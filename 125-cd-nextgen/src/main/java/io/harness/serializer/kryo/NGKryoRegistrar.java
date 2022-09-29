@@ -18,6 +18,8 @@ import io.harness.cdng.azure.webapp.ConnectionStringsParameters;
 import io.harness.cdng.azure.webapp.StartupCommandParameters;
 import io.harness.cdng.configfile.steps.ConfigFileStepParameters;
 import io.harness.cdng.configfile.steps.ConfigFilesOutcome;
+import io.harness.cdng.customDeployment.FetchInstanceScriptStepInfo;
+import io.harness.cdng.customDeployment.FetchInstanceScriptStepParameters;
 import io.harness.cdng.environment.yaml.EnvironmentYaml;
 import io.harness.cdng.gitops.CreatePRStepInfo;
 import io.harness.cdng.gitops.CreatePRStepParams;
@@ -31,6 +33,8 @@ import io.harness.cdng.infra.InfrastructureDef;
 import io.harness.cdng.infra.beans.InfraUseFromStage;
 import io.harness.cdng.infra.steps.InfraSectionStepParameters;
 import io.harness.cdng.infra.steps.InfraStepParameters;
+import io.harness.cdng.infra.yaml.CustomDeploymentInfrastructure;
+import io.harness.cdng.infra.yaml.EcsInfrastructure;
 import io.harness.cdng.infra.yaml.K8SDirectInfrastructure;
 import io.harness.cdng.infra.yaml.K8sGcpInfrastructure;
 import io.harness.cdng.infra.yaml.PdcInfrastructure;
@@ -66,7 +70,9 @@ import io.harness.cdng.pipeline.beans.DeploymentStageStepParameters;
 import io.harness.cdng.pipeline.beans.RollbackNode;
 import io.harness.cdng.pipeline.beans.RollbackOptionalChildChainStepParameters;
 import io.harness.cdng.pipeline.executions.CDAccountExecutionMetadata;
+import io.harness.cdng.provision.azure.AzureARMRollbackStepInfo;
 import io.harness.cdng.provision.azure.AzureCreateARMResourceStepInfo;
+import io.harness.cdng.provision.azure.AzureCreateBPStepInfo;
 import io.harness.cdng.provision.cloudformation.CloudformationCreateStackStepInfo;
 import io.harness.cdng.provision.cloudformation.CloudformationDeleteStackStepInfo;
 import io.harness.cdng.provision.cloudformation.CloudformationRollbackStepInfo;
@@ -185,6 +191,15 @@ public class NGKryoRegistrar implements KryoRegistrar {
     kryo.register(MergePRStepInfo.class, 12605);
     kryo.register(CustomFetchResponsePassThroughData.class, 12705);
     kryo.register(ConfigFilesOutcome.class, 12608);
+
     kryo.register(AzureCreateARMResourceStepInfo.class, 12609);
+    kryo.register(AzureCreateBPStepInfo.class, 12610);
+
+    kryo.register(AzureARMRollbackStepInfo.class, 12611);
+
+    kryo.register(EcsInfrastructure.class, 12612);
+    kryo.register(CustomDeploymentInfrastructure.class, 12613);
+    kryo.register(FetchInstanceScriptStepInfo.class, 12614);
+    kryo.register(FetchInstanceScriptStepParameters.class, 12615);
   }
 }

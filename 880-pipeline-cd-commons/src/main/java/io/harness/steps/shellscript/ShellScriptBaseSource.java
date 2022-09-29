@@ -19,5 +19,8 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 @OwnedBy(PIPELINE)
 @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
 public interface ShellScriptBaseSource {
+  String HARNESS = "Harness";
+  String INLINE = "Inline";
+
   String getType();
 }

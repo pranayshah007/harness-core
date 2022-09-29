@@ -33,6 +33,7 @@ import com.google.inject.Inject;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -198,9 +199,12 @@ public class ScriptProcessExecutor extends AbstractScriptExecutor {
         case POWERSHELL:
         case BASH:
           try {
-            executeCommandResponse =
-                executeBashScript(command, envVariablesToCollect, secretEnvVariablesToCollect, timeoutInMillis);
+            executeCommandResponse = executeBashScript(command,
+                envVariablesToCollect == null ? Collections.emptyList() : envVariablesToCollect,
+                secretEnvVariablesToCollect == null ? Collections.emptyList() : secretEnvVariablesToCollect,
+                timeoutInMillis);
           } catch (Exception e) {
+            log.error("[ScriptProcessExecutor-01] Error while executing script on delegate: ", e);
             saveExecutionLog(format("Exception: %s", e), ERROR);
           }
           break;
@@ -278,6 +282,8 @@ public class ScriptProcessExecutor extends AbstractScriptExecutor {
       String[] commandList = new String[] {"/bin/bash", scriptFilename};
       ProcessStopper processStopper = new ChildProcessStopper(
           scriptFilename, workingDirectory, new ProcessExecutor().environment(environment).directory(workingDirectory));
+
+      StringBuilder errorLog = new StringBuilder();
       ProcessExecutor processExecutor = new ProcessExecutor()
                                             .command(commandList)
                                             .directory(workingDirectory)
@@ -293,6 +299,8 @@ public class ScriptProcessExecutor extends AbstractScriptExecutor {
                                             .redirectError(new LogOutputStream() {
                                               @Override
                                               protected void processLine(String line) {
+                                                errorLog.append(line);
+                                                errorLog.append('\n');
                                                 saveExecutionLog(line, ERROR);
                                               }
                                             });
@@ -302,12 +310,24 @@ public class ScriptProcessExecutor extends AbstractScriptExecutor {
       }
 
       ProcessResult processResult = processExecutor.execute();
+
+      if (errorLog.length() > 0) {
+        log.error("[ScriptProcessExecutor-03] Error output stream:\n{}", errorLog);
+      }
+
       commandExecutionStatus = processResult.getExitValue() == 0 ? SUCCESS : FAILURE;
       if (commandExecutionStatus == SUCCESS && envVariablesOutputFile != null) {
         try (BufferedReader br = new BufferedReader(
                  new InputStreamReader(new FileInputStream(envVariablesOutputFile), StandardCharsets.UTF_8))) {
           processScriptOutputFile(envVariablesMap, br, secretVariablesToCollect);
+        } catch (FileNotFoundException e) {
+          log.error("[ScriptProcessExecutor-02] Error in processing script output: ", e);
+          saveExecutionLog(
+              "Error while reading variables to process Script Output. Avoid exiting from script early. IOException: "
+                  + e,
+              ERROR);
         } catch (IOException e) {
+          log.error("[ScriptProcessExecutor-02] Error in processing script output: ", e);
           saveExecutionLog("IOException:" + e, ERROR);
         }
       }

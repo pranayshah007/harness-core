@@ -16,6 +16,7 @@ import io.harness.cdng.infra.yaml.Infrastructure;
 import io.harness.cdng.infra.yaml.InfrastructureConfig;
 import io.harness.cdng.infra.yaml.InfrastructureDefinitionConfig;
 import io.harness.cdng.infra.yaml.InfrastructurePlanCreatorConfig;
+import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
 import io.harness.utils.YamlPipelineUtils;
@@ -42,12 +43,14 @@ public class InfrastructureEntityConfigMapper {
   public InfrastructureConfig toInfrastructureConfig(InfrastructureEntity infrastructureEntity) {
     Infrastructure infrastructure = null;
     boolean allowSimultaneousDeployments = false;
+    ServiceDefinitionType deploymentType = null;
     if (isNotEmpty(infrastructureEntity.getYaml())) {
       try {
         final InfrastructureConfig config =
             YamlPipelineUtils.read(infrastructureEntity.getYaml(), InfrastructureConfig.class);
         infrastructure = config.getInfrastructureDefinitionConfig().getSpec();
         allowSimultaneousDeployments = config.getInfrastructureDefinitionConfig().isAllowSimultaneousDeployments();
+        deploymentType = config.getInfrastructureDefinitionConfig().getDeploymentType();
       } catch (IOException e) {
         throw new InvalidRequestException("Cannot create infrastructure config due to " + e.getMessage());
       }
@@ -63,6 +66,7 @@ public class InfrastructureEntityConfigMapper {
                                             .environmentRef(infrastructureEntity.getEnvIdentifier())
                                             .type(infrastructureEntity.getType())
                                             .spec(infrastructure)
+                                            .deploymentType(deploymentType)
                                             .allowSimultaneousDeployments(allowSimultaneousDeployments)
                                             .build())
         .build();

@@ -89,21 +89,6 @@ public class GitFilePathHelperTest extends CategoryTest {
   @Test
   @Owner(developers = BHAVYA)
   @Category(UnitTests.class)
-  public void testValidateFilePath_whenFilePathIsNotInHarnessDirectory() {
-    String filePath = "abc.yaml";
-    try {
-      gitFilePathHelper.validateFilePath(filePath);
-    } catch (Exception ex) {
-      WingsException exception = ExceptionUtils.cause(InvalidRequestException.class, ex);
-      assertThat(exception).isNotNull();
-      assertThat(exception.getMessage())
-          .isEqualTo(String.format(GitFilePathHelper.FILE_PATH_INVALID_DIRECTORY_ERROR_FORMAT, filePath));
-    }
-  }
-
-  @Test
-  @Owner(developers = BHAVYA)
-  @Category(UnitTests.class)
   public void testValidateFilePath_whenFilePathHasInvalidExtension() {
     String filePath = ".harness/abc.py";
     try {

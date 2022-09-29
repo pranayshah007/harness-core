@@ -1,0 +1,49 @@
+freeze:
+  identifier: "id"
+  name: "name"
+  description: "desc"
+  orgIdentifier: "oId"
+  projectIdentifier: "pId"
+  status: "Enabled"
+  windows:
+    - timezone:
+      startTime: (YYYY-MM-DDThh:mm format)
+      endTime: (YYYY-MM-DDThh:mm format)
+      recurrence:
+        spec:
+          until: "until"
+          count: 1
+        type: "Daily"
+  entityConfigs:
+    - name: "rule1"
+      entities:
+      - filterType: "All"
+        type: "Service"
+        entityRefs:
+          - "serv1"
+          - "serv2"
+      - filterType: "Equals"
+        type: "Project"
+        entityRefs:
+          - "pip1"
+          - "pip2"
+      - filterType: "Equals"
+        type: "Org"
+        entityRefs:
+          - "pip1"
+          - "pip2"
+      - filterType: "Equals"
+        type: "EnvType"
+        entityRefs:
+          - "PROD"
+      - filterType: "Equals"
+        type: "Environment"
+        entityRefs:
+          - "pip1"
+          - "pip2"
+    - name: "rule2"
+      entity:
+        - filterType: "All"
+          type: "Service"
+        - filterType: "All"
+          type: "EnvType"

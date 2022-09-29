@@ -263,6 +263,7 @@ public class CIExecutionConfigServiceTest extends CIExecutionTestBase {
                                             .gitCloneImage("gc:abc")
                                             .buildAndPushECRImage("bpecr:1.2.3")
                                             .buildAndPushGCRImage("bpgcr:1.2.3")
+                                            .buildAndPushACRImage("bpacr:1.2.3")
                                             .gcsUploadImage("gcsupload:1.2.3")
                                             .vmImageConfig(vmImageConfig)
                                             .build();
@@ -357,6 +358,7 @@ public class CIExecutionConfigServiceTest extends CIExecutionTestBase {
                                             .gitCloneImage("gc:abc")
                                             .buildAndPushECRImage("bpecr:1.2.3")
                                             .buildAndPushGCRImage("bpgcr:1.2.3")
+                                            .buildAndPushACRImage("bpacr:1.2.3")
                                             .gcsUploadImage("gcsupload:1.2.3")
                                             .vmImageConfig(vmImageConfig)
                                             .build();
@@ -397,6 +399,7 @@ public class CIExecutionConfigServiceTest extends CIExecutionTestBase {
                                             .gitCloneImage("gc:abc")
                                             .buildAndPushECRImage("bpecr:1.2.3")
                                             .buildAndPushGCRImage("bpgcr:1.2.3")
+                                            .buildAndPushACRImage("bpacr:1.2.3")
                                             .gcsUploadImage("gcsupload:1.2.3")
                                             .s3UploadImage("s3upload:1.2.3")
                                             .artifactoryUploadTag("art:1.2.3")

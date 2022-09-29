@@ -16,7 +16,7 @@ import static io.harness.exception.WingsException.USER_SRE;
 import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
 import static io.harness.secrets.SecretPermissions.SECRET_RESOURCE_TYPE;
 import static io.harness.secrets.SecretPermissions.SECRET_VIEW_PERMISSION;
-import static io.harness.springdata.TransactionUtils.DEFAULT_TRANSACTION_RETRY_POLICY;
+import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 
 import static java.util.stream.Collectors.groupingBy;
 import static org.apache.commons.lang3.StringUtils.isBlank;
@@ -29,6 +29,7 @@ import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.beans.DelegateTaskRequest.DelegateTaskRequestBuilder;
+import io.harness.beans.IdentifierRef;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.RemoteMethodReturnValueData;
 import io.harness.delegate.beans.SSHTaskParams;
@@ -106,7 +107,7 @@ public class NGSecretServiceV2Impl implements NGSecretServiceV2 {
   private final NGSecretActivityService ngSecretActivityService;
   private final OutboxService outboxService;
   private final TransactionTemplate transactionTemplate;
-  private final RetryPolicy<Object> transactionRetryPolicy = DEFAULT_TRANSACTION_RETRY_POLICY;
+  private final RetryPolicy<Object> transactionRetryPolicy = DEFAULT_RETRY_POLICY;
   private final TaskSetupAbstractionHelper taskSetupAbstractionHelper;
   private final AccessControlClient accessControlClient;
 
@@ -142,6 +143,13 @@ public class NGSecretServiceV2Impl implements NGSecretServiceV2 {
   }
 
   @Override
+  public Optional<Secret> get(@NotNull IdentifierRef identifierRef) {
+    return secretRepository.findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndIdentifier(
+        identifierRef.getAccountIdentifier(), identifierRef.getOrgIdentifier(), identifierRef.getProjectIdentifier(),
+        identifierRef.getIdentifier());
+  }
+
+  @Override
   public boolean delete(
       @NotNull String accountIdentifier, String orgIdentifier, String projectIdentifier, @NotNull String identifier) {
     Optional<Secret> secretV2Optional = get(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
@@ -173,7 +181,7 @@ public class NGSecretServiceV2Impl implements NGSecretServiceV2 {
 
   @Override
   public Secret create(String accountIdentifier, @Valid SecretDTOV2 secretDTO, boolean draft) {
-    Secret secret = secretDTO.toEntity();
+    Secret secret = Secret.fromDTO(secretDTO);
     secret.setDraft(draft);
     secret.setAccountIdentifier(accountIdentifier);
     try {
@@ -205,7 +213,7 @@ public class NGSecretServiceV2Impl implements NGSecretServiceV2 {
       Secret oldSecret = secretOptional.get();
       SecretDTOV2 oldSecretClone = (SecretDTOV2) HObjectMapper.clone(oldSecret.toDTO());
 
-      Secret newSecret = secretDTO.toEntity();
+      Secret newSecret = Secret.fromDTO(secretDTO);
       oldSecret.setDescription(newSecret.getDescription());
       oldSecret.setName(newSecret.getName());
       oldSecret.setTags(newSecret.getTags());

@@ -12,6 +12,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cvng.migration.list.AddDeploymentMonitoringSourcePerpetualTask;
 import io.harness.cvng.migration.list.AddEnabledFlagToSLISLOMigration;
 import io.harness.cvng.migration.list.AddEnvRefsToMonitoredServiceMigration;
+import io.harness.cvng.migration.list.AddLastDisabledAtToMonitoredServiceMigration;
 import io.harness.cvng.migration.list.AddMetricIdentifierInCVConfigsAndMetricPacks;
 import io.harness.cvng.migration.list.AddMetricIdentifierToTimeSeriesThreshold;
 import io.harness.cvng.migration.list.AddMonitoredServiceToActivityMigration;
@@ -45,6 +46,7 @@ import io.harness.cvng.migration.list.UpdateActivityStatusMigration;
 import io.harness.cvng.migration.list.UpdateApdexMetricCriteria;
 import io.harness.cvng.migration.list.UpdateCvConfigPerpetualTasksMigration;
 import io.harness.cvng.migration.list.UpdateRiskIntToRiskEnum;
+import io.harness.cvng.migration.list.WriteServiceLevelObjectivesToV2;
 
 import com.google.common.collect.ImmutableList;
 import java.util.List;
@@ -112,6 +114,11 @@ public class CVNGBackgroundMigrationList {
         .add(Pair.of(48, SetNotRequiredActivityAnalysisStatusToIgnored.class))
         .add(Pair.of(49, PrometheusConnectorAuthenticationPerpetualTaskMigration.class))
         .add(Pair.of(50, AddEnabledFlagToSLISLOMigration.class))
+        .add(Pair.of(51, AddLastDisabledAtToMonitoredServiceMigration.class))
+        .add(Pair.of(52, WriteServiceLevelObjectivesToV2.class))
+        // if you are adding any other pair, make sure WriteServiceLevelObjectivesToV2
+        // in the end and update that num in CVNGMigrationServiceImpl.
+        //(TODO) Remove this feature flag and conditional migration after the feature is stable.
         .build();
   }
 }

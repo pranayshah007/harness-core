@@ -31,10 +31,12 @@ import io.harness.beans.yaml.extended.infrastrucutre.HostedVmInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml;
 import io.harness.ci.buildstate.BuildSetupUtils;
+import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.ci.integrationstage.BuildJobEnvInfoBuilder;
 import io.harness.ci.integrationstage.IntegrationStageUtils;
 import io.harness.ci.integrationstage.K8InitializeServiceUtils;
 import io.harness.ci.integrationstage.VmInitializeTaskParamsBuilder;
+import io.harness.ci.validation.CIYAMLSanitizationService;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.TaskSelector;
 import io.harness.delegate.beans.TaskData;
@@ -43,6 +45,7 @@ import io.harness.delegate.beans.ci.CITaskExecutionResponse;
 import io.harness.delegate.beans.ci.k8s.CIContainerStatus;
 import io.harness.delegate.beans.ci.k8s.CiK8sTaskResponse;
 import io.harness.delegate.beans.ci.k8s.K8sTaskExecutionResponse;
+import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.ci.vm.VmServiceStatus;
 import io.harness.delegate.beans.ci.vm.VmTaskExecutionResponse;
 import io.harness.encryption.Scope;
@@ -50,7 +53,9 @@ import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.helper.SerializedResponseDataHelper;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logstreaming.LogStreamingHelper;
+import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.core.EntityDetail;
+import io.harness.plancreator.execution.ExecutionWrapperConfig;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
@@ -81,9 +86,11 @@ import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
@@ -97,6 +104,7 @@ public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementPar
   public static final String LE_STATUS_TASK_TYPE = "CI_LE_STATUS";
   public static final Long TASK_BUFFER_TIMEOUT_MILLIS = 30 * 1000L;
 
+  @Inject private ConnectorUtils connectorUtils;
   @Inject private BuildSetupUtils buildSetupUtils;
   @Inject private SerializedResponseDataHelper serializedResponseDataHelper;
   @Inject private K8InitializeServiceUtils k8InitializeServiceUtils;
@@ -109,7 +117,7 @@ public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementPar
   private static final String DEPENDENCY_OUTCOME = "dependencies";
   public static final StepType STEP_TYPE = InitializeStepInfo.STEP_TYPE;
   @Inject private BuildJobEnvInfoBuilder buildJobEnvInfoBuilder;
-
+  @Inject private CIYAMLSanitizationService sanitizationService;
   @Override
   public Class<StepElementParameters> getStepParametersClass() {
     return StepElementParameters.class;
@@ -133,6 +141,62 @@ public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementPar
     if (isNotEmpty(connectorsEntityDetails)) {
       pipelineRbacHelper.checkRuntimePermissions(ambiance, connectorsEntityDetails, true);
     }
+
+    validateConnectors(
+        initializeStepInfo, connectorsEntityDetails, accountIdentifier, orgIdentifier, projectIdentifier);
+    sanitizeExecution(initializeStepInfo);
+  }
+
+  private List<ConnectorDetails> getConnectorDetails(
+      List<EntityDetail> entityDetails, String accountIdentifier, String projectIdentifier, String orgIdentifier) {
+    List<ConnectorDetails> connectorDetailsList = new ArrayList<>();
+    BaseNGAccess ngAccess = IntegrationStageUtils.getBaseNGAccess(accountIdentifier, orgIdentifier, projectIdentifier);
+    for (EntityDetail entityDetail : entityDetails) {
+      if (!EntityType.CONNECTORS.equals(entityDetail.getType())) {
+        continue;
+      }
+      ConnectorDetails connectorDetails =
+          connectorUtils.getConnectorDetailsWithIdentifier(ngAccess, (IdentifierRef) entityDetail.getEntityRef());
+      connectorDetailsList.add(connectorDetails);
+    }
+    return connectorDetailsList;
+  }
+
+  private void sanitizeExecution(InitializeStepInfo initializeStepInfo) {
+    List<ExecutionWrapperConfig> steps = initializeStepInfo.getExecutionElementConfig().getSteps();
+    if (initializeStepInfo.getInfrastructure().getType() == Infrastructure.Type.KUBERNETES_HOSTED
+        || initializeStepInfo.getInfrastructure().getType() == Infrastructure.Type.HOSTED_VM) {
+      sanitizationService.validate(steps);
+    }
+  }
+
+  private void validateConnectors(InitializeStepInfo initializeStepInfo, List<EntityDetail> connectorEntitiesList,
+      String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+    if (initializeStepInfo.getInfrastructure().getType() != Infrastructure.Type.HOSTED_VM) {
+      return;
+    }
+
+    // For hosted VMs, we need to validate whether all the connectors connect via platform or not
+    List<ConnectorDetails> connectorDetailsList =
+        getConnectorDetails(connectorEntitiesList, accountIdentifier, projectIdentifier, orgIdentifier);
+    Set<String> invalidIdentifiers = new HashSet<>();
+    for (ConnectorDetails connectorDetails : connectorDetailsList) {
+      if (connectorDetails.getExecuteOnDelegate() != null) {
+        if (connectorDetails.getExecuteOnDelegate()) {
+          invalidIdentifiers.add(connectorDetails.getIdentifier());
+        }
+      } else {
+        log.warn("Connector type: {} has executeOnDelegate set as null", connectorDetails.getConnectorType());
+        invalidIdentifiers.add(connectorDetails.getIdentifier());
+      }
+    }
+    if (!isEmpty(invalidIdentifiers)) {
+      throw new CIStageExecutionException(format(
+          "While using hosted infrastructure, all connectors should be configured to go via the Harness platform instead of via the delegate. "
+              + "Please update the connectors: %s to connect via the Harness platform instead. This can be done by "
+              + "editing the connector and updating the connectivity to go via the Harness platform.",
+          invalidIdentifiers));
+    }
   }
 
   @Override
@@ -145,7 +209,10 @@ public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementPar
     CIInitializeTaskParams buildSetupTaskParams =
         buildSetupUtils.getBuildSetupTaskParams(initializeStepInfo, ambiance, logPrefix);
     boolean executeOnHarnessHostedDelegates = false;
+    boolean emitEvent = false;
+    String stageId = ambiance.getStageExecutionId();
     List<TaskSelector> taskSelectors = new ArrayList<>();
+
     // Secrets are in decrypted format for DLITE_VM type
     if (buildSetupTaskParams.getType() != DLITE_VM) {
       log.info("Created params for build task: {}", buildSetupTaskParams);
@@ -156,11 +223,13 @@ public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementPar
       TaskSelector taskSelector = TaskSelector.newBuilder().setSelector(platformSelector).build();
       taskSelectors.add(taskSelector);
       executeOnHarnessHostedDelegates = true;
+
+      emitEvent = true;
     }
 
     return StepUtils.prepareTaskRequest(ambiance, getTaskData(stepElementParameters, buildSetupTaskParams),
         kryoSerializer, TaskCategory.DELEGATE_TASK_V2, Collections.emptyList(), true, null, taskSelectors,
-        Scope.PROJECT, EnvironmentType.ALL, executeOnHarnessHostedDelegates, new ArrayList<>());
+        Scope.PROJECT, EnvironmentType.ALL, executeOnHarnessHostedDelegates, new ArrayList<>(), emitEvent, stageId);
   }
 
   @Override
@@ -169,13 +238,13 @@ public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementPar
       throws Exception {
     ResponseData responseData = serializedResponseDataHelper.deserialize(responseSupplier.get());
     CITaskExecutionResponse ciTaskExecutionResponse = (CITaskExecutionResponse) responseData;
-    if (ciTaskExecutionResponse.getType() == CITaskExecutionResponse.Type.K8) {
+    CITaskExecutionResponse.Type type = ciTaskExecutionResponse.getType();
+    if (type == CITaskExecutionResponse.Type.K8) {
       return handleK8TaskResponse(ambiance, stepElementParameters, ciTaskExecutionResponse);
-    } else if (ciTaskExecutionResponse.getType() == CITaskExecutionResponse.Type.VM) {
+    } else if (type == CITaskExecutionResponse.Type.VM || type == CITaskExecutionResponse.Type.DOCKER) {
       return handleVmTaskResponse(ciTaskExecutionResponse);
     } else {
-      throw new CIStageExecutionException(
-          format("Invalid infra type for task response: %s", ciTaskExecutionResponse.getType()));
+      throw new CIStageExecutionException(format("Invalid infra type for task response: %s", type));
     }
   }
 
@@ -391,7 +460,7 @@ public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementPar
 
     List<String> connectorRefs =
         IntegrationStageUtils.getStageConnectorRefs(initializeStepInfo.getStageElementConfig());
-    if (infrastructure.getType() == Infrastructure.Type.VM
+    if (infrastructure.getType() == Infrastructure.Type.VM || infrastructure.getType() == Infrastructure.Type.DOCKER
         || infrastructure.getType() == Infrastructure.Type.HOSTED_VM) {
       if (!isEmpty(connectorRefs)) {
         entityDetails.addAll(

@@ -91,8 +91,10 @@ public class SshScriptCommandHandlerTest extends CategoryTest {
     when(scriptSshExecutor.executeCommandString(COMMAND, outputVariables))
         .thenReturn(ExecuteCommandResponse.builder().status(CommandExecutionStatus.SUCCESS).build());
 
-    CommandExecutionStatus status = sshScriptCommandHandler.handle(
-        getParameters(false), scriptCommandUnit, logStreamingTaskClient, commandUnitsProgress, taskContext);
+    CommandExecutionStatus status =
+        sshScriptCommandHandler
+            .handle(getParameters(false), scriptCommandUnit, logStreamingTaskClient, commandUnitsProgress, taskContext)
+            .getStatus();
     assertThat(status).isEqualTo(CommandExecutionStatus.SUCCESS);
     ArgumentCaptor<SshExecutorFactoryContext> contextArgumentCaptor =
         ArgumentCaptor.forClass(SshExecutorFactoryContext.class);
@@ -109,8 +111,10 @@ public class SshScriptCommandHandlerTest extends CategoryTest {
         .thenReturn(ExecuteCommandResponse.builder().status(CommandExecutionStatus.SUCCESS).build());
     when(scriptProcessExecutor.getLogCallback()).thenReturn(logCallback);
 
-    CommandExecutionStatus status = sshScriptCommandHandler.handle(
-        getParameters(true), scriptCommandUnit, logStreamingTaskClient, commandUnitsProgress, taskContext);
+    CommandExecutionStatus status =
+        sshScriptCommandHandler
+            .handle(getParameters(true), scriptCommandUnit, logStreamingTaskClient, commandUnitsProgress, taskContext)
+            .getStatus();
     assertThat(status).isEqualTo(CommandExecutionStatus.SUCCESS);
     ArgumentCaptor<SshExecutorFactoryContext> contextArgumentCaptor =
         ArgumentCaptor.forClass(SshExecutorFactoryContext.class);

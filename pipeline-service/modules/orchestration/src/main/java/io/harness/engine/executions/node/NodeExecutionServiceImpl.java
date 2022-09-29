@@ -465,6 +465,7 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
         .include(NodeExecutionKeys.status)
         .include(NodeExecutionKeys.mode)
         .include(NodeExecutionKeys.parentId)
+        .include(NodeExecutionKeys.ambiance)
         .include(NodeExecutionKeys.oldRetry);
     return mongoTemplate.find(query, NodeExecution.class);
   }
@@ -592,7 +593,8 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
     return extractChildExecutions(parentId, includeParent, finalList, allExecutions);
   }
 
-  private List<NodeExecution> extractChildExecutions(
+  @Override
+  public List<NodeExecution> extractChildExecutions(
       String parentId, boolean includeParent, List<NodeExecution> finalList, List<NodeExecution> allExecutions) {
     Map<String, List<NodeExecution>> parentChildrenMap = new HashMap<>();
     for (NodeExecution execution : allExecutions) {

@@ -34,12 +34,15 @@ public interface EntityTypeConstants {
   String DEPLOYMENT_STEPS = "DeploymentSteps";
   String DEPLOYMENT_STAGE = "DeploymentStage";
   String APPROVAL_STAGE = "ApprovalStage";
+  String PIPELINE_STAGE = "PipelineStage";
   String CUSTOM_STAGE = "CustomStage";
   String FEATURE_FLAG_STAGE = "FeatureFlagStage";
   String TRIGGERS = "Triggers";
   String MONITORED_SERVICE = "MonitoredService";
   String TEMPLATE = "Template";
   String TEMPLATE_STAGE = "TemplateStage";
+  String TEMPLATE_CUSTOM_DEPLOYMENT = "CustomDeployment";
+  String FETCH_INSTANCE_SCRIPT = "FetchInstanceScript";
   String GIT_REPOSITORIES = "GitRepositories";
   String FEATURE_FLAGS = "FeatureFlags";
   String HTTP = "Http";
@@ -57,6 +60,7 @@ public interface EntityTypeConstants {
   String K8S_BG_SWAP_SERVICES = "K8sBGSwapServices";
   String K8S_CANARY_DELETE = "K8sCanaryDelete";
   String RUN_STEP = "Run";
+  String BACKGROUND_STEP = "Background";
   String RUN_TEST = "RunTests";
   String PLUGIN = "Plugin";
   String RESTORE_CACHE_GCS = "RestoreCacheGCS";
@@ -108,5 +112,16 @@ public interface EntityTypeConstants {
   String AZURE_WEBAPP_ROLLBACK = "AzureWebAppRollback";
   String QUEUE = "Queue";
   String JENKINS_BUILD = "JenkinsBuild";
+  String ECS_ROLLING_DEPLOY = "EcsRollingDeploy";
+  String ECS_ROLLING_ROLLBACK = "EcsRollingRollback";
+  String ECS_CANARY_DEPLOY = "EcsCanaryDeploy";
+  String ECS_CANARY_DELETE = "EcsCanaryDelete";
   String AZURE_CREATE_ARM_RESOURCE_STEP = "AzureCreateARMResource";
+  String AZURE_CREATE_BP_RESOURCE_STEP = "AzureCreateBPResource";
+  String AZURE_ROLLBACK_ARM_RESOURCE_STEP = "AzureARMRollback";
+  String ECS_BLUE_GREEN_CREATE_SERVICE = "EcsBlueGreenCreateService";
+  String ECS_BLUE_GREEN_SWAP_TARGET_GROUPS = "EcsBlueGreenSwapTargetGroups";
+  String ECS_BLUE_GREEN_ROLLBACK = "EcsBlueGreenRollback";
+  String WAIT_STEP = "Wait";
+  String ARTIFACT_SOURCE_TEMPLATE = "ArtifactSource";
 }

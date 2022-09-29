@@ -30,8 +30,8 @@ public class ServiceOverridesMapper {
             .accountId(accountId)
             .orgIdentifier(serviceOverrideRequestDTO.getOrgIdentifier())
             .projectIdentifier(serviceOverrideRequestDTO.getProjectIdentifier())
-            .environmentRef(serviceOverrideRequestDTO.getEnvironmentRef())
-            .serviceRef(serviceOverrideRequestDTO.getServiceRef())
+            .environmentRef(serviceOverrideRequestDTO.getEnvironmentIdentifier())
+            .serviceRef(serviceOverrideRequestDTO.getServiceIdentifier())
             .yaml(serviceOverrideRequestDTO.getYaml())
             .build();
 
@@ -58,6 +58,14 @@ public class ServiceOverridesMapper {
           .serviceRef(serviceOverrideConfig.getServiceOverrideInfoConfig().getServiceRef())
           .variables(serviceOverrideConfig.getServiceOverrideInfoConfig().getVariables())
           .build();
+    } catch (IOException e) {
+      throw new InvalidRequestException(String.format("Cannot read serviceOverride yaml %s ", entityYaml));
+    }
+  }
+
+  public NGServiceOverrideConfig toNGServiceOverrideConfig(String entityYaml) {
+    try {
+      return YamlPipelineUtils.read(entityYaml, NGServiceOverrideConfig.class);
     } catch (IOException e) {
       throw new InvalidRequestException(String.format("Cannot read serviceOverride yaml %s ", entityYaml));
     }

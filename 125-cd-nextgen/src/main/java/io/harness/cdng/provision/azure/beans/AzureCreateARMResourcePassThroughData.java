@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.delegate.task.azure.appservice.settings.AppSettingsFile;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 
 import lombok.AccessLevel;
@@ -25,7 +26,7 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @OwnedBy(CDP)
 public class AzureCreateARMResourcePassThroughData implements PassThroughData {
-  String templateBody;
-  String parametersBody;
+  AppSettingsFile templateBody;
+  AppSettingsFile parametersBody;
   @Accessors(fluent = true) boolean hasGitFiles;
 }

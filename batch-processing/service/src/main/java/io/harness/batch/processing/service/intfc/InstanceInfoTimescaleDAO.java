@@ -20,9 +20,13 @@ import javax.validation.constraints.NotNull;
 public interface InstanceInfoTimescaleDAO {
   void insertIntoNodeInfo(@NotNull InstanceInfo instanceInfo);
 
+  void purgePodInfo();
+
   void insertIntoNodeInfo(@NotNull List<InstanceInfo> instanceInfoList);
 
   void insertIntoWorkloadInfo(@NotNull String accountId, @NotNull K8sWorkloadSpec workloadSpec);
+
+  void deleteWorkloadInfo();
 
   void insertIntoPodInfo(@NotNull List<InstanceInfo> instanceInfoList);
 

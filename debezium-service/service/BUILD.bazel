@@ -1,4 +1,5 @@
 load("@rules_java//java:defs.bzl", "java_binary")
+load("//:tools/bazel/GenTestRules.bzl", "run_tests")
 load("//:tools/bazel/macros.bzl", "run_analysis")
 
 java_binary(
@@ -18,6 +19,25 @@ java_binary(
         "@maven//:ch_qos_logback_logback_core",
     ],
 )
+
+java_library(
+    name = "tests",
+    testonly = True,
+    srcs = glob(["src/test/**/*.java"]),
+    resources = ["//debezium-service/service/src/test/resources:resource"],
+    visibility = ["//visibility:public"],
+    deps = [
+        ":module",
+        "//953-events-api:module",
+        "//960-continuous-features:module",
+        "//980-commons:module",
+        "//990-commons-test:module",
+        "//debezium-service/contracts:module",
+        "@maven//:org_mockito_mockito_inline",
+    ],
+)
+
+run_tests()
 
 run_analysis()
 

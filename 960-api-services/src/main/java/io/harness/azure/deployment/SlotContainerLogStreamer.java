@@ -10,6 +10,7 @@ package io.harness.azure.deployment;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.azure.model.AzureConstants.DDMMYYYY_TIME_PATTERN;
 import static io.harness.azure.model.AzureConstants.DEPLOYMENT_SLOT_PRODUCTION_NAME;
+import static io.harness.azure.model.AzureConstants.DEPLOY_TO_SLOT;
 import static io.harness.azure.model.AzureConstants.FAIL_DEPLOYMENT_ERROR_MSG;
 import static io.harness.azure.model.AzureConstants.TIME_PATTERN;
 import static io.harness.azure.model.AzureConstants.TIME_STAMP_REGEX;
@@ -171,7 +172,7 @@ public class SlotContainerLogStreamer {
       hasFailed = true;
       errorLog = logLine;
       logCallback.saveExecutionLog(String.format(FAIL_DEPLOYMENT_ERROR_MSG, slotName, logLine), ERROR);
-      throw new AzureAppServicesSlotSteadyStateException(errorLog);
+      throw new AzureAppServicesSlotSteadyStateException(errorLog, DEPLOY_TO_SLOT, 0, null);
     }
     Matcher deploymentLogMatcher = deploymentLogPattern.matcher(logLine);
     Matcher containerLogMatcher = containerSuccessPattern.matcher(logLine);

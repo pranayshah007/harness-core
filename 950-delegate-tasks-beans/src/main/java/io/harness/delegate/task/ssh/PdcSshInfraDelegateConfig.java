@@ -14,6 +14,7 @@ import io.harness.ng.core.dto.secrets.SSHKeySpecDTO;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import java.util.List;
+import java.util.Set;
 import lombok.Builder;
 import lombok.Value;
 
@@ -21,7 +22,7 @@ import lombok.Value;
 @Builder
 @OwnedBy(HarnessTeam.CDP)
 public class PdcSshInfraDelegateConfig implements SshInfraDelegateConfig {
-  List<String> hosts;
+  Set<String> hosts;
   PhysicalDataCenterConnectorDTO physicalDataCenterConnectorDTO;
   List<EncryptedDataDetail> encryptionDataDetails;
   SSHKeySpecDTO sshKeySpecDto;

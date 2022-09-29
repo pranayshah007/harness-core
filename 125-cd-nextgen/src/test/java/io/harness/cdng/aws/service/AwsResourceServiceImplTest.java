@@ -84,7 +84,7 @@ public class AwsResourceServiceImplTest extends CategoryTest {
         AwsIAMRolesResponse.builder().roles(rolesMap).commandExecutionStatus(CommandExecutionStatus.SUCCESS).build();
     doReturn(mockAwsIAMRolesResponse).when(serviceHelper).getResponseData(any(), any(), anyString());
     IdentifierRef mockIdentifierRef = IdentifierRef.builder().build();
-    service.getRolesARNs(mockIdentifierRef, "foo", "bar");
+    service.getRolesARNs(mockIdentifierRef, "foo", "bar", "us-east-1");
     assertThat(mockAwsIAMRolesResponse.getRoles().size()).isEqualTo(2);
   }
 
@@ -102,7 +102,7 @@ public class AwsResourceServiceImplTest extends CategoryTest {
     ErrorNotifyResponseData mockAwsIAMRolesResponse = ErrorNotifyResponseData.builder().build();
     doReturn(mockAwsIAMRolesResponse).when(serviceHelper).getResponseData(any(), any(), anyString());
     IdentifierRef mockIdentifierRef = IdentifierRef.builder().build();
-    service.getRolesARNs(mockIdentifierRef, "foo", "bar");
+    service.getRolesARNs(mockIdentifierRef, "foo", "bar", "us-east-1");
   }
 
   @Test

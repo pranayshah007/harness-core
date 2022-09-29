@@ -12,19 +12,15 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ng.core.invites.entities.Invite;
 import io.harness.ng.core.invites.entities.Invite.InviteKeys;
-import io.harness.utils.RetryUtils;
+import io.harness.springdata.PersistenceUtils;
 
-import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
-import java.time.Duration;
 import java.util.List;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
-import org.springframework.dao.DuplicateKeyException;
-import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.FindAndModifyOptions;
@@ -39,10 +35,8 @@ import org.springframework.data.repository.support.PageableExecutionUtils;
 @OwnedBy(PL)
 public class InviteRepositoryCustomImpl implements InviteRepositoryCustom {
   private final MongoTemplate mongoTemplate;
-  private final RetryPolicy<Object> updateRetryPolicy = RetryUtils.getRetryPolicy(
-      "[Retrying]: Failed updating Invite; attempt: {}", "[Failed]: Failed updating Invite; attempt: {}",
-      ImmutableList.of(OptimisticLockingFailureException.class, DuplicateKeyException.class), Duration.ofSeconds(1), 3,
-      log);
+  private final RetryPolicy<Object> updateRetryPolicy = PersistenceUtils.getRetryPolicy(
+      "[Retrying]: Failed updating Invite; attempt: {}", "[Failed]: Failed updating Invite; attempt: {}");
 
   @Override
   public Page<Invite> findAll(Criteria criteria, Pageable pageable) {

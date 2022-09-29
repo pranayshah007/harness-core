@@ -22,6 +22,7 @@ import io.harness.ccm.views.graphql.QLCEViewField;
 import io.harness.ccm.views.graphql.QLCEViewFieldIdentifierData;
 import io.harness.ccm.views.graphql.QLCEViewFilterWrapper;
 import io.harness.ccm.views.graphql.QLCEViewMetadataFilter;
+import io.harness.ccm.views.helper.BusinessMappingDataSourceHelper;
 import io.harness.ccm.views.service.CEViewService;
 import io.harness.ccm.views.service.ViewCustomFieldService;
 import io.harness.ccm.views.service.ViewsBillingService;
@@ -48,6 +49,7 @@ public class PerspectiveFieldsHelper {
   @Inject private CEViewService ceViewService;
   @Inject private ViewsBillingService viewsBillingService;
   @Inject private BusinessMappingService businessMappingService;
+  @Inject private BusinessMappingDataSourceHelper businessMappingDataSourceHelper;
   @Inject BigQueryHelper bigQueryHelper;
   @Inject BigQueryService bigQueryService;
   @Inject FeatureFlagService featureFlagService;
@@ -108,19 +110,15 @@ public class PerspectiveFieldsHelper {
         }
 
         for (ViewFieldIdentifier viewFieldIdentifier : ceView.getDataSources()) {
-          if (viewFieldIdentifier == ViewFieldIdentifier.AWS
-              && !viewFieldIdentifierSetFromCustomFields.contains(ViewFieldIdentifier.AWS)) {
-            fieldIdentifierData.add(getViewField(ViewFieldUtils.getAwsFields(), viewFieldIdentifier));
-          } else if (viewFieldIdentifier == ViewFieldIdentifier.GCP
-              && !viewFieldIdentifierSetFromCustomFields.contains(ViewFieldIdentifier.GCP)) {
-            fieldIdentifierData.add(getViewField(ViewFieldUtils.getGcpFields(), viewFieldIdentifier));
-          } else if (viewFieldIdentifier == ViewFieldIdentifier.CLUSTER
-              && !viewFieldIdentifierSetFromCustomFields.contains(ViewFieldIdentifier.CLUSTER)) {
-            fieldIdentifierData.add(
-                getViewField(ViewFieldUtils.getClusterFields(isClusterPerspective), viewFieldIdentifier));
-          } else if (viewFieldIdentifier == ViewFieldIdentifier.AZURE
-              && !viewFieldIdentifierSetFromCustomFields.contains(ViewFieldIdentifier.AZURE)) {
-            fieldIdentifierData.add(getViewField(accountIdToSupportedAzureFields.get(accountId), viewFieldIdentifier));
+          addFieldIdentifierData(accountId, isClusterPerspective, fieldIdentifierData,
+              viewFieldIdentifierSetFromCustomFields, viewFieldIdentifier);
+          if (viewFieldIdentifier == ViewFieldIdentifier.BUSINESS_MAPPING) {
+            final Set<ViewFieldIdentifier> businessMappingViewFieldIdentifiers =
+                businessMappingDataSourceHelper.getBusinessMappingViewFieldIdentifiers(
+                    accountId, ceView.getViewRules());
+            businessMappingViewFieldIdentifiers.forEach(businessMappingViewFieldIdentifier
+                -> addFieldIdentifierData(accountId, isClusterPerspective, fieldIdentifierData,
+                    viewFieldIdentifierSetFromCustomFields, businessMappingViewFieldIdentifier));
           }
         }
       } else {
@@ -130,6 +128,35 @@ public class PerspectiveFieldsHelper {
       fieldIdentifierData.addAll(getFieldIdentifierDataFromCEMetadataRecord(accountId, isClusterPerspective));
     }
     return PerspectiveFieldsData.builder().fieldIdentifierData(fieldIdentifierData).build();
+  }
+
+  private void addFieldIdentifierData(final String accountId, final boolean isClusterPerspective,
+      final List<QLCEViewFieldIdentifierData> fieldIdentifierData,
+      final Set<ViewFieldIdentifier> viewFieldIdentifierSetFromCustomFields,
+      final ViewFieldIdentifier viewFieldIdentifier) {
+    if (shouldAddFieldIdentifierData(
+            viewFieldIdentifierSetFromCustomFields, viewFieldIdentifier, ViewFieldIdentifier.AWS)) {
+      fieldIdentifierData.add(getViewField(ViewFieldUtils.getAwsFields(), viewFieldIdentifier));
+      viewFieldIdentifierSetFromCustomFields.add(ViewFieldIdentifier.AWS);
+    } else if (shouldAddFieldIdentifierData(
+                   viewFieldIdentifierSetFromCustomFields, viewFieldIdentifier, ViewFieldIdentifier.GCP)) {
+      fieldIdentifierData.add(getViewField(ViewFieldUtils.getGcpFields(), viewFieldIdentifier));
+      viewFieldIdentifierSetFromCustomFields.add(ViewFieldIdentifier.GCP);
+    } else if (shouldAddFieldIdentifierData(
+                   viewFieldIdentifierSetFromCustomFields, viewFieldIdentifier, ViewFieldIdentifier.CLUSTER)) {
+      fieldIdentifierData.add(getViewField(ViewFieldUtils.getClusterFields(isClusterPerspective), viewFieldIdentifier));
+      viewFieldIdentifierSetFromCustomFields.add(ViewFieldIdentifier.CLUSTER);
+    } else if (shouldAddFieldIdentifierData(
+                   viewFieldIdentifierSetFromCustomFields, viewFieldIdentifier, ViewFieldIdentifier.AZURE)) {
+      fieldIdentifierData.add(getViewField(accountIdToSupportedAzureFields.get(accountId), viewFieldIdentifier));
+      viewFieldIdentifierSetFromCustomFields.add(ViewFieldIdentifier.AZURE);
+    }
+  }
+
+  private boolean shouldAddFieldIdentifierData(final Set<ViewFieldIdentifier> viewFieldIdentifierSetFromCustomFields,
+      final ViewFieldIdentifier viewFieldIdentifier1, final ViewFieldIdentifier viewFieldIdentifier2) {
+    return viewFieldIdentifier1 == viewFieldIdentifier2
+        && !viewFieldIdentifierSetFromCustomFields.contains(viewFieldIdentifier2);
   }
 
   private List<QLCEViewFieldIdentifierData> getFieldIdentifierDataFromCEMetadataRecord(

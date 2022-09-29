@@ -73,14 +73,15 @@ public class CustomSecretsManagerEncryptor implements CustomEncryptor {
     int failedAttempts = 0;
     while (true) {
       try {
-        return HTimeLimiter.callInterruptible21(timeLimiter, Duration.ofSeconds(20),
+        return HTimeLimiter.callInterruptible21(timeLimiter, Duration.ofSeconds(60),
             () -> fetchSecretValueInternal(encryptedRecord, customSecretsManagerConfig));
       } catch (SecretManagementDelegateException e) {
         throw e;
       } catch (Exception e) {
         failedAttempts++;
         if (failedAttempts == NUM_OF_RETRIES) {
-          String message = "Faild to decrypt " + encryptedRecord.getName() + " after " + NUM_OF_RETRIES + " retries";
+          String message = String.format(
+              "Failed to read '%s' from shell script after %s retries", encryptedRecord.getName(), NUM_OF_RETRIES);
           throw new SecretManagementDelegateException(SECRET_MANAGEMENT_ERROR, message, e, USER);
         }
         sleep(ofMillis(1000));

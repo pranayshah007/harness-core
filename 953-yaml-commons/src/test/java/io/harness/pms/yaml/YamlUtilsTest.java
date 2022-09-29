@@ -131,6 +131,63 @@ public class YamlUtilsTest extends CategoryTest {
   @Test
   @Owner(developers = SAHIL)
   @Category(UnitTests.class)
+  public void testgetFullyQualifiedNameWithStrategy() throws IOException {
+    ClassLoader classLoader = this.getClass().getClassLoader();
+    final URL testFile = classLoader.getResource("pipeline.yaml");
+    String yamlContent = Resources.toString(testFile, Charsets.UTF_8);
+    YamlField yamlField = YamlUtils.readTree(YamlUtils.injectUuid(yamlContent));
+    // Pipeline Node
+    YamlNode pipelineNode = yamlField.getNode().getField("pipeline").getNode();
+    // Stages Node
+    YamlField stagesNode = pipelineNode.getField("stages");
+    // Stage1 Node
+    YamlNode stage1Node = stagesNode.getNode().asArray().get(3).getField("stage").getNode();
+
+    String stageFQN = YamlUtils.getFullyQualifiedName(stage1Node, true);
+    assertThat(stageFQN).isEqualTo("pipeline.stages.prodStage2<+strategy.identifierPostFix>");
+    assertThat(YamlUtils.getFullyQualifiedNameTillRoot(stage1Node)).isEqualTo("pipeline.stages.prodStage2");
+    // Stage1 Service Node
+    YamlNode serviceNode = stage1Node.getField("spec").getNode().getField("service").getNode();
+    assertThat(YamlUtils.getFullyQualifiedName(serviceNode, true))
+        .isEqualTo("pipeline.stages.prodStage2<+strategy.identifierPostFix>.spec.service");
+    assertThat(YamlUtils.getFullyQualifiedNameTillRoot(serviceNode))
+        .isEqualTo("pipeline.stages.prodStage2.spec.service");
+
+    // image Path qualified Name
+    YamlNode imagePath = serviceNode.getField("serviceDefinition")
+                             .getNode()
+                             .getField("spec")
+                             .getNode()
+                             .getField("artifacts")
+                             .getNode()
+                             .getField("primary")
+                             .getNode()
+                             .getField("spec")
+                             .getNode()
+                             .getField("imagePath")
+                             .getNode();
+    assertThat(YamlUtils.getFullyQualifiedName(imagePath, true))
+        .isEqualTo(
+            "pipeline.stages.prodStage2<+strategy.identifierPostFix>.spec.service.serviceDefinition.spec.artifacts.primary.spec.imagePath");
+
+    // infrastructure qualified name
+    YamlNode infraNode = stage1Node.getField("spec").getNode().getField("infrastructure").getNode();
+    assertThat(YamlUtils.getFullyQualifiedName(infraNode, true))
+        .isEqualTo("pipeline.stages.prodStage2<+strategy.identifierPostFix>.spec.infrastructure");
+
+    // step qualified name
+    YamlNode stepsNode =
+        stage1Node.getField("spec").getNode().getField("execution").getNode().getField("steps").getNode();
+    YamlNode step1Node = stepsNode.asArray().get(0).getField("step").getNode();
+    assertThat(YamlUtils.getFullyQualifiedName(step1Node, true))
+        .isEqualTo("pipeline.stages.prodStage2<+strategy.identifierPostFix>.spec.execution.steps.rolloutDeployment");
+    assertThat(YamlUtils.getFullyQualifiedNameTillRoot(step1Node))
+        .isEqualTo("pipeline.stages.prodStage2.spec.execution.steps.rolloutDeployment");
+  }
+
+  @Test
+  @Owner(developers = SAHIL)
+  @Category(UnitTests.class)
   public void testgetQNBetweenTwoFields() throws IOException {
     ClassLoader classLoader = this.getClass().getClassLoader();
     final URL testFile = classLoader.getResource("pipeline.yaml");

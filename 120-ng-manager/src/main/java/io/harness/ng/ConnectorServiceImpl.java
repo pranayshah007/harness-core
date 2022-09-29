@@ -207,12 +207,13 @@ public class ConnectorServiceImpl implements ConnectorService {
       final boolean executeOnDelegate = defaultConnectorService.checkConnectorExecutableOnDelegate(connectorInfo);
       boolean isDefaultBranchConnector = gitSyncSdkService.isDefaultBranch(accountIdentifier,
           connectorDTO.getConnectorInfo().getOrgIdentifier(), connectorDTO.getConnectorInfo().getProjectIdentifier());
-      if (!isHarnessManagedSecretManager && isDefaultBranchConnector && executeOnDelegate) {
+      if (!isHarnessManagedSecretManager && isDefaultBranchConnector && executeOnDelegate
+          && !ConnectorType.CUSTOM_SECRET_MANAGER.equals(connectorInfo.getConnectorType())) {
         connectorHeartbeatTaskId = connectorHeartbeatService.createConnectorHeatbeatTask(accountIdentifier,
             connectorInfo.getOrgIdentifier(), connectorInfo.getProjectIdentifier(), connectorInfo.getIdentifier());
       }
       if (connectorHeartbeatTaskId != null || isHarnessManagedSecretManager || !isDefaultBranchConnector
-          || !executeOnDelegate) {
+          || !executeOnDelegate || ConnectorType.CUSTOM_SECRET_MANAGER.equals(connectorInfo.getConnectorType())) {
         if (gitChangeType != null) {
           connectorResponse = getConnectorService(connectorInfo.getConnectorType())
                                   .create(connectorDTO, accountIdentifier, gitChangeType);
@@ -709,6 +710,11 @@ public class ConnectorServiceImpl implements ConnectorService {
   @Override
   public void resetHeartbeatForReferringConnectors(List<Pair<String, String>> connectorPerpetualTaskInfoList) {
     defaultConnectorService.resetHeartbeatForReferringConnectors(connectorPerpetualTaskInfoList);
+  }
+
+  @Override
+  public void resetHeartBeatTask(String accountId, String taskId) {
+    defaultConnectorService.resetHeartBeatTask(accountId, taskId);
   }
 
   @Override

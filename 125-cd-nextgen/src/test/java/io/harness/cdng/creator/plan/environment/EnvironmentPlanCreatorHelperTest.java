@@ -94,8 +94,8 @@ public class EnvironmentPlanCreatorHelperTest extends CDNGTestBase {
     String infraSectionUuid = UUIDGenerator.generateUuid();
     String serviceSpecNodeId = UUIDGenerator.generateUuid();
     Map<String, ByteString> resultedMetadata = EnvironmentPlanCreatorHelper.prepareMetadata(
-        environmentUuid, infraSectionUuid, serviceSpecNodeId, false, kryoSerializer);
-    assertThat(resultedMetadata.size()).isEqualTo(4);
+        environmentUuid, infraSectionUuid, serviceSpecNodeId, false, false, kryoSerializer);
+    assertThat(resultedMetadata.size()).isEqualTo(5);
 
     assertThat(kryoSerializer.asInflatedObject(resultedMetadata.get(YamlTypes.NEXT_UUID).toByteArray()))
         .isEqualTo(serviceSpecNodeId);
@@ -106,14 +106,20 @@ public class EnvironmentPlanCreatorHelperTest extends CDNGTestBase {
     assertThat(
         kryoSerializer.asInflatedObject(resultedMetadata.get(YAMLFieldNameConstants.GITOPS_ENABLED).toByteArray()))
         .isEqualTo(false);
+    assertThat(
+        kryoSerializer.asInflatedObject(resultedMetadata.get(YAMLFieldNameConstants.SKIP_INSTANCES).toByteArray()))
+        .isEqualTo(false);
 
     // GitOps = true
     resultedMetadata = EnvironmentPlanCreatorHelper.prepareMetadata(
-        environmentUuid, infraSectionUuid, serviceSpecNodeId, true, kryoSerializer);
-    assertThat(resultedMetadata.size()).isEqualTo(4);
+        environmentUuid, infraSectionUuid, serviceSpecNodeId, true, true, kryoSerializer);
+    assertThat(resultedMetadata.size()).isEqualTo(5);
 
     assertThat(
         kryoSerializer.asInflatedObject(resultedMetadata.get(YAMLFieldNameConstants.GITOPS_ENABLED).toByteArray()))
+        .isEqualTo(true);
+    assertThat(
+        kryoSerializer.asInflatedObject(resultedMetadata.get(YAMLFieldNameConstants.SKIP_INSTANCES).toByteArray()))
         .isEqualTo(true);
   }
 
@@ -154,7 +160,7 @@ public class EnvironmentPlanCreatorHelperTest extends CDNGTestBase {
         YamlUtils.read(envPlanCreatorConfigYaml, EnvironmentPlanCreatorConfig.class);
     LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap = new LinkedHashMap<>();
     EnvironmentPlanCreatorHelper.addEnvironmentV2Dependency(planCreationResponseMap, environmentPlanCreatorConfig,
-        environmentYamlV2, false, "environmentUuid", "infraSectionUuid", "serviceSpecNodeUuid", kryoSerializer);
+        environmentYamlV2, false, false, "environmentUuid", "infraSectionUuid", "serviceSpecNodeUuid", kryoSerializer);
     assertThat(planCreationResponseMap.size()).isEqualTo(1);
     String key = planCreationResponseMap.keySet().iterator().next();
     assertThat(planCreationResponseMap.get(key).getYamlUpdates().getFqnToYamlCount()).isEqualTo(1);
@@ -163,7 +169,7 @@ public class EnvironmentPlanCreatorHelperTest extends CDNGTestBase {
     Map<String, ByteString> dependencyMetadata =
         planCreationResponseMap.get(key).getDependencies().getDependencyMetadataMap().get(key).getMetadataMap();
 
-    assertThat(dependencyMetadata.size()).isEqualTo(4);
+    assertThat(dependencyMetadata.size()).isEqualTo(5);
     assertThat(dependencyMetadata.containsKey(YamlTypes.UUID)).isTrue();
     assertThat(dependencyMetadata.get(YamlTypes.UUID))
         .isEqualTo(ByteString.copyFrom(kryoSerializer.asDeflatedBytes(key)));

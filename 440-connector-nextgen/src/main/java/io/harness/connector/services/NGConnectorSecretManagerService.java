@@ -13,6 +13,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.ConnectorDTO;
 import io.harness.secretmanagerclient.dto.SecretManagerConfigDTO;
 
+import software.wings.beans.CustomSecretNGManagerConfig;
+
 @OwnedBy(PL)
 public interface NGConnectorSecretManagerService {
   SecretManagerConfigDTO getUsingIdentifier(
@@ -20,4 +22,17 @@ public interface NGConnectorSecretManagerService {
 
   ConnectorDTO decrypt(
       String accountIdentifier, String projectIdentifier, String orgIdentifier, ConnectorDTO connectorConfig);
+
+  default ConnectorDTO getConnectorDTO(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier) {
+    throw new RuntimeException("Can not find the connector dto. ");
+  }
+
+  void resolveSecretManagerScriptSecrets(String accountIdentifier, String path,
+      CustomSecretNGManagerConfig encryptionConfig, SecretManagerConfigDTO secretManagerConfigDTO);
+
+  String getPerpetualTaskId(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier);
+
+  void resetHeartBeatTask(String accountId, String taskId);
 }

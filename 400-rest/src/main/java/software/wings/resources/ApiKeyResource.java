@@ -117,7 +117,7 @@ public class ApiKeyResource {
   @Timed
   @ExceptionMetered
   @InternalApi
-  public RestResponse<Boolean> validate(@NotEmpty @QueryParam("accountId") String accountId, String apiKey) {
+  public RestResponse<Boolean> validate(@QueryParam("accountId") String accountId, String apiKey) {
     return new RestResponse<>(apiKeyService.isApiKeyValid(apiKey, accountId));
   }
 }

@@ -8,7 +8,7 @@
 package io.harness.waiter;
 
 import io.harness.annotation.HarnessEntity;
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.mongo.index.FdUniqueIndex;
 import io.harness.ng.DbAliases;
 import io.harness.queue.Queuable;
@@ -23,11 +23,11 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 @Data
 @EqualsAndHashCode(callSuper = false)
+@StoreIn(DbAliases.ALL)
+@Document("notifyQueue")
 @Entity(value = "notifyQueue", noClassnameStored = true)
 @HarnessEntity(exportable = false)
-@Document("notifyQueue")
 @FieldNameConstants(innerTypeName = "NotifyEventKeys")
-@StoreIn(DbAliases.ALL)
 public class NotifyEvent extends Queuable {
   @FdUniqueIndex private String waitInstanceId;
   @Override

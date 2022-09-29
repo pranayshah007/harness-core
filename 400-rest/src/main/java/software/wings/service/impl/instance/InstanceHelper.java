@@ -36,6 +36,7 @@ import io.harness.context.ContextElementType;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.exception.WingsException;
+import io.harness.exception.runtime.NoInstancesException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.instancesyncmonitoring.model.InstanceSyncMetricDetails;
 import io.harness.instancesyncmonitoring.service.InstanceSyncMonitoringService;
@@ -761,22 +762,14 @@ public class InstanceHelper {
 
     try {
       handler.processInstanceSyncResponseFromPerpetualTask(infrastructureMapping, response);
+    } catch (NoInstancesException ex) {
+      checkAndDeletePerpetualTask(infrastructureMapping, ex);
+      log.warn("Error handling Instance sync response. Infrastructure Mapping : [{}], Perpetual Task Id : [{}]",
+          infrastructureMapping.getUuid(), perpetualTaskRecord.getUuid(), ex);
     } catch (Exception ex) {
+      checkAndDeletePerpetualTask(infrastructureMapping, ex);
       log.error("Error handling Instance sync response. Infrastructure Mapping : [{}], Perpetual Task Id : [{}]",
           infrastructureMapping.getUuid(), perpetualTaskRecord.getUuid(), ex);
-      String errorMsg = getErrorMsg(ex);
-
-      boolean continueSync = instanceService.handleSyncFailure(infrastructureMapping.getAppId(),
-          infrastructureMapping.getServiceId(), infrastructureMapping.getEnvId(), infrastructureMapping.getUuid(),
-          infrastructureMapping.getDisplayName(), System.currentTimeMillis(), errorMsg);
-
-      if (!continueSync) {
-        log.info(
-            "Sync Status Failure for Infrastructure Mapping : [{}], Deleting all perpetual tasks for given infrastructure mapping",
-            infrastructureMapping.getUuid());
-        instanceSyncPerpetualTaskService.deletePerpetualTasks(infrastructureMapping);
-      }
-
       throw ex;
     } finally {
       Status status = handler.getStatus(infrastructureMapping, response);
@@ -801,6 +794,21 @@ public class InstanceHelper {
           buildMetricDetails(infrastructureMapping.getAccountId(), infrastructureMapping.getAppId(),
               infrastructureMapping.getDeploymentType(), status.isSuccess() ? SUCCESS_STATUS : FAILED_STATUS);
       instanceSyncMonitoringService.recordMetrics(metricDetails, false, System.currentTimeMillis() - startTime);
+    }
+  }
+
+  private void checkAndDeletePerpetualTask(InfrastructureMapping infrastructureMapping, Exception ex) {
+    String errorMsg = getErrorMsg(ex);
+
+    boolean continueSync = instanceService.handleSyncFailure(infrastructureMapping.getAppId(),
+        infrastructureMapping.getServiceId(), infrastructureMapping.getEnvId(), infrastructureMapping.getUuid(),
+        infrastructureMapping.getDisplayName(), System.currentTimeMillis(), errorMsg);
+
+    if (!continueSync) {
+      log.info(
+          "Sync Status Failure for Infrastructure Mapping : [{}], Deleting all perpetual tasks for given infrastructure mapping",
+          infrastructureMapping.getUuid());
+      instanceSyncPerpetualTaskService.deletePerpetualTasks(infrastructureMapping);
     }
   }
 

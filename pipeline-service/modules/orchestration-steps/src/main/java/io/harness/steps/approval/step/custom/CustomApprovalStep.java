@@ -9,9 +9,12 @@ package io.harness.steps.approval.step.custom;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
+import static java.util.Collections.emptyList;
+
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.delegate.task.shell.ShellScriptTaskNG;
+import io.harness.delegate.task.shell.WinRmShellScriptTaskNG;
 import io.harness.exception.ApprovalStepNGException;
 import io.harness.logstreaming.ILogStreamingStepClient;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
@@ -31,10 +34,13 @@ import io.harness.steps.approval.step.ApprovalInstanceService;
 import io.harness.steps.approval.step.beans.ApprovalStatus;
 import io.harness.steps.approval.step.custom.beans.CustomApprovalResponseData;
 import io.harness.steps.approval.step.custom.entities.CustomApprovalInstance;
+import io.harness.steps.shellscript.ShellType;
 import io.harness.tasks.ResponseData;
 
 import com.google.inject.Inject;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 @OwnedBy(CDC)
@@ -48,9 +54,8 @@ public class CustomApprovalStep extends AsyncExecutableWithRollback {
   @Override
   public AsyncExecutableResponse executeAsync(Ambiance ambiance, StepElementParameters stepParameters,
       StepInputPackage inputPackage, PassThroughData passThroughData) {
-    ILogStreamingStepClient logStreamingStepClient = logStreamingStepClientFactory.getLogStreamingStepClient(ambiance);
-    logStreamingStepClient.openStream(ShellScriptTaskNG.COMMAND_UNIT);
     CustomApprovalInstance approvalInstance = CustomApprovalInstance.fromStepParameters(ambiance, stepParameters);
+    openLogStream(ambiance, approvalInstance);
     approvalInstance = (CustomApprovalInstance) approvalInstanceService.save(approvalInstance);
     customApprovalInstanceHandler.wakeup();
     return AsyncExecutableResponse.newBuilder()
@@ -58,6 +63,20 @@ public class CustomApprovalStep extends AsyncExecutableWithRollback {
         .addAllLogKeys(CollectionUtils.emptyIfNull(StepUtils.generateLogKeys(
             StepUtils.generateLogAbstractions(ambiance), Collections.singletonList(ShellScriptTaskNG.COMMAND_UNIT))))
         .build();
+  }
+
+  private void openLogStream(Ambiance ambiance, CustomApprovalInstance approvalInstance) {
+    ILogStreamingStepClient logStreamingStepClient = logStreamingStepClientFactory.getLogStreamingStepClient(ambiance);
+    List<String> units;
+    if (ShellType.Bash.equals(approvalInstance.getShellType())) {
+      units = Collections.singletonList(ShellScriptTaskNG.COMMAND_UNIT);
+    } else {
+      units = Arrays.asList(WinRmShellScriptTaskNG.INIT_UNIT, WinRmShellScriptTaskNG.COMMAND_UNIT);
+    }
+
+    for (String unit : units) {
+      logStreamingStepClient.openStream(unit);
+    }
   }
 
   @Override
@@ -100,6 +119,6 @@ public class CustomApprovalStep extends AsyncExecutableWithRollback {
 
   private void closeLogStream(Ambiance ambiance) {
     ILogStreamingStepClient logStreamingStepClient = logStreamingStepClientFactory.getLogStreamingStepClient(ambiance);
-    logStreamingStepClient.closeStream(ShellScriptTaskNG.COMMAND_UNIT);
+    logStreamingStepClient.closeAllOpenStreamsWithPrefix(StepUtils.generateLogKeys(ambiance, emptyList()).get(0));
   }
 }

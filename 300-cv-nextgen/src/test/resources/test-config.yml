@@ -51,6 +51,7 @@ mongo:
   maxConnectionIdleTime: 600000
   connectionsPerHost: 300
   indexManagerMode: AUTO
+  aliasDBName: cvng
 
 managerClientConfig:
   baseUrl: http://localhost:7457
@@ -147,3 +148,6 @@ auditClientConfig:
   readTimeOutSeconds: 15
 
 enableAudit: false
+
+hostname: ${HOSTNAME:-localhost}
+basePathPrefix: ${BASE_PATH_PREFIX:-""}

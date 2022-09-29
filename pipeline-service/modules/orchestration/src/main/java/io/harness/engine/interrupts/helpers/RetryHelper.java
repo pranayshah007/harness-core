@@ -129,7 +129,6 @@ public class RetryHelper {
         .planNode(nodeExecution.getNode())
         .levelCount(ambiance.getLevelsCount())
         .mode(null)
-        .startTs(AmbianceUtils.getCurrentLevelStartTs(ambiance))
         .endTs(null)
         .initialWaitDuration(null)
         .resolvedStepParameters(null)
@@ -163,6 +162,10 @@ public class RetryHelper {
   @VisibleForTesting
   ExecutionInputInstance cloneAndSaveInputInstanceForRetry(String originalNodeExecutionId, String newNodeExecutionId) {
     ExecutionInputInstance inputInstance = executionInputService.getExecutionInputInstance(originalNodeExecutionId);
+    if (inputInstance == null) {
+      log.info("ExecutionInput instance is null for nodeExecutionId: {}", originalNodeExecutionId);
+      return null;
+    }
     inputInstance.setInputInstanceId(UUIDGenerator.generateUuid());
     inputInstance.setNodeExecutionId(newNodeExecutionId);
     return executionInputService.save(inputInstance);

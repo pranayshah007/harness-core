@@ -16,6 +16,8 @@ public interface CostEventService {
 
   boolean updateDeploymentEvent(CostEventData costEventData);
 
+  boolean purgeCostEventData();
+
   List<CostEventData> getEventsForWorkload(
       String accountId, String clusterId, String instanceId, String costEventType, long startTimeMillis);
 }

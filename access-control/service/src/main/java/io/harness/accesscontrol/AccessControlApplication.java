@@ -30,6 +30,7 @@ import io.harness.accesscontrol.commons.bootstrap.AccessControlManagementJob;
 import io.harness.accesscontrol.commons.events.EntityCrudEventListenerService;
 import io.harness.accesscontrol.commons.events.UserMembershipEventListenerService;
 import io.harness.accesscontrol.commons.migration.AccessControlMigrationProvider;
+import io.harness.accesscontrol.commons.version.VersionInfoResource;
 import io.harness.accesscontrol.principals.serviceaccounts.iterators.ServiceAccountReconciliationIterator;
 import io.harness.accesscontrol.principals.usergroups.iterators.UserGroupReconciliationIterator;
 import io.harness.accesscontrol.principals.users.iterators.UserReconciliationIterator;
@@ -40,7 +41,6 @@ import io.harness.accesscontrol.support.reconciliation.SupportRoleAssignmentsRec
 import io.harness.aggregator.AggregatorService;
 import io.harness.aggregator.MongoOffsetCleanupJob;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.controller.PrimaryVersionChangeScheduler;
 import io.harness.enforcement.client.CustomRestrictionRegisterConfiguration;
 import io.harness.enforcement.client.RestrictionUsageRegisterConfiguration;
 import io.harness.enforcement.client.custom.CustomRestrictionInterface;
@@ -48,6 +48,7 @@ import io.harness.enforcement.client.services.EnforcementSdkRegisterService;
 import io.harness.enforcement.client.usage.RestrictionUsageInterface;
 import io.harness.enforcement.constants.FeatureRestrictionName;
 import io.harness.exception.ConstraintViolationExceptionMapper;
+import io.harness.govern.ProviderModule;
 import io.harness.health.HealthService;
 import io.harness.maintenance.MaintenanceController;
 import io.harness.metrics.MetricRegistryModule;
@@ -64,7 +65,6 @@ import io.harness.outbox.OutboxEventPollService;
 import io.harness.persistence.HPersistence;
 import io.harness.remote.CharsetResponseFilter;
 import io.harness.request.RequestContextFilter;
-import io.harness.resource.VersionInfoResource;
 import io.harness.security.InternalApiAuthFilter;
 import io.harness.security.NextGenAuthenticationFilter;
 import io.harness.security.annotations.InternalApi;
@@ -80,6 +80,10 @@ import com.google.common.collect.ImmutableMap;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Key;
+import com.google.inject.Module;
+import com.google.inject.Provides;
+import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import com.google.inject.name.Names;
 import io.dropwizard.Application;
 import io.dropwizard.configuration.EnvironmentVariableSubstitutor;
@@ -95,6 +99,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
 import javax.servlet.DispatcherType;
@@ -138,6 +143,7 @@ public class AccessControlApplication extends Application<AccessControlConfigura
     });
     bootstrap.addCommand(new ScanClasspathMetadataCommand());
     bootstrap.addCommand(new GenerateOpenApiSpecCommand());
+    bootstrap.setMetricRegistry(metricRegistry);
     // Enable variable substitution with environment variables
     bootstrap.setConfigurationSourceProvider(new SubstitutingSourceProvider(
         bootstrap.getConfigurationSourceProvider(), new EnvironmentVariableSubstitutor(false)));
@@ -148,8 +154,18 @@ public class AccessControlApplication extends Application<AccessControlConfigura
   public void run(AccessControlConfiguration appConfig, Environment environment) {
     log.info("Starting Access Control Application ...");
     MaintenanceController.forceMaintenance(true);
-    Injector injector =
-        Guice.createInjector(AccessControlModule.getInstance(appConfig), new MetricRegistryModule(metricRegistry));
+    List<Module> modules = new ArrayList<>();
+    modules.add(AccessControlModule.getInstance(appConfig));
+    modules.add(new MetricRegistryModule(metricRegistry));
+    modules.add(new ProviderModule() {
+      @Provides
+      @Singleton
+      @Named("dbAliases")
+      public List<String> getDbAliases() {
+        return appConfig.getDbAliases();
+      }
+    });
+    Injector injector = Guice.createInjector(modules);
     injector.getInstance(HPersistence.class);
     registerCorsFilter(appConfig, environment);
     registerResources(environment, injector);
@@ -164,7 +180,6 @@ public class AccessControlApplication extends Application<AccessControlConfigura
     registerManagedBeans(appConfig, environment, injector);
     registerMigrations(injector);
     registerIterators(injector);
-    registerScheduledJobs(injector);
     registerOasResource(appConfig, environment, injector);
     initializeEnforcementFramework(injector);
     AccessControlManagementJob accessControlManagementJob = injector.getInstance(AccessControlManagementJob.class);
@@ -200,10 +215,6 @@ public class AccessControlApplication extends Application<AccessControlConfigura
     injector.getInstance(ServiceAccountReconciliationIterator.class).registerIterators();
     injector.getInstance(SupportPreferenceReconciliationIterator.class).registerIterators();
     injector.getInstance(ScopeReconciliationIterator.class).registerIterators();
-  }
-
-  public void registerScheduledJobs(Injector injector) {
-    injector.getInstance(PrimaryVersionChangeScheduler.class).registerExecutors();
   }
 
   private void registerJerseyFeatures(Environment environment) {

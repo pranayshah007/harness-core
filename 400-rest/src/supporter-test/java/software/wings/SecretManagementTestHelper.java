@@ -14,14 +14,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EncryptedData;
-import io.harness.exception.SecretManagementException;
 import io.harness.persistence.HPersistence;
 import io.harness.security.encryption.EncryptionType;
 
 import software.wings.beans.AppDynamicsConfig;
 import software.wings.beans.AwsSecretsManagerConfig;
 import software.wings.beans.AzureVaultConfig;
-import software.wings.beans.CyberArkConfig;
 import software.wings.beans.GcpKmsConfig;
 import software.wings.beans.KmsConfig;
 import software.wings.beans.SettingAttribute;
@@ -34,7 +32,6 @@ import software.wings.service.intfc.security.SecretManager;
 import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.UUID;
 
 @OwnedBy(PL)
@@ -44,16 +41,6 @@ public class SecretManagementTestHelper {
   @Inject protected EncryptionService encryptionService;
   @Inject protected SettingsService settingsService;
   @Inject private LocalSecretManagerService localSecretManagerService;
-
-  public static boolean validateCyberArkConfig(CyberArkConfig cyberArkConfig) {
-    if (Objects.equals(cyberArkConfig.getCyberArkUrl(), "invalidUrl")) {
-      throw new SecretManagementException("Invalid Url");
-    }
-    if (Objects.equals(cyberArkConfig.getClientCertificate(), "invalidCertificate")) {
-      throw new SecretManagementException("Invalid credentials");
-    }
-    return true;
-  }
 
   public static AzureVaultConfig getAzureVaultConfig() {
     AzureVaultConfig azureVaultConfig = new AzureVaultConfig();
@@ -170,23 +157,6 @@ public class SecretManagementTestHelper {
     gcpKmsConfig.setUsageRestrictions(
         localSecretManagerService.getEncryptionConfig(generateUuid()).getUsageRestrictions());
     return gcpKmsConfig;
-  }
-
-  public CyberArkConfig getCyberArkConfig() {
-    return getCyberArkConfig(null);
-  }
-
-  public CyberArkConfig getCyberArkConfig(String clientCertificate) {
-    final CyberArkConfig cyberArkConfig = new CyberArkConfig();
-    cyberArkConfig.setName("myCyberArk");
-    cyberArkConfig.setDefault(false);
-    cyberArkConfig.setCyberArkUrl("https://app.harness.io"); // Just a valid URL.
-    cyberArkConfig.setAppId(generateUuid());
-    cyberArkConfig.setClientCertificate(clientCertificate);
-    cyberArkConfig.setEncryptionType(EncryptionType.CYBERARK);
-    cyberArkConfig.setUsageRestrictions(
-        localSecretManagerService.getEncryptionConfig(generateUuid()).getUsageRestrictions());
-    return cyberArkConfig;
   }
 
   public void validateSettingAttributes(List<SettingAttribute> settingAttributes, int expectedNumOfEncryptedRecords) {

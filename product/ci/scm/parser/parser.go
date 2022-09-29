@@ -7,6 +7,7 @@ package parser
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -43,8 +44,12 @@ func ParseWebhook(ctx context.Context, in *pb.ParseWebhookRequest,
 	start := time.Now()
 	webhook, err := parseWebhookRequest(in)
 	if err != nil {
+	    message := "Failed to parse input webhook payload"
+	    if errors.Is(err, scm.ErrUnknownEvent) {
+	        message = "Unsupported webhook event"
+	    }
 		log.Errorw(
-			"Failed to parse input webhook payload",
+			message,
 			"input", in.String(),
 			"elapsed_time_ms", utils.TimeSince(start),
 			zap.Error(err),

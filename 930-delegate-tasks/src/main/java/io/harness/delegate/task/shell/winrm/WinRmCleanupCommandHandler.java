@@ -16,7 +16,7 @@ import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.task.shell.CommandTaskParameters;
 import io.harness.delegate.task.shell.ssh.CommandHandler;
 import io.harness.delegate.task.ssh.NgCommandUnit;
-import io.harness.logging.CommandExecutionStatus;
+import io.harness.shell.ExecuteCommandResponse;
 
 import com.google.inject.Singleton;
 import java.util.Map;
@@ -25,9 +25,9 @@ import java.util.Map;
 @Singleton
 public class WinRmCleanupCommandHandler implements CommandHandler {
   @Override
-  public CommandExecutionStatus handle(CommandTaskParameters parameters, NgCommandUnit commandUnit,
+  public ExecuteCommandResponse handle(CommandTaskParameters parameters, NgCommandUnit commandUnit,
       ILogStreamingTaskClient logStreamingTaskClient, CommandUnitsProgress commandUnitsProgress,
       Map<String, Object> taskContext) {
-    return SUCCESS;
+    return ExecuteCommandResponse.builder().status(SUCCESS).build();
   }
 }

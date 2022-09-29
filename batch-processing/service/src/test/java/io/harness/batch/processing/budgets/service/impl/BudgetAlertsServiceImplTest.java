@@ -13,6 +13,7 @@ import static io.harness.rule.OwnerRule.SHUBHANSHU;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -30,6 +31,9 @@ import io.harness.ccm.budget.dao.BudgetDao;
 import io.harness.ccm.commons.entities.billing.Budget;
 import io.harness.ccm.communication.CESlackWebhookService;
 import io.harness.ccm.communication.entities.CESlackWebhook;
+import io.harness.notification.notificationclient.NotificationResult;
+import io.harness.notifications.NotificationResourceClient;
+import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 import io.harness.timescaledb.TimeScaleDBService;
 
@@ -54,11 +58,13 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.runners.MockitoJUnitRunner;
+import retrofit2.Response;
 
 @RunWith(MockitoJUnitRunner.class)
 public class BudgetAlertsServiceImplTest extends CategoryTest {
   @Mock private TimeScaleDBService timeScaleDBService;
   @Mock private CEMailNotificationService emailNotificationService;
+  @Mock private NotificationResourceClient notificationResourceClient;
   @Mock private SlackMessageSender slackMessageSender;
   @Mock private BudgetTimescaleQueryHelper budgetTimescaleQueryHelper;
   @Mock private CESlackWebhookService ceSlackWebhookService;
@@ -85,7 +91,7 @@ public class BudgetAlertsServiceImplTest extends CategoryTest {
   private User user;
   private Budget budget;
   private CESlackWebhook ceSlackWebhook;
-
+  private Response<RestResponse<NotificationResult>> response;
   @Before
   public void setup() throws SQLException {
     MockitoAnnotations.initMocks(this);
@@ -94,7 +100,7 @@ public class BudgetAlertsServiceImplTest extends CategoryTest {
     when(timeScaleDBService.getDBConnection()).thenReturn(mockConnection);
     when(timeScaleDBService.isValid()).thenReturn(true);
     when(mockConnection.createStatement()).thenReturn(mockStatement);
-    when(emailNotificationService.send(any())).thenReturn(true);
+    when(notificationResourceClient.sendNotification(any(), any())).thenReturn(null);
     when(accountShardService.getCeEnabledAccountIds()).thenReturn(Arrays.asList(ACCOUNT_ID));
     alertThreshold = AlertThreshold.builder().percentage(0.5).basedOn(AlertThresholdBase.ACTUAL_COST).build();
     budget = Budget.builder()
@@ -134,6 +140,6 @@ public class BudgetAlertsServiceImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void shouldSendBudgetAlerts() {
     budgetAlertsService.sendBudgetAlerts();
-    verify(emailNotificationService).send(any());
+    verify(notificationResourceClient, times(1)).sendNotification(any(), any());
   }
 }

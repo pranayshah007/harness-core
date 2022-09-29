@@ -84,8 +84,8 @@ public class ExecutionInputServiceImpl implements ExecutionInputService {
     if (optional.isPresent()) {
       return optional.get();
     }
-    throw new InvalidRequestException(
-        String.format("Execution Input template does not exist for input execution id : %s", nodeExecutionId));
+    log.info("Execution Input template does not exist for input execution id: {}", nodeExecutionId);
+    return null;
   }
 
   @Override

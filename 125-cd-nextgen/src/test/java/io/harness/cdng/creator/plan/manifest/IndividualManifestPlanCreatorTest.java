@@ -57,12 +57,14 @@ public class IndividualManifestPlanCreatorTest extends CDNGTestBase {
   public void testGetSupportedTypes() {
     Map<String, Set<String>> supportedTypes = individualManifestPlanCreator.getSupportedTypes();
     assertThat(supportedTypes.containsKey(YamlTypes.MANIFEST_CONFIG)).isEqualTo(true);
-    assertThat(supportedTypes.get(YamlTypes.MANIFEST_CONFIG).size()).isEqualTo(10);
+    assertThat(supportedTypes.get(YamlTypes.MANIFEST_CONFIG).size()).isEqualTo(14);
     Set<String> manifestsSupportedTypes = supportedTypes.get(YamlTypes.MANIFEST_CONFIG);
 
     Set<String> expectedSupportedTypes = new HashSet<>(Arrays.asList(ManifestType.K8Manifest, ManifestType.VALUES,
         ManifestType.OpenshiftTemplate, ManifestType.KustomizePatches, ManifestType.Kustomize, ManifestType.HelmChart,
-        ManifestType.CONFIG_FILE, ManifestType.OpenshiftParam));
+        ManifestType.CONFIG_FILE, ManifestType.OpenshiftParam, ManifestType.ServerlessAwsLambda,
+        ManifestType.EcsTaskDefinition, ManifestType.EcsServiceDefinition, ManifestType.EcsScalableTargetDefinition,
+        ManifestType.EcsScalingPolicyDefinition));
 
     assertThat(manifestsSupportedTypes.containsAll(expectedSupportedTypes)).isEqualTo(true);
   }

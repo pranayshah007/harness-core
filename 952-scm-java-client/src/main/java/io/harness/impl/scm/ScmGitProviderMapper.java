@@ -204,7 +204,7 @@ public class ScmGitProviderMapper {
       case GITHUB_APP:
         // todo @aradisavljevic: switch to scm provider for github app after it is implemented
         String token = getAccessTokenFromGithubApp(githubConnector);
-        return GithubProvider.newBuilder().setAccessToken(token).build();
+        return GithubProvider.newBuilder().setAccessToken(token).setIsGithubApp(true).build();
       case TOKEN:
         String accessToken = getAccessToken(githubConnector);
         return GithubProvider.newBuilder().setAccessToken(accessToken).build();

@@ -59,7 +59,6 @@ java_library(
         "@maven//:junit_junit",
         "@maven//:org_assertj_assertj_core",
         "@maven//:org_mockito_mockito_core",
-        "@maven//:software_amazon_awssdk_auth",
     ],
 )
 

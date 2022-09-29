@@ -26,6 +26,8 @@ import io.harness.encryption.SecretRefHelper;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.api.NGSecretServiceV2;
 import io.harness.ng.core.dto.secrets.SSHKeySpecDTO;
+import io.harness.ng.core.dto.secrets.SecretSpecDTO;
+import io.harness.ng.core.dto.secrets.WinRmCredentialsSpecDTO;
 import io.harness.ng.core.models.Secret;
 import io.harness.perpetualtask.PerpetualTaskExecutionBundle;
 import io.harness.perpetualtask.instancesync.PdcPerpetualTaskParamsNg;
@@ -39,10 +41,12 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Singleton
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @OwnedBy(HarnessTeam.CDP)
+@Slf4j
 public class PdcInstanceSyncPerpetualTaskHandler extends InstanceSyncPerpetualTaskHandler {
   @Inject private NGSecretServiceV2 ngSecretServiceV2;
 
@@ -51,17 +55,14 @@ public class PdcInstanceSyncPerpetualTaskHandler extends InstanceSyncPerpetualTa
       List<DeploymentInfoDTO> deploymentInfoDTOList, InfrastructureOutcome infrastructureOutcome) {
     PdcInfrastructureOutcome pdcInfrastructureOutcome = (PdcInfrastructureOutcome) infrastructureOutcome;
 
-    Secret secret = findSecret(infrastructure.getAccountIdentifier(), infrastructure.getOrgIdentifier(),
-        infrastructure.getProjectIdentifier(), pdcInfrastructureOutcome.getCredentialsRef());
+    int port = getPort(infrastructure, pdcInfrastructureOutcome);
 
-    SSHKeySpecDTO sshKeySpecDTO = (SSHKeySpecDTO) secret.getSecretSpec().toDTO();
     List<PdcDeploymentInfoDTO> pdcDeploymentInfoDTOs = (List<PdcDeploymentInfoDTO>) (List<?>) deploymentInfoDTOList;
     List<String> hosts = pdcDeploymentInfoDTOs.stream()
                              .map(PdcDeploymentInfoDTO::getHost)
                              .filter(EmptyPredicate::isNotEmpty)
                              .distinct()
                              .collect(Collectors.toList());
-    int port = sshKeySpecDTO.getPort();
 
     PdcPerpetualTaskParamsNg PdcPerpetualTaskParamsNg =
         io.harness.perpetualtask.instancesync.PdcPerpetualTaskParamsNg.newBuilder()
@@ -77,6 +78,25 @@ public class PdcInstanceSyncPerpetualTaskHandler extends InstanceSyncPerpetualTa
 
     return createPerpetualTaskExecutionBundle(perpetualTaskPack, executionCapabilities,
         infrastructure.getOrgIdentifier(), infrastructure.getProjectIdentifier());
+  }
+
+  private int getPort(InfrastructureMappingDTO infrastructure, PdcInfrastructureOutcome pdcInfrastructureOutcome) {
+    Secret secret = findSecret(infrastructure.getAccountIdentifier(), infrastructure.getOrgIdentifier(),
+        infrastructure.getProjectIdentifier(), pdcInfrastructureOutcome.getCredentialsRef());
+
+    SecretSpecDTO secretSpecDTO = secret.getSecretSpec().toDTO();
+    int port;
+
+    if (secretSpecDTO instanceof SSHKeySpecDTO) {
+      port = ((SSHKeySpecDTO) secretSpecDTO).getPort();
+    } else if (secretSpecDTO instanceof WinRmCredentialsSpecDTO) {
+      port = ((WinRmCredentialsSpecDTO) secretSpecDTO).getPort();
+    } else {
+      log.error("SecretSpecDTO {} should be of SSH or Winrm", secretSpecDTO);
+      throw new InvalidRequestException("Invalid SecretSpecDTO specified");
+    }
+
+    return port;
   }
 
   private Secret findSecret(

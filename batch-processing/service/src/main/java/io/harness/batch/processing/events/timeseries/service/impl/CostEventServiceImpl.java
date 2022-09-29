@@ -16,6 +16,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -34,6 +35,9 @@ public class CostEventServiceImpl implements CostEventService {
 
   private static final int BATCH_SIZE = 500;
   private static final int MAX_RETRY_COUNT = 5;
+
+  private static final String COST_EVENT_DATA_PURGE_QUERY =
+      "SELECT drop_chunks('cost_event_data', interval '4 months')";
 
   static final String INSERT_STATEMENT =
       "INSERT INTO COST_EVENT_DATA (STARTTIME, ACCOUNTID, SETTINGID, CLUSTERID, CLUSTERTYPE, INSTANCEID, INSTANCETYPE, "
@@ -79,6 +83,30 @@ public class CostEventServiceImpl implements CostEventService {
       log.warn("Not processing cost event data:[{}]", costEventDataList.size());
     }
     return successfulInsert;
+  }
+
+  @Override
+  public boolean purgeCostEventData() {
+    log.info("Purging old {} data !!", COST_EVENT_DATA_PURGE_QUERY);
+    return executeQuery(COST_EVENT_DATA_PURGE_QUERY);
+  }
+
+  private boolean executeQuery(String query) {
+    boolean result = false;
+    if (timeScaleDBService.isValid()) {
+      int retryCount = 0;
+      while (retryCount < 2 && !result) {
+        try (Connection connection = timeScaleDBService.getDBConnection();
+             Statement statement = connection.createStatement()) {
+          statement.execute(query);
+          result = true;
+        } catch (SQLException e) {
+          log.error("Failed to execute query=[{}]", query, e);
+          retryCount++;
+        }
+      }
+    }
+    return result;
   }
 
   @Override

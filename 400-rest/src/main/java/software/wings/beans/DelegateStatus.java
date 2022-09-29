@@ -33,6 +33,7 @@ public class DelegateStatus {
   List<String> publishedVersions;
   List<DelegateInner> delegates;
   List<DelegateScalingGroup> scalingGroups;
+  String publishedImmutableDelegateVersion;
 
   @JsonInclude(Include.NON_NULL)
   @JsonIgnoreProperties(ignoreUnknown = true)
@@ -64,5 +65,7 @@ public class DelegateStatus {
     private boolean tokenActive;
     private long delegateExpirationTime;
     List<DelegateConnectionDetails> connections;
+    String version;
+    boolean autoUpgrade;
   }
 }

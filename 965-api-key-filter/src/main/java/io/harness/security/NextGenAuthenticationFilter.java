@@ -136,7 +136,11 @@ public class NextGenAuthenticationFilter extends JWTAuthenticationFilter {
 
   private Optional<String> getAccountIdentifierFromUri(ContainerRequestContext containerRequestContext) {
     String accountIdentifier =
-        containerRequestContext.getUriInfo().getQueryParameters().getFirst(NGCommonEntityConstants.ACCOUNT_KEY);
+        containerRequestContext.getUriInfo().getQueryParameters().getFirst(NGCommonEntityConstants.ACCOUNT);
+    if (StringUtils.isEmpty(accountIdentifier)) {
+      accountIdentifier =
+          containerRequestContext.getUriInfo().getQueryParameters().getFirst(NGCommonEntityConstants.ACCOUNT_KEY);
+    }
     if (StringUtils.isEmpty(accountIdentifier)) {
       accountIdentifier =
           containerRequestContext.getUriInfo().getPathParameters().getFirst(NGCommonEntityConstants.ACCOUNT_KEY);

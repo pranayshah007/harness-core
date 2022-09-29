@@ -131,6 +131,7 @@ public class ModuleLicenseInterfaceImplTest extends CategoryTest {
                                        .status(LicenseStatus.ACTIVE)
                                        .startTime(0)
                                        .expiryTime(0)
+                                       .selfService(true)
                                        .build();
     CFModuleLicenseDTO dto = (CFModuleLicenseDTO) moduleLicenseInterface.generateTrialLicense(
         Edition.ENTERPRISE, ACCOUNT_IDENTIFIER, ModuleType.CF);
@@ -154,6 +155,7 @@ public class ModuleLicenseInterfaceImplTest extends CategoryTest {
                                        .status(LicenseStatus.ACTIVE)
                                        .startTime(0)
                                        .expiryTime(0)
+                                       .selfService(true)
                                        .build();
     CFModuleLicenseDTO dto = (CFModuleLicenseDTO) moduleLicenseInterface.generateTrialLicense(
         Edition.TEAM, ACCOUNT_IDENTIFIER, ModuleType.CF);
@@ -176,6 +178,7 @@ public class ModuleLicenseInterfaceImplTest extends CategoryTest {
                                        .status(LicenseStatus.ACTIVE)
                                        .startTime(0)
                                        .expiryTime(Long.MAX_VALUE)
+                                       .selfService(true)
                                        .build();
     CFModuleLicenseDTO dto =
         (CFModuleLicenseDTO) moduleLicenseInterface.generateFreeLicense(ACCOUNT_IDENTIFIER, ModuleType.CF);

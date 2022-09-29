@@ -40,6 +40,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -47,6 +48,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.stereotype.Service;
 
 @Slf4j
@@ -54,6 +56,7 @@ import org.springframework.stereotype.Service;
 @Singleton
 @OwnedBy(HarnessTeam.CE)
 public class CEAWSConnectorValidator extends io.harness.ccm.connectors.AbstractCEConnectorValidator {
+  private final String AWS_DEFAULT_REGION = "us-east-1";
   private final String COMPRESSION = "GZIP";
   private final String TIME_GRANULARITY = "HOURLY";
   private final String REPORT_VERSIONING = "OVERWRITE_REPORT";
@@ -80,8 +83,25 @@ public class CEAWSConnectorValidator extends io.harness.ccm.connectors.AbstractC
     String connectorIdentifier = connectorResponseDTO.getConnector().getIdentifier();
 
     final List<ErrorDetail> errorList = new ArrayList<>();
+    log.info("ceAwsConnectorDTO: {}", ceAwsConnectorDTO);
     try {
-      final AWSCredentialsProvider credentialsProvider = getCredentialProvider(crossAccountAccessDTO);
+      if (Boolean.TRUE.equals(ceAwsConnectorDTO.getIsAWSGovCloudAccount())
+          && CollectionUtils.containsAny(featuresEnabled, Arrays.asList(CEFeatures.BILLING, CEFeatures.VISIBILITY))) {
+        return ConnectorValidationResult.builder()
+            .status(ConnectivityStatus.FAILURE)
+            .errors(ImmutableList.of(
+                ErrorDetail.builder()
+                    .code(500)
+                    .reason(
+                        "Visibility and Inventory features are currently not supported for AWS Gov Cloud Connectors.")
+                    .message("Please verify that only AutoStopping feature is selected.")
+                    .build()))
+            .errorSummary("Some of the selected features are not supported currently")
+            .testedAt(Instant.now().toEpochMilli())
+            .build();
+      }
+      final AWSCredentialsProvider credentialsProvider = getCredentialProvider(
+          crossAccountAccessDTO, Boolean.TRUE.equals(ceAwsConnectorDTO.getIsAWSGovCloudAccount()));
 
       if (featuresEnabled.contains(CEFeatures.BILLING)) {
         Optional<ReportDefinition> report =
@@ -132,6 +152,7 @@ public class CEAWSConnectorValidator extends io.harness.ccm.connectors.AbstractC
       }
 
     } catch (AWSSecurityTokenServiceException ex) {
+      log.info(ex.getErrorMessage());
       return ConnectorValidationResult.builder()
           .status(ConnectivityStatus.FAILURE)
           .errors(ImmutableList.of(
@@ -209,13 +230,14 @@ public class CEAWSConnectorValidator extends io.harness.ccm.connectors.AbstractC
     if (featuresEnabled.contains(CEFeatures.VISIBILITY)) {
       final Policy eventsPolicy = getRequiredEventsPolicy(createdAt);
       validateIfPolicyIsCorrect(credentialsProvider, crossAccountAccessDTO.getCrossAccountRoleArn(),
-          CEFeatures.VISIBILITY, errorList, eventsPolicy);
+          CEFeatures.VISIBILITY, errorList, eventsPolicy, false);
     }
 
     if (featuresEnabled.contains(CEFeatures.OPTIMIZATION)) {
       final Policy optimizationPolicy = getRequiredOptimizationPolicy(createdAt);
       validateIfPolicyIsCorrect(credentialsProvider, crossAccountAccessDTO.getCrossAccountRoleArn(),
-          CEFeatures.OPTIMIZATION, errorList, optimizationPolicy);
+          CEFeatures.OPTIMIZATION, errorList, optimizationPolicy,
+          Boolean.TRUE.equals(ceAwsConnectorDTO.getIsAWSGovCloudAccount()));
     }
 
     if (featuresEnabled.contains(CEFeatures.BILLING)) {
@@ -224,12 +246,12 @@ public class CEAWSConnectorValidator extends io.harness.ccm.connectors.AbstractC
       final Policy curPolicy = getRequiredCurPolicy(
           awsCurAttributesDTO.getS3BucketName(), configuration.getAwsConfig().getDestinationBucket(), createdAt);
       validateIfPolicyIsCorrect(credentialsProvider, crossAccountAccessDTO.getCrossAccountRoleArn(), CEFeatures.BILLING,
-          errorList, curPolicy);
+          errorList, curPolicy, false);
     }
   }
 
   private void validateIfPolicyIsCorrect(AWSCredentialsProvider credentialsProvider, String crossAccountRoleArn,
-      CEFeatures feature, List<ErrorDetail> errorList, @NotNull Policy policy) {
+      CEFeatures feature, List<ErrorDetail> errorList, @NotNull Policy policy, Boolean isAWSGovCloudConnector) {
     int errorSize = errorList.size();
     String reason = "";
     log.info("Verifying policy for features enabled {}", feature.name());
@@ -238,7 +260,8 @@ public class CEAWSConnectorValidator extends io.harness.ccm.connectors.AbstractC
       List<String> resources = statement.getResources().stream().map(Resource::getId).collect(Collectors.toList());
 
       List<EvaluationResult> evaluationResults =
-          awsClient.simulatePrincipalPolicy(credentialsProvider, crossAccountRoleArn, actions, resources);
+          awsClient.simulatePrincipalPolicy(credentialsProvider, crossAccountRoleArn, actions, resources,
+              isAWSGovCloudConnector ? configuration.getAwsGovCloudConfig().getAwsRegionName() : AWS_DEFAULT_REGION);
       log.info(evaluationResults.toString());
       evaluationResults =
           evaluationResults.stream().filter(x -> !"allowed".equals(x.getEvalDecision())).collect(Collectors.toList());
@@ -268,11 +291,18 @@ public class CEAWSConnectorValidator extends io.harness.ccm.connectors.AbstractC
   }
 
   @VisibleForTesting
-  public AWSCredentialsProvider getCredentialProvider(CrossAccountAccessDTO crossAccountAccessDTO) {
-    final AWSCredentialsProvider BasicAwsCredentials = awsClient.constructStaticBasicAwsCredentials(
-        configuration.getAwsConfig().getAccessKey(), configuration.getAwsConfig().getSecretKey());
-    final AWSCredentialsProvider credentialsProvider = awsClient.getAssumedCredentialsProvider(
-        BasicAwsCredentials, crossAccountAccessDTO.getCrossAccountRoleArn(), crossAccountAccessDTO.getExternalId());
+  public AWSCredentialsProvider getCredentialProvider(
+      CrossAccountAccessDTO crossAccountAccessDTO, Boolean isAWSGovCloudAccount) {
+    log.info("isAWSGovCloudAccount: {}", isAWSGovCloudAccount);
+    log.info("getAwsGovCloudConfig: {}", configuration.getAwsGovCloudConfig());
+    final AWSCredentialsProvider BasicAwsCredentials = awsClient.constructStaticBasicAwsCredentials(isAWSGovCloudAccount
+            ? configuration.getAwsGovCloudConfig().getAccessKey()
+            : configuration.getAwsConfig().getAccessKey(),
+        isAWSGovCloudAccount ? configuration.getAwsGovCloudConfig().getSecretKey()
+                             : configuration.getAwsConfig().getSecretKey());
+    final AWSCredentialsProvider credentialsProvider = awsClient.getAssumedCredentialsProviderWithRegion(
+        BasicAwsCredentials, crossAccountAccessDTO.getCrossAccountRoleArn(), crossAccountAccessDTO.getExternalId(),
+        isAWSGovCloudAccount ? configuration.getAwsGovCloudConfig().getAwsRegionName() : AWS_DEFAULT_REGION);
     credentialsProvider.getCredentials();
     return credentialsProvider;
   }

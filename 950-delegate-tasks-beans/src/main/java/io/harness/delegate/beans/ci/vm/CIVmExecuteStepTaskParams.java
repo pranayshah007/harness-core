@@ -10,6 +10,7 @@ package io.harness.delegate.beans.ci.vm;
 import static io.harness.expression.Expression.ALLOW_SECRETS;
 
 import io.harness.delegate.beans.ci.CIExecuteStepTaskParams;
+import io.harness.delegate.beans.ci.InfraInfo;
 import io.harness.delegate.beans.ci.vm.steps.VmStepInfo;
 import io.harness.delegate.beans.executioncapability.CIVmConnectionCapability;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
@@ -24,6 +25,7 @@ import java.util.Map;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
+import lombok.Getter;
 import lombok.experimental.SuperBuilder;
 
 @Data
@@ -40,6 +42,7 @@ public class CIVmExecuteStepTaskParams implements CIExecuteStepTaskParams, Execu
   @NotNull private String logKey;
   @NotNull private String workingDir;
   private Map<String, String> volToMountPath;
+  @NotNull @Getter private InfraInfo infraInfo;
 
   @Builder.Default private static final Type type = Type.VM;
 
@@ -50,6 +53,6 @@ public class CIVmExecuteStepTaskParams implements CIExecuteStepTaskParams, Execu
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
-    return Collections.singletonList(CIVmConnectionCapability.builder().poolId(poolId).build());
+    return Collections.singletonList(CIVmConnectionCapability.builder().poolId(poolId).infraInfo(infraInfo).build());
   }
 }

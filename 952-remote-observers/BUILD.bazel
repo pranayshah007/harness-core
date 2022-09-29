@@ -5,9 +5,6 @@ load("//:tools/bazel/macros.bzl", "run_analysis")
 java_library(
     name = "module",
     srcs = glob(["src/main/java/**/*.java"]),
-    resource_jars = [
-        "//952-remote-observers/src/main/proto:952_remote_observers_java_proto",
-    ],
     resources = [],
     visibility = ["//visibility:public"],
     deps = [

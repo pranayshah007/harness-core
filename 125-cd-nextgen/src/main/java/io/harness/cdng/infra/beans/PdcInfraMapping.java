@@ -11,10 +11,10 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.infra.beans.host.HostFilter;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.util.List;
-import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
 import org.mongodb.morphia.annotations.Id;
@@ -32,6 +32,5 @@ public class PdcInfraMapping implements InfraMapping {
   private String credentialsRef;
   private List<String> hosts;
   private String connectorRef;
-  private Map<String, String> attributeFilters;
-  private List<String> hostFilters;
+  private HostFilter hostFilter;
 }

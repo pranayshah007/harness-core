@@ -136,6 +136,8 @@ public class DefaultWinRmExecutor implements WinRmExecutor {
       ResponseMessage details = buildErrorDetailsFromWinRmClientException(e);
       saveExecutionLog(
           format("Command execution failed. Error: %s", details.getMessage()), ERROR, commandExecutionStatus);
+    } finally {
+      logCallback.dispatchLogs();
     }
     return commandExecutionStatus;
   }
@@ -236,6 +238,8 @@ public class DefaultWinRmExecutor implements WinRmExecutor {
       ResponseMessage details = buildErrorDetailsFromWinRmClientException(e);
       saveExecutionLog(
           format("Command execution failed. Error: %s", details.getMessage()), ERROR, commandExecutionStatus);
+    } finally {
+      logCallback.dispatchLogs();
     }
     executeCommandResponseBuilder.status(commandExecutionStatus);
     executeCommandResponseBuilder.commandExecutionData(executionDataBuilder.build());
@@ -329,5 +333,10 @@ public class DefaultWinRmExecutor implements WinRmExecutor {
         .stringBuilder(new StringBuilder(1024))
         .logLevel(logLevel)
         .build();
+  }
+
+  @Override
+  public LogCallback getLogCallback() {
+    return logCallback;
   }
 }

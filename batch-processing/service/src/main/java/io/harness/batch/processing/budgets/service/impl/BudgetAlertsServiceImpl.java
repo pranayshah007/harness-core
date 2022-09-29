@@ -13,9 +13,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static java.lang.String.format;
-import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
-import static org.apache.commons.text.StrSubstitutor.replace;
 
 import io.harness.batch.processing.config.BatchMainConfig;
 import io.harness.batch.processing.mail.CEMailNotificationService;
@@ -26,24 +24,30 @@ import io.harness.ccm.budget.dao.BudgetDao;
 import io.harness.ccm.budget.entities.BudgetAlertsData;
 import io.harness.ccm.budget.utils.BudgetUtils;
 import io.harness.ccm.commons.entities.billing.Budget;
+import io.harness.notification.Team;
+import io.harness.notification.dtos.NotificationChannelDTO;
+import io.harness.notification.dtos.NotificationChannelDTO.NotificationChannelDTOBuilder;
+import io.harness.notification.notificationclient.NotificationResult;
+import io.harness.notifications.NotificationResourceClient;
+import io.harness.rest.RestResponse;
 import io.harness.timescaledb.TimeScaleDBService;
 
-import software.wings.beans.SlackMessage;
 import software.wings.beans.User;
 import software.wings.beans.notification.SlackNotificationSetting;
 import software.wings.beans.security.UserGroup;
 import software.wings.graphql.datafetcher.billing.CloudBillingHelper;
 import software.wings.graphql.datafetcher.budget.BudgetTimescaleQueryHelper;
-import software.wings.helpers.ext.mail.EmailData;
 import software.wings.service.intfc.SlackMessageSender;
 import software.wings.service.intfc.instance.CloudToHarnessMappingService;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.inject.Singleton;
+import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -55,6 +59,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.utils.URIBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import retrofit2.Response;
 
 @Service
 @Singleton
@@ -62,6 +67,7 @@ import org.springframework.stereotype.Service;
 public class BudgetAlertsServiceImpl {
   @Autowired private TimeScaleDBService timeScaleDBService;
   @Autowired private CEMailNotificationService emailNotificationService;
+  @Autowired private NotificationResourceClient notificationResourceClient;
   @Autowired private SlackMessageSender slackMessageSender;
   @Autowired private BudgetTimescaleQueryHelper budgetTimescaleQueryHelper;
   @Autowired private BudgetDao budgetDao;
@@ -163,6 +169,7 @@ public class BudgetAlertsServiceImpl {
       if (exceedsThreshold(cost, getThresholdAmount(budget, alertThreshold))) {
         try {
           sendBudgetAlertViaSlack(budget, alertThreshold, slackWebhooks);
+          log.info("slack budget alert sent!");
         } catch (Exception e) {
           log.error("Notification via slack not send : ", e);
         }
@@ -175,21 +182,31 @@ public class BudgetAlertsServiceImpl {
     }
   }
 
-  private void sendBudgetAlertViaSlack(Budget budget, AlertThreshold alertThreshold, List<String> slackWebhooks) {
+  private void sendBudgetAlertViaSlack(Budget budget, AlertThreshold alertThreshold, List<String> slackWebhooks)
+      throws IOException, URISyntaxException {
     if ((isEmpty(slackWebhooks) || !budget.isNotifyOnSlack()) && alertThreshold.getSlackWebhooks() == null) {
       return;
     }
-    slackWebhooks.forEach(webhook -> {
-      String slackMessageTemplate =
-          "The cost associated with *${BUDGET_NAME}* has reached a limit of ${THRESHOLD_PERCENTAGE}%.";
-      Map<String, String> params =
-          ImmutableMap.<String, String>builder()
-              .put("THRESHOLD_PERCENTAGE", String.format("%.1f", alertThreshold.getPercentage()))
-              .put("BUDGET_NAME", budget.getName())
-              .build();
-      String slackMessage = replace(slackMessageTemplate, params);
-      slackMessageSender.send(new SlackMessage(webhook, null, null, slackMessage), false, false);
-    });
+    String budgetUrl = buildAbsoluteUrl(budget.getAccountId(), budget.getUuid(), budget.getName(), budget.isNgBudget());
+    Map<String, String> templateData =
+        ImmutableMap.<String, String>builder()
+            .put("THRESHOLD_PERCENTAGE", String.format("%.1f", alertThreshold.getPercentage()))
+            .put("BUDGET_NAME", budget.getName())
+            .put("BUDGET_URL", budgetUrl)
+            .build();
+    NotificationChannelDTOBuilder slackChannelBuilder = NotificationChannelDTO.builder()
+                                                            .accountId(budget.getAccountId())
+                                                            .templateData(templateData)
+                                                            .webhookUrls(slackWebhooks)
+                                                            .team(Team.OTHER)
+                                                            .templateId("slack_ccm_budget_alert")
+                                                            .userGroups(Collections.emptyList());
+    Response<RestResponse<NotificationResult>> response =
+        notificationResourceClient.sendNotification(budget.getAccountId(), slackChannelBuilder.build()).execute();
+    if (!response.isSuccessful()) {
+      log.error("Failed to send slack notification: {}",
+          (response.errorBody() != null) ? response.errorBody().string() : response.code());
+    }
   }
 
   private List<String> getEmailsForUserGroup(String accountId, List<String> userGroupIds) {
@@ -239,15 +256,26 @@ public class BudgetAlertsServiceImpl {
 
       uniqueEmailAddresses.forEach(emailAddress -> {
         templateModel.put("name", emailAddress.substring(0, emailAddress.lastIndexOf('@')));
-        EmailData emailData = EmailData.builder()
-                                  .to(singletonList(emailAddress))
-                                  .templateName("ce_budget_alert")
-                                  .templateModel(ImmutableMap.copyOf(templateModel))
-                                  .accountId(accountId)
-                                  .build();
-        emailData.setCc(emptyList());
-        emailData.setRetries(0);
-        emailNotificationService.send(emailData);
+        NotificationChannelDTOBuilder emailChannelBuilder = NotificationChannelDTO.builder()
+                                                                .accountId(accountId)
+                                                                .emailRecipients(singletonList(emailAddress))
+                                                                .team(Team.OTHER)
+                                                                .templateId("email_ccm_budget_alert")
+                                                                .templateData(ImmutableMap.copyOf(templateModel))
+                                                                .userGroups(Collections.emptyList());
+
+        try {
+          Response<RestResponse<NotificationResult>> response =
+              notificationResourceClient.sendNotification(accountId, emailChannelBuilder.build()).execute();
+          if (!response.isSuccessful()) {
+            log.error("Failed to send email notification: {}",
+                (response.errorBody() != null) ? response.errorBody().string() : response.code());
+          } else {
+            log.info("email sent to {} successfully", emailAddress);
+          }
+        } catch (IOException e) {
+          log.error(BUDGET_MAIL_ERROR, e);
+        }
       });
     } catch (URISyntaxException e) {
       log.error(BUDGET_MAIL_ERROR, e);

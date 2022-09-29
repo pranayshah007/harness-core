@@ -23,6 +23,8 @@ import io.harness.delegate.task.AbstractDelegateRunnableTask;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.azure.AzureTaskExecutionResponse;
 import io.harness.delegate.task.azure.arm.AzureARMTaskParameters;
+import io.harness.delegate.task.azure.common.AzureLogCallbackProvider;
+import io.harness.delegate.task.azure.common.AzureLogCallbackProviderFactory;
 
 import software.wings.delegatetasks.azure.AzureSecretHelper;
 import software.wings.service.impl.azure.manager.AzureTaskExecutionRequest;
@@ -38,6 +40,7 @@ import org.apache.commons.lang3.NotImplementedException;
 public class AzureARMTask extends AbstractDelegateRunnableTask {
   @Inject private AzureSecretHelper azureSecretHelper;
   @Inject private AzureARMTaskFactory azureARMTaskFactory;
+  @Inject protected AzureLogCallbackProviderFactory logCallbackProviderFactory;
 
   public AzureARMTask(DelegateTaskPackage delegateTaskPackage, ILogStreamingTaskClient logStreamingTaskClient,
       Consumer<DelegateTaskResponse> consumer, BooleanSupplier preExecute) {
@@ -60,7 +63,7 @@ public class AzureARMTask extends AbstractDelegateRunnableTask {
     AzureTaskExecutionRequest azureTaskExecutionRequest = (AzureTaskExecutionRequest) parameters;
     AzureConfig azureConfig = azureSecretHelper.decryptAndGetAzureConfig(
         azureTaskExecutionRequest.getAzureConfigDTO(), azureTaskExecutionRequest.getAzureConfigEncryptionDetails());
-    ILogStreamingTaskClient logStreamingTaskClient = getLogStreamingTaskClient();
+    AzureLogCallbackProvider logStreamingTaskClient = getLogCallback();
 
     AzureARMTaskParameters azureARMTaskParameters =
         (AzureARMTaskParameters) azureTaskExecutionRequest.getAzureTaskParameters();
@@ -68,5 +71,8 @@ public class AzureARMTask extends AbstractDelegateRunnableTask {
         azureARMTaskFactory.getAzureARMTask(azureARMTaskParameters.getCommandType().name());
 
     return azureARMTask.executeTask(azureARMTaskParameters, azureConfig, logStreamingTaskClient);
+  }
+  public AzureLogCallbackProvider getLogCallback() {
+    return logCallbackProviderFactory.createCg(getLogStreamingTaskClient());
   }
 }

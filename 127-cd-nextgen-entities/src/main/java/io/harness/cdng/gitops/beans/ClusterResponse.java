@@ -33,8 +33,10 @@ public class ClusterResponse {
   @EntityIdentifier @Schema(description = "identifier of the gitops cluster") String clusterRef;
   @Schema(description = "organization identifier of the cluster") String orgIdentifier;
   @Schema(description = "project identifier of the cluster") String projectIdentifier;
+  @Schema(description = "account identifier of the cluster") String accountIdentifier;
   @Schema(description = "environment identifier of the cluster") @NotEmpty String envRef;
   @Schema(description = "time at which the cluster was linked") Long linkedAt;
   @Schema(description = "scope at which the cluster exists in harness gitops, project vs org vs account")
   ScopeLevel scope;
+  @Schema(description = "name of the gitops cluster") String name;
 }

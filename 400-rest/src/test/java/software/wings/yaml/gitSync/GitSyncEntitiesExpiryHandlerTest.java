@@ -7,7 +7,6 @@
 
 package software.wings.yaml.gitSync;
 
-import static io.harness.beans.PageResponse.PageResponseBuilder.aPageResponse;
 import static io.harness.rule.OwnerRule.ABHINAV;
 import static io.harness.rule.OwnerRule.ARVIND;
 
@@ -15,14 +14,12 @@ import static software.wings.yaml.errorhandling.GitSyncError.GitSyncErrorKeys;
 import static software.wings.yaml.errorhandling.GitSyncError.builder;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
-import io.harness.beans.PageResponse;
 import io.harness.category.element.UnitTests;
 import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
@@ -30,19 +27,16 @@ import io.harness.rule.Owner;
 import software.wings.WingsBaseTest;
 import software.wings.beans.Account;
 import software.wings.beans.GitCommit;
-import software.wings.beans.GitFileActivitySummary;
 import software.wings.service.intfc.AppService;
 import software.wings.service.intfc.yaml.sync.GitSyncService;
 import software.wings.yaml.errorhandling.GitSyncError;
 
 import com.google.inject.Inject;
-import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
@@ -177,29 +171,17 @@ public class GitSyncEntitiesExpiryHandlerTest extends WingsBaseTest {
   @Owner(developers = ABHINAV)
   @Category(UnitTests.class)
   public void testGitFileActivity() {
-    doReturn(Arrays.asList("appId")).when(appService).getAppIdsByAccountId(account.getUuid());
-    GitFileActivity gitFileActivity = GitFileActivity.builder().accountId(account.getUuid()).build();
-    gitFileActivity.setUuid("uuid");
-    PageResponse pageResponse = aPageResponse().withResponse(Arrays.asList(gitFileActivity)).build();
-    doReturn(pageResponse).when(gitSyncService).fetchGitSyncActivity(any(), anyString(), anyString(), anyBoolean());
+    doReturn(true).when(gitSyncService).deleteGitActivityBeforeTime(anyLong(), anyString());
     gitSyncEntitiesExpiryHandler.handleGitFileActivity(account, 0L);
-    ArgumentCaptor<List> argumentCaptor = ArgumentCaptor.forClass(List.class);
-    verify(gitSyncService, times(1)).deleteGitActivity(argumentCaptor.capture(), any());
-    assert argumentCaptor.getValue().size() == 1;
+    verify(gitSyncService, times(1)).deleteGitActivityBeforeTime(anyLong(), anyString());
   }
 
   @Test
   @Owner(developers = ABHINAV)
   @Category(UnitTests.class)
   public void testGitFileActivitySummary() {
-    doReturn(Arrays.asList("appId")).when(appService).getAppIdsByAccountId(account.getUuid());
-    GitFileActivitySummary gitFileActivity = GitFileActivitySummary.builder().accountId(account.getUuid()).build();
-    gitFileActivity.setUuid("uuid");
-    PageResponse pageResponse = aPageResponse().withResponse(Arrays.asList(gitFileActivity)).build();
-    doReturn(pageResponse).when(gitSyncService).fetchGitCommits(any(), any(), anyString(), anyString());
+    doReturn(true).when(gitSyncService).deleteGitCommitsBeforeTime(anyLong(), anyString());
     gitSyncEntitiesExpiryHandler.handleGitCommitInGitFileActivitySummary(account, 0L);
-    ArgumentCaptor<List> argumentCaptor = ArgumentCaptor.forClass(List.class);
-    verify(gitSyncService, times(1)).deleteGitCommits(argumentCaptor.capture(), any());
-    assert argumentCaptor.getValue().size() == 1;
+    verify(gitSyncService, times(1)).deleteGitCommitsBeforeTime(anyLong(), anyString());
   }
 }

@@ -70,7 +70,7 @@ mongo:
   connectionsPerHost: 300
   indexManagerMode: AUTO
   transactionsEnabled: false
-  aliasDBName:  pms-harness
+  aliasDBName: pms-harness
   traceMode: DISABLED
 
 grpcServerConfig:
@@ -349,6 +349,8 @@ pipelineEventConsumersConfig:
     threads: 1
   initiateNode:
     threads: 2
+  pollingEvent:
+    threads: 5
 
 delegatePollingConfig:
   syncDelay: 2000
@@ -363,7 +365,7 @@ segmentConfiguration:
 enforcementClientConfiguration:
   enforcementCheckEnabled: false
 
-shouldUseInstanceCache: ${SHOULD_USE_INSTANCE_CACHE:-true}
+shouldUseInstanceCache: ${SHOULD_USE_INSTANCE_CACHE:-false}
 
 pmsPlanCreatorServicePoolConfig:
   corePoolSize: ${PLAN_CREATOR_SERVICE_EXECUTOR_POOL_CORE_SIZE:-2}

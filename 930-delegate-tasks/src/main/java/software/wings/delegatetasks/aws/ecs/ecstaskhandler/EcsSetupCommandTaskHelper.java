@@ -238,9 +238,9 @@ public class EcsSetupCommandTaskHelper {
     if (isFargateTaskLauchType(ecsSetupParams)) {
       registerTaskDefinitionRequest.withNetworkMode(NetworkMode.Awsvpc);
       registerTaskDefinitionRequest.setRequiresCompatibilities(Collections.singletonList(LaunchType.FARGATE.name()));
-      registerTaskDefinitionRequest.withCpu(taskDefinition.getCpu());
-      registerTaskDefinitionRequest.withMemory(taskDefinition.getMemory());
     }
+    registerTaskDefinitionRequest.withCpu(taskDefinition.getCpu());
+    registerTaskDefinitionRequest.withMemory(taskDefinition.getMemory());
 
     executionLogCallback.saveExecutionLog(
         format("Creating task definition %s with container image %s", ecsSetupParams.getTaskFamily(), dockerImageName),
@@ -311,9 +311,6 @@ public class EcsSetupCommandTaskHelper {
     if (isFargateTaskLauchType(ecsSetupParams)) {
       registerTaskDefinitionRequest.withNetworkMode(NetworkMode.Awsvpc);
       registerTaskDefinitionRequest.setRequiresCompatibilities(Collections.singletonList(LaunchType.FARGATE.name()));
-    } else {
-      registerTaskDefinitionRequest.withCpu(null);
-      registerTaskDefinitionRequest.withMemory(null);
     }
 
     executionLogCallback.saveExecutionLog(

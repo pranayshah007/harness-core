@@ -14,6 +14,7 @@ import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.expression.ExpressionEvaluatorUtils;
 import io.harness.expression.ExpressionMode;
 import io.harness.expression.ResolveObjectResponse;
+import io.harness.ng.core.template.TemplateEntityConstants;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
@@ -37,6 +38,7 @@ public class ShellScriptYamlExpressionEvaluator extends EngineExpressionEvaluato
   private static final String SECRETS_PREFIX = "secrets";
   private static final String YAML_EXPRESSION_CONNECTOR_PREFIX = "__yamlExpression.connector";
   private static final String CONNECTOR_ROOT_FIELD = "connector";
+  private static final String SPEC_FIELD = "spec";
 
   public ShellScriptYamlExpressionEvaluator(String yaml, int functorToken) {
     super(null);
@@ -47,6 +49,7 @@ public class ShellScriptYamlExpressionEvaluator extends EngineExpressionEvaluato
   @Override
   protected void initialize() {
     super.initialize();
+    addStaticAlias(TemplateEntityConstants.SECRET_MANAGER_ROOT_FIELD, SPEC_FIELD);
     // Add Shell Script Yaml Expression Functor
     addToContext(YAML_EXPRESSION_PREFIX,
         ShellScriptYamlExpressionFunctor.builder().rootYamlField(getShellScriptYamlField()).build());

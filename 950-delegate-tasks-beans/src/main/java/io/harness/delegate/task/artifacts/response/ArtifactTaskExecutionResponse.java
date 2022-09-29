@@ -11,6 +11,8 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.task.jenkins.JenkinsBuildTaskNGResponse;
+import io.harness.logging.CommandExecutionStatus;
+import io.harness.shell.ExecuteCommandResponse;
 
 import software.wings.helpers.ext.jenkins.BuildDetails;
 import software.wings.helpers.ext.jenkins.JobDetails;
@@ -32,4 +34,7 @@ public class ArtifactTaskExecutionResponse {
   List<JobDetails> jobDetails;
   List<String> artifactPath;
   JenkinsBuildTaskNGResponse jenkinsBuildTaskNGResponse;
+  ExecuteCommandResponse executeCommandResponse;
+  CommandExecutionStatus status;
+  String errorMessage;
 }

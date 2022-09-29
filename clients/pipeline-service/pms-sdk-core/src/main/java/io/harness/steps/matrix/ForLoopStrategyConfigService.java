@@ -41,7 +41,7 @@ public class ForLoopStrategyConfigService implements StrategyConfigService {
                                                   .build())
                          .build());
       }
-    } else if (!ParameterField.isBlank(harnessForConfig.getPartitions())) {
+    } else if (!ParameterField.isBlank(harnessForConfig.getPartitionSize())) {
       int currentIteration = 0;
       List<List<String>> partitions = partitionItems(harnessForConfig);
 
@@ -60,7 +60,6 @@ public class ForLoopStrategyConfigService implements StrategyConfigService {
     } else {
       int currentIteration = 0;
       List<String> params = splitParamsIfNeeded(harnessForConfig);
-
       for (String value : params) {
         children.add(ChildrenExecutableResponse.Child.newBuilder()
                          .setChildNodeId(childNodeId)
@@ -88,7 +87,7 @@ public class ForLoopStrategyConfigService implements StrategyConfigService {
   private List<List<String>> partitionItemsByPercentage(HarnessForConfig harnessForConfig) {
     List<String> items = harnessForConfig.getItems().getValue();
     int itemsSize = items.size();
-    ParameterField<Integer> partitionSizeInPercentage = harnessForConfig.getPartitions();
+    ParameterField<Integer> partitionSizeInPercentage = harnessForConfig.getPartitionSize();
     float partitionSizeInPercentageValue = partitionSizeInPercentage.getValue().floatValue();
 
     int partitionSize = Math.round((partitionSizeInPercentageValue / 100) * itemsSize);
@@ -108,7 +107,7 @@ public class ForLoopStrategyConfigService implements StrategyConfigService {
   private List<List<String>> partitionItemsByCount(HarnessForConfig harnessForConfig) {
     List<String> items = harnessForConfig.getItems().getValue();
     int itemsSize = items.size();
-    int partitionSize = harnessForConfig.getPartitions().getValue();
+    int partitionSize = harnessForConfig.getPartitionSize().getValue();
 
     // fix partitionSize if partitionSize is greater than number of items
     if (partitionSize > itemsSize) {
@@ -128,19 +127,28 @@ public class ForLoopStrategyConfigService implements StrategyConfigService {
   private List<String> handleSplitByPercentage(HarnessForConfig harnessForConfig) {
     int start = 0;
     List<String> params = harnessForConfig.getItems().getValue();
-    int end = params.size() - 1;
+    validateItems(params);
+    int itemsSize = params.size();
+    int end = itemsSize - 1;
     if (!ParameterField.isBlank(harnessForConfig.getStart())) {
-      start = (int) (((harnessForConfig.getStart().getValue().floatValue()) / 100) * params.size());
+      start = Math.round(((harnessForConfig.getStart().getValue().floatValue()) / 100) * itemsSize);
     }
     if (!ParameterField.isBlank(harnessForConfig.getEnd())) {
-      end = (int) (((harnessForConfig.getEnd().getValue().floatValue()) / 100) * params.size());
+      end = Math.round(((harnessForConfig.getEnd().getValue().floatValue()) / 100) * itemsSize);
     }
-    validateStartEnd(start, end, params.size());
+
+    // fix end, if provided percentage value is greater than 0
+    if (end == 0 && itemsSize > 0) {
+      end = 1;
+    }
+
+    validateStartEnd(start, end, itemsSize);
     return params.subList(start, end);
   }
 
   private List<String> handleSplitByCount(HarnessForConfig harnessForConfig) {
     List<String> params = harnessForConfig.getItems().getValue();
+    validateItems(params);
     if (!ParameterField.isBlank(harnessForConfig.getStart())) {
       int start = harnessForConfig.getStart().getValue();
       if (!ParameterField.isBlank(harnessForConfig.getEnd())) {
@@ -157,6 +165,12 @@ public class ForLoopStrategyConfigService implements StrategyConfigService {
       params = params.subList(0, end);
     }
     return params;
+  }
+
+  private void validateItems(List<String> params) {
+    if (null == params) {
+      throw new InvalidArgumentsException("Loop items list cannot be null");
+    }
   }
 
   private void validateStartEnd(int start, int end, int size) {
@@ -179,7 +193,6 @@ public class ForLoopStrategyConfigService implements StrategyConfigService {
       throw new InvalidArgumentsException("partition size cannot be equal or less that 0");
     }
   }
-
   @Override
   public StrategyInfo expandJsonNode(StrategyConfig strategyConfig, JsonNode jsonNode) {
     HarnessForConfig harnessForConfig = strategyConfig.getRepeat();

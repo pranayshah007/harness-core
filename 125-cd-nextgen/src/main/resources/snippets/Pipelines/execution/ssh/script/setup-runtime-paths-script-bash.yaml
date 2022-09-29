@@ -9,4 +9,4 @@
                         mkdir -p $HOME/<+service.name>/<+env.name>/runtime
                         mkdir -p $HOME/<+service.name>/<+env.name>/backup
                         mkdir -p $HOME/<+service.name>/<+env.name>/staging
-                        mkdir -p $HOME/<+service.name>/<+env.name>/runtime/tomcat/bin
+                        mkdir -p $HOME/<+service.name>/<+env.name>/tomcat/bin

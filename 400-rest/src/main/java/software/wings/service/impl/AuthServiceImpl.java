@@ -705,7 +705,7 @@ public class AuthServiceImpl implements AuthService {
     return authHandler.evaluateUserPermissionInfo(accountId, userGroups, user);
   }
 
-  private List<UserGroup> getUserGroups(String accountId, User user) {
+  public List<UserGroup> getUserGroups(String accountId, User user) {
     List<UserGroup> userGroups = userGroupService.listByAccountId(accountId, user, false);
 
     if (isEmpty(userGroups) && !userService.isUserAssignedToAccount(user, accountId)) {
@@ -1250,9 +1250,15 @@ public class AuthServiceImpl implements AuthService {
   @Override
   public void auditLoginToNg(List<String> accountIds, User loggedInUser) {
     if (Objects.nonNull(loggedInUser) && Objects.nonNull(accountIds)) {
-      accountIds.forEach(accountId
-          -> outboxService.save(
-              new LoginEvent(accountId, loggedInUser.getUuid(), loggedInUser.getEmail(), loggedInUser.getName())));
+      for (String accountIdentifier : accountIds) {
+        try {
+          outboxService.save(new LoginEvent(
+              accountIdentifier, loggedInUser.getUuid(), loggedInUser.getEmail(), loggedInUser.getName()));
+        } catch (Exception ex) {
+          log.warn("For account {} and userId {} the Audit trails for User Login event failed with exception: ",
+              accountIdentifier, loggedInUser.getUuid(), ex);
+        }
+      }
     }
   }
 

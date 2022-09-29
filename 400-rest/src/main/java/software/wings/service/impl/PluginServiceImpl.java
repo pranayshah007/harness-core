@@ -34,7 +34,6 @@ import software.wings.beans.AwsConfig;
 import software.wings.beans.AzureConfig;
 import software.wings.beans.BambooConfig;
 import software.wings.beans.BugsnagConfig;
-import software.wings.beans.CustomArtifactServerConfig;
 import software.wings.beans.DatadogConfig;
 import software.wings.beans.DockerConfig;
 import software.wings.beans.DynaTraceConfig;
@@ -394,17 +393,15 @@ public class PluginServiceImpl implements PluginService {
                        .withPluginCategories(asList(HelmRepo))
                        .withUiSchema(readUiSchema(SettingVariableTypes.HTTP_HELM_REPO.name()))
                        .build());
-    if (featureFlagService.isEnabled(FeatureName.HELM_OCI_SUPPORT, accountId)) {
-      pluginList.add(anAccountPlugin()
-                         .withSettingClass(OciHelmRepoConfig.class)
-                         .withAccountId(accountId)
-                         .withIsEnabled(true)
-                         .withDisplayName(SettingVariableTypes.OCI_HELM_REPO.getDisplayName())
-                         .withType(SettingVariableTypes.OCI_HELM_REPO.name())
-                         .withPluginCategories(asList(HelmRepo))
-                         .withUiSchema(readUiSchema(SettingVariableTypes.OCI_HELM_REPO.name()))
-                         .build());
-    }
+    pluginList.add(anAccountPlugin()
+                       .withSettingClass(OciHelmRepoConfig.class)
+                       .withAccountId(accountId)
+                       .withIsEnabled(true)
+                       .withDisplayName(SettingVariableTypes.OCI_HELM_REPO.getDisplayName())
+                       .withType(SettingVariableTypes.OCI_HELM_REPO.name())
+                       .withPluginCategories(asList(HelmRepo))
+                       .withUiSchema(readUiSchema(SettingVariableTypes.OCI_HELM_REPO.name()))
+                       .build());
     pluginList.add(anAccountPlugin()
                        .withSettingClass(AmazonS3HelmRepoConfig.class)
                        .withAccountId(accountId)
@@ -442,18 +439,6 @@ public class PluginServiceImpl implements PluginService {
                        .withType(SettingVariableTypes.SPOT_INST.toString())
                        .withPluginCategories(singletonList(CloudProvider))
                        .build());
-
-    if (featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, accountId)) {
-      pluginList.add(anAccountPlugin()
-                         .withSettingClass(CustomArtifactServerConfig.class)
-                         .withAccountId(accountId)
-                         .withIsEnabled(true)
-                         .withDisplayName(SettingVariableTypes.CUSTOM.getDisplayName())
-                         .withType(SettingVariableTypes.CUSTOM.name())
-                         .withPluginCategories(asList(Artifact))
-                         .withUiSchema(readUiSchema(SettingVariableTypes.CUSTOM.name()))
-                         .build());
-    }
 
     pluginList.add(anAccountPlugin()
                        .withSettingClass(AzureArtifactsPATConfig.class)

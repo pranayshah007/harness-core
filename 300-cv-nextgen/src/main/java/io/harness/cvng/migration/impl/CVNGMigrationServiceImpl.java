@@ -8,9 +8,11 @@
 package io.harness.cvng.migration.impl;
 
 import static io.harness.concurrent.HTimeLimiter.callInterruptible21;
+import static io.harness.cvng.core.utils.FeatureFlagNames.SERVICE_LEVEL_OBJECTIVE_V2;
 import static io.harness.cvng.migration.beans.CVNGSchema.CVNGMigrationStatus.PENDING;
 import static io.harness.cvng.migration.beans.CVNGSchema.SCHEMA_ID;
 
+import io.harness.cvng.core.services.api.FeatureFlagService;
 import io.harness.cvng.migration.CVNGBackgroundMigrationList;
 import io.harness.cvng.migration.CVNGMigration;
 import io.harness.cvng.migration.beans.CVNGSchema;
@@ -37,6 +39,7 @@ public class CVNGMigrationServiceImpl implements CVNGMigrationService {
   @Inject private Injector injector;
   @Inject private ExecutorService executorService;
   @Inject private TimeLimiter timeLimiter;
+  @Inject private FeatureFlagService featureFlagService;
 
   @Override
   public void runMigrations() {
@@ -44,21 +47,22 @@ public class CVNGMigrationServiceImpl implements CVNGMigrationService {
         CVNGBackgroundMigrationList.getMigrations().stream().collect(Collectors.toMap(Pair::getKey, Pair::getValue));
     int maxBackgroundVersion = backgroundMigrations.keySet().stream().mapToInt(Integer::intValue).max().orElse(0);
 
-    log.info("[Migration] - Initializing Global DB Entries");
-    initializeGlobalDbEntriesIfNeeded();
+    int cvngSchemaVersion = initializeGlobalDbEntriesIfNeededAndGetVersion();
 
     log.info("[Migration] - Checking for new backgroundMigrations");
-    CVNGSchema cvngSchema = hPersistence.createQuery(CVNGSchema.class).get();
-
-    if (cvngSchema.getVersion() < maxBackgroundVersion) {
+    if (cvngSchemaVersion < maxBackgroundVersion) {
       executorService.submit(() -> {
         try {
           callInterruptible21(timeLimiter, Duration.ofHours(2), () -> {
-            log.info(
-                "[Migration] - Updating schema version from {} to {}", cvngSchema.getVersion(), maxBackgroundVersion);
-            for (int i = cvngSchema.getVersion() + 1; i <= maxBackgroundVersion; i++) {
+            log.info("[Migration] - Updating schema version from {} to {}", cvngSchemaVersion, maxBackgroundVersion);
+            for (int i = cvngSchemaVersion + 1; i <= maxBackgroundVersion; i++) {
               if (backgroundMigrations.containsKey(i)) {
                 Class<? extends CVNGMigration> migration = backgroundMigrations.get(i);
+                if (i == 52 && !featureFlagService.isGlobalFlagEnabled(SERVICE_LEVEL_OBJECTIVE_V2)) {
+                  log.info(
+                      "[Migration] - Didn't migrate to version 52 as SERVICE_LEVEL_OBJECTIVE_V2 feature flag is disabled");
+                  continue;
+                }
                 log.info("[Migration] - Migrating to version {}: {} ...", i, migration.getSimpleName());
                 try {
                   injector.getInstance(migration).migrate();
@@ -82,15 +86,19 @@ public class CVNGMigrationServiceImpl implements CVNGMigrationService {
     }
   }
 
-  private void initializeGlobalDbEntriesIfNeeded() {
+  private int initializeGlobalDbEntriesIfNeededAndGetVersion() {
     try {
       Query<CVNGSchema> globalSchemaQuery = hPersistence.createQuery(CVNGSchema.class).filter("_id", SCHEMA_ID);
       CVNGSchema globalSchema = globalSchemaQuery.get();
       if (globalSchema == null) {
+        log.info("[Migration] - Initializing Global DB Entries");
         hPersistence.save(CVNGSchema.builder().uuid(SCHEMA_ID).version(0).cvngMigrationStatus(PENDING).build());
+        return 0;
       }
+      return globalSchema.getVersion();
     } catch (Exception e) {
       log.error("[Migration] - initializeGlobalDbEntriesIfNeeded failed.", e);
+      throw e;
     }
   }
 }

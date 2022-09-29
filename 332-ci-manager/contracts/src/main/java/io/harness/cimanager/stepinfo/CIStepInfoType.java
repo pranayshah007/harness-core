@@ -19,6 +19,7 @@ public enum CIStepInfoType {
   SETUP_ENV(CI_MANAGER, "SetupEnv"),
   CLEANUP(CI_MANAGER, "Cleanup"),
   RUN(CI_LITE_ENGINE, "Run"),
+  BACKGROUND(CI_LITE_ENGINE, "Background"),
   PLUGIN(CI_LITE_ENGINE, "Plugin"),
   SECURITY(CI_LITE_ENGINE, "Security"),
   GIT_CLONE(CI_LITE_ENGINE, "GitClone"),

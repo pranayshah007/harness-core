@@ -98,5 +98,5 @@ public interface YamlChangeSetService {
       int displayCount, List<YamlChangeSet.Status> statuses, Boolean gitToHarness);
 
   YamlChangeSet pushYamlChangeSetForGitToHarness(
-      String accountId, String branchName, String connectorId, String repositoryName);
+      String accountId, String branchName, String connectorId, String repositoryName, String appId);
 }

@@ -47,10 +47,12 @@ import io.harness.connector.entities.embedded.ceawsconnector.S3BucketDetails;
 import io.harness.connector.entities.embedded.ceazure.CEAzureConfig;
 import io.harness.connector.entities.embedded.cek8s.CEK8sDetails;
 import io.harness.connector.entities.embedded.customhealthconnector.CustomHealthConnector;
+import io.harness.connector.entities.embedded.customsecretmanager.CustomSecretManagerConnector;
 import io.harness.connector.entities.embedded.datadogconnector.DatadogConnector;
 import io.harness.connector.entities.embedded.docker.DockerConnector;
 import io.harness.connector.entities.embedded.docker.DockerUserNamePasswordAuthentication;
 import io.harness.connector.entities.embedded.dynatraceconnector.DynatraceConnector;
+import io.harness.connector.entities.embedded.elkconnector.ELKConnector;
 import io.harness.connector.entities.embedded.errortrackingconnector.ErrorTrackingConnector;
 import io.harness.connector.entities.embedded.gcpccm.GcpBillingExportDetails;
 import io.harness.connector.entities.embedded.gcpccm.GcpCloudCostConfig;
@@ -58,6 +60,7 @@ import io.harness.connector.entities.embedded.gcpconnector.GcpConfig;
 import io.harness.connector.entities.embedded.gcpconnector.GcpDelegateDetails;
 import io.harness.connector.entities.embedded.gcpconnector.GcpServiceAccountKey;
 import io.harness.connector.entities.embedded.gcpkmsconnector.GcpKmsConnector;
+import io.harness.connector.entities.embedded.gcpsecretmanager.GcpSecretManagerConnector;
 import io.harness.connector.entities.embedded.gitconnector.GitConfig;
 import io.harness.connector.entities.embedded.gitconnector.GitSSHAuthentication;
 import io.harness.connector.entities.embedded.gitconnector.GitUserNamePasswordAuthentication;
@@ -148,6 +151,9 @@ public class ConnectorMorphiaClassesRegistrar implements MorphiaRegistrar {
     set.add(AzureRepoConnector.class);
     set.add(JenkinsConnector.class);
     set.add(OciHelmConnector.class);
+    set.add(CustomSecretManagerConnector.class);
+    set.add(ELKConnector.class);
+    set.add(GcpSecretManagerConnector.class);
   }
 
   @Override

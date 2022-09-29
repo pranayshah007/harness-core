@@ -125,12 +125,13 @@ public class HelmRollbackState extends HelmDeployState {
   protected void setNewAndPrevReleaseVersion(ExecutionContext context, Application app, String releaseName,
       ContainerServiceParams containerServiceParams, HelmDeployStateExecutionDataBuilder stateExecutionDataBuilder,
       GitConfig gitConfig, List<EncryptedDataDetail> encryptedDataDetails, String commandFlags, HelmVersion helmVersion,
-      int expressionFunctorToken, HelmCommandFlag helmCommandFlag) {
+      int expressionFunctorToken, HelmCommandFlag helmCommandFlag, String activityId) {
     HelmDeployContextElement contextElement = context.getContextElement(ContextElementType.HELM_DEPLOY);
     if (contextElement != null) {
       stateExecutionDataBuilder.releaseOldVersion(contextElement.getNewReleaseRevision());
       stateExecutionDataBuilder.releaseNewVersion(contextElement.getNewReleaseRevision() + 1);
       stateExecutionDataBuilder.rollbackVersion(contextElement.getPreviousReleaseRevision());
+      stateExecutionDataBuilder.activityId(activityId);
     }
   }
 

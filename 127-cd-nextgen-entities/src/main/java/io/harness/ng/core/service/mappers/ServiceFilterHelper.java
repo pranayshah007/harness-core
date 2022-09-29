@@ -16,11 +16,14 @@ import static org.springframework.data.mongodb.core.query.Criteria.where;
 import io.harness.NGResourceFilterConstants;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
+import io.harness.cdng.visitor.YamlTypes;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.entity.ServiceEntity.ServiceEntityKeys;
 import io.harness.ng.core.utils.CoreCriteriaUtils;
+import io.harness.pms.yaml.YamlField;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import lombok.experimental.UtilityClass;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -84,8 +87,31 @@ public class ServiceFilterHelper {
     if (aBoolean == Boolean.TRUE) {
       criteria.and(key).is(true);
     } else if (aBoolean == Boolean.FALSE) {
-      criteria.and(key).is(false);
+      criteria.and(key).in(Arrays.asList(false, null));
     }
     return criteria;
+  }
+
+  public YamlField getPrimaryArtifactNodeFromServiceYaml(YamlField serviceField) {
+    if (serviceField == null) {
+      return null;
+    }
+
+    YamlField serviceDefinitionField = serviceField.getNode().getField(YamlTypes.SERVICE_DEFINITION);
+    if (serviceDefinitionField == null) {
+      return null;
+    }
+
+    YamlField serviceSpecField = serviceDefinitionField.getNode().getField(YamlTypes.SERVICE_SPEC);
+    if (serviceSpecField == null) {
+      return null;
+    }
+
+    YamlField artifactsField = serviceSpecField.getNode().getField(YamlTypes.ARTIFACT_LIST_CONFIG);
+    if (artifactsField == null) {
+      return null;
+    }
+
+    return artifactsField.getNode().getField(YamlTypes.PRIMARY_ARTIFACT);
   }
 }

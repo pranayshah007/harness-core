@@ -7,11 +7,15 @@
 
 package io.harness.gitsync.common.helper;
 
+import static io.harness.AuthorizationServiceHeader.GIT_SYNC_SERVICE;
 import static io.harness.annotations.dev.HarnessTeam.DX;
 
 import io.harness.EntityType;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidRequestException;
+import io.harness.manage.GlobalContextManager;
+import io.harness.security.PrincipalContextData;
+import io.harness.security.dto.ServicePrincipal;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -35,6 +39,17 @@ public class GitSyncUtils {
     } catch (IOException | NoSuchElementException e) {
       log.error("Could not process the yaml {}", yaml, e);
       throw new InvalidRequestException("Unable to parse yaml", e);
+    }
+  }
+
+  public void setGitSyncServicePrincipal() {
+    GlobalContextManager.upsertGlobalContextRecord(
+        PrincipalContextData.builder().principal(new ServicePrincipal(GIT_SYNC_SERVICE.getServiceId())).build());
+  }
+
+  public void setCurrentPrincipalContext(PrincipalContextData principal) {
+    if (principal != null) {
+      GlobalContextManager.upsertGlobalContextRecord(principal);
     }
   }
 }

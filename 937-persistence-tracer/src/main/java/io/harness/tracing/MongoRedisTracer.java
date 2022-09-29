@@ -7,6 +7,7 @@
 
 package io.harness.tracing;
 
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ACCOUNT_IDENTIFIER_METRICS_KEY;
 import static io.harness.mongo.tracing.TracerConstants.QUERY_HASH;
 import static io.harness.mongo.tracing.TracerConstants.SERVICE_ID;
 import static io.harness.version.VersionConstants.MAJOR_VERSION_KEY;
@@ -104,6 +105,7 @@ public class MongoRedisTracer implements Tracer, NgTracer {
     Document explainResult = mongoTemplate.getDb().runCommand(command);
     log.debug(String.format("Explain Results: %s", explainResult.toJson()));
     producer.send(Message.newBuilder()
+                      .putMetadata(ACCOUNT_IDENTIFIER_METRICS_KEY, serviceId)
                       .putMetadata(VERSION_KEY, versionInfoManager.getVersionInfo().getVersion())
                       .putMetadata(SERVICE_ID, serviceId)
                       .putMetadata(MAJOR_VERSION_KEY, getMajorVersionFromFullVersion())
@@ -124,6 +126,7 @@ public class MongoRedisTracer implements Tracer, NgTracer {
     String explainResult = JsonUtils.asJson(query.explain());
     log.debug(String.format("Explain Results: %s", explainResult));
     producer.send(Message.newBuilder()
+                      .putMetadata(ACCOUNT_IDENTIFIER_METRICS_KEY, serviceId)
                       .putMetadata(VERSION_KEY, versionInfoManager.getVersionInfo().getVersion())
                       .putMetadata(MAJOR_VERSION_KEY, getMajorVersionFromFullVersion())
                       .putMetadata(SERVICE_ID, serviceId)
@@ -134,7 +137,15 @@ public class MongoRedisTracer implements Tracer, NgTracer {
 
   private String getMajorVersionFromFullVersion() {
     String buildNo = versionInfoManager.getVersionInfo().getBuildNo();
-    String replaceBuildNumber = buildNo.substring(0, buildNo.length() - 2) + "xx";
+    String replaceBuildNumber;
+    try {
+      replaceBuildNumber = buildNo.substring(0, buildNo.length() - 2) + "xx";
+    } catch (Exception e) {
+      // Handling for semantic versioning. Returning MAJOR_MINOR
+      String version = versionInfoManager.getVersionInfo().getVersion();
+      replaceBuildNumber = version.substring(0, version.length() - 2).replace('.', '_');
+      return replaceBuildNumber;
+    }
     return versionInfoManager.getVersionInfo().getVersion().replace(buildNo, replaceBuildNumber);
   }
 

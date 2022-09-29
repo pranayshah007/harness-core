@@ -82,7 +82,6 @@ public class SecretSetupUsageBuilderRegistry {
     registeredSecretSetupUsageBuilders.put(
         SettingVariableTypes.AWS_SECRETS_MANAGER, SECRET_MANAGER_CONFIG_SETUP_USAGE_BUILDER);
     registeredSecretSetupUsageBuilders.put(SettingVariableTypes.AZURE_VAULT, SECRET_MANAGER_CONFIG_SETUP_USAGE_BUILDER);
-    registeredSecretSetupUsageBuilders.put(SettingVariableTypes.CYBERARK, SECRET_MANAGER_CONFIG_SETUP_USAGE_BUILDER);
     registeredSecretSetupUsageBuilders.put(SettingVariableTypes.GCP_KMS, SECRET_MANAGER_CONFIG_SETUP_USAGE_BUILDER);
     registeredSecretSetupUsageBuilders.put(SettingVariableTypes.KMS, SECRET_MANAGER_CONFIG_SETUP_USAGE_BUILDER);
     registeredSecretSetupUsageBuilders.put(SettingVariableTypes.VAULT, SECRET_MANAGER_CONFIG_SETUP_USAGE_BUILDER);

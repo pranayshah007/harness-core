@@ -42,16 +42,19 @@ public class EntityYamlRootNames {
   public static final String DELEGATE_CONFIGURATION = "delegateConfigurations";
   public static final String CV_VERIFICATION_JOB = "cvVerificationJob";
   public static final String INTEGRATION_STAGE = "integrationStage";
+
   public static final String INTEGRATION_STEP = "integrationSteps";
   public static final String CV_KUBERNETES_ACTIVITY_SOURCE = "cvKubernetesActivitySource";
   public static final String DEPLOYMENT_STEP = "deploymentSteps";
   public static final String DEPLOYMENT_STAGE = "deploymentStage";
   public static final String FEATURE_FLAG_STAGE = "featureFlagStage";
   public static final String APPROVAL_STAGE = "approvalStage";
+  public static final String PIPELINE_STAGE = "pipelineStage";
   public static final String CUSTOM_STAGE = "customStage";
   public static final String TRIGGERS = "trigger";
   public static final String MONITORED_SERVICE = "monitoredService";
   public static final String TEMPLATE = "template";
+  public static final String FETCH_INSTANCE_SCRIPT = "fetchInstanceScript";
   public static final String GIT_REPOSITORY = "gitRepository";
   public static final String FEATURE_FLAGS = "featureFlags";
   public static final String HTTP = "Http";
@@ -84,6 +87,7 @@ public class EntityYamlRootNames {
   public static final String OPAPOLICY = "governancePolicy";
   public static final String POLICY_STEP = "Policy";
   public static final String RUN_STEP = "Run";
+  public static final String BACKGROUND_STEP = "Background";
   public static final String RUN_TEST = "RunTests";
   public static final String PLUGIN = "Plugin";
   public static final String SECURITY = "Security";
@@ -117,5 +121,15 @@ public class EntityYamlRootNames {
   public static final String AZURE_SWAP_SLOT_STEP = "AzureSwapSlot";
   public static final String AZURE_WEBAPP_ROLLBACK_STEP = "AzureWebAppRollback";
   public static final String EMAIL = "EMAIL";
+  public static final String ECS_ROLLING_DEPLOY = "EcsRollingDeploy";
+  public static final String ECS_ROLLING_ROLLBACK = "EcsRollingRollback";
+  public static final String ECS_CANARY_DEPLOY = "EcsCanaryDeploy";
+  public static final String ECS_CANARY_DELETE = "EcsCanaryDelete";
   public static final String AZURE_CREATE_ARM_RESOURCE_STEP = "AzureCreateARMResource";
+  public static final String AZURE_CREATE_BP_RESOURCE_STEP = "AzureCreateBPResource";
+  public static final String AZURE_ROLLBACK_ARM_RESOURCE_STEP = "AzureARMRollback";
+  public static final String ECS_BLUE_GREEN_CREATE_SERVICE = "EcsBlueGreenCreateService";
+  public static final String ECS_BLUE_GREEN_SWAP_TARGET_GROUPS = "EcsBlueGreenSwapTargetGroups";
+  public static final String ECS_BLUE_GREEN_ROLLBACK = "EcsBlueGreenRollback";
+  public static final String WAIT_STEP = "Wait";
 }

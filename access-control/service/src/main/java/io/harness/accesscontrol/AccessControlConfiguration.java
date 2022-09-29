@@ -47,6 +47,7 @@ import io.dropwizard.logging.FileAppenderFactory;
 import io.dropwizard.request.logging.LogbackAccessRequestLogFactory;
 import io.dropwizard.request.logging.RequestLogFactory;
 import io.dropwizard.server.DefaultServerFactory;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.integration.SwaggerConfiguration;
 import io.swagger.v3.oas.integration.api.OpenAPIConfiguration;
 import io.swagger.v3.oas.models.OpenAPI;
@@ -55,6 +56,7 @@ import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.servers.Server;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -82,6 +84,7 @@ public class AccessControlConfiguration extends Configuration {
   public static final String AGGREGATOR_PACKAGE = "io.harness.accesscontrol.aggregator.api";
   public static final String HEALTH_PACKAGE = "io.harness.accesscontrol.health";
   public static final String ENFORCEMENT_PACKAGE = "io.harness.enforcement.client.resources";
+  public static final String ACCESSCONTROL_SERVER_STUB = "io.harness.spec.server.accesscontrol";
 
   @JsonProperty("mongo") private MongoConfig mongoConfig;
   @JsonProperty("allowedOrigins") private final List<String> allowedOrigins = Lists.newArrayList();
@@ -133,7 +136,7 @@ public class AccessControlConfiguration extends Configuration {
         .filter(clazz
             -> StringUtils.startsWithAny(clazz.getPackage().getName(), PERMISSION_PACKAGE, ROLES_PACKAGE,
                 ROLE_ASSIGNMENTS_PACKAGE, ACL_PACKAGE, ACCESSCONTROL_PREFERENCE_PACKAGE, AGGREGATOR_PACKAGE,
-                HEALTH_PACKAGE, ENFORCEMENT_PACKAGE))
+                HEALTH_PACKAGE, ENFORCEMENT_PACKAGE, ACCESSCONTROL_SERVER_STUB))
         .filter(clazz -> clazz.isInterface() || EmptyPredicate.isEmpty(clazz.getInterfaces()))
         .collect(Collectors.toSet());
   }
@@ -179,6 +182,17 @@ public class AccessControlConfiguration extends Configuration {
   }
 
   public static Set<String> getUniquePackages(Collection<Class<?>> classes) {
-    return classes.stream().map(aClass -> aClass.getPackage().getName()).collect(toSet());
+    return classes.stream()
+        .filter(x -> x.isAnnotationPresent(Tag.class))
+        .map(aClass -> aClass.getPackage().getName())
+        .collect(toSet());
+  }
+
+  public List<String> getDbAliases() {
+    List<String> dbAliases = new ArrayList<>();
+    if (mongoConfig != null) {
+      dbAliases.add(mongoConfig.getAliasDBName());
+    }
+    return dbAliases;
   }
 }

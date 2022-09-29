@@ -12,6 +12,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.contracts.service.VariableMergeResponseProto;
 import io.harness.pms.contracts.service.VariablesServiceGrpc.VariablesServiceImplBase;
 import io.harness.pms.contracts.service.VariablesServiceRequest;
+import io.harness.pms.contracts.service.VariablesServiceRequestV2;
 import io.harness.pms.mappers.VariablesResponseDtoMapper;
 import io.harness.pms.variables.VariableCreatorMergeService;
 import io.harness.pms.variables.VariableMergeServiceResponse;
@@ -37,6 +38,16 @@ public class VariablesServiceImpl extends VariablesServiceImplBase {
       VariablesServiceRequest request, StreamObserver<VariableMergeResponseProto> responseObserver) {
     VariableMergeServiceResponse variablesResponse =
         variableCreatorMergeService.createVariablesResponses(request.getYaml(), false);
+    VariableMergeResponseProto variableMergeResponseProto = VariablesResponseDtoMapper.toProto(variablesResponse);
+    responseObserver.onNext(variableMergeResponseProto);
+    responseObserver.onCompleted();
+  }
+
+  @Override
+  public void getVariablesV2(
+      VariablesServiceRequestV2 request, StreamObserver<VariableMergeResponseProto> responseObserver) {
+    VariableMergeServiceResponse variablesResponse = variableCreatorMergeService.createVariablesResponsesV2(
+        request.getAccountId(), request.getOrgId(), request.getProjectId(), request.getYaml());
     VariableMergeResponseProto variableMergeResponseProto = VariablesResponseDtoMapper.toProto(variablesResponse);
     responseObserver.onNext(variableMergeResponseProto);
     responseObserver.onCompleted();

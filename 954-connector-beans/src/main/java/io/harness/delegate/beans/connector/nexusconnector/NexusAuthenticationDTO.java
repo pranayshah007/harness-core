@@ -9,6 +9,7 @@ package io.harness.delegate.beans.connector.nexusconnector;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
+import io.harness.annotation.RecasterFieldName;
 import io.harness.annotations.dev.OwnedBy;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -33,7 +34,8 @@ import lombok.NoArgsConstructor;
 @JsonDeserialize(using = NexusAuthDTODeserializer.class)
 @Schema(name = "NexusAuthentication", description = "This entity contains the details for Nexus Authentication")
 public class NexusAuthenticationDTO {
-  @NotNull @JsonProperty("type") NexusAuthType authType;
+  @NotNull @RecasterFieldName(name = "type") @JsonProperty("type") NexusAuthType authType;
+  @RecasterFieldName(name = "spec")
   @JsonProperty("spec")
   @JsonTypeInfo(
       use = JsonTypeInfo.Id.NAME, property = "type", include = JsonTypeInfo.As.EXTERNAL_PROPERTY, visible = true)

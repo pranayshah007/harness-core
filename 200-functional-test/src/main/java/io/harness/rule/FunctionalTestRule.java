@@ -230,6 +230,13 @@ public class FunctionalTestRule implements MethodRule, InjectorRuleMixin, MongoR
 
       @Provides
       @Singleton
+      @Named("dbAliases")
+      public List<String> getDbAliases() {
+        return Collections.EMPTY_LIST;
+      }
+
+      @Provides
+      @Singleton
       Set<Class<? extends TypeConverter>> morphiaConverters() {
         return ImmutableSet.<Class<? extends TypeConverter>>builder()
             .addAll(ManagerRegistrars.morphiaConverters)
@@ -272,6 +279,13 @@ public class FunctionalTestRule implements MethodRule, InjectorRuleMixin, MongoR
         AdvancedDatastore datastore = (AdvancedDatastore) morphia.createDatastore(mongoClient, dbName);
         datastore.setQueryFactory(new QueryFactory());
         return datastore;
+      }
+
+      @Provides
+      @Named("primaryMongoClient")
+      @Singleton
+      MongoClient mongoClient() {
+        return mongoClient;
       }
 
       @Provides

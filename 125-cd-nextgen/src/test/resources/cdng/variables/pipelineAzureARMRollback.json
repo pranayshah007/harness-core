@@ -1,0 +1,96 @@
+{
+  "pipeline": {
+    "name": "aaa",
+    "identifier": "aaa",
+    "projectIdentifier": "NGPipeAutoDemoProUsF9qDyXU8",
+    "orgIdentifier": "CF_PipelineOrg",
+    "tags": {
+      "__uuid": "EB-Bn7DYStecyat2vzqV3Q"
+    },
+    "stages": [
+      {
+        "stage": {
+          "name": "aaa",
+          "identifier": "aaa",
+          "description": "",
+          "type": "Deployment",
+          "spec": {
+            "deploymentType": "Kubernetes",
+            "service": {
+              "serviceRef": "dfgh",
+              "__uuid": "Ps8ADZpQRoiozbu1tm1czw"
+            },
+            "environment": {
+              "environmentRef": "foobar",
+              "deployToAll": false,
+              "infrastructureDefinitions": [
+                {
+                  "identifier": "asdf",
+                  "__uuid": "7aApnIzxRmyCHmBW_Z5FLQ"
+                }
+              ],
+              "__uuid": "v-swLo_wRBStsgL_Fx57Ng"
+            },
+            "execution": {
+              "steps": [
+                {
+                  "step": {
+                    "type": "AzureARMRollback",
+                    "name": "aaa",
+                    "identifier": "aaa",
+                    "spec": {
+                      "provisionerIdentifier": "aaa",
+                      "__uuid": "8nvXo0EqSXmdKN6pp9U2GA"
+                    },
+                    "timeout": "10m",
+                    "__uuid": "WIY6BA0HQAG75s86k45Fvg"
+                  },
+                  "__uuid": "tTKtHQYiREK_klV3zFboRg"
+                }
+              ],
+              "rollbackSteps": [
+                {
+                  "step": {
+                    "name": "Rollback Rollout Deployment",
+                    "identifier": "rollbackRolloutDeployment",
+                    "type": "K8sRollingRollback",
+                    "timeout": "10m",
+                    "spec": {
+                      "__uuid": "0fs5JRGCRN-0aylIxWtzqA"
+                    },
+                    "__uuid": "4wu6mV7jTuWaN16N6ORjgg"
+                  },
+                  "__uuid": "Iem0-byATDmp_Xqn8UugrQ"
+                }
+              ],
+              "__uuid": "blVKprMwRx6KcfZOOiqaIg"
+            },
+            "__uuid": "p_VHrpyzQE2QsN3tmlXHCQ"
+          },
+          "tags": {
+            "__uuid": "Bf5taCk5TryhlDQZZZhGdA"
+          },
+          "failureStrategies": [
+            {
+              "onFailure": {
+                "errors": [
+                  "AllErrors"
+                ],
+                "action": {
+                  "type": "StageRollback",
+                  "__uuid": "l3b-gw6vSPCMfYaxGx4_2g"
+                },
+                "__uuid": "e6kRhVCwSI2y02u-8KPhZw"
+              },
+              "__uuid": "87eR0lnMS3SrtAs8g6MnJg"
+            }
+          ],
+          "__uuid": "oYKDbrHnQR6F8Q_Hj1AHfg"
+        },
+        "__uuid": "eyH48KLdRdiKib5UUausqg"
+      }
+    ],
+    "__uuid": "x3Vf9YOHRZ2mrL0UeSvtog"
+  },
+  "__uuid": "To6qRAuQSBu_zLrL9ACVLg"
+}

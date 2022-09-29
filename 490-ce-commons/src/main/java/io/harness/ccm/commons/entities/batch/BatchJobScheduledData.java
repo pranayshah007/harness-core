@@ -9,7 +9,7 @@ package io.harness.ccm.commons.entities.batch;
 
 import static io.harness.annotations.dev.HarnessTeam.CE;
 
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.mongo.index.FdTtlIndex;
 import io.harness.mongo.index.MongoIndex;
@@ -39,10 +39,10 @@ import org.mongodb.morphia.annotations.Entity;
 import org.mongodb.morphia.annotations.Id;
 
 @Data
+@StoreIn(DbAliases.CENG)
 @Entity(value = "batchJobScheduledData", noClassnameStored = true)
 @FieldNameConstants(innerTypeName = "BatchJobScheduledDataKeys")
 @FieldDefaults(level = AccessLevel.PRIVATE)
-@StoreIn(DbAliases.CENG)
 @OwnedBy(CE)
 public final class BatchJobScheduledData
     implements PersistentEntity, UuidAware, CreatedAtAware, UpdatedAtAware, AccountAccess, ValidUntilAccess {

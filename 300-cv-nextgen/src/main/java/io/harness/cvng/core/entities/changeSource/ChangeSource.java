@@ -8,7 +8,7 @@
 package io.harness.cvng.core.entities.changeSource;
 
 import io.harness.annotation.HarnessEntity;
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cvng.beans.change.ChangeSourceType;
@@ -45,10 +45,10 @@ import org.mongodb.morphia.query.UpdateOperations;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = false)
+@StoreIn(DbAliases.CVNG)
 @Entity(value = "changeSources")
 @OwnedBy(HarnessTeam.CV)
 @HarnessEntity(exportable = true)
-@StoreIn(DbAliases.CVNG)
 public abstract class ChangeSource
     implements PersistentEntity, UuidAware, AccountAccess, UpdatedAtAware, CreatedAtAware, PersistentRegularIterable {
   public static List<MongoIndex> mongoIndexes() {

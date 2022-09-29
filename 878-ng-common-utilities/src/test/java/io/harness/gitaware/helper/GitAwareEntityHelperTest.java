@@ -8,7 +8,6 @@
 package io.harness.gitaware.helper;
 
 import static io.harness.rule.OwnerRule.NAMAN;
-import static io.harness.rule.OwnerRule.VIVEK_DIXIT;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -19,7 +18,6 @@ import io.harness.CategoryTest;
 import io.harness.beans.Scope;
 import io.harness.category.element.UnitTests;
 import io.harness.context.GlobalContext;
-import io.harness.exception.InvalidRequestException;
 import io.harness.gitaware.dto.GitContextRequestParams;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.interceptor.GitSyncBranchContext;
@@ -39,8 +37,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockedStatic;
-import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
 public class GitAwareEntityHelperTest extends CategoryTest {
@@ -235,17 +231,15 @@ public class GitAwareEntityHelperTest extends CategoryTest {
         DummyGitAware.builder().connectorRef("__default__").repo("__default__").filePath("__default__").build();
     assertThatThrownBy(() -> gitAwareEntityHelper.updateEntityOnGit(noRepoName, data, scope))
         .hasMessage("No repo name provided.");
-  }
 
-  @Test
-  @Owner(developers = VIVEK_DIXIT)
-  @Category(UnitTests.class)
-  public void testCheckRootFolder() {
-    String filePathToBeImported = ".notInHarnessFolder";
-    GitEntityInfo gitEntityInfo = GitEntityInfo.builder().filePath(filePathToBeImported).build();
-    MockedStatic<GitAwareContextHelper> utilities = Mockito.mockStatic(GitAwareContextHelper.class);
-    utilities.when(GitAwareContextHelper::getGitRequestParamsInfo).thenReturn(gitEntityInfo);
-    assertThatThrownBy(() -> gitAwareEntityHelper.checkRootFolder()).isInstanceOf(InvalidRequestException.class);
+    DummyGitAware noBranchName = DummyGitAware.builder()
+                                     .connectorRef(connectorRef)
+                                     .repo(repoName)
+                                     .filePath(filePath)
+                                     .branch("__default__")
+                                     .build();
+    assertThatThrownBy(() -> gitAwareEntityHelper.updateEntityOnGit(noBranchName, data, scope))
+        .hasMessage("No branch provided for updating the file.");
   }
 
   @Data
@@ -256,6 +250,7 @@ public class GitAwareEntityHelperTest extends CategoryTest {
     String repo;
     String filePath;
     String data;
+    String branch;
 
     @Override
     public void setData(String data) {

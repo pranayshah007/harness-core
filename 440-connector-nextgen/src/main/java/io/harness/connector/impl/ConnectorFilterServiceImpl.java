@@ -26,6 +26,7 @@ import io.harness.NGCommonEntityConstants;
 import io.harness.NGResourceFilterConstants;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.ConnectorCategory;
+import io.harness.connector.ConnectorConnectivityMode;
 import io.harness.connector.ConnectorFilterPropertiesDTO;
 import io.harness.connector.entities.Connector.ConnectorKeys;
 import io.harness.connector.entities.embedded.ceawsconnector.CEAwsConfig.CEAwsConfigKeys;
@@ -150,6 +151,14 @@ public class ConnectorFilterServiceImpl implements ConnectorFilterService {
         connectorFilter.getDescription(), searchTerm, connectorFilter.getInheritingCredentialsFromDelegate());
     populateInFilter(criteria, ConnectorKeys.identifier, connectorFilter.getConnectorIdentifiers());
     populateInFilter(criteria, ConnectorKeys.connectionStatus, connectorFilter.getConnectivityStatuses());
+    List<Boolean> isExecuteOnDelegate = null;
+    if (isNotEmpty(connectorFilter.getConnectorConnectivityModes())) {
+      isExecuteOnDelegate = connectorFilter.getConnectorConnectivityModes()
+                                .stream()
+                                .map(mode -> mode.equals(ConnectorConnectivityMode.DELEGATE))
+                                .collect(Collectors.toList());
+    }
+    populateInFilter(criteria, ConnectorKeys.executeOnDelegate, isExecuteOnDelegate);
     CcmConnectorFilter ccmConnectorFilter = connectorFilter.getCcmConnectorFilter();
     if (ccmConnectorFilter != null) {
       populateCcmFilters(criteria, ccmConnectorFilter);

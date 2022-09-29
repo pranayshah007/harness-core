@@ -13,6 +13,7 @@ import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.beans.logstreaming.NGDelegateLogCallback;
 import io.harness.delegate.task.shell.ssh.ArtifactCommandUnitHandler;
+import io.harness.logging.DummyLogCallbackImpl;
 import io.harness.logging.LogCallback;
 import io.harness.shell.ScriptProcessExecutor;
 import io.harness.shell.ShellExecutorConfig;
@@ -51,5 +52,10 @@ public class ShellExecutorFactoryNG {
       boolean shouldOpenStream) {
     return new NGDelegateLogCallback(
         logStreamingTaskClient, shellExecutorConfig.getCommandUnitName(), shouldOpenStream, commandUnitsProgress);
+  }
+
+  public ScriptProcessExecutor getExecutor(
+      ShellExecutorConfig shellExecutorConfig, CommandUnitsProgress commandUnitsProgress) {
+    return new ScriptProcessExecutor(new DummyLogCallbackImpl(), false, shellExecutorConfig);
   }
 }

@@ -7,8 +7,10 @@
 
 package software.wings.service;
 
+import static io.harness.beans.FeatureName.CHANGE_INSTANCE_QUERY_OPERATOR_TO_NE;
 import static io.harness.beans.PageRequest.PageRequestBuilder.aPageRequest;
 import static io.harness.rule.OwnerRule.ABHINAV;
+import static io.harness.rule.OwnerRule.LUCAS_SALES;
 import static io.harness.rule.OwnerRule.RAMA;
 
 import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
@@ -17,12 +19,14 @@ import static software.wings.utils.WingsTestConstants.INFRA_MAPPING_ID;
 import static junit.framework.TestCase.assertEquals;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
 
 import io.harness.beans.PageResponse;
 import io.harness.beans.SearchFilter.Operator;
 import io.harness.category.element.UnitTests;
 import io.harness.data.structure.UUIDGenerator;
+import io.harness.ff.FeatureFlagService;
 import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
 
@@ -64,6 +68,7 @@ public class InstanceServiceTest extends WingsBaseTest {
   @Inject private AccountService accountService;
   @Mock private AppService appService;
   @Mock private Account account;
+  @Mock private FeatureFlagService featureFlagService;
 
   @Inject private HPersistence persistence;
   @InjectMocks @Inject private InstanceService instanceService;
@@ -123,6 +128,13 @@ public class InstanceServiceTest extends WingsBaseTest {
         .needRetry(needRetry)
         .isDeleted(isDeleted)
         .build();
+  }
+
+  private Instance buildInstanceWithLastWorkflowExecutionId(
+      String uuid, boolean isDeleted, Long deletedAt, boolean needRetry) {
+    Instance instance = buildInstance(uuid, isDeleted, deletedAt, needRetry);
+    instance.setLastWorkflowExecutionId("someId");
+    return instance;
   }
 
   @Test
@@ -312,5 +324,56 @@ public class InstanceServiceTest extends WingsBaseTest {
     assertThat(instance).isNull();
     final Instance instance_1 = instanceService.get(instancesNotToBeDeleted.get(0).getUuid(), true);
     assertThat(instance_1).isNotNull();
+  }
+
+  @Test
+  @Owner(developers = LUCAS_SALES)
+  @Category(UnitTests.class)
+  public void testGetLastDiscoveredInstance() {
+    doReturn(true).when(featureFlagService).isGlobalEnabled(CHANGE_INSTANCE_QUERY_OPERATOR_TO_NE);
+    List<Instance> instances = new ArrayList<>();
+    int a = 0;
+    while (a < 600) {
+      instances.add(
+          instanceService.save(buildInstance(UUIDGenerator.generateUuid(), false, System.currentTimeMillis(), false)));
+      instances.add(
+          instanceService.save(buildInstance(UUIDGenerator.generateUuid(), false, System.currentTimeMillis(), true)));
+      instances.add(
+          instanceService.save(buildInstance(UUIDGenerator.generateUuid(), true, System.currentTimeMillis(), false)));
+      instances.add(
+          instanceService.save(buildInstance(UUIDGenerator.generateUuid(), true, System.currentTimeMillis(), true)));
+      a += 4;
+    }
+    Instance instanceToBeFound = buildInstanceWithLastWorkflowExecutionId(
+        instanceId, true, System.currentTimeMillis() - TimeUnit.DAYS.toMillis(10), false);
+    instanceService.save(instanceToBeFound);
+
+    final Instance instanceFound = instanceService.getLastDiscoveredInstance(GLOBAL_APP_ID, INFRA_MAPPING_ID);
+
+    assertThat(instanceFound.getUuid()).isEqualTo(instanceToBeFound.getUuid());
+  }
+
+  @Test
+  @Owner(developers = LUCAS_SALES)
+  @Category(UnitTests.class)
+  public void testGetLastDiscoveredInstance_shouldReturn0() {
+    doReturn(true).when(featureFlagService).isGlobalEnabled(CHANGE_INSTANCE_QUERY_OPERATOR_TO_NE);
+    List<Instance> instances = new ArrayList<>();
+    int a = 0;
+    while (a < 600) {
+      instances.add(
+          instanceService.save(buildInstance(UUIDGenerator.generateUuid(), false, System.currentTimeMillis(), false)));
+      instances.add(
+          instanceService.save(buildInstance(UUIDGenerator.generateUuid(), false, System.currentTimeMillis(), true)));
+      instances.add(
+          instanceService.save(buildInstance(UUIDGenerator.generateUuid(), true, System.currentTimeMillis(), false)));
+      instances.add(
+          instanceService.save(buildInstance(UUIDGenerator.generateUuid(), true, System.currentTimeMillis(), true)));
+      a += 4;
+    }
+
+    final Instance instanceFound = instanceService.getLastDiscoveredInstance(GLOBAL_APP_ID, INFRA_MAPPING_ID);
+
+    assertThat(instanceFound).isNull();
   }
 }

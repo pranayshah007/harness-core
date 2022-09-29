@@ -21,7 +21,7 @@ import lombok.Data;
 
 @Data
 @Builder
-@JsonTypeName("Inline")
+@JsonTypeName(ShellScriptBaseSource.INLINE)
 @OwnedBy(CDC)
 @RecasterAlias("io.harness.steps.shellscript.ShellScriptInlineSource")
 public class ShellScriptInlineSource implements ShellScriptBaseSource {

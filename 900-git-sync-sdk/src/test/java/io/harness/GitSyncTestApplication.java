@@ -13,6 +13,7 @@ import static io.harness.packages.HarnessPackages.IO_HARNESS;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SampleBean;
+import io.harness.eventsframework.EventsFrameworkConfiguration;
 import io.harness.gitsync.AbstractGitSyncSdkModule;
 import io.harness.gitsync.GitSyncEntitiesConfiguration;
 import io.harness.gitsync.GitSyncSdkConfiguration;
@@ -20,6 +21,7 @@ import io.harness.gitsync.GitSyncSdkConfiguration.DeployMode;
 import io.harness.gitsync.GitSyncSdkInitHelper;
 import io.harness.gitsync.SampleBeanEntityGitPersistenceHelperServiceImpl;
 import io.harness.gitsync.interceptor.GitSyncThreadDecorator;
+import io.harness.gitsync.interceptor.GitXThreadDecorator;
 import io.harness.maintenance.MaintenanceController;
 
 import com.google.inject.Guice;
@@ -97,7 +99,8 @@ public class GitSyncTestApplication extends Application<GitSyncTestConfiguration
             .deployMode(DeployMode.REMOTE)
             .microservice(Microservice.PMS)
             .scmConnectionConfig(config.getScmConnectionConfig())
-            .eventsRedisConfig(config.getRedisConfig())
+            .eventsFrameworkConfiguration(
+                EventsFrameworkConfiguration.builder().redisConfig(config.getRedisConfig()).build())
             .serviceHeader(AuthorizationServiceHeader.PIPELINE_SERVICE)
             .gitSyncEntitiesConfiguration(gitSyncEntitiesConfigurations)
             .build();
@@ -129,6 +132,7 @@ public class GitSyncTestApplication extends Application<GitSyncTestConfiguration
     environment.jersey().register(JsonProcessingExceptionMapper.class);
     environment.jersey().register(EarlyEofExceptionMapper.class);
     environment.jersey().register(GitSyncThreadDecorator.class);
+    environment.jersey().register(GitXThreadDecorator.class);
     environment.jersey().register(MultiPartFeature.class);
   }
 }

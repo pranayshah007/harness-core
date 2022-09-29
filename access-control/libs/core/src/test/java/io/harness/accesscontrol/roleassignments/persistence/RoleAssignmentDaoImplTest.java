@@ -43,6 +43,7 @@ import io.harness.utils.PageTestUtils;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+import com.mongodb.BasicDBList;
 import io.serializer.HObjectMapper;
 import java.util.List;
 import java.util.Optional;
@@ -320,27 +321,34 @@ public class RoleAssignmentDaoImplTest extends AccessControlCoreTestBase {
       RoleAssignmentFilter roleAssignmentFilter, ArgumentCaptor<Criteria> criteriaArgumentCaptor) {
     Criteria criteria = criteriaArgumentCaptor.getValue();
     Document document = criteria.getCriteriaObject();
-    assertEquals(6, document.size());
+    assertEquals(2, document.size());
     if (roleAssignmentFilter.isIncludeChildScopes()) {
-      Pattern pattern = (Pattern) document.get(RoleAssignmentDBOKeys.scopeIdentifier);
+      BasicDBList orList = (BasicDBList) document.get("$or");
+      Document scopeCriteria = (Document) orList.get(0);
+      Pattern pattern = (Pattern) scopeCriteria.get(RoleAssignmentDBOKeys.scopeIdentifier);
       assertEquals("^" + roleAssignmentFilter.getScopeFilter(), pattern.toString());
     } else {
-      assertEquals(roleAssignmentFilter.getScopeFilter(), document.get(RoleAssignmentDBOKeys.scopeIdentifier));
+      BasicDBList orList = (BasicDBList) document.get("$or");
+      Document scopeCriteria = (Document) orList.get(0);
+      assertEquals(roleAssignmentFilter.getScopeFilter(), scopeCriteria.get(RoleAssignmentDBOKeys.scopeIdentifier));
     }
 
-    Document scopeLevelDocument = (Document) document.get(RoleAssignmentDBOKeys.scopeLevel);
+    BasicDBList andList = (BasicDBList) document.get("$and");
+    Document criteriaDocument = (Document) andList.get(0);
+
+    Document scopeLevelDocument = (Document) criteriaDocument.get(RoleAssignmentDBOKeys.scopeLevel);
     Set<?> inScopeLevelFilter = (Set<?>) scopeLevelDocument.get("$in");
     assertEquals(roleAssignmentFilter.getScopeLevelFilter(), inScopeLevelFilter);
-    Document resourceGroupDocument = (Document) document.get(RoleAssignmentDBOKeys.resourceGroupIdentifier);
+    Document resourceGroupDocument = (Document) criteriaDocument.get(RoleAssignmentDBOKeys.resourceGroupIdentifier);
     Set<?> inResourceGroupFilter = (Set<?>) resourceGroupDocument.get("$in");
     assertEquals(roleAssignmentFilter.getResourceGroupFilter(), inResourceGroupFilter);
-    Document roleDocument = (Document) document.get(RoleAssignmentDBOKeys.roleIdentifier);
+    Document roleDocument = (Document) criteriaDocument.get(RoleAssignmentDBOKeys.roleIdentifier);
     Set<?> inRoleFilter = (Set<?>) roleDocument.get("$in");
     assertEquals(roleAssignmentFilter.getRoleFilter(), inRoleFilter);
-    Document disabledDocument = (Document) document.get(RoleAssignmentDBOKeys.disabled);
+    Document disabledDocument = (Document) criteriaDocument.get(RoleAssignmentDBOKeys.disabled);
     Set<?> inDisabledFilter = (Set<?>) disabledDocument.get("$in");
     assertEquals(roleAssignmentFilter.getDisabledFilter(), inDisabledFilter);
-    Document principalTypeDocument = (Document) document.get(RoleAssignmentDBOKeys.principalType);
+    Document principalTypeDocument = (Document) criteriaDocument.get(RoleAssignmentDBOKeys.principalType);
     Set<?> inPrincipalTypeFilter = (Set<?>) principalTypeDocument.get("$in");
     assertEquals(roleAssignmentFilter.getPrincipalTypeFilter(), inPrincipalTypeFilter);
   }

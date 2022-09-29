@@ -53,7 +53,6 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.UriInfo;
 
 @Api("webhook")
 @Path("webhook")
@@ -275,8 +274,7 @@ public interface NGTriggerWebhookConfigResource {
       @Parameter(description = PipelineResourceConstants.PIPELINE_ID_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PIPELINE_KEY) String pipelineIdentifier,
       @Parameter(description = "Trigger Key") @QueryParam(TRIGGER_KEY) String triggerIdentifier,
-      @Parameter(description = "Trigger Payload") @NotNull String eventPayload, @Context HttpHeaders httpHeaders,
-      @Context UriInfo uriInfo);
+      @Parameter(description = "Trigger Payload") @NotNull String eventPayload, @Context HttpHeaders httpHeaders);
 
   @GET
   @Operation(operationId = "fetchWebhookDetails", summary = "Gets webhook event processing details for input eventId.",

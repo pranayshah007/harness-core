@@ -11,6 +11,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.utils.FilePathUtils.FILE_PATH_SEPARATOR;
 import static io.harness.utils.FilePathUtils.removeStartingAndEndingSlash;
 
+import io.harness.annotation.RecasterFieldName;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
@@ -60,6 +61,7 @@ import org.hibernate.validator.constraints.NotBlank;
 public class BitbucketConnectorDTO
     extends ConnectorConfigDTO implements ScmConnector, DelegateSelectable, ManagerExecutable {
   @NotNull
+  @RecasterFieldName(name = "type")
   @JsonProperty("type")
   @Schema(type = "string", allowableValues = {"Account", "Repo"})
   private GitConnectionType connectionType;
@@ -161,6 +163,7 @@ public class BitbucketConnectorDTO
   @Override
   public void validate() {
     GitClientHelper.validateURL(url);
+    validateUsername();
   }
 
   private GitRepositoryDTO getGitRepositoryDetailsForBitbucketServer() {
@@ -200,5 +203,32 @@ public class BitbucketConnectorDTO
     }
     return String.format("%s/projects/%s/repos/%s/browse/%s?at=refs/heads/%s", hostUrl,
         getGitRepositoryDetails().getOrg(), getGitRepositoryDetails().getName(), filePath, branchName);
+  }
+
+  /*
+    Since bitbucket connector can take two usernames (in authentication and apiAccess) there is a limitation
+    right now that both have to be of same type, either as secret or plain text.
+   */
+  private void validateUsername() {
+    if (authentication != null && authentication.getCredentials() != null
+        && authentication.getAuthType() == GitAuthType.HTTP) {
+      BitbucketHttpCredentialsDTO bitbucketHttpCredentialsSpecDTO =
+          (BitbucketHttpCredentialsDTO) authentication.getCredentials();
+      if (bitbucketHttpCredentialsSpecDTO.getType() == BitbucketHttpAuthenticationType.USERNAME_AND_PASSWORD) {
+        BitbucketUsernamePasswordDTO bitbucketUsernamePasswordDTO =
+            (BitbucketUsernamePasswordDTO) bitbucketHttpCredentialsSpecDTO.getHttpCredentialsSpec();
+        if (apiAccess != null && apiAccess.getSpec() != null
+            && apiAccess.getType() == BitbucketApiAccessType.USERNAME_AND_TOKEN) {
+          BitbucketUsernameTokenApiAccessDTO bitbucketUsernameTokenApiAccessDTO =
+              (BitbucketUsernameTokenApiAccessDTO) apiAccess.getSpec();
+          if ((bitbucketUsernamePasswordDTO.getUsernameRef() == null
+                  && bitbucketUsernameTokenApiAccessDTO.getUsernameRef() != null)
+              || (bitbucketUsernamePasswordDTO.getUsernameRef() != null
+                  && bitbucketUsernameTokenApiAccessDTO.getUsernameRef() == null)) {
+            throw new InvalidRequestException("Both usernames should be set either as secret or plain text");
+          }
+        }
+      }
+    }
   }
 }

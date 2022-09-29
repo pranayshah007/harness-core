@@ -55,7 +55,6 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.ArtifactMetadata;
 import io.harness.beans.DelegateTask;
 import io.harness.beans.ExecutionStatus;
-import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.delay.DelayEventHelper;
 import io.harness.ff.FeatureFlagService;
@@ -204,7 +203,8 @@ public class ArtifactCollectionStateTest extends CategoryTest {
     FieldUtils.writeField(executionContext, "featureFlagService", featureFlagService, true);
 
     WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService =
-        new WorkflowStandardParamsExtensionService(appService, accountService, artifactService, null, null, null);
+        new WorkflowStandardParamsExtensionService(
+            appService, accountService, artifactService, null, null, null, featureFlagService);
     ContextElementParamMapperFactory contextElementParamMapperFactory = new ContextElementParamMapperFactory(
         subdomainUrlHelper, workflowExecutionService, artifactService, artifactStreamService, null, featureFlagService,
         buildSourceService, workflowStandardParamsExtensionService);
@@ -221,7 +221,6 @@ public class ArtifactCollectionStateTest extends CategoryTest {
     when(artifactService.fetchLastCollectedApprovedArtifactForArtifactStream(jenkinsArtifactStream))
         .thenReturn(anArtifact().withAppId(APP_ID).withStatus(Status.APPROVED).build());
     when(delayEventHelper.delay(anyInt(), any())).thenReturn("anyGUID");
-    when(featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, ACCOUNT_ID)).thenReturn(false);
     when(subdomainUrlHelper.getPortalBaseUrl(any())).thenReturn("baseUrl");
     nexusArtifactStream.setArtifactStreamParameterized(true);
   }

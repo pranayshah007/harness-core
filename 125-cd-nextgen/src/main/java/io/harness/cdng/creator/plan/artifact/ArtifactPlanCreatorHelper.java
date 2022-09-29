@@ -7,8 +7,11 @@
 package io.harness.cdng.creator.plan.artifact;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.artifact.bean.yaml.CustomArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.customartifact.CustomScriptInlineSource;
 import io.harness.cdng.artifact.steps.ArtifactStep;
 import io.harness.cdng.artifact.steps.ArtifactStepParameters;
 import io.harness.cdng.artifact.steps.ArtifactSyncStep;
@@ -23,18 +26,37 @@ import lombok.experimental.UtilityClass;
 @UtilityClass
 public class ArtifactPlanCreatorHelper {
   public StepType getStepType(ArtifactStepParameters artifactStepParameters) {
-    if (ArtifactSourceType.CUSTOM_ARTIFACT == artifactStepParameters.getType()) {
-      return ArtifactSyncStep.STEP_TYPE;
+    if (shouldCreateDelegateTask(artifactStepParameters)) {
+      return ArtifactStep.STEP_TYPE;
     }
 
-    return ArtifactStep.STEP_TYPE;
+    return ArtifactSyncStep.STEP_TYPE;
   }
 
   public FacilitatorType getFacilitatorType(ArtifactStepParameters artifactStepParameters) {
-    if (ArtifactSourceType.CUSTOM_ARTIFACT == artifactStepParameters.getType()) {
-      return FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.SYNC).build();
+    if (shouldCreateDelegateTask(artifactStepParameters)) {
+      return FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.TASK).build();
     }
 
-    return FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.TASK).build();
+    return FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.SYNC).build();
+  }
+
+  public boolean shouldCreateDelegateTask(ArtifactStepParameters artifactStepParameters) {
+    if (ArtifactSourceType.CUSTOM_ARTIFACT == artifactStepParameters.getType()
+        && ((CustomArtifactConfig) artifactStepParameters.getSpec()).getScripts() == null) {
+      return false;
+    } else if (ArtifactSourceType.CUSTOM_ARTIFACT == artifactStepParameters.getType()) {
+      CustomScriptInlineSource customScriptInlineSource =
+          (CustomScriptInlineSource) ((CustomArtifactConfig) artifactStepParameters.getSpec())
+              .getScripts()
+              .getFetchAllArtifacts()
+              .getShellScriptBaseStepInfo()
+              .getSource()
+              .getSpec();
+      if (isEmpty(customScriptInlineSource.getScript().getValue().trim())) {
+        return false;
+      }
+    }
+    return true;
   }
 }

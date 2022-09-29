@@ -52,7 +52,6 @@ import org.hibernate.validator.constraints.NotEmpty;
 @Produces("application/json")
 @Scope(DELEGATE_SCOPE)
 @AuthRule(permissionType = LOGGED_IN)
-@ApiKeyAuthorized(permissionType = LOGGED_IN)
 @TargetModule(HarnessModule._420_DELEGATE_SERVICE)
 @OwnedBy(DEL)
 public class DelegateScopeResource {
@@ -68,6 +67,7 @@ public class DelegateScopeResource {
       { @ApiImplicitParam(name = "accountId", required = true, dataType = "string", paramType = "query") })
   @Timed
   @ExceptionMetered
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
   public RestResponse<PageResponse<DelegateScope>>
   list(@BeanParam PageRequest<DelegateScope> pageRequest) {
     return new RestResponse<>(delegateScopeService.list(pageRequest));
@@ -77,6 +77,7 @@ public class DelegateScopeResource {
   @Path("{delegateScopeId}")
   @Timed
   @ExceptionMetered
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
   public RestResponse<DelegateScope> get(@PathParam("delegateScopeId") @NotEmpty String delegateScopeId,
       @QueryParam("accountId") @NotEmpty String accountId) {
     return new RestResponse<>(delegateScopeService.get(accountId, delegateScopeId));
@@ -88,6 +89,7 @@ public class DelegateScopeResource {
   @Path("{delegateScopeId}")
   @Timed
   @ExceptionMetered
+  @ApiKeyAuthorized(permissionType = MANAGE_DELEGATES)
   public RestResponse<Void> delete(@PathParam("delegateScopeId") @NotEmpty String delegateScopeId,
       @QueryParam("accountId") @NotEmpty String accountId) {
     delegateScopeService.delete(accountId, delegateScopeId);
@@ -100,6 +102,7 @@ public class DelegateScopeResource {
   @Path("{delegateScopeId}")
   @Timed
   @ExceptionMetered
+  @ApiKeyAuthorized(permissionType = MANAGE_DELEGATES)
   public RestResponse<DelegateScope> update(@PathParam("delegateScopeId") @NotEmpty String delegateScopeId,
       @QueryParam("accountId") @NotEmpty String accountId, DelegateScope delegateScope) {
     delegateScope.setAccountId(accountId);
@@ -110,6 +113,7 @@ public class DelegateScopeResource {
   @AuthRule(permissionType = ACCOUNT_MANAGEMENT)
   @AuthRule(permissionType = MANAGE_DELEGATES)
   @POST
+  @ApiKeyAuthorized(permissionType = MANAGE_DELEGATES)
   public RestResponse<DelegateScope> add(
       @QueryParam("accountId") @NotEmpty String accountId, DelegateScope delegateScope) {
     delegateScope.setAccountId(accountId);

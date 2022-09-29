@@ -20,6 +20,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Optional;
+import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
@@ -35,7 +36,7 @@ import lombok.NoArgsConstructor;
 @OwnedBy(CDP)
 public class WinRmCredentialsSpecDTO extends SecretSpecDTO {
   @Schema(description = "WinRm port") @DefaultValue("5986") int port = 5986;
-  @NotNull WinRmAuthDTO auth;
+  @Valid @NotNull WinRmAuthDTO auth;
 
   @Override
   @JsonIgnore

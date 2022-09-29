@@ -118,14 +118,6 @@ ngIteratorsConfig:
 #connectionsPerHost : 300
 #indexManagerMode : AUTO
 
-pmsMongo:
-  uri: mongodb://localhost:27017/pms-harness
-  connectTimeout: 30000
-  serverSelectionTimeout: 90000
-  maxConnectionIdleTime: 600000
-  connectionsPerHost: 300
-  indexManagerMode: AUTO
-
 managerClientConfig:
   baseUrl: http://localhost:3457/api/
   connectTimeOutSeconds: 15
@@ -236,7 +228,7 @@ eventsFramework:
       CATrustStorePath: "/tmp/ca_trust_store"
       CATrustStorePassword: ""
 
-distributedLockImplementation: MONGO
+distributedLockImplementation: REDIS
 
 redisLockConfig:
   sentinel: false
@@ -458,6 +450,8 @@ opaClientConfig:
   connectTimeOutSeconds: 15
   readTimeOutSeconds: 15
 
+opaConnectivityEnabled: false
+
 secretsConfiguration:
   secretResolutionEnabled: false
   gcpSecretManagerProject: harness-playground
@@ -472,3 +466,5 @@ debeziumConsumerConfigs:
   - debeziumTopicName: ${DEBEZIUM_CONSUMER_TOPIC_NAME:-DEBEZIUM_pmsMongo.pms-harness.planExecutionsSummary}
     debeziumNumberOfThreads: ${DEBEZIUM_CONSUMER_THREADS:-2}
     debeziumBatchSize: ${DEBEZIUM_CONSUMER_BATCH_SIZE:-100}
+
+cdTsDbRetentionPeriodMonths: 7

@@ -9,10 +9,12 @@ package io.harness.gitsync.core.fullsync.entity;
 
 import static io.harness.annotations.dev.HarnessTeam.DX;
 
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.iterator.PersistentRegularIterable;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.FdUniqueIndex;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.PersistentEntity;
 import io.harness.security.dto.UserPrincipal;
 
@@ -37,6 +39,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = false)
+@StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "gitFullSyncJob", noClassnameStored = true)
 @Document("gitFullSyncJob")
 @TypeAlias("io.harness.gitsync.core.beans.gitFullSyncJob")

@@ -77,8 +77,10 @@ public class TemplateYamlConversionHelper {
       JsonNode fieldsToAdd = JsonPipelineUtils.asTree(templateYamlConversionRecord.getFieldsToAdd());
       if (fieldPlacementStrategy.equals(FieldPlacementStrategy.PARALLEL)) {
         String path = templateYamlConversionRecord.getPath();
-        String updatedPath = path.substring(0, path.lastIndexOf('/'));
-        YamlNodeUtils.addToPath(yamlField.getNode(), updatedPath, fieldsToAdd);
+        if (path.lastIndexOf('/') >= 0) {
+          path = path.substring(0, path.lastIndexOf('/'));
+        }
+        YamlNodeUtils.addToPath(yamlField.getNode(), path, fieldsToAdd);
       } else if (fieldPlacementStrategy.equals(FieldPlacementStrategy.REPLACE)) {
         yamlField.getNode().replacePath(templateYamlConversionRecord.getPath(), fieldsToAdd);
       }

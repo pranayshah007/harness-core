@@ -14,10 +14,11 @@ import io.harness.ng.core.dto.secrets.SSHKeySpecDTO;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import java.util.List;
+import java.util.Set;
 
 @OwnedBy(CDP)
 public interface SshInfraDelegateConfig {
-  List<String> getHosts();
+  Set<String> getHosts();
   List<EncryptedDataDetail> getEncryptionDataDetails();
   SSHKeySpecDTO getSshKeySpecDto();
 }

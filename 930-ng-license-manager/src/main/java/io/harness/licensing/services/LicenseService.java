@@ -20,15 +20,25 @@ import java.util.Map;
 import java.util.Set;
 
 public interface LicenseService extends LicenseCrudService {
-  ModuleLicenseDTO startFreeLicense(String accountIdentifier, ModuleType moduleType);
+  ModuleLicenseDTO startFreeLicense(String accountIdentifier, ModuleType moduleType, String referer);
+
   ModuleLicenseDTO startCommunityLicense(String accountIdentifier, ModuleType moduleType);
-  ModuleLicenseDTO startTrialLicense(String accountIdentifier, StartTrialDTO startTrialRequestDTO);
+
+  ModuleLicenseDTO startTrialLicense(String accountIdentifier, StartTrialDTO startTrialRequestDTO, String referer);
+
   ModuleLicenseDTO extendTrialLicense(String accountIdentifier, StartTrialDTO startTrialRequestDTO);
+
   CheckExpiryResultDTO checkExpiry(String accountIdentifier);
+
   void softDelete(String accountIdentifier);
+
   LicensesWithSummaryDTO getLicenseSummary(String accountIdentifier, ModuleType moduleType);
+
   Edition calculateAccountEdition(String accountIdentifier);
+
   Map<Edition, Set<EditionActionDTO>> getEditionActions(String accountIdentifier, ModuleType moduleType);
+
   Map<ModuleType, Long> getLastUpdatedAtMap(String accountIdentifier);
+
   List<ModuleLicenseDTO> getAllModuleLicences(String accountIdentifier);
 }

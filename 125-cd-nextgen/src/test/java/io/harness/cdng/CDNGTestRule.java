@@ -63,6 +63,7 @@ import io.harness.rule.Cache;
 import io.harness.rule.InjectorRuleMixin;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.secrets.remote.SecretNGManagerClient;
+import io.harness.secrets.services.PrivilegedSecretNGManagerClientServiceImpl;
 import io.harness.serializer.CDNGRegistrars;
 import io.harness.serializer.KryoModule;
 import io.harness.serializer.KryoRegistrar;
@@ -213,6 +214,9 @@ public class CDNGTestRule implements InjectorRuleMixin, MethodRule, MongoRuleMix
             .annotatedWith(Names.named(DEFAULT_CONNECTOR_SERVICE))
             .toInstance(Mockito.mock(ConnectorService.class));
         bind(SecretManagerClientService.class).toInstance(mock(SecretManagerClientService.class));
+        bind(SecretManagerClientService.class)
+            .annotatedWith(Names.named(ClientMode.PRIVILEGED.name()))
+            .toInstance(mock(PrivilegedSecretNGManagerClientServiceImpl.class));
         bind(DSLContext.class).toInstance(mock(DSLContext.class));
         bind(DelegateServiceGrpcClient.class).toInstance(mock(DelegateServiceGrpcClient.class));
         bind(DelegateSyncService.class).toInstance(mock(DelegateSyncService.class));

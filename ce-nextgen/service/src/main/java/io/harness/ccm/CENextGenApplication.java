@@ -31,6 +31,7 @@ import io.harness.enforcement.client.usage.RestrictionUsageInterface;
 import io.harness.enforcement.constants.FeatureRestrictionName;
 import io.harness.ff.FeatureFlagConfig;
 import io.harness.ff.FeatureFlagService;
+import io.harness.govern.ProviderModule;
 import io.harness.health.HealthService;
 import io.harness.licensing.usage.resources.LicenseUsageResource;
 import io.harness.maintenance.MaintenanceController;
@@ -64,6 +65,9 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Key;
 import com.google.inject.Module;
+import com.google.inject.Provides;
+import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import com.google.inject.name.Names;
 import io.dropwizard.Application;
 import io.dropwizard.configuration.ConfigurationSourceProvider;
@@ -152,6 +156,14 @@ public class CENextGenApplication extends Application<CENextGenConfiguration> {
     ConfigSecretUtils.resolveSecrets(configuration.getSecretsConfiguration(), configuration);
 
     List<Module> modules = new ArrayList<>();
+    modules.add(new ProviderModule() {
+      @Provides
+      @Singleton
+      @Named("dbAliases")
+      public List<String> getDbAliases() {
+        return configuration.getDbAliases();
+      }
+    });
     modules.add(new CENextGenModule(configuration));
     modules.add(new MetricRegistryModule(metricRegistry));
     modules.add(NGMigrationSdkModule.getInstance());

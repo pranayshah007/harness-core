@@ -25,6 +25,7 @@ import io.harness.batch.processing.cleanup.CEDataCleanupRequestService;
 import io.harness.batch.processing.config.BatchMainConfig;
 import io.harness.batch.processing.config.GcpScheduledQueryTriggerAction;
 import io.harness.batch.processing.connectors.ConnectorsHealthUpdateService;
+import io.harness.batch.processing.events.timeseries.service.intfc.CostEventService;
 import io.harness.batch.processing.metrics.ProductMetricsService;
 import io.harness.batch.processing.reports.ScheduledReportServiceImpl;
 import io.harness.batch.processing.service.AccountExpiryCleanupService;
@@ -34,6 +35,7 @@ import io.harness.batch.processing.service.impl.BatchJobRunningModeContext;
 import io.harness.batch.processing.service.impl.BatchJobTypeLogContext;
 import io.harness.batch.processing.service.impl.InstanceDataServiceImpl;
 import io.harness.batch.processing.service.intfc.BillingDataPipelineHealthStatusService;
+import io.harness.batch.processing.service.intfc.InstanceInfoTimescaleDAO;
 import io.harness.batch.processing.shard.AccountShardService;
 import io.harness.batch.processing.tasklet.support.HarnessServiceInfoFetcher;
 import io.harness.batch.processing.tasklet.support.K8SWorkloadService;
@@ -41,6 +43,7 @@ import io.harness.batch.processing.tasklet.support.K8sLabelServiceInfoFetcher;
 import io.harness.batch.processing.view.CEMetaDataRecordUpdateService;
 import io.harness.batch.processing.view.ViewCostUpdateService;
 import io.harness.beans.FeatureName;
+import io.harness.ccm.commons.dao.recommendation.K8sRecommendationDAO;
 import io.harness.cf.client.api.CfClient;
 import io.harness.cf.client.dto.Target;
 import io.harness.ff.FeatureFlagService;
@@ -96,6 +99,9 @@ public class EventJobScheduler {
   @Autowired private AwsAccountTagsCollectionService awsAccountTagsCollectionService;
   @Autowired private UtilizationDataServiceImpl utilizationDataService;
   @Autowired private PodCountComputationServiceImpl podCountComputationService;
+  @Autowired private CostEventService costEventService;
+  @Autowired private K8sRecommendationDAO k8sRecommendationDAO;
+  @Autowired private InstanceInfoTimescaleDAO instanceInfoTimescaleDAO;
 
   @PostConstruct
   public void orderJobs() {
@@ -164,10 +170,11 @@ public class EventJobScheduler {
     runCloudEfficiencyEventJobs(BatchJobBucket.OTHERS, true);
   }
 
-  @Scheduled(cron = "0 * * ? * *")
-  public void runGcpScheduledQueryJobs() {
-    accountShardService.getCeEnabledAccountIds().forEach(account -> gcpScheduledQueryTriggerAction.execute(account));
-  }
+  //  @Scheduled(cron = "0 * * ? * *")
+  //  public void runGcpScheduledQueryJobs() {
+  //    accountShardService.getCeEnabledAccountIds().forEach(account ->
+  //    gcpScheduledQueryTriggerAction.execute(account));
+  //  }
 
   @Scheduled(cron = "0 0 8 * * ?")
   public void runTimescalePurgeJob() {
@@ -207,6 +214,30 @@ public class EventJobScheduler {
         billingDataService.purgeOldHourlyBillingData(BatchJobType.INSTANCE_BILLING_HOURLY_AGGREGATION);
       } catch (Exception ex) {
         log.error("Exception while running purgeOldHourlyBillingData Job", ex);
+      }
+
+      try {
+        instanceInfoTimescaleDAO.purgePodInfo();
+      } catch (Exception ex) {
+        log.error("Exception while running purgePodInfo Job", ex);
+      }
+
+      try {
+        instanceInfoTimescaleDAO.deleteWorkloadInfo();
+      } catch (Exception ex) {
+        log.error("Exception while running deleteWorkloadInfo Job", ex);
+      }
+
+      try {
+        costEventService.purgeCostEventData();
+      } catch (Exception ex) {
+        log.error("Exception while running purgeCostEventData Job", ex);
+      }
+
+      try {
+        k8sRecommendationDAO.deleteOldRecommendationData();
+      } catch (Exception ex) {
+        log.error("Exception while running deleteOldRecommendationData Job", ex);
       }
     }
   }

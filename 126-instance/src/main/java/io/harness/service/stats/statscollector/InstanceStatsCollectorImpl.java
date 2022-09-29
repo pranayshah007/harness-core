@@ -76,7 +76,7 @@ public class InstanceStatsCollectorImpl implements StatsCollector {
   }
 
   private boolean createStats(String accountId, Instant instant) {
-    List<InstanceDTO> instances = null;
+    List<InstanceDTO> instances;
     try {
       if (isRecentCollection(instant)) {
         instances = instanceService.getActiveInstancesByAccount(accountId, -1);

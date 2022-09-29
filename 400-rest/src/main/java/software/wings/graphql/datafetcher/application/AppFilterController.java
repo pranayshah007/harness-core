@@ -24,13 +24,11 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
-import io.harness.beans.FeatureName;
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
 import io.harness.beans.SearchFilter;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnexpectedException;
-import io.harness.ff.FeatureFlagService;
 
 import software.wings.beans.Application;
 import software.wings.graphql.schema.type.QLAppFilter;
@@ -52,7 +50,6 @@ import java.util.stream.Collectors;
 @TargetModule(HarnessModule._380_CG_GRAPHQL)
 public class AppFilterController {
   @Inject private AppService appService;
-  @Inject private FeatureFlagService featureFlagService;
 
   public void validateAppFilter(QLAppFilter appFilter, String accountId) {
     if (appFilter == null) {
@@ -63,10 +60,6 @@ public class AppFilterController {
     }
     if (isNotEmpty(appFilter.getAppIds()) && appFilter.getFilterType() == QLAppFilterType.ALL) {
       throw new InvalidRequestException("Cannot set both appIds and filterType ALL in app filter");
-    }
-    if (!featureFlagService.isEnabled(FeatureName.CG_RBAC_EXCLUSION, accountId)
-        && QLAppFilterType.EXCLUDE_SELECTED.equals(appFilter.getFilterType())) {
-      throw new InvalidRequestException("Invalid Request: Please provide a valid application filter");
     }
     checkApplicationsExists(appFilter.getAppIds(), accountId);
   }

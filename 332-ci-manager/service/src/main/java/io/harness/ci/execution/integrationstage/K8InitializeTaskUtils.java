@@ -53,7 +53,6 @@ import static java.lang.String.format;
 import static org.apache.commons.lang3.CharUtils.isAsciiAlphanumeric;
 
 import io.harness.EntityType;
-import io.harness.ModuleType;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
@@ -94,15 +93,10 @@ import io.harness.delegate.beans.ci.pod.PVCVolume;
 import io.harness.delegate.beans.ci.pod.PodToleration;
 import io.harness.delegate.beans.ci.pod.PodVolume;
 import io.harness.delegate.beans.ci.pod.SecretVariableDetails;
-import io.harness.delegate.task.citasks.cik8handler.params.CIConstants;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ngexception.CIStageExecutionException;
-import io.harness.licensing.Edition;
-import io.harness.licensing.beans.summary.LicensesWithSummaryDTO;
-import io.harness.licensing.remote.NgLicenseHttpClient;
 import io.harness.ng.core.EntityDetail;
 import io.harness.ng.core.NGAccess;
-import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.rbac.PipelineRbacHelper;
@@ -130,7 +124,6 @@ import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
 import org.jetbrains.annotations.NotNull;
-import retrofit2.Response;
 
 @Singleton
 @Slf4j
@@ -145,7 +138,6 @@ public class K8InitializeTaskUtils {
   @Inject private CIFeatureFlagService featureFlagService;
   @Inject private SecretUtils secretUtils;
   @Inject private PipelineRbacHelper pipelineRbacHelper;
-  @Inject private NgLicenseHttpClient ngLicenseHttpClient;
 
   private final Duration RETRY_SLEEP_DURATION = Duration.ofSeconds(2);
   private final int MAX_ATTEMPTS = 3;
@@ -623,25 +615,5 @@ public class K8InitializeTaskUtils {
     IdentifierRef connectorRef =
         IdentifierRefHelper.getIdentifierRef(secretIdentifier, accountIdentifier, orgIdentifier, projectIdentifier);
     return EntityDetail.builder().entityRef(connectorRef).type(EntityType.SECRETS).build();
-  }
-
-  public Long getLimitTtl(NGAccess ngAccess) {
-    Response<ResponseDTO<LicensesWithSummaryDTO>> license = null;
-
-    try {
-      license =
-          ngLicenseHttpClient.getLicenseSummary(ngAccess.getAccountIdentifier(), ModuleType.CI.toString()).execute();
-
-      if (license.isSuccessful()) {
-        ResponseDTO<LicensesWithSummaryDTO> responseDTO = license.body();
-        if (responseDTO.getData().getEdition() == Edition.FREE) {
-          return CIConstants.POD_MAX_TTL_SECS_HOSTED_FREE;
-        }
-      }
-    } catch (Exception e) {
-      return CIConstants.POD_MAX_TTL_SECS;
-    }
-
-    return CIConstants.POD_MAX_TTL_SECS;
   }
 }

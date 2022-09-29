@@ -17,8 +17,10 @@ import static io.harness.eraro.ErrorCode.INVALID_REQUEST;
 import static io.harness.eraro.ErrorCode.SECRET_MANAGEMENT_ERROR;
 import static io.harness.exception.WingsException.SRE;
 import static io.harness.exception.WingsException.USER;
+import static io.harness.helpers.GlobalSecretManagerUtils.isNgHarnessSecretManager;
 import static io.harness.secretmanagerclient.SecretType.SecretFile;
 import static io.harness.secretmanagerclient.SecretType.SecretText;
+import static io.harness.secretmanagerclient.ValueType.CustomSecretManagerValues;
 import static io.harness.secretmanagerclient.ValueType.Inline;
 import static io.harness.secretmanagerclient.ValueType.Reference;
 import static io.harness.security.SimpleEncryption.CHARSET;
@@ -30,11 +32,16 @@ import static io.harness.security.encryption.SecretManagerType.VAULT;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
+import io.harness.beans.DecryptedSecretValue;
 import io.harness.beans.FeatureName;
 import io.harness.beans.SecretManagerConfig;
+import io.harness.connector.ConnectorDTO;
+import io.harness.connector.helper.CustomSecretManagerHelper;
 import io.harness.connector.services.NGConnectorSecretManagerService;
+import io.harness.delegate.beans.connector.customsecretmanager.CustomSecretManagerConnectorDTO;
 import io.harness.encryption.Scope;
 import io.harness.encryption.SecretRefData;
+import io.harness.encryptors.CustomEncryptorsRegistry;
 import io.harness.encryptors.KmsEncryptorsRegistry;
 import io.harness.encryptors.VaultEncryptorsRegistry;
 import io.harness.exception.InvalidRequestException;
@@ -48,12 +55,15 @@ import io.harness.ng.core.dto.secrets.SecretFileSpecDTO;
 import io.harness.ng.core.dto.secrets.SecretTextSpecDTO;
 import io.harness.ng.core.entities.NGEncryptedData;
 import io.harness.ng.core.entities.NGEncryptedData.NGEncryptedDataBuilder;
+import io.harness.pms.yaml.YamlUtils;
+import io.harness.secretmanagerclient.dto.CustomSecretManagerConfigDTO;
 import io.harness.secretmanagerclient.dto.LocalConfigDTO;
 import io.harness.secretmanagerclient.dto.SecretManagerConfigDTO;
 import io.harness.secretmanagerclient.dto.VaultConfigDTO;
 import io.harness.secretmanagerclient.remote.SecretManagerClient;
 import io.harness.secrets.SecretsFileService;
 import io.harness.security.encryption.EncryptedDataDetail;
+import io.harness.security.encryption.EncryptedDataParams;
 import io.harness.security.encryption.EncryptedRecord;
 import io.harness.security.encryption.EncryptedRecordData;
 import io.harness.security.encryption.EncryptionConfig;
@@ -62,7 +72,10 @@ import io.harness.security.encryption.SecretManagerType;
 import io.harness.utils.featureflaghelper.NGFeatureFlagHelperService;
 
 import software.wings.beans.BaseVaultConfig;
+import software.wings.beans.CustomSecretNGManagerConfig;
+import software.wings.beans.NameValuePairWithDefault;
 import software.wings.service.impl.security.GlobalEncryptDecryptClient;
+import software.wings.service.impl.security.NGEncryptorService;
 import software.wings.settings.SettingVariableTypes;
 
 import com.google.common.io.ByteStreams;
@@ -77,6 +90,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import javax.validation.constraints.NotNull;
@@ -98,13 +112,17 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
   private final GlobalEncryptDecryptClient globalEncryptDecryptClient;
   private final NGConnectorSecretManagerService ngConnectorSecretManagerService;
   private final NGFeatureFlagHelperService ngFeatureFlagHelperService;
+  private final CustomEncryptorsRegistry customEncryptorsRegistry;
+  private final CustomSecretManagerHelper customSecretManagerHelper;
+  private final NGEncryptorService ngEncryptorService;
 
   @Inject
   public NGEncryptedDataServiceImpl(NGEncryptedDataDao encryptedDataDao, KmsEncryptorsRegistry kmsEncryptorsRegistry,
       VaultEncryptorsRegistry vaultEncryptorsRegistry, SecretsFileService secretsFileService,
       SecretManagerClient secretManagerClient, GlobalEncryptDecryptClient globalEncryptDecryptClient,
       NGConnectorSecretManagerService ngConnectorSecretManagerService,
-      NGFeatureFlagHelperService ngFeatureFlagHelperService) {
+      NGFeatureFlagHelperService ngFeatureFlagHelperService, CustomEncryptorsRegistry customEncryptorsRegistry,
+      CustomSecretManagerHelper customSecretManagerHelper, NGEncryptorService ngEncryptorService) {
     this.encryptedDataDao = encryptedDataDao;
     this.kmsEncryptorsRegistry = kmsEncryptorsRegistry;
     this.vaultEncryptorsRegistry = vaultEncryptorsRegistry;
@@ -112,6 +130,9 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
     this.globalEncryptDecryptClient = globalEncryptDecryptClient;
     this.ngConnectorSecretManagerService = ngConnectorSecretManagerService;
     this.ngFeatureFlagHelperService = ngFeatureFlagHelperService;
+    this.customEncryptorsRegistry = customEncryptorsRegistry;
+    this.customSecretManagerHelper = customSecretManagerHelper;
+    this.ngEncryptorService = ngEncryptorService;
   }
 
   @Override
@@ -125,15 +146,50 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
 
     NGEncryptedData encryptedData = buildNGEncryptedData(accountIdentifier, dto, secretManager);
 
-    if (Inline.equals(secret.getValueType())) {
-      if (isReadOnlySecretManager(secretManager)) {
-        throw new SecretManagementException(SECRET_MANAGEMENT_ERROR, READ_ONLY_SECRET_MANAGER_ERROR, USER);
-      }
-      encrypt(encryptedData, secret.getValue(), SecretManagerConfigMapper.fromDTO(secretManager));
-    } else {
-      validatePath(encryptedData.getPath(), encryptedData.getEncryptionType());
+    switch (secret.getValueType()) {
+      case Inline:
+        if (isReadOnlySecretManager(secretManager)) {
+          throw new SecretManagementException(SECRET_MANAGEMENT_ERROR, READ_ONLY_SECRET_MANAGER_ERROR, USER);
+        }
+        encrypt(encryptedData, secret.getValue(), SecretManagerConfigMapper.fromDTO(secretManager));
+        break;
+      case Reference:
+        validatePath(encryptedData.getPath(), encryptedData.getEncryptionType());
+        break;
+      case CustomSecretManagerValues:
+        // At the time of creation, ensure secret exist.
+        validateCustomSecretManagerPathValue(accountIdentifier, encryptedData, secretManager, secret.getValue());
+        break;
+      default:
+        throw new RuntimeException("Secret value type is unknown");
     }
     return encryptedDataDao.save(encryptedData);
+  }
+
+  private void validateCustomSecretManagerPathValue(
+      String accountIdentifier, NGEncryptedData encryptedData, SecretManagerConfigDTO secretManager, String value) {
+    CustomSecretManagerConfigDTO customSecretManagerConfigDTO = (CustomSecretManagerConfigDTO) secretManager;
+    ConnectorDTO connectorDTO = ngConnectorSecretManagerService.getConnectorDTO(
+        customSecretManagerConfigDTO.getAccountIdentifier(), customSecretManagerConfigDTO.getOrgIdentifier(),
+        customSecretManagerConfigDTO.getProjectIdentifier(), customSecretManagerConfigDTO.getIdentifier());
+    CustomSecretManagerConnectorDTO customSecretManagerConnectorDTO =
+        (CustomSecretManagerConnectorDTO) connectorDTO.getConnectorInfo().getConnectorConfig();
+    Map<String, List<NameValuePairWithDefault>> inputValues = customSecretManagerHelper.mergeStringInInputValues(
+        value, customSecretManagerConnectorDTO.getTemplate().getTemplateInputs());
+    customSecretManagerConnectorDTO.getTemplate().setTemplateInputs(inputValues);
+    Set<EncryptedDataParams> encryptedDataParamsSet = customSecretManagerHelper.prepareEncryptedDataParamsSet(
+        customSecretManagerConfigDTO, YamlUtils.write(connectorDTO));
+    if (encryptedData.getParameters() == null) {
+      encryptedData.setParameters(encryptedDataParamsSet);
+    } else {
+      encryptedData.getParameters().addAll(encryptedDataParamsSet);
+    }
+    EncryptionConfig encryptionConfig = SecretManagerConfigMapper.fromDTO(secretManager);
+    boolean isReferenceValid = customEncryptorsRegistry.getCustomEncryptor(encryptedData.getEncryptionType())
+                                   .validateReference(accountIdentifier, encryptedDataParamsSet, encryptionConfig);
+    if (!isReferenceValid) {
+      throw new SecretManagementException(SECRET_MANAGEMENT_ERROR, "Failed to fetch the secret value.", USER);
+    }
   }
 
   private void validateSecretDoesNotExist(
@@ -184,7 +240,7 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
     builder.secretManagerIdentifier(secretManager.getIdentifier()).encryptionType(secretManager.getEncryptionType());
     if (SecretText.equals(dto.getType())) {
       SecretTextSpecDTO secret = (SecretTextSpecDTO) dto.getSpec();
-      if (Reference.equals(secret.getValueType())) {
+      if (Reference.equals(secret.getValueType()) || CustomSecretManagerValues.equals(secret.getValueType())) {
         builder.path(secret.getValue());
       }
       builder.type(SettingVariableTypes.SECRET_TEXT);
@@ -205,7 +261,8 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
                             .encryptSecret(encryptedData.getAccountIdentifier(), value, secretManagerConfig);
       validateEncryptedRecord(encryptedRecord);
     } else if (VAULT.equals(secretManagerType)) {
-      if (APP_ROLE.equals(((BaseVaultConfig) secretManagerConfig).getAccessType())
+      if (EncryptionType.VAULT.equals(secretManagerConfig.getEncryptionType())
+          && APP_ROLE.equals(((BaseVaultConfig) secretManagerConfig).getAccessType())
           && (ngFeatureFlagHelperService.isEnabled(
               encryptedData.getAccountIdentifier(), FeatureName.DO_NOT_RENEW_APPROLE_TOKEN))) {
         ((BaseVaultConfig) secretManagerConfig).setRenewAppRoleToken(false);
@@ -237,7 +294,8 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
       }
 
     } else if (VAULT.equals(secretManagerType)) {
-      if (APP_ROLE.equals(((BaseVaultConfig) secretManagerConfig).getAccessType())
+      if (EncryptionType.VAULT.equals(secretManagerConfig.getEncryptionType())
+          && APP_ROLE.equals(((BaseVaultConfig) secretManagerConfig).getAccessType())
           && (ngFeatureFlagHelperService.isEnabled(
               encryptedData.getAccountIdentifier(), FeatureName.DO_NOT_RENEW_APPROLE_TOKEN))) {
         ((BaseVaultConfig) secretManagerConfig).setRenewAppRoleToken(false);
@@ -407,6 +465,32 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
     return updatedEncryptedData;
   }
 
+  @Override
+  public DecryptedSecretValue decryptSecret(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier) {
+    NGEncryptedData encryptedData =
+        getWithFileContentOrThrow(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
+    SecretManagerConfigDTO secretManagerConfigDTO = getSecretManagerOrThrow(
+        accountIdentifier, orgIdentifier, projectIdentifier, encryptedData.getSecretManagerIdentifier(), false);
+
+    SecretManagerConfig secretManagerConfig = SecretManagerConfigMapper.fromDTO(secretManagerConfigDTO);
+    if (isNgHarnessSecretManager(secretManagerConfig.getNgMetadata())) {
+      String decryptedValue =
+          String.valueOf(kmsEncryptorsRegistry.getKmsEncryptor(secretManagerConfig)
+                             .fetchSecretValue(accountIdentifier, encryptedData, secretManagerConfig));
+      return DecryptedSecretValue.builder()
+          .identifier(identifier)
+          .accountIdentifier(accountIdentifier)
+          .orgIdentifier(orgIdentifier)
+          .projectIdentifier(projectIdentifier)
+          .decryptedValue(decryptedValue)
+          .build();
+    } else {
+      throw new InvalidRequestException(
+          "Decryption is supported only for secrets encrypted via harness managed secret managers");
+    }
+  }
+
   private byte[] getInputBytes(InputStream inputStream) {
     byte[] inputBytes = new byte[0];
     if (inputStream != null) {
@@ -453,14 +537,14 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
       String accountIdentifier, NGEncryptedData encryptedData, SecretManagerConfig secretManagerConfig) {
     SecretManagerType secretManagerType = secretManagerConfig.getType();
     if (VAULT.equals(secretManagerType)) {
-      BaseVaultConfig baseVaultConfig = (BaseVaultConfig) secretManagerConfig;
-      if (APP_ROLE.equals(baseVaultConfig.getAccessType())
+      if (EncryptionType.VAULT.equals(secretManagerConfig.getEncryptionType())
+          && APP_ROLE.equals(((BaseVaultConfig) secretManagerConfig).getAccessType())
           && (ngFeatureFlagHelperService.isEnabled(
               encryptedData.getAccountIdentifier(), FeatureName.DO_NOT_RENEW_APPROLE_TOKEN))) {
-        baseVaultConfig.setRenewAppRoleToken(false);
+        ((BaseVaultConfig) secretManagerConfig).setRenewAppRoleToken(false);
       }
       vaultEncryptorsRegistry.getVaultEncryptor(secretManagerConfig.getEncryptionType())
-          .deleteSecret(accountIdentifier, encryptedData, baseVaultConfig);
+          .deleteSecret(accountIdentifier, encryptedData, secretManagerConfig);
     }
   }
 
@@ -525,6 +609,10 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
                 }
               } else {
                 encryptedRecordData = buildEncryptedRecordData(encryptedData);
+              }
+              if (secretManager.getEncryptionType() == EncryptionType.CUSTOM_NG) {
+                ngConnectorSecretManagerService.resolveSecretManagerScriptSecrets(accountIdentifier,
+                    encryptedRecordData.getPath(), (CustomSecretNGManagerConfig) encryptionConfig, secretManager);
               }
               encryptedDataDetails.add(EncryptedDataDetail.builder()
                                            .encryptedData(encryptedRecordData)

@@ -49,7 +49,7 @@ public class HealthResourceTest extends CategoryTest {
   public void testGet_success() throws Exception {
     when(MaintenanceController.getMaintenanceFlag()).thenAnswer(value -> false);
     when(healthService.check()).thenReturn(HealthCheck.Result.healthy());
-    String healthResponse = healthResource.get().getData();
+    String healthResponse = healthResource.doReadinessCheck().getData();
     Assertions.assertThat(healthResponse).isNotNull();
     Assertions.assertThat(healthResponse).isEqualTo("healthy");
   }
@@ -60,7 +60,7 @@ public class HealthResourceTest extends CategoryTest {
   public void testGet_failure_due_to_monitor() throws Exception {
     when(healthService.check()).thenReturn(HealthCheck.Result.unhealthy("DB down"));
     try {
-      String healthResponse = healthResource.get().getData();
+      String healthResponse = healthResource.doReadinessCheck().getData();
       fail("Execution should not reach here");
     } catch (HealthException healthException) {
       // not required

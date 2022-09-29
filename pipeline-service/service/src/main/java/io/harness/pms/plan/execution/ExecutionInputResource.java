@@ -125,6 +125,10 @@ public class ExecutionInputResource {
           "Feature flag [NG_EXECUTION_INPUT] not enabled to support execution inputs in a Pipeline.");
     }
     ExecutionInputInstance executionInputInstance = executionInputService.getExecutionInputInstance(nodeExecutionId);
+    if (executionInputInstance == null) {
+      throw new InvalidRequestException(
+          String.format("Execution Input template does not exist for input execution id : %s", nodeExecutionId));
+    }
     return ResponseDTO.newResponse(ExecutionInputDTOMapper.toExecutionInputDTO(executionInputInstance));
   }
 

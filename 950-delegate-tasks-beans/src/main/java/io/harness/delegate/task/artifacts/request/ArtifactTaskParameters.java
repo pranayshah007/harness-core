@@ -7,12 +7,16 @@
 
 package io.harness.delegate.task.artifacts.request;
 
+import static io.harness.expression.Expression.ALLOW_SECRETS;
+
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.ExecutionCapabilityDemander;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.artifacts.ArtifactSourceDelegateRequest;
 import io.harness.delegate.task.artifacts.ArtifactTaskType;
+import io.harness.expression.Expression;
 import io.harness.expression.ExpressionEvaluator;
+import io.harness.expression.ExpressionReflectionUtils.NestedAnnotationResolver;
 
 import java.util.List;
 import javax.validation.constraints.NotNull;
@@ -21,9 +25,9 @@ import lombok.Value;
 
 @Value
 @Builder
-public class ArtifactTaskParameters implements TaskParameters, ExecutionCapabilityDemander {
+public class ArtifactTaskParameters implements TaskParameters, ExecutionCapabilityDemander, NestedAnnotationResolver {
   @NotNull String accountId;
-  @NotNull ArtifactSourceDelegateRequest attributes;
+  @NotNull @Expression(ALLOW_SECRETS) ArtifactSourceDelegateRequest attributes;
   @NotNull ArtifactTaskType artifactTaskType;
 
   @Override

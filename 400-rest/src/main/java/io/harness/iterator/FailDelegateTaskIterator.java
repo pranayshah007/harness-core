@@ -18,13 +18,9 @@ import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 import static io.harness.metrics.impl.DelegateMetricsServiceImpl.DELEGATE_TASK_EXPIRED;
 import static io.harness.persistence.HQuery.excludeAuthority;
 
-import static software.wings.service.impl.DelegateSelectionLogsServiceImpl.TASK_VALIDATION_FAILED;
-
-import static java.lang.String.format;
 import static java.lang.System.currentTimeMillis;
 import static java.util.Arrays.asList;
 import static java.util.function.Function.identity;
-import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 
@@ -38,7 +34,6 @@ import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.beans.RemoteMethodReturnValueData;
-import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.task.TaskLogContext;
 import io.harness.exception.FailureType;
 import io.harness.exception.InvalidRequestException;
@@ -51,11 +46,10 @@ import io.harness.persistence.HIterator;
 import io.harness.persistence.HPersistence;
 import io.harness.service.intfc.DelegateCache;
 import io.harness.service.intfc.DelegateTaskService;
+import io.harness.workers.background.CrossEnvironmentAccountLevelEntityProcessController;
 
 import software.wings.beans.Account;
 import software.wings.beans.Account.AccountKeys;
-import software.wings.beans.AccountStatus;
-import software.wings.beans.LicenseInfo.LicenseInfoKeys;
 import software.wings.beans.TaskType;
 import software.wings.core.managerConfiguration.ConfigurationController;
 import software.wings.service.intfc.AccountService;
@@ -96,6 +90,7 @@ public class FailDelegateTaskIterator implements MongoPersistenceIterator.Handle
   @Inject private Clock clock;
   @Inject private DelegateCache delegateCache;
   @Inject private DelegateSelectionLogsService delegateSelectionLogsService;
+  @Inject private ValidationFailedTaskMessageHelper validationFailedTaskMessageHelper;
 
   private static final long VALIDATION_TIMEOUT = TimeUnit.MINUTES.toMillis(2);
 
@@ -117,10 +112,7 @@ public class FailDelegateTaskIterator implements MongoPersistenceIterator.Handle
             .targetInterval(Duration.ofSeconds(DELEGATE_TASK_FAIL_TIMEOUT))
             .acceptableNoAlertDelay(Duration.ofSeconds(45))
             .acceptableExecutionTime(Duration.ofSeconds(30))
-            .filterExpander(query
-                -> query.or(query.criteria(AccountKeys.licenseInfo).doesNotExist(),
-                    query.criteria(AccountKeys.licenseInfo + "." + LicenseInfoKeys.accountStatus)
-                        .equal(AccountStatus.ACTIVE)))
+            .entityProcessController(new CrossEnvironmentAccountLevelEntityProcessController(accountService))
             .handler(this)
             .schedulingType(MongoPersistenceIterator.SchedulingType.REGULAR)
             .persistenceProvider(persistenceProvider)
@@ -293,11 +285,10 @@ public class FailDelegateTaskIterator implements MongoPersistenceIterator.Handle
                   whitelistedDelegates);
               return;
             }
-            String errorMessage = generateValidationError(delegateTask);
+            final String errorMessage = validationFailedTaskMessageHelper.generateValidationError(delegateTask);
             log.info("Failing task {} due to validation error, {}", delegateTask.getUuid(), errorMessage);
 
-            String capabilitiesFailErrorMessage = TASK_VALIDATION_FAILED + generateCapabilitiesMessage(delegateTask);
-            delegateSelectionLogsService.logTaskValidationFailed(delegateTask, capabilitiesFailErrorMessage);
+            delegateSelectionLogsService.logTaskValidationFailed(delegateTask, errorMessage);
 
             DelegateResponseData response;
             if (delegateTask.getData().isAsync()) {
@@ -324,28 +315,5 @@ public class FailDelegateTaskIterator implements MongoPersistenceIterator.Handle
         }
       }
     }
-  }
-
-  private String generateValidationError(DelegateTask delegateTask) {
-    final String capabilities = generateCapabilitiesMessage(delegateTask);
-    return format(
-        "No eligible delegate was able to confirm that it has the capability to perform [ %s ]", capabilities);
-  }
-
-  private String generateCapabilitiesMessage(final DelegateTask delegateTask) {
-    final List<ExecutionCapability> executionCapabilities = delegateTask.getExecutionCapabilities();
-    final StringBuilder stringBuilder = new StringBuilder("");
-
-    if (isNotEmpty(executionCapabilities)) {
-      stringBuilder.append(
-          (executionCapabilities.size() > 4 ? executionCapabilities.subList(0, 4) : executionCapabilities)
-              .stream()
-              .map(ExecutionCapability::fetchCapabilityBasis)
-              .collect(joining(", ")));
-      if (executionCapabilities.size() > 4) {
-        stringBuilder.append(", and ").append(executionCapabilities.size() - 4).append(" more...");
-      }
-    }
-    return stringBuilder.toString();
   }
 }

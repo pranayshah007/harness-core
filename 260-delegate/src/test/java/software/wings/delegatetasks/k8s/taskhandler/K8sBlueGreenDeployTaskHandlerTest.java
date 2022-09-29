@@ -79,9 +79,9 @@ import io.harness.k8s.model.K8sPod;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.KubernetesResource;
 import io.harness.k8s.model.KubernetesResourceId;
-import io.harness.k8s.model.Release;
-import io.harness.k8s.model.Release.KubernetesResourceIdRevision;
-import io.harness.k8s.model.ReleaseHistory;
+import io.harness.k8s.releasehistory.K8sLegacyRelease;
+import io.harness.k8s.releasehistory.K8sLegacyRelease.KubernetesResourceIdRevision;
+import io.harness.k8s.releasehistory.ReleaseHistory;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.rule.Owner;
 
@@ -151,7 +151,7 @@ public class K8sBlueGreenDeployTaskHandlerTest extends CategoryTest {
     doReturn(true).when(spyHandler).init(any(), any(), any());
     doReturn(true).when(spyHandler).prepareForBlueGreen(any(), any(), any());
     k8sBlueGreenHandlerConfig.setManagedWorkload(deployment());
-    k8sBlueGreenHandlerConfig.setCurrentRelease(new Release());
+    k8sBlueGreenHandlerConfig.setCurrentRelease(new K8sLegacyRelease());
     k8sBlueGreenHandlerConfig.setPrimaryService(primaryService());
     k8sBlueGreenHandlerConfig.setStageService(stageService());
     k8sBlueGreenHandlerConfig.setResources(
@@ -229,7 +229,7 @@ public class K8sBlueGreenDeployTaskHandlerTest extends CategoryTest {
         .prepareForBlueGreen(any(K8sBlueGreenDeployTaskParameters.class), any(K8sDelegateTaskParams.class),
             any(ExecutionLogCallback.class));
     k8sBlueGreenHandlerConfig.setManagedWorkload(deployment());
-    k8sBlueGreenHandlerConfig.setCurrentRelease(new Release());
+    k8sBlueGreenHandlerConfig.setCurrentRelease(new K8sLegacyRelease());
     k8sBlueGreenHandlerConfig.setPrimaryService(primaryService());
     k8sBlueGreenHandlerConfig.setStageService(stageService());
     doReturn(true)
@@ -287,7 +287,7 @@ public class K8sBlueGreenDeployTaskHandlerTest extends CategoryTest {
         .getExecutionLogCallback(any(K8sBlueGreenDeployTaskParameters.class), any());
 
     k8sBlueGreenHandlerConfig.setManagedWorkload(deployment());
-    k8sBlueGreenHandlerConfig.setCurrentRelease(new Release());
+    k8sBlueGreenHandlerConfig.setCurrentRelease(new K8sLegacyRelease());
     k8sBlueGreenHandlerConfig.setPrimaryService(primaryService());
     k8sBlueGreenHandlerConfig.setStageService(stageService());
 
@@ -313,7 +313,7 @@ public class K8sBlueGreenDeployTaskHandlerTest extends CategoryTest {
     doReturn(executionLogCallback).when(k8sTaskHelper).getExecutionLogCallback(any(), any());
     doReturn(true).when(spyHandler).init(any(), any(), any());
     k8sBlueGreenHandlerConfig.setManagedWorkload(deployment());
-    k8sBlueGreenHandlerConfig.setCurrentRelease(new Release());
+    k8sBlueGreenHandlerConfig.setCurrentRelease(new K8sLegacyRelease());
     k8sBlueGreenHandlerConfig.setPrimaryService(primaryService());
     k8sBlueGreenHandlerConfig.setStageService(stageService());
     k8sBlueGreenHandlerConfig.setResources(kubernetesResources);
@@ -472,21 +472,21 @@ public class K8sBlueGreenDeployTaskHandlerTest extends CategoryTest {
   public void testCleanupForBlueGreenForNPE() throws Exception {
     K8sDelegateTaskParams delegateTaskParams = K8sDelegateTaskParams.builder().build();
 
-    Release currentRelease = Release.builder().number(1).build();
+    K8sLegacyRelease currentRelease = K8sLegacyRelease.builder().number(1).build();
     k8sBlueGreenHandlerConfig.setClient(client);
     k8sBlueGreenHandlerConfig.setPrimaryColor("blue");
     k8sBlueGreenHandlerConfig.setStageColor("green");
     k8sBlueGreenHandlerConfig.setCurrentRelease(currentRelease);
 
     KubernetesResource kubernetesResource = ManifestHelper.processYaml(DEPLOYMENT_YAML).get(0);
-    Release release = Release.builder()
-                          .resources(asList(kubernetesResource.getResourceId()))
-                          .number(2)
-                          .managedWorkloads(asList(KubernetesResourceIdRevision.builder()
-                                                       .workload(kubernetesResource.getResourceId())
-                                                       .revision("2")
-                                                       .build()))
-                          .build();
+    K8sLegacyRelease release = K8sLegacyRelease.builder()
+                                   .resources(asList(kubernetesResource.getResourceId()))
+                                   .number(2)
+                                   .managedWorkloads(asList(KubernetesResourceIdRevision.builder()
+                                                                .workload(kubernetesResource.getResourceId())
+                                                                .revision("2")
+                                                                .build()))
+                                   .build();
     ReleaseHistory releaseHistory = ReleaseHistory.createNew();
     releaseHistory.setReleases(new ArrayList<>(asList(release)));
 
@@ -501,7 +501,7 @@ public class K8sBlueGreenDeployTaskHandlerTest extends CategoryTest {
     k8sBGBaseHandler.cleanupForBlueGreen(
         delegateTaskParams, releaseHistory, executionLogCallback, "blue", "green", currentRelease, client);
     verify(k8sTaskHelperBase, times(1))
-        .delete(client, delegateTaskParams, asList(kubernetesResource.getResourceId()), executionLogCallback, true);
+        .delete(client, delegateTaskParams, asList(kubernetesResource.getResourceId()), executionLogCallback, false);
   }
 
   @Test
@@ -798,7 +798,7 @@ public class K8sBlueGreenDeployTaskHandlerTest extends CategoryTest {
         .when(k8sTaskHelper)
         .getK8sTaskExecutionResponse(any(K8sTaskResponse.class), any(CommandExecutionStatus.class));
     k8sBlueGreenHandlerConfig.setManagedWorkload(deployment());
-    k8sBlueGreenHandlerConfig.setCurrentRelease(new Release());
+    k8sBlueGreenHandlerConfig.setCurrentRelease(new K8sLegacyRelease());
     k8sBlueGreenHandlerConfig.setPrimaryService(primaryService());
     k8sBlueGreenHandlerConfig.setStageService(stageService());
     k8sBlueGreenHandlerConfig.setResources(
@@ -859,7 +859,7 @@ public class K8sBlueGreenDeployTaskHandlerTest extends CategoryTest {
         .when(k8sTaskHelper)
         .getK8sTaskExecutionResponse(any(K8sTaskResponse.class), any(CommandExecutionStatus.class));
     k8sBlueGreenHandlerConfig.setManagedWorkload(deployment());
-    k8sBlueGreenHandlerConfig.setCurrentRelease(new Release());
+    k8sBlueGreenHandlerConfig.setCurrentRelease(new K8sLegacyRelease());
     k8sBlueGreenHandlerConfig.setPrimaryService(primaryService());
     k8sBlueGreenHandlerConfig.setStageService(stageService());
     k8sBlueGreenHandlerConfig.setResources(
@@ -910,7 +910,7 @@ public class K8sBlueGreenDeployTaskHandlerTest extends CategoryTest {
     doReturn(true).when(spyHandler).prepareForBlueGreen(any(), any(), any());
 
     k8sBlueGreenHandlerConfig.setManagedWorkload(deployment());
-    k8sBlueGreenHandlerConfig.setCurrentRelease(new Release());
+    k8sBlueGreenHandlerConfig.setCurrentRelease(new K8sLegacyRelease());
     k8sBlueGreenHandlerConfig.setPrimaryService(primaryService());
     k8sBlueGreenHandlerConfig.setStageService(stageService());
     k8sBlueGreenHandlerConfig.setResources(
@@ -961,7 +961,7 @@ public class K8sBlueGreenDeployTaskHandlerTest extends CategoryTest {
     doReturn("latest-rev").when(k8sTaskHelperBase).getLatestRevision(any(), eq(deployment().getResourceId()), any());
     doReturn(executionLogCallback).when(k8sTaskHelper).getExecutionLogCallback(any(), any());
     k8sBlueGreenHandlerConfig.setManagedWorkload(deployment());
-    k8sBlueGreenHandlerConfig.setCurrentRelease(new Release());
+    k8sBlueGreenHandlerConfig.setCurrentRelease(new K8sLegacyRelease());
     k8sBlueGreenHandlerConfig.setPrimaryService(primaryService());
     k8sBlueGreenHandlerConfig.setStageService(stageService());
 

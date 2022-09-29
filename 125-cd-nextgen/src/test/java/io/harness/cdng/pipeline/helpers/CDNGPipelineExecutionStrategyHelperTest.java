@@ -60,7 +60,6 @@ public class CDNGPipelineExecutionStrategyHelperTest extends CategoryTest {
     assertThat(result).contains("start: 50");
     assertThat(result).contains("end: 100");
     assertThat(result).contains("unit: Percentage");
-    assertThat(result).contains("maxConcurrency: 1");
   }
 
   @Test
@@ -76,7 +75,7 @@ public class CDNGPipelineExecutionStrategyHelperTest extends CategoryTest {
         ServiceDefinitionType.SSH, strategyParameters, false);
     assertThat(result).contains(STRATEGY);
     assertThat(result).contains("maxConcurrency: 1");
-    assertThat(result).contains("partitions: 50");
+    assertThat(result).contains("partitionSize: 50");
     assertThat(result).contains("unit: Percentage");
   }
 
@@ -93,7 +92,7 @@ public class CDNGPipelineExecutionStrategyHelperTest extends CategoryTest {
         ServiceDefinitionType.SSH, strategyParameters, false);
     assertThat(result).contains(STRATEGY);
     assertThat(result).contains("maxConcurrency: 1");
-    assertThat(result).contains("partitions: 50");
+    assertThat(result).contains("partitionSize: 50");
     assertThat(result).contains("unit: Percentage");
   }
 
@@ -104,13 +103,13 @@ public class CDNGPipelineExecutionStrategyHelperTest extends CategoryTest {
     StrategyParameters strategyParameters = StrategyParameters.builder()
                                                 .instances(1)
                                                 .unitType(NGInstanceUnitType.COUNT)
-                                                .artifactType(ArtifactType.JAR)
+                                                .artifactType(ArtifactType.WAR)
                                                 .build();
     String result = cdngPipelineExecutionStrategyHelper.generateSshWinRmRollingYaml(
-        ServiceDefinitionType.WINRM, strategyParameters, false);
+        ServiceDefinitionType.SSH, strategyParameters, false);
     assertThat(result).contains(STRATEGY);
     assertThat(result).contains("maxConcurrency: 1");
-    assertThat(result).contains("partitions: 1");
+    assertThat(result).contains("partitionSize: 1");
     assertThat(result).contains("unit: Count");
   }
 
@@ -122,7 +121,7 @@ public class CDNGPipelineExecutionStrategyHelperTest extends CategoryTest {
     StrategyParameters strategyParameters = StrategyParameters.builder()
                                                 .phases(phases)
                                                 .unitType(NGInstanceUnitType.PERCENTAGE)
-                                                .artifactType(ArtifactType.JAR)
+                                                .artifactType(ArtifactType.IIS)
                                                 .build();
     String result = cdngPipelineExecutionStrategyHelper.generateSshWinRmCanaryYaml(
         ServiceDefinitionType.WINRM, strategyParameters, false);
@@ -132,6 +131,5 @@ public class CDNGPipelineExecutionStrategyHelperTest extends CategoryTest {
     assertThat(result).contains("start: 50");
     assertThat(result).contains("end: 100");
     assertThat(result).contains("unit: Percentage");
-    assertThat(result).contains("maxConcurrency: 1");
   }
 }

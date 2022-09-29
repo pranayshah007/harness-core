@@ -21,8 +21,11 @@ import io.harness.yaml.core.variables.NGVariable;
 import io.harness.yaml.core.variables.SecretNGVariable;
 
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 
@@ -42,6 +45,29 @@ public class NGVariablesUtils {
         if (secretValue != null) {
           String value = fetchSecretExpressionWithExpressionToken(secretValue, expressionFunctorToken);
           mapOfVariables.put(variable.getName(), value);
+        }
+      } else {
+        ParameterField<?> value = getNonSecretValue(variable);
+        if (value != null) {
+          mapOfVariables.put(variable.getName(), value);
+        }
+      }
+    }
+    return mapOfVariables;
+  }
+
+  public Map<String, Object> getMapOfVariablesWithoutSecretExpression(List<NGVariable> variables) {
+    Map<String, Object> mapOfVariables = new HashMap<>();
+    if (EmptyPredicate.isEmpty(variables)) {
+      return mapOfVariables;
+    }
+    for (NGVariable variable : variables) {
+      if (variable instanceof SecretNGVariable) {
+        // value is the name of the output variable, not a secret ref
+        SecretNGVariable secretNGVariable = (SecretNGVariable) variable;
+        String secretValue = getSecretValue(secretNGVariable);
+        if (secretValue != null) {
+          mapOfVariables.put(variable.getName(), ParameterField.createValueField(secretValue));
         }
       } else {
         ParameterField<?> value = getNonSecretValue(variable);
@@ -88,6 +114,20 @@ public class NGVariablesUtils {
       }
     }
     return mapOfVariables;
+  }
+
+  public Set<String> getSetOfSecretVars(List<NGVariable> variables) {
+    Set<String> secretVars = new HashSet<>();
+    if (EmptyPredicate.isEmpty(variables)) {
+      return secretVars;
+    }
+    for (NGVariable variable : variables) {
+      if (variable instanceof SecretNGVariable) {
+        SecretNGVariable secretNGVariable = (SecretNGVariable) variable;
+        secretVars.add(secretNGVariable.getName());
+      }
+    }
+    return secretVars;
   }
 
   public String fetchSecretExpression(String secretValue) {
@@ -144,5 +184,28 @@ public class NGVariablesUtils {
     Map<String, Object> overrideVariablesMap = getMapOfVariables(overrideVariables, expressionFunctorToken);
     originalVariablesMap.putAll(overrideVariablesMap);
     return originalVariablesMap;
+  }
+
+  public Map<String, String> getStringMapVariables(List<NGVariable> variables, long expressionFunctorToken) {
+    Map<String, Object> inputVariables = getMapOfVariables(variables, expressionFunctorToken);
+    if (EmptyPredicate.isEmpty(inputVariables)) {
+      return new HashMap<>();
+    }
+    Map<String, String> res = new LinkedHashMap<>();
+    inputVariables.forEach((key, value) -> {
+      if (value instanceof ParameterField) {
+        ParameterField<?> parameterFieldValue = (ParameterField<?>) value;
+        if (parameterFieldValue.getValue() == null) {
+          throw new InvalidRequestException(String.format("Env. variable [%s] value found to be null", key));
+        }
+        res.put(key, parameterFieldValue.getValue().toString());
+      } else if (value instanceof String) {
+        res.put(key, (String) value);
+      } else {
+        log.error(String.format(
+            "Value other than String or ParameterField found for env. variable [%s]. value: [%s]", key, value));
+      }
+    });
+    return res;
   }
 }

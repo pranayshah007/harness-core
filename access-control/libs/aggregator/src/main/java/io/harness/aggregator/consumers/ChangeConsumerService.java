@@ -13,8 +13,11 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
 import java.util.List;
+import java.util.Set;
 
 @OwnedBy(HarnessTeam.PL)
 public interface ChangeConsumerService {
   List<ACL> getAClsForRoleAssignment(RoleAssignmentDBO roleAssignmentDBO);
+  List<ACL> getImplicitACLsForRoleAssignment(
+      RoleAssignmentDBO roleAssignment, Set<String> addedPrincipals, Set<String> addedPermissions);
 }

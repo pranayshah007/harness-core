@@ -8,6 +8,8 @@
 package io.harness.cvng.core.beans;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import java.time.Duration;
 import java.time.Instant;
 import lombok.Builder;
 import lombok.Value;
@@ -17,4 +19,9 @@ import lombok.Value;
 public class TimeRange {
   @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "UTC") Instant startTime;
   @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "UTC") Instant endTime;
+
+  @JsonIgnore
+  public Duration getDuration() {
+    return Duration.between(startTime, endTime);
+  }
 }

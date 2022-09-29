@@ -36,6 +36,7 @@ import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.beans.git.YamlGitConfigDTO;
 import io.harness.gitsync.GitSyncTestBase;
 import io.harness.gitsync.common.dtos.CreateGitFileRequestDTO;
+import io.harness.gitsync.common.dtos.GetLatestCommitOnFileRequestDTO;
 import io.harness.gitsync.common.dtos.GitFileContent;
 import io.harness.gitsync.common.dtos.UpdateGitFileRequestDTO;
 import io.harness.gitsync.common.helper.GitSyncConnectorHelper;
@@ -45,6 +46,7 @@ import io.harness.product.ci.scm.proto.Commit;
 import io.harness.product.ci.scm.proto.CreateBranchResponse;
 import io.harness.product.ci.scm.proto.CreateFileResponse;
 import io.harness.product.ci.scm.proto.FileContent;
+import io.harness.product.ci.scm.proto.GetLatestCommitOnFileResponse;
 import io.harness.product.ci.scm.proto.GetLatestCommitResponse;
 import io.harness.product.ci.scm.proto.GetUserRepoResponse;
 import io.harness.product.ci.scm.proto.GetUserReposResponse;
@@ -304,5 +306,27 @@ public class ScmManagerFacilitatorServiceImplTest extends GitSyncTestBase {
     final UpdateFileResponse updateFileResponse = scmManagerFacilitatorService.updateFile(updateGitFileRequestDTO);
     assertThat(updateFileResponse.getStatus()).isEqualTo(200);
     assertThat(updateFileResponse.getCommitId()).isEqualTo(commitId);
+  }
+
+  @Test
+  @Owner(developers = MOHIT_GARG)
+  @Category(UnitTests.class)
+  public void testGetLatestCommitOnFile() {
+    when(scmClient.getLatestCommitOnFile(any(), anyString(), anyString()))
+        .thenReturn(GetLatestCommitOnFileResponse.newBuilder().setCommitId(commitId).build());
+    GetLatestCommitOnFileRequestDTO getLatestCommitOnFileRequestDTO =
+        GetLatestCommitOnFileRequestDTO.builder()
+            .branchName(branch)
+            .filePath(filePath)
+            .scmConnector((ScmConnector) connectorInfo.getConnectorConfig())
+            .scope(Scope.builder()
+                       .accountIdentifier(accountIdentifier)
+                       .orgIdentifier(orgIdentifier)
+                       .projectIdentifier(projectIdentifier)
+                       .build())
+            .build();
+    final GetLatestCommitOnFileResponse getLatestCommitOnFileResponse =
+        scmManagerFacilitatorService.getLatestCommitOnFile(getLatestCommitOnFileRequestDTO);
+    assertThat(getLatestCommitOnFileResponse.getCommitId()).isEqualTo(commitId);
   }
 }

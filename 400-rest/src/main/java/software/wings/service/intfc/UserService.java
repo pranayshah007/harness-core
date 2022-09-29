@@ -212,6 +212,8 @@ public interface UserService extends OwnedByAccount {
    */
   User get(@NotEmpty String userId);
 
+  User get(@NotEmpty String userId, boolean includeSupportAccounts);
+
   List<User> getUsers(Set<String> userIds);
 
   /**

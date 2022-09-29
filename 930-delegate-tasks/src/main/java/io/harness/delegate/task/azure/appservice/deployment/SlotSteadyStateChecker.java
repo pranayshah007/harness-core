@@ -56,6 +56,10 @@ public class SlotSteadyStateChecker {
       String message = format("Timed out waiting for executing operation [%s]%s", commandUnitName, exceptionMessage);
       logCallback.saveExecutionLog(message, LogLevel.ERROR);
       throw new AzureAppServicesSlotSteadyStateException(message, commandUnitName, steadyCheckTimeoutInMinutes, e);
+    } catch (InterruptedException e) {
+      String message = format("Operation [%s] timed out or aborted", commandUnitName);
+      logCallback.saveExecutionLog(message, LogLevel.ERROR);
+      throw new AzureAppServicesSlotSteadyStateException(message, commandUnitName, steadyCheckTimeoutInMinutes, e);
     } catch (Exception e) {
       String message =
           format("Error while waiting for executing operation [%s], %n %s", commandUnitName, e.getMessage());

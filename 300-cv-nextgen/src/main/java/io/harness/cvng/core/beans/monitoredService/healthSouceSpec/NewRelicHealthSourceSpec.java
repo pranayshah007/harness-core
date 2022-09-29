@@ -144,7 +144,7 @@ public class NewRelicHealthSourceSpec extends MetricHealthSourceSpec {
           newRelicMetricDefinitions, newRelicMetricDefinitions.get(0).getRiskProfile().getCategory());
       cvConfigs.add(newRelicCVConfig);
     });
-
+    cvConfigs.forEach(newRelicCVConfig -> newRelicCVConfig.addMetricThresholds(metricPacks, newRelicMetricDefinitions));
     return cvConfigs;
   }
 

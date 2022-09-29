@@ -16,20 +16,24 @@ public enum SLIMissingDataType {
   @JsonProperty("Ignore") IGNORE;
 
   public SLIValue calculateSLIValue(long goodCount, long badCount, long totalMinutes) {
+    return calculateSLIValue(goodCount, badCount, totalMinutes, 0L);
+  }
+
+  public SLIValue calculateSLIValue(long goodCount, long badCount, long totalMinutes, long disabledMinutes) {
     Preconditions.checkState(totalMinutes != 0);
-    long missingDataCount = totalMinutes - (goodCount + badCount);
+    long missingDataCount = totalMinutes - (goodCount + badCount) - disabledMinutes;
     switch (this) {
       case GOOD:
         return SLIValue.builder()
             .goodCount((int) (goodCount + missingDataCount))
             .badCount((int) badCount)
-            .total((int) totalMinutes)
+            .total((int) (totalMinutes - disabledMinutes))
             .build();
       case BAD:
         return SLIValue.builder()
             .goodCount((int) goodCount)
             .badCount((int) (badCount + missingDataCount))
-            .total((int) totalMinutes)
+            .total((int) (totalMinutes - disabledMinutes))
             .build();
       case IGNORE:
         return SLIValue.builder()

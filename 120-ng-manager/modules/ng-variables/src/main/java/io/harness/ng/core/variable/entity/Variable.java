@@ -7,7 +7,7 @@
 
 package io.harness.ng.core.variable.entity;
 
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.validator.EntityIdentifier;
@@ -40,10 +40,10 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @OwnedBy(HarnessTeam.PL)
 @Data
 @FieldNameConstants(innerTypeName = "VariableKeys")
+@StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "variables", noClassnameStored = true)
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Document("variables")
-@StoreIn(DbAliases.NG_MANAGER)
 @Persistent
 public abstract class Variable implements PersistentEntity, NGAccountAccess {
   @Id @org.mongodb.morphia.annotations.Id String id;

@@ -250,7 +250,7 @@ public class ResourceLookupServiceImpl implements ResourceLookupService {
                    .build());
       }
     } catch (Exception e) {
-      log.warn("Failing to create ResourceLookupEntry for Record: {}", record);
+      log.warn("Failing to create ResourceLookupEntry for Record: {}", record, e);
     }
   }
 
@@ -267,7 +267,7 @@ public class ResourceLookupServiceImpl implements ResourceLookupService {
                    .build());
       }
     } catch (Exception e) {
-      log.warn("Failing to create ResourceLookupEntry for Record: {}", record);
+      log.warn("Failing to create ResourceLookupEntry for Record: {}", record, e);
     }
   }
 
@@ -293,7 +293,7 @@ public class ResourceLookupServiceImpl implements ResourceLookupService {
         }
       }
     } catch (Exception e) {
-      log.warn("Failing to create ResourceLookupEntry for Record: " + record);
+      log.warn("Failing to create ResourceLookupEntry for Record: " + record, e);
     }
   }
 

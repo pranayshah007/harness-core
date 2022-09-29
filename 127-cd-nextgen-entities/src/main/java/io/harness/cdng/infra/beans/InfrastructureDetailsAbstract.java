@@ -16,6 +16,8 @@ public abstract class InfrastructureDetailsAbstract {
   public String infraIdentifier;
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) public String infraName;
 
+  @ApiModelProperty(hidden = true) public Boolean skipInstances;
+
   public String getInfraIdentifier() {
     return infraIdentifier;
   }
@@ -27,5 +29,12 @@ public abstract class InfrastructureDetailsAbstract {
   }
   public void setInfraName(String infraName) {
     this.infraName = infraName;
+  }
+
+  public Boolean getSkipInstances() {
+    return skipInstances;
+  }
+  public void setSkipInstances(boolean skipInstances) {
+    this.skipInstances = skipInstances;
   }
 }

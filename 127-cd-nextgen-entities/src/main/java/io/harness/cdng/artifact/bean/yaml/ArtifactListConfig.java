@@ -13,6 +13,7 @@ import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.visitor.helpers.artifact.ArtifactListConfigVisitorHelper;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.walktree.beans.VisitableChildren;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
@@ -46,21 +47,19 @@ public class ArtifactListConfig implements Visitable {
   PrimaryArtifact primary;
   List<SidecarArtifactWrapper> sidecars;
 
-  @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
-  @ApiModelProperty(hidden = true)
-  List<ArtifactSource> sources;
-
   // For Visitor Framework Impl
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
 
   @Builder
-  @ConstructorProperties({"uuid", "primary", "sidecars", "sources", "metadata"})
-  public ArtifactListConfig(String uuid, PrimaryArtifact primary, @Singular List<SidecarArtifactWrapper> sidecars,
-      List<ArtifactSource> sources, String metadata) {
+  @ConstructorProperties({"uuid", "primary", "sidecars", "metadata"})
+  public ArtifactListConfig(
+      String uuid, PrimaryArtifact primary, @Singular List<SidecarArtifactWrapper> sidecars, String metadata) {
     this.uuid = uuid;
     this.primary = primary;
-    if (primary != null) {
-      this.primary.getSpec().setIdentifier("primary");
+    if (primary != null && this.primary.getSpec() != null) {
+      if (EmptyPredicate.isEmpty(primary.getSpec().getIdentifier())) {
+        this.primary.getSpec().setIdentifier("primary");
+      }
       this.primary.getSpec().setPrimaryArtifact(true);
     }
     this.sidecars = sidecars;
@@ -68,12 +67,6 @@ public class ArtifactListConfig implements Visitable {
       for (SidecarArtifactWrapper sidecar : this.sidecars) {
         sidecar.getSidecar().getSpec().setIdentifier(sidecar.getSidecar().getIdentifier());
         sidecar.getSidecar().getSpec().setPrimaryArtifact(false);
-      }
-    }
-    this.sources = sources;
-    if (isNotEmpty(sources)) {
-      for (ArtifactSource source : this.sources) {
-        source.getSpec().setIdentifier(source.getIdentifier());
       }
     }
   }
@@ -84,9 +77,6 @@ public class ArtifactListConfig implements Visitable {
     children.add("primary", primary);
     if (isNotEmpty(sidecars)) {
       sidecars.forEach(sidecar -> children.add("sidecars", sidecar));
-    }
-    if (isNotEmpty(sources)) {
-      sources.forEach(source -> children.add("sources", source));
     }
     return children;
   }

@@ -7,6 +7,7 @@
 
 package io.harness.cvng.core.utils.monitoredService;
 
+import static io.harness.cvng.core.beans.monitoredService.metricThresholdSpec.MetricThresholdCriteriaType.ABSOLUTE;
 import static io.harness.rule.OwnerRule.DEEPAK_CHHIKARA;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -16,7 +17,9 @@ import io.harness.category.element.UnitTests;
 import io.harness.cvng.BuilderFactory;
 import io.harness.cvng.beans.CVMonitoringCategory;
 import io.harness.cvng.core.beans.StackdriverDefinition;
+import io.harness.cvng.core.beans.monitoredService.TimeSeriesMetricPackDTO;
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.StackdriverMetricHealthSourceSpec;
+import io.harness.cvng.core.beans.monitoredService.metricThresholdSpec.MetricThresholdActionType;
 import io.harness.cvng.core.entities.AnalysisInfo.DeploymentVerification;
 import io.harness.cvng.core.entities.AnalysisInfo.LiveMonitoring;
 import io.harness.cvng.core.entities.AnalysisInfo.SLI;
@@ -30,6 +33,7 @@ import com.google.common.io.Resources;
 import com.google.inject.Inject;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Collections;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
 import org.junit.Before;
@@ -42,6 +46,9 @@ public class StackdriverMetricHealthSourceSpecTransformerTest extends CvNextGenT
   String identifier;
   String monitoringSourceName;
   BuilderFactory builderFactory;
+  String metricName;
+  String metricGroupName;
+  String customIdentifier;
 
   @Inject StackdriverMetricHealthSourceSpecTransformer stackdriverMetricHealthSourceSpecTransformer;
   @Before
@@ -50,6 +57,9 @@ public class StackdriverMetricHealthSourceSpecTransformerTest extends CvNextGenT
     connectorIdentifier = "connectorId";
     identifier = "healthSourceIdentifier";
     monitoringSourceName = "Prometheus";
+    metricName = "MetricName";
+    metricGroupName = "MetricGroupName";
+    customIdentifier = "Custom";
   }
 
   @Test
@@ -74,6 +84,17 @@ public class StackdriverMetricHealthSourceSpecTransformerTest extends CvNextGenT
     assertThat(metricDefinition.getSli().getEnabled()).isTrue();
     assertThat(metricDefinition.getAnalysis().getRiskProfile().getCategory())
         .isEqualTo(CVMonitoringCategory.PERFORMANCE);
+    assertThat(spec.getMetricPacks()).hasSize(1);
+    TimeSeriesMetricPackDTO timeSeriesMetricPackDTO = spec.getMetricPacks().iterator().next();
+    assertThat(timeSeriesMetricPackDTO.getMetricThresholds()).hasSize(1);
+    assertThat(timeSeriesMetricPackDTO.getIdentifier()).isEqualTo(customIdentifier);
+    TimeSeriesMetricPackDTO.MetricThreshold metricThreshold = timeSeriesMetricPackDTO.getMetricThresholds().get(0);
+    assertThat(metricThreshold.getMetricType()).isEqualTo(customIdentifier);
+    assertThat(metricThreshold.getMetricName()).isEqualTo(metricName);
+    assertThat(metricThreshold.getGroupName()).isEqualTo(metricGroupName);
+    assertThat(metricThreshold.getType()).isEqualTo(MetricThresholdActionType.IGNORE);
+    assertThat(metricThreshold.getCriteria().getType()).isEqualTo(ABSOLUTE);
+    assertThat(metricThreshold.getCriteria().getSpec().getLessThan()).isEqualTo(20.0);
   }
 
   private StackdriverCVConfig createCVConfig() throws IOException {
@@ -88,7 +109,15 @@ public class StackdriverMetricHealthSourceSpecTransformerTest extends CvNextGenT
     metricInfo.setDeploymentVerification(DeploymentVerification.builder().enabled(Boolean.TRUE).build());
     metricInfo.setLiveMonitoring(LiveMonitoring.builder().enabled(Boolean.TRUE).build());
     metricInfo.setSli(SLI.builder().enabled(Boolean.TRUE).build());
-    cvConfig.setMetricPack(MetricPack.builder().category(CVMonitoringCategory.PERFORMANCE).build());
+    cvConfig.setMetricPack(MetricPack.builder()
+                               .category(CVMonitoringCategory.PERFORMANCE)
+                               .metrics(Collections.singleton(
+                                   MetricPack.MetricDefinition.builder()
+                                       .name(metricName)
+                                       .thresholds(Collections.singletonList(
+                                           builderFactory.getMetricThresholdBuilder(metricName, metricGroupName)))
+                                       .build()))
+                               .build());
     cvConfig.setMetricInfoList(Arrays.asList(metricInfo));
     return cvConfig;
   }

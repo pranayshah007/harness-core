@@ -10,6 +10,7 @@ package io.harness.delegate.task.jira;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.rule.OwnerRule.ALEXEI;
 import static io.harness.rule.OwnerRule.MOUNIK;
+import static io.harness.rule.OwnerRule.YUVRAJ;
 import static io.harness.rule.OwnerRule.vivekveman;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
@@ -18,6 +19,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.when;
 
@@ -28,12 +30,22 @@ import io.harness.delegate.beans.connector.jira.JiraConnectorDTO;
 import io.harness.delegate.task.jira.JiraTaskNGParameters.JiraTaskNGParametersBuilder;
 import io.harness.encryption.SecretRefData;
 import io.harness.exception.HintException;
+import io.harness.exception.InvalidRequestException;
 import io.harness.jackson.JsonNodeUtils;
+import io.harness.jira.JiraActionNG;
 import io.harness.jira.JiraClient;
+import io.harness.jira.JiraFieldNG;
+import io.harness.jira.JiraFieldSchemaNG;
+import io.harness.jira.JiraFieldTypeNG;
 import io.harness.jira.JiraInternalConfig;
+import io.harness.jira.JiraIssueCreateMetadataNG;
 import io.harness.jira.JiraIssueNG;
+import io.harness.jira.JiraIssueTypeNG;
+import io.harness.jira.JiraIssueUpdateMetadataNG;
 import io.harness.jira.JiraProjectBasicNG;
+import io.harness.jira.JiraProjectNG;
 import io.harness.jira.JiraStatusNG;
+import io.harness.jira.JiraUserData;
 import io.harness.rule.Owner;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -44,6 +56,7 @@ import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -73,6 +86,10 @@ public class JiraTaskNGHandlerTest extends CategoryTest {
   private static String url;
   public static JiraClient jiraClient;
   private final JiraTaskNGHandler jiraTaskNGHandler = new JiraTaskNGHandler();
+  private static final String MULTI = "multi";
+  private static final String ISSUE_TYPE = "Issue Type";
+  private static final String ISSUE_ID = "IssueId";
+  private static final String CUSTOMFIELD_OPTION = "customfield_option";
   String JSON_RESOURCE = "testJson.json";
   ObjectNode jsonNode;
   ObjectNode jsonstatusNode;
@@ -231,6 +248,199 @@ public class JiraTaskNGHandlerTest extends CategoryTest {
                                        .issueKey("issuekey")
                                        .build()))
         .isEqualTo(jiraTaskNGResponse);
+  }
+
+  @Test
+  @Owner(developers = YUVRAJ)
+  @Category(UnitTests.class)
+  public void testcreateIssue() throws Exception {
+    Map<String, String> fields = new HashMap<>();
+    fields.put("QE Assignee", "your-jira-account-id");
+    fields.put("Test Summary", "No test added");
+    JiraConnectorDTO jiraConnectorDTO =
+        JiraConnectorDTO.builder()
+            .jiraUrl("https://harness.atlassian.net/")
+            .username("username")
+            .passwordRef(SecretRefData.builder().decryptedValue(new char[] {'3', '4', 'f', '5', '1'}).build())
+            .build();
+    JiraTaskNGParameters jiraTaskNGParameters = JiraTaskNGParameters.builder()
+                                                    .jiraConnectorDTO(jiraConnectorDTO)
+                                                    .action(JiraActionNG.CREATE_ISSUE)
+                                                    .projectKey("TJI")
+                                                    .issueType("Bug")
+                                                    .fields(fields)
+                                                    .fetchStatus(false)
+                                                    .ignoreComment(false)
+                                                    .build();
+    JiraIssueCreateMetadataNG jiraIssueCreateMetadataNG = Mockito.mock(JiraIssueCreateMetadataNG.class);
+
+    JiraProjectNG jiraProjectNG = Mockito.mock(JiraProjectNG.class);
+    Map<String, JiraProjectNG> project = new HashMap<>();
+    project.put("TJI", jiraProjectNG);
+    when(jiraIssueCreateMetadataNG.getProjects()).thenReturn(project);
+
+    JiraIssueTypeNG jiraIssueTypeNG = Mockito.mock(JiraIssueTypeNG.class);
+    Map<String, JiraIssueTypeNG> issueType = new HashMap<>();
+    issueType.put("Bug", jiraIssueTypeNG);
+    when(jiraProjectNG.getIssueTypes()).thenReturn(issueType);
+
+    Map<String, JiraFieldNG> fieldsMap = new HashMap<>();
+    JiraFieldNG jiraFieldNG1 = JiraFieldNG.builder().build();
+    jiraFieldNG1.setKey("QE Assignee");
+    jiraFieldNG1.setName("field1");
+    jiraFieldNG1.setSchema(JiraFieldSchemaNG.builder().type(JiraFieldTypeNG.USER).build());
+
+    JiraFieldNG jiraFieldNG2 = JiraFieldNG.builder().build();
+    jiraFieldNG2.setKey("Test Summary");
+    jiraFieldNG2.setName("field2");
+    jiraFieldNG2.setSchema(JiraFieldSchemaNG.builder().type(JiraFieldTypeNG.STRING).build());
+
+    fieldsMap.put("QE Assignee", jiraFieldNG1);
+    fieldsMap.put("Test Summary", jiraFieldNG2);
+    when(jiraIssueTypeNG.getFields()).thenReturn(fieldsMap);
+
+    JiraClient jiraClient = Mockito.mock(JiraClient.class);
+    PowerMockito.whenNew(JiraClient.class).withAnyArguments().thenReturn(jiraClient);
+    when(jiraClient.getIssueCreateMetadata("TJI", "Bug", null, false, false)).thenReturn(jiraIssueCreateMetadataNG);
+    JiraUserData jiraUserData = new JiraUserData("accountId", "assignee", true, "your-jira-account-id");
+    when(jiraClient.getUsers("your-jira-account-id", null, null)).thenReturn(Arrays.asList(jiraUserData));
+
+    JiraIssueNG jiraIssueNG = Mockito.mock(JiraIssueNG.class);
+    Map<String, String> fields1 = new HashMap<>();
+    fields1.put("QE Assignee", "accountId");
+    fields1.put("Test Summary", "No test added");
+    when(jiraClient.createIssue("TJI", "Bug", fields1, true)).thenReturn(jiraIssueNG);
+    JiraTaskNGResponse jiraTaskNGResponse = jiraTaskNGHandler.createIssue(jiraTaskNGParameters);
+
+    assertThat(jiraTaskNGResponse.getIssue()).isNotNull();
+    assertThat(jiraTaskNGResponse).isNotNull();
+    assertThat(jiraTaskNGResponse.getIssue()).isEqualTo(jiraIssueNG);
+    assertThat(jiraTaskNGParameters.getFields()).isEqualTo(fields1);
+  }
+
+  @Test
+  @Owner(developers = YUVRAJ)
+  @Category(UnitTests.class)
+  public void testupdateIssue() throws Exception {
+    Map<String, String> fields = new HashMap<>();
+    fields.put("QE Assignee", "your-jira-account-id");
+    fields.put("Test Summary", "No test added");
+    JiraConnectorDTO jiraConnectorDTO =
+        JiraConnectorDTO.builder()
+            .jiraUrl("https://harness.atlassian.net/")
+            .username("username")
+            .passwordRef(SecretRefData.builder().decryptedValue(new char[] {'3', '4', 'f', '5', '1'}).build())
+            .build();
+    JiraTaskNGParameters jiraTaskNGParameters = JiraTaskNGParameters.builder()
+                                                    .jiraConnectorDTO(jiraConnectorDTO)
+                                                    .action(JiraActionNG.CREATE_ISSUE)
+                                                    .projectKey("TJI")
+                                                    .issueType("Bug")
+                                                    .issueKey("TJI-37792")
+                                                    .transitionToStatus("INVALID")
+                                                    .fields(fields)
+                                                    .fetchStatus(false)
+                                                    .ignoreComment(false)
+                                                    .build();
+
+    JiraIssueUpdateMetadataNG jiraIssueUpdateMetadataNG = Mockito.mock(JiraIssueUpdateMetadataNG.class);
+
+    Map<String, JiraFieldNG> fieldsMap = new HashMap<>();
+    JiraFieldNG jiraFieldNG1 = JiraFieldNG.builder().build();
+    jiraFieldNG1.setKey("QE Assignee");
+    jiraFieldNG1.setName("field1");
+    jiraFieldNG1.setSchema(JiraFieldSchemaNG.builder().type(JiraFieldTypeNG.USER).build());
+
+    JiraFieldNG jiraFieldNG2 = JiraFieldNG.builder().build();
+    jiraFieldNG2.setKey("Test Summary");
+    jiraFieldNG2.setName("field2");
+    jiraFieldNG2.setSchema(JiraFieldSchemaNG.builder().type(JiraFieldTypeNG.STRING).build());
+
+    fieldsMap.put("QE Assignee", jiraFieldNG1);
+    fieldsMap.put("Test Summary", jiraFieldNG2);
+    when(jiraIssueUpdateMetadataNG.getFields()).thenReturn(fieldsMap);
+
+    JiraClient jiraClient = Mockito.mock(JiraClient.class);
+    PowerMockito.whenNew(JiraClient.class).withAnyArguments().thenReturn(jiraClient);
+    when(jiraClient.getIssueUpdateMetadata("TJI-37792")).thenReturn(jiraIssueUpdateMetadataNG);
+    JiraUserData jiraUserData = new JiraUserData("accountId", "assignee", true, "your-jira-account-id");
+    when(jiraClient.getUsers("your-jira-account-id", null, null)).thenReturn(Arrays.asList(jiraUserData));
+
+    JiraIssueNG jiraIssueNG = Mockito.mock(JiraIssueNG.class);
+    Map<String, String> fields1 = new HashMap<>();
+    fields1.put("QE Assignee", "accountId");
+    fields1.put("Test Summary", "No test added");
+    when(jiraClient.updateIssue(
+             jiraTaskNGParameters.getIssueKey(), jiraTaskNGParameters.getTransitionToStatus(), null, fields1))
+        .thenReturn(jiraIssueNG);
+    JiraTaskNGResponse jiraTaskNGResponse = jiraTaskNGHandler.updateIssue(jiraTaskNGParameters);
+
+    assertThat(jiraTaskNGResponse.getIssue()).isNotNull();
+    assertThat(jiraTaskNGResponse).isNotNull();
+    assertThat(jiraTaskNGResponse.getIssue()).isEqualTo(jiraIssueNG);
+    assertThat(jiraTaskNGParameters.getFields()).isEqualTo(fields1);
+  }
+
+  @Test
+  @Owner(developers = YUVRAJ)
+  @Category(UnitTests.class)
+  public void testIssueForException() throws Exception {
+    Map<String, String> fields = new HashMap<>();
+    fields.put("QE Assignee", "your-jira-account-id");
+    fields.put("Test Summary", "No test added");
+    JiraConnectorDTO jiraConnectorDTO =
+        JiraConnectorDTO.builder()
+            .jiraUrl("https://harness.atlassian.net/")
+            .username("username")
+            .passwordRef(SecretRefData.builder().decryptedValue(new char[] {'3', '4', 'f', '5', '1'}).build())
+            .build();
+    JiraTaskNGParameters jiraTaskNGParameters = JiraTaskNGParameters.builder()
+                                                    .jiraConnectorDTO(jiraConnectorDTO)
+                                                    .action(JiraActionNG.CREATE_ISSUE)
+                                                    .projectKey("TJI")
+                                                    .issueType("Bug")
+                                                    .issueKey("TJI-37792")
+                                                    .transitionToStatus("INVALID")
+                                                    .fields(fields)
+                                                    .fetchStatus(false)
+                                                    .ignoreComment(false)
+                                                    .build();
+
+    JiraIssueUpdateMetadataNG jiraIssueUpdateMetadataNG = Mockito.mock(JiraIssueUpdateMetadataNG.class);
+
+    Map<String, JiraFieldNG> fieldsMap = new HashMap<>();
+    JiraFieldNG jiraFieldNG1 = JiraFieldNG.builder().build();
+    jiraFieldNG1.setKey("QE Assignee");
+    jiraFieldNG1.setName("field1");
+    jiraFieldNG1.setSchema(JiraFieldSchemaNG.builder().type(JiraFieldTypeNG.USER).build());
+
+    JiraFieldNG jiraFieldNG2 = JiraFieldNG.builder().build();
+    jiraFieldNG2.setKey("Test Summary");
+    jiraFieldNG2.setName("field2");
+    jiraFieldNG2.setSchema(JiraFieldSchemaNG.builder().type(JiraFieldTypeNG.STRING).build());
+
+    fieldsMap.put("QE Assignee", jiraFieldNG1);
+    fieldsMap.put("Test Summary", jiraFieldNG2);
+    when(jiraIssueUpdateMetadataNG.getFields()).thenReturn(fieldsMap);
+
+    JiraClient jiraClient = Mockito.mock(JiraClient.class);
+    PowerMockito.whenNew(JiraClient.class).withAnyArguments().thenReturn(jiraClient);
+    when(jiraClient.getIssueUpdateMetadata("TJI-37792")).thenReturn(jiraIssueUpdateMetadataNG);
+    JiraUserData jiraUserData1 = new JiraUserData("accountId1", "assignee1", true, "your-jira-account-id-1");
+    JiraUserData jiraUserData2 = new JiraUserData("accountId2", "assignee2", true, "your-jira-account-id-2");
+    when(jiraClient.getUsers("your-jira-account-id", null, null))
+        .thenReturn(Arrays.asList(jiraUserData1, jiraUserData2));
+
+    JiraIssueNG jiraIssueNG = Mockito.mock(JiraIssueNG.class);
+    Map<String, String> fields1 = new HashMap<>();
+    fields1.put("QE Assignee", "accountId");
+    fields1.put("Test Summary", "No test added");
+    when(jiraClient.updateIssue(
+             jiraTaskNGParameters.getIssueKey(), jiraTaskNGParameters.getTransitionToStatus(), null, fields1))
+        .thenReturn(jiraIssueNG);
+
+    assertThatExceptionOfType(InvalidRequestException.class)
+        .isThrownBy(() -> jiraTaskNGHandler.updateIssue(jiraTaskNGParameters));
   }
 
   private JiraTaskNGParametersBuilder createJiraTaskParametersBuilder() {

@@ -201,10 +201,10 @@ public class SshCommandStepHelperTest extends CategoryTest {
   private final ServiceStepOutcome winRmServiceOutcome =
       ServiceStepOutcome.builder().type("WinRm").name("winrm-svc").build();
   private final PdcSshInfraDelegateConfig pdcSshInfraDelegateConfig =
-      PdcSshInfraDelegateConfig.builder().hosts(Collections.singletonList("host1")).build();
+      PdcSshInfraDelegateConfig.builder().hosts(Collections.singleton("host1")).build();
 
   private final PdcWinRmInfraDelegateConfig pdcWinRmInfraDelegateConfig =
-      PdcWinRmInfraDelegateConfig.builder().hosts(Collections.singletonList("host1")).build();
+      PdcWinRmInfraDelegateConfig.builder().hosts(Collections.singleton("host1")).build();
 
   private final ArtifactoryArtifactDelegateConfig artifactDelegateConfig =
       ArtifactoryArtifactDelegateConfig.builder().build();

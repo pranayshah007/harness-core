@@ -25,6 +25,7 @@ import io.harness.cdng.service.beans.ServiceDefinition;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.cdng.service.beans.ServiceYaml;
 import io.harness.cdng.service.beans.ServiceYamlV2;
+import io.harness.cdng.service.beans.ServicesYaml;
 import io.harness.exception.InvalidRequestException;
 import io.harness.filters.GenericStageFilterJsonCreatorV2;
 import io.harness.ng.core.environment.beans.Environment;
@@ -47,12 +48,14 @@ import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
 
 import com.google.inject.Inject;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 
 @OwnedBy(HarnessTeam.CDC)
@@ -147,6 +150,11 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
     } else if (deploymentStageConfig.getService() != null) {
       addFiltersFromServiceV2(filterCreationContext, filterBuilder, deploymentStageConfig.getService(),
           deploymentStageConfig.getDeploymentType());
+    } else if (deploymentStageConfig.getServices() != null) {
+      if (!deploymentStageConfig.getServices().getValues().isExpression()) {
+        addFiltersForServices(filterCreationContext, filterBuilder, deploymentStageConfig.getServices(),
+            deploymentStageConfig.getDeploymentType());
+      }
     } else {
       throw new InvalidYamlRuntimeException(
           format("serviceConfig or Service should be present in stage [%s]. Please add it and try again",
@@ -164,6 +172,13 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
     } else if (deploymentStageConfig.getEnvironmentGroup() != null) {
       addFiltersFromEnvironmentGroup(filterCreationContext, filterBuilder, deploymentStageConfig.getEnvironmentGroup(),
           deploymentStageConfig.getGitOpsEnabled());
+    } else if (deploymentStageConfig.getEnvironments() != null) {
+      if (!deploymentStageConfig.getEnvironments().getValues().isExpression()) {
+        for (EnvironmentYamlV2 environmentYamlV2 : deploymentStageConfig.getEnvironments().getValues().getValue()) {
+          addFiltersFromEnvironment(
+              filterCreationContext, filterBuilder, environmentYamlV2, deploymentStageConfig.getGitOpsEnabled());
+        }
+      }
     } else {
       throw new InvalidYamlRuntimeException(format(
           "Infrastructure or Environment or EnvironmentGroup should be present in stage [%s]. Please add it and try again",
@@ -186,6 +201,13 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
         throw new InvalidYamlRuntimeException(
             "Deploy to all environments is not supported yet. Please select a specific infrastructure and try again");
       }
+
+      if (ParameterField.isNull(env.getInfrastructureDefinition())
+          && ParameterField.isNull(env.getInfrastructureDefinitions())) {
+        throw new InvalidYamlRuntimeException(format(
+            "InfrastructureDefinition or InfrastructureDefinitions must be specified for environment in stage [%s]",
+            YamlUtils.getFullyQualifiedName(filterCreationContext.getCurrentField().getNode())));
+      }
     }
 
     if (!environmentRef.isExpression()) {
@@ -196,37 +218,48 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
         final Environment entity = environmentEntityOptional.get();
         filterBuilder.environmentName(entity.getName());
 
-        List<InfraStructureDefinitionYaml> infraList = env.getInfrastructureDefinitions().getValue();
-        if (isNotEmpty(infraList)) {
-          if (infraList.size() > 1) {
-            throw new InvalidYamlRuntimeException(format(
-                "multiple infra deployments are not supported yet in stage [%s]. Please select 1 infrastructure and try again",
-                YamlUtils.getFullyQualifiedName(filterCreationContext.getCurrentField().getNode())));
+        List<InfraStructureDefinitionYaml> infraList = new ArrayList<>();
+        if (ParameterField.isNotNull(env.getInfrastructureDefinitions())) {
+          if (!env.getInfrastructureDefinitions().isExpression()) {
+            infraList.addAll(env.getInfrastructureDefinitions().getValue());
           }
-          Optional<InfrastructureEntity> infrastructureEntity =
-              infraService.get(filterCreationContext.getSetupMetadata().getAccountId(),
-                  filterCreationContext.getSetupMetadata().getOrgId(),
-                  filterCreationContext.getSetupMetadata().getProjectId(), entity.getIdentifier(),
-                  infraList.get(0).getIdentifier());
-          if (infrastructureEntity.isPresent()) {
-            if (infrastructureEntity.get().getType() == null) {
+        } else if (ParameterField.isNotNull(env.getInfrastructureDefinition())) {
+          if (!env.getInfrastructureDefinition().isExpression()) {
+            infraList.add(env.getInfrastructureDefinition().getValue());
+          }
+        }
+
+        if (isNotEmpty(infraList)) {
+          List<InfrastructureEntity> infrastructureEntities = infraService.getAllInfrastructureFromIdentifierList(
+              filterCreationContext.getSetupMetadata().getAccountId(),
+              filterCreationContext.getSetupMetadata().getOrgId(),
+              filterCreationContext.getSetupMetadata().getProjectId(), entity.getIdentifier(),
+              infraList.stream()
+                  .map(InfraStructureDefinitionYaml::getIdentifier)
+                  .filter(field -> !field.isExpression())
+                  .map(ParameterField::getValue)
+                  .collect(Collectors.toList()));
+          for (InfrastructureEntity infrastructureEntity : infrastructureEntities) {
+            if (infrastructureEntity.getType() == null) {
               throw new InvalidRequestException(format(
                   "Infrastructure Definition [%s] in environment [%s] does not have an associated type. Please select a type for the infrastructure and try again",
-                  infrastructureEntity.get().getIdentifier(), infrastructureEntity.get().getEnvIdentifier()));
+                  infrastructureEntity.getIdentifier(), infrastructureEntity.getEnvIdentifier()));
             }
-            filterBuilder.infrastructureType(infrastructureEntity.get().getType().getDisplayName());
+            filterBuilder.infrastructureType(infrastructureEntity.getType().getDisplayName());
           }
         }
       }
     }
 
     if (gitOpsEnabled && !deployToAll.isExpression()) {
-      if (deployToAll.getValue() && env.getGitOpsClusters().fetchFinalValue() != null) {
+      if (deployToAll.getValue() && env.getGitOpsClusters() != null
+          && env.getGitOpsClusters().fetchFinalValue() != null) {
         throw new InvalidYamlRuntimeException(format(
             "When deploying to all, individual gitops clusters must not be provided in stage [%s]. Please remove the gitOpsClusters property and try again",
             YamlUtils.getFullyQualifiedName(filterCreationContext.getCurrentField().getNode())));
       }
-      if (!deployToAll.getValue() && env.getGitOpsClusters().fetchFinalValue() == null) {
+      if (!deployToAll.getValue() && env.getGitOpsClusters() != null
+          && env.getGitOpsClusters().fetchFinalValue() == null) {
         throw new InvalidYamlRuntimeException(format(
             "When deploy to all is false, list of gitops clusters must be provided  in stage [%s].  Please specify the gitOpsClusters property and try again",
             YamlUtils.getFullyQualifiedName(filterCreationContext.getCurrentField().getNode())));
@@ -245,6 +278,45 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
     if (gitOpsEnabled != Boolean.TRUE) {
       throw new InvalidYamlRuntimeException(
           "Deploy to all environment groups is not supported yet. Please try deploying to specific infrastructure and try again");
+    }
+  }
+
+  private void addFiltersForServices(FilterCreationContext filterCreationContext, CdFilterBuilder filterBuilder,
+      ServicesYaml services, ServiceDefinitionType deploymentType) {
+    List<String> serviceRefs = new ArrayList<>();
+
+    if (services.getValues().isExpression()) {
+      return;
+    }
+    for (ServiceYamlV2 serviceYamlV2 : services.getValues().getValue()) {
+      final ParameterField<String> serviceEntityRef = serviceYamlV2.getServiceRef();
+      if (serviceEntityRef == null || serviceEntityRef.fetchFinalValue() == null) {
+        throw new InvalidYamlRuntimeException(format(
+            "serviceRef should be present in stage [%s] when referring to a service entity. Please add it and try again",
+            YamlUtils.getFullyQualifiedName(filterCreationContext.getCurrentField().getNode())));
+      }
+      if (!serviceEntityRef.isExpression()) {
+        serviceRefs.add(serviceEntityRef.getValue());
+      }
+    }
+
+    if (!serviceRefs.isEmpty()) {
+      List<ServiceEntity> serviceEntities = serviceEntityService.getServices(
+          filterCreationContext.getSetupMetadata().getAccountId(), filterCreationContext.getSetupMetadata().getOrgId(),
+          filterCreationContext.getSetupMetadata().getProjectId(), serviceRefs);
+      for (ServiceEntity se : serviceEntities) {
+        NGServiceV2InfoConfig config = NGServiceEntityMapper.toNGServiceConfig(se).getNgServiceV2InfoConfig();
+        filterBuilder.serviceName(se.getName());
+        if (config.getServiceDefinition() == null) {
+          throw new InvalidYamlRuntimeException(
+              format("ServiceDefinition should be present in service [%s]. Please add it and try again", se.getName()));
+        }
+        if (config.getServiceDefinition().getType() != deploymentType) {
+          throw new InvalidYamlRuntimeException(format(
+              "deploymentType should be the same as in service [%s]. Please correct it and try again", se.getName()));
+        }
+        filterBuilder.deploymentType(config.getServiceDefinition().getType().getYamlName());
+      }
     }
   }
 

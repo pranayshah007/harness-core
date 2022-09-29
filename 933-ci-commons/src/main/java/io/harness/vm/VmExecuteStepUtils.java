@@ -19,6 +19,7 @@ import static org.apache.commons.lang3.CharUtils.isAsciiAlphanumeric;
 import io.harness.connector.ImageCredentials;
 import io.harness.connector.ImageSecretBuilder;
 import io.harness.connector.SecretSpecBuilder;
+import io.harness.delegate.beans.ci.InfraInfo;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.ci.pod.ImageDetailsWithConnector;
 import io.harness.delegate.beans.ci.pod.SecretParams;
@@ -82,18 +83,23 @@ public class VmExecuteStepUtils {
       secrets.addAll(params.getSecrets());
     }
     configBuilder.secrets(secrets);
+
+    InfraInfo infraInfo = params.getInfraInfo();
+
     return ExecuteStepRequest.builder()
         .stageRuntimeID(params.getStageRuntimeId())
         .poolId(params.getPoolId())
         .ipAddress(params.getIpAddress())
-        .config(configBuilder.build());
+        .config(configBuilder.build())
+        .infraType(infraInfo.getType().toString());
   }
 
   public ExecuteStepRequestBuilder convertService(
       VmServiceDependency params, CIVmInitializeTaskParams initializeTaskParams) {
+    String id = params.getIdentifier();
     ConfigBuilder configBuilder = Config.builder()
-                                      .id(params.getIdentifier())
-                                      .name(params.getIdentifier())
+                                      .id(id)
+                                      .name(id)
                                       .logKey(params.getLogKey())
                                       .workingDir(initializeTaskParams.getWorkingDir())
                                       .volumeMounts(getVolumeMounts(initializeTaskParams.getVolToMountPath()))
@@ -119,10 +125,13 @@ public class VmExecuteStepUtils {
       configBuilder.portBindings(params.getPortBindings());
     }
 
+    InfraInfo infraInfo = initializeTaskParams.getInfraInfo();
+
     return ExecuteStepRequest.builder()
         .poolId(initializeTaskParams.getPoolID())
         .config(configBuilder.build())
-        .stageRuntimeID(initializeTaskParams.getStageRuntimeId());
+        .stageRuntimeID(initializeTaskParams.getStageRuntimeId())
+        .infraType(infraInfo.getType().toString());
   }
 
   private List<String> setRunConfig(VmRunStep runStep, ConfigBuilder configBuilder) {

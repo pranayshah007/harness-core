@@ -61,6 +61,7 @@ import io.harness.steps.OutputExpressionConstants;
 import io.harness.steps.environment.EnvironmentOutcome;
 import io.harness.yaml.core.variables.NGVariable;
 
+import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -84,6 +85,7 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
   @Inject private EnvironmentService environmentService;
   @Inject private ServiceOverrideService serviceOverrideService;
   @Inject private InfrastructureEntityService infrastructureEntityService;
+  @Inject private InfrastructureMapper infrastructureMapper;
 
   @Override
   public LinkedHashMap<String, VariableCreationResponse> createVariablesForChildrenNodes(
@@ -197,7 +199,7 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
       if (environmentRef != null) {
         createVariablesForEnvironment(ctx, environmentRef, responseMap, serviceVariables);
       }
-      if (environmentRef != null && infraDefinitionRefs != null) {
+      if (environmentRef != null && isNotEmpty(infraDefinitionRefs)) {
         // todo: multi-infra
         createVariablesForInfraDefinitions(ctx, environmentRef, infraDefinitionRefs, responseMap);
       }
@@ -274,12 +276,12 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
     YamlField infraDefinitionField = envField.getNode().getField(YamlTypes.INFRASTRUCTURE_DEFS);
     Map<String, YamlExtraProperties> yamlPropertiesMap = new LinkedHashMap<>();
     List<YamlProperties> outputProperties = new LinkedList<>();
-
     InfrastructureConfig infrastructureConfig =
         InfrastructureEntityConfigMapper.toInfrastructureConfig(infrastructureEntity);
-    InfrastructureOutcome infrastructureOutcome =
-        InfrastructureMapper.toOutcome(infrastructureConfig.getInfrastructureDefinitionConfig().getSpec(),
-            EnvironmentOutcome.builder().build(), ServiceStepOutcome.builder().build());
+    InfrastructureOutcome infrastructureOutcome = infrastructureMapper.toOutcome(
+        infrastructureConfig.getInfrastructureDefinitionConfig().getSpec(), EnvironmentOutcome.builder().build(),
+        ServiceStepOutcome.builder().build(), infrastructureEntity.getAccountId(),
+        infrastructureEntity.getProjectIdentifier(), infrastructureEntity.getOrgIdentifier());
 
     List<String> infraStepOutputExpressions =
         VariableCreatorHelper.getExpressionsInObject(infrastructureOutcome, OutputExpressionConstants.INFRA);
@@ -396,7 +398,13 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
       if (isNotEmpty(infraStructureDefinitionYamls)) {
         return infraStructureDefinitionYamls.stream()
             .map(InfraStructureDefinitionYaml::getIdentifier)
+            .filter(p -> !p.isExpression())
+            .map(ParameterField::getValue)
             .collect(Collectors.toList());
+      }
+      if (ParameterField.isNotNull(environmentYamlV2.getInfrastructureDefinition())) {
+        return Lists.newArrayList(
+            environmentYamlV2.getInfrastructureDefinition().getValue().getIdentifier().getValue());
       }
     }
     return null;

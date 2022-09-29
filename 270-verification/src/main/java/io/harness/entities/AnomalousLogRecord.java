@@ -17,9 +17,11 @@ import static io.harness.persistence.GoogleDataStoreAware.readLong;
 import static io.harness.persistence.GoogleDataStoreAware.readString;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.StoreIn;
 import io.harness.exception.WingsException;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.MongoIndex;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.GoogleDataStoreAware;
 
 import software.wings.sm.StateType;
@@ -49,6 +51,7 @@ import org.mongodb.morphia.annotations.Id;
 @AllArgsConstructor
 @FieldNameConstants(innerTypeName = "AnomalousLogRecordsKey")
 @JsonIgnoreProperties(ignoreUnknown = true)
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "anomalousLogRecords", noClassnameStored = true)
 @HarnessEntity(exportable = false)
 public final class AnomalousLogRecord implements GoogleDataStoreAware {

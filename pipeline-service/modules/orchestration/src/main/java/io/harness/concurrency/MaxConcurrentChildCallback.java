@@ -7,7 +7,10 @@
 
 package io.harness.concurrency;
 
+import static io.harness.steps.SdkCoreStepUtils.createStepResponseFromChildResponse;
+
 import io.harness.OrchestrationPublisherName;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.OrchestrationEngine;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.exception.UnexpectedException;
@@ -16,6 +19,8 @@ import io.harness.graph.stepDetail.service.PmsGraphStepDetailsService;
 import io.harness.lock.AcquiredLock;
 import io.harness.lock.PersistentLocker;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.contracts.steps.io.StepResponseProto;
 import io.harness.pms.execution.utils.NodeProjectionUtils;
 import io.harness.pms.execution.utils.StatusUtils;
 import io.harness.tasks.ResponseData;
@@ -47,6 +52,7 @@ public class MaxConcurrentChildCallback implements OldNotifyCallback {
   String parentNodeExecutionId;
   Ambiance ambiance; // Store only planExecutionId
 
+  Boolean proceedIfFailed;
   @Override
   public void notify(Map<String, ResponseData> response) {
     String lockName = String.format(EXECUTION_START_PREFIX, parentNodeExecutionId);
@@ -56,13 +62,17 @@ public class MaxConcurrentChildCallback implements OldNotifyCallback {
         log.error("Could not acquire lock for nodeExecutionId: [{}]", parentNodeExecutionId);
         throw new UnexpectedException("Unable to occupy lock therefore throwing the exception");
       }
-      ConcurrentChildInstance childInstance = nodeExecutionInfoService.incrementCursor(parentNodeExecutionId);
+      Status currentStatus = createStepResponseFromChildResponse(response).getStatus();
+      ConcurrentChildInstance childInstance =
+          nodeExecutionInfoService.incrementCursor(parentNodeExecutionId, currentStatus);
+
       if (childInstance == null) {
         log.error("[MaxConcurrentCallback]: ChildInstance found null for parentId: " + parentNodeExecutionId);
         nodeExecutionService.errorOutActiveNodes(ambiance.getPlanExecutionId());
         return;
       }
       log.info("[MaxConcurrentCallback]: MaxConcurrentCallback called for parentId: " + parentNodeExecutionId);
+
       // We have reached the last child already so ignore this callback as there is no new child to run.
       if (childInstance.getCursor() >= childInstance.getChildrenNodeExecutionIds().size()) {
         log.info(
@@ -72,8 +82,25 @@ public class MaxConcurrentChildCallback implements OldNotifyCallback {
       }
       int cursor = childInstance.getCursor();
       String nodeExecutionToStart = childInstance.getChildrenNodeExecutionIds().get(cursor);
+      // If proceedIfFailed is false then we should mark all the remaining nodes as skipped.
+      if (proceedIfFailed != null && !proceedIfFailed
+          && (StatusUtils.brokeStatuses().contains(currentStatus)
+              || (EmptyPredicate.isNotEmpty(childInstance.getChildStatuses())
+                  && childInstance.getChildStatuses().stream().anyMatch(
+                      s -> StatusUtils.brokeStatuses().contains(s))))) {
+        skipExecution(nodeExecutionToStart);
+        return;
+      }
       getAmbianceAndStartExecution(nodeExecutionToStart);
     }
+  }
+
+  private void skipExecution(String nodeExecutionId) {
+    log.info(String.format("Skipping node: %s", nodeExecutionId));
+    NodeExecution nodeExecution =
+        nodeExecutionService.getWithFieldsIncluded(nodeExecutionId, NodeProjectionUtils.withAmbianceAndStatus);
+    StepResponseProto response = StepResponseProto.newBuilder().setStatus(Status.SKIPPED).build();
+    engine.processStepResponse(nodeExecution.getAmbiance(), response);
   }
 
   private void getAmbianceAndStartExecution(String nodeExecutionToStart) {

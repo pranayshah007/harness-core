@@ -12,7 +12,6 @@ import static io.harness.persistence.HQuery.excludeAuthority;
 import static software.wings.beans.Application.ApplicationKeys;
 
 import io.harness.persistence.HIterator;
-import io.harness.timescaledb.DBUtils;
 import io.harness.timescaledb.TimeScaleDBService;
 
 import software.wings.beans.Application;
@@ -23,7 +22,6 @@ import com.google.inject.Singleton;
 import com.mongodb.ReadPreference;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import lombok.extern.slf4j.Slf4j;
 import org.mongodb.morphia.query.FindOptions;
@@ -37,13 +35,8 @@ public class MigrateApplicationsToTimeScaleDB {
 
   private static final int MAX_RETRY = 5;
 
-  private static final String insert_statement =
-      "INSERT INTO CG_APPLICATIONS (ID,NAME,ACCOUNT_ID,CREATED_AT,LAST_UPDATED_AT,CREATED_BY,LAST_UPDATED_BY) VALUES (?,?,?,?,?,?,?)";
-
-  private static final String update_statement =
-      "UPDATE CG_APPLICATIONS SET NAME=?, ACCOUNT_ID=?, CREATED_AT=?, LAST_UPDATED_AT=?, CREATED_BY=?, LAST_UPDATED_BY=? WHERE ID=?";
-
-  private static final String query_statement = "SELECT * FROM CG_APPLICATIONS WHERE ID=?";
+  private static final String upsert_statement =
+      "INSERT INTO CG_APPLICATIONS (ID,NAME,ACCOUNT_ID,CREATED_AT,LAST_UPDATED_AT,CREATED_BY,LAST_UPDATED_BY) VALUES (?,?,?,?,?,?,?) ON CONFLICT(ID) DO UPDATE SET NAME = excluded.NAME,ACCOUNT_ID = excluded.ACCOUNT_ID,CREATED_AT = excluded.CREATED_AT,LAST_UPDATED_AT = excluded.LAST_UPDATED_AT,CREATED_BY = excluded.CREATED_BY,LAST_UPDATED_BY = excluded.LAST_UPDATED_BY;";
 
   public boolean runTimeScaleMigration(String accountId) {
     if (!timeScaleDBService.isValid()) {
@@ -80,21 +73,9 @@ public class MigrateApplicationsToTimeScaleDB {
     boolean successful = false;
     int retryCount = 0;
     while (!successful && retryCount < MAX_RETRY) {
-      ResultSet queryResult = null;
-
       try (Connection connection = timeScaleDBService.getDBConnection();
-           PreparedStatement queryStatement = connection.prepareStatement(query_statement);
-           PreparedStatement updateStatement = connection.prepareStatement(update_statement);
-           PreparedStatement insertStatement = connection.prepareStatement(insert_statement)) {
-        queryStatement.setString(1, application.getAppId());
-        queryResult = queryStatement.executeQuery();
-        if (queryResult != null && queryResult.next()) {
-          log.info("Application found in the timescaleDB:[{}],updating it", application.getAppId());
-          updateDataInTimeScaleDB(application, connection, updateStatement);
-        } else {
-          log.info("Application not found in the timescaleDB:[{}],inserting it", application.getAppId());
-          insertDataInTimeScaleDB(application, connection, insertStatement);
-        }
+           PreparedStatement upsertStatement = connection.prepareStatement(upsert_statement)) {
+        upsertDataInTimeScaleDB(application, upsertStatement);
         successful = true;
       } catch (SQLException e) {
         if (retryCount >= MAX_RETRY) {
@@ -107,48 +88,28 @@ public class MigrateApplicationsToTimeScaleDB {
         log.error("Failed to save application,[{}]", application.getAppId(), e);
         retryCount = MAX_RETRY + 1;
       } finally {
-        DBUtils.close(queryResult);
         log.info(
             "Total time =[{}] for application:[{}]", System.currentTimeMillis() - startTime, application.getAppId());
       }
     }
   }
 
-  private void insertDataInTimeScaleDB(
-      Application application, Connection connection, PreparedStatement insertPreparedStatement) throws SQLException {
-    insertPreparedStatement.setString(1, application.getAppId());
-    insertPreparedStatement.setString(2, application.getName());
-    insertPreparedStatement.setString(3, application.getAccountId());
-    insertPreparedStatement.setLong(4, application.getCreatedAt());
-    insertPreparedStatement.setLong(5, application.getLastUpdatedAt());
+  private void upsertDataInTimeScaleDB(Application application, PreparedStatement upsertPreparedStatement)
+      throws SQLException {
+    upsertPreparedStatement.setString(1, application.getAppId());
+    upsertPreparedStatement.setString(2, application.getName());
+    upsertPreparedStatement.setString(3, application.getAccountId());
+    upsertPreparedStatement.setLong(4, application.getCreatedAt());
+    upsertPreparedStatement.setLong(5, application.getLastUpdatedAt());
 
     String created_by = null;
     if (application.getCreatedBy() != null) {
       created_by = application.getCreatedBy().getName();
     }
-    insertPreparedStatement.setString(6, created_by);
-    insertPreparedStatement.setString(
+    upsertPreparedStatement.setString(6, created_by);
+    upsertPreparedStatement.setString(
         7, application.getLastUpdatedBy() != null ? application.getLastUpdatedBy().getName() : null);
 
-    insertPreparedStatement.execute();
-  }
-
-  private void updateDataInTimeScaleDB(
-      Application application, Connection connection, PreparedStatement updateStatement) throws SQLException {
-    updateStatement.setString(1, application.getName());
-    updateStatement.setString(2, application.getAccountId());
-    updateStatement.setLong(3, application.getCreatedAt());
-    updateStatement.setLong(4, application.getLastUpdatedAt());
-
-    String created_by = null;
-    if (application.getCreatedBy() != null) {
-      created_by = application.getCreatedBy().getName();
-    }
-    updateStatement.setString(4, created_by);
-    updateStatement.setString(
-        6, application.getLastUpdatedBy() != null ? application.getLastUpdatedBy().getName() : null);
-    updateStatement.setString(7, application.getAppId());
-
-    updateStatement.execute();
+    upsertPreparedStatement.execute();
   }
 }

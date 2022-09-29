@@ -91,8 +91,9 @@ public class TemplateVerifyStepMonitoredServiceResolutionServiceImplTest extends
   @Owner(developers = DHRUVX)
   @Category(UnitTests.class)
   public void testGetMonitoredServiceIdentifier() {
-    String actualIdentifier = templateService.getResolvedCVConfigInfo(serviceEnvironmentParams, monitoredServiceNode)
-                                  .getMonitoredServiceIdentifier();
+    String actualIdentifier =
+        templateService.fetchAndPersistResolvedCVConfigInfo(serviceEnvironmentParams, monitoredServiceNode)
+            .getMonitoredServiceIdentifier();
     assertThat(actualIdentifier).isNotBlank();
   }
 
@@ -101,7 +102,8 @@ public class TemplateVerifyStepMonitoredServiceResolutionServiceImplTest extends
   @Category(UnitTests.class)
   public void testGetCVConfigs() {
     List<CVConfig> actualCvConfigs =
-        templateService.getResolvedCVConfigInfo(serviceEnvironmentParams, monitoredServiceNode).getCvConfigs();
+        templateService.fetchAndPersistResolvedCVConfigInfo(serviceEnvironmentParams, monitoredServiceNode)
+            .getCvConfigs();
     assertThat(actualCvConfigs).hasSize(1);
   }
 
@@ -111,7 +113,8 @@ public class TemplateVerifyStepMonitoredServiceResolutionServiceImplTest extends
   public void testGetCVConfigs_monitoredServiceDtoDoesNotExist() {
     when(mockMonitoredServiceService.getExpandedMonitoredServiceFromYaml(any(), any())).thenReturn(null);
     List<CVConfig> actualCvConfigs =
-        templateService.getResolvedCVConfigInfo(serviceEnvironmentParams, monitoredServiceNode).getCvConfigs();
+        templateService.fetchAndPersistResolvedCVConfigInfo(serviceEnvironmentParams, monitoredServiceNode)
+            .getCvConfigs();
     assertThat(actualCvConfigs).hasSize(0);
   }
 
@@ -121,7 +124,8 @@ public class TemplateVerifyStepMonitoredServiceResolutionServiceImplTest extends
   public void testGetCVConfigs_healthSourcesDoNotExist() {
     monitoredServiceDTO.getSources().setHealthSources(Collections.emptySet());
     List<CVConfig> actualCvConfigs =
-        templateService.getResolvedCVConfigInfo(serviceEnvironmentParams, monitoredServiceNode).getCvConfigs();
+        templateService.fetchAndPersistResolvedCVConfigInfo(serviceEnvironmentParams, monitoredServiceNode)
+            .getCvConfigs();
     assertThat(actualCvConfigs).hasSize(0);
   }
 
@@ -131,7 +135,8 @@ public class TemplateVerifyStepMonitoredServiceResolutionServiceImplTest extends
   public void testGetCVConfigs_SourcesDoNotExist() {
     monitoredServiceDTO.setSources(null);
     List<CVConfig> actualCvConfigs =
-        templateService.getResolvedCVConfigInfo(serviceEnvironmentParams, monitoredServiceNode).getCvConfigs();
+        templateService.fetchAndPersistResolvedCVConfigInfo(serviceEnvironmentParams, monitoredServiceNode)
+            .getCvConfigs();
     assertThat(actualCvConfigs).hasSize(0);
   }
 
@@ -140,7 +145,7 @@ public class TemplateVerifyStepMonitoredServiceResolutionServiceImplTest extends
   @Category(UnitTests.class)
   public void testManagePerpetualTasks_verifyPerpetualTasksGotCreated() {
     ResolvedCVConfigInfo resolvedCVConfigInfo =
-        templateService.getResolvedCVConfigInfo(serviceEnvironmentParams, monitoredServiceNode);
+        templateService.fetchAndPersistResolvedCVConfigInfo(serviceEnvironmentParams, monitoredServiceNode);
     String verificationJobInstanceId = generateUuid();
     templateService.managePerpetualTasks(serviceEnvironmentParams, resolvedCVConfigInfo, verificationJobInstanceId);
     Query<MonitoringSourcePerpetualTask> query =
@@ -157,7 +162,7 @@ public class TemplateVerifyStepMonitoredServiceResolutionServiceImplTest extends
   @Category(UnitTests.class)
   public void testManagePerpetualTasks_verifySideKickGotCreated() {
     ResolvedCVConfigInfo resolvedCVConfigInfo =
-        templateService.getResolvedCVConfigInfo(serviceEnvironmentParams, monitoredServiceNode);
+        templateService.fetchAndPersistResolvedCVConfigInfo(serviceEnvironmentParams, monitoredServiceNode);
     String verificationJobInstanceId = generateUuid();
     templateService.managePerpetualTasks(serviceEnvironmentParams, resolvedCVConfigInfo, verificationJobInstanceId);
     Query<SideKick> query = hPersistence.createQuery(SideKick.class, excludeAuthority);
@@ -177,7 +182,7 @@ public class TemplateVerifyStepMonitoredServiceResolutionServiceImplTest extends
   public void testManagePerpetualTasks_noHealthSources() {
     monitoredServiceDTO.setSources(null);
     ResolvedCVConfigInfo resolvedCVConfigInfo =
-        templateService.getResolvedCVConfigInfo(serviceEnvironmentParams, monitoredServiceNode);
+        templateService.fetchAndPersistResolvedCVConfigInfo(serviceEnvironmentParams, monitoredServiceNode);
     String verificationJobInstanceId = generateUuid();
     templateService.managePerpetualTasks(serviceEnvironmentParams, resolvedCVConfigInfo, verificationJobInstanceId);
     List<MonitoringSourcePerpetualTask> monitoringSourcePerpetualTasks =

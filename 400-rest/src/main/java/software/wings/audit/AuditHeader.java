@@ -10,6 +10,7 @@ package software.wings.audit;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
@@ -17,6 +18,7 @@ import io.harness.beans.EmbeddedUser;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.mongo.index.SortCompoundMongoIndex;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
 
 import software.wings.beans.Application;
@@ -46,6 +48,7 @@ import org.mongodb.morphia.annotations.Entity;
 @OwnedBy(PL)
 @EqualsAndHashCode(callSuper = true)
 @FieldNameConstants(innerTypeName = "AuditHeaderKeys")
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "audits", noClassnameStored = true)
 @HarnessEntity(exportable = true)
 @TargetModule(HarnessModule._940_CG_AUDIT_SERVICE)
@@ -80,6 +83,13 @@ public class AuditHeader extends Base implements AccountAccess {
                  .field(AuditHeaderKeys.accountId)
                  .field(AuditHeaderKeys.appIdEntityRecord)
                  .descSortField(AuditHeaderKeys.createdAt)
+                 .build())
+        .add(SortCompoundMongoIndex.builder()
+                 .name("accountId_createdAt_earAffectedResourceOperation_earAffectedResourceType")
+                 .field(AuditHeaderKeys.accountId)
+                 .descSortField(AuditHeaderKeys.createdAt)
+                 .rangeField(AuditHeaderKeys.affectedResourceOp)
+                 .rangeField(AuditHeaderKeys.affectedResourceType)
                  .build())
         .build();
   }

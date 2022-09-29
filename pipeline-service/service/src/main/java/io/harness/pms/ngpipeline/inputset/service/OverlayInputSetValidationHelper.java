@@ -187,7 +187,9 @@ public class OverlayInputSetValidationHelper {
     List<String> existingButInvalidReferences =
         invalidReferencesWithErrors.keySet()
             .stream()
-            .filter(ref -> invalidReferencesWithErrors.get(ref).equals(InputSetErrorsHelper.INVALID_INPUT_SET_MESSAGE))
+            .filter(ref
+                -> invalidReferencesWithErrors.get(ref).equals(InputSetErrorsHelper.INVALID_INPUT_SET_MESSAGE)
+                    || invalidReferencesWithErrors.get(ref).equals(InputSetErrorsHelper.OUTDATED_INPUT_SET_MESSAGE))
             .collect(Collectors.toList());
     Set<String> invalidReferences = invalidReferencesWithErrors.keySet();
     List<String> validReferences =

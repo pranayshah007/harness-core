@@ -56,7 +56,6 @@ import software.wings.helpers.ext.jenkins.JobDetails;
 import software.wings.security.PermissionAttribute.ResourceType;
 import software.wings.security.UsageRestrictions;
 import software.wings.security.annotations.ApiKeyAuthorized;
-import software.wings.security.annotations.AuthRule;
 import software.wings.security.annotations.Scope;
 import software.wings.service.impl.SettingServiceHelper;
 import software.wings.service.impl.security.auth.SettingAuthHandler;
@@ -112,8 +111,6 @@ import org.hibernate.validator.constraints.NotEmpty;
 @Consumes(APPLICATION_JSON)
 @Produces(APPLICATION_JSON)
 @Scope(ResourceType.SETTING)
-@AuthRule(permissionType = LOGGED_IN)
-@ApiKeyAuthorized(permissionType = LOGGED_IN)
 @OwnedBy(CDC)
 @TargetModule(HarnessModule._360_CG_MANAGER)
 public class SettingResource {
@@ -147,6 +144,7 @@ public class SettingResource {
   @GET
   @Timed
   @ExceptionMetered
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
   public RestResponse<PageResponse<SettingAttribute>> list(
       @DefaultValue(GLOBAL_APP_ID) @QueryParam("appId") String appId, @QueryParam("currentAppId") String currentAppId,
       @DefaultValue("false") @QueryParam("forUsageInNewApp") Boolean forUsageInNewApp,
@@ -304,6 +302,7 @@ public class SettingResource {
   @Path("{attrId}")
   @Timed
   @ExceptionMetered
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
   public RestResponse<SettingAttribute> get(
       @DefaultValue(GLOBAL_APP_ID) @QueryParam("appId") String appId, @PathParam("attrId") String attrId) {
     SettingAttribute result = settingsService.get(appId, attrId);
@@ -467,6 +466,7 @@ public class SettingResource {
   @Path("build-sources/jobs")
   @Timed
   @ExceptionMetered
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
   public RestResponse<Set<JobDetails>> getJobs(
       @QueryParam("settingId") String settingId, @QueryParam("parentJobName") String parentJobName) {
     return new RestResponse<>(buildSourceService.getJobs(settingId, parentJobName));
@@ -483,6 +483,7 @@ public class SettingResource {
   @Path("build-sources/jobs/{jobName}/paths")
   @Timed
   @ExceptionMetered
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
   public RestResponse<Set<String>> getArtifactPaths(@PathParam("jobName") String jobName,
       @QueryParam("settingId") String settingId, @QueryParam("groupId") String groupId,
       @QueryParam("streamType") String streamType, @QueryParam("repositoryFormat") String repositoryFormat) {
@@ -497,6 +498,7 @@ public class SettingResource {
   @Path("build-sources/nexus/repositories/{repositoryName}/packageNames")
   @Timed
   @ExceptionMetered
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
   public RestResponse<Set<String>> fetchPackageNames(@PathParam("repositoryName") String repositoryName,
       @QueryParam("repositoryFormat") String repositoryFormat, @QueryParam("settingId") String settingId) {
     return new RestResponse<>(buildSourceService.fetchNexusPackageNames(repositoryName, repositoryFormat, settingId));
@@ -512,6 +514,7 @@ public class SettingResource {
   @Path("build-sources/plans")
   @Timed
   @ExceptionMetered
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
   public RestResponse<Map<String, String>> getBuildPlans(@QueryParam("settingId") String settingId,
       @QueryParam("streamType") String streamType, @QueryParam("repositoryType") String repositoryType,
       @QueryParam("repositoryFormat") String repositoryFormat) {
@@ -537,6 +540,7 @@ public class SettingResource {
   @Path("build-sources/jobs/{jobName}/groupIds")
   @Timed
   @ExceptionMetered
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
   public RestResponse<Set<String>> getGroupIds(@PathParam("jobName") String jobName,
       @QueryParam("settingId") String settingId, @QueryParam("repositoryFormat") String repositoryFormat) {
     if (isNotEmpty(repositoryFormat)) {
@@ -572,6 +576,7 @@ public class SettingResource {
   @Path("build-sources/builds")
   @Timed
   @ExceptionMetered
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
   public RestResponse<List<BuildDetails>> getBuilds(@QueryParam("artifactStreamId") String artifactStreamId,
       @QueryParam("settingId") String settingId, @DefaultValue("-1") @QueryParam("maxResults") int maxResults) {
     List<BuildDetails> buildDetails = buildSourceService.getBuilds(artifactStreamId, settingId, maxResults);
@@ -583,6 +588,7 @@ public class SettingResource {
   @Path("subscriptions")
   @Timed
   @ExceptionMetered
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
   public RestResponse<Map<String, String>> listSubscriptions(
       @QueryParam("accountId") String accountId, @QueryParam("settingId") String settingId) {
     return new RestResponse(azureResourceService.listSubscriptions(accountId, settingId));
@@ -592,6 +598,7 @@ public class SettingResource {
   @Path("subscriptions/{subscriptionId}/containerRegistries")
   @Timed
   @ExceptionMetered
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
   public RestResponse<List<String>> listContainerRegistries(@QueryParam("accountId") String accountId,
       @QueryParam("settingId") String settingId, @PathParam(value = "subscriptionId") String subscriptionId) {
     return new RestResponse(azureResourceService.listContainerRegistries(settingId, subscriptionId));
@@ -601,6 +608,7 @@ public class SettingResource {
   @Path("subscriptions/{subscriptionId}/containerRegistries/{registryName}/repositories")
   @Timed
   @ExceptionMetered
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
   public RestResponse<List<String>> listRepositories(@QueryParam("accountId") String accountId,
       @QueryParam("settingId") String settingId, @PathParam(value = "subscriptionId") String subscriptionId,
       @PathParam(value = "registryName") String registryName) {
@@ -617,6 +625,7 @@ public class SettingResource {
   @Path("azure-regions")
   @Timed
   @ExceptionMetered
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
   public RestResponse<List<NameValuePair>> listAzureRegions(@QueryParam("accountId") String accountId) {
     return new RestResponse(azureResourceService.listAzureRegions());
   }
@@ -631,6 +640,7 @@ public class SettingResource {
   @Path("aws-regions")
   @Timed
   @ExceptionMetered
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
   public RestResponse<List<NameValuePair>> listAwsRegions(@QueryParam("accountId") String accountId) {
     return new RestResponse(awsHelperResourceService.getAwsRegions());
   }
@@ -645,6 +655,7 @@ public class SettingResource {
   @Path("build-sources/project")
   @Timed
   @ExceptionMetered
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
   public RestResponse<String> getProject(@QueryParam("settingId") String settingId) {
     return new RestResponse<>(buildSourceService.getProject(settingId));
   }
@@ -660,6 +671,7 @@ public class SettingResource {
   @Path("build-sources/buckets")
   @Timed
   @ExceptionMetered
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
   public RestResponse<Map<String, String>> getBuckets(
       @QueryParam("projectId") @NotEmpty String projectId, @QueryParam("settingId") String settingId) {
     return new RestResponse<>(buildSourceService.getBuckets(projectId, settingId));
@@ -675,6 +687,7 @@ public class SettingResource {
   @Path("build-sources/smb-paths")
   @Timed
   @ExceptionMetered
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
   public RestResponse<List<String>> getSmbPaths(@QueryParam("settingId") String settingId) {
     return new RestResponse<>(buildSourceService.getSmbPaths(settingId));
   }
@@ -689,6 +702,7 @@ public class SettingResource {
   @Path("build-sources/artifact-paths")
   @Timed
   @ExceptionMetered
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
   public RestResponse<List<String>> getSftpPaths(
       @QueryParam("settingId") String settingId, @QueryParam("streamType") String streamType) {
     return new RestResponse<>(buildSourceService.getArtifactPathsByStreamType(settingId, streamType));
@@ -707,6 +721,7 @@ public class SettingResource {
   @Path("artifact-streams")
   @Timed
   @ExceptionMetered
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
   public RestResponse<PageResponse<ArtifactStream>> listArtifactStreams(@QueryParam("currentAppId") String currentAppId,
       @QueryParam("currentEnvId") String currentEnvId, @QueryParam("accountId") String accountId,
       @QueryParam("settingId") String settingId, @QueryParam("withArtifactCount") boolean withArtifactCount,
@@ -745,6 +760,7 @@ public class SettingResource {
   @Path("artifact-streams/{streamId}")
   @Timed
   @ExceptionMetered
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
   public RestResponse<ArtifactStream> get(@PathParam("streamId") String streamId) {
     return new RestResponse<>(artifactStreamService.get(streamId));
   }
@@ -771,6 +787,7 @@ public class SettingResource {
   @Path("artifact-streams/artifacts")
   @Timed
   @ExceptionMetered
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
   public RestResponse<PageResponse<Artifact>> listArtifacts(
       @QueryParam("accountId") String accountId, @BeanParam PageRequest<Artifact> pageRequest) {
     return new RestResponse<>(artifactService.listArtifactsForService(pageRequest));
@@ -780,6 +797,7 @@ public class SettingResource {
   @Path("tags")
   @Timed
   @ExceptionMetered
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
   public RestResponse<Set<String>> listTags(@QueryParam("region") String region,
       @QueryParam("computeProviderId") String settingId, @QueryParam("resourceType") String resourceType) {
     return new RestResponse<>(awsHelperResourceService.listTags(settingId, region, resourceType));
