@@ -18,6 +18,7 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
 import okhttp3.Request;
+import okio.Timeout;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -64,6 +65,11 @@ public class FakeAccountClient implements AccountClient {
 
       @Override
       public Request request() {
+        return null;
+      }
+
+      @Override
+      public Timeout timeout() {
         return null;
       }
     };
@@ -192,6 +198,11 @@ public class FakeAccountClient implements AccountClient {
 
       @Override
       public Request request() {
+        return null;
+      }
+
+      @Override
+      public Timeout timeout() {
         return null;
       }
     };
