@@ -492,14 +492,8 @@ func (r *runTestsTask) getCmd(ctx context.Context, agentPath, outputVarFile stri
 
 	// Runner selection
 	var runner testintelligence.TestRunner
-	r.log.Infow(r.language)
-	r.log.Infow(r.buildTool)
 	switch r.language {
-	case "scala":
-		fallthrough
-	case "java":
-		fallthrough
-	case "kotlin":
+	case "scala", "java", "kotlin":
 		switch r.buildTool {
 		case "maven":
 			runner = java.NewMavenRunner(r.log, r.fs, r.cmdContextFactory)
@@ -508,8 +502,10 @@ func (r *runTestsTask) getCmd(ctx context.Context, agentPath, outputVarFile stri
 		case "bazel":
 			runner = java.NewBazelRunner(r.log, r.fs, r.cmdContextFactory)
 		case "sbt":
-			if r.buildTool == "sbt" {
+			if r.language == "scala" {
 				runner = java.NewSBTRunner(r.log, r.fs, r.cmdContextFactory)
+			} else {
+				return "", fmt.Errorf("build tool: SBT is not supported for non-Scala languages")
 			}
 		default:
 			return "", fmt.Errorf("build tool: %s is not supported for Java", r.buildTool)
@@ -567,7 +563,6 @@ func (r *runTestsTask) getCmd(ctx context.Context, agentPath, outputVarFile stri
 
 	// Test command
 	testCmd, err := runner.GetCmd(ctx, selection.Tests, r.args, iniFilePath, ignoreInstr, !r.runOnlySelectedTests)
-	r.log.Infow(testCmd)
 	if err != nil {
 		return "", err
 	}
@@ -575,7 +570,15 @@ func (r *runTestsTask) getCmd(ctx context.Context, agentPath, outputVarFile stri
 	// TMPDIR needs to be set for some build tools like bazel
 	// TODO: (Vistaar) These commands need to be handled for Windows as well. We should move this out to the tool
 	// implementations and check for OS there.
-	command := fmt.Sprintf("set -xe\nexport TMPDIR=%s\nexport HARNESS_JAVA_AGENT=%s\n%s\n%s\n%s%s", r.tmpFilePath, agentArg, r.preCommand, testCmd, r.postCommand, outputVarCmd)
+	command := fmt.Sprintf("set -xe\nexport TMPDIR=%s\nexport HARNESS_JAVA_AGENT=%s\n", r.tmpFilePath, agentArg)
+	if r.preCommand != "" && r.preCommand != "null" {
+		command += fmt.Sprintf("%s\n", r.preCommand)
+	}
+	command += fmt.Sprintf("%s\n", testCmd)
+	if r.postCommand != "" && r.postCommand != "null" {
+		command += fmt.Sprintf("%s\n", r.postCommand)
+	}
+	command += outputVarCmd
 	resolvedCmd, err := resolveExprInCmd(command)
 	if err != nil {
 		return "", err
