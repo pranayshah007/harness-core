@@ -22,42 +22,48 @@ import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
-import org.apache.commons.collections4.CollectionUtils;
 
 @Data
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Builder
 @JsonIgnoreProperties(ignoreUnknown = true)
-@Schema(name = "ServiceLevelObjective", description = "This is the Service Level Objective entity defined in Harness")
-public class ServiceLevelObjectiveDTO implements YamlDTO {
-  @ApiModelProperty(required = true) @NotNull @EntityIdentifier String orgIdentifier;
-  @ApiModelProperty(required = true) @NotNull @EntityIdentifier String projectIdentifier;
+@NoArgsConstructor
+@AllArgsConstructor
+@Schema(name = "AbstractServiceLevelObjective",
+    description = "This is the Service Level Objective V2 entity defined in Harness")
+public class ServiceLevelObjectiveV2DTO implements YamlDTO {
+  @ApiModelProperty(required = true) @NotNull @EntityIdentifier ServiceLevelObjectiveType type;
+  @ApiModelProperty(required = true) @EntityIdentifier String orgIdentifier;
+  @ApiModelProperty(required = true) @EntityIdentifier String projectIdentifier;
   @ApiModelProperty(required = true) @NotNull @EntityIdentifier String identifier;
   @ApiModelProperty(required = true) @NotNull @NGEntityName String name;
   String description;
   @Size(max = 128) Map<String, String> tags;
-  @ApiModelProperty(required = true) @NotNull String userJourneyRef;
+  @ApiModelProperty(required = true) @NotNull List<String> userJourneyRefs;
   @ApiModelProperty(required = true) @NotNull String monitoredServiceRef;
   @ApiModelProperty(required = true) @NotNull String healthSourceRef;
-  ServiceLevelIndicatorType type;
-  @Valid @NotNull List<ServiceLevelIndicatorDTO> serviceLevelIndicators;
-  @Valid @NotNull SLOTargetDTO target;
+  @Valid ServiceLevelIndicatorType serviceLevelIndicatorType;
+  @Valid List<ServiceLevelIndicatorDTO> serviceLevelIndicators;
+  @Valid List<ServiceLevelObjectiveDetailsDTO> serviceLevelObjectivesDetails;
+  @Valid @NotNull SLOTargetDTO sloTarget;
   List<NotificationRuleRefDTO> notificationRuleRefs;
-
-  public ServiceLevelIndicatorType getType() {
-    if (type == null && CollectionUtils.isNotEmpty(serviceLevelIndicators)) {
-      return serviceLevelIndicators.get(0).getType();
-    }
-    return type;
-  }
 
   public List<NotificationRuleRefDTO> getNotificationRuleRefs() {
     if (notificationRuleRefs == null) {
       return Collections.emptyList();
     }
     return notificationRuleRefs;
+  }
+
+  public List<String> getUserJourneyRefs() {
+    if (userJourneyRefs == null) {
+      return Collections.emptyList();
+    }
+    return userJourneyRefs;
   }
 }

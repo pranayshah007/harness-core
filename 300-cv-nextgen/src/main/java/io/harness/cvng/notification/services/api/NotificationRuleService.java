@@ -31,6 +31,8 @@ public interface NotificationRuleService {
   List<NotificationRuleRef> getNotificationRuleRefs(ProjectParams projectParams,
       List<NotificationRuleRefDTO> notificationRuleRefDTOS, NotificationRuleType type,
       Instant lastSuccessfullNotificationTime);
+  void deleteNotificationRuleRefs(
+      ProjectParams projectParams, List<String> existingNotificationRuleRefs, List<String> updatedNotificationRuleRefs);
   List<NotificationRuleRefDTO> getNotificationRuleRefDTOs(List<NotificationRuleRef> notificationRuleRefs);
   List<NotificationRuleResponse> getNotificationRuleResponse(
       ProjectParams projectParams, List<NotificationRuleRef> notificationRuleRefList);
