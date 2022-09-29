@@ -82,7 +82,7 @@ public class NGTemplateRepositoryCustomImpl implements NGTemplateRepositoryCusto
   public TemplateEntity save(TemplateEntity templateToSave, String comments) throws InvalidRequestException {
     GitAwareContextHelper.initDefaultScmGitMetaData();
     GitEntityInfo gitEntityInfo = GitContextHelper.getGitEntityInfo();
-    if (gitEntityInfo == null || TemplateUtils.isInlineEntity(gitEntityInfo)) {
+    if (templateToSave.getStoreType() == null || StoreType.INLINE.equals(templateToSave.getStoreType())) {
       templateToSave.setStoreType(StoreType.INLINE);
       TemplateEntity savedTemplateEntity = mongoTemplate.save(templateToSave);
       if (shouldLogAudits(templateToSave.getAccountId(), templateToSave.getOrgIdentifier(),

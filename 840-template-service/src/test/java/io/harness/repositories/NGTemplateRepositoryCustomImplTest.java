@@ -157,6 +157,7 @@ public class NGTemplateRepositoryCustomImplTest {
                                         .identifier(templateId)
                                         .templateEntityType(TemplateEntityType.STEP_TEMPLATE)
                                         .yaml(pipelineYaml)
+                                        .storeType(StoreType.REMOTE)
                                         .build();
     TemplateEntity templateToSaveWithStoreType = templateToSave.withStoreType(StoreType.REMOTE)
                                                      .withConnectorRef(connectorRef)
