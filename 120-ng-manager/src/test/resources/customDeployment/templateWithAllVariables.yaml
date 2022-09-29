@@ -10,10 +10,20 @@ template:
         - name: clusterUrl
           type: String
           value: <+input>
+          description: "ClusterUrl"
+        - name: port
+          type: Number
+          value: 23
+          description: "Port"
+        - name: pwd
+          type: Secret
+          description: "Pass"
+          value: <+input>
+          secret: <+input>
         - name: image
           type: Connector
-          value: account.harnessImage
-          description: "Connector"
+          value: account.Docker
+          description: "Hello"
       fetchInstancesScript:
         store:
           type: Harness

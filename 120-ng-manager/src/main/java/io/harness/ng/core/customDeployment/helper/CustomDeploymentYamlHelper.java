@@ -183,7 +183,7 @@ public class CustomDeploymentYamlHelper {
     for (Map.Entry<String, String> entry : infraVariablesFromYaml.entrySet()) {
       if (!templateVariables.containsKey(entry.getKey())
           || !templateVariables.get(entry.getKey()).equals(entry.getValue())) {
-        throw new InvalidRequestException("Infrastructure Variable doesn't match the template Variables");
+        throw new InvalidRequestException("Infrastructure Variables doesn't match the template Variables");
       }
     }
   }
