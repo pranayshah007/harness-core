@@ -8,6 +8,7 @@ load("@rules_spring//springboot:springboot.bzl", "springboot")
 #load("//:tools/bazel/harness.bzl", "java_binary", "java_library")
 
 load("@dagger//:workspace_defs.bzl", "dagger_rules")
+
 dagger_rules()
 
 HarnessTeam = "DEL"

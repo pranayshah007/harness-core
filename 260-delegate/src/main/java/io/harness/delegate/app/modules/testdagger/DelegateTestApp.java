@@ -19,6 +19,7 @@ package io.harness.delegate.app.modules.testdagger;
 import io.harness.artifactory.service.ArtifactoryRegistryService;
 import io.harness.artifacts.docker.service.DockerRegistryService;
 import io.harness.nexus.service.NexusRegistryService;
+
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -28,6 +29,7 @@ public class DelegateTestApp {
     DockerRegistryService d = aComponent.regService();
     NexusRegistryService n = aComponent.getNexusRegSvc();
     ArtifactoryRegistryService arc = aComponent.getArtifactoryRegistryService();
-    log.info("Here-- \nDockerRegistryService: {} \nNexusRegistryService: {} \nArtifactoryRegistryService {}", d.toString(), n.toString(), arc.toString());
+    log.info("Here-- \nDockerRegistryService: {} \nNexusRegistryService: {} \nArtifactoryRegistryService {}",
+        d.toString(), n.toString(), arc.toString());
   }
 }

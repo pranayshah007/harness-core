@@ -7,9 +7,6 @@
 
 package io.harness.delegate.app.modules.testdagger;
 
-import dagger.Binds;
-import dagger.Module;
-import dagger.Provides;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.artifactory.service.ArtifactoryRegistryService;
@@ -29,30 +26,39 @@ import io.harness.http.HttpServiceImpl;
 import io.harness.nexus.service.NexusRegistryService;
 import io.harness.nexus.service.NexusRegistryServiceImpl;
 
+import dagger.Binds;
+import dagger.Module;
+import dagger.Provides;
+
 @TargetModule(HarnessModule._420_DELEGATE_AGENT_RDM)
 @Module
 public abstract class NGDelegateDaggerModule {
-
   @Provides
-  //scope if needed
+  // scope if needed
   public static DockerRegistryService provideDockerRegistryService() {
     return new DockerRegistryServiceImpl();
   }
 
   @Provides
-  public static NexusRegistryService provideNexusRegistryService() { return new NexusRegistryServiceImpl();}
-
+  public static NexusRegistryService provideNexusRegistryService() {
+    return new NexusRegistryServiceImpl();
+  }
 
   @Binds
   abstract ArtifactoryRegistryService bindArtifactoryRegistryService(
       ArtifactoryRegistryServiceImpl artifactoryRegistryService);
+
   @Binds abstract GcrApiService bindGcrApiService(GcrApiServiceImpl gcrApiService);
+
   @Binds
   abstract GithubPackagesRestClientFactory bindGithubPackagesRestClientFactory(
       GithubPackagesRestClientFactoryImpl githubPackagesRestClientFactory);
+
   @Binds
   abstract GithubPackagesRegistryService bindGithubPackagesRegistryService(
       GithubPackagesRegistryServiceImpl githubPackagesRegistryService);
+
   @Binds abstract GarApiService bindGarApiService(GARApiServiceImpl garApiService);
+
   @Binds abstract HttpService bindHttpService(HttpServiceImpl httpService);
 }

@@ -94,8 +94,7 @@ public class ArtifactoryClientImpl {
   private static final String ERROR_OCCURED_WHILE_RETRIEVING_STORAGIES = "Error occured while retrieving storages";
 
   @Inject
-  public ArtifactoryClientImpl() {
-  }
+  public ArtifactoryClientImpl() {}
 
   public List<Map<String, String>> getLabels(
       ArtifactoryConfigRequest artifactoryConfig, String imageName, String repositoryName, String buildNos) {

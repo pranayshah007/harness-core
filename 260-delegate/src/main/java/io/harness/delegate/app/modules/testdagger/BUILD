@@ -12,34 +12,34 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 load("@dagger//:workspace_defs.bzl", "dagger_rules")
-dagger_rules()
 
+dagger_rules()
 
 java_library(
     name = "module",
     srcs = glob(["**/*.java"]),
     visibility = ["//visibility:public"],
     deps = [
-       "//:lombok",
-       ":dagger",
-       "//420-delegate-agent:module",
-       "//867-polling-contracts:module",
-       "//platform-service/modules/notification-service/delegate-tasks:module",
-       "@maven//:org_apache_commons_commons_math3",
-       "@maven//:org_apache_logging_log4j_log4j_api",
-       "@maven//:org_apache_logging_log4j_log4j_to_slf4j",
-       "@maven//:org_atmosphere_wasync",
-       "@maven//:org_codehaus_janino_commons_compiler",
-       "@maven//:org_codehaus_janino_janino",
-       "@maven//:org_springframework_boot_spring_boot_loader",
-],
+        ":dagger",
+        "//:lombok",
+        "//420-delegate-agent:module",
+        "//867-polling-contracts:module",
+        "//platform-service/modules/notification-service/delegate-tasks:module",
+        "@maven//:org_apache_commons_commons_math3",
+        "@maven//:org_apache_logging_log4j_log4j_api",
+        "@maven//:org_apache_logging_log4j_log4j_to_slf4j",
+        "@maven//:org_atmosphere_wasync",
+        "@maven//:org_codehaus_janino_commons_compiler",
+        "@maven//:org_codehaus_janino_janino",
+        "@maven//:org_springframework_boot_spring_boot_loader",
+    ],
 )
 
 java_binary(
-name = "dagger-test-app",
-# srcs = glob(["*.java"]),
-main_class = "io.harness.delegate.app.modules.testdagger.DelegateTestApp",
-runtime_deps = [
-    ":module",
-],
+    name = "dagger-test-app",
+    # srcs = glob(["*.java"]),
+    main_class = "io.harness.delegate.app.modules.testdagger.DelegateTestApp",
+    runtime_deps = [
+        ":module",
+    ],
 )
