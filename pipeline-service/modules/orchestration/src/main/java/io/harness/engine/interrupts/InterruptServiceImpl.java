@@ -105,7 +105,8 @@ public class InterruptServiceImpl implements InterruptService {
       case EXPIRE_ALL:
         NodeExecution nodeExecution =
             nodeExecutionService.getWithFieldsIncluded(nodeExecutionId, NodeProjectionUtils.withStatusAndMode);
-        if (!ExecutionModeUtils.isParentMode(nodeExecution.getMode())) {
+        if (!ExecutionModeUtils.isParentMode(nodeExecution.getMode())
+            && StatusUtils.resumableStatuses().contains(nodeExecution.getStatus())) {
           if (interrupt.getType() == InterruptType.ABORT_ALL) {
             abortInterruptHandler.handleInterruptForNodeExecution(interrupt, nodeExecutionId);
           } else {

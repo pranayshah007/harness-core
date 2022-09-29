@@ -44,12 +44,12 @@ func (m *sbtRunner) AutoDetectTests(ctx context.Context) ([]types.RunnableTest, 
 func (b *sbtRunner) GetCmd(ctx context.Context, tests []types.RunnableTest, userArgs, agentConfigPath string, ignoreInstr, runAll bool) (string, error) {
 	if ignoreInstr {
 		b.log.Infow("ignoring instrumentation and not attaching Java agent")
-		return fmt.Sprintf("%s 'test %s'", sbtCmd, userArgs), nil
+		return fmt.Sprintf("%s %s 'test'", sbtCmd, userArgs), nil
 	}
 
 	agentArg := fmt.Sprintf(javaAgentArg, agentConfigPath)
-	instrArg := fmt.Sprintf("--define=HARNESS_ARGS=%s", agentArg)
-	defaultCmd := fmt.Sprintf("%s 'test %s %s'", sbtCmd, userArgs, instrArg) // run all the tests
+	instrArg := fmt.Sprintf("-J%s", agentArg)
+	defaultCmd := fmt.Sprintf("%s %s %s 'test'", sbtCmd, userArgs, instrArg) // run all the tests
 
 	if runAll {
 		// Run all the tests
@@ -69,5 +69,5 @@ func (b *sbtRunner) GetCmd(ctx context.Context, tests []types.RunnableTest, user
 		set[t.Class] = struct{}{}
 		testsList = append(testsList, t.Pkg + "."+ t.Class)
 	}
-	return fmt.Sprintf("%s 'testOnly %s %s %s'", sbtCmd, userArgs, instrArg, strings.Join(testsList, " ")), nil
+	return fmt.Sprintf("%s %s %s 'testOnly %s'", sbtCmd, userArgs, instrArg, strings.Join(testsList, " ")), nil
 }

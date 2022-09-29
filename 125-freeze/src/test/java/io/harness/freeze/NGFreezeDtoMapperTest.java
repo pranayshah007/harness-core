@@ -93,7 +93,7 @@ public class NGFreezeDtoMapperTest extends CategoryTest {
     List<FreezeEntityRule> freezeEntityRules = new LinkedList<>();
     FreezeEntityRule freezeEntityRule = new FreezeEntityRule();
     List<FreezeWindow> windows = new LinkedList<>();
-    freezeInfoConfig.setActive(FreezeStatus.ACTIVE);
+    freezeInfoConfig.setStatus(FreezeStatus.ENABLED);
     freezeInfoConfig.setDescription(ParameterField.<String>builder().value("desc").build());
     freezeInfoConfig.setIdentifier("id");
     freezeInfoConfig.setName("name");
@@ -102,9 +102,7 @@ public class NGFreezeDtoMapperTest extends CategoryTest {
     freezeInfoConfig.setRules(freezeEntityRules);
     freezeInfoConfig.setWindows(windows);
     EntityConfig entity = new EntityConfig();
-    entity.setExpression("exp");
     entity.setFilterType(FilterType.ALL);
-    entity.setTags(newArrayList("tag1", "tag2"));
     entity.setFreezeEntityType(FreezeEntityType.SERVICE);
     entity.setEntityReference(newArrayList("serv1", "serv2"));
     entities.add(entity);
@@ -119,7 +117,6 @@ public class NGFreezeDtoMapperTest extends CategoryTest {
     recurrence.setRecurrenceType(RecurrenceType.DAILY);
     RecurrenceSpec recurrenceSpec = new RecurrenceSpec();
     recurrenceSpec.setCount(1);
-    recurrenceSpec.setExpression("exp");
     recurrenceSpec.setUntil("until");
     recurrence.setSpec(recurrenceSpec);
     freezeWindow.setRecurrence(recurrence);

@@ -7,6 +7,8 @@
 
 package io.harness.ngmigration.service;
 
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
 import io.harness.ngmigration.service.entity.AccountMigrationService;
 import io.harness.ngmigration.service.entity.AppMigrationService;
 import io.harness.ngmigration.service.entity.ArtifactStreamMigrationService;
@@ -26,6 +28,7 @@ import software.wings.ngmigration.NGMigrationEntityType;
 
 import com.google.inject.Inject;
 
+@OwnedBy(HarnessTeam.CDC)
 public class NgMigrationFactory {
   @Inject PipelineMigrationService pipelineMigrationService;
   @Inject WorkflowMigrationService workflowMigrationService;

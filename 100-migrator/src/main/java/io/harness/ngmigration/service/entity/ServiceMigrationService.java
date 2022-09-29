@@ -10,7 +10,7 @@ package io.harness.ngmigration.service.entity;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static software.wings.ngmigration.NGMigrationEntityType.ARTIFACT_STREAM;
-import static software.wings.ngmigration.NGMigrationEntityType.CONNECTOR;
+import static software.wings.ngmigration.NGMigrationEntityType.MANIFEST;
 import static software.wings.ngmigration.NGMigrationEntityType.SERVICE;
 
 import static java.util.stream.Collectors.counting;
@@ -19,22 +19,16 @@ import static java.util.stream.Collectors.groupingBy;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.MigratedEntityMapping;
-import io.harness.cdng.artifact.bean.yaml.ArtifactListConfig;
-import io.harness.cdng.artifact.bean.yaml.DockerHubArtifactConfig;
-import io.harness.cdng.artifact.bean.yaml.PrimaryArtifact;
 import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
-import io.harness.cdng.service.beans.KubernetesServiceSpec;
 import io.harness.cdng.service.beans.ServiceConfig;
-import io.harness.cdng.service.beans.ServiceDefinition;
-import io.harness.cdng.service.beans.ServiceDefinitionType;
-import io.harness.cdng.service.beans.ServiceYaml;
 import io.harness.data.structure.EmptyPredicate;
-import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.encryption.Scope;
-import io.harness.exception.UnsupportedOperationException;
 import io.harness.gitsync.beans.YamlDTO;
+import io.harness.ng.core.service.yaml.NGServiceConfig;
+import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
 import io.harness.ngmigration.beans.BaseEntityInput;
 import io.harness.ngmigration.beans.BaseInputDefinition;
+import io.harness.ngmigration.beans.BaseProvidedInput;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.MigratorInputType;
 import io.harness.ngmigration.beans.NGYamlFile;
@@ -46,31 +40,35 @@ import io.harness.ngmigration.client.PmsClient;
 import io.harness.ngmigration.expressions.MigratorExpressionUtils;
 import io.harness.ngmigration.service.MigratorUtility;
 import io.harness.ngmigration.service.NgMigrationService;
+import io.harness.ngmigration.service.servicev2.ServiceV2Factory;
 import io.harness.pms.yaml.ParameterField;
 
 import software.wings.api.DeploymentType;
 import software.wings.beans.Service;
+import software.wings.beans.appmanifest.ApplicationManifest;
 import software.wings.beans.artifact.ArtifactStream;
-import software.wings.beans.artifact.DockerArtifactStream;
+import software.wings.ngmigration.CgBasicInfo;
 import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.CgEntityNode;
 import software.wings.ngmigration.DiscoveryNode;
 import software.wings.ngmigration.NGMigrationEntity;
 import software.wings.ngmigration.NGMigrationStatus;
+import software.wings.service.intfc.ApplicationManifestService;
 import software.wings.service.intfc.ArtifactStreamService;
 import software.wings.service.intfc.ServiceResourceService;
 import software.wings.utils.ArtifactType;
 
 import com.google.inject.Inject;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.apache.commons.lang3.StringUtils;
 
 @OwnedBy(HarnessTeam.CDC)
 public class ServiceMigrationService extends NgMigrationService {
@@ -78,6 +76,7 @@ public class ServiceMigrationService extends NgMigrationService {
   @Inject private ArtifactStreamService artifactStreamService;
   @Inject private ManifestMigrationService manifestMigrationService;
   @Inject private MigratorExpressionUtils migratorExpressionUtils;
+  @Inject private ApplicationManifestService applicationManifestService;
 
   @Override
   public MigratedEntityMapping generateMappingEntity(NGYamlFile yamlFile) {
@@ -112,12 +111,19 @@ public class ServiceMigrationService extends NgMigrationService {
         CgEntityNode.builder().id(serviceId).type(SERVICE).entityId(serviceEntityId).entity(service).build();
     List<ArtifactStream> artifactStreams =
         artifactStreamService.getArtifactStreamsForService(service.getAppId(), serviceId);
+    List<ApplicationManifest> applicationManifests =
+        applicationManifestService.listAppManifests(service.getAppId(), serviceId);
     Set<CgEntityId> children = new HashSet<>();
     if (isNotEmpty(artifactStreams)) {
       children.addAll(
           artifactStreams.stream()
               .map(artifactStream -> CgEntityId.builder().id(artifactStream.getUuid()).type(ARTIFACT_STREAM).build())
               .collect(Collectors.toSet()));
+    }
+    if (isNotEmpty(applicationManifests)) {
+      children.addAll(applicationManifests.stream()
+                          .map(manifest -> CgEntityId.builder().id(manifest.getUuid()).type(MANIFEST).build())
+                          .collect(Collectors.toList()));
     }
     return DiscoveryNode.builder().entityNode(serviceEntityNode).children(children).build();
   }
@@ -147,61 +153,12 @@ public class ServiceMigrationService extends NgMigrationService {
     return NGMigrationStatus.builder().status(true).build();
   }
 
-  private PrimaryArtifact getPrimaryArtifact(
-      ArtifactStream artifactStream, Map<CgEntityId, NgEntityDetail> migratedEntities) {
-    if (artifactStream instanceof DockerArtifactStream) {
-      DockerArtifactStream dockerArtifactStream = (DockerArtifactStream) artifactStream;
-      NgEntityDetail connector =
-          migratedEntities.get(CgEntityId.builder().type(CONNECTOR).id(dockerArtifactStream.getSettingId()).build());
-      return PrimaryArtifact.builder()
-          .sourceType(ArtifactSourceType.DOCKER_REGISTRY)
-          .spec(DockerHubArtifactConfig.builder()
-                    .connectorRef(ParameterField.createValueField(MigratorUtility.getIdentifierWithScope(connector)))
-                    .imagePath(ParameterField.createValueField(dockerArtifactStream.getImageName()))
-                    .tag(ParameterField.createValueField("<+input>"))
-                    .build())
-          .build();
-    }
-    throw new UnsupportedOperationException("Only Docker Artifact Streams are supported");
-  }
-
   public ServiceConfig getServiceConfig(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
-      Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NgEntityDetail> migratedEntities,
-      Set<CgEntityId> manifests) {
-    Service service = (Service) entities.get(entityId).getEntity();
-    migratorExpressionUtils.render(service);
-    PrimaryArtifact primaryArtifact = null;
-    if (isNotEmpty(graph.get(entityId)) && graph.get(entityId).stream().anyMatch(e -> e.getType() == ARTIFACT_STREAM)) {
-      CgEntityId artifactStreamId =
-          graph.get(entityId)
-              .stream()
-              .filter(e -> e.getType() == ARTIFACT_STREAM)
-              .findFirst()
-              .orElseThrow(() -> new UnsupportedOperationException("This should not be thrown"));
-      ArtifactStream artifactStream = (ArtifactStream) entities.get(artifactStreamId).getEntity();
-      migratorExpressionUtils.render(artifactStream);
-      primaryArtifact = getPrimaryArtifact(artifactStream, migratedEntities);
-    }
-
-    List<ManifestConfigWrapper> manifestConfigWrapperList =
-        manifestMigrationService.getManifests(manifests, inputDTO, entities, graph, migratedEntities);
-    ServiceDefinition serviceDefinition =
-        ServiceDefinition.builder()
-            .type(ServiceDefinitionType.KUBERNETES)
-            .serviceSpec(KubernetesServiceSpec.builder()
-                             .variables(new ArrayList<>())
-                             .artifacts(ArtifactListConfig.builder().primary(primaryArtifact).build())
-                             .manifests(manifestConfigWrapperList)
-                             .build())
-            .build();
-
-    ServiceYaml serviceYaml = ServiceYaml.builder()
-                                  .name(MigratorUtility.generateIdentifier(service.getName()))
-                                  .identifier(service.getName())
-                                  .description(ParameterField.createValueField(service.getDescription()))
-                                  .tags(null)
-                                  .build();
-    return ServiceConfig.builder().service(serviceYaml).serviceDefinition(serviceDefinition).build();
+      Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities) {
+    NGYamlFile entityDetail = migratedEntities.get(entityId);
+    return ServiceConfig.builder()
+        .serviceRef(ParameterField.createValueField(entityDetail.getNgEntityDetail().getIdentifier()))
+        .build();
   }
 
   @Override
@@ -210,9 +167,51 @@ public class ServiceMigrationService extends NgMigrationService {
 
   @Override
   public List<NGYamlFile> generateYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
-      Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NgEntityDetail> migratedEntities,
+      Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities,
       NgEntityDetail ngEntityDetail) {
-    return new ArrayList<>();
+    Service service = (Service) entities.get(entityId).getEntity();
+    String name = service.getName();
+    String identifier = MigratorUtility.generateIdentifier(name);
+
+    if (inputDTO.getInputs() != null && inputDTO.getInputs().containsKey(entityId)) {
+      // TODO: @deepakputhraya We should handle if the service needs to be reused.
+      BaseProvidedInput input = inputDTO.getInputs().get(entityId);
+      identifier = StringUtils.isNotBlank(input.getIdentifier()) ? input.getIdentifier() : identifier;
+      name = StringUtils.isNotBlank(input.getIdentifier()) ? input.getName() : name;
+    }
+
+    migratorExpressionUtils.render(service);
+    Set<CgEntityId> manifests =
+        graph.get(entityId).stream().filter(cgEntityId -> cgEntityId.getType() == MANIFEST).collect(Collectors.toSet());
+    List<ManifestConfigWrapper> manifestConfigWrapperList =
+        manifestMigrationService.getManifests(manifests, inputDTO, entities, graph, migratedEntities);
+
+    NGServiceConfig serviceYaml =
+        NGServiceConfig.builder()
+            .ngServiceV2InfoConfig(
+                NGServiceV2InfoConfig.builder()
+                    .name(name)
+                    .description(service.getDescription())
+                    .gitOpsEnabled(false)
+                    .identifier(identifier)
+                    .tags(new HashMap<>())
+                    .useFromStage(null)
+                    .serviceDefinition(ServiceV2Factory.getService2Mapper(service).getServiceDefinition(
+                        inputDTO, entities, graph, service, migratedEntities, manifestConfigWrapperList))
+                    .build())
+            .build();
+    return Collections.singletonList(
+        NGYamlFile.builder()
+            .filename(String.format("service/%s/%s.yaml", service.getAppId(), service.getName()))
+            .yaml(serviceYaml)
+            .type(SERVICE)
+            .cgBasicInfo(CgBasicInfo.builder()
+                             .accountId(service.getAccountId())
+                             .appId(null)
+                             .id(service.getUuid())
+                             .type(SERVICE)
+                             .build())
+            .build());
   }
 
   @Override
@@ -222,7 +221,7 @@ public class ServiceMigrationService extends NgMigrationService {
 
   @Override
   protected boolean isNGEntityExists() {
-    return false;
+    return true;
   }
 
   @Override

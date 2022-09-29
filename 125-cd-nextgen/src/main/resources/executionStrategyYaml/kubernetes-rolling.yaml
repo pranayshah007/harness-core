@@ -21,4 +21,5 @@ spec:
           identifier: rollbackRolloutDeployment
           type: K8sRollingRollback
           timeout: 10m
-          spec: {}
+          spec:
+            pruningEnabled: false

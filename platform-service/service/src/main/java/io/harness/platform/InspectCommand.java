@@ -18,7 +18,6 @@ import io.harness.persistence.UserProvider;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.serializer.NGAuditServiceRegistrars;
 import io.harness.serializer.NotificationRegistrars;
-import io.harness.serializer.PrimaryVersionManagerRegistrars;
 import io.harness.serializer.morphia.ResourceGroupSerializer;
 
 import com.google.common.collect.ImmutableMap;
@@ -157,10 +156,7 @@ public class InspectCommand<T extends io.dropwizard.Configuration> extends Confi
       @Provides
       @Singleton
       public Set<Class<? extends MorphiaRegistrar>> morphiaRegistrars() {
-        return ImmutableSet.<Class<? extends MorphiaRegistrar>>builder()
-            .addAll(morphiaRegistrars)
-            .addAll(PrimaryVersionManagerRegistrars.morphiaRegistrars)
-            .build();
+        return ImmutableSet.<Class<? extends MorphiaRegistrar>>builder().addAll(morphiaRegistrars).build();
       }
     };
   }

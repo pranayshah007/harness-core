@@ -26,7 +26,6 @@ import org.redisson.config.SingleServerConfig;
 @Slf4j
 public class RedissonClientFactory {
   private static final int DEFAULT_MIN_CONNECTION_IDLE_SIZE = 5;
-  private static final int DEFAULT_PING_CONNECTION_INTERVAL_IN_MILLIS = 30000;
 
   private static final Map<RedisConfig, RedissonClient> redisConfigRedissonClientMap = new HashMap<>();
 
@@ -58,7 +57,6 @@ public class RedissonClientFactory {
         if (redisConfig.getSubscriptionConnectionPoolSize() != 0) {
           config.useSingleServer().setSubscriptionConnectionPoolSize(redisConfig.getSubscriptionConnectionPoolSize());
         }
-        config.useSingleServer().setPingConnectionInterval(DEFAULT_PING_CONNECTION_INTERVAL_IN_MILLIS);
 
         serverConfig.setConnectionMinimumIdleSize(
             Math.max(DEFAULT_MIN_CONNECTION_IDLE_SIZE, redisConfig.getConnectionMinimumIdleSize()));
@@ -86,7 +84,6 @@ public class RedissonClientFactory {
           config.useSentinelServers().setSubscriptionConnectionPoolSize(
               redisConfig.getSubscriptionConnectionPoolSize());
         }
-        config.useSentinelServers().setPingConnectionInterval(DEFAULT_PING_CONNECTION_INTERVAL_IN_MILLIS);
       }
       config.setNettyThreads(redisConfig.getNettyThreads());
       config.setUseScriptCache(redisConfig.isUseScriptCache());

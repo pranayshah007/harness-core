@@ -97,6 +97,7 @@ import software.wings.beans.config.LogzConfig;
 import software.wings.beans.config.NexusConfig;
 import software.wings.beans.settings.azureartifacts.AzureArtifactsConfig;
 import software.wings.beans.settings.helm.AmazonS3HelmRepoConfig;
+import software.wings.beans.settings.helm.GCSHelmRepoConfig;
 import software.wings.beans.settings.helm.HelmRepoConfig;
 import software.wings.beans.settings.helm.HelmRepoConfigValidationResponse;
 import software.wings.beans.settings.helm.HelmRepoConfigValidationTaskParams;
@@ -658,21 +659,30 @@ public class SettingValidationService {
 
   private HelmRepoConfigValidationTaskParams getHelmRepoConfigValidationTaskParams(
       SettingAttribute settingAttribute, List<EncryptedDataDetail> encryptedDataDetails) {
+    boolean useLatestChartMuseumVersion =
+        featureFlagService.isEnabled(USE_LATEST_CHARTMUSEUM_VERSION, settingAttribute.getAccountId());
+    HelmRepoConfig helmRepoConfig = (HelmRepoConfig) settingAttribute.getValue();
+
+    if (helmRepoConfig instanceof GCSHelmRepoConfig) {
+      ((GCSHelmRepoConfig) helmRepoConfig).setUseLatestChartMuseumVersion(useLatestChartMuseumVersion);
+    } else if (helmRepoConfig instanceof AmazonS3HelmRepoConfig) {
+      ((AmazonS3HelmRepoConfig) helmRepoConfig).setUseLatestChartMuseumVersion(useLatestChartMuseumVersion);
+    }
+
     HelmRepoConfigValidationTaskParams taskParams =
         HelmRepoConfigValidationTaskParams.builder()
             .accountId(settingAttribute.getAccountId())
             .appId(settingAttribute.getAppId())
             .encryptedDataDetails(encryptedDataDetails)
-            .helmRepoConfig((HelmRepoConfig) settingAttribute.getValue())
+            .helmRepoConfig(helmRepoConfig)
             .repoDisplayName(settingAttribute.getName())
-            .useLatestChartMuseumVersion(
-                featureFlagService.isEnabled(USE_LATEST_CHARTMUSEUM_VERSION, settingAttribute.getAccountId()))
+            .useLatestChartMuseumVersion(useLatestChartMuseumVersion)
             .useOCIHelmRepo(true)
             .useNewHelmBinary(
                 featureFlagService.isEnabled(FeatureName.HELM_VERSION_3_8_0, settingAttribute.getAccountId()))
             .build();
 
-    String connectorId = ((HelmRepoConfig) settingAttribute.getValue()).getConnectorId();
+    String connectorId = helmRepoConfig.getConnectorId();
     if (isNotBlank(connectorId)) {
       SettingAttribute connectorSettingAttribute = settingsService.get(settingAttribute.getAppId(), connectorId);
       notNullCheck("Connector doesn't exist for id " + connectorId, connectorSettingAttribute);

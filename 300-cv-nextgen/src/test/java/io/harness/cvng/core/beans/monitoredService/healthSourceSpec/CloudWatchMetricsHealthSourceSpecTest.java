@@ -11,6 +11,7 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.DHRUVX;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import io.harness.CvNextGenTestBase;
 import io.harness.category.element.UnitTests;
@@ -24,6 +25,7 @@ import io.harness.cvng.core.beans.monitoredService.HealthSource.CVConfigUpdateRe
 import io.harness.cvng.core.beans.monitoredService.TimeSeriesMetricPackDTO;
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.CloudWatchMetricsHealthSourceSpec;
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.CloudWatchMetricsHealthSourceSpec.CloudWatchMetricDefinition;
+import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.MetricResponseMapping;
 import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.core.entities.CloudWatchMetricCVConfig;
 import io.harness.cvng.core.entities.MetricPack;
@@ -267,6 +269,53 @@ public class CloudWatchMetricsHealthSourceSpecTest extends CvNextGenTestBase {
     assertThat(result.getDeleted()).hasSize(2);
     assertThat(result.getAdded()).hasSize(0);
     assertCommon((CloudWatchMetricCVConfig) result.getDeleted().get(0));
+  }
+
+  @Test
+  @Owner(developers = DHRUVX)
+  @Category(UnitTests.class)
+  public void testValidate_serviceJsonInstancePathIsEmpty() {
+    CloudWatchMetricDefinition metricDefinition = cloudWatchMetricsHealthSourceSpec.getMetricDefinitions().get(0);
+    metricDefinition.getAnalysis().getDeploymentVerification().setEnabled(true);
+    metricDefinition.setResponseMapping(MetricResponseMapping.builder().serviceInstanceJsonPath("").build());
+    assertThatThrownBy(() -> cloudWatchMetricsHealthSourceSpec.validate())
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessage("Service instance label/key/path shouldn't be empty for Deployment Verification");
+  }
+
+  @Test
+  @Owner(developers = DHRUVX)
+  @Category(UnitTests.class)
+  public void testValidate_serviceJsonInstancePathIsNull() {
+    CloudWatchMetricDefinition metricDefinition = cloudWatchMetricsHealthSourceSpec.getMetricDefinitions().get(0);
+    metricDefinition.getAnalysis().getDeploymentVerification().setEnabled(true);
+    metricDefinition.setResponseMapping(MetricResponseMapping.builder().serviceInstanceJsonPath(null).build());
+    assertThatThrownBy(() -> cloudWatchMetricsHealthSourceSpec.validate())
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessage("Service instance label/key/path shouldn't be empty for Deployment Verification");
+  }
+
+  @Test
+  @Owner(developers = DHRUVX)
+  @Category(UnitTests.class)
+  public void testValidate_metricResponseMappingIsNull() {
+    CloudWatchMetricDefinition metricDefinition = cloudWatchMetricsHealthSourceSpec.getMetricDefinitions().get(0);
+    metricDefinition.getAnalysis().getDeploymentVerification().setEnabled(true);
+    metricDefinition.setResponseMapping(null);
+    assertThatThrownBy(() -> cloudWatchMetricsHealthSourceSpec.validate())
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessage("Service instance label/key/path shouldn't be empty for Deployment Verification");
+  }
+
+  @Test
+  @Owner(developers = DHRUVX)
+  @Category(UnitTests.class)
+  public void testValidate_serviceJsonInstancePathIsPresent() {
+    CloudWatchMetricDefinition metricDefinition = cloudWatchMetricsHealthSourceSpec.getMetricDefinitions().get(0);
+    metricDefinition.getAnalysis().getDeploymentVerification().setEnabled(true);
+    metricDefinition.setResponseMapping(MetricResponseMapping.builder().serviceInstanceJsonPath("path").build());
+    cloudWatchMetricsHealthSourceSpec.validate();
+    assertThat(true).isTrue();
   }
 
   private void assertCommon(CloudWatchMetricCVConfig cvConfig) {

@@ -32,6 +32,7 @@ input ApproveOrRejectApprovalsInput {
   applicationId: String!
   comments: String
   clientMutationId: String
+  userEmail: String
 }
 
 type ApproveOrRejectApprovalsInputPayload {

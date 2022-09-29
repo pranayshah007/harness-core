@@ -59,7 +59,8 @@ public class CloudWatchMetricsHealthSourceSpec extends MetricHealthSourceSpec {
                 && Objects.nonNull(metricDefinition.getAnalysis().getDeploymentVerification())
                 && Objects.nonNull(metricDefinition.getAnalysis().getDeploymentVerification().getEnabled())
                 && metricDefinition.getAnalysis().getDeploymentVerification().getEnabled()
-                && StringUtils.isNotEmpty(metricDefinition.getResponseMapping().getServiceInstanceJsonPath())),
+                && (Objects.isNull(metricDefinition.getResponseMapping())
+                    || StringUtils.isEmpty(metricDefinition.getResponseMapping().getServiceInstanceJsonPath()))),
             "Service instance label/key/path shouldn't be empty for Deployment Verification"));
   }
 

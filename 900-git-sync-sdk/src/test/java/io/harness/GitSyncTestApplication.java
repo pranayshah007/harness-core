@@ -21,6 +21,7 @@ import io.harness.gitsync.GitSyncSdkConfiguration.DeployMode;
 import io.harness.gitsync.GitSyncSdkInitHelper;
 import io.harness.gitsync.SampleBeanEntityGitPersistenceHelperServiceImpl;
 import io.harness.gitsync.interceptor.GitSyncThreadDecorator;
+import io.harness.gitsync.interceptor.GitXThreadDecorator;
 import io.harness.maintenance.MaintenanceController;
 
 import com.google.inject.Guice;
@@ -131,6 +132,7 @@ public class GitSyncTestApplication extends Application<GitSyncTestConfiguration
     environment.jersey().register(JsonProcessingExceptionMapper.class);
     environment.jersey().register(EarlyEofExceptionMapper.class);
     environment.jersey().register(GitSyncThreadDecorator.class);
+    environment.jersey().register(GitXThreadDecorator.class);
     environment.jersey().register(MultiPartFeature.class);
   }
 }

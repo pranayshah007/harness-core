@@ -4,6 +4,11 @@ $releaseId="$env:ReleaseNo"
       
                                       # Copy configs to application directory
                                     $userProfile = "$env:userprofile"
+                                    if (!(Test-Path "$userProfile\\<+service.name>\\<+env.name>\\runtime"))
+                                    {
+                                      Write-Host "Creating directory " $userProfile\\<+service.name>\\<+env.name>\\runtime
+                                      New-Item "$userProfile\\<+service.name>\\<+env.name>\\runtime"
+                                    }
                                     Copy-Item -Path "$userProfile\\<+service.name>\\<+env.name>\\runtime\\*.config" -Destination $appPhysicalDirectory -Force
       
                                     Import-Module WebAdministration

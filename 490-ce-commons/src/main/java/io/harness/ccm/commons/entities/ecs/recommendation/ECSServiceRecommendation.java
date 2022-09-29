@@ -27,6 +27,7 @@ import io.harness.persistence.UuidAware;
 
 import software.wings.graphql.datafetcher.ce.recommendation.entity.Cost;
 
+import com.amazonaws.services.ecs.model.LaunchType;
 import com.google.common.collect.ImmutableList;
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -74,6 +75,7 @@ public final class ECSServiceRecommendation
   @NotEmpty String clusterName;
   @NotEmpty String serviceArn; // instanceId from utilData
   @NotEmpty String serviceName; // last part of serviceArn
+  LaunchType launchType;
 
   // Recommendation
   Map<String, String> currentResourceRequirements;

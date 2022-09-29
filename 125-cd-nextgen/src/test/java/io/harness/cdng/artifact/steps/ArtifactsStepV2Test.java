@@ -246,7 +246,7 @@ public class ArtifactsStepV2Test {
     assertThat(output.getPrimaryArtifactTaskId()).isNotEmpty();
     assertThat(
         output.getArtifactConfigMap().values().stream().map(ArtifactConfig::getIdentifier).collect(Collectors.toSet()))
-        .containsExactly("source1-id", "s1", "s2");
+        .containsExactlyInAnyOrder("primary", "s1", "s2");
     assertThat(response.getCallbackIdsCount()).isEqualTo(3);
   }
 

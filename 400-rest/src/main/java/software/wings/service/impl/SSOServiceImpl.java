@@ -269,9 +269,7 @@ public class SSOServiceImpl implements SSOService {
     }
     account.setOauthEnabled(shouldEnableOauth);
     if (shouldUpdateAuthMechanism) {
-      if (featureFlagService.isEnabled(FeatureName.AUDIT_TRAIL_ENHANCEMENT, accountId)) {
-        auditSSOActivity(accountId, mechanism, currentAuthMechanism);
-      }
+      auditSSOActivity(accountId, mechanism, currentAuthMechanism);
       account.setAuthenticationMechanism(mechanism);
     }
     accountService.update(account);

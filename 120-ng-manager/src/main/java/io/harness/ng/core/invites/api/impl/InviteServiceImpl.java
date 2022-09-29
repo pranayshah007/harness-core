@@ -33,6 +33,7 @@ import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.account.AccountClient;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.beans.Scope;
 import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.InvalidRequestException;
@@ -77,6 +78,7 @@ import io.harness.telemetry.TelemetryReporter;
 import io.harness.user.remote.UserClient;
 import io.harness.user.remote.UserFilterNG;
 import io.harness.utils.PageUtils;
+import io.harness.utils.featureflaghelper.NGFeatureFlagHelperService;
 
 import com.auth0.jwt.interfaces.Claim;
 import com.google.common.base.Preconditions;
@@ -131,6 +133,8 @@ public class InviteServiceImpl implements InviteService {
       "accountIdentifier=%s&email=%s&token=%s&returnUrl=%s&generation=NG";
   private static final String ACCEPT_INVITE_PATH = "ng/api/invites/verify";
   private static final String USER_INVITE = "user_invite";
+  private static final String EMAIL_INVITE_TEMPLATE_ID = "email_invite";
+  private static final String EMAIL_NOTIFY_TEMPLATE_ID = "email_notify";
   private final String jwtPasswordSecret;
   private final JWTGeneratorUtils jwtGeneratorUtils;
   private final NgUserService ngUserService;
@@ -145,6 +149,7 @@ public class InviteServiceImpl implements InviteService {
   private final UserClient userClient;
   private final AccountOrgProjectHelper accountOrgProjectHelper;
   private final TelemetryReporter telemetryReporter;
+  private final NGFeatureFlagHelperService ngFeatureFlagHelperService;
 
   private final RetryPolicy<Object> transactionRetryPolicy =
       getRetryPolicy("[Retrying]: Failed to mark previous invites as stale; attempt: {}",
@@ -156,7 +161,7 @@ public class InviteServiceImpl implements InviteService {
       InviteRepository inviteRepository, NotificationClient notificationClient, AccountClient accountClient,
       OutboxService outboxService, AccessControlClient accessControlClient, UserClient userClient,
       AccountOrgProjectHelper accountOrgProjectHelper, @Named("isNgAuthUIEnabled") boolean isNgAuthUIEnabled,
-      TelemetryReporter telemetryReporter) {
+      TelemetryReporter telemetryReporter, NGFeatureFlagHelperService ngFeatureFlagHelperService) {
     this.jwtPasswordSecret = jwtPasswordSecret;
     this.jwtGeneratorUtils = jwtGeneratorUtils;
     this.ngUserService = ngUserService;
@@ -170,6 +175,7 @@ public class InviteServiceImpl implements InviteService {
     this.accessControlClient = accessControlClient;
     this.accountOrgProjectHelper = accountOrgProjectHelper;
     this.telemetryReporter = telemetryReporter;
+    this.ngFeatureFlagHelperService = ngFeatureFlagHelperService;
     MongoClientURI uri = new MongoClientURI(mongoConfig.getUri());
     useMongoTransactions = uri.getHosts().size() > 2;
   }
@@ -394,14 +400,24 @@ public class InviteServiceImpl implements InviteService {
                         .set(InviteKeys.roleBindings, newInvite.getRoleBindings())
                         .set(InviteKeys.userGroups, newInvite.getUserGroups());
     inviteRepository.updateInvite(newInvite.getId(), update);
-    outboxService.save(new UserInviteUpdateEvent(newInvite.getAccountIdentifier(), newInvite.getOrgIdentifier(),
-        newInvite.getProjectIdentifier(), writeDTO(newInvite), writeDTO(newInvite)));
+    String accountId = newInvite.getAccountIdentifier();
+    boolean isPLNoEmailForSamlAccountInvitesEnabled = isPLNoEmailForSamlAccountInvitesEnabled(accountId);
+    boolean isAutoInviteAcceptanceEnabled = isAutoInviteAcceptanceEnabled(accountId);
+
     try {
-      sendInvitationMail(newInvite);
-    } catch (URISyntaxException e) {
-      log.error("Mail embed url incorrect. can't sent email. InviteId: " + newInvite.getId(), e);
-    } catch (UnsupportedEncodingException e) {
-      log.error("Invite Email sending failed due to encoding exception. InviteId: " + newInvite.getId(), e);
+      sendInvitationMail(newInvite, isPLNoEmailForSamlAccountInvitesEnabled, isAutoInviteAcceptanceEnabled);
+    } catch (URISyntaxException ex) {
+      log.error(
+          "For invite: {} Mail embed url incorrect, can't sent email due to an exception: ", newInvite.getId(), ex);
+    } catch (UnsupportedEncodingException ex) {
+      log.error("For invite: {} Invite Email resending failed due to encoding exception: ", newInvite.getId(), ex);
+    } catch (Exception ex) {
+      log.error("For invite: {} while inviting or notifying user to join harness an exception occurred: ",
+          newInvite.getId(), ex);
+    }
+
+    if (!isPLNoEmailForSamlAccountInvitesEnabled) {
+      ngAuditUserInviteUpdateEvent(newInvite);
     }
     return newInvite;
   }
@@ -513,24 +529,57 @@ public class InviteServiceImpl implements InviteService {
   private InviteOperationResponse newInvite(Invite invite, boolean[] scimLdapArray) {
     checkUserLimit(invite.getAccountIdentifier(), invite.getEmail());
     Invite savedInvite = inviteRepository.save(invite);
-    outboxService.save(new UserInviteCreateEvent(
-        invite.getAccountIdentifier(), invite.getOrgIdentifier(), invite.getProjectIdentifier(), writeDTO(invite)));
-    try {
-      sendInvitationMail(savedInvite);
-    } catch (URISyntaxException e) {
-      log.error("Mail embed url incorrect. can't sent email. InviteId: " + savedInvite.getId(), e);
-    } catch (UnsupportedEncodingException e) {
-      log.error("Invite Email sending failed due to encoding exception. InviteId: " + savedInvite.getId(), e);
-    }
     String accountId = invite.getAccountIdentifier();
+    boolean isPLNoEmailForSamlAccountInvitesEnabled = isPLNoEmailForSamlAccountInvitesEnabled(accountId);
+    boolean isAutoInviteAcceptanceEnabled = isAutoInviteAcceptanceEnabled(accountId);
+
+    try {
+      sendInvitationMail(savedInvite, isPLNoEmailForSamlAccountInvitesEnabled, isAutoInviteAcceptanceEnabled);
+    } catch (URISyntaxException ex) {
+      log.error(
+          "For invite: {} Mail embed url incorrect, can't sent email due to an exception: ", savedInvite.getId(), ex);
+    } catch (UnsupportedEncodingException ex) {
+      log.error("For invite: {} Invite Email sending failed due to encoding exception: ", savedInvite.getId(), ex);
+    } catch (Exception ex) {
+      log.error("For invite: {} while inviting or notifying user to join harness an exception occurred: ",
+          savedInvite.getId(), ex);
+    }
+
     String email = invite.getEmail().trim();
+
     if (scimLdapArray[0]) {
       createAndInviteNonPasswordUser(accountId, invite.getInviteToken(), email, true);
-    } else if (scimLdapArray[1]
-        || CGRestUtils.getResponse(accountClient.checkAutoInviteAcceptanceEnabledForAccount(accountId))) {
+    } else if (scimLdapArray[1] || isAutoInviteAcceptanceEnabled || isPLNoEmailForSamlAccountInvitesEnabled) {
       createAndInviteNonPasswordUser(accountId, invite.getInviteToken(), email, false);
     }
+    if (!isPLNoEmailForSamlAccountInvitesEnabled) {
+      ngAuditUserInviteCreateEvent(savedInvite);
+    } else {
+      return InviteOperationResponse.USER_INVITE_NOT_REQUIRED;
+    }
     return InviteOperationResponse.USER_INVITED_SUCCESSFULLY;
+  }
+
+  private boolean isPLNoEmailForSamlAccountInvitesEnabled(String accountIdentifier) {
+    try {
+      return ngFeatureFlagHelperService.isEnabled(accountIdentifier, FeatureName.PL_NO_EMAIL_FOR_SAML_ACCOUNT_INVITES);
+    } catch (Exception ex) {
+      log.error(
+          "For account {} while making an accountClient call to check FF PL_NO_EMAIL_FOR_SAML_ACCOUNT_INVITES status failed with exception: ",
+          accountIdentifier, ex);
+      throw ex;
+    }
+  }
+
+  private boolean isAutoInviteAcceptanceEnabled(String accountIdentifier) {
+    try {
+      return CGRestUtils.getResponse(accountClient.checkAutoInviteAcceptanceEnabledForAccount(accountIdentifier));
+    } catch (Exception ex) {
+      log.error(
+          "For account {} while making an accountClient call to check AutoInviteAcceptanceEnabled failed with exception: ",
+          accountIdentifier, ex);
+      throw ex;
+    }
   }
 
   private void updateJWTTokenInInvite(Invite invite) {
@@ -541,15 +590,24 @@ public class InviteServiceImpl implements InviteService {
     inviteRepository.updateInvite(invite.getId(), update);
   }
 
-  private void sendInvitationMail(Invite invite) throws URISyntaxException, UnsupportedEncodingException {
+  private void sendInvitationMail(Invite invite, boolean isPLNoEmailForSamlAccountInvitesEnabled,
+      boolean isAutoInviteAcceptanceEnabled) throws URISyntaxException, UnsupportedEncodingException {
     updateJWTTokenInInvite(invite);
+    if (isPLNoEmailForSamlAccountInvitesEnabled) {
+      return;
+    }
     String url = isNgAuthUIEnabled ? getAcceptInviteUrl(invite) : getInvitationMailEmbedUrl(invite);
     EmailChannelBuilder emailChannelBuilder = EmailChannel.builder()
                                                   .accountId(invite.getAccountIdentifier())
                                                   .recipients(Collections.singletonList(invite.getEmail()))
                                                   .team(Team.PL)
-                                                  .templateId("email_invite")
                                                   .userGroups(Collections.emptyList());
+    boolean isSSOEnabled = CGRestUtils.getResponse(accountClient.isSSOEnabled(invite.getAccountIdentifier()));
+    if (isAutoInviteAcceptanceEnabled && isSSOEnabled) {
+      emailChannelBuilder.templateId(EMAIL_NOTIFY_TEMPLATE_ID);
+    } else {
+      emailChannelBuilder.templateId(EMAIL_INVITE_TEMPLATE_ID);
+    }
     Map<String, String> templateData = new HashMap<>();
     templateData.put("url", url);
     if (!isBlank(invite.getProjectIdentifier())) {
@@ -564,6 +622,26 @@ public class InviteServiceImpl implements InviteService {
     }
     emailChannelBuilder.templateData(templateData);
     notificationClient.sendNotificationAsync(emailChannelBuilder.build());
+  }
+
+  private void ngAuditUserInviteCreateEvent(Invite invite) {
+    try {
+      outboxService.save(new UserInviteCreateEvent(
+          invite.getAccountIdentifier(), invite.getOrgIdentifier(), invite.getProjectIdentifier(), writeDTO(invite)));
+    } catch (Exception ex) {
+      log.error("For account {} the Audit trails for User Invite Create Event with inviteId {} failed with exception: ",
+          invite.getAccountIdentifier(), invite.getId(), ex);
+    }
+  }
+
+  private void ngAuditUserInviteUpdateEvent(Invite invite) {
+    try {
+      outboxService.save(new UserInviteUpdateEvent(invite.getAccountIdentifier(), invite.getOrgIdentifier(),
+          invite.getProjectIdentifier(), writeDTO(invite), writeDTO(invite)));
+    } catch (Exception ex) {
+      log.error("For account {} the Audit trails for User Invite Update Event with inviteId {} failed with exception: ",
+          invite.getAccountIdentifier(), invite.getId(), ex);
+    }
   }
 
   private String getInvitationMailEmbedUrl(Invite invite) throws URISyntaxException {

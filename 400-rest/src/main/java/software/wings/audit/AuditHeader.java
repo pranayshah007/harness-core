@@ -84,6 +84,13 @@ public class AuditHeader extends Base implements AccountAccess {
                  .field(AuditHeaderKeys.appIdEntityRecord)
                  .descSortField(AuditHeaderKeys.createdAt)
                  .build())
+        .add(SortCompoundMongoIndex.builder()
+                 .name("accountId_createdAt_earAffectedResourceOperation_earAffectedResourceType")
+                 .field(AuditHeaderKeys.accountId)
+                 .descSortField(AuditHeaderKeys.createdAt)
+                 .rangeField(AuditHeaderKeys.affectedResourceOp)
+                 .rangeField(AuditHeaderKeys.affectedResourceType)
+                 .build())
         .build();
   }
 

@@ -608,6 +608,14 @@ permissions:
       - account
       - organization
       - project
+  - identifier: core_template_copy
+    name: Copy Templates
+    status: ACTIVE
+    includeInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
   - identifier: core_template_edit
     name: Edit a Template
     status: ACTIVE

@@ -20,7 +20,6 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.perpetualtask.PerpetualTaskScheduleConfig;
-import io.harness.grpc.DelegateServiceClassicGrpcClient;
 import io.harness.grpc.auth.DelegateAuthServerInterceptor;
 import io.harness.grpc.utils.HTimestamps;
 import io.harness.logging.AccountLogContext;
@@ -71,7 +70,6 @@ public class PerpetualTaskServiceImpl implements PerpetualTaskService, DelegateO
   private static final int TASK_FAILED_EXECUTION_LIMIT = 5;
 
   @Inject private MainConfiguration mainConfiguration;
-  @Inject private DelegateServiceClassicGrpcClient delegateServiceClassicGrpcClient;
   @Inject private RemoteObserverInformer remoteObserverInformer;
   @Inject private DelegateMetricsService delegateMetricsService;
 
@@ -125,10 +123,6 @@ public class PerpetualTaskServiceImpl implements PerpetualTaskService, DelegateO
   @Override
   public String createTask(String perpetualTaskType, String accountId, PerpetualTaskClientContext clientContext,
       PerpetualTaskSchedule schedule, boolean allowDuplicate, String taskDescription) {
-    if (mainConfiguration.isDisableDelegateMgmtInManager()) {
-      return delegateServiceClassicGrpcClient.createPerpetualTask(
-          perpetualTaskType, accountId, clientContext, schedule, allowDuplicate, taskDescription);
-    }
     return createPerpetualTaskInternal(
         perpetualTaskType, accountId, clientContext, schedule, allowDuplicate, taskDescription);
   }

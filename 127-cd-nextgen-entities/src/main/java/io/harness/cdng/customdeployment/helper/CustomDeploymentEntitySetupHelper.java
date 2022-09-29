@@ -130,10 +130,6 @@ public class CustomDeploymentEntitySetupHelper {
         log.error("templateRef is empty in yaml for account id :{}", infraEntity.getAccountId());
         throw new InvalidRequestException("templateRef is null in yaml");
       }
-      if (isEmpty(stepTemplateRef.getVersionLabel())) {
-        log.error("versionLabel is null in yaml for account id :{}", infraEntity.getAccountId());
-        throw new InvalidRequestException("versionLabel is null in yaml");
-      }
       return stepTemplateRef;
     } catch (Exception e) {
       log.error("Could not fetch the template reference from yaml for acc :{}, project :{}, infraRef:{}: {}",

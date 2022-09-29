@@ -19,12 +19,14 @@ import com.fasterxml.jackson.annotation.JsonValue;
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type", defaultImpl = K8BuildJobEnvInfo.class)
 @JsonSubTypes({
   @JsonSubTypes.Type(value = K8BuildJobEnvInfo.class, name = "K8")
-  , @JsonSubTypes.Type(value = VmBuildJobInfo.class, name = "VM")
+  , @JsonSubTypes.Type(value = VmBuildJobInfo.class, name = "VM"),
+      @JsonSubTypes.Type(value = VmBuildJobInfo.class, name = "DOCKER")
 })
 public interface BuildJobEnvInfo {
   enum Type {
     @JsonProperty("K8") K8("K8"),
-    @JsonProperty("VM") VM("VM");
+    @JsonProperty("VM") VM("VM"),
+    @JsonProperty("DOCKER") DOCKER("DOCKER");
 
     private final String yamlName;
     Type(String yamlName) {
