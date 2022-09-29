@@ -27,6 +27,7 @@ public class AzureMachineImageDelegateRequest implements ArtifactSourceDelegateR
   AzureConnectorDTO azureConnectorDTO;
   List<EncryptedDataDetail> encryptedDataDetails;
   String subscriptionId;
+  ArtifactSourceType sourceType;
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
     List<ExecutionCapability> capabilities =

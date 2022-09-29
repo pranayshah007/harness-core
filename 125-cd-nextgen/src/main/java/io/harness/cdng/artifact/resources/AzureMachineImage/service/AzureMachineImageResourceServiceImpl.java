@@ -74,14 +74,14 @@ public class AzureMachineImageResourceServiceImpl implements AzureMachineImageRe
 
   @Override
   public List<AzureMachineImageResourceGroupDto> listResourceGroups(IdentifierRef AzureMachineImageConnectorRef,
-      String cloudProviderId, String subscriptionId, String orgIdentifier, String projectIdentifier) {
+      String subscriptionId, String orgIdentifier, String projectIdentifier) {
     AzureConnectorDTO connector = getConnector(AzureMachineImageConnectorRef);
     BaseNGAccess baseNGAccess =
         getBaseNGAccess(AzureMachineImageConnectorRef.getAccountIdentifier(), orgIdentifier, projectIdentifier);
     List<EncryptedDataDetail> encryptionDetails = getEncryptionDetails(connector, baseNGAccess);
     AzureMachineImageDelegateRequest azureMachineImageDelegateRequest =
-        ArtifactDelegateRequestUtils.getAzureMachineImageDelegateRequest(
-            cloudProviderId, subscriptionId, connector, encryptionDetails, ArtifactSourceType.AZURE_MACHINE_IMAGE);
+        ArtifactDelegateRequestUtils.getAzureMachineImageResourceGroupsDelegateRequest(
+            subscriptionId, connector, encryptionDetails, ArtifactSourceType.AZURE_MACHINE_IMAGE);
     try {
       ArtifactTaskExecutionResponse artifactTaskExecutionResponse =
           executeSyncTask(azureMachineImageDelegateRequest, ArtifactTaskType.GET_BUILDS, baseNGAccess,
@@ -94,7 +94,6 @@ public class AzureMachineImageResourceServiceImpl implements AzureMachineImageRe
     } catch (ExplanationException e) {
       throw new HintException(HintException.HINT_GCP_ACCESS_DENIED, new InvalidRequestException(e.getMessage(), USER));
     }
-    //        return null;
   }
   private ArtifactTaskExecutionResponse executeSyncTask(
       AzureMachineImageDelegateRequest azureMachineImageDelegateRequest, ArtifactTaskType taskType,

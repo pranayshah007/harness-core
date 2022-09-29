@@ -7,5 +7,5 @@ import java.util.List;
 
 public interface AzureMachineImageResourceService {
   List<AzureMachineImageResourceGroupDto> listResourceGroups(IdentifierRef AzureMachineImageConnectorRef,
-      String cloudProviderId, String subscriptionId, String orgIdentifier, String projectIdentifier);
+      String subscriptionId, String orgIdentifier, String projectIdentifier);
 }

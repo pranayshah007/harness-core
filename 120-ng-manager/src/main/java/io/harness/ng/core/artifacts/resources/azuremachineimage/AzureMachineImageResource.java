@@ -50,7 +50,7 @@ public class AzureMachineImageResource {
   @ApiOperation(value = "Gets azure machine image resource groups", nickname = "getresourcegroups")
   public ResponseDTO<List<AzureMachineImageResourceGroupDto>> listResourceGroups(
       @QueryParam("connectorRef") String AzureConnectorIdentifier,
-      @QueryParam("cloudProviderId") String cloudProviderId, @PathParam(value = "subscriptionId") String subscriptionId,
+      @PathParam(value = "subscriptionId") String subscriptionId,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
       @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
@@ -58,7 +58,7 @@ public class AzureMachineImageResource {
     IdentifierRef connectorRef =
         IdentifierRefHelper.getIdentifierRef(AzureConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
     List<AzureMachineImageResourceGroupDto> resourceGroups = azureMachineImageResourceService.listResourceGroups(
-        connectorRef, cloudProviderId, subscriptionId, orgIdentifier, projectIdentifier);
+        connectorRef, subscriptionId, orgIdentifier, projectIdentifier);
 
     return ResponseDTO.newResponse(resourceGroups);
   }
