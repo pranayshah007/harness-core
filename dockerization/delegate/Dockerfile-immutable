@@ -19,7 +19,8 @@ COPY immutable-scripts /opt/harness-delegate/
 COPY scripts/client_tools.sh /opt/harness-delegate/client_tools.sh
 
 WORKDIR /opt/harness-delegate
-
+RUN whoami
+USER root
 ARG disable_client_tools=true
 ARG TARGETARCH
 RUN ./client_tools.sh $disable_client_tools $TARGETARCH\
