@@ -565,6 +565,7 @@ func (r *runTestsTask) getCmd(ctx context.Context, agentPath, outputVarFile stri
 
 	// Test command
 	testCmd, err := runner.GetCmd(ctx, selection.Tests, r.args, iniFilePath, ignoreInstr, !r.runOnlySelectedTests)
+	r.log.Infow(testCmd)
 	if err != nil {
 		return "", err
 	}
