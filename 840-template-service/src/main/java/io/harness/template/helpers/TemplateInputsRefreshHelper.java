@@ -174,10 +174,10 @@ public class TemplateInputsRefreshHelper {
 
     if (refreshedJsonNode == null) {
       // CASE -> When Template does not contain any runtime inputs
-      updatedValue.remove(TEMPLATE_VARIABLES);
+      updatedValue.remove(TEMPLATE_INPUTS);
     } else {
       // Inserting the Updated Value of TemplateInputs corresponding to the TemplateInputs field
-      updatedValue.set(TEMPLATE_VARIABLES, refreshedJsonNode);
+      updatedValue.set(TEMPLATE_INPUTS, refreshedJsonNode);
     }
 
     if (!templateVariablesEnabled) {

@@ -24,6 +24,7 @@ import io.harness.CategoryTest;
 import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
+import io.harness.account.AccountClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.customDeployment.remote.CustomDeploymentResourceClient;
@@ -99,6 +100,9 @@ public class NGTemplateResourceTest extends CategoryTest {
   @Mock TemplateReferenceHelper templateReferenceHelper;
   @Mock CustomDeploymentResourceClient customDeploymentResourceClient;
 
+  @Mock
+  AccountClient accountClient;
+
   private final String ACCOUNT_ID = "account_id";
   private final String ORG_IDENTIFIER = "orgId";
   private final String PROJ_IDENTIFIER = "projId";
@@ -143,7 +147,7 @@ public class NGTemplateResourceTest extends CategoryTest {
     variablesServiceBlockingStub = VariablesServiceGrpc.newBlockingStub(channel);
 
     templateResource = new NGTemplateResource(templateService, templateServiceHelper, accessControlClient,
-        templateMergeService, variablesServiceBlockingStub, templateYamlConversionHelper, templateReferenceHelper,
+        templateMergeService, variablesServiceBlockingStub, templateYamlConversionHelper, templateReferenceHelper, accountClient,
         customDeploymentResourceClient);
     ClassLoader classLoader = this.getClass().getClassLoader();
     String filename = "template.yaml";

@@ -34,7 +34,7 @@ public class RuntimeInputsValidator {
   public boolean areInputsValidAgainstSourceNode(JsonNode nodeToValidate, JsonNode sourceNode) {
     // if source node is null, should return true if nodeToValidate is null
     if (sourceNode == null) {
-      return nodeToValidate == null;
+      return nodeToValidate == null || nodeToValidate.isEmpty();
     }
 
     // Add dummy node to sourceNode and create template from it.
@@ -46,11 +46,11 @@ public class RuntimeInputsValidator {
 
     // if there are no runtime inputs in source node, return true if nodeToValidate is also null.
     if (isEmpty(sourceNodeInputSetFormatYaml)) {
-      return nodeToValidate == null;
+      return nodeToValidate == null || nodeToValidate.isEmpty();
     }
 
     // if nodeToValidate is null and there exist runtime inputs in source node, return false.
-    if (nodeToValidate == null) {
+    if (nodeToValidate == null || nodeToValidate.isEmpty()) {
       return false;
     }
 
