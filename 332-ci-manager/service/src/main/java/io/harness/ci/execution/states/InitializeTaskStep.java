@@ -27,12 +27,14 @@ import io.harness.beans.outcomes.LiteEnginePodDetailsOutcome;
 import io.harness.beans.outcomes.VmDetailsOutcome;
 import io.harness.beans.outcomes.VmDetailsOutcome.VmDetailsOutcomeBuilder;
 import io.harness.beans.steps.stepinfo.InitializeStepInfo;
+import io.harness.beans.yaml.extended.infrastrucutre.DockerInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.HostedVmInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml;
 import io.harness.ci.buildstate.BuildSetupUtils;
 import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.ci.integrationstage.BuildJobEnvInfoBuilder;
+import io.harness.ci.integrationstage.DockerInitializeTaskParamsBuilder;
 import io.harness.ci.integrationstage.IntegrationStageUtils;
 import io.harness.ci.integrationstage.K8InitializeServiceUtils;
 import io.harness.ci.integrationstage.VmInitializeTaskParamsBuilder;
@@ -110,6 +112,7 @@ public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementPar
   @Inject private K8InitializeServiceUtils k8InitializeServiceUtils;
   @Inject private ExecutionSweepingOutputService executionSweepingOutputResolver;
   @Inject private VmInitializeTaskParamsBuilder vmInitializeTaskParamsBuilder;
+  @Inject private DockerInitializeTaskParamsBuilder dockerInitializeTaskParamsBuilder;
   @Inject private KryoSerializer kryoSerializer;
   @Inject private CIDelegateTaskExecutor ciDelegateTaskExecutor;
   @Inject private PipelineRbacHelper pipelineRbacHelper;
@@ -216,7 +219,8 @@ public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementPar
     // Secrets are in decrypted format for DLITE_VM type
     if (buildSetupTaskParams.getType() != DLITE_VM) {
       log.info("Created params for build task: {}", buildSetupTaskParams);
-    } else {
+    }
+    if (buildSetupTaskParams.getType() == DLITE_VM) {
       HostedVmInfraYaml hostedVmInfraYaml = (HostedVmInfraYaml) initializeStepInfo.getInfrastructure();
       String platformSelector =
           vmInitializeTaskParamsBuilder.getHostedPoolId(hostedVmInfraYaml.getSpec().getPlatform());
@@ -225,6 +229,14 @@ public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementPar
       executeOnHarnessHostedDelegates = true;
 
       emitEvent = true;
+    } else if (initializeStepInfo.getInfrastructure().getType() == Infrastructure.Type.DOCKER) {
+      DockerInfraYaml dockerInfraYaml = (DockerInfraYaml) initializeStepInfo.getInfrastructure();
+      String platformSelector =
+          dockerInitializeTaskParamsBuilder.getHostedPoolId(dockerInfraYaml.getSpec().getPlatform());
+      TaskSelector taskSelector = TaskSelector.newBuilder().setSelector(platformSelector).build();
+      taskSelectors.add(taskSelector);
+      // TODO: start emitting & processing event for Docker as well
+      // emitEvent = true;
     }
 
     return StepUtils.prepareTaskRequest(ambiance, getTaskData(stepElementParameters, buildSetupTaskParams),
