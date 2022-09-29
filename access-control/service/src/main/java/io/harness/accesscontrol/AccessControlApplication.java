@@ -58,6 +58,7 @@ import io.harness.migration.MigrationProvider;
 import io.harness.migration.NGMigrationSdkInitHelper;
 import io.harness.migration.beans.NGMigrationConfiguration;
 import io.harness.ng.core.CorrelationFilter;
+import io.harness.ng.core.TraceFilter;
 import io.harness.ng.core.exceptionmappers.GenericExceptionMapperV2;
 import io.harness.ng.core.exceptionmappers.JerseyViolationExceptionMapperV2;
 import io.harness.ng.core.exceptionmappers.WingsExceptionMapperV2;
@@ -181,6 +182,11 @@ public class AccessControlApplication extends Application<AccessControlConfigura
     registerMigrations(injector);
     registerIterators(injector);
     registerOasResource(appConfig, environment, injector);
+
+    if (appConfig.getEnableOpentelemetry()) {
+      registerTraceFilter(environment, injector);
+    }
+
     initializeEnforcementFramework(injector);
     AccessControlManagementJob accessControlManagementJob = injector.getInstance(AccessControlManagementJob.class);
     accessControlManagementJob.run();
@@ -269,6 +275,10 @@ public class AccessControlApplication extends Application<AccessControlConfigura
 
   private void registerCorrelationFilter(Environment environment, Injector injector) {
     environment.jersey().register(injector.getInstance(CorrelationFilter.class));
+  }
+
+  private void registerTraceFilter(Environment environment, Injector injector) {
+    environment.jersey().register(injector.getInstance(TraceFilter.class));
   }
 
   private void registerRequestContextFilter(Environment environment) {
