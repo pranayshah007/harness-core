@@ -8,7 +8,10 @@
 package io.harness.ng.core.api.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.eraro.ErrorCode.SECRET_MANAGEMENT_ERROR;
+import static io.harness.exception.WingsException.USER;
 import static io.harness.rule.OwnerRule.NISHANT;
+import static io.harness.rule.OwnerRule.RAGHAV_MURALI;
 import static io.harness.rule.OwnerRule.TEJAS;
 import static io.harness.rule.OwnerRule.VIKAS_M;
 import static io.harness.security.encryption.EncryptionType.AZURE_VAULT;
@@ -255,6 +258,85 @@ public class NGEncryptedDataServiceImplTest extends CategoryTest {
         .thenReturn(vaultConfigDTO);
     ArgumentCaptor<SecretManagerConfig> argumentCaptor = ArgumentCaptor.forClass(SecretManagerConfig.class);
     when(vaultEncryptor.deleteSecret(any(), any(), argumentCaptor.capture())).thenReturn(true);
+    when(encryptedDataDao.delete(any(), any(), any(), any())).thenReturn(true);
+    boolean deleted = ngEncryptedDataService.delete(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
+    verify(ngFeatureFlagHelperService, times(1)).isEnabled(any(), any());
+    BaseVaultConfig vaultConfig = (BaseVaultConfig) argumentCaptor.getValue();
+    assertThat(vaultConfig.getRenewAppRoleToken()).isEqualTo(false);
+    assertThat(deleted).isEqualTo(true);
+  }
+
+  @Test
+  @Owner(developers = RAGHAV_MURALI)
+  @Category(UnitTests.class)
+  public void testDeleteSecret_evenWhenDeleteFailsInRemote() {
+    String accountIdentifier = randomAlphabetic(10);
+    String orgIdentifier = randomAlphabetic(10);
+    String projectIdentifier = randomAlphabetic(10);
+    String identifier = randomAlphabetic(10);
+    String encryptedValue = randomAlphabetic(10);
+    NGEncryptedData encryptedDataDTO = NGEncryptedData.builder()
+                                           .accountIdentifier(accountIdentifier)
+                                           .orgIdentifier(orgIdentifier)
+                                           .projectIdentifier(projectIdentifier)
+                                           .type(SettingVariableTypes.SECRET_TEXT)
+                                           .encryptedValue(encryptedValue.toCharArray())
+                                           .secretManagerIdentifier(identifier)
+                                           .build();
+    when(encryptedDataDao.get(any(), any(), any(), any())).thenReturn(encryptedDataDTO);
+    when(ngFeatureFlagHelperService.isEnabled(any(), any())).thenReturn(true);
+    SecretManagerConfigDTO vaultConfigDTO = VaultConfigDTO.builder()
+                                                .accountIdentifier(accountIdentifier)
+                                                .identifier("testSecret")
+                                                .appRoleId("appRoleId")
+                                                .secretId("secretId")
+                                                .renewAppRoleToken(true)
+                                                .build();
+    vaultConfigDTO.setEncryptionType(VAULT);
+    when(ngConnectorSecretManagerService.getUsingIdentifier(any(), any(), any(), any(), anyBoolean()))
+        .thenReturn(vaultConfigDTO);
+    ArgumentCaptor<SecretManagerConfig> argumentCaptor = ArgumentCaptor.forClass(SecretManagerConfig.class);
+    when(vaultEncryptor.deleteSecret(any(), any(), argumentCaptor.capture())).thenReturn(false);
+    when(encryptedDataDao.delete(any(), any(), any(), any())).thenReturn(true);
+    boolean deleted = ngEncryptedDataService.delete(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
+    verify(ngFeatureFlagHelperService, times(1)).isEnabled(any(), any());
+    BaseVaultConfig vaultConfig = (BaseVaultConfig) argumentCaptor.getValue();
+    assertThat(vaultConfig.getRenewAppRoleToken()).isEqualTo(false);
+    assertThat(deleted).isEqualTo(true);
+  }
+
+  @Test
+  @Owner(developers = RAGHAV_MURALI)
+  @Category(UnitTests.class)
+  public void testDeleteSecret_evenWhenDeleteFailsInRemoteWithException() {
+    String accountIdentifier = randomAlphabetic(10);
+    String orgIdentifier = randomAlphabetic(10);
+    String projectIdentifier = randomAlphabetic(10);
+    String identifier = randomAlphabetic(10);
+    String encryptedValue = randomAlphabetic(10);
+    NGEncryptedData encryptedDataDTO = NGEncryptedData.builder()
+                                           .accountIdentifier(accountIdentifier)
+                                           .orgIdentifier(orgIdentifier)
+                                           .projectIdentifier(projectIdentifier)
+                                           .type(SettingVariableTypes.SECRET_TEXT)
+                                           .encryptedValue(encryptedValue.toCharArray())
+                                           .secretManagerIdentifier(identifier)
+                                           .build();
+    when(encryptedDataDao.get(any(), any(), any(), any())).thenReturn(encryptedDataDTO);
+    when(ngFeatureFlagHelperService.isEnabled(any(), any())).thenReturn(true);
+    SecretManagerConfigDTO vaultConfigDTO = VaultConfigDTO.builder()
+                                                .accountIdentifier(accountIdentifier)
+                                                .identifier("testSecret")
+                                                .appRoleId("appRoleId")
+                                                .secretId("secretId")
+                                                .renewAppRoleToken(true)
+                                                .build();
+    vaultConfigDTO.setEncryptionType(VAULT);
+    when(ngConnectorSecretManagerService.getUsingIdentifier(any(), any(), any(), any(), anyBoolean()))
+        .thenReturn(vaultConfigDTO);
+    ArgumentCaptor<SecretManagerConfig> argumentCaptor = ArgumentCaptor.forClass(SecretManagerConfig.class);
+    when(vaultEncryptor.deleteSecret(any(), any(), argumentCaptor.capture()))
+        .thenThrow(new SecretManagementException(SECRET_MANAGEMENT_ERROR, "Delete on remote failed", USER));
     when(encryptedDataDao.delete(any(), any(), any(), any())).thenReturn(true);
     boolean deleted = ngEncryptedDataService.delete(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
     verify(ngFeatureFlagHelperService, times(1)).isEnabled(any(), any());
