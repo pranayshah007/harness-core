@@ -1,3 +1,10 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.ng.core.remote;
 
 import static io.harness.exception.WingsException.USER;
@@ -174,9 +181,10 @@ public class AccountSecretApiImpl implements AccountSecretApi {
       Boolean recursive, String searchTerm, Integer page, Integer limit) {
     List<SecretType> secretTypes = secretApiUtils.toSecretTypes(type);
 
-    List<SecretResponseWrapper> content = getNGPageResponse(
-        ngSecretService.list(account, org, project, secret, secretTypes, recursive, searchTerm, page, limit, null))
-                                              .getContent();
+    List<SecretResponseWrapper> content =
+        getNGPageResponse(ngSecretService.list(account, org, project, secret, secretTypes, recursive, searchTerm, page,
+                              limit, null, false))
+            .getContent();
 
     List<SecretResponse> secretResponse =
         content.stream().map(secretApiUtils::toSecretResponse).collect(Collectors.toList());

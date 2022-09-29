@@ -33,6 +33,11 @@ import io.harness.cdng.artifact.bean.yaml.customartifact.CustomArtifactSpecVisit
 import io.harness.cdng.artifact.bean.yaml.customartifact.CustomScriptBaseSource;
 import io.harness.cdng.artifact.bean.yaml.customartifact.CustomScriptInlineSource;
 import io.harness.cdng.artifact.bean.yaml.customartifact.FetchAllArtifacts;
+import io.harness.cdng.artifact.bean.yaml.nexusartifact.Nexus2RegistryArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryDockerConfig;
+import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryMavenConfig;
+import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryNpmConfig;
+import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryNugetConfig;
 import io.harness.cdng.artifact.outcome.AcrArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactoryGenericArtifactOutcome;
 import io.harness.cdng.artifact.outcome.DockerArtifactOutcome;
@@ -272,6 +277,11 @@ public class NGEntitiesKryoRegistrar implements KryoRegistrar {
     kryo.register(CustomArtifactScripts.class, 140018);
     kryo.register(CustomArtifactScriptSourceWrapper.class, 140019);
     kryo.register(CustomScriptBaseSource.class, 140020);
+    kryo.register(Nexus2RegistryArtifactConfig.class, 140012);
+    kryo.register(NexusRegistryNpmConfig.class, 140013);
+    kryo.register(NexusRegistryMavenConfig.class, 140014);
+    kryo.register(NexusRegistryNugetConfig.class, 140015);
+    kryo.register(NexusRegistryDockerConfig.class, 140016);
     kryo.register(CustomDeploymentInfrastructureOutcome.class, 140022);
     kryo.register(GoogleArtifactRegistryConfig.class, 130021);
     kryo.register(GarArtifactOutcome.class, 130022);

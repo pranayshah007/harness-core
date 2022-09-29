@@ -97,7 +97,6 @@ import io.harness.migration.NGMigrationSdkModule;
 import io.harness.migration.beans.NGMigrationConfiguration;
 import io.harness.migrations.InstanceMigrationProvider;
 import io.harness.ng.core.CorrelationFilter;
-import io.harness.ng.core.DefaultUserGroupsCreationJob;
 import io.harness.ng.core.EtagFilter;
 import io.harness.ng.core.event.NGEventConsumerService;
 import io.harness.ng.core.exceptionmappers.GenericExceptionMapperV2;
@@ -725,7 +724,6 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     environment.lifecycle().manage(injector.getInstance(QueueListenerController.class));
     environment.lifecycle().manage(injector.getInstance(NotifierScheduledExecutorService.class));
     environment.lifecycle().manage(injector.getInstance(OutboxEventPollService.class));
-    environment.lifecycle().manage(injector.getInstance(DefaultUserGroupsCreationJob.class));
     createConsumerThreadsToListenToEvents(environment, injector);
   }
 

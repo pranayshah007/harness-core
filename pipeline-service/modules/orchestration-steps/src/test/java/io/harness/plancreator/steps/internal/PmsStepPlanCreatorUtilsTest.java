@@ -141,7 +141,7 @@ public class PmsStepPlanCreatorUtilsTest extends OrchestrationStepsTestBase {
 
     YamlField yamlField = YamlUtils.readTree(yaml);
     Map<RollbackStrategy, String> map = PmsStepPlanCreatorUtils.getRollbackStrategyMap(yamlField);
-    assertEquals(map.size(), 2);
+    assertEquals(map.size(), 3);
   }
 
   @Test

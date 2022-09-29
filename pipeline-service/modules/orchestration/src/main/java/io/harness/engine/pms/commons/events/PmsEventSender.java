@@ -19,7 +19,6 @@ import io.harness.OrchestrationModuleConfig;
 import io.harness.OrchestrationRedisEventsConfig;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.eventsframework.api.Producer;
 import io.harness.eventsframework.impl.noop.NoOpProducer;
 import io.harness.eventsframework.impl.redis.RedisProducerFactory;
@@ -87,11 +86,10 @@ public class PmsEventSender {
                                                                .put(SERVICE_NAME, serviceName)
                                                                .putAll(AmbianceUtils.logContextMap(ambiance));
     Producer producer = obtainProducer(eventCategory, serviceName);
-
-    if (isMonitored
-        && pmsFeatureFlagService.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.PIPELINE_MONITORING)) {
+    if (isMonitored) {
       metadataBuilder.put(PIPELINE_MONITORING_ENABLED, "true");
     }
+
     String messageId =
         producer.send(Message.newBuilder().putAllMetadata(metadataBuilder.build()).setData(eventData).build());
     log.info("Successfully Sent {} event for {} to the producer. MessageId {}", eventCategory, serviceName, messageId);

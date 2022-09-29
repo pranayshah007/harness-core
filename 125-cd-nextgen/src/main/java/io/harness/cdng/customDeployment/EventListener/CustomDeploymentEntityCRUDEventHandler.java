@@ -1,3 +1,10 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.cdng.customDeployment.EventListener;
 
 import static software.wings.beans.AccountType.log;
@@ -35,8 +42,10 @@ public class CustomDeploymentEntityCRUDEventHandler {
       String accountRef, String orgRef, String projectRef, String identifier, String versionLabel) {
     Scope scope =
         Scope.builder().accountIdentifier(accountRef).orgIdentifier(orgRef).projectIdentifier(projectRef).build();
-    String entityFQN = getFullyQualifiedIdentifier(accountRef, orgRef, projectRef, identifier);
-    entityFQN = entityFQN + "/" + versionLabel + "/";
+    String entityFQN = getFullyQualifiedIdentifier(accountRef, orgRef, projectRef, identifier) + "/";
+    if (versionLabel != null) {
+      entityFQN = entityFQN + versionLabel + "/";
+    }
     List<EntitySetupUsageDTO> entitySetupUsages = entitySetupUsageService.listAllEntityUsagePerReferredEntityScope(
         scope, entityFQN, EntityType.TEMPLATE, EntityType.INFRASTRUCTURE, null, null);
     if (entitySetupUsages.isEmpty()) {
@@ -119,22 +128,24 @@ public class CustomDeploymentEntityCRUDEventHandler {
       JsonNode infraVariableNode = infraSpecNode.get("variables");
       Map<String, JsonNode> templateVariables = new HashMap<>();
       Map<String, JsonNode> infraVariables = new HashMap<>();
-      boolean flag = false;
+      boolean isObsolete = false;
       for (JsonNode variable : templateVariableNode) {
-        templateVariables.put(variable.get("name").asText(), variable.get("value"));
+        templateVariables.put(variable.get("name").asText(), variable);
       }
       for (JsonNode variable : infraVariableNode) {
         if (!templateVariables.containsKey(variable.get("name").asText())) {
-          flag = true;
+          isObsolete = true;
+        } else if (templateVariables.get(variable.get("name").asText()).get("type") != variable.get("type")) {
+          isObsolete = true;
         }
-        infraVariables.put(variable.get("name").asText(), variable.get("value"));
+        infraVariables.put(variable.get("name").asText(), variable);
       }
       for (JsonNode variable : templateVariableNode) {
         if (!infraVariables.containsKey(variable.get("name").asText())) {
-          flag = true;
+          isObsolete = true;
         }
       }
-      return flag;
+      return isObsolete;
     } catch (Exception e) {
       log.error(
           "Error Encountered in infra updation while reading yamls for template ans Infra for acc Id :{} ", accId);

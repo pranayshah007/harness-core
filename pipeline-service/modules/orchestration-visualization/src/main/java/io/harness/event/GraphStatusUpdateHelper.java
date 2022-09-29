@@ -10,6 +10,7 @@ package io.harness.event;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.pms.contracts.execution.Status.APPROVAL_WAITING;
 import static io.harness.pms.contracts.execution.Status.INTERVENTION_WAITING;
+import static io.harness.pms.contracts.execution.Status.WAIT_STEP_RUNNING;
 
 import io.harness.DelegateInfoHelper;
 import io.harness.annotations.dev.HarnessTeam;
@@ -142,6 +143,7 @@ public class GraphStatusUpdateHelper {
 
   @VisibleForTesting
   boolean isOutcomeUpdateGraphStatus(Status status) {
-    return StatusUtils.isFinalStatus(status) || status.equals(INTERVENTION_WAITING) || status.equals(APPROVAL_WAITING);
+    return StatusUtils.isFinalStatus(status) || status.equals(INTERVENTION_WAITING) || status.equals(APPROVAL_WAITING)
+        || status.equals(WAIT_STEP_RUNNING);
   }
 }

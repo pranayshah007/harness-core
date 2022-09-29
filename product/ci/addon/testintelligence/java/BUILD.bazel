@@ -29,6 +29,7 @@ go_test(
         "gradle_test.go",
         "helper_test.go",
         "maven_test.go",
+        "sbt_test.go",
     ],
     data = glob(["testdata/**"]),
     embed = [":java"],

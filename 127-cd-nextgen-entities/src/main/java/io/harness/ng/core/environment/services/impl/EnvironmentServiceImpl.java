@@ -15,6 +15,7 @@ import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPL
 import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.groupingBy;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
@@ -354,7 +355,7 @@ public class EnvironmentServiceImpl implements EnvironmentService {
 
   @Override
   public String createEnvironmentInputsYaml(
-      String accountId, String projectIdentifier, String orgIdentifier, String envIdentifier) {
+      String accountId, String orgIdentifier, String projectIdentifier, String envIdentifier) {
     Map<String, Object> yamlInputs =
         createEnvironmentInputsYamlInternal(accountId, orgIdentifier, projectIdentifier, envIdentifier);
 
@@ -508,5 +509,22 @@ public class EnvironmentServiceImpl implements EnvironmentService {
       // ignore this
     }
     return false;
+  }
+
+  public List<Environment> getEnvironments(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, List<String> environmemtIdentifiers) {
+    if (isEmpty(environmemtIdentifiers)) {
+      return emptyList();
+    }
+    Criteria criteria = Criteria.where(EnvironmentKeys.accountId)
+                            .is(accountIdentifier)
+                            .and(EnvironmentKeys.orgIdentifier)
+                            .is(orgIdentifier)
+                            .and(EnvironmentKeys.projectIdentifier)
+                            .is(projectIdentifier)
+                            .and(EnvironmentKeys.identifier)
+                            .in(environmemtIdentifiers);
+
+    return environmentRepository.findAll(criteria);
   }
 }

@@ -8,9 +8,11 @@
 package io.harness.cvng.migration.impl;
 
 import static io.harness.concurrent.HTimeLimiter.callInterruptible21;
+import static io.harness.cvng.core.utils.FeatureFlagNames.SERVICE_LEVEL_OBJECTIVE_V2;
 import static io.harness.cvng.migration.beans.CVNGSchema.CVNGMigrationStatus.PENDING;
 import static io.harness.cvng.migration.beans.CVNGSchema.SCHEMA_ID;
 
+import io.harness.cvng.core.services.api.FeatureFlagService;
 import io.harness.cvng.migration.CVNGBackgroundMigrationList;
 import io.harness.cvng.migration.CVNGMigration;
 import io.harness.cvng.migration.beans.CVNGSchema;
@@ -37,6 +39,7 @@ public class CVNGMigrationServiceImpl implements CVNGMigrationService {
   @Inject private Injector injector;
   @Inject private ExecutorService executorService;
   @Inject private TimeLimiter timeLimiter;
+  @Inject private FeatureFlagService featureFlagService;
 
   @Override
   public void runMigrations() {
@@ -55,6 +58,11 @@ public class CVNGMigrationServiceImpl implements CVNGMigrationService {
             for (int i = cvngSchemaVersion + 1; i <= maxBackgroundVersion; i++) {
               if (backgroundMigrations.containsKey(i)) {
                 Class<? extends CVNGMigration> migration = backgroundMigrations.get(i);
+                if (i == 52 && !featureFlagService.isGlobalFlagEnabled(SERVICE_LEVEL_OBJECTIVE_V2)) {
+                  log.info(
+                      "[Migration] - Didn't migrate to version 52 as SERVICE_LEVEL_OBJECTIVE_V2 feature flag is disabled");
+                  continue;
+                }
                 log.info("[Migration] - Migrating to version {}: {} ...", i, migration.getSimpleName());
                 try {
                   injector.getInstance(migration).migrate();

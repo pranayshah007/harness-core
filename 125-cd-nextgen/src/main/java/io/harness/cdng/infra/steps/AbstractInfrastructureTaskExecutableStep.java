@@ -103,7 +103,6 @@ import io.harness.steps.environment.EnvironmentOutcome;
 import io.harness.steps.shellscript.HostsOutput;
 import io.harness.steps.shellscript.SshInfraDelegateConfigOutput;
 import io.harness.steps.shellscript.WinRmInfraDelegateConfigOutput;
-import io.harness.supplier.ThrowingSupplier;
 import io.harness.yaml.infra.HostConnectionTypeKind;
 
 import software.wings.beans.TaskType;
@@ -124,8 +123,9 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 abstract class AbstractInfrastructureTaskExecutableStep {
+  public static final String LOG_SUFFIX = "Execute";
   private static final String DEFAULT_TIMEOUT = "10m";
-  private static final long DEFAULT_START_TIME_INTERVAL = 10 * 60 * 1000L;
+  protected static final long DEFAULT_START_TIME_INTERVAL = 10 * 60 * 1000L;
   @Inject protected InfrastructureStepHelper infrastructureStepHelper;
   @Inject protected OutcomeService outcomeService;
   @Inject protected CDStepHelper cdStepHelper;
@@ -141,6 +141,13 @@ abstract class AbstractInfrastructureTaskExecutableStep {
     private ServiceStepOutcome serviceStepOutcome;
     private EnvironmentOutcome environmentOutcome;
   }
+  @Data
+  @AllArgsConstructor
+  protected static class TaskRequestData {
+    private TaskRequest taskRequest;
+    private TaskData taskData;
+    private List<TaskSelectorYaml> taskSelectorYamls;
+  }
 
   protected OutcomeSet fetchRequiredOutcomes(Ambiance ambiance) {
     EnvironmentOutcome environmentOutcome = (EnvironmentOutcome) executionSweepingOutputService.resolve(
@@ -150,7 +157,7 @@ abstract class AbstractInfrastructureTaskExecutableStep {
     return new OutcomeSet(serviceOutcome, environmentOutcome);
   }
 
-  protected TaskRequest obtainTaskInternal(
+  protected TaskRequestData obtainTaskInternal(
       Ambiance ambiance, Infrastructure infrastructure, NGLogCallback logCallback, Boolean addRcStep) {
     saveExecutionLog(logCallback, "Starting infrastructure step...");
 
@@ -199,8 +206,8 @@ abstract class AbstractInfrastructureTaskExecutableStep {
   }
 
   protected StepResponse handleTaskResult(Ambiance ambiance,
-      InfrastructureTaskExecutableStepSweepingOutput stepSweepingOutput,
-      ThrowingSupplier<DelegateResponseData> responseDataSupplier, NGLogCallback logCallback) throws Exception {
+      InfrastructureTaskExecutableStepSweepingOutput stepSweepingOutput, DelegateResponseData responseData,
+      NGLogCallback logCallback) {
     log.info("Handling Task Result With Security Context for the Infrastructure Step");
     long startTime = System.currentTimeMillis() - DEFAULT_START_TIME_INTERVAL;
 
@@ -208,14 +215,6 @@ abstract class AbstractInfrastructureTaskExecutableStep {
     final ExecutionInfoKey executionInfoKey =
         ExecutionInfoKeyMapper.getExecutionInfoKey(ambiance, outcomeSet.getEnvironmentOutcome(),
             outcomeSet.getServiceStepOutcome(), stepSweepingOutput.getInfrastructureOutcome());
-
-    DelegateResponseData responseData;
-    try {
-      responseData = responseDataSupplier.get();
-    } catch (Exception ex) {
-      log.error("Error while processing Infrastructure Step response: {}", ex.getMessage(), ex);
-      return handleTaskException(startTime, ex, logCallback);
-    }
 
     boolean skipInstances = stepSweepingOutput.isSkipInstances();
     if (responseData instanceof AzureHostsResponse) {
@@ -378,7 +377,7 @@ abstract class AbstractInfrastructureTaskExecutableStep {
         .build();
   }
 
-  StepResponse buildFailureStepResponse(long startTime, String message, NGLogCallback logCallback) {
+  protected StepResponse buildFailureStepResponse(long startTime, String message, NGLogCallback logCallback) {
     if (logCallback != null) {
       logCallback.saveExecutionLog(
           color("Infrastructure step failed", Red), LogLevel.INFO, CommandExecutionStatus.FAILURE);
@@ -404,7 +403,7 @@ abstract class AbstractInfrastructureTaskExecutableStep {
         .build();
   }
 
-  private TaskRequest getTaskRequest(
+  private TaskRequestData getTaskRequest(
       Ambiance ambiance, ServiceStepOutcome serviceOutcome, InfrastructureOutcome infrastructureOutcome) {
     if (ServiceDefinitionType.SSH.name()
             .toLowerCase(Locale.ROOT)
@@ -419,7 +418,7 @@ abstract class AbstractInfrastructureTaskExecutableStep {
         format("Service type %s not supported for following infrastructure step", serviceOutcome.getType()));
   }
 
-  TaskRequest buildSshTaskRequest(Ambiance ambiance, InfrastructureOutcome infrastructureOutcome) {
+  TaskRequestData buildSshTaskRequest(Ambiance ambiance, InfrastructureOutcome infrastructureOutcome) {
     SshInfraDelegateConfig sshInfraDelegateConfig =
         publishSshInfraDelegateConfigOutput(infrastructureOutcome, ambiance);
 
@@ -435,7 +434,7 @@ abstract class AbstractInfrastructureTaskExecutableStep {
     }
   }
 
-  TaskRequest buildWinRmTaskRequest(Ambiance ambiance, InfrastructureOutcome infrastructureOutcome) {
+  TaskRequestData buildWinRmTaskRequest(Ambiance ambiance, InfrastructureOutcome infrastructureOutcome) {
     WinRmInfraDelegateConfig winRmInfraDelegateConfig =
         publishWinRmInfraDelegateConfigOutput(infrastructureOutcome, ambiance);
 
@@ -451,7 +450,7 @@ abstract class AbstractInfrastructureTaskExecutableStep {
     }
   }
 
-  TaskRequest buildAzureTaskRequest(Ambiance ambiance, AzureInfraDelegateConfig azureInfraDelegateConfig) {
+  TaskRequestData buildAzureTaskRequest(Ambiance ambiance, AzureInfraDelegateConfig azureInfraDelegateConfig) {
     Map<AzureAdditionalParams, String> additionalParams = new HashMap<>();
     additionalParams.put(AzureAdditionalParams.SUBSCRIPTION_ID, azureInfraDelegateConfig.getSubscriptionId());
     additionalParams.put(AzureAdditionalParams.RESOURCE_GROUP, azureInfraDelegateConfig.getResourceGroup());
@@ -484,12 +483,13 @@ abstract class AbstractInfrastructureTaskExecutableStep {
             .map(TaskSelectorYaml::new)
             .collect(Collectors.toList());
 
-    return StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer, Collections.singletonList("Execute"),
-        taskData.getTaskType(), TaskSelectorYaml.toTaskSelector(emptyIfNull(taskSelectorYamlList)),
-        stepHelper.getEnvironmentType(ambiance));
+    TaskRequest taskRequest = StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
+        Collections.singletonList("Execute"), taskData.getTaskType(),
+        TaskSelectorYaml.toTaskSelector(emptyIfNull(taskSelectorYamlList)), stepHelper.getEnvironmentType(ambiance));
+    return new TaskRequestData(taskRequest, taskData, taskSelectorYamlList);
   }
 
-  TaskRequest buildAwsTaskRequest(Ambiance ambiance, AwsInfraDelegateConfig awsInfraDelegateConfig) {
+  TaskRequestData buildAwsTaskRequest(Ambiance ambiance, AwsInfraDelegateConfig awsInfraDelegateConfig) {
     boolean isWinRm = awsInfraDelegateConfig instanceof AwsWinrmInfraDelegateConfig;
     final AwsTaskParams awsTaskParams;
 
@@ -527,9 +527,11 @@ abstract class AbstractInfrastructureTaskExecutableStep {
                                                       .map(delegateSelector -> new TaskSelectorYaml(delegateSelector))
                                                       .collect(Collectors.toList());
 
-    return StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer, Collections.singletonList("Execute"),
-        taskData.getTaskType(), TaskSelectorYaml.toTaskSelector(emptyIfNull(taskSelectorYamlList)),
-        stepHelper.getEnvironmentType(ambiance));
+    TaskRequest taskRequest = StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
+        Collections.singletonList("Execute"), taskData.getTaskType(),
+        TaskSelectorYaml.toTaskSelector(emptyIfNull(taskSelectorYamlList)), stepHelper.getEnvironmentType(ambiance));
+
+    return new TaskRequestData(taskRequest, taskData, taskSelectorYamlList);
   }
 
   SshInfraDelegateConfig publishSshInfraDelegateConfigOutput(

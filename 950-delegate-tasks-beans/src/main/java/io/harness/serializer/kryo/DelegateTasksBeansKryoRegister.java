@@ -93,8 +93,12 @@ import io.harness.delegate.beans.ccm.K8sClusterInfo;
 import io.harness.delegate.beans.ci.CIClusterType;
 import io.harness.delegate.beans.ci.CIInitializeTaskParams;
 import io.harness.delegate.beans.ci.CITaskExecutionResponse;
+import io.harness.delegate.beans.ci.DliteVmInfraInfo;
+import io.harness.delegate.beans.ci.DockerInfraInfo;
 import io.harness.delegate.beans.ci.ExecuteCommandTaskParams;
+import io.harness.delegate.beans.ci.InfraInfo;
 import io.harness.delegate.beans.ci.ShellScriptType;
+import io.harness.delegate.beans.ci.VmInfraInfo;
 import io.harness.delegate.beans.ci.k8s.CIContainerStatus;
 import io.harness.delegate.beans.ci.k8s.CIK8CleanupTaskParams;
 import io.harness.delegate.beans.ci.k8s.CIK8ExecuteStepTaskParams;
@@ -161,6 +165,11 @@ import io.harness.delegate.beans.connector.awsconnector.AwsListASGNamesTaskRespo
 import io.harness.delegate.beans.connector.awsconnector.AwsListClustersTaskResponse;
 import io.harness.delegate.beans.connector.awsconnector.AwsListEC2InstancesTaskParamsRequest;
 import io.harness.delegate.beans.connector.awsconnector.AwsListEC2InstancesTaskResponse;
+import io.harness.delegate.beans.connector.awsconnector.AwsListElbListenerRulesTaskParamsRequest;
+import io.harness.delegate.beans.connector.awsconnector.AwsListElbListenerRulesTaskResponse;
+import io.harness.delegate.beans.connector.awsconnector.AwsListElbListenersTaskParamsRequest;
+import io.harness.delegate.beans.connector.awsconnector.AwsListElbListenersTaskResponse;
+import io.harness.delegate.beans.connector.awsconnector.AwsListElbTaskResponse;
 import io.harness.delegate.beans.connector.awsconnector.AwsListLoadBalancersTaskResponse;
 import io.harness.delegate.beans.connector.awsconnector.AwsListTagsTaskParamsRequest;
 import io.harness.delegate.beans.connector.awsconnector.AwsListTagsTaskResponse;
@@ -187,6 +196,7 @@ import io.harness.delegate.beans.connector.docker.DockerTestConnectionTaskRespon
 import io.harness.delegate.beans.connector.docker.DockerValidationParams;
 import io.harness.delegate.beans.connector.gcp.GcpValidationParams;
 import io.harness.delegate.beans.connector.gcpkmsconnector.GcpKmsValidationParams;
+import io.harness.delegate.beans.connector.gcpsecretmanagerconnector.GcpSecretManagerValidationParams;
 import io.harness.delegate.beans.connector.helm.HttpHelmConnectivityTaskParams;
 import io.harness.delegate.beans.connector.helm.HttpHelmConnectivityTaskResponse;
 import io.harness.delegate.beans.connector.helm.HttpHelmValidationParams;
@@ -253,6 +263,7 @@ import io.harness.delegate.beans.executioncapability.SmtpCapability;
 import io.harness.delegate.beans.executioncapability.SocketConnectivityBulkOrExecutionCapability;
 import io.harness.delegate.beans.executioncapability.SocketConnectivityExecutionCapability;
 import io.harness.delegate.beans.executioncapability.SystemEnvCheckerCapability;
+import io.harness.delegate.beans.executioncapability.WinrmConnectivityExecutionCapability;
 import io.harness.delegate.beans.git.GitCommandExecutionResponse;
 import io.harness.delegate.beans.git.GitCommandExecutionResponse.GitCommandStatus;
 import io.harness.delegate.beans.git.GitCommandParams;
@@ -1181,6 +1192,10 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(ArtifactoryArtifactDelegateResponse.class, 19473);
     kryo.register(ArtifactoryGenericArtifactDelegateRequest.class, 19483);
     kryo.register(ArtifactoryGenericArtifactDelegateResponse.class, 19484);
+    kryo.register(InfraInfo.Type.class, 25001);
+    kryo.register(DockerInfraInfo.class, 25002);
+    kryo.register(VmInfraInfo.class, 25003);
+    kryo.register(DliteVmInfraInfo.class, 25004);
 
     kryo.register(DeploymentSlotData.class, 19457);
     kryo.register(ShellScriptTaskParametersNG.class, 19463);
@@ -1581,6 +1596,11 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(AwsListLoadBalancersTaskResponse.class, 83078);
     kryo.register(AwsListASGNamesTaskResponse.class, 83079);
     kryo.register(AwsListClustersTaskResponse.class, 83080);
+    kryo.register(AwsListElbTaskResponse.class, 83081);
+    kryo.register(AwsListElbListenersTaskParamsRequest.class, 83082);
+    kryo.register(AwsListElbListenerRulesTaskParamsRequest.class, 83083);
+    kryo.register(AwsListElbListenerRulesTaskResponse.class, 83084);
+    kryo.register(AwsListElbListenersTaskResponse.class, 83085);
 
     // WinRm
     kryo.register(WinRmCredentialsSpecDTO.class, 600001);
@@ -1804,5 +1824,7 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(AzureFetchArmPreDeploymentDataTaskParameters.class, 55423);
     kryo.register(AzureFetchArmPreDeploymentDataTaskResponse.class, 55424);
     kryo.register(AwsS3ArtifactDelegateConfig.class, 9800007);
+    kryo.register(WinrmConnectivityExecutionCapability.class, 55425);
+    kryo.register(GcpSecretManagerValidationParams.class, 19879);
   }
 }

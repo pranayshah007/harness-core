@@ -59,8 +59,7 @@ public class FreezeFilterHelper {
     }
 
     if (type != null) {
-      final Criteria typeCriteria = new Criteria().orOperator(
-          where(FreezeConfigEntityKeys.type).is(type.name()), where(FreezeConfigEntityKeys.type).is(null));
+      final Criteria typeCriteria = new Criteria().where(FreezeConfigEntityKeys.type).is(type.name());
       andCriterias.add(typeCriteria);
     }
 

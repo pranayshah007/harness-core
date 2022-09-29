@@ -55,14 +55,13 @@ public class EnvironmentMapper {
   ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
   Validator validator = factory.getValidator();
 
-  public Environment toEnvironmentEntity(String accountId, EnvironmentRequestDTO environmentRequestDTO,
-      boolean ngSvcManifestOverrideEnabled, boolean ngSvcConfigFilesOverrideEnabled) {
+  public Environment toEnvironmentEntity(String accountId, EnvironmentRequestDTO environmentRequestDTO) {
     final Environment environment;
     if (isNotEmpty(environmentRequestDTO.getYaml())) {
       NGEnvironmentConfig ngEnvironmentConfig = toNGEnvironmentConfig(environmentRequestDTO);
 
       validate(ngEnvironmentConfig);
-      validateEnvGlobalOverrides(ngEnvironmentConfig, ngSvcManifestOverrideEnabled, ngSvcConfigFilesOverrideEnabled);
+      validateEnvGlobalOverrides(ngEnvironmentConfig);
 
       environment = toNGEnvironmentEntity(accountId, ngEnvironmentConfig, environmentRequestDTO.getColor());
       environment.setYaml(environmentRequestDTO.getYaml());
@@ -217,23 +216,9 @@ public class EnvironmentMapper {
     }
   }
 
-  private void validateEnvGlobalOverrides(NGEnvironmentConfig ngEnvironmentConfig, boolean ngSvcManifestOverrideEnabled,
-      boolean ngSvcConfigFileOverrideEnabled) {
+  private void validateEnvGlobalOverrides(NGEnvironmentConfig ngEnvironmentConfig) {
     if (ngEnvironmentConfig.getNgEnvironmentInfoConfig() != null
         && ngEnvironmentConfig.getNgEnvironmentInfoConfig().getNgEnvironmentGlobalOverride() != null) {
-      if (!ngSvcManifestOverrideEnabled
-          && isNotEmpty(
-              ngEnvironmentConfig.getNgEnvironmentInfoConfig().getNgEnvironmentGlobalOverride().getManifests())) {
-        throw new InvalidRequestException(
-            "Manifest Override is not supported with FF NG_SERVICE_MANIFEST_OVERRIDE disabled");
-      }
-      if (!ngSvcConfigFileOverrideEnabled
-          && isNotEmpty(
-              ngEnvironmentConfig.getNgEnvironmentInfoConfig().getNgEnvironmentGlobalOverride().getConfigFiles())) {
-        throw new InvalidRequestException(
-            "Config Files Override is not supported with FF disabled NG_SERVICE_CONFIG_FILES_OVERRIDE");
-      }
-
       final NGEnvironmentGlobalOverride environmentGlobalOverride =
           ngEnvironmentConfig.getNgEnvironmentInfoConfig().getNgEnvironmentGlobalOverride();
       checkDuplicateManifestIdentifiersWithIn(environmentGlobalOverride.getManifests());

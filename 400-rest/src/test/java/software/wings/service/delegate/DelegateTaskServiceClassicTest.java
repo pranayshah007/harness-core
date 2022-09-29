@@ -1206,13 +1206,22 @@ public class DelegateTaskServiceClassicTest extends WingsBaseTest {
     } catch (NoEligibleDelegatesInAccountException e) {
       final DelegateTaskResponse response =
           DelegateTaskResponse.builder()
-              .response(ErrorNotifyResponseData.builder().errorMessage("Delegates are not available").build())
+              .response(ErrorNotifyResponseData.builder()
+                            .errorMessage("Delegates are not available")
+                            .exception(new NoEligibleDelegatesInAccountException(
+                                "No eligible delegate(s) in account to execute task. "))
+                            .build())
               .responseCode(ResponseCode.FAILED)
               .accountId(task.getAccountId())
               .build();
 
+      ArgumentCaptor<DelegateTaskResponse> delegateTaskResponseArgumentCaptor =
+          ArgumentCaptor.forClass(DelegateTaskResponse.class);
+      verify(delegateMetricsService)
+          .recordDelegateTaskResponseMetrics(
+              eq(task), delegateTaskResponseArgumentCaptor.capture(), eq(DELEGATE_TASK_RESPONSE));
+      assertThat(delegateTaskResponseArgumentCaptor.getValue().toString()).isEqualTo(response.toString());
       verify(delegateMetricsService).recordDelegateTaskMetrics(task, DELEGATE_TASK_NO_ELIGIBLE_DELEGATES);
-      verify(delegateMetricsService).recordDelegateTaskResponseMetrics(task, response, DELEGATE_TASK_RESPONSE);
       throw e;
     }
   }

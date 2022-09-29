@@ -373,6 +373,8 @@ public class ServerlessAwsLambdaDeployCommandTaskHandlerTest extends CategoryTes
         .when(serverlessAwsCommandTaskHelper)
         .fetchFunctionOutputFromCloudFormationTemplate(any());
 
+    doReturn("failed").when(serverlessAwsCommandTaskHelper).serverlessCommandFailureMessage(any(), any());
+
     serverlessAwsLambdaDeployCommandTaskHandler.executeTaskInternal(
         serverlessCommandRequest, serverlessDelegateTaskParams, iLogStreamingTaskClient, commandUnitsProgress);
   }
@@ -446,8 +448,7 @@ public class ServerlessAwsLambdaDeployCommandTaskHandlerTest extends CategoryTes
         .when(serverlessAwsCommandTaskHelper)
         .fetchFunctionOutputFromCloudFormationTemplate(any());
 
-    ServerlessDeployResponse serverlessDeployResponse =
-        (ServerlessDeployResponse) serverlessAwsLambdaDeployCommandTaskHandler.executeTaskInternal(
-            serverlessCommandRequest, serverlessDelegateTaskParams, iLogStreamingTaskClient, commandUnitsProgress);
+    serverlessAwsLambdaDeployCommandTaskHandler.executeTaskInternal(
+        serverlessCommandRequest, serverlessDelegateTaskParams, iLogStreamingTaskClient, commandUnitsProgress);
   }
 }
