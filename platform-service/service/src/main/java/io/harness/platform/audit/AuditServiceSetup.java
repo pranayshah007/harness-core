@@ -17,6 +17,7 @@ import io.harness.audit.retention.AuditAccountSyncService;
 import io.harness.audit.retention.AuditRetentionIteratorHandler;
 import io.harness.health.HealthService;
 import io.harness.ng.core.CorrelationFilter;
+import io.harness.ng.core.TraceFilter;
 import io.harness.persistence.HPersistence;
 import io.harness.platform.remote.AuditOpenApiResource;
 import io.harness.platform.remote.VersionInfoResource;
@@ -57,6 +58,10 @@ public class AuditServiceSetup {
     registerManagedBeans(environment, injector);
     registerIterators(injector);
     registerOasResource(appConfig, environment, injector);
+
+    if (appConfig.getEnableOpentelemetry()) {
+      registerTraceFilter(environment, injector);
+    }
   }
 
   private void registerHealthCheck(Environment environment, Injector injector) {
@@ -80,6 +85,10 @@ public class AuditServiceSetup {
 
   private void registerCorrelationFilter(Environment environment, Injector injector) {
     environment.jersey().register(injector.getInstance(CorrelationFilter.class));
+  }
+
+  private void registerTraceFilter(Environment environment, Injector injector) {
+    environment.jersey().register(injector.getInstance(TraceFilter.class));
   }
 
   private void registerManagedBeans(Environment environment, Injector injector) {

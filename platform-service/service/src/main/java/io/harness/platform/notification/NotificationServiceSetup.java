@@ -14,6 +14,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.health.HealthService;
 import io.harness.manage.ManagedScheduledExecutorService;
 import io.harness.ng.core.CorrelationFilter;
+import io.harness.ng.core.TraceFilter;
 import io.harness.notification.SeedDataConfiguration;
 import io.harness.notification.eventbackbone.MongoMessageConsumer;
 import io.harness.notification.service.api.SeedDataPopulaterService;
@@ -52,6 +53,10 @@ public class NotificationServiceSetup {
     registerQueueListeners(injector);
     registerHealthCheck(environment, injector);
     populateSeedData(injector, appConfig.getSeedDataConfiguration());
+
+    if (appConfig.getEnableOpentelemetry()) {
+      registerTraceFilter(environment, injector);
+    }
   }
 
   private void registerHealthCheck(Environment environment, Injector injector) {
@@ -89,6 +94,10 @@ public class NotificationServiceSetup {
 
   private void registerCorrelationFilter(Environment environment, Injector injector) {
     environment.jersey().register(injector.getInstance(CorrelationFilter.class));
+  }
+
+  private void registerTraceFilter(Environment environment, Injector injector) {
+    environment.jersey().register(injector.getInstance(TraceFilter.class));
   }
 
   private void registerQueueListeners(Injector injector) {

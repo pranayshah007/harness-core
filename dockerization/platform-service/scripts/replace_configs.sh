@@ -347,3 +347,5 @@ replace_key_value enforcementClientConfiguration.enforcementCheckEnabled "$ENFOR
 
 replace_key_value secretsConfiguration.gcpSecretManagerProject "$GCP_SECRET_MANAGER_PROJECT"
 replace_key_value secretsConfiguration.secretResolutionEnabled "$RESOLVE_SECRETS"
+
+replace_key_value enableOpentelemetry "$ENABLE_OPENTELEMETRY"
