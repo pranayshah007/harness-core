@@ -8,6 +8,7 @@
 package io.harness.ngmigration.connector;
 
 import static software.wings.settings.SettingVariableTypes.ARTIFACTORY;
+import static software.wings.settings.SettingVariableTypes.AWS;
 import static software.wings.settings.SettingVariableTypes.AZURE;
 import static software.wings.settings.SettingVariableTypes.DOCKER;
 import static software.wings.settings.SettingVariableTypes.GCP;
@@ -35,6 +36,7 @@ public class ConnectorFactory {
   private static final BaseConnector gcpConnector = new GcpConnectorImpl();
   private static final BaseConnector azureConnector = new AzureConnectorImpl();
   private static final BaseConnector httpHelmConnector = new HttpHelmConnectorImpl();
+  private static final BaseConnector awsConnector = new AWSConnectorImpl();
   private static final BaseConnector unsupportedConnector = new UnsupportedConnectorImpl();
 
   public static final Map<SettingVariableTypes, BaseConnector> CONNECTOR_FACTORY_MAP =
@@ -47,6 +49,7 @@ public class ConnectorFactory {
           .put(GCP, gcpConnector)
           .put(AZURE, azureConnector)
           .put(HTTP_HELM_REPO, httpHelmConnector)
+          .put(AWS, awsConnector)
           .build();
 
   public static BaseConnector getConnector(SettingAttribute settingAttribute) {
