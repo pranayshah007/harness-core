@@ -32,8 +32,9 @@ public class EcsBlueGreenSwapTargetGroupsStepParameters
     extends EcsBlueGreenSwapTargetGroupsBaseStepInfo implements EcsSpecParameters {
   @Builder(builderMethodName = "infoBuilder")
   public EcsBlueGreenSwapTargetGroupsStepParameters(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
-      String ecsBlueGreenCreateServiceFnq, String ecsBlueGreenSwapTargetGroupsFnq) {
-    super(delegateSelectors, ecsBlueGreenCreateServiceFnq, ecsBlueGreenSwapTargetGroupsFnq);
+      String ecsBlueGreenCreateServiceFnq, String ecsBlueGreenSwapTargetGroupsFnq,
+      ParameterField<Boolean> doNotDownsizeOldService) {
+    super(delegateSelectors, doNotDownsizeOldService, ecsBlueGreenCreateServiceFnq, ecsBlueGreenSwapTargetGroupsFnq);
   }
 
   public List<String> getCommandUnits() {

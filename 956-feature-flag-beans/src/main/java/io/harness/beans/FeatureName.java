@@ -84,7 +84,6 @@ public enum FeatureName {
   EXPORT_TF_PLAN,
   GCB_CI_SYSTEM,
   GCP_WORKLOAD_IDENTITY,
-  GIT_ACCOUNT_SUPPORT,
   GIT_HTTPS_KERBEROS,
   GIT_HOST_CONNECTIVITY,
   GLOBAL_COMMAND_LIBRARY,
@@ -440,8 +439,13 @@ public enum FeatureName {
       HarnessTeam.PL),
   PL_NO_EMAIL_FOR_SAML_ACCOUNT_INVITES("No email for users in account where SAML auth is enabled", HarnessTeam.PL),
   PL_ENABLE_GOOGLE_SECRET_MANAGER_IN_NG("Enable Google Secret Manager in NG", HarnessTeam.PL),
+  SPG_2K_DEFAULT_PAGE_SIZE("Increase the default page size to 2000 elements in CG", HarnessTeam.SPG),
   SPG_DISABLE_SEARCH_DEPLOYMENTS_PAGE("Disable search on deployment page in CG.", HarnessTeam.SPG),
-  CD_SERVICENOW_IMPORT_SET_NG("Enable ServiceNow Import Set Step", HarnessTeam.CDC);
+  CD_SERVICENOW_IMPORT_SET_NG("Enable ServiceNow Import Set Step", HarnessTeam.CDC),
+  WINRM_SCRIPT_COMMAND_SPLIT(
+      "Enables the new way of how to copy powershell/winrm script commands content to file on remote. (Copy is done in chunks of 4KB) ",
+      HarnessTeam.CDP);
+
   @Deprecated
   FeatureName() {
     scope = Scope.PER_ACCOUNT;

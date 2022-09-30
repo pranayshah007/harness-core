@@ -9,6 +9,8 @@ package io.harness.delegate.task.winrm;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.windows.CmdUtils.escapeLineBreakChars;
+import static io.harness.windows.CmdUtils.escapeWordBreakChars;
 
 import static java.lang.String.format;
 import static org.apache.commons.codec.binary.Base64.encodeBase64String;
@@ -22,6 +24,7 @@ import software.wings.beans.WinRmCommandParameter;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
+import com.google.common.primitives.Bytes;
 import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -35,6 +38,7 @@ import lombok.extern.slf4j.Slf4j;
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)
 public class WinRmExecutorHelper {
   private static final int SPLITLISTOFCOMMANDSBY = 20;
+  public static final int PARTITION_SIZE_IN_BYTES = 4 * 1024; // 4 KB
 
   /**
    * To construct the powershell script for running on target windows host.
@@ -77,6 +81,32 @@ public class WinRmExecutorHelper {
       commandList.add(format(appendPSInvokeCommandtoCommandString, psScriptFile, commandString + "`r`n"));
     }
     return Lists.partition(commandList, SPLITLISTOFCOMMANDSBY);
+  }
+
+  public static List<String> constructCommandsList(
+      String command, String psScriptFile, String powershell, List<WinRmCommandParameter> commandParameters) {
+    command = "$ErrorActionPreference=\"Stop\"\n" + command;
+
+    // Yes, replace() is intentional. We are replacing only character and not a regex pattern.
+    command = command.replace("$", "`$");
+    // This is to escape quotes
+    command = command.replaceAll("\"", "`\\\\\"");
+
+    // write commands to a file and then execute the file
+    String commandParametersString = buildCommandParameters(commandParameters);
+
+    List<List<Byte>> partitions = Lists.partition(Bytes.asList(command.getBytes()), PARTITION_SIZE_IN_BYTES);
+    List<String> commandList = new ArrayList<>();
+    for (List<Byte> partition : partitions) {
+      final String commandStringPart = escapeWordBreakChars(escapeLineBreakChars(new String(Bytes.toArray(partition))));
+      String appendTextToFileCommand = powershell + " Invoke-Command " + commandParametersString
+          + " -command {[IO.File]::AppendAllText(\\\"" + psScriptFile + "\\\", \\\"" + commandStringPart + "\\\" ) }";
+
+      // Append each command with PS Invoke command which is write command to file and also add the PS newline character
+      // for correct escaping
+      commandList.add(appendTextToFileCommand);
+    }
+    return commandList;
   }
 
   private static String buildCommandParameters(List<WinRmCommandParameter> commandParameters) {

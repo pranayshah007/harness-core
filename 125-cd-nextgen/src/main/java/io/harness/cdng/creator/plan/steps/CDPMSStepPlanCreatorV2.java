@@ -385,7 +385,7 @@ public abstract class CDPMSStepPlanCreatorV2<T extends CdAbstractStepNode> exten
           adviserObtainmentList.add(getManualInterventionAdviserObtainment(
               failureTypes, adviserObtainmentBuilder, actionConfig, actionUnderManualIntervention));
           break;
-        case PROCEED_WITH_DEFAULT_VALUE:
+        case PROCEED_WITH_DEFAULT_VALUES:
           adviserObtainmentList.add(
               adviserObtainmentBuilder.setType(ProceedWithDefaultValueAdviser.ADVISER_TYPE)
                   .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(

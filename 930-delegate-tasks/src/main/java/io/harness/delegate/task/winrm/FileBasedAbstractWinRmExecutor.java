@@ -8,6 +8,7 @@
 package io.harness.delegate.task.winrm;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.delegate.task.winrm.WinRmExecutorHelper.constructCommandsList;
 import static io.harness.delegate.task.winrm.WinRmExecutorHelper.constructPSScriptWithCommands;
 import static io.harness.delegate.task.winrm.WinRmExecutorHelper.constructPSScriptWithCommandsBulk;
 import static io.harness.delegate.task.winrm.WinRmExecutorHelper.getScriptExecutingCommand;
@@ -67,6 +68,7 @@ public abstract class FileBasedAbstractWinRmExecutor {
   protected LogCallback logCallback;
   protected final WinRmSessionConfig config;
   protected boolean disableCommandEncoding;
+  private boolean winrmScriptCommandSplit;
   protected boolean shouldSaveExecutionLogs;
 
   public FileBasedAbstractWinRmExecutor(LogCallback logCallback, boolean shouldSaveExecutionLogs,
@@ -75,6 +77,15 @@ public abstract class FileBasedAbstractWinRmExecutor {
     this.shouldSaveExecutionLogs = shouldSaveExecutionLogs;
     this.config = config;
     this.disableCommandEncoding = disableCommandEncoding;
+  }
+
+  public FileBasedAbstractWinRmExecutor(LogCallback logCallback, boolean shouldSaveExecutionLogs,
+      WinRmSessionConfig config, boolean disableCommandEncoding, boolean winrmScriptCommandSplit) {
+    this.logCallback = logCallback;
+    this.shouldSaveExecutionLogs = shouldSaveExecutionLogs;
+    this.config = config;
+    this.disableCommandEncoding = disableCommandEncoding;
+    this.winrmScriptCommandSplit = winrmScriptCommandSplit;
   }
 
   public abstract byte[] getConfigFileBytes(ConfigFileMetaData configFileMetaData) throws IOException;
@@ -238,9 +249,15 @@ public abstract class FileBasedAbstractWinRmExecutor {
         }
       }
     } else {
-      exitCode = session.executeCommandsList(
-          constructPSScriptWithCommands(command, psScriptFile, getPowershell(), config.getCommandParameters()),
-          outputWriter, errorWriter, false, getScriptExecutingCommand(psScriptFile, getPowershell()));
+      if (winrmScriptCommandSplit) {
+        exitCode = session.executeCommandsListV2(
+            constructCommandsList(command, psScriptFile, getPowershell(), config.getCommandParameters()), outputWriter,
+            errorWriter, false, getScriptExecutingCommand(psScriptFile, getPowershell()), true);
+      } else {
+        exitCode = session.executeCommandsList(
+            constructPSScriptWithCommands(command, psScriptFile, getPowershell(), config.getCommandParameters()),
+            outputWriter, errorWriter, false, getScriptExecutingCommand(psScriptFile, getPowershell()));
+      }
     }
     return exitCode;
   }

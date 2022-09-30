@@ -23,6 +23,7 @@ import io.harness.delegate.exception.EcsNGException;
 import io.harness.delegate.task.aws.AwsNgConfigMapper;
 import io.harness.delegate.task.ecs.EcsCommandTaskNGHelper;
 import io.harness.delegate.task.ecs.EcsInfraConfig;
+import io.harness.delegate.task.ecs.EcsLoadBalancerConfig;
 import io.harness.delegate.task.ecs.EcsTaskHelperBase;
 import io.harness.delegate.task.ecs.request.EcsBlueGreenPrepareRollbackRequest;
 import io.harness.delegate.task.ecs.request.EcsCommandRequest;
@@ -85,18 +86,37 @@ public class EcsBlueGreenPrepareRollbackCommandTaskHandler extends EcsCommandTas
               .parseYamlAsObject(ecsServiceDefinitionManifestContent, CreateServiceRequest.serializableBuilderClass())
               .build();
 
-      // Get targetGroup Arn
-      String targetGroupArn = ecsCommandTaskHelper.getTargetGroupArnFromLoadBalancer(ecsInfraConfig,
+      // Get prod targetGroup Arn
+      String prodTargetGroupArn = ecsCommandTaskHelper.getTargetGroupArnFromLoadBalancer(ecsInfraConfig,
           ecsBlueGreenPrepareRollbackRequest.getEcsLoadBalancerConfig().getProdListenerArn(),
           ecsBlueGreenPrepareRollbackRequest.getEcsLoadBalancerConfig().getProdListenerRuleArn(),
           ecsBlueGreenPrepareRollbackRequest.getEcsLoadBalancerConfig().getLoadBalancer(), awsInternalConfig);
+
+      // Get stage targetGroup Arn
+      String stageTargetGroupArn = ecsCommandTaskHelper.getTargetGroupArnFromLoadBalancer(ecsInfraConfig,
+          ecsBlueGreenPrepareRollbackRequest.getEcsLoadBalancerConfig().getStageListenerArn(),
+          ecsBlueGreenPrepareRollbackRequest.getEcsLoadBalancerConfig().getStageListenerRuleArn(),
+          ecsBlueGreenPrepareRollbackRequest.getEcsLoadBalancerConfig().getLoadBalancer(), awsInternalConfig);
+
+      EcsLoadBalancerConfig ecsLoadBalancerConfig =
+          EcsLoadBalancerConfig.builder()
+              .loadBalancer(ecsBlueGreenPrepareRollbackRequest.getEcsLoadBalancerConfig().getLoadBalancer())
+              .prodListenerArn(ecsBlueGreenPrepareRollbackRequest.getEcsLoadBalancerConfig().getProdListenerArn())
+              .prodListenerRuleArn(
+                  ecsBlueGreenPrepareRollbackRequest.getEcsLoadBalancerConfig().getProdListenerRuleArn())
+              .prodTargetGroupArn(prodTargetGroupArn)
+              .stageListenerArn(ecsBlueGreenPrepareRollbackRequest.getEcsLoadBalancerConfig().getStageListenerArn())
+              .stageListenerRuleArn(
+                  ecsBlueGreenPrepareRollbackRequest.getEcsLoadBalancerConfig().getStageListenerRuleArn())
+              .stageTargetGroupArn(stageTargetGroupArn)
+              .build();
 
       Optional<String> optionalServiceName = ecsCommandTaskHelper.getBlueVersionServiceName(
           createServiceRequest.serviceName() + EcsCommandTaskNGHelper.DELIMITER, ecsInfraConfig);
       if (!optionalServiceName.isPresent() || EmptyPredicate.isEmpty(optionalServiceName.get())) {
         // If no blue version service found
-        return getFirstTimeDeploymentResponse(
-            prepareRollbackDataLogCallback, targetGroupArn, ecsBlueGreenPrepareRollbackRequest);
+        return getFirstTimeDeploymentResponse(prepareRollbackDataLogCallback, prodTargetGroupArn,
+            ecsBlueGreenPrepareRollbackRequest, ecsLoadBalancerConfig);
       }
       String serviceName = optionalServiceName.get();
 
@@ -129,10 +149,7 @@ public class EcsBlueGreenPrepareRollbackCommandTaskHandler extends EcsCommandTas
                 .createServiceRequestBuilderString(createServiceRequestBuilderString)
                 .registerScalableTargetRequestBuilderStrings(registerScalableTargetRequestBuilderStrings)
                 .registerScalingPolicyRequestBuilderStrings(registerScalingPolicyRequestBuilderStrings)
-                .listenerArn(ecsBlueGreenPrepareRollbackRequest.getEcsLoadBalancerConfig().getProdListenerArn())
-                .loadBalancer(ecsBlueGreenPrepareRollbackRequest.getEcsLoadBalancerConfig().getLoadBalancer())
-                .listenerRuleArn(ecsBlueGreenPrepareRollbackRequest.getEcsLoadBalancerConfig().getProdListenerRuleArn())
-                .targetGroupArn(targetGroupArn)
+                .ecsLoadBalancerConfig(ecsLoadBalancerConfig)
                 .isFirstDeployment(false)
                 .serviceName(serviceName)
                 .build();
@@ -145,8 +162,8 @@ public class EcsBlueGreenPrepareRollbackCommandTaskHandler extends EcsCommandTas
             "Preparing Rollback Data complete", LogLevel.INFO, CommandExecutionStatus.SUCCESS);
         return ecsBlueGreenPrepareRollbackDataResponse;
       } else { // If service doesn't exist
-        return getFirstTimeDeploymentResponse(
-            prepareRollbackDataLogCallback, targetGroupArn, ecsBlueGreenPrepareRollbackRequest);
+        return getFirstTimeDeploymentResponse(prepareRollbackDataLogCallback, prodTargetGroupArn,
+            ecsBlueGreenPrepareRollbackRequest, ecsLoadBalancerConfig);
       }
     } catch (Exception e) {
       prepareRollbackDataLogCallback.saveExecutionLog(
@@ -157,7 +174,8 @@ public class EcsBlueGreenPrepareRollbackCommandTaskHandler extends EcsCommandTas
   }
 
   private EcsBlueGreenPrepareRollbackDataResponse getFirstTimeDeploymentResponse(LogCallback logCallback,
-      String targetGroupArn, EcsBlueGreenPrepareRollbackRequest ecsBlueGreenPrepareRollbackRequest) {
+      String targetGroupArn, EcsBlueGreenPrepareRollbackRequest ecsBlueGreenPrepareRollbackRequest,
+      EcsLoadBalancerConfig ecsLoadBalancerConfig) {
     logCallback.saveExecutionLog("Blue version of Service doesn't exist. Skipping Prepare Rollback Data..",
         LogLevel.INFO, CommandExecutionStatus.SUCCESS);
 
@@ -165,10 +183,7 @@ public class EcsBlueGreenPrepareRollbackCommandTaskHandler extends EcsCommandTas
     EcsBlueGreenPrepareRollbackDataResult ecsBlueGreenPrepareRollbackDataResult =
         EcsBlueGreenPrepareRollbackDataResult.builder()
             .isFirstDeployment(true)
-            .targetGroupArn(targetGroupArn)
-            .listenerArn(ecsBlueGreenPrepareRollbackRequest.getEcsLoadBalancerConfig().getProdListenerArn())
-            .loadBalancer(ecsBlueGreenPrepareRollbackRequest.getEcsLoadBalancerConfig().getLoadBalancer())
-            .listenerRuleArn(ecsBlueGreenPrepareRollbackRequest.getEcsLoadBalancerConfig().getProdListenerRuleArn())
+            .ecsLoadBalancerConfig(ecsLoadBalancerConfig)
             .build();
 
     return EcsBlueGreenPrepareRollbackDataResponse.builder()

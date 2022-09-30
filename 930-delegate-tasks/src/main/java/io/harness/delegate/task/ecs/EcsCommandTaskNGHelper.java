@@ -33,6 +33,7 @@ import io.harness.delegate.beans.ecs.EcsMapper;
 import io.harness.delegate.beans.ecs.EcsTask;
 import io.harness.delegate.task.aws.AwsNgConfigMapper;
 import io.harness.delegate.task.ecs.request.EcsBlueGreenCreateServiceRequest;
+import io.harness.delegate.task.ecs.request.EcsBlueGreenRollbackRequest;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.InvalidYamlException;
 import io.harness.logging.LogCallback;
@@ -676,11 +677,13 @@ public class EcsCommandTaskNGHelper {
         Optional<Service> optionService = describeService(ecsInfraConfig.getCluster(), service.serviceName(),
             ecsInfraConfig.getRegion(), ecsInfraConfig.getAwsConnectorDTO());
         service = optionService.orElse(null);
+        sleep(ofSeconds(10));
       }
     }
 
     // add green tag in create service request
-    CreateServiceRequest.Builder createServiceRequestBuilder = addGreenTagInCreateServiceRequest(createServiceRequest);
+    CreateServiceRequest.Builder createServiceRequestBuilder =
+        addTagInCreateServiceRequest(createServiceRequest, BG_GREEN);
 
     // update service name, cluster and task definition
     createServiceRequest = createServiceRequestBuilder.serviceName(stageServiceName)
@@ -716,6 +719,59 @@ public class EcsCommandTaskNGHelper {
         createServiceResponse.service().serviceName(), ecsInfraConfig.getCluster(), ecsInfraConfig.getRegion(),
         logCallback);
     return createServiceResponse.service().serviceName();
+  }
+
+  public void updateOldService(EcsBlueGreenRollbackRequest ecsBlueGreenRollbackRequest,
+      AwsInternalConfig awsInternalConfig, LogCallback logCallback, long timeoutInMillis) {
+    EcsInfraConfig ecsInfraConfig = ecsBlueGreenRollbackRequest.getEcsInfraConfig();
+    // Describe old service and get service details
+    Optional<Service> oldOptionalService =
+        describeService(ecsInfraConfig.getCluster(), ecsBlueGreenRollbackRequest.getOldServiceName(),
+            ecsInfraConfig.getRegion(), ecsInfraConfig.getAwsConnectorDTO());
+    List<ServiceEvent> eventsAlreadyProcessed = newArrayList();
+    if (oldOptionalService.isPresent() && isServiceActive(oldOptionalService.get())) {
+      Service oldService = oldOptionalService.get();
+      CreateServiceRequest createServiceRequest =
+          parseYamlAsObject(ecsBlueGreenRollbackRequest.getOldServiceCreateRequestBuilderString(),
+              CreateServiceRequest.serializableBuilderClass())
+              .build();
+
+      // update desired count of old service to its earlier desired count if its not same
+      if (!oldService.desiredCount().equals(createServiceRequest.desiredCount())) {
+        Service service = updateDesiredCount(ecsBlueGreenRollbackRequest.getOldServiceName(), ecsInfraConfig,
+            awsInternalConfig, createServiceRequest.desiredCount())
+                              .service();
+        eventsAlreadyProcessed = new ArrayList<>(service.events());
+      }
+    } else {
+      CreateServiceRequest createServiceRequest =
+          parseYamlAsObject(ecsBlueGreenRollbackRequest.getOldServiceCreateRequestBuilderString(),
+              CreateServiceRequest.serializableBuilderClass())
+              .build();
+
+      CreateServiceResponse createServiceResponse =
+          createService(createServiceRequest, ecsInfraConfig.getRegion(), ecsInfraConfig.getAwsConnectorDTO());
+      eventsAlreadyProcessed = new ArrayList<>(createServiceResponse.service().events());
+    }
+
+    waitForTasksToBeInRunningState(awsNgConfigMapper.createAwsInternalConfig(ecsInfraConfig.getAwsConnectorDTO()),
+        ecsInfraConfig.getCluster(), ecsBlueGreenRollbackRequest.getOldServiceName(), ecsInfraConfig.getRegion(),
+        eventsAlreadyProcessed, logCallback, timeoutInMillis);
+
+    // steady state check to reach stable state
+    ecsServiceSteadyStateCheck(logCallback, ecsInfraConfig.getAwsConnectorDTO(),
+        ecsBlueGreenRollbackRequest.getEcsInfraConfig().getCluster(), ecsBlueGreenRollbackRequest.getOldServiceName(),
+        ecsBlueGreenRollbackRequest.getEcsInfraConfig().getRegion(), timeoutInMillis, eventsAlreadyProcessed);
+
+    // register scalable target
+    registerScalableTargets(ecsBlueGreenRollbackRequest.getOldServiceScalableTargetManifestContentList(),
+        ecsInfraConfig.getAwsConnectorDTO(), ecsBlueGreenRollbackRequest.getOldServiceName(),
+        ecsInfraConfig.getCluster(), ecsInfraConfig.getRegion(), logCallback);
+
+    // attach scale policies
+    attachScalingPolicies(ecsBlueGreenRollbackRequest.getOldServiceScalingPolicyManifestContentList(),
+        ecsInfraConfig.getAwsConnectorDTO(), ecsBlueGreenRollbackRequest.getOldServiceName(),
+        ecsInfraConfig.getCluster(), ecsInfraConfig.getRegion(), logCallback);
   }
 
   public void swapTargetGroups(EcsInfraConfig ecsInfraConfig, LogCallback logCallback,
@@ -768,10 +824,10 @@ public class EcsCommandTaskNGHelper {
       return ecsV2Client.updateService(awsInternalConfig, updateServiceRequest, ecsInfraConfig.getRegion());
     }
     // todo modify it
-    throw new InvalidRequestException("service is not active, not able to update it.");
+    throw new InvalidRequestException("service" + serviceName + "is not active, not able to update it.");
   }
 
-  private void modifyListenerRule(EcsInfraConfig ecsInfraConfig, String listenerArn, String listenerRuleArn,
+  public void modifyListenerRule(EcsInfraConfig ecsInfraConfig, String listenerArn, String listenerRuleArn,
       String targetGroupArn, AwsInternalConfig awsInternalConfig) {
     // check if listener rule is default one in listener
     if (checkForDefaultRule(ecsInfraConfig, listenerArn, listenerRuleArn, awsInternalConfig)) {
@@ -871,11 +927,11 @@ public class EcsCommandTaskNGHelper {
     return firstVersionService;
   }
 
-  private CreateServiceRequest.Builder addGreenTagInCreateServiceRequest(CreateServiceRequest serviceRequest) {
+  private CreateServiceRequest.Builder addTagInCreateServiceRequest(CreateServiceRequest serviceRequest, String tag) {
     List<Tag> tags = newArrayList();
     tags.addAll(serviceRequest.tags());
 
-    Tag greenTag = Tag.builder().key(BG_VERSION).value(BG_GREEN).build();
+    Tag greenTag = Tag.builder().key(BG_VERSION).value(tag).build();
     tags.add(greenTag);
     return serviceRequest.toBuilder().tags(tags);
   }

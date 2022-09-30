@@ -22,7 +22,7 @@ directories:
   980-commons
 
 targets:
-  //ce-nextgen:module
+  ce-nextgen/service:module
 
 import_run_configurations:
   project/run-configurations/CENextGenApp.xml

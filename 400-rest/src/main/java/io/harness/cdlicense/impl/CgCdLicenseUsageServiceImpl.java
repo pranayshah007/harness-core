@@ -15,6 +15,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static java.util.stream.Collectors.toList;
 
 import io.harness.cdlicense.bean.CgActiveServicesUsageInfo;
+import io.harness.cdlicense.bean.CgServiceInstancesUsageInfo;
 import io.harness.cdlicense.bean.CgServiceUsage;
 import io.harness.cdlicense.bean.CgServiceUsage.CgServiceUsageBuilder;
 
@@ -40,6 +41,11 @@ public class CgCdLicenseUsageServiceImpl implements CgCdLicenseUsageService {
     Map<String, String> servicesNames =
         cgCdLicenseUsageQueryHelper.fetchServicesNames(accountId, serviceIdsFromDeployments);
     return buildCgActiveServicesUsageInfo(serviceIdsFromDeployments, percentileInstanceServicesUsageMap, servicesNames);
+  }
+
+  @Override
+  public CgServiceInstancesUsageInfo getServiceInstancesUsage(String accountId) {
+    return new CgServiceInstancesUsageInfo(cgCdLicenseUsageQueryHelper.fetchServiceInstancesOver30Days(accountId));
   }
 
   private CgActiveServicesUsageInfo buildCgActiveServicesUsageInfo(@NonNull List<String> serviceIdsFromDeployments,
