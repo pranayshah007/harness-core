@@ -21,7 +21,7 @@ import lombok.Data;
 @TargetModule(_960_API_SERVICES)
 @Data
 @JsonIgnoreProperties(ignoreUnknown = true)
-class AzureArtifactsPackages {
+public class AzureArtifactsPackages {
   private int count;
   private List<AzureArtifactsPackage> value;
 }
