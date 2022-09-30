@@ -7,10 +7,10 @@
 
 package io.harness.template.helpers;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.google.inject.Inject;
+import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.template.beans.NGTemplateConstants.*;
+
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.exception.ngexception.NGTemplateException;
@@ -23,18 +23,18 @@ import io.harness.template.beans.yaml.NGTemplateConfig;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.utils.NGTemplateFeatureFlagHelperService;
 import io.harness.utils.YamlPipelineUtils;
-import lombok.extern.slf4j.Slf4j;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.google.inject.Inject;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-
-import static io.harness.annotations.dev.HarnessTeam.CDC;
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
-import static io.harness.template.beans.NGTemplateConstants.*;
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @OwnedBy(CDC)
@@ -145,8 +145,7 @@ public class TemplateInputsRefreshHelper {
     TemplateEntity templateEntity = templateMergeServiceHelper.getLinkedTemplateEntity(
         accountId, orgId, projectId, TemplateNodeValue, templateCacheMap);
     String templateYaml = templateEntity.getYaml();
-    boolean templateVariablesEnabled =
-        featureFlagHelperService.isEnabled( accountId, FeatureName.NG_TEMPLATE_VARIABLES);
+    boolean templateVariablesEnabled = featureFlagHelperService.isEnabled(accountId, FeatureName.NG_TEMPLATE_VARIABLES);
 
     // Generate the Template Spec from the Template YAML
     JsonNode templateSpec;

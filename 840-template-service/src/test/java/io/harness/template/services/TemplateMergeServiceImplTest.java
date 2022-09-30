@@ -34,6 +34,7 @@ import io.harness.steps.StepUtils;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.helpers.TemplateMergeServiceHelper;
 import io.harness.template.helpers.TemplateYamlSchemaMergeHelper;
+import io.harness.template.utils.NGTemplateFeatureFlagHelperService;
 
 import com.google.common.io.Resources;
 import java.io.IOException;
@@ -43,8 +44,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-
-import io.harness.template.utils.NGTemplateFeatureFlagHelperService;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;

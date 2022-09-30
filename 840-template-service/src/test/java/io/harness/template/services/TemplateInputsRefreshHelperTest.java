@@ -7,7 +7,13 @@
 
 package io.harness.template.services;
 
-import com.google.common.io.Resources;
+import static io.harness.rule.OwnerRule.PRABU;
+import static io.harness.rule.OwnerRule.VED;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.joor.Reflect.on;
+import static org.mockito.Mockito.when;
+
 import io.harness.TemplateServiceTestBase;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -21,22 +27,17 @@ import io.harness.template.entity.TemplateEntity;
 import io.harness.template.helpers.TemplateInputsRefreshHelper;
 import io.harness.template.helpers.TemplateMergeServiceHelper;
 import io.harness.template.utils.NGTemplateFeatureFlagHelperService;
+
+import com.google.common.io.Resources;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.Objects;
+import java.util.Optional;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.Objects;
-import java.util.Optional;
-
-import static io.harness.rule.OwnerRule.PRABU;
-import static io.harness.rule.OwnerRule.VED;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.joor.Reflect.on;
-import static org.mockito.Mockito.when;
 
 @OwnedBy(HarnessTeam.CDC)
 public class TemplateInputsRefreshHelperTest extends TemplateServiceTestBase {

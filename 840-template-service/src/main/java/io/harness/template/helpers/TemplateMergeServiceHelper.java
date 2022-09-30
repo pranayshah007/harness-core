@@ -200,8 +200,7 @@ public class TemplateMergeServiceHelper {
       JsonNode templateInputsYaml = templateInputsYamlWithSpec == null
           ? null
           : YamlUtils.readTree(templateInputsYamlWithSpec).getNode().getCurrJsonNode().get(SPEC);
-      if (!featureFlagHelperService.isEnabled(accountId,
-              FeatureName.NG_TEMPLATE_VARIABLES)) {
+      if (!featureFlagHelperService.isEnabled(accountId, FeatureName.NG_TEMPLATE_VARIABLES)) {
         if (isEmpty(templateInputsYamlWithSpec)) {
           return templateInputsYamlWithSpec;
         }

@@ -123,8 +123,7 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
   private TemplateMergeServiceImpl templateMergeService;
   @Mock TemplateMergeServiceHelper templateMergeServiceHelper;
 
-  @Mock
-  NGTemplateFeatureFlagHelperService featureFlagHelperService;
+  @Mock NGTemplateFeatureFlagHelperService featureFlagHelperService;
 
   private TemplateMergeServiceHelper templateMergeServiceHelperReal;
 
@@ -159,7 +158,8 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
     templateMergeServiceHelperReal = new TemplateMergeServiceHelper(templateServiceHelper, featureFlagHelperService);
     inputsValidator = new InputsValidator(templateMergeServiceHelperReal);
     templateInputsValidator = new TemplateInputsValidator(inputsValidator);
-    templateMergeService = new TemplateMergeServiceImpl(templateServiceHelper, templateInputsValidator, templateMergeServiceHelperReal);
+    templateMergeService =
+        new TemplateMergeServiceImpl(templateServiceHelper, templateInputsValidator, templateMergeServiceHelperReal);
     String filename = "template.yaml";
     yaml = readFile(filename);
     on(templateServiceHelper).set("templateRepository", templateRepository);
