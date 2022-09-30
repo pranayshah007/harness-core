@@ -7,20 +7,11 @@
 
 package io.harness.template.helpers;
 
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.pms.merger.helpers.MergeHelper.mergeInputSetFormatYamlToOriginYaml;
-import static io.harness.pms.yaml.validation.RuntimeInputValuesValidator.validateStaticValues;
-import static io.harness.template.beans.NGTemplateConstants.DUMMY_NODE;
-import static io.harness.template.beans.NGTemplateConstants.SPEC;
-import static io.harness.template.beans.NGTemplateConstants.STABLE_VERSION;
-import static io.harness.template.beans.NGTemplateConstants.TEMPLATE;
-import static io.harness.template.beans.NGTemplateConstants.TEMPLATE_INPUTS;
-import static io.harness.template.beans.NGTemplateConstants.TEMPLATE_REF;
-import static io.harness.template.beans.NGTemplateConstants.TEMPLATE_VARIABLES;
-import static io.harness.template.beans.NGTemplateConstants.TEMPLATE_VERSION_LABEL;
-
-import io.harness.account.AccountClient;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.google.inject.Inject;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
@@ -47,16 +38,11 @@ import io.harness.template.services.NGTemplateServiceHelper;
 import io.harness.template.utils.NGTemplateFeatureFlagHelperService;
 import io.harness.utils.IdentifierRefHelper;
 import io.harness.utils.YamlPipelineUtils;
+import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.google.inject.Inject;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -66,8 +52,18 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
-import lombok.AllArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.pms.merger.helpers.MergeHelper.mergeInputSetFormatYamlToOriginYaml;
+import static io.harness.pms.yaml.validation.RuntimeInputValuesValidator.validateStaticValues;
+import static io.harness.template.beans.NGTemplateConstants.DUMMY_NODE;
+import static io.harness.template.beans.NGTemplateConstants.SPEC;
+import static io.harness.template.beans.NGTemplateConstants.STABLE_VERSION;
+import static io.harness.template.beans.NGTemplateConstants.TEMPLATE;
+import static io.harness.template.beans.NGTemplateConstants.TEMPLATE_INPUTS;
+import static io.harness.template.beans.NGTemplateConstants.TEMPLATE_REF;
+import static io.harness.template.beans.NGTemplateConstants.TEMPLATE_VERSION_LABEL;
 
 @OwnedBy(HarnessTeam.CDC)
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
@@ -182,18 +178,17 @@ public class TemplateMergeServiceHelper {
         throw new NGTemplateException("Template yaml to create template inputs cannot be empty");
       }
       YamlNode templateYamlNode = YamlUtils.readTree(yaml).getNode();
-      if (templateYamlNode.getField(TEMPLATE)== null) {
+      if (templateYamlNode.getField(TEMPLATE) == null) {
         log.error("Yaml provided is not a template yaml. Yaml:\n" + yaml);
         throw new NGTemplateException("Yaml provided is not a template yaml.");
       }
       String templateInputsYamlWithSpec = RuntimeInputFormHelper.createTemplateFromYaml(templateYamlNode.toString());
-      if(isEmpty(templateInputsYamlWithSpec)){
+      if (isEmpty(templateInputsYamlWithSpec)) {
         return templateInputsYamlWithSpec;
       }
-      JsonNode templateJsonNode = YamlUtils.readTree(templateInputsYamlWithSpec).getNode().getCurrJsonNode().get(TEMPLATE);
-      JsonNode templateInputsYaml = templateJsonNode == null
-          ? null
-          : templateJsonNode.get(SPEC);
+      JsonNode templateJsonNode =
+          YamlUtils.readTree(templateInputsYamlWithSpec).getNode().getCurrJsonNode().get(TEMPLATE);
+      JsonNode templateInputsYaml = templateJsonNode == null ? null : templateJsonNode.get(SPEC);
       if (!featureFlagHelperService.isEnabled(accountId, FeatureName.NG_TEMPLATE_VARIABLES)) {
         return YamlPipelineUtils.writeYamlString(templateInputsYaml);
       }

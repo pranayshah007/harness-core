@@ -9,7 +9,8 @@ package io.harness.template.helpers;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
-import static io.harness.template.beans.NGTemplateConstants.*;
+import static io.harness.template.beans.NGTemplateConstants.TEMPLATE;
+import static io.harness.template.beans.NGTemplateConstants.TEMPLATE_INPUTS;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
@@ -133,7 +134,7 @@ public class TemplateInputsRefreshHelper {
       Map<String, TemplateEntity> templateCacheMap) {
     // Template Inputs linked to the YAML
     JsonNode templateInputs = TemplateNodeValue.get(TEMPLATE_INPUTS);
-    JsonNode templateVariablesFromPipeline = TemplateNodeValue.get(TEMPLATE_VARIABLES);
+    JsonNode templateVariablesFromPipeline = TemplateNodeValue.get(YAMLFieldNameConstants.VARIABLES);
     ObjectMapper mapper = new ObjectMapper();
     ObjectNode templateVariablesFromPipelineWithRoot = null;
     if (templateVariablesFromPipeline != null) {

@@ -43,9 +43,9 @@ import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.CDC)
+@AllArgsConstructor(onConstructor = @__({ @Inject }))
 @Slf4j
 @Singleton
-@AllArgsConstructor(onConstructor = @__({ @Inject }))
 public class InputsValidator {
   private static final int MAX_DEPTH = 10;
   @Inject private TemplateMergeServiceHelper templateMergeServiceHelper;
