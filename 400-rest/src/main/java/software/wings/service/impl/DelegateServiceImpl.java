@@ -123,6 +123,7 @@ import io.harness.delegate.beans.DuplicateDelegateException;
 import io.harness.delegate.beans.FileBucket;
 import io.harness.delegate.beans.FileMetadata;
 import io.harness.delegate.beans.K8sConfigDetails;
+import io.harness.delegate.beans.connector.CEFeatures;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.events.DelegateGroupDeleteEvent;
 import io.harness.delegate.events.DelegateGroupUpsertEvent;
@@ -1580,6 +1581,8 @@ public class DelegateServiceImpl implements DelegateService {
     params.put(JRE_VERSION_KEY, getTargetJreVersion());
 
     params.put("enableCE", String.valueOf(templateParameters.isCeEnabled()));
+    params.put("enableCCMVisibility", String.valueOf(templateParameters.isEnableCCMVisibility()));
+    params.put("enableCCMAutostopping", String.valueOf(templateParameters.isEnableCCMAutostopping()));
 
     if (isNotBlank(templateParameters.getDelegateTags())) {
       params.put("delegateTags", templateParameters.getDelegateTags());
@@ -2693,6 +2696,8 @@ public class DelegateServiceImpl implements DelegateService {
             .sampleDelegate(delegateParams.isSampleDelegate())
             .currentlyExecutingDelegateTasks(delegateParams.getCurrentlyExecutingDelegateTasks())
             .ceEnabled(delegateParams.isCeEnabled())
+            .isCCMVisibilityEnabled(delegateParams.isCCMVisibilityEnabled())
+            .isCCMAutostoppingEnabled(delegateParams.isCCMAutostoppingEnabled())
             .delegateTokenName(delegateTokenName.orElse(null))
             .heartbeatAsObject(delegateParams.isHeartbeatAsObject())
             .immutable(delegateParams.isImmutable())
@@ -4166,6 +4171,8 @@ public class DelegateServiceImpl implements DelegateService {
                   .delegateName(delegateSetupDetails.getName())
                   .delegateType(KUBERNETES)
                   .ceEnabled(Boolean.TRUE.equals(delegateSetupDetails.getCeEnabled()))
+                  .enableCCMVisibility(delegateSetupDetails.getCcmFeaturesEnabled().contains(CEFeatures.VISIBILITY))
+                  .enableCCMAutostopping(delegateSetupDetails.getCcmFeaturesEnabled().contains(CEFeatures.OPTIMIZATION))
                   .ciEnabled(isCiEnabled)
                   .delegateDescription(delegateSetupDetails.getDescription())
                   .delegateSize(sizeDetails.getSize().name())

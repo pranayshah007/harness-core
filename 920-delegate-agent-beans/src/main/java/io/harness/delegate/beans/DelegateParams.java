@@ -52,6 +52,8 @@ public class DelegateParams {
   boolean pollingModeEnabled;
   boolean proxy;
   boolean ceEnabled;
+  boolean isCCMVisibilityEnabled;
+  boolean isCCMAutostoppingEnabled;
   boolean heartbeatAsObject;
   boolean immutable;
 

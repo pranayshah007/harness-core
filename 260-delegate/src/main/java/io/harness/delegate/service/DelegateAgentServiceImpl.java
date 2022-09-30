@@ -576,7 +576,9 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
               .location(Paths.get("").toAbsolutePath().toString())
               .heartbeatAsObject(true)
               .immutable(isImmutableDelegate)
-              .ceEnabled(Boolean.parseBoolean(System.getenv("ENABLE_CE")));
+              .ceEnabled(Boolean.parseBoolean(System.getenv("ENABLE_CE")))
+              .isCCMVisibilityEnabled(Boolean.parseBoolean(System.getenv("ENABLE_CCM_VISIBILITY")))
+              .isCCMAutostoppingEnabled(Boolean.parseBoolean(System.getenv("ENABLE_CCM_AUTOSTOPPING")));
 
       delegateId = registerDelegate(builder);
       DelegateAgentCommonVariables.setDelegateId(delegateId);
@@ -994,16 +996,19 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
         attempts.incrementAndGet();
         String attemptString = attempts.get() > 1 ? " (Attempt " + attempts.get() + ")" : "";
         log.info("Registering delegate" + attemptString);
-        DelegateParams delegateParams = builder.build()
-                                            .toBuilder()
-                                            .lastHeartBeat(clock.millis())
-                                            .delegateType(DELEGATE_TYPE)
-                                            .description(delegateConfiguration.getDescription())
-                                            //.proxy(set to true if there is a system proxy)
-                                            .pollingModeEnabled(delegateConfiguration.isPollForTasks())
-                                            .ceEnabled(Boolean.parseBoolean(System.getenv("ENABLE_CE")))
-                                            .heartbeatAsObject(true)
-                                            .build();
+        DelegateParams delegateParams =
+            builder.build()
+                .toBuilder()
+                .lastHeartBeat(clock.millis())
+                .delegateType(DELEGATE_TYPE)
+                .description(delegateConfiguration.getDescription())
+                //.proxy(set to true if there is a system proxy)
+                .pollingModeEnabled(delegateConfiguration.isPollForTasks())
+                .ceEnabled(Boolean.parseBoolean(System.getenv("ENABLE_CE")))
+                .isCCMVisibilityEnabled(Boolean.parseBoolean(System.getenv("ENABLE_CCM_VISIBILITY")))
+                .isCCMAutostoppingEnabled(Boolean.parseBoolean(System.getenv("ENABLE_CCM_AUTOSTOPPING")))
+                .heartbeatAsObject(true)
+                .build();
         restResponse = executeRestCall(delegateAgentManagerClient.registerDelegate(accountId, delegateParams));
       } catch (Exception e) {
         String msg = "Unknown error occurred while registering Delegate [" + accountId + "] with manager";

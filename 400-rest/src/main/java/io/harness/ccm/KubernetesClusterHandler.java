@@ -41,8 +41,10 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.segment.analytics.messages.TrackMessage;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -75,13 +77,20 @@ public class KubernetesClusterHandler implements DelegateObserver {
               .build()));
 
       // create NextGen CE-K8s connector
+      List<CEFeatures> featuresEnabled = new ArrayList<>();
+      if (delegate.isCCMVisibilityEnabled()) {
+        featuresEnabled.add(CEFeatures.VISIBILITY);
+      }
+      if (delegate.isCCMAutostoppingEnabled()) {
+        featuresEnabled.add(CEFeatures.OPTIMIZATION);
+      }
       execute(connectorResourceClient.createConnector(delegate.getAccountId(),
           ConnectorDTO.builder()
               .connectorInfo(ConnectorInfoDTO.builder()
                                  .connectorType(ConnectorType.CE_KUBERNETES_CLUSTER)
                                  .connectorConfig(CEKubernetesClusterConfigDTO.builder()
                                                       .connectorRef(delegate.getDelegateName())
-                                                      .featuresEnabled(Collections.singletonList(CEFeatures.VISIBILITY))
+                                                      .featuresEnabled(featuresEnabled)
                                                       .build())
                                  .identifier(delegate.getDelegateName() + "Costaccess")
                                  .name(delegate.getDelegateName() + "-Cost-access")

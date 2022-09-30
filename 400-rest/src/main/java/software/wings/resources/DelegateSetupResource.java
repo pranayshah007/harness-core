@@ -41,8 +41,11 @@ import io.harness.delegate.beans.DelegateApproval;
 import io.harness.delegate.beans.DelegateApprovalResponse;
 import io.harness.delegate.beans.DelegateSelector;
 import io.harness.delegate.beans.DelegateSetupDetails;
+import io.harness.delegate.beans.DelegateSize;
 import io.harness.delegate.beans.DelegateSizeDetails;
 import io.harness.delegate.beans.DelegateTags;
+import io.harness.delegate.beans.K8sConfigDetails;
+import io.harness.delegate.beans.K8sPermissionType;
 import io.harness.delegate.task.DelegateLogContext;
 import io.harness.k8s.KubernetesConvention;
 import io.harness.logging.AccountLogContext;
@@ -432,6 +435,7 @@ public class DelegateSetupResource {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgId, projectId),
         Resource.of(DELEGATE_RESOURCE_TYPE, null), DELEGATE_EDIT_PERMISSION);
 
+    updateDelegateSetupDetailsForCCM(delegateSetupDetails);
     try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR)) {
       return new RestResponse<>(delegateService.validateKubernetesSetupDetails(accountId, delegateSetupDetails));
     }
@@ -452,6 +456,7 @@ public class DelegateSetupResource {
         Resource.of(DELEGATE_RESOURCE_TYPE, null), DELEGATE_EDIT_PERMISSION);
 
     try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR)) {
+      updateDelegateSetupDetailsForCCM(delegateSetupDetails);
       File delegateFile = delegateService.generateKubernetesYaml(accountId, delegateSetupDetails,
           subdomainUrlHelper.getManagerUrl(request, accountId), getVerificationUrl(request), fileFormat);
 
@@ -792,5 +797,18 @@ public class DelegateSetupResource {
 
   private String getVerificationUrl(HttpServletRequest request) {
     return request.getScheme() + "://" + request.getServerName() + ":" + request.getServerPort();
+  }
+
+  private void updateDelegateSetupDetailsForCCM(DelegateSetupDetails delegateSetupDetails) {
+    if (Boolean.TRUE.equals(delegateSetupDetails.getCeEnabled())) {
+      delegateSetupDetails.setDelegateType("KUBERNETES");
+      delegateSetupDetails.setSize(DelegateSize.SMALL);
+      delegateSetupDetails.setK8sConfigDetails(
+          K8sConfigDetails.builder().k8sPermissionType(K8sPermissionType.CLUSTER_ADMIN).namespace("").build());
+      delegateSetupDetails.setTokenName(
+          "default_token"); // ? should the ui pass this? or we make api call and select 1st choice?
+      //      delegateSetupDetails.setDelegateConfigurationId(""); // ? how does the ui generate it. check with Raj.
+      delegateSetupDetails.setRunAsRoot(true);
+    }
   }
 }

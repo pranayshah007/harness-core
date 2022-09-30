@@ -31,6 +31,10 @@
           value: "false"
         - name: ENABLE_CE
           value: "${enableCE}"
+        - name: ENABLE_CCM_VISIBILITY
+          value: "${enableCCMVisibility}"
+        - name: ENABLE_CCM_AUTOSTOPPING
+          value: "${enableCCMAutostopping}"
         - name: PROXY_HOST
           value: ""
         - name: PROXY_PORT
@@ -61,6 +65,12 @@
           value: "true"
         - name: LOG_STREAMING_SERVICE_URL
           value: "${logStreamingServiceBaseUrl}"
+        - name: ENABLE_CE
+          value: "${enableCE}"
+        - name: ENABLE_CCM_VISIBILITY
+          value: "${enableCCMVisibility}"
+        - name: ENABLE_CCM_AUTOSTOPPING
+          value: "${enableCCMAutostopping}"
 </#macro>
 <#macro cgSpecific>
         - name: DELEGATE_PROFILE

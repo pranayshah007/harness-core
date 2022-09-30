@@ -25,6 +25,8 @@ public class TemplateParameters {
   private final String delegateGroupId;
   private final String delegateType;
   private final boolean ceEnabled;
+  private final boolean enableCCMVisibility;
+  private final boolean enableCCMAutostopping;
   private final boolean ciEnabled;
   private final String logStreamingServiceBaseUrl;
   private final String delegateDescription;

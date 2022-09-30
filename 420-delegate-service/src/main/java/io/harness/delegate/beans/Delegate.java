@@ -96,6 +96,8 @@ public class Delegate implements PersistentEntity, UuidAware, CreatedAtAware, Ac
   private boolean polllingModeEnabled;
   private boolean proxy;
   private boolean ceEnabled;
+  private boolean isCCMVisibilityEnabled;
+  private boolean isCCMAutostoppingEnabled;
 
   private List<String> supportedTaskTypes;
 
@@ -187,6 +189,8 @@ public class Delegate implements PersistentEntity, UuidAware, CreatedAtAware, Ac
         .supportedTaskTypes(delegateParams.getSupportedTaskTypes())
         .proxy(delegateParams.isProxy())
         .ceEnabled(delegateParams.isCeEnabled())
+        .isCCMVisibilityEnabled(delegateParams.isCCMVisibilityEnabled())
+        .isCCMAutostoppingEnabled(delegateParams.isCCMAutostoppingEnabled())
         .immutable(delegateParams.isImmutable())
         .tags(delegateParams.getTags())
         .build();
