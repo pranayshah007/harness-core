@@ -181,47 +181,31 @@ public class TemplateMergeServiceHelper {
       if (isEmpty(yaml)) {
         throw new NGTemplateException("Template yaml to create template inputs cannot be empty");
       }
-      YamlField templateYamlField = YamlUtils.readTree(yaml).getNode().getField(TEMPLATE);
-      if (templateYamlField == null) {
+      YamlNode templateYamlNode = YamlUtils.readTree(yaml).getNode();
+      if (templateYamlNode.getField(TEMPLATE)== null) {
         log.error("Yaml provided is not a template yaml. Yaml:\n" + yaml);
         throw new NGTemplateException("Yaml provided is not a template yaml.");
       }
-      ObjectNode templateNode = (ObjectNode) templateYamlField.getNode().getCurrJsonNode();
-      ObjectNode templateNodeCopy = templateNode.deepCopy();
-      String templateSpec = templateNode.retain(SPEC).toString();
-      String templateVariableSpec = new ObjectNode(
-          JsonNodeFactory.instance, Collections.singletonMap(DUMMY_NODE, templateNodeCopy.retain("variables")))
-                                        .toString();
-      if (isEmpty(templateSpec)) {
-        log.error("Template yaml provided does not have spec in it.");
-        throw new NGTemplateException("Template yaml provided does not have spec in it.");
-      }
-      String templateInputsYamlWithSpec = RuntimeInputFormHelper.createTemplateFromYaml(templateSpec);
-      JsonNode templateInputsYaml = templateInputsYamlWithSpec == null
-          ? null
-          : YamlUtils.readTree(templateInputsYamlWithSpec).getNode().getCurrJsonNode().get(SPEC);
-      if (!featureFlagHelperService.isEnabled(accountId, FeatureName.NG_TEMPLATE_VARIABLES)) {
-        if (isEmpty(templateInputsYamlWithSpec)) {
-          return templateInputsYamlWithSpec;
-        }
-        return YamlPipelineUtils.writeYamlString(templateInputsYaml);
-      }
-      String templateVariablesYamlWithDummy = RuntimeInputFormHelper.createTemplateFromYaml(templateVariableSpec);
-      if (isEmpty(templateInputsYamlWithSpec) && isEmpty(templateVariablesYamlWithDummy)) {
+      String templateInputsYamlWithSpec = RuntimeInputFormHelper.createTemplateFromYaml(templateYamlNode.toString());
+      if(isEmpty(templateInputsYamlWithSpec)){
         return templateInputsYamlWithSpec;
       }
-      JsonNode templateVariablesJson = templateVariablesYamlWithDummy == null
+      JsonNode templateJsonNode = YamlUtils.readTree(templateInputsYamlWithSpec).getNode().getCurrJsonNode().get(TEMPLATE);
+      JsonNode templateInputsYaml = templateJsonNode == null
           ? null
-          : YamlUtils.readTree(templateVariablesYamlWithDummy)
-                .getNode()
-                .getCurrJsonNode()
-                .get(DUMMY_NODE)
-                .get(YAMLFieldNameConstants.VARIABLES);
+          : templateJsonNode.get(SPEC);
+      if (!featureFlagHelperService.isEnabled(accountId, FeatureName.NG_TEMPLATE_VARIABLES)) {
+        return YamlPipelineUtils.writeYamlString(templateInputsYaml);
+      }
+      JsonNode templateVariablesJson = templateJsonNode.get(YAMLFieldNameConstants.VARIABLES);
+      if (templateInputsYaml == null && templateVariablesJson == null) {
+        return templateInputsYamlWithSpec;
+      }
       ObjectMapper mapper = new ObjectMapper();
       ObjectNode finalTemplateJson = mapper.createObjectNode();
 
       if (templateVariablesJson != null) {
-        finalTemplateJson.set(TEMPLATE_VARIABLES, templateVariablesJson);
+        finalTemplateJson.set(YAMLFieldNameConstants.VARIABLES, templateVariablesJson);
       }
       if (templateInputsYaml != null) {
         finalTemplateJson.set(TEMPLATE_INPUTS, templateInputsYaml);

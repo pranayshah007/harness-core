@@ -1,4 +1,4 @@
-templateVariables:
+variables:
 - name: "var2"
   type: "Number"
   value: "<+input>"
