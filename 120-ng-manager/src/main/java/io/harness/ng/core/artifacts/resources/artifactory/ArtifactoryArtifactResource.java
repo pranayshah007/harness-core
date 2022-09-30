@@ -18,6 +18,7 @@ import io.harness.cdng.artifact.bean.ArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.ArtifactoryRegistryArtifactConfig;
 import io.harness.cdng.artifact.resources.artifactory.dtos.ArtifactoryArtifactBuildDetailsDTO;
 import io.harness.cdng.artifact.resources.artifactory.dtos.ArtifactoryBuildDetailsDTO;
+import io.harness.cdng.artifact.resources.artifactory.dtos.ArtifactoryImagePathsDTO;
 import io.harness.cdng.artifact.resources.artifactory.dtos.ArtifactoryRepoDetailsDTO;
 import io.harness.cdng.artifact.resources.artifactory.dtos.ArtifactoryRequestDTO;
 import io.harness.cdng.artifact.resources.artifactory.dtos.ArtifactoryResponseDTO;
@@ -209,6 +210,33 @@ public class ArtifactoryArtifactResource {
     return ResponseDTO.newResponse(repoDetailsDTO);
   }
 
+  @GET
+  @Path("ImagePaths")
+  @ApiOperation(value = "Gets Image Paths details", nickname = "getImagePathsForArtifactory")
+  public ResponseDTO<ArtifactoryImagePathsDTO> getImagePaths(
+      @QueryParam("connectorRef") String artifactoryConnectorIdentifier,
+      @QueryParam("repositoryType") @DefaultValue("any") String repositoryType,
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
+      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @NotNull @QueryParam("repository") String repository, @QueryParam("fqnPath") String fqnPath,
+      @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceRef) {
+    if (isNotEmpty(serviceRef)) {
+      final ArtifactConfig artifactSpecFromService = artifactResourceUtils.locateArtifactInService(
+          accountId, orgIdentifier, projectIdentifier, serviceRef, fqnPath);
+      ArtifactoryRegistryArtifactConfig artifactoryRegistryArtifactConfig =
+          (ArtifactoryRegistryArtifactConfig) artifactSpecFromService;
+
+      if (isEmpty(artifactoryConnectorIdentifier)) {
+        artifactoryConnectorIdentifier = artifactoryRegistryArtifactConfig.getConnectorRef().getValue();
+      }
+    }
+    IdentifierRef connectorRef = IdentifierRefHelper.getIdentifierRef(
+        artifactoryConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
+    ArtifactoryImagePathsDTO artifactoryImagePathsDTO = artifactoryResourceService.getImagePaths(
+        repositoryType, connectorRef, orgIdentifier, projectIdentifier, repository);
+    return ResponseDTO.newResponse(artifactoryImagePathsDTO);
+  }
   @GET
   @Path("artifactBuildsDetails")
   @ApiOperation(value = "Gets artifacts builds details", nickname = "getArtifactsBuildsDetailsForArtifactory")
