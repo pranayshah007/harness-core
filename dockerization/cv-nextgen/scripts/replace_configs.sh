@@ -264,3 +264,5 @@ replace_key_value templateServiceClientConfig.baseUrl "$TEMPLATE_SERVICE_ENDPOIN
 replace_key_value templateServiceSecret "$TEMPLATE_SERVICE_SECRET"
 
 replace_key_value enforcementClientConfiguration.enforcementCheckEnabled "$ENFORCEMENT_CHECK_ENABLED"
+
+replace_key_value enableOpentelemetry "$ENABLE_OPENTELEMETRY"

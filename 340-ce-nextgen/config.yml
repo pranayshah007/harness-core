@@ -224,3 +224,5 @@ lightwingAutoCUDClientConfig:
   baseUrl: http://localhost:9090/
   connectTimeOutSeconds: 15
   readTimeOutSeconds: 15
+
+enableOpentelemetry: false
