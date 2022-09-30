@@ -11,6 +11,7 @@ import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.MLUKIC;
 import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
 import static io.harness.rule.OwnerRule.SAHIL;
+import static io.harness.rule.OwnerRule.SHIVAM;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -177,5 +178,33 @@ public class ArtifactResponseToOutcomeMapperTest extends CategoryTest {
     assertThat(artifactOutcome).isNotNull();
     assertThat(artifactOutcome).isInstanceOf(AcrArtifactOutcome.class);
     assertThat(artifactOutcome.getArtifactType()).isEqualTo(ArtifactSourceType.ACR.getDisplayName());
+  }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void testToValidateArtifactoryArtifactPath() {
+    ArtifactConfig artifactConfig =
+        ArtifactoryRegistryArtifactConfig.builder()
+            .connectorRef(ParameterField.createValueField("connector"))
+            .repository(ParameterField.createValueField("REPO_NAME"))
+            .artifactPath(ParameterField.createValueField("IMAGE"))
+            .artifactDirectory(ParameterField.createValueField("serverless"))
+            .repositoryFormat(ParameterField.createValueField(RepositoryFormat.generic.name()))
+            .build();
+    ArtifactBuildDetailsNG buildDetails =
+        ArtifactBuildDetailsNG.builder().metadata(Collections.singletonMap("URL", "URL")).build();
+    ArtifactDelegateResponse artifactDelegateResponse = ArtifactoryGenericArtifactDelegateResponse.builder()
+                                                            .buildDetails(buildDetails)
+                                                            .artifactPath("serverless/IMAGE")
+                                                            .build();
+
+    ArtifactOutcome artifactOutcome =
+        ArtifactResponseToOutcomeMapper.toArtifactOutcome(artifactConfig, artifactDelegateResponse, true);
+    ArtifactoryGenericArtifactOutcome artifactoryArtifactOutcome = (ArtifactoryGenericArtifactOutcome) artifactOutcome;
+
+    assertThat(artifactOutcome).isNotNull();
+    assertThat(artifactOutcome.getArtifactType()).isEqualTo(ArtifactSourceType.ARTIFACTORY_REGISTRY.getDisplayName());
+    assertThat(artifactoryArtifactOutcome.getArtifactPath()).isEqualTo("serverless/IMAGE");
   }
 }

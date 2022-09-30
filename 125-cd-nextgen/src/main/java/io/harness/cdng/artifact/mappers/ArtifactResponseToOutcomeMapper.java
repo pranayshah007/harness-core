@@ -339,10 +339,7 @@ public class ArtifactResponseToOutcomeMapper {
   private ArtifactoryGenericArtifactOutcome getArtifactoryGenericArtifactOutcome(
       ArtifactoryRegistryArtifactConfig artifactConfig,
       ArtifactoryGenericArtifactDelegateResponse artifactDelegateResponse, boolean useDelegateResponse) {
-    String artifactPath = useDelegateResponse ? ParameterField.isBlank(artifactConfig.getArtifactPathFilter())
-            ? Paths.get(artifactConfig.getArtifactDirectory().getValue(), artifactDelegateResponse.getArtifactPath())
-                  .toString()
-            : artifactDelegateResponse.getArtifactPath()
+    String artifactPath = useDelegateResponse ? artifactDelegateResponse.getArtifactPath()
                                               : (ParameterField.isNull(artifactConfig.getArtifactPath()) ? null
                                                       : ParameterField.isBlank(artifactConfig.getArtifactPathFilter())
                                                       ? Paths
