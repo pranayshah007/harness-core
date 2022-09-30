@@ -37,14 +37,9 @@ import software.wings.beans.LogColor;
 import software.wings.beans.LogWeight;
 
 import com.google.inject.Inject;
-import java.util.ArrayList;
-import java.util.List;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
-import software.amazon.awssdk.services.ecs.model.CreateServiceRequest;
-import software.amazon.awssdk.services.ecs.model.Service;
-import software.amazon.awssdk.services.ecs.model.ServiceEvent;
 
 @OwnedBy(HarnessTeam.CDP)
 @NoArgsConstructor
@@ -74,17 +69,64 @@ public class EcsBlueGreenRollbackCommandTaskHandler extends EcsCommandTaskNGHand
     try {
       AwsInternalConfig awsInternalConfig =
           awsNgConfigMapper.createAwsInternalConfig(ecsInfraConfig.getAwsConnectorDTO());
-      if (!ecsBlueGreenRollbackRequest.isTargetShiftStarted()) {
-        // failed after ecs blue green create service step and before ecs blue green swap target groups step
-        // delete new service created without steady state wait
-        ecsCommandTaskHelper.deleteService(ecsBlueGreenRollbackRequest.getNewServiceName(),
-            ecsBlueGreenRollbackRequest.getEcsInfraConfig().getCluster(),
-            ecsBlueGreenRollbackRequest.getEcsInfraConfig().getRegion(),
-            ecsBlueGreenRollbackRequest.getEcsInfraConfig().getAwsConnectorDTO());
-      } else {
-        // failed during ecs blue green swap target groups step or after it
-        ecsBlueGreenRollback(ecsBlueGreenRollbackRequest, rollbackCallback, awsInternalConfig);
+
+      if (!ecsBlueGreenRollbackRequest.isFirstDeployment()) {
+        ecsCommandTaskHelper.updateOldService(
+            ecsBlueGreenRollbackRequest, awsInternalConfig, rollbackCallback, timeoutInMillis);
       }
+
+      // Get current prod targetGroup Arn
+      String currentProdTargetGroupArn = ecsCommandTaskHelper.getTargetGroupArnFromLoadBalancer(ecsInfraConfig,
+          ecsBlueGreenRollbackRequest.getEcsLoadBalancerConfig().getProdListenerArn(),
+          ecsBlueGreenRollbackRequest.getEcsLoadBalancerConfig().getProdListenerRuleArn(),
+          ecsBlueGreenRollbackRequest.getEcsLoadBalancerConfig().getLoadBalancer(), awsInternalConfig);
+      // modify it if that's change from earlier prod targetGroup Arn
+      if (!ecsBlueGreenRollbackRequest.getEcsLoadBalancerConfig().getProdTargetGroupArn().equals(
+              currentProdTargetGroupArn)) {
+        ecsCommandTaskHelper.modifyListenerRule(ecsInfraConfig,
+            ecsBlueGreenRollbackRequest.getEcsLoadBalancerConfig().getProdListenerArn(),
+            ecsBlueGreenRollbackRequest.getEcsLoadBalancerConfig().getProdListenerRuleArn(),
+            ecsBlueGreenRollbackRequest.getEcsLoadBalancerConfig().getProdTargetGroupArn(), awsInternalConfig);
+      }
+
+      // Get current stage targetGroup Arn
+      String currentStageTargetGroupArn = ecsCommandTaskHelper.getTargetGroupArnFromLoadBalancer(ecsInfraConfig,
+          ecsBlueGreenRollbackRequest.getEcsLoadBalancerConfig().getStageListenerArn(),
+          ecsBlueGreenRollbackRequest.getEcsLoadBalancerConfig().getStageListenerRuleArn(),
+          ecsBlueGreenRollbackRequest.getEcsLoadBalancerConfig().getLoadBalancer(), awsInternalConfig);
+      // modify it if that's change from earlier stage targetGroup Arn
+      if (!ecsBlueGreenRollbackRequest.getEcsLoadBalancerConfig().getStageTargetGroupArn().equals(
+              currentStageTargetGroupArn)) {
+        ecsCommandTaskHelper.modifyListenerRule(ecsInfraConfig,
+            ecsBlueGreenRollbackRequest.getEcsLoadBalancerConfig().getStageListenerArn(),
+            ecsBlueGreenRollbackRequest.getEcsLoadBalancerConfig().getStageListenerRuleArn(),
+            ecsBlueGreenRollbackRequest.getEcsLoadBalancerConfig().getStageTargetGroupArn(), awsInternalConfig);
+      }
+
+      if (!ecsBlueGreenRollbackRequest.isFirstDeployment()) {
+        // update service tag of old service with blue version
+        ecsCommandTaskHelper.updateTag(ecsBlueGreenRollbackRequest.getOldServiceName(), ecsInfraConfig,
+            EcsCommandTaskNGHelper.BG_BLUE, awsInternalConfig);
+      }
+
+      // update service tag of new service with green version
+      ecsCommandTaskHelper.updateTag(ecsBlueGreenRollbackRequest.getNewServiceName(), ecsInfraConfig,
+          EcsCommandTaskNGHelper.BG_GREEN, awsInternalConfig);
+
+      // deleting scaling policies for new service
+      ecsCommandTaskHelper.deleteScalingPolicies(ecsInfraConfig.getAwsConnectorDTO(),
+          ecsBlueGreenRollbackRequest.getNewServiceName(), ecsInfraConfig.getCluster(), ecsInfraConfig.getRegion(),
+          rollbackCallback);
+
+      // de-registering scalable target for new service
+      ecsCommandTaskHelper.deregisterScalableTargets(ecsInfraConfig.getAwsConnectorDTO(),
+          ecsBlueGreenRollbackRequest.getNewServiceName(), ecsInfraConfig.getCluster(), ecsInfraConfig.getRegion(),
+          rollbackCallback);
+
+      // downsize new service desired count to zero
+      ecsCommandTaskHelper.updateDesiredCount(
+          ecsBlueGreenRollbackRequest.getNewServiceName(), ecsInfraConfig, awsInternalConfig, 0);
+
       EcsBlueGreenRollbackResultBuilder ecsBlueGreenRollbackResultBuilder =
           EcsBlueGreenRollbackResult.builder()
               .region(ecsBlueGreenRollbackRequest.getEcsInfraConfig().getRegion())
@@ -104,9 +146,9 @@ public class EcsBlueGreenRollbackCommandTaskHandler extends EcsCommandTaskNGHand
                 ecsBlueGreenRollbackRequest.getOldServiceName(), ecsInfraConfig.getRegion()));
       }
       ecsBlueGreenRollbackResultBuilder.prodTargetGroupArn(
-          ecsBlueGreenRollbackRequest.getEcsLoadBalancerConfig().getStageTargetGroupArn());
-      ecsBlueGreenRollbackResultBuilder.stageTargetGroupArn(
           ecsBlueGreenRollbackRequest.getEcsLoadBalancerConfig().getProdTargetGroupArn());
+      ecsBlueGreenRollbackResultBuilder.stageTargetGroupArn(
+          ecsBlueGreenRollbackRequest.getEcsLoadBalancerConfig().getStageTargetGroupArn());
       return EcsBlueGreenRollbackResponse.builder()
           .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
           .ecsBlueGreenRollbackResult(ecsBlueGreenRollbackResultBuilder.build())
@@ -115,59 +157,6 @@ public class EcsBlueGreenRollbackCommandTaskHandler extends EcsCommandTaskNGHand
       rollbackCallback.saveExecutionLog(color(format("%n Blue Green Rollback Failed."), LogColor.Red, LogWeight.Bold),
           LogLevel.ERROR, CommandExecutionStatus.FAILURE);
       throw new EcsNGException(e);
-    }
-  }
-
-  private void ecsBlueGreenRollback(EcsBlueGreenRollbackRequest ecsBlueGreenRollbackRequest, LogCallback rollbackLog,
-      AwsInternalConfig awsInternalConfig) {
-    if (ecsBlueGreenRollbackRequest.isFirstDeployment()) {
-      // swap target group with correct listener rule arns
-      ecsCommandTaskHelper.swapTargetGroups(
-          ecsInfraConfig, rollbackLog, ecsBlueGreenRollbackRequest.getEcsLoadBalancerConfig(), awsInternalConfig);
-      // delete new service created without steady state wait
-      ecsCommandTaskHelper.deleteService(ecsBlueGreenRollbackRequest.getNewServiceName(),
-          ecsBlueGreenRollbackRequest.getEcsInfraConfig().getCluster(),
-          ecsBlueGreenRollbackRequest.getEcsInfraConfig().getRegion(),
-          ecsBlueGreenRollbackRequest.getEcsInfraConfig().getAwsConnectorDTO());
-    } else {
-      CreateServiceRequest createServiceRequest =
-          ecsCommandTaskHelper
-              .parseYamlAsObject(ecsBlueGreenRollbackRequest.getOldServiceCreateRequestBuilderString(),
-                  CreateServiceRequest.serializableBuilderClass())
-              .build();
-
-      // update desired count of old service to its earlier desired count
-      Service service = ecsCommandTaskHelper
-                            .updateDesiredCount(ecsBlueGreenRollbackRequest.getOldServiceName(), ecsInfraConfig,
-                                awsInternalConfig, createServiceRequest.desiredCount())
-                            .service();
-
-      List<ServiceEvent> eventsAlreadyProcessed = new ArrayList<>(service.events());
-
-      ecsCommandTaskHelper.waitForTasksToBeInRunningState(
-          awsNgConfigMapper.createAwsInternalConfig(ecsInfraConfig.getAwsConnectorDTO()), ecsInfraConfig.getCluster(),
-          service.serviceName(), ecsInfraConfig.getRegion(), eventsAlreadyProcessed, rollbackLog, timeoutInMillis);
-
-      // steady state check to reach stable state
-      ecsCommandTaskHelper.ecsServiceSteadyStateCheck(rollbackLog, ecsInfraConfig.getAwsConnectorDTO(),
-          ecsBlueGreenRollbackRequest.getEcsInfraConfig().getCluster(), createServiceRequest.serviceName(),
-          ecsBlueGreenRollbackRequest.getEcsInfraConfig().getRegion(), timeoutInMillis, eventsAlreadyProcessed);
-
-      // swap target group with correct listener rule arns
-      ecsCommandTaskHelper.swapTargetGroups(
-          ecsInfraConfig, rollbackLog, ecsBlueGreenRollbackRequest.getEcsLoadBalancerConfig(), awsInternalConfig);
-
-      // update service tag of old service with blue version
-      ecsCommandTaskHelper.updateTag(ecsBlueGreenRollbackRequest.getOldServiceName(), ecsInfraConfig,
-          EcsCommandTaskNGHelper.BG_BLUE, awsInternalConfig);
-
-      // update service tag of new service with green version
-      ecsCommandTaskHelper.updateTag(ecsBlueGreenRollbackRequest.getNewServiceName(), ecsInfraConfig,
-          EcsCommandTaskNGHelper.BG_GREEN, awsInternalConfig);
-
-      // downsize new service desired count to zero
-      ecsCommandTaskHelper.updateDesiredCount(
-          ecsBlueGreenRollbackRequest.getNewServiceName(), ecsInfraConfig, awsInternalConfig, 0);
     }
   }
 }

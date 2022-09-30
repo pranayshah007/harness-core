@@ -87,9 +87,22 @@ public class EcsBlueGreenSwapTargetGroupsCommandTaskHandler extends EcsCommandTa
         ecsCommandTaskHelper.updateTag(ecsBlueGreenSwapTargetGroupsRequest.getOldServiceName(), ecsInfraConfig,
             EcsCommandTaskNGHelper.BG_GREEN, awsInternalConfig);
 
-        // downsize old service desired count to zero
-        ecsCommandTaskHelper.updateDesiredCount(
-            ecsBlueGreenSwapTargetGroupsRequest.getOldServiceName(), ecsInfraConfig, awsInternalConfig, 0);
+        // check downsize old flag and downsize it
+        if (!ecsBlueGreenSwapTargetGroupsRequest.isDoNotDownsizeOldService()) {
+          // deleting scaling policies for old service
+          ecsCommandTaskHelper.deleteScalingPolicies(ecsInfraConfig.getAwsConnectorDTO(),
+              ecsBlueGreenSwapTargetGroupsRequest.getOldServiceName(), ecsInfraConfig.getCluster(),
+              ecsInfraConfig.getRegion(), swapTargetGroupLogCallback);
+
+          // de-registering scalable target for old service
+          ecsCommandTaskHelper.deregisterScalableTargets(ecsInfraConfig.getAwsConnectorDTO(),
+              ecsBlueGreenSwapTargetGroupsRequest.getOldServiceName(), ecsInfraConfig.getCluster(),
+              ecsInfraConfig.getRegion(), swapTargetGroupLogCallback);
+
+          // downsize old service desired count to zero
+          ecsCommandTaskHelper.updateDesiredCount(
+              ecsBlueGreenSwapTargetGroupsRequest.getOldServiceName(), ecsInfraConfig, awsInternalConfig, 0);
+        }
       }
 
       EcsBlueGreenSwapTargetGroupsResult ecsBlueGreenSwapTargetGroupsResult =

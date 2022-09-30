@@ -13,7 +13,6 @@ import static java.lang.String.format;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.aws.beans.AwsInternalConfig;
 import io.harness.delegate.beans.ecs.EcsBlueGreenCreateServiceResult;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
@@ -74,8 +73,6 @@ public class EcsBlueGreenCreateServiceCommandTaskHandler extends EcsCommandTaskN
         iLogStreamingTaskClient, EcsCommandUnitConstants.deploy.toString(), true, commandUnitsProgress);
 
     try {
-      AwsInternalConfig awsInternalConfig =
-          awsNgConfigMapper.createAwsInternalConfig(ecsInfraConfig.getAwsConnectorDTO());
       String ecsServiceDefinitionManifestContent =
           ecsBlueGreenCreateServiceRequest.getEcsServiceDefinitionManifestContent();
       List<String> ecsScalableTargetManifestContentList =
@@ -100,11 +97,8 @@ public class EcsBlueGreenCreateServiceCommandTaskHandler extends EcsCommandTaskN
       deployLogCallback.saveExecutionLog(
           format("Created Task Definition %s with Arn %s..%n", taskDefinitionName, taskDefinitionArn), LogLevel.INFO);
 
-      // find target group arn from stage listener and stage listener rule arn
-      String targetGroupArn = ecsCommandTaskHelper.getTargetGroupArnFromLoadBalancer(ecsInfraConfig,
-          ecsBlueGreenCreateServiceRequest.getEcsLoadBalancerConfig().getStageListenerArn(),
-          ecsBlueGreenCreateServiceRequest.getEcsLoadBalancerConfig().getStageListenerRuleArn(),
-          ecsBlueGreenCreateServiceRequest.getEcsLoadBalancerConfig().getLoadBalancer(), awsInternalConfig);
+      // target group arn from stage listener and stage listener rule arn
+      String targetGroupArn = ecsBlueGreenCreateServiceRequest.getEcsLoadBalancerConfig().getStageTargetGroupArn();
 
       String serviceName = ecsCommandTaskHelper.createStageService(ecsServiceDefinitionManifestContent,
           ecsScalableTargetManifestContentList, ecsScalingPolicyManifestContentList, ecsInfraConfig, deployLogCallback,
