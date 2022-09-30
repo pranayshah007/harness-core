@@ -3,7 +3,7 @@ import project/bazelproject-config
 derive_targets_from_directories: false
 
 directories:
-  340-ce-nextgen
+  ce-nextgen
   374-ceng-graphql
   450-ce-views
   490-ce-commons
@@ -22,7 +22,7 @@ directories:
   980-commons
 
 targets:
-  //340-ce-nextgen:module
+  //ce-nextgen:module
 
 import_run_configurations:
   project/run-configurations/CENextGenApp.xml

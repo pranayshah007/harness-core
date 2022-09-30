@@ -60,7 +60,7 @@ public class CENextGenStartupTest extends CategoryTest {
   public static void beforeClass() throws Exception {
     MONGO_SERVER = startMongoServer();
     SUPPORT = new DropwizardTestSupport<>(CENextGenApplication.class,
-        String.valueOf(new File("340-ce-nextgen/src/test/resources/test-config.yml")),
+        String.valueOf(new File("ce-nextgen/service/src/test/resources/test-config.yml")),
         ConfigOverride.config("server.applicationConnectors[0].port", "0"),
         ConfigOverride.config("events-mongo.uri", getMongoUri()), ConfigOverride.config("hostname", "localhost"),
         ConfigOverride.config("basePathPrefix", SERVICE_ROOT_PATH));
