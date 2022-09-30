@@ -293,7 +293,7 @@ public class DeploymentStageVariableCreatorTest extends CategoryTest {
             "artifacts.primary.connectorRef", "artifacts.primary.imagePath", "artifacts.primary.tag",
             "artifacts.primary.tagRegex", "artifacts.primary.identifier", "artifacts.primary.type",
             "artifacts.primary.primaryArtifact", "artifacts.primary.image", "artifacts.primary.imagePullSecret",
-            "serviceVariables.svar2", "serviceVariables.envVar1", "serviceVariables.svar1");
+            "artifacts.primary.label", "serviceVariables.svar2", "serviceVariables.envVar1", "serviceVariables.svar1");
   }
 
   @Test
