@@ -203,8 +203,8 @@ BAZEL_MODULES="\
   //990-commons-test:module \
   //999-annotations:module \
   //access-control/service:module \
+  //ce-nextgen/service:module \
   //access-control/contracts:module \
-  //ce-nextgen:module \
   //product/ci/engine/proto:all \
   //product/ci/scm/proto:all \
 "
