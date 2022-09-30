@@ -96,7 +96,7 @@ public class ArtifactoryResourceServiceImpl implements ArtifactoryResourceServic
   @VisibleForTesting static final int timeoutInSecs = 60;
   private static final String FAILED_TO_FETCH_REPOSITORIES = "Failed to fetch repositories";
   private static final String FAILED_TO_FETCH_ARTIFACTS = "Failed to fetch artifacts";
-  private static final String FAILED_TO_FETCH_IMAGE_PATH = "Failed to fetch image path";
+  private static final String FAILED_TO_FETCH_IMAGE_PATHS = "Failed to fetch image path";
 
   @Inject
   public ArtifactoryResourceServiceImpl(@Named(DEFAULT_CONNECTOR_SERVICE) ConnectorService connectorService,
@@ -201,7 +201,7 @@ public class ArtifactoryResourceServiceImpl implements ArtifactoryResourceServic
 
     ArtifactoryFetchImagePathResponse taskResponse = (ArtifactoryFetchImagePathResponse) responseData;
     if (taskResponse.getCommandExecutionStatus() != SUCCESS) {
-      throw new ArtifactoryServerException(FAILED_TO_FETCH_IMAGE_PATH, ARTIFACT_SERVER_ERROR, USER);
+      throw new ArtifactoryServerException(FAILED_TO_FETCH_IMAGE_PATHS, ARTIFACT_SERVER_ERROR, USER);
     }
     return taskResponse;
   }

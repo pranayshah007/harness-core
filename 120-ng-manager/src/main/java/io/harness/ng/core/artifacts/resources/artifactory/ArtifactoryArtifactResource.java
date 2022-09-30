@@ -212,7 +212,7 @@ public class ArtifactoryArtifactResource {
 
   @GET
   @Path("ImagePaths")
-  @ApiOperation(value = "Gets Image Path details", nickname = "getImagePathForArtifactory")
+  @ApiOperation(value = "Gets Image Paths details", nickname = "getImagePathsForArtifactory")
   public ResponseDTO<ArtifactoryImagePathsDTO> getImagePaths(
       @QueryParam("connectorRef") String artifactoryConnectorIdentifier,
       @QueryParam("repositoryType") @DefaultValue("any") String repositoryType,
