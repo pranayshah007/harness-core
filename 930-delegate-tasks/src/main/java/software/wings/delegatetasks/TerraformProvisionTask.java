@@ -69,7 +69,6 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.TerraformCommandExecutionException;
 import io.harness.exception.WingsException;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
-import io.harness.filesystem.FileIo;
 import io.harness.git.model.GitRepositoryType;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
@@ -226,18 +225,6 @@ public class TerraformProvisionTask extends AbstractDelegateRunnableTask {
           CommandExecutionStatus.RUNNING, INFO, logCallback);
     }
     EncryptedRecordData encryptedTfPlan = parameters.getEncryptedTfPlan();
-    try {
-      encryptionService.decrypt(gitConfig, parameters.getSourceRepoEncryptionDetails(), false);
-      ExceptionMessageSanitizer.storeAllSecretsForSanitizing(gitConfig, parameters.getSourceRepoEncryptionDetails());
-      gitClient.ensureRepoLocallyClonedAndUpdated(gitOperationContext);
-    } catch (RuntimeException ex) {
-      Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(ex);
-      log.error("Exception in processing git operation", sanitizedException);
-      return TerraformExecutionData.builder()
-          .executionStatus(ExecutionStatus.FAILED)
-          .errorMessage(TerraformTaskUtils.getGitExceptionMessageIfExists(sanitizedException))
-          .build();
-    }
 
     String baseDir = parameters.isUseActivityIdBasedTfBaseDir()
         ? terraformBaseHelper.activityIdBasedBaseDir(
@@ -259,10 +246,12 @@ public class TerraformProvisionTask extends AbstractDelegateRunnableTask {
     }
 
     try {
-      copyFilesToWorkingDirectory(gitClientHelper.getRepoDirectory(gitOperationContext), workingDir);
+      encryptionService.decrypt(gitConfig, parameters.getSourceRepoEncryptionDetails(), false);
+      ExceptionMessageSanitizer.storeAllSecretsForSanitizing(gitConfig, parameters.getSourceRepoEncryptionDetails());
+      gitClient.cloneRepoAndCopyToWorkingDir(gitOperationContext, workingDir);
     } catch (Exception ex) {
       Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(ex);
-      log.error("Exception in copying files to provisioner specific directory", sanitizedException);
+      log.error("Exception in cloning & copying files to provisioner specific directory", sanitizedException);
       FileUtils.deleteQuietly(new File(baseDir));
       return TerraformExecutionData.builder()
           .executionStatus(ExecutionStatus.FAILED)
@@ -1008,18 +997,6 @@ public class TerraformProvisionTask extends AbstractDelegateRunnableTask {
     saveExecutionLog(message, CommandExecutionStatus.FAILURE, ERROR, logCallback);
     log.error("Exception in processing terraform operation", sanitizedException);
     return TerraformExecutionData.builder().executionStatus(ExecutionStatus.FAILED).errorMessage(message).build();
-  }
-
-  /*
-  Copies Files from the directory common to the git connector to a directory specific to the app
-  and provisioner
-   */
-  private void copyFilesToWorkingDirectory(String sourceDir, String destinationDir) throws IOException {
-    File dest = new File(destinationDir);
-    File src = new File(sourceDir);
-    deleteDirectoryAndItsContentIfExists(dest.getAbsolutePath());
-    FileUtils.copyDirectory(src, dest);
-    FileIo.waitForDirectoryToBeAccessibleOutOfProcess(dest.getPath(), 10);
   }
 
   @VisibleForTesting

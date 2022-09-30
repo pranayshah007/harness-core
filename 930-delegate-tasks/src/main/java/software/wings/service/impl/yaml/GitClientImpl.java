@@ -1122,6 +1122,16 @@ public class GitClientImpl implements GitClient {
     return fetchResult;
   }
 
+  public synchronized void cloneRepoAndCopyToWorkingDir(GitOperationContext gitOperationContext, String destinationDir)
+      throws IOException {
+    ensureRepoLocallyClonedAndUpdated(gitOperationContext);
+    File dest = new File(destinationDir);
+    File src = new File(gitClientHelper.getRepoDirectory(gitOperationContext));
+    deleteDirectoryAndItsContentIfExists(dest.getAbsolutePath());
+    FileUtils.copyDirectory(src, dest);
+    FileIo.waitForDirectoryToBeAccessibleOutOfProcess(dest.getPath(), 10);
+  }
+
   @Override
   public synchronized void ensureRepoLocallyClonedAndUpdated(GitOperationContext gitOperationContext) {
     GitConfig gitConfig = gitOperationContext.getGitConfig();
