@@ -96,6 +96,9 @@ public class MigratorUtility {
   }
 
   public static SecretRefData getSecretRef(Map<CgEntityId, NGYamlFile> migratedEntities, String secretId) {
+    if (secretId == null) {
+      return null;
+    }
     CgEntityId secretEntityId = CgEntityId.builder().id(secretId).type(SECRET).build();
     if (!migratedEntities.containsKey(secretEntityId)) {
       return SecretRefData.builder().identifier("__PLEASE_FIX_ME__").scope(Scope.PROJECT).build();

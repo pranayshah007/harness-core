@@ -10,35 +10,51 @@ package io.harness.ngmigration.connector;
 import static io.harness.delegate.beans.connector.k8Connector.KubernetesClusterConfigDTO.builder;
 import static io.harness.delegate.beans.connector.k8Connector.KubernetesCredentialType.INHERIT_FROM_DELEGATE;
 import static io.harness.delegate.beans.connector.k8Connector.KubernetesCredentialType.MANUAL_CREDENTIALS;
-import static io.harness.k8s.model.KubernetesClusterAuthType.NONE;
 
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.ConnectorType;
+import io.harness.delegate.beans.connector.k8Connector.KubernetesAuthCredentialDTO;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesAuthDTO;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesAuthType;
+import io.harness.delegate.beans.connector.k8Connector.KubernetesClientKeyCertDTO;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesClusterConfigDTO.KubernetesClusterConfigDTOBuilder;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesClusterDetailsDTO;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesCredentialDTO;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesOpenIdConnectDTO;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesServiceAccountDTO;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesUserNamePasswordDTO;
+import io.harness.encryption.SecretRefData;
 import io.harness.exception.InvalidRequestException;
 import io.harness.k8s.model.KubernetesClusterAuthType;
 import io.harness.ngmigration.beans.NGYamlFile;
+import io.harness.ngmigration.service.MigratorUtility;
 
 import software.wings.beans.KubernetesClusterConfig;
 import software.wings.beans.SettingAttribute;
 import software.wings.ngmigration.CgEntityId;
 
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.apache.commons.lang3.ObjectUtils;
 
 public class KubernetesConnectorImpl implements BaseConnector {
   @Override
   public List<String> getSecretIds(SettingAttribute settingAttribute) {
-    return Collections.singletonList(((KubernetesClusterConfig) settingAttribute.getValue()).getEncryptedPassword());
+    KubernetesClusterConfig clusterConfig = (KubernetesClusterConfig) settingAttribute.getValue();
+    List<String> secretRefs = new ArrayList<>();
+    secretRefs.add(clusterConfig.getEncryptedCaCert());
+    secretRefs.add(clusterConfig.getEncryptedUsername());
+    secretRefs.add(clusterConfig.getEncryptedPassword());
+    secretRefs.add(clusterConfig.getEncryptedClientKey());
+    secretRefs.add(clusterConfig.getEncryptedClientCert());
+    secretRefs.add(clusterConfig.getEncryptedClientKeyPassphrase());
+    secretRefs.add(clusterConfig.getEncryptedServiceAccountToken());
+    secretRefs.add(clusterConfig.getEncryptedOidcClientId());
+    secretRefs.add(clusterConfig.getEncryptedOidcPassword());
+    secretRefs.add(clusterConfig.getEncryptedOidcSecret());
+    return secretRefs;
   }
 
   @Override
@@ -50,58 +66,112 @@ public class KubernetesConnectorImpl implements BaseConnector {
   public ConnectorConfigDTO getConfigDTO(
       SettingAttribute settingAttribute, Set<CgEntityId> childEntities, Map<CgEntityId, NGYamlFile> migratedEntities) {
     KubernetesClusterConfig clusterConfig = (KubernetesClusterConfig) settingAttribute.getValue();
-    KubernetesClusterAuthType authType = clusterConfig.getAuthType() == null ? NONE : clusterConfig.getAuthType();
+    KubernetesClusterAuthType authType = clusterConfig.getAuthType();
     KubernetesClusterConfigDTOBuilder builder = builder().delegateSelectors(clusterConfig.getDelegateSelectors());
     KubernetesCredentialDTO credentialDTO;
-    switch (authType) {
-      case USER_PASSWORD:
-        credentialDTO = KubernetesCredentialDTO.builder()
-                            .kubernetesCredentialType(MANUAL_CREDENTIALS)
-                            .config(KubernetesClusterDetailsDTO.builder()
-                                        .masterUrl(clusterConfig.getMasterUrl())
-                                        .auth(KubernetesAuthDTO.builder()
-                                                  .authType(KubernetesAuthType.USER_PASSWORD)
-                                                  .credentials(KubernetesUserNamePasswordDTO.builder()
-                                                                   .username(new String(clusterConfig.getUsername()))
-                                                                   .passwordRef(null)
-                                                                   .build())
-                                                  .build())
-                                        .build())
-                            .build();
-        break;
-      case SERVICE_ACCOUNT:
-        credentialDTO =
-            KubernetesCredentialDTO.builder()
-                .kubernetesCredentialType(MANUAL_CREDENTIALS)
-                .config(KubernetesClusterDetailsDTO.builder()
-                            .masterUrl(clusterConfig.getMasterUrl())
-                            .auth(KubernetesAuthDTO.builder()
-                                      .authType(KubernetesAuthType.SERVICE_ACCOUNT)
-                                      .credentials(
-                                          KubernetesServiceAccountDTO.builder().serviceAccountTokenRef(null).build())
-                                      .build())
-                            .build())
-                .build();
-        break;
-      case OIDC:
-        credentialDTO = KubernetesCredentialDTO.builder()
-                            .kubernetesCredentialType(MANUAL_CREDENTIALS)
-                            .config(KubernetesClusterDetailsDTO.builder()
-                                        .masterUrl(clusterConfig.getMasterUrl())
-                                        .auth(KubernetesAuthDTO.builder()
-                                                  .authType(KubernetesAuthType.OPEN_ID_CONNECT)
-                                                  .credentials(KubernetesOpenIdConnectDTO.builder().build())
-                                                  .build())
-                                        .build())
-                            .build();
-        break;
-      case NONE:
-        credentialDTO = KubernetesCredentialDTO.builder().kubernetesCredentialType(INHERIT_FROM_DELEGATE).build();
-        break;
-      default:
-        throw new InvalidRequestException("K8s Auth type not supported");
+    String masterUrl = clusterConfig.getMasterUrl();
+    String oidcIdentityProviderUrl = clusterConfig.getOidcIdentityProviderUrl();
+    SecretRefData usernameRef = MigratorUtility.getSecretRef(migratedEntities, clusterConfig.getEncryptedUsername());
+    SecretRefData caCertRef = MigratorUtility.getSecretRef(migratedEntities, clusterConfig.getEncryptedCaCert());
+    SecretRefData passwordRef = MigratorUtility.getSecretRef(migratedEntities, clusterConfig.getEncryptedPassword());
+    SecretRefData serviceAccountTokenRef =
+        MigratorUtility.getSecretRef(migratedEntities, clusterConfig.getEncryptedServiceAccountToken());
+    SecretRefData clientIdRef =
+        MigratorUtility.getSecretRef(migratedEntities, clusterConfig.getEncryptedOidcClientId());
+    SecretRefData oidcPasswordRef =
+        MigratorUtility.getSecretRef(migratedEntities, clusterConfig.getEncryptedOidcPassword());
+    SecretRefData clientCertRef =
+        MigratorUtility.getSecretRef(migratedEntities, clusterConfig.getEncryptedClientCert());
+    SecretRefData clientKeyRef = MigratorUtility.getSecretRef(migratedEntities, clusterConfig.getEncryptedClientKey());
+
+    if (authType == null) {
+      credentialDTO = KubernetesCredentialDTO.builder().kubernetesCredentialType(INHERIT_FROM_DELEGATE).build();
+    } else if ((authType.equals(KubernetesClusterAuthType.NONE) && ObjectUtils.allNotNull(masterUrl, passwordRef))
+        || authType.equals(KubernetesClusterAuthType.USER_PASSWORD)) {
+      credentialDTO = getUsernamePasswordCredentials(masterUrl, clusterConfig.getUsername(), usernameRef, passwordRef);
+    } else if ((authType.equals(KubernetesClusterAuthType.NONE)
+                   && ObjectUtils.allNotNull(masterUrl, serviceAccountTokenRef))
+        || authType.equals(KubernetesClusterAuthType.SERVICE_ACCOUNT)) {
+      credentialDTO = getServiceAccountCredentials(masterUrl, serviceAccountTokenRef, caCertRef);
+    } else if ((authType.equals(KubernetesClusterAuthType.NONE)
+                   && ObjectUtils.allNotNull(masterUrl, oidcIdentityProviderUrl, oidcPasswordRef, clientIdRef))
+        || authType.equals(KubernetesClusterAuthType.OIDC)) {
+      SecretRefData oidcSecretRef =
+          MigratorUtility.getSecretRef(migratedEntities, clusterConfig.getEncryptedOidcSecret());
+      credentialDTO = getOidcCredentials(masterUrl, oidcIdentityProviderUrl, clusterConfig.getOidcUsername(),
+          clusterConfig.getOidcScopes(), usernameRef, oidcPasswordRef, clientIdRef, oidcSecretRef);
+    } else if (authType.equals(KubernetesClusterAuthType.NONE)
+        && ObjectUtils.allNotNull(masterUrl, clientCertRef, clientKeyRef)) {
+      SecretRefData clientKeyPassphraseRef =
+          MigratorUtility.getSecretRef(migratedEntities, clusterConfig.getEncryptedClientKeyPassphrase());
+      credentialDTO = getClientKeyCertCredentials(
+          masterUrl, caCertRef, clientCertRef, clientKeyRef, clientKeyPassphraseRef, clusterConfig.getClientKeyAlgo());
+    } else {
+      throw new InvalidRequestException("K8s Auth type not supported");
     }
 
     return builder.credential(credentialDTO).build();
+  }
+
+  private KubernetesCredentialDTO getUsernamePasswordCredentials(
+      String masterUrl, char[] username, SecretRefData usernameRef, SecretRefData encryptedPassword) {
+    KubernetesAuthCredentialDTO kubernetesAuthCredentialDTO = KubernetesUserNamePasswordDTO.builder()
+                                                                  .username(new String(username))
+                                                                  .usernameRef(usernameRef)
+                                                                  .passwordRef(encryptedPassword)
+                                                                  .build();
+    return getKubernetesCredentialDTO(kubernetesAuthCredentialDTO, masterUrl, KubernetesAuthType.USER_PASSWORD);
+  }
+
+  private KubernetesCredentialDTO getServiceAccountCredentials(
+      String masterUrl, SecretRefData encryptedServiceAccountTokenRef, SecretRefData caCertRef) {
+    KubernetesAuthCredentialDTO kubernetesAuthCredentialDTO =
+        KubernetesServiceAccountDTO.builder()
+            .serviceAccountTokenRef(encryptedServiceAccountTokenRef)
+            .caCertRef(caCertRef)
+            .build();
+    return getKubernetesCredentialDTO(kubernetesAuthCredentialDTO, masterUrl, KubernetesAuthType.SERVICE_ACCOUNT);
+  }
+
+  private KubernetesCredentialDTO getOidcCredentials(String masterUrl, String oidcIdentityProviderUrl, String username,
+      String scopes, SecretRefData usernameRef, SecretRefData passwordRef, SecretRefData oidcClientIdRef,
+      SecretRefData oidcSecretRef) {
+    KubernetesAuthCredentialDTO kubernetesAuthCredentialDTO = KubernetesOpenIdConnectDTO.builder()
+                                                                  .oidcIssuerUrl(oidcIdentityProviderUrl)
+                                                                  .oidcUsername(username)
+                                                                  .oidcUsernameRef(usernameRef)
+                                                                  .oidcClientIdRef(oidcClientIdRef)
+                                                                  .oidcPasswordRef(passwordRef)
+                                                                  .oidcSecretRef(oidcSecretRef)
+                                                                  .oidcScopes(scopes)
+                                                                  .build();
+    return getKubernetesCredentialDTO(kubernetesAuthCredentialDTO, masterUrl, KubernetesAuthType.OPEN_ID_CONNECT);
+  }
+
+  private KubernetesCredentialDTO getClientKeyCertCredentials(String masterUrl, SecretRefData caCertRef,
+      SecretRefData clientCertRef, SecretRefData clientKeyRef, SecretRefData clientKeyPassphraseRef,
+      String clientKeyAlgo) {
+    KubernetesAuthCredentialDTO kubernetesAuthCredentialDTO = KubernetesClientKeyCertDTO.builder()
+                                                                  .caCertRef(caCertRef)
+                                                                  .clientCertRef(clientCertRef)
+                                                                  .clientKeyRef(clientKeyRef)
+                                                                  .clientKeyPassphraseRef(clientKeyPassphraseRef)
+                                                                  .clientKeyAlgo(clientKeyAlgo)
+                                                                  .build();
+    return getKubernetesCredentialDTO(kubernetesAuthCredentialDTO, masterUrl, KubernetesAuthType.CLIENT_KEY_CERT);
+  }
+
+  private KubernetesCredentialDTO getKubernetesCredentialDTO(KubernetesAuthCredentialDTO kubernetesAuthCredentialDTO,
+      String masterUrl, KubernetesAuthType kubernetesAuthType) {
+    return KubernetesCredentialDTO.builder()
+        .kubernetesCredentialType(MANUAL_CREDENTIALS)
+        .config(KubernetesClusterDetailsDTO.builder()
+                    .masterUrl(masterUrl)
+                    .auth(KubernetesAuthDTO.builder()
+                              .authType(kubernetesAuthType)
+                              .credentials(kubernetesAuthCredentialDTO)
+                              .build())
+                    .build())
+        .build();
   }
 }
