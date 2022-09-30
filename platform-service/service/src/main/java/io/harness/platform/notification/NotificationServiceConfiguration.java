@@ -31,4 +31,5 @@ public class NotificationServiceConfiguration {
   @JsonProperty("smtp") @ConfigSecret private SmtpConfig smtpConfig;
   @JsonProperty("seedDataConfiguration") private SeedDataConfiguration seedDataConfiguration;
   @JsonProperty("delegateServiceGrpcConfig") private GrpcClientConfig delegateServiceGrpcConfig;
+  @JsonProperty(value = "enableOpentelemetry") private Boolean enableOpentelemetry;
 }
