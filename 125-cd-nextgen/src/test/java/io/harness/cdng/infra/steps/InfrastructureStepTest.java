@@ -43,6 +43,7 @@ import io.harness.cdng.environment.yaml.EnvironmentYaml;
 import io.harness.cdng.execution.ExecutionInfoKey;
 import io.harness.cdng.execution.helper.StageExecutionHelper;
 import io.harness.cdng.infra.InfrastructureMapper;
+import io.harness.cdng.infra.InfrastructureValidator;
 import io.harness.cdng.infra.beans.InfraMapping;
 import io.harness.cdng.infra.beans.K8sAzureInfraMapping;
 import io.harness.cdng.infra.beans.K8sDirectInfraMapping;
@@ -132,6 +133,7 @@ public class InfrastructureStepTest extends CategoryTest {
   @Mock NGLogCallback ngLogCallback;
   @Mock NGLogCallback ngLogCallbackOpen;
   @Mock InfrastructureMapper infrastructureMapper;
+  @Mock InfrastructureValidator infrastructureValidator;
 
   private final String ACCOUNT_ID = "accountId";
 

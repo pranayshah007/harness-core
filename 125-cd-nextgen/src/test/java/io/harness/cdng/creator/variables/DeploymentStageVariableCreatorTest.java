@@ -8,6 +8,7 @@
 package io.harness.cdng.creator.variables;
 
 import static io.harness.rule.OwnerRule.HINGER;
+import static io.harness.rule.OwnerRule.YOGESH;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -19,7 +20,7 @@ import io.harness.NGCommonEntityConstants;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.creator.plan.stage.DeploymentStageNode;
 import io.harness.cdng.infra.InfrastructureMapper;
-import io.harness.cdng.infra.beans.K8sDirectInfrastructureOutcome;
+import io.harness.connector.services.ConnectorService;
 import io.harness.ng.core.common.beans.NGTag;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.beans.EnvironmentType;
@@ -48,27 +49,53 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import junitparams.JUnitParamsRunner;
+import junitparams.Parameters;
+import lombok.Builder;
+import lombok.Value;
+import org.jooq.tools.reflect.Reflect;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 
+@RunWith(JUnitParamsRunner.class)
 public class DeploymentStageVariableCreatorTest extends CategoryTest {
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
   @Mock ServiceEntityService serviceEntityService;
   @Mock EnvironmentService environmentService;
   @Mock ServiceOverrideService serviceOverrideService;
   @Mock InfrastructureEntityService infrastructureEntityService;
-  @Mock InfrastructureMapper infrastructureMapper;
+  InfrastructureMapper infrastructureMapper = new InfrastructureMapper();
   @InjectMocks private DeploymentStageVariableCreator deploymentStageVariableCreator;
 
   private final String ACCOUNT_ID = "account_id";
   private final String ORG_IDENTIFIER = "default";
   private final String PROJ_IDENTIFIER = "svcenvrefactor";
   private final String ENV_IDENTIFIER = "environmentVariableTest";
+
+  AutoCloseable mocks;
+  @Before
+  public void setUp() throws Exception {
+    mocks = MockitoAnnotations.openMocks(this);
+    Reflect.on(deploymentStageVariableCreator).set("infrastructureMapper", infrastructureMapper);
+    Reflect.on(infrastructureMapper).set("connectorService", Mockito.mock(ConnectorService.class));
+  }
+
+  @After
+  public void tearDown() throws Exception {
+    if (mocks != null) {
+      mocks.close();
+    }
+  }
 
   @Test
   @Owner(developers = HINGER)
@@ -202,13 +229,6 @@ public class DeploymentStageVariableCreatorTest extends CategoryTest {
     when(infrastructureEntityService.get(any(), any(), any(), any(), any()))
         .thenReturn(Optional.of(infrastructureEntity));
     when(serviceOverrideService.get(any(), any(), any(), any(), any())).thenReturn(Optional.empty());
-    when(infrastructureMapper.toOutcome(any(), any(), any(), any(), any(), any()))
-        .thenReturn(K8sDirectInfrastructureOutcome.builder()
-                        .connectorRef("k8s_cluster")
-                        .namespace("def")
-                        .releaseName("release-<+INFRA_KEY>")
-                        .infrastructureKey("d4f194a54314d4a84247ab43fbd8d4b17b57a091")
-                        .build());
     YamlField fullYamlField = YamlUtils.readTree(pipelineJson);
 
     // Pipeline Node
@@ -376,15 +396,16 @@ public class DeploymentStageVariableCreatorTest extends CategoryTest {
   }
 
   @Test
-  @Owner(developers = HINGER)
+  @Owner(developers = YOGESH)
   @Category(UnitTests.class)
-  public void createVariablesForServiceEnvByRef_OnlyServiceInfraRuntime() throws IOException {
+  @Parameters(method = "getTestData")
+  public void testVariables(TestData data) throws IOException {
     ClassLoader classLoader = this.getClass().getClassLoader();
-    final URL testFile = classLoader.getResource("pipelineWithV2ServiceEnv_ServiceInfraRuntime.yaml");
+    final URL testFile = classLoader.getResource(data.getPipelineYamlFile());
     String pipelineYaml = Resources.toString(testFile, Charsets.UTF_8);
     String pipelineJson = YamlUtils.injectUuid(pipelineYaml);
 
-    final URL serviceYamlFile = classLoader.getResource("serviceV2.yaml");
+    final URL serviceYamlFile = classLoader.getResource(data.getServiceYamlFile());
     String serviceYaml = Resources.toString(serviceYamlFile, Charsets.UTF_8);
     ServiceEntity serviceEntity = ServiceEntity.builder()
                                       .name("variableTestSvc")
@@ -396,7 +417,7 @@ public class DeploymentStageVariableCreatorTest extends CategoryTest {
                                       .yaml(serviceYaml)
                                       .build();
 
-    final URL envYamlFile = classLoader.getResource("environmentV2.yaml");
+    final URL envYamlFile = classLoader.getResource(data.getEnvYamlFile());
     String environmentYaml = Resources.toString(envYamlFile, Charsets.UTF_8);
 
     Environment environmentEntity = Environment.builder()
@@ -408,7 +429,7 @@ public class DeploymentStageVariableCreatorTest extends CategoryTest {
                                         .type(EnvironmentType.Production)
                                         .build();
 
-    final URL infraYamlFile = classLoader.getResource("k8sDirectInfrastructure.yaml");
+    final URL infraYamlFile = classLoader.getResource(data.getInfraYamlFile());
     String infraYaml = Resources.toString(infraYamlFile, Charsets.UTF_8);
 
     InfrastructureEntity infrastructureEntity = InfrastructureEntity.builder()
@@ -450,27 +471,107 @@ public class DeploymentStageVariableCreatorTest extends CategoryTest {
 
     // linked hashmap so ordered entries: env, infra, service expressions
     List<VariableCreationResponse> variableCreationResponseList = new ArrayList<>(variablesForChildrenNodesV2.values());
+
     List<String> keys = new ArrayList<>(variablesForChildrenNodesV2.keySet());
 
-    // env
-    List<YamlProperties> envOutputProperties =
-        variableCreationResponseList.get(0).getYamlExtraProperties().get(keys.get(0)).getOutputPropertiesList();
-    List<String> envFqnPropertiesList =
-        envOutputProperties.stream().map(YamlProperties::getLocalName).collect(Collectors.toList());
+    assertExpressions(variableCreationResponseList, data.getEnvFqnIndex(), data.getExpectedEnvFqn(), keys);
+    assertExpressions(variableCreationResponseList, data.getInfraFqnIndex(), data.getExpectedInfraFqn(), keys);
+    assertExpressions(variableCreationResponseList, data.getSvcFqnIndex(), data.getExpectedSvcFqn(), keys);
+  }
 
-    assertThat(envFqnPropertiesList)
-        .containsExactly("env.name", "env.identifier", "env.description", "env.type", "env.tags", "env.environmentRef",
-            "env.variables.envVar1", "env.variables.svar1");
+  private void assertExpressions(List<VariableCreationResponse> variableCreationResponses, int index,
+      List<String> expectedExpressions, List<String> keys) {
+    if (index > 0) {
+      List<YamlProperties> serviceOutputProperties =
+          variableCreationResponses.get(index).getYamlExtraProperties().get(keys.get(index)).getOutputPropertiesList();
+      List<String> serviceFqnPropertiesList =
+          serviceOutputProperties.stream().map(YamlProperties::getLocalName).collect(Collectors.toList());
 
-    // no infra vars
-    // service variables include serviceVariables generated from env vars
-    List<YamlProperties> serviceOutputProperties =
-        variableCreationResponseList.get(1).getYamlExtraProperties().get(keys.get(1)).getOutputPropertiesList();
-    List<String> serviceFqnPropertiesList =
-        serviceOutputProperties.stream().map(YamlProperties::getLocalName).collect(Collectors.toList());
+      assertThat(serviceFqnPropertiesList).isEqualTo(expectedExpressions);
+    }
+  }
 
-    assertThat(serviceFqnPropertiesList)
-        .containsExactly("service.identifier", "service.name", "service.description", "service.type", "service.tags",
-            "service.gitOpsEnabled", "serviceVariables.envVar1", "serviceVariables.svar1");
+  private Object[][] getTestData() {
+    TestData data1 =
+        TestData.builder()
+            .pipelineYamlFile("pipelineWithV2ServiceEnv_ServiceInfraRuntime.yaml")
+            .serviceYamlFile("serviceV2.yaml")
+            .envYamlFile("environmentV2.yaml")
+            .infraYamlFile("k8sDirectInfrastructure.yaml")
+            .expectedSvcFqn(List.of("service.identifier", "service.name", "service.description", "service.type",
+                "service.tags", "service.gitOpsEnabled", "serviceVariables.envVar1", "serviceVariables.svar1"))
+            .expectedEnvFqn(List.of("env.name", "env.identifier", "env.description", "env.type", "env.tags",
+                "env.environmentRef", "env.variables.envVar1", "env.variables.svar1"))
+            .expectedInfraFqn(List.of())
+            .envFqnIndex(0)
+            .svcFqnIndex(1)
+            .infraFqnIndex(-1)
+            .build();
+
+    TestData data2 =
+        TestData.builder()
+            .pipelineYamlFile("pipelineWithV2ServiceEnv.yaml")
+            .serviceYamlFile("ServiceWithArtifactSources.yaml")
+            .envYamlFile("environmentV2.yaml")
+            .infraYamlFile("k8sDirectInfrastructure.yaml")
+            .expectedSvcFqn(List.of("service.identifier", "service.name", "service.description", "service.type",
+                "service.tags", "service.gitOpsEnabled", "artifacts.primary.connectorRef",
+                "artifacts.primary.imagePath", "artifacts.primary.tag", "artifacts.primary.tagRegex",
+                "artifacts.primary.identifier", "artifacts.primary.type", "artifacts.primary.primaryArtifact",
+                "artifacts.primary.image", "artifacts.primary.imagePullSecret", "artifacts.primary.registryHostname",
+                "artifacts.primary.region", "artifacts.primary.repositoryName", "artifacts.primary.artifactPath",
+                "artifacts.primary.repositoryFormat", "artifacts.primary.metadata", "artifacts.primary.subscription",
+                "artifacts.primary.registry", "artifacts.primary.repository", "artifacts.primary.project",
+                "artifacts.primary.package", "artifacts.primary.version", "artifacts.primary.versionRegex",
+                "serviceVariables.envVar1", "serviceVariables.svar1"))
+            .expectedEnvFqn(List.of("env.name", "env.identifier", "env.description", "env.type", "env.tags",
+                "env.environmentRef", "env.variables.envVar1", "env.variables.svar1"))
+            .expectedInfraFqn(List.of("infra.connectorRef", "infra.namespace", "infra.releaseName",
+                "infra.infrastructureKey", "infra.connector"))
+            .envFqnIndex(0)
+            .infraFqnIndex(1)
+            .svcFqnIndex(2)
+            .build();
+
+    TestData data3 =
+        TestData.builder()
+            .pipelineYamlFile("pipelineWithV2ServiceEnv.yaml")
+            .serviceYamlFile("ServiceWithArtifactSourcesButFixedPrimaryRef.yaml")
+            .envYamlFile("environmentV2.yaml")
+            .infraYamlFile("k8sDirectInfrastructure.yaml")
+            .expectedSvcFqn(List.of("service.identifier", "service.name", "service.description", "service.type",
+                "service.tags", "service.gitOpsEnabled", "artifacts.primary.connectorRef",
+                "artifacts.primary.repositoryName", "artifacts.primary.artifactPath",
+                "artifacts.primary.repositoryFormat", "artifacts.primary.tag", "artifacts.primary.tagRegex",
+                "artifacts.primary.identifier", "artifacts.primary.type", "artifacts.primary.primaryArtifact",
+                "artifacts.primary.image", "artifacts.primary.imagePullSecret", "artifacts.primary.registryHostname",
+                "artifacts.primary.metadata", "serviceVariables.envVar1", "serviceVariables.svar1"))
+            .expectedEnvFqn(List.of("env.name", "env.identifier", "env.description", "env.type", "env.tags",
+                "env.environmentRef", "env.variables.envVar1", "env.variables.svar1"))
+            .expectedInfraFqn(List.of("infra.connectorRef", "infra.namespace", "infra.releaseName",
+                "infra.infrastructureKey", "infra.connector"))
+            .envFqnIndex(0)
+            .infraFqnIndex(1)
+            .svcFqnIndex(2)
+            .build();
+
+    return new Object[][] {{data1}, {data2}, {data3}};
+  }
+
+  @Value
+  @Builder
+  private static class TestData {
+    String pipelineYamlFile;
+    String serviceYamlFile;
+    String envYamlFile;
+    String infraYamlFile;
+
+    int svcFqnIndex;
+    int envFqnIndex;
+    int infraFqnIndex;
+
+    List<String> expectedSvcFqn;
+    List<String> expectedEnvFqn;
+    List<String> expectedInfraFqn;
   }
 }

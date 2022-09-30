@@ -29,6 +29,7 @@ import io.harness.cdng.execution.ExecutionInfoKey;
 import io.harness.cdng.execution.helper.ExecutionInfoKeyMapper;
 import io.harness.cdng.execution.helper.StageExecutionHelper;
 import io.harness.cdng.infra.InfrastructureMapper;
+import io.harness.cdng.infra.InfrastructureValidator;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.infra.beans.SshWinRmAwsInfrastructureOutcome;
 import io.harness.cdng.infra.yaml.AzureWebAppInfrastructure;
@@ -137,6 +138,7 @@ abstract class AbstractInfrastructureTaskExecutableStep {
   @Inject protected StageExecutionHelper stageExecutionHelper;
   @Inject protected InfrastructureMapper infrastructureMapper;
   @Inject CustomDeploymentInfrastructureHelper customDeploymentInfrastructureHelper;
+  @Inject private InfrastructureValidator infrastructureValidator;
 
   @Data
   @AllArgsConstructor
@@ -172,9 +174,12 @@ abstract class AbstractInfrastructureTaskExecutableStep {
     final EnvironmentOutcome environmentOutcome = outcomeSet.getEnvironmentOutcome();
     final ServiceStepOutcome serviceOutcome = outcomeSet.getServiceStepOutcome();
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
+
+    infrastructureValidator.validate(infrastructure);
+
     final InfrastructureOutcome infrastructureOutcome =
         infrastructureMapper.toOutcome(infrastructure, environmentOutcome, serviceOutcome,
-            ngAccess.getAccountIdentifier(), ngAccess.getProjectIdentifier(), ngAccess.getOrgIdentifier());
+            ngAccess.getAccountIdentifier(), ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier());
 
     // save infrastructure sweeping output for further use within the step
     boolean skipInstances = infrastructureStepHelper.getSkipInstances(infrastructure);

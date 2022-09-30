@@ -10,7 +10,6 @@ package io.harness.cdng.infra;
 import static io.harness.cdng.infra.beans.host.dto.HostFilterSpecDTO.HOSTS_SEPARATOR;
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import static java.lang.String.format;
 
@@ -60,16 +59,15 @@ import io.harness.steps.environment.EnvironmentOutcome;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
-import java.util.List;
 import java.util.Optional;
 import javax.annotation.Nonnull;
 import javax.validation.constraints.NotNull;
-import org.apache.commons.lang3.tuple.Pair;
 
 @OwnedBy(HarnessTeam.CDP)
 public class InfrastructureMapper {
-  @Inject private CustomDeploymentInfrastructureHelper customDeploymentInfrastructureHelper;
+  @Inject CustomDeploymentInfrastructureHelper customDeploymentInfrastructureHelper;
   @Named(DEFAULT_CONNECTOR_SERVICE) @Inject private ConnectorService connectorService;
+
   @NotNull
   public InfrastructureOutcome toOutcome(@Nonnull Infrastructure infrastructure, EnvironmentOutcome environmentOutcome,
       ServiceStepOutcome service, String accountIdentifier, String projectIdentifier, String orgIdentifier) {
@@ -77,7 +75,6 @@ public class InfrastructureMapper {
     switch (infrastructure.getKind()) {
       case InfrastructureKind.KUBERNETES_DIRECT:
         K8SDirectInfrastructure k8SDirectInfrastructure = (K8SDirectInfrastructure) infrastructure;
-        validateK8sDirectInfrastructure(k8SDirectInfrastructure);
         K8sDirectInfrastructureOutcome k8SDirectInfrastructureOutcome =
             K8sDirectInfrastructureOutcome.builder()
                 .connectorRef(k8SDirectInfrastructure.getConnectorRef().getValue())
@@ -94,7 +91,6 @@ public class InfrastructureMapper {
 
       case InfrastructureKind.KUBERNETES_GCP:
         K8sGcpInfrastructure k8sGcpInfrastructure = (K8sGcpInfrastructure) infrastructure;
-        validateK8sGcpInfrastructure(k8sGcpInfrastructure);
         K8sGcpInfrastructureOutcome k8sGcpInfrastructureOutcome =
             K8sGcpInfrastructureOutcome.builder()
                 .connectorRef(k8sGcpInfrastructure.getConnectorRef().getValue())
@@ -113,7 +109,6 @@ public class InfrastructureMapper {
       case InfrastructureKind.SERVERLESS_AWS_LAMBDA:
         ServerlessAwsLambdaInfrastructure serverlessAwsLambdaInfrastructure =
             (ServerlessAwsLambdaInfrastructure) infrastructure;
-        validateServerlessAwsInfrastructure(serverlessAwsLambdaInfrastructure);
         ServerlessAwsLambdaInfrastructureOutcome serverlessAwsLambdaInfrastructureOutcome =
             ServerlessAwsLambdaInfrastructureOutcome.builder()
                 .connectorRef(serverlessAwsLambdaInfrastructure.getConnectorRef().getValue())
@@ -130,7 +125,6 @@ public class InfrastructureMapper {
 
       case InfrastructureKind.KUBERNETES_AZURE:
         K8sAzureInfrastructure k8sAzureInfrastructure = (K8sAzureInfrastructure) infrastructure;
-        validateK8sAzureInfrastructure(k8sAzureInfrastructure);
         K8sAzureInfrastructureOutcome k8sAzureInfrastructureOutcome =
             K8sAzureInfrastructureOutcome.builder()
                 .connectorRef(getParameterFieldValue(k8sAzureInfrastructure.getConnectorRef()))
@@ -153,7 +147,6 @@ public class InfrastructureMapper {
       case InfrastructureKind.PDC:
         PdcInfrastructure pdcInfrastructure = (PdcInfrastructure) infrastructure;
         setPdcInfrastructureHostValueSplittingStringToListIfNeeded(pdcInfrastructure);
-        validatePdcInfrastructure(pdcInfrastructure);
         PdcInfrastructureOutcome pdcInfrastructureOutcome =
             PdcInfrastructureOutcome.builder()
                 .credentialsRef(getParameterFieldValue(pdcInfrastructure.getCredentialsRef()))
@@ -171,8 +164,6 @@ public class InfrastructureMapper {
 
       case InfrastructureKind.SSH_WINRM_AWS:
         SshWinRmAwsInfrastructure sshWinRmAwsInfrastructure = (SshWinRmAwsInfrastructure) infrastructure;
-        validateSshWinRmAwsInfrastructure(sshWinRmAwsInfrastructure);
-
         SshWinRmAwsInfrastructureOutcome sshWinRmAwsInfrastructureOutcome =
             SshWinRmAwsInfrastructureOutcome.builder()
                 .connectorRef(getParameterFieldValue(sshWinRmAwsInfrastructure.getConnectorRef()))
@@ -192,7 +183,6 @@ public class InfrastructureMapper {
 
       case InfrastructureKind.SSH_WINRM_AZURE:
         SshWinRmAzureInfrastructure sshWinRmAzureInfrastructure = (SshWinRmAzureInfrastructure) infrastructure;
-        validateSshWinRmAzureInfrastructure(sshWinRmAzureInfrastructure);
         SshWinRmAzureInfrastructureOutcome sshWinRmAzureInfrastructureOutcome =
             SshWinRmAzureInfrastructureOutcome.builder()
                 .connectorRef(getParameterFieldValue(sshWinRmAzureInfrastructure.getConnectorRef()))
@@ -212,7 +202,6 @@ public class InfrastructureMapper {
 
       case InfrastructureKind.AZURE_WEB_APP:
         AzureWebAppInfrastructure azureWebAppInfrastructure = (AzureWebAppInfrastructure) infrastructure;
-        validateAzureWebAppInfrastructure(azureWebAppInfrastructure);
         AzureWebAppInfrastructureOutcome azureWebAppInfrastructureOutcome =
             AzureWebAppInfrastructureOutcome.builder()
                 .connectorRef(azureWebAppInfrastructure.getConnectorRef().getValue())
@@ -229,7 +218,6 @@ public class InfrastructureMapper {
 
       case InfrastructureKind.ECS:
         EcsInfrastructure ecsInfrastructure = (EcsInfrastructure) infrastructure;
-        validateEcsInfrastructure(ecsInfrastructure);
         EcsInfrastructureOutcome ecsInfrastructureOutcome =
             EcsInfrastructureOutcome.builder()
                 .connectorRef(ecsInfrastructure.getConnectorRef().getValue())
@@ -325,161 +313,6 @@ public class InfrastructureMapper {
       InfrastructureOutcomeAbstract infrastructureOutcome, String infraIdentifier, String infraName) {
     infrastructureOutcome.setInfraIdentifier(infraIdentifier);
     infrastructureOutcome.setInfraName(infraName);
-  }
-
-  private void validateK8sDirectInfrastructure(K8SDirectInfrastructure infrastructure) {
-    if (ParameterField.isNull(infrastructure.getNamespace())
-        || isEmpty(getParameterFieldValue(infrastructure.getNamespace()))) {
-      throw new InvalidArgumentsException(Pair.of("namespace", "cannot be empty"));
-    }
-
-    if (!hasValueOrExpression(infrastructure.getReleaseName())) {
-      throw new InvalidArgumentsException(Pair.of("releaseName", "cannot be empty"));
-    }
-  }
-
-  private void validateK8sGcpInfrastructure(K8sGcpInfrastructure infrastructure) {
-    if (ParameterField.isNull(infrastructure.getNamespace())
-        || isEmpty(getParameterFieldValue(infrastructure.getNamespace()))) {
-      throw new InvalidArgumentsException(Pair.of("namespace", "cannot be empty"));
-    }
-
-    if (!hasValueOrExpression(infrastructure.getReleaseName())) {
-      throw new InvalidArgumentsException(Pair.of("releaseName", "cannot be empty"));
-    }
-
-    if (ParameterField.isNull(infrastructure.getCluster())
-        || isEmpty(getParameterFieldValue(infrastructure.getCluster()))) {
-      throw new InvalidArgumentsException(Pair.of("cluster", "cannot be empty"));
-    }
-  }
-
-  private void validateK8sAzureInfrastructure(K8sAzureInfrastructure infrastructure) {
-    if (ParameterField.isNull(infrastructure.getNamespace())
-        || isEmpty(getParameterFieldValue(infrastructure.getNamespace()))) {
-      throw new InvalidArgumentsException(Pair.of("namespace", "cannot be empty"));
-    }
-
-    if (!hasValueOrExpression(infrastructure.getReleaseName())) {
-      throw new InvalidArgumentsException(Pair.of("releaseName", "cannot be empty"));
-    }
-
-    if (ParameterField.isNull(infrastructure.getCluster())
-        || isEmpty(getParameterFieldValue(infrastructure.getCluster()))) {
-      throw new InvalidArgumentsException(Pair.of("cluster", "cannot be empty"));
-    }
-
-    if (ParameterField.isNull(infrastructure.getSubscriptionId())
-        || isEmpty(getParameterFieldValue(infrastructure.getSubscriptionId()))) {
-      throw new InvalidArgumentsException(Pair.of("subscription", "cannot be empty"));
-    }
-
-    if (ParameterField.isNull(infrastructure.getResourceGroup())
-        || isEmpty(getParameterFieldValue(infrastructure.getResourceGroup()))) {
-      throw new InvalidArgumentsException(Pair.of("resourceGroup", "cannot be empty"));
-    }
-  }
-
-  private void validateAzureWebAppInfrastructure(AzureWebAppInfrastructure infrastructure) {
-    if (ParameterField.isNull(infrastructure.getConnectorRef())
-        || isEmpty(getParameterFieldValue(infrastructure.getConnectorRef()))) {
-      throw new InvalidArgumentsException(Pair.of("connectorRef", "cannot be empty"));
-    }
-
-    if (ParameterField.isNull(infrastructure.getSubscriptionId())
-        || isEmpty(getParameterFieldValue(infrastructure.getSubscriptionId()))) {
-      throw new InvalidArgumentsException(Pair.of("subscription", "cannot be empty"));
-    }
-
-    if (ParameterField.isNull(infrastructure.getResourceGroup())
-        || isEmpty(getParameterFieldValue(infrastructure.getResourceGroup()))) {
-      throw new InvalidArgumentsException(Pair.of("resourceGroup", "cannot be empty"));
-    }
-  }
-
-  private void validatePdcInfrastructure(PdcInfrastructure infrastructure) {
-    if (!hasValueOrExpression(infrastructure.getCredentialsRef())) {
-      throw new InvalidArgumentsException(Pair.of("credentialsRef", "cannot be empty"));
-    }
-
-    if (!hasValueListOrExpression(infrastructure.getHosts())
-        && !hasValueOrExpression(infrastructure.getConnectorRef())) {
-      throw new InvalidArgumentsException(Pair.of("hosts", "cannot be empty"),
-          Pair.of("connectorRef", "cannot be empty"),
-          new IllegalArgumentException("hosts and connectorRef are not defined"));
-    }
-  }
-
-  private void validateServerlessAwsInfrastructure(ServerlessAwsLambdaInfrastructure infrastructure) {
-    if (ParameterField.isNull(infrastructure.getRegion())
-        || isEmpty(getParameterFieldValue(infrastructure.getRegion()))) {
-      throw new InvalidArgumentsException(Pair.of("region", "cannot be empty"));
-    }
-    if (!hasValueOrExpression(infrastructure.getStage())) {
-      throw new InvalidArgumentsException(Pair.of("stage", "cannot be empty"));
-    }
-  }
-
-  private static void validateSshWinRmAzureInfrastructure(SshWinRmAzureInfrastructure infrastructure) {
-    if (!hasValueOrExpression(infrastructure.getConnectorRef())) {
-      throw new InvalidArgumentsException(Pair.of("connectorRef", "cannot be empty"));
-    }
-    if (!hasValueOrExpression(infrastructure.getSubscriptionId())) {
-      throw new InvalidArgumentsException(Pair.of("subscriptionId", "cannot be empty"));
-    }
-    if (!hasValueOrExpression(infrastructure.getResourceGroup())) {
-      throw new InvalidArgumentsException(Pair.of("resourceGroup", "cannot be empty"));
-    }
-    if (!hasValueOrExpression(infrastructure.getCredentialsRef())) {
-      throw new InvalidArgumentsException(Pair.of("credentialsRef", "cannot be empty"));
-    }
-  }
-
-  private void validateSshWinRmAwsInfrastructure(SshWinRmAwsInfrastructure infrastructure) {
-    if (!hasValueOrExpression(infrastructure.getCredentialsRef())) {
-      throw new InvalidArgumentsException(Pair.of("credentialsRef", "cannot be empty"));
-    }
-    if (!hasValueOrExpression(infrastructure.getConnectorRef())) {
-      throw new InvalidArgumentsException(Pair.of("connectorRef", "cannot be empty"));
-    }
-    if (!hasValueOrExpression(infrastructure.getRegion())) {
-      throw new InvalidArgumentsException(Pair.of("region", "cannot be empty"));
-    }
-    if (!hasValueOrExpression(infrastructure.getHostConnectionType())) {
-      throw new InvalidArgumentsException(Pair.of("hostConnectionType", "cannot be empty"));
-    }
-
-    if (infrastructure.getAwsInstanceFilter() == null) {
-      throw new InvalidArgumentsException(Pair.of("awsInstanceFilter", "cannot be null"));
-    }
-  }
-
-  private static void validateEcsInfrastructure(EcsInfrastructure infrastructure) {
-    if (!hasValueOrExpression(infrastructure.getConnectorRef())) {
-      throw new InvalidArgumentsException(Pair.of("connectorRef", "cannot be empty"));
-    }
-    if (!hasValueOrExpression(infrastructure.getCluster())) {
-      throw new InvalidArgumentsException(Pair.of("cluster", "cannot be empty"));
-    }
-    if (!hasValueOrExpression(infrastructure.getRegion())) {
-      throw new InvalidArgumentsException(Pair.of("region", "cannot be empty"));
-    }
-  }
-
-  private static boolean hasValueOrExpression(ParameterField<String> parameterField) {
-    if (ParameterField.isNull(parameterField)) {
-      return false;
-    }
-
-    return parameterField.isExpression() || !isEmpty(getParameterFieldValue(parameterField));
-  }
-
-  private <T> boolean hasValueListOrExpression(ParameterField<List<T>> parameterField) {
-    if (ParameterField.isNull(parameterField)) {
-      return false;
-    }
-
-    return parameterField.isExpression() || !isEmpty(getParameterFieldValue(parameterField));
   }
 
   private String getValueOrExpression(ParameterField<String> parameterField) {
