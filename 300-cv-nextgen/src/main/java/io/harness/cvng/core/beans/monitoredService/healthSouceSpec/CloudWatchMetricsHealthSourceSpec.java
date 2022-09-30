@@ -21,6 +21,7 @@ import io.harness.cvng.core.validators.UniqueIdentifierCheck;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Sets;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -45,6 +46,8 @@ import org.apache.commons.lang3.StringUtils;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @NoArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
+@Schema(name = "CloudWatchMetricsHealthSource",
+    description = "This is the Cloud Watch Metric Health Source spec entity defined in Harness", hidden = true)
 public class CloudWatchMetricsHealthSourceSpec extends MetricHealthSourceSpec {
   @NotNull String region;
   @NotNull String feature;
