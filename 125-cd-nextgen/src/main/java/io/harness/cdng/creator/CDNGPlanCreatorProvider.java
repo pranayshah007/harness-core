@@ -204,10 +204,11 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
   private static final String HELM = "Helm";
   private static final String PROVISIONER = "Provisioner";
   private static final String SHELL_SCRIPT_PROVISIONER_STEM_METADATA = "Shell Script Provisioner";
+  private static final String SSH_WINRM = "SshWinRM";
 
   private static final List<String> CLOUDFORMATION_CATEGORY =
-      Arrays.asList(KUBERNETES, PROVISIONER, CLOUDFORMATION_STEP_METADATA, HELM, ECS);
-  private static final List<String> TERRAFORM_CATEGORY = Arrays.asList(KUBERNETES, PROVISIONER, HELM, ECS);
+      Arrays.asList(KUBERNETES, PROVISIONER, CLOUDFORMATION_STEP_METADATA, HELM, ECS, SSH_WINRM);
+  private static final List<String> TERRAFORM_CATEGORY = Arrays.asList(KUBERNETES, PROVISIONER, HELM, ECS, SSH_WINRM);
   private static final String BUILD_STEP = "Builds";
 
   private static final List<String> AZURE_RESOURCE_CATEGORY =
@@ -546,7 +547,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setType(StepSpecTypeConstants.COMMAND)
             .setFeatureRestrictionName(FeatureRestrictionName.COMMAND.name())
             .setFeatureFlag(FeatureName.SSH_NG.name())
-            .setStepMetaData(StepMetaData.newBuilder().addCategory("SshWinRM").addFolderPaths("SSH or WinRM").build())
+            .setStepMetaData(StepMetaData.newBuilder().addCategory(SSH_WINRM).addFolderPaths("SSH or WinRM").build())
             .build();
 
     StepInfo serverlessDeploy =

@@ -133,6 +133,8 @@ public class CENextGenConfiguration extends Configuration {
   @JsonProperty("lightwingAutoCUDClientConfig") private ServiceHttpClientConfig lightwingAutoCUDClientConfig;
   @JsonProperty(value = "enableLightwingAutoCUDDC") private boolean enableLightwingAutoCUDDC;
 
+  @JsonProperty(value = "enableOpentelemetry") private Boolean enableOpentelemetry;
+
   public SwaggerBundleConfiguration getSwaggerBundleConfiguration() {
     SwaggerBundleConfiguration defaultSwaggerConf = new SwaggerBundleConfiguration();
 

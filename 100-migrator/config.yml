@@ -681,6 +681,8 @@ cg:
     syncInterval: 15
     defaultCronExpression: "0 0/15 * 1/1 * ? *"
 
+  enableOpentelemetry: false
+
 ngClientConfig:
   baseUrl: https://127.0.0.1:7090
 
