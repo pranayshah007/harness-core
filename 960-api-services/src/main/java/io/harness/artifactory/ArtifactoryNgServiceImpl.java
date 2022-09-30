@@ -22,6 +22,8 @@ import static org.jfrog.artifactory.client.model.impl.PackageTypeImpl.maven;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.artifactory.DTO.ImagePathDtos;
+import io.harness.artifactory.DTO.ImagePathsDTO;
 import io.harness.artifacts.comparator.BuildDetailsComparatorDescending;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.ArtifactoryRegistryException;
@@ -122,10 +124,10 @@ public class ArtifactoryNgServiceImpl implements ArtifactoryNgService {
   }
 
   @Override
-  public List<String> getImagePaths(ArtifactoryConfigRequest artifactoryConfig, String repoKey) {
+  public ImagePathDtos getImagePaths(ArtifactoryConfigRequest artifactoryConfig, String repoKey) {
     return listDockerImages(getArtifactoryClient(artifactoryConfig), repoKey);
   }
-  private List<String> listDockerImages(Artifactory artifactory, String repoKey) {
+  private ImagePathDtos listDockerImages(Artifactory artifactory, String repoKey) {
     List<String> images = new ArrayList<>();
     String errorOnListingDockerimages = "Error occurred while listing docker images from artifactory %s for Repo %s";
     try {
@@ -148,12 +150,21 @@ public class ArtifactoryNgServiceImpl implements ArtifactoryNgService {
       }
     } catch (SocketTimeoutException e) {
       log.error(format(errorOnListingDockerimages, artifactory, repoKey), e);
-      return images;
+      return ImagePathDtos.builder()
+          .imagePaths(images.stream()
+                          .map(imagepath -> (ImagePathsDTO.builder().imagePath(imagepath).build()))
+                          .collect(Collectors.toList()))
+          .build();
+
     } catch (Exception e) {
       log.error(format(errorOnListingDockerimages, artifactory, repoKey), e);
       handleAndRethrow(e, USER);
     }
-    return images;
+    return ImagePathDtos.builder()
+        .imagePaths(images.stream()
+                        .map(imagepath -> (ImagePathsDTO.builder().imagePath(imagepath).build()))
+                        .collect(Collectors.toList()))
+        .build();
   }
   @Override
   public InputStream downloadArtifacts(ArtifactoryConfigRequest artifactoryConfig, String repoKey,

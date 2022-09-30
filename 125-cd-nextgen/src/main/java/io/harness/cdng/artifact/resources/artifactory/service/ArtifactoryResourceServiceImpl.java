@@ -9,7 +9,7 @@ package io.harness.cdng.artifact.resources.artifactory.service;
 
 import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
 import static io.harness.delegate.beans.artifactory.ArtifactoryTaskParams.TaskType.FETCH_BUILDS;
-import static io.harness.delegate.beans.artifactory.ArtifactoryTaskParams.TaskType.FETCH_IMAGE_PATH;
+import static io.harness.delegate.beans.artifactory.ArtifactoryTaskParams.TaskType.FETCH_IMAGE_PATHS;
 import static io.harness.delegate.beans.artifactory.ArtifactoryTaskParams.TaskType.FETCH_REPOSITORIES;
 import static io.harness.eraro.ErrorCode.ARTIFACT_SERVER_ERROR;
 import static io.harness.exception.WingsException.USER;
@@ -24,6 +24,7 @@ import io.harness.beans.IdentifierRef;
 import io.harness.cdng.artifact.resources.artifactory.dtos.ArtifactoryArtifactBuildDetailsDTO;
 import io.harness.cdng.artifact.resources.artifactory.dtos.ArtifactoryBuildDetailsDTO;
 import io.harness.cdng.artifact.resources.artifactory.dtos.ArtifactoryImagePathDTO;
+import io.harness.cdng.artifact.resources.artifactory.dtos.ArtifactoryImagePathsDTO;
 import io.harness.cdng.artifact.resources.artifactory.dtos.ArtifactoryRepoDetailsDTO;
 import io.harness.cdng.artifact.resources.artifactory.dtos.ArtifactoryRequestDTO;
 import io.harness.cdng.artifact.resources.artifactory.dtos.ArtifactoryResponseDTO;
@@ -288,7 +289,7 @@ public class ArtifactoryResourceServiceImpl implements ArtifactoryResourceServic
   }
 
   @Override
-  public ArtifactoryImagePathDTO getImagePath(@NonNull String repositoryType, @NonNull IdentifierRef connectorRef,
+  public ArtifactoryImagePathsDTO getImagePaths(@NonNull String repositoryType, @NonNull IdentifierRef connectorRef,
       @NonNull String orgIdentifier, @NonNull String projectIdentifier, @NotNull String repository) {
     Optional<ConnectorResponseDTO> connectorDTO = connectorService.get(connectorRef.getAccountIdentifier(),
         connectorRef.getOrgIdentifier(), connectorRef.getProjectIdentifier(), connectorRef.getIdentifier());
@@ -307,14 +308,17 @@ public class ArtifactoryResourceServiceImpl implements ArtifactoryResourceServic
         ArtifactoryTaskParams.builder()
             .artifactoryConnectorDTO(artifactoryConnectorDTO)
             .encryptedDataDetails(getEncryptionDetails(artifactoryConnectorDTO, baseNGAccess))
-            .taskType(FETCH_IMAGE_PATH)
+            .taskType(FETCH_IMAGE_PATHS)
             .repoType(repositoryType)
             .repoName(repository)
             .build(),
         NG_ARTIFACTORY_TASK.name());
-
-    return ArtifactoryImagePathDTO.builder()
-        .imagePath(getArtifactoryFetchImagePathResponse(delegateResponseData).getImagePath())
+    List<io.harness.delegate.beans.artifactory.ArtifactoryImagePathFetchDTO> artifactoryImagePathFetchDTOS =
+        getArtifactoryFetchImagePathResponse(delegateResponseData).getArtifactoryImagePathsFetchDTO().getImagePaths();
+    return ArtifactoryImagePathsDTO.builder()
+        .imagePaths(artifactoryImagePathFetchDTOS.stream()
+                        .map(e -> (ArtifactoryImagePathDTO.builder().imagePath(e.getImagePath()).build()))
+                        .collect(Collectors.toList()))
         .build();
   }
 

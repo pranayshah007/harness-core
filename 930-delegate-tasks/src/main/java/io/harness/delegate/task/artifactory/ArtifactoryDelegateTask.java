@@ -11,6 +11,7 @@ import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 
 import io.harness.artifactory.ArtifactoryConfigRequest;
 import io.harness.artifactory.ArtifactoryNgService;
+import io.harness.artifactory.DTO.ImagePathDtos;
 import io.harness.connector.ConnectorValidationResult;
 import io.harness.connector.task.artifactory.ArtifactoryValidationHandler;
 import io.harness.delegate.beans.DelegateResponseData;
@@ -19,6 +20,8 @@ import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.beans.artifactory.ArtifactoryFetchBuildsResponse;
 import io.harness.delegate.beans.artifactory.ArtifactoryFetchImagePathResponse;
 import io.harness.delegate.beans.artifactory.ArtifactoryFetchRepositoriesResponse;
+import io.harness.delegate.beans.artifactory.ArtifactoryImagePathFetchDTO;
+import io.harness.delegate.beans.artifactory.ArtifactoryImagePathsFetchDTO;
 import io.harness.delegate.beans.artifactory.ArtifactoryTaskParams;
 import io.harness.delegate.beans.artifactory.ArtifactoryTaskParams.TaskType;
 import io.harness.delegate.beans.artifactory.ArtifactoryTaskResponse;
@@ -40,6 +43,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 import org.apache.commons.lang3.NotImplementedException;
 
 public class ArtifactoryDelegateTask extends AbstractDelegateRunnableTask {
@@ -75,7 +79,7 @@ public class ArtifactoryDelegateTask extends AbstractDelegateRunnableTask {
         return fetchRepositories(artifactoryConnectorDTO, artifactoryTaskParams.getRepoType());
       case FETCH_BUILDS:
         return fetchFileBuilds(artifactoryTaskParams);
-      case FETCH_IMAGE_PATH:
+      case FETCH_IMAGE_PATHS:
         return fetchImagePath(artifactoryConnectorDTO, artifactoryTaskParams);
       default:
         throw new InvalidRequestException("No task found for " + taskType.name());
@@ -107,9 +111,18 @@ public class ArtifactoryDelegateTask extends AbstractDelegateRunnableTask {
     ArtifactoryConfigRequest artifactoryConfigRequest =
         artifactoryRequestMapper.toArtifactoryRequest(artifactoryConnectorDTO);
 
-    List<String> imagePaths =
+    ImagePathDtos imagePaths =
         artifactoryNgService.getImagePaths(artifactoryConfigRequest, artifactoryTaskParams.getRepoName());
-    return ArtifactoryFetchImagePathResponse.builder().commandExecutionStatus(SUCCESS).imagePath(imagePaths).build();
+    return ArtifactoryFetchImagePathResponse.builder()
+        .commandExecutionStatus(SUCCESS)
+        .artifactoryImagePathsFetchDTO(
+            ArtifactoryImagePathsFetchDTO.builder()
+                .imagePaths(imagePaths.getImagePaths()
+                                .stream()
+                                .map(a -> ArtifactoryImagePathFetchDTO.builder().imagePath(a.getImagePath()).build())
+                                .collect(Collectors.toList()))
+                .build())
+        .build();
   }
 
   private DelegateResponseData validateArtifactoryConfig(

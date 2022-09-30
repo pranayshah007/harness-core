@@ -6,7 +6,6 @@ import io.harness.delegate.beans.DelegateMetaInfo;
 import io.harness.delegate.beans.DelegateTaskNotifyResponseData;
 import io.harness.logging.CommandExecutionStatus;
 
-import java.util.List;
 import lombok.Builder;
 import lombok.Data;
 
@@ -16,5 +15,5 @@ import lombok.Data;
 public class ArtifactoryFetchImagePathResponse implements DelegateTaskNotifyResponseData {
   private CommandExecutionStatus commandExecutionStatus;
   private DelegateMetaInfo delegateMetaInfo;
-  private List<String> imagePath;
+  private ArtifactoryImagePathsFetchDTO artifactoryImagePathsFetchDTO;
 }

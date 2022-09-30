@@ -18,7 +18,7 @@ import io.harness.cdng.artifact.bean.ArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.ArtifactoryRegistryArtifactConfig;
 import io.harness.cdng.artifact.resources.artifactory.dtos.ArtifactoryArtifactBuildDetailsDTO;
 import io.harness.cdng.artifact.resources.artifactory.dtos.ArtifactoryBuildDetailsDTO;
-import io.harness.cdng.artifact.resources.artifactory.dtos.ArtifactoryImagePathDTO;
+import io.harness.cdng.artifact.resources.artifactory.dtos.ArtifactoryImagePathsDTO;
 import io.harness.cdng.artifact.resources.artifactory.dtos.ArtifactoryRepoDetailsDTO;
 import io.harness.cdng.artifact.resources.artifactory.dtos.ArtifactoryRequestDTO;
 import io.harness.cdng.artifact.resources.artifactory.dtos.ArtifactoryResponseDTO;
@@ -211,9 +211,9 @@ public class ArtifactoryArtifactResource {
   }
 
   @GET
-  @Path("ImagePath")
+  @Path("ImagePaths")
   @ApiOperation(value = "Gets Image Path details", nickname = "getImagePathForArtifactory")
-  public ResponseDTO<ArtifactoryImagePathDTO> getImagePath(
+  public ResponseDTO<ArtifactoryImagePathsDTO> getImagePaths(
       @QueryParam("connectorRef") String artifactoryConnectorIdentifier,
       @QueryParam("repositoryType") @DefaultValue("any") String repositoryType,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
@@ -233,9 +233,9 @@ public class ArtifactoryArtifactResource {
     }
     IdentifierRef connectorRef = IdentifierRefHelper.getIdentifierRef(
         artifactoryConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
-    ArtifactoryImagePathDTO artifactoryImagePathDTO = artifactoryResourceService.getImagePath(
+    ArtifactoryImagePathsDTO artifactoryImagePathsDTO = artifactoryResourceService.getImagePaths(
         repositoryType, connectorRef, orgIdentifier, projectIdentifier, repository);
-    return ResponseDTO.newResponse(artifactoryImagePathDTO);
+    return ResponseDTO.newResponse(artifactoryImagePathsDTO);
   }
   @GET
   @Path("artifactBuildsDetails")

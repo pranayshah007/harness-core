@@ -1,4 +1,4 @@
-package io.harness.cdng.artifact.resources.artifactory.dtos;
+package io.harness.delegate.beans.artifactory;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.AccessLevel;
@@ -10,6 +10,6 @@ import lombok.experimental.FieldDefaults;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class ArtifactoryImagePathDTO {
+public class ArtifactoryImagePathFetchDTO {
   String imagePath;
 }
