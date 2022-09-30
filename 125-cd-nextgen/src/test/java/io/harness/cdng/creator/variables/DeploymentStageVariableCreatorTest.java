@@ -518,12 +518,12 @@ public class DeploymentStageVariableCreatorTest extends CategoryTest {
                 "service.tags", "service.gitOpsEnabled", "artifacts.primary.connectorRef",
                 "artifacts.primary.imagePath", "artifacts.primary.tag", "artifacts.primary.tagRegex",
                 "artifacts.primary.identifier", "artifacts.primary.type", "artifacts.primary.primaryArtifact",
-                "artifacts.primary.image", "artifacts.primary.imagePullSecret", "artifacts.primary.registryHostname",
-                "artifacts.primary.region", "artifacts.primary.repositoryName", "artifacts.primary.artifactPath",
-                "artifacts.primary.repositoryFormat", "artifacts.primary.metadata", "artifacts.primary.subscription",
-                "artifacts.primary.registry", "artifacts.primary.repository", "artifacts.primary.project",
-                "artifacts.primary.package", "artifacts.primary.version", "artifacts.primary.versionRegex",
-                "serviceVariables.envVar1", "serviceVariables.svar1"))
+                "artifacts.primary.image", "artifacts.primary.imagePullSecret", "artifacts.primary.label",
+                "artifacts.primary.registryHostname", "artifacts.primary.region", "artifacts.primary.repositoryName",
+                "artifacts.primary.artifactPath", "artifacts.primary.repositoryFormat", "artifacts.primary.metadata",
+                "artifacts.primary.subscription", "artifacts.primary.registry", "artifacts.primary.repository",
+                "artifacts.primary.project", "artifacts.primary.package", "artifacts.primary.version",
+                "artifacts.primary.versionRegex", "serviceVariables.envVar1", "serviceVariables.svar1"))
             .expectedEnvFqn(List.of("env.name", "env.identifier", "env.description", "env.type", "env.tags",
                 "env.environmentRef", "env.variables.envVar1", "env.variables.svar1"))
             .expectedInfraFqn(List.of("infra.connectorRef", "infra.namespace", "infra.releaseName",
