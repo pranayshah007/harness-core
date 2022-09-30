@@ -51,7 +51,7 @@ import org.springframework.lang.Nullable;
 @OwnedBy(HarnessTeam.PL)
 public class HMongoTemplate extends MongoTemplate implements HealthMonitor {
   private static final int RETRIES = 3;
-  private final int MAX_TIME_IN_MILLIS_FOR_MONGO_OPERATIONS;
+  private final int maxOperationInMillis;
 
   public static final FindAndModifyOptions upsertReturnNewOptions =
       new FindAndModifyOptions().upsert(true).returnNew(true);
@@ -66,7 +66,7 @@ public class HMongoTemplate extends MongoTemplate implements HealthMonitor {
   public HMongoTemplate(MongoDbFactory mongoDbFactory, MongoConverter mongoConverter, MongoConfig mongoConfig) {
     super(mongoDbFactory, mongoConverter);
     this.traceMode = mongoConfig.getTraceMode();
-    this.MAX_TIME_IN_MILLIS_FOR_MONGO_OPERATIONS = mongoConfig.getMaxOperationTimeInMillis();
+    this.maxOperationInMillis = mongoConfig.getMaxOperationTimeInMillis();
   }
 
   @Nullable
@@ -89,7 +89,7 @@ public class HMongoTemplate extends MongoTemplate implements HealthMonitor {
       Query query, Update update, FindAndModifyOptions options, Class<T> entityClass, String collectionName) {
     try {
       traceQuery(query, entityClass);
-      query.maxTime(Duration.ofMillis(MAX_TIME_IN_MILLIS_FOR_MONGO_OPERATIONS));
+      query.maxTime(Duration.ofMillis(maxOperationInMillis));
       return super.findAndModify(query, update, options, entityClass, collectionName);
     } catch (UncategorizedMongoDbException ex) {
       log.error(ERROR_MSG_QUERY_EXCEEDED_TIME_LIMIT, query);
@@ -116,7 +116,7 @@ public class HMongoTemplate extends MongoTemplate implements HealthMonitor {
   public <T> List<T> find(Query query, Class<T> entityClass, String collectionName) {
     try {
       traceQuery(query, entityClass);
-      query.maxTime(Duration.ofMillis(MAX_TIME_IN_MILLIS_FOR_MONGO_OPERATIONS));
+      query.maxTime(Duration.ofMillis(maxOperationInMillis));
       return super.find(query, entityClass, collectionName);
     } catch (UncategorizedMongoDbException ex) {
       log.error(ERROR_MSG_QUERY_EXCEEDED_TIME_LIMIT, query);
@@ -134,7 +134,7 @@ public class HMongoTemplate extends MongoTemplate implements HealthMonitor {
   public <T> T findOne(Query query, Class<T> entityClass, String collectionName) {
     try {
       traceQuery(query, entityClass);
-      query.maxTime(Duration.ofMillis(MAX_TIME_IN_MILLIS_FOR_MONGO_OPERATIONS));
+      query.maxTime(Duration.ofMillis(maxOperationInMillis));
       return super.findOne(query, entityClass, collectionName);
     } catch (UncategorizedMongoDbException ex) {
       log.error(ERROR_MSG_QUERY_EXCEEDED_TIME_LIMIT, query);
@@ -147,7 +147,7 @@ public class HMongoTemplate extends MongoTemplate implements HealthMonitor {
       Query query, String field, String collectionName, Class<?> entityClass, Class<T> resultClass) {
     try {
       traceQuery(query, entityClass);
-      query.maxTime(Duration.ofMillis(MAX_TIME_IN_MILLIS_FOR_MONGO_OPERATIONS));
+      query.maxTime(Duration.ofMillis(maxOperationInMillis));
       return super.findDistinct(query, field, collectionName, entityClass, resultClass);
     } catch (UncategorizedMongoDbException ex) {
       log.error(ERROR_MSG_QUERY_EXCEEDED_TIME_LIMIT, query);
@@ -160,7 +160,7 @@ public class HMongoTemplate extends MongoTemplate implements HealthMonitor {
       String collectionName, Class<T> resultType) {
     try {
       traceQuery(query, entityType);
-      query.maxTime(Duration.ofMillis(MAX_TIME_IN_MILLIS_FOR_MONGO_OPERATIONS));
+      query.maxTime(Duration.ofMillis(maxOperationInMillis));
       return super.findAndReplace(query, replacement, options, entityType, collectionName, resultType);
     } catch (UncategorizedMongoDbException ex) {
       log.error(ERROR_MSG_QUERY_EXCEEDED_TIME_LIMIT, query);
@@ -172,7 +172,7 @@ public class HMongoTemplate extends MongoTemplate implements HealthMonitor {
   public <T> T findAndRemove(Query query, Class<T> entityClass, String collectionName) {
     try {
       traceQuery(query, entityClass);
-      query.maxTime(Duration.ofMillis(MAX_TIME_IN_MILLIS_FOR_MONGO_OPERATIONS));
+      query.maxTime(Duration.ofMillis(maxOperationInMillis));
       return super.findAndRemove(query, entityClass, collectionName);
     } catch (UncategorizedMongoDbException ex) {
       log.error(ERROR_MSG_QUERY_EXCEEDED_TIME_LIMIT, query);
@@ -184,7 +184,7 @@ public class HMongoTemplate extends MongoTemplate implements HealthMonitor {
   public <T> List<T> findAllAndRemove(Query query, Class<T> entityClass, String collectionName) {
     try {
       traceQuery(query, entityClass);
-      query.maxTime(Duration.ofMillis(MAX_TIME_IN_MILLIS_FOR_MONGO_OPERATIONS));
+      query.maxTime(Duration.ofMillis(maxOperationInMillis));
       return super.findAllAndRemove(query, entityClass, collectionName);
     } catch (UncategorizedMongoDbException ex) {
       log.error(ERROR_MSG_QUERY_EXCEEDED_TIME_LIMIT, query);
@@ -197,7 +197,7 @@ public class HMongoTemplate extends MongoTemplate implements HealthMonitor {
       String reduceFunction, @Nullable MapReduceOptions mapReduceOptions, Class<T> entityClass) {
     try {
       traceQuery(query, entityClass);
-      query.maxTime(Duration.ofMillis(MAX_TIME_IN_MILLIS_FOR_MONGO_OPERATIONS));
+      query.maxTime(Duration.ofMillis(maxOperationInMillis));
       return super.mapReduce(query, inputCollectionName, mapFunction, reduceFunction, mapReduceOptions, entityClass);
     } catch (UncategorizedMongoDbException ex) {
       log.error(ERROR_MSG_QUERY_EXCEEDED_TIME_LIMIT, query);
@@ -208,7 +208,7 @@ public class HMongoTemplate extends MongoTemplate implements HealthMonitor {
   @Override
   protected long doCount(String collectionName, Document filter, CountOptions options) {
     try {
-      options.maxTime(MAX_TIME_IN_MILLIS_FOR_MONGO_OPERATIONS, TimeUnit.MILLISECONDS);
+      options.maxTime(maxOperationInMillis, TimeUnit.MILLISECONDS);
       return super.doCount(collectionName, filter, options);
     } catch (UncategorizedMongoDbException ex) {
       log.error("count operation for collection {} exceeded max time limit.", collectionName);
@@ -220,7 +220,7 @@ public class HMongoTemplate extends MongoTemplate implements HealthMonitor {
   public <T> CloseableIterator<T> stream(Query query, Class<T> entityType, String collectionName) {
     try {
       traceQuery(query, entityType);
-      query.maxTime(Duration.ofMillis(MAX_TIME_IN_MILLIS_FOR_MONGO_OPERATIONS));
+      query.maxTime(Duration.ofMillis(maxOperationInMillis));
       return super.stream(query, entityType, collectionName);
     } catch (UncategorizedMongoDbException ex) {
       log.error(ERROR_MSG_QUERY_EXCEEDED_TIME_LIMIT, query);
@@ -231,7 +231,7 @@ public class HMongoTemplate extends MongoTemplate implements HealthMonitor {
   @Override
   public void executeQuery(Query query, String collectionName, DocumentCallbackHandler dch) {
     try {
-      query.maxTime(Duration.ofMillis(MAX_TIME_IN_MILLIS_FOR_MONGO_OPERATIONS));
+      query.maxTime(Duration.ofMillis(maxOperationInMillis));
       super.executeQuery(query, collectionName, dch);
     } catch (UncategorizedMongoDbException ex) {
       log.error(ERROR_MSG_QUERY_EXCEEDED_TIME_LIMIT, query);
