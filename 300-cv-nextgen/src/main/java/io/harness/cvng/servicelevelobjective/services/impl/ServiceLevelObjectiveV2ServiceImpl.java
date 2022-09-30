@@ -28,7 +28,6 @@ import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveV
 import io.harness.cvng.servicelevelobjective.transformer.servicelevelindicator.SLOTargetTransformer;
 import io.harness.cvng.servicelevelobjective.transformer.servicelevelobjectivev2.SLOV2Transformer;
 import io.harness.exception.DuplicateFieldException;
-import io.harness.exception.InvalidRequestException;
 import io.harness.persistence.HPersistence;
 
 import com.google.common.base.Preconditions;
@@ -77,10 +76,11 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
     AbstractServiceLevelObjective serviceLevelObjective =
         getEntity(projectParams, serviceLevelObjectiveDTO.getIdentifier());
     if (serviceLevelObjective == null) {
-      throw new InvalidRequestException(String.format(
-          "SLO  with identifier %s, accountId %s, orgIdentifier %s and projectIdentifier %s  is not present",
+      log.error(String.format(
+          "[SLOV2 Not Found] SLO  with identifier %s, accountId %s, orgIdentifier %s and projectIdentifier %s  is not present",
           serviceLevelObjectiveDTO.getIdentifier(), projectParams.getAccountIdentifier(),
           projectParams.getOrgIdentifier(), projectParams.getProjectIdentifier()));
+      return ServiceLevelObjectiveV2Response.builder().build();
     }
     validate(serviceLevelObjectiveDTO, projectParams);
     updateSLOV2Entity(projectParams, serviceLevelObjective, serviceLevelObjectiveDTO, serviceLevelIndicators);
@@ -157,10 +157,11 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
   public boolean delete(ProjectParams projectParams, String identifier) {
     AbstractServiceLevelObjective serviceLevelObjectiveV2 = getEntity(projectParams, identifier);
     if (serviceLevelObjectiveV2 == null) {
-      throw new InvalidRequestException(String.format(
-          "SLO  with identifier %s, accountId %s, orgIdentifier %s and projectIdentifier %s  is not present",
+      log.error(String.format(
+          "[SLOV2 Not Found] SLO  with identifier %s, accountId %s, orgIdentifier %s and projectIdentifier %s  is not present",
           identifier, projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier(),
           projectParams.getProjectIdentifier()));
+      return false;
     }
     return hPersistence.delete(serviceLevelObjectiveV2);
   }
