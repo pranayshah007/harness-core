@@ -85,6 +85,7 @@ public class SlackMessageDispatcherTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void shouldSendApprovalRequiredMessageWithIconOverride() {
     when(featureFlagService.isEnabled(FeatureName.SLACK_APPROVALS, ACCOUNT_ID)).thenReturn(false);
+    when(featureFlagService.isEnabled(FeatureName.SEND_SLACK_NOTIFICATION_FROM_DELEGATE, ACCOUNT_ID)).thenReturn(false);
     InformationNotification notification =
         InformationNotification.builder()
             .accountId(ACCOUNT_ID)
@@ -114,6 +115,7 @@ public class SlackMessageDispatcherTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void shouldSendSlackApprovalMessageWithIconOverride() {
     when(featureFlagService.isEnabled(FeatureName.SLACK_APPROVALS, ACCOUNT_ID)).thenReturn(true);
+    when(featureFlagService.isEnabled(FeatureName.SEND_SLACK_NOTIFICATION_FROM_DELEGATE, ACCOUNT_ID)).thenReturn(false);
     InformationNotification notification =
         InformationNotification.builder()
             .accountId(ACCOUNT_ID)
