@@ -57,7 +57,7 @@ public class HMongoTemplate extends MongoTemplate implements HealthMonitor {
       new FindAndModifyOptions().upsert(true).returnNew(true);
   public static final FindAndModifyOptions upsertReturnOldOptions =
       new FindAndModifyOptions().upsert(true).returnNew(false);
-  private static final String ERROR_MSG_QUERY_EXCEEDED_TIME_LIMIT = "query {} exceeded max time limit.";
+  private static final String ERROR_MSG_QUERY_EXCEEDED_TIME_LIMIT = "query {} exceeded max time limit of {} ms.";
 
   private final TraceMode traceMode;
 
@@ -92,7 +92,7 @@ public class HMongoTemplate extends MongoTemplate implements HealthMonitor {
       query.maxTime(Duration.ofMillis(maxOperationInMillis));
       return super.findAndModify(query, update, options, entityClass, collectionName);
     } catch (UncategorizedMongoDbException ex) {
-      log.error(ERROR_MSG_QUERY_EXCEEDED_TIME_LIMIT, query);
+      log.error(ERROR_MSG_QUERY_EXCEEDED_TIME_LIMIT, query, maxOperationInMillis);
       throw ex;
     }
   }
@@ -119,7 +119,7 @@ public class HMongoTemplate extends MongoTemplate implements HealthMonitor {
       query.maxTime(Duration.ofMillis(maxOperationInMillis));
       return super.find(query, entityClass, collectionName);
     } catch (UncategorizedMongoDbException ex) {
-      log.error(ERROR_MSG_QUERY_EXCEEDED_TIME_LIMIT, query);
+      log.error(ERROR_MSG_QUERY_EXCEEDED_TIME_LIMIT, query, maxOperationInMillis);
       throw ex;
     }
   }
@@ -137,7 +137,7 @@ public class HMongoTemplate extends MongoTemplate implements HealthMonitor {
       query.maxTime(Duration.ofMillis(maxOperationInMillis));
       return super.findOne(query, entityClass, collectionName);
     } catch (UncategorizedMongoDbException ex) {
-      log.error(ERROR_MSG_QUERY_EXCEEDED_TIME_LIMIT, query);
+      log.error(ERROR_MSG_QUERY_EXCEEDED_TIME_LIMIT, query, maxOperationInMillis);
       throw ex;
     }
   }
@@ -150,7 +150,7 @@ public class HMongoTemplate extends MongoTemplate implements HealthMonitor {
       query.maxTime(Duration.ofMillis(maxOperationInMillis));
       return super.findDistinct(query, field, collectionName, entityClass, resultClass);
     } catch (UncategorizedMongoDbException ex) {
-      log.error(ERROR_MSG_QUERY_EXCEEDED_TIME_LIMIT, query);
+      log.error(ERROR_MSG_QUERY_EXCEEDED_TIME_LIMIT, query, maxOperationInMillis);
       throw ex;
     }
   }
@@ -163,7 +163,7 @@ public class HMongoTemplate extends MongoTemplate implements HealthMonitor {
       query.maxTime(Duration.ofMillis(maxOperationInMillis));
       return super.findAndReplace(query, replacement, options, entityType, collectionName, resultType);
     } catch (UncategorizedMongoDbException ex) {
-      log.error(ERROR_MSG_QUERY_EXCEEDED_TIME_LIMIT, query);
+      log.error(ERROR_MSG_QUERY_EXCEEDED_TIME_LIMIT, query, maxOperationInMillis);
       throw ex;
     }
   }
@@ -175,7 +175,7 @@ public class HMongoTemplate extends MongoTemplate implements HealthMonitor {
       query.maxTime(Duration.ofMillis(maxOperationInMillis));
       return super.findAndRemove(query, entityClass, collectionName);
     } catch (UncategorizedMongoDbException ex) {
-      log.error(ERROR_MSG_QUERY_EXCEEDED_TIME_LIMIT, query);
+      log.error(ERROR_MSG_QUERY_EXCEEDED_TIME_LIMIT, query, maxOperationInMillis);
       throw ex;
     }
   }
@@ -187,7 +187,7 @@ public class HMongoTemplate extends MongoTemplate implements HealthMonitor {
       query.maxTime(Duration.ofMillis(maxOperationInMillis));
       return super.findAllAndRemove(query, entityClass, collectionName);
     } catch (UncategorizedMongoDbException ex) {
-      log.error(ERROR_MSG_QUERY_EXCEEDED_TIME_LIMIT, query);
+      log.error(ERROR_MSG_QUERY_EXCEEDED_TIME_LIMIT, query, maxOperationInMillis);
       throw ex;
     }
   }
@@ -200,7 +200,7 @@ public class HMongoTemplate extends MongoTemplate implements HealthMonitor {
       query.maxTime(Duration.ofMillis(maxOperationInMillis));
       return super.mapReduce(query, inputCollectionName, mapFunction, reduceFunction, mapReduceOptions, entityClass);
     } catch (UncategorizedMongoDbException ex) {
-      log.error(ERROR_MSG_QUERY_EXCEEDED_TIME_LIMIT, query);
+      log.error(ERROR_MSG_QUERY_EXCEEDED_TIME_LIMIT, query, maxOperationInMillis);
       throw ex;
     }
   }
@@ -223,7 +223,7 @@ public class HMongoTemplate extends MongoTemplate implements HealthMonitor {
       query.maxTime(Duration.ofMillis(maxOperationInMillis));
       return super.stream(query, entityType, collectionName);
     } catch (UncategorizedMongoDbException ex) {
-      log.error(ERROR_MSG_QUERY_EXCEEDED_TIME_LIMIT, query);
+      log.error(ERROR_MSG_QUERY_EXCEEDED_TIME_LIMIT, query, maxOperationInMillis);
       throw ex;
     }
   }
@@ -234,7 +234,7 @@ public class HMongoTemplate extends MongoTemplate implements HealthMonitor {
       query.maxTime(Duration.ofMillis(maxOperationInMillis));
       super.executeQuery(query, collectionName, dch);
     } catch (UncategorizedMongoDbException ex) {
-      log.error(ERROR_MSG_QUERY_EXCEEDED_TIME_LIMIT, query);
+      log.error(ERROR_MSG_QUERY_EXCEEDED_TIME_LIMIT, query, maxOperationInMillis);
       throw ex;
     }
   }
