@@ -102,6 +102,7 @@ public class K8sNodeInfoTasklet implements Tasklet {
 
   public InstanceInfo process(PublishedMessage publishedMessage) {
     NodeInfo nodeInfo = (NodeInfo) publishedMessage.getMessage();
+    log.info("node info {}", nodeInfo.toString());
     String accountId = publishedMessage.getAccountId();
     String clusterId = nodeInfo.getClusterId();
     String nodeUid = nodeInfo.getNodeUid();

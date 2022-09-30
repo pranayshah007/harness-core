@@ -156,6 +156,7 @@ public class K8sPodInfoTasklet implements Tasklet {
   public InstanceInfo process(PublishedMessage publishedMessage) {
     String accountId = publishedMessage.getAccountId();
     PodInfo podInfo = (PodInfo) publishedMessage.getMessage();
+    log.info("Pod info {}", podInfo);
     String podUid = podInfo.getPodUid();
     String clusterId = podInfo.getClusterId();
     HarnessServiceInfo harnessServiceInfo = null;
