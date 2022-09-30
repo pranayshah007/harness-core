@@ -468,3 +468,5 @@ debeziumConsumerConfigs:
     debeziumBatchSize: ${DEBEZIUM_CONSUMER_BATCH_SIZE:-100}
 
 cdTsDbRetentionPeriodMonths: 7
+
+enableOpentelemetry: false

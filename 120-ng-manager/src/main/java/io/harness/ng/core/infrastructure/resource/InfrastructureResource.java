@@ -13,6 +13,8 @@ import static io.harness.rbac.CDNGRbacPermissions.ENVIRONMENT_UPDATE_PERMISSION;
 import static io.harness.rbac.CDNGRbacPermissions.ENVIRONMENT_VIEW_PERMISSION;
 import static io.harness.utils.PageUtils.getNGPageResponse;
 
+import static java.lang.String.format;
+
 import io.harness.NGCommonEntityConstants;
 import io.harness.NGResourceFilterConstants;
 import io.harness.accesscontrol.AccountIdentifier;
@@ -43,6 +45,9 @@ import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.infrastructure.InfrastructureType;
 import io.harness.ng.core.infrastructure.dto.InfrastructureRequestDTO;
 import io.harness.ng.core.infrastructure.dto.InfrastructureResponse;
+import io.harness.ng.core.infrastructure.dto.InfrastructureYamlMetadata;
+import io.harness.ng.core.infrastructure.dto.InfrastructureYamlMetadataApiInput;
+import io.harness.ng.core.infrastructure.dto.InfrastructureYamlMetadataDTO;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity.InfrastructureEntityKeys;
 import io.harness.ng.core.infrastructure.mappers.InfrastructureFilterHelper;
@@ -84,6 +89,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -123,7 +129,10 @@ import org.springframework.data.mongodb.core.query.Criteria;
               schema = @Schema(implementation = ErrorDTO.class))
     })
 @OwnedBy(HarnessTeam.PIPELINE)
+@Slf4j
 public class InfrastructureResource {
+  public static final String INFRASTRUCTURE_YAML_METADATA_INPUT_PARAM_MESSAGE =
+      "List of Infrastructure Identifiers for the entities";
   @Inject private final InfrastructureEntityService infrastructureEntityService;
   @Inject private final OrgAndProjectValidationHelper orgAndProjectValidationHelper;
   @Inject private final EnvironmentValidationHelper environmentValidationHelper;
@@ -170,7 +179,7 @@ public class InfrastructureResource {
       }
     } else {
       throw new NotFoundException(
-          String.format("Infrastructure with identifier [%s] in project [%s], org [%s], environment [%s] not found",
+          format("Infrastructure with identifier [%s] in project [%s], org [%s], environment [%s] not found",
               infraIdentifier, projectIdentifier, orgIdentifier, envIdentifier));
     }
     return ResponseDTO.newResponse(infraEntity.map(InfrastructureMapper::toResponseWrapper).orElse(null));
@@ -351,6 +360,8 @@ public class InfrastructureResource {
           NGResourceFilterConstants.SEARCH_TERM_KEY) String searchTerm,
       @Parameter(description = "List of InfrastructureIds") @QueryParam("infraIdentifiers")
       List<String> infraIdentifiers, @QueryParam("deploymentType") ServiceDefinitionType deploymentType,
+      @QueryParam("deploymentTemplateIdentifier") String deploymentTemplateIdentifier,
+      @QueryParam("versionLabel") String versionLabel,
       @Parameter(
           description =
               "Specifies the sorting criteria of the list. Like sorting based on the last updated entity, alphabetical sorting in an ascending or descending order")
@@ -369,7 +380,11 @@ public class InfrastructureResource {
       pageRequest = PageUtils.getPageRequest(page, size, sort);
     }
     Page<InfrastructureEntity> infraEntities = infrastructureEntityService.list(criteria, pageRequest);
-
+    if (ServiceDefinitionType.CUSTOM_DEPLOYMENT == deploymentType && !isEmpty(deploymentTemplateIdentifier)
+        && !isEmpty(versionLabel)) {
+      infraEntities = customDeploymentYamlHelper.getFilteredInfraEntities(
+          page, size, sort, deploymentTemplateIdentifier, versionLabel, infraEntities);
+    }
     return ResponseDTO.newResponse(getNGPageResponse(infraEntities.map(InfrastructureMapper::toResponseWrapper)));
   }
 
@@ -400,7 +415,7 @@ public class InfrastructureResource {
       @Parameter(description = "Specify whether Deploy to all infrastructures in the environment") @QueryParam(
           NGCommonEntityConstants.DEPLOY_TO_ALL) @DefaultValue("false") boolean deployToAll) {
     String infrastructureInputsYaml = infrastructureEntityService.createInfrastructureInputsFromYaml(
-        accountId, projectIdentifier, orgIdentifier, environmentIdentifier, infraIdentifiers, deployToAll);
+        accountId, orgIdentifier, projectIdentifier, environmentIdentifier, infraIdentifiers, deployToAll);
     return ResponseDTO.newResponse(
         NGEntityTemplateResponseDTO.builder().inputSetTemplateYaml(infrastructureInputsYaml).build());
   }
@@ -421,7 +436,7 @@ public class InfrastructureResource {
 
   private void checkForAccessOrThrow(String accountId, String orgIdentifier, String projectIdentifier,
       String envIdentifier, String permission, String action) {
-    String exceptionMessage = String.format("unable to %s infrastructure(s)", action);
+    String exceptionMessage = format("unable to %s infrastructure(s)", action);
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgIdentifier, projectIdentifier),
         Resource.of(NGResourceType.ENVIRONMENT, envIdentifier), permission, exceptionMessage);
   }
@@ -444,8 +459,31 @@ public class InfrastructureResource {
 
       if (!accessMap.get(key)) {
         throw new NGAccessDeniedException(
-            String.format("Missing permissions %s on %s", permission, key), WingsException.USER, null);
+            format("Missing permissions %s on %s", permission, key), WingsException.USER, null);
       }
     }
+  }
+
+  @POST
+  @Path("/infrastructureYamlMetadata")
+  @ApiOperation(value = "This api returns infrastructure YAML and runtime input YAML",
+      nickname = "getInfrastructureYamlAndRuntimeInputs")
+  @Hidden
+  public ResponseDTO<InfrastructureYamlMetadataDTO>
+  getInfrastructureYamlAndRuntimeInputs(@Parameter(description = INFRASTRUCTURE_YAML_METADATA_INPUT_PARAM_MESSAGE)
+                                        @Valid @NotNull InfrastructureYamlMetadataApiInput infrastructureYamlMetadata,
+      @Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
+          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
+      @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
+      @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
+      @Parameter(description = ENVIRONMENT_PARAM_MESSAGE) @NotNull @QueryParam(
+          NGCommonEntityConstants.ENVIRONMENT_IDENTIFIER_KEY) @ResourceIdentifier String environmentIdentifier) {
+    List<InfrastructureYamlMetadata> infrastructureYamlMetadataList =
+        infrastructureEntityService.createInfrastructureYamlMetadata(accountId, orgIdentifier, projectIdentifier,
+            environmentIdentifier, infrastructureYamlMetadata.getInfrastructureIdentifiers());
+    return ResponseDTO.newResponse(
+        InfrastructureYamlMetadataDTO.builder().infrastructureYamlMetadataList(infrastructureYamlMetadataList).build());
   }
 }

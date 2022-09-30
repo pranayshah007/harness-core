@@ -16,6 +16,7 @@ import static software.wings.settings.SettingVariableTypes.GIT;
 import static software.wings.settings.SettingVariableTypes.HTTP_HELM_REPO;
 import static software.wings.settings.SettingVariableTypes.KUBERNETES_CLUSTER;
 import static software.wings.settings.SettingVariableTypes.NEXUS;
+import static software.wings.settings.SettingVariableTypes.OCI_HELM_REPO;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -37,6 +38,7 @@ public class ConnectorFactory {
   private static final BaseConnector azureConnector = new AzureConnectorImpl();
   private static final BaseConnector httpHelmConnector = new HttpHelmConnectorImpl();
   private static final BaseConnector awsConnector = new AWSConnectorImpl();
+  private static final BaseConnector ociHelmConnector = new OCIHelmConnectorImpl();
   private static final BaseConnector unsupportedConnector = new UnsupportedConnectorImpl();
 
   public static final Map<SettingVariableTypes, BaseConnector> CONNECTOR_FACTORY_MAP =
@@ -50,6 +52,7 @@ public class ConnectorFactory {
           .put(AZURE, azureConnector)
           .put(HTTP_HELM_REPO, httpHelmConnector)
           .put(AWS, awsConnector)
+          .put(OCI_HELM_REPO, ociHelmConnector)
           .build();
 
   public static BaseConnector getConnector(SettingAttribute settingAttribute) {

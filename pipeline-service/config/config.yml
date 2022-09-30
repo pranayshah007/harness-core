@@ -422,6 +422,8 @@ orchestrationLogConfiguration:
 
 planCreatorMergeServiceDependencyBatch: ${PLAN_CREATOR_DEPENDENCY_BATCH:-50}
 
+enableOpentelemetry: false
+
 ############ Json Expansion Config variables #################
 
 jsonExpansionPoolConfig:

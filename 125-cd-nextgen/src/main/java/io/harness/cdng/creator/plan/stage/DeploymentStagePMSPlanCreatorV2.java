@@ -306,7 +306,11 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
   }
 
   private boolean useNewFlow(PlanCreationContext ctx, DeploymentStageNode stageNode) {
-    DeploymentStageConfig deploymentStageConfig = stageNode.getDeploymentStageConfig();
+    final DeploymentStageConfig deploymentStageConfig = stageNode.getDeploymentStageConfig();
+    // Todo(Yogesh): For gitops, use the old flow only, for now
+    if (deploymentStageConfig.getGitOpsEnabled()) {
+      return false;
+    }
     boolean isServiceV2 = deploymentStageConfig.getService() != null
         && ParameterField.isNotNull(deploymentStageConfig.getService().getServiceRef());
     boolean serviceV2UseFromStage = deploymentStageConfig.getService() != null

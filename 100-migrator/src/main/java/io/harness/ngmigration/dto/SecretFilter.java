@@ -26,7 +26,7 @@ import lombok.EqualsAndHashCode;
 @Data
 @EqualsAndHashCode(callSuper = true)
 @JsonTypeName("SECRET")
-public class ImportSecretsDTO extends BaseImportDTO {
+public class SecretFilter extends Filter {
   @Parameter(
       description =
           "ALL: To migrate all secrets. ID: TO migrate only specific connectors. Specific type is current not supported")

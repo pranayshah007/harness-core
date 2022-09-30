@@ -84,17 +84,8 @@ public class ApproveOrRejectApprovalsDataFetcher
       throw new InvalidRequestException("Execution does not exist or access is denied", WingsException.USER);
     }
 
-    boolean hasEmailAndFFEnabled = (approveOrRejectApprovalsInput.getUserEmail() != null)
-        && featureFlagService.isEnabled(
-            FeatureName.SPG_ENABLE_EMAIL_TO_APPROVE_OR_REJECT_GRAPHQL, execution.getAccountId());
     GraphQLContext graphQLContext = mutationContext.getDataFetchingEnvironment().getContext();
     ApiKeyEntry apiKeyEntry = graphQLContext.get("apiKeyEntry");
-
-    if (hasEmailAndFFEnabled) {
-      if (!isUserPresentInApiKey(approveOrRejectApprovalsInput.getUserEmail(), apiKeyEntry)) {
-        throw new InvalidRequestException("User email is invalid or your user cannot access", WingsException.USER);
-      }
-    }
 
     ApprovalDetails approvalDetails = constructApprovalDetailsFromInput(approveOrRejectApprovalsInput, apiKeyEntry);
     final String appId = approveOrRejectApprovalsInput.getApplicationId();
@@ -102,13 +93,8 @@ public class ApproveOrRejectApprovalsDataFetcher
         workflowExecutionService.fetchApprovalStateExecutionDataFromWorkflowExecution(
             appId, executionId, null, approvalDetails);
 
-    if (hasEmailAndFFEnabled) {
-      if (!hasValidUserEmail(
-              approveOrRejectApprovalsInput.getUserEmail(), execution.getAccountId(), approvalStateExecutionData)) {
-        throw new InvalidRequestException("User email is invalid or your user cannot access", WingsException.USER);
-      }
-    }
-
+    validateEmailWithApprovalUserGroups(approveOrRejectApprovalsInput.getUserEmail(), execution.getAccountId(),
+        approvalStateExecutionData.getUserGroups());
     verifyApproveOrRejectApprovalsInput(approveOrRejectApprovalsInput, approvalStateExecutionData);
 
     if (approvalStateExecutionData.isAutoRejectPreviousDeployments()
@@ -179,40 +165,23 @@ public class ApproveOrRejectApprovalsDataFetcher
   }
 
   @VisibleForTesting
-  boolean isUserPresentInApiKey(String email, ApiKeyEntry apiKeyEntry) {
-    User user = userService.getUserByEmail(email);
-    if (user == null) {
-      return false;
-    }
-
-    List<UserGroup> listUserGroupByUser = authService.getUserGroups(apiKeyEntry.getAccountId(), user);
-    List<UserGroup> userGroupByApiKey = apiKeyEntry.getUserGroups();
-
-    for (UserGroup userGroup : listUserGroupByUser) {
-      if (userGroupByApiKey.contains(userGroup)) {
-        return true;
+  void validateEmailWithApprovalUserGroups(String email, String accountId, List<String> approvalUserGroups) {
+    if (email != null && featureFlagService.isEnabled(FeatureName.SPG_ENABLE_EMAIL_VALIDATION, accountId)) {
+      boolean isValidated = false;
+      User user = userService.getUserByEmail(email);
+      if (user != null) {
+        List<UserGroup> userGroups = authService.getUserGroups(accountId, user);
+        for (UserGroup userGroup : userGroups) {
+          if (approvalUserGroups.contains(userGroup.getUuid())) {
+            isValidated = true;
+            break;
+          }
+        }
+      }
+      if (!isValidated) {
+        throw new InvalidRequestException(
+            "User with the provided e-mail is not authorized to approve", WingsException.USER);
       }
     }
-
-    return false;
-  }
-
-  @VisibleForTesting
-  boolean hasValidUserEmail(String email, String accountId, ApprovalStateExecutionData approvalStateExecutionData) {
-    User user = userService.getUserByEmail(email);
-    if (user == null) {
-      return false;
-    }
-
-    List<UserGroup> listUserGroupByUser = authService.getUserGroups(accountId, user);
-    List<String> userGroupApprovalStep = approvalStateExecutionData.getUserGroups();
-
-    for (UserGroup userGroup : listUserGroupByUser) {
-      if (userGroupApprovalStep.contains(userGroup.getUuid())) {
-        return true;
-      }
-    }
-
-    return false;
   }
 }

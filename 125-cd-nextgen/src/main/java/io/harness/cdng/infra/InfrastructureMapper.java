@@ -9,6 +9,7 @@ package io.harness.cdng.infra;
 
 import static io.harness.cdng.infra.beans.host.dto.HostFilterSpecDTO.HOSTS_SEPARATOR;
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
+import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import static java.lang.String.format;
@@ -19,8 +20,8 @@ import io.harness.cdng.customdeploymentng.CustomDeploymentInfrastructureHelper;
 import io.harness.cdng.infra.beans.AzureWebAppInfrastructureOutcome;
 import io.harness.cdng.infra.beans.CustomDeploymentInfrastructureOutcome;
 import io.harness.cdng.infra.beans.EcsInfrastructureOutcome;
-import io.harness.cdng.infra.beans.InfrastructureDetailsAbstract;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
+import io.harness.cdng.infra.beans.InfrastructureOutcomeAbstract;
 import io.harness.cdng.infra.beans.K8sAzureInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sDirectInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sGcpInfrastructureOutcome;
@@ -49,6 +50,8 @@ import io.harness.cdng.infra.yaml.SshWinRmAwsInfrastructure;
 import io.harness.cdng.infra.yaml.SshWinRmAzureInfrastructure;
 import io.harness.cdng.service.steps.ServiceStepOutcome;
 import io.harness.common.ParameterFieldHelper;
+import io.harness.connector.ConnectorResponseDTO;
+import io.harness.connector.services.ConnectorService;
 import io.harness.delegate.beans.connector.pdcconnector.HostFilterType;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.ng.core.infrastructure.InfrastructureKind;
@@ -56,19 +59,21 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.steps.environment.EnvironmentOutcome;
 
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import java.util.List;
+import java.util.Optional;
 import javax.annotation.Nonnull;
 import javax.validation.constraints.NotNull;
-import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.tuple.Pair;
 
-@AllArgsConstructor(onConstructor = @__({ @Inject }))
 @OwnedBy(HarnessTeam.CDP)
 public class InfrastructureMapper {
-  @Inject CustomDeploymentInfrastructureHelper customDeploymentInfrastructureHelper;
+  @Inject private CustomDeploymentInfrastructureHelper customDeploymentInfrastructureHelper;
+  @Named(DEFAULT_CONNECTOR_SERVICE) @Inject private ConnectorService connectorService;
   @NotNull
   public InfrastructureOutcome toOutcome(@Nonnull Infrastructure infrastructure, EnvironmentOutcome environmentOutcome,
       ServiceStepOutcome service, String accountIdentifier, String projectIdentifier, String orgIdentifier) {
+    final InfrastructureOutcomeAbstract infrastructureOutcome;
     switch (infrastructure.getKind()) {
       case InfrastructureKind.KUBERNETES_DIRECT:
         K8SDirectInfrastructure k8SDirectInfrastructure = (K8SDirectInfrastructure) infrastructure;
@@ -84,7 +89,8 @@ public class InfrastructureMapper {
                 .build();
         setInfraIdentifierAndName(k8SDirectInfrastructureOutcome, k8SDirectInfrastructure.getInfraIdentifier(),
             k8SDirectInfrastructure.getInfraName());
-        return k8SDirectInfrastructureOutcome;
+        infrastructureOutcome = k8SDirectInfrastructureOutcome;
+        break;
 
       case InfrastructureKind.KUBERNETES_GCP:
         K8sGcpInfrastructure k8sGcpInfrastructure = (K8sGcpInfrastructure) infrastructure;
@@ -101,7 +107,8 @@ public class InfrastructureMapper {
                 .build();
         setInfraIdentifierAndName(k8sGcpInfrastructureOutcome, k8sGcpInfrastructure.getInfraIdentifier(),
             k8sGcpInfrastructure.getInfraName());
-        return k8sGcpInfrastructureOutcome;
+        infrastructureOutcome = k8sGcpInfrastructureOutcome;
+        break;
 
       case InfrastructureKind.SERVERLESS_AWS_LAMBDA:
         ServerlessAwsLambdaInfrastructure serverlessAwsLambdaInfrastructure =
@@ -118,7 +125,8 @@ public class InfrastructureMapper {
                 .build();
         setInfraIdentifierAndName(serverlessAwsLambdaInfrastructureOutcome,
             serverlessAwsLambdaInfrastructure.getInfraIdentifier(), serverlessAwsLambdaInfrastructure.getInfraName());
-        return serverlessAwsLambdaInfrastructureOutcome;
+        infrastructureOutcome = serverlessAwsLambdaInfrastructureOutcome;
+        break;
 
       case InfrastructureKind.KUBERNETES_AZURE:
         K8sAzureInfrastructure k8sAzureInfrastructure = (K8sAzureInfrastructure) infrastructure;
@@ -139,7 +147,8 @@ public class InfrastructureMapper {
                 .build();
         setInfraIdentifierAndName(k8sAzureInfrastructureOutcome, k8sAzureInfrastructure.getInfraIdentifier(),
             k8sAzureInfrastructure.getInfraName());
-        return k8sAzureInfrastructureOutcome;
+        infrastructureOutcome = k8sAzureInfrastructureOutcome;
+        break;
 
       case InfrastructureKind.PDC:
         PdcInfrastructure pdcInfrastructure = (PdcInfrastructure) infrastructure;
@@ -157,7 +166,8 @@ public class InfrastructureMapper {
                 .build();
         setInfraIdentifierAndName(
             pdcInfrastructureOutcome, pdcInfrastructure.getInfraIdentifier(), pdcInfrastructure.getInfraName());
-        return pdcInfrastructureOutcome;
+        infrastructureOutcome = pdcInfrastructureOutcome;
+        break;
 
       case InfrastructureKind.SSH_WINRM_AWS:
         SshWinRmAwsInfrastructure sshWinRmAwsInfrastructure = (SshWinRmAwsInfrastructure) infrastructure;
@@ -177,7 +187,8 @@ public class InfrastructureMapper {
 
         setInfraIdentifierAndName(sshWinRmAwsInfrastructureOutcome, sshWinRmAwsInfrastructure.getInfraIdentifier(),
             sshWinRmAwsInfrastructure.getInfraName());
-        return sshWinRmAwsInfrastructureOutcome;
+        infrastructureOutcome = sshWinRmAwsInfrastructureOutcome;
+        break;
 
       case InfrastructureKind.SSH_WINRM_AZURE:
         SshWinRmAzureInfrastructure sshWinRmAzureInfrastructure = (SshWinRmAzureInfrastructure) infrastructure;
@@ -196,7 +207,8 @@ public class InfrastructureMapper {
                 .build();
         setInfraIdentifierAndName(sshWinRmAzureInfrastructureOutcome, sshWinRmAzureInfrastructure.getInfraIdentifier(),
             sshWinRmAzureInfrastructure.getInfraName());
-        return sshWinRmAzureInfrastructureOutcome;
+        infrastructureOutcome = sshWinRmAzureInfrastructureOutcome;
+        break;
 
       case InfrastructureKind.AZURE_WEB_APP:
         AzureWebAppInfrastructure azureWebAppInfrastructure = (AzureWebAppInfrastructure) infrastructure;
@@ -212,7 +224,8 @@ public class InfrastructureMapper {
                 .build();
         setInfraIdentifierAndName(azureWebAppInfrastructureOutcome, azureWebAppInfrastructure.getInfraIdentifier(),
             azureWebAppInfrastructure.getInfraName());
-        return azureWebAppInfrastructureOutcome;
+        infrastructureOutcome = azureWebAppInfrastructureOutcome;
+        break;
 
       case InfrastructureKind.ECS:
         EcsInfrastructure ecsInfrastructure = (EcsInfrastructure) infrastructure;
@@ -222,13 +235,13 @@ public class InfrastructureMapper {
                 .connectorRef(ecsInfrastructure.getConnectorRef().getValue())
                 .region(ecsInfrastructure.getRegion().getValue())
                 .cluster(ecsInfrastructure.getCluster().getValue())
-                .environment(environmentOutcome)
                 .infrastructureKey(InfrastructureKey.generate(
                     service, environmentOutcome, ecsInfrastructure.getInfrastructureKeyValues()))
                 .build();
         setInfraIdentifierAndName(
             ecsInfrastructureOutcome, ecsInfrastructure.getInfraIdentifier(), ecsInfrastructure.getInfraName());
-        return ecsInfrastructureOutcome;
+        infrastructureOutcome = ecsInfrastructureOutcome;
+        break;
 
       case InfrastructureKind.CUSTOM_DEPLOYMENT:
         CustomDeploymentInfrastructure customDeploymentInfrastructure = (CustomDeploymentInfrastructure) infrastructure;
@@ -245,16 +258,33 @@ public class InfrastructureMapper {
                     templateYaml, accountIdentifier, orgIdentifier, projectIdentifier))
                 .instancesListPath(
                     customDeploymentInfrastructureHelper.getInstancePath(templateYaml, accountIdentifier))
-                .environment(environmentOutcome)
                 .infrastructureKey(InfrastructureKey.generate(
                     service, environmentOutcome, customDeploymentInfrastructure.getInfrastructureKeyValues()))
                 .build();
         setInfraIdentifierAndName(customDeploymentInfrastructureOutcome,
             customDeploymentInfrastructure.getInfraIdentifier(), customDeploymentInfrastructure.getInfraName());
-        return customDeploymentInfrastructureOutcome;
+        infrastructureOutcome = customDeploymentInfrastructureOutcome;
+        break;
 
       default:
         throw new InvalidArgumentsException(format("Unknown Infrastructure Kind : [%s]", infrastructure.getKind()));
+    }
+
+    setConnectorInOutcome(infrastructure, accountIdentifier, projectIdentifier, orgIdentifier, infrastructureOutcome);
+
+    return infrastructureOutcome;
+  }
+
+  private void setConnectorInOutcome(Infrastructure infrastructure, String accountIdentifier, String projectIdentifier,
+      String orgIdentifier, InfrastructureOutcomeAbstract infrastructureOutcome) {
+    if (ParameterField.isNotNull(infrastructure.getConnectorReference())
+        && !infrastructure.getConnectorReference().isExpression()) {
+      Optional<ConnectorResponseDTO> connector = connectorService.getByRef(
+          accountIdentifier, orgIdentifier, projectIdentifier, infrastructure.getConnectorReference().getValue());
+
+      connector.ifPresent(c
+          -> infrastructureOutcome.setConnector(
+              Connector.builder().name(c.getConnector() != null ? c.getConnector().getName() : "").build()));
     }
   }
 
@@ -292,9 +322,9 @@ public class InfrastructureMapper {
   }
 
   public void setInfraIdentifierAndName(
-      InfrastructureDetailsAbstract infrastructureDetailsAbstract, String infraIdentifier, String infraName) {
-    infrastructureDetailsAbstract.setInfraIdentifier(infraIdentifier);
-    infrastructureDetailsAbstract.setInfraName(infraName);
+      InfrastructureOutcomeAbstract infrastructureOutcome, String infraIdentifier, String infraName) {
+    infrastructureOutcome.setInfraIdentifier(infraIdentifier);
+    infrastructureOutcome.setInfraName(infraName);
   }
 
   private void validateK8sDirectInfrastructure(K8SDirectInfrastructure infrastructure) {

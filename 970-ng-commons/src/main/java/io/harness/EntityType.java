@@ -324,7 +324,11 @@ public enum EntityType {
       IdentifierRef.class, EntityYamlRootNames.ECS_BLUE_GREEN_SWAP_TARGET_GROUPS),
   @JsonProperty(EntityTypeConstants.ECS_BLUE_GREEN_ROLLBACK)
   ECS_BLUE_GREEN_ROLLBACK_STEP(ModuleType.CD, EntityTypeConstants.ECS_BLUE_GREEN_ROLLBACK, IdentifierRef.class,
-      EntityYamlRootNames.ECS_BLUE_GREEN_ROLLBACK);
+      EntityYamlRootNames.ECS_BLUE_GREEN_ROLLBACK),
+  @JsonProperty(EntityTypeConstants.SHELL_SCRIPT_PROVISION_STEP)
+  SHELL_SCRIPT_PROVISION_STEP(ModuleType.CD, EntityTypeConstants.SHELL_SCRIPT_PROVISION_STEP, IdentifierRef.class,
+      EntityYamlRootNames.SHELL_SCRIPT_PROVISION_STEP);
+
   private final ModuleType moduleType;
   String yamlName;
   List<String> yamlRootElementString;

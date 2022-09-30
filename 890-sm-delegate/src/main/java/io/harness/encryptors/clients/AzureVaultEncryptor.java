@@ -214,7 +214,7 @@ public class AzureVaultEncryptor implements VaultEncryptor {
     } catch (Exception ex) {
       log.error("Failed to delete key {} from azure vault: {}", existingRecord.getEncryptionKey(),
           azureConfig.getVaultName(), ex);
-      return false;
+      throw new SecretManagementDelegateException(AZURE_KEY_VAULT_OPERATION_ERROR, ex.toString(), ex, USER);
     }
   }
 

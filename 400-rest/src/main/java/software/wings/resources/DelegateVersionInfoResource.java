@@ -11,6 +11,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static java.util.Collections.emptyList;
 
+import io.harness.delegate.service.intfc.DelegateRingService;
 import io.harness.exception.InvalidRequestException;
 import io.harness.rest.RestResponse;
 import io.harness.security.annotations.DelegateAuth2;
@@ -23,6 +24,7 @@ import com.codahale.metrics.annotation.Timed;
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
 import java.util.List;
+import java.util.Map;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -39,7 +41,7 @@ import org.hibernate.validator.constraints.NotEmpty;
 @RequiredArgsConstructor(onConstructor_ = @Inject)
 public class DelegateVersionInfoResource {
   private final AccountService accountService;
-  private final io.harness.delegate.service.intfc.DelegateRingService delegateRingService;
+  private final DelegateRingService delegateRingService;
 
   @GET
   @Path("/delegate/{ring}")
@@ -53,6 +55,15 @@ public class DelegateVersionInfoResource {
     }
 
     return new RestResponse<>(emptyList());
+  }
+
+  @GET
+  @Path("/delegate/rings")
+  @Timed
+  @ExceptionMetered
+  @PublicApi
+  public RestResponse<Map<String, List<String>>> getDelegateVersionFromRing() {
+    return new RestResponse<>(delegateRingService.getDelegateVersionsForAllRings(false));
   }
 
   @GET
@@ -72,6 +83,15 @@ public class DelegateVersionInfoResource {
   public RestResponse<String> getWatcherVersionFromRing(@PathParam("ring") String ringName) {
     final String ringVersion = delegateRingService.getWatcherVersionsForRing(ringName, false);
     return new RestResponse<>(ringVersion);
+  }
+
+  @GET
+  @Path("/watcher/rings")
+  @Timed
+  @ExceptionMetered
+  @PublicApi
+  public RestResponse<Map<String, String>> getWatcherVersionFromRing() {
+    return new RestResponse<>(delegateRingService.getWatcherVersionsAllRings(false));
   }
 
   @GET

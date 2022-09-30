@@ -254,7 +254,7 @@ public class ServiceOverrideServiceImpl implements ServiceOverrideService {
   }
 
   @Override
-  public String createServiceOverrideInputsYaml(String accountId, String projectIdentifier, String orgIdentifier,
+  public String createServiceOverrideInputsYaml(String accountId, String orgIdentifier, String projectIdentifier,
       String environmentIdentifier, String serviceIdentifier) {
     Map<String, Object> yamlInputs = createServiceOverrideInputsYamlInternal(
         accountId, orgIdentifier, projectIdentifier, environmentIdentifier, serviceIdentifier);
