@@ -186,23 +186,20 @@ public class TerraformProvisionTaskTest extends WingsBaseTest {
     sourceRepoEncryptionDetails = new ArrayList<>();
     sourceRepoEncryptionDetails.add(EncryptedDataDetail.builder().build());
 
+    terraformProvisionTaskSpy = spy(terraformProvisionTask);
+
     doAnswer(invocation -> {
       String dest = invocation.getArgument(1);
       FileUtils.copyDirectory(new File(GIT_REPO_DIRECTORY), new File(dest));
       return null;
     })
-        .when(gitClient)
+        .when(terraformProvisionTaskSpy)
         .cloneRepoAndCopyToWorkingDir(any(GitOperationContext.class), anyString());
-
-    terraformProvisionTaskSpy = spy(terraformProvisionTask);
 
     doReturn(0)
         .when(terraformProvisionTaskSpy)
         .executeShellCommand(
             anyString(), anyString(), any(TerraformProvisionParameters.class), anyMap(), any(LogOutputStream.class));
-    doReturn("latestCommit")
-        .when(terraformProvisionTaskSpy)
-        .getLatestCommitSHAFromLocalRepo(any(GitOperationContext.class));
     doReturn(new ArrayList<String>())
         .when(terraformProvisionTaskSpy)
         .getWorkspacesList(anyString(), any(), anyLong(), any(), any());
@@ -879,12 +876,13 @@ public class TerraformProvisionTaskTest extends WingsBaseTest {
 
   private void verify(TerraformExecutionData terraformExecutionData, TerraformCommand command) throws IOException {
     Mockito.verify(mockEncryptionService, times(1)).decrypt(gitConfig, sourceRepoEncryptionDetails, false);
-    Mockito.verify(gitClient, times(1)).cloneRepoAndCopyToWorkingDir(any(GitOperationContext.class), anyString());
+    Mockito.verify(terraformProvisionTaskSpy, times(1))
+        .cloneRepoAndCopyToWorkingDir(any(GitOperationContext.class), anyString());
     Mockito.verify(delegateFileManager, times(1)).upload(any(DelegateFile.class), any(InputStream.class));
     assertThat(terraformExecutionData.getWorkspace()).isEqualTo(WORKSPACE);
     assertThat(terraformExecutionData.getEntityId()).isEqualTo(ENTITY_ID);
     assertThat(terraformExecutionData.getCommandExecuted()).isEqualTo(command);
-    assertThat(terraformExecutionData.getSourceRepoReference()).isEqualTo("latestCommit");
+    assertThat(terraformExecutionData.getSourceRepoReference()).isEqualTo(null);
     assertThat(terraformExecutionData.getExecutionStatus()).isEqualTo(ExecutionStatus.SUCCESS);
   }
 

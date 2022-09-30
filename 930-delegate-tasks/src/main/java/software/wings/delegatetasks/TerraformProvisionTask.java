@@ -69,6 +69,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.TerraformCommandExecutionException;
 import io.harness.exception.WingsException;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
+import io.harness.filesystem.FileIo;
 import io.harness.git.model.GitRepositoryType;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
@@ -245,10 +246,11 @@ public class TerraformProvisionTask extends AbstractDelegateRunnableTask {
       fetchBackendConfigGitFiles(parameters, backendConfigsDir, logCallback);
     }
 
+    String latestCommitSHA;
     try {
       encryptionService.decrypt(gitConfig, parameters.getSourceRepoEncryptionDetails(), false);
       ExceptionMessageSanitizer.storeAllSecretsForSanitizing(gitConfig, parameters.getSourceRepoEncryptionDetails());
-      gitClient.cloneRepoAndCopyToWorkingDir(gitOperationContext, workingDir);
+      latestCommitSHA = cloneRepoAndCopyToWorkingDir(gitOperationContext, workingDir);
     } catch (Exception ex) {
       Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(ex);
       log.error("Exception in cloning & copying files to provisioner specific directory", sanitizedException);
@@ -275,9 +277,7 @@ public class TerraformProvisionTask extends AbstractDelegateRunnableTask {
          PlanHumanReadableOutputStream planHumanReadableOutputStream = new PlanHumanReadableOutputStream();
          PlanLogOutputStream planLogOutputStream = new PlanLogOutputStream()) {
       ensureLocalCleanup(scriptDirectory);
-      String sourceRepoReference = parameters.getCommitId() != null
-          ? parameters.getCommitId()
-          : getLatestCommitSHAFromLocalRepo(gitOperationContext);
+      String sourceRepoReference = parameters.getCommitId() != null ? parameters.getCommitId() : latestCommitSHA;
 
       Map<String, String> awsAuthEnvVariables = null;
       if (parameters.getAwsConfig() != null && parameters.getAwsConfigEncryptionDetails() != null) {
@@ -999,6 +999,18 @@ public class TerraformProvisionTask extends AbstractDelegateRunnableTask {
     return TerraformExecutionData.builder().executionStatus(ExecutionStatus.FAILED).errorMessage(message).build();
   }
 
+  /*
+Copies Files from the directory common to the git connector to a directory specific to the app
+and provisioner
+ */
+  private void copyFilesToWorkingDirectory(String sourceDir, String destinationDir) throws IOException {
+    File dest = new File(destinationDir);
+    File src = new File(sourceDir);
+    deleteDirectoryAndItsContentIfExists(dest.getAbsolutePath());
+    FileUtils.copyDirectory(src, dest);
+    FileIo.waitForDirectoryToBeAccessibleOutOfProcess(dest.getPath(), 10);
+  }
+
   @VisibleForTesting
   public void getCommandLineVariableParams(TerraformProvisionParameters parameters, File tfVariablesFile,
       StringBuilder executeParams, StringBuilder uiLogParams) throws IOException {
@@ -1129,6 +1141,13 @@ public class TerraformProvisionTask extends AbstractDelegateRunnableTask {
 
   private String color(String line, LogColor color, LogWeight logWeight) {
     return LogHelper.doneColoring(LogHelper.color(line, color, logWeight));
+  }
+
+  public synchronized String cloneRepoAndCopyToWorkingDir(
+      GitOperationContext gitOperationContext, String destinationDir) throws IOException {
+    gitClient.ensureRepoLocallyClonedAndUpdated(gitOperationContext);
+    copyFilesToWorkingDirectory(gitClientHelper.getRepoDirectory(gitOperationContext), destinationDir);
+    return getLatestCommitSHAFromLocalRepo(gitOperationContext);
   }
 
   @AllArgsConstructor

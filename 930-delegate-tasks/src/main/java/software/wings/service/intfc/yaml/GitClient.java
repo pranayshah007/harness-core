@@ -21,8 +21,6 @@ import software.wings.beans.yaml.GitFetchFilesRequest;
 import software.wings.beans.yaml.GitFetchFilesResult;
 import software.wings.beans.yaml.GitFilesBetweenCommitsRequest;
 
-import java.io.IOException;
-
 /**
  * Created by anubhaw on 10/16/17.
  */
@@ -36,8 +34,6 @@ import java.io.IOException;
 @BreakDependencyOn("software.wings.beans.GitConfig")
 public interface GitClient {
   void ensureRepoLocallyClonedAndUpdated(GitOperationContext gitOperationContext);
-
-  void cloneRepoAndCopyToWorkingDir(GitOperationContext gitOperationContext, String destDir) throws IOException;
 
   GitDiffResult diff(GitOperationContext gitOperationContext, boolean excludeFilesOutsideSetupFolder);
 
