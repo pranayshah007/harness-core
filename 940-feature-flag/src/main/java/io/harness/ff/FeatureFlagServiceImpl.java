@@ -223,7 +223,7 @@ public class FeatureFlagServiceImpl implements FeatureFlagService {
        */
       accountId = FeatureFlagConstants.STATIC_ACCOUNT_ID;
     }
-    Target target = Target.builder().identifier(accountId).name(accountId).build();
+    Target target = Target.builder().identifier(accountId).build();
     return cfClient.get().boolVariation(featureName.name(), target, false);
   }
 
