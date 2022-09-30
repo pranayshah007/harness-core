@@ -197,3 +197,4 @@ io.harness.plancreator.strategy.ExpressionAxisConfig
 io.harness.yaml.core.failurestrategy.ProceedWithDefaultValuesFailureActionConfig
 io.harness.beans.sweepingoutputs.StepArtifactSweepingOutput
 io.harness.yaml.core.failurestrategy.rollback.PipelineRollbackFailureActionConfig
+io.harness.beans.yaml.extended.TISplitStrategy
