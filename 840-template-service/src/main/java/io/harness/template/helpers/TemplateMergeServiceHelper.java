@@ -7,11 +7,18 @@
 
 package io.harness.template.helpers;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.google.inject.Inject;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.pms.merger.helpers.MergeHelper.mergeInputSetFormatYamlToOriginYaml;
+import static io.harness.pms.yaml.validation.RuntimeInputValuesValidator.validateStaticValues;
+import static io.harness.template.beans.NGTemplateConstants.DUMMY_NODE;
+import static io.harness.template.beans.NGTemplateConstants.SPEC;
+import static io.harness.template.beans.NGTemplateConstants.STABLE_VERSION;
+import static io.harness.template.beans.NGTemplateConstants.TEMPLATE;
+import static io.harness.template.beans.NGTemplateConstants.TEMPLATE_INPUTS;
+import static io.harness.template.beans.NGTemplateConstants.TEMPLATE_REF;
+import static io.harness.template.beans.NGTemplateConstants.TEMPLATE_VERSION_LABEL;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
@@ -38,9 +45,12 @@ import io.harness.template.services.NGTemplateServiceHelper;
 import io.harness.template.utils.NGTemplateFeatureFlagHelperService;
 import io.harness.utils.IdentifierRefHelper;
 import io.harness.utils.YamlPipelineUtils;
-import lombok.AllArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.google.inject.Inject;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -52,18 +62,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
-
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.pms.merger.helpers.MergeHelper.mergeInputSetFormatYamlToOriginYaml;
-import static io.harness.pms.yaml.validation.RuntimeInputValuesValidator.validateStaticValues;
-import static io.harness.template.beans.NGTemplateConstants.DUMMY_NODE;
-import static io.harness.template.beans.NGTemplateConstants.SPEC;
-import static io.harness.template.beans.NGTemplateConstants.STABLE_VERSION;
-import static io.harness.template.beans.NGTemplateConstants.TEMPLATE;
-import static io.harness.template.beans.NGTemplateConstants.TEMPLATE_INPUTS;
-import static io.harness.template.beans.NGTemplateConstants.TEMPLATE_REF;
-import static io.harness.template.beans.NGTemplateConstants.TEMPLATE_VERSION_LABEL;
+import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.CDC)
 @AllArgsConstructor(onConstructor = @__({ @Inject }))

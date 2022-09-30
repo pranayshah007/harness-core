@@ -7,18 +7,8 @@
 
 package io.harness.template.services;
 
-import static io.harness.rule.OwnerRule.*;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.joor.Reflect.on;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.when;
-
+import com.google.common.io.Resources;
 import io.harness.TemplateServiceTestBase;
-import io.harness.account.AccountClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
@@ -30,13 +20,15 @@ import io.harness.ng.core.template.TemplateReferenceSummary;
 import io.harness.ng.core.template.TemplateRetainVariablesResponse;
 import io.harness.ng.core.template.exception.NGTemplateResolveException;
 import io.harness.rule.Owner;
-import io.harness.steps.StepUtils;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.helpers.TemplateMergeServiceHelper;
-import io.harness.template.helpers.TemplateYamlSchemaMergeHelper;
 import io.harness.template.utils.NGTemplateFeatureFlagHelperService;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
 
-import com.google.common.io.Resources;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -44,18 +36,18 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.MockedStatic;
-import org.mockito.Mockito;
-import org.mockito.runners.MockitoJUnitRunner;
-import org.mockito.stubbing.Answer;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
+
+import static io.harness.rule.OwnerRule.ABHINAV_MITTAL;
+import static io.harness.rule.OwnerRule.INDER;
+import static io.harness.rule.OwnerRule.PRABU;
+import static io.harness.rule.OwnerRule.UTKARSH_CHOUBEY;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.joor.Reflect.on;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.when;
 
 @OwnedBy(HarnessTeam.CDC)
 public class TemplateMergeServiceImplTest extends TemplateServiceTestBase {
