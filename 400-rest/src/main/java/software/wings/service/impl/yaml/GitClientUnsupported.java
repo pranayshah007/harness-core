@@ -30,6 +30,11 @@ public class GitClientUnsupported implements GitClient {
   }
 
   @Override
+  public void cloneRepoAndCopyToWorkingDir(GitOperationContext gitOperationContext, String destDir) {
+    throw new UnsupportedOperationException("Git operations not supported.");
+  }
+
+  @Override
   public GitDiffResult diff(GitOperationContext gitOperationContext, boolean excludeFilesOutsideSetupFolder) {
     throw new UnsupportedOperationException("Git operations not supported.");
   }

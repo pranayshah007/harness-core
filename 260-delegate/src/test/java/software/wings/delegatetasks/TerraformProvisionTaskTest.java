@@ -31,6 +31,7 @@ import static org.mockito.Matchers.anyMap;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Matchers.startsWith;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -97,6 +98,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 import junitparams.JUnitParamsRunner;
 import junitparams.Parameters;
+import org.apache.commons.io.FileUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -184,7 +186,13 @@ public class TerraformProvisionTaskTest extends WingsBaseTest {
     sourceRepoEncryptionDetails = new ArrayList<>();
     sourceRepoEncryptionDetails.add(EncryptedDataDetail.builder().build());
 
-    doReturn(GIT_REPO_DIRECTORY).when(gitClientHelper).getRepoDirectory(any(GitOperationContext.class));
+    doAnswer(invocation -> {
+      String dest = invocation.getArgument(1);
+      FileUtils.copyDirectory(new File(GIT_REPO_DIRECTORY), new File(dest));
+      return null;
+    })
+        .when(gitClient)
+        .cloneRepoAndCopyToWorkingDir(any(GitOperationContext.class), anyString());
 
     terraformProvisionTaskSpy = spy(terraformProvisionTask);
 
@@ -869,10 +877,9 @@ public class TerraformProvisionTaskTest extends WingsBaseTest {
         .collect(Collectors.toList());
   }
 
-  private void verify(TerraformExecutionData terraformExecutionData, TerraformCommand command) {
+  private void verify(TerraformExecutionData terraformExecutionData, TerraformCommand command) throws IOException {
     Mockito.verify(mockEncryptionService, times(1)).decrypt(gitConfig, sourceRepoEncryptionDetails, false);
-    Mockito.verify(gitClient, times(1)).ensureRepoLocallyClonedAndUpdated(any(GitOperationContext.class));
-    Mockito.verify(gitClientHelper, times(1)).getRepoDirectory(any(GitOperationContext.class));
+    Mockito.verify(gitClient, times(1)).cloneRepoAndCopyToWorkingDir(any(GitOperationContext.class), anyString());
     Mockito.verify(delegateFileManager, times(1)).upload(any(DelegateFile.class), any(InputStream.class));
     assertThat(terraformExecutionData.getWorkspace()).isEqualTo(WORKSPACE);
     assertThat(terraformExecutionData.getEntityId()).isEqualTo(ENTITY_ID);
