@@ -30,6 +30,7 @@ import io.harness.licensing.LicenseType;
 import io.harness.licensing.beans.EditionActionDTO;
 import io.harness.licensing.beans.modules.AccountLicenseDTO;
 import io.harness.licensing.beans.modules.ModuleLicenseDTO;
+import io.harness.licensing.beans.modules.SMPDecLicenseDTO;
 import io.harness.licensing.beans.modules.SMPEncLicenseDTO;
 import io.harness.licensing.beans.modules.SMPLicenseRequestDTO;
 import io.harness.licensing.beans.modules.SMPValidationResultDTO;
@@ -69,7 +70,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
-import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Collection;
@@ -468,17 +468,7 @@ public class DefaultLicenseServiceImpl implements LicenseService {
   @Override
   public SMPValidationResultDTO validateSMPLicense(SMPEncLicenseDTO licenseDTO) {
     SMPLicenseEnc smpLicenseEnc = smpLicenseMapper.toSMPLicenseEnc(licenseDTO);
-    SMPLicenseValidationResult validationResult = null;
-    try {
-      validationResult = licenseValidator.validate(smpLicenseEnc, licenseDTO.isDecrypt());
-    } catch (NoSuchAlgorithmException e) {
-      log.error("Invalid algorithm detected in license body");
-      validationResult = SMPLicenseValidationResult.builder()
-                             .smpLicense(null)
-                             .resultMessage("Invalid algorithm detected in license")
-                             .isValid(false)
-                             .build();
-    }
+    SMPLicenseValidationResult validationResult = licenseValidator.validate(smpLicenseEnc, licenseDTO.isDecrypt());
     return smpLicenseMapper.toSMPValidationResultDTO(validationResult);
   }
 
