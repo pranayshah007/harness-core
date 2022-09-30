@@ -7,15 +7,8 @@
 
 package io.harness.template.services;
 
-import static io.harness.rule.OwnerRule.PRABU;
-import static io.harness.rule.OwnerRule.VED;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.joor.Reflect.on;
-import static org.mockito.Mockito.when;
-
+import com.google.common.io.Resources;
 import io.harness.TemplateServiceTestBase;
-import io.harness.account.AccountClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
@@ -27,34 +20,32 @@ import io.harness.rule.Owner;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.helpers.TemplateInputsRefreshHelper;
 import io.harness.template.helpers.TemplateMergeServiceHelper;
-import io.harness.template.helpers.TemplateYamlSchemaMergeHelper;
+import io.harness.template.utils.NGTemplateFeatureFlagHelperService;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
 
-import com.google.common.io.Resources;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 import java.util.Optional;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.mockito.runners.MockitoJUnitRunner;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
 
-@RunWith(MockitoJUnitRunner.class)
+import static io.harness.rule.OwnerRule.PRABU;
+import static io.harness.rule.OwnerRule.VED;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.joor.Reflect.on;
+import static org.mockito.Mockito.when;
+
 @OwnedBy(HarnessTeam.CDC)
-@PrepareForTest({TemplateYamlSchemaMergeHelper.class})
 public class TemplateInputsRefreshHelperTest extends TemplateServiceTestBase {
   @Mock private NGTemplateServiceHelper templateServiceHelper;
 
   @InjectMocks TemplateInputsRefreshHelper templateInputsRefreshHelper;
   @InjectMocks TemplateMergeServiceHelper templateMergeServiceHelper;
 
-  @Mock private AccountClient accountClient;
+  @Mock private NGTemplateFeatureFlagHelperService featureFlagHelperService;
 
   private static final String ACCOUNT_ID = "accountId";
 
@@ -71,11 +62,7 @@ public class TemplateInputsRefreshHelperTest extends TemplateServiceTestBase {
   public void setup() throws IllegalAccessException {
     on(templateMergeServiceHelper).set("templateServiceHelper", templateServiceHelper);
     on(templateInputsRefreshHelper).set("templateMergeServiceHelper", templateMergeServiceHelper);
-    Mockito.mockStatic(TemplateYamlSchemaMergeHelper.class);
-    PowerMockito
-        .when(
-            TemplateYamlSchemaMergeHelper.isFeatureFlagEnabled(FeatureName.NG_TEMPLATE_VARIABLES, null, accountClient))
-        .thenReturn(false);
+    when(featureFlagHelperService.isEnabled(null, FeatureName.NG_TEMPLATE_VARIABLES)).thenReturn(false);
   }
 
   @Test
@@ -312,10 +299,7 @@ public class TemplateInputsRefreshHelperTest extends TemplateServiceTestBase {
     String expectedPipelineYamlFile = "pipeline-with-two-variable-and-input.yaml";
     String expectedPipelineYaml = readFile(expectedPipelineYamlFile);
 
-    PowerMockito
-        .when(TemplateYamlSchemaMergeHelper.isFeatureFlagEnabled(
-            FeatureName.NG_TEMPLATE_VARIABLES, accountId, accountClient))
-        .thenReturn(true);
+    when(featureFlagHelperService.isEnabled(ACCOUNT_ID, FeatureName.NG_TEMPLATE_VARIABLES)).thenReturn(true);
 
     String refreshedYaml = templateInputsRefreshHelper.refreshTemplates(accountId, orgId, projId, pipelineYaml);
 
@@ -358,10 +342,7 @@ public class TemplateInputsRefreshHelperTest extends TemplateServiceTestBase {
     String expectedPipelineYamlFile = "pipeline-with-variable-two-input.yaml";
     String expectedPipelineYaml = readFile(expectedPipelineYamlFile);
 
-    PowerMockito
-        .when(TemplateYamlSchemaMergeHelper.isFeatureFlagEnabled(
-            FeatureName.NG_TEMPLATE_VARIABLES, accountId, accountClient))
-        .thenReturn(true);
+    when(featureFlagHelperService.isEnabled(ACCOUNT_ID, FeatureName.NG_TEMPLATE_VARIABLES)).thenReturn(true);
 
     String refreshedYaml = templateInputsRefreshHelper.refreshTemplates(accountId, orgId, projId, pipelineYaml);
 

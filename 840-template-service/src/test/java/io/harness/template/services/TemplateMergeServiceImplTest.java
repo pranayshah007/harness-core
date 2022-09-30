@@ -43,6 +43,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+
+import io.harness.template.utils.NGTemplateFeatureFlagHelperService;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -56,15 +58,13 @@ import org.mockito.stubbing.Answer;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 
-@RunWith(MockitoJUnitRunner.class)
 @OwnedBy(HarnessTeam.CDC)
-@PrepareForTest({TemplateYamlSchemaMergeHelper.class})
 public class TemplateMergeServiceImplTest extends TemplateServiceTestBase {
   @InjectMocks private TemplateMergeServiceImpl templateMergeService;
 
   @Mock private NGTemplateServiceHelper templateServiceHelper;
 
-  @Mock private AccountClient accountClient;
+  @Mock private NGTemplateFeatureFlagHelperService featureFlagHelperService;
   @InjectMocks TemplateMergeServiceHelper templateMergeServiceHelper;
 
   private static final String ACCOUNT_ID = "accountId";
@@ -84,11 +84,7 @@ public class TemplateMergeServiceImplTest extends TemplateServiceTestBase {
   public void setup() throws IllegalAccessException {
     on(templateMergeServiceHelper).set("templateServiceHelper", templateServiceHelper);
     on(templateMergeService).set("templateMergeServiceHelper", templateMergeServiceHelper);
-    Mockito.mockStatic(TemplateYamlSchemaMergeHelper.class);
-    PowerMockito
-        .when(
-            TemplateYamlSchemaMergeHelper.isFeatureFlagEnabled(FeatureName.NG_TEMPLATE_VARIABLES, null, accountClient))
-        .thenReturn(false);
+    when(featureFlagHelperService.isEnabled(null, FeatureName.NG_TEMPLATE_VARIABLES)).thenReturn(false);
   }
 
   @Test
@@ -143,10 +139,7 @@ public class TemplateMergeServiceImplTest extends TemplateServiceTestBase {
   @Owner(developers = PRABU)
   @Category(UnitTests.class)
   public void testCreateTemplateInputsFromStepTemplateWithVariables() {
-    PowerMockito
-        .when(
-            TemplateYamlSchemaMergeHelper.isFeatureFlagEnabled(FeatureName.NG_TEMPLATE_VARIABLES, null, accountClient))
-        .thenReturn(true);
+    when(featureFlagHelperService.isEnabled(null, FeatureName.NG_TEMPLATE_VARIABLES)).thenReturn(true);
     String filename = "step-template-with-variables.yaml";
     String yaml = readFile(filename);
     String templateYaml = templateMergeServiceHelper.createTemplateInputsFromTemplate(yaml, null);
@@ -161,10 +154,7 @@ public class TemplateMergeServiceImplTest extends TemplateServiceTestBase {
   @Owner(developers = PRABU)
   @Category(UnitTests.class)
   public void testCreateTemplateInputsFromStepTemplateWithOnlyVariables() {
-    PowerMockito
-        .when(
-            TemplateYamlSchemaMergeHelper.isFeatureFlagEnabled(FeatureName.NG_TEMPLATE_VARIABLES, null, accountClient))
-        .thenReturn(true);
+    when(featureFlagHelperService.isEnabled(null, FeatureName.NG_TEMPLATE_VARIABLES)).thenReturn(true);
     String filename = "step-template-with-variables-without-runtime-inputs.yaml";
     String yaml = readFile(filename);
     String templateYaml = templateMergeServiceHelper.createTemplateInputsFromTemplate(yaml, null);

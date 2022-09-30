@@ -67,10 +67,13 @@ import io.harness.template.beans.refresh.ValidateTemplateInputsResponseDTO;
 import io.harness.template.beans.yaml.NGTemplateConfig;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.entity.TemplateEntity.TemplateEntityKeys;
+import io.harness.template.helpers.InputsValidator;
+import io.harness.template.helpers.TemplateInputsValidator;
 import io.harness.template.helpers.TemplateMergeServiceHelper;
 import io.harness.template.helpers.TemplateReferenceHelper;
 import io.harness.template.mappers.NGTemplateDtoMapper;
 import io.harness.template.resources.NGTemplateResource;
+import io.harness.template.utils.NGTemplateFeatureFlagHelperService;
 import io.harness.utils.YamlPipelineUtils;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -117,8 +120,17 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
 
   @Mock NGTemplateSchemaServiceImpl templateSchemaService;
   @Mock AccessControlClient accessControlClient;
-  @Inject TemplateMergeServiceImpl templateMergeService;
+  private TemplateMergeServiceImpl templateMergeService;
   @Mock TemplateMergeServiceHelper templateMergeServiceHelper;
+
+  @Mock
+  NGTemplateFeatureFlagHelperService featureFlagHelperService;
+
+  private TemplateMergeServiceHelper templateMergeServiceHelperReal;
+
+  private InputsValidator inputsValidator;
+
+  private TemplateInputsValidator templateInputsValidator;
 
   @Mock TemplateGitXService templateGitXService;
 
@@ -144,6 +156,10 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
 
   @Before
   public void setUp() throws IOException {
+    templateMergeServiceHelperReal = new TemplateMergeServiceHelper(templateServiceHelper, featureFlagHelperService);
+    inputsValidator = new InputsValidator(templateMergeServiceHelperReal);
+    templateInputsValidator = new TemplateInputsValidator(inputsValidator);
+    templateMergeService = new TemplateMergeServiceImpl(templateServiceHelper, templateInputsValidator, templateMergeServiceHelperReal);
     String filename = "template.yaml";
     yaml = readFile(filename);
     on(templateServiceHelper).set("templateRepository", templateRepository);
@@ -186,6 +202,8 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
 
     Call<RestResponse<Boolean>> ffCall = mock(Call.class);
     when(ffCall.execute()).thenReturn(Response.success(new RestResponse<>(false)));
+
+    when(featureFlagHelperService.isEnabled(anyString(), any())).thenReturn(false);
   }
 
   @Test
@@ -864,7 +882,7 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
     doReturn(Optional.of(templateEntity))
         .when(templateServiceHelper)
         .getTemplateOrThrowExceptionIfInvalid(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, "zxcv", "as", false);
-    when(templateMergeServiceHelper.createTemplateInputsFromTemplate(yaml, null)).thenReturn(templateInputs);
+    when(templateMergeServiceHelper.createTemplateInputsFromTemplate(yaml, ACCOUNT_ID)).thenReturn(templateInputs);
 
     TemplateWithInputsResponseDTO templateWithInputsResponseDTO =
         templateService.getTemplateWithInputs(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, "zxcv", "as");

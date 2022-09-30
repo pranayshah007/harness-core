@@ -7,13 +7,10 @@
 
 package io.harness.template.helpers;
 
-import static io.harness.annotations.dev.HarnessTeam.CDC;
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
-import static io.harness.template.beans.NGTemplateConstants.TEMPLATE;
-import static io.harness.template.beans.NGTemplateConstants.TEMPLATE_INPUTS;
-import static io.harness.template.beans.NGTemplateConstants.TEMPLATE_VARIABLES;
-
-import io.harness.account.AccountClient;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.google.inject.Inject;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.exception.ngexception.NGTemplateException;
@@ -24,19 +21,20 @@ import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.template.beans.yaml.NGTemplateConfig;
 import io.harness.template.entity.TemplateEntity;
+import io.harness.template.utils.NGTemplateFeatureFlagHelperService;
 import io.harness.utils.YamlPipelineUtils;
+import lombok.extern.slf4j.Slf4j;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.google.inject.Inject;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import lombok.extern.slf4j.Slf4j;
+
+import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.template.beans.NGTemplateConstants.*;
 
 @Slf4j
 @OwnedBy(CDC)
@@ -47,7 +45,8 @@ import lombok.extern.slf4j.Slf4j;
  */
 public class TemplateInputsRefreshHelper {
   @Inject private TemplateMergeServiceHelper templateMergeServiceHelper;
-  @Inject private AccountClient accountClient;
+
+  @Inject private NGTemplateFeatureFlagHelperService featureFlagHelperService;
 
   // Returns the refreshed YAML when a YAML String is passed.
   public String refreshTemplates(String accountId, String orgId, String projectId, String yaml) {
@@ -147,7 +146,7 @@ public class TemplateInputsRefreshHelper {
         accountId, orgId, projectId, TemplateNodeValue, templateCacheMap);
     String templateYaml = templateEntity.getYaml();
     boolean templateVariablesEnabled =
-        TemplateYamlSchemaMergeHelper.isFeatureFlagEnabled(FeatureName.NG_TEMPLATE_VARIABLES, accountId, accountClient);
+        featureFlagHelperService.isEnabled( accountId, FeatureName.NG_TEMPLATE_VARIABLES);
 
     // Generate the Template Spec from the Template YAML
     JsonNode templateSpec;

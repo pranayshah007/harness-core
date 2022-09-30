@@ -44,6 +44,7 @@ import io.harness.serializer.JsonUtils;
 import io.harness.template.beans.yaml.NGTemplateConfig;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.services.NGTemplateServiceHelper;
+import io.harness.template.utils.NGTemplateFeatureFlagHelperService;
 import io.harness.utils.IdentifierRefHelper;
 import io.harness.utils.YamlPipelineUtils;
 
@@ -78,7 +79,7 @@ import lombok.extern.slf4j.Slf4j;
 public class TemplateMergeServiceHelper {
   private static final int MAX_DEPTH = 10;
   private NGTemplateServiceHelper templateServiceHelper;
-  private AccountClient accountClient;
+  private NGTemplateFeatureFlagHelperService featureFlagHelperService;
 
   // Gets the Template Entity linked to a YAML
   public TemplateEntity getLinkedTemplateEntity(
@@ -199,8 +200,8 @@ public class TemplateMergeServiceHelper {
       JsonNode templateInputsYaml = templateInputsYamlWithSpec == null
           ? null
           : YamlUtils.readTree(templateInputsYamlWithSpec).getNode().getCurrJsonNode().get(SPEC);
-      if (!TemplateYamlSchemaMergeHelper.isFeatureFlagEnabled(
-              FeatureName.NG_TEMPLATE_VARIABLES, accountId, accountClient)) {
+      if (!featureFlagHelperService.isEnabled(accountId,
+              FeatureName.NG_TEMPLATE_VARIABLES)) {
         if (isEmpty(templateInputsYamlWithSpec)) {
           return templateInputsYamlWithSpec;
         }
