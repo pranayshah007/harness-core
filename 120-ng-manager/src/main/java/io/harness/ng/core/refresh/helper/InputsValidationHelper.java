@@ -26,6 +26,7 @@ import io.harness.persistence.PersistentEntity;
 import io.harness.pms.merger.helpers.RuntimeInputsValidator;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
+import io.harness.pms.yaml.YamlNodeUtils;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.template.beans.refresh.NodeInfo;
 import io.harness.template.beans.refresh.v2.InputsValidationResponse;
@@ -93,10 +94,12 @@ public class InputsValidationHelper {
       YamlNode currentYamlNode = childYamlField.getNode();
       JsonNode value = currentYamlNode.getCurrJsonNode();
 
-      // If Template is present, validate the Template Inputs
-      if (serviceEntityService.isServiceField(fieldName, value)) {
-        validateServiceInputs(accountId, orgId, projectId, currentYamlNode, cacheMap, inputsValidationResponse);
-        continue;
+      if (inputsValidationResponse.isValid()) {
+        // If Service is present, validate the Service Inputs
+        if (serviceEntityService.isServiceField(fieldName, value)) {
+          validateServiceInputs(accountId, orgId, projectId, currentYamlNode, cacheMap, inputsValidationResponse);
+          continue;
+        }
       }
 
       if (value.isArray() && !YamlUtils.checkIfNodeIsArrayWithPrimitiveTypes(value)) {
@@ -140,22 +143,24 @@ public class InputsValidationHelper {
     ServiceEntity serviceEntity = getService(accountId, orgId, projectId, serviceRef, cacheMap);
 
     String serviceYaml = serviceEntity.fetchNonEmptyYaml();
-    InputsValidationResponse childrenErrorNodeSummary =
-        validateInputsForYaml(accountId, orgId, projectId, serviceYaml, cacheMap);
 
-    if (!childrenErrorNodeSummary.isValid()) {
-      childrenErrorNodeSummary.setValid(false);
-      errorNodeSummary.addChildErrorNode(
-          createServiceErrorNode(entityNode, serviceEntity, childrenErrorNodeSummary.getChildrenErrorNodes()));
+    // TODO: call Template service to resolve artifact source templates. If inputs issue, add service as nodeError.
+
+    YamlNode primaryArtifactRefNode = YamlNodeUtils.goToPathUsingFqn(
+        entityNode, "serviceInputs.serviceDefinition.spec.artifacts.primary.primaryArtifactRef");
+    String serviceRuntimeInputYaml = serviceEntityService.createServiceInputsYamlGivenPrimaryArtifactRef(
+        serviceYaml, serviceRef, primaryArtifactRefNode == null ? null : primaryArtifactRefNode.asText());
+    if (EmptyPredicate.isEmpty(serviceRuntimeInputYaml)) {
+      if (serviceInputs != null) {
+        errorNodeSummary.setValid(false);
+      }
       return;
     }
-
-    String serviceRuntimeInputYaml = serviceEntityService.createServiceInputsYaml(serviceYaml, serviceRef);
     ObjectMapper mapper = new ObjectMapper();
     ObjectNode serviceInputsNode = mapper.createObjectNode();
     serviceInputsNode.set(YamlTypes.SERVICE_INPUTS, serviceInputs);
-    if (!RuntimeInputsValidator.validateInputsAgainstSourceNode(
-            YamlPipelineUtils.writeYamlString(serviceInputsNode), serviceRuntimeInputYaml)) {
+    String linkedServiceInputsYaml = YamlPipelineUtils.writeYamlString(serviceInputsNode);
+    if (!RuntimeInputsValidator.validateInputsAgainstSourceNode(linkedServiceInputsYaml, serviceRuntimeInputYaml)) {
       errorNodeSummary.setValid(false);
     }
   }
@@ -184,6 +189,7 @@ public class InputsValidationHelper {
 
   private NodeErrorSummary createServiceErrorNode(
       YamlNode serviceNode, ServiceEntity serviceEntity, List<NodeErrorSummary> childrenErrorNodes) {
+    // TODO: test this before it's usage.
     YamlNode parentNode = serviceNode.getParentNode();
     if (parentNode != null) {
       // this is stage node now.
