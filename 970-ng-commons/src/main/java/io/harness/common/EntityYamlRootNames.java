@@ -78,6 +78,7 @@ public class EntityYamlRootNames {
   public static final String HELM_ROLLBACK = "HelmRollback";
   public static final String SERVICENOW_CREATE = "ServiceNowCreate";
   public static final String SERVICENOW_UPDATE = "ServiceNowUpdate";
+  public static final String SERVICENOW_IMPORT_SET = "ServiceNowImportSet";
   public static final String SERVICENOW_APPROVAL = "ServiceNowApproval";
   public static final String JIRA_APPROVAL = "JiraApproval";
   public static final String HARNESS_APPROVAL = "HarnessApproval";

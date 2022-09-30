@@ -16,19 +16,19 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.yaml.core.VariableExpression;
 
 import io.swagger.annotations.ApiModelProperty;
+import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.FieldDefaults;
-import org.hibernate.validator.constraints.NotEmpty;
 
 @OwnedBy(CDC)
 @Data
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class ServiceNowField {
-  @NotEmpty @VariableExpression(policy = REGULAR_WITH_CUSTOM_FIELD) String name;
+  @NotNull @NotEmpty @VariableExpression(policy = REGULAR_WITH_CUSTOM_FIELD) String name;
   @NotNull
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
   @VariableExpression(skipVariableExpression = true)

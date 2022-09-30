@@ -165,6 +165,18 @@ public class CommonStepInfo {
           .setFeatureFlag(FeatureName.WAIT_STEP.name())
           .build();
 
+  StepInfo serviceNowImportSetStepInfo =
+      StepInfo.newBuilder()
+          .setName("ServiceNow Import Set")
+          .setType(StepSpecTypeConstants.SERVICENOW_IMPORT_SET)
+          .setStepMetaData(StepMetaData.newBuilder()
+                               .addCategory(StepCategoryConstants.SERVICENOW)
+                               .addFolderPaths(FolderPathConstants.SERVICENOW)
+                               .build())
+          .setFeatureRestrictionName(FeatureRestrictionName.INTEGRATED_APPROVALS_WITH_SERVICE_NOW.name())
+          .setFeatureFlag(FeatureName.CD_SERVICENOW_IMPORT_SET_NG.name())
+          .build();
+
   public List<StepInfo> getCommonSteps(String category) {
     List<StepInfo> stepInfos = new ArrayList<>();
     stepInfos.add(shellScriptStepInfo);
@@ -182,6 +194,7 @@ public class CommonStepInfo {
     stepInfos.add(serviceNowUpdateStepInfo);
     stepInfos.add(emailStepInfo);
     stepInfos.add(waitStepInfo);
+    stepInfos.add(serviceNowImportSetStepInfo);
 
     return stepInfos.stream().filter(getStepInfoPredicate(category)).collect(Collectors.toList());
   }
