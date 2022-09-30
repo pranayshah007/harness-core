@@ -72,6 +72,7 @@ mongo:
   transactionsEnabled: false
   aliasDBName: pms-harness
   traceMode: DISABLED
+  maxOperationTimeInMillis: 1
 
 grpcServerConfig:
   connectors:
