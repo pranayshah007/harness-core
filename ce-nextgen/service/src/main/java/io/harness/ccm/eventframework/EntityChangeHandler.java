@@ -179,6 +179,7 @@ public class EntityChangeHandler {
         // Only fields that can change on a CE K8s Entity Update (Name, Connector Ref)
         clusterRecord.setClusterName(ceK8sConnectorInfoDTO.getName());
         clusterRecord.setK8sBaseConnectorRefIdentifier(ceKubernetesClusterConfigDTO.getConnectorRef());
+        clusterRecord = clusterRecordHandler.handleNewCEK8sConnectorCreate(clusterRecord);
         // find all the existing perpetual Tasks for these clusters
         String perpetualTaskId = clusterRecord.getPerpetualTaskId();
         // Reset the Perpetual Task
