@@ -81,6 +81,12 @@ if [[ $KUBERNETES_SERVICE_HOST != "" ]]; then
   fi
 fi
 
+DOCKER_PROXY_SECRET_FILE="/run/secrets/proxy.config"
+if [ "$DELEGATE_TYPE" == "DOCKER" ] && [ -e "$DOCKER_PROXY_SECRET_FILE" ]; then
+  echo "Docker delegate: copy proxy config mounted at ""$DOCKER_PROXY_SECRET_FILE"
+  cp "$DOCKER_PROXY_SECRET_FILE" 'proxy.config'
+fi
+
 if [ ! -e proxy.config ]; then
   echo "PROXY_HOST='$PROXY_HOST'" > proxy.config
   echo "PROXY_PORT='$PROXY_PORT'" >> proxy.config

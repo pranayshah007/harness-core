@@ -944,3 +944,5 @@ fi
 if [[ "" != "$LDAP_GROUP_SYNC_DEFAULT_CRON" ]]; then
   export LDAP_GROUP_SYNC_DEFAULT_CRON; yq -i '.ldapSyncJobConfig.defaultCronExpression=env(LDAP_GROUP_SYNC_DEFAULT_CRON)' $CONFIG_FILE
 fi
+
+replace_key_value cg.enableOpentelemetry "$ENABLE_OPENTELEMETRY"

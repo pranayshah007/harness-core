@@ -13,6 +13,7 @@ import static io.harness.delegate.beans.TaskData.DEFAULT_SYNC_CALL_TIMEOUT;
 import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.ff.FeatureFlagService;
 
 import software.wings.beans.SlackMessage;
@@ -65,35 +66,47 @@ public class SlackNotificationServiceImpl implements SlackNotificationService {
 
     boolean isCertValidationRequired = accountService.isCertValidationRequired(accountId);
 
-    try {
-      log.info("Sending message via delegate");
-      SyncTaskContext syncTaskContext = SyncTaskContext.builder()
-                                            .accountId(accountId)
-                                            .appId(GLOBAL_APP_ID)
-                                            .timeout(DEFAULT_SYNC_CALL_TIMEOUT)
-                                            .build();
-      log.info("Sending message for account {} via delegate", accountId);
-      delegateProxyFactory.get(SlackMessageSender.class, syncTaskContext)
-          .send(new SlackMessage(slackConfig.getOutgoingWebhookUrl(), slackChannel, senderName, message), true,
-              isCertValidationRequired);
-    } catch (Exception ex) {
-      log.error("Failed to send slack message", ex);
+    if (featureFlagService.isEnabled(FeatureName.SEND_SLACK_NOTIFICATION_FROM_DELEGATE, accountId)) {
+      try {
+        log.info("Sending message via delegate");
+        SyncTaskContext syncTaskContext = SyncTaskContext.builder()
+                                              .accountId(accountId)
+                                              .appId(GLOBAL_APP_ID)
+                                              .timeout(DEFAULT_SYNC_CALL_TIMEOUT)
+                                              .build();
+        log.info("Sending message for account {} via delegate", accountId);
+        delegateProxyFactory.get(SlackMessageSender.class, syncTaskContext)
+            .send(new SlackMessage(slackConfig.getOutgoingWebhookUrl(), slackChannel, senderName, message), true,
+                isCertValidationRequired);
+      } catch (Exception ex) {
+        log.error("Failed to send slack message", ex);
+      }
+    } else {
+      log.info("Sending message for account {} via manager", accountId);
+      slackMessageSender.send(new SlackMessage(slackConfig.getOutgoingWebhookUrl(), slackChannel, senderName, message),
+          false, isCertValidationRequired);
     }
   }
 
   @Override
   public void sendJSONMessage(String message, List<String> slackWebhooks, String accountId) {
     for (String slackWebHook : slackWebhooks) {
-      log.info("Sending message via delegate");
-      SyncTaskContext syncTaskContext = SyncTaskContext.builder()
-                                            .accountId(accountId)
-                                            .appId(GLOBAL_APP_ID)
-                                            .timeout(DEFAULT_SYNC_CALL_TIMEOUT)
-                                            .build();
-      log.info("Sending message for account {} via delegate", accountId);
+      // need to add feature flag so it is backwards compatible
+      if (featureFlagService.isEnabled(FeatureName.SEND_SLACK_NOTIFICATION_FROM_DELEGATE, accountId)) {
+        log.info("Sending message via delegate");
+        SyncTaskContext syncTaskContext = SyncTaskContext.builder()
+                                              .accountId(accountId)
+                                              .appId(GLOBAL_APP_ID)
+                                              .timeout(DEFAULT_SYNC_CALL_TIMEOUT)
+                                              .build();
+        log.info("Sending message for account {} via delegate", accountId);
 
-      delegateProxyFactory.get(SlackMessageSender.class, syncTaskContext)
-          .sendJSON(new SlackMessageJSON(slackWebHook, message));
+        delegateProxyFactory.get(SlackMessageSender.class, syncTaskContext)
+            .sendJSON(new SlackMessageJSON(slackWebHook, message));
+      } else {
+        log.info("Sending message for account {} via manager", accountId);
+        slackMessageSender.sendJSON(new SlackMessageJSON(slackWebHook, message));
+      }
     }
   }
 }

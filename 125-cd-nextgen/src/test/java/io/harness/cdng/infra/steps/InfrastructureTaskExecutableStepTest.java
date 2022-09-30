@@ -39,6 +39,7 @@ import io.harness.cdng.common.beans.SetupAbstractionKeys;
 import io.harness.cdng.execution.ExecutionInfoKey;
 import io.harness.cdng.execution.helper.StageExecutionHelper;
 import io.harness.cdng.infra.InfrastructureMapper;
+import io.harness.cdng.infra.InfrastructureValidator;
 import io.harness.cdng.infra.beans.AwsInstanceFilter;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.infra.beans.SshWinRmAwsInfrastructureOutcome;
@@ -128,6 +129,7 @@ public class InfrastructureTaskExecutableStepTest extends CategoryTest {
   @Mock private ThrowingSupplier throwingSupplier;
   @Mock private StageExecutionHelper stageExecutionHelper;
   @Mock private InfrastructureMapper infrastructureMapper;
+  @Mock InfrastructureValidator infrastructureValidator;
   @Mock private NGLogCallback mockLogCallback;
 
   @InjectMocks private InfrastructureTaskExecutableStep infrastructureStep = new InfrastructureTaskExecutableStep();

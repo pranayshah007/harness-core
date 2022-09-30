@@ -146,8 +146,7 @@ public class InfrastructureResource {
   @ApiOperation(value = "Gets an Infrastructure by identifier", nickname = "getInfrastructure")
   @NGAccessControlCheck(resourceType = NGResourceType.ENVIRONMENT, permission = "core_environment_view")
   @Operation(operationId = "getInfrastructure", summary = "Gets an Infrastructure by identifier",
-      responses = { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "The saved Infrastructure") },
-      hidden = true)
+      responses = { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "The saved Infrastructure") })
   public ResponseDTO<InfrastructureResponse>
   get(@Parameter(description = INFRA_PARAM_MESSAGE) @PathParam(
           "infraIdentifier") @ResourceIdentifier String infraIdentifier,
@@ -189,8 +188,7 @@ public class InfrastructureResource {
   @ApiOperation(value = "Create an Infrastructure in an Environment", nickname = "createInfrastructure")
   @Operation(operationId = "createInfrastructure", summary = "Create an Infrastructure in an Environment",
       responses =
-      { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Returns the created Infrastructure") },
-      hidden = true)
+      { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Returns the created Infrastructure") })
   public ResponseDTO<InfrastructureResponse>
   create(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
              NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
@@ -257,8 +255,7 @@ public class InfrastructureResource {
       {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(description = "Returns true if the Infrastructure is deleted")
-      },
-      hidden = true)
+      })
   public ResponseDTO<Boolean>
   delete(@Parameter(description = INFRA_PARAM_MESSAGE) @PathParam(
              "infraIdentifier") @ResourceIdentifier String infraIdentifier,
@@ -283,8 +280,7 @@ public class InfrastructureResource {
   @ApiOperation(value = "Update an Infrastructure by identifier", nickname = "updateInfrastructure")
   @Operation(operationId = "updateInfrastructure", summary = "Update an Infrastructure by identifier",
       responses =
-      { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Returns the updated Infrastructure") },
-      hidden = true)
+      { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Returns the updated Infrastructure") })
   public ResponseDTO<InfrastructureResponse>
   update(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
              NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
@@ -341,8 +337,7 @@ public class InfrastructureResource {
       {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(description = "Returns the list of Infrastructure for an Environment")
-      },
-      hidden = true)
+      })
   public ResponseDTO<PageResponse<InfrastructureResponse>>
   listInfrastructures(@Parameter(description = NGCommonEntityConstants.PAGE_PARAM_MESSAGE) @QueryParam(
                           NGCommonEntityConstants.PAGE) @DefaultValue("0") int page,

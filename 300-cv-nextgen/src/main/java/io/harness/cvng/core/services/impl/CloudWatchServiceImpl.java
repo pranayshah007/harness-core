@@ -27,6 +27,7 @@ import java.lang.reflect.Type;
 import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 
 @Slf4j
 public class CloudWatchServiceImpl implements CloudWatchService {
@@ -37,6 +38,12 @@ public class CloudWatchServiceImpl implements CloudWatchService {
       String expression, String region, String metricName, String metricIdentifier) {
     try {
       Preconditions.checkNotNull(expression);
+      if (StringUtils.isEmpty(metricIdentifier)) {
+        metricIdentifier = "id1";
+      }
+      if (StringUtils.isEmpty(metricName)) {
+        metricName = "metric1";
+      }
       expression = expression.trim();
 
       DataCollectionRequest request = CloudWatchMetricFetchSampleDataRequest.builder()

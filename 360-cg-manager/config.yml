@@ -701,3 +701,5 @@ ldapSyncJobConfig:
 useGlobalKMSAsBaseAlgo: false
 
 cdTsDbRetentionPeriodMonths: 7
+
+enableOpentelemetry: false

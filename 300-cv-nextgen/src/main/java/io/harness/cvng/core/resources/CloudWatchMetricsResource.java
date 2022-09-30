@@ -26,6 +26,7 @@ import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import java.util.List;
 import java.util.Map;
+import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.BeanParam;
 import javax.ws.rs.GET;
@@ -53,10 +54,10 @@ public class CloudWatchMetricsResource {
   @ExceptionMetered
   @ApiOperation(value = "get sample data for given query", nickname = "getSampleDataForQuery")
   public ResponseDTO<Map> getSampleDataForQuery(@NotNull @BeanParam ProjectParams projectParams,
-      @QueryParam("connectorIdentifier") @NotNull String connectorIdentifier,
-      @QueryParam("requestGuid") @NotNull String requestGuid, @QueryParam("region") @NotNull String region,
-      @QueryParam("expression") @NotNull String expression, @QueryParam("metricName") @NotNull String metricName,
-      @QueryParam("metricIdentifier") @NotNull String metricIdentifier) {
+      @QueryParam("connectorIdentifier") @NotBlank String connectorIdentifier,
+      @QueryParam("requestGuid") @NotBlank String requestGuid, @QueryParam("region") @NotBlank String region,
+      @QueryParam("expression") @NotBlank String expression, @QueryParam("metricName") String metricName,
+      @QueryParam("metricIdentifier") String metricIdentifier) {
     return ResponseDTO.newResponse(cloudWatchService.fetchSampleData(
         projectParams, connectorIdentifier, requestGuid, expression, region, metricName, metricIdentifier));
   }

@@ -61,6 +61,8 @@ import io.harness.pms.yaml.ParameterField;
 import software.wings.utils.RepositoryFormat;
 
 import java.nio.file.Paths;
+import java.util.Collections;
+import java.util.Map;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
@@ -209,6 +211,7 @@ public class ArtifactResponseToOutcomeMapper {
         .type(ArtifactSourceType.DOCKER_REGISTRY.getDisplayName())
         .primaryArtifact(dockerConfig.isPrimaryArtifact())
         .imagePullSecret(createImagePullSecret(ArtifactUtils.getArtifactKey(dockerConfig)))
+        .label(getLabels(dockerDelegateResponse))
         .build();
   }
 
@@ -235,7 +238,9 @@ public class ArtifactResponseToOutcomeMapper {
                                      : (googleArtifactRegistryConfig.getVersion() != null
                                              ? googleArtifactRegistryConfig.getVersion().getValue()
                                              : null))
-        .registryHostname(garDelegateResponse.getBuildDetails().getMetadata().get("registryHostname"))
+        .registryHostname(garDelegateResponse != null
+                ? garDelegateResponse.getBuildDetails().getMetadata().get("registryHostname")
+                : "")
         .connectorRef(googleArtifactRegistryConfig.getConnectorRef().getValue())
         .pkg(googleArtifactRegistryConfig.getPkg().getValue())
         .project(googleArtifactRegistryConfig.getProject().getValue())
@@ -334,10 +339,7 @@ public class ArtifactResponseToOutcomeMapper {
   private ArtifactoryGenericArtifactOutcome getArtifactoryGenericArtifactOutcome(
       ArtifactoryRegistryArtifactConfig artifactConfig,
       ArtifactoryGenericArtifactDelegateResponse artifactDelegateResponse, boolean useDelegateResponse) {
-    String artifactPath = useDelegateResponse ? ParameterField.isBlank(artifactConfig.getArtifactPathFilter())
-            ? Paths.get(artifactConfig.getArtifactDirectory().getValue(), artifactDelegateResponse.getArtifactPath())
-                  .toString()
-            : artifactDelegateResponse.getArtifactPath()
+    String artifactPath = useDelegateResponse ? artifactDelegateResponse.getArtifactPath()
                                               : (ParameterField.isNull(artifactConfig.getArtifactPath()) ? null
                                                       : ParameterField.isBlank(artifactConfig.getArtifactPathFilter())
                                                       ? Paths
@@ -390,7 +392,7 @@ public class ArtifactResponseToOutcomeMapper {
         .repository(acrArtifactConfig.getRepository().getValue())
         .image(getImageValue(acrArtifactDelegateResponse))
         .connectorRef(acrArtifactConfig.getConnectorRef().getValue())
-        .tag(getAcrTag(useDelegateResponse, acrArtifactDelegateResponse.getTag(), acrArtifactConfig.getTag()))
+        .tag(getAcrTag(useDelegateResponse, acrArtifactDelegateResponse, acrArtifactConfig.getTag()))
         .tagRegex(acrArtifactConfig.getTagRegex() != null ? acrArtifactConfig.getTagRegex().getValue() : null)
         .identifier(acrArtifactConfig.getIdentifier())
         .type(ArtifactSourceType.ACR.getDisplayName())
@@ -413,8 +415,11 @@ public class ArtifactResponseToOutcomeMapper {
         .build();
   }
 
-  private String getAcrTag(boolean useDelegateResponse, String delegateResponseTag, ParameterField<String> configTag) {
-    return useDelegateResponse ? delegateResponseTag : !ParameterField.isNull(configTag) ? configTag.getValue() : null;
+  private String getAcrTag(boolean useDelegateResponse, AcrArtifactDelegateResponse acrArtifactDelegateResponse,
+      ParameterField<String> configTag) {
+    return useDelegateResponse              ? acrArtifactDelegateResponse.getTag()
+        : !ParameterField.isNull(configTag) ? configTag.getValue()
+                                            : null;
   }
 
   private String getJenkinsBuild(boolean useDelegateResponse,
@@ -431,6 +436,14 @@ public class ArtifactResponseToOutcomeMapper {
     return EmptyPredicate.isNotEmpty(artifactDelegateResponse.getBuildDetails().getMetadata())
         ? artifactDelegateResponse.getBuildDetails().getMetadata().get(ArtifactMetadataKeys.IMAGE)
         : null;
+  }
+
+  private Map<String, String> getLabels(DockerArtifactDelegateResponse artifactDelegateResponse) {
+    if (artifactDelegateResponse == null || artifactDelegateResponse.getLabel() == null) {
+      return Collections.emptyMap();
+    }
+    return EmptyPredicate.isNotEmpty(artifactDelegateResponse.getLabel()) ? artifactDelegateResponse.getLabel()
+                                                                          : Collections.emptyMap();
   }
 
   private String getRegistryHostnameValue(ArtifactDelegateResponse artifactDelegateResponse) {

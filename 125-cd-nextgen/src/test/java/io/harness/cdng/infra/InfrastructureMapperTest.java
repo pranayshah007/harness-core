@@ -9,7 +9,6 @@ package io.harness.cdng.infra;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.rule.OwnerRule.ABHISHEK;
-import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.ACASIAN;
 import static io.harness.rule.OwnerRule.FILIP;
 import static io.harness.rule.OwnerRule.MLUKIC;
@@ -18,7 +17,6 @@ import static io.harness.rule.OwnerRule.TMACARI;
 import static io.harness.rule.OwnerRule.VAIBHAV_SI;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
 
@@ -51,7 +49,6 @@ import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
 import io.harness.delegate.beans.connector.pdcconnector.HostFilterType;
-import io.harness.exception.InvalidArgumentsException;
 import io.harness.ng.core.environment.beans.EnvironmentType;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
@@ -147,33 +144,6 @@ public class InfrastructureMapperTest extends CategoryTest {
   }
 
   @Test
-  @Owner(developers = ABOSII)
-  @Category(UnitTests.class)
-  public void testToOutcomeEmptyValues() {
-    K8SDirectInfrastructure emptyReleaseName = K8SDirectInfrastructure.builder()
-                                                   .connectorRef(ParameterField.createValueField("connectorId"))
-                                                   .namespace(ParameterField.createValueField("namespace"))
-                                                   .releaseName(ParameterField.createValueField(""))
-                                                   .build();
-
-    assertThatThrownBy(()
-                           -> infrastructureMapper.toOutcome(
-                               emptyReleaseName, environment, serviceOutcome, "accountId", "projId", "orgId"))
-        .isInstanceOf(InvalidArgumentsException.class);
-
-    K8SDirectInfrastructure emptyNamespace = K8SDirectInfrastructure.builder()
-                                                 .connectorRef(ParameterField.createValueField("connectorId"))
-                                                 .namespace(ParameterField.createValueField(""))
-                                                 .releaseName(ParameterField.createValueField("releaseName"))
-                                                 .build();
-
-    assertThatThrownBy(()
-                           -> infrastructureMapper.toOutcome(
-                               emptyNamespace, environment, serviceOutcome, "accountId", "projId", "orgId"))
-        .isInstanceOf(InvalidArgumentsException.class);
-  }
-
-  @Test
   @Owner(developers = ACASIAN)
   @Category(UnitTests.class)
   public void testK8sGcpInfraMapper() {
@@ -197,44 +167,6 @@ public class InfrastructureMapperTest extends CategoryTest {
     InfrastructureOutcome infrastructureOutcome = infrastructureMapper.toOutcome(
         k8SGcpInfrastructure, environment, serviceOutcome, "accountId", "projId", "orgId");
     assertThat(infrastructureOutcome).isEqualTo(k8sGcpInfrastructureOutcome);
-  }
-
-  @Test
-  @Owner(developers = ABOSII)
-  @Category(UnitTests.class)
-  public void testK8sGcpInfraMapperEmptyValues() {
-    K8sGcpInfrastructure emptyNamespace = K8sGcpInfrastructure.builder()
-                                              .connectorRef(ParameterField.createValueField("connectorId"))
-                                              .namespace(ParameterField.createValueField(""))
-                                              .releaseName(ParameterField.createValueField("release"))
-                                              .cluster(ParameterField.createValueField("cluster"))
-                                              .build();
-    assertThatThrownBy(()
-                           -> infrastructureMapper.toOutcome(
-                               emptyNamespace, environment, serviceOutcome, "accountId", "projId", "orgId"))
-        .isInstanceOf(InvalidArgumentsException.class);
-
-    K8sGcpInfrastructure emptyReleaseName = K8sGcpInfrastructure.builder()
-                                                .connectorRef(ParameterField.createValueField("connectorId"))
-                                                .namespace(ParameterField.createValueField("namespace"))
-                                                .releaseName(ParameterField.createValueField(""))
-                                                .cluster(ParameterField.createValueField("cluster"))
-                                                .build();
-    assertThatThrownBy(()
-                           -> infrastructureMapper.toOutcome(
-                               emptyReleaseName, environment, serviceOutcome, "accountId", "projId", "orgId"))
-        .isInstanceOf(InvalidArgumentsException.class);
-
-    K8sGcpInfrastructure emptyClusterName = K8sGcpInfrastructure.builder()
-                                                .connectorRef(ParameterField.createValueField("connectorId"))
-                                                .namespace(ParameterField.createValueField("namespace"))
-                                                .releaseName(ParameterField.createValueField("release"))
-                                                .cluster(ParameterField.createValueField(""))
-                                                .build();
-    assertThatThrownBy(()
-                           -> infrastructureMapper.toOutcome(
-                               emptyClusterName, environment, serviceOutcome, "accountId", "projId", "orgId"))
-        .isInstanceOf(InvalidArgumentsException.class);
   }
 
   @Test
@@ -262,28 +194,6 @@ public class InfrastructureMapperTest extends CategoryTest {
     InfrastructureOutcome infrastructureOutcome = infrastructureMapper.toOutcome(
         serverlessAwsLambdaInfrastructure, environment, serviceOutcome, "accountId", "projId", "orgId");
     assertThat(infrastructureOutcome).isEqualTo(expectedOutcome);
-  }
-
-  @Test
-  @Owner(developers = PIYUSH_BHUWALKA)
-  @Category(UnitTests.class)
-  public void testServerlessAwsInfraMapperEmptyValues() {
-    ServerlessAwsLambdaInfrastructure emptyRegion = ServerlessAwsLambdaInfrastructure.builder()
-                                                        .connectorRef(ParameterField.createValueField("connectorId"))
-                                                        .region(ParameterField.createValueField(""))
-                                                        .stage(ParameterField.createValueField("stage"))
-                                                        .build();
-    assertThatThrownBy(
-        () -> infrastructureMapper.toOutcome(emptyRegion, environment, serviceOutcome, "accountId", "projId", "orgId"))
-        .isInstanceOf(InvalidArgumentsException.class);
-
-    ServerlessAwsLambdaInfrastructure emptyStage = ServerlessAwsLambdaInfrastructure.builder()
-                                                       .connectorRef(ParameterField.createValueField("connectorId"))
-                                                       .region(ParameterField.createValueField("region"))
-                                                       .stage(ParameterField.createValueField(""))
-                                                       .build();
-    assertThatThrownBy(
-        () -> infrastructureMapper.toOutcome(emptyStage, environment, serviceOutcome, "accountId", "projId", "orgId"));
   }
 
   @Test
@@ -350,35 +260,6 @@ public class InfrastructureMapperTest extends CategoryTest {
   @Test
   @Owner(developers = FILIP)
   @Category(UnitTests.class)
-  public void testPdcInfrastructureEmptySshKeyRef() {
-    PdcInfrastructure emptySshKeyRef =
-        PdcInfrastructure.builder().connectorRef(ParameterField.createValueField("connector-ref")).build();
-
-    assertThatThrownBy(()
-                           -> infrastructureMapper.toOutcome(
-                               emptySshKeyRef, environment, serviceOutcome, "accountId", "projId", "orgId"))
-        .isInstanceOf(InvalidArgumentsException.class);
-  }
-
-  @Test
-  @Owner(developers = FILIP)
-  @Category(UnitTests.class)
-  public void testPdcInfrastructureEmptyHostsAndConnector() {
-    PdcInfrastructure emptySshKeyRef = PdcInfrastructure.builder()
-                                           .credentialsRef(ParameterField.createValueField("ssh-key-ref"))
-                                           .hosts(ParameterField.ofNull())
-                                           .connectorRef(ParameterField.ofNull())
-                                           .build();
-
-    assertThatThrownBy(()
-                           -> infrastructureMapper.toOutcome(
-                               emptySshKeyRef, environment, serviceOutcome, "accountId", "projId", "orgId"))
-        .isInstanceOf(InvalidArgumentsException.class);
-  }
-
-  @Test
-  @Owner(developers = FILIP)
-  @Category(UnitTests.class)
   public void testSshWinRmAzureInfrastructureToOutcome() {
     SshWinRmAzureInfrastructure infrastructure =
         SshWinRmAzureInfrastructure.builder()
@@ -404,38 +285,6 @@ public class InfrastructureMapperTest extends CategoryTest {
                                                      .build();
     outcome.setConnector(Connector.builder().name("my_connector").build());
     assertThat(infrastructureOutcome).isEqualToIgnoringGivenFields(outcome, "infrastructureKey");
-  }
-
-  @Test
-  @Owner(developers = FILIP)
-  @Category(UnitTests.class)
-  public void testSshWinRmAzureInfrastructureEmptyCredentialsRefAndResourceGroup() {
-    SshWinRmAzureInfrastructure invalidInfra = SshWinRmAzureInfrastructure.builder()
-                                                   .credentialsRef(ParameterField.ofNull())
-                                                   .resourceGroup(ParameterField.ofNull())
-                                                   .connectorRef(ParameterField.createValueField("connector-ref"))
-                                                   .subscriptionId(ParameterField.createValueField("sub-id"))
-                                                   .build();
-
-    assertThatThrownBy(
-        () -> infrastructureMapper.toOutcome(invalidInfra, environment, serviceOutcome, "accountId", "projId", "orgId"))
-        .isInstanceOf(InvalidArgumentsException.class);
-  }
-
-  @Test
-  @Owner(developers = FILIP)
-  @Category(UnitTests.class)
-  public void testSshWinRmAzureInfrastructureEmptySubscriptionIdAndConnectorId() {
-    SshWinRmAzureInfrastructure invalidInfra = SshWinRmAzureInfrastructure.builder()
-                                                   .subscriptionId(ParameterField.ofNull())
-                                                   .connectorRef(ParameterField.ofNull())
-                                                   .credentialsRef(ParameterField.createValueField("ssh-key-ref"))
-                                                   .resourceGroup(ParameterField.createValueField("resource-id"))
-                                                   .build();
-
-    assertThatThrownBy(
-        () -> infrastructureMapper.toOutcome(invalidInfra, environment, serviceOutcome, "accountId", "projId", "orgId"))
-        .isInstanceOf(InvalidArgumentsException.class);
   }
 
   @Test
@@ -518,77 +367,6 @@ public class InfrastructureMapperTest extends CategoryTest {
                                                    .build();
     outcome.setConnector(Connector.builder().name("my_connector").build());
     assertThat(infrastructureOutcome).isEqualToIgnoringGivenFields(outcome, "infrastructureKey");
-  }
-
-  @Test
-  @Owner(developers = MLUKIC)
-  @Category(UnitTests.class)
-  public void testK8sAzureInfraMapperEmptyValues() {
-    K8sAzureInfrastructure emptyNamespace = K8sAzureInfrastructure.builder()
-                                                .connectorRef(ParameterField.createValueField("connectorId"))
-                                                .namespace(ParameterField.createValueField(""))
-                                                .releaseName(ParameterField.createValueField("release"))
-                                                .subscriptionId(ParameterField.createValueField("subscriptionId"))
-                                                .resourceGroup(ParameterField.createValueField("resourceGroup"))
-                                                .cluster(ParameterField.createValueField("cluster"))
-                                                .build();
-    assertThatThrownBy(()
-                           -> infrastructureMapper.toOutcome(
-                               emptyNamespace, environment, serviceOutcome, "accountId", "projId", "orgId"))
-        .isInstanceOf(InvalidArgumentsException.class);
-
-    K8sAzureInfrastructure emptyReleaseName = K8sAzureInfrastructure.builder()
-                                                  .connectorRef(ParameterField.createValueField("connectorId"))
-                                                  .namespace(ParameterField.createValueField("namespace"))
-                                                  .releaseName(ParameterField.createValueField(""))
-                                                  .subscriptionId(ParameterField.createValueField("subscriptionId"))
-                                                  .resourceGroup(ParameterField.createValueField("resourceGroup"))
-                                                  .cluster(ParameterField.createValueField("cluster"))
-                                                  .build();
-    assertThatThrownBy(()
-                           -> infrastructureMapper.toOutcome(
-                               emptyReleaseName, environment, serviceOutcome, "accountId", "projId", "orgId"))
-        .isInstanceOf(InvalidArgumentsException.class);
-
-    K8sAzureInfrastructure emptySubscription = K8sAzureInfrastructure.builder()
-                                                   .connectorRef(ParameterField.createValueField("connectorId"))
-                                                   .namespace(ParameterField.createValueField("namespace"))
-                                                   .releaseName(ParameterField.createValueField("release"))
-                                                   .subscriptionId(ParameterField.createValueField(""))
-                                                   .resourceGroup(ParameterField.createValueField("resourceGroup"))
-                                                   .cluster(ParameterField.createValueField("cluster"))
-                                                   .build();
-    assertThatThrownBy(()
-                           -> infrastructureMapper.toOutcome(
-                               emptySubscription, environment, serviceOutcome, "accountId", "projId", "orgId"))
-        .isInstanceOf(InvalidArgumentsException.class);
-
-    K8sAzureInfrastructure emptyResourceGroupName =
-        K8sAzureInfrastructure.builder()
-            .connectorRef(ParameterField.createValueField("connectorId"))
-            .namespace(ParameterField.createValueField("namespace"))
-            .releaseName(ParameterField.createValueField("release"))
-            .subscriptionId(ParameterField.createValueField("subscriptionId"))
-            .resourceGroup(ParameterField.createValueField(""))
-            .cluster(ParameterField.createValueField("cluster"))
-            .build();
-    assertThatThrownBy(()
-                           -> infrastructureMapper.toOutcome(
-                               emptyResourceGroupName, environment, serviceOutcome, "accountId", "projId", "orgId"))
-        .isInstanceOf(InvalidArgumentsException.class);
-
-    K8sAzureInfrastructure emptyClusterName = K8sAzureInfrastructure.builder()
-                                                  .connectorRef(ParameterField.createValueField("connectorId"))
-                                                  .namespace(ParameterField.createValueField("namespace"))
-                                                  .releaseName(ParameterField.createValueField("release"))
-                                                  .subscriptionId(ParameterField.createValueField("subscriptionId"))
-                                                  .resourceGroup(ParameterField.createValueField("resourceGroup"))
-                                                  .cluster(ParameterField.createValueField(""))
-                                                  .build();
-    assertThatThrownBy(()
-                           -> infrastructureMapper.toOutcome(
-                               emptyClusterName, environment, serviceOutcome, "accountId", "projId", "orgId"))
-        .isInstanceOf(InvalidArgumentsException.class);
   }
 
   @Test

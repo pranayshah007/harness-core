@@ -70,6 +70,7 @@ import io.harness.cvng.core.beans.monitoredService.HealthSource;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO.MonitoredServiceDTOBuilder;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO.ServiceDependencyDTO;
+import io.harness.cvng.core.beans.monitoredService.RiskCategoryDTO;
 import io.harness.cvng.core.beans.monitoredService.TimeSeriesMetricPackDTO;
 import io.harness.cvng.core.beans.monitoredService.changeSourceSpec.HarnessCDChangeSourceSpec;
 import io.harness.cvng.core.beans.monitoredService.changeSourceSpec.HarnessCDCurrentGenChangeSourceSpec;
@@ -1336,5 +1337,19 @@ public class BuilderFactory {
                                .spec(HealthScoreConditionSpec.builder().threshold(20.0).period("10m").build())
                                .build());
     }
+  }
+
+  public List<RiskCategoryDTO> getRiskCategoryList() {
+    RiskCategoryDTO performanceThroughputRiskCategory = RiskCategoryDTO.builder()
+                                                            .displayName("Performance/Throughput")
+                                                            .cvMonitoringCategory(CVMonitoringCategory.PERFORMANCE)
+                                                            .timeSeriesMetricType(TimeSeriesMetricType.THROUGHPUT)
+                                                            .build();
+    RiskCategoryDTO infrastructureRiskCategory = RiskCategoryDTO.builder()
+                                                     .displayName("Infrastructure")
+                                                     .cvMonitoringCategory(CVMonitoringCategory.INFRASTRUCTURE)
+                                                     .timeSeriesMetricType(TimeSeriesMetricType.INFRA)
+                                                     .build();
+    return Arrays.asList(performanceThroughputRiskCategory, infrastructureRiskCategory);
   }
 }

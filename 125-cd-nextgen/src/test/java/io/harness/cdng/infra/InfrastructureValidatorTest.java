@@ -1,0 +1,216 @@
+package io.harness.cdng.infra;
+
+import static io.harness.rule.OwnerRule.YOGESH;
+
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+import io.harness.CategoryTest;
+import io.harness.category.element.UnitTests;
+import io.harness.cdng.infra.yaml.K8SDirectInfrastructure;
+import io.harness.cdng.infra.yaml.K8sAzureInfrastructure;
+import io.harness.cdng.infra.yaml.K8sGcpInfrastructure;
+import io.harness.cdng.infra.yaml.PdcInfrastructure;
+import io.harness.cdng.infra.yaml.ServerlessAwsLambdaInfrastructure;
+import io.harness.cdng.infra.yaml.SshWinRmAzureInfrastructure;
+import io.harness.exception.InvalidArgumentsException;
+import io.harness.pms.yaml.ParameterField;
+import io.harness.rule.Owner;
+
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.mockito.MockitoAnnotations;
+
+public class InfrastructureValidatorTest extends CategoryTest {
+  private InfrastructureValidator validator = new InfrastructureValidator();
+  private AutoCloseable mocks;
+
+  @Before
+  public void setUp() throws Exception {
+    mocks = MockitoAnnotations.openMocks(this);
+  }
+
+  @After
+  public void tearDown() throws Exception {
+    if (mocks != null) {
+      mocks.close();
+    }
+  }
+
+  @Test
+  @Owner(developers = YOGESH)
+  @Category(UnitTests.class)
+  public void testSshWinRmAzureInfrastructureEmptyCredentialsRefAndResourceGroup() {
+    SshWinRmAzureInfrastructure invalidInfra = SshWinRmAzureInfrastructure.builder()
+                                                   .credentialsRef(ParameterField.ofNull())
+                                                   .resourceGroup(ParameterField.ofNull())
+                                                   .connectorRef(ParameterField.createValueField("connector-ref"))
+                                                   .subscriptionId(ParameterField.createValueField("sub-id"))
+                                                   .build();
+
+    assertThatThrownBy(() -> validator.validate(invalidInfra)).isInstanceOf(InvalidArgumentsException.class);
+  }
+
+  @Test
+  @Owner(developers = YOGESH)
+  @Category(UnitTests.class)
+  public void testK8sGcpInfraMapperEmptyValues() {
+    K8sGcpInfrastructure emptyNamespace = K8sGcpInfrastructure.builder()
+                                              .connectorRef(ParameterField.createValueField("connectorId"))
+                                              .namespace(ParameterField.createValueField(""))
+                                              .releaseName(ParameterField.createValueField("release"))
+                                              .cluster(ParameterField.createValueField("cluster"))
+                                              .build();
+    assertThatThrownBy(() -> validator.validate(emptyNamespace)).isInstanceOf(InvalidArgumentsException.class);
+
+    K8sGcpInfrastructure emptyReleaseName = K8sGcpInfrastructure.builder()
+                                                .connectorRef(ParameterField.createValueField("connectorId"))
+                                                .namespace(ParameterField.createValueField("namespace"))
+                                                .releaseName(ParameterField.createValueField(""))
+                                                .cluster(ParameterField.createValueField("cluster"))
+                                                .build();
+    assertThatThrownBy(() -> validator.validate(emptyReleaseName)).isInstanceOf(InvalidArgumentsException.class);
+
+    K8sGcpInfrastructure emptyClusterName = K8sGcpInfrastructure.builder()
+                                                .connectorRef(ParameterField.createValueField("connectorId"))
+                                                .namespace(ParameterField.createValueField("namespace"))
+                                                .releaseName(ParameterField.createValueField("release"))
+                                                .cluster(ParameterField.createValueField(""))
+                                                .build();
+    assertThatThrownBy(() -> validator.validate(emptyClusterName)).isInstanceOf(InvalidArgumentsException.class);
+  }
+
+  @Test
+  @Owner(developers = YOGESH)
+  @Category(UnitTests.class)
+  public void testPdcInfrastructureEmptySshKeyRef() {
+    PdcInfrastructure emptySshKeyRef =
+        PdcInfrastructure.builder().connectorRef(ParameterField.createValueField("connector-ref")).build();
+
+    assertThatThrownBy(() -> validator.validate(emptySshKeyRef)).isInstanceOf(InvalidArgumentsException.class);
+  }
+
+  @Test
+  @Owner(developers = YOGESH)
+  @Category(UnitTests.class)
+  public void testPdcInfrastructureEmptyHostsAndConnector() {
+    PdcInfrastructure emptySshKeyRef = PdcInfrastructure.builder()
+                                           .credentialsRef(ParameterField.createValueField("ssh-key-ref"))
+                                           .hosts(ParameterField.ofNull())
+                                           .connectorRef(ParameterField.ofNull())
+                                           .build();
+
+    assertThatThrownBy(() -> validator.validate(emptySshKeyRef)).isInstanceOf(InvalidArgumentsException.class);
+  }
+
+  @Test
+  @Owner(developers = YOGESH)
+  @Category(UnitTests.class)
+  public void testK8sAzureInfraMapperEmptyValues() {
+    K8sAzureInfrastructure emptyNamespace = K8sAzureInfrastructure.builder()
+                                                .connectorRef(ParameterField.createValueField("connectorId"))
+                                                .namespace(ParameterField.createValueField(""))
+                                                .releaseName(ParameterField.createValueField("release"))
+                                                .subscriptionId(ParameterField.createValueField("subscriptionId"))
+                                                .resourceGroup(ParameterField.createValueField("resourceGroup"))
+                                                .cluster(ParameterField.createValueField("cluster"))
+                                                .build();
+    assertThatThrownBy(() -> validator.validate(emptyNamespace)).isInstanceOf(InvalidArgumentsException.class);
+
+    K8sAzureInfrastructure emptyReleaseName = K8sAzureInfrastructure.builder()
+                                                  .connectorRef(ParameterField.createValueField("connectorId"))
+                                                  .namespace(ParameterField.createValueField("namespace"))
+                                                  .releaseName(ParameterField.createValueField(""))
+                                                  .subscriptionId(ParameterField.createValueField("subscriptionId"))
+                                                  .resourceGroup(ParameterField.createValueField("resourceGroup"))
+                                                  .cluster(ParameterField.createValueField("cluster"))
+                                                  .build();
+    assertThatThrownBy(() -> validator.validate(emptyReleaseName)).isInstanceOf(InvalidArgumentsException.class);
+
+    K8sAzureInfrastructure emptySubscription = K8sAzureInfrastructure.builder()
+                                                   .connectorRef(ParameterField.createValueField("connectorId"))
+                                                   .namespace(ParameterField.createValueField("namespace"))
+                                                   .releaseName(ParameterField.createValueField("release"))
+                                                   .subscriptionId(ParameterField.createValueField(""))
+                                                   .resourceGroup(ParameterField.createValueField("resourceGroup"))
+                                                   .cluster(ParameterField.createValueField("cluster"))
+                                                   .build();
+    assertThatThrownBy(() -> validator.validate(emptySubscription)).isInstanceOf(InvalidArgumentsException.class);
+
+    K8sAzureInfrastructure emptyResourceGroupName =
+        K8sAzureInfrastructure.builder()
+            .connectorRef(ParameterField.createValueField("connectorId"))
+            .namespace(ParameterField.createValueField("namespace"))
+            .releaseName(ParameterField.createValueField("release"))
+            .subscriptionId(ParameterField.createValueField("subscriptionId"))
+            .resourceGroup(ParameterField.createValueField(""))
+            .cluster(ParameterField.createValueField("cluster"))
+            .build();
+    assertThatThrownBy(() -> validator.validate(emptyResourceGroupName)).isInstanceOf(InvalidArgumentsException.class);
+
+    K8sAzureInfrastructure emptyClusterName = K8sAzureInfrastructure.builder()
+                                                  .connectorRef(ParameterField.createValueField("connectorId"))
+                                                  .namespace(ParameterField.createValueField("namespace"))
+                                                  .releaseName(ParameterField.createValueField("release"))
+                                                  .subscriptionId(ParameterField.createValueField("subscriptionId"))
+                                                  .resourceGroup(ParameterField.createValueField("resourceGroup"))
+                                                  .cluster(ParameterField.createValueField(""))
+                                                  .build();
+    assertThatThrownBy(() -> validator.validate(emptyClusterName)).isInstanceOf(InvalidArgumentsException.class);
+  }
+
+  @Test
+  @Owner(developers = YOGESH)
+  @Category(UnitTests.class)
+  public void testSshWinRmAzureInfrastructureEmptySubscriptionIdAndConnectorId() {
+    SshWinRmAzureInfrastructure invalidInfra = SshWinRmAzureInfrastructure.builder()
+                                                   .subscriptionId(ParameterField.ofNull())
+                                                   .connectorRef(ParameterField.ofNull())
+                                                   .credentialsRef(ParameterField.createValueField("ssh-key-ref"))
+                                                   .resourceGroup(ParameterField.createValueField("resource-id"))
+                                                   .build();
+
+    assertThatThrownBy(() -> validator.validate(invalidInfra)).isInstanceOf(InvalidArgumentsException.class);
+  }
+
+  @Test
+  @Owner(developers = YOGESH)
+  @Category(UnitTests.class)
+  public void testServerlessAwsInfraMapperEmptyValues() {
+    ServerlessAwsLambdaInfrastructure emptyRegion = ServerlessAwsLambdaInfrastructure.builder()
+                                                        .connectorRef(ParameterField.createValueField("connectorId"))
+                                                        .region(ParameterField.createValueField(""))
+                                                        .stage(ParameterField.createValueField("stage"))
+                                                        .build();
+    assertThatThrownBy(() -> validator.validate(emptyRegion)).isInstanceOf(InvalidArgumentsException.class);
+
+    ServerlessAwsLambdaInfrastructure emptyStage = ServerlessAwsLambdaInfrastructure.builder()
+                                                       .connectorRef(ParameterField.createValueField("connectorId"))
+                                                       .region(ParameterField.createValueField("region"))
+                                                       .stage(ParameterField.createValueField(""))
+                                                       .build();
+    assertThatThrownBy(() -> validator.validate(emptyStage));
+  }
+
+  @Test
+  @Owner(developers = YOGESH)
+  @Category(UnitTests.class)
+  public void testToOutcomeEmptyValues() {
+    K8SDirectInfrastructure emptyReleaseName = K8SDirectInfrastructure.builder()
+                                                   .connectorRef(ParameterField.createValueField("connectorId"))
+                                                   .namespace(ParameterField.createValueField("namespace"))
+                                                   .releaseName(ParameterField.createValueField(""))
+                                                   .build();
+
+    assertThatThrownBy(() -> validator.validate(emptyReleaseName)).isInstanceOf(InvalidArgumentsException.class);
+
+    K8SDirectInfrastructure emptyNamespace = K8SDirectInfrastructure.builder()
+                                                 .connectorRef(ParameterField.createValueField("connectorId"))
+                                                 .namespace(ParameterField.createValueField(""))
+                                                 .releaseName(ParameterField.createValueField("releaseName"))
+                                                 .build();
+
+    assertThatThrownBy(() -> validator.validate(emptyNamespace)).isInstanceOf(InvalidArgumentsException.class);
+  }
+}

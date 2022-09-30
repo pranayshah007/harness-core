@@ -1011,3 +1011,5 @@ fi
 if [[ "" != "$TEMPLATE_SERVICE_ENDPOINT" ]]; then
   export TEMPLATE_SERVICE_ENDPOINT; yq -i '.templateServiceClientConfig.baseUrl=env(TEMPLATE_SERVICE_ENDPOINT)' $CONFIG_FILE
 fi
+
+replace_key_value cg.enableOpentelemetry "$ENABLE_OPENTELEMETRY"

@@ -9,6 +9,7 @@ package io.harness.delegate.beans.connector.artifactoryconnector;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
+import io.harness.annotation.RecasterFieldName;
 import io.harness.annotations.dev.OwnedBy;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -34,8 +35,9 @@ import lombok.NoArgsConstructor;
 @Schema(
     name = "ArtifactoryAuthentication", description = "This entity contains the details for Artifactory Authentication")
 public class ArtifactoryAuthenticationDTO {
-  @NotNull @JsonProperty("type") ArtifactoryAuthType authType;
+  @RecasterFieldName(name = "type") @NotNull @JsonProperty("type") ArtifactoryAuthType authType;
 
+  @RecasterFieldName(name = "spec")
   @JsonProperty("spec")
   @JsonTypeInfo(
       use = JsonTypeInfo.Id.NAME, property = "type", include = JsonTypeInfo.As.EXTERNAL_PROPERTY, visible = true)
