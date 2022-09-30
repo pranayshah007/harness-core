@@ -89,7 +89,7 @@ public class ArtifactoryResourceServiceImpl implements ArtifactoryResourceServic
   private final SecretManagerClientService secretManagerClientService;
   @Inject ExceptionManager exceptionManager;
 
-  @VisibleForTesting static final int timeoutInSecs = 60;
+  @VisibleForTesting static final int timeoutInSecs = 30;
   private static final String FAILED_TO_FETCH_REPOSITORIES = "Failed to fetch repositories";
   private static final String FAILED_TO_FETCH_ARTIFACTS = "Failed to fetch artifacts";
 
