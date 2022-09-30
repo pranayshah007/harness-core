@@ -19,7 +19,7 @@ import lombok.Getter;
  */
 @OwnedBy(HarnessTeam.PL)
 public enum FeatureName {
-  SPG_ENABLE_EMAIL_TO_APPROVE_OR_REJECT_GRAPHQL("Enable to use email to approve or reject graphql", HarnessTeam.SPG),
+  SPG_ENABLE_EMAIL_VALIDATION("Enable email validation in GraphQL approveOrRejectApprovals mutation", HarnessTeam.SPG),
   DISABLE_HELM_REPO_YAML_CACHE(
       "Enable to create a temporary folder (based on execution id) to store repository.yaml file", HarnessTeam.CDP),
   DEPRECATE_K8S_STEADY_STATE_CHECK_STEP,
@@ -433,13 +433,15 @@ public enum FeatureName {
   ARTIFACT_SOURCE_TEMPLATE("Flag to add support for artifact source templates", HarnessTeam.CDC),
   NG_DEPLOYMENT_FREEZE("Enables Deployment freeze for NG", HarnessTeam.CDC),
   PL_ENABLE_SWITCH_ACCOUNT_PAGINATION("Enables new API for Switch Account which is paginated", HarnessTeam.PL),
+  SHELL_SCRIPT_PROVISION_NG("Used to allow customers to access Shell Script Provision NG", HarnessTeam.CDP),
   NEW_EXECUTION_LIST_VIEW(
       "Enables the new UX for Executions list view for Pipelines and Projects", HarnessTeam.PIPELINE),
   PL_ACCESS_SECRET_DYNAMICALLY_BY_PATH(
       "For NG, it enables to read secrets from HashiCorp Vault directly using an fully qualified path expression without the need of creating secret in Harness.",
       HarnessTeam.PL),
   PL_NO_EMAIL_FOR_SAML_ACCOUNT_INVITES("No email for users in account where SAML auth is enabled", HarnessTeam.PL),
-  PL_ENABLE_GOOGLE_SECRET_MANAGER_IN_NG("Enable Google Secret Manager in NG", HarnessTeam.PL);
+  PL_ENABLE_GOOGLE_SECRET_MANAGER_IN_NG("Enable Google Secret Manager in NG", HarnessTeam.PL),
+  SPG_DISABLE_SEARCH_DEPLOYMENTS_PAGE("Disable search on deployment page in CG.", HarnessTeam.SPG);
   @Deprecated
   FeatureName() {
     scope = Scope.PER_ACCOUNT;

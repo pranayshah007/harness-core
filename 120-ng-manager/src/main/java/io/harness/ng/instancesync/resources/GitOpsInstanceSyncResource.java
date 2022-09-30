@@ -144,7 +144,7 @@ public class GitOpsInstanceSyncResource {
         instances.forEach(gitInstance -> {
           gitInstance.setPipelineName(pipelineInfo.getName());
           gitInstance.setLastExecutedAt(pipelineInfo.getLastExecutedAt());
-          gitInstance.setPipelineExecutionId(pipelineInfo.getPipelineExecutionId());
+          gitInstance.setPipelineExecutionId(pipelineInfo.getPlanExecutionId());
           gitInstance.setLastDeployedById(pipelineInfo.getDeployedById());
           gitInstance.setLastDeployedByName(pipelineInfo.getDeployedByName());
           instanceDTOs.add(gitInstance);

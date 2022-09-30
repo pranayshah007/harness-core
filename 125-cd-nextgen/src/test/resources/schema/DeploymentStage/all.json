@@ -8746,6 +8746,56 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "ShellScriptProvisionStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "required": [
+            "source"
+          ],
+          "properties": {
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "environmentVariables": {
+              "type": "array",
+              "items": {
+                "oneOf": [
+                  {
+                    "$ref": "#/definitions/NumberNGVariable"
+                  },
+                  {
+                    "$ref": "#/definitions/SecretNGVariable"
+                  },
+                  {
+                    "$ref": "#/definitions/StringNGVariable"
+                  }
+                ]
+              }
+            },
+            "source": {
+              "$ref": "#/definitions/ShellScriptSourceWrapper"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "ShellScriptSourceWrapper": {
       "type": "object",
       "required": [
@@ -9848,6 +9898,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/ServerlessAwsLambdaRollbackStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "ShellScriptProvision"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/ShellScriptProvisionStepInfo"
               }
             }
           }

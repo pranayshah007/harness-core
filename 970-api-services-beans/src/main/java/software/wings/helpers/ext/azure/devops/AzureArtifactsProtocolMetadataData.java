@@ -20,6 +20,6 @@ import lombok.Data;
 @TargetModule(_960_API_SERVICES)
 @Data
 @JsonIgnoreProperties(ignoreUnknown = true)
-class AzureArtifactsProtocolMetadataData {
+public class AzureArtifactsProtocolMetadataData {
   long size;
 }

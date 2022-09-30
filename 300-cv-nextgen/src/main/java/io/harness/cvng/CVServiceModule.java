@@ -138,6 +138,7 @@ import io.harness.cvng.core.services.api.OnboardingService;
 import io.harness.cvng.core.services.api.PagerDutyService;
 import io.harness.cvng.core.services.api.ParseSampleDataService;
 import io.harness.cvng.core.services.api.PrometheusService;
+import io.harness.cvng.core.services.api.RiskCategoryService;
 import io.harness.cvng.core.services.api.SetupUsageEventService;
 import io.harness.cvng.core.services.api.SideKickExecutor;
 import io.harness.cvng.core.services.api.SideKickService;
@@ -219,6 +220,7 @@ import io.harness.cvng.core.services.impl.monitoredService.ChangeSourceServiceIm
 import io.harness.cvng.core.services.impl.monitoredService.DatadogLogDataCollectionInfoMapper;
 import io.harness.cvng.core.services.impl.monitoredService.HealthSourceServiceImpl;
 import io.harness.cvng.core.services.impl.monitoredService.MonitoredServiceServiceImpl;
+import io.harness.cvng.core.services.impl.monitoredService.RiskCategoryServiceImpl;
 import io.harness.cvng.core.services.impl.monitoredService.ServiceDependencyServiceImpl;
 import io.harness.cvng.core.services.impl.sidekickexecutors.DemoActivitySideKickExecutor;
 import io.harness.cvng.core.services.impl.sidekickexecutors.RetryChangeSourceHandleDeleteSideKickExecutor;
@@ -765,6 +767,7 @@ public class CVServiceModule extends AbstractModule {
     bind(SLIDataProcessorService.class).to(SLIDataProcessorServiceImpl.class);
     bind(SLOHealthIndicatorService.class).to(SLOHealthIndicatorServiceImpl.class);
     bind(TimeSeriesThresholdService.class).to(TimeSeriesThresholdServiceImpl.class);
+    bind(RiskCategoryService.class).to(RiskCategoryServiceImpl.class);
     MapBinder<ChangeSourceType, ChangeSourceSpecTransformer> changeSourceTypeChangeSourceSpecTransformerMapBinder =
         MapBinder.newMapBinder(binder(), ChangeSourceType.class, ChangeSourceSpecTransformer.class);
     changeSourceTypeChangeSourceSpecTransformerMapBinder.addBinding(ChangeSourceType.HARNESS_CD)

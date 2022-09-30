@@ -476,4 +476,34 @@ public class AzureVaultEncryptorTest extends CategoryTest {
         .hasMessageContaining("'38fca8d7-4dda-41d5-b106-e5d8712b733b' was not found in the directory 'Harness Inc'.")
         .hasCauseInstanceOf(AuthenticationException.class);
   }
+
+  @Test
+  @Owner(developers = RAGHAV_MURALI)
+  @Category(UnitTests.class)
+  public void testDeleteSecretOtherException() {
+    EncryptedRecord oldRecord = EncryptedRecordData.builder()
+                                    .name(UUIDGenerator.generateUuid())
+                                    .encryptionKey(UUIDGenerator.generateUuid())
+                                    .encryptedValue(UUIDGenerator.generateUuid().toCharArray())
+                                    .build();
+
+    ObjectMapper objectMapper = new ObjectMapper();
+    String errorJson = "{\"error\" : {\"code\" : \"NotFound\","
+        + " \"message\": \"The secret with name My_Azure_Secret doesn't exist. \"}}";
+    try {
+      KeyVaultError error = objectMapper.readValue(errorJson, KeyVaultError.class);
+
+      when(keyVaultClient.deleteSecret(anyString(), anyString()))
+          .thenThrow(new KeyVaultErrorException("Secret not found", null, error));
+    } catch (Exception e) {
+      // unable to process json
+      fail("Json processing error");
+    }
+
+    assertThatThrownBy(
+        () -> azureVaultEncryptor.deleteSecret(azureVaultConfig.getAccountId(), oldRecord, azureVaultConfig))
+        .isInstanceOf(SecretManagementDelegateException.class)
+        .hasMessageContaining("Secret not found")
+        .hasCauseInstanceOf(KeyVaultErrorException.class);
+  }
 }

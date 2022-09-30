@@ -602,6 +602,10 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
         && ENCRYPTION_TYPES_REQUIRING_FILE_DOWNLOAD.contains(encryptedData.getEncryptionType())) {
       secretsFileService.deleteFile(encryptedData.getEncryptedValue());
     }
+    // Note - Ideally the return below should be a logical AND of whether secret was deleted
+    // in remote vault in deleteSecretInSecretManager and deletion in encrypted data DAO below.
+    // But for now to ensure local deletion of record goes through, just returning the boolean
+    // value of encrypted data DAO record irrespective of whether it was deleted on remote or not.
     return encryptedDataDao.delete(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
   }
 
@@ -615,8 +619,18 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
               encryptedData.getAccountIdentifier(), FeatureName.DO_NOT_RENEW_APPROLE_TOKEN))) {
         ((BaseVaultConfig) secretManagerConfig).setRenewAppRoleToken(false);
       }
-      vaultEncryptorsRegistry.getVaultEncryptor(secretManagerConfig.getEncryptionType())
-          .deleteSecret(accountIdentifier, encryptedData, secretManagerConfig);
+      try {
+        if (!vaultEncryptorsRegistry.getVaultEncryptor(secretManagerConfig.getEncryptionType())
+                 .deleteSecret(accountIdentifier, encryptedData, secretManagerConfig)) {
+          log.error("Secret was not deleted on the remote vault for account : {}, secret : {}", accountIdentifier,
+              secretManagerConfig.getIdentifier());
+        }
+      } catch (SecretManagementException ex) {
+        // Logging the exception here and not throwing it further
+        // to ensure the record gets deleted locally even if it
+        // fails on the remote vault.
+        log.error("Exception received while deleting secret : {}", ex.toString());
+      }
     }
   }
 
