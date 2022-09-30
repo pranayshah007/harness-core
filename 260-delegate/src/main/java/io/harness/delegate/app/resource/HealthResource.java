@@ -13,6 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.health.HealthException;
 import io.harness.health.HealthService;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.security.annotations.PublicApi;
 
 import com.codahale.metrics.annotation.ExceptionMetered;
 import com.codahale.metrics.annotation.Timed;
@@ -25,6 +26,7 @@ import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Api("health")
@@ -33,14 +35,10 @@ import lombok.extern.slf4j.Slf4j;
 @Produces(MediaType.APPLICATION_JSON)
 @OwnedBy(DEL)
 @Slf4j
-//@PublicApi - TODO: Test, but I don't think this is used on agent side since we don't process it
+@RequiredArgsConstructor(onConstructor_ = @Inject)
+@PublicApi
 public class HealthResource {
   private final HealthService healthService;
-
-  @Inject
-  public HealthResource(HealthService healthService) {
-    this.healthService = healthService;
-  }
 
   @GET
   @Timed

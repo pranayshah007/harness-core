@@ -7,66 +7,35 @@
 
 package io.harness.delegate.service.platform;
 
-import static com.google.common.collect.ImmutableList.*;
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.data.structure.UUIDGenerator.generateUuid;
-import static io.harness.delegate.message.ManagerMessageConstants.SELF_DESTRUCT;
 import static io.harness.delegate.metrics.DelegateMetricsConstants.TASK_EXECUTION_TIME;
 import static io.harness.delegate.metrics.DelegateMetricsConstants.TASK_TIMEOUT;
-import static io.harness.eraro.ErrorCode.EXPIRED_TOKEN;
-import static io.harness.eraro.ErrorCode.INVALID_TOKEN;
-import static io.harness.eraro.ErrorCode.REVOKED_TOKEN;
-import static io.harness.expression.SecretString.SECRET_MASK;
 import static io.harness.govern.IgnoreThrowable.ignoredOnPurpose;
-import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_NESTS;
-import static io.harness.logging.Misc.getDurationString;
-import static io.harness.network.Localhost.getLocalHostAddress;
 import static io.harness.threading.Morpheus.sleep;
 import static io.harness.utils.MemoryPerformanceUtils.memoryUsage;
 
 import static software.wings.beans.TaskType.SCRIPT;
 import static software.wings.beans.TaskType.SHELL_SCRIPT_TASK_NG;
 
-import static java.time.Duration.ofMinutes;
+import static com.google.common.collect.ImmutableList.of;
+import static com.google.common.collect.ImmutableList.toImmutableList;
 import static java.time.Duration.ofSeconds;
-import static java.util.Collections.emptyList;
-import static java.util.stream.Collectors.toList;
-import static org.apache.commons.lang3.StringUtils.isBlank;
-import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
-import io.harness.beans.DelegateHeartbeatResponse;
-import io.harness.beans.DelegateHeartbeatResponseStreaming;
-import io.harness.beans.DelegateTaskEventsResponse;
 import io.harness.concurrent.HTimeLimiter;
-import io.harness.configuration.DeployMode;
 import io.harness.data.structure.NullSafeImmutableMap;
 import io.harness.delegate.DelegateAgentCommonVariables;
-import io.harness.delegate.beans.DelegateConnectionHeartbeat;
-import io.harness.delegate.beans.DelegateInstanceStatus;
-import io.harness.delegate.beans.DelegateParams;
-import io.harness.delegate.beans.DelegateRegisterResponse;
 import io.harness.delegate.beans.DelegateTaskAbortEvent;
 import io.harness.delegate.beans.DelegateTaskEvent;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.beans.TaskData;
-import io.harness.delegate.logging.DelegateStackdriverLogAppender;
 import io.harness.delegate.service.common.AbstractDelegateAgentServiceImpl;
 import io.harness.delegate.service.common.DelegateTaskExecutionData;
-import io.harness.delegate.task.tasklogging.TaskLogContext;
-import io.harness.exception.UnexpectedException;
 import io.harness.logging.AutoLogContext;
 import io.harness.network.FibonacciBackOff;
-import io.harness.rest.RestResponse;
-import io.harness.security.TokenGenerator;
-import io.harness.serializer.JsonUtils;
-import io.harness.threading.Schedulable;
 
 import software.wings.beans.TaskType;
 import software.wings.delegatetasks.bash.BashScriptTask;
-import software.wings.misc.MemoryHelper;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -77,69 +46,37 @@ import com.google.inject.Injector;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.sun.management.OperatingSystemMXBean;
-import java.io.IOException;
-import java.io.Reader;
-import java.io.StringReader;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
-import java.net.ConnectException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.nio.file.Paths;
 import java.time.Duration;
-import java.util.Arrays;
-import java.util.ConcurrentModificationException;
-import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
-import java.util.stream.Stream;
-import javax.net.ssl.SSLException;
 import javax.validation.constraints.NotNull;
-import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.ResponseBody;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.math3.util.Precision;
-import org.apache.http.client.utils.URIBuilder;
-import org.asynchttpclient.AsyncHttpClient;
-import org.atmosphere.wasync.Client;
-import org.atmosphere.wasync.Encoder;
-import org.atmosphere.wasync.Event;
-import org.atmosphere.wasync.Function;
-import org.atmosphere.wasync.Options;
-import org.atmosphere.wasync.Request;
-import org.atmosphere.wasync.RequestBuilder;
-import org.atmosphere.wasync.Socket;
-import org.atmosphere.wasync.transport.TransportNotSupported;
 import retrofit2.Response;
 
 @Singleton
 @Slf4j
 public class DelegatePlatformService extends AbstractDelegateAgentServiceImpl {
-  private static final String DELEGATE_INSTANCE_ID = generateUuid();
-
   private final AtomicBoolean rejectRequest = new AtomicBoolean();
 
   private final AtomicInteger maxValidatingTasksCount = new AtomicInteger();
   private final AtomicInteger maxExecutingTasksCount = new AtomicInteger();
   private final AtomicInteger maxExecutingFuturesCount = new AtomicInteger();
 
-  private final Set<String> currentlyAcquiringTasks = ConcurrentHashMap.newKeySet();
-  private final Map<String, DelegateTaskPackage> currentlyValidatingTasks = new ConcurrentHashMap<>();
   private final Map<String, DelegateTaskPackage> currentlyExecutingTasks = new ConcurrentHashMap<>();
   private final Map<String, DelegateTaskExecutionData> currentlyExecutingFutures = new ConcurrentHashMap<>();
 
@@ -156,11 +93,7 @@ public class DelegatePlatformService extends AbstractDelegateAgentServiceImpl {
           .build();
 
   @Override
-  public void stop() {
-    log.info("Stopping delegate platform service, nothing to do!");
-  }
-
-  private void executeTask(@NotNull DelegateTaskPackage delegateTaskPackage) {
+  protected void executeTask(@NonNull final DelegateTaskPackage delegateTaskPackage) {
     TaskData taskData = delegateTaskPackage.getData();
 
     log.debug("DelegateTask acquired - accountId: {}, taskType: {}", getDelegateConfiguration().getAccountId(),
@@ -291,11 +224,9 @@ public class DelegatePlatformService extends AbstractDelegateAgentServiceImpl {
   @Override
   protected void abortTask(DelegateTaskAbortEvent delegateTaskEvent) {
     log.info("Aborting task {}", delegateTaskEvent);
-    currentlyValidatingTasks.remove(delegateTaskEvent.getDelegateTaskId());
-    log.info("Removed from validating futures on abort");
 
     Optional.ofNullable(currentlyExecutingFutures.get(delegateTaskEvent.getDelegateTaskId()).getTaskFuture())
-            .ifPresent(future -> future.cancel(true));
+        .ifPresent(future -> future.cancel(true));
     currentlyExecutingTasks.remove(delegateTaskEvent.getDelegateTaskId());
     if (currentlyExecutingFutures.remove(delegateTaskEvent.getDelegateTaskId()) != null) {
       log.info("Removed from executing futures on abort");
@@ -303,43 +234,34 @@ public class DelegatePlatformService extends AbstractDelegateAgentServiceImpl {
   }
 
   @Override
-  protected void dispatchTaskAsync(DelegateTaskEvent delegateTaskEvent) {
-    String delegateTaskId = delegateTaskEvent.getDelegateTaskId();
-    if (delegateTaskId == null) {
-      log.warn("Delegate task id cannot be null");
-      return;
-    }
-
-    if (!shouldContactManager()) {
-      log.info("Dropping task, self destruct in progress: " + delegateTaskId);
-      return;
-    }
-
+  protected boolean onPreExecute(final DelegateTaskEvent delegateTaskEvent, final String delegateTaskId) {
     if (rejectRequest.get()) {
       log.info("Delegate running out of resources, dropping this request [{}] " + delegateTaskId);
-      return;
+      return true;
     }
 
-    if (currentlyExecutingFutures.containsKey(delegateTaskEvent.getDelegateTaskId())) {
+    if (currentlyExecutingFutures.containsKey(delegateTaskId)) {
       log.info("Task [DelegateTaskEvent: {}] already queued, dropping this request ", delegateTaskEvent);
-      return;
+      return true;
+    } else {
+      return false;
     }
+  }
 
-    DelegateTaskExecutionData taskExecutionData = DelegateTaskExecutionData.builder().build();
-    if (currentlyExecutingFutures.putIfAbsent(delegateTaskId, taskExecutionData) == null) {
-      final Future<?> taskFuture = getTaskExecutor().submit(() -> dispatchDelegateTask(delegateTaskEvent));
-      log.info("TaskId: {} submitted for execution", delegateTaskId);
-      taskExecutionData.setTaskFuture(taskFuture);
-      updateCounterIfLessThanCurrent(maxExecutingFuturesCount, currentlyExecutingFutures.size());
-      return;
-    }
-
-    log.info("Task [DelegateTaskEvent: {}] already queued, dropping this request ", delegateTaskEvent);
+  @Override
+  protected void onPostExecute(final String delegateTaskId, final Future<?> taskFuture) {
+    updateCounterIfLessThanCurrent(maxExecutingFuturesCount, currentlyExecutingFutures.size());
+    final DelegateTaskExecutionData taskExecutionData =
+        DelegateTaskExecutionData.builder().taskFuture(taskFuture).build();
+    currentlyExecutingFutures.put(delegateTaskId, taskExecutionData);
   }
 
   @Override
   protected ImmutableList<String> getCurrentlyExecutingTaskIds() {
-    return currentlyExecutingTasks.values().stream().map(DelegateTaskPackage::getDelegateTaskId).collect(toImmutableList());
+    return currentlyExecutingTasks.values()
+        .stream()
+        .map(DelegateTaskPackage::getDelegateTaskId)
+        .collect(toImmutableList());
   }
 
   @Override
@@ -361,73 +283,9 @@ public class DelegatePlatformService extends AbstractDelegateAgentServiceImpl {
     logCurrentTasks();
   }
 
-  private void dispatchDelegateTask(DelegateTaskEvent delegateTaskEvent) {
-    try (TaskLogContext ignore = new TaskLogContext(delegateTaskEvent.getDelegateTaskId(), OVERRIDE_ERROR)) {
-      log.info("DelegateTaskEvent received - {}", delegateTaskEvent);
-      String delegateTaskId = delegateTaskEvent.getDelegateTaskId();
-
-      try {
-        if (getFrozen().get()) {
-          log.info(
-                  "Delegate process with detected time out of sync or with revoked token is running. Won't acquire tasks.");
-          return;
-        }
-
-        if (!getAcquireTasks().get()) {
-          log.info("[Old] Upgraded process is running. Won't acquire task while completing other tasks");
-          return;
-        }
-
-        if (currentlyAcquiringTasks.contains(delegateTaskId)) {
-          log.info("Task [DelegateTaskEvent: {}] currently acquiring. Don't acquire again", delegateTaskEvent);
-          return;
-        }
-
-        if (currentlyValidatingTasks.containsKey(delegateTaskId)) {
-          log.info("Task [DelegateTaskEvent: {}] already validating. Don't validate again", delegateTaskEvent);
-          return;
-        }
-
-        currentlyAcquiringTasks.add(delegateTaskId);
-
-        log.debug("Try to acquire DelegateTask - accountId: {}", getDelegateConfiguration().getAccountId());
-
-        DelegateTaskPackage delegateTaskPackage =
-                executeRestCall(getDelegateAgentManagerClient().acquireTask(DelegateAgentCommonVariables.getDelegateId(),
-                        delegateTaskId, getDelegateConfiguration().getAccountId(), DELEGATE_INSTANCE_ID));
-        if (delegateTaskPackage == null || delegateTaskPackage.getData() == null) {
-          if (delegateTaskPackage == null) {
-            log.warn("Delegate task package is null for task: {} - accountId: {}", delegateTaskId,
-                    delegateTaskEvent.getAccountId());
-          } else {
-            log.warn("Delegate task data not available for task: {} - accountId: {}", delegateTaskId,
-                    delegateTaskEvent.getAccountId());
-          }
-          return;
-        } else {
-          log.info("received task package {} for delegateInstance {}", delegateTaskPackage, DELEGATE_INSTANCE_ID);
-        }
-
-        if (isEmpty(delegateTaskPackage.getDelegateInstanceId())
-                || DELEGATE_INSTANCE_ID.equals(delegateTaskPackage.getDelegateInstanceId())) {
-          // Whitelisted. Proceed immediately.
-          log.info("Delegate {} whitelisted for task and accountId: {}", DelegateAgentCommonVariables.getDelegateId(),
-                  getDelegateConfiguration().getAccountId());
-          executeTask(delegateTaskPackage);
-        } else {
-          throw new IllegalArgumentException("Delegate received a task intended for delegate with instanceId "
-                  + delegateTaskPackage.getDelegateInstanceId());
-        }
-
-      } catch (IOException e) {
-        log.error("Unable to get task for validation", e);
-      } catch (Exception e) {
-        log.error("Unable to execute task", e);
-      } finally {
-        currentlyAcquiringTasks.remove(delegateTaskId);
-        currentlyExecutingFutures.remove(delegateTaskId);
-      }
-    }
+  @Override
+  protected void onPostExecute(final String delegateTaskId) {
+    currentlyExecutingFutures.remove(delegateTaskId);
   }
 
   private void updateCounterIfLessThanCurrent(AtomicInteger counter, int current) {
