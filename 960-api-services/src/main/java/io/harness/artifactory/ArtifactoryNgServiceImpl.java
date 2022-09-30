@@ -7,7 +7,16 @@
 
 package io.harness.artifactory;
 
+import static io.harness.artifactory.ArtifactoryClientImpl.getArtifactoryClient;
+import static io.harness.artifactory.ArtifactoryClientImpl.handleAndRethrow;
+import static io.harness.artifactory.ArtifactoryClientImpl.handleErrorResponse;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.exception.WingsException.USER;
+
+import static java.lang.String.format;
 import static java.util.stream.Collectors.toList;
+import static org.jfrog.artifactory.client.ArtifactoryRequest.ContentType.JSON;
+import static org.jfrog.artifactory.client.ArtifactoryRequest.Method.GET;
 import static org.jfrog.artifactory.client.model.impl.PackageTypeImpl.docker;
 import static org.jfrog.artifactory.client.model.impl.PackageTypeImpl.maven;
 
@@ -24,12 +33,17 @@ import software.wings.utils.RepositoryType;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.io.InputStream;
+import java.net.SocketTimeoutException;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.jfrog.artifactory.client.Artifactory;
+import org.jfrog.artifactory.client.ArtifactoryResponse;
+import org.jfrog.artifactory.client.impl.ArtifactoryRequestImpl;
 import org.jfrog.artifactory.client.model.impl.PackageTypeImpl;
 
 @Singleton
@@ -107,6 +121,40 @@ public class ArtifactoryNgServiceImpl implements ArtifactoryNgService {
     }
   }
 
+  @Override
+  public List<String> getImagePaths(ArtifactoryConfigRequest artifactoryConfig, String repoKey) {
+    return listDockerImages(getArtifactoryClient(artifactoryConfig), repoKey);
+  }
+  private List<String> listDockerImages(Artifactory artifactory, String repoKey) {
+    List<String> images = new ArrayList<>();
+    String errorOnListingDockerimages = "Error occurred while listing docker images from artifactory %s for Repo %s";
+    try {
+      log.info("Retrieving docker images from artifactory url {} and repo key {}", artifactory.getUri(), repoKey);
+      ArtifactoryResponse artifactoryResponse = artifactory.restCall(new ArtifactoryRequestImpl()
+                                                                         .apiUrl("api/docker/" + repoKey + "/v2"
+                                                                             + "/_catalog")
+                                                                         .method(GET)
+                                                                         .responseType(JSON));
+      handleErrorResponse(artifactoryResponse);
+      Map response = artifactoryResponse.parseBody(Map.class);
+      if (response != null) {
+        images = (List<String>) response.get("repositories");
+        if (isEmpty(images)) {
+          log.info("No docker images from artifactory url {} and repo key {}", artifactory.getUri(), repoKey);
+          images = new ArrayList<>();
+        }
+        log.info("Retrieving images from artifactory url {} and repo key {} success. Images {}", artifactory.getUri(),
+            repoKey, images);
+      }
+    } catch (SocketTimeoutException e) {
+      log.error(format(errorOnListingDockerimages, artifactory, repoKey), e);
+      return images;
+    } catch (Exception e) {
+      log.error(format(errorOnListingDockerimages, artifactory, repoKey), e);
+      handleAndRethrow(e, USER);
+    }
+    return images;
+  }
   @Override
   public InputStream downloadArtifacts(ArtifactoryConfigRequest artifactoryConfig, String repoKey,
       Map<String, String> metadata, String artifactPathMetadataKey, String artifactFileNameMetadataKey) {
