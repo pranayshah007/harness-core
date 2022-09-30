@@ -493,14 +493,7 @@ func (r *runTestsTask) getCmd(ctx context.Context, agentPath, outputVarFile stri
 	// Runner selection
 	var runner testintelligence.TestRunner
 	switch r.language {
-	case "scala":
-		if r.buildTool == "sbt" {
-			runner = java.NewSBTRunner(r.log, r.fs, r.cmdContextFactory)
-		}
-		fallthrough
-	case "java":
-		fallthrough
-	case "kotlin":
+	case "scala", "java", "kotlin":
 		switch r.buildTool {
 		case "maven":
 			runner = java.NewMavenRunner(r.log, r.fs, r.cmdContextFactory)
@@ -508,6 +501,13 @@ func (r *runTestsTask) getCmd(ctx context.Context, agentPath, outputVarFile stri
 			runner = java.NewGradleRunner(r.log, r.fs, r.cmdContextFactory)
 		case "bazel":
 			runner = java.NewBazelRunner(r.log, r.fs, r.cmdContextFactory)
+		case "sbt":
+			{
+				if r.language != "scala" {
+					return "", fmt.Errorf("build tool: SBT is not supported for non-Scala languages")
+				}
+				runner = java.NewSBTRunner(r.log, r.fs, r.cmdContextFactory)
+			}
 		default:
 			return "", fmt.Errorf("build tool: %s is not supported for Java", r.buildTool)
 		}
@@ -535,7 +535,7 @@ func (r *runTestsTask) getCmd(ctx context.Context, agentPath, outputVarFile stri
 	// Config file
 	var iniFilePath, agentArg string
 	switch r.language {
-	case "java":
+	case "java", "scala", "kotlin":
 		{
 			// Create the java agent config file
 			iniFilePath, err = r.createJavaAgentConfigFile(runner)
