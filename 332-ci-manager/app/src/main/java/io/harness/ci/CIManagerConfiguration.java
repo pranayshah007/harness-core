@@ -120,6 +120,7 @@ public class CIManagerConfiguration extends Configuration implements AssetsBundl
   @JsonProperty("apiUrl") private String apiUrl;
   @JsonProperty("hostname") String hostname;
   @JsonProperty("basePathPrefix") String basePathPrefix;
+  @JsonProperty(value = "enableOpentelemetry") private Boolean enableOpentelemetry;
 
   public static Collection<Class<?>> getResourceClasses() {
     return HarnessReflections.get()
