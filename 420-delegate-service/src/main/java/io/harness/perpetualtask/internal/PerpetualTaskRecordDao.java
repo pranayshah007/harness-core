@@ -26,6 +26,8 @@ import io.harness.persistence.HIterator;
 import io.harness.persistence.HPersistence;
 
 import com.google.inject.Inject;
+
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -213,13 +215,13 @@ public class PerpetualTaskRecordDao {
   }
 
   public List<PerpetualTaskRecord> listBatchOfPerpetualTasksToRebalanceForAccount(String accountId) {
-    markBatchOfPerpetualTasksWithNoHeartBeatToRebalanceForAccount(accountId);
 
     Query<PerpetualTaskRecord> query = persistence.createQuery(PerpetualTaskRecord.class)
                                            .filter(PerpetualTaskRecordKeys.accountId, accountId)
                                            .filter(PerpetualTaskRecordKeys.state, PerpetualTaskState.TASK_TO_REBALANCE);
 
     return query.asList(new FindOptions().limit(BATCH_SIZE_FOR_PERPETUAL_TASK_TO_REBALANCE));
+
   }
 
   public void markBatchOfPerpetualTasksWithNoHeartBeatToRebalanceForAccount(String accountId) {
@@ -228,7 +230,7 @@ public class PerpetualTaskRecordDao {
             .filter(PerpetualTaskRecordKeys.accountId, accountId)
             .filter(PerpetualTaskRecordKeys.state, TASK_ASSIGNED)
             .field(PerpetualTaskRecordKeys.lastHeartBeat)
-            .greaterThan(System.currentTimeMillis() - TimeUnit.MINUTES.toMillis(15));
+            .lessThan(currentTimeMillis() - 3 * PerpetualTaskRecordKeys.intervalSeconds);
 
     UpdateOperations<PerpetualTaskRecord> updateOperations =
             persistence.createUpdateOperations(PerpetualTaskRecord.class).set(PerpetualTaskRecordKeys.state
