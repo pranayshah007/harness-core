@@ -9,16 +9,12 @@ package io.harness.ng.core.refresh.helper;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
-import io.harness.EntityType;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.IdentifierRef;
 import io.harness.cdng.visitor.YamlTypes;
-import io.harness.common.EntityReferenceHelper;
 import io.harness.common.NGExpressionUtils;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
-import io.harness.exception.ngexception.NGTemplateException;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.mappers.ServiceElementMapper;
 import io.harness.ng.core.service.services.ServiceEntityService;
@@ -32,7 +28,6 @@ import io.harness.template.beans.refresh.NodeInfo;
 import io.harness.template.beans.refresh.v2.InputsValidationResponse;
 import io.harness.template.beans.refresh.v2.NodeErrorSummary;
 import io.harness.template.beans.refresh.v2.ServiceNodeErrorSummary;
-import io.harness.utils.IdentifierRefHelper;
 import io.harness.utils.YamlPipelineUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -42,16 +37,15 @@ import com.google.inject.Inject;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.CDC)
 @Slf4j
 public class InputsValidationHelper {
   @Inject ServiceEntityService serviceEntityService;
+  @Inject EntityFetchHelper entityFetchHelper;
 
   public InputsValidationResponse validateInputsForYaml(String accountId, String orgId, String projectId, String yaml) {
     return validateInputsForYaml(accountId, orgId, projectId, yaml, new HashMap<>());
@@ -73,7 +67,7 @@ public class InputsValidationHelper {
   private YamlNode validateAndGetYamlNode(String yaml) {
     // Case -> empty YAML, cannot validate
     if (isEmpty(yaml)) {
-      throw new NGTemplateException("Yaml to be validated cannot be empty.");
+      throw new InvalidRequestException("Yaml to be validated cannot be empty.");
     }
 
     YamlNode yamlNode;
@@ -82,7 +76,7 @@ public class InputsValidationHelper {
       yamlNode = YamlUtils.readTree(yaml).getNode();
     } catch (IOException e) {
       log.error("Could not convert yaml to JsonNode. Yaml:\n" + yaml, e);
-      throw new NGTemplateException("Could not convert yaml to JsonNode: " + e.getMessage());
+      throw new InvalidRequestException("Could not convert yaml to JsonNode: " + e.getMessage());
     }
     return yamlNode;
   }
@@ -140,7 +134,7 @@ public class InputsValidationHelper {
         return;
       }
     }
-    ServiceEntity serviceEntity = getService(accountId, orgId, projectId, serviceRef, cacheMap);
+    ServiceEntity serviceEntity = entityFetchHelper.getService(accountId, orgId, projectId, serviceRef, cacheMap);
 
     String serviceYaml = serviceEntity.fetchNonEmptyYaml();
 
@@ -165,28 +159,6 @@ public class InputsValidationHelper {
     }
   }
 
-  private ServiceEntity getService(
-      String accountId, String orgId, String projectId, String serviceRef, Map<String, PersistentEntity> cacheMap) {
-    IdentifierRef serviceIdentifierRef = IdentifierRefHelper.getIdentifierRef(serviceRef, accountId, orgId, projectId);
-    String uniqueServiceIdentifier =
-        generateUniqueIdentifier(serviceIdentifierRef.getAccountIdentifier(), serviceIdentifierRef.getOrgIdentifier(),
-            serviceIdentifierRef.getProjectIdentifier(), serviceIdentifierRef.getIdentifier(), EntityType.SERVICE);
-    if (cacheMap.containsKey(uniqueServiceIdentifier)) {
-      return (ServiceEntity) cacheMap.get(uniqueServiceIdentifier);
-    }
-
-    Optional<ServiceEntity> serviceEntity =
-        serviceEntityService.get(serviceIdentifierRef.getAccountIdentifier(), serviceIdentifierRef.getOrgIdentifier(),
-            serviceIdentifierRef.getProjectIdentifier(), serviceIdentifierRef.getIdentifier(), false);
-    if (!serviceEntity.isPresent()) {
-      throw new InvalidRequestException(String.format(
-          "Service with identifier [%s] in project [%s], org [%s] not found", serviceIdentifierRef.getIdentifier(),
-          serviceIdentifierRef.getProjectIdentifier(), serviceIdentifierRef.getOrgIdentifier()));
-    }
-    cacheMap.put(uniqueServiceIdentifier, serviceEntity.get());
-    return serviceEntity.get();
-  }
-
   private NodeErrorSummary createServiceErrorNode(
       YamlNode serviceNode, ServiceEntity serviceEntity, List<NodeErrorSummary> childrenErrorNodes) {
     // TODO: test this before it's usage.
@@ -204,20 +176,5 @@ public class InputsValidationHelper {
         .serviceResponse(ServiceElementMapper.writeDTO(serviceEntity))
         .childrenErrorNodes(childrenErrorNodes)
         .build();
-  }
-
-  private String generateUniqueIdentifier(
-      String accountId, String orgId, String projectId, String entityIdentifier, EntityType entityType) {
-    List<String> fqnList = new LinkedList<>();
-    fqnList.add(accountId);
-    if (EmptyPredicate.isNotEmpty(orgId)) {
-      fqnList.add(orgId);
-    }
-    if (EmptyPredicate.isNotEmpty(projectId)) {
-      fqnList.add(projectId);
-    }
-    fqnList.add(entityIdentifier);
-    fqnList.add(entityType.getYamlName());
-    return EntityReferenceHelper.createFQN(fqnList);
   }
 }

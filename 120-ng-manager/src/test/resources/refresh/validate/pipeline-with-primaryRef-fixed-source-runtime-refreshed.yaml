@@ -48,6 +48,7 @@ pipeline:
                       type: "ArtifactoryRegistry"
                       spec:
                         artifactDirectory: "<+input>"
+                        artifactPath: "<+input>"
                     primaryArtifactRef: "artifactory"
         environment:
           environmentRef: "testenv"

@@ -36,19 +36,8 @@ pipeline:
               timeout: "10m"
               spec: {}
         service:
-          serviceRef: "serverless"
-          serviceInputs:
-            serviceDefinition:
-              type: "ServerlessAwsLambda"
-              spec:
-                artifacts:
-                  primary:
-                    sources:
-                    - identifier: "artifactory"
-                      type: "ArtifactoryRegistry"
-                      spec:
-                        artifactDirectory: "<+input>"
-                    primaryArtifactRef: "artifactory"
+          serviceRef: "<+input>"
+          serviceInputs: "<+input>"
         environment:
           environmentRef: "testenv"
           deployToAll: false
