@@ -30,6 +30,7 @@ import io.harness.accesscontrol.commons.bootstrap.AccessControlManagementJob;
 import io.harness.accesscontrol.commons.events.EntityCrudEventListenerService;
 import io.harness.accesscontrol.commons.events.UserMembershipEventListenerService;
 import io.harness.accesscontrol.commons.migration.AccessControlMigrationProvider;
+import io.harness.accesscontrol.commons.version.VersionInfoResource;
 import io.harness.accesscontrol.principals.serviceaccounts.iterators.ServiceAccountReconciliationIterator;
 import io.harness.accesscontrol.principals.usergroups.iterators.UserGroupReconciliationIterator;
 import io.harness.accesscontrol.principals.users.iterators.UserReconciliationIterator;
@@ -40,7 +41,6 @@ import io.harness.accesscontrol.support.reconciliation.SupportRoleAssignmentsRec
 import io.harness.aggregator.AggregatorService;
 import io.harness.aggregator.MongoOffsetCleanupJob;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.controller.PrimaryVersionChangeScheduler;
 import io.harness.enforcement.client.CustomRestrictionRegisterConfiguration;
 import io.harness.enforcement.client.RestrictionUsageRegisterConfiguration;
 import io.harness.enforcement.client.custom.CustomRestrictionInterface;
@@ -58,6 +58,7 @@ import io.harness.migration.MigrationProvider;
 import io.harness.migration.NGMigrationSdkInitHelper;
 import io.harness.migration.beans.NGMigrationConfiguration;
 import io.harness.ng.core.CorrelationFilter;
+import io.harness.ng.core.TraceFilter;
 import io.harness.ng.core.exceptionmappers.GenericExceptionMapperV2;
 import io.harness.ng.core.exceptionmappers.JerseyViolationExceptionMapperV2;
 import io.harness.ng.core.exceptionmappers.WingsExceptionMapperV2;
@@ -65,7 +66,6 @@ import io.harness.outbox.OutboxEventPollService;
 import io.harness.persistence.HPersistence;
 import io.harness.remote.CharsetResponseFilter;
 import io.harness.request.RequestContextFilter;
-import io.harness.resource.VersionInfoResource;
 import io.harness.security.InternalApiAuthFilter;
 import io.harness.security.NextGenAuthenticationFilter;
 import io.harness.security.annotations.InternalApi;
@@ -108,6 +108,7 @@ import javax.servlet.FilterRegistration.Dynamic;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ResourceInfo;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.eclipse.jetty.servlets.CrossOriginFilter;
 import org.glassfish.jersey.media.multipart.MultiPartFeature;
@@ -181,8 +182,12 @@ public class AccessControlApplication extends Application<AccessControlConfigura
     registerManagedBeans(appConfig, environment, injector);
     registerMigrations(injector);
     registerIterators(injector);
-    registerScheduledJobs(injector);
     registerOasResource(appConfig, environment, injector);
+
+    if (BooleanUtils.isTrue(appConfig.getEnableOpentelemetry())) {
+      registerTraceFilter(environment, injector);
+    }
+
     initializeEnforcementFramework(injector);
     AccessControlManagementJob accessControlManagementJob = injector.getInstance(AccessControlManagementJob.class);
     accessControlManagementJob.run();
@@ -217,10 +222,6 @@ public class AccessControlApplication extends Application<AccessControlConfigura
     injector.getInstance(ServiceAccountReconciliationIterator.class).registerIterators();
     injector.getInstance(SupportPreferenceReconciliationIterator.class).registerIterators();
     injector.getInstance(ScopeReconciliationIterator.class).registerIterators();
-  }
-
-  public void registerScheduledJobs(Injector injector) {
-    injector.getInstance(PrimaryVersionChangeScheduler.class).registerExecutors();
   }
 
   private void registerJerseyFeatures(Environment environment) {
@@ -275,6 +276,10 @@ public class AccessControlApplication extends Application<AccessControlConfigura
 
   private void registerCorrelationFilter(Environment environment, Injector injector) {
     environment.jersey().register(injector.getInstance(CorrelationFilter.class));
+  }
+
+  private void registerTraceFilter(Environment environment, Injector injector) {
+    environment.jersey().register(injector.getInstance(TraceFilter.class));
   }
 
   private void registerRequestContextFilter(Environment environment) {

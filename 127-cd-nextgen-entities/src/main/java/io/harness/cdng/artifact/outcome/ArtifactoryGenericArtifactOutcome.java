@@ -15,6 +15,7 @@ import io.harness.cdng.artifact.ArtifactSummary;
 import io.harness.cdng.artifact.ArtifactoryGenericArtifactSummary;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import java.util.Map;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Value;
@@ -51,6 +52,8 @@ public class ArtifactoryGenericArtifactOutcome implements ArtifactOutcome {
   String tag;
   /** Whether this config corresponds to primary artifact.*/
   boolean primaryArtifact;
+  /** Artifact Metadata. */
+  Map<String, String> metadata;
 
   @Override
   public ArtifactSummary getArtifactSummary() {

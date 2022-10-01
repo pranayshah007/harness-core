@@ -1,3 +1,10 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.delegate.task.ecs;
 
 import static io.harness.logging.LogLevel.ERROR;
@@ -89,15 +96,20 @@ public class EcsGitFetchTask extends AbstractDelegateRunnableTask {
       EcsGitFetchFileConfig ecsTaskDefinitionGitFetchFileConfig =
           ecsGitFetchRequest.getEcsTaskDefinitionGitFetchFileConfig();
 
-      FetchFilesResult ecsTaskDefinitionFetchFilesResult = fetchManifestFile(
-          ecsTaskDefinitionGitFetchFileConfig, executionLogCallback, ecsGitFetchRequest.getAccountId());
-
+      FetchFilesResult ecsTaskDefinitionFetchFilesResult = null;
+      if (ecsTaskDefinitionGitFetchFileConfig != null) {
+        ecsTaskDefinitionFetchFilesResult = fetchManifestFile(
+            ecsTaskDefinitionGitFetchFileConfig, executionLogCallback, ecsGitFetchRequest.getAccountId());
+      }
       // Fetch Ecs Service Definition
       EcsGitFetchFileConfig ecsServiceDefinitionGitFetchFileConfig =
           ecsGitFetchRequest.getEcsServiceDefinitionGitFetchFileConfig();
 
-      FetchFilesResult ecsServiceDefinitionFetchFilesResult = fetchManifestFile(
-          ecsServiceDefinitionGitFetchFileConfig, executionLogCallback, ecsGitFetchRequest.getAccountId());
+      FetchFilesResult ecsServiceDefinitionFetchFilesResult = null;
+      if (ecsServiceDefinitionGitFetchFileConfig != null) {
+        ecsServiceDefinitionFetchFilesResult = fetchManifestFile(
+            ecsServiceDefinitionGitFetchFileConfig, executionLogCallback, ecsGitFetchRequest.getAccountId());
+      }
 
       List<FetchFilesResult> ecsScalableTargetFetchFilesResults = new ArrayList<>();
       if (CollectionUtils.isNotEmpty(ecsGitFetchRequest.getEcsScalableTargetGitFetchFileConfigs())) {

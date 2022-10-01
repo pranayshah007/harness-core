@@ -25,6 +25,7 @@ import io.harness.azure.model.AzureConfig;
 import io.harness.azure.model.AzureDeploymentMode;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.connector.azureconnector.AzureConnectorDTO;
+import io.harness.delegate.task.azure.appservice.settings.AppSettingsFile;
 import io.harness.delegate.task.azure.arm.deployment.context.DeploymentManagementGroupContext;
 import io.harness.delegate.task.azure.arm.deployment.context.DeploymentResourceGroupContext;
 import io.harness.delegate.task.azure.arm.deployment.context.DeploymentSubscriptionContext;
@@ -64,20 +65,21 @@ public class AzureARMBaseHelperImplTest extends CategoryTest {
                                   .azureAuthenticationType(AzureAuthenticationType.MANAGED_IDENTITY_USER_ASSIGNED)
                                   .azureEnvironmentType(AzureEnvironmentType.AZURE)
                                   .build();
-    AzureARMTaskNGParameters taskParams = AzureARMTaskNGParameters.builder()
-                                              .accountId("accountId")
-                                              .taskType(AzureARMTaskType.ARM_DEPLOYMENT)
-                                              .timeoutInMs(10000)
-                                              .encryptedDataDetails(Collections.emptyList())
-                                              .connectorDTO(AzureConnectorDTO.builder().build())
-                                              .scopeType(ARMScopeType.RESOURCE_GROUP)
-                                              .subscriptionId("subscriptionId")
-                                              .resourceGroupName("resourceGroupName")
-                                              .deploymentMode(AzureDeploymentMode.INCREMENTAL)
-                                              .deploymentName("deploymentName")
-                                              .templateBody("templateBody")
-                                              .parametersBody("parameters")
-                                              .build();
+    AzureARMTaskNGParameters taskParams =
+        AzureARMTaskNGParameters.builder()
+            .accountId("accountId")
+            .taskType(AzureARMTaskType.ARM_DEPLOYMENT)
+            .timeoutInMs(10000)
+            .encryptedDataDetails(Collections.emptyList())
+            .connectorDTO(AzureConnectorDTO.builder().build())
+            .scopeType(ARMScopeType.RESOURCE_GROUP)
+            .subscriptionId("subscriptionId")
+            .resourceGroupName("resourceGroupName")
+            .deploymentMode(AzureDeploymentMode.INCREMENTAL)
+            .deploymentName("deploymentName")
+            .templateBody(AppSettingsFile.builder().fileContent("templateBody").build())
+            .parametersBody(AppSettingsFile.builder().fileContent("parameters").build())
+            .build();
 
     DeploymentResourceGroupContext context =
         azureARMBaseHelperImpl.toDeploymentResourceGroupContext(taskParams, azureConfig, mockLogStreamingTaskClient);
@@ -99,22 +101,23 @@ public class AzureARMBaseHelperImplTest extends CategoryTest {
                                   .azureAuthenticationType(AzureAuthenticationType.MANAGED_IDENTITY_USER_ASSIGNED)
                                   .azureEnvironmentType(AzureEnvironmentType.AZURE)
                                   .build();
-    AzureARMTaskNGParameters taskParams = AzureARMTaskNGParameters.builder()
-                                              .accountId("accountId")
-                                              .taskType(AzureARMTaskType.ARM_DEPLOYMENT)
-                                              .encryptedDataDetails(Collections.emptyList())
-                                              .timeoutInMs(10000)
+    AzureARMTaskNGParameters taskParams =
+        AzureARMTaskNGParameters.builder()
+            .accountId("accountId")
+            .taskType(AzureARMTaskType.ARM_DEPLOYMENT)
+            .encryptedDataDetails(Collections.emptyList())
+            .timeoutInMs(10000)
 
-                                              .connectorDTO(AzureConnectorDTO.builder().build())
-                                              .scopeType(ARMScopeType.MANAGEMENT_GROUP)
-                                              .subscriptionId("subscriptionId")
-                                              .managementGroupId("managementGroupId")
-                                              .deploymentMode(AzureDeploymentMode.INCREMENTAL)
-                                              .deploymentName("deploymentName")
-                                              .templateBody("templateBody")
-                                              .parametersBody("parameters")
-                                              .deploymentDataLocation("deploymentDataLocation")
-                                              .build();
+            .connectorDTO(AzureConnectorDTO.builder().build())
+            .scopeType(ARMScopeType.MANAGEMENT_GROUP)
+            .subscriptionId("subscriptionId")
+            .managementGroupId("managementGroupId")
+            .deploymentMode(AzureDeploymentMode.INCREMENTAL)
+            .deploymentName("deploymentName")
+            .templateBody(AppSettingsFile.builder().fileContent("templateBody").build())
+            .parametersBody(AppSettingsFile.builder().fileContent("parameters").build())
+            .deploymentDataLocation("deploymentDataLocation")
+            .build();
 
     DeploymentManagementGroupContext context =
         azureARMBaseHelperImpl.toDeploymentManagementGroupContext(taskParams, azureConfig, mockLogStreamingTaskClient);
@@ -136,22 +139,23 @@ public class AzureARMBaseHelperImplTest extends CategoryTest {
                                   .azureAuthenticationType(AzureAuthenticationType.MANAGED_IDENTITY_USER_ASSIGNED)
                                   .azureEnvironmentType(AzureEnvironmentType.AZURE)
                                   .build();
-    AzureARMTaskNGParameters taskParams = AzureARMTaskNGParameters.builder()
-                                              .accountId("accountId")
-                                              .taskType(AzureARMTaskType.ARM_DEPLOYMENT)
-                                              .encryptedDataDetails(Collections.emptyList())
-                                              .timeoutInMs(10000)
+    AzureARMTaskNGParameters taskParams =
+        AzureARMTaskNGParameters.builder()
+            .accountId("accountId")
+            .taskType(AzureARMTaskType.ARM_DEPLOYMENT)
+            .encryptedDataDetails(Collections.emptyList())
+            .timeoutInMs(10000)
 
-                                              .connectorDTO(AzureConnectorDTO.builder().build())
-                                              .scopeType(ARMScopeType.SUBSCRIPTION)
-                                              .subscriptionId("subscriptionId")
-                                              .managementGroupId("managementGroupId")
-                                              .deploymentMode(AzureDeploymentMode.INCREMENTAL)
-                                              .deploymentName("deploymentName")
-                                              .templateBody("templateBody")
-                                              .parametersBody("parameters")
-                                              .deploymentDataLocation("deploymentDataLocation")
-                                              .build();
+            .connectorDTO(AzureConnectorDTO.builder().build())
+            .scopeType(ARMScopeType.SUBSCRIPTION)
+            .subscriptionId("subscriptionId")
+            .managementGroupId("managementGroupId")
+            .deploymentMode(AzureDeploymentMode.INCREMENTAL)
+            .deploymentName("deploymentName")
+            .templateBody(AppSettingsFile.builder().fileContent("templateBody").build())
+            .parametersBody(AppSettingsFile.builder().fileContent("parameters").build())
+            .deploymentDataLocation("deploymentDataLocation")
+            .build();
 
     DeploymentSubscriptionContext context =
         azureARMBaseHelperImpl.toDeploymentSubscriptionContext(taskParams, azureConfig, mockLogStreamingTaskClient);
@@ -173,21 +177,22 @@ public class AzureARMBaseHelperImplTest extends CategoryTest {
                                   .azureAuthenticationType(AzureAuthenticationType.MANAGED_IDENTITY_USER_ASSIGNED)
                                   .azureEnvironmentType(AzureEnvironmentType.AZURE)
                                   .build();
-    AzureARMTaskNGParameters taskParams = AzureARMTaskNGParameters.builder()
-                                              .accountId("accountId")
-                                              .taskType(AzureARMTaskType.ARM_DEPLOYMENT)
-                                              .encryptedDataDetails(Collections.emptyList())
-                                              .timeoutInMs(10000)
-                                              .connectorDTO(AzureConnectorDTO.builder().build())
-                                              .scopeType(ARMScopeType.TENANT)
-                                              .subscriptionId("subscriptionId")
-                                              .managementGroupId("managementGroupId")
-                                              .deploymentMode(AzureDeploymentMode.INCREMENTAL)
-                                              .deploymentName("deploymentName")
-                                              .templateBody("templateBody")
-                                              .parametersBody("parameters")
-                                              .deploymentDataLocation("deploymentDataLocation")
-                                              .build();
+    AzureARMTaskNGParameters taskParams =
+        AzureARMTaskNGParameters.builder()
+            .accountId("accountId")
+            .taskType(AzureARMTaskType.ARM_DEPLOYMENT)
+            .encryptedDataDetails(Collections.emptyList())
+            .timeoutInMs(10000)
+            .connectorDTO(AzureConnectorDTO.builder().build())
+            .scopeType(ARMScopeType.TENANT)
+            .subscriptionId("subscriptionId")
+            .managementGroupId("managementGroupId")
+            .deploymentMode(AzureDeploymentMode.INCREMENTAL)
+            .deploymentName("deploymentName")
+            .templateBody(AppSettingsFile.builder().fileContent("templateBody").build())
+            .parametersBody(AppSettingsFile.builder().fileContent("parameters").build())
+            .deploymentDataLocation("deploymentDataLocation")
+            .build();
 
     DeploymentTenantContext context =
         azureARMBaseHelperImpl.toDeploymentTenantContext(taskParams, azureConfig, mockLogStreamingTaskClient);

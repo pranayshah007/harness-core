@@ -9,6 +9,7 @@ package software.wings.service.impl.deployment.checks;
 
 import static io.harness.rule.OwnerRule.HINGER;
 import static io.harness.rule.OwnerRule.PRABU;
+import static io.harness.rule.OwnerRule.VINICIUS;
 
 import static software.wings.utils.WingsTestConstants.ACCOUNT_ID;
 import static software.wings.utils.WingsTestConstants.APP_ID;
@@ -53,6 +54,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import org.assertj.core.api.Assertions;
 import org.assertj.core.api.InstanceOfAssertFactories;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -226,6 +228,33 @@ public class DeploymentFreezeCheckerTest extends WingsBaseTest {
             "Deployment Freeze Window [FREEZE1] is active for the service. No deployments are allowed to proceed.")
         .extracting("accountId")
         .isEqualTo(ACCOUNT_ID);
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void checkDeploymentFreezeExclusionWhenBothEnvServiceFrozenAndExcluded() {
+    when(featureFlagService.isEnabled(FeatureName.SPG_NEW_DEPLOYMENT_FREEZE_EXCLUSIONS, ACCOUNT_ID)).thenReturn(true);
+    GovernanceConfig governanceConfig = generateGovernanceConfig();
+    governanceConfig.getTimeRangeBasedFreezeConfigs().get(0).getAppSelections().get(0).setServiceSelection(
+        new ServiceFilter(ServiceFilterType.CUSTOM, Arrays.asList(SERVICE_ID, SERVICE_ID + 1)));
+    governanceConfig.getTimeRangeBasedFreezeConfigs().get(0).setExcludeAppSelections(asList(
+        CustomAppFilter.builder()
+            .apps(asList(APP_ID))
+            .blackoutWindowFilterType(BlackoutWindowFilterType.CUSTOM)
+            .envSelection(new AllEnvFilter(EnvironmentFilterType.ALL))
+            .serviceSelection(new ServiceFilter(ServiceFilterType.CUSTOM, Arrays.asList(SERVICE_ID, SERVICE_ID + 1)))
+            .build()));
+
+    DeploymentFreezeChecker deploymentFreezeChecker = new DeploymentFreezeChecker(governanceConfigService,
+        new DeploymentCtx(APP_ID, Collections.singletonList(ENV_ID + 2), Collections.singletonList(SERVICE_ID)),
+        environmentService, featureFlagService);
+    when(governanceConfigService.getEnvIdsFromAppSelection(any(), any()))
+        .thenReturn(Arrays.asList(ENV_ID, ENV_ID + 1, ENV_ID + 2));
+    when(governanceConfigService.getServiceIdsFromAppSelection(any(), any()))
+        .thenReturn(Arrays.asList(SERVICE_ID, SERVICE_ID + 1));
+    Assertions.assertThatCode(() -> deploymentFreezeChecker.checkIfServiceFrozen(ACCOUNT_ID, governanceConfig))
+        .doesNotThrowAnyException();
   }
 
   private GovernanceConfig generateGovernanceConfig() {

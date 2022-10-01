@@ -1,3 +1,10 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.ci.execution;
 
 import static software.wings.beans.TaskType.DLITE_CI_VM_INITIALIZE_TASK;
@@ -23,7 +30,7 @@ import lombok.extern.slf4j.Slf4j;
 public class DelegateTaskEventListener implements MessageListener {
   private KryoSerializer kryoSerializer;
   private static final String OBSERVER_CLASS_NAME_KEY = "observer_class_name";
-  private static final String OBSERVER_CLASS_NAME_VALUE = "software.wings.service.impl.DelegateTaskObserver";
+  private static final String OBSERVER_CLASS_NAME_VALUE = "software.wings.service.impl.CIDelegateTaskObserver";
   @Inject CITaskDetailsRepository ciTaskDetailsRepository;
   @Inject
   public DelegateTaskEventListener(KryoSerializer kryoSerializer) {

@@ -7,12 +7,8 @@
 
 package software.wings.utils;
 
-import io.harness.ng.core.account.DefaultExperience;
-
-import software.wings.beans.Account;
 import software.wings.beans.SettingAttribute;
 import software.wings.helpers.ext.mail.SmtpConfig;
-import software.wings.service.intfc.AccountService;
 import software.wings.service.intfc.SettingsService;
 import software.wings.settings.SettingVariableTypes;
 
@@ -23,37 +19,30 @@ import java.util.List;
 @Singleton
 public class EmailHelperUtils {
   @Inject private SettingsService settingsService;
-  @Inject private AccountService accountService;
   public static final String NG_SMTP_SETTINGS_PREFIX = "ngSmtpConfig-";
 
-  public SmtpConfig getSmtpConfig(String accountId) {
+  public SmtpConfig getSmtpConfig(String accountId, Boolean isNg) {
     if (accountId == null) {
       return null;
     }
     List<SettingAttribute> smtpAttribute =
         settingsService.getGlobalSettingAttributesByType(accountId, SettingVariableTypes.SMTP.name());
-    Account account = accountService.get(accountId);
-    if (DefaultExperience.NG.equals(account.getDefaultExperience())) {
-      for (SettingAttribute settingAttribute : smtpAttribute) {
-        String smtpAttributeName = settingAttribute.getName();
-        if (smtpAttributeName.length() >= 13
-            && (NG_SMTP_SETTINGS_PREFIX.equalsIgnoreCase(settingAttribute.getName().substring(0, 13)))) {
-          SmtpConfig config = (SmtpConfig) settingAttribute.getValue();
-          if (isSmtpConfigValid(config)) {
-            return config;
-          }
-        }
-      }
-    }
-    if (smtpAttribute.size() > 0) {
-      for (SettingAttribute settingAttribute : smtpAttribute) {
-        SmtpConfig config = (SmtpConfig) settingAttribute.getValue();
-        if (isSmtpConfigValid(config)) {
+    for (SettingAttribute settingAttribute : smtpAttribute) {
+      String smtpAttributeName = settingAttribute.getName();
+      SmtpConfig config = (SmtpConfig) settingAttribute.getValue();
+      if (isSmtpConfigValid(config) && smtpAttributeName != null) {
+        boolean isNgSmtp = isNgSmtp(smtpAttributeName);
+        if ((isNg && isNgSmtp) || (!isNg && !isNgSmtp)) {
           return config;
         }
       }
     }
     return null;
+  }
+
+  public boolean isNgSmtp(String smtpAttributeName) {
+    return smtpAttributeName.length() >= 13
+        && (NG_SMTP_SETTINGS_PREFIX.equalsIgnoreCase(smtpAttributeName.substring(0, 13)));
   }
 
   public boolean isSmtpConfigValid(SmtpConfig config) {

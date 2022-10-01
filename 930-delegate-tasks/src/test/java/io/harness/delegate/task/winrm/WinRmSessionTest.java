@@ -12,6 +12,7 @@ import static io.harness.delegate.task.winrm.WinRmSession.FILE_CACHE_TYPE;
 import static io.harness.delegate.task.winrm.WinRmSession.KERBEROS_CACHE_NAME_ENV;
 import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.ARVIND;
+import static io.harness.rule.OwnerRule.BOJAN;
 import static io.harness.rule.OwnerRule.NAMAN_TALAYCHA;
 import static io.harness.rule.OwnerRule.SAHIL;
 import static io.harness.rule.OwnerRule.TMACARI;
@@ -80,6 +81,7 @@ import org.powermock.modules.junit4.PowerMockRunner;
 @PowerMockIgnore({"javax.security.*", "javax.net.*"})
 @OwnedBy(CDP)
 public class WinRmSessionTest extends CategoryTest {
+  private static final String SCRIPT_EXEC_COMMAND = "powershell -f file.ps1";
   @Mock private SshHelperUtils sshHelperUtils;
   @Mock private Writer writer;
   @Mock private Writer error;
@@ -104,6 +106,7 @@ public class WinRmSessionTest extends CategoryTest {
       winRmSessionConfig = io.harness.delegate.task.winrm.WinRmSessionConfig.builder()
                                .domain("KRB.LOCAL")
                                .skipCertChecks(true)
+                               .password("pwd")
                                .username("TestUser")
                                .environment(new HashMap<>())
                                .hostname("localhost")
@@ -322,6 +325,21 @@ public class WinRmSessionTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = BOJAN)
+  @Category(UnitTests.class)
+  public void testExecuteCommandsListV2WithScriptExecCommandKerberos() throws JSchException, IOException {
+    List<String> commands = new ArrayList<>();
+    commands.add("command");
+    ShellCommand shell = mock(ShellCommand.class);
+    WinRmTool winRmTool = mock(WinRmTool.class);
+    io.harness.delegate.task.winrm.PyWinrmArgs pyWinrmArgs = mock(io.harness.delegate.task.winrm.PyWinrmArgs.class);
+    setupMocks(commands, shell, winRmTool, pyWinrmArgs);
+
+    winRmSession.executeCommandsListV2(commands, writer, error, false, SCRIPT_EXEC_COMMAND, true);
+    assertThat(commands.get(1)).isEqualTo(SCRIPT_EXEC_COMMAND);
+  }
+
+  @Test
   @Owner(developers = TMACARI)
   @Category(UnitTests.class)
   public void testExecuteCommandsListWithScriptExecCommand() throws JSchException, IOException {
@@ -339,6 +357,21 @@ public class WinRmSessionTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = BOJAN)
+  @Category(UnitTests.class)
+  public void testExecuteCommandsListV2WithScriptExecCommand() throws JSchException, IOException {
+    List<String> commands = Collections.singletonList("command");
+    ShellCommand shell = mock(ShellCommand.class);
+    WinRmTool winRmTool = mock(WinRmTool.class);
+
+    setupMocks(commands, shell, winRmTool, null);
+
+    winRmSession.executeCommandsListV2(commands, writer, error, false, SCRIPT_EXEC_COMMAND, true);
+    verify(shell).execute("command", writer, error);
+    verify(shell).execute(SCRIPT_EXEC_COMMAND, writer, error);
+  }
+
+  @Test
   @Owner(developers = TMACARI)
   @Category(UnitTests.class)
   public void testExecuteCommandsListWithoutScriptExecCommand() throws JSchException, IOException {
@@ -353,6 +386,20 @@ public class WinRmSessionTest extends CategoryTest {
     winRmSession.executeCommandsList(commandsList, writer, error, false, null);
     verify(winRmTool).executeCommand(commands);
     verifyZeroInteractions(shell);
+  }
+
+  @Test
+  @Owner(developers = BOJAN)
+  @Category(UnitTests.class)
+  public void testExecuteCommandsListV2WithoutScriptExecCommand() throws JSchException, IOException {
+    List<String> commands = Collections.singletonList("command");
+    ShellCommand shell = mock(ShellCommand.class);
+    WinRmTool winRmTool = mock(WinRmTool.class);
+
+    setupMocks(commands, shell, winRmTool, null);
+
+    winRmSession.executeCommandsListV2(commands, writer, error, false, null, false);
+    verify(shell).execute("command", writer, error);
   }
 
   @Test

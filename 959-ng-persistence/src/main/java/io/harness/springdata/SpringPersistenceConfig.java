@@ -19,10 +19,10 @@ import io.harness.persistence.Store;
 import io.harness.reflection.HarnessReflections;
 
 import com.google.inject.Injector;
+import com.google.inject.Key;
+import com.google.inject.name.Names;
 import com.mongodb.MongoClient;
-import com.mongodb.MongoClientOptions;
 import com.mongodb.MongoClientURI;
-import com.mongodb.ReadPreference;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -55,25 +55,18 @@ public class SpringPersistenceConfig extends AbstractMongoConfiguration {
   protected final Injector injector;
   protected final List<Class<? extends Converter<?, ?>>> springConverters;
   protected final MongoConfig mongoConfig;
+  protected final MongoClient mongoClient;
 
   public SpringPersistenceConfig(Injector injector, List<Class<? extends Converter<?, ?>>> springConverters) {
     this.injector = injector;
     this.springConverters = springConverters;
+    this.mongoClient = injector.getInstance(Key.get(MongoClient.class, Names.named("primaryMongoClient")));
     this.mongoConfig = injector.getInstance(MongoConfig.class);
   }
 
   @Override
   public MongoClient mongoClient() {
-    MongoClientOptions options = MongoClientOptions.builder()
-                                     .retryWrites(true)
-                                     .connectTimeout(mongoConfig.getConnectTimeout())
-                                     .serverSelectionTimeout(mongoConfig.getServerSelectionTimeout())
-                                     .maxConnectionIdleTime(mongoConfig.getMaxConnectionIdleTime())
-                                     .connectionsPerHost(mongoConfig.getConnectionsPerHost())
-                                     .readPreference(ReadPreference.primary())
-                                     .build();
-    MongoClientURI uri = new MongoClientURI(mongoConfig.getUri(), MongoClientOptions.builder(options));
-    return new MongoClient(uri);
+    return mongoClient;
   }
 
   @Override
@@ -84,10 +77,9 @@ public class SpringPersistenceConfig extends AbstractMongoConfiguration {
   @Bean(name = "primary")
   @Primary
   public MongoTemplate mongoTemplate() throws Exception {
-    MongoConfig config = injector.getInstance(MongoConfig.class);
     MappingMongoConverter mappingMongoConverter = mappingMongoConverter();
     mappingMongoConverter.setMapKeyDotReplacement(DOT_REPLACEMENT);
-    return new HMongoTemplate(mongoDbFactory(), mappingMongoConverter, config.getTraceMode());
+    return new HMongoTemplate(mongoDbFactory(), mappingMongoConverter, mongoConfig.getTraceMode());
   }
 
   @Bean
@@ -97,12 +89,7 @@ public class SpringPersistenceConfig extends AbstractMongoConfiguration {
 
   @Override
   protected Set<Class<?>> getInitialEntitySet() {
-    Set<Class<?>> classes =
-        HarnessReflections.get()
-            .getTypesAnnotatedWith(TypeAlias.class)
-            .stream()
-            .filter(aClass -> !aClass.getName().equals(aClass.getAnnotation(TypeAlias.class).value()))
-            .collect(Collectors.toSet());
+    Set<Class<?>> classes = HarnessReflections.get().getTypesAnnotatedWith(TypeAlias.class);
     Store store = null;
     if (Objects.nonNull(mongoConfig.getAliasDBName())) {
       store = Store.builder().name(mongoConfig.getAliasDBName()).build();

@@ -17,6 +17,7 @@ import static io.harness.walktree.visitor.utilities.VisitorParentPathUtils.PATH_
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.stages.SecurityStageNode;
 import io.harness.beans.steps.StepSpecTypeConstants;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml;
@@ -31,9 +32,8 @@ import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.filters.FilterCreatorHelper;
-import io.harness.filters.GenericStageFilterJsonCreator;
+import io.harness.filters.GenericStageFilterJsonCreatorV2;
 import io.harness.ng.core.BaseNGAccess;
-import io.harness.plancreator.stages.stage.StageElementConfig;
 import io.harness.pms.pipeline.filter.PipelineFilter;
 import io.harness.pms.sdk.core.filter.creation.beans.FilterCreationContext;
 import io.harness.pms.yaml.ParameterField;
@@ -52,7 +52,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @OwnedBy(HarnessTeam.STO)
-public class STOStageFilterJsonCreator extends GenericStageFilterJsonCreator {
+public class STOStageFilterJsonCreator extends GenericStageFilterJsonCreatorV2<SecurityStageNode> {
   @Inject ConnectorUtils connectorUtils;
   @Inject private SimpleVisitorFactory simpleVisitorFactory;
   @Inject ValidationUtils validationUtils;
@@ -61,9 +61,12 @@ public class STOStageFilterJsonCreator extends GenericStageFilterJsonCreator {
   public Set<String> getSupportedStageTypes() {
     return ImmutableSet.of(StepSpecTypeConstants.SECURITY_STAGE);
   }
-
   @Override
-  public PipelineFilter getFilter(FilterCreationContext filterCreationContext, StageElementConfig stageElementConfig) {
+  public Class<SecurityStageNode> getFieldClass() {
+    return SecurityStageNode.class;
+  }
+  @Override
+  public PipelineFilter getFilter(FilterCreationContext filterCreationContext, SecurityStageNode stageElementConfig) {
     log.info("Received filter creation request for security tests stage {}", stageElementConfig.getIdentifier());
     String accountId = filterCreationContext.getSetupMetadata().getAccountId();
     String orgIdentifier = filterCreationContext.getSetupMetadata().getOrgId();
@@ -113,8 +116,8 @@ public class STOStageFilterJsonCreator extends GenericStageFilterJsonCreator {
     return ciFilterBuilder.build();
   }
 
-  private void validateStage(StageElementConfig stageElementConfig) {
-    IntegrationStageConfig integrationStageConfig = (IntegrationStageConfig) stageElementConfig.getStageType();
+  private void validateStage(SecurityStageNode stageElementConfig) {
+    IntegrationStageConfig integrationStageConfig = (IntegrationStageConfig) stageElementConfig.getStageInfoConfig();
 
     Infrastructure infrastructure = integrationStageConfig.getInfrastructure();
     if (infrastructure == null) {
@@ -126,7 +129,7 @@ public class STOStageFilterJsonCreator extends GenericStageFilterJsonCreator {
   }
 
   public Set<EntityDetailProtoDTO> getReferredEntities(
-      FilterCreationContext filterCreationContext, StageElementConfig stageElementConfig) {
+      FilterCreationContext filterCreationContext, SecurityStageNode stageElementConfig) {
     CodeBase ciCodeBase = null;
     String accountIdentifier = filterCreationContext.getSetupMetadata().getAccountId();
     String orgIdentifier = filterCreationContext.getSetupMetadata().getOrgId();
@@ -152,7 +155,7 @@ public class STOStageFilterJsonCreator extends GenericStageFilterJsonCreator {
           fullQualifiedDomainName, ciCodeBase.getConnectorRef(), EntityTypeProtoEnum.CONNECTORS));
     }
 
-    IntegrationStageConfig integrationStage = (IntegrationStageConfig) stageElementConfig.getStageType();
+    IntegrationStageConfig integrationStage = (IntegrationStageConfig) stageElementConfig.getStageInfoConfig();
     if (integrationStage.getInfrastructure() == null) {
       throw new CIStageExecutionException("Input infrastructure is not set");
     } else {

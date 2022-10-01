@@ -23,6 +23,8 @@ import io.harness.ci.logserviceclient.CILogServiceUtils;
 import io.harness.ci.states.codebase.CodeBaseTaskStep;
 import io.harness.delegate.TaskSelector;
 import io.harness.delegate.beans.ci.CICleanupTaskParams;
+import io.harness.delegate.beans.ci.InfraInfo;
+import io.harness.delegate.beans.ci.vm.CIVmCleanupTaskParams;
 import io.harness.encryption.Scope;
 import io.harness.logstreaming.LogStreamingHelper;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -171,6 +173,17 @@ public class PipelineExecutionUpdateEventHandler implements OrchestrationEventHa
       if (Strings.isNotBlank(delegateId)) {
         eligibleToExecuteDelegateIds.add(delegateId);
         ciTaskDetailsRepository.deleteFirstByStageExecutionId(stageId);
+      } else {
+        log.warn(
+            "Unable to locate delegate ID for stage ID: {}. Cleanup task may be routed to the wrong delegate", stageId);
+      }
+    } else if (InfraInfo.Type.DOCKER.equals(((CIVmCleanupTaskParams) ciCleanupTaskParams).getInfraInfo().getType())) {
+      // TODO: Start using fetchDelegateId once we start emitting & processing the event for Docker as well
+      OptionalOutcome optionalOutput = outcomeService.resolveOptional(
+          ambiance, RefObjectUtils.getOutcomeRefObject(VmDetailsOutcome.VM_DETAILS_OUTCOME));
+      VmDetailsOutcome vmDetailsOutcome = (VmDetailsOutcome) optionalOutput.getOutcome();
+      if (vmDetailsOutcome != null && Strings.isNotBlank(vmDetailsOutcome.getDelegateId())) {
+        eligibleToExecuteDelegateIds.add(vmDetailsOutcome.getDelegateId());
       }
     }
 
@@ -197,6 +210,8 @@ public class PipelineExecutionUpdateEventHandler implements OrchestrationEventHa
       return vmDetailsOutcome.getDelegateId();
     } else {
       String stageId = ambiance.getStageExecutionId();
+      log.info("Could not process the delegate ID for stage ID: {} from the init response. Trying to look in the DB",
+          stageId);
 
       long currentTime = System.currentTimeMillis();
       long waitTill = currentTime + WAIT_TIME_IN_SECOND * 1000;
@@ -207,6 +222,8 @@ public class PipelineExecutionUpdateEventHandler implements OrchestrationEventHa
         if (taskDetailsOptional.isPresent()) {
           CITaskDetails taskDetails = taskDetailsOptional.get();
           if (Strings.isNotBlank(taskDetails.getDelegateId())) {
+            log.info("Successfully found delegate ID: {} corresponding to stage ID: {}", taskDetails.getDelegateId(),
+                stageId);
             return taskDetails.getDelegateId();
           }
           break;

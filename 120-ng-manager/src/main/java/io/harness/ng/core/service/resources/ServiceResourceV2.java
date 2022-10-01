@@ -20,7 +20,6 @@ import static software.wings.beans.Service.ServiceKeys;
 
 import static java.lang.Long.parseLong;
 import static java.lang.String.format;
-import static java.util.Objects.isNull;
 import static javax.ws.rs.core.HttpHeaders.IF_MATCH;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNumeric;
@@ -40,6 +39,7 @@ import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.artifact.ArtifactSummary;
+import io.harness.cdng.artifact.bean.yaml.ArtifactSourceConfig;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
@@ -49,6 +49,7 @@ import io.harness.ng.core.beans.NGEntityTemplateResponseDTO;
 import io.harness.ng.core.beans.ServiceV2YamlMetadata;
 import io.harness.ng.core.beans.ServicesV2YamlMetadataDTO;
 import io.harness.ng.core.beans.ServicesYamlMetadataApiInput;
+import io.harness.ng.core.customDeployment.helper.CustomDeploymentYamlHelper;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -63,14 +64,12 @@ import io.harness.ng.core.service.mappers.ServiceFilterHelper;
 import io.harness.ng.core.service.services.ServiceEntityManagementService;
 import io.harness.ng.core.service.services.ServiceEntityService;
 import io.harness.ng.core.service.yaml.NGServiceConfig;
-import io.harness.pms.merger.YamlConfig;
 import io.harness.pms.rbac.NGResourceType;
 import io.harness.rbac.CDNGRbacUtility;
 import io.harness.repositories.UpsertOptions;
 import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.utils.PageUtils;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -102,8 +101,8 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -142,12 +141,13 @@ import org.springframework.data.mongodb.core.query.Criteria;
               schema = @Schema(implementation = ErrorDTO.class))
     })
 @OwnedBy(HarnessTeam.CDC)
+@Slf4j
 public class ServiceResourceV2 {
   private final ServiceEntityService serviceEntityService;
   private final AccessControlClient accessControlClient;
   private final ServiceEntityManagementService serviceEntityManagementService;
   private final OrgAndProjectValidationHelper orgAndProjectValidationHelper;
-
+  @Inject CustomDeploymentYamlHelper customDeploymentYamlHelper;
   public static final String SERVICE_PARAM_MESSAGE = "Service Identifier for the entity";
   public static final String SERVICE_YAML_METADATA_INPUT_PARAM_MESSAGE = "List of Service Identifiers for the entities";
 
@@ -352,8 +352,8 @@ public class ServiceResourceV2 {
     Page<ServiceEntity> serviceEntities = serviceEntityService.list(criteria, pageRequest);
     if (ServiceDefinitionType.CUSTOM_DEPLOYMENT == type && !isEmpty(deploymentTemplateIdentifier)
         && !isEmpty(versionLabel)) {
-      serviceEntities =
-          getFilteredServiceEntities(page, size, sort, deploymentTemplateIdentifier, versionLabel, serviceEntities);
+      serviceEntities = customDeploymentYamlHelper.getFilteredServiceEntities(
+          page, size, sort, deploymentTemplateIdentifier, versionLabel, serviceEntities);
     }
     serviceEntities.forEach(serviceEntity -> {
       if (EmptyPredicate.isEmpty(serviceEntity.getYaml())) {
@@ -391,7 +391,9 @@ public class ServiceResourceV2 {
           description =
               "Specifies the sorting criteria of the list. Like sorting based on the last updated entity, alphabetical sorting in an ascending or descending order")
       @QueryParam("sort") List<String> sort,
-      @QueryParam("type") ServiceDefinitionType type, @QueryParam("gitOpsEnabled") Boolean gitOpsEnabled) {
+      @QueryParam("type") ServiceDefinitionType type, @QueryParam("gitOpsEnabled") Boolean gitOpsEnabled,
+      @QueryParam("deploymentTemplateIdentifier") String deploymentTemplateIdentifier,
+      @QueryParam("versionLabel") String versionLabel) {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgIdentifier, projectIdentifier),
         Resource.of(PROJECT, projectIdentifier), VIEW_PROJECT_PERMISSION, "Unauthorized to list services");
 
@@ -400,10 +402,22 @@ public class ServiceResourceV2 {
     if (isNotEmpty(serviceIdentifiers)) {
       criteria.and(ServiceEntityKeys.identifier).in(serviceIdentifiers);
     }
-    List<ServiceResponse> serviceList = serviceEntityService.listRunTimePermission(criteria)
-                                            .stream()
-                                            .map(ServiceElementMapper::toAccessListResponseWrapper)
-                                            .collect(Collectors.toList());
+    List<ServiceResponse> serviceList;
+    if (type == ServiceDefinitionType.CUSTOM_DEPLOYMENT && !isEmpty(deploymentTemplateIdentifier)
+        && !isEmpty(versionLabel)) {
+      serviceList = serviceEntityService.listRunTimePermission(criteria)
+                        .stream()
+                        .filter(serviceEntity
+                            -> customDeploymentYamlHelper.isDeploymentTemplateService(
+                                deploymentTemplateIdentifier, versionLabel, serviceEntity))
+                        .map(ServiceElementMapper::toAccessListResponseWrapper)
+                        .collect(Collectors.toList());
+    } else {
+      serviceList = serviceEntityService.listRunTimePermission(criteria)
+                        .stream()
+                        .map(ServiceElementMapper::toAccessListResponseWrapper)
+                        .collect(Collectors.toList());
+    }
     List<PermissionCheckDTO> permissionCheckDTOS =
         serviceList.stream().map(CDNGRbacUtility::serviceResponseToPermissionCheckDTO).collect(Collectors.toList());
     List<AccessControlDTO> accessControlList =
@@ -495,9 +509,13 @@ public class ServiceResourceV2 {
 
   private ServiceV2YamlMetadata createServiceV2YamlMetadata(ServiceEntity serviceEntity) {
     if (isBlank(serviceEntity.getYaml())) {
-      throw new InvalidRequestException(
-          format("Service with identifier %s is not configured with a Service definition. Service Yaml is empty",
-              serviceEntity.getIdentifier()));
+      log.info("Service with identifier {} is not configured with a Service definition. Service Yaml is empty",
+          serviceEntity.getIdentifier());
+      return ServiceV2YamlMetadata.builder()
+          .serviceIdentifier(serviceEntity.getIdentifier())
+          .serviceYaml("")
+          .inputSetTemplateYaml("")
+          .build();
     }
 
     final String serviceInputSetYaml =
@@ -539,6 +557,15 @@ public class ServiceResourceV2 {
     }
   }
 
+  @GET
+  @Path("/dummy-artifactSourceConfig-api")
+  @ApiOperation(value = "This is dummy api to expose ArtifactSourceConfig", nickname = "dummyArtifactSourceConfigApi")
+  @Hidden
+  // do not delete this.
+  public ResponseDTO<ArtifactSourceConfig> getArtifactSourceConfig() {
+    return ResponseDTO.newResponse(ArtifactSourceConfig.builder().build());
+  }
+
   private List<ServiceResponse> filterByPermissionAndId(
       List<AccessControlDTO> accessControlList, List<ServiceResponse> serviceList) {
     List<ServiceResponse> filteredAccessControlDtoList = new ArrayList<>();
@@ -565,36 +592,5 @@ public class ServiceResourceV2 {
       throw new InvalidRequestException(
           "No request body sent in the API. Following field is required: identifier. Other optional fields: name, orgIdentifier, projectIdentifier, tags, description, version");
     }
-  }
-
-  private boolean isDTService(String deploymentTemplateIdentifier, String versionLabel, ServiceEntity serviceEntity) {
-    String yaml = serviceEntity.getYaml();
-    YamlConfig yamlConfig = new YamlConfig(yaml);
-    JsonNode service = yamlConfig.getYamlMap().get("service");
-    if (!isNull(service)) {
-      JsonNode serviceDef = service.get("serviceDefinition");
-      if (!isNull(serviceDef)) {
-        JsonNode serviceSpec = serviceDef.get("spec");
-        if (!isNull(serviceSpec)) {
-          JsonNode customDeploymentRef = serviceSpec.get("customDeploymentRef");
-          if (!isNull(customDeploymentRef)) {
-            JsonNode ref = customDeploymentRef.get("ref");
-            JsonNode versionLabelNode = customDeploymentRef.get("versionLabel");
-            return ref.asText().equals(deploymentTemplateIdentifier) && versionLabelNode.asText().equals(versionLabel);
-          }
-        }
-      }
-    }
-    return false;
-  }
-
-  @NotNull
-  private Page<ServiceEntity> getFilteredServiceEntities(int page, int size, List<String> sort,
-      String deploymentTemplateIdentifier, String versionLabel, Page<ServiceEntity> serviceEntities) {
-    List<ServiceEntity> entities = serviceEntities.getContent()
-                                       .stream()
-                                       .filter(s -> isDTService(deploymentTemplateIdentifier, versionLabel, s))
-                                       .collect(Collectors.toList());
-    return new PageImpl<>(entities, PageUtils.getPageRequest(page, size, sort), entities.size());
   }
 }

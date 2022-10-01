@@ -11,7 +11,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
 import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
-import static io.harness.springdata.TransactionUtils.DEFAULT_TRANSACTION_RETRY_POLICY;
+import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
@@ -66,7 +66,7 @@ public class ServiceOverrideServiceImpl implements ServiceOverrideService {
   private final EntitySetupUsageService entitySetupUsageService;
   private final Producer eventProducer;
   private final OutboxService outboxService;
-  private final RetryPolicy<Object> transactionRetryPolicy = DEFAULT_TRANSACTION_RETRY_POLICY;
+  private final RetryPolicy<Object> transactionRetryPolicy = DEFAULT_RETRY_POLICY;
   @Inject @Named(OUTBOX_TRANSACTION_TEMPLATE) private final TransactionTemplate transactionTemplate;
 
   @Inject
@@ -254,7 +254,7 @@ public class ServiceOverrideServiceImpl implements ServiceOverrideService {
   }
 
   @Override
-  public String createServiceOverrideInputsYaml(String accountId, String projectIdentifier, String orgIdentifier,
+  public String createServiceOverrideInputsYaml(String accountId, String orgIdentifier, String projectIdentifier,
       String environmentIdentifier, String serviceIdentifier) {
     Map<String, Object> yamlInputs = createServiceOverrideInputsYamlInternal(
         accountId, orgIdentifier, projectIdentifier, environmentIdentifier, serviceIdentifier);

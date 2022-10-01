@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.mongo.MongoConfig;
 import io.harness.mongo.MongoModule;
+import io.harness.mongo.metrics.HarnessConnectionPoolListener;
 import io.harness.persistence.PersistentEntity;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
@@ -50,6 +51,7 @@ import org.mongodb.morphia.annotations.Entity;
 @OwnedBy(PL)
 @Slf4j
 public class ChangeTracker {
+  private final HarnessConnectionPoolListener harnessConnectionPoolListener;
   private MongoConfig mongoConfig;
   private ChangeEventFactory changeEventFactory;
   private TagSet mongoTagSet;
@@ -62,10 +64,12 @@ public class ChangeTracker {
   private ClientSession clientSession;
 
   @Inject
-  public ChangeTracker(MongoConfig mongoConfig, ChangeEventFactory changeEventFactory, TagSet mongoTagSet) {
+  public ChangeTracker(MongoConfig mongoConfig, HarnessConnectionPoolListener harnessConnectionPoolListener,
+      ChangeEventFactory changeEventFactory, TagSet mongoTagSet) {
     this.mongoConfig = mongoConfig;
     this.changeEventFactory = changeEventFactory;
     this.mongoTagSet = mongoTagSet;
+    this.harnessConnectionPoolListener = harnessConnectionPoolListener;
   }
 
   private String getCollectionName(Class<? extends PersistentEntity> clazz) {
@@ -81,7 +85,10 @@ public class ChangeTracker {
     }
     return new MongoClientURI(mongoClientUrl,
         MongoClientOptions.builder(MongoModule.getDefaultMongoClientOptions(mongoConfig))
-            .readPreference(readPreference));
+            .readPreference(readPreference)
+            .addConnectionPoolListener(harnessConnectionPoolListener)
+            .applicationName("cg_changestream")
+            .description("cg_changestream"));
   }
 
   private void connectToMongoDatabase() {

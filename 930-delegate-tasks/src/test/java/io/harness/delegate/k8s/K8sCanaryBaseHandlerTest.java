@@ -11,9 +11,9 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.delegate.k8s.K8sTestConstants.CONFIG_MAP_YAML;
 import static io.harness.delegate.k8s.K8sTestConstants.DAEMON_SET_YAML;
 import static io.harness.delegate.k8s.K8sTestConstants.DEPLOYMENT_YAML;
-import static io.harness.k8s.model.Release.Status.Failed;
-import static io.harness.k8s.model.Release.Status.InProgress;
-import static io.harness.k8s.model.ReleaseHistory.defaultVersion;
+import static io.harness.k8s.releasehistory.IK8sRelease.Status.Failed;
+import static io.harness.k8s.releasehistory.IK8sRelease.Status.InProgress;
+import static io.harness.k8s.releasehistory.ReleaseHistory.defaultVersion;
 import static io.harness.logging.CommandExecutionStatus.FAILURE;
 import static io.harness.logging.LogLevel.ERROR;
 import static io.harness.rule.OwnerRule.ABOSII;
@@ -54,8 +54,9 @@ import io.harness.k8s.model.K8sPod;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.KubernetesResource;
 import io.harness.k8s.model.KubernetesResourceId;
-import io.harness.k8s.model.Release;
-import io.harness.k8s.model.ReleaseHistory;
+import io.harness.k8s.releasehistory.IK8sRelease;
+import io.harness.k8s.releasehistory.K8sLegacyRelease;
+import io.harness.k8s.releasehistory.ReleaseHistory;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
@@ -176,8 +177,8 @@ public class K8sCanaryBaseHandlerTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testDeploymentWorkloadsForCanaryCleanupCanaryTrue() throws Exception {
     K8sCanaryHandlerConfig k8sCanaryHandlerConfig = prepareValidWorkloads();
-    List<Release> releaseList = new ArrayList<>();
-    releaseList.add(Release.builder().number(1).status(Release.Status.InProgress).build());
+    List<K8sLegacyRelease> releaseList = new ArrayList<>();
+    releaseList.add(K8sLegacyRelease.builder().number(1).status(IK8sRelease.Status.InProgress).build());
     k8sCanaryHandlerConfig.setReleaseHistory(
         ReleaseHistory.builder().version(defaultVersion).releases(releaseList).build());
     ArgumentCaptor<ReleaseHistory> captor = ArgumentCaptor.forClass(ReleaseHistory.class);

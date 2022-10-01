@@ -13,6 +13,7 @@ import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.visitor.helpers.artifact.ArtifactListConfigVisitorHelper;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.walktree.beans.VisitableChildren;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
@@ -55,11 +56,11 @@ public class ArtifactListConfig implements Visitable {
       String uuid, PrimaryArtifact primary, @Singular List<SidecarArtifactWrapper> sidecars, String metadata) {
     this.uuid = uuid;
     this.primary = primary;
-    if (primary != null) {
-      if (this.primary.getSpec() != null) {
+    if (primary != null && this.primary.getSpec() != null) {
+      if (EmptyPredicate.isEmpty(primary.getSpec().getIdentifier())) {
         this.primary.getSpec().setIdentifier("primary");
-        this.primary.getSpec().setPrimaryArtifact(true);
       }
+      this.primary.getSpec().setPrimaryArtifact(true);
     }
     this.sidecars = sidecars;
     if (isNotEmpty(sidecars)) {

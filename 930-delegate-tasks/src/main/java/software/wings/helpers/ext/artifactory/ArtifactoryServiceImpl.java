@@ -83,7 +83,7 @@ import org.jfrog.artifactory.client.model.impl.PackageTypeImpl;
 @BreakDependencyOn("io.harness.delegate.task.ListNotifyResponseData")
 public class ArtifactoryServiceImpl implements ArtifactoryService {
   private static final String REASON = "Reason:";
-  private static final String RESULTS = "results";
+  static final String RESULTS = "results";
 
   private static final String DOWNLOAD_FILE_FOR_GENERIC_REPO = "Downloading the file for generic repo";
 
@@ -376,9 +376,11 @@ public class ArtifactoryServiceImpl implements ArtifactoryService {
     Map<String, List> response = artifactoryResponse.parseBody(Map.class);
     if (response != null) {
       List<Map<String, Object>> results = response.get(RESULTS);
-      for (Map<String, Object> item : results) {
-        String name = (String) item.get("name");
-        helmChartNames.add(name);
+      if (results != null) {
+        for (Map<String, Object> item : results) {
+          String name = (String) item.get("name");
+          helmChartNames.add(name);
+        }
       }
     }
     return helmChartNames;

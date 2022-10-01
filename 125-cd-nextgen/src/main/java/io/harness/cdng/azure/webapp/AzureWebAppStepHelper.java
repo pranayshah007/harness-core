@@ -471,7 +471,7 @@ public class AzureWebAppStepHelper {
     }
   }
 
-  private AppSettingsFile fetchFileContentFromHarnessStore(
+  public AppSettingsFile fetchFileContentFromHarnessStore(
       Ambiance ambiance, String settingsType, HarnessStore harnessStore) {
     HarnessStore renderedHarnessStore = (HarnessStore) cdExpressionResolver.updateExpressions(ambiance, harnessStore);
     if (!ParameterField.isNull(renderedHarnessStore.getFiles())

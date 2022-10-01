@@ -9,11 +9,17 @@ package io.harness.cvng.cdng.beans;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.SwaggerConstants;
 import io.harness.plancreator.steps.AbstractStepNode;
+import io.harness.pms.yaml.ParameterField;
+import io.harness.validator.NGRegexValidatorConstants;
 import io.harness.yaml.core.VariableExpression;
 import io.harness.yaml.core.failurestrategy.FailureStrategyConfig;
+import io.harness.yaml.core.timeout.Timeout;
 
+import io.swagger.annotations.ApiModelProperty;
 import java.util.List;
+import javax.validation.constraints.Pattern;
 import lombok.Data;
 
 @OwnedBy(HarnessTeam.CV)
@@ -21,4 +27,8 @@ import lombok.Data;
 public abstract class CVNGAbstractStepNode extends AbstractStepNode {
   // check if this field is needed or not
   @VariableExpression(skipVariableExpression = true) List<FailureStrategyConfig> failureStrategies;
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
+  @Pattern(regexp = NGRegexValidatorConstants.TIMEOUT_PATTERN)
+  @VariableExpression(skipInnerObjectTraversal = true)
+  ParameterField<Timeout> timeout;
 }

@@ -153,4 +153,17 @@ public class RuntimeInputFormHelperTest extends CategoryTest {
     assertEquals(jsonNode.get("pipeline").get("stages").get(0).get("stage").get("description").asText(),
         "<+executionInput.stage.description>");
   }
+
+  @Test
+  @Owner(developers = BRIJESH)
+  @Category(UnitTests.class)
+  public void testJsonNodeMergeDoesNotChangeOrderInList() throws JsonProcessingException {
+    String filename = "jsonNodeWithList.yaml";
+    String yaml = readFile(filename);
+    ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
+    JsonNode jsonNode = mapper.readTree(yaml);
+
+    RuntimeInputFormHelper.createExecutionInputFormAndUpdateYamlFieldForStage(jsonNode);
+    assertThat(jsonNode).isEqualTo(mapper.readTree(yaml));
+  }
 }

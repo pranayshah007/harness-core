@@ -447,7 +447,6 @@ public class SSOServiceImplTest extends WingsBaseTest {
                           .withAuthenticationMechanism(USER_PASSWORD)
                           .build();
     accountService.save(account, false);
-    when(featureFlagService.isEnabled(FeatureName.AUDIT_TRAIL_ENHANCEMENT, account.getUuid())).thenReturn(true);
 
     ssoService.setAuthenticationMechanism(account.getUuid(), SAML);
     List<OutboxEvent> outboxEvents = outboxService.list(OutboxEventFilter.builder().maximumEventsPolled(10).build());

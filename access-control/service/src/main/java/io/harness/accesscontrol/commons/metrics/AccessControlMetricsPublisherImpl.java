@@ -1,3 +1,10 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.accesscontrol.commons.metrics;
 
 import io.harness.metrics.service.api.MetricService;
@@ -40,10 +47,8 @@ public class AccessControlMetricsPublisherImpl implements MetricsPublisher {
     */
     Set<Map.Entry<String, Timer>> timerSet = metricRegistry.getTimers().entrySet();
     timerSet.forEach(entry -> recordTimer(sanitizeMetricName(entry.getKey()), entry.getValue()));
-    /* To Record Counters, not required as of now.
     Set<Map.Entry<String, Counter>> counterSet = metricRegistry.getCounters().entrySet();
     counterSet.forEach(entry -> recordCounter(sanitizeMetricName(entry.getKey()), entry.getValue()));
-     */
   }
 
   private void recordCounter(String metricName, Counter counter) {
@@ -84,6 +89,8 @@ public class AccessControlMetricsPublisherImpl implements MetricsPublisher {
     try (AccessControlMetricsContext ignore = new AccessControlMetricsContext(NAMESPACE, CONTAINER_NAME)) {
       recordMetric(metricName + "_count", timer.getCount());
       recordMetric(metricName + "_fifteenMinuteRate", timer.getFifteenMinuteRate());
+      recordMetric(metricName + "_fiveMinuteRate", timer.getFiveMinuteRate());
+      recordMetric(metricName + "_oneMinuteRate", timer.getOneMinuteRate());
       recordMetric(metricName + "_meanRate", timer.getMeanRate());
       recordSnapshot(metricName + "_snapshot", timer.getSnapshot());
     }
@@ -92,9 +99,9 @@ public class AccessControlMetricsPublisherImpl implements MetricsPublisher {
   private void recordSnapshot(String metricName, Snapshot snapshot) {
     try (AccessControlMetricsContext ignore = new AccessControlMetricsContext(NAMESPACE, CONTAINER_NAME)) {
       recordMetric(metricName + "_mean", snapshot.getMean() * SNAPSHOT_FACTOR);
-      recordMetric(metricName + "_75thPercentile", snapshot.get75thPercentile() * SNAPSHOT_FACTOR);
       recordMetric(metricName + "_95thPercentile", snapshot.get95thPercentile() * SNAPSHOT_FACTOR);
       recordMetric(metricName + "_99thPercentile", snapshot.get99thPercentile() * SNAPSHOT_FACTOR);
+      recordMetric(metricName + "_999thPercentile", snapshot.get999thPercentile() * SNAPSHOT_FACTOR);
     }
   }
 

@@ -75,10 +75,11 @@ public class GitFetchTaskNG extends AbstractDelegateRunnableTask {
 
   @Override
   public GitFetchResponse run(TaskParameters parameters) {
-    CommandUnitsProgress commandUnitsProgress = CommandUnitsProgress.builder().build();
+    GitFetchRequest gitFetchRequest = (GitFetchRequest) parameters;
+    CommandUnitsProgress commandUnitsProgress = gitFetchRequest.getCommandUnitsProgress() != null
+        ? gitFetchRequest.getCommandUnitsProgress()
+        : CommandUnitsProgress.builder().build();
     try {
-      GitFetchRequest gitFetchRequest = (GitFetchRequest) parameters;
-
       log.info("Running GitFetchFilesTask for activityId {}", gitFetchRequest.getActivityId());
 
       LogCallback executionLogCallback = new NGDelegateLogCallback(getLogStreamingTaskClient(),

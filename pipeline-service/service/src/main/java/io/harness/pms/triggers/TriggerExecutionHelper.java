@@ -282,7 +282,8 @@ public class TriggerExecutionHelper {
         pipelineEnforcementService.validateExecutionEnforcementsBasedOnStage(pipelineEntity);
 
         String expandedJson = pmsPipelineServiceHelper.fetchExpandedPipelineJSONFromYaml(pipelineEntity.getAccountId(),
-            pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(), pipelineYamlWithTemplateRef);
+            pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(), pipelineYamlWithTemplateRef,
+            true);
 
         planExecutionMetadataBuilder.yaml(pipelineYaml);
         planExecutionMetadataBuilder.processedYaml(YamlUtils.injectUuid(pipelineYaml));
@@ -369,6 +370,10 @@ public class TriggerExecutionHelper {
     TriggerType triggerType = WEBHOOK;
     if (triggerPayload.getType() == Type.SCHEDULED) {
       triggerType = TriggerType.SCHEDULER_CRON;
+    } else if (triggerPayload.getType() == Type.ARTIFACT) {
+      triggerType = TriggerType.ARTIFACT;
+    } else if (triggerPayload.getType() == Type.MANIFEST) {
+      triggerType = TriggerType.MANIFEST;
     } else if (triggerPayload.getSourceType() == SourceType.CUSTOM_REPO) {
       triggerType = WEBHOOK_CUSTOM;
     }
@@ -473,7 +478,7 @@ public class TriggerExecutionHelper {
     NGTriggerConfigV2 triggerConfigV2 = triggerDetails.getNgTriggerConfigV2();
     String pipelineBranch = triggerConfigV2.getPipelineBranchName();
     if (isEmpty(triggerConfigV2.getInputSetRefs())) {
-      return null;
+      return triggerConfigV2.getInputYaml();
     }
 
     String branch = null;

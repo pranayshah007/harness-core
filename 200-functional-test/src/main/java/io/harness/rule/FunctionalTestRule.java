@@ -282,6 +282,13 @@ public class FunctionalTestRule implements MethodRule, InjectorRuleMixin, MongoR
       }
 
       @Provides
+      @Named("primaryMongoClient")
+      @Singleton
+      MongoClient mongoClient() {
+        return mongoClient;
+      }
+
+      @Provides
       @Singleton
       @Nullable
       UserProvider userProvider() {

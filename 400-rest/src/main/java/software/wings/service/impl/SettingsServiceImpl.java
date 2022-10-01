@@ -171,6 +171,7 @@ import software.wings.settings.SettingValue;
 import software.wings.settings.SettingVariableTypes;
 import software.wings.utils.ArtifactType;
 import software.wings.utils.CryptoUtils;
+import software.wings.utils.EmailHelperUtils;
 import software.wings.verification.CVConfiguration;
 import software.wings.verification.CVConfiguration.CVConfigurationKeys;
 
@@ -254,6 +255,7 @@ public class SettingsServiceImpl implements SettingsService {
   @Inject private AWSCEConfigValidationService awsCeConfigService;
   @Inject private AzureCEConfigValidationService azureCEConfigValidationService;
   @Inject @Named(CeCloudAccountFeature.FEATURE_NAME) private UsageLimitedFeature ceCloudAccountFeature;
+  @Inject EmailHelperUtils emailHelperUtils;
 
   @Inject @Getter(onMethod = @__(@SuppressValidation)) private Subject<CloudProviderObserver> subject = new Subject<>();
   @Inject
@@ -310,8 +312,14 @@ public class SettingsServiceImpl implements SettingsService {
       log.info("Time taken in DB Query for while fetching settings:  {}", System.currentTimeMillis() - timestamp);
 
       timestamp = System.currentTimeMillis();
-      List<SettingAttribute> filteredSettingAttributes = getFilteredSettingAttributes(
-          pageResponse.getResponse(), appIdFromRequest, envIdFromRequest, forUsageInNewApp);
+      List<SettingAttribute> filteredSettingAttributes =
+          getFilteredSettingAttributes(pageResponse.getResponse(), appIdFromRequest, envIdFromRequest, forUsageInNewApp)
+              .stream()
+              .filter(settingAttribute
+                  -> !(SettingCategory.CONNECTOR.equals(settingAttribute.getCategory())
+                      && "SMTP".equals(settingAttribute.getValue().getType())
+                      && emailHelperUtils.isNgSmtp(settingAttribute.getName())))
+              .collect(Collectors.toList());
       log.info("Total time taken in filtering setting records:  {}.", System.currentTimeMillis() - timestamp);
       return aPageResponse().withResponse(filteredSettingAttributes).withTotal(pageResponse.getTotal()).build();
     } catch (InvalidRequestException | InvalidCredentialsException | InvalidArgumentsException e) {
@@ -1414,10 +1422,6 @@ public class SettingsServiceImpl implements SettingsService {
 
     ensureSettingAttributeSafeToDelete(settingAttribute);
 
-    if (featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, accountId)) {
-      pruneQueue.send(new PruneEvent(SettingAttribute.class, appId, settingAttribute.getUuid()));
-    }
-
     closeConnectivityErrorAlert(accountId, settingAttribute.getUuid());
     boolean deleted = wingsPersistence.delete(settingAttribute);
 
@@ -1563,32 +1567,30 @@ public class SettingsServiceImpl implements SettingsService {
             join(", ", infraMappingNames)));
       }
     } else {
-      if (!featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, connectorSetting.getAccountId())) {
-        List<String> allAccountApps = appService.getAppIdsByAccountId(connectorSetting.getAccountId());
-        List<ArtifactStream> artifactStreams =
-            artifactStreamService.listBySettingId(connectorSetting.getUuid())
-                .stream()
-                .filter(artifactStream -> allAccountApps.contains(artifactStream.getAppId()))
-                .filter(artifactStream -> serviceResourceService.get(artifactStream.getServiceId()) != null)
-                .collect(toList());
-        if (!artifactStreams.isEmpty()) {
-          List<String> artifactStreamNames = artifactStreams.stream()
-                                                 .map(ArtifactStream::getSourceName)
-                                                 .filter(java.util.Objects::nonNull)
-                                                 .collect(toList());
-          throw new InvalidRequestException(
-              format("Connector [%s] is referenced by %d Artifact %s [%s].", connectorSetting.getName(),
-                  artifactStreamNames.size(), plural("Source", artifactStreamNames.size()),
-                  join(", ", artifactStreamNames)),
-              USER);
-        }
+      List<String> allAccountApps = appService.getAppIdsByAccountId(connectorSetting.getAccountId());
+      List<ArtifactStream> artifactStreams =
+          artifactStreamService.listBySettingId(connectorSetting.getUuid())
+              .stream()
+              .filter(artifactStream -> allAccountApps.contains(artifactStream.getAppId()))
+              .filter(artifactStream -> serviceResourceService.get(artifactStream.getServiceId()) != null)
+              .collect(toList());
+      if (!artifactStreams.isEmpty()) {
+        List<String> artifactStreamNames = artifactStreams.stream()
+                                               .map(ArtifactStream::getSourceName)
+                                               .filter(java.util.Objects::nonNull)
+                                               .collect(toList());
+        throw new InvalidRequestException(
+            format("Connector [%s] is referenced by %d Artifact %s [%s].", connectorSetting.getName(),
+                artifactStreamNames.size(), plural("Source", artifactStreamNames.size()),
+                join(", ", artifactStreamNames)),
+            USER);
+      }
 
-        List<Rejection> rejections = manipulationSubject.fireApproveFromAll(
-            SettingsServiceManipulationObserver::settingsServiceDeleting, connectorSetting);
-        if (isNotEmpty(rejections)) {
-          throw new InvalidRequestException(
-              format("[%s]", join("\n", rejections.stream().map(Rejection::message).collect(toList()))), USER);
-        }
+      List<Rejection> rejections = manipulationSubject.fireApproveFromAll(
+          SettingsServiceManipulationObserver::settingsServiceDeleting, connectorSetting);
+      if (isNotEmpty(rejections)) {
+        throw new InvalidRequestException(
+            format("[%s]", join("\n", rejections.stream().map(Rejection::message).collect(toList()))), USER);
       }
     }
 
@@ -1607,25 +1609,19 @@ public class SettingsServiceImpl implements SettingsService {
           USER);
     }
 
-    if (!featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, accountId)) {
-      List<ArtifactStream> artifactStreams = artifactStreamService.listBySettingId(cloudProviderSetting.getUuid());
-      if (!artifactStreams.isEmpty()) {
-        List<String> artifactStreamNames = artifactStreams.stream().map(ArtifactStream::getName).collect(toList());
-        throw new InvalidRequestException(
-            format("Cloud provider [%s] is referenced by %d Artifact %s [%s].", cloudProviderSetting.getName(),
-                artifactStreamNames.size(), plural("Source", artifactStreamNames.size()),
-                join(", ", artifactStreamNames)),
-            USER);
-      }
+    List<ArtifactStream> artifactStreams = artifactStreamService.listBySettingId(cloudProviderSetting.getUuid());
+    if (!artifactStreams.isEmpty()) {
+      List<String> artifactStreamNames = artifactStreams.stream().map(ArtifactStream::getName).collect(toList());
+      throw new InvalidRequestException(
+          format("Cloud provider [%s] is referenced by %d Artifact %s [%s].", cloudProviderSetting.getName(),
+              artifactStreamNames.size(), plural("Source", artifactStreamNames.size()),
+              join(", ", artifactStreamNames)),
+          USER);
     }
     // TODO:: workflow scan for finding out usage in Steps ???
   }
 
   private void ensureAzureArtifactsConnectorSafeToDelete(SettingAttribute connectorSetting) {
-    if (featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, connectorSetting.getAccountId())) {
-      return;
-    }
-
     List<ArtifactStream> artifactStreams = artifactStreamService.listBySettingId(connectorSetting.getUuid());
     if (isEmpty(artifactStreams)) {
       return;

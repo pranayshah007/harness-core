@@ -15,8 +15,10 @@ import io.harness.plancreator.execution.ExecutionWrapperConfig;
 import io.harness.plancreator.steps.ParallelStepElementConfig;
 import io.harness.plancreator.steps.StepGroupElementConfig;
 import io.harness.plancreator.strategy.StrategyConfig;
+import io.harness.plancreator.strategy.StrategyUtils;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.serializer.JsonUtils;
 import io.harness.strategy.StrategyValidationUtils;
 import io.harness.yaml.utils.JsonPipelineUtils;
 
@@ -43,10 +45,9 @@ public class StrategyHelper {
   public StrategyInfo expandJsonNodes(JsonNode nodeWithStrategy) throws IOException {
     JsonNode node = nodeWithStrategy.get("strategy");
     if (node == null || node.isNull()) {
-      return StrategyInfo.builder()
-          .expandedJsonNodes(Collections.singletonList(nodeWithStrategy))
-          .maxConcurrency(1)
-          .build();
+      JsonNode clonedNode = JsonPipelineUtils.asTree(JsonUtils.asMap(
+          StrategyUtils.replaceExpressions(nodeWithStrategy.deepCopy().toString(), new HashMap<>(), 0, 1, null)));
+      return StrategyInfo.builder().expandedJsonNodes(Collections.singletonList(clonedNode)).maxConcurrency(1).build();
     }
     StrategyConfig strategyConfig = JsonPipelineUtils.read(node.toString(), StrategyConfig.class);
     StrategyValidationUtils.validateStrategyNode(strategyConfig);

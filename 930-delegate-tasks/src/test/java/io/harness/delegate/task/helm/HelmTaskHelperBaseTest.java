@@ -144,9 +144,22 @@ public class HelmTaskHelperBaseTest extends CategoryTest {
             .status("failed")
             .description("failed due to Forbidden: spec.persistentvolumesource is immutable after creation")
             .build();
-    assertThatThrownBy(() -> helmTaskHelperBase.processHelmReleaseHistOutput(releaseInfo))
+    assertThatThrownBy(() -> helmTaskHelperBase.processHelmReleaseHistOutput(releaseInfo, false))
         .isInstanceOf(HelmClientException.class)
         .hasMessageContaining("immutable after creation");
+  }
+
+  @Test
+  @Owner(developers = ACHYUTH)
+  @Category(UnitTests.class)
+  public void testProcessHelmReleaseHistOutputIgnoreHelmHistFail() {
+    ReleaseInfo releaseInfo =
+        ReleaseInfo.builder()
+            .chart("nginx-0.1.0")
+            .status("failed")
+            .description("failed due to Forbidden: spec.persistentvolumesource is immutable after creation")
+            .build();
+    assertThatCode(() -> helmTaskHelperBase.processHelmReleaseHistOutput(releaseInfo, true)).doesNotThrowAnyException();
   }
 
   @Test
@@ -853,7 +866,7 @@ public class HelmTaskHelperBaseTest extends CategoryTest {
 
     doAnswer(invocationOnMock -> invocationOnMock.getArgument(0, String.class))
         .when(helmTaskHelperBase)
-        .createDirectory(directory);
+        .createDirectoryIfNotExist(directory);
     doReturn(new ProcessResult(0, new ProcessOutput(getHelmCollectionResult().getBytes())))
         .when(helmTaskHelperBase)
         .executeCommand(anyMap(), eq(V_3_HELM_SEARCH_REPO_COMMAND), eq(directory), anyString(), eq(timeout),
@@ -894,7 +907,7 @@ public class HelmTaskHelperBaseTest extends CategoryTest {
 
     doAnswer(invocationOnMock -> invocationOnMock.getArgument(0, String.class))
         .when(helmTaskHelperBase)
-        .createDirectory(directory);
+        .createDirectoryIfNotExist(directory);
     doReturn(new ProcessResult(0, new ProcessOutput(getHelmCollectionResult().getBytes())))
         .when(helmTaskHelperBase)
         .executeCommand(anyMap(), eq(V_2_HELM_SEARCH_REPO_COMMAND), eq(directory), anyString(), eq(timeout),
@@ -944,7 +957,7 @@ public class HelmTaskHelperBaseTest extends CategoryTest {
         .createNewDirectoryAtPath(RESOURCE_DIR_BASE);
     doAnswer(invocationOnMock -> invocationOnMock.getArgument(0, String.class))
         .when(helmTaskHelperBase)
-        .createDirectory(directory);
+        .createDirectoryIfNotExist(directory);
     doReturn(new ProcessResult(0, new ProcessOutput(getHelmCollectionResult().getBytes())))
         .when(helmTaskHelperBase)
         .executeCommand(anyMap(), eq(V_3_HELM_SEARCH_REPO_COMMAND), eq(directory), anyString(), eq(timeout),
@@ -975,7 +988,7 @@ public class HelmTaskHelperBaseTest extends CategoryTest {
     doReturn(new ProcessResult(0, null)).when(processExecutor).execute();
     doAnswer(invocationOnMock -> invocationOnMock.getArgument(0, String.class))
         .when(helmTaskHelperBase)
-        .createDirectory(directory);
+        .createDirectoryIfNotExist(directory);
     doReturn(new ProcessResult(0, new ProcessOutput("".getBytes())))
         .when(helmTaskHelperBase)
         .executeCommand(anyMap(), eq(V_3_HELM_SEARCH_REPO_COMMAND), eq(directory), anyString(), eq(timeout),
@@ -1032,7 +1045,7 @@ public class HelmTaskHelperBaseTest extends CategoryTest {
         .createNewDirectoryAtPath(RESOURCE_DIR_BASE);
     doAnswer(invocationOnMock -> invocationOnMock.getArgument(0, String.class))
         .when(helmTaskHelperBase)
-        .createDirectory(directory);
+        .createDirectoryIfNotExist(directory);
 
     assertThatThrownBy(() -> helmTaskHelperBase.fetchChartVersions(helmChartManifestDelegateConfig, timeout, directory))
         .isInstanceOf(HelmClientException.class)

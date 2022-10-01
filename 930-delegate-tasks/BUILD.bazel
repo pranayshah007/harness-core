@@ -8,9 +8,6 @@ breakDependencyOn("//960-persistence:module")
 java_library(
     name = "module",
     srcs = glob(["src/main/java/**/*.java"]),
-    resource_jars = [
-        "//930-delegate-tasks/src/main/proto/io/harness:930_delegate_tasks_java_proto",
-    ],
     resources = [
         "//930-delegate-tasks/src/main/resources:resource",
     ],

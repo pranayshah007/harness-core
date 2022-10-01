@@ -15,7 +15,6 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.lock.AcquiredLock;
 import io.harness.lock.PersistentLocker;
-import io.harness.queue.QueueController;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -32,38 +31,26 @@ import org.redisson.api.RLock;
 public class SupportRoleAssignmentsReconciliationJob implements Runnable {
   private final PersistentLocker persistentLocker;
   private final SupportService supportService;
-  private final QueueController queueController;
   private final PrivilegedRoleAssignmentService privilegedRoleAssignmentService;
   private static final String SUPER_VIEWER_ROLE_IDENTIFIER = "_super_account_viewer";
   private static final String JOB_LOCK_NAME = "SUPPORT_ROLE_ASSIGNMENTS_RECONCILIATION_LOCK";
 
   @Inject
   public SupportRoleAssignmentsReconciliationJob(PersistentLocker persistentLocker, SupportService supportService,
-      QueueController queueController, PrivilegedRoleAssignmentService privilegedRoleAssignmentService) {
+      PrivilegedRoleAssignmentService privilegedRoleAssignmentService) {
     this.persistentLocker = persistentLocker;
     this.supportService = supportService;
-    this.queueController = queueController;
     this.privilegedRoleAssignmentService = privilegedRoleAssignmentService;
   }
 
   @Override
   public void run() {
-    try {
-      if (queueController.isNotPrimary()) {
-        log.info("This service instance is not primary. Not proceeding with the reconciliation job.");
-        return;
-      }
-    } catch (Exception e) {
-      log.error("Exception while checking service instance primary status. Will not proceed with reconciliation", e);
-      return;
-    }
-
     try (AcquiredLock<?> acquiredLock = acquireLock()) {
       if (acquiredLock == null) {
         return;
       }
       RLock lockObject = (RLock) acquiredLock.getLock();
-      while (lockObject.isHeldByCurrentThread() && queueController.isPrimary()) {
+      while (lockObject.isHeldByCurrentThread()) {
         Set<String> users = supportService.fetchSupportUsers();
         Set<Principal> principals =
             users.stream()

@@ -38,10 +38,10 @@ features:
     restrictions:
       FREE:
         restrictionType: AVAILABILITY
-        enabled: false
+        enabled: true
       TEAM:
         restrictionType: AVAILABILITY
-        enabled: false
+        enabled: true
       ENTERPRISE:
         restrictionType: AVAILABILITY
         enabled: true

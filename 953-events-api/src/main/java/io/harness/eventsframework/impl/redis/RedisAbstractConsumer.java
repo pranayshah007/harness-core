@@ -15,7 +15,6 @@ import io.harness.eventsframework.api.EventsFrameworkDownException;
 import io.harness.eventsframework.consumer.Message;
 import io.harness.eventsframework.impl.redis.monitoring.dto.RedisEventMetricDTOMapper;
 import io.harness.eventsframework.impl.redis.monitoring.publisher.RedisEventMetricPublisher;
-import io.harness.redis.RedisConfig;
 
 import com.google.inject.Inject;
 import io.github.resilience4j.core.IntervalFunction;
@@ -49,13 +48,6 @@ public abstract class RedisAbstractConsumer extends AbstractConsumer {
   private Retry retry;
   @Inject RedisEventMetricPublisher redisEventMetricPublisher;
 
-  public RedisAbstractConsumer(
-      String topicName, String groupName, @NotNull RedisConfig redisConfig, Duration maxProcessingTime, int batchSize) {
-    super(topicName, groupName);
-    RedissonClient redissonClient = RedisUtils.getClient(redisConfig);
-    initConsumerGroup(topicName, redissonClient, maxProcessingTime, batchSize, redisConfig.getEnvNamespace());
-  }
-
   public RedisAbstractConsumer(String topicName, String groupName, @NotNull RedissonClient redissonClient,
       Duration maxProcessingTime, int batchSize, String envNamespace) {
     super(topicName, groupName);
@@ -68,13 +60,6 @@ public abstract class RedisAbstractConsumer extends AbstractConsumer {
     super(topicName, groupName);
     initConsumerGroup(topicName, redissonClient, maxProcessingTime, batchSize, envNamespace);
     this.redisEventMetricPublisher = redisEventMetricPublisher;
-  }
-
-  public RedisAbstractConsumer(String topicName, String groupName, String consumerName, RedisConfig redisConfig,
-      Duration maxProcessingTime, int batchSize) {
-    super(topicName, groupName, consumerName);
-    RedissonClient redissonClient = RedisUtils.getClient(redisConfig);
-    initConsumerGroup(topicName, redissonClient, maxProcessingTime, batchSize, redisConfig.getEnvNamespace());
   }
 
   public RedisAbstractConsumer(String topicName, String groupName, String consumerName,

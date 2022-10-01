@@ -52,7 +52,7 @@ public class ChangeDataCaptureBulkMigrationHelper {
           if (changeHandler != null) {
             changeEventProcessor.processChangeEvent(CDCEntityBulkTaskConverter.convert(subscriptionEntity, document));
           } else {
-            log.info("ChangeHandler for {} is null", changeDataCapture.handler());
+            log.debug("ChangeHandler for {} is null", changeDataCapture.handler());
           }
         }
       }

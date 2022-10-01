@@ -11,6 +11,7 @@ import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.MLUKIC;
 import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
 import static io.harness.rule.OwnerRule.SAHIL;
+import static io.harness.rule.OwnerRule.SHIVAM;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -22,6 +23,7 @@ import io.harness.cdng.artifact.bean.yaml.ArtifactoryRegistryArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.CustomArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.DockerHubArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.NexusRegistryArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryDockerConfig;
 import io.harness.cdng.artifact.outcome.AcrArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactoryArtifactOutcome;
@@ -35,12 +37,14 @@ import io.harness.delegate.task.artifacts.artifactory.ArtifactoryGenericArtifact
 import io.harness.delegate.task.artifacts.azure.AcrArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.docker.DockerArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.nexus.NexusArtifactDelegateResponse;
+import io.harness.delegate.task.artifacts.response.ArtifactBuildDetailsNG;
 import io.harness.delegate.task.artifacts.response.ArtifactDelegateResponse;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 
 import software.wings.utils.RepositoryFormat;
 
+import java.util.Collections;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -66,11 +70,16 @@ public class ArtifactResponseToOutcomeMapperTest extends CategoryTest {
   @Owner(developers = MLUKIC)
   @Category(UnitTests.class)
   public void testToNexusArtifactOutcome() {
+    NexusRegistryDockerConfig nexusRegistryDockerConfig =
+        NexusRegistryDockerConfig.builder()
+            .artifactPath(ParameterField.createValueField("IMAGE"))
+            .repositoryPort(ParameterField.createValueField("TEST_REPO"))
+            .build();
     ArtifactConfig artifactConfig =
         NexusRegistryArtifactConfig.builder()
             .connectorRef(ParameterField.createValueField("connector"))
             .repository(ParameterField.createValueField("REPO_NAME"))
-            .artifactPath(ParameterField.createValueField("IMAGE"))
+            .nexusRegistryConfigSpec(nexusRegistryDockerConfig)
             .repositoryFormat(ParameterField.createValueField(RepositoryFormat.docker.name()))
             .build();
     ArtifactDelegateResponse artifactDelegateResponse = NexusArtifactDelegateResponse.builder().build();
@@ -135,8 +144,12 @@ public class ArtifactResponseToOutcomeMapperTest extends CategoryTest {
             .artifactDirectory(ParameterField.createValueField("IMAGE1"))
             .repositoryFormat(ParameterField.createValueField(RepositoryFormat.generic.name()))
             .build();
-    ArtifactDelegateResponse artifactDelegateResponse =
-        ArtifactoryGenericArtifactDelegateResponse.builder().artifactPath("IMAGE").build();
+    ArtifactBuildDetailsNG artifactBuildDetailsNG =
+        ArtifactBuildDetailsNG.builder().metadata(Collections.singletonMap("url", "url")).build();
+    ArtifactDelegateResponse artifactDelegateResponse = ArtifactoryGenericArtifactDelegateResponse.builder()
+                                                            .artifactPath("IMAGE")
+                                                            .buildDetails(artifactBuildDetailsNG)
+                                                            .build();
 
     ArtifactOutcome artifactOutcome =
         ArtifactResponseToOutcomeMapper.toArtifactOutcome(artifactConfig, artifactDelegateResponse, true);
@@ -165,5 +178,33 @@ public class ArtifactResponseToOutcomeMapperTest extends CategoryTest {
     assertThat(artifactOutcome).isNotNull();
     assertThat(artifactOutcome).isInstanceOf(AcrArtifactOutcome.class);
     assertThat(artifactOutcome.getArtifactType()).isEqualTo(ArtifactSourceType.ACR.getDisplayName());
+  }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void testToValidateArtifactoryArtifactPath() {
+    ArtifactConfig artifactConfig =
+        ArtifactoryRegistryArtifactConfig.builder()
+            .connectorRef(ParameterField.createValueField("connector"))
+            .repository(ParameterField.createValueField("REPO_NAME"))
+            .artifactPath(ParameterField.createValueField("IMAGE"))
+            .artifactDirectory(ParameterField.createValueField("serverless"))
+            .repositoryFormat(ParameterField.createValueField(RepositoryFormat.generic.name()))
+            .build();
+    ArtifactBuildDetailsNG buildDetails =
+        ArtifactBuildDetailsNG.builder().metadata(Collections.singletonMap("URL", "URL")).build();
+    ArtifactDelegateResponse artifactDelegateResponse = ArtifactoryGenericArtifactDelegateResponse.builder()
+                                                            .buildDetails(buildDetails)
+                                                            .artifactPath("serverless/IMAGE")
+                                                            .build();
+
+    ArtifactOutcome artifactOutcome =
+        ArtifactResponseToOutcomeMapper.toArtifactOutcome(artifactConfig, artifactDelegateResponse, true);
+    ArtifactoryGenericArtifactOutcome artifactoryArtifactOutcome = (ArtifactoryGenericArtifactOutcome) artifactOutcome;
+
+    assertThat(artifactOutcome).isNotNull();
+    assertThat(artifactOutcome.getArtifactType()).isEqualTo(ArtifactSourceType.ARTIFACTORY_REGISTRY.getDisplayName());
+    assertThat(artifactoryArtifactOutcome.getArtifactPath()).isEqualTo("serverless/IMAGE");
   }
 }

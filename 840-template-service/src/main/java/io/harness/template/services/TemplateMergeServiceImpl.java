@@ -36,6 +36,7 @@ import io.harness.template.entity.TemplateEntity;
 import io.harness.template.helpers.MergeTemplateInputsInObject;
 import io.harness.template.helpers.TemplateInputsValidator;
 import io.harness.template.helpers.TemplateMergeServiceHelper;
+import io.harness.template.utils.TemplateUtils;
 import io.harness.utils.YamlPipelineUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -84,12 +85,13 @@ public class TemplateMergeServiceImpl implements TemplateMergeService {
   public TemplateMergeResponseDTO applyTemplatesToYaml(
       String accountId, String orgId, String projectId, String yaml, boolean getMergedYamlWithTemplateField) {
     YamlNode yamlNode = validateAndGetYamlNode(yaml);
-
+    TemplateUtils.setupGitParentEntityDetails(accountId, orgId, projectId);
     Map<String, TemplateEntity> templateCacheMap = new HashMap<>();
     TemplateInputsErrorMetadataDTO errorResponse = templateMergeServiceHelper.validateLinkedTemplateInputsInYaml(
         accountId, orgId, projectId, yamlNode, templateCacheMap);
     if (errorResponse != null) {
-      throw new NGTemplateResolveException("Exception in resolving template refs in given yaml.", USER, errorResponse);
+      throw new NGTemplateResolveException(
+          "Exception in resolving template refs in given yaml.", USER, errorResponse, null);
     }
     return getTemplateMergeResponseDTO(
         accountId, orgId, projectId, yaml, getMergedYamlWithTemplateField, yamlNode, templateCacheMap);
@@ -102,14 +104,14 @@ public class TemplateMergeServiceImpl implements TemplateMergeService {
   public TemplateMergeResponseDTO applyTemplatesToYamlV2(
       String accountId, String orgId, String projectId, String yaml, boolean getMergedYamlWithTemplateField) {
     YamlNode yamlNode = validateAndGetYamlNode(yaml);
-
+    TemplateUtils.setupGitParentEntityDetails(accountId, orgId, projectId);
     Map<String, TemplateEntity> templateCacheMap = new HashMap<>();
     ValidateTemplateInputsResponseDTO validateTemplateInputsResponse =
         templateInputsValidator.validateNestedTemplateInputsForGivenYaml(
             accountId, orgId, projectId, yaml, templateCacheMap);
     if (!validateTemplateInputsResponse.isValidYaml()) {
       throw new NGTemplateResolveExceptionV2(
-          "Exception in resolving template refs in given yaml.", USER, validateTemplateInputsResponse);
+          "Exception in resolving template refs in given yaml.", USER, validateTemplateInputsResponse, null);
     }
     return getTemplateMergeResponseDTO(
         accountId, orgId, projectId, yaml, getMergedYamlWithTemplateField, yamlNode, templateCacheMap);

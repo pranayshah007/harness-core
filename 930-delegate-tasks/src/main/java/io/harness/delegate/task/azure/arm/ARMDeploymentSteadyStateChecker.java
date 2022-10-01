@@ -15,6 +15,8 @@ import static io.harness.logging.LogLevel.ERROR;
 import static io.harness.logging.LogLevel.INFO;
 import static io.harness.threading.Morpheus.sleep;
 
+import static software.wings.beans.LogHelper.color;
+
 import static java.lang.String.format;
 import static java.time.Duration.ofSeconds;
 
@@ -31,8 +33,16 @@ import io.harness.azure.model.blueprint.assignment.operation.AssignmentOperation
 import io.harness.azure.model.blueprint.assignment.operation.AzureResourceManagerError;
 import io.harness.concurrent.HTimeLimiter;
 import io.harness.delegate.task.azure.arm.deployment.context.DeploymentBlueprintSteadyStateContext;
+import io.harness.exception.FailureType;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.ngexception.AzureARMTaskException;
+import io.harness.exception.runtime.azure.AzureARMDeploymentException;
+import io.harness.exception.runtime.azure.AzureARMRuntimeException;
+import io.harness.exception.runtime.azure.AzureBPDeploymentException;
 import io.harness.logging.LogCallback;
+
+import software.wings.beans.LogColor;
+import software.wings.beans.LogWeight;
 
 import com.google.common.util.concurrent.TimeLimiter;
 import com.google.common.util.concurrent.UncheckedTimeoutException;
@@ -42,6 +52,7 @@ import com.microsoft.azure.PagedList;
 import com.microsoft.azure.management.resources.DeploymentOperationProperties;
 import com.microsoft.azure.management.resources.implementation.DeploymentOperationInner;
 import java.time.Duration;
+import java.util.EnumSet;
 import java.util.StringJoiner;
 import java.util.concurrent.Callable;
 import java.util.stream.Stream;
@@ -68,13 +79,15 @@ public class ARMDeploymentSteadyStateChecker {
             String errorMessage = printProvisioningResults(context, azureManagementClient, logCallback);
             if (ARMDeploymentStatus.isSuccess(provisioningState)) {
               logCallback.saveExecutionLog(
-                  format("%nARM Deployment - [%s] completed successfully", context.getDeploymentName()), INFO, SUCCESS);
+                  color(format("%nARM Deployment - [%s] completed successfully", context.getDeploymentName()),
+                      LogColor.White, LogWeight.Bold),
+                  INFO, SUCCESS);
               return Boolean.TRUE;
             } else {
               String message = format(
                   "%nARM Deployment failed for deployment - [%s]%n[%s]", context.getDeploymentName(), errorMessage);
-              logCallback.saveExecutionLog(message, ERROR, FAILURE);
-              throw new InvalidRequestException(message);
+              logCallback.saveExecutionLog(color(message, LogColor.Red), ERROR, FAILURE);
+              throw new AzureARMDeploymentException(message);
             }
           }
           sleep(ofSeconds(context.getStatusCheckIntervalInSeconds()));
@@ -87,12 +100,14 @@ public class ARMDeploymentSteadyStateChecker {
       String message = format("Timed out waiting for executing operation deployment - [%s], %n %s",
           context.getDeploymentName(), e.getMessage());
       logCallback.saveExecutionLog(message, ERROR, FAILURE);
-      throw new InvalidRequestException(message, e);
+      throw new AzureARMTaskException(message, EnumSet.of(FailureType.TIMEOUT_ERROR));
+    } catch (AzureARMRuntimeException ex) {
+      throw ex;
     } catch (Exception e) {
       String message = format(
           "Error while waiting for executing operation [%s], %n %s", context.getDeploymentName(), e.getMessage());
       logCallback.saveExecutionLog(message, ERROR, FAILURE);
-      throw new InvalidRequestException(message, e);
+      throw new AzureARMDeploymentException(message, e);
     }
   }
 
@@ -165,7 +180,9 @@ public class ARMDeploymentSteadyStateChecker {
             if (AssignmentProvisioningState.SUCCEEDED
                 == AssignmentProvisioningState.fromString(assignmentProvisioningStatus)) {
               logCallback.saveExecutionLog(
-                  format("%nBlueprint Deployment - [%s] completed successfully", assignmentName), INFO, SUCCESS);
+                  color(format("%nBlueprint Deployment - [%s] completed successfully", assignmentName), LogColor.White,
+                      LogWeight.Bold),
+                  INFO, SUCCESS);
               return Boolean.TRUE;
             } else {
               String message = format("%nBlueprint deployment failed - Assignment Name: [%s]", assignmentName);
@@ -182,7 +199,7 @@ public class ARMDeploymentSteadyStateChecker {
       String message = format("Timed out waiting for executing operation deployment - [%s], %n %s",
           context.getAssignmentName(), e.getMessage());
       logCallback.saveExecutionLog(message, ERROR, FAILURE);
-      throw new InvalidRequestException(message, e);
+      throw new AzureBPDeploymentException(message, e);
     } catch (InvalidRequestException e) {
       logCallback.saveExecutionLog(e.getMessage(), ERROR, FAILURE);
       throw e;
@@ -190,7 +207,7 @@ public class ARMDeploymentSteadyStateChecker {
       String message = format(
           "Error while waiting for executing operation [%s], %n %s", context.getAssignmentName(), e.getMessage());
       logCallback.saveExecutionLog(message, ERROR, FAILURE);
-      throw new InvalidRequestException(message, e);
+      throw new AzureBPDeploymentException(message, e);
     }
   }
 

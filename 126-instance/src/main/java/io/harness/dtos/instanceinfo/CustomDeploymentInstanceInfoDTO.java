@@ -1,3 +1,10 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.dtos.instanceinfo;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -15,7 +22,7 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = true)
 public class CustomDeploymentInstanceInfoDTO extends InstanceInfoDTO {
   @NotNull private String hostname;
-  @NotNull private String instanceFetchScript;
+  @NotNull private int instanceFetchScriptHash;
   private Map<String, Object> properties;
 
   @Override
@@ -25,7 +32,7 @@ public class CustomDeploymentInstanceInfoDTO extends InstanceInfoDTO {
 
   @Override
   public String prepareInstanceSyncHandlerKey() {
-    return InstanceSyncKey.builder().part(instanceFetchScript).build().toString();
+    return InstanceSyncKey.builder().part(instanceFetchScriptHash).build().toString();
   }
 
   @Override

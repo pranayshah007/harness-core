@@ -22,6 +22,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
 import io.harness.ng.core.infrastructure.mappers.InfrastructureFilterHelper;
 import io.harness.ng.core.utils.CoreCriteriaUtils;
+import io.harness.repositories.UpsertOptions;
 import io.harness.rule.Owner;
 import io.harness.utils.PageUtils;
 
@@ -74,7 +75,7 @@ public class InfrastructureEntityServiceImplTest extends CDNGEntitiesTestBase {
     infrastructureEntityService.create(createInfraRequest);
 
     String infrastructureInputsFromYaml = infrastructureEntityService.createInfrastructureInputsFromYaml(
-        ACCOUNT_ID, PROJECT_ID, ORG_ID, "ENV_IDENTIFIER", Arrays.asList("IDENTIFIER"), false);
+        ACCOUNT_ID, ORG_ID, PROJECT_ID, "ENV_IDENTIFIER", Arrays.asList("IDENTIFIER"), false);
     String resFile = "infrastructure-with-runtime-inputs-res.yaml";
     String resInputs = readFile(resFile);
     assertThat(infrastructureInputsFromYaml).isEqualTo(resInputs);
@@ -98,7 +99,7 @@ public class InfrastructureEntityServiceImplTest extends CDNGEntitiesTestBase {
     infrastructureEntityService.create(createInfraRequest);
 
     String infrastructureInputsFromYaml = infrastructureEntityService.createInfrastructureInputsFromYaml(
-        ACCOUNT_ID, PROJECT_ID, ORG_ID, "ENV_IDENTIFIER", Arrays.asList("IDENTIFIER1"), false);
+        ACCOUNT_ID, ORG_ID, PROJECT_ID, "ENV_IDENTIFIER", Arrays.asList("IDENTIFIER1"), false);
 
     assertThat(infrastructureInputsFromYaml).isNull();
   }
@@ -172,7 +173,7 @@ public class InfrastructureEntityServiceImplTest extends CDNGEntitiesTestBase {
                                                   .name("UPSERTED_INFRA")
                                                   .description("NEW_DESCRIPTION")
                                                   .build();
-    InfrastructureEntity upsertedInfra = infrastructureEntityService.upsert(upsertInfraRequest);
+    InfrastructureEntity upsertedInfra = infrastructureEntityService.upsert(upsertInfraRequest, UpsertOptions.DEFAULT);
     assertThat(upsertedInfra.getAccountId()).isEqualTo(upsertInfraRequest.getAccountId());
     assertThat(upsertedInfra.getOrgIdentifier()).isEqualTo(upsertInfraRequest.getOrgIdentifier());
     assertThat(upsertedInfra.getProjectIdentifier()).isEqualTo(upsertInfraRequest.getProjectIdentifier());

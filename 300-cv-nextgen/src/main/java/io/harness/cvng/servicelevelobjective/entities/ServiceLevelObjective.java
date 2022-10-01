@@ -7,8 +7,6 @@
 
 package io.harness.cvng.servicelevelobjective.entities;
 
-import static java.time.temporal.ChronoUnit.DAYS;
-
 import io.harness.annotation.HarnessEntity;
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
@@ -35,8 +33,6 @@ import io.harness.persistence.UuidAware;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.collect.ImmutableList;
-import java.time.Duration;
-import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -164,50 +160,9 @@ public class ServiceLevelObjective
     throw new IllegalArgumentException("Invalid fieldName " + fieldName);
   }
 
-  @Value
-  public static class TimePeriod {
-    LocalDateTime startTime;
-    LocalDateTime endTime;
-    @Builder
-    public TimePeriod(LocalDate startDate, LocalDate endDate) {
-      this(startDate.atStartOfDay(), endDate.atStartOfDay());
-    }
-    public static TimePeriod createWithLocalTime(LocalDateTime startTime, LocalDateTime endTime) {
-      return new TimePeriod(startTime, endTime);
-    }
-
-    private TimePeriod(LocalDateTime startTime, LocalDateTime endTime) {
-      this.startTime = startTime;
-      this.endTime = endTime;
-    }
-
-    public int getRemainingDays(LocalDateTime currentDateTime) {
-      return (int) ChronoUnit.DAYS.between(currentDateTime.toLocalDate(), endTime.toLocalDate());
-    }
-    public int getTotalDays() {
-      return (int) DAYS.between(getStartTime(), getEndTime());
-    }
-    public int totalMinutes() {
-      return (int) Duration.between(getStartTime(), getEndTime()).toMinutes();
-    }
-
-    /**
-     * Start time is inclusive.
-     */
-    public Instant getStartTime(ZoneOffset zoneId) {
-      return getStartTime().toInstant(zoneId);
-    }
-
-    /**
-     * End time is exclusive.
-     */
-    public Instant getEndTime(ZoneOffset zoneId) {
-      return getEndTime().toInstant(zoneId);
-    }
-  }
-
   @Data
   @SuperBuilder
+  @EqualsAndHashCode
   public abstract static class SLOTarget {
     public abstract TimePeriod getCurrentTimeRange(LocalDateTime currentDateTime);
     public abstract SLOTargetType getType();
@@ -215,6 +170,7 @@ public class ServiceLevelObjective
   }
   @Data
   @SuperBuilder
+  @EqualsAndHashCode(callSuper = true)
   public abstract static class CalenderSLOTarget extends SLOTarget {
     private final SLOTargetType type = SLOTargetType.CALENDER;
     public abstract SLOCalenderType getCalenderType();
@@ -222,6 +178,7 @@ public class ServiceLevelObjective
 
   @Value
   @SuperBuilder
+  @EqualsAndHashCode(callSuper = true)
   public static class WeeklyCalenderTarget extends CalenderSLOTarget {
     private DayOfWeek dayOfWeek;
     private final SLOCalenderType calenderType = SLOCalenderType.WEEKLY;
@@ -243,6 +200,7 @@ public class ServiceLevelObjective
 
   @SuperBuilder
   @Data
+  @EqualsAndHashCode(callSuper = true)
   public static class MonthlyCalenderTarget extends CalenderSLOTarget {
     int windowEndDayOfMonth;
     private final SLOCalenderType calenderType = SLOCalenderType.MONTHLY;
@@ -283,6 +241,7 @@ public class ServiceLevelObjective
 
   @SuperBuilder
   @Data
+  @EqualsAndHashCode(callSuper = true)
   public static class QuarterlyCalenderTarget extends CalenderSLOTarget {
     private final SLOCalenderType calenderType = SLOCalenderType.QUARTERLY;
 
@@ -309,6 +268,7 @@ public class ServiceLevelObjective
 
   @SuperBuilder
   @Data
+  @EqualsAndHashCode(callSuper = true)
   public static class RollingSLOTarget extends SLOTarget {
     int periodLengthDays;
     private final SLOTargetType type = SLOTargetType.ROLLING;
