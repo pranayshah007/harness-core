@@ -21,6 +21,7 @@ import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum;
 import io.harness.eventsframework.schemas.entity.IdentifierRefProtoDTO;
 import io.harness.eventsframework.schemas.entity.ScopeProtoEnum;
+import io.harness.eventsframework.schemas.entity.TemplateReferenceProtoDTO;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.customDeployment.CustomDeploymentVariableResponseDTO;
 import io.harness.ng.core.customDeployment.CustomDeploymentYamlRequestDTO;
@@ -131,6 +132,39 @@ public class CustomDeploymentYamlHelperImplTest extends CategoryTest {
   public void testGetReferencesFromYaml() {
     String template = readFile("templateReferences.yaml");
 
+    EntityDetailProtoDTO accountTemplate = EntityDetailProtoDTO.newBuilder()
+                                               .setType(EntityTypeProtoEnum.TEMPLATE)
+                                               .setTemplateRef(TemplateReferenceProtoDTO.newBuilder()
+                                                                   .setScope(ScopeProtoEnum.ACCOUNT)
+                                                                   .setAccountIdentifier(StringValue.of(ACCOUNT_ID))
+                                                                   .setIdentifier(StringValue.of("accountTemplate"))
+                                                                   .setVersionLabel(StringValue.of("v1"))
+                                                                   .build())
+                                               .build();
+
+    EntityDetailProtoDTO orgTemplate = EntityDetailProtoDTO.newBuilder()
+                                           .setType(EntityTypeProtoEnum.TEMPLATE)
+                                           .setTemplateRef(TemplateReferenceProtoDTO.newBuilder()
+                                                               .setScope(ScopeProtoEnum.ORG)
+                                                               .setAccountIdentifier(StringValue.of(ACCOUNT_ID))
+                                                               .setIdentifier(StringValue.of("orgTemplate"))
+                                                               .setOrgIdentifier(StringValue.of(ORG_ID))
+                                                               .setVersionLabel(StringValue.of("v2"))
+                                                               .build())
+                                           .build();
+
+    EntityDetailProtoDTO projectTemplate = EntityDetailProtoDTO.newBuilder()
+                                               .setType(EntityTypeProtoEnum.TEMPLATE)
+                                               .setTemplateRef(TemplateReferenceProtoDTO.newBuilder()
+                                                                   .setScope(ScopeProtoEnum.PROJECT)
+                                                                   .setAccountIdentifier(StringValue.of(ACCOUNT_ID))
+                                                                   .setIdentifier(StringValue.of("projectTemplate"))
+                                                                   .setOrgIdentifier(StringValue.of(ORG_ID))
+                                                                   .setProjectIdentifier(StringValue.of(PROJECT_ID))
+                                                                   .setVersionLabel(StringValue.of("v3"))
+                                                                   .build())
+                                               .build();
+
     EntityDetailProtoDTO accountConnector =
         EntityDetailProtoDTO.newBuilder()
             .setType(EntityTypeProtoEnum.CONNECTORS)
@@ -169,7 +203,8 @@ public class CustomDeploymentYamlHelperImplTest extends CategoryTest {
 
     List<EntityDetailProtoDTO> entities =
         customDeploymentYamlHelper.getReferencesFromYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, template);
-    assertThat(entities).containsExactly(accountConnector, orgConnector, projectConnector);
+    assertThat(entities).containsExactly(
+        accountConnector, orgConnector, projectConnector, accountTemplate, orgTemplate, projectTemplate);
   }
 
   @Test

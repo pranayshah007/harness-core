@@ -36,5 +36,5 @@ public class CustomDeploymentExecutionConfig {
   @ApiModelProperty(hidden = true)
   String uuid;
 
-  List<String> stepTemplateRefs;
+  List<StepTemplateRef> stepTemplateRefs;
 }
