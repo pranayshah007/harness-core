@@ -7,14 +7,11 @@
 
 package io.harness.ng.core.customDeployment.helper;
 
-import static io.harness.NGCommonEntityConstants.VERSION_LABEL_KEY;
 import static io.harness.common.EntityYamlRootNames.INFRASTRUCTURE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum.CONNECTORS;
-import static io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum.TEMPLATE;
 import static io.harness.ng.core.template.TemplateEntityConstants.CUSTOM_DEPLOYMENT_ROOT_FIELD;
-import static io.harness.template.yaml.TemplateRefHelper.TEMPLATE_REF;
 
 import static java.util.Objects.isNull;
 
@@ -24,7 +21,6 @@ import io.harness.cdng.manifest.ManifestStoreType;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.eventsframework.schemas.entity.IdentifierRefProtoDTO;
 import io.harness.eventsframework.schemas.entity.ScopeProtoEnum;
-import io.harness.eventsframework.schemas.entity.TemplateReferenceProtoDTO;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.customDeployment.CustomDeploymentVariableProperties;
 import io.harness.ng.core.customDeployment.CustomDeploymentVariableResponseDTO;
@@ -226,11 +222,15 @@ public class CustomDeploymentYamlHelper {
       if (isNull(store)) {
         throw new InvalidRequestException("Template yaml provided does not have store in it.");
       }
-      if (store.get("type").asText().equals(ManifestStoreType.INLINE)) {
-        if (store.get("spec").get("content").asText().length() <= 0) {
+      JsonNode type = store.get("type");
+      if (isNull(type)) {
+        throw new InvalidRequestException("Template yaml provided does not have store type in it.");
+      }
+      if (type.asText().equals(ManifestStoreType.INLINE)) {
+        if (store.get("spec").get("content").asText().length() == 0) {
           throw new InvalidRequestException("Fetch Instance script cannot be empty");
         }
-      } else if (store.get("type").asText().equals(ManifestStoreType.HARNESS)) {
+      } else if (type.asText().equals(ManifestStoreType.HARNESS)) {
         JsonNode files = store.get("spec").get("files");
         int count = 0;
         for (JsonNode file : files) {
@@ -315,10 +315,8 @@ public class CustomDeploymentYamlHelper {
       ((ObjectNode) infraSpecNode).set("variables", updatedVariableNode);
       return YamlUtils.write(infraYamlConfig.getYamlMap()).replace("---\n", "");
     } catch (Exception e) {
-      log.error(
-          "Error Encountered in infra updation while reading yamls for template ans Infra for acc Id :{} ", accId);
       throw new InvalidRequestException(
-          "Error Encountered in infra updation while reading yamls for template ans Infra");
+          "Error Encountered in infra updation while reading yamls for template and Infra: " + e.getMessage());
     }
   }
 
@@ -411,22 +409,15 @@ public class CustomDeploymentYamlHelper {
       return;
     }
     for (YamlNode arrayElement : yamlNode.asArray()) {
-      if (isEmpty(arrayElement.getIdentifier())) {
-        if (isNotEmpty(arrayElement.getArrayUniqueIdentifier())) {
-          if (isNull(arrayElement.getField(YAMLFieldNameConstants.VALUE))
-              || isNull(arrayElement.getField(YAMLFieldNameConstants.TYPE))) {
-            continue;
-          }
-          EntityDetailProtoDTO referredEntity =
-              getConnectorReferredEntity(accountId, orgId, projectId, arrayElement, path);
-          if (!isNull(referredEntity)) {
-            referredEntities.add(referredEntity);
-          }
-        } else {
-          EntityDetailProtoDTO referredEntity = getTemplateReferredEntity(accountId, orgId, projectId, arrayElement);
-          if (!isNull(referredEntity)) {
-            referredEntities.add(referredEntity);
-          }
+      if (isEmpty(arrayElement.getIdentifier()) && isNotEmpty(arrayElement.getArrayUniqueIdentifier())) {
+        if (isNull(arrayElement.getField(YAMLFieldNameConstants.VALUE))
+            || isNull(arrayElement.getField(YAMLFieldNameConstants.TYPE))) {
+          continue;
+        }
+        EntityDetailProtoDTO referredEntity =
+            getConnectorReferredEntity(accountId, orgId, projectId, arrayElement, path);
+        if (!isNull(referredEntity)) {
+          referredEntities.add(referredEntity);
         }
       }
     }
@@ -446,19 +437,9 @@ public class CustomDeploymentYamlHelper {
     return null;
   }
 
-  private static EntityDetailProtoDTO getTemplateReferredEntity(
-      String accountId, String orgId, String projectId, YamlNode arrayElement) {
-    if (arrayElement.getField(TEMPLATE_REF) != null && arrayElement.getField(VERSION_LABEL_KEY) != null) {
-      String templateRef = arrayElement.getField(TEMPLATE_REF).getNode().asText();
-      String versionLabel = arrayElement.getField(VERSION_LABEL_KEY).getNode().asText();
-      return buildTemplateEntityDetailProtoDTO(accountId, orgId, projectId, templateRef, versionLabel);
-    }
-    return null;
-  }
-
   private static EntityDetailProtoDTO buildConnectorEntityDetailProtoDTO(
       String accountId, String orgId, String projectId, String connectorRef, Map<String, String> metadata) {
-    if (connectorRef.startsWith("<+") && connectorRef.endsWith(">")) {
+    if (isEmpty(connectorRef) || (connectorRef.startsWith("<+") && connectorRef.endsWith(">"))) {
       return null;
     }
     IdentifierRefProtoDTO.Builder identifierRefProtoDTO =
@@ -482,30 +463,6 @@ public class CustomDeploymentYamlHelper {
     return EntityDetailProtoDTO.newBuilder()
         .setType(CONNECTORS)
         .setIdentifierRef(identifierRefProtoDTO.build())
-        .build();
-  }
-
-  private static EntityDetailProtoDTO buildTemplateEntityDetailProtoDTO(
-      String accountId, String orgId, String projectId, String templateRef, String versionLabel) {
-    TemplateReferenceProtoDTO.Builder templateReferenceProtoDTO = TemplateReferenceProtoDTO.newBuilder()
-                                                                      .setAccountIdentifier(StringValue.of(accountId))
-                                                                      .setVersionLabel(StringValue.of(versionLabel));
-    if (templateRef.contains(ACCOUNT_IDENTIFIER)) {
-      templateReferenceProtoDTO.setScope(ScopeProtoEnum.ACCOUNT)
-          .setIdentifier(StringValue.of(templateRef.replace(ACCOUNT_IDENTIFIER, "")));
-    } else if (templateRef.contains(ORG_IDENTIFIER)) {
-      templateReferenceProtoDTO.setScope(ScopeProtoEnum.ORG)
-          .setOrgIdentifier(StringValue.of(orgId))
-          .setIdentifier(StringValue.of(templateRef.replace(ORG_IDENTIFIER, "")));
-    } else {
-      templateReferenceProtoDTO.setScope(ScopeProtoEnum.PROJECT)
-          .setOrgIdentifier(StringValue.of(orgId))
-          .setProjectIdentifier(StringValue.of(projectId))
-          .setIdentifier(StringValue.of(templateRef));
-    }
-    return EntityDetailProtoDTO.newBuilder()
-        .setType(TEMPLATE)
-        .setTemplateRef(templateReferenceProtoDTO.build())
         .build();
   }
 

@@ -7,6 +7,7 @@
 
 package io.harness.cdng.customDeployment.EventListener;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ACTION;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.CREATE_ACTION;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.DELETE_ACTION;
@@ -76,15 +77,19 @@ public class CustomDeploymentEntityCRUDStreamEventListener implements MessageLis
   private boolean processRestoreEvent(EntityChangeDTO entityChangeDTO) {
     if (Objects.equals(entityChangeDTO.getMetadataMap().get("templateType"),
             TemplateEntityType.CUSTOM_DEPLOYMENT_TEMPLATE.toString())) {
+      String orgId =
+          isEmpty(entityChangeDTO.getOrgIdentifier().getValue()) ? null : entityChangeDTO.getOrgIdentifier().getValue();
+      String projectId = isEmpty(entityChangeDTO.getProjectIdentifier().getValue())
+          ? null
+          : entityChangeDTO.getProjectIdentifier().getValue();
       if (entityChangeDTO.getMetadataMap().get("isStable").equals("true")) {
         deploymentTemplateEntityCRUDEventHandler.updateInfraAsObsolete(
-            entityChangeDTO.getAccountIdentifier().getValue(), entityChangeDTO.getOrgIdentifier().getValue(),
-            entityChangeDTO.getProjectIdentifier().getValue(), entityChangeDTO.getIdentifier().getValue(), null);
+            entityChangeDTO.getAccountIdentifier().getValue(), orgId, projectId,
+            entityChangeDTO.getIdentifier().getValue(), null);
       }
       return deploymentTemplateEntityCRUDEventHandler.updateInfraAsObsolete(
-          entityChangeDTO.getAccountIdentifier().getValue(), entityChangeDTO.getOrgIdentifier().getValue(),
-          entityChangeDTO.getProjectIdentifier().getValue(), entityChangeDTO.getIdentifier().getValue(),
-          entityChangeDTO.getMetadataMap().get("versionLabel"));
+          entityChangeDTO.getAccountIdentifier().getValue(), orgId, projectId,
+          entityChangeDTO.getIdentifier().getValue(), entityChangeDTO.getMetadataMap().get("versionLabel"));
     }
     return true;
   }

@@ -9,6 +9,8 @@ package io.harness.cdng.customDeployment.EventListener;
 
 import static software.wings.beans.AccountType.log;
 
+import static java.util.Objects.isNull;
+
 import io.harness.EntityType;
 import io.harness.beans.IdentifierRef;
 import io.harness.beans.Scope;
@@ -65,7 +67,7 @@ public class CustomDeploymentEntityCRUDEventHandler {
       log.info("No infra found  in Db for given Deployment Template with id: {}", identifier);
       return false;
     }
-    String infraYaml = getInfraYaml(entitySetupUsages.get(0), accountRef, orgRef, projectRef);
+    String infraYaml = getInfraYaml(entitySetupUsages.get(0), accountRef);
     String templateYaml = getTemplateYaml(accountRef, orgRef, projectRef, identifier, versionLabel);
     boolean updateRequired = checkIfUpdateRequired(infraYaml, templateYaml, accountRef);
     if (updateRequired) {
@@ -74,12 +76,15 @@ public class CustomDeploymentEntityCRUDEventHandler {
     return true;
   }
 
-  public String getInfraYaml(EntitySetupUsageDTO entitySetupUsage, String accRef, String orgRef, String projectRef) {
+  public String getInfraYaml(EntitySetupUsageDTO entitySetupUsage, String accRef) {
     String infraId = entitySetupUsage.getReferredByEntity().getEntityRef().getIdentifier();
+    String orgId = entitySetupUsage.getReferredByEntity().getEntityRef().getOrgIdentifier();
+    String projectId = entitySetupUsage.getReferredByEntity().getEntityRef().getProjectIdentifier();
     String environment =
         ((IdentifierRef) entitySetupUsage.getReferredByEntity().getEntityRef()).getMetadata().get("envId");
     Optional<InfrastructureEntity> infrastructureOptional =
-        infrastructureEntityService.get(accRef, orgRef, projectRef, environment, infraId);
+        infrastructureEntityService.get(entitySetupUsage.getReferredByEntity().getEntityRef().getAccountIdentifier(),
+            orgId, projectId, environment, infraId);
     if (!infrastructureOptional.isPresent()) {
       log.error("No infra found to update for given deployment template with acc Id:{}", accRef);
       return null;
@@ -97,17 +102,17 @@ public class CustomDeploymentEntityCRUDEventHandler {
     try {
       YamlConfig templateConfig = new YamlConfig(templateYaml);
       JsonNode templateNode = templateConfig.getYamlMap().get("template");
-      if (templateNode.isNull()) {
+      if (isNull(templateNode)) {
         log.info("Error encountered while updating infra, template node is null for accId :{}", accId);
         return false;
       }
       JsonNode templateSpecNode = templateNode.get("spec");
-      if (templateSpecNode.isNull()) {
+      if (isNull(templateSpecNode)) {
         log.info("Error encountered while updating infra, template spec node is null for accId :{}", accId);
         return false;
       }
       JsonNode templateInfraNode = templateSpecNode.get("infrastructure");
-      if (templateInfraNode.isNull()) {
+      if (isNull(templateInfraNode)) {
         log.info("Error encountered while updating infra, template infrastructure node is null for accId :{}", accId);
         return false;
       }
@@ -115,12 +120,12 @@ public class CustomDeploymentEntityCRUDEventHandler {
 
       YamlConfig infraYamlConfig = new YamlConfig(infraYaml);
       JsonNode infraNode = infraYamlConfig.getYamlMap().get("infrastructureDefinition");
-      if (infraNode.isNull()) {
+      if (isNull(infraNode)) {
         log.info("Error encountered while updating infra, infra node is null for accId :{}", accId);
         return false;
       }
       JsonNode infraSpecNode = infraNode.get("spec");
-      if (infraSpecNode.isNull()) {
+      if (isNull(infraSpecNode)) {
         log.info("Error encountered while updating infra, infra spec node is null for accId :{}", accId);
         return false;
       }

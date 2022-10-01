@@ -22,6 +22,6 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = true)
 public class CustomDeploymentInstanceInfo extends InstanceInfo {
   @NotNull private String hostname;
-  @NotNull private int instanceFetchScriptHash;
+  @NotNull private String infrastructureKey;
   private Map<String, Object> properties;
 }
