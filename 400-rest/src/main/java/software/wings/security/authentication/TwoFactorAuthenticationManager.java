@@ -22,6 +22,7 @@ import io.harness.event.handler.impl.EventPublishHelper;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.ng.core.user.TwoFactorAdminOverrideSettings;
+import io.harness.outbox.OutboxEvent;
 import io.harness.outbox.api.OutboxService;
 
 import software.wings.beans.Account;
@@ -143,15 +144,20 @@ public class TwoFactorAuthenticationManager {
   private void ngAuditLoginSettings(
       String accountIdentifier, boolean oldTwoFactorAuthEnabled, boolean newTwoFactorAuthEnabled) {
     try {
-      outboxService.save(LoginSettingsTwoFactorAuthEvent.builder()
-                             .accountIdentifier(accountIdentifier)
-                             .oldTwoFactorAuthYamlDTO(
-                                 TwoFactorAuthYamlDTO.builder().isTwoFactorAuthEnabled(oldTwoFactorAuthEnabled).build())
-                             .newTwoFactorAuthYamlDTO(
-                                 TwoFactorAuthYamlDTO.builder().isTwoFactorAuthEnabled(newTwoFactorAuthEnabled).build())
-                             .build());
+      OutboxEvent outboxEvent = outboxService.save(
+          LoginSettingsTwoFactorAuthEvent.builder()
+              .accountIdentifier(accountIdentifier)
+              .oldTwoFactorAuthYamlDTO(
+                  TwoFactorAuthYamlDTO.builder().isTwoFactorAuthEnabled(oldTwoFactorAuthEnabled).build())
+              .newTwoFactorAuthYamlDTO(
+                  TwoFactorAuthYamlDTO.builder().isTwoFactorAuthEnabled(newTwoFactorAuthEnabled).build())
+              .build());
+      log.info(
+          "NG Auth Audits: for account {} and outboxEventId {} successfully saved the audit for LoginSettingsTwoFactorAuthEvent to outbox",
+          accountIdentifier, outboxEvent.getId());
     } catch (Exception ex) {
-      log.error("For account {} Audit trails for Two Factor Authentication Update event failed with exception: ",
+      log.error(
+          "NG Auth Audits: for account {} saving the LoginSettingsTwoFactorAuthEvent to outbox failed with exception: ",
           accountIdentifier, ex);
     }
   }
