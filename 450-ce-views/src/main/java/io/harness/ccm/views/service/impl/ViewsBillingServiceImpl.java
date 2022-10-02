@@ -246,6 +246,11 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
     boolean isClusterQuery = isClusterTableQuery(filters, Collections.emptyList(), queryParams);
     String businessMappingId = viewsQueryHelper.getBusinessMappingIdFromFilters(filters);
 
+    if (businessMappingId != null) {
+      return businessMappingService.getCostTargetNames(businessMappingId, queryParams.getAccountId(),
+          viewsQueryHelper.getSearchValueFromBusinessMappingFilter(filters, businessMappingId));
+    }
+
     List<ViewRule> viewRuleList = new ArrayList<>();
     Optional<QLCEViewFilterWrapper> viewMetadataFilter = getViewMetadataFilter(filters);
 
@@ -284,9 +289,8 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
       Thread.currentThread().interrupt();
       return null;
     }
-    return costCategoriesPostFetchResponseUpdate(getFilterValuesData(queryParams.getAccountId(), viewsQueryMetadata,
-                                                     result, idFilters, cloudProviderTableName.contains(CLUSTER_TABLE)),
-        businessMappingId);
+    return getFilterValuesData(queryParams.getAccountId(), viewsQueryMetadata, result, idFilters,
+        cloudProviderTableName.contains(CLUSTER_TABLE));
   }
 
   private List<String> getFilterValuesData(final String harnessAccountId, final ViewsQueryMetadata viewsQueryMetadata,
