@@ -77,6 +77,7 @@ import static io.harness.ccm.views.utils.ClusterTableKeys.GROUP_BY_INSTANCE_TYPE
 import static io.harness.ccm.views.utils.ClusterTableKeys.GROUP_BY_NAMESPACE;
 import static io.harness.ccm.views.utils.ClusterTableKeys.GROUP_BY_NAMESPACE_ID;
 import static io.harness.ccm.views.utils.ClusterTableKeys.GROUP_BY_NODE;
+import static io.harness.ccm.views.utils.ClusterTableKeys.GROUP_BY_NONE;
 import static io.harness.ccm.views.utils.ClusterTableKeys.GROUP_BY_POD;
 import static io.harness.ccm.views.utils.ClusterTableKeys.GROUP_BY_PRODUCT;
 import static io.harness.ccm.views.utils.ClusterTableKeys.GROUP_BY_STORAGE;
@@ -2309,6 +2310,8 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
             modifiedGroupBy.add(getGroupBy(GROUP_BY_INSTANCE_ID, INSTANCE_ID, CLUSTER));
             modifiedGroupBy.add(getGroupBy(GROUP_BY_INSTANCE_TYPE, INSTANCE_TYPE, CLUSTER));
             modifiedGroupBy.add(getGroupBy(GROUP_BY_INSTANCE_NAME, INSTANCE_NAME, CLUSTER));
+            break;
+          case GROUP_BY_NONE:
             break;
           default:
             modifiedGroupBy.add(groupBy);
