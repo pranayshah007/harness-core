@@ -165,7 +165,6 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
   @FdIndex private Long ceLicenseExpiryIteration;
   @FdIndex private Long resourceLookupSyncIteration;
   @FdIndex private long delegateTelemetryPublisherIteration;
-  @FdIndex private long delegateTaskFailIteration;
   @FdIndex private long delegateTaskRebroadcastIteration;
   @FdIndex private Long perpetualTaskRebalanceIteration;
 
@@ -486,11 +485,6 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
       return;
     }
 
-    else if (AccountKeys.delegateTaskFailIteration.equals(fieldName)) {
-      this.delegateTaskFailIteration = nextIteration;
-      return;
-    }
-
     else if (AccountKeys.delegateTaskRebroadcastIteration.equals(fieldName)) {
       this.delegateTaskRebroadcastIteration = nextIteration;
       return;
@@ -548,10 +542,6 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
 
     else if (AccountKeys.delegateTelemetryPublisherIteration.equals(fieldName)) {
       return this.delegateTelemetryPublisherIteration;
-    }
-
-    else if (AccountKeys.delegateTaskFailIteration.equals(fieldName)) {
-      return this.delegateTaskFailIteration;
     }
 
     else if (AccountKeys.delegateTaskRebroadcastIteration.equals(fieldName)) {
@@ -886,7 +876,6 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
     public static final String isHarnessSupportAccessAllowed = "isHarnessSupportAccessAllowed";
     public static final String resourceLookupSyncIteration = "resourceLookupSyncIteration";
     public static final String instanceStatsMetricsPublisherInteration = "instanceStatsMetricsPublisherIteration";
-    public static final String delegateTaskFailIteration = "delegateTaskFailIteration";
     public static final String delegateTaskRebroadcastIteration = "delegateTaskRebroadcastIteration";
     public static final String DELEGATE_CONFIGURATION_DELEGATE_VERSIONS =
         delegateConfiguration + "." + DelegateConfigurationKeys.delegateVersions;

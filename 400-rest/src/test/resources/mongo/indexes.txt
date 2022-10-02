@@ -11,7 +11,6 @@ accounts {"name": "accountName_1", "unique": true} {"accountName": 1}
 accounts {"name": "appId_1", "background": true} {"appId": 1}
 accounts {"name": "ceLicenseExpiryIteration_1", "background": true} {"ceLicenseExpiryIteration": 1}
 accounts {"name": "createdAt_1", "background": true} {"createdAt": 1}
-accounts {"name": "delegateTaskFailIteration_1", "background": true} {"delegateTaskFailIteration": 1}
 accounts {"name": "delegateTaskRebroadcastIteration_1", "background": true} {"delegateTaskRebroadcastIteration": 1}
 accounts {"name": "delegateTelemetryPublisherIteration_1", "background": true} {"delegateTelemetryPublisherIteration": 1}
 accounts {"name": "gitSyncExpiryCheckIteration_1", "background": true} {"gitSyncExpiryCheckIteration": 1}
@@ -198,6 +197,8 @@ delegateSelectionLogTaskMetadata {"name": "validUntil_1", "background": true, "e
 delegateSequenceConfig {"name": "appId_1", "background": true} {"appId": 1}
 delegateSequenceConfig {"name": "createdAt_1", "background": true} {"createdAt": 1}
 delegateSequenceConfig {"name": "uniqueDelegateSequenceIdx", "unique": true} {"accountId": 1, "hostName": 1, "sequenceNum": 1}
+delegateTasks {"name": "delegateTaskFailIteration_1", "background": true} {"delegateTaskFailIteration": 1}
+delegateTasks {"name": "expiry_1", "background": true} {"expiry": 1}
 delegateTasks {"name": "index", "background": true} {"status": 1, "expiry": 1}
 delegateTasks {"name": "pulling", "background": true} {"accountId": 1, "status": 1, "data.async": 1, "expiry": 1}
 delegateTasks {"name": "rebroadcast", "background": true} {"version": 1, "status": 1, "delegateId": 1, "nextBroadcast": 1}
