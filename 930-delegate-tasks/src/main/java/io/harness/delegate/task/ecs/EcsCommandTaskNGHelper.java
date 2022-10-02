@@ -35,7 +35,7 @@ import io.harness.delegate.task.aws.AwsNgConfigMapper;
 import io.harness.delegate.task.ecs.request.EcsBlueGreenCreateServiceRequest;
 import io.harness.delegate.task.ecs.request.EcsBlueGreenRollbackRequest;
 import io.harness.exception.InvalidRequestException;
-import io.harness.exception.InvalidYamlException;
+import io.harness.exception.NestedExceptionUtils;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
 import io.harness.serializer.YamlUtils;
@@ -58,6 +58,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import software.amazon.awssdk.core.waiters.WaiterResponse;
 import software.amazon.awssdk.services.applicationautoscaling.model.DeleteScalingPolicyRequest;
 import software.amazon.awssdk.services.applicationautoscaling.model.DeregisterScalableTargetRequest;
@@ -80,6 +81,7 @@ import software.amazon.awssdk.services.ecs.model.ListTasksRequest;
 import software.amazon.awssdk.services.ecs.model.ListTasksResponse;
 import software.amazon.awssdk.services.ecs.model.RegisterTaskDefinitionRequest;
 import software.amazon.awssdk.services.ecs.model.RegisterTaskDefinitionResponse;
+import software.amazon.awssdk.services.ecs.model.RunTaskRequest;
 import software.amazon.awssdk.services.ecs.model.Service;
 import software.amazon.awssdk.services.ecs.model.ServiceEvent;
 import software.amazon.awssdk.services.ecs.model.ServiceField;
@@ -388,7 +390,27 @@ public class EcsCommandTaskNGHelper {
     try {
       object = yamlUtils.read(yaml, tClass);
     } catch (Exception e) {
-      throw new InvalidYamlException(format("Error while parsing yaml to class %s", tClass.getName()), e);
+      // Set default
+      String schema = tClass.getName();
+
+      if (tClass == RegisterTaskDefinitionRequest.serializableBuilderClass()) {
+        schema = "ECS Task Definition";
+      } else if (tClass == CreateServiceRequest.serializableBuilderClass()) {
+        schema = "ECS Service Definition";
+      } else if (tClass == RegisterScalableTargetRequest.serializableBuilderClass()) {
+        schema = "ECS Scalable Target";
+      } else if (tClass == PutScalingPolicyRequest.serializableBuilderClass()) {
+        schema = "ECS Scaling Policy";
+      } else if (tClass == RunTaskRequest.serializableBuilderClass()) {
+        schema = "ECS Run Task Definition";
+      }
+
+      throw NestedExceptionUtils.hintWithExplanationException(
+          format("Please check yaml configured matches schema %s", schema),
+          format(
+              "Error while parsing yaml %s. Its expected to be matching %s schema. Please check Harness documentation https://docs.harness.io for more details",
+              yaml, schema),
+          e);
     }
     return object;
   }
@@ -397,6 +419,13 @@ public class EcsCommandTaskNGHelper {
       List<String> ecsScalableTargetManifestContentList, List<String> ecsScalingPolicyManifestContentList,
       EcsInfraConfig ecsInfraConfig, LogCallback logCallback, long timeoutInMillis,
       boolean sameAsAlreadyRunningInstances, boolean forceNewDeployment) {
+    if (StringUtils.isEmpty(createServiceRequest.serviceName())) {
+      throw NestedExceptionUtils.hintWithExplanationException(
+          format(
+              "Please check if ECS service name is configured properly in ECS Service Definition Manifest in Harness Service."),
+          format("ECS service name is not configured properly in ECS Service Definition. It is found to be empty."),
+          new InvalidRequestException("ECS service name is empty."));
+    }
     // if service exists create service, otherwise update service
     Optional<Service> optionalService = describeService(createServiceRequest.cluster(),
         createServiceRequest.serviceName(), ecsInfraConfig.getRegion(), ecsInfraConfig.getAwsConnectorDTO());
