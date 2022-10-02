@@ -113,6 +113,16 @@ public class TimeSeriesAnalysisServiceImpl implements TimeSeriesAnalysisService 
   }
 
   @Override
+  public List<String> scheduleCanaryAnalysis(AnalysisInput analysisInput) {
+    return null;
+  }
+
+  @Override
+  public List<String> scheduleImprovisedCanaryAnalysis(AnalysisInput analysisInput) {
+    return null;
+  }
+
+  @Override
   public List<String> scheduleTestVerificationTaskAnalysis(AnalysisInput analysisInput) {
     TimeSeriesLoadTestLearningEngineTask timeSeriesTask = createTimeSeriesLoadTestLearningEngineTask(analysisInput);
     learningEngineTaskService.createLearningEngineTasks(Arrays.asList(timeSeriesTask));

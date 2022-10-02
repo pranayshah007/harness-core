@@ -25,8 +25,10 @@ import io.harness.cvng.core.entities.VerificationTask.DeploymentInfo;
 import io.harness.cvng.core.entities.VerificationTask.TaskType;
 import io.harness.cvng.core.services.api.CVConfigService;
 import io.harness.cvng.core.services.api.ExecutionLogService;
+import io.harness.cvng.core.services.api.FeatureFlagService;
 import io.harness.cvng.core.services.api.TimeSeriesRecordService;
 import io.harness.cvng.core.services.api.VerificationTaskService;
+import io.harness.cvng.core.utils.FeatureFlagNames;
 import io.harness.cvng.metrics.CVNGMetricsUtils;
 import io.harness.cvng.metrics.services.impl.MetricContextBuilder;
 import io.harness.cvng.models.VerificationType;
@@ -84,6 +86,7 @@ public class AnalysisStateMachineServiceImpl implements AnalysisStateMachineServ
   @Inject private MetricService metricService;
   @Inject private MetricContextBuilder metricContextBuilder;
   @Inject private TimeSeriesRecordService timeSeriesRecordService;
+  @Inject private FeatureFlagService featureFlagService;
 
   @Override
   public void initiateStateMachine(String verificationTaskId, AnalysisStateMachine stateMachine) {
@@ -386,12 +389,13 @@ public class AnalysisStateMachineServiceImpl implements AnalysisStateMachineServ
           canaryTimeSeriesAnalysisState.setStatus(AnalysisStatus.CREATED);
           canaryTimeSeriesAnalysisState.setInputs(inputForAnalysis);
           stateMachine.setCurrentState(canaryTimeSeriesAnalysisState);
-          // TODO: add feature gate
-          HostSamplingState hostSamplingState = new HostSamplingState();
-          hostSamplingState.setStatus(AnalysisStatus.CREATED);
-          hostSamplingState.setInputs(inputForAnalysis);
-          hostSamplingState.setVerificationJobInstance(verificationJobInstance);
-          stateMachine.setCurrentState(hostSamplingState);
+          if (featureFlagService.isFeatureFlagEnabled(stateMachine.getAccountId(), FeatureFlagNames.HOST_SAMPLING)) {
+            HostSamplingState hostSamplingState = new HostSamplingState();
+            hostSamplingState.setStatus(AnalysisStatus.CREATED);
+            hostSamplingState.setInputs(inputForAnalysis);
+            hostSamplingState.setVerificationJobInstance(verificationJobInstance);
+            stateMachine.setCurrentState(hostSamplingState);
+          }
         }
         break;
       case LOG:

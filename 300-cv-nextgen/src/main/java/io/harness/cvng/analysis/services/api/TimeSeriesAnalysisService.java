@@ -27,6 +27,8 @@ import java.util.Set;
 public interface TimeSeriesAnalysisService {
   List<String> scheduleServiceGuardAnalysis(AnalysisInput input);
   List<String> scheduleCanaryVerificationTaskAnalysis(AnalysisInput analysisInput);
+  List<String> scheduleCanaryAnalysis(AnalysisInput analysisInput);
+  List<String> scheduleImprovisedCanaryAnalysis(AnalysisInput analysisInput);
   List<String> scheduleTestVerificationTaskAnalysis(AnalysisInput analysisInput);
   void logDeploymentVerificationProgress(AnalysisInput analysisInput, AnalysisStatus analysisStatus);
 

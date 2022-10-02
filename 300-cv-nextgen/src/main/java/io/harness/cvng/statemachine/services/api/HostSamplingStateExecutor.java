@@ -15,7 +15,10 @@ import io.harness.cvng.core.beans.TimeRange;
 import io.harness.cvng.core.services.api.TimeSeriesRecordService;
 import io.harness.cvng.statemachine.beans.AnalysisState;
 import io.harness.cvng.statemachine.beans.AnalysisStatus;
+import io.harness.cvng.statemachine.entities.CanaryAnalysisState;
 import io.harness.cvng.statemachine.entities.HostSamplingState;
+import io.harness.cvng.statemachine.entities.ImprovisedCanaryAnalysisState;
+import io.harness.cvng.statemachine.exception.AnalysisStateMachineException;
 import io.harness.cvng.verificationjob.entities.VerificationJob;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance;
 import io.harness.cvng.verificationjob.services.api.VerificationJobInstanceService;
@@ -139,31 +142,62 @@ public class HostSamplingStateExecutor extends AnalysisStateExecutor<HostSamplin
 
     @Override
     public AnalysisStatus getExecutionStatus(HostSamplingState analysisState) {
-        return AnalysisStatus.TRANSITION;
+        if (!analysisState.getControlHosts().isEmpty() && analysisState.getTestHosts().isEmpty()) {
+            return AnalysisStatus.TRANSITION;
+        }
+        return AnalysisStatus.RUNNING;
     }
 
     @Override
     public AnalysisState handleRerun(HostSamplingState analysisState) {
-        return null;
+        analysisState.setControlHosts(new HashSet<>());
+        analysisState.setTestHosts(new HashSet<>());
+        analysisState.setRetryCount(analysisState.getRetryCount() + 1);
+        return execute(analysisState);
     }
 
     @Override
     public AnalysisState handleRunning(HostSamplingState analysisState) {
-        return null;
+        return analysisState;
     }
 
     @Override
     public AnalysisState handleSuccess(HostSamplingState analysisState) {
-        return null;
+        analysisState.setStatus(AnalysisStatus.SUCCESS);
+        return analysisState;
     }
 
     @Override
     public AnalysisState handleTransition(HostSamplingState analysisState) {
-        return null;
+        analysisState.setStatus(AnalysisStatus.SUCCESS);
+        switch (analysisState.getLearningEngineTaskType()) {
+            case CANARY:
+                CanaryAnalysisState canaryAnalysisState = new CanaryAnalysisState();
+                canaryAnalysisState.setLearningEngineTaskType(analysisState.getLearningEngineTaskType());
+                canaryAnalysisState.setInputs(analysisState.getInputs());
+                canaryAnalysisState.setControlHosts(analysisState.getControlHosts());
+                canaryAnalysisState.setTestHosts(analysisState.getTestHosts());
+                return canaryAnalysisState;
+            case IMPROVISED_CANARY:
+                ImprovisedCanaryAnalysisState improvisedCanaryAnalysisState = new ImprovisedCanaryAnalysisState();
+                improvisedCanaryAnalysisState.setLearningEngineTaskType(analysisState.getLearningEngineTaskType());
+                improvisedCanaryAnalysisState.setInputs(analysisState.getInputs());
+                improvisedCanaryAnalysisState.setControlHosts(analysisState.getControlHosts());
+                improvisedCanaryAnalysisState.setTestHosts(analysisState.getTestHosts());
+                return improvisedCanaryAnalysisState;
+            default:
+                throw new AnalysisStateMachineException("Unknown learning engine task typein handleTransition "
+                        + "of HostSamplingState: " + analysisState.getLearningEngineTaskType());
+        }
     }
 
     @Override
     public AnalysisState handleRetry(HostSamplingState analysisState) {
-        return null;
+        if (analysisState.getRetryCount() >= getMaxRetry()) {
+            analysisState.setStatus(AnalysisStatus.FAILED);
+        } else {
+            return handleRerun(analysisState);
+        }
+        return analysisState;
     }
 }
