@@ -69,6 +69,7 @@ import com.google.inject.name.Named;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -123,19 +124,17 @@ public class AuthenticationManager {
     }
   }
 
-  private io.harness.ng.core.account.AuthenticationMechanism getAuthenticationMechanism(User user, String accountId) {
+  private Account getAccount(User user, String accountId) {
     if (user.isDisabled()) {
       throw new WingsException(USER_DISABLED, USER);
     }
-    io.harness.ng.core.account.AuthenticationMechanism authenticationMechanism;
+    Account account;
     if (isNotEmpty(accountId)) {
       // First check if the user is associated with the account.
       if (!userService.isUserAssignedToAccount(user, accountId)) {
         throw new InvalidRequestException("User is not assigned to account", USER);
       }
-      // If account is specified, using the specified account's auth mechanism
-      Account account = accountService.get(accountId);
-      authenticationMechanism = account.getAuthenticationMechanism();
+      account = accountService.get(accountId);
     } else {
       /*
        * Choose the first account as primary account, use its auth mechanism for login purpose if the user is
@@ -144,23 +143,24 @@ public class AuthenticationManager {
        */
       String defaultAccountId = user.getDefaultAccountId();
       Preconditions.checkNotNull(user.getAccounts(), String.format("No account found for {}", user.getEmail()));
-      Optional<Account> account =
+      Optional<Account> optionalAccount =
           user.getAccounts().stream().filter(acct -> Objects.equals(defaultAccountId, acct.getUuid())).findFirst();
-      if (account.isPresent()) {
-        authenticationMechanism = account.get().getAuthenticationMechanism();
-      } else {
-        authenticationMechanism = user.getAccounts().get(0).getAuthenticationMechanism();
-      }
+      account = optionalAccount.orElseGet(() -> user.getAccounts().get(0));
     }
 
-    if (authenticationMechanism == null) {
-      authenticationMechanism = io.harness.ng.core.account.AuthenticationMechanism.USER_PASSWORD;
+    if (account == null) {
+      throw new IllegalStateException(
+          String.format("Account with identifier [%s] doesn't exists or the user with identifier [%s] has no accounts",
+              accountId, user.getUuid()));
     }
-    return authenticationMechanism;
+    if (account.getAuthenticationMechanism() == null) {
+      account.setAuthenticationMechanism(io.harness.ng.core.account.AuthenticationMechanism.USER_PASSWORD);
+    }
+    return account;
   }
 
-  public io.harness.ng.core.account.AuthenticationMechanism getAuthenticationMechanism(String userName) {
-    return getAuthenticationMechanism(authenticationUtils.getUser(userName, USER), null);
+  public Account getAccount(String userName) {
+    return getAccount(authenticationUtils.getUser(userName, USER), null);
   }
 
   LoginTypeResponse getLoginTypeResponse(String userName) {
@@ -334,9 +334,8 @@ public class AuthenticationManager {
 
       if (isNotEmpty(accountId)) {
         User user = authenticationUtils.getUser(userName, USER);
-        io.harness.ng.core.account.AuthenticationMechanism authenticationMechanism =
-            getAuthenticationMechanism(user, accountId);
-        return defaultLoginInternal(userName, password, false, authenticationMechanism);
+        Account account = getAccount(user, accountId);
+        return defaultLoginInternal(userName, password, false, account);
       } else {
         return defaultLogin(userName, password);
       }
@@ -357,19 +356,18 @@ public class AuthenticationManager {
   }
 
   public User defaultLogin(String userName, String password) {
-    return defaultLoginInternal(userName, password, false, getAuthenticationMechanism(userName));
+    return defaultLoginInternal(userName, password, false, getAccount(userName));
   }
 
   public User defaultLoginUsingPasswordHash(String userName, String passwordHash) {
-    return defaultLoginInternal(userName, passwordHash, true, getAuthenticationMechanism(userName));
+    return defaultLoginInternal(userName, passwordHash, true, getAccount(userName));
   }
 
-  private User defaultLoginInternal(String userName, String password, boolean isPasswordHash,
-      io.harness.ng.core.account.AuthenticationMechanism authenticationMechanism) {
+  private User defaultLoginInternal(String userName, String password, boolean isPasswordHash, Account account) {
     try {
-      AuthHandler authHandler = getAuthHandler(authenticationMechanism);
+      AuthHandler authHandler = getAuthHandler(account.getAuthenticationMechanism());
       if (authHandler == null) {
-        log.error("No auth handler found for auth mechanism {}", authenticationMechanism);
+        log.error("No auth handler found for auth mechanism {}", account.getAuthenticationMechanism());
         throw new WingsException(INVALID_CREDENTIAL);
       }
 
@@ -380,7 +378,7 @@ public class AuthenticationManager {
           user = passwordBasedAuthHandler.authenticateWithPasswordHash(userName, password).getUser();
         } else {
           log.error("isPasswordHash should not be true if the auth mechanism {} is not username / password",
-              authenticationMechanism);
+              account.getAuthenticationMechanism());
           throw new WingsException(INVALID_CREDENTIAL);
         }
       } else {
@@ -390,10 +388,9 @@ public class AuthenticationManager {
       if (user.isTwoFactorAuthenticationEnabled()) {
         return generate2faJWTToken(user);
       } else {
-        List<String> accountIds = user.getAccountIds();
         User loggedInUser = authService.generateBearerTokenForUser(user);
-        authService.auditLogin(accountIds, loggedInUser);
-        authService.auditLoginToNg(accountIds, loggedInUser);
+        authService.auditLogin(Collections.singletonList(account.getUuid()), loggedInUser);
+        authService.auditLoginToNg(Collections.singletonList(account.getUuid()), loggedInUser);
         return loggedInUser;
       }
 
@@ -420,7 +417,9 @@ public class AuthenticationManager {
 
   public User loginUsingHarnessPassword(final String basicToken, String accountId) {
     String[] decryptedData = decryptBasicToken(basicToken);
-    User user = defaultLoginInternal(decryptedData[0], decryptedData[1], false, AuthenticationMechanism.USER_PASSWORD);
+    Account tempAccount = getAccount(decryptedData[0]);
+    tempAccount.setAuthenticationMechanism(AuthenticationMechanism.USER_PASSWORD);
+    User user = defaultLoginInternal(decryptedData[0], decryptedData[1], false, tempAccount);
     if (user == null) {
       throw new WingsException(INVALID_CREDENTIAL, USER);
     }
