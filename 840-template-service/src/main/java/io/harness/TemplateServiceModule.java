@@ -57,6 +57,7 @@ import io.harness.persistence.NoopUserProvider;
 import io.harness.persistence.UserProvider;
 import io.harness.pipeline.yamlschema.PipelineYamlSchemaClientModule;
 import io.harness.project.ProjectClientModule;
+import io.harness.reconcile.NgManagerReconcileClientModule;
 import io.harness.redis.RedisConfig;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.serializer.KryoRegistrar;
@@ -172,6 +173,8 @@ public class TemplateServiceModule extends AbstractModule {
         this.templateServiceConfiguration.getManagerServiceSecret(), TEMPLATE_SERVICE.getServiceId(),
         this.templateServiceConfiguration.isEnableAudit()));
     install(new CustomDeploymentClientModule(this.templateServiceConfiguration.getNgManagerServiceHttpClientConfig(),
+        this.templateServiceConfiguration.getNgManagerServiceSecret(), TEMPLATE_SERVICE.getServiceId()));
+    install(new NgManagerReconcileClientModule(this.templateServiceConfiguration.getNgManagerServiceHttpClientConfig(),
         this.templateServiceConfiguration.getNgManagerServiceSecret(), TEMPLATE_SERVICE.getServiceId()));
     install(new TransactionOutboxModule(DEFAULT_OUTBOX_POLL_CONFIGURATION, TEMPLATE_SERVICE.getServiceId(), false));
     install(new TokenClientModule(this.templateServiceConfiguration.getNgManagerServiceHttpClientConfig(),

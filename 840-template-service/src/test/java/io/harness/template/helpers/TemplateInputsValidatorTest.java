@@ -20,9 +20,11 @@ import static org.mockito.Mockito.when;
 import io.harness.TemplateServiceTestBase;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.template.TemplateEntityType;
+import io.harness.reconcile.remote.NgManagerReconcileClient;
 import io.harness.rule.Owner;
 import io.harness.template.beans.refresh.ErrorNodeSummary;
 import io.harness.template.beans.refresh.NodeInfo;
@@ -32,6 +34,7 @@ import io.harness.template.beans.yaml.NGTemplateConfig;
 import io.harness.template.beans.yaml.NGTemplateInfoConfig;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.services.NGTemplateServiceHelper;
+import io.harness.template.utils.NGTemplateFeatureFlagHelperService;
 import io.harness.utils.YamlPipelineUtils;
 
 import com.google.common.io.Resources;
@@ -55,12 +58,17 @@ public class TemplateInputsValidatorTest extends TemplateServiceTestBase {
   @InjectMocks TemplateInputsValidator templateInputsValidator;
   @InjectMocks TemplateMergeServiceHelper templateMergeServiceHelper;
   @Mock NGTemplateServiceHelper templateServiceHelper;
+  @Mock NGTemplateFeatureFlagHelperService featureFlagHelperService;
+  @Mock NgManagerReconcileClient ngManagerReconcileClient;
 
   @Before
   public void setup() {
     on(templateMergeServiceHelper).set("templateServiceHelper", templateServiceHelper);
     on(inputsValidator).set("templateMergeServiceHelper", templateMergeServiceHelper);
+    on(inputsValidator).set("featureFlagHelperService", featureFlagHelperService);
+    on(inputsValidator).set("ngManagerReconcileClient", ngManagerReconcileClient);
     on(templateInputsValidator).set("inputsValidator", inputsValidator);
+    when(featureFlagHelperService.isEnabled(ACCOUNT_ID, FeatureName.SERVICE_ENV_RECONCILIATION)).thenReturn(false);
   }
 
   private String readFile(String filename) {

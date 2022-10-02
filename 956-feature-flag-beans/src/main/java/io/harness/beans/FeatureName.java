@@ -445,7 +445,8 @@ public enum FeatureName {
   CD_SERVICENOW_IMPORT_SET_NG("Enable ServiceNow Import Set Step", HarnessTeam.CDC),
   WINRM_SCRIPT_COMMAND_SPLIT(
       "Enables the new way of how to copy powershell/winrm script commands content to file on remote. (Copy is done in chunks of 4KB) ",
-      HarnessTeam.CDP);
+      HarnessTeam.CDP),
+  SERVICE_ENV_RECONCILIATION("Do reconciliation of service and env on pipeline/template save", HarnessTeam.CDC);
 
   @Deprecated
   FeatureName() {
