@@ -301,6 +301,7 @@ mongo:
     mongoTagKey: none
     mongoTagValue: none
   aliasDBName: harness
+  maxOperationTimeInMillis: 900000
 
 events-mongo:
   uri: mongodb://localhost:27017/events

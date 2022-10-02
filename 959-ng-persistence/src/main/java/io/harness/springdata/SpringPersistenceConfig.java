@@ -79,7 +79,7 @@ public class SpringPersistenceConfig extends AbstractMongoConfiguration {
   public MongoTemplate mongoTemplate() throws Exception {
     MappingMongoConverter mappingMongoConverter = mappingMongoConverter();
     mappingMongoConverter.setMapKeyDotReplacement(DOT_REPLACEMENT);
-    return new HMongoTemplate(mongoDbFactory(), mappingMongoConverter, mongoConfig.getTraceMode());
+    return new HMongoTemplate(mongoDbFactory(), mappingMongoConverter, mongoConfig);
   }
 
   @Bean

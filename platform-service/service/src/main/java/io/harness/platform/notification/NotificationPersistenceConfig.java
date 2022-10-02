@@ -91,6 +91,6 @@ public class NotificationPersistenceConfig extends AbstractMongoConfiguration {
     MappingMongoConverter converter = new MappingMongoConverter(dbRefResolver, mappingContext);
     converter.setCodecRegistryProvider(mongoDbFactory);
     converter.afterPropertiesSet();
-    return new HMongoTemplate(mongoDbFactory, mappingMongoConverter(), mongoBackendConfiguration.getTraceMode());
+    return new HMongoTemplate(mongoDbFactory, mappingMongoConverter(), mongoBackendConfiguration);
   }
 }
