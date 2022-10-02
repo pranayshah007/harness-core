@@ -22,6 +22,7 @@ java_library(
     deps = [
         ":dagger",
         "//:lombok",
+        "//260-delegate:module",
         "//420-delegate-agent:module",
         "//867-polling-contracts:module",
         "//platform-service/modules/notification-service/delegate-tasks:module",

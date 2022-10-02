@@ -7,6 +7,9 @@
 
 package io.harness.delegate.app.modules.testdagger;
 
+import com.amazonaws.AmazonClientException;
+import com.amazonaws.AmazonServiceException;
+import dagger.multibindings.IntoMap;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.artifactory.service.ArtifactoryRegistryService;
@@ -21,6 +24,10 @@ import io.harness.artifacts.githubpackages.client.GithubPackagesRestClientFactor
 import io.harness.artifacts.githubpackages.client.GithubPackagesRestClientFactoryImpl;
 import io.harness.artifacts.githubpackages.service.GithubPackagesRegistryService;
 import io.harness.artifacts.githubpackages.service.GithubPackagesRegistryServiceImpl;
+import io.harness.delegate.app.modules.ExceptionKey;
+import io.harness.delegate.exceptionhandler.handler.AmazonClientExceptionHandler;
+import io.harness.delegate.exceptionhandler.handler.AmazonServiceExceptionHandler;
+import io.harness.exception.exceptionmanager.exceptionhandler.ExceptionHandler;
 import io.harness.http.HttpService;
 import io.harness.http.HttpServiceImpl;
 import io.harness.nexus.service.NexusRegistryService;
@@ -31,22 +38,20 @@ import dagger.Module;
 import dagger.Provides;
 
 @TargetModule(HarnessModule._420_DELEGATE_AGENT_RDM)
-@Module
+@Module(includes = {ExceptionHanderModule.class})
 public abstract class NGDelegateDaggerModule {
   @Provides
-  // scope if needed
-  public static DockerRegistryService provideDockerRegistryService() {
+  public static DockerRegistryService provideDockerRegSvc() {
     return new DockerRegistryServiceImpl();
   }
 
   @Provides
-  public static NexusRegistryService provideNexusRegistryService() {
+  public static NexusRegistryService provideNexusRegSvc() {
     return new NexusRegistryServiceImpl();
   }
 
   @Binds
-  abstract ArtifactoryRegistryService bindArtifactoryRegistryService(
-      ArtifactoryRegistryServiceImpl artifactoryRegistryService);
+  abstract ArtifactoryRegistryService bindArtifactoryRegSvc(ArtifactoryRegistryServiceImpl artifactoryRegistryService);
 
   @Binds abstract GcrApiService bindGcrApiService(GcrApiServiceImpl gcrApiService);
 
