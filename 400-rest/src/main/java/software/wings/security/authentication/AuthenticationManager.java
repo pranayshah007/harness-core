@@ -417,18 +417,16 @@ public class AuthenticationManager {
 
   public User loginUsingHarnessPassword(final String basicToken, String accountId) {
     String[] decryptedData = decryptBasicToken(basicToken);
-    Account tempAccount = getAccount(decryptedData[0]);
-    tempAccount.setAuthenticationMechanism(AuthenticationMechanism.USER_PASSWORD);
-    User user = defaultLoginInternal(decryptedData[0], decryptedData[1], false, tempAccount);
+    Account account = getAccount(decryptedData[0]);
+    account.setAuthenticationMechanism(AuthenticationMechanism.USER_PASSWORD);
+    User user = defaultLoginInternal(decryptedData[0], decryptedData[1], false, account);
+
     if (user == null) {
       throw new WingsException(INVALID_CREDENTIAL, USER);
     }
-
     if (user.isDisabled()) {
       throw new WingsException(USER_DISABLED, USER);
     }
-
-    Account account = isEmpty(accountId) ? authenticationUtils.getDefaultAccount(user) : accountService.get(accountId);
 
     if (DefaultExperience.NG.equals(account.getDefaultExperience())) {
       if (!Boolean.TRUE.equals(getResponse(userMembershipClient.isUserAdmin(user.getUuid(), accountId)))) {
