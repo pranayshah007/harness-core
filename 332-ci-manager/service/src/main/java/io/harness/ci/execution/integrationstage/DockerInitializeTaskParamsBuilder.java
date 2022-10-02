@@ -18,8 +18,6 @@ import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.beans.yaml.extended.platform.ArchType;
 import io.harness.beans.yaml.extended.platform.Platform;
-import io.harness.delegate.beans.ci.DockerInfraInfo;
-import io.harness.delegate.beans.ci.InfraInfo;
 import io.harness.delegate.beans.ci.vm.CIVmInitializeTaskParams;
 import io.harness.delegate.task.citasks.cik8handler.helper.SecretVolumesHelper;
 import io.harness.exception.ngexception.CIStageExecutionException;
@@ -51,9 +49,14 @@ public class DockerInitializeTaskParamsBuilder {
     return format("%s-%s", os.toString().toLowerCase(), arch.toString().toLowerCase());
   }
 
-  public static InfraInfo validateInfrastructureAndGetInfraInfo(Infrastructure infrastructure) {
+  //  public static InfraInfo validateInfrastructureAndGetInfraInfo(Infrastructure infrastructure) {
+  //    validateInfrastructure(infrastructure);
+  //    return DockerInfraInfo.builder().build();
+  //  }
+
+  public static CIVmInitializeTaskParams.Type validateInfrastructureAndGetInfraInfo(Infrastructure infrastructure) {
     validateInfrastructure(infrastructure);
-    return DockerInfraInfo.builder().build();
+    return CIVmInitializeTaskParams.Type.DOCKER;
   }
 
   public static void validateInfrastructure(Infrastructure infrastructure) {

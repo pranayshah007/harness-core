@@ -10,7 +10,7 @@ package io.harness.delegate.beans.ci.vm;
 import static io.harness.expression.Expression.ALLOW_SECRETS;
 
 import io.harness.delegate.beans.ci.CIExecuteStepTaskParams;
-import io.harness.delegate.beans.ci.InfraInfo;
+import io.harness.delegate.beans.ci.CIInitializeTaskParams;
 import io.harness.delegate.beans.ci.vm.steps.VmStepInfo;
 import io.harness.delegate.beans.executioncapability.CIVmConnectionCapability;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
@@ -42,7 +42,8 @@ public class CIVmExecuteStepTaskParams implements CIExecuteStepTaskParams, Execu
   @NotNull private String logKey;
   @NotNull private String workingDir;
   private Map<String, String> volToMountPath;
-  @NotNull @Getter private InfraInfo infraInfo;
+  //@Getter private InfraInfo infraInfo;
+  @Getter private CIInitializeTaskParams.Type infraInfo;
 
   @Builder.Default private static final Type type = Type.VM;
 

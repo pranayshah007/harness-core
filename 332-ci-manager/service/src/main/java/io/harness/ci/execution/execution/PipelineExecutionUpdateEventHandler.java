@@ -23,8 +23,6 @@ import io.harness.ci.logserviceclient.CILogServiceUtils;
 import io.harness.ci.states.codebase.CodeBaseTaskStep;
 import io.harness.delegate.TaskSelector;
 import io.harness.delegate.beans.ci.CICleanupTaskParams;
-import io.harness.delegate.beans.ci.InfraInfo;
-import io.harness.delegate.beans.ci.vm.CIVmCleanupTaskParams;
 import io.harness.encryption.Scope;
 import io.harness.logstreaming.LogStreamingHelper;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -164,7 +162,8 @@ public class PipelineExecutionUpdateEventHandler implements OrchestrationEventHa
     boolean executeOnHarnessHostedDelegates = false;
     List<String> eligibleToExecuteDelegateIds = new ArrayList<>();
 
-    if (ciCleanupTaskParams.getType() == CICleanupTaskParams.Type.DLITE_VM) {
+    CICleanupTaskParams.Type type = ciCleanupTaskParams.getType();
+    if (type == CICleanupTaskParams.Type.DLITE_VM) {
       taskType = TaskType.DLITE_CI_VM_CLEANUP_TASK.getDisplayName();
       executeOnHarnessHostedDelegates = true;
       serializationFormat = SerializationFormat.JSON;
@@ -177,7 +176,7 @@ public class PipelineExecutionUpdateEventHandler implements OrchestrationEventHa
         log.warn(
             "Unable to locate delegate ID for stage ID: {}. Cleanup task may be routed to the wrong delegate", stageId);
       }
-    } else if (InfraInfo.Type.DOCKER.equals(((CIVmCleanupTaskParams) ciCleanupTaskParams).getInfraInfo().getType())) {
+    } else if (type == CICleanupTaskParams.Type.DOCKER) {
       // TODO: Start using fetchDelegateId once we start emitting & processing the event for Docker as well
       OptionalOutcome optionalOutput = outcomeService.resolveOptional(
           ambiance, RefObjectUtils.getOutcomeRefObject(VmDetailsOutcome.VM_DETAILS_OUTCOME));

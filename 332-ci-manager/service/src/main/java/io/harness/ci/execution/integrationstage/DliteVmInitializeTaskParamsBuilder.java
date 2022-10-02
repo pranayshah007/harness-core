@@ -10,8 +10,8 @@ package io.harness.ci.integrationstage;
 import io.harness.beans.steps.stepinfo.InitializeStepInfo;
 import io.harness.beans.yaml.extended.infrastrucutre.HostedVmInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
-import io.harness.delegate.beans.ci.DliteVmInfraInfo;
-import io.harness.delegate.beans.ci.InfraInfo;
+import io.harness.delegate.beans.ci.CIInitializeTaskParams;
+import io.harness.delegate.beans.ci.vm.CIVmInitializeTaskParams;
 import io.harness.delegate.beans.ci.vm.dlite.DliteVmInitializeTaskParams;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -30,9 +30,14 @@ public class DliteVmInitializeTaskParamsBuilder {
     return vmInitializeTaskParamsBuilder.getHostedVmInitializeTaskParams(initializeStepInfo, ambiance);
   }
 
-  public static InfraInfo validateInfrastructureAndGetInfraInfo(Infrastructure infrastructure) {
+  //  public static InfraInfo validateInfrastructureAndGetInfraInfo(Infrastructure infrastructure) {
+  //    validateInfrastructure(infrastructure);
+  //    return DliteVmInfraInfo.builder().build();
+  //  }
+
+  public static CIVmInitializeTaskParams.Type validateInfrastructureAndGetInfraInfo(Infrastructure infrastructure) {
     validateInfrastructure(infrastructure);
-    return DliteVmInfraInfo.builder().build();
+    return CIInitializeTaskParams.Type.DLITE_VM;
   }
 
   public static void validateInfrastructure(Infrastructure infrastructure) {

@@ -9,15 +9,13 @@ package io.harness.delegate.beans.ci;
 
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
-import lombok.Getter;
 import lombok.Value;
 
 @Value
 @Builder
-public class VmInfraInfo implements InfraInfo {
-  @Builder.Default @NotNull private Type type = Type.VM;
-  @NotNull @Getter private String poolId;
-  @NotNull private String stageRuntimeId;
+public class DockerInfraInfo implements InfraInfo {
+  @Builder.Default @NotNull private Type type = Type.DOCKER;
+  private String stageRuntimeId;
   private String harnessImageConnectorRef;
 
   @Override
@@ -32,6 +30,6 @@ public class VmInfraInfo implements InfraInfo {
 
   @Override
   public String fetchCapabilityBasis() {
-    return String.format("%s-%s", poolId, stageRuntimeId);
+    return String.format("%s", stageRuntimeId);
   }
 }
