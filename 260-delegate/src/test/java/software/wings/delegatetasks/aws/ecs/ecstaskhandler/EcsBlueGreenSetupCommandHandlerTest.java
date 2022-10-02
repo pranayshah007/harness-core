@@ -47,7 +47,7 @@ import com.amazonaws.services.ecs.model.TaskDefinition;
 import com.amazonaws.services.elasticloadbalancingv2.model.Action;
 import com.amazonaws.services.elasticloadbalancingv2.model.Listener;
 import com.amazonaws.services.elasticloadbalancingv2.model.TargetGroup;
-import com.google.inject.Inject;
+import javax.inject.Inject;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Optional;

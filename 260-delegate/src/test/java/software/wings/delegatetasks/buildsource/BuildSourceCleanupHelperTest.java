@@ -57,7 +57,7 @@ import software.wings.helpers.ext.jenkins.BuildDetails;
 import software.wings.service.impl.artifact.ArtifactCollectionUtils;
 import software.wings.service.intfc.ArtifactService;
 
-import com.google.inject.Inject;
+import javax.inject.Inject;
 import java.util.Collections;
 import java.util.stream.Stream;
 import org.assertj.core.util.Maps;

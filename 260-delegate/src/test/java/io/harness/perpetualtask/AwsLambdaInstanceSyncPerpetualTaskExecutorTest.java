@@ -42,7 +42,7 @@ import software.wings.service.impl.aws.model.response.AwsLambdaDetailsResponse;
 import software.wings.service.intfc.aws.delegate.AwsCloudWatchHelperServiceDelegate;
 import software.wings.service.intfc.aws.delegate.AwsLambdaHelperServiceDelegate;
 
-import com.google.inject.Inject;
+import javax.inject.Inject;
 import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
 import java.io.IOException;

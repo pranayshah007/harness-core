@@ -47,7 +47,7 @@ import io.harness.shell.ShellExecutorConfig;
 
 import software.wings.sm.states.customdeploymentng.InstanceMapperUtils;
 
-import com.google.inject.Inject;
+import javax.inject.Inject;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.HashMap;

@@ -27,8 +27,8 @@ import io.harness.threading.Concurrent;
 
 import software.wings.beans.KubernetesClusterConfig;
 
-import com.google.inject.Inject;
-import com.google.inject.name.Named;
+import javax.inject.Inject;
+import javax.inject.Named;
 import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Timestamp;

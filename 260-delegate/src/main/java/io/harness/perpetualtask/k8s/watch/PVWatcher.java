@@ -29,7 +29,7 @@ import io.harness.perpetualtask.k8s.utils.K8sWatcherHelper;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.google.common.collect.ImmutableMap;
-import com.google.inject.Inject;
+import javax.inject.Inject;
 import com.google.inject.assistedinject.Assisted;
 import com.google.protobuf.Timestamp;
 import io.kubernetes.client.informer.EventType;

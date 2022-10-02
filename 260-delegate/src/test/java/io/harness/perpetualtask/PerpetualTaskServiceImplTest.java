@@ -34,7 +34,7 @@ import io.harness.service.intfc.PerpetualTaskStateObserver;
 
 import software.wings.WingsBaseTest;
 
-import com.google.inject.Inject;
+import javax.inject.Inject;
 import com.google.protobuf.Any;
 import com.google.protobuf.util.Durations;
 import java.time.Instant;

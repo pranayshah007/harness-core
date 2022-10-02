@@ -28,8 +28,8 @@ import io.harness.serializer.KryoSerializer;
 
 import software.wings.service.InstanceSyncConstants;
 
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import com.google.protobuf.ByteString;
 import java.time.Instant;
 import java.util.List;

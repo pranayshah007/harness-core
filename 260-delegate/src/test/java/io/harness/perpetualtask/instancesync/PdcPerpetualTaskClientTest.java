@@ -41,7 +41,7 @@ import software.wings.service.intfc.InfrastructureMappingService;
 import software.wings.service.intfc.SettingsService;
 import software.wings.service.intfc.security.SecretManager;
 
-import com.google.inject.Inject;
+import javax.inject.Inject;
 import com.google.protobuf.Message;
 import java.util.ArrayList;
 import java.util.Arrays;

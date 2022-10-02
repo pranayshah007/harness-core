@@ -18,8 +18,8 @@ import software.wings.delegatetasks.LogAnalysisStoreService;
 import software.wings.service.impl.analysis.LogElement;
 import software.wings.service.intfc.analysis.ClusterLevel;
 
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 

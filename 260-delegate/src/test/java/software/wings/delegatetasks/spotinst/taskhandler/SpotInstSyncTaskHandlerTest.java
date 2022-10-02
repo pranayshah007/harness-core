@@ -41,7 +41,7 @@ import software.wings.service.intfc.aws.delegate.AwsElbHelperServiceDelegate;
 
 import com.amazonaws.services.ec2.model.Instance;
 import com.google.common.util.concurrent.TimeLimiter;
-import com.google.inject.Inject;
+import javax.inject.Inject;
 import java.util.Collections;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;

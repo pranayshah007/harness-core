@@ -47,7 +47,7 @@ import software.wings.helpers.ext.k8s.request.K8sRollingDeployTaskParameters;
 import software.wings.helpers.ext.k8s.request.K8sTaskParameters;
 import software.wings.helpers.ext.k8s.response.K8sTaskExecutionResponse;
 
-import com.google.inject.Inject;
+import javax.inject.Inject;
 import java.nio.file.Paths;
 import java.util.Map;
 import java.util.Optional;

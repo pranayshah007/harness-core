@@ -27,7 +27,7 @@ import io.harness.security.encryption.SecretDecryptionService;
 import software.wings.delegatetasks.cv.DataCollectionException;
 import software.wings.delegatetasks.cvng.K8InfoDataService;
 
-import com.google.inject.Inject;
+import javax.inject.Inject;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.apis.CoreV1Api;

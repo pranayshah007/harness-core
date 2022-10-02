@@ -31,10 +31,10 @@ import software.wings.service.intfc.BuildService;
 import software.wings.service.intfc.security.EncryptionService;
 import software.wings.settings.SettingValue;
 
-import com.google.inject.Inject;
+import javax.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Key;
-import com.google.inject.Singleton;
+import javax.inject.Singleton;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;

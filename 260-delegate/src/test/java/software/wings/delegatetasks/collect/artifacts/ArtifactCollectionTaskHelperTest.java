@@ -55,7 +55,7 @@ import software.wings.helpers.ext.nexus.NexusService;
 import software.wings.service.impl.jenkins.JenkinsUtils;
 
 import com.google.common.collect.ImmutableMap;
-import com.google.inject.Inject;
+import javax.inject.Inject;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;

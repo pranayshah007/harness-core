@@ -49,7 +49,7 @@ import software.wings.helpers.ext.k8s.response.K8sTaskExecutionResponse;
 import software.wings.helpers.ext.k8s.response.K8sTrafficSplitResponse;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.inject.Inject;
+import javax.inject.Inject;
 import io.fabric8.istio.api.networking.v1alpha3.VirtualService;
 import java.io.IOException;
 import java.util.ArrayList;

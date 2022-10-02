@@ -45,7 +45,7 @@ import software.wings.service.intfc.SettingsService;
 import software.wings.service.intfc.security.SecretManager;
 
 import com.google.common.collect.ImmutableMap;
-import com.google.inject.Inject;
+import javax.inject.Inject;
 import java.util.Collections;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;

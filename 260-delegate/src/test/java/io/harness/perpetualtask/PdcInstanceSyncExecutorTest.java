@@ -29,7 +29,7 @@ import software.wings.beans.SettingAttribute;
 import software.wings.service.impl.aws.model.response.HostReachabilityResponse;
 import software.wings.utils.HostValidationService;
 
-import com.google.inject.Inject;
+import javax.inject.Inject;
 import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
 import java.io.IOException;

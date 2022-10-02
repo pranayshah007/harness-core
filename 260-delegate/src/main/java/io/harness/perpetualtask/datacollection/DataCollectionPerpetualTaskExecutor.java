@@ -46,8 +46,8 @@ import io.harness.verificationclient.CVNextGenServiceClient;
 
 import software.wings.delegatetasks.DelegateLogService;
 
-import com.google.inject.Inject;
-import com.google.inject.name.Named;
+import javax.inject.Inject;
+import javax.inject.Named;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;

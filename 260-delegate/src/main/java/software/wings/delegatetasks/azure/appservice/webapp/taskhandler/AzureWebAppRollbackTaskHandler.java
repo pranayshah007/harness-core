@@ -44,7 +44,7 @@ import io.harness.logging.LogLevel;
 import software.wings.beans.artifact.ArtifactStreamAttributes;
 import software.wings.delegatetasks.azure.appservice.webapp.AbstractAzureWebAppTaskHandler;
 
-import com.google.inject.Singleton;
+import javax.inject.Singleton;
 import java.io.File;
 import java.util.Collections;
 import java.util.List;

@@ -43,7 +43,7 @@ import com.amazonaws.services.applicationautoscaling.model.ScalableTarget;
 import com.amazonaws.services.applicationautoscaling.model.ServiceNamespace;
 import com.amazonaws.services.ecs.model.DescribeServicesResult;
 import com.amazonaws.services.ecs.model.Service;
-import com.google.inject.Inject;
+import javax.inject.Inject;
 import java.util.List;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;

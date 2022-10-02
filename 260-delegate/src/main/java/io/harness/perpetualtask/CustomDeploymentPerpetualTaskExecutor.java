@@ -28,7 +28,7 @@ import software.wings.api.shellscript.provision.ShellScriptProvisionExecutionDat
 import software.wings.core.local.executors.ShellExecutorFactory;
 
 import com.google.common.collect.ImmutableMap;
-import com.google.inject.Inject;
+import javax.inject.Inject;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;

@@ -44,7 +44,7 @@ import software.wings.delegatetasks.spotinst.taskhandler.SpotInstSyncTaskHandler
 import software.wings.service.intfc.security.EncryptionService;
 
 import com.amazonaws.services.ec2.model.Instance;
-import com.google.inject.Inject;
+import javax.inject.Inject;
 import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
 import java.time.Instant;

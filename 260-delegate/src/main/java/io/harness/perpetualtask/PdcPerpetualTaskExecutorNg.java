@@ -31,7 +31,7 @@ import software.wings.beans.HostReachabilityInfo;
 import software.wings.utils.HostValidationService;
 
 import com.google.common.collect.ImmutableSet;
-import com.google.inject.Inject;
+import javax.inject.Inject;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;

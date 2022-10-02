@@ -37,7 +37,7 @@ import io.harness.serializer.KryoSerializer;
 import software.wings.delegatetasks.azure.AzureAsyncTaskHelper;
 
 import com.google.common.collect.ImmutableSet;
-import com.google.inject.Inject;
+import javax.inject.Inject;
 import java.time.Instant;
 import java.util.List;
 import java.util.Set;

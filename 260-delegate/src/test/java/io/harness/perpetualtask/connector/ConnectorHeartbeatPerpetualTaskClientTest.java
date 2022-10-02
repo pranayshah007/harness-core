@@ -36,7 +36,7 @@ import io.harness.serializer.KryoSerializer;
 import software.wings.WingsBaseTest;
 
 import com.google.common.collect.ImmutableMap;
-import com.google.inject.Inject;
+import javax.inject.Inject;
 import java.io.IOException;
 import java.util.Map;
 import org.apache.commons.lang3.reflect.FieldUtils;

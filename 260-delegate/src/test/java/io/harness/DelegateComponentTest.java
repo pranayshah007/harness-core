@@ -15,7 +15,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.rule.Owner;
 import io.harness.testing.TestExecution;
 
-import com.google.inject.Inject;
+import javax.inject.Inject;
 import java.util.Map;
 import java.util.Map.Entry;
 import lombok.extern.slf4j.Slf4j;

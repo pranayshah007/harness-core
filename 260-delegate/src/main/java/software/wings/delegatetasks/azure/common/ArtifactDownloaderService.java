@@ -30,8 +30,8 @@ import software.wings.beans.artifact.ArtifactStreamAttributes;
 import software.wings.delegatetasks.DelegateFileManager;
 import software.wings.delegatetasks.azure.common.context.ArtifactDownloaderContext;
 
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;

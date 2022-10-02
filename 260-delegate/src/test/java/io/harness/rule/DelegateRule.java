@@ -30,7 +30,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.inject.Injector;
 import com.google.inject.Module;
 import com.google.inject.Provides;
-import com.google.inject.Singleton;
+import javax.inject.Singleton;
 import java.io.Closeable;
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;

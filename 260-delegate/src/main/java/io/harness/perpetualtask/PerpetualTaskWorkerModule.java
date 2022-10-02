@@ -59,10 +59,10 @@ import io.harness.perpetualtask.polling.manifest.ManifestPerpetualTaskExecutorNg
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
-import com.google.inject.Singleton;
+import javax.inject.Singleton;
 import com.google.inject.assistedinject.FactoryModuleBuilder;
 import com.google.inject.multibindings.MapBinder;
-import com.google.inject.name.Named;
+import javax.inject.Named;
 import io.grpc.CallCredentials;
 import io.grpc.Channel;
 import lombok.extern.slf4j.Slf4j;

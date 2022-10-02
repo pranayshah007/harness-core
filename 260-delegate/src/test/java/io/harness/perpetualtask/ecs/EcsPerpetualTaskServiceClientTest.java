@@ -24,7 +24,7 @@ import software.wings.beans.SettingAttribute;
 import software.wings.service.intfc.SettingsService;
 import software.wings.service.intfc.security.SecretManager;
 
-import com.google.inject.Inject;
+import javax.inject.Inject;
 import java.util.HashMap;
 import java.util.Map;
 import org.junit.Before;

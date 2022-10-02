@@ -36,9 +36,9 @@ import software.wings.delegatetasks.manifest.ManifestCollectionResponse;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
-import com.google.inject.name.Named;
+import javax.inject.Inject;
+import javax.inject.Singleton;
+import javax.inject.Named;
 import java.time.Instant;
 import java.util.Comparator;
 import java.util.List;

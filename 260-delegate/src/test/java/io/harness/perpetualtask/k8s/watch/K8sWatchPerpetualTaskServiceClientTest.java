@@ -24,7 +24,7 @@ import io.harness.rule.Owner;
 import software.wings.WingsBaseTest;
 import software.wings.service.intfc.SettingsService;
 
-import com.google.inject.Inject;
+import javax.inject.Inject;
 import java.util.HashMap;
 import java.util.Map;
 import org.junit.Before;

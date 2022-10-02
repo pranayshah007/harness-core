@@ -26,7 +26,7 @@ import io.harness.rule.Owner;
 
 import software.wings.WingsBaseTest;
 
-import com.google.inject.Inject;
+import javax.inject.Inject;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;

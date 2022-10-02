@@ -19,8 +19,8 @@ import io.harness.perpetualtask.k8s.informer.handlers.V1ReplicaSetHandler;
 import io.harness.perpetualtask.k8s.informer.handlers.V1StatefulSetHandler;
 import io.harness.perpetualtask.k8s.informer.handlers.V1beta1CronJobHandler;
 
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import io.kubernetes.client.informer.SharedInformerFactory;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.apis.AppsV1Api;

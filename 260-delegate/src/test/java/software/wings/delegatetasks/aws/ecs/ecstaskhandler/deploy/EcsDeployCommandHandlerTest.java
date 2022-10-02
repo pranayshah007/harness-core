@@ -45,7 +45,7 @@ import software.wings.helpers.ext.ecs.response.EcsCommandExecutionResponse;
 import software.wings.helpers.ext.ecs.response.EcsServiceDeployResponse;
 import software.wings.service.intfc.security.EncryptionService;
 
-import com.google.inject.Inject;
+import javax.inject.Inject;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import org.apache.commons.lang3.StringUtils;

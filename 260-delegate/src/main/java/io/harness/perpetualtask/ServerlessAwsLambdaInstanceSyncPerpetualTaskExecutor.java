@@ -29,7 +29,7 @@ import io.harness.perpetualtask.instancesync.ServerlessAwsLambdaDeploymentReleas
 import io.harness.perpetualtask.instancesync.ServerlessAwsLambdaInstanceSyncPerpetualTaskParams;
 import io.harness.serializer.KryoSerializer;
 
-import com.google.inject.Inject;
+import javax.inject.Inject;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.Collections;

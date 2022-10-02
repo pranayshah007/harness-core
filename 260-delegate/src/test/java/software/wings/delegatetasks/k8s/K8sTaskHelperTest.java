@@ -125,7 +125,7 @@ import software.wings.helpers.ext.k8s.response.K8sTaskResponse;
 import software.wings.service.intfc.GitService;
 import software.wings.service.intfc.security.EncryptionService;
 
-import com.google.inject.Inject;
+import javax.inject.Inject;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import java.io.File;
 import java.io.IOException;

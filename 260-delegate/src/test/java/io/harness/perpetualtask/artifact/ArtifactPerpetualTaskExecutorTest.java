@@ -37,7 +37,7 @@ import software.wings.delegatetasks.buildsource.BuildSourceParameters;
 import software.wings.delegatetasks.buildsource.BuildSourceResponse;
 import software.wings.helpers.ext.jenkins.BuildDetails;
 
-import com.google.inject.Inject;
+import javax.inject.Inject;
 import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
 import java.io.IOException;

@@ -13,7 +13,7 @@ import io.harness.serializer.KryoRegistrar;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Provides;
-import com.google.inject.Singleton;
+import javax.inject.Singleton;
 import java.util.Set;
 
 public class DelegateKryoModule extends ProviderModule {

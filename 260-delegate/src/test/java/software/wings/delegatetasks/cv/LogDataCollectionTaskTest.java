@@ -40,7 +40,7 @@ import software.wings.service.intfc.analysis.ClusterLevel;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
-import com.google.inject.Inject;
+import javax.inject.Inject;
 import java.io.IOException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;

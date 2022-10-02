@@ -18,7 +18,7 @@ import io.harness.security.annotations.PublicApi;
 import com.codahale.metrics.annotation.ExceptionMetered;
 import com.codahale.metrics.annotation.Timed;
 import com.codahale.metrics.health.HealthCheck;
-import com.google.inject.Inject;
+import javax.inject.Inject;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import javax.ws.rs.Consumes;

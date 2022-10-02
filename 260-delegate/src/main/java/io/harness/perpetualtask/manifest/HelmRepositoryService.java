@@ -21,8 +21,8 @@ import software.wings.delegatetasks.helm.HelmTaskHelper;
 import software.wings.helpers.ext.helm.request.HelmChartCollectionParams;
 import software.wings.helpers.ext.helm.request.HelmChartConfigParams;
 
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
 

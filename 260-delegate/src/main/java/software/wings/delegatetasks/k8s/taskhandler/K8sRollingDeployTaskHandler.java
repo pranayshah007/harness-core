@@ -78,7 +78,7 @@ import software.wings.helpers.ext.k8s.response.K8sRollingDeployResponse;
 import software.wings.helpers.ext.k8s.response.K8sTaskExecutionResponse;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.inject.Inject;
+import javax.inject.Inject;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.List;

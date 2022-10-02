@@ -32,7 +32,7 @@ import software.wings.helpers.ext.helm.request.HelmChartCollectionParams.HelmCha
 import software.wings.helpers.ext.helm.request.HelmChartConfigParams;
 import software.wings.helpers.ext.helm.response.HelmCollectChartResponse;
 
-import com.google.inject.Inject;
+import javax.inject.Inject;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;

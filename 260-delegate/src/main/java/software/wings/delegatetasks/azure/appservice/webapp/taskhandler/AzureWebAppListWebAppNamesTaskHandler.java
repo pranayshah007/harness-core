@@ -20,8 +20,8 @@ import io.harness.delegate.task.azure.appservice.webapp.response.AzureWebAppList
 
 import software.wings.delegatetasks.azure.appservice.webapp.AbstractAzureWebAppTaskHandler;
 
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import com.microsoft.azure.management.appservice.WebApp;
 import java.util.List;
 import java.util.stream.Collectors;

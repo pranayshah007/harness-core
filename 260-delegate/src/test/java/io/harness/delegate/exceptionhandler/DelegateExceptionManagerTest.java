@@ -32,7 +32,7 @@ import io.harness.exception.exceptionmanager.ExceptionManager;
 import io.harness.rule.Owner;
 
 import com.amazonaws.services.codedeploy.model.AmazonCodeDeployException;
-import com.google.inject.Inject;
+import javax.inject.Inject;
 import java.util.List;
 import org.junit.Before;
 import org.junit.Test;

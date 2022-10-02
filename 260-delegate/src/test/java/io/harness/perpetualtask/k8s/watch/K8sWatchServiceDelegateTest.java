@@ -35,7 +35,7 @@ import io.harness.serializer.KryoSerializer;
 import software.wings.helpers.ext.k8s.request.K8sClusterConfig;
 
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
-import com.google.inject.Inject;
+import javax.inject.Inject;
 import com.google.protobuf.ByteString;
 import io.kubernetes.client.informer.SharedIndexInformer;
 import io.kubernetes.client.informer.SharedInformerFactory;

@@ -34,7 +34,7 @@ import io.harness.perpetualtask.instancesync.K8sDeploymentRelease;
 import io.harness.perpetualtask.instancesync.K8sInstanceSyncPerpetualTaskParams;
 import io.harness.serializer.KryoSerializer;
 
-import com.google.inject.Inject;
+import javax.inject.Inject;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.Collections;

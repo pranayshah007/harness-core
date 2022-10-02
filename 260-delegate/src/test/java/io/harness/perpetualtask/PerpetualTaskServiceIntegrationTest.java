@@ -20,7 +20,7 @@ import io.harness.rule.Owner;
 import software.wings.dl.WingsPersistence;
 import software.wings.integration.IntegrationTestBase;
 
-import com.google.inject.Inject;
+import javax.inject.Inject;
 import com.google.protobuf.util.Durations;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;

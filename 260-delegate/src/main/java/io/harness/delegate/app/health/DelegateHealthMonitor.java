@@ -12,7 +12,7 @@ import io.harness.delegate.service.DelegateAgentService;
 import io.harness.health.HealthException;
 import io.harness.health.HealthMonitor;
 
-import com.google.inject.Inject;
+import javax.inject.Inject;
 import java.time.Duration;
 import lombok.extern.slf4j.Slf4j;
 

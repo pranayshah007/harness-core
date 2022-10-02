@@ -25,7 +25,7 @@ import software.wings.delegatetasks.azure.appservice.AbstractAzureAppServiceTask
 import software.wings.delegatetasks.azure.common.ArtifactDownloaderServiceLogWrapper;
 import software.wings.delegatetasks.azure.common.context.ArtifactDownloaderContext;
 
-import com.google.inject.Inject;
+import javax.inject.Inject;
 import java.io.File;
 
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)

@@ -18,8 +18,8 @@ import io.harness.serializer.KryoSerializer;
 import software.wings.beans.ConfigFileDto;
 import software.wings.delegatetasks.DelegateConfigService;
 
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import java.io.IOException;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;

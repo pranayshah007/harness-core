@@ -29,7 +29,7 @@ import io.harness.perpetualtask.instancesync.EcsDeploymentRelease;
 import io.harness.perpetualtask.instancesync.EcsInstanceSyncPerpetualTaskParams;
 import io.harness.serializer.KryoSerializer;
 
-import com.google.inject.Inject;
+import javax.inject.Inject;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.Collections;

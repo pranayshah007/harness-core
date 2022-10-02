@@ -38,7 +38,7 @@ import software.wings.beans.appmanifest.HelmChart;
 import software.wings.delegatetasks.manifest.ManifestCollectionExecutionResponse;
 import software.wings.helpers.ext.helm.request.HelmChartCollectionParams;
 
-import com.google.inject.Inject;
+import javax.inject.Inject;
 import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
 import java.time.Instant;

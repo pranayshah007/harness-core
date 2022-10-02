@@ -43,7 +43,7 @@ import software.wings.service.impl.newrelic.NewRelicMetricData;
 import software.wings.service.impl.newrelic.NewRelicMetricDataResponse;
 import software.wings.service.impl.newrelic.NewRelicMetricResponse;
 
-import com.google.inject.Inject;
+import javax.inject.Inject;
 import java.io.IOException;
 import java.security.SecureRandom;
 import java.time.Instant;

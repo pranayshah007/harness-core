@@ -56,7 +56,7 @@ import software.wings.beans.JiraConfig;
 import software.wings.beans.jira.JiraTaskParameters;
 import software.wings.service.intfc.security.EncryptionService;
 
-import com.google.inject.Inject;
+import javax.inject.Inject;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;

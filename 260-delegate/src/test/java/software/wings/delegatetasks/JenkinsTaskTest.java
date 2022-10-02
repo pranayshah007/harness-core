@@ -52,7 +52,7 @@ import software.wings.service.impl.jenkins.JenkinsUtils;
 import software.wings.service.intfc.security.EncryptionService;
 import software.wings.sm.states.JenkinsExecutionResponse;
 
-import com.google.inject.Inject;
+import javax.inject.Inject;
 import com.offbytwo.jenkins.client.JenkinsHttpConnection;
 import com.offbytwo.jenkins.model.Build;
 import com.offbytwo.jenkins.model.BuildResult;

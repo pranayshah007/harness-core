@@ -31,7 +31,7 @@ import io.harness.serializer.KryoSerializer;
 
 import software.wings.delegatetasks.cvng.K8InfoDataService;
 
-import com.google.inject.Inject;
+import javax.inject.Inject;
 import com.google.inject.Injector;
 import io.kubernetes.client.informer.SharedInformerFactory;
 import io.kubernetes.client.openapi.ApiClient;

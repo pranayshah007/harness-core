@@ -14,10 +14,10 @@ import io.harness.delegate.task.git.taskHandlers.github.GitHubTaskHandler;
 import io.harness.delegate.task.gitpolling.GitPollingSourceType;
 import io.harness.exception.InvalidRequestException;
 
-import com.google.inject.Inject;
+import javax.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Key;
-import com.google.inject.Singleton;
+import javax.inject.Singleton;
 
 @OwnedBy(HarnessTeam.CDC)
 @Singleton

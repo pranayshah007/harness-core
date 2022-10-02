@@ -25,8 +25,8 @@ import io.harness.logging.LogLevel;
 import software.wings.beans.artifact.ArtifactStreamAttributes;
 import software.wings.delegatetasks.azure.common.context.ArtifactDownloaderContext;
 
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import java.io.File;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

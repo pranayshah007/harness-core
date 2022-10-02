@@ -43,7 +43,7 @@ import com.amazonaws.services.ecs.model.Cluster;
 import com.amazonaws.services.ecs.model.Service;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.google.common.collect.ImmutableList;
-import com.google.inject.Inject;
+import javax.inject.Inject;
 import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Message;

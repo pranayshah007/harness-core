@@ -13,7 +13,7 @@ import io.harness.metrics.HarnessMetricRegistry;
 
 import com.codahale.metrics.annotation.ExceptionMetered;
 import com.codahale.metrics.annotation.Timed;
-import com.google.inject.Inject;
+import javax.inject.Inject;
 import io.prometheus.client.exporter.common.TextFormat;
 import io.swagger.annotations.Api;
 import java.io.IOException;

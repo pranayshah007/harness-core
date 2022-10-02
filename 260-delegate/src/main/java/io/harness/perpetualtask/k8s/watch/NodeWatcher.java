@@ -25,7 +25,7 @@ import io.harness.perpetualtask.k8s.utils.ApiInfoLogger;
 import io.harness.perpetualtask.k8s.utils.K8sWatcherHelper;
 
 import com.google.common.collect.ImmutableMap;
-import com.google.inject.Inject;
+import javax.inject.Inject;
 import com.google.inject.assistedinject.Assisted;
 import com.google.protobuf.Timestamp;
 import io.kubernetes.client.informer.EventType;

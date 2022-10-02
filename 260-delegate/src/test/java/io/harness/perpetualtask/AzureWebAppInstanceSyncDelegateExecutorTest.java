@@ -40,7 +40,7 @@ import software.wings.beans.AzureConfig;
 import software.wings.delegatetasks.azure.appservice.webapp.taskhandler.AzureWebAppListWebAppInstancesTaskHandler;
 import software.wings.service.intfc.security.EncryptionService;
 
-import com.google.inject.Inject;
+import javax.inject.Inject;
 import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
 import java.io.IOException;

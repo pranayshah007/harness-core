@@ -27,7 +27,7 @@ import software.wings.helpers.ext.helm.request.HelmInstallCommandRequest;
 import software.wings.helpers.ext.helm.request.HelmReleaseHistoryCommandRequest;
 import software.wings.helpers.ext.helm.request.HelmRollbackCommandRequest;
 
-import com.google.inject.Inject;
+import javax.inject.Inject;
 import java.util.Optional;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;

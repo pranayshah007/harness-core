@@ -54,7 +54,7 @@ import com.amazonaws.services.applicationautoscaling.model.ScalableTarget;
 import com.amazonaws.services.ecs.model.NetworkMode;
 import com.amazonaws.services.ecs.model.RegisterTaskDefinitionRequest;
 import com.amazonaws.services.ecs.model.Service;
-import com.google.inject.Inject;
+import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;

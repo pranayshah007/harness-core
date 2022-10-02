@@ -25,7 +25,7 @@ import software.wings.service.impl.aws.model.AwsAsgListInstancesResponse;
 import software.wings.service.intfc.aws.delegate.AwsAsgHelperServiceDelegate;
 
 import com.amazonaws.services.ec2.model.Instance;
-import com.google.inject.Inject;
+import javax.inject.Inject;
 import java.time.Instant;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;

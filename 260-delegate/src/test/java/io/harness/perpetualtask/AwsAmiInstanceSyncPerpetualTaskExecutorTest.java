@@ -37,7 +37,7 @@ import software.wings.service.impl.aws.model.AwsAsgListInstancesResponse;
 import software.wings.service.intfc.aws.delegate.AwsAsgHelperServiceDelegate;
 
 import com.amazonaws.services.ec2.model.Instance;
-import com.google.inject.Inject;
+import javax.inject.Inject;
 import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
 import java.io.IOException;

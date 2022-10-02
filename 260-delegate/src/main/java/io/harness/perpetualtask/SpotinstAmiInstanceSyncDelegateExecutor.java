@@ -28,7 +28,7 @@ import software.wings.beans.SpotInstConfig;
 import software.wings.delegatetasks.spotinst.taskhandler.SpotInstSyncTaskHandler;
 import software.wings.service.intfc.security.EncryptionService;
 
-import com.google.inject.Inject;
+import javax.inject.Inject;
 import java.time.Instant;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;

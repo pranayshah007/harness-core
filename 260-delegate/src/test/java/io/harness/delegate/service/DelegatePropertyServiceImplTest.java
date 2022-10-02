@@ -27,7 +27,7 @@ import io.harness.managerclient.HttpsCertRequirement.CertRequirement;
 import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 
-import com.google.inject.Inject;
+import javax.inject.Inject;
 import com.google.protobuf.Any;
 import java.io.IOException;
 import org.junit.Before;

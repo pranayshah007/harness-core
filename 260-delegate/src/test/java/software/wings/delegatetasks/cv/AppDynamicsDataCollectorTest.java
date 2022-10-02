@@ -34,7 +34,7 @@ import software.wings.service.impl.appdynamics.AppdynamicsMetricData;
 import software.wings.service.impl.appdynamics.AppdynamicsMetricDataValue;
 import software.wings.service.impl.appdynamics.AppdynamicsTier;
 
-import com.google.inject.Inject;
+import javax.inject.Inject;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;

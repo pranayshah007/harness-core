@@ -48,7 +48,7 @@ import io.harness.serializer.KryoSerializer;
 import software.wings.delegatetasks.cvng.K8InfoDataService;
 
 import com.google.common.collect.Sets;
-import com.google.inject.Inject;
+import javax.inject.Inject;
 import com.google.inject.Injector;
 import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;

@@ -17,8 +17,8 @@ import io.harness.azure.model.AzureConfig;
 import io.harness.delegate.task.azure.resource.operation.AzureResourceOperation;
 import io.harness.delegate.task.azure.resource.operation.AzureResourceOperationResponse;
 
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 

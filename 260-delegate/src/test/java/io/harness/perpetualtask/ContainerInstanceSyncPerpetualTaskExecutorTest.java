@@ -52,7 +52,7 @@ import software.wings.service.impl.instance.sync.response.ContainerSyncResponse;
 import software.wings.service.intfc.ContainerService;
 import software.wings.service.intfc.aws.delegate.AwsEcsHelperServiceDelegate;
 
-import com.google.inject.Inject;
+import javax.inject.Inject;
 import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
 import java.time.Instant;

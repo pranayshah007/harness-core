@@ -21,7 +21,7 @@ import io.harness.k8s.model.KubernetesResource;
 import io.harness.k8s.releasehistory.K8sLegacyRelease;
 
 import com.google.common.io.Resources;
-import com.google.inject.Singleton;
+import javax.inject.Singleton;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;

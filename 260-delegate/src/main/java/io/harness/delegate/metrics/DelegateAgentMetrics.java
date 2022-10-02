@@ -15,9 +15,9 @@ import io.harness.delegate.service.DelegateAgentService;
 import io.harness.metrics.HarnessMetricRegistry;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
-import com.google.inject.name.Named;
+import javax.inject.Inject;
+import javax.inject.Singleton;
+import javax.inject.Named;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;

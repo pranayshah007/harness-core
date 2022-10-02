@@ -20,7 +20,7 @@ import io.harness.delegate.task.azure.appservice.webapp.response.AzureWebAppList
 
 import software.wings.delegatetasks.azure.appservice.webapp.AbstractAzureWebAppTaskHandler;
 
-import com.google.inject.Singleton;
+import javax.inject.Singleton;
 import java.util.List;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

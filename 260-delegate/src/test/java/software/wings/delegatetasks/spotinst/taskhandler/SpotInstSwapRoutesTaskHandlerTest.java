@@ -53,7 +53,7 @@ import com.amazonaws.services.elasticloadbalancingv2.model.Listener;
 import com.amazonaws.services.elasticloadbalancingv2.model.Rule;
 import com.amazonaws.services.elasticloadbalancingv2.model.TargetGroup;
 import com.google.common.util.concurrent.TimeLimiter;
-import com.google.inject.Inject;
+import javax.inject.Inject;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;

@@ -35,7 +35,7 @@ import software.wings.service.impl.instana.InstanaInfraMetrics;
 import software.wings.service.intfc.instana.InstanaDelegateService;
 
 import com.google.common.collect.Lists;
-import com.google.inject.Inject;
+import javax.inject.Inject;
 import java.io.IOException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;

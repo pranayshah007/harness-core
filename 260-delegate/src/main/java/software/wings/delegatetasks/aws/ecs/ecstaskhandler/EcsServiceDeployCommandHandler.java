@@ -31,9 +31,9 @@ import software.wings.helpers.ext.ecs.request.EcsServiceDeployRequest;
 import software.wings.helpers.ext.ecs.response.EcsCommandExecutionResponse;
 import software.wings.helpers.ext.ecs.response.EcsServiceDeployResponse;
 
-import com.google.inject.Inject;
+import javax.inject.Inject;
 import com.google.inject.Injector;
-import com.google.inject.Singleton;
+import javax.inject.Singleton;
 import java.util.List;
 
 @Singleton

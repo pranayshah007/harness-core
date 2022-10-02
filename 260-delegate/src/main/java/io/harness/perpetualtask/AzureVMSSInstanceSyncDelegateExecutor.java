@@ -24,7 +24,7 @@ import io.harness.serializer.KryoSerializer;
 import software.wings.delegatetasks.azure.taskhandler.AzureVMSSSyncTaskHandler;
 import software.wings.service.intfc.security.EncryptionService;
 
-import com.google.inject.Inject;
+import javax.inject.Inject;
 import java.time.Instant;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;

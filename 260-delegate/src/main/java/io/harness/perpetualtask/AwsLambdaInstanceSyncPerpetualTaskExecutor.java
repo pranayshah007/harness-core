@@ -43,7 +43,7 @@ import software.wings.service.intfc.aws.delegate.AwsLambdaHelperServiceDelegate;
 
 import com.amazonaws.services.cloudwatch.model.Datapoint;
 import com.amazonaws.services.cloudwatch.model.Dimension;
-import com.google.inject.Inject;
+import javax.inject.Inject;
 import java.time.Instant;
 import java.util.Date;
 import java.util.List;

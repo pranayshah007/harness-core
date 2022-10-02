@@ -183,8 +183,8 @@ import com.google.common.util.concurrent.UncheckedTimeoutException;
 // todo - rdm - this inject is the only probematic one
 import com.google.inject.Inject;
 import com.google.inject.Injector;
-import com.google.inject.Singleton;
-import com.google.inject.name.Named;
+import javax.inject.Singleton;
+import javax.inject.Named;
 import com.sun.management.OperatingSystemMXBean;
 import java.io.BufferedWriter;
 import java.io.File;

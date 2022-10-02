@@ -15,8 +15,8 @@ import io.harness.delegate.task.gitpolling.GitPollingTaskType;
 import io.harness.delegate.task.gitpolling.request.GitPollingTaskParameters;
 import io.harness.delegate.task.gitpolling.response.GitPollingTaskExecutionResponse;
 
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.CDC)

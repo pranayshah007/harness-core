@@ -75,7 +75,7 @@ import software.wings.helpers.ext.k8s.response.K8sTaskExecutionResponse;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
-import com.google.inject.Inject;
+import javax.inject.Inject;
 import io.kubernetes.client.openapi.models.V1Service;
 import java.nio.file.Paths;
 import java.util.List;

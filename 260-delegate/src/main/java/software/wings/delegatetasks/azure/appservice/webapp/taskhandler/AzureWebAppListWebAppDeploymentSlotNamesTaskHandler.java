@@ -27,8 +27,8 @@ import io.harness.delegate.task.azure.appservice.webapp.response.DeploymentSlotD
 
 import software.wings.delegatetasks.azure.appservice.webapp.AbstractAzureWebAppTaskHandler;
 
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import com.microsoft.azure.management.appservice.DeploymentSlot;
 import java.util.List;
 import java.util.stream.Collectors;

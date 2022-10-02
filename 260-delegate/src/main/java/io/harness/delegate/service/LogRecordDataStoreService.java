@@ -14,8 +14,8 @@ import io.harness.cvng.beans.LogRecordDTO;
 import io.harness.datacollection.entity.LogDataRecord;
 import io.harness.verificationclient.CVNextGenServiceClient;
 
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import java.time.Duration;
 import java.util.List;
 import java.util.stream.Collectors;

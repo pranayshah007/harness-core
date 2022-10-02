@@ -19,8 +19,8 @@ import software.wings.delegatetasks.MetricDataStoreService;
 import software.wings.service.impl.newrelic.NewRelicMetricDataRecord;
 
 import com.google.common.util.concurrent.TimeLimiter;
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import java.time.Duration;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;

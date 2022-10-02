@@ -14,7 +14,7 @@ import io.harness.cvng.beans.change.ChangeSourceType;
 import io.harness.cvng.beans.change.KubernetesChangeEventMetadata;
 import io.harness.verificationclient.CVNextGenServiceClient;
 
-import com.google.inject.Inject;
+import javax.inject.Inject;
 import io.kubernetes.client.common.KubernetesObject;
 import io.kubernetes.client.informer.ResourceEventHandler;
 import java.time.OffsetDateTime;

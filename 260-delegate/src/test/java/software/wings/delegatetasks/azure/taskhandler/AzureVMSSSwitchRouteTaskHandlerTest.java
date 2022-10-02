@@ -40,7 +40,7 @@ import software.wings.WingsBaseTest;
 import software.wings.beans.command.ExecutionLogCallback;
 
 import com.google.common.util.concurrent.TimeLimiter;
-import com.google.inject.Inject;
+import javax.inject.Inject;
 import com.microsoft.azure.Page;
 import com.microsoft.azure.PagedList;
 import com.microsoft.azure.management.compute.VirtualMachineScaleSet;

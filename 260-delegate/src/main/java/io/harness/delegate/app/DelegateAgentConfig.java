@@ -8,7 +8,7 @@
 package io.harness.delegate.app;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.inject.Singleton;
+import javax.inject.Singleton;
 import io.dropwizard.Configuration;
 import lombok.Data;
 import lombok.EqualsAndHashCode;

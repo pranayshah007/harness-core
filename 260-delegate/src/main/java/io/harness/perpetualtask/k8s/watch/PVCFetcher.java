@@ -12,7 +12,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 
-import com.google.inject.Inject;
+import javax.inject.Inject;
 import com.google.inject.assistedinject.Assisted;
 import io.kubernetes.client.informer.SharedInformerFactory;
 import io.kubernetes.client.informer.cache.Store;

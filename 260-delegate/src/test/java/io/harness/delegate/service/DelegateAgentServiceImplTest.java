@@ -28,7 +28,7 @@ import io.harness.security.encryption.EncryptionConfig;
 
 import software.wings.beans.KmsConfig;
 
-import com.google.inject.Inject;
+import javax.inject.Inject;
 import java.util.HashMap;
 import java.util.Map;
 import org.junit.Before;

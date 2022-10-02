@@ -17,7 +17,7 @@ import io.harness.perpetualtask.PerpetualTaskExecutor;
 import io.harness.perpetualtask.PerpetualTaskId;
 import io.harness.perpetualtask.PerpetualTaskResponse;
 
-import com.google.inject.Singleton;
+import javax.inject.Singleton;
 import java.time.Instant;
 import java.util.concurrent.ThreadLocalRandom;
 import lombok.extern.slf4j.Slf4j;
