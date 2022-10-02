@@ -35,8 +35,12 @@ public class IdentifierRef implements EntityReference {
 
   @Override
   public String getFullyQualifiedName() {
-    return FullyQualifiedIdentifierHelper.getFullyQualifiedIdentifier(
+    String fqnIdentifier = FullyQualifiedIdentifierHelper.getFullyQualifiedIdentifier(
         accountIdentifier, orgIdentifier, projectIdentifier, identifier);
+    if (metadata != null && metadata.containsKey("CustomDeployment")) {
+      fqnIdentifier = fqnIdentifier + metadata.get("envId");
+    }
+    return fqnIdentifier;
   }
 
   public String getFullyQualifiedScopeIdentifier() {

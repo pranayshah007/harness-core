@@ -30,6 +30,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Inject;
 import com.mongodb.client.result.UpdateResult;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -53,17 +54,21 @@ public class CustomDeploymentEntityCRUDEventHandler {
     if (entitySetupUsages.isEmpty()) {
       log.info("No infra Update for  Deployment Template with id :{}, for AccountId : {}", identifier, accountRef);
     }
-    List<String> infraIdList = new ArrayList<>();
+    Map<String, List<String>> envMap = new HashMap<>();
+    List<String> infraIdsList = new ArrayList();
     Map<String, List<String>> envToInfraMap = new HashMap<>();
 
     for (EntitySetupUsageDTO entitySetupUsage : entitySetupUsages) {
       String infraId = entitySetupUsage.getReferredByEntity().getEntityRef().getIdentifier();
       String environment =
           ((IdentifierRef) entitySetupUsage.getReferredByEntity().getEntityRef()).getMetadata().get("envId");
-      infraIdList.add(infraId);
+      String orgIdentifierEnv = entitySetupUsage.getReferredByEntity().getEntityRef().getOrgIdentifier();
+      String projectIdentifierEnv = entitySetupUsage.getReferredByEntity().getEntityRef().getProjectIdentifier();
+      infraIdsList.add(infraId);
+      envMap.put(environment, Arrays.asList(orgIdentifierEnv, projectIdentifierEnv));
       envToInfraMap.computeIfAbsent(environment, k -> new ArrayList<>()).add(infraId);
     }
-    if (infraIdList.isEmpty() || entitySetupUsages.isEmpty()) {
+    if (infraIdsList.isEmpty() || entitySetupUsages.isEmpty()) {
       log.info("No infra found  in Db for given Deployment Template with id: {}", identifier);
       return false;
     }
@@ -71,7 +76,7 @@ public class CustomDeploymentEntityCRUDEventHandler {
     String templateYaml = getTemplateYaml(accountRef, orgRef, projectRef, identifier, versionLabel);
     boolean updateRequired = checkIfUpdateRequired(infraYaml, templateYaml, accountRef);
     if (updateRequired) {
-      updateInfrasAsObsolete(envToInfraMap, accountRef, orgRef, projectRef);
+      updateInfrasAsObsolete(envToInfraMap, accountRef, envMap);
     }
     return true;
   }
@@ -140,7 +145,10 @@ public class CustomDeploymentEntityCRUDEventHandler {
       for (JsonNode variable : infraVariableNode) {
         if (!templateVariables.containsKey(variable.get("name").asText())) {
           isObsolete = true;
-        } else if (templateVariables.get(variable.get("name").asText()).get("type") != variable.get("type")) {
+        } else if (!templateVariables.get(variable.get("name").asText())
+                        .get("type")
+                        .asText()
+                        .equals(variable.get("type").asText())) {
           isObsolete = true;
         }
         infraVariables.put(variable.get("name").asText(), variable);
@@ -159,19 +167,21 @@ public class CustomDeploymentEntityCRUDEventHandler {
     }
   }
 
-  public void updateInfrasAsObsolete(Map<String, List<String>> envToInfraMap, String accountIdentifier,
-      String orgIdentifier, String projectIdentifier) {
+  public void updateInfrasAsObsolete(
+      Map<String, List<String>> envToInfraMap, String accountIdentifier, Map<String, List<String>> envMap) {
     for (String environment : envToInfraMap.keySet()) {
-      updateInfras(envToInfraMap.get(environment), environment, accountIdentifier, orgIdentifier, projectIdentifier);
+      updateInfras(envToInfraMap.get(environment), environment, accountIdentifier, envMap);
     }
   }
-  public void updateInfras(List<String> Infras, String environment, String accountIdentifier, String orgIdentifier,
-      String projectIdentifier) {
+  public void updateInfras(
+      List<String> Infras, String environment, String accountId, Map<String, List<String>> envMap) {
+    String orgId = envMap.get(environment).get(0);
+    String projectId = envMap.get(environment).get(1);
     Update update = new Update();
     update.set(InfrastructureEntityKeys.obsolete, true);
-    UpdateResult updateResult = infrastructureEntityService.batchUpdateInfrastructure(
-        accountIdentifier, orgIdentifier, projectIdentifier, environment, Infras, update);
-    log.info("Infras updated successfully for accRef :{}, Environment :{} with updated result :{}", accountIdentifier,
+    UpdateResult updateResult =
+        infrastructureEntityService.batchUpdateInfrastructure(accountId, orgId, projectId, environment, Infras, update);
+    log.info("Infras updated successfully for accRef :{}, Environment :{} with updated result :{}", accountId,
         environment, updateResult);
   }
   public String getFullyQualifiedIdentifier(

@@ -14,6 +14,8 @@ import static io.harness.eventsframework.EventsFrameworkMetadataConstants.DELETE
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ENTITY_TYPE;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.UPDATE_ACTION;
 
+import static software.wings.beans.AccountType.log;
+
 import io.harness.eventsframework.consumer.Message;
 import io.harness.eventsframework.entity_crud.EntityChangeDTO;
 import io.harness.exception.InvalidRequestException;
@@ -75,21 +77,28 @@ public class CustomDeploymentEntityCRUDStreamEventListener implements MessageLis
   }
 
   private boolean processRestoreEvent(EntityChangeDTO entityChangeDTO) {
-    if (Objects.equals(entityChangeDTO.getMetadataMap().get("templateType"),
-            TemplateEntityType.CUSTOM_DEPLOYMENT_TEMPLATE.toString())) {
-      String orgId =
-          isEmpty(entityChangeDTO.getOrgIdentifier().getValue()) ? null : entityChangeDTO.getOrgIdentifier().getValue();
-      String projectId = isEmpty(entityChangeDTO.getProjectIdentifier().getValue())
-          ? null
-          : entityChangeDTO.getProjectIdentifier().getValue();
-      if (entityChangeDTO.getMetadataMap().get("isStable").equals("true")) {
-        deploymentTemplateEntityCRUDEventHandler.updateInfraAsObsolete(
+    try {
+      if (Objects.equals(entityChangeDTO.getMetadataMap().get("templateType"),
+              TemplateEntityType.CUSTOM_DEPLOYMENT_TEMPLATE.toString())) {
+        String orgId = isEmpty(entityChangeDTO.getOrgIdentifier().getValue())
+            ? null
+            : entityChangeDTO.getOrgIdentifier().getValue();
+        String projectId = isEmpty(entityChangeDTO.getProjectIdentifier().getValue())
+            ? null
+            : entityChangeDTO.getProjectIdentifier().getValue();
+        if (entityChangeDTO.getMetadataMap().get("isStable") != null) {
+          deploymentTemplateEntityCRUDEventHandler.updateInfraAsObsolete(
+              entityChangeDTO.getAccountIdentifier().getValue(), orgId, projectId,
+              entityChangeDTO.getIdentifier().getValue(), null);
+        }
+        return deploymentTemplateEntityCRUDEventHandler.updateInfraAsObsolete(
             entityChangeDTO.getAccountIdentifier().getValue(), orgId, projectId,
-            entityChangeDTO.getIdentifier().getValue(), null);
+            entityChangeDTO.getIdentifier().getValue(), entityChangeDTO.getMetadataMap().get("versionLabel"));
       }
-      return deploymentTemplateEntityCRUDEventHandler.updateInfraAsObsolete(
-          entityChangeDTO.getAccountIdentifier().getValue(), orgId, projectId,
-          entityChangeDTO.getIdentifier().getValue(), entityChangeDTO.getMetadataMap().get("versionLabel"));
+    } catch (Exception e) {
+      log.error("Could not Update the infra for deployment template change for account identifier :{}",
+          entityChangeDTO.getAccountIdentifier());
+      throw new InvalidRequestException("Could not Update the infra for deployment template change ");
     }
     return true;
   }

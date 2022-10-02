@@ -311,7 +311,7 @@ public class CustomDeploymentYamlHelper {
       for (JsonNode variable : templateVariableNode) {
         JsonNode var = variable;
         if (infraVariables.containsKey(variable.get("name").asText())) {
-          ((ObjectNode) var).set("value", variable.get("value"));
+          ((ObjectNode) var).set("value", infraVariables.get(variable.get("name").asText()).get("value"));
         }
         updateVariablesList.add(var);
       }
