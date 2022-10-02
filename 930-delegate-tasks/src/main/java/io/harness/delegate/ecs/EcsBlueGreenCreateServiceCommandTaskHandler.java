@@ -95,7 +95,7 @@ public class EcsBlueGreenCreateServiceCommandTaskHandler extends EcsCommandTaskN
       String taskDefinitionArn = taskDefinition.taskDefinitionArn();
 
       deployLogCallback.saveExecutionLog(
-          format("Created Task Definition %s with Arn %s..%n", taskDefinitionName, taskDefinitionArn), LogLevel.INFO);
+          format("Created Task Definition %s with Arn %s..%n%n", taskDefinitionName, taskDefinitionArn), LogLevel.INFO);
 
       // target group arn from stage listener and stage listener rule arn
       String targetGroupArn = ecsBlueGreenCreateServiceRequest.getEcsLoadBalancerConfig().getStageTargetGroupArn();

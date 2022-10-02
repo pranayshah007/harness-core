@@ -86,17 +86,36 @@ public class EcsBlueGreenPrepareRollbackCommandTaskHandler extends EcsCommandTas
               .parseYamlAsObject(ecsServiceDefinitionManifestContent, CreateServiceRequest.serializableBuilderClass())
               .build();
 
+      prepareRollbackDataLogCallback.saveExecutionLog(
+          format("Fetching Target group for ELB Prod Listener: %s ",
+              ecsBlueGreenPrepareRollbackRequest.getEcsLoadBalancerConfig().getProdListenerArn()),
+          LogLevel.INFO);
       // Get prod targetGroup Arn
       String prodTargetGroupArn = ecsCommandTaskHelper.getTargetGroupArnFromLoadBalancer(ecsInfraConfig,
           ecsBlueGreenPrepareRollbackRequest.getEcsLoadBalancerConfig().getProdListenerArn(),
           ecsBlueGreenPrepareRollbackRequest.getEcsLoadBalancerConfig().getProdListenerRuleArn(),
           ecsBlueGreenPrepareRollbackRequest.getEcsLoadBalancerConfig().getLoadBalancer(), awsInternalConfig);
 
+      prepareRollbackDataLogCallback.saveExecutionLog(
+          format("Fetched Target group for ELB Prod Listener: %s %n"
+                  + "with targetGroupArn: %s",
+              ecsBlueGreenPrepareRollbackRequest.getEcsLoadBalancerConfig().getProdListenerArn(), prodTargetGroupArn),
+          LogLevel.INFO);
+
+      prepareRollbackDataLogCallback.saveExecutionLog(
+          format("Fetching Target group for ELB Stage Listener: %s ",
+              ecsBlueGreenPrepareRollbackRequest.getEcsLoadBalancerConfig().getStageListenerArn()),
+          LogLevel.INFO);
       // Get stage targetGroup Arn
       String stageTargetGroupArn = ecsCommandTaskHelper.getTargetGroupArnFromLoadBalancer(ecsInfraConfig,
           ecsBlueGreenPrepareRollbackRequest.getEcsLoadBalancerConfig().getStageListenerArn(),
           ecsBlueGreenPrepareRollbackRequest.getEcsLoadBalancerConfig().getStageListenerRuleArn(),
           ecsBlueGreenPrepareRollbackRequest.getEcsLoadBalancerConfig().getLoadBalancer(), awsInternalConfig);
+      prepareRollbackDataLogCallback.saveExecutionLog(
+          format("Fetched Target group for ELB Stage Listener: %s %n"
+                  + "with targetGroupArn: %s",
+              ecsBlueGreenPrepareRollbackRequest.getEcsLoadBalancerConfig().getStageListenerArn(), stageTargetGroupArn),
+          LogLevel.INFO);
 
       EcsLoadBalancerConfig ecsLoadBalancerConfig =
           EcsLoadBalancerConfig.builder()
