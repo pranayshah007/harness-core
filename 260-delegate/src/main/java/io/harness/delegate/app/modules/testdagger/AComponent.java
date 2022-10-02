@@ -6,9 +6,8 @@ import io.harness.exception.exceptionmanager.exceptionhandler.ExceptionHandler;
 import io.harness.nexus.service.NexusRegistryService;
 
 import dagger.Component;
-
-import javax.inject.Singleton;
 import java.util.Map;
+import javax.inject.Singleton;
 
 @Singleton
 @Component(modules = {NGDelegateDaggerModule.class})

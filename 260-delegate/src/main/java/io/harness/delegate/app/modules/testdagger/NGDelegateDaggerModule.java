@@ -7,9 +7,6 @@
 
 package io.harness.delegate.app.modules.testdagger;
 
-import com.amazonaws.AmazonClientException;
-import com.amazonaws.AmazonServiceException;
-import dagger.multibindings.IntoMap;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.artifactory.service.ArtifactoryRegistryService;
@@ -24,10 +21,6 @@ import io.harness.artifacts.githubpackages.client.GithubPackagesRestClientFactor
 import io.harness.artifacts.githubpackages.client.GithubPackagesRestClientFactoryImpl;
 import io.harness.artifacts.githubpackages.service.GithubPackagesRegistryService;
 import io.harness.artifacts.githubpackages.service.GithubPackagesRegistryServiceImpl;
-import io.harness.delegate.app.modules.ExceptionKey;
-import io.harness.delegate.exceptionhandler.handler.AmazonClientExceptionHandler;
-import io.harness.delegate.exceptionhandler.handler.AmazonServiceExceptionHandler;
-import io.harness.exception.exceptionmanager.exceptionhandler.ExceptionHandler;
 import io.harness.http.HttpService;
 import io.harness.http.HttpServiceImpl;
 import io.harness.nexus.service.NexusRegistryService;

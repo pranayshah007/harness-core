@@ -5,8 +5,8 @@ import io.harness.artifacts.docker.service.DockerRegistryService;
 import io.harness.exception.exceptionmanager.exceptionhandler.ExceptionHandler;
 import io.harness.nexus.service.NexusRegistryService;
 
-import javax.inject.Inject;
 import java.util.Map;
+import javax.inject.Inject;
 
 public class ThatCoolThing {
   @Inject DockerRegistryService svc;

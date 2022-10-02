@@ -21,9 +21,8 @@ import io.harness.artifacts.docker.service.DockerRegistryService;
 import io.harness.exception.exceptionmanager.exceptionhandler.ExceptionHandler;
 import io.harness.nexus.service.NexusRegistryService;
 
-import lombok.extern.slf4j.Slf4j;
-
 import java.util.Map;
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class DelegateTestApp {
@@ -33,10 +32,10 @@ public class DelegateTestApp {
     NexusRegistryService n = aComponent.getNexusRegSvc();
     ArtifactoryRegistryService arc = aComponent.getArtifactoryRegistryService();
     Map<Class<? extends Exception>, ExceptionHandler> m = aComponent.getExceptionHandlerMap();
-    log.info("Here-- \nDockerRegistryService: {} \n" +
-                    "NexusRegistryService: {} \n" +
-                    "ArtifactoryRegistryService {} \n" +
-                    "ExceptionHandlerMap {} \n",
+    log.info("Here-- \nDockerRegistryService: {} \n"
+            + "NexusRegistryService: {} \n"
+            + "ArtifactoryRegistryService {} \n"
+            + "ExceptionHandlerMap {} \n",
         d.toString(), n.toString(), arc.toString(), m);
   }
 }
