@@ -14,6 +14,7 @@ import io.harness.EntityType;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
+import io.harness.beans.InfraDefReference;
 import io.harness.category.element.UnitTests;
 import io.harness.entitysetupusageclient.remote.EntitySetupUsageClient;
 import io.harness.ng.core.EntityDetail;
@@ -66,6 +67,7 @@ public class InternalReferredEntityExtractorTest extends CategoryTest {
       String name = dummy + i;
       entityDetailList.add(getEntityDetail("conn-" + name, EntityType.CONNECTORS));
       entityDetailList.add(getEntityDetail("svc-" + name, EntityType.SERVICE));
+      entityDetailList.add(getInfraDefRefEntityDetail("infra-" + name));
 
       // should be ignored
       entityDetailList.add(getEntityDetail("is-" + name, EntityType.INPUT_SETS));
@@ -84,7 +86,28 @@ public class InternalReferredEntityExtractorTest extends CategoryTest {
             Arrays.asList("accountId/svc-dummy0", "accountId/svc-dummy1", "accountId/svc-dummy2",
                 "accountId/svc-dummy3", "accountId/svc-dummy4"),
             EntityType.SERVICE, EntityType.CONNECTORS);
+
+    Mockito.verify(entitySetupUsageClient)
+        .listAllReferredUsagesBatch(ACCOUNT_ID,
+            Arrays.asList("accountId/ORG/PROJ/ENV/infra-dummy0/", "accountId/ORG/PROJ/ENV/infra-dummy1/",
+                "accountId/ORG/PROJ/ENV/infra-dummy2/", "accountId/ORG/PROJ/ENV/infra-dummy3/",
+                "accountId/ORG/PROJ/ENV/infra-dummy4/"),
+            EntityType.INFRASTRUCTURE, EntityType.CONNECTORS);
   }
+
+  private EntityDetail getInfraDefRefEntityDetail(String name) {
+    return EntityDetail.builder()
+        .entityRef(InfraDefReference.builder()
+                       .identifier(name)
+                       .accountIdentifier(ACCOUNT_ID)
+                       .orgIdentifier("ORG")
+                       .projectIdentifier("PROJ")
+                       .envIdentifier("ENV")
+                       .build())
+        .type(EntityType.INFRASTRUCTURE)
+        .build();
+  }
+
   private EntityDetail getEntityDetail(String name, EntityType entityType) {
     return EntityDetail.builder()
         .entityRef(IdentifierRef.builder().identifier(name).accountIdentifier(ACCOUNT_ID).build())
