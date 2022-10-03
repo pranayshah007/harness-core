@@ -30,6 +30,7 @@ import io.harness.cvng.core.transformer.metricThresholdSpec.MetricThresholdSpecD
 import io.harness.cvng.core.utils.DateTimeUtils;
 import io.harness.cvng.models.VerificationType;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.gson.Gson;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -60,6 +61,7 @@ public abstract class MetricCVConfig<I extends AnalysisInfo> extends CVConfig {
   public abstract List<I> getMetricInfos();
   public abstract void setMetricInfos(List<I> metricInfos);
 
+  @JsonIgnore
   public TimeRange getFirstTimeDataCollectionTimeRange() {
     Instant endTime = DateTimeUtils.roundDownTo5MinBoundary(getFirstTimeDataCollectionStartTime());
     return TimeRange.builder()
