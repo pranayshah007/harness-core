@@ -138,7 +138,7 @@ public class ArtifactResponseToOutcomeMapper {
           if (isNotEmpty(customScriptInlineSource.getScript().getValue())) {
             CustomArtifactDelegateResponse customArtifactDelegateResponse =
                 (CustomArtifactDelegateResponse) artifactDelegateResponse;
-            return getCustomArtifactOutcome(customArtifactConfig, customArtifactDelegateResponse);
+            return getCustomArtifactOutcome(customArtifactConfig, customArtifactDelegateResponse, useDelegateResponse);
           }
         }
         return getCustomArtifactOutcome(customArtifactConfig);
@@ -374,13 +374,13 @@ public class ArtifactResponseToOutcomeMapper {
         .build();
   }
 
-  private CustomArtifactOutcome getCustomArtifactOutcome(
-      CustomArtifactConfig artifactConfig, CustomArtifactDelegateResponse customArtifactDelegateResponse) {
+  private CustomArtifactOutcome getCustomArtifactOutcome(CustomArtifactConfig artifactConfig,
+      CustomArtifactDelegateResponse customArtifactDelegateResponse, boolean useDelegateResponse) {
     return CustomArtifactOutcome.builder()
         .identifier(artifactConfig.getIdentifier())
         .primaryArtifact(artifactConfig.isPrimaryArtifact())
         .version(artifactConfig.getVersion().getValue())
-        .metadata(customArtifactDelegateResponse.getMetadata())
+        .metadata(useDelegateResponse ? customArtifactDelegateResponse.getMetadata() : null)
         .build();
   }
 
