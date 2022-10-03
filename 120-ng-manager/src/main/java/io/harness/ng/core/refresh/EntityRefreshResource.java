@@ -30,7 +30,6 @@ import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Parameter;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -53,7 +52,7 @@ import retrofit2.http.Body;
 public class EntityRefreshResource {
   @Inject EntityRefreshService entityRefreshService;
 
-  @GET
+  @POST
   @Path("validate-inputs-yaml")
   @ApiOperation(value = "This validates whether inputs provided to different references in yaml is valid or not",
       nickname = "validateInputsForYaml")
