@@ -4977,7 +4977,7 @@ plain_artifacts = [
     "org.coursera:metrics-datadog:1.1.13",
     "org.cryptacular:cryptacular:1.1.4",
     "org.javassist:javassist:3.27.0-GA",
-    "org.glassfish:jakarta.el:3.0.3",
+    "org.glassfish:jakarta.el:3.0.4",
     "org.eclipse.jetty.http2:http2-common:9.4.48.v20220622",
     "org.eclipse.jetty.http2:http2-hpack:9.4.48.v20220622",
     "org.eclipse.jetty.http2:http2-server:9.4.48.v20220622",
