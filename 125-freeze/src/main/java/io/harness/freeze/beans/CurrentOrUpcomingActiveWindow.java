@@ -7,12 +7,12 @@
 
 package io.harness.freeze.beans;
 
+import lombok.Builder;
 import lombok.Data;
 
 @Data
-public class FreezeWindow {
-  String timeZone;
-  String startTime;
-  String endTime;
-  Recurrence recurrence;
+@Builder
+public class CurrentOrUpcomingActiveWindow {
+  Long startTime;
+  Long endTime;
 }
