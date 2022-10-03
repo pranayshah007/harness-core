@@ -243,6 +243,7 @@ public class DelegateAgentResource {
     try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR)) {
       final long startTime = System.currentTimeMillis();
       final boolean isConnectedUsingMtls = isAgentConnectedUsingMtls(agentMtlsAuthority);
+      log.info("DelegateParams(K8sQuickCreateTesting-Temp-Remove): {}", delegateParams);
       final DelegateRegisterResponse registerResponse = delegateService.register(delegateParams, isConnectedUsingMtls);
       log.info("Delegate registration took {} in ms", System.currentTimeMillis() - startTime);
       return new RestResponse<>(registerResponse);
