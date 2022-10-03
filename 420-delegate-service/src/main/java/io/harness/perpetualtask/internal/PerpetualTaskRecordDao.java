@@ -230,7 +230,7 @@ public class PerpetualTaskRecordDao {
             .filter(PerpetualTaskRecordKeys.accountId, accountId)
             .filter(PerpetualTaskRecordKeys.state, TASK_ASSIGNED)
             .field(PerpetualTaskRecordKeys.lastHeartBeat)
-            .lessThan(currentTimeMillis() - 3 * PerpetualTaskRecordKeys.intervalSeconds);
+            .lessThan(currentTimeMillis() - 3*(PerpetualTaskRecordKeys.intervalSeconds));
 
     UpdateOperations<PerpetualTaskRecord> updateOperations =
             persistence.createUpdateOperations(PerpetualTaskRecord.class).set(PerpetualTaskRecordKeys.state
