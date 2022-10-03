@@ -157,7 +157,7 @@ public class BitbucketConnectorDTO
       String httpRepoUrl = GitClientHelper.getCompleteHTTPUrlForBitbucketSaas(repoUrl);
       return String.format("%s/src/%s/%s", httpRepoUrl, branchName, filePath);
     }
-    return getFileUrlForBitbucketServer(repoUrl, branchName, filePath);
+    return getFileUrlForBitbucketServer(repoUrl, branchName, filePath, gitRepositoryDTO);
   }
 
   @Override
@@ -189,7 +189,8 @@ public class BitbucketConnectorDTO
     }
   }
 
-  private String getFileUrlForBitbucketServer(String repoUrl, String branchName, String filePath) {
+  private String getFileUrlForBitbucketServer(
+      String repoUrl, String branchName, String filePath, GitRepositoryDTO gitRepositoryDTO) {
     if (GitAuthType.SSH.equals(authentication.getAuthType())) {
       repoUrl = GitClientHelper.getCompleteHTTPUrlFromSSHUrlForBitbucketServer(repoUrl);
     }
@@ -202,7 +203,7 @@ public class BitbucketConnectorDTO
       throw new InvalidRequestException("Exception occurred while parsing bitbucket server url.");
     }
     return String.format("%s/projects/%s/repos/%s/browse/%s?at=refs/heads/%s", hostUrl,
-        getGitRepositoryDetails().getOrg(), getGitRepositoryDetails().getName(), filePath, branchName);
+        getGitRepositoryDetails().getOrg(), gitRepositoryDTO.getName(), filePath, branchName);
   }
 
   /*
