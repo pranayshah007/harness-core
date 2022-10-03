@@ -2316,29 +2316,8 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
         }
       }
 
-      Response<ResponseBody> response = null;
       try {
-        int retries = 5;
-        for (int attempt = 0; attempt < retries; attempt++) {
-          response = delegateAgentManagerClient.sendTaskStatus(delegateId, taskId, accountId, taskResponse).execute();
-          if (response != null && response.code() >= 200 && response.code() <= 299) {
-            log.info("Task {} response sent to manager", taskId);
-            break;
-          }
-          log.warn("Failed to send response for task {}: {}. error: {}. requested url: {} {}", taskId,
-              response == null ? "null" : response.code(),
-              response == null || response.errorBody() == null ? "null" : response.errorBody().string(),
-              response == null || response.raw() == null || response.raw().request() == null
-                  ? "null"
-                  : response.raw().request().url(),
-              attempt < (retries - 1) ? "Retrying." : "Giving up.");
-          if (attempt < retries - 1) {
-            // Do not sleep for last loop round, as we are going to fail.
-            sleep(ofSeconds(FibonacciBackOff.getFibonacciElement(attempt)));
-          }
-        }
-      } catch (Exception e) {
-        log.error("Unable to send response to manager", e);
+        sendTaskResponse(taskId, taskResponse);
       } finally {
         if (sanitizer != null) {
           delegateLogService.unregisterLogSanitizer(sanitizer);
@@ -2350,12 +2329,6 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
         currentlyExecutingTasks.remove(taskId);
         if (currentlyExecutingFutures.remove(taskId) != null) {
           log.debug("Removed from executing futures on post execution");
-        }
-        if (response != null && response.errorBody() != null && !response.isSuccessful()) {
-          response.errorBody().close();
-        }
-        if (response != null && response.body() != null && response.isSuccessful()) {
-          response.body().close();
         }
       }
     };
@@ -2704,6 +2677,41 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
     long tasksExecutionCount = ((ThreadPoolExecutor) taskExecutor).getActiveCount();
     metricRegistry.recordGaugeValue(TASKS_IN_QUEUE, new String[] {DELEGATE_NAME}, tasksInQueueCount);
     metricRegistry.recordGaugeValue(TASKS_CURRENTLY_EXECUTING, new String[] {DELEGATE_NAME}, tasksExecutionCount);
+  }
+
+  @Override
+  public void sendTaskResponse(final String taskId, final DelegateTaskResponse taskResponse) {
+    Response<ResponseBody> response = null;
+    try {
+      int retries = 5;
+      for (int attempt = 0; attempt < retries; attempt++) {
+        response = delegateAgentManagerClient.sendTaskStatus(delegateId, taskId, accountId, taskResponse).execute();
+        if (response != null && response.code() >= 200 && response.code() <= 299) {
+          log.info("Task {} response sent to manager", taskId);
+          break;
+        }
+        log.warn("Failed to send response for task {}: {}. error: {}. requested url: {} {}", taskId,
+                response == null ? "null" : response.code(),
+                response == null || response.errorBody() == null ? "null" : response.errorBody().string(),
+                response == null || response.raw() == null || response.raw().request() == null
+                        ? "null"
+                        : response.raw().request().url(),
+                attempt < (retries - 1) ? "Retrying." : "Giving up.");
+        if (attempt < retries - 1) {
+          // Do not sleep for last loop round, as we are going to fail.
+          sleep(ofSeconds(FibonacciBackOff.getFibonacciElement(attempt)));
+        }
+      }
+    } catch (IOException e) {
+      log.error("Unable to send response to manager", e);
+    } finally {
+      if (response != null && response.errorBody() != null && !response.isSuccessful()) {
+        response.errorBody().close();
+      }
+      if (response != null && response.body() != null && response.isSuccessful()) {
+        response.body().close();
+      }
+    }
   }
 
   private void sendErrorResponse(DelegateTaskPackage delegateTaskPackage, Exception exception) {

@@ -23,7 +23,6 @@ import static java.time.Duration.ofSeconds;
 
 import io.harness.concurrent.HTimeLimiter;
 import io.harness.data.structure.NullSafeImmutableMap;
-import io.harness.delegate.DelegateAgentCommonVariables;
 import io.harness.delegate.beans.DelegateTaskAbortEvent;
 import io.harness.delegate.beans.DelegateTaskEvent;
 import io.harness.delegate.beans.DelegateTaskPackage;
@@ -32,7 +31,6 @@ import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.service.common.AbstractDelegateAgentServiceImpl;
 import io.harness.delegate.service.common.DelegateTaskExecutionData;
 import io.harness.logging.AutoLogContext;
-import io.harness.network.FibonacciBackOff;
 
 import software.wings.beans.TaskType;
 import software.wings.delegatetasks.bash.BashScriptTask;
@@ -64,9 +62,7 @@ import javax.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
-import okhttp3.ResponseBody;
 import org.apache.commons.math3.util.Precision;
-import retrofit2.Response;
 
 @Singleton
 @Slf4j
@@ -106,7 +102,7 @@ public class DelegatePlatformService extends AbstractDelegateAgentServiceImpl {
 
     final BooleanSupplier preExecutionFunction = getPreExecutionFunction(delegateTaskPackage);
     final Consumer<DelegateTaskResponse> postExecutionFunction =
-        getPostExecutionFunction(delegateTaskPackage.getDelegateTaskId());
+        (response) -> sendTaskResponse(delegateTaskPackage.getDelegateTaskId(), response);
 
     final BashScriptTask delegateRunnableTask =
         new BashScriptTask(delegateTaskPackage, preExecutionFunction, postExecutionFunction);
@@ -138,45 +134,6 @@ public class DelegatePlatformService extends AbstractDelegateAgentServiceImpl {
         // should log an error and abort execution.
         log.error("Task is already being executed");
         return false;
-      }
-    };
-  }
-
-  private Consumer<DelegateTaskResponse> getPostExecutionFunction(String taskId) {
-    return taskResponse -> {
-      Response<ResponseBody> response = null;
-      try {
-        int retries = 5;
-        for (int attempt = 0; attempt < retries; attempt++) {
-          response = getDelegateAgentManagerClient()
-                         .sendTaskStatus(DelegateAgentCommonVariables.getDelegateId(), taskId,
-                             getDelegateConfiguration().getAccountId(), taskResponse)
-                         .execute();
-          if (response.code() >= 200 && response.code() <= 299) {
-            log.info("Task {} response sent to manager", taskId);
-            break;
-          }
-          log.warn("Failed to send response for task {}: {}. error: {}. requested url: {} {}", taskId, response.code(),
-              response.errorBody() == null ? "null" : response.errorBody().string(), response.raw().request().url(),
-              attempt < (retries - 1) ? "Retrying." : "Giving up.");
-          if (attempt < retries - 1) {
-            // Do not sleep for last loop round, as we are going to fail.
-            sleep(ofSeconds(FibonacciBackOff.getFibonacciElement(attempt)));
-          }
-        }
-      } catch (Exception e) {
-        log.error("Unable to send response to manager", e);
-      } finally {
-        currentlyExecutingTasks.remove(taskId);
-        if (currentlyExecutingFutures.remove(taskId) != null) {
-          log.debug("Removed from executing futures on post execution");
-        }
-        if (response != null && response.errorBody() != null && !response.isSuccessful()) {
-          response.errorBody().close();
-        }
-        if (response != null && response.body() != null && response.isSuccessful()) {
-          response.body().close();
-        }
       }
     };
   }
@@ -245,6 +202,14 @@ public class DelegatePlatformService extends AbstractDelegateAgentServiceImpl {
       return true;
     } else {
       return false;
+    }
+  }
+
+  @Override
+  protected void onResponseSent(final String taskId) {
+    currentlyExecutingTasks.remove(taskId);
+    if (currentlyExecutingFutures.remove(taskId) != null) {
+      log.debug("Removed from executing futures on post execution");
     }
   }
 

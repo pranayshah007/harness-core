@@ -26,6 +26,7 @@ import static io.harness.threading.Morpheus.sleep;
 
 import static java.lang.String.format;
 import static java.time.Duration.ofMinutes;
+import static java.time.Duration.ofSeconds;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.isBlank;
@@ -43,6 +44,7 @@ import io.harness.delegate.beans.DelegateRegisterResponse;
 import io.harness.delegate.beans.DelegateTaskAbortEvent;
 import io.harness.delegate.beans.DelegateTaskEvent;
 import io.harness.delegate.beans.DelegateTaskPackage;
+import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.beans.DelegateUnregisterRequest;
 import io.harness.delegate.configuration.DelegateConfiguration;
 import io.harness.delegate.logging.DelegateStackdriverLogAppender;
@@ -59,6 +61,7 @@ import io.harness.serializer.JsonUtils;
 import io.harness.threading.Schedulable;
 import io.harness.version.VersionInfoManager;
 
+import okhttp3.ResponseBody;
 import software.wings.beans.TaskType;
 
 import com.google.common.collect.ImmutableList;
@@ -133,6 +136,7 @@ public abstract class AbstractDelegateAgentServiceImpl implements DelegateAgentS
 
   private static final String DUPLICATE_DELEGATE_ERROR_MESSAGE =
       "Duplicate delegate with same delegateId:%s and connectionId:%s exists";
+  private static final int NUM_RESPONSE_RETRIES = 5;
 
   @Inject @Named("taskExecutor") @Getter(AccessLevel.PROTECTED) private ThreadPoolExecutor taskExecutor;
   @Inject @Named("taskPollExecutor") private ScheduledExecutorService taskPollExecutor;
@@ -183,6 +187,8 @@ public abstract class AbstractDelegateAgentServiceImpl implements DelegateAgentS
    * @return true if pre-execute checks failed which will cause the task to fail
    */
   protected abstract boolean onPreExecute(final DelegateTaskEvent delegateTaskEvent, final String delegateTaskId);
+  protected abstract void onResponseSent(final String taskId);
+
   // ToDo: add more onXXX lifecycle hooks
 
   @Override
@@ -195,14 +201,22 @@ public abstract class AbstractDelegateAgentServiceImpl implements DelegateAgentS
   }
 
   @Override
+  public void pause() {
+    if (!delegateConfiguration.isPollForTasks()) {
+      finalizeSocket();
+    }
+  }
+
+  @Override
   public void stop() {
     log.info("Stopping delegate platform service, nothing to do!");
   }
 
   @Override
-  public void pause() {
-    if (!delegateConfiguration.isPollForTasks()) {
-      finalizeSocket();
+  public void shutdown(boolean shouldUnregister) throws InterruptedException {
+    shutdownExecutors();
+    if (shouldUnregister) {
+      unregisterDelegate();
     }
   }
 
@@ -223,19 +237,38 @@ public abstract class AbstractDelegateAgentServiceImpl implements DelegateAgentS
   }
 
   @Override
-  public void shutdown(boolean shouldUnregister) throws InterruptedException {
-    shutdownExecutors();
-    if (shouldUnregister) {
-      unregisterDelegate();
-    }
-  }
-
-  @Override
   public void recordMetrics() {
     final int tasksInQueueCount = taskExecutor.getQueue().size();
     final long tasksExecutionCount = taskExecutor.getActiveCount();
     metricRegistry.recordGaugeValue(TASKS_IN_QUEUE, new String[] {DELEGATE_NAME}, tasksInQueueCount);
     metricRegistry.recordGaugeValue(TASKS_CURRENTLY_EXECUTING, new String[] {DELEGATE_NAME}, tasksExecutionCount);
+  }
+
+  @Override
+  public void sendTaskResponse(final String taskId, final DelegateTaskResponse taskResponse) {
+    try {
+      for (int attempt = 0; attempt < NUM_RESPONSE_RETRIES; attempt++) {
+        final Response<ResponseBody> response = getDelegateAgentManagerClient()
+                .sendTaskStatus(DelegateAgentCommonVariables.getDelegateId(), taskId,
+                        getDelegateConfiguration().getAccountId(), taskResponse)
+                .execute();
+        if (response.isSuccessful()) {
+          log.info("Task {} response sent to manager", taskId);
+          break;
+        }
+        log.warn("Failed to send response for task {}: {}. error: {}. requested url: {} {}", taskId, response.code(),
+                response.errorBody() == null ? "null" : response.errorBody().string(), response.raw().request().url(),
+                attempt < (NUM_RESPONSE_RETRIES - 1) ? "Retrying." : "Giving up.");
+        if (attempt < NUM_RESPONSE_RETRIES - 1) {
+          // Do not sleep for last loop round, as we are going to fail.
+          sleep(ofSeconds(FibonacciBackOff.getFibonacciElement(attempt)));
+        }
+      }
+    } catch (final Exception e) {
+      log.error("Unable to send response to manager for task {}", taskId, e);
+    } finally {
+      onResponseSent(taskId);
+    }
   }
 
   private void dispatchDelegateTask(@NonNull final DelegateTaskEvent delegateTaskEvent) {
