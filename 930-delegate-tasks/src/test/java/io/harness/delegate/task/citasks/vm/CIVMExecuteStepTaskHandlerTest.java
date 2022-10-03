@@ -18,7 +18,7 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
-import io.harness.delegate.beans.ci.VmInfraInfo;
+import io.harness.delegate.beans.ci.CIInitializeTaskParams;
 import io.harness.delegate.beans.ci.vm.CIVmExecuteStepTaskParams;
 import io.harness.delegate.beans.ci.vm.VmTaskExecutionResponse;
 import io.harness.delegate.beans.ci.vm.runner.ExecuteStepRequest;
@@ -50,7 +50,8 @@ public class CIVMExecuteStepTaskHandlerTest extends CategoryTest {
   @Mock private StepExecutionHelper stepExecutionHelper;
   @Mock private VmExecuteStepUtils vmExecuteStepUtils;
   @InjectMocks private io.harness.delegate.task.citasks.vm.CIVMExecuteStepTaskHandler CIVMExecuteStepTaskHandler;
-  private VmInfraInfo vmInfraInfo = VmInfraInfo.builder().poolId("test").stageRuntimeId("stage").build();
+  // private VmInfraInfo vmInfraInfo = VmInfraInfo.builder().poolId("test").stageRuntimeId("stage").build();
+  private static final CIInitializeTaskParams.Type vmInfraInfo = CIInitializeTaskParams.Type.VM;
 
   @Before
   public void setUp() {

@@ -230,6 +230,7 @@ public class MainConfiguration extends Configuration implements AssetsBundleConf
   @JsonProperty(value = "useGlobalKMSAsBaseAlgo", defaultValue = "false") private boolean useGlobalKMSAsBaseAlgo;
   @JsonProperty("totp") private TotpConfig totpConfig;
   @JsonProperty(value = "cdTsDbRetentionPeriodMonths") private String cdTsDbRetentionPeriodMonths;
+  @JsonProperty(value = "enableOpentelemetry") private Boolean enableOpentelemetry;
 
   private int applicationPort;
   private boolean sslEnabled;

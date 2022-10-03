@@ -17,6 +17,7 @@ import io.harness.audit.retention.AuditAccountSyncService;
 import io.harness.audit.retention.AuditRetentionIteratorHandler;
 import io.harness.health.HealthService;
 import io.harness.ng.core.CorrelationFilter;
+import io.harness.ng.core.TraceFilter;
 import io.harness.persistence.HPersistence;
 import io.harness.platform.remote.AuditOpenApiResource;
 import io.harness.platform.remote.VersionInfoResource;
@@ -36,6 +37,7 @@ import java.net.URL;
 import java.util.Collections;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.BooleanUtils;
 import org.glassfish.jersey.server.model.Resource;
 
 @Slf4j
@@ -57,6 +59,10 @@ public class AuditServiceSetup {
     registerManagedBeans(environment, injector);
     registerIterators(injector);
     registerOasResource(appConfig, environment, injector);
+
+    if (BooleanUtils.isTrue(appConfig.getEnableOpentelemetry())) {
+      registerTraceFilter(environment, injector);
+    }
   }
 
   private void registerHealthCheck(Environment environment, Injector injector) {
@@ -80,6 +86,10 @@ public class AuditServiceSetup {
 
   private void registerCorrelationFilter(Environment environment, Injector injector) {
     environment.jersey().register(injector.getInstance(CorrelationFilter.class));
+  }
+
+  private void registerTraceFilter(Environment environment, Injector injector) {
+    environment.jersey().register(injector.getInstance(TraceFilter.class));
   }
 
   private void registerManagedBeans(Environment environment, Injector injector) {

@@ -30,7 +30,7 @@ public class AutomationResource {
   @Path("/verification-job-instance/{verifyStepExecutionId}")
   @Timed
   @ExceptionMetered
-  @ApiOperation(value = "get verification job instance", nickname = "getVerificationJobInstance")
+  @ApiOperation(value = "get verification job instance", nickname = "getVerificationJobInstance", hidden = true)
   public RestResponse<VerificationJobInstance> getVerificationJobInstance(
       @NotBlank @NotNull @PathParam("verifyStepExecutionId") String verificationJobInstanceId) {
     return new RestResponse(verificationJobInstanceService.getVerificationJobInstance(verificationJobInstanceId));

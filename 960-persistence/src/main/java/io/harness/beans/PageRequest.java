@@ -49,6 +49,7 @@ import org.mongodb.morphia.mapping.Mapper;
 public class PageRequest<T> {
   public static final String UNLIMITED = "UNLIMITED";
   public static final int DEFAULT_UNLIMITED = 1000;
+  public static final String LIMIT_2K_PAGE_SIZE = "2000";
   public static final int DEFAULT_PAGE_SIZE = 50;
 
   private static Pattern searchField = Pattern.compile("search\\[[0-9]+]\\[field]");

@@ -75,7 +75,7 @@ public class InfrastructureEntityServiceImplTest extends CDNGEntitiesTestBase {
     infrastructureEntityService.create(createInfraRequest);
 
     String infrastructureInputsFromYaml = infrastructureEntityService.createInfrastructureInputsFromYaml(
-        ACCOUNT_ID, PROJECT_ID, ORG_ID, "ENV_IDENTIFIER", Arrays.asList("IDENTIFIER"), false);
+        ACCOUNT_ID, ORG_ID, PROJECT_ID, "ENV_IDENTIFIER", Arrays.asList("IDENTIFIER"), false);
     String resFile = "infrastructure-with-runtime-inputs-res.yaml";
     String resInputs = readFile(resFile);
     assertThat(infrastructureInputsFromYaml).isEqualTo(resInputs);
@@ -99,7 +99,7 @@ public class InfrastructureEntityServiceImplTest extends CDNGEntitiesTestBase {
     infrastructureEntityService.create(createInfraRequest);
 
     String infrastructureInputsFromYaml = infrastructureEntityService.createInfrastructureInputsFromYaml(
-        ACCOUNT_ID, PROJECT_ID, ORG_ID, "ENV_IDENTIFIER", Arrays.asList("IDENTIFIER1"), false);
+        ACCOUNT_ID, ORG_ID, PROJECT_ID, "ENV_IDENTIFIER", Arrays.asList("IDENTIFIER1"), false);
 
     assertThat(infrastructureInputsFromYaml).isNull();
   }

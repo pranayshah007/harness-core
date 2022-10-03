@@ -18,8 +18,8 @@ import io.harness.cvng.BuilderFactory;
 import io.harness.cvng.servicelevelobjective.beans.DayOfWeek;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardDetail.TimeRangeFilter;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelObjective.MonthlyCalenderTarget;
+import io.harness.cvng.servicelevelobjective.entities.ServiceLevelObjective.QuarterlyCalenderTarget;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelObjective.RollingSLOTarget;
-import io.harness.cvng.servicelevelobjective.entities.ServiceLevelObjective.TimePeriod;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelObjective.WeeklyCalenderTarget;
 import io.harness.rule.Owner;
 
@@ -81,9 +81,7 @@ public class ServiceLevelObjectiveTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetCurrentTimeRange_calenderQuarterly() {
     ServiceLevelObjective serviceLevelObjective =
-        builderFactory.getServiceLevelObjectiveBuilder()
-            .sloTarget(ServiceLevelObjective.QuarterlyCalenderTarget.builder().build())
-            .build();
+        builderFactory.getServiceLevelObjectiveBuilder().sloTarget(QuarterlyCalenderTarget.builder().build()).build();
     assertThat(serviceLevelObjective.getSloTarget().getCurrentTimeRange(LocalDateTime.parse("2021-12-03T10:15:00")))
         .isEqualTo(TimePeriod.builder()
                        .startDate(LocalDate.parse("2021-10-01"))
@@ -106,9 +104,7 @@ public class ServiceLevelObjectiveTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testTotalDays_Quarterly() {
     ServiceLevelObjective serviceLevelObjective =
-        builderFactory.getServiceLevelObjectiveBuilder()
-            .sloTarget(ServiceLevelObjective.QuarterlyCalenderTarget.builder().build())
-            .build();
+        builderFactory.getServiceLevelObjectiveBuilder().sloTarget(QuarterlyCalenderTarget.builder().build()).build();
     assertThat(serviceLevelObjective.getSloTarget()
                    .getCurrentTimeRange(LocalDateTime.parse("2021-12-03T10:15:00"))
                    .getTotalDays())
@@ -134,10 +130,9 @@ public class ServiceLevelObjectiveTest extends CategoryTest {
   @Owner(developers = KAMAL)
   @Category(UnitTests.class)
   public void testTotalDays_rolling() {
-    ServiceLevelObjective serviceLevelObjective =
-        builderFactory.getServiceLevelObjectiveBuilder()
-            .sloTarget(ServiceLevelObjective.RollingSLOTarget.builder().periodLengthDays(7).build())
-            .build();
+    ServiceLevelObjective serviceLevelObjective = builderFactory.getServiceLevelObjectiveBuilder()
+                                                      .sloTarget(RollingSLOTarget.builder().periodLengthDays(7).build())
+                                                      .build();
     assertThat(serviceLevelObjective.getSloTarget()
                    .getCurrentTimeRange(LocalDateTime.parse("2021-12-03T10:15:00"))
                    .getTotalDays())
@@ -211,9 +206,7 @@ public class ServiceLevelObjectiveTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetTimeRangeFilters_CalendarWeekly() {
     ServiceLevelObjective serviceLevelObjective =
-        builderFactory.getServiceLevelObjectiveBuilder()
-            .sloTarget(ServiceLevelObjective.WeeklyCalenderTarget.builder().build())
-            .build();
+        builderFactory.getServiceLevelObjectiveBuilder().sloTarget(WeeklyCalenderTarget.builder().build()).build();
     List<TimeRangeFilter> timeRangeFilters = serviceLevelObjective.getTimeRangeFilters();
     assertThat(timeRangeFilters.get(0)).isEqualTo(TimeRangeFilter.ONE_HOUR_FILTER);
     assertThat(timeRangeFilters.get(1)).isEqualTo(TimeRangeFilter.ONE_DAY_FILTER);
@@ -224,9 +217,7 @@ public class ServiceLevelObjectiveTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetTimeRangeFilters_CalendarMonthly() {
     ServiceLevelObjective serviceLevelObjective =
-        builderFactory.getServiceLevelObjectiveBuilder()
-            .sloTarget(ServiceLevelObjective.MonthlyCalenderTarget.builder().build())
-            .build();
+        builderFactory.getServiceLevelObjectiveBuilder().sloTarget(MonthlyCalenderTarget.builder().build()).build();
     List<TimeRangeFilter> timeRangeFilters = serviceLevelObjective.getTimeRangeFilters();
     assertThat(timeRangeFilters.get(0)).isEqualTo(TimeRangeFilter.ONE_HOUR_FILTER);
     assertThat(timeRangeFilters.get(1)).isEqualTo(TimeRangeFilter.ONE_DAY_FILTER);
@@ -238,9 +229,7 @@ public class ServiceLevelObjectiveTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetTimeRangeFilters_CalendarQuarterly() {
     ServiceLevelObjective serviceLevelObjective =
-        builderFactory.getServiceLevelObjectiveBuilder()
-            .sloTarget(ServiceLevelObjective.QuarterlyCalenderTarget.builder().build())
-            .build();
+        builderFactory.getServiceLevelObjectiveBuilder().sloTarget(QuarterlyCalenderTarget.builder().build()).build();
     List<TimeRangeFilter> timeRangeFilters = serviceLevelObjective.getTimeRangeFilters();
     assertThat(timeRangeFilters.get(0)).isEqualTo(TimeRangeFilter.ONE_HOUR_FILTER);
     assertThat(timeRangeFilters.get(1)).isEqualTo(TimeRangeFilter.ONE_DAY_FILTER);
@@ -252,10 +241,9 @@ public class ServiceLevelObjectiveTest extends CategoryTest {
   @Owner(developers = ARPITJ)
   @Category(UnitTests.class)
   public void testGetTimeRangeFilters_RollingLessThanWeek() {
-    ServiceLevelObjective serviceLevelObjective =
-        builderFactory.getServiceLevelObjectiveBuilder()
-            .sloTarget(ServiceLevelObjective.RollingSLOTarget.builder().periodLengthDays(5).build())
-            .build();
+    ServiceLevelObjective serviceLevelObjective = builderFactory.getServiceLevelObjectiveBuilder()
+                                                      .sloTarget(RollingSLOTarget.builder().periodLengthDays(5).build())
+                                                      .build();
     List<TimeRangeFilter> timeRangeFilters = serviceLevelObjective.getTimeRangeFilters();
     assertThat(timeRangeFilters.get(0)).isEqualTo(TimeRangeFilter.ONE_HOUR_FILTER);
     assertThat(timeRangeFilters.get(1)).isEqualTo(TimeRangeFilter.ONE_DAY_FILTER);
@@ -267,7 +255,7 @@ public class ServiceLevelObjectiveTest extends CategoryTest {
   public void testGetTimeRangeFilters_RollingMoreThanWeek() {
     ServiceLevelObjective serviceLevelObjective =
         builderFactory.getServiceLevelObjectiveBuilder()
-            .sloTarget(ServiceLevelObjective.RollingSLOTarget.builder().periodLengthDays(10).build())
+            .sloTarget(RollingSLOTarget.builder().periodLengthDays(10).build())
             .build();
     List<TimeRangeFilter> timeRangeFilters = serviceLevelObjective.getTimeRangeFilters();
     assertThat(timeRangeFilters.get(0)).isEqualTo(TimeRangeFilter.ONE_HOUR_FILTER);

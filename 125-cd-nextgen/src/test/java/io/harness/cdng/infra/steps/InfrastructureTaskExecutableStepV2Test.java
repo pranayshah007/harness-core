@@ -29,6 +29,7 @@ import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.execution.ExecutionInfoKey;
 import io.harness.cdng.execution.helper.StageExecutionHelper;
 import io.harness.cdng.infra.InfrastructureMapper;
+import io.harness.cdng.infra.InfrastructureValidator;
 import io.harness.cdng.infra.beans.AwsInstanceFilter;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.infra.beans.PdcInfrastructureOutcome;
@@ -116,6 +117,7 @@ import org.mockito.MockitoAnnotations;
 public class InfrastructureTaskExecutableStepV2Test extends CategoryTest {
   @Mock private InfrastructureEntityService infrastructureEntityService;
   @Mock private InfrastructureMapper infrastructureMapper;
+  @Mock InfrastructureValidator infrastructureValidator;
   @Mock private InfrastructureStepHelper infrastructureStepHelper;
   @Mock private CDStepHelper cdStepHelper;
   @Mock private StepHelper stepHelper;

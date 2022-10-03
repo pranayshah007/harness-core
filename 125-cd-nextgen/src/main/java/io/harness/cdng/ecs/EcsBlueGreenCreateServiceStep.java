@@ -84,6 +84,8 @@ public class EcsBlueGreenCreateServiceStep extends TaskChainExecutableWithRollba
             .prodListenerRuleArn(ecsBlueGreenCreateServiceStepParameters.getProdListenerRuleArn().getValue())
             .stageListenerArn(ecsBlueGreenCreateServiceStepParameters.getStageListener().getValue())
             .stageListenerRuleArn(ecsBlueGreenCreateServiceStepParameters.getStageListenerRuleArn().getValue())
+            .prodTargetGroupArn(ecsStepExecutorParams.getProdTargetGroupArn())
+            .stageTargetGroupArn(ecsStepExecutorParams.getStageTargetGroupArn())
             .build();
 
     EcsBlueGreenCreateServiceRequest ecsBlueGreenCreateServiceRequest =

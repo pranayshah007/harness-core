@@ -42,6 +42,7 @@ import io.harness.delegate.beans.connector.scm.github.GithubUsernamePasswordDTO;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
 import io.harness.delegate.task.git.GitFetchFilesConfig;
 import io.harness.ng.core.dto.secrets.SSHKeySpecDTO;
+import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
@@ -171,16 +172,20 @@ public class AzureCommonHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetGitFetchFileTaskChainResponse() {
     List<GitFetchFilesConfig> files = null;
-    ParameterField<List<String>> delegateSelector = ParameterField.<List<String>>builder().build();
-    StepElementParameters stepElementParameters =
-        StepElementParameters.builder().delegateSelectors(delegateSelector).build();
+    ParameterField<List<TaskSelectorYaml>> delegateSelector = ParameterField.<List<TaskSelectorYaml>>builder().build();
     AzureCreateARMResourcePassThroughData azureCreateARMResourcePassThroughData =
         AzureCreateARMResourcePassThroughData.builder().build();
+    AzureCreateARMResourceStepParameters step =
+        AzureCreateARMResourceStepParameters.infoBuilder()
+            .configurationParameters(AzureCreateARMResourceStepConfigurationParameters.builder().build())
+            .delegateSelectors(delegateSelector)
+            .build();
     Mockito.mockStatic(StepUtils.class);
     TaskRequest taskRequest = TaskRequest.newBuilder().build();
     when(StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any())).thenReturn(taskRequest);
+    StepElementParameters steps = StepElementParameters.builder().spec(step).build();
     TaskChainResponse result = azureCommonHelper.getGitFetchFileTaskChainResponse(azureHelperTest.getAmbiance(), files,
-        stepElementParameters, azureCreateARMResourcePassThroughData, Arrays.asList("test"), null);
+        steps, azureCreateARMResourcePassThroughData, Arrays.asList("test"), null);
     assertThat(result.isChainEnd()).isFalse();
     assertThat(result.getTaskRequest()).isEqualTo(taskRequest);
     assertThat(result.getPassThroughData()).isEqualTo(azureCreateARMResourcePassThroughData);

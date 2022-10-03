@@ -62,6 +62,9 @@ public class SecretMigrationService extends NgMigrationService {
   @Override
   public MigratedEntityMapping generateMappingEntity(NGYamlFile yamlFile) {
     CgBasicInfo basicInfo = yamlFile.getCgBasicInfo();
+    if (basicInfo == null) {
+      return null;
+    }
     SecretDTOV2 secretYaml = ((SecretRequestWrapper) yamlFile.getYaml()).getSecret();
     return MigratedEntityMapping.builder()
         .appId(basicInfo.getAppId())

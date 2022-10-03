@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CE;
 import static io.harness.mongo.iterator.MongoPersistenceIterator.SchedulingType.REGULAR;
 
 import static java.time.Duration.ofDays;
+import static java.time.Duration.ofHours;
 import static java.time.Duration.ofMinutes;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -49,7 +50,7 @@ public class CeLicenseExpiryHandler implements Handler<Account> {
         MongoPersistenceIterator.<Account, MorphiaFilterExpander<Account>>builder()
             .clazz(Account.class)
             .fieldName(AccountKeys.ceLicenseExpiryIteration)
-            .targetInterval(ofMinutes(CE_LICENSE_EXPIRY_INTERVAL_DAY))
+            .targetInterval(ofHours(24))
             .acceptableNoAlertDelay(ofMinutes(60))
             .acceptableExecutionTime(ofMinutes(5))
             .handler(this)

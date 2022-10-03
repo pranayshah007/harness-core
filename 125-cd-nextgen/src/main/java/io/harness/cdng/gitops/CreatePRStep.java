@@ -69,7 +69,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import joptsimple.internal.Strings;
 import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(GITOPS)
@@ -190,7 +189,7 @@ public class CreatePRStep extends TaskExecutableWithRollbackAndRbac<NGGitOpsResp
       GitopsClustersOutcome output = (GitopsClustersOutcome) optionalSweepingOutput.getOutput();
       List<GitopsClustersOutcome.ClusterData> clustersData = output.getClustersData();
 
-      String file = Strings.EMPTY;
+      String file = filePath;
 
       for (GitopsClustersOutcome.ClusterData cluster : clustersData) {
         if (filePath.contains("<+cluster.name>")) {

@@ -7,6 +7,7 @@
 
 package io.harness.security;
 
+import static io.harness.NGCommonEntityConstants.ACCOUNT_HEADER;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.exception.WingsException.USER;
 
@@ -74,7 +75,7 @@ public class NextGenAuthenticationFilter extends JWTAuthenticationFilter {
         isScimAPI() ? getApiKeyForScim(containerRequestContext) : getApiKeyFromHeaders(containerRequestContext);
 
     if (apiKeyOptional.isPresent()) {
-      Optional<String> accountIdentifierOptional = getAccountIdentifierFromUri(containerRequestContext);
+      Optional<String> accountIdentifierOptional = getAccountIdentifierFrom(containerRequestContext);
       if (!accountIdentifierOptional.isPresent()) {
         throw new InvalidRequestException("Account detail is not present in the request");
       }
@@ -134,9 +135,13 @@ public class NextGenAuthenticationFilter extends JWTAuthenticationFilter {
     return authorizationHeader.substring(bearerPrefix.length()).trim();
   }
 
-  private Optional<String> getAccountIdentifierFromUri(ContainerRequestContext containerRequestContext) {
-    String accountIdentifier =
-        containerRequestContext.getUriInfo().getQueryParameters().getFirst(NGCommonEntityConstants.ACCOUNT);
+  private Optional<String> getAccountIdentifierFrom(ContainerRequestContext containerRequestContext) {
+    String accountIdentifier = containerRequestContext.getHeaderString(ACCOUNT_HEADER);
+
+    if (StringUtils.isEmpty(accountIdentifier)) {
+      accountIdentifier =
+          containerRequestContext.getUriInfo().getQueryParameters().getFirst(NGCommonEntityConstants.ACCOUNT);
+    }
     if (StringUtils.isEmpty(accountIdentifier)) {
       accountIdentifier =
           containerRequestContext.getUriInfo().getQueryParameters().getFirst(NGCommonEntityConstants.ACCOUNT_KEY);

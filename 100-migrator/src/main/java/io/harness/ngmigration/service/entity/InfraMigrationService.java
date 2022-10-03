@@ -9,6 +9,7 @@ package io.harness.ngmigration.service.entity;
 
 import static software.wings.api.CloudProviderType.KUBERNETES_CLUSTER;
 import static software.wings.ngmigration.NGMigrationEntityType.CONNECTOR;
+import static software.wings.ngmigration.NGMigrationEntityType.ENVIRONMENT;
 
 import static java.util.stream.Collectors.counting;
 import static java.util.stream.Collectors.groupingBy;
@@ -17,13 +18,21 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.MigratedEntityMapping;
 import io.harness.cdng.infra.InfrastructureDef;
+import io.harness.cdng.infra.yaml.InfrastructureConfig;
+import io.harness.cdng.infra.yaml.InfrastructureDefinitionConfig;
 import io.harness.cdng.infra.yaml.K8SDirectInfrastructure;
+import io.harness.connector.ConnectorResponseDTO;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.encryption.Scope;
 import io.harness.exception.InvalidRequestException;
 import io.harness.gitsync.beans.YamlDTO;
+import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.ng.core.environment.yaml.NGEnvironmentConfig;
 import io.harness.ng.core.infrastructure.InfrastructureType;
+import io.harness.ng.core.infrastructure.dto.InfrastructureRequestDTO;
 import io.harness.ngmigration.beans.BaseEntityInput;
 import io.harness.ngmigration.beans.BaseInputDefinition;
+import io.harness.ngmigration.beans.BaseProvidedInput;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.MigratorInputType;
 import io.harness.ngmigration.beans.NGYamlFile;
@@ -33,14 +42,19 @@ import io.harness.ngmigration.beans.summary.InfraDefSummary;
 import io.harness.ngmigration.client.NGClient;
 import io.harness.ngmigration.client.PmsClient;
 import io.harness.ngmigration.expressions.MigratorExpressionUtils;
+import io.harness.ngmigration.service.MigratorMappingService;
 import io.harness.ngmigration.service.MigratorUtility;
 import io.harness.ngmigration.service.NgMigrationService;
+import io.harness.ngmigration.service.infra.InfraDefMapper;
+import io.harness.ngmigration.service.infra.InfraMapperFactory;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.serializer.JsonUtils;
 
 import software.wings.api.CloudProviderType;
 import software.wings.api.DeploymentType;
 import software.wings.infra.DirectKubernetesInfrastructure;
 import software.wings.infra.InfrastructureDefinition;
+import software.wings.ngmigration.CgBasicInfo;
 import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.CgEntityNode;
 import software.wings.ngmigration.DiscoveryNode;
@@ -57,15 +71,37 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
+import retrofit2.Response;
 
 @OwnedBy(HarnessTeam.CDC)
+@Slf4j
 public class InfraMigrationService extends NgMigrationService {
   @Inject private InfrastructureDefinitionService infrastructureDefinitionService;
   @Inject private MigratorExpressionUtils migratorExpressionUtils;
+  @Inject private InfraMapperFactory infraMapperFactory;
 
   @Override
   public MigratedEntityMapping generateMappingEntity(NGYamlFile yamlFile) {
-    throw new IllegalAccessError("Mapping not allowed for Infrastructure");
+    CgBasicInfo basicInfo = yamlFile.getCgBasicInfo();
+    InfrastructureConfig infrastructureConfig = (InfrastructureConfig) yamlFile.getYaml();
+    String identifier = infrastructureConfig.getInfrastructureDefinitionConfig().getIdentifier();
+    String orgIdentifier = infrastructureConfig.getInfrastructureDefinitionConfig().getOrgIdentifier();
+    String projectIdentifier = infrastructureConfig.getInfrastructureDefinitionConfig().getOrgIdentifier();
+    return MigratedEntityMapping.builder()
+        .appId(basicInfo.getAppId())
+        .accountId(basicInfo.getAccountId())
+        .cgEntityId(basicInfo.getId())
+        .entityType(NGMigrationEntityType.ENVIRONMENT.name())
+        .accountIdentifier(basicInfo.getAccountId())
+        .orgIdentifier(orgIdentifier)
+        .projectIdentifier(projectIdentifier)
+        .identifier(identifier)
+        .scope(Scope.PROJECT)
+        .fullyQualifiedIdentifier(MigratorMappingService.getFullyQualifiedIdentifier(
+            basicInfo.getAccountId(), orgIdentifier, projectIdentifier, identifier))
+        .build();
   }
 
   @Override
@@ -132,13 +168,86 @@ public class InfraMigrationService extends NgMigrationService {
 
   @Override
   public void migrate(String auth, NGClient ngClient, PmsClient pmsClient, MigrationInputDTO inputDTO,
-      NGYamlFile yamlFile) throws IOException {}
+      NGYamlFile yamlFile) throws IOException {
+    if (!yamlFile.isExists()) {
+      InfrastructureDefinitionConfig infraConfig =
+          ((InfrastructureConfig) yamlFile.getYaml()).getInfrastructureDefinitionConfig();
+      InfrastructureRequestDTO infraReqDTO = InfrastructureRequestDTO.builder()
+                                                 .identifier(infraConfig.getIdentifier())
+                                                 .type(infraConfig.getType())
+                                                 .orgIdentifier(infraConfig.getOrgIdentifier())
+                                                 .projectIdentifier(infraConfig.getProjectIdentifier())
+                                                 .name(infraConfig.getName())
+                                                 .tags(infraConfig.getTags())
+                                                 .type(infraConfig.getType())
+                                                 .environmentRef(infraConfig.getEnvironmentRef())
+                                                 .description(infraConfig.getDescription())
+                                                 .yaml(getYamlString(yamlFile))
+                                                 .build();
+      Response<ResponseDTO<ConnectorResponseDTO>> resp =
+          ngClient.createInfrastructure(auth, inputDTO.getAccountIdentifier(), JsonUtils.asTree(infraReqDTO)).execute();
+      log.info("Infrastructure creation Response details {} {}", resp.code(), resp.message());
+    }
+  }
 
   @Override
   public List<NGYamlFile> generateYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
       Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities,
       NgEntityDetail ngEntityDetail) {
-    return new ArrayList<>();
+    InfrastructureDefinition infra = (InfrastructureDefinition) entities.get(entityId).getEntity();
+    migratorExpressionUtils.render(infra);
+    String name = infra.getName();
+    String identifier = MigratorUtility.generateIdentifier(name);
+    String projectIdentifier = null;
+    String orgIdentifier = null;
+    if (inputDTO.getInputs() != null && inputDTO.getInputs().containsKey(entityId)) {
+      // TODO: @deepakputhraya We should handle if the connector needs to be reused.
+      BaseProvidedInput input = inputDTO.getInputs().get(entityId);
+      identifier = StringUtils.isNotBlank(input.getIdentifier()) ? input.getIdentifier() : identifier;
+      name = StringUtils.isNotBlank(input.getIdentifier()) ? input.getName() : name;
+    }
+    projectIdentifier = inputDTO.getProjectIdentifier();
+    orgIdentifier = inputDTO.getOrgIdentifier();
+    InfraDefMapper infraDefMapper = infraMapperFactory.getInfraDefMapper(infra);
+    NGYamlFile envNgYamlFile =
+        migratedEntities.get(CgEntityId.builder().id(infra.getEnvId()).type(ENVIRONMENT).build());
+    InfrastructureConfig infrastructureConfig =
+        InfrastructureConfig.builder()
+            .infrastructureDefinitionConfig(
+                InfrastructureDefinitionConfig.builder()
+                    .name(name)
+                    .orgIdentifier(orgIdentifier)
+                    .projectIdentifier(projectIdentifier)
+                    .identifier(identifier)
+                    .environmentRef(MigratorUtility.getIdentifierWithScope(envNgYamlFile.getNgEntityDetail()))
+                    .spec(infraDefMapper.getSpec(infra, migratedEntities))
+                    .type(infraDefMapper.getInfrastructureType(infra))
+                    .deploymentType(infraDefMapper.getServiceDefinition(infra))
+                    .build())
+            .build();
+
+    List<NGYamlFile> files = new ArrayList<>();
+    NGYamlFile ngYamlFile =
+        NGYamlFile.builder()
+            .filename(String.format("infra/%s/%s.yaml",
+                ((NGEnvironmentConfig) envNgYamlFile.getYaml()).getNgEnvironmentInfoConfig().getName(), name))
+            .yaml(infrastructureConfig)
+            .ngEntityDetail(NgEntityDetail.builder()
+                                .identifier(identifier)
+                                .orgIdentifier(orgIdentifier)
+                                .projectIdentifier(projectIdentifier)
+                                .build())
+            .type(NGMigrationEntityType.INFRA)
+            .cgBasicInfo(CgBasicInfo.builder()
+                             .accountId(infra.getAccountId())
+                             .appId(infra.getAppId())
+                             .id(infra.getUuid())
+                             .type(NGMigrationEntityType.INFRA)
+                             .build())
+            .build();
+    files.add(ngYamlFile);
+    migratedEntities.putIfAbsent(entityId, ngYamlFile);
+    return files;
   }
 
   @Override
@@ -148,7 +257,7 @@ public class InfraMigrationService extends NgMigrationService {
 
   @Override
   protected boolean isNGEntityExists() {
-    return false;
+    return true;
   }
 
   @Override

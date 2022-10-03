@@ -30,7 +30,13 @@ public interface NGEncryptedDataService {
 
   NGEncryptedData get(String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier);
 
+  NGEncryptedData getFromReferenceExpression(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String secretIdentifier);
+
   boolean delete(String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier);
+
+  NGEncryptedData hardDelete(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier);
 
   NGEncryptedData updateSecretText(String accountIdentifier, SecretDTOV2 dto);
 

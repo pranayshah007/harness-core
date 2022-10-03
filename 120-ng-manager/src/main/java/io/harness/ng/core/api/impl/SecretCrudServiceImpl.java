@@ -474,6 +474,7 @@ public class SecretCrudServiceImpl implements SecretCrudService {
         if (deletionSuccess) {
           secretEntityReferenceHelper.deleteSecretEntityReferenceWhenSecretGetsDeleted(accountIdentifier, orgIdentifier,
               projectIdentifier, identifier, getSecretManagerIdentifier(optionalSecret.get().getSecret()));
+          encryptedDataService.hardDelete(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
           publishEvent(accountIdentifier, orgIdentifier, projectIdentifier, identifier,
               EventsFrameworkMetadataConstants.DELETE_ACTION);
         } else {

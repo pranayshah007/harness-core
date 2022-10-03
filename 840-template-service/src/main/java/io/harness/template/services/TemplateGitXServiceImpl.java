@@ -95,11 +95,14 @@ public class TemplateGitXServiceImpl implements TemplateGitXService {
 
   @Override
   public boolean isNewGitXEnabled(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
-    if (projectIdentifier != null) {
-      return isGitSimplificationEnabledForAProject(accountIdentifier, orgIdentifier, projectIdentifier);
-    } else {
-      return ngTemplateFeatureFlagHelperService.isEnabled(accountIdentifier, FeatureName.NG_TEMPLATE_GITX_ACCOUNT_ORG);
+    if (ngTemplateFeatureFlagHelperService.isEnabled(accountIdentifier, FeatureName.NG_TEMPLATE_GITX)) {
+      if (projectIdentifier != null) {
+        return isGitSimplificationEnabledForAProject(accountIdentifier, orgIdentifier, projectIdentifier);
+      } else {
+        return true;
+      }
     }
+    return false;
   }
 
   private boolean isGitSimplificationEnabledForAProject(

@@ -11,9 +11,10 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EncryptedData;
 import io.harness.beans.SecretManagerConfig;
-import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.ng.core.dto.secrets.SecretTextSpecDTO;
+import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
+import io.harness.ngmigration.dto.SecretManagerCreatedDTO;
 import io.harness.secretmanagerclient.ValueType;
 import io.harness.secrets.SecretService;
 
@@ -37,8 +38,8 @@ public class HarnessSecretMigrator implements SecretMigrator {
   }
 
   @Override
-  public ConnectorConfigDTO getConfigDTO(
-      SecretManagerConfig secretManagerConfig, Map<CgEntityId, NGYamlFile> migratedEntities) {
-    return null;
+  public SecretManagerCreatedDTO getConfigDTO(SecretManagerConfig secretManagerConfig, MigrationInputDTO inputDTO,
+      Map<CgEntityId, NGYamlFile> migratedEntities) {
+    return SecretManagerCreatedDTO.builder().build();
   }
 }

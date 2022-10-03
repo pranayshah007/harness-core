@@ -21,6 +21,7 @@ import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorModule;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
+import io.harness.encryption.Scope;
 import io.harness.exception.InvalidRequestException;
 import io.harness.filestore.dto.node.FileNodeDTO;
 import io.harness.filestore.dto.node.FileStoreNodeDTO;
@@ -74,12 +75,23 @@ public class CustomDeploymentInfrastructureHelper {
             connectorNGVariable.setConnector(
                 ParameterField.<ConnectorInfoDTO>builder().value(connectorInfoDTO).build());
             mapOfVariables.put(connectorNGVariable.getName(), connectorInfoDTO);
+          } else if (!isNull(connectorNGVariable.getValue().getExpressionValue())) {
+            mapOfVariables.put(connectorNGVariable.getName(), connectorNGVariable.getValue().getExpressionValue());
           }
-
         } else if (variable instanceof CustomDeploymentSecretNGVariable) {
           CustomDeploymentSecretNGVariable secretNGVariable = (CustomDeploymentSecretNGVariable) variable;
-          String secretIdentifier = secretNGVariable.getValue().getValue().getIdentifier();
-          mapOfVariables.put(secretNGVariable.getName(), NGVariablesUtils.fetchSecretExpression(secretIdentifier));
+          if (!isNull(secretNGVariable.getValue().getValue())) {
+            String secretIdentifier = secretNGVariable.getValue().getValue().getIdentifier();
+            Scope scope = secretNGVariable.getValue().getValue().getScope();
+            String prefix = "";
+            if (scope != Scope.PROJECT) {
+              prefix = (scope == Scope.ACCOUNT) ? ACCOUNT_IDENTIFIER : ORG_IDENTIFIER;
+            }
+            String expression = NGVariablesUtils.fetchSecretExpression(prefix + secretIdentifier);
+            mapOfVariables.put(secretNGVariable.getName(), expression);
+          } else if (!isNull(secretNGVariable.getValue().getExpressionValue())) {
+            mapOfVariables.put(secretNGVariable.getName(), secretNGVariable.getValue().getExpressionValue());
+          }
         } else {
           mapOfVariables.put(variable.getName(), variable.getCurrentValue().getValue());
         }

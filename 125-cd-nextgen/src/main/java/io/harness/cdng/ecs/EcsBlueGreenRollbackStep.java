@@ -186,12 +186,12 @@ public class EcsBlueGreenRollbackStep extends TaskExecutableWithRollbackAndRbac<
     EcsLoadBalancerConfig ecsLoadBalancerConfig =
         EcsLoadBalancerConfig.builder()
             .loadBalancer(ecsBlueGreenPrepareRollbackDataOutcome.getLoadBalancer())
-            .prodListenerArn(ecsBlueGreenPrepareRollbackDataOutcome.getListenerArn())
-            .prodListenerRuleArn(ecsBlueGreenPrepareRollbackDataOutcome.getListenerRuleArn())
-            .prodTargetGroupArn(ecsBlueGreenCreateServiceDataOutcome.getTargetGroupArn())
-            .stageListenerArn(ecsBlueGreenCreateServiceDataOutcome.getListenerArn())
-            .stageListenerRuleArn(ecsBlueGreenCreateServiceDataOutcome.getListenerRuleArn())
-            .stageTargetGroupArn(ecsBlueGreenPrepareRollbackDataOutcome.getTargetGroupArn())
+            .prodListenerArn(ecsBlueGreenPrepareRollbackDataOutcome.getProdListenerArn())
+            .prodListenerRuleArn(ecsBlueGreenPrepareRollbackDataOutcome.getProdListenerRuleArn())
+            .prodTargetGroupArn(ecsBlueGreenPrepareRollbackDataOutcome.getProdTargetGroupArn())
+            .stageListenerArn(ecsBlueGreenPrepareRollbackDataOutcome.getStageListenerArn())
+            .stageListenerRuleArn(ecsBlueGreenPrepareRollbackDataOutcome.getStageListenerRuleArn())
+            .stageTargetGroupArn(ecsBlueGreenPrepareRollbackDataOutcome.getStageTargetGroupArn())
             .build();
 
     EcsBlueGreenRollbackRequestBuilder ecsBlueGreenRollbackRequestBuilder =
@@ -208,6 +208,10 @@ public class EcsBlueGreenRollbackStep extends TaskExecutableWithRollbackAndRbac<
             .isNewServiceCreated(ecsBlueGreenCreateServiceDataOutcome.isNewServiceCreated())
             .oldServiceCreateRequestBuilderString(
                 ecsBlueGreenPrepareRollbackDataOutcome.getCreateServiceRequestBuilderString())
+            .oldServiceScalableTargetManifestContentList(
+                ecsBlueGreenPrepareRollbackDataOutcome.getRegisterScalableTargetRequestBuilderStrings())
+            .oldServiceScalingPolicyManifestContentList(
+                ecsBlueGreenPrepareRollbackDataOutcome.getRegisterScalingPolicyRequestBuilderStrings())
             .ecsLoadBalancerConfig(ecsLoadBalancerConfig);
 
     if (EmptyPredicate.isEmpty(ecsBlueGreenRollbackStepParameters.ecsBlueGreenSwapTargetGroupsFnq)) {

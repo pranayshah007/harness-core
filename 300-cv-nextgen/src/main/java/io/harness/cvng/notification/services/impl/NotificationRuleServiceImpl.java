@@ -189,6 +189,17 @@ public class NotificationRuleServiceImpl implements NotificationRuleService {
   }
 
   @Override
+  public void deleteNotificationRuleRefs(ProjectParams projectParams, List<String> existingNotificationRuleRefs,
+      List<String> updatedNotificationRuleRefs) {
+    List<String> toBeDeletedNotificationRuleRefs = new ArrayList<>();
+    for (String notificationRuleRef : existingNotificationRuleRefs) {
+      if (!updatedNotificationRuleRefs.contains(notificationRuleRef)) {
+        toBeDeletedNotificationRuleRefs.add(notificationRuleRef);
+      }
+    }
+    delete(projectParams, toBeDeletedNotificationRuleRefs);
+  }
+  @Override
   public List<NotificationRuleRefDTO> getNotificationRuleRefDTOs(List<NotificationRuleRef> notificationRuleRefs) {
     return notificationRuleRefs.stream()
         .map(notificationRuleRef

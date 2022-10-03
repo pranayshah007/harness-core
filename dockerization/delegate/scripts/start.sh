@@ -71,6 +71,12 @@ if [[ $KUBERNETES_SERVICE_HOST != "" ]]; then
   fi
 fi
 
+DOCKER_PROXY_SECRET_FILE="/run/secrets/proxy.config"
+if [ "$DELEGATE_TYPE" == "DOCKER" ] && [ -e "$DOCKER_PROXY_SECRET_FILE" ]; then
+  echo "Docker delegate: copy proxy config mounted at ""$DOCKER_PROXY_SECRET_FILE"
+  cp "$DOCKER_PROXY_SECRET_FILE" 'proxy.config'
+fi
+
 if [ ! -e proxy.config ]; then
   echo "PROXY_HOST='$PROXY_HOST'" > proxy.config
   echo "PROXY_PORT='$PROXY_PORT'" >> proxy.config
@@ -192,15 +198,10 @@ if [[ $DEPLOY_MODE != "KUBERNETES" ]]; then
 fi
 
 WATCHER_VERSION=$(echo $WATCHER_CURRENT_VERSION | cut -d "." -f3)
-if [ $WATCHER_VERSION -ge 75276 ]; then
-  echo "using JRE11 with watcher $WATCHER_VERSION"
-  JRE_DIR="jdk-11.0.14+9-jre"
-  JVM_URL=$JVM_URL_BASE_PATH/jre/openjdk-11.0.14_9/OpenJDK11U-jre_x64_linux_hotspot_11.0.14_9.tar.gz
-else
-  echo "using JRE8 with watcher $WATCHER_VERSION"
-  JRE_DIR="jdk8u242-b08-jre"
-  JVM_URL=$JVM_URL_BASE_PATH/jre/openjdk-8u242/jre_x64_linux_8u242b08.tar.gz
-fi
+
+echo "using JRE11 with watcher $WATCHER_VERSION"
+JRE_DIR="jdk-11.0.14+9-jre"
+JVM_URL=$JVM_URL_BASE_PATH/jre/openjdk-11.0.14_9/OpenJDK11U-jre_x64_linux_hotspot_11.0.14_9.tar.gz
 
 JRE_BINARY=$JRE_DIR/bin/java
 

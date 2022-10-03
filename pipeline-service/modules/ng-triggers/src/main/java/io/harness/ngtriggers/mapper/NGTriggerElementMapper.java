@@ -213,15 +213,27 @@ public class NGTriggerElementMapper {
   }
 
   public void copyEntityFieldsOutsideOfYml(NGTriggerEntity existingEntity, NGTriggerEntity newEntity) {
-    boolean isWebhookPollingEnabled = isWebhookPollingEnabled(
-        existingEntity.getType(), existingEntity.getAccountId(), existingEntity.getPollInterval());
     if (newEntity.getType() == ARTIFACT || newEntity.getType() == MANIFEST) {
       copyFields(existingEntity, newEntity);
-    } else if (isWebhookPollingEnabled) {
-      if (newEntity.getPollInterval() == null) {
-        throw new InvalidRequestException("Polling Interval cannot be null");
+      return;
+    }
+
+    if (newEntity.getType() == WEBHOOK) {
+      if (!GITHUB.getEntityMetadataName().equalsIgnoreCase(existingEntity.getMetadata().getWebhook().getType())) {
+        return;
       }
-      copyFields(existingEntity, newEntity);
+
+      // Currently, enabled only for GITHUB
+      boolean isWebhookPollingEnabled = isWebhookPollingEnabled(
+          existingEntity.getType(), existingEntity.getAccountId(), existingEntity.getPollInterval());
+
+      if (isWebhookPollingEnabled) {
+        if (newEntity.getPollInterval() == null) {
+          throw new InvalidRequestException("Polling Interval cannot be null");
+        }
+        // Copy entities for webhook git polling
+        copyFields(existingEntity, newEntity);
+      }
     }
   }
 
@@ -294,7 +306,8 @@ public class NGTriggerElementMapper {
           metadata.git(prepareGitMetadata(webhookTriggerConfig));
         }
 
-        if (isWebhookPollingEnabled(triggerSource.getType(), accountIdentifier, triggerSource.getPollInterval())) {
+        if (webhookTriggerConfig.getType() == GITHUB
+            && isWebhookPollingEnabled(triggerSource.getType(), accountIdentifier, triggerSource.getPollInterval())) {
           return NGTriggerMetadata.builder()
               .webhook(metadata.build())
               .buildMetadata(

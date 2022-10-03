@@ -33,11 +33,14 @@ import io.harness.delegate.beans.ecs.EcsMapper;
 import io.harness.delegate.beans.ecs.EcsTask;
 import io.harness.delegate.task.aws.AwsNgConfigMapper;
 import io.harness.delegate.task.ecs.request.EcsBlueGreenCreateServiceRequest;
+import io.harness.delegate.task.ecs.request.EcsBlueGreenRollbackRequest;
 import io.harness.exception.InvalidRequestException;
-import io.harness.exception.InvalidYamlException;
+import io.harness.exception.NestedExceptionUtils;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
 import io.harness.serializer.YamlUtils;
+
+import software.wings.beans.LogColor;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.util.concurrent.TimeLimiter;
@@ -55,6 +58,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import software.amazon.awssdk.core.waiters.WaiterResponse;
 import software.amazon.awssdk.services.applicationautoscaling.model.DeleteScalingPolicyRequest;
 import software.amazon.awssdk.services.applicationautoscaling.model.DeregisterScalableTargetRequest;
@@ -77,6 +81,7 @@ import software.amazon.awssdk.services.ecs.model.ListTasksRequest;
 import software.amazon.awssdk.services.ecs.model.ListTasksResponse;
 import software.amazon.awssdk.services.ecs.model.RegisterTaskDefinitionRequest;
 import software.amazon.awssdk.services.ecs.model.RegisterTaskDefinitionResponse;
+import software.amazon.awssdk.services.ecs.model.RunTaskRequest;
 import software.amazon.awssdk.services.ecs.model.Service;
 import software.amazon.awssdk.services.ecs.model.ServiceEvent;
 import software.amazon.awssdk.services.ecs.model.ServiceField;
@@ -229,10 +234,7 @@ public class EcsCommandTaskNGHelper {
 
   public void deleteScalingPolicies(
       AwsConnectorDTO awsConnectorDTO, String serviceName, String cluster, String region, LogCallback logCallback) {
-    logCallback.saveExecutionLog(format("%n"
-                                         + "Deleting Scaling Policies from service %s..%n",
-                                     serviceName),
-        LogLevel.INFO);
+    logCallback.saveExecutionLog(format("Deleting Scaling Policies from service %s..%n", serviceName), LogLevel.INFO);
 
     DescribeScalingPoliciesRequest describeScalingPoliciesRequest =
         DescribeScalingPoliciesRequest.builder()
@@ -260,10 +262,10 @@ public class EcsCommandTaskNGHelper {
             LogLevel.INFO);
       });
 
-      logCallback.saveExecutionLog(format("Deleted Scaling Policies from service %s %n", serviceName), LogLevel.INFO);
+      logCallback.saveExecutionLog(format("Deleted Scaling Policies from service %s %n%n", serviceName), LogLevel.INFO);
     } else {
       logCallback.saveExecutionLog(
-          format("Didn't find any Scaling Policies attached to service %s %n", serviceName), LogLevel.INFO);
+          format("Didn't find any Scaling Policies attached to service %s %n%n", serviceName), LogLevel.INFO);
     }
   }
 
@@ -297,7 +299,7 @@ public class EcsCommandTaskNGHelper {
   public void deregisterScalableTargets(
       AwsConnectorDTO awsConnectorDTO, String serviceName, String cluster, String region, LogCallback logCallback) {
     logCallback.saveExecutionLog(
-        format("%nDeregistering Scalable Targets from service %s..%n", serviceName), LogLevel.INFO);
+        format("Deregistering Scalable Targets from service %s..%n", serviceName), LogLevel.INFO);
 
     DescribeScalableTargetsRequest describeScalableTargetsRequest =
         DescribeScalableTargetsRequest.builder()
@@ -327,10 +329,10 @@ public class EcsCommandTaskNGHelper {
             LogLevel.INFO);
       });
       logCallback.saveExecutionLog(
-          format("Deregistered Scalable Targets from service %s %n", serviceName), LogLevel.INFO);
+          format("Deregistered Scalable Targets from service %s %n%n", serviceName), LogLevel.INFO);
     } else {
       logCallback.saveExecutionLog(
-          format("Didn't find any Scalable Targets on service %s %n", serviceName), LogLevel.INFO);
+          format("Didn't find any Scalable Targets on service %s %n%n", serviceName), LogLevel.INFO);
     }
   }
 
@@ -388,7 +390,27 @@ public class EcsCommandTaskNGHelper {
     try {
       object = yamlUtils.read(yaml, tClass);
     } catch (Exception e) {
-      throw new InvalidYamlException(format("Error while parsing yaml to class %s", tClass.getName()), e);
+      // Set default
+      String schema = tClass.getName();
+
+      if (tClass == RegisterTaskDefinitionRequest.serializableBuilderClass()) {
+        schema = "ECS Task Definition";
+      } else if (tClass == CreateServiceRequest.serializableBuilderClass()) {
+        schema = "ECS Service Definition";
+      } else if (tClass == RegisterScalableTargetRequest.serializableBuilderClass()) {
+        schema = "ECS Scalable Target";
+      } else if (tClass == PutScalingPolicyRequest.serializableBuilderClass()) {
+        schema = "ECS Scaling Policy";
+      } else if (tClass == RunTaskRequest.serializableBuilderClass()) {
+        schema = "ECS Run Task Definition";
+      }
+
+      throw NestedExceptionUtils.hintWithExplanationException(
+          format("Please check yaml configured matches schema %s", schema),
+          format(
+              "Error while parsing yaml %s. Its expected to be matching %s schema. Please check Harness documentation https://docs.harness.io for more details",
+              yaml, schema),
+          e);
     }
     return object;
   }
@@ -397,6 +419,13 @@ public class EcsCommandTaskNGHelper {
       List<String> ecsScalableTargetManifestContentList, List<String> ecsScalingPolicyManifestContentList,
       EcsInfraConfig ecsInfraConfig, LogCallback logCallback, long timeoutInMillis,
       boolean sameAsAlreadyRunningInstances, boolean forceNewDeployment) {
+    if (StringUtils.isEmpty(createServiceRequest.serviceName())) {
+      throw NestedExceptionUtils.hintWithExplanationException(
+          format(
+              "Please check if ECS service name is configured properly in ECS Service Definition Manifest in Harness Service."),
+          format("ECS service name is not configured properly in ECS Service Definition. It is found to be empty."),
+          new InvalidRequestException("ECS service name is empty."));
+    }
     // if service exists create service, otherwise update service
     Optional<Service> optionalService = describeService(createServiceRequest.cluster(),
         createServiceRequest.serviceName(), ecsInfraConfig.getRegion(), ecsInfraConfig.getAwsConnectorDTO());
@@ -668,19 +697,21 @@ public class EcsCommandTaskNGHelper {
     // delete the existing non-blue version
     if (optionalService.isPresent() && isServiceActive(optionalService.get())) {
       Service service = optionalService.get();
-      DeleteServiceResponse deleteServiceResponse = deleteService(
+      logCallback.saveExecutionLog(
+          format("Deleting existing non-blue version Service: %s", service.serviceName()), LogLevel.INFO);
+
+      deleteService(
           service.serviceName(), service.clusterArn(), ecsInfraConfig.getRegion(), ecsInfraConfig.getAwsConnectorDTO());
 
-      service = deleteServiceResponse.service();
-      while (service != null && !"INACTIVE".equals(service.status())) {
-        Optional<Service> optionService = describeService(ecsInfraConfig.getCluster(), service.serviceName(),
-            ecsInfraConfig.getRegion(), ecsInfraConfig.getAwsConnectorDTO());
-        service = optionService.orElse(null);
-      }
+      ecsServiceInactiveStateCheck(logCallback, ecsInfraConfig.getAwsConnectorDTO(), ecsInfraConfig.getCluster(),
+          service.serviceName(), ecsInfraConfig.getRegion(), (int) TimeUnit.MILLISECONDS.toMinutes(timeoutInMillis));
+      logCallback.saveExecutionLog(
+          format("Deleted non-blue version Service: %s %n%n", service.serviceName()), LogLevel.INFO);
     }
 
     // add green tag in create service request
-    CreateServiceRequest.Builder createServiceRequestBuilder = addGreenTagInCreateServiceRequest(createServiceRequest);
+    CreateServiceRequest.Builder createServiceRequestBuilder =
+        addTagInCreateServiceRequest(createServiceRequest, BG_GREEN);
 
     // update service name, cluster and task definition
     createServiceRequest = createServiceRequestBuilder.serviceName(stageServiceName)
@@ -688,7 +719,7 @@ public class EcsCommandTaskNGHelper {
                                .taskDefinition(taskDefinitionArn)
                                .build();
 
-    logCallback.saveExecutionLog(format("Creating Service %s with task definition %s and desired count %s %n",
+    logCallback.saveExecutionLog(format("Creating Stage Service %s with task definition %s and desired count %s %n",
                                      createServiceRequest.serviceName(), createServiceRequest.taskDefinition(),
                                      createServiceRequest.desiredCount()),
         LogLevel.INFO);
@@ -704,8 +735,16 @@ public class EcsCommandTaskNGHelper {
     ecsServiceSteadyStateCheck(logCallback, ecsInfraConfig.getAwsConnectorDTO(), createServiceRequest.cluster(),
         createServiceRequest.serviceName(), ecsInfraConfig.getRegion(), timeoutInMillis, eventsAlreadyProcessed);
 
-    logCallback.saveExecutionLog(format("Created Service %s with Arn %s %n", createServiceRequest.serviceName(),
+    logCallback.saveExecutionLog(format("Created Stage Service %s with Arn %s %n%n", createServiceRequest.serviceName(),
                                      createServiceResponse.service().serviceArn()),
+        LogLevel.INFO);
+
+    logCallback.saveExecutionLog(format("Target Group with Arn: %s is associated with Stage Service %s", targetGroupArn,
+                                     createServiceRequest.serviceName()),
+        LogLevel.INFO);
+
+    logCallback.saveExecutionLog(format("Tag: [%s, %s] is associated with Stage Service %s", BG_VERSION, BG_GREEN,
+                                     createServiceRequest.serviceName()),
         LogLevel.INFO);
 
     registerScalableTargets(ecsScalableTargetManifestContentList, ecsInfraConfig.getAwsConnectorDTO(),
@@ -718,27 +757,113 @@ public class EcsCommandTaskNGHelper {
     return createServiceResponse.service().serviceName();
   }
 
+  public void updateOldService(EcsBlueGreenRollbackRequest ecsBlueGreenRollbackRequest,
+      AwsInternalConfig awsInternalConfig, LogCallback logCallback, long timeoutInMillis) {
+    EcsInfraConfig ecsInfraConfig = ecsBlueGreenRollbackRequest.getEcsInfraConfig();
+    // Describe old service and get service details
+    Optional<Service> oldOptionalService =
+        describeService(ecsInfraConfig.getCluster(), ecsBlueGreenRollbackRequest.getOldServiceName(),
+            ecsInfraConfig.getRegion(), ecsInfraConfig.getAwsConnectorDTO());
+    List<ServiceEvent> eventsAlreadyProcessed = newArrayList();
+    if (oldOptionalService.isPresent() && isServiceActive(oldOptionalService.get())) {
+      Service oldService = oldOptionalService.get();
+      CreateServiceRequest createServiceRequest =
+          parseYamlAsObject(ecsBlueGreenRollbackRequest.getOldServiceCreateRequestBuilderString(),
+              CreateServiceRequest.serializableBuilderClass())
+              .build();
+
+      // update desired count of old service to its earlier desired count if its not same
+      if (!oldService.desiredCount().equals(createServiceRequest.desiredCount())) {
+        logCallback.saveExecutionLog(
+            format("Updating Old Service %s with task definition %s and desired count %s", oldService.serviceName(),
+                oldService.taskDefinition(), createServiceRequest.desiredCount()),
+            LogLevel.INFO);
+        Service service = updateDesiredCount(ecsBlueGreenRollbackRequest.getOldServiceName(), ecsInfraConfig,
+            awsInternalConfig, createServiceRequest.desiredCount())
+                              .service();
+        eventsAlreadyProcessed = new ArrayList<>(service.events());
+      }
+    } else {
+      CreateServiceRequest createServiceRequest =
+          parseYamlAsObject(ecsBlueGreenRollbackRequest.getOldServiceCreateRequestBuilderString(),
+              CreateServiceRequest.serializableBuilderClass())
+              .build();
+
+      logCallback.saveExecutionLog(format("Creating Old Service %s with task definition %s and desired count %s",
+                                       createServiceRequest.serviceName(), createServiceRequest.taskDefinition(),
+                                       createServiceRequest.desiredCount()),
+          LogLevel.INFO);
+
+      CreateServiceResponse createServiceResponse =
+          createService(createServiceRequest, ecsInfraConfig.getRegion(), ecsInfraConfig.getAwsConnectorDTO());
+      eventsAlreadyProcessed = new ArrayList<>(createServiceResponse.service().events());
+    }
+
+    waitForTasksToBeInRunningState(awsNgConfigMapper.createAwsInternalConfig(ecsInfraConfig.getAwsConnectorDTO()),
+        ecsInfraConfig.getCluster(), ecsBlueGreenRollbackRequest.getOldServiceName(), ecsInfraConfig.getRegion(),
+        eventsAlreadyProcessed, logCallback, timeoutInMillis);
+
+    // steady state check to reach stable state
+    ecsServiceSteadyStateCheck(logCallback, ecsInfraConfig.getAwsConnectorDTO(),
+        ecsBlueGreenRollbackRequest.getEcsInfraConfig().getCluster(), ecsBlueGreenRollbackRequest.getOldServiceName(),
+        ecsBlueGreenRollbackRequest.getEcsInfraConfig().getRegion(), timeoutInMillis, eventsAlreadyProcessed);
+
+    logCallback.saveExecutionLog(
+        format("Updating old service:  %s scalable targets", ecsBlueGreenRollbackRequest.getOldServiceName()));
+
+    // register scalable target
+    registerScalableTargets(ecsBlueGreenRollbackRequest.getOldServiceScalableTargetManifestContentList(),
+        ecsInfraConfig.getAwsConnectorDTO(), ecsBlueGreenRollbackRequest.getOldServiceName(),
+        ecsInfraConfig.getCluster(), ecsInfraConfig.getRegion(), logCallback);
+
+    logCallback.saveExecutionLog(
+        format("Updating old service:  %s scaling policies", ecsBlueGreenRollbackRequest.getOldServiceName()));
+
+    // attach scale policies
+    attachScalingPolicies(ecsBlueGreenRollbackRequest.getOldServiceScalingPolicyManifestContentList(),
+        ecsInfraConfig.getAwsConnectorDTO(), ecsBlueGreenRollbackRequest.getOldServiceName(),
+        ecsInfraConfig.getCluster(), ecsInfraConfig.getRegion(), logCallback);
+  }
+
   public void swapTargetGroups(EcsInfraConfig ecsInfraConfig, LogCallback logCallback,
       EcsLoadBalancerConfig ecsLoadBalancerConfig, AwsInternalConfig awsInternalConfig) {
+    logCallback.saveExecutionLog(
+        format("Modifying ELB Prod Listener to Forward requests to Target group associated with new Service%n,"
+                + "TargetGroup: %s",
+            ecsLoadBalancerConfig.getStageTargetGroupArn()),
+        LogLevel.INFO);
     // modify prod listener rule with stage target group
     modifyListenerRule(ecsInfraConfig, ecsLoadBalancerConfig.getProdListenerArn(),
         ecsLoadBalancerConfig.getProdListenerRuleArn(), ecsLoadBalancerConfig.getStageTargetGroupArn(),
-        awsInternalConfig);
+        awsInternalConfig, logCallback);
+    logCallback.saveExecutionLog(
+        color(format("Successfully updated Prod Listener %n%n"), LogColor.White, Bold), LogLevel.INFO);
 
+    logCallback.saveExecutionLog(
+        format("Modifying ELB Stage Listener to Forward requests to Target group associated with old Service%n,"
+                + "TargetGroup: %s",
+            ecsLoadBalancerConfig.getProdTargetGroupArn()),
+        LogLevel.INFO);
     // modify stage listener rule with prod target group
     modifyListenerRule(ecsInfraConfig, ecsLoadBalancerConfig.getStageListenerArn(),
         ecsLoadBalancerConfig.getStageListenerRuleArn(), ecsLoadBalancerConfig.getProdTargetGroupArn(),
-        awsInternalConfig);
+        awsInternalConfig, logCallback);
+    logCallback.saveExecutionLog(
+        color(format("Successfully updated Stage Listener %n%n"), LogColor.White, Bold), LogLevel.INFO);
   }
 
-  public void updateTag(
-      String serviceName, EcsInfraConfig ecsInfraConfig, String value, AwsInternalConfig awsInternalConfig) {
+  public void updateTag(String serviceName, EcsInfraConfig ecsInfraConfig, String value,
+      AwsInternalConfig awsInternalConfig, LogCallback logCallback) {
     // Describe ecs service and get service details
     Optional<Service> optionalService = describeService(
         ecsInfraConfig.getCluster(), serviceName, ecsInfraConfig.getRegion(), ecsInfraConfig.getAwsConnectorDTO());
+
     if (optionalService.isPresent() && isServiceActive(optionalService.get())) {
       UntagResourceRequest untagResourceRequest =
           UntagResourceRequest.builder().resourceArn(optionalService.get().serviceArn()).tagKeys(BG_VERSION).build();
+
+      logCallback.saveExecutionLog(
+          format("Updating service: %s with tag: [%s, %s]", serviceName, BG_VERSION, value), LogLevel.INFO);
 
       // remove BG tag from service
       ecsV2Client.untagService(awsInternalConfig, untagResourceRequest, ecsInfraConfig.getRegion());
@@ -749,8 +874,9 @@ public class EcsCommandTaskNGHelper {
 
       // update BG tag to service
       ecsV2Client.tagService(awsInternalConfig, tagResourceRequest, ecsInfraConfig.getRegion());
+    } else {
+      throw new InvalidRequestException(format("Service: %s is not active", serviceName));
     }
-    // todo: other cases
   }
 
   public UpdateServiceResponse updateDesiredCount(
@@ -767,17 +893,25 @@ public class EcsCommandTaskNGHelper {
       // updating desired count
       return ecsV2Client.updateService(awsInternalConfig, updateServiceRequest, ecsInfraConfig.getRegion());
     }
-    // todo modify it
-    throw new InvalidRequestException("service is not active, not able to update it.");
+    throw new InvalidRequestException(format("service: %s is not active, not able to update it.", serviceName));
   }
 
-  private void modifyListenerRule(EcsInfraConfig ecsInfraConfig, String listenerArn, String listenerRuleArn,
-      String targetGroupArn, AwsInternalConfig awsInternalConfig) {
+  public void modifyListenerRule(EcsInfraConfig ecsInfraConfig, String listenerArn, String listenerRuleArn,
+      String targetGroupArn, AwsInternalConfig awsInternalConfig, LogCallback logCallback) {
     // check if listener rule is default one in listener
     if (checkForDefaultRule(ecsInfraConfig, listenerArn, listenerRuleArn, awsInternalConfig)) {
+      logCallback.saveExecutionLog(
+          format("Modifying the default Listener: %s %n with listener rule: %s %n to forward traffic to"
+                  + " TargetGroup: %s",
+              listenerArn, listenerRuleArn, targetGroupArn),
+          LogLevel.INFO);
       // update listener with target group
       modifyDefaultListenerRule(ecsInfraConfig, listenerArn, targetGroupArn, awsInternalConfig);
     } else {
+      logCallback.saveExecutionLog(format("Modifying the Listener rule: %s %n to forward traffic to"
+                                           + " TargetGroup: %s",
+                                       listenerRuleArn, targetGroupArn),
+          LogLevel.INFO);
       // update listener rule with target group
       modifySpecificListenerRule(ecsInfraConfig, listenerRuleArn, targetGroupArn, awsInternalConfig);
     }
@@ -871,11 +1005,11 @@ public class EcsCommandTaskNGHelper {
     return firstVersionService;
   }
 
-  private CreateServiceRequest.Builder addGreenTagInCreateServiceRequest(CreateServiceRequest serviceRequest) {
+  private CreateServiceRequest.Builder addTagInCreateServiceRequest(CreateServiceRequest serviceRequest, String tag) {
     List<Tag> tags = newArrayList();
     tags.addAll(serviceRequest.tags());
 
-    Tag greenTag = Tag.builder().key(BG_VERSION).value(BG_GREEN).build();
+    Tag greenTag = Tag.builder().key(BG_VERSION).value(tag).build();
     tags.add(greenTag);
     return serviceRequest.toBuilder().tags(tags);
   }
@@ -885,8 +1019,10 @@ public class EcsCommandTaskNGHelper {
     if (ecsServiceDefinitionManifestContent.contains(targetGroupArnKey)) {
       ecsServiceDefinitionManifestContent =
           ecsServiceDefinitionManifestContent.replace(targetGroupArnKey, targetGroupArn);
+    } else {
+      throw new InvalidRequestException(
+          "target group expression: <+targetGroupArn> does not exist in service definition");
     }
-    // todo: fail it before target group expression not found
     return ecsServiceDefinitionManifestContent;
   }
 
