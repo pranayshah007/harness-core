@@ -38,6 +38,7 @@ import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.repositories.UpsertOptions;
 import io.harness.repositories.infrastructure.spring.InfrastructureRepository;
+import io.harness.setupusage.InfrastructureEntitySetupUsageHelper;
 import io.harness.utils.YamlPipelineUtils;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -83,6 +84,7 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
   private final RetryPolicy<Object> transactionRetryPolicy = DEFAULT_RETRY_POLICY;
   private final OutboxService outboxService;
   @Inject CustomDeploymentEntitySetupHelper customDeploymentEntitySetupHelper;
+  @Inject private InfrastructureEntitySetupUsageHelper infrastructureEntitySetupUsageHelper;
 
   private static final String DUP_KEY_EXP_FORMAT_STRING_FOR_PROJECT =
       "Infrastructure [%s] under Environment [%s] Project[%s], Organization [%s] in Account [%s] already exists";
@@ -106,18 +108,22 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
       if (infraEntity.getType() == InfrastructureType.CUSTOM_DEPLOYMENT) {
         customDeploymentEntitySetupHelper.addReferencesInEntitySetupUsage(infraEntity);
       }
-      return Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
-        InfrastructureEntity infrastructureEntity = infrastructureRepository.save(infraEntity);
-        outboxService.save(EnvironmentUpdatedEvent.builder()
-                               .accountIdentifier(infraEntity.getAccountId())
-                               .orgIdentifier(infraEntity.getOrgIdentifier())
-                               .status(EnvironmentUpdatedEvent.Status.CREATED)
-                               .resourceType(EnvironmentUpdatedEvent.ResourceType.INFRASTRUCTURE)
-                               .projectIdentifier(infraEntity.getProjectIdentifier())
-                               .newInfrastructureEntity(infraEntity)
-                               .build());
-        return infrastructureEntity;
-      }));
+      InfrastructureEntity createdInfra =
+          Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
+            InfrastructureEntity infrastructureEntity = infrastructureRepository.save(infraEntity);
+            outboxService.save(EnvironmentUpdatedEvent.builder()
+                                   .accountIdentifier(infraEntity.getAccountId())
+                                   .orgIdentifier(infraEntity.getOrgIdentifier())
+                                   .status(EnvironmentUpdatedEvent.Status.CREATED)
+                                   .resourceType(EnvironmentUpdatedEvent.ResourceType.INFRASTRUCTURE)
+                                   .projectIdentifier(infraEntity.getProjectIdentifier())
+                                   .newInfrastructureEntity(infraEntity)
+                                   .build());
+            return infrastructureEntity;
+          }));
+      infrastructureEntitySetupUsageHelper.updateSetupUsages(createdInfra);
+
+      return createdInfra;
 
     } catch (DuplicateKeyException ex) {
       throw new DuplicateFieldException(
@@ -148,25 +154,28 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
         get(requestInfra.getAccountId(), requestInfra.getOrgIdentifier(), requestInfra.getProjectIdentifier(),
             requestInfra.getEnvIdentifier(), requestInfra.getIdentifier());
     if (infraEntityOptional.isPresent()) {
-      return Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
-        InfrastructureEntity updatedResult = infrastructureRepository.update(criteria, requestInfra);
-        if (updatedResult == null) {
-          throw new InvalidRequestException(String.format(
-              "Infrastructure [%s] under Environment [%s], Project [%s], Organization [%s] couldn't be updated or doesn't exist.",
-              requestInfra.getIdentifier(), requestInfra.getEnvIdentifier(), requestInfra.getProjectIdentifier(),
-              requestInfra.getOrgIdentifier()));
-        }
-        outboxService.save(EnvironmentUpdatedEvent.builder()
-                               .accountIdentifier(requestInfra.getAccountId())
-                               .orgIdentifier(requestInfra.getOrgIdentifier())
-                               .status(EnvironmentUpdatedEvent.Status.UPDATED)
-                               .resourceType(EnvironmentUpdatedEvent.ResourceType.INFRASTRUCTURE)
-                               .projectIdentifier(requestInfra.getProjectIdentifier())
-                               .newInfrastructureEntity(requestInfra)
-                               .oldInfrastructureEntity(infraEntityOptional.get())
-                               .build());
-        return updatedResult;
-      }));
+      InfrastructureEntity updatedInfra =
+          Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
+            InfrastructureEntity updatedResult = infrastructureRepository.update(criteria, requestInfra);
+            if (updatedResult == null) {
+              throw new InvalidRequestException(String.format(
+                  "Infrastructure [%s] under Environment [%s], Project [%s], Organization [%s] couldn't be updated or doesn't exist.",
+                  requestInfra.getIdentifier(), requestInfra.getEnvIdentifier(), requestInfra.getProjectIdentifier(),
+                  requestInfra.getOrgIdentifier()));
+            }
+            outboxService.save(EnvironmentUpdatedEvent.builder()
+                                   .accountIdentifier(requestInfra.getAccountId())
+                                   .orgIdentifier(requestInfra.getOrgIdentifier())
+                                   .status(EnvironmentUpdatedEvent.Status.UPDATED)
+                                   .resourceType(EnvironmentUpdatedEvent.ResourceType.INFRASTRUCTURE)
+                                   .projectIdentifier(requestInfra.getProjectIdentifier())
+                                   .newInfrastructureEntity(requestInfra)
+                                   .oldInfrastructureEntity(infraEntityOptional.get())
+                                   .build());
+            return updatedResult;
+          }));
+      infrastructureEntitySetupUsageHelper.updateSetupUsages(updatedInfra);
+      return updatedInfra;
     } else {
       throw new InvalidRequestException(
           String.format("Infrastructure [%s] under Environment [%s], Project [%s], Organization [%s] doesn't exist.",
@@ -181,24 +190,27 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
     setNameIfNotPresent(requestInfra);
     modifyInfraRequest(requestInfra);
     Criteria criteria = getInfrastructureEqualityCriteria(requestInfra);
-    return Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
-      InfrastructureEntity result = infrastructureRepository.upsert(criteria, requestInfra);
-      if (result == null) {
-        throw new InvalidRequestException(String.format(
-            "Infrastructure [%s] under Environment [%s] Project[%s], Organization [%s] couldn't be upserted.",
-            requestInfra.getIdentifier(), requestInfra.getEnvIdentifier(), requestInfra.getProjectIdentifier(),
-            requestInfra.getOrgIdentifier()));
-      }
-      outboxService.save(EnvironmentUpdatedEvent.builder()
-                             .accountIdentifier(requestInfra.getAccountId())
-                             .orgIdentifier(requestInfra.getOrgIdentifier())
-                             .status(EnvironmentUpdatedEvent.Status.UPSERTED)
-                             .resourceType(EnvironmentUpdatedEvent.ResourceType.INFRASTRUCTURE)
-                             .projectIdentifier(requestInfra.getProjectIdentifier())
-                             .newInfrastructureEntity(requestInfra)
-                             .build());
-      return result;
-    }));
+    InfrastructureEntity upsertedInfra =
+        Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
+          InfrastructureEntity result = infrastructureRepository.upsert(criteria, requestInfra);
+          if (result == null) {
+            throw new InvalidRequestException(String.format(
+                "Infrastructure [%s] under Environment [%s] Project[%s], Organization [%s] couldn't be upserted.",
+                requestInfra.getIdentifier(), requestInfra.getEnvIdentifier(), requestInfra.getProjectIdentifier(),
+                requestInfra.getOrgIdentifier()));
+          }
+          outboxService.save(EnvironmentUpdatedEvent.builder()
+                                 .accountIdentifier(requestInfra.getAccountId())
+                                 .orgIdentifier(requestInfra.getOrgIdentifier())
+                                 .status(EnvironmentUpdatedEvent.Status.UPSERTED)
+                                 .resourceType(EnvironmentUpdatedEvent.ResourceType.INFRASTRUCTURE)
+                                 .projectIdentifier(requestInfra.getProjectIdentifier())
+                                 .newInfrastructureEntity(requestInfra)
+                                 .build());
+          return result;
+        }));
+    infrastructureEntitySetupUsageHelper.updateSetupUsages(upsertedInfra);
+    return upsertedInfra;
   }
 
   @Override
@@ -232,6 +244,9 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
               "Infrastructure [%s] under Environment [%s], Project[%s], Organization [%s] couldn't be deleted.",
               infraIdentifier, envIdentifier, projectIdentifier, orgIdentifier));
         }
+
+        infraEntityOptional.ifPresent(
+            infrastructureEntity -> infrastructureEntitySetupUsageHelper.deleteSetupUsages(infrastructureEntity));
 
         outboxService.save(EnvironmentUpdatedEvent.builder()
                                .accountIdentifier(accountId)
