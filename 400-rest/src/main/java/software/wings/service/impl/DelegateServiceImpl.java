@@ -2573,6 +2573,11 @@ public class DelegateServiceImpl implements DelegateService {
       return DelegateRegisterResponse.builder().action(DelegateRegisterResponse.Action.SELF_DESTRUCT).build();
     }
 
+    if (!validateDelegateRegisterRequest(delegateParams)) {
+      log.warn("Invalid arguments received in register call");
+      return DelegateRegisterResponse.builder().action(DelegateRegisterResponse.Action.SELF_DESTRUCT).build();
+    }
+
     if (isNotBlank(delegateParams.getDelegateGroupId())) {
       final DelegateGroup delegateGroup = persistence.get(DelegateGroup.class, delegateParams.getDelegateGroupId());
 
@@ -4495,5 +4500,18 @@ public class DelegateServiceImpl implements DelegateService {
           : Optional.empty();
     }
     return Optional.empty();
+  }
+
+  private boolean validateDelegateRegisterRequest(DelegateParams delegateParams) {
+    if (delegateParams.getDelegateType().equals(ECS)) {
+      if (isEmpty(delegateParams.getDelegateGroupId())) {
+        return false;
+      }
+      if (isEmpty(delegateParams.getDelegateGroupName())) {
+        return false;
+      }
+    }
+    // TODO: Add more validation checks as and when required.
+    return true;
   }
 }
