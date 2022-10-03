@@ -162,24 +162,18 @@ public class ComputeInstancePricingStrategy implements InstancePricingStrategy {
     String azureDataSetId = customBillingMetaDataService.getAzureDataSetId(instanceData.getAccountId());
     String gcpDataSetId = customBillingMetaDataService.getGcpDataSetId(instanceData.getAccountId());
 
-    log.info("awsDataSetId : {}, azureDataSetId: {}, gcpDataSetId: {} and cloudProvider: {}", awsDataSetId,
-        azureDataSetId, gcpDataSetId, cloudProvider);
-
     if (cloudProvider == CloudProvider.AWS && null != awsDataSetId) {
       vmInstanceBillingData = awsCustomBillingService.getComputeVMPricingInfo(instanceData, startTime, endTime);
     } else if (cloudProvider == CloudProvider.AZURE && null != azureDataSetId) {
       vmInstanceBillingData = azureCustomBillingService.getComputeVMPricingInfo(instanceData, startTime, endTime);
     } else if (cloudProvider == CloudProvider.GCP && null != gcpDataSetId) {
       vmInstanceBillingData = gcpCustomBillingService.getComputeVMPricingInfo(instanceData, startTime, endTime);
-      log.info("Check: vmInstanceBillingData: {}", vmInstanceBillingData);
     }
 
     if (null != vmInstanceBillingData && !Double.isNaN(vmInstanceBillingData.getComputeCost())) {
       double pricePerHr = (vmInstanceBillingData.getComputeCost() * 3600) / parentInstanceActiveSecond;
       double cpuPricePerHr = (vmInstanceBillingData.getCpuCost() * 3600) / parentInstanceActiveSecond;
       double memoryPricePerHr = (vmInstanceBillingData.getMemoryCost() * 3600) / parentInstanceActiveSecond;
-      log.info("CUR Pricing, pricePerHour: {}, cpuPricePerHr: {}, memoryPricePerHr: {}, resourceId: {}", pricePerHr,
-          cpuPricePerHr, memoryPricePerHr, vmInstanceBillingData.getResourceId());
       if (!Double.isNaN(vmInstanceBillingData.getRate()) && vmInstanceBillingData.getRate() > 0.0
           && cloudProvider != CloudProvider.GCP) {
         pricePerHr = vmInstanceBillingData.getRate();
@@ -194,7 +188,6 @@ public class ComputeInstancePricingStrategy implements InstancePricingStrategy {
                         .memoryMb(memoryMb)
                         .build();
     }
-    log.info("vmInstanceBillingData: {} ==>  PRICINGDATA: {}", vmInstanceBillingData, pricingData);
     return pricingData;
   }
 }

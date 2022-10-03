@@ -173,16 +173,12 @@ public class BigQueryHelperServiceImpl implements BigQueryHelperService {
   }
 
   private Map<String, VMInstanceBillingData> convertToGcpInstanceBillingData(TableResult result) {
-    log.info("GCP: BQ fetched result rows: {}", result.getTotalRows());
     List<VMInstanceServiceBillingData> vmInstanceServiceBillingDataList =
         convertToGcpInstanceServiceBillingData(result);
-
-    log.info("GCP: vmInstanceServiceBillingDataList size for GCP: {}", vmInstanceServiceBillingDataList.size());
 
     Map<String, VMInstanceBillingData> vmInstanceBillingDataMap = new HashMap<>();
     for (VMInstanceServiceBillingData vmInstanceServiceBillingData : vmInstanceServiceBillingDataList) {
       String resourceId = vmInstanceServiceBillingData.getResourceId();
-      log.info("GCP: Processing for resourceId: {}", resourceId);
       double cpuCost = 0;
       double ramCost = 0;
       double networkCost = 0;
@@ -199,16 +195,10 @@ public class BigQueryHelperServiceImpl implements BigQueryHelperService {
         double rate = vmInstanceServiceBillingData.getRate();
 
         if (vmInstanceServiceBillingData.getProductFamily().equalsIgnoreCase("CPU Cost")) {
-          log.info("Existing CPU cost: {} and CurrentCost: {} for resourceId: {}", cpuCost,
-              vmInstanceServiceBillingData.getCost(), resourceId);
           cpuCost += vmInstanceServiceBillingData.getCost();
         } else if (vmInstanceServiceBillingData.getProductFamily().equalsIgnoreCase("RAM Cost")) {
-          log.info("Existing MemoryCost cost: {} and CurrentCost: {} for resourceId: {}", ramCost,
-              vmInstanceServiceBillingData.getCost(), resourceId);
           ramCost += vmInstanceServiceBillingData.getCost();
         } else if (vmInstanceServiceBillingData.getProductFamily().equalsIgnoreCase("Network Cost")) {
-          log.info("Existing network cost: {} and CurrentCost: {} for resourceId: {}", networkCost,
-              vmInstanceServiceBillingData.getCost(), resourceId);
           networkCost += vmInstanceServiceBillingData.getCost();
         }
 
@@ -221,17 +211,12 @@ public class BigQueryHelperServiceImpl implements BigQueryHelperService {
                                     .networkCost(networkCost)
                                     .rate(rate)
                                     .build();
-
-        log.info(
-            "===== GCP: ComputeCost: {}, CPU Cost: {}, Memory Cost: {}, Network Cost: {}, Rate: {} for resourceId: {}",
-            computeCost, cpuCost, ramCost, networkCost, rate, resourceId);
       }
 
       vmInstanceBillingDataMap.put(resourceId, vmInstanceBillingData);
     }
 
     log.debug("GCP: resource map data {} ", vmInstanceBillingDataMap);
-    log.info("GCP: resource map data {} ", vmInstanceBillingDataMap);
     return vmInstanceBillingDataMap;
   }
 
@@ -264,7 +249,6 @@ public class BigQueryHelperServiceImpl implements BigQueryHelperService {
       }
       instanceServiceBillingDataList.add(dataBuilder.build());
     }
-    log.info("GCP: Resource Id data {} ", instanceServiceBillingDataList);
     return instanceServiceBillingDataList;
   }
 

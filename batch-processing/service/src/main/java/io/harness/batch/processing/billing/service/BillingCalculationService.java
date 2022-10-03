@@ -129,9 +129,6 @@ public class BillingCalculationService {
     BillingAmountBreakup billingAmountBreakup = createBillingAmount(instanceActiveSeconds, pricingData, instanceData);
 
     log.debug("Billing amount {} {} {}", billingAmountBreakup, pricePerHour, instanceActiveSeconds);
-    log.info("Billing amount {}, perHour: {}, instanceActiveSeconds: {}, pricingSource: {}", billingAmountBreakup,
-        pricePerHour, instanceActiveSeconds, pricingData.getPricingSource());
-
     PricingSource pricingSource =
         null != pricingData.getPricingSource() ? pricingData.getPricingSource() : PricingSource.PUBLIC_API;
     double networkCost = 0;
@@ -166,9 +163,6 @@ public class BillingCalculationService {
       cpuBillingAmount = BigDecimal.valueOf((pricingData.getCpuPricePerHour() * instanceActiveSeconds) / 3600);
       memoryBillingAmount = BigDecimal.valueOf((pricingData.getMemoryPricePerHour() * instanceActiveSeconds) / 3600);
     }
-
-    log.info("CloudProvider: {}, cpuBillingAmount: {}, memoryBillingAmount: {}, totalBillingAmount: {}", cloudProvider,
-        cpuBillingAmount, memoryBillingAmount, billingAmount);
 
     return BillingAmountBreakup.builder()
         .billingAmount(billingAmount)

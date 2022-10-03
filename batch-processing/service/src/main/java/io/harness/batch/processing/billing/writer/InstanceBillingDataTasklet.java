@@ -256,7 +256,6 @@ public class InstanceBillingDataTasklet implements Tasklet {
     }
 
     String gcpDataSetId = customBillingMetaDataService.getGcpDataSetId(accountId);
-    log.info("GCP: gcpDataSetId: {}", gcpDataSetId);
     if (gcpDataSetId != null) {
       Set<String> resourceIds = new HashSet<>();
       instanceDataLists.forEach(instanceData -> {
@@ -266,15 +265,12 @@ public class InstanceBillingDataTasklet implements Tasklet {
         String cloudProvider =
             getValueForKeyFromInstanceMetaData(InstanceMetaDataConstants.CLOUD_PROVIDER, instanceData);
 
-        log.info("GCP: resourceId: {} and cloudProvider: {}.", resourceId, cloudProvider);
         if (null != resourceId && cloudProvider.equals(CloudProvider.GCP.name())) {
           resourceIds.add(resourceId);
         }
       });
 
-      log.info("GCP: ResourceIds check.");
       if (isNotEmpty(resourceIds)) {
-        log.info("GCP: ResourceIds Size: {}", resourceIds.size());
         gcpCustomBillingService.updateGcpVMBillingDataCache(
             new ArrayList<>(resourceIds), startTime, endTime, gcpDataSetId);
       }
@@ -346,8 +342,6 @@ public class InstanceBillingDataTasklet implements Tasklet {
         instanceData, utilizationData, parentInstanceActiveSecond, startTime, endTime);
 
     log.trace("Instance detail {} :: {} ", instanceData.getInstanceId(), billingData.getBillingAmountBreakup());
-    log.info("Instance Id: {}, BillingAmountBreakup: {} ", instanceData.getInstanceId(),
-        billingData.getBillingAmountBreakup());
 
     HarnessServiceInfo harnessServiceInfo = getHarnessServiceInfo(instanceData);
     HarnessServiceInfoNG harnessServiceInfoNG = getHarnessServiceInfoNG(instanceData);
