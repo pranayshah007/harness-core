@@ -27,7 +27,6 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.k8s.model.ImageDetails;
 import io.harness.plancreator.execution.ExecutionElementConfig;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
-import io.harness.plancreator.stages.stage.StageElementConfig;
 import io.harness.pms.yaml.ParameterField;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -62,10 +61,6 @@ public class VmInitializeTaskHelper {
   private static final String PLUGIN_STEP_LIMIT_CPU_STRING = "100m";
   private static final String PLUGIN_ENV_VAR = "foo";
   private static final String PLUGIN_ENV_VAL = "bar";
-
-  public static StageElementConfig getIntegrationStageElementConfig() {
-    return StageElementConfig.builder().identifier("ciStage").type("CI").stageType(getIntegrationStageConfig()).build();
-  }
 
   public static IntegrationStageConfig getIntegrationStageConfig() {
     List<ExecutionWrapperConfig> executionSectionList = getExecutionWrapperConfigList();
