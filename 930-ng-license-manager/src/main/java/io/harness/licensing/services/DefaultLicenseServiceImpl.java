@@ -515,14 +515,19 @@ public class DefaultLicenseServiceImpl implements LicenseService {
         AccountDTO accountDTO = createAccountIfNotPresent(validationResult.getLicenseDTO());
         // create module licenses
         createOrUpdateModuleLicenses(validationResult.getLicenseDTO().getModuleLicenses(), accountDTO);
-        String licenseSign = licenseGenerator.sign(smpLicenseMapper.toSMPLicense(validationResult.getLicenseDTO()));
+        SMPLicense smpLicense = smpLicenseMapper.toSMPLicense(validationResult.getLicenseDTO());
+        String licenseSign = licenseGenerator.sign(smpLicense);
         // start validation job with 1 day interval
         licenseValidationJob.scheduleValidation(accountDTO.getIdentifier(), licenseSign, 1440);
       } else {
         log.error("SMP License Validation Failed");
+        throw new InvalidRequestException(
+            "Invalid license provided for intallation. Please provide the correct license");
       }
     } catch (JsonProcessingException e) {
       log.error("Unable to parse validation result", e);
+      throw new InvalidRequestException(
+          "Invalid license provided for intallation. Please provide the correct license", e);
     }
   }
 
