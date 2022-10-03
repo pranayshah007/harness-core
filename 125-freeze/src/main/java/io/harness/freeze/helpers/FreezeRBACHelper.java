@@ -64,6 +64,8 @@ public class FreezeRBACHelper {
         result = MutablePair.of("ENVIRONMENT", "core_environment_view");
         break;
       }
+      default: {
+      }
     }
     return Optional.ofNullable(result);
   }
