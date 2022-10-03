@@ -11,6 +11,8 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotation.HarnessRepo;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.mongo.MongoConfig;
+import io.harness.mongo.metrics.HarnessConnectionPoolListener;
 import io.harness.springdata.HMongoTemplate;
 
 import com.google.inject.Inject;
@@ -29,6 +31,7 @@ import org.springframework.data.mongodb.MongoDbFactory;
 import org.springframework.data.mongodb.MongoTransactionManager;
 import org.springframework.data.mongodb.config.AbstractMongoConfiguration;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.SimpleMongoDbFactory;
 import org.springframework.data.mongodb.core.convert.DbRefResolver;
 import org.springframework.data.mongodb.core.convert.DefaultDbRefResolver;
 import org.springframework.data.mongodb.core.convert.MappingMongoConverter;
@@ -41,12 +44,16 @@ import org.springframework.data.mongodb.repository.config.EnableMongoRepositorie
     includeFilters = @ComponentScan.Filter(HarnessRepo.class), mongoTemplateRef = "notification-channel")
 public class NotificationChannelPersistenceConfig extends AbstractMongoConfiguration {
   private final MongoBackendConfiguration mongoBackendConfiguration;
+  private final HarnessConnectionPoolListener harnessConnectionPoolListener;
+  private final MongoConfig mongoConfig;
 
   @Inject
   public NotificationChannelPersistenceConfig(Injector injector) {
     this.mongoBackendConfiguration =
         (MongoBackendConfiguration) injector.getInstance(Key.get(NotificationClientConfiguration.class))
             .getNotificationClientBackendConfiguration();
+    this.harnessConnectionPoolListener = injector.getInstance(HarnessConnectionPoolListener.class);
+    this.mongoConfig = injector.getInstance(MongoConfig.class);
   }
 
   @Override
@@ -59,6 +66,9 @@ public class NotificationChannelPersistenceConfig extends AbstractMongoConfigura
             .maxConnectionIdleTime(mongoBackendConfiguration.getMaxConnectionIdleTime())
             .connectionsPerHost(mongoBackendConfiguration.getConnectionsPerHost())
             .readPreference(ReadPreference.primary())
+            .addConnectionPoolListener(harnessConnectionPoolListener)
+            .applicationName("ng_notification_channel_client")
+            .description("ng_notification_channel_client")
             .build();
     MongoClientURI uri =
         new MongoClientURI(mongoBackendConfiguration.getUri(), MongoClientOptions.builder(primaryMongoClientOptions));
@@ -82,13 +92,13 @@ public class NotificationChannelPersistenceConfig extends AbstractMongoConfigura
 
   @Bean(name = "notification-channel")
   public MongoTemplate mongoTemplate() throws Exception {
-    MongoDbFactory mongoDbFactory = mongoDbFactory();
+    MongoDbFactory mongoDbFactory = new SimpleMongoDbFactory(mongoClient(), getDatabaseName());
     DbRefResolver dbRefResolver = new DefaultDbRefResolver(mongoDbFactory);
     MongoMappingContext mappingContext = this.mongoMappingContext();
     mappingContext.setAutoIndexCreation(false);
     MappingMongoConverter converter = new MappingMongoConverter(dbRefResolver, mappingContext);
     converter.setCodecRegistryProvider(mongoDbFactory);
     converter.afterPropertiesSet();
-    return new HMongoTemplate(mongoDbFactory, mappingMongoConverter());
+    return new HMongoTemplate(mongoDbFactory, mappingMongoConverter(), mongoConfig);
   }
 }

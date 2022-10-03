@@ -1555,6 +1555,8 @@ public class NativeHelmStepHelperTest extends CategoryTest {
         K8sStepPassThroughData.builder()
             .manifestOutcome(HelmChartManifestOutcome.builder().store(store).build())
             .infrastructure(K8sDirectInfrastructureOutcome.builder().build())
+            .shouldOpenFetchFilesStream(true)
+            .shouldCloseFetchFilesStream(true)
             .build();
     Map<String, Collection<CustomSourceFile>> valuesFilesContentMap = new HashMap<>();
     valuesFilesContentMap.put("id",
@@ -1579,9 +1581,10 @@ public class NativeHelmStepHelperTest extends CategoryTest {
             .customFetchContent(customManifestValuesFetchResponse.getValuesFilesContentMap())
             .zippedManifestFileId(customManifestValuesFetchResponse.getZippedManifestFileId())
             .build();
+    updatedK8sStepPassThroughData.setShouldOpenFetchFilesStream(false);
     verify(nativeHelmStepHelper, times(1))
-        .executeValuesFetchTask(eq(ambiance), eq(stepElementParams), eq(emptyList()), eq(emptyMap()),
-            eq(updatedK8sStepPassThroughData), eq(true));
+        .executeValuesFetchTask(
+            eq(ambiance), eq(stepElementParams), eq(emptyList()), eq(emptyMap()), eq(updatedK8sStepPassThroughData));
   }
 
   @Test
@@ -1598,6 +1601,8 @@ public class NativeHelmStepHelperTest extends CategoryTest {
                                                  .manifestOutcome(K8sManifestOutcome.builder().store(store).build())
                                                  .manifestOutcomeList(asList(valuesManifestOutcome))
                                                  .infrastructure(K8sDirectInfrastructureOutcome.builder().build())
+                                                 .shouldOpenFetchFilesStream(true)
+                                                 .shouldCloseFetchFilesStream(true)
                                                  .build();
     Map<String, Collection<CustomSourceFile>> valuesFilesContentMap = new HashMap<>();
     valuesFilesContentMap.put("id",
@@ -1623,6 +1628,7 @@ public class NativeHelmStepHelperTest extends CategoryTest {
             .manifestOutcomeList(asList(ValuesManifestOutcome.builder().store(store).build(), valuesManifestOutcome))
             .customFetchContent(customManifestValuesFetchResponse.getValuesFilesContentMap())
             .zippedManifestFileId(customManifestValuesFetchResponse.getZippedManifestFileId())
+            .shouldOpenFetchFilesStream(false)
             .build();
 
     assertThat(taskChainResponse).isNotNull();
@@ -1672,6 +1678,8 @@ public class NativeHelmStepHelperTest extends CategoryTest {
                                                  .manifestOutcome(manifestOutcome)
                                                  .manifestOutcomeList(asList(valuesManifestOutcome))
                                                  .infrastructure(K8sDirectInfrastructureOutcome.builder().build())
+                                                 .shouldOpenFetchFilesStream(true)
+                                                 .shouldCloseFetchFilesStream(false)
                                                  .build();
     Map<String, Collection<CustomSourceFile>> valuesFilesContentMap = new HashMap<>();
     valuesFilesContentMap.put("id",
@@ -1688,6 +1696,7 @@ public class NativeHelmStepHelperTest extends CategoryTest {
     Map<String, ResponseData> responseDataMap =
         ImmutableMap.of("custom-manifest-values-fetch-response", customManifestValuesFetchResponse);
     ThrowingSupplier responseDataSuplier = StrategyHelper.buildResponseDataSupplier(responseDataMap);
+    passThroughData.setShouldCloseFetchFilesStream(true);
 
     TaskChainResponse taskChainResponse = nativeHelmStepHelper.executeNextLink(
         nativeHelmStepExecutor, ambiance, stepElementParams, passThroughData, responseDataSuplier);
@@ -1697,6 +1706,8 @@ public class NativeHelmStepHelperTest extends CategoryTest {
             .manifestOutcomeList(asList(valuesManifestOutcome))
             .customFetchContent(customManifestValuesFetchResponse.getValuesFilesContentMap())
             .zippedManifestFileId(customManifestValuesFetchResponse.getZippedManifestFileId())
+            .shouldOpenFetchFilesStream(false)
+            .shouldCloseFetchFilesStream(true)
             .build();
 
     assertThat(taskChainResponse).isNotNull();
@@ -1717,6 +1728,8 @@ public class NativeHelmStepHelperTest extends CategoryTest {
     K8sStepPassThroughData passThroughData = K8sStepPassThroughData.builder()
                                                  .manifestOutcome(HelmChartManifestOutcome.builder().build())
                                                  .infrastructure(K8sDirectInfrastructureOutcome.builder().build())
+                                                 .shouldOpenFetchFilesStream(true)
+                                                 .shouldCloseFetchFilesStream(true)
                                                  .build();
 
     UnitProgressData unitProgressData = UnitProgressData.builder().build();
@@ -1739,7 +1752,7 @@ public class NativeHelmStepHelperTest extends CategoryTest {
                     .infrastructure(passThroughData.getInfrastructure())
                     .lastActiveUnitProgressData(unitProgressData)
                     .build()),
-            eq(false), eq(unitProgressData));
+            eq(passThroughData.getShouldOpenFetchFilesStream()), eq(unitProgressData));
 
     List<String> valuesFilesContent = valuesFilesContentCaptor.getValue();
     assertThat(valuesFilesContent).isNotEmpty();
@@ -1787,11 +1800,86 @@ public class NativeHelmStepHelperTest extends CategoryTest {
                     .lastActiveUnitProgressData(unitProgressData)
                     .manifestFiles(manifestFilesList)
                     .build()),
-            eq(false), eq(unitProgressData));
+            eq(passThroughData.getShouldOpenFetchFilesStream()), eq(unitProgressData));
 
     List<String> valuesFilesContent = valuesFilesContentCaptor.getValue();
     assertThat(valuesFilesContent).isNotEmpty();
     assertThat(valuesFilesContent).isEqualTo(valuesYamlList.getValuesFileContents());
+  }
+
+  @Test
+  @Owner(developers = PRATYUSH)
+  @Category(UnitTests.class)
+  public void shouldHandleHelmValueFetchResponseWithNativeHelmStepExecutor() throws Exception {
+    StepElementParameters stepElementParams =
+        StepElementParameters.builder().spec(HelmDeployStepParams.infoBuilder().build()).build();
+
+    List<String> manifestIdentifiers = asList("manifest-identifier", "manifest-identifier2", "manifest-identifier3");
+    List<ManifestOutcome> manifestOutcomeList = new ArrayList<>();
+    HelmFetchFileResult valuesYamlList =
+        HelmFetchFileResult.builder().valuesFileContents(new ArrayList<>(asList("values yaml payload"))).build();
+    Map<String, HelmFetchFileResult> helmChartValuesFileMapContent = new HashMap<>();
+    helmChartValuesFileMapContent.put(manifestIdentifiers.get(0), valuesYamlList);
+    manifestOutcomeList.add(ValuesManifestOutcome.builder()
+                                .identifier(manifestIdentifiers.get(1))
+                                .store(HarnessStore.builder().build())
+                                .build());
+    Collection<CustomSourceFile> valuesYamlList2 =
+        asList(CustomSourceFile.builder().filePath("/path").fileContent("values yaml payload").build());
+    Map<String, Collection<CustomSourceFile>> customFetchContent = new HashMap<>();
+    customFetchContent.put(manifestIdentifiers.get(1), valuesYamlList2);
+    LocalStoreFetchFilesResult valuesYamlList3 =
+        LocalStoreFetchFilesResult.builder()
+            .LocalStoreFileContents(new ArrayList<>(asList("values yaml payload")))
+            .build();
+    manifestOutcomeList.add(ValuesManifestOutcome.builder()
+                                .identifier(manifestIdentifiers.get(2))
+                                .store(CustomRemoteStoreConfig.builder().build())
+                                .build());
+    Map<String, LocalStoreFetchFilesResult> localStoreFetchFilesResultMap = new HashMap<>();
+    localStoreFetchFilesResultMap.put(manifestIdentifiers.get(2), valuesYamlList3);
+    List<ManifestFiles> manifestFilesList = asList(ManifestFiles.builder().build());
+    K8sStepPassThroughData passThroughData = K8sStepPassThroughData.builder()
+                                                 .manifestOutcome(HelmChartManifestOutcome.builder()
+                                                                      .identifier(manifestIdentifiers.get(0))
+                                                                      .store(HttpStoreConfig.builder().build())
+                                                                      .build())
+                                                 .infrastructure(K8sDirectInfrastructureOutcome.builder().build())
+                                                 .manifestFiles(manifestFilesList)
+                                                 .customFetchContent(customFetchContent)
+                                                 .localStoreFileMapContents(localStoreFetchFilesResultMap)
+                                                 .manifestOutcomeList(manifestOutcomeList)
+                                                 .shouldOpenFetchFilesStream(true)
+                                                 .shouldCloseFetchFilesStream(false)
+                                                 .build();
+
+    UnitProgressData unitProgressData = UnitProgressData.builder().build();
+    HelmValuesFetchResponse helmValuesFetchResponse = HelmValuesFetchResponse.builder()
+                                                          .helmChartValuesFileMapContent(helmChartValuesFileMapContent)
+                                                          .commandExecutionStatus(SUCCESS)
+                                                          .unitProgressData(unitProgressData)
+                                                          .build();
+    Map<String, ResponseData> responseDataMap = ImmutableMap.of("helm-value-fetch-response", helmValuesFetchResponse);
+    ThrowingSupplier responseDataSuplier = StrategyHelper.buildResponseDataSupplier(responseDataMap);
+
+    nativeHelmStepHelper.executeNextLink(
+        nativeHelmStepExecutor, ambiance, stepElementParams, passThroughData, responseDataSuplier);
+
+    ArgumentCaptor<List> valuesFilesContentCaptor = ArgumentCaptor.forClass(List.class);
+    verify(nativeHelmStepExecutor, times(1))
+        .executeHelmTask(eq(passThroughData.getManifestOutcome()), eq(ambiance), eq(stepElementParams),
+            valuesFilesContentCaptor.capture(),
+            eq(NativeHelmExecutionPassThroughData.builder()
+                    .infrastructure(passThroughData.getInfrastructure())
+                    .lastActiveUnitProgressData(unitProgressData)
+                    .manifestFiles(manifestFilesList)
+                    .build()),
+            eq(passThroughData.getShouldOpenFetchFilesStream()), eq(unitProgressData));
+
+    List<String> valuesFilesContent = valuesFilesContentCaptor.getValue();
+    assertThat(valuesFilesContent).isNotEmpty();
+    assertThat(valuesFilesContent)
+        .isEqualTo(asList("values yaml payload", "values yaml payload", "values yaml payload"));
   }
 
   @Test
@@ -1878,9 +1966,7 @@ public class NativeHelmStepHelperTest extends CategoryTest {
 
     TaskRequest taskRequest = TaskRequest.getDefaultInstance();
     TaskChainResponse taskChainResponse = TaskChainResponse.builder().chainEnd(false).taskRequest(taskRequest).build();
-    doReturn(taskChainResponse)
-        .when(nativeHelmStepHelper)
-        .executeValuesFetchTask(any(), any(), any(), any(), any(), eq(true));
+    doReturn(taskChainResponse).when(nativeHelmStepHelper).executeValuesFetchTask(any(), any(), any(), any(), any());
     nativeHelmStepHelper.executeNextLink(
         nativeHelmStepExecutor, ambiance, stepElementParams, passThroughData, responseDataSuplier);
 
@@ -1889,7 +1975,7 @@ public class NativeHelmStepHelperTest extends CategoryTest {
         ArgumentCaptor.forClass(K8sStepPassThroughData.class);
     verify(nativeHelmStepHelper, times(1))
         .executeValuesFetchTask(eq(ambiance), eq(stepElementParams), eq(passThroughData.getValuesManifestOutcomes()),
-            valuesFilesContentCaptor.capture(), valuesFilesContentCaptor2.capture(), eq(true));
+            valuesFilesContentCaptor.capture(), valuesFilesContentCaptor2.capture());
 
     Map<String, HelmFetchFileResult> duplicatehelmChartValuesFileMapContent = valuesFilesContentCaptor.getValue();
     assertThat(duplicatehelmChartValuesFileMapContent).isNotEmpty();
@@ -1987,6 +2073,8 @@ public class NativeHelmStepHelperTest extends CategoryTest {
             .localStoreFileMapContents(localStoreFetchFilesResultMap)
             .customFetchContent(valuesFilesContentMap)
             .zippedManifestFileId("helmOverride4")
+            .shouldOpenFetchFilesStream(false)
+            .shouldCloseFetchFilesStream(false)
             .build();
 
     UnitProgressData unitProgressData = UnitProgressData.builder().build();
@@ -2010,7 +2098,7 @@ public class NativeHelmStepHelperTest extends CategoryTest {
                     .lastActiveUnitProgressData(unitProgressData)
                     .zippedManifestId("helmOverride4")
                     .build()),
-            eq(false), eq(unitProgressData));
+            eq(passThroughData.getShouldOpenFetchFilesStream()), eq(unitProgressData));
 
     List<String> valuesFilesContent = valuesFilesContentCaptor.getValue();
     assertThat(valuesFilesContent).isNotEmpty();
@@ -2079,6 +2167,8 @@ public class NativeHelmStepHelperTest extends CategoryTest {
             .manifestOutcome(HelmChartManifestOutcome.builder().identifier(manifestIdentifier).build())
             .infrastructure(K8sDirectInfrastructureOutcome.builder().build())
             .manifestOutcomeList(new ArrayList<>(orderedValuesManifests))
+            .shouldOpenFetchFilesStream(false)
+            .shouldCloseFetchFilesStream(false)
             .build();
 
     UnitProgressData unitProgressData = UnitProgressData.builder().build();
@@ -2101,7 +2191,7 @@ public class NativeHelmStepHelperTest extends CategoryTest {
                     .infrastructure(passThroughData.getInfrastructure())
                     .lastActiveUnitProgressData(unitProgressData)
                     .build()),
-            eq(false), eq(unitProgressData));
+            eq(passThroughData.getShouldOpenFetchFilesStream()), eq(unitProgressData));
 
     List<String> valuesFilesContent = valuesFilesContentCaptor.getValue();
     assertThat(valuesFilesContent).isNotEmpty();
@@ -2183,6 +2273,7 @@ public class NativeHelmStepHelperTest extends CategoryTest {
     K8sStepPassThroughData passThroughData = K8sStepPassThroughData.builder()
                                                  .manifestOutcome(HelmChartManifestOutcome.builder().build())
                                                  .infrastructure(K8sDirectInfrastructureOutcome.builder().build())
+                                                 .shouldOpenFetchFilesStream(true)
                                                  .build();
 
     GitFetchResponse gitFetchResponse = GitFetchResponse.builder()
@@ -2201,7 +2292,7 @@ public class NativeHelmStepHelperTest extends CategoryTest {
                 .infrastructure(passThroughData.getInfrastructure())
                 .lastActiveUnitProgressData(unitProgressData)
                 .build(),
-            false, unitProgressData);
+            passThroughData.getShouldOpenFetchFilesStream(), unitProgressData);
 
     TaskChainResponse response = nativeHelmStepHelper.executeNextLink(
         nativeHelmStepExecutor, ambiance, stepElementParameters, passThroughData, responseDataSuplier);
@@ -2387,10 +2478,9 @@ public class NativeHelmStepHelperTest extends CategoryTest {
     K8sStepPassThroughData nativeHelmStepPassThroughData =
         K8sStepPassThroughData.builder().infrastructure(outcomeBuilder).manifestOutcome(manifestOutcome).build();
 
-    assertThatCode(
-        ()
-            -> nativeHelmStepHelper.executeValuesFetchTask(ambiance, stepElementParameters, aggregatedValuesManifests,
-                helmChartFetchFilesResultMap, nativeHelmStepPassThroughData, false));
+    assertThatCode(()
+                       -> nativeHelmStepHelper.executeValuesFetchTask(ambiance, stepElementParameters,
+                           aggregatedValuesManifests, helmChartFetchFilesResultMap, nativeHelmStepPassThroughData));
   }
 
   private FileStoreNodeDTO getFileStoreNode(String path, String name) {

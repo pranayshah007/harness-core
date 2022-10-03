@@ -8,13 +8,11 @@
 package io.harness.steps.shellscript;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.expression;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
 import io.harness.pms.yaml.ParameterField;
-import io.harness.yaml.YamlSchemaTypes;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
@@ -27,9 +25,7 @@ import lombok.Data;
 @OwnedBy(CDP)
 @RecasterAlias("io.harness.steps.shellscript.HarnessFileStoreSource")
 public class HarnessFileStoreSource implements ShellScriptBaseSource {
-  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
-  @YamlSchemaTypes({expression})
-  ParameterField<String> file;
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> file;
 
   @Override
   public String getType() {

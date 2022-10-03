@@ -229,7 +229,16 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
             ERROR);
         List<GitFile> gitFiles = new ArrayList<>();
         gitOpsTaskParams.getFilesToVariablesMap().forEach((file, values) -> {
-          gitFiles.add(GitFile.builder().filePath(file).fileContent(gson.toJson(values)).build());
+          if (file.contains(".yaml") || file.contains(".yml")) {
+            try {
+              gitFiles.add(
+                  GitFile.builder().filePath(file).fileContent(convertJsonToYaml(gson.toJson(values))).build());
+            } catch (IOException ex) {
+              throw new RuntimeException("Failed to convert json to yaml while fetching files.");
+            }
+          } else {
+            gitFiles.add(GitFile.builder().filePath(file).fileContent(gson.toJson(values)).build());
+          }
         });
         return FetchFilesResult.builder().files(gitFiles).build();
       }

@@ -31,7 +31,6 @@ public class DelegateTaskRegistrars {
           .add(DelegateTasksMorphiaRegistrar.class)
           .addAll(ApiServicesRegistrars.morphiaRegistrars)
           .addAll(DelegateTasksBeansRegistrars.morphiaRegistrars)
-          .addAll(FeatureFlagBeansRegistrars.morphiaRegistrars)
           .addAll(SecretManagerClientRegistrars.morphiaRegistrars)
           .build();
 }

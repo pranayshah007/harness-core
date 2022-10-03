@@ -91,14 +91,16 @@ import org.apache.commons.lang3.StringUtils;
 public class CodebaseUtils {
   @Inject private ConnectorUtils connectorUtils;
   @Inject private ExecutionSweepingOutputService executionSweepingOutputResolver;
+  private final String PRMergeStatus = "merged";
 
-  public Map<String, String> getCodebaseVars(Ambiance ambiance, CIExecutionArgs ciExecutionArgs) {
+  public Map<String, String> getCodebaseVars(
+      Ambiance ambiance, CIExecutionArgs ciExecutionArgs, ConnectorDetails gitConnectorDetails) {
     Map<String, String> envVars = BuildEnvironmentUtils.getBuildEnvironmentVariables(ciExecutionArgs);
-    envVars.putAll(getRuntimeCodebaseVars(ambiance));
+    envVars.putAll(getRuntimeCodebaseVars(ambiance, gitConnectorDetails));
     return envVars;
   }
 
-  public Map<String, String> getRuntimeCodebaseVars(Ambiance ambiance) {
+  public Map<String, String> getRuntimeCodebaseVars(Ambiance ambiance, ConnectorDetails gitConnectorDetails) {
     Map<String, String> codebaseRuntimeVars = new HashMap<>();
 
     OptionalSweepingOutput optionalSweepingOutput =
@@ -108,14 +110,22 @@ public class CodebaseUtils {
     }
 
     CodebaseSweepingOutput codebaseSweeping = (CodebaseSweepingOutput) optionalSweepingOutput.getOutput();
+    String commitSha = codebaseSweeping.getCommitSha();
 
     /* Bitbucket SAAS does not generate refs/pull-requests/* which requires us to do this special handling.
-      Override commit ref to source branch instead of pull request ref
+      Override commit ref to source branch instead of pull request ref. Same is true for some versions of
+      bitbucket server too.
      */
     String commitRef = codebaseSweeping.getCommitRef();
-    if (isNotEmpty(codebaseSweeping.getPullRequestLink())
-        && codebaseSweeping.getPullRequestLink().contains("bitbucket.org")) {
-      commitRef = format("+refs/heads/%s", codebaseSweeping.getSourceBranch());
+    if (gitConnectorDetails != null && gitConnectorDetails.getConnectorType() == BITBUCKET) {
+      if (isNotEmpty(codebaseSweeping.getState()) && codebaseSweeping.getState().equals(PRMergeStatus)) {
+        commitRef = format("+refs/heads/%s", codebaseSweeping.getTargetBranch());
+        if (isNotEmpty(codebaseSweeping.getMergeSha())) {
+          commitSha = codebaseSweeping.getMergeSha();
+        }
+      } else {
+        commitRef = format("+refs/heads/%s", codebaseSweeping.getSourceBranch());
+      }
     }
 
     if (isNotEmpty(commitRef)) {
@@ -157,8 +167,8 @@ public class CodebaseUtils {
     if (isNotEmpty(codebaseSweeping.getBaseCommitSha())) {
       codebaseRuntimeVars.put(DRONE_COMMIT_BEFORE, codebaseSweeping.getBaseCommitSha());
     }
-    if (isNotEmpty(codebaseSweeping.getCommitSha())) {
-      codebaseRuntimeVars.put(DRONE_COMMIT_SHA, codebaseSweeping.getCommitSha());
+    if (isNotEmpty(commitSha)) {
+      codebaseRuntimeVars.put(DRONE_COMMIT_SHA, commitSha);
     }
 
     return codebaseRuntimeVars;

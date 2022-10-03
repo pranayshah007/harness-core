@@ -5,9 +5,10 @@
 # https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
 
 # From harness-core/scripts/jenkins/portal-openjdk-bazel.sh
-
+set -ex
 mkdir -p dist/ci-manager
 cd dist/ci-manager
+curl https://storage.googleapis.com/harness-prod-public/public/shared/tools/alpn/release/8.1.13.v20181017/alpn-boot-8.1.13.v20181017.jar  --output alpn-boot-8.1.13.v20181017.jar
 
 cp ${HOME}/.bazel-dirs/bin/332-ci-manager/app/module_deploy.jar ci-manager-capsule.jar
 cp ../../332-ci-manager/config/ci-manager-config.yml .

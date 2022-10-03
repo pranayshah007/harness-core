@@ -513,7 +513,8 @@ public class InstanceBillingDataTasklet implements Tasklet {
       BillingData billingData, UtilizationData utilizationData, InstanceData instanceData) {
     if (K8S_PV == instanceData.getInstanceType()) {
       BigDecimal storageUnallocatedFraction = BigDecimal.ZERO;
-      if (instanceData.getStorageResource() != null && instanceData.getStorageResource().getCapacity() > 0) {
+      if (instanceData.getStorageResource() != null && instanceData.getStorageResource().getCapacity() > 0
+          && utilizationData.getAvgStorageRequestValue() > 0) {
         BigDecimal capacityFromInstanceData = BigDecimal.valueOf(instanceData.getStorageResource().getCapacity());
         storageUnallocatedFraction =
             capacityFromInstanceData.subtract(BigDecimal.valueOf(utilizationData.getAvgStorageRequestValue()))
@@ -524,7 +525,12 @@ public class InstanceBillingDataTasklet implements Tasklet {
             utilizationData.getAvgStorageCapacityValue(), instanceData.toString());
         return BigDecimal.ZERO;
       }
-      return billingData.getBillingAmountBreakup().getStorageBillingAmount().multiply(storageUnallocatedFraction);
+      BigDecimal storageUnallocatedCost =
+          billingData.getBillingAmountBreakup().getStorageBillingAmount().multiply(storageUnallocatedFraction);
+      if (storageUnallocatedCost.compareTo(billingData.getBillingAmountBreakup().getStorageBillingAmount()) > 0) {
+        return billingData.getBillingAmountBreakup().getStorageBillingAmount();
+      }
+      return storageUnallocatedCost;
     }
     return BigDecimal.ZERO;
   }

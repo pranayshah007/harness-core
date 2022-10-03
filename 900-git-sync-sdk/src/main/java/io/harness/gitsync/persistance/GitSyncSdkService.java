@@ -18,6 +18,8 @@ public interface GitSyncSdkService {
    */
   boolean isGitSyncEnabled(String accountIdentifier, String orgIdentifier, String projectIdentifier);
 
+  void resetGitSyncSDKCache(String accountIdentifier, String orgIdentifier, String projectIdentifier);
+
   boolean isGitSimplificationEnabled(String accountIdentifier, String orgIdentifier, String projectIdentifier);
 
   /**

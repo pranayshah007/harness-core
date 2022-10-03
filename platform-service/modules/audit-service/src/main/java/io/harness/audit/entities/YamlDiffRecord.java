@@ -11,7 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL;
 
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.MongoIndex;
@@ -35,11 +35,11 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Data
 @Builder
 @FieldNameConstants(innerTypeName = "YamlDiffRecordKeys")
+@StoreIn(DbAliases.AUDITS)
 @Entity(value = "yamlDiff", noClassnameStored = true)
 @Document("yamlDiff")
 @TypeAlias("yamlDiff")
 @JsonInclude(NON_NULL)
-@StoreIn(DbAliases.AUDITS)
 public class YamlDiffRecord {
   @Id @org.mongodb.morphia.annotations.Id String id;
   @NotNull String auditId;

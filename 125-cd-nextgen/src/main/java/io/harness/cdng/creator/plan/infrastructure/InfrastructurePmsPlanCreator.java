@@ -115,14 +115,14 @@ public class InfrastructurePmsPlanCreator {
                                                           .build();
     return PlanNode.builder()
         .uuid(UUIDGenerator.generateUuid())
-        .name(PlanCreatorConstants.INFRA_NODE_NAME)
-        .identifier(PlanCreatorConstants.INFRA_DEFINITION_NODE_IDENTIFIER)
+        .name(PlanCreatorConstants.INFRA_SECTION_NODE_NAME)
+        .identifier(PlanCreatorConstants.INFRA_SECTION_NODE_IDENTIFIER)
         .stepType(InfrastructureTaskExecutableStepV2.STEP_TYPE)
         .group(OutcomeExpressionConstants.INFRASTRUCTURE_GROUP)
         .stepParameters(params)
         .facilitatorObtainment(
             FacilitatorObtainment.newBuilder()
-                .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.TASK).build())
+                .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.ASYNC).build())
                 .build())
         .adviserObtainments(adviserObtainments)
         .build();
@@ -412,7 +412,8 @@ public class InfrastructurePmsPlanCreator {
   public static List<AdviserObtainment> addResourceConstraintDependency(
       LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap, YamlField specField,
       KryoSerializer kryoSerializer) {
-    final String whenCondition = "<+infraAllowSimultaneousDeployments.allowed> == \"false\"";
+    final String whenCondition =
+        String.format("<+%s.addRcStep> == \"true\"", OutcomeExpressionConstants.INFRA_TASK_EXECUTABLE_STEP_OUTPUT);
     YamlField rcYamlField =
         addResourceConstraintDependency(specField.getNode(), planCreationResponseMap, whenCondition);
     return getAdviserObtainmentFromMetaDataToResourceConstraint(rcYamlField, kryoSerializer);

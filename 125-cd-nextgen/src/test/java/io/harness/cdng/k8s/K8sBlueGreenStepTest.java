@@ -136,7 +136,7 @@ public class K8sBlueGreenStepTest extends AbstractK8sStepExecutorTestBase {
     ArgumentCaptor<K8sBlueGreenOutcome> argumentCaptor = ArgumentCaptor.forClass(K8sBlueGreenOutcome.class);
     verify(executionSweepingOutputService, times(1))
         .consume(eq(ambiance), eq(OutcomeExpressionConstants.K8S_BLUE_GREEN_OUTCOME), argumentCaptor.capture(),
-            eq(StepOutcomeGroup.STAGE.name()));
+            eq(StepOutcomeGroup.STEP.name()));
     assertThat(argumentCaptor.getValue().getReleaseName()).isEqualTo("releaseName");
     assertThat(argumentCaptor.getValue().getPrimaryColor()).isEqualTo("blue");
     assertThat(argumentCaptor.getValue().getStageColor()).isEqualTo("green");

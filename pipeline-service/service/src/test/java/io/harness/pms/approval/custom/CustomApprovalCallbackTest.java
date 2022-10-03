@@ -177,7 +177,7 @@ public class CustomApprovalCallbackTest extends CategoryTest {
   @Owner(developers = DEEPAK_PUTHRAYA)
   @Category(UnitTests.class)
   public void testCallbackApproved() {
-    Map<String, Object> outputVars = ImmutableMap.of("Status", "status");
+    Map<String, Object> outputVars = ImmutableMap.of("Status", ParameterField.createValueField("status"));
     CustomApprovalInstance instance =
         CustomApprovalInstance.builder()
             .shellType(ShellType.Bash)
@@ -211,8 +211,6 @@ public class CustomApprovalCallbackTest extends CategoryTest {
             .build();
 
     when(kryoSerializer.asInflatedObject(any())).thenReturn(response);
-    when(shellScriptHelperService.prepareShellScriptOutcome(eq(sweepingOutput), eq(outputVars)))
-        .thenReturn(ShellScriptOutcome.builder().outputVariables(ImmutableMap.of("Status", "APPROVED")).build());
     when(approvalInstanceService.get(eq(APPROVAL_INSTANCE_ID))).thenReturn(instance);
     customApprovalCallback.push(ImmutableMap.of("xyz", BinaryResponseData.builder().build()));
     verify(approvalInstanceService).finalizeStatus(anyString(), eq(ApprovalStatus.APPROVED), any(TicketNG.class));
@@ -224,7 +222,7 @@ public class CustomApprovalCallbackTest extends CategoryTest {
   @Owner(developers = DEEPAK_PUTHRAYA)
   @Category(UnitTests.class)
   public void testCallbackFatalException() {
-    Map<String, Object> outputVars = ImmutableMap.of("Status", "status");
+    Map<String, Object> outputVars = ImmutableMap.of("Status", ParameterField.createValueField("status"));
     CustomApprovalInstance instance =
         CustomApprovalInstance.builder()
             .shellType(ShellType.Bash)
@@ -312,7 +310,7 @@ public class CustomApprovalCallbackTest extends CategoryTest {
   @Owner(developers = DEEPAK_PUTHRAYA)
   @Category(UnitTests.class)
   public void testCallbackRejected() {
-    Map<String, Object> outputVars = ImmutableMap.of("Status", "status");
+    Map<String, Object> outputVars = ImmutableMap.of("Status", ParameterField.createValueField("status"));
     CustomApprovalInstance instance =
         CustomApprovalInstance.builder()
             .shellType(ShellType.Bash)
@@ -356,8 +354,6 @@ public class CustomApprovalCallbackTest extends CategoryTest {
             .build();
 
     when(kryoSerializer.asInflatedObject(any())).thenReturn(response);
-    when(shellScriptHelperService.prepareShellScriptOutcome(eq(sweepingOutput), eq(outputVars)))
-        .thenReturn(ShellScriptOutcome.builder().outputVariables(ImmutableMap.of("Status", "REJECTED")).build());
     when(approvalInstanceService.get(eq(APPROVAL_INSTANCE_ID))).thenReturn(instance);
     customApprovalCallback.push(ImmutableMap.of("xyz", BinaryResponseData.builder().build()));
     verify(approvalInstanceService).finalizeStatus(anyString(), eq(ApprovalStatus.REJECTED), any(TicketNG.class));

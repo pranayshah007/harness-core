@@ -41,9 +41,10 @@ public class CIExecuteStepTask extends AbstractDelegateRunnableTask {
   @Override
   public DelegateResponseData run(TaskParameters parameters) {
     CIExecuteStepTaskParams ciExecuteStepTaskParams = (CIExecuteStepTaskParams) parameters;
-    if (ciExecuteStepTaskParams.getType() == CIExecuteStepTaskParams.Type.K8) {
+    CIExecuteStepTaskParams.Type type = ciExecuteStepTaskParams.getType();
+    if (type == CIExecuteStepTaskParams.Type.K8) {
       return ciK8ExecuteStepTaskHandler.executeTaskInternal(ciExecuteStepTaskParams, getTaskId());
-    } else if (ciExecuteStepTaskParams.getType() == CIExecuteStepTaskParams.Type.VM) {
+    } else if (type == CIExecuteStepTaskParams.Type.VM || type == CIExecuteStepTaskParams.Type.DOCKER) {
       return ciVmExecuteStepTaskHandler.executeTaskInternal(ciExecuteStepTaskParams, getTaskId());
     } else {
       throw new CIStageExecutionException(

@@ -33,6 +33,7 @@ import static io.harness.ci.commonconstants.CIExecutionConstants.PLUGIN_ACCESS_K
 import static io.harness.ci.commonconstants.CIExecutionConstants.PLUGIN_ARTIFACT_FILE_VALUE;
 import static io.harness.ci.commonconstants.CIExecutionConstants.PLUGIN_ASSUME_ROLE;
 import static io.harness.ci.commonconstants.CIExecutionConstants.PLUGIN_ENV_PREFIX;
+import static io.harness.ci.commonconstants.CIExecutionConstants.PLUGIN_EXTERNAL_ID;
 import static io.harness.ci.commonconstants.CIExecutionConstants.PLUGIN_JSON_KEY;
 import static io.harness.ci.commonconstants.CIExecutionConstants.PLUGIN_PASSW;
 import static io.harness.ci.commonconstants.CIExecutionConstants.PLUGIN_SECRET_KEY;
@@ -191,8 +192,7 @@ public class PluginSettingUtils {
         map.put(EnvVariableEnum.AWS_ACCESS_KEY, PLUGIN_ACCESS_KEY);
         map.put(EnvVariableEnum.AWS_SECRET_KEY, PLUGIN_SECRET_KEY);
         map.put(EnvVariableEnum.AWS_CROSS_ACCOUNT_ROLE_ARN, PLUGIN_ASSUME_ROLE);
-        // TODO: uncomment in the next release to ensure fix with delegateq backward compatibility.
-        //        map.put(EnvVariableEnum.AWS_CROSS_ACCOUNT_EXTERNAL_ID, PLUGIN_EXTERNAL_ID);
+        map.put(EnvVariableEnum.AWS_CROSS_ACCOUNT_EXTERNAL_ID, PLUGIN_EXTERNAL_ID);
         return map;
       case RESTORE_CACHE_S3:
       case SAVE_CACHE_S3:
@@ -292,7 +292,7 @@ public class PluginSettingUtils {
       }
 
       setOptionalEnvironmentVariable(map, PLUGIN_ARTIFACT_FILE, PLUGIN_ARTIFACT_FILE_VALUE);
-    } else if (infraType == Type.VM) {
+    } else if (infraType == Type.VM || infraType == Type.DOCKER) {
       setMandatoryEnvironmentVariable(map, PLUGIN_DAEMON_OFF, "true");
     }
 
@@ -341,7 +341,7 @@ public class PluginSettingUtils {
 
     if (infraType == Type.K8) {
       getACRStepInfoVariablesForK8s(stepInfo, identifier, map);
-    } else if (infraType == Type.VM) {
+    } else if (infraType == Type.VM || infraType == Type.DOCKER) {
       setMandatoryEnvironmentVariable(map, PLUGIN_DAEMON_OFF, "true");
     }
     return map;
@@ -426,7 +426,7 @@ public class PluginSettingUtils {
       }
 
       setOptionalEnvironmentVariable(map, PLUGIN_ARTIFACT_FILE, PLUGIN_ARTIFACT_FILE_VALUE);
-    } else if (infraType == Type.VM) {
+    } else if (infraType == Type.VM || infraType == Type.DOCKER) {
       setMandatoryEnvironmentVariable(map, PLUGIN_DAEMON_OFF, "true");
     }
 
@@ -485,7 +485,7 @@ public class PluginSettingUtils {
         setOptionalEnvironmentVariable(map, PLUGIN_ENABLE_CACHE, "true");
         setOptionalEnvironmentVariable(map, PLUGIN_CACHE_REPO, remoteCacheRepo);
       }
-    } else if (infraType == Type.VM) {
+    } else if (infraType == Type.VM || infraType == Type.DOCKER) {
       setMandatoryEnvironmentVariable(map, PLUGIN_DAEMON_OFF, "true");
     }
 

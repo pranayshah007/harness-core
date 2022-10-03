@@ -10,6 +10,7 @@ package io.harness.artifacts.nexus;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.rule.OwnerRule.MLUKIC;
+import static io.harness.rule.OwnerRule.SHIVAM;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -32,12 +33,15 @@ import io.harness.exception.NestedExceptionUtils;
 import io.harness.nexus.NexusClientImpl;
 import io.harness.nexus.NexusRequest;
 import io.harness.nexus.NexusThreeClientImpl;
+import io.harness.nexus.NexusTwoClientImpl;
 import io.harness.rule.Owner;
 
 import software.wings.utils.RepositoryFormat;
 
+import com.google.inject.Inject;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -56,11 +60,14 @@ import org.powermock.modules.junit4.PowerMockRunner;
 @PrepareForTest({HTimeLimiter.class})
 @OwnedBy(HarnessTeam.CDP)
 public class NexusClientImplTest extends CategoryTest {
-  @InjectMocks private NexusClientImpl nexusClient;
+  @Inject @InjectMocks private NexusClientImpl nexusClient;
   @Mock NexusThreeClientImpl nexusThreeService;
-
+  @Mock NexusTwoClientImpl nexusTwoClient;
   private static String url;
   private static Map<String, List<BuildDetailsInternal>> buildDetailsData;
+  private NexusRequest nexusConfig;
+  private NexusRequest nexusThreeConfig;
+  private String DEFAULT_NEXUS_URL;
 
   @Before
   public void before() {
@@ -295,6 +302,85 @@ public class NexusClientImplTest extends CategoryTest {
 
     List<BuildDetailsInternal> response =
         nexusClient.getBuildDetails(nexusConfig2, "test1", null, "superApp", RepositoryFormat.docker.name(), "1.0");
+    assertThat(response).isNotNull();
+    assertThat(response).size().isEqualTo(3);
+  }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void testGetBuildDetailsForMaven() {
+    NexusRequest nexusConfig1 = NexusRequest.builder()
+                                    .nexusUrl(url)
+                                    .username("username")
+                                    .password("password".toCharArray())
+                                    .hasCredentials(true)
+                                    .artifactRepositoryUrl(url)
+                                    .version("2.x")
+                                    .build();
+
+    doReturn(buildDetailsData.get("bdi1"))
+        .when(nexusTwoClient)
+        .getVersions(nexusConfig1, "test1", "groupId", "superApp", "war", "1.0");
+
+    List<BuildDetailsInternal> response =
+        nexusClient.getArtifactsVersions(nexusConfig1, "test1", "groupId", "superApp", "war", "1.0");
+
+    assertThat(response).isNotNull();
+    assertThat(response).size().isEqualTo(3);
+
+    NexusRequest nexusConfig2 = NexusRequest.builder()
+                                    .nexusUrl(url)
+                                    .username("username")
+                                    .password("password".toCharArray())
+                                    .hasCredentials(true)
+                                    .artifactRepositoryUrl(url)
+                                    .version("3.x")
+                                    .build();
+
+    doReturn(buildDetailsData.get("bdi1"))
+        .when(nexusThreeService)
+        .getVersions(nexusConfig2, "test1", "groupId", "superApp", "war", "1.0");
+
+    response = nexusClient.getArtifactsVersions(nexusConfig2, "test1", "groupId", "superApp", "war", "1.0");
+    assertThat(response).isNotNull();
+    assertThat(response).size().isEqualTo(3);
+  }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void testGetBuildDetailsForNPM() throws IOException {
+    NexusRequest nexusConfig1 = NexusRequest.builder()
+                                    .nexusUrl(url)
+                                    .username("username")
+                                    .password("password".toCharArray())
+                                    .hasCredentials(true)
+                                    .artifactRepositoryUrl(url)
+                                    .version("2.x")
+                                    .build();
+
+    doReturn(buildDetailsData.get("bdi1"))
+        .when(nexusTwoClient)
+        .getVersions("npm", nexusConfig1, "npm", "", Collections.emptySet());
+
+    List<BuildDetailsInternal> response = nexusClient.getArtifactsVersions(nexusConfig1, "npm", "npm", "");
+
+    assertThat(response).isNotNull();
+    assertThat(response).size().isEqualTo(3);
+
+    NexusRequest nexusConfig2 = NexusRequest.builder()
+                                    .nexusUrl(url)
+                                    .username("username")
+                                    .password("password".toCharArray())
+                                    .hasCredentials(true)
+                                    .artifactRepositoryUrl(url)
+                                    .version("3.x")
+                                    .build();
+
+    doReturn(buildDetailsData.get("bdi1")).when(nexusThreeService).getPackageVersions(nexusConfig2, "npm", "");
+
+    response = nexusClient.getArtifactsVersions(nexusConfig2, "npm", "npm", "");
     assertThat(response).isNotNull();
     assertThat(response).size().isEqualTo(3);
   }

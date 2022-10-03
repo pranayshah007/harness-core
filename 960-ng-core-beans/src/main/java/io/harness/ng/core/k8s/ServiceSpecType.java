@@ -17,4 +17,5 @@ public interface ServiceSpecType {
   String SERVERLESS_AWS_LAMBDA = "ServerlessAwsLambda";
   String WINRM = "WinRm";
   String AZURE_WEBAPP = "AzureWebApp";
+  String CUSTOM_DEPLOYMENT = "CustomDeployment";
 }

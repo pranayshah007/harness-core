@@ -38,6 +38,7 @@ public class OrchestrationVisualizationModuleRegistrars {
           .add(OrchestrationVisualizationMorphiaRegistrar.class)
           .addAll(OrchestrationRegistrars.morphiaRegistrars)
           .addAll(DelegateTaskRegistrars.morphiaRegistrars)
+          .addAll(FeatureFlagBeansRegistrars.morphiaRegistrars)
           .build();
 
   public static final ImmutableList<Class<? extends Converter<?, ?>>> springConverters =

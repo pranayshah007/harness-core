@@ -537,10 +537,10 @@ public class CIDashboardsApisTest extends CategoryTest {
 
     assertThat(failureBuild)
         .isEqualTo(ciOverviewDashboardServiceImpl.getBuildFailureInfo(
-            "pip1", "pip1", "branch1", "commit1", "id1", 10, 13, null, "status", "plan", "Webhook", null, null));
+            "pip1", "pip1", "branch1", "commit1", "id1", 10, 13, null, "status", "plan", "Webhook", null));
     assertThat(activeInfo)
         .isEqualTo(ciOverviewDashboardServiceImpl.getBuildActiveInfo("pip2", "pip2", "branch2", "commit2", "id2", null,
-            10, ExecutionStatus.RUNNING.name(), "plan", 13, "Webhook", null, null));
+            10, ExecutionStatus.RUNNING.name(), "plan", 13, "Webhook", null));
   }
 
   @Test

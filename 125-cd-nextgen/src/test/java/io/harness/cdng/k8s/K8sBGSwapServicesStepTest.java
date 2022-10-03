@@ -88,7 +88,12 @@ public class K8sBGSwapServicesStepTest extends CategoryTest {
   final K8sBlueGreenOutcome blueGreenOutcome =
       K8sBlueGreenOutcome.builder().primaryServiceName(primaryService).stageServiceName(stageService).build();
   final TaskRequest createdTaskRequest = TaskRequest.newBuilder().build();
-  final K8sBGSwapServicesStepParameters stepParameters = K8sBGSwapServicesStepParameters.infoBuilder().build();
+  final String bgStepFqn = "bgStep";
+  final String bgSwapServicesStepFqn = "bgSwapServicesStep";
+  final K8sBGSwapServicesStepParameters stepParameters = K8sBGSwapServicesStepParameters.infoBuilder()
+                                                             .blueGreenStepFqn(bgStepFqn)
+                                                             .blueGreenSwapServicesFqn(bgSwapServicesStepFqn)
+                                                             .build();
   final StepElementParameters stepElementParameters =
       StepElementParameters.builder().spec(stepParameters).timeout(ParameterField.createValueField("10m")).build();
   private String releaseName = "test-release-name";
@@ -107,8 +112,9 @@ public class K8sBGSwapServicesStepTest extends CategoryTest {
             eq(K8sExecutionPassThroughData.builder().infrastructure(infrastructureOutcome).build()));
     doReturn(OptionalSweepingOutput.builder().found(true).output(blueGreenOutcome).build())
         .when(executionSweepingOutputService)
-        .resolveOptional(
-            ambiance, RefObjectUtils.getSweepingOutputRefObject(OutcomeExpressionConstants.K8S_BLUE_GREEN_OUTCOME));
+        .resolveOptional(ambiance,
+            RefObjectUtils.getSweepingOutputRefObject(
+                bgStepFqn + "." + OutcomeExpressionConstants.K8S_BLUE_GREEN_OUTCOME));
     doReturn(infrastructureOutcome).when(cdStepHelper).getInfrastructureOutcome(ambiance);
   }
 
@@ -121,8 +127,9 @@ public class K8sBGSwapServicesStepTest extends CategoryTest {
     final OptionalOutcome optionalOutcome = OptionalOutcome.builder().found(false).build();
     doReturn(optionalOutcome)
         .when(outcomeService)
-        .resolveOptional(
-            ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.K8S_BG_SWAP_SERVICES_OUTCOME));
+        .resolveOptional(ambiance,
+            RefObjectUtils.getOutcomeRefObject(
+                bgSwapServicesStepFqn + "." + OutcomeExpressionConstants.K8S_BG_SWAP_SERVICES_OUTCOME));
 
     k8sBGSwapServicesStep.obtainTask(ambiance, stepElementParameters, stepInputPackage);
     ArgumentCaptor<K8sSwapServiceSelectorsRequest> requestArgumentCaptor =
@@ -161,8 +168,9 @@ public class K8sBGSwapServicesStepTest extends CategoryTest {
     final OptionalOutcome optionalOutcome = OptionalOutcome.builder().found(true).build();
     doReturn(optionalOutcome)
         .when(outcomeService)
-        .resolveOptional(
-            ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.K8S_BG_SWAP_SERVICES_OUTCOME));
+        .resolveOptional(ambiance,
+            RefObjectUtils.getOutcomeRefObject(
+                bgSwapServicesStepFqn + "." + OutcomeExpressionConstants.K8S_BG_SWAP_SERVICES_OUTCOME));
 
     setupPreConditions(ambiance);
 
@@ -186,8 +194,9 @@ public class K8sBGSwapServicesStepTest extends CategoryTest {
     OptionalOutcome optionalOutcome = OptionalOutcome.builder().found(false).build();
     doReturn(optionalOutcome)
         .when(outcomeService)
-        .resolveOptional(
-            ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.K8S_BG_SWAP_SERVICES_OUTCOME));
+        .resolveOptional(ambiance,
+            RefObjectUtils.getOutcomeRefObject(
+                bgSwapServicesStepFqn + "." + OutcomeExpressionConstants.K8S_BG_SWAP_SERVICES_OUTCOME));
 
     TaskRequest taskRequest = k8sBGSwapServicesStep.obtainTask(ambiance, stepElementParameters, stepInputPackage);
     assertThat(taskRequest).isNotNull();
@@ -200,14 +209,15 @@ public class K8sBGSwapServicesStepTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testObtainTaskInRollbackWhenSwapServicesIsMissingFromPipeline() {
     Ambiance ambiance = getAmbianceForRollback();
-    K8sBGSwapServicesStepParameters stepParams = K8sBGSwapServicesStepParameters.infoBuilder().build();
+    K8sBGSwapServicesStepParameters stepParams =
+        K8sBGSwapServicesStepParameters.infoBuilder().blueGreenStepFqn(bgStepFqn).build();
     StepElementParameters stepElementParams =
         StepElementParameters.builder().spec(stepParams).timeout(ParameterField.createValueField("10m")).build();
     OptionalOutcome optionalOutcome = OptionalOutcome.builder().found(false).build();
     doReturn(optionalOutcome)
         .when(outcomeService)
-        .resolveOptional(
-            ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.K8S_BG_SWAP_SERVICES_OUTCOME));
+        .resolveOptional(ambiance,
+            RefObjectUtils.getOutcomeRefObject("null." + OutcomeExpressionConstants.K8S_BG_SWAP_SERVICES_OUTCOME));
 
     TaskRequest taskRequest = k8sBGSwapServicesStep.obtainTask(ambiance, stepElementParams, stepInputPackage);
     assertThat(taskRequest).isNotNull();
@@ -275,8 +285,9 @@ public class K8sBGSwapServicesStepTest extends CategoryTest {
     final OptionalOutcome optionalOutcome = OptionalOutcome.builder().found(false).build();
     doReturn(optionalOutcome)
         .when(outcomeService)
-        .resolveOptional(
-            ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.K8S_BG_SWAP_SERVICES_OUTCOME));
+        .resolveOptional(ambiance,
+            RefObjectUtils.getOutcomeRefObject(
+                bgSwapServicesStepFqn + "." + OutcomeExpressionConstants.K8S_BG_SWAP_SERVICES_OUTCOME));
 
     doThrow(new InvalidRequestException(MISSING_INFRASTRUCTURE_ERROR))
         .when(cdStepHelper)
@@ -287,8 +298,9 @@ public class K8sBGSwapServicesStepTest extends CategoryTest {
 
     doReturn(OptionalSweepingOutput.builder().found(false).build())
         .when(executionSweepingOutputService)
-        .resolveOptional(
-            ambiance, RefObjectUtils.getSweepingOutputRefObject(OutcomeExpressionConstants.K8S_BLUE_GREEN_OUTCOME));
+        .resolveOptional(ambiance,
+            RefObjectUtils.getSweepingOutputRefObject(
+                bgStepFqn + "." + OutcomeExpressionConstants.K8S_BLUE_GREEN_OUTCOME));
     assertThatThrownBy(() -> k8sBGSwapServicesStep.obtainTask(ambiance, stepElementParameters, stepInputPackage))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessageContaining(BG_STEP_MISSING_ERROR);

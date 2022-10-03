@@ -30,4 +30,9 @@ public interface NGConnectorSecretManagerService {
 
   void resolveSecretManagerScriptSecrets(String accountIdentifier, String path,
       CustomSecretNGManagerConfig encryptionConfig, SecretManagerConfigDTO secretManagerConfigDTO);
+
+  String getPerpetualTaskId(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier);
+
+  void resetHeartBeatTask(String accountId, String taskId);
 }

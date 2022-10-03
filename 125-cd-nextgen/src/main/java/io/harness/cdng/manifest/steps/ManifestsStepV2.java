@@ -1,7 +1,18 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.cdng.manifest.steps;
 
 import static io.harness.cdng.manifest.ManifestType.HELM_SUPPORTED_MANIFEST_TYPES;
 import static io.harness.cdng.manifest.ManifestType.K8S_SUPPORTED_MANIFEST_TYPES;
+import static io.harness.cdng.service.steps.ServiceStepOverrideHelper.ENVIRONMENT_GLOBAL_OVERRIDES;
+import static io.harness.cdng.service.steps.ServiceStepOverrideHelper.SERVICE;
+import static io.harness.cdng.service.steps.ServiceStepOverrideHelper.SERVICE_OVERRIDES;
+import static io.harness.cdng.service.steps.ServiceStepOverrideHelper.validateOverridesTypeAndUniqueness;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
@@ -10,7 +21,7 @@ import static java.lang.String.format;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
-import io.harness.cdng.CDStepHelper;
+import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.manifest.mappers.ManifestOutcomeMapper;
 import io.harness.cdng.manifest.yaml.ManifestAttributes;
 import io.harness.cdng.manifest.yaml.ManifestConfig;
@@ -18,6 +29,7 @@ import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
+import io.harness.cdng.service.steps.ServiceStepV3;
 import io.harness.cdng.steps.EmptyStepParameters;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.connector.ConnectorModule;
@@ -28,12 +40,13 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.ng.core.NGAccess;
-import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
+import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.executables.SyncExecutable;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
@@ -44,13 +57,16 @@ import io.harness.utils.IdentifierRefHelper;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 
 @OwnedBy(HarnessTeam.CDC)
 @Slf4j
@@ -60,8 +76,8 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters> {
                                                .setStepCategory(StepCategory.STEP)
                                                .build();
   @Inject private ExecutionSweepingOutputService sweepingOutputService;
-  @Inject private CDStepHelper cdStepHelper;
   @Named(ConnectorModule.DEFAULT_CONNECTOR_SERVICE) @Inject private ConnectorService connectorService;
+  @Inject private CDExpressionResolver cdExpressionResolver;
 
   @Override
   public Class<EmptyStepParameters> getStepParametersClass() {
@@ -71,24 +87,27 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters> {
   @Override
   public StepResponse executeSync(Ambiance ambiance, EmptyStepParameters stepParameters, StepInputPackage inputPackage,
       PassThroughData passThroughData) {
-    final Optional<NGServiceV2InfoConfig> serviceOptional = cdStepHelper.fetchServiceConfigFromSweepingOutput(ambiance);
-    if (serviceOptional.isEmpty()) {
+    final NgManifestsMetadataSweepingOutput ngManifestsMetadataSweepingOutput =
+        fetchManifestsMetadataFromSweepingOutput(ambiance);
+
+    final Map<String, List<ManifestConfigWrapper>> finalSvcManifestsMap =
+        ngManifestsMetadataSweepingOutput.getFinalSvcManifestsMap();
+
+    if (isEmpty(finalSvcManifestsMap)) {
+      log.info("no manifest files found for service " + ngManifestsMetadataSweepingOutput.getServiceIdentifier()
+          + ". skipping the manifest files step");
       return StepResponse.builder().status(Status.SKIPPED).build();
     }
-
-    final NGServiceV2InfoConfig service = serviceOptional.get();
-    final List<ManifestConfigWrapper> manifests = service.getServiceDefinition().getServiceSpec().getManifests();
-
-    if (isEmpty(manifests)) {
-      return StepResponse.builder().status(Status.SKIPPED).build();
-    }
-
+    List<ManifestConfigWrapper> manifests = aggregateManifestsFromAllLocations(finalSvcManifestsMap);
     List<ManifestAttributes> manifestAttributes = manifests.stream()
                                                       .map(ManifestConfigWrapper::getManifest)
                                                       .map(ManifestConfig::getSpec)
                                                       .collect(Collectors.toList());
+    cdExpressionResolver.updateExpressions(ambiance, manifestAttributes);
+    validateOverridesTypeAndUniqueness(finalSvcManifestsMap, ngManifestsMetadataSweepingOutput.getServiceIdentifier(),
+        ngManifestsMetadataSweepingOutput.getEnvironmentIdentifier());
 
-    validateManifestList(service.getServiceDefinition().getType(), manifestAttributes);
+    validateManifestList(ngManifestsMetadataSweepingOutput.getServiceDefinitionType(), manifestAttributes);
     validateConnectors(ambiance, manifestAttributes);
 
     final ManifestsOutcome manifestsOutcome = new ManifestsOutcome();
@@ -101,6 +120,32 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters> {
         ambiance, OutcomeExpressionConstants.MANIFESTS, manifestsOutcome, StepCategory.STAGE.name());
 
     return StepResponse.builder().status(Status.SUCCEEDED).build();
+  }
+
+  @NotNull
+  private List<ManifestConfigWrapper> aggregateManifestsFromAllLocations(
+      @NonNull Map<String, List<ManifestConfigWrapper>> finalSvcManifestsMap) {
+    List<ManifestConfigWrapper> manifests = new ArrayList<>();
+    if (isNotEmpty(finalSvcManifestsMap.get(SERVICE))) {
+      manifests.addAll(finalSvcManifestsMap.get(SERVICE));
+    }
+    if (isNotEmpty(finalSvcManifestsMap.get(ENVIRONMENT_GLOBAL_OVERRIDES))) {
+      manifests.addAll(finalSvcManifestsMap.get(ENVIRONMENT_GLOBAL_OVERRIDES));
+    }
+    if (isNotEmpty(finalSvcManifestsMap.get(SERVICE_OVERRIDES))) {
+      manifests.addAll(finalSvcManifestsMap.get(SERVICE_OVERRIDES));
+    }
+    return manifests;
+  }
+
+  private NgManifestsMetadataSweepingOutput fetchManifestsMetadataFromSweepingOutput(Ambiance ambiance) {
+    final OptionalSweepingOutput resolveOptional = sweepingOutputService.resolveOptional(
+        ambiance, RefObjectUtils.getOutcomeRefObject(ServiceStepV3.SERVICE_MANIFESTS_SWEEPING_OUTPUT));
+    if (!resolveOptional.isFound()) {
+      log.info("Could not find manifestFilesSweepingOutput for the stage.");
+    }
+    return resolveOptional.isFound() ? (NgManifestsMetadataSweepingOutput) resolveOptional.getOutput()
+                                     : NgManifestsMetadataSweepingOutput.builder().build();
   }
 
   private void validateConnectors(Ambiance ambiance, List<ManifestAttributes> manifestAttributes) {

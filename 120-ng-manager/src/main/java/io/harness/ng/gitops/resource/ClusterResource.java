@@ -131,8 +131,7 @@ public class ClusterResource {
   @Path("{identifier}")
   @ApiOperation(value = "Gets a Cluster by identifier", nickname = "getCluster")
   @Operation(operationId = "getCluster", summary = "Gets a Cluster by identifier",
-      responses = { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "The saved Cluster") },
-      hidden = true)
+      responses = { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "The saved Cluster") })
   public ResponseDTO<ClusterResponse>
   get(@Parameter(description = CLUSTER_PARAM_MESSAGE) @PathParam("identifier") @ResourceIdentifier String clusterRef,
       @Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
@@ -163,8 +162,7 @@ public class ClusterResource {
   @POST
   @ApiOperation(value = "Link a gitops cluster to an environment", nickname = "linkCluster")
   @Operation(operationId = "linkCluster", summary = "link a Cluster",
-      responses = { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Returns the linked Cluster") },
-      hidden = true)
+      responses = { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Returns the linked Cluster") })
   public ResponseDTO<ClusterResponse>
   link(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
            NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
@@ -188,8 +186,7 @@ public class ClusterResource {
   @Path("/batch")
   @ApiOperation(value = "Link gitops clusters to an environment", nickname = "linkClusters")
   @Operation(operationId = "linkClusters", summary = "Link Clusters",
-      responses = { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Returns the linked Clusters") },
-      hidden = true)
+      responses = { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Returns the linked Clusters") })
   public ResponseDTO<ClusterBatchResponse>
   linkBatch(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
                 NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
@@ -226,8 +223,7 @@ public class ClusterResource {
   @ApiOperation(value = "Delete a Cluster by identifier", nickname = "deleteCluster")
   @Operation(operationId = "deleteCluster", summary = "Delete a Cluster by identifier",
       responses =
-      { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Returns true if the Cluster is deleted") },
-      hidden = true)
+      { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Returns true if the Cluster is deleted") })
   public ResponseDTO<Boolean>
   delete(@Parameter(description = CLUSTER_PARAM_MESSAGE) @PathParam("identifier") @ResourceIdentifier String clusterRef,
       @Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
@@ -253,8 +249,7 @@ public class ClusterResource {
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Returns the list of cluster for a Project")
-      },
-      hidden = true)
+      })
   public ResponseDTO<PageResponse<ClusterResponse>>
   list(@Parameter(description = NGCommonEntityConstants.PAGE_PARAM_MESSAGE) @QueryParam(
            NGCommonEntityConstants.PAGE) @DefaultValue("0") int page,
@@ -281,6 +276,7 @@ public class ClusterResource {
     checkForAccessOrThrow(
         accountId, orgIdentifier, projectIdentifier, envIdentifier, ENVIRONMENT_VIEW_PERMISSION, "list");
 
+    // NG Clusters
     Page<Cluster> entities = clusterService.list(
         page, size, accountId, orgIdentifier, projectIdentifier, envIdentifier, searchTerm, identifiers, sort);
 
@@ -294,7 +290,9 @@ public class ClusterResource {
     Map<String, ClusterFromGitops> allClusters =
         Stream.of(accountLevelClusters.getContent(), projectLevelClusters.getContent())
             .flatMap(List::stream)
-            .collect(Collectors.toMap(e -> e.getIdentifier(), Function.identity(), (c1, c2) -> c1));
+            .collect(Collectors.toMap(e
+                -> e.getScopeLevel().toString().toLowerCase() + "." + e.getIdentifier(),
+                Function.identity(), (c1, c2) -> c1));
     return ResponseDTO.newResponse(getNGPageResponse(entities.map(e -> ClusterEntityMapper.writeDTO(e, allClusters))));
   }
 

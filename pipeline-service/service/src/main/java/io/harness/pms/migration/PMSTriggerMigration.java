@@ -24,19 +24,15 @@ import io.harness.ngtriggers.beans.source.webhook.v2.bitbucket.BitbucketSpec;
 import io.harness.ngtriggers.beans.source.webhook.v2.bitbucket.event.BitbucketTriggerEvent;
 import io.harness.ngtriggers.beans.source.webhook.v2.github.GithubSpec;
 import io.harness.ngtriggers.mapper.NGTriggerElementMapper;
-import io.harness.utils.RetryUtils;
+import io.harness.springdata.PersistenceUtils;
 
-import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
-import java.time.Duration;
 import java.util.List;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
-import org.springframework.dao.DuplicateKeyException;
-import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.FindAndModifyOptions;
@@ -51,10 +47,8 @@ import org.springframework.data.mongodb.core.query.Update;
 public class PMSTriggerMigration implements NGMigration {
   @Inject private final MongoTemplate mongoTemplate;
   @Inject private NGTriggerElementMapper ngTriggerElementMapper;
-  private final RetryPolicy<Object> updateRetryPolicy = RetryUtils.getRetryPolicy(
-      "[Retrying]: Failed updating Trigger; attempt: {}", "[Failed]: Failed updating Trigger; attempt: {}",
-      ImmutableList.of(OptimisticLockingFailureException.class, DuplicateKeyException.class), Duration.ofSeconds(1), 3,
-      log);
+  private final RetryPolicy<Object> updateRetryPolicy = PersistenceUtils.getRetryPolicy(
+      "[Retrying]: Failed updating Trigger; attempt: {}", "[Failed]: Failed updating Trigger; attempt: {}");
 
   @Override
   public void migrate() {

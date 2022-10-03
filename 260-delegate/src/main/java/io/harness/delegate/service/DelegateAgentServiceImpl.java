@@ -808,11 +808,11 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   }
 
   private void handleClose(Object o) {
-    log.info("Event:{}, message:[{}] trying to reconnect", Event.CLOSE.name(), o.toString());
+    log.info("Event:{}, trying to reconnect, message:[{}]", Event.CLOSE.name(), o);
   }
 
   private void handleError(final Exception e) {
-    log.info("Event:{}, message:[{}]", Event.ERROR.name(), e.getMessage());
+    log.info("Event:{}", Event.ERROR.name(), e);
   }
 
   private void finalizeSocket() {

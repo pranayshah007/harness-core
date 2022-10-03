@@ -52,16 +52,16 @@ import org.hibernate.validator.constraints.NotEmpty;
 public class PrometheusConfig extends SettingValue implements EncryptableSetting, ExecutionCapabilityDemander {
   public static final String VALIDATION_URL = "api/v1/query?query=up";
   @Attributes(title = "URL", required = true) private String url;
+  @SchemaIgnore @NotEmpty private String accountId;
   @Attributes(title = "Username") private String username;
   @Attributes(title = "Password") @Encrypted(fieldName = "password") private char[] password;
   @JsonView(JsonViews.Internal.class) @SchemaIgnore private String encryptedPassword;
-  @SchemaIgnore @NotEmpty private String accountId;
 
   public PrometheusConfig() {
     super(SettingVariableTypes.PROMETHEUS.name());
   }
 
-  public PrometheusConfig(String url, String accountId, char[] password, String username, String encryptedPassword) {
+  public PrometheusConfig(String url, String accountId, String username, char[] password, String encryptedPassword) {
     this();
     this.url = url;
     this.accountId = accountId;

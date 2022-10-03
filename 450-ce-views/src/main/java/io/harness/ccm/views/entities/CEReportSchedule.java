@@ -7,7 +7,7 @@
 
 package io.harness.ccm.views.entities;
 
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EmbeddedUser;
@@ -41,8 +41,8 @@ import org.mongodb.morphia.annotations.Id;
 @Builder
 @FieldNameConstants(innerTypeName = "CEReportScheduleKeys")
 @FieldDefaults(level = AccessLevel.PRIVATE)
-@Entity(value = "ceReportSchedule", noClassnameStored = true)
 @StoreIn(DbAliases.CENG)
+@Entity(value = "ceReportSchedule", noClassnameStored = true)
 @OwnedBy(HarnessTeam.CE)
 @Schema(
     description = "Cloud Cost Report Schedule contains definition of 'how often' and 'to whom' the Report will be sent")

@@ -5,6 +5,7 @@ go_library(
     srcs = [
         "image.go",
         "jexl.go",
+        "ti.go",
     ],
     importpath = "github.com/harness/harness-core/product/ci/addon/remote",
     visibility = ["//visibility:public"],
@@ -12,6 +13,7 @@ go_library(
         "//product/ci/engine/consts",
         "//product/ci/engine/grpc/client",
         "//product/ci/engine/proto",
+        "//product/ci/ti-service/types",
         "@org_uber_go_zap//:zap",
     ],
 )

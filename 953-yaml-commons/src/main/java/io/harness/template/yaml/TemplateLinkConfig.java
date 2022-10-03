@@ -41,4 +41,5 @@ public class TemplateLinkConfig {
   @NotNull String templateRef;
   @Pattern(regexp = NGRegexValidatorConstants.VERSION_LABEL_PATTERN) String versionLabel;
   JsonNode templateInputs;
+  JsonNode templateVariables;
 }

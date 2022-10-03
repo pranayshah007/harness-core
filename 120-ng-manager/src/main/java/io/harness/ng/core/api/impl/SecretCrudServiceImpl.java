@@ -21,6 +21,7 @@ import static io.harness.secretmanagerclient.ValueType.CustomSecretManagerValues
 import static io.harness.secrets.SecretPermissions.SECRET_RESOURCE_TYPE;
 import static io.harness.secrets.SecretPermissions.SECRET_VIEW_PERMISSION;
 
+import static java.lang.String.format;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.NGResourceFilterConstants;
@@ -31,6 +32,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.ConnectorCategory;
 import io.harness.connector.services.NGConnectorSecretManagerService;
 import io.harness.delegate.beans.FileUploadLimit;
+import io.harness.encryption.SecretRefData;
 import io.harness.eventsframework.EventsFrameworkMetadataConstants;
 import io.harness.eventsframework.api.EventsFrameworkDownException;
 import io.harness.eventsframework.api.Producer;
@@ -46,6 +48,9 @@ import io.harness.ng.core.api.NGSecretServiceV2;
 import io.harness.ng.core.api.SecretCrudService;
 import io.harness.ng.core.common.beans.NGTag.NGTagKeys;
 import io.harness.ng.core.dto.secrets.BaseSSHSpecDTO;
+import io.harness.ng.core.dto.secrets.KerberosConfigDTO;
+import io.harness.ng.core.dto.secrets.KerberosWinRmConfigDTO;
+import io.harness.ng.core.dto.secrets.NTLMConfigDTO;
 import io.harness.ng.core.dto.secrets.SSHAuthDTO;
 import io.harness.ng.core.dto.secrets.SSHConfigDTO;
 import io.harness.ng.core.dto.secrets.SSHCredentialSpecDTO;
@@ -57,6 +62,8 @@ import io.harness.ng.core.dto.secrets.SecretDTOV2;
 import io.harness.ng.core.dto.secrets.SecretFileSpecDTO;
 import io.harness.ng.core.dto.secrets.SecretResponseWrapper;
 import io.harness.ng.core.dto.secrets.SecretTextSpecDTO;
+import io.harness.ng.core.dto.secrets.TGTPasswordSpecDTO;
+import io.harness.ng.core.dto.secrets.WinRmCredentialsSpecDTO;
 import io.harness.ng.core.entities.NGEncryptedData;
 import io.harness.ng.core.models.Secret;
 import io.harness.ng.core.models.Secret.SecretKeys;
@@ -206,7 +213,7 @@ public class SecretCrudServiceImpl implements SecretCrudService {
   public SecretResponseWrapper create(String accountIdentifier, SecretDTOV2 dto) {
     if (SecretText.equals(dto.getType()) && isEmpty(((SecretTextSpecDTO) dto.getSpec()).getValue())) {
       if ((((SecretTextSpecDTO) dto.getSpec()).getValueType()).equals(CustomSecretManagerValues)) {
-        log.info(String.format("Secret %s does not have any path for custom secret manager: %s", dto.getIdentifier(),
+        log.info(format("Secret %s does not have any path for custom secret manager: %s", dto.getIdentifier(),
             ((SecretTextSpecDTO) dto.getSpec()).getSecretManagerIdentifier()));
       } else {
         throw new InvalidRequestException("value cannot be empty for a secret text.");
@@ -333,18 +340,11 @@ public class SecretCrudServiceImpl implements SecretCrudService {
   @Override
   public Page<SecretResponseWrapper> list(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       List<String> identifiers, List<SecretType> secretTypes, boolean includeSecretsFromEverySubScope,
-      String searchTerm, int page, int size, ConnectorCategory sourceCategory) {
+      String searchTerm, int page, int size, ConnectorCategory sourceCategory,
+      boolean includeAllSecretsAccessibleAtScope) {
     Criteria criteria = Criteria.where(SecretKeys.accountIdentifier).is(accountIdentifier);
-    if (!includeSecretsFromEverySubScope) {
-      criteria.and(SecretKeys.orgIdentifier).is(orgIdentifier).and(SecretKeys.projectIdentifier).is(projectIdentifier);
-    } else {
-      if (isNotBlank(orgIdentifier)) {
-        criteria.and(SecretKeys.orgIdentifier).is(orgIdentifier);
-        if (isNotBlank(projectIdentifier)) {
-          criteria.and(SecretKeys.projectIdentifier).is(projectIdentifier);
-        }
-      }
-    }
+    addCriteriaForRequestedScopes(criteria, orgIdentifier, projectIdentifier, includeAllSecretsAccessibleAtScope,
+        includeSecretsFromEverySubScope);
 
     if (isNotEmpty(secretTypes)) {
       criteria = criteria.and(SecretKeys.type).in(secretTypes);
@@ -374,6 +374,57 @@ public class SecretCrudServiceImpl implements SecretCrudService {
     return ngSecretService.list(allMatchingSecrets, page, size).map(this::getResponseWrapper);
   }
 
+  @VisibleForTesting
+  protected void addCriteriaForRequestedScopes(Criteria criteria, String orgIdentifier, String projectIdentifier,
+      boolean includeAllSecretsAccessibleAtScope, boolean includeSecretsFromEverySubScope) {
+    if (!includeAllSecretsAccessibleAtScope && !includeSecretsFromEverySubScope) {
+      criteria.and(SecretKeys.orgIdentifier).is(orgIdentifier).and(SecretKeys.projectIdentifier).is(projectIdentifier);
+    } else {
+      Criteria superScopeCriteriaOrSubScopeCriteria = new Criteria();
+      Criteria subScopeCriteria = new Criteria();
+      Criteria superScopeCriteria = new Criteria();
+      addCriteriaForIncludeAllSecretsAccessibleAtScope(superScopeCriteria, orgIdentifier, projectIdentifier);
+      addCriteriaForIncludeSecretsFromSubScope(subScopeCriteria, orgIdentifier, projectIdentifier);
+      if (includeAllSecretsAccessibleAtScope && includeSecretsFromEverySubScope) {
+        superScopeCriteriaOrSubScopeCriteria.orOperator(superScopeCriteria, subScopeCriteria);
+        criteria.andOperator(superScopeCriteriaOrSubScopeCriteria);
+      } else if (includeSecretsFromEverySubScope) {
+        criteria.andOperator(subScopeCriteria);
+      } else {
+        criteria.andOperator(superScopeCriteria);
+      }
+    }
+  }
+
+  private void addCriteriaForIncludeSecretsFromSubScope(
+      Criteria subScopeCriteria, String orgIdentifier, String projectIdentifier) {
+    if (isNotBlank(orgIdentifier)) {
+      subScopeCriteria.and(SecretKeys.orgIdentifier).is(orgIdentifier);
+      if (isNotBlank(projectIdentifier)) {
+        subScopeCriteria.and(SecretKeys.projectIdentifier).is(projectIdentifier);
+      }
+    }
+  }
+
+  private void addCriteriaForIncludeAllSecretsAccessibleAtScope(
+      Criteria criteria, String orgIdentifier, String projectIdentifier) {
+    Criteria accountCriteria =
+        Criteria.where(SecretKeys.orgIdentifier).is(null).and(SecretKeys.projectIdentifier).is(null);
+    Criteria orgCriteria =
+        Criteria.where(SecretKeys.orgIdentifier).is(orgIdentifier).and(SecretKeys.projectIdentifier).is(null);
+    Criteria projectCriteria = Criteria.where(SecretKeys.orgIdentifier)
+                                   .is(orgIdentifier)
+                                   .and(SecretKeys.projectIdentifier)
+                                   .is(projectIdentifier);
+
+    if (isNotBlank(projectIdentifier)) {
+      criteria.orOperator(projectCriteria, orgCriteria, accountCriteria);
+    } else if (isNotBlank(orgIdentifier)) {
+      criteria.orOperator(orgCriteria, accountCriteria);
+    } else {
+      criteria.orOperator(accountCriteria);
+    }
+  }
   @Override
   public boolean delete(String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier) {
     Optional<SecretResponseWrapper> optionalSecret =
@@ -423,6 +474,7 @@ public class SecretCrudServiceImpl implements SecretCrudService {
         if (deletionSuccess) {
           secretEntityReferenceHelper.deleteSecretEntityReferenceWhenSecretGetsDeleted(accountIdentifier, orgIdentifier,
               projectIdentifier, identifier, getSecretManagerIdentifier(optionalSecret.get().getSecret()));
+          encryptedDataService.hardDelete(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
           publishEvent(accountIdentifier, orgIdentifier, projectIdentifier, identifier,
               EventsFrameworkMetadataConstants.DELETE_ACTION);
         } else {
@@ -640,5 +692,57 @@ public class SecretCrudServiceImpl implements SecretCrudService {
   public SecretValidationResultDTO validateSecret(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String identifier, @Valid SecretValidationMetaData metadata) {
     return ngSecretService.validateSecret(accountIdentifier, orgIdentifier, projectIdentifier, identifier, metadata);
+  }
+
+  @Override
+  public void validateSshWinRmSecretRef(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, SecretDTOV2 secretDTO) {
+    SecretRefData secretRef = null;
+
+    if (secretDTO.getSpec() instanceof SSHKeySpecDTO) {
+      SSHKeySpecDTO sshKeySpecDTO = (SSHKeySpecDTO) secretDTO.getSpec();
+      if (sshKeySpecDTO.getAuth().getSpec() instanceof SSHConfigDTO) {
+        SSHConfigDTO sshConfigDTO = (SSHConfigDTO) sshKeySpecDTO.getAuth().getSpec();
+        if (sshConfigDTO.getSpec() instanceof SSHKeyReferenceCredentialDTO) {
+          SSHKeyReferenceCredentialDTO sshKeyReferenceCredentialDTO =
+              (SSHKeyReferenceCredentialDTO) sshConfigDTO.getSpec();
+          secretRef = sshKeyReferenceCredentialDTO.getKey();
+        } else if (sshConfigDTO.getSpec() instanceof SSHPasswordCredentialDTO) {
+          SSHPasswordCredentialDTO sshPasswordCredentialDTO = (SSHPasswordCredentialDTO) sshConfigDTO.getSpec();
+          secretRef = sshPasswordCredentialDTO.getPassword();
+        }
+      } else if (sshKeySpecDTO.getAuth().getSpec() instanceof KerberosConfigDTO) {
+        KerberosConfigDTO kerberosConfigDTO = (KerberosConfigDTO) sshKeySpecDTO.getAuth().getSpec();
+        if (kerberosConfigDTO.getSpec() instanceof TGTPasswordSpecDTO) {
+          TGTPasswordSpecDTO tgtPasswordSpecDTO = (TGTPasswordSpecDTO) kerberosConfigDTO.getSpec();
+          secretRef = tgtPasswordSpecDTO.getPassword();
+        }
+      }
+    } else if (secretDTO.getSpec() instanceof WinRmCredentialsSpecDTO) {
+      WinRmCredentialsSpecDTO winRmCredentialsSpecDTO = (WinRmCredentialsSpecDTO) secretDTO.getSpec();
+      if (winRmCredentialsSpecDTO.getAuth().getSpec() instanceof KerberosWinRmConfigDTO) {
+        KerberosWinRmConfigDTO kerberosConfigDTO = (KerberosWinRmConfigDTO) winRmCredentialsSpecDTO.getAuth().getSpec();
+        if (kerberosConfigDTO.getSpec() instanceof TGTPasswordSpecDTO) {
+          TGTPasswordSpecDTO tgtPasswordSpecDTO = (TGTPasswordSpecDTO) kerberosConfigDTO.getSpec();
+          secretRef = tgtPasswordSpecDTO.getPassword();
+        }
+      } else if (winRmCredentialsSpecDTO.getAuth().getSpec() instanceof NTLMConfigDTO) {
+        NTLMConfigDTO ntlmConfigDTO = (NTLMConfigDTO) winRmCredentialsSpecDTO.getAuth().getSpec();
+        secretRef = ntlmConfigDTO.getPassword();
+      }
+    }
+
+    // in case of Kerberos no TGT, SSH key with optional password
+    if (secretRef == null) {
+      return;
+    }
+
+    Optional<Secret> secretOptional =
+        ngSecretService.get(accountIdentifier, orgIdentifier, projectIdentifier, secretRef.getIdentifier());
+
+    if (!secretOptional.isPresent()) {
+      throw new InvalidRequestException(
+          format("No such secret found '%s', please check identifier/scope and try again.", secretRef.getIdentifier()));
+    }
   }
 }

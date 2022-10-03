@@ -8,7 +8,7 @@
 package io.harness.cdng.execution;
 
 import io.harness.annotation.HarnessEntity;
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.mongo.index.CompoundMongoIndex;
@@ -41,11 +41,11 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @ToString
 @FieldNameConstants(innerTypeName = "StageExecutionInfoKeys")
 @FieldDefaults(level = AccessLevel.PRIVATE)
+@StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "stageExecutionInfo", noClassnameStored = true)
 @Document("stageExecutionInfo")
 @TypeAlias("stageExecutionInfo")
 @HarnessEntity(exportable = true)
-@StoreIn(DbAliases.NG_MANAGER)
 @OwnedBy(HarnessTeam.CDP)
 public class StageExecutionInfo implements PersistentEntity, UuidAware {
   @org.springframework.data.annotation.Id @Id String uuid;

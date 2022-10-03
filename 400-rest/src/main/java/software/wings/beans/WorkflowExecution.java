@@ -15,6 +15,7 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.BreakDependencyOn;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
@@ -29,11 +30,13 @@ import io.harness.beans.WorkflowType;
 import io.harness.dataretention.AccountDataRetentionEntity;
 import io.harness.iterator.PersistentRegularIterable;
 import io.harness.mongo.index.CompoundMongoIndex;
+import io.harness.mongo.index.CompoundTextMongoIndex;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.FdSparseIndex;
 import io.harness.mongo.index.FdTtlIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.mongo.index.SortCompoundMongoIndex;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
 import io.harness.persistence.CreatedAtAware;
 import io.harness.persistence.CreatedByAware;
@@ -84,6 +87,7 @@ import org.mongodb.morphia.annotations.Transient;
 @Data
 @Builder
 @FieldNameConstants(innerTypeName = "WorkflowExecutionKeys")
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "workflowExecutions", noClassnameStored = true)
 @HarnessEntity(exportable = true)
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -232,6 +236,21 @@ public class WorkflowExecution implements PersistentRegularIterable, AccountData
         .add(SortCompoundMongoIndex.builder()
                  .name("appId_createdAt")
                  .field(WorkflowExecutionKeys.appId)
+                 .descSortField(WorkflowExecutionKeys.createdAt)
+                 .build())
+        .add(CompoundTextMongoIndex.builder()
+                 .name("accountId_cdPageCandidate_createdAt_keywords")
+                 .field(WorkflowExecutionKeys.accountId)
+                 .field(WorkflowExecutionKeys.cdPageCandidate)
+                 .descSortField(WorkflowExecutionKeys.createdAt)
+                 .textField(WorkflowExecutionKeys.keywords)
+                 .build())
+        .add(SortCompoundMongoIndex.builder()
+                 .name("appid_workflowid_status_deployedServices_createdat")
+                 .field(WorkflowExecutionKeys.appId)
+                 .field(WorkflowExecutionKeys.workflowId)
+                 .field(WorkflowExecutionKeys.status)
+                 .field(WorkflowExecutionKeys.deployedServices)
                  .descSortField(WorkflowExecutionKeys.createdAt)
                  .build())
         .build();
@@ -406,6 +425,8 @@ public class WorkflowExecution implements PersistentRegularIterable, AccountData
     public static final String executionArgs_helmCharts = executionArgs + "." + ExecutionArgsKeys.helmCharts;
     public static final String executionArgs_helmCharts_displayName = executionArgs_helmCharts + "."
         + "displayName";
+    public static final String serviceExecutionSummaries_instanceStatusSummaries_instanceElement_uuid =
+        serviceExecutionSummaries + ".instanceStatusSummaries.instanceElement.uuid";
   }
 
   @PrePersist

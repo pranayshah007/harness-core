@@ -16,6 +16,7 @@ import static software.wings.beans.command.Command.Builder.aCommand;
 import static java.util.Arrays.asList;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
@@ -27,6 +28,7 @@ import io.harness.logging.CommandExecutionStatus;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.MongoIndex;
+import io.harness.ng.DbAliases;
 import io.harness.serializer.MapperUtils;
 
 import software.wings.beans.Base;
@@ -66,6 +68,7 @@ import org.mongodb.morphia.annotations.Entity;
  */
 @JsonTypeName("COMMAND")
 @Attributes(title = "Command")
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "commands")
 @HarnessEntity(exportable = true)
 @FieldNameConstants(innerTypeName = "CommandKeys")

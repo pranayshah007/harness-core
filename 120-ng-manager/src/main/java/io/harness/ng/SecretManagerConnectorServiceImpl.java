@@ -35,6 +35,7 @@ import io.harness.delegate.beans.connector.awssecretmanager.AwsSecretManagerDTO;
 import io.harness.delegate.beans.connector.azurekeyvaultconnector.AzureKeyVaultConnectorDTO;
 import io.harness.delegate.beans.connector.customsecretmanager.CustomSecretManagerConnectorDTO;
 import io.harness.delegate.beans.connector.gcpkmsconnector.GcpKmsConnectorDTO;
+import io.harness.delegate.beans.connector.gcpsecretmanager.GcpSecretManagerConnectorDTO;
 import io.harness.delegate.beans.connector.localconnector.LocalConnectorDTO;
 import io.harness.delegate.beans.connector.vaultconnector.VaultConnectorDTO;
 import io.harness.enforcement.client.services.EnforcementClientService;
@@ -166,6 +167,8 @@ public class SecretManagerConnectorServiceImpl implements ConnectorService {
         return ((LocalConnectorDTO) connector.getConnectorConfig()).isDefault();
       case CUSTOM_SECRET_MANAGER:
         return ((CustomSecretManagerConnectorDTO) connector.getConnectorConfig()).isDefault();
+      case GCP_SECRET_MANAGER:
+        return ((GcpSecretManagerConnectorDTO) connector.getConnectorConfig()).isDefault();
       default:
         throw new SecretManagementException(ErrorCode.SECRET_MANAGEMENT_ERROR,
             String.format("Unsupported Secret Manager type [%s]", connector.getConnectorType()), WingsException.USER);
@@ -320,6 +323,11 @@ public class SecretManagerConnectorServiceImpl implements ConnectorService {
   @Override
   public void resetHeartbeatForReferringConnectors(List<Pair<String, String>> connectorPerpetualTaskInfoList) {
     defaultConnectorService.resetHeartbeatForReferringConnectors(connectorPerpetualTaskInfoList);
+  }
+
+  @Override
+  public void resetHeartBeatTask(String accountId, String taskId) {
+    defaultConnectorService.resetHeartBeatTask(accountId, taskId);
   }
 
   @Override

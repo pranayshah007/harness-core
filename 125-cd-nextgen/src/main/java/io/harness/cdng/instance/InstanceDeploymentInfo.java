@@ -8,7 +8,7 @@
 package io.harness.cdng.instance;
 
 import io.harness.annotation.HarnessEntity;
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.entities.ArtifactDetails;
@@ -41,11 +41,11 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @ToString
 @FieldNameConstants(innerTypeName = "InstanceDeploymentInfoKeys")
 @FieldDefaults(level = AccessLevel.PRIVATE)
+@StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "instanceDeploymentInfo", noClassnameStored = true)
 @Document("instanceDeploymentInfo")
 @TypeAlias("instanceDeploymentInfo")
 @HarnessEntity(exportable = true)
-@StoreIn(DbAliases.NG_MANAGER)
 @OwnedBy(HarnessTeam.CDP)
 public class InstanceDeploymentInfo implements PersistentEntity, UuidAware {
   @org.springframework.data.annotation.Id @Id String uuid;

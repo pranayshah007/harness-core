@@ -18,6 +18,11 @@ import io.harness.ccm.cluster.entities.EcsCluster;
 import io.harness.ccm.license.CeLicenseInfo;
 import io.harness.ccm.license.CeLicenseType;
 import io.harness.cvng.state.CVNGVerificationTask;
+import io.harness.delegate.NoEligibleDelegatesInAccountException;
+import io.harness.delegate.beans.NoAvailableDelegatesException;
+import io.harness.delegate.beans.NoDelegatesException;
+import io.harness.delegate.beans.NoInstalledDelegatesException;
+import io.harness.exception.DelegateTaskExpiredException;
 import io.harness.serializer.KryoRegistrar;
 
 import software.wings.api.ARMStateExecutionData;
@@ -259,8 +264,10 @@ import software.wings.sm.states.EnvState.EnvExecutionResponseData;
 import software.wings.sm.states.ForkState.ForkStateExecutionData;
 import software.wings.sm.states.RepeatState.RepeatStateExecutionData;
 import software.wings.sm.states.azure.AzureVMSSDeployExecutionSummary;
+import software.wings.sm.states.azure.AzureVMSSDeployStateExecutionData;
 import software.wings.sm.states.azure.AzureVMSSSetupExecutionSummary;
 import software.wings.sm.states.azure.AzureVMSSSetupStateExecutionData;
+import software.wings.sm.states.azure.AzureVMSSSwitchRouteStateExecutionData;
 import software.wings.sm.states.azure.appservices.AzureAppServiceSlotSetupExecutionData;
 import software.wings.sm.states.azure.appservices.AzureAppServiceSlotSetupExecutionSummary;
 import software.wings.sm.states.azure.appservices.AzureAppServiceSlotShiftTrafficExecutionData;
@@ -592,5 +599,12 @@ public class ManagerKryoRegistrar implements KryoRegistrar {
     kryo.register(UserGroupEntityReference.class, 50010);
     kryo.register(EncryptedDataDetails.class, 50013);
     kryo.register(K8sCanaryDeleteServiceElement.class, 50016);
+    kryo.register(AzureVMSSDeployStateExecutionData.class, 50017);
+    kryo.register(AzureVMSSSwitchRouteStateExecutionData.class, 50018);
+    kryo.register(NoInstalledDelegatesException.class, 73988);
+    kryo.register(NoEligibleDelegatesInAccountException.class, 73989);
+    kryo.register(NoAvailableDelegatesException.class, 73990);
+    kryo.register(NoDelegatesException.class, 73991);
+    kryo.register(DelegateTaskExpiredException.class, 980036);
   }
 }

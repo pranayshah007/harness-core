@@ -46,8 +46,10 @@ import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.servers.Server;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -118,6 +120,7 @@ public class CIManagerConfiguration extends Configuration implements AssetsBundl
   @JsonProperty("apiUrl") private String apiUrl;
   @JsonProperty("hostname") String hostname;
   @JsonProperty("basePathPrefix") String basePathPrefix;
+  @JsonProperty(value = "enableOpentelemetry") private Boolean enableOpentelemetry;
 
   public static Collection<Class<?>> getResourceClasses() {
     return HarnessReflections.get()
@@ -180,5 +183,19 @@ public class CIManagerConfiguration extends Configuration implements AssetsBundl
     Set<String> packages = getUniquePackages(getOAS3ResourceClassesOnly());
     return new SwaggerConfiguration().openAPI(oas).prettyPrint(true).resourcePackages(packages).scannerClass(
         "io.swagger.v3.jaxrs2.integration.JaxrsAnnotationScanner");
+  }
+
+  public List<String> getDbAliases() {
+    List<String> dbAliases = new ArrayList<>();
+    if (harnessCIMongo != null) {
+      dbAliases.add(harnessCIMongo.getAliasDBName());
+    }
+    if (harnessMongo != null) {
+      dbAliases.add(harnessMongo.getAliasDBName());
+    }
+    if (pmsMongoConfig != null) {
+      dbAliases.add(pmsMongoConfig.getAliasDBName());
+    }
+    return dbAliases;
   }
 }

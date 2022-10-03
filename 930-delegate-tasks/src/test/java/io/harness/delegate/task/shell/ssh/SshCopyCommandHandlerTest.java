@@ -279,7 +279,7 @@ public class SshCopyCommandHandlerTest extends CategoryTest {
     assertThat(context).isNotNull();
     assertThat(context.getAccountId()).isEqualTo("testAccount");
     assertThat(context.getExecutionId()).isEqualTo("testExecution");
-    assertThat(context.getWorkingDirectory()).isEqualTo("/test");
+    assertThat(context.getWorkingDirectory()).isNull();
     assertThat(context.getCommandUnitName()).isEqualTo("test");
     assertThat(context.getCommandUnitsProgress()).isEqualTo(commandUnitsProgress);
     assertThat(context.isExecuteOnDelegate()).isEqualTo(onDelegate);

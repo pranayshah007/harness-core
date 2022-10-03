@@ -32,8 +32,8 @@ import io.harness.ngmigration.client.NGClient;
 import io.harness.ngmigration.client.PmsClient;
 import io.harness.ngmigration.expressions.MigratorExpressionUtils;
 import io.harness.ngmigration.service.NgMigrationService;
-import io.harness.ngmigration.service.ngManifestFactory.NgManifestFactory;
-import io.harness.ngmigration.service.ngManifestFactory.NgManifestService;
+import io.harness.ngmigration.service.manifestfactory.NgManifestFactory;
+import io.harness.ngmigration.service.manifestfactory.NgManifestService;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.serializer.JsonUtils;
 
@@ -151,7 +151,7 @@ public class ManifestMigrationService extends NgMigrationService {
 
   @Override
   public List<NGYamlFile> generateYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
-      Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NgEntityDetail> migratedEntities,
+      Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities,
       NgEntityDetail ngEntityDetail) {
     return null;
   }
@@ -174,7 +174,7 @@ public class ManifestMigrationService extends NgMigrationService {
 
   public List<ManifestConfigWrapper> getManifests(Set<CgEntityId> manifestEntityIds, MigrationInputDTO inputDTO,
       Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, Set<CgEntityId>> graph,
-      Map<CgEntityId, NgEntityDetail> migratedEntities) {
+      Map<CgEntityId, NGYamlFile> migratedEntities) {
     if (isEmpty(manifestEntityIds)) {
       return Collections.emptyList();
     }
@@ -224,5 +224,10 @@ public class ManifestMigrationService extends NgMigrationService {
           .paths(ParameterField.createValueField(Collections.singletonList(gitFileConfig.getFilePath())));
     }
     return gitStoreBuilder.build();
+  }
+
+  @Override
+  public boolean canMigrate(CgEntityId id, CgEntityId root, boolean migrateAll) {
+    return migrateAll || root.getType().equals(NGMigrationEntityType.SERVICE);
   }
 }

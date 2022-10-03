@@ -8,7 +8,7 @@
 package io.harness.cdng.provision.terraform;
 
 import io.harness.annotation.HarnessEntity;
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.manifest.yaml.FileStorageConfigDTO;
@@ -34,11 +34,11 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Data
 @Builder
 @FieldNameConstants(innerTypeName = "TerraformConfigKeys")
+@StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "terraformConfig", noClassnameStored = true)
 @Document("terraformConfig")
 @TypeAlias("terraformConfig")
 @HarnessEntity(exportable = true)
-@StoreIn(DbAliases.NG_MANAGER)
 @OwnedBy(HarnessTeam.CDP)
 public class TerraformConfig implements PersistentEntity, CreatedAtAware {
   public static List<MongoIndex> mongoIndexes() {

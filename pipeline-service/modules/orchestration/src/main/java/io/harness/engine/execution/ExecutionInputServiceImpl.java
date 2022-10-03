@@ -14,10 +14,14 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.OrchestrationEngine;
 import io.harness.engine.executions.node.NodeExecutionService;
+import io.harness.engine.pms.data.PmsEngineExpressionService;
 import io.harness.exception.InvalidRequestException;
 import io.harness.execution.ExecutionInputInstance;
 import io.harness.execution.NodeExecution;
+import io.harness.expression.ExpressionMode;
+import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.execution.utils.NodeProjectionUtils;
 import io.harness.pms.merger.YamlConfig;
 import io.harness.pms.merger.fqn.FQN;
 import io.harness.pms.merger.helpers.MergeHelper;
@@ -48,6 +52,7 @@ public class ExecutionInputServiceImpl implements ExecutionInputService {
   @Inject ExecutionInputServiceHelper executionInputServiceHelper;
   @Inject NodeExecutionService nodeExecutionService;
   @Inject OrchestrationEngine engine;
+  @Inject PmsEngineExpressionService pmsEngineExpressionService;
   @Override
   // TODO(BRIJESH): Use lock so that only one input can be processed and only one doneWith should be called.
   public boolean continueExecution(String nodeExecutionId, String executionInputYaml) {
@@ -111,6 +116,11 @@ public class ExecutionInputServiceImpl implements ExecutionInputService {
       if (EmptyPredicate.isEmpty(executionInputYaml)) {
         executionInputYaml = executionInputInstance.getTemplate();
       }
+      Ambiance ambiance =
+          nodeExecutionService.getWithFieldsIncluded(nodeExecutionId, NodeProjectionUtils.withAmbianceAndStatus)
+              .getAmbiance();
+      executionInputYaml = (String) pmsEngineExpressionService.resolve(
+          ambiance, executionInputYaml, ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED);
       executionInputInstance.setUserInput(executionInputYaml);
 
       Map<FQN, String> invalidFQNsInInputSet =

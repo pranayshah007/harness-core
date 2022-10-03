@@ -23,8 +23,8 @@ import static io.harness.ng.core.usergroups.filter.UserGroupFilterType.INCLUDE_I
 import static io.harness.ng.core.utils.UserGroupMapper.toDTO;
 import static io.harness.ng.core.utils.UserGroupMapper.toEntity;
 import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
-import static io.harness.remote.client.RestClientUtils.getResponse;
-import static io.harness.springdata.TransactionUtils.DEFAULT_TRANSACTION_RETRY_POLICY;
+import static io.harness.remote.client.CGRestUtils.getResponse;
+import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
@@ -41,6 +41,7 @@ import io.harness.accesscontrol.roleassignments.api.RoleAssignmentAggregateRespo
 import io.harness.accesscontrol.roleassignments.api.RoleAssignmentFilterDTO;
 import io.harness.accesscontrol.roleassignments.api.RoleAssignmentResponseDTO;
 import io.harness.accesscontrol.scopes.ScopeDTO;
+import io.harness.accesscontrol.scopes.ScopeFilterType;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
 import io.harness.beans.ScopeLevel;
@@ -57,6 +58,7 @@ import io.harness.ng.authenticationsettings.remote.AuthSettingsManagerClient;
 import io.harness.ng.beans.PageRequest;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.api.UserGroupService;
+import io.harness.ng.core.dto.ScopeSelector;
 import io.harness.ng.core.dto.UserGroupDTO;
 import io.harness.ng.core.dto.UserGroupFilterDTO;
 import io.harness.ng.core.entities.NotificationSettingConfig;
@@ -120,7 +122,7 @@ public class UserGroupServiceImpl implements UserGroupService {
   private final AccessControlAdminClient accessControlAdminClient;
   private final AccessControlClient accessControlClient;
   private final ScopeNameMapper scopeNameMapper;
-  private final RetryPolicy<Object> transactionRetryPolicy = DEFAULT_TRANSACTION_RETRY_POLICY;
+  private final RetryPolicy<Object> transactionRetryPolicy = DEFAULT_RETRY_POLICY;
   private final NGFeatureFlagHelperService ngFeatureFlagHelperService;
   private static final List<String> defaultUserGroups = ImmutableList.of(DEFAULT_ACCOUNT_LEVEL_USER_GROUP_IDENTIFIER,
       DEFAULT_ORGANIZATION_LEVEL_USER_GROUP_IDENTIFIER, DEFAULT_PROJECT_LEVEL_USER_GROUP_IDENTIFIER);
@@ -260,6 +262,13 @@ public class UserGroupServiceImpl implements UserGroupService {
     return userGroupRepository.findAll(
         createUserGroupFilterCriteria(accountIdentifier, orgIdentifier, projectIdentifier, searchTerm, filterType),
         pageable);
+  }
+
+  @Override
+  public Page<UserGroup> list(
+      List<ScopeSelector> scopeFilter, String userIdentifier, String searchTerm, Pageable pageable) {
+    Criteria criteria = createUserGroupCriteriaByUser(scopeFilter, userIdentifier, searchTerm);
+    return userGroupRepository.findAll(criteria, pageable);
   }
 
   @Override
@@ -657,6 +666,43 @@ public class UserGroupServiceImpl implements UserGroupService {
     return criteria;
   }
 
+  private Criteria createUserGroupCriteriaByUser(
+      List<ScopeSelector> scopeFilter, String userIdentifier, String searchTerm) {
+    Criteria criteria = new Criteria();
+    criteria.and(UserGroupKeys.users).in(userIdentifier);
+    Criteria[] scopeCriteriaList =
+        scopeFilter.stream()
+            .map(scope -> {
+              if (ScopeFilterType.INCLUDING_CHILD_SCOPES.equals(scope.getFilter())) {
+                Criteria scopeCriteria =
+                    Criteria.where(UserGroupKeys.accountIdentifier).is(scope.getAccountIdentifier());
+                if (isNotEmpty(scope.getOrgIdentifier())) {
+                  scopeCriteria.and(UserGroupKeys.orgIdentifier).is(scope.getOrgIdentifier());
+                }
+                if (isNotEmpty(scope.getProjectIdentifier())) {
+                  scopeCriteria.and(UserGroupKeys.projectIdentifier).is(scope.getProjectIdentifier());
+                }
+                return scopeCriteria;
+              } else {
+                return Criteria.where(UserGroupKeys.accountIdentifier)
+                    .is(scope.getAccountIdentifier())
+                    .and(UserGroupKeys.orgIdentifier)
+                    .is(scope.getOrgIdentifier())
+                    .and(UserGroupKeys.projectIdentifier)
+                    .is(scope.getProjectIdentifier());
+              }
+            })
+            .toArray(Criteria[] ::new);
+    if (isNotEmpty(scopeCriteriaList)) {
+      criteria.orOperator(scopeCriteriaList);
+    }
+    if (isNotBlank(searchTerm)) {
+      Criteria searchCriteria = new Criteria().orOperator(Criteria.where(UserGroupKeys.name).regex(searchTerm, "i"),
+          Criteria.where(UserGroupKeys.tags).regex(searchTerm, "i"));
+      criteria.andOperator(searchCriteria);
+    }
+    return criteria;
+  }
   private Criteria getUserGroupbySsoIdCriteria(String accountIdentifier, String ssoId) {
     Criteria criteria = createScopeCriteria(accountIdentifier, null, null);
     criteria.and(UserGroupKeys.isSsoLinked).is(true);

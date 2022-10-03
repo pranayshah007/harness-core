@@ -1767,6 +1767,9 @@
                 ]
               },
               "minLength": 1
+            },
+            "isAWSGovCloudAccount": {
+              "type": "boolean"
             }
           }
         }
@@ -1929,7 +1932,8 @@
             "Jenkins",
             "OciHelmRepo",
             "CustomSecretManager",
-            "ELK"
+            "ELK",
+            "GcpSecretManager"
           ]
         }
       },
@@ -2299,6 +2303,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/GcpKmsConnectorDTO"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "GcpSecretManager"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/GcpSecretManager"
               }
             }
           }
@@ -2689,7 +2709,6 @@
         {
           "type": "object",
           "required": [
-            "onDelegate",
             "template"
           ],
           "properties": {
@@ -3161,6 +3180,35 @@
           "properties": {
             "secretKeyRef": {
               "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "GcpSecretManager": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ConnectorConfigDTO"
+        },
+        {
+          "type": "object",
+          "required": [
+            "credentialsRef"
+          ],
+          "properties": {
+            "credentialsRef": {
+              "type": "string"
+            },
+            "default": {
+              "type": "boolean"
+            },
+            "delegateSelectors": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string"
+              }
             }
           }
         }

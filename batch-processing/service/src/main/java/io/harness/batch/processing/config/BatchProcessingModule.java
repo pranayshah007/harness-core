@@ -99,6 +99,7 @@ import com.google.inject.Singleton;
 import com.google.inject.matcher.Matchers;
 import com.google.inject.multibindings.OptionalBinder;
 import com.google.inject.name.Named;
+import java.util.List;
 import java.util.concurrent.Executors;
 import lombok.extern.slf4j.Slf4j;
 
@@ -112,13 +113,20 @@ public class BatchProcessingModule extends AbstractModule {
 
   /**
    * Required by io.harness.ccm.commons.utils.BigQueryHelper, though io.harness.ccm.commons.beans.config.GcpConfig is
-   * utilized 340-ce-nextgen application only.
+   * utilized ce-nextgen application only.
    */
   @Provides
   @Singleton
   @Named("gcpConfig")
   public io.harness.ccm.commons.beans.config.GcpConfig gcpConfig() {
     return batchMainConfig.getGcpConfig();
+  }
+
+  @Provides
+  @Singleton
+  @Named("dbAliases")
+  public List<String> getDbAliases() {
+    return batchMainConfig.getDbAliases();
   }
 
   @Override

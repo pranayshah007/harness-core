@@ -29,11 +29,14 @@ public interface StepSpecTypeConstants {
   String SERVICENOW_APPROVAL = "ServiceNowApproval";
   String SERVICENOW_CREATE = "ServiceNowCreate";
   String SERVICENOW_UPDATE = "ServiceNowUpdate";
+  String SERVICENOW_IMPORT_SET = "ServiceNowImportSet";
   String APPROVAL_STAGE = "Approval";
+  String PIPELINE_STAGE = "Pipeline";
   String CUSTOM_STAGE = "Custom";
   String FEATURE_FLAG_STAGE = "FeatureFlag";
   String POLICY_STEP = "Policy";
   String EMAIL = "Email";
+  String WAIT_STEP = "Wait";
 
   String APPROVAL_FACILITATOR = "APPROVAL_FACILITATOR";
   String RESOURCE_RESTRAINT_FACILITATOR_TYPE = "RESOURCE_RESTRAINT";
@@ -76,4 +79,10 @@ public interface StepSpecTypeConstants {
       StepType.newBuilder().setType(StepSpecTypeConstants.SHELL_SCRIPT).setStepCategory(StepCategory.STEP).build();
   StepType EMAIL_STEP_TYPE =
       StepType.newBuilder().setType(StepSpecTypeConstants.EMAIL).setStepCategory(StepCategory.STEP).build();
+  StepType WAIT_STEP_TYPE =
+      StepType.newBuilder().setType(StepSpecTypeConstants.WAIT_STEP).setStepCategory(StepCategory.STEP).build();
+  StepType SERVICE_NOW_IMPORT_SET_STEP_TYPE = StepType.newBuilder()
+                                                  .setType(StepSpecTypeConstants.SERVICENOW_IMPORT_SET)
+                                                  .setStepCategory(StepCategory.STEP)
+                                                  .build();
 }

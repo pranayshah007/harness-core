@@ -1,9 +1,17 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.cdng.artifact.steps;
 
 import static io.harness.cdng.artifact.steps.ArtifactsStepV2.ARTIFACTS_STEP_V_2;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -17,24 +25,29 @@ import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.artifact.bean.ArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.ArtifactListConfig;
+import io.harness.cdng.artifact.bean.yaml.ArtifactSource;
 import io.harness.cdng.artifact.bean.yaml.DockerHubArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.GcrArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.PrimaryArtifact;
 import io.harness.cdng.artifact.bean.yaml.SidecarArtifact;
 import io.harness.cdng.artifact.bean.yaml.SidecarArtifactWrapper;
 import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
 import io.harness.cdng.artifact.utils.ArtifactStepHelper;
+import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.service.beans.KubernetesServiceSpec;
 import io.harness.cdng.service.beans.ServiceDefinition;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.cdng.service.steps.ServiceStepsHelper;
 import io.harness.cdng.steps.EmptyStepParameters;
 import io.harness.data.structure.UUIDGenerator;
+import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.delegate.task.artifacts.docker.DockerArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.docker.DockerArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.response.ArtifactBuildDetailsNG;
 import io.harness.delegate.task.artifacts.response.ArtifactTaskExecutionResponse;
 import io.harness.delegate.task.artifacts.response.ArtifactTaskResponse;
+import io.harness.exception.ArtifactServerException;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logstreaming.NGLogCallback;
 import io.harness.ng.core.service.yaml.NGServiceConfig;
@@ -43,7 +56,6 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.AsyncExecutableResponse;
 import io.harness.pms.contracts.execution.Status;
-import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
@@ -82,11 +94,16 @@ public class ArtifactsStepV2Test {
   @Mock private ArtifactStepHelper artifactStepHelper;
   @Mock private ExecutionSweepingOutputService mockSweepingOutputService;
   @Mock private CDStepHelper cdStepHelper;
+  @Mock private CDExpressionResolver expressionResolver;
   @InjectMocks private ArtifactsStepV2 step = new ArtifactsStepV2();
 
   private final EmptyStepParameters stepParameters = new EmptyStepParameters();
   private final StepInputPackage inputPackage = StepInputPackage.builder().build();
   private AutoCloseable mocks;
+
+  private final Ambiance ambiance = buildAmbiance();
+  private final ArtifactTaskResponse successResponse = sampleArtifactTaskResponse();
+  private final ErrorNotifyResponseData errorNotifyResponse = sampleErrorNotifyResponse();
 
   @Before
   public void setUp() throws Exception {
@@ -121,8 +138,8 @@ public class ArtifactsStepV2Test {
   @Owner(developers = OwnerRule.YOGESH)
   @Category(UnitTests.class)
   public void executeAsyncServiceSweepingOutputNotPresent() {
-    AsyncExecutableResponse response = step.executeAsync(
-        buildAmbiance(ArtifactsStepV2.STEP_TYPE), stepParameters, StepInputPackage.builder().build(), null);
+    AsyncExecutableResponse response =
+        step.executeAsync(ambiance, stepParameters, StepInputPackage.builder().build(), null);
 
     assertThat(response.getCallbackIdsCount()).isEqualTo(0);
   }
@@ -146,10 +163,10 @@ public class ArtifactsStepV2Test {
         .when(cdStepHelper)
         .fetchServiceConfigFromSweepingOutput(Mockito.any(Ambiance.class));
 
-    AsyncExecutableResponse response =
-        step.executeAsync(buildAmbiance(ArtifactsStepV2.STEP_TYPE), stepParameters, inputPackage, null);
+    AsyncExecutableResponse response = step.executeAsync(ambiance, stepParameters, inputPackage, null);
 
     verify(mockSweepingOutputService).consume(any(Ambiance.class), anyString(), captor.capture(), eq(""));
+    verify(expressionResolver, times(1)).updateExpressions(any(Ambiance.class), any());
 
     ArtifactsStepV2SweepingOutput output = captor.getValue();
 
@@ -159,6 +176,78 @@ public class ArtifactsStepV2Test {
         output.getArtifactConfigMap().values().stream().map(ArtifactConfig::getIdentifier).collect(Collectors.toSet()))
         .containsExactly("primary");
     assertThat(response.getCallbackIdsCount()).isEqualTo(1);
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.YOGESH)
+  @Category(UnitTests.class)
+  public void executeAsyncWithArtifactSources() {
+    ArgumentCaptor<ArtifactsStepV2SweepingOutput> captor = ArgumentCaptor.forClass(ArtifactsStepV2SweepingOutput.class);
+
+    // Prepare test data
+    ArtifactSource source1 = ArtifactSource.builder()
+                                 .identifier("source1-id")
+                                 .sourceType(ArtifactSourceType.DOCKER_REGISTRY)
+                                 .spec(DockerHubArtifactConfig.builder()
+                                           .connectorRef(ParameterField.createValueField("connector"))
+                                           .tag(ParameterField.createValueField("latest"))
+                                           .imagePath(ParameterField.createValueField("nginx"))
+                                           .build())
+                                 .build();
+    ArtifactSource source2 = ArtifactSource.builder()
+                                 .identifier("source2-id")
+                                 .sourceType(ArtifactSourceType.GCR)
+                                 .spec(GcrArtifactConfig.builder()
+                                           .connectorRef(ParameterField.createValueField("connector"))
+                                           .tag(ParameterField.createValueField("latest"))
+                                           .imagePath(ParameterField.createValueField("nginx"))
+                                           .build())
+                                 .build();
+    doReturn(getServiceConfig(
+                 ArtifactListConfig.builder()
+                     .primary(PrimaryArtifact.builder()
+                                  .sources(List.of(source1, source2))
+                                  .primaryArtifactRef(ParameterField.createValueField(source1.getIdentifier()))
+                                  .build())
+                     .sidecar(SidecarArtifactWrapper.builder()
+                                  .sidecar(SidecarArtifact.builder()
+                                               .identifier("s1")
+                                               .sourceType(ArtifactSourceType.DOCKER_REGISTRY)
+                                               .spec(DockerHubArtifactConfig.builder()
+                                                         .connectorRef(ParameterField.createValueField("connector"))
+                                                         .tag(ParameterField.createValueField("latest"))
+                                                         .imagePath(ParameterField.createValueField("nginx"))
+                                                         .build())
+                                               .build())
+                                  .build())
+                     .sidecar(SidecarArtifactWrapper.builder()
+                                  .sidecar(SidecarArtifact.builder()
+                                               .identifier("s2")
+                                               .sourceType(ArtifactSourceType.DOCKER_REGISTRY)
+                                               .spec(DockerHubArtifactConfig.builder()
+                                                         .connectorRef(ParameterField.createValueField("connector"))
+                                                         .tag(ParameterField.createValueField("latest"))
+                                                         .imagePath(ParameterField.createValueField("nginx"))
+                                                         .build())
+                                               .build())
+                                  .build())
+                     .build()))
+        .when(cdStepHelper)
+        .fetchServiceConfigFromSweepingOutput(Mockito.any(Ambiance.class));
+
+    AsyncExecutableResponse response = step.executeAsync(ambiance, stepParameters, inputPackage, null);
+
+    verify(mockSweepingOutputService).consume(any(Ambiance.class), anyString(), captor.capture(), eq(""));
+    verify(expressionResolver, times(1)).updateExpressions(any(Ambiance.class), any());
+
+    ArtifactsStepV2SweepingOutput output = captor.getValue();
+
+    assertThat(output.getArtifactConfigMap()).hasSize(3);
+    assertThat(output.getPrimaryArtifactTaskId()).isNotEmpty();
+    assertThat(
+        output.getArtifactConfigMap().values().stream().map(ArtifactConfig::getIdentifier).collect(Collectors.toSet()))
+        .containsExactlyInAnyOrder("primary", "s1", "s2");
+    assertThat(response.getCallbackIdsCount()).isEqualTo(3);
   }
 
   @Test
@@ -202,10 +291,10 @@ public class ArtifactsStepV2Test {
         .when(cdStepHelper)
         .fetchServiceConfigFromSweepingOutput(Mockito.any(Ambiance.class));
 
-    AsyncExecutableResponse response =
-        step.executeAsync(buildAmbiance(ArtifactsStepV2.STEP_TYPE), stepParameters, inputPackage, null);
+    AsyncExecutableResponse response = step.executeAsync(ambiance, stepParameters, inputPackage, null);
 
     verify(mockSweepingOutputService).consume(any(Ambiance.class), anyString(), captor.capture(), eq(""));
+    verify(expressionResolver, times(1)).updateExpressions(any(Ambiance.class), any());
 
     ArtifactsStepV2SweepingOutput output = captor.getValue();
 
@@ -250,10 +339,10 @@ public class ArtifactsStepV2Test {
         .when(cdStepHelper)
         .fetchServiceConfigFromSweepingOutput(Mockito.any(Ambiance.class));
 
-    AsyncExecutableResponse response =
-        step.executeAsync(buildAmbiance(ArtifactsStepV2.STEP_TYPE), stepParameters, inputPackage, null);
+    AsyncExecutableResponse response = step.executeAsync(ambiance, stepParameters, inputPackage, null);
 
     verify(mockSweepingOutputService).consume(any(Ambiance.class), anyString(), captor.capture(), eq(""));
+    verify(expressionResolver, times(1)).updateExpressions(any(Ambiance.class), any());
 
     ArtifactsStepV2SweepingOutput output = captor.getValue();
 
@@ -269,8 +358,7 @@ public class ArtifactsStepV2Test {
   @Owner(developers = OwnerRule.YOGESH)
   @Category(UnitTests.class)
   public void handleAsyncResponseEmpty() {
-    StepResponse stepResponse =
-        step.handleAsyncResponse(buildAmbiance(ArtifactsStepV2.STEP_TYPE), stepParameters, new HashMap<>());
+    StepResponse stepResponse = step.handleAsyncResponse(ambiance, stepParameters, new HashMap<>());
 
     assertThat(stepResponse.getStatus()).isEqualTo(Status.SKIPPED);
   }
@@ -289,8 +377,7 @@ public class ArtifactsStepV2Test {
         .when(mockSweepingOutputService)
         .resolveOptional(any(Ambiance.class), eq(RefObjectUtils.getSweepingOutputRefObject(ARTIFACTS_STEP_V_2)));
 
-    StepResponse stepResponse = step.handleAsyncResponse(
-        buildAmbiance(ArtifactsStepV2.STEP_TYPE), stepParameters, Map.of("taskId-1", sampleArtifactTaskResponse()));
+    StepResponse stepResponse = step.handleAsyncResponse(ambiance, stepParameters, Map.of("taskId-1", successResponse));
 
     final ArgumentCaptor<ArtifactsOutcome> captor = ArgumentCaptor.forClass(ArtifactsOutcome.class);
     verify(mockSweepingOutputService, times(1))
@@ -301,6 +388,30 @@ public class ArtifactsStepV2Test {
     assertThat(stepResponse.getStatus()).isEqualTo(Status.SUCCEEDED);
     assertThat(outcome.getPrimary()).isNotNull();
     assertThat(outcome.getSidecars()).isEmpty();
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.YOGESH)
+  @Category(UnitTests.class)
+  public void handleAsyncErrorNotifyResponse() {
+    doReturn(OptionalSweepingOutput.builder()
+                 .found(true)
+                 .output(ArtifactsStepV2SweepingOutput.builder()
+                             .primaryArtifactTaskId("taskId-1")
+                             .artifactConfigMap(Map.of("taskId-1", sampleDockerConfig("image1")))
+                             .build())
+                 .build())
+        .when(mockSweepingOutputService)
+        .resolveOptional(any(Ambiance.class), eq(RefObjectUtils.getSweepingOutputRefObject(ARTIFACTS_STEP_V_2)));
+
+    try {
+      step.handleAsyncResponse(
+          ambiance, stepParameters, Map.of("taskId-1", errorNotifyResponse, "taskId-2", successResponse));
+    } catch (ArtifactServerException ase) {
+      assertThat(ase.getMessage()).contains("No Eligible Delegates");
+      return;
+    }
+    fail("ArtifactServerException expected");
   }
 
   @Test
@@ -318,9 +429,8 @@ public class ArtifactsStepV2Test {
         .when(mockSweepingOutputService)
         .resolveOptional(any(Ambiance.class), eq(RefObjectUtils.getSweepingOutputRefObject(ARTIFACTS_STEP_V_2)));
 
-    StepResponse stepResponse = step.handleAsyncResponse(buildAmbiance(ArtifactsStepV2.STEP_TYPE), stepParameters,
-        Map.of("taskId-1", sampleArtifactTaskResponse(), "taskId-2", sampleArtifactTaskResponse(), "taskId-3",
-            sampleArtifactTaskResponse()));
+    StepResponse stepResponse = step.handleAsyncResponse(ambiance, stepParameters,
+        Map.of("taskId-1", successResponse, "taskId-2", successResponse, "taskId-3", successResponse));
 
     final ArgumentCaptor<ArtifactsOutcome> captor = ArgumentCaptor.forClass(ArtifactsOutcome.class);
     verify(mockSweepingOutputService, times(1))
@@ -347,9 +457,8 @@ public class ArtifactsStepV2Test {
         .when(mockSweepingOutputService)
         .resolveOptional(any(Ambiance.class), eq(RefObjectUtils.getSweepingOutputRefObject(ARTIFACTS_STEP_V_2)));
 
-    StepResponse stepResponse = step.handleAsyncResponse(buildAmbiance(ArtifactsStepV2.STEP_TYPE), stepParameters,
-        Map.of("taskId-1", sampleArtifactTaskResponse(), "taskId-2", sampleArtifactTaskResponse(), "taskId-3",
-            sampleArtifactTaskResponse()));
+    StepResponse stepResponse = step.handleAsyncResponse(ambiance, stepParameters,
+        Map.of("taskId-1", successResponse, "taskId-2", successResponse, "taskId-3", successResponse));
 
     final ArgumentCaptor<ArtifactsOutcome> captor = ArgumentCaptor.forClass(ArtifactsOutcome.class);
     verify(mockSweepingOutputService, times(1))
@@ -383,6 +492,10 @@ public class ArtifactsStepV2Test {
         .build();
   }
 
+  private ErrorNotifyResponseData sampleErrorNotifyResponse() {
+    return ErrorNotifyResponseData.builder().errorMessage("No Eligible Delegates").build();
+  }
+
   private Optional<NGServiceV2InfoConfig> getServiceConfig(ArtifactListConfig artifactListConfig) {
     NGServiceV2InfoConfig config =
         NGServiceV2InfoConfig.builder()
@@ -397,10 +510,13 @@ public class ArtifactsStepV2Test {
     return Optional.of(config);
   }
 
-  private Ambiance buildAmbiance(StepType stepType) {
+  private Ambiance buildAmbiance() {
     List<Level> levels = new ArrayList<>();
-    levels.add(
-        Level.newBuilder().setRuntimeId(generateUuid()).setSetupId(generateUuid()).setStepType(stepType).build());
+    levels.add(Level.newBuilder()
+                   .setRuntimeId(generateUuid())
+                   .setSetupId(generateUuid())
+                   .setStepType(ArtifactsStepV2.STEP_TYPE)
+                   .build());
     return Ambiance.newBuilder()
         .setPlanExecutionId(generateUuid())
         .putAllSetupAbstractions(Map.of("accountId", ACCOUNT_ID))

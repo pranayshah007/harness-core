@@ -46,6 +46,7 @@ public class HintException extends WingsException {
   public static final String HINT_DOCKER_HUB_IMAGE_NAME =
       "Check if the Docker image you are looking for is in the Docker registry.";
   public static final String HINT_DOCKER_HUB_ACCESS_DENIED = "Please ensure DockerHub credentials are valid";
+  public static final String HINT_GITHUB_ACCESS_DENIED = "Please ensure Github credentials are valid";
   public static final String HINT_NEXUS_IMAGE_NAME =
       "Check if the Docker image you are looking for is in the Nexus registry.";
   public static final String HINT_NEXUS_ACCESS_DENIED = "Please ensure Nexus credentials are valid";
@@ -129,6 +130,8 @@ public class HintException extends WingsException {
   public static final String HINT_FILE_CREATION_ERROR =
       "Check if delegate instance has enough free space or enough write permissions";
   public static final String CHECK_LDAP_CONNECTION = "Please check your credentials under Ldap Connection Settings";
+  public static final String CHECK_LDAP_AUTH_CREDENTIALS =
+      "Please check user email, password entered for Ldap test/enable authentication for the configured Ldap settings";
   public static final String LDAP_ATTRIBUTES_INCORRECT =
       "Verify configuration provided in Base DN or Search Filter are correct";
 

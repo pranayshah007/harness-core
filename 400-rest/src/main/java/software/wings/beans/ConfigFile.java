@@ -13,10 +13,12 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static software.wings.beans.EntityVersion.Builder.anEntityVersion;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.MongoIndex;
+import io.harness.ng.DbAliases;
 import io.harness.security.encryption.EncryptionType;
 import io.harness.validation.Create;
 
@@ -58,6 +60,7 @@ import org.mongodb.morphia.annotations.Transient;
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = false)
 @FieldNameConstants(innerTypeName = "ConfigFileKeys")
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "configFiles", noClassnameStored = true)
 @HarnessEntity(exportable = true)
 @OwnedBy(CDC)

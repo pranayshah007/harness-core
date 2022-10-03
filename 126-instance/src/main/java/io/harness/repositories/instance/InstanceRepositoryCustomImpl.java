@@ -14,6 +14,7 @@ import static org.springframework.data.mongodb.core.aggregation.Aggregation.newA
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.entities.Instance;
 import io.harness.entities.Instance.InstanceKeys;
 import io.harness.models.ActiveServiceInstanceInfo;
@@ -24,7 +25,6 @@ import io.harness.models.constants.InstanceSyncConstants;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.mongodb.client.result.UpdateResult;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -253,9 +253,12 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
             .and(InstanceKeys.envIdentifier)
             .is(envId)
             .and(InstanceKeys.serviceIdentifier)
-            .is(serviceId)
-            .and(InstanceSyncConstants.PRIMARY_ARTIFACT_TAG)
-            .in(buildIds);
+            .is(serviceId);
+
+    // in case artifact tag is missing
+    if (EmptyPredicate.isNotEmpty(buildIds)) {
+      criteria = criteria.and(InstanceSyncConstants.PRIMARY_ARTIFACT_TAG).in(buildIds);
+    }
 
     MatchOperation matchStage = Aggregation.match(criteria);
     GroupOperation group = group(InstanceSyncConstants.PRIMARY_ARTIFACT_TAG)
@@ -343,13 +346,13 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
   }
 
   @Override
-  public UpdateResult updateInfrastructureMapping(List<String> instanceIds, String infrastructureMappingId) {
-    Criteria criteria = Criteria.where(InstanceKeys.id).in(instanceIds);
+  public void updateInfrastructureMapping(String instanceId, String infrastructureMappingId) {
+    Criteria criteria = Criteria.where(InstanceKeys.id).is(instanceId);
     Query query = new Query();
     query.addCriteria(criteria);
 
     Update update = new Update();
     update.set(InstanceKeys.infrastructureMappingId, infrastructureMappingId);
-    return mongoTemplate.updateMulti(query, update, Instance.class);
+    mongoTemplate.findAndModify(query, update, Instance.class);
   }
 }

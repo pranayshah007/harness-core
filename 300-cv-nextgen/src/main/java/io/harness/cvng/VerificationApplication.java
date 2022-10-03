@@ -67,6 +67,7 @@ import io.harness.cvng.core.jobs.MonitoringSourcePerpetualTaskHandler;
 import io.harness.cvng.core.jobs.PersistentLockCleanup;
 import io.harness.cvng.core.jobs.SLIDataCollectionTaskCreateNextTaskHandler;
 import io.harness.cvng.core.jobs.ServiceGuardDataCollectionTaskCreateNextTaskHandler;
+import io.harness.cvng.core.jobs.ServiceLevelObjectiveV2VerifyTaskHandler;
 import io.harness.cvng.core.jobs.StatemachineEventConsumer;
 import io.harness.cvng.core.services.CVNextGenConstants;
 import io.harness.cvng.core.services.api.SideKickService;
@@ -84,6 +85,9 @@ import io.harness.cvng.migration.beans.CVNGSchema.CVNGSchemaKeys;
 import io.harness.cvng.migration.service.CVNGMigrationService;
 import io.harness.cvng.notification.jobs.MonitoredServiceNotificationHandler;
 import io.harness.cvng.notification.jobs.SLONotificationHandler;
+import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveType;
+import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObjective;
+import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObjective.ServiceLevelObjectiveV2Keys;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator.ServiceLevelIndicatorKeys;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelObjective;
@@ -132,6 +136,7 @@ import io.harness.mongo.iterator.provider.MorphiaPersistenceProvider;
 import io.harness.morphia.MorphiaModule;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.ng.core.CorrelationFilter;
+import io.harness.ng.core.TraceFilter;
 import io.harness.ng.core.exceptionmappers.GenericExceptionMapperV2;
 import io.harness.ng.core.exceptionmappers.WingsExceptionMapperV2;
 import io.harness.notification.Team;
@@ -231,6 +236,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ResourceInfo;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.glassfish.jersey.server.model.Resource;
@@ -378,6 +384,13 @@ public class VerificationApplication extends Application<VerificationConfigurati
       MongoConfig mongoConfig() {
         return configuration.getMongoConnectionFactory();
       }
+
+      @Provides
+      @Singleton
+      @Named("dbAliases")
+      public List<String> getDbAliases() {
+        return configuration.getDbAliases();
+      }
     });
     modules.add(new AbstractMongoModule() {
       @Override
@@ -445,6 +458,7 @@ public class VerificationApplication extends Application<VerificationConfigurati
     registerCreateNextDataCollectionTaskIterator(injector);
     registerCVNGDemoPerpetualTaskIterator(injector);
     registerDataCollectionTasksPerpetualTaskStatusUpdateIterator(injector);
+    registerServiceLevelObjectiveV2VerifyTaskIterator(injector);
     injector.getInstance(CVNGStepTaskHandler.class).registerIterator();
     injector.getInstance(PrimaryVersionChangeScheduler.class).registerExecutors();
     registerExceptionMappers(environment.jersey());
@@ -464,6 +478,10 @@ public class VerificationApplication extends Application<VerificationConfigurati
     scheduleMaintenanceActivities(injector, configuration);
     initializeEnforcementSdk(injector);
     registerOasResource(configuration, environment, injector);
+
+    if (BooleanUtils.isTrue(configuration.getEnableOpentelemetry())) {
+      registerTraceFilter(environment, injector);
+    }
 
     log.info("Leaving startup maintenance mode");
     MaintenanceController.forceMaintenance(false);
@@ -853,6 +871,41 @@ public class VerificationApplication extends Application<VerificationConfigurati
         () -> dataCollectionTasksPerpetualTaskStatusUpdateIterator.process(), 0, 2, TimeUnit.MINUTES);
   }
 
+  private void registerServiceLevelObjectiveV2VerifyTaskIterator(Injector injector) {
+    ScheduledThreadPoolExecutor serviceLevelObjectiveV2VerifyTaskExecutor = new ScheduledThreadPoolExecutor(
+        3, new ThreadFactoryBuilder().setNameFormat("service-level-objective-v2-verify-task-iterator").build());
+
+    ServiceLevelObjectiveV2VerifyTaskHandler serviceLevelObjectiveV2VerifyTaskHandler =
+        injector.getInstance(ServiceLevelObjectiveV2VerifyTaskHandler.class);
+
+    PersistenceIterator serviceLevelObjectiveV2VerifyTaskIterator =
+        MongoPersistenceIterator
+            .<AbstractServiceLevelObjective, MorphiaFilterExpander<AbstractServiceLevelObjective>>builder()
+            .mode(PersistenceIterator.ProcessMode.PUMP)
+            .iteratorName("ServiceLevelObjectiveV2VerifyTaskIterator")
+            .clazz(AbstractServiceLevelObjective.class)
+            .fieldName(ServiceLevelObjectiveV2Keys.nextVerificationIteration)
+            .targetInterval(ofMinutes(30))
+            .acceptableNoAlertDelay(ofMinutes(5))
+            .executorService(serviceLevelObjectiveV2VerifyTaskExecutor)
+            .semaphore(new Semaphore(2))
+            .handler(serviceLevelObjectiveV2VerifyTaskHandler)
+            .schedulingType(REGULAR)
+            .filterExpander(query
+                -> query.and(
+                    query.criteria(ServiceLevelObjectiveV2Keys.lastUpdatedAt)
+                        .greaterThan(
+                            injector.getInstance(Clock.class).instant().minus(45, ChronoUnit.MINUTES).toEpochMilli()),
+                    query.criteria(ServiceLevelObjectiveV2Keys.type).equal(ServiceLevelObjectiveType.SIMPLE)))
+            .persistenceProvider(injector.getInstance(MorphiaPersistenceProvider.class))
+            .redistribute(true)
+            .build();
+
+    injector.injectMembers(serviceLevelObjectiveV2VerifyTaskIterator);
+    serviceLevelObjectiveV2VerifyTaskExecutor.scheduleWithFixedDelay(
+        () -> serviceLevelObjectiveV2VerifyTaskIterator.process(), 0, 5, TimeUnit.MINUTES);
+  }
+
   private void registerVerificationJobInstanceDataCollectionTaskIterator(Injector injector) {
     ScheduledThreadPoolExecutor verificationTaskExecutor = new ScheduledThreadPoolExecutor(
         5, new ThreadFactoryBuilder().setNameFormat("verification-job-instance-data-collection-iterator").build());
@@ -1061,6 +1114,10 @@ public class VerificationApplication extends Application<VerificationConfigurati
 
   private void registerCorrelationFilter(Environment environment, Injector injector) {
     environment.jersey().register(injector.getInstance(CorrelationFilter.class));
+  }
+
+  private void registerTraceFilter(Environment environment, Injector injector) {
+    environment.jersey().register(injector.getInstance(TraceFilter.class));
   }
 
   private void runMigrations(Injector injector) {

@@ -300,7 +300,8 @@ public class AwsClientImpl implements AwsClient {
         credentialsProvider, crossAccountAccess.getCrossAccountRoleArn(), crossAccountAccess.getExternalId(), region);
   }
 
-  private AWSCredentialsProvider getAssumedCredentialsProviderWithRegion(AWSCredentialsProvider credentialsProvider,
+  @Override
+  public AWSCredentialsProvider getAssumedCredentialsProviderWithRegion(AWSCredentialsProvider credentialsProvider,
       String crossAccountRoleArn, @Nullable String externalId, @NotNull String region) {
     final AWSSecurityTokenService awsSecurityTokenService =
         AWSSecurityTokenServiceClientBuilder.standard().withRegion(region).withCredentials(credentialsProvider).build();
@@ -352,10 +353,10 @@ public class AwsClientImpl implements AwsClient {
     return Optional.empty();
   }
 
-  protected AmazonIdentityManagement getAwsIAMClient(AWSCredentialsProvider credentialsProvider) {
+  protected AmazonIdentityManagement getAwsIAMClient(AWSCredentialsProvider credentialsProvider, Regions region) {
     return AmazonIdentityManagementClientBuilder.standard()
         .withCredentials(credentialsProvider)
-        .withRegion(DEFAULT_REGION)
+        .withRegion(region)
         .build();
   }
 
@@ -382,7 +383,7 @@ public class AwsClientImpl implements AwsClient {
   @Override
   public List<String> listRolePolicyNames(
       AWSCredentialsProvider awsCredentialsProvider, @NotNull final String roleName) {
-    final AmazonIdentityManagement iam = getAwsIAMClient(awsCredentialsProvider);
+    final AmazonIdentityManagement iam = getAwsIAMClient(awsCredentialsProvider, DEFAULT_REGION);
 
     List<String> policyNames = new ArrayList<>();
 
@@ -405,8 +406,9 @@ public class AwsClientImpl implements AwsClient {
    */
   @Override
   public List<EvaluationResult> simulatePrincipalPolicy(final AWSCredentialsProvider credentialsProvider,
-      @NotNull String policySourceArn, @NotEmpty List<String> actionNames, @Nullable List<String> resourceArns) {
-    final AmazonIdentityManagement iam = getAwsIAMClient(credentialsProvider);
+      @NotNull String policySourceArn, @NotEmpty List<String> actionNames, @Nullable List<String> resourceArns,
+      @NotNull String region) {
+    final AmazonIdentityManagement iam = getAwsIAMClient(credentialsProvider, Regions.fromName(region));
     final SimulatePrincipalPolicyRequest request =
         new SimulatePrincipalPolicyRequest().withPolicySourceArn(policySourceArn).withActionNames(actionNames);
     if (isNotEmpty(resourceArns)) {
@@ -426,7 +428,7 @@ public class AwsClientImpl implements AwsClient {
   @Override
   public Policy getRolePolicy(
       AWSCredentialsProvider awsCredentialsProvider, @NotNull final String roleName, @NotNull final String policyName) {
-    final AmazonIdentityManagement iam = getAwsIAMClient(awsCredentialsProvider);
+    final AmazonIdentityManagement iam = getAwsIAMClient(awsCredentialsProvider, DEFAULT_REGION);
     final GetRolePolicyResult result =
         iam.getRolePolicy(new GetRolePolicyRequest().withPolicyName(policyName).withRoleName(roleName));
 

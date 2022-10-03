@@ -11,6 +11,8 @@ import static io.harness.govern.IgnoreThrowable.ignoredOnPurpose;
 import static io.harness.morphia.MorphiaRegistrar.putClass;
 
 import io.harness.agent.sdk.HarnessTrace;
+import io.harness.annotations.StoreIn;
+import io.harness.annotations.StoreInMultiple;
 import io.harness.exception.GeneralException;
 import io.harness.exception.UnexpectedException;
 import io.harness.govern.Switch;
@@ -34,13 +36,15 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.net.URL;
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.mongodb.morphia.Morphia;
 import org.mongodb.morphia.ObjectFactory;
@@ -53,6 +57,7 @@ import org.mongodb.morphia.utils.ReflectionUtils;
 @Slf4j
 public class MorphiaModule extends AbstractModule {
   private static volatile MorphiaModule instance;
+  private static final String ALL = "all";
 
   public static MorphiaModule getInstance() {
     if (instance == null) {
@@ -67,8 +72,8 @@ public class MorphiaModule extends AbstractModule {
   @Provides
   @Named("morphiaClasses")
   @Singleton
-  Set<Class> classes(Set<Class<? extends MorphiaRegistrar>> registrars) {
-    Set<Class> classes = Collections.newSetFromMap(new ConcurrentHashMap<>());
+  Set<Class> classes(Set<Class<? extends MorphiaRegistrar>> registrars, @Named("dbAliases") List<String> dbAliases) {
+    Set<Class> classes = ConcurrentHashMap.newKeySet();
     registrars.forEach(registrar -> {
       try {
         Constructor<?> constructor = registrar.getConstructor();
@@ -78,8 +83,27 @@ public class MorphiaModule extends AbstractModule {
         throw new GeneralException("Failed initializing morphia", e);
       }
     });
+    if (dbAliases.isEmpty()) {
+      return classes;
+    }
+    return classes.stream().filter(clazz -> hasClassInStores(clazz, dbAliases)).collect(Collectors.toSet());
+  }
 
-    return classes;
+  private static boolean hasClassInStores(Class mc, List<String> storeNames) {
+    for (String storeName : storeNames) {
+      final StoreIn storeIn = (StoreIn) mc.getAnnotation(StoreIn.class);
+      final StoreInMultiple storeInMultiple = (StoreInMultiple) mc.getAnnotation(StoreInMultiple.class);
+      if (storeIn != null && (storeIn.value().equals(storeName) || storeIn.value().equals(ALL))) {
+        return true;
+      }
+      if (storeInMultiple != null
+          && Arrays.stream(storeInMultiple.value())
+                 .map(StoreIn::value)
+                 .anyMatch(storeInVal -> storeInVal.equals(storeName) || storeInVal.equals(ALL))) {
+        return true;
+      }
+    }
+    return false;
   }
 
   @HarnessTrace

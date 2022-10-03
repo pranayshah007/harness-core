@@ -11,10 +11,12 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import static java.time.Duration.ofDays;
 
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.iterator.PersistentRegularIterable;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.FdTtlIndex;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.UuidAccess;
 
 import java.time.Duration;
@@ -36,6 +38,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Data
 @Builder
 @FieldNameConstants(innerTypeName = "TimeoutInstanceKeys")
+@StoreIn(DbAliases.PMS)
 @Entity(value = "timeoutInstances")
 @Document("timeoutInstances")
 @TypeAlias("timeoutInstance")

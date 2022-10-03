@@ -14,6 +14,8 @@ import io.harness.beans.DelegateTaskRequest;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.artifact.bean.ArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.ArtifactListConfig;
+import io.harness.cdng.artifact.bean.yaml.ArtifactSource;
+import io.harness.cdng.artifact.bean.yaml.PrimaryArtifact;
 import io.harness.cdng.artifact.bean.yaml.SidecarArtifactWrapper;
 import io.harness.cdng.artifact.mappers.ArtifactResponseToOutcomeMapper;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
@@ -22,10 +24,13 @@ import io.harness.cdng.artifact.outcome.ArtifactsOutcome.ArtifactsOutcomeBuilder
 import io.harness.cdng.artifact.outcome.SidecarsOutcome;
 import io.harness.cdng.artifact.utils.ArtifactStepHelper;
 import io.harness.cdng.artifact.utils.ArtifactUtils;
+import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.service.steps.ServiceStepsHelper;
 import io.harness.cdng.steps.EmptyStepParameters;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
+import io.harness.cdng.visitor.YamlTypes;
 import io.harness.delegate.TaskSelector;
+import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.task.artifacts.ArtifactSourceDelegateRequest;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.delegate.task.artifacts.ArtifactTaskType;
@@ -51,6 +56,7 @@ import io.harness.pms.sdk.core.steps.executables.AsyncExecutable;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.service.DelegateGrpcClientWrapper;
 import io.harness.tasks.ResponseData;
 
@@ -60,6 +66,7 @@ import software.wings.beans.LogWeight;
 
 import com.google.inject.Inject;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -87,6 +94,7 @@ public class ArtifactsStepV2 implements AsyncExecutable<EmptyStepParameters> {
   @Inject private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
 
   @Inject private CDStepHelper cdStepHelper;
+  @Inject private CDExpressionResolver cdExpressionResolver;
 
   @Override
   public Class<EmptyStepParameters> getStepParametersClass() {
@@ -109,12 +117,15 @@ public class ArtifactsStepV2 implements AsyncExecutable<EmptyStepParameters> {
       return AsyncExecutableResponse.newBuilder().build();
     }
 
-    final Set<String> taskIds = new HashSet<>();
-    final Map<String, ArtifactConfig> artifactConfigMap = new HashMap<>();
-
-    String primaryArtifactTaskId = null;
     final ArtifactListConfig artifacts = service.getServiceDefinition().getServiceSpec().getArtifacts();
 
+    processArtifactSourcesIfPresent(artifacts);
+
+    resolveExpressions(ambiance, artifacts);
+
+    final Set<String> taskIds = new HashSet<>();
+    String primaryArtifactTaskId = null;
+    final Map<String, ArtifactConfig> artifactConfigMap = new HashMap<>();
     final NGLogCallback logCallback = serviceStepsHelper.getServiceLogCallback(ambiance);
     if (artifacts.getPrimary() != null) {
       primaryArtifactTaskId =
@@ -136,11 +147,57 @@ public class ArtifactsStepV2 implements AsyncExecutable<EmptyStepParameters> {
     return AsyncExecutableResponse.newBuilder().addAllCallbackIds(taskIds).build();
   }
 
+  private void processArtifactSourcesIfPresent(ArtifactListConfig artifacts) {
+    if (artifacts.getPrimary() == null) {
+      return;
+    }
+    PrimaryArtifact primary = artifacts.getPrimary();
+    if (artifacts.getPrimary().getSpec() == null && ParameterField.isNotNull(primary.getPrimaryArtifactRef())
+        && !primary.getPrimaryArtifactRef().isExpression() && isNotEmpty(primary.getSources())) {
+      Optional<ArtifactSource> primaryArtifact =
+          primary.getSources()
+              .stream()
+              .filter(s -> primary.getPrimaryArtifactRef().getValue().equals(s.getIdentifier()))
+              .findFirst();
+      primaryArtifact.ifPresent(p -> {
+        p.getSpec().setPrimaryArtifact(true);
+        p.getSpec().setIdentifier(YamlTypes.PRIMARY_ARTIFACT);
+        artifacts.setPrimary(PrimaryArtifact.builder()
+                                 .spec(p.getSpec())
+                                 .sourceType(p.getSourceType())
+                                 .metadata(p.getMetadata())
+                                 .build());
+      });
+    }
+  }
+
+  private void resolveExpressions(Ambiance ambiance, ArtifactListConfig artifacts) {
+    final List<Object> toResolve = new ArrayList<>();
+    if (artifacts.getPrimary() != null) {
+      toResolve.add(artifacts.getPrimary());
+    }
+    if (isNotEmpty(artifacts.getSidecars())) {
+      toResolve.add(artifacts.getSidecars());
+    }
+    cdExpressionResolver.updateExpressions(ambiance, toResolve);
+  }
+
   @Override
   public StepResponse handleAsyncResponse(
       Ambiance ambiance, EmptyStepParameters stepParameters, Map<String, ResponseData> responseDataMap) {
     if (isEmpty(responseDataMap)) {
       return StepResponse.builder().status(Status.SKIPPED).build();
+    }
+
+    final List<ErrorNotifyResponseData> failedResponses = responseDataMap.values()
+                                                              .stream()
+                                                              .filter(ErrorNotifyResponseData.class ::isInstance)
+                                                              .map(ErrorNotifyResponseData.class ::cast)
+                                                              .collect(Collectors.toList());
+
+    if (isNotEmpty(failedResponses)) {
+      log.error("Error notify response found for artifacts step " + failedResponses);
+      throw new ArtifactServerException("Failed to fetch artifacts. " + failedResponses.get(0).getErrorMessage());
     }
 
     OptionalSweepingOutput outputOptional =
@@ -153,7 +210,7 @@ public class ArtifactsStepV2 implements AsyncExecutable<EmptyStepParameters> {
 
     ArtifactsStepV2SweepingOutput artifactsSweepingOutput = (ArtifactsStepV2SweepingOutput) outputOptional.getOutput();
 
-    final NGLogCallback logCallback = serviceStepsHelper.getServiceLogCallback(ambiance, true);
+    final NGLogCallback logCallback = serviceStepsHelper.getServiceLogCallback(ambiance);
     final ArtifactsOutcomeBuilder outcomeBuilder = ArtifactsOutcome.builder();
     final SidecarsOutcome sidecarsOutcome = new SidecarsOutcome();
     for (String taskId : responseDataMap.keySet()) {

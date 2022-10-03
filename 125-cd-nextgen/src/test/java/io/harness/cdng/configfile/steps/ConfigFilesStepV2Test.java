@@ -1,3 +1,10 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.cdng.configfile.steps;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
@@ -24,6 +31,7 @@ import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
 import io.harness.cdng.service.beans.KubernetesServiceSpec;
 import io.harness.cdng.service.beans.ServiceDefinition;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
+import io.harness.cdng.service.steps.ServiceStepV3;
 import io.harness.cdng.service.steps.ServiceStepsHelper;
 import io.harness.cdng.steps.EmptyStepParameters;
 import io.harness.connector.ConnectorResponseDTO;
@@ -35,6 +43,8 @@ import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
+import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.ParameterField;
@@ -42,6 +52,8 @@ import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -64,6 +76,8 @@ public class ConfigFilesStepV2Test {
   @InjectMocks private final ConfigFilesStepV2 step = new ConfigFilesStepV2();
   private AutoCloseable mocks;
   private static final String ACCOUNT_ID = "accountId";
+  private static final String SVC_ID = "SVC_ID";
+  private static final String ENV_ID = "ENV_ID";
 
   @Before
   public void setUp() throws Exception {
@@ -86,9 +100,17 @@ public class ConfigFilesStepV2Test {
   @Owner(developers = OwnerRule.YOGESH)
   @Category(UnitTests.class)
   public void executeNoFiles() {
-    doReturn(getServiceConfig(new ArrayList<>()))
-        .when(cdStepHelper)
-        .fetchServiceConfigFromSweepingOutput(any(Ambiance.class));
+    doReturn(OptionalSweepingOutput.builder()
+                 .found(true)
+                 .output(NgConfigFilesMetadataSweepingOutput.builder()
+                             .finalSvcConfigFiles(new ArrayList<>())
+                             .serviceIdentifier(SVC_ID)
+                             .environmentIdentifier(ENV_ID)
+                             .build())
+                 .build())
+        .when(mockSweepingOutputService)
+        .resolveOptional(any(Ambiance.class),
+            eq(RefObjectUtils.getOutcomeRefObject(ServiceStepV3.SERVICE_CONFIG_FILES_SWEEPING_OUTPUT)));
 
     StepResponse stepResponse = step.executeSync(buildAmbiance(), new EmptyStepParameters(), null, null);
 
@@ -104,9 +126,17 @@ public class ConfigFilesStepV2Test {
     ConfigFileWrapper file2 = sampleConfigFile("file2");
     ConfigFileWrapper file3 = sampleConfigFile("file3");
 
-    doReturn(getServiceConfig(List.of(file1, file2, file3)))
-        .when(cdStepHelper)
-        .fetchServiceConfigFromSweepingOutput(any(Ambiance.class));
+    doReturn(OptionalSweepingOutput.builder()
+                 .found(true)
+                 .output(NgConfigFilesMetadataSweepingOutput.builder()
+                             .finalSvcConfigFiles(Arrays.asList(file1, file2, file3))
+                             .serviceIdentifier(SVC_ID)
+                             .environmentIdentifier(ENV_ID)
+                             .build())
+                 .build())
+        .when(mockSweepingOutputService)
+        .resolveOptional(any(Ambiance.class),
+            eq(RefObjectUtils.getOutcomeRefObject(ServiceStepV3.SERVICE_CONFIG_FILES_SWEEPING_OUTPUT)));
 
     StepResponse stepResponse = step.executeSync(buildAmbiance(), new EmptyStepParameters(), null, null);
 
@@ -128,9 +158,17 @@ public class ConfigFilesStepV2Test {
     doReturn(Optional.empty()).when(connectorService).get(anyString(), anyString(), anyString(), anyString());
     ConfigFileWrapper file1 = sampleConfigFile("file404");
 
-    doReturn(getServiceConfig(List.of(file1)))
-        .when(cdStepHelper)
-        .fetchServiceConfigFromSweepingOutput(any(Ambiance.class));
+    doReturn(OptionalSweepingOutput.builder()
+                 .found(true)
+                 .output(NgConfigFilesMetadataSweepingOutput.builder()
+                             .finalSvcConfigFiles(Collections.singletonList(file1))
+                             .serviceIdentifier(SVC_ID)
+                             .environmentIdentifier(ENV_ID)
+                             .build())
+                 .build())
+        .when(mockSweepingOutputService)
+        .resolveOptional(any(Ambiance.class),
+            eq(RefObjectUtils.getOutcomeRefObject(ServiceStepV3.SERVICE_CONFIG_FILES_SWEEPING_OUTPUT)));
 
     try {
       step.executeSync(buildAmbiance(), new EmptyStepParameters(), null, null);

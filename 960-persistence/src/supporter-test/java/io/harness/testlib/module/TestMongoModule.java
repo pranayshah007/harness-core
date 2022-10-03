@@ -12,6 +12,7 @@ import static io.harness.rule.TestUserProvider.testUserProvider;
 
 import io.harness.factory.ClosingFactory;
 import io.harness.mongo.HObjectFactory;
+import io.harness.mongo.MongoConfig;
 import io.harness.mongo.ObjectFactoryModule;
 import io.harness.mongo.QueryFactory;
 import io.harness.mongo.index.migrator.Migrator;
@@ -26,6 +27,8 @@ import com.google.inject.Singleton;
 import com.google.inject.multibindings.MapBinder;
 import com.google.inject.name.Named;
 import com.mongodb.MongoClient;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.mongodb.morphia.AdvancedDatastore;
@@ -100,7 +103,7 @@ public class TestMongoModule extends AbstractModule implements MongoRuleMixin {
     }
 
     AdvancedDatastore datastore = (AdvancedDatastore) morphia.createDatastore(mongoClient, databaseName);
-    datastore.setQueryFactory(new QueryFactory());
+    datastore.setQueryFactory(new QueryFactory(MongoConfig.builder().build()));
     ((HObjectFactory) objectFactory).setDatastore(datastore);
     return datastore;
   }
@@ -110,6 +113,13 @@ public class TestMongoModule extends AbstractModule implements MongoRuleMixin {
   @Named("morphiaClasses")
   Map<Class, String> morphiaCustomCollectionNames() {
     return ImmutableMap.<Class, String>builder().build();
+  }
+
+  @Provides
+  @Singleton
+  @Named("dbAliases")
+  public List<String> getDbAliases() {
+    return Collections.EMPTY_LIST;
   }
 
   @Override

@@ -8,10 +8,12 @@
 package io.harness.cv;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.StoreIn;
 import io.harness.beans.ExecutionStatus;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.FdTtlIndex;
 import io.harness.mongo.index.FdUniqueIndex;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
 import io.harness.persistence.CreatedAtAware;
 import io.harness.persistence.PersistentEntity;
@@ -33,6 +35,7 @@ import org.mongodb.morphia.annotations.Id;
 @Builder
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldNameConstants(innerTypeName = "WorkflowVerificationResultKeys")
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "workflowVerificationResults", noClassnameStored = true)
 @HarnessEntity(exportable = true)
 public class WorkflowVerificationResult

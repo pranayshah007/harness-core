@@ -19,6 +19,7 @@ import io.harness.engine.facilitation.facilitator.child.ChildFacilitator;
 import io.harness.engine.facilitation.facilitator.chilidren.ChildrenFacilitator;
 import io.harness.engine.facilitation.facilitator.sync.SyncFacilitator;
 import io.harness.engine.facilitation.facilitator.task.TaskFacilitator;
+import io.harness.engine.facilitation.facilitator.waitStep.WaitStepFacilitator;
 import io.harness.exception.InvalidRequestException;
 import io.harness.plan.PlanNode;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -76,6 +77,8 @@ public class FacilitationHelper {
         return injector.getInstance(ChildChainFacilitator.class);
       case OrchestrationFacilitatorType.CHILDREN:
         return injector.getInstance(ChildrenFacilitator.class);
+      case OrchestrationFacilitatorType.WAIT_STEP:
+        return injector.getInstance(WaitStepFacilitator.class);
       default:
         throw new InvalidRequestException("Core facilitator Type not found");
     }

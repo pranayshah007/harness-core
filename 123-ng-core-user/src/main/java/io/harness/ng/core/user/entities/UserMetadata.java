@@ -9,7 +9,7 @@ package io.harness.ng.core.user.entities;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.MongoIndex;
@@ -37,10 +37,10 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Builder
 @FieldNameConstants(innerTypeName = "UserMetadataKeys")
 @FieldDefaults(level = AccessLevel.PRIVATE)
+@StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "userMetadata", noClassnameStored = true)
 @Document("userMetadata")
 @TypeAlias("userMetadata")
-@StoreIn(DbAliases.NG_MANAGER)
 @OwnedBy(PL)
 public class UserMetadata implements PersistentEntity {
   public static List<MongoIndex> mongoIndexes() {

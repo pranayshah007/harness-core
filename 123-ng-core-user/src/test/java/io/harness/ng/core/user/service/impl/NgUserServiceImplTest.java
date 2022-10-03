@@ -359,13 +359,14 @@ public class NgUserServiceImplTest extends CategoryTest {
         .thenReturn(isAccountBasicRoleFeatureFlag);
     doNothing()
         .when(ngUserService)
-        .addUserToScopeInternal(userId, UserMembershipUpdateSource.USER, scope, getDefaultRoleIdentifier(scope));
+        .addUserToScopeInternal(userId, UserMembershipUpdateSource.USER, scope, getDefaultRoleIdentifier(scope),
+            isAccountBasicRoleFeatureFlag);
 
     parentScopes.forEach(parentScope
         -> doNothing()
                .when(ngUserService)
-               .addUserToScopeInternal(
-                   userId, UserMembershipUpdateSource.USER, parentScope, getDefaultRoleIdentifier(parentScope)));
+               .addUserToScopeInternal(userId, UserMembershipUpdateSource.USER, parentScope,
+                   getDefaultRoleIdentifier(parentScope), isAccountBasicRoleFeatureFlag));
     doNothing()
         .when(ngUserService)
         .createRoleAssignments(
@@ -416,8 +417,9 @@ public class NgUserServiceImplTest extends CategoryTest {
 
   private void assertAddUserToScope(Scope scope, List<String> userIds, List<String> userGroups) {
     verify(userMetadataRepository, times(userIds.size())).findDistinctByUserId(any());
-    verify(ngUserService, times(userIds.size() * getRank(scope))).addUserToScopeInternal(any(), any(), any(), any());
-    verify(ngUserService, times(userIds.size())).createRoleAssignments(any(), any(), any(), anyBoolean());
+    verify(ngUserService, times(userIds.size() * getRank(scope)))
+        .addUserToScopeInternal(any(), any(), any(), any(), anyBoolean());
+    verify(ngUserService, times(userIds.size() * 2)).createRoleAssignments(any(), any(), any(), anyBoolean());
     verify(userGroupService, times(isEmpty(userGroups) ? 0 : userIds.size())).list(any(UserGroupFilterDTO.class));
     verify(userGroupService, times(userIds.size())).addUserToUserGroups(any(Scope.class), any(), any());
   }

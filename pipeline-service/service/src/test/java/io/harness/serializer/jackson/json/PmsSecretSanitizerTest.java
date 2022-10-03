@@ -7,6 +7,7 @@
 
 package io.harness.serializer.jackson.json;
 
+import static io.harness.rule.OwnerRule.HINGER;
 import static io.harness.rule.OwnerRule.SAHIL;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -428,5 +429,17 @@ public class PmsSecretSanitizerTest extends CategoryTest {
         + "}],\"progressData\":{},\"delegateInfoList\":[{\"id\":\"hLCDMJeuSDqUDV67V2eecA\",\"name\":\"automation-pipeline-cdng-delegate\",\"taskId\":\"Tou4F5vGTnyPvESd4sxaOA\",\"taskName\":\"Shell Script Task\"}],\"interruptHistories\":[],\"stepDetails\":null}},\"nodeAdjacencyListMap\":{\"6rEaJw2fS5iJEApWQQaRlQ\":{\"children\":[\"CXyz69wJSqSWCV4z3IoKmg\"],\"nextIds\":[]},\"HGe4nYd-R_-Zv4nLWalYZw\":{\"children\":[],\"nextIds\":[\"PIuGnofTSOqbZn3CAN_QgA\"]},\"CXyz69wJSqSWCV4z3IoKmg\":{\"children\":[],\"nextIds\":[\"iXxPpcMBSFuQoKAOsvXDRA\"]},\"a9p0RM0bRIWeG22Y_0dhnQ\":{\"children\":[],\"nextIds\":[]},\"n9AThTFbSRW6dTp5VXks1w\":{\"children\":[\"cfmbMYzJSKmRlI6qjNVHOQ\"],\"nextIds\":[]},\"zf5e9Mz5RyOJohceVNKaXw\":{\"children\":[],\"nextIds\":[\"eQ8hvuNzRoCJZmFbZ_bHtg\"]},\"eQ8hvuNzRoCJZmFbZ_bHtg\":{\"children\":[],\"nextIds\":[\"JeXoUFP3QbKDEcT8mOM72A\"]},\"JeXoUFP3QbKDEcT8mOM72A\":{\"children\":[],\"nextIds\":[\"a9p0RM0bRIWeG22Y_0dhnQ\"]},\"cfmbMYzJSKmRlI6qjNVHOQ\":{\"children\":[],\"nextIds\":[]},\"P25AmCwDTPK9wutjU6VwnQ\":{\"children\":[],\"nextIds\":[\"n9AThTFbSRW6dTp5VXks1w\"]},\"iXxPpcMBSFuQoKAOsvXDRA\":{\"children\":[\"HGe4nYd-R_-Zv4nLWalYZw\"],\"nextIds\":[\"P25AmCwDTPK9wutjU6VwnQ\"]},\"PIuGnofTSOqbZn3CAN_QgA\":{\"children\":[],\"nextIds\":[\"zf5e9Mz5RyOJohceVNKaXw\"]}},\"representationStrategy\":\"camelCase\"}},\"metaData\":null,\"correlationId\":\"102b19af-446f-410f-aa04-daf5a3692c9f\"}";
 
     assertThat(sanitizedJson).isEqualTo(expectedJson);
+  }
+
+  @Test
+  @Owner(developers = HINGER)
+  @Category(UnitTests.class)
+  public void testSanitizeSweepingOutputSecrets() {
+    String toBeMatched = "abcd${sweepingOutputSecrets.obtain(\\\"ovar3\\\",\\\"BASE_64\\\")}";
+    assertThat(PmsSecretSanitizer.sanitize(toBeMatched)).isEqualTo("abcd*******");
+
+    String multipleOccurenceMatch =
+        "abcd${sweepingOutputSecrets.obtain(\\\"ovar3\\\",\\\"BASE_64\\\")}abcd${sweepingOutputSecrets.obtain(\\\"ovar3\\\",\\\"BASE_64\\\")}";
+    assertThat(PmsSecretSanitizer.sanitize(multipleOccurenceMatch)).isEqualTo("abcd*******abcd*******");
   }
 }

@@ -16,7 +16,7 @@ if [ ! -e start.sh ]; then
   exit 1
 fi
 
-JRE_DIR=${jreDirectory}
+JRE_DIR=jdk-11.0.14+9-jre
 JRE_BINARY=$JRE_DIR/bin/java
 case "$OSTYPE" in
   solaris*)
@@ -24,7 +24,6 @@ case "$OSTYPE" in
     ;;
   darwin*)
     OS=macosx
-    JRE_DIR=${jreMacDirectory}
     JRE_BINARY=$JRE_DIR/Contents/Home/bin/java
     ;;
   linux*)
@@ -47,12 +46,16 @@ case "$OSTYPE" in
     ;;
 esac
 
-JVM_URL=${delegateStorageUrl}/${jreTarPath}
+DELEGATE_STORAGE_URL=${delegateStorageUrl}
 
-<#if alpnJarPath?? >
-ALPN_BOOT_JAR_URL=${delegateStorageUrl}/${alpnJarPath}
+<#if useCdn == "true">
+  <#noparse>
+    JVM_URL=$DELEGATE_STORAGE_URL/public/shared/jre/openjdk-11.0.14_9/OpenJDK11U-jre_x64_${OS}_hotspot_11.0.14_9.tar.gz
+  </#noparse>
 <#else>
-ALPN_BOOT_JAR_URL=""
+  <#noparse>
+    JVM_URL=$DELEGATE_STORAGE_URL/jre/openjdk-11.0.14_9/OpenJDK11U-jre_x64_${OS}_hotspot_11.0.14_9.tar.gz
+  </#noparse>
 </#if>
 
 <#noparse>

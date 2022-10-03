@@ -9,7 +9,7 @@ package io.harness.audit.entities;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.iterator.PersistentIterable;
 import io.harness.iterator.PersistentRegularIterable;
@@ -37,10 +37,10 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Setter
 @Builder
 @FieldNameConstants(innerTypeName = "AuditSettingsKeys")
+@StoreIn(DbAliases.AUDITS)
 @Entity(value = "auditSettings", noClassnameStored = true)
 @Document("auditSettings")
 @TypeAlias("auditSettings")
-@StoreIn(DbAliases.AUDITS)
 public class AuditSettings implements PersistentIterable, PersistentRegularIterable {
   @Id @org.mongodb.morphia.annotations.Id String id;
   @NotBlank String accountIdentifier;

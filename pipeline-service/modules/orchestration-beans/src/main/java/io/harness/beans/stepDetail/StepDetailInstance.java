@@ -9,7 +9,7 @@ package io.harness.beans.stepDetail;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ToBeDeleted;
 import io.harness.mongo.index.CompoundMongoIndex;
@@ -35,10 +35,10 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Data
 @Builder
 @FieldNameConstants(innerTypeName = "StepDetailInstanceKeys")
+@StoreIn(DbAliases.PMS)
 @Entity(value = "stepDetailInstance", noClassnameStored = true)
 @Document("stepDetailInstance")
 @TypeAlias("stepDetailInstance")
-@StoreIn(DbAliases.PMS)
 @ToBeDeleted
 // Delete after six months from 27-Jan
 public class StepDetailInstance {

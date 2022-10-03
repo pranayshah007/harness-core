@@ -14,19 +14,23 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import io.harness.cvng.beans.DeviationType;
 import io.harness.cvng.beans.ThresholdConfigType;
 import io.harness.cvng.beans.TimeSeriesMetricType;
 import io.harness.cvng.beans.TimeSeriesThresholdActionType;
 import io.harness.cvng.beans.TimeSeriesThresholdCriteria;
 import io.harness.cvng.beans.TimeSeriesThresholdType;
+import io.harness.cvng.core.beans.HealthSourceMetricDefinition;
 import io.harness.cvng.core.beans.TimeRange;
 import io.harness.cvng.core.beans.monitoredService.TimeSeriesMetricPackDTO;
 import io.harness.cvng.core.beans.monitoredService.metricThresholdSpec.MetricThresholdActionType;
 import io.harness.cvng.core.beans.monitoredService.metricThresholdSpec.MetricThresholdCriteriaType;
+import io.harness.cvng.core.constant.MonitoredServiceConstants;
 import io.harness.cvng.core.transformer.metricThresholdSpec.MetricThresholdSpecDTOTransformer;
 import io.harness.cvng.core.utils.DateTimeUtils;
 import io.harness.cvng.models.VerificationType;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.gson.Gson;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -57,6 +61,7 @@ public abstract class MetricCVConfig<I extends AnalysisInfo> extends CVConfig {
   public abstract List<I> getMetricInfos();
   public abstract void setMetricInfos(List<I> metricInfos);
 
+  @JsonIgnore
   public TimeRange getFirstTimeDataCollectionTimeRange() {
     Instant endTime = DateTimeUtils.roundDownTo5MinBoundary(getFirstTimeDataCollectionStartTime());
     return TimeRange.builder()
@@ -107,6 +112,7 @@ public abstract class MetricCVConfig<I extends AnalysisInfo> extends CVConfig {
                              .action(TimeSeriesThresholdActionType.IGNORE)
                              .criteria(criteria)
                              .thresholdConfigType(ThresholdConfigType.DEFAULT)
+                             .deviationType(DeviationType.getDeviationType(thresholdTypes))
                              .build());
         });
       });
@@ -119,8 +125,10 @@ public abstract class MetricCVConfig<I extends AnalysisInfo> extends CVConfig {
     for (MetricPack.MetricDefinition metricDefinition : cvConfig.getMetricPack().getMetrics()) {
       if (metricDefinition.getName().equals(metricName)) {
         if (Objects.nonNull(metricDefinition.getThresholds())) {
-          metricDefinition.getThresholds().forEach(
-              threshold -> thresholdTypes.add(threshold.getCriteria().getThresholdType()));
+          metricDefinition.getThresholds()
+              .stream()
+              .filter(threshold -> threshold.getThresholdConfigType().equals(ThresholdConfigType.DEFAULT))
+              .forEach(threshold -> thresholdTypes.add(threshold.getCriteria().getThresholdType()));
         }
       }
     }
@@ -135,7 +143,7 @@ public abstract class MetricCVConfig<I extends AnalysisInfo> extends CVConfig {
         List<TimeSeriesThreshold> customThresholds =
             metricDefinition.getThresholds()
                 .stream()
-                .filter(m -> ThresholdConfigType.CUSTOMER.equals(m.getThresholdConfigType()))
+                .filter(m -> ThresholdConfigType.USER_DEFINED.equals(m.getThresholdConfigType()))
                 .collect(Collectors.toList());
         for (TimeSeriesThreshold timeSeriesThreshold : customThresholds) {
           String key = getKey(timeSeriesThreshold);
@@ -208,5 +216,18 @@ public abstract class MetricCVConfig<I extends AnalysisInfo> extends CVConfig {
     return timeSeriesThreshold.getMetricName() + timeSeriesThreshold.getMetricGroupName()
         + timeSeriesThreshold.getAction() + timeSeriesThreshold.getCriteria().getType()
         + timeSeriesThreshold.getCriteria().getAction();
+  }
+
+  protected DeviationType getDeviationType(Map<String, HealthSourceMetricDefinition> mapOfMetricDefinitions,
+      String metricName, MetricPack.MetricDefinition metric, String identifier) {
+    if (!identifier.equalsIgnoreCase(MonitoredServiceConstants.CUSTOM_METRIC_PACK)) {
+      return metric.getType().getDeviationType();
+    } else {
+      List<TimeSeriesThresholdType> thresholdTypes = null;
+      if (mapOfMetricDefinitions.containsKey(metricName)) {
+        thresholdTypes = mapOfMetricDefinitions.get(metricName).getRiskProfile().getThresholdTypes();
+      }
+      return DeviationType.getDeviationType(thresholdTypes);
+    }
   }
 }

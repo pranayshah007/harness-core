@@ -1,3 +1,10 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.delegate.task.ecs.request;
 
 import static io.harness.expression.Expression.ALLOW_SECRETS;
@@ -25,8 +32,10 @@ public class EcsRollingDeployRequest implements EcsCommandRequest, NestedAnnotat
   CommandUnitsProgress commandUnitsProgress;
   @NonFinal @Expression(ALLOW_SECRETS) EcsInfraConfig ecsInfraConfig;
   @NonFinal @Expression(ALLOW_SECRETS) Integer timeoutIntervalInMin;
-  @Expression(ALLOW_SECRETS) String ecsTaskDefinitionManifestContent;
-  @Expression(ALLOW_SECRETS) String ecsServiceDefinitionManifestContent;
-  @Expression(ALLOW_SECRETS) List<String> ecsScalableTargetManifestContentList;
-  @Expression(ALLOW_SECRETS) List<String> ecsScalingPolicyManifestContentList;
+  @NonFinal @Expression(ALLOW_SECRETS) String ecsTaskDefinitionManifestContent;
+  @NonFinal @Expression(ALLOW_SECRETS) String ecsServiceDefinitionManifestContent;
+  @NonFinal @Expression(ALLOW_SECRETS) List<String> ecsScalableTargetManifestContentList;
+  @NonFinal @Expression(ALLOW_SECRETS) List<String> ecsScalingPolicyManifestContentList;
+  @NonFinal @Expression(ALLOW_SECRETS) boolean sameAsAlreadyRunningInstances;
+  @NonFinal @Expression(ALLOW_SECRETS) boolean forceNewDeployment;
 }

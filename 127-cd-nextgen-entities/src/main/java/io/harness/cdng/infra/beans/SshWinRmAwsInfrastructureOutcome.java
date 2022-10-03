@@ -26,11 +26,12 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("cdng.infra.beans.SshWinRmAwsInfrastructureOutcome")
 @OwnedBy(HarnessTeam.CDP)
 @RecasterAlias("io.harness.cdng.infra.beans.SshWinRmAwsInfrastructureOutcome")
-public class SshWinRmAwsInfrastructureOutcome extends InfrastructureDetailsAbstract implements InfrastructureOutcome {
+public class SshWinRmAwsInfrastructureOutcome extends InfrastructureOutcomeAbstract {
   private String connectorRef;
   private String credentialsRef;
   private String region;
   Map<String, String> tags;
+  private String hostConnectionType;
 
   @VariableExpression(skipVariableExpression = true) private EnvironmentOutcome environment;
   private String infrastructureKey;

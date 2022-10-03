@@ -1036,6 +1036,10 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
     }
   }
 
+  public void resetHeartBeatTask(String accountId, String taskId) {
+    connectorHeartbeatService.resetPerpetualTask(accountId, taskId);
+  }
+
   @Override
   public List<ConnectorResponseDTO> listbyFQN(String accountIdentifier, List<String> connectorFQN) {
     if (isEmpty(connectorFQN)) {

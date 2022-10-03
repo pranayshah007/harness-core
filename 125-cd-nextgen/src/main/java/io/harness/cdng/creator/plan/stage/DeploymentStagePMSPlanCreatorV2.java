@@ -11,11 +11,13 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.cdng.pipeline.steps.MultiDeploymentSpawnerUtils.SERVICE_REF_EXPRESSION;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.cdng.creator.plan.envGroup.EnvGroupPlanCreatorHelper;
 import io.harness.cdng.creator.plan.environment.EnvironmentPlanCreatorHelper;
 import io.harness.cdng.creator.plan.infrastructure.InfrastructurePmsPlanCreator;
 import io.harness.cdng.creator.plan.service.ServiceAllInOnePlanCreatorUtils;
 import io.harness.cdng.creator.plan.service.ServicePlanCreatorHelper;
+import io.harness.cdng.creator.plan.stage.OverridesFromEnvironment.OverridesFromEnvironmentBuilder;
 import io.harness.cdng.envGroup.yaml.EnvGroupPlanCreatorConfig;
 import io.harness.cdng.envgroup.yaml.EnvironmentGroupYaml;
 import io.harness.cdng.environment.yaml.EnvironmentPlanCreatorConfig;
@@ -61,11 +63,13 @@ import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.yaml.DependenciesUtils;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.serializer.KryoSerializer;
+import io.harness.strategy.StrategyValidationUtils;
 import io.harness.utils.NGFeatureFlagHelperService;
 import io.harness.when.utils.RunInfoUtils;
 import io.harness.yaml.core.failurestrategy.FailureStrategyConfig;
@@ -158,8 +162,8 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
   @Override
   public PlanNode createPlanForParentNode(
       PlanCreationContext ctx, DeploymentStageNode stageNode, List<String> childrenNodeIds) {
-    stageNode.setIdentifier(StrategyUtils.getIdentifierWithExpression(ctx, stageNode.getIdentifier()));
-    stageNode.setName(StrategyUtils.getIdentifierWithExpression(ctx, stageNode.getName()));
+    stageNode.setIdentifier(getIdentifierWithExpression(ctx, stageNode, stageNode.getIdentifier()));
+    stageNode.setName(getIdentifierWithExpression(ctx, stageNode, stageNode.getName()));
     DeploymentStageConfig config = stageNode.getDeploymentStageConfig();
     StageElementParametersBuilder stageParameters = CdStepParametersUtils.getStageParameters(stageNode);
     YamlField specField =
@@ -190,6 +194,14 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
     return builder.build();
   }
 
+  public String getIdentifierWithExpression(PlanCreationContext ctx, DeploymentStageNode node, String identifier) {
+    if (node.getDeploymentStageConfig().getServices() != null
+        || node.getDeploymentStageConfig().getEnvironments() != null
+        || node.getDeploymentStageConfig().getEnvironmentGroup() != null) {
+      return identifier + StrategyValidationUtils.STRATEGY_IDENTIFIER_POSTFIX;
+    }
+    return StrategyUtils.getIdentifierWithExpression(ctx, identifier);
+  }
   @Override
   public LinkedHashMap<String, PlanCreationResponse> createPlanForChildrenNodes(
       PlanCreationContext ctx, DeploymentStageNode stageNode) {
@@ -203,23 +215,24 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
       YamlField specField =
           Preconditions.checkNotNull(ctx.getCurrentField().getNode().getField(YAMLFieldNameConstants.SPEC));
 
-      if (useNewFlow(ctx)) {
+      if (useNewFlow(ctx, stageNode)) {
         List<AdviserObtainment> adviserObtainments =
             addResourceConstraintDependencyWithWhenCondition(planCreationResponseMap, specField);
         String infraNodeId = addInfrastructureNode(planCreationResponseMap, stageNode, adviserObtainments);
-        String serviceNodeId = addServiceNode(planCreationResponseMap, stageNode, infraNodeId);
+        String serviceNodeId = addServiceNode(specField, planCreationResponseMap, stageNode, infraNodeId);
         addSpecNode(planCreationResponseMap, specField, serviceNodeId);
       } else {
         final String postServiceStepUuid = "service-" + UUIDGenerator.generateUuid();
         final String environmentUuid = "environment-" + UUIDGenerator.generateUuid();
-        // Spec node is also added in this method
-        YamlField serviceField = addServiceDependency(
-            planCreationResponseMap, specField, stageNode, ctx, environmentUuid, postServiceStepUuid);
+        final YamlField serviceField = servicePlanCreatorHelper.getResolvedServiceField(specField, stageNode, ctx);
 
         PipelineInfrastructure pipelineInfrastructure = stageNode.getDeploymentStageConfig().getInfrastructure();
-        String serviceSpecNodeUuid = servicePlanCreatorHelper.fetchServiceSpecUuid(serviceField);
-        addEnvAndInfraDependency(ctx, stageNode, planCreationResponseMap, specField, pipelineInfrastructure,
-            postServiceStepUuid, environmentUuid, serviceSpecNodeUuid, environmentUuid);
+
+        final OverridesFromEnvironment overridesFromEnvironment =
+            addEnvAndInfraDependency(ctx, stageNode, planCreationResponseMap, specField, pipelineInfrastructure,
+                postServiceStepUuid, environmentUuid, environmentUuid, serviceField);
+        addServiceDependency(planCreationResponseMap, specField, stageNode, environmentUuid, postServiceStepUuid,
+            serviceField, overridesFromEnvironment);
       }
 
       // Add dependency for execution
@@ -272,9 +285,9 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
           GraphLayoutNode.newBuilder()
               .setNodeUUID(planNodeId)
               .setNodeType(yamlField.getNode().getType())
-              .setName(yamlField.getNode().getName())
+              .setName(config.getName())
               .setNodeGroup(StepOutcomeGroup.STAGE.name())
-              .setNodeIdentifier(yamlField.getNode().getIdentifier())
+              .setNodeIdentifier(config.getIdentifier())
               .setEdgeLayoutList(EdgeLayoutList.newBuilder().build())
               .build());
       return GraphLayoutResponse.builder().layoutNodes(stageYamlFieldMap).build();
@@ -292,17 +305,29 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
         planCreationResponseMap, specField, kryoSerializer);
   }
 
-  private boolean useNewFlow(PlanCreationContext ctx) {
-    // uncomment this going forward
-    //    return featureFlagHelperService.isEnabled(
-    //        ctx.getMetadata().getAccountIdentifier(), FeatureName.SERVICE_V2_EXPRESSION);
-    return false;
+  private boolean useNewFlow(PlanCreationContext ctx, DeploymentStageNode stageNode) {
+    final DeploymentStageConfig deploymentStageConfig = stageNode.getDeploymentStageConfig();
+    // Todo(Yogesh): For gitops, use the old flow only, for now
+    if (deploymentStageConfig.getGitOpsEnabled()) {
+      return false;
+    }
+    boolean isServiceV2 = deploymentStageConfig.getService() != null
+        && ParameterField.isNotNull(deploymentStageConfig.getService().getServiceRef());
+    boolean serviceV2UseFromStage = deploymentStageConfig.getService() != null
+        && deploymentStageConfig.getService().getUseFromStage() != null
+        && EmptyPredicate.isNotEmpty(deploymentStageConfig.getService().getUseFromStage().getStage());
+    boolean isServices = deploymentStageConfig.getServices() != null;
+    boolean shouldUseNewFlow = isServices || isServiceV2 || serviceV2UseFromStage;
+    return shouldUseNewFlow
+        && featureFlagHelperService.isEnabled(
+            ctx.getMetadata().getAccountIdentifier(), FeatureName.SERVICE_V2_EXPRESSION);
   }
 
-  private void addEnvAndInfraDependency(PlanCreationContext ctx, DeploymentStageNode stageNode,
+  private OverridesFromEnvironment addEnvAndInfraDependency(PlanCreationContext ctx, DeploymentStageNode stageNode,
       LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap, YamlField specField,
       PipelineInfrastructure pipelineInfrastructure, String postServiceStepUuid, String environmentUuid,
-      String serviceSpecNodeUuid, String envGroupUuid) throws IOException {
+      String envGroupUuid, YamlField serviceField) throws IOException {
+    final OverridesFromEnvironmentBuilder overridesBuilder = OverridesFromEnvironment.builder();
     YamlField infraField = specField.getNode().getField(YamlTypes.PIPELINE_INFRASTRUCTURE);
     EnvironmentYamlV2 environmentV2 = stageNode.getDeploymentStageConfig().getEnvironment();
     EnvironmentsYaml environments = stageNode.getDeploymentStageConfig().getEnvironments();
@@ -320,6 +345,8 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
     if (environmentV2 != null && environmentV2.getDeployToAll().isExpression()) {
       throw new InvalidRequestException("Value for deploy to all must be provided");
     }
+
+    String serviceSpecNodeUuid = servicePlanCreatorHelper.fetchServiceSpecUuid(serviceField);
 
     if (infraField != null) {
       // Adding infrastructure node
@@ -355,21 +382,25 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
     } else {
       final boolean gitOpsEnabled = isGitopsEnabled(stageNode.getDeploymentStageConfig());
       final boolean skipInstances = isSkipInstances(stageNode);
-      // serviceRef will be used to fetch serviceOverride of this service in the environment
       String serviceRef;
       if (stageNode.getDeploymentStageConfig().getServices() != null) {
         serviceRef = SERVICE_REF_EXPRESSION;
       } else {
-        serviceRef = stageNode.getDeploymentStageConfig().getService().getServiceRef().getValue();
+        serviceRef = servicePlanCreatorHelper.getServiceRef(serviceField);
       }
       EnvironmentPlanCreatorConfig environmentPlanCreatorConfig =
           EnvironmentPlanCreatorHelper.getResolvedEnvRefs(ctx.getMetadata(), environmentV2, gitOpsEnabled, serviceRef,
               serviceOverrideService, environmentService, infrastructure);
 
+      overridesBuilder.serviceOverrideConfig(environmentPlanCreatorConfig.getServiceOverrideConfig());
+      overridesBuilder.environmentGlobalOverride(environmentPlanCreatorConfig.getEnvironmentGlobalOverride());
+      overridesBuilder.envIdentifier(environmentPlanCreatorConfig.getIdentifier());
+
       EnvironmentPlanCreatorHelper.addEnvironmentV2Dependency(planCreationResponseMap, environmentPlanCreatorConfig,
           specField.getNode().getField(YamlTypes.ENVIRONMENT_YAML), gitOpsEnabled, skipInstances, environmentUuid,
           postServiceStepUuid, serviceSpecNodeUuid, kryoSerializer);
     }
+    return overridesBuilder.build();
   }
 
   private boolean isSkipInstances(DeploymentStageNode stageNode) {
@@ -410,11 +441,10 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
   }
 
   // This function adds the service dependency and returns the resolved service field
-  private YamlField addServiceDependency(LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap,
-      YamlField specField, DeploymentStageNode stageNode, PlanCreationContext ctx, String environmentUuid,
-      String infraSectionUuid) throws IOException {
+  private void addServiceDependency(LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap,
+      YamlField specField, DeploymentStageNode stageNode, String environmentUuid, String infraSectionUuid,
+      YamlField serviceField, OverridesFromEnvironment overridesFromEnvironment) throws IOException {
     // Adding service child by resolving the serviceField
-    YamlField serviceField = servicePlanCreatorHelper.getResolvedServiceField(specField, stageNode, ctx);
     String serviceNodeUuid = serviceField.getNode().getUuid();
 
     // Adding Spec node
@@ -426,18 +456,17 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
     planCreationResponseMap.put(serviceNodeUuid,
         PlanCreationResponse.builder()
             .dependencies(servicePlanCreatorHelper.getDependenciesForService(
-                serviceField, stageNode, environmentUuid, infraSectionUuid))
+                serviceField, stageNode, environmentUuid, infraSectionUuid, overridesFromEnvironment))
             .yamlUpdates(YamlUpdates.newBuilder()
                              .putFqnToYaml(serviceField.getYamlPath(),
                                  YamlUtils.writeYamlString(serviceField).replace("---\n", ""))
                              .build())
             .build());
-
-    return serviceField;
   }
 
-  private String addServiceNode(LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap,
-      DeploymentStageNode stageNode, String nextNodeId) throws IOException {
+  private String addServiceNode(YamlField specField,
+      LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap, DeploymentStageNode stageNode,
+      String nextNodeId) throws IOException {
     // Adding service child by resolving the serviceField
     ServiceDefinitionType serviceType = stageNode.getDeploymentStageConfig().getDeploymentType();
     ServiceYamlV2 service;
@@ -455,7 +484,7 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
     }
     String serviceNodeId = service.getUuid();
     planCreationResponseMap.putAll(ServiceAllInOnePlanCreatorUtils.addServiceNode(
-        kryoSerializer, service, environment, serviceNodeId, nextNodeId, serviceType));
+        specField, kryoSerializer, service, environment, serviceNodeId, nextNodeId, serviceType));
     return serviceNodeId;
   }
   private String addInfrastructureNode(LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap,

@@ -29,7 +29,8 @@ public enum ArtifactTaskType {
   GET_ARTIFACT_PATH("Get Artifact Path"),
   GET_JOB_PARAMETERS("Get the Job Parameters"),
   JENKINS_BUILD("Trigger Jenkins Build"),
-  JENKINS_POLL_TASK("Jenkins Poll TAsk");
+  JENKINS_POLL_TASK("Jenkins Poll TAsk"),
+  GET_GITHUB_PACKAGES("Get Github Packages");
 
   @Getter private final String displayName;
 

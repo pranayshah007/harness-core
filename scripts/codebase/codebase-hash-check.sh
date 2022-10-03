@@ -29,6 +29,7 @@ if [[ $HASH != $EXISTING_HASH ]];
 then
   message="$HASH is not same sas what is generated from develop branch"
   echo -e "\n${bold}260-delegate check failed.\n${normal}"
+  echo Please refer this document: https://harness.atlassian.net/wiki/spaces/DEL/pages/21184151774/How+to+fix+Codebase+hash+check+failure+in+PR
   errors+=("$message")
 else
   echo "There are no changes in dependencies for module: $MODULE"

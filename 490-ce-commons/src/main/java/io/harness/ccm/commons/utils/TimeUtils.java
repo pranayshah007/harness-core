@@ -7,8 +7,8 @@
 
 package io.harness.ccm.commons.utils;
 
-import static io.harness.ccm.commons.constants.Constants.TIME_ZONE;
-import static io.harness.ccm.commons.constants.Constants.ZONE_OFFSET;
+import static io.harness.ccm.CcmConstants.TIME_ZONE;
+import static io.harness.ccm.CcmConstants.ZONE_OFFSET;
 
 import com.google.inject.Singleton;
 import java.time.Instant;

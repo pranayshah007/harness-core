@@ -18,6 +18,7 @@ import static org.mockito.Mockito.when;
 import io.harness.CategoryTest;
 import io.harness.batch.processing.dao.intfc.InstanceDataDao;
 import io.harness.category.element.UnitTests;
+import io.harness.ccm.RecommenderUtils;
 import io.harness.ccm.commons.beans.recommendation.ResourceId;
 import io.harness.ccm.commons.constants.InstanceMetaDataConstants;
 import io.harness.ccm.commons.entities.batch.InstanceData;
@@ -29,7 +30,6 @@ import io.harness.grpc.utils.HTimestamps;
 import io.harness.rule.Owner;
 
 import software.wings.graphql.datafetcher.ce.recommendation.entity.ContainerCheckpoint;
-import software.wings.graphql.datafetcher.ce.recommendation.entity.RecommenderUtils;
 
 import com.google.common.collect.ImmutableMap;
 import java.time.Duration;

@@ -1,3 +1,10 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.delegate.ecs;
 
 import static java.lang.String.format;
@@ -18,21 +25,18 @@ import io.harness.delegate.task.ecs.response.EcsPrepareRollbackDataResponse;
 import io.harness.ecs.EcsCommandUnitConstants;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.NestedExceptionUtils;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.inject.Inject;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
-import software.amazon.awssdk.services.applicationautoscaling.model.DescribeScalableTargetsResponse;
-import software.amazon.awssdk.services.applicationautoscaling.model.DescribeScalingPoliciesResponse;
 import software.amazon.awssdk.services.ecs.model.CreateServiceRequest;
 import software.amazon.awssdk.services.ecs.model.Service;
 
@@ -67,6 +71,15 @@ public class EcsPrepareRollbackCommandTaskHandler extends EcsCommandTaskNGHandle
     CreateServiceRequest.Builder createServiceRequestBuilder = ecsCommandTaskHelper.parseYamlAsObject(
         ecsServiceDefinitionManifestContent, CreateServiceRequest.serializableBuilderClass());
     CreateServiceRequest createServiceRequest = createServiceRequestBuilder.build();
+
+    if (StringUtils.isEmpty(createServiceRequest.serviceName())) {
+      throw NestedExceptionUtils.hintWithExplanationException(
+          format(
+              "Please check if ECS service name is configured properly in ECS Service Definition Manifest in Harness Service."),
+          format("ECS service name is not configured properly in ECS Service Definition. It is found to be empty."),
+          new InvalidRequestException("ECS service name is empty."));
+    }
+
     String serviceName = createServiceRequest.serviceName();
 
     prepareRollbackDataLogCallback.saveExecutionLog(
@@ -85,68 +98,17 @@ public class EcsPrepareRollbackCommandTaskHandler extends EcsCommandTaskNGHandle
           format("Fetched Service Definition Details for Service %s", serviceName), LogLevel.INFO);
 
       // Get registerScalableTargetRequestBuilderStrings if present
-      prepareRollbackDataLogCallback.saveExecutionLog(
-          format("Fetching Scalable Target Details for Service %s..", serviceName), LogLevel.INFO);
-      DescribeScalableTargetsResponse describeScalableTargetsResponse =
-          ecsCommandTaskHelper.listScalableTargets(ecsInfraConfig.getAwsConnectorDTO(), ecsInfraConfig.getCluster(),
-              service.serviceName(), ecsInfraConfig.getRegion());
-
-      List<String> registerScalableTargetRequestBuilderStrings = null;
-      if (describeScalableTargetsResponse != null
-          && CollectionUtils.isNotEmpty(describeScalableTargetsResponse.scalableTargets())) {
-        registerScalableTargetRequestBuilderStrings =
-            describeScalableTargetsResponse.scalableTargets()
-                .stream()
-                .map(scalableTarget -> {
-                  try {
-                    return EcsMapper.createRegisterScalableTargetRequestFromScalableTarget(scalableTarget);
-                  } catch (Exception e) {
-                    String message = "Error while creating register scalable target request json from scalable target";
-                    log.error(message);
-                    throw new InvalidRequestException(message, e);
-                  }
-                })
-                .collect(Collectors.toList());
-        prepareRollbackDataLogCallback.saveExecutionLog(
-            format("Fetched Scalable Target Details for Service %s", serviceName), LogLevel.INFO);
-      } else {
-        prepareRollbackDataLogCallback.saveExecutionLog(
-            format("Didn't find Scalable Target Details for Service %s", serviceName), LogLevel.INFO);
-      }
+      List<String> registerScalableTargetRequestBuilderStrings = ecsCommandTaskHelper.getScalableTargetsAsString(
+          prepareRollbackDataLogCallback, serviceName, service, ecsInfraConfig);
 
       // Get putScalingPolicyRequestBuilderStrings if present
-      prepareRollbackDataLogCallback.saveExecutionLog(
-          format("Fetching Scaling Policy Details for Service %s..", serviceName), LogLevel.INFO);
-      DescribeScalingPoliciesResponse describeScalingPoliciesResponse =
-          ecsCommandTaskHelper.listScalingPolicies(ecsInfraConfig.getAwsConnectorDTO(), ecsInfraConfig.getCluster(),
-              service.serviceName(), ecsInfraConfig.getRegion());
-
-      List<String> registerScalingPolicyRequestBuilderStrings = null;
-      if (describeScalingPoliciesResponse != null
-          && CollectionUtils.isNotEmpty(describeScalingPoliciesResponse.scalingPolicies())) {
-        registerScalingPolicyRequestBuilderStrings =
-            describeScalingPoliciesResponse.scalingPolicies()
-                .stream()
-                .map(scalingPolicy -> {
-                  try {
-                    return EcsMapper.createPutScalingPolicyRequestFromScalingPolicy(scalingPolicy);
-                  } catch (JsonProcessingException e) {
-                    String message = "Error while creating put scaling policy request json from scaling policy";
-                    log.error(message);
-                    throw new InvalidRequestException(message, e);
-                  }
-                })
-                .collect(Collectors.toList());
-        prepareRollbackDataLogCallback.saveExecutionLog(
-            format("Fetched Scaling Policy Details for Service %s", serviceName), LogLevel.INFO);
-      } else {
-        prepareRollbackDataLogCallback.saveExecutionLog(
-            format("Didn't find Scaling Policy Details for Service %s", serviceName), LogLevel.INFO);
-      }
+      List<String> registerScalingPolicyRequestBuilderStrings = ecsCommandTaskHelper.getScalingPoliciesAsString(
+          prepareRollbackDataLogCallback, serviceName, service, ecsInfraConfig);
 
       EcsPrepareRollbackDataResult ecsPrepareRollbackDataResult =
           EcsPrepareRollbackDataResult.builder()
               .isFirstDeployment(false)
+              .serviceName(serviceName)
               .createServiceRequestBuilderString(createServiceRequestBuilderString)
               .registerScalableTargetRequestBuilderStrings(registerScalableTargetRequestBuilderStrings)
               .registerScalingPolicyRequestBuilderStrings(registerScalingPolicyRequestBuilderStrings)
@@ -169,7 +131,7 @@ public class EcsPrepareRollbackCommandTaskHandler extends EcsCommandTaskNGHandle
 
       // Send EcsPrepareRollbackDataResult with isFirstDeployment as true
       EcsPrepareRollbackDataResult ecsPrepareRollbackDataResult =
-          EcsPrepareRollbackDataResult.builder().isFirstDeployment(true).build();
+          EcsPrepareRollbackDataResult.builder().isFirstDeployment(true).serviceName(serviceName).build();
 
       return EcsPrepareRollbackDataResponse.builder()
           .ecsPrepareRollbackDataResult(ecsPrepareRollbackDataResult)

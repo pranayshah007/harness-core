@@ -133,7 +133,7 @@ public class JenkinsBuildStepHelperServiceImpl implements JenkinsBuildStepHelper
               .stream()
               .map(s -> TaskSelector.newBuilder().setSelector(s).build())
               .collect(Collectors.toList()),
-          Scope.PROJECT, EnvironmentType.ALL, false, Collections.emptyList());
+          Scope.PROJECT, EnvironmentType.ALL, false, Collections.emptyList(), false, null);
     } else {
       ILogStreamingStepClient logStreamingStepClient =
           logStreamingStepClientFactory.getLogStreamingStepClient(ambiance);

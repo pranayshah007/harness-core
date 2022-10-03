@@ -4,6 +4,7 @@ harness-mongo:
   serverSelectionTimeout: 90000
   maxConnectionIdleTime: 600000
   connectionsPerHost: 50
+  aliasDBName: harness
 events-mongo:
   uri: mongodb://localhost:27017/events
   connectTimeout: 30000
@@ -11,6 +12,7 @@ events-mongo:
   maxConnectionIdleTime: 600000
   connectionsPerHost: 300
   indexManagerMode: AUTO
+  aliasDBName: events
 
 timescaledb:
   timescaledbUrl: "jdbc:postgresql://localhost:5432/harness"

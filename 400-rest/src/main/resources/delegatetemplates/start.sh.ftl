@@ -84,7 +84,9 @@ fi
 
 if [ -s init.sh ]; then
     echo "Starting initialization script for delegate"
+    CURRENT_WORKING_DIRECTORY=$(pwd)
     source ./init.sh
+    cd "$CURRENT_WORKING_DIRECTORY"
     if [ $? -eq 0 ];
     then
       echo "Completed executing initialization script"
@@ -229,12 +231,11 @@ export DELEGATE_TYPE=${delegateType}
 export HOSTNAME
 export CAPSULE_CACHE_DIR="$DIR/.cache"
 
-<#if isJdk11Watcher == "true">
 # Strip JAVA_OPTS that is not recognized by JRE11
 <#noparse>
 WATCHER_JAVA_OPTS=${WATCHER_JAVA_OPTS//UseCGroupMemoryLimitForHeap/UseContainerSupport}
 </#noparse>
-</#if>
+
 if [[ $1 == "upgrade" ]]; then
   echo "Upgrade"
   WATCHER_CURRENT_VERSION=$(jar_app_version watcher.jar)

@@ -23,6 +23,7 @@ import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
 import io.harness.delegate.task.ecs.EcsCommandTypeNG;
 import io.harness.delegate.task.ecs.request.EcsPrepareRollbackDataRequest;
 import io.harness.delegate.task.ecs.request.EcsRollingDeployRequest;
+import io.harness.delegate.task.ecs.request.EcsRollingDeployRequest.EcsRollingDeployRequestBuilder;
 import io.harness.delegate.task.ecs.response.EcsRollingDeployResponse;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.logging.CommandExecutionStatus;
@@ -109,7 +110,7 @@ public class EcsRollingDeployStep extends TaskChainExecutableWithRollbackAndRbac
   @Override
   public TaskChainResponse startChainLinkAfterRbac(
       Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
-    return ecsStepCommonHelper.startChainLink(ambiance, stepParameters, ecsStepHelper);
+    return ecsStepCommonHelper.startChainLink(this, ambiance, stepParameters, ecsStepHelper);
   }
 
   @Override
@@ -124,7 +125,10 @@ public class EcsRollingDeployStep extends TaskChainExecutableWithRollbackAndRbac
     InfrastructureOutcome infrastructureOutcome = executionPassThroughData.getInfrastructure();
     final String accountId = AmbianceUtils.getAccountId(ambiance);
 
-    EcsRollingDeployRequest ecsRollingDeployRequest =
+    EcsRollingDeployStepParameters ecsRollingDeployStepParameters =
+        (EcsRollingDeployStepParameters) stepElementParameters.getSpec();
+
+    EcsRollingDeployRequestBuilder ecsRollingDeployRequestBuilder =
         EcsRollingDeployRequest.builder()
             .accountId(accountId)
             .ecsCommandType(EcsCommandTypeNG.ECS_ROLLING_DEPLOY)
@@ -135,8 +139,18 @@ public class EcsRollingDeployStep extends TaskChainExecutableWithRollbackAndRbac
             .ecsTaskDefinitionManifestContent(ecsStepExecutorParams.getEcsTaskDefinitionManifestContent())
             .ecsServiceDefinitionManifestContent(ecsStepExecutorParams.getEcsServiceDefinitionManifestContent())
             .ecsScalableTargetManifestContentList(ecsStepExecutorParams.getEcsScalableTargetManifestContentList())
-            .ecsScalingPolicyManifestContentList(ecsStepExecutorParams.getEcsScalingPolicyManifestContentList())
-            .build();
+            .ecsScalingPolicyManifestContentList(ecsStepExecutorParams.getEcsScalingPolicyManifestContentList());
+
+    if (ecsRollingDeployStepParameters.getSameAsAlreadyRunningInstances().getValue() != null) {
+      ecsRollingDeployRequestBuilder.sameAsAlreadyRunningInstances(
+          ecsRollingDeployStepParameters.getSameAsAlreadyRunningInstances().getValue().booleanValue());
+    }
+    if (ecsRollingDeployStepParameters.getForceNewDeployment().getValue() != null) {
+      ecsRollingDeployRequestBuilder.forceNewDeployment(
+          ecsRollingDeployStepParameters.getForceNewDeployment().getValue().booleanValue());
+    }
+
+    EcsRollingDeployRequest ecsRollingDeployRequest = ecsRollingDeployRequestBuilder.build();
 
     return ecsStepCommonHelper.queueEcsTask(
         stepElementParameters, ecsRollingDeployRequest, ambiance, executionPassThroughData, true);

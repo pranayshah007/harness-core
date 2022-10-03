@@ -100,7 +100,7 @@ public class YamlSchemaGenerator {
 
   public Map<EntityType, JsonNode> generateYamlSchema() {
     Map<EntityType, JsonNode> schema = new ConcurrentHashMap<>();
-    rootClasses.parallelStream().forEach(rootSchemaClass -> {
+    rootClasses.forEach(rootSchemaClass -> {
       final Map<String, JsonNode> stringJsonNodeMap = generateJsonSchemaForRootClass(
           YamlSchemaConfiguration.builder().build(), swaggerGenerator, rootSchemaClass.getClazz());
       if (stringJsonNodeMap.size() != 1 || stringJsonNodeMap.get(YamlConstants.SCHEMA_FILE_NAME) == null) {

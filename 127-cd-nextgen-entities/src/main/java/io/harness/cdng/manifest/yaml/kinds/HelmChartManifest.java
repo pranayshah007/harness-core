@@ -72,7 +72,6 @@ public class HelmChartManifest implements ManifestAttributes, Visitable {
   @ApiModelProperty(dataType = "io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper")
   @SkipAutoEvaluation
   ParameterField<StoreConfigWrapper> store;
-  // @YamlSchemaTypes({string, bool}) ParameterField<Boolean>
   @Wither @ApiModelProperty(dataType = STRING_CLASSPATH) @SkipAutoEvaluation ParameterField<String> chartName;
   @Wither @ApiModelProperty(dataType = STRING_CLASSPATH) @SkipAutoEvaluation ParameterField<String> chartVersion;
   @Wither HelmVersion helmVersion;

@@ -11,9 +11,11 @@ import static io.harness.annotations.dev.HarnessTeam.CI;
 
 import io.harness.annotation.HarnessEntity;
 import io.harness.annotation.RecasterAlias;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.build.BuildStatusUpdateParameter;
 import io.harness.mongo.index.FdIndex;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
 import io.harness.persistence.PersistentEntity;
 import io.harness.persistence.UuidAware;
@@ -32,6 +34,7 @@ import org.springframework.data.annotation.TypeAlias;
 @Data
 @Builder
 @JsonIgnoreProperties(ignoreUnknown = true)
+@StoreIn(DbAliases.CIMANAGER)
 @Entity(value = "stageDetails")
 @HarnessEntity(exportable = true)
 @TypeAlias("StageDetails")

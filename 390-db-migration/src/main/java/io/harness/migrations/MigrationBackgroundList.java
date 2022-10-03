@@ -132,6 +132,7 @@ import io.harness.migrations.all.SetDefaultTimeOutAndActionForManualIntervention
 import io.harness.migrations.all.SetDummyTechStackForOldAccounts;
 import io.harness.migrations.all.SetEmailToIndividualMemberFlag;
 import io.harness.migrations.all.SetLastLoginTimeToAllUsers;
+import io.harness.migrations.all.SettingAttributesServiceAccountTokenMigration;
 import io.harness.migrations.all.TemplateLibraryYamlMigration;
 import io.harness.migrations.all.TerraformIsTemplatizedMigration;
 import io.harness.migrations.all.TimeSeriesMLScoresTTLMigration;
@@ -398,6 +399,7 @@ public class MigrationBackgroundList {
         .add(Pair.of(231, TimeSeriesRiskSummaryTTLMigration.class))
         .add(Pair.of(232, TimeSeriesMLScoresTTLMigration.class))
         .add(Pair.of(233, ExecuteWorkflowAbortActionMigration.class))
+        .add(Pair.of(234, SettingAttributesServiceAccountTokenMigration.class))
         .build();
   }
 }

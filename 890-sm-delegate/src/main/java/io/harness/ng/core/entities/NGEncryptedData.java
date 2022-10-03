@@ -9,7 +9,7 @@ package io.harness.ng.core.entities;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.MongoIndex;
@@ -41,9 +41,9 @@ import org.springframework.data.annotation.TypeAlias;
 @Builder
 @FieldNameConstants(innerTypeName = "NGEncryptedDataKeys")
 @FieldDefaults(level = AccessLevel.PRIVATE)
+@StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "ngEncryptedRecords", noClassnameStored = true)
 @TypeAlias("ngEncryptedData")
-@StoreIn(DbAliases.NG_MANAGER)
 public class NGEncryptedData implements PersistentEntity, EncryptedRecord {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()

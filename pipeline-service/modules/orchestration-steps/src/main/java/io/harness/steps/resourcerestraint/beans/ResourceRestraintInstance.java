@@ -10,7 +10,7 @@ package io.harness.steps.resourcerestraint.beans;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_NESTS;
 
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.distribution.constraint.Consumer;
 import io.harness.iterator.PersistentRegularIterable;
@@ -45,10 +45,10 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Data
 @Builder
 @FieldNameConstants(innerTypeName = "ResourceRestraintInstanceKeys")
+@StoreIn(DbAliases.PMS)
 @Entity(value = "resourceRestraintInstances")
 @Document("resourceRestraintInstances")
 @TypeAlias("resourceRestraintInstance")
-@StoreIn(DbAliases.PMS)
 public class ResourceRestraintInstance implements PersistentEntity, UuidAccess, PersistentRegularIterable {
   public static final long TTL = 6;
 

@@ -27,6 +27,7 @@ import java.util.concurrent.TimeUnit;
 
 @OwnedBy(CDP)
 public class AzureARMBaseHelperImpl implements AzureResourceCreationBaseHelper {
+  protected static final String EMPTY_JSON = "{}";
   private static final Random rand = new Random();
 
   @Override
@@ -37,8 +38,10 @@ public class AzureARMBaseHelperImpl implements AzureResourceCreationBaseHelper {
         .azureClientContext(azureClientContext)
         .deploymentName(getDeploymentName(deploymentParameters))
         .mode(deploymentParameters.getDeploymentMode())
-        .templateJson(deploymentParameters.getTemplateBody())
-        .parametersJson(deploymentParameters.getParametersBody())
+        .templateJson(deploymentParameters.getTemplateBody().fetchFileContent())
+        .parametersJson(deploymentParameters.getParametersBody() != null
+                ? deploymentParameters.getParametersBody().fetchFileContent()
+                : EMPTY_JSON)
         .logStreamingTaskClient(logCallback)
         .steadyStateTimeoutInMin((int) TimeUnit.MILLISECONDS.toMinutes(deploymentParameters.getTimeoutInMs()))
         .isRollback(deploymentParameters.isRollback()) // I still need to check this part
@@ -73,8 +76,8 @@ public class AzureARMBaseHelperImpl implements AzureResourceCreationBaseHelper {
         .deploymentDataLocation(deploymentParameters.getDeploymentDataLocation())
         .managementGroupId(deploymentParameters.getManagementGroupId())
         .mode(deploymentParameters.getDeploymentMode())
-        .templateJson(deploymentParameters.getTemplateBody())
-        .parametersJson(deploymentParameters.getParametersBody())
+        .templateJson(deploymentParameters.getTemplateBody().fetchFileContent())
+        .parametersJson(deploymentParameters.getParametersBody().fetchFileContent())
         .logStreamingTaskClient(logStreamingTaskClient)
         .steadyStateTimeoutInMin((int) TimeUnit.MILLISECONDS.toMinutes(deploymentParameters.getTimeoutInMs()))
         .build();
@@ -95,7 +98,6 @@ public class AzureARMBaseHelperImpl implements AzureResourceCreationBaseHelper {
     return AzureARMTaskNGResponse.builder()
         .outputs(outputs)
         .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
-        .azureARMPreDeploymentData(AzureARMPreDeploymentData.builder().build())
         .build();
   }
 
@@ -107,8 +109,8 @@ public class AzureARMBaseHelperImpl implements AzureResourceCreationBaseHelper {
         .deploymentName(getDeploymentName(deploymentParameters))
         .deploymentDataLocation(deploymentParameters.getDeploymentDataLocation())
         .mode(deploymentParameters.getDeploymentMode())
-        .templateJson(deploymentParameters.getTemplateBody())
-        .parametersJson(deploymentParameters.getParametersBody())
+        .templateJson(deploymentParameters.getTemplateBody().fetchFileContent())
+        .parametersJson(deploymentParameters.getParametersBody().fetchFileContent())
         .logStreamingTaskClient(logStreamingTaskClient)
         .steadyStateTimeoutInMin((int) TimeUnit.MILLISECONDS.toMinutes(deploymentParameters.getTimeoutInMs()))
         .build();
@@ -123,8 +125,8 @@ public class AzureARMBaseHelperImpl implements AzureResourceCreationBaseHelper {
         .deploymentDataLocation(deploymentParameters.getDeploymentDataLocation())
         .subscriptionId(deploymentParameters.getSubscriptionId())
         .mode(deploymentParameters.getDeploymentMode())
-        .templateJson(deploymentParameters.getTemplateBody())
-        .parametersJson(deploymentParameters.getParametersBody())
+        .templateJson(deploymentParameters.getTemplateBody().fetchFileContent())
+        .parametersJson(deploymentParameters.getParametersBody().fetchFileContent())
         .logStreamingTaskClient(logStreamingTaskClient)
         .steadyStateTimeoutInMin((int) TimeUnit.MILLISECONDS.toMinutes(deploymentParameters.getTimeoutInMs()))
         .build();

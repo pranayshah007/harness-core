@@ -10,7 +10,7 @@ package io.harness.ldap.service.impl;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.beans.NgSetupFields.NG;
 import static io.harness.delegate.beans.NgSetupFields.OWNER;
-import static io.harness.remote.client.RestClientUtils.getResponse;
+import static io.harness.remote.client.CGRestUtils.getResponse;
 
 import static software.wings.beans.TaskType.NG_LDAP_GROUPS_SYNC;
 import static software.wings.beans.TaskType.NG_LDAP_SEARCH_GROUPS;
@@ -62,6 +62,7 @@ import software.wings.beans.dto.LdapSettings;
 import software.wings.beans.sso.LdapGroupResponse;
 import software.wings.beans.sso.LdapSettingsMapper;
 import software.wings.beans.sso.LdapTestResponse;
+import software.wings.helpers.ext.ldap.LdapConstants;
 import software.wings.helpers.ext.ldap.LdapResponse;
 
 import com.google.inject.Inject;
@@ -81,10 +82,10 @@ import retrofit2.Call;
 @Slf4j
 @OwnedBy(HarnessTeam.PL)
 public class NGLdapServiceImpl implements NGLdapService {
-  public static final String UNKNOWN_RESPONSE_FROM_DELEGATE = "Unknown Response from delegate";
   public static final String ISSUE_WITH_LDAP_CONNECTION = "Issue with Ldap Connection";
   public static final String ISSUE_WITH_USER_QUERY_SETTINGS_PROVIDED = "Issue with User Query Settings provided";
   public static final String ISSUE_WITH_GROUP_QUERY_SETTINGS_PROVIDED = "Issue with Group Query Settings provided";
+  public static final String ISSUE_WITH_LDAP_TEST_AUTHENTICATION = "Issue with Ldap Test Authentication";
   private final AuthSettingsManagerClient managerClient;
   private final DelegateGrpcClientWrapper delegateService;
   private final TaskSetupAbstractionHelper taskSetupAbstractionHelper;
@@ -143,19 +144,11 @@ public class NGLdapServiceImpl implements NGLdapService {
   }
 
   private LdapTestResponse getLdapTestResponse(NGLdapDelegateTaskResponse delegateResponseData, String errorMessage) {
-    NGLdapDelegateTaskResponse delegateTaskResponse = delegateResponseData;
-    LdapTestResponse ldapTestResponse = delegateTaskResponse.getLdapTestResponse();
+    LdapTestResponse ldapTestResponse = delegateResponseData.getLdapTestResponse();
 
     String ldapTestResponseMessage = ldapTestResponse.getMessage();
     if (FAILURE == ldapTestResponse.getStatus() && null != ldapTestResponseMessage) {
-      try {
-        LdapErrorHandler.handleError(ResultCode.valueOf(ldapTestResponseMessage), errorMessage);
-      } catch (IllegalArgumentException exception) {
-        log.error("NGLDAP: Received {} error code from Delegate. Check if this case if not handled in Delegate.",
-            ldapTestResponseMessage, exception);
-        throw NestedExceptionUtils.hintWithExplanationException(HintException.LDAP_ATTRIBUTES_INCORRECT,
-            ExplanationException.LDAP_ATTRIBUTES_INCORRECT, new GeneralException(errorMessage));
-      }
+      handleErrorResponseMessageFromDelegate(errorMessage, ldapTestResponseMessage);
     }
     return ldapTestResponse;
   }
@@ -187,11 +180,19 @@ public class NGLdapServiceImpl implements NGLdapService {
 
   @Override
   public void syncUserGroupsJob(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
-    log.info("NGLDAP: Sync user group for NG LDAP starting for account: {}, organization: {}, project: {}",
-        accountIdentifier, orgIdentifier, projectIdentifier);
     LdapSettingsWithEncryptedDataDetail settingsWithEncryptedDataDetail =
         getLdapSettingsWithEncryptedDataInternal(accountIdentifier);
 
+    if (null != settingsWithEncryptedDataDetail && null != settingsWithEncryptedDataDetail.getLdapSettings()
+        && settingsWithEncryptedDataDetail.getLdapSettings().isDisabled()) {
+      log.info(
+          "NGLDAP: Sync user group is disabled for NG LDAP on account: {}, organization: {}, project: {}. Skipping user group sync",
+          accountIdentifier, orgIdentifier, projectIdentifier);
+      return;
+    }
+
+    log.info("NGLDAP: Sync user group for NG LDAP starting for account: {}, organization: {}, project: {}",
+        accountIdentifier, orgIdentifier, projectIdentifier);
     List<UserGroup> userGroupsToSync = userGroupService.getUserGroupsBySsoId(
         accountIdentifier, settingsWithEncryptedDataDetail.getLdapSettings().getUuid());
     Map<UserGroup, LdapGroupResponse> userGroupsToLdapGroupMap = new HashMap<>();
@@ -208,9 +209,16 @@ public class NGLdapServiceImpl implements NGLdapService {
           userGroup.getOrgIdentifier(), userGroup.getProjectIdentifier(), parameters, NG_LDAP_GROUPS_SYNC);
 
       NGLdapGroupSyncTaskResponse groupSearchResponse = (NGLdapGroupSyncTaskResponse) delegateResponseData;
-      log.info("NGLDAP:Received delegate response for syncLdapGroupByDn in NG LDAP for account: {}", accountIdentifier);
+      log.info("NGLDAP: Received delegate response for syncLdapGroupByDn in NG LDAP for group {} in account: {}",
+          userGroup.getIdentifier(), accountIdentifier);
 
-      userGroupsToLdapGroupMap.put(userGroup, groupSearchResponse.getLdapGroupsResponse());
+      if (null != groupSearchResponse.getLdapGroupsResponse()) {
+        userGroupsToLdapGroupMap.put(userGroup, groupSearchResponse.getLdapGroupsResponse());
+      } else {
+        log.error(
+            "NGLDAP: No LDAP group response received in delegate response. Points to some error in delegate task execution for group: {} in account: {}",
+            userGroup, accountIdentifier);
+      }
     }
 
     ngLdapGroupSyncHelper.reconcileAllUserGroups(
@@ -237,7 +245,29 @@ public class NGLdapServiceImpl implements NGLdapService {
     DelegateResponseData delegateResponseData = getDelegateResponseData(
         accountIdentifier, orgIdentifier, projectIdentifier, taskParameters, NG_LDAP_TEST_AUTHENTICATION);
     NGLdapTestAuthenticationTaskResponse authResponse = (NGLdapTestAuthenticationTaskResponse) delegateResponseData;
-    return authResponse.getLdapAuthenticationResponse();
+    LdapResponse ldapAuthTestResponse = authResponse.getLdapAuthenticationResponse();
+    if (null != ldapAuthTestResponse) {
+      final String ldapAuthTestResponseMessage = ldapAuthTestResponse.getMessage();
+      if (LdapResponse.Status.FAILURE == ldapAuthTestResponse.getStatus() && isNotEmpty(ldapAuthTestResponseMessage)) {
+        handleErrorResponseMessageFromDelegate(ISSUE_WITH_LDAP_TEST_AUTHENTICATION, ldapAuthTestResponseMessage);
+      }
+    }
+    return ldapAuthTestResponse;
+  }
+
+  private void handleErrorResponseMessageFromDelegate(String errorMessage, String ldapTestResponseMessage) {
+    try {
+      if (LdapConstants.INVALID_CREDENTIALS.equals(ldapTestResponseMessage)) {
+        LdapErrorHandler.handleError(ResultCode.INVALID_CREDENTIALS, errorMessage, true);
+      } else {
+        LdapErrorHandler.handleError(ResultCode.valueOf(ldapTestResponseMessage), errorMessage, false);
+      }
+    } catch (IllegalArgumentException exception) {
+      log.error("NGLDAP: Received {} error code from Delegate. Check if this case is not handled in Delegate.",
+          ldapTestResponseMessage, exception);
+      throw NestedExceptionUtils.hintWithExplanationException(HintException.LDAP_ATTRIBUTES_INCORRECT,
+          ExplanationException.LDAP_ATTRIBUTES_INCORRECT, new GeneralException(errorMessage));
+    }
   }
 
   private NGLdapDelegateTaskParameters getNgLdapDelegateTaskParameters(
@@ -295,7 +325,7 @@ public class NGLdapServiceImpl implements NGLdapService {
     try {
       delegateResponseData = delegateService.executeSyncTask(delegateTaskRequest);
     } catch (DelegateServiceDriverException ex) {
-      log.error("Error occurred while executing delegate task.", ex);
+      log.error("NGLDAP: Error occurred while executing delegate task.", ex);
       throw buildDelegateNotAvailableHintException(delegateDownErrorMessage);
     }
 

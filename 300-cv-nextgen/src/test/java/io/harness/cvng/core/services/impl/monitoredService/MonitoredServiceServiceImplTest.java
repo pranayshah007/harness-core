@@ -17,6 +17,7 @@ import static io.harness.rule.OwnerRule.DEEPAK_CHHIKARA;
 import static io.harness.rule.OwnerRule.KAMAL;
 import static io.harness.rule.OwnerRule.KANHAIYA;
 import static io.harness.rule.OwnerRule.KAPIL;
+import static io.harness.rule.OwnerRule.KARAN_SARASWAT;
 import static io.harness.rule.OwnerRule.NAVEEN;
 import static io.harness.rule.OwnerRule.PRAVEEN;
 import static io.harness.rule.OwnerRule.SOWMYA;
@@ -53,6 +54,7 @@ import io.harness.cvng.beans.cvnglog.ExecutionLogDTO;
 import io.harness.cvng.beans.cvnglog.ExecutionLogDTO.LogLevel;
 import io.harness.cvng.beans.cvnglog.TraceableType;
 import io.harness.cvng.client.FakeNotificationClient;
+import io.harness.cvng.core.beans.HealthMonitoringFlagResponse;
 import io.harness.cvng.core.beans.HealthSourceMetricDefinition.AnalysisDTO;
 import io.harness.cvng.core.beans.HealthSourceMetricDefinition.AnalysisDTO.DeploymentVerificationDTO;
 import io.harness.cvng.core.beans.HealthSourceMetricDefinition.AnalysisDTO.LiveMonitoringDTO;
@@ -1152,16 +1154,14 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
   }
 
   @Test
-  @Owner(developers = KANHAIYA)
+  @Owner(developers = KARAN_SARASWAT)
   @Category(UnitTests.class)
-  public void testUpdate_monitoredServiceEnabled() {
+  public void testSetHealthMonitoringFlag_monitoredServiceEnabled() {
     MonitoredServiceDTO monitoredServiceDTO = createMonitoredServiceDTO();
     monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
-    monitoredServiceDTO.setEnabled(true);
-    MonitoredServiceDTO savedMonitoredServiceDTO =
-        monitoredServiceService.update(builderFactory.getContext().getAccountId(), monitoredServiceDTO)
-            .getMonitoredServiceDTO();
-    assertThat(savedMonitoredServiceDTO.isEnabled()).isTrue();
+    HealthMonitoringFlagResponse healthMonitoringFlagResponse = monitoredServiceService.setHealthMonitoringFlag(
+        builderFactory.getProjectParams(), monitoredServiceDTO.getIdentifier(), true);
+    assertThat(healthMonitoringFlagResponse.isHealthMonitoringEnabled()).isTrue();
   }
 
   @Test

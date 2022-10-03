@@ -42,6 +42,7 @@ java_library(
         "//200-functional-test/src/test/resources:resource",
     ] + ["//:resource"] + [
         "//260-delegate:module_deploy",
+        "//315-sto-manager:module_deploy.jar",
         "//332-ci-manager/app:module_deploy.jar",
         "//350-event-server:module_deploy.jar",
         "//360-cg-manager:module_deploy.jar",

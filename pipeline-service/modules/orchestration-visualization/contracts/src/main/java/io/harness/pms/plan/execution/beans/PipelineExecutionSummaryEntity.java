@@ -10,8 +10,8 @@ package io.harness.pms.plan.execution.beans;
 import static java.time.Duration.ofDays;
 
 import io.harness.annotation.HarnessEntity;
-import io.harness.annotation.StoreIn;
 import io.harness.annotations.ChangeDataCapture;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.validator.Trimmed;
@@ -73,6 +73,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Builder
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldNameConstants(innerTypeName = "PlanExecutionSummaryKeys")
+@StoreIn(DbAliases.PMS)
 @Entity(value = "planExecutionsSummary", noClassnameStored = true)
 @Document("planExecutionsSummary")
 @TypeAlias("planExecutionsSummary")
@@ -83,7 +84,6 @@ import org.springframework.data.mongodb.core.mapping.Document;
     handler = "PipelineExecutionSummaryEntityCD")
 @ChangeDataCapture(table = "service_infra_info", dataStore = "pms-harness", fields = {},
     handler = "PipelineExecutionSummaryEntityServiceAndInfra")
-@StoreIn(DbAliases.PMS)
 public class PipelineExecutionSummaryEntity implements PersistentEntity, UuidAware, CreatedAtAware, UpdatedAtAware {
   public static final Duration TTL = ofDays(183);
   public static final long TTL_MONTHS = 6;

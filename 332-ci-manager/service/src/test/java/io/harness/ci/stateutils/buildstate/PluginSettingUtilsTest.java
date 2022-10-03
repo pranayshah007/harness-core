@@ -35,6 +35,7 @@ import static org.mockito.Mockito.when;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.plugin.compatible.PluginCompatibleStep;
+import io.harness.beans.steps.stepinfo.ACRStepInfo;
 import io.harness.beans.steps.stepinfo.DockerStepInfo;
 import io.harness.beans.steps.stepinfo.ECRStepInfo;
 import io.harness.beans.steps.stepinfo.GCRStepInfo;
@@ -142,6 +143,38 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
     Ambiance ambiance = Ambiance.newBuilder().build();
     Map<String, String> actual =
         pluginSettingUtils.getPluginCompatibleEnvVariables(gcrStepInfo, "identifier", 100, ambiance, Type.K8);
+    assertThat(actual).isEqualTo(expected);
+  }
+
+  @Test
+  @Owner(developers = ALEKSANDAR)
+  @Category(UnitTests.class)
+  public void shouldGetACRStepInfoEnvVariables() {
+    ACRStepInfo acrStepInfo =
+        ACRStepInfo.builder()
+            .repository(ParameterField.createValueField("repo.acr.com/test1"))
+            .tags(ParameterField.createValueField(asList("tag1", "tag2")))
+            .dockerfile(ParameterField.createValueField("Dockerfile"))
+            .context(ParameterField.createValueField("context"))
+            .target(ParameterField.createValueField("target"))
+            .buildArgs(ParameterField.createValueField(Collections.singletonMap("arg1", "value1")))
+            .labels(ParameterField.createValueField(Collections.singletonMap("label", "label1")))
+            .build();
+
+    Map<String, String> expected = new HashMap<>();
+    expected.put("PLUGIN_REPO", "repo.acr.com/test1");
+    expected.put("PLUGIN_REGISTRY", "repo.acr.com");
+    expected.put("PLUGIN_TAGS", "tag1,tag2");
+    expected.put("PLUGIN_DOCKERFILE", "Dockerfile");
+    expected.put("PLUGIN_CONTEXT", "context");
+    expected.put("PLUGIN_TARGET", "target");
+    expected.put("PLUGIN_BUILD_ARGS", "arg1=value1");
+    expected.put("PLUGIN_CUSTOM_LABELS", "label=label1");
+    expected.put("PLUGIN_SNAPSHOT_MODE", "redo");
+    expected.put("PLUGIN_ARTIFACT_FILE", "/addon/tmp/.plugin/artifact");
+    Ambiance ambiance = Ambiance.newBuilder().build();
+    Map<String, String> actual =
+        pluginSettingUtils.getPluginCompatibleEnvVariables(acrStepInfo, "identifier", 100, ambiance, Type.K8);
     assertThat(actual).isEqualTo(expected);
   }
 

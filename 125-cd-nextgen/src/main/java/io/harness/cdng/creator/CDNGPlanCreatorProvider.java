@@ -7,6 +7,48 @@
 
 package io.harness.cdng.creator;
 
+import static io.harness.cdng.manifest.ManifestType.EcsScalingPolicyDefinition;
+import static io.harness.cdng.manifest.ManifestType.EcsTaskDefinition;
+import static io.harness.cdng.manifest.ManifestType.ServerlessAwsLambda;
+import static io.harness.cdng.visitor.YamlTypes.APPLICATION_SETTINGS;
+import static io.harness.cdng.visitor.YamlTypes.ARTIFACTS;
+import static io.harness.cdng.visitor.YamlTypes.CONFIG_FILE;
+import static io.harness.cdng.visitor.YamlTypes.CONFIG_FILES;
+import static io.harness.cdng.visitor.YamlTypes.CONNECTION_STRINGS;
+import static io.harness.cdng.visitor.YamlTypes.ENVIRONMENT_GROUP_YAML;
+import static io.harness.cdng.visitor.YamlTypes.ENVIRONMENT_YAML;
+import static io.harness.cdng.visitor.YamlTypes.K8S_MANIFEST;
+import static io.harness.cdng.visitor.YamlTypes.MANIFEST_CONFIG;
+import static io.harness.cdng.visitor.YamlTypes.MANIFEST_LIST_CONFIG;
+import static io.harness.cdng.visitor.YamlTypes.PRIMARY;
+import static io.harness.cdng.visitor.YamlTypes.ROLLBACK_STEPS;
+import static io.harness.cdng.visitor.YamlTypes.SERVICE_CONFIG;
+import static io.harness.cdng.visitor.YamlTypes.SERVICE_DEFINITION;
+import static io.harness.cdng.visitor.YamlTypes.SERVICE_ENTITY;
+import static io.harness.cdng.visitor.YamlTypes.SIDECAR;
+import static io.harness.cdng.visitor.YamlTypes.SIDECARS;
+import static io.harness.cdng.visitor.YamlTypes.SPEC;
+import static io.harness.cdng.visitor.YamlTypes.STARTUP_COMMAND;
+import static io.harness.cdng.visitor.YamlTypes.STEPS;
+import static io.harness.cdng.visitor.YamlTypes.STEP_GROUP;
+import static io.harness.cdng.visitor.YamlTypes.STRATEGY;
+import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.ACR_NAME;
+import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.AMAZON_S3_NAME;
+import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.ARTIFACTORY_REGISTRY_NAME;
+import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.CUSTOM_ARTIFACT_NAME;
+import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.DOCKER_REGISTRY_NAME;
+import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.ECR_NAME;
+import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.GCR_NAME;
+import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.GITHUB_PACKAGES_NAME;
+import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.GOOGLE_ARTIFACT_REGISTRY_NAME;
+import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.JENKINS_NAME;
+import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.NEXUS2_REGISTRY_NAME;
+import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.NEXUS3_REGISTRY_NAME;
+import static io.harness.ng.core.k8s.ServiceSpecType.AZURE_WEBAPP;
+import static io.harness.ng.core.k8s.ServiceSpecType.CUSTOM_DEPLOYMENT;
+import static io.harness.ng.core.k8s.ServiceSpecType.ECS;
+import static io.harness.ng.core.k8s.ServiceSpecType.KUBERNETES;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
@@ -15,6 +57,7 @@ import io.harness.cdng.azure.webapp.variablecreator.AzureWebAppSlotDeploymentSte
 import io.harness.cdng.azure.webapp.variablecreator.AzureWebAppSwapSlotStepVariableCreator;
 import io.harness.cdng.azure.webapp.variablecreator.AzureWebAppTrafficShiftStepVariableCreator;
 import io.harness.cdng.creator.filters.DeploymentStageFilterJsonCreatorV2;
+import io.harness.cdng.creator.plan.CDStepGroupPmsPlanCreator;
 import io.harness.cdng.creator.plan.CDStepsPlanCreator;
 import io.harness.cdng.creator.plan.artifact.ArtifactsPlanCreator;
 import io.harness.cdng.creator.plan.artifact.PrimaryArtifactPlanCreator;
@@ -38,12 +81,14 @@ import io.harness.cdng.creator.plan.stage.DeploymentStagePMSPlanCreatorV2;
 import io.harness.cdng.creator.plan.steps.AzureARMRollbackResourceStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.AzureCreateARMResourceStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.AzureCreateBPResourceStepPlanCreator;
+import io.harness.cdng.creator.plan.steps.CDPMSCommandStepFilterJsonCreator;
 import io.harness.cdng.creator.plan.steps.CDPMSStepFilterJsonCreator;
 import io.harness.cdng.creator.plan.steps.CDPMSStepFilterJsonCreatorV2;
 import io.harness.cdng.creator.plan.steps.CloudformationCreateStackStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.CloudformationDeleteStackStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.CloudformationRollbackStackStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.CommandStepPlanCreator;
+import io.harness.cdng.creator.plan.steps.FetchInstanceScriptStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.GitOpsCreatePRStepPlanCreatorV2;
 import io.harness.cdng.creator.plan.steps.GitOpsMergePRStepPlanCreatorV2;
 import io.harness.cdng.creator.plan.steps.HelmDeployStepPlanCreatorV2;
@@ -57,6 +102,7 @@ import io.harness.cdng.creator.plan.steps.K8sDeleteStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.K8sRollingRollbackStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.K8sRollingStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.K8sScaleStepPlanCreator;
+import io.harness.cdng.creator.plan.steps.ShellScriptProvisionStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.TerraformApplyStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.TerraformDestroyStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.TerraformPlanStepPlanCreator;
@@ -65,6 +111,9 @@ import io.harness.cdng.creator.plan.steps.azure.webapp.AzureWebAppRollbackStepPl
 import io.harness.cdng.creator.plan.steps.azure.webapp.AzureWebAppSlotDeploymentStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.azure.webapp.AzureWebAppSlotSwapSlotPlanCreator;
 import io.harness.cdng.creator.plan.steps.azure.webapp.AzureWebAppTrafficShiftStepPlanCreator;
+import io.harness.cdng.creator.plan.steps.ecs.EcsBlueGreenCreateServiceStepPlanCreator;
+import io.harness.cdng.creator.plan.steps.ecs.EcsBlueGreenRollbackStepPlanCreator;
+import io.harness.cdng.creator.plan.steps.ecs.EcsBlueGreenSwapTargetGroupsStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.ecs.EcsCanaryDeleteStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.ecs.EcsCanaryDeployStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.ecs.EcsRollingDeployStepPlanCreator;
@@ -73,6 +122,9 @@ import io.harness.cdng.creator.plan.steps.serverless.ServerlessAwsLambdaDeploySt
 import io.harness.cdng.creator.plan.steps.serverless.ServerlessAwsLambdaRollbackStepPlanCreator;
 import io.harness.cdng.creator.variables.CommandStepVariableCreator;
 import io.harness.cdng.creator.variables.DeploymentStageVariableCreator;
+import io.harness.cdng.creator.variables.EcsBlueGreenCreateServiceStepVariableCreator;
+import io.harness.cdng.creator.variables.EcsBlueGreenRollbackStepVariableCreator;
+import io.harness.cdng.creator.variables.EcsBlueGreenSwapTargetGroupsStepVariableCreator;
 import io.harness.cdng.creator.variables.EcsCanaryDeleteStepVariableCreator;
 import io.harness.cdng.creator.variables.EcsCanaryDeployStepVariableCreator;
 import io.harness.cdng.creator.variables.EcsRollingDeployStepVariableCreator;
@@ -92,57 +144,99 @@ import io.harness.cdng.creator.variables.K8sRollingStepVariableCreator;
 import io.harness.cdng.creator.variables.K8sScaleStepVariableCreator;
 import io.harness.cdng.creator.variables.ServerlessAwsLambdaDeployStepVariableCreator;
 import io.harness.cdng.creator.variables.ServerlessAwsLambdaRollbackStepVariableCreator;
+import io.harness.cdng.customDeployment.variablecreator.FetchInstanceScriptStepVariableCreator;
 import io.harness.cdng.jenkins.jenkinsstep.JenkinsBuildStepVariableCreator;
 import io.harness.cdng.jenkins.jenkinsstep.JenkinsCreateStepPlanCreator;
+import io.harness.cdng.manifest.ManifestType;
 import io.harness.cdng.provision.azure.variablecreator.AzureARMRollbackStepVariableCreator;
 import io.harness.cdng.provision.azure.variablecreator.AzureCreateARMResourceStepVariableCreator;
 import io.harness.cdng.provision.azure.variablecreator.AzureCreateBPStepVariableCreator;
 import io.harness.cdng.provision.cloudformation.variablecreator.CloudformationCreateStepVariableCreator;
 import io.harness.cdng.provision.cloudformation.variablecreator.CloudformationDeleteStepVariableCreator;
 import io.harness.cdng.provision.cloudformation.variablecreator.CloudformationRollbackStepVariableCreator;
+import io.harness.cdng.provision.shellscript.ShellScriptProvisionStepVariableCreator;
 import io.harness.cdng.provision.terraform.variablecreator.TerraformApplyStepVariableCreator;
 import io.harness.cdng.provision.terraform.variablecreator.TerraformDestroyStepVariableCreator;
 import io.harness.cdng.provision.terraform.variablecreator.TerraformPlanStepVariableCreator;
 import io.harness.cdng.provision.terraform.variablecreator.TerraformRollbackStepVariableCreator;
+import io.harness.cdng.visitor.YamlTypes;
+import io.harness.delegate.beans.DelegateType;
 import io.harness.enforcement.constants.FeatureRestrictionName;
 import io.harness.executions.steps.StepSpecTypeConstants;
+import io.harness.filters.EmptyAnyFilterJsonCreator;
+import io.harness.filters.EmptyFilterJsonCreator;
 import io.harness.filters.ExecutionPMSFilterJsonCreator;
 import io.harness.filters.ParallelGenericFilterJsonCreator;
 import io.harness.filters.StepGroupPmsFilterJsonCreator;
+import io.harness.ng.core.k8s.ServiceSpecType;
 import io.harness.plancreator.stages.parallel.ParallelPlanCreator;
 import io.harness.plancreator.steps.SpecNodePlanCreator;
-import io.harness.plancreator.steps.StepGroupPMSPlanCreator;
 import io.harness.plancreator.strategy.StrategyConfigPlanCreator;
 import io.harness.pms.contracts.steps.StepInfo;
 import io.harness.pms.contracts.steps.StepMetaData;
 import io.harness.pms.sdk.core.pipeline.filters.FilterJsonCreator;
 import io.harness.pms.sdk.core.plan.creation.creators.PartialPlanCreator;
 import io.harness.pms.sdk.core.plan.creation.creators.PipelineServiceInfoProvider;
+import io.harness.pms.sdk.core.variables.EmptyAnyVariableCreator;
+import io.harness.pms.sdk.core.variables.EmptyVariableCreator;
 import io.harness.pms.sdk.core.variables.StrategyVariableCreator;
 import io.harness.pms.sdk.core.variables.VariableCreator;
 import io.harness.pms.utils.InjectorUtils;
+import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.variables.ExecutionVariableCreator;
 
+import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 
 @OwnedBy(HarnessTeam.CDC)
 @Singleton
 public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
   private static final String TERRAFORM_STEP_METADATA = "Terraform";
-  private static final List<String> CLOUDFORMATION_CATEGORY =
-      Arrays.asList("Kubernetes", "Provisioner", "Cloudformation", "Helm");
   private static final String CLOUDFORMATION_STEP_METADATA = "Cloudformation";
-  private static final List<String> TERRAFORM_CATEGORY = Arrays.asList("Kubernetes", "Provisioner", "Helm");
+  private static final String AZURE = "Azure";
+  private static final String HELM = "Helm";
+  private static final String PROVISIONER = "Provisioner";
+  private static final String SHELL_SCRIPT_PROVISIONER_STEM_METADATA = "Shell Script Provisioner";
+  private static final String SSH_WINRM = "SshWinRM";
+
+  private static final List<String> CLOUDFORMATION_CATEGORY =
+      Arrays.asList(KUBERNETES, PROVISIONER, CLOUDFORMATION_STEP_METADATA, HELM, ECS, SSH_WINRM);
+  private static final List<String> TERRAFORM_CATEGORY = Arrays.asList(KUBERNETES, PROVISIONER, HELM, ECS, SSH_WINRM);
   private static final String BUILD_STEP = "Builds";
 
   private static final List<String> AZURE_RESOURCE_CATEGORY =
-      Arrays.asList("Kubernetes", "Provisioner", "Azure", "Helm", "AzureWebApp");
-  private static final String AZURE_RESOURCE_STEP_METADATA = "AzureProvisioner";
+      Arrays.asList(KUBERNETES, PROVISIONER, AZURE, HELM, AZURE_WEBAPP);
+  private static final String AZURE_RESOURCE_STEP_METADATA = "Azure Provisioner";
+
+  private static final List<String> SHELL_SCRIPT_PROVISIONER_CATEGORY =
+      Arrays.asList(KUBERNETES, PROVISIONER, HELM, AZURE_WEBAPP, ECS);
+
+  private static final Set<String> EMPTY_FILTER_IDENTIFIERS = Sets.newHashSet(SIDECARS, SPEC, SERVICE_CONFIG,
+      CONFIG_FILE, STARTUP_COMMAND, APPLICATION_SETTINGS, ARTIFACTS, ROLLBACK_STEPS, CONNECTION_STRINGS, STEPS,
+      CONFIG_FILES, ENVIRONMENT_GROUP_YAML, SERVICE_ENTITY, MANIFEST_LIST_CONFIG, STRATEGY, STEP_GROUP);
+  private static final Set<String> EMPTY_SIDECAR_TYPES = Sets.newHashSet(CUSTOM_ARTIFACT_NAME, JENKINS_NAME,
+      DOCKER_REGISTRY_NAME, ACR_NAME, AMAZON_S3_NAME, ARTIFACTORY_REGISTRY_NAME, ECR_NAME,
+      GOOGLE_ARTIFACT_REGISTRY_NAME, GCR_NAME, NEXUS3_REGISTRY_NAME, GITHUB_PACKAGES_NAME);
+  private static final Set<String> EMPTY_MANIFEST_TYPES = Sets.newHashSet(EcsTaskDefinition, ServerlessAwsLambda,
+      EcsScalingPolicyDefinition, K8S_MANIFEST, ManifestType.VALUES, ManifestType.KustomizePatches,
+      ManifestType.EcsScalableTargetDefinition, ManifestType.Kustomize, ManifestType.EcsServiceDefinition, CONFIG_FILES,
+      ManifestType.HelmChart, ManifestType.ReleaseRepo, ManifestType.OpenshiftTemplate, ManifestType.OpenshiftParam);
+  private static final Set<String> EMPTY_ENVIRONMENT_TYPES =
+      Sets.newHashSet(YamlTypes.ENV_PRODUCTION, YamlTypes.ENV_PRE_PRODUCTION);
+  private static final Set<String> EMPTY_PRIMARY_TYPES = Sets.newHashSet(CUSTOM_ARTIFACT_NAME, JENKINS_NAME,
+      DOCKER_REGISTRY_NAME, ACR_NAME, AMAZON_S3_NAME, ARTIFACTORY_REGISTRY_NAME, ECR_NAME,
+      GOOGLE_ARTIFACT_REGISTRY_NAME, GCR_NAME, NEXUS3_REGISTRY_NAME, NEXUS2_REGISTRY_NAME, GITHUB_PACKAGES_NAME);
+  private static final Set<String> EMPTY_SERVICE_DEFINITION_TYPES =
+      Sets.newHashSet(ManifestType.ServerlessAwsLambda, DelegateType.ECS, ServiceSpecType.NATIVE_HELM,
+          ServiceSpecType.SSH, AZURE_WEBAPP, ServiceSpecType.WINRM, KUBERNETES, CUSTOM_DEPLOYMENT);
+
   @Inject InjectorUtils injectorUtils;
   @Inject DeploymentStageVariableCreator deploymentStageVariableCreator;
 
@@ -163,6 +257,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     planCreators.add(new K8sBGSwapServicesStepPlanCreator());
     planCreators.add(new K8sCanaryDeleteStepPlanCreator());
     planCreators.add(new TerraformApplyStepPlanCreator());
+    planCreators.add(new FetchInstanceScriptStepPlanCreator());
     planCreators.add(new TerraformPlanStepPlanCreator());
     planCreators.add(new TerraformDestroyStepPlanCreator());
     planCreators.add(new TerraformRollbackStepPlanCreator());
@@ -181,7 +276,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     planCreators.add(new ManifestsPlanCreator());
     planCreators.add(new IndividualManifestPlanCreator());
     planCreators.add(new CDStepsPlanCreator());
-    planCreators.add(new StepGroupPMSPlanCreator());
+    planCreators.add(new CDStepGroupPmsPlanCreator());
     planCreators.add(new ParallelPlanCreator());
     planCreators.add(new ServerlessAwsLambdaDeployStepPlanCreator());
     planCreators.add(new ServerlessAwsLambdaRollbackStepPlanCreator());
@@ -206,11 +301,15 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     planCreators.add(new EcsRollingRollbackStepPlanCreator());
     planCreators.add(new EcsCanaryDeployStepPlanCreator());
     planCreators.add(new EcsCanaryDeleteStepPlanCreator());
+    planCreators.add(new EcsBlueGreenCreateServiceStepPlanCreator());
+    planCreators.add(new EcsBlueGreenSwapTargetGroupsStepPlanCreator());
+    planCreators.add(new EcsBlueGreenRollbackStepPlanCreator());
 
     planCreators.add(new AzureCreateARMResourceStepPlanCreator());
     planCreators.add(new AzureCreateBPResourceStepPlanCreator());
 
     planCreators.add(new AzureARMRollbackResourceStepPlanCreator());
+    planCreators.add(new ShellScriptProvisionStepPlanCreator());
     injectorUtils.injectMembers(planCreators);
     return planCreators;
   }
@@ -224,6 +323,13 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     filterJsonCreators.add(new ExecutionPMSFilterJsonCreator());
     filterJsonCreators.add(new ParallelGenericFilterJsonCreator());
     filterJsonCreators.add(new StepGroupPmsFilterJsonCreator());
+    filterJsonCreators.add(new CDPMSCommandStepFilterJsonCreator());
+    filterJsonCreators.add(new EmptyAnyFilterJsonCreator(EMPTY_FILTER_IDENTIFIERS));
+    filterJsonCreators.add(new EmptyFilterJsonCreator(SIDECAR, EMPTY_SIDECAR_TYPES));
+    filterJsonCreators.add(new EmptyFilterJsonCreator(MANIFEST_CONFIG, EMPTY_MANIFEST_TYPES));
+    filterJsonCreators.add(new EmptyFilterJsonCreator(ENVIRONMENT_YAML, EMPTY_ENVIRONMENT_TYPES));
+    filterJsonCreators.add(new EmptyFilterJsonCreator(PRIMARY, EMPTY_PRIMARY_TYPES));
+    filterJsonCreators.add(new EmptyFilterJsonCreator(SERVICE_DEFINITION, EMPTY_SERVICE_DEFINITION_TYPES));
     injectorUtils.injectMembers(filterJsonCreators);
 
     return filterJsonCreators;
@@ -231,7 +337,16 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
 
   @Override
   public List<VariableCreator> getVariableCreators() {
+    Set<String> emptyVariableIdentifiers = new HashSet<>(EMPTY_FILTER_IDENTIFIERS);
+    emptyVariableIdentifiers.add(YAMLFieldNameConstants.PARALLEL);
+
     List<VariableCreator> variableCreators = new ArrayList<>();
+    variableCreators.add(new EmptyAnyVariableCreator(emptyVariableIdentifiers));
+    variableCreators.add(new EmptyVariableCreator(SIDECAR, EMPTY_SIDECAR_TYPES));
+    variableCreators.add(new EmptyVariableCreator(MANIFEST_CONFIG, EMPTY_MANIFEST_TYPES));
+    variableCreators.add(new EmptyVariableCreator(ENVIRONMENT_YAML, EMPTY_ENVIRONMENT_TYPES));
+    variableCreators.add(new EmptyVariableCreator(PRIMARY, EMPTY_PRIMARY_TYPES));
+    variableCreators.add(new EmptyVariableCreator(SERVICE_DEFINITION, EMPTY_SERVICE_DEFINITION_TYPES));
     variableCreators.add(new GitOpsCreatePRStepVariableCreator());
     variableCreators.add(new GitOpsMergePRStepVariableCreator());
     variableCreators.add(deploymentStageVariableCreator);
@@ -261,6 +376,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     variableCreators.add(new AzureWebAppTrafficShiftStepVariableCreator());
     variableCreators.add(new AzureWebAppSwapSlotStepVariableCreator());
     variableCreators.add(new AzureWebAppRollbackStepVariableCreator());
+    variableCreators.add(new FetchInstanceScriptStepVariableCreator());
     variableCreators.add(new JenkinsBuildStepVariableCreator());
     variableCreators.add(new StrategyVariableCreator());
     // ECS
@@ -268,10 +384,14 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     variableCreators.add(new EcsRollingRollbackStepVariableCreator());
     variableCreators.add(new EcsCanaryDeployStepVariableCreator());
     variableCreators.add(new EcsCanaryDeleteStepVariableCreator());
+    variableCreators.add(new EcsBlueGreenCreateServiceStepVariableCreator());
+    variableCreators.add(new EcsBlueGreenSwapTargetGroupsStepVariableCreator());
+    variableCreators.add(new EcsBlueGreenRollbackStepVariableCreator());
 
     variableCreators.add(new AzureCreateARMResourceStepVariableCreator());
     variableCreators.add(new AzureCreateBPStepVariableCreator());
     variableCreators.add(new AzureARMRollbackStepVariableCreator());
+    variableCreators.add(new ShellScriptProvisionStepVariableCreator());
     return variableCreators;
   }
 
@@ -427,7 +547,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setType(StepSpecTypeConstants.COMMAND)
             .setFeatureRestrictionName(FeatureRestrictionName.COMMAND.name())
             .setFeatureFlag(FeatureName.SSH_NG.name())
-            .setStepMetaData(StepMetaData.newBuilder().addCategory("SshWinRM").addFolderPaths("SSH or WinRM").build())
+            .setStepMetaData(StepMetaData.newBuilder().addCategory(SSH_WINRM).addFolderPaths("SSH or WinRM").build())
             .build();
 
     StepInfo serverlessDeploy =
@@ -474,6 +594,30 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
         StepInfo.newBuilder()
             .setName("Ecs Canary Delete")
             .setType(StepSpecTypeConstants.ECS_CANARY_DELETE)
+            .setStepMetaData(StepMetaData.newBuilder().addCategory("ECS").setFolderPath("ECS").build())
+            .setFeatureFlag(FeatureName.ECS_NG.name())
+            .build();
+
+    StepInfo ecsBlueGreenCreateService =
+        StepInfo.newBuilder()
+            .setName("Ecs Blue Green Create Service")
+            .setType(StepSpecTypeConstants.ECS_BLUE_GREEN_CREATE_SERVICE)
+            .setStepMetaData(StepMetaData.newBuilder().addCategory("ECS").setFolderPath("ECS").build())
+            .setFeatureFlag(FeatureName.ECS_NG.name())
+            .build();
+
+    StepInfo ecsBlueGreenSwapTargetGroups =
+        StepInfo.newBuilder()
+            .setName("Ecs Blue Green Swap Target Groups")
+            .setType(StepSpecTypeConstants.ECS_BLUE_GREEN_SWAP_TARGET_GROUPS)
+            .setStepMetaData(StepMetaData.newBuilder().addCategory("ECS").setFolderPath("ECS").build())
+            .setFeatureFlag(FeatureName.ECS_NG.name())
+            .build();
+
+    StepInfo ecsBlueGreenRollback =
+        StepInfo.newBuilder()
+            .setName("Ecs Blue Green Rollback")
+            .setType(StepSpecTypeConstants.ECS_BLUE_GREEN_ROLLBACK)
             .setStepMetaData(StepMetaData.newBuilder().addCategory("ECS").setFolderPath("ECS").build())
             .setFeatureFlag(FeatureName.ECS_NG.name())
             .build();
@@ -589,6 +733,26 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setFeatureFlag(FeatureName.AZURE_ARM_BP_NG.name())
             .build();
 
+    StepInfo fetchInstanceScript =
+        StepInfo.newBuilder()
+            .setName("Fetch Instance Script")
+            .setType(StepSpecTypeConstants.CUSTOM_DEPLOYMENT_FETCH_INSTANCE_SCRIPT)
+            .setStepMetaData(
+                StepMetaData.newBuilder().addCategory("CustomDeployment").addFolderPaths("CustomDeployment").build())
+            .setFeatureFlag(FeatureName.NG_DEPLOYMENT_TEMPLATE.name())
+            .build();
+
+    StepInfo shellScriptProvision = StepInfo.newBuilder()
+                                        .setName("Shell Script Provision")
+                                        .setType(StepSpecTypeConstants.SHELL_SCRIPT_PROVISION)
+                                        .setFeatureRestrictionName(FeatureRestrictionName.SHELL_SCRIPT_PROVISION.name())
+                                        .setStepMetaData(StepMetaData.newBuilder()
+                                                             .addAllCategory(SHELL_SCRIPT_PROVISIONER_CATEGORY)
+                                                             .addFolderPaths(SHELL_SCRIPT_PROVISIONER_STEM_METADATA)
+                                                             .build())
+                                        .setFeatureFlag(FeatureName.SHELL_SCRIPT_PROVISION_NG.name())
+                                        .build();
+
     List<StepInfo> stepInfos = new ArrayList<>();
 
     stepInfos.add(gitOpsCreatePR);
@@ -626,6 +790,11 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     stepInfos.add(azureCreateARMResources);
     stepInfos.add(azureCreateBPResources);
     stepInfos.add(azureARMRollback);
+    stepInfos.add(fetchInstanceScript);
+    stepInfos.add(ecsBlueGreenCreateService);
+    stepInfos.add(ecsBlueGreenSwapTargetGroups);
+    stepInfos.add(ecsBlueGreenRollback);
+    stepInfos.add(shellScriptProvision);
     return stepInfos;
   }
 }

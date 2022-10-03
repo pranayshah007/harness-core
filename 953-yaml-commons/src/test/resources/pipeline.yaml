@@ -426,3 +426,76 @@ pipeline:
                         scriptType: BASH
                         scriptString: |
                           echo 'I should be executed during rollback'
+
+    - stage:
+        identifier: prodStage2
+        name: "prod stage2"
+        type: Deployment
+        strategy:
+          repeat:
+            times: 2
+        spec:
+          service:
+            identifier: manager
+            serviceDefinition:
+              type: Kubernetes
+              spec:
+                artifacts:
+                  primary:
+                    type: Dockerhub
+                    spec:
+                      connectorRef: "https://registry.hub.docker.com/"
+                      imagePath: "library/nginx"
+                      tag: "1.18"
+                manifests:   # {k8Manifest |  valuesOverride | pcfManifest |  HelmSourceRepo | HelmSourceRepo | Kustomize | openShift}
+                  - manifest:
+                      identifier: baseValues
+                      type: K8sManifest
+                      spec:
+                        store:
+                          type: Git
+                          spec:
+                            connectorRef: BBPSsTiCQ3OnD87_SHrSmw
+                            gitFetchType: Branch
+                            branch: master
+                            paths:
+                              - test/spec
+            stageOverrides:
+              manifests:   # {k8Manifest |  valuesOverride | pcfManifest |  HelmSourceRepo | HelmSourceRepo | Kustomize | openShift}
+                - manifest:
+                    identifier: prodOverride
+                    type: Values
+                    spec:
+                      store:
+                        type: Git
+                        spec:
+                          connectorRef: BBPSsTiCQ3OnD87_SHrSmw
+                          gitFetchType: Branch
+                          branch: master
+                          paths:
+                            - test/prod/values.yaml
+          infrastructure:
+            environment:
+              name:
+              identifier: stagingInfra
+              type: PreProduction
+              tags:
+                - key: cloud
+                  value: AWS
+                - key: team
+                  value: cdp
+            infrastructureDefinition:
+              type: KubernetesDirect
+              spec:
+                connectorRef: 2JrX8ESYSTWbhBTPBu7slQ
+                namespace: default
+                releaseName: vaibhav
+          execution:
+            steps:
+              - step:
+                  name: "Rollout Deployment"
+                  identifier: rolloutDeployment
+                  type: K8sRollingDeploy
+                  spec:
+                    timeout: 120000
+                    skipDryRun: false

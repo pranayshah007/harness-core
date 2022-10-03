@@ -105,7 +105,7 @@ public class PauseStateTest extends WingsBaseTest {
     WorkflowStandardParams workflowStandardParams = new WorkflowStandardParams();
 
     WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService =
-        spy(new WorkflowStandardParamsExtensionService(null, accountService, null, null, null, null));
+        spy(new WorkflowStandardParamsExtensionService(null, accountService, null, null, null, null, null));
     when(workflowStandardParamsExtensionService.getApp(workflowStandardParams))
         .thenReturn(anApplication().accountId(ACCOUNT_ID).uuid(APP_ID).build());
     when(workflowStandardParamsExtensionService.getEnv(workflowStandardParams))

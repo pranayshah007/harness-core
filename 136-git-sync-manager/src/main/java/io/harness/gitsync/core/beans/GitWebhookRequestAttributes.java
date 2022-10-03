@@ -9,7 +9,9 @@ package io.harness.gitsync.core.beans;
 
 import static io.harness.annotations.dev.HarnessTeam.DX;
 
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.ng.DbAliases;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -28,6 +30,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @AllArgsConstructor
 @ToString(exclude = {"webhookBody", "webhookHeaders"})
 @EqualsAndHashCode(callSuper = false)
+@StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "gitWebhookRequestAttributesNG", noClassnameStored = true)
 @Document("gitWebhookRequestAttributesNG")
 @TypeAlias("io.harness.gitsync.core.beans.gitWebhookRequestAttributes")

@@ -7,7 +7,7 @@
 
 package io.harness.cdng.creator.plan.environment;
 
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -15,7 +15,6 @@ import io.harness.cdng.envGroup.yaml.EnvGroupPlanCreatorConfig;
 import io.harness.cdng.environment.steps.EnvironmentStepParameters;
 import io.harness.cdng.environment.yaml.EnvironmentPlanCreatorConfig;
 import io.harness.data.structure.CollectionUtils;
-import io.harness.data.structure.EmptyPredicate;
 import io.harness.ng.core.envGroup.EnvironmentGroupOutcome;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.yaml.NGEnvironmentConfig;
@@ -25,10 +24,11 @@ import io.harness.steps.environment.EnvironmentOutcome;
 import io.harness.yaml.core.variables.NGVariable;
 import io.harness.yaml.utils.NGVariablesUtils;
 
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import lombok.NonNull;
 import lombok.experimental.UtilityClass;
 import org.apache.commons.lang3.StringUtils;
 
@@ -38,11 +38,11 @@ public class EnvironmentMapper {
   public EnvironmentStepParameters toEnvironmentStepParameters(
       EnvironmentPlanCreatorConfig environmentPlanCreatorConfig) {
     Map<String, Object> serviceOverrides = new HashMap<>();
-    if (environmentPlanCreatorConfig.getServiceOverrides() != null
-        && isNotEmpty(environmentPlanCreatorConfig.getServiceOverrides().getVariables())) {
-      serviceOverrides =
-          NGVariablesUtils.getMapOfVariables(environmentPlanCreatorConfig.getServiceOverrides().getVariables());
+    if (areSvcOverrideVariablesPresent(environmentPlanCreatorConfig)) {
+      serviceOverrides = NGVariablesUtils.getMapOfVariables(
+          environmentPlanCreatorConfig.getServiceOverrideConfig().getServiceOverrideInfoConfig().getVariables());
     }
+
     return EnvironmentStepParameters.builder()
         .environmentRef(environmentPlanCreatorConfig.getEnvironmentRef())
         .name(environmentPlanCreatorConfig.getName())
@@ -53,6 +53,13 @@ public class EnvironmentMapper {
         .serviceOverrides(serviceOverrides)
         .variables(NGVariablesUtils.getMapOfVariables(environmentPlanCreatorConfig.getVariables()))
         .build();
+  }
+
+  private boolean areSvcOverrideVariablesPresent(EnvironmentPlanCreatorConfig environmentPlanCreatorConfig) {
+    return environmentPlanCreatorConfig != null && environmentPlanCreatorConfig.getServiceOverrideConfig() != null
+        && environmentPlanCreatorConfig.getServiceOverrideConfig().getServiceOverrideInfoConfig() != null
+        && environmentPlanCreatorConfig.getServiceOverrideConfig().getServiceOverrideInfoConfig().getVariables()
+        != null;
   }
 
   public EnvironmentStepParameters toEnvironmentStepParameters(EnvGroupPlanCreatorConfig envGroupPlanCreatorConfig) {
@@ -84,13 +91,14 @@ public class EnvironmentMapper {
     }
   }
 
-  private Map<String, Object> overrideVariables(List<NGVariable> variables1, List<NGVariable> variables2) {
-    if (EmptyPredicate.isNotEmpty(variables1) && EmptyPredicate.isNotEmpty(variables2)) {
-      Map<String, Object> v1 = NGVariablesUtils.getMapOfVariables(variables1);
-      v1.putAll(NGVariablesUtils.getMapOfVariables(variables2));
-      return v1;
+  private Map<String, Object> overrideVariables(List<NGVariable> base, List<NGVariable> override) {
+    if (isEmpty(base)) {
+      return NGVariablesUtils.getMapOfVariables(override);
     }
-    return Collections.emptyMap();
+
+    final Map<String, Object> v1 = NGVariablesUtils.getMapOfVariables(base);
+    v1.putAll(NGVariablesUtils.getMapOfVariables(override));
+    return v1;
   }
 
   public EnvironmentGroupOutcome toEnvironmentGroupOutcome(EnvironmentStepParameters stepParameters) {
@@ -102,11 +110,13 @@ public class EnvironmentMapper {
         .build();
   }
 
-  public static EnvironmentOutcome toEnvironmentOutcome(
-      Environment environment, NGEnvironmentConfig ngEnvironmentConfig, NGServiceOverrideConfig ngServiceOverrides) {
+  public EnvironmentOutcome toEnvironmentOutcome(Environment environment,
+      @NonNull NGEnvironmentConfig ngEnvironmentConfig, @NonNull NGServiceOverrideConfig ngServiceOverrides) {
+    List<NGVariable> svcOverrideVariables = ngServiceOverrides.getServiceOverrideInfoConfig() == null
+        ? new ArrayList<>()
+        : ngServiceOverrides.getServiceOverrideInfoConfig().getVariables();
     final Map<String, Object> variables =
-        overrideVariables(ngServiceOverrides.getServiceOverrideInfoConfig().getVariables(),
-            ngEnvironmentConfig.getNgEnvironmentInfoConfig().getVariables());
+        overrideVariables(ngEnvironmentConfig.getNgEnvironmentInfoConfig().getVariables(), svcOverrideVariables);
     return EnvironmentOutcome.builder()
         .identifier(environment.getIdentifier())
         .name(StringUtils.defaultIfBlank(environment.getName(), ""))

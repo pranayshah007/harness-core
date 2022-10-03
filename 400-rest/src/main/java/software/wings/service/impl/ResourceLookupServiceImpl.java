@@ -49,6 +49,7 @@ import static java.util.Collections.emptyList;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
+import io.harness.beans.FeatureName;
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
 import io.harness.beans.SearchFilter;
@@ -250,7 +251,7 @@ public class ResourceLookupServiceImpl implements ResourceLookupService {
                    .build());
       }
     } catch (Exception e) {
-      log.warn("Failing to create ResourceLookupEntry for Record: {}", record);
+      log.warn("Failing to create ResourceLookupEntry for Record: {}", record, e);
     }
   }
 
@@ -267,7 +268,7 @@ public class ResourceLookupServiceImpl implements ResourceLookupService {
                    .build());
       }
     } catch (Exception e) {
-      log.warn("Failing to create ResourceLookupEntry for Record: {}", record);
+      log.warn("Failing to create ResourceLookupEntry for Record: {}", record, e);
     }
   }
 
@@ -293,7 +294,7 @@ public class ResourceLookupServiceImpl implements ResourceLookupService {
         }
       }
     } catch (Exception e) {
-      log.warn("Failing to create ResourceLookupEntry for Record: " + record);
+      log.warn("Failing to create ResourceLookupEntry for Record: " + record, e);
     }
   }
 
@@ -420,6 +421,13 @@ public class ResourceLookupServiceImpl implements ResourceLookupService {
 
         List<String> resourceIds = response.stream().map(ResourceLookup::getResourceId).collect(Collectors.toList());
         request.addFilter("_id", IN, resourceIds.toArray());
+      }
+    }
+
+    if (isBlank(request.getLimit())) {
+      String accountId = getAccountIdFromPageRequest(request);
+      if (isNotBlank(accountId) && featureFlagService.isEnabled(FeatureName.SPG_2K_DEFAULT_PAGE_SIZE, accountId)) {
+        request.setLimit(PageRequest.LIMIT_2K_PAGE_SIZE);
       }
     }
 

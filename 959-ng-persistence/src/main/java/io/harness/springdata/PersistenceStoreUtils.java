@@ -10,8 +10,8 @@ package io.harness.springdata;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
-import io.harness.annotation.StoreIn;
-import io.harness.annotation.StoreInMultiple;
+import io.harness.annotations.StoreIn;
+import io.harness.annotations.StoreInMultiple;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ng.DbAliases;

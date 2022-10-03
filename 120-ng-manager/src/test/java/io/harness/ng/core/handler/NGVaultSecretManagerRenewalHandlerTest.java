@@ -114,6 +114,20 @@ public class NGVaultSecretManagerRenewalHandlerTest extends CategoryTest {
     verify(ngVaultService, times(0)).renewAppRoleClientToken(any());
   }
 
+  @Test
+  @Owner(developers = VIKAS_M)
+  @Category(UnitTests.class)
+  public void testRenewal_forSoftDeletedVault_shouldNotHappen() {
+    VaultConnector vaultConnector = getVaultConnectorWithAccessType(AccessType.TOKEN);
+    vaultConnector.setAccountIdentifier("sampleAccount");
+    vaultConnector.setRenewedAt(System.currentTimeMillis() - Duration.ofMinutes(15L).toMillis());
+    vaultConnector.setDeleted(true);
+    when(mongoTemplate.findById(any(), any())).thenReturn(vaultConnector);
+    vaultSecretManagerRenewalHandler.handle(vaultConnector);
+    verify(ngVaultService, times(0)).renewToken(vaultConnector);
+    verify(ngVaultService, times(0)).renewAppRoleClientToken(any());
+  }
+
   private VaultConnector getAppRoleBasedVault() {
     return VaultConnector.builder()
         .accessType(AccessType.APP_ROLE)

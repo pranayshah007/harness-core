@@ -26,6 +26,7 @@ import org.springframework.data.annotation.TypeAlias;
 @JsonTypeName("ecsRollingRollbackDataOutcome")
 @RecasterAlias("io.harness.cdng.ecs.EcsRollingRollbackDataOutcome")
 public class EcsRollingRollbackDataOutcome implements Outcome, ExecutionSweepingOutput {
+  String serviceName;
   String createServiceRequestBuilderString;
   List<String> registerScalableTargetRequestBuilderStrings;
   List<String> registerScalingPolicyRequestBuilderStrings;

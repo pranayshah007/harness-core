@@ -24,9 +24,14 @@ import org.ldaptive.ResultCode;
 @Slf4j
 @OwnedBy(PL)
 public class LdapErrorHandler {
-  public void handleError(ResultCode resultCode, String errorMessage) throws WingsException {
+  public void handleError(ResultCode resultCode, String errorMessage, boolean isLdapAuthenticationCase)
+      throws WingsException {
     switch (resultCode) {
       case INVALID_CREDENTIALS:
+        if (isLdapAuthenticationCase) {
+          throw NestedExceptionUtils.hintWithExplanationException(HintException.CHECK_LDAP_AUTH_CREDENTIALS,
+              ExplanationException.INVALID_LDAP_AUTH_EMAIL_PWD, new GeneralException(errorMessage));
+        }
         throw NestedExceptionUtils.hintWithExplanationException(HintException.CHECK_LDAP_CONNECTION,
             ExplanationException.INVALID_LDAP_CREDENTIALS, new GeneralException(errorMessage));
       case INAPPROPRIATE_MATCHING:

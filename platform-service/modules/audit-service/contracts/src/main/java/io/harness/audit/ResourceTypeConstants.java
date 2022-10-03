@@ -45,9 +45,9 @@ public class ResourceTypeConstants {
   public static final String VARIABLE = "VARIABLE";
   public static final String CHAOS_HUB = "CHAOS_HUB";
   public static final String MONITORED_SERVICE = "MONITORED_SERVICE";
-  public static final String CHAOS_AGENT = "CHAOS_AGENT";
+  public static final String CHAOS_DELEGATE = "CHAOS_DELEGATE";
   public static final String CHAOS_GITOPS = "CHAOS_GITOPS";
-  public static final String CHAOS_WORKFLOW = "CHAOS_WORKFLOW";
+  public static final String CHAOS_SCENARIO = "CHAOS_SCENARIO";
   public static final String SERVICE_LEVEL_OBJECTIVE = "SERVICE_LEVEL_OBJECTIVE";
   public static final String STO_TARGET = "STO_TARGET";
   public static final String STO_EXEMPTION = "STO_EXEMPTION";

@@ -1,6 +1,13 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.cdng.infra.steps;
 
-import static io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants.INFRA_TASK_EXECUTABLE_STEP_V2;
+import static io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants.INFRA_TASK_EXECUTABLE_STEP_OUTPUT;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -17,12 +24,16 @@ import static software.wings.beans.LogHelper.color;
 import static java.lang.String.format;
 
 import io.harness.cdng.CDStepHelper;
+import io.harness.cdng.customdeploymentng.CustomDeploymentInfrastructureHelper;
 import io.harness.cdng.execution.ExecutionInfoKey;
 import io.harness.cdng.execution.helper.ExecutionInfoKeyMapper;
 import io.harness.cdng.execution.helper.StageExecutionHelper;
 import io.harness.cdng.infra.InfrastructureMapper;
+import io.harness.cdng.infra.InfrastructureValidator;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
+import io.harness.cdng.infra.beans.SshWinRmAwsInfrastructureOutcome;
 import io.harness.cdng.infra.yaml.AzureWebAppInfrastructure;
+import io.harness.cdng.infra.yaml.CustomDeploymentInfrastructure;
 import io.harness.cdng.infra.yaml.Infrastructure;
 import io.harness.cdng.infra.yaml.K8SDirectInfrastructure;
 import io.harness.cdng.infra.yaml.K8sAzureInfrastructure;
@@ -35,6 +46,7 @@ import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.cdng.service.steps.ServiceStepOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.connector.ConnectorInfoDTO;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.structure.HarnessStringUtils;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.TaskData;
@@ -67,6 +79,7 @@ import io.harness.logging.LogLevel;
 import io.harness.logging.UnitProgress;
 import io.harness.logging.UnitStatus;
 import io.harness.logstreaming.NGLogCallback;
+import io.harness.ng.core.NGAccess;
 import io.harness.ng.core.infrastructure.InfrastructureKind;
 import io.harness.ng.core.k8s.ServiceSpecType;
 import io.harness.plancreator.steps.TaskSelectorYaml;
@@ -77,6 +90,7 @@ import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.pms.contracts.execution.failure.FailureType;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.contracts.steps.StepCategory;
+import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
@@ -92,7 +106,7 @@ import io.harness.steps.environment.EnvironmentOutcome;
 import io.harness.steps.shellscript.HostsOutput;
 import io.harness.steps.shellscript.SshInfraDelegateConfigOutput;
 import io.harness.steps.shellscript.WinRmInfraDelegateConfigOutput;
-import io.harness.supplier.ThrowingSupplier;
+import io.harness.yaml.infra.HostConnectionTypeKind;
 
 import software.wings.beans.TaskType;
 import software.wings.service.impl.aws.model.AwsEC2Instance;
@@ -112,8 +126,9 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 abstract class AbstractInfrastructureTaskExecutableStep {
+  public static final String LOG_SUFFIX = "Execute";
   private static final String DEFAULT_TIMEOUT = "10m";
-  private static final long DEFAULT_START_TIME_INTERVAL = 10 * 60 * 1000L;
+  protected static final long DEFAULT_START_TIME_INTERVAL = 10 * 60 * 1000L;
   @Inject protected InfrastructureStepHelper infrastructureStepHelper;
   @Inject protected OutcomeService outcomeService;
   @Inject protected CDStepHelper cdStepHelper;
@@ -121,12 +136,22 @@ abstract class AbstractInfrastructureTaskExecutableStep {
   @Inject protected KryoSerializer kryoSerializer;
   @Inject protected StepHelper stepHelper;
   @Inject protected StageExecutionHelper stageExecutionHelper;
+  @Inject protected InfrastructureMapper infrastructureMapper;
+  @Inject CustomDeploymentInfrastructureHelper customDeploymentInfrastructureHelper;
+  @Inject private InfrastructureValidator infrastructureValidator;
 
   @Data
   @AllArgsConstructor
   protected static class OutcomeSet {
     private ServiceStepOutcome serviceStepOutcome;
     private EnvironmentOutcome environmentOutcome;
+  }
+  @Data
+  @AllArgsConstructor
+  protected static class TaskRequestData {
+    private TaskRequest taskRequest;
+    private TaskData taskData;
+    private List<TaskSelectorYaml> taskSelectorYamls;
   }
 
   protected OutcomeSet fetchRequiredOutcomes(Ambiance ambiance) {
@@ -137,26 +162,32 @@ abstract class AbstractInfrastructureTaskExecutableStep {
     return new OutcomeSet(serviceOutcome, environmentOutcome);
   }
 
-  protected TaskRequest obtainTaskInternal(
-      Ambiance ambiance, Infrastructure infrastructureSpec, NGLogCallback logCallback) {
+  protected TaskRequestData obtainTaskInternal(
+      Ambiance ambiance, Infrastructure infrastructure, NGLogCallback logCallback, Boolean addRcStep) {
     saveExecutionLog(logCallback, "Starting infrastructure step...");
 
-    validateConnector(infrastructureSpec, ambiance);
-    validateInfrastructure(infrastructureSpec);
+    validateConnector(infrastructure, ambiance);
+    validateInfrastructure(infrastructure);
 
     saveExecutionLog(logCallback, "Fetching environment information...");
     final OutcomeSet outcomeSet = fetchRequiredOutcomes(ambiance);
     final EnvironmentOutcome environmentOutcome = outcomeSet.getEnvironmentOutcome();
     final ServiceStepOutcome serviceOutcome = outcomeSet.getServiceStepOutcome();
+    NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
+
+    infrastructureValidator.validate(infrastructure);
+
     final InfrastructureOutcome infrastructureOutcome =
-        InfrastructureMapper.toOutcome(infrastructureSpec, environmentOutcome, serviceOutcome);
+        infrastructureMapper.toOutcome(infrastructure, environmentOutcome, serviceOutcome,
+            ngAccess.getAccountIdentifier(), ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier());
 
     // save infrastructure sweeping output for further use within the step
-    boolean skipInstances = infrastructureStepHelper.getSkipInstances(infrastructureSpec);
-    executionSweepingOutputService.consume(ambiance, INFRA_TASK_EXECUTABLE_STEP_V2,
+    boolean skipInstances = infrastructureStepHelper.getSkipInstances(infrastructure);
+    executionSweepingOutputService.consume(ambiance, INFRA_TASK_EXECUTABLE_STEP_OUTPUT,
         InfrastructureTaskExecutableStepSweepingOutput.builder()
             .infrastructureOutcome(infrastructureOutcome)
             .skipInstances(skipInstances)
+            .addRcStep(addRcStep != null && addRcStep)
             .build(),
         "");
 
@@ -183,8 +214,8 @@ abstract class AbstractInfrastructureTaskExecutableStep {
   }
 
   protected StepResponse handleTaskResult(Ambiance ambiance,
-      InfrastructureTaskExecutableStepSweepingOutput stepSweepingOutput,
-      ThrowingSupplier<DelegateResponseData> responseDataSupplier, NGLogCallback logCallback) throws Exception {
+      InfrastructureTaskExecutableStepSweepingOutput stepSweepingOutput, DelegateResponseData responseData,
+      NGLogCallback logCallback) {
     log.info("Handling Task Result With Security Context for the Infrastructure Step");
     long startTime = System.currentTimeMillis() - DEFAULT_START_TIME_INTERVAL;
 
@@ -192,14 +223,6 @@ abstract class AbstractInfrastructureTaskExecutableStep {
     final ExecutionInfoKey executionInfoKey =
         ExecutionInfoKeyMapper.getExecutionInfoKey(ambiance, outcomeSet.getEnvironmentOutcome(),
             outcomeSet.getServiceStepOutcome(), stepSweepingOutput.getInfrastructureOutcome());
-
-    DelegateResponseData responseData;
-    try {
-      responseData = responseDataSupplier.get();
-    } catch (Exception ex) {
-      log.error("Error while processing Infrastructure Step response: {}", ex.getMessage(), ex);
-      return handleTaskException(startTime, ex, logCallback);
-    }
 
     boolean skipInstances = stepSweepingOutput.isSkipInstances();
     if (responseData instanceof AzureHostsResponse) {
@@ -215,8 +238,8 @@ abstract class AbstractInfrastructureTaskExecutableStep {
   }
 
   protected InfrastructureTaskExecutableStepSweepingOutput fetchInfraStepOutputOrThrow(Ambiance ambiance) {
-    OptionalSweepingOutput output = executionSweepingOutputService.resolveOptional(
-        ambiance, RefObjectUtils.getSweepingOutputRefObject(OutcomeExpressionConstants.INFRA_TASK_EXECUTABLE_STEP_V2));
+    OptionalSweepingOutput output = executionSweepingOutputService.resolveOptional(ambiance,
+        RefObjectUtils.getSweepingOutputRefObject(OutcomeExpressionConstants.INFRA_TASK_EXECUTABLE_STEP_OUTPUT));
     if (!output.isFound()) {
       throw new InvalidRequestException("Infrastructure could not be resolved");
     }
@@ -262,7 +285,7 @@ abstract class AbstractInfrastructureTaskExecutableStep {
       NGLogCallback logCallback, InfrastructureOutcome infrastructureOutcome, ExecutionInfoKey executionInfoKey,
       long startTime) {
     Set<String> hostNames =
-        azureHostsResponse.getHosts().stream().map(AzureHostResponse::getPublicAddress).collect(Collectors.toSet());
+        azureHostsResponse.getHosts().stream().map(AzureHostResponse::getAddress).collect(Collectors.toSet());
     if (isEmpty(hostNames)) {
       saveExecutionLogSafely(logCallback,
           color("No host(s) found for specified infrastructure or filter did not match any instance(s)", Red));
@@ -285,7 +308,7 @@ abstract class AbstractInfrastructureTaskExecutableStep {
       ExecutionInfoKey executionInfoKey, long startTime) {
     Set<String> hostNames = awsListEC2InstancesTaskResponse.getInstances()
                                 .stream()
-                                .map(AwsEC2Instance::getPublicDnsName)
+                                .map(awsEC2Instance -> mapToAddress(awsEC2Instance, infrastructureOutcome))
                                 .collect(Collectors.toSet());
     if (isEmpty(hostNames)) {
       saveExecutionLogSafely(logCallback,
@@ -302,6 +325,25 @@ abstract class AbstractInfrastructureTaskExecutableStep {
         HostsOutput.builder().hosts(filteredHosts).build(), StepCategory.STAGE.name());
 
     return buildSuccessStepResponse(ambiance, infrastructureOutcome, logCallback, executionInfoKey, startTime);
+  }
+
+  private String mapToAddress(AwsEC2Instance awsEC2Instance, InfrastructureOutcome infrastructureOutcome) {
+    if (!(infrastructureOutcome instanceof SshWinRmAwsInfrastructureOutcome)) {
+      throw new InvalidRequestException(
+          format("Not supported infrastructure kind : [%s]", infrastructureOutcome.getKind()));
+    }
+    final String hostConnectionType =
+        ((SshWinRmAwsInfrastructureOutcome) infrastructureOutcome).getHostConnectionType();
+
+    if (HostConnectionTypeKind.PUBLIC_IP.equals(hostConnectionType)
+        && EmptyPredicate.isNotEmpty(awsEC2Instance.getPublicIp())) {
+      return awsEC2Instance.getPublicIp();
+    } else if (HostConnectionTypeKind.PRIVATE_IP.equals(hostConnectionType)
+        && EmptyPredicate.isNotEmpty(awsEC2Instance.getPrivateIp())) {
+      return awsEC2Instance.getPrivateIp();
+    } else {
+      return awsEC2Instance.getHostname(); // default
+    }
   }
 
   StepResponse handleTaskException(long startTime, Exception e, NGLogCallback logCallback) throws Exception {
@@ -343,7 +385,7 @@ abstract class AbstractInfrastructureTaskExecutableStep {
         .build();
   }
 
-  StepResponse buildFailureStepResponse(long startTime, String message, NGLogCallback logCallback) {
+  protected StepResponse buildFailureStepResponse(long startTime, String message, NGLogCallback logCallback) {
     if (logCallback != null) {
       logCallback.saveExecutionLog(
           color("Infrastructure step failed", Red), LogLevel.INFO, CommandExecutionStatus.FAILURE);
@@ -369,7 +411,7 @@ abstract class AbstractInfrastructureTaskExecutableStep {
         .build();
   }
 
-  private TaskRequest getTaskRequest(
+  private TaskRequestData getTaskRequest(
       Ambiance ambiance, ServiceStepOutcome serviceOutcome, InfrastructureOutcome infrastructureOutcome) {
     if (ServiceDefinitionType.SSH.name()
             .toLowerCase(Locale.ROOT)
@@ -384,7 +426,7 @@ abstract class AbstractInfrastructureTaskExecutableStep {
         format("Service type %s not supported for following infrastructure step", serviceOutcome.getType()));
   }
 
-  TaskRequest buildSshTaskRequest(Ambiance ambiance, InfrastructureOutcome infrastructureOutcome) {
+  TaskRequestData buildSshTaskRequest(Ambiance ambiance, InfrastructureOutcome infrastructureOutcome) {
     SshInfraDelegateConfig sshInfraDelegateConfig =
         publishSshInfraDelegateConfigOutput(infrastructureOutcome, ambiance);
 
@@ -400,7 +442,7 @@ abstract class AbstractInfrastructureTaskExecutableStep {
     }
   }
 
-  TaskRequest buildWinRmTaskRequest(Ambiance ambiance, InfrastructureOutcome infrastructureOutcome) {
+  TaskRequestData buildWinRmTaskRequest(Ambiance ambiance, InfrastructureOutcome infrastructureOutcome) {
     WinRmInfraDelegateConfig winRmInfraDelegateConfig =
         publishWinRmInfraDelegateConfigOutput(infrastructureOutcome, ambiance);
 
@@ -416,13 +458,12 @@ abstract class AbstractInfrastructureTaskExecutableStep {
     }
   }
 
-  TaskRequest buildAzureTaskRequest(Ambiance ambiance, AzureInfraDelegateConfig azureInfraDelegateConfig) {
+  TaskRequestData buildAzureTaskRequest(Ambiance ambiance, AzureInfraDelegateConfig azureInfraDelegateConfig) {
     Map<AzureAdditionalParams, String> additionalParams = new HashMap<>();
     additionalParams.put(AzureAdditionalParams.SUBSCRIPTION_ID, azureInfraDelegateConfig.getSubscriptionId());
     additionalParams.put(AzureAdditionalParams.RESOURCE_GROUP, azureInfraDelegateConfig.getResourceGroup());
     additionalParams.put(AzureAdditionalParams.OS_TYPE, azureInfraDelegateConfig.getOsType());
-    additionalParams.put(
-        AzureAdditionalParams.USE_PUBLIC_DNS, Boolean.toString(azureInfraDelegateConfig.isUsePublicDns()));
+    additionalParams.put(AzureAdditionalParams.HOST_CONNECTION_TYPE, azureInfraDelegateConfig.getHostConnectionType());
 
     Map<String, Object> params = new HashMap<>();
     params.put("tags", azureInfraDelegateConfig.getTags());
@@ -444,18 +485,19 @@ abstract class AbstractInfrastructureTaskExecutableStep {
             .parameters(new Object[] {azureTaskParamsTaskParams})
             .build();
 
-    List<TaskSelectorYaml> taskSelectorYamlList = azureInfraDelegateConfig.getAzureConnectorDTO()
-                                                      .getDelegateSelectors()
-                                                      .stream()
-                                                      .map(delegateSelector -> new TaskSelectorYaml(delegateSelector))
-                                                      .collect(Collectors.toList());
+    List<TaskSelectorYaml> taskSelectorYamlList =
+        emptyIfNull(azureInfraDelegateConfig.getAzureConnectorDTO().getDelegateSelectors())
+            .stream()
+            .map(TaskSelectorYaml::new)
+            .collect(Collectors.toList());
 
-    return StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer, Collections.singletonList("Execute"),
-        taskData.getTaskType(), TaskSelectorYaml.toTaskSelector(emptyIfNull(taskSelectorYamlList)),
-        stepHelper.getEnvironmentType(ambiance));
+    TaskRequest taskRequest = StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
+        Collections.singletonList("Execute"), taskData.getTaskType(),
+        TaskSelectorYaml.toTaskSelector(emptyIfNull(taskSelectorYamlList)), stepHelper.getEnvironmentType(ambiance));
+    return new TaskRequestData(taskRequest, taskData, taskSelectorYamlList);
   }
 
-  TaskRequest buildAwsTaskRequest(Ambiance ambiance, AwsInfraDelegateConfig awsInfraDelegateConfig) {
+  TaskRequestData buildAwsTaskRequest(Ambiance ambiance, AwsInfraDelegateConfig awsInfraDelegateConfig) {
     boolean isWinRm = awsInfraDelegateConfig instanceof AwsWinrmInfraDelegateConfig;
     final AwsTaskParams awsTaskParams;
 
@@ -493,9 +535,11 @@ abstract class AbstractInfrastructureTaskExecutableStep {
                                                       .map(delegateSelector -> new TaskSelectorYaml(delegateSelector))
                                                       .collect(Collectors.toList());
 
-    return StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer, Collections.singletonList("Execute"),
-        taskData.getTaskType(), TaskSelectorYaml.toTaskSelector(emptyIfNull(taskSelectorYamlList)),
-        stepHelper.getEnvironmentType(ambiance));
+    TaskRequest taskRequest = StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
+        Collections.singletonList("Execute"), taskData.getTaskType(),
+        TaskSelectorYaml.toTaskSelector(emptyIfNull(taskSelectorYamlList)), stepHelper.getEnvironmentType(ambiance));
+
+    return new TaskRequestData(taskRequest, taskData, taskSelectorYamlList);
   }
 
   SshInfraDelegateConfig publishSshInfraDelegateConfigOutput(
@@ -537,7 +581,8 @@ abstract class AbstractInfrastructureTaskExecutableStep {
       case SSH_WINRM_AWS:
         SshWinRmAwsInfrastructure sshWinRmAwsInfrastructure = (SshWinRmAwsInfrastructure) infrastructure;
         infrastructureStepHelper.validateExpression(sshWinRmAwsInfrastructure.getConnectorRef(),
-            sshWinRmAwsInfrastructure.getCredentialsRef(), sshWinRmAwsInfrastructure.getRegion());
+            sshWinRmAwsInfrastructure.getCredentialsRef(), sshWinRmAwsInfrastructure.getRegion(),
+            sshWinRmAwsInfrastructure.getHostConnectionType());
         break;
       default:
         throw new UnsupportedOperationException(
@@ -558,43 +603,43 @@ abstract class AbstractInfrastructureTaskExecutableStep {
       return;
     }
 
-    ConnectorInfoDTO connectorInfo =
-        infrastructureStepHelper.validateAndGetConnector(infrastructure.getConnectorReference(), ambiance, logCallback);
+    List<ConnectorInfoDTO> connectorInfo = infrastructureStepHelper.validateAndGetConnectors(
+        infrastructure.getConnectorReferences(), ambiance, logCallback);
 
     if (InfrastructureKind.KUBERNETES_GCP.equals(infrastructure.getKind())) {
-      if (!(connectorInfo.getConnectorConfig() instanceof GcpConnectorDTO)) {
+      if (!(connectorInfo.get(0).getConnectorConfig() instanceof GcpConnectorDTO)) {
         throw new InvalidRequestException(format("Invalid connector type [%s] for identifier: [%s], expected [%s]",
-            connectorInfo.getConnectorType().name(), infrastructure.getConnectorReference().getValue(),
+            connectorInfo.get(0).getConnectorType().name(), infrastructure.getConnectorReference().getValue(),
             ConnectorType.GCP.name()));
       }
     }
 
     if (InfrastructureKind.SERVERLESS_AWS_LAMBDA.equals(infrastructure.getKind())) {
-      if (!(connectorInfo.getConnectorConfig() instanceof AwsConnectorDTO)) {
+      if (!(connectorInfo.get(0).getConnectorConfig() instanceof AwsConnectorDTO)) {
         throw new InvalidRequestException(format("Invalid connector type [%s] for identifier: [%s], expected [%s]",
-            connectorInfo.getConnectorType().name(), infrastructure.getConnectorReference().getValue(),
+            connectorInfo.get(0).getConnectorType().name(), infrastructure.getConnectorReference().getValue(),
             ConnectorType.AWS.name()));
       }
     }
 
     if (InfrastructureKind.KUBERNETES_AZURE.equals(infrastructure.getKind())
-        && !(connectorInfo.getConnectorConfig() instanceof AzureConnectorDTO)) {
+        && !(connectorInfo.get(0).getConnectorConfig() instanceof AzureConnectorDTO)) {
       throw new InvalidRequestException(format("Invalid connector type [%s] for identifier: [%s], expected [%s]",
-          connectorInfo.getConnectorType().name(), infrastructure.getConnectorReference().getValue(),
+          connectorInfo.get(0).getConnectorType().name(), infrastructure.getConnectorReference().getValue(),
           ConnectorType.AZURE.name()));
     }
 
     if (InfrastructureKind.SSH_WINRM_AZURE.equals(infrastructure.getKind())
-        && !(connectorInfo.getConnectorConfig() instanceof AzureConnectorDTO)) {
+        && !(connectorInfo.get(0).getConnectorConfig() instanceof AzureConnectorDTO)) {
       throw new InvalidRequestException(format("Invalid connector type [%s] for identifier: [%s], expected [%s]",
-          connectorInfo.getConnectorType().name(), infrastructure.getConnectorReference().getValue(),
+          connectorInfo.get(0).getConnectorType().name(), infrastructure.getConnectorReference().getValue(),
           ConnectorType.AZURE.name()));
     }
 
     if (InfrastructureKind.AZURE_WEB_APP.equals(infrastructure.getKind())
-        && !(connectorInfo.getConnectorConfig() instanceof AzureConnectorDTO)) {
+        && !(connectorInfo.get(0).getConnectorConfig() instanceof AzureConnectorDTO)) {
       throw new InvalidRequestException(format("Invalid connector type [%s] for identifier: [%s], expected [%s]",
-          connectorInfo.getConnectorType().name(), infrastructure.getConnectorReference().getValue(),
+          connectorInfo.get(0).getConnectorType().name(), infrastructure.getConnectorReference().getValue(),
           ConnectorType.AZURE.name()));
     }
 
@@ -620,6 +665,14 @@ abstract class AbstractInfrastructureTaskExecutableStep {
           saveExecutionLog(logCallback,
               color(format(k8sNamespaceLogLine, k8SDirectInfrastructure.getNamespace().getValue()), Yellow));
         }
+        break;
+
+      case InfrastructureKind.CUSTOM_DEPLOYMENT:
+        CustomDeploymentInfrastructure customDeploymentInfrastructure = (CustomDeploymentInfrastructure) infrastructure;
+        infrastructureStepHelper.validateExpression(customDeploymentInfrastructure.getConnectorReference(),
+            ParameterField.createValueField(customDeploymentInfrastructure.getCustomDeploymentRef().getTemplateRef()),
+            ParameterField.createValueField(customDeploymentInfrastructure.getCustomDeploymentRef().getVersionLabel()));
+        customDeploymentInfrastructureHelper.validateInfra(ambiance, customDeploymentInfrastructure);
         break;
 
       case InfrastructureKind.KUBERNETES_GCP:
@@ -667,7 +720,8 @@ abstract class AbstractInfrastructureTaskExecutableStep {
       case InfrastructureKind.SSH_WINRM_AWS:
         SshWinRmAwsInfrastructure sshWinRmAwsInfrastructure = (SshWinRmAwsInfrastructure) infrastructure;
         infrastructureStepHelper.validateExpression(sshWinRmAwsInfrastructure.getConnectorRef(),
-            sshWinRmAwsInfrastructure.getCredentialsRef(), sshWinRmAwsInfrastructure.getRegion());
+            sshWinRmAwsInfrastructure.getCredentialsRef(), sshWinRmAwsInfrastructure.getRegion(),
+            sshWinRmAwsInfrastructure.getHostConnectionType());
         break;
 
       case InfrastructureKind.AZURE_WEB_APP:

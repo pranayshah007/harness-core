@@ -10,11 +10,13 @@ package software.wings.beans.infrastructure;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.delegate.task.terraform.TerraformCommand;
 import io.harness.mongo.index.FdIndex;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
 import io.harness.persistence.CreatedAtAware;
 import io.harness.persistence.PersistentEntity;
@@ -39,6 +41,7 @@ import org.mongodb.morphia.annotations.Id;
 @SuperBuilder(toBuilder = true)
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = false)
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "terraformConfig")
 @HarnessEntity(exportable = true)
 @FieldNameConstants(innerTypeName = "TerraformConfigKeys")

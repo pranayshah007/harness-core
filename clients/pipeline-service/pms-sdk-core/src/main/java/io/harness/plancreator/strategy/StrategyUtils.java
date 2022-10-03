@@ -41,6 +41,7 @@ import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.yaml.DependenciesUtils;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
+import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.serializer.JsonUtils;
 import io.harness.serializer.KryoSerializer;
@@ -64,6 +65,11 @@ import lombok.experimental.UtilityClass;
 public class StrategyUtils {
   public boolean isWrappedUnderStrategy(YamlField yamlField) {
     YamlField strategyField = yamlField.getNode().getField(YAMLFieldNameConstants.STRATEGY);
+    return strategyField != null;
+  }
+
+  public boolean isWrappedUnderStrategy(YamlNode yamlField) {
+    YamlField strategyField = yamlField.getField(YAMLFieldNameConstants.STRATEGY);
     return strategyField != null;
   }
 
@@ -268,7 +274,9 @@ public class StrategyUtils {
     }
     expressionsMap.put(EXPR_START_ESC + "strategy.iteration" + EXPR_END_ESC, String.valueOf(currentIteration));
     expressionsMap.put(EXPR_START_ESC + "strategy.iterations" + EXPR_END, String.valueOf(totalIteration));
-    expressionsMap.put(EXPR_START_ESC + "strategy.totalIterations" + EXPR_END, String.valueOf(totalIteration));
+    expressionsMap.put(EXPR_START_ESC + "step.iteration" + EXPR_END_ESC, String.valueOf(currentIteration));
+    expressionsMap.put(EXPR_START_ESC + "step.iterations" + EXPR_END, String.valueOf(totalIteration));
+    expressionsMap.put(EXPR_START_ESC + "step.totalIterations" + EXPR_END, String.valueOf(totalIteration));
 
     expressionsMap.put(repeatExpression, itemValue == null ? "" : itemValue);
     return expressionsMap;

@@ -9,7 +9,7 @@ package io.harness.gitsync.common.beans;
 
 import static io.harness.annotations.dev.HarnessTeam.DX;
 
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EmbeddedUser;
 import io.harness.mongo.index.CompoundMongoIndex;
@@ -35,14 +35,14 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 @Data
 @Builder
-@Document("gitSyncSettings")
 @TypeAlias("io.harness.gitsync.common.beans.gitSyncSettings")
 @EqualsAndHashCode(callSuper = false)
 @JsonIgnoreProperties(ignoreUnknown = true)
+@StoreIn(DbAliases.NG_MANAGER)
+@Document("gitSyncSettings")
 @Entity(value = "gitSyncSettings", noClassnameStored = true)
 @FieldNameConstants(innerTypeName = "GitSyncSettingsKeys")
 @OwnedBy(DX)
-@StoreIn(DbAliases.NG_MANAGER)
 public class GitSyncSettings {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()

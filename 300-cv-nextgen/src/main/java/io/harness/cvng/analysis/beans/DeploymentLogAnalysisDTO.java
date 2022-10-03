@@ -207,6 +207,7 @@ public class DeploymentLogAnalysisDTO {
         return controlClusterHostFrequencies.stream()
             .map(clusterHostFrequencyData
                 -> ControlClusterSummary.builder()
+                       .label(clusterHostFrequencyData.getLabel())
                        .controlFrequencyData(
                            HostFrequencyData.generateAverageFrequencyList(clusterHostFrequencyData.getFrequencyData()))
                        .build())

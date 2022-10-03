@@ -1,3 +1,10 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.delegate.task.ecs;
 
 import static io.harness.logging.LogLevel.ERROR;
@@ -33,6 +40,7 @@ import io.harness.delegate.task.ecs.response.EcsGitFetchResponse;
 import io.harness.delegate.task.git.TaskStatus;
 import io.harness.delegate.task.serverless.ServerlessGitFetchTaskHelper;
 import io.harness.ecs.EcsCommandUnitConstants;
+import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.git.model.FetchFilesResult;
 import io.harness.logging.CommandExecutionStatus;
@@ -52,6 +60,7 @@ import java.util.List;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.NotImplementedException;
 import org.jose4j.lang.JoseException;
 
@@ -88,30 +97,39 @@ public class EcsGitFetchTask extends AbstractDelegateRunnableTask {
       EcsGitFetchFileConfig ecsTaskDefinitionGitFetchFileConfig =
           ecsGitFetchRequest.getEcsTaskDefinitionGitFetchFileConfig();
 
-      FetchFilesResult ecsTaskDefinitionFetchFilesResult = fetchManifestFile(
-          ecsTaskDefinitionGitFetchFileConfig, executionLogCallback, ecsGitFetchRequest.getAccountId());
-
+      FetchFilesResult ecsTaskDefinitionFetchFilesResult = null;
+      if (ecsTaskDefinitionGitFetchFileConfig != null) {
+        ecsTaskDefinitionFetchFilesResult = fetchManifestFile(
+            ecsTaskDefinitionGitFetchFileConfig, executionLogCallback, ecsGitFetchRequest.getAccountId());
+      }
       // Fetch Ecs Service Definition
       EcsGitFetchFileConfig ecsServiceDefinitionGitFetchFileConfig =
           ecsGitFetchRequest.getEcsServiceDefinitionGitFetchFileConfig();
 
-      FetchFilesResult ecsServiceDefinitionFetchFilesResult = fetchManifestFile(
-          ecsServiceDefinitionGitFetchFileConfig, executionLogCallback, ecsGitFetchRequest.getAccountId());
+      FetchFilesResult ecsServiceDefinitionFetchFilesResult = null;
+      if (ecsServiceDefinitionGitFetchFileConfig != null) {
+        ecsServiceDefinitionFetchFilesResult = fetchManifestFile(
+            ecsServiceDefinitionGitFetchFileConfig, executionLogCallback, ecsGitFetchRequest.getAccountId());
+      }
 
       List<FetchFilesResult> ecsScalableTargetFetchFilesResults = new ArrayList<>();
-      for (EcsGitFetchFileConfig ecsScalableTargetGitFetchFileConfig :
-          ecsGitFetchRequest.getEcsScalableTargetGitFetchFileConfigs()) {
-        FetchFilesResult ecsScalableTargetFetchFilesResult = fetchManifestFile(
-            ecsScalableTargetGitFetchFileConfig, executionLogCallback, ecsGitFetchRequest.getAccountId());
-        ecsScalableTargetFetchFilesResults.add(ecsScalableTargetFetchFilesResult);
+      if (CollectionUtils.isNotEmpty(ecsGitFetchRequest.getEcsScalableTargetGitFetchFileConfigs())) {
+        for (EcsGitFetchFileConfig ecsScalableTargetGitFetchFileConfig :
+            ecsGitFetchRequest.getEcsScalableTargetGitFetchFileConfigs()) {
+          FetchFilesResult ecsScalableTargetFetchFilesResult = fetchManifestFile(
+              ecsScalableTargetGitFetchFileConfig, executionLogCallback, ecsGitFetchRequest.getAccountId());
+          ecsScalableTargetFetchFilesResults.add(ecsScalableTargetFetchFilesResult);
+        }
       }
 
       List<FetchFilesResult> ecsScalingPolicyFetchFilesResults = new ArrayList<>();
-      for (EcsGitFetchFileConfig ecsScalingPolicyGitFetchFileConfig :
-          ecsGitFetchRequest.getEcsScalingPolicyGitFetchFileConfigs()) {
-        FetchFilesResult ecsScalingPolicyFetchFilesResult = fetchManifestFile(
-            ecsScalingPolicyGitFetchFileConfig, executionLogCallback, ecsGitFetchRequest.getAccountId());
-        ecsScalingPolicyFetchFilesResults.add(ecsScalingPolicyFetchFilesResult);
+      if (CollectionUtils.isNotEmpty(ecsGitFetchRequest.getEcsScalingPolicyGitFetchFileConfigs())) {
+        for (EcsGitFetchFileConfig ecsScalingPolicyGitFetchFileConfig :
+            ecsGitFetchRequest.getEcsScalingPolicyGitFetchFileConfigs()) {
+          FetchFilesResult ecsScalingPolicyFetchFilesResult = fetchManifestFile(
+              ecsScalingPolicyGitFetchFileConfig, executionLogCallback, ecsGitFetchRequest.getAccountId());
+          ecsScalingPolicyFetchFilesResults.add(ecsScalingPolicyFetchFilesResult);
+        }
       }
 
       executionLogCallback.saveExecutionLog(
@@ -167,8 +185,18 @@ public class EcsGitFetchTask extends AbstractDelegateRunnableTask {
 
         List<String> filePaths = Collections.singletonList(filePath);
         serverlessGitFetchTaskHelper.printFileNames(executionLogCallback, filePaths);
-        filesResult =
-            serverlessGitFetchTaskHelper.fetchFileFromRepo(gitStoreDelegateConfig, filePaths, accountId, gitConfigDTO);
+        try {
+          filesResult = serverlessGitFetchTaskHelper.fetchFileFromRepo(
+              gitStoreDelegateConfig, filePaths, accountId, gitConfigDTO);
+        } catch (Exception e) {
+          throw NestedExceptionUtils.hintWithExplanationException(
+              format(
+                  "Please checks files %s configured Manifest section in Harness Service are correct. Check if git credentials are correct.",
+                  filePaths),
+              format("Error while fetching files %s from Git repo %s", filePaths,
+                  ecsGitFetchFileConfig.getGitStoreDelegateConfig().getGitConfigDTO().getUrl()),
+              e);
+        }
       }
       executionLogCallback.saveExecutionLog(
           color(format("%nFetch Config File completed successfully..%n"), LogColor.White, LogWeight.Bold), INFO);
@@ -186,5 +214,9 @@ public class EcsGitFetchTask extends AbstractDelegateRunnableTask {
       throw sanitizedException;
     }
     return filesResult;
+  }
+
+  public boolean isSupportingErrorFramework() {
+    return true;
   }
 }

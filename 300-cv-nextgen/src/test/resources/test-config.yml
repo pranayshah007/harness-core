@@ -51,6 +51,7 @@ mongo:
   maxConnectionIdleTime: 600000
   connectionsPerHost: 300
   indexManagerMode: AUTO
+  aliasDBName: cvng
 
 managerClientConfig:
   baseUrl: http://localhost:7457

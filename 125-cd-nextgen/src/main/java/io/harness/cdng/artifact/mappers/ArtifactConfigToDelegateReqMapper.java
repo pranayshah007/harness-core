@@ -7,6 +7,9 @@
 
 package io.harness.cdng.artifact.mappers;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.exception.WingsException.USER;
+
 import static software.wings.utils.RepositoryFormat.generic;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -18,10 +21,16 @@ import io.harness.cdng.artifact.bean.yaml.CustomArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.DockerHubArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.EcrArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.GcrArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.GithubPackagesArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.GoogleArtifactRegistryConfig;
 import io.harness.cdng.artifact.bean.yaml.JenkinsArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.NexusRegistryArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.customartifact.CustomScriptInlineSource;
+import io.harness.cdng.artifact.bean.yaml.nexusartifact.Nexus2RegistryArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryDockerConfig;
+import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryMavenConfig;
+import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryNpmConfig;
+import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryNugetConfig;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConnectorDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
@@ -30,6 +39,7 @@ import io.harness.delegate.beans.connector.docker.DockerConnectorDTO;
 import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorDTO;
 import io.harness.delegate.beans.connector.jenkins.JenkinsConnectorDTO;
 import io.harness.delegate.beans.connector.nexusconnector.NexusConnectorDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.task.artifacts.ArtifactDelegateRequestUtils;
 import io.harness.delegate.task.artifacts.ArtifactSourceDelegateRequest;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
@@ -40,9 +50,12 @@ import io.harness.delegate.task.artifacts.docker.DockerArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.ecr.EcrArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.gar.GarDelegateRequest;
 import io.harness.delegate.task.artifacts.gcr.GcrArtifactDelegateRequest;
+import io.harness.delegate.task.artifacts.githubpackages.GithubPackagesArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.jenkins.JenkinsArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.nexus.NexusArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.s3.S3ArtifactDelegateRequest;
+import io.harness.eraro.Level;
+import io.harness.exception.InvalidArtifactServerException;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.yaml.ParameterField;
@@ -64,7 +77,7 @@ public class ArtifactConfigToDelegateReqMapper {
     // If both are empty, regex is latest among all docker artifacts.
     String tagRegex = artifactConfig.getTagRegex() != null ? artifactConfig.getTagRegex().getValue() : "";
     String tag = artifactConfig.getTag() != null ? artifactConfig.getTag().getValue() : "";
-    if (EmptyPredicate.isEmpty(tag) && EmptyPredicate.isEmpty(tagRegex)) {
+    if (isEmpty(tag) && isEmpty(tagRegex)) {
       tagRegex = ACCEPT_ALL_REGEX;
     }
     return ArtifactDelegateRequestUtils.getDockerDelegateRequest(artifactConfig.getImagePath().getValue(), tag,
@@ -77,12 +90,34 @@ public class ArtifactConfigToDelegateReqMapper {
     String filePathRegex =
         artifactConfig.getFilePathRegex() != null ? artifactConfig.getFilePathRegex().getValue() : "";
     String filePath = artifactConfig.getFilePath() != null ? artifactConfig.getFilePath().getValue() : "";
-    if (EmptyPredicate.isEmpty(filePath) && EmptyPredicate.isEmpty(filePathRegex)) {
+    if (isEmpty(filePath) && isEmpty(filePathRegex)) {
       filePathRegex = "*";
     }
     return ArtifactDelegateRequestUtils.getAmazonS3DelegateRequest(artifactConfig.getBucketName().getValue(), filePath,
         filePathRegex, null, connectorRef, connectorDTO, encryptedDataDetails, ArtifactSourceType.AMAZONS3,
         artifactConfig.getRegion() != null ? artifactConfig.getRegion().getValue() : "us-east-1");
+  }
+
+  public GithubPackagesArtifactDelegateRequest getGithubPackagesDelegateRequest(
+      GithubPackagesArtifactConfig artifactConfig, GithubConnectorDTO connectorDTO,
+      List<EncryptedDataDetail> encryptedDataDetails, String connectorRef) {
+    String versionRegex = artifactConfig.getVersionRegex() != null
+        ? (StringUtils.isBlank(artifactConfig.getVersionRegex().getValue())
+                ? ""
+                : artifactConfig.getVersionRegex().getValue())
+        : "";
+    String version = artifactConfig.getVersion() != null
+        ? StringUtils.isBlank(artifactConfig.getVersion().getValue()) ? "" : artifactConfig.getVersion().getValue()
+        : "";
+
+    // If both version and versionRegex are empty, versionRegex is latest among all versions.
+    if (isEmpty(version) && isEmpty(versionRegex)) {
+      versionRegex = "*";
+    }
+
+    return ArtifactDelegateRequestUtils.getGithubPackagesDelegateRequest(artifactConfig.getPackageName().getValue(),
+        artifactConfig.getPackageType().getValue(), version, versionRegex, artifactConfig.getOrg().getValue(),
+        connectorRef, connectorDTO, encryptedDataDetails, ArtifactSourceType.GITHUB_PACKAGES);
   }
 
   public JenkinsArtifactDelegateRequest getJenkinsDelegateRequest(JenkinsArtifactConfig artifactConfig,
@@ -99,6 +134,14 @@ public class ArtifactConfigToDelegateReqMapper {
                                                             .getShellScriptBaseStepInfo()
                                                             .getSource()
                                                             .getSpec();
+    if (EmptyPredicate.isNotEmpty(customScriptInlineSource.getScript().getValue())) {
+      if (isEmpty(artifactConfig.getScripts().getFetchAllArtifacts().getArtifactsArrayPath().getValue())) {
+        throw new InvalidArtifactServerException("Artifacts Array Path is missing", Level.ERROR, USER);
+      }
+      if (isEmpty(artifactConfig.getScripts().getFetchAllArtifacts().getVersionPath().getValue())) {
+        throw new InvalidArtifactServerException("Version Path is missing", Level.ERROR, USER);
+      }
+    }
     return ArtifactDelegateRequestUtils.getCustomDelegateRequest(
         artifactConfig.getScripts().getFetchAllArtifacts().getArtifactsArrayPath().getValue(),
         artifactConfig.getVersionRegex().getValue(),
@@ -117,7 +160,7 @@ public class ArtifactConfigToDelegateReqMapper {
     // If both are empty, regex is latest among all gcr artifacts.
     String tagRegex = gcrArtifactConfig.getTagRegex() != null ? gcrArtifactConfig.getTagRegex().getValue() : "";
     String tag = gcrArtifactConfig.getTag() != null ? gcrArtifactConfig.getTag().getValue() : "";
-    if (EmptyPredicate.isEmpty(tag) && EmptyPredicate.isEmpty(tagRegex)) {
+    if (isEmpty(tag) && isEmpty(tagRegex)) {
       tagRegex = ACCEPT_ALL_REGEX;
     }
     return ArtifactDelegateRequestUtils.getGcrDelegateRequest(gcrArtifactConfig.getImagePath().getValue(), tag,
@@ -131,12 +174,11 @@ public class ArtifactConfigToDelegateReqMapper {
         garArtifactConfig.getVersionRegex() != null ? garArtifactConfig.getVersionRegex().getValue() : "";
     String version = garArtifactConfig.getVersion() != null ? garArtifactConfig.getVersion().getValue() : "";
     if (StringUtils.isBlank(version) && StringUtils.isBlank(versionRegex)) {
-      versionRegex = ACCEPT_ALL_REGEX;
+      versionRegex = "/*";
     }
     return ArtifactDelegateRequestUtils.getGoogleArtifactDelegateRequest(garArtifactConfig.getRegion().getValue(),
         garArtifactConfig.getRepositoryName().getValue(), garArtifactConfig.getProject().getValue(),
-        garArtifactConfig.getPkg().getValue(), garArtifactConfig.getVersion().getValue(),
-        garArtifactConfig.getVersionRegex().getValue(), gcpConnectorDTO, encryptedDataDetails,
+        garArtifactConfig.getPkg().getValue(), version, versionRegex, gcpConnectorDTO, encryptedDataDetails,
         ArtifactSourceType.GOOGLE_ARTIFACT_REGISTRY, Integer.MAX_VALUE);
   }
 
@@ -145,7 +187,7 @@ public class ArtifactConfigToDelegateReqMapper {
     // If both are empty, regex is latest among all ecr artifacts.
     String tagRegex = ecrArtifactConfig.getTagRegex() != null ? ecrArtifactConfig.getTagRegex().getValue() : "";
     String tag = ecrArtifactConfig.getTag() != null ? ecrArtifactConfig.getTag().getValue() : "";
-    if (EmptyPredicate.isEmpty(tag) && EmptyPredicate.isEmpty(tagRegex)) {
+    if (isEmpty(tag) && isEmpty(tagRegex)) {
       tagRegex = ACCEPT_ALL_REGEX;
     }
     return ArtifactDelegateRequestUtils.getEcrDelegateRequest(ecrArtifactConfig.getImagePath().getValue(), tag,
@@ -158,17 +200,87 @@ public class ArtifactConfigToDelegateReqMapper {
     // If both are empty, regex is latest among all docker artifacts.
     String tagRegex = artifactConfig.getTagRegex() != null ? artifactConfig.getTagRegex().getValue() : "";
     String tag = artifactConfig.getTag() != null ? artifactConfig.getTag().getValue() : "";
-    if (EmptyPredicate.isEmpty(tag) && EmptyPredicate.isEmpty(tagRegex)) {
+    if (isEmpty(tag) && isEmpty(tagRegex)) {
       tagRegex = ACCEPT_ALL_REGEX;
     }
-    String port = artifactConfig.getRepositoryPort() != null ? artifactConfig.getRepositoryPort().getValue() : null;
-    String artifactRepositoryUrl =
-        artifactConfig.getRepositoryUrl() != null ? artifactConfig.getRepositoryUrl().getValue() : null;
+
+    String packageName = null;
+    String groupId = null;
+    String artifactId = null;
+    String extension = null;
+    String classifier = null;
+    String port = null;
+    String artifactRepositoryUrl = null;
+    if (artifactConfig.getRepositoryFormat().getValue().equalsIgnoreCase("npm")) {
+      NexusRegistryNpmConfig nexusRegistryNpmConfig =
+          (NexusRegistryNpmConfig) artifactConfig.getNexusRegistryConfigSpec();
+      packageName = nexusRegistryNpmConfig.getPackageName().getValue();
+    } else if (artifactConfig.getRepositoryFormat().getValue().equalsIgnoreCase("nuget")) {
+      NexusRegistryNugetConfig nexusRegistryNugetConfig =
+          (NexusRegistryNugetConfig) artifactConfig.getNexusRegistryConfigSpec();
+      packageName = nexusRegistryNugetConfig.getPackageName().getValue();
+    } else if (artifactConfig.getRepositoryFormat().getValue().equalsIgnoreCase("docker")) {
+      NexusRegistryDockerConfig nexusRegistryDockerConfig =
+          (NexusRegistryDockerConfig) artifactConfig.getNexusRegistryConfigSpec();
+      port = nexusRegistryDockerConfig.getRepositoryPort() != null
+          ? nexusRegistryDockerConfig.getRepositoryPort().getValue()
+          : null;
+      artifactRepositoryUrl = nexusRegistryDockerConfig.getRepositoryUrl() != null
+          ? nexusRegistryDockerConfig.getRepositoryUrl().getValue()
+          : null;
+      artifactId = nexusRegistryDockerConfig.getArtifactPath() != null
+          ? nexusRegistryDockerConfig.getArtifactPath().getValue()
+          : null;
+    } else {
+      NexusRegistryMavenConfig nexusRegistryMavenConfig =
+          (NexusRegistryMavenConfig) artifactConfig.getNexusRegistryConfigSpec();
+      groupId = nexusRegistryMavenConfig.getGroupId().getValue();
+      artifactId = nexusRegistryMavenConfig.getArtifactId().getValue();
+      extension = nexusRegistryMavenConfig.getExtension().getValue();
+      classifier = nexusRegistryMavenConfig.getClassifier().getValue();
+    }
 
     return ArtifactDelegateRequestUtils.getNexusArtifactDelegateRequest(artifactConfig.getRepository().getValue(), port,
-        artifactConfig.getArtifactPath().getValue(), artifactConfig.getRepositoryFormat().getValue(),
-        artifactRepositoryUrl, tag, tagRegex, connectorRef, nexusConnectorDTO, encryptedDataDetails,
-        ArtifactSourceType.NEXUS3_REGISTRY);
+        artifactId, artifactConfig.getRepositoryFormat().getValue(), artifactRepositoryUrl, tag, tagRegex, connectorRef,
+        nexusConnectorDTO, encryptedDataDetails, ArtifactSourceType.NEXUS3_REGISTRY, groupId, artifactId, extension,
+        classifier, packageName);
+  }
+
+  public NexusArtifactDelegateRequest getNexus2ArtifactDelegateRequest(Nexus2RegistryArtifactConfig artifactConfig,
+      NexusConnectorDTO nexusConnectorDTO, List<EncryptedDataDetail> encryptedDataDetails, String connectorRef) {
+    // If both are empty, regex is latest among all docker artifacts.
+    String tagRegex = artifactConfig.getTagRegex() != null ? artifactConfig.getTagRegex().getValue() : "";
+    String tag = artifactConfig.getTag() != null ? artifactConfig.getTag().getValue() : "";
+    if (isEmpty(tag) && isEmpty(tagRegex)) {
+      tagRegex = ACCEPT_ALL_REGEX;
+    }
+
+    String packageName = null;
+    String groupId = null;
+    String artifactId = null;
+    String extension = null;
+    String classifier = null;
+    if (artifactConfig.getRepositoryFormat().getValue().equalsIgnoreCase("npm")) {
+      NexusRegistryNpmConfig nexusRegistryNpmConfig =
+          (NexusRegistryNpmConfig) artifactConfig.getNexusRegistryConfigSpec();
+      packageName = nexusRegistryNpmConfig.getPackageName().getValue();
+    } else if (artifactConfig.getRepositoryFormat().getValue().equalsIgnoreCase("nuget")) {
+      NexusRegistryNugetConfig nexusRegistryNugetConfig =
+          (NexusRegistryNugetConfig) artifactConfig.getNexusRegistryConfigSpec();
+      packageName = nexusRegistryNugetConfig.getPackageName().getValue();
+    } else {
+      NexusRegistryMavenConfig nexusRegistryMavenConfig =
+          (NexusRegistryMavenConfig) artifactConfig.getNexusRegistryConfigSpec();
+      groupId = nexusRegistryMavenConfig.getGroupId().getValue();
+      artifactId = nexusRegistryMavenConfig.getArtifactId().getValue();
+      extension = nexusRegistryMavenConfig.getExtension().getValue();
+      classifier = nexusRegistryMavenConfig.getClassifier().getValue();
+    }
+
+    return ArtifactDelegateRequestUtils.getNexusArtifactDelegateRequest(artifactConfig.getRepository().getValue(), null,
+        null, artifactConfig.getRepositoryFormat().getValue(), null, tag, tagRegex, connectorRef, nexusConnectorDTO,
+        encryptedDataDetails, ArtifactSourceType.NEXUS2_REGISTRY, groupId, artifactId, extension, classifier,
+        packageName);
   }
 
   public ArtifactSourceDelegateRequest getArtifactoryArtifactDelegateRequest(
@@ -189,7 +301,7 @@ public class ArtifactConfigToDelegateReqMapper {
     // If both are empty, regex is latest among all docker artifacts.
     String tagRegex = artifactConfig.getTagRegex() != null ? artifactConfig.getTagRegex().getValue() : "";
     String tag = artifactConfig.getTag() != null ? artifactConfig.getTag().getValue() : "";
-    if (EmptyPredicate.isEmpty(tag) && EmptyPredicate.isEmpty(tagRegex)) {
+    if (isEmpty(tag) && isEmpty(tagRegex)) {
       tagRegex = ACCEPT_ALL_REGEX;
     }
 
@@ -228,7 +340,7 @@ public class ArtifactConfigToDelegateReqMapper {
     String tagRegex =
         ParameterField.isNull(acrArtifactConfig.getTagRegex()) ? "" : acrArtifactConfig.getTagRegex().getValue();
     String tag = ParameterField.isNull(acrArtifactConfig.getTag()) ? "" : acrArtifactConfig.getTag().getValue();
-    if (EmptyPredicate.isEmpty(tag) && EmptyPredicate.isEmpty(tagRegex)) {
+    if (isEmpty(tag) && isEmpty(tagRegex)) {
       tagRegex = ACCEPT_ALL_REGEX;
     }
     return ArtifactDelegateRequestUtils.getAcrDelegateRequest(acrArtifactConfig.getSubscriptionId().getValue(),

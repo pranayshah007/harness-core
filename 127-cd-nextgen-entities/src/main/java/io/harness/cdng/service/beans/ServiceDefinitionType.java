@@ -51,9 +51,14 @@ public enum ServiceDefinitionType {
           ExecutionStrategyType.DEFAULT),
       ServiceSpecType.AZURE_WEBAPP),
 
+  @JsonProperty(ServiceSpecType.CUSTOM_DEPLOYMENT)
+  CUSTOM_DEPLOYMENT(ServiceSpecType.CUSTOM_DEPLOYMENT, Lists.newArrayList(ExecutionStrategyType.DEFAULT),
+      ServiceSpecType.CUSTOM_DEPLOYMENT),
+
   @JsonProperty(ServiceSpecType.ECS)
   ECS("ECS",
-      Lists.newArrayList(ExecutionStrategyType.ROLLING, ExecutionStrategyType.CANARY, ExecutionStrategyType.DEFAULT),
+      Lists.newArrayList(ExecutionStrategyType.ROLLING, ExecutionStrategyType.CANARY, ExecutionStrategyType.BLUE_GREEN,
+          ExecutionStrategyType.DEFAULT),
       ServiceSpecType.ECS);
 
   /*

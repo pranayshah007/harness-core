@@ -33,6 +33,7 @@ public class CEAwsConnectorDTO extends ConnectorConfigDTO {
   @NotNull @Valid CrossAccountAccessDTO crossAccountAccess;
   @Valid AwsCurAttributesDTO curAttributes;
   String awsAccountId;
+  Boolean isAWSGovCloudAccount;
   @NotEmpty(message = "FeaturesEnabled can't be empty") List<CEFeatures> featuresEnabled;
 
   @Override
