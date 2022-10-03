@@ -123,7 +123,7 @@ public class IntegrationStageStepPMS implements ChildExecutable<StageElementPara
       List<Outcome> outcomes = stepIdentifiers.stream()
                                    .map(stepIdentifier
                                        -> outcomeService.resolveOptional(
-                                           ambiance, RefObjectUtils.getOutcomeRefObject("artifact-" + stepIdentifier)))
+                                           ambiance, RefObjectUtils.getOutcomeRefObject("artifact_" + stepIdentifier)))
                                    .filter(OptionalOutcome::isFound)
                                    .map(OptionalOutcome::getOutcome)
                                    .collect(Collectors.toList());
