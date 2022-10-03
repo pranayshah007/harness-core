@@ -112,7 +112,7 @@ public class InputsValidator {
           NGRestUtils.getResponse(ngManagerReconcileClient.validateYaml(
               accountId, orgId, projectId, RefreshRequestDTO.builder().yaml(yaml).build()));
       templateInputsValidationResponse.setValid(
-          templateInputsValidationResponse.isValid() || ngManagerInputsValidationResponse.isValid());
+          templateInputsValidationResponse.isValid() && ngManagerInputsValidationResponse.isValid());
       if (EmptyPredicate.isNotEmpty(ngManagerInputsValidationResponse.getChildrenErrorNodes())) {
         ngManagerInputsValidationResponse.getChildrenErrorNodes().forEach(
             templateInputsValidationResponse::addChildErrorNode);
