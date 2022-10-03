@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ngmigration.service;
+package io.harness.ngmigration.service.importer;
 
 import io.harness.beans.EncryptedData;
 import io.harness.beans.EncryptedData.EncryptedDataKeys;
@@ -16,12 +16,14 @@ import io.harness.ngmigration.beans.DiscoverEntityInput;
 import io.harness.ngmigration.beans.DiscoveryInput;
 import io.harness.ngmigration.dto.ImportDTO;
 import io.harness.ngmigration.dto.SecretFilter;
+import io.harness.ngmigration.service.DiscoveryService;
 import io.harness.secretmanagers.SecretManagerConfigService;
 import io.harness.security.encryption.EncryptionType;
 
 import software.wings.ngmigration.DiscoveryResult;
 import software.wings.ngmigration.NGMigrationEntityType;
 import software.wings.service.intfc.security.SecretManager;
+import software.wings.settings.SettingVariableTypes;
 
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
@@ -44,7 +46,7 @@ public class SecretsImportService implements ImportService {
       SecretFilter filter = (SecretFilter) importDTO.getFilter();
       String accountId = importDTO.getAccountIdentifier();
       List<String> secretIds;
-      switch (filter.getMechanism()) {
+      switch (filter.getImportType()) {
         case ALL:
           // Note: All here means all the connectors we support today
           List<String> secretManagerIds =
@@ -65,6 +67,7 @@ public class SecretsImportService implements ImportService {
                   .listSecrets(accountId,
                       PageRequestBuilder.<EncryptedData>aPageRequest()
                           .addFilter(EncryptedDataKeys.kmsId, Operator.IN, secretManagerIds.stream().toArray())
+                          .addFilter(EncryptedDataKeys.type, Operator.EQ, SettingVariableTypes.SECRET_TEXT)
                           .withLimit("UNLIMITED")
                           .build(),
                       null, null, true, false)

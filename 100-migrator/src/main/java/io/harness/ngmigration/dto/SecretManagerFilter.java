@@ -24,11 +24,11 @@ import lombok.EqualsAndHashCode;
 @OwnedBy(HarnessTeam.CDC)
 @Data
 @EqualsAndHashCode(callSuper = true)
-@JsonTypeName("CONNECTOR")
-public class ConnectorFilter extends Filter {
+@JsonTypeName("SECRET_MANAGER")
+public class SecretManagerFilter extends Filter {
   @Parameter(
       description =
-          "ALL: To migrate all connectors. TYPE: To migrate only specific type of connectors(eg: Docker, AWS etc). ID: TO migrate only specific connectors")
+          "ALL: To migrate all secret managers. TYPE: To migrate only specific type of secret managers(eg: Docker, AWS etc). ID: TO migrate only specific secret managers")
   @NotNull
   private ImportMechanism importType;
 

@@ -5,15 +5,20 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ngmigration.service;
+package io.harness.ngmigration.dto;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.ngmigration.dto.ImportDTO;
 
-import software.wings.ngmigration.DiscoveryResult;
+import com.fasterxml.jackson.annotation.JsonTypeName;
+import io.swagger.v3.oas.annotations.Parameter;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 @OwnedBy(HarnessTeam.CDC)
-public interface ImportService {
-  DiscoveryResult discover(String authToken, ImportDTO importConnectorDTO);
+@Data
+@EqualsAndHashCode(callSuper = true)
+@JsonTypeName("APPLICATION")
+public class ApplicationFilter extends Filter {
+  @Parameter(description = "Application to import") private String appId;
 }

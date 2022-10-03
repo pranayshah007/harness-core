@@ -5,13 +5,14 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ngmigration.service;
+package io.harness.ngmigration.service.importer;
 
 import io.harness.ngmigration.beans.DiscoverEntityInput;
 import io.harness.ngmigration.beans.DiscoveryInput;
 import io.harness.ngmigration.connector.ConnectorFactory;
 import io.harness.ngmigration.dto.ConnectorFilter;
 import io.harness.ngmigration.dto.ImportDTO;
+import io.harness.ngmigration.service.DiscoveryService;
 
 import software.wings.beans.SettingAttribute;
 import software.wings.ngmigration.DiscoveryResult;
@@ -40,7 +41,7 @@ public class ConnectorImportService implements ImportService {
     ConnectorFilter filter = (ConnectorFilter) importConnectorDTO.getFilter();
     String accountId = importConnectorDTO.getAccountIdentifier();
     List<String> settingIds;
-    switch (filter.getMechanism()) {
+    switch (filter.getImportType()) {
       case ALL:
         // Note: All here means all the connectors we support today
         settingIds = getSettingIdsForType(accountId, ConnectorFactory.CONNECTOR_FACTORY_MAP.keySet());
