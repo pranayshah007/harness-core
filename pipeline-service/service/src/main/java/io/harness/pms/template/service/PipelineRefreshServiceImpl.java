@@ -81,15 +81,12 @@ public class PipelineRefreshServiceImpl implements PipelineRefreshService {
     PipelineEntity pipelineEntity = getPipelineEntity(accountId, orgId, projectId, pipelineIdentifier);
 
     String pipelineYaml = pipelineEntity.getYaml();
-    //    if (Boolean.TRUE.equals(pipelineEntity.getTemplateReference())) {
     RefreshResponseDTO refreshResponseDTO =
         pmsPipelineTemplateHelper.getRefreshedYaml(accountId, orgId, projectId, pipelineEntity.getYaml());
     return YamlDiffResponseDTO.builder()
         .originalYaml(pipelineYaml)
         .refreshedYaml(refreshResponseDTO.getRefreshedYaml())
         .build();
-    //    }
-    //    return YamlDiffResponseDTO.builder().originalYaml(pipelineYaml).refreshedYaml(pipelineYaml).build();
   }
 
   @Override
