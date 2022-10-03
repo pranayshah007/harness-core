@@ -99,6 +99,7 @@ import io.harness.capability.service.CapabilityService;
 import io.harness.category.element.UnitTests;
 import io.harness.configuration.DeployMode;
 import io.harness.context.GlobalContext;
+import io.harness.delegate.beans.AutoUpgrade;
 import io.harness.delegate.beans.ConnectionMode;
 import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.Delegate.DelegateBuilder;
@@ -569,13 +570,14 @@ public class DelegateServiceTest extends WingsBaseTest {
                                       .accountId(accountId)
                                       .name("test1")
                                       .status(DelegateGroupStatus.ENABLED)
-                                      .upgraderLastUpdated(123)
+                                      .upgraderLastUpdated(System.currentTimeMillis())
                                       .ng(false)
                                       .build();
 
     Delegate delegateWithScalingGroup2 = createDelegateBuilder().build();
     delegateWithScalingGroup2.setAccountId(accountId);
     delegateWithScalingGroup2.setDelegateGroupName("test2");
+    delegateWithScalingGroup2.setImmutable(true);
     DelegateGroup scalingGroup2 = DelegateGroup.builder()
                                       .accountId(accountId)
                                       .name("test2")
@@ -617,11 +619,11 @@ public class DelegateServiceTest extends WingsBaseTest {
         assertThat(group.getDelegates())
             .extracting(DelegateStatus.DelegateInner::getUuid)
             .containsOnly(delegateWithScalingGroup1.getUuid());
-        assertThat(group.getUpgraderLastUpdated()).isEqualTo(123);
+        assertThat(group.getAutoUpgrade()).isEqualTo(AutoUpgrade.ON);
       } else if (group.getGroupName().equals("test2")) {
         assertThat(group.getDelegates()).hasSize(1);
         assertThat(group.getDelegates().get(0).getUuid()).isEqualTo(delegateWithScalingGroup2.getUuid());
-        assertThat(group.getUpgraderLastUpdated()).isEqualTo(0);
+        assertThat(group.getAutoUpgrade()).isEqualTo(AutoUpgrade.SYNCHRONIZING);
       } else if (group.getGroupName().equals("test3")) {
         assertThat(group.getDelegates()).hasSize(0);
       }
