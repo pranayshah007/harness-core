@@ -9,6 +9,7 @@ package io.harness.delegate.beans.ecs;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.delegate.task.ecs.EcsLoadBalancerConfig;
 
 import java.util.List;
 import lombok.Builder;
@@ -23,8 +24,5 @@ public class EcsBlueGreenPrepareRollbackDataResult {
   List<String> registerScalableTargetRequestBuilderStrings;
   List<String> registerScalingPolicyRequestBuilderStrings;
   boolean isFirstDeployment;
-  String loadBalancer;
-  String listenerArn;
-  String listenerRuleArn;
-  String targetGroupArn;
+  EcsLoadBalancerConfig ecsLoadBalancerConfig;
 }

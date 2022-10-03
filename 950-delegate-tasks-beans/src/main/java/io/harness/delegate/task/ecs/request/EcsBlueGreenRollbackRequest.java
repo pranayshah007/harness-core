@@ -18,6 +18,7 @@ import io.harness.delegate.task.ecs.EcsLoadBalancerConfig;
 import io.harness.expression.Expression;
 import io.harness.expression.ExpressionReflectionUtils;
 
+import java.util.List;
 import lombok.Builder;
 import lombok.Value;
 import lombok.experimental.NonFinal;
@@ -40,4 +41,6 @@ public class EcsBlueGreenRollbackRequest
   boolean isNewServiceCreated;
   boolean isTargetShiftStarted;
   String oldServiceCreateRequestBuilderString;
+  List<String> oldServiceScalableTargetManifestContentList;
+  List<String> oldServiceScalingPolicyManifestContentList;
 }

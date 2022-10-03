@@ -189,7 +189,7 @@ public class StatusUtils {
       case SUCCEEDED:
         return EnumSet.of(INTERVENTION_WAITING, RUNNING, QUEUED);
       case IGNORE_FAILED:
-        return EnumSet.of(EXPIRED, FAILED, INTERVENTION_WAITING, RUNNING, APPROVAL_REJECTED);
+        return EnumSet.of(EXPIRED, FAILED, INTERVENTION_WAITING, RUNNING, APPROVAL_REJECTED, QUEUED);
       default:
         throw new IllegalStateException("Unexpected value: " + status);
     }

@@ -50,12 +50,15 @@ public class CustomDeploymentServiceSpecVisitorHelper implements ConfigValidator
     CustomDeploymentServiceSpec serviceSpec = (CustomDeploymentServiceSpec) object;
     Set<EntityDetailProtoDTO> result = new HashSet<>();
     if (!isNull(serviceSpec.getCustomDeploymentRef())) {
-      String templateRef = serviceSpec.getCustomDeploymentRef().getTemplateRef();
       String versionLabel = serviceSpec.getCustomDeploymentRef().getVersionLabel();
+      if (isNull(versionLabel)) {
+        return result;
+      }
       TemplateReferenceProtoDTO.Builder templateReferenceProtoDTO =
           TemplateReferenceProtoDTO.newBuilder()
               .setAccountIdentifier(StringValue.of(accountIdentifier))
               .setVersionLabel(StringValue.of(versionLabel));
+      String templateRef = serviceSpec.getCustomDeploymentRef().getTemplateRef();
       if (templateRef.contains("account.")) {
         templateReferenceProtoDTO.setScope(ScopeProtoEnum.ACCOUNT)
             .setIdentifier(StringValue.of(templateRef.replace("account.", "")));

@@ -654,6 +654,8 @@ import io.harness.delegate.task.shell.SshCommandTaskParameters;
 import io.harness.delegate.task.shell.TailFilePatternDto;
 import io.harness.delegate.task.shell.WinRmShellScriptTaskParametersNG;
 import io.harness.delegate.task.shell.WinrmTaskParameters;
+import io.harness.delegate.task.shell.provisioner.ShellScriptProvisionTaskNGRequest;
+import io.harness.delegate.task.shell.provisioner.ShellScriptProvisionTaskNGResponse;
 import io.harness.delegate.task.spotinst.request.SpotInstDeployTaskParameters;
 import io.harness.delegate.task.spotinst.request.SpotInstGetElastigroupJsonParameters;
 import io.harness.delegate.task.spotinst.request.SpotInstListElastigroupInstancesParameters;
@@ -1826,5 +1828,7 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(AwsS3ArtifactDelegateConfig.class, 9800007);
     kryo.register(WinrmConnectivityExecutionCapability.class, 55425);
     kryo.register(GcpSecretManagerValidationParams.class, 19879);
+    kryo.register(ShellScriptProvisionTaskNGRequest.class, 55426);
+    kryo.register(ShellScriptProvisionTaskNGResponse.class, 55427);
   }
 }

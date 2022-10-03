@@ -52,8 +52,7 @@ import io.harness.ci.logserviceclient.CILogServiceUtils;
 import io.harness.ci.serializer.RunStepProtobufSerializer;
 import io.harness.ci.serializer.vm.VmStepSerializer;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
-import io.harness.delegate.beans.ci.DliteVmInfraInfo;
-import io.harness.delegate.beans.ci.VmInfraInfo;
+import io.harness.delegate.beans.ci.CIInitializeTaskParams;
 import io.harness.delegate.beans.ci.vm.VmTaskExecutionResponse;
 import io.harness.delegate.beans.ci.vm.runner.ExecuteStepRequest;
 import io.harness.delegate.beans.ci.vm.steps.VmRunStep;
@@ -126,8 +125,10 @@ public class RunStepTest extends CIExecutionTestBase {
   @Mock SerializedResponseDataHelper serializedResponseDataHelper;
   @Inject private ExceptionManager exceptionManager;
   @InjectMocks RunStep runStep;
-  @InjectMocks private DliteVmInfraInfo dliteVmInfraInfo;
-  private VmInfraInfo vmInfraInfo = VmInfraInfo.builder().poolId("test").build();
+  //@InjectMocks private DliteVmInfraInfo dliteVmInfraInfo;
+  // private VmInfraInfo vmInfraInfo = VmInfraInfo.builder().poolId("test").build();
+  private static final CIInitializeTaskParams.Type vmInfraInfo = CIInitializeTaskParams.Type.VM;
+  private static final CIInitializeTaskParams.Type dliteVmInfraInfo = CIInitializeTaskParams.Type.DLITE_VM;
 
   private Ambiance ambiance;
   private RunStepInfo stepInfo;

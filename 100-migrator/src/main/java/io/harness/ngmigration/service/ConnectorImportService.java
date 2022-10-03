@@ -9,10 +9,9 @@ package io.harness.ngmigration.service;
 
 import io.harness.ngmigration.beans.DiscoverEntityInput;
 import io.harness.ngmigration.beans.DiscoveryInput;
-import io.harness.ngmigration.beans.MigrationInputDTO;
-import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.connector.ConnectorFactory;
-import io.harness.ngmigration.dto.ImportConnectorDTO;
+import io.harness.ngmigration.dto.ConnectorFilter;
+import io.harness.ngmigration.dto.ImportDTO;
 
 import software.wings.beans.SettingAttribute;
 import software.wings.ngmigration.DiscoveryResult;
@@ -26,7 +25,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class ConnectorImportService {
+public class ConnectorImportService implements ImportService {
   @Inject private SettingsService settingsService;
   @Inject DiscoveryService discoveryService;
 
@@ -37,24 +36,25 @@ public class ConnectorImportService {
         .collect(Collectors.toList());
   }
 
-  public List<NGYamlFile> importConnectors(String authToken, ImportConnectorDTO importConnectorDTO) {
+  public DiscoveryResult discover(String authToken, ImportDTO importConnectorDTO) {
+    ConnectorFilter filter = (ConnectorFilter) importConnectorDTO.getFilter();
     String accountId = importConnectorDTO.getAccountIdentifier();
     List<String> settingIds;
-    switch (importConnectorDTO.getMechanism()) {
+    switch (filter.getMechanism()) {
       case ALL:
         // Note: All here means all the connectors we support today
         settingIds = getSettingIdsForType(accountId, ConnectorFactory.CONNECTOR_FACTORY_MAP.keySet());
         break;
       case TYPE:
-        settingIds = getSettingIdsForType(accountId, importConnectorDTO.getTypes());
+        settingIds = getSettingIdsForType(accountId, filter.getTypes());
         break;
       case SPECIFIC:
-        settingIds = importConnectorDTO.getIds();
+        settingIds = filter.getIds();
         break;
       default:
         settingIds = new ArrayList<>();
     }
-    DiscoveryResult discoveryResult = discoveryService.discoverMulti(accountId,
+    return discoveryService.discoverMulti(accountId,
         DiscoveryInput.builder()
             .entities(settingIds.stream()
                           .map(settingId
@@ -65,13 +65,5 @@ public class ConnectorImportService {
                           .collect(Collectors.toList()))
             .exportImage(false)
             .build());
-    MigrationInputDTO migrationInputDTO =
-        MigrationInputDTO.builder()
-            .accountIdentifier(accountId)
-            .orgIdentifier(importConnectorDTO.getOrgIdentifier())
-            .projectIdentifier(importConnectorDTO.getProjectIdentifier())
-            .migrateReferencedEntities(importConnectorDTO.isMigrateReferencedEntities())
-            .build();
-    return discoveryService.migrateEntity(authToken, migrationInputDTO, discoveryResult, true);
   }
 }

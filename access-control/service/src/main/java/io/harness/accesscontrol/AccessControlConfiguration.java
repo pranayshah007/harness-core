@@ -115,6 +115,7 @@ public class AccessControlConfiguration extends Configuration {
   @JsonProperty("hostname") private String hostname = "localhost";
   @JsonProperty("basePathPrefix") private String basePathPrefix = "";
   @JsonProperty("segmentConfiguration") private SegmentConfiguration segmentConfiguration;
+  @JsonProperty(value = "enableOpentelemetry") private Boolean enableOpentelemetry;
 
   public static final Collection<Class<?>> ALL_ACCESS_CONTROL_RESOURCES = getResourceClasses();
 

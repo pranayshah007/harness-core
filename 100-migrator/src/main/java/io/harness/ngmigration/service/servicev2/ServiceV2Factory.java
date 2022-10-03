@@ -17,10 +17,14 @@ import software.wings.beans.Service;
 @OwnedBy(HarnessTeam.CDC)
 public class ServiceV2Factory {
   private static final ServiceV2Mapper k8sServiceV2Mapper = new K8sServiceV2Mapper();
+  private static final ServiceV2Mapper nativeHelmServiceV2Mapper = new NativeHelmServiceV2Mapper();
 
   public static ServiceV2Mapper getService2Mapper(Service service) {
     if (DeploymentType.KUBERNETES.equals(service.getDeploymentType())) {
       return k8sServiceV2Mapper;
+    }
+    if (DeploymentType.HELM.equals(service.getDeploymentType())) {
+      return nativeHelmServiceV2Mapper;
     }
     throw new InvalidRequestException(
         String.format("Service of deployment type %s supported", service.getDeploymentType()));

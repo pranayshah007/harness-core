@@ -23,7 +23,7 @@ import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceServic
 import io.harness.cvng.servicelevelobjective.beans.DayOfWeek;
 import io.harness.cvng.servicelevelobjective.beans.ErrorBudgetRisk;
 import io.harness.cvng.servicelevelobjective.beans.SLOCalenderType;
-import io.harness.cvng.servicelevelobjective.beans.SLOTarget;
+import io.harness.cvng.servicelevelobjective.beans.SLOTargetDTO;
 import io.harness.cvng.servicelevelobjective.beans.SLOTargetType;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorType;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveDTO;
@@ -189,7 +189,7 @@ public class SLODashboardResourceTest extends CvNextGenTestBase {
                  .identifier("id2")
                  .userJourneyRef("uj1")
                  .type(ServiceLevelIndicatorType.AVAILABILITY)
-                 .target(SLOTarget.builder()
+                 .target(SLOTargetDTO.builder()
                              .type(SLOTargetType.CALENDER)
                              .sloTargetPercentage(80.0)
                              .spec(CalenderSLOTargetSpec.builder()

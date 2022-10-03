@@ -8,7 +8,7 @@
 package io.harness.cdng.customdeployment;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.yaml.core.VariableExpression.IteratePolicy.REGULAR;
+import static io.harness.yaml.core.VariableExpression.IteratePolicy.REGULAR_WITH_CUSTOM_FIELD;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.numberString;
 
 import io.harness.annotation.RecasterAlias;
@@ -51,7 +51,7 @@ public class CustomDeploymentNumberNGVariable implements CustomDeploymentNGVaria
   @NotNull
   @YamlSchemaTypes({numberString})
   @ApiModelProperty(dataType = SwaggerConstants.DOUBLE_CLASSPATH)
-  @VariableExpression(policy = REGULAR, skipInnerObjectTraversal = true)
+  @VariableExpression(policy = REGULAR_WITH_CUSTOM_FIELD, skipInnerObjectTraversal = true)
   ParameterField<Double> value;
   @VariableExpression(skipVariableExpression = true) String description;
   @VariableExpression(skipVariableExpression = true) boolean required;

@@ -138,6 +138,7 @@ public class PipelineServiceConfiguration extends Configuration {
   @JsonProperty("planCreatorMergeServiceDependencyBatch") private Integer planCreatorMergeServiceDependencyBatch;
   @JsonProperty("jsonExpansionPoolConfig") private ThreadPoolConfig jsonExpansionPoolConfig;
   @JsonProperty("jsonExpansionRequestBatchSize") private Integer jsonExpansionBatchSize;
+  @JsonProperty(value = "enableOpentelemetry") private Boolean enableOpentelemetry;
 
   private String managerServiceSecret;
   private String managerTarget;

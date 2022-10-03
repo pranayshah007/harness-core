@@ -14,18 +14,7 @@ import io.harness.cdng.artifact.bean.artifactsource.DockerArtifactSource;
 import io.harness.cdng.artifact.steps.ArtifactStepParameters;
 import io.harness.cdng.envGroup.beans.EnvironmentGroupEntity;
 import io.harness.cdng.execution.StageExecutionInfo;
-import io.harness.cdng.infra.beans.AzureWebAppInfraMapping;
-import io.harness.cdng.infra.beans.CustomDeploymentInfraMapping;
-import io.harness.cdng.infra.beans.EcsInfraMapping;
-import io.harness.cdng.infra.beans.InfraMapping;
 import io.harness.cdng.infra.beans.InfraUseFromStage;
-import io.harness.cdng.infra.beans.K8sAzureInfraMapping;
-import io.harness.cdng.infra.beans.K8sDirectInfraMapping;
-import io.harness.cdng.infra.beans.K8sGcpInfraMapping;
-import io.harness.cdng.infra.beans.PdcInfraMapping;
-import io.harness.cdng.infra.beans.ServerlessAwsLambdaInfraMapping;
-import io.harness.cdng.infra.beans.SshWinRmAwsInfraMapping;
-import io.harness.cdng.infra.beans.SshWinRmAzureInfraMapping;
 import io.harness.cdng.infra.steps.InfraStepParameters;
 import io.harness.cdng.instance.InstanceDeploymentInfo;
 import io.harness.cdng.pipeline.executions.CDAccountExecutionMetadata;
@@ -44,12 +33,6 @@ import java.util.Set;
 public class NGMorphiaRegistrar implements MorphiaRegistrar {
   @Override
   public void registerClasses(Set<Class> set) {
-    set.add(InfraMapping.class);
-    set.add(K8sDirectInfraMapping.class);
-    set.add(K8sGcpInfraMapping.class);
-    set.add(K8sAzureInfraMapping.class);
-    set.add(PdcInfraMapping.class);
-    set.add(SshWinRmAzureInfraMapping.class);
     set.add(DockerArtifactSource.class);
     set.add(ArtifactSource.class);
     set.add(TerraformConfig.class);
@@ -57,11 +40,6 @@ public class NGMorphiaRegistrar implements MorphiaRegistrar {
     set.add(PollingDocument.class);
     set.add(CDAccountExecutionMetadata.class);
     set.add(EnvironmentGroupEntity.class);
-    set.add(ServerlessAwsLambdaInfraMapping.class);
-    set.add(SshWinRmAwsInfraMapping.class);
-    set.add(AzureWebAppInfraMapping.class);
-    set.add(CustomDeploymentInfraMapping.class);
-    set.add(EcsInfraMapping.class);
     set.add(CdTelemetrySentStatus.class);
     set.add(StageExecutionInfo.class);
     set.add(InstanceDeploymentInfo.class);

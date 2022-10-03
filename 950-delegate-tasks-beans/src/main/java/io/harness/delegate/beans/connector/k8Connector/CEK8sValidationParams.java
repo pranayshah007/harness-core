@@ -10,6 +10,7 @@ package io.harness.delegate.beans.connector.k8Connector;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.connector.CEFeatures;
+import io.harness.delegate.beans.connector.ConnectorType;
 
 import java.util.List;
 import lombok.Data;
@@ -20,4 +21,9 @@ import lombok.experimental.SuperBuilder;
 @OwnedBy(HarnessTeam.CE)
 public class CEK8sValidationParams extends K8sValidationParams {
   List<CEFeatures> featuresEnabled;
+
+  @Override
+  public ConnectorType getConnectorType() {
+    return ConnectorType.CE_KUBERNETES_CLUSTER;
+  }
 }

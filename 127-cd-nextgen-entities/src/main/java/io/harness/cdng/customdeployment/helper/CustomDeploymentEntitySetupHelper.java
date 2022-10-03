@@ -12,6 +12,8 @@ import static io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum.TEMP
 
 import static software.wings.beans.AccountType.log;
 
+import static java.util.Objects.isNull;
+
 import io.harness.eventsframework.EventsFrameworkConstants;
 import io.harness.eventsframework.EventsFrameworkMetadataConstants;
 import io.harness.eventsframework.api.Producer;
@@ -48,7 +50,9 @@ public class CustomDeploymentEntitySetupHelper {
 
   public void addReferencesInEntitySetupUsage(@NotNull InfrastructureEntity infraEntity) {
     EntityDetailProtoDTO entityDetailProtoDTO = getEntityProto(infraEntity);
-    publishSetupUsageEvent(infraEntity, entityDetailProtoDTO);
+    if (!isNull(entityDetailProtoDTO)) {
+      publishSetupUsageEvent(infraEntity, entityDetailProtoDTO);
+    }
   }
   public void deleteReferencesInEntitySetupUsage(@NotNull InfrastructureEntity infraEntity) {
     EntityDetailProtoDTO infraDetails = getEntityProtoForDelete(infraEntity);
@@ -84,6 +88,7 @@ public class CustomDeploymentEntitySetupHelper {
                                   .setOrgIdentifier(StringValue.of(infraEntity.getOrgIdentifier()))
                                   .setProjectIdentifier(StringValue.of(infraEntity.getProjectIdentifier()))
                                   .putMetadata("envId", infraEntity.getEnvIdentifier())
+                                  .putMetadata("CustomDeployment", "true")
                                   .build())
             .setType(EntityTypeProtoEnum.INFRASTRUCTURE)
             .setName(infraEntity.getName())
@@ -143,6 +148,11 @@ public class CustomDeploymentEntitySetupHelper {
       StepTemplateRef stepTemplateRef = getStepTemplateRefFromYaml(infraEntity);
       String templateRef = stepTemplateRef.getTemplateRef();
       String versionLabel = stepTemplateRef.getVersionLabel();
+      if (isNull(versionLabel)) {
+        log.error("Empty versionLabel while trying to add entity setup usage for acc :{}, project :{}, infraRef:{}",
+            infraEntity.getAccountId(), infraEntity.getProjectIdentifier(), infraEntity.getIdentifier());
+        return null;
+      }
       TemplateReferenceProtoDTO.Builder templateReferenceProtoDTO =
           TemplateReferenceProtoDTO.newBuilder().setAccountIdentifier(StringValue.of(infraEntity.getAccountId()));
       if (templateRef.contains(ACCOUNT_IDENTIFIER)) {
@@ -176,11 +186,14 @@ public class CustomDeploymentEntitySetupHelper {
             .setOrgIdentifier(StringValue.of(infraEntity.getOrgIdentifier()))
             .setProjectIdentifier(StringValue.of(infraEntity.getProjectIdentifier()))
             .setIdentifier(StringValue.of(infraEntity.getIdentifier()))
+            .putMetadata("envId", infraEntity.getEnvIdentifier())
+            .putMetadata("CustomDeployment", "true")
             .build();
 
     return EntityDetailProtoDTO.newBuilder()
         .setIdentifierRef(identifierRefProtoDTO)
         .setType(EntityTypeProtoEnum.INFRASTRUCTURE)
+        .setName(infraEntity.getName())
         .build();
   }
 }

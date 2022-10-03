@@ -28,4 +28,5 @@ public class AuditServiceConfiguration {
   @JsonProperty("enableAuditService") boolean enableAuditService = true;
   @JsonProperty("hostname") String hostname;
   @JsonProperty("basePathPrefix") String basePathPrefix;
+  @JsonProperty(value = "enableOpentelemetry") private Boolean enableOpentelemetry;
 }

@@ -40,7 +40,7 @@ public class WriteServiceLevelObjectivesToV2 implements CVNGMigration {
         .tags(serviceLevelObjective.getTags() == null ? Collections.emptyList() : serviceLevelObjective.getTags())
         .userJourneyIdentifiers(Collections.singletonList(serviceLevelObjective.getUserJourneyIdentifier()))
         .notificationRuleRefs(serviceLevelObjective.getNotificationRuleRefs())
-        .sloTarget(getNewSLOTargetFromOldSLOTarget(serviceLevelObjective.getSloTarget()))
+        .sloTarget(serviceLevelObjective.getSloTarget())
         .enabled(serviceLevelObjective.isEnabled())
         .lastUpdatedAt(serviceLevelObjective.getLastUpdatedAt())
         .createdAt(serviceLevelObjective.getCreatedAt())
@@ -53,41 +53,6 @@ public class WriteServiceLevelObjectivesToV2 implements CVNGMigration {
         .build();
   }
 
-  private AbstractServiceLevelObjective.SLOTarget getNewSLOTargetFromOldSLOTarget(
-      ServiceLevelObjective.SLOTarget sloTarget) {
-    switch (sloTarget.getType()) {
-      case CALENDER:
-        ServiceLevelObjective.CalenderSLOTarget calenderSLOTarget = (ServiceLevelObjective.CalenderSLOTarget) sloTarget;
-        switch (calenderSLOTarget.getCalenderType()) {
-          case WEEKLY:
-            ServiceLevelObjective.WeeklyCalenderTarget weeklyCalenderTarget =
-                (ServiceLevelObjective.WeeklyCalenderTarget) calenderSLOTarget;
-            return AbstractServiceLevelObjective.WeeklyCalenderTarget.builder()
-                .dayOfWeek(weeklyCalenderTarget.getDayOfWeek())
-                .build();
-          case MONTHLY:
-            ServiceLevelObjective.MonthlyCalenderTarget monthlyCalenderTarget =
-                (ServiceLevelObjective.MonthlyCalenderTarget) calenderSLOTarget;
-            return AbstractServiceLevelObjective.MonthlyCalenderTarget.builder()
-                .windowEndDayOfMonth(monthlyCalenderTarget.getWindowEndDayOfMonth())
-                .build();
-          case QUARTERLY:
-            ServiceLevelObjective.QuarterlyCalenderTarget quarterlyCalenderTarget =
-                (ServiceLevelObjective.QuarterlyCalenderTarget) calenderSLOTarget;
-            return AbstractServiceLevelObjective.QuarterlyCalenderTarget.builder().build();
-          default:
-            throw new IllegalStateException(
-                "calendar type: " + calenderSLOTarget.getCalenderType() + " is not handled");
-        }
-      case ROLLING:
-        ServiceLevelObjective.RollingSLOTarget rollingSLOTarget = (ServiceLevelObjective.RollingSLOTarget) sloTarget;
-        return AbstractServiceLevelObjective.RollingSLOTarget.builder()
-            .periodLengthDays(rollingSLOTarget.getPeriodLengthDays())
-            .build();
-      default:
-        throw new IllegalStateException("type: " + sloTarget.getType() + " is not handled");
-    }
-  }
   @Override
   public ChecklistItem whatHappensOnRollback() {
     return ChecklistItem.NA;

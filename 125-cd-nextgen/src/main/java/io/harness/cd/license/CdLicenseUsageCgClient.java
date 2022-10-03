@@ -10,6 +10,7 @@ package io.harness.cd.license;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdlicense.bean.CgActiveServicesUsageInfo;
+import io.harness.cdlicense.bean.CgServiceInstancesUsageInfo;
 import io.harness.rest.RestResponse;
 
 import retrofit2.Call;
@@ -20,4 +21,7 @@ import retrofit2.http.Query;
 public interface CdLicenseUsageCgClient {
   @GET("cg/cd/license/usage")
   Call<RestResponse<CgActiveServicesUsageInfo>> getActiveServiceUsage(@Query("accountId") String accountId);
+
+  @GET("cg/cd/license/usage/service-instance")
+  Call<RestResponse<CgServiceInstancesUsageInfo>> getServiceInstancesUsage(@Query("accountId") String accountId);
 }
