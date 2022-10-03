@@ -93,8 +93,8 @@ public class NGFreezeDtoMapper {
     return YamlPipelineUtils.writeYamlString(freezeConfig);
   }
 
-  private FreezeConfigEntity toFreezeConfigEntityResponse(
-      String accountId, FreezeConfig freezeConfig, String freezeConfigYaml, FreezeType type, String orgId, String projectId) {
+  private FreezeConfigEntity toFreezeConfigEntityResponse(String accountId, FreezeConfig freezeConfig,
+      String freezeConfigYaml, FreezeType type, String orgId, String projectId) {
     //    validateFreezeYaml(freezeConfig, orgId, projectId);
     String description = null;
     if (freezeConfig.getFreezeInfoConfig().getDescription() != null) {
