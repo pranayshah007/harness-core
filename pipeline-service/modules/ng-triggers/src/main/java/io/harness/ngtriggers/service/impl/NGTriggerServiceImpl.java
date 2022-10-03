@@ -47,6 +47,7 @@ import io.harness.ngtriggers.beans.entity.TriggerEventHistory;
 import io.harness.ngtriggers.beans.entity.TriggerWebhookEvent;
 import io.harness.ngtriggers.beans.entity.TriggerWebhookEvent.TriggerWebhookEventsKeys;
 import io.harness.ngtriggers.beans.entity.metadata.WebhookRegistrationStatusData;
+import io.harness.ngtriggers.beans.entity.metadata.catalog.TriggerCatalogItem;
 import io.harness.ngtriggers.beans.entity.metadata.status.PollingSubscriptionStatus;
 import io.harness.ngtriggers.beans.entity.metadata.status.StatusResult;
 import io.harness.ngtriggers.beans.entity.metadata.status.TriggerStatus;
@@ -62,6 +63,7 @@ import io.harness.ngtriggers.events.TriggerCreateEvent;
 import io.harness.ngtriggers.events.TriggerDeleteEvent;
 import io.harness.ngtriggers.events.TriggerUpdateEvent;
 import io.harness.ngtriggers.exceptions.InvalidTriggerYamlException;
+import io.harness.ngtriggers.helpers.TriggerCatalogHelper;
 import io.harness.ngtriggers.helpers.TriggerHelper;
 import io.harness.ngtriggers.mapper.NGTriggerElementMapper;
 import io.harness.ngtriggers.mapper.TriggerFilterHelper;
@@ -143,6 +145,7 @@ public class NGTriggerServiceImpl implements NGTriggerService {
   private final KryoSerializer kryoSerializer;
   private final PipelineServiceClient pipelineServiceClient;
   private final BuildTriggerHelper buildTriggerHelper;
+  private final TriggerCatalogHelper triggerCatalogHelper;
   private final PollingResourceClient pollingResourceClient;
   private final NGTriggerElementMapper ngTriggerElementMapper;
   private final OutboxService outboxService;
@@ -953,5 +956,9 @@ public class NGTriggerServiceImpl implements NGTriggerService {
   public Object fetchExecutionSummaryV2(String planExecutionId, String accountId, String orgId, String projectId) {
     return NGRestUtils.getResponse(
         pipelineServiceClient.getExecutionDetailV2(planExecutionId, accountId, orgId, projectId));
+  }
+  @Override
+  public List<TriggerCatalogItem> getTriggerCatalog(String accountIdentifier) {
+    return triggerCatalogHelper.getTriggerTypeToCategoryMapping(accountIdentifier);
   }
 }
