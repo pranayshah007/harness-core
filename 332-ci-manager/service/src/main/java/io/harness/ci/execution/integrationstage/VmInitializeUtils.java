@@ -7,6 +7,7 @@
 
 package io.harness.ci.integrationstage;
 
+import static io.harness.beans.serializer.RunTimeInputHandler.resolveArchType;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveOSType;
 import static io.harness.ci.commonconstants.CIExecutionConstants.ACCOUNT_ID_ATTR;
 import static io.harness.ci.commonconstants.CIExecutionConstants.BUILD_NUMBER_ATTR;
@@ -43,11 +44,14 @@ import io.harness.beans.steps.stepinfo.BackgroundStepInfo;
 import io.harness.beans.steps.stepinfo.RunStepInfo;
 import io.harness.beans.steps.stepinfo.RunTestsStepInfo;
 import io.harness.beans.sweepingoutputs.StageDetails;
+import io.harness.beans.yaml.extended.infrastrucutre.HostedVmInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.beans.yaml.extended.infrastrucutre.VmInfraSpec;
 import io.harness.beans.yaml.extended.infrastrucutre.VmInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.VmPoolYaml;
+import io.harness.beans.yaml.extended.platform.ArchType;
+import io.harness.beans.yaml.extended.platform.Platform;
 import io.harness.ci.buildstate.PluginSettingUtils;
 import io.harness.cimanager.stages.IntegrationStageConfig;
 import io.harness.exception.InvalidRequestException;
@@ -64,6 +68,8 @@ import com.google.inject.Singleton;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import io.swagger.models.auth.In;
 import lombok.extern.slf4j.Slf4j;
 
 @Singleton
@@ -255,6 +261,17 @@ public class VmInitializeUtils {
 
     VmPoolYaml vmPoolYaml = (VmPoolYaml) vmInfraYaml.getSpec();
     return resolveOSType(vmPoolYaml.getSpec().getOs());
+  }
+
+  public static ArchType getArchType(Infrastructure infrastructure) {
+    if (infrastructure.getType() == Infrastructure.Type.HOSTED_VM) {
+      HostedVmInfraYaml hostedVmInfraYaml = (HostedVmInfraYaml) infrastructure;
+      ParameterField<Platform> platform = hostedVmInfraYaml.getSpec().getPlatform();
+      if (platform != null && platform.getValue() != null) {
+        return resolveArchType(platform.getValue().getArch());
+      }
+    }
+    return ArchType.Amd64;
   }
 
   public Map<String, String> getBuildTags(Ambiance ambiance, StageDetails stageDetails) {

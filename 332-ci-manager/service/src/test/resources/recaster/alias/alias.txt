@@ -200,3 +200,5 @@ io.harness.yaml.core.failurestrategy.ProceedWithDefaultValuesFailureActionConfig
 io.harness.beans.sweepingoutputs.StepArtifactSweepingOutput
 io.harness.yaml.core.failurestrategy.rollback.PipelineRollbackFailureActionConfig
 io.harness.beans.yaml.extended.TISplitStrategy
+io.harness.beans.sweepingoutputs.StageExecutionSweepingOutput
+io.harness.beans.sweepingoutputs.InitializeExecutionSweepingOutput

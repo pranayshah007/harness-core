@@ -56,6 +56,7 @@ import io.harness.beans.steps.stepinfo.RunTestsStepInfo;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
+import io.harness.beans.yaml.extended.platform.ArchType;
 import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.ci.buildstate.InfraInfoUtils;
 import io.harness.ci.license.CILicenseService;
@@ -749,6 +750,7 @@ public class IntegrationStageUtils {
     String infraType = infrastructure.getType().getYamlName();
     String infraOSType = null;
     String infraHostType = null;
+    String infraOSArchType = ArchType.Amd64.toString();
 
     Infrastructure.Type type = infrastructure.getType();
     if (type == KUBERNETES_DIRECT) {
@@ -762,10 +764,16 @@ public class IntegrationStageUtils {
       infraHostType = HARNESS_HOSTED;
     } else if (infrastructure.getType() == HOSTED_VM) {
       infraOSType = VmInitializeUtils.getOS(infrastructure).toString();
+      infraOSArchType = VmInitializeUtils.getArchType(infrastructure).toString();
       infraHostType = HARNESS_HOSTED;
     }
 
-    return CIInfraDetails.builder().infraType(infraType).infraOSType(infraOSType).infraHostType(infraHostType).build();
+    return CIInfraDetails.builder()
+        .infraType(infraType)
+        .infraOSType(infraOSType)
+        .infraHostType(infraHostType)
+        .infraArchType(infraOSArchType)
+        .build();
   }
 
   public static CIScmDetails getCiScmDetails(ConnectorUtils connectorUtils, ConnectorDetails connectorDetails) {
