@@ -34,6 +34,7 @@ import io.harness.factory.ClosingFactory;
 import io.harness.gitsync.persistance.testing.GitSyncablePersistenceTestModule;
 import io.harness.govern.ProviderModule;
 import io.harness.govern.ServersModule;
+import io.harness.mongo.MongoConfig;
 import io.harness.mongo.MongoPersistence;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.ng.core.entitysetupusage.EntitySetupUsageModule;
@@ -164,6 +165,12 @@ public class CDNGEntitiesTestRule implements InjectorRuleMixin, MethodRule, Mong
       @Singleton
       OutboxService getOutboxService(OutboxEventRepository outboxEventRepository) {
         return new OutboxServiceImpl(new OutboxDaoImpl(outboxEventRepository), NG_DEFAULT_OBJECT_MAPPER);
+      }
+
+      @Provides
+      @Singleton
+      MongoConfig mongoConfig() {
+        return MongoConfig.builder().build();
       }
 
       @Provides

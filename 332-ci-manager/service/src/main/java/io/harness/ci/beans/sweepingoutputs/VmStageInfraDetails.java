@@ -11,7 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CI;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.delegate.beans.ci.InfraInfo;
+import io.harness.delegate.beans.ci.CIInitializeTaskParams;
 import io.harness.validation.Update;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
@@ -38,7 +38,8 @@ public class VmStageInfraDetails implements StageInfraDetails {
   @Id @NotNull(groups = {Update.class}) @SchemaIgnore private String uuid;
 
   @Builder.Default @NotNull private Type type = Type.VM;
-  @NotNull @Getter private InfraInfo infraInfo;
+  //@Getter private InfraInfo infraInfo;
+  @Getter private CIInitializeTaskParams.Type infraInfo;
 
   @Override
   public StageInfraDetails.Type getType() {

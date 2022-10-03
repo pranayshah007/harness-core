@@ -8,6 +8,7 @@
 package io.harness.ng.core.entitysetupusage;
 
 import io.harness.govern.ProviderModule;
+import io.harness.mongo.MongoConfig;
 import io.harness.mongo.MongoPersistence;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.persistence.HPersistence;
@@ -76,6 +77,12 @@ public class EntitySetupUsageTestRule implements InjectorRuleMixin, MethodRule, 
         return ImmutableList.<Class<? extends Converter<?, ?>>>builder()
             .addAll(SetupUsageRegistrars.springConverters)
             .build();
+      }
+
+      @Provides
+      @Singleton
+      MongoConfig mongoConfig() {
+        return MongoConfig.builder().build();
       }
     });
 

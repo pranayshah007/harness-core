@@ -96,6 +96,7 @@ public interface EntityTypeConstants {
   String POLICY_STEP = "Policy";
   String SERVICENOW_CREATE = "ServiceNowCreate";
   String SERVICENOW_UPDATE = "ServiceNowUpdate";
+  String SERVICENOW_IMPORT_SET = "ServiceNowImportSet";
   String ENVIRONMENT_GROUP = "EnvironmentGroup";
   String NG_FILE = "NgFile";
   String CLOUDFORMATION_CREATE_STACK_STEP = "CreateStack";

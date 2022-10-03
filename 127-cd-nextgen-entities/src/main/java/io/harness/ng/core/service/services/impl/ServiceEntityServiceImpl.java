@@ -453,16 +453,27 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
 
   @Override
   public String createServiceInputsYaml(String yaml, String serviceIdentifier) {
+    return createServiceInputsYamlInternal(yaml, serviceIdentifier, null);
+  }
+
+  @Override
+  public String createServiceInputsYamlGivenPrimaryArtifactRef(
+      String serviceYaml, String serviceIdentifier, String primaryArtifactRef) {
+    return createServiceInputsYamlInternal(serviceYaml, serviceIdentifier, primaryArtifactRef);
+  }
+
+  private String createServiceInputsYamlInternal(
+      String serviceYaml, String serviceIdentifier, String primaryArtifactRef) {
     Map<String, Object> serviceInputs = new HashMap<>();
 
     try {
-      YamlField serviceYamlField = YamlUtils.readTree(yaml).getNode().getField(YamlTypes.SERVICE_ENTITY);
+      YamlField serviceYamlField = YamlUtils.readTree(serviceYaml).getNode().getField(YamlTypes.SERVICE_ENTITY);
       if (serviceYamlField == null) {
         throw new YamlException(
             String.format("Yaml provided for service %s does not have service root field.", serviceIdentifier));
       }
 
-      modifyServiceDefinitionNodeBeforeCreatingServiceInputs(serviceYamlField, serviceIdentifier);
+      modifyServiceDefinitionNodeBeforeCreatingServiceInputs(serviceYamlField, serviceIdentifier, primaryArtifactRef);
       ObjectNode serviceNode = (ObjectNode) serviceYamlField.getNode().getCurrJsonNode();
       ObjectNode serviceDefinitionNode = serviceNode.retain(YamlTypes.SERVICE_DEFINITION);
       if (EmptyPredicate.isEmpty(serviceDefinitionNode)) {
@@ -532,7 +543,7 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
   }
 
   private void modifyServiceDefinitionNodeBeforeCreatingServiceInputs(
-      YamlField serviceYamlField, String serviceIdentifier) {
+      YamlField serviceYamlField, String serviceIdentifier, String primaryArtifactRef) {
     YamlField primaryArtifactField = ServiceFilterHelper.getPrimaryArtifactNodeFromServiceYaml(serviceYamlField);
     if (primaryArtifactField == null) {
       return;
@@ -543,13 +554,11 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
               primaryArtifactField.getNode().getCurrJsonNode().getNodeType()));
     }
 
-    YamlField primaryArtifactRef = primaryArtifactField.getNode().getField(YamlTypes.PRIMARY_ARTIFACT_REF);
+    YamlField primaryArtifactRefField = primaryArtifactField.getNode().getField(YamlTypes.PRIMARY_ARTIFACT_REF);
     YamlField artifactSourcesField = primaryArtifactField.getNode().getField(YamlTypes.ARTIFACT_SOURCES);
-    if (primaryArtifactRef == null || artifactSourcesField == null) {
+    if (primaryArtifactRefField == null || artifactSourcesField == null) {
       return;
     }
-
-    String primaryArtifactRefValue = primaryArtifactRef.getNode().asText();
 
     if (!artifactSourcesField.getNode().isArray()) {
       throw new InvalidRequestException(
@@ -557,11 +566,17 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
               artifactSourcesField.getNode().getCurrJsonNode().getNodeType()));
     }
 
+    String primaryArtifactRefValue = primaryArtifactRefField.getNode().asText();
+
     ObjectNode primaryArtifactObjectNode = (ObjectNode) primaryArtifactField.getNode().getCurrJsonNode();
     if (NGExpressionUtils.matchesInputSetPattern(primaryArtifactRefValue)) {
-      primaryArtifactObjectNode.remove(YamlTypes.ARTIFACT_SOURCES);
-      primaryArtifactObjectNode.put(YamlTypes.ARTIFACT_SOURCES, "<+input>");
-      return;
+      if (EmptyPredicate.isNotEmpty(primaryArtifactRef)) {
+        primaryArtifactRefValue = primaryArtifactRef;
+      } else {
+        primaryArtifactObjectNode.remove(YamlTypes.ARTIFACT_SOURCES);
+        primaryArtifactObjectNode.put(YamlTypes.ARTIFACT_SOURCES, "<+input>");
+        return;
+      }
     }
 
     if (EngineExpressionEvaluator.hasExpressions(primaryArtifactRefValue)) {

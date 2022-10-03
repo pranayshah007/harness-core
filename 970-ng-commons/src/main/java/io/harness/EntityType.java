@@ -201,6 +201,9 @@ public enum EntityType {
   @JsonProperty(EntityTypeConstants.SERVICENOW_UPDATE)
   SERVICENOW_UPDATE_STEP(ModuleType.PMS, EntityTypeConstants.SERVICENOW_UPDATE, IdentifierRef.class,
       EntityYamlRootNames.SERVICENOW_UPDATE),
+  @JsonProperty(EntityTypeConstants.SERVICENOW_IMPORT_SET)
+  SERVICENOW_IMPORT_SET_STEP(ModuleType.PMS, EntityTypeConstants.SERVICENOW_IMPORT_SET, IdentifierRef.class,
+      EntityYamlRootNames.SERVICENOW_IMPORT_SET),
   @JsonProperty(EntityTypeConstants.OPAPOLICIES)
   OPAPOLICIES(ModuleType.CORE, EntityTypeConstants.OPAPOLICIES, IdentifierRef.class, EntityYamlRootNames.OPAPOLICY),
   POLICY_STEP(ModuleType.PMS, EntityTypeConstants.POLICY_STEP, IdentifierRef.class, EntityYamlRootNames.POLICY_STEP),

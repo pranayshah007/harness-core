@@ -563,6 +563,7 @@ replace_key_value opaServerConfig.baseUrl "$OPA_SERVER_BASEURL"
 replace_key_value opaServerConfig.secret "$OPA_SERVER_SECRET"
 replace_key_value policyManagerSecret "$OPA_SERVER_SECRET"
 replace_key_value opaClientConfig.baseUrl "$OPA_SERVER_BASEURL"
+replace_key_value opaConnectivityEnabled "$OPA_CONNECTIVITY_ENABLED"
 if [[ "" != "$OPA_CONNECT_TIMEOUT" ]]; then
   replace_key_value opaClientConfig.connectTimeOutSeconds "$OPA_CONNECT_TIMEOUT"
 fi

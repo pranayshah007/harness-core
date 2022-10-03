@@ -14,9 +14,7 @@ import static io.harness.rule.OwnerRule.FERNANDOD;
 import static io.harness.rule.OwnerRule.NAMAN;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.notNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
@@ -39,7 +37,6 @@ import io.harness.rule.Owner;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -121,9 +118,8 @@ public class PmsSdkInitHelperTest extends CategoryTest {
     when(provider.getPlanCreators()).thenReturn(ImmutableList.of(mock(PartialPlanCreator.class)));
 
     try (MockedStatic<PmsSdkInitValidator> validator = mockStatic(PmsSdkInitValidator.class)) {
-      validator.when(() -> PmsSdkInitValidator.supportedTypesPlanCreator(any())).thenReturn(ImmutableMap.of());
       PmsSdkInitHelper.calculateSupportedTypes(provider);
-      validator.verify(() -> PmsSdkInitValidator.validatePlanCreators(notNull(), eq(provider)));
+      validator.verify(() -> PmsSdkInitValidator.validatePlanCreators(eq(provider)));
     }
   }
 

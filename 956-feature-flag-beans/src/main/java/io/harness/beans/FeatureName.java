@@ -19,6 +19,8 @@ import lombok.Getter;
  */
 @OwnedBy(HarnessTeam.PL)
 public enum FeatureName {
+  SPG_NEW_DEPLOYMENT_FREEZE_EXCLUSIONS(
+      "Flag to support deployment freeze exclusions. Depends on NEW_DEPLOYMENT_FREEZE", HarnessTeam.SPG),
   SPG_ENABLE_EMAIL_VALIDATION("Enable email validation in GraphQL approveOrRejectApprovals mutation", HarnessTeam.SPG),
   DISABLE_HELM_REPO_YAML_CACHE(
       "Enable to create a temporary folder (based on execution id) to store repository.yaml file", HarnessTeam.CDP),
@@ -69,7 +71,6 @@ public enum FeatureName {
   ENABLE_WINRM_ENV_VARIABLES,
   FF_PIPELINE,
   FF_GITSYNC,
-  NG_TEMPLATE_GITX_ACCOUNT_ORG,
   NG_TEMPLATE_GITX,
   FFM_1513,
   FFM_1512,
@@ -85,7 +86,6 @@ public enum FeatureName {
   EXPORT_TF_PLAN,
   GCB_CI_SYSTEM,
   GCP_WORKLOAD_IDENTITY,
-  GIT_ACCOUNT_SUPPORT,
   GIT_HTTPS_KERBEROS,
   GIT_HOST_CONNECTIVITY,
   GLOBAL_COMMAND_LIBRARY,
@@ -187,7 +187,6 @@ public enum FeatureName {
   CI_OVERVIEW_PAGE("UI flag to show CI overview page", HarnessTeam.CI),
   SKIP_BASED_ON_STACK_STATUSES,
   WF_VAR_MULTI_SELECT_ALLOWED_VALUES,
-  LDAP_GROUP_SYNC_JOB_ITERATOR,
   CF_CLI7,
   CF_APP_NON_VERSIONING_INACTIVE_ROLLBACK,
   CF_ALLOW_SPECIAL_CHARACTERS,
@@ -442,7 +441,14 @@ public enum FeatureName {
       HarnessTeam.PL),
   PL_NO_EMAIL_FOR_SAML_ACCOUNT_INVITES("No email for users in account where SAML auth is enabled", HarnessTeam.PL),
   PL_ENABLE_GOOGLE_SECRET_MANAGER_IN_NG("Enable Google Secret Manager in NG", HarnessTeam.PL),
-  SPG_DISABLE_SEARCH_DEPLOYMENTS_PAGE("Disable search on deployment page in CG.", HarnessTeam.SPG);
+  SPG_2K_DEFAULT_PAGE_SIZE("Increase the default page size to 2000 elements in CG", HarnessTeam.SPG),
+  SPG_DISABLE_SEARCH_DEPLOYMENTS_PAGE("Disable search on deployment page in CG.", HarnessTeam.SPG),
+  CD_SERVICENOW_IMPORT_SET_NG("Enable ServiceNow Import Set Step", HarnessTeam.CDC),
+  WINRM_SCRIPT_COMMAND_SPLIT(
+      "Enables the new way of how to copy powershell/winrm script commands content to file on remote. (Copy is done in chunks of 4KB) ",
+      HarnessTeam.CDP),
+  SERVICE_ENV_RECONCILIATION("Do reconciliation of service and env on pipeline/template save", HarnessTeam.CDC);
+
   @Deprecated
   FeatureName() {
     scope = Scope.PER_ACCOUNT;

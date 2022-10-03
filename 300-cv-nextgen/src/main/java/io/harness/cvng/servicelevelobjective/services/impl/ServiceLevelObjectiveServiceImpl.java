@@ -236,8 +236,7 @@ public class ServiceLevelObjectiveServiceImpl implements ServiceLevelObjectiveSe
                            .projectIdentifier(projectParams.getProjectIdentifier())
                            .build());
     if (featureFlagService.isGlobalFlagEnabled(SERVICE_LEVEL_OBJECTIVE_V2)) {
-      return serviceLevelObjectiveV2Service.delete(projectParams, identifier)
-          && hPersistence.delete(serviceLevelObjective);
+      serviceLevelObjectiveV2Service.delete(projectParams, identifier);
     }
     return hPersistence.delete(serviceLevelObjective);
   }

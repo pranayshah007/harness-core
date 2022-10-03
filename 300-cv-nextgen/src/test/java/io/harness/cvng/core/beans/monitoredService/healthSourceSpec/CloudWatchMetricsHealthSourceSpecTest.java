@@ -32,6 +32,7 @@ import io.harness.cvng.core.entities.MetricPack;
 import io.harness.cvng.core.entities.MetricPack.MetricDefinition;
 import io.harness.cvng.core.services.CVNextGenConstants;
 import io.harness.cvng.core.services.api.MetricPackService;
+import io.harness.cvng.utils.CloudWatchUtils;
 import io.harness.rule.Owner;
 
 import com.google.inject.Inject;
@@ -318,6 +319,18 @@ public class CloudWatchMetricsHealthSourceSpecTest extends CvNextGenTestBase {
     assertThat(true).isTrue();
   }
 
+  @Test
+  @Owner(developers = DHRUVX)
+  @Category(UnitTests.class)
+  public void testValidate_metricIdentifierDoesNotMatchExpectedPattern() {
+    CloudWatchMetricDefinition metricDefinition = cloudWatchMetricsHealthSourceSpec.getMetricDefinitions().get(0);
+    metricDefinition.setIdentifier("CloudWatch Metric-1");
+    assertThatThrownBy(() -> cloudWatchMetricsHealthSourceSpec.validate())
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessage(
+            "Metric identifier does not match the expected pattern: " + CloudWatchUtils.METRIC_QUERY_IDENTIFIER_REGEX);
+  }
+
   private void assertCommon(CloudWatchMetricCVConfig cvConfig) {
     assertThat(cvConfig.getAccountId()).isEqualTo(accountId);
     assertThat(cvConfig.getOrgIdentifier()).isEqualTo(orgIdentifier);
@@ -362,7 +375,7 @@ public class CloudWatchMetricsHealthSourceSpecTest extends CvNextGenTestBase {
     return CloudWatchMetricDefinition.builder()
         .expression(identifier)
         .metricName(identifier)
-        .identifier(identifier)
+        .identifier("identifier")
         .groupName(group)
         .build();
   }

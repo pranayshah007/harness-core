@@ -37,4 +37,5 @@ public class EcsBlueGreenSwapTargetGroupsRequest
   String oldServiceName;
   String newServiceName;
   boolean isFirstDeployment;
+  boolean doNotDownsizeOldService;
 }

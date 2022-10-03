@@ -42,6 +42,7 @@ import org.apache.commons.lang3.StringUtils;
 @Slf4j
 public class CloudWatchUtils {
   public static final String CLOUDWATCH_GET_METRIC_DATA_API_TARGET = "GraniteServiceVersion20100801.GetMetricData";
+  public static final String METRIC_QUERY_IDENTIFIER_REGEX = "^[a-z][a-zA-Z0-9_]*$";
   public static String getBaseUrl(String region, String serviceName) {
     return "https://" + serviceName + "." + region + ".amazonaws.com";
   }
