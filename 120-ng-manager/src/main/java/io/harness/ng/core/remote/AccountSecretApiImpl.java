@@ -30,7 +30,6 @@ import io.harness.security.SecurityContextBuilder;
 import io.harness.spec.server.ng.AccountSecretApi;
 import io.harness.spec.server.ng.model.SecretRequest;
 import io.harness.spec.server.ng.model.SecretResponse;
-import io.harness.spec.server.ng.model.ValidateSecretSlugResponse;
 
 import com.google.inject.Inject;
 import java.io.InputStream;
@@ -90,9 +89,9 @@ public class AccountSecretApiImpl implements AccountSecretApi {
   }
 
   @Override
-  public Response getAccountScopedSecrets(String account, String org, String project, List<String> secret,
-      List<String> type, Boolean recursive, String searchTerm, Integer page, Integer limit) {
-    return getSecrets(account, org, project, secret, type, recursive, searchTerm, page, limit);
+  public Response getAccountScopedSecrets(List<String> secret, List<String> type, Boolean recursive, String searchTerm,
+      Integer page, Integer limit, String account) {
+    return getSecrets(account, secret, type, recursive, searchTerm, page, limit);
   }
 
   @Override
@@ -128,16 +127,6 @@ public class AccountSecretApiImpl implements AccountSecretApi {
     return Response.ok()
         .entity(ngSecretService.updateFile(account, null, null, secret, secretDto, fileInputStream))
         .build();
-  }
-
-  @Override
-  public Response validateUniqueAccountScopedSecretSlug(String secret, String account) {
-    return validateSecretSlug(secret, account);
-  }
-
-  private Response validateSecretSlug(String secret, String account) {
-    boolean isUnique = ngSecretService.validateTheIdentifierIsUnique(account, null, null, secret);
-    return Response.ok().entity(new ValidateSecretSlugResponse().valid(isUnique)).build();
   }
 
   private Response updateSecret(SecretRequest secretRequest, String secret, String account) {
@@ -177,14 +166,13 @@ public class AccountSecretApiImpl implements AccountSecretApi {
         format("Secret with identifier [%s] in org [%s] and project [%s] not found", secret, null, null));
   }
 
-  private Response getSecrets(String account, String org, String project, List<String> secret, List<String> type,
-      Boolean recursive, String searchTerm, Integer page, Integer limit) {
+  private Response getSecrets(String account, List<String> secret, List<String> type, Boolean recursive,
+      String searchTerm, Integer page, Integer limit) {
     List<SecretType> secretTypes = secretApiUtils.toSecretTypes(type);
 
-    List<SecretResponseWrapper> content =
-        getNGPageResponse(ngSecretService.list(account, org, project, secret, secretTypes, recursive, searchTerm, page,
-                              limit, null, false))
-            .getContent();
+    List<SecretResponseWrapper> content = getNGPageResponse(
+        ngSecretService.list(account, null, null, secret, secretTypes, recursive, searchTerm, page, limit, null, false))
+                                              .getContent();
 
     List<SecretResponse> secretResponse =
         content.stream().map(secretApiUtils::toSecretResponse).collect(Collectors.toList());

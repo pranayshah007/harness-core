@@ -5481,6 +5481,7 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
   public List<WorkflowExecution> obtainWorkflowExecutions(
       String accountId, long fromDateEpochMilli, String[] projectedKeys) {
     List<WorkflowExecution> workflowExecutions = new ArrayList<>();
+
     try (HIterator<WorkflowExecution> iterator =
              obtainWorkflowExecutionIterator(accountId, fromDateEpochMilli, projectedKeys)) {
       while (iterator.hasNext()) {
@@ -5509,7 +5510,7 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
 
   private HIterator<WorkflowExecution> obtainWorkflowExecutionIterator(
       String accountId, long epochMilli, String[] projectedKeys) {
-    Query<WorkflowExecution> query = wingsPersistence.createQuery(WorkflowExecution.class)
+    Query<WorkflowExecution> query = wingsPersistence.createAuthorizedQueryOnAnalyticNode(WorkflowExecution.class)
                                          .field(WorkflowExecutionKeys.accountId)
                                          .equal(accountId)
                                          .field(WorkflowExecutionKeys.createdAt)

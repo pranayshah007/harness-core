@@ -30,7 +30,6 @@ import io.harness.eventsframework.producer.Message;
 import io.harness.ng.core.AccountScope;
 import io.harness.ng.core.OrgScope;
 import io.harness.ng.core.ProjectScope;
-import io.harness.ng.core.template.TemplateEntityType;
 import io.harness.outbox.OutboxEvent;
 import io.harness.outbox.api.OutboxEventHandler;
 import io.harness.security.PrincipalContextData;
@@ -66,9 +65,8 @@ public class TemplateOutboxEventHandler implements OutboxEventHandler {
     TemplateCreateEvent templateCreateEvent =
         objectMapper.readValue(outboxEvent.getEventData(), TemplateCreateEvent.class);
 
-    boolean publishedToRedis = publishEvent(outboxEvent, EventsFrameworkMetadataConstants.CREATE_ACTION,
-        templateCreateEvent.getTemplateEntity().getVersionLabel(),
-        templateCreateEvent.getTemplateEntity().getTemplateEntityType());
+    boolean publishedToRedis = publishEvent(
+        outboxEvent, EventsFrameworkMetadataConstants.CREATE_ACTION, templateCreateEvent.getTemplateEntity());
     TemplateEventData templateEventData = new TemplateEventData(templateCreateEvent.getComments(), null);
     AuditEntry auditEntry = AuditEntry.builder()
                                 .action(Action.CREATE)
@@ -106,13 +104,11 @@ public class TemplateOutboxEventHandler implements OutboxEventHandler {
       publishedToRedis = publishEvent(EventsFrameworkMetadataConstants.DELETE_ACTION,
           oldTemplate.getAccountIdentifier(), outboxEvent.getResource().getIdentifier(), entityBuilder.build());
 
-      publishedToRedis = publishedToRedis
-          && publishEvent(outboxEvent, EventsFrameworkMetadataConstants.CREATE_ACTION, oldTemplate.getVersionLabel(),
-              oldTemplate.getTemplateEntityType());
+      publishedToRedis =
+          publishedToRedis && publishEvent(outboxEvent, EventsFrameworkMetadataConstants.CREATE_ACTION, oldTemplate);
     } else {
-      publishedToRedis = publishEvent(outboxEvent, EventsFrameworkMetadataConstants.UPDATE_ACTION,
-          templateUpdateEvent.getNewTemplateEntity().getVersionLabel(),
-          templateUpdateEvent.getNewTemplateEntity().getTemplateEntityType());
+      publishedToRedis = publishEvent(
+          outboxEvent, EventsFrameworkMetadataConstants.UPDATE_ACTION, templateUpdateEvent.getNewTemplateEntity());
     }
 
     TemplateEventData templateEventData = new TemplateEventData(
@@ -135,9 +131,8 @@ public class TemplateOutboxEventHandler implements OutboxEventHandler {
   private boolean handleTemplateDeleteEvent(OutboxEvent outboxEvent) throws IOException {
     TemplateDeleteEvent templateDeleteEvent =
         objectMapper.readValue(outboxEvent.getEventData(), TemplateDeleteEvent.class);
-    boolean publishedToRedis = publishEvent(outboxEvent, EventsFrameworkMetadataConstants.DELETE_ACTION,
-        templateDeleteEvent.getTemplateEntity().getVersionLabel(),
-        templateDeleteEvent.getTemplateEntity().getTemplateEntityType());
+    boolean publishedToRedis = publishEvent(
+        outboxEvent, EventsFrameworkMetadataConstants.DELETE_ACTION, templateDeleteEvent.getTemplateEntity());
     TemplateEventData templateEventData = new TemplateEventData(templateDeleteEvent.getComments(), null);
     AuditEntry auditEntry = AuditEntry.builder()
                                 .action(Action.DELETE)
@@ -181,7 +176,7 @@ public class TemplateOutboxEventHandler implements OutboxEventHandler {
     }
   }
 
-  boolean publishEvent(OutboxEvent outboxEvent, String action, String versionLabel, TemplateEntityType templateType) {
+  boolean publishEvent(OutboxEvent outboxEvent, String action, TemplateEntity templateEntity) {
     EntityChangeDTO.Builder entityBuilder =
         EntityChangeDTO.newBuilder().setIdentifier(StringValue.of(outboxEvent.getResource().getIdentifier()));
     String accountIdentifier;
@@ -201,8 +196,11 @@ public class TemplateOutboxEventHandler implements OutboxEventHandler {
       entityBuilder.setProjectIdentifier(StringValue.of(resourceScope.getProjectIdentifier()));
     }
 
-    entityBuilder.putMetadata("versionLabel", versionLabel);
-    entityBuilder.putMetadata("templateType", templateType.toString());
+    entityBuilder.putMetadata("versionLabel", templateEntity.getVersionLabel());
+    entityBuilder.putMetadata("templateType", templateEntity.getTemplateEntityType().toString());
+    if (templateEntity.isStableTemplate()) {
+      entityBuilder.putMetadata("isStable", "true");
+    }
     return publishEvent(action, accountIdentifier, outboxEvent.getResource().getIdentifier(), entityBuilder.build());
   }
 

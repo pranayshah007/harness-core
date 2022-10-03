@@ -1581,6 +1581,8 @@
 19875:io.harness.delegate.beans.connector.customsecretmanager.CustomSecretManagerConnectorDTO
 19876:io.harness.delegate.beans.connector.customsecretmanager.CustomSecretManagerValidationParams
 19877:io.harness.delegate.beans.connector.customsecretmanager.TemplateLinkConfigForCustomSecretManager
+19878:io.harness.delegate.beans.connector.gcpsecretmanager.GcpSecretManagerConnectorDTO
+19879:io.harness.delegate.beans.connector.gcpsecretmanagerconnector.GcpSecretManagerValidationParams
 20001:io.harness.delegate.task.shell.ShellScriptApprovalTaskParameters
 20002:io.harness.delegate.task.http.HttpTaskParameters
 20100:io.harness.ng.core.environment.beans.EnvironmentType
@@ -1762,6 +1764,8 @@
 55423:io.harness.delegate.task.azure.arm.AzureFetchArmPreDeploymentDataTaskParameters
 55424:io.harness.delegate.task.azure.arm.AzureFetchArmPreDeploymentDataTaskResponse
 55425:io.harness.delegate.beans.executioncapability.WinrmConnectivityExecutionCapability
+55426:io.harness.delegate.task.shell.provisioner.ShellScriptProvisionTaskNGRequest
+55427:io.harness.delegate.task.shell.provisioner.ShellScriptProvisionTaskNGResponse
 55470:io.harness.delegate.task.ssh.artifact.CustomArtifactDelegateConfig
 55501:io.harness.delegate.beans.instancesync.info.PdcServerInstanceInfo
 55502:io.harness.delegate.beans.instancesync.info.AzureSshWinrmServerInstanceInfo
@@ -1796,6 +1800,14 @@
 73985:io.harness.delegate.beans.DelegateEntityOwner
 73986:io.harness.delegate.beans.DelegateSizeDetails
 73987:io.harness.delegate.beans.DelegateSize
+80302:software.wings.helpers.ext.azure.devops.AzureArtifactsFeeds
+80303:software.wings.helpers.ext.azure.devops.AzureArtifactsPackageFile
+80304:software.wings.helpers.ext.azure.devops.AzureArtifactsPackageFileInfo
+80305:software.wings.helpers.ext.azure.devops.AzureArtifactsPackages
+80307:software.wings.helpers.ext.azure.devops.AzureArtifactsPackageVersions
+80308:software.wings.helpers.ext.azure.devops.AzureArtifactsProtocolMetadata
+80309:software.wings.helpers.ext.azure.devops.AzureArtifactsProtocolMetadataData
+80310:software.wings.helpers.ext.azure.devops.AzureDevopsProjects
 83071:io.harness.delegate.beans.connector.awsconnector.AwsListEC2InstancesTaskParamsRequest
 83072:io.harness.delegate.beans.connector.awsconnector.AwsListEC2InstancesTaskResponse
 83073:software.wings.service.impl.aws.model.AwsEC2Instance
@@ -1806,6 +1818,11 @@
 83078:io.harness.delegate.beans.connector.awsconnector.AwsListLoadBalancersTaskResponse
 83079:io.harness.delegate.beans.connector.awsconnector.AwsListASGNamesTaskResponse
 83080:io.harness.delegate.beans.connector.awsconnector.AwsListClustersTaskResponse
+83081:io.harness.delegate.beans.connector.awsconnector.AwsListElbTaskResponse
+83082:io.harness.delegate.beans.connector.awsconnector.AwsListElbListenersTaskParamsRequest
+83083:io.harness.delegate.beans.connector.awsconnector.AwsListElbListenerRulesTaskParamsRequest
+83084:io.harness.delegate.beans.connector.awsconnector.AwsListElbListenerRulesTaskResponse
+83085:io.harness.delegate.beans.connector.awsconnector.AwsListElbListenersTaskResponse
 90001:software.wings.service.impl.apm.AWSPrometheusInfo
 95001:io.harness.delegate.beans.logstreaming.UnitProgressData
 97001:io.harness.jira.JiraActionNG
@@ -1850,6 +1867,9 @@
 97113:io.harness.servicenow.ServiceNowTemplate
 97114:io.harness.aws.AwsCFTemplatesType
 97115:io.harness.ssh.FileSourceType
+97116:io.harness.servicenow.ServiceNowImportSetResponseNG
+97117:io.harness.servicenow.ServiceNowImportSetTransformMapResult
+97118:io.harness.servicenow.ServiceNowStagingTable
 98399:io.harness.delegate.task.helm.HelmCommandRequestNG
 98400:io.harness.helm.HelmCommandType
 98401:io.harness.delegate.task.helm.HelmInstallCommandRequestNG
@@ -2334,6 +2354,7 @@
 980033:io.harness.exception.ngexception.beans.templateservice.TemplateInputsErrorDTO
 980034:io.harness.exception.ngexception.beans.templateservice.TemplateInputsErrorMetadataDTO
 980035:io.harness.exception.ngexception.AzureARMTaskException
+980037:io.harness.exception.ngexception.AzureBPTaskException
 9300122:io.harness.yaml.core.timeout.Timeout
 9800001:io.harness.beans.RecasterMap
 9800002:io.harness.licensing.beans.modules.ChaosModuleLicenseDTO

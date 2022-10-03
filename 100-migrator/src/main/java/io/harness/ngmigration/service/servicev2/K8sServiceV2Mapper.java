@@ -19,7 +19,9 @@ import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
+import io.harness.ngmigration.service.MigratorUtility;
 import io.harness.ngmigration.service.artifactstream.ArtifactStreamFactory;
+import io.harness.yaml.core.variables.NGVariable;
 
 import software.wings.beans.Service;
 import software.wings.beans.artifact.ArtifactStream;
@@ -45,10 +47,12 @@ public class K8sServiceV2Mapper implements ServiceV2Mapper {
                             .getArtifactDetails(inputDTO, entities, graph, artifactStream, migratedEntities);
     }
     KubernetesServiceSpecBuilder kubernetesServiceSpec = KubernetesServiceSpec.builder();
+    List<NGVariable> variables = MigratorUtility.getVariables(service.getServiceVariables(), migratedEntities);
     if (primaryArtifact != null) {
       kubernetesServiceSpec.artifacts(ArtifactListConfig.builder().primary(primaryArtifact).build());
     }
     kubernetesServiceSpec.manifests(manifests);
+    kubernetesServiceSpec.variables(variables);
     return ServiceDefinition.builder()
         .type(ServiceDefinitionType.KUBERNETES)
         .serviceSpec(kubernetesServiceSpec.build())

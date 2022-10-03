@@ -16,6 +16,7 @@ import lombok.experimental.UtilityClass;
 @OwnedBy(PL)
 @UtilityClass
 public class NGCommonEntityConstants {
+  public static final String ACCOUNT_HEADER = "Harness-Account";
   public static final String ACCOUNT = "account";
   public static final String ACCOUNT_KEY = "accountIdentifier";
   public static final String ORG_KEY = "orgIdentifier";
@@ -70,7 +71,7 @@ public class NGCommonEntityConstants {
   public static final Integer MAX_PAGE_SIZE = 10000;
   public static final String EXPIRY_TIME = "expiryTime";
 
-  // TODO(UTSAV): Move to 340-ce-nextgen
+  // TODO(UTSAV): Move to ce-nextgen
   public static final String IS_EVENTS_ENABLED = "eventsEnabled";
   public static final String IS_OPTIMIZATION_ENABLED = "optimizationEnabled";
   public static final String IS_CUR_ENABLED = "curEnabled";

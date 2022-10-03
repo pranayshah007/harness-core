@@ -1345,4 +1345,132 @@ public class PipelineServiceImplTest extends WingsBaseTest {
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("Variable var1 does not have any common allowed values between all stages");
   }
+
+  @Test
+  @Owner(developers = YUVRAJ)
+  @Category(UnitTests.class)
+  public void test_mergeNonEntityPipelineVariablesDefaultValueFalseOverride1() {
+    Variable var1 = aVariable()
+                        .name("var1")
+                        .allowedList(asList("value2", "value3"))
+                        .allowedValues("value2,value3")
+                        .value("value3")
+                        .build();
+    List<Variable> pipelineVars = new ArrayList<>();
+    Variable existVar1 =
+        aVariable().name("var1").allowedList(asList("value1", "value2")).allowedValues("value1,value2").build();
+    pipelineVars.add(existVar1);
+    pipelineServiceImpl.mergeNonEntityPipelineVariables(var1, false, pipelineVars, var1.getName(), "var1");
+    assertThat(pipelineVars.size()).isEqualTo(1);
+    assertThat(pipelineVars.get(0).getName()).isEqualTo("var1");
+    assertThat(pipelineVars.get(0).getAllowedList().size()).isEqualTo(1);
+    assertThat(pipelineVars.get(0).getAllowedValues()).isEqualTo("value2");
+    assertThat(pipelineVars.get(0).getValue()).isEqualTo(null);
+
+    Variable var2 = aVariable()
+                        .name("var2")
+                        .allowedList(asList("value2", "value3"))
+                        .allowedValues("value2,value3")
+                        .value("value3")
+                        .build();
+    List<Variable> pipelineVars1 = new ArrayList<>();
+    Variable existVar2 = aVariable()
+                             .name("var2")
+                             .allowedList(asList("value1", "value2"))
+                             .allowedValues("value1,value2")
+                             .value("value2")
+                             .build();
+    pipelineVars1.add(existVar2);
+    pipelineServiceImpl.mergeNonEntityPipelineVariables(var2, false, pipelineVars1, var2.getName(), "var2");
+    assertThat(pipelineVars1.size()).isEqualTo(1);
+    assertThat(pipelineVars1.get(0).getName()).isEqualTo("var2");
+    assertThat(pipelineVars1.get(0).getAllowedList().size()).isEqualTo(1);
+    assertThat(pipelineVars1.get(0).getAllowedValues()).isEqualTo("value2");
+    assertThat(pipelineVars1.get(0).getValue()).isEqualTo("value2");
+
+    Variable var3 = aVariable()
+                        .name("var3")
+                        .allowedList(asList("value2", "value3", "value4"))
+                        .allowedValues("value2,value3,value4")
+                        .value("value3")
+                        .build();
+    List<Variable> pipelineVars2 = new ArrayList<>();
+    Variable existVar3 = aVariable()
+                             .name("var3")
+                             .allowedList(asList("value1", "value2", "value3"))
+                             .allowedValues("value1,value2,value3")
+                             .value("value2")
+                             .build();
+    pipelineVars2.add(existVar3);
+    pipelineServiceImpl.mergeNonEntityPipelineVariables(var3, false, pipelineVars2, var3.getName(), "var3");
+    assertThat(pipelineVars2.size()).isEqualTo(1);
+    assertThat(pipelineVars2.get(0).getName()).isEqualTo("var3");
+    assertThat(pipelineVars2.get(0).getAllowedList().size()).isEqualTo(2);
+    assertThat(pipelineVars2.get(0).getAllowedValues()).isEqualTo("value2,value3");
+    assertThat(pipelineVars2.get(0).getValue()).isEqualTo("value3");
+  }
+
+  @Test
+  @Owner(developers = YUVRAJ)
+  @Category(UnitTests.class)
+  public void test_mergeNonEntityPipelineVariablesDefaultValueFalseOverride2() {
+    Variable var1 =
+        aVariable().name("var1").allowedList(asList("value2", "value3")).allowedValues("value2,value3").build();
+    List<Variable> pipelineVars = new ArrayList<>();
+    Variable existVar1 = aVariable()
+                             .name("var1")
+                             .allowedList(asList("value1", "value2"))
+                             .allowedValues("value1,value2")
+                             .value("value1")
+                             .build();
+    pipelineVars.add(existVar1);
+    pipelineServiceImpl.mergeNonEntityPipelineVariables(var1, false, pipelineVars, var1.getName(), "var1");
+    assertThat(pipelineVars.size()).isEqualTo(1);
+    assertThat(pipelineVars.get(0).getName()).isEqualTo("var1");
+    assertThat(pipelineVars.get(0).getAllowedList().size()).isEqualTo(1);
+    assertThat(pipelineVars.get(0).getAllowedValues()).isEqualTo("value2");
+    assertThat(pipelineVars.get(0).getValue()).isEqualTo(null);
+
+    Variable var2 = aVariable()
+                        .name("var2")
+                        .allowedList(asList("value2", "value3"))
+                        .allowedValues("value2,value3")
+                        .value("value2")
+                        .build();
+    List<Variable> pipelineVars1 = new ArrayList<>();
+    Variable existVar2 = aVariable()
+                             .name("var2")
+                             .allowedList(asList("value1", "value2"))
+                             .allowedValues("value1,value2")
+                             .value("value1")
+                             .build();
+    pipelineVars1.add(existVar2);
+    pipelineServiceImpl.mergeNonEntityPipelineVariables(var2, false, pipelineVars1, var2.getName(), "var2");
+    assertThat(pipelineVars1.size()).isEqualTo(1);
+    assertThat(pipelineVars1.get(0).getName()).isEqualTo("var2");
+    assertThat(pipelineVars1.get(0).getAllowedList().size()).isEqualTo(1);
+    assertThat(pipelineVars1.get(0).getAllowedValues()).isEqualTo("value2");
+    assertThat(pipelineVars1.get(0).getValue()).isEqualTo("value2");
+
+    Variable var3 = aVariable()
+                        .name("var3")
+                        .allowedList(asList("value2", "value3", "value4"))
+                        .allowedValues("value2,value3,value4")
+                        .value("value3")
+                        .build();
+    List<Variable> pipelineVars2 = new ArrayList<>();
+    Variable existVar3 = aVariable()
+                             .name("var3")
+                             .allowedList(asList("value1", "value2", "value5"))
+                             .allowedValues("value1,value2,value5")
+                             .value("value5")
+                             .build();
+    pipelineVars2.add(existVar3);
+    pipelineServiceImpl.mergeNonEntityPipelineVariables(var3, false, pipelineVars2, var3.getName(), "var3");
+    assertThat(pipelineVars2.size()).isEqualTo(1);
+    assertThat(pipelineVars2.get(0).getName()).isEqualTo("var3");
+    assertThat(pipelineVars2.get(0).getAllowedList().size()).isEqualTo(1);
+    assertThat(pipelineVars2.get(0).getAllowedValues()).isEqualTo("value2");
+    assertThat(pipelineVars2.get(0).getValue()).isEqualTo(null);
+  }
 }

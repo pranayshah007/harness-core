@@ -89,6 +89,36 @@ public class CloudWatchServiceImplTest extends CvNextGenTestBase {
   @Test
   @Owner(developers = DHRUVX)
   @Category(UnitTests.class)
+  public void testFetchSampleData_metricIdentifierIsBlank() throws IOException {
+    String responseObject = readResource("sample-metric-data.json");
+    when(verificationManagerService.getDataCollectionResponse(
+             anyString(), anyString(), anyString(), any(DataCollectionRequest.class)))
+        .thenReturn(responseObject);
+
+    Map sampleDataResponse = cloudWatchService.fetchSampleData(builderFactory.getProjectParams(), connectorIdentifier,
+        generateUuid(), generateUuid(), generateUuid(), generateUuid(), null);
+
+    assertThat(sampleDataResponse).isNotNull();
+  }
+
+  @Test
+  @Owner(developers = DHRUVX)
+  @Category(UnitTests.class)
+  public void testFetchSampleData_metricNameIsBlank() throws IOException {
+    String responseObject = readResource("sample-metric-data.json");
+    when(verificationManagerService.getDataCollectionResponse(
+             anyString(), anyString(), anyString(), any(DataCollectionRequest.class)))
+        .thenReturn(responseObject);
+
+    Map sampleDataResponse = cloudWatchService.fetchSampleData(builderFactory.getProjectParams(), connectorIdentifier,
+        generateUuid(), generateUuid(), generateUuid(), null, null);
+
+    assertThat(sampleDataResponse).isNotNull();
+  }
+
+  @Test
+  @Owner(developers = DHRUVX)
+  @Category(UnitTests.class)
   public void testFetchSampleData_unexpectedMultipleTimeSeriesResponse() throws IOException {
     String responseObject = readResource("sample-metric-data-multiple-time-series.json");
     when(verificationManagerService.getDataCollectionResponse(

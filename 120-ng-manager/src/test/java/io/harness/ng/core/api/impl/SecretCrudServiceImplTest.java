@@ -508,6 +508,7 @@ public class SecretCrudServiceImplTest extends CategoryTest {
         .thenReturn(Optional.of(
             Secret.builder().type(SecretType.SecretText).secretSpec(SecretTextSpec.builder().build()).build()));
     secretCrudService.deleteBatch("accountId", "orgId", "projectId", secretIdentifiers);
+    verify(encryptedDataService, times(2)).hardDelete(any(), any(), any(), any());
     verify(ngSecretServiceV2, times(2)).get(any(), any(), any(), any());
     verify(secretEntityReferenceHelper, times(2))
         .deleteSecretEntityReferenceWhenSecretGetsDeleted(any(), any(), any(), any(), any());

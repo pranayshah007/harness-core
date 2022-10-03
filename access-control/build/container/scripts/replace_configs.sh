@@ -64,3 +64,5 @@ if [[ "" != "$ALLOWED_ORIGINS" ]]; then
     INDEX=$(expr $INDEX + 1)
   done
 fi
+
+replace_key_value enableOpentelemetry "$ENABLE_OPENTELEMETRY"

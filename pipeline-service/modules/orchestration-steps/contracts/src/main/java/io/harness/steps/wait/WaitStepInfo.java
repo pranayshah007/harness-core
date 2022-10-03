@@ -74,7 +74,7 @@ public class WaitStepInfo implements PMSStepInfo, Visitable {
   @Override
   @JsonIgnore
   public String getFacilitatorType() {
-    return OrchestrationFacilitatorType.ASYNC;
+    return OrchestrationFacilitatorType.WAIT_STEP;
   }
 
   @Override

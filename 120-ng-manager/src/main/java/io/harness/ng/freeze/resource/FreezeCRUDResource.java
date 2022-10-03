@@ -258,8 +258,9 @@ public class FreezeCRUDResource {
       FreezeFilterPropertiesDTO freezeFilterPropertiesDTO) {
     String searchTerm = freezeFilterPropertiesDTO == null ? null : freezeFilterPropertiesDTO.getSearchTerm();
     FreezeStatus status = freezeFilterPropertiesDTO == null ? null : freezeFilterPropertiesDTO.getFreezeStatus();
-    Criteria criteria = FreezeFilterHelper.createCriteriaForGetList(
-        accountId, orgIdentifier, projectIdentifier, searchTerm, FreezeType.MANUAL, status);
+    Criteria criteria = FreezeFilterHelper.createCriteriaForGetList(accountId, orgIdentifier, projectIdentifier,
+        searchTerm, FreezeType.MANUAL, status, freezeFilterPropertiesDTO.getStartTime(),
+        freezeFilterPropertiesDTO.getEndTime());
     Pageable pageRequest;
     if (freezeFilterPropertiesDTO != null && isNotEmpty(freezeFilterPropertiesDTO.getFreezeIdentifiers())) {
       criteria.and(FreezeConfigEntityKeys.identifier).in(freezeFilterPropertiesDTO.getFreezeIdentifiers());

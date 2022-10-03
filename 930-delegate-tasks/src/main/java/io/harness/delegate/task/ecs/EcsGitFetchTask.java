@@ -40,6 +40,7 @@ import io.harness.delegate.task.ecs.response.EcsGitFetchResponse;
 import io.harness.delegate.task.git.TaskStatus;
 import io.harness.delegate.task.serverless.ServerlessGitFetchTaskHelper;
 import io.harness.ecs.EcsCommandUnitConstants;
+import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.git.model.FetchFilesResult;
 import io.harness.logging.CommandExecutionStatus;
@@ -184,8 +185,18 @@ public class EcsGitFetchTask extends AbstractDelegateRunnableTask {
 
         List<String> filePaths = Collections.singletonList(filePath);
         serverlessGitFetchTaskHelper.printFileNames(executionLogCallback, filePaths);
-        filesResult =
-            serverlessGitFetchTaskHelper.fetchFileFromRepo(gitStoreDelegateConfig, filePaths, accountId, gitConfigDTO);
+        try {
+          filesResult = serverlessGitFetchTaskHelper.fetchFileFromRepo(
+              gitStoreDelegateConfig, filePaths, accountId, gitConfigDTO);
+        } catch (Exception e) {
+          throw NestedExceptionUtils.hintWithExplanationException(
+              format(
+                  "Please checks files %s configured Manifest section in Harness Service are correct. Check if git credentials are correct.",
+                  filePaths),
+              format("Error while fetching files %s from Git repo %s", filePaths,
+                  ecsGitFetchFileConfig.getGitStoreDelegateConfig().getGitConfigDTO().getUrl()),
+              e);
+        }
       }
       executionLogCallback.saveExecutionLog(
           color(format("%nFetch Config File completed successfully..%n"), LogColor.White, LogWeight.Bold), INFO);
@@ -203,5 +214,9 @@ public class EcsGitFetchTask extends AbstractDelegateRunnableTask {
       throw sanitizedException;
     }
     return filesResult;
+  }
+
+  public boolean isSupportingErrorFramework() {
+    return true;
   }
 }

@@ -24,6 +24,8 @@ import io.harness.delegate.task.ecs.response.EcsCommandResponse;
 import io.harness.delegate.task.ecs.response.EcsPrepareRollbackDataResponse;
 import io.harness.ecs.EcsCommandUnitConstants;
 import io.harness.exception.InvalidArgumentsException;
+import io.harness.exception.InvalidRequestException;
+import io.harness.exception.NestedExceptionUtils;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
@@ -33,6 +35,7 @@ import java.util.List;
 import java.util.Optional;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import software.amazon.awssdk.services.ecs.model.CreateServiceRequest;
 import software.amazon.awssdk.services.ecs.model.Service;
@@ -68,6 +71,15 @@ public class EcsPrepareRollbackCommandTaskHandler extends EcsCommandTaskNGHandle
     CreateServiceRequest.Builder createServiceRequestBuilder = ecsCommandTaskHelper.parseYamlAsObject(
         ecsServiceDefinitionManifestContent, CreateServiceRequest.serializableBuilderClass());
     CreateServiceRequest createServiceRequest = createServiceRequestBuilder.build();
+
+    if (StringUtils.isEmpty(createServiceRequest.serviceName())) {
+      throw NestedExceptionUtils.hintWithExplanationException(
+          format(
+              "Please check if ECS service name is configured properly in ECS Service Definition Manifest in Harness Service."),
+          format("ECS service name is not configured properly in ECS Service Definition. It is found to be empty."),
+          new InvalidRequestException("ECS service name is empty."));
+    }
+
     String serviceName = createServiceRequest.serviceName();
 
     prepareRollbackDataLogCallback.saveExecutionLog(

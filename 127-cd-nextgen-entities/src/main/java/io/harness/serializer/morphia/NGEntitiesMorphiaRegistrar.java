@@ -25,6 +25,17 @@ import io.harness.cdng.artifact.outcome.GithubPackagesArtifactOutcome;
 import io.harness.cdng.artifact.outcome.JenkinsArtifactOutcome;
 import io.harness.cdng.artifact.outcome.S3ArtifactOutcome;
 import io.harness.cdng.gitops.entity.Cluster;
+import io.harness.cdng.infra.beans.AzureWebAppInfraMapping;
+import io.harness.cdng.infra.beans.CustomDeploymentInfraMapping;
+import io.harness.cdng.infra.beans.EcsInfraMapping;
+import io.harness.cdng.infra.beans.InfraMapping;
+import io.harness.cdng.infra.beans.K8sAzureInfraMapping;
+import io.harness.cdng.infra.beans.K8sDirectInfraMapping;
+import io.harness.cdng.infra.beans.K8sGcpInfraMapping;
+import io.harness.cdng.infra.beans.PdcInfraMapping;
+import io.harness.cdng.infra.beans.ServerlessAwsLambdaInfraMapping;
+import io.harness.cdng.infra.beans.SshWinRmAwsInfraMapping;
+import io.harness.cdng.infra.beans.SshWinRmAzureInfraMapping;
 import io.harness.cdng.manifest.yaml.ManifestsOutcome;
 import io.harness.cdng.service.beans.ServiceConfig;
 import io.harness.cdng.service.beans.ServiceConfigOutcome;
@@ -48,6 +59,17 @@ public class NGEntitiesMorphiaRegistrar implements MorphiaRegistrar {
     set.add(Environment.class);
     set.add(InfrastructureEntity.class);
     set.add(NGServiceOverridesEntity.class);
+    set.add(ServerlessAwsLambdaInfraMapping.class);
+    set.add(SshWinRmAwsInfraMapping.class);
+    set.add(AzureWebAppInfraMapping.class);
+    set.add(CustomDeploymentInfraMapping.class);
+    set.add(EcsInfraMapping.class);
+    set.add(InfraMapping.class);
+    set.add(K8sDirectInfraMapping.class);
+    set.add(K8sGcpInfraMapping.class);
+    set.add(K8sAzureInfraMapping.class);
+    set.add(PdcInfraMapping.class);
+    set.add(SshWinRmAzureInfraMapping.class);
   }
 
   @Override

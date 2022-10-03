@@ -9,6 +9,10 @@ package io.harness.delegate.task.winrm;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.delegate.task.winrm.WinRmExecutorHelper.PARTITION_SIZE_IN_BYTES;
+import static io.harness.delegate.utils.TaskExceptionUtils.calcPercentage;
+import static io.harness.logging.CommandExecutionStatus.RUNNING;
+import static io.harness.logging.LogLevel.INFO;
 import static io.harness.windows.CmdUtils.escapeEnvValueSpecialChars;
 
 import static java.lang.String.format;
@@ -208,6 +212,52 @@ public class WinRmSession implements AutoCloseable {
       }
     }
 
+    return statusCode;
+  }
+
+  public int executeCommandsListV2(List<String> commandList, Writer output, Writer error, boolean isOutputWriter,
+      String scriptExecCommand, boolean isScriptFileExecution) {
+    if (commandList.isEmpty()) {
+      return -1;
+    }
+    int statusCode;
+    if (args != null) {
+      if (isNotEmpty(scriptExecCommand)) {
+        commandList.add(scriptExecCommand);
+      }
+      return executeAllCommands(commandList, output, error, isOutputWriter, isScriptFileExecution);
+    } else {
+      statusCode = executeAllCommands(commandList, output, error, isOutputWriter, isScriptFileExecution);
+      if (isNotEmpty(scriptExecCommand)) {
+        statusCode = shell.execute(scriptExecCommand, output, error);
+      }
+    }
+
+    return statusCode;
+  }
+
+  private int executeAllCommands(
+      List<String> commandList, Writer output, Writer error, boolean isOutputWriter, boolean isScriptFileExecution) {
+    int statusCode = 0;
+    int chunkNumber = 1;
+    if (isScriptFileExecution) {
+      logCallback.saveExecutionLog(
+          format("Transferring script to a remote file. Chunk size: %s Bytes\n", PARTITION_SIZE_IN_BYTES), INFO,
+          RUNNING);
+    }
+    for (String command : commandList) {
+      int fileLength = commandList.stream().mapToInt(c -> c.getBytes().length).sum();
+      statusCode = executeCommandString(command, output, error, isOutputWriter);
+      if (isScriptFileExecution) {
+        logCallback.saveExecutionLog(format("Transferred %s data to PowerShell script file...\n",
+                                         calcPercentage(chunkNumber * PARTITION_SIZE_IN_BYTES, fileLength)),
+            INFO, RUNNING);
+      }
+      if (statusCode != 0) {
+        return statusCode;
+      }
+      chunkNumber++;
+    }
     return statusCode;
   }
 

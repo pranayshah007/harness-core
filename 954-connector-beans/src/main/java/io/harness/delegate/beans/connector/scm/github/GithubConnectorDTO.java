@@ -10,6 +10,7 @@ package io.harness.delegate.beans.connector.scm.github;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.utils.FilePathUtils.removeStartingAndEndingSlash;
 
+import io.harness.annotation.RecasterFieldName;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
@@ -55,6 +56,7 @@ import org.hibernate.validator.constraints.NotBlank;
 public class GithubConnectorDTO
     extends ConnectorConfigDTO implements ScmConnector, DelegateSelectable, ManagerExecutable {
   @NotNull
+  @RecasterFieldName(name = "type")
   @JsonProperty("type")
   @Schema(type = "string", allowableValues = {"Account", "Repo"})
   GitConnectionType connectionType;

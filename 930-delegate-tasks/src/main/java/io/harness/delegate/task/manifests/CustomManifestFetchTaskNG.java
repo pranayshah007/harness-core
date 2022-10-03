@@ -150,6 +150,9 @@ public class CustomManifestFetchTaskNG extends AbstractDelegateRunnableTask {
       valuesFetchResponse =
           customManifestFetchTaskHelper.fetchValuesTask(fetchParams, logCallback, defaultSourceWorkingDirectory, false);
       if (valuesFetchResponse.getCommandExecutionStatus() == FAILURE) {
+        if (valuesFetchResponse.getUnitProgressData() == null) {
+          valuesFetchResponse.setUnitProgressData(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress));
+        }
         return valuesFetchResponse;
       }
     } catch (Exception e) {

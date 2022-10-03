@@ -306,7 +306,7 @@
                 "StepGroupRollback",
                 "PipelineRollback",
                 "ManualIntervention",
-                "ProceedWithDefaultValue"
+                "ProceedWithDefaultValues"
               ]
             }
           },
@@ -718,7 +718,7 @@
                   "Verification",
                   "DelegateProvisioning",
                   "PolicyEvaluationFailure",
-                  "ExecutionInputTimeoutError"
+                  "InputTimeoutError"
                 ]
               }
             }
@@ -907,7 +907,7 @@
                 "type": {
                   "type": "string",
                   "enum": [
-                    "ProceedWithDefaultValue"
+                    "ProceedWithDefaultValues"
                   ]
                 }
               }

@@ -32,7 +32,10 @@ public class EcsBlueGreenPrepareRollbackDataOutcome implements Outcome, Executio
   List<String> registerScalingPolicyRequestBuilderStrings;
   boolean isFirstDeployment;
   String loadBalancer;
-  String listenerArn;
-  String listenerRuleArn;
-  String targetGroupArn;
+  String prodListenerArn;
+  String prodListenerRuleArn;
+  String prodTargetGroupArn;
+  String stageListenerArn;
+  String stageListenerRuleArn;
+  String stageTargetGroupArn;
 }

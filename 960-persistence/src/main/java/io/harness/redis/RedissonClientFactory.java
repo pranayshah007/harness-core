@@ -59,10 +59,23 @@ public class RedissonClientFactory {
         }
 
         if (redisConfig.getSubscriptionsPerConnection() != 0) {
-          config.useSingleServer().setSubscriptionsPerConnection(redisConfig.getSubscriptionsPerConnection());
+          serverConfig.setSubscriptionsPerConnection(redisConfig.getSubscriptionsPerConnection());
         }
         if (redisConfig.getSubscriptionConnectionPoolSize() != 0) {
-          config.useSingleServer().setSubscriptionConnectionPoolSize(redisConfig.getSubscriptionConnectionPoolSize());
+          serverConfig.setSubscriptionConnectionPoolSize(redisConfig.getSubscriptionConnectionPoolSize());
+        }
+
+        if (redisConfig.getConnectionPoolSize() != 0) {
+          serverConfig.setConnectionPoolSize(redisConfig.getConnectionPoolSize());
+        }
+        if (redisConfig.getRetryInterval() != 0) {
+          serverConfig.setRetryInterval(redisConfig.getRetryInterval());
+        }
+        if (redisConfig.getTimeout() != 0) {
+          serverConfig.setTimeout(redisConfig.getTimeout());
+        }
+        if (redisConfig.getRetryAttempts() != 0) {
+          serverConfig.setRetryAttempts(redisConfig.getRetryAttempts());
         }
 
         serverConfig.setConnectionMinimumIdleSize(
@@ -90,6 +103,19 @@ public class RedissonClientFactory {
         if (redisConfig.getSubscriptionConnectionPoolSize() != 0) {
           config.useSentinelServers().setSubscriptionConnectionPoolSize(
               redisConfig.getSubscriptionConnectionPoolSize());
+        }
+
+        if (redisConfig.getConnectionPoolSize() != 0) {
+          config.useSentinelServers().setSubscriptionConnectionPoolSize(redisConfig.getConnectionPoolSize());
+        }
+        if (redisConfig.getRetryInterval() != 0) {
+          config.useSentinelServers().setRetryInterval(redisConfig.getRetryInterval());
+        }
+        if (redisConfig.getTimeout() != 0) {
+          config.useSentinelServers().setTimeout(redisConfig.getTimeout());
+        }
+        if (redisConfig.getRetryAttempts() != 0) {
+          config.useSentinelServers().setRetryAttempts(redisConfig.getRetryAttempts());
         }
       }
       config.setNettyThreads(redisConfig.getNettyThreads());

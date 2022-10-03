@@ -27,6 +27,7 @@ import io.harness.migration.MigrationProvider;
 import io.harness.migration.NGMigrationSdkInitHelper;
 import io.harness.migration.beans.NGMigrationConfiguration;
 import io.harness.ng.core.CorrelationFilter;
+import io.harness.ng.core.TraceFilter;
 import io.harness.outbox.OutboxEventPollService;
 import io.harness.persistence.HPersistence;
 import io.harness.platform.remote.ResourceGroupOpenApiResource;
@@ -55,6 +56,7 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.BooleanUtils;
 import org.glassfish.jersey.server.model.Resource;
 
 @Slf4j
@@ -81,6 +83,10 @@ public class ResourceGroupServiceSetup {
     ResourceGroupsManagementJob resourceGroupsManagementJob = injector.getInstance(ResourceGroupsManagementJob.class);
     resourceGroupsManagementJob.run();
     registerOasResource(appConfig, environment, injector);
+
+    if (BooleanUtils.isTrue(appConfig.getEnableOpentelemetry())) {
+      registerTraceFilter(environment, injector);
+    }
   }
 
   private void registerHealthCheck(Environment environment, Injector injector) {
@@ -134,6 +140,10 @@ public class ResourceGroupServiceSetup {
 
   private void registerCorrelationFilter(Environment environment, Injector injector) {
     environment.jersey().register(injector.getInstance(CorrelationFilter.class));
+  }
+
+  private void registerTraceFilter(Environment environment, Injector injector) {
+    environment.jersey().register(injector.getInstance(TraceFilter.class));
   }
 
   private void initializeEnforcementFramework(Injector injector) {

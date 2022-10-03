@@ -200,7 +200,8 @@
           ],
           "properties": {
             "bucketName": {
-              "type": "string"
+              "type": "string",
+              "minLength": 1
             },
             "connectorRef": {
               "type": "string"
@@ -3212,6 +3213,16 @@
                   "minLength": 1
                 }
               ]
+            },
+            "doNotDownsizeOldService": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string"
+                }
+              ]
             }
           }
         }
@@ -3718,7 +3729,7 @@
             "StepGroupRollback",
             "PipelineRollback",
             "ManualIntervention",
-            "ProceedWithDefaultValue"
+            "ProceedWithDefaultValues"
           ]
         }
       },
@@ -7111,7 +7122,7 @@
               "Verification",
               "DelegateProvisioning",
               "PolicyEvaluationFailure",
-              "ExecutionInputTimeoutError"
+              "InputTimeoutError"
             ]
           }
         }
@@ -7919,7 +7930,7 @@
             "type": {
               "type": "string",
               "enum": [
-                "ProceedWithDefaultValue"
+                "ProceedWithDefaultValues"
               ]
             }
           }
@@ -8740,6 +8751,56 @@
           "properties": {
             "script": {
               "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "ShellScriptProvisionStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "required": [
+            "source"
+          ],
+          "properties": {
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "environmentVariables": {
+              "type": "array",
+              "items": {
+                "oneOf": [
+                  {
+                    "$ref": "#/definitions/NumberNGVariable"
+                  },
+                  {
+                    "$ref": "#/definitions/SecretNGVariable"
+                  },
+                  {
+                    "$ref": "#/definitions/StringNGVariable"
+                  }
+                ]
+              }
+            },
+            "source": {
+              "$ref": "#/definitions/ShellScriptSourceWrapper"
             }
           }
         }
@@ -9856,6 +9917,22 @@
           "if": {
             "properties": {
               "type": {
+                "const": "ShellScriptProvision"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/ShellScriptProvisionStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
                 "const": "TerraformApply"
               }
             }
@@ -10002,8 +10079,7 @@
     "StepTemplateRef": {
       "type": "object",
       "required": [
-        "templateRef",
-        "versionLabel"
+        "templateRef"
       ],
       "properties": {
         "templateRef": {

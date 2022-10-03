@@ -59,6 +59,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import retrofit2.Response;
@@ -114,9 +115,12 @@ public class ConnectorMigrationService extends NgMigrationService {
                                      .entity(settingAttribute)
                                      .build();
     Set<CgEntityId> children = new HashSet<>();
-    String secret = ConnectorFactory.getConnector(settingAttribute).getSecretId(settingAttribute);
-    if (StringUtils.isNotBlank(secret)) {
-      children.add(CgEntityId.builder().id(secret).type(NGMigrationEntityType.SECRET).build());
+    List<String> secrets = ConnectorFactory.getConnector(settingAttribute).getSecretIds(settingAttribute);
+    if (EmptyPredicate.isNotEmpty(secrets)) {
+      children.addAll(secrets.stream()
+                          .filter(StringUtils::isNotBlank)
+                          .map(secret -> CgEntityId.builder().id(secret).type(NGMigrationEntityType.SECRET).build())
+                          .collect(Collectors.toList()));
     }
     return DiscoveryNode.builder().children(children).entityNode(connectorNode).build();
   }

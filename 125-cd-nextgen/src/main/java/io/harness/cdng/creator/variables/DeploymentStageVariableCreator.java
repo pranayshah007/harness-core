@@ -11,7 +11,9 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STRATEGY;
 
 import io.harness.NGCommonEntityConstants;
+import io.harness.cdng.artifact.bean.ArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.ArtifactListConfig;
+import io.harness.cdng.artifact.bean.yaml.ArtifactSource;
 import io.harness.cdng.artifact.bean.yaml.PrimaryArtifact;
 import io.harness.cdng.artifact.bean.yaml.SidecarArtifact;
 import io.harness.cdng.artifact.bean.yaml.SidecarArtifactWrapper;
@@ -281,7 +283,7 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
     InfrastructureOutcome infrastructureOutcome = infrastructureMapper.toOutcome(
         infrastructureConfig.getInfrastructureDefinitionConfig().getSpec(), EnvironmentOutcome.builder().build(),
         ServiceStepOutcome.builder().build(), infrastructureEntity.getAccountId(),
-        infrastructureEntity.getProjectIdentifier(), infrastructureEntity.getOrgIdentifier());
+        infrastructureEntity.getOrgIdentifier(), infrastructureEntity.getProjectIdentifier());
 
     List<String> infraStepOutputExpressions =
         VariableCreatorHelper.getExpressionsInObject(infrastructureOutcome, OutputExpressionConstants.INFRA);
@@ -410,36 +412,6 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
     return null;
   }
 
-  private String getEnvironmentRef(VariableCreationContext ctx) {
-    YamlField currentField = ctx.getCurrentField();
-    // environment node in v2 yaml
-    YamlField envField =
-        currentField.getNode().getField(YAMLFieldNameConstants.SPEC).getNode().getField(YamlTypes.ENVIRONMENT_YAML);
-
-    if (VariableCreatorHelper.isNotYamlFieldEmpty(envField)) {
-      if (VariableCreatorHelper.isNotYamlFieldEmpty(envField.getNode().getField(YamlTypes.ENVIRONMENT_REF))) {
-        return envField.getNode().getField(YamlTypes.ENVIRONMENT_REF).getNode().getCurrJsonNode().asText();
-      }
-    }
-    return null;
-  }
-
-  private String getInfraDefinitionRef(VariableCreationContext ctx) {
-    YamlField currentField = ctx.getCurrentField();
-    // environment node in v2 yaml
-    YamlField envField =
-        currentField.getNode().getField(YAMLFieldNameConstants.SPEC).getNode().getField(YamlTypes.ENVIRONMENT_YAML);
-    if (VariableCreatorHelper.isNotYamlFieldEmpty(envField)) {
-      YamlField infraDefinitionField = envField.getNode().getField(YamlTypes.INFRASTRUCTURE_DEFS);
-      if (VariableCreatorHelper.isNotYamlFieldEmpty(infraDefinitionField)) {
-        // pick 1st node
-        // todo(hinger): multi infra
-        return infraDefinitionField.getNode().getCurrJsonNode().get(0).get(YamlTypes.REF).asText();
-      }
-    }
-    return null;
-  }
-
   private List<YamlProperties> handleServiceStepOutcome() {
     List<YamlProperties> outputProperties = new ArrayList<>();
     ServiceStepOutcome serviceStepOutcome = ServiceStepOutcome.builder().build();
@@ -479,21 +451,45 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
         }
         PrimaryArtifact primaryArtifact = artifactListConfig.getPrimary();
         if (primaryArtifact != null) {
-          ArtifactOutcome primaryArtifactOutcome =
-              ArtifactResponseToOutcomeMapper.toArtifactOutcome(primaryArtifact.getSpec(), null, false);
-          List<String> primaryArtifactExpressions =
-              VariableCreatorHelper.getExpressionsInObject(primaryArtifactOutcome, PRIMARY);
-
-          for (String outputExpression : primaryArtifactExpressions) {
-            outputProperties.add(YamlProperties.newBuilder()
-                                     .setLocalName(OutcomeExpressionConstants.ARTIFACTS + "." + outputExpression)
-                                     .setVisible(true)
-                                     .build());
+          Set<String> expressions = new HashSet<>();
+          if (primaryArtifact.getSpec() != null) {
+            populateExpressionsForArtifact(outputProperties, primaryArtifact.getSpec(), expressions);
+          }
+          if (ParameterField.isNotNull(primaryArtifact.getPrimaryArtifactRef())
+              && isNotEmpty(primaryArtifact.getSources())) {
+            // If primary artifact ref is fixed, use only that particular artifact source
+            if (!primaryArtifact.getPrimaryArtifactRef().isExpression()) {
+              Optional<ArtifactSource> source =
+                  primaryArtifact.getSources()
+                      .stream()
+                      .filter(s -> primaryArtifact.getPrimaryArtifactRef().getValue().equals(s.getIdentifier()))
+                      .findFirst();
+              source.ifPresent(s -> populateExpressionsForArtifact(outputProperties, s.getSpec(), expressions));
+            } else {
+              primaryArtifact.getSources().forEach(
+                  s -> populateExpressionsForArtifact(outputProperties, s.getSpec(), expressions));
+            }
           }
         }
       }
     }
     return outputProperties;
+  }
+
+  private void populateExpressionsForArtifact(
+      List<YamlProperties> outputProperties, ArtifactConfig spec, Set<String> expressions) {
+    ArtifactOutcome primaryArtifactOutcome = ArtifactResponseToOutcomeMapper.toArtifactOutcome(spec, null, false);
+    List<String> primaryArtifactExpressions =
+        VariableCreatorHelper.getExpressionsInObject(primaryArtifactOutcome, PRIMARY);
+
+    for (String outputExpression : primaryArtifactExpressions) {
+      if (expressions.add(outputExpression)) {
+        outputProperties.add(YamlProperties.newBuilder()
+                                 .setLocalName(OutcomeExpressionConstants.ARTIFACTS + "." + outputExpression)
+                                 .setVisible(true)
+                                 .build());
+      }
+    }
   }
 
   private List<YamlProperties> handleManifestProperties(NGServiceConfig ngServiceConfig) {

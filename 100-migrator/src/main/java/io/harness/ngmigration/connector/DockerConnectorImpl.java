@@ -27,6 +27,8 @@ import software.wings.beans.DockerConfig;
 import software.wings.beans.SettingAttribute;
 import software.wings.ngmigration.CgEntityId;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.apache.commons.lang3.StringUtils;
@@ -34,8 +36,8 @@ import org.apache.commons.lang3.StringUtils;
 @OwnedBy(HarnessTeam.CDC)
 public class DockerConnectorImpl implements BaseConnector {
   @Override
-  public String getSecretId(SettingAttribute settingAttribute) {
-    return ((DockerConfig) settingAttribute.getValue()).getEncryptedPassword();
+  public List<String> getSecretIds(SettingAttribute settingAttribute) {
+    return Collections.singletonList(((DockerConfig) settingAttribute.getValue()).getEncryptedPassword());
   }
 
   @Override

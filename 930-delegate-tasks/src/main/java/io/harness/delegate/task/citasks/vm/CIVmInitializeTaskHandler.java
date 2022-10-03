@@ -24,7 +24,6 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.SecretSpecBuilder;
 import io.harness.delegate.beans.ci.CIInitializeTaskParams;
-import io.harness.delegate.beans.ci.InfraInfo;
 import io.harness.delegate.beans.ci.pod.SecretParams;
 import io.harness.delegate.beans.ci.vm.CIVmInitializeTaskParams;
 import io.harness.delegate.beans.ci.vm.VmServiceStatus;
@@ -165,8 +164,6 @@ public class CIVmInitializeTaskHandler implements CIInitializeTaskHandler {
                                        .volumes(getVolumes(params.getVolToMountPath()))
                                        .build();
 
-    InfraInfo infraInfo = params.getInfraInfo();
-
     return SetupVmRequest.builder()
         .id(stageId)
         .correlationID(taskId)
@@ -174,7 +171,7 @@ public class CIVmInitializeTaskHandler implements CIInitializeTaskHandler {
         .config(config)
         .logKey(params.getLogKey())
         .tags(params.getTags())
-        .infraType(infraInfo.getType().toString())
+        .infraType(params.getInfraInfo().toString())
         .build();
   }
 

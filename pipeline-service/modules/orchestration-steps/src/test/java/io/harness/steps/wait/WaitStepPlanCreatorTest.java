@@ -100,7 +100,8 @@ public class WaitStepPlanCreatorTest extends OrchestrationStepsTestBase {
     WaitStepParameters waitStepParameters = (WaitStepParameters) stepElementParameters.getSpec();
     assertEquals(waitStepParameters.duration.getValue().getTimeoutString(), "10m");
     assertEquals(planNode.getFacilitatorObtainments().size(), 1);
-    assertEquals(planNode.getFacilitatorObtainments().get(0).getType().getType(), OrchestrationFacilitatorType.ASYNC);
+    assertEquals(
+        planNode.getFacilitatorObtainments().get(0).getType().getType(), OrchestrationFacilitatorType.WAIT_STEP);
   }
 
   @Test

@@ -1235,7 +1235,11 @@ public class PipelineServiceImpl implements PipelineService {
 
   private void overWriteDefaultValue(Variable existingVar, String value) {
     if (value != null && !value.equals("")) {
-      existingVar.setValue(value);
+      if (existingVar.getAllowedList() == null) {
+        existingVar.setValue(value);
+      } else if (existingVar.getAllowedList().contains(value)) {
+        existingVar.setValue(value);
+      }
     }
   }
 
@@ -1254,6 +1258,9 @@ public class PipelineServiceImpl implements PipelineService {
       if (existingVar.getAllowedList() != null && existingVar.getAllowedList().size() == 0) {
         throw new InvalidRequestException(String.format(
             "Variable %s does not have any common allowed values between all stages", existingVar.getName()));
+      }
+      if (existingVar.getValue() != null && (!existingVar.getAllowedList().contains(existingVar.getValue()))) {
+        existingVar.setValue(null);
       }
     }
   }

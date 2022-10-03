@@ -18,7 +18,7 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
-import io.harness.delegate.beans.ci.VmInfraInfo;
+import io.harness.delegate.beans.ci.CIInitializeTaskParams;
 import io.harness.delegate.beans.ci.vm.CIVmCleanupTaskParams;
 import io.harness.delegate.beans.ci.vm.VmTaskExecutionResponse;
 import io.harness.delegate.task.citasks.vm.helper.HttpHelper;
@@ -42,7 +42,8 @@ public class CIVmCleanupTaskHandlerTest extends CategoryTest {
   @Mock private HttpHelper httpHelper;
   @InjectMocks private CIVmCleanupTaskHandler ciVmCleanupTaskHandler;
   //@InjectMocks private CIVmCleanupTaskHandler ciVmCleanupTaskHandler;
-  private VmInfraInfo vmInfraInfo = VmInfraInfo.builder().poolId("test").build();
+  // private VmInfraInfo vmInfraInfo = VmInfraInfo.builder().poolId("test").build();
+  private static final CIInitializeTaskParams.Type vmInfraInfo = CIInitializeTaskParams.Type.VM;
 
   @Before
   public void setUp() {

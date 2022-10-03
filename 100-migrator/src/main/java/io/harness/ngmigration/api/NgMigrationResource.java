@@ -10,6 +10,10 @@ package io.harness.ngmigration.api;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import static java.lang.String.format;
+import static java.util.Calendar.DATE;
+import static java.util.Calendar.MONTH;
+import static java.util.Calendar.YEAR;
+import static java.util.Calendar.getInstance;
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -20,7 +24,8 @@ import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.MigrationInputResult;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.summary.BaseSummary;
-import io.harness.ngmigration.dto.BaseImportDTO;
+import io.harness.ngmigration.dto.ImportDTO;
+import io.harness.ngmigration.dto.SaveSummaryDTO;
 import io.harness.ngmigration.service.AsyncDiscoveryHandler;
 import io.harness.ngmigration.service.DiscoveryService;
 import io.harness.ngmigration.service.MigrationResourceService;
@@ -38,6 +43,9 @@ import com.codahale.metrics.annotation.Timed;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import java.io.IOException;
+import java.time.Instant;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import javax.ws.rs.Consumes;
@@ -153,10 +161,10 @@ public class NgMigrationResource {
   @Path("/save/v2")
   @Timed
   @ExceptionMetered
-  public RestResponse<List<NGYamlFile>> saveEntitiesV2(
-      @HeaderParam("Authorization") String auth, @QueryParam("accountId") String accountId, BaseImportDTO importDTO) {
+  public RestResponse<SaveSummaryDTO> saveEntitiesV2(
+      @HeaderParam("Authorization") String auth, @QueryParam("accountId") String accountId, ImportDTO importDTO) {
     importDTO.setAccountIdentifier(accountId);
-    return new RestResponse<>(migrationResourceService.migrateCgEntityToNG(auth, importDTO));
+    return new RestResponse<>(migrationResourceService.save(auth, importDTO));
   }
 
   @POST
@@ -177,6 +185,21 @@ public class NgMigrationResource {
     inputDTO.setMigrateReferencedEntities(true);
     return Response.ok(discoveryService.exportYamlFilesAsZip(inputDTO, result), MediaType.APPLICATION_OCTET_STREAM)
         .header("content-disposition", format("attachment; filename = %s_%s_%s.zip", accountId, entityId, entityType))
+        .build();
+  }
+
+  @POST
+  @Path("/export-yaml/v2")
+  @Timed
+  @ExceptionMetered
+  public Response exportZippedYamlFilesV2(
+      @HeaderParam("Authorization") String auth, @QueryParam("accountId") String accountId, ImportDTO importDTO) {
+    importDTO.setAccountIdentifier(accountId);
+    Calendar calendar = getInstance();
+    String filename = String.format(
+        "%s_%s_%s_%s", calendar.get(YEAR), calendar.get(MONTH), calendar.get(DATE), Date.from(Instant.EPOCH).getTime());
+    return Response.ok(migrationResourceService.exportYaml(auth, importDTO))
+        .header("content-disposition", format("attachment; filename = %s_%s.zip", accountId, filename))
         .build();
   }
 

@@ -100,6 +100,7 @@ public class VerificationConfiguration extends Configuration {
   @JsonProperty @ConfigSecret private PortalConfig portal = new PortalConfig();
   @JsonProperty("hostname") String hostname = "localhost";
   @JsonProperty("basePathPrefix") String basePathPrefix = "";
+  @JsonProperty(value = "enableOpentelemetry") private Boolean enableOpentelemetry;
 
   private String portalUrl;
   /**

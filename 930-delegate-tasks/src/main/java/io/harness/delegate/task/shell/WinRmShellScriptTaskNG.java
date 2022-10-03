@@ -170,8 +170,8 @@ public class WinRmShellScriptTaskNG extends AbstractDelegateRunnableTask {
         winRmConfigAuthEnhancer.configureAuthentication((WinRmCredentialsSpecDTO) taskParameters.getSshKeySpecDTO(),
             taskParameters.getEncryptionDetails(), configBuilder, taskParameters.isUseWinRMKerberosUniqueCacheFile());
 
-    WinRmExecutor executor = winRmExecutorFactoryNG.getExecutor(
-        config, taskParameters.isDisableCommandEncoding(), logStreamingTaskClient, commandUnitsProgress);
+    WinRmExecutor executor = winRmExecutorFactoryNG.getExecutor(config, taskParameters.isDisableCommandEncoding(),
+        taskParameters.isWinrmScriptCommandSplit(), logStreamingTaskClient, commandUnitsProgress);
 
     CommandExecutionStatus commandExecutionStatus =
         executor.executeCommandString(getInitCommand(taskParameters.getWorkingDirectory()));
@@ -198,8 +198,8 @@ public class WinRmShellScriptTaskNG extends AbstractDelegateRunnableTask {
         winRmConfigAuthEnhancer.configureAuthentication((WinRmCredentialsSpecDTO) taskParameters.getSshKeySpecDTO(),
             taskParameters.getEncryptionDetails(), configBuilder, taskParameters.isUseWinRMKerberosUniqueCacheFile());
 
-    WinRmExecutor executor = winRmExecutorFactoryNG.getExecutor(
-        config, taskParameters.isDisableCommandEncoding(), logStreamingTaskClient, commandUnitsProgress);
+    WinRmExecutor executor = winRmExecutorFactoryNG.getExecutor(config, taskParameters.isDisableCommandEncoding(),
+        taskParameters.isWinrmScriptCommandSplit(), logStreamingTaskClient, commandUnitsProgress);
 
     ExecuteCommandResponse executeCommandResponse = executor.executeCommandString(
         taskParameters.getScript(), taskParameters.getOutputVars(), taskParameters.getSecretOutputVars(), null);

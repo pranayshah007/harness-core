@@ -12,6 +12,8 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.ngmigration.utils.NGMigrationConstants.VIZ_FILE_NAME;
 import static io.harness.ngmigration.utils.NGMigrationConstants.VIZ_TEMP_DIR_PREFIX;
 
+import static software.wings.ngmigration.NGMigrationEntityType.ENVIRONMENT;
+
 import static java.util.stream.Collectors.groupingBy;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -262,8 +264,12 @@ public class DiscoveryService {
 
   public StreamingOutput exportYamlFilesAsZip(MigrationInputDTO inputDTO, DiscoveryResult discoveryResult) {
     List<NGYamlFile> ngYamlFiles = migrateEntity(inputDTO, discoveryResult);
+    return createZip(ngYamlFiles);
+  }
+
+  public StreamingOutput createZip(List<NGYamlFile> yamlFiles) {
     String folder = "/tmp/" + UUIDGenerator.generateUuid();
-    exportZip(ngYamlFiles, folder);
+    exportZip(yamlFiles, folder);
     return output -> {
       try {
         byte[] data = Files.readAllBytes(Paths.get(folder + NGMigrationConstants.ZIP_FILE_PATH));
@@ -286,7 +292,6 @@ public class DiscoveryService {
   public List<NGYamlFile> migrateEntity(
       String auth, MigrationInputDTO inputDTO, DiscoveryResult discoveryResult, boolean dryRun) {
     List<NGYamlFile> ngYamlFiles = migrateEntity(inputDTO, discoveryResult);
-    exportZip(ngYamlFiles, NGMigrationConstants.DEFAULT_ZIP_DIRECTORY);
     if (!dryRun) {
       createEntities(auth, inputDTO, ngYamlFiles);
     }
@@ -385,11 +390,29 @@ public class DiscoveryService {
     if (!leafTracker.containsKey(entityId)) {
       return new ArrayList<>();
     }
-
     List<NGYamlFile> files = new ArrayList<>();
+
+    // Note: Special case: Migrate environments
+    // We are doing this because when we migrate infra we need to reference environment
+    // & environment is parent of infra. Environment also has no business logic.
+    List<CgEntityId> environments = graph.keySet()
+                                        .stream()
+                                        .filter(cgEntityId -> ENVIRONMENT.equals(cgEntityId.getType()))
+                                        .collect(Collectors.toList());
+    for (CgEntityId entry : environments) {
+      List<NGYamlFile> currentEntity = migrationFactory.getMethod(entry.getType())
+                                           .getYaml(inputDTO, entityId, entities, graph, entry, migratedEntities);
+      if (isNotEmpty(currentEntity)) {
+        files.addAll(currentEntity);
+      }
+    }
+
     while (isNotEmpty(leafTracker)) {
       List<CgEntityId> leafNodes = getLeafNodes(leafTracker);
       for (CgEntityId entry : leafNodes) {
+        if (ENVIRONMENT.equals(entry.getType())) {
+          continue;
+        }
         List<NGYamlFile> currentEntity = migrationFactory.getMethod(entry.getType())
                                              .getYaml(inputDTO, entityId, entities, graph, entry, migratedEntities);
         if (isNotEmpty(currentEntity)) {

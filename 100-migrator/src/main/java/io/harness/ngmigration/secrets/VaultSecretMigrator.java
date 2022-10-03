@@ -7,22 +7,30 @@
 
 package io.harness.ngmigration.secrets;
 
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EncryptedData;
 import io.harness.beans.SecretManagerConfig;
-import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.vaultconnector.VaultConnectorDTO;
-import io.harness.encryption.Scope;
 import io.harness.encryption.SecretRefData;
+import io.harness.ng.core.dto.secrets.SecretDTOV2;
 import io.harness.ng.core.dto.secrets.SecretTextSpecDTO;
+import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
+import io.harness.ngmigration.beans.NgEntityDetail;
+import io.harness.ngmigration.dto.SecretManagerCreatedDTO;
+import io.harness.ngmigration.service.MigratorUtility;
+import io.harness.secretmanagerclient.SecretType;
 import io.harness.secretmanagerclient.ValueType;
 
 import software.wings.beans.VaultConfig;
 import software.wings.ngmigration.CgEntityId;
 
+import java.util.Collections;
 import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
 
+@OwnedBy(HarnessTeam.CDC)
 public class VaultSecretMigrator implements SecretMigrator {
   @Override
   public SecretTextSpecDTO getSecretSpec(
@@ -43,24 +51,57 @@ public class VaultSecretMigrator implements SecretMigrator {
   }
 
   @Override
-  public ConnectorConfigDTO getConfigDTO(
-      SecretManagerConfig secretManagerConfig, Map<CgEntityId, NGYamlFile> migratedEntities) {
+  public SecretManagerCreatedDTO getConfigDTO(SecretManagerConfig secretManagerConfig, MigrationInputDTO inputDTO,
+      Map<CgEntityId, NGYamlFile> migratedEntities) {
     VaultConfig vaultConfig = (VaultConfig) secretManagerConfig;
     // TODO: Handle all cases
-    return VaultConnectorDTO.builder()
-        .authToken(SecretRefData.builder().scope(Scope.ACCOUNT).identifier("__harness_please_fix_me__").build())
-        .basePath(vaultConfig.getBasePath())
-        .vaultUrl(vaultConfig.getVaultUrl())
-        .renewalIntervalMinutes(vaultConfig.getRenewalInterval())
-        .secretEngineManuallyConfigured(vaultConfig.isEngineManuallyEntered())
-        .secretEngineName(vaultConfig.getSecretEngineName())
-        .secretEngineVersion(vaultConfig.getSecretEngineVersion())
-        .useVaultAgent(vaultConfig.isUseVaultAgent())
-        .useAwsIam(false)
-        .useK8sAuth(false)
-        .isDefault(vaultConfig.isDefault())
-        .isReadOnly(vaultConfig.isReadOnly())
-        .delegateSelectors(null)
+    String secretId =
+        String.format("migratedHarnessSecret_%s", MigratorUtility.generateIdentifier(vaultConfig.getName()));
+    NgEntityDetail secretEntityDetail = NgEntityDetail.builder()
+                                            .identifier(secretId)
+                                            .orgIdentifier(inputDTO.getOrgIdentifier())
+                                            .projectIdentifier(inputDTO.getProjectIdentifier())
+                                            .build();
+    SecretDTOV2 secretDTOV2 =
+        SecretDTOV2.builder()
+            .identifier(secretId)
+            .name(String.format("Auto Generated Secret for Secret Manager - %s", vaultConfig.getName()))
+            .description("Auto generated secret by Harness.")
+            .orgIdentifier(inputDTO.getOrgIdentifier())
+            .projectIdentifier(inputDTO.getProjectIdentifier())
+            .type(SecretType.SecretText)
+            .spec(SecretTextSpecDTO.builder()
+                      .secretManagerIdentifier(
+                          MigratorUtility.getIdentifierWithScope(NgEntityDetail.builder()
+                                                                     .projectIdentifier(inputDTO.getProjectIdentifier())
+                                                                     .orgIdentifier(inputDTO.getOrgIdentifier())
+                                                                     .identifier("harnessSecretManager")
+                                                                     .build()))
+                      .value(vaultConfig.getAuthToken())
+                      .valueType(ValueType.Inline)
+                      .build())
+            .build();
+    VaultConnectorDTO connectorDTO = VaultConnectorDTO.builder()
+                                         .authToken(SecretRefData.builder()
+                                                        .scope(MigratorUtility.getScope(secretEntityDetail))
+                                                        .identifier(secretId)
+                                                        .build())
+                                         .basePath(vaultConfig.getBasePath())
+                                         .vaultUrl(vaultConfig.getVaultUrl())
+                                         .renewalIntervalMinutes(vaultConfig.getRenewalInterval())
+                                         .secretEngineManuallyConfigured(vaultConfig.isEngineManuallyEntered())
+                                         .secretEngineName(vaultConfig.getSecretEngineName())
+                                         .secretEngineVersion(vaultConfig.getSecretEngineVersion())
+                                         .useVaultAgent(vaultConfig.isUseVaultAgent())
+                                         .useAwsIam(false)
+                                         .useK8sAuth(false)
+                                         .isDefault(vaultConfig.isDefault())
+                                         .isReadOnly(vaultConfig.isReadOnly())
+                                         .delegateSelectors(null)
+                                         .build();
+    return SecretManagerCreatedDTO.builder()
+        .connector(connectorDTO)
+        .secrets(Collections.singletonList(secretDTOV2))
         .build();
   }
 }

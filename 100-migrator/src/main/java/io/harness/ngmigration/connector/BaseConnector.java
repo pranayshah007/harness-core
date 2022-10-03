@@ -28,7 +28,7 @@ public interface BaseConnector {
     return true;
   }
 
-  String getSecretId(SettingAttribute settingAttribute);
+  List<String> getSecretIds(SettingAttribute settingAttribute);
 
   ConnectorType getConnectorType(SettingAttribute settingAttribute);
 

@@ -8,6 +8,7 @@
 package io.harness.ng.core.environment.services;
 
 import io.harness.ng.core.environment.beans.Environment;
+import io.harness.ng.core.environment.beans.EnvironmentInputsetYamlandServiceOverridesMetadataDTO;
 import io.harness.repositories.UpsertOptions;
 
 import java.util.List;
@@ -45,8 +46,12 @@ public interface EnvironmentService {
       String accountId, String orgIdentifier, String projectIdentifier, List<String> envIdentifierList);
 
   String createEnvironmentInputsYaml(
-      String accountId, String projectIdentifier, String orgIdentifier, String envIdentifier);
+      String accountId, String orgIdentifier, String projectIdentifier, String envIdentifier);
 
   List<Map<String, String>> getAttributes(
       String accountId, String orgIdentifier, String projectIdentifier, List<String> envIdentifiers);
+
+  EnvironmentInputsetYamlandServiceOverridesMetadataDTO getEnvironmentsInputYamlAndServiceOverridesMetadata(
+      String accountId, String orgIdentifier, String projectIdentifier, List<String> envIdentifiers,
+      List<String> serviceIdentifiers);
 }

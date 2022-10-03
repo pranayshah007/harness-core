@@ -96,6 +96,7 @@ public interface EntityTypeConstants {
   String POLICY_STEP = "Policy";
   String SERVICENOW_CREATE = "ServiceNowCreate";
   String SERVICENOW_UPDATE = "ServiceNowUpdate";
+  String SERVICENOW_IMPORT_SET = "ServiceNowImportSet";
   String ENVIRONMENT_GROUP = "EnvironmentGroup";
   String NG_FILE = "NgFile";
   String CLOUDFORMATION_CREATE_STACK_STEP = "CreateStack";
@@ -124,4 +125,6 @@ public interface EntityTypeConstants {
   String ECS_BLUE_GREEN_ROLLBACK = "EcsBlueGreenRollback";
   String WAIT_STEP = "Wait";
   String ARTIFACT_SOURCE_TEMPLATE = "ArtifactSource";
+  String SHELL_SCRIPT_PROVISION_STEP = "ShellScriptProvision";
+  String FREEZE = "Freeze";
 }

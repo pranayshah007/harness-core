@@ -64,6 +64,7 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.emptySet;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.synchronizedList;
+import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 import static org.apache.commons.io.filefilter.FileFilterUtils.falseFileFilter;
@@ -150,6 +151,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.jar.JarFile;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -172,12 +174,13 @@ import org.zeroturnaround.exec.stream.slf4j.Slf4jStream;
 @Slf4j
 @OwnedBy(HarnessTeam.DEL)
 public class WatcherServiceImpl implements WatcherService {
-  private static final long DELEGATE_HEARTBEAT_TIMEOUT = TimeUnit.MINUTES.toMillis(5);
-  private static final long DELEGATE_STARTUP_TIMEOUT = TimeUnit.MINUTES.toMillis(1);
-  private static final long DELEGATE_UPGRADE_TIMEOUT = TimeUnit.MINUTES.toMillis(10);
+  private static final long DELEGATE_HEARTBEAT_TIMEOUT = MINUTES.toMillis(5);
+  private static final long DELEGATE_STARTUP_TIMEOUT = MINUTES.toMillis(1);
+  private static final long DELEGATE_UPGRADE_TIMEOUT = MINUTES.toMillis(10);
   private static final long DELEGATE_SHUTDOWN_TIMEOUT = TimeUnit.HOURS.toMillis(2);
   private static final long DELEGATE_VERSION_MATCH_TIMEOUT = TimeUnit.HOURS.toMillis(2);
-  private static final long DELEGATE_RESTART_TO_UPGRADE_JRE_TIMEOUT = TimeUnit.MINUTES.toMillis(5);
+  private static final long DELEGATE_RESTART_TO_UPGRADE_JRE_TIMEOUT = MINUTES.toMillis(5);
+  private static final int DELEGATE_VERSION_CHECK_FREQ_MINS = 25;
   private static final Pattern VERSION_PATTERN = Pattern.compile("^[1-9]\\.[0-9]\\.[0-9]*-\\d{3}$");
   private static final String DELEGATE_SEQUENCE_CONFIG_FILE = "./delegate_sequence_config";
   private static final String USER_DIR = "user.dir";
@@ -228,6 +231,7 @@ public class WatcherServiceImpl implements WatcherService {
   private final AtomicInteger minMinorVersion = new AtomicInteger(0);
   private final Set<Integer> illegalVersions = new HashSet<>();
   private final Map<String, Long> delegateVersionMatchedAt = new HashMap<>();
+  private final AtomicReference<List<String>> cachedDelegateVersion = new AtomicReference<>();
 
   @Override
   public void run(boolean upgrade) {
@@ -250,7 +254,7 @@ public class WatcherServiceImpl implements WatcherService {
 
       generateEcsDelegateSequenceConfigFile();
       if (upgrade) {
-        Message message = messageService.waitForMessage(WATCHER_GO_AHEAD, TimeUnit.MINUTES.toMillis(5));
+        Message message = messageService.waitForMessage(WATCHER_GO_AHEAD, MINUTES.toMillis(5));
         log.info(message != null ? "[New] Got go-ahead. Proceeding"
                                  : "[New] Timed out waiting for go-ahead. Proceeding anyway");
       }
@@ -319,7 +323,7 @@ public class WatcherServiceImpl implements WatcherService {
     log.info("Scheduling logging of file handles...");
     watchExecutor.scheduleWithFixedDelay(
         new Schedulable("Unexpected exception occurred while logging file handles", this::logFileHandles), 0,
-        watcherConfiguration.getFileHandlesMonitoringIntervalInMinutes(), TimeUnit.MINUTES);
+        watcherConfiguration.getFileHandlesMonitoringIntervalInMinutes(), MINUTES);
   }
 
   private boolean isLsofCommandPresent() {
@@ -374,7 +378,7 @@ public class WatcherServiceImpl implements WatcherService {
   }
 
   private boolean deleteOldFiles(File logsFolder) {
-    long retentionPeriod = TimeUnit.MINUTES.toMillis(watcherConfiguration.getFileHandlesLogsRetentionInMinutes());
+    long retentionPeriod = MINUTES.toMillis(watcherConfiguration.getFileHandlesLogsRetentionInMinutes());
     long cutoff = System.currentTimeMillis() - retentionPeriod;
     File[] filesToBeDeleted = logsFolder.listFiles((FileFilter) new AgeFileFilter(cutoff));
     if (filesToBeDeleted != null) {
@@ -465,6 +469,9 @@ public class WatcherServiceImpl implements WatcherService {
     runningDelegates.addAll(
         Optional.ofNullable(messageService.getData(WATCHER_DATA, RUNNING_DELEGATES, List.class)).orElse(emptyList()));
 
+    inputExecutor.scheduleWithFixedDelay(
+        new Schedulable("Error fetching delegate version from manager", this::watchDelegateVersions), 0,
+        DELEGATE_VERSION_CHECK_FREQ_MINS, MINUTES);
     heartbeatExecutor.scheduleWithFixedDelay(
         new Schedulable("Error while heart-beating", this::heartbeat), 0, 10, TimeUnit.SECONDS);
     heartbeatExecutor.scheduleWithFixedDelay(
@@ -995,13 +1002,23 @@ public class WatcherServiceImpl implements WatcherService {
 
   @VisibleForTesting
   public List<String> findExpectedDelegateVersions() {
+    List<String> delegateVersion = cachedDelegateVersion.get();
+    if (isEmpty(delegateVersion)) {
+      log.info("No cached delegate version found, trying to fetch latest delegate version");
+      watchDelegateVersions();
+      delegateVersion = cachedDelegateVersion.get();
+    }
+    return delegateVersion;
+  }
+
+  private void watchDelegateVersions() {
     try {
       if (multiVersion) {
         RestResponse<DelegateConfiguration> restResponse = callInterruptible21(timeLimiter, ofSeconds(30),
             () -> SafeHttpCall.execute(managerClient.getDelegateConfiguration(watcherConfiguration.getAccountId())));
 
         if (restResponse == null) {
-          return null;
+          return;
         }
 
         DelegateConfiguration config = restResponse.getResource();
@@ -1010,19 +1027,19 @@ public class WatcherServiceImpl implements WatcherService {
           selfDestruct();
         }
 
-        return config != null ? config.getDelegateVersions() : null;
+        if (config != null) {
+          cachedDelegateVersion.set(config.getDelegateVersions());
+        }
       } else {
         String delegateMetadata =
             Http.getResponseStringFromUrl(watcherConfiguration.getDelegateCheckLocation(), 10, 10);
-
-        return singletonList(substringBefore(delegateMetadata, " ").trim());
+        cachedDelegateVersion.set(singletonList(substringBefore(delegateMetadata, " ").trim()));
       }
     } catch (UncheckedTimeoutException e) {
       log.warn("Timed out fetching delegate version information", e);
     } catch (Exception e) {
       log.warn("Unable to fetch delegate version information", e);
     }
-    return null;
   }
 
   private int getMinorVersion(String delegateVersion) {
@@ -1191,8 +1208,7 @@ public class WatcherServiceImpl implements WatcherService {
         String newDelegateProcess = null;
 
         if (newDelegate.getProcess().isAlive()) {
-          Message message =
-              messageService.waitForMessage(NEW_DELEGATE, TimeUnit.MINUTES.toMillis(version == null ? 15 : 4));
+          Message message = messageService.waitForMessage(NEW_DELEGATE, MINUTES.toMillis(version == null ? 15 : 4));
           if (message != null) {
             newDelegateProcess = message.getParams().get(0);
             log.info("Got process ID from new delegate: {}", newDelegateProcess);
@@ -1207,7 +1223,7 @@ public class WatcherServiceImpl implements WatcherService {
               runningDelegates.add(newDelegateProcess);
               messageService.putData(WATCHER_DATA, RUNNING_DELEGATES, runningDelegates);
             }
-            message = messageService.readMessageFromChannel(DELEGATE, newDelegateProcess, TimeUnit.MINUTES.toMillis(2));
+            message = messageService.readMessageFromChannel(DELEGATE, newDelegateProcess, MINUTES.toMillis(2));
             if (message != null && message.getMessage().equals(DELEGATE_STARTED)) {
               log.info("Retrieved delegate-started message from new delegate {}", newDelegateProcess);
               oldDelegateProcesses.forEach(oldDelegateProcess -> {
@@ -1424,12 +1440,12 @@ public class WatcherServiceImpl implements WatcherService {
       boolean success = false;
 
       if (process.getProcess().isAlive()) {
-        Message message = messageService.waitForMessage(NEW_WATCHER, TimeUnit.MINUTES.toMillis(3));
+        Message message = messageService.waitForMessage(NEW_WATCHER, MINUTES.toMillis(3));
         if (message != null) {
           String newWatcherProcess = message.getParams().get(0);
           log.info("[Old] Got process ID from new watcher: " + newWatcherProcess);
           messageService.putData(WATCHER_DATA, NEXT_WATCHER, newWatcherProcess);
-          message = messageService.readMessageFromChannel(WATCHER, newWatcherProcess, TimeUnit.MINUTES.toMillis(2));
+          message = messageService.readMessageFromChannel(WATCHER, newWatcherProcess, MINUTES.toMillis(2));
           if (message != null && message.getMessage().equals(WATCHER_STARTED)) {
             log.info(
                 "[Old] Retrieved watcher-started message from new watcher {}. Sending go-ahead", newWatcherProcess);

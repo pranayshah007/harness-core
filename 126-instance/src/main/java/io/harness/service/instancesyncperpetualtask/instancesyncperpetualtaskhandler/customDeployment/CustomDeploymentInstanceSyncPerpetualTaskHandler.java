@@ -60,6 +60,7 @@ public class CustomDeploymentInstanceSyncPerpetualTaskHandler extends InstanceSy
       CustomDeploymentNGDeploymentInfoDTO customDeploymentNGDeploymentInfoDTO) {
     return CustomDeploymentNGInstanceSyncPerpetualTaskParams.newBuilder()
         .setScript(customDeploymentNGDeploymentInfoDTO.getInstanceFetchScript())
+        .setInfrastructureKey(customDeploymentNGDeploymentInfoDTO.getInfratructureKey())
         .setInstancesListPath(((CustomDeploymentInfrastructureOutcome) infraOutcome).getInstancesListPath())
         .putAllInstanceAttributes(((CustomDeploymentInfrastructureOutcome) infraOutcome).getInstanceAttributes())
         .setAccountId(infrastructureMappingDTO.getAccountIdentifier())

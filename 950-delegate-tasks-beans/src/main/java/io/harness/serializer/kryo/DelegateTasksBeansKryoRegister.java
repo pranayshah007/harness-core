@@ -165,6 +165,11 @@ import io.harness.delegate.beans.connector.awsconnector.AwsListASGNamesTaskRespo
 import io.harness.delegate.beans.connector.awsconnector.AwsListClustersTaskResponse;
 import io.harness.delegate.beans.connector.awsconnector.AwsListEC2InstancesTaskParamsRequest;
 import io.harness.delegate.beans.connector.awsconnector.AwsListEC2InstancesTaskResponse;
+import io.harness.delegate.beans.connector.awsconnector.AwsListElbListenerRulesTaskParamsRequest;
+import io.harness.delegate.beans.connector.awsconnector.AwsListElbListenerRulesTaskResponse;
+import io.harness.delegate.beans.connector.awsconnector.AwsListElbListenersTaskParamsRequest;
+import io.harness.delegate.beans.connector.awsconnector.AwsListElbListenersTaskResponse;
+import io.harness.delegate.beans.connector.awsconnector.AwsListElbTaskResponse;
 import io.harness.delegate.beans.connector.awsconnector.AwsListLoadBalancersTaskResponse;
 import io.harness.delegate.beans.connector.awsconnector.AwsListTagsTaskParamsRequest;
 import io.harness.delegate.beans.connector.awsconnector.AwsListTagsTaskResponse;
@@ -191,6 +196,7 @@ import io.harness.delegate.beans.connector.docker.DockerTestConnectionTaskRespon
 import io.harness.delegate.beans.connector.docker.DockerValidationParams;
 import io.harness.delegate.beans.connector.gcp.GcpValidationParams;
 import io.harness.delegate.beans.connector.gcpkmsconnector.GcpKmsValidationParams;
+import io.harness.delegate.beans.connector.gcpsecretmanagerconnector.GcpSecretManagerValidationParams;
 import io.harness.delegate.beans.connector.helm.HttpHelmConnectivityTaskParams;
 import io.harness.delegate.beans.connector.helm.HttpHelmConnectivityTaskResponse;
 import io.harness.delegate.beans.connector.helm.HttpHelmValidationParams;
@@ -648,6 +654,8 @@ import io.harness.delegate.task.shell.SshCommandTaskParameters;
 import io.harness.delegate.task.shell.TailFilePatternDto;
 import io.harness.delegate.task.shell.WinRmShellScriptTaskParametersNG;
 import io.harness.delegate.task.shell.WinrmTaskParameters;
+import io.harness.delegate.task.shell.provisioner.ShellScriptProvisionTaskNGRequest;
+import io.harness.delegate.task.shell.provisioner.ShellScriptProvisionTaskNGResponse;
 import io.harness.delegate.task.spotinst.request.SpotInstDeployTaskParameters;
 import io.harness.delegate.task.spotinst.request.SpotInstGetElastigroupJsonParameters;
 import io.harness.delegate.task.spotinst.request.SpotInstListElastigroupInstancesParameters;
@@ -1590,6 +1598,11 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(AwsListLoadBalancersTaskResponse.class, 83078);
     kryo.register(AwsListASGNamesTaskResponse.class, 83079);
     kryo.register(AwsListClustersTaskResponse.class, 83080);
+    kryo.register(AwsListElbTaskResponse.class, 83081);
+    kryo.register(AwsListElbListenersTaskParamsRequest.class, 83082);
+    kryo.register(AwsListElbListenerRulesTaskParamsRequest.class, 83083);
+    kryo.register(AwsListElbListenerRulesTaskResponse.class, 83084);
+    kryo.register(AwsListElbListenersTaskResponse.class, 83085);
 
     // WinRm
     kryo.register(WinRmCredentialsSpecDTO.class, 600001);
@@ -1814,5 +1827,8 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(AzureFetchArmPreDeploymentDataTaskResponse.class, 55424);
     kryo.register(AwsS3ArtifactDelegateConfig.class, 9800007);
     kryo.register(WinrmConnectivityExecutionCapability.class, 55425);
+    kryo.register(GcpSecretManagerValidationParams.class, 19879);
+    kryo.register(ShellScriptProvisionTaskNGRequest.class, 55426);
+    kryo.register(ShellScriptProvisionTaskNGResponse.class, 55427);
   }
 }
