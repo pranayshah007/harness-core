@@ -35,6 +35,9 @@ public interface NGEncryptedDataService {
 
   boolean delete(String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier);
 
+  NGEncryptedData hardDelete(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier);
+
   NGEncryptedData updateSecretText(String accountIdentifier, SecretDTOV2 dto);
 
   NGEncryptedData updateSecretFile(String accountIdentifier, SecretDTOV2 dto, InputStream inputStream);
