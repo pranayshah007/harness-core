@@ -18,21 +18,21 @@ import io.harness.template.beans.refresh.v2.InputsValidationResponse;
 import org.hibernate.validator.constraints.NotEmpty;
 import retrofit2.Call;
 import retrofit2.http.Body;
-import retrofit2.http.GET;
+import retrofit2.http.POST;
 import retrofit2.http.Query;
 
 @OwnedBy(HarnessTeam.CDC)
 public interface NgManagerReconcileClient {
   String BASE_ENDPOINT = "refresh-inputs/";
 
-  @GET(BASE_ENDPOINT + "validate-inputs-yaml")
+  @POST(BASE_ENDPOINT + "validate-inputs-yaml")
   Call<ResponseDTO<InputsValidationResponse>> validateYaml(
       @Query(value = NGCommonEntityConstants.ACCOUNT_KEY) @NotEmpty String accountIdentifier,
       @Query(value = NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @Query(value = NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @Body RefreshRequestDTO refreshRequestDTO);
 
-  @GET(BASE_ENDPOINT + "refreshed-yaml")
+  @POST(BASE_ENDPOINT + "refreshed-yaml")
   Call<ResponseDTO<RefreshResponseDTO>> refreshYaml(
       @Query(value = NGCommonEntityConstants.ACCOUNT_KEY) @NotEmpty String accountIdentifier,
       @Query(value = NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
