@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package delegate.src.main.java.io.harness.agent;
+package io.harness.delegate.agent;
 
 import lombok.extern.slf4j.Slf4j;
 

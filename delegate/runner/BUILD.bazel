@@ -1,0 +1,29 @@
+load("@rules_java//java:defs.bzl", "java_library")
+load("@rules_java//java:defs.bzl", "java_binary")
+load("//:tools/bazel/macros.bzl", "run_analysis_per_module")
+
+java_library(
+    name = "module",
+    srcs = glob(["src/main/java/**/*.java"]),
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:lombok",
+        "//930-delegate-tasks:module",
+        "//930-delegate-tasks/src/main/proto/io/harness:930_delegate_tasks_java_proto",
+        "//950-delegate-tasks-beans:module",
+    ],
+)
+
+java_binary(
+    name = "DelegateRunner",
+    main_class = "io.harness.delegate.runner.DelegateRunner",
+    resources = ["//delegate/runner/src/main/resources:resource"],
+    visibility = ["//visibility:public"],
+    runtime_deps = [
+        ":module",
+        "@maven//:ch_qos_logback_logback_classic",
+    ],
+    deps = [],
+)
+
+run_analysis_per_module()
