@@ -200,7 +200,8 @@
           ],
           "properties": {
             "bucketName": {
-              "type": "string"
+              "type": "string",
+              "minLength": 1
             },
             "connectorRef": {
               "type": "string"
