@@ -65,4 +65,7 @@ public interface InfrastructureEntityService {
 
   List<InfrastructureYamlMetadata> createInfrastructureYamlMetadata(String accountId, String orgIdentifier,
       String projectIdentifier, String environmentIdentifier, List<String> infraIds);
+
+  String createInfrastructureInputsFromYaml(String accountId, String orgIdentifier, String projectIdentifier,
+      String environmentIdentifier, String infraIdentifier);
 }

@@ -52,7 +52,6 @@ import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.UpdateResult;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -536,14 +535,69 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
           .build();
     }
 
-    final String infrastructureInputSetYaml =
-        createInfrastructureInputsFromYaml(infrastructureEntity.getAccountId(), infrastructureEntity.getOrgIdentifier(),
-            infrastructureEntity.getProjectIdentifier(), infrastructureEntity.getEnvIdentifier(),
-            Collections.singletonList(infrastructureEntity.getIdentifier()), false);
+    final String infrastructureInputSetYaml = createInfrastructureInputsFromYaml(infrastructureEntity.getAccountId(),
+        infrastructureEntity.getOrgIdentifier(), infrastructureEntity.getProjectIdentifier(),
+        infrastructureEntity.getEnvIdentifier(), infrastructureEntity.getIdentifier());
     return InfrastructureYamlMetadata.builder()
         .infrastructureIdentifier(infrastructureEntity.getIdentifier())
         .infrastructureYaml(infrastructureEntity.getYaml())
         .inputSetTemplateYaml(infrastructureInputSetYaml)
         .build();
+  }
+
+  @Override
+  public String createInfrastructureInputsFromYaml(String accountId, String orgIdentifier, String projectIdentifier,
+      String environmentIdentifier, String infraIdentifier) {
+    Map<String, Object> yamlInputs = createInfrastructureInputsYamlInternal(
+        accountId, orgIdentifier, projectIdentifier, environmentIdentifier, infraIdentifier);
+
+    if (isEmpty(yamlInputs)) {
+      return null;
+    }
+    return YamlPipelineUtils.writeYamlString(yamlInputs);
+  }
+
+  InfrastructureEntity getInfrastructureFromEnvAndInfraIdentifier(
+      String accountId, String orgId, String projectId, String envId, String infraId) {
+    Optional<InfrastructureEntity> infrastructureEntity =
+        infrastructureRepository.findByAccountIdAndOrgIdentifierAndProjectIdentifierAndEnvIdentifierAndIdentifier(
+            accountId, orgId, projectId, envId, infraId);
+    if (infrastructureEntity.isPresent()) {
+      return infrastructureEntity.get();
+    } else {
+      return null;
+    }
+  }
+
+  private Map<String, Object> createInfrastructureInputsYamlInternal(
+      String accountId, String orgIdentifier, String projectIdentifier, String envIdentifier, String infraIdentifier) {
+    Map<String, Object> yamlInputs = new HashMap<>();
+    InfrastructureEntity infrastructureEntity = getInfrastructureFromEnvAndInfraIdentifier(
+        accountId, orgIdentifier, projectIdentifier, envIdentifier, infraIdentifier);
+    ObjectMapper mapper = new ObjectMapper();
+    ObjectNode infraDefinition = createInfraDefinitionInputs(infrastructureEntity, mapper);
+    if (infraDefinition != null) {
+      yamlInputs.put("infrastructureInputs", infraDefinition);
+    }
+    return yamlInputs;
+  }
+
+  private ObjectNode createInfraDefinitionInputs(InfrastructureEntity infraEntity, ObjectMapper mapper) {
+    String yaml = infraEntity.getYaml();
+    if (isEmpty(yaml)) {
+      throw new InvalidRequestException("Infrastructure Yaml cannot be empty");
+    }
+    try {
+      String infraDefinitionInputs = RuntimeInputFormHelper.createRuntimeInputForm(yaml, true);
+      if (isEmpty(infraDefinitionInputs)) {
+        return null;
+      }
+
+      YamlField infrastructureDefinitionYamlField =
+          YamlUtils.readTree(infraDefinitionInputs).getNode().getField(YamlTypes.INFRASTRUCTURE_DEF);
+      return (ObjectNode) infrastructureDefinitionYamlField.getNode().getCurrJsonNode();
+    } catch (IOException e) {
+      throw new InvalidRequestException("Error occurred while creating Service Override inputs ", e);
+    }
   }
 }
