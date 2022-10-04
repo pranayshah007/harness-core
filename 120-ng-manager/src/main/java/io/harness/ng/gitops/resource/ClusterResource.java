@@ -200,6 +200,10 @@ public class ClusterResource {
     checkForAccessOrThrow(accountId, request.getOrgIdentifier(), request.getProjectIdentifier(), request.getEnvRef(),
         ENVIRONMENT_UPDATE_PERMISSION, "create");
 
+    if (request.isUnlinkAllClusters()) {
+      throw new InvalidRequestException(
+          "This is api for linking clusters, please do not set `unlinkAllClusters` field or set it to false");
+    }
     List<Cluster> entities = new ArrayList<>();
     if (!request.isLinkAllClusters()) {
       entities = ClusterEntityMapper.toEntities(accountId, request);
@@ -216,6 +220,52 @@ public class ClusterResource {
     }
     long linked = isNotEmpty(entities) ? clusterService.bulkCreate(entities) : 0;
     return ResponseDTO.newResponse(ClusterBatchResponse.builder().linked(linked).build());
+  }
+
+  @POST
+  @Path("/batchunlink")
+  @ApiOperation(value = "Unlink gitops clusters to an environment", nickname = "unlinkClustersInBatch")
+  @Operation(operationId = "unlinkClustersInBatch", summary = "Unlink Clusters",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(description = "Returns true if all the Clusters are deleted")
+      })
+  public ResponseDTO<ClusterBatchResponse>
+  unlinkBatch(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
+                  NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
+      @Parameter(description = "Details of the createCluster to be created") @Valid ClusterBatchRequest request) {
+    throwExceptionForNoRequestDTO(request);
+    orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(
+        request.getOrgIdentifier(), request.getProjectIdentifier(), accountId);
+    environmentValidationHelper.checkThatEnvExists(
+        accountId, request.getOrgIdentifier(), request.getProjectIdentifier(), request.getEnvRef());
+
+    checkForAccessOrThrow(accountId, request.getOrgIdentifier(), request.getProjectIdentifier(), request.getEnvRef(),
+        ENVIRONMENT_UPDATE_PERMISSION, "delete");
+
+    if (request.isLinkAllClusters()) {
+      throw new InvalidRequestException(
+          "This is api for unlinking clusters, please do not set `linkAllClusters` field or set it to false");
+    }
+    List<Cluster> entities = new ArrayList<>();
+    if (!request.isUnlinkAllClusters()) {
+      entities = ClusterEntityMapper.toEntities(accountId, request);
+    } else {
+      PageResponse<ClusterFromGitops> accountLevelClusters =
+          fetchClustersFromGitopsService(0, UNLIMITED_PAGE_SIZE, accountId, "", "", request.getSearchTerm());
+      // check number of project level clusters
+      PageResponse<ClusterFromGitops> projectLevelClusters = fetchClustersFromGitopsService(0, UNLIMITED_PAGE_SIZE,
+          accountId, request.getOrgIdentifier(), request.getProjectIdentifier(), request.getSearchTerm());
+      entities.addAll(ClusterEntityMapper.toEntities(accountId, request.getOrgIdentifier(),
+          request.getProjectIdentifier(), request.getEnvRef(), accountLevelClusters.getContent()));
+      entities.addAll(ClusterEntityMapper.toEntities(accountId, request.getOrgIdentifier(),
+          request.getProjectIdentifier(), request.getEnvRef(), projectLevelClusters.getContent()));
+    }
+    long unlinked = isNotEmpty(entities) ? clusterService.bulkDelete(entities, accountId, request.getOrgIdentifier(),
+                        request.getProjectIdentifier(), request.getEnvRef())
+                                         : 0;
+    return ResponseDTO.newResponse(ClusterBatchResponse.builder().unlinked(unlinked).build());
   }
 
   @DELETE

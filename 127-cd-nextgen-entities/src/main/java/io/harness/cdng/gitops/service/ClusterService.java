@@ -47,6 +47,13 @@ public interface ClusterService {
   long bulkCreate(@NotNull List<Cluster> entities);
 
   /**
+   * @param entities cluster entities to be bulk deleted
+   * @return number of clusters unlinked
+   */
+  long bulkDelete(
+      @NotNull List<Cluster> entities, String accountId, String orgIdentifier, String projectIdentifier, String envRef);
+
+  /**
    * @param accountId         the account id
    * @param orgIdentifier     the organization identifier
    * @param projectIdentifier the project identifier
