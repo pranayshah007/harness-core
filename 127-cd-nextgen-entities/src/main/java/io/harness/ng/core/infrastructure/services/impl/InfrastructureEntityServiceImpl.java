@@ -287,7 +287,7 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
 
     Criteria criteria = getInfrastructureEqualityCriteriaForProject(accountId, orgIdentifier, projectIdentifier);
     DeleteResult deleteResult = infrastructureRepository.delete(criteria);
-    return deleteResult.wasAcknowledged() && deleteResult.getDeletedCount() > 0;
+    return deleteResult.wasAcknowledged();
   }
 
   private void setObsoleteAsFalse(InfrastructureEntity requestInfra) {
