@@ -39,14 +39,18 @@ import io.harness.concurrent.HTimeLimiter;
 import io.harness.delegate.DelegateAgentCommonVariables;
 import io.harness.delegate.beans.DelegateConnectionHeartbeat;
 import io.harness.delegate.beans.DelegateInstanceStatus;
+import io.harness.delegate.beans.DelegateMetaInfo;
 import io.harness.delegate.beans.DelegateParams;
 import io.harness.delegate.beans.DelegateRegisterResponse;
 import io.harness.delegate.beans.DelegateTaskAbortEvent;
 import io.harness.delegate.beans.DelegateTaskEvent;
+import io.harness.delegate.beans.DelegateTaskNotifyResponseData;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.beans.DelegateUnregisterRequest;
+import io.harness.delegate.beans.RemoteMethodReturnValueData;
 import io.harness.delegate.configuration.DelegateConfiguration;
+import io.harness.delegate.exception.DelegateRetryableException;
 import io.harness.delegate.logging.DelegateStackdriverLogAppender;
 import io.harness.delegate.service.DelegateAgentService;
 import io.harness.delegate.task.tasklogging.TaskLogContext;
@@ -113,6 +117,7 @@ import retrofit2.Response;
 
 @Slf4j
 public abstract class AbstractDelegateAgentServiceImpl implements DelegateAgentService {
+  protected static final String HOST_NAME = getLocalHostName();
   private static final String DELEGATE_INSTANCE_ID = generateUuid();
   private static final int POLL_INTERVAL_SECONDS = 3;
   // Marker string to indicate task events.
@@ -120,7 +125,6 @@ public abstract class AbstractDelegateAgentServiceImpl implements DelegateAgentS
   private static final String ABORT_EVENT_MARKER = "{\"eventType\":\"DelegateTaskAbortEvent\"";
   private static final String HEARTBEAT_RESPONSE = "{\"eventType\":\"DelegateHeartbeatResponseStreaming\"";
 
-  private static final String HOST_NAME = getLocalHostName();
   private static final String DELEGATE_TYPE = System.getenv("DELEGATE_TYPE");
   protected static final String DELEGATE_NAME =
       isNotBlank(System.getenv("DELEGATE_NAME")) ? System.getenv("DELEGATE_NAME") : "";
@@ -187,6 +191,7 @@ public abstract class AbstractDelegateAgentServiceImpl implements DelegateAgentS
    * @return true if pre-execute checks failed which will cause the task to fail
    */
   protected abstract boolean onPreExecute(final DelegateTaskEvent delegateTaskEvent, final String delegateTaskId);
+  protected abstract void onPreResponseSent(final DelegateTaskResponse response);
   protected abstract void onResponseSent(final String taskId);
 
   // ToDo: add more onXXX lifecycle hooks
@@ -220,6 +225,7 @@ public abstract class AbstractDelegateAgentServiceImpl implements DelegateAgentS
     }
   }
 
+  @Override
   public void freeze() {
     log.warn("Delegate with id: {} was put in freeze mode.", DelegateAgentCommonVariables.getDelegateId());
     frozenAt.set(System.currentTimeMillis());
@@ -247,6 +253,8 @@ public abstract class AbstractDelegateAgentServiceImpl implements DelegateAgentS
   @Override
   public void sendTaskResponse(final String taskId, final DelegateTaskResponse taskResponse) {
     try {
+      onPreResponseSent(taskResponse);
+
       for (int attempt = 0; attempt < NUM_RESPONSE_RETRIES; attempt++) {
         final Response<ResponseBody> response = getDelegateAgentManagerClient()
                 .sendTaskStatus(DelegateAgentCommonVariables.getDelegateId(), taskId,
