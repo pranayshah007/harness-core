@@ -387,7 +387,7 @@ public class ArtifactResponseToOutcomeMapper {
         .identifier(artifactConfig.getIdentifier())
         .type(ArtifactSourceType.ARTIFACTORY_REGISTRY.getDisplayName())
         .primaryArtifact(artifactConfig.isPrimaryArtifact())
-        .metadata(artifactDelegateResponse.getBuildDetails().getMetadata())
+        .metadata(useDelegateResponse ? artifactDelegateResponse.getBuildDetails().getMetadata() : null)
         .build();
   }
 

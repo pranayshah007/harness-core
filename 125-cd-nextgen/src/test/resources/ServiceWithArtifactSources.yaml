@@ -47,6 +47,14 @@ service:
               identifier: artifactorydocker
               type: ArtifactoryRegistry
             - spec:
+                connectorRef: Artifactory
+                artifactDirectory: serverless
+                artifactPath: handler.zip
+                repository: lambda
+                repositoryFormat: generic
+              identifier: artifactory
+              type: ArtifactoryRegistry
+            - spec:
                 connectorRef: account.testAzureConnector
                 tag: alpha-1.0
                 subscriptionId: "1234"
