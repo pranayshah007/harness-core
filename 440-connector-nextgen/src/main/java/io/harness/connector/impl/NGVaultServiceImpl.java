@@ -342,6 +342,10 @@ public class NGVaultServiceImpl implements NGVaultService {
       throw new SecretManagementException(VAULT_OPERATION_ERROR, message, USER);
     }
 
+    if (!vaultConnectorDTO.isRenewAppRoleToken()) {
+      return;
+    }
+
     Scope scope = secretRefData.getScope();
     orgIdentifier = getOrgIdentifier(orgIdentifier, scope);
     projectIdentifier = getProjectIdentifier(projectIdentifier, scope);
