@@ -8,12 +8,12 @@
 package software.wings.helpers.ext.azure.devops;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.artifacts.azureartifacts.service.AzureArtifactsRegistryServiceImpl.getAzureArtifactsRestClient;
+import static io.harness.artifacts.azureartifacts.service.AzureArtifactsRegistryServiceImpl.getAzureDevopsRestClient;
 
 import static software.wings.helpers.ext.azure.devops.AzureArtifactsServiceHelper.execute;
 import static software.wings.helpers.ext.azure.devops.AzureArtifactsServiceHelper.getAuthHeader;
 import static software.wings.helpers.ext.azure.devops.AzureArtifactsServiceHelper.getAzureArtifactsDownloadClient;
-import static software.wings.helpers.ext.azure.devops.AzureArtifactsServiceHelper.getAzureArtifactsRestClient;
-import static software.wings.helpers.ext.azure.devops.AzureArtifactsServiceHelper.getAzureDevopsRestClient;
 import static software.wings.helpers.ext.azure.devops.AzureArtifactsServiceHelper.getInputStreamSize;
 import static software.wings.helpers.ext.azure.devops.AzureArtifactsServiceHelper.getMavenDownloadUrl;
 import static software.wings.helpers.ext.azure.devops.AzureArtifactsServiceHelper.getNuGetDownloadUrl;

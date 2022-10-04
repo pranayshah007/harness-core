@@ -320,7 +320,7 @@
             "AmazonS3",
             "GoogleArtifactRegistry",
             "GithubPackageRegistry",
-            "AzureArtifactsRegistry"
+            "AzureArtifacts"
           ]
         }
       },
@@ -378,14 +378,14 @@
           "if": {
             "properties": {
               "type": {
-                "const": "AzureArtifactsRegistry"
+                "const": "AzureArtifacts"
               }
             }
           },
           "then": {
             "properties": {
               "spec": {
-                "$ref": "#/definitions/AzureArtifactConfig"
+                "$ref": "#/definitions/AzureArtifactsConfig"
               }
             }
           }
@@ -685,7 +685,7 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
-    "AzureArtifactConfig": {
+    "AzureArtifactsConfig": {
       "allOf": [
         {
           "$ref": "#/definitions/ArtifactConfig"
@@ -695,9 +695,8 @@
           "required": [
             "connectorRef",
             "feed",
-            "packageName",
+            "package",
             "packageType",
-            "project",
             "scope"
           ],
           "properties": {
@@ -707,7 +706,7 @@
             "feed": {
               "type": "string"
             },
-            "packageName": {
+            "package": {
               "type": "string"
             },
             "packageType": {
@@ -7709,7 +7708,7 @@
             "AmazonS3",
             "GoogleArtifactRegistry",
             "GithubPackageRegistry",
-            "AzureArtifactsRegistry"
+            "AzureArtifacts"
           ]
         }
       },
@@ -7767,14 +7766,14 @@
           "if": {
             "properties": {
               "type": {
-                "const": "AzureArtifactsRegistry"
+                "const": "AzureArtifacts"
               }
             }
           },
           "then": {
             "properties": {
               "spec": {
-                "$ref": "#/definitions/AzureArtifactConfig"
+                "$ref": "#/definitions/AzureArtifactsConfig"
               }
             }
           }
@@ -8889,7 +8888,7 @@
             "AmazonS3",
             "GoogleArtifactRegistry",
             "GithubPackageRegistry",
-            "AzureArtifactsRegistry"
+            "AzureArtifacts"
           ]
         }
       },
@@ -8947,14 +8946,14 @@
           "if": {
             "properties": {
               "type": {
-                "const": "AzureArtifactsRegistry"
+                "const": "AzureArtifacts"
               }
             }
           },
           "then": {
             "properties": {
               "spec": {
-                "$ref": "#/definitions/AzureArtifactConfig"
+                "$ref": "#/definitions/AzureArtifactsConfig"
               }
             }
           }

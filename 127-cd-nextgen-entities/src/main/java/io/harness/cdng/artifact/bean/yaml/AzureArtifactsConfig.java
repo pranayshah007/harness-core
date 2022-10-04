@@ -26,6 +26,7 @@ import io.harness.walktree.visitor.SimpleVisitorHelper;
 import io.harness.walktree.visitor.Visitable;
 import io.harness.yaml.core.VariableExpression;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
 import java.util.Arrays;
@@ -50,8 +51,8 @@ import org.springframework.data.annotation.TypeAlias;
 @SimpleVisitorHelper(helperClass = ConnectorRefExtractorHelper.class)
 @TypeAlias("azureArtifactConfig")
 @OneOfField(fields = {"version", "versionRegex"})
-@RecasterAlias("io.harness.cdng.artifact.bean.yaml.AzureArtifactConfig")
-public class AzureArtifactConfig implements ArtifactConfig, Visitable, WithConnectorRef {
+@RecasterAlias("io.harness.cdng.artifact.bean.yaml.AzureArtifactsConfig")
+public class AzureArtifactsConfig implements ArtifactConfig, Visitable, WithConnectorRef {
   /**
    * Azure Artifacts connector.
    */
@@ -66,7 +67,7 @@ public class AzureArtifactConfig implements ArtifactConfig, Visitable, WithConne
   ParameterField<String> packageType;
 
   /**
-   * Package Scope.
+   * Feed Scope.
    */
   @NotNull
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH, allowableValues = "project, org")
@@ -76,7 +77,7 @@ public class AzureArtifactConfig implements ArtifactConfig, Visitable, WithConne
   /**
    * Project
    */
-  @NotNull @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @Wither ParameterField<String> project;
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @Wither ParameterField<String> project;
 
   /**
    * Feed
@@ -86,7 +87,11 @@ public class AzureArtifactConfig implements ArtifactConfig, Visitable, WithConne
   /**
    * PackageName
    */
-  @NotNull @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @Wither ParameterField<String> packageName;
+  @JsonProperty("package")
+  @NotNull
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
+  @Wither
+  ParameterField<String> packageName;
 
   /**
    * Version
@@ -126,40 +131,40 @@ public class AzureArtifactConfig implements ArtifactConfig, Visitable, WithConne
 
   @Override
   public ArtifactConfig applyOverrides(ArtifactConfig overrideConfig) {
-    AzureArtifactConfig azureArtifactConfig = (AzureArtifactConfig) overrideConfig;
+    AzureArtifactsConfig azureArtifactsConfig = (AzureArtifactsConfig) overrideConfig;
 
-    AzureArtifactConfig resultantConfig = this;
+    AzureArtifactsConfig resultantConfig = this;
 
-    if (!ParameterField.isNull(azureArtifactConfig.getConnectorRef())) {
-      resultantConfig = resultantConfig.withConnectorRef(azureArtifactConfig.getConnectorRef());
+    if (!ParameterField.isNull(azureArtifactsConfig.getConnectorRef())) {
+      resultantConfig = resultantConfig.withConnectorRef(azureArtifactsConfig.getConnectorRef());
     }
 
-    if (!ParameterField.isNull(azureArtifactConfig.getPackageType())) {
-      resultantConfig = resultantConfig.withPackageType(azureArtifactConfig.getPackageType());
+    if (!ParameterField.isNull(azureArtifactsConfig.getPackageType())) {
+      resultantConfig = resultantConfig.withPackageType(azureArtifactsConfig.getPackageType());
     }
 
-    if (!ParameterField.isNull(azureArtifactConfig.getScope())) {
-      resultantConfig = resultantConfig.withScope(azureArtifactConfig.getScope());
+    if (!ParameterField.isNull(azureArtifactsConfig.getScope())) {
+      resultantConfig = resultantConfig.withScope(azureArtifactsConfig.getScope());
     }
 
-    if (!ParameterField.isNull(azureArtifactConfig.getProject())) {
-      resultantConfig = resultantConfig.withProject(azureArtifactConfig.getProject());
+    if (!ParameterField.isNull(azureArtifactsConfig.getProject())) {
+      resultantConfig = resultantConfig.withProject(azureArtifactsConfig.getProject());
     }
 
-    if (!ParameterField.isNull(azureArtifactConfig.getFeed())) {
-      resultantConfig = resultantConfig.withFeed(azureArtifactConfig.getFeed());
+    if (!ParameterField.isNull(azureArtifactsConfig.getFeed())) {
+      resultantConfig = resultantConfig.withFeed(azureArtifactsConfig.getFeed());
     }
 
-    if (!ParameterField.isNull(azureArtifactConfig.getPackageName())) {
-      resultantConfig = resultantConfig.withPackageName(azureArtifactConfig.getPackageName());
+    if (!ParameterField.isNull(azureArtifactsConfig.getPackageName())) {
+      resultantConfig = resultantConfig.withPackageName(azureArtifactsConfig.getPackageName());
     }
 
-    if (!ParameterField.isNull(azureArtifactConfig.getVersion())) {
-      resultantConfig = resultantConfig.withVersion(azureArtifactConfig.getVersion());
+    if (!ParameterField.isNull(azureArtifactsConfig.getVersion())) {
+      resultantConfig = resultantConfig.withVersion(azureArtifactsConfig.getVersion());
     }
 
-    if (!ParameterField.isNull(azureArtifactConfig.getVersionRegex())) {
-      resultantConfig = resultantConfig.withVersionRegex(azureArtifactConfig.getVersionRegex());
+    if (!ParameterField.isNull(azureArtifactsConfig.getVersionRegex())) {
+      resultantConfig = resultantConfig.withVersionRegex(azureArtifactsConfig.getVersionRegex());
     }
 
     return resultantConfig;

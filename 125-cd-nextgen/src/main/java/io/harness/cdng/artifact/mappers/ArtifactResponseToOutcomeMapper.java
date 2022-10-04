@@ -16,6 +16,7 @@ import io.harness.cdng.artifact.bean.ArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.AcrArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.AmazonS3ArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.ArtifactoryRegistryArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.AzureArtifactsConfig;
 import io.harness.cdng.artifact.bean.yaml.CustomArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.DockerHubArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.EcrArtifactConfig;
@@ -31,6 +32,7 @@ import io.harness.cdng.artifact.outcome.AcrArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactoryArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactoryGenericArtifactOutcome;
+import io.harness.cdng.artifact.outcome.AzureArtifactsOutcome;
 import io.harness.cdng.artifact.outcome.CustomArtifactOutcome;
 import io.harness.cdng.artifact.outcome.DockerArtifactOutcome;
 import io.harness.cdng.artifact.outcome.EcrArtifactOutcome;
@@ -47,6 +49,7 @@ import io.harness.delegate.task.artifacts.S3ArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.artifactory.ArtifactoryArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.artifactory.ArtifactoryGenericArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.azure.AcrArtifactDelegateResponse;
+import io.harness.delegate.task.artifacts.azureartifacts.AzureArtifactsDelegateResponse;
 import io.harness.delegate.task.artifacts.custom.CustomArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.docker.DockerArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.ecr.EcrArtifactDelegateResponse;
@@ -161,10 +164,32 @@ public class ArtifactResponseToOutcomeMapper {
         GoogleArtifactRegistryConfig googleArtifactRegistryConfig = (GoogleArtifactRegistryConfig) artifactConfig;
         GarDelegateResponse garDelegateResponse = (GarDelegateResponse) artifactDelegateResponse;
         return getGarArtifactOutcome(googleArtifactRegistryConfig, garDelegateResponse, useDelegateResponse);
+
+      case AZURE_ARTIFACTS:
+        AzureArtifactsConfig azureArtifactsConfig = (AzureArtifactsConfig) artifactConfig;
+        AzureArtifactsDelegateResponse azureArtifactsDelegateResponse =
+            (AzureArtifactsDelegateResponse) artifactDelegateResponse;
+        return getAzureArtifactsOutcome(azureArtifactsConfig, azureArtifactsDelegateResponse, useDelegateResponse);
+
       default:
         throw new UnsupportedOperationException(
             String.format("Unknown Artifact Config type: [%s]", artifactConfig.getSourceType()));
     }
+  }
+
+  private static AzureArtifactsOutcome getAzureArtifactsOutcome(AzureArtifactsConfig azureArtifactsConfig,
+      AzureArtifactsDelegateResponse azureArtifactsDelegateResponse, boolean useDelegateResponse) {
+    return AzureArtifactsOutcome.builder()
+        .image(azureArtifactsDelegateResponse.getPackageUrl())
+        .imagePullSecret(createImagePullSecret(ArtifactUtils.getArtifactKey(azureArtifactsConfig)))
+        .packageName(azureArtifactsConfig.getPackageName().getValue())
+        .version(azureArtifactsDelegateResponse.getVersion())
+        .connectorRef(azureArtifactsConfig.getConnectorRef().getValue())
+        .type(ArtifactSourceType.AZURE_ARTIFACTS.getDisplayName())
+        .identifier(azureArtifactsConfig.getIdentifier())
+        .primaryArtifact(azureArtifactsConfig.isPrimaryArtifact())
+        .versionRegex(azureArtifactsConfig.getVersionRegex().getValue())
+        .build();
   }
 
   private static GithubPackagesArtifactOutcome getGithubPackagesArtifactOutcome(
