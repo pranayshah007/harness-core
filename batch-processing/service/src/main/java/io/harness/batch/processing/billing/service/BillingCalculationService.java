@@ -14,7 +14,6 @@ import io.harness.batch.processing.pricing.InstancePricingStrategy;
 import io.harness.batch.processing.pricing.InstancePricingStrategyFactory;
 import io.harness.batch.processing.pricing.PricingData;
 import io.harness.batch.processing.pricing.PricingSource;
-import io.harness.batch.processing.pricing.service.intfc.GcpCustomBillingService;
 import io.harness.batch.processing.tasklet.util.InstanceMetaDataUtils;
 import io.harness.ccm.commons.beans.CostAttribution;
 import io.harness.ccm.commons.beans.InstanceType;
@@ -39,15 +38,11 @@ import org.springframework.stereotype.Service;
 @Slf4j
 public class BillingCalculationService {
   private final InstancePricingStrategyFactory instancePricingStrategyFactory;
-  private final GcpCustomBillingService gcpCustomBillingService;
-
   private final AtomicInteger atomicTripper = new AtomicInteger(0);
 
   @Autowired
-  public BillingCalculationService(
-      InstancePricingStrategyFactory instancePricingStrategyFactory, GcpCustomBillingService gcpCustomBillingService) {
+  public BillingCalculationService(InstancePricingStrategyFactory instancePricingStrategyFactory) {
     this.instancePricingStrategyFactory = instancePricingStrategyFactory;
-    this.gcpCustomBillingService = gcpCustomBillingService;
   }
 
   public String getInstanceClusterIdKey(String instanceId, String clusterId) {

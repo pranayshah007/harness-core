@@ -178,8 +178,6 @@ public class InstanceBillingDataTasklet implements Tasklet {
     Set<String> parentInstanceIds = new HashSet<>();
     Instant prevStartTime = startTime.minus(3, ChronoUnit.DAYS);
 
-    log.info("instanceDataLists Size: {}", instanceDataLists.size());
-
     instanceDataLists.forEach(instanceData -> {
       if (null == instanceData.getActiveInstanceIterator() && null == instanceData.getUsageStopTime()) {
         instanceDataDao.updateInstanceActiveIterationTime(instanceData);
@@ -199,7 +197,6 @@ public class InstanceBillingDataTasklet implements Tasklet {
             .collect(Collectors.groupingBy(InstanceData::getClusterId));
     String awsDataSetId = customBillingMetaDataService.getAwsDataSetId(accountId);
     log.debug("AWS data set {}", awsDataSetId);
-    log.info("AWS data set {}", awsDataSetId);
     if (awsDataSetId != null) {
       Set<String> resourceIds = new HashSet<>();
       Set<String> eksFargateResourceIds = new HashSet<>();
@@ -236,7 +233,6 @@ public class InstanceBillingDataTasklet implements Tasklet {
 
     String azureDataSetId = customBillingMetaDataService.getAzureDataSetId(accountId);
     log.debug("Azure data set {}", azureDataSetId);
-    log.info("Azure data set {}", azureDataSetId);
     if (azureDataSetId != null) {
       Set<String> resourceIds = new HashSet<>();
       instanceDataLists.forEach(instanceData -> {

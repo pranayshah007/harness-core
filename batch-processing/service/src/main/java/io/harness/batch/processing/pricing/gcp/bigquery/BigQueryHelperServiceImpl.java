@@ -36,6 +36,7 @@ import com.google.cloud.bigquery.Schema;
 import com.google.cloud.bigquery.TableResult;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -69,7 +70,7 @@ public class BigQueryHelperServiceImpl implements BigQueryHelperService {
   private static final String TABLE_SUFFIX = "%s_%s";
   private static final String AWS_CUR_TABLE_NAME = "awscur_%s";
   private static final String AZURE_TABLE_NAME = "unifiedTable";
-  private static final String GCP_TABLE_NAME_WITH_WILDCARD = "gcp_billing_export_*";
+  private static final String GCP_TABLE_NAME_WITH_WILDCARD = "gcp_billing_export_resource_*";
   private String resourceCondition = "resourceid like '%%%s%%'";
 
   @Override
@@ -407,10 +408,9 @@ public class BigQueryHelperServiceImpl implements BigQueryHelperService {
     String resourceIdSubQuery = createSubQuery(resourceIds);
     String query = BQConst.GCP_VM_BILLING_QUERY;
     String projectTableName = getGcpProjectTableName(dataSetId);
-    String formattedQuery = format(query, GCP_PRODUCT_FAMILY_CASE_CONDITION, projectTableName, startTime, endTime,
-        resourceIdSubQuery, startTime, endTime, GCP_DESCRIPTION_CONDITION);
-
-    log.info("GCP CUR Data Query: {}", formattedQuery);
+    String formattedQuery =
+        format(query, GCP_PRODUCT_FAMILY_CASE_CONDITION, projectTableName, startTime.minus(1, ChronoUnit.DAYS),
+            endTime.plus(7, ChronoUnit.DAYS), resourceIdSubQuery, startTime, endTime, GCP_DESCRIPTION_CONDITION);
     return query(formattedQuery, "GCP");
   }
 
