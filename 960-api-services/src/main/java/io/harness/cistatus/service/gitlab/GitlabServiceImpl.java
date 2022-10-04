@@ -48,11 +48,11 @@ public class GitlabServiceImpl implements GitlabService {
         return json;
       } else {
         log.error(
-            "Failed to merge PR for github url {} and prNum {}. Response {} ", apiUrl, prNumber, response.errorBody());
+            "Failed to merge PR for gitlab url {} and prNum {}. Response {} ", apiUrl, prNumber, response.errorBody());
         return json;
       }
     } catch (Exception e) {
-      log.error("Failed to merge PR for github url {} and prNum {} ", apiUrl, prNumber, e);
+      log.error("Failed to merge PR for gitlab url {} and prNum {} ", apiUrl, prNumber, e);
       return new JSONObject();
     }
   }
@@ -72,7 +72,7 @@ public class GitlabServiceImpl implements GitlabService {
               .execute();
 
       if (!statusCreationResponseResponse.isSuccessful()) {
-        log.error("Failed to send status for bitbucket url {} and sha {} error {}, message {}",
+        log.error("Failed to send status for gitlab url {} and sha {} error {}, message {}",
             gitlabConfig.getGitlabUrl(), sha, statusCreationResponseResponse.errorBody().string(),
             statusCreationResponseResponse.message());
       }

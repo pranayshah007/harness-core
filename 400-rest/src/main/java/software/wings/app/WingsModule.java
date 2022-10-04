@@ -33,6 +33,8 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.annotations.retry.MethodExecutionHelper;
 import io.harness.annotations.retry.RetryOnException;
 import io.harness.annotations.retry.RetryOnExceptionInterceptor;
+import io.harness.artifacts.azureartifacts.service.AzureArtifactsRegistryService;
+import io.harness.artifacts.azureartifacts.service.AzureArtifactsRegistryServiceImpl;
 import io.harness.artifacts.gcr.service.GcrApiService;
 import io.harness.artifacts.gcr.service.GcrApiServiceImpl;
 import io.harness.artifacts.githubpackages.client.GithubPackagesRestClientFactory;
@@ -1084,6 +1086,7 @@ public class WingsModule extends AbstractModule implements ServersModule {
     bind(GcrBuildService.class).to(GcrBuildServiceImpl.class);
     bind(GithubPackagesRestClientFactory.class).to(GithubPackagesRestClientFactoryImpl.class);
     bind(GithubPackagesRegistryService.class).to(GithubPackagesRegistryServiceImpl.class);
+    bind(AzureArtifactsRegistryService.class).to(AzureArtifactsRegistryServiceImpl.class);
     bind(AcrService.class).to(AcrServiceImpl.class);
     bind(AcrBuildService.class).to(AcrBuildServiceImpl.class);
     bind(AmiService.class).to(AmiServiceImpl.class);

@@ -7,17 +7,13 @@
 
 package io.harness.cvng.core.utils.monitoredService;
 
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-
 import io.harness.cvng.core.beans.HealthSourceMetricDefinition.AnalysisDTO;
 import io.harness.cvng.core.beans.HealthSourceMetricDefinition.AnalysisDTO.DeploymentVerificationDTO;
 import io.harness.cvng.core.beans.HealthSourceMetricDefinition.AnalysisDTO.LiveMonitoringDTO;
 import io.harness.cvng.core.beans.HealthSourceMetricDefinition.SLIDTO;
 import io.harness.cvng.core.beans.RiskProfile;
 import io.harness.cvng.core.beans.StackdriverDefinition;
-import io.harness.cvng.core.beans.monitoredService.TimeSeriesMetricPackDTO;
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.StackdriverMetricHealthSourceSpec;
-import io.harness.cvng.core.constant.MonitoredServiceConstants;
 import io.harness.cvng.core.entities.AnalysisInfo.DeploymentVerification;
 import io.harness.cvng.core.entities.AnalysisInfo.LiveMonitoring;
 import io.harness.cvng.core.entities.AnalysisInfo.SLI;
@@ -26,9 +22,7 @@ import io.harness.serializer.JsonUtils;
 
 import com.google.common.base.Preconditions;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 public class StackdriverMetricHealthSourceSpecTransformer
     implements CVConfigToHealthSourceTransformer<StackdriverCVConfig, StackdriverMetricHealthSourceSpec> {
@@ -39,7 +33,6 @@ public class StackdriverMetricHealthSourceSpecTransformer
         cvConfigs.stream().map(StackdriverCVConfig::getConnectorIdentifier).distinct().count() == 1,
         "ConnectorRef should be same for all the configs in the list.");
     List<StackdriverDefinition> metricDefinitions = new ArrayList<>();
-    Set<TimeSeriesMetricPackDTO> metricPacks = new HashSet<>();
     cvConfigs.forEach(cvConfig -> {
       cvConfig.getMetricInfoList().forEach(metricInfo -> {
         RiskProfile riskProfile =
@@ -71,18 +64,9 @@ public class StackdriverMetricHealthSourceSpecTransformer
         metricDefinitions.add(metricDefinition);
       });
     });
-    cvConfigs.forEach(stackdriverCVConfig -> {
-      String identifier = MonitoredServiceConstants.CUSTOM_METRIC_PACK;
-      List<TimeSeriesMetricPackDTO.MetricThreshold> metricThresholds = stackdriverCVConfig.getMetricThresholdDTOs();
-      if (isNotEmpty(metricThresholds)) {
-        metricThresholds.forEach(metricThreshold -> metricThreshold.setMetricType(identifier));
-      }
-      metricPacks.add(
-          TimeSeriesMetricPackDTO.builder().identifier(identifier).metricThresholds(metricThresholds).build());
-    });
     return StackdriverMetricHealthSourceSpec.builder()
         .metricDefinitions(metricDefinitions)
-        .metricPacks(metricPacks)
+        .metricPacks(addMetricPacks(cvConfigs))
         .connectorRef(cvConfigs.get(0).getConnectorIdentifier())
         .build();
   }

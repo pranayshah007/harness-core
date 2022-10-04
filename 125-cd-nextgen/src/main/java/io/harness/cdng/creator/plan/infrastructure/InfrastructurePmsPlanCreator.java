@@ -28,6 +28,7 @@ import io.harness.cdng.infra.yaml.InfrastructureDefinitionConfig;
 import io.harness.cdng.pipeline.PipelineInfrastructure;
 import io.harness.cdng.rollback.steps.InfrastructureDefinitionStep;
 import io.harness.cdng.rollback.steps.InfrastructureProvisionerStep;
+import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.data.structure.EmptyPredicate;
@@ -92,8 +93,8 @@ public class InfrastructurePmsPlanCreator {
         .build();
   }
 
-  public PlanNode getInfraTaskExecutableStepV2PlanNode(
-      EnvironmentYamlV2 environmentYamlV2, List<AdviserObtainment> adviserObtainments) {
+  public PlanNode getInfraTaskExecutableStepV2PlanNode(EnvironmentYamlV2 environmentYamlV2,
+      List<AdviserObtainment> adviserObtainments, ServiceDefinitionType deploymentType) {
     ParameterField<String> infraRef;
     ParameterField<Map<String, Object>> infraInputs;
 
@@ -112,6 +113,7 @@ public class InfrastructurePmsPlanCreator {
                                                           .envRef(environmentYamlV2.getEnvironmentRef())
                                                           .infraRef(infraRef)
                                                           .infraInputs(infraInputs)
+                                                          .deploymentType(deploymentType)
                                                           .build();
     return PlanNode.builder()
         .uuid(UUIDGenerator.generateUuid())

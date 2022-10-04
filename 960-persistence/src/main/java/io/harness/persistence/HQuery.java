@@ -196,11 +196,18 @@ public class HQuery<T> extends QueryImpl<T> {
     }
   }
 
-  @Override
-  public MorphiaIterator<T, T> fetch() {
-    enforceHarnessRules();
-    traceQuery();
-    return super.fetch();
+  public MorphiaIterator<T, T> fetch(FindOptions options) {
+    Class<T> entityClass = null;
+    try {
+      entityClass = super.getEntityClass();
+      enforceHarnessRules();
+      traceQuery();
+      options.maxTime(maxOperationTimeInMillis, TimeUnit.MILLISECONDS);
+      return HPersistence.retry(() -> { return super.fetch(options); });
+    } catch (MongoExecutionTimeoutException ex) {
+      log.error("fetch query exceeded max time limit for entityClass {} with options {}", entityClass, options);
+      throw ex;
+    }
   }
 
   @Override

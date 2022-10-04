@@ -1,0 +1,21 @@
+{
+  "connector" : {
+    "name" : "example_connector",
+    "slug" : "example_connector",
+    "description" : "example_connector",
+    "org" : "default",
+    "project" : "example_project",
+    "tags" : {
+      "property1" : "example_connector"
+    },
+    "spec" : {
+      "type" : "AzureClientCertificate",
+      "delegate_selectors" :  [ "pl1" ],
+      "azure_environment_type" : "AZURE",
+      "execute_on_delegate" : false,
+      "application_id" : "1234567890",
+      "tenant_id" : "1234567890",
+      "certificate_ref" : "account.azure-client-certificate"
+    }
+  }
+}
