@@ -131,6 +131,7 @@ import io.harness.cvng.dashboard.entities.HeatMap;
 import io.harness.cvng.dashboard.entities.HeatMap.HeatMapBuilder;
 import io.harness.cvng.dashboard.entities.HeatMap.HeatMapResolution;
 import io.harness.cvng.dashboard.entities.HeatMap.HeatMapRisk;
+import io.harness.cvng.models.VerificationType;
 import io.harness.cvng.notification.beans.ErrorBudgetRemainingPercentageConditionSpec;
 import io.harness.cvng.notification.beans.HealthScoreConditionSpec;
 import io.harness.cvng.notification.beans.NotificationRuleCondition;
@@ -384,6 +385,7 @@ public class BuilderFactory {
         .tierName("tier-name")
         .connectorIdentifier("AppDynamics Connector")
         .category(CVMonitoringCategory.PERFORMANCE)
+        .verificationType(VerificationType.TIME_SERIES)
         .enabled(true)
         .productName(generateUuid());
   }
