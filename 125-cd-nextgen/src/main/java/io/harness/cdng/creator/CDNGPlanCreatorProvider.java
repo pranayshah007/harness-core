@@ -221,7 +221,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
 
   private static final Set<String> EMPTY_FILTER_IDENTIFIERS = Sets.newHashSet(SIDECARS, SPEC, SERVICE_CONFIG,
       CONFIG_FILE, STARTUP_COMMAND, APPLICATION_SETTINGS, ARTIFACTS, ROLLBACK_STEPS, CONNECTION_STRINGS, STEPS,
-      CONFIG_FILES, ENVIRONMENT_GROUP_YAML, SERVICE_ENTITY, MANIFEST_LIST_CONFIG, STRATEGY, STEP_GROUP);
+      CONFIG_FILES, ENVIRONMENT_GROUP_YAML, SERVICE_ENTITY, MANIFEST_LIST_CONFIG, STEP_GROUP);
   private static final Set<String> EMPTY_SIDECAR_TYPES = Sets.newHashSet(CUSTOM_ARTIFACT_NAME, JENKINS_NAME,
       DOCKER_REGISTRY_NAME, ACR_NAME, AMAZON_S3_NAME, ARTIFACTORY_REGISTRY_NAME, ECR_NAME,
       GOOGLE_ARTIFACT_REGISTRY_NAME, GCR_NAME, NEXUS3_REGISTRY_NAME, GITHUB_PACKAGES_NAME, AZURE_ARTIFACTS_NAME);
@@ -327,6 +327,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     filterJsonCreators.add(new StepGroupPmsFilterJsonCreator());
     filterJsonCreators.add(new CDPMSCommandStepFilterJsonCreator());
     filterJsonCreators.add(new EmptyAnyFilterJsonCreator(EMPTY_FILTER_IDENTIFIERS));
+    filterJsonCreators.add(new EmptyAnyFilterJsonCreator(Sets.newHashSet(STRATEGY)));
     filterJsonCreators.add(new EmptyFilterJsonCreator(SIDECAR, EMPTY_SIDECAR_TYPES));
     filterJsonCreators.add(new EmptyFilterJsonCreator(MANIFEST_CONFIG, EMPTY_MANIFEST_TYPES));
     filterJsonCreators.add(new EmptyFilterJsonCreator(ENVIRONMENT_YAML, EMPTY_ENVIRONMENT_TYPES));
