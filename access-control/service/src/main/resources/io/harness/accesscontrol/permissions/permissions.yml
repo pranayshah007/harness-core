@@ -1235,14 +1235,6 @@ permissions:
       - account
       - organization
       - project
-  - identifier: core_deploymentfreeze_view
-    name: View deployment freeze
-    status: EXPERIMENTAL
-    includedInAllRoles: false
-    allowedScopeLevels:
-      - account
-      - organization
-      - project
   - identifier: core_deploymentfreeze_override
     name: Override a deployment freeze
     status: EXPERIMENTAL
