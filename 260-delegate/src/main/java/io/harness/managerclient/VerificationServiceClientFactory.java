@@ -63,7 +63,7 @@ public class VerificationServiceClientFactory implements Provider<VerificationSe
     objectMapper.registerModule(new JavaTimeModule());
     Retrofit retrofit = new Retrofit.Builder()
                             .baseUrl(this.baseUrl)
-                            .client(getUnsafeOkHttpClient())
+                            .client(this.httpClient)
                             .addConverterFactory(JacksonConverterFactory.create(objectMapper))
                             .build();
     return retrofit.create(VerificationServiceClient.class);
