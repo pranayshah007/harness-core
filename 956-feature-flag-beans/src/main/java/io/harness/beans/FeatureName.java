@@ -444,8 +444,10 @@ public enum FeatureName {
   AZURE_WEBAPP_NG_S3_ARTIFACTS(
       "UI FF to enable AWS S3 as an artifact source option for Azure Web App NG", HarnessTeam.CDP),
   SETTING_ATTRIBUTES_SERVICE_ACCOUNT_TOKEN_MIGRATION("Migrate erroneous service account tokens", HarnessTeam.PL),
-  SPG_2K_DEFAULT_PAGE_SIZE("Increase the default page size to 2000 elements in CG", HarnessTeam.SPG);
-
+  SPG_2K_DEFAULT_PAGE_SIZE("Increase the default page size to 2000 elements in CG", HarnessTeam.SPG),
+  WINRM_SCRIPT_COMMAND_SPLIT(
+      "Enables the new way of how to copy powershell/winrm script commands content to file on remote. (Copy is done in chunks of 4KB) ",
+      HarnessTeam.CDP);
   @Deprecated
   FeatureName() {
     scope = Scope.PER_ACCOUNT;
