@@ -114,6 +114,7 @@ public class IntegrationStageUtilsTest {
                                                 .infraType("KubernetesDirect")
                                                 .infraOSType("Linux")
                                                 .infraHostType("Self Hosted")
+                                                .infraArchType("Amd64")
                                                 .build();
 
     assertThat(ciInfraDetails).isEqualTo(expectedCiInfraDetails);
