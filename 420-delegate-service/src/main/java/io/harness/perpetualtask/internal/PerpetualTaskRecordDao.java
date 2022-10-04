@@ -231,7 +231,7 @@ public class PerpetualTaskRecordDao {
     Query<PerpetualTaskRecord> queryToUpdate = persistence.createQuery(PerpetualTaskRecord.class)
             .filter(PerpetualTaskRecordKeys.accountId, accountId)
             .filter(PerpetualTaskRecordKeys.state, TASK_ASSIGNED)
-            .field(String.valueOf(PerpetualTaskRecordKeys.lastHeartBeat))
+            .field(String.valueOf(PerpetualTaskRecordKeys.lastHeartbeat))
             .lessThan(System.currentTimeMillis() - multipleInterval);
 
     UpdateOperations<PerpetualTaskRecord> updateOperations =
