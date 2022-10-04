@@ -7,7 +7,6 @@
 package io.harness.cdng.creator.plan.artifact;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.artifact.bean.yaml.CustomArtifactConfig;
@@ -21,6 +20,7 @@ import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
 
 import lombok.experimental.UtilityClass;
+import org.apache.commons.lang3.StringUtils;
 
 @OwnedBy(CDC)
 @UtilityClass
@@ -53,9 +53,7 @@ public class ArtifactPlanCreatorHelper {
               .getShellScriptBaseStepInfo()
               .getSource()
               .getSpec();
-      if (isEmpty(customScriptInlineSource.getScript().getValue().trim())) {
-        return false;
-      }
+      return !StringUtils.isBlank(customScriptInlineSource.getScript().getValue());
     }
     return true;
   }
