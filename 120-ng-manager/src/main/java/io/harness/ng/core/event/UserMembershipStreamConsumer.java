@@ -32,7 +32,7 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(PL)
 @Slf4j
 @Singleton
-public class UserMembershipStreamConsumer implements Runnable {
+public class UserMembershipStreamConsumer extends TraceConsumer {
   private static final int WAIT_TIME_IN_SECONDS = 30;
   private final Consumer eventConsumer;
   private final List<MessageListener> messageListenersList;
@@ -95,20 +95,14 @@ public class UserMembershipStreamConsumer implements Runnable {
     }
   }
 
-  private boolean handleMessage(Message message) {
-    try {
-      AtomicBoolean success = new AtomicBoolean(true);
-      messageListenersList.forEach(messageListener -> {
-        if (!messageListener.handleMessage(message)) {
-          success.set(false);
-        }
-      });
-      return success.get();
-    } catch (Exception ex) {
-      // This is not evicted from events framework so that it can be processed
-      // by other consumer if the error is a runtime error
-      log.error(String.format("Error occurred in processing message with id %s", message.getId()), ex);
-      return false;
-    }
+  @Override
+  protected boolean processMessage(Message message) {
+    AtomicBoolean success = new AtomicBoolean(true);
+    messageListenersList.forEach(messageListener -> {
+      if (!messageListener.handleMessage(message)) {
+        success.set(false);
+      }
+    });
+    return success.get();
   }
 }
