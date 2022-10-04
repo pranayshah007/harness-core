@@ -65,6 +65,7 @@ public class FreezeRBACHelper {
         break;
       }
       default: {
+        break;
       }
     }
     return Optional.ofNullable(result);
