@@ -464,7 +464,7 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
       LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap, DeploymentStageNode stageNode,
       String nextNodeId) throws IOException {
     // Adding service child by resolving the serviceField
-    ServiceDefinitionType serviceType = stageNode.getDeploymentStageConfig().getDeploymentType();
+    ServiceDefinitionType deploymentType = stageNode.getDeploymentStageConfig().getDeploymentType();
     ServiceYamlV2 service;
     if (stageNode.getDeploymentStageConfig().getServices() != null) {
       service = MultiDeploymentSpawnerUtils.getServiceYamlV2Node();
@@ -480,7 +480,7 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
     }
     String serviceNodeId = service.getUuid();
     planCreationResponseMap.putAll(ServiceAllInOnePlanCreatorUtils.addServiceNode(
-        specField, kryoSerializer, service, environment, serviceNodeId, nextNodeId, serviceType));
+        specField, kryoSerializer, service, environment, serviceNodeId, nextNodeId, deploymentType));
     return serviceNodeId;
   }
   private String addInfrastructureNode(LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap,
@@ -491,7 +491,8 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
     } else {
       environment = stageNode.getDeploymentStageConfig().getEnvironment();
     }
-    PlanNode node = InfrastructurePmsPlanCreator.getInfraTaskExecutableStepV2PlanNode(environment, adviserObtainments);
+    PlanNode node = InfrastructurePmsPlanCreator.getInfraTaskExecutableStepV2PlanNode(
+        environment, adviserObtainments, stageNode.getDeploymentStageConfig().getDeploymentType());
     planCreationResponseMap.put(node.getUuid(), PlanCreationResponse.builder().planNode(node).build());
     return node.getUuid();
   }
