@@ -120,7 +120,7 @@ public class FreezeTimeUtils {
     return new Date().getTime();
   }
 
-  private Long getEpochValueFromDateString(String dateString, TimeZone timeZone) {
+  public Long getEpochValueFromDateString(String dateString, TimeZone timeZone) {
     if (dateString == null) {
       return null;
     }

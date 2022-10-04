@@ -7,12 +7,13 @@
 
 package io.harness.freeze.beans;
 
+import javax.validation.constraints.NotNull;
 import lombok.Data;
 
 @Data
 public class FreezeWindow {
-  String timeZone;
-  String startTime;
-  String endTime;
+  @NotNull String timeZone;
+  @NotNull String startTime;
+  @NotNull String endTime;
   Recurrence recurrence;
 }

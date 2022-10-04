@@ -10,8 +10,10 @@ package io.harness.freeze.beans;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 
+import javax.validation.constraints.NotNull;
+
 @Data
 public class Recurrence {
-  @JsonProperty("type") RecurrenceType recurrenceType;
+  @NotNull @JsonProperty("type") RecurrenceType recurrenceType;
   RecurrenceSpec spec;
 }
