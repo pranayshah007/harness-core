@@ -119,6 +119,19 @@ public class ClusterServiceImpl implements ClusterService {
   }
 
   @Override
+  public long deleteAllFromEnvAndReturnCount(
+      String accountId, String orgIdentifier, String projectIdentifier, String envIdentifier) {
+    checkArgument(isNotEmpty(accountId), "accountId must be present");
+    checkArgument(isNotEmpty(orgIdentifier), "org identifier must be present");
+    checkArgument(isNotEmpty(projectIdentifier), "project identifier must be present");
+    checkArgument(isNotEmpty(envIdentifier), "environment identifier must be present");
+
+    Criteria criteria = getClusterEqCriteriaForAllClusters(accountId, orgIdentifier, projectIdentifier, envIdentifier);
+    DeleteResult delete = clusterRepository.delete(criteria);
+    return delete.getDeletedCount();
+  }
+
+  @Override
   public boolean deleteAllFromEnv(
       String accountId, String orgIdentifier, String projectIdentifier, String envIdentifier) {
     checkArgument(isNotEmpty(accountId), "accountId must be present");
