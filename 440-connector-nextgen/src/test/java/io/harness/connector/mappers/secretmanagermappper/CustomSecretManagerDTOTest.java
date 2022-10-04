@@ -32,7 +32,7 @@ public class CustomSecretManagerDTOTest extends CategoryTest {
     defaultFieldNamesToValue = new HashMap<>();
     defaultFieldNamesToValue.put("isDefault", false);
     defaultFieldNamesToValue.put("harnessManaged", false);
-    defaultFieldNamesToValue.put("onDelegate", false);
+    defaultFieldNamesToValue.put("onDelegate", true);
   }
 
   @Test
