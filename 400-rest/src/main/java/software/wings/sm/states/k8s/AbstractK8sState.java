@@ -81,6 +81,7 @@ import software.wings.api.PhaseElement;
 import software.wings.api.ServiceElement;
 import software.wings.api.instancedetails.InstanceInfoVariables;
 import software.wings.api.k8s.K8sApplicationManifestSourceInfo;
+import software.wings.api.k8s.K8sCanaryDeleteServiceElement;
 import software.wings.api.k8s.K8sElement;
 import software.wings.api.k8s.K8sGitConfigMapInfo;
 import software.wings.api.k8s.K8sHelmDeploymentElement;
@@ -609,6 +610,21 @@ public abstract class AbstractK8sState extends State implements K8sStateExecutor
                                    .name("k8s")
                                    .output(kryoSerializer.asDeflatedBytes(k8sElement))
                                    .build());
+  }
+
+  public void saveK8sCanaryDeployRun(ExecutionContext context) {
+    sweepingOutputService.save(
+        context.prepareSweepingOutputBuilder(Scope.WORKFLOW)
+            .name(K8sCanaryDeleteServiceElement.SWEEPING_OUTPUT_NAME)
+            .value(K8sCanaryDeleteServiceElement.builder().previousDeployedK8sCanary(true).build())
+            .build());
+  }
+
+  public K8sCanaryDeleteServiceElement fetchK8sCanaryDeleteServiceElement(ExecutionContext context) {
+    SweepingOutputInquiry sweepingOutputInquiry =
+        context.prepareSweepingOutputInquiryBuilder().name(K8sCanaryDeleteServiceElement.SWEEPING_OUTPUT_NAME).build();
+
+    return (K8sCanaryDeleteServiceElement) sweepingOutputService.findSweepingOutput(sweepingOutputInquiry);
   }
 
   public ExecutionResponse queueK8sDelegateTask(ExecutionContext context, K8sTaskParameters k8sTaskParameters,

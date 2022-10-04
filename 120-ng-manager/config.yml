@@ -95,6 +95,7 @@ mongo:
   transactionsEnabled: false
   aliasDBName: ng-harness
   traceMode: DISABLED
+  maxOperationTimeInMillis: 900000
 
 accountConfig:
   deploymentClusterName: ""
@@ -117,14 +118,6 @@ ngIteratorsConfig:
 #maxConnectionIdleTime : 600000
 #connectionsPerHost : 300
 #indexManagerMode : AUTO
-
-pmsMongo:
-  uri: mongodb://localhost:27017/pms-harness
-  connectTimeout: 30000
-  serverSelectionTimeout: 90000
-  maxConnectionIdleTime: 600000
-  connectionsPerHost: 300
-  indexManagerMode: AUTO
 
 managerClientConfig:
   baseUrl: http://localhost:3457/api/
@@ -236,7 +229,7 @@ eventsFramework:
       CATrustStorePath: "/tmp/ca_trust_store"
       CATrustStorePassword: ""
 
-distributedLockImplementation: MONGO
+distributedLockImplementation: REDIS
 
 redisLockConfig:
   sentinel: false
@@ -400,9 +393,9 @@ featureFlagConfig:
 enableDashboardTimescale: false
 
 timescaledb:
-  timescaledbUrl: "jdbc:postgresql://34.83.25.129:5432/harnessdev"
-  timescaledbUsername: "harnessappdev"
-  timescaledbPassword: "harnessappdev"
+  timescaledbUrl: "jdbc:postgresql://localhost:5432/harness"
+  timescaledbUsername: "postgres"
+  timescaledbPassword: ""
   connectTimeout: 10
   socketTimeout: 30
   logUnclosedConnections: false
@@ -424,6 +417,7 @@ cacheConfig:
   cacheBackend: REDIS
   cacheNamespace: ""
   disabledCaches: [ ]
+  enterpriseCacheEnabled: true
 
 scopeAccessCheckEnabled: true
 
@@ -457,6 +451,8 @@ opaClientConfig:
   connectTimeOutSeconds: 15
   readTimeOutSeconds: 15
 
+opaConnectivityEnabled: false
+
 secretsConfiguration:
   secretResolutionEnabled: false
   gcpSecretManagerProject: harness-playground
@@ -471,3 +467,7 @@ debeziumConsumerConfigs:
   - debeziumTopicName: ${DEBEZIUM_CONSUMER_TOPIC_NAME:-DEBEZIUM_pmsMongo.pms-harness.planExecutionsSummary}
     debeziumNumberOfThreads: ${DEBEZIUM_CONSUMER_THREADS:-2}
     debeziumBatchSize: ${DEBEZIUM_CONSUMER_BATCH_SIZE:-100}
+
+cdTsDbRetentionPeriodMonths: 7
+
+enableOpentelemetry: false

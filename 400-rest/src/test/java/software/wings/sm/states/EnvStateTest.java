@@ -15,6 +15,7 @@ import static io.harness.rule.OwnerRule.GARVIT;
 import static io.harness.rule.OwnerRule.HINGER;
 import static io.harness.rule.OwnerRule.PRABU;
 import static io.harness.rule.OwnerRule.SRINIVAS;
+import static io.harness.rule.OwnerRule.YUVRAJ;
 
 import static software.wings.api.EnvStateExecutionData.Builder.anEnvStateExecutionData;
 import static software.wings.beans.Application.Builder.anApplication;
@@ -94,6 +95,7 @@ import software.wings.sm.WorkflowStandardParams;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Injector;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -232,8 +234,6 @@ public class EnvStateTest extends WingsBaseTest {
       return sweepingOutputInstance;
     });
 
-    when(featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, ACCOUNT_ID)).thenReturn(false);
-
     envState.handleAsyncResponse(
         context, ImmutableMap.of("", new EnvState.EnvExecutionResponseData(WORKFLOW_EXECUTION_ID, SUCCESS)));
   }
@@ -249,7 +249,6 @@ public class EnvStateTest extends WingsBaseTest {
                         .build());
     when(workflowExecutionService.getArtifactsCollected(APP_ID, WORKFLOW_EXECUTION_ID))
         .thenReturn(Collections.emptyList());
-    when(featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, ACCOUNT_ID)).thenReturn(false);
     envState.handleAsyncResponse(
         context, ImmutableMap.of("", new EnvState.EnvExecutionResponseData(WORKFLOW_EXECUTION_ID, SUCCESS)));
     verify(sweepingOutputService, never()).save(any());
@@ -314,8 +313,6 @@ public class EnvStateTest extends WingsBaseTest {
       return sweepingOutputInstance;
     });
 
-    when(featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, ACCOUNT_ID)).thenReturn(true);
-
     envState.handleAsyncResponse(
         context, ImmutableMap.of("", new EnvState.EnvExecutionResponseData(WORKFLOW_EXECUTION_ID, SUCCESS)));
   }
@@ -331,7 +328,6 @@ public class EnvStateTest extends WingsBaseTest {
                         .build());
     when(workflowExecutionService.getStateExecutionInstances(APP_ID, WORKFLOW_EXECUTION_ID))
         .thenReturn(Collections.emptyList());
-    when(featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, ACCOUNT_ID)).thenReturn(true);
     envState.handleAsyncResponse(
         context, ImmutableMap.of("", new EnvState.EnvExecutionResponseData(WORKFLOW_EXECUTION_ID, SUCCESS)));
     verify(sweepingOutputService, never()).save(any());
@@ -355,7 +351,6 @@ public class EnvStateTest extends WingsBaseTest {
 
     when(workflowExecutionService.getStateExecutionInstances(APP_ID, WORKFLOW_EXECUTION_ID))
         .thenReturn(Collections.emptyList());
-    when(featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, ACCOUNT_ID)).thenReturn(true);
     when(featureFlagService.isEnabled(FeatureName.RESOLVE_DEPLOYMENT_TAGS_BEFORE_EXECUTION, ACCOUNT_ID))
         .thenReturn(true);
 
@@ -451,5 +446,31 @@ public class EnvStateTest extends WingsBaseTest {
         .isEqualTo("Master Deployment Freeze is active. No deployments are allowed.");
     EnvStateExecutionData stateExecutionData = (EnvStateExecutionData) executionResponse.getStateExecutionData();
     assertThat(stateExecutionData.getWorkflowId()).isEqualTo(WORKFLOW_ID);
+  }
+
+  @Test
+  @Owner(developers = YUVRAJ)
+  @Category(UnitTests.class)
+  public void testRenderWorkflowExpression1() {
+    List<String> workflowVariableWithExpressionValue = new ArrayList<>();
+    workflowVariableWithExpressionValue.add("var1");
+    Map<String, String> variableMap = new HashMap<>();
+    variableMap.put("var1", "${secrets.getValue('value')}");
+    ExecutionArgs executionArgs = ExecutionArgs.builder().workflowVariables(variableMap).build();
+    envState.renderWorkflowExpression(context, executionArgs, workflowVariableWithExpressionValue);
+    verify(context, times(0)).renderExpression(any());
+  }
+
+  @Test
+  @Owner(developers = YUVRAJ)
+  @Category(UnitTests.class)
+  public void testRenderWorkflowExpression2() {
+    List<String> workflowVariableWithExpressionValue = new ArrayList<>();
+    workflowVariableWithExpressionValue.add("var1");
+    Map<String, String> variableMap = new HashMap<>();
+    variableMap.put("var1", "${workflow.variable.var1}");
+    ExecutionArgs executionArgs = ExecutionArgs.builder().workflowVariables(variableMap).build();
+    envState.renderWorkflowExpression(context, executionArgs, workflowVariableWithExpressionValue);
+    verify(context, times(1)).renderExpression(any());
   }
 }

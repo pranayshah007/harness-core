@@ -7,8 +7,10 @@
 
 package io.harness.security;
 
+import static io.harness.NGCommonEntityConstants.ACCOUNT_HEADER;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
+import static io.harness.rule.OwnerRule.ASHISHSANODIA;
 import static io.harness.rule.OwnerRule.RAJ;
 import static io.harness.rule.OwnerRule.SHASHANK;
 import static io.harness.rule.OwnerRule.SOWMYA;
@@ -17,6 +19,7 @@ import static io.harness.security.NextGenAuthenticationFilter.X_API_KEY;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.catchThrowableOfType;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -275,6 +278,101 @@ public class NextGenAuthenticationFilterTest extends ApiKeyFilterTestBase {
         .isInstanceOf(InvalidRequestException.class)
         .hasMessageContaining("Invalid accountId in token " + uuid)
         .hasMessageContaining(uuid);
+  }
+
+  @Test
+  @Owner(developers = ASHISHSANODIA)
+  @Category(UnitTests.class)
+  public void testAccountQueryParamForAPISpecFirst() {
+    final UriInfo mockUriInfo = mock(UriInfo.class);
+    doReturn(mockUriInfo).when(containerRequestContext).getUriInfo();
+    MultivaluedMap<String, String> queryParams = new MultivaluedHashMap<>();
+    queryParams.put(NGCommonEntityConstants.ACCOUNT, Lists.newArrayList("account"));
+    when(mockUriInfo.getQueryParameters()).thenReturn(queryParams);
+    when(mockUriInfo.getPathParameters()).thenReturn(queryParams);
+
+    String delimiter = ".";
+    String uuid = generateUuid();
+    String rawPassword = generateUuid();
+    String encodedPassword = new BCryptPasswordEncoder($2A, 10).encode(rawPassword);
+    apiKey = "pat" + delimiter + uuid + delimiter + rawPassword;
+    when(containerRequestContext.getHeaderString(X_API_KEY)).thenReturn(apiKey);
+    when(authenticationFilter.testRequestPredicate(containerRequestContext)).thenReturn(true);
+    PowerMockito.mockStatic(NGRestUtils.class);
+    TokenDTO tokenDTO = TokenDTO.builder()
+                            .apiKeyType(ApiKeyType.USER)
+                            .encodedPassword(encodedPassword)
+                            .valid(true)
+                            .accountIdentifier("account")
+                            .parentIdentifier(generateUuid())
+                            .email("user@harness.io")
+                            .username("user")
+                            .build();
+    when(NGRestUtils.getResponse(any())).thenAnswer(invocationOnMock -> tokenDTO);
+    authenticationFilter.filter(containerRequestContext);
+    Principal context = SourcePrincipalContextBuilder.getSourcePrincipal();
+    assertThat(context).isNotNull();
+    assertThat(context.getType()).isEqualByComparingTo(PrincipalType.USER);
+    assertThat(context.getName()).isEqualTo(tokenDTO.getParentIdentifier());
+  }
+
+  @Test
+  @Owner(developers = ASHISHSANODIA)
+  @Category(UnitTests.class)
+  public void testAccountHeaderParamMismatchWithApiKeyAccountForAPISpecFirst() {
+    String delimiter = ".";
+    String uuid = generateUuid();
+    String rawPassword = generateUuid();
+    String encodedPassword = new BCryptPasswordEncoder($2A, 10).encode(rawPassword);
+    apiKey = "pat" + delimiter + uuid + delimiter + rawPassword;
+    when(containerRequestContext.getHeaderString(X_API_KEY)).thenReturn(apiKey);
+    when(containerRequestContext.getHeaderString(ACCOUNT_HEADER)).thenReturn("different-account-from-header");
+    when(authenticationFilter.testRequestPredicate(containerRequestContext)).thenReturn(true);
+    PowerMockito.mockStatic(NGRestUtils.class);
+    TokenDTO tokenDTO = TokenDTO.builder()
+                            .apiKeyType(ApiKeyType.USER)
+                            .encodedPassword(encodedPassword)
+                            .valid(true)
+                            .accountIdentifier("account")
+                            .parentIdentifier(generateUuid())
+                            .email("user@harness.io")
+                            .username("user")
+                            .build();
+    when(NGRestUtils.getResponse(any())).thenAnswer(invocationOnMock -> tokenDTO);
+    Throwable thrown =
+        catchThrowableOfType(() -> authenticationFilter.filter(containerRequestContext), InvalidRequestException.class);
+
+    assertThat(thrown).hasMessage(String.format("Invalid account token access %s", uuid));
+  }
+
+  @Test
+  @Owner(developers = ASHISHSANODIA)
+  @Category(UnitTests.class)
+  public void testAccountHeaderParamForAPISpecFirst() {
+    String delimiter = ".";
+    String uuid = generateUuid();
+    String rawPassword = generateUuid();
+    String encodedPassword = new BCryptPasswordEncoder($2A, 10).encode(rawPassword);
+    apiKey = "pat" + delimiter + uuid + delimiter + rawPassword;
+    when(containerRequestContext.getHeaderString(X_API_KEY)).thenReturn(apiKey);
+    when(containerRequestContext.getHeaderString(ACCOUNT_HEADER)).thenReturn("account");
+    when(authenticationFilter.testRequestPredicate(containerRequestContext)).thenReturn(true);
+    PowerMockito.mockStatic(NGRestUtils.class);
+    TokenDTO tokenDTO = TokenDTO.builder()
+                            .apiKeyType(ApiKeyType.USER)
+                            .encodedPassword(encodedPassword)
+                            .valid(true)
+                            .accountIdentifier("account")
+                            .parentIdentifier(generateUuid())
+                            .email("user@harness.io")
+                            .username("user")
+                            .build();
+    when(NGRestUtils.getResponse(any())).thenAnswer(invocationOnMock -> tokenDTO);
+    authenticationFilter.filter(containerRequestContext);
+    Principal context = SourcePrincipalContextBuilder.getSourcePrincipal();
+    assertThat(context).isNotNull();
+    assertThat(context.getType()).isEqualByComparingTo(PrincipalType.USER);
+    assertThat(context.getName()).isEqualTo(tokenDTO.getParentIdentifier());
   }
 
   @Test

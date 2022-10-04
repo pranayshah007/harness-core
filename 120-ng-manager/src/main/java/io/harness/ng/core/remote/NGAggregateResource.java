@@ -14,9 +14,11 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.ng.accesscontrol.PlatformPermissions.VIEW_ORGANIZATION_PERMISSION;
 import static io.harness.ng.accesscontrol.PlatformPermissions.VIEW_PROJECT_PERMISSION;
 import static io.harness.ng.accesscontrol.PlatformPermissions.VIEW_USERGROUP_PERMISSION;
+import static io.harness.ng.accesscontrol.PlatformPermissions.VIEW_USER_PERMISSION;
 import static io.harness.ng.accesscontrol.PlatformResourceTypes.ACCOUNT;
 import static io.harness.ng.accesscontrol.PlatformResourceTypes.ORGANIZATION;
 import static io.harness.ng.accesscontrol.PlatformResourceTypes.PROJECT;
+import static io.harness.ng.accesscontrol.PlatformResourceTypes.USER;
 import static io.harness.ng.accesscontrol.PlatformResourceTypes.USERGROUP;
 import static io.harness.utils.PageUtils.getNGPageResponse;
 import static io.harness.utils.PageUtils.getPageRequest;
@@ -52,6 +54,7 @@ import io.harness.ng.core.dto.ProjectAggregateDTO;
 import io.harness.ng.core.dto.ProjectFilterDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.dto.UserGroupAggregateDTO;
+import io.harness.ng.core.dto.UserGroupAggregateFilter;
 import io.harness.ng.core.entities.Organization.OrganizationKeys;
 import io.harness.ng.core.entities.Project.ProjectKeys;
 import io.harness.ng.core.services.OrganizationService;
@@ -64,6 +67,7 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
+import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Parameter;
 import java.util.Set;
 import javax.validation.constraints.Max;
@@ -72,6 +76,7 @@ import javax.ws.rs.BeanParam;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
@@ -79,6 +84,7 @@ import javax.ws.rs.QueryParam;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import retrofit2.http.Body;
 
 @OwnedBy(PL)
 @Api("aggregate")
@@ -193,6 +199,29 @@ public class NGAggregateResource {
     }
     return ResponseDTO.newResponse(aggregateUserGroupService.listAggregateUserGroups(
         pageRequest, accountIdentifier, orgIdentifier, projectIdentifier, searchTerm, userSize, filterType));
+  }
+
+  @POST
+  @Path("acl/user/{userId}/usergroups")
+  @Hidden
+  @ApiOperation(value = "Get User Groups by User Id", nickname = "getUserGroupAggregateListByUser")
+  public ResponseDTO<PageResponse<UserGroupAggregateDTO>> list(@NotNull @PathParam("userId") String userIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier, @BeanParam PageRequest pageRequest,
+      @QueryParam(NGResourceFilterConstants.SEARCH_TERM_KEY) String searchTerm,
+      @QueryParam("userSize") @DefaultValue("6") @Max(20) int userCount,
+      @Body UserGroupAggregateFilter userGroupAggregateFilter) {
+    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
+        Resource.of(USER, userIdentifier), VIEW_USER_PERMISSION);
+    if (isEmpty(pageRequest.getSortOrders())) {
+      SortOrder order =
+          SortOrder.Builder.aSortOrder().withField(ProjectKeys.lastModifiedAt, SortOrder.OrderType.DESC).build();
+      pageRequest.setSortOrders(ImmutableList.of(order));
+    }
+    return ResponseDTO.newResponse(
+        aggregateUserGroupService.listAggregateUserGroupsForUser(pageRequest, accountIdentifier, orgIdentifier,
+            projectIdentifier, userGroupAggregateFilter.getScopeFilter(), userIdentifier, searchTerm, userCount));
   }
 
   @GET

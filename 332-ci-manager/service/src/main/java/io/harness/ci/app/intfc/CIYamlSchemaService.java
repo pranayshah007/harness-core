@@ -5,6 +5,6 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.app.intfc;
+package io.harness.ci.app.intfc;
 
 public interface CIYamlSchemaService extends StageYamlSchemaService {}

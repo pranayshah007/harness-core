@@ -7,7 +7,9 @@
 
 package io.harness.ng.core.activityhistory.entity;
 
+import io.harness.annotations.StoreIn;
 import io.harness.connector.ConnectivityStatus;
+import io.harness.ng.DbAliases;
 import io.harness.ng.core.EntityDetail;
 import io.harness.ng.core.dto.ErrorDetail;
 
@@ -27,6 +29,7 @@ import org.springframework.data.annotation.TypeAlias;
 @SuperBuilder
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = false)
+@StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "entityActivity", noClassnameStored = true)
 @Persistent
 @TypeAlias("io.harness.ng.core.activity.EntityUsageActivityDetail")

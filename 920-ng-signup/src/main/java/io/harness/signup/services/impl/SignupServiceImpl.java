@@ -12,7 +12,7 @@ import static io.harness.beans.FeatureName.AUTO_FREE_MODULE_LICENSE;
 import static io.harness.configuration.DeployMode.DEPLOY_MODE;
 import static io.harness.configuration.DeployVariant.DEPLOY_VERSION;
 import static io.harness.exception.WingsException.USER;
-import static io.harness.remote.client.RestClientUtils.getResponse;
+import static io.harness.remote.client.CGRestUtils.getResponse;
 import static io.harness.signup.services.SignupType.COMMUNITY_PROVISION;
 import static io.harness.utils.CryptoUtils.secureRandAlphaNumString;
 
@@ -64,7 +64,6 @@ import io.harness.user.remote.UserClient;
 import io.harness.version.VersionInfoManager;
 
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
@@ -76,13 +75,15 @@ import java.net.URISyntaxException;
 import java.net.UnknownHostException;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
+import java.time.temporal.IsoFields;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -149,7 +150,7 @@ public class SignupServiceImpl implements SignupService {
    * Signup in non email verification blocking flow
    */
   @Override
-  public UserInfo signup(SignupDTO dto, String captchaToken) throws WingsException {
+  public UserInfo signup(SignupDTO dto, String captchaToken, String referer) throws WingsException {
     verifyReCaptcha(dto, captchaToken);
     verifySignupDTO(dto);
 
@@ -158,7 +159,7 @@ public class SignupServiceImpl implements SignupService {
     AccountDTO account = createAccount(dto);
     UserInfo user = createUser(dto, account);
     sendSucceedTelemetryEvent(dto.getEmail(), dto.getUtmInfo(), account.getIdentifier(), user,
-        SignupType.SIGNUP_FORM_FLOW, account.getName());
+        SignupType.SIGNUP_FORM_FLOW, account.getName(), referer);
     executorService.submit(() -> {
       SignupVerificationToken verificationToken = generateNewToken(user.getEmail());
       try {
@@ -274,7 +275,7 @@ public class SignupServiceImpl implements SignupService {
    * Complete Signup in email verification blocking flow
    */
   @Override
-  public UserInfo completeSignupInvite(String token) {
+  public UserInfo completeSignupInvite(String token, String referer) {
     if (DeployVariant.isCommunity(deployVersion)) {
       throw new InvalidRequestException("You are not allowed to complete a signup invite with community edition");
     }
@@ -297,10 +298,10 @@ public class SignupServiceImpl implements SignupService {
 
     UserInfo userInfo = null;
     try {
-      userInfo = getResponse(userClient.completeSignupInvite(verificationToken.getEmail()));
+      userInfo = getResponse(userClient.completeSignupInvite(verificationToken.getEmail(), null));
       verificationTokenRepository.delete(verificationToken);
       sendSucceedTelemetryEvent(userInfo.getEmail(), userInfo.getUtmInfo(), userInfo.getDefaultAccountId(), userInfo,
-          SignupType.SIGNUP_FORM_FLOW, userInfo.getAccounts().get(0).getAccountName());
+          SignupType.SIGNUP_FORM_FLOW, userInfo.getAccounts().get(0).getAccountName(), referer);
 
       UserInfo finalUserInfo = userInfo;
       executorService.submit(() -> {
@@ -320,7 +321,7 @@ public class SignupServiceImpl implements SignupService {
             !userInfo.getIntent().equals("") ? ModuleType.valueOf(userInfo.getIntent().toUpperCase()) : null,
             userInfo.getEdition() != null ? Edition.valueOf(userInfo.getEdition()) : null,
             userInfo.getSignupAction() != null ? SignupAction.valueOf(userInfo.getSignupAction()) : null,
-            userInfo.getDefaultAccountId());
+            userInfo.getDefaultAccountId(), referer);
       }
 
       log.info("Completed NG signup for {}", userInfo.getEmail());
@@ -428,7 +429,7 @@ public class SignupServiceImpl implements SignupService {
   }
 
   @Override
-  public UserInfo oAuthSignup(OAuthSignupDTO dto) {
+  public UserInfo oAuthSignup(OAuthSignupDTO dto, String referer) {
     if (DeployVariant.isCommunity(deployVersion)) {
       throw new InvalidRequestException("You are not allowed to oauth signup with community edition");
     }
@@ -454,8 +455,8 @@ public class SignupServiceImpl implements SignupService {
       oAuthUser.setSignupAction(dto.getSignupAction().toString());
     }
 
-    sendSucceedTelemetryEvent(
-        dto.getEmail(), dto.getUtmInfo(), account.getIdentifier(), oAuthUser, SignupType.OAUTH_FLOW, account.getName());
+    sendSucceedTelemetryEvent(dto.getEmail(), dto.getUtmInfo(), account.getIdentifier(), oAuthUser,
+        SignupType.OAUTH_FLOW, account.getName(), referer);
 
     executorService.submit(() -> {
       try {
@@ -468,29 +469,27 @@ public class SignupServiceImpl implements SignupService {
     });
 
     if (featureFlagService.isGlobalEnabled(AUTO_FREE_MODULE_LICENSE)) {
-      enableModuleLicense(dto.getIntent(), dto.getEdition(), dto.getSignupAction(), account.getIdentifier());
+      enableModuleLicense(dto.getIntent(), dto.getEdition(), dto.getSignupAction(), account.getIdentifier(), referer);
     }
     waitForRbacSetup(oAuthUser.getDefaultAccountId(), oAuthUser.getUuid(), oAuthUser.getEmail());
     return oAuthUser;
   }
 
   private void enableModuleLicense(
-      ModuleType intent, Edition edition, SignupAction signupAction, String accountIdentifier) {
-    Set<ModuleType> moduleTypeSet = Sets.newHashSet(ModuleType.CD, ModuleType.CI, ModuleType.CF, ModuleType.CE);
-    if (signupAction != null && edition != null && intent != null && signupAction.equals(SignupAction.TRIAL)
-        && moduleTypeSet.contains(intent)) {
-      StartTrialDTO startTrialDTO = StartTrialDTO.builder().edition(edition).moduleType(intent).build();
-      licenseService.startTrialLicense(accountIdentifier, startTrialDTO);
-      moduleTypeSet.remove(intent);
-    }
-
-    for (ModuleType moduleType : moduleTypeSet) {
-      licenseService.startFreeLicense(accountIdentifier, moduleType);
+      ModuleType intent, Edition edition, SignupAction signupAction, String accountIdentifier, String referer) {
+    if (intent != null) {
+      if (signupAction != null && edition != null && signupAction.equals(SignupAction.TRIAL)) {
+        StartTrialDTO startTrialDTO = StartTrialDTO.builder().edition(edition).moduleType(intent).build();
+        licenseService.startTrialLicense(accountIdentifier, startTrialDTO, referer);
+        return;
+      }
+      licenseService.startFreeLicense(accountIdentifier, intent, referer);
     }
   }
 
   /**
    * Verify token in non email verification blocking flow
+   *
    * @param token
    * @return
    */
@@ -594,8 +593,8 @@ public class SignupServiceImpl implements SignupService {
         ImmutableMap.<Destination, Boolean>builder().put(Destination.MARKETO, true).build(), Category.SIGN_UP);
   }
 
-  private void sendSucceedTelemetryEvent(
-      String email, UtmInfo utmInfo, String accountId, UserInfo userInfo, String source, String accountName) {
+  private void sendSucceedTelemetryEvent(String email, UtmInfo utmInfo, String accountId, UserInfo userInfo,
+      String source, String accountName, String referer) {
     HashMap<String, Object> properties = new HashMap<>();
     properties.put(EMAIL, email);
     properties.put("name", userInfo.getName());
@@ -614,7 +613,11 @@ public class SignupServiceImpl implements SignupService {
     groupProperties.put("group_id", accountId);
     groupProperties.put("group_type", "Account");
     groupProperties.put("group_name", accountName);
+    addCreatedInfoInGroupCall(groupProperties, email, utmInfo);
 
+    if (referer != null) {
+      groupProperties.put("refererURL", referer);
+    }
     // group event to register new signed-up user with new account
     telemetryReporter.sendGroupEvent(
         accountId, email, groupProperties, ImmutableMap.<Destination, Boolean>builder().build());
@@ -647,12 +650,43 @@ public class SignupServiceImpl implements SignupService {
     if (userInfo.getEdition() != null) {
       trackProperties.put(EDITION, userInfo.getEdition());
     }
+    if (referer != null) {
+      trackProperties.put("refererURL", referer);
+    }
     tempExecutor.schedule(
         ()
             -> telemetryReporter.sendTrackEvent(SUCCEED_EVENT_NAME, email, accountId, trackProperties,
                 ImmutableMap.<Destination, Boolean>builder().put(Destination.MARKETO, true).build(), Category.SIGN_UP),
         20, TimeUnit.SECONDS);
     log.info("Signup telemetry sent");
+  }
+
+  private void addCreatedInfoInGroupCall(HashMap<String, Object> groupProperties, String email, UtmInfo utmInfo) {
+    ZonedDateTime now = ZonedDateTime.now();
+
+    DateTimeFormatter monthDateFormatter = DateTimeFormatter.ofPattern("yyyyMMdd");
+    String createdAt = now.format(monthDateFormatter);
+
+    int year = now.getYear();
+    int isoWeek = now.get(IsoFields.WEEK_OF_WEEK_BASED_YEAR);
+    String createdAtWeek = year + "W" + isoWeek;
+
+    DateTimeFormatter monthFormatter = DateTimeFormatter.ofPattern("yyyyMM");
+    String createdAtMonth = now.format(monthFormatter);
+
+    groupProperties.put("created_at", createdAt);
+    groupProperties.put("created_at_week", createdAtWeek);
+    groupProperties.put("created_at_month", createdAtMonth);
+    groupProperties.put("created_by_user_id", email);
+
+    if (utmInfo != null) {
+      groupProperties.put("created_by_user_utm_source", utmInfo.getUtmSource() == null ? "" : utmInfo.getUtmSource());
+      groupProperties.put(
+          "created_by_user_utm_campaign", utmInfo.getUtmCampaign() == null ? "" : utmInfo.getUtmCampaign());
+      groupProperties.put("created_by_user_utm_medium", utmInfo.getUtmMedium() == null ? "" : utmInfo.getUtmMedium());
+      groupProperties.put(
+          "created_by_user_utm_content", utmInfo.getUtmContent() == null ? "" : utmInfo.getUtmContent());
+    }
   }
 
   private void sendCommunitySucceedTelemetry(String email, String accountId, UserInfo userInfo, String source) {

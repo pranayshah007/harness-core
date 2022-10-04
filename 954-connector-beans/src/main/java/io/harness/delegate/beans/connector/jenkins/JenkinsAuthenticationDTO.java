@@ -9,6 +9,7 @@ package io.harness.delegate.beans.connector.jenkins;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
+import io.harness.annotation.RecasterFieldName;
 import io.harness.annotations.dev.OwnedBy;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -31,7 +32,7 @@ import lombok.NoArgsConstructor;
 @JsonDeserialize(using = JenkinsAuthenticationDTODeserializer.class)
 @Schema(name = "JenkinsAuthentication", description = "This entity contains the details for Jenkins Authentication")
 public class JenkinsAuthenticationDTO {
-  @NotNull @JsonProperty("type") JenkinsAuthType authType;
+  @NotNull @RecasterFieldName(name = "type") @JsonProperty("type") JenkinsAuthType authType;
 
   @Builder
   public JenkinsAuthenticationDTO(JenkinsAuthType authType, JenkinsAuthCredentialsDTO credentials) {
@@ -39,6 +40,7 @@ public class JenkinsAuthenticationDTO {
     this.credentials = credentials;
   }
 
+  @RecasterFieldName(name = "spec")
   @JsonProperty("spec")
   @JsonTypeInfo(
       use = JsonTypeInfo.Id.NAME, property = "type", include = JsonTypeInfo.As.EXTERNAL_PROPERTY, visible = true)

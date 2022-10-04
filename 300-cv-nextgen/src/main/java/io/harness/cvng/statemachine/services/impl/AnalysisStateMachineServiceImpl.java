@@ -59,7 +59,6 @@ import io.harness.persistence.HPersistence;
 
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
-
 import java.sql.Time;
 import java.time.Clock;
 import java.time.Instant;
@@ -413,7 +412,8 @@ public class AnalysisStateMachineServiceImpl implements AnalysisStateMachineServ
       AnalysisInput analysisInput, VerificationJobInstance verificationJobInstance) {
     Optional<TimeRange> preDeploymentTimeRange =
         verificationJobInstanceService.getPreDeploymentTimeRange(verificationJobInstance.getUuid());
-    if (preDeploymentTimeRange.isPresent() && preDeploymentTimeRange.get().equals(analysisInput.getTimeRange())) {
+    if (preDeploymentTimeRange.isPresent()
+        && analysisInput.getTimeRange().getStartTime().isBefore(preDeploymentTimeRange.get().getEndTime())) {
       // first task so needs to enqueue clustering task
       PreDeploymentLogClusterState preDeploymentLogClusterState = PreDeploymentLogClusterState.builder().build();
       preDeploymentLogClusterState.setClusterLevel(LogClusterLevel.L1);

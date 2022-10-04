@@ -71,6 +71,7 @@ class PmsSdkProviderModule extends AbstractModule {
   public Cache<String, Integer> sdkEventsCache(
       HarnessCacheManager harnessCacheManager, VersionInfoManager versionInfoManager) {
     return harnessCacheManager.getCache("pmsSdkEventsCache", String.class, Integer.class,
-        AccessedExpiryPolicy.factoryOf(Duration.THIRTY_MINUTES), versionInfoManager.getVersionInfo().getBuildNo());
+        AccessedExpiryPolicy.factoryOf(Duration.THIRTY_MINUTES), versionInfoManager.getVersionInfo().getBuildNo(),
+        true);
   }
 }

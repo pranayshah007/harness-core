@@ -37,7 +37,9 @@ STATIC_MARKUP_LIST = {
     "UVxMDMhNQxOCvroqqImWdQ": 5.04,  # AXA XL %age markup to costs
 }
 AZURESCHEMATOPIC = os.environ.get('AZURESCHEMATOPIC', f'projects/{PROJECTID}/topics/nikunjtesttopic')
-TOPIC_PATH = publisher.topic_path(PROJECTID, AZURESCHEMATOPIC)
+AZURESCHEMA_TOPIC_PATH = publisher.topic_path(PROJECTID, AZURESCHEMATOPIC)
+AZURE_COST_CF_TOPIC_NAME = os.environ.get('AZURECOSTCFTOPIC', 'nikunjtesttopic')
+AZURE_COST_CF_TOPIC_PATH = publisher.topic_path(PROJECTID, AZURE_COST_CF_TOPIC_NAME)
 
 def main(event, context):
     """Triggered from a message on a Cloud Pub/Sub topic.
@@ -115,6 +117,9 @@ def main(event, context):
     if not ingest_data_from_csv(jsonData):
         return
     azure_column_mapping = setAvailableColumns(jsonData)
+    # sending event to pubsub to create azurecost_* tables
+    send_event(AZURE_COST_CF_TOPIC_PATH, {"tableId": jsonData["tableId"], "azure_column_mapping": azure_column_mapping})
+
     get_unique_subs_id(jsonData, azure_column_mapping)
     ingest_data_into_preagg(jsonData, azure_column_mapping)
     ingest_data_into_unified(jsonData, azure_column_mapping)
@@ -221,7 +226,7 @@ def ingest_data_from_csv(jsonData):
             print_(e, "WARN")
             print_("Ingesting in existing table failed. Sending event to generate dynamic schema.\n"
                    "Ingestion with new schema will be automatically retried in next 1 hr", "WARN")
-            send_event(jsonData)
+            send_event(AZURESCHEMA_TOPIC_PATH, jsonData)
             # Cleanly exit from CF at this point
             print_("Exiting..")
             return False
@@ -238,11 +243,11 @@ def ingest_data_from_csv(jsonData):
         print_("Cleaned up {}.".format(blob.name))
     return True
 
-def send_event(jsonData):
+def send_event(topic_path, jsonData):
     message_json = json.dumps(jsonData)
     message_bytes = message_json.encode('utf-8')
     try:
-        publish_future = publisher.publish(TOPIC_PATH, data=message_bytes)
+        publish_future = publisher.publish(topic_path, data=message_bytes)
         publish_future.result()  # Verify the publish succeeded
         print('Message published: %s.' % jsonData)
     except Exception as e:

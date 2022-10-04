@@ -7,6 +7,7 @@
 
 package software.wings.graphql.datafetcher.ce.recommendation.entity;
 
+import io.harness.ccm.RecommenderUtils;
 import io.harness.ccm.commons.entities.k8s.recommendation.PartialRecommendationHistogram;
 import io.harness.histogram.Histogram;
 import io.harness.histogram.HistogramCheckpoint;
@@ -28,8 +29,10 @@ public class PartialHistogramAggragator {
         // merge the day's cpu histogram into the aggregate cpu histogram
         HistogramCheckpoint cpuHistogramPartialCheckpoint = containerCheckpoint.getCpuHistogram();
         if (cpuHistogramPartialCheckpoint.getBucketWeights() != null) {
-          Histogram cpuHistogramPartial = RecommenderUtils.loadFromCheckpointV2(cpuHistogramPartialCheckpoint);
-          Histogram cpuHistogram = cpuHistograms.getOrDefault(containerName, RecommenderUtils.newCpuHistogramV2());
+          Histogram cpuHistogramPartial =
+              io.harness.ccm.RecommenderUtils.loadFromCheckpointV2(cpuHistogramPartialCheckpoint);
+          Histogram cpuHistogram =
+              cpuHistograms.getOrDefault(containerName, io.harness.ccm.RecommenderUtils.newCpuHistogramV2());
           cpuHistogram.merge(cpuHistogramPartial);
           cpuHistograms.put(containerName, cpuHistogram);
         }

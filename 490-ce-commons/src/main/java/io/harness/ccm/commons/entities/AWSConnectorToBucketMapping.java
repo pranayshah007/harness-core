@@ -10,10 +10,11 @@ package io.harness.ccm.commons.entities;
 import static io.harness.annotations.dev.HarnessTeam.CE;
 
 import io.harness.annotation.HarnessEntity;
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.MongoIndex;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
 import io.harness.persistence.CreatedAtAware;
 import io.harness.persistence.PersistentEntity;
@@ -35,10 +36,10 @@ import org.mongodb.morphia.annotations.Id;
 @Builder
 @FieldNameConstants(innerTypeName = "AWSConnectorToBucketMappingKeys")
 @FieldDefaults(level = AccessLevel.PRIVATE)
+@StoreIn(DbAliases.CENG)
 @Entity(value = "awsEntityToBucketMapping", noClassnameStored = true)
 @HarnessEntity(exportable = false)
 @OwnedBy(CE)
-@StoreIn("events")
 public class AWSConnectorToBucketMapping
     implements PersistentEntity, UuidAware, AccountAccess, CreatedAtAware, UpdatedAtAware {
   public static List<MongoIndex> mongoIndexes() {

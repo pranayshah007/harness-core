@@ -18,6 +18,7 @@ import io.harness.cvng.beans.stackdriver.StackDriverMetricDefinition;
 import io.harness.cvng.core.beans.StackdriverDefinition;
 import io.harness.cvng.core.entities.MetricPack.MetricDefinition;
 import io.harness.cvng.core.entities.StackdriverCVConfig.MetricInfo;
+import io.harness.cvng.core.services.CVNextGenConstants;
 import io.harness.cvng.core.utils.analysisinfo.AnalysisInfoUtility;
 import io.harness.cvng.core.utils.analysisinfo.DevelopmentVerificationTransformer;
 import io.harness.cvng.core.utils.analysisinfo.LiveMonitoringTransformer;
@@ -115,7 +116,7 @@ public class StackdriverCVConfig extends MetricCVConfig<MetricInfo> {
         metricInfo -> { StackDriverMetricDefinition.extractFromJson(metricInfo.getJsonMetricDefinition()); });
   }
 
-  public void fromStackdriverDefinitions(
+  public void populateFromMetricDefinitions(
       List<StackdriverDefinition> stackdriverDefinitions, CVMonitoringCategory category) {
     Preconditions.checkNotNull(stackdriverDefinitions);
     if (metricInfoList == null) {
@@ -127,7 +128,7 @@ public class StackdriverCVConfig extends MetricCVConfig<MetricInfo> {
                                 .accountId(getAccountId())
                                 .dataSourceType(DataSourceType.STACKDRIVER)
                                 .projectIdentifier(getProjectIdentifier())
-                                .identifier(category.getDisplayName())
+                                .identifier(CVNextGenConstants.CUSTOM_PACK_IDENTIFIER)
                                 .build();
 
     stackdriverDefinitions.forEach(definition -> {

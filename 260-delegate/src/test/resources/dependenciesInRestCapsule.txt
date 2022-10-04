@@ -37,7 +37,7 @@ com.amazonaws:jmespath-java:jar:1.11.834
 com.auth0:java-jwt:jar:3.1.0
 com.azure:azure-core-http-netty:jar:1.6.3
 com.azure:azure-core:jar:1.10.0
-com.azure:azure-identity:jar:1.1.2
+com.azure:azure-identity:jar:1.4.4
 com.azure:azure-storage-blob:jar:12.9.0
 com.azure:azure-storage-common:jar:12.9.0
 com.azure:azure-storage-internal-avro:jar:12.0.1

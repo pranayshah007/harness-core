@@ -88,9 +88,8 @@ public class CodeUtils {
       return true;
     }
     final String clazzLocation = Preconditions.checkNotNull(CodeUtils.location(clazz));
-    if (clazzLocation.equals(location)) {
-      return true;
-    }
-    return false;
+
+    // Return true if clazz is located in any folder inside the parent module.
+    return clazzLocation.startsWith(location);
   }
 }

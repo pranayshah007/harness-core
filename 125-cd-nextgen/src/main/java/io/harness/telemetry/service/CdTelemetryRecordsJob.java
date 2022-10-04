@@ -23,7 +23,7 @@ public class CdTelemetryRecordsJob {
   @Inject private CdTelemetryPublisher publisher;
 
   public void scheduleTasks() {
-    long initialDelay = 10;
+    long initialDelay = 180;
 
     try {
       log.info("CdTelemetryRecordsJob scheduler starting");

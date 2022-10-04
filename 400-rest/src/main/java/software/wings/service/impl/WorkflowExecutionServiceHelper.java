@@ -27,6 +27,8 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
+import io.harness.beans.CreatedByType;
+import io.harness.beans.ExecutionCause;
 import io.harness.beans.ExecutionStatus;
 import io.harness.beans.OrchestrationWorkflowType;
 import io.harness.data.structure.EmptyPredicate;
@@ -80,10 +82,12 @@ import java.util.StringJoiner;
 import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.mongodb.morphia.query.Query;
 import org.mongodb.morphia.query.Sort;
 
+@Slf4j
 @OwnedBy(CDC)
 @Singleton
 @TargetModule(HarnessModule._870_CG_ORCHESTRATION)
@@ -312,8 +316,8 @@ public class WorkflowExecutionServiceHelper {
    * - Don't set values if variable corresponding to name is not of the same type and possibly entity type
    * - Otherwise set values
    * - Finally if value is not found for any entity-type variable or there is an entity-variable not present in current
-   *   workflow variables, all entity-type variables are reset. This is to make the behaviour simple and predictable for
-   *   now. This can made more intelligent later on.
+   * workflow variables, all entity-type variables are reset. This is to make the behaviour simple and predictable for
+   * now. This can made more intelligent later on.
    *
    * @param workflowVariables       current workflow variables - non-empty
    * @param oldWorkflowVariablesMap workflow variables from an older execution - non-empty
@@ -592,6 +596,33 @@ public class WorkflowExecutionServiceHelper {
         .asList();
   }
 
+  private Map<String, List<StateExecutionInstance>> fetchFailedExecutionInstanceMap(
+      String appId, List<String> workflowExecutionIds) {
+    Query<StateExecutionInstance> query = wingsPersistence.createQuery(StateExecutionInstance.class)
+                                              .filter(StateExecutionInstanceKeys.appId, appId)
+                                              .field(StateExecutionInstanceKeys.executionUuid)
+                                              .in(workflowExecutionIds)
+                                              .field(StateExecutionInstanceKeys.status)
+                                              .in(ExecutionStatus.resumableStatuses)
+                                              .order(Sort.ascending(StateExecutionInstanceKeys.endTs));
+
+    List<StateExecutionInstance> stateExecutionInstances =
+        query.project(StateExecutionInstanceKeys.uuid, true)
+            .project(StateExecutionInstanceKeys.stateType, true)
+            .project(StateExecutionInstanceKeys.displayName, true)
+            .project(StateExecutionInstanceKeys.parentInstanceId, true)
+            .project(StateExecutionInstanceKeys.stateName, true)
+            .project(StateExecutionInstanceKeys.stateExecutionMap, true)
+            .project(StateExecutionInstanceKeys.executionUuid, true)
+            .asList();
+
+    if (stateExecutionInstances == null) {
+      return new HashMap<>();
+    }
+
+    return stateExecutionInstances.stream().collect(Collectors.groupingBy(StateExecutionInstance::getExecutionUuid));
+  }
+
   public void populateFailureDetailsWithStepInfo(WorkflowExecution workflowExecution) {
     Map<String, StringJoiner> executionDetails = new LinkedHashMap<>();
     HashSet<String> parentInstances = new HashSet<>();
@@ -619,5 +650,61 @@ public class WorkflowExecutionServiceHelper {
     workflowExecution.setFailureDetails(failureMessage.toString());
     workflowExecution.setFailedStepNames(failedStepNames.toString());
     workflowExecution.setFailedStepTypes(failedStepTypes.toString());
+  }
+
+  public List<WorkflowExecution> populateFailureDetailsWithStepInfo(
+      String appId, List<WorkflowExecution> workflowExecutions) {
+    Map<String, List<StateExecutionInstance>> stateExecutionInstanceMap = fetchFailedExecutionInstanceMap(
+        appId, workflowExecutions.stream().map(WorkflowExecution::getUuid).collect(toList()));
+    List<WorkflowExecution> workflowExecutionsWithFailureDetails = new ArrayList<>();
+    stateExecutionInstanceMap.forEach((executionId, stateExecutionInstances) -> {
+      Map<String, StringJoiner> executionDetails = new LinkedHashMap<>();
+      HashSet<String> parentInstances = new HashSet<>();
+      StringJoiner failureMessage = new StringJoiner(", ");
+      StringJoiner failedStepNames = new StringJoiner(", ");
+      StringJoiner failedStepTypes = new StringJoiner(", ");
+      try {
+        prepareFailedPhases(stateExecutionInstances, parentInstances, executionDetails);
+        prepareFailedSteps(appId, executionId, stateExecutionInstances, parentInstances, executionDetails);
+
+        if (isNotEmpty(executionDetails)) {
+          executionDetails.forEach((id, message) -> {
+            failureMessage.add(message.toString());
+            stateExecutionInstances.stream().filter(sei -> id.equals(sei.getUuid())).findFirst().ifPresent(sei -> {
+              failedStepNames.add(sei.getStateName());
+              failedStepTypes.add(sei.getStateType());
+            });
+          });
+        }
+
+        WorkflowExecution requiredWorkflowExecution =
+            workflowExecutions.stream().filter(we -> executionId.equals(we.getUuid())).findFirst().orElse(null);
+        if (requiredWorkflowExecution != null) {
+          requiredWorkflowExecution.setFailureDetails(failureMessage.toString());
+          requiredWorkflowExecution.setFailedStepNames(failedStepNames.toString());
+          requiredWorkflowExecution.setFailedStepTypes(failedStepTypes.toString());
+        }
+        workflowExecutionsWithFailureDetails.add(requiredWorkflowExecution);
+      } catch (Exception e) {
+        log.error("Unable to fetch failure details for appId {}, executionId {}", executionId, appId, e);
+      }
+    });
+    return workflowExecutionsWithFailureDetails;
+  }
+
+  public static String getCause(WorkflowExecution workflowExecution) {
+    if (workflowExecution.getPipelineExecutionId() != null) {
+      return ExecutionCause.ExecutedAlongPipeline.name();
+    } else {
+      CreatedByType createdByType = workflowExecution.getCreatedByType();
+      if (CreatedByType.API_KEY == createdByType) {
+        return ExecutionCause.ExecutedByAPIKey.name();
+      } else if (workflowExecution.getDeploymentTriggerId() != null) {
+        return ExecutionCause.ExecutedByTrigger.name();
+      } else if (workflowExecution.getTriggeredBy() != null) {
+        return ExecutionCause.ExecutedByUser.name();
+      }
+    }
+    return null;
   }
 }

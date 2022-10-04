@@ -54,12 +54,12 @@ public class CIPipelineCRUDFunctionalTest extends CategoryTest {
                           .replace(pipelineDescriptionPlaceholder, UUID.randomUUID().toString());
 
     // Create
-    String id = NGPipelineRestUtils.createPipeline(accountIdentifier, orgIdentifier, projectIdentifier, pipeline);
+    String id = NGPipelineRestUtils.createPipeline("ci", accountIdentifier, orgIdentifier, projectIdentifier, pipeline);
     assertThat(id).isNotNull().isEqualTo(pipelineName);
 
     // Read
     Map<String, Object> ngPipelineResponseDTO =
-        NGPipelineRestUtils.readPipeline(accountIdentifier, orgIdentifier, projectIdentifier, id);
+        NGPipelineRestUtils.readPipeline("ci", accountIdentifier, orgIdentifier, projectIdentifier, id);
     String yamlPipeline = (String) ngPipelineResponseDTO.get("yamlPipeline");
     assertThat(yamlPipeline).isEqualTo(pipeline);
 
@@ -67,13 +67,13 @@ public class CIPipelineCRUDFunctionalTest extends CategoryTest {
                                  .replace(pipelineDescriptionPlaceholder, UUID.randomUUID().toString());
 
     // Update
-    String updatedPipelineId =
-        NGPipelineRestUtils.updatePipeline(accountIdentifier, orgIdentifier, projectIdentifier, id, updatedPipeline);
+    String updatedPipelineId = NGPipelineRestUtils.updatePipeline(
+        "ci", accountIdentifier, orgIdentifier, projectIdentifier, id, updatedPipeline);
     assertThat(updatedPipelineId).isEqualTo(id);
 
     // Delete
     Boolean deletePipeline =
-        NGPipelineRestUtils.deletePipeline(accountIdentifier, orgIdentifier, projectIdentifier, id);
+        NGPipelineRestUtils.deletePipeline("ci", accountIdentifier, orgIdentifier, projectIdentifier, id);
     assertThat(deletePipeline).isTrue();
   }
 }

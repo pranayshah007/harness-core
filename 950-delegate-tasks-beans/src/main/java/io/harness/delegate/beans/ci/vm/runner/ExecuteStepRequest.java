@@ -24,6 +24,7 @@ public class ExecuteStepRequest {
   @JsonProperty("pool_id") String poolId;
   @JsonProperty("stage_runtime_id") String stageRuntimeID;
   @JsonProperty("start_step_request") Config config;
+  @JsonProperty("infra_type") String infraType;
 
   @Data
   @Builder

@@ -9,9 +9,6 @@ java_library(
         "//960-persistence/src/main/resources:resource",
     ],
     visibility = ["//visibility:public"],
-    runtime_deps = [
-        "@maven//:org_postgresql_postgresql",
-    ],
     deps = [
         "//:lombok",
         "//970-ng-commons:module",

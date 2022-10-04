@@ -63,6 +63,7 @@ import com.google.protobuf.ByteString;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executors;
@@ -134,7 +135,8 @@ public class DelegateServiceTaskApiFunctionalTest extends AbstractFunctionalTest
                     .setExecutionTimeout(com.google.protobuf.Duration.newBuilder().setSeconds(600).setNanos(0).build())
                     .setExpressionFunctorToken(HashGenerator.generateIntegerHash())
                     .build(),
-                httpTaskParameters.fetchRequiredExecutionCapabilities(null), null, Duration.ZERO, false)
+                httpTaskParameters.fetchRequiredExecutionCapabilities(null), null, Duration.ZERO, false, false,
+                Collections.emptyList(), false, null)
             .getTaskId();
 
     DelegateResponseData responseData =
@@ -188,7 +190,8 @@ public class DelegateServiceTaskApiFunctionalTest extends AbstractFunctionalTest
                     .setExecutionTimeout(com.google.protobuf.Duration.newBuilder().setSeconds(600).setNanos(0).build())
                     .setExpressionFunctorToken(HashGenerator.generateIntegerHash())
                     .build(),
-                httpTaskParameters.fetchRequiredExecutionCapabilities(null), null, Duration.ZERO, false)
+                httpTaskParameters.fetchRequiredExecutionCapabilities(null), null, Duration.ZERO, false, false,
+                Collections.emptyList(), false, null)
             .getTaskId();
 
     DelegateResponseData responseData =
@@ -247,7 +250,7 @@ public class DelegateServiceTaskApiFunctionalTest extends AbstractFunctionalTest
                     .setExpressionFunctorToken(HashGenerator.generateIntegerHash())
                     .build(),
                 httpTaskParameters.fetchRequiredExecutionCapabilities(null), Arrays.asList(NON_EXISTING_SELECTOR),
-                Duration.ZERO, false))
+                Duration.ZERO, false, false, Collections.emptyList(), false, null))
         .isInstanceOf(DelegateServiceDriverException.class)
         .hasMessage("Unexpected error occurred while submitting task.")
         .hasRootCauseMessage("INTERNAL: Delegates are not available");
@@ -295,7 +298,8 @@ public class DelegateServiceTaskApiFunctionalTest extends AbstractFunctionalTest
                     .setExecutionTimeout(com.google.protobuf.Duration.newBuilder().setSeconds(600).setNanos(0).build())
                     .setExpressionFunctorToken(HashGenerator.generateIntegerHash())
                     .build(),
-                httpTaskParameters.fetchRequiredExecutionCapabilities(null), null, Duration.ZERO, false)
+                httpTaskParameters.fetchRequiredExecutionCapabilities(null), null, Duration.ZERO, false, false,
+                Collections.emptyList(), false, null)
             .getTaskId();
 
     Poller.pollFor(Duration.ofMinutes(5), Duration.ofSeconds(5), () -> {
@@ -353,7 +357,8 @@ public class DelegateServiceTaskApiFunctionalTest extends AbstractFunctionalTest
                     .setExecutionTimeout(com.google.protobuf.Duration.newBuilder().setSeconds(30).setNanos(0).build())
                     .setExpressionFunctorToken(HashGenerator.generateIntegerHash())
                     .build(),
-                emptyList(), Arrays.asList(NON_EXISTING_SELECTOR), Duration.ZERO, false)
+                emptyList(), Arrays.asList(NON_EXISTING_SELECTOR), Duration.ZERO, false, false, Collections.emptyList(),
+                false, null)
             .getTaskId();
 
     Poller.pollFor(Duration.ofMinutes(5), Duration.ofSeconds(5), () -> {

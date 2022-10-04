@@ -21,8 +21,8 @@ import org.zeroturnaround.exec.StartedProcess;
 
 public abstract class AbstractExecutable implements Executable {
   @Override
-  public ProcessResult execute(String directory, OutputStream output, OutputStream error, boolean printCommand)
-      throws Exception {
+  public ProcessResult execute(String directory, OutputStream output, OutputStream error, boolean printCommand,
+      Map<String, String> env) throws Exception {
     String command = this.command();
 
     if (printCommand) {
@@ -30,7 +30,12 @@ public abstract class AbstractExecutable implements Executable {
     }
 
     Map<String, String> environment = Maps.newHashMap();
-    addGcpCredentialsToEnvironmentIfExist(directory, environment);
+
+    if (env.isEmpty()) {
+      addGcpCredentialsToEnvironmentIfExist(directory, environment);
+    } else {
+      environment = env;
+    }
 
     return Utils.executeScript(directory, command, output, error, environment);
   }

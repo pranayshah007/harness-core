@@ -32,6 +32,7 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.hibernate.validator.constraints.NotBlank;
+import org.hibernate.validator.constraints.URL;
 
 @Data
 @Builder
@@ -44,7 +45,7 @@ import org.hibernate.validator.constraints.NotBlank;
 @OneOfField(fields = {"username", "usernameRef"})
 @Schema(name = "ServiceNowConnector", description = "ServiceNow Connector details.")
 public class ServiceNowConnectorDTO extends ConnectorConfigDTO implements DecryptableEntity, DelegateSelectable {
-  @NotNull @NotBlank String serviceNowUrl;
+  @URL @NotNull @NotBlank String serviceNowUrl;
   String username;
   @ApiModelProperty(dataType = "string") @SecretReference SecretRefData usernameRef;
   @ApiModelProperty(dataType = "string") @NotNull @SecretReference SecretRefData passwordRef;

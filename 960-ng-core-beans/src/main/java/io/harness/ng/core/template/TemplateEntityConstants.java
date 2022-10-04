@@ -16,6 +16,7 @@ public interface TemplateEntityConstants {
   String STEP = "Step";
   String STAGE = "Stage";
   String PIPELINE = "Pipeline";
+  String CUSTOM_DEPLOYMENT = "CustomDeployment";
   String MONITORED_SERVICE = "MonitoredService";
   String SECRET_MANAGER = "SecretManager";
   String STABLE_TEMPLATE = "Stable";
@@ -32,7 +33,9 @@ public interface TemplateEntityConstants {
   String STEP_ROOT_FIELD = "step";
   String STAGE_ROOT_FIELD = "stage";
   String PIPELINE_ROOT_FIELD = "pipeline";
+  String CUSTOM_DEPLOYMENT_ROOT_FIELD = "customDeployment";
   String MONITORED_SERVICE_ROOT_FIELD = "monitoredService";
   String SECRET_MANAGER_ROOT_FIELD = "secretManager";
-  String SCRIPT_ROOT_FIELD = "script";
+  String ARTIFACT_SOURCE_ROOT_FIELD = "artifactSource";
+  String ARTIFACT_SOURCE = "ArtifactSource";
 }

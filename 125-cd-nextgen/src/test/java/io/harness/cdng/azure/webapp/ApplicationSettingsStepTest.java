@@ -20,6 +20,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDNGTestBase;
 import io.harness.cdng.azure.AzureHelperService;
 import io.harness.cdng.azure.config.ApplicationSettingsOutcome;
+import io.harness.cdng.azure.config.yaml.ApplicationSettingsConfiguration;
 import io.harness.cdng.k8s.beans.StepExceptionPassThroughData;
 import io.harness.cdng.manifest.yaml.GitStore;
 import io.harness.cdng.manifest.yaml.harness.HarnessStore;
@@ -81,7 +82,9 @@ public class ApplicationSettingsStepTest extends CDNGTestBase {
     StoreConfigWrapper storeConfigWrapper = getStoreConfigWrapper();
 
     ApplicationSettingsParameters stepParameters =
-        ApplicationSettingsParameters.builder().applicationSettings(storeConfigWrapper).build();
+        ApplicationSettingsParameters.builder()
+            .applicationSettings(ApplicationSettingsConfiguration.builder().store(storeConfigWrapper).build())
+            .build();
     StepResponse response =
         applicationSettingsStep.executeSync(ambiance, stepParameters, getStepInputPackage(), getPassThroughData());
 
@@ -109,7 +112,9 @@ public class ApplicationSettingsStepTest extends CDNGTestBase {
 
     StoreConfigWrapper storeConfigWrapper = getStoreConfigWrapperWithGitStore();
     ApplicationSettingsParameters stepParameters =
-        ApplicationSettingsParameters.builder().applicationSettings(storeConfigWrapper).build();
+        ApplicationSettingsParameters.builder()
+            .applicationSettings(ApplicationSettingsConfiguration.builder().store(storeConfigWrapper).build())
+            .build();
 
     StepResponse response =
         applicationSettingsStep.executeSync(ambiance, stepParameters, getStepInputPackage(), getPassThroughData());

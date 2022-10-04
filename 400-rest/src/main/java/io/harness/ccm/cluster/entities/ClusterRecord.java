@@ -10,10 +10,12 @@ package io.harness.ccm.cluster.entities;
 import static io.harness.annotations.dev.HarnessTeam.CE;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.mongo.index.FdIndex;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
 import io.harness.persistence.CreatedAtAware;
 import io.harness.persistence.PersistentEntity;
@@ -33,6 +35,7 @@ import org.mongodb.morphia.annotations.Id;
 @Builder
 @FieldNameConstants(innerTypeName = "ClusterRecordKeys")
 @FieldDefaults(level = AccessLevel.PRIVATE)
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "clusterRecords", noClassnameStored = true)
 @HarnessEntity(exportable = false)
 @OwnedBy(CE)

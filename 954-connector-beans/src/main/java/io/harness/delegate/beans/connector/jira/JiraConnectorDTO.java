@@ -35,6 +35,7 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.hibernate.validator.constraints.NotBlank;
+import org.hibernate.validator.constraints.URL;
 
 @OwnedBy(HarnessTeam.CDC)
 @Data
@@ -48,7 +49,7 @@ import org.hibernate.validator.constraints.NotBlank;
 @OneOfField(fields = {"username", "usernameRef"})
 @Schema(name = "JiraConnector", description = "JIRA Connector details.")
 public class JiraConnectorDTO extends ConnectorConfigDTO implements DecryptableEntity, DelegateSelectable {
-  @NotNull @NotBlank String jiraUrl;
+  @URL @NotNull @NotBlank String jiraUrl;
   String username;
   @ApiModelProperty(dataType = "string") @SecretReference SecretRefData usernameRef;
   @ApiModelProperty(dataType = "string") @NotNull @SecretReference SecretRefData passwordRef;

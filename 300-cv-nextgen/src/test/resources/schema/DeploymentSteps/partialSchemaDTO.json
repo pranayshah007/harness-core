@@ -264,25 +264,6 @@
           ],
           "$schema": "http://json-schema.org/draft-07/schema#"
         },
-        "ConfiguredMonitoredServiceSpec": {
-          "allOf": [
-            {
-              "$ref": "#/definitions/cvng/MonitoredServiceSpec"
-            },
-            {
-              "type": "object",
-              "required": [
-                "monitoredServiceRef"
-              ],
-              "properties": {
-                "monitoredServiceRef": {
-                  "type": "string"
-                }
-              }
-            }
-          ],
-          "$schema": "http://json-schema.org/draft-07/schema#"
-        },
         "DefaultMonitoredServiceSpec": {
           "allOf": [
             {
@@ -323,7 +304,9 @@
                 "Abort",
                 "StageRollback",
                 "StepGroupRollback",
-                "ManualIntervention"
+                "PipelineRollback",
+                "ManualIntervention",
+                "ProceedWithDefaultValues"
               ]
             }
           },
@@ -353,7 +336,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*)",
+                  "pattern": "(.*<\\+.+>.*|^<\\+input>.*)",
                   "minLength": 1
                 }
               ]
@@ -368,7 +351,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*)",
+                  "pattern": "(.*<\\+.+>.*|^<\\+input>.*)",
                   "minLength": 1
                 }
               ]
@@ -382,7 +365,21 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*)",
+                  "pattern": "(.*<\\+.+>.*|^<\\+input>.*)",
+                  "minLength": 1
+                }
+              ]
+            },
+            "partitionSize": {
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "format": "int32",
+                  "minimum": 0
+                },
+                {
+                  "type": "string",
+                  "pattern": "(.*<\\+.+>.*|^<\\+input>.*)",
                   "minLength": 1
                 }
               ]
@@ -396,7 +393,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*)",
+                  "pattern": "(.*<\\+.+>.*|^<\\+input>.*)",
                   "minLength": 1
                 }
               ]
@@ -410,7 +407,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*)",
+                  "pattern": "(.*<\\+.+>.*|^<\\+input>.*)",
                   "minLength": 1
                 }
               ]
@@ -597,7 +594,7 @@
                     },
                     {
                       "type": "string",
-                      "pattern": "(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*)",
+                      "pattern": "(.*<\\+.+>.*|^<\\+input>.*)",
                       "minLength": 1
                     }
                   ]
@@ -625,22 +622,6 @@
           },
           "$schema": "http://json-schema.org/draft-07/schema#",
           "allOf": [
-            {
-              "if": {
-                "properties": {
-                  "type": {
-                    "const": "Configured"
-                  }
-                }
-              },
-              "then": {
-                "properties": {
-                  "spec": {
-                    "$ref": "#/definitions/cvng/ConfiguredMonitoredServiceSpec"
-                  }
-                }
-              }
-            },
             {
               "if": {
                 "properties": {
@@ -707,6 +688,12 @@
                   "$ref": "#/definitions/cvng/MarkAsSuccessFailureActionConfig"
                 },
                 {
+                  "$ref": "#/definitions/cvng/PipelineRollbackFailureActionConfig"
+                },
+                {
+                  "$ref": "#/definitions/cvng/ProceedWithDefaultValuesFailureActionConfig"
+                },
+                {
                   "$ref": "#/definitions/cvng/RetryFailureActionConfig"
                 },
                 {
@@ -730,7 +717,8 @@
                   "Authorization",
                   "Verification",
                   "DelegateProvisioning",
-                  "PolicyEvaluationFailure"
+                  "PolicyEvaluationFailure",
+                  "InputTimeoutError"
                 ]
               }
             }
@@ -753,6 +741,12 @@
                 },
                 {
                   "$ref": "#/definitions/cvng/MarkAsSuccessFailureActionConfig"
+                },
+                {
+                  "$ref": "#/definitions/cvng/PipelineRollbackFailureActionConfig"
+                },
+                {
+                  "$ref": "#/definitions/cvng/ProceedWithDefaultValuesFailureActionConfig"
                 },
                 {
                   "$ref": "#/definitions/cvng/RetryFailureActionConfig"
@@ -784,6 +778,12 @@
                 },
                 {
                   "$ref": "#/definitions/cvng/MarkAsSuccessFailureActionConfig"
+                },
+                {
+                  "$ref": "#/definitions/cvng/PipelineRollbackFailureActionConfig"
+                },
+                {
+                  "$ref": "#/definitions/cvng/ProceedWithDefaultValuesFailureActionConfig"
                 },
                 {
                   "$ref": "#/definitions/cvng/RetryFailureActionConfig"
@@ -869,6 +869,50 @@
               }
             }
           },
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "PipelineRollbackFailureActionConfig": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/cvng/FailureStrategyActionConfig"
+            },
+            {
+              "type": "object",
+              "required": [
+                "type"
+              ],
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "PipelineRollback"
+                  ]
+                }
+              }
+            }
+          ],
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "ProceedWithDefaultValuesFailureActionConfig": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/cvng/FailureStrategyActionConfig"
+            },
+            {
+              "type": "object",
+              "required": [
+                "type"
+              ],
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "ProceedWithDefaultValues"
+                  ]
+                }
+              }
+            }
+          ],
           "$schema": "http://json-schema.org/draft-07/schema#"
         },
         "RetryFailureActionConfig": {
@@ -1007,7 +1051,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*)",
+                  "pattern": "(.*<\\+.+>.*|^<\\+input>.*)",
                   "minLength": 1
                 }
               ]

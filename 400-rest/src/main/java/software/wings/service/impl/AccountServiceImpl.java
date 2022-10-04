@@ -103,6 +103,7 @@ import io.harness.ng.core.account.DefaultExperience;
 import io.harness.ng.core.account.OauthProviderType;
 import io.harness.observer.RemoteObserverInformer;
 import io.harness.observer.Subject;
+import io.harness.outbox.api.OutboxService;
 import io.harness.persistence.HIterator;
 import io.harness.persistence.HPersistence;
 import io.harness.reflection.ReflectionUtils;
@@ -133,6 +134,8 @@ import software.wings.beans.User;
 import software.wings.beans.User.UserKeys;
 import software.wings.beans.governance.GovernanceConfig;
 import software.wings.beans.loginSettings.LoginSettingsService;
+import software.wings.beans.loginSettings.events.LoginSettingsWhitelistedDomainsUpdateEvent;
+import software.wings.beans.loginSettings.events.WhitelistedDomainsYamlDTO;
 import software.wings.beans.sso.LdapSettings;
 import software.wings.beans.sso.LdapSettings.LdapSettingsKeys;
 import software.wings.beans.sso.OauthSettings;
@@ -149,7 +152,6 @@ import software.wings.helpers.ext.mail.EmailData;
 import software.wings.licensing.LicenseService;
 import software.wings.scheduler.AlertCheckJob;
 import software.wings.scheduler.InstanceStatsCollectorJob;
-import software.wings.scheduler.LdapGroupSyncJob;
 import software.wings.scheduler.LdapGroupSyncJobHelper;
 import software.wings.scheduler.LimitVicinityCheckerJob;
 import software.wings.scheduler.ScheduledTriggerJob;
@@ -196,7 +198,9 @@ import com.google.inject.name.Named;
 import com.mongodb.DuplicateKeyException;
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.net.MalformedURLException;
 import java.net.SocketTimeoutException;
+import java.net.URL;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -259,6 +263,8 @@ public class AccountServiceImpl implements AccountService {
   private static final String SAMPLE_DELEGATE_STATUS_ENDPOINT_FORMAT_STRING = "http://%s/account-%s.txt";
   private static final String DELIMITER = "####";
   private static final String DEFAULT_EXPERIENCE = "defaultExperience";
+  private static final String[] RESERVED_SUBDOMAIN_PREFIX_REGEXES = {
+      "^agent$", "^app(-?\\d+)?$", "^pr$", "^qa$", "^stress$", "^prod(-?\\d+)?$"};
 
   @Inject protected AuthService authService;
   @Inject protected HarnessCacheManager harnessCacheManager;
@@ -303,6 +309,7 @@ public class AccountServiceImpl implements AccountService {
   @Inject private HPersistence persistence;
   @Inject private CgCdLicenseUsageService cgCdLicenseUsageService;
   @Inject private DelegateVersionService delegateVersionService;
+  @Inject private OutboxService outboxService;
 
   @Inject @Named("BackgroundJobScheduler") private PersistentScheduler jobScheduler;
   @Inject private GovernanceFeature governanceFeature;
@@ -1439,7 +1446,6 @@ public class AccountServiceImpl implements AccountService {
     // 3. LdapGroupSyncJob
     List<LdapSettings> ldapSettings = getAllLdapSettingsForAccount(accountId);
     for (LdapSettings ldapSetting : ldapSettings) {
-      LdapGroupSyncJob.add(jobScheduler, accountId, ldapSetting.getUuid());
       ldapGroupSyncJobHelper.syncJob(ldapSetting);
     }
     log.info("Started all background quartz jobs for account {}", accountId);
@@ -1461,10 +1467,6 @@ public class AccountServiceImpl implements AccountService {
     }
 
     // 3. LdapGroupSyncJob
-    List<LdapSettings> ldapSettings = getAllLdapSettingsForAccount(accountId);
-    for (LdapSettings ldapSetting : ldapSettings) {
-      LdapGroupSyncJob.delete(jobScheduler, ssoSettingService, accountId, ldapSetting.getUuid());
-    }
     log.info("Stopped all background quartz jobs for account {}", accountId);
   }
 
@@ -1701,17 +1703,44 @@ public class AccountServiceImpl implements AccountService {
     // Filter the valid domains after trimming trailing spaces
     Set<String> validDomains =
         whitelistedDomains.stream().filter(DomainValidator.getInstance()::isValid).collect(Collectors.toSet());
-
+    // Domain name sanitising
+    validDomains = validDomains.stream()
+                       .map(s -> s.replace("http://", "").replace("http:// www.", "").replace("www.", ""))
+                       .filter(EmptyPredicate::isNotEmpty)
+                       .collect(Collectors.toSet());
     if (whitelistedDomains.size() != validDomains.size()) {
       throw new WingsException("Invalid domain name");
     }
 
+    List<Account> accounts = getAccounts(Arrays.asList(accountId));
+    if (isEmpty(accounts)) {
+      throw new AccountNotFoundException(
+          "Account is not found for the given id: " + accountId, null, ACCOUNT_DOES_NOT_EXIST, Level.ERROR, USER, null);
+    }
+    Account account = accounts.get(0);
     UpdateOperations<Account> whitelistedDomainsUpdateOperations =
         wingsPersistence.createUpdateOperations(Account.class);
     setUnset(whitelistedDomainsUpdateOperations, AccountKeys.whitelistedDomains, validDomains);
     wingsPersistence.update(wingsPersistence.createQuery(Account.class).filter(Mapper.ID_KEY, accountId),
         whitelistedDomainsUpdateOperations);
+    ngAuditLoginSettings(accountId, account.getWhitelistedDomains(), validDomains);
     return get(accountId);
+  }
+
+  private void ngAuditLoginSettings(
+      String accountIdentifier, Set<String> oldWhitelistedDomains, Set<String> newWhitelistedDomains) {
+    try {
+      outboxService.save(LoginSettingsWhitelistedDomainsUpdateEvent.builder()
+                             .accountIdentifier(accountIdentifier)
+                             .oldWhitelistedDomainsYamlDTO(
+                                 WhitelistedDomainsYamlDTO.builder().whitelistedDomains(oldWhitelistedDomains).build())
+                             .newWhitelistedDomainsYamlDTO(
+                                 WhitelistedDomainsYamlDTO.builder().whitelistedDomains(newWhitelistedDomains).build())
+                             .build());
+    } catch (Exception ex) {
+      log.error(
+          "For account {} Audit trails for LoginSettings update event failed with exception: ", accountIdentifier, ex);
+    }
   }
 
   @Override
@@ -1818,12 +1847,51 @@ public class AccountServiceImpl implements AccountService {
    * @param subdomainUrl subdomain URL object
    * @return boolean
    */
-  @Override
   public boolean validateSubdomainUrl(SubdomainUrl subdomainUrl) {
     // Sanity check for subdomain URL
     String[] schemes = {"https"};
     UrlValidator urlValidator = new UrlValidator(schemes);
     return urlValidator.isValid(subdomainUrl.getUrl());
+  }
+
+  /**
+   * Checks whether the subdomain URL is reserved or not
+   *
+   * @param subdomainUrl Object of type SubdomainUrl
+   * @return true if subdomain URL is reserved otherwise false
+   */
+  public boolean checkReservedSubdomainUrl(SubdomainUrl subdomainUrl) throws InvalidArgumentsException {
+    String host = "";
+    try {
+      // parse the url to get host
+      URL url = new URL(subdomainUrl.getUrl());
+      host = url.getHost();
+    } catch (MalformedURLException e) {
+      log.warn("subdomain url '{}' is malformed: {}", subdomainUrl.getUrl(), e);
+      throw new InvalidArgumentsException("Subdomain URL is malformed", USER);
+    }
+
+    /**
+     * ASSUMPTION:
+     *   First segment is custom part - the rest is static for the environment.
+     *   For example https://[segment].harness.io
+     */
+    int i = host.indexOf('.');
+    if (i <= 0) {
+      // throw if there's no custom part, or it's empty (i == 0)
+      throw new InvalidArgumentsException("Subdomain URL is malformed", USER);
+    }
+
+    // get segment and run through all reserved prefix regexes
+    String segment = host.substring(0, i).toLowerCase();
+    for (String reservedRegex : RESERVED_SUBDOMAIN_PREFIX_REGEXES) {
+      if (segment.matches(reservedRegex)) {
+        return true;
+      }
+    }
+
+    // subdomain has a non-reserved prefix
+    return false;
   }
 
   /**
@@ -1859,14 +1927,19 @@ public class AccountServiceImpl implements AccountService {
       throw new UnauthorizedException("User is not authorized to add subdomain URL", USER);
     }
 
-    // Check if URL is not duplicate
+    // Check if URL is duplicate
     if (checkDuplicateSubdomainUrl(subDomainUrl)) {
       throw new InvalidArgumentsException("Subdomain URL is already taken", USER);
     }
 
     // Check if URL is valid
     if (!validateSubdomainUrl(subDomainUrl)) {
-      throw new InvalidArgumentsException("Subdomain URL provided is invalid", USER);
+      throw new InvalidArgumentsException("Subdomain URL is invalid", USER);
+    }
+
+    // Check if subdomain is reserved
+    if (checkReservedSubdomainUrl(subDomainUrl)) {
+      throw new InvalidArgumentsException("Subdomain URL is reserved", USER);
     }
 
     setSubdomainUrl(get(accountId), subDomainUrl);

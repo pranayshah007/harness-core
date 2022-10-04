@@ -165,7 +165,7 @@ public class StateMachineTest extends WingsBaseTest {
     StateMachine sm = new StateMachine(workflow, 1, graph, stencilMap, false);
     assertThat(sm.getOrchestrationWorkflow().isValid()).isFalse();
     assertThat(sm.getOrchestrationWorkflow().getValidationMessage())
-        .contains("Value exceeded maximum timeout of 3w 3d 20h 30m.");
+        .contains("Invalid value for timeoutMillis or value exceeded maximum timeout of 3w 3d 20h 30m.");
     assertThat(sm.isValid()).isFalse();
   }
 

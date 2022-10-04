@@ -8,10 +8,12 @@
 package software.wings.yaml.gitSync;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.StoreIn;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.mongo.index.SortCompoundMongoIndex;
+import io.harness.ng.DbAliases;
 
 import software.wings.beans.Base;
 import software.wings.beans.yaml.GitFileChange;
@@ -34,6 +36,7 @@ import org.mongodb.morphia.annotations.Entity;
 @Data
 @EqualsAndHashCode(callSuper = false)
 @FieldNameConstants(innerTypeName = "YamlChangeSetKeys")
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "yamlChangeSet")
 @HarnessEntity(exportable = false)
 public class YamlChangeSet extends Base {

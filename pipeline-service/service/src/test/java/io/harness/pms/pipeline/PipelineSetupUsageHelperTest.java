@@ -207,7 +207,7 @@ public class PipelineSetupUsageHelperTest extends PipelineServiceTestBase {
                    .build());
       when(request.execute()).thenReturn(Response.success(ResponseDTO.newResponse(list)));
       Mockito.mockStatic(NGRestUtils.class);
-      when(NGRestUtils.getResponseWithRetry(any(), any())).thenReturn(list);
+      when(NGRestUtils.getResponse(any(), any())).thenReturn(list);
     } catch (IOException ex) {
       log.info("Encountered exception ", ex);
     }
@@ -305,7 +305,7 @@ public class PipelineSetupUsageHelperTest extends PipelineServiceTestBase {
     }
 
     Mockito.mockStatic(NGRestUtils.class);
-    when(NGRestUtils.getResponseWithRetry(any(), any())).thenReturn(list);
+    when(NGRestUtils.getResponse(any(), any())).thenReturn(list);
     List<EntityDetail> referencesOfPipeline = pipelineSetupUsageHelper.getReferencesOfPipeline(
         accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier, pipelineYaml, null);
     assertThat(referencesOfPipeline.size()).isEqualTo(1);

@@ -12,6 +12,8 @@ import static io.harness.govern.Switch.unhandled;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.steps.stepinfo.InitializeStepInfo;
+import io.harness.ci.integrationstage.DliteVmInitializeTaskParamsBuilder;
+import io.harness.ci.integrationstage.DockerInitializeTaskParamsBuilder;
 import io.harness.ci.integrationstage.K8InitializeTaskParamsBuilder;
 import io.harness.ci.integrationstage.VmInitializeTaskParamsBuilder;
 import io.harness.delegate.beans.ci.CIInitializeTaskParams;
@@ -27,6 +29,8 @@ import lombok.extern.slf4j.Slf4j;
 public class BuildSetupUtils {
   @Inject private K8InitializeTaskParamsBuilder k8InitializeTaskParamsBuilder;
   @Inject private VmInitializeTaskParamsBuilder vmInitializeTaskParamsBuilder;
+  @Inject private DliteVmInitializeTaskParamsBuilder dliteVmInitializeTaskParamsBuilder;
+  @Inject private DockerInitializeTaskParamsBuilder dockerInitializeTaskParamsBuilder;
 
   public CIInitializeTaskParams getBuildSetupTaskParams(
       InitializeStepInfo initializeStepInfo, Ambiance ambiance, String logPrefix) {
@@ -36,8 +40,10 @@ public class BuildSetupUtils {
         return k8InitializeTaskParamsBuilder.getK8InitializeTaskParams(initializeStepInfo, ambiance, logPrefix);
       case VM:
         return vmInitializeTaskParamsBuilder.getDirectVmInitializeTaskParams(initializeStepInfo, ambiance);
-      case RUNS_ON:
-        return vmInitializeTaskParamsBuilder.getHostedVmInitializeTaskParams(initializeStepInfo, ambiance);
+      case DOCKER:
+        return dockerInitializeTaskParamsBuilder.getDockerInitializeTaskParams(initializeStepInfo, ambiance);
+      case HOSTED_VM:
+        return dliteVmInitializeTaskParamsBuilder.getDliteVmInitializeTaskParams(initializeStepInfo, ambiance);
       default:
         unhandled(initializeStepInfo.getBuildJobEnvInfo().getType());
     }

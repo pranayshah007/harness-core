@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.app.resources;
+package io.harness.ci.api;
 
 import static io.harness.annotations.dev.HarnessTeam.CI;
 
@@ -13,7 +13,7 @@ import static java.lang.String.format;
 
 import io.harness.EntityType;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.app.intfc.CIYamlSchemaService;
+import io.harness.ci.app.intfc.CIYamlSchemaService;
 import io.harness.ci.plan.creator.execution.CIPipelineModuleInfo;
 import io.harness.cimanager.yamlschema.api.CIYamlSchemaResource;
 import io.harness.common.EntityTypeConstants;

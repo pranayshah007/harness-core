@@ -73,9 +73,7 @@ public class ResourceConstraintBackupHandler implements Handler<ResourceConstrai
     boolean toUnblock = false;
     try {
       if (State.BLOCKED.name().equals(instance.getState())) {
-        if (log.isWarnEnabled()) {
-          log.error("This is a completely blocked constraint: {}", constraintId);
-        }
+        log.debug("This is a completely blocked constraint: {}", constraintId);
         toUnblock = true;
       } else if (State.ACTIVE.name().equals(instance.getState())) {
         if (resourceConstraintService.updateActiveConstraintForInstance(instance)) {
@@ -90,7 +88,7 @@ public class ResourceConstraintBackupHandler implements Handler<ResourceConstrai
     } catch (WingsException exception) {
       ExceptionLogger.logProcessedMessages(exception, MANAGER, log);
     } catch (RuntimeException e) {
-      log.error("", e);
+      log.error(String.format("An error occurred when running resource constraint monitor [instance=%s]", instance), e);
     }
   }
 }

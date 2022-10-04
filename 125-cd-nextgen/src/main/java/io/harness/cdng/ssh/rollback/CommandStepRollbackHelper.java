@@ -8,8 +8,8 @@
 package io.harness.cdng.ssh.rollback;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.cdng.ssh.utils.CommandStepUtils.getEnvironmentVariables;
 import static io.harness.cdng.ssh.utils.CommandStepUtils.getOutputVariables;
+import static io.harness.cdng.ssh.utils.CommandStepUtils.mergeEnvironmentVariables;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
@@ -86,10 +86,11 @@ public class CommandStepRollbackHelper extends CDStepHelper {
     SshWinRmArtifactDelegateConfig artifactDelegateConfig = isNotEmpty(artifactsOutcome)
         ? sshWinRmArtifactHelper.getArtifactDelegateConfigConfig(artifactsOutcome.get(0), ambiance)
         : null;
-    FileDelegateConfig fileDelegateConfig =
-        sshWinRmConfigFileHelper.getFileDelegateConfig(sshWinRmExecutionDetails.getConfigFilesOutcome(), ambiance);
+    FileDelegateConfig fileDelegateConfig = sshWinRmExecutionDetails.getConfigFilesOutcome() != null
+        ? sshWinRmConfigFileHelper.getFileDelegateConfig(sshWinRmExecutionDetails.getConfigFilesOutcome(), ambiance)
+        : null;
     Map<String, String> environmentVariables =
-        getEnvironmentVariables(sshWinRmExecutionDetails.getEnvVariables(), builtInEnvVariables);
+        mergeEnvironmentVariables(sshWinRmExecutionDetails.getEnvVariables(), builtInEnvVariables);
     List<String> outputVariables = getOutputVariables(sshWinRmExecutionDetails.getOutVariables());
 
     return Optional.of(SshWinRmRollbackData.builder()

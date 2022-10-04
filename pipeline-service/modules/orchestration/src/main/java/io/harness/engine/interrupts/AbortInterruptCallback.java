@@ -63,7 +63,7 @@ public class AbortInterruptCallback implements OldNotifyCallback {
     abortNode(response);
   }
 
-  private void abortNode(Map<String, ResponseData> response) {
+  void abortNode(Map<String, ResponseData> response) {
     NodeExecution nodeExecution = nodeExecutionService.get(nodeExecutionId);
     abortHelper.abortDiscontinuingNode(nodeExecution, interruptId, interruptConfig);
     ResponseData responseData = isEmpty(response) ? null : response.values().iterator().next();

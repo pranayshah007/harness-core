@@ -19,6 +19,7 @@ import lombok.Getter;
 @Getter
 @Builder
 @EqualsAndHashCode
+@Deprecated
 public class TemplateInfo {
   private String templateIdentifier;
   private String versionLabel;

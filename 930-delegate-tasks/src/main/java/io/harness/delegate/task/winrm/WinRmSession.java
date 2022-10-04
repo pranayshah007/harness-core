@@ -9,6 +9,11 @@ package io.harness.delegate.task.winrm;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.delegate.task.winrm.WinRmExecutorHelper.PARTITION_SIZE_IN_BYTES;
+import static io.harness.delegate.utils.TaskExceptionUtils.calcPercentage;
+import static io.harness.logging.CommandExecutionStatus.FAILURE;
+import static io.harness.logging.CommandExecutionStatus.RUNNING;
+import static io.harness.logging.LogLevel.INFO;
 import static io.harness.windows.CmdUtils.escapeEnvValueSpecialChars;
 
 import static java.lang.String.format;
@@ -16,6 +21,7 @@ import static java.lang.String.format;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.clienttools.ClientTool;
 import io.harness.delegate.clienttools.HarnessPywinrmVersion;
 import io.harness.delegate.clienttools.InstallUtils;
@@ -90,8 +96,12 @@ public class WinRmSession implements AutoCloseable {
                  .workingDir(config.getWorkingDirectory())
                  .timeout(config.getTimeout())
                  .build();
-      SshHelperUtils.generateTGT(getUserPrincipal(config.getUsername(), config.getDomain()), config.getPassword(),
-          config.getKeyTabFilePath(), logCallback, generateTGTEnv);
+
+      if (!EmptyPredicate.isEmpty(config.getPassword()) || !EmptyPredicate.isEmpty(config.getKeyTabFilePath())) {
+        SshHelperUtils.generateTGT(getUserPrincipal(config.getUsername(), config.getDomain()), config.getPassword(),
+            config.getKeyTabFilePath(), logCallback, generateTGTEnv);
+      }
+
       shell = null;
       if (executeCommandString("echo 'checking connection'", null, null, false) != 0) {
         throw new InvalidRequestException("Cannot reach remote host");
@@ -203,6 +213,61 @@ public class WinRmSession implements AutoCloseable {
       }
     }
 
+    return statusCode;
+  }
+
+  public int executeCommandsListV2(List<String> commandList, Writer output, Writer error, boolean isOutputWriter,
+      String scriptExecCommand, boolean isScriptFileExecution) {
+    if (commandList.isEmpty()) {
+      return -1;
+    }
+    int statusCode;
+    if (args != null) {
+      if (isNotEmpty(scriptExecCommand)) {
+        commandList.add(scriptExecCommand);
+      }
+      statusCode = executeAllCommands(commandList, output, error, isOutputWriter, isScriptFileExecution);
+      if (statusCode != 0) {
+        log.warn("Transferring script data to PowerShell script file failed.");
+      }
+      return statusCode;
+    } else {
+      statusCode = executeAllCommands(commandList, output, error, isOutputWriter, isScriptFileExecution);
+      if (statusCode != 0) {
+        log.warn("Transferring script data to PowerShell script file failed.");
+        return statusCode;
+      }
+      if (isNotEmpty(scriptExecCommand)) {
+        statusCode = shell.execute(scriptExecCommand, output, error);
+      }
+    }
+
+    return statusCode;
+  }
+
+  private int executeAllCommands(
+      List<String> commandList, Writer output, Writer error, boolean isOutputWriter, boolean isScriptFileExecution) {
+    int statusCode = 0;
+    int chunkNumber = 1;
+    if (isScriptFileExecution) {
+      logCallback.saveExecutionLog(
+          format("Transferring script to a remote file. Chunk size: %s Bytes\n", PARTITION_SIZE_IN_BYTES), INFO,
+          RUNNING);
+    }
+    for (String command : commandList) {
+      int fileLength = commandList.stream().mapToInt(c -> c.getBytes().length).sum();
+      statusCode = executeCommandString(command, output, error, isOutputWriter);
+      if (statusCode != 0) {
+        logCallback.saveExecutionLog("Transferring script data to PowerShell script file failed.", INFO, FAILURE);
+        return statusCode;
+      }
+      if (isScriptFileExecution) {
+        logCallback.saveExecutionLog(format("Transferred %s data to PowerShell script file...\n",
+                                         calcPercentage(chunkNumber * PARTITION_SIZE_IN_BYTES, fileLength)),
+            INFO, RUNNING);
+      }
+      chunkNumber++;
+    }
     return statusCode;
   }
 

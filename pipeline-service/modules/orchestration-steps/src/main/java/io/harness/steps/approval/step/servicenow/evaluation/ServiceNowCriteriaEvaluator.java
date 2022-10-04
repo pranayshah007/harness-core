@@ -13,6 +13,8 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.ApprovalStepNGException;
+import io.harness.logstreaming.NGLogCallback;
+import io.harness.servicenow.ServiceNowFieldValueNG;
 import io.harness.servicenow.ServiceNowTicketNG;
 import io.harness.steps.approval.step.beans.ConditionDTO;
 import io.harness.steps.approval.step.beans.CriteriaSpecDTO;
@@ -20,13 +22,20 @@ import io.harness.steps.approval.step.beans.JexlCriteriaSpecDTO;
 import io.harness.steps.approval.step.beans.KeyValuesCriteriaSpecDTO;
 import io.harness.steps.approval.step.beans.Operator;
 import io.harness.steps.approval.step.evaluation.ConditionEvaluator;
+import io.harness.steps.approval.step.servicenow.entities.ServiceNowApprovalInstance;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.time.Instant;
 import java.util.List;
+import java.util.TimeZone;
 import lombok.experimental.UtilityClass;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
 @OwnedBy(CDC)
 @UtilityClass
+@Slf4j
 public class ServiceNowCriteriaEvaluator {
   public boolean evaluateCriteria(ServiceNowTicketNG ticket, CriteriaSpecDTO criteriaSpec) {
     if (ticket == null || ticket.getFields() == null || EmptyPredicate.isEmpty(ticket.getFields())) {
@@ -100,5 +109,78 @@ public class ServiceNowCriteriaEvaluator {
       }
     }
     return !matchAnyCondition;
+  }
+
+  public boolean validateWithinChangeWindow(
+      ServiceNowTicketNG ticket, ServiceNowApprovalInstance instance, NGLogCallback logCallback) {
+    if (ticket == null || ticket.getFields() == null || EmptyPredicate.isEmpty(ticket.getFields())) {
+      throw new ApprovalStepNGException("Failed to fetch ticket. Ticket number might be invalid", true);
+    }
+    if (instance.getChangeWindow() == null) {
+      return true;
+    }
+    log.info("Evaluating change window criteria for instance id - {}", instance.getId());
+    logCallback.saveExecutionLog("Approval criteria has been met, evaluating change window criteria...");
+    String startField = instance.getChangeWindow().getStartField();
+    String endField = instance.getChangeWindow().getEndField();
+    if (validateWithinChangeWindowInternal(validateAndGetChangeWindowFields(ticket, startField, "start field"),
+            validateAndGetChangeWindowFields(ticket, endField, "end field"))) {
+      log.info("Change window criteria has been met for instance id - {}", instance.getId());
+      logCallback.saveExecutionLog("Change window criteria has been met");
+      return true;
+    }
+    return false;
+  }
+
+  private ServiceNowFieldValueNG validateAndGetChangeWindowFields(
+      ServiceNowTicketNG ticket, String fieldValue, String fieldName) {
+    if (StringUtils.isBlank(fieldValue)) {
+      throw new ApprovalStepNGException(String.format("Change window %s can't be empty or blank", fieldName), true);
+    }
+    if (!ticket.getFields().containsKey(fieldValue)) {
+      throw new ApprovalStepNGException("Field " + fieldValue + " doesn't exist in ticket", true);
+    }
+
+    ServiceNowFieldValueNG fieldTicketValue = ticket.getFields().get(fieldValue);
+    if (StringUtils.isBlank(fieldTicketValue.getValue())) {
+      throw new ApprovalStepNGException(
+          String.format("Value of change window %s in the ticket can't be blank", fieldName), true);
+    }
+    return fieldTicketValue;
+  }
+
+  private boolean validateWithinChangeWindowInternal(
+      ServiceNowFieldValueNG startTimeFieldTicketValue, ServiceNowFieldValueNG endTimeFieldTicketValue) {
+    Instant nowInstant = Instant.now();
+    SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+    dateFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
+    try {
+      Instant startTime = dateFormat.parse(addTimeIfNeeded(startTimeFieldTicketValue.getValue())).toInstant();
+      Instant endTime = dateFormat.parse(addTimeIfNeeded(endTimeFieldTicketValue.getValue())).toInstant();
+      log.info(
+          "[CHANGE_WINDOW_TIME_LOG]: Start time: {}, End time: {}, Current time: {}", startTime, endTime, nowInstant);
+      if (endTime.compareTo(startTime) <= 0) {
+        throw new ApprovalStepNGException(
+            String.format("Start window time {%s} must be earlier than end window time {%s}",
+                startTimeFieldTicketValue.getDisplayValue(), endTimeFieldTicketValue.getDisplayValue()),
+            true);
+      }
+      if (endTime.compareTo(nowInstant) < 0) {
+        throw new ApprovalStepNGException(String.format("End window time {%s} must be greater than current time",
+                                              endTimeFieldTicketValue.getDisplayValue()),
+            true);
+      }
+      return startTime.compareTo(nowInstant) < 0 && endTime.compareTo(nowInstant) > 0;
+    } catch (ParseException pe) {
+      throw new ApprovalStepNGException(
+          String.format("Invalid approval Change window values in ServiceNow : %s", pe.getMessage()), true);
+    }
+  }
+
+  private static String addTimeIfNeeded(String date) {
+    if (date == null || date.contains(" ")) {
+      return date;
+    }
+    return date + " 00:00:00";
   }
 }

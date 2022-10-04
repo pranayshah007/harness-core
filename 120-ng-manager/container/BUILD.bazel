@@ -21,6 +21,7 @@ pkg_tar(
     srcs = [
         "//120-ng-manager:config.yml",
         "//120-ng-manager:keystore.jks",
+        "//120-ng-manager/src/main/resources:enterprise-redisson-jcache.yaml",
         "//400-rest/src/main/resources:redisson-jcache.yaml",
     ],
     files = {

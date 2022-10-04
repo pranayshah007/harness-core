@@ -10,6 +10,7 @@ package software.wings.sm;
 import static io.harness.rule.OwnerRule.BRETT;
 import static io.harness.rule.OwnerRule.GARVIT;
 import static io.harness.rule.OwnerRule.MILOS;
+import static io.harness.rule.OwnerRule.YUVRAJ;
 
 import static software.wings.beans.Application.Builder.anApplication;
 import static software.wings.beans.Environment.Builder.anEnvironment;
@@ -25,6 +26,7 @@ import static software.wings.utils.WingsTestConstants.mockChecker;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.joor.Reflect.on;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 import io.harness.beans.FeatureName;
@@ -51,13 +53,13 @@ import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import java.util.ArrayList;
+import java.util.List;
 import javax.annotation.Nullable;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 
 /**
  * Tests the WorkflowStandardParamsExtensionService.
@@ -79,14 +81,13 @@ public class WorkflowStandardParamsExtensionServiceTest extends WingsBaseTest {
     when(settingsService.getGlobalSettingAttributesByType(ACCOUNT_ID, SettingVariableTypes.APP_DYNAMICS.name()))
         .thenReturn(Lists.newArrayList(aSettingAttribute().withUuid("id").build()));
     on(appService).set("settingsService", settingsService);
-    when(featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, ACCOUNT_ID)).thenReturn(false);
   }
 
   @Test
   @Owner(developers = GARVIT)
   @Category(UnitTests.class)
   public void shouldFetchRequiredApp() {
-    when(limitCheckerFactory.getInstance(Mockito.any())).thenReturn(mockChecker());
+    when(limitCheckerFactory.getInstance(any())).thenReturn(mockChecker());
     Application app = prepareApp();
     WorkflowStandardParams std = new WorkflowStandardParams();
     std.setAppId(app.getUuid());
@@ -112,7 +113,7 @@ public class WorkflowStandardParamsExtensionServiceTest extends WingsBaseTest {
   @Owner(developers = GARVIT)
   @Category(UnitTests.class)
   public void shouldFetchRequiredEnv() {
-    when(limitCheckerFactory.getInstance(Mockito.any())).thenReturn(mockChecker());
+    when(limitCheckerFactory.getInstance(any())).thenReturn(mockChecker());
     Application app = prepareApp();
     Environment env = prepareEnv(app.getUuid());
     WorkflowStandardParams std = new WorkflowStandardParams();
@@ -220,6 +221,29 @@ public class WorkflowStandardParamsExtensionServiceTest extends WingsBaseTest {
     assertThat(rollbackArtifact).isNull();
   }
 
+  @Test
+  @Owner(developers = YUVRAJ)
+  @Category(UnitTests.class)
+  public void test_getArtifacts() {
+    List<String> artifactIds = new ArrayList<>();
+    artifactIds.add("id1");
+    artifactIds.add("id2");
+    WorkflowStandardParams workflowStandardParams =
+        WorkflowStandardParams.Builder.aWorkflowStandardParams().withArtifactIds(artifactIds).withAppId(APP_ID).build();
+    Artifact artifact1 =
+        Artifact.Builder.anArtifact().withUuid("id1").withAccountId(ACCOUNT_ID).withLastUpdatedAt(10).build();
+    Artifact artifact2 =
+        Artifact.Builder.anArtifact().withUuid("id2").withAccountId(ACCOUNT_ID).withLastUpdatedAt(20).build();
+    when(artifactService.get("id1")).thenReturn(artifact1);
+    when(artifactService.get("id2")).thenReturn(artifact2);
+    when(featureFlagService.isEnabled(FeatureName.SORT_ARTIFACTS_IN_UPDATED_ORDER, null)).thenReturn(true);
+    WorkflowStandardParamsExtensionService extensionService =
+        this.getWorkflowStandardParamsExtensionService(null, artifactService, artifactStreamServiceBindingService);
+    List<Artifact> artifacts = extensionService.getArtifacts(workflowStandardParams);
+    assertThat(artifacts.get(0)).isEqualTo(artifact2);
+    assertThat(artifacts.get(1)).isEqualTo(artifact1);
+  }
+
   private WorkflowStandardParamsExtensionService getWorkflowStandardParamsExtensionService(
       @Nullable AccountService accountService, @Nullable ArtifactService artifactService,
       @Nullable ArtifactStreamServiceBindingService artifactStreamServiceBindingService) {
@@ -229,6 +253,6 @@ public class WorkflowStandardParamsExtensionServiceTest extends WingsBaseTest {
         injector.getInstance(EnvironmentService.class),
         artifactStreamServiceBindingService != null ? artifactStreamServiceBindingService
                                                     : injector.getInstance(ArtifactStreamServiceBindingService.class),
-        injector.getInstance(HelmChartService.class));
+        injector.getInstance(HelmChartService.class), featureFlagService);
   }
 }

@@ -9,7 +9,18 @@ package software.wings.service.impl;
 
 import static io.harness.rule.OwnerRule.BOOPESH;
 import static io.harness.rule.OwnerRule.DEEPAK;
+import static io.harness.rule.OwnerRule.KAPIL;
 import static io.harness.rule.OwnerRule.SHASHANK;
+
+import static software.wings.beans.loginSettings.LoginSettingsConstants.LDAP_SSO_CREATED;
+import static software.wings.beans.loginSettings.LoginSettingsConstants.LDAP_SSO_DELETED;
+import static software.wings.beans.loginSettings.LoginSettingsConstants.LDAP_SSO_UPDATED;
+import static software.wings.beans.loginSettings.LoginSettingsConstants.OAUTH_PROVIDER_CREATED;
+import static software.wings.beans.loginSettings.LoginSettingsConstants.OAUTH_PROVIDER_DELETED;
+import static software.wings.beans.loginSettings.LoginSettingsConstants.OAUTH_PROVIDER_UPDATED;
+import static software.wings.beans.loginSettings.LoginSettingsConstants.SAML_SSO_CREATED;
+import static software.wings.beans.loginSettings.LoginSettingsConstants.SAML_SSO_DELETED;
+import static software.wings.beans.loginSettings.LoginSettingsConstants.SAML_SSO_UPDATED;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
@@ -28,26 +39,46 @@ import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ff.FeatureFlagService;
+import io.harness.ng.core.account.OauthProviderType;
+import io.harness.outbox.OutboxEvent;
+import io.harness.outbox.api.OutboxService;
+import io.harness.outbox.filter.OutboxEventFilter;
 import io.harness.rule.Owner;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import software.wings.WingsBaseTest;
 import software.wings.annotation.EncryptableSetting;
+import software.wings.beans.Account;
 import software.wings.beans.alert.Alert;
 import software.wings.beans.alert.AlertType;
+import software.wings.beans.loginSettings.events.LoginSettingsLDAPCreateEvent;
+import software.wings.beans.loginSettings.events.LoginSettingsLDAPDeleteEvent;
+import software.wings.beans.loginSettings.events.LoginSettingsLDAPUpdateEvent;
+import software.wings.beans.loginSettings.events.LoginSettingsOAuthCreateEvent;
+import software.wings.beans.loginSettings.events.LoginSettingsOAuthDeleteEvent;
+import software.wings.beans.loginSettings.events.LoginSettingsOAuthUpdateEvent;
+import software.wings.beans.loginSettings.events.LoginSettingsSAMLCreateEvent;
+import software.wings.beans.loginSettings.events.LoginSettingsSAMLDeleteEvent;
+import software.wings.beans.loginSettings.events.LoginSettingsSAMLUpdateEvent;
 import software.wings.beans.sso.LdapConnectionSettings;
 import software.wings.beans.sso.LdapGroupSettings;
 import software.wings.beans.sso.LdapSettings;
 import software.wings.beans.sso.LdapUserSettings;
+import software.wings.beans.sso.OauthSettings;
 import software.wings.beans.sso.SSOSettings.SSOSettingsKeys;
+import software.wings.beans.sso.SamlSettings;
 import software.wings.helpers.ext.ldap.LdapConstants;
 import software.wings.scheduler.LdapSyncJobConfig;
+import software.wings.service.intfc.AccountService;
 import software.wings.service.intfc.AlertService;
 import software.wings.service.intfc.SSOSettingService;
 import software.wings.service.intfc.security.EncryptionService;
 import software.wings.service.intfc.security.SecretManager;
 
+import com.google.common.collect.Sets;
 import com.google.inject.Inject;
+import io.serializer.HObjectMapper;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -75,6 +106,8 @@ public class SSOSettingServiceImplTest extends WingsBaseTest {
   private String message = "errorMessage";
   private LdapSettings ldapSettings;
   @Mock LdapSyncJobConfig ldapSyncJobConfig;
+  @Inject private OutboxService outboxService;
+  @Mock private AccountService accountService;
 
   @Test
   @Owner(developers = DEEPAK)
@@ -112,7 +145,7 @@ public class SSOSettingServiceImplTest extends WingsBaseTest {
   @Owner(developers = SHASHANK)
   @Category(UnitTests.class)
   public void shouldSaveLdapSettingWithCronExpression() {
-    LdapSettings ldapSettings = createLDAOSSOProvider();
+    LdapSettings ldapSettings = createLDAPSSOProvider();
     ldapSettings.setCronExpression("0 0/15 * 1/1 * ? *");
     ldapSettings = ssoSettingService.createLdapSettings(ldapSettings);
     LdapSettings savedLdapSettings = ssoSettingService.getLdapSettingsByAccountId(ldapSettings.getAccountId());
@@ -128,7 +161,7 @@ public class SSOSettingServiceImplTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void shouldSaveLdapSettingWithDefaultCronExpressionFromConfig() {
     when(ldapSyncJobConfig.getDefaultCronExpression()).thenReturn("0 0/15 * 1/1 * ? *");
-    LdapSettings ldapSettings = createLDAOSSOProvider();
+    LdapSettings ldapSettings = createLDAPSSOProvider();
     ldapSettings = ssoSettingService.createLdapSettings(ldapSettings);
     LdapSettings savedLdapSettings = ssoSettingService.getLdapSettingsByAccountId(ldapSettings.getAccountId());
 
@@ -143,7 +176,7 @@ public class SSOSettingServiceImplTest extends WingsBaseTest {
   @Category(UnitTests.class)
   // Min Interval = 900 seconds
   public void shouldNotSaveCronExpressionLessThanMinInterval() {
-    LdapSettings ldapSettings = createLDAOSSOProvider();
+    LdapSettings ldapSettings = createLDAPSSOProvider();
     ldapSettings.setCronExpression("0 0/14 * 1/1 * ? *");
     ssoSettingService.createLdapSettings(ldapSettings);
   }
@@ -152,7 +185,7 @@ public class SSOSettingServiceImplTest extends WingsBaseTest {
   @Owner(developers = SHASHANK)
   @Category(UnitTests.class)
   public void shouldHaveNextIterations() {
-    LdapSettings ldapSettings = createLDAOSSOProvider();
+    LdapSettings ldapSettings = createLDAPSSOProvider();
     ldapSettings.setCronExpression("0 0/15 * 1/1 * ? *");
     ldapSettings.recalculateNextIterations(SSOSettingsKeys.nextIterations, true, 0);
     assertThat(ldapSettings.getNextIterations()).isNotEmpty();
@@ -163,7 +196,7 @@ public class SSOSettingServiceImplTest extends WingsBaseTest {
   @Owner(developers = SHASHANK)
   @Category(UnitTests.class)
   public void shouldHaveNextIterationsWithOnlyDefaultCronSet() {
-    LdapSettings ldapSettings = createLDAOSSOProvider();
+    LdapSettings ldapSettings = createLDAPSSOProvider();
     ldapSettings.setDefaultCronExpression("0 0/15 * 1/1 * ? *");
     ldapSettings.recalculateNextIterations(SSOSettingsKeys.nextIterations, true, 0);
     assertThat(ldapSettings.getNextIterations()).isNotEmpty();
@@ -174,7 +207,7 @@ public class SSOSettingServiceImplTest extends WingsBaseTest {
   @Owner(developers = SHASHANK)
   @Category(UnitTests.class)
   public void shouldFailNextIterationsWithNoCronOrDefaultCron() {
-    LdapSettings ldapSettings = createLDAOSSOProvider();
+    LdapSettings ldapSettings = createLDAPSSOProvider();
     ldapSettings.recalculateNextIterations(SSOSettingsKeys.nextIterations, true, 0);
   }
 
@@ -182,7 +215,7 @@ public class SSOSettingServiceImplTest extends WingsBaseTest {
   @Owner(developers = SHASHANK)
   @Category(UnitTests.class)
   public void shouldFailNextIterationsForWrongCron() {
-    LdapSettings ldapSettings = createLDAOSSOProvider();
+    LdapSettings ldapSettings = createLDAPSSOProvider();
     ldapSettings.setCronExpression("0 0/A * 1/1 * ? *");
     ldapSettings.recalculateNextIterations(SSOSettingsKeys.nextIterations, true, 0);
   }
@@ -191,7 +224,7 @@ public class SSOSettingServiceImplTest extends WingsBaseTest {
   @Owner(developers = SHASHANK)
   @Category(UnitTests.class)
   public void shouldNotSaveForWrongCron() {
-    LdapSettings ldapSettings = createLDAOSSOProvider();
+    LdapSettings ldapSettings = createLDAPSSOProvider();
     ldapSettings.setCronExpression("0 0/A * 1/1 * ? *");
     ssoSettingService.createLdapSettings(ldapSettings);
   }
@@ -200,7 +233,7 @@ public class SSOSettingServiceImplTest extends WingsBaseTest {
   @Owner(developers = SHASHANK)
   @Category(UnitTests.class)
   public void shouldNotReCalculateNextIterationsForExistingListOfMoreThanTwo() {
-    LdapSettings ldapSettings = createLDAOSSOProvider();
+    LdapSettings ldapSettings = createLDAPSSOProvider();
     ldapSettings.setCronExpression("0 0/15 * 1/1 * ? *");
     ldapSettings.recalculateNextIterations(SSOSettingsKeys.nextIterations, true, 0);
     assertThat(ldapSettings.getNextIterations()).isNotEmpty();
@@ -215,7 +248,7 @@ public class SSOSettingServiceImplTest extends WingsBaseTest {
   @Owner(developers = SHASHANK)
   @Category(UnitTests.class)
   public void shouldReCalculateNextIterationsForExistingListOfLessThanTwo() {
-    LdapSettings ldapSettings = createLDAOSSOProvider();
+    LdapSettings ldapSettings = createLDAPSSOProvider();
     ldapSettings.setCronExpression("0 0/15 * 1/1 * ? *");
     ldapSettings.recalculateNextIterations(SSOSettingsKeys.nextIterations, true, 0);
     assertThat(ldapSettings.getNextIterations()).isNotEmpty();
@@ -231,7 +264,7 @@ public class SSOSettingServiceImplTest extends WingsBaseTest {
   @Owner(developers = BOOPESH)
   @Category(UnitTests.class)
   public void createLDAPSettingWithSecret() {
-    LdapSettings ldapSettings = createLDAOSSOProviderWithSecret();
+    LdapSettings ldapSettings = createLDAPSSOProviderWithSecret();
     ldapSettings.setCronExpression("0 0/15 * 1/1 * ? *");
     ldapSettings.getConnectionSettings().setPasswordType(LdapConnectionSettings.SECRET);
     EncryptedDataDetail encryptedDataDetail = mock(EncryptedDataDetail.class);
@@ -250,7 +283,7 @@ public class SSOSettingServiceImplTest extends WingsBaseTest {
   @Owner(developers = BOOPESH)
   @Category(UnitTests.class)
   public void createLDAPSettingWithInlinePassword() {
-    LdapSettings ldapSettings = createLDAOSSOProvider();
+    LdapSettings ldapSettings = createLDAPSSOProvider();
     ldapSettings.setCronExpression("0 0/15 * 1/1 * ? *");
     EncryptedDataDetail encryptedDataDetail = mock(EncryptedDataDetail.class);
     List<EncryptedDataDetail> encryptedDataDetails = Arrays.asList(encryptedDataDetail);
@@ -268,7 +301,7 @@ public class SSOSettingServiceImplTest extends WingsBaseTest {
   @Owner(developers = BOOPESH)
   @Category(UnitTests.class)
   public void updateLDAPSettingWithInlinePasswordToSecret() {
-    LdapSettings ldapSettings = createLDAOSSOProvider();
+    LdapSettings ldapSettings = createLDAPSSOProvider();
     ldapSettings.setCronExpression("0 0/15 * 1/1 * ? *");
     EncryptedDataDetail encryptedDataDetail = mock(EncryptedDataDetail.class);
     List<EncryptedDataDetail> encryptedDataDetails = Arrays.asList(encryptedDataDetail);
@@ -289,7 +322,7 @@ public class SSOSettingServiceImplTest extends WingsBaseTest {
   @Owner(developers = BOOPESH)
   @Category(UnitTests.class)
   public void updateLDAPSettingWithBothInlinePasswordAndSecret() {
-    LdapSettings ldapSettings = createLDAOSSOProvider();
+    LdapSettings ldapSettings = createLDAPSSOProvider();
     ldapSettings.setCronExpression("0 0/15 * 1/1 * ? *");
     EncryptedDataDetail encryptedDataDetail = mock(EncryptedDataDetail.class);
     List<EncryptedDataDetail> encryptedDataDetails = Arrays.asList(encryptedDataDetail);
@@ -309,7 +342,7 @@ public class SSOSettingServiceImplTest extends WingsBaseTest {
   @Owner(developers = BOOPESH)
   @Category(UnitTests.class)
   public void updateLDAPSettingWithSecretToInlinePassword() {
-    LdapSettings ldapSettings = createLDAOSSOProviderWithSecret();
+    LdapSettings ldapSettings = createLDAPSSOProviderWithSecret();
     ldapSettings.setCronExpression("0 0/15 * 1/1 * ? *");
     ldapSettings.getConnectionSettings().setPasswordType(LdapConnectionSettings.SECRET);
     EncryptedDataDetail encryptedDataDetail = mock(EncryptedDataDetail.class);
@@ -327,7 +360,179 @@ public class SSOSettingServiceImplTest extends WingsBaseTest {
         .isEqualTo(LdapConnectionSettings.INLINE_SECRET);
   }
 
-  public LdapSettings createLDAOSSOProvider() {
+  @Test
+  @Owner(developers = KAPIL)
+  @Category(UnitTests.class)
+  public void testSaveSamlSettingsWithoutCGLicenseCheck_ForSAMLCreateUpdateDeleteNGAudits() throws IOException {
+    SamlSettings samlSettings = SamlSettings.builder()
+                                    .metaDataFile("TestMetaDataFile")
+                                    .url("oktaIdpUrl")
+                                    .accountId(accountId)
+                                    .displayName("Okta")
+                                    .origin("dev-274703.oktapreview.com")
+                                    .build();
+    SamlSettings savedSamlSettings = ssoSettingService.saveSamlSettingsWithoutCGLicenseCheck(samlSettings);
+    List<OutboxEvent> outboxEvents = outboxService.list(OutboxEventFilter.builder().maximumEventsPolled(10).build());
+    OutboxEvent outboxEvent = outboxEvents.get(outboxEvents.size() - 1);
+
+    assertThat(outboxEvent.getEventType()).isEqualTo(SAML_SSO_CREATED);
+    LoginSettingsSAMLCreateEvent loginSettingsSAMLCreateEvent = HObjectMapper.NG_DEFAULT_OBJECT_MAPPER.readValue(
+        outboxEvent.getEventData(), LoginSettingsSAMLCreateEvent.class);
+
+    assertThat(loginSettingsSAMLCreateEvent.getAccountIdentifier()).isEqualTo(accountId);
+    assertThat(loginSettingsSAMLCreateEvent.getOldSamlSettingsYamlDTO()).isEqualTo(null);
+    assertThat(loginSettingsSAMLCreateEvent.getNewSamlSettingsYamlDTO().getSamlSettings()).isEqualTo(savedSamlSettings);
+
+    SamlSettings newSamlSettings = SamlSettings.builder()
+                                       .metaDataFile("TestMetaDataFile")
+                                       .url("microsoftOnlineUrl")
+                                       .accountId(accountId)
+                                       .displayName("Azure 1")
+                                       .origin("login.microsoftonline.com")
+                                       .build();
+    SamlSettings newSavedSamlSettings = ssoSettingService.saveSamlSettingsWithoutCGLicenseCheck(newSamlSettings);
+    outboxEvents = outboxService.list(OutboxEventFilter.builder().maximumEventsPolled(10).build());
+    outboxEvent = outboxEvents.get(outboxEvents.size() - 1);
+
+    assertThat(outboxEvent.getEventType()).isEqualTo(SAML_SSO_UPDATED);
+    LoginSettingsSAMLUpdateEvent loginSettingsSAMLUpdateEvent = HObjectMapper.NG_DEFAULT_OBJECT_MAPPER.readValue(
+        outboxEvent.getEventData(), LoginSettingsSAMLUpdateEvent.class);
+
+    assertThat(loginSettingsSAMLUpdateEvent.getAccountIdentifier()).isEqualTo(accountId);
+    assertThat(loginSettingsSAMLUpdateEvent.getOldSamlSettingsYamlDTO().getSamlSettings()).isEqualTo(savedSamlSettings);
+    assertThat(loginSettingsSAMLUpdateEvent.getNewSamlSettingsYamlDTO().getSamlSettings())
+        .isEqualTo(newSavedSamlSettings);
+
+    boolean isSamlSettingsDeleted = ssoSettingService.deleteSamlSettings(accountId);
+    assertThat(isSamlSettingsDeleted).isTrue();
+    outboxEvents = outboxService.list(OutboxEventFilter.builder().maximumEventsPolled(10).build());
+    outboxEvent = outboxEvents.get(outboxEvents.size() - 1);
+
+    assertThat(outboxEvent.getEventType()).isEqualTo(SAML_SSO_DELETED);
+    LoginSettingsSAMLDeleteEvent loginSettingsSAMLDeleteEvent = HObjectMapper.NG_DEFAULT_OBJECT_MAPPER.readValue(
+        outboxEvent.getEventData(), LoginSettingsSAMLDeleteEvent.class);
+
+    assertThat(loginSettingsSAMLDeleteEvent.getAccountIdentifier()).isEqualTo(accountId);
+    assertThat(loginSettingsSAMLDeleteEvent.getOldSamlSettingsYamlDTO().getSamlSettings())
+        .isEqualTo(newSavedSamlSettings);
+    assertThat(loginSettingsSAMLDeleteEvent.getNewSamlSettingsYamlDTO()).isEqualTo(null);
+  }
+
+  @Test
+  @Owner(developers = KAPIL)
+  @Category(UnitTests.class)
+  public void testSaveOauthSettings_ForOAuthCreateUpdateDeleteNGAudits() throws IOException {
+    Account account = new Account();
+    account.setUuid(accountId);
+    when(accountService.get(accountId)).thenReturn(account);
+
+    OauthSettings oauthSettings = OauthSettings.builder()
+                                      .accountId(accountId)
+                                      .allowedProviders(Sets.newHashSet(OauthProviderType.GITHUB))
+                                      .displayName("DisplayName")
+                                      .build();
+    OauthSettings savedOauthSettings = ssoSettingService.saveOauthSettings(oauthSettings);
+    List<OutboxEvent> outboxEvents = outboxService.list(OutboxEventFilter.builder().maximumEventsPolled(10).build());
+    OutboxEvent outboxEvent = outboxEvents.get(outboxEvents.size() - 1);
+
+    assertThat(outboxEvent.getEventType()).isEqualTo(OAUTH_PROVIDER_CREATED);
+    LoginSettingsOAuthCreateEvent loginSettingsOAuthCreateEvent = HObjectMapper.NG_DEFAULT_OBJECT_MAPPER.readValue(
+        outboxEvent.getEventData(), LoginSettingsOAuthCreateEvent.class);
+
+    assertThat(loginSettingsOAuthCreateEvent.getAccountIdentifier()).isEqualTo(accountId);
+    assertThat(loginSettingsOAuthCreateEvent.getOldOAuthSettingsYamlDTO()).isEqualTo(null);
+    assertThat(loginSettingsOAuthCreateEvent.getNewOAuthSettingsYamlDTO().getOauthSettings())
+        .isEqualTo(savedOauthSettings);
+
+    OauthSettings newOauthSettings =
+        OauthSettings.builder()
+            .accountId(accountId)
+            .allowedProviders(Sets.newHashSet(OauthProviderType.GITHUB, OauthProviderType.AZURE))
+            .displayName("NewDisplayName")
+            .build();
+    OauthSettings newSaveOauthSettings = ssoSettingService.saveOauthSettings(newOauthSettings);
+    outboxEvents = outboxService.list(OutboxEventFilter.builder().maximumEventsPolled(10).build());
+    outboxEvent = outboxEvents.get(outboxEvents.size() - 1);
+
+    assertThat(outboxEvent.getEventType()).isEqualTo(OAUTH_PROVIDER_UPDATED);
+    LoginSettingsOAuthUpdateEvent loginSettingsOAuthUpdateEvent = HObjectMapper.NG_DEFAULT_OBJECT_MAPPER.readValue(
+        outboxEvent.getEventData(), LoginSettingsOAuthUpdateEvent.class);
+
+    assertThat(loginSettingsOAuthUpdateEvent.getAccountIdentifier()).isEqualTo(accountId);
+    assertThat(loginSettingsOAuthUpdateEvent.getOldOAuthSettingsYamlDTO().getOauthSettings())
+        .isEqualTo(savedOauthSettings);
+    assertThat(loginSettingsOAuthUpdateEvent.getNewOAuthSettingsYamlDTO().getOauthSettings())
+        .isEqualTo(newSaveOauthSettings);
+
+    boolean isOauthSettingsDeleted = ssoSettingService.deleteOauthSettings(accountId);
+    assertThat(isOauthSettingsDeleted).isTrue();
+    outboxEvents = outboxService.list(OutboxEventFilter.builder().maximumEventsPolled(10).build());
+    outboxEvent = outboxEvents.get(outboxEvents.size() - 1);
+
+    assertThat(outboxEvent.getEventType()).isEqualTo(OAUTH_PROVIDER_DELETED);
+    LoginSettingsOAuthDeleteEvent loginSettingsOAuthDeleteEvent = HObjectMapper.NG_DEFAULT_OBJECT_MAPPER.readValue(
+        outboxEvent.getEventData(), LoginSettingsOAuthDeleteEvent.class);
+
+    assertThat(loginSettingsOAuthDeleteEvent.getAccountIdentifier()).isEqualTo(accountId);
+    assertThat(loginSettingsOAuthDeleteEvent.getOldOAuthSettingsYamlDTO().getOauthSettings())
+        .isEqualTo(newSaveOauthSettings);
+    assertThat(loginSettingsOAuthDeleteEvent.getNewOAuthSettingsYamlDTO()).isEqualTo(null);
+  }
+
+  @Test
+  @Owner(developers = KAPIL)
+  @Category(UnitTests.class)
+  public void testCreateLdapSettings_ForLDAPCreateUpdateDeleteNGAudits() throws IOException {
+    LdapSettings ldapSettings = createLDAPSSOProvider();
+    ldapSettings.setCronExpression("0 0/15 * 1/1 * ? *");
+    LdapSettings savedLdapSettings = ssoSettingService.createLdapSettings(ldapSettings);
+    List<OutboxEvent> outboxEvents = outboxService.list(OutboxEventFilter.builder().maximumEventsPolled(10).build());
+    OutboxEvent outboxEvent = outboxEvents.get(outboxEvents.size() - 1);
+
+    assertThat(outboxEvent.getEventType()).isEqualTo(LDAP_SSO_CREATED);
+    LoginSettingsLDAPCreateEvent loginSettingsLDAPCreateEvent = HObjectMapper.NG_DEFAULT_OBJECT_MAPPER.readValue(
+        outboxEvent.getEventData(), LoginSettingsLDAPCreateEvent.class);
+
+    assertThat(loginSettingsLDAPCreateEvent.getAccountIdentifier()).isEqualTo(accountId);
+    assertThat(loginSettingsLDAPCreateEvent.getOldLdapSettingsYamlDTO()).isEqualTo(null);
+    assertThat(loginSettingsLDAPCreateEvent.getNewLdapSettingsYamlDTO().getLdapSettings()).isEqualTo(savedLdapSettings);
+
+    LdapSettings newLdapSettings = LdapSettings.builder()
+                                       .accountId(accountId)
+                                       .displayName("newLdapSettings")
+                                       .connectionSettings(new LdapConnectionSettings())
+                                       .userSettingsList(Arrays.asList(new LdapUserSettings()))
+                                       .groupSettingsList(Arrays.asList(new LdapGroupSettings()))
+                                       .build();
+    newLdapSettings.setCronExpression("0 0/15 * 1/1 * ? *");
+    LdapSettings newSavedLdapSettings = ssoSettingService.updateLdapSettings(newLdapSettings);
+    outboxEvents = outboxService.list(OutboxEventFilter.builder().maximumEventsPolled(10).build());
+    outboxEvent = outboxEvents.get(outboxEvents.size() - 1);
+
+    assertThat(outboxEvent.getEventType()).isEqualTo(LDAP_SSO_UPDATED);
+    LoginSettingsLDAPUpdateEvent loginSettingsLDAPUpdateEvent = HObjectMapper.NG_DEFAULT_OBJECT_MAPPER.readValue(
+        outboxEvent.getEventData(), LoginSettingsLDAPUpdateEvent.class);
+
+    assertThat(loginSettingsLDAPUpdateEvent.getAccountIdentifier()).isEqualTo(accountId);
+    assertThat(loginSettingsLDAPUpdateEvent.getOldLdapSettingsYamlDTO().getLdapSettings()).isEqualTo(savedLdapSettings);
+    assertThat(loginSettingsLDAPUpdateEvent.getNewLdapSettingsYamlDTO().getLdapSettings())
+        .isEqualTo(newSavedLdapSettings);
+
+    ssoSettingService.deleteLdapSettings(accountId);
+    outboxEvents = outboxService.list(OutboxEventFilter.builder().maximumEventsPolled(10).build());
+    outboxEvent = outboxEvents.get(outboxEvents.size() - 1);
+
+    assertThat(outboxEvent.getEventType()).isEqualTo(LDAP_SSO_DELETED);
+    LoginSettingsLDAPDeleteEvent loginSettingsLDAPDeleteEvent = HObjectMapper.NG_DEFAULT_OBJECT_MAPPER.readValue(
+        outboxEvent.getEventData(), LoginSettingsLDAPDeleteEvent.class);
+
+    assertThat(loginSettingsLDAPDeleteEvent.getAccountIdentifier()).isEqualTo(accountId);
+    assertThat(loginSettingsLDAPDeleteEvent.getOldLdapSettingsYamlDTO().getLdapSettings())
+        .isEqualTo(newSavedLdapSettings);
+    assertThat(loginSettingsLDAPDeleteEvent.getNewLdapSettingsYamlDTO()).isEqualTo(null);
+  }
+
+  public LdapSettings createLDAPSSOProvider() {
     LdapConnectionSettings connectionSettings = new LdapConnectionSettings();
     connectionSettings.setBindDN("testBindDN");
     connectionSettings.setBindPassword("testBindPassword");
@@ -342,7 +547,7 @@ public class SSOSettingServiceImplTest extends WingsBaseTest {
     return ldapSettings;
   }
 
-  public LdapSettings createLDAOSSOProviderWithSecret() {
+  public LdapSettings createLDAPSSOProviderWithSecret() {
     LdapConnectionSettings connectionSettings = new LdapConnectionSettings();
     connectionSettings.setBindDN("testBindDN");
     connectionSettings.setBindSecret("testBindSecret".toCharArray());

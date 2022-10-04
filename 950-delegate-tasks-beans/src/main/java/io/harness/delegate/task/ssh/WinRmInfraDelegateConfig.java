@@ -14,10 +14,11 @@ import io.harness.ng.core.dto.secrets.WinRmCredentialsSpecDTO;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import java.util.List;
+import java.util.Set;
 
 @OwnedBy(CDP)
 public interface WinRmInfraDelegateConfig {
-  List<String> getHosts();
+  Set<String> getHosts();
   List<EncryptedDataDetail> getEncryptionDataDetails();
   WinRmCredentialsSpecDTO getWinRmCredentials();
 }

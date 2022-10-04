@@ -18,6 +18,7 @@ import io.harness.licensing.entities.modules.CDModuleLicense;
 import io.harness.licensing.entities.modules.CEModuleLicense;
 import io.harness.licensing.entities.modules.CFModuleLicense;
 import io.harness.licensing.entities.modules.CIModuleLicense;
+import io.harness.licensing.entities.modules.ChaosModuleLicense;
 import io.harness.licensing.entities.modules.ModuleLicense;
 import io.harness.licensing.entities.modules.STOModuleLicense;
 
@@ -256,6 +257,18 @@ public class ModuleLicenseHelper {
         if (stoLicense.getNumberOfDevelopers() != null
             && !stoLicense.getNumberOfDevelopers().equals(currentSTOLicense.getNumberOfDevelopers())) {
           currentSTOLicense.setNumberOfDevelopers(stoLicense.getNumberOfDevelopers());
+        }
+        break;
+      case CHAOS:
+        ChaosModuleLicense chaosLicense = (ChaosModuleLicense) update;
+        ChaosModuleLicense currentCHAOSLicense = (ChaosModuleLicense) current;
+        if (chaosLicense.getTotalChaosDelegates() != null
+            && !chaosLicense.getTotalChaosDelegates().equals(currentCHAOSLicense.getTotalChaosDelegates())) {
+          currentCHAOSLicense.setTotalChaosDelegates(chaosLicense.getTotalChaosDelegates());
+        }
+        if (chaosLicense.getTotalChaosScenarioRun() != null
+            && !chaosLicense.getTotalChaosScenarioRun().equals(currentCHAOSLicense.getTotalChaosScenarioRun())) {
+          currentCHAOSLicense.setTotalChaosScenarioRun(chaosLicense.getTotalChaosScenarioRun());
         }
         break;
       default:

@@ -11,7 +11,9 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STRATEGY;
 
 import io.harness.NGCommonEntityConstants;
+import io.harness.cdng.artifact.bean.ArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.ArtifactListConfig;
+import io.harness.cdng.artifact.bean.yaml.ArtifactSource;
 import io.harness.cdng.artifact.bean.yaml.PrimaryArtifact;
 import io.harness.cdng.artifact.bean.yaml.SidecarArtifact;
 import io.harness.cdng.artifact.bean.yaml.SidecarArtifactWrapper;
@@ -61,6 +63,7 @@ import io.harness.steps.OutputExpressionConstants;
 import io.harness.steps.environment.EnvironmentOutcome;
 import io.harness.yaml.core.variables.NGVariable;
 
+import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -84,6 +87,7 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
   @Inject private EnvironmentService environmentService;
   @Inject private ServiceOverrideService serviceOverrideService;
   @Inject private InfrastructureEntityService infrastructureEntityService;
+  @Inject private InfrastructureMapper infrastructureMapper;
 
   @Override
   public LinkedHashMap<String, VariableCreationResponse> createVariablesForChildrenNodes(
@@ -197,7 +201,7 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
       if (environmentRef != null) {
         createVariablesForEnvironment(ctx, environmentRef, responseMap, serviceVariables);
       }
-      if (environmentRef != null && infraDefinitionRefs != null) {
+      if (environmentRef != null && isNotEmpty(infraDefinitionRefs)) {
         // todo: multi-infra
         createVariablesForInfraDefinitions(ctx, environmentRef, infraDefinitionRefs, responseMap);
       }
@@ -274,12 +278,12 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
     YamlField infraDefinitionField = envField.getNode().getField(YamlTypes.INFRASTRUCTURE_DEFS);
     Map<String, YamlExtraProperties> yamlPropertiesMap = new LinkedHashMap<>();
     List<YamlProperties> outputProperties = new LinkedList<>();
-
     InfrastructureConfig infrastructureConfig =
         InfrastructureEntityConfigMapper.toInfrastructureConfig(infrastructureEntity);
-    InfrastructureOutcome infrastructureOutcome =
-        InfrastructureMapper.toOutcome(infrastructureConfig.getInfrastructureDefinitionConfig().getSpec(),
-            EnvironmentOutcome.builder().build(), ServiceStepOutcome.builder().build());
+    InfrastructureOutcome infrastructureOutcome = infrastructureMapper.toOutcome(
+        infrastructureConfig.getInfrastructureDefinitionConfig().getSpec(), EnvironmentOutcome.builder().build(),
+        ServiceStepOutcome.builder().build(), infrastructureEntity.getAccountId(),
+        infrastructureEntity.getOrgIdentifier(), infrastructureEntity.getProjectIdentifier());
 
     List<String> infraStepOutputExpressions =
         VariableCreatorHelper.getExpressionsInObject(infrastructureOutcome, OutputExpressionConstants.INFRA);
@@ -396,37 +400,13 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
       if (isNotEmpty(infraStructureDefinitionYamls)) {
         return infraStructureDefinitionYamls.stream()
             .map(InfraStructureDefinitionYaml::getIdentifier)
+            .filter(p -> !p.isExpression())
+            .map(ParameterField::getValue)
             .collect(Collectors.toList());
       }
-    }
-    return null;
-  }
-
-  private String getEnvironmentRef(VariableCreationContext ctx) {
-    YamlField currentField = ctx.getCurrentField();
-    // environment node in v2 yaml
-    YamlField envField =
-        currentField.getNode().getField(YAMLFieldNameConstants.SPEC).getNode().getField(YamlTypes.ENVIRONMENT_YAML);
-
-    if (VariableCreatorHelper.isNotYamlFieldEmpty(envField)) {
-      if (VariableCreatorHelper.isNotYamlFieldEmpty(envField.getNode().getField(YamlTypes.ENVIRONMENT_REF))) {
-        return envField.getNode().getField(YamlTypes.ENVIRONMENT_REF).getNode().getCurrJsonNode().asText();
-      }
-    }
-    return null;
-  }
-
-  private String getInfraDefinitionRef(VariableCreationContext ctx) {
-    YamlField currentField = ctx.getCurrentField();
-    // environment node in v2 yaml
-    YamlField envField =
-        currentField.getNode().getField(YAMLFieldNameConstants.SPEC).getNode().getField(YamlTypes.ENVIRONMENT_YAML);
-    if (VariableCreatorHelper.isNotYamlFieldEmpty(envField)) {
-      YamlField infraDefinitionField = envField.getNode().getField(YamlTypes.INFRASTRUCTURE_DEFS);
-      if (VariableCreatorHelper.isNotYamlFieldEmpty(infraDefinitionField)) {
-        // pick 1st node
-        // todo(hinger): multi infra
-        return infraDefinitionField.getNode().getCurrJsonNode().get(0).get(YamlTypes.REF).asText();
+      if (ParameterField.isNotNull(environmentYamlV2.getInfrastructureDefinition())) {
+        return Lists.newArrayList(
+            environmentYamlV2.getInfrastructureDefinition().getValue().getIdentifier().getValue());
       }
     }
     return null;
@@ -471,21 +451,45 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
         }
         PrimaryArtifact primaryArtifact = artifactListConfig.getPrimary();
         if (primaryArtifact != null) {
-          ArtifactOutcome primaryArtifactOutcome =
-              ArtifactResponseToOutcomeMapper.toArtifactOutcome(primaryArtifact.getSpec(), null, false);
-          List<String> primaryArtifactExpressions =
-              VariableCreatorHelper.getExpressionsInObject(primaryArtifactOutcome, PRIMARY);
-
-          for (String outputExpression : primaryArtifactExpressions) {
-            outputProperties.add(YamlProperties.newBuilder()
-                                     .setLocalName(OutcomeExpressionConstants.ARTIFACTS + "." + outputExpression)
-                                     .setVisible(true)
-                                     .build());
+          Set<String> expressions = new HashSet<>();
+          if (primaryArtifact.getSpec() != null) {
+            populateExpressionsForArtifact(outputProperties, primaryArtifact.getSpec(), expressions);
+          }
+          if (ParameterField.isNotNull(primaryArtifact.getPrimaryArtifactRef())
+              && isNotEmpty(primaryArtifact.getSources())) {
+            // If primary artifact ref is fixed, use only that particular artifact source
+            if (!primaryArtifact.getPrimaryArtifactRef().isExpression()) {
+              Optional<ArtifactSource> source =
+                  primaryArtifact.getSources()
+                      .stream()
+                      .filter(s -> primaryArtifact.getPrimaryArtifactRef().getValue().equals(s.getIdentifier()))
+                      .findFirst();
+              source.ifPresent(s -> populateExpressionsForArtifact(outputProperties, s.getSpec(), expressions));
+            } else {
+              primaryArtifact.getSources().forEach(
+                  s -> populateExpressionsForArtifact(outputProperties, s.getSpec(), expressions));
+            }
           }
         }
       }
     }
     return outputProperties;
+  }
+
+  private void populateExpressionsForArtifact(
+      List<YamlProperties> outputProperties, ArtifactConfig spec, Set<String> expressions) {
+    ArtifactOutcome primaryArtifactOutcome = ArtifactResponseToOutcomeMapper.toArtifactOutcome(spec, null, false);
+    List<String> primaryArtifactExpressions =
+        VariableCreatorHelper.getExpressionsInObject(primaryArtifactOutcome, PRIMARY);
+
+    for (String outputExpression : primaryArtifactExpressions) {
+      if (expressions.add(outputExpression)) {
+        outputProperties.add(YamlProperties.newBuilder()
+                                 .setLocalName(OutcomeExpressionConstants.ARTIFACTS + "." + outputExpression)
+                                 .setVisible(true)
+                                 .build());
+      }
+    }
   }
 
   private List<YamlProperties> handleManifestProperties(NGServiceConfig ngServiceConfig) {

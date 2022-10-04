@@ -11,6 +11,7 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.GARVIT;
 import static io.harness.rule.OwnerRule.PRASHANT;
 import static io.harness.rule.OwnerRule.SAHIL;
+import static io.harness.rule.OwnerRule.VIVEK_DIXIT;
 
 import static junit.framework.TestCase.assertFalse;
 import static junit.framework.TestCase.assertTrue;
@@ -27,6 +28,9 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.MatrixMetadata;
 import io.harness.pms.contracts.execution.StrategyMetadata;
+import io.harness.pms.contracts.plan.ExecutionMetadata;
+import io.harness.pms.contracts.plan.ExecutionTriggerInfo;
+import io.harness.pms.contracts.plan.TriggeredBy;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.rule.Owner;
@@ -34,6 +38,7 @@ import io.harness.rule.Owner;
 import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.InvalidProtocolBufferException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import org.junit.Test;
@@ -357,5 +362,23 @@ public class AmbianceUtilsTest extends CategoryTest {
                    .addLevels(Level.newBuilder().buildPartial())
                    .build();
     assertTrue(AmbianceUtils.isCurrentStrategyLevelAtStage(ambiance));
+  }
+
+  @Test
+  @Owner(developers = VIVEK_DIXIT)
+  @Category(UnitTests.class)
+  public void testgetEmail() {
+    Ambiance ambiance =
+        Ambiance.newBuilder()
+            .setMetadata(ExecutionMetadata.newBuilder()
+                             .setTriggerInfo(ExecutionTriggerInfo.newBuilder()
+                                                 .setTriggeredBy(TriggeredBy.newBuilder()
+                                                                     .putAllExtraInfo(Collections.singletonMap(
+                                                                         "email", "expected@harness.io"))
+                                                                     .build())
+                                                 .build())
+                             .build())
+            .build();
+    assertThat(AmbianceUtils.getEmail(ambiance)).isEqualTo("expected@harness.io");
   }
 }

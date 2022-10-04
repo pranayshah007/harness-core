@@ -14,6 +14,7 @@ import io.harness.secret.ConfigSecret;
 import io.harness.secret.SecretsConfiguration;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.ArrayList;
 import java.util.List;
 import lombok.Builder;
 import lombok.Data;
@@ -34,4 +35,15 @@ public class EventServiceConfig {
   @JsonProperty("eventDataBatchQueryConfig") private EventDataBatchQueryConfig eventDataBatchQueryConfig;
 
   @Singular private List<Connector> connectors;
+
+  public List<String> getDbAliases() {
+    List<String> dbAliases = new ArrayList<>();
+    if (harnessMongo != null) {
+      dbAliases.add(harnessMongo.getAliasDBName());
+    }
+    if (eventsMongo != null) {
+      dbAliases.add(eventsMongo.getAliasDBName());
+    }
+    return dbAliases;
+  }
 }

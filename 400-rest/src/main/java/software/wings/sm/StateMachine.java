@@ -23,6 +23,7 @@ import static java.lang.String.format;
 import static java.util.stream.Collectors.toList;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
@@ -35,11 +36,10 @@ import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
-import io.harness.logging.AccountLogContext;
-import io.harness.logging.AutoLogContext;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.MongoIndex;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.CreatedAtAware;
 import io.harness.persistence.PersistentEntity;
 import io.harness.persistence.UuidAware;
@@ -58,8 +58,6 @@ import software.wings.common.WingsExpressionProcessorFactory;
 import software.wings.common.WorkflowConstants;
 import software.wings.exception.DuplicateStateNameException;
 import software.wings.exception.StateMachineIssueException;
-import software.wings.service.impl.AppLogContext;
-import software.wings.service.impl.WorkflowLogContext;
 import software.wings.sm.states.EnvState.EnvStateKeys;
 import software.wings.sm.states.ForkState;
 import software.wings.sm.states.RepeatState;
@@ -95,6 +93,7 @@ import org.mongodb.morphia.annotations.Transient;
 @OwnedBy(CDC)
 @TargetModule(HarnessModule._957_CG_BEANS)
 @Data
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "stateMachines", noClassnameStored = true)
 @HarnessEntity(exportable = true)
 @FieldNameConstants(innerTypeName = "StateMachineKeys")
@@ -162,12 +161,7 @@ public class StateMachine implements PersistentEntity, UuidAware, CreatedAtAware
     this.originId = workflow.getUuid();
     this.originVersion = originVersion;
     String errorMsg = null;
-    try (
-        AutoLogContext ignore =
-            new AccountLogContext(workflow.getAccountId(), AutoLogContext.OverrideBehavior.OVERRIDE_ERROR);
-        AutoLogContext ignore2 = new AppLogContext(workflow.getAppId(), AutoLogContext.OverrideBehavior.OVERRIDE_ERROR);
-        AutoLogContext ignore3 =
-            new WorkflowLogContext(workflow.getUuid(), AutoLogContext.OverrideBehavior.OVERRIDE_ERROR)) {
+    try {
       deepTransform(graph, stencilMap, orchestrationWorkflow);
       valid = true;
     } catch (WingsException wingsException) {

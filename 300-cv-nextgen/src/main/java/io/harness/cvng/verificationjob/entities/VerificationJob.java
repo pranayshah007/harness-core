@@ -16,7 +16,7 @@ import static io.harness.cvng.verificationjob.CVVerificationJobConstants.SERVICE
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotation.HarnessEntity;
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cvng.beans.DataSourceType;
@@ -42,7 +42,6 @@ import com.google.common.collect.ImmutableList;
 import java.net.URISyntaxException;
 import java.time.Duration;
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -63,11 +62,11 @@ import org.mongodb.morphia.annotations.Id;
 @FieldNameConstants(innerTypeName = "VerificationJobKeys")
 @EqualsAndHashCode(callSuper = false)
 @JsonIgnoreProperties(ignoreUnknown = true)
+@StoreIn(DbAliases.CVNG)
 @Entity(value = "verificationJobs")
 @HarnessEntity(exportable = true)
 @SuperBuilder
 @OwnedBy(HarnessTeam.CV)
-@StoreIn(DbAliases.CVNG)
 // Also the serialization of duration is in millis.
 public abstract class VerificationJob
     implements PersistentEntity, UuidAware, CreatedAtAware, UpdatedAtAware, AccountAccess {
@@ -148,16 +147,24 @@ public abstract class VerificationJob
   protected abstract void validateParams();
   // TODO: Should this time range be configurable ?
   public abstract Optional<TimeRange> getPreActivityTimeRange(Instant deploymentStartTime);
+
+  public abstract List<TimeRange> getPreActivityDataCollectionTimeRanges(Instant deploymentStartTime);
+
   public abstract Optional<TimeRange> getPostActivityTimeRange(Instant deploymentStartTime);
   public abstract List<TimeRange> getDataCollectionTimeRanges(Instant startTime);
 
   protected List<TimeRange> getTimeRangesForDuration(Instant startTime) {
     Preconditions.checkArgument(
         !duration.isRuntimeParam(), "Duration is marked as a runtime arg that hasn't been resolved yet.");
+    Instant endTime = startTime.plus(getDuration());
+    return getDuration().toMinutes() < 30 ? getTimeRangeBuckets(startTime, endTime, Duration.ofMinutes(1))
+                                          : getTimeRangeBuckets(startTime, endTime, Duration.ofMinutes(5));
+  }
+
+  protected List<TimeRange> getTimeRangeBuckets(Instant startTime, Instant endTime, Duration bucketSize) {
     List<TimeRange> ranges = new ArrayList<>();
-    for (Instant current = startTime; current.compareTo(startTime.plusMillis(getDuration().toMillis())) < 0;
-         current = current.plus(1, ChronoUnit.MINUTES)) {
-      ranges.add(TimeRange.builder().startTime(current).endTime(current.plus(1, ChronoUnit.MINUTES)).build());
+    for (Instant current = startTime; current.compareTo(endTime) < 0; current = current.plus(bucketSize)) {
+      ranges.add(TimeRange.builder().startTime(current).endTime(current.plus(bucketSize)).build());
     }
     return ranges;
   }

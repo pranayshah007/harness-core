@@ -22,8 +22,8 @@ import io.harness.dtos.deploymentinfo.AzureSshWinrmDeploymentInfoDTO;
 import io.harness.dtos.deploymentinfo.DeploymentInfoDTO;
 import io.harness.dtos.instanceinfo.AzureSshWinrmInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.InstanceInfoDTO;
-import io.harness.models.infrastructuredetails.AzureSshWinrmInfrastructureDetails;
 import io.harness.models.infrastructuredetails.InfrastructureDetails;
+import io.harness.models.infrastructuredetails.SshWinrmInfrastructureDetails;
 import io.harness.ng.core.k8s.ServiceSpecType;
 import io.harness.rule.Owner;
 
@@ -52,8 +52,8 @@ public class AzureSshWinrmInstanceSyncHandlerTest extends InstancesTestBase {
         AzureSshWinrmInstanceInfoDTO.builder().infrastructureKey(INFRASTRUCTURE_KEY).host(HOST).build();
     InfrastructureDetails infrastructureDetails =
         azureSshWinrmInstanceSyncHandler.getInfrastructureDetails(instanceInfoDTO);
-    assertThat(infrastructureDetails).isInstanceOf(AzureSshWinrmInfrastructureDetails.class);
-    assertThat(((AzureSshWinrmInfrastructureDetails) infrastructureDetails).getHost()).isEqualTo(HOST);
+    assertThat(infrastructureDetails).isInstanceOf(SshWinrmInfrastructureDetails.class);
+    assertThat(((SshWinrmInfrastructureDetails) infrastructureDetails).getHost()).isEqualTo(HOST);
   }
 
   @Test
@@ -69,8 +69,8 @@ public class AzureSshWinrmInstanceSyncHandlerTest extends InstancesTestBase {
 
     InfrastructureDetails infrastructureDetails =
         azureSshWinrmInstanceSyncHandler.getInfrastructureDetails(instanceInfoDTO);
-    assertThat(infrastructureDetails).isInstanceOf(AzureSshWinrmInfrastructureDetails.class);
-    assertThat(((AzureSshWinrmInfrastructureDetails) infrastructureDetails).getHost()).isEqualTo(HOST);
+    assertThat(infrastructureDetails).isInstanceOf(SshWinrmInfrastructureDetails.class);
+    assertThat(((SshWinrmInfrastructureDetails) infrastructureDetails).getHost()).isEqualTo(HOST);
   }
 
   @Test

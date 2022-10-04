@@ -13,6 +13,8 @@ import io.harness.delegate.beans.UpgradeCheckResult;
 
 @OwnedBy(HarnessTeam.DEL)
 public interface DelegateUpgraderService {
+  UpgradeCheckResult getDelegateImageTag(String accountId, String currentDelegateImageTag, String delegateGroupName);
+
   UpgradeCheckResult getDelegateImageTag(String accountId, String currentDelegateImageTag);
 
   UpgradeCheckResult getUpgraderImageTag(String accountId, String currentUpgraderImageTag);

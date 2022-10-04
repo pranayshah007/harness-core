@@ -37,7 +37,7 @@ mongo:
   connectionsPerHost: 300
   indexManagerMode: AUTO
   transactionsEnabled: false
-  aliasDBName:  template-harness
+  aliasDBName: template-harness
   traceMode: DISABLED
 
 gitSdkConfiguration:

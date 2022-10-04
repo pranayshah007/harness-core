@@ -7,12 +7,17 @@
 
 package io.harness.delegate.service.impl;
 
+import static io.harness.k8s.KubernetesConvention.getAccountIdentifier;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.delegate.beans.DelegateGroup;
+import io.harness.delegate.beans.DelegateGroup.DelegateGroupKeys;
 import io.harness.delegate.beans.DelegateType;
 import io.harness.delegate.beans.UpgradeCheckResult;
 import io.harness.delegate.service.DelegateVersionService;
 import io.harness.delegate.service.intfc.DelegateUpgraderService;
+import io.harness.persistence.HPersistence;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -25,10 +30,39 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(HarnessTeam.DEL)
 public class DelegateUpgraderServiceImpl implements DelegateUpgraderService {
   private final DelegateVersionService delegateVersionService;
+  private final HPersistence persistence;
 
   @Inject
-  public DelegateUpgraderServiceImpl(DelegateVersionService delegateVersionService) {
+  public DelegateUpgraderServiceImpl(DelegateVersionService delegateVersionService, HPersistence persistence) {
     this.delegateVersionService = delegateVersionService;
+    this.persistence = persistence;
+  }
+
+  @Override
+  public UpgradeCheckResult getDelegateImageTag(
+      String accountId, String currentDelegateImageTag, String delegateGroupName) {
+    String newDelegateImageTag = delegateVersionService.getImmutableDelegateImageTag(accountId);
+    updateDelegateUpgrader(accountId, fetchDelegateGroupName(delegateGroupName, accountId));
+    final boolean shouldUpgrade = !currentDelegateImageTag.equals(newDelegateImageTag);
+    return new UpgradeCheckResult(shouldUpgrade ? newDelegateImageTag : currentDelegateImageTag, shouldUpgrade);
+  }
+
+  private String fetchDelegateGroupName(String delegateGroupName, String accountId) {
+    String accountShort = getAccountIdentifier(accountId);
+    String[] split = delegateGroupName.split("-");
+    // In CG deployment name is appended with accountIdShort.
+    if (split.length > 0 && split[split.length - 1].equals(accountShort)) {
+      return delegateGroupName.substring(0, delegateGroupName.lastIndexOf('-'));
+    }
+    return delegateGroupName;
+  }
+
+  private void updateDelegateUpgrader(String accountId, String delegateGroupName) {
+    persistence.update(persistence.createQuery(DelegateGroup.class)
+                           .filter(DelegateGroupKeys.accountId, accountId)
+                           .filter(DelegateGroupKeys.name, delegateGroupName),
+        persistence.createUpdateOperations(DelegateGroup.class)
+            .set(DelegateGroupKeys.upgraderLastUpdated, System.currentTimeMillis()));
   }
 
   @Override

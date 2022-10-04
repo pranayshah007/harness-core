@@ -40,6 +40,9 @@ public class PollingDocumentMapper {
       case ARTIFACT:
         pollingDocumentBuilder.pollingType(PollingType.ARTIFACT);
         break;
+      case GITPOLLING:
+        pollingDocumentBuilder.pollingType(PollingType.WEBHOOK_POLLING);
+        break;
       default:
         throw new InvalidRequestException("Unsupported category type " + category);
     }

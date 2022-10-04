@@ -76,6 +76,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -395,7 +396,6 @@ public class TimeSeriesAnalysisServiceImpl implements TimeSeriesAnalysisService 
   public void saveAnalysis(String taskId, DeploymentTimeSeriesAnalysisDTO analysis) {
     LearningEngineTask learningEngineTask = learningEngineTaskService.get(taskId);
     Preconditions.checkNotNull(learningEngineTask, "Needs to be a valid LE task.");
-    learningEngineTaskService.markCompleted(taskId);
 
     DeploymentTimeSeriesAnalysis deploymentTimeSeriesAnalysis =
         DeploymentTimeSeriesAnalysis.builder()
@@ -409,6 +409,7 @@ public class TimeSeriesAnalysisServiceImpl implements TimeSeriesAnalysisService 
             .failFast(analysis.isFailFast())
             .build();
     deploymentTimeSeriesAnalysisService.save(deploymentTimeSeriesAnalysis);
+    learningEngineTaskService.markCompleted(taskId);
   }
 
   @Override
@@ -504,6 +505,11 @@ public class TimeSeriesAnalysisServiceImpl implements TimeSeriesAnalysisService 
     // in LE we pass metric identifier as the metric_name, as metric_name is the identifier for LE
     timeSeriesMetricDefinitions.forEach(timeSeriesMetricDefinition
         -> timeSeriesMetricDefinition.setMetricName(timeSeriesMetricDefinition.getMetricIdentifier()));
+    // Log instances when deviation type is null
+    timeSeriesMetricDefinitions.stream()
+        .filter(timeSeriesMetricDefinition -> Objects.isNull(timeSeriesMetricDefinition.getDeviationType()))
+        .forEach(timeSeriesMetricDefinition
+            -> log.error("Deviation type should never be null" + timeSeriesMetricDefinition));
     return timeSeriesMetricDefinitions;
   }
 

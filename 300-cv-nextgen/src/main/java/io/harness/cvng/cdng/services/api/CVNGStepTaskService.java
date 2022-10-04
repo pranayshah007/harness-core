@@ -30,6 +30,7 @@ public interface CVNGStepTaskService {
   void create(CVNGStepTask cvngStepTask);
   void notifyCVNGStep(CVNGStepTask entity);
   CVNGStepTask getByCallBackId(String callBackId);
+
   DeploymentActivitySummaryDTO getDeploymentSummary(String callBackId);
   TransactionMetricInfoSummaryPageDTO getDeploymentActivityTimeSeriesData(String accountId, String callBackId,
       DeploymentTimeSeriesAnalysisFilter deploymentTimeSeriesAnalysisFilter, PageParams pageParams);

@@ -10,6 +10,7 @@ package io.harness.debezium;
 import static io.harness.rule.OwnerRule.SHALINI;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
@@ -56,7 +57,9 @@ public class DebeziumControllerStarterTest extends CategoryTest {
     collections.add("coll1");
     collections.add("coll2");
     doReturn(collections).when(debeziumConfig).getMonitoredCollections();
-    doReturn(null).when(changeConsumerFactory).get(anyLong(), anyString(), any(ChangeConsumerConfig.class), anyLong());
+    doReturn(null)
+        .when(changeConsumerFactory)
+        .get(anyLong(), anyString(), any(ChangeConsumerConfig.class), anyLong(), anyInt());
     MockedStatic<DebeziumConfiguration> utilities = Mockito.mockStatic(DebeziumConfiguration.class);
     utilities.when(() -> DebeziumConfiguration.getDebeziumProperties(any(DebeziumConfig.class), any(RedisConfig.class)))
         .thenReturn(null);

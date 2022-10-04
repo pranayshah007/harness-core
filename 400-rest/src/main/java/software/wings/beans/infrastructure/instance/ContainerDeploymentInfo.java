@@ -10,11 +10,13 @@ package software.wings.beans.infrastructure.instance;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.EmbeddedUser;
 import io.harness.mongo.index.FdIndex;
+import io.harness.ng.DbAliases;
 
 import software.wings.beans.Base;
 
@@ -31,6 +33,7 @@ import org.mongodb.morphia.annotations.Entity;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Data
 @EqualsAndHashCode(callSuper = true)
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "containerDeploymentInfo", noClassnameStored = true)
 @HarnessEntity(exportable = false)
 @OwnedBy(CDP)

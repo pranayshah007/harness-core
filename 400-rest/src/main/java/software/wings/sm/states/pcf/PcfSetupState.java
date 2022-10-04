@@ -479,6 +479,12 @@ public class PcfSetupState extends State {
         return artifact.getArtifactFileMetadata().get(0).getUrl();
       case ARTIFACTORY:
         return artifactStreamAttributes.getMetadata().get("artifactPath");
+      case NEXUS:
+        if (isEmpty(artifactStreamAttributes.getMetadata())
+            || isEmpty(artifactStreamAttributes.getMetadata().get(URL))) {
+          throw new InvalidRequestException("artifact url is required");
+        }
+        return artifactStreamAttributes.getMetadata().get(URL);
       default:
         return artifactStreamAttributes.getMetadata().get(URL);
     }

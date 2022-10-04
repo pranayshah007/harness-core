@@ -6,6 +6,7 @@
  */
 
 package software.wings.sm.states;
+
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.beans.ExecutionStatus.FAILED;
 import static io.harness.beans.ExecutionStatus.REJECTED;
@@ -47,12 +48,10 @@ import io.harness.logging.ExceptionLogger;
 import io.harness.logging.Misc;
 import io.harness.tasks.ResponseData;
 
-import software.wings.api.ArtifactCollectionExecutionData;
 import software.wings.api.EnvStateExecutionData;
 import software.wings.api.artifact.ServiceArtifactElement;
 import software.wings.api.artifact.ServiceArtifactElements;
 import software.wings.api.artifact.ServiceArtifactVariableElement;
-import software.wings.api.artifact.ServiceArtifactVariableElements;
 import software.wings.api.helm.ServiceHelmElement;
 import software.wings.api.helm.ServiceHelmElements;
 import software.wings.beans.Application;
@@ -85,13 +84,13 @@ import software.wings.sm.ExecutionInterrupt;
 import software.wings.sm.ExecutionResponse;
 import software.wings.sm.ExecutionResponse.ExecutionResponseBuilder;
 import software.wings.sm.State;
-import software.wings.sm.StateExecutionInstance;
 import software.wings.sm.StateType;
 import software.wings.sm.WorkflowStandardParams;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.github.reinert.jjschema.Attributes;
 import com.github.reinert.jjschema.SchemaIgnore;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import java.util.ArrayList;
@@ -102,6 +101,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.FieldNameConstants;
@@ -121,6 +122,8 @@ import org.mongodb.morphia.annotations.Transient;
 @TargetModule(HarnessModule._870_CG_ORCHESTRATION)
 public class EnvState extends State implements WorkflowState {
   public static final Integer ENV_STATE_TIMEOUT_MILLIS = 7 * 24 * 60 * 60 * 1000;
+
+  private static final Pattern secretNamePattern = Pattern.compile("\\$\\{secrets.getValue\\([^{}]+\\)}");
 
   // NOTE: This field should no longer be used. It contains incorrect/stale values.
   @Attributes(required = true, title = "Environment") @Setter @Deprecated private String envId;
@@ -221,13 +224,7 @@ public class EnvState extends State implements WorkflowState {
                 .filter(variable -> hasExpressionValue(variable.getValue()))
                 .map(Entry::getKey)
                 .collect(toList());
-        if (isNotEmpty(workflowVariablesWithExpressionValue)) {
-          workflowVariablesWithExpressionValue.forEach(variable -> {
-            String value = context.renderExpression(executionArgs.getWorkflowVariables().get(variable));
-            executionArgs.getWorkflowVariables().put(variable,
-                value == null || "null".equals(value) ? executionArgs.getWorkflowVariables().get(variable) : value);
-          });
-        }
+        renderWorkflowExpression(context, executionArgs, workflowVariablesWithExpressionValue);
       }
       WorkflowExecution execution = executionService.triggerOrchestrationExecution(
           appId, null, workflowId, context.getWorkflowExecutionId(), executionArgs, null);
@@ -258,6 +255,22 @@ public class EnvState extends State implements WorkflowState {
           .errorMessage(message)
           .stateExecutionData(envStateExecutionData)
           .build();
+    }
+  }
+
+  @VisibleForTesting
+  void renderWorkflowExpression(
+      ExecutionContext context, ExecutionArgs executionArgs, List<String> workflowVariablesWithExpressionValue) {
+    if (isNotEmpty(workflowVariablesWithExpressionValue)) {
+      workflowVariablesWithExpressionValue.forEach(variable -> {
+        String secretVariable = executionArgs.getWorkflowVariables().get(variable);
+        Matcher matcher = secretNamePattern.matcher(secretVariable);
+        if (!matcher.matches()) {
+          String value = context.renderExpression(executionArgs.getWorkflowVariables().get(variable));
+          executionArgs.getWorkflowVariables().put(variable,
+              value == null || "null".equals(value) ? executionArgs.getWorkflowVariables().get(variable) : value);
+        }
+      });
     }
   }
 
@@ -463,11 +476,7 @@ public class EnvState extends State implements WorkflowState {
 
     EnvStateExecutionData stateExecutionData = context.getStateExecutionData();
     if (stateExecutionData.getOrchestrationWorkflowType() == OrchestrationWorkflowType.BUILD) {
-      if (!featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, context.getAccountId())) {
-        saveArtifactAndManifestElements(context, stateExecutionData);
-      } else {
-        saveArtifactVariableElements(context, stateExecutionData);
-      }
+      saveArtifactAndManifestElements(context, stateExecutionData);
     }
 
     if (context.getWorkflowType() == WorkflowType.PIPELINE
@@ -536,39 +545,6 @@ public class EnvState extends State implements WorkflowState {
         context.prepareSweepingOutputBuilder(Scope.PIPELINE)
             .name(ServiceHelmElements.SWEEPING_OUTPUT_NAME + context.getStateExecutionInstanceId())
             .value(ServiceHelmElements.builder().helmElements(helmElements).build())
-            .build());
-  }
-
-  private void saveArtifactVariableElements(ExecutionContext context, EnvStateExecutionData stateExecutionData) {
-    List<StateExecutionInstance> allStateExecutionInstances =
-        executionService.getStateExecutionInstances(context.getAppId(), stateExecutionData.getWorkflowExecutionId());
-    if (isEmpty(allStateExecutionInstances)) {
-      return;
-    }
-
-    List<ServiceArtifactVariableElement> artifactVariableElements = new ArrayList<>();
-    allStateExecutionInstances.forEach(stateExecutionInstance -> {
-      if (!(stateExecutionInstance.fetchStateExecutionData() instanceof ArtifactCollectionExecutionData)) {
-        return;
-      }
-
-      ArtifactCollectionExecutionData artifactCollectionExecutionData =
-          (ArtifactCollectionExecutionData) stateExecutionInstance.fetchStateExecutionData();
-      Artifact artifact = artifactService.get(artifactCollectionExecutionData.getArtifactId());
-      artifactVariableElements.add(ServiceArtifactVariableElement.builder()
-                                       .uuid(artifact.getUuid())
-                                       .name(artifact.getDisplayName())
-                                       .entityType(artifactCollectionExecutionData.getEntityType())
-                                       .entityId(artifactCollectionExecutionData.getEntityId())
-                                       .serviceId(artifactCollectionExecutionData.getServiceId())
-                                       .artifactVariableName(artifactCollectionExecutionData.getArtifactVariableName())
-                                       .build());
-    });
-
-    sweepingOutputService.save(
-        context.prepareSweepingOutputBuilder(Scope.PIPELINE)
-            .name(ServiceArtifactVariableElements.SWEEPING_OUTPUT_NAME + context.getStateExecutionInstanceId())
-            .value(ServiceArtifactVariableElements.builder().artifactVariableElements(artifactVariableElements).build())
             .build());
   }
 

@@ -17,6 +17,7 @@ import static javax.servlet.http.HttpServletResponse.SC_OK;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
+import io.harness.azure.model.AzureHostConnectionType;
 import io.harness.azure.model.AzureOSType;
 import io.harness.delegate.beans.azure.response.AzureHostResponse;
 import io.harness.delegate.beans.azure.response.AzureHostsResponse;
@@ -35,11 +36,9 @@ import io.harness.serializer.KryoSerializer;
 
 import software.wings.delegatetasks.azure.AzureAsyncTaskHelper;
 
+import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import java.time.Instant;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -49,10 +48,7 @@ import lombok.extern.slf4j.Slf4j;
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)
 @OwnedBy(CDP)
 public class AzureSshWinrmInstanceSyncPerpetualTaskExecutor implements PerpetualTaskExecutor {
-  private static final String SUCCESS_RESPONSE_MSG = "success";
-
-  private static final Set<String> VALID_SERVICE_TYPES =
-      Collections.unmodifiableSet(new HashSet(Arrays.asList(ServiceSpecType.SSH, ServiceSpecType.WINRM)));
+  private static final Set<String> VALID_SERVICE_TYPES = ImmutableSet.of(ServiceSpecType.SSH, ServiceSpecType.WINRM);
 
   @Inject private DelegateAgentManagerClient delegateAgentManagerClient;
   @Inject private KryoSerializer kryoSerializer;
@@ -99,8 +95,9 @@ public class AzureSshWinrmInstanceSyncPerpetualTaskExecutor implements Perpetual
 
     AzureHostsResponse azureHostsResponse = azureAsyncTaskHelper.listHosts(
         infraConfig.getConnectorEncryptionDataDetails(), infraConfig.getAzureConnectorDTO(),
-        infraConfig.getSubscriptionId(), infraConfig.getResourceGroup(), azureOSType, infraConfig.getTags());
-    return azureHostsResponse.getHosts().stream().map(AzureHostResponse::getHostName).collect(Collectors.toSet());
+        infraConfig.getSubscriptionId(), infraConfig.getResourceGroup(), azureOSType, infraConfig.getTags(),
+        AzureHostConnectionType.fromString(infraConfig.getHostConnectionType()));
+    return azureHostsResponse.getHosts().stream().map(AzureHostResponse::getAddress).collect(Collectors.toSet());
   }
 
   private List<ServerInstanceInfo> getServerInstanceInfoList(

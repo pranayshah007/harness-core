@@ -14,8 +14,10 @@ import static io.harness.persistence.GoogleDataStoreAware.readList;
 import static io.harness.persistence.GoogleDataStoreAware.readLong;
 import static io.harness.persistence.GoogleDataStoreAware.readString;
 
+import io.harness.annotations.StoreIn;
 import io.harness.beans.ExecutionStatus;
 import io.harness.mongo.index.FdTtlIndex;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
 import io.harness.persistence.GoogleDataStoreAware;
 import io.harness.persistence.UuidAware;
@@ -51,6 +53,7 @@ import org.mongodb.morphia.annotations.Id;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = false, exclude = {"validUntil"})
+@StoreIn(DbAliases.HARNESS)
 @org.mongodb.morphia.annotations.Entity(value = "timeSeriesRawData", noClassnameStored = true)
 @FieldNameConstants(innerTypeName = "TimeSeriesRawDataKeys")
 @Slf4j

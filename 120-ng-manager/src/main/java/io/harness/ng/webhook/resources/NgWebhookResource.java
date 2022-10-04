@@ -26,6 +26,7 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
+import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -38,6 +39,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.MultivaluedMap;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -83,6 +85,11 @@ public class NgWebhookResource {
   public ResponseDTO<String>
   processWebhookEvent(@NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
       @NotNull String eventPayload, @Context HttpHeaders httpHeaders) {
+    return processWebhook(accountIdentifier, eventPayload, httpHeaders.getRequestHeaders());
+  }
+  @Hidden
+  public ResponseDTO<String> processWebhook(
+      String accountIdentifier, String eventPayload, MultivaluedMap<String, String> httpHeaders) {
     WebhookEvent eventEntity = webhookHelper.toNGTriggerWebhookEvent(accountIdentifier, eventPayload, httpHeaders);
     if (eventEntity != null) {
       WebhookEvent newEvent = webhookService.addEventToQueue(eventEntity);

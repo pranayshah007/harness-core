@@ -10,12 +10,14 @@ package software.wings.beans.appmanifest;
 import static io.harness.annotations.dev.HarnessModule._957_CG_BEANS;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.MongoIndex;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
 
 import software.wings.beans.Base;
@@ -35,6 +37,7 @@ import org.mongodb.morphia.annotations.Entity;
 @Builder
 @FieldNameConstants(innerTypeName = "ManifestFileKeys")
 @EqualsAndHashCode(callSuper = false)
+@StoreIn(DbAliases.HARNESS)
 @Entity("manifestFile")
 @HarnessEntity(exportable = true)
 @OwnedBy(HarnessTeam.CDP)

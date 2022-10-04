@@ -381,7 +381,7 @@ public class DeploymentTimeSeriesAnalysisServiceImpl implements DeploymentTimeSe
               .order(Sort.descending(DeploymentTimeSeriesAnalysisKeys.startTime))
               .get();
       max = CVNGObjectUtils.max(
-          max, deploymentTimeSeriesAnalysis, Comparator.comparingDouble(DeploymentTimeSeriesAnalysis::getScore));
+          max, deploymentTimeSeriesAnalysis, Comparator.comparingDouble(dta -> dta.getRisk().getValue()));
     }
     return max;
   }

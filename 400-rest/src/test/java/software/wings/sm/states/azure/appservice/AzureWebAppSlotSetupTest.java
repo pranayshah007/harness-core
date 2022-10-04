@@ -350,7 +350,7 @@ public class AzureWebAppSlotSetupTest extends WingsBaseTest {
   }
 
   private String getConnStringJSON() {
-    return "[\n  {\n    \"name\": \"CONN_STRING_WITH_SECRET\",\n    \"value\": \"${secrets.getValue(\\\"var_name\\\")}\",\n    \"type\": \"Custom\",\n    \"slotSetting\": false\n  },\n  {\n    \"name\": \"MY_SQL_CONN_STRING\",\n    \"value\": \"jdbc:mysql://localhost/test\",\n    \"type\": \"MySql\",\n    \"slotSetting\": true\n  },\n  {\n    \"name\": \"SQL_SERVER_CONN_STRING\",\n    \"value\": \"jdbc:sqlserver://INNOWAVE-99\\\\SQLEXPRESS01;databaseName=EDS\",\n    \"type\": \"SQLServer\",\n    \"slotSetting\": true\n  }\n]";
+    return "[\n  {\n    \"name\": \"CONN_STRING_WITH_SECRET\",\n    \"value\": \"${secrets.getValue(\\\"var_name\\\")}\",\n    \"type\": \"Custom\",\n    \"slotSetting\": false\n  },\n  {\n    \"name\": \"MY_SQL_CONN_STRING\",\n    \"value\": \"jdbc:mysql://localhost/test\",\n    \"type\": \"MySQL\",\n    \"slotSetting\": true\n  },\n  {\n    \"name\": \"SQL_SERVER_CONN_STRING\",\n    \"value\": \"jdbc:sqlserver://INNOWAVE-99\\\\SQLEXPRESS01;databaseName=EDS\",\n    \"type\": \"SQLServer\",\n    \"slotSetting\": true\n  }\n]";
   }
 
   private AzureWebAppInfrastructureMapping getAzureWebAppInfraMapping() {

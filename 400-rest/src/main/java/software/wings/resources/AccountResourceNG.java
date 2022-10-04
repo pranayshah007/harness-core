@@ -167,6 +167,13 @@ public class AccountResourceNG {
     return new RestResponse(accountService.isAutoInviteAcceptanceEnabled(accountId));
   }
 
+  @GET
+  @Path("is-sso-enabled")
+  public RestResponse<Boolean> isSSOEnabled(@QueryParam("accountId") @NotEmpty String accountId) {
+    Account account = accountService.get(accountId);
+    return new RestResponse(accountService.isSSOEnabled(account));
+  }
+
   @Path("/exists/{accountName}")
   public RestResponse<Boolean> doesAccountExist(@PathParam("accountName") String accountName) {
     return new RestResponse<>(accountService.exists(accountName));

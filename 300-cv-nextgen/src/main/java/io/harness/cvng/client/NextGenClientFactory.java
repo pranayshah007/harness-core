@@ -25,7 +25,6 @@ import io.github.resilience4j.retrofit.CircuitBreakerCallAdapter;
 import io.serializer.HObjectMapper;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
-import okhttp3.ConnectionPool;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import retrofit2.Retrofit;
@@ -64,7 +63,7 @@ public class NextGenClientFactory extends AbstractHttpClientFactory implements P
   private OkHttpClient getUnsafeOkHttpClient(String baseUrl) {
     try {
       return Http.getUnsafeOkHttpClientBuilder(baseUrl, 60, 60)
-          .connectionPool(new ConnectionPool())
+          .connectionPool(Http.connectionPool)
           .retryOnConnectionFailure(false)
           .addInterceptor(getAuthorizationInterceptor(clientMode))
           .addInterceptor(getCorrelationIdInterceptor())

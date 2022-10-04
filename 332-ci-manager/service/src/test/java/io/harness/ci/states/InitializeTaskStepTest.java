@@ -13,7 +13,6 @@ import static io.harness.rule.OwnerRule.SHUBHAM;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.when;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -86,24 +85,6 @@ public class InitializeTaskStepTest extends CIExecutionTestBase {
                                 .name("name")
                                 .spec(initializeStepInfo)
                                 .build();
-  }
-
-  @Test
-  @Owner(developers = ALEKSANDAR)
-  @Category(UnitTests.class)
-  public void shouldObtainTask() {
-    when(ciDelegateTaskExecutor.queueTask(eq(ambiance.getSetupAbstractionsMap()), any(), any(), any()))
-        .thenReturn("taskId");
-
-    //    when(buildSetupUtils.getBuildSetupTaskParams(eq(liteEngineTaskStepInfo), eq(ambiance)))
-    //        .thenReturn(CIK8BuildTaskParams.builder().build());
-
-    //    TaskRequest taskRequest =
-    //        liteEngineTaskStep.obtainTask(ambiance, liteEngineTaskStepInfo, StepInputPackage.builder().build());
-    //
-    //    assertThat(taskRequest.getDelegateTaskRequest()).isNotNull();
-    //    TaskType taskType = taskRequest.getDelegateTaskRequest().getDetails().getType();
-    //    assertThat(taskType.getType()).isEqualTo("CI_BUILD");
   }
 
   @SneakyThrows

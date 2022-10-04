@@ -11,15 +11,18 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Builder;
 import lombok.Data;
 
 @Data
 @Builder
 @OwnedBy(PIPELINE)
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class WebhookMetadata {
   String type;
   GitMetadata git;
   CustomMetadata custom;
   @Builder.Default WebhookRegistrationStatus registrationStatus = WebhookRegistrationStatus.UNAVAILABLE;
+  String webhookId;
 }

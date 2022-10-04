@@ -31,6 +31,7 @@ import software.wings.beans.sso.LdapLinkGroupRequest;
 import software.wings.beans.sso.SSOType;
 import software.wings.beans.sso.SamlLinkGroupRequest;
 import software.wings.security.PermissionAttribute.ResourceType;
+import software.wings.security.annotations.ApiKeyAuthorized;
 import software.wings.security.annotations.AuthRule;
 import software.wings.security.annotations.Scope;
 import software.wings.service.intfc.UserGroupService;
@@ -101,6 +102,7 @@ public class UserGroupResource {
   @Timed
   @ExceptionMetered
   @AuthRule(permissionType = USER_PERMISSION_READ)
+  @ApiKeyAuthorized(permissionType = USER_PERMISSION_READ)
   public RestResponse<PageResponse<UserGroup>> list(@BeanParam PageRequest<UserGroup> pageRequest,
       @QueryParam("accountId") @NotEmpty String accountId, @QueryParam("searchTerm") String searchTerm,
       @QueryParam("details") @DefaultValue("true") boolean loadUsers,
@@ -130,6 +132,7 @@ public class UserGroupResource {
   @Timed
   @AuthRule(permissionType = USER_PERMISSION_READ)
   @ExceptionMetered
+  @ApiKeyAuthorized(permissionType = USER_PERMISSION_READ)
   public RestResponse<UserGroup> get(
       @QueryParam("accountId") String accountId, @PathParam("userGroupId") String userGroupId) {
     return new RestResponse<>(getPublicUserGroup(userGroupService.get(accountId, userGroupId)));
@@ -145,6 +148,7 @@ public class UserGroupResource {
   @Path("count")
   @Timed
   @AuthRule(permissionType = USER_PERMISSION_READ)
+  @ApiKeyAuthorized(permissionType = USER_PERMISSION_READ)
   @ExceptionMetered
   public RestResponse<Long> getCountOfUserGroups(@QueryParam("accountId") String accountId) {
     return new RestResponse<>(userGroupService.getCountOfUserGroups(accountId));
@@ -352,6 +356,7 @@ public class UserGroupResource {
   @Timed
   @ExceptionMetered
   @AuthRule(permissionType = LOGGED_IN)
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
   public RestResponse<PageResponse<UserGroup>> listForApprovals(@QueryParam("accountId") @NotEmpty String accountId) {
     PageRequest<UserGroup> pageRequest = PageRequestBuilder.aPageRequest()
                                              .withLimit(Long.toString(userGroupService.getCountOfUserGroups(accountId)))

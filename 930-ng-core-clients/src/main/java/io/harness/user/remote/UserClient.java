@@ -76,7 +76,8 @@ public interface UserClient {
   @GET(CHECK_USER_LIMIT)
   Call<RestResponse<Boolean>> checkUserLimit(@Query("accountId") String accountId, @Query("email") String email);
 
-  @PUT(USERS_SIGNUP_INVITE_API) Call<RestResponse<UserInfo>> completeSignupInvite(@Query("email") String email);
+  @PUT(USERS_SIGNUP_INVITE_API)
+  Call<RestResponse<UserInfo>> completeSignupInvite(@Query("email") String email, @Query("referer") String referer);
 
   @PUT(SCIM_USER_PATCH_UPDATE)
   Call<RestResponse<ScimUser>> scimUserPatchUpdate(

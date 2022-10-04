@@ -49,15 +49,14 @@ public class AzureRepoServiceImpl implements AzureRepoService {
 
       return statusCreationResponseResponse.isSuccessful();
     } catch (Exception e) {
-      log.error("Failed to post commit status request to Azure repo with url {} and sha {} ",
-          azureRepoConfig.getAzureRepoUrl(), sha, e);
-      return false;
+      throw new InvalidRequestException(
+          format("Failed to send status for AzureRepo url %s and sha %s ", azureRepoConfig.getAzureRepoUrl(), sha), e);
     }
   }
 
   @Override
-  public JSONObject mergePR(AzureRepoConfig azureRepoConfig, String userName, String token, String sha, String org,
-      String project, String repo, String prNumber) {
+  public JSONObject mergePR(AzureRepoConfig azureRepoConfig, String token, String sha, String org, String project,
+      String repo, String prNumber, boolean deleteSourceBranch) {
     log.info("Merging PR for sha {}", sha);
 
     JSONObject commitId = new JSONObject();
@@ -66,7 +65,7 @@ public class AzureRepoServiceImpl implements AzureRepoService {
     JSONObject mergeStrategy = new JSONObject();
     mergeStrategy.put("mergeStrategy", "1");
     mergeStrategy.put("mergeCommitMessage", MergeCommitMessage);
-    mergeStrategy.put("deleteSourceBranch", true);
+    mergeStrategy.put("deleteSourceBranch", deleteSourceBranch);
 
     JSONObject lastMergeSourceCommit = new JSONObject();
     lastMergeSourceCommit.put("lastMergeSourceCommit", commitId);

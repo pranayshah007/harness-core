@@ -7,6 +7,8 @@
 
 package io.harness.subscription.params;
 
+import io.harness.subscription.dto.AddressDto;
+
 import lombok.Builder;
 import lombok.Data;
 
@@ -17,4 +19,5 @@ public class CustomerParams {
   private String customerId;
   private String name;
   private String billingContactEmail;
+  private AddressDto address;
 }

@@ -30,6 +30,7 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.hibernate.validator.constraints.NotBlank;
+import org.hibernate.validator.constraints.URL;
 
 @OwnedBy(CDC)
 @Data
@@ -41,7 +42,7 @@ import org.hibernate.validator.constraints.NotBlank;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Schema(name = "JenkinsConnector", description = "Jenkins Connector details.")
 public class JenkinsConnectorDTO extends ConnectorConfigDTO implements DelegateSelectable {
-  @NotNull @NotBlank String jenkinsUrl;
+  @URL @NotNull @NotBlank String jenkinsUrl;
   @Valid JenkinsAuthenticationDTO auth;
   Set<String> delegateSelectors;
 

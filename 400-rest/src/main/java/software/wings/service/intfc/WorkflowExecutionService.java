@@ -233,6 +233,8 @@ public interface WorkflowExecutionService extends StateStatusUpdate {
 
   List<Artifact> obtainLastGoodDeployedArtifacts(@NotEmpty String appId, @NotEmpty String workflowId);
 
+  List<Artifact> obtainLastGoodDeployedArtifacts(@NotEmpty String appId, @NotEmpty String workflowId, String serviceId);
+
   List<Artifact> obtainLastGoodDeployedArtifacts(
       WorkflowExecution workflowExecution, List<String> infraMappingList, boolean useInfraMappingBasedRollbackArtifact);
 
@@ -353,4 +355,7 @@ public interface WorkflowExecutionService extends StateStatusUpdate {
   WorkflowExecutionInfo getWorkflowExecutionInfo(String appId, String workflowExecutionId);
 
   WorkflowExecution getWorkflowExecutionWithFailureDetails(@NotNull String appId, @NotNull String workflowExecutionId);
+
+  List<WorkflowExecution> getWorkflowExecutionsWithFailureDetails(
+      String appId, List<WorkflowExecution> workflowExecutions);
 }

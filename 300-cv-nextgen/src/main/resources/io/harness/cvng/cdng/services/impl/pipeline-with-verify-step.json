@@ -74,9 +74,8 @@
                               "deploymentTag": "<+serviceConfig.artifacts.primary.tag>"
                             },
                             "monitoredService": {
-                              "type":"Configured",
+                              "type":"Default",
                               "spec": {
-                                "monitoredServiceRef": "dummy_service"
                               }
                             }
                           },

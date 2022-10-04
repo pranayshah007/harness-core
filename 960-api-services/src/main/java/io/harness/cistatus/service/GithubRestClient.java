@@ -9,10 +9,14 @@ package io.harness.cistatus.service;
 
 import io.harness.cistatus.GithubAppTokenCreationResponse;
 import io.harness.cistatus.StatusCreationResponse;
+import io.harness.gitpolling.github.GitHubPollingWebhookEventDelivery;
+import io.harness.gitpolling.github.GitPollingWebhookEventMetadata;
 
+import java.util.List;
 import java.util.Map;
 import retrofit2.Call;
 import retrofit2.http.Body;
+import retrofit2.http.DELETE;
 import retrofit2.http.GET;
 import retrofit2.http.Header;
 import retrofit2.http.Headers;
@@ -45,4 +49,21 @@ public interface GithubRestClient {
   @Headers("Accept: application/vnd.github.v3+json")
   Call<Object> mergePR(@Header("Authorization") String authorization, @Path("owner") String owner,
       @Path("repo") String repo, @Path("pull_number") String pullNumber);
+
+  @DELETE("repos/{owner}/{repo}/git/refs/heads/{ref}")
+  @Headers("Accept: application/vnd.github.v3+json")
+  Call<Object> deleteRef(@Header("Authorization") String authorization, @Path("owner") String owner,
+      @Path("repo") String repo, @Path("ref") String ref);
+
+  @GET("/repos/{owner}/{repo}/hooks/{hook_id}/deliveries")
+  @Headers("Accept: application/vnd.github.v3+json")
+  Call<List<GitPollingWebhookEventMetadata>> getWebhookRecentDeliveryEventsIds(
+      @Header("Authorization") String authorization, @Path("owner") String owner, @Path("repo") String repo,
+      @Path("hook_id") String webhookId);
+
+  @GET("/repos/{owner}/{repo}/hooks/{hook_id}/deliveries/{delivery_id}")
+  @Headers("Accept: application/vnd.github.v3+json")
+  Call<GitHubPollingWebhookEventDelivery> getWebhookDeliveryId(@Header("Authorization") String authorization,
+      @Path("owner") String owner, @Path("repo") String repo, @Path("hook_id") String webhookId,
+      @Path("delivery_id") String deliveryId);
 }

@@ -10,6 +10,8 @@ package io.harness.pms.ngpipeline.inputset.beans.resource;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.gitsync.sdk.EntityGitDetails;
+import io.harness.pms.pipeline.PipelineResourceConstants;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -18,8 +20,10 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 import lombok.AccessLevel;
 import lombok.Builder;
+import lombok.Setter;
 import lombok.Value;
 import lombok.experimental.FieldDefaults;
+import lombok.experimental.NonFinal;
 
 @OwnedBy(PIPELINE)
 @Value
@@ -37,4 +41,5 @@ public class InputSetYamlDiffDTO {
   @Schema(description = "Tells whether any Input Set can provide any new values") boolean noUpdatePossible;
   @Schema(description = "List of references in an OverlayInputSet that exist but are invalid")
   List<String> invalidReferences;
+  @Setter @NonFinal @Schema(description = PipelineResourceConstants.GIT_DETAILS_MESSAGE) EntityGitDetails gitDetails;
 }

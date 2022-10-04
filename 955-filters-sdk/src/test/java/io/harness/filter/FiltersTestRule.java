@@ -11,6 +11,7 @@ import io.harness.factory.ClosingFactory;
 import io.harness.filter.serializer.FiltersRegistrars;
 import io.harness.govern.ProviderModule;
 import io.harness.govern.ServersModule;
+import io.harness.mongo.MongoConfig;
 import io.harness.mongo.MongoPersistence;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.persistence.HPersistence;
@@ -87,6 +88,12 @@ public class FiltersTestRule implements InjectorRuleMixin, MethodRule, MongoRule
         return ImmutableList.<Class<? extends Converter<?, ?>>>builder()
             .addAll(FiltersRegistrars.springConverters)
             .build();
+      }
+
+      @Provides
+      @Singleton
+      MongoConfig mongoConfig() {
+        return MongoConfig.builder().build();
       }
     });
     return modules;

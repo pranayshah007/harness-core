@@ -313,3 +313,11 @@ pipeline:
                 socketTimeoutMillis: 1000
                 method: GET
                 url: https://google.com
+          - step:
+              identifier: httpStep9
+              type: Http
+              name: http step 9
+              spec:
+                socketTimeoutMillis: 1000
+                method: GET
+                url: <+input>.executionInput()

@@ -1,0 +1,8 @@
+Var indexUrl = concat(Env:baseUrl, "_cat/indices?format=json")
+Var result = sync-call(url=Var:indexUrl,header=Env:commonHeaders)
+Var indexList = []
+foreach rawIndex in Var:result {
+    Var indexName = extract(Var:rawIndex,$.index)
+    Var:indexList.append(Var:indexName)
+}
+return Var:indexList

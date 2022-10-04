@@ -29,8 +29,12 @@ import lombok.experimental.UtilityClass;
 @UtilityClass
 public class FQNHelper {
   List<String> possibleUUIDs = Arrays.asList(YAMLFieldNameConstants.IDENTIFIER, YAMLFieldNameConstants.NAME,
-      YAMLFieldNameConstants.KEY, YAMLFieldNameConstants.COMMAND_TYPE);
-
+      YAMLFieldNameConstants.KEY, YAMLFieldNameConstants.COMMAND_TYPE, YAMLFieldNameConstants.SERVICE_REF,
+      YAMLFieldNameConstants.ENVIRONMENT_REF);
+  // TODO: come-up with better approach. Take values from Services in
+  // SDK.(https://harness.atlassian.net/browse/PIE-5305)
+  List<String> UUIDsToIdentityElementInList = Arrays.asList(
+      YAMLFieldNameConstants.IDENTIFIER, YAMLFieldNameConstants.SERVICE_REF, YAMLFieldNameConstants.ENVIRONMENT_REF);
   public void validateUniqueFqn(FQN fqn, Object value, Map<FQN, Object> res, HashSet<String> expressions) {
     String expressionFqn = fqn.displayWithoutParallel();
     if (expressions.contains(expressionFqn)) {
@@ -63,6 +67,10 @@ public class FQNHelper {
       }
     }
     return "";
+  }
+
+  public boolean isKeyInsideUUIdsToIdentityElementInList(String key) {
+    return UUIDsToIdentityElementInList.contains(key);
   }
 
   public void removeNonRequiredStages(Map<FQN, Object> templateMap, List<String> stageIdentifiers) {

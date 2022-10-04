@@ -53,7 +53,7 @@ stomanager-mongo:
   maxConnectionIdleTime: 600000
   connectionsPerHost: 300
   indexManagerMode: AUTO
-  aliasDBName: sto-manager
+  aliasDBName: sto-harness
 
 enableAuth: false
 
@@ -124,7 +124,7 @@ ciExecutionServiceConfig:
       entrypoint:
         - /bin/drone-s3
     securityConfig:
-      image: zeronorth/sto_plugin:dev
+      image: harness/sto-plugin:dev
       entrypoint:
         - /bin/sh
         - -c
@@ -150,7 +150,7 @@ ciExecutionServiceConfig:
       buildAndPushGCR: plugins/gcr:latest
       gcsUpload: plugins/gcs:1.2.4
       s3Upload: plugins/s3:1.0.4
-      security: plugin/sto_plugin:dev
+      security: harness/sto-plugin:dev
       artifactoryUpload: plugins/artifactory:1.0.6
       cacheGCS: plugins/cache:1.3.7
       cacheS3: plugins/cache:1.3.7
@@ -224,6 +224,7 @@ cacheConfig:
   cacheBackend: REDIS
   cacheNamespace: ""
   disabledCaches: [ ]
+  enterpriseCacheEnabled: true
 
 enforcementClientConfiguration:
   enforcementCheckEnabled: false

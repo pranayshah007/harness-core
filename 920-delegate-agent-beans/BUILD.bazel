@@ -5,14 +5,12 @@ load("//:tools/bazel/macros.bzl", "run_analysis")
 java_library(
     name = "module",
     srcs = glob(["src/main/java/**/*.java"]),
-    resource_jars = [
-        "//920-delegate-agent-beans/src/main/proto:920_delegate_agent_beans_java_proto",
-    ],
     resources = [
     ],
     visibility = ["//visibility:public"],
     deps = [
         "//:lombok",
+        "//920-delegate-agent-beans/src/main/proto:920_delegate_agent_beans_java_proto",
         "//950-delegate-tasks-beans:module",
         "//955-delegate-beans:module",
         "//970-watcher-beans:module",

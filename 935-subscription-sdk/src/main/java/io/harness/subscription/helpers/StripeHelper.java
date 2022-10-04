@@ -43,4 +43,5 @@ public interface StripeHelper {
   void payInvoice(String invoiceId);
 
   PaymentMethodCollectionDTO listPaymentMethods(String customerId);
+  InvoiceDetailDTO finalizeInvoice(String invoiceId);
 }

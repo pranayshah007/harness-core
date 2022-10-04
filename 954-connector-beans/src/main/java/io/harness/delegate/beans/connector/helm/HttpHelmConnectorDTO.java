@@ -28,6 +28,7 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.hibernate.validator.constraints.NotBlank;
+import org.hibernate.validator.constraints.URL;
 
 @Data
 @Builder
@@ -38,7 +39,7 @@ import org.hibernate.validator.constraints.NotBlank;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Schema(name = "HttpHelmConnector", description = "This contains http helm connector details")
 public class HttpHelmConnectorDTO extends ConnectorConfigDTO implements DelegateSelectable {
-  @NotNull @NotBlank String helmRepoUrl;
+  @URL @NotNull @NotBlank String helmRepoUrl;
   @Valid HttpHelmAuthenticationDTO auth;
   Set<String> delegateSelectors;
 

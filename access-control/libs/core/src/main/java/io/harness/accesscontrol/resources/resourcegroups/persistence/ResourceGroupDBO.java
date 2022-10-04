@@ -11,7 +11,8 @@ import static io.harness.ng.DbAliases.ACCESS_CONTROL;
 
 import io.harness.accesscontrol.AccessControlEntity;
 import io.harness.accesscontrol.resources.resourcegroups.ResourceSelector;
-import io.harness.annotation.StoreIn;
+import io.harness.accesscontrol.resources.resourcegroups.ScopeSelector;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EmbeddedUser;
@@ -52,10 +53,10 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @ToString
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @FieldNameConstants(innerTypeName = "ResourceGroupDBOKeys")
+@StoreIn(ACCESS_CONTROL)
 @Entity(value = "resourcegroups", noClassnameStored = true)
 @Document("resourcegroups")
 @TypeAlias("resourcegroups")
-@StoreIn(ACCESS_CONTROL)
 public class ResourceGroupDBO implements PersistentRegularIterable, AccessControlEntity {
   @Setter @Id @org.mongodb.morphia.annotations.Id String id;
   @EqualsAndHashCode.Include final String scopeIdentifier;
@@ -64,6 +65,7 @@ public class ResourceGroupDBO implements PersistentRegularIterable, AccessContro
   @EqualsAndHashCode.Include final Set<String> allowedScopeLevels;
   @EqualsAndHashCode.Include @NotNull final Set<String> resourceSelectors;
   @EqualsAndHashCode.Include @NotNull final Set<ResourceSelector> resourceSelectorsV2;
+  @EqualsAndHashCode.Include @NotNull final Set<ScopeSelector> scopeSelectors;
   @EqualsAndHashCode.Include @NotNull @Builder.Default final Boolean managed = Boolean.FALSE;
 
   @Setter @CreatedDate Long createdAt;

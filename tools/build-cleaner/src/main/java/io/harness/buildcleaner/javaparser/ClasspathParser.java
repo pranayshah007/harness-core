@@ -1,3 +1,10 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.buildcleaner.javaparser;
 
 import com.github.javaparser.JavaParser;
@@ -60,13 +67,16 @@ public class ClasspathParser {
     return classMetadatas;
   }
 
-  public void parseClasses(String srcs, boolean findBuildInParent) throws IOException {
+  public void parseClasses(String srcs, Set<String> assumedPackagePrefixesWithBuildFile) throws IOException {
     String pattern = workspace.toString() + "/" + srcs;
-    logger.info("Pattern: {}", pattern);
+    logger.info("Parsing java files: {}", pattern);
     PathMatcher pathMatcher = FileSystems.getDefault().getPathMatcher("glob:" + pattern);
     try (Stream<Path> paths = Files.find(workspace, Integer.MAX_VALUE, (path, f) -> pathMatcher.matches(path))) {
-      paths.peek(path -> logger.debug("processing {}", path))
-          .forEach(path -> parseFileGatherDependencies(path, findBuildInParent));
+      paths.peek(path -> logger.debug("processing {}", path)).forEach(path -> {
+        if (path.toString().endsWith(".java")) {
+          parseFileGatherDependencies(path, assumedPackagePrefixesWithBuildFile);
+        }
+      });
     }
   }
 
@@ -77,10 +87,10 @@ public class ClasspathParser {
   }
 
   private void parseFileGatherDependencies(Path classPath) {
-    parseFileGatherDependencies(classPath, false);
+    parseFileGatherDependencies(classPath, new HashSet<String>());
   }
 
-  private void parseFileGatherDependencies(Path classPath, boolean findBuildInParent) {
+  private void parseFileGatherDependencies(Path classPath, Set<String> assumedPackagePrefixesWithBuildFile) {
     CompilationUnit cu;
     try {
       ParseResult<CompilationUnit> result = this.javaParser.parse(classPath);
@@ -97,7 +107,7 @@ public class ClasspathParser {
     parseClasses(cu);
     parsePackages(cu);
     findMainMethods(cu);
-    parseFullyQualifiedClassNames(classPath, cu, findBuildInParent);
+    parseFullyQualifiedClassNames(classPath, cu, assumedPackagePrefixesWithBuildFile);
   }
 
   private void parseImports(CompilationUnit cu) {
@@ -189,7 +199,8 @@ public class ClasspathParser {
     }
   }
 
-  private void parseFullyQualifiedClassNames(Path classPath, CompilationUnit cu, boolean findBuildInParent) {
+  private void parseFullyQualifiedClassNames(
+      Path classPath, CompilationUnit cu, Set<String> assumedPackagePrefixesWithBuildFile) {
     Optional<PackageDeclaration> packageDeclaration = cu.getPackageDeclaration();
     String packageName = "";
     if (!packageDeclaration.isEmpty()) {
@@ -198,9 +209,18 @@ public class ClasspathParser {
     final String effectivePackageName = packageName;
 
     Path buildModulePath = workspace.relativize(classPath.getParent());
+
+    boolean findBuildInParent = true;
+    for (String packagePrefixWithBuildFile : assumedPackagePrefixesWithBuildFile) {
+      if (buildModulePath.toString().startsWith(packagePrefixWithBuildFile)
+          || packagePrefixWithBuildFile.equals("all")) {
+        findBuildInParent = false;
+        break;
+      }
+    }
     if (findBuildInParent) {
       Path parentModule = classPath.getParent();
-      while (parentModule.getNameCount() > workspace.getNameCount()) {
+      while (parentModule.getNameCount() >= workspace.getNameCount()) {
         Path buildFilePath = Paths.get(parentModule.toString() + "/BUILD.bazel");
         if (Files.exists(buildFilePath)) {
           buildModulePath = workspace.relativize(parentModule);

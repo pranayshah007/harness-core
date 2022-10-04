@@ -6,8 +6,8 @@
 # To add Harness helm repo with name harness:
 # helm repo add harness https://app.harness.io/storage/harness-download/harness-helm-charts/
 
-# To install the chart with the release name my-release and this values.yaml
-# helm install --name my-release harness/harness-delegate-ng -f harness-delegate-values.yaml
+# To install the chart:
+# helm upgrade -i <delegate-name> --namespace <namespace> --create-namespace <repo-name>/harness-delegate-ng -f harness-delegate-values.yaml
 
 # Account Id to which the delegate will be connecting
 accountId: ${accountId}
@@ -36,3 +36,7 @@ initScript: ""
 
 # Specify JAVA_OPTS
 javaOpts: "-Xms64M"
+
+# Set to true to run delegate as root
+securityContext:
+  runAsRoot: ${runAsRoot}

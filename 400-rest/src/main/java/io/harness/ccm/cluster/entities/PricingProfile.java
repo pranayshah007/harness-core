@@ -9,7 +9,7 @@ package io.harness.ccm.cluster.entities;
 
 import static io.harness.annotations.dev.HarnessTeam.CE;
 
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
@@ -30,9 +30,9 @@ import org.mongodb.morphia.annotations.Id;
 
 @Data
 @Builder
+@StoreIn(DbAliases.CENG)
 @Entity(value = "pricingProfile")
 @FieldDefaults(level = AccessLevel.PRIVATE)
-@StoreIn(DbAliases.CENG)
 @FieldNameConstants(innerTypeName = "PricingProfileKeys")
 @OwnedBy(CE)
 @TargetModule(HarnessModule._490_CE_COMMONS)

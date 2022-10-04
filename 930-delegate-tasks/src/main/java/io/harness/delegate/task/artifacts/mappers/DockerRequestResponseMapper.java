@@ -57,6 +57,17 @@ public class DockerRequestResponseMapper {
         .build();
   }
 
+  public DockerArtifactDelegateResponse toDockerResponse(
+      BuildDetailsInternal buildDetailsInternal, DockerArtifactDelegateRequest request, Map<String, String> label) {
+    return DockerArtifactDelegateResponse.builder()
+        .buildDetails(ArtifactBuildDetailsMapper.toBuildDetailsNG(buildDetailsInternal))
+        .imagePath(request.getImagePath())
+        .tag(buildDetailsInternal.getNumber())
+        .label(label)
+        .sourceType(ArtifactSourceType.DOCKER_REGISTRY)
+        .build();
+  }
+
   public List<DockerArtifactDelegateResponse> toDockerResponse(
       List<Map<String, String>> labelsList, DockerArtifactDelegateRequest request) {
     return IntStream.range(0, request.getTagsList().size())

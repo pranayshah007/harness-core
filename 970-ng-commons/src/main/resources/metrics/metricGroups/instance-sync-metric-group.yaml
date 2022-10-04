@@ -1,0 +1,10 @@
+name: Group by fields for metrics
+identifier: instance_sync_metric_group
+labels:
+  - accountId
+  - appId
+  - orgId
+  - projectId
+  - isNg
+  - deploymentType
+  - status

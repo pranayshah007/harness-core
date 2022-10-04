@@ -1,0 +1,22 @@
+failureStrategies:
+  - onFailure:
+      errors:
+        - AllErrors
+      action:
+        type: StageRollback
+spec:
+  execution:
+    steps:
+      - step:
+          name: "ECS Rolling Deploy"
+          identifier: ecsRollingDeploy
+          type: EcsRollingDeploy
+          timeout: 10m
+          spec: {}
+    rollbackSteps:
+      - step:
+          name: "ECS Rolling Rollback"
+          identifier: ecsRollingRollback
+          type: EcsRollingRollback
+          timeout: 10m
+          spec: {}

@@ -167,14 +167,14 @@ public class PlanNodeExecutionStrategyTest extends OrchestrationTestBase {
     executionStrategy.runNode(ambiance, planNode, null);
     verify(executorService).submit(any(Runnable.class));
     doReturn(NodeExecution.builder().uuid("fda").build()).when(nodeExecutionService).save(any());
-    // waitForExecutionInputHelper.waitForExecutionInput() will not be called.FF is off.
+    // waitForExecutionInputHelper.waitForExecutionInputOrStart() will not be called.FF is off.
     verify(waitForExecutionInputHelper, never()).waitForExecutionInput(any(), any(), any());
 
     doReturn(true).when(pmsFeatureFlagService).isEnabled(any(), any(FeatureName.class));
     executionStrategy.runNode(ambiance, planNode, null);
     verify(executorService, times(2)).submit(any(Runnable.class));
-    // waitForExecutionInputHelper.waitForExecutionInput() will not be called.FF is on but executionInputTemplate is
-    // empty.
+    // waitForExecutionInputHelper.waitForExecutionInputOrStart() will not be called.FF is on but executionInputTemplate
+    // is empty.
     verify(waitForExecutionInputHelper, never()).waitForExecutionInput(any(), any(), any());
 
     planNode = PlanNode.builder()
@@ -191,10 +191,7 @@ public class PlanNodeExecutionStrategyTest extends OrchestrationTestBase {
 
     executionStrategy.runNode(ambiance, planNode, null);
     // executorService.submit will not be called this time because execution will pause for user input.
-    verify(executorService, times(2)).submit(any(Runnable.class));
-    // waitForExecutionInputHelper.waitForExecutionInput() will be called once.FF is on and executionInputTemplate is
-    // non empty.
-    verify(waitForExecutionInputHelper, times(1)).waitForExecutionInput(any(), any(), eq("executionInputTemplate"));
+    verify(executorService, times(3)).submit(any(Runnable.class));
   }
 
   @Test
@@ -572,7 +569,6 @@ public class PlanNodeExecutionStrategyTest extends OrchestrationTestBase {
                                       .levelCount(1)
                                       .status(Status.QUEUED)
                                       .unitProgresses(new ArrayList<>())
-                                      .startTs(startTs)
                                       .name(AmbianceUtils.modifyIdentifier(ambiance, node.getName()))
                                       .identifier(AmbianceUtils.modifyIdentifier(ambiance, node.getIdentifier()))
                                       .notifyId("NID")

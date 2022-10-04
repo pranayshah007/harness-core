@@ -7,6 +7,7 @@
 
 package io.harness.delegate.beans.connector.scm.github;
 
+import io.harness.annotation.RecasterFieldName;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.connector.SourceCodeManagerAuthentication;
@@ -34,7 +35,8 @@ import lombok.experimental.FieldDefaults;
 @Schema(
     name = "GithubAuthentication", description = "This contains details of the information needed for Github access")
 public class GithubAuthenticationDTO implements SourceCodeManagerAuthentication {
-  @NotNull @JsonProperty("type") GitAuthType authType;
+  @NotNull @RecasterFieldName(name = "type") @JsonProperty("type") GitAuthType authType;
+  @RecasterFieldName(name = "spec")
   @JsonProperty("spec")
   @JsonTypeInfo(
       use = JsonTypeInfo.Id.NAME, property = "type", include = JsonTypeInfo.As.EXTERNAL_PROPERTY, visible = true)

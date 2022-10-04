@@ -25,23 +25,27 @@ import io.harness.beans.execution.ExecutionSource;
 import io.harness.beans.execution.ManualExecutionSource;
 import io.harness.beans.executionargs.CIExecutionArgs;
 import io.harness.beans.serializer.RunTimeInputHandler;
-import io.harness.beans.stages.IntegrationStageConfig;
+import io.harness.beans.stages.IntegrationStageNode;
+import io.harness.beans.steps.CIAbstractStepNode;
 import io.harness.beans.steps.CIStepInfo;
 import io.harness.beans.steps.CIStepInfoType;
+import io.harness.beans.steps.nodes.InitializeStepNode;
+import io.harness.beans.steps.nodes.PluginStepNode;
 import io.harness.beans.steps.stepinfo.InitializeStepInfo;
 import io.harness.beans.steps.stepinfo.PluginStepInfo;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
+import io.harness.beans.yaml.extended.infrastrucutre.VmInfraYaml;
+import io.harness.beans.yaml.extended.infrastrucutre.VmPoolYaml;
 import io.harness.ci.config.CIExecutionServiceConfig;
 import io.harness.ci.execution.CIExecutionConfigService;
+import io.harness.cimanager.stages.IntegrationStageConfig;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.plancreator.execution.ExecutionElementConfig;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
-import io.harness.plancreator.stages.stage.StageElementConfig;
 import io.harness.plancreator.steps.ParallelStepElementConfig;
-import io.harness.plancreator.steps.StepElementConfig;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.yaml.core.timeout.Timeout;
 import io.harness.yaml.extended.ci.codebase.CodeBase;
@@ -66,12 +70,13 @@ public class CIStepGroupUtils {
   @Inject private InitializeStepGenerator initializeStepGenerator;
   @Inject private CIExecutionConfigService ciExecutionConfigService;
   @Inject private CIExecutionServiceConfig ciExecutionServiceConfig;
+  @Inject private VmInitializeTaskParamsBuilder vmInitializeTaskParamsBuilder;
 
-  public List<ExecutionWrapperConfig> createExecutionWrapperWithInitializeStep(StageElementConfig stageElementConfig,
+  public List<ExecutionWrapperConfig> createExecutionWrapperWithInitializeStep(IntegrationStageNode stageNode,
       CIExecutionArgs ciExecutionArgs, CodeBase ciCodebase, Infrastructure infrastructure, String accountId) {
     List<ExecutionWrapperConfig> mainEngineExecutionSections = new ArrayList<>();
 
-    IntegrationStageConfig integrationStageConfig = IntegrationStageUtils.getIntegrationStageConfig(stageElementConfig);
+    IntegrationStageConfig integrationStageConfig = IntegrationStageUtils.getIntegrationStageConfig(stageNode);
 
     if (integrationStageConfig.getExecution() == null || isEmpty(integrationStageConfig.getExecution().getSteps())) {
       return mainEngineExecutionSections;
@@ -80,7 +85,7 @@ public class CIStepGroupUtils {
     List<ExecutionWrapperConfig> executionSections = integrationStageConfig.getExecution().getSteps();
 
     log.info("Creating CI execution wrapper step info with initialize step for integration stage {} ",
-        stageElementConfig.getIdentifier());
+        stageNode.getIdentifier());
 
     List<ExecutionWrapperConfig> initializeExecutionSections = new ArrayList<>();
     boolean gitClone = RunTimeInputHandler.resolveGitClone(integrationStageConfig.getCloneCodebase());
@@ -95,7 +100,7 @@ public class CIStepGroupUtils {
 
     if (isNotEmpty(initializeExecutionSections)) {
       ExecutionWrapperConfig liteEngineStepExecutionWrapper = fetchInitializeStepExecutionWrapper(
-          initializeExecutionSections, stageElementConfig, ciExecutionArgs, ciCodebase, infrastructure, accountId);
+          initializeExecutionSections, stageNode, ciExecutionArgs, ciCodebase, infrastructure, accountId);
 
       mainEngineExecutionSections.add(liteEngineStepExecutionWrapper);
       // Also execute each step individually on main engine
@@ -106,7 +111,7 @@ public class CIStepGroupUtils {
   }
 
   private ExecutionWrapperConfig fetchInitializeStepExecutionWrapper(
-      List<ExecutionWrapperConfig> liteEngineExecutionSections, StageElementConfig integrationStage,
+      List<ExecutionWrapperConfig> liteEngineExecutionSections, IntegrationStageNode integrationStage,
       CIExecutionArgs ciExecutionArgs, CodeBase ciCodebase, Infrastructure infrastructure, String accountId) {
     // TODO Do not generate new id
     InitializeStepInfo initializeStepInfo = initializeStepGenerator.createInitializeStepInfo(
@@ -115,13 +120,13 @@ public class CIStepGroupUtils {
 
     try {
       String uuid = generateUuid();
-      String jsonString = JsonPipelineUtils.writeJsonString(StepElementConfig.builder()
+      String jsonString = JsonPipelineUtils.writeJsonString(InitializeStepNode.builder()
                                                                 .identifier(INITIALIZE_TASK)
                                                                 .name(INITIALIZE_TASK)
                                                                 .uuid(generateUuid())
-                                                                .type(INITIALIZE_TASK)
+                                                                .type(InitializeStepNode.StepType.liteEngineTask)
                                                                 .timeout(getTimeout(infrastructure))
-                                                                .stepSpecType(initializeStepInfo)
+                                                                .initializeStepInfo(initializeStepInfo)
                                                                 .build());
       JsonNode jsonNode = JsonPipelineUtils.getMapper().readTree(jsonString);
       return ExecutionWrapperConfig.builder().uuid(uuid).step(jsonNode).build();
@@ -139,28 +144,35 @@ public class CIStepGroupUtils {
       throw new CIStageExecutionException("Input infrastructure can not be empty");
     }
 
-    if (infrastructure.getType() != Infrastructure.Type.KUBERNETES_DIRECT) {
+    if (infrastructure.getType() == Infrastructure.Type.VM) {
+      vmInitializeTaskParamsBuilder.validateInfrastructure(infrastructure);
+      VmPoolYaml vmPoolYaml = (VmPoolYaml) ((VmInfraYaml) infrastructure).getSpec();
+      return parseTimeout(vmPoolYaml.getSpec().getInitTimeout(), "15m");
+    } else if (infrastructure.getType() == Infrastructure.Type.KUBERNETES_DIRECT) {
+      if (((K8sDirectInfraYaml) infrastructure).getSpec() == null) {
+        throw new CIStageExecutionException("Input infrastructure can not be empty");
+      }
+      ParameterField<String> timeout = ((K8sDirectInfraYaml) infrastructure).getSpec().getInitTimeout();
+      return parseTimeout(timeout, "10m");
+    } else {
       return ParameterField.createValueField(Timeout.fromString("10m"));
     }
+  }
 
-    if (((K8sDirectInfraYaml) infrastructure).getSpec() == null) {
-      throw new CIStageExecutionException("Input infrastructure can not be empty");
-    }
-    ParameterField<String> timeout = ((K8sDirectInfraYaml) infrastructure).getSpec().getInitTimeout();
-
+  private ParameterField<Timeout> parseTimeout(ParameterField<String> timeout, String defaultTimeout) {
     if (timeout != null && timeout.fetchFinalValue() != null && isNotEmpty((String) timeout.fetchFinalValue())) {
       return ParameterField.createValueField(Timeout.fromString((String) timeout.fetchFinalValue()));
     } else {
-      return ParameterField.createValueField(Timeout.fromString("10m"));
+      return ParameterField.createValueField(Timeout.fromString(defaultTimeout));
     }
   }
 
   private boolean isCIManagerStep(ExecutionWrapperConfig executionWrapperConfig) {
     if (executionWrapperConfig != null) {
       if (executionWrapperConfig.getStep() != null && !executionWrapperConfig.getStep().isNull()) {
-        StepElementConfig stepElementConfig = IntegrationStageUtils.getStepElementConfig(executionWrapperConfig);
-        if (stepElementConfig.getStepSpecType() instanceof CIStepInfo) {
-          CIStepInfo ciStepInfo = (CIStepInfo) stepElementConfig.getStepSpecType();
+        CIAbstractStepNode stepNode = IntegrationStageUtils.getStepNode(executionWrapperConfig);
+        if (stepNode.getStepSpecType() instanceof CIStepInfo) {
+          CIStepInfo ciStepInfo = (CIStepInfo) stepNode.getStepSpecType();
           return ciStepInfo.getNonYamlInfo().getStepInfoType().getCiStepExecEnvironment() == CI_MANAGER;
         } else {
           throw new InvalidRequestException("Non CIStepInfo is not supported");
@@ -184,10 +196,10 @@ public class CIStepGroupUtils {
     if (isNotEmpty(parallel.getSections())) {
       for (ExecutionWrapperConfig executionWrapper : parallel.getSections()) {
         if (executionWrapper.getStep() != null && !executionWrapper.getStep().isNull()) {
-          StepElementConfig stepElementConfig = IntegrationStageUtils.getStepElementConfig(executionWrapper);
+          CIAbstractStepNode stepNode = IntegrationStageUtils.getStepNode(executionWrapper);
 
-          if (stepElementConfig.getStepSpecType() instanceof CIStepInfo) {
-            CIStepInfo ciStepInfo = (CIStepInfo) stepElementConfig.getStepSpecType();
+          if (stepNode.getStepSpecType() instanceof CIStepInfo) {
+            CIStepInfo ciStepInfo = (CIStepInfo) stepNode.getStepSpecType();
             if (ciStepExecEnvironment == null
                 || (ciStepExecEnvironment
                     == ciStepInfo.getNonYamlInfo().getStepInfoType().getCiStepExecEnvironment())) {
@@ -248,24 +260,24 @@ public class CIStepGroupUtils {
                               .name(GIT_CLONE_STEP_NAME)
                               .settings(ParameterField.createValueField(settings))
                               .envVariables(envVariables)
-                              .entrypoint(entrypoint)
+                              .entrypoint(ParameterField.createValueField(entrypoint))
                               .harnessManagedImage(true)
                               .resources(ciCodebase.getResources())
                               .build();
 
     String uuid = generateUuid();
-    StepElementConfig stepElementConfig =
-        StepElementConfig.builder()
+    PluginStepNode pluginStepNode =
+        PluginStepNode.builder()
             .identifier(GIT_CLONE_STEP_ID)
             .name(GIT_CLONE_STEP_NAME)
             .timeout(ParameterField.createValueField(Timeout.builder().timeoutString("1h").build()))
             .uuid(generateUuid())
-            .type("Plugin")
-            .stepSpecType(step)
+            .type(PluginStepNode.StepType.Plugin)
+            .pluginStepInfo(step)
             .build();
 
     try {
-      String jsonString = JsonPipelineUtils.writeJsonString(stepElementConfig);
+      String jsonString = JsonPipelineUtils.writeJsonString(pluginStepNode);
       JsonNode jsonNode = JsonPipelineUtils.getMapper().readTree(jsonString);
       return ExecutionWrapperConfig.builder().uuid(uuid).step(jsonNode).build();
     } catch (IOException e) {

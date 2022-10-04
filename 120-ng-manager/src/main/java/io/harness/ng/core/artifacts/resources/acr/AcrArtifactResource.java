@@ -157,10 +157,10 @@ public class AcrArtifactResource {
       @QueryParam("subscriptionId") String subscriptionId, @QueryParam("registry") String registry,
       @NotNull @QueryParam("fqnPath") String fqnPath,
       @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceRef) {
-    final ArtifactConfig artifactSpecFromService =
-        artifactResourceUtils.locateArtifactInService(accountId, orgIdentifier, projectIdentifier, serviceRef, fqnPath);
-    AcrArtifactConfig acrArtifactConfig = (AcrArtifactConfig) artifactSpecFromService;
     if (isNotEmpty(serviceRef)) {
+      final ArtifactConfig artifactSpecFromService = artifactResourceUtils.locateArtifactInService(
+          accountId, orgIdentifier, projectIdentifier, serviceRef, fqnPath);
+      AcrArtifactConfig acrArtifactConfig = (AcrArtifactConfig) artifactSpecFromService;
       if (isEmpty(azureConnectorIdentifier)) {
         azureConnectorIdentifier = acrArtifactConfig.getConnectorRef().getValue();
       }

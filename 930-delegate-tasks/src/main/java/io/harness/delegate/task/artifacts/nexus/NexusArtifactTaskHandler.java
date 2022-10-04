@@ -39,14 +39,17 @@ public class NexusArtifactTaskHandler extends DelegateArtifactTaskHandler<NexusA
     BuildDetailsInternal lastSuccessfulBuild;
     NexusRequest nexusConfig = NexusRequestResponseMapper.toNexusInternalConfig(attributesRequest);
     if (isRegex(attributesRequest)) {
-      lastSuccessfulBuild =
-          nexusRegistryService.getLastSuccessfulBuildFromRegex(nexusConfig, attributesRequest.getRepositoryName(),
-              attributesRequest.getRepositoryPort(), attributesRequest.getArtifactPath(),
-              attributesRequest.getRepositoryFormat(), attributesRequest.getTagRegex());
+      lastSuccessfulBuild = nexusRegistryService.getLastSuccessfulBuildFromRegex(nexusConfig,
+          attributesRequest.getRepositoryName(), attributesRequest.getRepositoryPort(),
+          attributesRequest.getArtifactPath(), attributesRequest.getRepositoryFormat(), attributesRequest.getTagRegex(),
+          attributesRequest.getGroupId(), attributesRequest.getArtifactName(), attributesRequest.getExtension(),
+          attributesRequest.getClassifier(), attributesRequest.getPackageName());
     } else {
       lastSuccessfulBuild = nexusRegistryService.verifyBuildNumber(nexusConfig, attributesRequest.getRepositoryName(),
           attributesRequest.getRepositoryPort(), attributesRequest.getArtifactPath(),
-          attributesRequest.getRepositoryFormat(), attributesRequest.getTag());
+          attributesRequest.getRepositoryFormat(), attributesRequest.getTag(), attributesRequest.getGroupId(),
+          attributesRequest.getArtifactName(), attributesRequest.getExtension(), attributesRequest.getClassifier(),
+          attributesRequest.getPackageName());
     }
 
     NexusArtifactDelegateResponse nexusArtifactDelegateResponse =
@@ -59,7 +62,9 @@ public class NexusArtifactTaskHandler extends DelegateArtifactTaskHandler<NexusA
     List<BuildDetailsInternal> builds = nexusRegistryService.getBuilds(
         NexusRequestResponseMapper.toNexusInternalConfig(attributesRequest), attributesRequest.getRepositoryName(),
         attributesRequest.getRepositoryPort(), attributesRequest.getArtifactPath(),
-        attributesRequest.getRepositoryFormat(), NexusRegistryService.MAX_NO_OF_TAGS_PER_ARTIFACT);
+        attributesRequest.getRepositoryFormat(), NexusRegistryService.MAX_NO_OF_TAGS_PER_ARTIFACT,
+        attributesRequest.getGroupId(), attributesRequest.getArtifactName(), attributesRequest.getExtension(),
+        attributesRequest.getClassifier(), attributesRequest.getPackageName());
     List<NexusArtifactDelegateResponse> nexusArtifactDelegateResponseList =
         builds.stream()
             .sorted(new BuildDetailsInternalComparatorDescending())

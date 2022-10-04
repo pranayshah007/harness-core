@@ -35,7 +35,9 @@ import java.io.IOException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.Set;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import org.reflections.Reflections;
 import org.reflections.scanners.ResourcesScanner;
 
@@ -56,24 +58,25 @@ public class GraphQLProvider implements QueryLanguageProvider<GraphQL> {
 
   @Inject
   public void init() {
-    if (privateGraphQL == null) {
-      String[] allPaths = new String[] {GRAPHQL_SCHEMA_PRIVATE_DIRECTORY_PATH, GRAPHQL_SCHEMA_PUBLIC_DIRECTORY_PATH};
-      privateGraphQL = getGraphQL(allPaths);
-    }
-
-    if (publicGraphQL == null) {
-      String[] allPaths = new String[] {GRAPHQL_SCHEMA_PUBLIC_DIRECTORY_PATH};
-      publicGraphQL = getGraphQL(allPaths);
-    }
-  }
-
-  private GraphQL getGraphQL(String[] paths) {
-    SchemaParser schemaParser = new SchemaParser();
     TypeDefinitionRegistry typeDefinitionRegistry = new TypeDefinitionRegistry();
 
-    for (String path : paths) {
-      loadSchemaForEnv(path, typeDefinitionRegistry, schemaParser);
-    }
+    Reflections reflections = new Reflections("graphql/", new ResourcesScanner());
+    Set<String> resources = reflections.getResources(GRAPHQL_FILE_PATTERN);
+    Set<String> publicResources = resources.stream()
+                                      .filter(resource -> resource.startsWith(GRAPHQL_SCHEMA_PUBLIC_DIRECTORY_PATH))
+                                      .collect(Collectors.toSet());
+    Set<String> privateResources = resources.stream()
+                                       .filter(resource -> resource.startsWith(GRAPHQL_SCHEMA_PRIVATE_DIRECTORY_PATH))
+                                       .collect(Collectors.toSet());
+
+    publicGraphQL = getGraphQL(publicResources, typeDefinitionRegistry);
+    privateGraphQL = getGraphQL(privateResources, typeDefinitionRegistry);
+  }
+
+  private GraphQL getGraphQL(Set<String> resources, TypeDefinitionRegistry typeDefinitionRegistry) {
+    SchemaParser schemaParser = new SchemaParser();
+
+    resources.forEach(resource -> typeDefinitionRegistry.merge(schemaParser.parse(loadSchemaFile(resource))));
     RuntimeWiring runtimeWiring = buildRuntimeWiring();
 
     SchemaGenerator schemaGenerator = new SchemaGenerator();
@@ -90,13 +93,6 @@ public class GraphQLProvider implements QueryLanguageProvider<GraphQL> {
         .instrumentation(
             new ChainedInstrumentation(Arrays.asList(new QueryDepthInstrumentation(), qlAuditInstrumentation)))
         .build();
-  }
-
-  private void loadSchemaForEnv(
-      final String schemaPathForEnv, TypeDefinitionRegistry typeDefinitionRegistry, final SchemaParser schemaParser) {
-    Reflections reflections = new Reflections(schemaPathForEnv, new ResourcesScanner());
-    reflections.getResources(GRAPHQL_FILE_PATTERN)
-        .forEach(resource -> typeDefinitionRegistry.merge(schemaParser.parse(loadSchemaFile(resource))));
   }
 
   private RuntimeWiring buildRuntimeWiring() {

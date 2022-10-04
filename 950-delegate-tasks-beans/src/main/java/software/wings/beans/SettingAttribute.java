@@ -65,6 +65,7 @@ import static software.wings.settings.SettingVariableTypes.WINRM_CONNECTION_ATTR
 import static java.util.Arrays.stream;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
@@ -79,6 +80,7 @@ import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.mongo.index.SortCompoundMongoIndex;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
 import io.harness.persistence.CreatedAtAware;
 import io.harness.persistence.CreatedByAware;
@@ -125,6 +127,7 @@ import org.mongodb.morphia.annotations.Transient;
 @Data
 @EqualsAndHashCode(of = {"uuid", "appId"}, callSuper = false)
 @FieldNameConstants(innerTypeName = "SettingAttributeKeys")
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "settingAttributes")
 @HarnessEntity(exportable = true)
 public class SettingAttribute
@@ -463,6 +466,7 @@ public class SettingAttribute
     public static final String value_type = SettingAttributeKeys.value + ".type";
     public static final String isCEEnabled = SettingAttributeKeys.value + ".ccmConfig.cloudCostEnabled";
     public static final String referencedConnector = SettingAttributeKeys.value + ".connectorId";
+    public static final String authType = SettingAttributeKeys.value + ".authType";
   }
 
   @Nonnull

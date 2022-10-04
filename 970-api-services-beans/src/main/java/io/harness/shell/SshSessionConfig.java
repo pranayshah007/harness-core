@@ -14,6 +14,7 @@ import software.wings.settings.SettingVariableTypes;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.github.reinert.jjschema.SchemaIgnore;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import lombok.Data;
 import lombok.ToString;
@@ -37,7 +38,7 @@ public class SshSessionConfig implements EncryptableSetting, ScriptExecutionCont
   @NotEmpty private String host;
   private Integer port = 22;
   private String userName;
-  @Encrypted(fieldName = "password") private char[] password;
+  @Encrypted(fieldName = "password") private char[] password; // used for Kerberos/Bastion host authentication
   private String keyName;
   @Encrypted(fieldName = "key") private char[] key;
   @Encrypted(fieldName = "key_passphrase") private char[] keyPassphrase;
@@ -58,13 +59,16 @@ public class SshSessionConfig implements EncryptableSetting, ScriptExecutionCont
 
   private AuthenticationScheme authenticationScheme;
   private KerberosConfig kerberosConfig;
-  @Encrypted(fieldName = "ssh_password") private char[] sshPassword;
+  @Encrypted(fieldName = "ssh_password") private char[] sshPassword; // used to SSH into remote host
   @SchemaIgnore private String encryptedSshPassword;
   private AccessType accessType;
 
   private boolean isVaultSSH;
   private String publicKey;
   private String signedPublicKey;
+
+  // environment variables for remote session
+  private Map<String, String> envVariables;
 
   @Override
   public SettingVariableTypes getSettingType() {
@@ -113,6 +117,7 @@ public class SshSessionConfig implements EncryptableSetting, ScriptExecutionCont
     private boolean isVaultSSH;
     private String publicKey;
     private String signedPublicKey;
+    private Map<String, String> envVariables;
 
     private Builder() {}
 
@@ -265,6 +270,11 @@ public class SshSessionConfig implements EncryptableSetting, ScriptExecutionCont
       return this;
     }
 
+    public Builder withEnvVariables(Map<String, String> envVariables) {
+      this.envVariables = envVariables;
+      return this;
+    }
+
     public Builder but() {
       return aSshSessionConfig()
           .withAccountId(accountId)
@@ -295,7 +305,8 @@ public class SshSessionConfig implements EncryptableSetting, ScriptExecutionCont
           .withAccessType(accessType)
           .withPublicKey(publicKey)
           .withSignedPublicKey(signedPublicKey)
-          .withVaultSSH(isVaultSSH);
+          .withVaultSSH(isVaultSSH)
+          .withEnvVariables(envVariables);
     }
 
     public SshSessionConfig build() {
@@ -329,6 +340,7 @@ public class SshSessionConfig implements EncryptableSetting, ScriptExecutionCont
       sshSessionConfig.setVaultSSH(isVaultSSH);
       sshSessionConfig.setSignedPublicKey(signedPublicKey);
       sshSessionConfig.setPublicKey(publicKey);
+      sshSessionConfig.setEnvVariables(envVariables);
       return sshSessionConfig;
     }
   }

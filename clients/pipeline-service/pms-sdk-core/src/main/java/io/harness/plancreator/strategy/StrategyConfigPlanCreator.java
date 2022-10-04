@@ -80,6 +80,7 @@ public class StrategyConfigPlanCreator extends ChildrenPlanCreator<StrategyConfi
                                         .strategyConfig(config)
                                         .maxConcurrency(maxConcurrency)
                                         .strategyType(strategyType)
+                                        .shouldProceedIfFailed(metadata.getShouldProceedIfFailed())
                                         .build();
     return PlanNode.builder()
         .uuid(strategyNodeId)

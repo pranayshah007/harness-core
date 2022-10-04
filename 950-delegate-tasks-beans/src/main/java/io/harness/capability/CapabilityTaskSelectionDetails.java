@@ -9,6 +9,7 @@ package io.harness.capability;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -17,6 +18,7 @@ import io.harness.delegate.beans.TaskGroup;
 import io.harness.iterator.PersistentFibonacciIterable;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.FdTtlIndex;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.PersistentEntity;
 
 import java.time.Duration;
@@ -34,6 +36,7 @@ import org.mongodb.morphia.annotations.Id;
 @Data
 @Builder
 @FieldNameConstants(innerTypeName = "CapabilityTaskSelectionDetailsKeys")
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "capabilityTaskSelectionDetails", noClassnameStored = true)
 @OwnedBy(HarnessTeam.DEL)
 @TargetModule(HarnessModule._955_DELEGATE_BEANS)

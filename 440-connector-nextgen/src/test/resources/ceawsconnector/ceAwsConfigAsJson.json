@@ -26,7 +26,8 @@
         "crossAccountRoleArn": "arn:aws:iam::890436954479:role/harnessCERole",
         "externalId": "harness:108817434118:kmpySmUISimoRrJL6NL73w"
       },
-      "awsAccountId":"890436954479"
+      "awsAccountId":"890436954479",
+      "isAWSGovCloudAccount":false
     }
   }
 }

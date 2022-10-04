@@ -230,7 +230,7 @@ public abstract class AbstractDataFetcherTestBase extends WingsBaseTest {
             .executionArgs(ExecutionArgs.builder()
                                .artifacts(List.of(
                                    Artifact.Builder.anArtifact().withMetadata(new ArtifactMetadata(metadata)).build()))
-                               .helmCharts(List.of(HelmChart.builder().version("helm1").build()))
+                               .helmCharts(List.of(HelmChart.builder().displayName("helm-1.23").build()))
                                .build())
             .build();
     return wingsPersistence.insert(workflowExecution);

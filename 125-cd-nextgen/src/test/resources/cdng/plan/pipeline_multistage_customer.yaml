@@ -1,0 +1,1971 @@
+pipeline:
+  name: car-owner-app
+  identifier: carownerapppipeline
+  allowStageExecutions: false
+  projectIdentifier: Car_Owner_App
+  orgIdentifier: Tractable_ENG
+  description: Pipeline for the car-owner-app repo
+  tags: {}
+  stages:
+    - stage:
+        name: Install deps
+        identifier: Install_dependencies
+        type: CI
+        spec:
+          cloneCodebase: true
+          infrastructure:
+            type: KubernetesDirect
+            spec:
+              connectorRef: account.K8S_nextgen_Connector
+              namespace: harness-build
+              automountServiceAccountToken: true
+          execution:
+            steps:
+              - step:
+                  type: Run
+                  name: Lint all apps
+                  identifier: Lint_all_apps
+                  spec:
+                    connectorRef: account.Tractable_Docker_Hub_v1
+                    image: <+pipeline.variables.NODE_BUILD_IMAGE>
+                    shell: Sh
+                    command: yarn lint:check
+              - step:
+                  type: ShellScript
+                  name: Provisioner Step1
+                  identifier: Provisioner_Step1
+                  spec:
+                    shell: Bash
+                    onDelegate: true
+                    source:
+                      type: Inline
+                      spec:
+                        script: script
+                    environmentVariables: [ ]
+                    outputVariables: [ ]
+                    executionTarget: { }
+                  timeout: 10m
+              - step:
+                  name: Save cache
+                  identifier: Save_cache
+                  template:
+                    templateRef: account.Save_S3_Cache
+                    versionLabel: "1.0"
+                    templateInputs:
+                      type: SaveCacheS3
+                      spec:
+                        sourcePaths:
+                          - node_modules
+                          - apps/frontend/node_modules
+                          - apps/data-collection-service/node_modules
+                          - apps/backend-for-frontend/node_modules
+                          - packages/app-config/node_modules
+                          - packages/logging/node_modules
+                          - packages/client-config/node_modules
+              - step:
+                  type: ShellScript
+                  name: Provisioner Step2
+                  identifier: Provisioner_Step2
+                  spec:
+                    shell: Bash
+                    onDelegate: true
+                    source:
+                      type: Inline
+                      spec:
+                        script: script
+                    environmentVariables: [ ]
+                    outputVariables: [ ]
+                    executionTarget: { }
+                  timeout: 10m
+        variables:
+          - name: NODE_BUILD_IMAGE
+            type: String
+            value: <+pipeline.variables.NODE_BUILD_IMAGE>
+          - name: JUNIT_XML_FILE
+            type: String
+            value: junit.xml
+          - name: CACHE_PATHS
+            type: String
+            value: <+pipeline.variables.CACHE_PATHS>
+          - name: USE_NODE_MODULES_CACHE
+            type: String
+            default: "YES"
+            value: <+input>.allowedValues(YES,NO)
+          - name: PLUGIN_ACL
+            type: String
+            value: bucket-owner-full-control
+        when:
+          pipelineStatus: Success
+          condition: <+pipeline.variables.RUN_FRONTEND_TESTS> == "YES" || <+pipeline.variables.RUN_DCS_TESTS> == "YES" || <+pipeline.variables.RUN_BFF_TESTS> == "YES"
+    - parallel:
+        - stage:
+            name: Run frontend tests
+            identifier: Run_frontend_tests
+            type: CI
+            spec:
+              cloneCodebase: true
+              infrastructure:
+                type: KubernetesDirect
+                spec:
+                  connectorRef: account.K8S_nextgen_Connector
+                  namespace: harness-build
+                  automountServiceAccountToken: true
+              execution:
+                steps:
+                  - step:
+                      type: RestoreCacheS3
+                      spec:
+                        connectorRef: account.AWS_S3_Cache_Connector
+                        region: eu-west-1
+                        bucket: tractableai-dev-utilities
+                        key: /harness/cache/<+project.identifier>/<+pipeline.name>/Install_dependencies/
+                        archiveFormat: Tar
+                        resources:
+                          limits:
+                            memory: 4Gi
+                            cpu: "2"
+                      name: Restore cache
+                      identifier: Restore_cache
+                      failureStrategies: []
+                  - step:
+                      name: NPM Auth
+                      identifier: NPM_Auth
+                      type: Plugin
+                      spec:
+                        connectorRef: account.Tractable_Docker_Hub
+                        image: robertstettner/drone-npm-auth
+                        settings:
+                          token: <+secrets.getValue("account.NPM_Tractable_Bot_Token")>
+                      description: Add a token to access to npmjs
+                  - step:
+                      type: Run
+                      name: Install
+                      identifier: Install
+                      spec:
+                        connectorRef: account.Tractable_Docker_Hub_v1
+                        image: <+pipeline.variables.NODE_BUILD_IMAGE>
+                        shell: Sh
+                        command: yarn install
+                  - step:
+                      identifier: Run_Tests
+                      name: Run Tests
+                      type: Run
+                      spec:
+                        connectorRef: account.Tractable_Docker_Hub
+                        image: <+stage.variables.NODE_BUILD_IMAGE>
+                        shell: Sh
+                        command: yarn turbo run test:ci --filter=@coa/frontend
+                        reports:
+                          type: JUnit
+                          spec:
+                            paths:
+                              - ./apps/frontend/junit.xml
+                        resources:
+                          limits:
+                            memory: 2Gi
+                            cpu: "2"
+                      failureStrategies: []
+            variables:
+              - name: NODE_BUILD_IMAGE
+                type: String
+                value: <+pipeline.variables.NODE_BUILD_IMAGE>
+              - name: JUNIT_XML_FILE
+                type: String
+                value: junit.xml
+              - name: CACHE_PATHS
+                type: String
+                value: <+pipeline.variables.CACHE_PATHS>
+              - name: PLUGIN_ACL
+                type: String
+                value: bucket-owner-full-control
+            when:
+              pipelineStatus: Success
+              condition: <+pipeline.variables.RUN_FRONTEND_TESTS> == "YES"
+        - stage:
+            name: Run DCS tests
+            identifier: Run_DCS_tests
+            type: CI
+            spec:
+              cloneCodebase: true
+              infrastructure:
+                type: KubernetesDirect
+                spec:
+                  connectorRef: account.K8S_nextgen_Connector
+                  namespace: harness-build
+                  automountServiceAccountToken: true
+                  nodeSelector: {}
+              execution:
+                steps:
+                  - step:
+                      type: Run
+                      name: Deploy localstack
+                      identifier: Terraform
+                      spec:
+                        connectorRef: account.Tractable_Docker_Hub_v1
+                        image: hashicorp/terraform:1.1.7
+                        shell: Sh
+                        command: |
+                          export PACKAGE_VERSION=$(cat package.json \
+                            | grep version \
+                            | head -1 \
+                            | awk -F: '{ print $2 }' \
+                            | sed 's/[",]//g')
+
+                          AWS_ACCESS_KEY_ID="test"
+                          AWS_SECRET_ACCESS_KEY="test"
+                          AWS_SESSION_TOKEN="test"
+
+                          cd localstack
+
+                          terraform init
+                          terraform apply -auto-approve
+
+                          cd ../terraform
+
+                          cp ../localstack/overwrites/provider.tf provider.tf
+                          cp ../localstack/overwrites/state.tf state.tf
+                          cp ../localstack/overwrites/sqs.tf modules/car-owner-app/sqs.tf
+                          cp ../localstack/overwrites/s3.tf modules/car-owner-app/s3.tf
+
+                          terraform init \
+                              -var="environment=localstack" \
+                              -var="app_version=$(PACKAGE_VERSION)" \
+                              -var-file=variables/localstack.tfvars \
+                              -backend-config="key=car-owner-app/localstack.tfstate"
+
+                          terraform apply \
+                              -var="environment=localstack" \
+                              -var="app_version=$(PACKAGE_VERSION)" \
+                              -var-file=variables/localstack.tfvars \
+                              -auto-approve
+                        envVariables:
+                          AWS_ACCESS_KEY_ID: test
+                          AWS_SECRET_ACCESS_KEY: test
+                          AWS_SESSION_TOKEN: test
+                  - step:
+                      type: RestoreCacheS3
+                      spec:
+                        connectorRef: account.AWS_S3_Cache_Connector
+                        region: eu-west-1
+                        bucket: tractableai-dev-utilities
+                        key: harness/cache/<+project.identifier>/<+pipeline.name>/Install_dependencies/
+                        archiveFormat: Tar
+                        resources:
+                          limits:
+                            memory: 4Gi
+                            cpu: "2"
+                      name: Restore cache
+                      identifier: Restore_cache
+                  - step:
+                      name: NPM Auth
+                      identifier: NPM_Auth
+                      type: Plugin
+                      spec:
+                        connectorRef: account.Tractable_Docker_Hub
+                        image: robertstettner/drone-npm-auth
+                        settings:
+                          token: <+secrets.getValue("account.NPM_Tractable_Bot_Token")>
+                      description: Add a token to access to npmjs
+                  - step:
+                      type: Run
+                      name: Install
+                      identifier: Install
+                      spec:
+                        connectorRef: account.Tractable_Docker_Hub_v1
+                        image: <+pipeline.variables.NODE_BUILD_IMAGE>
+                        command: yarn install --frozen-lockfile
+                  - step:
+                      identifier: Run_unit_tests
+                      name: Run unit tests
+                      type: Run
+                      spec:
+                        connectorRef: account.Tractable_Docker_Hub
+                        image: <+stage.variables.NODE_BUILD_IMAGE>
+                        shell: Sh
+                        command: yarn turbo run test:unit --filter=@coa/data-collection-service
+                        reports:
+                          type: JUnit
+                          spec:
+                            paths:
+                              - <+input>
+                        resources:
+                          limits:
+                            memory: 2Gi
+                            cpu: "2"
+                  - step:
+                      type: Run
+                      name: Run int tests
+                      identifier: Run_int_tests
+                      spec:
+                        connectorRef: account.Tractable_Docker_Hub
+                        image: <+stage.variables.NODE_BUILD_IMAGE>
+                        shell: Sh
+                        command: |-
+                          yarn --cwd apps/data-collection-service 
+
+                          cp apps/data-collection-service/.env.test.example apps/data-collection-service/.env.test
+
+                          yarn --cwd apps/data-collection-service db:migrate:test
+
+                          yarn turbo run test:int --filter=@coa/data-collection-service
+                        resources:
+                          limits:
+                            memory: 2Gi
+                      description: Migrate the test database and run the integration tests against the PostgresDB and Localstack instance started earlier in the stage
+              serviceDependencies:
+                - identifier: PostgresDB
+                  name: PostgresDB
+                  type: Service
+                  description: PostgresDB for tests
+                  spec:
+                    connectorRef: account.Tractable_Docker_Hub_v1
+                    image: postgres:13
+                    envVariables:
+                      POSTGRES_DB: car_owner_app_test
+                      POSTGRES_USER: car_owner_app_postgres
+                      POSTGRES_PASSWORD: p0stgr3s
+                      POSTGRES_HOST_AUTH_METHOD: trust
+                      PGPORT: "2345"
+                - identifier: Localstack
+                  name: Localstack
+                  type: Service
+                  description: Localstack to mock AWS for tests
+                  spec:
+                    connectorRef: account.Tractable_Docker_Hub_v1
+                    image: localstack/localstack:0.14.2
+                    envVariables:
+                      SERVICES: sns,s3,dynamodb,ec2,sqs
+                      EDGE_PORT: 4566
+                      AWS_DEFAULT_REGION: eu-west-1
+                      AWS_ACCESS_KEY_ID: test
+                      AWS_SECRET_ACCESS_KEY: test
+                      HOST_TMP_FOLDER: /tmp
+            variables:
+              - name: NODE_BUILD_IMAGE
+                type: String
+                value: <+pipeline.variables.NODE_BUILD_IMAGE>
+              - name: JUNIT_XML_FILE
+                type: String
+                value: junit.xml
+              - name: CACHE_PATHS
+                type: String
+                value: <+pipeline.variables.CACHE_PATHS>
+              - name: PLUGIN_ACL
+                type: String
+                value: bucket-owner-full-control
+            when:
+              pipelineStatus: Success
+              condition: <+pipeline.variables.RUN_DCS_TESTS> == "YES"
+        - stage:
+            name: Run BFF tests
+            identifier: Run_BFF_tests
+            type: CI
+            spec:
+              cloneCodebase: true
+              infrastructure:
+                type: KubernetesDirect
+                spec:
+                  connectorRef: account.K8S_nextgen_Connector
+                  namespace: harness-build
+                  automountServiceAccountToken: true
+                  nodeSelector: {}
+                  os: Linux
+              execution:
+                steps:
+                  - step:
+                      type: Run
+                      name: Deploy Localstack
+                      identifier: Deploy_Localstack
+                      spec:
+                        connectorRef: account.Tractable_Docker_Hub_v1
+                        image: hashicorp/terraform:1.1.7
+                        shell: Sh
+                        command: |
+                          export PACKAGE_VERSION=$(cat package.json \
+                            | grep version \
+                            | head -1 \
+                            | awk -F: '{ print $2 }' \
+                            | sed 's/[",]//g')
+
+                          AWS_ACCESS_KEY_ID="test"
+                          AWS_SECRET_ACCESS_KEY="test"
+                          AWS_SESSION_TOKEN="test"
+
+                          cd localstack
+
+                          terraform init
+                          terraform apply -auto-approve
+
+                          cd ../terraform
+
+                          cp ../localstack/overwrites/provider.tf provider.tf
+                          cp ../localstack/overwrites/state.tf state.tf
+                          cp ../localstack/overwrites/sqs.tf modules/car-owner-app/sqs.tf
+                          cp ../localstack/overwrites/s3.tf modules/car-owner-app/s3.tf
+
+                          terraform init \
+                              -var="environment=localstack" \
+                              -var="app_version=$(PACKAGE_VERSION)" \
+                              -var-file=variables/localstack.tfvars \
+                              -backend-config="key=car-owner-app/localstack.tfstate"
+
+                          terraform apply \
+                              -var="environment=localstack" \
+                              -var="app_version=$(PACKAGE_VERSION)" \
+                              -var-file=variables/localstack.tfvars \
+                              -auto-approve
+                        envVariables:
+                          AWS_ACCESS_KEY_ID: test
+                          AWS_SECRET_ACCESS_KEY: test
+                          AWS_SESSION_TOKEN: test
+                  - step:
+                      type: RestoreCacheS3
+                      spec:
+                        connectorRef: account.AWS_S3_Cache_Connector
+                        region: eu-west-1
+                        bucket: tractableai-dev-utilities
+                        key: harness/cache/<+project.identifier>/<+pipeline.name>/Install_dependencies/
+                        archiveFormat: Tar
+                        resources:
+                          limits:
+                            memory: 4Gi
+                            cpu: "2"
+                      name: Restore cache
+                      identifier: Restore_cache
+                  - step:
+                      name: NPM Auth
+                      identifier: NPM_Auth
+                      type: Plugin
+                      spec:
+                        connectorRef: account.Tractable_Docker_Hub
+                        image: robertstettner/drone-npm-auth
+                        settings:
+                          token: <+secrets.getValue("account.NPM_Tractable_Bot_Token")>
+                      description: Add a token to access to npmjs
+                  - step:
+                      type: Run
+                      name: Install
+                      identifier: Install
+                      spec:
+                        connectorRef: account.Tractable_Docker_Hub_v1
+                        image: <+pipeline.variables.NODE_BUILD_IMAGE>
+                        command: yarn install --frozen-lockfile
+                  - step:
+                      identifier: Run_Tests
+                      name: Run Tests
+                      type: Run
+                      spec:
+                        connectorRef: account.Tractable_Docker_Hub
+                        image: <+stage.variables.NODE_BUILD_IMAGE>
+                        shell: Sh
+                        command: yarn test --filter=@coa/backend-for-frontend
+                        reports:
+                          type: JUnit
+                          spec:
+                            paths:
+                              - <+input>
+                        resources:
+                          limits:
+                            memory: 2Gi
+                            cpu: "2"
+                      failureStrategies: []
+              serviceDependencies:
+                - identifier: Localstack
+                  name: Localstack
+                  type: Service
+                  description: Localstack to mock AWS for tests
+                  spec:
+                    connectorRef: account.Tractable_Docker_Hub_v1
+                    image: localstack/localstack:0.14.2
+                    envVariables:
+                      SERVICES: sns,s3,dynamodb,ec2,sqs
+                      EDGE_PORT: "4566"
+                      AWS_DEFAULT_REGION: eu-west-1
+                      AWS_ACCESS_KEY_ID: test
+                      AWS_SECRET_ACCESS_KEY: test
+                      HOST_TMP_FOLDER: /tmp
+                - identifier: Redis
+                  name: Redis
+                  type: Service
+                  description: Redis key/value store
+                  spec:
+                    connectorRef: account.Tractable_Docker_Hub_v1
+                    image: redis:7.0.2
+                    entrypoint:
+                      - redis-server
+                      - "--save"
+                      - "60"
+                      - "1"
+                      - "--loglevel"
+                      - warning
+                      - "--protected-mode"
+                      - "no"
+                      - "--port"
+                      - "6321"
+            variables:
+              - name: NODE_BUILD_IMAGE
+                type: String
+                value: <+pipeline.variables.NODE_BUILD_IMAGE>
+              - name: JUNIT_XML_FILE
+                type: String
+                value: junit.xml
+              - name: CACHE_PATHS
+                type: String
+                value: <+pipeline.variables.CACHE_PATHS>
+              - name: PLUGIN_ACL
+                type: String
+                value: bucket-owner-full-control
+            when:
+              pipelineStatus: Success
+              condition: <+pipeline.variables.RUN_DCS_TESTS> == "YES"
+        - stage:
+            name: Run package tests
+            identifier: Run_package_tests
+            type: CI
+            spec:
+              cloneCodebase: true
+              infrastructure:
+                type: KubernetesDirect
+                spec:
+                  connectorRef: account.K8S_nextgen_Connector
+                  namespace: harness-build
+                  automountServiceAccountToken: true
+              execution:
+                steps:
+                  - step:
+                      type: RestoreCacheS3
+                      spec:
+                        connectorRef: account.AWS_S3_Cache_Connector
+                        region: eu-west-1
+                        bucket: tractableai-dev-utilities
+                        key: /harness/cache/<+project.identifier>/<+pipeline.name>/Install_dependencies/
+                        archiveFormat: Tar
+                        resources:
+                          limits:
+                            memory: 4Gi
+                            cpu: "2"
+                      name: Restore cache
+                      identifier: Restore_cache
+                      failureStrategies: []
+                  - step:
+                      name: NPM Auth
+                      identifier: NPM_Auth
+                      type: Plugin
+                      spec:
+                        connectorRef: account.Tractable_Docker_Hub
+                        image: robertstettner/drone-npm-auth
+                        settings:
+                          token: <+secrets.getValue("account.NPM_Tractable_Bot_Token")>
+                      description: Add a token to access to npmjs
+                  - step:
+                      type: Run
+                      name: Install
+                      identifier: Install
+                      spec:
+                        connectorRef: account.Tractable_Docker_Hub_v1
+                        image: <+pipeline.variables.NODE_BUILD_IMAGE>
+                        shell: Sh
+                        command: yarn install
+                  - step:
+                      identifier: Run_App_Config_Tests
+                      name: Run AppConfig Tests
+                      type: Run
+                      spec:
+                        connectorRef: account.Tractable_Docker_Hub
+                        image: <+stage.variables.NODE_BUILD_IMAGE>
+                        shell: Sh
+                        command: yarn test --filter=@coa/app-config
+                        reports:
+                          type: JUnit
+                          spec:
+                            paths:
+                              - <+input>
+                        resources:
+                          limits:
+                            memory: 2Gi
+                            cpu: "2"
+                      failureStrategies: []
+                  - step:
+                      identifier: Run_Client_Config_Tests
+                      name: Run ClientConfig Tests
+                      type: Run
+                      spec:
+                        connectorRef: account.Tractable_Docker_Hub
+                        image: <+stage.variables.NODE_BUILD_IMAGE>
+                        shell: Sh
+                        command: |-
+                          cp clientConfig.json.example clientConfig.json
+
+                          yarn test --filter=@coa/client-config
+                        reports:
+                          type: JUnit
+                          spec:
+                            paths:
+                              - <+input>
+                        resources:
+                          limits:
+                            memory: 2Gi
+                            cpu: "2"
+                      failureStrategies: []
+                  - step:
+                      identifier: Run_Logging_Tests
+                      name: Run Logging Tests
+                      type: Run
+                      spec:
+                        connectorRef: account.Tractable_Docker_Hub
+                        image: <+stage.variables.NODE_BUILD_IMAGE>
+                        shell: Sh
+                        command: yarn test --filter=@coa/logging
+                        reports:
+                          type: JUnit
+                          spec:
+                            paths:
+                              - <+input>
+                        resources:
+                          limits:
+                            memory: 2Gi
+                            cpu: "2"
+                      failureStrategies: []
+                  - step:
+                      type: Run
+                      name: Run Runner tests
+                      identifier: Run_Runner_tests
+                      spec:
+                        connectorRef: account.Tractable_Docker_Hub
+                        image: <+stage.variables.NODE_BUILD_IMAGE>
+                        shell: Sh
+                        command: yarn test --filter=@coa/runner
+                      description: Runs the @coa/runner tests
+            variables:
+              - name: NODE_BUILD_IMAGE
+                type: String
+                value: <+pipeline.variables.NODE_BUILD_IMAGE>
+              - name: JUNIT_XML_FILE
+                type: String
+                value: junit.xml
+              - name: CACHE_PATHS
+                type: String
+                value: <+pipeline.variables.CACHE_PATHS>
+              - name: PLUGIN_ACL
+                type: String
+                value: bucket-owner-full-control
+            when:
+              pipelineStatus: Success
+              condition: <+pipeline.variables.RUN_PACKAGES_TESTS> == "YES"
+    - stage:
+        type: CI
+        spec:
+          cloneCodebase: true
+          infrastructure:
+            type: KubernetesDirect
+            spec:
+              connectorRef: account.K8S_nextgen_Connector
+              namespace: harness-build
+              automountServiceAccountToken: true
+              nodeSelector: {}
+          execution:
+            steps:
+              - step:
+                  name: Generate Tag
+                  identifier: Generate_Tag
+                  template:
+                    templateRef: account.Generate_Tag
+                    versionLabel: 2.4.6
+                    templateInputs:
+                      type: Run
+                      spec:
+                        envVariables:
+                          TAG_PREFIX: "null"
+                          DOCKER_IMAGE: <+pipeline.variables.BFF_DOCKER_IMAGE>
+                          TAG_OVERRIDE: "null"
+                          ADD_GIT_TAG: "null"
+                      when:
+                        condition: "true"
+        variables: []
+        when:
+          pipelineStatus: Success
+          condition: <+pipeline.variables.DEPLOY_DCS> == "YES" || <+pipeline.variables.DEPLOY_BFF> == "YES"
+        failureStrategies: []
+        name: Docker Tag
+        identifier: Docker_Taga
+    - parallel:
+        - stage:
+            name: Deploy DCS to dev
+            identifier: Deploy_DCS_to_dev
+            type: Deployment
+            spec:
+              serviceConfig:
+                serviceRef: carownerapp
+                serviceDefinition:
+                  type: Kubernetes
+                  spec:
+                    variables: []
+                    manifests:
+                      - manifest:
+                          identifier: main
+                          type: Kustomize
+                          spec:
+                            store:
+                              type: Github
+                              spec:
+                                connectorRef: account.GithubConnectorV2
+                                gitFetchType: Branch
+                                folderPath: kubernetes/data-collection-service/k8s-dev
+                                repoName: <+stage.variables.K8S_GIT_REPO>
+                                branch: <+stage.variables.K8S_GIT_BRANCH>
+                            pluginPath: ""
+                            skipResourceVersioning: false
+                      - manifest:
+                          identifier: artifact_patch
+                          type: KustomizePatches
+                          spec:
+                            store:
+                              type: Github
+                              spec:
+                                connectorRef: account.GithubConnectorV2
+                                gitFetchType: Branch
+                                paths:
+                                  - <+stage.variables.PATCHES_PATH>
+                                repoName: <+stage.variables.K8S_GIT_REPO>
+                                branch: <+stage.variables.K8S_GIT_BRANCH>
+                    artifacts:
+                      primary:
+                        spec:
+                          connectorRef: account.Tractable_Docker_Hub
+                          imagePath: <+pipeline.variables.DCS_DOCKER_IMAGE>
+                          tag: <+pipeline.stages.Docker_Tag.spec.execution.steps.Generate_Tag.output.outputVariables.DOCKER_TAG>
+                        type: DockerRegistry
+              infrastructure:
+                environmentRef: dev
+                infrastructureDefinition:
+                  type: KubernetesDirect
+                  spec:
+                    connectorRef: account.k8sdev
+                    namespace: harness-delegate
+                    releaseName: release-<+INFRA_KEY>
+                allowSimultaneousDeployments: false
+              execution:
+                steps:
+                  - step:
+                      type: TerraformPlan
+                      name: Terraform Plan
+                      identifier: Terraform_Plan
+                      spec:
+                        configuration:
+                          command: Apply
+                          configFiles:
+                            store:
+                              type: Github
+                              spec:
+                                gitFetchType: Branch
+                                connectorRef: account.Github_via_SSH_ECDSA_key
+                                repoName: car-owner-app
+                                branch: <+codebase.branch>
+                                folderPath: terraform
+                          secretManagerRef: account.harnessSecretManager
+                          environmentVariables:
+                            - name: TF_CLI_ARGS_init
+                              value: "-backend-config=\"key=car-owner-app/dev.tfstate\""
+                              type: String
+                            - name: TF_CLI_ARGS_apply
+                              value: "-parallelism=1"
+                              type: String
+                            - name: TFENV_DEBUG
+                              value: "1"
+                              type: String
+                            - name: TFENV_TERRAFORM_VERSION
+                              value: 1.1.7
+                              type: String
+                            - name: TF_CLI_ARGS_plan
+                              value: "-parallelism=1"
+                              type: String
+                          varFiles:
+                            - varFile:
+                                type: Remote
+                                identifier: var-file
+                                spec:
+                                  store:
+                                    type: Github
+                                    spec:
+                                      gitFetchType: Branch
+                                      repoName: car-owner-app
+                                      branch: <+codebase.branch>
+                                      paths:
+                                        - terraform/variables/dev.tfvars
+                                      connectorRef: account.Github_via_SSH_ECDSA_key
+                        provisionerIdentifier: car_owner_app_dev
+                        delegateSelectors:
+                          - harness-delegate-k8s-infra-eu
+                      timeout: 10m
+                      failureStrategies: []
+                  - step:
+                      type: TerraformApply
+                      name: Terraform Apply
+                      identifier: Terraform_Apply
+                      spec:
+                        configuration:
+                          type: InheritFromPlan
+                        provisionerIdentifier: car_owner_app_dev
+                        delegateSelectors:
+                          - harness-delegate-k8s-infra-eu
+                      timeout: 10m
+                      failureStrategies: []
+                  - step:
+                      name: Rollout Deployment
+                      identifier: rolloutDeployment
+                      type: K8sRollingDeploy
+                      timeout: 10m
+                      spec:
+                        skipDryRun: false
+                rollbackSteps:
+                  - step:
+                      name: Rollback Rollout Deployment
+                      identifier: rollbackRolloutDeployment
+                      type: K8sRollingRollback
+                      timeout: 10m
+                      spec: {}
+              serviceDependencies: []
+            failureStrategies:
+              - onFailure:
+                  errors:
+                    - AllErrors
+                  action:
+                    type: StageRollback
+            variables:
+              - name: K8S_GIT_REPO
+                type: String
+                value: <+pipeline.variables.K8S_GIT_REPO>
+              - name: K8S_GIT_BRANCH
+                type: String
+                value: <+codebase.branch>
+              - name: PATCHES_PATH
+                type: String
+                value: <+pipeline.variables.HARNESS_PATCH_PATH>
+              - name: SERVICE_NAME
+                type: String
+                default: <+service.name>
+                value: <+service.name>
+            when:
+              pipelineStatus: Success
+              condition: <+pipeline.variables.DEPLOY_DCS> == "YES" && (<+pipeline.variables.SINGLE_DEPLOY_TARGET>=="dev" || <+pipeline.variables.DEPLOY_TO_ALL_CLUSTERS>=="YES")
+            tags: {}
+        - stage:
+            name: Deploy DCS to staging-eu
+            identifier: Deploy_DCS_to_stagingeu
+            type: Deployment
+            spec:
+              serviceConfig:
+                serviceRef: carownerapp
+                serviceDefinition:
+                  type: Kubernetes
+                  spec:
+                    variables: []
+                    manifests:
+                      - manifest:
+                          identifier: main
+                          type: Kustomize
+                          spec:
+                            store:
+                              type: Github
+                              spec:
+                                connectorRef: account.GithubConnectorV2
+                                gitFetchType: Branch
+                                folderPath: kubernetes/data-collection-service/k8s-staging-eu
+                                repoName: <+stage.variables.K8S_GIT_REPO>
+                                branch: <+stage.variables.K8S_GIT_BRANCH>
+                            pluginPath: ""
+                            skipResourceVersioning: false
+                      - manifest:
+                          identifier: artifact_patch
+                          type: KustomizePatches
+                          spec:
+                            store:
+                              type: Github
+                              spec:
+                                connectorRef: account.GithubConnectorV2
+                                gitFetchType: Branch
+                                paths:
+                                  - <+stage.variables.PATCHES_PATH>
+                                repoName: <+stage.variables.K8S_GIT_REPO>
+                                branch: <+stage.variables.K8S_GIT_BRANCH>
+                    artifacts:
+                      primary:
+                        spec:
+                          connectorRef: account.Tractable_Docker_Hub
+                          imagePath: <+pipeline.variables.DCS_DOCKER_IMAGE>
+                          tag: <+pipeline.stages.Docker_Tag.spec.execution.steps.Generate_Tag.output.outputVariables.DOCKER_TAG>
+                        type: DockerRegistry
+              infrastructure:
+                environmentRef: stagingeu
+                infrastructureDefinition:
+                  type: KubernetesDirect
+                  spec:
+                    connectorRef: account.k8sstagingeu
+                    namespace: harness-delegate
+                    releaseName: release-<+INFRA_KEY>
+                allowSimultaneousDeployments: false
+              execution:
+                steps:
+                  - step:
+                      type: TerraformPlan
+                      name: Terraform Plan
+                      identifier: Terraform_Plan
+                      spec:
+                        configuration:
+                          command: Apply
+                          configFiles:
+                            store:
+                              type: Github
+                              spec:
+                                gitFetchType: Branch
+                                connectorRef: account.Github_via_SSH_ECDSA_key
+                                repoName: car-owner-app
+                                branch: <+codebase.branch>
+                                folderPath: terraform
+                          secretManagerRef: account.harnessSecretManager
+                          environmentVariables:
+                            - name: TF_CLI_ARGS_init
+                              value: "-backend-config=\"key=car-owner-app/integ.tfstate\""
+                              type: String
+                            - name: TF_CLI_ARGS_apply
+                              value: "-parallelism=1"
+                              type: String
+                            - name: TFENV_DEBUG
+                              value: "1"
+                              type: String
+                            - name: TFENV_TERRAFORM_VERSION
+                              value: 1.1.7
+                              type: String
+                            - name: TF_CLI_ARGS_plan
+                              value: "-parallelism=1"
+                              type: String
+                          varFiles:
+                            - varFile:
+                                type: Remote
+                                identifier: var-file
+                                spec:
+                                  store:
+                                    type: Github
+                                    spec:
+                                      gitFetchType: Branch
+                                      repoName: car-owner-app
+                                      branch: <+codebase.branch>
+                                      paths:
+                                        - terraform/variables/integ.tfvars
+                                      connectorRef: account.Github_via_SSH_ECDSA_key
+                        provisionerIdentifier: car_owner_app_staging_eu
+                        delegateSelectors:
+                          - harness-delegate-k8s-infra-eu
+                      timeout: 10m
+                      failureStrategies: []
+                  - step:
+                      type: TerraformApply
+                      name: Terraform Apply
+                      identifier: Terraform_Apply
+                      spec:
+                        configuration:
+                          type: InheritFromPlan
+                        provisionerIdentifier: car_owner_app_staging_eu
+                        delegateSelectors:
+                          - harness-delegate-k8s-infra-eu
+                      timeout: 10m
+                      failureStrategies: []
+                  - step:
+                      name: Rollout Deployment
+                      identifier: rolloutDeployment
+                      type: K8sRollingDeploy
+                      timeout: 10m
+                      spec:
+                        skipDryRun: false
+                rollbackSteps:
+                  - step:
+                      name: Rollback Rollout Deployment
+                      identifier: rollbackRolloutDeployment
+                      type: K8sRollingRollback
+                      timeout: 10m
+                      spec: {}
+              serviceDependencies: []
+            failureStrategies:
+              - onFailure:
+                  errors:
+                    - AllErrors
+                  action:
+                    type: StageRollback
+            variables:
+              - name: K8S_GIT_REPO
+                type: String
+                value: <+pipeline.variables.K8S_GIT_REPO>
+              - name: K8S_GIT_BRANCH
+                type: String
+                value: <+codebase.branch>
+              - name: PATCHES_PATH
+                type: String
+                value: <+pipeline.variables.HARNESS_PATCH_PATH>
+              - name: SERVICE_NAME
+                type: String
+                default: <+service.name>
+                value: <+service.name>
+            when:
+              pipelineStatus: Success
+              condition: <+pipeline.variables.DEPLOY_DCS> == "YES" && (<+pipeline.variables.SINGLE_DEPLOY_TARGET>=="staging-eu" || <+pipeline.variables.DEPLOY_TO_ALL_CLUSTERS>=="YES")
+            tags: {}
+        - stage:
+            name: Deploy DCS to preprod-eu
+            identifier: Deploy_DCS_to_preprodeu
+            type: Deployment
+            spec:
+              serviceConfig:
+                serviceRef: carownerapp
+                serviceDefinition:
+                  type: Kubernetes
+                  spec:
+                    variables: []
+                    manifests:
+                      - manifest:
+                          identifier: main
+                          type: Kustomize
+                          spec:
+                            store:
+                              type: Github
+                              spec:
+                                connectorRef: account.GithubConnectorV2
+                                gitFetchType: Branch
+                                folderPath: kubernetes/data-collection-service/k8s-preprod-eu
+                                repoName: <+stage.variables.K8S_GIT_REPO>
+                                branch: <+stage.variables.K8S_GIT_BRANCH>
+                            pluginPath: ""
+                            skipResourceVersioning: false
+                      - manifest:
+                          identifier: artifact_patch
+                          type: KustomizePatches
+                          spec:
+                            store:
+                              type: Github
+                              spec:
+                                connectorRef: account.GithubConnectorV2
+                                gitFetchType: Branch
+                                paths:
+                                  - <+stage.variables.PATCHES_PATH>
+                                repoName: <+stage.variables.K8S_GIT_REPO>
+                                branch: <+stage.variables.K8S_GIT_BRANCH>
+                    artifacts:
+                      primary:
+                        spec:
+                          connectorRef: account.Tractable_Docker_Hub
+                          imagePath: <+pipeline.variables.DCS_DOCKER_IMAGE>
+                          tag: <+pipeline.stages.Docker_Tag.spec.execution.steps.Generate_Tag.output.outputVariables.DOCKER_TAG>
+                        type: DockerRegistry
+              infrastructure:
+                environmentRef: preprodeu
+                infrastructureDefinition:
+                  type: KubernetesDirect
+                  spec:
+                    connectorRef: account.k8sprodeu
+                    namespace: harness-delegate
+                    releaseName: release-<+INFRA_KEY>
+                allowSimultaneousDeployments: false
+              execution:
+                steps:
+                  - step:
+                      type: TerraformPlan
+                      name: Terraform Plan
+                      identifier: Terraform_Plan
+                      spec:
+                        configuration:
+                          command: Apply
+                          configFiles:
+                            store:
+                              type: Github
+                              spec:
+                                gitFetchType: Branch
+                                connectorRef: account.Github_via_SSH_ECDSA_key
+                                repoName: car-owner-app
+                                branch: <+codebase.branch>
+                                folderPath: terraform
+                          secretManagerRef: account.harnessSecretManager
+                          environmentVariables:
+                            - name: TF_CLI_ARGS_init
+                              value: "-backend-config=\"key=car-owner-app/preprod-eu.tfstate\""
+                              type: String
+                            - name: TF_CLI_ARGS_apply
+                              value: "-parallelism=1"
+                              type: String
+                            - name: TFENV_DEBUG
+                              value: "1"
+                              type: String
+                            - name: TFENV_TERRAFORM_VERSION
+                              value: 1.1.7
+                              type: String
+                            - name: TF_CLI_ARGS_plan
+                              value: "-parallelism=1"
+                              type: String
+                          varFiles:
+                            - varFile:
+                                type: Remote
+                                identifier: var-file
+                                spec:
+                                  store:
+                                    type: Github
+                                    spec:
+                                      gitFetchType: Branch
+                                      repoName: car-owner-app
+                                      branch: <+codebase.branch>
+                                      paths:
+                                        - terraform/variables/preprod-eu.tfvars
+                                      connectorRef: account.Github_via_SSH_ECDSA_key
+                        provisionerIdentifier: car_owner_app_preprod_eu
+                        delegateSelectors:
+                          - harness-delegate-k8s-infra-eu
+                      timeout: 10m
+                      failureStrategies: []
+                  - step:
+                      type: TerraformApply
+                      name: Terraform Apply
+                      identifier: Terraform_Apply
+                      spec:
+                        configuration:
+                          type: InheritFromPlan
+                        provisionerIdentifier: car_owner_app_preprod_eu
+                        delegateSelectors:
+                          - harness-delegate-k8s-infra-eu
+                      timeout: 10m
+                      failureStrategies: []
+                  - step:
+                      name: Rollout Deployment
+                      identifier: rolloutDeployment
+                      type: K8sRollingDeploy
+                      timeout: 10m
+                      spec:
+                        skipDryRun: false
+                rollbackSteps:
+                  - step:
+                      name: Rollback Rollout Deployment
+                      identifier: rollbackRolloutDeployment
+                      type: K8sRollingRollback
+                      timeout: 10m
+                      spec: {}
+              serviceDependencies: []
+            failureStrategies:
+              - onFailure:
+                  errors:
+                    - AllErrors
+                  action:
+                    type: StageRollback
+            variables:
+              - name: K8S_GIT_REPO
+                type: String
+                value: <+pipeline.variables.K8S_GIT_REPO>
+              - name: K8S_GIT_BRANCH
+                type: String
+                value: <+codebase.branch>
+              - name: PATCHES_PATH
+                type: String
+                value: <+pipeline.variables.HARNESS_PATCH_PATH>
+              - name: SERVICE_NAME
+                type: String
+                default: <+service.name>
+                value: <+service.name>
+            when:
+              pipelineStatus: Success
+              condition: <+pipeline.variables.DEPLOY_DCS> == "YES" && (<+pipeline.variables.SINGLE_DEPLOY_TARGET>=="preprod-eu" || <+pipeline.variables.DEPLOY_TO_ALL_CLUSTERS>=="YES")
+            tags: {}
+        - stage:
+            name: Deploy DCS to preprod-jp
+            identifier: Deploy_DCS_to_preprodjp
+            type: Deployment
+            spec:
+              serviceConfig:
+                serviceRef: carownerapp
+                serviceDefinition:
+                  type: Kubernetes
+                  spec:
+                    variables: []
+                    manifests:
+                      - manifest:
+                          identifier: main
+                          type: Kustomize
+                          spec:
+                            store:
+                              type: Github
+                              spec:
+                                connectorRef: account.GithubConnectorV2
+                                gitFetchType: Branch
+                                folderPath: kubernetes/data-collection-service/k8s-preprod-jp
+                                repoName: <+stage.variables.K8S_GIT_REPO>
+                                branch: <+stage.variables.K8S_GIT_BRANCH>
+                            pluginPath: ""
+                            skipResourceVersioning: false
+                      - manifest:
+                          identifier: artifact_patch
+                          type: KustomizePatches
+                          spec:
+                            store:
+                              type: Github
+                              spec:
+                                connectorRef: account.GithubConnectorV2
+                                gitFetchType: Branch
+                                paths:
+                                  - <+stage.variables.PATCHES_PATH>
+                                repoName: <+stage.variables.K8S_GIT_REPO>
+                                branch: <+stage.variables.K8S_GIT_BRANCH>
+                    artifacts:
+                      primary:
+                        spec:
+                          connectorRef: account.Tractable_Docker_Hub
+                          imagePath: <+pipeline.variables.DCS_DOCKER_IMAGE>
+                          tag: <+pipeline.stages.Docker_Tag.spec.execution.steps.Generate_Tag.output.outputVariables.DOCKER_TAG>
+                        type: DockerRegistry
+              infrastructure:
+                environmentRef: preprodjp
+                infrastructureDefinition:
+                  type: KubernetesDirect
+                  spec:
+                    connectorRef: account.k8sprodjp
+                    namespace: harness-delegate
+                    releaseName: release-<+INFRA_KEY>
+                allowSimultaneousDeployments: false
+              execution:
+                steps:
+                  - step:
+                      type: TerraformPlan
+                      name: Terraform Plan
+                      identifier: Terraform_Plan
+                      spec:
+                        configuration:
+                          command: Apply
+                          configFiles:
+                            store:
+                              type: Github
+                              spec:
+                                gitFetchType: Branch
+                                connectorRef: account.Github_via_SSH_ECDSA_key
+                                repoName: car-owner-app
+                                branch: <+codebase.branch>
+                                folderPath: terraform
+                          secretManagerRef: account.harnessSecretManager
+                          environmentVariables:
+                            - name: TF_CLI_ARGS_init
+                              value: "-backend-config=\"key=car-owner-app/preprod-jp.tfstate\""
+                              type: String
+                            - name: TF_CLI_ARGS_apply
+                              value: "-parallelism=1"
+                              type: String
+                            - name: TFENV_DEBUG
+                              value: "1"
+                              type: String
+                            - name: TFENV_TERRAFORM_VERSION
+                              value: 1.1.7
+                              type: String
+                            - name: TF_CLI_ARGS_plan
+                              value: "-parallelism=1"
+                              type: String
+                          varFiles:
+                            - varFile:
+                                type: Remote
+                                identifier: var-file
+                                spec:
+                                  store:
+                                    type: Github
+                                    spec:
+                                      gitFetchType: Branch
+                                      repoName: car-owner-app
+                                      branch: <+codebase.branch>
+                                      paths:
+                                        - terraform/variables/preprod-jp.tfvars
+                                      connectorRef: account.Github_via_SSH_ECDSA_key
+                        provisionerIdentifier: car_owner_app_preprod_jp
+                        delegateSelectors:
+                          - harness-delegate-k8s-infra-eu
+                      timeout: 10m
+                      failureStrategies: []
+                  - step:
+                      type: TerraformApply
+                      name: Terraform Apply
+                      identifier: Terraform_Apply
+                      spec:
+                        configuration:
+                          type: InheritFromPlan
+                        provisionerIdentifier: car_owner_app_preprod_jp
+                        delegateSelectors:
+                          - harness-delegate-k8s-infra-eu
+                      timeout: 10m
+                      failureStrategies: []
+                  - step:
+                      name: Rollout Deployment
+                      identifier: rolloutDeployment
+                      type: K8sRollingDeploy
+                      timeout: 10m
+                      spec:
+                        skipDryRun: false
+                rollbackSteps:
+                  - step:
+                      name: Rollback Rollout Deployment
+                      identifier: rollbackRolloutDeployment
+                      type: K8sRollingRollback
+                      timeout: 10m
+                      spec: {}
+              serviceDependencies: []
+            failureStrategies:
+              - onFailure:
+                  errors:
+                    - AllErrors
+                  action:
+                    type: StageRollback
+            variables:
+              - name: K8S_GIT_REPO
+                type: String
+                value: <+pipeline.variables.K8S_GIT_REPO>
+              - name: K8S_GIT_BRANCH
+                type: String
+                value: <+codebase.branch>
+              - name: PATCHES_PATH
+                type: String
+                value: <+pipeline.variables.HARNESS_PATCH_PATH>
+              - name: SERVICE_NAME
+                type: String
+                default: <+service.name>
+                value: <+service.name>
+            when:
+              pipelineStatus: Success
+              condition: <+pipeline.variables.DEPLOY_DCS> == "YES" && (<+pipeline.variables.SINGLE_DEPLOY_TARGET>=="preprod-jp" || <+pipeline.variables.DEPLOY_TO_ALL_CLUSTERS>=="YES")
+            tags: {}
+        - stage:
+            name: Deploy DCS to preprod-us
+            identifier: Deploy_DCS_to_preprodus
+            type: Deployment
+            spec:
+              serviceConfig:
+                serviceRef: carownerapp
+                serviceDefinition:
+                  type: Kubernetes
+                  spec:
+                    variables: []
+                    manifests:
+                      - manifest:
+                          identifier: main
+                          type: Kustomize
+                          spec:
+                            store:
+                              type: Github
+                              spec:
+                                connectorRef: account.GithubConnectorV2
+                                gitFetchType: Branch
+                                folderPath: kubernetes/data-collection-service/k8s-preprod-us
+                                repoName: <+stage.variables.K8S_GIT_REPO>
+                                branch: <+stage.variables.K8S_GIT_BRANCH>
+                            pluginPath: ""
+                            skipResourceVersioning: false
+                      - manifest:
+                          identifier: artifact_patch
+                          type: KustomizePatches
+                          spec:
+                            store:
+                              type: Github
+                              spec:
+                                connectorRef: account.GithubConnectorV2
+                                gitFetchType: Branch
+                                paths:
+                                  - <+stage.variables.PATCHES_PATH>
+                                repoName: <+stage.variables.K8S_GIT_REPO>
+                                branch: <+stage.variables.K8S_GIT_BRANCH>
+                    artifacts:
+                      primary:
+                        spec:
+                          connectorRef: account.Tractable_Docker_Hub
+                          imagePath: <+pipeline.variables.DCS_DOCKER_IMAGE>
+                          tag: <+pipeline.stages.Docker_Tag.spec.execution.steps.Generate_Tag.output.outputVariables.DOCKER_TAG>
+                        type: DockerRegistry
+              infrastructure:
+                environmentRef: preprodus
+                infrastructureDefinition:
+                  type: KubernetesDirect
+                  spec:
+                    connectorRef: account.k8sprodus
+                    namespace: harness-delegate
+                    releaseName: release-<+INFRA_KEY>
+                allowSimultaneousDeployments: false
+              execution:
+                steps:
+                  - step:
+                      type: TerraformPlan
+                      name: Terraform Plan
+                      identifier: Terraform_Plan
+                      spec:
+                        configuration:
+                          command: Apply
+                          configFiles:
+                            store:
+                              type: Github
+                              spec:
+                                gitFetchType: Branch
+                                connectorRef: account.Github_via_SSH_ECDSA_key
+                                repoName: car-owner-app
+                                branch: <+codebase.branch>
+                                folderPath: terraform
+                          secretManagerRef: account.harnessSecretManager
+                          environmentVariables:
+                            - name: TF_CLI_ARGS_init
+                              value: "-backend-config=\"key=car-owner-app/preprod-us.tfstate\""
+                              type: String
+                            - name: TF_CLI_ARGS_apply
+                              value: "-parallelism=1"
+                              type: String
+                            - name: TFENV_DEBUG
+                              value: "1"
+                              type: String
+                            - name: TFENV_TERRAFORM_VERSION
+                              value: 1.1.7
+                              type: String
+                            - name: TF_CLI_ARGS_plan
+                              value: "-parallelism=1"
+                              type: String
+                          varFiles:
+                            - varFile:
+                                type: Remote
+                                identifier: var-file
+                                spec:
+                                  store:
+                                    type: Github
+                                    spec:
+                                      gitFetchType: Branch
+                                      repoName: car-owner-app
+                                      branch: <+codebase.branch>
+                                      paths:
+                                        - terraform/variables/preprod-us.tfvars
+                                      connectorRef: account.Github_via_SSH_ECDSA_key
+                        provisionerIdentifier: car_owner_app_preprod_us
+                        delegateSelectors:
+                          - harness-delegate-k8s-infra-eu
+                      timeout: 10m
+                      failureStrategies: []
+                  - step:
+                      type: TerraformApply
+                      name: Terraform Apply
+                      identifier: Terraform_Apply
+                      spec:
+                        configuration:
+                          type: InheritFromPlan
+                        provisionerIdentifier: car_owner_app_preprod_us
+                        delegateSelectors:
+                          - harness-delegate-k8s-infra-eu
+                      timeout: 10m
+                      failureStrategies: []
+                  - step:
+                      name: Rollout Deployment
+                      identifier: rolloutDeployment
+                      type: K8sRollingDeploy
+                      timeout: 10m
+                      spec:
+                        skipDryRun: false
+                rollbackSteps:
+                  - step:
+                      name: Rollback Rollout Deployment
+                      identifier: rollbackRolloutDeployment
+                      type: K8sRollingRollback
+                      timeout: 10m
+                      spec: {}
+              serviceDependencies: []
+            failureStrategies:
+              - onFailure:
+                  errors:
+                    - AllErrors
+                  action:
+                    type: StageRollback
+            variables:
+              - name: K8S_GIT_REPO
+                type: String
+                value: <+pipeline.variables.K8S_GIT_REPO>
+              - name: K8S_GIT_BRANCH
+                type: String
+                value: <+codebase.branch>
+              - name: PATCHES_PATH
+                type: String
+                value: <+pipeline.variables.HARNESS_PATCH_PATH>
+              - name: SERVICE_NAME
+                type: String
+                default: <+service.name>
+                value: <+service.name>
+            when:
+              pipelineStatus: Success
+              condition: <+pipeline.variables.DEPLOY_DCS> == "YES" && (<+pipeline.variables.SINGLE_DEPLOY_TARGET>=="preprod-us" || <+pipeline.variables.DEPLOY_TO_ALL_CLUSTERS>=="YES")
+            tags: {}
+        - stage:
+            name: Deploy DCS to prod-eu
+            identifier: Deploy_DCS_to_prodeu
+            type: Deployment
+            spec:
+              serviceConfig:
+                serviceRef: carownerapp
+                serviceDefinition:
+                  type: Kubernetes
+                  spec:
+                    variables: []
+                    manifests:
+                      - manifest:
+                          identifier: main
+                          type: Kustomize
+                          spec:
+                            store:
+                              type: Github
+                              spec:
+                                connectorRef: account.GithubConnectorV2
+                                gitFetchType: Branch
+                                folderPath: kubernetes/data-collection-service/k8s-prod-eu
+                                repoName: <+stage.variables.K8S_GIT_REPO>
+                                branch: <+stage.variables.K8S_GIT_BRANCH>
+                            pluginPath: ""
+                            skipResourceVersioning: false
+                      - manifest:
+                          identifier: artifact_patch
+                          type: KustomizePatches
+                          spec:
+                            store:
+                              type: Github
+                              spec:
+                                connectorRef: account.GithubConnectorV2
+                                gitFetchType: Branch
+                                paths:
+                                  - <+stage.variables.PATCHES_PATH>
+                                repoName: <+stage.variables.K8S_GIT_REPO>
+                                branch: <+stage.variables.K8S_GIT_BRANCH>
+                    artifacts:
+                      primary:
+                        spec:
+                          connectorRef: account.Tractable_Docker_Hub
+                          imagePath: <+pipeline.variables.DCS_DOCKER_IMAGE>
+                          tag: <+pipeline.stages.Docker_Tag.spec.execution.steps.Generate_Tag.output.outputVariables.DOCKER_TAG>
+                        type: DockerRegistry
+              infrastructure:
+                environmentRef: prodeu
+                infrastructureDefinition:
+                  type: KubernetesDirect
+                  spec:
+                    connectorRef: account.k8sprodeu
+                    namespace: harness-delegate
+                    releaseName: release-<+INFRA_KEY>
+                allowSimultaneousDeployments: false
+              execution:
+                steps:
+                  - step:
+                      type: TerraformPlan
+                      name: Terraform Plan
+                      identifier: Terraform_Plan
+                      spec:
+                        configuration:
+                          command: Apply
+                          configFiles:
+                            store:
+                              type: Github
+                              spec:
+                                gitFetchType: Branch
+                                connectorRef: account.Github_via_SSH_ECDSA_key
+                                repoName: car-owner-app
+                                branch: <+codebase.branch>
+                                folderPath: terraform
+                          secretManagerRef: account.harnessSecretManager
+                          environmentVariables:
+                            - name: TF_CLI_ARGS_init
+                              value: "-backend-config=\"key=car-owner-app/eu.tfstate\""
+                              type: String
+                            - name: TF_CLI_ARGS_apply
+                              value: "-parallelism=1"
+                              type: String
+                            - name: TFENV_DEBUG
+                              value: "1"
+                              type: String
+                            - name: TFENV_TERRAFORM_VERSION
+                              value: 1.1.7
+                              type: String
+                            - name: TF_CLI_ARGS_plan
+                              value: "-parallelism=1"
+                              type: String
+                          varFiles:
+                            - varFile:
+                                type: Remote
+                                identifier: var-file
+                                spec:
+                                  store:
+                                    type: Github
+                                    spec:
+                                      gitFetchType: Branch
+                                      repoName: car-owner-app
+                                      branch: <+codebase.branch>
+                                      paths:
+                                        - terraform/variables/eu.tfvars
+                                      connectorRef: account.Github_via_SSH_ECDSA_key
+                        provisionerIdentifier: car_owner_app_prod_eu
+                        delegateSelectors:
+                          - harness-delegate-k8s-infra-eu
+                      timeout: 10m
+                      failureStrategies: []
+                  - step:
+                      type: TerraformApply
+                      name: Terraform Apply
+                      identifier: Terraform_Apply
+                      spec:
+                        configuration:
+                          type: InheritFromPlan
+                        provisionerIdentifier: car_owner_app_prod_eu
+                        delegateSelectors:
+                          - harness-delegate-k8s-infra-eu
+                      timeout: 10m
+                      failureStrategies: []
+                  - step:
+                      name: Rollout Deployment
+                      identifier: rolloutDeployment
+                      type: K8sRollingDeploy
+                      timeout: 10m
+                      spec:
+                        skipDryRun: false
+                rollbackSteps:
+                  - step:
+                      name: Rollback Rollout Deployment
+                      identifier: rollbackRolloutDeployment
+                      type: K8sRollingRollback
+                      timeout: 10m
+                      spec: {}
+              serviceDependencies: []
+            failureStrategies:
+              - onFailure:
+                  errors:
+                    - AllErrors
+                  action:
+                    type: StageRollback
+            variables:
+              - name: K8S_GIT_REPO
+                type: String
+                value: <+pipeline.variables.K8S_GIT_REPO>
+              - name: K8S_GIT_BRANCH
+                type: String
+                value: <+codebase.branch>
+              - name: PATCHES_PATH
+                type: String
+                value: <+pipeline.variables.HARNESS_PATCH_PATH>
+              - name: SERVICE_NAME
+                type: String
+                default: <+service.name>
+                value: <+service.name>
+            when:
+              pipelineStatus: Success
+              condition: <+pipeline.variables.DEPLOY_DCS> == "YES" && (<+pipeline.variables.SINGLE_DEPLOY_TARGET>=="prod-eu" || <+pipeline.variables.DEPLOY_TO_ALL_CLUSTERS>=="YES")
+            tags: {}
+        - stage:
+            name: Deploy DCS to prod-jp
+            identifier: Deploy_DCS_to_prodjp
+            type: Deployment
+            spec:
+              serviceConfig:
+                serviceRef: carownerapp
+                serviceDefinition:
+                  type: Kubernetes
+                  spec:
+                    variables: []
+                    manifests:
+                      - manifest:
+                          identifier: main
+                          type: Kustomize
+                          spec:
+                            store:
+                              type: Github
+                              spec:
+                                connectorRef: account.GithubConnectorV2
+                                gitFetchType: Branch
+                                folderPath: kubernetes/data-collection-service/k8s-prod-jp
+                                repoName: <+stage.variables.K8S_GIT_REPO>
+                                branch: <+stage.variables.K8S_GIT_BRANCH>
+                            pluginPath: ""
+                            skipResourceVersioning: false
+                      - manifest:
+                          identifier: artifact_patch
+                          type: KustomizePatches
+                          spec:
+                            store:
+                              type: Github
+                              spec:
+                                connectorRef: account.GithubConnectorV2
+                                gitFetchType: Branch
+                                paths:
+                                  - <+stage.variables.PATCHES_PATH>
+                                repoName: <+stage.variables.K8S_GIT_REPO>
+                                branch: <+stage.variables.K8S_GIT_BRANCH>
+                    artifacts:
+                      primary:
+                        spec:
+                          connectorRef: account.Tractable_Docker_Hub
+                          imagePath: <+pipeline.variables.DCS_DOCKER_IMAGE>
+                          tag: <+pipeline.stages.Docker_Tag.spec.execution.steps.Generate_Tag.output.outputVariables.DOCKER_TAG>
+                        type: DockerRegistry
+              infrastructure:
+                environmentRef: prodjp
+                infrastructureDefinition:
+                  type: KubernetesDirect
+                  spec:
+                    connectorRef: account.k8sprodjp
+                    namespace: harness-delegate
+                    releaseName: release-<+INFRA_KEY>
+                allowSimultaneousDeployments: false
+              execution:
+                steps:
+                  - step:
+                      type: TerraformPlan
+                      name: Terraform Plan
+                      identifier: Terraform_Plan
+                      spec:
+                        configuration:
+                          command: Apply
+                          configFiles:
+                            store:
+                              type: Github
+                              spec:
+                                gitFetchType: Branch
+                                connectorRef: account.Github_via_SSH_ECDSA_key
+                                repoName: car-owner-app
+                                branch: <+codebase.branch>
+                                folderPath: terraform
+                          secretManagerRef: account.harnessSecretManager
+                          environmentVariables:
+                            - name: TF_CLI_ARGS_init
+                              value: "-backend-config=\"key=car-owner-app/jp.tfstate\""
+                              type: String
+                            - name: TF_CLI_ARGS_apply
+                              value: "-parallelism=1"
+                              type: String
+                            - name: TFENV_DEBUG
+                              value: "1"
+                              type: String
+                            - name: TFENV_TERRAFORM_VERSION
+                              value: 1.1.7
+                              type: String
+                            - name: TF_CLI_ARGS_plan
+                              value: "-parallelism=1"
+                              type: String
+                          varFiles:
+                            - varFile:
+                                type: Remote
+                                identifier: var-file
+                                spec:
+                                  store:
+                                    type: Github
+                                    spec:
+                                      gitFetchType: Branch
+                                      repoName: car-owner-app
+                                      branch: <+codebase.branch>
+                                      paths:
+                                        - terraform/variables/jp.tfvars
+                                      connectorRef: account.Github_via_SSH_ECDSA_key
+                        provisionerIdentifier: car_owner_app_prod_jp
+                        delegateSelectors:
+                          - harness-delegate-k8s-infra-eu
+                      timeout: 10m
+                      failureStrategies: []
+                  - step:
+                      type: TerraformApply
+                      name: Terraform Apply
+                      identifier: Terraform_Apply
+                      spec:
+                        configuration:
+                          type: InheritFromPlan
+                        provisionerIdentifier: car_owner_app_prod_jp
+                        delegateSelectors:
+                          - harness-delegate-k8s-infra-eu
+                      timeout: 10m
+                      failureStrategies: []
+                  - step:
+                      name: Rollout Deployment
+                      identifier: rolloutDeployment
+                      type: K8sRollingDeploy
+                      timeout: 10m
+                      spec:
+                        skipDryRun: false
+                rollbackSteps:
+                  - step:
+                      name: Rollback Rollout Deployment
+                      identifier: rollbackRolloutDeployment
+                      type: K8sRollingRollback
+                      timeout: 10m
+                      spec: {}
+              serviceDependencies: []
+            failureStrategies:
+              - onFailure:
+                  errors:
+                    - AllErrors
+                  action:
+                    type: StageRollback
+            variables:
+              - name: K8S_GIT_REPO
+                type: String
+                value: <+pipeline.variables.K8S_GIT_REPO>
+              - name: K8S_GIT_BRANCH
+                type: String
+                value: <+codebase.branch>
+              - name: PATCHES_PATH
+                type: String
+                value: <+pipeline.variables.HARNESS_PATCH_PATH>
+              - name: SERVICE_NAME
+                type: String
+                default: <+service.name>
+                value: <+service.name>
+            when:
+              pipelineStatus: Success
+              condition: <+pipeline.variables.DEPLOY_DCS> == "YES" && (<+pipeline.variables.SINGLE_DEPLOY_TARGET>=="prod-jp" || <+pipeline.variables.DEPLOY_TO_ALL_CLUSTERS>=="YES")
+            tags: {}
+        - stage:
+            name: Deploy DCS to prod-us
+            identifier: Deploy_DCS_to_produs
+            type: Deployment
+            spec:
+              serviceConfig:
+                serviceRef: carownerapp
+                serviceDefinition:
+                  type: Kubernetes
+                  spec:
+                    variables: []
+                    manifests:
+                      - manifest:
+                          identifier: main
+                          type: Kustomize
+                          spec:
+                            store:
+                              type: Github
+                              spec:
+                                connectorRef: account.GithubConnectorV2
+                                gitFetchType: Branch
+                                folderPath: kubernetes/data-collection-service/k8s-prod-us
+                                repoName: <+stage.variables.K8S_GIT_REPO>
+                                branch: <+stage.variables.K8S_GIT_BRANCH>
+                            pluginPath: ""
+                            skipResourceVersioning: false
+                      - manifest:
+                          identifier: artifact_patch
+                          type: KustomizePatches
+                          spec:
+                            store:
+                              type: Github
+                              spec:
+                                connectorRef: account.GithubConnectorV2
+                                gitFetchType: Branch
+                                paths:
+                                  - <+stage.variables.PATCHES_PATH>
+                                repoName: <+stage.variables.K8S_GIT_REPO>
+                                branch: <+stage.variables.K8S_GIT_BRANCH>
+                    artifacts:
+                      primary:
+                        spec:
+                          connectorRef: account.Tractable_Docker_Hub
+                          imagePath: <+pipeline.variables.DCS_DOCKER_IMAGE>
+                          tag: <+pipeline.stages.Docker_Tag.spec.execution.steps.Generate_Tag.output.outputVariables.DOCKER_TAG>
+                        type: DockerRegistry
+              infrastructure:
+                environmentRef: produs
+                infrastructureDefinition:
+                  type: KubernetesDirect
+                  spec:
+                    connectorRef: account.k8sprodus
+                    namespace: harness-delegate
+                    releaseName: release-<+INFRA_KEY>
+                allowSimultaneousDeployments: false
+              execution:
+                steps:
+                  - step:
+                      type: TerraformPlan
+                      name: Terraform Plan
+                      identifier: Terraform_Plan
+                      spec:
+                        configuration:
+                          command: Apply
+                          configFiles:
+                            store:
+                              type: Github
+                              spec:
+                                gitFetchType: Branch
+                                connectorRef: account.Github_via_SSH_ECDSA_key
+                                repoName: car-owner-app
+                                branch: <+codebase.branch>
+                                folderPath: terraform
+                          secretManagerRef: account.harnessSecretManager
+                          environmentVariables:
+                            - name: TF_CLI_ARGS_init
+                              value: "-backend-config=\"key=car-owner-app/us.tfstate\""
+                              type: String
+                            - name: TF_CLI_ARGS_apply
+                              value: "-parallelism=1"
+                              type: String
+                            - name: TFENV_DEBUG
+                              value: "1"
+                              type: String
+                            - name: TFENV_TERRAFORM_VERSION
+                              value: 1.1.7
+                              type: String
+                            - name: TF_CLI_ARGS_plan
+                              value: "-parallelism=1"
+                              type: String
+                          varFiles:
+                            - varFile:
+                                type: Remote
+                                identifier: var-file
+                                spec:
+                                  store:
+                                    type: Github
+                                    spec:
+                                      gitFetchType: Branch
+                                      repoName: car-owner-app
+                                      branch: <+codebase.branch>
+                                      paths:
+                                        - terraform/variables/us.tfvars
+                                      connectorRef: account.Github_via_SSH_ECDSA_key
+                        provisionerIdentifier: car_owner_app_prod_us
+                        delegateSelectors:
+                          - harness-delegate-k8s-infra-eu
+                      timeout: 10m
+                      failureStrategies: []
+                  - step:
+                      type: TerraformApply
+                      name: Terraform Apply
+                      identifier: Terraform_Apply
+                      spec:
+                        configuration:
+                          type: InheritFromPlan
+                        provisionerIdentifier: car_owner_app_prod_us
+                        delegateSelectors:
+                          - harness-delegate-k8s-infra-eu
+                      timeout: 10m
+                      failureStrategies: []
+                  - step:
+                      name: Rollout Deployment
+                      identifier: rolloutDeployment
+                      type: K8sRollingDeploy
+                      timeout: 10m
+                      spec:
+                        skipDryRun: false
+                rollbackSteps:
+                  - step:
+                      name: Rollback Rollout Deployment
+                      identifier: rollbackRolloutDeployment
+                      type: K8sRollingRollback
+                      timeout: 10m
+                      spec: {}
+              serviceDependencies: []
+            failureStrategies:
+              - onFailure:
+                  errors:
+                    - AllErrors
+                  action:
+                    type: StageRollback
+            variables:
+              - name: K8S_GIT_REPO
+                type: String
+                value: <+pipeline.variables.K8S_GIT_REPO>
+              - name: K8S_GIT_BRANCH
+                type: String
+                value: <+codebase.branch>
+              - name: PATCHES_PATH
+                type: String
+                value: <+pipeline.variables.HARNESS_PATCH_PATH>
+              - name: SERVICE_NAME
+                type: String
+                default: <+service.name>
+                value: <+service.name>
+            when:
+              pipelineStatus: Success
+              condition: <+pipeline.variables.DEPLOY_DCS> == "YES" && (<+pipeline.variables.SINGLE_DEPLOY_TARGET>=="prod-us" || <+pipeline.variables.DEPLOY_TO_ALL_CLUSTERS>=="YES")
+            tags: {}

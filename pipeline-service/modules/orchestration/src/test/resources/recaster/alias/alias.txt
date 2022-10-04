@@ -1,3 +1,4 @@
+io.harness.plancreator.customDeployment.StepTemplateRef
 io.harness.utils.DummyOrchestrationOutcome
 io.harness.yaml.core.failurestrategy.OnFailureConfig
 parameterField
@@ -50,3 +51,5 @@ io.harness.plancreator.strategy.HarnessForConfig
 io.harness.plancreator.steps.TaskSelectorYaml
 io.harness.logging.CommandExecutionStatus
 io.harness.plancreator.strategy.ExpressionAxisConfig
+io.harness.yaml.core.failurestrategy.ProceedWithDefaultValuesFailureActionConfig
+io.harness.yaml.core.failurestrategy.rollback.PipelineRollbackFailureActionConfig

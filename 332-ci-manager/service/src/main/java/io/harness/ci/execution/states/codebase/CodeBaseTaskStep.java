@@ -71,6 +71,7 @@ import com.google.inject.Inject;
 import com.google.protobuf.InvalidProtocolBufferException;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
@@ -116,7 +117,8 @@ public class CodeBaseTaskStep implements TaskExecutable<CodeBaseTaskStepParamete
                                   .build();
 
     log.info("Created delegate task to fetch codebase info");
-    return StepUtils.prepareTaskRequest(ambiance, taskData, kryoSerializer);
+    return StepUtils.prepareTaskRequest(
+        ambiance, taskData, kryoSerializer, false, Collections.emptyList(), false, null);
   }
 
   @Override
@@ -297,6 +299,7 @@ public class CodeBaseTaskStep implements TaskExecutable<CodeBaseTaskStepParamete
 
       String commitSha = prWebhookEvent.getBaseAttributes().getAfter();
       String shortCommitSha = WebhookTriggerProcessorUtils.getShortCommitSha(commitSha);
+      String mergeCommitSha = prWebhookEvent.getBaseAttributes().getMergeSha();
 
       return CodebaseSweepingOutput.builder()
           .commits(codeBaseCommits)
@@ -308,6 +311,7 @@ public class CodeBaseTaskStep implements TaskExecutable<CodeBaseTaskStepParamete
           .prTitle(prWebhookEvent.getTitle())
           .build(new Build("PR"))
           .commitSha(commitSha)
+          .mergeSha(mergeCommitSha)
           .shortCommitSha(shortCommitSha)
           .baseCommitSha(prWebhookEvent.getBaseAttributes().getBefore())
           .repoUrl(prWebhookEvent.getRepository().getLink())
@@ -413,6 +417,7 @@ public class CodeBaseTaskStep implements TaskExecutable<CodeBaseTaskStepParamete
                                  .prNumber(String.valueOf(pr.getNumber()))
                                  .prTitle(pr.getTitle())
                                  .commitSha(commitSha)
+                                 .mergeSha(pr.getMergeSha())
                                  .shortCommitSha(shortCommitSha)
                                  .build(new Build("PR"))
                                  .baseCommitSha(pr.getBase().getSha())
@@ -445,10 +450,10 @@ public class CodeBaseTaskStep implements TaskExecutable<CodeBaseTaskStepParamete
   @NotNull
   private String getState(PullRequest pr) {
     String state = "open";
-    if (pr.getClosed()) {
-      state = "closed";
-    } else if (pr.getMerged()) {
+    if (pr.getMerged()) {
       state = "merged";
+    } else if (pr.getClosed()) {
+      state = "closed";
     }
     return state;
   }
@@ -456,10 +461,10 @@ public class CodeBaseTaskStep implements TaskExecutable<CodeBaseTaskStepParamete
   @NotNull
   private String getState(PRWebhookEvent pr) {
     String state = "open";
-    if (pr.isClosed()) {
-      state = "closed";
-    } else if (pr.isMerged()) {
+    if (pr.isMerged()) {
       state = "merged";
+    } else if (pr.isClosed()) {
+      state = "closed";
     }
     return state;
   }

@@ -14,6 +14,8 @@ import static io.harness.persistence.GoogleDataStoreAware.readLong;
 import static io.harness.persistence.GoogleDataStoreAware.readString;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.StoreIn;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.CreatedAtAware;
 import io.harness.persistence.GoogleDataStoreAware;
 import io.harness.persistence.UuidAware;
@@ -38,6 +40,7 @@ import org.mongodb.morphia.annotations.Id;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @NoArgsConstructor
 @AllArgsConstructor
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "supervisedTrainingStatus", noClassnameStored = true)
 @HarnessEntity(exportable = false)
 public class SupervisedTrainingStatus implements GoogleDataStoreAware, CreatedAtAware, UuidAware {

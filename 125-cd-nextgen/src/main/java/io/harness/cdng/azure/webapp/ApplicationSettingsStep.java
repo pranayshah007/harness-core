@@ -13,6 +13,7 @@ import static io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstan
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.azure.AzureHelperService;
 import io.harness.cdng.azure.config.ApplicationSettingsOutcome;
+import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
 import io.harness.cdng.service.steps.ServiceStepsHelper;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.logstreaming.NGLogCallback;
@@ -53,15 +54,14 @@ public class ApplicationSettingsStep implements SyncExecutable<ApplicationSettin
       StepInputPackage inputPackage, PassThroughData passThroughData) {
     NGLogCallback logCallback = serviceStepsHelper.getServiceLogCallback(ambiance);
     logCallback.saveExecutionLog("Processing application settings...");
-    azureHelperService.validateSettingsStoreReferences(stepParameters.getApplicationSettings(), ambiance, ENTITY_TYPE);
+    StoreConfigWrapper storeConfig = stepParameters.getApplicationSettings().getStore();
+    azureHelperService.validateSettingsStoreReferences(storeConfig, ambiance, ENTITY_TYPE);
     logCallback.saveExecutionLog("Processed application settings");
     return StepResponse.builder()
         .status(Status.SUCCEEDED)
         .stepOutcome(StepResponse.StepOutcome.builder()
                          .name(APPLICATION_SETTINGS)
-                         .outcome(ApplicationSettingsOutcome.builder()
-                                      .store(stepParameters.getApplicationSettings().getSpec())
-                                      .build())
+                         .outcome(ApplicationSettingsOutcome.builder().store(storeConfig.getSpec()).build())
                          .group(StepOutcomeGroup.STAGE.name())
                          .build())
         .build();

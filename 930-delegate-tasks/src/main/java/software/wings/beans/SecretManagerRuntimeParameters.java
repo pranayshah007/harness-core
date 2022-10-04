@@ -9,8 +9,10 @@ package software.wings.beans;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.mongo.index.FdIndex;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
 import io.harness.persistence.PersistentEntity;
 import io.harness.persistence.UuidAware;
@@ -33,6 +35,7 @@ import org.mongodb.morphia.annotations.Id;
 @AllArgsConstructor
 @ToString(exclude = {"runtimeParameters"})
 @EqualsAndHashCode
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "secretManagerRuntimeParameters", noClassnameStored = true)
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldNameConstants(innerTypeName = "SecretManagerRuntimeParametersKeys")

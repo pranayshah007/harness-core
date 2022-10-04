@@ -10,6 +10,7 @@ package io.harness.jira;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.rule.OwnerRule.DEEPAK_PUTHRAYA;
 import static io.harness.rule.OwnerRule.GARVIT;
+import static io.harness.rule.OwnerRule.YUVRAJ;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
@@ -257,6 +258,33 @@ public class JiraIssueUtilsNGTest extends CategoryTest {
     Assertions.assertThat(issue.getFields()).isNotEmpty();
     Assertions.assertThat(issue.getKey()).isEqualTo("EDNK-6594");
     Assertions.assertThat(issue.getFields().get("Status")).isEqualTo("Done");
+  }
+
+  @Test
+  @Owner(developers = YUVRAJ)
+  @Category(UnitTests.class)
+  public void testParseDateTimeEpoch() throws IOException {
+    String createMetadataJson = getResource("create_metadata.json");
+    JsonNode node = JsonUtils.readTree(createMetadataJson);
+    JiraIssueCreateMetadataNG createMetadata = new JiraIssueCreateMetadataNG(node);
+    JiraIssueTypeNG issueType = createMetadata.getProjects().get("JEL").getIssueTypes().get("Story");
+    assertThat(issueType).isNotNull();
+    assertThat(issueType.getFields().size()).isEqualTo(22);
+
+    issueType.removeField(JiraConstantsNG.STATUS_NAME);
+    assertThat(issueType.getFields().size()).isEqualTo(21);
+
+    Map<String, String> fields = new HashMap<>();
+    fields.put("Summary", "summary");
+    fields.put("Description", "description");
+    fields.put("customtime", "1664537411000");
+
+    Map<String, Object> currFields = new HashMap<>();
+    JiraIssueUtilsNG.updateFieldValues(currFields, issueType.getFields(), fields, true);
+    assertThat(currFields.size()).isEqualTo(3);
+    assertThat(currFields.get("summary")).isEqualTo("summary");
+    assertThat(currFields.get("description")).isEqualTo("description");
+    assertThat(currFields.get("customfield_10211")).isEqualTo("2022-09-30T11:30:11Z");
   }
 
   private String getResource(String path) throws IOException {

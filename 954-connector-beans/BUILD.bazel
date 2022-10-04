@@ -12,7 +12,6 @@ java_library(
     deps = [
         "//:lombok",
         "//951-opa-contracts:opa_contracts_java_proto",
-        "//955-filters-sdk:module",
         "//960-api-services:module",
         "//970-api-services-beans:module",
         "//970-ng-commons:module",
@@ -36,6 +35,7 @@ java_library(
         "//999-annotations:module",
         "@maven//:junit_junit",
         "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_apache_commons_commons_math3",
         "@maven//:org_assertj_assertj_core",
         "@maven//:org_mockito_mockito_core",
     ],

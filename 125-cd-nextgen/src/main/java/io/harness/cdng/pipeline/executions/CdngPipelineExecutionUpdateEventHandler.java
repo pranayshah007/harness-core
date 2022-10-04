@@ -20,6 +20,8 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
 import io.harness.cdng.execution.service.StageExecutionInfoService;
+import io.harness.cdng.instance.InstanceDeploymentInfoStatus;
+import io.harness.cdng.instance.service.InstanceDeploymentInfoService;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.executions.steps.StepSpecTypeConstants;
@@ -61,6 +63,7 @@ public class CdngPipelineExecutionUpdateEventHandler implements OrchestrationEve
   @Inject private StepHelper stepHelper;
   @Inject private AccountService accountService;
   @Inject private StageExecutionInfoService stageExecutionInfoService;
+  @Inject private InstanceDeploymentInfoService instanceDeploymentInfoService;
 
   @Override
   public void handleEvent(OrchestrationEvent event) {
@@ -119,6 +122,21 @@ public class CdngPipelineExecutionUpdateEventHandler implements OrchestrationEve
                 "Unable to delete stage status key lock, accountIdentifier: %s, orgIdentifier: %s, projectIdentifier: %s, "
                     + "stageExecutionId: %s, stageStatus: %s",
                 accountIdentifier, orgIdentifier, projectIdentifier, stageExecutionId, stageStatus),
+            ex);
+      }
+
+      InstanceDeploymentInfoStatus instanceDeploymentInfoStatus = status.equals(Status.SUCCEEDED)
+          ? InstanceDeploymentInfoStatus.SUCCEEDED
+          : InstanceDeploymentInfoStatus.FAILED;
+      try {
+        // TODO execute this async by using ExecutionService and then calculate execution key
+        instanceDeploymentInfoService.updateStatus(scope, stageExecutionId, instanceDeploymentInfoStatus);
+      } catch (Exception ex) {
+        log.error(
+            String.format(
+                "Unable to update instance status, accountIdentifier: %s, orgIdentifier: %s, projectIdentifier: %s, "
+                    + "stageExecutionId: %s, instanceDeploymentInfoStatus: %s",
+                accountIdentifier, orgIdentifier, projectIdentifier, stageExecutionId, instanceDeploymentInfoStatus),
             ex);
       }
     }

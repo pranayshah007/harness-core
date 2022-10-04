@@ -15,6 +15,7 @@ import io.harness.steps.environment.EnvironmentOutcome;
 import io.harness.yaml.core.VariableExpression;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import java.util.Map;
 import lombok.Builder;
 import lombok.Value;
 import org.springframework.data.annotation.TypeAlias;
@@ -25,15 +26,12 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("cdng.infra.beans.SshWinRmAwsInfrastructureOutcome")
 @OwnedBy(HarnessTeam.CDP)
 @RecasterAlias("io.harness.cdng.infra.beans.SshWinRmAwsInfrastructureOutcome")
-public class SshWinRmAwsInfrastructureOutcome extends InfrastructureDetailsAbstract implements InfrastructureOutcome {
+public class SshWinRmAwsInfrastructureOutcome extends InfrastructureOutcomeAbstract {
   private String connectorRef;
   private String credentialsRef;
   private String region;
-  private String loadBalancer;
-  private String hostNameConvention;
-  private Boolean useAutoScalingGroup;
-  private String autoScalingGroupName;
-  private AwsInstanceFilter awsInstanceFilter;
+  Map<String, String> tags;
+  private String hostConnectionType;
 
   @VariableExpression(skipVariableExpression = true) private EnvironmentOutcome environment;
   private String infrastructureKey;

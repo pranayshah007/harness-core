@@ -109,6 +109,9 @@ public class RoleAssignmentResourceTest extends AccessControlTestBase {
   private ServiceAccountService serviceAccountService;
   private RoleAssignmentDTOMapper roleAssignmentDTOMapper;
   private RoleDTOMapper roleDTOMapper;
+
+  private RoleAssignmentAggregateMapper roleAssignmentAggregateMapper;
+
   private TransactionTemplate transactionTemplate;
   private HarnessActionValidator<RoleAssignment> actionValidator;
   private OutboxService outboxService;
@@ -135,16 +138,17 @@ public class RoleAssignmentResourceTest extends AccessControlTestBase {
     userService = mock(UserService.class);
     serviceAccountService = mock(ServiceAccountService.class);
     roleAssignmentDTOMapper = mock(RoleAssignmentDTOMapper.class);
+    roleAssignmentAggregateMapper = mock(RoleAssignmentAggregateMapper.class);
     roleDTOMapper = mock(RoleDTOMapper.class);
     transactionTemplate = mock(TransactionTemplate.class);
     actionValidator = mock(HarnessActionValidator.class);
     outboxService = mock(OutboxService.class);
     accessControlClient = mock(AccessControlClient.class);
-    roleAssignmentResource =
-        spy(new RoleAssignmentResourceImpl(roleAssignmentService, harnessResourceGroupService, harnessUserGroupService,
-            harnessUserService, harnessServiceAccountService, harnessScopeService, scopeService, roleService,
-            resourceGroupService, userGroupService, userService, serviceAccountService, roleAssignmentDTOMapper,
-            roleDTOMapper, transactionTemplate, actionValidator, outboxService, accessControlClient));
+    roleAssignmentResource = spy(new RoleAssignmentResourceImpl(roleAssignmentService, harnessResourceGroupService,
+        harnessUserGroupService, harnessUserService, harnessServiceAccountService, harnessScopeService, scopeService,
+        roleService, resourceGroupService, userGroupService, userService, serviceAccountService,
+        roleAssignmentDTOMapper, roleAssignmentAggregateMapper, roleDTOMapper, transactionTemplate, actionValidator,
+        outboxService, accessControlClient));
     pageRequest = PageRequest.builder().pageIndex(0).pageSize(50).build();
     accountIdentifier = randomAlphabetic(10);
     orgIdentifier = randomAlphabetic(10);

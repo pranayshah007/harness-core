@@ -11,16 +11,14 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.preflight.entity.PreFlightEntity;
 import io.harness.pms.preflight.entity.PreFlightEntity.PreFlightEntityKeys;
+import io.harness.springdata.PersistenceUtils;
 
 import com.google.inject.Inject;
-import java.time.Duration;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
-import org.springframework.dao.DuplicateKeyException;
-import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.mongodb.core.FindAndModifyOptions;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -57,18 +55,7 @@ public class PreFlightRepositoryCustomImpl implements PreFlightRepositoryCustom 
   }
 
   private RetryPolicy<Object> getRetryPolicy() {
-    Duration RETRY_SLEEP_DURATION = Duration.ofSeconds(10);
-    int MAX_ATTEMPTS = 3;
-    return new RetryPolicy<>()
-        .handle(OptimisticLockingFailureException.class)
-        .handle(DuplicateKeyException.class)
-        .withDelay(RETRY_SLEEP_DURATION)
-        .withMaxAttempts(MAX_ATTEMPTS)
-        .onFailedAttempt(event
-            -> log.info(
-                "[Retrying]: Failed updating Service; attempt: {}", event.getAttemptCount(), event.getLastFailure()))
-        .onFailure(event
-            -> log.error(
-                "[Failed]: Failed updating Service; attempt: {}", event.getAttemptCount(), event.getFailure()));
+    return PersistenceUtils.getRetryPolicy(
+        "[Retrying]: Failed updating Service; attempt: {}", "[Failed]: Failed updating Service; attempt: {}");
   }
 }

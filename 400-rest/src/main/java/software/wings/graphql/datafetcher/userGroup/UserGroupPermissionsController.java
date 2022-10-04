@@ -19,6 +19,7 @@ import static software.wings.graphql.schema.type.permissions.QLAccountPermission
 import static software.wings.graphql.schema.type.permissions.QLAccountPermissionType.READ_USERS_AND_GROUPS;
 import static software.wings.graphql.schema.type.permissions.QLAccountPermissionType.VIEW_AUDITS;
 import static software.wings.graphql.schema.type.permissions.QLAccountPermissionType.VIEW_CE;
+import static software.wings.security.PermissionAttribute.Action.ABORT_WORKFLOW;
 import static software.wings.security.PermissionAttribute.Action.CREATE;
 import static software.wings.security.PermissionAttribute.Action.DELETE;
 import static software.wings.security.PermissionAttribute.Action.EXECUTE;
@@ -253,6 +254,8 @@ public class UserGroupPermissionsController {
         return EXECUTE_PIPELINE;
       case ROLLBACK_WORKFLOW:
         return EXECUTE_WORKFLOW_ROLLBACK;
+      case ABORT_WORKFLOW:
+        return ABORT_WORKFLOW;
       default:
         log.error("Invalid Action {} given by the user", action.toString());
     }
@@ -433,6 +436,9 @@ public class UserGroupPermissionsController {
       actionsList.add(QLActions.EXECUTE_WORKFLOW);
       actionsList.add(QLActions.EXECUTE_PIPELINE);
       actionsList.add(QLActions.ROLLBACK_WORKFLOW);
+    }
+    if (actionsList.contains(QLActions.EXECUTE_WORKFLOW)) {
+      actionsList.add(QLActions.ABORT_WORKFLOW);
     }
   }
 
@@ -634,6 +640,8 @@ public class UserGroupPermissionsController {
         return QLActions.EXECUTE_WORKFLOW;
       case EXECUTE_WORKFLOW_ROLLBACK:
         return QLActions.ROLLBACK_WORKFLOW;
+      case ABORT_WORKFLOW:
+        return QLActions.ABORT_WORKFLOW;
       default:
         log.error("Invalid Action {} given by the user", action.toString());
     }

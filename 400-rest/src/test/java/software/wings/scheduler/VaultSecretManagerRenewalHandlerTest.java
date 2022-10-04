@@ -8,6 +8,7 @@
 package software.wings.scheduler;
 
 import static io.harness.rule.OwnerRule.UTKARSH;
+import static io.harness.rule.OwnerRule.VIKAS_M;
 
 import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
 import static software.wings.beans.alert.AlertType.InvalidKMS;
@@ -76,6 +77,34 @@ public class VaultSecretManagerRenewalHandlerTest extends WingsBaseTest {
     vaultConfig.setRenewedAt(System.currentTimeMillis() - Duration.ofMinutes(15).toMillis());
     vaultSecretManagerRenewalHandler.handle(vaultConfig);
     verifyInteractionWithNoMocks();
+  }
+
+  @Test
+  @Owner(developers = VIKAS_M)
+  @Category(UnitTests.class)
+  public void testRenewalForAppRoleVaultConfig_withRenewAppRoleTokenSetToFalse_shouldNotPass() {
+    VaultConfig vaultConfig = secretManagementTestHelper.getVaultConfigWithAppRole("appRoleId", "secretId");
+    vaultConfig.setAccountId("accountId");
+    vaultConfig.setRenewalInterval(5);
+    vaultConfig.setRenewedAt(System.currentTimeMillis() - Duration.ofMinutes(5).toMillis());
+    vaultConfig.setRenewAppRoleToken(false);
+    vaultSecretManagerRenewalHandler.handle(vaultConfig);
+    verify(vaultService, times(0)).renewAppRoleClientToken(any());
+  }
+
+  @Test
+  @Owner(developers = VIKAS_M)
+  @Category(UnitTests.class)
+  public void testRenewalForAppRoleVaultConfig_withRenewAppRoleSetToTrue_shouldPass() {
+    VaultConfig vaultConfig = secretManagementTestHelper.getVaultConfigWithAppRole("appRoleId", "secretId");
+    vaultConfig.setAccountId("accountId");
+    vaultConfig.setRenewalInterval(5);
+    vaultConfig.setRenewedAt(System.currentTimeMillis() - Duration.ofMinutes(5).toMillis());
+    vaultConfig.setRenewAppRoleToken(true);
+    vaultSecretManagerRenewalHandler.handle(vaultConfig);
+    verify(vaultService, times(1)).renewAppRoleClientToken(vaultConfig);
+    verify(vaultService, times(0)).renewToken(any());
+    verifySuccessAlertInteraction(vaultConfig.getAccountId());
   }
 
   @Test

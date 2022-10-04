@@ -95,6 +95,13 @@ public class ApiServiceRule implements MethodRule, InjectorRuleMixin {
       Map<Class, String> morphiaCustomCollectionNames() {
         return Collections.emptyMap();
       }
+
+      @Provides
+      @Singleton
+      @Named("dbAliases")
+      public List<String> getDbAliases() {
+        return Collections.EMPTY_LIST;
+      }
     });
 
     modules.add(MorphiaModule.getInstance());

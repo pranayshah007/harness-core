@@ -18,7 +18,7 @@ import io.harness.pms.sdk.core.filter.creation.beans.FilterCreationContext;
 import java.util.List;
 
 public interface VerifyStepMonitoredServiceResolutionService {
-  ResolvedCVConfigInfo getResolvedCVConfigInfo(
+  ResolvedCVConfigInfo fetchAndPersistResolvedCVConfigInfo(
       ServiceEnvironmentParams serviceEnvironmentParams, MonitoredServiceNode monitoredServiceNode);
   default void managePerpetualTasks(ServiceEnvironmentParams serviceEnvironmentParams,
       ResolvedCVConfigInfo resolvedCVConfigInfo, String verificationJobInstanceId) {}

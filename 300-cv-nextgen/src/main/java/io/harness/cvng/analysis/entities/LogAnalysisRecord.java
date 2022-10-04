@@ -8,7 +8,7 @@
 package io.harness.cvng.analysis.entities;
 
 import io.harness.annotation.HarnessEntity;
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.cvng.CVConstants;
 import io.harness.cvng.analysis.beans.LogAnalysisCluster;
 import io.harness.mongo.index.FdIndex;
@@ -40,9 +40,9 @@ import org.mongodb.morphia.annotations.Id;
 @AllArgsConstructor
 @FieldNameConstants(innerTypeName = "LogAnalysisRecordKeys")
 @JsonIgnoreProperties(ignoreUnknown = true)
+@StoreIn(DbAliases.CVNG)
 @Entity(value = "logAnalysisRecords", noClassnameStored = true)
 @HarnessEntity(exportable = false)
-@StoreIn(DbAliases.CVNG)
 public final class LogAnalysisRecord implements PersistentEntity, UuidAware, CreatedAtAware, UpdatedAtAware {
   @Id private String uuid;
   @FdIndex private long createdAt;

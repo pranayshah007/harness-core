@@ -90,6 +90,12 @@ shared_dependencies = [
     "@maven//:org_slf4j_slf4j_api",
     "@maven//:ru_vyarus_guice_validator",
     "@maven//:io_harness_cv_data_collection_dsl",
+    "@maven//:io_swagger_core_v3_swagger_jaxrs2",
+    "@maven//:io_swagger_core_v3_swagger_jaxrs2_servlet_initializer_v2",
+    "@maven//:io_swagger_core_v3_swagger_core",
+    "@maven//:io_swagger_core_v3_swagger_annotations",
+    "@maven//:io_swagger_core_v3_swagger_models",
+    "@maven//:io_swagger_core_v3_swagger_integration",
 ]
 
 java_binary(

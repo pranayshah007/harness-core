@@ -15,17 +15,17 @@ import io.harness.ModuleType;
 import io.harness.account.AccountClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.app.intfc.CIYamlSchemaService;
 import io.harness.beans.FeatureFlag;
-import io.harness.beans.stages.IntegrationStageConfigImpl;
 import io.harness.beans.stages.IntegrationStageNode;
+import io.harness.ci.app.intfc.CIYamlSchemaService;
+import io.harness.cimanager.stages.IntegrationStageConfigImpl;
 import io.harness.encryption.Scope;
 import io.harness.jackson.JsonNodeUtils;
 import io.harness.plancreator.steps.ParallelStepElementConfig;
 import io.harness.plancreator.steps.StepElementConfig;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
-import io.harness.remote.client.RestClientUtils;
+import io.harness.remote.client.CGRestUtils;
 import io.harness.utils.FeatureRestrictionsGetter;
 import io.harness.yaml.schema.SchemaGeneratorUtils;
 import io.harness.yaml.schema.YamlSchemaGenerator;
@@ -137,7 +137,7 @@ public class CIYamlSchemaServiceImpl implements CIYamlSchemaService {
 
     yamlSchemaGenerator.modifyRefsNamespace(integrationStageSchema, CI_NAMESPACE);
     Set<String> enabledFeatureFlags =
-        RestClientUtils.getResponse(accountClient.listAllFeatureFlagsForAccount(accountIdentifier))
+        CGRestUtils.getResponse(accountClient.listAllFeatureFlagsForAccount(accountIdentifier))
             .stream()
             .filter(FeatureFlag::isEnabled)
             .map(FeatureFlag::getName)

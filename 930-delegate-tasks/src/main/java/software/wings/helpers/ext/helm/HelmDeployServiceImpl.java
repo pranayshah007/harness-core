@@ -62,9 +62,9 @@ import io.harness.k8s.model.Kind;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.KubernetesResource;
 import io.harness.k8s.model.KubernetesResourceId;
-import io.harness.k8s.model.Release;
-import io.harness.k8s.model.Release.Status;
-import io.harness.k8s.model.ReleaseHistory;
+import io.harness.k8s.releasehistory.IK8sRelease;
+import io.harness.k8s.releasehistory.K8sLegacyRelease;
+import io.harness.k8s.releasehistory.ReleaseHistory;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
@@ -180,7 +180,8 @@ public class HelmDeployServiceImpl implements HelmDeployService {
           helmTaskHelperBase.parseHelmReleaseCommandOutput(helmCliResponse.getOutput(), RELEASE_HISTORY);
 
       if (!isEmpty(releaseInfoList)) {
-        helmTaskHelperBase.processHelmReleaseHistOutput(releaseInfoList.get(releaseInfoList.size() - 1));
+        helmTaskHelperBase.processHelmReleaseHistOutput(
+            releaseInfoList.get(releaseInfoList.size() - 1), commandRequest.isIgnoreReleaseHistFailStatus());
       }
 
       executionLogCallback.saveExecutionLog(
@@ -265,6 +266,9 @@ public class HelmDeployServiceImpl implements HelmDeployService {
         deleteAndPurgeHelmRelease(commandRequest, executionLogCallback);
       }
       deleteDirectoryAndItsContentIfExists(getWorkingDirectory(commandRequest));
+      if (isNotEmpty(commandRequest.getGcpKeyPath())) {
+        deleteDirectoryAndItsContentIfExists(Paths.get(commandRequest.getGcpKeyPath()).getParent().toString());
+      }
     }
   }
 
@@ -304,7 +308,7 @@ public class HelmDeployServiceImpl implements HelmDeployService {
         success = success
             && k8sTaskHelperBase.doStatusCheckAllResourcesForHelm(client, entry.getValue(), commandRequest.getOcPath(),
                 commandRequest.getWorkingDir(), namespace, commandRequest.getKubeConfigLocation(),
-                (ExecutionLogCallback) executionLogCallback);
+                (ExecutionLogCallback) executionLogCallback, commandRequest.getGcpKeyPath());
         executionLogCallback.saveExecutionLog(
             format("Status check done with success [%s] for resources in namespace: [%s]", success, namespace));
         KubernetesConfig kubernetesConfig =
@@ -431,10 +435,27 @@ public class HelmDeployServiceImpl implements HelmDeployService {
   @VisibleForTesting
   void fetchChartRepo(HelmCommandRequest commandRequest, long timeoutInMillis) throws Exception {
     HelmChartConfigParams helmChartConfigParams = commandRequest.getRepoConfig().getHelmChartConfigParams();
-    String workingDirectory = Paths.get(getWorkingDirectory(commandRequest)).toString();
-
-    helmTaskHelper.downloadChartFiles(
-        helmChartConfigParams, workingDirectory, timeoutInMillis, commandRequest.getHelmCommandFlag());
+    helmTaskHelperBase.modifyRepoNameToIncludeBucket(helmChartConfigParams);
+    boolean isEnvVarSet = helmTaskHelperBase.isHelmLocalRepoSet();
+    boolean isChartPresent = false;
+    String workingDirectory;
+    if (isEnvVarSet) {
+      workingDirectory = helmTaskHelperBase.getHelmLocalRepositoryCompletePath(helmChartConfigParams.getRepoName(),
+          helmChartConfigParams.getChartName(), helmChartConfigParams.getChartVersion());
+      if (helmTaskHelperBase.doesChartExistInLocalRepo(helmChartConfigParams.getRepoName(),
+              helmChartConfigParams.getChartName(), helmChartConfigParams.getChartVersion())) {
+        isChartPresent = true;
+      } else {
+        throw new InvalidRequestException(
+            "Env Variable HELM_LOCAL_REPOSITORY set, expecting chart directory to exist locally after helm fetch but did not find it \n");
+      }
+    } else {
+      workingDirectory = Paths.get(getWorkingDirectory(commandRequest)).toString();
+    }
+    if (!isChartPresent) {
+      helmTaskHelper.downloadChartFiles(
+          helmChartConfigParams, workingDirectory, timeoutInMillis, commandRequest.getHelmCommandFlag());
+    }
     commandRequest.setWorkingDir(getChartDirectory(workingDirectory, helmChartConfigParams.getChartName()));
 
     commandRequest.getExecutionLogCallback().saveExecutionLog("Helm Chart Repo checked-out locally");
@@ -573,13 +594,14 @@ public class HelmDeployServiceImpl implements HelmDeployService {
       HelmCommandRequest request, HelmCommandResponse response, ReleaseHistory releaseHistory) throws IOException {
     KubernetesConfig kubernetesConfig =
         containerDeploymentDelegateHelper.getKubernetesConfig(request.getContainerServiceParams());
-    releaseHistory.setReleaseStatus(
-        CommandExecutionStatus.SUCCESS == response.getCommandExecutionStatus() ? Status.Succeeded : Status.Failed);
+    releaseHistory.setReleaseStatus(CommandExecutionStatus.SUCCESS == response.getCommandExecutionStatus()
+            ? IK8sRelease.Status.Succeeded
+            : IK8sRelease.Status.Failed);
     k8sTaskHelperBase.saveReleaseHistory(kubernetesConfig, request.getReleaseName(), releaseHistory.getAsYaml(), true);
   }
 
   @Override
-  public HelmCommandResponse rollback(HelmRollbackCommandRequest commandRequest) {
+  public HelmCommandResponse rollback(HelmRollbackCommandRequest commandRequest) throws IOException {
     LogCallback executionLogCallback = getExecutionLogCallback(commandRequest, HelmDummyCommandUnitConstants.Rollback);
     commandRequest.setExecutionLogCallback(executionLogCallback);
 
@@ -625,6 +647,9 @@ public class HelmDeployServiceImpl implements HelmDeployService {
       return new HelmCommandResponse(CommandExecutionStatus.FAILURE, ExceptionUtils.getMessage(sanitizedException));
     } finally {
       cleanupWorkingDirectory(commandRequest);
+      if (isNotEmpty(commandRequest.getGcpKeyPath())) {
+        deleteDirectoryAndItsContentIfExists(Paths.get(commandRequest.getGcpKeyPath()).getParent().toString());
+      }
     }
   }
 
@@ -650,10 +675,10 @@ public class HelmDeployServiceImpl implements HelmDeployService {
     KubernetesConfig kubernetesConfig =
         containerDeploymentDelegateHelper.getKubernetesConfig(request.getContainerServiceParams());
     ReleaseHistory releaseHistory = fetchK8sReleaseHistory(request, kubernetesConfig);
-    Release rollbackRelease = releaseHistory.getRelease(request.getPrevReleaseVersion());
+    K8sLegacyRelease rollbackRelease = releaseHistory.getRelease(request.getPrevReleaseVersion());
     notNullCheck("Unable to find release " + request.getPrevReleaseVersion(), rollbackRelease);
 
-    if (Status.Succeeded != rollbackRelease.getStatus()) {
+    if (IK8sRelease.Status.Succeeded != rollbackRelease.getStatus()) {
       throw new InvalidRequestException("Invalid status for release with number " + request.getPrevReleaseVersion()
               + ". Expected 'Succeeded' status, actual status is '" + rollbackRelease.getStatus() + "'",
           USER);

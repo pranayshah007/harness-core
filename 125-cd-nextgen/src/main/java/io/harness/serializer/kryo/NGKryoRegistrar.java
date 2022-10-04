@@ -18,6 +18,8 @@ import io.harness.cdng.azure.webapp.ConnectionStringsParameters;
 import io.harness.cdng.azure.webapp.StartupCommandParameters;
 import io.harness.cdng.configfile.steps.ConfigFileStepParameters;
 import io.harness.cdng.configfile.steps.ConfigFilesOutcome;
+import io.harness.cdng.customDeployment.FetchInstanceScriptStepInfo;
+import io.harness.cdng.customDeployment.FetchInstanceScriptStepParameters;
 import io.harness.cdng.environment.yaml.EnvironmentYaml;
 import io.harness.cdng.gitops.CreatePRStepInfo;
 import io.harness.cdng.gitops.CreatePRStepParams;
@@ -31,12 +33,6 @@ import io.harness.cdng.infra.InfrastructureDef;
 import io.harness.cdng.infra.beans.InfraUseFromStage;
 import io.harness.cdng.infra.steps.InfraSectionStepParameters;
 import io.harness.cdng.infra.steps.InfraStepParameters;
-import io.harness.cdng.infra.yaml.K8SDirectInfrastructure;
-import io.harness.cdng.infra.yaml.K8sGcpInfrastructure;
-import io.harness.cdng.infra.yaml.PdcInfrastructure;
-import io.harness.cdng.infra.yaml.ServerlessAwsLambdaInfrastructure;
-import io.harness.cdng.infra.yaml.SshWinRmAwsInfrastructure;
-import io.harness.cdng.infra.yaml.SshWinRmAzureInfrastructure;
 import io.harness.cdng.jenkins.jenkinsstep.JenkinsBuildStepInfo;
 import io.harness.cdng.k8s.DeleteResourcesWrapper;
 import io.harness.cdng.k8s.K8sBlueGreenOutcome;
@@ -66,6 +62,9 @@ import io.harness.cdng.pipeline.beans.DeploymentStageStepParameters;
 import io.harness.cdng.pipeline.beans.RollbackNode;
 import io.harness.cdng.pipeline.beans.RollbackOptionalChildChainStepParameters;
 import io.harness.cdng.pipeline.executions.CDAccountExecutionMetadata;
+import io.harness.cdng.provision.azure.AzureARMRollbackStepInfo;
+import io.harness.cdng.provision.azure.AzureCreateARMResourceStepInfo;
+import io.harness.cdng.provision.azure.AzureCreateBPStepInfo;
 import io.harness.cdng.provision.cloudformation.CloudformationCreateStackStepInfo;
 import io.harness.cdng.provision.cloudformation.CloudformationDeleteStackStepInfo;
 import io.harness.cdng.provision.cloudformation.CloudformationRollbackStepInfo;
@@ -101,7 +100,6 @@ public class NGKryoRegistrar implements KryoRegistrar {
     kryo.register(ServiceStepParameters.class, 8008);
     kryo.register(DockerArtifactSource.class, 8017);
     kryo.register(ManifestFetchOutcome.class, 8027);
-    kryo.register(K8SDirectInfrastructure.class, 8028);
     kryo.register(EnvironmentYaml.class, 8029);
     kryo.register(K8sRollingOutcome.class, 8034);
     kryo.register(K8sRollingRollbackOutcome.class, 8054);
@@ -122,11 +120,6 @@ public class NGKryoRegistrar implements KryoRegistrar {
     kryo.register(InfrastructureDef.class, 8102);
     kryo.register(RollbackOptionalChildChainStepParameters.class, 8108);
     kryo.register(RollbackNode.class, 8109);
-
-    kryo.register(K8sGcpInfrastructure.class, 8301);
-    kryo.register(PdcInfrastructure.class, 8302);
-    kryo.register(SshWinRmAzureInfrastructure.class, 8303);
-    kryo.register(SshWinRmAwsInfrastructure.class, 8304);
 
     // Starting using 12500 series as 8100 series is also used in 400-rest
     kryo.register(K8sBlueGreenOutcome.class, 12500);
@@ -168,7 +161,7 @@ public class NGKryoRegistrar implements KryoRegistrar {
     kryo.register(ServerlessAwsLambdaRollbackStepInfo.class, 12574);
     kryo.register(ServerlessAwsLambdaRollbackStepParameters.class, 12575);
     kryo.register(ServerlessExecutionPassThroughData.class, 12577);
-    kryo.register(ServerlessAwsLambdaInfrastructure.class, 12579);
+
     kryo.register(ServerlessStepExceptionPassThroughData.class, 12580);
     kryo.register(ServerlessGitFetchFailurePassThroughData.class, 12581);
     kryo.register(ServerlessGitFetchOutcome.class, 12582);
@@ -182,8 +175,15 @@ public class NGKryoRegistrar implements KryoRegistrar {
     kryo.register(JenkinsBuildStepInfo.class, 12700);
     kryo.register(MergePRStepParams.class, 12604);
     kryo.register(MergePRStepInfo.class, 12605);
-
     kryo.register(CustomFetchResponsePassThroughData.class, 12705);
     kryo.register(ConfigFilesOutcome.class, 12608);
+
+    kryo.register(AzureCreateARMResourceStepInfo.class, 12609);
+    kryo.register(AzureCreateBPStepInfo.class, 12610);
+
+    kryo.register(AzureARMRollbackStepInfo.class, 12611);
+
+    kryo.register(FetchInstanceScriptStepInfo.class, 12614);
+    kryo.register(FetchInstanceScriptStepParameters.class, 12615);
   }
 }

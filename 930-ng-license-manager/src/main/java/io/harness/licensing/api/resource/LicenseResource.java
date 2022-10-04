@@ -148,6 +148,24 @@ public class LicenseResource {
   }
 
   @GET
+  @Path("account-license")
+  @ApiOperation(value = "Gets All Module Licenses for an Account", nickname = "getAllAccountModuleLicenses")
+  @Operation(operationId = "getAllAccountModuleLicenses", summary = "Gets All Module License Information in Account",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Returns all module licenses for an account")
+      })
+  @InternalApi
+  @Hidden
+  public ResponseDTO<List<ModuleLicenseDTO>>
+  getAllAccountModuleLicenses(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
+      NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier) {
+    List<ModuleLicenseDTO> moduleLicenses = licenseService.getAllModuleLicences(accountIdentifier);
+    return ResponseDTO.newResponse(moduleLicenses);
+  }
+
+  @GET
   @Path("{identifier}")
   @ApiOperation(value = "Gets Module License", nickname = "getModuleLicenseById")
   @Operation(operationId = "getModuleLicenseById", summary = "Gets Module License",
@@ -180,8 +198,10 @@ public class LicenseResource {
   startFreeLicense(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
                        NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
       @Parameter(required = true, description = "A Harness Platform module.") @NotNull @QueryParam(
-          NGCommonEntityConstants.MODULE_TYPE) ModuleType moduleType) {
-    return ResponseDTO.newResponse(licenseService.startFreeLicense(accountIdentifier, moduleType));
+          NGCommonEntityConstants.MODULE_TYPE) ModuleType moduleType,
+      @Parameter(required = true, description = "Referer URL") @QueryParam(
+          NGCommonEntityConstants.REFERER) String referer) {
+    return ResponseDTO.newResponse(licenseService.startFreeLicense(accountIdentifier, moduleType, referer));
   }
 
   @POST
@@ -210,8 +230,9 @@ public class LicenseResource {
                         NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
       @io.swagger.v3.oas.annotations.parameters.RequestBody(required = true,
           description = "This is the details of the Trial License. ModuleType and edition are mandatory") @NotNull
-      @Valid @Body StartTrialDTO startTrialRequestDTO) {
-    return ResponseDTO.newResponse(licenseService.startTrialLicense(accountIdentifier, startTrialRequestDTO));
+      @Valid @Body StartTrialDTO startTrialRequestDTO,
+      @Parameter(description = "Referrer URL") @QueryParam(NGCommonEntityConstants.REFERER) String referer) {
+    return ResponseDTO.newResponse(licenseService.startTrialLicense(accountIdentifier, startTrialRequestDTO, referer));
   }
 
   @POST

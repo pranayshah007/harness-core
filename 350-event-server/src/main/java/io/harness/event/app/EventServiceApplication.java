@@ -96,6 +96,14 @@ public class EventServiceApplication {
                                             .buildValidatorFactory();
 
     List<Module> modules = new ArrayList<>();
+    modules.add(new ProviderModule() {
+      @Provides
+      @Singleton
+      @Named("dbAliases")
+      public List<String> getDbAliases() {
+        return config.getDbAliases();
+      }
+    });
     modules.add(new ValidationModule(validatorFactory));
     modules.add(new ProviderModule() {
       @Provides

@@ -8,6 +8,8 @@
 package io.harness.event.model;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.StoreIn;
+import io.harness.ng.DbAliases;
 import io.harness.queue.Queuable;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -20,6 +22,7 @@ import org.mongodb.morphia.annotations.Entity;
 @Data
 @Builder
 @EqualsAndHashCode(callSuper = true)
+@StoreIn(DbAliases.ALL)
 @Entity(value = "genericEvent", noClassnameStored = true)
 @HarnessEntity(exportable = false)
 public class GenericEvent extends Queuable {

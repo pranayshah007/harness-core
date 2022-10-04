@@ -10,6 +10,7 @@ package software.wings.beans;
 import static software.wings.beans.HarnessTagType.USER;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -17,6 +18,7 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.EmbeddedUser;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.MongoIndex;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
 import io.harness.persistence.CreatedAtAware;
 import io.harness.persistence.CreatedByAware;
@@ -49,6 +51,7 @@ import org.mongodb.morphia.annotations.Id;
 @Builder
 @JsonInclude(Include.NON_NULL)
 @FieldNameConstants(innerTypeName = "HarnessTagLinkKeys")
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "tagLinks", noClassnameStored = true)
 @HarnessEntity(exportable = true)
 public class HarnessTagLink implements PersistentEntity, UuidAware, UpdatedAtAware, UpdatedByAware, CreatedAtAware,

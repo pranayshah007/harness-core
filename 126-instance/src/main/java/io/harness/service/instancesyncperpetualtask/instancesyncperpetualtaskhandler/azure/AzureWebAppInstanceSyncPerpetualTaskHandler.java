@@ -10,6 +10,7 @@ package io.harness.service.instancesyncperpetualtask.instancesyncperpetualtaskha
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
+import io.harness.cdng.azure.AzureEncryptionDetailsHelper;
 import io.harness.cdng.azure.AzureHelperService;
 import io.harness.cdng.infra.beans.AzureWebAppInfrastructureOutcome;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
@@ -43,6 +44,7 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @OwnedBy(HarnessTeam.CDP)
 public class AzureWebAppInstanceSyncPerpetualTaskHandler extends InstanceSyncPerpetualTaskHandler {
+  @Inject private AzureEncryptionDetailsHelper azureEncryptionDetailsHelper;
   @Inject private AzureHelperService azureHelperService;
 
   @Override
@@ -144,7 +146,7 @@ public class AzureWebAppInstanceSyncPerpetualTaskHandler extends InstanceSyncPer
         .deploymentSlot(deploymentSlot)
         .subscription(azureWebAppInfrastructureOutcome.getSubscription())
         .resourceGroup(azureWebAppInfrastructureOutcome.getResourceGroup())
-        .encryptionDataDetails(azureHelperService.getEncryptionDetails(connectorDTO, baseNGAccess))
+        .encryptionDataDetails(azureEncryptionDetailsHelper.getEncryptionDetails(connectorDTO, baseNGAccess))
         .azureConnectorDTO(connectorDTO)
         .build();
   }

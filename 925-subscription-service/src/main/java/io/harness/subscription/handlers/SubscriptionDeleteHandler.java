@@ -41,7 +41,6 @@ public class SubscriptionDeleteHandler implements StripeEventHandler {
     log.info("Expire license {} because subscription {} canceled", currentLicense.getId(), subscription.getId());
     currentLicense.setExpiryTime(Instant.now().toEpochMilli());
     currentLicense.setStatus(LicenseStatus.EXPIRED);
-    currentLicense.setSelfService(false);
     licenseService.updateModuleLicense(currentLicense);
 
     // delete subscription mapping

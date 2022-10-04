@@ -10,6 +10,7 @@ package io.harness.delegate.beans.connector.awssecretmanager;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.SecretManagerDescriptionConstants;
+import io.harness.annotation.RecasterFieldName;
 import io.harness.annotations.dev.OwnedBy;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -37,9 +38,11 @@ import lombok.experimental.FieldDefaults;
     description = "This contains the credential type and configuration of the AWS Secret Manager.")
 public class AwsSecretManagerCredentialDTO {
   @NotNull
+  @RecasterFieldName(name = "type")
   @JsonProperty("type")
   @Schema(description = SecretManagerDescriptionConstants.AWS_CREDENTIAL)
   AwsSecretManagerCredentialType credentialType;
+  @RecasterFieldName(name = "spec")
   @JsonProperty("spec")
   @JsonTypeInfo(
       use = JsonTypeInfo.Id.NAME, property = "type", include = JsonTypeInfo.As.EXTERNAL_PROPERTY, visible = true)

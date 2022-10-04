@@ -53,6 +53,7 @@ import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
 import io.harness.tasks.ResponseData;
 
+import software.wings.api.k8s.K8sCanaryDeleteServiceElement;
 import software.wings.api.k8s.K8sStateExecutionData;
 import software.wings.beans.Activity;
 import software.wings.beans.DirectKubernetesInfrastructureMapping;
@@ -136,7 +137,7 @@ public class K8sDeleteTest extends CategoryTest {
     when(featureFlagService.isEnabled(eq(FeatureName.NEW_KUBECTL_VERSION), any())).thenReturn(false);
     doReturn("Deployment/test").when(context).renderExpression("${workflow.variables.resources}");
     doReturn(ExecutionResponse.builder().build()).when(k8sDelete).queueK8sDelegateTask(any(), any(), any());
-
+    doReturn(K8sCanaryDeleteServiceElement.builder().build()).when(k8sDelete).fetchK8sCanaryDeleteServiceElement(any());
     k8sDelete.setResources("${workflow.variables.resources}");
     k8sDelete.setFilePaths(null);
     k8sDelete.setDeleteNamespacesForRelease(true);
@@ -176,7 +177,7 @@ public class K8sDeleteTest extends CategoryTest {
     when(featureFlagService.isEnabled(eq(FeatureName.NEW_KUBECTL_VERSION), any())).thenReturn(false);
     doReturn("Deployment/test").when(context).renderExpression("${workflow.variables.resources}");
     doReturn(ExecutionResponse.builder().build()).when(k8sDelete).queueK8sDelegateTask(any(), any(), any());
-
+    doReturn(K8sCanaryDeleteServiceElement.builder().build()).when(k8sDelete).fetchK8sCanaryDeleteServiceElement(any());
     k8sDelete.setResources("${workflow.variables.resources}");
     k8sDelete.setFilePaths(null);
     k8sDelete.setDeleteNamespacesForRelease(false);

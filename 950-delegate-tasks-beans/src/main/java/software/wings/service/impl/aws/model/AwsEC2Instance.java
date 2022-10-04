@@ -21,4 +21,7 @@ import lombok.Data;
 public class AwsEC2Instance implements Serializable {
   private String instanceId;
   private String publicDnsName;
+  private String privateIp;
+  private String publicIp;
+  private String hostname;
 }

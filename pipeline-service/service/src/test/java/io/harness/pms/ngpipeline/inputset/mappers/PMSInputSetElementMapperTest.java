@@ -13,11 +13,7 @@ import static io.harness.rule.OwnerRule.NAMAN;
 import static junit.framework.TestCase.assertEquals;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
@@ -33,9 +29,7 @@ import io.harness.pms.inputset.InputSetErrorWrapperDTOPMS;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetResponseDTOPMS;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetSummaryResponseDTOPMS;
-import io.harness.pms.ngpipeline.inputset.service.PMSInputSetService;
 import io.harness.pms.ngpipeline.overlayinputset.beans.resource.OverlayInputSetResponseDTOPMS;
-import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.rule.Owner;
 
 import com.google.common.io.Resources;
@@ -52,8 +46,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 
 public class PMSInputSetElementMapperTest extends CategoryTest {
   private final String PIPELINE_IDENTIFIER = "Test_Pipline11";
@@ -61,8 +53,6 @@ public class PMSInputSetElementMapperTest extends CategoryTest {
   private final String ORG_IDENTIFIER = "orgId";
   private final String PROJ_IDENTIFIER = "projId";
 
-  @Mock PMSInputSetService inputSetService;
-  @Mock PMSPipelineService pipelineService;
   @Mock GitSyncSdkService gitSyncSdkService;
 
   String inputSetYaml;
@@ -234,11 +224,8 @@ public class PMSInputSetElementMapperTest extends CategoryTest {
     InputSetEntity entity = PMSInputSetElementMapper.toInputSetEntity(
         ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, inputSetYaml);
 
-    InputSetErrorWrapperDTOPMS inputSetErrorWrapperDTOPMS = null;
-    Map<String, String> overlaySetErrorDetails = null;
-
-    InputSetSummaryResponseDTOPMS inputSetResponseDTOPMS = PMSInputSetElementMapper.toInputSetSummaryResponseDTOPMS(
-        entity, inputSetErrorWrapperDTOPMS, overlaySetErrorDetails);
+    InputSetSummaryResponseDTOPMS inputSetResponseDTOPMS =
+        PMSInputSetElementMapper.toInputSetSummaryResponseDTOPMS(entity);
 
     assertThat(inputSetResponseDTOPMS.getPipelineIdentifier()).isEqualTo(PIPELINE_IDENTIFIER);
 
@@ -316,18 +303,5 @@ public class PMSInputSetElementMapperTest extends CategoryTest {
     inputSetEntity = PMSInputSetElementMapper.toInputSetEntity("accountId", overlayInputSetYaml);
     assertEquals(inputSetEntity.getAccountId(), "accountId");
     assertEquals(inputSetEntity.getIdentifier(), "overlay1");
-  }
-
-  @Test
-  @Owner(developers = NAMAN)
-  @Category(UnitTests.class)
-  public void testToInputSetSummaryResponseDTOPMSListWithNoErrors() {
-    InputSetEntity entity = PMSInputSetElementMapper.toInputSetEntity(
-        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, inputSetYaml);
-    Page<InputSetEntity> inputSetEntities = new PageImpl<>(Collections.singletonList(entity));
-    PMSInputSetElementMapper.toInputSetSummaryResponseDTOPMSList(inputSetService, pipelineService, gitSyncSdkService,
-        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, inputSetEntities);
-    verify(pipelineService, times(0)).get(any(), any(), any(), any(), anyBoolean());
-    verify(inputSetService, times(0)).getWithoutValidations(any(), any(), any(), any(), any(), anyBoolean());
   }
 }

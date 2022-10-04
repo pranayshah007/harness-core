@@ -341,6 +341,12 @@ public class ArtifactoryClientImpl {
         .stream()
         .map(buildDetail -> {
           buildDetail.setArtifactPath(buildDetail.getArtifactPath().replaceFirst(repositoryName, "").substring(1));
+          Map<String, String> metadata = new HashMap<>();
+          if (EmptyPredicate.isNotEmpty(buildDetail.getMetadata())) {
+            metadata = buildDetail.getMetadata();
+          }
+          metadata.put(ArtifactMetadataKeys.url, buildDetail.getBuildUrl());
+          buildDetail.setMetadata(metadata);
           return buildDetail;
         })
         .collect(toList());
@@ -506,6 +512,9 @@ public class ArtifactoryClientImpl {
   }
 
   private String constructBuildNumber(String artifactPattern, String path) {
+    if (artifactPattern.equals("./*")) {
+      return path;
+    }
     String[] tokens = artifactPattern.split("/");
     for (String token : tokens) {
       if (token.contains("*") || token.contains("+")) {

@@ -283,7 +283,7 @@ public class DeploymentLogAnalysisServiceImpl implements DeploymentLogAnalysisSe
               .order(Sort.descending(DeploymentLogAnalysisKeys.startTime))
               .get();
       max = CVNGObjectUtils.max(max, deploymentLogAnalysis,
-          Comparator.comparingDouble(logAnalysis -> logAnalysis.getResultSummary().getScore()));
+          Comparator.comparingDouble(logAnalysis -> logAnalysis.getResultSummary().getRisk()));
     }
     return max;
   }

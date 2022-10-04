@@ -10,7 +10,7 @@ package io.harness.template.entity;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotation.HarnessEntity;
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.validator.EntityIdentifier;
 import io.harness.data.validator.EntityName;
@@ -33,6 +33,7 @@ import io.harness.persistence.UuidAware;
 import io.harness.persistence.gitaware.GitAware;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.github.reinert.jjschema.SchemaIgnore;
 import com.google.common.collect.ImmutableList;
 import java.util.Arrays;
@@ -61,11 +62,11 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Builder
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldNameConstants(innerTypeName = "TemplateEntityKeys")
+@StoreIn(DbAliases.TEMPLATE)
 @Entity(value = "templatesNG", noClassnameStored = true)
 @Document("templatesNG")
 @TypeAlias("templatesNG")
 @HarnessEntity(exportable = true)
-@StoreIn(DbAliases.TEMPLATE)
 public class TemplateEntity
     implements GitAware, GitSyncableEntity, PersistentEntity, AccountAccess, UuidAware, CreatedAtAware, UpdatedAtAware {
   @Setter @NonFinal @Id @org.mongodb.morphia.annotations.Id String uuid;
@@ -85,7 +86,7 @@ public class TemplateEntity
   @Wither @Builder.Default Boolean deleted = Boolean.FALSE;
 
   @Wither String versionLabel;
-  @Wither boolean isStableTemplate;
+  @JsonProperty("isStableTemplate") @Wither boolean isStableTemplate;
   @Wither boolean isLastUpdatedTemplate;
   @Wither TemplateEntityType templateEntityType;
   @Wither String childType;

@@ -36,4 +36,6 @@ public class GitSyncSettingsDTO {
   boolean executeOnDelegate;
   @Schema(description = "Specifies if git simplification is enabled or not", hidden = true)
   boolean isGitSimplificationEnabled;
+  @Schema(description = "Specifies if git sync is enabled only for Feature Flag module", hidden = true)
+  boolean isEnabledOnlyForFF;
 }

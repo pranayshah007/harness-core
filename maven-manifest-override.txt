@@ -1,6 +1,8 @@
 com.google.inject,@maven//:com_google_inject_guice
-org.slf4j,@maven//:org_slf4j_slf4j_api
-org.w3c.dom,@maven//:xml_apis_xml_apis
+com.google.inject.name,@maven//:com_google_inject_guice
+com.mongodb,@maven//:org_mongodb_mongo_java_driver
+javax.validation.constraints,@maven//:javax_validation_validation_api
+javax.ws.rs,@maven//:javax_ws_rs_javax_ws_rs_api
 lombok,//:lombok
 lombok.delombok.ant,//:lombok
 lombok.experimental,//:lombok
@@ -16,3 +18,6 @@ lombok.javac.apt,//:lombok
 lombok.launch,//:lombok
 lombok.val,//:lombok
 lombok.var,//:lombok
+org.hibernate.validator.constraints,@maven//:org_hibernate_validator_hibernate_validator
+org.slf4j,@maven//:org_slf4j_slf4j_api
+org.w3c.dom,@maven//:xml_apis_xml_apis

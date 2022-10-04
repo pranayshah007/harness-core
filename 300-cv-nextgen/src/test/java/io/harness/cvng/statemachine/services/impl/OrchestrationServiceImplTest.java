@@ -628,15 +628,11 @@ public class OrchestrationServiceImplTest extends CvNextGenTestBase {
 
     createDeploymentTimeSeriesAnalysisRecords(deploymentVerificationTaskId);
     orchestrate(deploymentVerificationTaskId);
-    AnalysisOrchestrator savedOrchestrator = hPersistence.createQuery(AnalysisOrchestrator.class).get();
     List<AnalysisStateMachine> savedStateMachines = hPersistence.createQuery(AnalysisStateMachine.class).asList();
     assertThat(savedStateMachines.size()).isEqualTo(2);
     assertThat(savedStateMachines.get(0).getStatus()).isEqualTo(AnalysisStatus.SUCCESS);
     assertThat(savedStateMachines.get(1).getStatus()).isEqualTo(AnalysisStatus.TERMINATED);
-
-    orchestrate(deploymentVerificationTaskId);
-    orchestrate(deploymentVerificationTaskId);
-    savedOrchestrator = hPersistence.createQuery(AnalysisOrchestrator.class).get();
+    AnalysisOrchestrator savedOrchestrator = hPersistence.createQuery(AnalysisOrchestrator.class).get();
     assertThat(savedOrchestrator).isNotNull();
     assertThat(savedOrchestrator.getStatus()).isEqualTo(AnalysisOrchestratorStatus.TERMINATED);
 

@@ -8,7 +8,7 @@
 package io.harness.cdng.provision.cloudformation.beans;
 
 import io.harness.annotation.HarnessEntity;
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.mongo.index.MongoIndex;
@@ -33,11 +33,11 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Data
 @Builder
 @FieldNameConstants(innerTypeName = "CloudformationConfigKeys")
+@StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "cloudformationConfig", noClassnameStored = true)
 @Document("cloudformationConfig")
 @TypeAlias("cloudformationConfig")
 @HarnessEntity(exportable = true)
-@StoreIn(DbAliases.NG_MANAGER)
 @OwnedBy(HarnessTeam.CDP)
 public class CloudformationConfig implements PersistentEntity, CreatedAtAware {
   public static List<MongoIndex> mongoIndexes() {

@@ -1,0 +1,58 @@
+---
+orgIdentifier: default
+projectIdentifier: srm
+serviceRef: datadog
+environmentRef: env
+identifier: datadog_env
+notificationRuleRefs: []
+name: datadog_env
+description: ''
+tags: {}
+sources:
+  healthSources:
+    - type: DatadogMetrics
+      identifier: datadog_source
+      name: datadog_source
+      spec:
+        connectorRef: test
+        feature: Datadog Cloud Metrics
+        metricDefinitions:
+          - identifier: metric
+            dashboardName: G1
+            metricPath: metric
+            metricName: metric
+            metric: container.cpu.limit
+            metricTags: []
+            isManualQuery: false
+            isCustomCreatedMetric: true
+            serviceInstanceIdentifierTag: host
+            groupingQuery: container.cpu.limit{*} by {host}.rollup(avg, 60)
+            query: container.cpu.limit{*}.rollup(avg, 60)
+            sli:
+              enabled: false
+            analysis:
+              riskProfile:
+                metricType: ERROR
+                category: Errors
+                thresholdTypes:
+                  - ACT_WHEN_HIGHER
+              liveMonitoring:
+                enabled: false
+              deploymentVerification:
+                enabled: true
+                serviceInstanceFieldName: host
+        metricPacks:
+          - identifier: Custom
+            metricThresholds:
+              - type: IgnoreThreshold
+                spec:
+                  action: Ignore
+                criteria:
+                  type: Absolute
+                  spec:
+                    greaterThan: 10
+                metricType: Custom
+                metricName: metric
+  changeSources: []
+dependencies: []
+type: Application

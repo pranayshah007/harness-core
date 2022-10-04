@@ -139,6 +139,7 @@ public class OrchestrationServiceImpl implements OrchestrationService {
             .filter(AnalysisOrchestratorKeys.verificationTaskId, verificationTaskId);
     UpdateOperations<AnalysisOrchestrator> updateOperations =
         hPersistence.createUpdateOperations(AnalysisOrchestrator.class)
+            .set(AnalysisOrchestratorKeys.status, AnalysisOrchestratorStatus.TERMINATED)
             .set(AnalysisOrchestratorKeys.analysisStateMachineQueue, Collections.EMPTY_LIST);
     hPersistence.save(analysisStateMachines);
     hPersistence.upsert(orchestratorQuery, updateOperations);
@@ -210,7 +211,8 @@ public class OrchestrationServiceImpl implements OrchestrationService {
         default:
           log.info("Unknown analysis status of the state machine under execution");
       }
-      if (AnalysisStatus.SUCCESS == stateMachineStatus || AnalysisStatus.COMPLETED == stateMachineStatus) {
+      if ((AnalysisStatus.SUCCESS == stateMachineStatus || AnalysisStatus.COMPLETED == stateMachineStatus)
+          && !AnalysisOrchestratorStatus.getFinalStates().contains(orchestrator.getStatus())) {
         orchestrateNewAnalysisStateMachine(
             orchestrator.getVerificationTaskId(), currentlyExecutingStateMachine.getTotalRetryCountToBePropagated());
       }

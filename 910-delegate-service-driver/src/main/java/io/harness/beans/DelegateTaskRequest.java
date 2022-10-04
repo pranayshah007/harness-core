@@ -36,4 +36,10 @@ public class DelegateTaskRequest {
   int expressionFunctorToken;
   List<String> eligibleToExecuteDelegateIds;
   @Builder.Default SerializationFormat serializationFormat = SerializationFormat.KRYO;
+
+  // Used for harness hosted delegates
+  private boolean executeOnHarnessHostedDelegates;
+
+  private boolean emitEvent;
+  private String stageId;
 }

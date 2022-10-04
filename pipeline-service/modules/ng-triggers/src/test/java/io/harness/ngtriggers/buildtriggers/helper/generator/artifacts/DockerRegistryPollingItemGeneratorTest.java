@@ -68,7 +68,7 @@ public class DockerRegistryPollingItemGeneratorTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testEcrPollingItemGeneration_pipelineContainsFixedValuesExceptTag() throws Exception {
     TriggerDetails triggerDetails =
-        ngTriggerElementMapper.toTriggerDetails("acc", "org", "proj", ngTriggerYaml_artifact_dockerregistry);
+        ngTriggerElementMapper.toTriggerDetails("acc", "org", "proj", ngTriggerYaml_artifact_dockerregistry, false);
     triggerDetails.getNgTriggerEntity().getMetadata().getBuildMetadata().setPollingConfig(
         PollingConfig.builder().signature("sig1").build());
     BuildTriggerOpsData buildTriggerOpsData = buildTriggerHelper.generateBuildTriggerOpsDataForArtifact(
@@ -91,7 +91,7 @@ public class DockerRegistryPollingItemGeneratorTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testEcrPollingItemGeneration_pipelineContainsAllRuntimeInputs() throws Exception {
     TriggerDetails triggerDetails =
-        ngTriggerElementMapper.toTriggerDetails("acc", "org", "proj", ngTriggerYaml_artifact_dockerregistry);
+        ngTriggerElementMapper.toTriggerDetails("acc", "org", "proj", ngTriggerYaml_artifact_dockerregistry, false);
     triggerDetails.getNgTriggerEntity().getMetadata().getBuildMetadata().setPollingConfig(
         PollingConfig.builder().signature("sig1").build());
     BuildTriggerOpsData buildTriggerOpsData = buildTriggerHelper.generateBuildTriggerOpsDataForArtifact(

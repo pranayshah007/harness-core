@@ -15,11 +15,15 @@ import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.steps.StepSpecTypeConstants;
+import io.harness.plancreator.stages.stage.AbstractStageNode;
 import io.harness.plancreator.stages.stage.StageInfoConfig;
+import io.harness.yaml.core.VariableExpression;
+import io.harness.yaml.core.failurestrategy.FailureStrategyConfig;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import java.util.List;
 import javax.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -34,7 +38,7 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("SecurityStageNode")
 @OwnedBy(STO)
 @RecasterAlias("io.harness.beans.stages.SecurityStageNode")
-public class SecurityStageNode extends IntegrationAbstractStageNode {
+public class SecurityStageNode extends AbstractStageNode {
   @JsonProperty("type") @NotNull StepType type = StepType.SecurityTests;
 
   @JsonProperty("spec")
@@ -57,4 +61,6 @@ public class SecurityStageNode extends IntegrationAbstractStageNode {
       this.name = name;
     }
   }
+
+  @VariableExpression(skipVariableExpression = true) List<FailureStrategyConfig> failureStrategies;
 }

@@ -20,6 +20,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDNGTestBase;
 import io.harness.cdng.azure.AzureHelperService;
 import io.harness.cdng.azure.config.StartupCommandOutcome;
+import io.harness.cdng.azure.config.yaml.StartupCommandConfiguration;
 import io.harness.cdng.k8s.beans.StepExceptionPassThroughData;
 import io.harness.cdng.manifest.yaml.GitStore;
 import io.harness.cdng.manifest.yaml.harness.HarnessStore;
@@ -81,7 +82,9 @@ public class StartupScriptStepTest extends CDNGTestBase {
     StoreConfigWrapper storeConfigWrapper = getStoreConfigWrapper();
 
     StartupCommandParameters stepParameters =
-        StartupCommandParameters.builder().startupCommand(storeConfigWrapper).build();
+        StartupCommandParameters.builder()
+            .startupCommand(StartupCommandConfiguration.builder().store(storeConfigWrapper).build())
+            .build();
     StepResponse response =
         startupScriptStep.executeSync(ambiance, stepParameters, getStepInputPackage(), getPassThroughData());
 
@@ -109,7 +112,9 @@ public class StartupScriptStepTest extends CDNGTestBase {
 
     StoreConfigWrapper storeConfigWrapper = getStoreConfigWrapperWithGitStore();
     StartupCommandParameters stepParameters =
-        StartupCommandParameters.builder().startupCommand(storeConfigWrapper).build();
+        StartupCommandParameters.builder()
+            .startupCommand(StartupCommandConfiguration.builder().store(storeConfigWrapper).build())
+            .build();
 
     StepResponse response =
         startupScriptStep.executeSync(ambiance, stepParameters, getStepInputPackage(), getPassThroughData());

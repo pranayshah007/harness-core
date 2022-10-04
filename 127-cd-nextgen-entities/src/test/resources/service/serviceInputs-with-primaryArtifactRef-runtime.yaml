@@ -1,0 +1,18 @@
+serviceInputs:
+  serviceDefinition:
+    type: "Kubernetes"
+    spec:
+      artifacts:
+        primary:
+          primaryArtifactRef: "<+input>"
+          sources: "<+input>"
+      manifests:
+      - manifest:
+          identifier: "mani_id"
+          type: "HelmChart"
+          spec:
+            chartName: "<+input>"
+      variables:
+      - name: "variable1"
+        type: "String"
+        value: "<+input>"

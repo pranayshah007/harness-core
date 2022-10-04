@@ -1,0 +1,11 @@
+{
+  "identifier" : "example_project_slug",
+  "name" : "example-project-name",
+  "color" : "#0063F7",
+  "modules" : [ "CD" ],
+  "description" : "This is a example project",
+  "tags" : {
+    "property1" : "value1",
+    "property2" : "value2"
+  }
+}

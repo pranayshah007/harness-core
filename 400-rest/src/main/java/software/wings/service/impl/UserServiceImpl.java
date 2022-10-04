@@ -1143,10 +1143,14 @@ public class UserServiceImpl implements UserService {
 
     boolean shouldMailContainTwoFactorInfo = user.isTwoFactorAuthenticationEnabled();
     model.put("shouldMailContainTwoFactorInfo", Boolean.toString(shouldMailContainTwoFactorInfo));
+
+    log.info("The shouldMailContainTwoFactorInfo for userId {} and accountId {} is {}", user.getUuid(),
+        account.getUuid(), shouldMailContainTwoFactorInfo);
+
     model.put("totpSecret", user.getTotpSecretKey());
     String otpUrl = totpAuthHandler.generateOtpUrl(account.getCompanyName(), user.getEmail(), user.getTotpSecretKey());
     model.put("totpUrl", otpUrl);
-
+    log.info("The totpUrl for userId {} and accountId {} is {}", user.getUuid(), account.getUuid(), otpUrl);
     return model;
   }
 
@@ -1449,10 +1453,12 @@ public class UserServiceImpl implements UserService {
     if (!isInviteAcceptanceRequired) {
       addUserToUserGroups(accountId, user, userGroups, false, true);
     }
-    if (!isInviteAcceptanceRequired && accountService.isSSOEnabled(account)) {
-      sendUserInvitationToOnlySsoAccountMail(account, user);
-    } else {
-      sendNewInvitationMail(userInvite, account, user);
+    if (!featureFlagService.isEnabled(FeatureName.PL_NO_EMAIL_FOR_SAML_ACCOUNT_INVITES, accountId)) {
+      if (!isInviteAcceptanceRequired && accountService.isSSOEnabled(account)) {
+        sendUserInvitationToOnlySsoAccountMail(account, user);
+      } else {
+        sendNewInvitationMail(userInvite, account, user);
+      }
     }
 
     auditServiceHelper.reportForAuditingUsingAccountId(
@@ -3016,12 +3022,19 @@ public class UserServiceImpl implements UserService {
    */
   @Override
   public User get(String userId) {
+    return get(userId, true);
+  }
+
+  @Override
+  public User get(String userId, boolean includeSupportAccounts) {
     User user = wingsPersistence.get(User.class, userId);
     if (user == null) {
       throw new UnauthorizedException(EXC_MSG_USER_DOESNT_EXIST, USER);
     }
 
-    loadSupportAccounts(user);
+    if (includeSupportAccounts) {
+      loadSupportAccounts(user);
+    }
 
     List<Account> accounts = user.getAccounts();
     if (isNotEmpty(accounts)) {

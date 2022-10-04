@@ -188,7 +188,7 @@ public class BudgetCostServiceImpl implements BudgetCostService {
     return perspectiveTimeSeriesHelper
         .fetch(viewsBillingService.getTimeSeriesStatsNg(bigQueryService.get(), filters, groupBy, aggregationFunction,
                    Collections.emptyList(), cloudProviderTable, true, 100,
-                   viewsQueryHelper.buildQueryParams(accountId, true, false, false, false, timeOffsetInDays)),
+                   viewsQueryHelper.buildQueryParams(accountId, true, false, false, false, timeOffsetInDays, false)),
             perspectiveTimeSeriesHelper.getTimePeriod(groupBy), groupBy)
         .getStats();
   }

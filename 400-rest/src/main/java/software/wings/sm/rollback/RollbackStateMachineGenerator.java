@@ -51,7 +51,6 @@ import software.wings.sm.states.StagingOriginalExecution.StagingOriginalExecutio
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import java.util.Collections;
-import java.util.List;
 import javax.validation.constraints.NotNull;
 
 @OwnedBy(CDC)
@@ -123,7 +122,6 @@ public class RollbackStateMachineGenerator {
             0, getResourceConstraintStep(appId, canaryOrchestrationWorkflow.getConcurrencyStrategy()));
 
         if (featureFlagService.isEnabled(FeatureName.WINRM_ASG_ROLLBACK, appService.getAccountIdByAppId(appId))
-            && isItAFirstPhase(phase, canaryOrchestrationWorkflow.getWorkflowPhases())
             && rollbackPhase.getDeploymentType() == DeploymentType.WINRM
             && infrastructureDefinitionService.get(appId, rollbackPhase.getInfraDefinitionId()).getCloudProviderType()
                 == CloudProviderType.AWS) {
@@ -175,10 +173,5 @@ public class RollbackStateMachineGenerator {
                                                                 .build()));
 
     rollbackPhase.getPhaseSteps().add(0, collectInstancesStep);
-  }
-
-  private boolean isItAFirstPhase(WorkflowPhase phase, List<WorkflowPhase> workflowPhases) {
-    // will be last in rollback
-    return workflowPhases.get(0).getUuid().equals(phase.getUuid());
   }
 }

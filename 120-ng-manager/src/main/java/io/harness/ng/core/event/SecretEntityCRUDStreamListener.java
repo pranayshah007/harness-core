@@ -8,6 +8,7 @@
 package io.harness.ng.core.event;
 
 import static io.harness.annotations.dev.HarnessTeam.DX;
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ACCOUNT_ENTITY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ACTION;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.CREATE_ACTION;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.DELETE_ACTION;
@@ -24,6 +25,7 @@ import io.harness.connector.validator.SecretEntityCRUDEventHandler;
 import io.harness.eventsframework.NgEventLogContext;
 import io.harness.eventsframework.consumer.Message;
 import io.harness.eventsframework.entity_crud.EntityChangeDTO;
+import io.harness.eventsframework.entity_crud.account.AccountEntityChangeDTO;
 import io.harness.eventsframework.entity_crud.organization.OrganizationEntityChangeDTO;
 import io.harness.eventsframework.entity_crud.project.ProjectEntityChangeDTO;
 import io.harness.exception.InvalidRequestException;
@@ -82,6 +84,8 @@ public class SecretEntityCRUDStreamListener implements MessageListener {
             return processProjectChangeEvent(message);
           } else if (ORGANIZATION_ENTITY.equals(entityType)) {
             return processOrganizationChangeEvent(message);
+          } else if (ACCOUNT_ENTITY.equals(entityType)) {
+            return processAccountChangeEvent(message);
           }
         }
       }
@@ -96,6 +100,25 @@ public class SecretEntityCRUDStreamListener implements MessageListener {
       default:
     }
     return true;
+  }
+
+  private boolean processAccountChangeEvent(Message message) {
+    if (!(message.getMessage().getMetadataMap().containsKey(ACTION)
+            && DELETE_ACTION.equals(message.getMessage().getMetadataMap().get(ACTION)))) {
+      return true;
+    }
+    AccountEntityChangeDTO accountEntityChangeDTO;
+    try {
+      accountEntityChangeDTO = AccountEntityChangeDTO.parseFrom(message.getMessage().getData());
+    } catch (InvalidProtocolBufferException e) {
+      throw new InvalidRequestException(
+          String.format("Exception in unpacking EntityChangeDTO for key %s", message.getId()), e);
+    }
+    return processAccountDeleteEvent(accountEntityChangeDTO);
+  }
+
+  private boolean processAccountDeleteEvent(AccountEntityChangeDTO accountEntityChangeDTO) {
+    return secretEntityCRUDEventHandler.deleteAssociatedSecrets(accountEntityChangeDTO.getAccountId(), null, null);
   }
 
   private boolean processOrganizationChangeEvent(Message message) {

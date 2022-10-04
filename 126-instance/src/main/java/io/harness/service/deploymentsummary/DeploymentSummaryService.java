@@ -23,6 +23,9 @@ public interface DeploymentSummaryService {
   Optional<DeploymentSummaryDTO> getNthDeploymentSummaryFromNow(
       int N, String instanceSyncKey, InfrastructureMappingDTO infrastructureMappingDTO);
 
+  Optional<DeploymentSummaryDTO> getLatestByInstanceKeyAndPipelineExecutionIdNot(
+      String instanceSyncKey, InfrastructureMappingDTO infrastructureMappingDTO, String pipelineExecutionId);
+
   Optional<DeploymentSummaryDTO> getLatestByInstanceKey(
       String instanceSyncKey, InfrastructureMappingDTO infrastructureMappingDTO);
 }
