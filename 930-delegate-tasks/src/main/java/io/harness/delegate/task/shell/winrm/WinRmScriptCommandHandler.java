@@ -107,9 +107,8 @@ public class WinRmScriptCommandHandler implements CommandHandler {
       CommandUnitsProgress commandUnitsProgress, WinrmTaskParameters winRmCommandTaskParameters,
       ScriptCommandUnit commandUnit) {
     WinRmSessionConfig config = getWinRmSessionConfig(commandUnit, winRmCommandTaskParameters, winRmConfigAuthEnhancer);
-    WinRmExecutor executor =
-        winRmExecutorFactoryNG.getExecutor(config, winRmCommandTaskParameters.isDisableWinRMCommandEncodingFFSet(),
-            winRmCommandTaskParameters.isWinrmScriptCommandSplit(), logStreamingTaskClient, commandUnitsProgress);
+    WinRmExecutor executor = winRmExecutorFactoryNG.getExecutor(config,
+        winRmCommandTaskParameters.isDisableWinRMCommandEncodingFFSet(), logStreamingTaskClient, commandUnitsProgress);
 
     return executor.executeCommandString(commandUnit.getCommand(), winRmCommandTaskParameters.getOutputVariables());
   }

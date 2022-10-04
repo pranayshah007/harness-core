@@ -935,10 +935,6 @@ public class CommandState extends State {
       commandParametersBuilder.disableWinRMCommandEncodingFFSet(true);
     }
 
-    if (featureFlagService.isEnabled(FeatureName.WINRM_SCRIPT_COMMAND_SPLIT, accountId)) {
-      commandParametersBuilder.winrmScriptCommandSplit(true);
-    }
-
     commandParametersBuilder.multiArtifact(false);
 
     commandParametersBuilder.useWinRMKerberosUniqueCacheFile(

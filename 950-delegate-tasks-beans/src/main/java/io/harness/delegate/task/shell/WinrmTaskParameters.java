@@ -22,7 +22,9 @@ import io.harness.delegate.task.ssh.AzureWinrmInfraDelegateConfig;
 import io.harness.delegate.task.ssh.PdcWinRmInfraDelegateConfig;
 import io.harness.delegate.task.ssh.WinRmInfraDelegateConfig;
 import io.harness.expression.ExpressionEvaluator;
+import io.harness.security.encryption.SecretDecryptionService;
 
+import com.google.inject.Inject;
 import java.util.List;
 import lombok.Getter;
 import lombok.Value;
@@ -33,10 +35,10 @@ import lombok.experimental.SuperBuilder;
 @Getter
 @OwnedBy(CDP)
 public class WinrmTaskParameters extends CommandTaskParameters {
+  @Inject SecretDecryptionService secretDecryptionService;
   String host;
   WinRmInfraDelegateConfig winRmInfraDelegateConfig;
   boolean disableWinRMCommandEncodingFFSet;
-  boolean winrmScriptCommandSplit;
   boolean useWinRMKerberosUniqueCacheFile;
 
   @Override

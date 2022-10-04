@@ -114,9 +114,8 @@ public class WinRmInitCommandHandler implements CommandHandler {
       NgCommandUnit commandUnit) {
     WinRmSessionConfig config = getWinRmSessionConfig(commandUnit, winRmCommandTaskParameters, winRmConfigAuthEnhancer);
 
-    WinRmExecutor executor =
-        winRmExecutorFactoryNG.getExecutor(config, winRmCommandTaskParameters.isDisableWinRMCommandEncodingFFSet(),
-            winRmCommandTaskParameters.isWinrmScriptCommandSplit(), logStreamingTaskClient, commandUnitsProgress);
+    WinRmExecutor executor = winRmExecutorFactoryNG.getExecutor(config,
+        winRmCommandTaskParameters.isDisableWinRMCommandEncodingFFSet(), logStreamingTaskClient, commandUnitsProgress);
 
     return executor.executeCommandString(getInitCommand(WINDOWS_HOME_DIR), false);
   }

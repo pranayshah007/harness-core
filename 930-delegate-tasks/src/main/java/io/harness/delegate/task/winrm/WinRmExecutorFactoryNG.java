@@ -28,10 +28,9 @@ public class WinRmExecutorFactoryNG {
   @Inject private ArtifactoryRequestMapper artifactoryRequestMapper;
 
   public WinRmExecutor getExecutor(WinRmSessionConfig config, boolean disableCommandEncoding,
-      boolean winrmScriptCommandSplit, ILogStreamingTaskClient logStreamingTaskClient,
-      CommandUnitsProgress commandUnitsProgress) {
+      ILogStreamingTaskClient logStreamingTaskClient, CommandUnitsProgress commandUnitsProgress) {
     return new DefaultWinRmExecutor(getExecutionLogCallback(config, logStreamingTaskClient, commandUnitsProgress), true,
-        config, disableCommandEncoding, winrmScriptCommandSplit);
+        config, disableCommandEncoding);
   }
 
   public FileBasedWinRmExecutorNG getFiledBasedWinRmExecutor(WinRmSessionConfig config, boolean disableCommandEncoding,

@@ -44,7 +44,7 @@ public class WinRmDownloadArtifactCommandHandler
 
     WinRmSessionConfig config = getWinRmSessionConfig(commandUnit, winRmCommandTaskParameters, winRmConfigAuthEnhancer);
     return winRmExecutorFactoryNG.getExecutor(config, winRmCommandTaskParameters.isDisableWinRMCommandEncodingFFSet(),
-        winRmCommandTaskParameters.isWinrmScriptCommandSplit(), logStreamingTaskClient, commandUnitsProgress);
+        logStreamingTaskClient, commandUnitsProgress);
   }
 
   @Override

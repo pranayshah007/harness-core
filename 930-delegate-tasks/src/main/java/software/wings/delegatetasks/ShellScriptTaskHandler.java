@@ -98,9 +98,8 @@ public class ShellScriptTaskHandler {
       case WINRM: {
         try {
           WinRmSessionConfig winRmSessionConfig = parameters.winrmSessionConfig(encryptionService);
-          WinRmExecutor executor =
-              winrmExecutorFactory.getExecutor(winRmSessionConfig, parameters.isDisableWinRMCommandEncodingFFSet(),
-                  parameters.isSaveExecutionLogs(), parameters.isWinrmScriptCommandSplit());
+          WinRmExecutor executor = winrmExecutorFactory.getExecutor(
+              winRmSessionConfig, parameters.isDisableWinRMCommandEncodingFFSet(), parameters.isSaveExecutionLogs());
           return CommandExecutionResultMapper.from(
               executor.executeCommandString(parameters.getScript(), items, secretItems, timeoutInMillis));
         } catch (Exception e) {
