@@ -4157,6 +4157,16 @@
                   "minLength": 1
                 }
               ]
+            },
+            "ignoreReleaseHistFailStatus": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string"
+                }
+              ]
             }
           }
         }
