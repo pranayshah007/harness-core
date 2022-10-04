@@ -194,9 +194,7 @@ public class CIModuleInfoProviderTest extends CIExecutionTestBase {
     Ambiance ambiance = getAmbianceWithLevel(
         Level.newBuilder().setStartTs(1111L).setStepType(IntegrationStageStepPMS.STEP_TYPE).build());
     Infrastructure infrastructure =
-        K8sHostedInfraYaml.builder()
-            .spec(K8sHostedInfraYamlSpec.builder().identifier("k8HostedInfra").build())
-            .build();
+        K8sHostedInfraYaml.builder().spec(K8sHostedInfraYamlSpec.builder().identifier("k8HostedInfra").build()).build();
     OrchestrationEvent event =
         OrchestrationEvent.builder()
             .ambiance(ambiance)
