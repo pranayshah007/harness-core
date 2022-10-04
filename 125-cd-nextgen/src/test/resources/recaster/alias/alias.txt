@@ -114,7 +114,7 @@ io.harness.cdng.manifest.yaml.OpenshiftManifestOutcome
 io.harness.cdng.manifest.yaml.ReleaseRepoManifestOutcome
 io.harness.cdng.artifact.bean.yaml.EcrArtifactConfig
 io.harness.cdng.artifact.bean.yaml.AmazonS3ArtifactConfig
-io.harness.cdng.artifact.bean.yaml.AzureArtifactConfig
+io.harness.cdng.artifact.bean.yaml.AzureArtifactsConfig
 io.harness.steps.shellscript.K8sInfraDelegateConfigOutput
 io.harness.steps.shellscript.SshInfraDelegateConfigOutput
 io.harness.steps.shellscript.WinRmInfraDelegateConfigOutput
@@ -414,6 +414,8 @@ io.harness.cdng.azure.config.yaml.StartupCommandConfiguration
 io.harness.ngpipeline.artifact.bean.GithubPackagesArtifactOutcome
 io.harness.ngpipeline.pipeline.executions.beans.GithubPackagesArtifactSummary
 io.harness.cdng.artifact.bean.yaml.GithubPackageArtifactConfig
+io.harness.ngpipeline.artifact.bean.AzureArtifactsOutcome
+io.harness.ngpipeline.pipeline.executions.beans.AzureArtifactsSummary
 io.harness.cdng.provision.azure.AzureSubscriptionSpec
 io.harness.cdng.provision.azure.AzureTenantSpec
 io.harness.cdng.provision.azure.AzureResourceGroupSpec

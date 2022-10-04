@@ -64,4 +64,33 @@ service:
                 package: demo
                 version: 1.0
               type: GoogleArtifactRegistry
+            - identifier: customartifactsource
+              spec:
+                timeout: 2m
+                scripts:
+                  fetchAllArtifacts:
+                    artifactsArrayPath: items
+                    versionPath: version
+                    spec:
+                      shell: Bash
+                      source:
+                        spec:
+                          script: |-
+                            cat << EOF > $HARNESS_ARTIFACT_RESULT_PATH
+                            {
+                              "items": [
+                                {
+                                "id": "Y2RwL",
+                                "repository": "cdp-qa-automation-1",
+                                "format": "docker",
+                                "group": null,
+                                "name": "nginx",
+                                "version": "1.0"
+                              }
+                              ]
+                            }
+                            EOF
+                        type: Inline
+                version: <+input>
+              type: CustomArtifact
     type: Kubernetes

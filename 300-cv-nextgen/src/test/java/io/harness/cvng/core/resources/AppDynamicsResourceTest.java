@@ -89,10 +89,7 @@ public class AppDynamicsResourceTest extends CvNextGenTestBase {
     assertThat(response.getStatus()).isEqualTo(400);
     String responseJson = response.readEntity(String.class);
     assertThat(responseJson).contains("{\"field\":\"appName\",\"message\":\"must not be null\"}");
-    assertThat(responseJson).contains("{\"field\":\"projectIdentifier\",\"message\":\"must not be null\"}");
     assertThat(responseJson).contains("{\"field\":\"connectorIdentifier\",\"message\":\"must not be null\"}");
-    assertThat(responseJson).contains("{\"field\":\"orgIdentifier\",\"message\":\"must not be null\"}");
-    assertThat(responseJson).contains("{\"field\":\"accountId\",\"message\":\"must not be null\"}");
   }
 
   @SneakyThrows
@@ -107,10 +104,7 @@ public class AppDynamicsResourceTest extends CvNextGenTestBase {
     assertThat(response.getStatus()).isEqualTo(400);
     String responseJson = response.readEntity(String.class);
     assertThat(responseJson).contains("{\"field\":\"appName\",\"message\":\"must not be null\"}");
-    assertThat(responseJson).contains("{\"field\":\"projectIdentifier\",\"message\":\"must not be null\"}");
     assertThat(responseJson).contains("{\"field\":\"connectorIdentifier\",\"message\":\"must not be null\"}");
-    assertThat(responseJson).contains("{\"field\":\"orgIdentifier\",\"message\":\"must not be null\"}");
-    assertThat(responseJson).contains("{\"field\":\"accountId\",\"message\":\"must not be null\"}");
     assertThat(responseJson).contains("{\"field\":\"tier\",\"message\":\"must not be null\"}");
     assertThat(responseJson).contains("{\"field\":\"baseFolder\",\"message\":\"must not be null\"}");
   }

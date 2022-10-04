@@ -8,13 +8,14 @@ java_library(
     visibility = ["//visibility:public"],
     deps = [
         "//:lombok",
+        "@maven//:org_zeroturnaround_zt_exec",
     ],
 )
 
 java_binary(
     name = "DelegateAgent",
-    main_class = "delegate.src.main.java.io.harness.agent.DelegateAgent",
-    resources = ["//delegate/src/main/java/io/harness/agent/resources:resource"],
+    main_class = "io.harness.delegate.agent.DelegateAgent",
+    resources = ["//delegate/src/main/java/io/harness/delegate/agent/resources:resource"],
     visibility = ["//visibility:public"],
     runtime_deps = [
         ":module",

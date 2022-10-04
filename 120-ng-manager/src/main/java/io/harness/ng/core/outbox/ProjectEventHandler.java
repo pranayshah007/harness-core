@@ -164,7 +164,7 @@ public class ProjectEventHandler implements OutboxEventHandler {
 
   private boolean publishEvent(String accountIdentifier, String orgIdentifier, String identifier, String action) {
     try {
-      eventProducer.send(
+      String eventId = eventProducer.send(
           Message.newBuilder()
               .putAllMetadata(
                   ImmutableMap.of("accountId", accountIdentifier, EventsFrameworkMetadataConstants.ENTITY_TYPE,
@@ -176,6 +176,8 @@ public class ProjectEventHandler implements OutboxEventHandler {
                            .build()
                            .toByteString())
               .build());
+      log.info("Produced event id:[{}] for projectId: [{}], orgId:[{}], accountId: [{}], action:[{}]", eventId,
+          identifier, orgIdentifier, accountIdentifier, action);
       return true;
     } catch (EventsFrameworkDownException e) {
       log.error("Failed to send event to events framework projectIdentifier: " + identifier, e);

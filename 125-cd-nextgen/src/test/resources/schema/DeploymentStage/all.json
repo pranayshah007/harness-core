@@ -320,7 +320,7 @@
             "AmazonS3",
             "GoogleArtifactRegistry",
             "GithubPackageRegistry",
-            "AzureArtifactsRegistry"
+            "AzureArtifacts"
           ]
         }
       },
@@ -378,14 +378,14 @@
           "if": {
             "properties": {
               "type": {
-                "const": "AzureArtifactsRegistry"
+                "const": "AzureArtifacts"
               }
             }
           },
           "then": {
             "properties": {
               "spec": {
-                "$ref": "#/definitions/AzureArtifactConfig"
+                "$ref": "#/definitions/AzureArtifactsConfig"
               }
             }
           }
@@ -685,7 +685,7 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
-    "AzureArtifactConfig": {
+    "AzureArtifactsConfig": {
       "allOf": [
         {
           "$ref": "#/definitions/ArtifactConfig"
@@ -695,9 +695,8 @@
           "required": [
             "connectorRef",
             "feed",
-            "packageName",
+            "package",
             "packageType",
-            "project",
             "scope"
           ],
           "properties": {
@@ -707,7 +706,7 @@
             "feed": {
               "type": "string"
             },
-            "packageName": {
+            "package": {
               "type": "string"
             },
             "packageType": {
@@ -3493,10 +3492,19 @@
           "type": "string"
         },
         "environments": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/EnvironmentYamlV2"
-          }
+          "oneOf": [
+            {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/EnvironmentYamlV2"
+              }
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
         },
         "metadata": {
           "type": "string"
@@ -7700,7 +7708,7 @@
             "AmazonS3",
             "GoogleArtifactRegistry",
             "GithubPackageRegistry",
-            "AzureArtifactsRegistry"
+            "AzureArtifacts"
           ]
         }
       },
@@ -7758,14 +7766,14 @@
           "if": {
             "properties": {
               "type": {
-                "const": "AzureArtifactsRegistry"
+                "const": "AzureArtifacts"
               }
             }
           },
           "then": {
             "properties": {
               "spec": {
-                "$ref": "#/definitions/AzureArtifactConfig"
+                "$ref": "#/definitions/AzureArtifactsConfig"
               }
             }
           }
@@ -8880,7 +8888,7 @@
             "AmazonS3",
             "GoogleArtifactRegistry",
             "GithubPackageRegistry",
-            "AzureArtifactsRegistry"
+            "AzureArtifacts"
           ]
         }
       },
@@ -8938,14 +8946,14 @@
           "if": {
             "properties": {
               "type": {
-                "const": "AzureArtifactsRegistry"
+                "const": "AzureArtifacts"
               }
             }
           },
           "then": {
             "properties": {
               "spec": {
-                "$ref": "#/definitions/AzureArtifactConfig"
+                "$ref": "#/definitions/AzureArtifactsConfig"
               }
             }
           }

@@ -40,6 +40,7 @@ public class ClusterBatchRequest {
   @Schema(description = "project identifier of the cluster") String projectIdentifier;
   @Schema(description = "environment identifier of the cluster") @NotEmpty String envRef;
   @Schema(description = "link all clusters") boolean linkAllClusters;
+  @Schema(description = "unlink all clusters") boolean unlinkAllClusters;
   @Schema(description = "search term if applicable. only valid if linking all clusters") String searchTerm;
   @Schema(description = "list of cluster identifiers and names") List<ClusterBasicDTO> clusters;
 
@@ -53,11 +54,11 @@ public class ClusterBatchRequest {
 
   @AssertTrue(
       message =
-          "Only one of linkAllClusters or clusters must be set. Search term cannot be set if not linking all clusters")
+          "Either linkAllClusters/unlinkAllClusters must be set OR clusters must be provided. Search term cannot be set if not linking/unlinking all clusters")
   private boolean
   isValid() {
-    boolean c1 = linkAllClusters ^ isNotEmpty(clusters);
-    boolean c2 = isEmpty(searchTerm) || linkAllClusters;
+    boolean c1 = (linkAllClusters || unlinkAllClusters) ^ isNotEmpty(clusters);
+    boolean c2 = isEmpty(searchTerm) || linkAllClusters || unlinkAllClusters;
     return c1 && c2;
   }
 }

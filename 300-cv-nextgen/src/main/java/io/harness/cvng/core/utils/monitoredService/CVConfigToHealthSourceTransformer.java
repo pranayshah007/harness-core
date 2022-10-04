@@ -7,13 +7,20 @@
 
 package io.harness.cvng.core.utils.monitoredService;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import io.harness.cvng.core.beans.monitoredService.TimeSeriesMetricPackDTO;
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.HealthSourceSpec;
+import io.harness.cvng.core.constant.MonitoredServiceConstants;
 import io.harness.cvng.core.entities.CVConfig;
+import io.harness.cvng.core.entities.MetricCVConfig;
 
 import com.google.common.base.Preconditions;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public interface CVConfigToHealthSourceTransformer<C extends CVConfig, T extends HealthSourceSpec> {
   default T transform(List<? extends CVConfig> cvConfigGroup) {
@@ -24,4 +31,27 @@ public interface CVConfigToHealthSourceTransformer<C extends CVConfig, T extends
     return transformToHealthSourceConfig(typedCVConfig);
   }
   T transformToHealthSourceConfig(List<C> cvConfigGroup);
+
+  default Set<TimeSeriesMetricPackDTO> addMetricPacks(List<? extends MetricCVConfig> cvConfigs) {
+    Set<TimeSeriesMetricPackDTO> metricPacks = new HashSet<>();
+    List<TimeSeriesMetricPackDTO.MetricThreshold> customMetricThresholds = new ArrayList<>();
+    cvConfigs.forEach(cvConfig -> {
+      String identifier = cvConfig.getMetricPack().getIdentifier();
+      List<TimeSeriesMetricPackDTO.MetricThreshold> metricThresholds = cvConfig.getMetricThresholdDTOs();
+      if (isNotEmpty(metricThresholds)) {
+        metricThresholds.forEach(metricThreshold -> metricThreshold.setMetricType(identifier));
+      }
+      if (!(MonitoredServiceConstants.CUSTOM_METRIC_PACK.equals(identifier) && isEmpty(metricThresholds))) {
+        metricPacks.add(
+            TimeSeriesMetricPackDTO.builder().identifier(identifier).metricThresholds(metricThresholds).build());
+      }
+    });
+    if (isNotEmpty(customMetricThresholds)) {
+      metricPacks.add(TimeSeriesMetricPackDTO.builder()
+                          .identifier(MonitoredServiceConstants.CUSTOM_METRIC_PACK)
+                          .metricThresholds(customMetricThresholds)
+                          .build());
+    }
+    return metricPacks;
+  }
 }

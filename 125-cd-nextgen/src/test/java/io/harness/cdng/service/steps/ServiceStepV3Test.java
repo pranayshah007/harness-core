@@ -26,6 +26,7 @@ import io.harness.cdng.manifest.yaml.kinds.K8sManifest;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.data.structure.UUIDGenerator;
+import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnresolvedExpressionsException;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.services.EnvironmentService;
@@ -110,6 +111,24 @@ public class ServiceStepV3Test {
                                                 .expression(true)
                                                 .expressionValue("<+randomExpression>")
                                                 .build())
+                                .build(),
+                            null));
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.YOGESH)
+  @Category(UnitTests.class)
+  public void executeSyncServiceTypeMismatch() {
+    // SSH Service
+    final ServiceEntity serviceEntity = testServiceEntity();
+    mockService(serviceEntity);
+
+    assertThatExceptionOfType(InvalidRequestException.class)
+        .isThrownBy(()
+                        -> step.obtainChildren(buildAmbiance(),
+                            ServiceStepV3Parameters.builder()
+                                .serviceRef(ParameterField.createValueField("svcid"))
+                                .deploymentType(ServiceDefinitionType.ECS)
                                 .build(),
                             null));
   }

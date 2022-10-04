@@ -42,6 +42,7 @@ import io.harness.steps.approval.step.servicenow.ServiceNowApprovalStepNode;
 import io.harness.steps.customstage.CustomStageNode;
 import io.harness.steps.jira.create.JiraCreateStepNode;
 import io.harness.steps.jira.update.JiraUpdateStepNode;
+import io.harness.steps.pipelinestage.PipelineStageNode;
 import io.harness.steps.policy.PolicyStepNode;
 import io.harness.steps.servicenow.create.ServiceNowCreateStepNode;
 import io.harness.steps.servicenow.importset.ServiceNowImportSetStepNode;
@@ -142,7 +143,7 @@ public class OrchestrationStepsModuleRegistrars {
                    .availableAtProjectLevel(true)
                    .availableAtOrgLevel(false)
                    .availableAtAccountLevel(false)
-                   .clazz(ApprovalStageNode.class)
+                   .clazz(PipelineStageNode.class)
                    .yamlSchemaMetadata(YamlSchemaMetadata.builder()
                                            .namespace(SchemaNamespaceConstants.PIPELINE)
                                            .modulesSupported(ImmutableList.of(ModuleType.PMS))

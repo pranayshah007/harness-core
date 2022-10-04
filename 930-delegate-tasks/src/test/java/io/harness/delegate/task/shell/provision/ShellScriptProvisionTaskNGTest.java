@@ -72,7 +72,7 @@ public class ShellScriptProvisionTaskNGTest extends CategoryTest {
   @Test
   @Owner(developers = TMACARI)
   @Category(UnitTests.class)
-  public void testShouldDownloadArtifactRemote() {
+  public void testShouldExecuteScript() {
     ScriptProcessExecutor scriptProcessExecutor = mock(ScriptProcessExecutor.class);
     Map<String, String> variables = new HashMap<>();
     variables.put("key", "value");
@@ -103,12 +103,13 @@ public class ShellScriptProvisionTaskNGTest extends CategoryTest {
     assertThat(shellExecutorConfig.getEnvironment().get("key")).isEqualTo("value");
     assertThat(shellExecutorConfig.getEnvironment().get(PROVISIONER_OUTPUT_PATH_KEY)).isNotEmpty();
     assertThat(response.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
+    assertThat(response.getUnitProgressData()).isNotNull();
   }
 
   @Test
   @Owner(developers = TMACARI)
   @Category(UnitTests.class)
-  public void testShouldDownloadArtifactRemoteFailure() {
+  public void testShouldExecuteScriptFailure() {
     ScriptProcessExecutor scriptProcessExecutor = mock(ScriptProcessExecutor.class);
     Map<String, String> variables = new HashMap<>();
     variables.put("key", "value");
@@ -139,12 +140,13 @@ public class ShellScriptProvisionTaskNGTest extends CategoryTest {
     assertThat(shellExecutorConfig.getEnvironment().get("key")).isEqualTo("value");
     assertThat(shellExecutorConfig.getEnvironment().get(PROVISIONER_OUTPUT_PATH_KEY)).isNotEmpty();
     assertThat(response.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.FAILURE);
+    assertThat(response.getUnitProgressData()).isNotNull();
   }
 
   @Test
   @Owner(developers = TMACARI)
   @Category(UnitTests.class)
-  public void testShouldDownloadArtifactRemoteExceptionThrown() {
+  public void testShouldExecuteScriptExceptionThrown() {
     ShellScriptProvisionTaskNGRequest request = ShellScriptProvisionTaskNGRequest.builder()
                                                     .accountId("accountId")
                                                     .scriptBody("test")
@@ -159,5 +161,6 @@ public class ShellScriptProvisionTaskNGTest extends CategoryTest {
 
     assertThat(response.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.FAILURE);
     assertThat(response.getErrorMessage()).isEqualTo("error");
+    assertThat(response.getUnitProgressData()).isNotNull();
   }
 }

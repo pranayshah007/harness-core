@@ -84,8 +84,7 @@ public class CVDataCollectionTaskResource {
   @Timed
   @ExceptionMetered
   public RestResponse<String> getDataCollectionResult(@NotNull @QueryParam("accountId") String accountId,
-      @NotNull @QueryParam("orgIdentifier") String orgIdentifier,
-      @NotNull @QueryParam("projectIdentifier") String projectIdentifier,
+      @QueryParam("orgIdentifier") String orgIdentifier, @QueryParam("projectIdentifier") String projectIdentifier,
       @Body DataCollectionRequest dataCollectionRequest) {
     return new RestResponse<>(dataCollectionTaskService.getDataCollectionResult(
         accountId, orgIdentifier, projectIdentifier, dataCollectionRequest));

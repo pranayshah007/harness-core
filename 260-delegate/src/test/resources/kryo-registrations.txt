@@ -1498,6 +1498,7 @@
 19551:io.harness.delegate.beans.connector.ConnectorValidationParameterResponse
 19552:io.harness.delegate.beans.connector.scm.github.GithubOauthDTO
 19553:io.harness.delegate.beans.connector.scm.gitlab.GitlabOauthDTO
+19554:io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsValidationParams
 19630:io.harness.delegate.beans.connector.helm.OciHelmValidationParams
 19640:io.harness.delegate.beans.connector.helm.HttpHelmConnectivityTaskParams
 19641:io.harness.delegate.beans.connector.helm.HttpHelmConnectivityTaskResponse
@@ -1781,6 +1782,11 @@
 56338:io.harness.delegate.task.gitpolling.GitPollingTaskType
 56339:io.harness.delegate.beans.polling.GitPollingDelegateResponse
 56403:io.harness.delegate.beans.storeconfig.CustomRemoteStoreDelegateConfig
+57500:io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsTestConnectionTaskParams
+57501:io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsTestConnectionTaskResponse
+57502:io.harness.delegate.task.artifacts.azureartifacts.AzureArtifactsDelegateRequest
+57503:io.harness.delegate.task.artifacts.azureartifacts.AzureArtifactsDelegateResponse
+57504:io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsCapabilityHelper
 71100:software.wings.service.impl.ThirdPartyApiCallLog.ThirdPartyApiCallField
 71101:software.wings.service.impl.ThirdPartyApiCallLog.FieldType
 71102:software.wings.beans.Log
@@ -2365,3 +2371,9 @@
 9800007:io.harness.delegate.task.ssh.artifact.AwsS3ArtifactDelegateConfig
 10000001:io.harness.delegate.beans.connector.elkconnector.ELKConnectorDTO
 10000002:io.harness.delegate.beans.connector.elkconnector.ELKAuthType
+10000101:io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsConnectorDTO
+10000102:io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsCredentialsDTO
+10000103:io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsAuthenticationType
+10000109:io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsAuthenticationDTO
+10000111:io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsTokenDTO
+

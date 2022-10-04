@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.pms.pipeline.stage;
+package io.harness.steps.pipelinestage;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
@@ -36,7 +36,7 @@ import org.springframework.data.annotation.TypeAlias;
 @OwnedBy(PIPELINE)
 @RecasterAlias("io.harness.pms.pipeline.stage.PipelineStageNode")
 public class PipelineStageNode extends PmsAbstractStageNode {
-  @JsonProperty("type") @NotNull StepType type = StepType.PIPELINE;
+  @JsonProperty("type") @NotNull StepType type = StepType.Pipeline;
 
   @JsonProperty("spec")
   @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
@@ -52,7 +52,7 @@ public class PipelineStageNode extends PmsAbstractStageNode {
   }
 
   public enum StepType {
-    PIPELINE(StepSpecTypeConstants.PIPELINE_STAGE);
+    Pipeline(StepSpecTypeConstants.PIPELINE_STAGE);
     @Getter String name;
     StepType(String name) {
       this.name = name;
