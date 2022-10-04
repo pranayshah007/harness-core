@@ -105,28 +105,6 @@ public class PerpetualTaskServiceImplTest extends WingsBaseTest {
   }
 
   @Test
-  @Owner(developers = MOHIT_GARG)
-  @Category(UnitTests.class)
-  public void testCustomTimeIntervalIfNotPresent() {
-    long finalTaskTimeInterval =
-        perpetualTaskService.getTaskTimeInterval(perpetualTaskSchedule(), ACCOUNT_ID, PerpetualTaskType.ECS_CLUSTER);
-
-    assertThat(finalTaskTimeInterval).isEqualTo(perpetualTaskSchedule().getInterval().getSeconds());
-  }
-
-  @Test
-  @Owner(developers = MOHIT_GARG)
-  @Category(UnitTests.class)
-  public void testCustomTimeIntervalIfPresent() {
-    long customTimeIntervalInMs = 100000;
-    perpetualTaskScheduleService.save(ACCOUNT_ID, PerpetualTaskType.ECS_CLUSTER, customTimeIntervalInMs);
-    long finalTaskTimeInterval =
-        perpetualTaskService.getTaskTimeInterval(perpetualTaskSchedule(), ACCOUNT_ID, PerpetualTaskType.ECS_CLUSTER);
-
-    assertThat(finalTaskTimeInterval).isEqualTo(customTimeIntervalInMs / 1000);
-  }
-
-  @Test
   @Owner(developers = VUK)
   @Category(UnitTests.class)
   public void testResetTaskWithoutTaskParams() {
