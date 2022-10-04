@@ -15,4 +15,5 @@ message CustomDeploymentNGInstanceSyncPerpetualTaskParams {
   string output_path_key = 3;
   string instances_list_path = 4;
   map<string, string> instance_attributes = 5;
+  string infrastructure_key = 6;
 }

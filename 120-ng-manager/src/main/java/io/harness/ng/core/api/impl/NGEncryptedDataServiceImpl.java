@@ -609,6 +609,12 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
     return encryptedDataDao.delete(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
   }
 
+  @Override
+  public NGEncryptedData hardDelete(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier) {
+    return encryptedDataDao.hardDelete(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
+  }
+
   private void deleteSecretInSecretManager(
       String accountIdentifier, NGEncryptedData encryptedData, SecretManagerConfig secretManagerConfig) {
     SecretManagerType secretManagerType = secretManagerConfig.getType();

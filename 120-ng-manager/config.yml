@@ -95,6 +95,7 @@ mongo:
   transactionsEnabled: false
   aliasDBName: ng-harness
   traceMode: DISABLED
+  maxOperationTimeInMillis: 900000
 
 accountConfig:
   deploymentClusterName: ""

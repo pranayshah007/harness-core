@@ -40,6 +40,7 @@ import com.google.inject.Inject;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
+import software.amazon.awssdk.services.ecs.model.UpdateServiceResponse;
 
 @OwnedBy(HarnessTeam.CDP)
 @NoArgsConstructor
@@ -77,31 +78,55 @@ public class EcsBlueGreenSwapTargetGroupsCommandTaskHandler extends EcsCommandTa
       ecsCommandTaskHelper.swapTargetGroups(ecsInfraConfig, swapTargetGroupLogCallback,
           ecsBlueGreenSwapTargetGroupsRequest.getEcsLoadBalancerConfig(), awsInternalConfig);
 
+      swapTargetGroupLogCallback.saveExecutionLog(
+          format("Updating tag of new service: %s", ecsBlueGreenSwapTargetGroupsRequest.getNewServiceName()));
       // update service tag of new service with blue version
       ecsCommandTaskHelper.updateTag(ecsBlueGreenSwapTargetGroupsRequest.getNewServiceName(), ecsInfraConfig,
-          EcsCommandTaskNGHelper.BG_BLUE, awsInternalConfig);
+          EcsCommandTaskNGHelper.BG_BLUE, awsInternalConfig, swapTargetGroupLogCallback);
+
+      swapTargetGroupLogCallback.saveExecutionLog(
+          color(format("Successfully updated tag %n%n"), LogColor.White, LogWeight.Bold), LogLevel.INFO);
 
       // if its not a first deployment, update old service with zero desired count and change its tag
       if (!ecsBlueGreenSwapTargetGroupsRequest.isFirstDeployment()) {
+        swapTargetGroupLogCallback.saveExecutionLog(
+            format("Updating tag of old service: %s", ecsBlueGreenSwapTargetGroupsRequest.getOldServiceName()));
         // update service tag of old service with green version
         ecsCommandTaskHelper.updateTag(ecsBlueGreenSwapTargetGroupsRequest.getOldServiceName(), ecsInfraConfig,
-            EcsCommandTaskNGHelper.BG_GREEN, awsInternalConfig);
+            EcsCommandTaskNGHelper.BG_GREEN, awsInternalConfig, swapTargetGroupLogCallback);
+
+        swapTargetGroupLogCallback.saveExecutionLog(
+            color(format("Successfully updated tag %n%n"), LogColor.White, LogWeight.Bold), LogLevel.INFO);
 
         // check downsize old flag and downsize it
         if (!ecsBlueGreenSwapTargetGroupsRequest.isDoNotDownsizeOldService()) {
+          swapTargetGroupLogCallback.saveExecutionLog(format(
+              "Removing green service:  %s scaling policies", ecsBlueGreenSwapTargetGroupsRequest.getOldServiceName()));
           // deleting scaling policies for old service
           ecsCommandTaskHelper.deleteScalingPolicies(ecsInfraConfig.getAwsConnectorDTO(),
               ecsBlueGreenSwapTargetGroupsRequest.getOldServiceName(), ecsInfraConfig.getCluster(),
               ecsInfraConfig.getRegion(), swapTargetGroupLogCallback);
 
+          swapTargetGroupLogCallback.saveExecutionLog(format(
+              "Removing green service:  %s scalable targets", ecsBlueGreenSwapTargetGroupsRequest.getOldServiceName()));
           // de-registering scalable target for old service
           ecsCommandTaskHelper.deregisterScalableTargets(ecsInfraConfig.getAwsConnectorDTO(),
               ecsBlueGreenSwapTargetGroupsRequest.getOldServiceName(), ecsInfraConfig.getCluster(),
               ecsInfraConfig.getRegion(), swapTargetGroupLogCallback);
 
+          swapTargetGroupLogCallback.saveExecutionLog(format("Downsizing green service:  %s with zero desired count",
+              ecsBlueGreenSwapTargetGroupsRequest.getOldServiceName()));
           // downsize old service desired count to zero
-          ecsCommandTaskHelper.updateDesiredCount(
+          UpdateServiceResponse updateServiceResponse = ecsCommandTaskHelper.updateDesiredCount(
               ecsBlueGreenSwapTargetGroupsRequest.getOldServiceName(), ecsInfraConfig, awsInternalConfig, 0);
+
+          if (updateServiceResponse.service() != null) {
+            swapTargetGroupLogCallback.saveExecutionLog(format("Current desired count for green service:  %s is %s",
+                ecsBlueGreenSwapTargetGroupsRequest.getOldServiceName(),
+                updateServiceResponse.service().desiredCount()));
+          }
+          swapTargetGroupLogCallback.saveExecutionLog(
+              "Waiting 30s for downsize to complete green service to synchronize");
         }
       }
 
@@ -131,11 +156,11 @@ public class EcsBlueGreenSwapTargetGroupsCommandTaskHandler extends EcsCommandTa
               .ecsBlueGreenSwapTargetGroupsResult(ecsBlueGreenSwapTargetGroupsResult)
               .build();
       swapTargetGroupLogCallback.saveExecutionLog(
-          color(format("%n Swapping Successful."), LogColor.Green, LogWeight.Bold), LogLevel.INFO,
+          color(format("Swapping Successful. %n"), LogColor.Green, LogWeight.Bold), LogLevel.INFO,
           CommandExecutionStatus.SUCCESS);
       return ecsBlueGreenSwapTargetGroupsResponse;
     } catch (Exception e) {
-      swapTargetGroupLogCallback.saveExecutionLog(color(format("%n Swapping Failed."), LogColor.Red, LogWeight.Bold),
+      swapTargetGroupLogCallback.saveExecutionLog(color(format("Swapping Failed. %n"), LogColor.Red, LogWeight.Bold),
           LogLevel.ERROR, CommandExecutionStatus.FAILURE);
       throw new EcsNGException(e);
     }

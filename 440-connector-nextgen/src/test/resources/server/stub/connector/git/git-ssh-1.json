@@ -1,0 +1,21 @@
+{
+  "connector": {
+    "name": "example_connector",
+    "slug": "example_connector",
+    "description": "example_connector",
+    "org": "default",
+    "project": "example_project",
+    "tags": {
+      "property1": "example_connector"
+    },
+    "spec": {
+      "type": "GitSsh",
+      "url": "https://github.com/example/example-repo.git",
+      "branch": "example_branch",
+      "connection_type": "Repo",
+      "ssh_key_ref": "account.git-ssh-key",
+      "validation_repo" : "https://github.com/example/example-validation-repo.git",
+      "execute_on_delegate": false
+    }
+  }
+}

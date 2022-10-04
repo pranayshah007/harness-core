@@ -49,6 +49,7 @@ public class InputsValidationHelperTest extends NgManagerTestBase {
   private static final String ORG_ID = "orgId";
   private static final String PROJECT_ID = "projectId";
   @InjectMocks InputsValidationHelper inputsValidationHelper;
+  @InjectMocks EntityFetchHelper entityFetchHelper;
   @Mock ServiceRepository serviceRepository;
   @Mock EntitySetupUsageService entitySetupUsageService;
   @Mock Producer eventProducer;
@@ -62,7 +63,9 @@ public class InputsValidationHelperTest extends NgManagerTestBase {
   public void setup() {
     serviceEntityService = spy(new ServiceEntityServiceImpl(serviceRepository, entitySetupUsageService, eventProducer,
         outboxService, transactionTemplate, serviceOverrideService, entitySetupUsageHelper));
+    on(entityFetchHelper).set("serviceEntityService", serviceEntityService);
     on(inputsValidationHelper).set("serviceEntityService", serviceEntityService);
+    on(inputsValidationHelper).set("entityFetchHelper", entityFetchHelper);
   }
 
   private String readFile(String filename) {

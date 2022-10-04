@@ -58,6 +58,7 @@ import io.harness.govern.ServersModule;
 import io.harness.impl.scm.ScmServiceClientImpl;
 import io.harness.lock.DistributedLockImplementation;
 import io.harness.lock.PersistentLockModule;
+import io.harness.mongo.MongoConfig;
 import io.harness.mongo.MongoPersistence;
 import io.harness.persistence.HPersistence;
 import io.harness.pms.sdk.PmsSdkConfiguration;
@@ -244,6 +245,12 @@ public class CIExecutionRule implements MethodRule, InjectorRuleMixin, MongoRule
       @Singleton
       DistributedLockImplementation distributedLockImplementation() {
         return DistributedLockImplementation.NOOP;
+      }
+
+      @Provides
+      @Singleton
+      MongoConfig mongoConfig() {
+        return MongoConfig.builder().build();
       }
 
       @Provides

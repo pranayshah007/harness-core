@@ -32,6 +32,7 @@ import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.context.GlobalContext;
 import io.harness.encryption.Scope;
@@ -56,6 +57,7 @@ import io.harness.ng.core.template.exception.NGTemplateResolveExceptionV2;
 import io.harness.organization.remote.OrganizationClient;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.project.remote.ProjectClient;
+import io.harness.reconcile.remote.NgManagerReconcileClient;
 import io.harness.repositories.NGTemplateRepository;
 import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
@@ -67,10 +69,13 @@ import io.harness.template.beans.refresh.ValidateTemplateInputsResponseDTO;
 import io.harness.template.beans.yaml.NGTemplateConfig;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.entity.TemplateEntity.TemplateEntityKeys;
+import io.harness.template.helpers.InputsValidator;
+import io.harness.template.helpers.TemplateInputsValidator;
 import io.harness.template.helpers.TemplateMergeServiceHelper;
 import io.harness.template.helpers.TemplateReferenceHelper;
 import io.harness.template.mappers.NGTemplateDtoMapper;
 import io.harness.template.resources.NGTemplateResource;
+import io.harness.template.utils.NGTemplateFeatureFlagHelperService;
 import io.harness.utils.YamlPipelineUtils;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -117,10 +122,15 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
 
   @Mock NGTemplateSchemaServiceImpl templateSchemaService;
   @Mock AccessControlClient accessControlClient;
-  @Inject TemplateMergeServiceImpl templateMergeService;
   @Mock TemplateMergeServiceHelper templateMergeServiceHelper;
+  @Inject TemplateMergeServiceHelper injectedTemplateMergeServiceHelper;
 
   @Mock TemplateGitXService templateGitXService;
+  @Mock NGTemplateFeatureFlagHelperService featureFlagHelperService;
+  @Mock NgManagerReconcileClient ngManagerReconcileClient;
+  @InjectMocks InputsValidator inputsValidator;
+  @InjectMocks TemplateInputsValidator templateInputsValidator;
+  @InjectMocks TemplateMergeServiceImpl templateMergeService;
 
   private final String ACCOUNT_ID = RandomStringUtils.randomAlphanumeric(6);
   private final String ORG_IDENTIFIER = "orgId";
@@ -146,6 +156,10 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
   public void setUp() throws IOException {
     String filename = "template.yaml";
     yaml = readFile(filename);
+    on(inputsValidator).set("templateMergeServiceHelper", injectedTemplateMergeServiceHelper);
+    on(templateInputsValidator).set("inputsValidator", inputsValidator);
+    on(templateMergeService).set("templateMergeServiceHelper", injectedTemplateMergeServiceHelper);
+    on(templateMergeService).set("templateInputsValidator", templateInputsValidator);
     on(templateServiceHelper).set("templateRepository", templateRepository);
     on(templateService).set("templateRepository", templateRepository);
     on(templateService).set("templateRepository", templateRepository);
@@ -186,6 +200,8 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
 
     Call<RestResponse<Boolean>> ffCall = mock(Call.class);
     when(ffCall.execute()).thenReturn(Response.success(new RestResponse<>(false)));
+
+    when(featureFlagHelperService.isEnabled(ACCOUNT_ID, FeatureName.SERVICE_ENV_RECONCILIATION)).thenReturn(false);
   }
 
   @Test

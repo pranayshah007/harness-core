@@ -7,7 +7,6 @@
 
 package io.harness.pms.sdk;
 
-import static io.harness.pms.sdk.PmsSdkInitValidator.supportedTypesPlanCreator;
 import static io.harness.pms.sdk.PmsSdkInitValidator.validatePlanCreators;
 import static io.harness.rule.OwnerRule.FERNANDOD;
 
@@ -69,10 +68,7 @@ public class PmsSdkInitValidatorTest {
     PipelineServiceInfoProvider pipelineServiceInfoProvider =
         createPipelineServiceInfoProvider(planCreators, filterCreators, variableCreators);
 
-    assertThatCode(()
-                       -> validatePlanCreators(supportedTypesPlanCreator(pipelineServiceInfoProvider.getPlanCreators()),
-                           pipelineServiceInfoProvider))
-        .doesNotThrowAnyException();
+    assertThatCode(() -> validatePlanCreators(pipelineServiceInfoProvider)).doesNotThrowAnyException();
   }
 
   @Test
@@ -294,10 +290,7 @@ public class PmsSdkInitValidatorTest {
    */
   private PmsSdkPlanCreatorValidationException doValidatePlanCreators(
       PipelineServiceInfoProvider pipelineServiceInfoProvider) {
-    final Throwable ex = catchThrowable(
-        ()
-            -> validatePlanCreators(
-                supportedTypesPlanCreator(pipelineServiceInfoProvider.getPlanCreators()), pipelineServiceInfoProvider));
+    final Throwable ex = catchThrowable(() -> validatePlanCreators(pipelineServiceInfoProvider));
     assertThat(ex)
         .isInstanceOf(PmsSdkPlanCreatorValidationException.class)
         .hasMessage("Plan creators has unsupported filters or unsupported variables");

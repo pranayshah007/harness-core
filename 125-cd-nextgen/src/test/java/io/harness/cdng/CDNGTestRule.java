@@ -41,6 +41,7 @@ import io.harness.govern.ServersModule;
 import io.harness.grpc.DelegateServiceGrpcClient;
 import io.harness.lock.DistributedLockImplementation;
 import io.harness.lock.PersistentLockModule;
+import io.harness.mongo.MongoConfig;
 import io.harness.mongo.MongoPersistence;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.ng.core.api.NGEncryptedDataService;
@@ -194,6 +195,12 @@ public class CDNGTestRule implements InjectorRuleMixin, MethodRule, MongoRuleMix
       @Singleton
       OutboxService getOutboxService(OutboxEventRepository outboxEventRepository) {
         return new OutboxServiceImpl(new OutboxDaoImpl(outboxEventRepository), NG_DEFAULT_OBJECT_MAPPER);
+      }
+
+      @Provides
+      @Singleton
+      MongoConfig mongoConfig() {
+        return MongoConfig.builder().build();
       }
 
       @Provides

@@ -82,10 +82,9 @@ public class CustomDeploymentInfrastructure
   @Override
   public String[] getInfrastructureKeyValues() {
     List<String> infraKeys = new ArrayList<>();
-    if (!isNull(variables)) {
-      for (CustomDeploymentNGVariable variable : variables) {
-        infraKeys.add(variable.getName());
-      }
+    if (!isNull(customDeploymentRef)) {
+      infraKeys.add(customDeploymentRef.getTemplateRef());
+      infraKeys.add(customDeploymentRef.getVersionLabel());
     }
     return infraKeys.toArray(new String[0]);
   }

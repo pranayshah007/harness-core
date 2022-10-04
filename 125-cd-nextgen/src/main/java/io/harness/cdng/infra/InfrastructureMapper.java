@@ -59,6 +59,9 @@ import io.harness.steps.environment.EnvironmentOutcome;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 import javax.annotation.Nonnull;
 import javax.validation.constraints.NotNull;
@@ -70,7 +73,7 @@ public class InfrastructureMapper {
 
   @NotNull
   public InfrastructureOutcome toOutcome(@Nonnull Infrastructure infrastructure, EnvironmentOutcome environmentOutcome,
-      ServiceStepOutcome service, String accountIdentifier, String projectIdentifier, String orgIdentifier) {
+      ServiceStepOutcome service, String accountIdentifier, String orgIdentifier, String projectIdentifier) {
     final InfrastructureOutcomeAbstract infrastructureOutcome;
     switch (infrastructure.getKind()) {
       case InfrastructureKind.KUBERNETES_DIRECT:
@@ -236,6 +239,9 @@ public class InfrastructureMapper {
         String templateYaml = customDeploymentInfrastructureHelper.getTemplateYaml(accountIdentifier, orgIdentifier,
             projectIdentifier, customDeploymentInfrastructure.getCustomDeploymentRef().getTemplateRef(),
             customDeploymentInfrastructure.getCustomDeploymentRef().getVersionLabel());
+        List<String> infraKeys =
+            new ArrayList<>(Arrays.asList(customDeploymentInfrastructure.getInfrastructureKeyValues()));
+        infraKeys.add(customDeploymentInfrastructure.getInfraIdentifier());
         CustomDeploymentInfrastructureOutcome customDeploymentInfrastructureOutcome =
             CustomDeploymentInfrastructureOutcome.builder()
                 .variables(customDeploymentInfrastructureHelper.convertListVariablesToMap(
@@ -246,8 +252,9 @@ public class InfrastructureMapper {
                     templateYaml, accountIdentifier, orgIdentifier, projectIdentifier))
                 .instancesListPath(
                     customDeploymentInfrastructureHelper.getInstancePath(templateYaml, accountIdentifier))
-                .infrastructureKey(InfrastructureKey.generate(
-                    service, environmentOutcome, customDeploymentInfrastructure.getInfrastructureKeyValues()))
+                .environment(environmentOutcome)
+                .infrastructureKey(
+                    InfrastructureKey.generate(service, environmentOutcome, infraKeys.toArray(new String[0])))
                 .build();
         setInfraIdentifierAndName(customDeploymentInfrastructureOutcome,
             customDeploymentInfrastructure.getInfraIdentifier(), customDeploymentInfrastructure.getInfraName());

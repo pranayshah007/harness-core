@@ -18,7 +18,6 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
-import io.harness.delegate.beans.ci.VmInfraInfo;
 import io.harness.delegate.beans.ci.vm.CIVmInitializeTaskParams;
 import io.harness.delegate.beans.ci.vm.VmTaskExecutionResponse;
 import io.harness.delegate.beans.ci.vm.runner.SetupVmResponse;
@@ -44,7 +43,8 @@ public class CIVmInitializeTaskHandlerTest extends CategoryTest {
   @Mock private HttpHelper httpHelper;
   @Mock private ILogStreamingTaskClient logStreamingTaskClient;
   @InjectMocks private CIVmInitializeTaskHandler ciVmInitializeTaskHandler;
-  private VmInfraInfo vmInfraInfo = VmInfraInfo.builder().poolId("test").build();
+  // private VmInfraInfo vmInfraInfo = VmInfraInfo.builder().poolId("test").build();
+  private static final CIVmInitializeTaskParams.Type vmInfraInfo = CIVmInitializeTaskParams.Type.VM;
 
   @Before
   public void setUp() {

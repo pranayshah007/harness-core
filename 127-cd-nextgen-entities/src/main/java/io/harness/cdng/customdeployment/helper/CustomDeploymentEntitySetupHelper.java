@@ -88,6 +88,7 @@ public class CustomDeploymentEntitySetupHelper {
                                   .setOrgIdentifier(StringValue.of(infraEntity.getOrgIdentifier()))
                                   .setProjectIdentifier(StringValue.of(infraEntity.getProjectIdentifier()))
                                   .putMetadata("envId", infraEntity.getEnvIdentifier())
+                                  .putMetadata("CustomDeployment", "true")
                                   .build())
             .setType(EntityTypeProtoEnum.INFRASTRUCTURE)
             .setName(infraEntity.getName())
@@ -185,11 +186,14 @@ public class CustomDeploymentEntitySetupHelper {
             .setOrgIdentifier(StringValue.of(infraEntity.getOrgIdentifier()))
             .setProjectIdentifier(StringValue.of(infraEntity.getProjectIdentifier()))
             .setIdentifier(StringValue.of(infraEntity.getIdentifier()))
+            .putMetadata("envId", infraEntity.getEnvIdentifier())
+            .putMetadata("CustomDeployment", "true")
             .build();
 
     return EntityDetailProtoDTO.newBuilder()
         .setIdentifierRef(identifierRefProtoDTO)
         .setType(EntityTypeProtoEnum.INFRASTRUCTURE)
+        .setName(infraEntity.getName())
         .build();
   }
 }

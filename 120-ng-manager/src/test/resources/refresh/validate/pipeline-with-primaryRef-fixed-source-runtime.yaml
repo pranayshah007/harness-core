@@ -36,7 +36,7 @@ pipeline:
                   timeout: 10m
                   spec: {}
           service:
-            serviceRef: <+input>
+            serviceRef: serverless
             serviceInputs:
               serviceDefinition:
                 type: ServerlessAwsLambda

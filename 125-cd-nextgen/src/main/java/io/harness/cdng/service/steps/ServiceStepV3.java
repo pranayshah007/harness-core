@@ -321,6 +321,13 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
     }
 
     final ServiceEntity serviceEntity = serviceOpt.get();
+
+    if (serviceEntity.getType() != null && stepParameters.getDeploymentType() != null
+        && serviceEntity.getType() != stepParameters.getDeploymentType()) {
+      throw new InvalidRequestException(format("Deployment type of the stage [%s] and the service [%s] do not match",
+          stepParameters.getDeploymentType().getYamlName(), serviceEntity.getType().getYamlName()));
+    }
+
     final String mergedServiceYaml;
     if (stepParameters.getInputs() != null && isNotEmpty(stepParameters.getInputs().getValue())) {
       mergedServiceYaml = mergeServiceInputsIntoService(serviceEntity.getYaml(), stepParameters.getInputs().getValue());

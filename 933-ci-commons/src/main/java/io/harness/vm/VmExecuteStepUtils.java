@@ -19,7 +19,6 @@ import static org.apache.commons.lang3.CharUtils.isAsciiAlphanumeric;
 import io.harness.connector.ImageCredentials;
 import io.harness.connector.ImageSecretBuilder;
 import io.harness.connector.SecretSpecBuilder;
-import io.harness.delegate.beans.ci.InfraInfo;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.ci.pod.ImageDetailsWithConnector;
 import io.harness.delegate.beans.ci.pod.SecretParams;
@@ -84,14 +83,12 @@ public class VmExecuteStepUtils {
     }
     configBuilder.secrets(secrets);
 
-    InfraInfo infraInfo = params.getInfraInfo();
-
     return ExecuteStepRequest.builder()
         .stageRuntimeID(params.getStageRuntimeId())
         .poolId(params.getPoolId())
         .ipAddress(params.getIpAddress())
         .config(configBuilder.build())
-        .infraType(infraInfo.getType().toString());
+        .infraType(params.getInfraInfo().toString());
   }
 
   public ExecuteStepRequestBuilder convertService(
@@ -125,13 +122,11 @@ public class VmExecuteStepUtils {
       configBuilder.portBindings(params.getPortBindings());
     }
 
-    InfraInfo infraInfo = initializeTaskParams.getInfraInfo();
-
     return ExecuteStepRequest.builder()
         .poolId(initializeTaskParams.getPoolID())
         .config(configBuilder.build())
         .stageRuntimeID(initializeTaskParams.getStageRuntimeId())
-        .infraType(infraInfo.getType().toString());
+        .infraType(initializeTaskParams.getInfraInfo().toString());
   }
 
   private List<String> setRunConfig(VmRunStep runStep, ConfigBuilder configBuilder) {

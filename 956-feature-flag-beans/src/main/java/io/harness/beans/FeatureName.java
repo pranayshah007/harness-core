@@ -34,7 +34,6 @@ public enum FeatureName {
   ARTIFACT_STREAM_DELEGATE_SCOPING,
   ARTIFACT_STREAM_DELEGATE_TIMEOUT,
   AUTO_ACCEPT_SAML_ACCOUNT_INVITES,
-  AZURE_US_GOV_CLOUD,
   AZURE_VMSS,
   AZURE_WEBAPP,
   BIND_FETCH_FILES_TASK_TO_DELEGATE,
@@ -401,8 +400,6 @@ public enum FeatureName {
   VALIDATE_PHASES_AND_ROLLBACK("Validate that each phase has your own rollback phase", HarnessTeam.SPG),
   OPTIMIZED_TF_PLAN_NG(
       "Enables uploading Terraform plan to GCS/MongoGridFS instead of saving to sweeping output", HarnessTeam.CDP),
-  SERVICE_V2_EXPRESSION(
-      "Allow service reference to be an expression in a pipeline for the new service entity", HarnessTeam.CDC),
   CIE_HOSTED_VMS(
       "Enables hosted VMs in favor of hosted K8s for CIE. This flag will be deprecated once all the feature work has been checked in",
       HarnessTeam.CI),
@@ -446,7 +443,9 @@ public enum FeatureName {
   CD_SERVICENOW_IMPORT_SET_NG("Enable ServiceNow Import Set Step", HarnessTeam.CDC),
   WINRM_SCRIPT_COMMAND_SPLIT(
       "Enables the new way of how to copy powershell/winrm script commands content to file on remote. (Copy is done in chunks of 4KB) ",
-      HarnessTeam.CDP);
+      HarnessTeam.CDP),
+  SERVICE_ENV_RECONCILIATION("Do reconciliation of service and env on pipeline/template save", HarnessTeam.CDC),
+  CD_TRIGGER_CATALOG("Enables UI for Trigger catalog for Nexus ", HarnessTeam.CDC);
 
   @Deprecated
   FeatureName() {

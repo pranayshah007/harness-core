@@ -48,9 +48,9 @@ public class MultiDeploymentSpawnerUtils {
   public static final String SERVICE_INPUTS_EXPRESSION = "<+matrix." + SERVICE_INPUTS + ">";
   public static final String USE_FROM_STAGE_EXPRESSION = "<+matrix." + USE_FROM_STAGE + ">";
 
-  public static final String MULTI_SERVICE_DEPLOYMENT = "Multiple Services";
-  public static final String MULTI_ENV_DEPLOYMENT = "Multiple Environments";
-  public static final String MULTI_SERVICE_ENV_DEPLOYMENT = "Multiple Services and Environments";
+  public static final String MULTI_SERVICE_DEPLOYMENT = "MULTI_SERVICE_DEPLOYMENT";
+  public static final String MULTI_ENV_DEPLOYMENT = "MULTI_ENV_DEPLOYMENT";
+  public static final String MULTI_SERVICE_ENV_DEPLOYMENT = "MULTI_SERVICE_ENV_DEPLOYMENT";
 
   Map<String, String> getMapFromServiceYaml(ServiceYamlV2 service) {
     Map<String, String> matrixMetadataMap = new HashMap<>();

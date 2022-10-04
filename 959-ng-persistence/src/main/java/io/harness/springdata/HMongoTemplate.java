@@ -13,23 +13,37 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.ExceptionUtils;
 import io.harness.health.HealthMonitor;
+import io.harness.mongo.MongoConfig;
 import io.harness.mongo.tracing.TraceMode;
 import io.harness.ng.persistence.tracer.NgTracer;
 import io.harness.observer.Subject;
 
 import com.mongodb.MongoSocketOpenException;
 import com.mongodb.MongoSocketReadException;
+import com.mongodb.client.model.CountOptions;
 import java.time.Duration;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import org.bson.Document;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.mongodb.MongoDbFactory;
+import org.springframework.data.mongodb.UncategorizedMongoDbException;
+import org.springframework.data.mongodb.core.DocumentCallbackHandler;
 import org.springframework.data.mongodb.core.FindAndModifyOptions;
+import org.springframework.data.mongodb.core.FindAndReplaceOptions;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.aggregation.Aggregation;
+import org.springframework.data.mongodb.core.aggregation.AggregationOperationContext;
+import org.springframework.data.mongodb.core.aggregation.AggregationOptions;
+import org.springframework.data.mongodb.core.aggregation.AggregationResults;
 import org.springframework.data.mongodb.core.convert.MongoConverter;
+import org.springframework.data.mongodb.core.mapreduce.MapReduceOptions;
+import org.springframework.data.mongodb.core.mapreduce.MapReduceResults;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
+import org.springframework.data.util.CloseableIterator;
 import org.springframework.lang.Nullable;
 
 @SuppressWarnings("NullableProblems")
@@ -37,23 +51,22 @@ import org.springframework.lang.Nullable;
 @OwnedBy(HarnessTeam.PL)
 public class HMongoTemplate extends MongoTemplate implements HealthMonitor {
   private static final int RETRIES = 3;
+  private final int maxOperationInMillis;
 
   public static final FindAndModifyOptions upsertReturnNewOptions =
       new FindAndModifyOptions().upsert(true).returnNew(true);
   public static final FindAndModifyOptions upsertReturnOldOptions =
       new FindAndModifyOptions().upsert(true).returnNew(false);
+  private static final String ERROR_MSG_QUERY_EXCEEDED_TIME_LIMIT = "query {} exceeded max time limit of {} ms.";
 
   private final TraceMode traceMode;
 
   @Getter private final Subject<NgTracer> tracerSubject = new Subject<>();
 
-  public HMongoTemplate(MongoDbFactory mongoDbFactory, MongoConverter mongoConverter) {
-    this(mongoDbFactory, mongoConverter, TraceMode.DISABLED);
-  }
-
-  public HMongoTemplate(MongoDbFactory mongoDbFactory, MongoConverter mongoConverter, TraceMode traceMode) {
+  public HMongoTemplate(MongoDbFactory mongoDbFactory, MongoConverter mongoConverter, MongoConfig mongoConfig) {
     super(mongoDbFactory, mongoConverter);
-    this.traceMode = traceMode;
+    this.traceMode = mongoConfig.getTraceMode();
+    this.maxOperationInMillis = mongoConfig.getMaxOperationTimeInMillis();
   }
 
   @Nullable
@@ -69,6 +82,19 @@ public class HMongoTemplate extends MongoTemplate implements HealthMonitor {
   public <T> T findAndModify(Query query, Update update, FindAndModifyOptions options, Class<T> entityClass) {
     traceQuery(query, entityClass);
     return retry(() -> findAndModify(query, update, options, entityClass, getCollectionName(entityClass)));
+  }
+
+  @Override
+  public <T> T findAndModify(
+      Query query, Update update, FindAndModifyOptions options, Class<T> entityClass, String collectionName) {
+    try {
+      traceQuery(query, entityClass);
+      query.maxTime(Duration.ofMillis(maxOperationInMillis));
+      return super.findAndModify(query, update, options, entityClass, collectionName);
+    } catch (UncategorizedMongoDbException ex) {
+      log.error(ERROR_MSG_QUERY_EXCEEDED_TIME_LIMIT, query, maxOperationInMillis);
+      throw ex;
+    }
   }
 
   @Override
@@ -88,14 +114,146 @@ public class HMongoTemplate extends MongoTemplate implements HealthMonitor {
 
   @Override
   public <T> List<T> find(Query query, Class<T> entityClass, String collectionName) {
-    traceQuery(query, entityClass);
-    return super.find(query, entityClass, collectionName);
+    try {
+      traceQuery(query, entityClass);
+      query.maxTime(Duration.ofMillis(maxOperationInMillis));
+      return super.find(query, entityClass, collectionName);
+    } catch (UncategorizedMongoDbException ex) {
+      log.error(ERROR_MSG_QUERY_EXCEEDED_TIME_LIMIT, query, maxOperationInMillis);
+      throw ex;
+    }
+  }
+
+  @Override
+  public <T> List<T> findAll(Class<T> entityClass, String collectionName) {
+    Query query = new Query();
+    return find(query, entityClass, collectionName);
   }
 
   @Override
   public <T> T findOne(Query query, Class<T> entityClass, String collectionName) {
-    traceQuery(query, entityClass);
-    return super.findOne(query, entityClass, collectionName);
+    try {
+      traceQuery(query, entityClass);
+      query.maxTime(Duration.ofMillis(maxOperationInMillis));
+      return super.findOne(query, entityClass, collectionName);
+    } catch (UncategorizedMongoDbException ex) {
+      log.error(ERROR_MSG_QUERY_EXCEEDED_TIME_LIMIT, query, maxOperationInMillis);
+      throw ex;
+    }
+  }
+
+  @Override
+  public <T> List<T> findDistinct(
+      Query query, String field, String collectionName, Class<?> entityClass, Class<T> resultClass) {
+    try {
+      traceQuery(query, entityClass);
+      query.maxTime(Duration.ofMillis(maxOperationInMillis));
+      return super.findDistinct(query, field, collectionName, entityClass, resultClass);
+    } catch (UncategorizedMongoDbException ex) {
+      log.error(ERROR_MSG_QUERY_EXCEEDED_TIME_LIMIT, query, maxOperationInMillis);
+      throw ex;
+    }
+  }
+
+  @Override
+  public <S, T> T findAndReplace(Query query, S replacement, FindAndReplaceOptions options, Class<S> entityType,
+      String collectionName, Class<T> resultType) {
+    try {
+      traceQuery(query, entityType);
+      query.maxTime(Duration.ofMillis(maxOperationInMillis));
+      return super.findAndReplace(query, replacement, options, entityType, collectionName, resultType);
+    } catch (UncategorizedMongoDbException ex) {
+      log.error(ERROR_MSG_QUERY_EXCEEDED_TIME_LIMIT, query, maxOperationInMillis);
+      throw ex;
+    }
+  }
+
+  @Override
+  public <T> T findAndRemove(Query query, Class<T> entityClass, String collectionName) {
+    try {
+      traceQuery(query, entityClass);
+      query.maxTime(Duration.ofMillis(maxOperationInMillis));
+      return super.findAndRemove(query, entityClass, collectionName);
+    } catch (UncategorizedMongoDbException ex) {
+      log.error(ERROR_MSG_QUERY_EXCEEDED_TIME_LIMIT, query, maxOperationInMillis);
+      throw ex;
+    }
+  }
+
+  @Override
+  public <T> List<T> findAllAndRemove(Query query, Class<T> entityClass, String collectionName) {
+    try {
+      traceQuery(query, entityClass);
+      query.maxTime(Duration.ofMillis(maxOperationInMillis));
+      return super.findAllAndRemove(query, entityClass, collectionName);
+    } catch (UncategorizedMongoDbException ex) {
+      log.error(ERROR_MSG_QUERY_EXCEEDED_TIME_LIMIT, query, maxOperationInMillis);
+      throw ex;
+    }
+  }
+
+  @Override
+  public <T> MapReduceResults<T> mapReduce(Query query, String inputCollectionName, String mapFunction,
+      String reduceFunction, @Nullable MapReduceOptions mapReduceOptions, Class<T> entityClass) {
+    try {
+      traceQuery(query, entityClass);
+      query.maxTime(Duration.ofMillis(maxOperationInMillis));
+      return super.mapReduce(query, inputCollectionName, mapFunction, reduceFunction, mapReduceOptions, entityClass);
+    } catch (UncategorizedMongoDbException ex) {
+      log.error(ERROR_MSG_QUERY_EXCEEDED_TIME_LIMIT, query, maxOperationInMillis);
+      throw ex;
+    }
+  }
+
+  @Override
+  protected long doCount(String collectionName, Document filter, CountOptions options) {
+    try {
+      options.maxTime(maxOperationInMillis, TimeUnit.MILLISECONDS);
+      return super.doCount(collectionName, filter, options);
+    } catch (UncategorizedMongoDbException ex) {
+      log.error(
+          "count operation for collection {} exceeded max time limit of {} ms.", collectionName, maxOperationInMillis);
+      throw ex;
+    }
+  }
+
+  @Override
+  public <T> CloseableIterator<T> stream(Query query, Class<T> entityType, String collectionName) {
+    try {
+      traceQuery(query, entityType);
+      query.maxTime(Duration.ofMillis(maxOperationInMillis));
+      return super.stream(query, entityType, collectionName);
+    } catch (UncategorizedMongoDbException ex) {
+      log.error(ERROR_MSG_QUERY_EXCEEDED_TIME_LIMIT, query, maxOperationInMillis);
+      throw ex;
+    }
+  }
+
+  @Override
+  public void executeQuery(Query query, String collectionName, DocumentCallbackHandler dch) {
+    try {
+      query.maxTime(Duration.ofMillis(maxOperationInMillis));
+      super.executeQuery(query, collectionName, dch);
+    } catch (UncategorizedMongoDbException ex) {
+      log.error(ERROR_MSG_QUERY_EXCEEDED_TIME_LIMIT, query, maxOperationInMillis);
+      throw ex;
+    }
+  }
+
+  @Override
+  protected <O> AggregationResults<O> aggregate(Aggregation aggregation, String collectionName, Class<O> outputType,
+      @Nullable AggregationOperationContext context) {
+    AggregationOptions aggregationOptions = aggregation.getOptions();
+    // Todo: once spring got updated, set maxTimeMS in aggregation options
+    return super.aggregate(aggregation, collectionName, outputType, context);
+  }
+
+  @Override
+  protected <O> CloseableIterator<O> aggregateStream(Aggregation aggregation, String collectionName,
+      Class<O> outputType, @Nullable AggregationOperationContext context) {
+    AggregationOptions aggregationOptions = aggregation.getOptions();
+    // Todo: once spring got updated, set maxTimeMS in aggregation options
+    return super.aggregateStream(aggregation, collectionName, outputType, context);
   }
 
   private <T> void traceQuery(Query query, Class<T> entityClass) {

@@ -134,4 +134,5 @@ public class EntityYamlRootNames {
   public static final String ECS_BLUE_GREEN_ROLLBACK = "EcsBlueGreenRollback";
   public static final String WAIT_STEP = "Wait";
   public static final String SHELL_SCRIPT_PROVISION_STEP = "ShellScriptProvision";
+  public static final String FREEZE = "freeze";
 }

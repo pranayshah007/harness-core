@@ -67,6 +67,7 @@ import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.glassfish.jersey.server.model.Resource;
+import org.reflections.Reflections;
 
 @Data
 @EqualsAndHashCode(callSuper = false)
@@ -101,6 +102,7 @@ public class VerificationConfiguration extends Configuration {
   @JsonProperty("hostname") String hostname = "localhost";
   @JsonProperty("basePathPrefix") String basePathPrefix = "";
   @JsonProperty(value = "enableOpentelemetry") private Boolean enableOpentelemetry;
+  public static final String RESOURCE_PACKAGE = "io.harness.cvng";
 
   private String portalUrl;
   /**
@@ -196,13 +198,9 @@ public class VerificationConfiguration extends Configuration {
     return getResourceClasses().stream().filter(x -> x.isAnnotationPresent(Tag.class)).collect(Collectors.toList());
   }
 
-  public Set<Class<?>> getResourceClasses() {
-    return HarnessReflections.get()
-        .getTypesAnnotatedWith(Path.class)
-        .stream()
-        .filter(
-            klazz -> StringUtils.startsWithAny(klazz.getPackage().getName(), this.getClass().getPackage().getName()))
-        .collect(Collectors.toSet());
+  public static Collection<Class<?>> getResourceClasses() {
+    Reflections reflections = new Reflections(RESOURCE_PACKAGE);
+    return reflections.getTypesAnnotatedWith(Path.class);
   }
 
   public List<String> getDbAliases() {

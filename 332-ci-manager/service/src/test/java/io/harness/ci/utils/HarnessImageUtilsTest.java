@@ -29,7 +29,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.ci.config.CIExecutionServiceConfig;
 import io.harness.ci.executionplan.CIExecutionTestBase;
-import io.harness.delegate.beans.ci.VmInfraInfo;
+import io.harness.delegate.beans.ci.CIInitializeTaskParams;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.exception.InvalidRequestException;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -58,7 +58,8 @@ public class HarnessImageUtilsTest extends CIExecutionTestBase {
   @Mock private ConnectorDetails connectorDetails;
   @Mock private CIExecutionServiceConfig ciExecutionServiceConfig;
   @Inject private HarnessImageUtils harnessImageUtils;
-  private VmInfraInfo vmInfraInfo = VmInfraInfo.builder().poolId("test").build();
+  // private VmInfraInfo vmInfraInfo = VmInfraInfo.builder().poolId("test").build();
+  private static final CIInitializeTaskParams.Type vmInfraInfo = CIInitializeTaskParams.Type.VM;
 
   @Before
   public void setUp() {

@@ -90,9 +90,7 @@ public class ArtifactConfigToDelegateReqMapper {
     String filePathRegex =
         artifactConfig.getFilePathRegex() != null ? artifactConfig.getFilePathRegex().getValue() : "";
     String filePath = artifactConfig.getFilePath() != null ? artifactConfig.getFilePath().getValue() : "";
-    if (isEmpty(filePath) && isEmpty(filePathRegex)) {
-      filePathRegex = "*";
-    }
+
     return ArtifactDelegateRequestUtils.getAmazonS3DelegateRequest(artifactConfig.getBucketName().getValue(), filePath,
         filePathRegex, null, connectorRef, connectorDTO, encryptedDataDetails, ArtifactSourceType.AMAZONS3,
         artifactConfig.getRegion() != null ? artifactConfig.getRegion().getValue() : "us-east-1");

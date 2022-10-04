@@ -16,6 +16,18 @@ customDeployment:
         type: Connector
         value: projectConnector
         description: "projectConnector"
+      - name: inputConnector
+        type: Connector
+        value: <+input>
+        description: "inputConnector"
+      - name: expressionConnector
+        type: Connector
+        value: <+pipeline.name>
+        description: "expressionConnector"
+      - name: emptyConnector
+        type: Connector
+        value: ""
+        description: "emptyConnector"
     fetchInstancesScript:
       store:
         type: Harness

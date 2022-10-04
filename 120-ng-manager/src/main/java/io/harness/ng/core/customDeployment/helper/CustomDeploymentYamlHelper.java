@@ -226,11 +226,15 @@ public class CustomDeploymentYamlHelper {
       if (isNull(store)) {
         throw new InvalidRequestException("Template yaml provided does not have store in it.");
       }
-      if (store.get("type").asText().equals(ManifestStoreType.INLINE)) {
-        if (store.get("spec").get("content").asText().length() <= 0) {
+      JsonNode type = store.get("type");
+      if (isNull(type)) {
+        throw new InvalidRequestException("Template yaml provided does not have store type in it.");
+      }
+      if (type.asText().equals(ManifestStoreType.INLINE)) {
+        if (store.get("spec").get("content").asText().length() == 0) {
           throw new InvalidRequestException("Fetch Instance script cannot be empty");
         }
-      } else if (store.get("type").asText().equals(ManifestStoreType.HARNESS)) {
+      } else if (type.asText().equals(ManifestStoreType.HARNESS)) {
         JsonNode files = store.get("spec").get("files");
         int count = 0;
         for (JsonNode file : files) {
@@ -307,7 +311,7 @@ public class CustomDeploymentYamlHelper {
       for (JsonNode variable : templateVariableNode) {
         JsonNode var = variable;
         if (infraVariables.containsKey(variable.get("name").asText())) {
-          ((ObjectNode) var).set("value", variable.get("value"));
+          ((ObjectNode) var).set("value", infraVariables.get(variable.get("name").asText()).get("value"));
         }
         updateVariablesList.add(var);
       }
@@ -315,10 +319,8 @@ public class CustomDeploymentYamlHelper {
       ((ObjectNode) infraSpecNode).set("variables", updatedVariableNode);
       return YamlUtils.write(infraYamlConfig.getYamlMap()).replace("---\n", "");
     } catch (Exception e) {
-      log.error(
-          "Error Encountered in infra updation while reading yamls for template ans Infra for acc Id :{} ", accId);
       throw new InvalidRequestException(
-          "Error Encountered in infra updation while reading yamls for template ans Infra");
+          "Error Encountered in infra updation while reading yamls for template and Infra: " + e.getMessage());
     }
   }
 
@@ -458,7 +460,7 @@ public class CustomDeploymentYamlHelper {
 
   private static EntityDetailProtoDTO buildConnectorEntityDetailProtoDTO(
       String accountId, String orgId, String projectId, String connectorRef, Map<String, String> metadata) {
-    if (connectorRef.startsWith("<+") && connectorRef.endsWith(">")) {
+    if (isEmpty(connectorRef) || (connectorRef.startsWith("<+") && connectorRef.endsWith(">"))) {
       return null;
     }
     IdentifierRefProtoDTO.Builder identifierRefProtoDTO =
