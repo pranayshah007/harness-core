@@ -36,7 +36,9 @@ import io.harness.helper.SerializedResponseDataHelper;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.ParameterField;
@@ -74,7 +76,10 @@ public class InitializeTaskStepTest extends CIExecutionTestBase {
   public void setUp() {
     Map<String, String> setupAbstractions = new HashMap<>();
     setupAbstractions.put("accountId", "accountId");
-    ambiance = Ambiance.newBuilder().putAllSetupAbstractions(setupAbstractions).build();
+    ambiance = Ambiance.newBuilder()
+                   .putAllSetupAbstractions(setupAbstractions)
+                   .addLevels(Level.newBuilder().setStepType(InitializeTaskStep.STEP_TYPE).build())
+                   .build();
     initializeStepInfo = InitializeStepInfo.builder()
                              .stageElementConfig(ciExecutionPlanTestHelper.getIntegrationStageConfig())
                              .executionSource(ciExecutionPlanTestHelper.getCIExecutionArgs().getExecutionSource())
@@ -110,6 +115,8 @@ public class InitializeTaskStepTest extends CIExecutionTestBase {
                                                      .k8sTaskResponse(taskResponse)
                                                      .build();
     when(serializedResponseDataHelper.deserialize(any())).thenReturn(executionResponse);
+    when(executionSweepingOutputResolver.resolveOptional(any(), any()))
+        .thenReturn(OptionalSweepingOutput.builder().found(false).build());
     when(k8InitializeServiceUtils.getServiceInfos(any())).thenReturn(new ArrayList<>());
     StepResponse stepResponse = initializeTaskStep.handleTaskResultWithSecurityContext(
         ambiance, stepElementParameters, () -> executionResponse);
@@ -131,6 +138,8 @@ public class InitializeTaskStepTest extends CIExecutionTestBase {
                                                      .build();
 
     when(serializedResponseDataHelper.deserialize(any())).thenReturn(executionResponse);
+    when(executionSweepingOutputResolver.resolveOptional(any(), any()))
+        .thenReturn(OptionalSweepingOutput.builder().found(false).build());
     when(k8InitializeServiceUtils.getServiceInfos(any())).thenReturn(new ArrayList<>());
     StepResponse stepResponse = initializeTaskStep.handleTaskResultWithSecurityContext(
         ambiance, stepElementParameters, () -> executionResponse);
@@ -169,6 +178,8 @@ public class InitializeTaskStepTest extends CIExecutionTestBase {
                                                      .build();
 
     when(serializedResponseDataHelper.deserialize(any())).thenReturn(executionResponse);
+    when(executionSweepingOutputResolver.resolveOptional(any(), any()))
+        .thenReturn(OptionalSweepingOutput.builder().found(false).build());
     when(k8InitializeServiceUtils.getServiceInfos(any())).thenReturn(Arrays.asList(serviceDefinitionInfo));
     StepResponse stepResponse = initializeTaskStep.handleTaskResultWithSecurityContext(
         ambiance, stepElementParameters, () -> executionResponse);
@@ -201,6 +212,8 @@ public class InitializeTaskStepTest extends CIExecutionTestBase {
                                                      .build();
 
     when(serializedResponseDataHelper.deserialize(any())).thenReturn(executionResponse);
+    when(executionSweepingOutputResolver.resolveOptional(any(), any()))
+        .thenReturn(OptionalSweepingOutput.builder().found(false).build());
     when(k8InitializeServiceUtils.getServiceInfos(any())).thenReturn(Arrays.asList(serviceDefinitionInfo));
     StepResponse stepResponse = initializeTaskStep.handleTaskResultWithSecurityContext(
         ambiance, stepElementParameters, () -> executionResponse);
@@ -214,6 +227,8 @@ public class InitializeTaskStepTest extends CIExecutionTestBase {
   public void handleVmTaskSuccessWithSecurityContext() {
     VmTaskExecutionResponse executionResponse =
         VmTaskExecutionResponse.builder().commandExecutionStatus(CommandExecutionStatus.SUCCESS).build();
+    when(executionSweepingOutputResolver.resolveOptional(any(), any()))
+        .thenReturn(OptionalSweepingOutput.builder().found(false).build());
     when(serializedResponseDataHelper.deserialize(any())).thenReturn(executionResponse);
     StepResponse stepResponse = initializeTaskStep.handleTaskResultWithSecurityContext(
         ambiance, stepElementParameters, () -> executionResponse);
@@ -229,6 +244,8 @@ public class InitializeTaskStepTest extends CIExecutionTestBase {
         VmTaskExecutionResponse.builder().commandExecutionStatus(CommandExecutionStatus.FAILURE).build();
 
     when(serializedResponseDataHelper.deserialize(any())).thenReturn(executionResponse);
+    when(executionSweepingOutputResolver.resolveOptional(any(), any()))
+        .thenReturn(OptionalSweepingOutput.builder().found(false).build());
     StepResponse stepResponse = initializeTaskStep.handleTaskResultWithSecurityContext(
         ambiance, stepElementParameters, () -> executionResponse);
     assertThat(stepResponse.getStatus()).isEqualTo(Status.FAILED);

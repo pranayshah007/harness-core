@@ -28,6 +28,7 @@ import io.harness.beans.yaml.extended.infrastrucutre.HostedVmInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.HostedVmInfraYaml.HostedVmInfraSpec;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.K8sHostedInfraYaml;
+import io.harness.beans.yaml.extended.infrastrucutre.K8sHostedInfraYaml.K8sHostedInfraYamlSpec;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.beans.yaml.extended.platform.ArchType;
 import io.harness.beans.yaml.extended.platform.Platform;
@@ -194,7 +195,7 @@ public class CIModuleInfoProviderTest extends CIExecutionTestBase {
         Level.newBuilder().setStartTs(1111L).setStepType(IntegrationStageStepPMS.STEP_TYPE).build());
     Infrastructure infrastructure =
         K8sHostedInfraYaml.builder()
-            .spec(K8sHostedInfraYaml.K8sHostedInfraYamlSpec.builder().identifier("k8HostedInfra").build())
+            .spec(K8sHostedInfraYamlSpec.builder().identifier("k8HostedInfra").build())
             .build();
     OrchestrationEvent event =
         OrchestrationEvent.builder()
@@ -301,8 +302,8 @@ public class CIModuleInfoProviderTest extends CIExecutionTestBase {
 
   private Ambiance getAmbianceWithLevel(Level level) {
     return Ambiance.newBuilder()
-        .putAllSetupAbstractions(Maps.of("accountId", "accountId", "projectIdentifier",
-            "projectIdentifier", "orgIdentifier", "orgIdentifier"))
+        .putAllSetupAbstractions(Maps.of(
+            "accountId", "accountId", "projectIdentifier", "projectIdentifier", "orgIdentifier", "orgIdentifier"))
         .addLevels(level)
         .setStageExecutionId("stageExecutionId")
         .build();

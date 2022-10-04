@@ -141,7 +141,7 @@ public class CIModuleInfoProvider implements ExecutionSummaryModuleInfoProvider 
             if (initializeStepInfo.getCiCodebase().getConnectorRef().getValue() != null) {
               try {
                 ConnectorDetails connectorDetails = connectorUtils.getConnectorDetails(
-                   baseNGAccess, initializeStepInfo.getCiCodebase().getConnectorRef().getValue());
+                    baseNGAccess, initializeStepInfo.getCiCodebase().getConnectorRef().getValue());
                 if (executionTriggerInfo.getTriggerType() == TriggerType.WEBHOOK) {
                   url = IntegrationStageUtils.getGitURLFromConnector(
                       connectorDetails, initializeStepInfo.getCiCodebase());
@@ -272,8 +272,7 @@ public class CIModuleInfoProvider implements ExecutionSummaryModuleInfoProvider 
           .imageDetailsList(imageDetailsList)
           .tiBuildDetailsList(tiBuildDetailsList)
           .build();
-    }
-    else if (currentStepType != null
+    } else if (currentStepType != null
         && Objects.equals(currentStepType.getType(), IntegrationStageStepPMS.STEP_TYPE.getType())) {
       return CIPipelineModuleInfo.builder().ciPipelineStageModuleInfo(getCIPipelineStageLevelInfo(event)).build();
     }
