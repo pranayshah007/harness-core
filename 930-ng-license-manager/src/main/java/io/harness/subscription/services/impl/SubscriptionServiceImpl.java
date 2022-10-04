@@ -299,7 +299,6 @@ public class SubscriptionServiceImpl implements SubscriptionService {
                                    .build();
     return stripeHelper.updateSubscription(param);
   }
-
   @Override
   public void cancelSubscription(String accountIdentifier, String subscriptionId) {
     isSelfServiceEnable(accountIdentifier);
