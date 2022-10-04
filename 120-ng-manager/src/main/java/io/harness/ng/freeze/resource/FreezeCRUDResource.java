@@ -50,7 +50,6 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
-import java.util.Optional;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -282,23 +281,23 @@ public class FreezeCRUDResource {
   }
 
   @GET
-  @Path("/isGlobalDeploymentFreezeActive")
-  @ApiOperation(value = "Get status of Global Freeze", nickname = "getGlobalFreezeStatus")
-  @Operation(operationId = "getGlobalFreezeStatus", summary = "Get status of Global Freeze",
+  @Path("/getGlobalFreeze")
+  @ApiOperation(value = "Get Global Freeze Yaml", nickname = "getGlobalFreeze")
+  @Operation(operationId = "getGlobalFreeze", summary = "Get Global Freeze Yaml",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
-        ApiResponse(responseCode = "default", description = "Get status of Global Freeze")
+        ApiResponse(responseCode = "default", description = "Get Global Freeze Yaml")
       })
   @Hidden
-  public Optional<Boolean>
-  isGlobalDeploymentFreezeActive(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull
-                                 @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
+  public ResponseDTO<FreezeResponseDTO>
+  getGlobalFreeze(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
+                      NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
       @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgId,
       @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId) {
-    return freezeCRUDService.isGlobalDeploymentFreezeActive(accountId, orgId, projectId);
+    return ResponseDTO.newResponse(freezeCRUDService.getGlobalFreeze(accountId, orgId, projectId));
   }
 
   @POST
@@ -323,6 +322,8 @@ public class FreezeCRUDResource {
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
       @Parameter(description = "This contains details of Freeze filters")
       FreezeFilterPropertiesDTO freezeFilterPropertiesDTO) {
+    List<String> freezeIdentifiers =
+        freezeFilterPropertiesDTO == null ? null : freezeFilterPropertiesDTO.getFreezeIdentifiers();
     String searchTerm = freezeFilterPropertiesDTO == null ? null : freezeFilterPropertiesDTO.getSearchTerm();
     FreezeStatus status = freezeFilterPropertiesDTO == null ? null : freezeFilterPropertiesDTO.getFreezeStatus();
     Criteria criteria = FreezeFilterHelper.createCriteriaForGetList(accountId, orgIdentifier, projectIdentifier,

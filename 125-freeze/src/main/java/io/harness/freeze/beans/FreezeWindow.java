@@ -13,6 +13,7 @@ import lombok.Data;
 public class FreezeWindow {
   String timeZone;
   String startTime;
+  String duration;
   String endTime;
   Recurrence recurrence;
 }
