@@ -96,7 +96,9 @@ import io.harness.file.NGFileServiceModule;
 import io.harness.filestore.NgFileStoreModule;
 import io.harness.filestore.outbox.FileEventHandler;
 import io.harness.freeze.service.FreezeCRUDService;
+import io.harness.freeze.service.FreezeEvaluateService;
 import io.harness.freeze.service.impl.FreezeCRUDServiceImpl;
+import io.harness.freeze.service.impl.FreezeEvaluateServiceImpl;
 import io.harness.gitops.GitopsResourceClientModule;
 import io.harness.gitsync.GitSyncConfigClientModule;
 import io.harness.gitsync.GitSyncModule;
@@ -625,6 +627,7 @@ public class NextGenModule extends AbstractModule {
         appConfig.getNextGenConfig().getManagerServiceSecret(), NG_MANAGER.getServiceId()));
     bind(NgGlobalKmsService.class).to(NgGlobalKmsServiceImpl.class);
     bind(FreezeCRUDService.class).to(FreezeCRUDServiceImpl.class);
+    bind(FreezeEvaluateService.class).to(FreezeEvaluateServiceImpl.class);
     install(new ProviderModule() {
       @Provides
       @Singleton

@@ -90,10 +90,13 @@ public class FreezeTimeUtils {
 
   private boolean currentWindowIsActive(Long windowStartTime, Long windowEndTime) {
     Long currentTime = getCurrentTime();
-    if (currentTime > windowStartTime && currentTime < windowEndTime) {
-      return true;
-    }
-    return false;
+    return currentTime > windowStartTime && currentTime < windowEndTime;
+  }
+
+  public boolean currentWindowIsActive(CurrentOrUpcomingActiveWindow currentOrUpcomingActiveWindow) {
+    return currentOrUpcomingActiveWindow != null
+        && currentWindowIsActive(
+            currentOrUpcomingActiveWindow.getStartTime(), currentOrUpcomingActiveWindow.getEndTime());
   }
 
   private Long getEpochValue(RecurrenceType offsetType, String dateString, TimeZone timeZone, int offsetValue) {
