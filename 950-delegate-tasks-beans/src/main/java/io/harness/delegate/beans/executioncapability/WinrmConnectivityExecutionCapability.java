@@ -66,7 +66,10 @@ public class WinrmConnectivityExecutionCapability implements ExecutionCapability
 
   @Override
   public String getCapabilityToString() {
-    return isNotEmpty(fetchCapabilityBasis()) ? String.format("Capability reach url:  %s ", fetchCapabilityBasis())
-                                              : null;
+    String authScheme = winRmInfraDelegateConfig.getWinRmCredentials() != null
+        ? winRmInfraDelegateConfig.getWinRmCredentials().getAuth().getAuthScheme().toString()
+        : " no authentication details";
+    String host = fetchCapabilityBasis();
+    return isNotEmpty(host) ? String.format("Capability to connect %s with %s", host, authScheme) : null;
   }
 }
