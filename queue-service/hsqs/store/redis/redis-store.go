@@ -18,13 +18,13 @@ import (
 	"time"
 )
 
-// Redis type store used for enqueuing and dequeuing
+// Store Redis type store used for enqueuing and dequeuing
 type Store struct {
 	client *redis.Client
 	logger *zerolog.Logger
 }
 
-// // NewRedisStore returns a new instance of RedisStore.
+// NewRedisStore returns a new instance of RedisStore.
 func NewRedisStore(addr string) *Store {
 	c := redis.NewClient(&redis.Options{Addr: addr})
 	l := zerolog.New(os.Stderr).With().Timestamp().Logger()
@@ -40,12 +40,12 @@ func (i InvalidTypeError) Error() string {
 	return fmt.Sprintf("Invalid type %q, must be a pointer type", i.tp)
 }
 
-// close the client
+// Close the client
 func (s *Store) Close() error {
 	return s.client.Close()
 }
 
-// enqueues a given task message in there respective topic and subtopic
+// Enqueue enqueues a given task message in there respective topic and subtopic
 func (s *Store) Enqueue(ctx context.Context, request store.EnqueueRequest) (*store.EnqueueResponse, error) {
 
 	err := ValidateEnqueueRequest(&request)
@@ -66,9 +66,8 @@ func (s *Store) Enqueue(ctx context.Context, request store.EnqueueRequest) (*sto
 		},
 	}
 
-	// add subtopic in subtopics set
-
-	_, err = s.client.SAdd(ctx, allSubTopicsKey).Result()
+	// add original request subtopic key in subtopics set
+	_, err = s.client.SAdd(ctx, allSubTopicsKey, request.SubTopic).Result()
 	if err != nil {
 		return &store.EnqueueResponse{}, err
 	}
@@ -83,7 +82,7 @@ func (s *Store) Enqueue(ctx context.Context, request store.EnqueueRequest) (*sto
 	return &store.EnqueueResponse{ItemID: val}, nil
 }
 
-// dequeues a message for processing randomly from the queues for all the subTopics
+// Dequeue dequeues a message for processing randomly from the queues for all the subTopics
 func (s *Store) Dequeue(ctx context.Context, request store.DequeueRequest) (*store.DequeueResponse, error) {
 
 	err := ValidateDequeueRequest(&request)
@@ -106,14 +105,14 @@ func (s *Store) Dequeue(ctx context.Context, request store.DequeueRequest) (*sto
 	return s.ReadFromStream(ctx, selectedStream, request.BatchSize, request.ConsumerName)
 }
 
-// helper method to read from subTopic Streams
+// ReadFromStream helper method to read from subTopic Streams
 func (s *Store) ReadFromStream(ctx context.Context, streamKey string, batchSize int, consumerName string) (*store.DequeueResponse, error) {
 	// Claim entries for pending items more than retry interval duration for given topic
 	// else return new Messages
 	return &store.DequeueResponse{}, nil
 }
 
-// helper method to fetch all subTopics for a given topic
+// AllSubTopicsForGivenTopic helper method to fetch all subTopics for a given topic
 func (s *Store) AllSubTopicsForGivenTopic(ctx context.Context, request *store.DequeueRequest) ([]string, error) {
 	allQueuesTopicKey := utils.GetStoreAllSubTopicsFromTopicKey(request.Topic)
 	allTopicsResult, err := s.client.SMembers(ctx, allQueuesTopicKey).Result()
@@ -129,7 +128,7 @@ func (s *Store) AllSubTopicsForGivenTopic(ctx context.Context, request *store.De
 	return allTopicsResult, nil
 }
 
-// helper method to set a key value pair
+// SetKey helper method to set a key value pair
 func (s *Store) SetKey(ctx context.Context, key string, v any) error {
 	data, err := json.Marshal(v)
 	if err != nil {
@@ -138,7 +137,7 @@ func (s *Store) SetKey(ctx context.Context, key string, v any) error {
 	return s.client.Set(ctx, key, data, 0).Err()
 }
 
-// helper method to get value for a key
+// GetKey helper method to get value for a key
 func (s *Store) GetKey(ctx context.Context, key string, v any) error {
 	bytes, err := s.client.Get(ctx, key).Bytes()
 	if err != nil {
@@ -157,7 +156,7 @@ func (s *Store) GetKey(ctx context.Context, key string, v any) error {
 
 }
 
-// helper method to get topic metadata details
+// GetTopicMetadata helper method to get topic metadata details
 func (s *Store) GetTopicMetadata(ctx context.Context, topic string) (*store.RegisterTopicMetadata, error) {
 	var metadata store.RegisterTopicMetadata
 	err := s.GetKey(ctx, utils.GetTopicMetadataKey(topic), &metadata)
@@ -171,7 +170,7 @@ func (s *Store) GetTopicMetadata(ctx context.Context, topic string) (*store.Regi
 	return &metadata, nil
 }
 
-// helper method to Validate Dequeue Request
+// ValidateDequeueRequest helper method to Validate Dequeue Request
 func ValidateDequeueRequest(request *store.DequeueRequest) error {
 	if len(request.Topic) == 0 {
 		return fmt.Errorf("DequeueRequest TopicName cannot be empty")
@@ -185,7 +184,7 @@ func ValidateDequeueRequest(request *store.DequeueRequest) error {
 	return nil
 }
 
-// helper method to Validate Enqueue Request
+// ValidateEnqueueRequest helper method to Validate Enqueue Request
 func ValidateEnqueueRequest(request *store.EnqueueRequest) error {
 	if len(request.Topic) == 0 {
 		return fmt.Errorf("EnqueueRequest TopicName cannot be empty")
@@ -206,22 +205,22 @@ func ValidateEnqueueRequest(request *store.EnqueueRequest) error {
 
 }
 
-// Response Object for claiming Redis Stream
+// ClaimResponse Response Object for claiming Redis Stream
 type ClaimResponse struct {
 	err        error
 	StreamName string
 	Messages   []*store.DequeueResponse
 }
 
-// Request Object for claiming Redis Stream
+// ClaimRequest Request Object for claiming Redis Stream
 type ClaimRequest struct {
 	StreamName   string
 	GroupName    string
 	ConsumerName string
 }
 
-// helper method to claim redis stream entries
-func (s *Store) claimEntries(ctx context.Context, request *ClaimRequest, ch chan *ClaimResponse, ids []string) {
+// ClaimEntries helper method to claim redis stream entries
+func (s *Store) ClaimEntries(ctx context.Context, request *ClaimRequest, ch chan *ClaimResponse, ids []string) {
 	result, err := s.client.XClaim(ctx, &redis.XClaimArgs{
 		Stream:   request.StreamName,
 		Group:    request.GroupName,
@@ -250,7 +249,7 @@ func (s *Store) claimEntries(ctx context.Context, request *ClaimRequest, ch chan
 	}
 }
 
-// helper method to map x message to response
+// MapXMessageToResponse helper method to map x message to response
 func MapXMessageToResponse(msgs []redis.XMessage) []*store.DequeueResponse {
 	messages := make([]*store.DequeueResponse, 0)
 	for _, m := range msgs {
