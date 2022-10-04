@@ -1229,7 +1229,7 @@ permissions:
       - account
   - identifier: core_deploymentfreeze_manage
     name: Manage deployment freeze
-    status: EXPERIMENTAL
+    status: ACTIVE
     includedInAllRoles: false
     allowedScopeLevels:
       - account
@@ -1237,7 +1237,7 @@ permissions:
       - project
   - identifier: core_deploymentfreeze_override
     name: Override a deployment freeze
-    status: EXPERIMENTAL
+    status: ACTIVE
     includedInAllRoles: false
     allowedScopeLevels:
       - account
@@ -1245,7 +1245,7 @@ permissions:
       - project
   - identifier: core_deploymentfreeze_global
     name: Global deployment freeze
-    status: EXPERIMENTAL
+    status: ACTIVE
     includedInAllRoles: false
     allowedScopeLevels:
       - account
