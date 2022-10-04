@@ -3493,10 +3493,19 @@
           "type": "string"
         },
         "environments": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/EnvironmentYamlV2"
-          }
+          "oneOf": [
+            {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/EnvironmentYamlV2"
+              }
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
         },
         "metadata": {
           "type": "string"

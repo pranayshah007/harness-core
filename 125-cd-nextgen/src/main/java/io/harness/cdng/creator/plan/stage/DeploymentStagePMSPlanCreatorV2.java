@@ -414,6 +414,15 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
         && stageConfig.getEnvironmentGroup() == null) {
       return;
     }
+
+    String subType;
+    if (stageConfig.getEnvironments() == null) {
+      subType = MultiDeploymentSpawnerUtils.MULTI_SERVICE_DEPLOYMENT;
+    } else if (stageConfig.getServices() == null) {
+      subType = MultiDeploymentSpawnerUtils.MULTI_ENV_DEPLOYMENT;
+    } else {
+      subType = MultiDeploymentSpawnerUtils.MULTI_SERVICE_ENV_DEPLOYMENT;
+    }
     MultiDeploymentStepParameters stepParameters =
         MultiDeploymentStepParameters.builder()
             .strategyType(StrategyType.MATRIX)
@@ -421,6 +430,7 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
             .environments(stageConfig.getEnvironments())
             .environmentGroup(stageConfig.getEnvironmentGroup())
             .services(stageConfig.getServices())
+            .subType(subType)
             .build();
 
     MultiDeploymentMetadata metadata =
@@ -473,7 +483,8 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
     }
 
     EnvironmentYamlV2 environment;
-    if (stageNode.getDeploymentStageConfig().getEnvironments() != null) {
+    if (stageNode.getDeploymentStageConfig().getEnvironments() != null
+        || stageNode.getDeploymentStageConfig().getEnvironmentGroup() != null) {
       environment = MultiDeploymentSpawnerUtils.getEnvironmentYamlV2Node();
     } else {
       environment = stageNode.getDeploymentStageConfig().getEnvironment();
@@ -486,7 +497,8 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
   private String addInfrastructureNode(LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap,
       DeploymentStageNode stageNode, List<AdviserObtainment> adviserObtainments) throws IOException {
     EnvironmentYamlV2 environment;
-    if (stageNode.getDeploymentStageConfig().getEnvironments() != null) {
+    if (stageNode.getDeploymentStageConfig().getEnvironments() != null
+        || stageNode.getDeploymentStageConfig().getEnvironmentGroup() != null) {
       environment = MultiDeploymentSpawnerUtils.getEnvironmentYamlV2Node();
     } else {
       environment = stageNode.getDeploymentStageConfig().getEnvironment();
