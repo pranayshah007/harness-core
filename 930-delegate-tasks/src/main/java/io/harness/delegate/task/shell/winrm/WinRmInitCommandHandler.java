@@ -74,9 +74,8 @@ public class WinRmInitCommandHandler implements CommandHandler {
     WinRmSessionConfig config = winRmConfigAuthEnhancer.configureAuthentication(
         winRmInfraDelegateConfig.getWinRmCredentials(), winRmInfraDelegateConfig.getEncryptionDataDetails(),
         configBuilder, winRmCommandTaskParameters.isUseWinRMKerberosUniqueCacheFile());
-    WinRmExecutor executor =
-        winRmExecutorFactoryNG.getExecutor(config, winRmCommandTaskParameters.isDisableWinRMCommandEncodingFFSet(),
-            winRmCommandTaskParameters.isWinrmScriptCommandSplit(), logStreamingTaskClient, commandUnitsProgress);
+    WinRmExecutor executor = winRmExecutorFactoryNG.getExecutor(config,
+        winRmCommandTaskParameters.isDisableWinRMCommandEncodingFFSet(), logStreamingTaskClient, commandUnitsProgress);
 
     for (NgCommandUnit cu : parameters.getCommandUnits()) {
       if (NGCommandUnitType.SCRIPT.equals(cu.getCommandUnitType())) {

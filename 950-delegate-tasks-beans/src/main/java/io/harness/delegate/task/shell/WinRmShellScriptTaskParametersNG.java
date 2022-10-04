@@ -51,7 +51,6 @@ public class WinRmShellScriptTaskParametersNG implements TaskParameters, Executi
 
   // WinRm specific fields
   boolean disableCommandEncoding;
-  boolean winrmScriptCommandSplit;
   boolean useWinRMKerberosUniqueCacheFile;
 
   @Override

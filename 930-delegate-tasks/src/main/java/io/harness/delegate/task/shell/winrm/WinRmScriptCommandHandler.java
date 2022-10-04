@@ -74,9 +74,8 @@ public class WinRmScriptCommandHandler implements CommandHandler {
     WinRmSessionConfig config = winRmConfigAuthEnhancer.configureAuthentication(
         winRmInfraDelegateConfig.getWinRmCredentials(), winRmInfraDelegateConfig.getEncryptionDataDetails(),
         configBuilder, winRmCommandTaskParameters.isUseWinRMKerberosUniqueCacheFile());
-    WinRmExecutor executor =
-        winRmExecutorFactoryNG.getExecutor(config, winRmCommandTaskParameters.isDisableWinRMCommandEncodingFFSet(),
-            winRmCommandTaskParameters.isWinrmScriptCommandSplit(), logStreamingTaskClient, commandUnitsProgress);
+    WinRmExecutor executor = winRmExecutorFactoryNG.getExecutor(config,
+        winRmCommandTaskParameters.isDisableWinRMCommandEncodingFFSet(), logStreamingTaskClient, commandUnitsProgress);
 
     return executor.executeCommandString(
         scriptCommandUnit.getCommand(), winRmCommandTaskParameters.getOutputVariables());

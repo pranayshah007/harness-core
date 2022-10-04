@@ -37,9 +37,8 @@ public class FileBasedWinRmExecutor extends FileBasedAbstractWinRmExecutor imple
   protected DelegateFileManager delegateFileManager;
 
   public FileBasedWinRmExecutor(LogCallback logCallback, DelegateFileManager delegateFileManager,
-      boolean shouldSaveExecutionLogs, WinRmSessionConfig config, boolean disableCommandEncoding,
-      boolean winrmScriptCommandSplit) {
-    super(logCallback, shouldSaveExecutionLogs, config, disableCommandEncoding, winrmScriptCommandSplit);
+      boolean shouldSaveExecutionLogs, WinRmSessionConfig config, boolean disableCommandEncoding) {
+    super(logCallback, shouldSaveExecutionLogs, config, disableCommandEncoding);
     this.delegateFileManager = delegateFileManager;
   }
 

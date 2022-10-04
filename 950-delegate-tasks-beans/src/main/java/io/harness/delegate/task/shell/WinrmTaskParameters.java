@@ -35,7 +35,6 @@ public class WinrmTaskParameters extends CommandTaskParameters {
   String host;
   WinRmInfraDelegateConfig winRmInfraDelegateConfig;
   boolean disableWinRMCommandEncodingFFSet;
-  boolean winrmScriptCommandSplit;
   boolean useWinRMKerberosUniqueCacheFile;
 
   @Override
