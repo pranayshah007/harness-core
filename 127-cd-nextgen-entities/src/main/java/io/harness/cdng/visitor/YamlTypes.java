@@ -152,4 +152,6 @@ public interface YamlTypes {
 
   String ENV_PRODUCTION = "Production";
   String ENV_PRE_PRODUCTION = "PreProduction";
+
+  String SERVICE_ENTITIES = "services";
 }

@@ -55,7 +55,8 @@ public class MultiDeploymentSpawnerUtils {
   Map<String, String> getMapFromServiceYaml(ServiceYamlV2 service) {
     Map<String, String> matrixMetadataMap = new HashMap<>();
     matrixMetadataMap.put(SERVICE_REF, service.getServiceRef().getValue());
-    if (EmptyPredicate.isNotEmpty(service.getServiceInputs().getValue())) {
+    if (!ParameterField.isBlank(service.getServiceInputs())
+        && EmptyPredicate.isNotEmpty(service.getServiceInputs().getValue())) {
       matrixMetadataMap.put(SERVICE_INPUTS, JsonUtils.asJson(service.getServiceInputs().getValue()));
     }
     if (service.getUseFromStage() != null) {
@@ -68,14 +69,21 @@ public class MultiDeploymentSpawnerUtils {
       EnvironmentYamlV2 environmentYamlV2, InfraStructureDefinitionYaml infraStructureDefinitionYaml) {
     Map<String, String> matrixMetadataMap = new HashMap<>();
     matrixMetadataMap.put(ENVIRONMENT_REF, environmentYamlV2.getEnvironmentRef().getValue());
-    if (EmptyPredicate.isNotEmpty(environmentYamlV2.getEnvironmentInputs().getValue())) {
+    if (!ParameterField.isBlank(environmentYamlV2.getEnvironmentInputs())
+        && EmptyPredicate.isNotEmpty(environmentYamlV2.getEnvironmentInputs().getValue())) {
       matrixMetadataMap.put(ENVIRONMENT_INPUTS, JsonUtils.asJson(environmentYamlV2.getEnvironmentInputs().getValue()));
     }
-    matrixMetadataMap.put(
-        SERVICE_OVERRIDE_INPUTS, JsonUtils.asJson(environmentYamlV2.getServiceOverrideInputs().getValue()));
-    matrixMetadataMap.put(GIT_OPS_CLUSTERS, JsonUtils.asJson(environmentYamlV2.getGitOpsClusters().getValue()));
+    if (!ParameterField.isBlank(environmentYamlV2.getServiceOverrideInputs())) {
+      matrixMetadataMap.put(
+          SERVICE_OVERRIDE_INPUTS, JsonUtils.asJson(environmentYamlV2.getServiceOverrideInputs().getValue()));
+    }
+    if (!ParameterField.isBlank(environmentYamlV2.getGitOpsClusters())) {
+      matrixMetadataMap.put(GIT_OPS_CLUSTERS, JsonUtils.asJson(environmentYamlV2.getGitOpsClusters().getValue()));
+    }
     matrixMetadataMap.put(INFRA_IDENTIFIER, infraStructureDefinitionYaml.getIdentifier().getValue());
-    matrixMetadataMap.put(INFRA_INPUTS, JsonUtils.asJson(infraStructureDefinitionYaml.getInputs().getValue()));
+    if (!ParameterField.isBlank(infraStructureDefinitionYaml.getInputs())) {
+      matrixMetadataMap.put(INFRA_INPUTS, JsonUtils.asJson(infraStructureDefinitionYaml.getInputs().getValue()));
+    }
     return matrixMetadataMap;
   }
 

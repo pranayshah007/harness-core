@@ -35,6 +35,7 @@ import io.harness.cdng.visitor.YamlTypes;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.InvalidYamlException;
 import io.harness.ng.core.environment.services.EnvironmentService;
 import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
 import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
@@ -426,6 +427,14 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
       subType = MultiDeploymentSpawnerUtils.MULTI_ENV_DEPLOYMENT;
     } else {
       subType = MultiDeploymentSpawnerUtils.MULTI_SERVICE_ENV_DEPLOYMENT;
+    }
+    if (stageConfig.getServices() != null && ParameterField.isBlank(stageConfig.getServices().getValues())) {
+      throw new InvalidYamlException(
+          "No values of services provided. Please provide at least one service for deployment");
+    }
+    if (stageConfig.getEnvironments() != null && ParameterField.isBlank(stageConfig.getEnvironments().getValues())) {
+      throw new InvalidYamlException(
+          "No values of environments provided. Please provide at least one service for deployment");
     }
     MultiDeploymentStepParameters stepParameters =
         MultiDeploymentStepParameters.builder()
