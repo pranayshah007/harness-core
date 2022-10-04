@@ -103,6 +103,112 @@
     }
   ],
   "definitions": {
+    "AMIArtifactConfig": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ArtifactConfig"
+        },
+        {
+          "type": "object",
+          "required": [
+            "connectorRef",
+            "region"
+          ],
+          "properties": {
+            "connectorRef": {
+              "type": "string",
+              "minLength": 1
+            },
+            "filters": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/AMIFilter"
+              }
+            },
+            "region": {
+              "type": "string",
+              "enum": [
+                "us-east-1",
+                "us-east-2",
+                "us-west-1",
+                "us-west-2",
+                "af-south-1",
+                "ap-east-1",
+                "ap-south-east-3",
+                "ap-south-east-2",
+                "ap-south-east-1",
+                "ap-south-1",
+                "ap-northeast-3",
+                "ap-north-east-2",
+                "ap-north-east-1",
+                "ca-central-1",
+                "eu-central-1",
+                "eu-west-1",
+                "eu-west-2",
+                "eu-west-3",
+                "eu-south-1",
+                "eu-north-1",
+                "me-south-1",
+                "me-central-1",
+                "sa-east-1"
+              ],
+              "minLength": 1
+            },
+            "tags": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/AMITag"
+              }
+            },
+            "version": {
+              "type": "string"
+            },
+            "versionRegex": {
+              "type": "string"
+            }
+          }
+        },
+        {
+          "oneOf": [
+            {
+              "required": [
+                "versionRegex"
+              ]
+            },
+            {
+              "required": [
+                "version"
+              ]
+            }
+          ]
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "AMIFilter": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "AMITag": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "AbortFailureActionConfig": {
       "allOf": [
         {
@@ -320,7 +426,8 @@
             "AmazonS3",
             "GoogleArtifactRegistry",
             "GithubPackageRegistry",
-            "AzureArtifacts"
+            "AzureArtifacts",
+            "AmazonMachineImage"
           ]
         }
       },
@@ -338,6 +445,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/AcrArtifactConfig"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "AmazonMachineImage"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/AMIArtifactConfig"
               }
             }
           }
@@ -7708,7 +7831,8 @@
             "AmazonS3",
             "GoogleArtifactRegistry",
             "GithubPackageRegistry",
-            "AzureArtifacts"
+            "AzureArtifacts",
+            "AmazonMachineImage"
           ]
         }
       },
@@ -7726,6 +7850,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/AcrArtifactConfig"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "AmazonMachineImage"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/AMIArtifactConfig"
               }
             }
           }
@@ -8888,7 +9028,8 @@
             "AmazonS3",
             "GoogleArtifactRegistry",
             "GithubPackageRegistry",
-            "AzureArtifacts"
+            "AzureArtifacts",
+            "AmazonMachineImage"
           ]
         }
       },
@@ -8906,6 +9047,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/AcrArtifactConfig"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "AmazonMachineImage"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/AMIArtifactConfig"
               }
             }
           }

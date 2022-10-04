@@ -115,6 +115,9 @@ io.harness.cdng.manifest.yaml.ReleaseRepoManifestOutcome
 io.harness.cdng.artifact.bean.yaml.EcrArtifactConfig
 io.harness.cdng.artifact.bean.yaml.AmazonS3ArtifactConfig
 io.harness.cdng.artifact.bean.yaml.AzureArtifactsConfig
+io.harness.cdng.artifact.bean.yaml.AMIArtifactConfig
+io.harness.cdng.artifact.bean.yaml.ami.AMITag
+io.harness.cdng.artifact.bean.yaml.ami.AMIFilter
 io.harness.steps.shellscript.K8sInfraDelegateConfigOutput
 io.harness.steps.shellscript.SshInfraDelegateConfigOutput
 io.harness.steps.shellscript.WinRmInfraDelegateConfigOutput

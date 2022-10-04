@@ -22,4 +22,5 @@ public interface ArtifactSourceConstants {
   String GITHUB_PACKAGES_NAME = "GithubPackageRegistry";
   String GOOGLE_ARTIFACT_REGISTRY_NAME = "GoogleArtifactRegistry";
   String AZURE_ARTIFACTS_NAME = "AzureArtifacts";
+  String AMI_ARTIFACTS_NAME = "AmazonMachineImage";
 }
