@@ -43,7 +43,7 @@ public class RollbackStagePlanCreator {
     PlanNode rollbackStagePlanNode =
         PlanNode.builder()
             .uuid(stageNode.getUuid() + "_rollbackStage")
-            .name(NGCommonUtilPlanCreationConstants.ROLLBACK_STAGE_NODE_NAME)
+            .name(stageNode.getName() + " " + NGCommonUtilPlanCreationConstants.ROLLBACK_STAGE_NODE_NAME)
             .identifier(stageNode.getUuid() + "_rollbackStage")
             .stepType(NGSectionStep.STEP_TYPE)
             .stepParameters(SectionChainStepParameters.builder().childNodeIds(childNodeIDs).build())
