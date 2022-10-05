@@ -11,12 +11,14 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.NAVEEN;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
 import io.harness.cvng.BuilderFactory;
 import io.harness.cvng.analysis.entities.LearningEngineTask;
 import io.harness.cvng.analysis.services.api.TimeSeriesAnalysisService;
+import io.harness.cvng.core.beans.TimeRange;
 import io.harness.cvng.core.services.api.TimeSeriesRecordService;
 import io.harness.cvng.statemachine.beans.AnalysisInput;
 import io.harness.cvng.statemachine.beans.AnalysisState;
@@ -30,10 +32,12 @@ import io.harness.rule.Owner;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Optional;
 import org.apache.commons.lang3.reflect.FieldUtils;
 import org.junit.Before;
 import org.junit.Test;
@@ -85,7 +89,17 @@ public class HostSamplingStateExecutorTest extends CategoryTest {
             .resolvedJob(builderFactory.canaryVerificationJobBuilder().build())
             .build();
     hostSamplingState.setVerificationJobInstance(verificationJobInstance);
+
+    Optional<TimeRange> preDeploymentTimeRange = verificationJobInstance.getResolvedJob().getPreActivityTimeRange(
+        verificationJobInstance.getDeploymentStartTime());
+    when(timeSeriesRecordService.getTimeSeriesRecordDTOs(hostSamplingState.getInputs().getVerificationTaskId(),
+             preDeploymentTimeRange.get().getStartTime(), preDeploymentTimeRange.get().getEndTime()))
+        .thenReturn(new ArrayList<>());
+
     hostSamplingState = (HostSamplingState) hostSamplingStateExecutor.execute(hostSamplingState);
+    when(timeSeriesRecordService.getTimeSeriesRecordDTOs(hostSamplingState.getInputs().getVerificationTaskId(),
+             hostSamplingState.getInputs().getStartTime(), hostSamplingState.getInputs().getEndTime()))
+        .thenReturn(new ArrayList<>());
 
     assertThat(hostSamplingState.getStatus().name()).isEqualTo(AnalysisStatus.RUNNING.name());
     assertThat(hostSamplingState.getRetryCount()).isEqualTo(0);

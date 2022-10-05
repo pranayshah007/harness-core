@@ -613,7 +613,7 @@ public class AnalysisStateMachineServiceImplTest extends CvNextGenTestBase {
   public void testCreateStateMachine_forDeployment_withHostSamplingFFOn() throws IllegalAccessException {
     FeatureFlagService featureFlagService = mock(FeatureFlagService.class);
     when(featureFlagService.isFeatureFlagEnabled(
-             eq(builderFactory.getContext().getAccountId()), eq(FeatureFlagNames.HOST_SAMPLING)))
+             eq(builderFactory.getContext().getAccountId()), eq(FeatureFlagNames.SRM_HOST_SAMPLING_ENABLE)))
         .thenReturn(true);
     FieldUtils.writeField(stateMachineService, "featureFlagService", featureFlagService, true);
     String verificationTaskId = generateUuid();

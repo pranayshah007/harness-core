@@ -12,12 +12,11 @@ import io.harness.cvng.analysis.entities.LearningEngineTask.LearningEngineTaskTy
 import io.harness.cvng.analysis.services.api.TimeSeriesAnalysisService;
 import io.harness.cvng.core.beans.TimeRange;
 import io.harness.cvng.core.services.api.TimeSeriesRecordService;
+import io.harness.cvng.statemachine.beans.AnalysisInput;
 import io.harness.cvng.statemachine.beans.AnalysisState;
 import io.harness.cvng.statemachine.beans.AnalysisStatus;
 import io.harness.cvng.statemachine.entities.CanaryAnalysisState;
 import io.harness.cvng.statemachine.entities.HostSamplingState;
-import io.harness.cvng.statemachine.entities.ImprovisedCanaryAnalysisState;
-import io.harness.cvng.statemachine.exception.AnalysisStateMachineException;
 import io.harness.cvng.verificationjob.entities.VerificationJob;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance;
 import io.harness.cvng.verificationjob.services.api.VerificationJobInstanceService;
@@ -27,6 +26,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -37,7 +37,8 @@ public class HostSamplingStateExecutor extends AnalysisStateExecutor<HostSamplin
 
   @Override
   public AnalysisState execute(HostSamplingState analysisState) {
-    VerificationJobInstance verificationJobInstance = analysisState.getVerificationJobInstance();
+    VerificationJobInstance verificationJobInstance =
+        verificationJobInstanceService.getVerificationJobInstance(analysisState.getVerificationJobInstanceId());
     VerificationJob verificationJob = verificationJobInstance.getResolvedJob();
     Optional<TimeRange> preDeploymentTimeRange =
         verificationJob.getPreActivityTimeRange(verificationJobInstance.getDeploymentStartTime());
@@ -49,8 +50,11 @@ public class HostSamplingStateExecutor extends AnalysisStateExecutor<HostSamplin
         timeSeriesRecordService.getTimeSeriesRecordDTOs(analysisState.getInputs().getVerificationTaskId(),
             analysisState.getInputs().getStartTime(), analysisState.getInputs().getEndTime());
 
-    Set<String> preDeploymentHosts = new HashSet<>();
-    Set<String> postDeploymentHosts = new HashSet<>();
+    Set<String> preDeploymentHosts =
+        preDeploymentTimeSeriesRecords.stream().map(TimeSeriesRecordDTO::getHost).collect(Collectors.toSet());
+    Set<String> postDeploymentHosts =
+        postDeploymentTimeSeriesRecords.stream().map(TimeSeriesRecordDTO::getHost).collect(Collectors.toSet());
+
     for (TimeSeriesRecordDTO timeSeriesRecordDTO : preDeploymentTimeSeriesRecords) {
       preDeploymentHosts.add(timeSeriesRecordDTO.getHost());
     }
@@ -67,13 +71,13 @@ public class HostSamplingStateExecutor extends AnalysisStateExecutor<HostSamplin
     // is not None and is equal to postDeployment hosts
     // in that case test hosts is None and control hosts is postdeployment hosts
     Set<String> newHosts = new HashSet<>(postDeploymentHosts);
-    Set<String> intersection = new HashSet<>(preDeploymentHosts);
-    intersection.retainAll(postDeploymentHosts);
-    newHosts.removeAll(intersection);
+    Set<String> commonHosts = new HashSet<>(preDeploymentHosts);
+    commonHosts.retainAll(postDeploymentHosts);
+    newHosts.removeAll(commonHosts);
     switch (verificationJob.getType()) {
       case CANARY:
         // always canary
-        analysisState.setLearningEngineTaskType(LearningEngineTaskType.CANARY);
+        analysisState.setLearningEngineTaskType(LearningEngineTaskType.CANARY_METRIC);
         analysisState.setStatus(AnalysisStatus.RUNNING);
         if (newHosts.isEmpty()) {
           // predeployment nodes: n1, n2
@@ -102,7 +106,7 @@ public class HostSamplingStateExecutor extends AnalysisStateExecutor<HostSamplin
       case ROLLING:
       case BLUE_GREEN:
         // always improvised canary
-        analysisState.setLearningEngineTaskType(LearningEngineTaskType.IMPROVISED_CANARY);
+        analysisState.setLearningEngineTaskType(LearningEngineTaskType.BEFORE_AFTER_DEPLOYMENT_METRIC);
         Set<String> controlHosts = new HashSet<>(preDeploymentHosts);
         Set<String> testHosts = new HashSet<>(postDeploymentHosts);
         analysisState.setControlHosts(controlHosts);
@@ -117,7 +121,7 @@ public class HostSamplingStateExecutor extends AnalysisStateExecutor<HostSamplin
           testHosts = new HashSet<>(postDeploymentHosts);
           analysisState.setControlHosts(controlHosts);
           analysisState.setTestHosts(testHosts);
-          analysisState.setLearningEngineTaskType(LearningEngineTaskType.IMPROVISED_CANARY);
+          analysisState.setLearningEngineTaskType(LearningEngineTaskType.BEFORE_AFTER_DEPLOYMENT_METRIC);
         } else {
           // predeployment nodes: n1, n2 (or n1, n2)
           // postdeployment nodes: n1, n2, n3 (or n3, n4)
@@ -126,9 +130,9 @@ public class HostSamplingStateExecutor extends AnalysisStateExecutor<HostSamplin
           analysisState.setTestHosts(testHosts);
           analysisState.setControlHosts(controlHosts);
           if (newHosts.equals(postDeploymentHosts)) {
-            analysisState.setLearningEngineTaskType(LearningEngineTaskType.IMPROVISED_CANARY);
+            analysisState.setLearningEngineTaskType(LearningEngineTaskType.BEFORE_AFTER_DEPLOYMENT_METRIC);
           } else {
-            analysisState.setLearningEngineTaskType(LearningEngineTaskType.CANARY);
+            analysisState.setLearningEngineTaskType(LearningEngineTaskType.CANARY_METRIC);
           }
         }
         break;
@@ -140,7 +144,7 @@ public class HostSamplingStateExecutor extends AnalysisStateExecutor<HostSamplin
 
   @Override
   public AnalysisStatus getExecutionStatus(HostSamplingState analysisState) {
-    if (!analysisState.getControlHosts().isEmpty() && !analysisState.getTestHosts().isEmpty()) {
+    if (!analysisState.getControlHosts().isEmpty() || !analysisState.getTestHosts().isEmpty()) {
       return AnalysisStatus.TRANSITION;
     }
     return AnalysisStatus.RUNNING;
@@ -169,25 +173,12 @@ public class HostSamplingStateExecutor extends AnalysisStateExecutor<HostSamplin
   @Override
   public AnalysisState handleTransition(HostSamplingState analysisState) {
     analysisState.setStatus(AnalysisStatus.SUCCESS);
-    switch (analysisState.getLearningEngineTaskType()) {
-      case CANARY:
-        CanaryAnalysisState canaryAnalysisState = new CanaryAnalysisState();
-        canaryAnalysisState.setLearningEngineTaskType(analysisState.getLearningEngineTaskType());
-        canaryAnalysisState.setInputs(analysisState.getInputs());
-        canaryAnalysisState.setControlHosts(analysisState.getControlHosts());
-        canaryAnalysisState.setTestHosts(analysisState.getTestHosts());
-        return canaryAnalysisState;
-      case IMPROVISED_CANARY:
-        ImprovisedCanaryAnalysisState improvisedCanaryAnalysisState = new ImprovisedCanaryAnalysisState();
-        improvisedCanaryAnalysisState.setLearningEngineTaskType(analysisState.getLearningEngineTaskType());
-        improvisedCanaryAnalysisState.setInputs(analysisState.getInputs());
-        improvisedCanaryAnalysisState.setControlHosts(analysisState.getControlHosts());
-        improvisedCanaryAnalysisState.setTestHosts(analysisState.getTestHosts());
-        return improvisedCanaryAnalysisState;
-      default:
-        throw new AnalysisStateMachineException("Unknown learning engine task typein handleTransition "
-            + "of HostSamplingState: " + analysisState.getLearningEngineTaskType());
-    }
+    CanaryAnalysisState canaryAnalysisState = new CanaryAnalysisState();
+    canaryAnalysisState.setLearningEngineTaskType(analysisState.getLearningEngineTaskType());
+    canaryAnalysisState.setInputs(analysisState.getInputs());
+    canaryAnalysisState.setControlHosts(analysisState.getControlHosts());
+    canaryAnalysisState.setTestHosts(analysisState.getTestHosts());
+    return canaryAnalysisState;
   }
 
   @Override

@@ -388,11 +388,12 @@ public class AnalysisStateMachineServiceImpl implements AnalysisStateMachineServ
           canaryTimeSeriesAnalysisState.setStatus(AnalysisStatus.CREATED);
           canaryTimeSeriesAnalysisState.setInputs(inputForAnalysis);
           stateMachine.setCurrentState(canaryTimeSeriesAnalysisState);
-          if (featureFlagService.isFeatureFlagEnabled(stateMachine.getAccountId(), FeatureFlagNames.HOST_SAMPLING)) {
+          if (featureFlagService.isFeatureFlagEnabled(
+                  stateMachine.getAccountId(), FeatureFlagNames.SRM_HOST_SAMPLING_ENABLE)) {
             HostSamplingState hostSamplingState = new HostSamplingState();
             hostSamplingState.setStatus(AnalysisStatus.CREATED);
             hostSamplingState.setInputs(inputForAnalysis);
-            hostSamplingState.setVerificationJobInstance(verificationJobInstance);
+            hostSamplingState.setVerificationJobInstanceId(verificationJobInstance.getUuid());
             stateMachine.setCurrentState(hostSamplingState);
           }
         }

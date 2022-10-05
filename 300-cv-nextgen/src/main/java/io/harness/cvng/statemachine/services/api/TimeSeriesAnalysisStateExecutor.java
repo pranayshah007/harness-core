@@ -26,10 +26,13 @@ import lombok.extern.slf4j.Slf4j;
 public abstract class TimeSeriesAnalysisStateExecutor<T extends TimeSeriesAnalysisState>
     extends AnalysisStateExecutor<T> {
   @Inject protected transient TimeSeriesAnalysisService timeSeriesAnalysisService;
+  @Inject protected AnalysisState analysisState;
 
   @Override
   public AnalysisState execute(T analysisState) {
-    List<String> taskIds = scheduleAnalysis(analysisState.getInputs());
+    300 - cv
+        - nextgen / src / main / java / io / harness / cvng / statemachine / services / api
+            / TimeSeriesAnalysisStateExecutor.java List<String> taskIds = scheduleAnalysis(analysisState.getInputs());
     analysisState.setStatus(AnalysisStatus.RUNNING);
 
     if (taskIds != null && taskIds.size() == 1) {
