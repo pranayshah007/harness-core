@@ -395,7 +395,7 @@ public class CIModuleInfoProvider implements ExecutionSummaryModuleInfoProvider 
           buildMultiplier = IntegrationStageUtils.getBuildTimeMultiplierForHostedInfra(infrastructure);
 
           if (infrastructure.getType() == Infrastructure.Type.HOSTED_VM
-              || infrastructure.getType() == Infrastructure.Type.KUBERNETES_DIRECT) {
+              || infrastructure.getType() == Infrastructure.Type.KUBERNETES_HOSTED) {
             OptionalSweepingOutput optionalSweepingOutput = executionSweepingOutputService.resolveOptional(
                 ambiance, RefObjectUtils.getOutcomeRefObject(INITIALIZE_EXECUTION));
             if (optionalSweepingOutput.isFound()) {
