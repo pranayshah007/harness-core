@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.artifact.bean.yaml.CustomArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.customartifact.CustomScriptInlineSource;
+import io.harness.cdng.artifact.bean.yaml.customartifact.FetchAllArtifacts;
 import io.harness.cdng.artifact.steps.ArtifactStep;
 import io.harness.cdng.artifact.steps.ArtifactStepParameters;
 import io.harness.cdng.artifact.steps.ArtifactSyncStep;
@@ -42,19 +43,31 @@ public class ArtifactPlanCreatorHelper {
   }
 
   public boolean shouldCreateDelegateTask(ArtifactStepParameters artifactStepParameters) {
-    if (ArtifactSourceType.CUSTOM_ARTIFACT == artifactStepParameters.getType()
-        && ((CustomArtifactConfig) artifactStepParameters.getSpec()).getScripts() == null) {
-      return false;
-    } else if (ArtifactSourceType.CUSTOM_ARTIFACT == artifactStepParameters.getType()) {
-      CustomScriptInlineSource customScriptInlineSource =
-          (CustomScriptInlineSource) ((CustomArtifactConfig) artifactStepParameters.getSpec())
-              .getScripts()
-              .getFetchAllArtifacts()
-              .getShellScriptBaseStepInfo()
-              .getSource()
-              .getSpec();
-      return !StringUtils.isBlank(customScriptInlineSource.getScript().getValue());
+    if (!ArtifactSourceType.CUSTOM_ARTIFACT.equals(artifactStepParameters.getType())) {
+      return true;
     }
-    return true;
+    CustomArtifactConfig artifactConfig = (CustomArtifactConfig) artifactStepParameters.getSpec();
+    if (artifactConfig.getScripts() == null || artifactConfig.getScripts().getFetchAllArtifacts() == null) {
+      return false;
+    }
+    FetchAllArtifacts fetchAllArtifacts = artifactConfig.getScripts().getFetchAllArtifacts();
+    if (fetchAllArtifacts.getShellScriptBaseStepInfo() == null
+        || fetchAllArtifacts.getShellScriptBaseStepInfo().getSource() == null
+        || fetchAllArtifacts.getShellScriptBaseStepInfo().getSource().getSpec() == null) {
+      return false;
+    }
+    if (fetchAllArtifacts.getArtifactsArrayPath() == null || fetchAllArtifacts.getVersionPath() == null
+        || StringUtils.isBlank(fetchAllArtifacts.getVersionPath().getValue())
+        || StringUtils.isBlank(fetchAllArtifacts.getArtifactsArrayPath().getValue())) {
+      return false;
+    }
+    CustomScriptInlineSource customScriptInlineSource =
+        (CustomScriptInlineSource) ((CustomArtifactConfig) artifactStepParameters.getSpec())
+            .getScripts()
+            .getFetchAllArtifacts()
+            .getShellScriptBaseStepInfo()
+            .getSource()
+            .getSpec();
+    return StringUtils.isNotBlank(customScriptInlineSource.getScript().getValue());
   }
 }

@@ -169,18 +169,19 @@ public class SideCarPlanCreatorTest extends CDNGTestBase {
         CustomArtifactScriptSourceWrapper.builder().spec(customScriptInlineSource).build();
     CustomArtifactScriptInfo customArtifactScriptInfo =
         CustomArtifactScriptInfo.builder().source(customArtifactScriptSourceWrapper).build();
-    FetchAllArtifacts fetchAllArtifacts =
-        FetchAllArtifacts.builder().shellScriptBaseStepInfo(customArtifactScriptInfo).build();
+    FetchAllArtifacts fetchAllArtifacts = FetchAllArtifacts.builder()
+                                              .shellScriptBaseStepInfo(customArtifactScriptInfo)
+                                              .artifactsArrayPath(ParameterField.createValueField("arrayPath"))
+                                              .versionPath(ParameterField.createValueField("version"))
+                                              .build();
     CustomArtifactScripts customArtifactScripts =
         CustomArtifactScripts.builder().fetchAllArtifacts(fetchAllArtifacts).build();
-    ArtifactStepParameters artifactStepParameters = ArtifactStepParameters.builder()
-                                                        .identifier(identifier)
-                                                        .type(ArtifactSourceType.CUSTOM_ARTIFACT)
-                                                        .spec(CustomArtifactConfig.builder()
-                                                                  .scripts(new CustomArtifactScripts())
-                                                                  .scripts(customArtifactScripts)
-                                                                  .build())
-                                                        .build();
+    ArtifactStepParameters artifactStepParameters =
+        ArtifactStepParameters.builder()
+            .identifier(identifier)
+            .type(ArtifactSourceType.CUSTOM_ARTIFACT)
+            .spec(CustomArtifactConfig.builder().scripts(customArtifactScripts).build())
+            .build();
 
     metadataDependency.put(YamlTypes.UUID, ByteString.copyFrom(kryoSerializer.asDeflatedBytes(uuid)));
     metadataDependency.put(
