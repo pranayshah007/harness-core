@@ -1098,9 +1098,7 @@ public class EcsContainerServiceImpl implements EcsContainerService {
         updateServiceCount(serviceCountRequestData);
         executionLogCallback.saveExecutionLog("Service update request successfully submitted.", LogLevel.INFO);
         waitForTasksToBeInRunningStateWithHandledExceptions(serviceCountRequestData);
-        if (desiredCount > service.getDesiredCount()) { // don't do it for downsize.
-          waitForServiceToReachSteadyState(serviceSteadyStateTimeout, serviceCountRequestData);
-        }
+        waitForServiceToReachSteadyState(serviceSteadyStateTimeout, serviceCountRequestData);
       }
 
       return getContainerInfosAfterEcsWait(
