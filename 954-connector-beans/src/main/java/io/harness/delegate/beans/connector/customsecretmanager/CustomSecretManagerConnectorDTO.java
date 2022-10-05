@@ -70,7 +70,7 @@ public class CustomSecretManagerConnectorDTO extends ConnectorConfigDTO implemen
 
   @Override
   public void validate() {
-    if (onDelegate) {
+    if (Boolean.TRUE.equals(onDelegate)) {
       boolean throwException = false;
       StringBuilder errorMessageBuilder =
           new StringBuilder("Target machine information should be absent if execution is on delegate. Found ");
