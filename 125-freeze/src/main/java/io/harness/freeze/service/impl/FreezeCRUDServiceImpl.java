@@ -50,7 +50,7 @@ public class FreezeCRUDServiceImpl implements FreezeCRUDService {
   public FreezeResponseDTO createFreezeConfig(
       String deploymentFreezeYaml, String accountId, String orgId, String projectId) {
     FreezeConfigEntity freezeConfigEntity =
-        NGFreezeDtoMapper.toFreezeConfigEntity(accountId, orgId, projectId, deploymentFreezeYaml);
+        NGFreezeDtoMapper.toFreezeConfigEntityManual(accountId, orgId, projectId, deploymentFreezeYaml);
     Optional<FreezeConfigEntity> freezeConfigEntityOptional =
         freezeConfigRepository.findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifier(accountId,
             freezeConfigEntity.getOrgIdentifier(), freezeConfigEntity.getProjectIdentifier(),
@@ -66,10 +66,48 @@ public class FreezeCRUDServiceImpl implements FreezeCRUDService {
   }
 
   @Override
+  public FreezeResponseDTO manageGlobalFreezeConfig(
+      String deploymentFreezeYaml, String accountId, String orgId, String projectId) {
+    FreezeConfigEntity freezeConfigEntity =
+        NGFreezeDtoMapper.toFreezeConfigEntityGlobal(accountId, orgId, projectId, deploymentFreezeYaml);
+    freezeConfigRepository.upsert(FreezeFilterHelper.getFreezeEqualityCriteria(freezeConfigEntity), freezeConfigEntity);
+    return NGFreezeDtoMapper.prepareFreezeResponseDto(freezeConfigEntity);
+  }
+
+  @Override
+  public Optional<Boolean> isGlobalDeploymentFreezeActive(String accountId, String orgId, String projectId) {
+    Optional<FreezeConfigEntity> entity;
+    Boolean result = false;
+    if (accountId != null) {
+      entity = freezeConfigRepository.findGlobalByAccountIdAndOrgIdentifierAndProjectIdentifier(accountId, null, null);
+      if (entity.isPresent() && entity.get().getStatus() != null
+          && entity.get().getStatus().equals(FreezeStatus.ENABLED)) {
+        result = true;
+      }
+    }
+    if (!result && orgId != null) {
+      entity = freezeConfigRepository.findGlobalByAccountIdAndOrgIdentifierAndProjectIdentifier(accountId, orgId, null);
+      if (entity.isPresent() && entity.get().getStatus() != null
+          && entity.get().getStatus().equals(FreezeStatus.ENABLED)) {
+        result = true;
+      }
+    }
+    if (!result && projectId != null) {
+      entity =
+          freezeConfigRepository.findGlobalByAccountIdAndOrgIdentifierAndProjectIdentifier(accountId, orgId, projectId);
+      if (entity.isPresent() && entity.get().getStatus() != null
+          && entity.get().getStatus().equals(FreezeStatus.ENABLED)) {
+        result = true;
+      }
+    }
+    return Optional.ofNullable(result);
+  }
+
+  @Override
   public FreezeResponseDTO updateFreezeConfig(
       String deploymentFreezeYaml, String accountId, String orgId, String projectId, String freezeIdentifier) {
     FreezeConfigEntity updatedFreezeConfigEntity =
-        NGFreezeDtoMapper.toFreezeConfigEntity(accountId, orgId, projectId, deploymentFreezeYaml);
+        NGFreezeDtoMapper.toFreezeConfigEntityManual(accountId, orgId, projectId, deploymentFreezeYaml);
     Optional<FreezeConfigEntity> freezeConfigEntityOptional =
         freezeConfigRepository.findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifier(
             accountId, orgId, projectId, freezeIdentifier);

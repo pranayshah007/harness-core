@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: resourceTypeConfiguration
-version: 18
+version: 19
 resourceTypes:
   - identifier: ACCOUNT
     permissionKey: account
@@ -108,3 +108,5 @@ resourceTypes:
     permissionKey: smtp
   - identifier: SETTING
     permissionKey: setting
+  - identifier: DEPLOYMENTFREEZE
+    permissionKey: deploymentfreeze
