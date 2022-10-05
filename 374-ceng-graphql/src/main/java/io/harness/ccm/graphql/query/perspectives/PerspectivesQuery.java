@@ -88,6 +88,11 @@ public class PerspectivesQuery {
     isClusterQuery = isClusterQuery != null && isClusterQuery;
     groupBy = groupBy != null ? groupBy : Collections.emptyList();
 
+    // Group by is only needed in case of business mapping
+    if (!viewsQueryHelper.isGroupByBusinessMappingPresent(groupBy)) {
+      groupBy = Collections.emptyList();
+    }
+
     QLCEViewTrendData trendStatsData = viewsBillingService.getTrendStatsDataNg(bigQuery, filters, groupBy,
         aggregateFunction, cloudProviderTableName, viewsQueryHelper.buildQueryParams(accountId, isClusterQuery));
     return PerspectiveTrendStats.builder()
@@ -112,6 +117,11 @@ public class PerspectivesQuery {
     BigQuery bigQuery = bigQueryService.get();
     isClusterQuery = isClusterQuery != null && isClusterQuery;
     groupBy = groupBy != null ? groupBy : Collections.emptyList();
+
+    // Group by is only needed in case of business mapping
+    if (!viewsQueryHelper.isGroupByBusinessMappingPresent(groupBy)) {
+      groupBy = Collections.emptyList();
+    }
 
     QLCEViewTrendInfo forecastCostData = viewsBillingService.getForecastCostData(bigQuery, filters, groupBy,
         aggregateFunction, cloudProviderTableName, viewsQueryHelper.buildQueryParams(accountId, isClusterQuery));

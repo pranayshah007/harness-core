@@ -272,16 +272,18 @@ public class NGTriggerServiceTest extends CategoryTest {
   @Owner(developers = SRIDHAR)
   @Category(UnitTests.class)
   public void testHardDelete() {
-    NGTriggerEntity ngTrigger = NGTriggerEntity.builder()
-                                    .accountId(ACCOUNT_ID)
-                                    .enabled(Boolean.TRUE)
-                                    .deleted(Boolean.FALSE)
-                                    .identifier(IDENTIFIER)
-                                    .projectIdentifier(PROJ_IDENTIFIER)
-                                    .targetIdentifier(PIPELINE_IDENTIFIER)
-                                    .orgIdentifier(ORG_IDENTIFIER)
-                                    .type(NGTriggerType.WEBHOOK)
-                                    .build();
+    NGTriggerEntity ngTrigger =
+        NGTriggerEntity.builder()
+            .accountId(ACCOUNT_ID)
+            .enabled(Boolean.TRUE)
+            .deleted(Boolean.FALSE)
+            .identifier(IDENTIFIER)
+            .projectIdentifier(PROJ_IDENTIFIER)
+            .targetIdentifier(PIPELINE_IDENTIFIER)
+            .orgIdentifier(ORG_IDENTIFIER)
+            .metadata(NGTriggerMetadata.builder().webhook(WebhookMetadata.builder().type("Gitlab").build()).build())
+            .type(NGTriggerType.WEBHOOK)
+            .build();
 
     Optional<NGTriggerEntity> optionalNGTrigger = Optional.of(ngTrigger);
 
@@ -301,16 +303,18 @@ public class NGTriggerServiceTest extends CategoryTest {
   @Owner(developers = SRIDHAR)
   @Category(UnitTests.class)
   public void testDeleteException() {
-    NGTriggerEntity ngTrigger = NGTriggerEntity.builder()
-                                    .accountId(ACCOUNT_ID)
-                                    .enabled(Boolean.TRUE)
-                                    .deleted(Boolean.FALSE)
-                                    .identifier(IDENTIFIER)
-                                    .projectIdentifier(PROJ_IDENTIFIER)
-                                    .targetIdentifier(PIPELINE_IDENTIFIER)
-                                    .orgIdentifier(ORG_IDENTIFIER)
-                                    .type(NGTriggerType.WEBHOOK)
-                                    .build();
+    NGTriggerEntity ngTrigger =
+        NGTriggerEntity.builder()
+            .accountId(ACCOUNT_ID)
+            .enabled(Boolean.TRUE)
+            .deleted(Boolean.FALSE)
+            .identifier(IDENTIFIER)
+            .projectIdentifier(PROJ_IDENTIFIER)
+            .targetIdentifier(PIPELINE_IDENTIFIER)
+            .orgIdentifier(ORG_IDENTIFIER)
+            .type(NGTriggerType.WEBHOOK)
+            .metadata(NGTriggerMetadata.builder().webhook(WebhookMetadata.builder().type("Gitlab").build()).build())
+            .build();
 
     Optional<NGTriggerEntity> optionalNGTrigger = Optional.of(ngTrigger);
 
@@ -338,6 +342,7 @@ public class NGTriggerServiceTest extends CategoryTest {
             .orgIdentifier(ORG_IDENTIFIER)
             .type(NGTriggerType.WEBHOOK)
             .pollInterval("2m")
+            .metadata(NGTriggerMetadata.builder().webhook(WebhookMetadata.builder().type("Gitlab").build()).build())
             .triggerStatus(TriggerStatus.builder()
                                .webhookAutoRegistrationStatus(WebhookAutoRegistrationStatus.builder()
                                                                   .registrationResult(WebhookRegistrationStatus.SUCCESS)

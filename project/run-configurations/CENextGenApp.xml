@@ -6,9 +6,9 @@
                     debug_port="6015"
                     blaze-command="run"
                     keep-in-sync="true">
-        <blaze-target>//340-ce-nextgen:module</blaze-target>
+        <blaze-target>//ce-nextgen/service:module</blaze-target>
         <blaze-user-exe-flag>server</blaze-user-exe-flag>
-        <blaze-user-exe-flag>$PROJECT_DIR$/../340-ce-nextgen/config.yml</blaze-user-exe-flag>
+        <blaze-user-exe-flag>$PROJECT_DIR$/../ce-nextgen/config/config.yml</blaze-user-exe-flag>
     </blaze-settings>
     <method v="2">
         <option name="Blaze.BeforeRunTask" enabled="true"/>

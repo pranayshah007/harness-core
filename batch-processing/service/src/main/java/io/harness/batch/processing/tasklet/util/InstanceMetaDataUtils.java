@@ -58,7 +58,9 @@ public class InstanceMetaDataUtils {
     if (null != labelsMap.get(K8sCCMConstants.GKE_NODE_POOL_KEY)) {
       nodePoolValue = labelsMap.get(K8sCCMConstants.GKE_NODE_POOL_KEY);
     } else if (null != labelsMap.get(K8sCCMConstants.AKS_NODE_POOL_KEY)) {
-      nodePoolValue = labelsMap.get(K8sCCMConstants.AKS_NODE_POOL_KEY);
+      if (!isSpotInstance(labelsMap)) {
+        nodePoolValue = labelsMap.get(K8sCCMConstants.AKS_NODE_POOL_KEY);
+      }
     } else if (null != labelsMap.get(K8sCCMConstants.EKS_NODE_POOL_KEY)) {
       nodePoolValue = labelsMap.get(K8sCCMConstants.EKS_NODE_POOL_KEY);
     } else if (null != labelsMap.get(K8sCCMConstants.EKSCTL_NODE_POOL_KEY)) {
@@ -69,6 +71,13 @@ public class InstanceMetaDataUtils {
     if (null != nodePoolValue) {
       metaData.put(InstanceMetaDataConstants.NODE_POOL_NAME, nodePoolValue);
     }
+  }
+
+  private static boolean isSpotInstance(Map<String, String> labelsMap) {
+    return null != labelsMap.get(K8sCCMConstants.SPOT_INSTANCE_NODE_LIFECYCLE)
+        && (labelsMap.get(K8sCCMConstants.SPOT_INSTANCE_NODE_LIFECYCLE).equalsIgnoreCase(K8sCCMConstants.SPOT_INSTANCE)
+            || labelsMap.get(K8sCCMConstants.SPOT_INSTANCE_NODE_LIFECYCLE)
+                   .equalsIgnoreCase(K8sCCMConstants.ON_DEMAND_INSTANCE));
   }
 
   public static boolean checkIfKeyExistsAndIsTrue(@NonNull String key, @NonNull Map<String, String> labelsMap) {

@@ -20,7 +20,7 @@ public class CustomDeploymentNGDeploymentInfoMapper {
   public CustomDeploymentNGDeploymentInfoDTO toDTO(CustomDeploymentNGDeploymentInfo customDeploymentNGDeploymentInfo) {
     return CustomDeploymentNGDeploymentInfoDTO.builder()
         .instanceFetchScript(customDeploymentNGDeploymentInfo.getInstanceFetchScript())
-        .instanceFetchScriptHash(customDeploymentNGDeploymentInfo.getInstanceFetchScriptHash())
+        .infratructureKey(customDeploymentNGDeploymentInfo.getInfratructureKey())
         .artifactBuildNum(customDeploymentNGDeploymentInfo.getArtifactBuildNum())
         .artifactName(customDeploymentNGDeploymentInfo.getArtifactName())
         .artifactSourceName(customDeploymentNGDeploymentInfo.getArtifactSourceName())
@@ -38,7 +38,7 @@ public class CustomDeploymentNGDeploymentInfoMapper {
         .artifactName(customDeploymentNGDeploymentInfoDTO.getArtifactName())
         .artifactSourceName(customDeploymentNGDeploymentInfoDTO.getArtifactSourceName())
         .artifactStreamId(customDeploymentNGDeploymentInfoDTO.getArtifactStreamId())
-        .instanceFetchScriptHash(customDeploymentNGDeploymentInfoDTO.getInstanceFetchScriptHash())
+        .infratructureKey(customDeploymentNGDeploymentInfoDTO.getInfratructureKey())
         .scriptOutput(customDeploymentNGDeploymentInfoDTO.getScriptOutput())
         .tags(customDeploymentNGDeploymentInfoDTO.getTags())
         .build();

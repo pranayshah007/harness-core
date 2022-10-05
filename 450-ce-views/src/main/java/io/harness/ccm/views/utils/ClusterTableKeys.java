@@ -127,4 +127,5 @@ public class ClusterTableKeys {
   public static final String GROUP_BY_INSTANCE_ID = "Instance Id";
   public static final String GROUP_BY_INSTANCE_NAME = "Instance Name";
   public static final String GROUP_BY_INSTANCE_TYPE = "Instance Type";
+  public static final String GROUP_BY_NONE = "None";
 }

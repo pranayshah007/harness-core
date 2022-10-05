@@ -838,9 +838,15 @@ public class EcsStepCommonHelper extends EcsStepUtils {
       return TaskChainResponse.builder().passThroughData(ecsStepExceptionPassThroughData).chainEnd(true).build();
     }
 
+    String prodTargetGroupArn = null;
+    String stageTargetGroupArn = null;
+
     if (ecsStepExecutor instanceof EcsBlueGreenCreateServiceStep) {
       EcsBlueGreenPrepareRollbackDataResult ecsBlueGreenPrepareRollbackDataResult =
           ecsBlueGreenPrepareRollbackDataResponse.getEcsBlueGreenPrepareRollbackDataResult();
+
+      prodTargetGroupArn = ecsBlueGreenPrepareRollbackDataResult.getEcsLoadBalancerConfig().getProdTargetGroupArn();
+      stageTargetGroupArn = ecsBlueGreenPrepareRollbackDataResult.getEcsLoadBalancerConfig().getStageTargetGroupArn();
 
       EcsBlueGreenPrepareRollbackDataOutcome ecsBlueGreenPrepareRollbackDataOutcome =
           EcsBlueGreenPrepareRollbackDataOutcome.builder()
@@ -852,10 +858,15 @@ public class EcsStepCommonHelper extends EcsStepUtils {
               .registerScalingPolicyRequestBuilderStrings(
                   ecsBlueGreenPrepareRollbackDataResult.getRegisterScalingPolicyRequestBuilderStrings())
               .isFirstDeployment(ecsBlueGreenPrepareRollbackDataResult.isFirstDeployment())
-              .loadBalancer(ecsBlueGreenPrepareRollbackDataResult.getLoadBalancer())
-              .listenerArn(ecsBlueGreenPrepareRollbackDataResult.getListenerArn())
-              .listenerRuleArn(ecsBlueGreenPrepareRollbackDataResult.getListenerRuleArn())
-              .targetGroupArn(ecsBlueGreenPrepareRollbackDataResult.getTargetGroupArn())
+              .loadBalancer(ecsBlueGreenPrepareRollbackDataResult.getEcsLoadBalancerConfig().getLoadBalancer())
+              .prodListenerArn(ecsBlueGreenPrepareRollbackDataResult.getEcsLoadBalancerConfig().getProdListenerArn())
+              .prodListenerRuleArn(
+                  ecsBlueGreenPrepareRollbackDataResult.getEcsLoadBalancerConfig().getProdListenerRuleArn())
+              .prodTargetGroupArn(prodTargetGroupArn)
+              .stageListenerArn(ecsBlueGreenPrepareRollbackDataResult.getEcsLoadBalancerConfig().getStageListenerArn())
+              .stageListenerRuleArn(
+                  ecsBlueGreenPrepareRollbackDataResult.getEcsLoadBalancerConfig().getStageListenerRuleArn())
+              .stageTargetGroupArn(stageTargetGroupArn)
               .build();
 
       executionSweepingOutputService.consume(ambiance,
@@ -886,6 +897,8 @@ public class EcsStepCommonHelper extends EcsStepUtils {
             .ecsScalableTargetManifestContentList(ecsScalableTargetManifestContentList)
             .ecsScalingPolicyManifestContentList(ecsScalingPolicyManifestContentList)
             .targetGroupArnKey(ecsStepPassThroughData.getTargetGroupArnKey())
+            .prodTargetGroupArn(prodTargetGroupArn)
+            .stageTargetGroupArn(stageTargetGroupArn)
             .build();
 
     return ecsStepExecutor.executeEcsTask(ambiance, stepElementParameters, ecsExecutionPassThroughData,

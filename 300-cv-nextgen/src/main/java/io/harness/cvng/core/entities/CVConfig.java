@@ -150,6 +150,7 @@ public abstract class CVConfig
 
   public abstract TimeRange getFirstTimeDataCollectionTimeRange();
 
+  @JsonIgnore
   public Instant getFirstTimeDataCollectionStartTime() {
     Preconditions.checkState(getCreatedAt() != 0, "CreatedAt needs to be set to get the baseline");
     Instant startTime = Instant.ofEpochMilli(getCreatedAt());

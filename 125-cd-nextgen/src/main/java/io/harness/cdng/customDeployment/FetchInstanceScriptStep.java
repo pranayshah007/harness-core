@@ -203,9 +203,10 @@ public class FetchInstanceScriptStep extends TaskExecutableWithRollbackAndRbac<S
                 .getSweepingOutputEnvVariables();
         instanceElements = InstanceMapperUtils.mapJsonToInstanceElements(infrastructureOutcome.getInstanceAttributes(),
             infrastructureOutcome.getInstancesListPath(), output.get(OUTPUT_PATH_KEY), instanceElementMapper);
-        instanceElements.forEach(serverInstanceInfo
-            -> serverInstanceInfo.setInstanceFetchScript(
-                getResolvedFetchInstanceScript(ambiance, infrastructureOutcome)));
+        instanceElements.forEach(serverInstanceInfo -> {
+          serverInstanceInfo.setInstanceFetchScript(getResolvedFetchInstanceScript(ambiance, infrastructureOutcome));
+          serverInstanceInfo.setInfrastructureKey(infrastructureOutcome.getInfrastructureKey());
+        });
         validateInstanceElements(instanceElements, infrastructureOutcome);
       }
     }

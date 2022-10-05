@@ -7,6 +7,7 @@
 
 package io.harness.delegate.beans.connector.azureconnector;
 
+import io.harness.annotation.RecasterFieldName;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
@@ -26,8 +27,9 @@ import lombok.NoArgsConstructor;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Schema(name = "AzureAuth", description = "This contains azure auth details")
 public class AzureAuthDTO {
-  @NotNull @JsonProperty("type") AzureSecretType azureSecretType;
+  @NotNull @RecasterFieldName(name = "type") @JsonProperty("type") AzureSecretType azureSecretType;
 
+  @RecasterFieldName(name = "spec")
   @JsonProperty("spec")
   @JsonTypeInfo(
       use = JsonTypeInfo.Id.NAME, property = "type", include = JsonTypeInfo.As.EXTERNAL_PROPERTY, visible = true)

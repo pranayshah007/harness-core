@@ -55,6 +55,9 @@ public interface ServiceEntityService {
 
   String createServiceInputsYaml(String yaml, String serviceIdentifier);
 
+  String createServiceInputsYamlGivenPrimaryArtifactRef(
+      String serviceYaml, String serviceIdentifier, String primaryArtifactRef);
+
   ArtifactSourcesResponseDTO getArtifactSourceInputs(String yaml, String serviceIdentifier);
 
   boolean forceDeleteAllInProject(String accountId, String orgIdentifier, String projectIdentifier);

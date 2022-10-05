@@ -71,8 +71,7 @@ public class PipelineOutboxPersistenceConfig extends AbstractMongoConfiguration 
   public MongoTemplate mongoTemplate() throws Exception {
     MappingMongoConverter mappingMongoConverter = mappingMongoConverter();
     mappingMongoConverter.setMapKeyDotReplacement(DOT_REPLACEMENT);
-    MongoTemplate mongoTemplate =
-        new HMongoTemplate(mongoDbFactory(), mappingMongoConverter, mongoConfig.getTraceMode());
+    MongoTemplate mongoTemplate = new HMongoTemplate(mongoDbFactory(), mappingMongoConverter, mongoConfig);
     mongoTemplate.setReadPreference(ReadPreference.secondary());
     return mongoTemplate;
   }

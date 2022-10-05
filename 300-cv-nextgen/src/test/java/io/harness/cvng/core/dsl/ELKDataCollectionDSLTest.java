@@ -59,8 +59,8 @@ public class ELKDataCollectionDSLTest extends HoverflyTestBase {
   @Owner(developers = ARPITJ)
   @Category(UnitTests.class)
   public void testExecute_ELK_DSL() {
-    final RuntimeParameters runtimeParameters = getRuntimeParameters(
-        "message: error", "hostname", "*", "@timestamp", "message", "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+    final RuntimeParameters runtimeParameters = getRuntimeParameters("message: error", "_source.hostname", "*",
+        "_source.@timestamp", "_source.message", "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
     List<LogDataRecord> logDataRecords =
         (List<LogDataRecord>) dataCollectionDSLService.execute(code, runtimeParameters, callDetails -> {});
     assertThat(logDataRecords).isNotNull();

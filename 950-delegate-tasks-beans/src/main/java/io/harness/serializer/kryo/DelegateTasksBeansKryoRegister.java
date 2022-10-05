@@ -181,6 +181,10 @@ import io.harness.delegate.beans.connector.awsconnector.AwsValidateTaskResponse;
 import io.harness.delegate.beans.connector.awsconnector.AwsValidationParams;
 import io.harness.delegate.beans.connector.awskmsconnector.AwsKmsValidationParams;
 import io.harness.delegate.beans.connector.awssecretmanager.AwsSecretManagerValidationParams;
+import io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsCapabilityHelper;
+import io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsTestConnectionTaskParams;
+import io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsTestConnectionTaskResponse;
+import io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsValidationParams;
 import io.harness.delegate.beans.connector.azureconnector.AzureAdditionalParams;
 import io.harness.delegate.beans.connector.azureconnector.AzureContainerRegistryConnectorDTO;
 import io.harness.delegate.beans.connector.azureconnector.AzureTaskParams;
@@ -336,6 +340,8 @@ import io.harness.delegate.task.artifacts.artifactory.ArtifactoryGenericArtifact
 import io.harness.delegate.task.artifacts.artifactory.ArtifactoryGenericArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.azure.AcrArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.azure.AcrArtifactDelegateResponse;
+import io.harness.delegate.task.artifacts.azureartifacts.AzureArtifactsDelegateRequest;
+import io.harness.delegate.task.artifacts.azureartifacts.AzureArtifactsDelegateResponse;
 import io.harness.delegate.task.artifacts.custom.CustomArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.custom.CustomArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.docker.DockerArtifactDelegateRequest;
@@ -654,6 +660,8 @@ import io.harness.delegate.task.shell.SshCommandTaskParameters;
 import io.harness.delegate.task.shell.TailFilePatternDto;
 import io.harness.delegate.task.shell.WinRmShellScriptTaskParametersNG;
 import io.harness.delegate.task.shell.WinrmTaskParameters;
+import io.harness.delegate.task.shell.provisioner.ShellScriptProvisionTaskNGRequest;
+import io.harness.delegate.task.shell.provisioner.ShellScriptProvisionTaskNGResponse;
 import io.harness.delegate.task.spotinst.request.SpotInstDeployTaskParameters;
 import io.harness.delegate.task.spotinst.request.SpotInstGetElastigroupJsonParameters;
 import io.harness.delegate.task.spotinst.request.SpotInstListElastigroupInstancesParameters;
@@ -1250,6 +1258,7 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(HelmChartManifestDelegateConfig.class, 19548);
     kryo.register(HttpHelmValidationParams.class, 19549);
     kryo.register(ConnectorValidationParameterResponse.class, 19551);
+    kryo.register(AzureArtifactsValidationParams.class, 19554);
 
     kryo.register(OciHelmValidationParams.class, 19630);
     kryo.register(HttpHelmConnectivityTaskParams.class, 19640);
@@ -1821,10 +1830,17 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(CustomSecretManagerValidationParams.class, 19876);
     kryo.register(GarDelegateRequest.class, 55420);
     kryo.register(GarDelegateResponse.class, 55421);
+    kryo.register(AzureArtifactsTestConnectionTaskParams.class, 57500);
+    kryo.register(AzureArtifactsTestConnectionTaskResponse.class, 57501);
+    kryo.register(AzureArtifactsDelegateRequest.class, 57502);
+    kryo.register(AzureArtifactsDelegateResponse.class, 57503);
+    kryo.register(AzureArtifactsCapabilityHelper.class, 57504);
     kryo.register(AzureFetchArmPreDeploymentDataTaskParameters.class, 55423);
     kryo.register(AzureFetchArmPreDeploymentDataTaskResponse.class, 55424);
     kryo.register(AwsS3ArtifactDelegateConfig.class, 9800007);
     kryo.register(WinrmConnectivityExecutionCapability.class, 55425);
     kryo.register(GcpSecretManagerValidationParams.class, 19879);
+    kryo.register(ShellScriptProvisionTaskNGRequest.class, 55426);
+    kryo.register(ShellScriptProvisionTaskNGResponse.class, 55427);
   }
 }

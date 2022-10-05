@@ -10,7 +10,6 @@ package io.harness.delegate.beans.ci.vm;
 import static io.harness.expression.Expression.ALLOW_SECRETS;
 
 import io.harness.delegate.beans.ci.CIInitializeTaskParams;
-import io.harness.delegate.beans.ci.InfraInfo;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.ci.vm.steps.VmServiceDependency;
 import io.harness.delegate.beans.connector.ConnectorTaskParams;
@@ -66,7 +65,8 @@ public class CIVmInitializeTaskParams
   private String stageRuntimeId;
   @Expression(ALLOW_SECRETS) private List<VmServiceDependency> serviceDependencies;
   @Builder.Default private static final Type type = Type.VM;
-  @NotNull @Getter private InfraInfo infraInfo;
+  //@Getter private InfraInfo infraInfo;
+  @Getter private CIInitializeTaskParams.Type infraInfo;
 
   @Override
   public Type getType() {

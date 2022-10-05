@@ -72,7 +72,6 @@ public class DeploymentStagePMSPlanCreatorV2Test extends CDNGTestBase {
   @Mock private NGFeatureFlagHelperService featureFlagHelperService;
   @Inject private KryoSerializer kryoSerializer;
   @InjectMocks private DeploymentStagePMSPlanCreatorV2 deploymentStagePMSPlanCreator;
-
   private AutoCloseable mocks;
   ObjectMapper mapper = new ObjectMapper();
   @Before

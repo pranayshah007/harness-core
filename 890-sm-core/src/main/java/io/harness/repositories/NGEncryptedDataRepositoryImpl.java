@@ -63,6 +63,22 @@ public class NGEncryptedDataRepositoryImpl implements NGEncryptedDataRepository 
   }
 
   @Override
+  public NGEncryptedData hardDeleteNGEncryptedDataByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndIdentifier(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier) {
+    Criteria criteria = Criteria.where(NGEncryptedDataKeys.accountIdentifier)
+                            .is(accountIdentifier)
+                            .and(NGEncryptedDataKeys.orgIdentifier)
+                            .is(orgIdentifier)
+                            .and(NGEncryptedDataKeys.projectIdentifier)
+                            .is(projectIdentifier)
+                            .and(NGEncryptedDataKeys.identifier)
+                            .is(identifier);
+    Query query = new Query();
+    query.addCriteria(criteria);
+    return mongoTemplate.findAndRemove(query, NGEncryptedData.class, getCollectionName());
+  }
+
+  @Override
   public String getCollectionName() {
     return NG_ENCRYPTED_DATA_COLLECTION_NAME;
   }

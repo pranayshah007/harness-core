@@ -16,8 +16,7 @@ import io.harness.ci.integrationstage.DockerInitializeStepUtils;
 import io.harness.ci.integrationstage.DockerInitializeTaskParamsBuilder;
 import io.harness.ci.integrationstage.VmInitializeTaskParamsBuilder;
 import io.harness.ci.integrationstage.VmInitializeUtils;
-import io.harness.delegate.beans.ci.InfraInfo;
-import io.harness.delegate.beans.ci.VmInfraInfo;
+import io.harness.delegate.beans.ci.CIInitializeTaskParams;
 import io.harness.exception.ngexception.CIStageExecutionException;
 
 public class InfraInfoUtils {
@@ -33,17 +32,31 @@ public class InfraInfoUtils {
     }
   }
 
-  public static String getPoolId(InfraInfo infraInfo) {
-    if (infraInfo.getType() == InfraInfo.Type.VM) {
-      return ((VmInfraInfo) infraInfo).getPoolId();
-    } else {
-      return "";
-    }
-  }
+  //  public static String getPoolId(InfraInfo infraInfo) {
+  //    if (infraInfo.getType() == InfraInfo.Type.VM) {
+  //      return ((VmInfraInfo) infraInfo).getPoolId();
+  //    } else {
+  //      return "";
+  //    }
+  //  }
 
-  public static InfraInfo validateInfrastructureAndGetInfraInfo(Infrastructure infrastructure) {
+  //  public static InfraInfo validateInfrastructureAndGetInfraInfo(Infrastructure infrastructure) {
+  //    Infrastructure.Type type = infrastructure.getType();
+  //    InfraInfo infraInfo;
+  //    if (type == Infrastructure.Type.VM) {
+  //      infraInfo = VmInitializeTaskParamsBuilder.validateInfrastructureAndGetInfraInfo(infrastructure);
+  //    } else if (type == Infrastructure.Type.DOCKER) {
+  //      infraInfo = DockerInitializeTaskParamsBuilder.validateInfrastructureAndGetInfraInfo(infrastructure);
+  //    } else {
+  //      infraInfo = DliteVmInitializeTaskParamsBuilder.validateInfrastructureAndGetInfraInfo(infrastructure);
+  //    }
+  //
+  //    return infraInfo;
+  //  }
+
+  public static CIInitializeTaskParams.Type validateInfrastructureAndGetInfraInfo(Infrastructure infrastructure) {
     Infrastructure.Type type = infrastructure.getType();
-    InfraInfo infraInfo;
+    CIInitializeTaskParams.Type infraInfo;
     if (type == Infrastructure.Type.VM) {
       infraInfo = VmInitializeTaskParamsBuilder.validateInfrastructureAndGetInfraInfo(infrastructure);
     } else if (type == Infrastructure.Type.DOCKER) {

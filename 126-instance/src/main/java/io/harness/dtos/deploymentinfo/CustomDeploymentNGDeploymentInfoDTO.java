@@ -26,7 +26,7 @@ import org.codehaus.commons.nullanalysis.NotNull;
 @EqualsAndHashCode(callSuper = true)
 @OwnedBy(CDP)
 public class CustomDeploymentNGDeploymentInfoDTO extends DeploymentInfoDTO {
-  @NotNull private int instanceFetchScriptHash;
+  @NotNull private String infratructureKey;
   private String instanceFetchScript;
   private String scriptOutput;
   private List<String> tags;
@@ -40,6 +40,6 @@ public class CustomDeploymentNGDeploymentInfoDTO extends DeploymentInfoDTO {
   }
   @Override
   public String prepareInstanceSyncHandlerKey() {
-    return InstanceSyncKey.builder().part(instanceFetchScriptHash).build().toString();
+    return InstanceSyncKey.builder().part(infratructureKey).build().toString();
   }
 }

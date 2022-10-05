@@ -77,7 +77,7 @@ if [[ "" != "$GCP_PROJECT_ID" ]]; then
 fi
 
 if [[ "" != "$NG_HARNESS_MONGO_URI" ]]; then
-  yq -i '.ng-harness.uri=' $CONFIG_FILE
+  export NG_HARNESS_MONGO_URI; yq -i '.ng-harness.uri=env(NG_HARNESS_MONGO_URI)' $CONFIG_FILE
 fi
 
 replace_key_value cfClientConfig.apiKey "$CF_CLIENT_API_KEY"

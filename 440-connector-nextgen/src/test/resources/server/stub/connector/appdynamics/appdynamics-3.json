@@ -1,0 +1,40 @@
+{
+  "connector" : {
+    "name" : "example_connector",
+    "identifier" : "example_connector",
+    "description" : "example_connector",
+    "orgIdentifier" : "default",
+    "projectIdentifier" : "example_project",
+    "tags" : {
+      "property1" : "example_connector"
+    },
+    "type" : "AppDynamics",
+    "spec" : {
+      "username" : "appdynamics-username",
+      "accountname" : "appdynamics-account-name",
+      "controllerUrl" : "https://appdynamics.com/controller/",
+      "delegateSelectors" : [ ],
+      "passwordRef" : "account.appdynamics-password",
+      "clientSecretRef" : null,
+      "clientId" : null,
+      "authType" : "UsernamePassword"
+    }
+  },
+  "createdAt" : 1234567890,
+  "lastModifiedAt" : 1234567890,
+  "harnessManaged" : false,
+  "status" : {
+    "status" : "FAILURE",
+    "errorSummary" : "Error Encountered (Check your credentials)",
+    "errors" : [
+      {
+        "reason" : "Unexpected Error",
+        "message" : "Check your credentials",
+        "code" : 450
+      }
+    ],
+    "testedAt" : 1234567890,
+    "lastTestedAt" : 0,
+    "lastConnectedAt" : 1234567890
+  }
+}

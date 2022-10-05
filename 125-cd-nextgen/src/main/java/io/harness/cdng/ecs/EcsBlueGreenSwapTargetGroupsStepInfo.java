@@ -52,8 +52,9 @@ public class EcsBlueGreenSwapTargetGroupsStepInfo
 
   @Builder(builderMethodName = "infoBuilder")
   public EcsBlueGreenSwapTargetGroupsStepInfo(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
-      String ecsBlueGreenCreateServiceFnq, String ecsBlueGreenSwapTargetGroupsFnq) {
-    super(delegateSelectors, ecsBlueGreenCreateServiceFnq, ecsBlueGreenSwapTargetGroupsFnq);
+      String ecsBlueGreenCreateServiceFnq, String ecsBlueGreenSwapTargetGroupsFnq,
+      ParameterField<Boolean> doNotDownsizeOldService) {
+    super(delegateSelectors, doNotDownsizeOldService, ecsBlueGreenCreateServiceFnq, ecsBlueGreenSwapTargetGroupsFnq);
   }
   @Override
   public StepType getStepType() {
@@ -69,6 +70,7 @@ public class EcsBlueGreenSwapTargetGroupsStepInfo
   public SpecParameters getSpecParameters() {
     return EcsBlueGreenSwapTargetGroupsStepParameters.infoBuilder()
         .delegateSelectors(this.getDelegateSelectors())
+        .doNotDownsizeOldService(this.getDoNotDownsizeOldService())
         .build();
   }
 

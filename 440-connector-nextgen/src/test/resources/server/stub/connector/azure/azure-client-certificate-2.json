@@ -1,0 +1,31 @@
+{
+  "connector" : {
+    "name" : "example_connector",
+    "identifier" : "example_connector",
+    "description" : "example_connector",
+    "orgIdentifier" : "default",
+    "projectIdentifier" : "example_project",
+    "tags" : {
+      "property1" : "example_connector"
+    },
+    "type" : "Azure",
+    "spec" : {
+      "credential" : {
+        "type" : "ManualConfig",
+        "spec" : {
+          "applicationId" : "1234567890",
+          "tenantId" : "1234567890",
+          "auth" : {
+            "type" : "Certificate",
+            "spec" : {
+              "certificateRef" : "account.azure-client-certificate"
+            }
+          }
+        }
+      },
+      "delegateSelectors" : [ "pl1" ],
+      "azureEnvironmentType" : "AZURE",
+      "executeOnDelegate" : false
+    }
+  }
+}

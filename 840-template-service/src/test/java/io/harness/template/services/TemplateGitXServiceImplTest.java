@@ -15,7 +15,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.powermock.api.mockito.PowerMockito.doReturn;
 import static org.powermock.api.mockito.PowerMockito.when;
 
-import io.harness.beans.FeatureName;
 import io.harness.beans.Scope;
 import io.harness.category.element.UnitTests;
 import io.harness.context.GlobalContext;
@@ -36,7 +35,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
 public class TemplateGitXServiceImplTest {
@@ -135,6 +133,7 @@ public class TemplateGitXServiceImplTest {
                                    .branch(BranchName)
                                    .filePath(ENTITY_REPO_URL)
                                    .build();
+    when(ngTemplateFeatureFlagHelperService.isEnabled(any(), any())).thenReturn(true);
     when(gitSyncSdkService.isGitSimplificationEnabled(any(), any(), any())).thenReturn(true);
     boolean isNewGitXEnabled = templateGitXService.isNewGitXEnabledAndIsRemoteEntity(templateToSave, branchInfo);
     assertTrue(isNewGitXEnabled);
@@ -159,10 +158,7 @@ public class TemplateGitXServiceImplTest {
                                    .filePath(ENTITY_REPO_URL)
                                    .build();
 
-    Mockito
-        .when(
-            ngTemplateFeatureFlagHelperService.isEnabled(ACCOUNT_IDENTIFIER, FeatureName.NG_TEMPLATE_GITX_ACCOUNT_ORG))
-        .thenReturn(true);
+    when(ngTemplateFeatureFlagHelperService.isEnabled(any(), any())).thenReturn(true);
 
     boolean isNewGitXEnabled = templateGitXService.isNewGitXEnabledAndIsRemoteEntity(templateToSave, branchInfo);
     assertTrue(isNewGitXEnabled);
