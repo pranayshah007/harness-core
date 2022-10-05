@@ -25,6 +25,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
 import com.google.common.base.Splitter;
+
 /**
  * The enum Error codes.
  */
@@ -647,8 +648,7 @@ public enum ErrorCode {
 
   AWS_STS_ERROR,
 
-  FREEZE_EXCEPTION,
-  DELEGATE_TASK_EXPIRED;
+  FREEZE_EXCEPTION;
 
   private Status status = BAD_REQUEST;
   private String description;
