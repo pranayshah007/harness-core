@@ -7,21 +7,22 @@ java_library(
     srcs = glob(["*.java"]),
     visibility = ["//visibility:public"],
     deps = [
+        "//950-delegate-tasks-beans:module",
+        "//980-commons:module",
         "//:lombok",
+        "//delegate/src/main/java/io/harness/delegate/taskagent/client/delegate:module",
+        "//delegate/src/main/java/io/harness/delegate/taskagent/servicediscovery:module",
+        "@maven//:org_apache_commons_commons_exec",
         "@maven//:org_zeroturnaround_zt_exec",
     ],
 )
 
 java_binary(
-    name = "DelegateAgent",
-    main_class = "io.harness.delegate.agent.DelegateAgent",
-    resources = ["//delegate/src/main/java/io/harness/delegate/agent/resources:resource"],
+    name = "DelegateTaskAgent",
+    main_class = "io.harness.delegate.taskagent.DelegateTaskAgent",
     visibility = ["//visibility:public"],
-    runtime_deps = [
-        ":module",
-        "@maven//:ch_qos_logback_logback_classic",
-    ],
+    runtime_deps = [":module"],
     deps = [],
 )
-
 run_analysis_per_module()
+

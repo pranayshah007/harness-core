@@ -5,11 +5,11 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.delegate.agent;
+package io.harness.delegate.taskagent;
 
-import io.harness.delegate.agent.client.delegate.DelegateCoreClient;
-import io.harness.delegate.agent.client.delegate.DelegateCoreClientFactory;
-import io.harness.delegate.agent.servicediscovery.ServiceDiscovery;
+import io.harness.delegate.taskagent.client.delegate.DelegateCoreClient;
+import io.harness.delegate.taskagent.client.delegate.DelegateCoreClientFactory;
+import io.harness.delegate.taskagent.servicediscovery.ServiceDiscovery;
 import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.serializer.YamlUtils;
 
@@ -24,7 +24,7 @@ import org.zeroturnaround.exec.ProcessResult;
 import org.zeroturnaround.exec.listener.ShutdownHookProcessDestroyer;
 
 @Slf4j
-public class DelegateAgent {
+public class DelegateTaskAgent {
   // TODO(gauravnanda): Parametrize this.
   private static final String DELEGATE_RUNNER_JAR_PATH = "/opt/harness/task.jar";
   private static final String DELEGATE_NAME = System.getenv("DELEGATE_NAME");
