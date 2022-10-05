@@ -965,6 +965,7 @@
 7492:io.harness.k8s.model.response.CEK8sDelegatePrerequisite.Rule
 7501:software.wings.helpers.ext.ecs.request.EcsRunTaskDeployRequest
 7502:software.wings.helpers.ext.ecs.response.EcsRunTaskDeployResponse
+7503:software.wings.beans.AzureBlobConfig
 8030:io.harness.delegate.beans.storeconfig.FetchType
 8035:software.wings.service.impl.azure.manager.AzureVMSSCommandRequest
 8058:software.wings.helpers.ext.helm.request.HelmChartCollectionParams
@@ -1578,6 +1579,7 @@
 19809:io.harness.delegate.beans.connector.azureconnector.AzureSystemAssignedMSIAuthDTO
 19810:io.harness.delegate.beans.connector.azureconnector.AzureMSIAuthUADTO
 19811:io.harness.delegate.beans.connector.azureconnector.AzureMSIAuthSADTO
+19812:io.harness.delegate.beans.connector.azureblobconnector.AzureBlobConnectorDTO
 19854:io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectionTypeDTO
 19875:io.harness.delegate.beans.connector.customsecretmanager.CustomSecretManagerConnectorDTO
 19876:io.harness.delegate.beans.connector.customsecretmanager.CustomSecretManagerValidationParams
@@ -2274,11 +2276,13 @@
 643285:io.harness.delegate.beans.connector.awskmsconnector.AwsKmsValidationParams
 643286:io.harness.delegate.beans.connector.azurekeyvaultconnector.AzureKeyVaultValidationParams
 643287:io.harness.delegate.beans.connector.awssecretmanager.AwsSecretManagerValidationParams
+643288:io.harness.delegate.beans.connector.azureblobconnector.AzureBlobValidationParams
 643295:io.harness.delegate.beans.connector.awssecretmanager.AwsSecretManagerDTO
 643296:io.harness.delegate.beans.connector.awssecretmanager.AwsSecretManagerCredentialDTO
 643297:io.harness.delegate.beans.connector.awssecretmanager.AwsSecretManagerCredentialType
 643298:io.harness.delegate.beans.connector.awssecretmanager.AwsSecretManagerCredentialSpecDTO
 643299:io.harness.delegate.beans.connector.awssecretmanager.AwsSecretManagerConstants
+643300:io.harness.secretmanagerclient.dto.azureblob.AzureBlobConfigDTO
 643301:io.harness.secretmanagerclient.dto.awssecretmanager.AwsSMConfigDTO
 643302:io.harness.secretmanagerclient.dto.awssecretmanager.AwsSMConfigUpdateDTO
 643303:io.harness.secretmanagerclient.dto.awssecretmanager.BaseAwsSMConfigDTO
@@ -2289,6 +2293,7 @@
 643308:io.harness.delegate.beans.connector.awssecretmanager.AwsSMCredentialSpecManualConfigDTO
 643310:io.harness.delegate.beans.connector.awssecretmanager.AwsSMCredentialSpecAssumeIAMDTO
 643311:io.harness.delegate.beans.connector.awssecretmanager.AwsSMCredentialSpecAssumeSTSDTO
+743300:io.harness.secretmanagerclient.dto.azureblob.AzureBlobConfigUpdateDTO
 930001:io.harness.licensing.beans.modules.CDModuleLicenseDTO
 930002:io.harness.licensing.beans.modules.CEModuleLicenseDTO
 930003:io.harness.licensing.beans.modules.CFModuleLicenseDTO

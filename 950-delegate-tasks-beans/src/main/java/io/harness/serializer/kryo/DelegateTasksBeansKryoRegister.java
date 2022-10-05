@@ -185,8 +185,8 @@ import io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsCapabili
 import io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsTestConnectionTaskParams;
 import io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsTestConnectionTaskResponse;
 import io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsValidationParams;
-import io.harness.delegate.beans.connector.azureconnector.AzureAdditionalParams;
 import io.harness.delegate.beans.connector.azureblobconnector.AzureBlobValidationParams;
+import io.harness.delegate.beans.connector.azureconnector.AzureAdditionalParams;
 import io.harness.delegate.beans.connector.azureconnector.AzureContainerRegistryConnectorDTO;
 import io.harness.delegate.beans.connector.azureconnector.AzureTaskParams;
 import io.harness.delegate.beans.connector.azureconnector.AzureTaskType;

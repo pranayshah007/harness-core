@@ -3,12 +3,11 @@ package io.harness.encryptors;
 import static io.harness.rule.OwnerRule.TEJAS;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-import static org.powermock.api.mockito.PowerMockito.mockStatic;
+import static org.powermock.api.mockito.PowerMockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.azure.AzureEnvironmentType;
@@ -34,14 +33,12 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
 @Slf4j
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({BlobClientAuthenticator.class, BlobClient.class})
-@PowerMockIgnore({"javax.security.*", "org.apache.http.conn.ssl.", "javax.net.ssl.", "javax.crypto.*", "sun.*"})
+@PrepareForTest({BlobClientAuthenticator.class})
 public class AzureBlobEncryptorTest extends CategoryTest {
   private AzureBlobEncryptor azureBlobEncryptor;
   private AzureBlobConfig azureBlobConfig;
@@ -63,9 +60,9 @@ public class AzureBlobEncryptorTest extends CategoryTest {
                           .encryptionType(EncryptionType.AZURE_BLOB)
                           .isDefault(false)
                           .build();
-    mockStatic(BlobClientAuthenticator.class);
-    blobClient = PowerMockito.mock(BlobClient.class);
-    when(BlobClientAuthenticator.getClient(any(), any())).thenReturn(blobClient);
+    PowerMockito.mockStatic(BlobClientAuthenticator.class);
+    blobClient = mock(BlobClient.class);
+    when(BlobClientAuthenticator.getClient(any(), any())).thenAnswer(invocationOnMock -> blobClient);
   }
 
   @Test
