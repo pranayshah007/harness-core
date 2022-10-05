@@ -9,7 +9,6 @@ package io.harness.delegate.beans.connector.scm.gitlab;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
-import io.harness.annotation.RecasterFieldName;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
@@ -51,7 +50,7 @@ import org.hibernate.validator.constraints.NotBlank;
 @Schema(name = "GitlabConnector", description = "This contains details of Gitlab connectors")
 public class GitlabConnectorDTO
     extends ConnectorConfigDTO implements ScmConnector, DelegateSelectable, ManagerExecutable {
-  @NotNull @RecasterFieldName(name = "type") @JsonProperty("type") GitConnectionType connectionType;
+  @NotNull @JsonProperty("type") GitConnectionType connectionType;
   @NotNull @NotBlank String url;
   private String validationRepo;
   @Valid @NotNull GitlabAuthenticationDTO authentication;
