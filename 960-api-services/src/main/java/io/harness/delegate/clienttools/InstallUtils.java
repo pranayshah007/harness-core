@@ -308,16 +308,15 @@ public class InstallUtils {
   }
 
   private static String getArchPath() {
-    if (SystemUtils.OS_ARCH != null) {
-      if (SystemUtils.IS_OS_MAC) {
-        return amd64;
-      }
-      if (x86_64.equals(SystemUtils.OS_ARCH)) {
-        return amd64;
-      } else if (aarch64.equals(SystemUtils.OS_ARCH)) {
-        return arm64;
-      }
+    if (SystemUtils.IS_OS_MAC) {
+      return amd64;
     }
-    throw new UnsupportedOperationException("Unsupported arch");
+    if (x86_64.equals(SystemUtils.OS_ARCH) || amd64.equals(SystemUtils.OS_ARCH)) {
+      return amd64;
+    } else if (aarch64.equals(SystemUtils.OS_ARCH) || arm64.equals(SystemUtils.OS_ARCH)) {
+      return arm64;
+    } else {
+      throw new UnsupportedOperationException("Unsupported arch");
+    }
   }
 }
