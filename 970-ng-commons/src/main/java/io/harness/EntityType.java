@@ -330,8 +330,10 @@ public enum EntityType {
       EntityYamlRootNames.ECS_BLUE_GREEN_ROLLBACK),
   @JsonProperty(EntityTypeConstants.SHELL_SCRIPT_PROVISION_STEP)
   SHELL_SCRIPT_PROVISION_STEP(ModuleType.CD, EntityTypeConstants.SHELL_SCRIPT_PROVISION_STEP, IdentifierRef.class,
-      EntityYamlRootNames.SHELL_SCRIPT_PROVISION_STEP);
-
+      EntityYamlRootNames.SHELL_SCRIPT_PROVISION_STEP),
+  @JsonProperty(EntityTypeConstants.GITOPS_UPDATE_RELEASE_REPO)
+  GITOPS_UPDATE_RELEASE_REPO(ModuleType.CD, EntityTypeConstants.GITOPS_UPDATE_RELEASE_REPO, IdentifierRef.class,
+      EntityYamlRootNames.GITOPS_UPDATE_RELEASE_REPO);
   private final ModuleType moduleType;
   String yamlName;
   List<String> yamlRootElementString;

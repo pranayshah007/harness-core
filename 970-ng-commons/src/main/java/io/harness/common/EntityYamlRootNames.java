@@ -25,6 +25,7 @@ import lombok.experimental.UtilityClass;
 public class EntityYamlRootNames {
   public static final String GITOPS_CREATE_PR = "CreatePR";
   public static final String GITOPS_MERGE_PR = "MergePR";
+  public static final String GITOPS_UPDATE_RELEASE_REPO = "GitOpsUpdateReleaseRepo";
   public static final String ENVIRONMENT_GROUP = "environmentGroup";
   public static final String PROJECT = "project";
   public static final String PIPELINE = "pipeline";
