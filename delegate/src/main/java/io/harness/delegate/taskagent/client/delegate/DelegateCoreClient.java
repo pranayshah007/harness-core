@@ -12,10 +12,11 @@ import io.harness.delegate.beans.DelegateTaskResponse;
 import retrofit2.Call;
 import retrofit2.http.Body;
 import retrofit2.http.POST;
+import retrofit2.http.Path;
 import retrofit2.http.Query;
 
 public interface DelegateCoreClient {
-  @POST("agent/delegates/register")
-  Call<Void> taskResponse(
-      @Query("accountId") final String accountId, @Body final DelegateTaskResponse delegateTaskResponse);
+  @POST("task/{taskId}/execution-response")
+  Call<Void> taskResponse(@Query("accountId") final String accountId, @Path("taskId") final String taskId,
+      @Body final DelegateTaskResponse delegateTaskResponse);
 }
