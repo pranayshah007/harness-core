@@ -10,10 +10,21 @@ template:
         - name: clusterUrl
           type: String
           value: <+input>
+          description: "ClusterUrl"
+        - name: port
+          type: Secret
+          value: <+input>
+          description: "Port"
+          secret: <+input>
+        - name: pwd
+          type: Secret
+          description: "Pass"
+          value: <+input>
+          secret: <+input>
         - name: image
           type: Connector
-          value: account.harnessImage
-          description: "Connector"
+          value: account.Docker
+          description: "Hello"
       fetchInstancesScript:
         store:
           type: Harness
@@ -27,5 +38,4 @@ template:
           description: "IP address of the host"
     execution:
       stepTemplateRefs:
-        - templateRef: org.OpenStackSetup
-          versionLabel: v1
+        - org.OpenStackSetup

@@ -37,5 +37,4 @@ template:
           description: "IP address of the host"
     execution:
       stepTemplateRefs:
-        - templateRef: org.OpenStackSetup
-          versionLabel: v1
+        - org.OpenStackSetup

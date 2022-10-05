@@ -8,6 +8,13 @@ customDeployment:
         type: Connector
         value: account.harnessImage
         description: "Connector"
+    fetchInstancesScript:
+      store:
+        type: Harness
+        spec:
+          files:
+            - account:/manifest.yml
+            - account:/manifest1.yml
     instancesListPath: instances
     instanceAttributes:
       - name: hostName
@@ -15,5 +22,4 @@ customDeployment:
         description: "IP address of the host"
   execution:
     stepTemplateRefs:
-      - templateRef: org.OpenStackSetup
-        versionLabel: v1
+      - org.OpenStackSetup

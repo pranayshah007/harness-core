@@ -9,7 +9,9 @@ customDeployment:
         value: account.harnessImage
         description: "Connector"
     fetchInstancesScript:
-      store: {}
+      store:
+        spec:
+          content: ""
     instancesListPath: instances
     instanceAttributes:
       - name: hostName
@@ -17,5 +19,4 @@ customDeployment:
         description: "IP address of the host"
   execution:
     stepTemplateRefs:
-      - templateRef: org.OpenStackSetup
-        versionLabel: v1
+      - org.OpenStackSetup

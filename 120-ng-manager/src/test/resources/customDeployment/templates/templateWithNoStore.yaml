@@ -8,14 +8,7 @@ customDeployment:
         type: Connector
         value: account.harnessImage
         description: "Connector"
-    fetchInstancesScript:
-      store:
-        type: Git
-        spec:
-          connectorRef: ""
-          folderPath: ""
-          gitFetchType: Branch
-          commitId: ""
+    fetchInstancesScript: {}
     instancesListPath: instances
     instanceAttributes:
       - name: hostName
@@ -23,5 +16,4 @@ customDeployment:
         description: "IP address of the host"
   execution:
     stepTemplateRefs:
-      - templateRef: org.OpenStackSetup
-        versionLabel: v1
+      - org.OpenStackSetup

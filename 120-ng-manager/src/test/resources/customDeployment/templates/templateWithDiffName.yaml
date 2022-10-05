@@ -12,16 +12,15 @@ template:
           value: <+input>
           description: "ClusterUrl"
         - name: port
-          type: Secret
-          value: <+input>
+          type: Number
+          value: 23
           description: "Port"
-          secret: <+input>
         - name: pwd
           type: Secret
           description: "Pass"
           value: <+input>
           secret: <+input>
-        - name: image
+        - name: image1
           type: Connector
           value: account.Docker
           description: "Hello"
@@ -38,5 +37,4 @@ template:
           description: "IP address of the host"
     execution:
       stepTemplateRefs:
-        - templateRef: org.OpenStackSetup
-          versionLabel: v1
+        - org.OpenStackSetup
