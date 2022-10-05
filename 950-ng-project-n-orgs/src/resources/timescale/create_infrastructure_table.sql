@@ -22,7 +22,6 @@ CREATE TABLE IF NOT EXISTS public.infrastructures (
     namespace text,
     resource_group text
 );
-ALTER TABLE ONLY public.infrastructures
-    ADD CONSTRAINT infrastructures_pkey PRIMARY KEY (id);
+ALTER TABLE public.infrastructures DROP CONSTRAINT IF EXISTS infrastructures_pkey;
 
 COMMIT;
