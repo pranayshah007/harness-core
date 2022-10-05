@@ -12,7 +12,6 @@ import static io.harness.annotations.dev.HarnessTeam.DX;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.gitsync.events.GitSyncEventConsumerService;
 import io.harness.gitsync.interceptor.GitSyncThreadDecorator;
-import io.harness.gitsync.interceptor.GitXThreadDecorator;
 
 import com.google.common.util.concurrent.ServiceManager;
 import com.google.inject.Injector;
@@ -39,7 +38,6 @@ public class GitSyncSdkInitHelper {
 
   private static void registerInterceptor(Environment environment) {
     environment.jersey().register(new GitSyncThreadDecorator());
-    environment.jersey().register(new GitXThreadDecorator());
   }
 
   private static void initializeServiceManager(Injector injector, String serviceName) {

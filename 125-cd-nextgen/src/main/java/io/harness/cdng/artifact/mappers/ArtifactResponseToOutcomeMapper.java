@@ -131,14 +131,19 @@ public class ArtifactResponseToOutcomeMapper {
         return getAcrArtifactOutcome(acrArtifactConfig, acrArtifactDelegateResponse, useDelegateResponse);
       case CUSTOM_ARTIFACT:
         CustomArtifactConfig customArtifactConfig = (CustomArtifactConfig) artifactConfig;
-        if (customArtifactConfig.getScripts() != null) {
+        if (customArtifactConfig.getScripts() != null
+            && customArtifactConfig.getScripts().getFetchAllArtifacts() != null
+            && customArtifactConfig.getScripts().getFetchAllArtifacts().getShellScriptBaseStepInfo() != null
+            && customArtifactConfig.getScripts().getFetchAllArtifacts().getShellScriptBaseStepInfo().getSource()
+                != null) {
           CustomScriptInlineSource customScriptInlineSource =
               (CustomScriptInlineSource) customArtifactConfig.getScripts()
                   .getFetchAllArtifacts()
                   .getShellScriptBaseStepInfo()
                   .getSource()
                   .getSpec();
-          if (isNotEmpty(customScriptInlineSource.getScript().getValue())) {
+          if (customScriptInlineSource != null && customScriptInlineSource.getScript() != null
+              && isNotEmpty(customScriptInlineSource.getScript().getValue())) {
             CustomArtifactDelegateResponse customArtifactDelegateResponse =
                 (CustomArtifactDelegateResponse) artifactDelegateResponse;
             return getCustomArtifactOutcome(customArtifactConfig, customArtifactDelegateResponse, useDelegateResponse);

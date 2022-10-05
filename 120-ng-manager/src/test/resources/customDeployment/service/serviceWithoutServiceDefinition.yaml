@@ -1,0 +1,4 @@
+service:
+  name: TestService
+  identifier: TestService
+  gitOpsEnabled: false

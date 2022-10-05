@@ -43,7 +43,7 @@ public class ParameterFieldProcessor {
       if (field.isTypeString()) {
         newValue = engineExpressionEvaluator.renderExpression(field.getExpressionValue(), expressionMode);
       } else {
-        newValue = engineExpressionEvaluator.evaluateExpression(field.getExpressionValue());
+        newValue = engineExpressionEvaluator.evaluateExpression(field.getExpressionValue(), expressionMode);
       }
 
       if (newValue instanceof String && EngineExpressionEvaluator.hasExpressions((String) newValue)) {

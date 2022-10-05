@@ -76,7 +76,6 @@ public class NextGenRegistrars {
           .add(FeedbackMorphiaRegistrars.class)
           .addAll(InstanceRegistrars.morphiaRegistrars)
           .addAll(DelegateTaskRegistrars.morphiaRegistrars)
-          .addAll(SubscriptionRegistrars.morphiaRegistrars)
           .addAll(NGVariableRegistrars.morphiaRegistrars)
           .addAll(NGSettingRegistrar.morphiaRegistrars)
           .addAll(FreezeRegistrars.morphiaRegistrars)

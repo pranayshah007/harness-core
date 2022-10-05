@@ -36,7 +36,6 @@ import io.harness.gitsync.dao.GitProcessingRequestService;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.interceptor.GitSyncBranchContext;
 import io.harness.gitsync.interceptor.GitSyncThreadDecorator;
-import io.harness.gitsync.interceptor.GitXThreadDecorator;
 import io.harness.gitsync.logger.GitProcessingLogContext;
 import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.lock.AcquiredLock;
@@ -71,7 +70,6 @@ public class GitToHarnessSdkProcessorImpl implements GitToHarnessSdkProcessor {
   GitSdkInterface changeSetHelperService;
   Supplier<List<EntityType>> sortOrder;
   GitSyncThreadDecorator gitSyncThreadDecorator;
-  GitXThreadDecorator gitXThreadDecorator;
   GitProcessingRequestService gitProcessingRequestDao;
   PersistentLocker persistentLocker;
   GitSyncSdkService gitSyncSdkService;
@@ -79,14 +77,12 @@ public class GitToHarnessSdkProcessorImpl implements GitToHarnessSdkProcessor {
   @Inject
   public GitToHarnessSdkProcessorImpl(ChangeSetInterceptorService changeSetInterceptorService,
       GitSdkInterface changeSetHelperService, @Named("GitSyncSortOrder") Supplier<List<EntityType>> sortOrder,
-      GitSyncThreadDecorator gitSyncThreadDecorator, GitXThreadDecorator gitXThreadDecorator,
-      GitProcessingRequestService gitProcessingRequestDao, PersistentLocker persistentLocker,
-      GitSyncSdkService gitSyncSdkService) {
+      GitSyncThreadDecorator gitSyncThreadDecorator, GitProcessingRequestService gitProcessingRequestDao,
+      PersistentLocker persistentLocker, GitSyncSdkService gitSyncSdkService) {
     this.changeSetInterceptorService = changeSetInterceptorService;
     this.changeSetHelperService = changeSetHelperService;
     this.sortOrder = sortOrder;
     this.gitSyncThreadDecorator = gitSyncThreadDecorator;
-    this.gitXThreadDecorator = gitXThreadDecorator;
     this.gitProcessingRequestDao = gitProcessingRequestDao;
     this.persistentLocker = persistentLocker;
     this.gitSyncSdkService = gitSyncSdkService;

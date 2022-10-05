@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: rolesConfiguration
-version: 35
+version: 36
 roles:
     - identifier: _project_admin
       name: Project Admin
@@ -134,6 +134,9 @@ roles:
         - chaos_chaosscenario_delete
         - core_setting_view
         - core_setting_edit
+        - core_deploymentfreeze_manage
+        - core_deploymentfreeze_override
+        - core_deploymentfreeze_global
       allowedScopeLevels:
         - project
       managed: true
@@ -324,6 +327,9 @@ roles:
         - chaos_chaosscenario_delete
         - core_setting_view
         - core_setting_edit
+        - core_deploymentfreeze_manage
+        - core_deploymentfreeze_override
+        - core_deploymentfreeze_global
       allowedScopeLevels:
         - organization
       managed: true
@@ -546,6 +552,9 @@ roles:
         - ccm_folder_view
         - ccm_folder_edit
         - ccm_folder_delete
+        - core_deploymentfreeze_manage
+        - core_deploymentfreeze_override
+        - core_deploymentfreeze_global
       allowedScopeLevels:
         - account
       managed: true

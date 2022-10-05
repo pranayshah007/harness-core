@@ -1359,12 +1359,26 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
         .build();
   }
 
+  @SneakyThrows
   public String getYamlTemplate(ProjectParams projectParams, MonitoredServiceType type) {
     // returning default yaml template, account/org/project specific templates can be generated later.
     String defaultTemplate = type == null ? MONITORED_SERVICE_YAML_TEMPLATE.get(MonitoredServiceType.APPLICATION)
                                           : MONITORED_SERVICE_YAML_TEMPLATE.get(type);
-    return StringUtils.replaceEach(defaultTemplate, new String[] {"$projectIdentifier", "$orgIdentifier"},
-        new String[] {projectParams.getProjectIdentifier(), projectParams.getOrgIdentifier()});
+
+    if (projectParams.getProjectIdentifier() == null) {
+      defaultTemplate = StringUtils.remove(defaultTemplate, "  projectIdentifier: $projectIdentifier\n");
+    } else {
+      defaultTemplate =
+          StringUtils.replace(defaultTemplate, "$projectIdentifier", projectParams.getProjectIdentifier());
+    }
+
+    if (projectParams.getOrgIdentifier() == null) {
+      defaultTemplate = StringUtils.remove(defaultTemplate, "  orgIdentifier: $orgIdentifier\n");
+    } else {
+      defaultTemplate = StringUtils.replace(defaultTemplate, "$orgIdentifier", projectParams.getOrgIdentifier());
+    }
+
+    return defaultTemplate;
   }
 
   @Override
