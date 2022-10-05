@@ -5148,7 +5148,7 @@ plain_artifacts = [
     "stax:stax-api:1.0.1",
     "stax:stax:1.2.0",
     "wsdl4j:wsdl4j:1.6.3",
-    "xerces:xercesImpl:2.12.0",
+    "xerces:xercesImpl:2.12.2",
     "xml-apis:xml-apis:1.4.01",
     "xml-resolver:xml-resolver:1.2",
     "xpp3:xpp3:1.1.3.3",
