@@ -223,14 +223,14 @@ public class PerpetualTaskRecordDao {
     long intervalValue = Long.valueOf(PerpetualTaskRecordKeys.intervalSeconds);
     long multipleInterval = (3 * intervalValue) / 1000;
     Query<PerpetualTaskRecord> queryToUpdate = persistence.createQuery(PerpetualTaskRecord.class)
-            .filter(PerpetualTaskRecordKeys.accountId, accountId)
-            .filter(PerpetualTaskRecordKeys.state, TASK_ASSIGNED)
-            .field(String.valueOf(PerpetualTaskRecordKeys.lastHeartbeat))
-            .lessThan(System.currentTimeMillis() - multipleInterval);
+                                                   .filter(PerpetualTaskRecordKeys.accountId, accountId)
+                                                   .filter(PerpetualTaskRecordKeys.state, TASK_ASSIGNED)
+                                                   .field(String.valueOf(PerpetualTaskRecordKeys.lastHeartbeat))
+                                                   .lessThan(System.currentTimeMillis() - multipleInterval);
 
     UpdateOperations<PerpetualTaskRecord> updateOperations =
-            persistence.createUpdateOperations(PerpetualTaskRecord.class)
-                    .set(PerpetualTaskRecordKeys.state, PerpetualTaskState.TASK_TO_REBALANCE);
+        persistence.createUpdateOperations(PerpetualTaskRecord.class)
+            .set(PerpetualTaskRecordKeys.state, PerpetualTaskState.TASK_TO_REBALANCE);
 
     persistence.findAndModify(queryToUpdate, updateOperations, HPersistence.returnNewOptions);
   }
