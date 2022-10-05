@@ -146,7 +146,7 @@ public class AppDynamicsResource {
       nickname = "getAppdynamicsMetricDataByPath")
   @Deprecated(since = "moving to v2")
   public ResponseDTO<AppdynamicsMetricDataResponse>
-  getMetricData(@BeanParam @Valid ProjectParams projectParams,
+  getMetricData(@NotNull @BeanParam ProjectParams projectParams,
       @NotNull @QueryParam("connectorIdentifier") String connectorIdentifier,
       @NotNull @QueryParam("appName") String appName, @NotNull @QueryParam("baseFolder") String baseFolder,
       @NotNull @QueryParam("tier") String tier, @NotNull @QueryParam("metricPath") String metricPath,
@@ -185,7 +185,7 @@ public class AppDynamicsResource {
   @ApiOperation(value = "get all appdynamics metric data for an application and a complete metric path",
       nickname = "getAppdynamicsMetricDataByPathV2")
   public ResponseDTO<AppdynamicsMetricDataResponse>
-  getMetricData(@BeanParam @Valid ProjectParams projectParams,
+  getMetricData(@NotNull @BeanParam ProjectParams projectParams,
       @NotNull @QueryParam("connectorIdentifier") String connectorIdentifier,
       @NotNull @QueryParam("appName") String appName,
       @NotNull @QueryParam("completeMetricPath") String completeMetricPath) {
