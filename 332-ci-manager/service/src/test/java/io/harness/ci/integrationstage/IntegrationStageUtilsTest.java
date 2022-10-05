@@ -11,7 +11,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.beans.steps.CIAbstractStepNode;
 import io.harness.beans.steps.stepinfo.InitializeStepInfo;
+import io.harness.beans.yaml.extended.infrastrucutre.HostedVmInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
+import io.harness.beans.yaml.extended.infrastrucutre.K8sHostedInfraYaml;
+import io.harness.beans.yaml.extended.platform.ArchType;
+import io.harness.beans.yaml.extended.platform.Platform;
 import io.harness.category.element.UnitTests;
 import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.ci.executionplan.CIExecutionPlanTestHelper;
@@ -26,6 +30,7 @@ import io.harness.delegate.beans.connector.scm.GitConnectionType;
 import io.harness.plancreator.execution.ExecutionElementConfig;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.yaml.core.StepSpecType;
 import io.harness.yaml.extended.ci.codebase.CodeBase;
@@ -210,5 +215,22 @@ public class IntegrationStageUtilsTest {
       assertThat(stepJson.contains("\"HARNESS_NODE_INDEX\": \"<+strategy.iterations>\""));
       assertThat(stepJson.contains("\"HARNESS_NODE_TOTAL\": \"<+strategy.iterations>\""));
     }
+  }
+
+  @Test
+  @Category(UnitTests.class)
+  public void getBuildTimeMultiplier() {
+    K8sHostedInfraYaml k8sHostedInfraYaml = K8sHostedInfraYaml.builder().build();
+    Double buildTimeMultiplier = IntegrationStageUtils.getBuildTimeMultiplierForHostedInfra(k8sHostedInfraYaml);
+    assertThat(buildTimeMultiplier).isEqualTo(1.0);
+    HostedVmInfraYaml hostedVmInfraYaml =
+        HostedVmInfraYaml.builder()
+            .spec(HostedVmInfraYaml.HostedVmInfraSpec.builder()
+                      .platform(ParameterField.createValueField(
+                          Platform.builder().arch(ParameterField.createValueField(ArchType.Amd64)).build()))
+                      .build())
+            .build();
+    buildTimeMultiplier = IntegrationStageUtils.getBuildTimeMultiplierForHostedInfra(hostedVmInfraYaml);
+    assertThat(buildTimeMultiplier).isEqualTo(1.0);
   }
 }

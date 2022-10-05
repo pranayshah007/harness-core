@@ -77,6 +77,9 @@ public class PlanExecutionSummaryCIStageChangeDataHandler extends AbstractChange
             if (ciPipelineStageModuleInfo.get("osType") != null) {
               columnValueMapping.put("ostype", ciPipelineStageModuleInfo.get("osType").toString());
             }
+            if (ciPipelineStageModuleInfo.get("infraType") != null) {
+              columnValueMapping.put("infratype", ciPipelineStageModuleInfo.get("infraType").toString());
+            }
             if (ciPipelineStageModuleInfo.get("osArch") != null) {
               columnValueMapping.put("osarch", ciPipelineStageModuleInfo.get("osArch").toString());
             }
@@ -87,9 +90,13 @@ public class PlanExecutionSummaryCIStageChangeDataHandler extends AbstractChange
               columnValueMapping.put(
                   "cputime", String.valueOf(Long.parseLong(ciPipelineStageModuleInfo.get("cpuTime").toString())));
             }
-            if (ciPipelineStageModuleInfo.get("buildTime") != null) {
-              columnValueMapping.put(
-                  "buildtime", String.valueOf(Long.parseLong(ciPipelineStageModuleInfo.get("buildTime").toString())));
+            if (ciPipelineStageModuleInfo.get("stageBuildTime") != null) {
+              columnValueMapping.put("stagebuildtime",
+                  String.valueOf(Long.parseLong(ciPipelineStageModuleInfo.get("stageBuildTime").toString())));
+            }
+            if (ciPipelineStageModuleInfo.get("buildMultiplier") != null) {
+              columnValueMapping.put("buildmultiplier",
+                  String.valueOf(Double.parseDouble(ciPipelineStageModuleInfo.get("buildMultiplier").toString())));
             }
             return columnValueMapping;
           }

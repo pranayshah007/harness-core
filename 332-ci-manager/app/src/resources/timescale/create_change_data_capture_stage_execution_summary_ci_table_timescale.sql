@@ -17,10 +17,12 @@ BEGIN;
      planexecutionid character varying(100),
      stageexecutionid character varying(100) NOT NULL,
      cputime bigint,
-     buildtime bigint,
+     stagebuildtime bigint,
+     infratype character varying(100),
      ostype character varying(100),
      osarch character varying(100),
-     startts bigint NOT NULL);
+     startts bigint NOT NULL,
+     buildmultiplier double precision DEFAULT 1);
 COMMIT;
 
 BEGIN;

@@ -378,6 +378,7 @@ public class CIModuleInfoProvider implements ExecutionSummaryModuleInfoProvider 
     String osArch;
     long initialiseBuildTime = 0;
     long totalStageBuildTime = 0;
+    double buildMultiplier = 1;
 
     if (event.getResolvedStepParameters() != null) {
       StageElementParameters stageElementParameters = (StageElementParameters) event.getResolvedStepParameters();
@@ -391,9 +392,10 @@ public class CIModuleInfoProvider implements ExecutionSummaryModuleInfoProvider 
           CIInfraDetails ciInfraDetails = IntegrationStageUtils.getCiInfraDetails(infrastructure);
           osType = ciInfraDetails.getInfraOSType();
           osArch = ciInfraDetails.getInfraArchType();
+          buildMultiplier = IntegrationStageUtils.getBuildTimeMultiplierForHostedInfra(infrastructure);
 
           if (infrastructure.getType() == Infrastructure.Type.HOSTED_VM
-              || infrastructure.getType() == Infrastructure.Type.KUBERNETES_HOSTED) {
+              || infrastructure.getType() == Infrastructure.Type.KUBERNETES_DIRECT) {
             OptionalSweepingOutput optionalSweepingOutput = executionSweepingOutputService.resolveOptional(
                 ambiance, RefObjectUtils.getOutcomeRefObject(INITIALIZE_EXECUTION));
             if (optionalSweepingOutput.isFound()) {
@@ -412,11 +414,13 @@ public class CIModuleInfoProvider implements ExecutionSummaryModuleInfoProvider 
                 .stageExecutionId(stageExecutionId)
                 .stageId(stageId)
                 .stageName(stageName)
+                .infraType(infrastructure.getType().getYamlName())
                 .osType(osType)
                 .osArch(osArch)
                 .cpuTime(totalStageBuildTime - initialiseBuildTime)
-                .buildTime(totalStageBuildTime)
+                .stageBuildTime(totalStageBuildTime)
                 .startTs(startTime)
+                .buildMultiplier(buildMultiplier)
                 .build();
           }
         }

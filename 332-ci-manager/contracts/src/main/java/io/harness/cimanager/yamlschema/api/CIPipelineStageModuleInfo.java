@@ -21,8 +21,10 @@ public class CIPipelineStageModuleInfo {
   String stageId;
   String stageName;
   Long cpuTime;
-  Long buildTime;
+  Long stageBuildTime;
+  String infraType;
   String osType;
   String osArch;
   Long startTs;
+  Double buildMultiplier;
 }

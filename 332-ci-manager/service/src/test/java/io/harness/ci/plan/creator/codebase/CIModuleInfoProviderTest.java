@@ -228,7 +228,7 @@ public class CIModuleInfoProviderTest extends CIExecutionTestBase {
     assertThat(ciPipelineModuleInfo.getCiPipelineStageModuleInfo().getOsType()).isEqualTo("Linux");
     assertThat(ciPipelineModuleInfo.getCiPipelineStageModuleInfo().getStageExecutionId()).isEqualTo("stageExecutionId");
     assertThat(ciPipelineModuleInfo.getCiPipelineStageModuleInfo().getCpuTime()).isEqualTo(4437L);
-    assertThat(ciPipelineModuleInfo.getCiPipelineStageModuleInfo().getBuildTime()).isEqualTo(5671L);
+    assertThat(ciPipelineModuleInfo.getCiPipelineStageModuleInfo().getStageBuildTime()).isEqualTo(5671L);
     assertThat(ciPipelineModuleInfo.getCiPipelineStageModuleInfo().getStartTs()).isEqualTo(1111L);
   }
 
@@ -281,7 +281,7 @@ public class CIModuleInfoProviderTest extends CIExecutionTestBase {
     assertThat(ciPipelineModuleInfo.getCiPipelineStageModuleInfo().getOsType()).isEqualTo("Linux");
     assertThat(ciPipelineModuleInfo.getCiPipelineStageModuleInfo().getStageExecutionId()).isEqualTo("stageExecutionId");
     assertThat(ciPipelineModuleInfo.getCiPipelineStageModuleInfo().getCpuTime()).isEqualTo(4437L);
-    assertThat(ciPipelineModuleInfo.getCiPipelineStageModuleInfo().getBuildTime()).isEqualTo(5671L);
+    assertThat(ciPipelineModuleInfo.getCiPipelineStageModuleInfo().getStageBuildTime()).isEqualTo(5671L);
     assertThat(ciPipelineModuleInfo.getCiPipelineStageModuleInfo().getStartTs()).isEqualTo(1111L);
   }
 

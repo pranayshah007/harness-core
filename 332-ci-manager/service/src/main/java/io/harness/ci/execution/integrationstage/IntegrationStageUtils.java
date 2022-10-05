@@ -795,4 +795,22 @@ public class IntegrationStageUtils {
     }
     return CIConstants.STAGE_MAX_TTL_SECS;
   }
+
+  public static Double getBuildTimeMultiplierForHostedInfra(Infrastructure infrastructure) {
+    CIInfraDetails ciInfraDetails = getCiInfraDetails(infrastructure);
+    switch (infrastructure.getType()) {
+      case KUBERNETES_HOSTED:
+      case HOSTED_VM:
+        switch (ciInfraDetails.getInfraOSType()) {
+          case "MacOs":
+            return 10.0;
+          case "Windows":
+            return 2.0;
+          default:
+            return 1.0;
+        }
+      default:
+    }
+    return 1.0;
+  }
 }
