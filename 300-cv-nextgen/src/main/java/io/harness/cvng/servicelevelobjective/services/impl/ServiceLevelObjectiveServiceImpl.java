@@ -7,7 +7,6 @@
 
 package io.harness.cvng.servicelevelobjective.services.impl;
 
-import static io.harness.cvng.core.utils.FeatureFlagNames.SERVICE_LEVEL_OBJECTIVE_V2;
 import static io.harness.cvng.notification.utils.NotificationRuleCommonUtils.getNotificationTemplateId;
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.BURN_RATE;
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.COOL_OFF_DURATION;
@@ -142,11 +141,13 @@ public class ServiceLevelObjectiveServiceImpl implements ServiceLevelObjectiveSe
             .build());
     ServiceLevelObjective serviceLevelObjective =
         saveServiceLevelObjectiveEntity(projectParams, serviceLevelObjectiveDTO, monitoredService.isEnabled());
-    if (featureFlagService.isGlobalFlagEnabled(SERVICE_LEVEL_OBJECTIVE_V2)) {
+    try {
       ServiceLevelObjectiveV2DTO serviceLevelObjectiveV2DTO =
           serviceLevelObjectiveTypeSLOV2TransformerMap.get(ServiceLevelObjectiveType.SIMPLE)
               .getSLOV2DTO(serviceLevelObjectiveDTO);
       serviceLevelObjectiveV2Service.create(projectParams, serviceLevelObjectiveV2DTO);
+    } catch (Exception e) {
+      log.error("[SLO Data Mismatch]: SLOV2 not created", e);
     }
     outboxService.save(ServiceLevelObjectiveCreateEvent.builder()
                            .resourceName(serviceLevelObjectiveDTO.getName())
@@ -185,12 +186,14 @@ public class ServiceLevelObjectiveServiceImpl implements ServiceLevelObjectiveSe
         serviceLevelObjectiveDTO.getServiceLevelIndicators(), serviceLevelObjectiveDTO.getIdentifier(),
         serviceLevelObjective.getServiceLevelIndicators(), serviceLevelObjectiveDTO.getMonitoredServiceRef(),
         serviceLevelObjectiveDTO.getHealthSourceRef(), timePeriod, currentTimePeriod);
-    if (featureFlagService.isGlobalFlagEnabled(SERVICE_LEVEL_OBJECTIVE_V2)) {
+    try {
       ServiceLevelObjectiveV2DTO serviceLevelObjectiveV2DTO =
           serviceLevelObjectiveTypeSLOV2TransformerMap.get(ServiceLevelObjectiveType.SIMPLE)
               .getSLOV2DTO(serviceLevelObjectiveDTO);
       serviceLevelObjectiveV2Service.update(
           projectParams, identifier, serviceLevelObjectiveV2DTO, serviceLevelIndicators);
+    } catch (Exception e) {
+      log.error("[SLO Data Mismatch]: SLOV2 not updated", e);
     }
     serviceLevelObjective =
         updateSLOEntity(projectParams, serviceLevelObjective, serviceLevelObjectiveDTO, serviceLevelIndicators);
@@ -235,8 +238,10 @@ public class ServiceLevelObjectiveServiceImpl implements ServiceLevelObjectiveSe
                            .orgIdentifier(projectParams.getOrgIdentifier())
                            .projectIdentifier(projectParams.getProjectIdentifier())
                            .build());
-    if (featureFlagService.isGlobalFlagEnabled(SERVICE_LEVEL_OBJECTIVE_V2)) {
+    try {
       serviceLevelObjectiveV2Service.delete(projectParams, identifier);
+    } catch (Exception e) {
+      log.error("[SLO Data Mismatch]: SLOV2 not deleted", e);
     }
     return hPersistence.delete(serviceLevelObjective);
   }
@@ -552,12 +557,14 @@ public class ServiceLevelObjectiveServiceImpl implements ServiceLevelObjectiveSe
     }
     updateNotificationRuleRefInSLO(
         projectParams, serviceLevelObjective, new ArrayList<>(notificationRuleRefsWithChange));
-    if (featureFlagService.isGlobalFlagEnabled(SERVICE_LEVEL_OBJECTIVE_V2)) {
+    try {
       AbstractServiceLevelObjective serviceLevelObjectiveV2 =
           serviceLevelObjectiveTypeSLOV2TransformerMap.get(ServiceLevelObjectiveType.SIMPLE)
               .getSLOV2(serviceLevelObjective);
       serviceLevelObjectiveV2Service.updateNotificationRuleRefInSLO(
           projectParams, serviceLevelObjectiveV2, new ArrayList<>(notificationRuleRefsWithChange));
+    } catch (Exception e) {
+      log.error("[SLO Data Mismatch]: SLOV2 noti not updated", e);
     }
   }
 
@@ -676,9 +683,11 @@ public class ServiceLevelObjectiveServiceImpl implements ServiceLevelObjectiveSe
                             .filter(ServiceLevelObjectiveKeys.monitoredServiceIdentifier, monitoredServiceIdentifier),
         hPersistence.createUpdateOperations(ServiceLevelObjective.class)
             .set(ServiceLevelObjectiveKeys.enabled, isEnabled));
-    if (featureFlagService.isGlobalFlagEnabled(SERVICE_LEVEL_OBJECTIVE_V2)) {
+    try {
       serviceLevelObjectiveV2Service.setMonitoredServiceSLOsEnableFlag(
           projectParams, monitoredServiceIdentifier, isEnabled);
+    } catch (Exception e) {
+      log.error("[SLO Data Mismatch]: Flag not enabled in SLOV2", e);
     }
   }
 
