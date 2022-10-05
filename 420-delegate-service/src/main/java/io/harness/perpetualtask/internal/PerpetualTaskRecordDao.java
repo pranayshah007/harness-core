@@ -14,7 +14,6 @@ import static io.harness.perpetualtask.PerpetualTaskState.TASK_UNASSIGNED;
 import static java.lang.System.currentTimeMillis;
 import static java.util.Arrays.asList;
 
-import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.task.DelegateLogContext;
 import io.harness.network.FibonacciBackOff;
 import io.harness.perpetualtask.PerpetualTaskClientContext;
@@ -26,8 +25,6 @@ import io.harness.persistence.HIterator;
 import io.harness.persistence.HPersistence;
 
 import com.google.inject.Inject;
-
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -215,32 +212,28 @@ public class PerpetualTaskRecordDao {
   }
 
   public List<PerpetualTaskRecord> listBatchOfPerpetualTasksToRebalanceForAccount(String accountId) {
-
     Query<PerpetualTaskRecord> query = persistence.createQuery(PerpetualTaskRecord.class)
                                            .filter(PerpetualTaskRecordKeys.accountId, accountId)
                                            .filter(PerpetualTaskRecordKeys.state, PerpetualTaskState.TASK_TO_REBALANCE);
 
     return query.asList(new FindOptions().limit(BATCH_SIZE_FOR_PERPETUAL_TASK_TO_REBALANCE));
-
   }
 
   public void markBatchOfPerpetualTasksWithNoHeartBeatToRebalanceForAccount(String accountId) {
-
     long intervalValue = Long.valueOf(PerpetualTaskRecordKeys.intervalSeconds);
-    long multipleInterval = (3*intervalValue)/1000;
+    long multipleInterval = (3 * intervalValue) / 1000;
     Query<PerpetualTaskRecord> queryToUpdate = persistence.createQuery(PerpetualTaskRecord.class)
-            .filter(PerpetualTaskRecordKeys.accountId, accountId)
-            .filter(PerpetualTaskRecordKeys.state, TASK_ASSIGNED)
-            .field(String.valueOf(PerpetualTaskRecordKeys.lastHeartbeat))
-            .lessThan(System.currentTimeMillis() - multipleInterval);
+                                                   .filter(PerpetualTaskRecordKeys.accountId, accountId)
+                                                   .filter(PerpetualTaskRecordKeys.state, TASK_ASSIGNED)
+                                                   .field(String.valueOf(PerpetualTaskRecordKeys.lastHeartbeat))
+                                                   .lessThan(System.currentTimeMillis() - multipleInterval);
 
     UpdateOperations<PerpetualTaskRecord> updateOperations =
-            persistence.createUpdateOperations(PerpetualTaskRecord.class).set(PerpetualTaskRecordKeys.state
-                    , PerpetualTaskState.TASK_TO_REBALANCE);
+        persistence.createUpdateOperations(PerpetualTaskRecord.class)
+            .set(PerpetualTaskRecordKeys.state, PerpetualTaskState.TASK_TO_REBALANCE);
 
     persistence.findAndModify(queryToUpdate, updateOperations, HPersistence.returnNewOptions);
   }
-
 
   public PerpetualTaskRecord getTask(String taskId) {
     return persistence.createQuery(PerpetualTaskRecord.class).field(PerpetualTaskRecordKeys.uuid).equal(taskId).get();
