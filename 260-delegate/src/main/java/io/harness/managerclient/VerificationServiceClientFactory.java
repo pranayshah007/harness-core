@@ -25,6 +25,7 @@ import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
+import com.google.inject.Singleton;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.X509KeyManager;
 import javax.net.ssl.X509TrustManager;
@@ -35,11 +36,13 @@ import retrofit2.converter.jackson.JacksonConverterFactory;
 
 @TargetModule(HarnessModule._420_DELEGATE_AGENT)
 @OwnedBy(HarnessTeam.CV)
+@Singleton
 public class VerificationServiceClientFactory implements Provider<VerificationServiceClient> {
   private final String baseUrl;
   private final TokenGenerator tokenGenerator;
   private final String clientCertificateFilePath;
   private final String clientCertificateKeyFilePath;
+  private final OkHttpClient httpClient;
 
   // As of now ignored (always trusts all certs)
   private final boolean trustAllCertificates;
@@ -52,6 +55,7 @@ public class VerificationServiceClientFactory implements Provider<VerificationSe
     this.clientCertificateFilePath = configuration.getClientCertificateFilePath();
     this.clientCertificateKeyFilePath = configuration.getClientCertificateKeyFilePath();
     this.trustAllCertificates = configuration.isTrustAllCertificates();
+    this.httpClient = this.getUnsafeOkHttpClient();
   }
 
   @Override
@@ -62,7 +66,7 @@ public class VerificationServiceClientFactory implements Provider<VerificationSe
     objectMapper.registerModule(new JavaTimeModule());
     Retrofit retrofit = new Retrofit.Builder()
                             .baseUrl(this.baseUrl)
-                            .client(getUnsafeOkHttpClient())
+                            .client(httpClient)
                             .addConverterFactory(JacksonConverterFactory.create(objectMapper))
                             .build();
     return retrofit.create(VerificationServiceClient.class);

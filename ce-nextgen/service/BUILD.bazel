@@ -86,6 +86,7 @@ java_binary(
     visibility = ["//visibility:public"],
     runtime_deps = [
         "@maven//:javax_ws_rs_javax_ws_rs_api",
+        "@maven//:org_postgresql_postgresql",
     ],
     deps = shared_dependencies,
 )

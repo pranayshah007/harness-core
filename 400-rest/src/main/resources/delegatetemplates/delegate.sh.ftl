@@ -123,138 +123,71 @@ if [ -z $INSTALL_CLIENT_TOOLS_IN_BACKGROUND ]; then
   export INSTALL_CLIENT_TOOLS_IN_BACKGROUND=true
 fi
 
-if [ ! -e config-delegate.yml ]; then
-  echo "accountId: ${accountId}" > config-delegate.yml
-fi
-test "$(tail -c 1 config-delegate.yml)" && `echo "" >> config-delegate.yml`
+echo "accountId: ${accountId}" > config-delegate.yml
+
 <#if delegateToken??>
-if ! `grep delegateToken config-delegate.yml > /dev/null`; then
-  echo "delegateToken: ${delegateToken}" >> config-delegate.yml
-fi
+echo "delegateToken: ${delegateToken}" >> config-delegate.yml
 <#else>
-if ! `grep delegateToken config-delegate.yml > /dev/null`; then
-  echo "delegateToken: ${accountSecret}" >> config-delegate.yml
-fi
+echo "delegateToken: ${accountSecret}" >> config-delegate.yml
 </#if>
-if ! `grep dynamicHandlingOfRequestEnabled config-delegate.yml > /dev/null`; then
-  echo "dynamicHandlingOfRequestEnabled: ${dynamicHandlingOfRequestEnabled}" >> config-delegate.yml
-fi
-if ! `grep managerUrl config-delegate.yml > /dev/null`; then
-  echo "managerUrl: ${managerHostAndPort}/api/" >> config-delegate.yml
-fi
-if ! `grep verificationServiceUrl config-delegate.yml > /dev/null`; then
-  echo "verificationServiceUrl: ${managerHostAndPort}/verification/" >> config-delegate.yml
-elif [[ "$(grep verificationServiceUrl config-delegate.yml | cut -d ' ' -f 2)" != "${managerHostAndPort}/verification/" ]]; then
-  sed -i.bak "s|^verificationServiceUrl:.*$|verificationServiceUrl: ${managerHostAndPort}/verification/|" config-delegate.yml
-fi
-if ! `grep cvNextGenUrl config-delegate.yml > /dev/null`; then
-  echo "cvNextGenUrl: ${managerHostAndPort}/cv/api/" >> config-delegate.yml
-elif [[ "$(grep cvNextGenUrl config-delegate.yml | cut -d ' ' -f 2)" != "${managerHostAndPort}/cv/api/" ]]; then
-  sed -i.bak "s|^cvNextGenUrl:.*$|cvNextGenUrl: ${managerHostAndPort}/cv/api/|" config-delegate.yml
-fi
-if ! `grep watcherCheckLocation config-delegate.yml > /dev/null`; then
-  echo "watcherCheckLocation: ${watcherStorageUrl}/${watcherCheckLocation}" >> config-delegate.yml
-elif [[ "$(grep watcherCheckLocation config-delegate.yml | cut -d ' ' -f 2)" != "${watcherStorageUrl}/${watcherCheckLocation}" ]]; then
-  sed -i.bak "s|^watcherCheckLocation:.*$|watcherCheckLocation: ${watcherStorageUrl}/${watcherCheckLocation}|" config-delegate.yml
-fi
-if ! `grep heartbeatIntervalMs config-delegate.yml > /dev/null`; then
-  echo "heartbeatIntervalMs: 50000" >> config-delegate.yml
-fi
-if ! `grep doUpgrade config-delegate.yml > /dev/null`; then
-  echo "doUpgrade: true" >> config-delegate.yml
-fi
-if ! `grep localDiskPath config-delegate.yml > /dev/null`; then
-  echo "localDiskPath: /tmp" >> config-delegate.yml
-fi
-if ! `grep maxCachedArtifacts config-delegate.yml > /dev/null`; then
-  echo "maxCachedArtifacts: 2" >> config-delegate.yml
-fi
-if ! `grep pollForTasks config-delegate.yml > /dev/null`; then
-  if [ "$DEPLOY_MODE" == "ONPREM" ]; then
-      echo "pollForTasks: true" >> config-delegate.yml
-  elif [[ ! -z "$POLL_FOR_TASKS" ]]; then
-      echo "pollForTasks: $POLL_FOR_TASKS" >> config-delegate.yml
-  else
-      echo "pollForTasks: false" >> config-delegate.yml
-  fi
+echo "dynamicHandlingOfRequestEnabled: ${dynamicHandlingOfRequestEnabled}" >> config-delegate.yml
+echo "managerUrl: ${managerHostAndPort}/api/" >> config-delegate.yml
+echo "verificationServiceUrl: ${managerHostAndPort}/verification/" >> config-delegate.yml
+echo "cvNextGenUrl: ${managerHostAndPort}/cv/api/" >> config-delegate.yml
+echo "watcherCheckLocation: ${watcherStorageUrl}/${watcherCheckLocation}" >> config-delegate.yml
+echo "heartbeatIntervalMs: 50000" >> config-delegate.yml
+echo "doUpgrade: true" >> config-delegate.yml
+echo "localDiskPath: /tmp" >> config-delegate.yml
+echo "maxCachedArtifacts: 2" >> config-delegate.yml
+
+if [ "$DEPLOY_MODE" == "ONPREM" ]; then
+    echo "pollForTasks: true" >> config-delegate.yml
+elif [[ ! -z "$POLL_FOR_TASKS" ]]; then
+    echo "pollForTasks: $POLL_FOR_TASKS" >> config-delegate.yml
+else
+    echo "pollForTasks: false" >> config-delegate.yml
 fi
 
-if ! `grep useCdn config-delegate.yml > /dev/null`; then
-  echo "useCdn: ${useCdn}" >> config-delegate.yml
-elif [[ "$(grep useCdn config-delegate.yml | cut -d ' ' -f 2)" != "${useCdn}" ]]; then
-  sed -i.bak "s|^useCdn:.*$|useCdn: ${useCdn}|" config-delegate.yml
-fi
+echo "useCdn: ${useCdn}" >> config-delegate.yml
 <#if useCdn == "true">
-if ! `grep cdnUrl config-delegate.yml > /dev/null`; then
-  echo "cdnUrl: ${cdnUrl}" >> config-delegate.yml
-elif [[ "$(grep cdnUrl config-delegate.yml | cut -d ' ' -f 2)" != "${cdnUrl}" ]]; then
-  sed -i.bak "s|^cdnUrl:.*$|cdnUrl: ${cdnUrl}|" config-delegate.yml
-fi
+echo "cdnUrl: ${cdnUrl}" >> config-delegate.yml
 </#if>
 <#if managerTarget??>
-if ! `grep managerTarget config-delegate.yml > /dev/null`; then
-  echo "managerTarget: ${managerTarget}" >> config-delegate.yml
-elif [[ "$(grep managerTarget config-delegate.yml | cut -d ' ' -f 2)" != "${managerTarget}" ]]; then
-  sed -i.bak "s|^managerTarget:.*$|managerTarget: ${managerTarget}|" config-delegate.yml
-fi
-if ! `grep managerAuthority config-delegate.yml > /dev/null`; then
-  echo "managerAuthority: ${managerAuthority}" >> config-delegate.yml
-elif [[ "$(grep managerAuthority config-delegate.yml | cut -d ' ' -f 2)" != "${managerAuthority}" ]]; then
-  sed -i.bak "s|^managerAuthority:.*$|managerAuthority: ${managerAuthority}|" config-delegate.yml
-fi
+echo "managerTarget: ${managerTarget}" >> config-delegate.yml
+echo "managerAuthority: ${managerAuthority}" >> config-delegate.yml
 </#if>
 
-if ! `grep grpcServiceEnabled config-delegate.yml > /dev/null`; then
-  echo "grpcServiceEnabled: $GRPC_SERVICE_ENABLED" >> config-delegate.yml
-elif [[ "$(grep grpcServiceEnabled config-delegate.yml | cut -d ' ' -f 2)" != "$GRPC_SERVICE_ENABLED" ]]; then
-  sed -i.bak "s|^grpcServiceEnabled:.*$|grpcServiceEnabled: $GRPC_SERVICE_ENABLED|" config-delegate.yml
-fi
+echo "grpcServiceEnabled: $GRPC_SERVICE_ENABLED" >> config-delegate.yml
+echo "grpcServiceConnectorPort: $GRPC_SERVICE_CONNECTOR_PORT" >> config-delegate.yml
+echo "logStreamingServiceBaseUrl: ${logStreamingServiceBaseUrl}" >> config-delegate.yml
+echo "clientToolsDownloadDisabled: $CLIENT_TOOLS_DOWNLOAD_DISABLED" >> config-delegate.yml
+echo "installClientToolsInBackground: $INSTALL_CLIENT_TOOLS_IN_BACKGROUND" >> config-delegate.yml
 
-if ! `grep grpcServiceConnectorPort config-delegate.yml > /dev/null`; then
-  echo "grpcServiceConnectorPort: $GRPC_SERVICE_CONNECTOR_PORT" >> config-delegate.yml
-elif [[ "$(grep grpcServiceConnectorPort config-delegate.yml | cut -d ' ' -f 2)" != "$GRPC_SERVICE_CONNECTOR_PORT" ]]; then
-  sed -i.bak "s|^grpcServiceConnectorPort:.*$|grpcServiceConnectorPort: $GRPC_SERVICE_CONNECTOR_PORT|" config-delegate.yml
-fi
-
-if ! `grep logStreamingServiceBaseUrl config-delegate.yml > /dev/null`; then
-  echo "logStreamingServiceBaseUrl: ${logStreamingServiceBaseUrl}" >> config-delegate.yml
-elif [[ "$(grep logStreamingServiceBaseUrl config-delegate.yml | cut -d ' ' -f 2)" != "${logStreamingServiceBaseUrl}" ]]; then
-  sed -i.bak "s|^logStreamingServiceBaseUrl:.*$|logStreamingServiceBaseUrl: ${logStreamingServiceBaseUrl}|" config-delegate.yml
-fi
-
-if ! `grep clientToolsDownloadDisabled config-delegate.yml > /dev/null`; then
-  echo "clientToolsDownloadDisabled: $CLIENT_TOOLS_DOWNLOAD_DISABLED" >> config-delegate.yml
-fi
-
-if ! `grep installClientToolsInBackground config-delegate.yml > /dev/null`; then
-  echo "installClientToolsInBackground: $INSTALL_CLIENT_TOOLS_IN_BACKGROUND" >> config-delegate.yml
-fi
-
-if [ ! -z "$KUSTOMIZE_PATH" ] && ! `grep kustomizePath config-delegate.yml > /dev/null` ; then
+if [ ! -z "$KUSTOMIZE_PATH" ] ; then
   echo "kustomizePath: $KUSTOMIZE_PATH" >> config-delegate.yml
 fi
 
-if [ ! -z "$OC_PATH" ] && ! `grep ocPath config-delegate.yml > /dev/null` ; then
+if [ ! -z "$OC_PATH" ] ; then
   echo "ocPath: $OC_PATH" >> config-delegate.yml
 fi
 
-if [ ! -z "$KUBECTL_PATH" ] && ! `grep kubectlPath config-delegate.yml > /dev/null` ; then
+if [ ! -z "$KUBECTL_PATH" ] ; then
   echo "kubectlPath: $KUBECTL_PATH" >> config-delegate.yml
 fi
 
-if [ ! -z "$HELM3_PATH" ] && ! `grep helm3Path config-delegate.yml > /dev/null` ; then
+if [ ! -z "$HELM3_PATH" ] ; then
   echo "helm3Path: $HELM3_PATH" >> config-delegate.yml
 fi
 
-if [ ! -z "$HELM_PATH" ] && ! `grep helmPath config-delegate.yml > /dev/null` ; then
+if [ ! -z "$HELM_PATH" ] ; then
   echo "helmPath: $HELM_PATH" >> config-delegate.yml
 fi
 
-if [ ! -z "$CF_CLI6_PATH" ] && ! `grep cfCli6Path config-delegate.yml > /dev/null` ; then
+if [ ! -z "$CF_CLI6_PATH" ] ; then
   echo "cfCli6Path: $CF_CLI6_PATH" >> config-delegate.yml
 fi
 
-if [ ! -z "$CF_CLI7_PATH" ] && ! `grep cfCli7Path config-delegate.yml > /dev/null` ; then
+if [ ! -z "$CF_CLI7_PATH" ] ; then
   echo "cfCli7Path: $CF_CLI7_PATH" >> config-delegate.yml
 fi
 

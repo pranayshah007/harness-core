@@ -28,6 +28,7 @@ import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
+import com.google.inject.Singleton;
 import com.google.protobuf.ExtensionRegistryLite;
 import java.util.concurrent.TimeUnit;
 import javax.net.ssl.SSLContext;
@@ -41,17 +42,18 @@ import retrofit2.Retrofit;
 import retrofit2.converter.jackson.JacksonConverterFactory;
 import retrofit2.converter.protobuf.ProtoConverterFactory;
 
+@Singleton
 @Slf4j
 @OwnedBy(HarnessTeam.DEL)
 public class DelegateAgentManagerClientFactory implements Provider<DelegateAgentManagerClient> {
   private final VersionInfoManager versionInfoManager;
   private final DelegateKryoConverterFactory kryoConverterFactory;
-
   private final String baseUrl;
   private final TokenGenerator tokenGenerator;
   private final String clientCertificateFilePath;
   private final String clientCertificateKeyFilePath;
   private final boolean trustAllCertificates;
+  private final OkHttpClient httpClient;
 
   @Inject
   public DelegateAgentManagerClientFactory(final DelegateConfiguration configuration,
@@ -64,6 +66,7 @@ public class DelegateAgentManagerClientFactory implements Provider<DelegateAgent
     this.trustAllCertificates = configuration.isTrustAllCertificates();
     this.versionInfoManager = versionInfoManager;
     this.kryoConverterFactory = kryoConverterFactory;
+    this.httpClient = this.trustAllCertificates ? this.getUnsafeOkHttpClient() : this.getSafeOkHttpClient();
   }
 
   @Override
@@ -73,7 +76,6 @@ public class DelegateAgentManagerClientFactory implements Provider<DelegateAgent
     objectMapper.registerModule(new GuavaModule());
     objectMapper.registerModule(new JavaTimeModule());
 
-    OkHttpClient httpClient = this.trustAllCertificates ? this.getUnsafeOkHttpClient() : this.getSafeOkHttpClient();
     ExtensionRegistryLite registryLite = ExtensionRegistryLite.newInstance();
     Retrofit retrofit = new Retrofit.Builder()
                             .baseUrl(this.baseUrl)

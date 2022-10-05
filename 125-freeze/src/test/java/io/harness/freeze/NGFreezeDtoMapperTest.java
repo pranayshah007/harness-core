@@ -47,8 +47,8 @@ import org.junit.experimental.categories.Category;
 @OwnedBy(CDC)
 public class NGFreezeDtoMapperTest extends CategoryTest {
   private final String ACCOUNT_ID = "accountId";
-  private final String ORG_IDENTIFIER = "orgId";
-  private final String PROJ_IDENTIFIER = "projId";
+  private final String ORG_IDENTIFIER = "oId";
+  private final String PROJ_IDENTIFIER = "pId";
   private final String FREEZE_IDENTIFIER = "freezeId";
 
   private String yaml;
@@ -78,8 +78,13 @@ public class NGFreezeDtoMapperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testToTemplateDto() {
     FreezeConfigEntity entity =
-        NGFreezeDtoMapper.toFreezeConfigEntity(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, yaml);
+        NGFreezeDtoMapper.toFreezeConfigEntity(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, yaml, FreezeType.MANUAL);
     assertThat(entity).isNotNull();
+    assertThat(entity.getType()).isEqualTo(FreezeType.MANUAL);
+    assertThat(entity.getAccountId()).isEqualTo(ACCOUNT_ID);
+    assertThat(entity.getOrgIdentifier()).isEqualTo(ORG_IDENTIFIER);
+    assertThat(entity.getProjectIdentifier()).isEqualTo(PROJ_IDENTIFIER);
+    assertThat(entity.getYaml()).isEqualTo(yaml);
   }
 
   @Test

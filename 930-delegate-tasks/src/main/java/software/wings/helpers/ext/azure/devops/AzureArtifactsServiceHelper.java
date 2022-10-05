@@ -8,6 +8,7 @@
 package software.wings.helpers.ext.azure.devops;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.artifacts.azureartifacts.service.AzureArtifactsRegistryServiceImpl.CONNECT_TIMEOUT;
 import static io.harness.data.encoding.EncodingUtils.encodeBase64;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.network.Http.getOkHttpClientBuilder;
@@ -38,8 +39,6 @@ import lombok.experimental.UtilityClass;
 import okhttp3.OkHttpClient;
 import retrofit2.Call;
 import retrofit2.Response;
-import retrofit2.Retrofit;
-import retrofit2.converter.jackson.JacksonConverterFactory;
 
 @OwnedBy(CDC)
 @TargetModule(HarnessModule._960_API_SERVICES)
@@ -48,44 +47,6 @@ import retrofit2.converter.jackson.JacksonConverterFactory;
 @BreakDependencyOn("software.wings.beans.settings.azureartifacts.AzureArtifactsPATConfig")
 @UtilityClass
 public class AzureArtifactsServiceHelper {
-  private static final int CONNECT_TIMEOUT = 5;
-  private static final int READ_TIMEOUT = 10;
-
-  static AzureDevopsRestClient getAzureDevopsRestClient(String azureDevopsUrl) {
-    String url = ensureTrailingSlash(azureDevopsUrl);
-    OkHttpClient okHttpClient = getOkHttpClientBuilder()
-                                    .connectTimeout(CONNECT_TIMEOUT, TimeUnit.SECONDS)
-                                    .readTimeout(READ_TIMEOUT, TimeUnit.SECONDS)
-                                    .proxy(Http.checkAndGetNonProxyIfApplicable(url))
-                                    .retryOnConnectionFailure(true)
-                                    .build();
-    Retrofit retrofit = new Retrofit.Builder()
-                            .client(okHttpClient)
-                            .baseUrl(url)
-                            .addConverterFactory(JacksonConverterFactory.create())
-                            .build();
-    return retrofit.create(AzureDevopsRestClient.class);
-  }
-
-  static AzureArtifactsRestClient getAzureArtifactsRestClient(String azureDevopsUrl, String project) {
-    String url = ensureTrailingSlash(getSubdomainUrl(azureDevopsUrl, "feeds"));
-    if (isNotBlank(project)) {
-      url += project + "/";
-    }
-    OkHttpClient okHttpClient = getOkHttpClientBuilder()
-                                    .connectTimeout(CONNECT_TIMEOUT, TimeUnit.SECONDS)
-                                    .readTimeout(READ_TIMEOUT, TimeUnit.SECONDS)
-                                    .proxy(Http.checkAndGetNonProxyIfApplicable(url))
-                                    .retryOnConnectionFailure(true)
-                                    .build();
-    Retrofit retrofit = new Retrofit.Builder()
-                            .client(okHttpClient)
-                            .baseUrl(url)
-                            .addConverterFactory(JacksonConverterFactory.create())
-                            .build();
-    return retrofit.create(AzureArtifactsRestClient.class);
-  }
-
   static OkHttpClient getAzureArtifactsDownloadClient(String artifactDownloadUrl) {
     return getOkHttpClientBuilder()
         .connectTimeout(CONNECT_TIMEOUT, TimeUnit.SECONDS)
@@ -148,7 +109,7 @@ public class AzureArtifactsServiceHelper {
     }
   }
 
-  static <T> T execute(Call<T> call) {
+  public static <T> T execute(Call<T> call) {
     try {
       Response<T> response = call.execute();
       validateResponse(response);

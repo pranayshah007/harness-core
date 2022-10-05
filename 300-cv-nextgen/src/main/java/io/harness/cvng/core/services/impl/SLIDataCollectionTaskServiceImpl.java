@@ -93,7 +93,6 @@ public class SLIDataCollectionTaskServiceImpl implements DataCollectionTaskManag
     DataCollectionTask dataCollectionTask = getDataCollectionTaskForSLI(
         cvConfigList, serviceLevelIndicator, nextTaskStartTime, nextTaskStartTime.plus(5, ChronoUnit.MINUTES));
     if (prevSLITask.getStatus() != DataCollectionExecutionStatus.SUCCESS) {
-      dataCollectionTask.setRetryCount(prevSLITask.getRetryCount());
       dataCollectionTask.setValidAfter(dataCollectionTask.getNextValidAfter(clock.instant()));
     }
     dataCollectionTaskService.validateIfAlreadyExists(dataCollectionTask);

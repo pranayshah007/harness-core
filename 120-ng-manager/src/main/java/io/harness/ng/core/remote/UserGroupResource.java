@@ -63,6 +63,7 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
+import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -539,6 +540,29 @@ public class UserGroupResource {
     checkExternallyManaged(accountIdentifier, orgIdentifier, projectIdentifier, userGroupId);
     return new RestResponse<>(userGroupService.linkToSsoGroup(accountIdentifier, orgIdentifier, projectIdentifier,
         userGroupId, SSOType.LDAP, ldapId, groupRequest.getLdapGroupDN(), groupRequest.getLdapGroupName()));
+  }
+
+  @GET
+  @Path("sso/{identifier}")
+  @Hidden
+  @ApiOperation(value = "Get User Groups List linked to SSO", nickname = "getSsoLinkedUserGroups")
+  @Operation(operationId = "getSsoLinkedUserGroups", description = "List User Groups linked to sso id",
+      summary = "List the User Groups at any account/org/project scope linked to an sso id",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(description = "Returns the list of the User Groups linked to sso id.")
+      })
+  public ResponseDTO<List<UserGroupDTO>>
+  getSsoLinkedUserGroups(@Parameter(description = ACCOUNT_PARAM_MESSAGE, required = true) @NotNull @QueryParam(
+                             NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @Parameter(description = "Identifier of the SSO setting", required = true) @PathParam(
+          NGCommonEntityConstants.IDENTIFIER_KEY) String ssoIdentifier) {
+    List<UserGroupDTO> userGroupDTOS = userGroupService.getUserGroupsBySsoId(accountIdentifier, ssoIdentifier)
+                                           .stream()
+                                           .map(UserGroupMapper::toDTO)
+                                           .collect(Collectors.toList());
+    return ResponseDTO.newResponse(userGroupDTOS);
   }
 
   private void checkExternallyManaged(
