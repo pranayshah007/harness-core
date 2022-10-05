@@ -66,6 +66,7 @@ import java.util.stream.Collectors;
 import javax.ws.rs.NotFoundException;
 import lombok.Builder;
 import lombok.Value;
+import javax.annotation.Nullable;
 import lombok.extern.slf4j.Slf4j;
 import org.mongodb.morphia.query.Query;
 import org.mongodb.morphia.query.Sort;
@@ -380,6 +381,12 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
             + "Please delete the notification rule inside SLOs before deleting notification rule. SLOs : "
             + String.join(
                 ", ", serviceLevelObjectives.stream().map(slo -> slo.getName()).collect(Collectors.toList())));
+  }
+
+  @Nullable
+  @Override
+  public AbstractServiceLevelObjective get(String sloId) {
+    return hPersistence.get(AbstractServiceLevelObjective.class, sloId);
   }
 
   private AbstractServiceLevelObjective updateSLOV2Entity(ProjectParams projectParams,

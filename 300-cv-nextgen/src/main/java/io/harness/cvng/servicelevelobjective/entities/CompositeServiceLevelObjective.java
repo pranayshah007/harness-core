@@ -28,6 +28,7 @@ public class CompositeServiceLevelObjective extends AbstractServiceLevelObjectiv
   public CompositeServiceLevelObjective() {
     super.setType(ServiceLevelObjectiveType.COMPOSITE);
   }
+  private int version;
 
   @Size(max = 20) List<ServiceLevelObjectivesDetail> serviceLevelObjectivesDetails;
 

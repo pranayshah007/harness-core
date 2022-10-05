@@ -56,7 +56,7 @@ public class CompositeSLORecord implements PersistentEntity, UuidAware, UpdatedA
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()
                  .name("slo_timestamp")
-                 .field(CompositeSLORecordKeys.sliId)
+                 .field(CompositeSLORecordKeys.sloId)
                  .field(CompositeSLORecordKeys.timestamp)
                  .build())
         .build();
@@ -71,7 +71,7 @@ public class CompositeSLORecord implements PersistentEntity, UuidAware, UpdatedA
   @Version long version;
   @Id private String uuid;
   @FdIndex private String verificationTaskId;
-  private String sliId;
+  private String sloId;
   private Instant timestamp; // minute
   @Setter(AccessLevel.PRIVATE) private long epochMinute;
   private double runningBadCount;
@@ -79,12 +79,5 @@ public class CompositeSLORecord implements PersistentEntity, UuidAware, UpdatedA
   private long lastUpdatedAt;
   private long createdAt;
   private int sloVersion;
-  public enum SLIState { NO_DATA, GOOD, BAD }
   @Builder.Default @FdTtlIndex private Date validUntil = Date.from(OffsetDateTime.now().plusDays(180).toInstant());
-  @Data
-  @Builder
-  public static class SLIRecordParam {
-    private SLIState sliState;
-    private Instant timeStamp;
-  }
 }
