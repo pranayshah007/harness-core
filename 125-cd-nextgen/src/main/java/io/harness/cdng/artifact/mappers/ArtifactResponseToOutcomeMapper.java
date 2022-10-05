@@ -128,17 +128,22 @@ public class ArtifactResponseToOutcomeMapper {
         return getAcrArtifactOutcome(acrArtifactConfig, acrArtifactDelegateResponse, useDelegateResponse);
       case CUSTOM_ARTIFACT:
         CustomArtifactConfig customArtifactConfig = (CustomArtifactConfig) artifactConfig;
-        if (customArtifactConfig.getScripts() != null) {
+        if (customArtifactConfig.getScripts() != null
+            && customArtifactConfig.getScripts().getFetchAllArtifacts() != null
+            && customArtifactConfig.getScripts().getFetchAllArtifacts().getShellScriptBaseStepInfo() != null
+            && customArtifactConfig.getScripts().getFetchAllArtifacts().getShellScriptBaseStepInfo().getSource()
+                != null) {
           CustomScriptInlineSource customScriptInlineSource =
               (CustomScriptInlineSource) customArtifactConfig.getScripts()
                   .getFetchAllArtifacts()
                   .getShellScriptBaseStepInfo()
                   .getSource()
                   .getSpec();
-          if (isNotEmpty(customScriptInlineSource.getScript().getValue())) {
+          if (customScriptInlineSource != null && customScriptInlineSource.getScript() != null
+              && isNotEmpty(customScriptInlineSource.getScript().getValue())) {
             CustomArtifactDelegateResponse customArtifactDelegateResponse =
                 (CustomArtifactDelegateResponse) artifactDelegateResponse;
-            return getCustomArtifactOutcome(customArtifactConfig, customArtifactDelegateResponse);
+            return getCustomArtifactOutcome(customArtifactConfig, customArtifactDelegateResponse, useDelegateResponse);
           }
         }
         return getCustomArtifactOutcome(customArtifactConfig);
@@ -374,13 +379,13 @@ public class ArtifactResponseToOutcomeMapper {
         .build();
   }
 
-  private CustomArtifactOutcome getCustomArtifactOutcome(
-      CustomArtifactConfig artifactConfig, CustomArtifactDelegateResponse customArtifactDelegateResponse) {
+  private CustomArtifactOutcome getCustomArtifactOutcome(CustomArtifactConfig artifactConfig,
+      CustomArtifactDelegateResponse customArtifactDelegateResponse, boolean useDelegateResponse) {
     return CustomArtifactOutcome.builder()
         .identifier(artifactConfig.getIdentifier())
         .primaryArtifact(artifactConfig.isPrimaryArtifact())
         .version(artifactConfig.getVersion().getValue())
-        .metadata(customArtifactDelegateResponse.getMetadata())
+        .metadata(useDelegateResponse ? customArtifactDelegateResponse.getMetadata() : null)
         .build();
   }
 
