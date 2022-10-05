@@ -7,6 +7,7 @@
 
 package io.harness.cdng.service.steps;
 
+import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 import io.harness.pms.yaml.ParameterField;
@@ -25,6 +26,7 @@ public class ServiceStepV3Parameters implements StepParameters {
   private ParameterField<Map<String, Object>> envInputs;
   private ParameterField<Map<String, Object>> serviceOverrideInputs;
   private List<String> childrenNodeIds;
+  private ServiceDefinitionType deploymentType;
   @Override
   public String toViewJson() {
     return RecastOrchestrationUtils.toJson(Map.of("service", serviceRef.fetchFinalValue()));

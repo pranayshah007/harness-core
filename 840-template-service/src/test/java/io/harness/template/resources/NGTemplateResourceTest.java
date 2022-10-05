@@ -54,6 +54,7 @@ import io.harness.template.helpers.TemplateYamlConversionHelper;
 import io.harness.template.services.NGTemplateService;
 import io.harness.template.services.NGTemplateServiceHelper;
 import io.harness.template.services.TemplateMergeService;
+import io.harness.template.services.TemplateVariableCreatorFactory;
 
 import com.google.common.io.Resources;
 import com.google.inject.Inject;
@@ -98,6 +99,7 @@ public class NGTemplateResourceTest extends CategoryTest {
   @Mock TemplateYamlConversionHelper templateYamlConversionHelper;
   @Mock TemplateReferenceHelper templateReferenceHelper;
   @Mock CustomDeploymentResourceClient customDeploymentResourceClient;
+  @Mock TemplateVariableCreatorFactory templateVariableCreatorFactory;
 
   private final String ACCOUNT_ID = "account_id";
   private final String ORG_IDENTIFIER = "orgId";
@@ -144,7 +146,7 @@ public class NGTemplateResourceTest extends CategoryTest {
 
     templateResource = new NGTemplateResource(templateService, templateServiceHelper, accessControlClient,
         templateMergeService, variablesServiceBlockingStub, templateYamlConversionHelper, templateReferenceHelper,
-        customDeploymentResourceClient);
+        customDeploymentResourceClient, templateVariableCreatorFactory);
     ClassLoader classLoader = this.getClass().getClassLoader();
     String filename = "template.yaml";
     yaml = Resources.toString(Objects.requireNonNull(classLoader.getResource(filename)), StandardCharsets.UTF_8);

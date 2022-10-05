@@ -19,6 +19,7 @@ import io.harness.cdng.artifact.bean.yaml.AcrArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.AmazonS3ArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.ArtifactListConfig;
 import io.harness.cdng.artifact.bean.yaml.ArtifactoryRegistryArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.AzureArtifactsConfig;
 import io.harness.cdng.artifact.bean.yaml.CustomArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.DockerHubArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.EcrArtifactConfig;
@@ -185,6 +186,15 @@ public class ArtifactUtils {
             githubPackagesArtifactConfig.getVersion().getValue(),
             githubPackagesArtifactConfig.getVersionRegex().getValue(),
             githubPackagesArtifactConfig.getConnectorRef().getValue());
+      case AZURE_ARTIFACTS:
+        AzureArtifactsConfig azureArtifactsConfig = (AzureArtifactsConfig) artifactConfig;
+
+        return String.format(
+            "\ntype: %s \npackageName: %s \npackageType: %s \nproject: %s \nfeed: %s \nversion: %s \nversionRegex: %s \nconnectorRef: %s\n",
+            sourceType, azureArtifactsConfig.getPackageName().getValue(),
+            azureArtifactsConfig.getPackageType().getValue(), azureArtifactsConfig.getProject().getValue(),
+            azureArtifactsConfig.getFeed().getValue(), azureArtifactsConfig.getVersion().getValue(),
+            azureArtifactsConfig.getVersionRegex().getValue(), azureArtifactsConfig.getConnectorRef().getValue());
       case GOOGLE_ARTIFACT_REGISTRY:
         GoogleArtifactRegistryConfig googleArtifactRegistryConfig = (GoogleArtifactRegistryConfig) artifactConfig;
         String version = googleArtifactRegistryConfig.getVersion().getValue() != null

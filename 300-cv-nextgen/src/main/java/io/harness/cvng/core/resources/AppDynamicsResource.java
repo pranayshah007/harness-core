@@ -65,8 +65,7 @@ public class AppDynamicsResource {
   @Timed
   @ExceptionMetered
   @ApiOperation(value = "get metric data for given metric packs", nickname = "getAppdynamicsMetricData")
-  public ResponseDTO<Set<AppdynamicsValidationResponse>> getMetricData(
-      @NotNull @Valid @BeanParam ProjectParams projectParams,
+  public ResponseDTO<Set<AppdynamicsValidationResponse>> getMetricData(@NotNull @BeanParam ProjectParams projectParams,
       @QueryParam("connectorIdentifier") @NotNull String connectorIdentifier,
       @QueryParam("appName") @NotNull String appName, @QueryParam("tierName") @NotNull String tierName,
       @QueryParam("requestGuid") @NotNull String requestGuid, @NotNull @Valid @Body List<MetricPackDTO> metricPacks) {
@@ -81,7 +80,7 @@ public class AppDynamicsResource {
   @ExceptionMetered
   @ApiOperation(value = "get all appdynamics applications", nickname = "getAppdynamicsApplications")
   public ResponseDTO<PageResponse<AppDynamicsApplication>> getAllApplications(
-      @NotNull @Valid @BeanParam ProjectParams projectParams,
+      @NotNull @BeanParam ProjectParams projectParams,
       @NotNull @QueryParam("connectorIdentifier") final String connectorIdentifier,
       @QueryParam("offset") @NotNull Integer offset, @QueryParam("pageSize") @NotNull Integer pageSize,
       @QueryParam("filter") String filter) {
@@ -95,7 +94,7 @@ public class AppDynamicsResource {
   @Timed
   @ExceptionMetered
   @ApiOperation(value = "get all appdynamics tiers for an application", nickname = "getAppdynamicsTiers")
-  public ResponseDTO<PageResponse<AppDynamicsTier>> getAllTiers(@NotNull @Valid @BeanParam ProjectParams projectParams,
+  public ResponseDTO<PageResponse<AppDynamicsTier>> getAllTiers(@NotNull @BeanParam ProjectParams projectParams,
       @NotNull @QueryParam("connectorIdentifier") final String connectorIdentifier,
       @NotNull @QueryParam("appName") String appName, @QueryParam("offset") @NotNull Integer offset,
       @QueryParam("pageSize") @NotNull Integer pageSize, @QueryParam("filter") String filter) {
@@ -109,7 +108,7 @@ public class AppDynamicsResource {
   @Timed
   @ExceptionMetered
   @ApiOperation(value = "get all appdynamics base folders for an application", nickname = "getAppdynamicsBaseFolders")
-  public ResponseDTO<List<String>> getBaseFolders(@BeanParam @Valid ProjectParams projectParams,
+  public ResponseDTO<List<String>> getBaseFolders(@NotNull @BeanParam ProjectParams projectParams,
       @NotNull @QueryParam("connectorIdentifier") final String connectorIdentifier,
       @NotNull @QueryParam("appName") String appName, @QueryParam("path") @DefaultValue("") String path,
       @QueryParam("routingId") String routingId) {
@@ -127,7 +126,7 @@ public class AppDynamicsResource {
   @ApiOperation(
       value = "get all appdynamics metric structure for an application", nickname = "getAppdynamicsMetricStructure")
   public ResponseDTO<List<AppDynamicsFileDefinition>>
-  getMetricStructure(@BeanParam @Valid ProjectParams projectParams,
+  getMetricStructure(@NotNull @BeanParam ProjectParams projectParams,
       @NotNull @QueryParam("connectorIdentifier") final String connectorIdentifier,
       @NotNull @QueryParam("appName") String appName, @NotNull @QueryParam("baseFolder") String baseFolder,
       @NotNull @QueryParam("tier") String tier, @NotNull @QueryParam("metricPath") @DefaultValue("") String metricPath,

@@ -13,11 +13,15 @@ import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
+import io.harness.cdng.infra.NGInfraDefinitionConfigVisitorHelper;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.data.validator.EntityIdentifier;
 import io.harness.data.validator.EntityName;
 import io.harness.ng.core.infrastructure.InfrastructureType;
 import io.harness.validator.NGRegexValidatorConstants;
+import io.harness.walktree.beans.VisitableChildren;
+import io.harness.walktree.visitor.SimpleVisitorHelper;
+import io.harness.walktree.visitor.Visitable;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -45,7 +49,8 @@ import org.springframework.data.annotation.TypeAlias;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @TypeAlias("infrastructureDefinitionConfig")
-public class InfrastructureDefinitionConfig {
+@SimpleVisitorHelper(helperClass = NGInfraDefinitionConfigVisitorHelper.class)
+public class InfrastructureDefinitionConfig implements Visitable {
   @JsonProperty("__uuid")
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
@@ -67,4 +72,11 @@ public class InfrastructureDefinitionConfig {
   @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
   @NotNull
   Infrastructure spec;
+
+  @Override
+  public VisitableChildren getChildrenToWalk() {
+    VisitableChildren children = VisitableChildren.builder().build();
+    children.add("spec", spec);
+    return children;
+  }
 }

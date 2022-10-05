@@ -168,6 +168,9 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
   @FdIndex private long delegateTaskRebroadcastIteration;
   @FdIndex private Long perpetualTaskRebalanceIteration;
 
+  // adding this to avoid kryo exception. Its not used anymore, check DEL-5047
+  @Deprecated private long delegateTaskFailIteration;
+
   @Getter private boolean cloudCostEnabled;
   @Getter @Setter private boolean ceAutoCollectK8sEvents;
   @Getter @Setter private TrialSignupOptions trialSignupOptions;
