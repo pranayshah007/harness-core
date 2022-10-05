@@ -20,6 +20,7 @@ import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorDTO;
 import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorWrapperDTO;
 import io.harness.filter.FilterType;
 import io.harness.gitsync.beans.StoreType;
+import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.ng.core.common.beans.NGTag;
 import io.harness.pms.contracts.plan.TriggerType;
@@ -33,7 +34,9 @@ import io.harness.pms.pipeline.mappers.PMSPipelineDtoMapper;
 import io.harness.spec.server.pipeline.model.ExecutionSummary;
 import io.harness.spec.server.pipeline.model.ExecutorInfo;
 import io.harness.spec.server.pipeline.model.ExecutorInfo.TriggerTypeEnum;
+import io.harness.spec.server.pipeline.model.GitCreateDetails;
 import io.harness.spec.server.pipeline.model.GitDetails;
+import io.harness.spec.server.pipeline.model.GitUpdateDetails;
 import io.harness.spec.server.pipeline.model.NodeInfo;
 import io.harness.spec.server.pipeline.model.PipelineGetResponseBody;
 import io.harness.spec.server.pipeline.model.PipelineListResponseBody;
@@ -346,5 +349,35 @@ public class PipelinesApiUtils {
             "Field provided for sorting unidentified. Accepted values: slug / name / created / updated");
     }
     return new ArrayList<>(Collections.singleton(field + "," + order));
+  }
+
+  public static GitEntityInfo populateGitCreateDetails(GitCreateDetails gitDetails) {
+    if (gitDetails == null) {
+      return GitEntityInfo.builder().build();
+    }
+    return GitEntityInfo.builder()
+        .branch(gitDetails.getBranchName())
+        .filePath(gitDetails.getFilePath())
+        .commitMsg(gitDetails.getCommitMessage())
+        .isNewBranch(gitDetails.getBranchName() != null && gitDetails.getBaseBranch() != null)
+        .baseBranch(gitDetails.getBaseBranch())
+        .connectorRef(gitDetails.getConnectorRef())
+        .storeType(StoreType.getFromStringOrNull(gitDetails.getStoreType().toString()))
+        .repoName(gitDetails.getRepoName())
+        .build();
+  }
+
+  public static GitEntityInfo populateGitUpdateDetails(GitUpdateDetails gitDetails) {
+    if (gitDetails == null) {
+      return GitEntityInfo.builder().build();
+    }
+    return GitEntityInfo.builder()
+        .branch(gitDetails.getBranchName())
+        .commitMsg(gitDetails.getCommitMessage())
+        .isNewBranch(gitDetails.getBranchName() != null && gitDetails.getBaseBranch() != null)
+        .baseBranch(gitDetails.getBaseBranch())
+        .lastCommitId(gitDetails.getLastCommitId())
+        .lastObjectId(gitDetails.getLastObjectId())
+        .build();
   }
 }
