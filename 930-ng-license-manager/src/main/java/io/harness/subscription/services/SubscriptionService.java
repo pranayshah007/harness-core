@@ -33,6 +33,7 @@ public interface SubscriptionService {
   SubscriptionDetailDTO updateSubscription(
       String accountIdentifier, String subscriptionId, SubscriptionDTO subscriptionDTO);
   void cancelSubscription(String accountIdentifier, String subscriptionId);
+  void cancelAllSubscriptions(String accountIdentifier);
   SubscriptionDetailDTO getSubscription(String accountIdentifier, String subscriptionId);
   boolean checkSubscriptionExists(String subscriptionId);
   List<SubscriptionDetailDTO> listSubscriptions(String accountIdentifier, ModuleType moduleType);

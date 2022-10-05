@@ -314,6 +314,18 @@ public class SubscriptionServiceImpl implements SubscriptionService {
   }
 
   @Override
+  public void cancelAllSubscriptions(String accountIdentifier) {
+    isSelfServiceEnable(accountIdentifier);
+
+    List<SubscriptionDetail> subscriptionDetails =
+        subscriptionDetailRepository.findByAccountIdentifier(accountIdentifier);
+    subscriptionDetails.forEach(subscriptionDetail -> {
+      if (subscriptionDetail.isActive()) {
+        cancelSubscription(accountIdentifier, subscriptionDetail.getSubscriptionId());
+      }
+    });
+  }
+  @Override
   public SubscriptionDetailDTO getSubscription(String accountIdentifier, String subscriptionId) {
     isSelfServiceEnable(accountIdentifier);
 
