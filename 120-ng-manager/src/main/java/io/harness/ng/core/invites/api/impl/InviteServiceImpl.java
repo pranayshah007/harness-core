@@ -401,11 +401,13 @@ public class InviteServiceImpl implements InviteService {
                         .set(InviteKeys.userGroups, newInvite.getUserGroups());
     inviteRepository.updateInvite(newInvite.getId(), update);
     String accountId = newInvite.getAccountIdentifier();
+    boolean isSSOEnabled = isSSOEnabled(accountId);
     boolean isPLNoEmailForSamlAccountInvitesEnabled = isPLNoEmailForSamlAccountInvitesEnabled(accountId);
     boolean isAutoInviteAcceptanceEnabled = isAutoInviteAcceptanceEnabled(accountId);
 
     try {
-      sendInvitationMail(newInvite, isPLNoEmailForSamlAccountInvitesEnabled, isAutoInviteAcceptanceEnabled);
+      sendInvitationMail(
+          newInvite, isSSOEnabled, isPLNoEmailForSamlAccountInvitesEnabled, isAutoInviteAcceptanceEnabled);
     } catch (URISyntaxException ex) {
       log.error(
           "For invite: {} Mail embed url incorrect, can't sent email due to an exception: ", newInvite.getId(), ex);
@@ -530,11 +532,13 @@ public class InviteServiceImpl implements InviteService {
     checkUserLimit(invite.getAccountIdentifier(), invite.getEmail());
     Invite savedInvite = inviteRepository.save(invite);
     String accountId = invite.getAccountIdentifier();
+    boolean isSSOEnabled = isSSOEnabled(accountId);
     boolean isPLNoEmailForSamlAccountInvitesEnabled = isPLNoEmailForSamlAccountInvitesEnabled(accountId);
     boolean isAutoInviteAcceptanceEnabled = isAutoInviteAcceptanceEnabled(accountId);
 
     try {
-      sendInvitationMail(savedInvite, isPLNoEmailForSamlAccountInvitesEnabled, isAutoInviteAcceptanceEnabled);
+      sendInvitationMail(
+          savedInvite, isSSOEnabled, isPLNoEmailForSamlAccountInvitesEnabled, isAutoInviteAcceptanceEnabled);
     } catch (URISyntaxException ex) {
       log.error(
           "For invite: {} Mail embed url incorrect, can't sent email due to an exception: ", savedInvite.getId(), ex);
@@ -549,15 +553,26 @@ public class InviteServiceImpl implements InviteService {
 
     if (scimLdapArray[0]) {
       createAndInviteNonPasswordUser(accountId, invite.getInviteToken(), email, true);
-    } else if (scimLdapArray[1] || isAutoInviteAcceptanceEnabled || isPLNoEmailForSamlAccountInvitesEnabled) {
+    } else if (scimLdapArray[1]
+        || ((isAutoInviteAcceptanceEnabled || isPLNoEmailForSamlAccountInvitesEnabled) && isSSOEnabled)) {
       createAndInviteNonPasswordUser(accountId, invite.getInviteToken(), email, false);
     }
-    if (!isPLNoEmailForSamlAccountInvitesEnabled) {
-      ngAuditUserInviteCreateEvent(savedInvite);
-    } else {
+    if (isPLNoEmailForSamlAccountInvitesEnabled && isSSOEnabled) {
       return InviteOperationResponse.USER_INVITE_NOT_REQUIRED;
+    } else {
+      ngAuditUserInviteCreateEvent(savedInvite);
     }
     return InviteOperationResponse.USER_INVITED_SUCCESSFULLY;
+  }
+
+  private boolean isSSOEnabled(String accountIdentifier) {
+    try {
+      return CGRestUtils.getResponse(accountClient.isSSOEnabled(accountIdentifier));
+    } catch (Exception ex) {
+      log.error("For account {} while making an accountClient call to check isSSOEnabled failed with exception: ",
+          accountIdentifier, ex);
+      throw ex;
+    }
   }
 
   private boolean isPLNoEmailForSamlAccountInvitesEnabled(String accountIdentifier) {
@@ -590,10 +605,10 @@ public class InviteServiceImpl implements InviteService {
     inviteRepository.updateInvite(invite.getId(), update);
   }
 
-  private void sendInvitationMail(Invite invite, boolean isPLNoEmailForSamlAccountInvitesEnabled,
+  private void sendInvitationMail(Invite invite, boolean isSSOEnabled, boolean isPLNoEmailForSamlAccountInvitesEnabled,
       boolean isAutoInviteAcceptanceEnabled) throws URISyntaxException, UnsupportedEncodingException {
     updateJWTTokenInInvite(invite);
-    if (isPLNoEmailForSamlAccountInvitesEnabled) {
+    if (isPLNoEmailForSamlAccountInvitesEnabled && isSSOEnabled) {
       return;
     }
     String url = isNgAuthUIEnabled ? getAcceptInviteUrl(invite) : getInvitationMailEmbedUrl(invite);
@@ -602,7 +617,6 @@ public class InviteServiceImpl implements InviteService {
                                                   .recipients(Collections.singletonList(invite.getEmail()))
                                                   .team(Team.PL)
                                                   .userGroups(Collections.emptyList());
-    boolean isSSOEnabled = CGRestUtils.getResponse(accountClient.isSSOEnabled(invite.getAccountIdentifier()));
     if (isAutoInviteAcceptanceEnabled && isSSOEnabled) {
       emailChannelBuilder.templateId(EMAIL_NOTIFY_TEMPLATE_ID);
     } else {
