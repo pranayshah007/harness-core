@@ -19,6 +19,7 @@ import io.harness.walktree.visitor.utilities.VisitorParentPathUtils;
 public interface YamlTypes {
   String GITOPS_CREATE_PR = StepSpecTypeConstants.GITOPS_CREATE_PR;
   String GITOPS_MERGE_PR = StepSpecTypeConstants.GITOPS_MERGE_PR;
+  String UPDATE_RELEASE_REPO = StepSpecTypeConstants.GITOPS_UPDATE_RELEASE_REPO;
 
   String PRIMARY_ARTIFACT = "primary";
   String PRIMARY_ARTIFACT_REF = "primaryArtifactRef";

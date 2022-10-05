@@ -513,4 +513,6 @@ io.harness.cdng.provision.azure.ShellScriptProvisionOutcome
 io.harness.cdng.provision.shellscript.ShellScriptProvisionStepInfo
 io.harness.cdng.provision.shellscript.ShellScriptProvisionStepNode
 io.harness.cdng.provision.shellscript.ShellScriptProvisionStepParameters
-
+io.harness.cdng.gitops.UpdateReleaseRepoStepNode
+io.harness.cdng.gitops.UpdateReleaseRepoStepInfo
+io.harness.cdng.gitops.UpdateReleaseRepoOutcome
