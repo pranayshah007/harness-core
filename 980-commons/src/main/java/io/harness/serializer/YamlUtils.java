@@ -8,11 +8,14 @@
 package io.harness.serializer;
 
 import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 import com.fasterxml.jackson.datatype.guava.GuavaModule;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -25,7 +28,7 @@ public class YamlUtils {
    * Instantiates a new yaml utils.
    */
   public YamlUtils() {
-    mapper = new ObjectMapper(new YAMLFactory());
+    mapper = new ObjectMapper(new YAMLFactory().disable(YAMLGenerator.Feature.USE_NATIVE_TYPE_ID));
     mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
     mapper.registerModule(new Jdk8Module());
     mapper.registerModule(new GuavaModule());
@@ -61,5 +64,9 @@ public class YamlUtils {
   public <T> T read(String yaml, TypeReference<T> typeReference)
       throws JsonParseException, JsonMappingException, IOException {
     return mapper.readValue(yaml, typeReference);
+  }
+
+  public String dump(final Object obj) throws JsonProcessingException {
+    return mapper.writeValueAsString(obj);
   }
 }

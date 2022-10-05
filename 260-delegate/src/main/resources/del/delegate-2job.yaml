@@ -1,0 +1,24 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: task2-job
+spec:
+  backoffLimit: 2
+  activeDeadlineSeconds: 100
+  ttlSecondsAfterFinished: 200
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - image: alpine
+          name: first-task
+          imagePullPolicy: Always
+          resources:
+            limits:
+              cpu: "0.5"
+              memory: "512Mi"
+            requests:
+              cpu: "0.5"
+              memory: "512Mi"
+          command: ["/bin/sh"]
+          args: ["-c", "while true; do echo hello sleep 10; echo slept; done"]

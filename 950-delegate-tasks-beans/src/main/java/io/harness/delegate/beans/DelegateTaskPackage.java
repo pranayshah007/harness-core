@@ -43,6 +43,7 @@ public class DelegateTaskPackage {
 
   @Default private Map<String, EncryptionConfig> encryptionConfigs = new HashMap<>();
   @Default private Map<String, SecretDetail> secretDetails = new HashMap<>();
+  // Some tasks expect decrypted secrets here
   @Default private Set<String> secrets = new HashSet<>();
 
   private List<ExecutionCapability> executionCapabilities;
