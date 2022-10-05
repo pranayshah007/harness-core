@@ -7,7 +7,6 @@
 
 package io.harness.delegate.beans.connector.azureconnector;
 
-import io.harness.annotation.RecasterFieldName;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.encryption.SecretRefData;
@@ -30,7 +29,6 @@ import lombok.EqualsAndHashCode;
 @Schema(name = "AzureClientKeyCert", description = "This contains azure client key certificate details")
 public class AzureClientKeyCertDTO extends AzureAuthCredentialDTO {
   @ApiModelProperty(dataType = "string")
-  @RecasterFieldName(name = "certificateRef")
   @JsonProperty("certificateRef")
   @NotNull
   @SecretReference
