@@ -30,9 +30,7 @@ public abstract class TimeSeriesAnalysisStateExecutor<T extends TimeSeriesAnalys
 
   @Override
   public AnalysisState execute(T analysisState) {
-    300 - cv
-        - nextgen / src / main / java / io / harness / cvng / statemachine / services / api
-            / TimeSeriesAnalysisStateExecutor.java List<String> taskIds = scheduleAnalysis(analysisState.getInputs());
+    List<String> taskIds = scheduleAnalysis(analysisState.getInputs());
     analysisState.setStatus(AnalysisStatus.RUNNING);
 
     if (taskIds != null && taskIds.size() == 1) {
