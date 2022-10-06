@@ -9,17 +9,13 @@ package io.harness.customDeployment;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
+import com.google.inject.*;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.customDeployment.remote.CustomDeploymentClientHttpFactory;
 import io.harness.customDeployment.remote.CustomDeploymentResourceClient;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.security.ServiceTokenGenerator;
 import io.harness.serializer.kryo.KryoConverterFactory;
-
-import com.google.inject.AbstractModule;
-import com.google.inject.Inject;
-import com.google.inject.Provides;
-import com.google.inject.Scopes;
 
 @OwnedBy(CDP)
 public class CustomDeploymentClientModule extends AbstractModule {
@@ -36,6 +32,7 @@ public class CustomDeploymentClientModule extends AbstractModule {
   }
 
   @Provides
+  @Singleton
   private CustomDeploymentClientHttpFactory customDeploymentClientHttpFactory(
       KryoConverterFactory kryoConverterFactory) {
     return new CustomDeploymentClientHttpFactory(this.customDeploymentClientConfig, this.serviceSecret,

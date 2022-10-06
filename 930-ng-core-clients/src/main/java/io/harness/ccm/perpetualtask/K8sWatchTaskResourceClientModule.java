@@ -9,15 +9,11 @@ package io.harness.ccm.perpetualtask;
 
 import static io.harness.annotations.dev.HarnessTeam.CE;
 
+import com.google.inject.*;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.security.ServiceTokenGenerator;
 import io.harness.serializer.kryo.KryoConverterFactory;
-
-import com.google.inject.AbstractModule;
-import com.google.inject.Inject;
-import com.google.inject.Provides;
-import com.google.inject.Scopes;
 
 @OwnedBy(CE)
 public class K8sWatchTaskResourceClientModule extends AbstractModule {
@@ -34,6 +30,7 @@ public class K8sWatchTaskResourceClientModule extends AbstractModule {
   }
 
   @Provides
+  @Singleton
   private K8sWatchTaskResourceHttpClientFactory secretManagerHttpClientFactory(
       KryoConverterFactory kryoConverterFactory) {
     return new K8sWatchTaskResourceHttpClientFactory(

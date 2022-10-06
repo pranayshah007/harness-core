@@ -7,6 +7,7 @@
 
 package io.harness.ng.core.globalkms.client;
 
+import com.google.inject.Singleton;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.client.NgConnectorManagerClient;
@@ -31,6 +32,7 @@ public class NgConnectorManagerClientModule extends AbstractModule {
   }
 
   @Provides
+  @Singleton
   private NgConnectorManagerClientFactory connectorManagerClientFactory(KryoConverterFactory kryoConverterFactory) {
     return new NgConnectorManagerClientFactory(
         managerClientConfig, managerServiceSecret, new ServiceTokenGenerator(), kryoConverterFactory);

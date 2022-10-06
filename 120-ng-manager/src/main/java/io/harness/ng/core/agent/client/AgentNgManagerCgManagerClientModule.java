@@ -9,6 +9,7 @@ package io.harness.ng.core.agent.client;
 
 import static io.harness.annotations.dev.HarnessTeam.DEL;
 
+import com.google.inject.Singleton;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.security.ServiceTokenGenerator;
@@ -32,6 +33,7 @@ public class AgentNgManagerCgManagerClientModule extends AbstractModule {
   }
 
   @Provides
+  @Singleton
   private AgentNgManagerCgManagerClientFactory agentNgManagerCgManagerClientFactory(
       KryoConverterFactory kryoConverterFactory) {
     return new AgentNgManagerCgManagerClientFactory(

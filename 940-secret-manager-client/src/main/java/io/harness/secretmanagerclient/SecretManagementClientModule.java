@@ -9,6 +9,7 @@ package io.harness.secretmanagerclient;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
+import com.google.inject.Singleton;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.secretmanagerclient.remote.SecretManagerClient;
@@ -34,6 +35,7 @@ public class SecretManagementClientModule extends AbstractModule {
   }
 
   @Provides
+  @Singleton
   private SecretManagerHttpClientFactory secretManagerHttpClientFactory(KryoConverterFactory kryoConverterFactory) {
     return new SecretManagerHttpClientFactory(
         secretManagerConfig, serviceSecret, new ServiceTokenGenerator(), kryoConverterFactory, clientId);

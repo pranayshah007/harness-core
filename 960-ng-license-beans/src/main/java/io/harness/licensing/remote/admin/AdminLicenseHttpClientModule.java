@@ -7,14 +7,11 @@
 
 package io.harness.licensing.remote.admin;
 
+import com.google.inject.*;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.security.ServiceTokenGenerator;
 import io.harness.serializer.kryo.KryoConverterFactory;
 
-import com.google.inject.AbstractModule;
-import com.google.inject.Inject;
-import com.google.inject.Provides;
-import com.google.inject.Scopes;
 import lombok.AllArgsConstructor;
 
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
@@ -24,6 +21,7 @@ public class AdminLicenseHttpClientModule extends AbstractModule {
   private final String clientId;
 
   @Provides
+  @Singleton
   private AdminLicenseHttpClientFactory adminLicenseHttpClientFactory(KryoConverterFactory kryoConverterFactory) {
     return new AdminLicenseHttpClientFactory(this.adminLicenseHttpClientConfig, this.serviceSecret,
         new ServiceTokenGenerator(), kryoConverterFactory, clientId);

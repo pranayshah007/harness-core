@@ -9,6 +9,7 @@ package io.harness.account;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
+import com.google.inject.*;
 import io.harness.account.services.AccountService;
 import io.harness.account.services.impl.AccountServiceImpl;
 import io.harness.annotations.dev.OwnedBy;
@@ -17,10 +18,6 @@ import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.security.ServiceTokenGenerator;
 import io.harness.serializer.kryo.KryoConverterFactory;
 
-import com.google.inject.AbstractModule;
-import com.google.inject.Key;
-import com.google.inject.Provides;
-import com.google.inject.Scopes;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
 
@@ -37,6 +34,7 @@ public class AccountClientModule extends AbstractModule {
   }
 
   @Provides
+  @Singleton
   private AccountHttpClientFactory accountClientFactory(KryoConverterFactory kryoConverterFactory) {
     return new AccountHttpClientFactory(serviceHttpClientConfig, serviceSecret, new ServiceTokenGenerator(),
         kryoConverterFactory, clientId, ClientMode.NON_PRIVILEGED);
@@ -44,6 +42,7 @@ public class AccountClientModule extends AbstractModule {
 
   @Provides
   @Named("PRIVILEGED")
+  @Singleton
   private AccountHttpClientFactory privilegedAccountClientFactory(KryoConverterFactory kryoConverterFactory) {
     return new AccountHttpClientFactory(serviceHttpClientConfig, serviceSecret, new ServiceTokenGenerator(),
         kryoConverterFactory, clientId, ClientMode.PRIVILEGED);

@@ -9,17 +9,13 @@ package io.harness.service;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
+import com.google.inject.*;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.security.ServiceTokenGenerator;
 import io.harness.serializer.kryo.KryoConverterFactory;
 import io.harness.service.remote.ServiceResourceClient;
 import io.harness.service.remote.ServiceResourceClientHttpFactory;
-
-import com.google.inject.AbstractModule;
-import com.google.inject.Inject;
-import com.google.inject.Provides;
-import com.google.inject.Scopes;
 
 @OwnedBy(PIPELINE)
 public class ServiceResourceClientModule extends AbstractModule {
@@ -36,6 +32,7 @@ public class ServiceResourceClientModule extends AbstractModule {
   }
 
   @Provides
+  @Singleton
   private ServiceResourceClientHttpFactory serviceResourceClientHttpFactory(KryoConverterFactory kryoConverterFactory) {
     return new ServiceResourceClientHttpFactory(
         this.ngManagerClientConfig, this.serviceSecret, new ServiceTokenGenerator(), kryoConverterFactory, clientId);

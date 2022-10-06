@@ -7,6 +7,7 @@
 
 package io.harness.client;
 
+import com.google.inject.Singleton;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.remote.client.ServiceHttpClientConfig;
@@ -31,6 +32,7 @@ public class DelegateSelectionLogHttpClientModule extends AbstractModule {
   }
 
   @Provides
+  @Singleton
   private DelegateSelectionLogHttpClientFactory delegateSelectionLogClientFactory(
       KryoConverterFactory kryoConverterFactory) {
     return new DelegateSelectionLogHttpClientFactory(

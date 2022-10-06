@@ -9,6 +9,7 @@ package io.harness.pipeline.remote;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
+import com.google.inject.Singleton;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.security.ServiceTokenGenerator;
@@ -33,6 +34,7 @@ public class PipelineRemoteClientModule extends AbstractModule {
   }
 
   @Provides
+  @Singleton
   private PipelineServiceHttpClientFactory secretNGManagerHttpClientFactory(KryoConverterFactory kryoConverterFactory) {
     return new PipelineServiceHttpClientFactory(
         serviceHttpClientConfig, serviceSecret, new ServiceTokenGenerator(), kryoConverterFactory, clientId);

@@ -7,17 +7,13 @@
 
 package io.harness.instanceng;
 
+import com.google.inject.*;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.remote.client.ClientMode;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.security.ServiceTokenGenerator;
 import io.harness.serializer.kryo.KryoConverterFactory;
-
-import com.google.inject.AbstractModule;
-import com.google.inject.Inject;
-import com.google.inject.Provides;
-import com.google.inject.Scopes;
 
 @OwnedBy(HarnessTeam.CE)
 public class InstanceNGResourceClientModule extends AbstractModule {
@@ -45,6 +41,7 @@ public class InstanceNGResourceClientModule extends AbstractModule {
   }
 
   @Provides
+  @Singleton
   private InstanceNGResourceHttpClientFactory providesHttpClientFactory(KryoConverterFactory kryoConverterFactory) {
     return new InstanceNGResourceHttpClientFactory(this.ngManagerClientConfig, this.serviceSecret,
         new ServiceTokenGenerator(), kryoConverterFactory, clientId, clientMode);

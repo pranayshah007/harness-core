@@ -9,6 +9,7 @@ package io.harness.usermembership;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
+import com.google.inject.*;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.remote.client.ClientMode;
 import io.harness.remote.client.ServiceHttpClientConfig;
@@ -17,10 +18,6 @@ import io.harness.serializer.kryo.KryoConverterFactory;
 import io.harness.usermembership.remote.UserMembershipClient;
 import io.harness.usermembership.remote.UserMembershipHttpClientFactory;
 
-import com.google.inject.AbstractModule;
-import com.google.inject.Key;
-import com.google.inject.Provides;
-import com.google.inject.Scopes;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
 
@@ -39,6 +36,7 @@ public class UserMembershipClientModule extends AbstractModule {
 
   @Provides
   @Named("PRIVILEGED")
+  @Singleton
   private UserMembershipHttpClientFactory privilegedUserMembershipHttpClientFactory(
       KryoConverterFactory kryoConverterFactory) {
     return new UserMembershipHttpClientFactory(serviceHttpClientConfig, serviceSecret, new ServiceTokenGenerator(),
@@ -47,6 +45,7 @@ public class UserMembershipClientModule extends AbstractModule {
 
   @Provides
   @Named("NON_PRIVILEGED")
+  @Singleton
   private UserMembershipHttpClientFactory nonPrivilegedUserMembershipHttpClientFactory(
       KryoConverterFactory kryoConverterFactory) {
     return new UserMembershipHttpClientFactory(serviceHttpClientConfig, serviceSecret, new ServiceTokenGenerator(),

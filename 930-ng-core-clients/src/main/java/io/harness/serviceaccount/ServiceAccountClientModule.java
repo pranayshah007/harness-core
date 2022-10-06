@@ -9,6 +9,7 @@ package io.harness.serviceaccount;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
+import com.google.inject.*;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.remote.client.ClientMode;
 import io.harness.remote.client.ServiceHttpClientConfig;
@@ -17,10 +18,6 @@ import io.harness.serializer.kryo.KryoConverterFactory;
 import io.harness.serviceaccount.remote.ServiceAccountClient;
 import io.harness.serviceaccount.remote.ServiceAccountClientHttpFactory;
 
-import com.google.inject.AbstractModule;
-import com.google.inject.Key;
-import com.google.inject.Provides;
-import com.google.inject.Scopes;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
 
@@ -39,6 +36,7 @@ public class ServiceAccountClientModule extends AbstractModule {
 
   @Provides
   @Named("PRIVILEGED")
+  @Singleton
   private ServiceAccountClientHttpFactory privilegedServiceAccountHttpClientFactory(
       KryoConverterFactory kryoConverterFactory) {
     return new ServiceAccountClientHttpFactory(ngManagerClientConfig, serviceSecret, new ServiceTokenGenerator(),
@@ -47,6 +45,7 @@ public class ServiceAccountClientModule extends AbstractModule {
 
   @Provides
   @Named("NON_PRIVILEGED")
+  @Singleton
   private ServiceAccountClientHttpFactory nonPrivilegedServiceAccountHttpClientFactory(
       KryoConverterFactory kryoConverterFactory) {
     return new ServiceAccountClientHttpFactory(ngManagerClientConfig, serviceSecret, new ServiceTokenGenerator(),

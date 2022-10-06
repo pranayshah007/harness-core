@@ -7,6 +7,7 @@
 
 package io.harness.cd.license;
 
+import com.google.inject.Singleton;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.remote.client.ServiceHttpClientConfig;
@@ -35,6 +36,7 @@ public class CdLicenseUsageCgModule extends AbstractModule {
   }
 
   @Provides
+  @Singleton
   private CdLicenseUsageCgClientFactory clientFactory(KryoConverterFactory kryoConverterFactory) {
     return new CdLicenseUsageCgClientFactory(
         serviceHttpClientConfig, serviceSecret, new ServiceTokenGenerator(), kryoConverterFactory, clientId);

@@ -16,10 +16,7 @@ import io.harness.serializer.kryo.KryoConverterFactory;
 import io.harness.template.remote.TemplateResourceClient;
 import io.harness.template.remote.TemplateResourceClientHttpFactory;
 
-import com.google.inject.AbstractModule;
-import com.google.inject.Inject;
-import com.google.inject.Provides;
-import com.google.inject.Scopes;
+import com.google.inject.*;
 
 @OwnedBy(CDC)
 public class TemplateResourceClientModule extends AbstractModule {
@@ -36,6 +33,7 @@ public class TemplateResourceClientModule extends AbstractModule {
   }
 
   @Provides
+  @Singleton
   private TemplateResourceClientHttpFactory templateResourceClientHttpFactory(
       KryoConverterFactory kryoConverterFactory) {
     return new TemplateResourceClientHttpFactory(

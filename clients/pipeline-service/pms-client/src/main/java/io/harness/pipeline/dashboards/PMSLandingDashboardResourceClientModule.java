@@ -9,6 +9,7 @@ package io.harness.pipeline.dashboards;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
+import com.google.inject.Singleton;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.security.ServiceTokenGenerator;
@@ -42,6 +43,7 @@ public class PMSLandingDashboardResourceClientModule extends AbstractModule {
   }
 
   @Provides
+  @Singleton
   private PMSLandingDashboardResourceClientFactory pmsLandingDashboardResourceClientFactory(
       KryoConverterFactory kryoConverterFactory) {
     return new PMSLandingDashboardResourceClientFactory(

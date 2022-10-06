@@ -9,6 +9,7 @@ package io.harness.user;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
+import com.google.inject.Singleton;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.remote.client.ClientMode;
 import io.harness.remote.client.ServiceHttpClientConfig;
@@ -46,6 +47,7 @@ public class UserClientModule extends AbstractModule {
   }
 
   @Provides
+  @Singleton
   private UserHttpClientFactory userClientFactory(KryoConverterFactory kryoConverterFactory) {
     return new UserHttpClientFactory(serviceHttpClientConfig, serviceSecret, new ServiceTokenGenerator(),
         kryoConverterFactory, clientId, ClientMode.NON_PRIVILEGED);
@@ -53,6 +55,7 @@ public class UserClientModule extends AbstractModule {
 
   @Provides
   @Named("PRIVILEGED")
+  @Singleton
   private UserHttpClientFactory privilegedUserClientFactory() {
     return new UserHttpClientFactory(
         serviceHttpClientConfig, serviceSecret, new ServiceTokenGenerator(), null, clientId, ClientMode.PRIVILEGED);

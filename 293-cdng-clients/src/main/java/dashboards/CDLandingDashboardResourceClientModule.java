@@ -9,6 +9,7 @@ package dashboards;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
+import com.google.inject.Singleton;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.security.ServiceTokenGenerator;
@@ -42,6 +43,7 @@ public class CDLandingDashboardResourceClientModule extends AbstractModule {
   }
 
   @Provides
+  @Singleton
   private CDLandingDashboardResourceClientFactory cdLandingDashboardResourceClientFactory(
       KryoConverterFactory kryoConverterFactory) {
     return new CDLandingDashboardResourceClientFactory(

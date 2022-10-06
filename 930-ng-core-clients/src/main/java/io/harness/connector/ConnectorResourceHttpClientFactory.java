@@ -25,12 +25,6 @@ import lombok.extern.slf4j.Slf4j;
 public class ConnectorResourceHttpClientFactory
     extends AbstractHttpClientFactory implements Provider<ConnectorResourceClient> {
   public ConnectorResourceHttpClientFactory(ServiceHttpClientConfig ngManagerConfig, String serviceSecret,
-      ServiceTokenGenerator tokenGenerator, KryoConverterFactory kryoConverterFactory, String clientId) {
-    super(ngManagerConfig, serviceSecret, tokenGenerator, kryoConverterFactory, clientId);
-    log.info("secretManagerConfig {}", ngManagerConfig);
-  }
-
-  public ConnectorResourceHttpClientFactory(ServiceHttpClientConfig ngManagerConfig, String serviceSecret,
       ServiceTokenGenerator tokenGenerator, KryoConverterFactory kryoConverterFactory, String clientId,
       ClientMode clientMode) {
     super(ngManagerConfig, serviceSecret, tokenGenerator, kryoConverterFactory, clientId, false, clientMode);

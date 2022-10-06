@@ -7,6 +7,7 @@
 
 package io.harness.licensing.remote;
 
+import com.google.inject.Singleton;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.security.ServiceTokenGenerator;
 import io.harness.serializer.kryo.KryoConverterFactory;
@@ -37,6 +38,7 @@ public class NgLicenseHttpClientModule extends AbstractModule {
   }
 
   @Provides
+  @Singleton
   private NgLicenseHttpClientFactory ngLicenseHttpClientFactory(KryoConverterFactory kryoConverterFactory) {
     return new NgLicenseHttpClientFactory(
         this.ngManagerClientConfig, this.serviceSecret, new ServiceTokenGenerator(), kryoConverterFactory, clientId);

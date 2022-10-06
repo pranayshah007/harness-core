@@ -7,6 +7,7 @@
 
 package io.harness.filestoreclient.module;
 
+import com.google.inject.Singleton;
 import io.harness.filestoreclient.remote.FileStoreClient;
 import io.harness.filestoreclient.remote.FileStoreClientFactoryForCg;
 import io.harness.security.ServiceTokenGenerator;
@@ -28,6 +29,7 @@ public class FileStoreClientCgModule extends AbstractModule {
   }
 
   @Provides
+  @Singleton
   public FileStoreClientFactoryForCg secretManagerHttpClientFactory(KryoConverterFactory kryoConverterFactory) {
     return new FileStoreClientFactoryForCg(baseUrl, serviceSecret, serviceTokenGenerator);
   }

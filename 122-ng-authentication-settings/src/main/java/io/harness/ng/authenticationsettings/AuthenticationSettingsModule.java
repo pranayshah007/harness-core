@@ -9,6 +9,7 @@ package io.harness.ng.authenticationsettings;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
+import com.google.inject.Singleton;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ng.authenticationsettings.impl.AuthenticationSettingsService;
 import io.harness.ng.authenticationsettings.impl.AuthenticationSettingsServiceImpl;
@@ -39,6 +40,7 @@ public class AuthenticationSettingsModule extends AbstractModule {
   }
 
   @Provides
+  @Singleton
   private AuthSettingsManagerClientFactory getAuthSettingsManagerClientFactory(
       KryoConverterFactory kryoConverterFactory) {
     return new AuthSettingsManagerClientFactory(

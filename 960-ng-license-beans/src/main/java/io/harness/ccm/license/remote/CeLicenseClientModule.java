@@ -7,6 +7,7 @@
 
 package io.harness.ccm.license.remote;
 
+import com.google.inject.Singleton;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.security.ServiceTokenGenerator;
 import io.harness.serializer.kryo.KryoConverterFactory;
@@ -36,6 +37,7 @@ public class CeLicenseClientModule extends AbstractModule {
   }
 
   @Provides
+  @Singleton
   private CeLicenseClientFactory ngLicenseHttpClientFactory(KryoConverterFactory kryoConverterFactory) {
     return new CeLicenseClientFactory(
         this.managerClientConfig, this.serviceSecret, new ServiceTokenGenerator(), kryoConverterFactory, clientId);

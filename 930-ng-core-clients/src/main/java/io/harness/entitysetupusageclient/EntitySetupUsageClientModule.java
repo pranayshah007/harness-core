@@ -9,6 +9,7 @@ package io.harness.entitysetupusageclient;
 
 import static io.harness.annotations.dev.HarnessTeam.DX;
 
+import com.google.inject.Singleton;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.entitysetupusageclient.remote.EntitySetupUsageClient;
 import io.harness.entitysetupusageclient.remote.EntitySetupUsageHttpClientFactory;
@@ -34,6 +35,7 @@ public class EntitySetupUsageClientModule extends AbstractModule {
   }
 
   @Provides
+  @Singleton
   private EntitySetupUsageHttpClientFactory entityReferenceHttpClientFactory(
       KryoConverterFactory kryoConverterFactory) {
     return new EntitySetupUsageHttpClientFactory(

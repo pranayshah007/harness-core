@@ -9,6 +9,7 @@ package io.harness.webhook;
 
 import static io.harness.annotations.dev.HarnessTeam.DX;
 
+import com.google.inject.Singleton;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.remote.client.ClientMode;
 import io.harness.remote.client.ServiceHttpClientConfig;
@@ -35,6 +36,7 @@ public class WebhookEventClientModule extends AbstractModule {
   }
 
   @Provides
+  @Singleton
   private WebhookEventHttpClientFactory modulesHttpClientFactory(KryoConverterFactory kryoConverterFactory) {
     return new WebhookEventHttpClientFactory(serviceHttpClientConfig, serviceSecret, new ServiceTokenGenerator(),
         kryoConverterFactory, clientId, ClientMode.PRIVILEGED);

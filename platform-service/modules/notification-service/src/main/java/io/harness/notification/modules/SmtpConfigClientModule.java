@@ -7,6 +7,7 @@
 
 package io.harness.notification.modules;
 
+import com.google.inject.Singleton;
 import io.harness.notification.remote.SmtpConfigClient;
 import io.harness.notification.remote.SmtpConfigHttpClientFactory;
 import io.harness.remote.client.ServiceHttpClientConfig;
@@ -27,6 +28,7 @@ public class SmtpConfigClientModule extends AbstractModule {
   }
 
   @Provides
+  @Singleton
   private SmtpConfigHttpClientFactory smtpConfigClientFactory(KryoConverterFactory kryoConverterFactory) {
     return new SmtpConfigHttpClientFactory(
         serviceHttpClientConfig, serviceSecret, new ServiceTokenGenerator(), kryoConverterFactory);

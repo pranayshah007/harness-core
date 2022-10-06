@@ -9,6 +9,7 @@ package io.harness.modules;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
+import com.google.inject.Singleton;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.modules.remote.ModulesClient;
 import io.harness.modules.remote.ModulesHttpClientFactory;
@@ -33,6 +34,7 @@ public class ModulesClientModule extends AbstractModule {
   }
 
   @Provides
+  @Singleton
   private ModulesHttpClientFactory modulesHttpClientFactory(KryoConverterFactory kryoConverterFactory) {
     return new ModulesHttpClientFactory(
         serviceHttpClientConfig, serviceSecret, new ServiceTokenGenerator(), kryoConverterFactory, clientId);

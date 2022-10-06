@@ -9,6 +9,7 @@ package io.harness.delegate;
 
 import static io.harness.annotations.dev.HarnessTeam.DEL;
 
+import com.google.inject.Singleton;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.remote.client.ClientMode;
 import io.harness.remote.client.ServiceHttpClientConfig;
@@ -33,6 +34,7 @@ public class DelegateServiceResourceClientModule extends AbstractModule {
   }
 
   @Provides
+  @Singleton
   private DelegateServiceResourceClientFactory privilegedDelegateServiceResourceClientFactory(
       KryoConverterFactory kryoConverterFactory) {
     return new DelegateServiceResourceClientFactory(serviceHttpClientConfig, serviceSecret, new ServiceTokenGenerator(),

@@ -7,6 +7,7 @@
 
 package io.harness.pipeline.yamlschema;
 
+import com.google.inject.Singleton;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.security.ServiceTokenGenerator;
 import io.harness.serializer.kryo.KryoConverterFactory;
@@ -29,6 +30,7 @@ public class PipelineYamlSchemaClientModule extends AbstractModule {
   }
 
   @Provides
+  @Singleton
   private PipelineYamlSchemaServiceHttpClientFactory secretNGManagerHttpClientFactory(
       KryoConverterFactory kryoConverterFactory) {
     return new PipelineYamlSchemaServiceHttpClientFactory(

@@ -7,6 +7,7 @@
 
 package io.harness.ngsettings.client.remote;
 
+import com.google.inject.Singleton;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.security.ServiceTokenGenerator;
 import io.harness.serializer.kryo.KryoConverterFactory;
@@ -28,6 +29,7 @@ public class NGSettingsClientModule extends AbstractModule {
   }
 
   @Provides
+  @Singleton
   private NGSettingsClientFactory ngSettingsClientFactory(KryoConverterFactory kryoConverterFactory) {
     return new NGSettingsClientFactory(
         ngSettingsClientConfig, serviceSecret, new ServiceTokenGenerator(), kryoConverterFactory, clientId);

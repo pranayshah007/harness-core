@@ -9,6 +9,7 @@ package io.harness.audit.client.remote;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
+import com.google.inject.Singleton;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.audit.client.api.AuditClientService;
 import io.harness.audit.client.api.impl.AuditClientServiceImpl;
@@ -37,6 +38,7 @@ public class AuditClientModule extends AbstractModule {
   }
 
   @Provides
+  @Singleton
   private AuditClientFactory auditClientFactory(KryoConverterFactory kryoConverterFactory) {
     return new AuditClientFactory(
         auditClientConfig, serviceSecret, new ServiceTokenGenerator(), kryoConverterFactory, clientId);

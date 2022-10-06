@@ -7,6 +7,7 @@
 
 package io.harness.userng;
 
+import com.google.inject.Singleton;
 import io.harness.remote.client.ClientMode;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.security.ServiceTokenGenerator;
@@ -42,6 +43,7 @@ public class UserNGClientModule extends AbstractModule {
   }
 
   @Provides
+  @Singleton
   private UserNGHttpClientFactory userNGHttpClientFactory(KryoConverterFactory kryoConverterFactory) {
     return new UserNGHttpClientFactory(serviceHttpClientConfig, serviceSecret, new ServiceTokenGenerator(),
         kryoConverterFactory, clientId, ClientMode.NON_PRIVILEGED);
@@ -49,6 +51,7 @@ public class UserNGClientModule extends AbstractModule {
 
   @Provides
   @Named("PRIVILEGED")
+  @Singleton
   private UserNGHttpClientFactory privilegedUserNGClientFactory() {
     return new UserNGHttpClientFactory(
         serviceHttpClientConfig, serviceSecret, new ServiceTokenGenerator(), null, clientId, ClientMode.PRIVILEGED);

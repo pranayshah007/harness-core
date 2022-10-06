@@ -9,6 +9,7 @@ package io.harness.ng.core.smtp;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
+import com.google.inject.Singleton;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.security.ServiceTokenGenerator;
@@ -35,6 +36,7 @@ public class NgSMTPSettingsHttpClientModule extends AbstractModule {
   }
 
   @Provides
+  @Singleton
   private NgSMTPSettingsHttpClientFactory getNgSMTPSettingsHttpClientFactory(
       KryoConverterFactory kryoConverterFactory) {
     return new NgSMTPSettingsHttpClientFactory(
