@@ -19,6 +19,8 @@ public enum PerpetualTaskState {
   @Deprecated NO_DELEGATE_AVAILABLE,
   @Deprecated NO_ELIGIBLE_DELEGATES,
   @Deprecated TASK_RUN_SUCCEEDED,
-  @Deprecated TASK_RUN_FAILED
+  @Deprecated TASK_RUN_FAILED,
 
+  TASK_NON_ASSIGNABLE,
+  TASK_INVALID
 }
