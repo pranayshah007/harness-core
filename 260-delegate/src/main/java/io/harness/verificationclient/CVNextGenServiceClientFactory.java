@@ -86,7 +86,7 @@ public class CVNextGenServiceClientFactory implements Provider<CVNextGenServiceC
       SSLContext sslContext = sslContextBuilder.build();
 
       // https://www.baeldung.com/okhttp-timeouts
-      return Http.getOkHttpClient()
+      return Http.getDefaultOkHttpClient()
           .newBuilder()
           .connectionPool(CONNECTION_POOL)
           .connectTimeout(10, TimeUnit.SECONDS)

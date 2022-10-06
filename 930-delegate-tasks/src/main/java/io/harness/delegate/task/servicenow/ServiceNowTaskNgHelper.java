@@ -766,7 +766,7 @@ public class ServiceNowTaskNgHelper {
 
   @NotNull
   private OkHttpClient getHttpClient(String url) {
-      return Http.getOkHttpClient().newBuilder()
+      return Http.getDefaultOkHttpClient().newBuilder()
         .connectTimeout(TIME_OUT, TimeUnit.SECONDS)
         .readTimeout(TIME_OUT, TimeUnit.SECONDS)
         .proxy(Http.checkAndGetNonProxyIfApplicable(url))

@@ -309,7 +309,7 @@ public class KubernetesHelperService {
   @VisibleForTesting
   public OkHttpClient createHttpClientWithProxySetting(final Config config) {
     try {
-        OkHttpClient.Builder httpClientBuilder = Http.getOkHttpClient().newBuilder();
+        OkHttpClient.Builder httpClientBuilder = Http.getDefaultOkHttpClient().newBuilder();
       httpClientBuilder.proxy(Http.checkAndGetNonProxyIfApplicable(config.getMasterUrl()));
       // Follow any redirects
       httpClientBuilder.followRedirects(true);

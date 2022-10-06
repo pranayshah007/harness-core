@@ -187,7 +187,7 @@ public class APMDelegateServiceImpl implements APMDelegateService {
     final Retrofit retrofit = new Retrofit.Builder()
                                   .baseUrl(baseUrl)
                                   .addConverterFactory(JacksonConverterFactory.create())
-                                  .client(Http.getOkHttpClient()
+                                  .client(Http.getDefaultOkHttpClient()
                                               .newBuilder()
                                               .proxy(checkAndGetNonProxyIfApplicable(baseUrl))
                                               .connectTimeout(30, TimeUnit.SECONDS)

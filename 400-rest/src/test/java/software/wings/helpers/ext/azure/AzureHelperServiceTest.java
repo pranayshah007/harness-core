@@ -241,7 +241,7 @@ public class AzureHelperServiceTest extends WingsBaseTest {
   public void testGetAzureManagementRestClient() {
     try (MockedStatic<Http> httpMockedStatic = Mockito.mockStatic(Http.class)) {
       OkHttpClient.Builder clientBuilder = new OkHttpClient.Builder();
-        when(Http.getOkHttpClient().newBuilder()).thenReturn(clientBuilder);
+        when(Http.getDefaultOkHttpClient().newBuilder()).thenReturn(clientBuilder);
 
       azureDelegateHelperService.getAzureManagementRestClient(null);
       ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);

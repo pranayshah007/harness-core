@@ -114,7 +114,7 @@ public class LogzDelegateServiceImpl implements LogzDelegateService {
   private LogzRestClient getLogzRestClient(
       final LogzConfig logzConfig, List<EncryptedDataDetail> encryptedDataDetails) {
     encryptionService.decrypt(logzConfig, encryptedDataDetails, false);
-      OkHttpClient.Builder httpClient = Http.getOkHttpClient().newBuilder();
+      OkHttpClient.Builder httpClient = Http.getDefaultOkHttpClient().newBuilder();
     httpClient.addInterceptor(chain -> {
       Request original = chain.request();
 

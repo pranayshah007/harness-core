@@ -150,7 +150,7 @@ public class BugsnagDelegateServiceImpl implements BugsnagDelegateService {
     final Retrofit retrofit = new Retrofit.Builder()
                                   .baseUrl(config.getUrl())
                                   .addConverterFactory(JacksonConverterFactory.create())
-                                  .client(Http.getOkHttpClient()
+                                  .client(Http.getDefaultOkHttpClient()
                                               .newBuilder()
                                               .proxy(checkAndGetNonProxyIfApplicable(config.getUrl()))
                                               .connectTimeout(30, TimeUnit.SECONDS)

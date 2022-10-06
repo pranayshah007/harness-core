@@ -29,7 +29,7 @@ public class NGLogStreamingClientFactory implements Provider<LogStreamingService
 
   @Override
   public LogStreamingServiceRestClient get() {
-      OkHttpClient okHttpClient = Http.getOkHttpClient().newBuilder()
+      OkHttpClient okHttpClient = Http.getDefaultOkHttpClient().newBuilder()
                                     .connectTimeout(5, TimeUnit.SECONDS)
                                     .readTimeout(10, TimeUnit.SECONDS)
                                     .proxy(Http.checkAndGetNonProxyIfApplicable(logStreamingServiceBaseUrl))

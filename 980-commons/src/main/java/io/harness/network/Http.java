@@ -283,7 +283,7 @@ public class Http {
       String url, long connectTimeOutSeconds, long readTimeOutSeconds) {
     try {
       OkHttpClient.Builder builder =
-          getOkHttpClient()
+          getDefaultOkHttpClient()
               .newBuilder()
               .sslSocketFactory(getSslContext().getSocketFactory(), (X509TrustManager) getTrustManagers()[0])
               .connectTimeout(connectTimeOutSeconds, TimeUnit.SECONDS)
@@ -295,29 +295,6 @@ public class Http {
       }
 
       return builder;
-    } catch (Exception e) {
-      throw new RuntimeException(e);
-    }
-  }
-
-  public OkHttpClient getOkHttpClient(
-      String url, boolean isCertValidationRequired, long connectTimeOutSeconds, long readTimeOutSeconds) {
-    try {
-      OkHttpClient.Builder builder = getOkHttpClient()
-                                         .newBuilder()
-                                         .connectTimeout(connectTimeOutSeconds, TimeUnit.SECONDS)
-                                         .readTimeout(readTimeOutSeconds, TimeUnit.SECONDS);
-
-      Proxy proxy = checkAndGetNonProxyIfApplicable(url);
-      if (proxy != null) {
-        builder.proxy(proxy);
-      }
-
-      if (!isCertValidationRequired) {
-        builder.sslSocketFactory(getSslContext().getSocketFactory(), (X509TrustManager) getTrustManagers()[0]);
-      }
-
-      return builder.build();
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
@@ -463,7 +440,7 @@ public class Http {
     return domain.toLowerCase().endsWith(pattern.toLowerCase());
   }
 
-  public static OkHttpClient getOkHttpClient() {
+  public static OkHttpClient getDefaultOkHttpClient() {
     if (defaultOkHttpClient == null) {
       synchronized (Http.class) {
         if (defaultOkHttpClient == null) {
@@ -484,6 +461,29 @@ public class Http {
       }
     }
     return defaultOkHttpClient;
+  }
+
+  public OkHttpClient getOkHttpClient(
+      String url, boolean isCertValidationRequired, long connectTimeOutSeconds, long readTimeOutSeconds) {
+    try {
+      OkHttpClient.Builder builder = getDefaultOkHttpClient()
+                                         .newBuilder()
+                                         .connectTimeout(connectTimeOutSeconds, TimeUnit.SECONDS)
+                                         .readTimeout(readTimeOutSeconds, TimeUnit.SECONDS);
+
+      Proxy proxy = checkAndGetNonProxyIfApplicable(url);
+      if (proxy != null) {
+        builder.proxy(proxy);
+      }
+
+      if (!isCertValidationRequired) {
+        builder.sslSocketFactory(getSslContext().getSocketFactory(), (X509TrustManager) getTrustManagers()[0]);
+      }
+
+      return builder.build();
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
   }
 
   private static String getProxyPrefix() {

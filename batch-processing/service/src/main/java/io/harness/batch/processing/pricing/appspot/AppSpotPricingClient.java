@@ -49,7 +49,7 @@ public class AppSpotPricingClient {
   }
 
   private static Call appSpotPricingCall() {
-      OkHttpClient okHttpClient = Http.getOkHttpClient().newBuilder()
+      OkHttpClient okHttpClient = Http.getDefaultOkHttpClient().newBuilder()
                                     .connectTimeout(120, TimeUnit.SECONDS)
                                     .readTimeout(120, TimeUnit.SECONDS)
                                     .proxy(Http.checkAndGetNonProxyIfApplicable(BASE_URL))

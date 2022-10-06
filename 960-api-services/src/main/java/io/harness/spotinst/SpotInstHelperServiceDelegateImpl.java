@@ -52,7 +52,7 @@ public class SpotInstHelperServiceDelegateImpl implements SpotInstHelperServiceD
       Retrofit retrofit = new Retrofit.Builder()
                             .baseUrl(spotInstBaseUrl)
                             .addConverterFactory(JacksonConverterFactory.create())
-                            .client(Http.getOkHttpClient().newBuilder()
+                            .client(Http.getDefaultOkHttpClient().newBuilder()
                                         .readTimeout(SPOTINST_REST_TIMEOUT_MINUTES, MINUTES)
                                         .connectTimeout(SPOTINST_REST_TIMEOUT_MINUTES, MINUTES)
                                         .build())

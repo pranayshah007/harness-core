@@ -75,18 +75,6 @@ import retrofit2.converter.jackson.JacksonConverterFactory;
 @OwnedBy(PL)
 @Slf4j
 public abstract class AbstractHttpClientFactory {
-  private static final OkHttpClient UNSAFE_OKHTTP_CLIENT;
-
-  static {
-    OkHttpClient result;
-    synchronized (Http.class) {
-      result = Http.getOkHttpClient(null, false, 15, 15);
-    }
-    UNSAFE_OKHTTP_CLIENT = result;
-  }
-
-  private static final OkHttpClient OKHTTP_CLIENT_WITH_PROXY_AUTH = Http.getOkHttpClient();
-
   private final ServiceHttpClientConfig serviceHttpClientConfig;
   private final String serviceSecret;
   private final ServiceTokenGenerator tokenGenerator;
@@ -181,7 +169,8 @@ public abstract class AbstractHttpClientFactory {
       SSLContext sslContext = SSLContext.getInstance("TLS");
       sslContext.init(null, trustManagers, null);
 
-      return OKHTTP_CLIENT_WITH_PROXY_AUTH.newBuilder()
+      return Http.getDefaultOkHttpClient()
+          .newBuilder()
           .connectionPool(new ConnectionPool())
           .connectTimeout(5, TimeUnit.SECONDS)
           .readTimeout(10, TimeUnit.SECONDS)
@@ -222,7 +211,8 @@ public abstract class AbstractHttpClientFactory {
   private OkHttpClient getUnsafeOkHttpClient(String baseUrl, ClientMode clientMode) {
     try {
       OkHttpClient.Builder builder =
-          UNSAFE_OKHTTP_CLIENT.newBuilder()
+          Http.getOkHttpClient(null, false, 15, 15)
+              .newBuilder()
               .proxy(Http.checkAndGetNonProxyIfApplicable(baseUrl))
               .connectTimeout(serviceHttpClientConfig.getConnectTimeOutSeconds(), TimeUnit.SECONDS)
               .readTimeout(serviceHttpClientConfig.getReadTimeOutSeconds(), TimeUnit.SECONDS)

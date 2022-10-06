@@ -585,7 +585,7 @@ public class NewRelicDelgateServiceImpl implements NewRelicDelegateService {
   }
 
   private NewRelicRestClient getNewRelicRestClient(final NewRelicConfig newRelicConfig) {
-      OkHttpClient.Builder httpClient = Http.getOkHttpClient().newBuilder();
+      OkHttpClient.Builder httpClient = Http.getDefaultOkHttpClient().newBuilder();
     httpClient.readTimeout(30, TimeUnit.SECONDS);
     httpClient.addInterceptor(chain -> {
       Request original = chain.request();

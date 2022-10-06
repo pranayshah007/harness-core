@@ -62,7 +62,7 @@ public class GcrApiServiceImpl implements GcrApiService {
 
   private GcrRestClient getGcrRestClient(String registryHostName) {
     String url = getUrl(registryHostName);
-      OkHttpClient okHttpClient = Http.getOkHttpClient().newBuilder()
+      OkHttpClient okHttpClient = Http.getDefaultOkHttpClient().newBuilder()
                                     .connectTimeout(CONNECT_TIMEOUT, TimeUnit.SECONDS)
                                     .proxy(Http.checkAndGetNonProxyIfApplicable(url))
                                     .build();

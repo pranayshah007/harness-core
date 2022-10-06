@@ -78,7 +78,7 @@ public class AppDynamicsDataCollector implements MetricsDataCollector<AppDynamic
   @VisibleForTesting
   AppdynamicsRestClient getAppDynamicsRestClient() {
     AppDynamicsConfig appDynamicsConfig = dataCollectionInfo.getAppDynamicsConfig();
-      OkHttpClient.Builder httpClient = Http.getOkHttpClient().newBuilder();
+      OkHttpClient.Builder httpClient = Http.getDefaultOkHttpClient().newBuilder();
     httpClient.addInterceptor(chain -> {
       Request original = chain.request();
       Request request =

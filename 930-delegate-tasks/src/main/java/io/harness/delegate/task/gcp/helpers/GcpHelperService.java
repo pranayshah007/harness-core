@@ -280,7 +280,7 @@ public class GcpHelperService {
   }
 
   public OkHttpClient getHttpClient(long timeoutInSeconds, String url) {
-      return Http.getOkHttpClient().newBuilder()
+      return Http.getDefaultOkHttpClient().newBuilder()
         .connectTimeout(timeoutInSeconds, TimeUnit.SECONDS)
         .proxy(Http.checkAndGetNonProxyIfApplicable(url))
         .build();

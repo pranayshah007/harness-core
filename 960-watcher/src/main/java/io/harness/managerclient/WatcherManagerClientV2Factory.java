@@ -65,7 +65,7 @@ public class WatcherManagerClientV2Factory implements Provider<ManagerClientV2> 
       // Create an ssl socket factory with our all-trusting manager
       final SSLSocketFactory sslSocketFactory = sslContext.getSocketFactory();
 
-      return Http.getOkHttpClient()
+      return Http.getDefaultOkHttpClient()
           .newBuilder()
           .connectionPool(new ConnectionPool())
           .retryOnConnectionFailure(true)

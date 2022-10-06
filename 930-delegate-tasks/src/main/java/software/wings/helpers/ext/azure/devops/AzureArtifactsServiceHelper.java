@@ -47,7 +47,7 @@ import retrofit2.Response;
 @UtilityClass
 public class AzureArtifactsServiceHelper {
   static OkHttpClient getAzureArtifactsDownloadClient(String artifactDownloadUrl) {
-      return Http.getOkHttpClient().newBuilder()
+      return Http.getDefaultOkHttpClient().newBuilder()
         .connectTimeout(CONNECT_TIMEOUT, TimeUnit.SECONDS)
         .proxy(Http.checkAndGetNonProxyIfApplicable(artifactDownloadUrl))
         .retryOnConnectionFailure(true)

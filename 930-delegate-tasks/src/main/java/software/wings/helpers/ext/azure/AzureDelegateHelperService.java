@@ -363,7 +363,7 @@ public class AzureDelegateHelperService {
 
   AzureManagementRestClient getAzureManagementRestClient(AzureEnvironmentType azureEnvironmentType) {
     String url = getAzureEnvironment(azureEnvironmentType).resourceManagerEndpoint();
-      OkHttpClient okHttpClient = Http.getOkHttpClient().newBuilder()
+      OkHttpClient okHttpClient = Http.getDefaultOkHttpClient().newBuilder()
                                     .connectTimeout(CONNECT_TIMEOUT, TimeUnit.SECONDS)
                                     .readTimeout(READ_TIMEOUT, TimeUnit.SECONDS)
                                     .proxy(Http.checkAndGetNonProxyIfApplicable(url))
@@ -409,7 +409,7 @@ public class AzureDelegateHelperService {
 
   private AcrRestClient getAcrRestClient(String registryHostName) {
     String url = getUrl(registryHostName);
-      OkHttpClient okHttpClient = Http.getOkHttpClient().newBuilder()
+      OkHttpClient okHttpClient = Http.getDefaultOkHttpClient().newBuilder()
                                     .connectTimeout(CONNECT_TIMEOUT, TimeUnit.SECONDS)
                                     .readTimeout(READ_TIMEOUT, TimeUnit.SECONDS)
                                     .proxy(Http.checkAndGetNonProxyIfApplicable(url))

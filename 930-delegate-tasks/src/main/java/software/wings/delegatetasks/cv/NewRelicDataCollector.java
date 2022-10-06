@@ -537,7 +537,7 @@ public class NewRelicDataCollector implements MetricsDataCollector<NewRelicDataC
   @VisibleForTesting
   NewRelicRestClient getNewRelicRestClient() {
     NewRelicConfig newRelicConfig = dataCollectionInfo.getNewRelicConfig();
-      OkHttpClient.Builder httpClient = Http.getOkHttpClient().newBuilder();
+      OkHttpClient.Builder httpClient = Http.getDefaultOkHttpClient().newBuilder();
     httpClient.addInterceptor(chain -> {
       Request original = chain.request();
 

@@ -29,7 +29,7 @@ public class BanzaiRecommenderConfiguration {
 
     log.info("BanzaiRecommender base URL: {}", config.getBaseUrl());
 
-      OkHttpClient okHttpClient = Http.getOkHttpClient().newBuilder()
+      OkHttpClient okHttpClient = Http.getDefaultOkHttpClient().newBuilder()
                                     .connectTimeout(config.getConnectTimeOutSeconds(), TimeUnit.SECONDS)
                                     .readTimeout(config.getReadTimeOutSeconds(), TimeUnit.SECONDS)
                                     .proxy(Http.checkAndGetNonProxyIfApplicable(config.getBaseUrl()))

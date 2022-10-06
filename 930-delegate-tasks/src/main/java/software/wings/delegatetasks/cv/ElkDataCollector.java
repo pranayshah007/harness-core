@@ -200,7 +200,7 @@ public class ElkDataCollector implements LogDataCollector<ElkDataCollectionInfoV
   Retrofit createRetrofit(ElkConfig elkConfig) {
     OkHttpClient.Builder httpClient = elkConfig.getElkUrl().startsWith("https")
         ? getUnsafeOkHttpClient().readTimeout(60, TimeUnit.SECONDS)
-        : getOkHttpClient().newBuilder().readTimeout(60, TimeUnit.SECONDS);
+        : getDefaultOkHttpClient().newBuilder().readTimeout(60, TimeUnit.SECONDS);
     httpClient
         .addInterceptor(chain -> {
           Request original = chain.request();
@@ -280,7 +280,7 @@ sslContext.init(null, trustAllCerts, new SecureRandom());
 // Create an ssl socket factory with our all-trusting manager
 final SSLSocketFactory sslSocketFactory = sslContext.getSocketFactory();
 
-      OkHttpClient.Builder builder = getOkHttpClient().newBuilder();
+      OkHttpClient.Builder builder = getDefaultOkHttpClient().newBuilder();
 builder.sslSocketFactory(sslSocketFactory, (X509TrustManager) trustAllCerts[0]);
 builder.hostnameVerifier(new NoopHostnameVerifier());
 

@@ -59,7 +59,7 @@ public class FileStoreNgClientFactory implements Provider<FileStoreClient> {
       sslContext.init(null, TRUST_ALL_CERTS.toArray(new TrustManager[1]), new java.security.SecureRandom());
       // Create an ssl socket factory with our all-trusting manager
       final SSLSocketFactory sslSocketFactory = sslContext.getSocketFactory();
-      return Http.getOkHttpClient()
+      return Http.getDefaultOkHttpClient()
           .newBuilder()
           .connectionPool(CONNECTION_POOL)
           .connectTimeout(10, TimeUnit.SECONDS)

@@ -117,7 +117,7 @@ public class DelegateAgentManagerClientFactory
 
     SSLContext sslContext = sslContextBuilder.build();
 
-    return Http.getOkHttpClient()
+    return Http.getDefaultOkHttpClient()
         .newBuilder()
         .hostnameVerifier(new NoopHostnameVerifier())
         .sslSocketFactory(sslContext.getSocketFactory(), trustManager)

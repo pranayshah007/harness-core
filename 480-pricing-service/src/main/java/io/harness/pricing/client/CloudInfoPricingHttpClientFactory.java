@@ -32,7 +32,7 @@ public class CloudInfoPricingHttpClientFactory implements Provider<CloudInfoPric
   public CloudInfoPricingClient get() {
     log.info("BASE_CLOUD_INFO_PRICING_SERVICE_URL: {}", httpClientConfig.getBaseUrl());
 
-      OkHttpClient okHttpClient = Http.getOkHttpClient().newBuilder()
+      OkHttpClient okHttpClient = Http.getDefaultOkHttpClient().newBuilder()
                                     .connectTimeout(httpClientConfig.getConnectTimeOutSeconds(), TimeUnit.SECONDS)
                                     .readTimeout(httpClientConfig.getReadTimeOutSeconds(), TimeUnit.SECONDS)
                                     .proxy(Http.checkAndGetNonProxyIfApplicable(httpClientConfig.getBaseUrl()))

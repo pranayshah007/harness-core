@@ -428,7 +428,7 @@ public class JiraClient {
   private JiraRestClient createRestClient() {
     String url = config.getJiraUrl() + "rest/api/2/";
       OkHttpClient okHttpClient =
-        Http.getOkHttpClient().newBuilder()
+        Http.getDefaultOkHttpClient().newBuilder()
             .connectTimeout(CONNECT_TIMEOUT, TimeUnit.SECONDS)
             .readTimeout(READ_TIMEOUT, TimeUnit.SECONDS)
             .proxy(Http.checkAndGetNonProxyIfApplicable(url))

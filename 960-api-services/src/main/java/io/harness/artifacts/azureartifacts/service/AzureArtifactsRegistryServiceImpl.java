@@ -375,7 +375,7 @@ public class AzureArtifactsRegistryServiceImpl implements AzureArtifactsRegistry
 
   public static AzureDevopsRestClient getAzureDevopsRestClient(String azureDevopsUrl) {
     String url = ensureTrailingSlash(azureDevopsUrl);
-      OkHttpClient okHttpClient = Http.getOkHttpClient().newBuilder()
+      OkHttpClient okHttpClient = Http.getDefaultOkHttpClient().newBuilder()
                                     .connectTimeout(CONNECT_TIMEOUT, TimeUnit.SECONDS)
                                     .readTimeout(READ_TIMEOUT, TimeUnit.SECONDS)
                                     .proxy(Http.checkAndGetNonProxyIfApplicable(url))
@@ -394,7 +394,7 @@ public class AzureArtifactsRegistryServiceImpl implements AzureArtifactsRegistry
     if (isNotBlank(project)) {
       url += project + "/";
     }
-      OkHttpClient okHttpClient = Http.getOkHttpClient().newBuilder()
+      OkHttpClient okHttpClient = Http.getDefaultOkHttpClient().newBuilder()
                                     .connectTimeout(CONNECT_TIMEOUT, TimeUnit.SECONDS)
                                     .readTimeout(READ_TIMEOUT, TimeUnit.SECONDS)
                                     .proxy(Http.checkAndGetNonProxyIfApplicable(url))

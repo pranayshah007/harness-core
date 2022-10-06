@@ -181,7 +181,7 @@ public class GcbServiceImpl implements GcbService {
 
   @VisibleForTesting
   <T> T getRestClient(final Class<T> client, String baseUrl) {
-      OkHttpClient okHttpClient = Http.getOkHttpClient().newBuilder()
+      OkHttpClient okHttpClient = Http.getDefaultOkHttpClient().newBuilder()
                                     .connectTimeout(5, TimeUnit.SECONDS)
                                     .proxy(Http.checkAndGetNonProxyIfApplicable(baseUrl))
                                     .build();
