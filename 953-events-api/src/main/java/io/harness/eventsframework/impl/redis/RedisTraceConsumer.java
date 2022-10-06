@@ -2,10 +2,11 @@ package io.harness.eventsframework.impl.redis;
 
 import io.harness.eventsframework.consumer.Message;
 import io.harness.logging.AutoLogContext;
+
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public abstract  class RedisTraceConsumer implements Runnable {
+public abstract class RedisTraceConsumer implements Runnable {
   protected boolean handleMessage(Message message) {
     try (AutoLogContext autoLogContext = new AutoLogContext(
              message.getMessage().getMetadataMap(), AutoLogContext.OverrideBehavior.OVERRIDE_NESTS)) {
