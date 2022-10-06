@@ -319,19 +319,10 @@ public class Http {
   }
 
   public OkHttpClient getOkHttpClient(String url, boolean isCertValidationRequired) {
-    return getOkHttpClientBuilder(url, isCertValidationRequired).build();
-  }
-
-  private OkHttpClient.Builder getOkHttpClientBuilder(String url, boolean isCertValidationRequired) {
-    return getOkHttpClientBuilder(url, 15, 15, isCertValidationRequired);
-  }
-
-  private OkHttpClient.Builder getOkHttpClientBuilder(
-      String url, long connectTimeOutSeconds, long readTimeOutSeconds, boolean isCertValidationRequired) {
     if (isCertValidationRequired) {
-      return getSafeOkHttpClientBuilder(url, connectTimeOutSeconds, readTimeOutSeconds);
+      return getSafeOkHttpClientBuilder(url, 15, 15).build();
     } else {
-      return getUnsafeOkHttpClientBuilder(url, connectTimeOutSeconds, readTimeOutSeconds);
+      return getUnsafeOkHttpClientBuilder(url, 15, 15).build();
     }
   }
 
