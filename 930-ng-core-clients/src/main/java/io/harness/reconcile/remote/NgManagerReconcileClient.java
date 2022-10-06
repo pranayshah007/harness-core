@@ -11,8 +11,8 @@ import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ng.core.dto.ResponseDTO;
-import io.harness.ng.core.template.RefreshRequestDTO;
 import io.harness.ng.core.template.RefreshResponseDTO;
+import io.harness.ng.core.template.refresh.NgManagerRefreshRequestDTO;
 import io.harness.template.beans.refresh.v2.InputsValidationResponse;
 
 import org.hibernate.validator.constraints.NotEmpty;
@@ -30,12 +30,12 @@ public interface NgManagerReconcileClient {
       @Query(value = NGCommonEntityConstants.ACCOUNT_KEY) @NotEmpty String accountIdentifier,
       @Query(value = NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @Query(value = NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
-      @Body RefreshRequestDTO refreshRequestDTO);
+      @Body NgManagerRefreshRequestDTO refreshRequestDTO);
 
   @POST(BASE_ENDPOINT + "refreshed-yaml")
   Call<ResponseDTO<RefreshResponseDTO>> refreshYaml(
       @Query(value = NGCommonEntityConstants.ACCOUNT_KEY) @NotEmpty String accountIdentifier,
       @Query(value = NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @Query(value = NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
-      @Body RefreshRequestDTO refreshRequestDTO);
+      @Body NgManagerRefreshRequestDTO refreshRequestDTO);
 }

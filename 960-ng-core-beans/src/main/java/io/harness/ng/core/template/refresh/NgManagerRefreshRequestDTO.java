@@ -5,19 +5,19 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.models.infrastructuredetails;
+package io.harness.ng.core.template.refresh;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
-import java.util.Map;
+import javax.validation.constraints.NotNull;
 import lombok.Builder;
-import lombok.Value;
+import lombok.Data;
 
-@OwnedBy(HarnessTeam.CDP)
-@Value
+@OwnedBy(HarnessTeam.CDC)
+@Data
 @Builder
-public class CustomDeploymentInfrastructureDetails extends InfrastructureDetails {
-  private String hostname;
-  private Map<String, Object> properties;
+public class NgManagerRefreshRequestDTO {
+  @NotNull String yaml;
+  String resolvedTemplatesYaml;
 }

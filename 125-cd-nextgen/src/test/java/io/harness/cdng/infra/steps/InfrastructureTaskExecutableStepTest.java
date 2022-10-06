@@ -49,9 +49,13 @@ import io.harness.cdng.infra.yaml.K8sGcpInfrastructure;
 import io.harness.cdng.infra.yaml.SshWinRmAwsInfrastructure;
 import io.harness.cdng.infra.yaml.SshWinRmAwsInfrastructure.SshWinRmAwsInfrastructureBuilder;
 import io.harness.cdng.infra.yaml.SshWinRmAzureInfrastructure;
+import io.harness.cdng.instance.InstanceOutcomeHelper;
+import io.harness.cdng.instance.outcome.InstanceOutcome;
+import io.harness.cdng.instance.outcome.InstancesOutcome;
 import io.harness.cdng.service.steps.ServiceStepOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.connector.ConnectorInfoDTO;
+import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.azure.response.AzureHostResponse;
 import io.harness.delegate.beans.azure.response.AzureHostsResponse;
 import io.harness.delegate.beans.connector.ConnectorType;
@@ -104,6 +108,7 @@ import software.wings.service.impl.aws.model.AwsEC2Instance;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -131,6 +136,7 @@ public class InfrastructureTaskExecutableStepTest extends CategoryTest {
   @Mock private InfrastructureMapper infrastructureMapper;
   @Mock InfrastructureValidator infrastructureValidator;
   @Mock private NGLogCallback mockLogCallback;
+  @Mock InstanceOutcomeHelper instanceOutcomeHelper;
 
   @InjectMocks private InfrastructureTaskExecutableStep infrastructureStep = new InfrastructureTaskExecutableStep();
 
@@ -377,6 +383,9 @@ public class InfrastructureTaskExecutableStepTest extends CategoryTest {
         .thenReturn(new HashSet<>(Arrays.asList("host1", "host2")));
     Map<String, ResponseData> responseDataMap = ImmutableMap.of("azure-hosts-response", azureHostsResponse);
     ThrowingSupplier responseDataSupplier = StrategyHelper.buildResponseDataSupplier(responseDataMap);
+    when(instanceOutcomeHelper.saveAndGetInstancesOutcome(
+             eq(ambiance), any(InfrastructureOutcome.class), any(DelegateResponseData.class), any(Set.class)))
+        .thenReturn(getInstancesOutcome());
 
     StepResponse response =
         infrastructureStep.handleTaskResultWithSecurityContext(ambiance, azureInfra, responseDataSupplier);
@@ -395,6 +404,14 @@ public class InfrastructureTaskExecutableStepTest extends CategoryTest {
     HostsOutput hostsOutput = hostsOutputArgumentCaptor.getValue();
     assertThat(hostsOutput).isNotNull();
     assertThat(hostsOutput.getHosts()).containsExactly("host1", "host2");
+
+    Collection<StepResponse.StepOutcome> stepOutcomes = response.getStepOutcomes();
+    assertThat(stepOutcomes.contains(StepResponse.StepOutcome.builder()
+                                         .outcome(getInstancesOutcome())
+                                         .name(OutcomeExpressionConstants.INSTANCES)
+                                         .group(OutcomeExpressionConstants.INFRASTRUCTURE_GROUP)
+                                         .build()))
+        .isTrue();
   }
 
   @Test
@@ -433,6 +450,9 @@ public class InfrastructureTaskExecutableStepTest extends CategoryTest {
             .build();
     Map<String, ResponseData> responseDataMap = ImmutableMap.of("aws-hosts-response", awsListEC2InstancesTaskResponse);
     ThrowingSupplier responseDataSupplier = StrategyHelper.buildResponseDataSupplier(responseDataMap);
+    when(instanceOutcomeHelper.saveAndGetInstancesOutcome(
+             eq(ambiance), any(InfrastructureOutcome.class), any(DelegateResponseData.class), any(Set.class)))
+        .thenReturn(getInstancesOutcome());
 
     StepResponse response =
         infrastructureStep.handleTaskResultWithSecurityContext(ambiance, awsInfra, responseDataSupplier);
@@ -451,6 +471,14 @@ public class InfrastructureTaskExecutableStepTest extends CategoryTest {
     HostsOutput hostsOutput = hostsOutputArgumentCaptor.getValue();
     assertThat(hostsOutput).isNotNull();
     assertThat(hostsOutput.getHosts()).containsExactly("host1");
+
+    Collection<StepResponse.StepOutcome> stepOutcomes = response.getStepOutcomes();
+    assertThat(stepOutcomes.contains(StepResponse.StepOutcome.builder()
+                                         .outcome(getInstancesOutcome())
+                                         .name(OutcomeExpressionConstants.INSTANCES)
+                                         .group(OutcomeExpressionConstants.INFRASTRUCTURE_GROUP)
+                                         .build()))
+        .isTrue();
   }
 
   @Test
@@ -694,5 +722,11 @@ public class InfrastructureTaskExecutableStepTest extends CategoryTest {
     Ambiance ambiance = Ambiance.newBuilder().putSetupAbstractions(SetupAbstractionKeys.accountId, ACCOUNT_ID).build();
     assertThatThrownBy(() -> infrastructureStep.validateConnector(infrastructure, ambiance))
         .hasMessageContaining(message);
+  }
+
+  private InstancesOutcome getInstancesOutcome() {
+    return InstancesOutcome.builder()
+        .instances(List.of(InstanceOutcome.builder().name("instanceName").hostName("instanceHostname").build()))
+        .build();
   }
 }

@@ -47,6 +47,7 @@ public class CustomDeploymentEntitySetupHelper {
   @JsonIgnore private final ObjectMapper jsonObjectMapper = new ObjectMapper();
   private static final String ACCOUNT_IDENTIFIER = "account.";
   private static final String ORG_IDENTIFIER = "org.";
+  public static final String STABLE_VERSION = "__STABLE__";
 
   public void addReferencesInEntitySetupUsage(@NotNull InfrastructureEntity infraEntity) {
     EntityDetailProtoDTO entityDetailProtoDTO = getEntityProto(infraEntity);
@@ -167,6 +168,9 @@ public class CustomDeploymentEntitySetupHelper {
             .setOrgIdentifier(StringValue.of(infraEntity.getOrgIdentifier()))
             .setProjectIdentifier(StringValue.of(infraEntity.getProjectIdentifier()))
             .setIdentifier(StringValue.of(templateRef));
+      }
+      if (versionLabel.isEmpty()) {
+        versionLabel = STABLE_VERSION;
       }
       templateReferenceProtoDTO.setVersionLabel(StringValue.of(versionLabel));
       return EntityDetailProtoDTO.newBuilder()

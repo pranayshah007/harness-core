@@ -52,6 +52,7 @@ public class CustomDeploymentInstanceSyncHandler extends AbstractInstanceSyncHan
     CustomDeploymentInstanceInfoDTO deploymentPackageInstanceInfoDTO =
         (CustomDeploymentInstanceInfoDTO) instanceInfoDTO;
     return CustomDeploymentInfrastructureDetails.builder()
+        .properties(deploymentPackageInstanceInfoDTO.getProperties())
         .hostname(deploymentPackageInstanceInfoDTO.getHostname())
         .build();
   }
