@@ -152,6 +152,7 @@ import software.wings.helpers.ext.mail.EmailData;
 import software.wings.licensing.LicenseService;
 import software.wings.scheduler.AlertCheckJob;
 import software.wings.scheduler.InstanceStatsCollectorJob;
+import software.wings.scheduler.LdapGroupSyncJob;
 import software.wings.scheduler.LdapGroupSyncJobHelper;
 import software.wings.scheduler.LimitVicinityCheckerJob;
 import software.wings.scheduler.ScheduledTriggerJob;
@@ -1446,6 +1447,7 @@ public class AccountServiceImpl implements AccountService {
     // 3. LdapGroupSyncJob
     List<LdapSettings> ldapSettings = getAllLdapSettingsForAccount(accountId);
     for (LdapSettings ldapSetting : ldapSettings) {
+      LdapGroupSyncJob.add(jobScheduler, accountId, ldapSetting.getUuid());
       ldapGroupSyncJobHelper.syncJob(ldapSetting);
     }
     log.info("Started all background quartz jobs for account {}", accountId);
@@ -1467,6 +1469,10 @@ public class AccountServiceImpl implements AccountService {
     }
 
     // 3. LdapGroupSyncJob
+    List<LdapSettings> ldapSettings = getAllLdapSettingsForAccount(accountId);
+    for (LdapSettings ldapSetting : ldapSettings) {
+      LdapGroupSyncJob.delete(jobScheduler, ssoSettingService, accountId, ldapSetting.getUuid());
+    }
     log.info("Stopped all background quartz jobs for account {}", accountId);
   }
 
