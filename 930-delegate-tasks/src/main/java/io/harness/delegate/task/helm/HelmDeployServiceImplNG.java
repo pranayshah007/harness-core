@@ -667,7 +667,7 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
   }
 
   @VisibleForTesting
-  void prepareRepoAndCharts(HelmCommandRequestNG commandRequest, long timeoutInMillis) throws IOException {
+  void prepareRepoAndCharts(HelmCommandRequestNG commandRequest, long timeoutInMillis) throws Exception {
     ManifestDelegateConfig manifestDelegateConfig = commandRequest.getManifestDelegateConfig();
     HelmChartManifestDelegateConfig helmChartManifestDelegateConfig =
         (HelmChartManifestDelegateConfig) manifestDelegateConfig;
@@ -761,19 +761,16 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
     }
   }
 
-  private void fetchChartRepo(HelmCommandRequestNG commandRequestNG, long timeoutInMillis) {
+  private void fetchChartRepo(HelmCommandRequestNG commandRequestNG, long timeoutInMillis) throws Exception {
     HelmChartManifestDelegateConfig helmChartManifestDelegateConfig =
         (HelmChartManifestDelegateConfig) commandRequestNG.getManifestDelegateConfig();
     String chartName = helmChartManifestDelegateConfig.getChartName();
-    String chartVersion = helmChartManifestDelegateConfig.getChartVersion();
     String workingDir = Paths.get(commandRequestNG.getWorkingDir()).toString();
-    String repoName =
-        helmTaskHelperBase.getRepoNameNG(commandRequestNG.getManifestDelegateConfig().getStoreDelegateConfig());
     if (helmTaskHelperBase.isHelmLocalRepoSet()) {
-      if (!helmTaskHelperBase.doesChartExistInLocalRepo(repoName, chartName, chartVersion)) {
-        throw new InvalidRequestException(
-            "Env Variable HELM_LOCAL_REPOSITORY set, expecting chart directory to exist locally after helm fetch but did not find it \n");
-      }
+      createDirectoryIfDoesNotExist(workingDir);
+      waitForDirectoryToBeAccessibleOutOfProcess(workingDir, 10);
+      helmTaskHelperBase.populateChartToLocalHelmRepo(
+          helmChartManifestDelegateConfig, timeoutInMillis, commandRequestNG.getLogCallback(), workingDir);
     } else {
       downloadFilesFromChartRepo(
           commandRequestNG.getManifestDelegateConfig(), workingDir, commandRequestNG.getLogCallback(), timeoutInMillis);
