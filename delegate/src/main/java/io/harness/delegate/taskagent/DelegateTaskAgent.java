@@ -29,6 +29,7 @@ public class DelegateTaskAgent {
   private static final String DELEGATE_RUNNER_JAR_PATH = "/opt/harness/task.jar";
   private static final String DELEGATE_NAME = System.getenv("DELEGATE_NAME");
   private static final String ACCOUNT_ID = System.getenv("ACCOUNT_ID");
+  private static final String TASK_ID = System.getenv("TASK_ID");
   private final static DelegateCoreClient delegateCoreClient =
       DelegateCoreClientFactory.createDelegateCoreClient(ServiceDiscovery.getDelegateServiceEndpoint(DELEGATE_NAME));
 
@@ -55,7 +56,7 @@ public class DelegateTaskAgent {
       final String outputYaml = Files.readString(Paths.get("/etc/output/result.yaml"));
       final DelegateTaskResponse taskResponse = new YamlUtils().read(outputYaml, DelegateTaskResponse.class);
 
-      delegateCoreClient.taskResponse(ACCOUNT_ID, taskResponse);
+      delegateCoreClient.taskResponse(ACCOUNT_ID, TASK_ID, taskResponse);
     } catch (final Exception e) {
       log.error("Something failed!!!", e);
     }
