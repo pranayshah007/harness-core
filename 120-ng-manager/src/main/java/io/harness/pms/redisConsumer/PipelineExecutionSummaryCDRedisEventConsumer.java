@@ -20,6 +20,7 @@ import io.harness.debezium.DebeziumChangeEvent;
 import io.harness.eventsframework.api.Consumer;
 import io.harness.eventsframework.api.EventsFrameworkDownException;
 import io.harness.eventsframework.consumer.Message;
+import io.harness.eventsframework.impl.redis.RedisTraceConsumer;
 import io.harness.lock.AcquiredLock;
 import io.harness.lock.PersistentLocker;
 import io.harness.pms.events.base.PmsRedisConsumer;
@@ -40,7 +41,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @OwnedBy(PIPELINE)
 @Singleton
-public class PipelineExecutionSummaryCDRedisEventConsumer implements PmsRedisConsumer {
+public class PipelineExecutionSummaryCDRedisEventConsumer extends RedisTraceConsumer implements PmsRedisConsumer {
   @Inject private PersistentLocker persistentLocker;
 
   private static final int WAIT_TIME_IN_SECONDS = 30;
@@ -115,7 +116,8 @@ public class PipelineExecutionSummaryCDRedisEventConsumer implements PmsRedisCon
    * fetch last processed timestamp from cache, if it is greater than current timestamp, we can simply ignore the event,
    * else, process it. We are doing this to have the consistent end state in timescaleDB for each pipeline execution.
    */
-  private boolean handleMessage(Message message) {
+  @Override
+  protected boolean processMessage(Message message) {
     DebeziumChangeEvent debeziumChangeEvent = Objects.requireNonNull(buildEventFromMessage(message));
     // debeziumChangeEvent.getKey() gives id of the planExecutionsSummary Document which is unique for each pipeline
     // execution.
