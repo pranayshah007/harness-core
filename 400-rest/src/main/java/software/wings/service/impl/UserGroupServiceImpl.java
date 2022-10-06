@@ -20,6 +20,7 @@ import static io.harness.validation.Validator.unEqualCheck;
 
 import static software.wings.beans.security.UserGroup.DEFAULT_ACCOUNT_ADMIN_USER_GROUP_NAME;
 import static software.wings.beans.security.UserGroupSearchTermType.APPLICATION_NAME;
+import static software.wings.scheduler.LdapGroupSyncJob.add;
 import static software.wings.security.PermissionAttribute.Action.ABORT_WORKFLOW;
 import static software.wings.security.PermissionAttribute.Action.EXECUTE;
 import static software.wings.security.PermissionAttribute.Action.EXECUTE_PIPELINE;
@@ -1048,6 +1049,7 @@ public class UserGroupServiceImpl implements UserGroupService {
     auditServiceHelper.reportForAuditingUsingAccountId(accountId, group, updatedGroup, Type.LINK_SSO);
 
     if (ssoType == SSOType.LDAP) {
+      add(jobScheduler, accountId, ssoId);
       ldapGroupSyncJobHelper.syncJob(ssoSettings);
     }
 
