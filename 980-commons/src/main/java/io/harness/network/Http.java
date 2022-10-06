@@ -300,30 +300,26 @@ public class Http {
     }
   }
 
-  private OkHttpClient.Builder getSafeOkHttpClientBuilder(
-      String url, long connectTimeOutSeconds, long readTimeOutSeconds) {
+  public OkHttpClient getOkHttpClient(
+      String url, boolean isCertValidationRequired, long connectTimeOutSeconds, long readTimeOutSeconds) {
     try {
       OkHttpClient.Builder builder = getOkHttpClient()
                                          .newBuilder()
                                          .connectTimeout(connectTimeOutSeconds, TimeUnit.SECONDS)
                                          .readTimeout(readTimeOutSeconds, TimeUnit.SECONDS);
 
-      Proxy proxy = Http.checkAndGetNonProxyIfApplicable(url);
+      Proxy proxy = checkAndGetNonProxyIfApplicable(url);
       if (proxy != null) {
         builder.proxy(proxy);
       }
-      return builder;
+
+      if (!isCertValidationRequired) {
+        builder.sslSocketFactory(getSslContext().getSocketFactory(), (X509TrustManager) getTrustManagers()[0]);
+      }
+
+      return builder.build();
     } catch (Exception e) {
       throw new RuntimeException(e);
-    }
-  }
-
-  public OkHttpClient getOkHttpClient(
-      String url, boolean isCertValidationRequired, long connectTimeOutSeconds, long readTimeOutSeconds) {
-    if (isCertValidationRequired) {
-      return getSafeOkHttpClientBuilder(url, connectTimeOutSeconds, readTimeOutSeconds).build();
-    } else {
-      return getUnsafeOkHttpClientBuilder(url, connectTimeOutSeconds, readTimeOutSeconds).build();
     }
   }
 
