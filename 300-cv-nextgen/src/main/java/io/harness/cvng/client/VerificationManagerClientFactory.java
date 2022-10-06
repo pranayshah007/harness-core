@@ -62,7 +62,7 @@ public class VerificationManagerClientFactory implements Provider<VerificationMa
       final SSLSocketFactory sslSocketFactory = sslContext.getSocketFactory();
 
       return Http.getOkHttpClientWithProxyAuthSetup()
-          .connectionPool(Http.connectionPool)
+          .newBuilder()
           .readTimeout(60, TimeUnit.SECONDS)
           .retryOnConnectionFailure(true)
           .addInterceptor(new VerificationAuthInterceptor(tokenGenerator))

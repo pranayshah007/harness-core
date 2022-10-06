@@ -28,6 +28,6 @@ public class PipelineServiceHttpClientFactory
 
   @Override
   public PipelineServiceClient get() {
-    return getRetrofit().create(PipelineServiceClient.class);
+    return getUnsafeOkRetrofit().create(PipelineServiceClient.class);
   }
 }

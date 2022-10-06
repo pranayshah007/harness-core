@@ -32,6 +32,6 @@ public class AuditClientFactory extends AbstractHttpClientFactory implements Pro
 
   @Override
   public AuditClient get() {
-    return getRetrofit().create(AuditClient.class);
+    return getUnsafeOkRetrofit().create(AuditClient.class);
   }
 }

@@ -28,6 +28,6 @@ public class FeatureFlagClientHttpFactory extends AbstractHttpClientFactory impl
 
   @Override
   public FeatureFlagsClient get() {
-    return getRetrofit().create(FeatureFlagsClient.class);
+    return getUnsafeOkRetrofit().create(FeatureFlagsClient.class);
   }
 }

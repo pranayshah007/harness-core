@@ -36,6 +36,6 @@ public class ServiceResourceClientHttpFactory
 
   @Override
   public ServiceResourceClient get() {
-    return getRetrofit().create(ServiceResourceClient.class);
+    return getUnsafeOkRetrofit().create(ServiceResourceClient.class);
   }
 }

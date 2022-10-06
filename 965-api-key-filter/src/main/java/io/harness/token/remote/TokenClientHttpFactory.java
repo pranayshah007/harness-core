@@ -33,6 +33,6 @@ public class TokenClientHttpFactory extends AbstractHttpClientFactory implements
 
   @Override
   public TokenClient get() {
-    return getRetrofit().create(TokenClient.class);
+    return getUnsafeOkRetrofit().create(TokenClient.class);
   }
 }

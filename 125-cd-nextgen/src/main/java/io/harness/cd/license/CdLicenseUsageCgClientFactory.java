@@ -32,6 +32,6 @@ public class CdLicenseUsageCgClientFactory
 
   @Override
   public CdLicenseUsageCgClient get() {
-    return getRetrofit().create(CdLicenseUsageCgClient.class);
+    return getUnsafeOkRetrofit().create(CdLicenseUsageCgClient.class);
   }
 }

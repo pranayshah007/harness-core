@@ -104,19 +104,16 @@ public class AzureMarketplaceIntegrationService {
   }
 
   private JSONObject getResolveTokenResponse(String authenticationToken, String azureToken) {
-    try {
-      RequestBody reqbody = RequestBody.create(null, new byte[0]);
-      Request request = new Builder()
-                            .url(AZURE_MARKETPLACE_RESOLVE_API_URL)
-                            .post(reqbody)
-                            .addHeader(AUTHORIZATION, "Bearer " + authenticationToken)
-                            .addHeader(X_MS_MARKETPLACE_TOKEN_KEY, azureToken)
-                            .build();
-
-      okhttp3.Response response = client.newCall(request).execute();
+    RequestBody reqbody = RequestBody.create(null, new byte[0]);
+    Request request = new Builder()
+                          .url(AZURE_MARKETPLACE_RESOLVE_API_URL)
+                          .post(reqbody)
+                          .addHeader(AUTHORIZATION, "Bearer " + authenticationToken)
+                          .addHeader(X_MS_MARKETPLACE_TOKEN_KEY, azureToken)
+                          .build();
+    try (okhttp3.Response response = client.newCall(request).execute()) {
       return new JSONObject(response.body().string());
-
-    } catch (IOException e) {
+    } catch (Exception e) {
       log.error("Failed to process Azure marketplace signup", e);
       throw new io.harness.exception.SignupException("Failed to process azure signup token");
     }

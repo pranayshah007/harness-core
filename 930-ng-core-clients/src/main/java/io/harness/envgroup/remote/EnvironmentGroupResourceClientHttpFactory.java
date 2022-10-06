@@ -36,6 +36,6 @@ public class EnvironmentGroupResourceClientHttpFactory
 
   @Override
   public EnvironmentGroupResourceClient get() {
-    return getRetrofit().create(EnvironmentGroupResourceClient.class);
+    return getUnsafeOkRetrofit().create(EnvironmentGroupResourceClient.class);
   }
 }

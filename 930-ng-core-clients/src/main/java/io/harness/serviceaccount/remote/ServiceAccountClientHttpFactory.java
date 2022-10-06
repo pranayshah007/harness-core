@@ -36,6 +36,6 @@ public class ServiceAccountClientHttpFactory
 
   @Override
   public ServiceAccountClient get() {
-    return getRetrofit().create(ServiceAccountClient.class);
+    return getUnsafeOkRetrofit().create(ServiceAccountClient.class);
   }
 }

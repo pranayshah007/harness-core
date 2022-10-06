@@ -31,6 +31,6 @@ public class AdminLicenseHttpClientFactory
 
   @Override
   public AdminLicenseHttpClient get() {
-    return getRetrofit().create(AdminLicenseHttpClient.class);
+    return getUnsafeOkRetrofit().create(AdminLicenseHttpClient.class);
   }
 }

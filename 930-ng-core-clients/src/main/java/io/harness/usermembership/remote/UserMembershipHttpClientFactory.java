@@ -34,6 +34,6 @@ public class UserMembershipHttpClientFactory
 
   @Override
   public UserMembershipClient get() {
-    return getRetrofit().create(UserMembershipClient.class);
+    return getUnsafeOkRetrofit().create(UserMembershipClient.class);
   }
 }

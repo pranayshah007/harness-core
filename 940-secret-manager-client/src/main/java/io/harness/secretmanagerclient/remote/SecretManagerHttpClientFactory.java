@@ -31,6 +31,6 @@ public class SecretManagerHttpClientFactory extends AbstractHttpClientFactory im
 
   @Override
   public SecretManagerClient get() {
-    return getRetrofit().create(SecretManagerClient.class);
+    return getUnsafeOkRetrofit().create(SecretManagerClient.class);
   }
 }

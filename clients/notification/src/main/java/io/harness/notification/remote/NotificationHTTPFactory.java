@@ -28,6 +28,6 @@ public class NotificationHTTPFactory
 
   @Override
   public io.harness.notification.remote.NotificationHTTPClient get() {
-    return getRetrofit().create(NotificationHTTPClient.class);
+    return getUnsafeOkRetrofit().create(NotificationHTTPClient.class);
   }
 }

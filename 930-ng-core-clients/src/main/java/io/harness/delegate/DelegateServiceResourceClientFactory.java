@@ -32,6 +32,6 @@ public class DelegateServiceResourceClientFactory
 
   @Override
   public DelegateServiceResourceClient get() {
-    return getRetrofit().create(DelegateServiceResourceClient.class);
+    return getUnsafeOkRetrofit().create(DelegateServiceResourceClient.class);
   }
 }

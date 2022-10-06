@@ -38,6 +38,6 @@ public class PollResourceHttpClientFactory
 
   @Override
   public PollingResourceClient get() {
-    return getRetrofit().create(PollingResourceClient.class);
+    return getUnsafeOkRetrofit().create(PollingResourceClient.class);
   }
 }

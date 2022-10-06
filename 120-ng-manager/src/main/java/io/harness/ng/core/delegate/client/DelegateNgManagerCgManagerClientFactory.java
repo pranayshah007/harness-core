@@ -32,6 +32,6 @@ public class DelegateNgManagerCgManagerClientFactory
 
   @Override
   public DelegateNgManagerCgManagerClient get() {
-    return getRetrofit().create(DelegateNgManagerCgManagerClient.class);
+    return getUnsafeOkRetrofit().create(DelegateNgManagerCgManagerClient.class);
   }
 }

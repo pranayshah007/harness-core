@@ -31,6 +31,6 @@ public class ModulesHttpClientFactory extends AbstractHttpClientFactory implemen
 
   @Override
   public ModulesClient get() {
-    return getRetrofit().create(ModulesClient.class);
+    return getUnsafeOkRetrofit().create(ModulesClient.class);
   }
 }

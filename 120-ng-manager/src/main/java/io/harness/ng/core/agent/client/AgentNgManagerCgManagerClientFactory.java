@@ -32,6 +32,6 @@ public class AgentNgManagerCgManagerClientFactory
 
   @Override
   public AgentNgManagerCgManagerClient get() {
-    return getRetrofit().create(AgentNgManagerCgManagerClient.class);
+    return getUnsafeOkRetrofit().create(AgentNgManagerCgManagerClient.class);
   }
 }

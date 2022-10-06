@@ -28,6 +28,6 @@ public class PMSLandingDashboardResourceClientFactory
 
   @Override
   public PMSLandingDashboardResourceClient get() {
-    return getRetrofit().create(PMSLandingDashboardResourceClient.class);
+    return getUnsafeOkRetrofit().create(PMSLandingDashboardResourceClient.class);
   }
 }

@@ -87,6 +87,7 @@ public class CVNextGenServiceClientFactory implements Provider<CVNextGenServiceC
 
       // https://www.baeldung.com/okhttp-timeouts
       return Http.getOkHttpClientWithProxyAuthSetup()
+          .newBuilder()
           .connectionPool(CONNECTION_POOL)
           .connectTimeout(10, TimeUnit.SECONDS)
           .readTimeout(10, TimeUnit.SECONDS)

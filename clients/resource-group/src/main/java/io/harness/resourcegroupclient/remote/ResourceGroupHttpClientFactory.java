@@ -29,6 +29,6 @@ public class ResourceGroupHttpClientFactory extends AbstractHttpClientFactory im
 
   @Override
   public ResourceGroupClient get() {
-    return getRetrofit().create(ResourceGroupClient.class);
+    return getUnsafeOkRetrofit().create(ResourceGroupClient.class);
   }
 }

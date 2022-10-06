@@ -23,6 +23,6 @@ public class EnforcementSdkClientFactory extends AbstractHttpClientFactory imple
 
   @Override
   public EnforcementSdkClient get() {
-    return getRetrofit().create(EnforcementSdkClient.class);
+    return getUnsafeOkRetrofit().create(EnforcementSdkClient.class);
   }
 }

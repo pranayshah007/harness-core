@@ -33,6 +33,6 @@ public class UserGroupHttpClientFactory extends AbstractHttpClientFactory implem
 
   @Override
   public UserGroupClient get() {
-    return getRetrofit().create(UserGroupClient.class);
+    return getUnsafeOkRetrofit().create(UserGroupClient.class);
   }
 }

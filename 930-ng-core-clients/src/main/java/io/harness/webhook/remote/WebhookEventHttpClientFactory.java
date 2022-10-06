@@ -28,6 +28,6 @@ public class WebhookEventHttpClientFactory extends AbstractHttpClientFactory imp
 
   @Override
   public WebhookEventClient get() {
-    return getRetrofit().create(WebhookEventClient.class);
+    return getUnsafeOkRetrofit().create(WebhookEventClient.class);
   }
 }

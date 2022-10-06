@@ -30,6 +30,6 @@ public class CeLicenseClientFactory extends AbstractHttpClientFactory implements
 
   @Override
   public CeLicenseClient get() {
-    return getRetrofit().create(CeLicenseClient.class);
+    return getUnsafeOkRetrofit().create(CeLicenseClient.class);
   }
 }

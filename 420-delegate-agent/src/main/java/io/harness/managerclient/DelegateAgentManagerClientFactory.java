@@ -118,9 +118,9 @@ public class DelegateAgentManagerClientFactory
     SSLContext sslContext = sslContextBuilder.build();
 
     return Http.getOkHttpClientWithProxyAuthSetup()
+        .newBuilder()
         .hostnameVerifier(new NoopHostnameVerifier())
         .sslSocketFactory(sslContext.getSocketFactory(), trustManager)
-        .connectionPool(Http.connectionPool)
         .retryOnConnectionFailure(true)
         .addInterceptor(new io.harness.managerclient.DelegateAuthInterceptor(this.tokenGenerator))
         .addInterceptor(chain -> {

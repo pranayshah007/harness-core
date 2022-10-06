@@ -30,6 +30,6 @@ public class EnforcementClientFactory extends AbstractHttpClientFactory implemen
 
   @Override
   public EnforcementClient get() {
-    return getRetrofit().create(EnforcementClient.class);
+    return getUnsafeOkRetrofit().create(EnforcementClient.class);
   }
 }

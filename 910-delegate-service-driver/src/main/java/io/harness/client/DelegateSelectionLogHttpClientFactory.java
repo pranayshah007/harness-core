@@ -31,6 +31,6 @@ public class DelegateSelectionLogHttpClientFactory
 
   @Override
   public DelegateSelectionLogHttpClient get() {
-    return getRetrofit().create(DelegateSelectionLogHttpClient.class);
+    return getUnsafeOkRetrofit().create(DelegateSelectionLogHttpClient.class);
   }
 }

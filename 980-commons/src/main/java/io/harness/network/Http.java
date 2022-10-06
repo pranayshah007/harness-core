@@ -26,10 +26,7 @@ import com.google.common.cache.LoadingCache;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
-import java.net.InetSocketAddress;
-import java.net.MalformedURLException;
 import java.net.Proxy;
-import java.net.Socket;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -59,30 +56,11 @@ import org.apache.http.HttpHost;
 public class Http {
   private static UrlValidator urlValidator =
       new UrlValidator(new String[] {"http", "https"}, UrlValidator.ALLOW_LOCAL_URLS);
+  private volatile static OkHttpClient defaultOkHttpClient;
   public static ConnectionPool connectionPool = new ConnectionPool(0, 5, TimeUnit.MINUTES);
 
   private static TrustManager[] trustAllCerts = getTrustManagers();
   private static final SSLContext sc = createSslContext();
-
-  public static boolean connectableHost(String host, int port) {
-    try (Socket socket = new Socket()) {
-      socket.connect(new InetSocketAddress(host, port), 5000); // 5 sec timeout
-      return true;
-    } catch (IOException ignored) {
-      // Do nothing
-    }
-    return false; // Either timeout or unreachable or failed DNS lookup.
-  }
-
-  public static boolean connectableHost(String urlString) {
-    try {
-      URL url = new URL(urlString);
-      return connectableHost(url.getHost(), url.getPort() < 0 ? 80 : url.getPort());
-    } catch (MalformedURLException e) {
-      log.error("", e);
-    }
-    return false;
-  }
 
   LoadingCache<String, Integer> responseCodeForValidation =
       CacheBuilder.newBuilder()
@@ -301,6 +279,10 @@ public class Http {
     return new TrustManager[] {new AllTrustingX509TrustManager()};
   }
 
+  public static OkHttpClient getUnsafeOkHttpClient() {
+    return getUnsafeOkHttpClient(null);
+  }
+
   public static OkHttpClient getUnsafeOkHttpClient(String url) {
     return getUnsafeOkHttpClient(url, 15, 15);
   }
@@ -321,7 +303,6 @@ public class Http {
       OkHttpClient.Builder builder =
           getOkHttpClientBuilder()
               .sslSocketFactory(sslContext.getSocketFactory(), (X509TrustManager) getTrustManagers()[0])
-              .hostnameVerifier(new NoopHostnameVerifier())
               .connectTimeout(connectTimeOutSeconds, TimeUnit.SECONDS)
               .readTimeout(readTimeOutSeconds, TimeUnit.SECONDS);
 
@@ -340,7 +321,6 @@ public class Http {
       String url, long connectTimeOutSeconds, long readTimeOutSeconds) {
     try {
       OkHttpClient.Builder builder = Http.getOkHttpClientBuilder()
-                                         .hostnameVerifier(new NoopHostnameVerifier())
                                          .connectTimeout(connectTimeOutSeconds, TimeUnit.SECONDS)
                                          .readTimeout(readTimeOutSeconds, TimeUnit.SECONDS);
 
@@ -516,27 +496,34 @@ public class Http {
   }
 
   public static OkHttpClient.Builder getOkHttpClientBuilder() {
-    return getOkHttpClientWithProxyAuthSetup().connectionPool(connectionPool);
+    return getOkHttpClientWithProxyAuthSetup().newBuilder();
   }
 
   public static OkHttpClient.Builder getOkHttpClientBuilderWithReadtimeOut(int timeout, TimeUnit timeUnit) {
     return getOkHttpClientBuilder().readTimeout(timeout, timeUnit);
   }
 
-  public static OkHttpClient.Builder getOkHttpClientWithProxyAuthSetup() {
-    OkHttpClient.Builder builder = new OkHttpClient.Builder().hostnameVerifier(new NoopHostnameVerifier());
+  public static OkHttpClient getOkHttpClientWithProxyAuthSetup() {
+    if (defaultOkHttpClient == null) {
+      synchronized (Http.class) {
+        if (defaultOkHttpClient == null) {
+          OkHttpClient.Builder builder = new OkHttpClient.Builder().hostnameVerifier(new NoopHostnameVerifier());
+          builder.connectionPool(connectionPool);
 
-    String user = getProxyUserName();
-    if (isNotEmpty(user)) {
-      log.info("###Using proxy Auth");
-      String password = getProxyPassword();
-      builder.proxyAuthenticator((route, response) -> {
-        String credential = Credentials.basic(user, password);
-        return response.request().newBuilder().header("Proxy-Authorization", credential).build();
-      });
+          String user = getProxyUserName();
+          if (isNotEmpty(user)) {
+            log.info("###Using proxy Auth");
+            String password = getProxyPassword();
+            builder.proxyAuthenticator((route, response) -> {
+              String credential = Credentials.basic(user, password);
+              return response.request().newBuilder().header("Proxy-Authorization", credential).build();
+            });
+          }
+          defaultOkHttpClient = builder.build();
+        }
+      }
     }
-
-    return builder;
+    return defaultOkHttpClient;
   }
 
   private static String getProxyPrefix() {
@@ -576,12 +563,16 @@ public class Http {
 
   public static String getResponseStringFromUrl(String url, int connectTimeoutSeconds, int readTimeoutSeconds)
       throws IOException {
-    return getResponseFromUrl(url, connectTimeoutSeconds, readTimeoutSeconds).body().string();
+    try (Response response = getResponseFromUrl(url, connectTimeoutSeconds, readTimeoutSeconds)) {
+      return response.body().string();
+    }
   }
 
   public static InputStream getResponseStreamFromUrl(String url, int connectTimeoutSeconds, int readTimeoutSeconds)
       throws IOException {
-    return getResponseFromUrl(url, connectTimeoutSeconds, readTimeoutSeconds).body().byteStream();
+    try (Response response = getResponseFromUrl(url, connectTimeoutSeconds, readTimeoutSeconds)) {
+      return response.body().byteStream();
+    }
   }
 
   private static Response getResponseFromUrl(String url, int connectTimeoutSeconds, int readTimeoutSeconds)

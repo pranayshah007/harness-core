@@ -33,6 +33,6 @@ public class FileStoreHttpClientFactory extends AbstractHttpClientFactory implem
 
   @Override
   public FileStoreClient get() {
-    return getRetrofit().create(FileStoreClient.class);
+    return getUnsafeOkRetrofit().create(FileStoreClient.class);
   }
 }

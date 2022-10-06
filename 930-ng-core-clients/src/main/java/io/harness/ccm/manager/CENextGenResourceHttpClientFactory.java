@@ -34,6 +34,6 @@ public class CENextGenResourceHttpClientFactory
 
   @Override
   public CENextGenResourceClient get() {
-    return getRetrofit().create(CENextGenResourceClient.class);
+    return getUnsafeOkRetrofit().create(CENextGenResourceClient.class);
   }
 }

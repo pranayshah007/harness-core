@@ -31,6 +31,6 @@ public class SmtpConfigHttpClientFactory extends AbstractHttpClientFactory imple
 
   @Override
   public SmtpConfigClient get() {
-    return getRetrofit().create(SmtpConfigClient.class);
+    return getUnsafeOkRetrofit().create(SmtpConfigClient.class);
   }
 }

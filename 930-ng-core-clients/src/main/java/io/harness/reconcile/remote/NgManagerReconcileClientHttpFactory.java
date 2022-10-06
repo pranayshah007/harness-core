@@ -34,6 +34,6 @@ public class NgManagerReconcileClientHttpFactory
 
   @Override
   public NgManagerReconcileClient get() {
-    return getRetrofit().create(NgManagerReconcileClient.class);
+    return getUnsafeOkRetrofit().create(NgManagerReconcileClient.class);
   }
 }

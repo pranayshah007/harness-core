@@ -30,6 +30,6 @@ public class SecretNGManagerHttpClientFactory
 
   @Override
   public SecretNGManagerClient get() {
-    return getRetrofit().create(SecretNGManagerClient.class);
+    return getUnsafeOkRetrofit().create(SecretNGManagerClient.class);
   }
 }

@@ -31,6 +31,6 @@ public class FileServiceClientFactory extends AbstractHttpClientFactory implemen
 
   @Override
   public FileServiceClient get() {
-    return getRetrofit().create(FileServiceClient.class);
+    return getUnsafeOkRetrofit().create(FileServiceClient.class);
   }
 }

@@ -32,6 +32,6 @@ public class NotificationResourceClientFactory
 
   @Override
   public NotificationResourceClient get() {
-    return getRetrofit().create(NotificationResourceClient.class);
+    return getUnsafeOkRetrofit().create(NotificationResourceClient.class);
   }
 }

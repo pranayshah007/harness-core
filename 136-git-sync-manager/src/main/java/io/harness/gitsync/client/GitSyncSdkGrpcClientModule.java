@@ -72,11 +72,22 @@ public class GitSyncSdkGrpcClientModule extends AbstractModule {
 
   @Provides
   @Singleton
+  public Map<Microservice, Channel> gitSyncGrpcChannels(
+      @Named("GitSyncGrpcClientConfigs") Map<Microservice, GrpcClientConfig> gitSyncGrpcChannels) throws SSLException {
+    Map<Microservice, Channel> map = new HashMap<>();
+    for (Map.Entry<Microservice, GrpcClientConfig> entry : gitSyncGrpcChannels.entrySet()) {
+      map.put(entry.getKey(), getChannel(entry.getValue()));
+    }
+    return map;
+  }
+
+  @Provides
+  @Singleton
   public Map<Microservice, GitToHarnessServiceBlockingStub> gitToHarnessServiceGrpcClient(
-      @Named("GitSyncGrpcClientConfigs") Map<Microservice, GrpcClientConfig> clientConfigs) throws SSLException {
+      Map<Microservice, Channel> gitSyncGrpcChannels) {
     Map<Microservice, GitToHarnessServiceBlockingStub> map = new HashMap<>();
-    for (Map.Entry<Microservice, GrpcClientConfig> entry : clientConfigs.entrySet()) {
-      map.put(entry.getKey(), GitToHarnessServiceGrpc.newBlockingStub(getChannel(entry.getValue())));
+    for (Map.Entry<Microservice, Channel> entry : gitSyncGrpcChannels.entrySet()) {
+      map.put(entry.getKey(), GitToHarnessServiceGrpc.newBlockingStub(entry.getValue()));
     }
     map.put(GmsClientConstants.moduleType,
         GitToHarnessServiceGrpc.newBlockingStub(
@@ -87,10 +98,10 @@ public class GitSyncSdkGrpcClientModule extends AbstractModule {
   @Provides
   @Singleton
   public Map<Microservice, FullSyncServiceBlockingStub> fullSyncServiceGrpcClient(
-      @Named("GitSyncGrpcClientConfigs") Map<Microservice, GrpcClientConfig> clientConfigs) throws SSLException {
+      Map<Microservice, Channel> gitSyncGrpcChannels) {
     Map<Microservice, FullSyncServiceBlockingStub> map = new HashMap<>();
-    for (Map.Entry<Microservice, GrpcClientConfig> entry : clientConfigs.entrySet()) {
-      map.put(entry.getKey(), FullSyncServiceGrpc.newBlockingStub(getChannel(entry.getValue())));
+    for (Map.Entry<Microservice, Channel> entry : gitSyncGrpcChannels.entrySet()) {
+      map.put(entry.getKey(), FullSyncServiceGrpc.newBlockingStub(entry.getValue()));
     }
     map.put(GmsClientConstants.moduleType,
         FullSyncServiceGrpc.newBlockingStub(

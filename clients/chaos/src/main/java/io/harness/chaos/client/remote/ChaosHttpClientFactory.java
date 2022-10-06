@@ -33,6 +33,6 @@ public class ChaosHttpClientFactory extends AbstractHttpClientFactory implements
 
   @Override
   public ChaosHttpClient get() {
-    return getRetrofit().create(ChaosHttpClient.class);
+    return getUnsafeOkRetrofit().create(ChaosHttpClient.class);
   }
 }

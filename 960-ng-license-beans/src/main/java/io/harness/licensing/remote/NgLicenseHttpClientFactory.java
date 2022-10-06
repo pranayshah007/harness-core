@@ -30,6 +30,6 @@ public class NgLicenseHttpClientFactory extends AbstractHttpClientFactory implem
 
   @Override
   public NgLicenseHttpClient get() {
-    return getRetrofit().create(NgLicenseHttpClient.class);
+    return getUnsafeOkRetrofit().create(NgLicenseHttpClient.class);
   }
 }

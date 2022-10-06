@@ -33,6 +33,6 @@ public class ProjectHttpClientFactory extends AbstractHttpClientFactory implemen
 
   @Override
   public ProjectClient get() {
-    return getRetrofit().create(ProjectClient.class);
+    return getUnsafeOkRetrofit().create(ProjectClient.class);
   }
 }

@@ -36,6 +36,6 @@ public class GitopsResourceClientHttpFactory
 
   @Override
   public GitopsResourceClient get() {
-    return getRetrofit().create(GitopsResourceClient.class);
+    return getUnsafeOkRetrofit().create(GitopsResourceClient.class);
   }
 }

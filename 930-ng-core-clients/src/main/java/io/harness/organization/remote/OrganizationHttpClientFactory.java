@@ -34,6 +34,6 @@ public class OrganizationHttpClientFactory extends AbstractHttpClientFactory imp
 
   @Override
   public OrganizationClient get() {
-    return getRetrofit().create(OrganizationClient.class);
+    return getUnsafeOkRetrofit().create(OrganizationClient.class);
   }
 }

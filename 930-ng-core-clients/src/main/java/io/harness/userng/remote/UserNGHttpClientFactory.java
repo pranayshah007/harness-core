@@ -31,6 +31,6 @@ public class UserNGHttpClientFactory extends AbstractHttpClientFactory implement
   }
   @Override
   public UserNGClient get() {
-    return getRetrofit().create(UserNGClient.class);
+    return getUnsafeOkRetrofit().create(UserNGClient.class);
   }
 }

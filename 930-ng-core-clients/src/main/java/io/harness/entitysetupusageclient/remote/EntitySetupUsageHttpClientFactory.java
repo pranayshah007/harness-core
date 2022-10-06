@@ -32,6 +32,6 @@ public class EntitySetupUsageHttpClientFactory
 
   @Override
   public EntitySetupUsageClient get() {
-    return getRetrofit().create(EntitySetupUsageClient.class);
+    return getUnsafeOkRetrofit().create(EntitySetupUsageClient.class);
   }
 }

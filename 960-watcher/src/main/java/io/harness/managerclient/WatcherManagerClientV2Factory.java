@@ -66,6 +66,7 @@ public class WatcherManagerClientV2Factory implements Provider<ManagerClientV2> 
       final SSLSocketFactory sslSocketFactory = sslContext.getSocketFactory();
 
       return Http.getOkHttpClientWithProxyAuthSetup()
+          .newBuilder()
           .connectionPool(new ConnectionPool())
           .retryOnConnectionFailure(true)
           .addInterceptor(new WatcherAuthInterceptor(tokenGenerator))

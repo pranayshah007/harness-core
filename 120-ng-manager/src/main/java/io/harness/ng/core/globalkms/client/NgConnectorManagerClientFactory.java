@@ -29,6 +29,6 @@ public class NgConnectorManagerClientFactory
 
   @Override
   public NgConnectorManagerClient get() {
-    return getRetrofit().create(NgConnectorManagerClient.class);
+    return getUnsafeOkRetrofit().create(NgConnectorManagerClient.class);
   }
 }

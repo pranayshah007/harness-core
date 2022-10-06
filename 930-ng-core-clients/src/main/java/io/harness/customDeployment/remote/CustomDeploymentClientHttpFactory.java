@@ -35,6 +35,6 @@ public class CustomDeploymentClientHttpFactory
 
   @Override
   public CustomDeploymentResourceClient get() {
-    return getRetrofit().create(CustomDeploymentResourceClient.class);
+    return getUnsafeOkRetrofit().create(CustomDeploymentResourceClient.class);
   }
 }

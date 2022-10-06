@@ -36,6 +36,6 @@ public class NgInviteHttpClientFactory extends AbstractHttpClientFactory impleme
 
   @Override
   public NgInviteClient get() {
-    return getRetrofit().create(NgInviteClient.class);
+    return getUnsafeOkRetrofit().create(NgInviteClient.class);
   }
 }

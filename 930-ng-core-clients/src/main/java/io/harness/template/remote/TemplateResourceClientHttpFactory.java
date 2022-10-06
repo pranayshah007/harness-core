@@ -35,6 +35,6 @@ public class TemplateResourceClientHttpFactory
 
   @Override
   public TemplateResourceClient get() {
-    return getRetrofit().create(TemplateResourceClient.class);
+    return getUnsafeOkRetrofit().create(TemplateResourceClient.class);
   }
 }

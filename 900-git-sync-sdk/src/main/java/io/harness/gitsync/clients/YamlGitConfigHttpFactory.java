@@ -31,6 +31,6 @@ public class YamlGitConfigHttpFactory extends AbstractHttpClientFactory implemen
 
   @Override
   public YamlGitConfigClient get() {
-    return getRetrofit().create(YamlGitConfigClient.class);
+    return getUnsafeOkRetrofit().create(YamlGitConfigClient.class);
   }
 }

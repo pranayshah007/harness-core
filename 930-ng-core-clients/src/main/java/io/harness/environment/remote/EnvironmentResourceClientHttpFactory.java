@@ -37,6 +37,6 @@ public class EnvironmentResourceClientHttpFactory
 
   @Override
   public EnvironmentResourceClient get() {
-    return getRetrofit().create(EnvironmentResourceClient.class);
+    return getUnsafeOkRetrofit().create(EnvironmentResourceClient.class);
   }
 }

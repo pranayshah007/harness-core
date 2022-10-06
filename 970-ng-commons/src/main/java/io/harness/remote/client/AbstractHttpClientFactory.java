@@ -75,6 +75,9 @@ import retrofit2.converter.jackson.JacksonConverterFactory;
 @OwnedBy(PL)
 @Slf4j
 public abstract class AbstractHttpClientFactory {
+  private static final OkHttpClient UNSAFE_OKHTTP_CLIENT = Http.getUnsafeOkHttpClient();
+  private static final OkHttpClient OKHTTP_CLIENT_WITH_PROXY_AUTH = Http.getOkHttpClientWithProxyAuthSetup();
+
   private final ServiceHttpClientConfig serviceHttpClientConfig;
   private final String serviceSecret;
   private final ServiceTokenGenerator tokenGenerator;
@@ -121,8 +124,7 @@ public abstract class AbstractHttpClientFactory {
     if (isSafeOk) {
       retrofitBuilder.client(getSafeOkHttpClient());
     } else {
-      retrofitBuilder.client(getUnsafeOkHttpClient(
-          baseUrl, this.clientMode, Boolean.TRUE.equals(this.serviceHttpClientConfig.getEnableHttpLogging())));
+      retrofitBuilder.client(getUnsafeOkHttpClient(baseUrl, this.clientMode));
     }
     if (this.enableCircuitBreaker) {
       retrofitBuilder.addCallAdapterFactory(CircuitBreakerCallAdapter.of(getCircuitBreaker()));
@@ -132,17 +134,7 @@ public abstract class AbstractHttpClientFactory {
     return retrofitBuilder.build();
   }
 
-  protected Retrofit getRetrofit() {
-    /*
-    .baseUrl(baseUrl)
-    .addConverterFactory(kryoConverterFactory)
-    .client(getUnsafeOkHttpClient(baseUrl))
-    .addCallAdapterFactory(CircuitBreakerCallAdapter.of(getCircuitBreaker()))
-    .addConverterFactory(JacksonConverterFactory.create(objectMapper))
-    .build();
-
-     Order of factories of a particular type is important while creating the builder, please do not change the order
-     */
+  protected Retrofit getUnsafeOkRetrofit() {
     return getRetrofit(false);
   }
 
@@ -154,7 +146,7 @@ public abstract class AbstractHttpClientFactory {
     return CircuitBreaker.ofDefaults(this.clientId);
   }
 
-  protected ObjectMapper getObjectMapper() {
+  private ObjectMapper getObjectMapper() {
     ObjectMapper objMapper = HObjectMapper.get();
     objMapper.setSubtypeResolver(new JsonSubtypeResolver(objMapper.getSubtypeResolver()));
     objMapper.setConfig(objMapper.getSerializationConfig().withView(JsonViews.Public.class));
@@ -168,7 +160,7 @@ public abstract class AbstractHttpClientFactory {
     return objMapper;
   }
 
-  protected OkHttpClient getSafeOkHttpClient() {
+  private OkHttpClient getSafeOkHttpClient() {
     try {
       KeyStore keyStore = getKeyStore();
 
@@ -180,7 +172,7 @@ public abstract class AbstractHttpClientFactory {
       SSLContext sslContext = SSLContext.getInstance("TLS");
       sslContext.init(null, trustManagers, null);
 
-      return Http.getOkHttpClientWithProxyAuthSetup()
+      return OKHTTP_CLIENT_WITH_PROXY_AUTH.newBuilder()
           .connectionPool(new ConnectionPool())
           .connectTimeout(5, TimeUnit.SECONDS)
           .readTimeout(10, TimeUnit.SECONDS)
@@ -218,18 +210,18 @@ public abstract class AbstractHttpClientFactory {
     return keyStore;
   }
 
-  protected OkHttpClient getUnsafeOkHttpClient(String baseUrl, ClientMode clientMode, boolean addHttpLogging) {
+  private OkHttpClient getUnsafeOkHttpClient(String baseUrl, ClientMode clientMode) {
     try {
       OkHttpClient.Builder builder =
-          Http.getUnsafeOkHttpClientBuilder(baseUrl, serviceHttpClientConfig.getConnectTimeOutSeconds(),
-                  serviceHttpClientConfig.getReadTimeOutSeconds())
-              .connectionPool(new ConnectionPool())
-              .retryOnConnectionFailure(true)
+          UNSAFE_OKHTTP_CLIENT.newBuilder()
+              .proxy(Http.checkAndGetNonProxyIfApplicable(baseUrl))
+              .connectTimeout(serviceHttpClientConfig.getConnectTimeOutSeconds(), TimeUnit.SECONDS)
+              .readTimeout(serviceHttpClientConfig.getReadTimeOutSeconds(), TimeUnit.SECONDS)
               .addInterceptor(getAuthorizationInterceptor(clientMode))
               .addInterceptor(getCorrelationIdInterceptor())
               .addInterceptor(getGitContextInterceptor())
               .addInterceptor(getRequestContextInterceptor());
-      if (addHttpLogging) {
+      if (Boolean.TRUE.equals(this.serviceHttpClientConfig.getEnableHttpLogging())) {
         HttpLoggingInterceptor loggingInterceptor = new HttpLoggingInterceptor();
         loggingInterceptor.setLevel(HttpLoggingInterceptor.Level.BODY);
         builder.addInterceptor(loggingInterceptor);
@@ -250,7 +242,7 @@ public abstract class AbstractHttpClientFactory {
   }
 
   @NotNull
-  protected Interceptor getGitContextInterceptor() {
+  private Interceptor getGitContextInterceptor() {
     return chain -> {
       Request request = chain.request();
       GlobalContextData globalContextData = GlobalContextManager.get(GitSyncBranchContext.NG_GIT_SYNC_CONTEXT);
@@ -300,7 +292,7 @@ public abstract class AbstractHttpClientFactory {
     };
   }
 
-  protected String getServiceSecret() {
+  private String getServiceSecret() {
     String managerServiceSecret = this.serviceSecret;
     if (StringUtils.isNotBlank(managerServiceSecret)) {
       return managerServiceSecret.trim();

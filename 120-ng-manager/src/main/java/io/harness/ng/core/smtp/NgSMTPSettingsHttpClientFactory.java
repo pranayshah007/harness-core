@@ -31,6 +31,6 @@ public class NgSMTPSettingsHttpClientFactory
   }
   @Override
   public NgSMTPSettingsHttpClient get() {
-    return getRetrofit().create(NgSMTPSettingsHttpClient.class);
+    return getUnsafeOkRetrofit().create(NgSMTPSettingsHttpClient.class);
   }
 }

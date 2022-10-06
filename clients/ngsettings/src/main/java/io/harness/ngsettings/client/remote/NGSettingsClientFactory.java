@@ -33,6 +33,6 @@ public class NGSettingsClientFactory extends AbstractHttpClientFactory implement
 
   @Override
   public NGSettingsClient get() {
-    return getRetrofit().create(NGSettingsClient.class);
+    return getUnsafeOkRetrofit().create(NGSettingsClient.class);
   }
 }

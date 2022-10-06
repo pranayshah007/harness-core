@@ -34,6 +34,6 @@ public class AccessControlHttpClientFactory
 
   @Override
   public AccessControlHttpClient get() {
-    return getRetrofit().create(AccessControlHttpClient.class);
+    return getUnsafeOkRetrofit().create(AccessControlHttpClient.class);
   }
 }

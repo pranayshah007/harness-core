@@ -34,6 +34,6 @@ public class K8sWatchTaskResourceHttpClientFactory
 
   @Override
   public K8sWatchTaskResourceClient get() {
-    return getRetrofit().create(K8sWatchTaskResourceClient.class);
+    return getUnsafeOkRetrofit().create(K8sWatchTaskResourceClient.class);
   }
 }

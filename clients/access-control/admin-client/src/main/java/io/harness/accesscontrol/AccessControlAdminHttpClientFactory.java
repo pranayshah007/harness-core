@@ -35,6 +35,6 @@ public class AccessControlAdminHttpClientFactory
 
   @Override
   public AccessControlAdminClient get() {
-    return getRetrofit().create(AccessControlAdminClient.class);
+    return getUnsafeOkRetrofit().create(AccessControlAdminClient.class);
   }
 }

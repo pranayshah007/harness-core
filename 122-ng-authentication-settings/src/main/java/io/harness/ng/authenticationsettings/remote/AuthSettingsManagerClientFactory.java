@@ -31,6 +31,6 @@ public class AuthSettingsManagerClientFactory
 
   @Override
   public AuthSettingsManagerClient get() {
-    return getRetrofit().create(AuthSettingsManagerClient.class);
+    return getUnsafeOkRetrofit().create(AuthSettingsManagerClient.class);
   }
 }

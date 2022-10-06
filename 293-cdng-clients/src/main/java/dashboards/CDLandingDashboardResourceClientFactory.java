@@ -28,6 +28,6 @@ public class CDLandingDashboardResourceClientFactory
 
   @Override
   public CDLandingDashboardResourceClient get() {
-    return getRetrofit().create(CDLandingDashboardResourceClient.class);
+    return getUnsafeOkRetrofit().create(CDLandingDashboardResourceClient.class);
   }
 }

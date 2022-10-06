@@ -33,6 +33,6 @@ public class FileStoreNgHttpClientFactory extends AbstractHttpClientFactory impl
 
   @Override
   public FileStoreClient get() {
-    return getRetrofit().create(FileStoreClient.class);
+    return getUnsafeOkRetrofit().create(FileStoreClient.class);
   }
 }

@@ -34,6 +34,6 @@ public class VariableHttpClientFactory extends AbstractHttpClientFactory impleme
 
   @Override
   public VariableClient get() {
-    return getRetrofit().create(VariableClient.class);
+    return getUnsafeOkRetrofit().create(VariableClient.class);
   }
 }

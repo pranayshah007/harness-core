@@ -30,6 +30,6 @@ public class YamlSchemaHttpClientFactory extends AbstractHttpClientFactory {
   }
 
   public YamlSchemaClient create() {
-    return getRetrofit().create(YamlSchemaClient.class);
+    return getUnsafeOkRetrofit().create(YamlSchemaClient.class);
   }
 }

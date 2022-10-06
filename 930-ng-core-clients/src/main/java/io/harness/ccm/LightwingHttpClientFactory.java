@@ -33,6 +33,6 @@ public class LightwingHttpClientFactory extends AbstractHttpClientFactory implem
 
   @Override
   public LightwingClient get() {
-    return getRetrofit().create(LightwingClient.class);
+    return getUnsafeOkRetrofit().create(LightwingClient.class);
   }
 }

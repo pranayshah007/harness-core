@@ -28,6 +28,6 @@ public class PipelineYamlSchemaServiceHttpClientFactory
 
   @Override
   public PipelineYamlSchemaServiceClient get() {
-    return getRetrofit().create(PipelineYamlSchemaServiceClient.class);
+    return getUnsafeOkRetrofit().create(PipelineYamlSchemaServiceClient.class);
   }
 }

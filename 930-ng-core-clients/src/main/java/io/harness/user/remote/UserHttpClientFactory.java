@@ -33,6 +33,6 @@ public class UserHttpClientFactory extends AbstractHttpClientFactory implements 
 
   @Override
   public UserClient get() {
-    return getRetrofit().create(UserClient.class);
+    return getUnsafeOkRetrofit().create(UserClient.class);
   }
 }

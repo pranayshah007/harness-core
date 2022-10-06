@@ -29,6 +29,6 @@ public class InstanceNGResourceHttpClientFactory
 
   @Override
   public InstanceNGResourceClient get() {
-    return getRetrofit().create(InstanceNGResourceClient.class);
+    return getUnsafeOkRetrofit().create(InstanceNGResourceClient.class);
   }
 }

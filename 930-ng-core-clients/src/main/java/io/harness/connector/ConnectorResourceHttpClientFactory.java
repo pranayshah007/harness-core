@@ -39,6 +39,6 @@ public class ConnectorResourceHttpClientFactory
 
   @Override
   public ConnectorResourceClient get() {
-    return getRetrofit().create(ConnectorResourceClient.class);
+    return getUnsafeOkRetrofit().create(ConnectorResourceClient.class);
   }
 }

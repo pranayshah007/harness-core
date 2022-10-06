@@ -29,6 +29,6 @@ public class InstanceSyncResourceHttpClientFactory
 
   @Override
   public InstanceSyncResourceClient get() {
-    return getRetrofit().create(InstanceSyncResourceClient.class);
+    return getUnsafeOkRetrofit().create(InstanceSyncResourceClient.class);
   }
 }
