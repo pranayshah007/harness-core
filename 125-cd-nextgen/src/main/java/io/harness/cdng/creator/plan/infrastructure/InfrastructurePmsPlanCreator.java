@@ -288,6 +288,7 @@ public class InfrastructurePmsPlanCreator {
                 .build());
       }
     }
+    // todo: check what parameters to send
     adviserObtainments.add(AdviserObtainment.newBuilder().setType(RollbackCustomAdviser.ADVISER_TYPE).build());
     return adviserObtainments;
   }
@@ -301,6 +302,7 @@ public class InfrastructurePmsPlanCreator {
             .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(
                 OnSuccessAdviserParameters.builder().nextNodeId(resourceConstraintField.getNode().getUuid()).build())))
             .build());
+    // todo: check what parameters to send
     adviserObtainments.add(AdviserObtainment.newBuilder().setType(RollbackCustomAdviser.ADVISER_TYPE).build());
     return adviserObtainments;
   }

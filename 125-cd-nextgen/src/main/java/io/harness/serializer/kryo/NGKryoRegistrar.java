@@ -10,6 +10,7 @@ package io.harness.serializer.kryo;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.advisers.RollbackCustomAdviserParameters;
 import io.harness.cdng.advisers.RollbackCustomStepParameters;
 import io.harness.cdng.artifact.bean.artifactsource.DockerArtifactSource;
 import io.harness.cdng.artifact.steps.ArtifactStepParameters;
@@ -189,5 +190,7 @@ public class NGKryoRegistrar implements KryoRegistrar {
 
     kryo.register(FetchInstanceScriptStepInfo.class, 12614);
     kryo.register(FetchInstanceScriptStepParameters.class, 12615);
+
+    kryo.register(RollbackCustomAdviserParameters.class, 12616);
   }
 }

@@ -12,6 +12,8 @@ import static io.harness.cdng.pipeline.steps.MultiDeploymentSpawnerUtils.SERVICE
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
+import io.harness.cdng.advisers.RollbackCustomAdviser;
+import io.harness.cdng.advisers.RollbackCustomAdviserParameters;
 import io.harness.cdng.creator.plan.envGroup.EnvGroupPlanCreatorHelper;
 import io.harness.cdng.creator.plan.environment.EnvironmentPlanCreatorHelper;
 import io.harness.cdng.creator.plan.infrastructure.InfrastructurePmsPlanCreator;
@@ -79,6 +81,7 @@ import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -187,12 +190,27 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
                 FacilitatorObtainment.newBuilder()
                     .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.CHILD).build())
                     .build())
-            .adviserObtainments(getAdviserObtainmentFromMetaData(ctx.getCurrentField()));
+            .adviserObtainments(getAdviserObtainment(ctx.getCurrentField()));
 
     if (!EmptyPredicate.isEmpty(ctx.getExecutionInputTemplate())) {
       builder.executionInputTemplate(ctx.getExecutionInputTemplate());
     }
     return builder.build();
+  }
+
+  List<AdviserObtainment> getAdviserObtainment(YamlField stageField) {
+    List<AdviserObtainment> adviserObtainment = new ArrayList<>();
+
+    RollbackCustomAdviserParameters rollbackCustomAdviserParameters =
+        RollbackCustomAdviserParameters.builder().canAdviseOnPipelineRollback(true).build();
+    adviserObtainment.add(
+        AdviserObtainment.newBuilder()
+            .setType(RollbackCustomAdviser.ADVISER_TYPE)
+            .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(rollbackCustomAdviserParameters)))
+            .build());
+
+    adviserObtainment.addAll(getAdviserObtainmentFromMetaData(stageField));
+    return adviserObtainment;
   }
 
   public String getIdentifierWithExpression(PlanCreationContext ctx, DeploymentStageNode node, String identifier) {

@@ -8,6 +8,7 @@
 package io.harness.cdng.advisers;
 
 import io.harness.advisers.rollback.OnFailRollbackOutput;
+import io.harness.advisers.rollback.RollbackStrategy;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
@@ -26,8 +27,10 @@ import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.SectionStepSweepingOutput;
 
+import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 @OwnedBy(HarnessTeam.PIPELINE)
@@ -56,7 +59,12 @@ public class RollbackCustomAdviser implements Adviser {
   @Override
   public boolean canAdvise(AdvisingEvent advisingEvent) {
     OnFailRollbackOutput rollbackOutcome = getRollbackOutputV2(advisingEvent);
+    RollbackCustomAdviserParameters adviserParameters = extractParameters(advisingEvent);
     if (rollbackOutcome == null) {
+      return false;
+    }
+    if (Objects.equals(rollbackOutcome.getStrategy(), RollbackStrategy.PIPELINE_ROLLBACK)
+        && !adviserParameters.getCanAdviseOnPipelineRollback()) {
       return false;
     }
     return StatusUtils.brokeStatuses().contains(advisingEvent.getToStatus());
@@ -101,5 +109,10 @@ public class RollbackCustomAdviser implements Adviser {
       return null;
     }
     return (OnFailRollbackOutput) optionalSweepingOutput.getOutput();
+  }
+
+  private RollbackCustomAdviserParameters extractParameters(AdvisingEvent advisingEvent) {
+    return (RollbackCustomAdviserParameters) Preconditions.checkNotNull(
+        kryoSerializer.asObject(advisingEvent.getAdviserParameters()));
   }
 }
