@@ -572,7 +572,7 @@ public class NGTemplateServiceImpl implements NGTemplateService {
   public Page<TemplateEntity> list(Criteria criteria, Pageable pageable, String accountId, String orgIdentifier,
       String projectIdentifier, Boolean getDistinctFromBranches) {
     enforcementClientService.checkAvailability(FeatureRestrictionName.TEMPLATE_SERVICE, accountId);
-    if (templateGitXService.isNewGitXEnabled(accountId, orgIdentifier, projectIdentifier)) {
+    if (templateGitXService.shouldHideRemoteTemplates(accountId, orgIdentifier, projectIdentifier)) {
       criteria.and("storeType").in(StoreType.INLINE.name(), null);
     }
     if (Boolean.TRUE.equals(getDistinctFromBranches)

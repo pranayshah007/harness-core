@@ -132,6 +132,20 @@ public class TemplateGitXServiceImpl implements TemplateGitXService {
     return false;
   }
 
+  public boolean shouldHideRemoteTemplates(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+    // when the project and org identifier are present for old git sync project
+    if (gitSyncSdkService.isGitSyncEnabled(accountIdentifier, orgIdentifier, projectIdentifier)) {
+      return true;
+    }
+
+    if (ngTemplateFeatureFlagHelperService.isEnabled(accountIdentifier, FeatureName.USE_OLD_GIT_SYNC)) {
+      // when we have new gitx project in oldGitSync account created
+      return !ngTemplateFeatureFlagHelperService.isEnabled(accountIdentifier, FeatureName.NG_TEMPLATE_GITX);
+    }
+    // when we are in the new GitX project
+    return false;
+  }
+
   public String checkForFileUniquenessAndGetRepoURL(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String templateIdentifier, boolean isForceImport) {
     GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
