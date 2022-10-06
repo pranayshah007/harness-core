@@ -9,6 +9,7 @@ package io.harness.eventsframework.impl.redis;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.eventsframework.impl.redis.RedisUtils.REDIS_STREAM_INTERNAL_KEY;
+import static io.harness.eventsframework.impl.redis.RedisUtils.REDIS_STREAM_TRACE_ID_KEY;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.eventsframework.api.AbstractProducer;
@@ -21,6 +22,7 @@ import com.google.inject.Inject;
 import io.github.resilience4j.core.IntervalFunction;
 import io.github.resilience4j.retry.Retry;
 import io.github.resilience4j.retry.RetryConfig;
+import io.opentelemetry.api.trace.Span;
 import io.vavr.control.Try;
 import java.util.Base64;
 import java.util.HashMap;
@@ -31,6 +33,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.RStream;
 import org.redisson.api.RedissonClient;
 import org.redisson.api.StreamMessageId;
+import org.slf4j.MDC;
 
 @OwnedBy(PL)
 @Slf4j
@@ -79,6 +82,7 @@ public class RedisProducer extends AbstractProducer {
 
   private String sendInternal(Message message) {
     Map<String, String> redisData = new HashMap<>(message.getMetadataMap());
+    addTraceId(redisData);
     redisData.put(REDIS_STREAM_INTERNAL_KEY, Base64.getEncoder().encodeToString(message.getData().toByteArray()));
     populateOtherProducerSpecificData(redisData);
 
@@ -123,6 +127,14 @@ public class RedisProducer extends AbstractProducer {
           RedisEventMetricDTOMapper.prepareRedisEventMetricDTO(message, getTopicName()), REDIS_PRODUCER_EVENT_METRIC);
     } catch (Exception ex) {
       log.warn("Error while sending metrics for redis producer events :", ex);
+    }
+  }
+
+  private void addTraceId(Map<String, String> redisData) {
+    if (!Span.getInvalid().equals(Span.current())) {
+      redisData.put(REDIS_STREAM_TRACE_ID_KEY, Span.current().getSpanContext().getTraceId());
+    } else if (MDC.getCopyOfContextMap().containsKey(REDIS_STREAM_TRACE_ID_KEY)) {
+      redisData.put(REDIS_STREAM_TRACE_ID_KEY, MDC.get(REDIS_STREAM_TRACE_ID_KEY));
     }
   }
 }
