@@ -11,6 +11,7 @@ import static java.lang.String.format;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.common.NGExpressionUtils;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.pms.data.PmsEngineExpressionService;
 import io.harness.exception.InvalidRequestException;
@@ -118,6 +119,9 @@ public class YamlExpressionResolveHelper {
   private void resolveExpressionInValueNode(
       YamlNode parentNode, String childName, String childValue, EngineExpressionEvaluator engineExpressionEvaluator) {
     ObjectNode objectNode = (ObjectNode) parentNode.getCurrJsonNode();
+    if (NGExpressionUtils.matchesExecutionInputPattern(childValue)) {
+      return;
+    }
     if (EngineExpressionEvaluator.hasExpressions(childValue)) {
       String resolvedExpression = engineExpressionEvaluator.renderExpression(childValue, true);
       // Update node value only if expression was successfully resolved

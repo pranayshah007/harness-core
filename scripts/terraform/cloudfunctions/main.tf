@@ -19,6 +19,11 @@ provider "google" {
   project = var.projectId
 }
 
+provider "google-beta" {
+  credentials = var.credentialsFile
+  project = var.projectId
+  region = var.region
+}
 
 module "ce-cloudfunctions" {
   source = "./ce"

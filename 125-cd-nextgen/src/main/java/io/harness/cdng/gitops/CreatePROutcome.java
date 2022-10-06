@@ -31,4 +31,5 @@ public class CreatePROutcome implements Outcome, ExecutionSweepingOutput {
   String prlink;
   List<String> changedFiles;
   String commitId;
+  String ref;
 }

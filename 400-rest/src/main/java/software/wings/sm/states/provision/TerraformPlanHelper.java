@@ -15,6 +15,7 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.SweepingOutputInstance;
 import io.harness.beans.terraform.TerraformPlanParam;
 import io.harness.encryptors.clients.AwsKmsEncryptor;
+import io.harness.exception.WingsException;
 import io.harness.security.encryption.EncryptedRecordData;
 
 import software.wings.dl.WingsPersistence;
@@ -25,6 +26,7 @@ import software.wings.sm.ExecutionContext;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
+import org.bson.BSONException;
 
 @Slf4j
 @OwnedBy(CDP)
@@ -36,14 +38,18 @@ public class TerraformPlanHelper {
   @Inject protected AwsKmsEncryptor awsKmsEncryptor;
 
   public void saveEncryptedTfPlanToSweepingOutput(EncryptedRecordData data, ExecutionContext context, String planName) {
-    EncryptedRecordData encryptedTfPlan = getEncryptedTfPlanFromSweepingOutput(context, planName);
-    if (encryptedTfPlan != null) {
-      deleteEncryptedTfPlanFromSweepingOutput(context, planName);
+    try {
+      EncryptedRecordData encryptedTfPlan = getEncryptedTfPlanFromSweepingOutput(context, planName);
+      if (encryptedTfPlan != null) {
+        deleteEncryptedTfPlanFromSweepingOutput(context, planName);
+      }
+      sweepingOutputService.save(context.prepareSweepingOutputBuilder(SweepingOutputInstance.Scope.WORKFLOW)
+                                     .name(planName)
+                                     .value(TerraformPlanParam.builder().encryptedRecordData(data).build())
+                                     .build());
+    } catch (BSONException e) {
+      throw new WingsException(e.getMessage(), e);
     }
-    sweepingOutputService.save(context.prepareSweepingOutputBuilder(SweepingOutputInstance.Scope.WORKFLOW)
-                                   .name(planName)
-                                   .value(TerraformPlanParam.builder().encryptedRecordData(data).build())
-                                   .build());
   }
 
   public EncryptedRecordData getEncryptedTfPlanFromSweepingOutput(ExecutionContext context, String planName) {

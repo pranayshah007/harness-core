@@ -150,6 +150,7 @@ public class DynatraceHealthSourceSpec extends MetricHealthSourceSpec {
                            return cvConfig;
                          })
                          .collect(Collectors.toList()));
+    cvConfigs.forEach(dynatraceCVConfig -> dynatraceCVConfig.addMetricThresholds(metricPacks, metricDefinitions));
     return cvConfigs;
   }
 

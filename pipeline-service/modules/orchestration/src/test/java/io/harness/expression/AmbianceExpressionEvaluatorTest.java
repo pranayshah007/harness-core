@@ -10,6 +10,7 @@ package io.harness.expression;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.BRIJESH;
 import static io.harness.rule.OwnerRule.GARVIT;
+import static io.harness.rule.OwnerRule.IVAN;
 import static io.harness.rule.OwnerRule.SAHIL;
 import static io.harness.text.resolver.ExpressionResolver.nullStringValue;
 
@@ -31,6 +32,7 @@ import io.harness.exception.UnresolvedExpressionsException;
 import io.harness.expression.field.dummy.DummyOrchestrationField;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
+import io.harness.pms.contracts.execution.ForMetadata;
 import io.harness.pms.contracts.execution.MatrixMetadata;
 import io.harness.pms.contracts.execution.StrategyMetadata;
 import io.harness.pms.contracts.steps.StepCategory;
@@ -45,6 +47,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import javax.validation.constraints.NotNull;
@@ -180,7 +183,7 @@ public class AmbianceExpressionEvaluatorTest extends OrchestrationTestBase {
     validateExpression(evaluator, "strVal2", "a2");
   }
 
-  private Ambiance buildAmbiance(boolean addStrategyMetadata) {
+  private Ambiance buildAmbiance(StrategyMetadata metadata) {
     Level phaseLevel =
         Level.newBuilder()
             .setRuntimeId(PHASE_RUNTIME_ID)
@@ -215,13 +218,8 @@ public class AmbianceExpressionEvaluatorTest extends OrchestrationTestBase {
             .setStartTs(3)
             .setIdentifier("i3")
             .setStepType(StepType.newBuilder().setType("SECTION").setStepCategory(StepCategory.STAGE).build())
-            .setStrategyMetadata(
-                StrategyMetadata.newBuilder()
-                    .setMatrixMetadata(
-                        MatrixMetadata.newBuilder().addMatrixCombination(1).putMatrixValues("a", "1").build())
-                    .build())
+            .setStrategyMetadata(metadata)
             .build();
-
     List<Level> levels = new ArrayList<>();
     levels.add(phaseLevel);
     levels.add(sectionLevel);
@@ -240,7 +238,10 @@ public class AmbianceExpressionEvaluatorTest extends OrchestrationTestBase {
   @Owner(developers = SAHIL)
   @Category(UnitTests.class)
   public void testMatrixExpressions() {
-    Ambiance ambiance = buildAmbiance(true);
+    Ambiance ambiance = buildAmbiance(
+        StrategyMetadata.newBuilder()
+            .setMatrixMetadata(MatrixMetadata.newBuilder().addMatrixCombination(1).putMatrixValues("a", "1").build())
+            .build());
 
     EngineExpressionEvaluator evaluator = prepareEngineExpressionEvaluator(
         new ImmutableMap.Builder<String, Object>().put("strategy", new StrategyFunctor(ambiance)).build());
@@ -249,6 +250,27 @@ public class AmbianceExpressionEvaluatorTest extends OrchestrationTestBase {
     validateSingleExpression(evaluator, "strategy.iteration", 0, false);
     validateSingleExpression(evaluator, "strategy.iterations", 0, false);
   }
+
+  @Test
+  @Owner(developers = IVAN)
+  @Category(UnitTests.class)
+  public void testForExpressions() {
+    Ambiance ambiance = buildAmbiance(StrategyMetadata.newBuilder()
+                                          .setForMetadata(ForMetadata.newBuilder()
+                                                              .addAllPartition(Arrays.asList("host1", "host2", "host3"))
+                                                              .setValue("value")
+                                                              .build())
+                                          .build());
+
+    EngineExpressionEvaluator evaluator = prepareEngineExpressionEvaluator(
+        new ImmutableMap.Builder<String, Object>().put("strategy", new StrategyFunctor(ambiance)).build());
+
+    validateSingleExpression(evaluator, "strategy.repeat.partition", Arrays.asList("host1", "host2", "host3"), false);
+    validateSingleExpression(evaluator, "strategy.repeat.item", "value", false);
+    validateSingleExpression(evaluator, "strategy.iteration", 0, false);
+    validateSingleExpression(evaluator, "strategy.iterations", 0, false);
+  }
+
   private void validateExpression(EngineExpressionEvaluator evaluator, String expression, Object expected) {
     validateExpression(evaluator, expression, expected, false);
   }
@@ -321,7 +343,7 @@ public class AmbianceExpressionEvaluatorTest extends OrchestrationTestBase {
   @Test
   @Owner(developers = BRIJESH)
   @Category(UnitTests.class)
-  public void testStringReplacerWithExpressionModes() {
+  public void testResolveExpressionWithExpressionModes() {
     EngineExpressionEvaluator expressionEvaluator = prepareEngineExpressionEvaluator(ImmutableMap.of("key1", "val1"));
 
     // key1 is set in context, so for each mode the returned value would be val1.
@@ -363,6 +385,45 @@ public class AmbianceExpressionEvaluatorTest extends OrchestrationTestBase {
 
     // expression will not be resolved, and mode is THROW_EXCEPTION_IF_UNRESOLVED, so it will throw
     // UnresolvedExpressionsException exception.
+    assertThatThrownBy(
+        () -> expressionEvaluator.resolve("abc<+invalidKey> def", ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED))
+        .isInstanceOf(UnresolvedExpressionsException.class);
+  }
+
+  @Test
+  @Owner(developers = BRIJESH)
+  @Category(UnitTests.class)
+  public void testEvaluateExpressionWithExpressionModes() {
+    EngineExpressionEvaluator expressionEvaluator = prepareEngineExpressionEvaluator(ImmutableMap.of("key1", "val1"));
+
+    // key1 is set in context, so for each mode the returned value would be val1.
+    assertThat(
+        expressionEvaluator.evaluateExpression("<+key1>", ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED))
+        .isEqualTo("val1");
+    assertThat(expressionEvaluator.evaluateExpression("<+key1>", ExpressionMode.RETURN_NULL_IF_UNRESOLVED))
+        .isEqualTo("val1");
+    assertThat(expressionEvaluator.evaluateExpression("<+key1>", ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED))
+        .isEqualTo("val1");
+
+    // expression will not be evaluated, and mode is RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED, so original expression
+    // will be returned.
+    assertThat(expressionEvaluator.evaluateExpression(
+                   "<+invalidKey>", ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED))
+        .isEqualTo("<+invalidKey>");
+    // One inner expression will be resolved and other will not be resolved. Since mode is
+    // RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED so resolved value will be concatenated with unresolved expression.
+    assertThat(expressionEvaluator.evaluateExpression(
+                   "<+invalidKey>+<+key1>", ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED))
+        .isEqualTo("<+invalidKey>val1");
+
+    // expression will not be evaluated, and mode is RETURN_NULL_IF_UNRESOLVED, so null value would be returned.
+    assertThat(expressionEvaluator.evaluateExpression("<+invalidKey>", ExpressionMode.RETURN_NULL_IF_UNRESOLVED))
+        .isEqualTo(null);
+
+    // expression will not be resolved, and mode is THROW_EXCEPTION_IF_UNRESOLVED, so it will throw
+    // UnresolvedExpressionsException exception.
+    assertThatThrownBy(() -> expressionEvaluator.resolve("<+invalidKey>", ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED))
+        .isInstanceOf(UnresolvedExpressionsException.class);
     assertThatThrownBy(
         () -> expressionEvaluator.resolve("abc<+invalidKey> def", ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED))
         .isInstanceOf(UnresolvedExpressionsException.class);

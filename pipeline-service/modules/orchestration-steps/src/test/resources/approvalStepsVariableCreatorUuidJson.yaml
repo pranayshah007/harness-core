@@ -58,7 +58,9 @@
                 "name": "servicenow_approval",
                 "identifier": "servicenow_approval",
                 "spec": {
+                  "issueType": "issueType",
                   "connectorRef": "harness_snow_dev",
+                  "projectKey": "projectKey",
                   "ticketNumber": "INC0081882",
                   "ticketType": "INCIDENT",
                   "approvalCriteria": {

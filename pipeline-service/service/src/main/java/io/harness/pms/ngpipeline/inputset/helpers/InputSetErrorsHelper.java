@@ -38,6 +38,7 @@ import lombok.experimental.UtilityClass;
 @UtilityClass
 public class InputSetErrorsHelper {
   public final String INVALID_INPUT_SET_MESSAGE = "Reference is an invalid Input Set";
+  public final String OUTDATED_INPUT_SET_MESSAGE = "Reference is an outdated input set";
 
   public InputSetErrorWrapperDTOPMS getErrorMap(String pipelineYaml, String inputSetYaml) {
     String pipelineComp = getPipelineComponent(inputSetYaml);
@@ -105,7 +106,7 @@ public class InputSetErrorsHelper {
       if (inputSetEntity.getInputSetEntityType() == InputSetEntityType.OVERLAY_INPUT_SET) {
         res.put(identifier, "References can't be other overlay input sets");
       } else if (inputSetEntity.getIsInvalid()) {
-        res.put(identifier, "Reference is an outdated input set");
+        res.put(identifier, OUTDATED_INPUT_SET_MESSAGE);
       } else {
         String inputSetYaml = inputSetEntity.getYaml();
         InputSetErrorWrapperDTOPMS errorMap = getErrorMap(pipelineYaml, inputSetYaml);
@@ -117,11 +118,31 @@ public class InputSetErrorsHelper {
     return res;
   }
 
+  public Map<String, String> getInvalidInputSetReferences(
+      List<Optional<InputSetEntity>> inputSets, List<String> identifiers) {
+    Map<String, String> res = new LinkedHashMap<>();
+    for (int i = 0; i < identifiers.size(); i++) {
+      String identifier = identifiers.get(i);
+      Optional<InputSetEntity> optionalEntity = inputSets.get(i);
+      if (!optionalEntity.isPresent()) {
+        res.put(identifier, "Reference does not exist");
+        continue;
+      }
+      InputSetEntity inputSetEntity = optionalEntity.get();
+      if (inputSetEntity.getInputSetEntityType() == InputSetEntityType.OVERLAY_INPUT_SET) {
+        res.put(identifier, "References can't be other overlay input sets");
+      } else if (inputSetEntity.getIsInvalid()) {
+        res.put(identifier, OUTDATED_INPUT_SET_MESSAGE);
+      }
+    }
+    return res;
+  }
+
   // TODO(BRIJESH): This method is duplicated in ExecutionInputServiceImpl. Do the refactoring and keep this at only one
   // place.
   public Map<FQN, String> getInvalidFQNsInInputSet(String templateYaml, String inputSetPipelineCompYaml) {
     YamlConfig inputSetConfig = new YamlConfig(inputSetPipelineCompYaml);
-    YamlConfig templateConfig = new YamlConfig(templateYaml);
+    YamlConfig templateConfig = EmptyPredicate.isEmpty(templateYaml) ? null : new YamlConfig(templateYaml);
     return getInvalidFQNsInInputSetFromTemplateConfig(templateConfig, inputSetConfig);
   }
 
@@ -133,7 +154,7 @@ public class InputSetErrorsHelper {
   Map<FQN, String> getInvalidFQNsInInputSetFromTemplateConfig(YamlConfig templateConfig, YamlConfig inputSetConfig) {
     Map<FQN, String> errorMap = new LinkedHashMap<>();
     Set<FQN> inputSetFQNs = new LinkedHashSet<>(inputSetConfig.getFqnToValueMap().keySet());
-    if (EmptyPredicate.isEmpty(templateConfig.getFqnToValueMap())) {
+    if (templateConfig == null || EmptyPredicate.isEmpty(templateConfig.getFqnToValueMap())) {
       inputSetFQNs.forEach(fqn -> errorMap.put(fqn, "Pipeline no longer contains any runtime input"));
       return errorMap;
     }

@@ -35,17 +35,19 @@ import io.harness.ng.accesscontrol.migrations.models.AccessControlMigration;
 import io.harness.ng.accesscontrol.migrations.services.AccessControlMigrationService;
 import io.harness.ng.core.AccountOrgProjectValidator;
 import io.harness.ng.core.accountsetting.services.NGAccountSettingService;
+import io.harness.ng.core.api.DefaultUserGroupService;
 import io.harness.ng.core.dto.OrganizationDTO;
 import io.harness.ng.core.dto.ProjectDTO;
 import io.harness.ng.core.entities.Organization;
 import io.harness.ng.core.entities.Project;
+import io.harness.ng.core.manifests.SampleManifestFileService;
 import io.harness.ng.core.services.OrganizationService;
 import io.harness.ng.core.services.ProjectService;
 import io.harness.ng.core.user.UserInfo;
 import io.harness.ng.core.user.UserMembershipUpdateSource;
 import io.harness.ng.core.user.service.NgUserService;
+import io.harness.remote.client.CGRestUtils;
 import io.harness.remote.client.NGRestUtils;
-import io.harness.remote.client.RestClientUtils;
 import io.harness.user.remote.UserClient;
 import io.harness.utils.CryptoUtils;
 
@@ -80,6 +82,9 @@ public class NGAccountSetupService {
   private final boolean shouldAssignAdmins;
   private final NGAccountSettingService accountSettingService;
   private final FeatureFlagService featureFlagService;
+  private final DefaultUserGroupService defaultUserGroupService;
+
+  private final SampleManifestFileService sampleManifestFileService;
 
   @Inject
   public NGAccountSetupService(OrganizationService organizationService,
@@ -88,7 +93,8 @@ public class NGAccountSetupService {
       UserClient userClient, AccessControlMigrationService accessControlMigrationService,
       HarnessSMManager harnessSMManager, CIDefaultEntityManager ciDefaultEntityManager,
       NextGenConfiguration nextGenConfiguration, NGAccountSettingService accountSettingService,
-      ProjectService projectService, FeatureFlagService featureFlagService) {
+      ProjectService projectService, FeatureFlagService featureFlagService,
+      SampleManifestFileService sampleManifestFileService, DefaultUserGroupService defaultUserGroupService) {
     this.organizationService = organizationService;
     this.accountOrgProjectValidator = accountOrgProjectValidator;
     this.accessControlAdminClient = accessControlAdminClient;
@@ -103,6 +109,8 @@ public class NGAccountSetupService {
     this.accountSettingService = accountSettingService;
     this.projectService = projectService;
     this.featureFlagService = featureFlagService;
+    this.sampleManifestFileService = sampleManifestFileService;
+    this.defaultUserGroupService = defaultUserGroupService;
   }
 
   public void setupAccountForNG(String accountIdentifier) {
@@ -111,7 +119,8 @@ public class NGAccountSetupService {
           "Account with accountIdentifier %s not found, skipping creation of Default Organization", accountIdentifier));
       return;
     }
-
+    Scope accountScope = Scope.of(accountIdentifier, null, null);
+    defaultUserGroupService.create(accountScope, emptyList());
     Organization defaultOrg = createDefaultOrg(accountIdentifier);
     if (featureFlagService.isGlobalEnabled(FeatureName.CREATE_DEFAULT_PROJECT)) {
       Project defaultProject = createDefaultProject(accountIdentifier, defaultOrg.getIdentifier());
@@ -125,6 +134,20 @@ public class NGAccountSetupService {
     harnessSMManager.createHarnessSecretManager(accountIdentifier, null, null);
     ciDefaultEntityManager.createCIDefaultEntities(accountIdentifier, null, null);
     accountSettingService.setUpDefaultAccountSettings(accountIdentifier);
+    createSampleFiles(accountIdentifier);
+  }
+
+  private void createSampleFiles(String accountIdentifier) {
+    try {
+      SampleManifestFileService.SampleManifestFileCreateResponse fileCreateResponse =
+          sampleManifestFileService.createDefaultFilesInFileStore(accountIdentifier);
+      if (!fileCreateResponse.isCreated()) {
+        log.error(String.format("Failed to create sample manifest files for account:%s. Reason %s", accountIdentifier,
+            fileCreateResponse.getErrorMessage()));
+      }
+    } catch (Exception ex) {
+      log.error("Failed to create sample manifest files for account:" + accountIdentifier, ex);
+    }
   }
 
   private Organization createDefaultOrg(String accountIdentifier) {
@@ -262,7 +285,7 @@ public class NGAccountSetupService {
       int limit = 500;
       int maxIterations = 50;
       while (maxIterations > 0) {
-        PageResponse<UserInfo> usersPage = RestClientUtils.getResponse(
+        PageResponse<UserInfo> usersPage = CGRestUtils.getResponse(
             userClient.list(accountId, String.valueOf(offset), String.valueOf(limit), null, true));
         if (isEmpty(usersPage.getResponse())) {
           break;

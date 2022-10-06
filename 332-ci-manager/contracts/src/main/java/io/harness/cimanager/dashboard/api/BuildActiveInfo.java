@@ -13,9 +13,9 @@ import io.harness.ng.core.dashboard.ServiceDeploymentInfo;
 
 import java.util.List;
 import lombok.Builder;
-import lombok.Value;
+import lombok.Data;
 
-@Value
+@Data
 @Builder
 public class BuildActiveInfo {
   private String piplineName;

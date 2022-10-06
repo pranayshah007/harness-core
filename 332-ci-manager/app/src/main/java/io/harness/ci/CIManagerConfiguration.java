@@ -46,8 +46,10 @@ import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.servers.Server;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -68,6 +70,8 @@ import org.apache.commons.lang3.StringUtils;
 @Slf4j
 public class CIManagerConfiguration extends Configuration implements AssetsBundleConfiguration {
   public static final String BASE_PACKAGE = "io.harness.app.resources";
+
+  public static final String CI_API_PACKAGE = "io.harness.ci.api";
   public static final String NG_PIPELINE_PACKAGE = "io.harness.ngpipeline";
   public static final String ENFORCEMENT_CLIENT_PACKAGE = "io.harness.enforcement.client.resources";
   public static final Collection<Class<?>> HARNESS_RESOURCE_CLASSES = getResourceClasses();
@@ -116,14 +120,15 @@ public class CIManagerConfiguration extends Configuration implements AssetsBundl
   @JsonProperty("apiUrl") private String apiUrl;
   @JsonProperty("hostname") String hostname;
   @JsonProperty("basePathPrefix") String basePathPrefix;
+  @JsonProperty(value = "enableOpentelemetry") private Boolean enableOpentelemetry;
 
   public static Collection<Class<?>> getResourceClasses() {
     return HarnessReflections.get()
         .getTypesAnnotatedWith(Path.class)
         .stream()
         .filter(klazz
-            -> StringUtils.startsWithAny(
-                klazz.getPackage().getName(), BASE_PACKAGE, NG_PIPELINE_PACKAGE, ENFORCEMENT_CLIENT_PACKAGE))
+            -> StringUtils.startsWithAny(klazz.getPackage().getName(), BASE_PACKAGE, CI_API_PACKAGE,
+                NG_PIPELINE_PACKAGE, ENFORCEMENT_CLIENT_PACKAGE))
         .collect(Collectors.toSet());
   }
 
@@ -178,5 +183,19 @@ public class CIManagerConfiguration extends Configuration implements AssetsBundl
     Set<String> packages = getUniquePackages(getOAS3ResourceClassesOnly());
     return new SwaggerConfiguration().openAPI(oas).prettyPrint(true).resourcePackages(packages).scannerClass(
         "io.swagger.v3.jaxrs2.integration.JaxrsAnnotationScanner");
+  }
+
+  public List<String> getDbAliases() {
+    List<String> dbAliases = new ArrayList<>();
+    if (harnessCIMongo != null) {
+      dbAliases.add(harnessCIMongo.getAliasDBName());
+    }
+    if (harnessMongo != null) {
+      dbAliases.add(harnessMongo.getAliasDBName());
+    }
+    if (pmsMongoConfig != null) {
+      dbAliases.add(pmsMongoConfig.getAliasDBName());
+    }
+    return dbAliases;
   }
 }

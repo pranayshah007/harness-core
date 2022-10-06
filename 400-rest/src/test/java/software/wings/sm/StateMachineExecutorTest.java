@@ -17,6 +17,7 @@ import static io.harness.beans.ExecutionStatus.FAILED;
 import static io.harness.beans.ExecutionStatus.NEW;
 import static io.harness.beans.ExecutionStatus.RUNNING;
 import static io.harness.beans.ExecutionStatus.SKIPPED;
+import static io.harness.beans.ExecutionStatus.STARTING;
 import static io.harness.beans.ExecutionStatus.SUCCESS;
 import static io.harness.beans.ExecutionStatus.WAITING;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
@@ -26,6 +27,7 @@ import static io.harness.rule.OwnerRule.GARVIT;
 import static io.harness.rule.OwnerRule.GEORGE;
 import static io.harness.rule.OwnerRule.MILOS;
 import static io.harness.rule.OwnerRule.PRASHANT;
+import static io.harness.rule.OwnerRule.RAFAEL;
 import static io.harness.rule.OwnerRule.TMACARI;
 
 import static software.wings.api.InstanceElement.Builder.anInstanceElement;
@@ -1289,5 +1291,35 @@ public class StateMachineExecutorTest extends WingsBaseTest {
     executor.skipDelayedStepIfRequired(context, state);
 
     verify(executor, never()).handleResponse(any(), any());
+  }
+
+  @Test
+  @Owner(developers = RAFAEL)
+  @Category(UnitTests.class)
+  public void shouldCleanForRetryWhenStateExecutionMapIsEmpty() {
+    List<ContextElement> originalNotifyElements = asList(anInstanceElement().displayName("foo").build());
+
+    String prevStateExecutionInstanceId = wingsPersistence.save(
+        aStateExecutionInstance().appId("appId").displayName("state0").notifyElements(originalNotifyElements).build());
+
+    HashMap<String, StateExecutionData> stateExecutionMap = new HashMap<>();
+
+    StateExecutionInstance stateExecutionInstance = aStateExecutionInstance()
+                                                        .appId("appId")
+                                                        .displayName("state1")
+                                                        .status(STARTING)
+                                                        .stateExecutionMap(stateExecutionMap)
+                                                        .prevInstanceId(prevStateExecutionInstanceId)
+                                                        .stateTimeout(60000L)
+                                                        .build();
+
+    wingsPersistence.save(stateExecutionInstance);
+    stateMachineExecutor.clearStateExecutionData(stateExecutionInstance, null);
+
+    stateExecutionInstance = wingsPersistence.get(StateExecutionInstance.class, stateExecutionInstance.getUuid());
+
+    assertThat(stateExecutionInstance.getStatus()).isEqualTo(NEW);
+    assertThat(stateExecutionInstance.isRetry()).isEqualTo(true);
+    assertThat(stateExecutionInstance.getRetryCount()).isEqualTo(1);
   }
 }

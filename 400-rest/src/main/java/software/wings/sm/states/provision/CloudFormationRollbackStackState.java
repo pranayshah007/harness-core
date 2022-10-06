@@ -10,6 +10,7 @@ package software.wings.sm.states.provision;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.beans.ExecutionStatus.SKIPPED;
 import static io.harness.beans.ExecutionStatus.SUCCESS;
+import static io.harness.beans.FeatureName.CLOUDFORMATION_CHANGE_SET;
 import static io.harness.context.ContextElementType.CLOUD_FORMATION_ROLLBACK;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -259,18 +260,20 @@ public class CloudFormationRollbackStackState extends CloudFormationState {
                                                  .collect(Collectors.toList()));
       }
 
-      CloudFormationCreateStackRequest request = builder.stackNameSuffix(configParameter.getEntityId())
-                                                     .customStackName(configParameter.getCustomStackName())
-                                                     .region(configParameter.getRegion())
-                                                     .commandType(CloudFormationCommandType.CREATE_STACK)
-                                                     .accountId(context.getAccountId())
-                                                     .appId(context.getAppId())
-                                                     .cloudFormationRoleArn(roleArnRendered)
-                                                     .commandName(mainCommandUnit())
-                                                     .activityId(activityId)
-                                                     .variables(textVariables)
-                                                     .encryptedVariables(encryptedTextVariables)
-                                                     .build();
+      CloudFormationCreateStackRequest request =
+          builder.stackNameSuffix(configParameter.getEntityId())
+              .customStackName(configParameter.getCustomStackName())
+              .region(configParameter.getRegion())
+              .commandType(CloudFormationCommandType.CREATE_STACK)
+              .accountId(context.getAccountId())
+              .appId(context.getAppId())
+              .cloudFormationRoleArn(roleArnRendered)
+              .commandName(mainCommandUnit())
+              .activityId(activityId)
+              .variables(textVariables)
+              .encryptedVariables(encryptedTextVariables)
+              .deploy(featureFlagService.isEnabled(CLOUDFORMATION_CHANGE_SET, context.getAccountId()))
+              .build();
       setTimeOutOnRequest(request);
       DelegateTask delegateTask =
           DelegateTask.builder()
@@ -371,7 +374,8 @@ public class CloudFormationRollbackStackState extends CloudFormationState {
           .activityId(activityId)
           .commandName(mainCommandUnit())
           .variables(stackElement.getOldStackParameters())
-          .awsConfig(awsConfig);
+          .awsConfig(awsConfig)
+          .deploy(featureFlagService.isEnabled(CLOUDFORMATION_CHANGE_SET, context.getAccountId()));
       if (stackElement.isSkipBasedOnStackStatus() == false || isEmpty(stackElement.getStackStatusesToMarkAsSuccess())) {
         builder.stackStatusesToMarkAsSuccess(new ArrayList<>());
       } else {

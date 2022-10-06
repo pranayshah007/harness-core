@@ -18,6 +18,7 @@ import static software.wings.graphql.datafetcher.DataFetcherUtils.NEGATIVE_OFFSE
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.eraro.ResponseMessage;
+import io.harness.exception.AccessDeniedException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.logging.ExceptionLogger;
@@ -25,7 +26,9 @@ import io.harness.logging.ExceptionLogger;
 import software.wings.graphql.directive.DataFetcherDirective.DataFetcherDirectiveAttributes;
 import software.wings.graphql.schema.query.QLPageQueryParameters;
 import software.wings.graphql.schema.type.QLContextedObject;
+import software.wings.service.intfc.AuthService;
 
+import com.google.inject.Inject;
 import graphql.GraphQLContext;
 import graphql.schema.DataFetchingEnvironment;
 import java.lang.reflect.ParameterizedType;
@@ -41,6 +44,7 @@ import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.reflect.FieldUtils;
 import org.dataloader.DataLoader;
+import org.jetbrains.annotations.Nullable;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.config.Configuration;
 import org.modelmapper.convention.MatchingStrategies;
@@ -52,6 +56,7 @@ import org.modelmapper.internal.objenesis.ObjenesisStd;
 @TargetModule(HarnessModule._380_CG_GRAPHQL)
 public abstract class PlainObjectBaseDataFetcher<T, P> extends BaseDataFetcher {
   public static final String SELECTION_SET_FIELD_NAME = "selectionSet";
+  @Inject AuthService authService;
 
   @Override
   public void addDataFetcherDirectiveAttributesForParent(
@@ -67,11 +72,16 @@ public abstract class PlainObjectBaseDataFetcher<T, P> extends BaseDataFetcher {
 
   @Override
   public final Object get(DataFetchingEnvironment dataFetchingEnvironment) {
+    return getInternal(dataFetchingEnvironment, 0);
+  }
+
+  @Nullable
+  private Object getInternal(DataFetchingEnvironment dataFetchingEnvironment, int retryCount) {
     Type[] typeArguments = ((ParameterizedType) getClass().getGenericSuperclass()).getActualTypeArguments();
 
     Class<T> returnClass = (Class<T>) typeArguments[0];
     Class<P> parametersClass = (Class<P>) typeArguments[1];
-    Object result;
+    Object result = null;
     try {
       final P parameters = fetchParameters(parametersClass, dataFetchingEnvironment);
       authRuleInstrumentation.instrumentDataFetcher(this, dataFetchingEnvironment, returnClass);
@@ -81,6 +91,15 @@ public abstract class PlainObjectBaseDataFetcher<T, P> extends BaseDataFetcher {
         result = fetchWithBatching(parameters, dataFetchingEnvironment.getDataLoader(dataFetcherName));
       } else {
         result = fetchPlainObject(parameters, getAccountId(dataFetchingEnvironment));
+      }
+    } catch (AccessDeniedException ex) {
+      if (retryCount == 0) {
+        log.error("got access denied", ex);
+        authService.evictUserPermissionAndRestrictionCacheForAccount(getAccountId(dataFetchingEnvironment), true, true);
+        getInternal(dataFetchingEnvironment, 1);
+      } else {
+        log.error("got access denied in second retry returning", ex);
+        throw new InvalidRequestException(getCombinedErrorMessages(ex), ex, ex.getReportTargets());
       }
     } catch (WingsException ex) {
       throw new InvalidRequestException(getCombinedErrorMessages(ex), ex, ex.getReportTargets());

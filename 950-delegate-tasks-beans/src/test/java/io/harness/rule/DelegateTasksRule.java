@@ -115,6 +115,13 @@ public class DelegateTasksRule implements MethodRule, InjectorRuleMixin {
       public ObjectMapper getYamlSchemaObjectMapper() {
         return Jackson.newObjectMapper();
       }
+
+      @Provides
+      @Singleton
+      @Named("dbAliases")
+      public List<String> getDbAliases() {
+        return Collections.EMPTY_LIST;
+      }
     });
     modules.add(MorphiaModule.getInstance());
     modules.add(new ProviderModule() {

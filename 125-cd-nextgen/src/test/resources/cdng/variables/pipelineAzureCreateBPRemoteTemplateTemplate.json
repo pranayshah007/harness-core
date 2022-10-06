@@ -1,0 +1,115 @@
+{
+  "pipeline": {
+    "name": "aaa",
+    "identifier": "aaa",
+    "projectIdentifier": "NGPipeAutoDemoProUsF9qDyXU8",
+    "orgIdentifier": "CF_PipelineOrg",
+    "tags": {
+      "__uuid": "viN7nZxlRcqR9JhuuPHNsQ"
+    },
+    "stages": [
+      {
+        "stage": {
+          "name": "aaa",
+          "identifier": "aaa",
+          "description": "",
+          "type": "Deployment",
+          "spec": {
+            "deploymentType": "Kubernetes",
+            "service": {
+              "serviceRef": "dfgh",
+              "__uuid": "z89OcBuLRsyGxx3Kyg2usg"
+            },
+            "environment": {
+              "environmentRef": "foobar",
+              "deployToAll": false,
+              "infrastructureDefinitions": [
+                {
+                  "identifier": "asdf",
+                  "__uuid": "s2hiLoDQSryVJ3aLIrQ_Lw"
+                }
+              ],
+              "__uuid": "08ulsq6KQKaN_MFeCY532w"
+            },
+            "execution": {
+              "steps": [
+                {
+                  "step": {
+                    "type": "AzureCreateBPResource",
+                    "name": "aaa",
+                    "identifier": "aaa",
+                    "spec": {
+                      "provisionerIdentifier": "aaa",
+                      "configuration": {
+                        "connectorRef": "foobar",
+                        "assignmentName": "aaa",
+                        "scope": "Subscription",
+                        "template": {
+                          "store": {
+                            "type": "Github",
+                            "spec": {
+                              "connectorRef": "bp2",
+                              "gitFetchType": "Branch",
+                              "folderPath": "infra",
+                              "branch": "main",
+                              "__uuid": "uNHy4RDZSh6qmB0S9VA5tA"
+                            },
+                            "__uuid": "IavnU_ZzRZqbHwCyCyfSLg"
+                          },
+                          "__uuid": "yrjdzClaSXaPyi94XwRiJw"
+                        },
+                        "__uuid": "o_6xMe-zRu6Jec1EcIPJfQ"
+                      },
+                      "__uuid": "bK1L8hdGSAG2ltROjIZuSg"
+                    },
+                    "timeout": "10m",
+                    "__uuid": "L6xCijB0TpW7ee4is-qRCw"
+                  },
+                  "__uuid": "bGN6_YwHRQ-FluFCae0KTA"
+                }
+              ],
+              "rollbackSteps": [
+                {
+                  "step": {
+                    "name": "Rollback Rollout Deployment",
+                    "identifier": "rollbackRolloutDeployment",
+                    "type": "K8sRollingRollback",
+                    "timeout": "10m",
+                    "spec": {
+                      "__uuid": "LWsuVcveSQCQwE3f9P2Rjw"
+                    },
+                    "__uuid": "BfkdEItpStOrxEACgw0wmw"
+                  },
+                  "__uuid": "_uBjCk3nQbCw3iWp2QAzWQ"
+                }
+              ],
+              "__uuid": "zVslmLBrSPmk-R-cvGYFIA"
+            },
+            "__uuid": "FjLsJ89jQIuwR8kvm5CJ_w"
+          },
+          "tags": {
+            "__uuid": "msVaVvGfQ2el4T4VgOVOHQ"
+          },
+          "failureStrategies": [
+            {
+              "onFailure": {
+                "errors": [
+                  "AllErrors"
+                ],
+                "action": {
+                  "type": "StageRollback",
+                  "__uuid": "vsYhBLT_Tei-mBnlYZvedg"
+                },
+                "__uuid": "h8nucSCZSHyIOuevK9M-gA"
+              },
+              "__uuid": "xsj9x9vlRaCsqF4Oe-AWHw"
+            }
+          ],
+          "__uuid": "Y3m-hVoDR72FoEvATLaFjQ"
+        },
+        "__uuid": "UMrPvhdlQ6OfAUVJLme3rg"
+      }
+    ],
+    "__uuid": "QiOL1_Z4R-GxiDrs3_Pccg"
+  }
+}

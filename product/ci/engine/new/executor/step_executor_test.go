@@ -192,3 +192,49 @@ func TestStepRunSuccess(t *testing.T) {
 	err := e.Run(ctx, stepProto)
 	assert.Equal(t, err, nil)
 }
+
+func TestDetachStepRunSuccess(t *testing.T) {
+	ctrl, ctx := gomock.WithContext(context.Background(), t)
+	defer ctrl.Finish()
+
+	accountID := "test"
+	taskID := "taskID"
+	callbackToken := "token"
+
+	tmpFilePath := "/tmp"
+	stepProto := &pb.UnitStep{
+		Id: "test2",
+		Step: &pb.UnitStep_Run{
+			Run: &pb.RunStep{
+				Command:       "ls",
+				ContainerPort: uint32(8000),
+				Detach:        true,
+			},
+		},
+		CallbackToken: callbackToken,
+		TaskId:        taskID,
+		AccountId:     accountID,
+	}
+
+	o := &output.StepOutput{}
+
+	log, _ := logs.GetObservedLogger(zap.InfoLevel)
+
+	oldAddonExecutor := executeStepOnAddon
+	defer func() { executeStepOnAddon = oldAddonExecutor }()
+	executeStepOnAddon = func(ctx context.Context, step *pb.UnitStep, tmpFilePath string,
+		log *zap.SugaredLogger, buf io.Writer) (*output.StepOutput, *pb.Artifact, error) {
+		return o, nil, nil
+	}
+
+	oldSendStepStatus := sendStepStatus
+	defer func() { sendStepStatus = oldSendStepStatus }()
+	sendStepStatus = func(ctx context.Context, stepID, endpoint, accountID, callbackToken, taskID string, numRetries int32, timeTaken time.Duration,
+		status statuspb.StepExecutionStatus, errMsg string, stepOutput *output.StepOutput, artifact *pb.Artifact, log *zap.SugaredLogger) error {
+		return nil
+	}
+
+	e := NewStepExecutor(tmpFilePath, "foo", log.Sugar(), new(bytes.Buffer))
+	err := e.Run(ctx, stepProto)
+	assert.Equal(t, err, nil)
+}

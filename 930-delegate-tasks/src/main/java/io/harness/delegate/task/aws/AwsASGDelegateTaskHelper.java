@@ -13,7 +13,9 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.aws.AwsCallTracker;
 import io.harness.aws.beans.AwsInternalConfig;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.DelegateResponseData;
+import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsListASGInstancesTaskParamsRequest;
 import io.harness.delegate.beans.connector.awsconnector.AwsListASGNamesTaskResponse;
 import io.harness.delegate.beans.connector.awsconnector.AwsListEC2InstancesTaskResponse;
@@ -22,6 +24,7 @@ import io.harness.exception.AwsAutoScaleException;
 import io.harness.exception.AwsInstanceException;
 import io.harness.exception.ExceptionUtils;
 import io.harness.logging.CommandExecutionStatus;
+import io.harness.security.encryption.EncryptedDataDetail;
 
 import software.wings.service.impl.AwsUtils;
 import software.wings.service.impl.aws.client.CloseableAmazonWebServiceClient;
@@ -49,24 +52,28 @@ public class AwsASGDelegateTaskHelper {
   @Inject private AwsUtils awsUtils;
 
   public DelegateResponseData getInstances(AwsListASGInstancesTaskParamsRequest awsTaskParams) {
-    awsUtils.decryptRequestDTOs(awsTaskParams.getAwsConnector(), awsTaskParams.getEncryptionDetails());
-    AwsInternalConfig awsInternalConfig =
-        awsUtils.getAwsInternalConfig(awsTaskParams.getAwsConnector(), awsTaskParams.getRegion());
-
-    List<AwsEC2Instance> result = new ArrayList<>();
-
-    List<String> instanceIds =
-        getInstanceIds(awsInternalConfig, awsTaskParams.getRegion(), awsTaskParams.getAutoScalingGroupName());
-
-    if (CollectionUtils.isNotEmpty(instanceIds)) {
-      result =
-          awsListEC2InstancesDelegateTaskHelper.getInstances(awsInternalConfig, awsTaskParams.getRegion(), instanceIds);
-    }
+    List<AwsEC2Instance> result = getInstances(awsTaskParams.getAwsConnector(), awsTaskParams.getEncryptionDetails(),
+        awsTaskParams.getRegion(), awsTaskParams.getAutoScalingGroupName());
 
     return AwsListEC2InstancesTaskResponse.builder()
         .instances(result)
         .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
         .build();
+  }
+
+  public List<AwsEC2Instance> getInstances(AwsConnectorDTO awsConnector, List<EncryptedDataDetail> encryptionDetails,
+      String region, String autoScalingGroupName) {
+    awsUtils.decryptRequestDTOs(awsConnector, encryptionDetails);
+    AwsInternalConfig awsInternalConfig = awsUtils.getAwsInternalConfig(awsConnector, region);
+
+    List<AwsEC2Instance> result = new ArrayList<>();
+    List<String> instanceIds = getInstanceIds(awsInternalConfig, region, autoScalingGroupName);
+
+    if (EmptyPredicate.isNotEmpty(instanceIds)) {
+      result = awsListEC2InstancesDelegateTaskHelper.getInstances(awsInternalConfig, region, instanceIds);
+    }
+
+    return result;
   }
 
   public List<String> getInstanceIds(AwsInternalConfig awsInternalConfig, String region, String autoScalingGroupName) {

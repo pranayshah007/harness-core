@@ -7,7 +7,7 @@
 
 package io.harness.delegate.beans;
 
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.FdTtlIndex;
 import io.harness.ng.DbAliases;
@@ -23,9 +23,9 @@ import org.mongodb.morphia.annotations.Id;
 
 @Value
 @Builder
+@StoreIn(DbAliases.ALL)
 @Entity(value = "!!!custom_delegateAsyncTaskResponses", noClassnameStored = true)
 @FieldNameConstants(innerTypeName = "DelegateAsyncTaskResponseKeys")
-@StoreIn(DbAliases.ALL)
 public class DelegateAsyncTaskResponse implements PersistentEntity {
   @Id @org.springframework.data.annotation.Id private String uuid;
   private byte[] responseData;

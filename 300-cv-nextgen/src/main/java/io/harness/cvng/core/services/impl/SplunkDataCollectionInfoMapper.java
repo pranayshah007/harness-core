@@ -22,7 +22,6 @@ public class SplunkDataCollectionInfoMapper
             .serviceInstanceIdentifier(cvConfig.getServiceInstanceIdentifier())
             .build();
     splunkDataCollectionInfo.setDataCollectionDsl(cvConfig.getDataCollectionDsl());
-    splunkDataCollectionInfo.setHostCollectionDSL(cvConfig.getHostCollectionDSL());
     return splunkDataCollectionInfo;
   }
 }

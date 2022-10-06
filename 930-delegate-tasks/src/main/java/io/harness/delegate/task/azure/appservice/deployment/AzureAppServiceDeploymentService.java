@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.azure.model.AzureConstants.ADD_APPLICATION_SETTINGS;
 import static io.harness.azure.model.AzureConstants.ADD_CONNECTION_STRINGS;
 import static io.harness.azure.model.AzureConstants.ARTIFACT_DEPLOY_STARTED;
+import static io.harness.azure.model.AzureConstants.DEFAULT_JAR_ARTIFACT_NAME;
 import static io.harness.azure.model.AzureConstants.DELETE_APPLICATION_SETTINGS;
 import static io.harness.azure.model.AzureConstants.DELETE_CONNECTION_STRINGS;
 import static io.harness.azure.model.AzureConstants.DELETE_CONTAINER_SETTINGS;
@@ -48,6 +49,7 @@ import static io.harness.azure.model.AzureConstants.SUCCESS_TRAFFIC_SHIFT;
 import static io.harness.azure.model.AzureConstants.SUCCESS_UPDATE_CONTAINER_SETTINGS;
 import static io.harness.azure.model.AzureConstants.SUCCESS_UPDATE_IMAGE_SETTINGS;
 import static io.harness.azure.model.AzureConstants.SUCCESS_UPDATE_STARTUP_COMMAND;
+import static io.harness.azure.model.AzureConstants.SWAP_SLOT_FAILURE;
 import static io.harness.azure.model.AzureConstants.SWAP_SLOT_SUCCESS;
 import static io.harness.azure.model.AzureConstants.UNSUPPORTED_ARTIFACT;
 import static io.harness.azure.model.AzureConstants.UPDATE_APPLICATION_CONFIGURATIONS;
@@ -61,7 +63,9 @@ import static io.harness.azure.model.AzureConstants.WAR_DEPLOY;
 import static io.harness.azure.model.AzureConstants.ZIP_DEPLOY;
 import static io.harness.azure.model.AzureConstants.ZIP_EXTENSION;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.task.azure.appservice.deployment.verifier.SlotStatusVerifier.SlotStatusVerifierType.SLOT_CONTAINER_DEPLOYMENT_VERIFIER;
+import static io.harness.delegate.task.azure.appservice.deployment.verifier.SlotStatusVerifier.SlotStatusVerifierType.SLOT_DEPLOYMENT_VERIFIER;
 import static io.harness.delegate.task.azure.appservice.deployment.verifier.SlotStatusVerifier.SlotStatusVerifierType.START_VERIFIER;
 import static io.harness.delegate.task.azure.appservice.deployment.verifier.SlotStatusVerifier.SlotStatusVerifierType.STOP_VERIFIER;
 import static io.harness.delegate.task.azure.appservice.deployment.verifier.SlotStatusVerifier.SlotStatusVerifierType.SWAP_VERIFIER;
@@ -86,12 +90,14 @@ import io.harness.delegate.task.azure.appservice.deployment.context.AzureAppServ
 import io.harness.delegate.task.azure.appservice.deployment.context.AzureAppServiceDockerDeploymentContext;
 import io.harness.delegate.task.azure.appservice.deployment.context.AzureAppServicePackageDeploymentContext;
 import io.harness.delegate.task.azure.appservice.deployment.context.SlotContainerDeploymentVerifierContext;
+import io.harness.delegate.task.azure.appservice.deployment.context.SlotDeploymentVerifierContext;
 import io.harness.delegate.task.azure.appservice.deployment.context.SlotStatusVerifierContext;
 import io.harness.delegate.task.azure.appservice.deployment.context.SwapSlotStatusVerifierContext;
 import io.harness.delegate.task.azure.appservice.deployment.verifier.SlotStatusVerifier;
 import io.harness.delegate.task.azure.appservice.webapp.AppServiceDeploymentProgress;
 import io.harness.delegate.task.azure.common.AzureLogCallbackProvider;
 import io.harness.delegate.task.azure.common.validator.Validators;
+import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.runtime.azure.AzureAppServicesDeployArtifactFileException;
 import io.harness.logging.LogCallback;
@@ -116,6 +122,8 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 import rx.Completable;
 
 @Singleton
@@ -168,8 +176,9 @@ public class AzureAppServiceDeploymentService {
           deploymentContext.getStartupCommand(), deployLogCallback);
       startSlotAsyncWithSteadyCheck(deploymentContext, preDeploymentData, deployLogCallback);
 
-      slotDeploymentSteadyStateCheck(deploymentContext.getSlotName(), deploymentContext.getSteadyStateTimeoutInMin(),
-          deploymentContext.getAzureWebClientContext(), deployLogCallback, slotLogStreamer);
+      containerDeploymentSteadyStateCheck(deploymentContext.getSlotName(),
+          deploymentContext.getSteadyStateTimeoutInMin(), deploymentContext.getAzureWebClientContext(),
+          deployLogCallback, slotLogStreamer);
 
       deployLogCallback.saveExecutionLog(
           String.format(SUCCESS_SLOT_DEPLOYMENT, deploymentContext.getSlotName()), INFO, SUCCESS);
@@ -179,7 +188,7 @@ public class AzureAppServiceDeploymentService {
     }
   }
 
-  private void slotDeploymentSteadyStateCheck(String slot, int timeOut, AzureWebClientContext deploymentContext,
+  private void containerDeploymentSteadyStateCheck(String slot, int timeOut, AzureWebClientContext deploymentContext,
       LogCallback deployLogCallback, SlotContainerLogStreamer slotLogStreamer) {
     SlotContainerDeploymentVerifierContext verifierContext = SlotContainerDeploymentVerifierContext.builder()
                                                                  .logCallback(deployLogCallback)
@@ -208,28 +217,59 @@ public class AzureAppServiceDeploymentService {
 
   private void deployPackageToSlot(
       AzureAppServicePackageDeploymentContext deploymentContext, AzureAppServicePreDeploymentData preDeploymentData) {
-    Optional<StreamPackageDeploymentLogsTask> logStreamer = Optional.empty();
+    markDeploymentProgress(preDeploymentData, AppServiceDeploymentProgress.DEPLOY_TO_SLOT);
+    AzureLogCallbackProvider logCallbackProvider = deploymentContext.getLogCallbackProvider();
+    LogCallback deployLog = logCallbackProvider.obtainLogCallback(DEPLOY_TO_SLOT);
+    deployLog.saveExecutionLog(String.format(START_SLOT_DEPLOYMENT, deploymentContext.getSlotName()));
+    Optional<String> dockerImageAndTag = azureWebClient.getSlotDockerImageNameAndTag(
+        deploymentContext.getAzureWebClientContext(), deploymentContext.getSlotName());
 
-    try {
-      markDeploymentProgress(preDeploymentData, AppServiceDeploymentProgress.DEPLOY_TO_SLOT);
-      AzureLogCallbackProvider logCallbackProvider = deploymentContext.getLogCallbackProvider();
-      LogCallback deployLog = logCallbackProvider.obtainLogCallback(DEPLOY_TO_SLOT);
-      deployLog.saveExecutionLog(String.format(START_SLOT_DEPLOYMENT, deploymentContext.getSlotName()));
-
+    if (dockerImageAndTag.isPresent() && isNotEmpty(dockerImageAndTag.get())) {
       SlotContainerLogStreamer slotLogStreamer = new SlotContainerLogStreamer(
           deploymentContext.getAzureWebClientContext(), azureWebClient, deploymentContext.getSlotName(), deployLog);
-
-      deployArtifactFile(deploymentContext, preDeploymentData, deployLog);
+      deployArtifactFile(deploymentContext, preDeploymentData, deployLog, false);
       startSlotAsyncWithSteadyCheck(deploymentContext, preDeploymentData, deployLog);
+      containerDeploymentSteadyStateCheck(deploymentContext.getSlotName(),
+          deploymentContext.getSteadyStateTimeoutInMin(), deploymentContext.getAzureWebClientContext(), deployLog,
+          slotLogStreamer);
+    } else {
+      DateTime startSlotTime = new DateTime(DateTimeZone.UTC).minusMinutes(1);
+      StreamPackageDeploymentLogsTask logStreamer =
+          new StreamPackageDeploymentLogsTask(deploymentContext.getAzureWebClientContext(), azureWebClient,
+              deploymentContext.getSlotName(), deployLog, startSlotTime);
+      try {
+        logStreamer.run();
+        deployArtifactFile(deploymentContext, preDeploymentData, deployLog, true);
+        startSlotAsyncWithSteadyCheck(deploymentContext, preDeploymentData, deployLog);
+        deploySlotSteadyStateCheck(deploymentContext, logStreamer, deployLog);
+      } catch (Exception e) {
+        logStreamer.unsubscribe();
+        throw e;
+      }
+    }
+    deployLog.saveExecutionLog(String.format(SUCCESS_SLOT_DEPLOYMENT, deploymentContext.getSlotName()), INFO, SUCCESS);
+  }
 
-      slotDeploymentSteadyStateCheck(deploymentContext.getSlotName(), deploymentContext.getSteadyStateTimeoutInMin(),
-          deploymentContext.getAzureWebClientContext(), deployLog, slotLogStreamer);
+  private void deploySlotSteadyStateCheck(AzureAppServiceDeploymentContext deploymentContext,
+      StreamPackageDeploymentLogsTask streamPackageDeploymentLogsTask, LogCallback deployLogCallback) {
+    try {
+      SlotDeploymentVerifierContext verifierContext =
+          SlotDeploymentVerifierContext.builder()
+              .logCallback(deployLogCallback)
+              .slotName(deploymentContext.getSlotName())
+              .azureWebClient(azureWebClient)
+              .azureWebClientContext(deploymentContext.getAzureWebClientContext())
+              .logStreamer(streamPackageDeploymentLogsTask)
+              .build();
 
-      deployLog.saveExecutionLog(
-          String.format(SUCCESS_SLOT_DEPLOYMENT, deploymentContext.getSlotName()), INFO, SUCCESS);
-    } catch (Exception ex) {
-      logStreamer.ifPresent(StreamPackageDeploymentLogsTask::unsubscribe);
-      throw ex;
+      SlotStatusVerifier statusVerifier =
+          SlotStatusVerifier.getStatusVerifier(SLOT_DEPLOYMENT_VERIFIER.name(), verifierContext);
+
+      slotSteadyStateChecker.waitUntilDeploymentCompleteWithTimeout(deploymentContext.getSteadyStateTimeoutInMin(),
+          SLOT_STARTING_STATUS_CHECK_INTERVAL, deployLogCallback, DEPLOY_TO_SLOT, statusVerifier);
+    } catch (Exception exception) {
+      deployLogCallback.saveExecutionLog(String.format(FAIL_DEPLOYMENT, exception.getMessage()), ERROR, FAILURE);
+      throw exception;
     }
   }
 
@@ -471,20 +511,27 @@ public class AzureAppServiceDeploymentService {
         sourceSlotName, targetSlotName, azureWebClient, webClientContext, restCallBack, slotSwapLogCallback));
     executorService.shutdown();
 
-    slotSteadyStateChecker.waitUntilCompleteWithTimeout(steadyStateTimeoutInMinutes,
-        SLOT_STOPPING_STATUS_CHECK_INTERVAL, slotSwapLogCallback, SLOT_SWAP, statusVerifier);
+    try {
+      slotSteadyStateChecker.waitUntilCompleteWithTimeout(steadyStateTimeoutInMinutes,
+          SLOT_STOPPING_STATUS_CHECK_INTERVAL, slotSwapLogCallback, SLOT_SWAP, statusVerifier);
+    } catch (Exception e) {
+      String message = ExceptionUtils.getMessage(e);
+      slotSwapLogCallback.saveExecutionLog(format(SWAP_SLOT_FAILURE, targetSlotName, message), ERROR, FAILURE);
+      throw e;
+    }
+
     slotSwapLogCallback.saveExecutionLog(SWAP_SLOT_SUCCESS, INFO, SUCCESS);
   }
 
   private void deployArtifactFile(AzureAppServicePackageDeploymentContext context,
-      AzureAppServicePreDeploymentData preDeploymentData, LogCallback deployLog) {
+      AzureAppServicePreDeploymentData preDeploymentData, LogCallback deployLog, boolean isWindowsServicePlan) {
     String slotName = context.getSlotName();
     markDeploymentProgress(preDeploymentData, AppServiceDeploymentProgress.DEPLOY_TO_SLOT);
     try {
       deployLog.saveExecutionLog(START_ARTIFACT_DEPLOY);
       uploadStartupScript(context.getAzureWebClientContext(), slotName, context.getStartupCommand(), deployLog);
       Completable deployment = deployPackage(context.getAzureWebClientContext(), slotName, context.getArtifactFile(),
-          context.getArtifactType(), deployLog);
+          context.getArtifactType(), deployLog, isWindowsServicePlan);
       deployment.await(context.getSteadyStateTimeoutInMin(), TimeUnit.MINUTES);
     } catch (Exception exception) {
       deployLog.saveExecutionLog(String.format(FAIL_DEPLOYMENT, exception.getMessage()), ERROR, FAILURE);
@@ -501,7 +548,7 @@ public class AzureAppServiceDeploymentService {
   }
 
   private Completable deployPackage(AzureWebClientContext azureWebClientContext, final String slotName,
-      final File artifactFile, ArtifactType artifactType, LogCallback logCallback) {
+      final File artifactFile, ArtifactType artifactType, LogCallback logCallback, boolean isWindowsServicePlan) {
     switch (artifactType) {
       case ZIP:
       case NUGET:
@@ -509,16 +556,16 @@ public class AzureAppServiceDeploymentService {
       case WAR:
         return deployWarToSlotAndLog(azureWebClientContext, slotName, artifactFile, logCallback);
       case JAR:
-        return deployJarToSlot(azureWebClientContext, slotName, artifactFile, logCallback);
+        return deployJarToSlot(azureWebClientContext, slotName, artifactFile, logCallback, isWindowsServicePlan);
       default:
         throw new InvalidRequestException(format(UNSUPPORTED_ARTIFACT, artifactType, slotName));
     }
   }
 
   private Completable deployJarToSlot(AzureWebClientContext azureWebClientContext, final String slotName,
-      final File artifactFile, LogCallback logCallback) {
+      final File artifactFile, LogCallback logCallback, boolean isWindowsServicePlan) {
     try {
-      File zipFile = convertJarToZip(artifactFile, logCallback);
+      File zipFile = convertJarToZip(artifactFile, logCallback, isWindowsServicePlan);
       return deployZipToSlotAndLog(azureWebClientContext, slotName, zipFile, logCallback);
     } catch (IOException e) {
       logCallback.saveExecutionLog(String.format(FAIL_DEPLOYMENT, e.getMessage()), ERROR, FAILURE);
@@ -526,8 +573,9 @@ public class AzureAppServiceDeploymentService {
     }
   }
 
-  private File convertJarToZip(File artifactFile, LogCallback logCallback) throws IOException {
-    artifactFile = renameJarFile(artifactFile);
+  private File convertJarToZip(File artifactFile, LogCallback logCallback, boolean isWindowsServicePlan)
+      throws IOException {
+    artifactFile = renameJarFile(artifactFile, logCallback, isWindowsServicePlan);
     String artifactPath = artifactFile.getAbsolutePath();
     String zipPath = artifactPath + ZIP_EXTENSION;
 
@@ -549,13 +597,19 @@ public class AzureAppServiceDeploymentService {
   // e.g.
   // "/private/var/tmp/_bazel_anilchowdhury/repository/azureappsvcartifacts/p2wEjFNSSA60rkrM1NDvjg/spring-boot-hello-2.0.jar_1307164"))
   // we must remove this suffix to work
-  private File renameJarFile(File artifactFile) {
+  private File renameJarFile(File artifactFile, LogCallback logCallback, boolean isWindowsServicePlan) {
     String absolutePath = artifactFile.getAbsolutePath();
-    if (absolutePath.endsWith(JAR_EXTENSION)) {
+    if (absolutePath.endsWith(JAR_EXTENSION) && !isWindowsServicePlan) {
       return artifactFile;
     }
-    int lastIndexOf = absolutePath.lastIndexOf('_');
-    String newName = absolutePath.substring(0, lastIndexOf);
+    String newName;
+    if (isWindowsServicePlan) {
+      newName = DEFAULT_JAR_ARTIFACT_NAME;
+      logCallback.saveExecutionLog(String.format("Renaming %s to %s", artifactFile.getName(), newName));
+    } else {
+      int lastIndexOf = absolutePath.lastIndexOf('_');
+      newName = absolutePath.substring(0, lastIndexOf);
+    }
     File oldFile = new File(absolutePath);
     File newFile = new File(newName);
     if (!oldFile.renameTo(newFile)) {

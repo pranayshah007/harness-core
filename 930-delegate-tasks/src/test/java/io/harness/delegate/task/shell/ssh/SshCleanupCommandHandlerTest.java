@@ -33,6 +33,7 @@ import io.harness.delegate.task.ssh.PdcSshInfraDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.ArtifactoryArtifactDelegateConfig;
 import io.harness.exception.InvalidRequestException;
 import io.harness.logging.CommandExecutionStatus;
+import io.harness.logging.LogCallback;
 import io.harness.ng.core.dto.secrets.SSHKeySpecDTO;
 import io.harness.rule.Owner;
 import io.harness.security.encryption.EncryptedDataDetail;
@@ -62,6 +63,7 @@ public class SshCleanupCommandHandlerTest extends CategoryTest {
   @Mock ScriptProcessExecutor scriptProcessExecutor;
   @Mock SshScriptExecutorFactory sshScriptExecutorFactory;
   @Mock Map<String, Object> taskContext;
+  @Mock LogCallback logCallback;
 
   final SSHKeySpecDTO SSH_KEY_SPEC = SSHKeySpecDTO.builder().build();
   final List<EncryptedDataDetail> encryptedDataDetailList = Collections.emptyList();
@@ -85,8 +87,10 @@ public class SshCleanupCommandHandlerTest extends CategoryTest {
     when(scriptSshExecutor.executeCommandString("rm -rf /tmp/testExecution"))
         .thenReturn(CommandExecutionStatus.SUCCESS);
 
-    CommandExecutionStatus status = sshCleanupCommandHandler.handle(
-        getParameters(false), cleanupCommandUnit, logStreamingTaskClient, commandUnitsProgress, taskContext);
+    CommandExecutionStatus status =
+        sshCleanupCommandHandler
+            .handle(getParameters(false), cleanupCommandUnit, logStreamingTaskClient, commandUnitsProgress, taskContext)
+            .getStatus();
     assertThat(status).isEqualTo(CommandExecutionStatus.SUCCESS);
 
     ArgumentCaptor<SshExecutorFactoryContext> contextArgumentCaptor =
@@ -102,9 +106,12 @@ public class SshCleanupCommandHandlerTest extends CategoryTest {
     doReturn(scriptProcessExecutor).when(sshScriptExecutorFactory).getExecutor(any());
     when(scriptProcessExecutor.executeCommandString("rm -rf /tmp/testExecution"))
         .thenReturn(CommandExecutionStatus.SUCCESS);
+    when(scriptProcessExecutor.getLogCallback()).thenReturn(logCallback);
 
-    CommandExecutionStatus status = sshCleanupCommandHandler.handle(
-        getParameters(true), cleanupCommandUnit, logStreamingTaskClient, commandUnitsProgress, taskContext);
+    CommandExecutionStatus status =
+        sshCleanupCommandHandler
+            .handle(getParameters(true), cleanupCommandUnit, logStreamingTaskClient, commandUnitsProgress, taskContext)
+            .getStatus();
     assertThat(status).isEqualTo(CommandExecutionStatus.SUCCESS);
 
     ArgumentCaptor<SshExecutorFactoryContext> contextArgumentCaptor =

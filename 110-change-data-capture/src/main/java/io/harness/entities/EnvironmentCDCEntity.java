@@ -10,7 +10,6 @@ package io.harness.entities;
 import io.harness.ChangeHandler;
 import io.harness.changehandlers.EnvironmentsChangeDataHandler;
 import io.harness.ng.core.environment.beans.Environment;
-import io.harness.persistence.PersistentEntity;
 
 import com.google.inject.Inject;
 
@@ -23,7 +22,7 @@ public class EnvironmentCDCEntity implements CDCEntity<Environment> {
   }
 
   @Override
-  public Class<? extends PersistentEntity> getSubscriptionEntity() {
+  public Class<Environment> getSubscriptionEntity() {
     return Environment.class;
   }
 }

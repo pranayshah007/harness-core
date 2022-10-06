@@ -59,6 +59,7 @@ import io.kubernetes.client.openapi.models.V1ServicePortBuilder;
 import io.kubernetes.client.openapi.models.V1Status;
 import io.kubernetes.client.util.generic.GenericKubernetesApi;
 import io.kubernetes.client.util.generic.KubernetesApiResponse;
+import io.kubernetes.client.util.generic.options.DeleteOptions;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -154,7 +155,7 @@ public class CIK8JavaClientHandler {
     }
 
     try {
-      return coreV1Api.readNamespacedSecret(secretName, namespace, null, null, null);
+      return coreV1Api.readNamespacedSecret(secretName, namespace, null);
     } catch (ApiException exception) {
       if (isResourceNotFoundException(exception.getCode())) {
         return null;
@@ -176,7 +177,7 @@ public class CIK8JavaClientHandler {
     log.info("Creating secret [{}]", secret.getMetadata().getName());
 
     try {
-      return coreV1Api.createNamespacedSecret(namespace, secret, null, null, null);
+      return coreV1Api.createNamespacedSecret(namespace, secret, null, null, null, null);
     } catch (ApiException exception) {
       String secretDef = secret.getMetadata() != null && isNotEmpty(secret.getMetadata().getName())
           ? format("%s/%s", namespace, secret.getMetadata().getName())
@@ -195,7 +196,7 @@ public class CIK8JavaClientHandler {
     log.info("Replacing secret [{}]", name);
 
     try {
-      return coreV1Api.replaceNamespacedSecret(name, namespace, secret, null, null, null);
+      return coreV1Api.replaceNamespacedSecret(name, namespace, secret, null, null, null, null);
     } catch (ApiException exception) {
       String secretDef = secret.getMetadata() != null && isNotEmpty(secret.getMetadata().getName())
           ? format("%s/%s", namespace, secret.getMetadata().getName())
@@ -233,7 +234,7 @@ public class CIK8JavaClientHandler {
 
   private V1Pod createPod(CoreV1Api coreV1Api, V1Pod pod, String namespace) throws ApiException {
     try {
-      return coreV1Api.createNamespacedPod(namespace, pod, null, null, null);
+      return coreV1Api.createNamespacedPod(namespace, pod, null, null, null, null);
     } catch (ApiException ex) {
       log.warn("Failed to created pod due to: {}", ex.getResponseBody());
       throw ex;
@@ -252,7 +253,9 @@ public class CIK8JavaClientHandler {
 
   public V1Status deletePod(GenericKubernetesApi<V1Pod, V1PodList> podClient, String podName, String namespace) {
     V1Status v1Status = new V1Status();
-    KubernetesApiResponse kubernetesApiResponse = podClient.delete(namespace, podName);
+    DeleteOptions deleteOptions = new DeleteOptions();
+    deleteOptions.setGracePeriodSeconds(0l);
+    KubernetesApiResponse kubernetesApiResponse = podClient.delete(namespace, podName, deleteOptions);
     if (kubernetesApiResponse.isSuccess()) {
       v1Status.setStatus("Success");
       return v1Status;
@@ -262,12 +265,13 @@ public class CIK8JavaClientHandler {
       log.warn("Pod {} not found ", podName);
       throw new PodNotFoundException("Failed to delete pod " + podName);
     } else {
+      log.warn("Pod {} deletion failed with response code: {}", podName, kubernetesApiResponse.getHttpStatusCode());
       throw new RuntimeException("Failed to delete pod " + podName);
     }
   }
 
   public V1Pod getPod(CoreV1Api coreV1Api, String podName, String namespace) throws ApiException {
-    return coreV1Api.readNamespacedPod(podName, namespace, null, null, null);
+    return coreV1Api.readNamespacedPod(podName, namespace, null);
   }
 
   public void createService(CoreV1Api coreV1Api, String namespace, String serviceName, Map<String, String> selectorMap,
@@ -288,7 +292,7 @@ public class CIK8JavaClientHandler {
                         .withPorts(svcPorts)
                         .endSpec()
                         .build();
-    coreV1Api.createNamespacedService(namespace, svc, null, null, null);
+    coreV1Api.createNamespacedService(namespace, svc, null, null, null, null);
   }
 
   private RetryPolicy<Object> getRetryPolicy(String failedAttemptMessage, String failureMessage) {

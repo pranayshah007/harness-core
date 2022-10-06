@@ -71,4 +71,6 @@ public interface AdminAccountService {
   boolean updateIsProductLed(String accountId, boolean enabled);
 
   boolean updateRingName(String accountId, String ringName);
+
+  Account createGlobalDelegateAccount(Account account, String adminUserEmail);
 }

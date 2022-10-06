@@ -31,6 +31,38 @@ public class UserJourneyServiceImpl implements UserJourneyService {
     return getUserJourneyResponse(userJourneyDTO.getIdentifier(), projectParams);
   }
 
+  @Override
+  public List<UserJourney> get(ProjectParams projectParams) {
+    return hPersistence.createQuery(UserJourney.class)
+        .filter(UserJourneyKeys.accountId, projectParams.getAccountIdentifier())
+        .filter(UserJourneyKeys.orgIdentifier, projectParams.getOrgIdentifier())
+        .filter(UserJourneyKeys.projectIdentifier, projectParams.getProjectIdentifier())
+        .order(Sort.descending(UserJourneyKeys.lastUpdatedAt))
+        .asList();
+  }
+
+  @Override
+  public PageResponse<UserJourneyResponse> getUserJourneys(
+      ProjectParams projectParams, Integer offset, Integer pageSize) {
+    List<UserJourney> userJourneyList = get(projectParams);
+
+    PageResponse<UserJourney> userJourneyEntityPageResponse =
+        PageUtils.offsetAndLimit(userJourneyList, offset, pageSize);
+    List<UserJourneyResponse> userJourneyPageResponses = userJourneyEntityPageResponse.getContent()
+                                                             .stream()
+                                                             .map(this::userJourneyEntityToUserJourneyResponse)
+                                                             .collect(Collectors.toList());
+
+    return PageResponse.<UserJourneyResponse>builder()
+        .pageSize(pageSize)
+        .pageIndex(offset)
+        .totalPages(userJourneyEntityPageResponse.getTotalPages())
+        .totalItems(userJourneyEntityPageResponse.getTotalItems())
+        .pageItemCount(userJourneyEntityPageResponse.getPageItemCount())
+        .content(userJourneyPageResponses)
+        .build();
+  }
+
   private UserJourneyResponse getUserJourneyResponse(String identifier, ProjectParams projectParams) {
     UserJourney userJourney = hPersistence.createQuery(UserJourney.class)
                                   .filter(UserJourneyKeys.accountId, projectParams.getAccountIdentifier())
@@ -61,33 +93,5 @@ public class UserJourneyServiceImpl implements UserJourneyService {
                                   .identifier(userJourneyDTO.getIdentifier())
                                   .build();
     hPersistence.save(userJourney);
-  }
-
-  @Override
-  public PageResponse<UserJourneyResponse> getUserJourneys(
-      ProjectParams projectParams, Integer offset, Integer pageSize) {
-    List<UserJourney> userJourneyList =
-        hPersistence.createQuery(UserJourney.class)
-            .filter(UserJourneyKeys.accountId, projectParams.getAccountIdentifier())
-            .filter(UserJourneyKeys.orgIdentifier, projectParams.getOrgIdentifier())
-            .filter(UserJourneyKeys.projectIdentifier, projectParams.getProjectIdentifier())
-            .order(Sort.descending(UserJourneyKeys.lastUpdatedAt))
-            .asList();
-
-    PageResponse<UserJourney> userJourneyEntityPageResponse =
-        PageUtils.offsetAndLimit(userJourneyList, offset, pageSize);
-    List<UserJourneyResponse> userJourneyPageResponses = userJourneyEntityPageResponse.getContent()
-                                                             .stream()
-                                                             .map(this::userJourneyEntityToUserJourneyResponse)
-                                                             .collect(Collectors.toList());
-
-    return PageResponse.<UserJourneyResponse>builder()
-        .pageSize(pageSize)
-        .pageIndex(offset)
-        .totalPages(userJourneyEntityPageResponse.getTotalPages())
-        .totalItems(userJourneyEntityPageResponse.getTotalItems())
-        .pageItemCount(userJourneyEntityPageResponse.getPageItemCount())
-        .content(userJourneyPageResponses)
-        .build();
   }
 }

@@ -201,6 +201,18 @@ public class ConnectorUtils {
         GithubConnectorDTO githubConnectorDTO = (GithubConnectorDTO) connectorConfigDTO;
         connectorDetailsBuilder.executeOnDelegate(githubConnectorDTO.getExecuteOnDelegate());
         break;
+      case BITBUCKET:
+        BitbucketConnectorDTO bitbucketConnectorDTO = (BitbucketConnectorDTO) connectorConfigDTO;
+        connectorDetailsBuilder.executeOnDelegate(bitbucketConnectorDTO.getExecuteOnDelegate());
+        break;
+      case GITLAB:
+        GitlabConnectorDTO gitlabConnectorDTO = (GitlabConnectorDTO) connectorConfigDTO;
+        connectorDetailsBuilder.executeOnDelegate(gitlabConnectorDTO.getExecuteOnDelegate());
+        break;
+      case AZURE_REPO:
+        AzureRepoConnectorDTO azureRepoConnectorDTO = (AzureRepoConnectorDTO) connectorConfigDTO;
+        connectorDetailsBuilder.executeOnDelegate(azureRepoConnectorDTO.getExecuteOnDelegate());
+        break;
       default:
         break;
     }

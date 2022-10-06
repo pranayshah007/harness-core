@@ -94,6 +94,8 @@ public interface DelegateService extends OwnedByAccount {
 
   Delegate updateTags(@Valid Delegate delegate);
 
+  Delegate updateTagsFromUI(Delegate delegate, DelegateTags delegateTags);
+
   Delegate updateDescription(String accountId, String delegateId, String newDescription);
 
   Delegate updateApprovalStatus(String accountId, String delegateId, DelegateApproval action)
@@ -116,7 +118,7 @@ public interface DelegateService extends OwnedByAccount {
       String delegateProfile, String tokenName) throws IOException;
 
   File downloadKubernetes(String managerHost, String verificationServiceUrl, String accountId, String delegateName,
-      String delegateProfile, String tokenName) throws IOException;
+      String delegateProfile, String tokenName, boolean runAsRoot) throws IOException;
 
   File downloadCeKubernetesYaml(String managerHost, String verificationUrl, String accountId, String delegateName,
       String delegateProfile, String tokenName) throws IOException;
@@ -135,7 +137,7 @@ public interface DelegateService extends OwnedByAccount {
 
   DelegateRegisterResponse register(@Valid Delegate delegate);
 
-  DelegateRegisterResponse register(@Valid DelegateParams delegateParams);
+  DelegateRegisterResponse register(@Valid DelegateParams delegateParams, boolean isConnectedUsingMtls);
 
   void unregister(String accountId, DelegateUnregisterRequest request);
 

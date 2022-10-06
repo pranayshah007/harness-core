@@ -19,6 +19,7 @@ mongo:
   maxConnectionIdleTime: 600000
   connectionsPerHost: 300
   indexManagerMode: AUTO
+  aliasDBName: git-test-harness
 
 gitSyncClientConfig:
   target: localhost:13001

@@ -110,7 +110,7 @@ public class ScmPathFilterEvaluationTask extends AbstractDelegateRunnableTask {
       // push case
       CompareCommitsResponse compareCommitsResponse = scmDelegateClient.processScmRequest(c
           -> scmServiceClient.compareCommits(
-              connector, params.getLatestCommit(), params.getPreviousCommit(), SCMGrpc.newBlockingStub(c)));
+              connector, params.getPreviousCommit(), params.getLatestCommit(), SCMGrpc.newBlockingStub(c)));
 
       Set<String> filepaths = emptySet();
       if (compareCommitsResponse.getFilesCount() > 0) {

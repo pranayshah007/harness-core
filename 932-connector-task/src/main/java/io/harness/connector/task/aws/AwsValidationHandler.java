@@ -7,8 +7,7 @@
 
 package io.harness.connector.task.aws;
 
-import static io.harness.aws.AwsExceptionHandler.handleAmazonClientException;
-import static io.harness.aws.AwsExceptionHandler.handleAmazonServiceException;
+import static io.harness.exception.WingsException.ExecutionContext.MANAGER;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -17,32 +16,40 @@ import io.harness.aws.AwsConfig;
 import io.harness.connector.ConnectivityStatus;
 import io.harness.connector.ConnectorValidationResult;
 import io.harness.connector.task.ConnectorValidationHandler;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.connector.ConnectorValidationParams;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsTaskParams;
 import io.harness.delegate.beans.connector.awsconnector.AwsValidationParams;
-import io.harness.errorhandling.NGErrorHelper;
+import io.harness.exception.exceptionmanager.ExceptionManager;
 import io.harness.security.encryption.EncryptedDataDetail;
 
-import com.amazonaws.AmazonClientException;
-import com.amazonaws.services.ec2.model.AmazonEC2Exception;
+import com.amazonaws.regions.Regions;
 import com.google.inject.Inject;
-import java.util.Collections;
 import java.util.List;
+import javax.validation.constraints.NotNull;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @OwnedBy(HarnessTeam.CI)
 public class AwsValidationHandler implements ConnectorValidationHandler {
   @Inject AwsNgConfigMapper ngConfigMapper;
   @Inject private AwsClient awsClient;
-  @Inject private NGErrorHelper ngErrorHelper;
+  @Inject ExceptionManager exceptionManager;
+
+  private static final Regions DEFAULT_REGION = Regions.US_EAST_1;
 
   @Override
   public ConnectorValidationResult validate(
       ConnectorValidationParams connectorValidationParams, String accountIdentifier) {
-    final AwsValidationParams awsValidationParams = (AwsValidationParams) connectorValidationParams;
-    final AwsConnectorDTO connectorDTO = awsValidationParams.getAwsConnectorDTO();
-    final List<EncryptedDataDetail> encryptedDataDetails = awsValidationParams.getEncryptedDataDetails();
-    return validateInternal(connectorDTO, encryptedDataDetails);
+    try {
+      final AwsValidationParams awsValidationParams = (AwsValidationParams) connectorValidationParams;
+      final AwsConnectorDTO connectorDTO = awsValidationParams.getAwsConnectorDTO();
+      final List<EncryptedDataDetail> encryptedDataDetails = awsValidationParams.getEncryptedDataDetails();
+      return validateInternal(connectorDTO, encryptedDataDetails);
+    } catch (Exception e) {
+      throw exceptionManager.processException(e, MANAGER, log);
+    }
   }
 
   public ConnectorValidationResult validate(AwsTaskParams awsTaskParams, List<EncryptedDataDetail> encryptionDetails) {
@@ -52,36 +59,19 @@ public class AwsValidationHandler implements ConnectorValidationHandler {
 
   private ConnectorValidationResult validateInternal(
       AwsConnectorDTO awsConnectorDTO, List<EncryptedDataDetail> encryptedDataDetails) {
-    ConnectorValidationResult connectorValidationResult;
-
-    try {
-      AwsConfig awsConfig = ngConfigMapper.mapAwsConfigWithDecryption(awsConnectorDTO, encryptedDataDetails);
-      connectorValidationResult = handleValidateTask(awsConfig);
-    } catch (Exception e) {
-      String errorMessage = e.getMessage();
-      connectorValidationResult = ConnectorValidationResult.builder()
-                                      .status(ConnectivityStatus.FAILURE)
-                                      .errors(Collections.singletonList(ngErrorHelper.createErrorDetail(errorMessage)))
-                                      .errorSummary(ngErrorHelper.getErrorSummary(errorMessage))
-                                      .testedAt(System.currentTimeMillis())
-                                      .build();
+    AwsConfig awsConfig = ngConfigMapper.mapAwsConfigWithDecryption(awsConnectorDTO, encryptedDataDetails);
+    String region = DEFAULT_REGION.getName();
+    if (EmptyPredicate.isNotEmpty(awsConnectorDTO.getCredential().getTestRegion())) {
+      region = awsConnectorDTO.getCredential().getTestRegion();
     }
-    return connectorValidationResult;
+    return handleValidateTask(awsConfig, region);
   }
 
-  private ConnectorValidationResult handleValidateTask(AwsConfig awsConfig) {
-    ConnectorValidationResult result = null;
-    try {
-      awsClient.validateAwsAccountCredential(awsConfig);
-      result = ConnectorValidationResult.builder()
-                   .status(ConnectivityStatus.SUCCESS)
-                   .testedAt(System.currentTimeMillis())
-                   .build();
-    } catch (AmazonEC2Exception amazonEC2Exception) {
-      handleAmazonServiceException(amazonEC2Exception);
-    } catch (AmazonClientException amazonClientException) {
-      handleAmazonClientException(amazonClientException);
-    }
-    return result;
+  private ConnectorValidationResult handleValidateTask(AwsConfig awsConfig, @NotNull String region) {
+    awsClient.validateAwsAccountCredential(awsConfig, region);
+    return ConnectorValidationResult.builder()
+        .status(ConnectivityStatus.SUCCESS)
+        .testedAt(System.currentTimeMillis())
+        .build();
   }
 }

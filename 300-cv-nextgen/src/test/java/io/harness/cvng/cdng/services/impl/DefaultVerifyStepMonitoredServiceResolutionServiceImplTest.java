@@ -70,8 +70,9 @@ public class DefaultVerifyStepMonitoredServiceResolutionServiceImplTest extends 
     MonitoredServiceResponse monitoredServiceResponse =
         monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
     String expectedIdentifier = monitoredServiceResponse.getMonitoredServiceDTO().getIdentifier();
-    String actualIdentifier = defaultService.getResolvedCVConfigInfo(serviceEnvironmentParams, monitoredServiceNode)
-                                  .getMonitoredServiceIdentifier();
+    String actualIdentifier =
+        defaultService.fetchAndPersistResolvedCVConfigInfo(serviceEnvironmentParams, monitoredServiceNode)
+            .getMonitoredServiceIdentifier();
     assertThat(actualIdentifier).isEqualTo(expectedIdentifier);
   }
 
@@ -79,8 +80,9 @@ public class DefaultVerifyStepMonitoredServiceResolutionServiceImplTest extends 
   @Owner(developers = DHRUVX)
   @Category(UnitTests.class)
   public void testGetMonitoredServiceIdentifier_monitoredServiceDoesNotExist() {
-    String actualIdentifier = defaultService.getResolvedCVConfigInfo(serviceEnvironmentParams, monitoredServiceNode)
-                                  .getMonitoredServiceIdentifier();
+    String actualIdentifier =
+        defaultService.fetchAndPersistResolvedCVConfigInfo(serviceEnvironmentParams, monitoredServiceNode)
+            .getMonitoredServiceIdentifier();
     assertThat(actualIdentifier).isNull();
   }
 
@@ -91,7 +93,8 @@ public class DefaultVerifyStepMonitoredServiceResolutionServiceImplTest extends 
     metricPackService.createDefaultMetricPackAndThresholds(accountId, orgIdentifier, projectIdentifier);
     monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
     List<CVConfig> actualCvConfigs =
-        defaultService.getResolvedCVConfigInfo(serviceEnvironmentParams, monitoredServiceNode).getCvConfigs();
+        defaultService.fetchAndPersistResolvedCVConfigInfo(serviceEnvironmentParams, monitoredServiceNode)
+            .getCvConfigs();
     assertThat(actualCvConfigs).hasSize(1);
   }
 
@@ -100,7 +103,8 @@ public class DefaultVerifyStepMonitoredServiceResolutionServiceImplTest extends 
   @Category(UnitTests.class)
   public void testGetCVConfigs_monitoredServiceDoesNotExist() {
     List<CVConfig> actualCvConfigs =
-        defaultService.getResolvedCVConfigInfo(serviceEnvironmentParams, monitoredServiceNode).getCvConfigs();
+        defaultService.fetchAndPersistResolvedCVConfigInfo(serviceEnvironmentParams, monitoredServiceNode)
+            .getCvConfigs();
     assertThat(actualCvConfigs).isNull();
   }
 
@@ -112,7 +116,8 @@ public class DefaultVerifyStepMonitoredServiceResolutionServiceImplTest extends 
     monitoredServiceDTO.getSources().setHealthSources(Collections.emptySet());
     monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
     List<CVConfig> actualCvConfigs =
-        defaultService.getResolvedCVConfigInfo(serviceEnvironmentParams, monitoredServiceNode).getCvConfigs();
+        defaultService.fetchAndPersistResolvedCVConfigInfo(serviceEnvironmentParams, monitoredServiceNode)
+            .getCvConfigs();
     assertThat(actualCvConfigs).isEmpty();
   }
 

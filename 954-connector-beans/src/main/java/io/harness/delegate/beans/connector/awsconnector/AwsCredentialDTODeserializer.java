@@ -34,6 +34,7 @@ public class AwsCredentialDTODeserializer extends StdDeserializer<AwsCredentialD
     JsonNode typeNode = parentJsonNode.get("type");
     JsonNode authSpec = parentJsonNode.get("spec");
     JsonNode crossAccNode = parentJsonNode.get("crossAccountAccess");
+    JsonNode regionNode = parentJsonNode.get("region");
 
     AwsCredentialType type = getType(typeNode);
     AwsCredentialSpecDTO awsCredentialSpecDTO = null;
@@ -50,11 +51,16 @@ public class AwsCredentialDTODeserializer extends StdDeserializer<AwsCredentialD
         throw new InvalidRequestException("No spec should be provided with the inherit from delegate type");
       }
     }
+    String region = null;
+    if (regionNode != null && !regionNode.isNull()) {
+      region = regionNode.asText();
+    }
 
     return AwsCredentialDTO.builder()
         .awsCredentialType(type)
         .config(awsCredentialSpecDTO)
         .crossAccountAccess(crossAccountAccessDTO)
+        .testRegion(region)
         .build();
   }
 

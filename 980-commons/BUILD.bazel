@@ -5,9 +5,6 @@ load("//:tools/bazel/harness.bzl", "harness_sign", "java_library")
 java_library(
     name = "module",
     srcs = glob(["src/main/java/**/*.java"]),
-    resource_jars = [
-        "//980-commons/src/main/proto:980_commons_java_proto",
-    ],
     resources = [
         "//980-commons/src/main/resources:resource",
         "//980-commons/src/main/resources-filtered:resource",

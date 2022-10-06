@@ -53,6 +53,7 @@ import io.harness.exception.UnauthorizedException;
 import io.harness.exception.WingsException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.logging.AutoLogContext;
+import io.harness.outbox.OutboxEvent;
 import io.harness.outbox.api.OutboxService;
 import io.harness.persistence.HPersistence;
 import io.harness.security.DelegateTokenAuthenticator;
@@ -705,7 +706,7 @@ public class AuthServiceImpl implements AuthService {
     return authHandler.evaluateUserPermissionInfo(accountId, userGroups, user);
   }
 
-  private List<UserGroup> getUserGroups(String accountId, User user) {
+  public List<UserGroup> getUserGroups(String accountId, User user) {
     List<UserGroup> userGroups = userGroupService.listByAccountId(accountId, user, false);
 
     if (isEmpty(userGroups) && !userService.isUserAssignedToAccount(user, accountId)) {
@@ -1250,9 +1251,18 @@ public class AuthServiceImpl implements AuthService {
   @Override
   public void auditLoginToNg(List<String> accountIds, User loggedInUser) {
     if (Objects.nonNull(loggedInUser) && Objects.nonNull(accountIds)) {
-      accountIds.forEach(accountId
-          -> outboxService.save(
-              new LoginEvent(accountId, loggedInUser.getUuid(), loggedInUser.getEmail(), loggedInUser.getName())));
+      for (String accountIdentifier : accountIds) {
+        try {
+          OutboxEvent outboxEvent = outboxService.save(new LoginEvent(
+              accountIdentifier, loggedInUser.getUuid(), loggedInUser.getEmail(), loggedInUser.getName()));
+          log.info(
+              "NG Login Audits: for account {} and outboxEventId {} successfully saved the audit for LoginEvent to outbox",
+              accountIdentifier, outboxEvent.getId());
+        } catch (Exception ex) {
+          log.error("NG Login Audits: for account {} saving the LoginEvent to outbox failed with exception: ",
+              accountIdentifier, ex);
+        }
+      }
     }
   }
 

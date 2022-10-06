@@ -9,6 +9,7 @@ package io.harness.eventsframework.impl.redis;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.eventsframework.impl.redis.RedisUtils.REDIS_STREAM_INTERNAL_KEY;
+import static io.harness.eventsframework.impl.redis.RedisUtils.REDIS_STREAM_TRACE_ID_KEY;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.eventsframework.api.AbstractProducer;
@@ -16,23 +17,23 @@ import io.harness.eventsframework.api.EventsFrameworkDownException;
 import io.harness.eventsframework.impl.redis.monitoring.dto.RedisEventMetricDTOMapper;
 import io.harness.eventsframework.impl.redis.monitoring.publisher.RedisEventMetricPublisher;
 import io.harness.eventsframework.producer.Message;
-import io.harness.redis.RedisConfig;
 
 import com.google.inject.Inject;
 import io.github.resilience4j.core.IntervalFunction;
 import io.github.resilience4j.retry.Retry;
 import io.github.resilience4j.retry.RetryConfig;
+import io.opentelemetry.api.trace.Span;
 import io.vavr.control.Try;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.RStream;
 import org.redisson.api.RedissonClient;
 import org.redisson.api.StreamMessageId;
+import org.slf4j.MDC;
 
 @OwnedBy(PL)
 @Slf4j
@@ -49,20 +50,6 @@ public class RedisProducer extends AbstractProducer {
   private int maxTopicSize;
 
   private Retry retry;
-
-  public RedisProducer(String topicName, @NotNull RedisConfig redisConfig, int maxTopicSize, String producerName,
-      RedisEventMetricPublisher redisEventMetricPublisher) {
-    super(topicName, producerName);
-    RedissonClient redissonClient = RedisUtils.getClient(redisConfig);
-    initProducer(topicName, redissonClient, maxTopicSize, redisConfig.getEnvNamespace());
-    this.redisEventMetricPublisher = redisEventMetricPublisher;
-  }
-
-  public RedisProducer(String topicName, @NotNull RedisConfig redisConfig, int maxTopicSize, String producerName) {
-    super(topicName, producerName);
-    RedissonClient redissonClient = RedisUtils.getClient(redisConfig);
-    initProducer(topicName, redissonClient, maxTopicSize, redisConfig.getEnvNamespace());
-  }
 
   public RedisProducer(String topicName, @NotNull RedissonClient redissonClient, int maxTopicSize, String producerName,
       String envNamespace, RedisEventMetricPublisher redisEventMetricPublisher) {
@@ -95,6 +82,7 @@ public class RedisProducer extends AbstractProducer {
 
   private String sendInternal(Message message) {
     Map<String, String> redisData = new HashMap<>(message.getMetadataMap());
+    addTraceId(redisData);
     redisData.put(REDIS_STREAM_INTERNAL_KEY, Base64.getEncoder().encodeToString(message.getData().toByteArray()));
     populateOtherProducerSpecificData(redisData);
 
@@ -128,23 +116,9 @@ public class RedisProducer extends AbstractProducer {
     redissonClient.shutdown();
   }
 
-  public static RedisProducer of(
-      String topicName, @NotNull RedisConfig redisConfig, int maxTopicLength, String producerName) {
-    return new RedisProducer(topicName, redisConfig, maxTopicLength, producerName);
-  }
-
   public static RedisProducer of(String topicName, @NotNull RedissonClient redissonClient, int maxTopicSize,
       String producerName, String envNamespace) {
     return new RedisProducer(topicName, redissonClient, maxTopicSize, producerName, envNamespace);
-  }
-
-  private void waitForRedisToComeUp() {
-    try {
-      TimeUnit.MILLISECONDS.sleep(500);
-    } catch (InterruptedException e) {
-      log.error("Polling to redis was interrupted, shutting down producer", e);
-      shutdown();
-    }
   }
 
   private void addMonitoring(Message message) {
@@ -153,6 +127,14 @@ public class RedisProducer extends AbstractProducer {
           RedisEventMetricDTOMapper.prepareRedisEventMetricDTO(message, getTopicName()), REDIS_PRODUCER_EVENT_METRIC);
     } catch (Exception ex) {
       log.warn("Error while sending metrics for redis producer events :", ex);
+    }
+  }
+
+  private void addTraceId(Map<String, String> redisData) {
+    if (!Span.getInvalid().equals(Span.current())) {
+      redisData.put(REDIS_STREAM_TRACE_ID_KEY, Span.current().getSpanContext().getTraceId());
+    } else if (MDC.getCopyOfContextMap().containsKey(REDIS_STREAM_TRACE_ID_KEY)) {
+      redisData.put(REDIS_STREAM_TRACE_ID_KEY, MDC.get(REDIS_STREAM_TRACE_ID_KEY));
     }
   }
 }

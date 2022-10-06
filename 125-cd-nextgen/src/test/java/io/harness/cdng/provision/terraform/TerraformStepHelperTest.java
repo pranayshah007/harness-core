@@ -186,6 +186,7 @@ public class TerraformStepHelperTest extends CategoryTest {
     io.harness.cdng.manifest.yaml.GitStoreConfig configFiles = output.getConfigFiles();
     assertThat(configFiles).isNotNull();
     assertThat(configFiles.getGitFetchType()).isEqualTo(FetchType.COMMIT);
+    assertThat(ParameterFieldHelper.getParameterFieldValue(configFiles.getBranch())).isNull();
     String commitId = ParameterFieldHelper.getParameterFieldValue(configFiles.getCommitId());
     assertThat(commitId).isEqualTo("commit-1");
     List<TerraformVarFileConfig> varFileConfigs = output.getVarFileConfigs();

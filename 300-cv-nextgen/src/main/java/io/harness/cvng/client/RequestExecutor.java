@@ -7,6 +7,7 @@
 
 package io.harness.cvng.client;
 
+import io.harness.eraro.ErrorCode;
 import io.harness.eraro.ResponseMessage;
 import io.harness.rest.RestResponse;
 import io.harness.serializer.JsonUtils;
@@ -15,6 +16,7 @@ import com.google.inject.Singleton;
 import java.io.IOException;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections.CollectionUtils;
 import retrofit2.Call;
 import retrofit2.Response;
 
@@ -30,9 +32,7 @@ public class RequestExecutor {
       } else {
         int code = response.code();
         String errorBody = response.errorBody().string();
-        if (code == 500) {
-          tryParsingErrorFromRestResponse(code, errorBody);
-        }
+        tryParsingErrorFromRestResponse(code, errorBody);
         throw new ServiceCallException(response.code(), response.message(), errorBody);
       }
     } catch (IOException e) {
@@ -53,9 +53,15 @@ public class RequestExecutor {
       return;
     }
     List<ResponseMessage> responseMessages = restResponse.getResponseMessages();
-    if (responseMessages.size() > 0) {
-      throw new ServiceCallException(
-          code, responseMessages.get(0).getMessage(), responseMessages.get(0).getException());
+    if (CollectionUtils.isNotEmpty(responseMessages)) {
+      ResponseMessage responseMessage = responseMessages.get(0);
+      if (ErrorCode.DATA_COLLECTION_ERROR.equals(responseMessage.getCode())) {
+        throw new ServiceCallException(
+            responseMessage.getCode(), code, responseMessages.get(0).getMessage(), errorBody, responseMessages);
+      } else {
+        throw new ServiceCallException(
+            ErrorCode.UNKNOWN_ERROR, code, responseMessages.get(0).getMessage(), errorBody, responseMessages);
+      }
     }
   }
 }

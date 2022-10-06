@@ -29,6 +29,7 @@ import io.harness.govern.ServersModule;
 import io.harness.grpc.DelegateServiceGrpcClient;
 import io.harness.lock.DistributedLockImplementation;
 import io.harness.lock.PersistentLockModule;
+import io.harness.mongo.MongoConfig;
 import io.harness.mongo.MongoPersistence;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.opaclient.OpaServiceClient;
@@ -130,6 +131,12 @@ public class OrchestrationStepsRule implements MethodRule, InjectorRuleMixin, Mo
         return ImmutableSet.<Class<? extends TypeConverter>>builder()
             .addAll(OrchestrationBeansRegistrars.morphiaConverters)
             .build();
+      }
+
+      @Provides
+      @Singleton
+      MongoConfig mongoConfig() {
+        return MongoConfig.builder().build();
       }
 
       @Provides

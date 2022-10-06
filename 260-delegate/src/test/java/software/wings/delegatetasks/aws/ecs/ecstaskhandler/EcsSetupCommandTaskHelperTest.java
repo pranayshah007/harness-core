@@ -760,6 +760,8 @@ public class EcsSetupCommandTaskHelperTest extends WingsBaseTest {
     assertThat(containerDefinition.getSecrets().get(0).getName()).isEqualTo("environment_variable_name");
     assertThat(containerDefinition.getSecrets().get(0).getValueFrom())
         .isEqualTo("arn:aws:ssm:region:aws_account_id:parameter/parameter_name");
+    assertThat(registerTaskDefinitionRequest.getCpu()).isEqualTo("1");
+    assertThat(registerTaskDefinitionRequest.getMemory()).isEqualTo("512");
   }
 
   @Test
@@ -788,8 +790,8 @@ public class EcsSetupCommandTaskHelperTest extends WingsBaseTest {
     assertThat(registerTaskDefinitionRequest.getExecutionRoleArn()).isEqualTo("abc");
     assertThat(registerTaskDefinitionRequest.getContainerDefinitions()).isNotNull();
     assertThat(registerTaskDefinitionRequest.getContainerDefinitions()).hasSize(1);
-    assertThat(registerTaskDefinitionRequest.getCpu()).isEqualTo(null);
-    assertThat(registerTaskDefinitionRequest.getMemory()).isEqualTo(null);
+    assertThat(registerTaskDefinitionRequest.getCpu()).isEqualTo("1");
+    assertThat(registerTaskDefinitionRequest.getMemory()).isEqualTo("512");
     assertThat(registerTaskDefinitionRequest.getTags().contains(new Tag().withKey("key1").withValue("value1")))
         .isTrue();
     assertThat(registerTaskDefinitionRequest.getTags().contains(new Tag().withKey("key2").withValue("value2")))

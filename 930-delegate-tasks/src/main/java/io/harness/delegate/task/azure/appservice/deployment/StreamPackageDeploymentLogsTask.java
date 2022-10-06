@@ -30,6 +30,8 @@ import io.harness.azure.utility.AzureLogParser;
 import io.harness.exception.InvalidRequestException;
 import io.harness.logging.LogCallback;
 
+import software.wings.beans.LogHelper;
+
 import com.microsoft.azure.CloudException;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -37,6 +39,7 @@ import org.joda.time.DateTime;
 import rx.Observable;
 import rx.Subscriber;
 import rx.Subscription;
+import rx.schedulers.Schedulers;
 
 @OwnedBy(CDP)
 public class StreamPackageDeploymentLogsTask implements Runnable {
@@ -65,7 +68,7 @@ public class StreamPackageDeploymentLogsTask implements Runnable {
     if (!logParser.shouldLog(log)) {
       return;
     }
-    logCallback.saveExecutionLog(log, INFO);
+    logCallback.saveExecutionLog(LogHelper.color(log, White, Bold), INFO);
   }
 
   protected void streamLogs(String s) {
@@ -129,7 +132,7 @@ public class StreamPackageDeploymentLogsTask implements Runnable {
       }
     };
     subscription = streamSubscriber;
-    logStreamObservable.subscribe(streamSubscriber);
+    logStreamObservable.subscribeOn(Schedulers.newThread()).subscribe(streamSubscriber);
   }
 
   public boolean operationFailed() {

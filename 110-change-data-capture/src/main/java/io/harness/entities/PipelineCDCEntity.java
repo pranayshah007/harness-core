@@ -10,7 +10,6 @@ package io.harness.entities;
 import io.harness.ChangeHandler;
 import io.harness.changehandlers.PipelinesChangeDataHandler;
 import io.harness.changehandlers.TagsInfoCDChangeDataHandler;
-import io.harness.persistence.PersistentEntity;
 import io.harness.pms.pipeline.PipelineEntity;
 
 import com.google.inject.Inject;
@@ -30,7 +29,7 @@ public class PipelineCDCEntity implements CDCEntity<PipelineEntity> {
   }
 
   @Override
-  public Class<? extends PersistentEntity> getSubscriptionEntity() {
+  public Class<PipelineEntity> getSubscriptionEntity() {
     return PipelineEntity.class;
   }
 }

@@ -13,6 +13,8 @@ import io.harness.beans.IdentifierRef;
 import io.harness.cdng.azure.resources.dtos.AzureTagsDTO;
 import io.harness.cdng.k8s.resources.azure.dtos.AzureClustersDTO;
 import io.harness.cdng.k8s.resources.azure.dtos.AzureDeploymentSlotsDTO;
+import io.harness.cdng.k8s.resources.azure.dtos.AzureLocationsDTO;
+import io.harness.cdng.k8s.resources.azure.dtos.AzureManagementGroupsDTO;
 import io.harness.cdng.k8s.resources.azure.dtos.AzureResourceGroupsDTO;
 import io.harness.cdng.k8s.resources.azure.dtos.AzureSubscriptionsDTO;
 import io.harness.cdng.k8s.resources.azure.dtos.AzureWebAppNamesDTO;
@@ -34,5 +36,11 @@ public interface AzureResourceService {
       String projectIdentifier, String subscriptionId, String resourceGroup, String webAppName);
 
   AzureTagsDTO getTags(
+      IdentifierRef connectorRef, String orgIdentifier, String projectIdentifier, String subscriptionId);
+
+  AzureManagementGroupsDTO getAzureManagementGroups(
+      IdentifierRef connectorRef, String orgIdentifier, String projectIdentifier);
+
+  AzureLocationsDTO getLocations(
       IdentifierRef connectorRef, String orgIdentifier, String projectIdentifier, String subscriptionId);
 }

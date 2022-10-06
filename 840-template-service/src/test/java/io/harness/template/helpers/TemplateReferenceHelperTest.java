@@ -202,7 +202,7 @@ public class TemplateReferenceHelperTest extends TemplateServiceTestBase {
     String filename = "pipeline-with-references.yaml";
     String pipelineYaml = readFile(filename);
 
-    when(templateServiceHelper.getOrThrowExceptionIfInvalid(
+    when(templateServiceHelper.getTemplateOrThrowExceptionIfInvalid(
              ACCOUNT_ID, ORG_ID, PROJECT_ID, "approvalTemplate", "", false))
         .thenReturn(Optional.of(TemplateEntity.builder().identifier("approvalTemplate").versionLabel("1").build()));
 

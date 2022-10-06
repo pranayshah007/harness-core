@@ -38,6 +38,8 @@ import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.scm.GitAuthType;
 import io.harness.delegate.beans.connector.scm.GitConnectionType;
 import io.harness.delegate.beans.connector.scm.github.GithubApiAccessDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubApiAccessType;
+import io.harness.delegate.beans.connector.scm.github.GithubAppSpecDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubAuthenticationDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubHttpAuthenticationType;
@@ -503,6 +505,86 @@ public class TriggerFilePathConditionFilterTest extends CategoryTest {
     PowerMockito.mockStatic(ConditionEvaluator.class);
     when(ConditionEvaluator.evaluate(any(), any(), any())).thenReturn(true);
     assertThat(filter.initiateSCMTaskAndEvaluate(filterRequestData, triggerDetails, pathCondition)).isTrue();
+  }
+
+  @Test
+  @Owner(developers = RAGHAV_GUPTA)
+  @Category(UnitTests.class)
+  public void testInitiateTaskAndEvaluateForGithubAPP() {
+    TriggerDetails triggerDetails = generateTriggerDetails();
+
+    GithubConnectorDTO githubConnectorDTO =
+        GithubConnectorDTO.builder()
+            .connectionType(GitConnectionType.ACCOUNT)
+            .url("http://localhost")
+            .apiAccess(GithubApiAccessDTO.builder()
+                           .type(GithubApiAccessType.GITHUB_APP)
+                           .spec(GithubAppSpecDTO.builder().build())
+                           .build())
+            .authentication(GithubAuthenticationDTO.builder()
+                                .authType(GitAuthType.HTTP)
+                                .credentials(GithubHttpCredentialsDTO.builder()
+                                                 .type(GithubHttpAuthenticationType.USERNAME_AND_PASSWORD)
+                                                 .httpCredentialsSpec(GithubUsernamePasswordDTO.builder()
+                                                                          .username("usermane")
+                                                                          .passwordRef(SecretRefData.builder().build())
+                                                                          .build())
+                                                 .build())
+                                .build())
+            .build();
+
+    List<EncryptedDataDetail> encryptedDataDetails = emptyList();
+    TriggerEventDataCondition pathCondition =
+        TriggerEventDataCondition.builder().key(CHANGED_FILES).operator(EQUALS).value("test").build();
+    ParseWebhookResponse parseWebhookResponse =
+        ParseWebhookResponse.newBuilder()
+            .setPush(PushHook.newBuilder().setBefore("before").setAfter("after").setRef("ref").build())
+            .build();
+    WebhookPayloadData webhookPayloadData =
+        WebhookPayloadData.builder().parseWebhookResponse(parseWebhookResponse).build();
+    FilterRequestData filterRequestData =
+        FilterRequestData.builder().accountId("acc").webhookPayloadData(webhookPayloadData).build();
+
+    doReturn(ConnectorDetails.builder()
+                 .connectorConfig(githubConnectorDTO)
+                 .orgIdentifier("org")
+                 .connectorType(ConnectorType.GITHUB)
+                 .projectIdentifier("proj")
+                 .encryptedDataDetails(encryptedDataDetails)
+                 .executeOnDelegate(false)
+                 .build())
+        .when(connectorUtils)
+        .getConnectorDetails(any(NGAccess.class), eq("account.conn"));
+
+    when(scmFilePathEvaluatorOnDelegate.getScmPathFilterEvaluationTaskParams(any(), any(), any(), any()))
+        .thenCallRealMethod();
+    when(scmFilePathEvaluatorOnDelegate.execute(any(), any(), any(), any())).thenCallRealMethod();
+
+    byte[] data = new byte[0];
+    when(taskExecutionUtils.executeSyncTask(any(DelegateTaskRequest.class)))
+        .thenReturn(BinaryResponseData.builder().data(data).build());
+    doReturn(ScmPathFilterEvaluationTaskResponse.builder().matched(true).build())
+        .when(kryoSerializer)
+        .asInflatedObject(data);
+
+    ArgumentCaptor<DelegateTaskRequest> argumentCaptor = ArgumentCaptor.forClass(DelegateTaskRequest.class);
+    assertThat(filter.initiateSCMTaskAndEvaluate(filterRequestData, triggerDetails, pathCondition)).isTrue();
+    verify(taskExecutionUtils, times(1)).executeSyncTask(argumentCaptor.capture());
+
+    // Assert Delegate Task request object generated
+    DelegateTaskRequest delegateTaskRequest = argumentCaptor.getValue();
+    assertThat(delegateTaskRequest.getAccountId()).isEqualTo("acc");
+    assertThat(delegateTaskRequest.getTaskType()).isEqualTo(SCM_PATH_FILTER_EVALUATION_TASK.toString());
+
+    assertThat(delegateTaskRequest.getTaskParameters()).isNotNull();
+
+    TaskParameters taskParameters = delegateTaskRequest.getTaskParameters();
+    assertThat(ScmPathFilterEvaluationTaskParams.class.isAssignableFrom(taskParameters.getClass()));
+    ScmPathFilterEvaluationTaskParams params = (ScmPathFilterEvaluationTaskParams) taskParameters;
+    assertThat(params.getScmConnector()).isEqualTo(githubConnectorDTO);
+    assertThat(params.getEncryptedDataDetails()).isEqualTo(encryptedDataDetails);
+    assertThat(params.getOperator()).isEqualTo(EQUALS.getValue());
+    assertThat(params.getStandard()).isEqualTo("test");
   }
 
   @Test

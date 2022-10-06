@@ -15,5 +15,5 @@ import io.harness.persistence.PersistentEntity;
 @OwnedBy(HarnessTeam.CE)
 public interface CDCEntity<T extends PersistentEntity> {
   ChangeHandler getChangeHandler(String handlerClass);
-  Class<? extends PersistentEntity> getSubscriptionEntity();
+  Class<T> getSubscriptionEntity();
 }

@@ -7,9 +7,11 @@
 
 package io.harness.encryptors;
 
+import static io.harness.rule.OwnerRule.RAGHAV_MURALI;
 import static io.harness.rule.OwnerRule.UTKARSH;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
@@ -26,6 +28,7 @@ import io.harness.concurrent.HTimeLimiter;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.delegate.exception.DelegateRetryableException;
 import io.harness.encryptors.clients.GcpKmsEncryptor;
+import io.harness.exception.HintException;
 import io.harness.rule.Owner;
 import io.harness.security.encryption.EncryptedRecord;
 import io.harness.security.encryption.EncryptedRecordData;
@@ -33,6 +36,8 @@ import io.harness.security.encryption.EncryptionType;
 
 import software.wings.beans.GcpKmsConfig;
 
+import com.google.api.gax.rpc.StatusCode;
+import com.google.api.gax.rpc.UnauthenticatedException;
 import com.google.cloud.kms.v1.CryptoKeyName;
 import com.google.cloud.kms.v1.DecryptResponse;
 import com.google.cloud.kms.v1.EncryptResponse;
@@ -152,5 +157,97 @@ public class GcpKmsEncryptorTest extends CategoryTest {
       assertThat(e.getCause().getMessage())
           .isEqualTo(String.format("Decryption failed for encryptedData %s after 3 retries", encryptedData.getName()));
     }
+  }
+
+  @Test
+  @Owner(developers = RAGHAV_MURALI)
+  @Category(UnitTests.class)
+  public void testEncryptSecretShouldThrowAuthenticationError() {
+    KeyManagementServiceClient kmsClient = mock(KeyManagementServiceClient.class);
+    StatusCode statusCode = mock(StatusCode.class);
+    String resourceName = CryptoKeyName.format(
+        gcpKmsConfig.getProjectId(), gcpKmsConfig.getRegion(), gcpKmsConfig.getKeyRing(), gcpKmsConfig.getKeyName());
+    doReturn(kmsClient).when(gcpKmsEncryptor).getClientInternal(any());
+
+    when(statusCode.getCode()).thenReturn(StatusCode.Code.UNAUTHENTICATED);
+    when(kmsClient.encrypt(eq(resourceName), any(ByteString.class)))
+        .thenThrow(
+            new UnauthenticatedException("Request had invalid authentication credentials.", null, statusCode, false));
+
+    assertThatThrownBy(() -> gcpKmsEncryptor.encryptSecret(gcpKmsConfig.getAccountId(), "MySecretValue", gcpKmsConfig))
+        .isInstanceOf(HintException.class)
+        .hasMessageContaining(HintException.HINT_GCP_ACCESS_DENIED);
+  }
+
+  @Test
+  @Owner(developers = RAGHAV_MURALI)
+  @Category(UnitTests.class)
+  public void testEncryptSecretShouldThrowAuthenticationErrorWithRetry() {
+    KeyManagementServiceClient kmsClient = mock(KeyManagementServiceClient.class);
+    StatusCode statusCode = mock(StatusCode.class);
+    String resourceName = CryptoKeyName.format(
+        gcpKmsConfig.getProjectId(), gcpKmsConfig.getRegion(), gcpKmsConfig.getKeyRing(), gcpKmsConfig.getKeyName());
+    doReturn(kmsClient).when(gcpKmsEncryptor).getClientInternal(any());
+
+    when(statusCode.getCode()).thenReturn(StatusCode.Code.UNAUTHENTICATED);
+    when(kmsClient.encrypt(eq(resourceName), any(ByteString.class)))
+        .thenThrow(
+            new UnauthenticatedException("Request had invalid authentication credentials.", null, statusCode, true));
+
+    assertThatThrownBy(() -> gcpKmsEncryptor.encryptSecret(gcpKmsConfig.getAccountId(), "MySecretValue", gcpKmsConfig))
+        .isInstanceOf(HintException.class)
+        .hasMessageContaining(HintException.HINT_GCP_ACCESS_DENIED);
+  }
+
+  @Test
+  @Owner(developers = RAGHAV_MURALI)
+  @Category(UnitTests.class)
+  public void testFetchSecretShouldThrowAuthenticationError() {
+    KeyManagementServiceClient kmsClient = mock(KeyManagementServiceClient.class);
+    StatusCode statusCode = mock(StatusCode.class);
+    String resourceName = CryptoKeyName.format(
+        gcpKmsConfig.getProjectId(), gcpKmsConfig.getRegion(), gcpKmsConfig.getKeyRing(), gcpKmsConfig.getKeyName());
+    doReturn(kmsClient).when(gcpKmsEncryptor).getClientInternal(any());
+    EncryptedRecordData encryptedData = EncryptedRecordData.builder()
+                                            .uuid(UUIDGenerator.generateUuid())
+                                            .name(UUIDGenerator.generateUuid())
+                                            .encryptionKey(UUIDGenerator.generateUuid())
+                                            .encryptedValue(UUIDGenerator.generateUuid().toCharArray())
+                                            .build();
+
+    when(statusCode.getCode()).thenReturn(StatusCode.Code.UNAUTHENTICATED);
+    when(kmsClient.decrypt(eq(resourceName), any()))
+        .thenThrow(
+            new UnauthenticatedException("Request had invalid authentication credentials.", null, statusCode, false));
+
+    assertThatThrownBy(() -> gcpKmsEncryptor.fetchSecretValue(gcpKmsConfig.getAccountId(), encryptedData, gcpKmsConfig))
+        .isInstanceOf(HintException.class)
+        .hasMessageContaining(HintException.HINT_GCP_ACCESS_DENIED);
+  }
+
+  @Test
+  @Owner(developers = RAGHAV_MURALI)
+  @Category(UnitTests.class)
+  public void testFetchSecretShouldThrowAuthenticationErrorWithRetry() {
+    KeyManagementServiceClient kmsClient = mock(KeyManagementServiceClient.class);
+    StatusCode statusCode = mock(StatusCode.class);
+    String resourceName = CryptoKeyName.format(
+        gcpKmsConfig.getProjectId(), gcpKmsConfig.getRegion(), gcpKmsConfig.getKeyRing(), gcpKmsConfig.getKeyName());
+    doReturn(kmsClient).when(gcpKmsEncryptor).getClientInternal(any());
+    EncryptedRecordData encryptedData = EncryptedRecordData.builder()
+                                            .uuid(UUIDGenerator.generateUuid())
+                                            .name(UUIDGenerator.generateUuid())
+                                            .encryptionKey(UUIDGenerator.generateUuid())
+                                            .encryptedValue(UUIDGenerator.generateUuid().toCharArray())
+                                            .build();
+
+    when(statusCode.getCode()).thenReturn(StatusCode.Code.UNAUTHENTICATED);
+    when(kmsClient.decrypt(eq(resourceName), any()))
+        .thenThrow(
+            new UnauthenticatedException("Request had invalid authentication credentials.", null, statusCode, true));
+
+    assertThatThrownBy(() -> gcpKmsEncryptor.fetchSecretValue(gcpKmsConfig.getAccountId(), encryptedData, gcpKmsConfig))
+        .isInstanceOf(HintException.class)
+        .hasMessageContaining(HintException.HINT_GCP_ACCESS_DENIED);
   }
 }

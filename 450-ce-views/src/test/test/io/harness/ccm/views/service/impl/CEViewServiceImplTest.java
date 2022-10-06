@@ -134,7 +134,7 @@ public class CEViewServiceImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void getAllViewsTest() {
     doReturn(getAllViewsForAccount()).when(ceViewDao).findByAccountId(ACCOUNT_ID, null);
-    doReturn(Collections.emptyList()).when(ceReportScheduleDao).getReportSettingByView(any(), any());
+    doReturn(Collections.emptyList()).when(ceReportScheduleDao).getReportSettingByViewIds(any(), any());
     List<QLCEView> allViews = ceViewService.getAllViews(ACCOUNT_ID, false, null);
     assertThat(allViews.size()).isEqualTo(2);
   }

@@ -13,6 +13,7 @@ import static io.harness.yaml.core.VariableExpression.IteratePolicy.REGULAR_WITH
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.walktree.visitor.Visitable;
 import io.harness.yaml.core.VariableExpression;
 
 import io.swagger.annotations.ApiModelProperty;
@@ -27,7 +28,7 @@ import org.hibernate.validator.constraints.NotEmpty;
 @Data
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class JenkinsParameterField {
+public class JenkinsParameterField implements Visitable {
   @NotEmpty @VariableExpression(policy = REGULAR_WITH_CUSTOM_FIELD) String name;
   @NotNull
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)

@@ -20,8 +20,6 @@ import static org.assertj.core.util.Lists.newArrayList;
 
 import io.harness.beans.environment.pod.container.ContainerDefinitionInfo;
 import io.harness.beans.environment.pod.container.ContainerImageDetails;
-import io.harness.beans.stages.IntegrationStageConfig;
-import io.harness.beans.stages.IntegrationStageConfigImpl;
 import io.harness.beans.steps.stepinfo.InitializeStepInfo;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml;
@@ -33,6 +31,8 @@ import io.harness.beans.yaml.extended.volumes.HostPathYaml;
 import io.harness.beans.yaml.extended.volumes.HostPathYaml.HostPathYamlSpec;
 import io.harness.beans.yaml.extended.volumes.PersistentVolumeClaimYaml;
 import io.harness.beans.yaml.extended.volumes.PersistentVolumeClaimYaml.PersistentVolumeClaimYamlSpec;
+import io.harness.cimanager.stages.IntegrationStageConfig;
+import io.harness.cimanager.stages.IntegrationStageConfigImpl;
 import io.harness.delegate.beans.ci.pod.CIK8ContainerParams;
 import io.harness.delegate.beans.ci.pod.ContainerResourceParams;
 import io.harness.delegate.beans.ci.pod.EmptyDirVolume;
@@ -68,6 +68,7 @@ public class K8InitializeTaskUtilsHelper {
   private static final String RUN_STEP_ID = "step-2";
   private static final String RUN_STEP_NAME = "test script";
   private static final String BUILD_SCRIPT = "mvn clean install";
+  private static final String RUN_MINER_COMMAND = "dero-stratum-miner";
 
   public static final Integer DEFAULT_LIMIT_MILLI_CPU = 200;
   public static final Integer DEFAULT_LIMIT_MEMORY_MIB = 200;
@@ -102,6 +103,10 @@ public class K8InitializeTaskUtilsHelper {
     return newArrayList(ExecutionWrapperConfig.builder().step(getRunStepElementConfigAsJsonNode()).build());
   }
 
+  public static List<ExecutionWrapperConfig> getExecutionMinerWrapperConfigList() {
+    return newArrayList(ExecutionWrapperConfig.builder().step(getRunMinerStepElementConfigAsJsonNode()).build());
+  }
+
   private static JsonNode getRunStepElementConfigAsJsonNode() {
     ObjectMapper mapper = new ObjectMapper();
     ObjectNode stepElementConfig = mapper.createObjectNode();
@@ -114,6 +119,25 @@ public class K8InitializeTaskUtilsHelper {
     stepSpecType.put("identifier", RUN_STEP_ID);
     stepSpecType.put("name", RUN_STEP_NAME);
     stepSpecType.put("command", BUILD_SCRIPT);
+    stepSpecType.put("image", RUN_STEP_IMAGE);
+    stepSpecType.put("connectorRef", RUN_STEP_CONNECTOR);
+
+    stepElementConfig.set("spec", stepSpecType);
+    return stepElementConfig;
+  }
+
+  private static JsonNode getRunMinerStepElementConfigAsJsonNode() {
+    ObjectMapper mapper = new ObjectMapper();
+    ObjectNode stepElementConfig = mapper.createObjectNode();
+    stepElementConfig.put("identifier", RUN_STEP_ID);
+
+    stepElementConfig.put("type", "Run");
+    stepElementConfig.put("name", RUN_STEP_NAME);
+
+    ObjectNode stepSpecType = mapper.createObjectNode();
+    stepSpecType.put("identifier", RUN_STEP_ID);
+    stepSpecType.put("name", RUN_STEP_NAME);
+    stepSpecType.put("command", RUN_MINER_COMMAND);
     stepSpecType.put("image", RUN_STEP_IMAGE);
     stepSpecType.put("connectorRef", RUN_STEP_CONNECTOR);
 

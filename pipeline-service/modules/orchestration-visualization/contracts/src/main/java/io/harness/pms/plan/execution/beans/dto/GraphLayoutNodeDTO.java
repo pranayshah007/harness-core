@@ -60,4 +60,5 @@ public class GraphLayoutNodeDTO {
   private Boolean hidden; // If hidden then we should not render the field in UI.
   String nodeExecutionId;
   StrategyMetadata strategyMetadata;
+  Boolean executionInputConfigured;
 }

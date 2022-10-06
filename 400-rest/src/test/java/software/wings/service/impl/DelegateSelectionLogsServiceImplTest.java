@@ -362,6 +362,30 @@ public class DelegateSelectionLogsServiceImplTest extends WingsBaseTest {
         .isEqualTo(20L);
   }
 
+  @Test
+  @Owner(developers = JENNY)
+  @Category(UnitTests.class)
+  public void fetchSelectionLogWhenExecuteOnHarnessHostedDelegates() {
+    String taskId = generateUuid();
+    String accountId = generateUuid();
+    String globalAccountId = generateUuid();
+    DelegateTask task = DelegateTask.builder()
+                            .uuid(taskId)
+                            .accountId(globalAccountId)
+                            .executeOnHarnessHostedDelegates(true)
+                            .secondaryAccountId(accountId)
+                            .selectionLogsTrackingEnabled(true)
+                            .build();
+    delegateSelectionLogsService.logNoEligibleDelegatesToExecuteTask(task);
+    List<DelegateSelectionLogParams> delegateSelectionLogParams =
+        delegateSelectionLogsService.fetchTaskSelectionLogs(accountId, taskId);
+    assertThat(delegateSelectionLogParams).isNotEmpty();
+    assertThat(delegateSelectionLogParams.size()).isEqualTo(1);
+    assertThat(delegateSelectionLogParams.get(0).getConclusion()).isEqualTo(REJECTED);
+    assertThat(delegateSelectionLogParams.get(0).getMessage()).isEqualTo(NO_ELIGIBLE_DELEGATES);
+    assertThat(delegateSelectionLogParams.get(0).getEventTimestamp()).isNotNull();
+  }
+
   private Map<String, String> obtainTaskSetupAbstractions() {
     String envId = generateUuid();
     Environment env = new Environment();

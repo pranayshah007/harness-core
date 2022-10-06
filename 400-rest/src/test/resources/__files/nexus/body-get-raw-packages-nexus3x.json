@@ -1,0 +1,40 @@
+{
+  "items" : [ {
+    "id" : "bnVnZXQtaG9zdGVkOmM3NzAxNjljMGIyZTNlZDgyMjdjYmQxMDZhNDc1Nzhi",
+    "repository" : "raw-hosted",
+    "format" : "raw",
+    "group" : null,
+    "name" : "Raw.Sample.Package",
+    "version" : null,
+    "assets" : [ {
+      "downloadUrl" : "http://localhost:8881/nexus/repository/raw-hosted/Raw.Sample.Package",
+      "path" : "Raw.Sample.Package",
+      "id" : "bnVnZXQtaG9zdGVkOjM2ZTNkZWM4ZGU1MjhjOWI3MDkyYTJlYTJlYjAxYTlm",
+      "repository" : "raw-hosted",
+      "format" : "raw",
+      "checksum" : {
+        "sha1" : "2114317833a0aa18a11f5e6685d81c8c23bd37d4",
+        "sha512" : "14dd447cf0a20f322c17170e1ce41aeee011d5ff3bec4d28e0f3b9acdf1ed43c0ce990d763b6693bfe3c4ffaf640908c717a4504747197a3df6d41bfedd60ba3"
+      }
+    } ]
+  }, {
+    "id" : "bnVnZXQtaG9zdGVkOmM3NzAxNjljMGIyZTNlZDgyY2Y4MzU1Nzg5MzQyOTZi",
+    "repository" : "raw-hosted",
+    "format" : "raw",
+    "group" : null,
+    "name" : "Raw.Sample.Package1",
+    "version" : null,
+    "assets" : [ {
+      "downloadUrl" : "http://localhost:8881/nexus/repository/raw-hosted/Raw.Sample.Package1",
+      "path" : "Raw.Sample.Package1",
+      "id" : "bnVnZXQtaG9zdGVkOjM2ZTNkZWM4ZGU1MjhjOWI3Y2M0ZTc0NGMxM2VmMDI5",
+      "repository" : "raw-hosted",
+      "format" : "raw",
+      "checksum" : {
+        "sha1" : "1cd7fe11a7d78970576347b0ceace81d4618c33d",
+        "sha512" : "be6f910bb03e7ffc952ac396262ffefacaa9093221e5a637b8812839f777e52061efb8972b4d527374a7037a2e1b3f9c3584994689038584d06140b1329c171b"
+      }
+    } ]
+  } ],
+  "continuationToken" : null
+}

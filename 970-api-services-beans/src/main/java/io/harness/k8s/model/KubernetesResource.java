@@ -74,13 +74,16 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.constructor.ConstructorException;
 
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@Slf4j
 @OwnedBy(CDP)
 public class KubernetesResource {
   private static final String MISSING_DEPLOYMENT_SPEC_MSG = "Deployment does not have spec";
@@ -153,8 +156,8 @@ public class KubernetesResource {
     }
 
     try {
-      org.yaml.snakeyaml.Yaml yaml =
-          new org.yaml.snakeyaml.Yaml(new Yaml.CustomConstructor(Object.class), new BooleanPatchedRepresenter());
+      org.yaml.snakeyaml.Yaml yaml = new org.yaml.snakeyaml.Yaml(
+          new Yaml.CustomConstructor(Object.class, new LoaderOptions()), new BooleanPatchedRepresenter());
       this.spec = yaml.dump(k8sResource);
       this.value = readYaml(this.spec).get(0);
     } catch (IOException e) {
@@ -186,8 +189,8 @@ public class KubernetesResource {
     }
 
     try {
-      org.yaml.snakeyaml.Yaml yaml =
-          new org.yaml.snakeyaml.Yaml(new Yaml.CustomConstructor(Object.class), new BooleanPatchedRepresenter());
+      org.yaml.snakeyaml.Yaml yaml = new org.yaml.snakeyaml.Yaml(
+          new Yaml.CustomConstructor(Object.class, new LoaderOptions()), new BooleanPatchedRepresenter());
       this.spec = yaml.dump(k8sResource);
       this.value = readYaml(this.spec).get(0);
     } catch (IOException e) {
@@ -246,10 +249,18 @@ public class KubernetesResource {
       return false;
     }
 
-    Object k8sResource = getK8sResource();
-    V1Service v1Service = (V1Service) k8sResource;
-    notNullCheck("Service does not have spec", v1Service.getSpec());
-    return StringUtils.equals(v1Service.getSpec().getType(), "LoadBalancer");
+    try {
+      Object k8sResource = getK8sResource();
+      V1Service v1Service = (V1Service) k8sResource;
+      notNullCheck("Service does not have spec", v1Service.getSpec());
+      return StringUtils.equals(v1Service.getSpec().getType(), "LoadBalancer");
+    } catch (KubernetesYamlException ex) {
+      log.warn("Error loading YAML while checking if the service is of kind LoadBalancer. "
+              + "Ignoring this exception as kubectl apply is already successful and "
+              + "pipeline execution should not be marked as failed because of this. Spec: {}",
+          this.getSpec(), ex);
+    }
+    return false;
   }
 
   public KubernetesResource addColorSelectorInService(String color) {
@@ -266,8 +277,8 @@ public class KubernetesResource {
     v1Service.getSpec().setSelector(selectors);
 
     try {
-      org.yaml.snakeyaml.Yaml yaml =
-          new org.yaml.snakeyaml.Yaml(new Yaml.CustomConstructor(Object.class), new BooleanPatchedRepresenter());
+      org.yaml.snakeyaml.Yaml yaml = new org.yaml.snakeyaml.Yaml(
+          new Yaml.CustomConstructor(Object.class, new LoaderOptions()), new BooleanPatchedRepresenter());
       this.spec = yaml.dump(k8sResource);
       this.value = readYaml(this.spec).get(0);
     } catch (IOException e) {
@@ -282,8 +293,8 @@ public class KubernetesResource {
     Object k8sResource = getK8sResource();
     updateName(k8sResource, transformer);
     try {
-      org.yaml.snakeyaml.Yaml yaml =
-          new org.yaml.snakeyaml.Yaml(new Yaml.CustomConstructor(Object.class), new BooleanPatchedRepresenter());
+      org.yaml.snakeyaml.Yaml yaml = new org.yaml.snakeyaml.Yaml(
+          new Yaml.CustomConstructor(Object.class, new LoaderOptions()), new BooleanPatchedRepresenter());
       this.spec = yaml.dump(k8sResource);
       this.value = readYaml(this.spec).get(0);
     } catch (IOException e) {
@@ -379,8 +390,8 @@ public class KubernetesResource {
     v1PodTemplateSpec.getMetadata().setLabels(podLabels);
 
     try {
-      org.yaml.snakeyaml.Yaml yaml =
-          new org.yaml.snakeyaml.Yaml(new Yaml.CustomConstructor(Object.class), new BooleanPatchedRepresenter());
+      org.yaml.snakeyaml.Yaml yaml = new org.yaml.snakeyaml.Yaml(
+          new Yaml.CustomConstructor(Object.class, new LoaderOptions()), new BooleanPatchedRepresenter());
       this.spec = yaml.dump(k8sResource);
       this.value = readYaml(this.spec).get(0);
     } catch (IOException e) {
@@ -398,8 +409,8 @@ public class KubernetesResource {
     updateSecretRef(k8sResource, secretRefTransformer);
 
     try {
-      org.yaml.snakeyaml.Yaml yaml =
-          new org.yaml.snakeyaml.Yaml(new Yaml.CustomConstructor(Object.class), new BooleanPatchedRepresenter());
+      org.yaml.snakeyaml.Yaml yaml = new org.yaml.snakeyaml.Yaml(
+          new Yaml.CustomConstructor(Object.class, new LoaderOptions()), new BooleanPatchedRepresenter());
       this.spec = yaml.dump(k8sResource);
       this.value = readYaml(this.spec).get(0);
     } catch (IOException e) {
@@ -427,8 +438,8 @@ public class KubernetesResource {
           e.setValue(redacted);
         }
       }
-      org.yaml.snakeyaml.Yaml yaml =
-          new org.yaml.snakeyaml.Yaml(new Yaml.CustomConstructor(Object.class), new BooleanPatchedRepresenter());
+      org.yaml.snakeyaml.Yaml yaml = new org.yaml.snakeyaml.Yaml(
+          new Yaml.CustomConstructor(Object.class, new LoaderOptions()), new BooleanPatchedRepresenter());
       result = yaml.dump(v1Secret);
     } catch (Exception e) {
       // do nothing
@@ -801,8 +812,8 @@ public class KubernetesResource {
     }
 
     try {
-      org.yaml.snakeyaml.Yaml yaml =
-          new org.yaml.snakeyaml.Yaml(new Yaml.CustomConstructor(Object.class), new BooleanPatchedRepresenter());
+      org.yaml.snakeyaml.Yaml yaml = new org.yaml.snakeyaml.Yaml(
+          new Yaml.CustomConstructor(Object.class, new LoaderOptions()), new BooleanPatchedRepresenter());
       return ResourceUtils.removeEmptyOrNullFields(yaml.dump(Yaml.loadAs(this.spec, V1StatefulSet.class)));
     } catch (IOException e) {
       // Return original spec

@@ -228,7 +228,9 @@ public class EcsServiceSetup extends State {
                   .async(true)
                   .taskType(GIT_FETCH_FILES_TASK.name())
                   .parameters(new Object[] {fetchFilesTaskParams})
-                  .timeout(TimeUnit.MINUTES.toMillis(GIT_FETCH_FILES_TASK_ASYNC_TIMEOUT))
+                  .timeout(TimeUnit.MINUTES.toMillis(Math.max(
+                      ecsStateHelper.renderTimeout(serviceSteadyStateTimeout, context, DEFAULT_AMI_ASG_TIMEOUT_MIN),
+                      GIT_FETCH_FILES_TASK_ASYNC_TIMEOUT)))
                   .build())
         .build();
   }

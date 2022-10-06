@@ -31,11 +31,13 @@ public class DebeziumConfigurationTest extends CategoryTest {
   @Owner(developers = SHALINI)
   @Category(UnitTests.class)
   public void testGetDebeziumProperties() {
-    DebeziumConfig debeziumConfig =
-        new DebeziumConfig(false, "testConnector", "offset_file", "offsets", "false", "false", "6000", "1000", "10000",
-            60, "3", "MongoDbConnectorClass", 1000, "rs0/host1", "shop", "", "", "false", "products", "", "2000");
+    DebeziumConfig debeziumConfig = new DebeziumConfig(false, "testConnector", "offset_file", "offsets", "false",
+        "false", "6000", "1000", "10000", 60, "3", "MongoDbConnectorClass", 1000, "rs0/host1", "shop", "", "", "false",
+        "products", "", "2000", 1000, "initial", "document");
     RedisConfig redisConfig = new RedisConfig();
     Properties expectedProps = new Properties();
+    expectedProps.setProperty(DebeziumConfiguration.TRANSFORMS_UNWRAP_ARRAY_ENCODING, "document");
+    expectedProps.setProperty(DebeziumConfiguration.SNAPSHOT_MODE, "initial");
     expectedProps.setProperty(DebeziumConfiguration.CONNECTOR_NAME, debeziumConfig.getConnectorName());
     expectedProps.setProperty(DebeziumConfiguration.OFFSET_STORAGE, RedisOffsetBackingStore.class.getName());
     expectedProps.setProperty(DebeziumConfiguration.OFFSET_STORAGE_FILE_FILENAME, JsonUtils.asJson(redisConfig));

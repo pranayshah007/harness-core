@@ -200,6 +200,10 @@ public abstract class WorkflowYamlHandler<Y extends WorkflowYaml> extends BaseYa
         });
       }
 
+      if (featureFlagService.isEnabled(FeatureName.VALIDATE_PHASES_AND_ROLLBACK, change.getAccountId())) {
+        WorkflowYamlHandlerValidator.validatePhaseAndRollbackPhase(workflowPhaseMap, rollbackPhaseMap);
+      }
+
       // user variables
       List<Variable> userVariables = Lists.newArrayList();
       if (yaml.getUserVariables() != null) {

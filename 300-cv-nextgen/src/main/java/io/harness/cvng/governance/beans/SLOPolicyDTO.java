@@ -10,11 +10,13 @@ package io.harness.cvng.governance.beans;
 import static io.harness.annotations.dev.HarnessTeam.CV;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cvng.core.beans.monitoredService.SloHealthIndicatorDTO;
 import io.harness.gitsync.beans.YamlDTO;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.annotations.ApiModel;
+import java.util.Map;
 import javax.validation.Valid;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -30,6 +32,7 @@ import lombok.experimental.FieldDefaults;
 public class SLOPolicyDTO implements YamlDTO {
   @JsonProperty("sloErrorBudgetRemainingPercentage") @Valid Double sloErrorBudgetRemainingPercentage;
   @JsonProperty("statusOfMonitoredService") @Valid MonitoredServiceStatus statusOfMonitoredService;
+  @JsonProperty("slos") @Valid Map<String, SloHealthIndicatorDTO> slos;
 
   public enum MonitoredServiceStatus { CONFIGURED, NOT_CONFIGURED }
 }

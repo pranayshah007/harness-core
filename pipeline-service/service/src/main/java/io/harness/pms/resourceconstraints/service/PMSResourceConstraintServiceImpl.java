@@ -9,6 +9,7 @@ package io.harness.pms.resourceconstraints.service;
 
 import static io.harness.distribution.constraint.Consumer.State.ACTIVE;
 import static io.harness.distribution.constraint.Consumer.State.BLOCKED;
+import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -17,6 +18,7 @@ import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.exception.InvalidRequestException;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.PlanExecution;
+import io.harness.logging.AutoLogContext;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.plan.execution.SetupAbstractionUtils;
@@ -30,6 +32,7 @@ import io.harness.steps.resourcerestraint.service.ResourceRestraintInstanceServi
 import io.harness.steps.resourcerestraint.service.ResourceRestraintService;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -137,10 +140,22 @@ public class PMSResourceConstraintServiceImpl implements PMSResourceConstraintSe
     // CAN BE HELPFUL IF WE HAVE A BIG NUMBER OF RESOURCE RESTRAINT INSTANCES
     String cacheKey = String.format("%s_%s_%s_%s", accountId, orgIdentifier, projectIdentifier, pipelineIdentifier);
     return cache
-        .computeIfAbsent(cacheKey,
-            k
-            -> pipelineService.get(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, false)
-                   .orElseGet(() -> PipelineEntity.builder().build()))
+        .computeIfAbsent(
+            cacheKey, k -> getPipelineEntity(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier))
         .getName();
+  }
+
+  private PipelineEntity getPipelineEntity(
+      String accountId, String orgIdentifier, String projectIdentifier, String pipelineIdentifier) {
+    try (AutoLogContext ignore1 =
+             new AutoLogContext(ImmutableMap.of("accountId", accountId, "orgIdentifier", orgIdentifier,
+                                    "projectIdentifier", projectIdentifier, "pipelineIdentifier", pipelineIdentifier),
+                 OVERRIDE_ERROR)) {
+      return pipelineService.get(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, false)
+          .orElseGet(() -> PipelineEntity.builder().build());
+    } catch (RuntimeException e) {
+      log.warn("An error occurs when resource constraint try access the pipeline entity", e);
+    }
+    return PipelineEntity.builder().build();
   }
 }

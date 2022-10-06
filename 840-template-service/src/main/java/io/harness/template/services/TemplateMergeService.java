@@ -10,6 +10,7 @@ package io.harness.template.services;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
+import io.harness.ng.core.template.TemplateRetainVariablesResponse;
 
 @OwnedBy(HarnessTeam.CDC)
 public interface TemplateMergeService {
@@ -21,4 +22,6 @@ public interface TemplateMergeService {
 
   TemplateMergeResponseDTO applyTemplatesToYamlV2(
       String accountId, String orgId, String projectId, String yaml, boolean getMergedYamlWithTemplateField);
+
+  TemplateRetainVariablesResponse mergeTemplateInputs(String newTemplateInputs, String originalTemplateInputs);
 }

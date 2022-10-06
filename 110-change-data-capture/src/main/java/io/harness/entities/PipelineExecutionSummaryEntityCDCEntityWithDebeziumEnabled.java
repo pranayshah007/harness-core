@@ -14,7 +14,6 @@ import io.harness.cf.client.dto.Target;
 import io.harness.changehandlers.PlanExecutionSummaryCdChangeDataHandler;
 import io.harness.changehandlers.PlanExecutionSummaryCdChangeServiceInfraChangeDataHandlerNew;
 import io.harness.changehandlers.PlanExecutionSummaryChangeDataHandler;
-import io.harness.persistence.PersistentEntity;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 
 import com.google.inject.Inject;
@@ -39,7 +38,6 @@ public class PipelineExecutionSummaryEntityCDCEntityWithDebeziumEnabled
       if (!debeziumEnabled) {
         return planExecutionSummaryCdChangeDataHandler;
       } else {
-        log.info("FF {} is true.", FeatureName.DEBEZIUM_ENABLED.toString());
         return null;
       }
     } else if (handlerClass.contentEquals("PipelineExecutionSummaryEntityServiceAndInfra")) {
@@ -49,7 +47,7 @@ public class PipelineExecutionSummaryEntityCDCEntityWithDebeziumEnabled
   }
 
   @Override
-  public Class<? extends PersistentEntity> getSubscriptionEntity() {
+  public Class<PipelineExecutionSummaryEntity> getSubscriptionEntity() {
     return PipelineExecutionSummaryEntity.class;
   }
 }

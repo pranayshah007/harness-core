@@ -11,7 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.HarnessStringUtils.emptyIfNull;
 
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.pms.steps.identity.IdentityStepParameters;
@@ -73,10 +73,10 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Value
 @Builder
 @FieldNameConstants(innerTypeName = "NodeExecutionKeys")
+@StoreIn(DbAliases.PMS)
 @Entity(value = "nodeExecutions", noClassnameStored = true)
 @Document("nodeExecutions")
 @TypeAlias("nodeExecution")
-@StoreIn(DbAliases.PMS)
 public class NodeExecution implements PersistentEntity, UuidAccess, PmsNodeExecution {
   public static final long TTL_MONTHS = 6;
 
@@ -117,6 +117,7 @@ public class NodeExecution implements PersistentEntity, UuidAccess, PmsNodeExecu
   SkipInfo skipInfo;
   NodeRunInfo nodeRunInfo;
 
+  @Builder.Default Boolean executionInputConfigured = false;
   // Retries
   @Singular List<String> retryIds;
   @Builder.Default Boolean oldRetry = false;

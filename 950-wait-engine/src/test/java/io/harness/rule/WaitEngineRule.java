@@ -20,6 +20,7 @@ import io.harness.factory.ClosingFactoryModule;
 import io.harness.govern.ProviderModule;
 import io.harness.govern.ServersModule;
 import io.harness.metrics.MetricRegistryModule;
+import io.harness.mongo.MongoConfig;
 import io.harness.mongo.MongoPersistence;
 import io.harness.mongo.queue.QueueFactory;
 import io.harness.morphia.MorphiaRegistrar;
@@ -110,6 +111,12 @@ public class WaitEngineRule implements MethodRule, InjectorRuleMixin, MongoRuleM
         return ImmutableSet.<Class<? extends MorphiaRegistrar>>builder()
             .addAll(WaitEngineRegistrars.morphiaRegistrars)
             .build();
+      }
+
+      @Provides
+      @Singleton
+      MongoConfig mongoConfig() {
+        return MongoConfig.builder().build();
       }
 
       @Provides

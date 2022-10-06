@@ -10,8 +10,10 @@ package software.wings.beans.alert;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.mongo.index.FdIndex;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
 
 import software.wings.alerts.AlertCategory;
@@ -39,6 +41,7 @@ import org.mongodb.morphia.annotations.Entity;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldNameConstants(innerTypeName = "AlertNotificationRulekeys")
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "alertNotificationRules", noClassnameStored = true)
 @HarnessEntity(exportable = true)
 public class AlertNotificationRule extends Base implements AccountAccess {

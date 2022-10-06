@@ -15,7 +15,7 @@ import lombok.extern.slf4j.Slf4j;
 @Getter
 @Slf4j
 public enum GoTemplateVersion implements ClientToolVersion {
-  V0_4("v0.4");
-
+  V0_4("v0.4"),
+  V0_4_1("v0.4.1");
   private final String version;
 }

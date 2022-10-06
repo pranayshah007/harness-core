@@ -13,7 +13,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.commons.entities.billing.CECloudAccount;
 import io.harness.changehandlers.CECloudAccountBigQueryChangeHandler;
 import io.harness.changehandlers.TimeScaleDBChangeHandler;
-import io.harness.persistence.PersistentEntity;
 
 import com.google.inject.Inject;
 
@@ -31,7 +30,7 @@ public class CECloudAccountCDCEntity implements CDCEntity<CECloudAccount> {
   }
 
   @Override
-  public Class<? extends PersistentEntity> getSubscriptionEntity() {
+  public Class<CECloudAccount> getSubscriptionEntity() {
     return CECloudAccount.class;
   }
 }

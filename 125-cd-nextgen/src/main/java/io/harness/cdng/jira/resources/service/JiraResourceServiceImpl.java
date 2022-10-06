@@ -13,7 +13,9 @@ import static io.harness.utils.DelegateOwner.getNGTaskSetupAbstractionsWithOwner
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DelegateTaskRequest;
+import io.harness.beans.FeatureName;
 import io.harness.beans.IdentifierRef;
+import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.common.NGTaskType;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
@@ -23,6 +25,8 @@ import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.beans.RemoteMethodReturnValueData;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.jira.JiraConnectorDTO;
+import io.harness.delegate.task.jira.JiraSearchUserData;
+import io.harness.delegate.task.jira.JiraSearchUserParams;
 import io.harness.delegate.task.jira.JiraTaskNGParameters;
 import io.harness.delegate.task.jira.JiraTaskNGParameters.JiraTaskNGParametersBuilder;
 import io.harness.delegate.task.jira.JiraTaskNGResponse;
@@ -30,6 +34,8 @@ import io.harness.exception.HarnessJiraException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.jira.JiraActionNG;
+import io.harness.jira.JiraFieldNG;
+import io.harness.jira.JiraFieldTypeNG;
 import io.harness.jira.JiraIssueCreateMetadataNG;
 import io.harness.jira.JiraIssueUpdateMetadataNG;
 import io.harness.jira.JiraProjectBasicNG;
@@ -39,14 +45,18 @@ import io.harness.ng.core.NGAccess;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.service.DelegateGrpcClientWrapper;
+import io.harness.utils.IdentifierRefHelper;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import java.time.Duration;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 @OwnedBy(CDC)
 @Singleton
@@ -56,13 +66,16 @@ public class JiraResourceServiceImpl implements JiraResourceService {
   private final ConnectorService connectorService;
   private final SecretManagerClientService secretManagerClientService;
   private final DelegateGrpcClientWrapper delegateGrpcClientWrapper;
+  private final CDFeatureFlagHelper cdFeatureFlagHelper;
 
   @Inject
   public JiraResourceServiceImpl(@Named(DEFAULT_CONNECTOR_SERVICE) ConnectorService connectorService,
-      SecretManagerClientService secretManagerClientService, DelegateGrpcClientWrapper delegateGrpcClientWrapper) {
+      SecretManagerClientService secretManagerClientService, DelegateGrpcClientWrapper delegateGrpcClientWrapper,
+      CDFeatureFlagHelper cdFeatureFlagHelper) {
     this.connectorService = connectorService;
     this.secretManagerClientService = secretManagerClientService;
     this.delegateGrpcClientWrapper = delegateGrpcClientWrapper;
+    this.cdFeatureFlagHelper = cdFeatureFlagHelper;
   }
 
   @Override
@@ -101,7 +114,21 @@ public class JiraResourceServiceImpl implements JiraResourceService {
                                                     .fetchStatus(fetchStatus)
                                                     .ignoreComment(ignoreComment);
     JiraTaskNGResponse jiraTaskResponse = obtainJiraTaskNGResponse(jiraConnectorRef, orgId, projectId, paramsBuilder);
-    return jiraTaskResponse.getIssueCreateMetadata();
+
+    JiraIssueCreateMetadataNG jiraIssueCreateMetadataNG = jiraTaskResponse.getIssueCreateMetadata();
+    if (!cdFeatureFlagHelper.isEnabled(
+            jiraConnectorRef.getAccountIdentifier(), FeatureName.ALLOW_USER_TYPE_FIELDS_JIRA)) {
+      Set<JiraFieldNG> jiraUserFields = new HashSet<>();
+      jiraIssueCreateMetadataNG.getProjects().values().forEach(
+          proj -> proj.getIssueTypes().values().forEach(issueType1 -> issueType1.getFields().values().forEach(field -> {
+            if (field.getSchema().getType() == JiraFieldTypeNG.USER) {
+              jiraUserFields.add(field);
+            }
+          })));
+      jiraUserFields.forEach(field -> jiraIssueCreateMetadataNG.removeField(field.getName()));
+    }
+
+    return jiraIssueCreateMetadataNG;
   }
 
   @Override
@@ -113,7 +140,25 @@ public class JiraResourceServiceImpl implements JiraResourceService {
     return jiraTaskResponse.getIssueUpdateMetadata();
   }
 
-  private JiraTaskNGResponse obtainJiraTaskNGResponse(
+  @Override
+  public JiraSearchUserData searchUser(String accountId, String orgIdentifier, String projectIdentifier,
+      String connectorId, long defaultSyncCallTimeout, String userQuery, String offset) {
+    if (!cdFeatureFlagHelper.isEnabled(accountId, FeatureName.ALLOW_USER_TYPE_FIELDS_JIRA)) {
+      return null;
+    }
+    JiraSearchUserParams jiraSearchUserParams =
+        JiraSearchUserParams.builder().accountId(accountId).userQuery(userQuery).startAt(offset).build();
+    JiraTaskNGParametersBuilder paramsBuilder =
+        JiraTaskNGParameters.builder().jiraSearchUserParams(jiraSearchUserParams).action(JiraActionNG.SEARCH_USER);
+    IdentifierRef connectorRef =
+        IdentifierRefHelper.getIdentifierRef(connectorId, accountId, orgIdentifier, projectIdentifier);
+    JiraTaskNGResponse jiraTaskNGResponse =
+        obtainJiraTaskNGResponse(connectorRef, orgIdentifier, projectIdentifier, paramsBuilder);
+    return jiraTaskNGResponse.getJiraSearchUserData();
+  }
+
+  @VisibleForTesting
+  JiraTaskNGResponse obtainJiraTaskNGResponse(
       IdentifierRef jiraConnectionRef, String orgId, String projectId, JiraTaskNGParametersBuilder paramsBuilder) {
     JiraConnectorDTO connector = getConnector(jiraConnectionRef);
     BaseNGAccess baseNGAccess = getBaseNGAccess(jiraConnectionRef, orgId, projectId);

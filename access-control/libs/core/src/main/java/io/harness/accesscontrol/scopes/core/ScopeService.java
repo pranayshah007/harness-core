@@ -20,6 +20,7 @@ import org.hibernate.validator.constraints.NotEmpty;
 @OwnedBy(HarnessTeam.PL)
 public interface ScopeService {
   long saveAll(@NotNull @Valid List<Scope> scopes);
+  Optional<Scope> get(String identifier);
   Scope getOrCreate(@NotNull @Valid Scope scope);
   boolean isPresent(@NotEmpty String identifier);
   Optional<Scope> deleteIfPresent(@NotEmpty String identifier);

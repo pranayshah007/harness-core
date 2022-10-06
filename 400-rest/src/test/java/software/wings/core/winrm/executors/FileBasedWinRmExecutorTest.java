@@ -56,7 +56,7 @@ public class FileBasedWinRmExecutorTest extends CategoryTest {
   @Before
   public void setUp() throws Exception {
     MockitoAnnotations.initMocks(this);
-    spyFileBasedWinRmExecutor = new FileBasedWinRmExecutor(logCallback, delegateFileManager, true, config, true);
+    spyFileBasedWinRmExecutor = new FileBasedWinRmExecutor(logCallback, delegateFileManager, true, config, true, false);
   }
 
   @Test

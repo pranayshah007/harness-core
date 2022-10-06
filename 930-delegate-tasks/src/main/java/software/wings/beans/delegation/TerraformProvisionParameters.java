@@ -85,6 +85,8 @@ public class TerraformProvisionParameters implements TaskParameters, ActivityAcc
   private final List<String> tfVarFiles;
   private final boolean runPlanOnly;
   private final boolean exportPlanToApplyStep;
+  private final boolean exportPlanToHumanReadableOutput;
+
   private final String workspace;
   private final String delegateTag;
 

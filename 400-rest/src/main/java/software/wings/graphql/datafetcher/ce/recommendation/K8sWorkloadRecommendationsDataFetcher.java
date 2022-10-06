@@ -63,6 +63,7 @@ import org.mongodb.morphia.query.FieldEnd;
 import org.mongodb.morphia.query.Query;
 import org.mongodb.morphia.query.Sort;
 import org.yaml.snakeyaml.DumperOptions;
+import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
 
 @Slf4j
@@ -205,7 +206,7 @@ public class K8sWorkloadRecommendationsDataFetcher extends AbstractConnectionV2D
     options.setIndent(2);
     options.setPrettyFlow(false);
     options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
-    return new Yaml(new io.kubernetes.client.util.Yaml.CustomConstructor(Object.class),
+    return new Yaml(new io.kubernetes.client.util.Yaml.CustomConstructor(Object.class, new LoaderOptions()),
         new io.kubernetes.client.util.Yaml.CustomRepresenter(), options);
   }
 

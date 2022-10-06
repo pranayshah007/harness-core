@@ -34,6 +34,7 @@ import lombok.EqualsAndHashCode;
 @TargetModule(HarnessModule._950_DELEGATE_TASKS_BEANS)
 @OwnedBy(CDP)
 public class K8sRollingDeployTaskParameters extends K8sTaskParameters implements ManifestAwareTaskParams {
+  @Expression(ALLOW_SECRETS) private K8sDelegateManifestConfig k8sDelegateManifestConfig;
   @Expression(ALLOW_SECRETS) private List<String> valuesYamlList;
   private boolean isInCanaryWorkflow;
   private boolean skipDryRun;
@@ -56,7 +57,8 @@ public class K8sRollingDeployTaskParameters extends K8sTaskParameters implements
       boolean skipAddingSelectorToDeployment) {
     super(accountId, appId, commandName, activityId, k8sClusterConfig, workflowExecutionId, releaseName,
         timeoutIntervalInMin, k8sTaskType, helmVersion, delegateSelectors, useLatestChartMuseumVersion,
-        useLatestKustomizeVersion, useNewKubectlVersion, k8sDelegateManifestConfig);
+        useLatestKustomizeVersion, useNewKubectlVersion);
+    this.k8sDelegateManifestConfig = k8sDelegateManifestConfig;
     this.valuesYamlList = valuesYamlList;
     this.isInCanaryWorkflow = isInCanaryWorkflow;
     this.skipDryRun = skipDryRun;
@@ -74,7 +76,7 @@ public class K8sRollingDeployTaskParameters extends K8sTaskParameters implements
     List<ExecutionCapability> capabilities =
         new ArrayList<>(super.fetchRequiredExecutionCapabilities(maskingEvaluator));
 
-    Set<String> delegateSelectors = getDelegateSelectorsFromConfigs(getK8sDelegateManifestConfig());
+    Set<String> delegateSelectors = getDelegateSelectorsFromConfigs(k8sDelegateManifestConfig);
     if (isNotEmpty(delegateSelectors)) {
       capabilities.add(SelectorCapability.builder().selectors(delegateSelectors).build());
     }

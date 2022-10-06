@@ -15,6 +15,7 @@ import io.harness.engine.pms.advise.handlers.IgnoreFailureAdviseHandler;
 import io.harness.engine.pms.advise.handlers.InterventionWaitAdviserResponseHandler;
 import io.harness.engine.pms.advise.handlers.MarkSuccessAdviseHandler;
 import io.harness.engine.pms.advise.handlers.NextStepHandler;
+import io.harness.engine.pms.advise.handlers.ProceedWithDefaultAdviserHandler;
 import io.harness.engine.pms.advise.handlers.RetryAdviserResponseHandler;
 import io.harness.exception.InvalidRequestException;
 import io.harness.pms.contracts.advisers.AdviseType;
@@ -29,6 +30,7 @@ public class AdviseHandlerFactory {
   @Inject private InterventionWaitAdviserResponseHandler interventionWaitAdviseHandler;
   @Inject private MarkSuccessAdviseHandler markSuccessAdviseHandler;
   @Inject private IgnoreFailureAdviseHandler ignoreFailureAdviseHandler;
+  @Inject private ProceedWithDefaultAdviserHandler proceedWithDefaultAdviserHandler;
 
   public AdviserResponseHandler obtainHandler(AdviseType adviseType) {
     switch (adviseType) {
@@ -44,6 +46,8 @@ public class AdviseHandlerFactory {
         return markSuccessAdviseHandler;
       case IGNORE_FAILURE:
         return ignoreFailureAdviseHandler;
+      case PROCEED_WITH_DEFAULT:
+        return proceedWithDefaultAdviserHandler;
       default:
         throw new InvalidRequestException("No handler Present for advise type: " + adviseType);
     }

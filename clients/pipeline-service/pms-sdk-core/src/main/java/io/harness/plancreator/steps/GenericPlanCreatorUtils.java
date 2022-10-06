@@ -34,6 +34,15 @@ public class GenericPlanCreatorUtils {
     return stageNode.getUuid();
   }
 
+  public String getStageOrParallelNodeId(YamlField currentField) {
+    YamlNode stageNode = YamlUtils.findParentNode(currentField.getNode(), STAGE);
+    if (stageNode == null) {
+      return null;
+    }
+    YamlNode parallelNode = YamlUtils.findParentNode(stageNode, PARALLEL);
+    return parallelNode == null ? stageNode.getUuid() : parallelNode.getUuid();
+  }
+
   public String getStepGroupRollbackStepsNodeId(YamlField currentField) {
     YamlNode stepGroup = YamlUtils.findParentNode(currentField.getNode(), STEP_GROUP);
     return getRollbackStepsNodeId(stepGroup);
@@ -88,5 +97,10 @@ public class GenericPlanCreatorUtils {
 
             action.toString() + " Failure action doesn't have corresponding RepairAction Code.");
     }
+  }
+
+  public static String getRollbackStageNodeId(YamlField currentField) {
+    String stageNodeId = getStageOrParallelNodeId(currentField);
+    return stageNodeId + "_rollbackStage";
   }
 }

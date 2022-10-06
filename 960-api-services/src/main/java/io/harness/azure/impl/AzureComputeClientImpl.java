@@ -41,11 +41,13 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 import io.harness.azure.AzureClient;
 import io.harness.azure.client.AzureComputeClient;
 import io.harness.azure.model.AzureConfig;
+import io.harness.azure.model.AzureHostConnectionType;
 import io.harness.azure.model.AzureMachineImageArtifact;
 import io.harness.azure.model.AzureOSType;
 import io.harness.azure.model.AzureUserAuthVMInstanceData;
 import io.harness.azure.model.AzureVMSSTagsData;
 import io.harness.azure.model.VirtualMachineData;
+import io.harness.azure.model.VirtualMachineData.VirtualMachineDataBuilder;
 import io.harness.azure.model.image.AzureMachineImage;
 import io.harness.azure.model.image.AzureMachineImageFactory;
 import io.harness.azure.utility.AzureResourceUtility;
@@ -611,7 +613,7 @@ public class AzureComputeClientImpl extends AzureClient implements AzureComputeC
 
   @Override
   public List<VirtualMachineData> listHosts(AzureConfig azureConfig, String subscriptionId, String resourceGroup,
-      AzureOSType osType, Map<String, String> tags) {
+      AzureOSType osType, Map<String, String> tags, AzureHostConnectionType hostConnectionType) {
     if (isBlank(resourceGroup)) {
       throw new IllegalArgumentException(RESOURCE_GROUP_NAME_NULL_VALIDATION_MSG);
     }
@@ -631,8 +633,7 @@ public class AzureComputeClientImpl extends AzureClient implements AzureComputeC
         .filter(this::isVmRunning)
         .filter(virtualMachine -> filterOsType(virtualMachine, osType))
         .filter(virtualMachine -> filterTags(virtualMachine, tags))
-        .filter(virtualMachine -> virtualMachine.getPrimaryPublicIPAddress() != null)
-        .map(this::toVirtualMachineData)
+        .map(virtualMachine -> toVirtualMachineData(virtualMachine, hostConnectionType))
         .collect(Collectors.toList());
   }
 
@@ -660,7 +661,31 @@ public class AzureComputeClientImpl extends AzureClient implements AzureComputeC
         && virtualMachine.tags().values().containsAll(tags.values());
   }
 
-  private VirtualMachineData toVirtualMachineData(VirtualMachine virtualMachine) {
-    return VirtualMachineData.builder().hostName(virtualMachine.getPrimaryPublicIPAddress().ipAddress()).build();
+  private VirtualMachineData toVirtualMachineData(
+      VirtualMachine virtualMachine, AzureHostConnectionType hostConnectionType) {
+    VirtualMachineDataBuilder builder = VirtualMachineData.builder().hostName(virtualMachine.name());
+
+    setAddress(virtualMachine, hostConnectionType, builder);
+    return builder.hostName(virtualMachine.name())
+        .privateIp(virtualMachine.getPrimaryNetworkInterface() != null
+                ? virtualMachine.getPrimaryNetworkInterface().primaryPrivateIP()
+                : null)
+        .publicIp(virtualMachine.getPrimaryPublicIPAddress() != null
+                ? virtualMachine.getPrimaryPublicIPAddress().ipAddress()
+                : null)
+        .build();
+  }
+
+  private void setAddress(
+      VirtualMachine virtualMachine, AzureHostConnectionType hostConnectionType, VirtualMachineDataBuilder builder) {
+    if (AzureHostConnectionType.PUBLIC_IP.equals(hostConnectionType)
+        && virtualMachine.getPrimaryPublicIPAddress() != null) {
+      builder.address(virtualMachine.getPrimaryPublicIPAddress().ipAddress());
+    } else if (AzureHostConnectionType.PRIVATE_IP.equals(hostConnectionType)
+        && virtualMachine.getPrimaryNetworkInterface() != null) {
+      builder.address(virtualMachine.getPrimaryNetworkInterface().primaryPrivateIP());
+    } else if (AzureHostConnectionType.HOSTNAME.equals(hostConnectionType)) {
+      builder.address(virtualMachine.name());
+    }
   }
 }

@@ -18,11 +18,11 @@ import io.harness.iterator.PersistenceIteratorFactory;
 import io.harness.mongo.iterator.MongoPersistenceIterator;
 import io.harness.mongo.iterator.filter.SpringFilterExpander;
 import io.harness.mongo.iterator.provider.SpringPersistenceProvider;
-import io.harness.resourcegroup.framework.v1.service.impl.ResourceGroupValidatorServiceImpl;
 import io.harness.resourcegroup.framework.v2.remote.mapper.ResourceGroupMapper;
 import io.harness.resourcegroup.framework.v2.service.ResourceGroupService;
-import io.harness.resourcegroup.v1.model.ResourceGroup;
-import io.harness.resourcegroup.v1.model.ResourceGroup.ResourceGroupKeys;
+import io.harness.resourcegroup.framework.v2.service.ResourceGroupValidator;
+import io.harness.resourcegroup.v2.model.ResourceGroup;
+import io.harness.resourcegroup.v2.model.ResourceGroup.ResourceGroupKeys;
 
 import com.google.inject.Inject;
 import lombok.AllArgsConstructor;
@@ -39,14 +39,14 @@ public class ResourceGroupAsyncReconciliationHandler implements MongoPersistence
   @Inject private final PersistenceIteratorFactory persistenceIteratorFactory;
   @Inject private final MongoTemplate mongoTemplate;
   @Inject private final ResourceGroupService resourceGroupService;
-  @Inject private final ResourceGroupValidatorServiceImpl resourceGroupValidatorService;
+  @Inject private final ResourceGroupValidator resourceGroupValidator;
 
   @Override
   public void handle(ResourceGroup resourceGroup) {
-    boolean updated = resourceGroupValidatorService.sanitizeResourceSelectors(resourceGroup);
+    boolean updated = resourceGroupValidator.sanitizeResourceSelectors(resourceGroup);
     if (updated) {
-      resourceGroupService.update(ResourceGroupMapper.toDTO(ResourceGroupMapper.fromV1(resourceGroup)),
-          Boolean.TRUE.equals(resourceGroup.getHarnessManaged()));
+      resourceGroupService.update(
+          ResourceGroupMapper.toDTO(resourceGroup), Boolean.TRUE.equals(resourceGroup.getHarnessManaged()));
     }
   }
 

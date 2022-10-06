@@ -7,11 +7,13 @@
 
 package io.harness.delegate.beans;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Builder;
 import lombok.Value;
 
 @Value
 @Builder
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class DelegateRegisterResponse {
   String delegateId;
   Action action;

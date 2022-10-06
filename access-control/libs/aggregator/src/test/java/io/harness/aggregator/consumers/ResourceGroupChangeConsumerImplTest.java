@@ -46,6 +46,7 @@ import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -76,8 +77,8 @@ public class ResourceGroupChangeConsumerImplTest extends AggregatorTestBase {
     userGroupService = mock(UserGroupService.class);
     roleAssignmentRepository = mock(RoleAssignmentRepository.class);
     resourceGroupRepository = mock(ResourceGroupRepository.class);
-    ChangeConsumerService changeConsumerService =
-        new ChangeConsumerServiceImpl(roleService, userGroupService, resourceGroupService, scopeService);
+    ChangeConsumerService changeConsumerService = new ChangeConsumerServiceImpl(
+        roleService, userGroupService, resourceGroupService, scopeService, new HashMap<>());
     resourceGroupChangeConsumer = new ResourceGroupChangeConsumerImpl(aclRepository, roleAssignmentRepository,
         resourceGroupRepository, AggregatorJobType.PRIMARY.name(), changeConsumerService);
     aclRepository.cleanCollection();

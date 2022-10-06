@@ -10,6 +10,7 @@ package io.harness.service.instancesynchandlerfactory;
 import static io.harness.rule.OwnerRule.ARVIND;
 import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
 import static io.harness.rule.OwnerRule.VIKYATH_HAREKAL;
+import static io.harness.rule.OwnerRule.VITALIE;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -19,6 +20,7 @@ import io.harness.exception.UnexpectedException;
 import io.harness.ng.core.infrastructure.InfrastructureKind;
 import io.harness.ng.core.k8s.ServiceSpecType;
 import io.harness.rule.Owner;
+import io.harness.service.instancesynchandler.AwsSshWinrmInstanceSyncHandler;
 import io.harness.service.instancesynchandler.AzureSshWinrmInstanceSyncHandler;
 import io.harness.service.instancesynchandler.AzureWebAppInstanceSyncHandler;
 import io.harness.service.instancesynchandler.K8sInstanceSyncHandler;
@@ -37,6 +39,7 @@ public class InstanceSyncHandlerFactoryServiceImplTest extends InstancesTestBase
   @Mock ServerlessAwsLambdaInstanceSyncHandler serverlessAwsLambdaInstanceSyncHandler;
   @Mock PdcInstanceSyncHandler pdcInstanceSyncHandler;
   @Mock AzureSshWinrmInstanceSyncHandler azureSshWinrmInstanceSyncHandler;
+  @Mock AwsSshWinrmInstanceSyncHandler awsSshWinrmInstanceSyncHandler;
   @Mock AzureWebAppInstanceSyncHandler azureWebAppInstanceSyncHandler;
   @InjectMocks InstanceSyncHandlerFactoryServiceImpl instanceSyncHandlerFactoryService;
 
@@ -99,5 +102,17 @@ public class InstanceSyncHandlerFactoryServiceImplTest extends InstancesTestBase
     assertThat(instanceSyncHandlerFactoryService.getInstanceSyncHandler(
                    ServiceSpecType.WINRM, InfrastructureKind.SSH_WINRM_AZURE))
         .isEqualTo(azureSshWinrmInstanceSyncHandler);
+  }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void getInstanceSyncHandlerTestWhenDeploymentTypeIsAws() {
+    assertThat(
+        instanceSyncHandlerFactoryService.getInstanceSyncHandler(ServiceSpecType.SSH, InfrastructureKind.SSH_WINRM_AWS))
+        .isEqualTo(awsSshWinrmInstanceSyncHandler);
+    assertThat(instanceSyncHandlerFactoryService.getInstanceSyncHandler(
+                   ServiceSpecType.WINRM, InfrastructureKind.SSH_WINRM_AWS))
+        .isEqualTo(awsSshWinrmInstanceSyncHandler);
   }
 }

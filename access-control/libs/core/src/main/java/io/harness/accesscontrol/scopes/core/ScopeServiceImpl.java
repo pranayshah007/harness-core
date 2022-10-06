@@ -51,6 +51,16 @@ public class ScopeServiceImpl implements ScopeService {
   }
 
   @Override
+  public Optional<Scope> get(String identifier) {
+    Optional<ScopeDBO> scopeDBO = scopeDao.get(identifier);
+    if (scopeDBO.isPresent()) {
+      return Optional.ofNullable(
+          Scope.builder().instanceId(scopeDBO.get().getIdentifier()).instanceName(scopeDBO.get().getName()).build());
+    }
+    return null;
+  }
+
+  @Override
   public Scope getOrCreate(Scope scope) {
     ScopeDBO scopeDBO = fromScope(scope);
     return toScope(scopeDao.createIfNotPresent(scopeDBO));

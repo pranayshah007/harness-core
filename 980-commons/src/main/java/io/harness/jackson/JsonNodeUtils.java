@@ -26,8 +26,8 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -86,7 +86,7 @@ public class JsonNodeUtils {
   }
 
   public static void removeDuplicatesFromArrayNode(ArrayNode arrayNode) {
-    Set<JsonNode> set = new HashSet<>();
+    Set<JsonNode> set = new LinkedHashSet<>();
     for (int i = 0; i < arrayNode.size(); i++) {
       set.add(arrayNode.get(i));
     }
@@ -321,5 +321,23 @@ public class JsonNodeUtils {
       throw new InvalidArgumentsException(String.format("Field not found: %s", fieldName));
     }
     return value;
+  }
+
+  public Object getValueFromJsonNode(Object objectNode) {
+    if (objectNode instanceof TextNode) {
+      return ((TextNode) objectNode).asText();
+    } else if (objectNode instanceof NumericNode) {
+      return ((NumericNode) objectNode).doubleValue();
+    } else if (objectNode instanceof BooleanNode) {
+      return ((BooleanNode) objectNode).booleanValue();
+    } else if (objectNode instanceof ArrayNode) {
+      List<Object> response = new ArrayList<>();
+      for (int i = 0; i < ((ArrayNode) objectNode).size(); i++) {
+        response.add(getValueFromJsonNode(((ArrayNode) objectNode).get(i)));
+      }
+      return response;
+    } else {
+      return objectNode.toString().replace("\\\"", "").replace("\"", "");
+    }
   }
 }

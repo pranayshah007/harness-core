@@ -17,7 +17,7 @@ public class SLIValue {
   int badCount;
   int total;
   public double sliPercentage() {
-    if (total == 0) {
+    if (total <= 0) {
       return 100.0;
     } else {
       return (goodCount * 100.0) / total;

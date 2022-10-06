@@ -61,6 +61,7 @@ public class GraphVertexConverterTest extends OrchestrationVisualizationTestBase
                                       .status(Status.FAILED)
                                       .stepType(stepType)
                                       .retryId("retryId")
+                                      .executionInputConfigured(true)
                                       .mode(ExecutionMode.SYNC)
                                       .build();
     GraphVertex graphVertex = graphVertexConverter.convertFrom(nodeExecution);
@@ -77,5 +78,6 @@ public class GraphVertexConverterTest extends OrchestrationVisualizationTestBase
     assertThat(graphVertex.getMode()).isEqualTo(ExecutionMode.SYNC);
     assertThat(graphVertex.getRetryIds()).isEqualTo(nodeExecution.getRetryIds());
     assertThat(graphVertex.getStatus()).isEqualTo(Status.FAILED);
+    assertThat(graphVertex.getExecutionInputConfigured()).isTrue();
   }
 }

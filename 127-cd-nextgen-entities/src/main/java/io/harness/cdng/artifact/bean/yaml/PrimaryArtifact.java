@@ -13,9 +13,12 @@ import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.SwaggerConstants;
 import io.harness.cdng.artifact.bean.ArtifactConfig;
 import io.harness.cdng.visitor.helpers.artifact.ArtifactSpecWrapperVisitorHelper;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.walktree.beans.VisitableChildren;
@@ -25,7 +28,8 @@ import io.harness.walktree.visitor.Visitable;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import io.swagger.annotations.ApiModelProperty;
-import javax.validation.constraints.NotNull;
+import java.beans.ConstructorProperties;
+import java.util.List;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
@@ -48,9 +52,12 @@ public class PrimaryArtifact implements Visitable {
   @ApiModelProperty(hidden = true)
   private String uuid;
 
-  @NotNull @JsonProperty("type") ArtifactSourceType sourceType;
+  List<ArtifactSource> sources;
 
-  @NotNull
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> primaryArtifactRef;
+
+  @JsonProperty("type") ArtifactSourceType sourceType;
+
   @JsonProperty("spec")
   @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
   ArtifactConfig spec;
@@ -60,16 +67,29 @@ public class PrimaryArtifact implements Visitable {
 
   // Use Builder as Constructor then only external property(visible) will be filled.
   @Builder
-  public PrimaryArtifact(String uuid, ArtifactSourceType sourceType, ArtifactConfig spec) {
+  @ConstructorProperties({"uuid", "sourceType", "spec", "primaryArtifactRef", "sources", "metadata"})
+  public PrimaryArtifact(String uuid, ArtifactSourceType sourceType, ArtifactConfig spec,
+      ParameterField<String> primaryArtifactRef, List<ArtifactSource> sources, String metadata) {
     this.uuid = uuid;
     this.sourceType = sourceType;
     this.spec = spec;
+    this.primaryArtifactRef = primaryArtifactRef;
+    this.sources = sources;
+    if (EmptyPredicate.isNotEmpty(sources)) {
+      for (ArtifactSource source : this.sources) {
+        source.getSpec().setIdentifier(source.getIdentifier());
+      }
+    }
+    this.metadata = metadata;
   }
 
   @Override
   public VisitableChildren getChildrenToWalk() {
     VisitableChildren visitableChildren = VisitableChildren.builder().build();
     visitableChildren.add(YAMLFieldNameConstants.SPEC, spec);
+    if (EmptyPredicate.isNotEmpty(sources)) {
+      sources.forEach(source -> visitableChildren.add("sources", source));
+    }
     return visitableChildren;
   }
 

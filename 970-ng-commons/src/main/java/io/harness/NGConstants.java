@@ -34,6 +34,7 @@ public class NGConstants {
   public static final String ACCOUNT_ADMIN_ROLE = "_account_admin";
   public static final String ACCOUNT_ADMIN_ROLE_NAME = "Account Admin";
   public static final String ACCOUNT_VIEWER_ROLE = "_account_viewer";
+  public static final String ACCOUNT_BASIC_ROLE = "_account_basic";
   public static final String ORGANIZATION_ADMIN_ROLE = "_organization_admin";
   public static final String ORGANIZATION_VIEWER_ROLE = "_organization_viewer";
   public static final String PROJECT_ADMIN_ROLE = "_project_admin";
@@ -50,4 +51,7 @@ public class NGConstants {
 
   public static final String BRANCH = "branch";
   public static final String REPO = "repoIdentifier";
+  public static final String DEFAULT_ACCOUNT_LEVEL_USER_GROUP_IDENTIFIER = "_account_all_users";
+  public static final String DEFAULT_ORGANIZATION_LEVEL_USER_GROUP_IDENTIFIER = "_organization_all_users";
+  public static final String DEFAULT_PROJECT_LEVEL_USER_GROUP_IDENTIFIER = "_project_all_users";
 }

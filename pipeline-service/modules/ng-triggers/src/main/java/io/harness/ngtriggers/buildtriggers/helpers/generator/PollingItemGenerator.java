@@ -10,10 +10,12 @@ package io.harness.ngtriggers.buildtriggers.helpers.generator;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.ngtriggers.beans.source.NGTriggerType.ARTIFACT;
 import static io.harness.ngtriggers.beans.source.NGTriggerType.MANIFEST;
+import static io.harness.ngtriggers.beans.source.NGTriggerType.WEBHOOK;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.ngtriggers.beans.entity.NGTriggerEntity;
+import io.harness.ngtriggers.beans.source.NGTriggerType;
 import io.harness.ngtriggers.buildtriggers.helpers.dtos.BuildTriggerOpsData;
 import io.harness.polling.contracts.Category;
 import io.harness.polling.contracts.PollingItem;
@@ -24,13 +26,24 @@ public interface PollingItemGenerator {
   PollingItem generatePollingItem(BuildTriggerOpsData buildTriggerOpsData);
 
   default PollingItem.Builder getBaseInitializedPollingItem(NGTriggerEntity ngTriggerEntity) {
-    if (ngTriggerEntity.getType() != MANIFEST && ngTriggerEntity.getType() != ARTIFACT) {
-      throw new InvalidArgumentsException("Only MANIFEST and ARTIFACT trigger types are supported");
+    if (ngTriggerEntity.getType() != MANIFEST && ngTriggerEntity.getType() != ARTIFACT
+        && ngTriggerEntity.getType() != WEBHOOK) {
+      throw new InvalidArgumentsException("Only MANIFEST, ARTIFACT and WEBHOOK trigger types are supported");
     }
 
     PollingItem.Builder pollingItem = PollingItem.newBuilder();
 
-    pollingItem.setCategory(ngTriggerEntity.getType() == MANIFEST ? Category.MANIFEST : Category.ARTIFACT)
+    NGTriggerType type = ngTriggerEntity.getType();
+    Category category = null;
+    if (type == MANIFEST) {
+      category = Category.MANIFEST;
+    } else if (type == ARTIFACT) {
+      category = Category.ARTIFACT;
+    } else if (type == WEBHOOK) {
+      category = Category.GITPOLLING;
+    }
+
+    pollingItem.setCategory(category)
         .setQualifier(Qualifier.newBuilder()
                           .setAccountId(ngTriggerEntity.getAccountId())
                           .setOrganizationId(ngTriggerEntity.getOrgIdentifier())

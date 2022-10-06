@@ -167,7 +167,7 @@ public class K8sWatchServiceDelegate {
 
   public static String getKubeSystemUid(DefaultK8sMetricsClient client) {
     try {
-      return client.readNamespace("kube-system", null, null, null).getMetadata().getUid();
+      return client.readNamespace("kube-system", null).getMetadata().getUid();
     } catch (Exception e) {
       log.warn("Error getting kube-system namespace uid", e);
       return "kube-system";

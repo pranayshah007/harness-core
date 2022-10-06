@@ -15,9 +15,11 @@ import io.harness.annotations.dev.OwnedBy;
 public interface StepSpecTypeConstants {
   String GITOPS_CREATE_PR = "CreatePR";
   String GITOPS_MERGE_PR = "MergePR";
+  String GITOPS_UPDATE_RELEASE_REPO = "GitOpsUpdateReleaseRepo";
   String CLOUDFORMATION_CREATE_STACK = "CreateStack";
   String CLOUDFORMATION_DELETE_STACK = "DeleteStack";
   String CLOUDFORMATION_ROLLBACK_STACK = "RollbackStack";
+
   String K8S_ROLLING_DEPLOY = "K8sRollingDeploy";
   String K8S_ROLLING_ROLLBACK = "K8sRollingRollback";
   String K8S_BLUE_GREEN_DEPLOY = "K8sBlueGreenDeploy";
@@ -32,6 +34,10 @@ public interface StepSpecTypeConstants {
   String TERRAFORM_PLAN = "TerraformPlan";
   String TERRAFORM_DESTROY = "TerraformDestroy";
   String TERRAFORM_ROLLBACK = "TerraformRollback";
+
+  String AZURE_CREATE_ARM_RESOURCE = "AzureCreateARMResource";
+  String AZURE_CREATE_BP_RESOURCE = "AzureCreateBPResource";
+  String AZURE_ROLLBACK_ARM_RESOURCE = "AzureARMRollback";
 
   String PLACEHOLDER = "Placeholder";
 
@@ -48,4 +54,17 @@ public interface StepSpecTypeConstants {
   String AZURE_WEBAPP_ROLLBACK = "AzureWebAppRollback";
   String DEPLOYMENT_STAGE = "Deployment";
   String JENKINS_BUILD = "JenkinsBuild";
+
+  String DEPLOYMENT_TYPE_CUSTOM_DEPLOYMENT = "CustomDeployment";
+  String CUSTOM_DEPLOYMENT_FETCH_INSTANCE_SCRIPT = "FetchInstanceScript";
+
+  String ECS_ROLLING_DEPLOY = "EcsRollingDeploy";
+  String ECS_ROLLING_ROLLBACK = "EcsRollingRollback";
+  String ECS_CANARY_DEPLOY = "EcsCanaryDeploy";
+  String ECS_CANARY_DELETE = "EcsCanaryDelete";
+  String ECS_BLUE_GREEN_CREATE_SERVICE = "EcsBlueGreenCreateService";
+  String ECS_BLUE_GREEN_SWAP_TARGET_GROUPS = "EcsBlueGreenSwapTargetGroups";
+  String ECS_BLUE_GREEN_ROLLBACK = "EcsBlueGreenRollback";
+
+  String SHELL_SCRIPT_PROVISION = "ShellScriptProvision";
 }

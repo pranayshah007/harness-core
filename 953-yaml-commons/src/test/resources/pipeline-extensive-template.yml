@@ -107,3 +107,14 @@ pipeline:
                 type: "Http"
                 spec:
                   method: "<+input>"
+  - stage:
+      identifier: "qaStage4"
+      type: "Deployment"
+      spec:
+        execution:
+          steps:
+          - step:
+              identifier: "httpStep9"
+              type: "Http"
+              spec:
+                url: "<+input>.executionInput()"

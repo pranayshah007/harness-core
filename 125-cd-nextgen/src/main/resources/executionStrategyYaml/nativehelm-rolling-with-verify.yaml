@@ -1,0 +1,29 @@
+failureStrategies:
+  - onFailure:
+      errors:
+        - AllErrors
+      action:
+        type: StageRollback
+spec:
+  execution:
+    steps:
+      - step:
+          name: "Helm Deployment"
+          identifier: helmDeployment
+          type: HelmDeploy
+          timeout: 10m
+          spec:
+            skipDryRun: false
+      - step:
+          type: Verify
+          name: Verify
+          identifier: Verify
+          timeout: 2h
+          spec: { }
+    rollbackSteps:
+      - step:
+          name: "Helm Rollback"
+          identifier: helmRollback
+          type: HelmRollback
+          timeout: 10m
+          spec: {}

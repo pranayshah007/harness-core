@@ -12,6 +12,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.validation.Validator.notNullCheck;
 
+import static software.wings.security.PermissionAttribute.PermissionType.LOGGED_IN;
 import static software.wings.security.PermissionAttribute.ResourceType.APPLICATION;
 
 import io.harness.beans.PageRequest;
@@ -25,6 +26,7 @@ import software.wings.beans.trigger.Trigger;
 import software.wings.beans.trigger.WebhookEventType;
 import software.wings.beans.trigger.WebhookParameters;
 import software.wings.beans.trigger.WebhookSource;
+import software.wings.security.annotations.ApiKeyAuthorized;
 import software.wings.security.annotations.Scope;
 import software.wings.service.intfc.TriggerService;
 
@@ -73,6 +75,7 @@ public class TriggerResource {
   @GET
   @Timed
   @ExceptionMetered
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
   public RestResponse<PageResponse<Trigger>> list(@QueryParam("appId") List<String> appIds,
       @QueryParam("tagFilter") String tagFilter, @QueryParam("withTags") @DefaultValue("false") boolean withTags,
       @BeanParam PageRequest<Trigger> pageRequest) {
@@ -94,6 +97,7 @@ public class TriggerResource {
   @Path("{triggerId}")
   @Timed
   @ExceptionMetered
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
   public RestResponse<Trigger> get(@QueryParam("appId") String appId, @PathParam("triggerId") String triggerId) {
     triggerService.authorizeAppAccess(Collections.singletonList(appId));
     return new RestResponse<>(triggerService.get(appId, triggerId));
@@ -176,6 +180,7 @@ public class TriggerResource {
   @Path("{triggerId}/webhook_token")
   @Timed
   @ExceptionMetered
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
   public RestResponse<WebHookToken> generateWebhookToken(
       @QueryParam("appId") String appId, @PathParam("triggerId") String triggerId) {
     return new RestResponse<>(triggerService.generateWebHookToken(appId, triggerId));
@@ -185,6 +190,7 @@ public class TriggerResource {
   @Path("{triggerId}/webhook_token/git")
   @Timed
   @ExceptionMetered
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
   public RestResponse<WebHookToken> generateGitWebhookToken(
       @QueryParam("appId") String appId, @PathParam("triggerId") String triggerId) {
     return new RestResponse<>(triggerService.generateWebHookToken(appId, triggerId));
@@ -208,6 +214,7 @@ public class TriggerResource {
   @Path("webhook/parameters")
   @Timed
   @ExceptionMetered
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
   public RestResponse<WebhookParameters> listWebhookParameters(@QueryParam("appId") String appId,
       @QueryParam("workflowId") String workflowId, @QueryParam("workflowType") WorkflowType workflowType,
       @QueryParam("webhookSource") WebhookSource webhookSource, @QueryParam("eventType") String eventType) {
@@ -219,6 +226,7 @@ public class TriggerResource {
   @Path("webhook/eventTypes")
   @Timed
   @ExceptionMetered
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
   public RestResponse<WebhookEventType> listWebhookEventTypes(@QueryParam("appId") String appId) {
     return new RestResponse<>();
   }

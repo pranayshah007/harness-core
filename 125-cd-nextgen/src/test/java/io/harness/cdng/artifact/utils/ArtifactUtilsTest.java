@@ -10,6 +10,7 @@ package io.harness.cdng.artifact.utils;
 import static io.harness.rule.OwnerRule.ARCHIT;
 import static io.harness.rule.OwnerRule.MLUKIC;
 import static io.harness.rule.OwnerRule.SHIVAM;
+import static io.harness.rule.OwnerRule.vivekveman;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -23,6 +24,7 @@ import io.harness.cdng.artifact.bean.yaml.AcrArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.ArtifactListConfig;
 import io.harness.cdng.artifact.bean.yaml.ArtifactoryRegistryArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.DockerHubArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.GoogleArtifactRegistryConfig;
 import io.harness.cdng.artifact.bean.yaml.JenkinsArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.NexusRegistryArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.PrimaryArtifact;
@@ -34,6 +36,7 @@ import io.harness.cdng.artifact.outcome.DockerArtifactOutcome;
 import io.harness.cdng.artifact.outcome.JenkinsArtifactOutcome;
 import io.harness.cdng.artifact.outcome.NexusArtifactOutcome;
 import io.harness.exception.InvalidRequestException;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 
 import java.util.Arrays;
@@ -310,5 +313,45 @@ public class ArtifactUtilsTest extends CategoryTest {
             .build();
     List<ArtifactConfig> artifactsList = ArtifactUtils.convertArtifactListIntoArtifacts(artifactListConfig, null);
     assertThat(artifactsList).containsOnly(primaryArtifact, sidecarArtifact);
+  }
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testGar() {
+    GoogleArtifactRegistryConfig primaryArtifact =
+        GoogleArtifactRegistryConfig.builder()
+            .region(ParameterField.<String>builder().value("us").build())
+            .repositoryName(ParameterField.<String>builder().value("vivek").build())
+            .pkg(ParameterField.<String>builder().value("alphine").build())
+            .project(ParameterField.<String>builder().value("cd-play").build())
+            .version(ParameterField.<String>builder().value("version").build())
+            .googleArtifactRegistryType(ParameterField.<String>builder().value("docker").build())
+            .connectorRef(ParameterField.<String>builder().value("account.gcp").build())
+            .isPrimaryArtifact(true)
+            .identifier("ARTIFACT1")
+            .build();
+    GoogleArtifactRegistryConfig sidecarArtifact =
+        GoogleArtifactRegistryConfig.builder().isPrimaryArtifact(false).identifier("ARTIFACT12").build();
+    ArtifactListConfig artifactListConfig =
+        ArtifactListConfig.builder()
+            .primary(
+                PrimaryArtifact.builder().sourceType(primaryArtifact.getSourceType()).spec(primaryArtifact).build())
+            .sidecar(SidecarArtifactWrapper.builder()
+                         .sidecar(SidecarArtifact.builder().spec(sidecarArtifact).build())
+                         .build())
+            .build();
+
+    List<ArtifactConfig> artifactsList = ArtifactUtils.convertArtifactListIntoArtifacts(artifactListConfig, null);
+    String log = ArtifactUtils.getLogInfo(
+        artifactListConfig.getPrimary().getSpec(), artifactListConfig.getPrimary().getSourceType());
+    assertThat(artifactsList).containsOnly(primaryArtifact, sidecarArtifact);
+    assertThat(log).isEqualTo("\ntype: GoogleArtifactRegistry \n"
+        + "region: us \n"
+        + "project: cd-play \n"
+        + "repositoryName: vivek \n"
+        + "package: alphine \n"
+        + "version/versionRegex: version \n"
+        + "connectorRef: account.gcp \n"
+        + "registryType: docker\n");
   }
 }

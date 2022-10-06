@@ -36,9 +36,11 @@ import io.harness.audit.Action;
 import io.harness.audit.ResourceTypeConstants;
 import io.harness.audit.beans.AuditEntry;
 import io.harness.audit.client.api.AuditClientService;
+import io.harness.beans.Scope;
 import io.harness.category.element.UnitTests;
 import io.harness.eventsframework.api.Producer;
 import io.harness.eventsframework.producer.Message;
+import io.harness.ng.core.api.DefaultUserGroupService;
 import io.harness.ng.core.dto.UserGroupDTO;
 import io.harness.ng.core.dto.UserGroupRequest;
 import io.harness.ng.core.events.UserGroupCreateEvent;
@@ -70,6 +72,7 @@ public class UserGroupEventHandlerTest extends CategoryTest {
   private Producer producer;
   private AuditClientService auditClientService;
   private UserGroupEventHandler userGroupEventHandler;
+  private DefaultUserGroupService defaultUserGroupService;
 
   @Before
   public void setup() {
@@ -77,7 +80,8 @@ public class UserGroupEventHandlerTest extends CategoryTest {
     yamlMapper = new YAMLMapper();
     producer = mock(Producer.class);
     auditClientService = mock(AuditClientService.class);
-    userGroupEventHandler = spy(new UserGroupEventHandler(producer, auditClientService));
+    defaultUserGroupService = mock(DefaultUserGroupService.class);
+    userGroupEventHandler = spy(new UserGroupEventHandler(producer, auditClientService, defaultUserGroupService));
   }
 
   private UserGroupDTO getUserGroupDTO(
@@ -127,6 +131,8 @@ public class UserGroupEventHandlerTest extends CategoryTest {
     final ArgumentCaptor<AuditEntry> auditEntryArgumentCaptor = ArgumentCaptor.forClass(AuditEntry.class);
     when(producer.send(any())).thenReturn("");
     when(auditClientService.publishAudit(any(), any())).thenReturn(true);
+    Scope scope = Scope.of(accountIdentifier, orgIdentifier, null);
+    when(defaultUserGroupService.isDefaultUserGroup(scope, identifier)).thenReturn(false);
 
     userGroupEventHandler.handle(outboxEvent);
 
@@ -184,7 +190,8 @@ public class UserGroupEventHandlerTest extends CategoryTest {
     final ArgumentCaptor<AuditEntry> auditEntryArgumentCaptor = ArgumentCaptor.forClass(AuditEntry.class);
     when(producer.send(any())).thenReturn("");
     when(auditClientService.publishAudit(any(), any())).thenReturn(true);
-
+    Scope scope = Scope.of(accountIdentifier, orgIdentifier, null);
+    when(defaultUserGroupService.isDefaultUserGroup(scope, identifier)).thenReturn(false);
     userGroupEventHandler.handle(outboxEvent);
 
     verify(producer, times(1)).send(messageArgumentCaptor.capture());
@@ -241,6 +248,8 @@ public class UserGroupEventHandlerTest extends CategoryTest {
     final ArgumentCaptor<AuditEntry> auditEntryArgumentCaptor = ArgumentCaptor.forClass(AuditEntry.class);
     when(producer.send(any())).thenReturn("");
     when(auditClientService.publishAudit(any(), any())).thenReturn(true);
+    Scope scope = Scope.of(accountIdentifier, orgIdentifier, null);
+    when(defaultUserGroupService.isDefaultUserGroup(scope, identifier)).thenReturn(false);
 
     userGroupEventHandler.handle(outboxEvent);
 

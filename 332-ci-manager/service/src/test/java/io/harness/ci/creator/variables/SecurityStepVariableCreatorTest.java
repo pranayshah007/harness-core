@@ -113,6 +113,15 @@ public class SecurityStepVariableCreatorTest extends CategoryTest {
             "pipeline.stages.security.spec.execution.steps.sto.output.outputVariables.HIGH",
             "pipeline.stages.security.spec.execution.steps.sto.output.outputVariables.MEDIUM",
             "pipeline.stages.security.spec.execution.steps.sto.output.outputVariables.LOW",
-            "pipeline.stages.security.spec.execution.steps.sto.output.outputVariables.TOTAL");
+            "pipeline.stages.security.spec.execution.steps.sto.output.outputVariables.INFO",
+            "pipeline.stages.security.spec.execution.steps.sto.output.outputVariables.UNASSIGNED",
+            "pipeline.stages.security.spec.execution.steps.sto.output.outputVariables.TOTAL",
+            "pipeline.stages.security.spec.execution.steps.sto.output.outputVariables.NEW_CRITICAL",
+            "pipeline.stages.security.spec.execution.steps.sto.output.outputVariables.NEW_HIGH",
+            "pipeline.stages.security.spec.execution.steps.sto.output.outputVariables.NEW_MEDIUM",
+            "pipeline.stages.security.spec.execution.steps.sto.output.outputVariables.NEW_LOW",
+            "pipeline.stages.security.spec.execution.steps.sto.output.outputVariables.NEW_INFO",
+            "pipeline.stages.security.spec.execution.steps.sto.output.outputVariables.NEW_UNASSIGNED",
+            "pipeline.stages.security.spec.execution.steps.sto.output.outputVariables.NEW_TOTAL");
   }
 }

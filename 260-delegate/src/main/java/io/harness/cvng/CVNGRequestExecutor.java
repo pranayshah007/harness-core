@@ -28,7 +28,7 @@ import retrofit2.Response;
 @TargetModule(HarnessModule._420_DELEGATE_AGENT)
 public class CVNGRequestExecutor {
   private static final int MAX_RETRIES = 2;
-  @Inject @Named("verificationDataCollectorExecutor") private ExecutorService executorService;
+  @Inject @Named("verificationDataCollectorCVNGCallExecutor") private ExecutorService executorService;
   public <U> U executeWithTimeout(Call<U> request, Duration timeout) {
     Callable<U> task = () -> executeRequest(request);
     Future<U> future = executorService.submit(task);

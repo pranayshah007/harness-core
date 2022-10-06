@@ -49,6 +49,8 @@ public class JiraTaskNGHelper {
         return jiraTaskNGHandler.createIssue(params);
       case UPDATE_ISSUE:
         return jiraTaskNGHandler.updateIssue(params);
+      case SEARCH_USER:
+        return jiraTaskNGHandler.searchUser(params);
       default:
         throw new InvalidRequestException(String.format("Invalid jira action: %s", params.getAction()));
     }

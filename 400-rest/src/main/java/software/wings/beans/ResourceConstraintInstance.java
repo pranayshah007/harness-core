@@ -10,6 +10,7 @@ package software.wings.beans;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
@@ -19,6 +20,7 @@ import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.FdTtlIndex;
 import io.harness.mongo.index.MongoIndex;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
 import io.harness.persistence.UuidAware;
 import io.harness.validation.Update;
@@ -41,6 +43,7 @@ import org.mongodb.morphia.annotations.Id;
 @Builder
 @EqualsAndHashCode(callSuper = false)
 @FieldNameConstants(innerTypeName = "ResourceConstraintInstanceKeys")
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "resourceConstraintInstances", noClassnameStored = true)
 @HarnessEntity(exportable = false)
 @TargetModule(HarnessModule._957_CG_BEANS)
@@ -76,6 +79,11 @@ public class ResourceConstraintInstance implements PersistentRegularIterable, Uu
                  .field(ResourceConstraintInstanceKeys.state)
                  .field(ResourceConstraintInstanceKeys.resourceUnit)
                  .field(ResourceConstraintInstanceKeys.order)
+                 .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("releaseEntity_state")
+                 .field(ResourceConstraintInstanceKeys.releaseEntityId)
+                 .field(ResourceConstraintInstanceKeys.state)
                  .build())
         .build();
   }

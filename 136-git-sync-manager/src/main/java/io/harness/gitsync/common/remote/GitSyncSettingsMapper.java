@@ -7,6 +7,7 @@
 
 package io.harness.gitsync.common.remote;
 
+import static io.harness.gitsync.common.beans.GitSyncSettings.IS_ENABLED_ONLY_FOR_FF;
 import static io.harness.gitsync.common.beans.GitSyncSettings.IS_EXECUTE_ON_DELEGATE;
 import static io.harness.gitsync.common.beans.GitSyncSettings.IS_GIT_SIMPLIFICATION_ENABLED;
 
@@ -36,6 +37,9 @@ public class GitSyncSettingsMapper {
         .isGitSimplificationEnabled(gitSyncSettings.getSettings()
                                         .getOrDefault(IS_GIT_SIMPLIFICATION_ENABLED, String.valueOf(false))
                                         .equals(String.valueOf(true)))
+        .isEnabledOnlyForFF(gitSyncSettings.getSettings()
+                                .getOrDefault(IS_ENABLED_ONLY_FOR_FF, String.valueOf(false))
+                                .equals(String.valueOf(true)))
         .build();
   }
 

@@ -10,7 +10,7 @@ package io.harness.delegate.beans.connector.helm;
 import io.harness.delegate.beans.connector.ConnectorCapabilityBaseHelper;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
-import io.harness.delegate.task.mixin.HttpConnectionExecutionCapabilityGenerator;
+import io.harness.delegate.task.mixin.SocketConnectivityCapabilityGenerator;
 import io.harness.expression.ExpressionEvaluator;
 
 import java.util.ArrayList;
@@ -24,8 +24,12 @@ public class HttpHelmCapabilityHelper extends ConnectorCapabilityBaseHelper {
     List<ExecutionCapability> capabilityList = new ArrayList<>();
     HttpHelmConnectorDTO helmConnector = (HttpHelmConnectorDTO) connectorConfigDTO;
     final String helmRepoUrl = helmConnector.getHelmRepoUrl();
-    capabilityList.add(HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapability(
-        helmRepoUrl, maskingEvaluator));
+    /*
+      We are henceforth using SocketConnectivityExecutionCapability instead of HttpConnectionExecutionCapability
+      this is to ensure that we don't fail Helm Repo Connector Validation in case the url returns 400
+      ref: https://harness.atlassian.net/browse/CDS-36189
+    */
+    SocketConnectivityCapabilityGenerator.addSocketConnectivityExecutionCapability(helmRepoUrl, capabilityList);
     populateDelegateSelectorCapability(capabilityList, helmConnector.getDelegateSelectors());
     return capabilityList;
   }

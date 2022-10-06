@@ -8,9 +8,11 @@
 package io.harness.entity;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.mongo.index.FdUniqueIndex;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.CreatedAtAware;
 import io.harness.persistence.PersistentEntity;
 import io.harness.persistence.UpdatedAtAware;
@@ -27,6 +29,7 @@ import org.mongodb.morphia.annotations.Id;
 @Builder
 @EqualsAndHashCode(callSuper = false)
 @FieldNameConstants(innerTypeName = "ServiceSecretKeyKeys")
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "serviceSecrets", noClassnameStored = true)
 @HarnessEntity(exportable = false)
 public class ServiceSecretKey implements PersistentEntity, CreatedAtAware, UpdatedAtAware {

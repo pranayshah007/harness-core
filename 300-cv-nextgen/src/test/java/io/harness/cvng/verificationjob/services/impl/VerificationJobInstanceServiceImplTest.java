@@ -37,6 +37,8 @@ import io.harness.cvng.analysis.entities.DeploymentLogAnalysis;
 import io.harness.cvng.analysis.services.api.DeploymentLogAnalysisService;
 import io.harness.cvng.analysis.services.api.VerificationJobInstanceAnalysisService;
 import io.harness.cvng.beans.AppDynamicsDataCollectionInfo;
+import io.harness.cvng.beans.DataCollectionExecutionStatus;
+import io.harness.cvng.beans.DataCollectionTaskDTO;
 import io.harness.cvng.beans.activity.ActivityVerificationStatus;
 import io.harness.cvng.beans.job.Sensitivity;
 import io.harness.cvng.beans.job.VerificationJobType;
@@ -133,7 +135,7 @@ public class VerificationJobInstanceServiceImplTest extends CvNextGenTestBase {
     deploymentStartTimeMs = Instant.parse("2020-07-27T10:44:06.390Z").toEpochMilli();
     connectorId = generateUuid();
     perpetualTaskId = generateUuid();
-    fakeNow = Instant.parse("2020-07-27T10:50:00.390Z");
+    fakeNow = Instant.parse("2020-07-27T11:00:00.390Z");
     clock = Clock.fixed(fakeNow, ZoneOffset.UTC);
     timeCounter = 0;
     builderFactory = BuilderFactory.builder()
@@ -149,6 +151,7 @@ public class VerificationJobInstanceServiceImplTest extends CvNextGenTestBase {
                          .build();
     cvConfig = newCVConfig();
     FieldUtils.writeField(verificationJobInstanceService, "clock", clock, true);
+    FieldUtils.writeField(dataCollectionTaskService, "clock", clock, true);
     FieldUtils.writeField(verificationJobInstanceService, "nextGenService", nextGenService, true);
     when(verificationManagerService.createDataCollectionTask(any(), any(), any(), any())).thenReturn(perpetualTaskId);
 
@@ -203,11 +206,71 @@ public class VerificationJobInstanceServiceImplTest extends CvNextGenTestBase {
     verificationJobInstance.setResolvedJob(job);
     verificationJobInstanceService.createDataCollectionTasks(verificationJobInstance);
     String workerId = getDataCollectionWorkerId(connectorId);
-    DataCollectionTask firstTask = dataCollectionTaskService.getNextTask(accountId, workerId).get();
-    assertThat(firstTask).isNotNull();
-    assertThat(firstTask.getStartTime()).isEqualTo(Instant.parse("2020-07-27T10:34:00Z"));
-    assertThat(firstTask.getEndTime()).isEqualTo(Instant.parse("2020-07-27T10:44:00Z"));
-    assertThat(firstTask.getValidAfter()).isEqualTo(Instant.parse("2020-07-27T10:44:00Z").plus(Duration.ofMinutes(5)));
+    DataCollectionTask dataCollectionTask = dataCollectionTaskService.getNextTask(accountId, workerId).get();
+    assertThat(dataCollectionTask).isNotNull();
+    assertThat(dataCollectionTask.getStartTime()).isEqualTo(Instant.parse("2020-07-27T10:34:00Z"));
+    assertThat(dataCollectionTask.getEndTime()).isEqualTo(Instant.parse("2020-07-27T10:39:00Z"));
+    assertThat(dataCollectionTask.getValidAfter())
+        .isEqualTo(Instant.parse("2020-07-27T10:39:00Z").plus(Duration.ofMinutes(5)));
+    dataCollectionTaskService.updateTaskStatus(DataCollectionTaskDTO.DataCollectionTaskResult.builder()
+                                                   .dataCollectionTaskId(dataCollectionTask.getUuid())
+                                                   .status(DataCollectionExecutionStatus.SUCCESS)
+                                                   .build());
+    dataCollectionTask = dataCollectionTaskService.getNextTask(accountId, workerId).get();
+    assertThat(dataCollectionTask).isNotNull();
+    assertThat(dataCollectionTask.getStartTime()).isEqualTo(Instant.parse("2020-07-27T10:39:00Z"));
+    assertThat(dataCollectionTask.getEndTime()).isEqualTo(Instant.parse("2020-07-27T10:44:00Z"));
+    assertThat(dataCollectionTask.getValidAfter())
+        .isEqualTo(Instant.parse("2020-07-27T10:44:00Z").plus(Duration.ofMinutes(5)));
+    dataCollectionTaskService.updateTaskStatus(DataCollectionTaskDTO.DataCollectionTaskResult.builder()
+                                                   .dataCollectionTaskId(dataCollectionTask.getUuid())
+                                                   .status(DataCollectionExecutionStatus.SUCCESS)
+                                                   .build());
+    dataCollectionTask = dataCollectionTaskService.getNextTask(accountId, workerId).get();
+    assertThat(dataCollectionTask).isNotNull();
+    assertThat(dataCollectionTask.getStartTime()).isEqualTo(Instant.parse("2020-07-27T10:46:00Z"));
+    assertThat(dataCollectionTask.getEndTime()).isEqualTo(Instant.parse("2020-07-27T10:47:00Z"));
+    assertThat(dataCollectionTask.getValidAfter())
+        .isEqualTo(Instant.parse("2020-07-27T10:47:00Z").plus(Duration.ofMinutes(5)));
+  }
+
+  @Test
+  @Owner(developers = ABHIJITH)
+  @Category(UnitTests.class)
+  public void createDataCollectionTasks_validateDataCollectionTasksCreationForLongDuration() {
+    VerificationJob job = builderFactory.canaryVerificationJobBuilder()
+                              .monitoringSources(Collections.singletonList(monitoringSourceIdentifier))
+                              .duration(RuntimeParameter.builder().isRuntimeParam(false).value("60m").build())
+                              .build();
+    job.setAccountId(accountId);
+    job.setIdentifier(verificationJobIdentifier);
+    cvConfigService.save(newCVConfig());
+    String verificationJobInstanceId =
+        verificationJobInstanceService.create(newVerificationJobInstance(Duration.ofMinutes(60)));
+    VerificationJobInstance verificationJobInstance =
+        verificationJobInstanceService.getVerificationJobInstance(verificationJobInstanceId);
+    verificationJobInstance.setResolvedJob(job);
+    verificationJobInstanceService.createDataCollectionTasks(verificationJobInstance);
+    String workerId = getDataCollectionWorkerId(connectorId);
+    DataCollectionTask dataCollectionTask = dataCollectionTaskService.getNextTask(accountId, workerId).get();
+    assertThat(dataCollectionTask).isNotNull();
+    assertThat(dataCollectionTask.getStartTime()).isEqualTo(Instant.parse("2020-07-27T09:44:00Z"));
+    assertThat(dataCollectionTask.getEndTime()).isEqualTo(Instant.parse("2020-07-27T09:49:00Z"));
+    assertThat(dataCollectionTask.getValidAfter())
+        .isEqualTo(Instant.parse("2020-07-27T09:49:00Z").plus(Duration.ofMinutes(5)));
+    // Skip threw 11 data collection task
+    for (int i = 0; i < 12; i++) {
+      dataCollectionTaskService.updateTaskStatus(DataCollectionTaskDTO.DataCollectionTaskResult.builder()
+                                                     .dataCollectionTaskId(dataCollectionTask.getUuid())
+                                                     .status(DataCollectionExecutionStatus.SUCCESS)
+                                                     .build());
+      dataCollectionTask = dataCollectionTaskService.getNextTask(accountId, workerId).get();
+    }
+    assertThat(dataCollectionTask).isNotNull();
+    assertThat(dataCollectionTask.getStartTime()).isEqualTo(Instant.parse("2020-07-27T10:46:00Z"));
+    assertThat(dataCollectionTask.getEndTime()).isEqualTo(Instant.parse("2020-07-27T10:51:00Z"));
+    assertThat(dataCollectionTask.getValidAfter())
+        .isEqualTo(Instant.parse("2020-07-27T10:51:00Z").plus(Duration.ofMinutes(5)));
   }
 
   @Test
@@ -267,8 +330,8 @@ public class VerificationJobInstanceServiceImplTest extends CvNextGenTestBase {
     String workerId = getDataCollectionWorkerId(connectorId);
     DataCollectionTask firstTask = dataCollectionTaskService.getNextTask(accountId, workerId).get();
     assertThat(firstTask).isNotNull();
-    assertThat(firstTask.getEndTime()).isEqualTo(Instant.parse("2020-07-27T10:44:00Z"));
-    assertThat(firstTask.getValidAfter()).isEqualTo(Instant.parse("2020-07-27T10:44:00Z").plus(DATA_COLLECTION_DELAY));
+    assertThat(firstTask.getEndTime()).isEqualTo(Instant.parse("2020-07-27T10:39:00Z"));
+    assertThat(firstTask.getValidAfter()).isEqualTo(Instant.parse("2020-07-27T10:39:00Z").plus(DATA_COLLECTION_DELAY));
     assertThat(updated.getExecutionStatus()).isEqualTo(ExecutionStatus.RUNNING);
   }
 
@@ -832,6 +895,12 @@ public class VerificationJobInstanceServiceImplTest extends CvNextGenTestBase {
         .startTime(Instant.ofEpochMilli(deploymentStartTimeMs + Duration.ofMinutes(2).toMillis()))
         .dataCollectionDelay(Duration.ofMinutes(5))
         .build();
+  }
+
+  private VerificationJobInstance newVerificationJobInstance(Duration duration) {
+    VerificationJobInstance verificationJobInstance = newVerificationJobInstance();
+    verificationJobInstance.getResolvedJob().setDuration(duration);
+    return verificationJobInstance;
   }
 
   private VerificationJobInstance createVerificationJobInstance(

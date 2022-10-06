@@ -259,7 +259,6 @@ public class UserGroupServiceImplTest extends WingsBaseTest {
     when(rbacFeature.getMaxUsageAllowedForAccount(accountId)).thenReturn(Integer.MAX_VALUE);
     when(rbacFeature.getMaxUsageAllowedForAccount(ACCOUNT_ID)).thenReturn(Integer.MAX_VALUE);
     when(ccmSettingService.isCloudCostEnabled(eq(accountId))).thenReturn(false);
-    when(featureFlagService.isEnabled(FeatureName.CG_RBAC_EXCLUSION, accountId)).thenReturn(true);
     persistence.save(user);
   }
 

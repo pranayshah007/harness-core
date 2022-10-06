@@ -9,6 +9,7 @@ package software.wings.resources;
 
 import static io.harness.beans.SearchFilter.Operator.EQ;
 
+import static software.wings.security.PermissionAttribute.PermissionType.LOGGED_IN;
 import static software.wings.security.PermissionAttribute.PermissionType.SERVICE;
 import static software.wings.security.PermissionAttribute.ResourceType.APPLICATION;
 
@@ -21,6 +22,7 @@ import io.harness.rest.RestResponse;
 import software.wings.beans.artifact.ArtifactStream;
 import software.wings.beans.artifact.ArtifactStreamSummary;
 import software.wings.security.PermissionAttribute;
+import software.wings.security.annotations.ApiKeyAuthorized;
 import software.wings.security.annotations.AuthRule;
 import software.wings.security.annotations.Scope;
 import software.wings.service.impl.security.auth.AuthHandler;
@@ -104,6 +106,7 @@ public class ArtifactStreamResource {
   @GET
   @Timed
   @ExceptionMetered
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
   public RestResponse<PageResponse<ArtifactStream>> list(@QueryParam("appId") String appId,
       @QueryParam("accountId") String accountId, @QueryParam("withArtifactCount") boolean withArtifactCount,
       @QueryParam("artifactSearchString") String artifactSearchString,
@@ -124,6 +127,7 @@ public class ArtifactStreamResource {
   @Path("{streamId}")
   @Timed
   @ExceptionMetered
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
   public RestResponse<ArtifactStream> get(@QueryParam("appId") String appId, @PathParam("streamId") String streamId) {
     return new RestResponse<>(artifactStreamService.get(streamId));
   }
@@ -204,6 +208,7 @@ public class ArtifactStreamResource {
   @Path("buildsource-types")
   @Timed
   @ExceptionMetered
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
   public RestResponse<Map<String, String>> getBuildSourceTypes(
       @QueryParam("appId") String appId, @QueryParam("serviceId") String serviceId) {
     return new RestResponse<>(artifactStreamService.getSupportedBuildSourceTypes(appId, serviceId));
@@ -219,6 +224,7 @@ public class ArtifactStreamResource {
   @Path("summary")
   @Timed
   @ExceptionMetered
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
   public RestResponse<List<ArtifactStreamSummary>> listArtifactStreamSummary(@QueryParam("appId") String appId) {
     if (!appService.exist(appId)) {
       throw new NotFoundException("application with id " + appId + " not found.");
@@ -237,6 +243,7 @@ public class ArtifactStreamResource {
   @Path("{id}/parameters")
   @Timed
   @ExceptionMetered
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
   public RestResponse<List<String>> listArtifactStreamParameters(@PathParam("id") String id) {
     return new RestResponse<>(artifactStreamService.getArtifactStreamParameters(id));
   }

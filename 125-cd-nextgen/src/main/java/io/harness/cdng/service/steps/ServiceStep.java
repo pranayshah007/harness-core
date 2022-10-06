@@ -52,7 +52,7 @@ public class ServiceStep implements SyncExecutable<ServiceStepParameters> {
     ServiceStepUtils.validateResources(
         entityReferenceExtractorUtils, pipelineRbacHelper, accessControlClient, ambiance, stepParameters);
     ServiceEntity serviceEntity = ServiceStepUtils.getServiceEntity(serviceEntityService, ambiance, stepParameters);
-    serviceEntityService.upsert(serviceEntity, UpsertOptions.DEFAULT.withNoOutbox());
+    serviceEntityService.upsert(serviceEntity, UpsertOptions.DEFAULT.withNoOutbox().withNoSetupUsage());
     return StepResponse.builder()
         .status(Status.SUCCEEDED)
         .stepOutcome(StepOutcome.builder()

@@ -51,6 +51,6 @@ public class NamespaceFetcher {
     }
 
     log.warn("Namespace not found in NamespaceFetcher store, fetching using coreV1Api");
-    return this.coreV1Api.readNamespace(namespaceName, null, null, null);
+    return this.coreV1Api.readNamespace(namespaceName, null);
   }
 }

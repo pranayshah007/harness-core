@@ -53,28 +53,28 @@ public class InterruptHelper {
   }
 
   public boolean discontinueTaskIfRequired(NodeExecution nodeExecution) {
-    Ambiance ambiance = nodeExecution.getAmbiance();
     ExecutableResponse executableResponse = nodeExecution.obtainLatestExecutableResponse();
-    if (executableResponse != null && ExecutionModeUtils.isTaskMode(nodeExecution.getMode())) {
-      String taskId;
-      TaskCategory taskCategory;
-      switch (executableResponse.getResponseCase()) {
-        case TASK:
-          TaskExecutableResponse taskExecutableResponse = executableResponse.getTask();
-          taskId = taskExecutableResponse.getTaskId();
-          taskCategory = taskExecutableResponse.getTaskCategory();
-          break;
-        case TASKCHAIN:
-          TaskChainExecutableResponse taskChainExecutableResponse = executableResponse.getTaskChain();
-          taskId = taskChainExecutableResponse.getTaskId();
-          taskCategory = taskChainExecutableResponse.getTaskCategory();
-          break;
-        default:
-          throw new InvalidRequestException("Executable Response should contain either task or taskChain");
-      }
-      TaskExecutor executor = taskExecutorMap.get(taskCategory);
-      return executor.abortTask(ambiance.getSetupAbstractionsMap(), taskId);
+    if (executableResponse == null || !ExecutionModeUtils.isTaskMode(nodeExecution.getMode())) {
+      return true;
     }
-    return true;
+    Ambiance ambiance = nodeExecution.getAmbiance();
+    String taskId;
+    TaskCategory taskCategory;
+    switch (executableResponse.getResponseCase()) {
+      case TASK:
+        TaskExecutableResponse taskExecutableResponse = executableResponse.getTask();
+        taskId = taskExecutableResponse.getTaskId();
+        taskCategory = taskExecutableResponse.getTaskCategory();
+        break;
+      case TASKCHAIN:
+        TaskChainExecutableResponse taskChainExecutableResponse = executableResponse.getTaskChain();
+        taskId = taskChainExecutableResponse.getTaskId();
+        taskCategory = taskChainExecutableResponse.getTaskCategory();
+        break;
+      default:
+        throw new InvalidRequestException("Executable Response should contain either task or taskChain");
+    }
+    TaskExecutor executor = taskExecutorMap.get(taskCategory);
+    return executor.abortTask(ambiance.getSetupAbstractionsMap(), taskId);
   }
 }

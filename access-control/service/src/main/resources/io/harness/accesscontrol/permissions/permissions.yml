@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: permissionsConfiguration
-version: 34
+version: 38
 permissions:
   - identifier: core_project_delete
     name: Delete Project
@@ -608,6 +608,14 @@ permissions:
       - account
       - organization
       - project
+  - identifier: core_template_copy
+    name: Copy Templates
+    status: ACTIVE
+    includeInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
   - identifier: core_template_edit
     name: Edit a Template
     status: ACTIVE
@@ -1025,70 +1033,79 @@ permissions:
       - account
       - organization
       - project
-  - identifier: chaos_chaosagent_view
-    name: View a Chaos Agent
+  - identifier: chaos_chaosinfrastructure_view
+    name: View a Chaos Infrastructure
     status: ACTIVE
     includeInAllRoles: false
     allowedScopeLevels:
       - account
       - organization
       - project
-  - identifier: chaos_chaosagent_edit
-    name: Edit a Chaos Agent
+  - identifier: chaos_chaosinfrastructure_edit
+    name: Edit a Chaos Infrastructure
     status: ACTIVE
     includeInAllRoles: false
     allowedScopeLevels:
       - account
       - organization
       - project
-  - identifier: chaos_chaosagent_delete
-    name: Delete a Chaos Agent
+  - identifier: chaos_chaosinfrastructure_delete
+    name: Delete a Chaos Infrastructure
     status: ACTIVE
     includeInAllRoles: false
     allowedScopeLevels:
       - account
       - organization
       - project
-  - identifier: chaos_chaosgitops_view
-    name: View Gitops
-    status: ACTIVE
-    includeInAllRoles: false
-    allowedScopeLevels:
-      - account
-      - organization
-      - project
-  - identifier: chaos_chaosgitops_edit
-    name: Edit Gitops
-    status: ACTIVE
-    includeInAllRoles: false
-    allowedScopeLevels:
-      - account
-      - organization
-      - project
-  - identifier: chaos_chaosworkflow_view
-    name: View a Chaos Workflow
+  - identifier: chaos_chaosexperiment_view
+    name: View a Chaos Experiment
     status: ACTIVE
     includedInAllRoles: false
     allowedScopeLevels:
       - account
       - organization
       - project
-  - identifier: chaos_chaosworkflow_edit
-    name: Edit a Chaos Workflow
+  - identifier: chaos_chaosexperiment_edit
+    name: Edit a Chaos Experiment
     status: ACTIVE
     includedInAllRoles: false
     allowedScopeLevels:
       - account
       - organization
       - project
-  - identifier: chaos_chaosworkflow_delete
-    name: Delete a Chaos Workflow
+  - identifier: chaos_chaosexperiment_delete
+    name: Delete a Chaos Experiment
     status: ACTIVE
     includedInAllRoles: false
     allowedScopeLevels:
       - account
       - organization
       - project
+  - identifier: chaos_chaosgameday_view
+    name: View a Chaos GameDay
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: chaos_chaosgameday_edit
+    name: Edit a Chaos GameDay
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: chaos_chaosgameday_delete
+    name: Delete a Chaos GameDay
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+
   - identifier: core_setting_view
     name: View Settings
     status: ACTIVE
@@ -1107,115 +1124,139 @@ permissions:
       - project
   - identifier: ccm_perspective_view
     name: View a CCM Perspective
-    status: EXPERIMENTAL
+    status: ACTIVE
     includedInAllRoles: false
     allowedScopeLevels:
       - account
   - identifier: ccm_perspective_edit
     name: Create or Edit or Move a CCM Perspective
-    status: EXPERIMENTAL
+    status: ACTIVE
     includedInAllRoles: false
     allowedScopeLevels:
       - account
   - identifier: ccm_perspective_delete
     name: Delete a CCM Perspective
-    status: EXPERIMENTAL
+    status: ACTIVE
     includedInAllRoles: false
     allowedScopeLevels:
       - account
   - identifier: ccm_budget_view
     name: View a CCM Budget
-    status: EXPERIMENTAL
+    status: ACTIVE
     includedInAllRoles: false
     allowedScopeLevels:
       - account
   - identifier: ccm_budget_edit
     name: Create or Edit a CCM Budget
-    status: EXPERIMENTAL
+    status: ACTIVE
     includedInAllRoles: false
     allowedScopeLevels:
       - account
   - identifier: ccm_budget_delete
     name: Delete a CCM Budget
-    status: EXPERIMENTAL
+    status: ACTIVE
     includedInAllRoles: false
     allowedScopeLevels:
       - account
   - identifier: ccm_costCategory_view
     name: View a CCM Cost Category
-    status: EXPERIMENTAL
+    status: ACTIVE
     includedInAllRoles: false
     allowedScopeLevels:
       - account
   - identifier: ccm_costCategory_edit
     name: Create or Edit a CCM Cost Category
-    status: EXPERIMENTAL
+    status: ACTIVE
     includedInAllRoles: false
     allowedScopeLevels:
       - account
   - identifier: ccm_costCategory_delete
     name: Delete a CCM Cost Category
-    status: EXPERIMENTAL
+    status: ACTIVE
     includedInAllRoles: false
     allowedScopeLevels:
       - account
   - identifier: ccm_autoStoppingRule_view
     name: View a CCM Auto Stopping Rule
-    status: EXPERIMENTAL
+    status: ACTIVE
     includedInAllRoles: false
     allowedScopeLevels:
       - account
   - identifier: ccm_autoStoppingRule_edit
     name: Create or Edit a CCM Auto Stopping Rule
-    status: EXPERIMENTAL
+    status: ACTIVE
     includedInAllRoles: false
     allowedScopeLevels:
       - account
   - identifier: ccm_autoStoppingRule_delete
     name: Delete a CCM Auto Stopping Rule
-    status: EXPERIMENTAL
+    status: ACTIVE
     includedInAllRoles: false
     allowedScopeLevels:
       - account
   - identifier: ccm_folder_view
     name: View a CCM Folder
-    status: EXPERIMENTAL
+    status: ACTIVE
     includedInAllRoles: false
     allowedScopeLevels:
       - account
   - identifier: ccm_folder_edit
     name: Create or Edit a CCM Folder
-    status: EXPERIMENTAL
+    status: ACTIVE
     includedInAllRoles: false
     allowedScopeLevels:
       - account
   - identifier: ccm_folder_delete
     name: Delete a CCM Folder
-    status: EXPERIMENTAL
+    status: ACTIVE
     includedInAllRoles: false
     allowedScopeLevels:
       - account
   - identifier: ccm_loadBalancer_view
     name: View a CCM Load balancer
-    status: EXPERIMENTAL
+    status: ACTIVE
     includedInAllRoles: false
     allowedScopeLevels:
       - account
   - identifier: ccm_loadBalancer_edit
     name: Create or Edit a Load balancer
-    status: EXPERIMENTAL
+    status: ACTIVE
     includedInAllRoles: false
     allowedScopeLevels:
       - account
   - identifier: ccm_loadBalancer_delete
     name: Delete a CCM Load balancer
-    status: EXPERIMENTAL
+    status: ACTIVE
     includedInAllRoles: false
     allowedScopeLevels:
       - account
   - identifier: ccm_overview_view
     name: View CCM Overview page
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+  - identifier: core_deploymentfreeze_manage
+    name: Manage deployment freeze
     status: EXPERIMENTAL
     includedInAllRoles: false
     allowedScopeLevels:
       - account
+      - organization
+      - project
+  - identifier: core_deploymentfreeze_override
+    name: Override a deployment freeze
+    status: EXPERIMENTAL
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: core_deploymentfreeze_global
+    name: Global deployment freeze
+    status: EXPERIMENTAL
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project

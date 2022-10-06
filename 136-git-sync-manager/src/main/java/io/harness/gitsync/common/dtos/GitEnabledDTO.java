@@ -23,4 +23,5 @@ public class GitEnabledDTO {
   @Schema(description = "This checks if Git Sync is enabled for a given scope") boolean isGitSyncEnabled;
   @Schema(description = "This is the Git Sync connectivity mode") ConnectivityMode connectivityMode;
   @Schema(hidden = true) boolean isGitSimplificationEnabled;
+  @Schema(hidden = true) boolean isGitSyncEnabledOnlyForFF;
 }

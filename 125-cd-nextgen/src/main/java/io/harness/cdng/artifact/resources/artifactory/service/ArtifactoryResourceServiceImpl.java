@@ -9,6 +9,7 @@ package io.harness.cdng.artifact.resources.artifactory.service;
 
 import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
 import static io.harness.delegate.beans.artifactory.ArtifactoryTaskParams.TaskType.FETCH_BUILDS;
+import static io.harness.delegate.beans.artifactory.ArtifactoryTaskParams.TaskType.FETCH_IMAGE_PATHS;
 import static io.harness.delegate.beans.artifactory.ArtifactoryTaskParams.TaskType.FETCH_REPOSITORIES;
 import static io.harness.eraro.ErrorCode.ARTIFACT_SERVER_ERROR;
 import static io.harness.exception.WingsException.USER;
@@ -22,6 +23,7 @@ import io.harness.beans.DelegateTaskRequest;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.artifact.resources.artifactory.dtos.ArtifactoryArtifactBuildDetailsDTO;
 import io.harness.cdng.artifact.resources.artifactory.dtos.ArtifactoryBuildDetailsDTO;
+import io.harness.cdng.artifact.resources.artifactory.dtos.ArtifactoryImagePathsDTO;
 import io.harness.cdng.artifact.resources.artifactory.dtos.ArtifactoryRepoDetailsDTO;
 import io.harness.cdng.artifact.resources.artifactory.dtos.ArtifactoryRequestDTO;
 import io.harness.cdng.artifact.resources.artifactory.dtos.ArtifactoryResponseDTO;
@@ -35,6 +37,7 @@ import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.beans.RemoteMethodReturnValueData;
 import io.harness.delegate.beans.artifactory.ArtifactoryFetchBuildsResponse;
+import io.harness.delegate.beans.artifactory.ArtifactoryFetchImagePathResponse;
 import io.harness.delegate.beans.artifactory.ArtifactoryFetchRepositoriesResponse;
 import io.harness.delegate.beans.artifactory.ArtifactoryTaskParams;
 import io.harness.delegate.beans.connector.ConnectorType;
@@ -58,6 +61,7 @@ import io.harness.exception.DelegateServiceDriverException;
 import io.harness.exception.HintException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
+import io.harness.exception.exceptionmanager.ExceptionManager;
 import io.harness.exception.exceptionmanager.exceptionhandler.DocumentLinksConstants;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.core.NGAccess;
@@ -77,17 +81,21 @@ import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import javax.validation.constraints.NotNull;
 import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
 
 @Singleton
-@OwnedBy(HarnessTeam.CDP)
+@Slf4j
+@OwnedBy(HarnessTeam.CDC)
 public class ArtifactoryResourceServiceImpl implements ArtifactoryResourceService {
   private final ConnectorService connectorService;
   private final DelegateGrpcClientWrapper delegateGrpcClientWrapper;
   private final SecretManagerClientService secretManagerClientService;
+  @Inject ExceptionManager exceptionManager;
 
   @VisibleForTesting static final int timeoutInSecs = 60;
   private static final String FAILED_TO_FETCH_REPOSITORIES = "Failed to fetch repositories";
   private static final String FAILED_TO_FETCH_ARTIFACTS = "Failed to fetch artifacts";
+  private static final String FAILED_TO_FETCH_IMAGE_PATHS = "Failed to fetch image path";
 
   @Inject
   public ArtifactoryResourceServiceImpl(@Named(DEFAULT_CONNECTOR_SERVICE) ConnectorService connectorService,
@@ -170,7 +178,11 @@ public class ArtifactoryResourceServiceImpl implements ArtifactoryResourceServic
             .taskSetupAbstraction(SetupAbstractionKeys.orgIdentifier, ngAccess.getOrgIdentifier())
             .taskSetupAbstraction(SetupAbstractionKeys.projectIdentifier, ngAccess.getProjectIdentifier())
             .build();
-    return delegateGrpcClientWrapper.executeSyncTask(delegateTaskRequest);
+    try {
+      return delegateGrpcClientWrapper.executeSyncTask(delegateTaskRequest);
+    } catch (DelegateServiceDriverException ex) {
+      throw exceptionManager.processException(ex, WingsException.ExecutionContext.MANAGER, log);
+    }
   }
 
   private ArtifactoryFetchRepositoriesResponse getArtifactoryFetchRepositoriesResponse(
@@ -180,6 +192,15 @@ public class ArtifactoryResourceServiceImpl implements ArtifactoryResourceServic
     ArtifactoryFetchRepositoriesResponse taskResponse = (ArtifactoryFetchRepositoriesResponse) responseData;
     if (taskResponse.getCommandExecutionStatus() != SUCCESS) {
       throw new ArtifactoryServerException(FAILED_TO_FETCH_REPOSITORIES, ARTIFACT_SERVER_ERROR, USER);
+    }
+    return taskResponse;
+  }
+  private ArtifactoryFetchImagePathResponse getArtifactoryFetchImagePathResponse(DelegateResponseData responseData) {
+    handleErrorResponseData(responseData, FAILED_TO_FETCH_REPOSITORIES);
+
+    ArtifactoryFetchImagePathResponse taskResponse = (ArtifactoryFetchImagePathResponse) responseData;
+    if (taskResponse.getCommandExecutionStatus() != SUCCESS) {
+      throw new ArtifactoryServerException(FAILED_TO_FETCH_IMAGE_PATHS, ARTIFACT_SERVER_ERROR, USER);
     }
     return taskResponse;
   }
@@ -266,6 +287,35 @@ public class ArtifactoryResourceServiceImpl implements ArtifactoryResourceServic
     return artifactTaskExecutionResponse.isArtifactServerValid();
   }
 
+  @Override
+  public ArtifactoryImagePathsDTO getImagePaths(@NonNull String repositoryType, @NonNull IdentifierRef connectorRef,
+      @NonNull String orgIdentifier, @NonNull String projectIdentifier, @NotNull String repository) {
+    Optional<ConnectorResponseDTO> connectorDTO = connectorService.get(connectorRef.getAccountIdentifier(),
+        connectorRef.getOrgIdentifier(), connectorRef.getProjectIdentifier(), connectorRef.getIdentifier());
+    if (!connectorDTO.isPresent()
+        || ConnectorType.ARTIFACTORY != connectorDTO.get().getConnector().getConnectorType()) {
+      throw new InvalidRequestException(String.format("Connector not found for identifier : [%s] with scope: [%s]",
+                                            connectorRef.getIdentifier(), connectorRef.getScope()),
+          WingsException.USER);
+    }
+    BaseNGAccess baseNGAccess = getBaseNGAccess(connectorRef.getAccountIdentifier(), orgIdentifier, projectIdentifier);
+
+    ConnectorInfoDTO connectors = connectorDTO.get().getConnector();
+    ArtifactoryConnectorDTO artifactoryConnectorDTO = (ArtifactoryConnectorDTO) connectors.getConnectorConfig();
+
+    DelegateResponseData delegateResponseData = getResponseData(baseNGAccess,
+        ArtifactoryTaskParams.builder()
+            .artifactoryConnectorDTO(artifactoryConnectorDTO)
+            .encryptedDataDetails(getEncryptionDetails(artifactoryConnectorDTO, baseNGAccess))
+            .taskType(FETCH_IMAGE_PATHS)
+            .repoType(repositoryType)
+            .repoName(repository)
+            .build(),
+        NG_ARTIFACTORY_TASK.name());
+    ArtifactoryFetchImagePathResponse imagePathResponse = getArtifactoryFetchImagePathResponse(delegateResponseData);
+    return ArtifactoryImagePathsDTO.builder().imagePaths(imagePathResponse.getArtifactoryImagePathsFetchDTO()).build();
+  }
+
   private ArtifactoryConnectorDTO getConnector(IdentifierRef artifactoryConnectorRef) {
     Optional<ConnectorResponseDTO> connectorDTO =
         connectorService.get(artifactoryConnectorRef.getAccountIdentifier(), artifactoryConnectorRef.getOrgIdentifier(),
@@ -335,7 +385,11 @@ public class ArtifactoryResourceServiceImpl implements ArtifactoryResourceServic
             .taskSetupAbstraction(SetupAbstractionKeys.projectIdentifier, ngAccess.getProjectIdentifier())
             .taskSelectors(delegateSelectors)
             .build();
-    return delegateGrpcClientWrapper.executeSyncTask(delegateTaskRequest);
+    try {
+      return delegateGrpcClientWrapper.executeSyncTask(delegateTaskRequest);
+    } catch (DelegateServiceDriverException ex) {
+      throw exceptionManager.processException(ex, WingsException.ExecutionContext.MANAGER, log);
+    }
   }
 
   private ArtifactTaskExecutionResponse getTaskExecutionResponse(

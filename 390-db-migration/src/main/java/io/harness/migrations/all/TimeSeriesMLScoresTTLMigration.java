@@ -16,7 +16,6 @@ import io.harness.persistence.HIterator;
 
 import software.wings.dl.WingsPersistence;
 import software.wings.service.impl.analysis.TimeSeriesMLScores;
-import software.wings.service.intfc.verification.CVConfigurationService;
 
 import com.google.inject.Inject;
 import java.time.Instant;
@@ -24,12 +23,11 @@ import java.time.temporal.ChronoUnit;
 import java.util.Date;
 import lombok.extern.slf4j.Slf4j;
 import org.mongodb.morphia.query.Query;
+import org.mongodb.morphia.query.Sort;
 
 @Slf4j
 public class TimeSeriesMLScoresTTLMigration implements Migration {
-  private static int BATCH_SIZE = 100;
   @Inject private WingsPersistence wingsPersistence;
-  @Inject private CVConfigurationService cvConfigurationService;
 
   @Override
   public void migrate() {
@@ -45,17 +43,40 @@ public class TimeSeriesMLScoresTTLMigration implements Migration {
 
   private void deleteOldRecords(Instant deletionThreshold) {
     try {
-      Query<TimeSeriesMLScores> query = wingsPersistence.createQuery(TimeSeriesMLScores.class, excludeAuthority)
-                                            .field(BaseKeys.lastUpdatedAt)
-                                            .lessThanOrEq(deletionThreshold.toEpochMilli());
-      long documentsToBeDeleted = query.count();
+      Query<TimeSeriesMLScores> countQuery = wingsPersistence.createQuery(TimeSeriesMLScores.class, excludeAuthority)
+                                                 .field(BaseKeys.lastUpdatedAt)
+                                                 .lessThanOrEq(deletionThreshold.toEpochMilli());
+      long documentsToBeDeleted = countQuery.count();
       log.info("Number of records to be deleted " + documentsToBeDeleted);
-      long documentsRemaining = query.count();
-      Query<TimeSeriesMLScores> limitedQuery = query.limit(BATCH_SIZE);
+      long documentsRemaining = countQuery.count();
+      long fromTimestamp = wingsPersistence.createQuery(TimeSeriesMLScores.class, excludeAuthority)
+                               .field(BaseKeys.lastUpdatedAt)
+                               .lessThanOrEq(deletionThreshold.toEpochMilli())
+                               .order(Sort.ascending(BaseKeys.lastUpdatedAt))
+                               .limit(1)
+                               .get()
+                               .getLastUpdatedAt();
+      Instant fromInstant = Instant.ofEpochMilli(fromTimestamp);
+      Instant toInstant = fromInstant.plus(1, ChronoUnit.DAYS);
+
       while (documentsRemaining > 0) {
-        wingsPersistence.deleteOnServer(limitedQuery);
-        documentsRemaining = query.count();
+        toInstant = deletionThreshold.compareTo(toInstant) > 0 ? toInstant : deletionThreshold;
+        log.info("Deleting records between " + fromInstant + " and " + toInstant);
+        try {
+          Query<TimeSeriesMLScores> findQuery = wingsPersistence.createQuery(TimeSeriesMLScores.class, excludeAuthority)
+                                                    .field(BaseKeys.lastUpdatedAt)
+                                                    .greaterThanOrEq(fromInstant.toEpochMilli())
+                                                    .field(BaseKeys.lastUpdatedAt)
+                                                    .lessThan(toInstant.toEpochMilli());
+
+          wingsPersistence.deleteOnServer(findQuery);
+        } catch (Exception e) {
+          log.error("Exception while deleting records between " + fromInstant + " and " + toInstant, e);
+        }
+        documentsRemaining = countQuery.count();
         log.info("Number of records to be deleted " + documentsRemaining);
+        fromInstant = fromInstant.plus(1, ChronoUnit.DAYS);
+        toInstant = fromInstant.plus(1, ChronoUnit.DAYS);
       }
 
     } catch (Exception e) {
@@ -73,10 +94,14 @@ public class TimeSeriesMLScoresTTLMigration implements Migration {
         Date recordValidUntil = Date.from(Instant.ofEpochMilli(lastUpdatedAt).plus(180, ChronoUnit.DAYS));
         dbRecord.setValidUntil(recordValidUntil);
         log.info("Updating record " + dbRecord.getUuid());
-        wingsPersistence.save(dbRecord);
+        try {
+          wingsPersistence.save(dbRecord);
+        } catch (Exception e) {
+          log.error("Exception while updating record. " + dbRecord.getUuid(), e);
+        }
       }
     } catch (Exception e) {
-      log.error("Exception while deleting records. ", e);
+      log.error("Exception while updating records. ", e);
     }
   }
 }

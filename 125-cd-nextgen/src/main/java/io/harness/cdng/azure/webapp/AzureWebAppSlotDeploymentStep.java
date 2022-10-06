@@ -75,6 +75,7 @@ import io.harness.tasks.ResponseData;
 
 import software.wings.beans.TaskType;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import java.util.ArrayList;
@@ -92,6 +93,8 @@ public class AzureWebAppSlotDeploymentStep extends TaskChainExecutableWithRollba
                                                .setType(ExecutionNodeType.AZURE_SLOT_DEPLOYMENT.getYamlType())
                                                .setStepCategory(StepCategory.STEP)
                                                .build();
+
+  @VisibleForTesting static final String FETCH_PREDEPLOYMENT_DATA_TASK_NAME = "Save App Service Configurations Task";
 
   @Inject private AzureWebAppStepHelper azureWebAppStepHelper;
   @Inject private CDStepHelper cdStepHelper;
@@ -296,7 +299,8 @@ public class AzureWebAppSlotDeploymentStep extends TaskChainExecutableWithRollba
     return TaskChainResponse.builder()
         .chainEnd(false)
         .taskRequest(azureWebAppStepHelper.prepareTaskRequest(stepElementParameters, ambiance,
-            fetchPreDeploymentDataRequest, TaskType.AZURE_WEB_APP_TASK_NG, getCommandUnits(passThroughData, false)))
+            fetchPreDeploymentDataRequest, TaskType.AZURE_WEB_APP_TASK_NG, FETCH_PREDEPLOYMENT_DATA_TASK_NAME,
+            getCommandUnits(passThroughData, false)))
         .passThroughData(passThroughData)
         .build();
   }

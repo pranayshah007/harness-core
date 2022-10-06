@@ -10,6 +10,7 @@ package io.harness.connector.validator;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.joor.Reflect.on;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
@@ -51,7 +52,8 @@ import io.harness.delegate.beans.connector.azureconnector.AzureSecretType;
 import io.harness.delegate.beans.connector.azureconnector.AzureUserAssignedMSIAuthDTO;
 import io.harness.encryption.Scope;
 import io.harness.encryption.SecretRefData;
-import io.harness.errorhandling.NGErrorHelper;
+import io.harness.exception.WingsException;
+import io.harness.exception.exceptionmanager.ExceptionManager;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
@@ -80,9 +82,9 @@ public class AzureConnectorValidatorTest extends CategoryTest {
   @Mock private DefaultConnectorServiceImpl connectorService;
   @InjectMocks private AzureNgConfigMapper azureNgConfigMapper;
   @InjectMocks private AzureConnectorValidator azureConnectorValidator;
-  @InjectMocks private NGErrorHelper ngErrorHelper;
   @Mock private Map<String, ConnectorValidationHandler> connectorTypeToConnectorValidationHandlerMap;
   @Mock private Map<String, ConnectorValidationParamsProvider> connectorValidationParamsProviderMap;
+  @Mock private ExceptionManager exceptionManager;
 
   @Before
   public void setUp() throws Exception {
@@ -279,7 +281,13 @@ public class AzureConnectorValidatorTest extends CategoryTest {
 
     AzureValidationHandler azureValidationHandler = mock(AzureValidationHandler.class);
     on(azureValidationHandler).set("azureNgConfigMapper", azureNgConfigMapper);
-    on(azureValidationHandler).set("ngErrorHelper", ngErrorHelper);
+    on(azureValidationHandler).set("exceptionManager", exceptionManager);
+    when(exceptionManager.processException(any(), any(), any()))
+        .thenReturn(
+            WingsException.builder()
+                .message(
+                    "Connector with credential type InheritFromDelegate does not support validation through harness")
+                .build());
     when(azureValidationHandler.validate(any(), any())).thenCallRealMethod();
     when(connectorTypeToConnectorValidationHandlerMap.get(Matchers.eq("Azure"))).thenReturn(azureValidationHandler);
 
@@ -295,11 +303,11 @@ public class AzureConnectorValidatorTest extends CategoryTest {
                                                    .orgIdentifier("orgIdentifier")
                                                    .build())
                                     .build()));
-    ConnectorValidationResult connectorValidationResult = azureConnectorValidator.validate(
-        azureConnectorDTO, "accountIdentifier", "orgIdentifier", "projectIdentifier", "identifier");
-    assertThat(connectorValidationResult.getStatus()).isEqualTo(ConnectivityStatus.FAILURE);
-    assertThat(connectorValidationResult.getErrorSummary())
-        .isEqualTo(
-            "Error Encountered (Connector with credential type InheritFromDelegate does not support validation through harness)");
+
+    assertThatThrownBy(()
+                           -> azureConnectorValidator.validate(azureConnectorDTO, "accountIdentifier", "orgIdentifier",
+                               "projectIdentifier", "identifier"))
+        .isInstanceOf(WingsException.class)
+        .hasMessage("Connector with credential type InheritFromDelegate does not support validation through harness");
   }
 }

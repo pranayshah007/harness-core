@@ -146,9 +146,11 @@ public class InstanceDashboardServiceImpl implements InstanceDashboardService {
       final String envId = activeServiceInstanceInfo.getEnvIdentifier();
       final String envName = activeServiceInstanceInfo.getEnvName();
       final String buildId = activeServiceInstanceInfo.getTag();
+      final String displayName = activeServiceInstanceInfo.getDisplayName();
       final Integer count = activeServiceInstanceInfo.getCount();
-      activeServiceInstanceInfoList.add(new ActiveServiceInstanceInfo(infraIdentifier, infraName,
-          lastPipelineExecutionId, lastPipelineExecutionName, lastDeployedAt, envId, envName, buildId, count));
+      activeServiceInstanceInfoList.add(
+          new ActiveServiceInstanceInfo(infraIdentifier, infraName, lastPipelineExecutionId, lastPipelineExecutionName,
+              lastDeployedAt, envId, envName, buildId, displayName, count));
     });
 
     return activeServiceInstanceInfoList;

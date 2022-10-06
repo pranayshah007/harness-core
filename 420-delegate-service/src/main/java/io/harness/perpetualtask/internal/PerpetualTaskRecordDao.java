@@ -38,7 +38,7 @@ import org.mongodb.morphia.query.UpdateResults;
 @Slf4j
 public class PerpetualTaskRecordDao {
   private final HPersistence persistence;
-  private static final int MAX_FIBONACCI_INDEX_FOR_TASK_ASSIGNMENT = 8;
+  private static final int MAX_FIBONACCI_INDEX_FOR_TASK_ASSIGNMENT = 10;
   private static final int BATCH_SIZE_FOR_PERPETUAL_TASK_TO_REBALANCE = 20;
 
   @Inject
@@ -217,6 +217,22 @@ public class PerpetualTaskRecordDao {
                                            .filter(PerpetualTaskRecordKeys.state, PerpetualTaskState.TASK_TO_REBALANCE);
 
     return query.asList(new FindOptions().limit(BATCH_SIZE_FOR_PERPETUAL_TASK_TO_REBALANCE));
+  }
+
+  public void markBatchOfPerpetualTasksWithNoHeartBeatToRebalanceForAccount(String accountId) {
+    long intervalValue = Long.valueOf(PerpetualTaskRecordKeys.intervalSeconds);
+    long multipleInterval = (3 * intervalValue) / 1000;
+    Query<PerpetualTaskRecord> queryToUpdate = persistence.createQuery(PerpetualTaskRecord.class)
+                                                   .filter(PerpetualTaskRecordKeys.accountId, accountId)
+                                                   .filter(PerpetualTaskRecordKeys.state, TASK_ASSIGNED)
+                                                   .field(String.valueOf(PerpetualTaskRecordKeys.lastHeartbeat))
+                                                   .lessThan(System.currentTimeMillis() - multipleInterval);
+
+    UpdateOperations<PerpetualTaskRecord> updateOperations =
+        persistence.createUpdateOperations(PerpetualTaskRecord.class)
+            .set(PerpetualTaskRecordKeys.state, PerpetualTaskState.TASK_TO_REBALANCE);
+
+    persistence.findAndModify(queryToUpdate, updateOperations, HPersistence.returnNewOptions);
   }
 
   public PerpetualTaskRecord getTask(String taskId) {

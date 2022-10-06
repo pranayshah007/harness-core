@@ -7,12 +7,18 @@
 
 package io.harness.delegate.task.mixin;
 
+import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.SocketConnectivityExecutionCapability;
 
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.List;
 import javax.validation.constraints.NotNull;
 import lombok.experimental.UtilityClass;
+import lombok.extern.slf4j.Slf4j;
 
 @UtilityClass
+@Slf4j
 public class SocketConnectivityCapabilityGenerator {
   public static SocketConnectivityExecutionCapability buildSocketConnectivityCapability(
       @NotNull String hostName, @NotNull String port) {
@@ -21,5 +27,26 @@ public class SocketConnectivityCapabilityGenerator {
         .port(port)
         .url(hostName + ":" + port)
         .build();
+  }
+  public void addSocketConnectivityExecutionCapability(String repoUrl, List<ExecutionCapability> capabilities) {
+    try {
+      URI url = new URI(repoUrl);
+      int port = url.getPort();
+      if (port <= -1) {
+        if (url.getScheme() != null) {
+          port = url.getScheme().equals("https") ? 443 : 80;
+        } else {
+          port = 443;
+        }
+      }
+      capabilities.add(SocketConnectivityExecutionCapability.builder()
+                           .url(repoUrl)
+                           .scheme(url.getScheme())
+                           .hostName(url.getHost())
+                           .port(String.valueOf(port))
+                           .build());
+    } catch (URISyntaxException e) {
+      log.error("Unable to process URL: " + e.getMessage());
+    }
   }
 }

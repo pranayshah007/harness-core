@@ -7,14 +7,41 @@
 
 package io.harness.beans;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+
+import lombok.extern.log4j.Log4j;
+import org.apache.commons.lang3.EnumUtils;
+
 /**
  * SortOrder bean class.
  *
  * @author Rishi
  */
+@Log4j
 public class SortOrder {
+  public static final String FIELD_NAME_ORDER_TYPE_SEPARATOR = ",";
+
   private String fieldName;
   private OrderType orderType;
+
+  public SortOrder(String fieldNameOrderType) {
+    try {
+      if (isNotEmpty(fieldNameOrderType)) {
+        String[] sortInfo = fieldNameOrderType.split(FIELD_NAME_ORDER_TYPE_SEPARATOR);
+        if (isEmpty(sortInfo[0].trim())) {
+          throw new IllegalArgumentException("fieldName cannot be blank");
+        }
+        this.fieldName = sortInfo[0];
+        this.orderType = sortInfo.length > 1 ? EnumUtils.getEnumIgnoreCase(OrderType.class, sortInfo[1], OrderType.DESC)
+                                             : OrderType.DESC;
+      }
+    } catch (Exception exception) {
+      log.warn(String.format("Unable to set SortOrder from: %s", fieldNameOrderType), exception);
+    }
+  }
+
+  public SortOrder() {}
 
   /**
    * Gets field name.

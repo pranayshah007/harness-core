@@ -15,11 +15,16 @@ import io.harness.accesscontrol.common.filter.ManagedFilter;
 import io.harness.accesscontrol.commons.validation.ValidationResultMapper;
 import io.harness.accesscontrol.principals.Principal;
 import io.harness.accesscontrol.principals.PrincipalDTO;
+import io.harness.accesscontrol.principals.PrincipalType;
+import io.harness.accesscontrol.principals.usergroups.UserGroup;
 import io.harness.accesscontrol.roleassignments.RoleAssignment;
 import io.harness.accesscontrol.roleassignments.RoleAssignment.RoleAssignmentBuilder;
 import io.harness.accesscontrol.roleassignments.RoleAssignmentFilter;
+import io.harness.accesscontrol.roleassignments.ScopeFilter;
 import io.harness.accesscontrol.roleassignments.validator.RoleAssignmentValidationRequest;
 import io.harness.accesscontrol.roleassignments.validator.RoleAssignmentValidationResult;
+import io.harness.accesscontrol.scopes.ScopeDTO;
+import io.harness.accesscontrol.scopes.ScopeFilterType;
 import io.harness.accesscontrol.scopes.core.Scope;
 import io.harness.accesscontrol.scopes.core.ScopeService;
 import io.harness.accesscontrol.scopes.harness.ScopeMapper;
@@ -29,7 +34,9 @@ import io.harness.utils.CryptoUtils;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @OwnedBy(PL)
@@ -98,6 +105,44 @@ public class RoleAssignmentDTOMapper {
             .scopeIdentifier(scope.toString())
             .scopeLevel(scope.getLevel().toString());
     return roleAssignmentBuilder.build();
+  }
+
+  public RoleAssignmentFilter fromDTO(String identifier, List<UserGroup> userGroups, RoleAssignmentFilterV2 object) {
+    Set<Principal> principalFilter = new HashSet<>();
+    principalFilter.add(Principal.builder().principalType(PrincipalType.USER).principalIdentifier(identifier).build());
+    userGroups.stream().forEach(userGroup -> {
+      principalFilter.add(
+          Principal.builder()
+              .principalScopeLevel(
+                  scopeService.buildScopeFromScopeIdentifier(userGroup.getScopeIdentifier()).getLevel().toString())
+              .principalType(PrincipalType.USER_GROUP)
+              .principalIdentifier(userGroup.getIdentifier())
+              .build());
+    });
+    return RoleAssignmentFilter.builder()
+        .scopeFilters(object.getScopeFilters() == null
+                ? new HashSet()
+                : object.getScopeFilters()
+                      .stream()
+                      .map(filter
+                          -> ScopeFilter.builder()
+                                 .scope(ScopeMapper
+                                            .fromDTO(ScopeDTO.builder()
+                                                         .accountIdentifier(filter.getAccountIdentifier())
+                                                         .orgIdentifier(filter.getOrgIdentifier())
+                                                         .projectIdentifier(filter.getProjectIdentifier())
+                                                         .build())
+                                            .toString()
+
+                                         )
+                                 .includeChildScopes(ScopeFilterType.INCLUDING_CHILD_SCOPES.equals(filter.getFilter()))
+                                 .build())
+                      .collect(Collectors.toSet()))
+        .roleFilter(object.getRoleFilter() == null ? new HashSet<>() : object.getRoleFilter())
+        .resourceGroupFilter(
+            object.getResourceGroupFilter() == null ? new HashSet<>() : object.getResourceGroupFilter())
+        .principalFilter(principalFilter)
+        .build();
   }
 
   public static RoleAssignmentFilter fromDTO(String scopeIdentifier, RoleAssignmentFilterDTO object) {

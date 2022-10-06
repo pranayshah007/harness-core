@@ -17,6 +17,7 @@ public class S3ArtifactInfoBuilder implements PollingInfoBuilder {
   public PollingInfo toPollingInfo(PollingPayloadData pollingPayloadData) {
     return S3ArtifactInfo.builder()
         .connectorRef(pollingPayloadData.getConnectorRef())
+        .region(pollingPayloadData.getAmazonS3Payload().getRegion())
         .bucketName(pollingPayloadData.getAmazonS3Payload().getBucketName())
         .filePathRegex(pollingPayloadData.getAmazonS3Payload().getFilePathRegex())
         .build();

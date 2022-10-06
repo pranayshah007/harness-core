@@ -38,10 +38,7 @@ public class ImagePullSecretFunctorTest extends CategoryTest {
   @Mock ImagePullSecretUtils imagePullSecretUtils;
   @Mock OutcomeService outcomeService;
   @InjectMocks ImagePullSecretFunctor imagePullSecretFunctor;
-  static String outcomeJson =
-      "{\"__recast\":\"io.harness.ngpipeline.artifact.bean.ArtifactsOutcome\",\"primary\":{\"__recast\":\"io.harness.ngpipeline.artifact.bean.DockerArtifactOutcome\",\"connectorRef\":null,\"imagePath\":null,\"tag\":null,\"tagRegex\":null,\"identifier\":null,\"type\":null,\"primaryArtifact\":false,\"image\":null,\"imagePullSecret\":null},\"sidecars\":null}";
-  static String outcomeNullPrimaryJson =
-      "{\"__recast\":\"io.harness.ngpipeline.artifact.bean.ArtifactsOutcome\",\"sidecars\":null}";
+
   @Before
   public void setUp() {
     MockitoAnnotations.initMocks(this);

@@ -8,10 +8,12 @@
 package io.harness.ng.core.outbox;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ACCOUNT_ENTITY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ORGANIZATION_ENTITY;
 import static io.harness.rule.OwnerRule.VIKAS_M;
 
 import static junit.framework.TestCase.assertEquals;
+import static junit.framework.TestCase.assertTrue;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
@@ -26,6 +28,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.connector.eventHandlers.ConnectorEntityCRUDEventHandler;
 import io.harness.eventsframework.EventsFrameworkMetadataConstants;
 import io.harness.eventsframework.consumer.Message;
+import io.harness.eventsframework.entity_crud.account.AccountEntityChangeDTO;
 import io.harness.eventsframework.entity_crud.organization.OrganizationEntityChangeDTO;
 import io.harness.ng.core.accountsetting.services.NGAccountSettingService;
 import io.harness.ng.core.event.ConnectorEntityCRUDStreamListener;
@@ -59,6 +62,45 @@ public class ConnectorEntityCRUDStreamListenerTest extends CategoryTest {
   @Test
   @Owner(developers = VIKAS_M)
   @Category(UnitTests.class)
+  public void testAccountDeleteEvent() {
+    String accountId = randomAlphabetic(10);
+    Message message = Message.newBuilder()
+                          .setMessage(io.harness.eventsframework.producer.Message.newBuilder()
+                                          .putAllMetadata(ImmutableMap.of("accountId", accountId,
+                                              EventsFrameworkMetadataConstants.ENTITY_TYPE, ACCOUNT_ENTITY,
+                                              EventsFrameworkMetadataConstants.ACTION,
+                                              EventsFrameworkMetadataConstants.DELETE_ACTION))
+                                          .setData(getAccountPayload(accountId))
+                                          .build())
+                          .build();
+    final ArgumentCaptor<String> idCaptor = ArgumentCaptor.forClass(String.class);
+    when(connectorEntityCRUDEventHandler.deleteAssociatedConnectors(any(), any(), any())).thenReturn(true);
+    boolean result = connectorEntityCRUDStreamListener.handleMessage(message);
+    verify(connectorEntityCRUDEventHandler, times(1)).deleteAssociatedConnectors(idCaptor.capture(), any(), any());
+    assertEquals(idCaptor.getValue(), accountId);
+    assertTrue(result);
+  }
+
+  @Test
+  @Owner(developers = VIKAS_M)
+  @Category(UnitTests.class)
+  public void testAccountChangeEvent_withoutAnyActionSetInMetadata() {
+    String accountId = randomAlphabetic(10);
+    Message message = Message.newBuilder()
+                          .setMessage(io.harness.eventsframework.producer.Message.newBuilder()
+                                          .putAllMetadata(ImmutableMap.of("accountId", accountId,
+                                              EventsFrameworkMetadataConstants.ENTITY_TYPE, ACCOUNT_ENTITY))
+                                          .setData(getAccountPayload(accountId))
+                                          .build())
+                          .build();
+    boolean result = connectorEntityCRUDStreamListener.handleMessage(message);
+    verify(connectorEntityCRUDEventHandler, times(0)).deleteAssociatedConnectors(any(), any(), any());
+    assertTrue(result);
+  }
+
+  @Test
+  @Owner(developers = VIKAS_M)
+  @Category(UnitTests.class)
   public void testOrganizationDeleteEvent() {
     String accountIdentifier = randomAlphabetic(10);
     String identifier = randomAlphabetic(10);
@@ -84,5 +126,9 @@ public class ConnectorEntityCRUDStreamListenerTest extends CategoryTest {
         .setAccountIdentifier(accountIdentifier)
         .build()
         .toByteString();
+  }
+
+  private ByteString getAccountPayload(String identifier) {
+    return AccountEntityChangeDTO.newBuilder().setAccountId(identifier).build().toByteString();
   }
 }

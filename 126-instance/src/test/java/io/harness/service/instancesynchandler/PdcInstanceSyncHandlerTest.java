@@ -23,7 +23,7 @@ import io.harness.dtos.deploymentinfo.PdcDeploymentInfoDTO;
 import io.harness.dtos.instanceinfo.InstanceInfoDTO;
 import io.harness.dtos.instanceinfo.PdcInstanceInfoDTO;
 import io.harness.models.infrastructuredetails.InfrastructureDetails;
-import io.harness.models.infrastructuredetails.PdcInfrastructureDetails;
+import io.harness.models.infrastructuredetails.SshWinrmInfrastructureDetails;
 import io.harness.ng.core.k8s.ServiceSpecType;
 import io.harness.rule.Owner;
 
@@ -48,8 +48,8 @@ public class PdcInstanceSyncHandlerTest extends InstancesTestBase {
     PdcInstanceInfoDTO instanceInfoDTO =
         PdcInstanceInfoDTO.builder().infrastructureKey(INFRASTRUCTURE_KEY).host(HOST).build();
     InfrastructureDetails infrastructureDetails = pdcInstanceSyncHandler.getInfrastructureDetails(instanceInfoDTO);
-    assertThat(infrastructureDetails).isInstanceOf(PdcInfrastructureDetails.class);
-    assertThat(((PdcInfrastructureDetails) infrastructureDetails).getHost()).isEqualTo(HOST);
+    assertThat(infrastructureDetails).isInstanceOf(SshWinrmInfrastructureDetails.class);
+    assertThat(((SshWinrmInfrastructureDetails) infrastructureDetails).getHost()).isEqualTo(HOST);
   }
 
   @Test
@@ -63,8 +63,8 @@ public class PdcInstanceSyncHandlerTest extends InstancesTestBase {
     assertThat(((PdcInstanceInfoDTO) instanceInfoDTO).getServiceType()).isEqualTo(SSH_SERVICE);
 
     InfrastructureDetails infrastructureDetails = pdcInstanceSyncHandler.getInfrastructureDetails(instanceInfoDTO);
-    assertThat(infrastructureDetails).isInstanceOf(PdcInfrastructureDetails.class);
-    assertThat(((PdcInfrastructureDetails) infrastructureDetails).getHost()).isEqualTo(HOST);
+    assertThat(infrastructureDetails).isInstanceOf(SshWinrmInfrastructureDetails.class);
+    assertThat(((SshWinrmInfrastructureDetails) infrastructureDetails).getHost()).isEqualTo(HOST);
   }
 
   @Test

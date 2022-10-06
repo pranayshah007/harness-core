@@ -105,7 +105,7 @@ public class K8sResourceValidatorImplTest extends CategoryTest {
 
     doReturn(v1SelfSubjectAccessReview)
         .when(authorizationV1Api)
-        .createSelfSubjectAccessReview(any(V1SelfSubjectAccessReview.class), any(), any(), any());
+        .createSelfSubjectAccessReview(any(V1SelfSubjectAccessReview.class), any(), any(), any(), any());
   }
 
   @Test
@@ -224,7 +224,9 @@ public class K8sResourceValidatorImplTest extends CategoryTest {
   @Owner(developers = UTSAV)
   @Category(UnitTests.class)
   public void shouldHandleNullAsValidateError() throws ApiException {
-    doThrow(new ApiException("")).when(authorizationV1Api).createSelfSubjectAccessReview(any(), any(), any(), any());
+    doThrow(new ApiException(""))
+        .when(authorizationV1Api)
+        .createSelfSubjectAccessReview(any(), any(), any(), any(), any());
     List<V1SubjectAccessReviewStatus> statuses =
         k8sResourceValidator.validate(authorizationV1Api, v1ResourceAttributesList, 10);
 

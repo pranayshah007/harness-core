@@ -50,6 +50,7 @@ import software.wings.graphql.schema.type.artifactSource.QLNexusDockerProps;
 import software.wings.graphql.schema.type.artifactSource.QLNexusMavenProps;
 import software.wings.graphql.schema.type.artifactSource.QLNexusNpmProps;
 import software.wings.graphql.schema.type.artifactSource.QLNexusNugetProps;
+import software.wings.graphql.schema.type.artifactSource.QLNexusRawProps;
 import software.wings.graphql.schema.type.artifactSource.QLSFTPArtifactSource;
 import software.wings.graphql.schema.type.artifactSource.QLSMBArtifactSource;
 import software.wings.graphql.schema.type.audit.QLApiKeyChangeSet;
@@ -226,6 +227,7 @@ public class TypeResolverManager {
     public static final String NexusMavenProps = "NexusMavenProps";
     public static final String NexusNpmProps = "NexusNpmProps";
     public static final String NexusNugetProps = "NexusNugetProps";
+    public static final String NexusRawProps = "NexusRawProps";
 
     public static final String AmazonS3Connector = "AmazonS3Connector";
     public static final String ApmVerificationConnector = "ApmVerificationConnector";
@@ -412,6 +414,7 @@ public class TypeResolverManager {
                                       .put(QLNexusMavenProps.class, TypeResolverManagerTypes.NexusMavenProps)
                                       .put(QLNexusNpmProps.class, TypeResolverManagerTypes.NexusNpmProps)
                                       .put(QLNexusNugetProps.class, TypeResolverManagerTypes.NexusNugetProps)
+                                      .put(QLNexusRawProps.class, TypeResolverManagerTypes.NexusRawProps)
                                       .build()))
         .put(TypeResolverManagerUnifaces.Instance,
             getResultTypeResolver(

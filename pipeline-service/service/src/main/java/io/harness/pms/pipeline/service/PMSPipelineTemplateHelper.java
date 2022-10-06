@@ -17,6 +17,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnexpectedException;
 import io.harness.exception.ngexception.NGTemplateException;
 import io.harness.exception.ngexception.beans.templateservice.TemplateInputsErrorMetadataDTO;
+import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitsync.helpers.GitContextHelper;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.ng.core.template.RefreshRequestDTO;
@@ -77,34 +78,35 @@ public class PMSPipelineTemplateHelper {
         GitEntityInfo gitEntityInfo = GitContextHelper.getGitEntityInfo();
         if (gitEntityInfo != null) {
           return NGRestUtils.getResponse(templateResourceClient.applyTemplatesOnGivenYamlV2(accountId, orgId, projectId,
-              gitEntityInfo.getBranch(), gitEntityInfo.getYamlGitConfigId(), true,
+              gitEntityInfo.getBranch(), gitEntityInfo.getYamlGitConfigId(), true, getConnectorRef(), getRepoName(),
+              accountId, orgId, projectId,
               TemplateApplyRequestDTO.builder()
                   .originalEntityYaml(yaml)
                   .checkForAccess(checkForTemplateAccess)
                   .getMergedYamlWithTemplateField(getMergedTemplateWithTemplateReferences)
                   .build()));
         }
-        return NGRestUtils.getResponse(
-            templateResourceClient.applyTemplatesOnGivenYamlV2(accountId, orgId, projectId, null, null, null,
-                TemplateApplyRequestDTO.builder()
-                    .originalEntityYaml(yaml)
-                    .checkForAccess(checkForTemplateAccess)
-                    .getMergedYamlWithTemplateField(getMergedTemplateWithTemplateReferences)
-                    .build()));
+        return NGRestUtils.getResponse(templateResourceClient.applyTemplatesOnGivenYamlV2(accountId, orgId, projectId,
+            null, null, null, null, null, null, null, null,
+            TemplateApplyRequestDTO.builder()
+                .originalEntityYaml(yaml)
+                .checkForAccess(checkForTemplateAccess)
+                .getMergedYamlWithTemplateField(getMergedTemplateWithTemplateReferences)
+                .build()));
       } catch (InvalidRequestException e) {
         if (e.getMetadata() instanceof TemplateInputsErrorMetadataDTO) {
           throw new NGTemplateResolveException(
-              TEMPLATE_RESOLVE_EXCEPTION_MSG, USER, (TemplateInputsErrorMetadataDTO) e.getMetadata());
+              TEMPLATE_RESOLVE_EXCEPTION_MSG, USER, (TemplateInputsErrorMetadataDTO) e.getMetadata(), yaml);
         } else if (e.getMetadata() instanceof ValidateTemplateInputsResponseDTO) {
           throw new NGTemplateResolveExceptionV2(
-              TEMPLATE_RESOLVE_EXCEPTION_MSG, USER, (ValidateTemplateInputsResponseDTO) e.getMetadata());
+              TEMPLATE_RESOLVE_EXCEPTION_MSG, USER, (ValidateTemplateInputsResponseDTO) e.getMetadata(), yaml);
         } else {
           throw new NGTemplateException(e.getMessage(), e);
         }
       } catch (NGTemplateResolveException e) {
-        throw new NGTemplateResolveException(e.getMessage(), USER, e.getErrorResponseDTO());
+        throw new NGTemplateResolveException(e.getMessage(), USER, e.getErrorResponseDTO(), null);
       } catch (NGTemplateResolveExceptionV2 e) {
-        throw new NGTemplateResolveExceptionV2(e.getMessage(), USER, e.getValidateTemplateInputsResponseDTO());
+        throw new NGTemplateResolveExceptionV2(e.getMessage(), USER, e.getValidateTemplateInputsResponseDTO(), null);
       } catch (UnexpectedException e) {
         log.error("Error connecting to Template Service", e);
         throw new NGTemplateException(TEMPLATE_RESOLVE_EXCEPTION_MSG, e);
@@ -171,5 +173,21 @@ public class PMSPipelineTemplateHelper {
 
     return NGRestUtils.getResponse(templateResourceClient.refreshAllTemplatesForYaml(
         accountId, orgId, projectId, null, null, null, refreshRequest));
+  }
+
+  private String getConnectorRef() {
+    GitEntityInfo gitEntityInfo = GitContextHelper.getGitEntityInfo();
+    if (GitAwareContextHelper.isNullOrDefault(gitEntityInfo.getParentEntityConnectorRef())) {
+      return gitEntityInfo.getConnectorRef();
+    }
+    return gitEntityInfo.getParentEntityConnectorRef();
+  }
+
+  private String getRepoName() {
+    GitEntityInfo gitEntityInfo = GitContextHelper.getGitEntityInfo();
+    if (GitAwareContextHelper.isNullOrDefault(gitEntityInfo.getParentEntityRepoName())) {
+      return gitEntityInfo.getRepoName();
+    }
+    return gitEntityInfo.getParentEntityRepoName();
   }
 }

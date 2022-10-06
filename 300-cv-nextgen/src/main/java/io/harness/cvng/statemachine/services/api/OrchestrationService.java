@@ -15,6 +15,8 @@ import java.util.Set;
 public interface OrchestrationService {
   void queueAnalysis(String verificationTaskId, Instant startTime, Instant endTime);
   void orchestrate(AnalysisOrchestrator orchestrator);
+  void markTerminated(String verificationTaskId);
+  void markStateMachineTerminated(String verificationTaskId);
   void markCompleted(String verificationTaskId);
   void markCompleted(Set<String> verificationTaskIds);
   AnalysisOrchestrator getAnalysisOrchestrator(String verificationTaskId);

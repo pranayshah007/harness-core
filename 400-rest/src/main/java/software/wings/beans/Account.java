@@ -16,6 +16,7 @@ import static software.wings.common.VerificationConstants.SERVICE_GUAARD_LIMIT;
 
 import io.harness.annotation.HarnessEntity;
 import io.harness.annotations.ChangeDataCapture;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
@@ -28,6 +29,7 @@ import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.FdUniqueIndex;
 import io.harness.mongo.index.MongoIndex;
+import io.harness.ng.DbAliases;
 import io.harness.ng.core.account.AuthenticationMechanism;
 import io.harness.ng.core.account.DefaultExperience;
 import io.harness.ng.core.account.ServiceAccountConfig;
@@ -66,6 +68,7 @@ import org.mongodb.morphia.annotations.Transient;
 @TargetModule(HarnessModule._955_ACCOUNT_MGMT)
 @FieldNameConstants(innerTypeName = "AccountKeys")
 @JsonIgnoreProperties(ignoreUnknown = true)
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "accounts", noClassnameStored = true)
 @HarnessEntity(exportable = true)
 @ChangeDataCapture(table = "accounts", fields = {AccountKeys.accountName, AccountKeys.createdAt}, handler = "")
@@ -162,9 +165,11 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
   @FdIndex private Long ceLicenseExpiryIteration;
   @FdIndex private Long resourceLookupSyncIteration;
   @FdIndex private long delegateTelemetryPublisherIteration;
-  @FdIndex private long delegateTaskFailIteration;
   @FdIndex private long delegateTaskRebroadcastIteration;
   @FdIndex private Long perpetualTaskRebalanceIteration;
+
+  // adding this to avoid kryo exception. Its not used anymore, check DEL-5047
+  @Deprecated private long delegateTaskFailIteration;
 
   @Getter private boolean cloudCostEnabled;
   @Getter @Setter private boolean ceAutoCollectK8sEvents;
@@ -173,6 +178,8 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
   @Getter @Setter private Long serviceGuardLimit = SERVICE_GUAARD_LIMIT;
 
   @Getter @Setter ServiceAccountConfig serviceAccountConfig;
+
+  @FdIndex @Getter @Setter boolean globalDelegateAccount;
 
   private transient Map<String, String> defaults = new HashMap<>();
   /**
@@ -481,11 +488,6 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
       return;
     }
 
-    else if (AccountKeys.delegateTaskFailIteration.equals(fieldName)) {
-      this.delegateTaskFailIteration = nextIteration;
-      return;
-    }
-
     else if (AccountKeys.delegateTaskRebroadcastIteration.equals(fieldName)) {
       this.delegateTaskRebroadcastIteration = nextIteration;
       return;
@@ -545,10 +547,6 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
       return this.delegateTelemetryPublisherIteration;
     }
 
-    else if (AccountKeys.delegateTaskFailIteration.equals(fieldName)) {
-      return this.delegateTaskFailIteration;
-    }
-
     else if (AccountKeys.delegateTaskRebroadcastIteration.equals(fieldName)) {
       return this.delegateTaskRebroadcastIteration;
     }
@@ -598,6 +596,7 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
     private boolean isProductLed;
     private boolean accountActivelyUsed;
     private ServiceAccountConfig serviceAccountConfig;
+    private boolean globalDelegateAccount;
 
     private Builder() {}
 
@@ -770,6 +769,11 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
       return this;
     }
 
+    public Builder withGlobalDelegateAccount(boolean globalDelegateAccount) {
+      this.globalDelegateAccount = globalDelegateAccount;
+      return this;
+    }
+
     public Builder but() {
       return anAccount()
           .withCompanyName(companyName)
@@ -875,7 +879,6 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
     public static final String isHarnessSupportAccessAllowed = "isHarnessSupportAccessAllowed";
     public static final String resourceLookupSyncIteration = "resourceLookupSyncIteration";
     public static final String instanceStatsMetricsPublisherInteration = "instanceStatsMetricsPublisherIteration";
-    public static final String delegateTaskFailIteration = "delegateTaskFailIteration";
     public static final String delegateTaskRebroadcastIteration = "delegateTaskRebroadcastIteration";
     public static final String DELEGATE_CONFIGURATION_DELEGATE_VERSIONS =
         delegateConfiguration + "." + DelegateConfigurationKeys.delegateVersions;

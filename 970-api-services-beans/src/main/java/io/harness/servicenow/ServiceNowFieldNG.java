@@ -9,6 +9,8 @@ package io.harness.servicenow;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
+import static org.apache.commons.lang3.StringUtils.isBlank;
+
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.jackson.JsonNodeUtils;
 
@@ -36,6 +38,8 @@ public class ServiceNowFieldNG {
   boolean required;
   boolean isCustom;
   @NotNull ServiceNowFieldSchemaNG schema;
+  // This is internal type returned by serviceNow API
+  String internalType;
   @Builder.Default @NotNull List<ServiceNowFieldAllowedValueNG> allowedValues = new ArrayList<>();
 
   public ServiceNowFieldNG() {
@@ -50,6 +54,10 @@ public class ServiceNowFieldNG {
     this.schema = new ServiceNowFieldSchemaNG(node.get("schema"));
     this.allowedValues = new ArrayList<>();
     addAllowedValues(node.get("allowedValues"));
+    this.internalType = JsonNodeUtils.getString(node, "internalType");
+    if (isBlank(this.internalType)) {
+      this.internalType = JsonNodeUtils.getString(node, "type");
+    }
   }
 
   private void addAllowedValues(JsonNode node) {

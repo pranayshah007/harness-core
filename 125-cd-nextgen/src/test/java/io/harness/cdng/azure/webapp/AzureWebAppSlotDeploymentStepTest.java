@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.azure.model.AzureConstants.DEPLOY_TO_SLOT;
 import static io.harness.azure.model.AzureConstants.SAVE_EXISTING_CONFIGURATIONS;
 import static io.harness.azure.model.AzureConstants.UPDATE_SLOT_CONFIGURATION_SETTINGS;
+import static io.harness.cdng.azure.webapp.AzureWebAppSlotDeploymentStep.FETCH_PREDEPLOYMENT_DATA_TASK_NAME;
 import static io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants.APPLICATION_SETTINGS;
 import static io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants.CONNECTION_STRINGS;
 import static io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants.STARTUP_COMMAND;
@@ -25,6 +26,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
@@ -132,6 +134,10 @@ public class AzureWebAppSlotDeploymentStepTest extends CDNGTestBase {
         .when(azureWebAppStepHelper)
         .prepareTaskRequest(
             any(StepElementParameters.class), eq(ambiance), any(TaskParameters.class), any(TaskType.class), anyList());
+    doReturn(taskRequest)
+        .when(azureWebAppStepHelper)
+        .prepareTaskRequest(any(StepElementParameters.class), eq(ambiance), any(TaskParameters.class),
+            any(TaskType.class), anyString(), anyList());
     doReturn(gitTaskRequest)
         .when(azureWebAppStepHelper)
         .prepareGitFetchTaskRequest(any(StepElementParameters.class), eq(ambiance), anyMap(), anyList());
@@ -159,7 +165,7 @@ public class AzureWebAppSlotDeploymentStepTest extends CDNGTestBase {
 
     verify(azureWebAppStepHelper)
         .prepareTaskRequest(eq(stepElementParameters), eq(ambiance), taskParametersArgumentCaptor.capture(),
-            eq(TaskType.AZURE_WEB_APP_TASK_NG), eq(expectedCommandUnits));
+            eq(TaskType.AZURE_WEB_APP_TASK_NG), eq(FETCH_PREDEPLOYMENT_DATA_TASK_NAME), eq(expectedCommandUnits));
     TaskParameters taskParameters = taskParametersArgumentCaptor.getValue();
     assertThat(taskParameters).isInstanceOf(AzureWebAppFetchPreDeploymentDataRequest.class);
     AzureWebAppFetchPreDeploymentDataRequest dataRequest = (AzureWebAppFetchPreDeploymentDataRequest) taskParameters;
@@ -216,7 +222,7 @@ public class AzureWebAppSlotDeploymentStepTest extends CDNGTestBase {
 
     verify(azureWebAppStepHelper)
         .prepareTaskRequest(eq(stepElementParameters), eq(ambiance), taskParametersArgumentCaptor.capture(),
-            eq(TaskType.AZURE_WEB_APP_TASK_NG), anyList());
+            eq(TaskType.AZURE_WEB_APP_TASK_NG), eq(FETCH_PREDEPLOYMENT_DATA_TASK_NAME), anyList());
     verify(azureWebAppStepHelper).fetchWebAppConfigsFromHarnessStore(ambiance, harnessStoreConfigs);
 
     // After we fetch files from harness store we're going to queue fetch predeployment data task
@@ -257,7 +263,7 @@ public class AzureWebAppSlotDeploymentStepTest extends CDNGTestBase {
 
     verify(azureWebAppStepHelper)
         .prepareTaskRequest(eq(stepElementParameters), eq(ambiance), taskParametersArgumentCaptor.capture(),
-            eq(TaskType.AZURE_WEB_APP_TASK_NG), anyList());
+            eq(TaskType.AZURE_WEB_APP_TASK_NG), eq(FETCH_PREDEPLOYMENT_DATA_TASK_NAME), anyList());
 
     // Next task will fetch predeployment data since no unprocessed configs left
     assertThat(taskParametersArgumentCaptor.getValue()).isInstanceOf(AzureWebAppFetchPreDeploymentDataRequest.class);

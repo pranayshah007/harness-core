@@ -11,7 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import static java.lang.Boolean.FALSE;
 
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.validator.EntityIdentifier;
 import io.harness.data.validator.NGEntityName;
@@ -46,10 +46,10 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Builder
 @EqualsAndHashCode(callSuper = false)
 @FieldNameConstants(innerTypeName = "UserGroupKeys")
+@StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "user-groups", noClassnameStored = true)
 @Document("user-groups")
 @TypeAlias("user-groups")
-@StoreIn(DbAliases.NG_MANAGER)
 @OwnedBy(PL)
 public class UserGroup implements PersistentEntity, NGAccountAccess {
   public static List<MongoIndex> mongoIndexes() {

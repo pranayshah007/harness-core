@@ -106,6 +106,8 @@ public class NexusArtifactStream extends ArtifactStream {
         || getRepositoryFormat().equals(RepositoryFormat.npm.name())) {
       return format("%s_%s_%s", getJobname() + "/" + getPackageName(), buildNo,
           new SimpleDateFormat(dateFormat).format(new Date()));
+    } else if (getRepositoryFormat().equals(RepositoryFormat.raw.name())) {
+      return getJobname() + "/" + getPackageName();
     }
     return null;
   }

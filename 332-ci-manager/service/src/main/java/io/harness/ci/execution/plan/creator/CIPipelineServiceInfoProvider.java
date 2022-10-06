@@ -7,11 +7,16 @@
 
 package io.harness.ci.plan.creator;
 
+import static io.harness.pms.yaml.YAMLFieldNameConstants.STEP;
+import static io.harness.pms.yaml.YAMLFieldNameConstants.STEPS;
+import static io.harness.pms.yaml.YAMLFieldNameConstants.STRATEGY;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.beans.steps.StepSpecTypeConstants;
 import io.harness.ci.creator.variables.ArtifactoryUploadStepVariableCreator;
+import io.harness.ci.creator.variables.BackgroundStepVariableCreator;
 import io.harness.ci.creator.variables.BuildAndPushACRStepVariableCreator;
 import io.harness.ci.creator.variables.BuildAndPushECRStepVariableCreator;
 import io.harness.ci.creator.variables.BuildAndPushGCRStepVariableCreator;
@@ -19,6 +24,7 @@ import io.harness.ci.creator.variables.CIStageVariableCreator;
 import io.harness.ci.creator.variables.CIStepVariableCreator;
 import io.harness.ci.creator.variables.DockerStepVariableCreator;
 import io.harness.ci.creator.variables.GCSUploadStepVariableCreator;
+import io.harness.ci.creator.variables.GitCloneStepVariableCreator;
 import io.harness.ci.creator.variables.PluginStepVariableCreator;
 import io.harness.ci.creator.variables.RestoreCacheGCSStepVariableCreator;
 import io.harness.ci.creator.variables.RestoreCacheS3StepVariableCreator;
@@ -28,17 +34,20 @@ import io.harness.ci.creator.variables.S3UploadStepVariableCreator;
 import io.harness.ci.creator.variables.SaveCacheGCSStepVariableCreator;
 import io.harness.ci.creator.variables.SaveCacheS3StepVariableCreator;
 import io.harness.ci.creator.variables.SecurityStepVariableCreator;
-import io.harness.ci.plan.creator.filter.CIStageFilterJsonCreator;
-import io.harness.ci.plan.creator.stage.IntegrationStagePMSPlanCreator;
+import io.harness.ci.plan.creator.filter.CIStageFilterJsonCreatorV2;
+import io.harness.ci.plan.creator.stage.IntegrationStagePMSPlanCreatorV2;
 import io.harness.ci.plan.creator.step.CIPMSStepFilterJsonCreator;
 import io.harness.ci.plan.creator.step.CIPMSStepPlanCreator;
 import io.harness.ci.plan.creator.step.CIStepFilterJsonCreatorV2;
 import io.harness.ci.plancreator.ArtifactoryUploadStepPlanCreator;
+import io.harness.ci.plancreator.BackgroundStepPlanCreator;
 import io.harness.ci.plancreator.BuildAndPushACRStepPlanCreator;
 import io.harness.ci.plancreator.BuildAndPushECRStepPlanCreator;
 import io.harness.ci.plancreator.BuildAndPushGCRStepPlanCreator;
 import io.harness.ci.plancreator.DockerStepPlanCreator;
 import io.harness.ci.plancreator.GCSUploadStepPlanCreator;
+import io.harness.ci.plancreator.GitCloneStepPlanCreator;
+import io.harness.ci.plancreator.InitializeStepPlanCreator;
 import io.harness.ci.plancreator.PluginStepPlanCreator;
 import io.harness.ci.plancreator.RestoreCacheGCSStepPlanCreator;
 import io.harness.ci.plancreator.RestoreCacheS3StepPlanCreator;
@@ -49,7 +58,9 @@ import io.harness.ci.plancreator.SaveCacheGCSStepPlanCreator;
 import io.harness.ci.plancreator.SaveCacheS3StepPlanCreator;
 import io.harness.ci.plancreator.SecurityStepPlanCreator;
 import io.harness.enforcement.constants.FeatureRestrictionName;
+import io.harness.filters.EmptyAnyFilterJsonCreator;
 import io.harness.filters.ExecutionPMSFilterJsonCreator;
+import io.harness.filters.ParallelGenericFilterJsonCreator;
 import io.harness.plancreator.execution.ExecutionPmsPlanCreator;
 import io.harness.plancreator.stages.parallel.ParallelPlanCreator;
 import io.harness.plancreator.steps.NGStageStepsPlanCreator;
@@ -59,9 +70,12 @@ import io.harness.pms.contracts.steps.StepMetaData;
 import io.harness.pms.sdk.core.pipeline.filters.FilterJsonCreator;
 import io.harness.pms.sdk.core.plan.creation.creators.PartialPlanCreator;
 import io.harness.pms.sdk.core.plan.creation.creators.PipelineServiceInfoProvider;
+import io.harness.pms.sdk.core.variables.EmptyAnyVariableCreator;
+import io.harness.pms.sdk.core.variables.EmptyVariableCreator;
 import io.harness.pms.sdk.core.variables.StrategyVariableCreator;
 import io.harness.pms.sdk.core.variables.VariableCreator;
 import io.harness.pms.utils.InjectorUtils;
+import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.variables.ExecutionVariableCreator;
 
 import com.google.inject.Inject;
@@ -69,18 +83,22 @@ import com.google.inject.Singleton;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 
 @Singleton
 @OwnedBy(HarnessTeam.CI)
 public class CIPipelineServiceInfoProvider implements PipelineServiceInfoProvider {
+  private static final String LITE_ENGINE_TASK = "liteEngineTask";
+
   @Inject InjectorUtils injectorUtils;
 
   @Override
   public List<PartialPlanCreator<?>> getPlanCreators() {
     List<PartialPlanCreator<?>> planCreators = new LinkedList<>();
-    planCreators.add(new IntegrationStagePMSPlanCreator());
+    planCreators.add(new IntegrationStagePMSPlanCreatorV2());
     planCreators.add(new CIPMSStepPlanCreator());
     planCreators.add(new RunStepPlanCreator());
+    planCreators.add(new BackgroundStepPlanCreator());
     planCreators.add(new RunTestStepPlanCreator());
     planCreators.add(new S3UploadStepPlanCreator());
     planCreators.add(new SaveCacheGCSStepPlanCreator());
@@ -99,6 +117,8 @@ public class CIPipelineServiceInfoProvider implements PipelineServiceInfoProvide
     planCreators.add(new ExecutionPmsPlanCreator());
     planCreators.add(new ParallelPlanCreator());
     planCreators.add(new StrategyConfigPlanCreator());
+    planCreators.add(new GitCloneStepPlanCreator());
+    planCreators.add(new InitializeStepPlanCreator());
     injectorUtils.injectMembers(planCreators);
     return planCreators;
   }
@@ -106,10 +126,12 @@ public class CIPipelineServiceInfoProvider implements PipelineServiceInfoProvide
   @Override
   public List<FilterJsonCreator> getFilterJsonCreators() {
     List<FilterJsonCreator> filterJsonCreators = new ArrayList<>();
-    filterJsonCreators.add(new CIStageFilterJsonCreator());
     filterJsonCreators.add(new CIPMSStepFilterJsonCreator());
     filterJsonCreators.add(new CIStepFilterJsonCreatorV2());
+    filterJsonCreators.add(new CIStageFilterJsonCreatorV2());
     filterJsonCreators.add(new ExecutionPMSFilterJsonCreator());
+    filterJsonCreators.add(new ParallelGenericFilterJsonCreator());
+    filterJsonCreators.add(new EmptyAnyFilterJsonCreator(Set.of(STRATEGY, STEPS)));
     injectorUtils.injectMembers(filterJsonCreators);
 
     return filterJsonCreators;
@@ -122,7 +144,7 @@ public class CIPipelineServiceInfoProvider implements PipelineServiceInfoProvide
     variableCreators.add(new ExecutionVariableCreator());
     variableCreators.add(new CIStepVariableCreator());
     variableCreators.add(new RunStepVariableCreator());
-
+    variableCreators.add(new BackgroundStepVariableCreator());
     variableCreators.add(new RunTestStepVariableCreator());
     variableCreators.add(new S3UploadStepVariableCreator());
     variableCreators.add(new SaveCacheGCSStepVariableCreator());
@@ -137,7 +159,10 @@ public class CIPipelineServiceInfoProvider implements PipelineServiceInfoProvide
     variableCreators.add(new BuildAndPushGCRStepVariableCreator());
     variableCreators.add(new SaveCacheS3StepVariableCreator());
     variableCreators.add(new SecurityStepVariableCreator());
+    variableCreators.add(new GitCloneStepVariableCreator());
     variableCreators.add(new StrategyVariableCreator());
+    variableCreators.add(new EmptyAnyVariableCreator(Set.of(YAMLFieldNameConstants.PARALLEL, STEPS)));
+    variableCreators.add(new EmptyVariableCreator(STEP, Set.of(LITE_ENGINE_TASK)));
 
     return variableCreators;
   }
@@ -149,6 +174,12 @@ public class CIPipelineServiceInfoProvider implements PipelineServiceInfoProvide
                                .setType(StepSpecTypeConstants.RUN)
                                .setStepMetaData(StepMetaData.newBuilder().addFolderPaths("Build").build())
                                .build();
+
+    StepInfo backgroundStepInfo = StepInfo.newBuilder()
+                                      .setName("Background")
+                                      .setType(StepSpecTypeConstants.BACKGROUND)
+                                      .setStepMetaData(StepMetaData.newBuilder().addFolderPaths("Build").build())
+                                      .build();
 
     StepInfo runTestsStepInfo = StepInfo.newBuilder()
                                     .setName("Run Tests")
@@ -162,6 +193,13 @@ public class CIPipelineServiceInfoProvider implements PipelineServiceInfoProvide
                                   .setType(StepSpecTypeConstants.PLUGIN)
                                   .setStepMetaData(StepMetaData.newBuilder().addFolderPaths("Build").build())
                                   .build();
+
+    StepInfo gitCloneStepInfo = StepInfo.newBuilder()
+                                    .setName("Git Clone")
+                                    .setType(StepSpecTypeConstants.GIT_CLONE)
+                                    .setStepMetaData(StepMetaData.newBuilder().addFolderPaths("Build").build())
+                                    .build();
+
     StepInfo restoreCacheFromGCS = StepInfo.newBuilder()
                                        .setName("Restore Cache From GCS")
                                        .setType(StepSpecTypeConstants.RESTORE_CACHE_GCS)
@@ -244,6 +282,7 @@ public class CIPipelineServiceInfoProvider implements PipelineServiceInfoProvide
     List<StepInfo> stepInfos = new ArrayList<>();
 
     stepInfos.add(runStepInfo);
+    stepInfos.add(backgroundStepInfo);
     stepInfos.add(uploadToGCS);
     stepInfos.add(ecrPushBuilds);
     stepInfos.add(uploadToS3);
@@ -257,6 +296,7 @@ public class CIPipelineServiceInfoProvider implements PipelineServiceInfoProvide
     stepInfos.add(dockerPushBuild);
     stepInfos.add(uploadArtifactsToJfrogBuild);
     stepInfos.add(saveCacheToGCS);
+    stepInfos.add(gitCloneStepInfo);
     stepInfos.add(saveCacheToS3);
 
     return stepInfos;

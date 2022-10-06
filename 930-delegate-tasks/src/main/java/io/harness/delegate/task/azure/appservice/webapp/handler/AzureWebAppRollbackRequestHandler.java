@@ -136,14 +136,16 @@ public class AzureWebAppRollbackRequestHandler extends AzureWebAppRequestHandler
   private AzureAppServicePackageDeploymentContext toAzureAppServicePackageDeploymentContext(
       AzureWebAppRollbackRequest taskRequest, AzureWebClientContext azureWebClientContext,
       AzureLogCallbackProvider logCallbackProvider) {
-    AutoCloseableWorkingDirectory autoCloseableWorkingDirectory =
-        new AutoCloseableWorkingDirectory(REPOSITORY_DIR_PATH, AZURE_APP_SVC_ARTIFACT_DOWNLOAD_DIR_PATH);
-    AzurePackageArtifactConfig artifactConfig = (AzurePackageArtifactConfig) taskRequest.getArtifact();
-    AzureArtifactDownloadResponse artifactResponse = null;
-    if (artifactConfig != null) {
-      ArtifactDownloadContext downloadContext = azureAppServiceResourceUtilities.toArtifactNgDownloadContext(
-          artifactConfig, autoCloseableWorkingDirectory, logCallbackProvider);
-      artifactResponse = artifactDownloaderService.download(downloadContext);
+    AzureArtifactDownloadResponse artifactResponse;
+    try (AutoCloseableWorkingDirectory autoCloseableWorkingDirectory =
+             new AutoCloseableWorkingDirectory(REPOSITORY_DIR_PATH, AZURE_APP_SVC_ARTIFACT_DOWNLOAD_DIR_PATH)) {
+      AzurePackageArtifactConfig artifactConfig = (AzurePackageArtifactConfig) taskRequest.getArtifact();
+      artifactResponse = null;
+      if (artifactConfig != null) {
+        ArtifactDownloadContext downloadContext = azureAppServiceResourceUtilities.toArtifactNgDownloadContext(
+            artifactConfig, autoCloseableWorkingDirectory, logCallbackProvider);
+        artifactResponse = artifactDownloaderService.download(downloadContext);
+      }
     }
 
     AzureAppServicePreDeploymentData preDeploymentData = taskRequest.getPreDeploymentData();
@@ -257,14 +259,19 @@ public class AzureWebAppRollbackRequestHandler extends AzureWebAppRequestHandler
       AzureWebAppRollbackRequest taskRequest, AzureWebClientContext azureWebClientContext,
       AzureAppServiceDeploymentContext deploymentContext) {
     AzureAppServicePreDeploymentData preDeploymentData = taskRequest.getPreDeploymentData();
+    if (!deploymentContext.isBasicDeployment()
+        && isTrafficWeightDifferent(azureWebClientContext, deploymentContext, preDeploymentData)) {
+      rollbackUpdateSlotTrafficWeight(preDeploymentData, azureWebClientContext, logCallbackProvider);
+    }
+    LogCallback rerouteTrafficLogCallback = logCallbackProvider.obtainLogCallback(SLOT_TRAFFIC_PERCENTAGE);
+    rerouteTrafficLogCallback.saveExecutionLog(NO_TRAFFIC_SHIFT_REQUIRED, INFO, SUCCESS);
+  }
+
+  private boolean isTrafficWeightDifferent(AzureWebClientContext azureWebClientContext,
+      AzureAppServiceDeploymentContext deploymentContext, AzureAppServicePreDeploymentData preDeploymentData) {
     double slotTrafficWeight =
         azureAppServiceService.getSlotTrafficWeight(azureWebClientContext, deploymentContext.getSlotName());
-    if (slotTrafficWeight != preDeploymentData.getTrafficWeight() && !deploymentContext.isBasicDeployment()) {
-      rollbackUpdateSlotTrafficWeight(preDeploymentData, azureWebClientContext, logCallbackProvider);
-    } else {
-      LogCallback rerouteTrafficLogCallback = logCallbackProvider.obtainLogCallback(SLOT_TRAFFIC_PERCENTAGE);
-      rerouteTrafficLogCallback.saveExecutionLog(NO_TRAFFIC_SHIFT_REQUIRED, INFO, SUCCESS);
-    }
+    return slotTrafficWeight != preDeploymentData.getTrafficWeight();
   }
 
   private void rollbackUpdateSlotTrafficWeight(AzureAppServicePreDeploymentData preDeploymentData,

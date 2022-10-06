@@ -25,6 +25,7 @@ public class DliteVmInitializeTaskParams implements CIInitializeTaskParams {
   @JsonProperty("services") List<ExecuteStepRequest> services;
 
   @Builder.Default private static final CIInitializeTaskParams.Type type = Type.DLITE_VM;
+
   @Override
   public CIInitializeTaskParams.Type getType() {
     return type;

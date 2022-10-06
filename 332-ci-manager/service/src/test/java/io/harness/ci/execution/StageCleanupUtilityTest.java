@@ -25,6 +25,7 @@ import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.ci.executionplan.CIExecutionPlanTestHelper;
 import io.harness.ci.executionplan.CIExecutionTestBase;
 import io.harness.delegate.beans.ci.CICleanupTaskParams;
+import io.harness.delegate.beans.ci.vm.CIVmInitializeTaskParams;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
@@ -49,6 +50,9 @@ public class StageCleanupUtilityTest extends CIExecutionTestBase {
   @Inject private CIExecutionPlanTestHelper ciExecutionPlanTestHelper;
 
   @InjectMocks private StageCleanupUtility stageCleanupUtility;
+  // private VmInfraInfo vmInfraInfo = VmInfraInfo.builder().poolId("test").build();
+  private static final CIVmInitializeTaskParams.Type vmInfraInfo = CIVmInitializeTaskParams.Type.VM;
+
   private Ambiance ambiance = Ambiance.newBuilder()
                                   .putAllSetupAbstractions(Maps.of("accountId", "accountId", "projectIdentifier",
                                       "projectIdentfier", "orgIdentifier", "orgIdentifier"))
@@ -89,7 +93,7 @@ public class StageCleanupUtilityTest extends CIExecutionTestBase {
              ambiance, RefObjectUtils.getSweepingOutputRefObject(STAGE_INFRA_DETAILS)))
         .thenReturn(OptionalSweepingOutput.builder()
                         .found(true)
-                        .output(VmStageInfraDetails.builder().poolId(poolId).build())
+                        .output(VmStageInfraDetails.builder().poolId(poolId).infraInfo(vmInfraInfo).build())
                         .build());
     when(executionSweepingOutputResolver.resolveOptional(
              ambiance, RefObjectUtils.getSweepingOutputRefObject(ContextElement.stageDetails)))

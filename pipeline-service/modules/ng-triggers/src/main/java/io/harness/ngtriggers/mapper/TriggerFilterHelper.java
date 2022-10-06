@@ -134,6 +134,9 @@ public class TriggerFilterHelper {
     update.set(NGTriggerEntityKeys.tags, triggerEntity.getTags());
     update.set(NGTriggerEntityKeys.deleted, false);
     update.set(NGTriggerEntityKeys.triggerStatus, triggerEntity.getTriggerStatus());
+    if (triggerEntity.getPollInterval() != null) {
+      update.set(NGTriggerEntityKeys.pollInterval, triggerEntity.getPollInterval());
+    }
     if (triggerEntity.getNextIterations() != null) {
       update.set(NGTriggerEntityKeys.nextIterations, triggerEntity.getNextIterations());
     }

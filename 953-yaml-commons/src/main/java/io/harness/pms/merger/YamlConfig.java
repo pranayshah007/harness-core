@@ -48,6 +48,11 @@ public class YamlConfig {
     fqnToValueMap = FQNMapGenerator.generateFQNMap(yamlMap);
   }
 
+  public YamlConfig(JsonNode jsonNode, boolean keepUuidFields) {
+    yamlMap = jsonNode;
+    fqnToValueMap = FQNMapGenerator.generateFQNMap(yamlMap, keepUuidFields);
+  }
+
   public YamlConfig(Map<FQN, Object> fqnToValueMap, JsonNode originalYaml) {
     yamlMap = YamlMapGenerator.generateYamlMap(fqnToValueMap, originalYaml, false);
     // fqnToValueMap can be missing some values which need to be taken from originalYaml. These values are there in

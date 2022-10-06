@@ -90,11 +90,13 @@ public class AzureRepoToGitMapperTest extends CategoryTest {
                                                             .authentication(azureRepoAuthenticationDTO)
                                                             .apiAccess(azureRepoApiAccessDTO)
                                                             .delegateSelectors(delegateSelectors)
+                                                            .executeOnDelegate(false)
                                                             .build();
     GitConfigDTO gitConfigDTO = AzureRepoToGitMapper.mapToGitConfigDTO(azureRepoConnectorDTO);
     assertThat(gitConfigDTO).isNotNull();
     assertThat(gitConfigDTO.getGitAuthType()).isEqualTo(HTTP);
     assertThat(gitConfigDTO.getDelegateSelectors()).isEqualTo(delegateSelectors);
+    assertThat(gitConfigDTO.getExecuteOnDelegate()).isEqualTo(false);
     GitHTTPAuthenticationDTO gitAuthentication = (GitHTTPAuthenticationDTO) gitConfigDTO.getGitAuth();
     assertThat(gitConfigDTO.getGitConnectionType()).isEqualTo(PROJECT);
     assertThat(gitConfigDTO.getUrl()).isEqualTo(url);

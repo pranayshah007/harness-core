@@ -15,6 +15,7 @@ import io.harness.pms.sdk.core.data.ExecutionSweepingOutput;
 import io.harness.pms.sdk.core.data.Outcome;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import java.util.Map;
 import lombok.Builder;
 import lombok.Value;
 import org.springframework.data.annotation.TypeAlias;
@@ -27,4 +28,5 @@ import org.springframework.data.annotation.TypeAlias;
 @RecasterAlias("io.harness.cdng.ssh.CommandStepOutcome")
 public class CommandStepOutcome implements Outcome, ExecutionSweepingOutput {
   String host;
+  Map<String, String> outputVariables;
 }

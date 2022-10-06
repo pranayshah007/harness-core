@@ -34,6 +34,7 @@ import static software.wings.integration.SSO.LDAP.LdapIntegrationTestConstants.u
 import static software.wings.integration.SSO.LDAP.LdapIntegrationTestConstants.userSettingEmailAttr;
 import static software.wings.integration.SSO.LDAP.LdapIntegrationTestConstants.userSettingSearchFilter;
 
+import io.harness.delegate.beans.ldap.LDAPTestAuthenticationRequest;
 import io.harness.serializer.JsonSubtypeResolver;
 
 import software.wings.beans.sso.LdapConnectionSettings;
@@ -41,7 +42,6 @@ import software.wings.beans.sso.LdapGroupSettings;
 import software.wings.beans.sso.LdapLinkGroupRequest;
 import software.wings.beans.sso.LdapSettings;
 import software.wings.beans.sso.LdapUserSettings;
-import software.wings.resources.SSOResource.LDAPTestAuthenticationRequest;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -156,9 +156,8 @@ public class LdapTestHelper {
   }
 
   public static LDAPTestAuthenticationRequest getAuthenticationRequestObject() {
-    LDAPTestAuthenticationRequest ldapTestAuthenticationRequest = new LDAPTestAuthenticationRequest();
-    ldapTestAuthenticationRequest.setEmail(email);
-    ldapTestAuthenticationRequest.setPassword(pass);
+    LDAPTestAuthenticationRequest ldapTestAuthenticationRequest =
+        LDAPTestAuthenticationRequest.builder().email(email).password(pass).build();
     return ldapTestAuthenticationRequest;
   }
 

@@ -24,7 +24,6 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.event.timeseries.processor.utils.DateUtils;
 import io.harness.exception.WingsException;
 import io.harness.timescaledb.DBUtils;
-import io.harness.timescaledb.TimeScaleDBConfig;
 import io.harness.timescaledb.TimeScaleDBService;
 
 import software.wings.graphql.schema.type.aggregation.QLDataPoint;
@@ -72,7 +71,6 @@ public class InstanceTimeSeriesDataHelper {
   @Inject TimeScaleDBService timeScaleDBService;
   @Inject NameService nameService;
   @Inject InstanceStatsDataFetcher instanceStatsDataFetcher;
-  private static int DEFAULT_EXPIRY_IN_DAYS = 210;
 
   public QLStackedTimeSeriesData getTimeSeriesAggregatedData(String accountId,
       QLNoOpAggregateFunction aggregateFunction, List<QLInstanceFilter> filters, QLTimeSeriesAggregation groupByTime,
@@ -496,38 +494,6 @@ public class InstanceTimeSeriesDataHelper {
         retryCount++;
       } finally {
         DBUtils.close(resultSet);
-      }
-    }
-  }
-
-  public void purgeOldInstances() {
-    if (!timeScaleDBService.isValid()) {
-      log.info("Skipping purge of old instances from time scale db since time scale db is not initialized");
-      return;
-    }
-
-    int retryCount = 0;
-    TimeScaleDBConfig timeScaleDBConfig = timeScaleDBService.getTimeScaleDBConfig();
-    int expiryInDays = timeScaleDBConfig != null && timeScaleDBConfig.getInstanceDataRetentionDays() > 0
-        ? timeScaleDBConfig.getInstanceDataRetentionDays()
-        : DEFAULT_EXPIRY_IN_DAYS;
-    String query = new StringBuilder("SELECT drop_chunks(interval '")
-                       .append(expiryInDays)
-                       .append(" days', 'instance_stats')")
-                       .toString();
-
-    while (retryCount < MAX_RETRY) {
-      try (Connection connection = timeScaleDBService.getDBConnection();
-           Statement statement = connection.createStatement()) {
-        statement.execute(query);
-        return;
-      } catch (SQLException e) {
-        if (retryCount >= MAX_RETRY) {
-          log.error("Failed to execute query=[{}]", query, e);
-        } else {
-          log.warn("Failed to execute query=[{}], retryCount=[{}]", query, retryCount);
-        }
-        retryCount++;
       }
     }
   }

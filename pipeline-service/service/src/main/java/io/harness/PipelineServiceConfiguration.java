@@ -138,6 +138,7 @@ public class PipelineServiceConfiguration extends Configuration {
   @JsonProperty("planCreatorMergeServiceDependencyBatch") private Integer planCreatorMergeServiceDependencyBatch;
   @JsonProperty("jsonExpansionPoolConfig") private ThreadPoolConfig jsonExpansionPoolConfig;
   @JsonProperty("jsonExpansionRequestBatchSize") private Integer jsonExpansionBatchSize;
+  @JsonProperty(value = "enableOpentelemetry") private Boolean enableOpentelemetry;
 
   private String managerServiceSecret;
   private String managerTarget;
@@ -261,5 +262,13 @@ public class PipelineServiceConfiguration extends Configuration {
         .prettyPrint(true)
         .resourceClasses(resourceClasses)
         .scannerClass("io.swagger.v3.jaxrs2.integration.JaxrsAnnotationScanner");
+  }
+
+  public List<String> getDbAliases() {
+    List<String> dbAliases = new ArrayList<>();
+    if (mongoConfig != null) {
+      dbAliases.add(mongoConfig.getAliasDBName());
+    }
+    return dbAliases;
   }
 }

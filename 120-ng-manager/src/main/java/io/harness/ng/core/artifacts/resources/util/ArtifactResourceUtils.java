@@ -171,13 +171,13 @@ public class ArtifactResourceUtils {
       Optional<ServiceEntity> optionalService =
           serviceEntityService.get(accountId, orgIdentifier, projectIdentifier, serviceId, false);
       optionalService.ifPresent(
-          service -> yamlFields.add(getYamlField(service.getYaml(), YAMLFieldNameConstants.SERVICE)));
+          service -> yamlFields.add(getYamlField(service.fetchNonEmptyYaml(), YAMLFieldNameConstants.SERVICE)));
     }
     if (isNotEmpty(environmentId)) {
       Optional<Environment> optionalEnvironment =
           environmentService.get(accountId, orgIdentifier, projectIdentifier, environmentId, false);
-      optionalEnvironment.ifPresent(
-          environment -> yamlFields.add(getYamlField(environment.getYaml(), YAMLFieldNameConstants.ENVIRONMENT)));
+      optionalEnvironment.ifPresent(environment
+          -> yamlFields.add(getYamlField(environment.fetchNonEmptyYaml(), YAMLFieldNameConstants.ENVIRONMENT)));
     }
     return yamlFields;
   }

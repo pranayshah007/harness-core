@@ -15,6 +15,8 @@ import static io.harness.rule.OwnerRule.FERNANDOD;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -28,6 +30,7 @@ import io.harness.distribution.constraint.Constraint.Strategy;
 import io.harness.distribution.constraint.Consumer.State;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.executions.plan.PlanExecutionService;
+import io.harness.exception.EntityNotFoundException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.PlanExecution;
@@ -413,6 +416,28 @@ public class PMSResourceConstraintServiceTest extends PipelineServiceTestBase {
         .getAllByRestraintIdAndResourceUnitAndStates(
             resourceConstraint.getUuid(), RESOURCE_UNIT, Arrays.asList(ACTIVE, BLOCKED));
     verify(planExecutionService).findAllByPlanExecutionIdIn(any());
+  }
+
+  @Test
+  @Owner(developers = FERNANDOD)
+  @Category(UnitTests.class)
+  public void shouldGetPipelineNameHandleExceptionFromPipelineServiceGetOperation() {
+    Map<String, String> setupAbstractions = new HashMap<>();
+    setupAbstractions.put("accountId", "A");
+    setupAbstractions.put("orgIdentifier", "B");
+    setupAbstractions.put("projectIdentifier", "C");
+    PlanExecution planExecution =
+        PlanExecution.builder()
+            .uuid(PLAN_EXECUTION_ID)
+            .setupAbstractions(setupAbstractions)
+            .metadata(ExecutionMetadata.newBuilder().setPipelineIdentifier("pipeline-id").build())
+            .build();
+
+    when(pipelineService.get(anyString(), anyString(), anyString(), anyString(), anyBoolean()))
+        .thenThrow(new EntityNotFoundException("anyContent"));
+
+    Map<String, PipelineEntity> cache = new HashMap<>();
+    assertThat(pmsResourceConstraintService.getPipelineName(cache, planExecution)).isNull();
   }
 
   private ResourceRestraint getResourceConstraint() {

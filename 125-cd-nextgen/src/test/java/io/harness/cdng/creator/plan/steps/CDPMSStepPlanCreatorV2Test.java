@@ -8,6 +8,7 @@
 package io.harness.cdng.creator.plan.steps;
 
 import static io.harness.rule.OwnerRule.ABOSII;
+import static io.harness.rule.OwnerRule.NAMAN_TALAYCHA;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -96,6 +97,22 @@ public class CDPMSStepPlanCreatorV2Test extends CategoryTest {
             "pipeline.stages.Stage1.spec.execution.steps.Execution_Step2",
             "pipeline.stages.Stage1.spec.infrastructure.infrastructureDefinition.provisioner.steps.Provisioner_Step1",
             "pipeline.stages.Stage1.spec.infrastructure.infrastructureDefinition.provisioner.steps.Provisioner_Step2");
+  }
+
+  @Test
+  @Owner(developers = NAMAN_TALAYCHA)
+  @Category(UnitTests.class)
+  public void testFindStepsBeforeCurrentStepCustomerCase() throws IOException {
+    YamlField pipeline = getYamlFieldFromGivenFileName("cdng/plan/pipeline_multistage_customer.yaml");
+    YamlField currentStep =
+        pipeline.fromYamlPath("pipeline/stages/[3]/parallel/[0]/stage/spec/execution/steps/[1]/step");
+    List<YamlNode> steps = cdPMSStepPlanCreator.findStepsBeforeCurrentStep(
+        currentStep, yamlNode -> SHELL_SCRIPT_TYPE.equals(yamlNode.getType()));
+
+    assertThat(steps).hasSize(2);
+    assertThat(steps.stream().map(YamlUtils::getFullyQualifiedName))
+        .containsOnly("pipeline.stages.Install_dependencies.spec.execution.steps.Provisioner_Step1",
+            "pipeline.stages.Install_dependencies.spec.execution.steps.Provisioner_Step2");
   }
 
   private YamlField getYamlFieldFromGivenFileName(String file) throws IOException {

@@ -27,7 +27,7 @@ metadata:
   namespace: harness-delegate
 type: Opaque
 data:
-  ACCOUNT_SECRET: "QUNDT1VOVF9LRVk="
+  DELEGATE_TOKEN: "QUNDT1VOVF9LRVk="
 
 ---
 
@@ -62,6 +62,9 @@ spec:
       - image: harness/delegate:latest
         imagePullPolicy: Always
         name: delegate
+        securityContext:
+          allowPrivilegeEscalation: false
+          runAsUser: 0
         resources:
           limits:
             cpu: "1.0"

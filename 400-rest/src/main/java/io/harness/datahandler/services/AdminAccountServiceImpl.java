@@ -18,6 +18,7 @@ import io.harness.beans.PageRequest;
 import io.harness.ccm.license.CeLicenseInfo;
 import io.harness.datahandler.models.AccountSummary;
 import io.harness.datahandler.utils.AccountSummaryHelper;
+import io.harness.delegate.DelegateGlobalAccountController;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.limits.ActionType;
@@ -53,6 +54,7 @@ public class AdminAccountServiceImpl implements AdminAccountService {
   @Inject private LimitConfigurationService limitConfigurationService;
   @Inject private AccountSummaryHelper accountSummaryHelper;
   @Inject private FeatureFlagService featureFlagService;
+  @Inject private DelegateGlobalAccountController delegateGlobalAccountController;
 
   @Override
   public LicenseInfo updateLicense(String accountId, LicenseUpdateInfo licenseUpdateInfo) {
@@ -197,5 +199,13 @@ public class AdminAccountServiceImpl implements AdminAccountService {
   @Override
   public boolean updateRingName(String accountId, String ringName) {
     return accountService.updateRingName(accountId, ringName);
+  }
+
+  @Override
+  public Account createGlobalDelegateAccount(Account account, String adminUserEmail) {
+    if (delegateGlobalAccountController.getGlobalAccount().isPresent()) {
+      return null;
+    }
+    return createAccount(account, adminUserEmail);
   }
 }

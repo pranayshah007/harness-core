@@ -104,9 +104,9 @@ aeriform("//332-ci-manager/contracts:module")
 
 aeriform("//332-ci-manager/contracts:tests")
 
-aeriform("//340-ce-nextgen:module")
+aeriform("//ce-nextgen:module")
 
-aeriform("//340-ce-nextgen:tests")
+aeriform("//ce-nextgen:tests")
 
 aeriform("//350-event-server:module")
 
@@ -344,7 +344,7 @@ aeriform("//950-wait-engine:tests")
 
 aeriform("//951-cg-git-sync:module")
 
-aeriform("//951-debezium-service")
+aeriform("//debezium-service")
 
 aeriform("//952-debezium-engine")
 

@@ -29,9 +29,11 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.connector.ConnectivityStatus;
 import io.harness.connector.ConnectorValidationResult;
+import io.harness.connector.helper.CustomSecretManagerHelper;
 import io.harness.connector.services.ConnectorService;
 import io.harness.connector.services.NGConnectorSecretManagerService;
 import io.harness.connector.services.NGVaultService;
+import io.harness.encryptors.CustomEncryptorsRegistry;
 import io.harness.encryptors.KmsEncryptorsRegistry;
 import io.harness.encryptors.VaultEncryptorsRegistry;
 import io.harness.exception.DelegateServiceDriverException;
@@ -50,6 +52,7 @@ import io.harness.secretmanagerclient.dto.VaultMetadataSpecDTO;
 import io.harness.secretmanagerclient.remote.SecretManagerClient;
 import io.harness.security.encryption.EncryptionType;
 import io.harness.service.DelegateGrpcClientWrapper;
+import io.harness.utils.featureflaghelper.NGFeatureFlagHelperService;
 
 import software.wings.beans.BaseVaultConfig;
 import software.wings.beans.VaultConfig;
@@ -75,6 +78,10 @@ public class NGSecretManagerServiceImplTest extends CategoryTest {
   ConnectorService connectorService;
   AccountClient accountClient;
   DelegateGrpcClientWrapper delegateService;
+  CustomEncryptorsRegistry customEncryptorsRegistry;
+
+  CustomSecretManagerHelper customSecretManagerHelper;
+  NGFeatureFlagHelperService ngFeatureFlagHelperService;
 
   private final String ACCOUNT_IDENTIFIER = "ACCOUNT_ID";
   private final String ORG_IDENTIFIER = "ACCOUNT_ID";
@@ -93,8 +100,12 @@ public class NGSecretManagerServiceImplTest extends CategoryTest {
     connectorService = mock(ConnectorService.class);
     accountClient = mock(AccountClient.class);
     delegateService = mock(DelegateGrpcClientWrapper.class);
+    ngFeatureFlagHelperService = mock(NGFeatureFlagHelperService.class);
+    customEncryptorsRegistry = mock(CustomEncryptorsRegistry.class);
+    customSecretManagerHelper = mock(CustomSecretManagerHelper.class);
     ngSecretManagerService = new NGSecretManagerServiceImpl(secretManagerClient, ngConnectorSecretManagerService,
-        kmsEncryptorsRegistry, vaultEncryptorsRegistry, ngVaultService);
+        kmsEncryptorsRegistry, vaultEncryptorsRegistry, customEncryptorsRegistry, ngVaultService,
+        customSecretManagerHelper, ngFeatureFlagHelperService);
   }
 
   @Test

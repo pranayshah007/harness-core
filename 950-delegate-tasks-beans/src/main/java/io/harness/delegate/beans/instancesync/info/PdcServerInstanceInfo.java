@@ -9,20 +9,19 @@ package io.harness.delegate.beans.instancesync.info;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import lombok.Builder;
-import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
 
 @JsonTypeName("PdcServerInstanceInfo")
-@Data
-@Builder
+@NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 @OwnedBy(HarnessTeam.CDP)
-public class PdcServerInstanceInfo extends ServerInstanceInfo {
-  private String serviceType;
-  private String infrastructureKey;
-  private String host;
+public class PdcServerInstanceInfo extends SshWinrmServerInstanceInfo {
+  @Builder
+  public PdcServerInstanceInfo(String serviceType, String infrastructureKey, String host) {
+    super(serviceType, infrastructureKey, host);
+  }
 }

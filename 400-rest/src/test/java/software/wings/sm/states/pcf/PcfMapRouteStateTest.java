@@ -358,8 +358,8 @@ public class PcfMapRouteStateTest extends WingsBaseTest {
                  .build()))
         .thenReturn(setupSweepingOutputPcf);
 
-    workflowStandardParamsExtensionService = spy(
-        new WorkflowStandardParamsExtensionService(appService, null, artifactService, environmentService, null, null));
+    workflowStandardParamsExtensionService = spy(new WorkflowStandardParamsExtensionService(
+        appService, null, artifactService, environmentService, null, null, featureFlagService));
 
     on(context).set("workflowStandardParamsExtensionService", workflowStandardParamsExtensionService);
     FieldUtils.writeField(

@@ -338,8 +338,8 @@ public class PcfPluginStateTest extends WingsBaseTest {
     doNothing().when(stateExecutionService).appendDelegateTaskDetails(anyString(), any());
 
     WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService =
-        spy(new WorkflowStandardParamsExtensionService(
-            appService, null, artifactService, environmentService, artifactStreamServiceBindingService, null));
+        spy(new WorkflowStandardParamsExtensionService(appService, null, artifactService, environmentService,
+            artifactStreamServiceBindingService, null, featureFlagService));
 
     on(context).set("workflowStandardParamsExtensionService", workflowStandardParamsExtensionService);
     on(pcfPluginState).set("workflowStandardParamsExtensionService", workflowStandardParamsExtensionService);

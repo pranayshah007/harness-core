@@ -42,6 +42,7 @@ import io.harness.gitsync.GetFileResponse;
 import io.harness.gitsync.GetRepoUrlRequest;
 import io.harness.gitsync.GetRepoUrlResponse;
 import io.harness.gitsync.GitMetaData;
+import io.harness.gitsync.IsGitSimplificationEnabledRequest;
 import io.harness.gitsync.PushFileResponse;
 import io.harness.gitsync.PushInfo;
 import io.harness.gitsync.RepoDetails;
@@ -88,7 +89,7 @@ import io.harness.ng.core.entitydetail.EntityDetailProtoToRestMapper;
 import io.harness.product.ci.scm.proto.CreateFileResponse;
 import io.harness.product.ci.scm.proto.DeleteFileResponse;
 import io.harness.product.ci.scm.proto.UpdateFileResponse;
-import io.harness.remote.client.RestClientUtils;
+import io.harness.remote.client.CGRestUtils;
 import io.harness.security.Principal;
 import io.harness.security.dto.UserPrincipal;
 import io.harness.tasks.DecryptGitApiAccessHelper;
@@ -259,20 +260,23 @@ public class HarnessToGitHelperServiceImpl implements HarnessToGitHelperService 
   }
 
   @Override
-  public Boolean isGitSimplificationEnabled(EntityScopeInfo entityScopeInfo) {
+  public Boolean isGitSimplificationEnabled(IsGitSimplificationEnabledRequest isGitSimplificationEnabledRequest) {
+    String accountIdentifier = isGitSimplificationEnabledRequest.getEntityScopeInfo().getAccountId();
+    String orgIdentifier = isGitSimplificationEnabledRequest.getEntityScopeInfo().getOrgId().getValue();
+    String projectIdentifier = isGitSimplificationEnabledRequest.getEntityScopeInfo().getProjectId().getValue();
     try {
-      if (isEnabled(entityScopeInfo.getAccountId(), FeatureName.NG_GIT_EXPERIENCE)) {
-        return true;
+      if (isEnabled(accountIdentifier, FeatureName.USE_OLD_GIT_SYNC)) {
+        return gitSyncSettingsService.getGitSimplificationStatus(accountIdentifier, orgIdentifier, projectIdentifier);
+      } else {
+        return !isOldGitSyncEnabledForModule(isGitSimplificationEnabledRequest.getEntityScopeInfo(),
+            isGitSimplificationEnabledRequest.getIsNotForFFModule());
       }
-      return gitSyncSettingsService.getGitSimplificationStatus(entityScopeInfo.getAccountId(),
-          entityScopeInfo.getOrgId().getValue(), entityScopeInfo.getProjectId().getValue());
     } catch (Exception ex) {
       log.error(
           String.format(
               "Exception while checking git Simplification status for accountId: %s , orgId: %s , projectId: %s "),
-          entityScopeInfo.getAccountId(), entityScopeInfo.getOrgId().getValue(),
-          entityScopeInfo.getProjectId().getValue(), ex);
-      return false;
+          accountIdentifier, orgIdentifier, projectIdentifier, ex);
+      throw new UnexpectedException("Something went wrong while performing operation. Please contact harness support.");
     }
   }
 
@@ -507,6 +511,12 @@ public class HarnessToGitHelperServiceImpl implements HarnessToGitHelperService 
     }
   }
 
+  @Override
+  public Boolean isOldGitSyncEnabledForModule(EntityScopeInfo entityScopeInfo, boolean isNotForFFModule) {
+    return gitSyncSettingsService.isOldGitSyncEnabledForModule(entityScopeInfo.getAccountId(),
+        entityScopeInfo.getOrgId().getValue(), entityScopeInfo.getProjectId().getValue(), isNotForFFModule);
+  }
+
   private InfoForGitPush getInfoForGitPush(
       FileInfo request, EntityDetail entityDetailDTO, String accountId, YamlGitConfigDTO yamlGitConfig) {
     Principal principal = request.getPrincipal();
@@ -634,6 +644,6 @@ public class HarnessToGitHelperServiceImpl implements HarnessToGitHelperService 
   }
 
   private boolean isEnabled(String accountId, FeatureName featureName) {
-    return RestClientUtils.getResponse(accountClient.isFeatureFlagEnabled(featureName.name(), accountId));
+    return CGRestUtils.getResponse(accountClient.isFeatureFlagEnabled(featureName.name(), accountId));
   }
 }

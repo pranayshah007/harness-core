@@ -10,6 +10,7 @@ package io.harness.ng.core.service.services.impl;
 import static io.harness.rule.OwnerRule.ARCHIT;
 import static io.harness.rule.OwnerRule.DEEPAK;
 import static io.harness.rule.OwnerRule.HINGER;
+import static io.harness.rule.OwnerRule.INDER;
 import static io.harness.rule.OwnerRule.MOHIT_GARG;
 import static io.harness.rule.OwnerRule.PRABU;
 import static io.harness.rule.OwnerRule.YOGESH;
@@ -19,7 +20,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyString;
-import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -27,7 +27,6 @@ import static org.mockito.internal.verification.VerificationModeFactory.times;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDNGEntitiesTestBase;
 import io.harness.data.structure.UUIDGenerator;
@@ -37,6 +36,7 @@ import io.harness.ng.core.EntityDetail;
 import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageDTO;
 import io.harness.ng.core.entitysetupusage.impl.EntitySetupUsageServiceImpl;
 import io.harness.ng.core.service.dto.ServiceResponseDTO;
+import io.harness.ng.core.service.entity.ArtifactSourcesResponseDTO;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.mappers.ServiceElementMapper;
 import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
@@ -45,7 +45,6 @@ import io.harness.outbox.api.OutboxService;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.repositories.UpsertOptions;
 import io.harness.rule.Owner;
-import io.harness.utils.NGFeatureFlagHelperService;
 import io.harness.utils.PageUtils;
 
 import com.google.common.io.Resources;
@@ -72,7 +71,6 @@ import org.springframework.data.mongodb.core.query.Criteria;
 @OwnedBy(HarnessTeam.CDC)
 public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
   @Mock private OutboxService outboxService;
-  @Mock private NGFeatureFlagHelperService ngFeatureFlagHelperService;
   @Mock private EntitySetupUsageServiceImpl entitySetupUsageService;
   @Mock private ServiceOverrideService serviceOverrideService;
   @Mock private ServiceEntitySetupUsageHelper entitySetupUsageHelper;
@@ -80,12 +78,12 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
   private static final String ACCOUNT_ID = "ACCOUNT_ID";
   private static final String ORG_ID = "ORG_ID";
   private static final String PROJECT_ID = "PROJECT_ID";
+  private static final String SERVICE_ID = "serviceId";
 
   @Before
   public void setup() {
     entitySetupUsageService = mock(EntitySetupUsageServiceImpl.class);
     Reflect.on(serviceEntityService).set("entitySetupUsageService", entitySetupUsageService);
-    Reflect.on(serviceEntityService).set("ngFeatureFlagHelperService", ngFeatureFlagHelperService);
     Reflect.on(serviceEntityService).set("outboxService", outboxService);
     Reflect.on(serviceEntityService).set("serviceOverrideService", serviceOverrideService);
     Reflect.on(serviceEntityService).set("entitySetupUsageHelper", entitySetupUsageHelper);
@@ -378,7 +376,6 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
   @Owner(developers = HINGER)
   @Category(UnitTests.class)
   public void testDeleteAllServicesInProject() {
-    doReturn(true).when(ngFeatureFlagHelperService).isEnabled("ACCOUNT_ID", FeatureName.HARD_DELETE_ENTITIES);
     ServiceEntity serviceEntity1 = ServiceEntity.builder()
                                        .accountId("ACCOUNT_ID")
                                        .identifier("IDENTIFIER_1")
@@ -415,7 +412,6 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
   @Owner(developers = HINGER)
   @Category(UnitTests.class)
   public void testHardDeleteService() {
-    doReturn(true).when(ngFeatureFlagHelperService).isEnabled("ACCOUNT_ID", FeatureName.HARD_DELETE_ENTITIES);
     final String id = UUIDGenerator.generateUuid();
     ServiceEntity serviceEntity = ServiceEntity.builder()
                                       .accountId("ACCOUNT_ID")
@@ -443,9 +439,9 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
   @Owner(developers = HINGER)
   @Category(UnitTests.class)
   public void testCreateServiceInputsForServiceWithNoRuntimeInputs() {
-    String filename = "service-without-runtime-inputs.yaml";
+    String filename = "service/service-without-runtime-inputs.yaml";
     String yaml = readFile(filename);
-    String templateYaml = serviceEntityService.createServiceInputsYaml(yaml);
+    String templateYaml = serviceEntityService.createServiceInputsYaml(yaml, SERVICE_ID);
     assertThat(templateYaml).isNullOrEmpty();
   }
 
@@ -453,14 +449,102 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
   @Owner(developers = HINGER)
   @Category(UnitTests.class)
   public void testCreateServiceInputsForServiceWithRuntimeInputs() {
-    String filename = "service-with-runtime-inputs.yaml";
+    String filename = "service/service-with-runtime-inputs.yaml";
     String yaml = readFile(filename);
-    String templateYaml = serviceEntityService.createServiceInputsYaml(yaml);
+    String templateYaml = serviceEntityService.createServiceInputsYaml(yaml, SERVICE_ID);
     assertThat(templateYaml).isNotNull();
 
-    String resFile = "service-with-runtime-inputs-res.yaml";
+    String resFile = "service/service-with-runtime-inputs-res.yaml";
     String resTemplate = readFile(resFile);
     assertThat(templateYaml).isEqualTo(resTemplate);
+  }
+
+  @Test
+  @Owner(developers = INDER)
+  @Category(UnitTests.class)
+  public void testCreateServiceInputsForServiceWithPrimaryArtifactRefFixed() {
+    String filename = "service/service-with-primaryArtifactRef-fixed.yaml";
+    String yaml = readFile(filename);
+    String templateYaml = serviceEntityService.createServiceInputsYaml(yaml, SERVICE_ID);
+    assertThat(templateYaml).isNotNull();
+
+    String resFile = "service/serviceInputs-with-primaryArtifactRef-fixed.yaml";
+    String resTemplate = readFile(resFile);
+    assertThat(templateYaml).isEqualTo(resTemplate);
+  }
+
+  @Test
+  @Owner(developers = INDER)
+  @Category(UnitTests.class)
+  public void testCreateServiceInputsForServiceWithPrimaryArtifactRefRuntime() {
+    String filename = "service/service-with-primaryArtifactRef-runtime.yaml";
+    String yaml = readFile(filename);
+    String templateYaml = serviceEntityService.createServiceInputsYaml(yaml, SERVICE_ID);
+    assertThat(templateYaml).isNotNull();
+
+    String resFile = "service/serviceInputs-with-primaryArtifactRef-runtime.yaml";
+    String resTemplate = readFile(resFile);
+    assertThat(templateYaml).isEqualTo(resTemplate);
+  }
+
+  @Test
+  @Owner(developers = INDER)
+  @Category(UnitTests.class)
+  public void testCreateServiceInputsForServiceWithPrimaryArtifactRefExpression() {
+    String filename = "service/service-with-primaryArtifactRef-expression.yaml";
+    String yaml = readFile(filename);
+    assertThatThrownBy(() -> serviceEntityService.createServiceInputsYaml(yaml, SERVICE_ID))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(String.format("Primary artifact ref cannot be an expression inside the service %s", SERVICE_ID));
+  }
+
+  @Test
+  @Owner(developers = INDER)
+  @Category(UnitTests.class)
+  public void testGetArtifactSourceInputsWithServiceV2() {
+    String filename = "service/service-with-primaryArtifactRef-runtime.yaml";
+    String yaml = readFile(filename);
+    ArtifactSourcesResponseDTO responseDTO = serviceEntityService.getArtifactSourceInputs(yaml, SERVICE_ID);
+    assertThat(responseDTO).isNotNull();
+    assertThat(responseDTO.getSourceIdentifiers()).isNotNull().isNotEmpty().hasSize(2);
+    assertThat(responseDTO.getSourceIdentifiers()).hasSameElementsAs(Arrays.asList("i1", "i2"));
+    assertThat(responseDTO.getSourceIdentifierToSourceInputMap()).isNotNull().isNotEmpty().hasSize(2);
+    String runForm1 = "identifier: \"i1\"\n"
+        + "type: \"DockerRegistry\"\n"
+        + "spec:\n"
+        + "  tag: \"<+input>\"\n";
+    String runForm2 = "identifier: \"i2\"\n"
+        + "type: \"DockerRegistry\"\n"
+        + "spec:\n"
+        + "  tag: \"<+input>\"\n";
+    assertThat(responseDTO.getSourceIdentifierToSourceInputMap()).hasFieldOrPropertyWithValue("i1", runForm1);
+    assertThat(responseDTO.getSourceIdentifierToSourceInputMap()).hasFieldOrPropertyWithValue("i2", runForm2);
+  }
+
+  @Test
+  @Owner(developers = INDER)
+  @Category(UnitTests.class)
+  public void testGetArtifactSourceInputsWithServiceV1() {
+    String filename = "service/serviceWith3ConnectorReferences.yaml";
+    String yaml = readFile(filename);
+    ArtifactSourcesResponseDTO responseDTO = serviceEntityService.getArtifactSourceInputs(yaml, SERVICE_ID);
+    assertThat(responseDTO).isNotNull();
+    assertThat(responseDTO.getSourceIdentifiers()).isNull();
+    assertThat(responseDTO.getSourceIdentifierToSourceInputMap()).isNull();
+  }
+
+  @Test
+  @Owner(developers = INDER)
+  @Category(UnitTests.class)
+  public void testGetArtifactSourceInputsWithServiceV2AndSourcesHasNoRuntimeInput() {
+    String filename = "service/service-with-no-runtime-input-in-sources.yaml";
+    String yaml = readFile(filename);
+    ArtifactSourcesResponseDTO responseDTO = serviceEntityService.getArtifactSourceInputs(yaml, SERVICE_ID);
+    assertThat(responseDTO).isNotNull();
+    assertThat(responseDTO.getSourceIdentifiers()).isNotNull().isNotEmpty().hasSize(2);
+    assertThat(responseDTO.getSourceIdentifiers()).hasSameElementsAs(Arrays.asList("i1", "i2"));
+    assertThat(responseDTO.getSourceIdentifierToSourceInputMap()).hasFieldOrPropertyWithValue("i1", null);
+    assertThat(responseDTO.getSourceIdentifierToSourceInputMap()).hasFieldOrPropertyWithValue("i2", null);
   }
 
   @Test
@@ -512,14 +596,49 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
         serviceEntityService.getYamlNodeForFqn(ACCOUNT_ID, ORG_ID, PROJECT_ID, "testGetYamlNodeForFqn",
             "pipeline.stages.s2.spec.service.serviceInputs.serviceDefinition.spec.artifacts.primary.spec.tag");
 
-    YamlNode sidecarNode = serviceEntityService.getYamlNodeForFqn(ACCOUNT_ID, ORG_ID, PROJECT_ID,
-        "testGetYamlNodeForFqn",
-        "pipeline.stages.s2.spec.service.serviceInputs.serviceDefinition.spec.artifacts.sidecars[0].sidecar.spec.tag");
+    YamlNode sidecarNode =
+        serviceEntityService.getYamlNodeForFqn(ACCOUNT_ID, ORG_ID, PROJECT_ID, "testGetYamlNodeForFqn",
+            "pipeline.stages.s2.spec.service.serviceInputs.serviceDefinition.spec.artifacts.sidecars.sc1.spec.tag");
 
     assertThat(primaryNode.getCurrJsonNode().asText()).isEqualTo("<+input>");
     assertThat(primaryNode.getParentNode().toString())
         .isEqualTo(
             "{\"connectorRef\":\"account.harnessImage\",\"imagePath\":\"harness/todolist\",\"tag\":\"<+input>\"}");
+
+    assertThat(sidecarNode.getCurrJsonNode().asText()).isEqualTo("<+input>");
+    assertThat(sidecarNode.getParentNode().toString())
+        .isEqualTo(
+            "{\"connectorRef\":\"account.harnessImage\",\"imagePath\":\"harness/todolist-sample\",\"region\":\"us-east-1\",\"tag\":\"<+input>\"}");
+  }
+
+  @Test
+  @Owner(developers = INDER)
+  @Category(UnitTests.class)
+  public void testGetYamlNodeForFqnWithPrimarySources() {
+    String yaml = readFile("ArtifactResourceUtils/serviceWithPrimarySourcesAndSidecars.yaml");
+    ServiceEntity createRequest = ServiceEntity.builder()
+                                      .accountId(ACCOUNT_ID)
+                                      .orgIdentifier(ORG_ID)
+                                      .projectIdentifier(PROJECT_ID)
+                                      .name("testGetYamlNodeForFqn")
+                                      .identifier("testGetYamlNodeForFqn")
+                                      .yaml(yaml)
+                                      .build();
+
+    serviceEntityService.create(createRequest);
+
+    YamlNode primaryNode = serviceEntityService.getYamlNodeForFqn(ACCOUNT_ID, ORG_ID, PROJECT_ID,
+        "testGetYamlNodeForFqn",
+        "pipeline.stages.s2.spec.service.serviceInputs.serviceDefinition.spec.artifacts.primary.sources.i1.spec.tag");
+
+    YamlNode sidecarNode =
+        serviceEntityService.getYamlNodeForFqn(ACCOUNT_ID, ORG_ID, PROJECT_ID, "testGetYamlNodeForFqn",
+            "pipeline.stages.s2.spec.service.serviceInputs.serviceDefinition.spec.artifacts.sidecars.sc1.spec.tag");
+
+    assertThat(primaryNode.getCurrJsonNode().asText()).isEqualTo("<+input>");
+    assertThat(primaryNode.getParentNode().toString())
+        .isEqualTo(
+            "{\"connectorRef\":\"account.harnessImage1\",\"imagePath\":\"harness/todolist\",\"tag\":\"<+input>\"}");
 
     assertThat(sidecarNode.getCurrJsonNode().asText()).isEqualTo("<+input>");
     assertThat(sidecarNode.getParentNode().toString())

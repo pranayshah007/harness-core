@@ -55,6 +55,7 @@ public class GraphVertexDTO {
   NodeRunInfo nodeRunInfo;
   PmsStepParameters stepParameters;
   ExecutionMode mode;
+  private Boolean executionInputConfigured;
 
   List<GraphDelegateSelectionLogParams> graphDelegateSelectionLogParams;
   List<ExecutableResponse> executableResponses;

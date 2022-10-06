@@ -1,0 +1,32 @@
+service:
+  name: variableTestSvc
+  identifier: variableTestSvc
+  tags: {}
+  serviceDefinition:
+    spec:
+      artifacts:
+        primary:
+          primaryArtifactRef: artifactorydocker
+          sources:
+            - spec:
+                connectorRef: dockerhub
+                imagePath: <+pipeline.variables.v1>
+                tag: alpha-1.0
+              identifier: docker
+              type: DockerRegistry
+            - spec:
+                connectorRef: cdplayGCP
+                imagePath: "hello-world"
+                tag: alpha-1.0
+                registryHostname: us.gcr.io
+              identifier: gcr
+              type: Gcr
+            - spec:
+                connectorRef: Artifactory
+                artifactPath: hello-world
+                tag: alpha-1.0
+                repository: docker-local
+                repositoryFormat: docker
+              identifier: artifactorydocker
+              type: ArtifactoryRegistry
+    type: Kubernetes

@@ -44,21 +44,23 @@ public class CIDelegateTaskExecutor {
   }
 
   public String queueTask(Map<String, String> setupAbstractions, HDelegateTask task, List<String> taskSelectors,
-      List<String> eligibleToExecuteDelegateIds) {
+      List<String> eligibleToExecuteDelegateIds, boolean executeOnHarnessHostedDelegates) {
     String accountId = task.getAccountId();
     TaskData taskData = task.getData();
-    final DelegateTaskRequest delegateTaskRequest = DelegateTaskRequest.builder()
-                                                        .parked(taskData.isParked())
-                                                        .accountId(accountId)
-                                                        .serializationFormat(taskData.getSerializationFormat())
-                                                        .taskSelectors(taskSelectors)
-                                                        .taskType(taskData.getTaskType())
-                                                        .taskParameters(extractTaskParameters(taskData))
-                                                        .executionTimeout(Duration.ofHours(12))
-                                                        .taskSetupAbstractions(setupAbstractions)
-                                                        .expressionFunctorToken(taskData.getExpressionFunctorToken())
-                                                        .eligibleToExecuteDelegateIds(eligibleToExecuteDelegateIds)
-                                                        .build();
+    final DelegateTaskRequest delegateTaskRequest =
+        DelegateTaskRequest.builder()
+            .parked(taskData.isParked())
+            .accountId(accountId)
+            .serializationFormat(taskData.getSerializationFormat())
+            .taskSelectors(taskSelectors)
+            .taskType(taskData.getTaskType())
+            .taskParameters(extractTaskParameters(taskData))
+            .executionTimeout(Duration.ofHours(12))
+            .executeOnHarnessHostedDelegates(executeOnHarnessHostedDelegates)
+            .taskSetupAbstractions(setupAbstractions)
+            .expressionFunctorToken(taskData.getExpressionFunctorToken())
+            .eligibleToExecuteDelegateIds(eligibleToExecuteDelegateIds)
+            .build();
     RetryPolicy<Object> retryPolicy =
         getRetryPolicy(format("[Retrying failed call to submit delegate task attempt: {}"),
             format("Failed to submit delegate task  after retrying {} times"));

@@ -51,6 +51,7 @@ public class GraphVertexDTOConverter {
             .outcomes(graphVertex.getPmsOutcomes())
             .unitProgresses(graphVertex.getUnitProgresses())
             .progressData(graphVertex.getPmsProgressData())
+            .executionInputConfigured(graphVertex.getExecutionInputConfigured())
             .stepDetails(graphVertex.getStepDetails());
     if (level != null && level.hasStrategyMetadata()) {
       builder.strategyMetadata(level.getStrategyMetadata());

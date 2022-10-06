@@ -9,13 +9,12 @@ package io.harness.execution;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.engine.OrchestrationEngine;
+import io.harness.engine.interrupts.InterruptService;
 import io.harness.pms.PmsFeatureFlagService;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.events.InitiateNodeEvent;
 import io.harness.pms.events.base.PmsBaseEventHandler;
-import io.harness.pms.execution.utils.AmbianceUtils;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
@@ -28,6 +27,7 @@ public class InitiateNodeHandler extends PmsBaseEventHandler<InitiateNodeEvent> 
   @Inject private OrchestrationEngine engine;
   @Inject private PmsFeatureFlagService pmsFeatureFlagService;
 
+  @Inject private InterruptService interruptService;
   @Override
   protected Map<String, String> extractMetricContext(Map<String, String> metadataMap, InitiateNodeEvent event) {
     return ImmutableMap.of("eventType", "TRIGGER_NODE");
@@ -50,11 +50,7 @@ public class InitiateNodeHandler extends PmsBaseEventHandler<InitiateNodeEvent> 
 
   @Override
   protected void handleEventWithContext(InitiateNodeEvent event) {
-    if (pmsFeatureFlagService.isEnabled(AmbianceUtils.getAccountId(event.getAmbiance()), FeatureName.PIPELINE_MATRIX)) {
-      engine.initiateNode(event.getAmbiance(), event.getNodeId(), event.getRuntimeId(), null,
-          event.hasStrategyMetadata() ? event.getStrategyMetadata() : null, event.getInitiateMode());
-    } else {
-      engine.initiateNode(event.getAmbiance(), event.getNodeId(), event.getRuntimeId(), null);
-    }
+    engine.initiateNode(event.getAmbiance(), event.getNodeId(), event.getRuntimeId(), null,
+        event.hasStrategyMetadata() ? event.getStrategyMetadata() : null, event.getInitiateMode());
   }
 }

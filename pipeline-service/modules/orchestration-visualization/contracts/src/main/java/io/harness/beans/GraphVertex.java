@@ -67,7 +67,7 @@ public class GraphVertex implements Serializable {
   private List<InterruptEffect> interruptHistories;
   private Map<String, PmsOutcome> outcomeDocuments;
   private List<String> retryIds;
-
+  private Boolean executionInputConfigured;
   private Map<String, List<ProgressData>> progressDataMap;
 
   private SkipInfo skipInfo;

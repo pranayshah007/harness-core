@@ -31,6 +31,9 @@ COSTAGGREGATED = "costAggregated"
 CEINTERNALDATASET = "CE_INTERNAL"
 GCPINSTANCEINVENTORY = "gcpInstanceInventory"
 GCPDISKINVENTORY = "gcpDiskInventory"
+AZUREVMINVENTORY = "azureVMInventory"
+AZUREVMINVENTORYMETRIC = "azureVMInventoryMetric"
+AZURECOSTPREFIX = "azurecost"
 CONNECTORDATASYNCSTATUSTABLE = "connectorDataSyncStatus"
 GCPCONNECTORINFOTABLE = "gcpConnectorInfo"
 
@@ -155,6 +158,24 @@ def createTable(client, table_ref):
             type_=bigquery.TimePartitioningType.DAY,
             field="creationTime"
         )
+    elif tableName.startswith(AZURECOSTPREFIX):
+        fieldset = bq_schema.azure_cost_table_schema
+        partition = bigquery.TimePartitioning(
+            type_=bigquery.TimePartitioningType.DAY,
+            field="startTime"
+        )
+    elif tableName == AZUREVMINVENTORYMETRIC:
+        fieldset = bq_schema.azureVMInventoryCPUSchema
+        partition = bigquery.TimePartitioning(
+            type_=bigquery.TimePartitioningType.DAY,
+            field="addedAt"
+        )
+    elif tableName.startswith(AZUREVMINVENTORY):
+        fieldset = bq_schema.azureVMInventorySchema
+        partition = bigquery.TimePartitioning(
+            type_=bigquery.TimePartitioningType.DAY,
+            field="creationTime"
+        )
 
     for field in fieldset:
         if field.get("type") == "RECORD":
@@ -175,9 +196,9 @@ def createTable(client, table_ref):
         return False
     table = bigquery.Table("%s.%s.%s" % (table_ref.project, table_ref.dataset_id, tableName), schema=schema)
 
-    if tableName in [UNIFIED, PREAGGREGATED, AWSEC2INVENTORYMETRIC, AWSEBSINVENTORYMETRICS, COSTAGGREGATED] or \
+    if tableName in [UNIFIED, PREAGGREGATED, AWSEC2INVENTORYMETRIC, AWSEBSINVENTORYMETRICS, COSTAGGREGATED, AZUREVMINVENTORYMETRIC] or \
             tableName.startswith(GCPINSTANCEINVENTORY) or tableName.startswith(GCPDISKINVENTORY) or \
-            tableName.startswith(AWSCURPREFIX):
+            tableName.startswith(AWSCURPREFIX) or tableName.startswith(AZUREVMINVENTORY) or tableName.startswith(AZURECOSTPREFIX):
         table.time_partitioning = partition
     elif tableName.startswith(AWSEC2INVENTORY) or tableName.startswith(AWSEBSINVENTORY) or \
             tableName in [CLUSTERDATA, CLUSTERDATAAGGREGATED, CLUSTERDATAHOURLY, CLUSTERDATAHOURLYAGGREGATED]:

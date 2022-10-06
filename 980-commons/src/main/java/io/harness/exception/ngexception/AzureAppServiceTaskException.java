@@ -12,19 +12,29 @@ import static io.harness.eraro.ErrorCode.AZURE_APP_SERVICES_TASK_EXCEPTION;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.eraro.Level;
+import io.harness.exception.FailureType;
 import io.harness.exception.WingsException;
+
+import java.util.EnumSet;
 
 @OwnedBy(CDP)
 public class AzureAppServiceTaskException extends WingsException {
   private static final String MESSAGE_KEY = "message";
 
   public AzureAppServiceTaskException(String message) {
-    super(message, null, AZURE_APP_SERVICES_TASK_EXCEPTION, Level.ERROR, null, null);
+    super(
+        message, null, AZURE_APP_SERVICES_TASK_EXCEPTION, Level.ERROR, null, EnumSet.of(FailureType.APPLICATION_ERROR));
+    param(MESSAGE_KEY, message);
+  }
+
+  public AzureAppServiceTaskException(String message, EnumSet<FailureType> failureTypes) {
+    super(message, null, AZURE_APP_SERVICES_TASK_EXCEPTION, Level.ERROR, null, failureTypes);
     param(MESSAGE_KEY, message);
   }
 
   public AzureAppServiceTaskException(String message, Throwable cause) {
-    super(message, cause, AZURE_APP_SERVICES_TASK_EXCEPTION, Level.ERROR, null, null);
+    super(message, cause, AZURE_APP_SERVICES_TASK_EXCEPTION, Level.ERROR, null,
+        EnumSet.of(FailureType.APPLICATION_ERROR));
     param(MESSAGE_KEY, message);
   }
 }

@@ -8,6 +8,7 @@
 package io.harness.ng.jira.resources;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.delegate.beans.TaskData.DEFAULT_SYNC_CALL_TIMEOUT;
 
 import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.dev.OwnedBy;
@@ -18,6 +19,7 @@ import io.harness.jira.JiraIssueCreateMetadataNG;
 import io.harness.jira.JiraIssueUpdateMetadataNG;
 import io.harness.jira.JiraProjectBasicNG;
 import io.harness.jira.JiraStatusNG;
+import io.harness.jira.JiraUserData;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -38,6 +40,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
+import org.hibernate.validator.constraints.NotEmpty;
 
 @OwnedBy(CDC)
 @Api("jira")
@@ -108,6 +111,21 @@ public class JiraResource {
     JiraIssueCreateMetadataNG createMetadata = jiraResourceService.getIssueCreateMetadata(
         connectorRef, orgId, projectId, projectKey, issueType, expand, fetchStatus, ignoreComment);
     return ResponseDTO.newResponse(createMetadata);
+  }
+
+  @GET
+  @Path("searchUser")
+  @ApiOperation(value = "Get jira usernames for the jira connector", nickname = "jiraUserSearch")
+  public ResponseDTO<List<JiraUserData>> getUserSearch(
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @NotEmpty String accountId,
+      @QueryParam(NGCommonEntityConstants.CONNECTOR_IDENTIFIER_KEY) String connectorId,
+      @QueryParam("userQuery") String userQuery, @QueryParam("offset") String offset) {
+    return ResponseDTO.newResponse(jiraResourceService
+                                       .searchUser(accountId, orgIdentifier, projectIdentifier, connectorId,
+                                           DEFAULT_SYNC_CALL_TIMEOUT, userQuery, offset)
+                                       .getJiraUserDataList());
   }
 
   @GET

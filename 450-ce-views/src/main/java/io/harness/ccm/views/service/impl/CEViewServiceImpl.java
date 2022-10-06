@@ -74,6 +74,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.jooq.tools.StringUtils;
+import org.springframework.util.CollectionUtils;
 
 @Slf4j
 @Singleton
@@ -330,7 +331,7 @@ public class CEViewServiceImpl implements CEViewService {
                      .filter(view -> ImmutableSet.of(ViewType.SAMPLE, ViewType.CUSTOMER).contains(view.getViewType()))
                      .collect(Collectors.toList());
     }
-    return getQLCEViewsFromCEViews(viewList, folderList);
+    return getQLCEViewsFromCEViews(accountId, viewList, folderList);
   }
 
   @Override
@@ -343,16 +344,18 @@ public class CEViewServiceImpl implements CEViewService {
                      .filter(view -> ImmutableSet.of(ViewType.SAMPLE, ViewType.CUSTOMER).contains(view.getViewType()))
                      .collect(Collectors.toList());
     }
-    return getQLCEViewsFromCEViews(viewList, folderList);
+    return getQLCEViewsFromCEViews(accountId, viewList, folderList);
   }
 
-  private List<QLCEView> getQLCEViewsFromCEViews(List<CEView> viewList, List<CEViewFolder> folderList) {
+  private List<QLCEView> getQLCEViewsFromCEViews(
+      String accountId, List<CEView> viewList, List<CEViewFolder> folderList) {
     List<QLCEView> graphQLViewObjList = new ArrayList<>();
     Map<String, String> folderIdToNameMapping =
         folderList.stream().collect(Collectors.toMap(CEViewFolder::getUuid, CEViewFolder::getName));
+    Map<String[], List<CEReportSchedule>> viewIdReportSchedule = getViewIdReportSchedule(accountId, viewList);
     for (CEView view : viewList) {
-      List<CEReportSchedule> reportSchedules =
-          ceReportScheduleDao.getReportSettingByView(view.getUuid(), view.getAccountId());
+      String[] viewIdList = {view.getUuid()};
+      List<CEReportSchedule> reportSchedules = viewIdReportSchedule.get(viewIdList);
       ViewChartType vChartType = null;
       if (view.getViewVisualization() != null) {
         // For DRAFT support, no visualizations have been set at this point
@@ -381,10 +384,16 @@ public class CEViewServiceImpl implements CEViewService {
               .timeRange(view.getViewTimeRange().getViewTimeRangeType())
               .dataSources(view.getDataSources())
               .viewPreferences(view.getViewPreferences())
-              .isReportScheduledConfigured(!reportSchedules.isEmpty())
+              .isReportScheduledConfigured(!CollectionUtils.isEmpty(reportSchedules))
               .build());
     }
     return graphQLViewObjList;
+  }
+
+  private Map<String[], List<CEReportSchedule>> getViewIdReportSchedule(String accountId, List<CEView> viewList) {
+    List<String> viewIds = viewList.stream().map(CEView::getUuid).collect(Collectors.toList());
+    List<CEReportSchedule> reportSettingByViewIds = ceReportScheduleDao.getReportSettingByViewIds(viewIds, accountId);
+    return reportSettingByViewIds.stream().collect(Collectors.groupingBy(CEReportSchedule::getViewsId));
   }
 
   @Override

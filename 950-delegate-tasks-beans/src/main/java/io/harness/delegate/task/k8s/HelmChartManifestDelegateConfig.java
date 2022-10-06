@@ -22,8 +22,9 @@ public class HelmChartManifestDelegateConfig implements ManifestDelegateConfig {
   String chartVersion;
   HelmVersion helmVersion;
   HelmCommandFlag helmCommandFlag;
-  private boolean useRepoFlags;
   private boolean checkIncorrectChartVersion;
+  private boolean useCache;
+  private boolean useRepoFlags;
   private boolean deleteRepoCacheDir;
 
   @Override

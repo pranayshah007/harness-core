@@ -7,6 +7,7 @@
 
 package io.harness.delegate.beans;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.As;
@@ -23,6 +24,7 @@ public class DelegateTaskEvent {
   private String accountId;
   private String delegateTaskId;
   private boolean sync;
+  @JsonIgnore private String taskType;
 
   /**
    * Getter for property 'accountId'.
@@ -78,12 +80,31 @@ public class DelegateTaskEvent {
     this.sync = sync;
   }
 
+  /**
+   * Getter for property 'taskType'.
+   *
+   * @return Value for property 'taskType'.
+   */
+  public String getTaskType() {
+    return taskType;
+  }
+
+  /**
+   * Setter for property 'accountId'.
+   *
+   * @param accountId Value to set for property 'accountId'.
+   */
+  public void setTaskType(String taskType) {
+    this.taskType = taskType;
+  }
+
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(this)
         .add("delegateTaskId", delegateTaskId)
         .add("sync", sync)
         .add("accountId", accountId)
+        .add("taskType", taskType)
         .toString();
   }
 
@@ -91,6 +112,7 @@ public class DelegateTaskEvent {
     private String accountId;
     private String delegateTaskId;
     private boolean sync;
+    private String taskType;
 
     private DelegateTaskEventBuilder() {}
 
@@ -113,8 +135,17 @@ public class DelegateTaskEvent {
       return this;
     }
 
+    public DelegateTaskEventBuilder withTaskType(String taskType) {
+      this.taskType = taskType;
+      return this;
+    }
+
     public DelegateTaskEventBuilder but() {
-      return aDelegateTaskEvent().withAccountId(accountId).withDelegateTaskId(delegateTaskId).withSync(sync);
+      return aDelegateTaskEvent()
+          .withAccountId(accountId)
+          .withDelegateTaskId(delegateTaskId)
+          .withSync(sync)
+          .withTaskType(taskType);
     }
 
     public DelegateTaskEvent build() {
@@ -122,6 +153,7 @@ public class DelegateTaskEvent {
       delegateTaskEvent.setAccountId(accountId);
       delegateTaskEvent.setDelegateTaskId(delegateTaskId);
       delegateTaskEvent.setSync(sync);
+      delegateTaskEvent.setTaskType(taskType);
       return delegateTaskEvent;
     }
   }

@@ -45,7 +45,7 @@ public class DefaultVerifyStepMonitoredServiceResolutionServiceImpl
   @Inject private MonitoredServiceService monitoredServiceService;
 
   @Override
-  public ResolvedCVConfigInfo getResolvedCVConfigInfo(
+  public ResolvedCVConfigInfo fetchAndPersistResolvedCVConfigInfo(
       ServiceEnvironmentParams serviceEnvironmentParams, MonitoredServiceNode monitoredServiceNode) {
     ResolvedCVConfigInfoBuilder resolvedCVConfigInfoBuilder = ResolvedCVConfigInfo.builder();
     Optional<MonitoredService> monitoredService = getMonitoredService(serviceEnvironmentParams);

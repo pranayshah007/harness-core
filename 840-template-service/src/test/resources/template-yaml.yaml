@@ -1,0 +1,19 @@
+template:
+  projectIdentifier: projId
+  orgIdentifier: orgId
+  identifier: template1
+  versionLabel: version1
+  name: template1
+  type: Step
+  spec:
+    type: ShellScript
+    spec:
+      shell: Bash
+      onDelegate: true
+      source:
+        type: Inline
+        spec:
+          script: <+input>
+      environmentVariables: []
+      outputVariables: []
+    timeout: <+input>

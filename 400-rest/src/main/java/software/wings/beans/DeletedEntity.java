@@ -8,11 +8,13 @@
 package software.wings.beans;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.iterator.PersistentRegularIterable;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.FdUniqueIndex;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.PersistentEntity;
 
 import lombok.AllArgsConstructor;
@@ -24,6 +26,7 @@ import org.mongodb.morphia.annotations.Id;
 @OwnedBy(HarnessTeam.PL)
 @Data
 @AllArgsConstructor
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "deletedEntities", noClassnameStored = true)
 @HarnessEntity(exportable = false)
 @FieldNameConstants(innerTypeName = "DeletedEntityKeys")

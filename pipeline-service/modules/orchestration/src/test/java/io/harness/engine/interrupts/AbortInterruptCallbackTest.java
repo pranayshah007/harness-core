@@ -9,9 +9,12 @@ package io.harness.engine.interrupts;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.PRASHANT;
+import static io.harness.rule.OwnerRule.VIVEK_DIXIT;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import io.harness.OrchestrationTestBase;
@@ -29,17 +32,21 @@ import io.harness.waiter.StringNotifyResponseData;
 import io.harness.waiter.WaitNotifyEngine;
 
 import com.google.common.collect.ImmutableMap;
+import java.util.Collections;
 import org.joor.Reflect;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public class AbortInterruptCallbackTest extends OrchestrationTestBase {
   @Mock AbortHelper abortHelper;
   @Mock NodeExecutionService nodeExecutionService;
   @Mock WaitNotifyEngine waitNotifyEngine;
+  @Spy @InjectMocks AbortInterruptCallback abortInterruptCallback;
 
   @Test
   @Owner(developers = PRASHANT)
@@ -76,5 +83,23 @@ public class AbortInterruptCallbackTest extends OrchestrationTestBase {
     assertThat(nExIdCaptor.getValue()).isEqualTo(nodeExecutionId);
     assertThat(intIdCaptor.getValue()).isEqualTo(interruptId);
     assertThat(notifyIdCaptpr.getValue()).isEqualTo(nodeExecutionId + "|" + interruptId);
+  }
+
+  @Test
+  @Owner(developers = VIVEK_DIXIT)
+  @Category(UnitTests.class)
+  public void testNotifyTimeout() {
+    doNothing().when(abortInterruptCallback).abortNode(any());
+    abortInterruptCallback.notifyTimeout(Collections.EMPTY_MAP);
+    verify(abortInterruptCallback, times(1)).abortNode(any());
+  }
+
+  @Test
+  @Owner(developers = VIVEK_DIXIT)
+  @Category(UnitTests.class)
+  public void testNotifyError() {
+    doNothing().when(abortInterruptCallback).abortNode(any());
+    abortInterruptCallback.notifyError(Collections.EMPTY_MAP);
+    verify(abortInterruptCallback, times(1)).abortNode(any());
   }
 }

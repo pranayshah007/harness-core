@@ -8,11 +8,13 @@
 package io.harness.encryptors;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.rule.OwnerRule.RAGHAV_MURALI;
 import static io.harness.rule.OwnerRule.SHASHANK;
 import static io.harness.rule.OwnerRule.UTKARSH;
 import static io.harness.rule.OwnerRule.VIKAS_M;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Matchers.anyString;
@@ -606,9 +608,26 @@ public class HashicorpVaultEncryptorTest extends CategoryTest {
     when(vaultRestClient.deleteSecretPermanentely(
              vaultConfig.getAuthToken(), vaultConfig.getSecretEngineName(), fullPath))
         .thenThrow(new HashiCorpVaultRuntimeException("error: Permission denied"));
-    boolean deleted = hashicorpVaultEncryptor.deleteSecret(vaultConfig.getAccountId(), oldRecord, vaultConfig);
-    assertThat(deleted).isEqualTo(false);
+    assertThatThrownBy(() -> hashicorpVaultEncryptor.deleteSecret(vaultConfig.getAccountId(), oldRecord, vaultConfig))
+        .isInstanceOf(HashiCorpVaultRuntimeException.class);
     verify(vaultRestClient, times(1)).deleteSecretPermanentely(any(), any(), any());
+  }
+
+  @Test
+  @Owner(developers = RAGHAV_MURALI)
+  @Category(UnitTests.class)
+  public void testDeleteSecretShouldThrowHashicorpException() throws IOException {
+    String encryptionKey = UUIDGenerator.generateUuid();
+    String fullPath = vaultConfig.getBasePath() + "/" + encryptionKey;
+    EncryptedRecord oldRecord = EncryptedRecordData.builder()
+                                    .encryptedValue(UUIDGenerator.generateUuid().toCharArray())
+                                    .encryptionKey(encryptionKey)
+                                    .build();
+    when(vaultRestClient.deleteSecretPermanentely(
+             vaultConfig.getAuthToken(), vaultConfig.getSecretEngineName(), fullPath))
+        .thenThrow(new HashiCorpVaultRuntimeException("error: Permission denied"));
+    assertThatThrownBy(() -> hashicorpVaultEncryptor.deleteSecret(vaultConfig.getAccountId(), oldRecord, vaultConfig))
+        .isInstanceOf(HashiCorpVaultRuntimeException.class);
   }
 
   @Test
