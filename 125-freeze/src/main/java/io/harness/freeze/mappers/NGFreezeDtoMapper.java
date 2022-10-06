@@ -119,7 +119,6 @@ public class NGFreezeDtoMapper {
       throw new InvalidRequestException("FreezeInfoConfig cannot be empty");
     }
     FreezeInfoConfig freezeInfoConfig = freezeConfig.getFreezeInfoConfig();
-    validateName(freezeInfoConfig.getName());
 
     // Currently we support only 1 window, Remove this validation after multiple windows are supported.
     if (freezeInfoConfig.getWindows().size() > 1) {
@@ -134,12 +133,6 @@ public class NGFreezeDtoMapper {
           throw new InvalidRequestException("Invalid time format provided.", e);
         }
       });
-    }
-  }
-
-  private void validateName(String name) {
-    if (name == null) {
-      throw new InvalidRequestException("Name cannot be empty for the freeze window");
     }
   }
 
