@@ -7,6 +7,7 @@
 package store
 
 import (
+	"fmt"
 	"time"
 )
 
@@ -40,6 +41,11 @@ type EnqueueErrorResponse struct {
 	ErrorMessage string
 }
 
+func (e *EnqueueErrorResponse) Error() string {
+	return fmt.Sprintf("EnqueueErrorResponse: message - %s",
+		e.ErrorMessage)
+}
+
 // DequeueRequest Request object for Dequeuing messages
 type DequeueRequest struct {
 	Topic        string
@@ -67,6 +73,11 @@ type DequeueErrorResponse struct {
 	ErrorMessage string
 }
 
+func (e *DequeueErrorResponse) Error() string {
+	return fmt.Sprintf("DequeueErrorResponse: message - %s",
+		e.ErrorMessage)
+}
+
 // AckRequest Request object for Acknowledging a message
 type AckRequest struct {
 	ItemID       string
@@ -83,6 +94,11 @@ type AckResponse struct {
 // AckErrorResponse Error Response object for Acknowledging a message
 type AckErrorResponse struct {
 	ErrorMessage string
+}
+
+func (e *AckErrorResponse) Error() string {
+	return fmt.Sprintf("AckErrorResponse: message - %s",
+		e.ErrorMessage)
 }
 
 type UnAckType int
@@ -117,4 +133,9 @@ type UnAckResponse struct {
 // UnAckErrorResponse Response object for UnAck a message
 type UnAckErrorResponse struct {
 	ErrorMessage string
+}
+
+func (e *UnAckErrorResponse) Error() string {
+	return fmt.Sprintf("UnAckErrorResponse: message - %s",
+		e.ErrorMessage)
 }
