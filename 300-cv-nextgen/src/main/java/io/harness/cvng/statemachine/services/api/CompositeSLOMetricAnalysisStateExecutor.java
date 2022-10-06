@@ -22,6 +22,7 @@ import io.harness.cvng.statemachine.beans.AnalysisState;
 import io.harness.cvng.statemachine.beans.AnalysisStatus;
 import io.harness.cvng.statemachine.entities.CompositeSLOMetricAnalysisState;
 
+import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 import java.time.Instant;
 import java.util.HashMap;
@@ -57,6 +58,8 @@ public class CompositeSLOMetricAnalysisStateExecutor extends AnalysisStateExecut
       SimpleServiceLevelObjective simpleServiceLevelObjective =
           (SimpleServiceLevelObjective) serviceLevelObjectiveV2Service.get(
               objectivesDetail.getServiceLevelObjectiveRef());
+      Preconditions.checkState(simpleServiceLevelObjective.getServiceLevelIndicators().size() == 1,
+          "Only one service level indicator is supported");
       String sliId = simpleServiceLevelObjective.getServiceLevelIndicators().get(0);
       ServiceLevelIndicator serviceLevelIndicator = serviceLevelIndicatorService.get(sliId);
       List<SLIRecord> sliRecords = sliRecordService.getSLIRecords(sliId, startTime, endTime);

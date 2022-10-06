@@ -102,12 +102,13 @@ public class CompositeSLORecordServiceImpl implements CompositeSLORecordService 
       SLOValue sloValue = null;
       double prevRecordGoodCount = 0;
       double prevRecordBadCount = 0;
+      CompositeSLORecord lastCompositeSLORecord =
+          getLastCompositeSLORecord(compositeServiceLevelObjective.getUuid(), startTime);
+      if (Objects.nonNull(lastCompositeSLORecord)) {
+        prevRecordGoodCount = lastCompositeSLORecord.getRunningGoodCount();
+        prevRecordBadCount = lastCompositeSLORecord.getRunningBadCount();
+      }
       for (CompositeSLORecord sloRecord : sloRecords) {
-        if (sloRecord.getTimestamp().isBefore(startTime)) {
-          prevRecordBadCount = sloRecord.getRunningBadCount();
-          prevRecordGoodCount = sloRecord.getRunningGoodCount();
-          continue;
-        }
         double goodCountFromStart = sloRecord.getRunningGoodCount() - prevRecordGoodCount;
         double badCountFromStart = sloRecord.getRunningBadCount() - prevRecordBadCount;
         if (sloRecord.getSloVersion() != sloVersion) {
@@ -262,8 +263,6 @@ public class CompositeSLORecordServiceImpl implements CompositeSLORecordService 
 
   private List<CompositeSLORecord> compositeSLORecords(
       String sloId, Instant startTime, Instant endTime, TimeRangeParams filter) {
-    // For getting the base of the SLO.
-    CompositeSLORecord previousRecord = getFirstCompositeSLORecord(sloId, startTime.minusSeconds(60));
     CompositeSLORecord firstRecord = getFirstCompositeSLORecord(sloId, startTime);
     CompositeSLORecord lastRecord = getLastCompositeSLORecord(sloId, endTime);
     CompositeSLORecord firstRecordInRange = getFirstCompositeSLORecord(sloId, filter.getStartTime());
@@ -279,10 +278,6 @@ public class CompositeSLORecordServiceImpl implements CompositeSLORecordService 
     long diff = totalMinutes / MAX_NUMBER_OF_POINTS;
     if (diff == 0) {
       diff = 1L;
-    }
-    // long reminder = totalMinutes % maxNumberOfPoints;
-    if (previousRecord != null) {
-      minutes.add(previousRecord.getTimestamp());
     }
     minutes.add(firstRecord.getTimestamp());
     minutes.add(startTime);
