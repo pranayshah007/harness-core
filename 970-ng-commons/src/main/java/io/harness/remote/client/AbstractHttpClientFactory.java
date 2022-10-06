@@ -75,8 +75,17 @@ import retrofit2.converter.jackson.JacksonConverterFactory;
 @OwnedBy(PL)
 @Slf4j
 public abstract class AbstractHttpClientFactory {
-  private static final OkHttpClient UNSAFE_OKHTTP_CLIENT = Http.getUnsafeOkHttpClient();
-  private static final OkHttpClient OKHTTP_CLIENT_WITH_PROXY_AUTH = Http.getOkHttpClientWithProxyAuthSetup();
+  private static final OkHttpClient UNSAFE_OKHTTP_CLIENT;
+
+  static {
+    OkHttpClient result;
+    synchronized (Http.class) {
+      result = Http.getUnsafeOkHttpClientBuilder(null, 15, 15).build();
+    }
+    UNSAFE_OKHTTP_CLIENT = result;
+  }
+
+  private static final OkHttpClient OKHTTP_CLIENT_WITH_PROXY_AUTH = Http.getOkHttpClient();
 
   private final ServiceHttpClientConfig serviceHttpClientConfig;
   private final String serviceSecret;

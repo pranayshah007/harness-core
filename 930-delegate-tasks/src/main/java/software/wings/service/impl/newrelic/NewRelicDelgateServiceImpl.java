@@ -9,7 +9,6 @@ package software.wings.service.impl.newrelic;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.network.Http.getOkHttpClientBuilder;
 
 import static software.wings.delegatetasks.cv.CVConstants.URL_STRING;
 import static software.wings.service.impl.ThirdPartyApiCallLog.createApiCallLog;
@@ -18,6 +17,7 @@ import io.harness.delegate.task.DataCollectionExecutorService;
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.WingsException;
 import io.harness.exception.WingsException.ReportTarget;
+import io.harness.network.Http;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.serializer.JsonUtils;
 
@@ -585,7 +585,7 @@ public class NewRelicDelgateServiceImpl implements NewRelicDelegateService {
   }
 
   private NewRelicRestClient getNewRelicRestClient(final NewRelicConfig newRelicConfig) {
-    OkHttpClient.Builder httpClient = getOkHttpClientBuilder();
+      OkHttpClient.Builder httpClient = Http.getOkHttpClient().newBuilder();
     httpClient.readTimeout(30, TimeUnit.SECONDS);
     httpClient.addInterceptor(chain -> {
       Request original = chain.request();

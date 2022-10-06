@@ -7,12 +7,11 @@
 
 package software.wings.service.impl.logz;
 
-import static io.harness.network.Http.getOkHttpClientBuilder;
-
 import static software.wings.delegatetasks.cv.CVConstants.URL_STRING;
 import static software.wings.service.impl.ThirdPartyApiCallLog.PAYLOAD;
 
 import io.harness.exception.WingsException;
+import io.harness.network.Http;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.serializer.JsonUtils;
 
@@ -115,7 +114,7 @@ public class LogzDelegateServiceImpl implements LogzDelegateService {
   private LogzRestClient getLogzRestClient(
       final LogzConfig logzConfig, List<EncryptedDataDetail> encryptedDataDetails) {
     encryptionService.decrypt(logzConfig, encryptedDataDetails, false);
-    OkHttpClient.Builder httpClient = getOkHttpClientBuilder();
+      OkHttpClient.Builder httpClient = Http.getOkHttpClient().newBuilder();
     httpClient.addInterceptor(chain -> {
       Request original = chain.request();
 

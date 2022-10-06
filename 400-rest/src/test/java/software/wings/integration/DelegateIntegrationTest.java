@@ -28,6 +28,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import lombok.extern.slf4j.Slf4j;
+import okhttp3.OkHttpClient;
 import org.apache.commons.io.FileUtils;
 import org.awaitility.Duration;
 import org.hamcrest.CoreMatchers;
@@ -57,7 +58,11 @@ public class DelegateIntegrationTest extends IntegrationTestBase {
   public void shouldDownloadDelegateZipWithWatcher()
       throws IOException, JSONException, TimeoutException, InterruptedException {
     String url = "https://localhost:9090/api/delegates/downloadUrl?accountId=" + accountId;
-    String responseString = Http.getUnsafeOkHttpClient(url)
+    OkHttpClient result;
+    synchronized (Http.class) {
+      result = Http.getUnsafeOkHttpClientBuilder(url, 15, 15).build();
+    }
+    String responseString = result
                                 .newCall(new okhttp3.Request.Builder()
                                              .addHeader("Authorization", "Bearer " + userToken)
                                              .addHeader("accept", "application/json")
@@ -103,7 +108,11 @@ public class DelegateIntegrationTest extends IntegrationTestBase {
   @Ignore("TODO: please provide clear motivation why this test is ignored")
   public void shouldRunDelegate() throws IOException, JSONException, TimeoutException, InterruptedException {
     String url = "https://localhost:9090/api/delegates/downloadUrl?accountId=" + accountId;
-    String responseString = Http.getUnsafeOkHttpClient(url)
+    OkHttpClient result;
+    synchronized (Http.class) {
+      result = Http.getUnsafeOkHttpClientBuilder(url, 15, 15).build();
+    }
+    String responseString = result
                                 .newCall(new okhttp3.Request.Builder()
                                              .addHeader("Authorization", "Bearer " + userToken)
                                              .addHeader("accept", "application/json")

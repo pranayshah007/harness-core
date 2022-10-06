@@ -57,7 +57,7 @@ public class Http {
   private static UrlValidator urlValidator =
       new UrlValidator(new String[] {"http", "https"}, UrlValidator.ALLOW_LOCAL_URLS);
   private volatile static OkHttpClient defaultOkHttpClient;
-  public static ConnectionPool connectionPool = new ConnectionPool(0, 5, TimeUnit.MINUTES);
+  private static ConnectionPool connectionPool = new ConnectionPool(0, 5, TimeUnit.MINUTES);
 
   private static TrustManager[] trustAllCerts = getTrustManagers();
   private static final SSLContext sc = createSslContext();
@@ -279,30 +279,13 @@ public class Http {
     return new TrustManager[] {new AllTrustingX509TrustManager()};
   }
 
-  public static OkHttpClient getUnsafeOkHttpClient() {
-    return getUnsafeOkHttpClient(null);
-  }
-
-  public static OkHttpClient getUnsafeOkHttpClient(String url) {
-    return getUnsafeOkHttpClient(url, 15, 15);
-  }
-
-  public static synchronized OkHttpClient getUnsafeOkHttpClient(
+  public static OkHttpClient.Builder getUnsafeOkHttpClientBuilder(
       String url, long connectTimeOutSeconds, long readTimeOutSeconds) {
-    return getUnsafeOkHttpClientBuilder(url, connectTimeOutSeconds, readTimeOutSeconds).build();
-  }
-
-  public static synchronized OkHttpClient.Builder getUnsafeOkHttpClientBuilder(
-      String url, long connectTimeOutSeconds, long readTimeOutSeconds) {
-    return getUnsafeOkHttpClientBuilder(url, connectTimeOutSeconds, readTimeOutSeconds, getSslContext());
-  }
-
-  public static synchronized OkHttpClient.Builder getUnsafeOkHttpClientBuilder(
-      String url, long connectTimeOutSeconds, long readTimeOutSeconds, SSLContext sslContext) {
     try {
       OkHttpClient.Builder builder =
-          getOkHttpClientBuilder()
-              .sslSocketFactory(sslContext.getSocketFactory(), (X509TrustManager) getTrustManagers()[0])
+          getOkHttpClient()
+              .newBuilder()
+              .sslSocketFactory(getSslContext().getSocketFactory(), (X509TrustManager) getTrustManagers()[0])
               .connectTimeout(connectTimeOutSeconds, TimeUnit.SECONDS)
               .readTimeout(readTimeOutSeconds, TimeUnit.SECONDS);
 
@@ -320,7 +303,8 @@ public class Http {
   public OkHttpClient.Builder getSafeOkHttpClientBuilder(
       String url, long connectTimeOutSeconds, long readTimeOutSeconds) {
     try {
-      OkHttpClient.Builder builder = Http.getOkHttpClientBuilder()
+      OkHttpClient.Builder builder = getOkHttpClient()
+                                         .newBuilder()
                                          .connectTimeout(connectTimeOutSeconds, TimeUnit.SECONDS)
                                          .readTimeout(readTimeOutSeconds, TimeUnit.SECONDS);
 
@@ -338,11 +322,11 @@ public class Http {
     return getOkHttpClientBuilder(url, isCertValidationRequired).build();
   }
 
-  public OkHttpClient.Builder getOkHttpClientBuilder(String url, boolean isCertValidationRequired) {
+  private OkHttpClient.Builder getOkHttpClientBuilder(String url, boolean isCertValidationRequired) {
     return getOkHttpClientBuilder(url, 15, 15, isCertValidationRequired);
   }
 
-  public OkHttpClient.Builder getOkHttpClientBuilder(
+  private OkHttpClient.Builder getOkHttpClientBuilder(
       String url, long connectTimeOutSeconds, long readTimeOutSeconds, boolean isCertValidationRequired) {
     if (isCertValidationRequired) {
       return getSafeOkHttpClientBuilder(url, connectTimeOutSeconds, readTimeOutSeconds);
@@ -491,19 +475,7 @@ public class Http {
     return domain.toLowerCase().endsWith(pattern.toLowerCase());
   }
 
-  public static OkHttpClient.Builder getOkHttpClientWithNoProxyValueSet(String url) {
-    return getOkHttpClientBuilder().proxy(checkAndGetNonProxyIfApplicable(url));
-  }
-
-  public static OkHttpClient.Builder getOkHttpClientBuilder() {
-    return getOkHttpClientWithProxyAuthSetup().newBuilder();
-  }
-
-  public static OkHttpClient.Builder getOkHttpClientBuilderWithReadtimeOut(int timeout, TimeUnit timeUnit) {
-    return getOkHttpClientBuilder().readTimeout(timeout, timeUnit);
-  }
-
-  public static OkHttpClient getOkHttpClientWithProxyAuthSetup() {
+  public static OkHttpClient getOkHttpClient() {
     if (defaultOkHttpClient == null) {
       synchronized (Http.class) {
         if (defaultOkHttpClient == null) {
@@ -577,8 +549,10 @@ public class Http {
 
   private static Response getResponseFromUrl(String url, int connectTimeoutSeconds, int readTimeoutSeconds)
       throws IOException {
-    return getUnsafeOkHttpClient(url, connectTimeoutSeconds, readTimeoutSeconds)
-        .newCall(new Request.Builder().url(url).build())
-        .execute();
+    OkHttpClient result;
+    synchronized (Http.class) {
+      result = getUnsafeOkHttpClientBuilder(url, connectTimeoutSeconds, readTimeoutSeconds).build();
+    }
+    return result.newCall(new Request.Builder().url(url).build()).execute();
   }
 }

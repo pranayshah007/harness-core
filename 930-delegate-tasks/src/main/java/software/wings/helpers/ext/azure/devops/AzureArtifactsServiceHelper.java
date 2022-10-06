@@ -11,7 +11,6 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.artifacts.azureartifacts.service.AzureArtifactsRegistryServiceImpl.CONNECT_TIMEOUT;
 import static io.harness.data.encoding.EncodingUtils.encodeBase64;
 import static io.harness.exception.WingsException.USER;
-import static io.harness.network.Http.getOkHttpClientBuilder;
 
 import static java.lang.String.format;
 import static org.apache.commons.lang3.StringUtils.isBlank;
@@ -48,7 +47,7 @@ import retrofit2.Response;
 @UtilityClass
 public class AzureArtifactsServiceHelper {
   static OkHttpClient getAzureArtifactsDownloadClient(String artifactDownloadUrl) {
-    return getOkHttpClientBuilder()
+      return Http.getOkHttpClient().newBuilder()
         .connectTimeout(CONNECT_TIMEOUT, TimeUnit.SECONDS)
         .proxy(Http.checkAndGetNonProxyIfApplicable(artifactDownloadUrl))
         .retryOnConnectionFailure(true)

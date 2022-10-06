@@ -7,6 +7,8 @@
 
 package software.wings.service.impl.bugsnag;
 
+import static io.harness.network.Http.checkAndGetNonProxyIfApplicable;
+
 import static software.wings.delegatetasks.cv.CVConstants.URL_STRING;
 import static software.wings.service.impl.ThirdPartyApiCallLog.createApiCallLog;
 
@@ -145,13 +147,15 @@ public class BugsnagDelegateServiceImpl implements BugsnagDelegateService {
 
   private APMRestClient getAPMRestClient(final BugsnagConfig config, List<EncryptedDataDetail> encryptedDataDetails) {
     encryptionService.decrypt(config, encryptedDataDetails, false);
-    final Retrofit retrofit =
-        new Retrofit.Builder()
-            .baseUrl(config.getUrl())
-            .addConverterFactory(JacksonConverterFactory.create())
-            .client(
-                Http.getOkHttpClientWithNoProxyValueSet(config.getUrl()).connectTimeout(30, TimeUnit.SECONDS).build())
-            .build();
+    final Retrofit retrofit = new Retrofit.Builder()
+                                  .baseUrl(config.getUrl())
+                                  .addConverterFactory(JacksonConverterFactory.create())
+                                  .client(Http.getOkHttpClient()
+                                              .newBuilder()
+                                              .proxy(checkAndGetNonProxyIfApplicable(config.getUrl()))
+                                              .connectTimeout(30, TimeUnit.SECONDS)
+                                              .build())
+                                  .build();
     return retrofit.create(APMRestClient.class);
   }
 }

@@ -7,8 +7,7 @@
 
 package software.wings.delegatetasks.cv;
 
-import static io.harness.network.Http.getOkHttpClientBuilder;
-import static io.harness.network.Http.getOkHttpClientBuilderWithReadtimeOut;
+import static io.harness.network.Http.*;
 
 import static java.lang.String.format;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
@@ -201,7 +200,7 @@ public class ElkDataCollector implements LogDataCollector<ElkDataCollectionInfoV
   Retrofit createRetrofit(ElkConfig elkConfig) {
     OkHttpClient.Builder httpClient = elkConfig.getElkUrl().startsWith("https")
         ? getUnsafeOkHttpClient().readTimeout(60, TimeUnit.SECONDS)
-        : getOkHttpClientBuilderWithReadtimeOut(60, TimeUnit.SECONDS);
+        : getOkHttpClient().newBuilder().readTimeout(60, TimeUnit.SECONDS);
     httpClient
         .addInterceptor(chain -> {
           Request original = chain.request();
@@ -281,7 +280,7 @@ sslContext.init(null, trustAllCerts, new SecureRandom());
 // Create an ssl socket factory with our all-trusting manager
 final SSLSocketFactory sslSocketFactory = sslContext.getSocketFactory();
 
-OkHttpClient.Builder builder = getOkHttpClientBuilder();
+      OkHttpClient.Builder builder = getOkHttpClient().newBuilder();
 builder.sslSocketFactory(sslSocketFactory, (X509TrustManager) trustAllCerts[0]);
 builder.hostnameVerifier(new NoopHostnameVerifier());
 

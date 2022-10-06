@@ -8,7 +8,6 @@
 package io.harness.spotinst;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
-import static io.harness.network.Http.getOkHttpClientBuilder;
 import static io.harness.spotinst.model.SpotInstConstants.SPOTINST_REST_TIMEOUT_MINUTES;
 import static io.harness.spotinst.model.SpotInstConstants.listElastiGroupsQueryTime;
 import static io.harness.spotinst.model.SpotInstConstants.spotInstBaseUrl;
@@ -23,6 +22,7 @@ import static java.util.stream.Collectors.toList;
 
 import io.harness.exception.WingsException;
 import io.harness.exception.WingsException.ReportTarget;
+import io.harness.network.Http;
 import io.harness.spotinst.model.ElastiGroup;
 import io.harness.spotinst.model.ElastiGroupInstanceHealth;
 import io.harness.spotinst.model.SpotInstConstants;
@@ -49,10 +49,10 @@ import retrofit2.converter.jackson.JacksonConverterFactory;
 @Slf4j
 public class SpotInstHelperServiceDelegateImpl implements SpotInstHelperServiceDelegate {
   private SpotInstRestClient getSpotInstRestClient() {
-    Retrofit retrofit = new Retrofit.Builder()
+      Retrofit retrofit = new Retrofit.Builder()
                             .baseUrl(spotInstBaseUrl)
                             .addConverterFactory(JacksonConverterFactory.create())
-                            .client(getOkHttpClientBuilder()
+                            .client(Http.getOkHttpClient().newBuilder()
                                         .readTimeout(SPOTINST_REST_TIMEOUT_MINUTES, MINUTES)
                                         .connectTimeout(SPOTINST_REST_TIMEOUT_MINUTES, MINUTES)
                                         .build())

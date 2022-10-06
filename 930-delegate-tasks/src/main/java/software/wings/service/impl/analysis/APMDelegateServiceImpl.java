@@ -9,6 +9,7 @@ package software.wings.service.impl.analysis;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.network.Http.checkAndGetNonProxyIfApplicable;
 
 import static software.wings.delegatetasks.cv.CVConstants.AZURE_BASE_URL;
 import static software.wings.delegatetasks.cv.CVConstants.AZURE_TOKEN_URL;
@@ -183,12 +184,15 @@ public class APMDelegateServiceImpl implements APMDelegateService {
   }
 
   private APMRestClient getAPMRestClient(String baseUrl) {
-    final Retrofit retrofit =
-        new Retrofit.Builder()
-            .baseUrl(baseUrl)
-            .addConverterFactory(JacksonConverterFactory.create())
-            .client(Http.getOkHttpClientWithNoProxyValueSet(baseUrl).connectTimeout(30, TimeUnit.SECONDS).build())
-            .build();
+    final Retrofit retrofit = new Retrofit.Builder()
+                                  .baseUrl(baseUrl)
+                                  .addConverterFactory(JacksonConverterFactory.create())
+                                  .client(Http.getOkHttpClient()
+                                              .newBuilder()
+                                              .proxy(checkAndGetNonProxyIfApplicable(baseUrl))
+                                              .connectTimeout(30, TimeUnit.SECONDS)
+                                              .build())
+                                  .build();
     return retrofit.create(APMRestClient.class);
   }
 

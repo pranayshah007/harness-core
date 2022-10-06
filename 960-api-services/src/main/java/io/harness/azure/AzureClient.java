@@ -7,8 +7,6 @@
 
 package io.harness.azure;
 
-import static io.harness.network.Http.getOkHttpClientBuilder;
-
 import static com.google.common.base.Charsets.UTF_8;
 import static java.lang.String.format;
 import static org.apache.commons.codec.binary.Base64.encodeBase64String;
@@ -132,7 +130,7 @@ public class AzureClient {
   }
 
   protected <T> T getAzureRestClient(String url, Class<T> clazz) {
-    OkHttpClient okHttpClient = getOkHttpClientBuilder()
+      OkHttpClient okHttpClient = Http.getOkHttpClient().newBuilder()
                                     .connectTimeout(AzureConstants.REST_CLIENT_CONNECT_TIMEOUT, TimeUnit.SECONDS)
                                     .readTimeout(AzureConstants.REST_CLIENT_READ_TIMEOUT, TimeUnit.SECONDS)
                                     .proxy(Http.checkAndGetNonProxyIfApplicable(url))

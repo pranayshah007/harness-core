@@ -7,8 +7,6 @@
 
 package io.harness.logstreaming;
 
-import static io.harness.network.Http.getOkHttpClientBuilder;
-
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.network.Http;
@@ -31,7 +29,7 @@ public class NGLogStreamingClientFactory implements Provider<LogStreamingService
 
   @Override
   public LogStreamingServiceRestClient get() {
-    OkHttpClient okHttpClient = getOkHttpClientBuilder()
+      OkHttpClient okHttpClient = Http.getOkHttpClient().newBuilder()
                                     .connectTimeout(5, TimeUnit.SECONDS)
                                     .readTimeout(10, TimeUnit.SECONDS)
                                     .proxy(Http.checkAndGetNonProxyIfApplicable(logStreamingServiceBaseUrl))

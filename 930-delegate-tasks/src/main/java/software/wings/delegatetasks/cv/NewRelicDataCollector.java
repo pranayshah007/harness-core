@@ -9,7 +9,6 @@ package software.wings.delegatetasks.cv;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.network.Http.getOkHttpClientBuilder;
 
 import static software.wings.service.impl.newrelic.NewRelicMetricDataRecord.DEFAULT_GROUP_NAME;
 import static software.wings.service.impl.newrelic.NewRelicMetricValueDefinition.APDEX_SCORE;
@@ -24,6 +23,7 @@ import io.harness.delegate.task.DataCollectionExecutorService;
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.WingsException;
 import io.harness.exception.WingsException.ReportTarget;
+import io.harness.network.Http;
 import io.harness.serializer.JsonUtils;
 
 import software.wings.beans.NewRelicConfig;
@@ -537,7 +537,7 @@ public class NewRelicDataCollector implements MetricsDataCollector<NewRelicDataC
   @VisibleForTesting
   NewRelicRestClient getNewRelicRestClient() {
     NewRelicConfig newRelicConfig = dataCollectionInfo.getNewRelicConfig();
-    OkHttpClient.Builder httpClient = getOkHttpClientBuilder();
+      OkHttpClient.Builder httpClient = Http.getOkHttpClient().newBuilder();
     httpClient.addInterceptor(chain -> {
       Request original = chain.request();
 

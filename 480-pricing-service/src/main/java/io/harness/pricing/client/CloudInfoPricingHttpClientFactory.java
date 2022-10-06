@@ -7,8 +7,6 @@
 
 package io.harness.pricing.client;
 
-import static io.harness.network.Http.getOkHttpClientBuilder;
-
 import io.harness.network.Http;
 import io.harness.remote.client.ServiceHttpClientConfig;
 
@@ -34,7 +32,7 @@ public class CloudInfoPricingHttpClientFactory implements Provider<CloudInfoPric
   public CloudInfoPricingClient get() {
     log.info("BASE_CLOUD_INFO_PRICING_SERVICE_URL: {}", httpClientConfig.getBaseUrl());
 
-    OkHttpClient okHttpClient = getOkHttpClientBuilder()
+      OkHttpClient okHttpClient = Http.getOkHttpClient().newBuilder()
                                     .connectTimeout(httpClientConfig.getConnectTimeOutSeconds(), TimeUnit.SECONDS)
                                     .readTimeout(httpClientConfig.getReadTimeOutSeconds(), TimeUnit.SECONDS)
                                     .proxy(Http.checkAndGetNonProxyIfApplicable(httpClientConfig.getBaseUrl()))

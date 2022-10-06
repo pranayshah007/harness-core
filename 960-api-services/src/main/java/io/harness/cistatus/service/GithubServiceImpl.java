@@ -42,6 +42,7 @@ import java.util.stream.Collectors;
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 import lombok.extern.slf4j.Slf4j;
+import okhttp3.OkHttpClient;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.http.HttpStatus;
 import org.json.JSONObject;
@@ -245,10 +246,14 @@ public class GithubServiceImpl implements GithubService {
       if (!githubUrl.endsWith("/")) {
         githubUrl = githubUrl + "/";
       }
+      OkHttpClient result;
+      synchronized (Http.class) {
+        result = Http.getUnsafeOkHttpClientBuilder(githubUrl, 15, 15).build();
+      }
       Retrofit retrofit = new Retrofit.Builder()
                               .baseUrl(githubUrl)
                               .addConverterFactory(JacksonConverterFactory.create())
-                              .client(Http.getUnsafeOkHttpClient(githubUrl))
+                              .client(result)
                               .build();
       return retrofit.create(GithubRestClient.class);
     } catch (InvalidRequestException e) {

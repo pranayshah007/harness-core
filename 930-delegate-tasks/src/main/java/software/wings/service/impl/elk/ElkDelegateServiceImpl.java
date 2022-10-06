@@ -9,7 +9,6 @@ package software.wings.service.impl.elk;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.network.Http.getOkHttpClientBuilder;
 import static io.harness.network.Http.getOkHttpClientBuilderWithReadtimeOut;
 
 import static software.wings.service.impl.ThirdPartyApiCallLog.createApiCallLog;
@@ -223,7 +222,7 @@ public class ElkDelegateServiceImpl implements ElkDelegateService {
     encryptionService.decrypt(elkConfig, encryptedDataDetails, false);
     OkHttpClient.Builder httpClient = elkConfig.getElkUrl().startsWith("https")
         ? getUnsafeOkHttpClient().readTimeout(60, TimeUnit.SECONDS)
-        : getOkHttpClientBuilderWithReadtimeOut(60, TimeUnit.SECONDS);
+        : Http.getOkHttpClient().newBuilder().readTimeout(60, TimeUnit.SECONDS);
     httpClient
         .addInterceptor(chain -> {
           Request original = chain.request();
@@ -300,7 +299,7 @@ sslContext.init(null, trustAllCerts, new java.security.SecureRandom());
 // Create an ssl socket factory with our all-trusting manager
 final SSLSocketFactory sslSocketFactory = sslContext.getSocketFactory();
 
-OkHttpClient.Builder builder = getOkHttpClientBuilder();
+      OkHttpClient.Builder builder = Http.getOkHttpClient().newBuilder();
 builder.sslSocketFactory(sslSocketFactory, (X509TrustManager) trustAllCerts[0]);
 builder.hostnameVerifier(new NoopHostnameVerifier());
 

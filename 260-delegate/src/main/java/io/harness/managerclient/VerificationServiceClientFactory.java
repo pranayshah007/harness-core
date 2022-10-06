@@ -82,7 +82,7 @@ public class VerificationServiceClientFactory implements Provider<VerificationSe
 
       SSLContext sslContext = sslContextBuilder.build();
 
-      return Http.getOkHttpClientWithProxyAuthSetup()
+      return Http.getOkHttpClient()
           .newBuilder()
           .retryOnConnectionFailure(true)
           .addInterceptor(new DelegateAuthInterceptor(this.tokenGenerator))

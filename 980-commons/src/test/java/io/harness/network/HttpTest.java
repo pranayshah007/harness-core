@@ -109,7 +109,12 @@ public class HttpTest extends CategoryTest {
   @Owner(developers = GEORGE)
   @Category(UnitTests.class)
   public void concurrencyTest() {
-    Concurrent.test(5, i -> { OkHttpClient client = Http.getUnsafeOkHttpClient("https://harness.io"); });
+    Concurrent.test(5, i -> {
+      OkHttpClient result;
+      synchronized (Http.class) {
+        result = Http.getUnsafeOkHttpClientBuilder("https://harness.io", 15, 15).build();
+      }
+      OkHttpClient client = result; });
   }
 
   @Test

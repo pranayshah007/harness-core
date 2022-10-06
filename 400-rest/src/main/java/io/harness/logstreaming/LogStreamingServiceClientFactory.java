@@ -7,8 +7,6 @@
 
 package io.harness.logstreaming;
 
-import static io.harness.network.Http.getOkHttpClientBuilder;
-
 import io.harness.annotations.dev.BreakDependencyOn;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
@@ -35,7 +33,7 @@ public class LogStreamingServiceClientFactory implements Provider<LogStreamingSe
   @Override
   public LogStreamingServiceRestClient get() {
     String url = mainConfiguration.getLogStreamingServiceConfig().getBaseUrl();
-    OkHttpClient okHttpClient = getOkHttpClientBuilder()
+      OkHttpClient okHttpClient = Http.getOkHttpClient().newBuilder()
                                     .connectTimeout(5, TimeUnit.SECONDS)
                                     .readTimeout(10, TimeUnit.SECONDS)
                                     .proxy(Http.checkAndGetNonProxyIfApplicable(url))

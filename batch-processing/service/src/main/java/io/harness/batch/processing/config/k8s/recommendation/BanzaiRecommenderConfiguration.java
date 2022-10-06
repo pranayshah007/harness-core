@@ -7,8 +7,6 @@
 
 package io.harness.batch.processing.config.k8s.recommendation;
 
-import static io.harness.network.Http.getOkHttpClientBuilder;
-
 import io.harness.batch.processing.config.BatchMainConfig;
 import io.harness.batch.processing.pricing.banzai.BanzaiRecommenderClient;
 import io.harness.network.Http;
@@ -31,7 +29,7 @@ public class BanzaiRecommenderConfiguration {
 
     log.info("BanzaiRecommender base URL: {}", config.getBaseUrl());
 
-    OkHttpClient okHttpClient = getOkHttpClientBuilder()
+      OkHttpClient okHttpClient = Http.getOkHttpClient().newBuilder()
                                     .connectTimeout(config.getConnectTimeOutSeconds(), TimeUnit.SECONDS)
                                     .readTimeout(config.getReadTimeOutSeconds(), TimeUnit.SECONDS)
                                     .proxy(Http.checkAndGetNonProxyIfApplicable(config.getBaseUrl()))

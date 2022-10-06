@@ -23,6 +23,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.MediaType;
+import okhttp3.OkHttpClient;
 import okhttp3.RequestBody;
 import org.json.JSONObject;
 import retrofit2.Response;
@@ -106,10 +107,14 @@ public class AzureRepoServiceImpl implements AzureRepoService {
       if (!azureRepoUrl.endsWith("/")) {
         azureRepoUrl = azureRepoUrl + "/";
       }
+      OkHttpClient result;
+      synchronized (Http.class) {
+        result = Http.getUnsafeOkHttpClientBuilder(azureRepoUrl, 15, 15).build();
+      }
       Retrofit retrofit = new Retrofit.Builder()
                               .baseUrl(azureRepoUrl)
                               .addConverterFactory(JacksonConverterFactory.create())
-                              .client(Http.getUnsafeOkHttpClient(azureRepoUrl))
+                              .client(result)
                               .build();
       return retrofit.create(AzureRepoRestClient.class);
     } catch (InvalidRequestException e) {

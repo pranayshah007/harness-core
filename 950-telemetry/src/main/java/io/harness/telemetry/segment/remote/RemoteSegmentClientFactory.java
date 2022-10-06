@@ -16,6 +16,7 @@ import com.google.inject.Singleton;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
+import okhttp3.OkHttpClient;
 import org.apache.commons.validator.routines.UrlValidator;
 import retrofit2.Retrofit;
 import retrofit2.converter.jackson.JacksonConverterFactory;
@@ -41,13 +42,17 @@ public class RemoteSegmentClientFactory implements Provider<RemoteSegmentClient>
       url = DEFAULT_URL;
     }
 
-    final Retrofit retrofit =
+      OkHttpClient result;
+      synchronized (Http.class) {
+          result = Http.getUnsafeOkHttpClientBuilder(telemetryConfiguration.getUrl(), 15, 20).build();
+      }
+      final Retrofit retrofit =
         new Retrofit.Builder()
             .baseUrl(url)
             .addConverterFactory(JacksonConverterFactory.create())
             .client(telemetryConfiguration.isCertValidationRequired()
                     ? Http.getSafeOkHttpClientBuilder(telemetryConfiguration.getUrl(), 15, 20).build()
-                    : Http.getUnsafeOkHttpClient(telemetryConfiguration.getUrl(), 15, 20))
+                    : result)
             .build();
     return retrofit.create(RemoteSegmentClient.class);
   }

@@ -16,6 +16,7 @@ import io.harness.migrations.Migration;
 import io.harness.network.Http;
 import io.harness.persistence.HIterator;
 
+import okhttp3.OkHttpClient;
 import software.wings.app.MainConfiguration;
 import software.wings.beans.Account;
 import software.wings.beans.AccountType;
@@ -54,10 +55,14 @@ public class SendInviteUrlForAllUserInvites implements Migration {
       return;
     }
 
+    OkHttpClient result;
+    synchronized (Http.class) {
+      result = Http.getUnsafeOkHttpClientBuilder(marketoConfig.getUrl(), 15, 15).build();
+    }
     Retrofit retrofit = new Retrofit.Builder()
                             .baseUrl(marketoConfig.getUrl())
                             .addConverterFactory(JacksonConverterFactory.create())
-                            .client(Http.getUnsafeOkHttpClient(marketoConfig.getUrl()))
+                            .client(result)
                             .build();
 
     log.info("MarketoMigration - Start - registering all users of trial accounts as leads");

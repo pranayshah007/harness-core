@@ -13,7 +13,6 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.eraro.ErrorCode.AZURE_SERVICE_EXCEPTION;
 import static io.harness.eraro.ErrorCode.CLUSTER_NOT_FOUND;
 import static io.harness.exception.WingsException.USER;
-import static io.harness.network.Http.getOkHttpClientBuilder;
 import static io.harness.validation.Validator.notNullCheck;
 
 import static com.google.common.base.Charsets.UTF_8;
@@ -364,7 +363,7 @@ public class AzureDelegateHelperService {
 
   AzureManagementRestClient getAzureManagementRestClient(AzureEnvironmentType azureEnvironmentType) {
     String url = getAzureEnvironment(azureEnvironmentType).resourceManagerEndpoint();
-    OkHttpClient okHttpClient = getOkHttpClientBuilder()
+      OkHttpClient okHttpClient = Http.getOkHttpClient().newBuilder()
                                     .connectTimeout(CONNECT_TIMEOUT, TimeUnit.SECONDS)
                                     .readTimeout(READ_TIMEOUT, TimeUnit.SECONDS)
                                     .proxy(Http.checkAndGetNonProxyIfApplicable(url))
@@ -410,7 +409,7 @@ public class AzureDelegateHelperService {
 
   private AcrRestClient getAcrRestClient(String registryHostName) {
     String url = getUrl(registryHostName);
-    OkHttpClient okHttpClient = getOkHttpClientBuilder()
+      OkHttpClient okHttpClient = Http.getOkHttpClient().newBuilder()
                                     .connectTimeout(CONNECT_TIMEOUT, TimeUnit.SECONDS)
                                     .readTimeout(READ_TIMEOUT, TimeUnit.SECONDS)
                                     .proxy(Http.checkAndGetNonProxyIfApplicable(url))

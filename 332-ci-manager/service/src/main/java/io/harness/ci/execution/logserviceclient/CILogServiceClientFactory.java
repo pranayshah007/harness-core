@@ -16,6 +16,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
+import okhttp3.OkHttpClient;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
@@ -31,9 +32,13 @@ public class CILogServiceClientFactory implements Provider<CILogServiceClient> {
   @Override
   public CILogServiceClient get() {
     Gson gson = new GsonBuilder().setLenient().create();
+    OkHttpClient result;
+    synchronized (Http.class) {
+      result = Http.getUnsafeOkHttpClientBuilder(logConfig.getBaseUrl(), 15, 15).build();
+    }
     Retrofit retrofit = new Retrofit.Builder()
                             .baseUrl(logConfig.getBaseUrl())
-                            .client(Http.getUnsafeOkHttpClient(logConfig.getBaseUrl()))
+                            .client(result)
                             .addConverterFactory(GsonConverterFactory.create(gson))
                             .build();
     return retrofit.create(CILogServiceClient.class);

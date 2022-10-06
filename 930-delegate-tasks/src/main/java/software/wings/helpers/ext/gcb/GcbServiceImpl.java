@@ -8,7 +8,6 @@
 package software.wings.helpers.ext.gcb;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
-import static io.harness.network.Http.getOkHttpClientBuilder;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.task.artifacts.gcr.exceptions.GcbClientException;
@@ -182,7 +181,7 @@ public class GcbServiceImpl implements GcbService {
 
   @VisibleForTesting
   <T> T getRestClient(final Class<T> client, String baseUrl) {
-    OkHttpClient okHttpClient = getOkHttpClientBuilder()
+      OkHttpClient okHttpClient = Http.getOkHttpClient().newBuilder()
                                     .connectTimeout(5, TimeUnit.SECONDS)
                                     .proxy(Http.checkAndGetNonProxyIfApplicable(baseUrl))
                                     .build();

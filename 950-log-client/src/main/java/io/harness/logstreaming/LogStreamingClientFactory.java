@@ -107,7 +107,7 @@ public class LogStreamingClientFactory implements Provider<LogStreamingClient> {
 
     SSLContext sslContext = sslContextBuilder.build();
 
-    return Http.getOkHttpClientWithProxyAuthSetup()
+    return Http.getOkHttpClient()
         .newBuilder()
         .connectionPool(new ConnectionPool())
         .connectTimeout(5, TimeUnit.SECONDS)

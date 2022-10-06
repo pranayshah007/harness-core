@@ -21,6 +21,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
+import okhttp3.OkHttpClient;
 import org.json.JSONObject;
 import retrofit2.Response;
 import retrofit2.Retrofit;
@@ -92,10 +93,14 @@ public class GitlabServiceImpl implements GitlabService {
       if (!gitlabUrl.endsWith("/")) {
         gitlabUrl = gitlabUrl + "/";
       }
+      OkHttpClient result;
+      synchronized (Http.class) {
+        result = Http.getUnsafeOkHttpClientBuilder(gitlabUrl, 15, 15).build();
+      }
       Retrofit retrofit = new Retrofit.Builder()
                               .baseUrl(gitlabUrl)
                               .addConverterFactory(JacksonConverterFactory.create())
-                              .client(Http.getUnsafeOkHttpClient(gitlabUrl))
+                              .client(result)
                               .build();
       return retrofit.create(GitlabRestClient.class);
     } catch (InvalidRequestException e) {

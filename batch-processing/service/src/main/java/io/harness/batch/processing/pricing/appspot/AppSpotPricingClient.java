@@ -7,8 +7,6 @@
 
 package io.harness.batch.processing.pricing.appspot;
 
-import static io.harness.network.Http.getOkHttpClientBuilder;
-
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.UnexpectedException;
@@ -51,7 +49,7 @@ public class AppSpotPricingClient {
   }
 
   private static Call appSpotPricingCall() {
-    OkHttpClient okHttpClient = getOkHttpClientBuilder()
+      OkHttpClient okHttpClient = Http.getOkHttpClient().newBuilder()
                                     .connectTimeout(120, TimeUnit.SECONDS)
                                     .readTimeout(120, TimeUnit.SECONDS)
                                     .proxy(Http.checkAndGetNonProxyIfApplicable(BASE_URL))

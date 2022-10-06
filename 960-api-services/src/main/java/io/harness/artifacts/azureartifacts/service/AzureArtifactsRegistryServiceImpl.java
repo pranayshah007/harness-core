@@ -9,7 +9,6 @@ package io.harness.artifacts.azureartifacts.service;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.data.encoding.EncodingUtils.encodeBase64;
-import static io.harness.network.Http.getOkHttpClientBuilder;
 
 import static software.wings.helpers.ext.jenkins.BuildDetails.Builder.aBuildDetails;
 
@@ -376,7 +375,7 @@ public class AzureArtifactsRegistryServiceImpl implements AzureArtifactsRegistry
 
   public static AzureDevopsRestClient getAzureDevopsRestClient(String azureDevopsUrl) {
     String url = ensureTrailingSlash(azureDevopsUrl);
-    OkHttpClient okHttpClient = getOkHttpClientBuilder()
+      OkHttpClient okHttpClient = Http.getOkHttpClient().newBuilder()
                                     .connectTimeout(CONNECT_TIMEOUT, TimeUnit.SECONDS)
                                     .readTimeout(READ_TIMEOUT, TimeUnit.SECONDS)
                                     .proxy(Http.checkAndGetNonProxyIfApplicable(url))
@@ -395,7 +394,7 @@ public class AzureArtifactsRegistryServiceImpl implements AzureArtifactsRegistry
     if (isNotBlank(project)) {
       url += project + "/";
     }
-    OkHttpClient okHttpClient = getOkHttpClientBuilder()
+      OkHttpClient okHttpClient = Http.getOkHttpClient().newBuilder()
                                     .connectTimeout(CONNECT_TIMEOUT, TimeUnit.SECONDS)
                                     .readTimeout(READ_TIMEOUT, TimeUnit.SECONDS)
                                     .proxy(Http.checkAndGetNonProxyIfApplicable(url))

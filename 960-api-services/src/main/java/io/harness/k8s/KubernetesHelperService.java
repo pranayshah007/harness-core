@@ -14,7 +14,6 @@ import static io.harness.exception.WingsException.USER;
 import static io.harness.filesystem.FileIo.getHomeDir;
 import static io.harness.govern.Switch.noop;
 import static io.harness.k8s.KubernetesConvention.DASH;
-import static io.harness.network.Http.getOkHttpClientBuilder;
 import static io.harness.network.Http.joinHostPort;
 
 import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_EMPTY;
@@ -310,7 +309,7 @@ public class KubernetesHelperService {
   @VisibleForTesting
   public OkHttpClient createHttpClientWithProxySetting(final Config config) {
     try {
-      OkHttpClient.Builder httpClientBuilder = getOkHttpClientBuilder();
+        OkHttpClient.Builder httpClientBuilder = Http.getOkHttpClient().newBuilder();
       httpClientBuilder.proxy(Http.checkAndGetNonProxyIfApplicable(config.getMasterUrl()));
       // Follow any redirects
       httpClientBuilder.followRedirects(true);

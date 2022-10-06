@@ -9,7 +9,6 @@ package software.wings.delegatetasks.cv;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.network.Http.getOkHttpClientBuilder;
 
 import static software.wings.service.impl.appdynamics.AppdynamicsDelegateServiceImpl.BT_PERFORMANCE_PATH_PREFIX;
 
@@ -17,6 +16,7 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.delegate.task.DataCollectionExecutorService;
 
+import io.harness.network.Http;
 import software.wings.beans.AppDynamicsConfig;
 import software.wings.helpers.ext.appdynamics.AppdynamicsRestClient;
 import software.wings.service.impl.analysis.MetricElement;
@@ -78,7 +78,7 @@ public class AppDynamicsDataCollector implements MetricsDataCollector<AppDynamic
   @VisibleForTesting
   AppdynamicsRestClient getAppDynamicsRestClient() {
     AppDynamicsConfig appDynamicsConfig = dataCollectionInfo.getAppDynamicsConfig();
-    OkHttpClient.Builder httpClient = getOkHttpClientBuilder();
+      OkHttpClient.Builder httpClient = Http.getOkHttpClient().newBuilder();
     httpClient.addInterceptor(chain -> {
       Request original = chain.request();
       Request request =

@@ -103,7 +103,11 @@ public class ManagerVersionsCleanUpJob implements Runnable {
   private boolean checkManagerHealth(String version) {
     String url = mainConfiguration.getApiUrl() + "/api/health";
 
-    OkHttpClient httpClient = Http.getUnsafeOkHttpClient(url);
+    OkHttpClient result;
+    synchronized (Http.class) {
+      result = Http.getUnsafeOkHttpClientBuilder(url, 15, 15).build();
+    }
+    OkHttpClient httpClient = result;
     Request request = new Request.Builder().url(url).get().addHeader("version", version).build();
 
     Response response;

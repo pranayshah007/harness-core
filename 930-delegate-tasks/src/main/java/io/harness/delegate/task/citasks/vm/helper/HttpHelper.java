@@ -29,6 +29,7 @@ import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
 import okhttp3.MediaType;
+import okhttp3.OkHttpClient;
 import retrofit2.Response;
 import retrofit2.Retrofit;
 import retrofit2.converter.jackson.JacksonConverterFactory;
@@ -49,10 +50,14 @@ public class HttpHelper {
 
   public RunnerRestClient getRunnerClient(int timeoutInSecs) {
     String runnerUrl = getRunnerUrl();
-    Retrofit retrofit = new Retrofit.Builder()
+      OkHttpClient result;
+      synchronized (Http.class) {
+          result = Http.getUnsafeOkHttpClientBuilder(runnerUrl, RUNNER_CONNECT_TIMEOUT_SECS, timeoutInSecs).build();
+      }
+      Retrofit retrofit = new Retrofit.Builder()
                             .baseUrl(runnerUrl)
                             .addConverterFactory(JacksonConverterFactory.create())
-                            .client(Http.getUnsafeOkHttpClient(runnerUrl, RUNNER_CONNECT_TIMEOUT_SECS, timeoutInSecs))
+                            .client(result)
                             .build();
     return retrofit.create(RunnerRestClient.class);
   }

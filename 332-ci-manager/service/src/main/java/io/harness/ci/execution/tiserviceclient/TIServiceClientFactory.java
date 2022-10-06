@@ -16,6 +16,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
+import okhttp3.OkHttpClient;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
@@ -31,9 +32,13 @@ public class TIServiceClientFactory implements Provider<TIServiceClient> {
   @Override
   public TIServiceClient get() {
     Gson gson = new GsonBuilder().setLenient().create();
+    OkHttpClient result;
+    synchronized (Http.class) {
+      result = Http.getUnsafeOkHttpClientBuilder(tiConfig.getBaseUrl(), 15, 15).build();
+    }
     Retrofit retrofit = new Retrofit.Builder()
                             .baseUrl(tiConfig.getBaseUrl())
-                            .client(Http.getUnsafeOkHttpClient(tiConfig.getBaseUrl()))
+                            .client(result)
                             .addConverterFactory(GsonConverterFactory.create(gson))
                             .build();
     return retrofit.create(TIServiceClient.class);

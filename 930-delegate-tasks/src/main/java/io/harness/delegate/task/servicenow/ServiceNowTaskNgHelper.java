@@ -10,7 +10,6 @@ package io.harness.delegate.task.servicenow;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.eraro.ErrorCode.SERVICENOW_ERROR;
 import static io.harness.exception.WingsException.USER;
-import static io.harness.network.Http.getOkHttpClientBuilder;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
@@ -767,7 +766,7 @@ public class ServiceNowTaskNgHelper {
 
   @NotNull
   private OkHttpClient getHttpClient(String url) {
-    return getOkHttpClientBuilder()
+      return Http.getOkHttpClient().newBuilder()
         .connectTimeout(TIME_OUT, TimeUnit.SECONDS)
         .readTimeout(TIME_OUT, TimeUnit.SECONDS)
         .proxy(Http.checkAndGetNonProxyIfApplicable(url))

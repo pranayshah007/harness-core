@@ -22,6 +22,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
+import okhttp3.OkHttpClient;
 import org.apache.commons.codec.binary.Base64;
 import retrofit2.Response;
 import retrofit2.Retrofit;
@@ -76,10 +77,14 @@ public class BitbucketServiceImpl implements BitbucketService {
       if (!bitbucketUrl.endsWith("/")) {
         bitbucketUrl = bitbucketUrl + "/";
       }
+      OkHttpClient result;
+      synchronized (Http.class) {
+        result = Http.getUnsafeOkHttpClientBuilder(bitbucketUrl, 15, 15).build();
+      }
       Retrofit retrofit = new Retrofit.Builder()
                               .baseUrl(bitbucketUrl)
                               .addConverterFactory(JacksonConverterFactory.create())
-                              .client(Http.getUnsafeOkHttpClient(bitbucketUrl))
+                              .client(result)
                               .build();
       return retrofit.create(BitbucketRestClient.class);
     } catch (InvalidRequestException e) {

@@ -63,7 +63,7 @@ public class VerificationManagerClientFactory implements Provider<VerificationMa
       // Create an ssl socket factory with our all-trusting manager
       final SSLSocketFactory sslSocketFactory = sslContext.getSocketFactory();
 
-      return Http.getOkHttpClientWithProxyAuthSetup()
+      return Http.getOkHttpClient()
           .newBuilder()
           .retryOnConnectionFailure(true)
           .addInterceptor(new VerificationAuthInterceptor(tokenGenerator))

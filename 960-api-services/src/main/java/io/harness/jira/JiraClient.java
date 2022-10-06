@@ -8,7 +8,6 @@
 package io.harness.jira;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
-import static io.harness.network.Http.getOkHttpClientBuilder;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
@@ -428,8 +427,8 @@ public class JiraClient {
 
   private JiraRestClient createRestClient() {
     String url = config.getJiraUrl() + "rest/api/2/";
-    OkHttpClient okHttpClient =
-        getOkHttpClientBuilder()
+      OkHttpClient okHttpClient =
+        Http.getOkHttpClient().newBuilder()
             .connectTimeout(CONNECT_TIMEOUT, TimeUnit.SECONDS)
             .readTimeout(READ_TIMEOUT, TimeUnit.SECONDS)
             .proxy(Http.checkAndGetNonProxyIfApplicable(url))
