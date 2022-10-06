@@ -1767,6 +1767,7 @@
 55425:io.harness.delegate.beans.executioncapability.WinrmConnectivityExecutionCapability
 55426:io.harness.delegate.task.shell.provisioner.ShellScriptProvisionTaskNGRequest
 55427:io.harness.delegate.task.shell.provisioner.ShellScriptProvisionTaskNGResponse
+55428:io.harness.delegate.beans.artifactory.ArtifactoryFetchImagePathResponse
 55470:io.harness.delegate.task.ssh.artifact.CustomArtifactDelegateConfig
 55501:io.harness.delegate.beans.instancesync.info.PdcServerInstanceInfo
 55502:io.harness.delegate.beans.instancesync.info.AzureSshWinrmServerInstanceInfo
@@ -1814,6 +1815,7 @@
 80308:software.wings.helpers.ext.azure.devops.AzureArtifactsProtocolMetadata
 80309:software.wings.helpers.ext.azure.devops.AzureArtifactsProtocolMetadataData
 80310:software.wings.helpers.ext.azure.devops.AzureDevopsProjects
+80311:io.harness.artifactory.ArtifactoryImagePath
 83071:io.harness.delegate.beans.connector.awsconnector.AwsListEC2InstancesTaskParamsRequest
 83072:io.harness.delegate.beans.connector.awsconnector.AwsListEC2InstancesTaskResponse
 83073:software.wings.service.impl.aws.model.AwsEC2Instance

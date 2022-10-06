@@ -29,6 +29,8 @@ public interface ArtifactoryNgService {
 
   Map<String, String> getRepositories(ArtifactoryConfigRequest artifactoryConfig, String packageType);
 
+  List<ArtifactoryImagePath> getImagePaths(ArtifactoryConfigRequest artifactoryConfig, String repoKey);
+
   InputStream downloadArtifacts(ArtifactoryConfigRequest artifactoryConfig, String repoKey,
       Map<String, String> metadata, String artifactPathMetadataKey, String artifactFileNameMetadataKey);
 

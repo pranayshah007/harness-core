@@ -45,6 +45,7 @@ import io.harness.delegate.beans.SerializedResponseData;
 import io.harness.delegate.beans.SlackTaskParams;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.artifactory.ArtifactoryFetchBuildsResponse;
+import io.harness.delegate.beans.artifactory.ArtifactoryFetchImagePathResponse;
 import io.harness.delegate.beans.artifactory.ArtifactoryFetchRepositoriesResponse;
 import io.harness.delegate.beans.artifactory.ArtifactoryTaskParams;
 import io.harness.delegate.beans.artifactory.ArtifactoryTaskResponse;
@@ -1842,5 +1843,6 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(GcpSecretManagerValidationParams.class, 19879);
     kryo.register(ShellScriptProvisionTaskNGRequest.class, 55426);
     kryo.register(ShellScriptProvisionTaskNGResponse.class, 55427);
+    kryo.register(ArtifactoryFetchImagePathResponse.class, 55428);
   }
 }
