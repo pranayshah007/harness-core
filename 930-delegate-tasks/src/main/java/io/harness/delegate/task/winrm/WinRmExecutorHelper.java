@@ -87,20 +87,20 @@ public class WinRmExecutorHelper {
       String command, String psScriptFile, String powershell, List<WinRmCommandParameter> commandParameters) {
     command = "$ErrorActionPreference=\"Stop\"\n" + command;
 
-    // Yes, replace() is intentional. We are replacing only character and not a regex pattern.
-    command = command.replace("$", "`$");
-    // This is to escape quotes
-    command = command.replaceAll("\"", "`\\\\\"");
-
     // write commands to a file and then execute the file
     String commandParametersString = buildCommandParameters(commandParameters);
 
     List<List<Byte>> partitions = Lists.partition(Bytes.asList(command.getBytes()), PARTITION_SIZE_IN_BYTES);
     List<String> commandList = new ArrayList<>();
     for (List<Byte> partition : partitions) {
-      final String commandStringPart = escapeWordBreakChars(escapeLineBreakChars(new String(Bytes.toArray(partition))));
+      String partOfCommand = new String(Bytes.toArray(partition));
+      // Yes, replace() is intentional. We are replacing only character and not a regex pattern.
+      partOfCommand = partOfCommand.replace("$", "`$");
+      // This is to escape quotes
+      partOfCommand = partOfCommand.replaceAll("\"", "`\\\\\"");
+      partOfCommand = escapeWordBreakChars(escapeLineBreakChars(partOfCommand));
       String appendTextToFileCommand = powershell + " Invoke-Command " + commandParametersString
-          + " -command {[IO.File]::AppendAllText(\\\"" + psScriptFile + "\\\", \\\"" + commandStringPart + "\\\" ) }";
+          + " -command {[IO.File]::AppendAllText(\\\"" + psScriptFile + "\\\", \\\"" + partOfCommand + "\\\" ) }";
 
       // Append each command with PS Invoke command which is write command to file and also add the PS newline character
       // for correct escaping

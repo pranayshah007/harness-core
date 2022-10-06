@@ -220,111 +220,20 @@ if [ ! -d $JRE_DIR  -o ! -e $JRE_BINARY ]; then
   exit 1
 fi
 
-if [ ! -e config-watcher.yml ]; then
-  echo "accountId: $ACCOUNT_ID" > config-watcher.yml
-fi
-test "$(tail -c 1 config-watcher.yml)" && `echo "" >> config-watcher.yml`
+echo "accountId: $ACCOUNT_ID" > config-watcher.yml
 # delegateToken is a replacement of accountSecret. There is a possibility where pod is running with older yaml,
 # where ACCOUNT_SECRET is present in env variable, prefer using ACCOUNT_SECRET in those scenarios.
-if ! `grep -E 'accountSecret|delegateToken' config-watcher.yml > /dev/null`; then
-  if [ ! -e $ACCOUNT_SECRET ]; then
-    echo "delegateToken: $ACCOUNT_SECRET" >> config-watcher.yml
-  else
-    echo "delegateToken: $DELEGATE_TOKEN" >> config-watcher.yml
-  fi
-fi
-if ! `grep managerUrl config-watcher.yml > /dev/null`; then
-  echo "managerUrl: $MANAGER_HOST_AND_PORT/api/" >> config-watcher.yml
-fi
-if ! `grep doUpgrade config-watcher.yml > /dev/null`; then
-  echo "doUpgrade: true" >> config-watcher.yml
-fi
-if ! `grep upgradeCheckLocation config-watcher.yml > /dev/null`; then
-  echo "upgradeCheckLocation: $WATCHER_STORAGE_URL/$WATCHER_CHECK_LOCATION" >> config-watcher.yml
+if [ ! -e $ACCOUNT_SECRET ]; then
+  echo "delegateToken: $ACCOUNT_SECRET" >> config-watcher.yml
 else
-  sed -i.bak "s|^upgradeCheckLocation:.*$|upgradeCheckLocation: $WATCHER_STORAGE_URL/$WATCHER_CHECK_LOCATION|" config-watcher.yml
-fi
-if ! `grep upgradeCheckIntervalSeconds config-watcher.yml > /dev/null`; then
-  echo "upgradeCheckIntervalSeconds: 1200" >> config-watcher.yml
-fi
-if ! `grep delegateCheckLocation config-watcher.yml > /dev/null`; then
-  echo "delegateCheckLocation: $DELEGATE_STORAGE_URL/$DELEGATE_CHECK_LOCATION" >> config-watcher.yml
-else
-  sed -i.bak "s|^delegateCheckLocation:.*$|delegateCheckLocation: $DELEGATE_STORAGE_URL/$DELEGATE_CHECK_LOCATION|" config-watcher.yml
+  echo "delegateToken: $DELEGATE_TOKEN" >> config-watcher.yml
 fi
 
-if [ ! -e config-delegate.yml ]; then
-  echo "accountId: $ACCOUNT_ID" > config-delegate.yml
-  echo "accountSecret: $ACCOUNT_SECRET" >> config-delegate.yml
-fi
-test "$(tail -c 1 config-delegate.yml)" && `echo "" >> config-delegate.yml`
-if ! `grep managerUrl config-delegate.yml > /dev/null`; then
-  echo "managerUrl: $MANAGER_HOST_AND_PORT/api/" >> config-delegate.yml
-fi
-if ! `grep verificationServiceUrl config-delegate.yml > /dev/null`; then
-  echo "verificationServiceUrl: $MANAGER_HOST_AND_PORT/verification/" >> config-delegate.yml
-fi
-if ! `grep cvNextGenUrl config-delegate.yml > /dev/null`; then
-  echo "cvNextGenUrl: $MANAGER_HOST_AND_PORT/cv/api/" >> config-delegate.yml
-fi
-if ! `grep watcherCheckLocation config-delegate.yml > /dev/null`; then
-  echo "watcherCheckLocation: $WATCHER_STORAGE_URL/$WATCHER_CHECK_LOCATION" >> config-delegate.yml
-else
-  sed -i.bak "s|^watcherCheckLocation:.*$|watcherCheckLocation: $WATCHER_STORAGE_URL/$WATCHER_CHECK_LOCATION|" config-delegate.yml
-fi
-if ! `grep heartbeatIntervalMs config-delegate.yml > /dev/null`; then
-  echo "heartbeatIntervalMs: 50000" >> config-delegate.yml
-fi
-if ! `grep doUpgrade config-delegate.yml > /dev/null`; then
-  echo "doUpgrade: true" >> config-delegate.yml
-fi
-if ! `grep localDiskPath config-delegate.yml > /dev/null`; then
-  echo "localDiskPath: /tmp" >> config-delegate.yml
-fi
-if ! `grep maxCachedArtifacts config-delegate.yml > /dev/null`; then
-  echo "maxCachedArtifacts: 2" >> config-delegate.yml
-fi
-if ! `grep pollForTasks config-delegate.yml > /dev/null`; then
-  if [ "$DEPLOY_MODE" == "ONPREM" ]; then
-      echo "pollForTasks: true" >> config-delegate.yml
-  else
-      echo "pollForTasks: ${POLL_FOR_TASKS:-false}" >> config-delegate.yml
-  fi
-fi
-
-if ! `grep cdnUrl config-delegate.yml > /dev/null`; then
-  echo "cdnUrl: $CDN_URL" >> config-delegate.yml
-else
-  sed -i.bak "s|^cdnUrl:.*$|cdnUrl: $CDN_URL|" config-delegate.yml
-fi
-
-if [ ! -z "$HELM3_PATH" ] && ! `grep helm3Path config-delegate.yml > /dev/null` ; then
-  echo "helm3Path: $HELM3_PATH" >> config-delegate.yml
-fi
-
-if [ ! -z "$HELM_PATH" ] && ! `grep helmPath config-delegate.yml > /dev/null` ; then
-  echo "helmPath: $HELM_PATH" >> config-delegate.yml
-fi
-
-if [ ! -z "$CF_CLI6_PATH" ] && ! `grep cfCli6Path config-delegate.yml > /dev/null` ; then
-  echo "cfCli6Path: $CF_CLI6_PATH" >> config-delegate.yml
-fi
-
-if [ ! -z "$CF_CLI7_PATH" ] && ! `grep cfCli7Path config-delegate.yml > /dev/null` ; then
-  echo "cfCli7Path: $CF_CLI7_PATH" >> config-delegate.yml
-fi
-
-if [ ! -z "$KUSTOMIZE_PATH" ] && ! `grep kustomizePath config-delegate.yml > /dev/null` ; then
-  echo "kustomizePath: $KUSTOMIZE_PATH" >> config-delegate.yml
-fi
-
-if [ ! -z "$GRPC_SERVICE_ENABLED" ] && ! `grep grpcServiceEnabled config-delegate.yml > /dev/null` ; then
-  echo "grpcServiceEnabled: $GRPC_SERVICE_ENABLED" >> config-delegate.yml
-fi
-
-if [ ! -z "$GRPC_SERVICE_CONNECTOR_PORT" ] && ! `grep grpcServiceConnectorPort config-delegate.yml > /dev/null` ; then
-  echo "grpcServiceConnectorPort: $GRPC_SERVICE_CONNECTOR_PORT" >> config-delegate.yml
-fi
+echo "managerUrl: $MANAGER_HOST_AND_PORT/api/" >> config-watcher.yml
+echo "doUpgrade: true" >> config-watcher.yml
+echo "upgradeCheckLocation: $WATCHER_STORAGE_URL/$WATCHER_CHECK_LOCATION" >> config-watcher.yml
+echo "upgradeCheckIntervalSeconds: 1200" >> config-watcher.yml
+echo "delegateCheckLocation: $DELEGATE_STORAGE_URL/$DELEGATE_CHECK_LOCATION" >> config-watcher.yml
 
 rm -f -- *.bak
 

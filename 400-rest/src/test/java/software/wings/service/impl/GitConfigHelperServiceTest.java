@@ -29,7 +29,6 @@ import io.harness.beans.DelegateTask;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.GeneralException;
 import io.harness.exception.InvalidRequestException;
-import io.harness.ff.FeatureFlagService;
 import io.harness.rule.Owner;
 import io.harness.security.encryption.EncryptedDataDetail;
 
@@ -55,7 +54,6 @@ import org.mockito.Mock;
 public class GitConfigHelperServiceTest extends WingsBaseTest {
   @Mock ExecutionContext context;
   @Mock DelegateService delegateService;
-  @Mock FeatureFlagService featureFlagService;
 
   @Inject @InjectMocks private GitConfigHelperService gitConfigHelperService;
 
@@ -78,6 +76,20 @@ public class GitConfigHelperServiceTest extends WingsBaseTest {
     assertThat(gitConfig.getBranch()).isEqualTo("master");
     assertThat(gitConfig.getRepoUrl()).isEqualTo("github.com");
     assertThat(gitConfig.getReference()).isEqualTo("tag-1");
+  }
+
+  @Test
+  @Owner(developers = ARVIND)
+  @Category(UnitTests.class)
+  public void validateGitConfigTestUrlTypeAccount() throws Exception {
+    validateGitConfigUrlTypeAccount();
+  }
+
+  @Test
+  @Owner(developers = ARVIND)
+  @Category(UnitTests.class)
+  public void validateGitConfigTestUrlTypeRepo() throws Exception {
+    validateGitConfigUrlTypeRepo();
   }
 
   private void validateGitConfigConvert(String expectedRepoUrl, String repoName, GitConfig config, String resetRepoUrl,

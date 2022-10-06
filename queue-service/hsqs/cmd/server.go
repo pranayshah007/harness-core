@@ -23,9 +23,6 @@ import (
 
 const envarg = "envfile"
 
-// todo: use config file to access these values
-const redisAddr = "127.0.0.1:6379"
-
 // @title          Swagger Doc- hsqs
 // @version        1.0
 // @description    This is a queuing client.
@@ -70,7 +67,7 @@ func startServer(c *config.Config) {
 
 	g := r.Group("v1")
 
-	store := redis.NewRedisStore(redisAddr)
+	store := redis.NewRedisStore(c.Redis.Endpoint)
 	h := handler.NewHandler(store)
 	h.Register(g)
 

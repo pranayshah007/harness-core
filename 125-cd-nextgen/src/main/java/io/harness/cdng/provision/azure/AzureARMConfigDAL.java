@@ -40,7 +40,7 @@ public class AzureARMConfigDAL {
             .filter(AzureARMConfigKeys.projectId, AmbianceUtils.getProjectIdentifier(ambiance))
             .filter(AzureARMConfigKeys.provisionerIdentifier, provisionerIdentifier)
             .filter(AzureARMConfigKeys.stageExecutionId, ambiance.getStageExecutionId())
-            .order(Sort.descending(AzureARMConfigKeys.createdAt));
+            .order(Sort.ascending(AzureARMConfigKeys.createdAt));
     return query.get();
   }
 

@@ -248,23 +248,17 @@ public class ClusterResource {
       throw new InvalidRequestException(
           "This is api for unlinking clusters, please do not set `linkAllClusters` field or set it to false");
     }
-    List<Cluster> entities = new ArrayList<>();
-    if (!request.isUnlinkAllClusters()) {
-      entities = ClusterEntityMapper.toEntities(accountId, request);
+
+    long unlinked;
+    if (request.isUnlinkAllClusters()) {
+      unlinked = clusterService.deleteAllFromEnvAndReturnCount(
+          accountId, request.getOrgIdentifier(), request.getProjectIdentifier(), request.getEnvRef());
     } else {
-      PageResponse<ClusterFromGitops> accountLevelClusters =
-          fetchClustersFromGitopsService(0, UNLIMITED_PAGE_SIZE, accountId, "", "", request.getSearchTerm());
-      // check number of project level clusters
-      PageResponse<ClusterFromGitops> projectLevelClusters = fetchClustersFromGitopsService(0, UNLIMITED_PAGE_SIZE,
-          accountId, request.getOrgIdentifier(), request.getProjectIdentifier(), request.getSearchTerm());
-      entities.addAll(ClusterEntityMapper.toEntities(accountId, request.getOrgIdentifier(),
-          request.getProjectIdentifier(), request.getEnvRef(), accountLevelClusters.getContent()));
-      entities.addAll(ClusterEntityMapper.toEntities(accountId, request.getOrgIdentifier(),
-          request.getProjectIdentifier(), request.getEnvRef(), projectLevelClusters.getContent()));
+      List<Cluster> entities = ClusterEntityMapper.toEntities(accountId, request);
+      unlinked = isNotEmpty(entities) ? clusterService.bulkDelete(entities, accountId, request.getOrgIdentifier(),
+                     request.getProjectIdentifier(), request.getEnvRef())
+                                      : 0;
     }
-    long unlinked = isNotEmpty(entities) ? clusterService.bulkDelete(entities, accountId, request.getOrgIdentifier(),
-                        request.getProjectIdentifier(), request.getEnvRef())
-                                         : 0;
     return ResponseDTO.newResponse(ClusterBatchResponse.builder().unlinked(unlinked).build());
   }
 

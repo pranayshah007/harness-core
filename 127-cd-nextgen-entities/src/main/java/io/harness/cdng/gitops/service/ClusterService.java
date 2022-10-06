@@ -91,6 +91,18 @@ public interface ClusterService {
       @NotEmpty String projectIdentifier, @NotEmpty String envIdentifier);
 
   /**
+   * Deletes all clusters linked to a particular harness environment.
+   * @param accountId  the account id
+   * @param orgIdentifier the organization identifier
+   * @param projectIdentifier the project identifier
+   * @param envIdentifier identifier of the environment the gitops cluster is linked to
+   * @return long return number of records deleted
+   */
+  @NotNull
+  long deleteAllFromEnvAndReturnCount(@NotEmpty String accountId, @NotEmpty String orgIdentifier,
+      @NotEmpty String projectIdentifier, @NotEmpty String envIdentifier);
+
+  /**
    * Deletes all clusters linked to a particular harness project.
    * @param accountId  the account id
    * @param orgIdentifier the organization identifier

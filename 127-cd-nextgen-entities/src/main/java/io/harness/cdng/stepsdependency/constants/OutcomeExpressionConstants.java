@@ -52,4 +52,5 @@ public class OutcomeExpressionConstants {
   public final String ECS_BLUE_GREEN_SWAP_TARGET_GROUPS_OUTCOME = "ecsBlueGreenSwapTargetGroupsOutcome";
   public final String ECS_BLUE_GREEN_SWAP_TARGET_GROUPS_START_OUTCOME = "ecsBlueGreenSwapTargetGroupsStartOutcome";
   public final String ECS_BLUE_GREEN_ROLLBACK_OUTCOME = "ecsBlueGreenRollbackOutcome";
+  public final String UPDATE_RELEASE_REPO_OUTCOME = "updateReleaseRepoOutcome";
 }

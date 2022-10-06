@@ -657,7 +657,7 @@ software.amazon.ion:ion-java:jar:1.0.2
 stax:stax-api:jar:1.0.1
 stax:stax:jar:1.2.0
 wsdl4j:wsdl4j:jar:1.6.3
-xerces:xercesImpl:jar:2.9.1
+xerces:xercesImpl:jar:2.12.2
 xml-apis:xml-apis:jar:1.4.01
 xml-resolver:xml-resolver:jar:1.2
 xpp3:xpp3:jar:1.1.3.3
