@@ -103,6 +103,7 @@ import io.harness.cvng.notification.services.api.NotificationRuleTemplateDataGen
 import io.harness.cvng.notification.services.api.NotificationRuleTemplateDataGenerator.NotificationData;
 import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelObjective;
+import io.harness.cvng.servicelevelobjective.entities.TimePeriod;
 import io.harness.cvng.servicelevelobjective.services.api.SLOHealthIndicatorService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveService;
@@ -1358,12 +1359,26 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
         .build();
   }
 
+  @SneakyThrows
   public String getYamlTemplate(ProjectParams projectParams, MonitoredServiceType type) {
     // returning default yaml template, account/org/project specific templates can be generated later.
     String defaultTemplate = type == null ? MONITORED_SERVICE_YAML_TEMPLATE.get(MonitoredServiceType.APPLICATION)
                                           : MONITORED_SERVICE_YAML_TEMPLATE.get(type);
-    return StringUtils.replaceEach(defaultTemplate, new String[] {"$projectIdentifier", "$orgIdentifier"},
-        new String[] {projectParams.getProjectIdentifier(), projectParams.getOrgIdentifier()});
+
+    if (projectParams.getProjectIdentifier() == null) {
+      defaultTemplate = StringUtils.remove(defaultTemplate, "  projectIdentifier: $projectIdentifier\n");
+    } else {
+      defaultTemplate =
+          StringUtils.replace(defaultTemplate, "$projectIdentifier", projectParams.getProjectIdentifier());
+    }
+
+    if (projectParams.getOrgIdentifier() == null) {
+      defaultTemplate = StringUtils.remove(defaultTemplate, "  orgIdentifier: $orgIdentifier\n");
+    } else {
+      defaultTemplate = StringUtils.replace(defaultTemplate, "$orgIdentifier", projectParams.getOrgIdentifier());
+    }
+
+    return defaultTemplate;
   }
 
   @Override
@@ -1607,7 +1622,7 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
 
     for (ServiceLevelObjective serviceLevelObjective : serviceLevelObjectiveList) {
       LocalDateTime currentLocalDate = LocalDateTime.ofInstant(clock.instant(), serviceLevelObjective.getZoneOffset());
-      ServiceLevelObjective.TimePeriod timePeriod = serviceLevelObjective.getCurrentTimeRange(currentLocalDate);
+      TimePeriod timePeriod = serviceLevelObjective.getCurrentTimeRange(currentLocalDate);
       Boolean outOfRange = false;
       if (!Objects.isNull(startTime) && !Objects.isNull(endTime)) {
         if ((startTime > timePeriod.getEndTime(serviceLevelObjective.getZoneOffset()).toEpochMilli())
@@ -1897,13 +1912,8 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
                                                     .collect(Collectors.toList());
     List<String> updatedNotificationRuleRefs =
         notificationRuleRefs.stream().map(NotificationRuleRef::getNotificationRuleRef).collect(Collectors.toList());
-    List<String> toBeDeletedNotificationRuleRefs = new ArrayList<>();
-    for (String notificationRuleRef : existingNotificationRuleRefs) {
-      if (!updatedNotificationRuleRefs.contains(notificationRuleRef)) {
-        toBeDeletedNotificationRuleRefs.add(notificationRuleRef);
-      }
-    }
-    notificationRuleService.delete(projectParams, toBeDeletedNotificationRuleRefs);
+    notificationRuleService.deleteNotificationRuleRefs(
+        projectParams, existingNotificationRuleRefs, updatedNotificationRuleRefs);
   }
 
   @Value

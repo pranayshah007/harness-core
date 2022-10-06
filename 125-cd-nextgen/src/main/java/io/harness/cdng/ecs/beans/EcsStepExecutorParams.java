@@ -24,4 +24,6 @@ public class EcsStepExecutorParams {
   List<String> ecsScalableTargetManifestContentList;
   List<String> ecsScalingPolicyManifestContentList;
   String targetGroupArnKey;
+  String prodTargetGroupArn;
+  String stageTargetGroupArn;
 }

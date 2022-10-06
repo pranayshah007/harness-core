@@ -55,7 +55,7 @@ public class AllowedValuesValidator implements RuntimeValidator {
     }
 
     if (isJexlExpression) {
-      parameters = (String) engineExpressionEvaluator.evaluateExpression(parameters);
+      parameters = (String) engineExpressionEvaluator.evaluateExpression(parameters, expressionMode);
     } else {
       parameters = engineExpressionEvaluator.renderExpression(parameters, expressionMode);
     }

@@ -42,4 +42,8 @@ public class RedisConfig {
   @ConfigSecret private RedisSSLConfig sslConfig;
   private int subscriptionsPerConnection;
   private int subscriptionConnectionPoolSize;
+  private int connectionPoolSize;
+  private int retryInterval;
+  private int retryAttempts;
+  private int timeout;
 }

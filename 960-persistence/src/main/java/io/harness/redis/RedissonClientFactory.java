@@ -1,3 +1,10 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.redis;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
@@ -26,7 +33,6 @@ import org.redisson.config.SingleServerConfig;
 @Slf4j
 public class RedissonClientFactory {
   private static final int DEFAULT_MIN_CONNECTION_IDLE_SIZE = 5;
-  private static final int DEFAULT_PING_CONNECTION_INTERVAL_IN_MILLIS = 30000;
 
   private static final Map<RedisConfig, RedissonClient> redisConfigRedissonClientMap = new HashMap<>();
 
@@ -53,12 +59,24 @@ public class RedissonClientFactory {
         }
 
         if (redisConfig.getSubscriptionsPerConnection() != 0) {
-          config.useSingleServer().setSubscriptionsPerConnection(redisConfig.getSubscriptionsPerConnection());
+          serverConfig.setSubscriptionsPerConnection(redisConfig.getSubscriptionsPerConnection());
         }
         if (redisConfig.getSubscriptionConnectionPoolSize() != 0) {
-          config.useSingleServer().setSubscriptionConnectionPoolSize(redisConfig.getSubscriptionConnectionPoolSize());
+          serverConfig.setSubscriptionConnectionPoolSize(redisConfig.getSubscriptionConnectionPoolSize());
         }
-        config.useSingleServer().setPingConnectionInterval(DEFAULT_PING_CONNECTION_INTERVAL_IN_MILLIS);
+
+        if (redisConfig.getConnectionPoolSize() != 0) {
+          serverConfig.setConnectionPoolSize(redisConfig.getConnectionPoolSize());
+        }
+        if (redisConfig.getRetryInterval() != 0) {
+          serverConfig.setRetryInterval(redisConfig.getRetryInterval());
+        }
+        if (redisConfig.getTimeout() != 0) {
+          serverConfig.setTimeout(redisConfig.getTimeout());
+        }
+        if (redisConfig.getRetryAttempts() != 0) {
+          serverConfig.setRetryAttempts(redisConfig.getRetryAttempts());
+        }
 
         serverConfig.setConnectionMinimumIdleSize(
             Math.max(DEFAULT_MIN_CONNECTION_IDLE_SIZE, redisConfig.getConnectionMinimumIdleSize()));
@@ -86,7 +104,19 @@ public class RedissonClientFactory {
           config.useSentinelServers().setSubscriptionConnectionPoolSize(
               redisConfig.getSubscriptionConnectionPoolSize());
         }
-        config.useSentinelServers().setPingConnectionInterval(DEFAULT_PING_CONNECTION_INTERVAL_IN_MILLIS);
+
+        if (redisConfig.getConnectionPoolSize() != 0) {
+          config.useSentinelServers().setSubscriptionConnectionPoolSize(redisConfig.getConnectionPoolSize());
+        }
+        if (redisConfig.getRetryInterval() != 0) {
+          config.useSentinelServers().setRetryInterval(redisConfig.getRetryInterval());
+        }
+        if (redisConfig.getTimeout() != 0) {
+          config.useSentinelServers().setTimeout(redisConfig.getTimeout());
+        }
+        if (redisConfig.getRetryAttempts() != 0) {
+          config.useSentinelServers().setRetryAttempts(redisConfig.getRetryAttempts());
+        }
       }
       config.setNettyThreads(redisConfig.getNettyThreads());
       config.setUseScriptCache(redisConfig.isUseScriptCache());

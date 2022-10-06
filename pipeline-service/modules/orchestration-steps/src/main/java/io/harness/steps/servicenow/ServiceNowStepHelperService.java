@@ -29,4 +29,6 @@ public interface ServiceNowStepHelperService {
   TaskRequest prepareTaskRequest(ServiceNowTaskNGParametersBuilder paramsBuilder, Ambiance ambiance,
       String connectorRef, String timeStr, String taskName);
   StepResponse prepareStepResponse(ThrowingSupplier<ServiceNowTaskNGResponse> responseSupplier) throws Exception;
+  StepResponse prepareImportSetStepResponse(ThrowingSupplier<ServiceNowTaskNGResponse> responseSupplier)
+      throws Exception;
 }

@@ -60,6 +60,7 @@ import org.mongodb.morphia.query.Sort;
 public class WorkflowExecutionZombieHandlerTest {
   private static final String WORKFLOW_ID = "workflowId";
   private static final String EXECUTION_UUID = "executionUuid";
+  private static final String APP_ID = "APP_ID";
 
   @InjectMocks private WorkflowExecutionZombieHandler monitorHandler;
 
@@ -124,7 +125,7 @@ public class WorkflowExecutionZombieHandlerTest {
   public void shouldHandleWorkflowExecutionWhenIsZombieStateButCreatedOutOfThreshold() {
     WorkflowExecution wfExecution = createValidWorkflowExecution();
     StateExecutionInstance seInstance = aStateExecutionInstance()
-                                            .appId("APP_ID")
+                                            .appId(APP_ID)
                                             .executionUuid(EXECUTION_UUID)
                                             .stateType(StateType.PHASE.name())
                                             .createdAt(System.currentTimeMillis())
@@ -143,11 +144,8 @@ public class WorkflowExecutionZombieHandlerTest {
   @Category(UnitTests.class)
   public void shouldHandleWorkflowExecutionAndTriggerInterruptWhenZombieState() {
     WorkflowExecution wfExecution = createValidWorkflowExecution();
-    StateExecutionInstance seInstance = aStateExecutionInstance()
-                                            .appId("APP_ID")
-                                            .executionUuid(EXECUTION_UUID)
-                                            .stateType(StateType.PHASE.name())
-                                            .build();
+    StateExecutionInstance seInstance =
+        aStateExecutionInstance().appId(APP_ID).executionUuid(EXECUTION_UUID).stateType(StateType.PHASE.name()).build();
 
     prepareWingsPersistence(seInstance);
 
@@ -158,7 +156,7 @@ public class WorkflowExecutionZombieHandlerTest {
     assertSortAndLimit();
 
     ExecutionInterrupt value = captor.getValue();
-    assertThat(value.getAppId()).isEqualTo("APP_ID");
+    assertThat(value.getAppId()).isEqualTo(APP_ID);
     assertThat(value.getExecutionUuid()).isEqualTo(EXECUTION_UUID);
     assertThat(value.getExecutionInterruptType()).isEqualTo(ExecutionInterruptType.ABORT_ALL);
   }
@@ -167,7 +165,7 @@ public class WorkflowExecutionZombieHandlerTest {
   @Owner(developers = FERNANDOD)
   @Category(UnitTests.class)
   public void shouldVerifyNotZombieStateType() {
-    Set<StateType> types = new HashSet(Arrays.asList(StateType.values()));
+    Set<StateType> types = new HashSet<>(Arrays.asList(StateType.values()));
 
     // REMOVE VALID TYPES
     types.remove(StateType.REPEAT);
@@ -192,7 +190,9 @@ public class WorkflowExecutionZombieHandlerTest {
   private void prepareWingsPersistence(List<StateExecutionInstance> instances) {
     Query<StateExecutionInstance> query = mock(Query.class);
     when(wingsPersistence.createQuery(StateExecutionInstance.class)).thenReturn(query);
-    when(query.filter(any(), any())).thenReturn(query);
+    when(query.filter(eq(StateExecutionInstanceKeys.appId), any())).thenReturn(query);
+    when(query.filter(eq(StateExecutionInstanceKeys.workflowId), any())).thenReturn(query);
+    when(query.filter(eq(StateExecutionInstanceKeys.executionUuid), any())).thenReturn(query);
     when(query.order(argSort.capture())).thenReturn(query);
     when(query.asList(argFindOptions.capture())).thenReturn(instances);
   }

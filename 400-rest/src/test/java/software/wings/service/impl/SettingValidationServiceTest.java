@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.beans.FeatureName.AWS_OVERRIDE_REGION;
 import static io.harness.beans.FeatureName.NEW_KUBECTL_VERSION;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
+import static io.harness.rule.OwnerRule.ABHINAV2;
 import static io.harness.rule.OwnerRule.ARVIND;
 import static io.harness.rule.OwnerRule.PRANJAL;
 import static io.harness.rule.OwnerRule.RAGHU;
@@ -80,6 +81,7 @@ import software.wings.beans.SumoConfig;
 import software.wings.beans.ValidationResult;
 import software.wings.beans.config.LogzConfig;
 import software.wings.beans.settings.helm.AmazonS3HelmRepoConfig;
+import software.wings.beans.settings.helm.GCSHelmRepoConfig;
 import software.wings.beans.settings.helm.HelmRepoConfigValidationResponse;
 import software.wings.beans.settings.helm.HelmRepoConfigValidationTaskParams;
 import software.wings.delegatetasks.DelegateProxyFactory;
@@ -152,6 +154,7 @@ public class SettingValidationServiceTest extends WingsBaseTest {
   @Inject private DynaTraceDelegateService dynaTraceDelegateService;
   @Inject private APMDelegateService apmDelegateService;
   @Inject private RequestExecutor requestExecutor;
+  @Mock private DelegateService delegateService;
   @Mock private WingsPersistence wingsPersistence;
   @Mock private DelegateProxyFactory delegateProxyFactory;
   @Mock private ElkAnalysisService elkAnalysisService;
@@ -1126,6 +1129,28 @@ public class SettingValidationServiceTest extends WingsBaseTest {
     assertThatThrownBy(() -> settingValidationService.validate(attribute))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessageContaining("No or Empty Delegate Selector Provided");
+  }
+
+  @Test
+  @Owner(developers = ABHINAV2)
+  @Category(UnitTests.class)
+  public void testValidateChartMuseumVersionFlagInHelmRepoConfig() throws InterruptedException, IllegalAccessException {
+    FieldUtils.writeField(settingValidationService, "delegateService", delegateService, true);
+
+    HelmRepoConfigValidationResponse validationResponse = mock(HelmRepoConfigValidationResponse.class);
+    GCSHelmRepoConfig repoConfig = GCSHelmRepoConfig.builder().build();
+    SettingAttribute attribute = new SettingAttribute();
+    attribute.setValue(repoConfig);
+
+    ArgumentCaptor<DelegateTask> delegateTaskArgumentCaptor = ArgumentCaptor.forClass(DelegateTask.class);
+    doReturn(validationResponse).when(delegateService).executeTask(delegateTaskArgumentCaptor.capture());
+    doReturn(true).when(featureFlagService).isEnabled(any(), any());
+
+    settingValidationService.validate(attribute);
+
+    DelegateTask task = delegateTaskArgumentCaptor.getValue();
+    assertThat(((HelmRepoConfigValidationTaskParams) task.getData().getParameters()[0]).isUseLatestChartMuseumVersion())
+        .isTrue();
   }
 
   @Test

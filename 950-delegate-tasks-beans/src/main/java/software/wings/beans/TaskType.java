@@ -14,10 +14,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.TaskGroup;
-import io.harness.delegate.beans.ci.docker.CIDockerCleanupStepRequest;
-import io.harness.delegate.beans.ci.docker.CIDockerExecuteStepRequest;
-import io.harness.delegate.beans.ci.docker.CIDockerInitializeTaskRequest;
-import io.harness.delegate.beans.ci.docker.DockerTaskExecutionResponse;
 import io.harness.delegate.beans.ci.vm.VmTaskExecutionResponse;
 import io.harness.delegate.beans.ci.vm.dlite.DliteVmCleanupTaskParams;
 import io.harness.delegate.beans.ci.vm.dlite.DliteVmExecuteStepTaskParams;
@@ -108,6 +104,7 @@ public enum TaskType {
   AZURE_ARTIFACTS_GET_FEEDS(TaskGroup.AZURE_ARTIFACTS),
   AZURE_ARTIFACTS_GET_PACKAGES(TaskGroup.AZURE_ARTIFACTS),
   AZURE_ARTIFACTS_COLLECTION(TaskGroup.AZURE_ARTIFACTS),
+  AZURE_ARTIFACTS_CONNECTIVITY_TEST_TASK(TaskGroup.AZURE_ARTIFACTS),
   AZURE_GET_SUBSCRIPTIONS(TaskGroup.AZURE_ARTIFACTS),
   AZURE_MACHINE_IMAGE_GET_IMAGE_GALLERIES(TaskGroup.AZURE_ARTIFACTS),
   AZURE_MACHINE_IMAGE_GET_IMAGE_DEFINITIONS(TaskGroup.AZURE_ARTIFACTS),
@@ -302,6 +299,7 @@ public enum TaskType {
   ARTIFACTORY_ARTIFACT_TASK_NG(TaskGroup.ARTIFACT_COLLECT_NG),
   AMAZON_S3_ARTIFACT_TASK_NG(TaskGroup.ARTIFACT_COLLECT_NG),
   GITHUB_PACKAGES_TASK_NG(TaskGroup.ARTIFACT_COLLECT_NG),
+  AZURE_ARTIFACT_TASK_NG(TaskGroup.ARTIFACT_COLLECT_NG, "Azure Task"),
   AWS_ROUTE53_TASK(TaskGroup.AWS),
   SHELL_SCRIPT_APPROVAL(TaskGroup.SCRIPT),
   CUSTOM_GET_BUILDS(TaskGroup.CUSTOM),
@@ -378,9 +376,6 @@ public enum TaskType {
   VALIDATE_CUSTOM_SECRET_MANAGER_SECRET_REFERENCE(TaskGroup.COMMAND_TASK_NG),
   FETCH_CUSTOM_SECRET(TaskGroup.COMMAND_TASK_NG),
   RESOLVE_CUSTOM_SM_CONFIG(TaskGroup.COMMAND_TASK_NG),
-  CI_DOCKER_INITIALIZE_TASK(TaskGroup.CI, CIDockerInitializeTaskRequest.class, DockerTaskExecutionResponse.class, true),
-  CI_DOCKER_EXECUTE_TASK(TaskGroup.CI, CIDockerExecuteStepRequest.class, DockerTaskExecutionResponse.class, true),
-  CI_DOCKER_CLEANUP_TASK(TaskGroup.CI, CIDockerCleanupStepRequest.class, DockerTaskExecutionResponse.class, true),
   NG_LDAP_TEST_USER_SETTINGS(TaskGroup.LDAP),
   NG_LDAP_TEST_GROUP_SETTINGS(TaskGroup.LDAP),
   DLITE_CI_VM_INITIALIZE_TASK(TaskGroup.CI, DliteVmInitializeTaskParams.class, VmTaskExecutionResponse.class, true),
@@ -389,9 +384,10 @@ public enum TaskType {
   NG_LDAP_GROUPS_SYNC(TaskGroup.LDAP),
   AZURE_NG_ARM(TaskGroup.AZURE_NG_ARM_BLUEPRINT, "Azure ARM"),
   NG_LDAP_TEST_AUTHENTICATION(TaskGroup.LDAP),
-  ECS_GIT_FETCH_TASK_NG(TaskGroup.ECS),
-  ECS_COMMAND_TASK_NG(TaskGroup.ECS),
-  WIN_RM_SHELL_SCRIPT_TASK_NG(TaskGroup.SHELL_SCRIPT_NG, "Shell Script Task");
+  ECS_GIT_FETCH_TASK_NG(TaskGroup.ECS, "ECS Git Fetch Task"),
+  ECS_COMMAND_TASK_NG(TaskGroup.ECS, "ECS Command Task"),
+  WIN_RM_SHELL_SCRIPT_TASK_NG(TaskGroup.SHELL_SCRIPT_NG, "Shell Script Task"),
+  SHELL_SCRIPT_PROVISION(TaskGroup.SHELL_SCRIPT_PROVISION_NG, "Shell Script Provision Task");
 
   private final TaskGroup taskGroup;
   private final String displayName;

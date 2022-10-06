@@ -26,6 +26,7 @@ import io.harness.cdng.execution.ExecutionInfoKey;
 import io.harness.cdng.execution.helper.ExecutionInfoKeyMapper;
 import io.harness.cdng.execution.helper.StageExecutionHelper;
 import io.harness.cdng.infra.InfrastructureMapper;
+import io.harness.cdng.infra.InfrastructureValidator;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sAzureInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sDirectInfrastructureOutcome;
@@ -46,6 +47,7 @@ import io.harness.delegate.task.k8s.K8sInfraDelegateConfig;
 import io.harness.delegate.task.ssh.SshInfraDelegateConfig;
 import io.harness.delegate.task.ssh.WinRmInfraDelegateConfig;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
+import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.logging.CommandExecutionStatus;
@@ -62,6 +64,8 @@ import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.AsyncExecutableResponse;
 import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.contracts.execution.failure.FailureData;
+import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.pms.contracts.plan.ExecutionPrincipalInfo;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
@@ -71,6 +75,7 @@ import io.harness.pms.rbac.PipelineRbacHelper;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
+import io.harness.pms.security.PmsSecurityContextEventGuard;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.service.DelegateGrpcClientWrapper;
 import io.harness.steps.EntityReferenceExtractorUtils;
@@ -115,7 +120,8 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
   @Inject private StageExecutionHelper stageExecutionHelper;
   @Inject private EntityReferenceExtractorUtils entityReferenceExtractorUtils;
   @Inject private PipelineRbacHelper pipelineRbacHelper;
-  @Inject InfrastructureMapper infrastructureMapper;
+  @Inject private InfrastructureMapper infrastructureMapper;
+  @Inject private InfrastructureValidator infrastructureValidator;
 
   @Override
   public Class<InfrastructureTaskExecutableStepV2Params> getStepParametersClass() {
@@ -160,6 +166,19 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
   @Override
   public StepResponse handleAsyncResponse(Ambiance ambiance, InfrastructureTaskExecutableStepV2Params stepParameters,
       Map<String, ResponseData> responseDataMap) {
+    try (PmsSecurityContextEventGuard securityContextEventGuard = new PmsSecurityContextEventGuard(ambiance)) {
+      return handleAsyncResponseInternal(ambiance, responseDataMap);
+    } catch (Exception ex) {
+      return StepResponse.builder()
+          .status(Status.FAILED)
+          .failureInfo(FailureInfo.newBuilder()
+                           .addFailureData(FailureData.newBuilder().setMessage(ExceptionUtils.getMessage(ex)).build())
+                           .build())
+          .build();
+    }
+  }
+
+  private StepResponse handleAsyncResponseInternal(Ambiance ambiance, Map<String, ResponseData> responseDataMap) {
     final InfrastructureTaskExecutableStepSweepingOutput infraOutput = fetchInfraStepOutputOrThrow(ambiance);
     final NGLogCallback logCallback = infrastructureStepHelper.getInfrastructureLogCallback(ambiance, LOG_SUFFIX);
 
@@ -257,8 +276,11 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
     final EnvironmentOutcome environmentOutcome = outcomeSet.getEnvironmentOutcome();
     final ServiceStepOutcome serviceOutcome = outcomeSet.getServiceStepOutcome();
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
+
+    infrastructureValidator.validate(spec);
+
     final InfrastructureOutcome infrastructureOutcome = infrastructureMapper.toOutcome(spec, environmentOutcome,
-        serviceOutcome, ngAccess.getAccountIdentifier(), ngAccess.getProjectIdentifier(), ngAccess.getOrgIdentifier());
+        serviceOutcome, ngAccess.getAccountIdentifier(), ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier());
 
     // save spec sweeping output for further use within the step
     boolean skipInstances = infrastructureStepHelper.getSkipInstances(spec);
@@ -284,6 +306,14 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
     if (infrastructureEntityOpt.isEmpty()) {
       throw new InvalidRequestException(String.format("Infrastructure definition %s not found in environment %s",
           stepParameters.getInfraRef().getValue(), stepParameters.getEnvRef().getValue()));
+    }
+
+    if (infrastructureEntityOpt.get().getDeploymentType() != null && stepParameters.getDeploymentType() != null
+        && infrastructureEntityOpt.get().getDeploymentType() != stepParameters.getDeploymentType()) {
+      throw new InvalidRequestException(
+          format("Deployment type of the stage [%s] and the infrastructure [%s] do not match",
+              stepParameters.getDeploymentType().getYamlName(),
+              infrastructureEntityOpt.get().getDeploymentType().getYamlName()));
     }
 
     final InfrastructureEntity infrastructureEntity = infrastructureEntityOpt.get();

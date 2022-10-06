@@ -17,7 +17,6 @@ import static io.harness.notification.NotificationServiceConstants.SLACKSERVICE;
 import static java.time.Duration.ofSeconds;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.app.PrimaryVersionManagerModule;
 import io.harness.callback.DelegateCallback;
 import io.harness.callback.DelegateCallbackToken;
 import io.harness.callback.MongoDatabase;
@@ -57,9 +56,9 @@ import io.harness.persistence.NoopUserProvider;
 import io.harness.persistence.UserProvider;
 import io.harness.platform.PlatformConfiguration;
 import io.harness.queue.QueueConsumer;
+import io.harness.queue.QueueController;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.serializer.NotificationRegistrars;
-import io.harness.serializer.PrimaryVersionManagerRegistrars;
 import io.harness.service.DelegateServiceDriverModule;
 import io.harness.threading.ExecutorModule;
 import io.harness.token.TokenClientModule;
@@ -139,7 +138,6 @@ public class NotificationServiceModule extends AbstractModule {
       Set<Class<? extends MorphiaRegistrar>> morphiaRegistrars() {
         return ImmutableSet.<Class<? extends MorphiaRegistrar>>builder()
             .addAll(NotificationRegistrars.morphiaRegistrars)
-            .addAll(PrimaryVersionManagerRegistrars.morphiaRegistrars)
             .build();
       }
 
@@ -186,7 +184,18 @@ public class NotificationServiceModule extends AbstractModule {
         this.appConfig.getNotificationServiceConfig().getDelegateServiceGrpcConfig().getAuthority(), true));
 
     install(VersionModule.getInstance());
-    install(PrimaryVersionManagerModule.getInstance());
+    bind(QueueController.class).toInstance(new QueueController() {
+      @Override
+      public boolean isPrimary() {
+        return true;
+      }
+
+      @Override
+      public boolean isNotPrimary() {
+        return false;
+      }
+    });
+
     install(new ValidationModule(getValidatorFactory()));
 
     install(new NotificationPersistenceModule());

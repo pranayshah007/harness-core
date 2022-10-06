@@ -7,7 +7,9 @@ import io.harness.cdng.artifact.bean.ArtifactConfig;
 import io.harness.pms.sdk.core.data.ExecutionSweepingOutput;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
@@ -24,4 +26,5 @@ import org.springframework.data.annotation.TypeAlias;
 public class ArtifactsStepV2SweepingOutput implements ExecutionSweepingOutput {
   String primaryArtifactTaskId;
   @Builder.Default Map<String, ArtifactConfig> artifactConfigMap = new HashMap<>();
+  @Builder.Default List<ArtifactConfig> artifactConfigMapForNonDelegateTaskTypes = new ArrayList<>();
 }

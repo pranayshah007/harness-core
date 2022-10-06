@@ -28,11 +28,14 @@ import io.harness.cvng.core.entities.NewRelicCVConfig.NewRelicMetricInfo;
 import io.harness.cvng.core.entities.VerificationTask.TaskType;
 import io.harness.cvng.core.services.CVNextGenConstants;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
+import io.harness.delegate.beans.connector.newrelic.NewRelicConnectorDTO;
 import io.harness.rule.Owner;
 
 import com.google.inject.Inject;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -95,6 +98,19 @@ public class NewRelicDataCollectionInfoMapperTest extends CvNextGenTestBase {
     assertThat(dataCollectionInfo.getGroupName()).isEqualTo("groupName");
     assertThat(dataCollectionInfo.isCustomQuery()).isEqualTo(true);
     assertThat(dataCollectionInfo.getMetricInfoList().size()).isEqualTo(2);
+  }
+
+  @Test
+  @Owner(developers = ABHIJITH)
+  @Category(UnitTests.class)
+  public void testToDataConnectionInfoForCVWithNoCustomMetricConfiguredForCV() {
+    List<NewRelicCVConfig> cvConfigs =
+        Arrays.asList(createCVConfigWithCustomMetric("metric1"), createCVConfigWithCustomMetric("metric2"));
+    NewRelicCVConfig cvConfig = createCVConfigWithCustomMetric("metric1");
+    cvConfig.getMetricInfos().get(0).getDeploymentVerification().setEnabled(false);
+    NewRelicDataCollectionInfo dataCollectionInfo = mapper.toDataCollectionInfo(cvConfig, TaskType.DEPLOYMENT);
+    Map<String, Object> envVariables = dataCollectionInfo.getDslEnvVariables(NewRelicConnectorDTO.builder().build());
+    assertThat(envVariables.get("queries")).isEqualTo(new ArrayList<>());
   }
 
   @Test

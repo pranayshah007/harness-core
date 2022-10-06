@@ -37,6 +37,7 @@ import io.harness.cdng.k8s.beans.StepExceptionPassThroughData;
 import io.harness.cdng.manifest.ManifestStoreType;
 import io.harness.cdng.manifest.ManifestType;
 import io.harness.cdng.manifest.steps.ManifestsOutcome;
+import io.harness.cdng.manifest.yaml.HelmChartManifestOutcome;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
 import io.harness.cdng.manifest.yaml.ValuesManifestOutcome;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
@@ -92,6 +93,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -148,29 +150,38 @@ public class NativeHelmStepHelper extends K8sHelmCommonStepHelper {
       List<ManifestOutcome> manifestOutcomes, K8sStepPassThroughData k8sStepPassThroughData) {
     ManifestOutcome helmChartManifestOutcome = k8sStepPassThroughData.getManifestOutcome();
     StoreConfig storeConfig = extractStoreConfigFromManifestOutcome(helmChartManifestOutcome);
+    k8sStepPassThroughData.setShouldOpenFetchFilesStream(
+        shouldOpenFetchFilesStream(k8sStepPassThroughData.getShouldOpenFetchFilesStream()));
 
     if (shouldExecuteCustomFetchTask(storeConfig, manifestOutcomes)) {
+      k8sStepPassThroughData.setShouldCloseFetchFilesStream(
+          shouldCloseFetchFilesStream(manifestOutcomes, k8sStepPassThroughData.getManifestStoreTypeVisited(),
+              new HashSet<>(Arrays.asList(ManifestStoreType.CUSTOM_REMOTE)),
+              k8sStepPassThroughData.isShouldCloseFetchFilesStream()));
       return prepareCustomFetchManifestAndValuesTaskChainResponse(
           storeConfig, ambiance, stepElementParameters, manifestOutcomes, k8sStepPassThroughData);
     }
-
-    boolean shouldOpenLogStream = isEmpty(k8sStepPassThroughData.getLocalStoreFileMapContents())
-        && isEmpty(k8sStepPassThroughData.getManifestFiles());
 
     if (!ManifestStoreType.isInGitSubset(storeConfig.getKind())
         && !ManifestStoreType.HARNESS.equals(storeConfig.getKind())) {
       K8sStepPassThroughData deepCopyOfK8sPassThroughData =
           k8sStepPassThroughData.toBuilder().customFetchContent(emptyMap()).zippedManifestFileId("").build();
-      return prepareHelmFetchValuesTaskChainResponse(ambiance, stepElementParameters, aggregatedValuesManifests,
-          deepCopyOfK8sPassThroughData, shouldOpenLogStream);
+      deepCopyOfK8sPassThroughData.setShouldCloseFetchFilesStream(
+          shouldCloseFetchFilesStream(manifestOutcomes, deepCopyOfK8sPassThroughData.getManifestStoreTypeVisited(),
+              ManifestStoreType.HelmChartRepo, deepCopyOfK8sPassThroughData.isShouldCloseFetchFilesStream()));
+      return prepareHelmFetchValuesTaskChainResponse(
+          ambiance, stepElementParameters, aggregatedValuesManifests, deepCopyOfK8sPassThroughData);
     }
 
     ValuesManifestOutcome valuesManifestOutcome =
         ValuesManifestOutcome.builder().identifier(helmChartManifestOutcome.getIdentifier()).store(storeConfig).build();
     if (ManifestStoreType.isInGitSubset(storeConfig.getKind())
         || shouldExecuteGitFetchTask(aggregatedValuesManifests)) {
+      k8sStepPassThroughData.setShouldCloseFetchFilesStream(
+          shouldCloseFetchFilesStream(manifestOutcomes, k8sStepPassThroughData.getManifestStoreTypeVisited(),
+              ManifestStoreType.GitSubsetRepo, k8sStepPassThroughData.isShouldCloseFetchFilesStream()));
       return prepareGitFetchValuesTaskChainResponse(ambiance, stepElementParameters, valuesManifestOutcome,
-          aggregatedValuesManifests, k8sStepPassThroughData, storeConfig, shouldOpenLogStream, true);
+          aggregatedValuesManifests, k8sStepPassThroughData, storeConfig);
     }
 
     LinkedList<ValuesManifestOutcome> orderedValuesManifests = new LinkedList<>(aggregatedValuesManifests);
@@ -189,9 +200,15 @@ public class NativeHelmStepHelper extends K8sHelmCommonStepHelper {
     cdStepHelper.validateManifestsOutcome(ambiance, manifestsOutcome);
 
     ManifestOutcome helmChartManifestOutcome = getHelmSupportedManifestOutcome(manifestsOutcome.values());
+    K8sStepPassThroughData k8sStepPassThroughData =
+        K8sStepPassThroughData.builder()
+            .manifestOutcome(helmChartManifestOutcome)
+            .infrastructure(infrastructureOutcome)
+            .manifestStoreTypeVisited(new HashSet<>(Arrays.asList(ManifestStoreType.InheritFromManifest)))
+            .build();
 
     return prepareHelmWithValuesManifests(helmStepExecutor, getOrderedManifestOutcome(manifestsOutcome.values()),
-        helmChartManifestOutcome, ambiance, stepElementParameters, infrastructureOutcome);
+        ambiance, stepElementParameters, k8sStepPassThroughData);
   }
 
   protected ManifestsOutcome resolveManifestsOutcome(Ambiance ambiance) {
@@ -206,30 +223,36 @@ public class NativeHelmStepHelper extends K8sHelmCommonStepHelper {
   }
 
   private TaskChainResponse prepareHelmWithValuesManifests(NativeHelmStepExecutor nativeHelmStepExecutor,
-      List<ManifestOutcome> manifestOutcomes, ManifestOutcome helmChartManifestOutcome, Ambiance ambiance,
-      StepElementParameters stepElementParameters, InfrastructureOutcome infrastructureOutcome) {
+      List<ManifestOutcome> manifestOutcomes, Ambiance ambiance, StepElementParameters stepElementParameters,
+      K8sStepPassThroughData k8sStepPassThroughData) {
+    HelmChartManifestOutcome helmChartManifestOutcome =
+        (HelmChartManifestOutcome) k8sStepPassThroughData.getManifestOutcome();
     List<ValuesManifestOutcome> aggregatedValuesManifests = getAggregatedValuesManifests(manifestOutcomes);
     List<ManifestFiles> manifestFiles = new ArrayList<>();
     Map<String, LocalStoreFetchFilesResult> localStoreFileMapContents = new HashMap<>();
 
     if (ManifestStoreType.HARNESS.equals(helmChartManifestOutcome.getStore().getKind())
         || isAnyLocalStore(aggregatedValuesManifests)) {
-      LogCallback logCallback = cdStepHelper.getLogCallback(K8sCommandUnitConstants.FetchFiles, ambiance, true);
+      k8sStepPassThroughData.setShouldOpenFetchFilesStream(
+          shouldOpenFetchFilesStream(k8sStepPassThroughData.getShouldOpenFetchFilesStream()));
+      LogCallback logCallback = cdStepHelper.getLogCallback(
+          K8sCommandUnitConstants.FetchFiles, ambiance, k8sStepPassThroughData.getShouldOpenFetchFilesStream());
       localStoreFileMapContents.putAll(fetchFilesFromLocalStore(
           ambiance, helmChartManifestOutcome, aggregatedValuesManifests, manifestFiles, logCallback));
-      if (shouldCloseLogStreamForLocalStore(manifestOutcomes)) {
+      k8sStepPassThroughData.setShouldCloseFetchFilesStream(shouldCloseFetchFilesStream(manifestOutcomes,
+          k8sStepPassThroughData.getManifestStoreTypeVisited(), new HashSet<>(Arrays.asList(ManifestStoreType.HARNESS)),
+          k8sStepPassThroughData.isShouldCloseFetchFilesStream()));
+      if (k8sStepPassThroughData.isShouldCloseFetchFilesStream()) {
         logCallback.saveExecutionLog("Done.", INFO, CommandExecutionStatus.SUCCESS);
       }
     }
 
-    K8sStepPassThroughData k8sStepPassThroughData = K8sStepPassThroughData.builder()
-                                                        .manifestOutcome(helmChartManifestOutcome)
-                                                        .infrastructure(infrastructureOutcome)
-                                                        .localStoreFileMapContents(localStoreFileMapContents)
-                                                        .manifestFiles(manifestFiles)
-                                                        .build();
+    K8sStepPassThroughData updatedK8sStepPassThroughData = k8sStepPassThroughData.toBuilder()
+                                                               .localStoreFileMapContents(localStoreFileMapContents)
+                                                               .manifestFiles(manifestFiles)
+                                                               .build();
     return prepareValuesFetchTask(ambiance, nativeHelmStepExecutor, stepElementParameters, aggregatedValuesManifests,
-        valuesAndParamsManifestOutcomes(manifestOutcomes), k8sStepPassThroughData);
+        valuesAndParamsManifestOutcomes(manifestOutcomes), updatedK8sStepPassThroughData);
   }
 
   @VisibleForTesting
@@ -348,7 +371,7 @@ public class NativeHelmStepHelper extends K8sHelmCommonStepHelper {
             .zippedManifestId(nativeHelmStepPassThroughData.getZippedManifestFileId())
             .manifestFiles(nativeHelmStepPassThroughData.getManifestFiles())
             .build(),
-        false, gitFetchResponse.getUnitProgressData());
+        nativeHelmStepPassThroughData.getShouldOpenFetchFilesStream(), gitFetchResponse.getUnitProgressData());
   }
 
   private TaskChainResponse handleHelmValuesFetchResponse(ResponseData responseData,
@@ -382,9 +405,12 @@ public class NativeHelmStepHelper extends K8sHelmCommonStepHelper {
         aggregatedValuesManifest.add((ValuesManifestOutcome) manifestOutcome);
       }
     }
+    nativeHelmStepPassThroughData.setShouldOpenFetchFilesStream(
+        shouldOpenFetchFilesStream(nativeHelmStepPassThroughData.getShouldOpenFetchFilesStream()));
     if (shouldExecuteGitFetchTask(aggregatedValuesManifest)) {
+      nativeHelmStepPassThroughData.setShouldCloseFetchFilesStream(true);
       return executeValuesFetchTask(ambiance, stepElementParameters, aggregatedValuesManifest,
-          helmValuesFetchResponse.getHelmChartValuesFileMapContent(), nativeHelmStepPassThroughData, true);
+          helmValuesFetchResponse.getHelmChartValuesFileMapContent(), nativeHelmStepPassThroughData);
     } else {
       List<String> valuesFileContents = new ArrayList<>();
       addValuesFileFromHelmChartManifest(helmValuesFetchFilesResultMap, valuesFileContents, helmChartIdentifier);
@@ -406,7 +432,7 @@ public class NativeHelmStepHelper extends K8sHelmCommonStepHelper {
               .zippedManifestId(nativeHelmStepPassThroughData.getZippedManifestFileId())
               .manifestFiles(nativeHelmStepPassThroughData.getManifestFiles())
               .build(),
-          false, helmValuesFetchResponse.getUnitProgressData());
+          nativeHelmStepPassThroughData.getShouldOpenFetchFilesStream(), helmValuesFetchResponse.getUnitProgressData());
     }
   }
   private TaskChainResponse handleCustomFetchResponse(ResponseData responseData, Ambiance ambiance,
@@ -428,11 +454,13 @@ public class NativeHelmStepHelper extends K8sHelmCommonStepHelper {
             .customFetchContent(customManifestValuesFetchResponse.getValuesFilesContentMap())
             .zippedManifestFileId(customManifestValuesFetchResponse.getZippedManifestFileId())
             .build();
+    updatedK8sStepPassThroughData.setShouldOpenFetchFilesStream(
+        shouldOpenFetchFilesStream(updatedK8sStepPassThroughData.getShouldOpenFetchFilesStream()));
 
     if (ManifestStoreType.CUSTOM_REMOTE.equals(k8sManifest.getStore().getKind())) {
       List<ValuesManifestOutcome> aggregatedValuesManifest = new ArrayList<>();
 
-      for (ValuesManifestOutcome valuesManifestOutcome : k8sStepPassThroughData.getValuesManifestOutcomes()) {
+      for (ValuesManifestOutcome valuesManifestOutcome : updatedK8sStepPassThroughData.getValuesManifestOutcomes()) {
         if (ManifestStoreType.isInGitSubset(valuesManifestOutcome.getStore().getKind())) {
           aggregatedValuesManifest.add(valuesManifestOutcome);
         }
@@ -444,24 +472,27 @@ public class NativeHelmStepHelper extends K8sHelmCommonStepHelper {
           aggregatedValuesManifest.add((ValuesManifestOutcome) manifestOutcome);
         }
       }
-
+      updatedK8sStepPassThroughData.setShouldCloseFetchFilesStream(true);
       return executeValuesFetchTask(
-          ambiance, stepElementParameters, aggregatedValuesManifest, emptyMap(), updatedK8sStepPassThroughData, true);
+          ambiance, stepElementParameters, aggregatedValuesManifest, emptyMap(), updatedK8sStepPassThroughData);
     }
 
     if (ManifestType.HelmChart.equals(k8sManifest.getType())) {
-      boolean shouldOpenLogStream = isEmpty(k8sStepPassThroughData.getCustomFetchContent());
+      updatedK8sStepPassThroughData.setShouldCloseFetchFilesStream(
+          shouldCloseFetchFilesStream(updatedK8sStepPassThroughData.getManifestOutcomeList(),
+              updatedK8sStepPassThroughData.getManifestStoreTypeVisited(), ManifestStoreType.HelmChartRepo,
+              updatedK8sStepPassThroughData.isShouldCloseFetchFilesStream()));
       return prepareHelmFetchValuesTaskChainResponse(ambiance, stepElementParameters,
-          k8sStepPassThroughData.getValuesManifestOutcomes(), updatedK8sStepPassThroughData, shouldOpenLogStream);
+          updatedK8sStepPassThroughData.getValuesManifestOutcomes(), updatedK8sStepPassThroughData);
     }
 
     StoreConfig storeConfig = extractStoreConfigFromManifestOutcome(k8sManifest);
-
+    updatedK8sStepPassThroughData.setShouldCloseFetchFilesStream(true);
     ValuesManifestOutcome valuesManifestOutcome =
         ValuesManifestOutcome.builder().identifier(k8sManifest.getIdentifier()).store(storeConfig).build();
 
     return prepareGitFetchValuesTaskChainResponse(ambiance, stepElementParameters, valuesManifestOutcome,
-        k8sStepPassThroughData.getValuesManifestOutcomes(), updatedK8sStepPassThroughData, storeConfig, false, true);
+        updatedK8sStepPassThroughData.getValuesManifestOutcomes(), updatedK8sStepPassThroughData, storeConfig);
   }
 
   public TaskChainResponse executeHelmTask(Ambiance ambiance, StepElementParameters stepElementParameters,
@@ -470,8 +501,6 @@ public class NativeHelmStepHelper extends K8sHelmCommonStepHelper {
     List<ManifestFiles> manifestFiles = k8sStepPassThroughData.getManifestFiles();
     Map<String, LocalStoreFetchFilesResult> localStoreFetchFilesResultMap =
         k8sStepPassThroughData.getLocalStoreFileMapContents();
-    boolean shouldOpenLogStream =
-        isEmpty(k8sStepPassThroughData.getLocalStoreFileMapContents()) && isEmpty(manifestFiles);
 
     List<String> valuesFileContents = new ArrayList<>();
     for (ManifestOutcome valuesManifest : manifestOutcomeList) {
@@ -490,7 +519,7 @@ public class NativeHelmStepHelper extends K8sHelmCommonStepHelper {
             .infrastructure(k8sStepPassThroughData.getInfrastructure())
             .manifestFiles(manifestFiles)
             .build(),
-        shouldOpenLogStream, null);
+        k8sStepPassThroughData.getShouldOpenFetchFilesStream(), null);
   }
 
   public static String getErrorMessage(HelmCmdExecResponseNG helmCmdExecResponseNG) {

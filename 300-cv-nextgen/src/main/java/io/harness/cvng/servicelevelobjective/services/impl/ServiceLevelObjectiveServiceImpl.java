@@ -22,6 +22,7 @@ import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.beans.params.logsFilterParams.SLILogsFilter;
 import io.harness.cvng.core.entities.MonitoredService;
 import io.harness.cvng.core.services.api.CVNGLogService;
+import io.harness.cvng.core.services.api.FeatureFlagService;
 import io.harness.cvng.core.services.api.VerificationTaskService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
 import io.harness.cvng.core.utils.DateTimeUtils;
@@ -47,24 +48,29 @@ import io.harness.cvng.servicelevelobjective.beans.ErrorBudgetRisk;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardApiFilter;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardWidget.SLOGraphData;
 import io.harness.cvng.servicelevelobjective.beans.SLOErrorBudgetResetDTO;
-import io.harness.cvng.servicelevelobjective.beans.SLOTarget;
-import io.harness.cvng.servicelevelobjective.beans.SLOTarget.SLOTargetKeys;
+import io.harness.cvng.servicelevelobjective.beans.SLOTargetDTO;
+import io.harness.cvng.servicelevelobjective.beans.SLOTargetDTO.SLOTargetKeys;
 import io.harness.cvng.servicelevelobjective.beans.SLOTargetType;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorType;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveDTO;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveFilter;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveResponse;
+import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveType;
+import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2DTO;
+import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelObjective.ServiceLevelObjectiveKeys;
-import io.harness.cvng.servicelevelobjective.entities.ServiceLevelObjective.TimePeriod;
+import io.harness.cvng.servicelevelobjective.entities.TimePeriod;
 import io.harness.cvng.servicelevelobjective.services.api.SLIRecordService;
 import io.harness.cvng.servicelevelobjective.services.api.SLOErrorBudgetResetService;
 import io.harness.cvng.servicelevelobjective.services.api.SLOHealthIndicatorService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveService;
+import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveV2Service;
 import io.harness.cvng.servicelevelobjective.transformer.servicelevelindicator.SLOTargetTransformer;
+import io.harness.cvng.servicelevelobjective.transformer.servicelevelobjectivev2.SLOV2Transformer;
 import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
@@ -111,12 +117,15 @@ public class ServiceLevelObjectiveServiceImpl implements ServiceLevelObjectiveSe
   @Inject private ServiceLevelIndicatorService serviceLevelIndicatorService;
   @Inject private SLOHealthIndicatorService sloHealthIndicatorService;
   @Inject private Map<SLOTargetType, SLOTargetTransformer> sloTargetTypeSLOTargetTransformerMap;
+  @Inject private Map<ServiceLevelObjectiveType, SLOV2Transformer> serviceLevelObjectiveTypeSLOV2TransformerMap;
   @Inject private SLIRecordService sliRecordService;
   @Inject private SLOErrorBudgetResetService sloErrorBudgetResetService;
   @Inject private VerificationTaskService verificationTaskService;
   @Inject private CVNGLogService cvngLogService;
   @Inject private NotificationRuleService notificationRuleService;
   @Inject private NotificationClient notificationClient;
+  @Inject private FeatureFlagService featureFlagService;
+  @Inject private ServiceLevelObjectiveV2Service serviceLevelObjectiveV2Service;
   @Inject
   private Map<NotificationRuleConditionType, NotificationRuleTemplateDataGenerator>
       notificationRuleConditionTypeTemplateDataGeneratorMap;
@@ -132,6 +141,14 @@ public class ServiceLevelObjectiveServiceImpl implements ServiceLevelObjectiveSe
             .build());
     ServiceLevelObjective serviceLevelObjective =
         saveServiceLevelObjectiveEntity(projectParams, serviceLevelObjectiveDTO, monitoredService.isEnabled());
+    try {
+      ServiceLevelObjectiveV2DTO serviceLevelObjectiveV2DTO =
+          serviceLevelObjectiveTypeSLOV2TransformerMap.get(ServiceLevelObjectiveType.SIMPLE)
+              .getSLOV2DTO(serviceLevelObjectiveDTO);
+      serviceLevelObjectiveV2Service.create(projectParams, serviceLevelObjectiveV2DTO);
+    } catch (Exception e) {
+      log.error("[SLO Data Mismatch]: SLOV2 not created", e);
+    }
     outboxService.save(ServiceLevelObjectiveCreateEvent.builder()
                            .resourceName(serviceLevelObjectiveDTO.getName())
                            .newServiceLevelObjectiveDTO(serviceLevelObjectiveDTO)
@@ -160,7 +177,26 @@ public class ServiceLevelObjectiveServiceImpl implements ServiceLevelObjectiveSe
     ServiceLevelObjectiveDTO existingServiceLevelObjective =
         serviceLevelObjectiveToServiceLevelObjectiveDTO(serviceLevelObjective);
     validate(serviceLevelObjectiveDTO, projectParams);
-    serviceLevelObjective = updateSLOEntity(projectParams, serviceLevelObjective, serviceLevelObjectiveDTO);
+    LocalDateTime currentLocalDate = LocalDateTime.ofInstant(clock.instant(), ZoneOffset.UTC);
+    TimePeriod timePeriod = sloTargetTypeSLOTargetTransformerMap.get(serviceLevelObjectiveDTO.getTarget().getType())
+                                .getSLOTarget(serviceLevelObjectiveDTO.getTarget().getSpec())
+                                .getCurrentTimeRange(currentLocalDate);
+    TimePeriod currentTimePeriod = serviceLevelObjective.getCurrentTimeRange(currentLocalDate);
+    List<String> serviceLevelIndicators = serviceLevelIndicatorService.update(projectParams,
+        serviceLevelObjectiveDTO.getServiceLevelIndicators(), serviceLevelObjectiveDTO.getIdentifier(),
+        serviceLevelObjective.getServiceLevelIndicators(), serviceLevelObjectiveDTO.getMonitoredServiceRef(),
+        serviceLevelObjectiveDTO.getHealthSourceRef(), timePeriod, currentTimePeriod);
+    try {
+      ServiceLevelObjectiveV2DTO serviceLevelObjectiveV2DTO =
+          serviceLevelObjectiveTypeSLOV2TransformerMap.get(ServiceLevelObjectiveType.SIMPLE)
+              .getSLOV2DTO(serviceLevelObjectiveDTO);
+      serviceLevelObjectiveV2Service.update(
+          projectParams, identifier, serviceLevelObjectiveV2DTO, serviceLevelIndicators);
+    } catch (Exception e) {
+      log.error("[SLO Data Mismatch]: SLOV2 not updated", e);
+    }
+    serviceLevelObjective =
+        updateSLOEntity(projectParams, serviceLevelObjective, serviceLevelObjectiveDTO, serviceLevelIndicators);
     sloHealthIndicatorService.upsert(serviceLevelObjective);
     sloErrorBudgetResetService.clearErrorBudgetResets(projectParams, identifier);
     outboxService.save(ServiceLevelObjectiveUpdateEvent.builder()
@@ -202,6 +238,11 @@ public class ServiceLevelObjectiveServiceImpl implements ServiceLevelObjectiveSe
                            .orgIdentifier(projectParams.getOrgIdentifier())
                            .projectIdentifier(projectParams.getProjectIdentifier())
                            .build());
+    try {
+      serviceLevelObjectiveV2Service.delete(projectParams, identifier);
+    } catch (Exception e) {
+      log.error("[SLO Data Mismatch]: SLOV2 not deleted", e);
+    }
     return hPersistence.delete(serviceLevelObjective);
   }
 
@@ -437,7 +478,7 @@ public class ServiceLevelObjectiveServiceImpl implements ServiceLevelObjectiveSe
           sloErrorBudgetResetService.getErrorBudgetResets(projectParams, serviceLevelObjective.getIdentifier());
       int totalErrorBudgetMinutes =
           serviceLevelObjective.getActiveErrorBudgetMinutes(errorBudgetResetDTOS, currentLocalDate);
-      ServiceLevelObjective.TimePeriod timePeriod = serviceLevelObjective.getCurrentTimeRange(currentLocalDate);
+      TimePeriod timePeriod = serviceLevelObjective.getCurrentTimeRange(currentLocalDate);
       Instant currentTimeMinute = DateTimeUtils.roundDownTo1MinBoundary(clock.instant());
 
       SLOGraphData sloGraphData = sliRecordService.getGraphData(serviceLevelIndicator,
@@ -516,6 +557,15 @@ public class ServiceLevelObjectiveServiceImpl implements ServiceLevelObjectiveSe
     }
     updateNotificationRuleRefInSLO(
         projectParams, serviceLevelObjective, new ArrayList<>(notificationRuleRefsWithChange));
+    try {
+      AbstractServiceLevelObjective serviceLevelObjectiveV2 =
+          serviceLevelObjectiveTypeSLOV2TransformerMap.get(ServiceLevelObjectiveType.SIMPLE)
+              .getSLOV2(serviceLevelObjective);
+      serviceLevelObjectiveV2Service.updateNotificationRuleRefInSLO(
+          projectParams, serviceLevelObjectiveV2, new ArrayList<>(notificationRuleRefsWithChange));
+    } catch (Exception e) {
+      log.error("[SLO Data Mismatch]: SLOV2 noti not updated", e);
+    }
   }
 
   @Override
@@ -633,10 +683,17 @@ public class ServiceLevelObjectiveServiceImpl implements ServiceLevelObjectiveSe
                             .filter(ServiceLevelObjectiveKeys.monitoredServiceIdentifier, monitoredServiceIdentifier),
         hPersistence.createUpdateOperations(ServiceLevelObjective.class)
             .set(ServiceLevelObjectiveKeys.enabled, isEnabled));
+    try {
+      serviceLevelObjectiveV2Service.setMonitoredServiceSLOsEnableFlag(
+          projectParams, monitoredServiceIdentifier, isEnabled);
+    } catch (Exception e) {
+      log.error("[SLO Data Mismatch]: Flag not enabled in SLOV2", e);
+    }
   }
 
   private ServiceLevelObjective updateSLOEntity(ProjectParams projectParams,
-      ServiceLevelObjective serviceLevelObjective, ServiceLevelObjectiveDTO serviceLevelObjectiveDTO) {
+      ServiceLevelObjective serviceLevelObjective, ServiceLevelObjectiveDTO serviceLevelObjectiveDTO,
+      List<String> serviceLevelIndicators) {
     UpdateOperations<ServiceLevelObjective> updateOperations =
         hPersistence.createUpdateOperations(ServiceLevelObjective.class);
     updateOperations.set(ServiceLevelObjectiveKeys.name, serviceLevelObjectiveDTO.getName());
@@ -649,16 +706,8 @@ public class ServiceLevelObjectiveServiceImpl implements ServiceLevelObjectiveSe
         ServiceLevelObjectiveKeys.monitoredServiceIdentifier, serviceLevelObjectiveDTO.getMonitoredServiceRef());
     updateOperations.set(
         ServiceLevelObjectiveKeys.healthSourceIdentifier, serviceLevelObjectiveDTO.getHealthSourceRef());
-    LocalDateTime currentLocalDate = LocalDateTime.ofInstant(clock.instant(), ZoneOffset.UTC);
-    TimePeriod timePeriod = sloTargetTypeSLOTargetTransformerMap.get(serviceLevelObjectiveDTO.getTarget().getType())
-                                .getSLOTarget(serviceLevelObjectiveDTO.getTarget().getSpec())
-                                .getCurrentTimeRange(currentLocalDate);
-    TimePeriod currentTimePeriod = serviceLevelObjective.getCurrentTimeRange(currentLocalDate);
-    updateOperations.set(ServiceLevelObjectiveKeys.serviceLevelIndicators,
-        serviceLevelIndicatorService.update(projectParams, serviceLevelObjectiveDTO.getServiceLevelIndicators(),
-            serviceLevelObjectiveDTO.getIdentifier(), serviceLevelObjective.getServiceLevelIndicators(),
-            serviceLevelObjectiveDTO.getMonitoredServiceRef(), serviceLevelObjectiveDTO.getHealthSourceRef(),
-            timePeriod, currentTimePeriod));
+    updateOperations.set(ServiceLevelObjectiveKeys.serviceLevelIndicators, serviceLevelIndicators);
+    updateOperations.set(ServiceLevelObjectiveKeys.type, serviceLevelObjectiveDTO.getType());
     updateOperations.set(ServiceLevelObjectiveKeys.sloTarget,
         sloTargetTypeSLOTargetTransformerMap.get(serviceLevelObjectiveDTO.getTarget().getType())
             .getSLOTarget(serviceLevelObjectiveDTO.getTarget().getSpec()));
@@ -687,13 +736,8 @@ public class ServiceLevelObjectiveServiceImpl implements ServiceLevelObjectiveSe
                                                     .collect(Collectors.toList());
     List<String> updatedNotificationRuleRefs =
         notificationRuleRefs.stream().map(NotificationRuleRef::getNotificationRuleRef).collect(Collectors.toList());
-    List<String> toBeDeletedNotificationRuleRefs = new ArrayList<>();
-    for (String notificationRuleRef : existingNotificationRuleRefs) {
-      if (!updatedNotificationRuleRefs.contains(notificationRuleRef)) {
-        toBeDeletedNotificationRuleRefs.add(notificationRuleRef);
-      }
-    }
-    notificationRuleService.delete(projectParams, toBeDeletedNotificationRuleRefs);
+    notificationRuleService.deleteNotificationRuleRefs(
+        projectParams, existingNotificationRuleRefs, updatedNotificationRuleRefs);
   }
 
   private ServiceLevelObjectiveResponse getSLOResponse(String identifier, ProjectParams projectParams) {
@@ -773,7 +817,7 @@ public class ServiceLevelObjectiveServiceImpl implements ServiceLevelObjectiveSe
             serviceLevelIndicatorService.get(projectParams, serviceLevelObjective.getServiceLevelIndicators()))
         .notificationRuleRefs(
             notificationRuleService.getNotificationRuleRefDTOs(serviceLevelObjective.getNotificationRuleRefs()))
-        .target(SLOTarget.builder()
+        .target(SLOTargetDTO.builder()
                     .type(serviceLevelObjective.getSloTarget().getType())
                     .spec(sloTargetTypeSLOTargetTransformerMap.get(serviceLevelObjective.getSloTarget().getType())
                               .getSLOTargetSpec(serviceLevelObjective.getSloTarget()))

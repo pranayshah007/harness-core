@@ -14,6 +14,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.factory.ClosingFactory;
 import io.harness.govern.ProviderModule;
 import io.harness.govern.ServersModule;
+import io.harness.mongo.MongoConfig;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.ngsettings.NgSettingsPersistenceTestModule;
 import io.harness.ngsettings.services.SettingValidator;
@@ -98,6 +99,12 @@ public class NgSettingRule implements MethodRule, InjectorRuleMixin, MongoRuleMi
       @Singleton
       Set<Class<? extends MorphiaRegistrar>> morphiaRegistrars() {
         return NGSettingRegistrar.morphiaRegistrars;
+      }
+
+      @Provides
+      @Singleton
+      MongoConfig mongoConfig() {
+        return MongoConfig.builder().build();
       }
 
       @Provides

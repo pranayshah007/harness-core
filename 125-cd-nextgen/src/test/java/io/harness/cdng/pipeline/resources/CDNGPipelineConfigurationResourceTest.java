@@ -80,8 +80,8 @@ public class CDNGPipelineConfigurationResourceTest extends CategoryTest {
         .isEqualTo(Lists.newArrayList(ExecutionStrategyType.DEFAULT));
 
     assertThat(executionStrategyResponse.get(ServiceDefinitionType.ECS))
-        .isEqualTo(Lists.newArrayList(
-            ExecutionStrategyType.ROLLING, ExecutionStrategyType.CANARY, ExecutionStrategyType.DEFAULT));
+        .isEqualTo(Lists.newArrayList(ExecutionStrategyType.ROLLING, ExecutionStrategyType.CANARY,
+            ExecutionStrategyType.BLUE_GREEN, ExecutionStrategyType.DEFAULT));
 
     /*
     Assertions commented as these service definitions are currently not supported

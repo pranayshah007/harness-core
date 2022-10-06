@@ -82,18 +82,21 @@ public class VmExecuteStepUtils {
       secrets.addAll(params.getSecrets());
     }
     configBuilder.secrets(secrets);
+
     return ExecuteStepRequest.builder()
         .stageRuntimeID(params.getStageRuntimeId())
         .poolId(params.getPoolId())
         .ipAddress(params.getIpAddress())
-        .config(configBuilder.build());
+        .config(configBuilder.build())
+        .infraType(params.getInfraInfo().toString());
   }
 
   public ExecuteStepRequestBuilder convertService(
       VmServiceDependency params, CIVmInitializeTaskParams initializeTaskParams) {
+    String id = params.getIdentifier();
     ConfigBuilder configBuilder = Config.builder()
-                                      .id(params.getIdentifier())
-                                      .name(params.getIdentifier())
+                                      .id(id)
+                                      .name(id)
                                       .logKey(params.getLogKey())
                                       .workingDir(initializeTaskParams.getWorkingDir())
                                       .volumeMounts(getVolumeMounts(initializeTaskParams.getVolToMountPath()))
@@ -122,7 +125,8 @@ public class VmExecuteStepUtils {
     return ExecuteStepRequest.builder()
         .poolId(initializeTaskParams.getPoolID())
         .config(configBuilder.build())
-        .stageRuntimeID(initializeTaskParams.getStageRuntimeId());
+        .stageRuntimeID(initializeTaskParams.getStageRuntimeId())
+        .infraType(initializeTaskParams.getInfraInfo().toString());
   }
 
   private List<String> setRunConfig(VmRunStep runStep, ConfigBuilder configBuilder) {

@@ -13,6 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.dto.secrets.SecretResponseWrapper;
+import io.harness.ng.core.service.dto.ServiceResponse;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import retrofit2.Call;
@@ -31,5 +32,17 @@ public interface NGClient {
   Call<ResponseDTO<SecretResponseWrapper>> createSecret(@Header("Authorization") String auth,
       @Query(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
       @Query(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
-      @Query(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier, @Body JsonNode connectorDTO);
+      @Query(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier, @Body JsonNode secretDTO);
+
+  @POST("servicesV2")
+  Call<ResponseDTO<ServiceResponse>> createService(@Header("Authorization") String auth,
+      @Query(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier, @Body JsonNode serviceDTO);
+
+  @POST("environmentsV2")
+  Call<ResponseDTO<ConnectorResponseDTO>> createEnvironment(@Header("Authorization") String auth,
+      @Query(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier, @Body JsonNode environmentDTO);
+
+  @POST("infrastructures")
+  Call<ResponseDTO<ConnectorResponseDTO>> createInfrastructure(@Header("Authorization") String auth,
+      @Query(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier, @Body JsonNode infraDTO);
 }

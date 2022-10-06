@@ -166,6 +166,9 @@ public enum EntityType {
   @JsonProperty(EntityTypeConstants.APPROVAL_STAGE)
   APPROVAL_STAGE(
       ModuleType.PMS, EntityTypeConstants.APPROVAL_STAGE, IdentifierRef.class, EntityYamlRootNames.APPROVAL_STAGE),
+  @JsonProperty(EntityTypeConstants.PIPELINE_STAGE)
+  PIPELINE_STAGE(
+      ModuleType.PMS, EntityTypeConstants.PIPELINE_STAGE, IdentifierRef.class, EntityYamlRootNames.PIPELINE_STAGE),
   @JsonProperty(EntityTypeConstants.FEATURE_FLAG_STAGE)
   FEATURE_FLAG_STAGE(ModuleType.CF, EntityTypeConstants.FEATURE_FLAG_STAGE, IdentifierRef.class,
       EntityYamlRootNames.FEATURE_FLAG_STAGE),
@@ -198,6 +201,9 @@ public enum EntityType {
   @JsonProperty(EntityTypeConstants.SERVICENOW_UPDATE)
   SERVICENOW_UPDATE_STEP(ModuleType.PMS, EntityTypeConstants.SERVICENOW_UPDATE, IdentifierRef.class,
       EntityYamlRootNames.SERVICENOW_UPDATE),
+  @JsonProperty(EntityTypeConstants.SERVICENOW_IMPORT_SET)
+  SERVICENOW_IMPORT_SET_STEP(ModuleType.PMS, EntityTypeConstants.SERVICENOW_IMPORT_SET, IdentifierRef.class,
+      EntityYamlRootNames.SERVICENOW_IMPORT_SET),
   @JsonProperty(EntityTypeConstants.OPAPOLICIES)
   OPAPOLICIES(ModuleType.CORE, EntityTypeConstants.OPAPOLICIES, IdentifierRef.class, EntityYamlRootNames.OPAPOLICY),
   POLICY_STEP(ModuleType.PMS, EntityTypeConstants.POLICY_STEP, IdentifierRef.class, EntityYamlRootNames.POLICY_STEP),
@@ -321,6 +327,15 @@ public enum EntityType {
       IdentifierRef.class, EntityYamlRootNames.ECS_BLUE_GREEN_SWAP_TARGET_GROUPS),
   @JsonProperty(EntityTypeConstants.ECS_BLUE_GREEN_ROLLBACK)
   ECS_BLUE_GREEN_ROLLBACK_STEP(ModuleType.CD, EntityTypeConstants.ECS_BLUE_GREEN_ROLLBACK, IdentifierRef.class,
+      EntityYamlRootNames.ECS_BLUE_GREEN_ROLLBACK),
+  @JsonProperty(EntityTypeConstants.SHELL_SCRIPT_PROVISION_STEP)
+  SHELL_SCRIPT_PROVISION_STEP(ModuleType.CD, EntityTypeConstants.SHELL_SCRIPT_PROVISION_STEP, IdentifierRef.class,
+      EntityYamlRootNames.SHELL_SCRIPT_PROVISION_STEP),
+  @JsonProperty(EntityTypeConstants.FREEZE)
+  FREEZE(ModuleType.CD, EntityTypeConstants.FREEZE, IdentifierRef.class, EntityYamlRootNames.FREEZE),
+  @JsonProperty(EntityTypeConstants.GITOPS_UPDATE_RELEASE_REPO)
+  GITOPS_UPDATE_RELEASE_REPO(ModuleType.CD, EntityTypeConstants.GITOPS_UPDATE_RELEASE_REPO, IdentifierRef.class,
+      EntityYamlRootNames.GITOPS_UPDATE_RELEASE_REPO);
       EntityYamlRootNames.ECS_BLUE_GREEN_ROLLBACK),
   @JsonProperty(EntityTypeConstants.CHAOS_STEP)
   CHAOS_STEP(ModuleType.CHAOS, EntityTypeConstants.CHAOS_STEP, IdentifierRef.class, EntityYamlRootNames.CHAOS_STEP);

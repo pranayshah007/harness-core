@@ -95,6 +95,7 @@ mongo:
   transactionsEnabled: false
   aliasDBName: ng-harness
   traceMode: DISABLED
+  maxOperationTimeInMillis: 900000
 
 accountConfig:
   deploymentClusterName: ""
@@ -392,9 +393,9 @@ featureFlagConfig:
 enableDashboardTimescale: false
 
 timescaledb:
-  timescaledbUrl: "jdbc:postgresql://34.83.25.129:5432/harnessdev"
-  timescaledbUsername: "harnessappdev"
-  timescaledbPassword: "harnessappdev"
+  timescaledbUrl: "jdbc:postgresql://localhost:5432/harness"
+  timescaledbUsername: "postgres"
+  timescaledbPassword: ""
   connectTimeout: 10
   socketTimeout: 30
   logUnclosedConnections: false
@@ -450,6 +451,8 @@ opaClientConfig:
   connectTimeOutSeconds: 15
   readTimeOutSeconds: 15
 
+opaConnectivityEnabled: false
+
 secretsConfiguration:
   secretResolutionEnabled: false
   gcpSecretManagerProject: harness-playground
@@ -466,3 +469,5 @@ debeziumConsumerConfigs:
     debeziumBatchSize: ${DEBEZIUM_CONSUMER_BATCH_SIZE:-100}
 
 cdTsDbRetentionPeriodMonths: 7
+
+enableOpentelemetry: false

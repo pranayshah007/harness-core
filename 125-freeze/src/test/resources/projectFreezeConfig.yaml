@@ -4,50 +4,46 @@ freeze:
   description: "desc"
   orgIdentifier: "oId"
   projectIdentifier: "pId"
-  status: "ACTIVE"
+  status: "Enabled"
   windows:
-    - timezone:
-      startTime: (YYYY-MM-DDThh:mm format)
-      endTime: (YYYY-MM-DDThh:mm format)
+    - timeZone: "America/Los_Angeles"
+      startTime: "2022-09-29T16:00"
+      endTime: "2022-09-29T18:00"
       recurrence:
         spec:
-          until: "until"
+          until: "2022-09-29T20:00"
           count: 1
-          expression: "exp"
-          dayRange:
-            - "Sat-Sun"
-            - "Mon-Tues"
-        type: "DAILY"
+        type: "Daily"
   entityConfigs:
-    - entity:
-      - tags:
-          - "tag1"
-          - "tag2"
-        expression: "exp"
-        filterType: "ALL"
-        type: "SERVICE"
+    - name: "rule1"
+      entities:
+      - filterType: "All"
+        type: "Service"
         entityRefs:
           - "serv1"
           - "serv2"
-      - expression: "exp"
-        filterType: "ALL"
-        type: "PIPELINE"
+      - filterType: "Equals"
+        type: "Project"
         entityRefs:
           - "pip1"
           - "pip2"
-    - entity:
-        - tags:
-            - "tag1"
-            - "tag2"
-          expression: "exp"
-          filterType: "ALL"
-          type: "SERVICE"
-          entityRefs:
-            - "serv1"
-            - "serv2"
-        - expression: "exp"
-          filterType: "ALL"
-          type: "PIPELINE"
-          entityRefs:
-            - "pip1"
-            - "pip2"
+      - filterType: "Equals"
+        type: "Org"
+        entityRefs:
+          - "pip1"
+          - "pip2"
+      - filterType: "Equals"
+        type: "EnvType"
+        entityRefs:
+          - "PROD"
+      - filterType: "Equals"
+        type: "Environment"
+        entityRefs:
+          - "pip1"
+          - "pip2"
+    - name: "rule2"
+      entity:
+        - filterType: "All"
+          type: "Service"
+        - filterType: "All"
+          type: "EnvType"

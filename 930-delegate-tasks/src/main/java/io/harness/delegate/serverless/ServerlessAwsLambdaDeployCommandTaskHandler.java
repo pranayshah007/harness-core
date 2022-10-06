@@ -125,8 +125,9 @@ public class ServerlessAwsLambdaDeployCommandTaskHandler extends ServerlessComma
       setupDirectory(serverlessDeployRequest, setupDirectoryLogCallback, serverlessDelegateTaskParams);
     } catch (Exception ex) {
       setupDirectoryLogCallback.saveExecutionLog(
-          color(format("%n setup directory failed."), LogColor.Red, LogWeight.Bold), LogLevel.ERROR,
-          CommandExecutionStatus.FAILURE);
+          color(format("%n Setup directory failed with error: %s", serverlessTaskHelperBase.getExceptionMessage(ex)),
+              LogColor.Red, LogWeight.Bold),
+          LogLevel.ERROR, CommandExecutionStatus.FAILURE);
       throw ex;
     }
 
@@ -138,7 +139,9 @@ public class ServerlessAwsLambdaDeployCommandTaskHandler extends ServerlessComma
           serverlessDelegateTaskParams.getWorkingDirectory());
       artifactLogCallback.saveExecutionLog(format("Done..%n"), LogLevel.INFO, CommandExecutionStatus.SUCCESS);
     } catch (Exception ex) {
-      artifactLogCallback.saveExecutionLog(color(format("%n artifact download failed."), LogColor.Red, LogWeight.Bold),
+      artifactLogCallback.saveExecutionLog(
+          color(format("%n Artifact download failed with error: %s", serverlessTaskHelperBase.getExceptionMessage(ex)),
+              LogColor.Red, LogWeight.Bold),
           LogLevel.ERROR, CommandExecutionStatus.FAILURE);
       throw ex;
     }
@@ -152,11 +155,12 @@ public class ServerlessAwsLambdaDeployCommandTaskHandler extends ServerlessComma
       serverlessAwsCommandTaskHelper.setUpConfigureCredential(serverlessAwsLambdaConfig, configureCredsLogCallback,
           serverlessDelegateTaskParams, serverlessAwsLambdaCredentialType, serverlessClient, timeoutInMillis,
           crossAccountAccessFlag, environmentVariables, awsCliClient, serverlessAwsLambdaInfraConfig);
-      configureCredsLogCallback.saveExecutionLog(format("Done..%n"), LogLevel.INFO, CommandExecutionStatus.SUCCESS);
+      configureCredsLogCallback.saveExecutionLog(format("Done...%n"), LogLevel.INFO, CommandExecutionStatus.SUCCESS);
     } catch (Exception ex) {
-      configureCredsLogCallback.saveExecutionLog(
-          color(format("%n configure credentials failed."), LogColor.Red, LogWeight.Bold), LogLevel.ERROR,
-          CommandExecutionStatus.FAILURE);
+      configureCredsLogCallback.saveExecutionLog(color(format("%n Configure credentials failed with error: %s",
+                                                           serverlessTaskHelperBase.getExceptionMessage(ex)),
+                                                     LogColor.Red, LogWeight.Bold),
+          LogLevel.ERROR, CommandExecutionStatus.FAILURE);
       throw ex;
     }
     LogCallback pluginLogCallback = serverlessTaskHelperBase.getLogCallback(
@@ -164,9 +168,11 @@ public class ServerlessAwsLambdaDeployCommandTaskHandler extends ServerlessComma
     try {
       serverlessAwsCommandTaskHelper.installPlugins(serverlessManifestSchema, serverlessDelegateTaskParams,
           pluginLogCallback, serverlessClient, timeoutInMillis, serverlessManifestConfig);
-      pluginLogCallback.saveExecutionLog(format("Done..%n"), LogLevel.INFO, CommandExecutionStatus.SUCCESS);
+      pluginLogCallback.saveExecutionLog(format("Done....%n"), LogLevel.INFO, CommandExecutionStatus.SUCCESS);
     } catch (Exception ex) {
-      pluginLogCallback.saveExecutionLog(color(format("%n installing plugin failed."), LogColor.Red, LogWeight.Bold),
+      pluginLogCallback.saveExecutionLog(
+          color(format("%n Installing plugin failed with error: %s", serverlessTaskHelperBase.getExceptionMessage(ex)),
+              LogColor.Red, LogWeight.Bold),
           LogLevel.ERROR, CommandExecutionStatus.FAILURE);
       throw ex;
     }
@@ -176,7 +182,9 @@ public class ServerlessAwsLambdaDeployCommandTaskHandler extends ServerlessComma
     try {
       return deploy(serverlessDeployRequest, deployLogCallback, serverlessDelegateTaskParams);
     } catch (Exception ex) {
-      deployLogCallback.saveExecutionLog(color(format("%n Deployment failed."), LogColor.Red, LogWeight.Bold),
+      deployLogCallback.saveExecutionLog(
+          color(format("%n Deployment failed with error: %s", serverlessTaskHelperBase.getExceptionMessage(ex)),
+              LogColor.Red, LogWeight.Bold),
           LogLevel.ERROR, CommandExecutionStatus.FAILURE);
       throw new ServerlessNGException(ex);
     }
@@ -230,7 +238,7 @@ public class ServerlessAwsLambdaDeployCommandTaskHandler extends ServerlessComma
         log.error("Failure in fetching serverless deployment output", sanitizedException);
         executionLogCallback.saveExecutionLog(
             format("%nFailed to fetch serverless deployment output: %s", ExceptionUtils.getMessage(sanitizedException)),
-            ERROR, CommandExecutionStatus.FAILURE);
+            ERROR);
         throw NestedExceptionUtils.hintWithExplanationException(SERVERLESS_FETCH_DEPLOY_OUTPUT_HINT,
             SERVERLESS_FETCH_DEPLOY_OUTPUT_EXPLANATION,
             new ServerlessAwsLambdaRuntimeException(SERVERLESS_FETCH_DEPLOY_OUTPUT_FAILED, sanitizedException));
@@ -242,6 +250,10 @@ public class ServerlessAwsLambdaDeployCommandTaskHandler extends ServerlessComma
       executionLogCallback.saveExecutionLog(format("Done..%n"), LogLevel.INFO, CommandExecutionStatus.SUCCESS);
       serverlessDeployResponseBuilder.commandExecutionStatus(CommandExecutionStatus.SUCCESS);
     } else {
+      executionLogCallback.saveExecutionLog(
+          color(serverlessAwsCommandTaskHelper.serverlessCommandFailureMessage("Deploy Command", response),
+              LogColor.Red, LogWeight.Bold),
+          ERROR);
       serverlessAwsCommandTaskHelper.handleCommandExecutionFailure(response, serverlessClient.deploy());
     }
 

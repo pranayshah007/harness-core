@@ -58,6 +58,7 @@ import io.harness.exception.DelegateServiceDriverException;
 import io.harness.exception.HintException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
+import io.harness.exception.exceptionmanager.ExceptionManager;
 import io.harness.exception.exceptionmanager.exceptionhandler.DocumentLinksConstants;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.core.NGAccess;
@@ -77,13 +78,16 @@ import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import javax.validation.constraints.NotNull;
 import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
 
 @Singleton
+@Slf4j
 @OwnedBy(HarnessTeam.CDP)
 public class ArtifactoryResourceServiceImpl implements ArtifactoryResourceService {
   private final ConnectorService connectorService;
   private final DelegateGrpcClientWrapper delegateGrpcClientWrapper;
   private final SecretManagerClientService secretManagerClientService;
+  @Inject ExceptionManager exceptionManager;
 
   @VisibleForTesting static final int timeoutInSecs = 60;
   private static final String FAILED_TO_FETCH_REPOSITORIES = "Failed to fetch repositories";
@@ -170,7 +174,11 @@ public class ArtifactoryResourceServiceImpl implements ArtifactoryResourceServic
             .taskSetupAbstraction(SetupAbstractionKeys.orgIdentifier, ngAccess.getOrgIdentifier())
             .taskSetupAbstraction(SetupAbstractionKeys.projectIdentifier, ngAccess.getProjectIdentifier())
             .build();
-    return delegateGrpcClientWrapper.executeSyncTask(delegateTaskRequest);
+    try {
+      return delegateGrpcClientWrapper.executeSyncTask(delegateTaskRequest);
+    } catch (DelegateServiceDriverException ex) {
+      throw exceptionManager.processException(ex, WingsException.ExecutionContext.MANAGER, log);
+    }
   }
 
   private ArtifactoryFetchRepositoriesResponse getArtifactoryFetchRepositoriesResponse(
@@ -335,7 +343,11 @@ public class ArtifactoryResourceServiceImpl implements ArtifactoryResourceServic
             .taskSetupAbstraction(SetupAbstractionKeys.projectIdentifier, ngAccess.getProjectIdentifier())
             .taskSelectors(delegateSelectors)
             .build();
-    return delegateGrpcClientWrapper.executeSyncTask(delegateTaskRequest);
+    try {
+      return delegateGrpcClientWrapper.executeSyncTask(delegateTaskRequest);
+    } catch (DelegateServiceDriverException ex) {
+      throw exceptionManager.processException(ex, WingsException.ExecutionContext.MANAGER, log);
+    }
   }
 
   private ArtifactTaskExecutionResponse getTaskExecutionResponse(

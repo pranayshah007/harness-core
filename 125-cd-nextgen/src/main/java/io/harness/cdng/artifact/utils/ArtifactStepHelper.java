@@ -17,6 +17,7 @@ import io.harness.cdng.artifact.bean.ArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.AcrArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.AmazonS3ArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.ArtifactoryRegistryArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.AzureArtifactsConfig;
 import io.harness.cdng.artifact.bean.yaml.CustomArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.DockerHubArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.EcrArtifactConfig;
@@ -36,6 +37,10 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.TaskSelector;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConnectorDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
+import io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsAuthenticationType;
+import io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsConnectorDTO;
+import io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsCredentialsDTO;
+import io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsTokenDTO;
 import io.harness.delegate.beans.connector.azureconnector.AzureConnectorDTO;
 import io.harness.delegate.beans.connector.azureconnector.AzureCredentialType;
 import io.harness.delegate.beans.connector.azureconnector.AzureInheritFromDelegateDetailsDTO;
@@ -89,7 +94,7 @@ public class ArtifactStepHelper {
         DockerHubArtifactConfig dockerConfig = (DockerHubArtifactConfig) artifactConfig;
         connectorDTO = getConnector(dockerConfig.getConnectorRef().getValue(), ambiance);
         if (!(connectorDTO.getConnectorConfig() instanceof DockerConnectorDTO)) {
-          throw new InvalidConnectorTypeException("provided Connector " + dockerConfig.getConnectorRef().getValue()
+          throw new InvalidConnectorTypeException("Provided Connector " + dockerConfig.getConnectorRef().getValue()
                   + " is not compatible with " + dockerConfig.getSourceType() + " Artifact",
               WingsException.USER);
         }
@@ -104,7 +109,7 @@ public class ArtifactStepHelper {
         GoogleArtifactRegistryConfig googleArtifactRegistryConfig = (GoogleArtifactRegistryConfig) artifactConfig;
         connectorDTO = getConnector(googleArtifactRegistryConfig.getConnectorRef().getValue(), ambiance);
         if (!(connectorDTO.getConnectorConfig() instanceof GcpConnectorDTO)) {
-          throw new InvalidConnectorTypeException("provided Connector "
+          throw new InvalidConnectorTypeException("Provided Connector "
                   + googleArtifactRegistryConfig.getConnectorRef().getValue() + " is not compatible with "
                   + googleArtifactRegistryConfig.getSourceType() + " Artifact",
               WingsException.USER);
@@ -121,7 +126,7 @@ public class ArtifactStepHelper {
         AmazonS3ArtifactConfig amazonS3ArtifactConfig = (AmazonS3ArtifactConfig) artifactConfig;
         connectorDTO = getConnector(amazonS3ArtifactConfig.getConnectorRef().getValue(), ambiance);
         if (!(connectorDTO.getConnectorConfig() instanceof AwsConnectorDTO)) {
-          throw new InvalidConnectorTypeException("provided Connector "
+          throw new InvalidConnectorTypeException("Provided Connector "
                   + amazonS3ArtifactConfig.getConnectorRef().getValue() + " is not compatible with "
                   + amazonS3ArtifactConfig.getSourceType() + " Artifact",
               WingsException.USER);
@@ -138,7 +143,7 @@ public class ArtifactStepHelper {
         connectorDTO = getConnector(githubPackagesArtifactConfig.getConnectorRef().getValue(), ambiance);
 
         if (!(connectorDTO.getConnectorConfig() instanceof GithubConnectorDTO)) {
-          throw new InvalidConnectorTypeException("provided Connector "
+          throw new InvalidConnectorTypeException("Provided Connector "
                   + githubPackagesArtifactConfig.getConnectorRef().getValue() + " is not compatible with "
                   + githubPackagesArtifactConfig.getSourceType() + " Artifact",
               WingsException.USER);
@@ -149,11 +154,30 @@ public class ArtifactStepHelper {
 
         return ArtifactConfigToDelegateReqMapper.getGithubPackagesDelegateRequest(githubPackagesArtifactConfig,
             githubConnectorDTO, encryptedDataDetails, githubPackagesArtifactConfig.getConnectorRef().getValue());
+      case AZURE_ARTIFACTS:
+        AzureArtifactsConfig azureArtifactsConfig = (AzureArtifactsConfig) artifactConfig;
+
+        connectorDTO = getConnector(azureArtifactsConfig.getConnectorRef().getValue(), ambiance);
+
+        if (!(connectorDTO.getConnectorConfig() instanceof AzureArtifactsConnectorDTO)) {
+          throw new InvalidConnectorTypeException("Provided Connector "
+                  + azureArtifactsConfig.getConnectorRef().getValue() + " is not compatible with "
+                  + azureArtifactsConfig.getSourceType() + " Artifact",
+              WingsException.USER);
+        }
+
+        AzureArtifactsConnectorDTO azureArtifactsConnectorDTO =
+            (AzureArtifactsConnectorDTO) connectorDTO.getConnectorConfig();
+
+        encryptedDataDetails = getAzureArtifactsEncryptionDetails(azureArtifactsConnectorDTO, ngAccess);
+
+        return ArtifactConfigToDelegateReqMapper.getAzureArtifactsDelegateRequest(azureArtifactsConfig,
+            azureArtifactsConnectorDTO, encryptedDataDetails, azureArtifactsConfig.getConnectorRef().getValue());
       case GCR:
         GcrArtifactConfig gcrArtifactConfig = (GcrArtifactConfig) artifactConfig;
         connectorDTO = getConnector(gcrArtifactConfig.getConnectorRef().getValue(), ambiance);
         if (!(connectorDTO.getConnectorConfig() instanceof GcpConnectorDTO)) {
-          throw new InvalidConnectorTypeException("provided Connector " + gcrArtifactConfig.getConnectorRef().getValue()
+          throw new InvalidConnectorTypeException("Provided Connector " + gcrArtifactConfig.getConnectorRef().getValue()
                   + " is not compatible with " + gcrArtifactConfig.getSourceType() + " Artifact",
               WingsException.USER);
         }
@@ -168,7 +192,7 @@ public class ArtifactStepHelper {
         EcrArtifactConfig ecrArtifactConfig = (EcrArtifactConfig) artifactConfig;
         connectorDTO = getConnector(ecrArtifactConfig.getConnectorRef().getValue(), ambiance);
         if (!(connectorDTO.getConnectorConfig() instanceof AwsConnectorDTO)) {
-          throw new InvalidConnectorTypeException("provided Connector " + ecrArtifactConfig.getConnectorRef().getValue()
+          throw new InvalidConnectorTypeException("Provided Connector " + ecrArtifactConfig.getConnectorRef().getValue()
                   + " is not compatible with " + ecrArtifactConfig.getSourceType() + " Artifact",
               WingsException.USER);
         }
@@ -183,7 +207,7 @@ public class ArtifactStepHelper {
         NexusRegistryArtifactConfig nexusRegistryArtifactConfig = (NexusRegistryArtifactConfig) artifactConfig;
         connectorDTO = getConnector(nexusRegistryArtifactConfig.getConnectorRef().getValue(), ambiance);
         if (!(connectorDTO.getConnectorConfig() instanceof NexusConnectorDTO)) {
-          throw new InvalidConnectorTypeException("provided Connector "
+          throw new InvalidConnectorTypeException("Provided Connector "
                   + nexusRegistryArtifactConfig.getConnectorRef().getValue() + " is not compatible with "
                   + nexusRegistryArtifactConfig.getSourceType() + " Artifact",
               WingsException.USER);
@@ -199,7 +223,7 @@ public class ArtifactStepHelper {
         Nexus2RegistryArtifactConfig nexus2RegistryArtifactConfig = (Nexus2RegistryArtifactConfig) artifactConfig;
         connectorDTO = getConnector(nexus2RegistryArtifactConfig.getConnectorRef().getValue(), ambiance);
         if (!(connectorDTO.getConnectorConfig() instanceof NexusConnectorDTO)) {
-          throw new InvalidConnectorTypeException("provided Connector "
+          throw new InvalidConnectorTypeException("Provided Connector "
                   + nexus2RegistryArtifactConfig.getConnectorRef().getValue() + " is not compatible with "
                   + nexus2RegistryArtifactConfig.getSourceType() + " Artifact",
               WingsException.USER);
@@ -216,7 +240,7 @@ public class ArtifactStepHelper {
             (ArtifactoryRegistryArtifactConfig) artifactConfig;
         connectorDTO = getConnector(artifactoryRegistryArtifactConfig.getConnectorRef().getValue(), ambiance);
         if (!(connectorDTO.getConnectorConfig() instanceof ArtifactoryConnectorDTO)) {
-          throw new InvalidConnectorTypeException("provided Connector "
+          throw new InvalidConnectorTypeException("Provided Connector "
                   + artifactoryRegistryArtifactConfig.getConnectorRef().getValue() + " is not compatible with "
                   + artifactoryRegistryArtifactConfig.getSourceType() + " Artifact",
               WingsException.USER);
@@ -259,7 +283,7 @@ public class ArtifactStepHelper {
         JenkinsArtifactConfig jenkinsArtifactConfig = (JenkinsArtifactConfig) artifactConfig;
         connectorDTO = getConnector(jenkinsArtifactConfig.getConnectorRef().getValue(), ambiance);
         if (!(connectorDTO.getConnectorConfig() instanceof JenkinsConnectorDTO)) {
-          throw new InvalidConnectorTypeException("provided Connector "
+          throw new InvalidConnectorTypeException("Provided Connector "
                   + jenkinsArtifactConfig.getConnectorRef().getValue() + " is not compatible with "
                   + jenkinsArtifactConfig.getSourceType() + " Artifact",
               WingsException.USER);
@@ -278,6 +302,26 @@ public class ArtifactStepHelper {
         throw new UnsupportedOperationException(
             String.format("Unknown Artifact Config type: [%s]", artifactConfig.getSourceType()));
     }
+  }
+
+  private List<EncryptedDataDetail> getAzureArtifactsEncryptionDetails(
+      AzureArtifactsConnectorDTO azureArtifactsConnectorDTO, NGAccess ngAccess) {
+    List<EncryptedDataDetail> encryptedDataDetails = new ArrayList<>();
+
+    if (azureArtifactsConnectorDTO.getAuth() != null && azureArtifactsConnectorDTO.getAuth().getCredentials() != null) {
+      AzureArtifactsCredentialsDTO httpCredentialsDTO = azureArtifactsConnectorDTO.getAuth().getCredentials();
+
+      if (httpCredentialsDTO.getType().equals(AzureArtifactsAuthenticationType.PERSONAL_ACCESS_TOKEN)) {
+        AzureArtifactsTokenDTO httpCredentialsSpecDTO = httpCredentialsDTO.getCredentialsSpec();
+
+        encryptedDataDetails = secretManagerClientService.getEncryptionDetails(ngAccess, httpCredentialsSpecDTO);
+
+      } else {
+        throw new InvalidRequestException("Please select the Authentication Type as Personal Access Token");
+      }
+    }
+
+    return encryptedDataDetails;
   }
 
   private List<EncryptedDataDetail> getGithubEncryptedDetails(
@@ -352,6 +396,8 @@ public class ArtifactStepHelper {
         return TaskType.GITHUB_PACKAGES_TASK_NG;
       case CUSTOM_ARTIFACT:
         return TaskType.CUSTOM_ARTIFACT_NG;
+      case AZURE_ARTIFACTS:
+        return TaskType.AZURE_ARTIFACT_TASK_NG;
       default:
         throw new UnsupportedOperationException(
             String.format("Unknown Artifact Config type: [%s]", artifactConfig.getSourceType()));
@@ -454,6 +500,16 @@ public class ArtifactStepHelper {
                                                    .collect(Collectors.toList()));
       case CUSTOM_ARTIFACT:
         return TaskSelectorYaml.toTaskSelector(((CustomArtifactConfig) artifactConfig).getDelegateSelectors());
+      case AZURE_ARTIFACTS:
+        AzureArtifactsConfig azureArtifactsConfig = (AzureArtifactsConfig) artifactConfig;
+
+        connectorDTO = getConnector(azureArtifactsConfig.getConnectorRef().getValue(), ambiance);
+
+        return TaskSelectorYaml.toTaskSelector(((AzureArtifactsConnectorDTO) connectorDTO.getConnectorConfig())
+                                                   .getDelegateSelectors()
+                                                   .stream()
+                                                   .map(TaskSelectorYaml::new)
+                                                   .collect(Collectors.toList()));
       default:
         throw new UnsupportedOperationException(
             String.format("Unknown Artifact Config type: [%s]", artifactConfig.getSourceType()));

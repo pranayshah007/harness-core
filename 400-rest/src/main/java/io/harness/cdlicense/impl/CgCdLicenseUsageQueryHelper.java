@@ -7,9 +7,11 @@
 
 package io.harness.cdlicense.impl;
 
+import static io.harness.cdlicense.bean.CgCdLicenseUsageConstants.INSTANCE_COUNT_PERCENTILE_DISC;
 import static io.harness.cdlicense.bean.CgCdLicenseUsageConstants.MAX_RETRY;
 import static io.harness.cdlicense.bean.CgCdLicenseUsageConstants.QUERY_FECTH_PERCENTILE_INSTANCE_COUNT_FOR_SERVICES;
 import static io.harness.cdlicense.bean.CgCdLicenseUsageConstants.QUERY_FECTH_SERVICES_IN_LAST_N_DAYS_DEPLOYMENT;
+import static io.harness.cdlicense.bean.CgCdLicenseUsageConstants.QUERY_FETCH_SERVICE_INSTANCE_USAGE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import static java.util.stream.Collectors.toList;
@@ -33,15 +35,54 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 
 @Slf4j
 @Singleton
 public class CgCdLicenseUsageQueryHelper {
   @Inject private TimeScaleDBService timeScaleDBService;
   @Inject private WingsPersistence wingsPersistence;
+
+  public long fetchServiceInstancesOver30Days(String accountId) {
+    if (StringUtils.isEmpty(accountId)) {
+      log.error("AccountId: [{}] cannot be empty for finding service instances", accountId);
+      return 0L;
+    }
+
+    int retry = 0;
+    boolean successfulOperation = false;
+    long percentileInstanceCount = 0L;
+    while (!successfulOperation && retry <= MAX_RETRY) {
+      try (Connection dbConnection = timeScaleDBService.getDBConnection();
+           PreparedStatement fetchStatement = dbConnection.prepareStatement(QUERY_FETCH_SERVICE_INSTANCE_USAGE)) {
+        fetchStatement.setDouble(1, INSTANCE_COUNT_PERCENTILE_DISC);
+        fetchStatement.setString(2, accountId);
+
+        ResultSet resultSet = fetchStatement.executeQuery();
+        if (Objects.nonNull(resultSet) && resultSet.next()) {
+          percentileInstanceCount = resultSet.getLong(1);
+        } else {
+          log.warn("No service instances count found for accountId: [{}]", accountId);
+        }
+
+        successfulOperation = true;
+      } catch (SQLException exception) {
+        if (retry >= MAX_RETRY) {
+          String errorLog = "MAX RETRY FAILURE: Failed to fetch service instance usage after " + MAX_RETRY + " retries";
+          throw new CgLicenseUsageException(errorLog, exception);
+        }
+        log.error(
+            "Failed to fetch service instance usage for accountId : [{}] , retry : [{}]", accountId, retry, exception);
+        retry++;
+      }
+    }
+
+    return percentileInstanceCount;
+  }
 
   @NonNull
   public List<String> fetchDistinctSvcIdUsedInDeployments(String accountId, int timePeriod) {

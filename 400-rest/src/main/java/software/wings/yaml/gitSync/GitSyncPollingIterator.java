@@ -41,8 +41,8 @@ public class GitSyncPollingIterator implements MongoPersistenceIterator.Handler<
     persistenceIteratorFactory.createPumpIteratorWithDedicatedThreadPool(
         PersistenceIteratorFactory.PumpExecutorOptions.builder()
             .name("GitSyncPollingIterator")
-            .poolSize(1)
-            .interval(ofMinutes(2))
+            .poolSize(5)
+            .interval(ofMinutes(1))
             .build(),
         YamlGitConfig.class,
         MongoPersistenceIterator.<YamlGitConfig, MorphiaFilterExpander<YamlGitConfig>>builder()

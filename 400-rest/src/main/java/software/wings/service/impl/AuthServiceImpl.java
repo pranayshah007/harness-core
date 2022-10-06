@@ -705,7 +705,7 @@ public class AuthServiceImpl implements AuthService {
     return authHandler.evaluateUserPermissionInfo(accountId, userGroups, user);
   }
 
-  private List<UserGroup> getUserGroups(String accountId, User user) {
+  public List<UserGroup> getUserGroups(String accountId, User user) {
     List<UserGroup> userGroups = userGroupService.listByAccountId(accountId, user, false);
 
     if (isEmpty(userGroups) && !userService.isUserAssignedToAccount(user, accountId)) {

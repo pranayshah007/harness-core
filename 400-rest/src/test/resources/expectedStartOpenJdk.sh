@@ -16,7 +16,7 @@ if [ ! -e start.sh ]; then
   exit 1
 fi
 
-JRE_DIR=jdk8u242-b08-jre
+JRE_DIR=jdk-11.0.14+9-jre
 JRE_BINARY=$JRE_DIR/bin/java
 case "$OSTYPE" in
   solaris*)
@@ -24,7 +24,6 @@ case "$OSTYPE" in
     ;;
   darwin*)
     OS=macosx
-    JRE_DIR=jdk8u242-b08-jre
     JRE_BINARY=$JRE_DIR/Contents/Home/bin/java
     ;;
   linux*)
@@ -47,9 +46,9 @@ case "$OSTYPE" in
     ;;
 esac
 
-JVM_URL=http://localhost:8888/jre/openjdk-8u242/jre_x64_${OS}_8u242b08.tar.gz
+DELEGATE_STORAGE_URL=http://localhost:8888
 
-ALPN_BOOT_JAR_URL=http://localhost:8888/tools/alpn/release/8.1.13.v20181017/alpn-boot-8.1.13.v20181017.jar
+    JVM_URL=$DELEGATE_STORAGE_URL/jre/openjdk-11.0.14_9/OpenJDK11U-jre_x64_${OS}_hotspot_11.0.14_9.tar.gz
 
 SOURCE="${BASH_SOURCE[0]}"
 while [ -h "$SOURCE" ]; do # resolve $SOURCE until the file is no longer a symlink
@@ -273,43 +272,20 @@ DELEGATE_STORAGE_URL=http://localhost:8888
   fi
 fi
 
-if [ ! -e config-watcher.yml ]; then
-  echo "accountId: ACCOUNT_ID" > config-watcher.yml
+if [ -e config-watcher.yml ]; then
+  rm config-watcher.yml
 fi
-test "$(tail -c 1 config-watcher.yml)" && `echo "" >> config-watcher.yml`
-set +x
-if ! `grep delegateToken config-watcher.yml > /dev/null`; then
-  echo "delegateToken: ACCOUNT_KEY" >> config-watcher.yml
-fi
-set -x
-if ! `grep managerUrl config-watcher.yml > /dev/null`; then
-  echo "managerUrl: https://localhost:9090/api/" >> config-watcher.yml
-fi
-if ! `grep doUpgrade config-watcher.yml > /dev/null`; then
-  echo "doUpgrade: true" >> config-watcher.yml
-fi
-if ! `grep upgradeCheckLocation config-watcher.yml > /dev/null`; then
-  echo "upgradeCheckLocation: http://localhost:8888/watcherci.txt" >> config-watcher.yml
-elif [[ "$(grep upgradeCheckLocation config-watcher.yml | cut -d ' ' -f 2)" != "http://localhost:8888/watcherci.txt" ]]; then
-  sed -i.bak "s|^upgradeCheckLocation:.*$|upgradeCheckLocation: http://localhost:8888/watcherci.txt|" config-watcher.yml
-fi
-if ! `grep upgradeCheckIntervalSeconds config-watcher.yml > /dev/null`; then
-  echo "upgradeCheckIntervalSeconds: 1200" >> config-watcher.yml
-fi
-if ! `grep delegateCheckLocation config-watcher.yml > /dev/null`; then
-  echo "delegateCheckLocation: http://localhost:8888/delegateci.txt" >> config-watcher.yml
-elif [[ "$(grep delegateCheckLocation config-watcher.yml | cut -d ' ' -f 2)" != "http://localhost:8888/delegateci.txt" ]]; then
-  sed -i.bak "s|^delegateCheckLocation:.*$|delegateCheckLocation: http://localhost:8888/delegateci.txt|" config-watcher.yml
-fi
-if ! `grep fileHandlesMonitoringEnabled config-watcher.yml > /dev/null`; then
-  echo "fileHandlesMonitoringEnabled: false" >> config-watcher.yml
-fi
-if ! `grep fileHandlesMonitoringIntervalInMinutes config-watcher.yml > /dev/null`; then
-  echo "fileHandlesMonitoringIntervalInMinutes: 15" >> config-watcher.yml
-fi
-if ! `grep fileHandlesLogsRetentionInMinutes config-watcher.yml > /dev/null`; then
-  echo "fileHandlesLogsRetentionInMinutes: 1440" >> config-watcher.yml
-fi
+
+echo "accountId: ACCOUNT_ID" > config-watcher.yml
+echo "delegateToken: ACCOUNT_KEY" >> config-watcher.yml
+echo "managerUrl: https://localhost:9090/api/" >> config-watcher.yml
+echo "doUpgrade: true" >> config-watcher.yml
+echo "upgradeCheckLocation: http://localhost:8888/watcherci.txt" >> config-watcher.yml
+echo "upgradeCheckIntervalSeconds: 1200" >> config-watcher.yml
+echo "delegateCheckLocation: http://localhost:8888/delegateci.txt" >> config-watcher.yml
+echo "fileHandlesMonitoringEnabled: false" >> config-watcher.yml
+echo "fileHandlesMonitoringIntervalInMinutes: 15" >> config-watcher.yml
+echo "fileHandlesLogsRetentionInMinutes: 1440" >> config-watcher.yml
 
 rm -f -- *.bak
 
@@ -319,6 +295,9 @@ export DELEGATE_TYPE=SHELL_SCRIPT
 
 export HOSTNAME
 export CAPSULE_CACHE_DIR="$DIR/.cache"
+
+# Strip JAVA_OPTS that is not recognized by JRE11
+WATCHER_JAVA_OPTS=${WATCHER_JAVA_OPTS//UseCGroupMemoryLimitForHeap/UseContainerSupport}
 
 if [[ $1 == "upgrade" ]]; then
   echo "Upgrade"

@@ -159,19 +159,6 @@ public class PipelineRefreshServiceTest extends PipelineServiceTestBase {
   @Test
   @Owner(developers = INDER)
   @Category(UnitTests.class)
-  public void testGetYamlDiffPipelineWithNoTemplateReferences() {
-    YamlDiffResponseDTO responseDTO =
-        pipelineRefreshService.getYamlDiff(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_IDENTIFIER_WITHOUT_TEMPLATES);
-    verify(pmsPipelineService).get(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_IDENTIFIER_WITHOUT_TEMPLATES, false);
-    verify(pmsPipelineTemplateHelper, never()).getRefreshedYaml(anyString(), anyString(), anyString(), anyString());
-    assertThat(responseDTO).isNotNull();
-    assertThat(responseDTO.getOriginalYaml()).isEqualTo(pipelineEntityWithoutTemplates.getYaml());
-    assertThat(responseDTO.getRefreshedYaml()).isEqualTo(pipelineEntityWithoutTemplates.getYaml());
-  }
-
-  @Test
-  @Owner(developers = INDER)
-  @Category(UnitTests.class)
   public void testGetYamlDiffPipelineWithTemplateReferences() {
     String refreshedYaml = "Yayy!! Updated YAML";
     when(pmsPipelineTemplateHelper.getRefreshedYaml(
@@ -185,19 +172,6 @@ public class PipelineRefreshServiceTest extends PipelineServiceTestBase {
     assertThat(responseDTO).isNotNull();
     assertThat(responseDTO.getOriginalYaml()).isEqualTo(pipelineEntityWithTemplates.getYaml());
     assertThat(responseDTO.getRefreshedYaml()).isEqualTo(refreshedYaml);
-  }
-
-  @Test
-  @Owner(developers = INDER)
-  @Category(UnitTests.class)
-  public void testValidateTemplateInputsInPipelineWithNoTemplateReferences() {
-    ValidateTemplateInputsResponseDTO responseDTO = pipelineRefreshService.validateTemplateInputsInPipeline(
-        ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_IDENTIFIER_WITHOUT_TEMPLATES);
-    verify(pmsPipelineService).get(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_IDENTIFIER_WITHOUT_TEMPLATES, false);
-    verify(pmsPipelineTemplateHelper, never())
-        .validateTemplateInputsForGivenYaml(anyString(), anyString(), anyString(), anyString());
-    assertThat(responseDTO).isNotNull();
-    assertThat(responseDTO.isValidYaml()).isTrue();
   }
 
   @Test

@@ -8,37 +8,76 @@
 package software.wings.integration.service;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
-import static io.harness.delegate.beans.FileBucket.AUDITS;
 import static io.harness.rule.OwnerRule.ADWAIT;
+import static io.harness.rule.OwnerRule.BOOPESH;
+
+import static software.wings.beans.Account.Builder.anAccount;
+import static software.wings.utils.WingsTestConstants.USER_ID;
+import static software.wings.utils.WingsTestConstants.USER_NAME;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.joor.Reflect.on;
 
 import io.harness.beans.PageRequest;
-import io.harness.category.element.DeprecatedIntegrationTests;
+import io.harness.category.element.UnitTests;
 import io.harness.rule.Owner;
 
 import software.wings.WingsBaseTest;
 import software.wings.audit.AuditHeader;
 import software.wings.audit.AuditHeader.RequestType;
+import software.wings.beans.Account;
+import software.wings.beans.User;
+import software.wings.security.UserRequestContext;
+import software.wings.security.UserThreadLocal;
 import software.wings.service.AuditServiceTestHelper;
+import software.wings.service.intfc.AccountService;
 import software.wings.service.intfc.AuditService;
-import software.wings.service.intfc.FileService;
+import software.wings.utils.WingsTestConstants;
 
+import com.google.common.util.concurrent.FakeTimeLimiter;
 import com.google.inject.Inject;
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.time.Duration;
+import java.time.Instant;
+import org.apache.commons.lang3.RandomStringUtils;
+import org.junit.Before;
 import org.junit.Ignore;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.rules.TemporaryFolder;
 
 // this test fails intermittently
 public class AuditServiceIntegrationTest extends WingsBaseTest {
   @Inject private AuditServiceTestHelper auditServiceTestHelper;
+  @Rule public TemporaryFolder temporaryFolder = new TemporaryFolder();
+  @Inject private AccountService accountService;
   @Inject protected AuditService auditService;
-  @Inject protected FileService fileService;
+  private String accountId = "some-account-uuid-" + RandomStringUtils.randomAlphanumeric(5);
+
+  private void setUserRequestContext() {
+    User user = User.Builder.anUser().name(USER_NAME).uuid(USER_ID).build();
+    user.setUserRequestContext(UserRequestContext.builder().accountId(accountId).build());
+    UserThreadLocal.set(user);
+  }
+  @Before
+  public void setupMocks() throws IOException {
+    on(auditService).set("timeLimiter", new FakeTimeLimiter());
+    Account account = anAccount()
+                          .withUuid(accountId)
+                          .withAccountName(WingsTestConstants.ACCOUNT_NAME)
+                          .withCompanyName(WingsTestConstants.COMPANY_NAME)
+                          .withLicenseInfo(getLicenseInfo())
+                          .build();
+    accountService.save(account, false, false);
+    accountId = account.getUuid();
+    setUserRequestContext();
+  }
 
   @Test
   @Owner(developers = ADWAIT)
-  @Category(DeprecatedIntegrationTests.class)
+  @Category(UnitTests.class)
   @Ignore("TODO: please provide clear motivation why this test is ignored")
   public void shouldCreateRequestPayload() throws Exception {
     AuditHeader header = auditServiceTestHelper.createAuditHeader(generateUuid());
@@ -62,7 +101,7 @@ public class AuditServiceIntegrationTest extends WingsBaseTest {
    */
   @Test
   @Owner(developers = ADWAIT)
-  @Category(DeprecatedIntegrationTests.class)
+  @Category(UnitTests.class)
   @Ignore("TODO: please provide clear motivation why this test is ignored")
   public void shouldFinalize() throws Exception {
     AuditHeader header = auditServiceTestHelper.createAuditHeader(generateUuid());
@@ -79,29 +118,26 @@ public class AuditServiceIntegrationTest extends WingsBaseTest {
   }
 
   @Test
-  @Owner(developers = ADWAIT)
-  @Category(DeprecatedIntegrationTests.class)
-  @Ignore("TODO: please provide clear motivation why this test is ignored")
-  public void shouldDeleteAuditRecordsRequestFiles() throws Exception {
+  @Owner(developers = BOOPESH)
+  @Category(UnitTests.class)
+  public void shouldDeleteExpiredAuditsAndAuditFilesAndAuditChunks() throws Exception {
     AuditHeader header = auditServiceTestHelper.createAuditHeader(generateUuid());
-    assertThat(header.getRequestTime()).isNull();
-    assertThat(header.getRequestPayloadUuid()).isNull();
-    byte[] httpBody = "TESTTESTTESTTESTTESTTESTTESTTESTTESTTEST".getBytes();
-    String requestFileId = auditService.create(header, RequestType.REQUEST, new ByteArrayInputStream(httpBody));
-    String responseFileId = auditService.create(header, RequestType.RESPONSE, new ByteArrayInputStream(httpBody));
-
     header.setResponseStatusCode(200);
-    header.setResponseTime(System.currentTimeMillis());
-    AuditHeader header2 = auditService.read(header.getAppId(), header.getUuid());
-    assertThat(header2).isNotNull();
-    assertThat(header2.getRequestPayloadUuid()).isNotNull();
-    assertThat(header2.getRequestPayloadUuid()).isEqualTo(requestFileId);
-    assertThat(header2.getResponsePayloadUuid()).isNotNull();
-    assertThat(header2.getResponsePayloadUuid()).isEqualTo(responseFileId);
-
-    auditService.deleteAuditRecords(0);
+    header.setResponseTime(Instant.now().toEpochMilli());
+    assertThat(auditService.list(new PageRequest<>())).hasSize(1);
+    auditService.deleteAuditRecords(Instant.now().plus(Duration.ofDays(10)).toEpochMilli());
     assertThat(auditService.list(new PageRequest<>())).hasSize(0);
-    assertThat(fileService.getAllFileIds(header2.getRequestPayloadUuid(), AUDITS)).hasSize(0);
-    assertThat(fileService.getAllFileIds(header2.getResponsePayloadUuid(), AUDITS)).hasSize(0);
+  }
+
+  @Test
+  @Owner(developers = BOOPESH)
+  @Category(UnitTests.class)
+  public void shouldNotDeleteAuditsAndAuditFilesAndAuditChunks() throws Exception {
+    AuditHeader header = auditServiceTestHelper.createAuditHeader(generateUuid());
+    header.setResponseStatusCode(200);
+    header.setResponseTime(Instant.now().toEpochMilli());
+    assertThat(auditService.list(new PageRequest<>())).hasSize(1);
+    auditService.deleteAuditRecords(Instant.now().minus(Duration.ofDays(10)).toEpochMilli());
+    assertThat(auditService.list(new PageRequest<>())).hasSize(1);
   }
 }

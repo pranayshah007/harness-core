@@ -15,6 +15,7 @@ import io.harness.annotations.dev.OwnedBy;
 public interface EntityTypeConstants {
   String GITOPS_CREATE_PR = "CreatePR";
   String GITOPS_MERGE_PR = "MergePR";
+  String GITOPS_UPDATE_RELEASE_REPO = "GitOpsUpdateReleaseRepo";
   String PROJECTS = "Projects";
   String PIPELINES = "Pipelines";
   String PIPELINE_STEPS = "PipelineSteps";
@@ -34,6 +35,7 @@ public interface EntityTypeConstants {
   String DEPLOYMENT_STEPS = "DeploymentSteps";
   String DEPLOYMENT_STAGE = "DeploymentStage";
   String APPROVAL_STAGE = "ApprovalStage";
+  String PIPELINE_STAGE = "PipelineStage";
   String CUSTOM_STAGE = "CustomStage";
   String FEATURE_FLAG_STAGE = "FeatureFlagStage";
   String TRIGGERS = "Triggers";
@@ -95,6 +97,7 @@ public interface EntityTypeConstants {
   String POLICY_STEP = "Policy";
   String SERVICENOW_CREATE = "ServiceNowCreate";
   String SERVICENOW_UPDATE = "ServiceNowUpdate";
+  String SERVICENOW_IMPORT_SET = "ServiceNowImportSet";
   String ENVIRONMENT_GROUP = "EnvironmentGroup";
   String NG_FILE = "NgFile";
   String CLOUDFORMATION_CREATE_STACK_STEP = "CreateStack";
@@ -123,5 +126,7 @@ public interface EntityTypeConstants {
   String ECS_BLUE_GREEN_ROLLBACK = "EcsBlueGreenRollback";
   String WAIT_STEP = "Wait";
   String ARTIFACT_SOURCE_TEMPLATE = "ArtifactSource";
+  String SHELL_SCRIPT_PROVISION_STEP = "ShellScriptProvision";
+  String FREEZE = "Freeze";
   String CHAOS_STEP = "Chaos";
 }

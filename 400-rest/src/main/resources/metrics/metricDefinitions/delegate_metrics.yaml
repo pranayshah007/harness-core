@@ -46,4 +46,8 @@ metrics:
     metricDefinition: Perpetual tasks to rebalance
     type: LastValue
     unit: count
+  - metricName: perpetual_tasks_paused_num
+    metricDefinition: Perpetual tasks paused
+    type: LastValue
+    unit: count
 

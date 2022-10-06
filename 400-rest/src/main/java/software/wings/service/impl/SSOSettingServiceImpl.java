@@ -33,9 +33,12 @@ import io.harness.ff.FeatureFlagService;
 import io.harness.iterator.PersistentCronIterable;
 import io.harness.ng.core.account.AuthenticationMechanism;
 import io.harness.ng.core.account.OauthProviderType;
+import io.harness.ng.core.dto.UserGroupDTO;
 import io.harness.outbox.api.OutboxService;
 import io.harness.persistence.HIterator;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.scheduler.PersistentScheduler;
+import io.harness.usergroups.UserGroupClient;
 
 import software.wings.beans.Account;
 import software.wings.beans.Event;
@@ -72,7 +75,6 @@ import software.wings.features.api.RestrictedApi;
 import software.wings.features.extractors.LdapSettingsAccountIdExtractor;
 import software.wings.features.extractors.SamlSettingsAccountIdExtractor;
 import software.wings.scheduler.LdapGroupScheduledHandler;
-import software.wings.scheduler.LdapGroupSyncJob;
 import software.wings.scheduler.LdapGroupSyncJobHelper;
 import software.wings.scheduler.LdapSyncJobConfig;
 import software.wings.security.authentication.oauth.OauthOptions;
@@ -127,6 +129,7 @@ public class SSOSettingServiceImpl implements SSOSettingService {
   @Inject private SSOServiceHelper ssoServiceHelper;
   @Inject private FeatureFlagService featureFlagService;
   @Inject private OutboxService outboxService;
+  @Inject @Named("PRIVILEGED") private UserGroupClient userGroupClient;
   static final int ONE_DAY = 86400000;
 
   @Override
@@ -357,6 +360,7 @@ public class SSOSettingServiceImpl implements SSOSettingService {
       throw new InvalidRequestException(
           "Deleting Saml provider with linked user groups is not allowed. Unlink the user groups first.");
     }
+    checkForLinkedSSOGroupsOnNG(samlSettings.getAccountId(), samlSettings.getUuid());
     return wingsPersistence.delete(samlSettings);
   }
 
@@ -392,7 +396,6 @@ public class SSOSettingServiceImpl implements SSOSettingService {
     }
     updateNextIterations(settings);
     LdapSettings savedSettings = wingsPersistence.saveAndGet(LdapSettings.class, settings);
-    LdapGroupSyncJob.add(jobScheduler, savedSettings.getAccountId(), savedSettings.getUuid());
     ldapGroupScheduledHandler.wakeup();
     auditServiceHelper.reportForAuditingUsingAccountId(settings.getAccountId(), null, settings, Event.Type.CREATE);
     ngAuditLoginSettingsForLdapUpload(savedSettings.getAccountId(), savedSettings);
@@ -435,7 +438,6 @@ public class SSOSettingServiceImpl implements SSOSettingService {
         settings.getAccountId(), oldSettings, savedSettings, Event.Type.UPDATE);
     ngAuditLoginSettingsForLdapUpdate(settings.getAccountId(), currentLdapSettings, savedSettings);
     log.info("Auditing updation of LDAP for account={}", savedSettings.getAccountId());
-    LdapGroupSyncJob.add(jobScheduler, savedSettings.getAccountId(), savedSettings.getUuid());
     ldapGroupScheduledHandler.wakeup();
     return savedSettings;
   }
@@ -463,12 +465,12 @@ public class SSOSettingServiceImpl implements SSOSettingService {
       throw new InvalidRequestException(
           "Deleting SSO provider with linked user groups is not allowed. Unlink the user groups first.");
     }
+    checkForLinkedSSOGroupsOnNG(settings.getAccountId(), settings.getUuid());
     if (LdapConnectionSettings.INLINE_SECRET.equals(settings.getConnectionSettings().getPasswordType())) {
       secretManager.deleteSecret(
           settings.getAccountId(), settings.getConnectionSettings().getEncryptedBindPassword(), new HashMap<>(), false);
     }
     wingsPersistence.delete(settings);
-    LdapGroupSyncJob.delete(jobScheduler, this, settings.getAccountId(), settings.getUuid());
     auditServiceHelper.reportDeleteForAuditingUsingAccountId(settings.getAccountId(), settings);
     ngAuditLoginSettingsForLdapDelete(settings.getAccountId(), settings);
     log.info("Auditing deletion of LDAP Settings for account={}", settings.getAccountId());
@@ -699,5 +701,23 @@ public class SSOSettingServiceImpl implements SSOSettingService {
         return null;
       }
     };
+  }
+
+  private void checkForLinkedSSOGroupsOnNG(final String accountId, final String ssoUuid) {
+    List<UserGroupDTO> userGroupDTOs = null;
+    if (accountService.isNextGenEnabled(accountId)) {
+      try {
+        userGroupDTOs = NGRestUtils.getResponse(userGroupClient.getSsoLinkedUserGroups(ssoUuid, accountId));
+      } catch (Exception exc) {
+        log.error(
+            "For account {} and ssoId {} for delete SSO provider request, finding linked SSO groups on NG call failed with exception: ",
+            accountId, ssoUuid, exc);
+        throw exc;
+      }
+    }
+    if (isNotEmpty(userGroupDTOs)) {
+      throw new InvalidRequestException(
+          "Deleting SSO provider with linked user groups is not allowed. Unlink the user groups in NG also first.");
+    }
   }
 }

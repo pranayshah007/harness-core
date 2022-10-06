@@ -24,13 +24,16 @@ import static software.wings.beans.LogHelper.color;
 import static java.lang.String.format;
 
 import io.harness.cdng.CDStepHelper;
+import io.harness.cdng.customdeploymentng.CustomDeploymentInfrastructureHelper;
 import io.harness.cdng.execution.ExecutionInfoKey;
 import io.harness.cdng.execution.helper.ExecutionInfoKeyMapper;
 import io.harness.cdng.execution.helper.StageExecutionHelper;
 import io.harness.cdng.infra.InfrastructureMapper;
+import io.harness.cdng.infra.InfrastructureValidator;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.infra.beans.SshWinRmAwsInfrastructureOutcome;
 import io.harness.cdng.infra.yaml.AzureWebAppInfrastructure;
+import io.harness.cdng.infra.yaml.CustomDeploymentInfrastructure;
 import io.harness.cdng.infra.yaml.Infrastructure;
 import io.harness.cdng.infra.yaml.K8SDirectInfrastructure;
 import io.harness.cdng.infra.yaml.K8sAzureInfrastructure;
@@ -134,6 +137,8 @@ abstract class AbstractInfrastructureTaskExecutableStep {
   @Inject protected StepHelper stepHelper;
   @Inject protected StageExecutionHelper stageExecutionHelper;
   @Inject protected InfrastructureMapper infrastructureMapper;
+  @Inject CustomDeploymentInfrastructureHelper customDeploymentInfrastructureHelper;
+  @Inject private InfrastructureValidator infrastructureValidator;
 
   @Data
   @AllArgsConstructor
@@ -169,9 +174,12 @@ abstract class AbstractInfrastructureTaskExecutableStep {
     final EnvironmentOutcome environmentOutcome = outcomeSet.getEnvironmentOutcome();
     final ServiceStepOutcome serviceOutcome = outcomeSet.getServiceStepOutcome();
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
+
+    infrastructureValidator.validate(infrastructure);
+
     final InfrastructureOutcome infrastructureOutcome =
         infrastructureMapper.toOutcome(infrastructure, environmentOutcome, serviceOutcome,
-            ngAccess.getAccountIdentifier(), ngAccess.getProjectIdentifier(), ngAccess.getOrgIdentifier());
+            ngAccess.getAccountIdentifier(), ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier());
 
     // save infrastructure sweeping output for further use within the step
     boolean skipInstances = infrastructureStepHelper.getSkipInstances(infrastructure);
@@ -657,6 +665,14 @@ abstract class AbstractInfrastructureTaskExecutableStep {
           saveExecutionLog(logCallback,
               color(format(k8sNamespaceLogLine, k8SDirectInfrastructure.getNamespace().getValue()), Yellow));
         }
+        break;
+
+      case InfrastructureKind.CUSTOM_DEPLOYMENT:
+        CustomDeploymentInfrastructure customDeploymentInfrastructure = (CustomDeploymentInfrastructure) infrastructure;
+        infrastructureStepHelper.validateExpression(customDeploymentInfrastructure.getConnectorReference(),
+            ParameterField.createValueField(customDeploymentInfrastructure.getCustomDeploymentRef().getTemplateRef()),
+            ParameterField.createValueField(customDeploymentInfrastructure.getCustomDeploymentRef().getVersionLabel()));
+        customDeploymentInfrastructureHelper.validateInfra(ambiance, customDeploymentInfrastructure);
         break;
 
       case InfrastructureKind.KUBERNETES_GCP:

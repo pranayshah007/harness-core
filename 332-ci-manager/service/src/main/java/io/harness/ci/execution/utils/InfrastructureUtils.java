@@ -32,6 +32,9 @@ public class InfrastructureUtils {
           harnessImageConnector = ((VmPoolYaml) vmInfraSpec).getSpec().getHarnessImageConnectorRef();
         }
         break;
+      case DOCKER:
+        // At present we have an empty spec for docker case.
+        break;
       default:
         break;
     }
