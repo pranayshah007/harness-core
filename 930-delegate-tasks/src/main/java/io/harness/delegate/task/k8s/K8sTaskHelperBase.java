@@ -3003,7 +3003,8 @@ public class K8sTaskHelperBase {
 
   private String getManifestDirectoryForHelmChart(
       String baseManifestDirectory, HelmChartManifestDelegateConfig helmChartManifest) {
-    if (StoreDelegateConfigType.HARNESS.equals(helmChartManifest.getStoreDelegateConfig().getType())) {
+    if (StoreDelegateConfigType.HARNESS.equals(helmChartManifest.getStoreDelegateConfig().getType())
+        || StoreDelegateConfigType.CUSTOM_REMOTE.equals(helmChartManifest.getStoreDelegateConfig().getType())) {
       return baseManifestDirectory;
     }
     if (GIT != helmChartManifest.getStoreDelegateConfig().getType()) {
