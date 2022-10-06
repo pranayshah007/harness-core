@@ -44,6 +44,7 @@ import io.harness.delegate.events.DelegateGroupUpsertEvent;
 import io.harness.delegate.filter.DelegateFilterPropertiesDTO;
 import io.harness.delegate.filter.DelegateInstanceConnectivityStatus;
 import io.harness.delegate.utils.DelegateEntityOwnerHelper;
+import io.harness.delegate.utils.DelegateTagsHelper;
 import io.harness.exception.InvalidRequestException;
 import io.harness.filter.dto.FilterDTO;
 import io.harness.filter.service.FilterService;
@@ -91,6 +92,8 @@ public class DelegateSetupServiceImpl implements DelegateSetupService {
   @Inject private DelegateConnectionDao delegateConnectionDao;
   @Inject private FilterService filterService;
   @Inject private OutboxService outboxService;
+
+  @Inject private DelegateTagsHelper delegateTagsHelper;
   private static final Duration HEARTBEAT_EXPIRY_TIME = ofMinutes(5);
   // grpc heartbeat thread is scheduled at 5 mins, hence we are allowing a gap of 15 mins
   private static final long MAX_GRPC_HB_TIMEOUT = TimeUnit.MINUTES.toMillis(15);
@@ -171,12 +174,6 @@ public class DelegateSetupServiceImpl implements DelegateSetupService {
 
       if (delegateGroup != null) {
         selectorTypeMap.put(delegateGroup.getName().toLowerCase(), SelectorType.GROUP_NAME);
-
-        if (isNotEmpty(delegateGroup.getTags())) {
-          for (String selector : delegateGroup.getTags()) {
-            selectorTypeMap.put(selector.toLowerCase(), SelectorType.GROUP_SELECTORS);
-          }
-        }
       }
     } else if (isNotEmpty(delegate.getHostName())) {
       selectorTypeMap.put(delegate.getHostName().toLowerCase(), SelectorType.HOST_NAME);
@@ -407,10 +404,11 @@ public class DelegateSetupServiceImpl implements DelegateSetupService {
     String delegateDescription = delegateGroup != null ? delegateGroup.getDescription() : null;
     String delegateConfigurationId = delegateGroup != null ? delegateGroup.getDelegateConfigurationId() : null;
     String delegateGroupIdentifier = delegateGroup != null ? delegateGroup.getIdentifier() : null;
-    Set<String> groupCustomSelectors = delegateGroup != null ? delegateGroup.getTags() : null;
     long upgraderLastUpdated = delegateGroup != null ? delegateGroup.getUpgraderLastUpdated() : 0;
     long groupExpirationTime = groupDelegates.stream().mapToLong(Delegate::getExpirationTime).min().orElse(0);
     boolean immutableDelegate = isNotEmpty(groupDelegates) && groupDelegates.get(0).isImmutable();
+
+    Set<String> groupCustomSelectors = delegateTagsHelper.getUnionOfDelegateGroupSelectors(delegateGroup);
 
     // pick any connected delegateId to check whether grpc is active or not
     AtomicReference<String> delegateId = new AtomicReference<>();
@@ -591,7 +589,8 @@ public class DelegateSetupServiceImpl implements DelegateSetupService {
           delegateGroupQuery.or(delegateGroupQuery.criteria(DelegateGroupKeys.name).contains(searchTerm),
               delegateGroupQuery.criteria(DelegateGroupKeys.description).contains(searchTerm),
               delegateGroupQuery.criteria(DelegateGroupKeys.identifier).contains(searchTerm),
-              delegateGroupQuery.criteria(DelegateGroupKeys.tags).contains(searchTerm));
+              delegateGroupQuery.criteria(DelegateGroupKeys.tags).contains(searchTerm),
+              delegateGroupQuery.criteria(DelegateGroupKeys.tagsFromYaml).contains(searchTerm));
       delegateGroupQuery.and(criteria);
     }
 
@@ -762,43 +761,6 @@ public class DelegateSetupServiceImpl implements DelegateSetupService {
         .map(
             delegateGroup -> DelegateGroupDTO.convertToDTO(delegateGroup, listDelegateGroupImplicitTags(delegateGroup)))
         .collect(Collectors.toList());
-  }
-
-  @Override
-  public List<String> listDelegateImplicitSelectors(Delegate delegate) {
-    List<String> delegateImplicitSelectors = new ArrayList<>();
-
-    if (isNotEmpty(delegate.getDelegateGroupId())) {
-      DelegateGroup delegateGroup =
-          delegateCache.getDelegateGroup(delegate.getAccountId(), delegate.getDelegateGroupId());
-
-      if (delegateGroup != null) {
-        delegateImplicitSelectors.add(delegateGroup.getName().toLowerCase());
-
-        if (isNotEmpty(delegateGroup.getTags())) {
-          delegateImplicitSelectors.addAll(delegateGroup.getTags());
-        }
-      }
-    } else if (isNotEmpty(delegate.getHostName())) {
-      delegateImplicitSelectors.add(delegate.getHostName().toLowerCase());
-    }
-
-    if (isNotEmpty(delegate.getDelegateName())) {
-      delegateImplicitSelectors.add(delegate.getDelegateName().toLowerCase());
-    }
-
-    DelegateProfile delegateProfile =
-        delegateCache.getDelegateProfile(delegate.getAccountId(), delegate.getDelegateProfileId());
-
-    if (delegateProfile != null && isNotEmpty(delegateProfile.getName())) {
-      delegateImplicitSelectors.add(delegateProfile.getName().toLowerCase());
-    }
-
-    if (delegateProfile != null && isNotEmpty(delegateProfile.getSelectors())) {
-      delegateImplicitSelectors.addAll(delegateProfile.getSelectors());
-    }
-
-    return delegateImplicitSelectors;
   }
 
   private boolean checkForDelegateGroupsHavingAllTags(DelegateGroup delegateGroup, DelegateGroupTags tags) {

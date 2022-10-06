@@ -43,6 +43,9 @@ public class DelegateGroupDTO implements YamlDTO {
     if (isNotEmpty(delegateGroup.getTags())) {
       tags.addAll(delegateGroup.getTags());
     }
+    if (isNotEmpty(delegateGroup.getTagsFromYaml())) {
+      tags.addAll(delegateGroup.getTagsFromYaml());
+    }
     if (isNotEmpty(implicitTags)) {
       tags.addAll(implicitTags);
     }

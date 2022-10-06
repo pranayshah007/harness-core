@@ -64,6 +64,7 @@ public class DelegateController {
         .includeScopes(delegate.getIncludeScopes())
         .excludeScopes(delegate.getExcludeScopes())
         .supportedTasks(delegate.getSupportedTaskTypes())
+        // comment: should update here also
         .tags(delegate.getTags())
         .connections(delegateConnections)
         .build();

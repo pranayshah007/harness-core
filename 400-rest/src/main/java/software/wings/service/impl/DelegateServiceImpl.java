@@ -133,6 +133,7 @@ import io.harness.delegate.service.intfc.DelegateNgTokenService;
 import io.harness.delegate.task.DelegateLogContext;
 import io.harness.delegate.telemetry.DelegateTelemetryPublisher;
 import io.harness.delegate.utils.DelegateEntityOwnerHelper;
+import io.harness.delegate.utils.DelegateTagsHelper;
 import io.harness.environment.SystemEnvironment;
 import io.harness.event.handler.impl.EventPublishHelper;
 import io.harness.eventsframework.EventsFrameworkConstants;
@@ -408,6 +409,8 @@ public class DelegateServiceImpl implements DelegateService {
   @Inject private DelegateVersionService delegateVersionService;
   @Inject private AgentMtlsEndpointService agentMtlsEndpointService;
 
+  @Inject private DelegateTagsHelper delegateTagsHelper;
+
   private final LoadingCache<String, String> delegateVersionCache =
       CacheBuilder.newBuilder()
           .maximumSize(10000)
@@ -558,6 +561,9 @@ public class DelegateServiceImpl implements DelegateService {
           if (isNotEmpty(group.getTags())) {
             groupSelectors.addAll(group.getTags());
           }
+          if (isNotEmpty(group.getTagsFromYaml())) {
+            groupSelectors.addAll(group.getTagsFromYaml());
+          }
 
           return groupSelectors;
         })
@@ -591,6 +597,9 @@ public class DelegateServiceImpl implements DelegateService {
       if (isNotEmpty(group.getTags())) {
         group.getTags().forEach(tag -> addDelegateSelector(tag, delegateSelectorMap, isConnected));
       }
+      if (isNotEmpty(group.getTagsFromYaml())) {
+        group.getTagsFromYaml().forEach(tag -> addDelegateSelector(tag, delegateSelectorMap, isConnected));
+      }
     });
     return delegateSelectorMap.values().stream().sorted(new DelegateSelectorComparator()).collect(Collectors.toList());
   }
@@ -619,12 +628,15 @@ public class DelegateServiceImpl implements DelegateService {
   @Override
   public Set<String> retrieveDelegateSelectors(Delegate delegate, boolean fetchFromCache) {
     Set<String> selectors = new HashSet<>(getUnionOfTags(delegate));
-    if (delegate.isNg()) {
+    if (delegate.isNg() || isGroupedCgDelegate(delegate)) {
       DelegateGroup delegateGroup = fetchFromCache
           ? delegateCache.getDelegateGroup(delegate.getAccountId(), delegate.getDelegateGroupId())
           : delegateSetupService.getDelegateGroup(delegate.getAccountId(), delegate.getDelegateGroupId());
-      if (delegateGroup != null && delegateGroup.getTags() != null) {
+      if (isNotEmpty(delegateGroup.getTags())) {
         selectors.addAll(delegateGroup.getTags());
+      }
+      if (isNotEmpty(delegateGroup.getTagsFromYaml())) {
+        selectors.addAll(delegateGroup.getTagsFromYaml());
       }
     }
     selectors.addAll(delegateSetupService.retrieveDelegateImplicitSelectors(delegate, fetchFromCache).keySet());
@@ -1212,6 +1224,10 @@ public class DelegateServiceImpl implements DelegateService {
 
   // UI will send a list of yaml+ui tags, so first separate out the respective tags and then update in db.
   public Delegate updateTagsFromUI(final Delegate delegate, @NotNull DelegateTags delegateTags) {
+    if (isGroupedCgDelegate(delegate)) {
+      return delegateTagsHelper.updateTagsFromUIForGroupedCGDelegates(delegate, delegateTags);
+    }
+
     List<String> tagsFromYaml = Optional.ofNullable(delegate.getTagsFromYaml()).orElseGet(Collections::emptyList);
 
     List<String> tagsFromUI = delegateTags.getTags();
@@ -1226,17 +1242,12 @@ public class DelegateServiceImpl implements DelegateService {
 
     UpdateOperations<Delegate> updateOperations = persistence.createUpdateOperations(Delegate.class);
     setUnset(updateOperations, DelegateKeys.tags, updatedListOfTagsFromUI);
+    setUnset(updateOperations, DelegateKeys.tagsFromYaml, updatedListOfTagsFromYaml);
+
     log.info("Updating delegate tags : Delegate:{} tags:{}", delegate.getUuid(), delegateTags.getTags());
 
     Delegate updatedDelegate = null;
-    if (isGroupedCgDelegate(delegate)) {
-      // update for delegateGroup here
-      log.info("Updating tags for all delegates in a group {}", delegate.getDelegateGroupName());
-      updatedDelegate = updateAllCgDelegatesInGroup(delegate, updateOperations, "TAGS");
-    } else {
-      setUnset(updateOperations, DelegateKeys.tagsFromYaml, updatedListOfTagsFromYaml);
-      updatedDelegate = updateDelegate(delegate, updateOperations);
-    }
+    updatedDelegate = updateDelegate(delegate, updateOperations);
 
     auditServiceHelper.reportForAuditingUsingAccountId(
         delegate.getAccountId(), delegate, updatedDelegate, Type.UPDATE_TAG);
@@ -2625,18 +2636,18 @@ public class DelegateServiceImpl implements DelegateService {
 
     Optional<String> delegateTokenName = getDelegateTokenNameFromGlobalContext();
 
-    // tokenName here will be used for auditing the delegate register event
-    DelegateSetupDetails delegateSetupDetails = DelegateSetupDetails.builder()
-                                                    .name(delegateParams.getDelegateName())
-                                                    .hostName(delegateParams.getHostName())
-                                                    .orgIdentifier(orgIdentifier)
-                                                    .projectIdentifier(projectIdentifier)
-                                                    .description(delegateParams.getDescription())
-                                                    .delegateType(delegateParams.getDelegateType())
-                                                    .tokenName(delegateTokenName.orElse(null))
-                                                    .build();
-
-    // TODO: ARPIT for cg grouped delegates we should save tags only in delegateGroup
+    // tokenName and tags here will be used for auditing the delegate register event
+    DelegateSetupDetails delegateSetupDetails =
+        DelegateSetupDetails.builder()
+            .name(delegateParams.getDelegateName())
+            .hostName(delegateParams.getHostName())
+            .orgIdentifier(orgIdentifier)
+            .projectIdentifier(projectIdentifier)
+            .description(delegateParams.getDescription())
+            .delegateType(delegateParams.getDelegateType())
+            .tokenName(delegateTokenName.orElse(null))
+            .tags(isNotEmpty(delegateParams.getTags()) ? new HashSet<>(delegateParams.getTags()) : null)
+            .build();
 
     if (delegateParams.isNg()) {
       final DelegateGroup delegateGroup =
@@ -2645,10 +2656,9 @@ public class DelegateServiceImpl implements DelegateService {
       delegateGroupName = delegateGroup.getName();
     }
 
-    if (isNotBlank(delegateGroupId) && isNotEmpty(delegateParams.getTags())) {
-      persistence.update(persistence.createQuery(DelegateGroup.class).filter(DelegateGroupKeys.uuid, delegateGroupId),
-          persistence.createUpdateOperations(DelegateGroup.class)
-              .set(DelegateGroupKeys.tags, new HashSet<>(delegateParams.getTags())));
+    if (isNotBlank(delegateGroupId)) {
+      delegateTagsHelper.updateYamlTagsForGroupedDelegates(
+          delegateParams.getAccountId(), delegateGroupId, delegateParams.getTags());
     }
 
     final DelegateEntityOwner owner = DelegateEntityOwnerHelper.buildOwner(orgIdentifier, projectIdentifier);
@@ -2680,8 +2690,8 @@ public class DelegateServiceImpl implements DelegateService {
             .supportedTaskTypes(delegateParams.getSupportedTaskTypes())
             .delegateRandomToken(delegateParams.getDelegateRandomToken())
             .keepAlivePacket(delegateParams.isKeepAlivePacket())
-            // if delegate is ng then save tags only in delegate group.
-            .tagsFromYaml(delegateParams.isNg() ? null : delegateParams.getTags())
+            // if delegate is grouped then save tags only in delegate group.
+            .tagsFromYaml(isNotBlank(delegateGroupId) ? null : delegateParams.getTags())
             .polllingModeEnabled(delegateParams.isPollingModeEnabled())
             .proxy(delegateParams.isProxy())
             .sampleDelegate(delegateParams.isSampleDelegate())
@@ -2709,7 +2719,7 @@ public class DelegateServiceImpl implements DelegateService {
       return delegateRegisterResponse;
     } else {
       Delegate registeredDelegate = upsertDelegateOperation(existingDelegate, delegate, delegateSetupDetails);
-      updateDelegateYamlTagsAfterReRegistering(
+      delegateTagsHelper.updateDelegateYamlTagsAfterReRegistering(
           registeredDelegate.getAccountId(), registeredDelegate.getUuid(), delegate.getTagsFromYaml());
       return registerResponseFromDelegate(registeredDelegate);
     }
@@ -2825,18 +2835,6 @@ public class DelegateServiceImpl implements DelegateService {
       }
     }
     return registeredDelegate;
-  }
-
-  private void updateDelegateYamlTagsAfterReRegistering(
-      @NotBlank String accountId, @NotBlank String delegateId, @Nullable List<String> yamlTags) {
-    Query<Delegate> delegateQuery = persistence.createQuery(Delegate.class)
-                                        .filter(DelegateKeys.accountId, accountId)
-                                        .filter(DelegateKeys.uuid, delegateId);
-
-    UpdateOperations<Delegate> updateOperations = persistence.createUpdateOperations(Delegate.class);
-    setUnset(updateOperations, DelegateKeys.tagsFromYaml, yamlTags);
-
-    persistence.update(delegateQuery, updateOperations);
   }
 
   private void broadcastDelegateHeartBeatResponse(Delegate delegate, Delegate registeredDelegate) {
@@ -3167,7 +3165,6 @@ public class DelegateServiceImpl implements DelegateService {
         : null;
     K8sConfigDetails k8sConfigDetails =
         delegateSetupDetails != null ? delegateSetupDetails.getK8sConfigDetails() : null;
-    final Set<String> tags = delegateSetupDetails != null ? delegateSetupDetails.getTags() : null;
 
     DelegateEntityOwner owner = DelegateEntityOwnerHelper.buildOwner(orgIdentifier, projectIdentifier);
 
@@ -3205,7 +3202,6 @@ public class DelegateServiceImpl implements DelegateService {
 
     setUnset(updateOperations, DelegateGroupKeys.owner, owner);
     setUnset(updateOperations, DelegateGroupKeys.description, description);
-    setUnset(updateOperations, DelegateGroupKeys.tags, tags);
 
     if (sizeDetails != null) {
       setUnset(updateOperations, DelegateGroupKeys.sizeDetails, sizeDetails);
@@ -3661,7 +3657,8 @@ public class DelegateServiceImpl implements DelegateService {
       throw new InvalidRequestException(
           format("Delegate with accountId: %s and delegateId: %s does not exists.", accountId, delegateId));
     }
-    return DelegateDTO.convertToDTO(delegate, delegateSetupService.listDelegateImplicitSelectors(delegate));
+    return DelegateDTO.convertToDTO(
+        delegate, new ArrayList<>(delegateSetupService.retrieveDelegateImplicitSelectors(delegate, false).keySet()));
   }
 
   @Override
@@ -3735,7 +3732,6 @@ public class DelegateServiceImpl implements DelegateService {
     delegate.setExcludeScopes(existingInactiveDelegate.getExcludeScopes());
     delegate.setIncludeScopes(existingInactiveDelegate.getIncludeScopes());
     delegate.setDelegateProfileId(existingInactiveDelegate.getDelegateProfileId());
-    delegate.setTags(existingInactiveDelegate.getTags());
     delegate.setKeywords(existingInactiveDelegate.getKeywords());
     delegate.setDescription(existingInactiveDelegate.getDescription());
   }
@@ -3754,8 +3750,6 @@ public class DelegateServiceImpl implements DelegateService {
         if ("SCOPES".equals(fieldBeingUpdate)) {
           log.info("Updating delegate scopes: includeScopes:{} excludeScopes:{}", delegate.getIncludeScopes(),
               delegate.getExcludeScopes());
-        } else if ("TAGS".equals(fieldBeingUpdate)) {
-          log.info("Updating delegate tags : tags:{}", delegate.getTags());
         } else {
           log.info("Updating grouped CG delegate {}", delegate.getDelegateName());
         }
@@ -4357,12 +4351,14 @@ public class DelegateServiceImpl implements DelegateService {
     return delegateList.stream()
         .filter(delegate -> checkForDelegateHavingAllTags(delegate, tags))
         .map(delegate
-            -> DelegateDTO.convertToDTO(delegate, delegateSetupService.listDelegateImplicitSelectors(delegate)))
+            -> DelegateDTO.convertToDTO(delegate,
+                new ArrayList<>(delegateSetupService.retrieveDelegateImplicitSelectors(delegate, false).keySet())))
         .collect(Collectors.toList());
   }
 
   private boolean checkForDelegateHavingAllTags(Delegate delegate, DelegateTags tags) {
-    List<String> delegateTags = delegateSetupService.listDelegateImplicitSelectors(delegate);
+    List<String> delegateTags =
+        new ArrayList<>(delegateSetupService.retrieveDelegateImplicitSelectors(delegate, false).keySet());
     if (isNotEmpty(delegate.getTags())) {
       delegateTags.addAll(delegate.getTags());
     }

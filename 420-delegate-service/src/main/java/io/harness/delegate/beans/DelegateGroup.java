@@ -67,6 +67,8 @@ public class DelegateGroup implements PersistentEntity, UuidAware {
 
   private Set<String> tags;
 
+  private Set<String> tagsFromYaml;
+
   @Builder.Default private DelegateGroupStatus status = DelegateGroupStatus.ENABLED;
 
   @FdTtlIndex private Date validUntil;

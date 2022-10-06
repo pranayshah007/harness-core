@@ -78,6 +78,4 @@ public interface DelegateSetupService {
 
   List<DelegateGroupDTO> listDelegateGroupsHavingTags(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, DelegateGroupTags tags);
-
-  List<String> listDelegateImplicitSelectors(Delegate delegate);
 }

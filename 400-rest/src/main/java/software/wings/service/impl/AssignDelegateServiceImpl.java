@@ -1076,10 +1076,17 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
   private enum ScopeMatchResult { SCOPE_MATCHED, ALLOWED_WILDCARD, SCOPE_NOT_MATCHED }
 
   private Optional<List<String>> getDelegateTags(Delegate delegate) {
-    if (delegate.isNg()) {
+    // ng and cg grouped delegates
+    if (isNotEmpty(delegate.getDelegateGroupId())) {
       DelegateGroup delegateGroup =
           delegateCache.getDelegateGroup(delegate.getAccountId(), delegate.getDelegateGroupId());
-      List<String> tags = new ArrayList<>(delegateGroup.getTags());
+      List<String> tags = new ArrayList<>();
+      if (isNotEmpty(delegateGroup.getTagsFromYaml())) {
+        tags.addAll(delegateGroup.getTagsFromYaml());
+      }
+      if (isNotEmpty(delegateGroup.getTags())) {
+        tags.addAll(delegateGroup.getTags());
+      }
       return Optional.of(tags);
     }
     return Optional.ofNullable(delegate.getTags());

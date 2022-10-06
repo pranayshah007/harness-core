@@ -54,6 +54,7 @@ import retrofit2.http.Body;
 @TargetModule(HarnessModule._420_DELEGATE_SERVICE)
 @OwnedBy(DEL)
 public class DelegateTagsResource {
+  // modify these apis also
   private final DelegateService delegateService;
 
   @Inject
