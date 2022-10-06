@@ -23,6 +23,7 @@ import io.harness.cvng.analysis.beans.ServiceGuardTimeSeriesAnalysisDTO;
 import io.harness.cvng.analysis.beans.ServiceGuardTxnMetricAnalysisDataDTO.MetricSumDTO;
 import io.harness.cvng.analysis.beans.TimeSeriesAnomaliesDTO;
 import io.harness.cvng.analysis.beans.TimeSeriesRecordDTO;
+import io.harness.cvng.analysis.entities.CanaryMetricLearningEngineTask;
 import io.harness.cvng.analysis.entities.DeploymentTimeSeriesAnalysis;
 import io.harness.cvng.analysis.entities.LearningEngineTask;
 import io.harness.cvng.analysis.entities.LearningEngineTask.ExecutionStatus;
@@ -115,12 +116,10 @@ public class TimeSeriesAnalysisServiceImpl implements TimeSeriesAnalysisService 
 
   @Override
   public List<String> scheduleCanaryAnalysis(AnalysisInput analysisInput) {
-    return null;
-  }
-
-  @Override
-  public List<String> scheduleImprovisedCanaryAnalysis(AnalysisInput analysisInput) {
-    return null;
+    CanaryMetricLearningEngineTask timeSeriesTask = createCanaryMetricLearningEngineTask(analysisInput);
+    learningEngineTaskService.createLearningEngineTasks(Arrays.asList(timeSeriesTask));
+    // TODO: find a good way to return all taskIDs
+    return Arrays.asList(timeSeriesTask.getUuid());
   }
 
   @Override
@@ -221,6 +220,48 @@ public class TimeSeriesAnalysisServiceImpl implements TimeSeriesAnalysisService 
     return timeSeriesLearningEngineTask;
   }
 
+  private CanaryMetricLearningEngineTask createCanaryMetricLearningEngineTask(AnalysisInput input) {
+    String taskId = generateUuid();
+    VerificationJobInstance verificationJobInstance = verificationJobInstanceService.getVerificationJobInstance(
+        verificationTaskService.getVerificationJobInstanceId(input.getVerificationTaskId()));
+    CanaryBlueGreenVerificationJob verificationJob =
+        (CanaryBlueGreenVerificationJob) verificationJobInstance.getResolvedJob();
+    Preconditions.checkNotNull(verificationJobInstance, "verificationJobInstance can not be null");
+    CanaryMetricLearningEngineTask timeSeriesLearningEngineTask =
+        CanaryMetricLearningEngineTask.builder()
+            .preDeploymentDataUrl(preDeploymentDataUrlCanary(input, verificationJobInstance, verificationJob))
+            .postDeploymentDataUrl(postDeploymentDataUrlCanary(input, verificationJobInstance))
+            .dataLength(
+                (int) Duration.between(verificationJobInstance.getStartTime(), input.getStartTime()).toMinutes() + 1)
+            .metricTemplateUrl(createMetricTemplateUrl(input))
+            .tolerance(verificationJob.getSensitivity().getTolerance())
+            .build();
+
+    timeSeriesLearningEngineTask.setLearningEngineTaskType(input.getLearningEngineTaskType());
+    timeSeriesLearningEngineTask.setVerificationTaskId(input.getVerificationTaskId());
+    timeSeriesLearningEngineTask.setAnalysisType(LearningEngineTaskType.TIME_SERIES_CANARY);
+    timeSeriesLearningEngineTask.setAnalysisStartTime(input.getStartTime());
+    timeSeriesLearningEngineTask.setAnalysisEndTime(input.getEndTime());
+    timeSeriesLearningEngineTask.setAnalysisEndEpochMinute(
+        TimeUnit.MILLISECONDS.toMinutes(input.getEndTime().toEpochMilli()));
+    timeSeriesLearningEngineTask.setAnalysisSaveUrl(createVerificationTaskAnalysisSaveUrl(taskId));
+    timeSeriesLearningEngineTask.setFailureUrl(learningEngineTaskService.createFailureUrl(taskId));
+    timeSeriesLearningEngineTask.setUuid(taskId);
+    timeSeriesLearningEngineTask.setControlHosts(input.getControlHosts());
+    timeSeriesLearningEngineTask.setTestHosts(input.getTestHosts());
+
+    DeploymentVerificationTaskInfo deploymentVerificationTaskInfo =
+        DeploymentVerificationTaskInfo.builder()
+            .deploymentStartTime(verificationJobInstance.getDeploymentStartTime().toEpochMilli())
+            .newHostsTrafficSplitPercentage(verificationJobInstance.getNewHostsTrafficSplitPercentage())
+            .newVersionHosts(verificationJobInstance.getNewVersionHosts())
+            .oldVersionHosts(verificationJobInstance.getOldVersionHosts())
+            .build();
+    timeSeriesLearningEngineTask.setDeploymentVerificationTaskInfo(deploymentVerificationTaskInfo);
+
+    return timeSeriesLearningEngineTask;
+  }
+
   private String createVerificationTaskAnalysisSaveUrl(String taskId) {
     URIBuilder uriBuilder = new URIBuilder();
     uriBuilder.setPath(
@@ -301,6 +342,17 @@ public class TimeSeriesAnalysisServiceImpl implements TimeSeriesAnalysisService 
     return getUriString(uriBuilder);
   }
 
+  private String postDeploymentDataUrlCanary(AnalysisInput input, VerificationJobInstance verificationJobInstance) {
+    URIBuilder uriBuilder = new URIBuilder();
+    uriBuilder.setPath(SERVICE_BASE_URL + "/" + TIMESERIES_ANALYSIS_RESOURCE + "/time-series-data");
+    uriBuilder.addParameter("verificationTaskId", input.getVerificationTaskId());
+    uriBuilder.addParameter("startTime", Long.toString(verificationJobInstance.getStartTime().toEpochMilli()));
+    uriBuilder.addParameter("endTime", Long.toString(input.getEndTime().toEpochMilli()));
+    uriBuilder.addParameter("controlHosts", String.join(",", input.getControlHosts()));
+    uriBuilder.addParameter("testHosts", String.join(",", input.getTestHosts()));
+    return getUriString(uriBuilder);
+  }
+
   private String preDeploymentDataUrl(
       AnalysisInput input, VerificationJobInstance verificationJobInstance, VerificationJob verificationJob) {
     Optional<TimeRange> preDeploymentTimeRange =
@@ -312,6 +364,22 @@ public class TimeSeriesAnalysisServiceImpl implements TimeSeriesAnalysisService 
     uriBuilder.addParameter("verificationTaskId", input.getVerificationTaskId());
     uriBuilder.addParameter("startTime", Long.toString(preDeploymentTimeRange.get().getStartTime().toEpochMilli()));
     uriBuilder.addParameter("endTime", Long.toString(preDeploymentTimeRange.get().getEndTime().toEpochMilli()));
+    return getUriString(uriBuilder);
+  }
+
+  private String preDeploymentDataUrlCanary(
+      AnalysisInput input, VerificationJobInstance verificationJobInstance, VerificationJob verificationJob) {
+    Optional<TimeRange> preDeploymentTimeRange =
+        verificationJob.getPreActivityTimeRange(verificationJobInstance.getDeploymentStartTime());
+    Preconditions.checkState(preDeploymentTimeRange.isPresent(),
+        "Pre-deployment time range is empty for canary analysis task. This should not happen");
+    URIBuilder uriBuilder = new URIBuilder();
+    uriBuilder.setPath(SERVICE_BASE_URL + "/" + TIMESERIES_ANALYSIS_RESOURCE + "/time-series-data");
+    uriBuilder.addParameter("verificationTaskId", input.getVerificationTaskId());
+    uriBuilder.addParameter("startTime", Long.toString(preDeploymentTimeRange.get().getStartTime().toEpochMilli()));
+    uriBuilder.addParameter("endTime", Long.toString(preDeploymentTimeRange.get().getEndTime().toEpochMilli()));
+    uriBuilder.addParameter("controlHosts", String.join(",", input.getControlHosts()));
+    uriBuilder.addParameter("testHosts", String.join(",", input.getTestHosts()));
     return getUriString(uriBuilder);
   }
 
@@ -518,6 +586,17 @@ public class TimeSeriesAnalysisServiceImpl implements TimeSeriesAnalysisService 
       String verificationTaskId, Instant startTime, Instant endTime) {
     List<TimeSeriesRecordDTO> timeSeriesRecordDTOS =
         timeSeriesRecordService.getTimeSeriesRecordDTOs(verificationTaskId, startTime, endTime);
+    // in LE we pass metric identifier as the metric_name, as metric_name is the identifier for LE.
+    timeSeriesRecordDTOS.forEach(
+        timeSeriesRecordDTO -> timeSeriesRecordDTO.setMetricName(timeSeriesRecordDTO.getMetricIdentifier()));
+    return timeSeriesRecordDTOS;
+  }
+
+  @Override
+  public List<TimeSeriesRecordDTO> getMetricTimeSeriesRecordDTOs(
+      String verificationTaskId, Instant startTime, Instant endTime, Set<String> controlHosts, Set<String> testHosts) {
+    List<TimeSeriesRecordDTO> timeSeriesRecordDTOS = timeSeriesRecordService.getMetricTimeSeriesRecordDTOs(
+        verificationTaskId, startTime, endTime, controlHosts, testHosts);
     // in LE we pass metric identifier as the metric_name, as metric_name is the identifier for LE.
     timeSeriesRecordDTOS.forEach(
         timeSeriesRecordDTO -> timeSeriesRecordDTO.setMetricName(timeSeriesRecordDTO.getMetricIdentifier()));

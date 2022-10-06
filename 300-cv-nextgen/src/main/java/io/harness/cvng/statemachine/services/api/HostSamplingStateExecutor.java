@@ -74,43 +74,45 @@ public class HostSamplingStateExecutor extends AnalysisStateExecutor<HostSamplin
     Set<String> commonHosts = new HashSet<>(preDeploymentHosts);
     commonHosts.retainAll(postDeploymentHosts);
     newHosts.removeAll(commonHosts);
+    AnalysisInput.AnalysisInputBuilder analysisInputBuilder = AnalysisInput.builder();
     switch (verificationJob.getType()) {
       case CANARY:
         // always canary
-        analysisState.setLearningEngineTaskType(LearningEngineTaskType.CANARY_METRIC);
+        analysisInputBuilder.learningEngineTaskType(LearningEngineTaskType.CANARY_METRIC);
         analysisState.setStatus(AnalysisStatus.RUNNING);
         if (newHosts.isEmpty()) {
           // predeployment nodes: n1, n2
           // postdeployment nodes: n1, n2
           Set<String> controlHosts = new HashSet<>(postDeploymentHosts);
           Set<String> testHosts = new HashSet<>();
-          analysisState.setControlHosts(controlHosts);
-          analysisState.setTestHosts(testHosts);
+          analysisInputBuilder = analysisInputBuilder.controlHosts(controlHosts).testHosts(testHosts);
+          analysisState.setInputs(analysisInputBuilder.build());
         } else if (!newHosts.equals(postDeploymentHosts)) {
           // predeployment nodes: n1, n2
           // postdeployment nodes: n1, n2, n3
           Set<String> testHosts = new HashSet<>(newHosts);
           Set<String> controlHosts = new HashSet<>(postDeploymentHosts);
           controlHosts.removeAll(testHosts);
-          analysisState.setControlHosts(controlHosts);
-          analysisState.setTestHosts(testHosts);
+          analysisInputBuilder = analysisInputBuilder.controlHosts(controlHosts).testHosts(testHosts);
+          analysisState.setInputs(analysisInputBuilder.build());
         } else {
           // predeployment nodes: n1, n2
           // postdeploymnet nodes: n3, n4
           Set<String> testHosts = new HashSet<>();
           Set<String> controlHosts = new HashSet<>();
-          analysisState.setControlHosts(controlHosts);
-          analysisState.setTestHosts(testHosts);
+          analysisInputBuilder = analysisInputBuilder.controlHosts(controlHosts).testHosts(testHosts);
+          analysisState.setInputs(analysisInputBuilder.build());
         }
         break;
       case ROLLING:
       case BLUE_GREEN:
         // always improvised canary
         analysisState.setLearningEngineTaskType(LearningEngineTaskType.BEFORE_AFTER_DEPLOYMENT_METRIC);
+        analysisInputBuilder.learningEngineTaskType(LearningEngineTaskType.BEFORE_AFTER_DEPLOYMENT_METRIC);
         Set<String> controlHosts = new HashSet<>(preDeploymentHosts);
         Set<String> testHosts = new HashSet<>(postDeploymentHosts);
-        analysisState.setControlHosts(controlHosts);
-        analysisState.setTestHosts(testHosts);
+        analysisInputBuilder = analysisInputBuilder.controlHosts(controlHosts).testHosts(testHosts);
+        analysisState.setInputs(analysisInputBuilder.build());
         break;
       case AUTO:
         if (newHosts.isEmpty()) {
@@ -119,8 +121,10 @@ public class HostSamplingStateExecutor extends AnalysisStateExecutor<HostSamplin
           // postdeployment nodes: n1, n2
           controlHosts = new HashSet<>(preDeploymentHosts);
           testHosts = new HashSet<>(postDeploymentHosts);
-          analysisState.setControlHosts(controlHosts);
-          analysisState.setTestHosts(testHosts);
+          analysisInputBuilder = analysisInputBuilder.controlHosts(controlHosts)
+                                     .testHosts(testHosts)
+                                     .learningEngineTaskType(LearningEngineTaskType.BEFORE_AFTER_DEPLOYMENT_METRIC);
+          analysisState.setInputs(analysisInputBuilder.build());
           analysisState.setLearningEngineTaskType(LearningEngineTaskType.BEFORE_AFTER_DEPLOYMENT_METRIC);
         } else {
           // predeployment nodes: n1, n2 (or n1, n2)
@@ -129,10 +133,15 @@ public class HostSamplingStateExecutor extends AnalysisStateExecutor<HostSamplin
           testHosts = new HashSet<>(newHosts);
           analysisState.setTestHosts(testHosts);
           analysisState.setControlHosts(controlHosts);
+          analysisInputBuilder = analysisInputBuilder.controlHosts(controlHosts).testHosts(testHosts);
           if (newHosts.equals(postDeploymentHosts)) {
             analysisState.setLearningEngineTaskType(LearningEngineTaskType.BEFORE_AFTER_DEPLOYMENT_METRIC);
+            analysisInputBuilder.learningEngineTaskType(LearningEngineTaskType.BEFORE_AFTER_DEPLOYMENT_METRIC);
+            analysisState.setInputs(analysisInputBuilder.build());
           } else {
             analysisState.setLearningEngineTaskType(LearningEngineTaskType.CANARY_METRIC);
+            analysisInputBuilder.learningEngineTaskType(LearningEngineTaskType.CANARY_METRIC);
+            analysisState.setInputs(analysisInputBuilder.build());
           }
         }
         break;
@@ -174,10 +183,7 @@ public class HostSamplingStateExecutor extends AnalysisStateExecutor<HostSamplin
   public AnalysisState handleTransition(HostSamplingState analysisState) {
     analysisState.setStatus(AnalysisStatus.SUCCESS);
     CanaryAnalysisState canaryAnalysisState = new CanaryAnalysisState();
-    canaryAnalysisState.setLearningEngineTaskType(analysisState.getLearningEngineTaskType());
     canaryAnalysisState.setInputs(analysisState.getInputs());
-    canaryAnalysisState.setControlHosts(analysisState.getControlHosts());
-    canaryAnalysisState.setTestHosts(analysisState.getTestHosts());
     return canaryAnalysisState;
   }
 

@@ -29,6 +29,7 @@ import io.swagger.annotations.ApiOperation;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -53,9 +54,10 @@ public class TimeSeriesAnalysisResource {
       value = "get test timeseries data for a verification job and risk analysis", nickname = "getTimeSeriesRecords")
   public RestResponse<List<TimeSeriesRecordDTO>>
   getTimeSeriesRecords(@QueryParam("verificationTaskId") @NotNull String verificationTaskId,
-      @QueryParam("startTime") @NotNull Long startTime, @QueryParam("endTime") @NotNull Long endTime) {
-    return new RestResponse<>(timeSeriesAnalysisService.getTimeSeriesRecordDTOs(
-        verificationTaskId, Instant.ofEpochMilli(startTime), Instant.ofEpochMilli(endTime)));
+      @QueryParam("startTime") @NotNull Long startTime, @QueryParam("endTime") @NotNull Long endTime,
+      @QueryParam("controlHosts") Set<String> controlHosts, @QueryParam("testHosts") Set<String> testHosts) {
+    return new RestResponse<>(timeSeriesAnalysisService.getMetricTimeSeriesRecordDTOs(
+        verificationTaskId, Instant.ofEpochMilli(startTime), Instant.ofEpochMilli(endTime), controlHosts, testHosts));
   }
 
   @GET

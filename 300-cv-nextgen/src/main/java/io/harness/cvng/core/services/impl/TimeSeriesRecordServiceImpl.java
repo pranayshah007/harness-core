@@ -524,6 +524,32 @@ public class TimeSeriesRecordServiceImpl implements TimeSeriesRecordService {
     return timeSeriesRecordDTOS;
   }
 
+  @Override
+  public List<TimeSeriesRecordDTO> getMetricTimeSeriesRecordDTOs(
+      String verificationTaskId, Instant startTime, Instant endTime, Set<String> controlHosts, Set<String> testHosts) {
+    List<TimeSeriesRecord> timeSeriesRecords = getTimeSeriesRecords(verificationTaskId, startTime, endTime);
+    List<TimeSeriesRecordDTO> timeSeriesRecordDTOS = new ArrayList<>();
+    timeSeriesRecords.forEach(timeSeriesRecord -> {
+      for (TimeSeriesRecord.TimeSeriesGroupValue record : timeSeriesRecord.getTimeSeriesGroupValues()) {
+        if (record.getTimeStamp().compareTo(startTime) >= 0 && record.getTimeStamp().compareTo(endTime) < 0
+            && (controlHosts.contains(timeSeriesRecord.getHost()) || testHosts.contains(timeSeriesRecord.getHost()))) {
+          TimeSeriesRecordDTO timeSeriesRecordDTO =
+              TimeSeriesRecordDTO.builder()
+                  .groupName(record.getGroupName())
+                  .host(timeSeriesRecord.getHost())
+                  .metricName(timeSeriesRecord.getMetricName())
+                  .metricIdentifier(timeSeriesRecord.getMetricIdentifier())
+                  .epochMinute(TimeUnit.MILLISECONDS.toMinutes(record.getTimeStamp().toEpochMilli()))
+                  .verificationTaskId(timeSeriesRecord.getVerificationTaskId())
+                  .metricValue(record.getMetricValue())
+                  .build();
+          timeSeriesRecordDTOS.add(timeSeriesRecordDTO);
+        }
+      }
+    });
+    return timeSeriesRecordDTOS;
+  }
+
   private TimeSeriesTestDataDTO getSortedListOfTimeSeriesRecords(
       String cvConfigId, Map<String, List<TimeSeriesRecord.TimeSeriesGroupValue>> unsortedTimeseries) {
     if (isNotEmpty(unsortedTimeseries)) {
