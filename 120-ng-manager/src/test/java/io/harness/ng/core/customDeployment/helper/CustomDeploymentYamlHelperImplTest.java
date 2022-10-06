@@ -229,6 +229,22 @@ public class CustomDeploymentYamlHelperImplTest extends CategoryTest {
   @Test
   @Owner(developers = RISHABH)
   @Category(UnitTests.class)
+  public void testGetReferencesFromYamlInvalidRef() {
+    String template = readFile("templateInvalidReferences.yaml", TEMPLATE_RESOURCE_PATH_PREFIX);
+    doReturn(TemplateResponseDTO.builder()
+                 .yaml(readFile("templateInvalidReferences.yaml", TEMPLATE_RESOURCE_PATH_PREFIX))
+                 .build())
+        .when(customDeploymentYamlHelper)
+        .getScopedTemplateResponseDTO(anyString(), anyString(), anyString(), anyString(), anyString());
+
+    assertThatThrownBy(() -> customDeploymentYamlHelper.getReferencesFromYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, template))
+        .hasMessage(
+            "Template yaml provided does not have valid entity references: step template linked cannot have empty identifier");
+  }
+
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
   public void testGetStepTemplateRefFromYaml() {
     String infraYaml = readFile("infrastructure.yaml", INFRA_RESOURCE_PATH_PREFIX);
     StepTemplateRef stepTemplateRef = customDeploymentYamlHelper.getStepTemplateRefFromYaml(infraYaml, "ACCOUNT");
@@ -617,6 +633,102 @@ public class CustomDeploymentYamlHelperImplTest extends CategoryTest {
     String templateYaml = readFile("templateWithNoScriptNode.yaml", TEMPLATE_RESOURCE_PATH_PREFIX);
     assertThatThrownBy(() -> customDeploymentYamlHelper.validateTemplateYaml(templateYaml))
         .hasMessage("Template yaml is not valid: Template yaml provided does not have Fetch Instance Script in it.");
+  }
+
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void testGetUpdatedYamlTemplateNoVariables() {
+    String templateYaml = readFile("templateWithNoVariables.yaml", TEMPLATE_RESOURCE_PATH_PREFIX);
+    String infraYaml = readFile("infrastructure.yaml", INFRA_RESOURCE_PATH_PREFIX);
+    String updatedYaml = customDeploymentYamlHelper.getUpdatedYaml(templateYaml, infraYaml, ACCOUNT_ID);
+    log.info(updatedYaml);
+    assertThat(updatedYaml).isEqualTo(readFile("infrastructureWithEmptyVariables.yaml", INFRA_RESOURCE_PATH_PREFIX));
+  }
+
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void testGetUpdatedYamlAllVariables() {
+    String templateYaml = readFile("templateWithAllVariables.yaml", TEMPLATE_RESOURCE_PATH_PREFIX);
+    String infraYaml = readFile("infrastructureWithNoVariables.yaml", INFRA_RESOURCE_PATH_PREFIX);
+    assertThat(customDeploymentYamlHelper.getUpdatedYaml(templateYaml, infraYaml, ACCOUNT_ID))
+        .isEqualTo(readFile("infrastructure.yaml", INFRA_RESOURCE_PATH_PREFIX));
+  }
+
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void testGetUpdatedYamlDiffTypeVariable() {
+    String templateYaml = readFile("template.yaml", TEMPLATE_RESOURCE_PATH_PREFIX);
+    String infraYaml = readFile("infrastructureWithDiffVarType.yaml", INFRA_RESOURCE_PATH_PREFIX);
+    assertThat(customDeploymentYamlHelper.getUpdatedYaml(templateYaml, infraYaml, ACCOUNT_ID))
+        .isEqualTo(readFile("infrastructureWithSameVarType.yaml", INFRA_RESOURCE_PATH_PREFIX));
+  }
+
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void testGetUpdatedYamlNoChange() {
+    String templateYaml = readFile("template.yaml", TEMPLATE_RESOURCE_PATH_PREFIX);
+    String infraYaml = readFile("infrastructureWithSameVarType.yaml", INFRA_RESOURCE_PATH_PREFIX);
+    assertThat(customDeploymentYamlHelper.getUpdatedYaml(templateYaml, infraYaml, ACCOUNT_ID))
+        .isEqualTo(readFile("infrastructureWithSameVarType.yaml", INFRA_RESOURCE_PATH_PREFIX));
+  }
+
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void testGetUpdatedYamlInvalidTemplate() {
+    String templateYaml = readFile("service.yaml", SERVICE_RESOURCE_PATH_PREFIX);
+    String infraYaml = readFile("infrastructureWithSameVarType.yaml", INFRA_RESOURCE_PATH_PREFIX);
+    assertThatThrownBy(() -> customDeploymentYamlHelper.getUpdatedYaml(templateYaml, infraYaml, ACCOUNT_ID))
+        .hasMessage(
+            "Error Encountered in infra updation while reading yamls for template and Infra: template yaml cannot be empty");
+  }
+
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void testGetUpdatedYamlNoTemplateSpec() {
+    String templateYaml = readFile("templateWithNoSpec.yaml", TEMPLATE_RESOURCE_PATH_PREFIX);
+    String infraYaml = readFile("infrastructureWithSameVarType.yaml", INFRA_RESOURCE_PATH_PREFIX);
+    assertThatThrownBy(() -> customDeploymentYamlHelper.getUpdatedYaml(templateYaml, infraYaml, ACCOUNT_ID))
+        .hasMessage(
+            "Error Encountered in infra updation while reading yamls for template and Infra: template yaml spec cannot be empty");
+  }
+
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void testGetUpdatedYamlNoTemplateInfra() {
+    String templateYaml = readFile("templateWithNoInfra.yaml", TEMPLATE_RESOURCE_PATH_PREFIX);
+    String infraYaml = readFile("infrastructureWithSameVarType.yaml", INFRA_RESOURCE_PATH_PREFIX);
+    assertThatThrownBy(() -> customDeploymentYamlHelper.getUpdatedYaml(templateYaml, infraYaml, ACCOUNT_ID))
+        .hasMessage(
+            "Error Encountered in infra updation while reading yamls for template and Infra: template yaml infra cannot be empty");
+  }
+
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void testGetUpdatedYamlNoInfraDef() {
+    String templateYaml = readFile("template.yaml", TEMPLATE_RESOURCE_PATH_PREFIX);
+    String infraYaml = readFile("template.yaml", TEMPLATE_RESOURCE_PATH_PREFIX);
+    assertThatThrownBy(() -> customDeploymentYamlHelper.getUpdatedYaml(templateYaml, infraYaml, ACCOUNT_ID))
+        .hasMessage(
+            "Error Encountered in infra updation while reading yamls for template and Infra: infra yaml cannot be empty");
+  }
+
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void testGetUpdatedYamlNoInfraSpec() {
+    String templateYaml = readFile("template.yaml", TEMPLATE_RESOURCE_PATH_PREFIX);
+    String infraYaml = readFile("infrastructureWithoutSpec.yaml", INFRA_RESOURCE_PATH_PREFIX);
+    assertThatThrownBy(() -> customDeploymentYamlHelper.getUpdatedYaml(templateYaml, infraYaml, ACCOUNT_ID))
+        .hasMessage(
+            "Error Encountered in infra updation while reading yamls for template and Infra: infra yaml spec cannot be empty");
   }
 
   @Test

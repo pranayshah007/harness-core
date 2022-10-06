@@ -42,5 +42,4 @@ customDeployment:
   execution:
     stepTemplateRefs:
       - "account.accountTemplate"
-      - "org.orgTemplate"
-      - "projectTemplate"
+      - ""

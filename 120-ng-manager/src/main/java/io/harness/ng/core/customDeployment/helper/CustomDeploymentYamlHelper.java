@@ -298,20 +298,24 @@ public class CustomDeploymentYamlHelper {
       }
 
       ObjectMapper mapper = new ObjectMapper();
-      JsonNode infraVariableNode = infraSpecNode.get("variables");
       ArrayNode updatedVariableNode = mapper.createArrayNode();
       Map<String, JsonNode> infraVariables = new HashMap<>();
-      for (JsonNode variable : infraVariableNode) {
-        infraVariables.put(variable.get("name").asText(), variable);
+      if (infraSpecNode.has("variables")) {
+        JsonNode infraVariableNode = infraSpecNode.get("variables");
+        for (JsonNode variable : infraVariableNode) {
+          infraVariables.put(variable.get("name").asText(), variable);
+        }
       }
       List<JsonNode> updateVariablesList = new ArrayList<>();
-      JsonNode templateVariableNode = templateInfraNode.get("variables");
-      for (JsonNode variable : templateVariableNode) {
-        JsonNode var = variable;
-        if (infraVariables.containsKey(variable.get("name").asText())) {
-          ((ObjectNode) var).set("value", infraVariables.get(variable.get("name").asText()).get("value"));
+      if (templateInfraNode.has("variables")) {
+        JsonNode templateVariableNode = templateInfraNode.get("variables");
+        for (JsonNode variable : templateVariableNode) {
+          JsonNode var = variable;
+          if (infraVariables.containsKey(variable.get("name").asText())) {
+            ((ObjectNode) var).set("value", infraVariables.get(variable.get("name").asText()).get("value"));
+          }
+          updateVariablesList.add(var);
         }
-        updateVariablesList.add(var);
       }
       updatedVariableNode.addAll(updateVariablesList);
       ((ObjectNode) infraSpecNode).set("variables", updatedVariableNode);
@@ -451,7 +455,7 @@ public class CustomDeploymentYamlHelper {
   private EntityDetailProtoDTO getTemplateReferredEntity(
       String accountId, String orgId, String projectId, String templateRef) {
     if (isEmpty(templateRef)) {
-      throw new InvalidRequestException("Template ref cannot be empty");
+      throw new InvalidRequestException("step template linked cannot have empty identifier");
     }
     return buildStableTemplateEntityDetailProtoDTO(accountId, orgId, projectId, templateRef);
   }
