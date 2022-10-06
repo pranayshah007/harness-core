@@ -63,10 +63,10 @@ import io.harness.delegate.TaskSelector;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.ci.CIExecuteStepTaskParams;
-import io.harness.delegate.beans.ci.InfraInfo;
 import io.harness.delegate.beans.ci.k8s.CIK8ExecuteStepTaskParams;
 import io.harness.delegate.beans.ci.k8s.K8sTaskExecutionResponse;
 import io.harness.delegate.beans.ci.vm.CIVmExecuteStepTaskParams;
+import io.harness.delegate.beans.ci.vm.CIVmInitializeTaskParams;
 import io.harness.delegate.beans.ci.vm.VmTaskExecutionResponse;
 import io.harness.delegate.beans.ci.vm.dlite.DliteVmExecuteStepTaskParams;
 import io.harness.delegate.beans.ci.vm.steps.VmStepInfo;
@@ -313,7 +313,8 @@ public abstract class AbstractStepExecutable implements AsyncExecutableWithRbac<
     String workingDir;
     Map<String, String> volToMountPath;
     String poolId;
-    InfraInfo infraInfo;
+    // InfraInfo infraInfo;
+    CIVmInitializeTaskParams.Type infraInfo;
     if (type == StageInfraDetails.Type.VM || type == StageInfraDetails.Type.DOCKER) {
       VmStageInfraDetails infraDetails = (VmStageInfraDetails) stageInfraDetails;
       poolId = infraDetails.getPoolId();

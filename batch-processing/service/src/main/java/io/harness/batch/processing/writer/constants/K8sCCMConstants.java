@@ -31,6 +31,9 @@ public class K8sCCMConstants {
   public static final String DEFAULT_DEPLOYMENT_TYPE = "Pod";
   public static final String AWS_FARGATE_COMPUTE_TYPE = "fargate";
   public static final String NODE_POOL_NAME_KEY = "node-pool-name";
+  public static final String SPOT_INSTANCE_NODE_LIFECYCLE = "spotinst~io/node-lifecycle";
+  public static final String SPOT_INSTANCE = "spot";
+  public static final String ON_DEMAND_INSTANCE = "od";
 
   private K8sCCMConstants() {}
 }

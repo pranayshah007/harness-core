@@ -1,0 +1,11 @@
+{
+  "org": {
+    "slug": "example_organization",
+    "name": "Example Organization",
+    "description": "This is an Example organization",
+    "tags": {
+      "example-tag-1": "example-tag-1-value",
+      "example-tag-2": "example-tag-2-value"
+    }
+  }
+}

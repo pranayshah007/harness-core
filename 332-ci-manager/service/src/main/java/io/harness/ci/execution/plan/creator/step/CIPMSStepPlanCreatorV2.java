@@ -133,6 +133,7 @@ public abstract class CIPMSStepPlanCreatorV2<T extends CIAbstractStepNode> exten
                         AbsoluteSdkTimeoutTrackerParameters.builder().timeout(getTimeoutString(stepElement)).build())
                     .build())
             .skipUnresolvedExpressionsCheck(stepElement.getStepSpecType().skipUnresolvedExpressionsCheck())
+            .expressionMode(stepElement.getStepSpecType().getExpressionMode())
             .build();
     return PlanCreationResponse.builder()
         .node(stepPlanNode.getUuid(), stepPlanNode)

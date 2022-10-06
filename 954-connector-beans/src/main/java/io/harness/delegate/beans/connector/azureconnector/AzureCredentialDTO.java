@@ -7,7 +7,6 @@
 
 package io.harness.delegate.beans.connector.azureconnector;
 
-import io.harness.annotation.RecasterFieldName;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
@@ -34,8 +33,7 @@ import lombok.experimental.FieldDefaults;
 @JsonDeserialize(using = AzureCredentialDTODeserializer.class)
 @Schema(name = "AzureCredential", description = "This contains Azure connector credentials")
 public class AzureCredentialDTO {
-  @NotNull @RecasterFieldName(name = "type") @JsonProperty("type") AzureCredentialType azureCredentialType;
-  @RecasterFieldName(name = "spec")
+  @NotNull @JsonProperty("type") AzureCredentialType azureCredentialType;
   @JsonProperty("spec")
   @JsonTypeInfo(
       use = JsonTypeInfo.Id.NAME, property = "type", include = JsonTypeInfo.As.EXTERNAL_PROPERTY, visible = true)

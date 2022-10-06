@@ -33,7 +33,7 @@ import org.jetbrains.annotations.NotNull;
  */
 @UtilityClass
 @Slf4j
-class PmsSdkInitValidator {
+public class PmsSdkInitValidator {
   /**
    * Is expected that every {@link PartialPlanCreator} has your own {@link FilterJsonCreator} and {@link
    * VariableCreator}. For this moment we only detect and notify the differences without change current final list of
@@ -41,8 +41,9 @@ class PmsSdkInitValidator {
    *
    * @throws PmsSdkPlanCreatorValidationException when any difference is detected.
    */
-  static void validatePlanCreators(
-      Map<String, Set<String>> supportedPlan, PipelineServiceInfoProvider pipelineServiceInfoProvider) {
+  public static Map<String, Set<String>> validatePlanCreators(PipelineServiceInfoProvider pipelineServiceInfoProvider) {
+    final Map<String, Set<String>> supportedPlan =
+        supportedTypesPlanCreator(pipelineServiceInfoProvider.getPlanCreators());
     final Map<String, Set<String>> supportedFilters =
         supportedTypesFilterCreator(pipelineServiceInfoProvider.getFilterJsonCreators());
     final Map<String, Set<String>> supportedVariables =
@@ -59,15 +60,16 @@ class PmsSdkInitValidator {
     if (MapUtils.isNotEmpty(unsupportedFilters) || MapUtils.isNotEmpty(unsupportedVariables)) {
       throw new PmsSdkPlanCreatorValidationException(unsupportedFilters, unsupportedVariables);
     }
+    return supportedPlan;
   }
 
-  private static void detectUnsupportedTypes(String label, Map.Entry<String, Set<String>> entry,
+  private static void detectUnsupportedTypes(String label, Map.Entry<String, Set<String>> planCreatorEntry,
       Map<String, Set<String>> supported, Map<String, Set<String>> unsupported) {
-    final String planKey = entry.getKey();
+    final String planKey = planCreatorEntry.getKey();
 
     if (supported.containsKey(planKey)) {
       final Set<String> content = supported.get(planKey);
-      final Set<String> planValues = entry.getValue();
+      final Set<String> planValues = planCreatorEntry.getValue();
 
       final Collection<String> notFound = getDifferences(content, planValues);
       if (!notFound.isEmpty()) {
@@ -98,7 +100,7 @@ class PmsSdkInitValidator {
   /**
    * Extract the supported types from a list of {@link PartialPlanCreator}s.
    */
-  static Map<String, Set<String>> supportedTypesPlanCreator(List<PartialPlanCreator<?>> planCreators) {
+  private static Map<String, Set<String>> supportedTypesPlanCreator(List<PartialPlanCreator<?>> planCreators) {
     Map<String, Set<String>> supportedTypes = new HashMap<>();
     for (PartialPlanCreator<?> planCreator : planCreators) {
       populateSupportedTypes(supportedTypes, planCreator.getSupportedTypes());

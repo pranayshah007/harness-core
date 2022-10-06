@@ -15,8 +15,10 @@ import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.artifact.bean.ArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.ArtifactListConfig;
 import io.harness.cdng.artifact.bean.yaml.ArtifactSource;
+import io.harness.cdng.artifact.bean.yaml.CustomArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.PrimaryArtifact;
 import io.harness.cdng.artifact.bean.yaml.SidecarArtifactWrapper;
+import io.harness.cdng.artifact.bean.yaml.customartifact.CustomScriptInlineSource;
 import io.harness.cdng.artifact.mappers.ArtifactResponseToOutcomeMapper;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
@@ -29,6 +31,7 @@ import io.harness.cdng.service.steps.ServiceStepsHelper;
 import io.harness.cdng.steps.EmptyStepParameters;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.cdng.visitor.YamlTypes;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.TaskSelector;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.task.artifacts.ArtifactSourceDelegateRequest;
@@ -126,24 +129,35 @@ public class ArtifactsStepV2 implements AsyncExecutable<EmptyStepParameters> {
     final Set<String> taskIds = new HashSet<>();
     String primaryArtifactTaskId = null;
     final Map<String, ArtifactConfig> artifactConfigMap = new HashMap<>();
+    final List<ArtifactConfig> artifactConfigMapForNonDelegateTaskTypes = new ArrayList<>();
     final NGLogCallback logCallback = serviceStepsHelper.getServiceLogCallback(ambiance);
     if (artifacts.getPrimary() != null) {
-      primaryArtifactTaskId =
-          handle(ambiance, logCallback, artifacts.getPrimary().getSpec(), artifacts.getPrimary().getSourceType(), true);
-      taskIds.add(primaryArtifactTaskId);
-      artifactConfigMap.put(primaryArtifactTaskId, artifacts.getPrimary().getSpec());
+      if (shouldCreateDelegateTask(artifacts.getPrimary().getSourceType(), artifacts.getPrimary().getSpec())) {
+        primaryArtifactTaskId = handle(
+            ambiance, logCallback, artifacts.getPrimary().getSpec(), artifacts.getPrimary().getSourceType(), true);
+        taskIds.add(primaryArtifactTaskId);
+        artifactConfigMap.put(primaryArtifactTaskId, artifacts.getPrimary().getSpec());
+      } else {
+        artifactConfigMapForNonDelegateTaskTypes.add(artifacts.getPrimary().getSpec());
+      }
     }
 
     if (isNotEmpty(artifacts.getSidecars())) {
       for (SidecarArtifactWrapper sidecar : artifacts.getSidecars()) {
-        String taskId =
-            handle(ambiance, logCallback, sidecar.getSidecar().getSpec(), sidecar.getSidecar().getSourceType(), false);
-        taskIds.add(taskId);
-        artifactConfigMap.put(taskId, sidecar.getSidecar().getSpec());
+        if (shouldCreateDelegateTask(sidecar.getSidecar().getSourceType(), sidecar.getSidecar().getSpec())) {
+          String taskId = handle(
+              ambiance, logCallback, sidecar.getSidecar().getSpec(), sidecar.getSidecar().getSourceType(), false);
+          taskIds.add(taskId);
+          artifactConfigMap.put(taskId, sidecar.getSidecar().getSpec());
+        } else {
+          artifactConfigMapForNonDelegateTaskTypes.add(sidecar.getSidecar().getSpec());
+        }
       }
     }
-    sweepingOutputService.consume(
-        ambiance, ARTIFACTS_STEP_V_2, new ArtifactsStepV2SweepingOutput(primaryArtifactTaskId, artifactConfigMap), "");
+    sweepingOutputService.consume(ambiance, ARTIFACTS_STEP_V_2,
+        new ArtifactsStepV2SweepingOutput(
+            primaryArtifactTaskId, artifactConfigMap, artifactConfigMapForNonDelegateTaskTypes),
+        "");
     return AsyncExecutableResponse.newBuilder().addAllCallbackIds(taskIds).build();
   }
 
@@ -185,7 +199,11 @@ public class ArtifactsStepV2 implements AsyncExecutable<EmptyStepParameters> {
   @Override
   public StepResponse handleAsyncResponse(
       Ambiance ambiance, EmptyStepParameters stepParameters, Map<String, ResponseData> responseDataMap) {
-    if (isEmpty(responseDataMap)) {
+    final OptionalSweepingOutput outputOptional =
+        sweepingOutputService.resolveOptional(ambiance, RefObjectUtils.getSweepingOutputRefObject(ARTIFACTS_STEP_V_2));
+
+    // If there were some artifacts that did not require a delegate task, we cannot skip here.
+    if (isEmpty(responseDataMap) && !nonDelegateTaskArtifactsExist(outputOptional)) {
       return StepResponse.builder().status(Status.SKIPPED).build();
     }
 
@@ -199,9 +217,6 @@ public class ArtifactsStepV2 implements AsyncExecutable<EmptyStepParameters> {
       log.error("Error notify response found for artifacts step " + failedResponses);
       throw new ArtifactServerException("Failed to fetch artifacts. " + failedResponses.get(0).getErrorMessage());
     }
-
-    OptionalSweepingOutput outputOptional =
-        sweepingOutputService.resolveOptional(ambiance, RefObjectUtils.getSweepingOutputRefObject(ARTIFACTS_STEP_V_2));
 
     if (!outputOptional.isFound()) {
       log.error(ARTIFACTS_STEP_V_2 + " sweeping output not found. Failing...");
@@ -238,6 +253,20 @@ public class ArtifactsStepV2 implements AsyncExecutable<EmptyStepParameters> {
                                                                   : taskResponse.getCommandExecutionStatus().name()));
       }
     }
+
+    // Create outcomes for artifacts that did not require a delegate task
+    if (isNotEmpty(artifactsSweepingOutput.getArtifactConfigMapForNonDelegateTaskTypes())) {
+      artifactsSweepingOutput.artifactConfigMapForNonDelegateTaskTypes.forEach(ac -> {
+        ArtifactOutcome outcome = ArtifactResponseToOutcomeMapper.toArtifactOutcome(ac, null, false);
+        logArtifactFetchedMessage(logCallback, ac, null, ac.isPrimaryArtifact());
+        if (ac.isPrimaryArtifact()) {
+          outcomeBuilder.primary(outcome);
+        } else {
+          sidecarsOutcome.put(ac.getIdentifier(), outcome);
+        }
+      });
+    }
+
     final ArtifactsOutcome artifactsOutcome = outcomeBuilder.sidecars(sidecarsOutcome).build();
 
     sweepingOutputService.consume(
@@ -294,20 +323,50 @@ public class ArtifactsStepV2 implements AsyncExecutable<EmptyStepParameters> {
   private void logArtifactFetchedMessage(
       NGLogCallback logCallback, ArtifactConfig artifactConfig, ArtifactTaskResponse taskResponse, boolean isPrimary) {
     if (isPrimary) {
-      logCallback.saveExecutionLog(LogHelper.color(String.format("Fetched details of primary artifact [status:%s]",
-                                                       taskResponse.getCommandExecutionStatus().name()),
+      logCallback.saveExecutionLog(LogHelper.color(
+          String.format("Fetched details of primary artifact [status:%s]",
+              taskResponse != null ? taskResponse.getCommandExecutionStatus().name() : CommandExecutionStatus.SUCCESS),
           LogColor.Cyan, LogWeight.Bold));
     } else {
-      logCallback.saveExecutionLog(
-          LogHelper.color(String.format("Fetched details of sidecar artifact [%s] [status: %s]",
-                              artifactConfig.getIdentifier(), taskResponse.getCommandExecutionStatus().name()),
-              LogColor.Cyan, LogWeight.Bold));
+      logCallback.saveExecutionLog(LogHelper.color(
+          String.format("Fetched details of sidecar artifact [%s] [status: %s]", artifactConfig.getIdentifier(),
+              taskResponse != null ? taskResponse.getCommandExecutionStatus().name() : CommandExecutionStatus.SUCCESS),
+          LogColor.Cyan, LogWeight.Bold));
     }
-    if (taskResponse.getArtifactTaskExecutionResponse() != null
+    if (taskResponse != null && taskResponse.getArtifactTaskExecutionResponse() != null
         && taskResponse.getArtifactTaskExecutionResponse().getArtifactDelegateResponses() != null) {
       logCallback.saveExecutionLog(LogHelper.color(
           taskResponse.getArtifactTaskExecutionResponse().getArtifactDelegateResponses().get(0).describe(),
           LogColor.Green, LogWeight.Bold));
+    } else if (artifactConfig != null) {
+      logCallback.saveExecutionLog(
+          LogHelper.color(ArtifactUtils.getLogInfo(artifactConfig, artifactConfig.getSourceType()), LogColor.Green));
     }
+  }
+
+  public boolean shouldCreateDelegateTask(ArtifactSourceType type, ArtifactConfig config) {
+    if (ArtifactSourceType.CUSTOM_ARTIFACT != type) {
+      return true;
+    }
+    if (((CustomArtifactConfig) config).getScripts() == null) {
+      return false;
+    } else {
+      CustomScriptInlineSource customScriptInlineSource = (CustomScriptInlineSource) ((CustomArtifactConfig) config)
+                                                              .getScripts()
+                                                              .getFetchAllArtifacts()
+                                                              .getShellScriptBaseStepInfo()
+                                                              .getSource()
+                                                              .getSpec();
+      if (isEmpty(customScriptInlineSource.getScript().getValue().trim())) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  private boolean nonDelegateTaskArtifactsExist(OptionalSweepingOutput outputOptional) {
+    return outputOptional != null && outputOptional.isFound()
+        && EmptyPredicate.isNotEmpty(
+            ((ArtifactsStepV2SweepingOutput) outputOptional.getOutput()).getArtifactConfigMapForNonDelegateTaskTypes());
   }
 }

@@ -17,8 +17,8 @@ import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.refresh.service.EntityRefreshService;
-import io.harness.ng.core.template.RefreshRequestDTO;
 import io.harness.ng.core.template.RefreshResponseDTO;
+import io.harness.ng.core.template.refresh.NgManagerRefreshRequestDTO;
 import io.harness.template.beans.refresh.v2.InputsValidationResponse;
 
 import com.google.inject.Inject;
@@ -30,7 +30,6 @@ import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Parameter;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -53,7 +52,7 @@ import retrofit2.http.Body;
 public class EntityRefreshResource {
   @Inject EntityRefreshService entityRefreshService;
 
-  @GET
+  @POST
   @Path("validate-inputs-yaml")
   @ApiOperation(value = "This validates whether inputs provided to different references in yaml is valid or not",
       nickname = "validateInputsForYaml")
@@ -64,9 +63,9 @@ public class EntityRefreshResource {
           NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgId,
       @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId,
-      @Parameter(description = "YAML") @NotNull @Body RefreshRequestDTO refreshRequestDTO) {
-    return ResponseDTO.newResponse(
-        entityRefreshService.validateInputsForYaml(accountId, orgId, projectId, refreshRequestDTO.getYaml()));
+      @Parameter(description = "YAML") @NotNull @Body NgManagerRefreshRequestDTO refreshRequestDTO) {
+    return ResponseDTO.newResponse(entityRefreshService.validateInputsForYaml(
+        accountId, orgId, projectId, refreshRequestDTO.getYaml(), refreshRequestDTO.getResolvedTemplatesYaml()));
   }
 
   @POST
@@ -80,10 +79,11 @@ public class EntityRefreshResource {
           NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgId,
       @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId,
-      @Parameter(description = "YAML") @NotNull @Body RefreshRequestDTO refreshRequestDTO) {
-    return ResponseDTO.newResponse(RefreshResponseDTO.builder()
-                                       .refreshedYaml(entityRefreshService.refreshLinkedInputs(
-                                           accountId, orgId, projectId, refreshRequestDTO.getYaml()))
-                                       .build());
+      @Parameter(description = "YAML") @NotNull @Body NgManagerRefreshRequestDTO refreshRequestDTO) {
+    return ResponseDTO.newResponse(
+        RefreshResponseDTO.builder()
+            .refreshedYaml(entityRefreshService.refreshLinkedInputs(
+                accountId, orgId, projectId, refreshRequestDTO.getYaml(), refreshRequestDTO.getResolvedTemplatesYaml()))
+            .build());
   }
 }

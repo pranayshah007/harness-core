@@ -325,6 +325,8 @@ public class AzureAsyncTaskHelper {
     return AzureHostResponse.builder()
         .hostName(virtualMachineData.getHostName())
         .address(virtualMachineData.getAddress())
+        .privateIp(virtualMachineData.getPrivateIp())
+        .publicIp(virtualMachineData.getPublicIp())
         .build();
   }
 

@@ -10,7 +10,6 @@ package io.harness.delegate.task.citasks.vm;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.ci.CICleanupTaskParams;
-import io.harness.delegate.beans.ci.InfraInfo;
 import io.harness.delegate.beans.ci.vm.CIVmCleanupTaskParams;
 import io.harness.delegate.beans.ci.vm.VmTaskExecutionResponse;
 import io.harness.delegate.beans.ci.vm.runner.DestroyVmRequest;
@@ -57,13 +56,11 @@ public class CIVmCleanupTaskHandler implements CICleanupTaskHandler {
   }
 
   private DestroyVmRequest convert(CIVmCleanupTaskParams params, String taskId) {
-    InfraInfo infraInfo = params.getInfraInfo();
-
     return DestroyVmRequest.builder()
         .poolID(params.getPoolId())
         .id(params.getStageRuntimeId())
         .correlationID(taskId)
-        .infraType(infraInfo.getType().toString())
+        .infraType(params.getInfraInfo().toString())
         .build();
   }
 }

@@ -14,14 +14,17 @@ import static org.joor.Reflect.on;
 import static org.mockito.Mockito.when;
 
 import io.harness.TemplateServiceTestBase;
+import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.reconcile.remote.NgManagerReconcileClient;
 import io.harness.rule.Owner;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.helpers.TemplateInputsRefreshHelper;
 import io.harness.template.helpers.TemplateMergeServiceHelper;
+import io.harness.template.utils.NGTemplateFeatureFlagHelperService;
 
 import com.google.common.io.Resources;
 import java.io.IOException;
@@ -39,6 +42,8 @@ public class TemplateInputsRefreshHelperTest extends TemplateServiceTestBase {
 
   @InjectMocks TemplateInputsRefreshHelper templateInputsRefreshHelper;
   @InjectMocks TemplateMergeServiceHelper templateMergeServiceHelper;
+  @Mock NGTemplateFeatureFlagHelperService featureFlagHelperService;
+  @Mock NgManagerReconcileClient ngManagerReconcileClient;
 
   private static final String ACCOUNT_ID = "accountId";
 
@@ -55,6 +60,9 @@ public class TemplateInputsRefreshHelperTest extends TemplateServiceTestBase {
   public void setup() throws IllegalAccessException {
     on(templateMergeServiceHelper).set("templateServiceHelper", templateServiceHelper);
     on(templateInputsRefreshHelper).set("templateMergeServiceHelper", templateMergeServiceHelper);
+    on(templateInputsRefreshHelper).set("featureFlagHelperService", featureFlagHelperService);
+    on(templateInputsRefreshHelper).set("ngManagerReconcileClient", ngManagerReconcileClient);
+    when(featureFlagHelperService.isEnabled(ACCOUNT_ID, FeatureName.SERVICE_ENV_RECONCILIATION)).thenReturn(false);
   }
 
   @Test

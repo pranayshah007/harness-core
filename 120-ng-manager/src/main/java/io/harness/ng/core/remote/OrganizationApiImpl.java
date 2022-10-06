@@ -7,6 +7,7 @@
 
 package io.harness.ng.core.remote;
 
+import static io.harness.NGCommonEntityConstants.DIFFERENT_SLUG_IN_PAYLOAD_AND_PARAM;
 import static io.harness.NGConstants.DEFAULT_ORG_IDENTIFIER;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.ng.accesscontrol.PlatformPermissions.CREATE_ORGANIZATION_PERMISSION;
@@ -30,6 +31,7 @@ import io.harness.spec.server.ng.model.UpdateOrganizationRequest;
 
 import com.google.inject.Inject;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
@@ -72,12 +74,13 @@ public class OrganizationApiImpl implements OrganizationApi {
   }
 
   @Override
-  public Response getOrganizations(String account, List org, String searchTerm, Integer page, Integer limit) {
+  public Response getOrganizations(
+      List<String> org, String searchTerm, Integer page, Integer limit, String account, String sort, String order) {
     OrganizationFilterDTO organizationFilterDTO =
         OrganizationFilterDTO.builder().searchTerm(searchTerm).identifiers(org).ignoreCase(true).build();
 
     Page<Organization> orgPage = organizationService.listPermittedOrgs(
-        account, organizationApiUtils.getPageRequest(page, limit), organizationFilterDTO);
+        account, organizationApiUtils.getPageRequest(page, limit, sort, order), organizationFilterDTO);
 
     Page<OrganizationResponse> organizationResponsePage = orgPage.map(organizationApiUtils::getOrganizationResponse);
 
@@ -95,8 +98,16 @@ public class OrganizationApiImpl implements OrganizationApi {
   @Override
   public Response updateOrganization(
       UpdateOrganizationRequest request, @ResourceIdentifier String slug, @AccountIdentifier String account) {
+    if (!Objects.equals(request.getOrg().getSlug(), slug)) {
+      throw new InvalidRequestException(DIFFERENT_SLUG_IN_PAYLOAD_AND_PARAM, USER);
+    }
+    if (DEFAULT_ORG_IDENTIFIER.equals(slug)) {
+      throw new InvalidRequestException(
+          String.format("Update operation not supported for Default Organization (slug: [%s])", DEFAULT_ORG_IDENTIFIER),
+          USER);
+    }
     Organization updatedOrganization =
-        organizationService.update(account, slug, organizationApiUtils.getOrganizationDto(slug, request));
+        organizationService.update(account, slug, organizationApiUtils.getOrganizationDto(request));
     return Response.ok()
         .entity(organizationApiUtils.getOrganizationResponse(updatedOrganization))
         .tag(updatedOrganization.getVersion().toString())

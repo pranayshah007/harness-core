@@ -12,16 +12,12 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.cvng.core.beans.HealthSourceMetricDefinition;
 import io.harness.cvng.core.beans.RiskProfile;
-import io.harness.cvng.core.beans.monitoredService.TimeSeriesMetricPackDTO;
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.NewRelicHealthSourceSpec;
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.NewRelicHealthSourceSpec.NewRelicMetricDefinition;
-import io.harness.cvng.core.constant.MonitoredServiceConstants;
 import io.harness.cvng.core.entities.NewRelicCVConfig;
 
 import com.google.common.base.Preconditions;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.commons.collections4.CollectionUtils;
 
@@ -78,25 +74,14 @@ public class NewRelicHealthSourceSpecTransformer
                   .build();
             }))
             .collect(Collectors.toList());
-    Set<TimeSeriesMetricPackDTO> metricPacks = new HashSet<>();
-    cvConfigs.forEach(newRelicCVConfig -> {
-      String identifier = newRelicCVConfig.getMetricPack().getIdentifier();
-      List<TimeSeriesMetricPackDTO.MetricThreshold> metricThresholds = newRelicCVConfig.getMetricThresholdDTOs();
-      if (isNotEmpty(metricThresholds)) {
-        metricThresholds.forEach(metricThreshold -> metricThreshold.setMetricType(identifier));
-      }
-      if (!(MonitoredServiceConstants.CUSTOM_METRIC_PACK.equals(identifier) && isEmpty(metricThresholds))) {
-        metricPacks.add(
-            TimeSeriesMetricPackDTO.builder().identifier(identifier).metricThresholds(metricThresholds).build());
-      }
-    });
+
     return NewRelicHealthSourceSpec.builder()
         .applicationName(appName)
         .connectorRef(cvConfigs.get(0).getConnectorIdentifier())
         .applicationId(appId != null ? String.valueOf(appId) : null)
         .feature(cvConfigs.get(0).getProductName())
         .newRelicMetricDefinitions(newRelicMetricDefinitions)
-        .metricPacks(metricPacks)
+        .metricPacks(addMetricPacks(cvConfigs))
         .build();
   }
 }

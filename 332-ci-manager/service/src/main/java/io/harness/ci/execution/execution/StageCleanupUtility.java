@@ -25,7 +25,6 @@ import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml;
 import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.delegate.TaskSelector;
 import io.harness.delegate.beans.ci.CICleanupTaskParams;
-import io.harness.delegate.beans.ci.InfraInfo;
 import io.harness.delegate.beans.ci.k8s.CIK8CleanupTaskParams;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.ci.vm.CIVmCleanupTaskParams;
@@ -131,12 +130,11 @@ public class StageCleanupUtility {
     }
 
     StageDetails stageDetails = (StageDetails) optionalSweepingOutput.getOutput();
-    InfraInfo infraInfo = vmStageInfraDetails.getInfraInfo();
 
     return CIVmCleanupTaskParams.builder()
         .stageRuntimeId(stageDetails.getStageRuntimeID())
         .poolId(vmStageInfraDetails.getPoolId())
-        .infraInfo(infraInfo)
+        .infraInfo(vmStageInfraDetails.getInfraInfo())
         .build();
   }
 

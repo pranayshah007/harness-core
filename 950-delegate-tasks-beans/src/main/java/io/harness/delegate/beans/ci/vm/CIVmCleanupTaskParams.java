@@ -8,7 +8,7 @@
 package io.harness.delegate.beans.ci.vm;
 
 import io.harness.delegate.beans.ci.CICleanupTaskParams;
-import io.harness.delegate.beans.ci.InfraInfo;
+import io.harness.delegate.beans.ci.CIInitializeTaskParams;
 import io.harness.delegate.beans.executioncapability.CIVmConnectionCapability;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.ExecutionCapabilityDemander;
@@ -29,7 +29,8 @@ import lombok.experimental.SuperBuilder;
 public class CIVmCleanupTaskParams implements CICleanupTaskParams, ExecutionCapabilityDemander {
   @NotNull private String stageRuntimeId;
   @NotNull private String poolId;
-  @NotNull @Getter private InfraInfo infraInfo;
+  //@Getter private InfraInfo infraInfo;
+  @Getter private CIInitializeTaskParams.Type infraInfo;
 
   @Builder.Default private static final CICleanupTaskParams.Type type = CICleanupTaskParams.Type.VM;
 

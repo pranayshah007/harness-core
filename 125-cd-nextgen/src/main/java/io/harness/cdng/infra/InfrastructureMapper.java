@@ -73,7 +73,7 @@ public class InfrastructureMapper {
 
   @NotNull
   public InfrastructureOutcome toOutcome(@Nonnull Infrastructure infrastructure, EnvironmentOutcome environmentOutcome,
-      ServiceStepOutcome service, String accountIdentifier, String projectIdentifier, String orgIdentifier) {
+      ServiceStepOutcome service, String accountIdentifier, String orgIdentifier, String projectIdentifier) {
     final InfrastructureOutcomeAbstract infrastructureOutcome;
     switch (infrastructure.getKind()) {
       case InfrastructureKind.KUBERNETES_DIRECT:

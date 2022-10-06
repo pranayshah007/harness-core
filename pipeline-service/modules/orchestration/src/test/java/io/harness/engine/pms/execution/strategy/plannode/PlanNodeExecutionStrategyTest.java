@@ -53,6 +53,7 @@ import io.harness.event.handlers.AdviserResponseRequestProcessor;
 import io.harness.exception.InvalidRequestException;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.NodeExecution.NodeExecutionBuilder;
+import io.harness.expression.ExpressionMode;
 import io.harness.plan.PlanNode;
 import io.harness.pms.PmsFeatureFlagService;
 import io.harness.pms.contracts.advisers.AdviseType;
@@ -715,6 +716,10 @@ public class PlanNodeExecutionStrategyTest extends OrchestrationTestBase {
             .setPlanId(planId)
             .addLevels(Level.newBuilder().setRuntimeId(runtimeId).setSetupId(setupId).setRetryIndex(1).build())
             .build();
+    PlanNode planNode = PlanNode.builder()
+                            .expressionMode(ExpressionMode.RETURN_NULL_IF_UNRESOLVED)
+                            .stepParameters(new PmsStepParameters())
+                            .build();
     doReturn(new Object()).when(pmsEngineExpressionService).resolve(ambiance, new PmsStepParameters(), true);
     MockedStatic<PmsStepParameters> utilities = Mockito.mockStatic(PmsStepParameters.class);
     utilities.when(() -> PmsStepParameters.parse(any(OrchestrationMap.class))).thenReturn(new PmsStepParameters());
@@ -723,7 +728,9 @@ public class PlanNodeExecutionStrategyTest extends OrchestrationTestBase {
     utilities1
         .when(() -> OrchestrationMapBackwardCompatibilityUtils.extractToOrchestrationMap(any(PmsStepParameters.class)))
         .thenReturn(new OrchestrationMap());
-    executionStrategy.resolveParameters(ambiance, new PmsStepParameters(), true);
+    executionStrategy.resolveParameters(ambiance, planNode);
+    verify(pmsEngineExpressionService, times(1))
+        .resolve(ambiance, planNode.getStepParameters(), planNode.getExpressionMode());
     verify(nodeExecutionService, times(1)).update(any(), any());
   }
 }
