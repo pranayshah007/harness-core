@@ -385,7 +385,7 @@ public enum FeatureName {
   CUSTOM_SECRET_MANAGER_NG("Enable Custom Secret Manager in NG", HarnessTeam.PL),
   AZURE_ARM_BP_NG("Used to allow customers to access ARM/BP capabilities", HarnessTeam.CDP),
   CV_AWS_PROMETHEUS("Enable AWS Prometheus for CV State", HarnessTeam.CV),
-  GIT_WEBHOOK_POLLING("Used to poll git webhook recent delivery events", HarnessTeam.CDP),
+  CD_GIT_WEBHOOK_POLLING("Used to poll git webhook recent delivery events", HarnessTeam.CDP),
   MULTI_SERVICE_INFRA("Enable multiple service/environment support in NG", HarnessTeam.CDP),
   CD_TRIGGERS_REFACTOR("Enable NG Triggers UI refactoring", HarnessTeam.CDP),
   SORT_ARTIFACTS_IN_UPDATED_ORDER("Sort the collected artifacts by lastUpdatedAt", HarnessTeam.SPG),
