@@ -19,7 +19,6 @@ import static io.harness.metrics.impl.DelegateMetricsServiceImpl.PERPETUAL_TASK_
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.delegate.beans.Delegate;
-import io.harness.delegate.beans.perpetualtask.PerpetualTaskScheduleConfig;
 import io.harness.grpc.auth.DelegateAuthServerInterceptor;
 import io.harness.grpc.utils.HTimestamps;
 import io.harness.logging.AccountLogContext;
@@ -38,7 +37,6 @@ import software.wings.service.impl.DelegateObserver;
 import software.wings.service.impl.DelegateTaskBroadcastHelper;
 import software.wings.service.intfc.perpetualtask.PerpetualTaskCrudObserver;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.protobuf.Any;
