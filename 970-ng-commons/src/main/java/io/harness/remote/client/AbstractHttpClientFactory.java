@@ -80,7 +80,7 @@ public abstract class AbstractHttpClientFactory {
   static {
     OkHttpClient result;
     synchronized (Http.class) {
-      result = Http.getUnsafeOkHttpClientBuilder(null, 15, 15).build();
+      result = Http.getOkHttpClient(null, false, 15, 15);
     }
     UNSAFE_OKHTTP_CLIENT = result;
   }

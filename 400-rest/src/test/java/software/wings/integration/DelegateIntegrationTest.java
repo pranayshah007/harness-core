@@ -60,7 +60,7 @@ public class DelegateIntegrationTest extends IntegrationTestBase {
     String url = "https://localhost:9090/api/delegates/downloadUrl?accountId=" + accountId;
     OkHttpClient result;
     synchronized (Http.class) {
-      result = Http.getUnsafeOkHttpClientBuilder(url, 15, 15).build();
+      result = Http.getOkHttpClient(url, false, 15, 15);
     }
     String responseString = result
                                 .newCall(new okhttp3.Request.Builder()
@@ -110,7 +110,7 @@ public class DelegateIntegrationTest extends IntegrationTestBase {
     String url = "https://localhost:9090/api/delegates/downloadUrl?accountId=" + accountId;
     OkHttpClient result;
     synchronized (Http.class) {
-      result = Http.getUnsafeOkHttpClientBuilder(url, 15, 15).build();
+      result = Http.getOkHttpClient(url, false, 15, 15);
     }
     String responseString = result
                                 .newCall(new okhttp3.Request.Builder()

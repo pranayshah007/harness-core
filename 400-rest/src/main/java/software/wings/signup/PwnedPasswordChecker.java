@@ -85,8 +85,7 @@ public class PwnedPasswordChecker {
 
   private OkHttpClient getHttpClient() {
     if (httpClient == null) {
-      httpClient =
-          Http.getSafeOkHttpClientBuilder(BASE_API_URL, CONNECTION_TIMEOUT_SECONDS, READ_TIMEOUT_SECONDS).build();
+      httpClient = Http.getOkHttpClient(BASE_API_URL, true, CONNECTION_TIMEOUT_SECONDS, READ_TIMEOUT_SECONDS);
     }
     return httpClient;
   }

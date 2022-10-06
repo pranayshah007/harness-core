@@ -52,7 +52,7 @@ public class HttpHelper {
     String runnerUrl = getRunnerUrl();
       OkHttpClient result;
       synchronized (Http.class) {
-          result = Http.getUnsafeOkHttpClientBuilder(runnerUrl, RUNNER_CONNECT_TIMEOUT_SECS, timeoutInSecs).build();
+          result = Http.getOkHttpClient(runnerUrl, false, RUNNER_CONNECT_TIMEOUT_SECS, timeoutInSecs);
       }
       Retrofit retrofit = new Retrofit.Builder()
                             .baseUrl(runnerUrl)

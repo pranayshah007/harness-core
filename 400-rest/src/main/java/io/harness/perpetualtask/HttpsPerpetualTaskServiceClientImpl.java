@@ -81,7 +81,7 @@ public class HttpsPerpetualTaskServiceClientImpl implements HttpsPerpetualTaskSe
 
   private HttpsClient buildHttpsClient(HttpsClientEntrypoint entrypoint) {
     OkHttpClient client =
-        Http.getUnsafeOkHttpClientBuilder(entrypoint.getUrl(), 15, 15)
+        Http.getOkHttpClient(entrypoint.getUrl(), false, 15, 15).newBuilder()
             .connectionPool(new ConnectionPool())
             .retryOnConnectionFailure(true)
             .addInterceptor(chain -> {

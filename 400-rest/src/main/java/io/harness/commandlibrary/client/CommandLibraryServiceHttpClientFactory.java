@@ -84,7 +84,7 @@ public class CommandLibraryServiceHttpClientFactory implements Provider<CommandL
 
   private OkHttpClient getUnsafeOkHttpClient(String baseUrl) {
     try {
-      return Http.getUnsafeOkHttpClientBuilder(baseUrl, 15, 15)
+      return Http.getOkHttpClient(baseUrl, false, 15, 15).newBuilder()
           .connectionPool(new ConnectionPool())
           .retryOnConnectionFailure(true)
           .addInterceptor(getAuthorizationInterceptor())

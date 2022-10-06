@@ -62,7 +62,7 @@ public class NextGenClientFactory extends AbstractHttpClientFactory implements P
 
   private OkHttpClient getUnsafeOkHttpClient(String baseUrl) {
     try {
-      return Http.getUnsafeOkHttpClientBuilder(baseUrl, 60, 60)
+      return Http.getOkHttpClient(baseUrl, false, 60, 60).newBuilder()
           .retryOnConnectionFailure(false)
           .addInterceptor(getAuthorizationInterceptor(clientMode))
           .addInterceptor(getCorrelationIdInterceptor())

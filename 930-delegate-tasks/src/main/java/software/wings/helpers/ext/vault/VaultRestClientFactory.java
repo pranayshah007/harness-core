@@ -62,9 +62,9 @@ public class VaultRestClientFactory {
   public static Retrofit getVaultRetrofit(String vaultUrl, boolean isCertValidationRequired) {
     OkHttpClient httpClient;
     if (isCertValidationRequired) {
-      httpClient = Http.getSafeOkHttpClientBuilder(vaultUrl, 10, 10).addInterceptor(loggingInterceptor).build();
+      httpClient = Http.getOkHttpClient(vaultUrl, true, 10, 10).newBuilder().addInterceptor(loggingInterceptor).build();
     } else {
-      httpClient = Http.getUnsafeOkHttpClientBuilder(vaultUrl, 10, 10)
+      httpClient = Http.getOkHttpClient(vaultUrl, false, 10, 10).newBuilder()
                        .addInterceptor(loggingInterceptor)
                        .connectionPool(new ConnectionPool(0, 1, TimeUnit.NANOSECONDS))
                        .protocols(Arrays.asList(Protocol.HTTP_1_1))

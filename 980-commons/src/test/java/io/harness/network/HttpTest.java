@@ -112,7 +112,7 @@ public class HttpTest extends CategoryTest {
     Concurrent.test(5, i -> {
       OkHttpClient result;
       synchronized (Http.class) {
-        result = Http.getUnsafeOkHttpClientBuilder("https://harness.io", 15, 15).build();
+        result = Http.getOkHttpClient("https://harness.io", false, 15, 15);
       }
       OkHttpClient client = result; });
   }

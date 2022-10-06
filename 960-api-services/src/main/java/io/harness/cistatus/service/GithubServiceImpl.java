@@ -248,7 +248,7 @@ public class GithubServiceImpl implements GithubService {
       }
       OkHttpClient result;
       synchronized (Http.class) {
-        result = Http.getUnsafeOkHttpClientBuilder(githubUrl, 15, 15).build();
+        result = Http.getOkHttpClient(githubUrl, false, 15, 15);
       }
       Retrofit retrofit = new Retrofit.Builder()
                               .baseUrl(githubUrl)

@@ -34,7 +34,7 @@ public class STOServiceClientFactory implements Provider<STOServiceClient> {
     Gson gson = new GsonBuilder().setLenient().create();
     OkHttpClient result;
     synchronized (Http.class) {
-      result = Http.getUnsafeOkHttpClientBuilder(stoConfig.getBaseUrl(), 15, 15).build();
+      result = Http.getOkHttpClient(stoConfig.getBaseUrl(), false, 15, 15);
     }
     Retrofit retrofit = new Retrofit.Builder()
                             .baseUrl(stoConfig.getBaseUrl())

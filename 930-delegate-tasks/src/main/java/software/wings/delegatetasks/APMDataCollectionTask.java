@@ -210,12 +210,12 @@ public class APMDataCollectionTask extends AbstractDelegateDataCollectionTask {
     }
 
     private APMRestClient getAPMRestClient(final String baseUrl, final boolean validateCert) {
-      final Retrofit retrofit = new Retrofit.Builder()
-                                    .baseUrl(baseUrl)
-                                    .addConverterFactory(JacksonConverterFactory.create())
-                                    .client(validateCert ? Http.getSafeOkHttpClientBuilder(baseUrl, 15, 60).build()
-                                                         : getUnsafeHttpClient(baseUrl))
-                                    .build();
+      final Retrofit retrofit =
+          new Retrofit.Builder()
+              .baseUrl(baseUrl)
+              .addConverterFactory(JacksonConverterFactory.create())
+              .client(validateCert ? Http.getOkHttpClient(baseUrl, true, 15, 60) : getUnsafeHttpClient(baseUrl))
+              .build();
       return retrofit.create(APMRestClient.class);
     }
 

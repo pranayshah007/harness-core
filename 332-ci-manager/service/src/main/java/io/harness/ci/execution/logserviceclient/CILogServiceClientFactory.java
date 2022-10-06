@@ -34,7 +34,7 @@ public class CILogServiceClientFactory implements Provider<CILogServiceClient> {
     Gson gson = new GsonBuilder().setLenient().create();
     OkHttpClient result;
     synchronized (Http.class) {
-      result = Http.getUnsafeOkHttpClientBuilder(logConfig.getBaseUrl(), 15, 15).build();
+      result = Http.getOkHttpClient(logConfig.getBaseUrl(), false, 15, 15);
     }
     Retrofit retrofit = new Retrofit.Builder()
                             .baseUrl(logConfig.getBaseUrl())

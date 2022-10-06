@@ -105,7 +105,7 @@ public class ManagerVersionsCleanUpJob implements Runnable {
 
     OkHttpClient result;
     synchronized (Http.class) {
-      result = Http.getUnsafeOkHttpClientBuilder(url, 15, 15).build();
+      result = Http.getOkHttpClient(url, false, 15, 15);
     }
     OkHttpClient httpClient = result;
     Request request = new Request.Builder().url(url).get().addHeader("version", version).build();

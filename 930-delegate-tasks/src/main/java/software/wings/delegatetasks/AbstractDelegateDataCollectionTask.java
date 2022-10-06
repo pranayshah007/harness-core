@@ -75,7 +75,7 @@ public abstract class AbstractDelegateDataCollectionTask extends AbstractDelegat
 
   public static OkHttpClient getUnsafeHttpClient(String baseUrl) {
       synchronized (Http.class) {
-          return Http.getUnsafeOkHttpClientBuilder(baseUrl, 15, 60).build();
+          return Http.getOkHttpClient(baseUrl, false, 15, 60);
       }
   }
 

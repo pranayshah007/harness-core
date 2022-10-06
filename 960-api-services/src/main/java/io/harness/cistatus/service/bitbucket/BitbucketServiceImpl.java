@@ -79,7 +79,7 @@ public class BitbucketServiceImpl implements BitbucketService {
       }
       OkHttpClient result;
       synchronized (Http.class) {
-        result = Http.getUnsafeOkHttpClientBuilder(bitbucketUrl, 15, 15).build();
+        result = Http.getOkHttpClient(bitbucketUrl, false, 15, 15);
       }
       Retrofit retrofit = new Retrofit.Builder()
                               .baseUrl(bitbucketUrl)

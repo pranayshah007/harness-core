@@ -34,7 +34,7 @@ public class TIServiceClientFactory implements Provider<TIServiceClient> {
     Gson gson = new GsonBuilder().setLenient().create();
     OkHttpClient result;
     synchronized (Http.class) {
-      result = Http.getUnsafeOkHttpClientBuilder(tiConfig.getBaseUrl(), 15, 15).build();
+      result = Http.getOkHttpClient(tiConfig.getBaseUrl(), false, 15, 15).build();
     }
     Retrofit retrofit = new Retrofit.Builder()
                             .baseUrl(tiConfig.getBaseUrl())

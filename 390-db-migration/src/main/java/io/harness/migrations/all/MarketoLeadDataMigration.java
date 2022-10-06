@@ -56,7 +56,7 @@ public class MarketoLeadDataMigration implements Migration {
 
     OkHttpClient result;
     synchronized (Http.class) {
-      result = Http.getUnsafeOkHttpClientBuilder(marketoConfig.getUrl(), 15, 15).build();
+      result = Http.getOkHttpClient(marketoConfig.getUrl(), false, 15, 15);
     }
     Retrofit retrofit = new Retrofit.Builder()
                             .baseUrl(marketoConfig.getUrl())

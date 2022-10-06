@@ -42,18 +42,17 @@ public class RemoteSegmentClientFactory implements Provider<RemoteSegmentClient>
       url = DEFAULT_URL;
     }
 
-      OkHttpClient result;
-      synchronized (Http.class) {
-          result = Http.getUnsafeOkHttpClientBuilder(telemetryConfiguration.getUrl(), 15, 20).build();
-      }
-      final Retrofit retrofit =
-        new Retrofit.Builder()
-            .baseUrl(url)
-            .addConverterFactory(JacksonConverterFactory.create())
-            .client(telemetryConfiguration.isCertValidationRequired()
-                    ? Http.getSafeOkHttpClientBuilder(telemetryConfiguration.getUrl(), 15, 20).build()
-                    : result)
-            .build();
+    OkHttpClient result;
+    synchronized (Http.class) {
+      result = Http.getOkHttpClient(telemetryConfiguration.getUrl(), false, 15, 20);
+    }
+    final Retrofit retrofit = new Retrofit.Builder()
+                                  .baseUrl(url)
+                                  .addConverterFactory(JacksonConverterFactory.create())
+                                  .client(telemetryConfiguration.isCertValidationRequired()
+                                          ? Http.getOkHttpClient(telemetryConfiguration.getUrl(), true, 15, 20)
+                                          : result)
+                                  .build();
     return retrofit.create(RemoteSegmentClient.class);
   }
 }

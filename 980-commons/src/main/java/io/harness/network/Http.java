@@ -300,7 +300,7 @@ public class Http {
     }
   }
 
-  public OkHttpClient.Builder getSafeOkHttpClientBuilder(
+  private OkHttpClient.Builder getSafeOkHttpClientBuilder(
       String url, long connectTimeOutSeconds, long readTimeOutSeconds) {
     try {
       OkHttpClient.Builder builder = getOkHttpClient()
@@ -318,11 +318,12 @@ public class Http {
     }
   }
 
-  public OkHttpClient getOkHttpClient(String url, boolean isCertValidationRequired) {
+  public OkHttpClient getOkHttpClient(
+      String url, boolean isCertValidationRequired, long connectTimeOutSeconds, long readTimeOutSeconds) {
     if (isCertValidationRequired) {
-      return getSafeOkHttpClientBuilder(url, 15, 15).build();
+      return getSafeOkHttpClientBuilder(url, connectTimeOutSeconds, readTimeOutSeconds).build();
     } else {
-      return getUnsafeOkHttpClientBuilder(url, 15, 15).build();
+      return getUnsafeOkHttpClientBuilder(url, connectTimeOutSeconds, readTimeOutSeconds).build();
     }
   }
 
@@ -542,7 +543,7 @@ public class Http {
       throws IOException {
     OkHttpClient result;
     synchronized (Http.class) {
-      result = getUnsafeOkHttpClientBuilder(url, connectTimeoutSeconds, readTimeoutSeconds).build();
+      result = getOkHttpClient(url, false, connectTimeoutSeconds, readTimeoutSeconds);
     }
     return result.newCall(new Request.Builder().url(url).build()).execute();
   }

@@ -95,7 +95,7 @@ public class GitlabServiceImpl implements GitlabService {
       }
       OkHttpClient result;
       synchronized (Http.class) {
-        result = Http.getUnsafeOkHttpClientBuilder(gitlabUrl, 15, 15).build();
+        result = Http.getOkHttpClient(gitlabUrl, false, 15, 15);
       }
       Retrofit retrofit = new Retrofit.Builder()
                               .baseUrl(gitlabUrl)
