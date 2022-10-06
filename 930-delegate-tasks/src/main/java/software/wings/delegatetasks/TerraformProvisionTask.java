@@ -1069,7 +1069,8 @@ public class TerraformProvisionTask extends AbstractDelegateRunnableTask {
                                           .environment(envVars)
                                           .timeout(timeout, TimeUnit.MILLISECONDS)
                                           .directory(Paths.get(scriptDir).toFile())
-                                          .redirectOutput(logOutputStream);
+                                          .redirectOutput(logOutputStream)
+                                          .redirectError(logOutputStream);
 
     ProcessResult processResult = processExecutor.execute();
     String output = processResult.outputUTF8();
@@ -1088,7 +1089,8 @@ public class TerraformProvisionTask extends AbstractDelegateRunnableTask {
                                           .command("/bin/sh", "-c", joinedCommands)
                                           .readOutput(true)
                                           .environment(envVars)
-                                          .redirectOutput(logOutputStream);
+                                          .redirectOutput(logOutputStream)
+                                          .redirectError(logOutputStream);
 
     ProcessResult processResult = processExecutor.execute();
     return processResult.getExitValue();
