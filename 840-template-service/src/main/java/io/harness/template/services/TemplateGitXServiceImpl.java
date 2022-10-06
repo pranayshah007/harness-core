@@ -142,8 +142,7 @@ public class TemplateGitXServiceImpl implements TemplateGitXService {
       // when we have new gitx project in oldGitSync account created
       return !ngTemplateFeatureFlagHelperService.isEnabled(accountIdentifier, FeatureName.NG_TEMPLATE_GITX);
     }
-    // when we are in the new GitX project
-    return false;
+    return true;
   }
 
   public String checkForFileUniquenessAndGetRepoURL(String accountIdentifier, String orgIdentifier,
