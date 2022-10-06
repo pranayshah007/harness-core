@@ -45,12 +45,12 @@ public class RollbackExecutableUtility {
     }
     String nextNodeId = onFailRollbackParameters.getStrategyToUuid().get(strategy);
     executionSweepingOutputService.consume(ambiance, YAMLFieldNameConstants.USE_ROLLBACK_STRATEGY,
-        OnFailRollbackOutput.builder().nextNodeId(nextNodeId).build(), StepOutcomeGroup.STEP.name());
+        OnFailRollbackOutput.builder().nextNodeId(nextNodeId).strategy(strategy).build(), StepOutcomeGroup.STEP.name());
 
     // MI -> Rollback
     try {
       executionSweepingOutputService.consume(ambiance, YAMLFieldNameConstants.STOP_STEPS_SEQUENCE,
-          OnFailRollbackOutput.builder().nextNodeId(nextNodeId).build(), StepCategory.STAGE.name());
+          OnFailRollbackOutput.builder().nextNodeId(nextNodeId).strategy(strategy).build(), StepCategory.STAGE.name());
     } catch (Exception e) {
       log.warn("Ignoring duplicate sweeping output of - " + YAMLFieldNameConstants.STOP_STEPS_SEQUENCE);
     }

@@ -107,13 +107,16 @@ public class RetryAdviserWithRollback implements Adviser {
             .build();
       case STAGE_ROLLBACK:
       case STEP_GROUP_ROLLBACK:
-        String nextNodeId = parameters.getStrategyToUuid().get(
-            RollbackStrategy.fromRepairActionCode(parameters.getRepairActionCodeAfterRetry()));
+        RollbackStrategy rollbackStrategy =
+            RollbackStrategy.fromRepairActionCode(parameters.getRepairActionCodeAfterRetry());
+        String nextNodeId = parameters.getStrategyToUuid().get(rollbackStrategy);
         executionSweepingOutputService.consume(ambiance, YAMLFieldNameConstants.USE_ROLLBACK_STRATEGY,
-            OnFailRollbackOutput.builder().nextNodeId(nextNodeId).build(), StepOutcomeGroup.STEP.name());
+            OnFailRollbackOutput.builder().nextNodeId(nextNodeId).strategy(rollbackStrategy).build(),
+            StepOutcomeGroup.STEP.name());
         try {
           executionSweepingOutputService.consume(ambiance, YAMLFieldNameConstants.STOP_STEPS_SEQUENCE,
-              OnFailRollbackOutput.builder().nextNodeId(nextNodeId).build(), StepCategory.STAGE.name());
+              OnFailRollbackOutput.builder().nextNodeId(nextNodeId).strategy(rollbackStrategy).build(),
+              StepCategory.STAGE.name());
         } catch (Exception e) {
           log.warn("Ignoring duplicate sweeping output of - " + YAMLFieldNameConstants.STOP_STEPS_SEQUENCE);
         }

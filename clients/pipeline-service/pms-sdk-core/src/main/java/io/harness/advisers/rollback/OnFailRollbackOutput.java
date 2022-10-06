@@ -25,4 +25,5 @@ import org.springframework.data.annotation.TypeAlias;
 @RecasterAlias("io.harness.advisers.rollback.OnFailRollbackOutput")
 public class OnFailRollbackOutput implements ExecutionSweepingOutput {
   String nextNodeId;
+  RollbackStrategy strategy;
 }
