@@ -47,6 +47,7 @@ public class CompositeServiceLevelObjective extends AbstractServiceLevelObjectiv
       setCommonOperations(updateOperations, serviceLevelObjectiveV2DTO);
       updateOperations.set(CompositeServiceLevelObjectiveKeys.serviceLevelObjectivesDetails,
           serviceLevelObjectiveV2DTO.getServiceLevelObjectivesDetails());
+      updateOperations.inc(CompositeServiceLevelObjectiveKeys.version);
     }
   }
 }

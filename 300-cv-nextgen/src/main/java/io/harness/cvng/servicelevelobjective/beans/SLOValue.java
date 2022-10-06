@@ -16,11 +16,11 @@ public class SLOValue {
   double goodCount;
   double badCount;
   double total;
-  public double sliPercentage() {
+  public double sloPercentage() {
     if (total <= 0.0) {
       return 100.0;
     } else {
-      return (goodCount * 100.0) / total;
+      return (goodCount * 100.0) / (goodCount + badCount);
     }
   }
 }

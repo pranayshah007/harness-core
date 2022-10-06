@@ -124,7 +124,7 @@ public class CompositeSLORecordServiceImpl implements CompositeSLORecordService 
         sloValue = SLOValue.builder().goodCount(goodCountFromStart).badCount(badCountFromStart).build();
         sloTrend.add(SLODashboardWidget.Point.builder()
                          .timestamp(sloRecord.getTimestamp().toEpochMilli())
-                         .value(sloValue.sliPercentage())
+                         .value(sloValue.sloPercentage())
                          .enabled(enabled)
                          .build());
         errorBudgetBurndown.add(
