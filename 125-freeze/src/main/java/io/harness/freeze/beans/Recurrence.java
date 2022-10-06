@@ -8,9 +8,8 @@
 package io.harness.freeze.beans;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.Data;
-
 import javax.validation.constraints.NotNull;
+import lombok.Data;
 
 @Data
 public class Recurrence {
