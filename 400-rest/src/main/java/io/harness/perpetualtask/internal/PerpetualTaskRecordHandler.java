@@ -150,13 +150,16 @@ public class PerpetualTaskRecordHandler implements PerpetualTaskCrudObserver {
               return;
             }
           }
-
-          String delegateId = ((DelegateTaskNotifyResponseData) response).getDelegateMetaInfo().getId();
-          log.info("Delegate {} is assigned to the inactive {} perpetual task with id={}.", delegateId,
-              taskRecord.getPerpetualTaskType(), taskId);
-          perpetualTaskService.appointDelegate(
-              taskRecord.getAccountId(), taskId, delegateId, System.currentTimeMillis());
-
+          if (((DelegateTaskNotifyResponseData) response).getDelegateMetaInfo() != null) {
+            String delegateId = ((DelegateTaskNotifyResponseData) response).getDelegateMetaInfo().getId();
+            log.info("Delegate {} is assigned to the inactive {} perpetual task with id={}.", delegateId,
+                taskRecord.getPerpetualTaskType(), taskId);
+            perpetualTaskService.appointDelegate(
+                taskRecord.getAccountId(), taskId, delegateId, System.currentTimeMillis());
+          } else {
+            log.info("Perpetual task {} unable to assign delegate due to missing DelegateMetaInfo.",
+                validationTask.getUuid());
+          }
         } else if ((response instanceof RemoteMethodReturnValueData)
             && (((RemoteMethodReturnValueData) response).getException() instanceof InvalidRequestException)) {
           perpetualTaskService.updateTaskUnassignedReason(
