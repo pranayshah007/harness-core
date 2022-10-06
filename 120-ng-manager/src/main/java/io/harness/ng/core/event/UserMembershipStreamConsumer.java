@@ -15,6 +15,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.eventsframework.api.Consumer;
 import io.harness.eventsframework.api.EventsFrameworkDownException;
 import io.harness.eventsframework.consumer.Message;
+import io.harness.eventsframework.impl.redis.RedisTraceConsumer;
 import io.harness.queue.QueueController;
 import io.harness.security.SecurityContextBuilder;
 import io.harness.security.dto.ServicePrincipal;
@@ -32,7 +33,7 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(PL)
 @Slf4j
 @Singleton
-public class UserMembershipStreamConsumer extends TraceConsumer {
+public class UserMembershipStreamConsumer extends RedisTraceConsumer {
   private static final int WAIT_TIME_IN_SECONDS = 30;
   private final Consumer eventConsumer;
   private final List<MessageListener> messageListenersList;
