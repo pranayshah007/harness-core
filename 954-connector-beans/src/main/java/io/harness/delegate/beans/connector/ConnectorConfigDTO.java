@@ -16,6 +16,7 @@ import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConne
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.connector.awskmsconnector.AwsKmsConnectorDTO;
 import io.harness.delegate.beans.connector.awssecretmanager.AwsSecretManagerDTO;
+import io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsConnectorDTO;
 import io.harness.delegate.beans.connector.azureconnector.AzureConnectorDTO;
 import io.harness.delegate.beans.connector.azurekeyvaultconnector.AzureKeyVaultConnectorDTO;
 import io.harness.delegate.beans.connector.ceawsconnector.CEAwsConnectorDTO;
@@ -104,7 +105,8 @@ import java.util.List;
       @JsonSubTypes.Type(value = OciHelmConnectorDTO.class, name = "OciHelmRepo"),
       @JsonSubTypes.Type(value = CustomSecretManagerConnectorDTO.class, name = "CustomSecretManager"),
       @JsonSubTypes.Type(value = ELKConnectorDTO.class, name = "ELK"),
-      @JsonSubTypes.Type(value = GcpSecretManagerConnectorDTO.class, name = "GcpSecretManager")
+      @JsonSubTypes.Type(value = GcpSecretManagerConnectorDTO.class, name = "GcpSecretManager"),
+      @JsonSubTypes.Type(value = AzureArtifactsConnectorDTO.class, name = "AzureArtifacts")
 })
 @OwnedBy(DX)
 @Schema(name = "ConnectorConfig", description = "This is the view of the ConnectorConfig entity defined in Harness")

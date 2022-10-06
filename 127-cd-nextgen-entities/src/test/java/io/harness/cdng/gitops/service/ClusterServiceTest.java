@@ -7,6 +7,7 @@
 
 package io.harness.cdng.gitops.service;
 
+import static io.harness.rule.OwnerRule.ROHITKARELIA;
 import static io.harness.rule.OwnerRule.YOGESH;
 
 import static java.util.Arrays.asList;
@@ -157,6 +158,20 @@ public class ClusterServiceTest extends CDNGEntitiesTestBase {
 
     assertThat(
         clusterService.listAcrossEnv(0, 5, ACCOUNT_ID, ORG_ID, PROJECT_ID, List.of("env1", "env2")).getTotalElements())
+        .isEqualTo(0);
+  }
+
+  @Test
+  @Owner(developers = ROHITKARELIA)
+  @Category(UnitTests.class)
+  public void testBulkDelete() {
+    List<Cluster> clusterList =
+        asList(getClusterForEnv("env1", "y1"), getClusterForEnv("env1", "y2"), getClusterForEnv("env1", "y3"));
+    clusterService.bulkCreate(clusterList);
+
+    clusterService.bulkDelete(clusterList, ACCOUNT_ID, ORG_ID, PROJECT_ID, "env1");
+
+    assertThat(clusterService.listAcrossEnv(0, 5, ACCOUNT_ID, ORG_ID, PROJECT_ID, List.of("env1")).getTotalElements())
         .isEqualTo(0);
   }
 

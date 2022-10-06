@@ -68,8 +68,8 @@ public class ShellScriptProvisionTaskNG extends AbstractDelegateRunnableTask {
   @Override
   public ShellScriptProvisionTaskNGResponse run(TaskParameters taskParameters) {
     String workingDir = null;
+    CommandUnitsProgress commandUnitsProgress = CommandUnitsProgress.builder().build();
     try {
-      CommandUnitsProgress commandUnitsProgress = CommandUnitsProgress.builder().build();
       LogCallback logCallback = getLogCallback(getLogStreamingTaskClient(), COMMAND_UNIT, true, commandUnitsProgress);
       ShellScriptProvisionTaskNGRequest parameters = (ShellScriptProvisionTaskNGRequest) taskParameters;
       String basePath = Paths.get("shellScriptProvisioner").toAbsolutePath().toString();
@@ -100,6 +100,7 @@ public class ShellScriptProvisionTaskNG extends AbstractDelegateRunnableTask {
       logCallback.saveExecutionLog(message, INFO, SUCCESS);
       if (executeCommandResponse.getStatus() == CommandExecutionStatus.FAILURE) {
         return ShellScriptProvisionTaskNGResponse.builder()
+            .unitProgressData(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress))
             .commandExecutionStatus(CommandExecutionStatus.FAILURE)
             .errorMessage(message)
             .build();
@@ -117,6 +118,7 @@ public class ShellScriptProvisionTaskNG extends AbstractDelegateRunnableTask {
     } catch (Exception e) {
       log.error("Error occurred in the task", e);
       return ShellScriptProvisionTaskNGResponse.builder()
+          .unitProgressData(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress))
           .commandExecutionStatus(CommandExecutionStatus.FAILURE)
           .errorMessage(e.getMessage())
           .build();

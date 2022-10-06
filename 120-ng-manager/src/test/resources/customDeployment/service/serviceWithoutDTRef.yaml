@@ -1,0 +1,14 @@
+service:
+  name: TestService
+  identifier: TestService
+  serviceDefinition:
+    type: CustomDeployment
+    spec:
+      artifacts:
+        primary:
+          spec:
+            connectorRef: account.Docker
+            imagePath: library/nginx
+            tag: <+input>
+          type: DockerRegistry
+  gitOpsEnabled: false

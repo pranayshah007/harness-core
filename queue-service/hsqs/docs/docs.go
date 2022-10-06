@@ -128,7 +128,12 @@ const docTemplate = `{
                 "metadata": {
                     "$ref": "#/definitions/store.DequeueItemMetadata"
                 },
-                "payload": {},
+                "payload": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
                 "queueKey": {
                     "type": "string"
                 },
@@ -141,8 +146,10 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "payload": {
-                    "type": "object",
-                    "additionalProperties": true
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
                 },
                 "producerName": {
                     "type": "string"
@@ -159,7 +166,7 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "itemId": {
-                    "description": "ItemId is the identifier of the task in the Queue",
+                    "description": "ItemID is the identifier of the task in the Queue",
                     "type": "string"
                 }
             }

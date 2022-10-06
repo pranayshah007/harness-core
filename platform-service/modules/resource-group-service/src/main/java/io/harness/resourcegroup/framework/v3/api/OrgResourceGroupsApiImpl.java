@@ -16,6 +16,8 @@ import static java.lang.String.format;
 
 import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.accesscontrol.NGAccessControlCheck;
+import io.harness.accesscontrol.OrgIdentifier;
+import io.harness.accesscontrol.ResourceIdentifier;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
@@ -52,7 +54,7 @@ public class OrgResourceGroupsApiImpl implements OrganizationResourceGroupsApi {
   @NGAccessControlCheck(resourceType = RESOURCE_GROUP, permission = EDIT_RESOURCEGROUP_PERMISSION)
   @FeatureRestrictionCheck(FeatureRestrictionName.CUSTOM_RESOURCE_GROUPS)
   public Response createResourceGroupOrg(
-      CreateResourceGroupRequest body, String org, @AccountIdentifier String account) {
+      CreateResourceGroupRequest body, @OrgIdentifier String org, @AccountIdentifier String account) {
     ResourceGroupRequest resourceGroupRequest = ResourceGroupApiUtils.getResourceGroupRequestOrg(org, body, account);
     resourceGroupValidator.validateResourceGroup(resourceGroupRequest);
     ResourceGroupsResponse resourceGroupsResponse = ResourceGroupApiUtils.getResourceGroupResponse(
@@ -62,7 +64,8 @@ public class OrgResourceGroupsApiImpl implements OrganizationResourceGroupsApi {
 
   @Override
   @NGAccessControlCheck(resourceType = RESOURCE_GROUP, permission = DELETE_RESOURCEGROUP_PERMISSION)
-  public Response deleteResourceGroupOrg(String org, String resourceGroup, String account) {
+  public Response deleteResourceGroupOrg(
+      @OrgIdentifier String org, @ResourceIdentifier String resourceGroup, @AccountIdentifier String account) {
     ResourceGroupsResponse resourceGroupsResponse = ResourceGroupApiUtils.getResourceGroupResponse(
         resourceGroupService.get(Scope.of(account, org, null), resourceGroup, NO_FILTER).orElse(null));
     if (resourceGroupService.delete(Scope.of(account, org, null), resourceGroup)) {
@@ -73,7 +76,8 @@ public class OrgResourceGroupsApiImpl implements OrganizationResourceGroupsApi {
 
   @Override
   @NGAccessControlCheck(resourceType = RESOURCE_GROUP, permission = VIEW_RESOURCEGROUP_PERMISSION)
-  public Response getResourceGroupOrg(String org, String resourceGroup, String account) {
+  public Response getResourceGroupOrg(
+      @OrgIdentifier String org, @ResourceIdentifier String resourceGroup, @AccountIdentifier String account) {
     ResourceGroupsResponse resourceGroupsResponse = ResourceGroupApiUtils.getResourceGroupResponse(
         resourceGroupService.get(Scope.of(account, org, null), resourceGroup, NO_FILTER).orElse(null));
     if (resourceGroupsResponse == null) {
@@ -84,8 +88,8 @@ public class OrgResourceGroupsApiImpl implements OrganizationResourceGroupsApi {
 
   @Override
   @NGAccessControlCheck(resourceType = RESOURCE_GROUP, permission = VIEW_RESOURCEGROUP_PERMISSION)
-  public Response listResourceGroupsOrg(
-      String org, Integer page, Integer limit, String searchTerm, String account, String sort, String order) {
+  public Response listResourceGroupsOrg(@OrgIdentifier String org, Integer page, Integer limit, String searchTerm,
+      @AccountIdentifier String account, String sort, String order) {
     PageRequest pageRequest = ResourceGroupApiUtils.getPageRequest(page, limit, sort, order);
     Page<ResourceGroupResponse> pageResponse =
         resourceGroupService.list(Scope.of(account, org, null), pageRequest, searchTerm);
@@ -102,8 +106,8 @@ public class OrgResourceGroupsApiImpl implements OrganizationResourceGroupsApi {
 
   @Override
   @NGAccessControlCheck(resourceType = RESOURCE_GROUP, permission = EDIT_RESOURCEGROUP_PERMISSION)
-  public Response updateResourceGroupOrg(
-      CreateResourceGroupRequest body, String org, String resourceGroup, String account) {
+  public Response updateResourceGroupOrg(CreateResourceGroupRequest body, @OrgIdentifier String org,
+      @ResourceIdentifier String resourceGroup, @AccountIdentifier String account) {
     if (!resourceGroup.equals(body.getSlug())) {
       throw new InvalidRequestException("Resource Group identifier in the request body and the URL do not match.");
     }

@@ -22,7 +22,10 @@ definitions:
         type: string
       metadata:
         $ref: '#/definitions/store.DequeueItemMetadata'
-      payload: {}
+      payload:
+        items:
+          type: integer
+        type: array
       queueKey:
         type: string
       timeStamp:
@@ -31,8 +34,9 @@ definitions:
   store.EnqueueRequest:
     properties:
       payload:
-        additionalProperties: true
-        type: object
+        items:
+          type: integer
+        type: array
       producerName:
         type: string
       subTopic:
@@ -43,7 +47,7 @@ definitions:
   store.EnqueueResponse:
     properties:
       itemId:
-        description: ItemId is the identifier of the task in the Queue
+        description: ItemID is the identifier of the task in the Queue
         type: string
     type: object
 host: localhost:9091

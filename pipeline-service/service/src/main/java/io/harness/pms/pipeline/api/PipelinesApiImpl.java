@@ -7,7 +7,11 @@
 
 package io.harness.pms.pipeline.api;
 
+import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.accesscontrol.NGAccessControlCheck;
+import io.harness.accesscontrol.OrgIdentifier;
+import io.harness.accesscontrol.ProjectIdentifier;
+import io.harness.accesscontrol.ResourceIdentifier;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.engine.governance.PolicyEvaluationFailureException;
@@ -16,6 +20,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorWrapperDTO;
 import io.harness.git.model.ChangeType;
 import io.harness.gitaware.helper.GitAwareContextHelper;
+import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.governance.GovernanceMetadata;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
 import io.harness.pms.annotations.PipelineServiceAuth;
@@ -63,7 +68,10 @@ public class PipelinesApiImpl implements PipelinesApi {
   private final PipelineMetadataService pipelineMetadataService;
 
   @Override
-  public Response createPipeline(PipelineCreateRequestBody requestBody, String org, String project, String account) {
+  @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT)
+  public Response createPipeline(PipelineCreateRequestBody requestBody, @OrgIdentifier String org,
+      @ProjectIdentifier String project, @AccountIdentifier String account) {
+    GitAwareContextHelper.populateGitDetails(PipelinesApiUtils.populateGitCreateDetails(requestBody.getGitDetails()));
     PipelineEntity pipelineEntity =
         PMSPipelineDtoMapper.toPipelineEntity(account, org, project, requestBody.getPipelineYaml(), null);
     log.info(String.format("Creating a Pipeline with identifier %s in project %s, org %s, account %s",
@@ -80,7 +88,8 @@ public class PipelinesApiImpl implements PipelinesApi {
 
   @Override
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_DELETE)
-  public Response deletePipeline(String org, String project, String pipeline, String account) {
+  public Response deletePipeline(@OrgIdentifier String org, @ProjectIdentifier String project,
+      @ResourceIdentifier String pipeline, @AccountIdentifier String account) {
     log.info(String.format(
         "Deleting Pipeline with identifier %s in project %s, org %s, account %s", pipeline, project, org, account));
     boolean deleted = pmsPipelineService.delete(account, org, project, pipeline, null);
@@ -91,8 +100,10 @@ public class PipelinesApiImpl implements PipelinesApi {
   }
 
   @Override
-  public Response getPipeline(
-      String org, String project, String pipeline, String account, String branch, Boolean templatesApplied) {
+  @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_VIEW)
+  public Response getPipeline(@OrgIdentifier String org, @ProjectIdentifier String project,
+      @ResourceIdentifier String pipeline, @AccountIdentifier String account, String branch, Boolean templatesApplied) {
+    GitAwareContextHelper.populateGitDetails(GitEntityInfo.builder().branch(branch).build());
     log.info(String.format(
         "Retrieving Pipeline with identifier %s in project %s, org %s, account %s", pipeline, project, org, account));
     Optional<PipelineEntity> pipelineEntity;
@@ -134,10 +145,11 @@ public class PipelinesApiImpl implements PipelinesApi {
   }
 
   @Override
-  public Response listPipelines(String org, String project, String account, Integer page, Integer limit,
-      String searchTerm, String sort, String order, String module, String filterId, List<String> pipelineIds,
-      String name, String description, List<String> tags, List<String> services, List<String> envs,
-      String deploymentType, String repoName) {
+  @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_VIEW)
+  public Response listPipelines(@OrgIdentifier String org, @ProjectIdentifier String project,
+      @AccountIdentifier String account, Integer page, Integer limit, String searchTerm, String sort, String order,
+      String module, String filterId, List<String> pipelineIds, String name, String description, List<String> tags,
+      List<String> services, List<String> envs, String deploymentType, String repoName) {
     log.info(String.format("Get List of Pipelines in project %s, org %s, account %s", project, org, account));
     Criteria criteria = pipelineServiceHelper.formCriteria(account, org, project, filterId,
         PipelinesApiUtils.getFilterProperties(
@@ -169,8 +181,10 @@ public class PipelinesApiImpl implements PipelinesApi {
   }
 
   @Override
-  public Response updatePipeline(
-      PipelineUpdateRequestBody requestBody, String org, String project, String pipeline, String account) {
+  @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT)
+  public Response updatePipeline(PipelineUpdateRequestBody requestBody, @OrgIdentifier String org,
+      @ProjectIdentifier String project, @ResourceIdentifier String pipeline, @AccountIdentifier String account) {
+    GitAwareContextHelper.populateGitDetails(PipelinesApiUtils.populateGitUpdateDetails(requestBody.getGitDetails()));
     log.info(String.format(
         "Updating Pipeline with identifier %s in project %s, org %s, account %s", pipeline, project, org, account));
     PipelineEntity pipelineEntity =

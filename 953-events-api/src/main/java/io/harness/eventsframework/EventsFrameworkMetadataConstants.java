@@ -44,6 +44,7 @@ public final class EventsFrameworkMetadataConstants {
   public static final String CHAOS_SCENARIO = "chaosscenario";
 
   public static final String SERVICE_ENTITY = "service";
+  public static final String DEPLOYMENT_FREEZE_ENTITY = "deploymentfreeze";
   public static final String ENVIRONMENT_ENTITY = "environment";
   public static final String ENVIRONMENT_GROUP_ENTITY = "environmentGroup";
 

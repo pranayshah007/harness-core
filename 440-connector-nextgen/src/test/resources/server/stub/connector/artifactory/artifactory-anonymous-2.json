@@ -1,0 +1,21 @@
+{
+  "connector" : {
+    "name" : "example_connector",
+    "identifier" : "example_connector",
+    "description" : "example_connector",
+    "orgIdentifier" : "default",
+    "projectIdentifier" : "example_project",
+    "tags" : {
+      "property1" : "example_connector"
+    },
+    "type" : "Artifactory",
+    "spec" : {
+      "artifactoryServerUrl" : "https://artifactory.com/example/example-artifactory",
+      "auth" : {
+        "type" : "Anonymous"
+      },
+      "delegateSelectors" : [ ],
+      "executeOnDelegate" : false
+    }
+  }
+}

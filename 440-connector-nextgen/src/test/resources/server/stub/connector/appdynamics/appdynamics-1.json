@@ -1,0 +1,20 @@
+{
+  "connector" : {
+    "name" : "example_connector",
+    "slug" : "example_connector",
+    "description" : "example_connector",
+    "org" : "default",
+    "project" : "example_project",
+    "tags" : {
+      "property1" : "example_connector"
+    },
+    "spec" : {
+      "type" : "Appdynamics",
+      "account_name" : "appdynamics-account-name",
+      "controller_url" : "https://appdynamics.com/controller/",
+      "username" : "appdynamics-username",
+      "password_ref" : "account.appdynamics-password",
+      "delegate_selectors" : [ ]
+    }
+  }
+}

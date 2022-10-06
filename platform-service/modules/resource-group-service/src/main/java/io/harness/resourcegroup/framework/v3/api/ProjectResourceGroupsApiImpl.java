@@ -16,6 +16,9 @@ import static java.lang.String.format;
 
 import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.accesscontrol.NGAccessControlCheck;
+import io.harness.accesscontrol.OrgIdentifier;
+import io.harness.accesscontrol.ProjectIdentifier;
+import io.harness.accesscontrol.ResourceIdentifier;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
@@ -51,8 +54,8 @@ public class ProjectResourceGroupsApiImpl implements ProjectResourceGroupsApi {
   @Override
   @NGAccessControlCheck(resourceType = RESOURCE_GROUP, permission = EDIT_RESOURCEGROUP_PERMISSION)
   @FeatureRestrictionCheck(FeatureRestrictionName.CUSTOM_RESOURCE_GROUPS)
-  public Response createResourceGroupProject(
-      CreateResourceGroupRequest body, String org, String project, @AccountIdentifier String account) {
+  public Response createResourceGroupProject(CreateResourceGroupRequest body, @OrgIdentifier String org,
+      @ProjectIdentifier String project, @AccountIdentifier String account) {
     ResourceGroupRequest resourceGroupRequest =
         ResourceGroupApiUtils.getResourceGroupRequestProject(org, project, body, account);
     resourceGroupValidator.validateResourceGroup(resourceGroupRequest);
@@ -63,7 +66,8 @@ public class ProjectResourceGroupsApiImpl implements ProjectResourceGroupsApi {
 
   @Override
   @NGAccessControlCheck(resourceType = RESOURCE_GROUP, permission = DELETE_RESOURCEGROUP_PERMISSION)
-  public Response deleteResourceGroupProject(String org, String project, String resourceGroup, String account) {
+  public Response deleteResourceGroupProject(@OrgIdentifier String org, @ProjectIdentifier String project,
+      @ResourceIdentifier String resourceGroup, @AccountIdentifier String account) {
     ResourceGroupsResponse resourceGroupsResponse = ResourceGroupApiUtils.getResourceGroupResponse(
         resourceGroupService.get(Scope.of(account, org, project), resourceGroup, NO_FILTER).orElse(null));
     if (resourceGroupService.delete(Scope.of(account, org, project), resourceGroup)) {
@@ -74,7 +78,8 @@ public class ProjectResourceGroupsApiImpl implements ProjectResourceGroupsApi {
 
   @Override
   @NGAccessControlCheck(resourceType = RESOURCE_GROUP, permission = VIEW_RESOURCEGROUP_PERMISSION)
-  public Response getResourceGroupProject(String org, String project, String resourceGroup, String account) {
+  public Response getResourceGroupProject(@OrgIdentifier String org, @ProjectIdentifier String project,
+      @ResourceIdentifier String resourceGroup, @AccountIdentifier String account) {
     ResourceGroupsResponse resourceGroupsResponse = ResourceGroupApiUtils.getResourceGroupResponse(
         resourceGroupService.get(Scope.of(account, org, project), resourceGroup, NO_FILTER).orElse(null));
     if (resourceGroupsResponse == null) {
@@ -85,8 +90,8 @@ public class ProjectResourceGroupsApiImpl implements ProjectResourceGroupsApi {
 
   @Override
   @NGAccessControlCheck(resourceType = RESOURCE_GROUP, permission = VIEW_RESOURCEGROUP_PERMISSION)
-  public Response listResourceGroupsProject(String org, String project, Integer page, Integer limit, String searchTerm,
-      String account, String sort, String order) {
+  public Response listResourceGroupsProject(@OrgIdentifier String org, @ProjectIdentifier String project, Integer page,
+      Integer limit, String searchTerm, @AccountIdentifier String account, String sort, String order) {
     PageRequest pageRequest = ResourceGroupApiUtils.getPageRequest(page, limit, sort, order);
     Page<ResourceGroupResponse> pageResponse =
         resourceGroupService.list(Scope.of(account, org, project), pageRequest, searchTerm);
@@ -104,8 +109,8 @@ public class ProjectResourceGroupsApiImpl implements ProjectResourceGroupsApi {
 
   @Override
   @NGAccessControlCheck(resourceType = RESOURCE_GROUP, permission = EDIT_RESOURCEGROUP_PERMISSION)
-  public Response updateResourceGroupProject(
-      CreateResourceGroupRequest body, String org, String project, String resourceGroup, String account) {
+  public Response updateResourceGroupProject(CreateResourceGroupRequest body, @OrgIdentifier String org,
+      @ProjectIdentifier String project, @ResourceIdentifier String resourceGroup, @AccountIdentifier String account) {
     if (!resourceGroup.equals(body.getSlug())) {
       throw new InvalidRequestException("Resource Group identifier in the request body and the URL do not match.");
     }

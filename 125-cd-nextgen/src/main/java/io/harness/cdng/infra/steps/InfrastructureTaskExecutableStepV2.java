@@ -308,6 +308,14 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
           stepParameters.getInfraRef().getValue(), stepParameters.getEnvRef().getValue()));
     }
 
+    if (infrastructureEntityOpt.get().getDeploymentType() != null && stepParameters.getDeploymentType() != null
+        && infrastructureEntityOpt.get().getDeploymentType() != stepParameters.getDeploymentType()) {
+      throw new InvalidRequestException(
+          format("Deployment type of the stage [%s] and the infrastructure [%s] do not match",
+              stepParameters.getDeploymentType().getYamlName(),
+              infrastructureEntityOpt.get().getDeploymentType().getYamlName()));
+    }
+
     final InfrastructureEntity infrastructureEntity = infrastructureEntityOpt.get();
     if (ParameterField.isNotNull(stepParameters.getInfraInputs())
         && isNotEmpty(stepParameters.getInfraInputs().getValue())) {
