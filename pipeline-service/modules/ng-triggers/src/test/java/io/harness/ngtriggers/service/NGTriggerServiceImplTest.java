@@ -37,6 +37,9 @@ import io.harness.ngtriggers.beans.entity.NGTriggerEntity;
 import io.harness.ngtriggers.beans.entity.metadata.NGTriggerMetadata;
 import io.harness.ngtriggers.beans.entity.metadata.WebhookMetadata;
 import io.harness.ngtriggers.beans.entity.metadata.WebhookRegistrationStatus;
+import io.harness.ngtriggers.beans.entity.metadata.catalog.TriggerCatalogItem;
+import io.harness.ngtriggers.beans.entity.metadata.catalog.TriggerCatalogType;
+import io.harness.ngtriggers.beans.entity.metadata.catalog.TriggerCategory;
 import io.harness.ngtriggers.beans.entity.metadata.status.TriggerStatus;
 import io.harness.ngtriggers.beans.entity.metadata.status.WebhookAutoRegistrationStatus;
 import io.harness.ngtriggers.beans.entity.metadata.status.WebhookInfo;
@@ -47,6 +50,7 @@ import io.harness.ngtriggers.beans.source.scheduled.ScheduledTriggerConfig;
 import io.harness.ngtriggers.beans.source.webhook.v2.WebhookTriggerConfigV2;
 import io.harness.ngtriggers.beans.target.TargetType;
 import io.harness.ngtriggers.buildtriggers.helpers.BuildTriggerHelper;
+import io.harness.ngtriggers.helpers.TriggerCatalogHelper;
 import io.harness.ngtriggers.mapper.NGTriggerElementMapper;
 import io.harness.ngtriggers.service.impl.NGTriggerServiceImpl;
 import io.harness.ngtriggers.utils.PollingSubscriptionHelper;
@@ -69,6 +73,9 @@ import com.mongodb.client.result.DeleteResult;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
@@ -87,7 +94,7 @@ import retrofit2.Call;
 import retrofit2.Response;
 
 @OwnedBy(PIPELINE)
-public class NGTriggerServiceTest extends CategoryTest {
+public class NGTriggerServiceImplTest extends CategoryTest {
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
   @Mock NGTriggerElementMapper ngTriggerElementMapper;
   @Mock PipelineServiceClient pipelineServiceClient;
@@ -105,6 +112,8 @@ public class NGTriggerServiceTest extends CategoryTest {
   @Mock PollingResourceClient pollingResourceClient;
 
   TriggerValidationHandler triggerValidationHandler;
+
+  @Mock TriggerCatalogHelper triggerCatalogHelper;
 
   private final String ACCOUNT_ID = "account_id";
   private final String ORG_IDENTIFIER = "orgId";
@@ -396,5 +405,30 @@ public class NGTriggerServiceTest extends CategoryTest {
       runnableCaptor.getValue().run();
       return null;
     };
+  }
+
+  @Test
+  @Owner(developers = SRIDHAR)
+  @Category(UnitTests.class)
+  public void testGetTriggerCatalog() {
+    when(triggerCatalogHelper.getTriggerTypeToCategoryMapping(ACCOUNT_ID))
+        .thenReturn(Arrays.asList(TriggerCatalogItem.builder()
+                                      .category(TriggerCategory.ARTIFACT)
+                                      .triggerCatalogType(new HashSet<>(Collections.singleton(TriggerCatalogType.ACR)))
+                                      .build(),
+            TriggerCatalogItem.builder()
+                .category(TriggerCategory.WEBHOOK)
+                .triggerCatalogType(new HashSet<>(Collections.singleton(TriggerCatalogType.GITHUB)))
+                .build(),
+            TriggerCatalogItem.builder()
+                .category(TriggerCategory.SCHEDULED)
+                .triggerCatalogType(new HashSet<>(Collections.singleton(TriggerCatalogType.SCHEDULED)))
+                .build(),
+            TriggerCatalogItem.builder()
+                .category(TriggerCategory.MANIFEST)
+                .triggerCatalogType(new HashSet<>(Collections.singleton(TriggerCatalogType.HELM_CHART)))
+                .build()));
+    List<TriggerCatalogItem> lst = ngTriggerServiceImpl.getTriggerCatalog(ACCOUNT_ID);
+    assertThat(lst.size()).isEqualTo(4);
   }
 }
