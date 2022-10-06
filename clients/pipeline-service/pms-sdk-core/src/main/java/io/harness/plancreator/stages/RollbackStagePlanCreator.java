@@ -12,6 +12,7 @@ import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.steps.common.NGSectionStep;
+import io.harness.steps.section.chain.SectionChainStep;
 import io.harness.steps.section.chain.SectionChainStepParameters;
 
 import java.util.ArrayList;
@@ -45,7 +46,7 @@ public class RollbackStagePlanCreator {
             .uuid(stageNode.getUuid() + "_rollbackStage")
             .name(stageNode.getName() + " " + NGCommonUtilPlanCreationConstants.ROLLBACK_STAGE_NODE_NAME)
             .identifier(stageNode.getUuid() + "_rollbackStage")
-            .stepType(NGSectionStep.STEP_TYPE)
+            .stepType(SectionChainStep.STEP_TYPE)
             .stepParameters(SectionChainStepParameters.builder().childNodeIds(childNodeIDs).build())
             .facilitatorObtainment(facilitatorObtainment)
             .skipExpressionChain(true)
