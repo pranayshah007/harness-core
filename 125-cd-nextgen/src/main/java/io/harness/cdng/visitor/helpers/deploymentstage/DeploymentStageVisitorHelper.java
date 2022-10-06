@@ -75,7 +75,8 @@ public class DeploymentStageVisitorHelper implements ConfigValidator, EntityRefe
     for (ExecutionWrapperConfig wrapperConfig : steps) {
       try {
         if (!isNull(wrapperConfig.getStep())) {
-          if (wrapperConfig.getStep().get("type").asText().equals(CUSTOM_DEPLOYMENT_FETCH_INSTANCE_SCRIPT)) {
+          if (wrapperConfig.getStep().has("type")
+              && wrapperConfig.getStep().get("type").asText().equals(CUSTOM_DEPLOYMENT_FETCH_INSTANCE_SCRIPT)) {
             YamlUtils.read(wrapperConfig.getStep().toString(), FetchInstanceScriptStepNode.class);
             fetchInstanceScriptStepCount++;
           }

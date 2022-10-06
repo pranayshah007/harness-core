@@ -7,14 +7,12 @@
 
 package io.harness.ng.core.customDeployment.helper;
 
-import static io.harness.NGCommonEntityConstants.VERSION_LABEL_KEY;
 import static io.harness.common.EntityYamlRootNames.INFRASTRUCTURE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum.CONNECTORS;
 import static io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum.TEMPLATE;
 import static io.harness.ng.core.template.TemplateEntityConstants.CUSTOM_DEPLOYMENT_ROOT_FIELD;
-import static io.harness.template.yaml.TemplateRefHelper.TEMPLATE_REF;
 
 import static java.util.Objects.isNull;
 
@@ -74,6 +72,7 @@ public class CustomDeploymentYamlHelper {
   private static final String ACCOUNT_IDENTIFIER = "account.";
   private static final String INPUT_STRING = "<+input>";
   private static final String ORG_IDENTIFIER = "org.";
+  private static final String STEP_TEMPLATE_REFS = "stepTemplateRefs";
   @JsonIgnore private final ObjectMapper jsonObjectMapper = new ObjectMapper();
   @Inject TemplateResourceClient templateResourceClient;
 
@@ -261,7 +260,8 @@ public class CustomDeploymentYamlHelper {
       YamlField yaml = YamlUtils.getTopRootFieldInYaml(entityYaml);
       populateReferredEntitiesListForLeafNodes(accountId, orgId, projectId, referredEntities, yaml, path);
     } catch (Exception e) {
-      throw new InvalidRequestException("Template yaml provided does not have valid entity references ", e);
+      throw new InvalidRequestException(
+          "Template yaml provided does not have valid entity references: " + e.getMessage());
     }
     return referredEntities;
   }
@@ -383,7 +383,7 @@ public class CustomDeploymentYamlHelper {
     }
   }
 
-  private static void populateReferredEntitiesListForLeafNodes(String accountId, String orgId, String projectId,
+  private void populateReferredEntitiesListForLeafNodes(String accountId, String orgId, String projectId,
       List<EntityDetailProtoDTO> referredEntities, YamlField yamlField, Stack<String> path) {
     path.push(yamlField.getName());
     if (yamlField.getNode().isArray()) {
@@ -396,7 +396,7 @@ public class CustomDeploymentYamlHelper {
     path.pop();
   }
 
-  private static void populateReferredEntitiesListForLeafNodesInObject(String accountId, String orgId, String projectId,
+  private void populateReferredEntitiesListForLeafNodesInObject(String accountId, String orgId, String projectId,
       List<EntityDetailProtoDTO> referredEntities, YamlNode yamlNode, Stack<String> path) {
     for (YamlField field : yamlNode.fields()) {
       if (!field.getNode().getCurrJsonNode().isValueNode()) {
@@ -405,25 +405,27 @@ public class CustomDeploymentYamlHelper {
     }
   }
 
-  private static void populateReferredEntitiesListForLeafNodesInArray(String accountId, String orgId, String projectId,
+  private void populateReferredEntitiesListForLeafNodesInArray(String accountId, String orgId, String projectId,
       List<EntityDetailProtoDTO> referredEntities, YamlNode yamlNode, Stack<String> path) {
     if (YamlUtils.checkIfNodeIsArrayWithPrimitiveTypes(yamlNode.getCurrJsonNode())) {
-      return;
-    }
-    for (YamlNode arrayElement : yamlNode.asArray()) {
-      if (isEmpty(arrayElement.getIdentifier())) {
-        if (isNotEmpty(arrayElement.getArrayUniqueIdentifier())) {
+      if (!path.empty() && path.lastElement().equals(STEP_TEMPLATE_REFS)) {
+        for (YamlNode arrayElement : yamlNode.asArray()) {
+          EntityDetailProtoDTO referredEntity =
+              getTemplateReferredEntity(accountId, orgId, projectId, arrayElement.asText());
+          if (!isNull(referredEntity)) {
+            referredEntities.add(referredEntity);
+          }
+        }
+      }
+    } else {
+      for (YamlNode arrayElement : yamlNode.asArray()) {
+        if (isEmpty(arrayElement.getIdentifier()) && isNotEmpty(arrayElement.getArrayUniqueIdentifier())) {
           if (isNull(arrayElement.getField(YAMLFieldNameConstants.VALUE))
               || isNull(arrayElement.getField(YAMLFieldNameConstants.TYPE))) {
             continue;
           }
           EntityDetailProtoDTO referredEntity =
               getConnectorReferredEntity(accountId, orgId, projectId, arrayElement, path);
-          if (!isNull(referredEntity)) {
-            referredEntities.add(referredEntity);
-          }
-        } else {
-          EntityDetailProtoDTO referredEntity = getTemplateReferredEntity(accountId, orgId, projectId, arrayElement);
           if (!isNull(referredEntity)) {
             referredEntities.add(referredEntity);
           }
@@ -446,14 +448,12 @@ public class CustomDeploymentYamlHelper {
     return null;
   }
 
-  private static EntityDetailProtoDTO getTemplateReferredEntity(
-      String accountId, String orgId, String projectId, YamlNode arrayElement) {
-    if (arrayElement.getField(TEMPLATE_REF) != null && arrayElement.getField(VERSION_LABEL_KEY) != null) {
-      String templateRef = arrayElement.getField(TEMPLATE_REF).getNode().asText();
-      String versionLabel = arrayElement.getField(VERSION_LABEL_KEY).getNode().asText();
-      return buildTemplateEntityDetailProtoDTO(accountId, orgId, projectId, templateRef, versionLabel);
+  private EntityDetailProtoDTO getTemplateReferredEntity(
+      String accountId, String orgId, String projectId, String templateRef) {
+    if (isEmpty(templateRef)) {
+      throw new InvalidRequestException("Template ref cannot be empty");
     }
-    return null;
+    return buildStableTemplateEntityDetailProtoDTO(accountId, orgId, projectId, templateRef);
   }
 
   private static EntityDetailProtoDTO buildConnectorEntityDetailProtoDTO(
@@ -485,11 +485,12 @@ public class CustomDeploymentYamlHelper {
         .build();
   }
 
-  private static EntityDetailProtoDTO buildTemplateEntityDetailProtoDTO(
-      String accountId, String orgId, String projectId, String templateRef, String versionLabel) {
+  private EntityDetailProtoDTO buildStableTemplateEntityDetailProtoDTO(
+      String accountId, String orgId, String projectId, String templateRef) {
+    getScopedTemplateResponseDTO(accountId, orgId, projectId, templateRef, "");
     TemplateReferenceProtoDTO.Builder templateReferenceProtoDTO = TemplateReferenceProtoDTO.newBuilder()
                                                                       .setAccountIdentifier(StringValue.of(accountId))
-                                                                      .setVersionLabel(StringValue.of(versionLabel));
+                                                                      .setVersionLabel(StringValue.of("__STABLE__"));
     if (templateRef.contains(ACCOUNT_IDENTIFIER)) {
       templateReferenceProtoDTO.setScope(ScopeProtoEnum.ACCOUNT)
           .setIdentifier(StringValue.of(templateRef.replace(ACCOUNT_IDENTIFIER, "")));
@@ -547,7 +548,7 @@ public class CustomDeploymentYamlHelper {
       return (ObjectNode) templateInfra;
     } catch (IOException e) {
       log.error("Error occurred while fetching template infrastructure " + e);
-      throw new InvalidRequestException("Error occurred while fetching template infrastructure ", e);
+      throw new InvalidRequestException("Error occurred while fetching template infrastructure " + e.getMessage());
     }
   }
 
@@ -588,7 +589,7 @@ public class CustomDeploymentYamlHelper {
       return variables;
     } catch (Exception e) {
       log.error("Error occurred while fetching template " + e);
-      throw new InvalidRequestException("Error occurred while fetching template ", e);
+      throw new InvalidRequestException("Error occurred while fetching template " + e.getMessage());
     }
   }
 
@@ -619,7 +620,8 @@ public class CustomDeploymentYamlHelper {
       }
       return variables;
     } catch (Exception e) {
-      throw new InvalidRequestException("Error occurred while parsing variables from infrastructure yaml ", e);
+      throw new InvalidRequestException(
+          "Error occurred while parsing variables from infrastructure yaml " + e.getMessage());
     }
   }
 }

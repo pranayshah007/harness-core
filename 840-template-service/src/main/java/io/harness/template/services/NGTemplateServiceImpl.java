@@ -13,6 +13,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.exception.WingsException.USER_SRE;
 import static io.harness.remote.client.NGRestUtils.getResponse;
+import static io.harness.template.beans.NGTemplateConstants.STABLE_VERSION;
 import static io.harness.utils.RestCallToNGManagerClientUtils.execute;
 
 import static java.lang.String.format;
@@ -530,28 +531,41 @@ public class NGTemplateServiceImpl implements NGTemplateService {
   }
 
   private void checkThatTheTemplateIsNotUsedByOthers(TemplateEntity templateToDelete) {
-    boolean isEntityReferenced;
     IdentifierRef identifierRef = IdentifierRef.builder()
                                       .accountIdentifier(templateToDelete.getAccountIdentifier())
                                       .orgIdentifier(templateToDelete.getOrgIdentifier())
                                       .projectIdentifier(templateToDelete.getProjectIdentifier())
                                       .identifier(templateToDelete.getIdentifier())
                                       .build();
-    String referredEntityFQN = identifierRef.getFullyQualifiedName() + "/" + templateToDelete.getVersionLabel() + "/";
-    try {
-      isEntityReferenced = execute(entitySetupUsageClient.isEntityReferenced(
-          templateToDelete.getAccountIdentifier(), referredEntityFQN, EntityType.TEMPLATE));
-    } catch (Exception ex) {
-      log.info("Encountered exception while requesting the Entity Reference records of [{}], with exception",
-          templateToDelete.getIdentifier(), ex);
-      throw new UnexpectedException(
-          String.format("Error while checking references for template %s with version label: %s : %s",
-              templateToDelete.getIdentifier(), templateToDelete.getVersionLabel(), ex.getMessage()));
-    }
-    if (isEntityReferenced) {
+
+    if (isTemplateEntityReferenced(identifierRef, templateToDelete.getAccountIdentifier(),
+            templateToDelete.getIdentifier(), templateToDelete.getVersionLabel())) {
       throw new ReferencedEntityException(String.format(
           "Could not delete the template %s as it is referenced by other entities", templateToDelete.getIdentifier()));
     }
+    if (templateToDelete.isStableTemplate()
+        && isTemplateEntityReferenced(
+            identifierRef, templateToDelete.getAccountIdentifier(), templateToDelete.getIdentifier(), STABLE_VERSION)) {
+      throw new ReferencedEntityException(String.format(
+          "Could not delete the template %s as it is referenced by other entities", templateToDelete.getIdentifier()));
+    }
+  }
+
+  private boolean isTemplateEntityReferenced(
+      IdentifierRef identifierRef, String accountId, String templateId, String versionLabel) {
+    String referredEntityFQN = identifierRef.getFullyQualifiedName() + "/" + versionLabel + "/";
+    boolean isEntityReferenced;
+    try {
+      isEntityReferenced =
+          execute(entitySetupUsageClient.isEntityReferenced(accountId, referredEntityFQN, EntityType.TEMPLATE));
+    } catch (Exception ex) {
+      log.info("Encountered exception while requesting the Entity Reference records of [{}], with exception",
+          templateId, ex);
+      throw new UnexpectedException(
+          String.format("Error while checking references for template %s with version label: %s : %s", templateId,
+              versionLabel, ex.getMessage()));
+    }
+    return isEntityReferenced;
   }
 
   @Override
