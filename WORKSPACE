@@ -4799,6 +4799,7 @@ plain_artifacts = [
     "io.harness:ng-manager-server-spec:1.0.25",
     "io.harness:platform-server-spec:1.0.10",
     "io.harness:pipeline-server-spec:1.0.16",
+    "io.harness:template-server-spec:1.0.7",
     "io.jsonwebtoken:jjwt:0.9.1",
     "io.kubernetes:client-java-api:16.0.0",
     "io.kubernetes:client-java-extended:16.0.0",
@@ -5159,7 +5160,6 @@ plain_artifacts = [
     "io.swagger.core.v3:swagger-models:2.2.0",
     "io.swagger.core.v3:swagger-integration:2.2.0",
     "io.opentelemetry:opentelemetry-api:1.18.0",
-    "io.harness:smp-license:1.0.7",
 ]
 
 amazon_artifacts = [
