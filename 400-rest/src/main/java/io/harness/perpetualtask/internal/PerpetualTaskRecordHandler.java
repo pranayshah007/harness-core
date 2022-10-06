@@ -23,6 +23,7 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.DelegateTask;
 import io.harness.delegate.Capability;
 import io.harness.delegate.NoEligibleDelegatesInAccountException;
+import io.harness.delegate.beans.DelegateMetaInfo;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.DelegateTaskNotifyResponseData;
 import io.harness.delegate.beans.NoAvailableDelegatesException;
@@ -150,12 +151,12 @@ public class PerpetualTaskRecordHandler implements PerpetualTaskCrudObserver {
               return;
             }
           }
-          if (((DelegateTaskNotifyResponseData) response).getDelegateMetaInfo() != null) {
-            String delegateId = ((DelegateTaskNotifyResponseData) response).getDelegateMetaInfo().getId();
-            log.info("Delegate {} is assigned to the inactive {} perpetual task with id={}.", delegateId,
+          DelegateMetaInfo delegateMetaInfo = ((DelegateTaskNotifyResponseData) response).getDelegateMetaInfo();
+          if (delegateMetaInfo != null) {
+            log.info("Delegate {} is assigned to the inactive {} perpetual task with id={}.", delegateMetaInfo.getId(),
                 taskRecord.getPerpetualTaskType(), taskId);
             perpetualTaskService.appointDelegate(
-                taskRecord.getAccountId(), taskId, delegateId, System.currentTimeMillis());
+                taskRecord.getAccountId(), taskId, delegateMetaInfo.getId(), System.currentTimeMillis());
           } else {
             log.info("Perpetual task {} unable to assign delegate due to missing DelegateMetaInfo.",
                 validationTask.getUuid());
