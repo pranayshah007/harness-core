@@ -37,6 +37,7 @@ public enum FeatureName {
   AZURE_US_GOV_CLOUD,
   AZURE_VMSS,
   AZURE_WEBAPP,
+  AUDIT_TRAIL_ENHANCEMENT,
   BIND_FETCH_FILES_TASK_TO_DELEGATE,
   CCM_SUSTAINABILITY("Sustainability Feature in CCM Module", HarnessTeam.CE),
   CDNG_ENABLED,
