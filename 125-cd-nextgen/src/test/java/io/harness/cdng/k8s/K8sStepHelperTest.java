@@ -30,8 +30,6 @@ import static io.harness.rule.OwnerRule.PRATYUSH;
 import static io.harness.rule.OwnerRule.VAIBHAV_SI;
 
 import static java.util.Arrays.asList;
-import static java.util.Collections.emptyList;
-import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -2008,12 +2006,13 @@ public class K8sStepHelperTest extends CategoryTest {
         StepElementParameters.builder().spec(K8sRollingStepParameters.infoBuilder().build()).build();
 
     StoreConfig store = CustomRemoteStoreConfig.builder().build();
-    K8sStepPassThroughData passThroughData =
-        K8sStepPassThroughData.builder()
-            .manifestOutcome(HelmChartManifestOutcome.builder().store(store).build())
-            .infrastructure(K8sDirectInfrastructureOutcome.builder().build())
-            .shouldOpenFetchFilesStream(true)
-            .build();
+    HelmChartManifestOutcome helmChartManifestOutcome =
+        HelmChartManifestOutcome.builder().identifier("id").store(store).build();
+    K8sStepPassThroughData passThroughData = K8sStepPassThroughData.builder()
+                                                 .manifestOutcome(helmChartManifestOutcome)
+                                                 .infrastructure(K8sDirectInfrastructureOutcome.builder().build())
+                                                 .shouldOpenFetchFilesStream(true)
+                                                 .build();
     Map<String, Collection<CustomSourceFile>> valuesFilesContentMap = new HashMap<>();
     valuesFilesContentMap.put("id",
         asList(CustomSourceFile.builder().fileContent("values yaml payload").filePath("path/to/values.yaml").build()));
@@ -2037,9 +2036,19 @@ public class K8sStepHelperTest extends CategoryTest {
             .zippedManifestFileId(customManifestValuesFetchResponse.getZippedManifestFileId())
             .shouldOpenFetchFilesStream(false)
             .build();
-    verify(k8sStepHelper, times(1))
-        .executeValuesFetchTask(
-            eq(ambiance), eq(stepElementParams), eq(emptyList()), eq(emptyMap()), eq(updatedK8sStepPassThroughData));
+    ArgumentCaptor<List> valuesFilesContentCaptor = ArgumentCaptor.forClass(List.class);
+    verify(k8sStepExecutor, times(1))
+        .executeK8sTask(eq(helmChartManifestOutcome), eq(ambiance), eq(stepElementParams),
+            valuesFilesContentCaptor.capture(),
+            eq(K8sExecutionPassThroughData.builder()
+                    .infrastructure(updatedK8sStepPassThroughData.getInfrastructure())
+                    .zippedManifestId(updatedK8sStepPassThroughData.getZippedManifestFileId())
+                    .lastActiveUnitProgressData(null)
+                    .build()),
+            eq(updatedK8sStepPassThroughData.getShouldOpenFetchFilesStream()), eq(null));
+    List<String> valuesFilesContent = valuesFilesContentCaptor.getValue();
+    assertThat(valuesFilesContent).isNotEmpty();
+    assertThat(valuesFilesContent.size()).isEqualTo(1);
   }
 
   @Test

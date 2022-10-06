@@ -13,5 +13,5 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public enum FilterType {
   @JsonProperty("All") ALL,
   @JsonProperty("Equals") EQUALS,
-  @JsonProperty("NOT_EQUALS") @JsonIgnore NOT_EQUALS,
+  @JsonProperty("NotEquals") @JsonIgnore NOT_EQUALS,
 }

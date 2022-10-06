@@ -14,6 +14,7 @@ import io.harness.connector.heartbeat.ArtifactoryValidationParamsProvider;
 import io.harness.connector.heartbeat.AwsKmsConnectorValidationParamsProvider;
 import io.harness.connector.heartbeat.AwsSecretManagerValidationParamsProvider;
 import io.harness.connector.heartbeat.AwsValidationParamsProvider;
+import io.harness.connector.heartbeat.AzureArtifactsConnectorValidationParamsProvider;
 import io.harness.connector.heartbeat.AzureKeyVaultConnectorValidationParamsProvider;
 import io.harness.connector.heartbeat.AzureValidationParamsProvider;
 import io.harness.connector.heartbeat.CEK8sConnectorValidationParamsProvider;
@@ -44,6 +45,8 @@ import io.harness.connector.mappers.awscodecommit.AwsCodeCommitDTOToEntity;
 import io.harness.connector.mappers.awscodecommit.AwsCodeCommitEntityToDTO;
 import io.harness.connector.mappers.awsmapper.AwsDTOToEntity;
 import io.harness.connector.mappers.awsmapper.AwsEntityToDTO;
+import io.harness.connector.mappers.azureartifacts.AzureArtifactsDTOToEntity;
+import io.harness.connector.mappers.azureartifacts.AzureArtifactsEntityToDTO;
 import io.harness.connector.mappers.azuremapper.AzureDTOToEntity;
 import io.harness.connector.mappers.azuremapper.AzureEntityToDTO;
 import io.harness.connector.mappers.azurerepomapper.AzureRepoDTOToEntity;
@@ -130,6 +133,7 @@ import io.harness.connector.task.gcp.GcpValidationTaskHandler;
 import io.harness.connector.task.git.GitValidationHandler;
 import io.harness.connector.validator.ArtifactoryConnectionValidator;
 import io.harness.connector.validator.AwsConnectorValidator;
+import io.harness.connector.validator.AzureArtifactsConnectorValidator;
 import io.harness.connector.validator.AzureConnectorValidator;
 import io.harness.connector.validator.CCMConnectorValidator;
 import io.harness.connector.validator.CEKubernetesConnectionValidator;
@@ -327,6 +331,10 @@ public class ConnectorRegistryFactory {
         new ConnectorRegistrar(ConnectorCategory.SECRET_MANAGER, SecretManagerConnectorValidator.class,
             CustomSecretManagerValidationParamProvider.class, CustomSecretManagerDTOToEntity.class,
             CustomSecretManagerEntityToDTO.class, NotSupportedValidationHandler.class));
+    registrar.put(ConnectorType.AZURE_ARTIFACTS,
+        new ConnectorRegistrar(ConnectorCategory.ARTIFACTORY, AzureArtifactsConnectorValidator.class,
+            AzureArtifactsConnectorValidationParamsProvider.class, AzureArtifactsDTOToEntity.class,
+            AzureArtifactsEntityToDTO.class, NotSupportedValidationHandler.class));
     registrar.put(ConnectorType.GCP_SECRET_MANAGER,
         new ConnectorRegistrar(ConnectorCategory.SECRET_MANAGER, SecretManagerConnectorValidator.class,
             GcpSecretManagerValidationParamProvider.class, GcpSecretManagerDTOToEntity.class,

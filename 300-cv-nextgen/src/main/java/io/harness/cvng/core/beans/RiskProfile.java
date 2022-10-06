@@ -12,13 +12,36 @@ import io.harness.cvng.beans.TimeSeriesMetricType;
 import io.harness.cvng.beans.TimeSeriesThresholdType;
 
 import java.util.List;
+import java.util.Objects;
 import lombok.Builder;
 import lombok.Data;
 
 @Data
 @Builder
 public class RiskProfile {
-  private CVMonitoringCategory category;
-  private TimeSeriesMetricType metricType;
-  List<TimeSeriesThresholdType> thresholdTypes;
+  @Deprecated private CVMonitoringCategory category;
+  @Deprecated private TimeSeriesMetricType metricType;
+  private RiskCategory riskCategory;
+  private List<TimeSeriesThresholdType> thresholdTypes;
+
+  public CVMonitoringCategory getCategory() {
+    if (Objects.nonNull(riskCategory)) {
+      return riskCategory.getCvMonitoringCategory();
+    }
+    return category;
+  }
+
+  public TimeSeriesMetricType getMetricType() {
+    if (Objects.nonNull(riskCategory)) {
+      return riskCategory.getTimeSeriesMetricType();
+    }
+    return metricType;
+  }
+
+  public RiskCategory getRiskCategory() {
+    if (Objects.isNull(riskCategory) && Objects.nonNull(category) && Objects.nonNull(metricType)) {
+      return RiskCategory.fromMetricAndCategory(metricType, category);
+    }
+    return riskCategory;
+  }
 }

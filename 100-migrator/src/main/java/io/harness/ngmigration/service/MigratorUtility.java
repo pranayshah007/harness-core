@@ -16,6 +16,7 @@ import io.harness.exception.InvalidArgumentsException;
 import io.harness.ngmigration.beans.InputDefaults;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
+import io.harness.ngmigration.secrets.SecretFactory;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.yaml.core.variables.NGVariable;
 import io.harness.yaml.core.variables.NGVariableType;
@@ -58,7 +59,7 @@ public class MigratorUtility {
       case SECRET_MANAGER:
         return 1;
       case SECRET:
-        return 5;
+        return SecretFactory.isStoredInHarnessSecretManager(file) ? Integer.MIN_VALUE : 5;
       case CONNECTOR:
         return 10;
       case SERVICE:
@@ -96,6 +97,9 @@ public class MigratorUtility {
   }
 
   public static SecretRefData getSecretRef(Map<CgEntityId, NGYamlFile> migratedEntities, String secretId) {
+    if (secretId == null) {
+      return null;
+    }
     CgEntityId secretEntityId = CgEntityId.builder().id(secretId).type(SECRET).build();
     if (!migratedEntities.containsKey(secretEntityId)) {
       return SecretRefData.builder().identifier("__PLEASE_FIX_ME__").scope(Scope.PROJECT).build();

@@ -48,7 +48,7 @@ func (b *sbtRunner) GetCmd(ctx context.Context, tests []types.RunnableTest, user
 	}
 
 	agentArg := fmt.Sprintf(javaAgentArg, agentConfigPath)
-	instrArg := fmt.Sprintf("-J%s", agentArg)
+	instrArg := fmt.Sprintf("'set javaOptions ++= Seq(\"%s\")'", agentArg)
 	defaultCmd := fmt.Sprintf("%s %s %s 'test'", sbtCmd, userArgs, instrArg) // run all the tests
 
 	if runAll {

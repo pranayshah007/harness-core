@@ -15,7 +15,6 @@ import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPL
 import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.groupingBy;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
@@ -39,6 +38,8 @@ import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageDTO;
 import io.harness.ng.core.entitysetupusage.service.EntitySetupUsageService;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.beans.Environment.EnvironmentKeys;
+import io.harness.ng.core.environment.beans.EnvironmentInputsetYamlAndServiceOverridesMetadata;
+import io.harness.ng.core.environment.beans.EnvironmentInputsetYamlandServiceOverridesMetadataDTO;
 import io.harness.ng.core.environment.services.EnvironmentService;
 import io.harness.ng.core.events.EnvironmentCreateEvent;
 import io.harness.ng.core.events.EnvironmentDeleteEvent;
@@ -61,7 +62,6 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.google.protobuf.StringValue;
-import com.mongodb.client.result.UpdateResult;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -306,8 +306,8 @@ public class EnvironmentServiceImpl implements EnvironmentService {
 
     Criteria criteria = getAllEnvironmentsEqualityCriteriaWithinProject(accountId, orgIdentifier, projectIdentifier);
     return Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
-      UpdateResult updateResult = environmentRepository.deleteMany(criteria);
-      if (!updateResult.wasAcknowledged()) {
+      boolean deleted = environmentRepository.delete(criteria);
+      if (!deleted) {
         throw new InvalidRequestException(
             String.format("Environments under Project[%s], Organization [%s] couldn't be deleted.", projectIdentifier,
                 orgIdentifier));
@@ -511,20 +511,26 @@ public class EnvironmentServiceImpl implements EnvironmentService {
     return false;
   }
 
-  public List<Environment> getEnvironments(
-      String accountIdentifier, String orgIdentifier, String projectIdentifier, List<String> environmemtIdentifiers) {
-    if (isEmpty(environmemtIdentifiers)) {
-      return emptyList();
+  public EnvironmentInputsetYamlandServiceOverridesMetadataDTO getEnvironmentsInputYamlAndServiceOverridesMetadata(
+      String accountId, String orgIdentifier, String projectIdentifier, List<String> envIdentifiers,
+      List<String> serviceIdentifiers) {
+    Map<String, EnvironmentInputsetYamlAndServiceOverridesMetadata> environmentYamlMetadataMap = new HashMap<>();
+    for (String env : envIdentifiers) {
+      String inputYaml = createEnvironmentInputsYaml(accountId, orgIdentifier, projectIdentifier, env);
+      Map<String, String> serviceOverridesYaml = new HashMap<>();
+      for (String serviceId : serviceIdentifiers) {
+        String serviceOverrides = serviceOverrideService.createServiceOverrideInputsYaml(
+            accountId, orgIdentifier, projectIdentifier, env, serviceId);
+        serviceOverridesYaml.put(serviceId, serviceOverrides);
+      }
+      environmentYamlMetadataMap.put(env,
+          EnvironmentInputsetYamlAndServiceOverridesMetadata.builder()
+              .runtimeInputYaml(inputYaml)
+              .serviceOverridesYaml(serviceOverridesYaml)
+              .build());
     }
-    Criteria criteria = Criteria.where(EnvironmentKeys.accountId)
-                            .is(accountIdentifier)
-                            .and(EnvironmentKeys.orgIdentifier)
-                            .is(orgIdentifier)
-                            .and(EnvironmentKeys.projectIdentifier)
-                            .is(projectIdentifier)
-                            .and(EnvironmentKeys.identifier)
-                            .in(environmemtIdentifiers);
-
-    return environmentRepository.findAll(criteria);
+    return EnvironmentInputsetYamlandServiceOverridesMetadataDTO.builder()
+        .environmentsInputYamlAndServiceOverrides(environmentYamlMetadataMap)
+        .build();
   }
 }

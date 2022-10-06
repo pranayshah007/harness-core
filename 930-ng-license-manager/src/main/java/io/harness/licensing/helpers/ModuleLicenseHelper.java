@@ -262,13 +262,14 @@ public class ModuleLicenseHelper {
       case CHAOS:
         ChaosModuleLicense chaosLicense = (ChaosModuleLicense) update;
         ChaosModuleLicense currentCHAOSLicense = (ChaosModuleLicense) current;
-        if (chaosLicense.getTotalChaosDelegates() != null
-            && !chaosLicense.getTotalChaosDelegates().equals(currentCHAOSLicense.getTotalChaosDelegates())) {
-          currentCHAOSLicense.setTotalChaosDelegates(chaosLicense.getTotalChaosDelegates());
+        if (chaosLicense.getTotalChaosInfrastructures() != null
+            && !chaosLicense.getTotalChaosInfrastructures().equals(
+                currentCHAOSLicense.getTotalChaosInfrastructures())) {
+          currentCHAOSLicense.setTotalChaosInfrastructures(chaosLicense.getTotalChaosInfrastructures());
         }
-        if (chaosLicense.getTotalChaosScenarioRun() != null
-            && !chaosLicense.getTotalChaosScenarioRun().equals(currentCHAOSLicense.getTotalChaosScenarioRun())) {
-          currentCHAOSLicense.setTotalChaosScenarioRun(chaosLicense.getTotalChaosScenarioRun());
+        if (chaosLicense.getTotalChaosExperimentRuns() != null
+            && !chaosLicense.getTotalChaosExperimentRuns().equals(currentCHAOSLicense.getTotalChaosExperimentRuns())) {
+          currentCHAOSLicense.setTotalChaosExperimentRuns(chaosLicense.getTotalChaosExperimentRuns());
         }
         break;
       default:

@@ -10,14 +10,10 @@ package io.harness.ngmigration.dto;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ngmigration.beans.ImportMechanism;
-import io.harness.ngmigration.beans.InputDefaults;
-
-import software.wings.ngmigration.NGMigrationEntityType;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.v3.oas.annotations.Parameter;
 import java.util.List;
-import java.util.Map;
 import javax.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -31,10 +27,7 @@ public class SecretFilter extends Filter {
       description =
           "ALL: To migrate all secrets. ID: TO migrate only specific connectors. Specific type is current not supported")
   @NotNull
-  private ImportMechanism mechanism;
+  private ImportMechanism importType;
 
   @Parameter(description = "To be provided if mechanism is ID") private List<String> ids;
-
-  @Parameter(description = "The defaults for every entity. By default every entity is scoped to project.")
-  private Map<NGMigrationEntityType, InputDefaults> defaults;
 }

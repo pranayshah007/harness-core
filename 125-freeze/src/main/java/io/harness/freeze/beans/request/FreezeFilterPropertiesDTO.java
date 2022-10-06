@@ -21,5 +21,7 @@ public class FreezeFilterPropertiesDTO {
           "Specifies the sorting criteria of the list. Like sorting based on the last updated entity, alphabetical sorting in an ascending or descending order")
   List<String> sort;
   FreezeStatus freezeStatus;
+  Long startTime;
+  Long endTime;
   @Parameter(description = "The word to be searched and included in the list response") String searchTerm;
 }

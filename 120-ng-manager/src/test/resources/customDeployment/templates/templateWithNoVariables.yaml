@@ -1,0 +1,22 @@
+template:
+  name: OpenStack
+  identifier: OpenStack
+  tags: {}
+  description: ""
+  type: CustomDeployment
+  spec:
+    infrastructure:
+      fetchInstancesScript:
+        store:
+          type: Harness
+          spec:
+            files:
+              - account:/manifest.yml
+      instancesListPath: instances
+      instanceAttributes:
+        - name: hostName
+          jsonPath: <+input>
+          description: "IP address of the host"
+    execution:
+      stepTemplateRefs:
+        - org.OpenStackSetup

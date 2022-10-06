@@ -26,6 +26,9 @@ import io.harness.connector.entities.embedded.awskmsconnector.AwsKmsIamCredentia
 import io.harness.connector.entities.embedded.awskmsconnector.AwsKmsManualCredential;
 import io.harness.connector.entities.embedded.awskmsconnector.AwsKmsStsCredential;
 import io.harness.connector.entities.embedded.awssecretmanager.AwsSecretManagerConnector;
+import io.harness.connector.entities.embedded.azureartifacts.AzureArtifactsAuthentication;
+import io.harness.connector.entities.embedded.azureartifacts.AzureArtifactsConnector;
+import io.harness.connector.entities.embedded.azureartifacts.AzureArtifactsTokenCredentials;
 import io.harness.connector.entities.embedded.azureconnector.AzureConfig;
 import io.harness.connector.entities.embedded.azureconnector.AzureManagedIdentityCredential;
 import io.harness.connector.entities.embedded.azureconnector.AzureManualCredential;
@@ -154,6 +157,7 @@ public class ConnectorMorphiaClassesRegistrar implements MorphiaRegistrar {
     set.add(CustomSecretManagerConnector.class);
     set.add(ELKConnector.class);
     set.add(GcpSecretManagerConnector.class);
+    set.add(AzureArtifactsConnector.class);
   }
 
   @Override
@@ -221,5 +225,7 @@ public class ConnectorMorphiaClassesRegistrar implements MorphiaRegistrar {
     h.put("connector.entities.embedded.azurerepoconnector.AzureRepoHttpAuthentication",
         AzureRepoHttpAuthentication.class);
     h.put("connector.entities.embedded.azurerepoconnector.AzureRepoUsernameToken", AzureRepoUsernameToken.class);
+    h.put("connector.entities.embedded.azureartifacts.AzureRepoHttpAuthentication", AzureArtifactsAuthentication.class);
+    h.put("connector.entities.embedded.azureartifacts.AzureRepoUsernameToken", AzureArtifactsTokenCredentials.class);
   }
 }

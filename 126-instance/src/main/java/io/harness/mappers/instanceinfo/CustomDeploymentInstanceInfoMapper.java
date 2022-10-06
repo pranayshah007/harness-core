@@ -19,14 +19,14 @@ import lombok.experimental.UtilityClass;
 public class CustomDeploymentInstanceInfoMapper {
   public CustomDeploymentInstanceInfoDTO toDTO(CustomDeploymentInstanceInfo customDeploymentInstanceInfo) {
     return CustomDeploymentInstanceInfoDTO.builder()
-        .instanceFetchScriptHash(customDeploymentInstanceInfo.getInstanceFetchScriptHash())
+        .infrastructureKey(customDeploymentInstanceInfo.getInfrastructureKey())
         .hostname(customDeploymentInstanceInfo.getHostname())
         .properties(customDeploymentInstanceInfo.getProperties())
         .build();
   }
   public CustomDeploymentInstanceInfo toEntity(CustomDeploymentInstanceInfoDTO customDeploymentInstanceInfoDTO) {
     return CustomDeploymentInstanceInfo.builder()
-        .instanceFetchScriptHash(customDeploymentInstanceInfoDTO.getInstanceFetchScriptHash())
+        .infrastructureKey(customDeploymentInstanceInfoDTO.getInfrastructureKey())
         .hostname(customDeploymentInstanceInfoDTO.getHostname())
         .properties(customDeploymentInstanceInfoDTO.getProperties())
         .build();

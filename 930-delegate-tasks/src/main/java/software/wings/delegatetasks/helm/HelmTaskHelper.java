@@ -210,7 +210,7 @@ public class HelmTaskHelper {
     unzipManifestFiles(destDir, zipInputStream);
   }
 
-  private void populateChartToLocalHelmRepo(HelmChartConfigParams helmChartConfig, long timeoutInMillis,
+  public void populateChartToLocalHelmRepo(HelmChartConfigParams helmChartConfig, long timeoutInMillis,
       String workingDirectory, HelmCommandFlag helmCommandFlag) throws Exception {
     try {
       if (!helmTaskHelperBase.doesChartExistInLocalRepo(

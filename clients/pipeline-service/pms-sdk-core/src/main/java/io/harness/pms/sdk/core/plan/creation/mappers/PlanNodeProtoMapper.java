@@ -48,6 +48,7 @@ public class PlanNodeProtoMapper {
             .addAllAdviserObtainments(CollectionUtils.emptyIfNull(node.getAdviserObtainments()))
             .addAllFacilitatorObtainments(CollectionUtils.emptyIfNull(node.getFacilitatorObtainments()))
             .setSkipExpressionChain(node.isSkipExpressionChain())
+            .setExpressionMode(node.getExpressionMode())
             .setSkipType(node.getSkipGraphType())
             .setServiceName(serviceName)
             .addAllTimeoutObtainments(toTimeoutObtainments(node.getTimeoutObtainments()))

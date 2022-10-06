@@ -103,6 +103,112 @@
     }
   ],
   "definitions": {
+    "AMIArtifactConfig": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ArtifactConfig"
+        },
+        {
+          "type": "object",
+          "required": [
+            "connectorRef",
+            "region"
+          ],
+          "properties": {
+            "connectorRef": {
+              "type": "string",
+              "minLength": 1
+            },
+            "filters": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/AMIFilter"
+              }
+            },
+            "region": {
+              "type": "string",
+              "enum": [
+                "us-east-1",
+                "us-east-2",
+                "us-west-1",
+                "us-west-2",
+                "af-south-1",
+                "ap-east-1",
+                "ap-south-east-3",
+                "ap-south-east-2",
+                "ap-south-east-1",
+                "ap-south-1",
+                "ap-northeast-3",
+                "ap-north-east-2",
+                "ap-north-east-1",
+                "ca-central-1",
+                "eu-central-1",
+                "eu-west-1",
+                "eu-west-2",
+                "eu-west-3",
+                "eu-south-1",
+                "eu-north-1",
+                "me-south-1",
+                "me-central-1",
+                "sa-east-1"
+              ],
+              "minLength": 1
+            },
+            "tags": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/AMITag"
+              }
+            },
+            "version": {
+              "type": "string"
+            },
+            "versionRegex": {
+              "type": "string"
+            }
+          }
+        },
+        {
+          "oneOf": [
+            {
+              "required": [
+                "versionRegex"
+              ]
+            },
+            {
+              "required": [
+                "version"
+              ]
+            }
+          ]
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "AMIFilter": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "AMITag": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "AbortFailureActionConfig": {
       "allOf": [
         {
@@ -200,7 +306,8 @@
           ],
           "properties": {
             "bucketName": {
-              "type": "string"
+              "type": "string",
+              "minLength": 1
             },
             "connectorRef": {
               "type": "string"
@@ -319,7 +426,8 @@
             "AmazonS3",
             "GoogleArtifactRegistry",
             "GithubPackageRegistry",
-            "AzureArtifactsRegistry"
+            "AzureArtifacts",
+            "AmazonMachineImage"
           ]
         }
       },
@@ -337,6 +445,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/AcrArtifactConfig"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "AmazonMachineImage"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/AMIArtifactConfig"
               }
             }
           }
@@ -377,14 +501,14 @@
           "if": {
             "properties": {
               "type": {
-                "const": "AzureArtifactsRegistry"
+                "const": "AzureArtifacts"
               }
             }
           },
           "then": {
             "properties": {
               "spec": {
-                "$ref": "#/definitions/AzureArtifactConfig"
+                "$ref": "#/definitions/AzureArtifactsConfig"
               }
             }
           }
@@ -684,7 +808,7 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
-    "AzureArtifactConfig": {
+    "AzureArtifactsConfig": {
       "allOf": [
         {
           "$ref": "#/definitions/ArtifactConfig"
@@ -694,9 +818,8 @@
           "required": [
             "connectorRef",
             "feed",
-            "packageName",
+            "package",
             "packageType",
-            "project",
             "scope"
           ],
           "properties": {
@@ -706,7 +829,7 @@
             "feed": {
               "type": "string"
             },
-            "packageName": {
+            "package": {
               "type": "string"
             },
             "packageType": {
@@ -3212,6 +3335,16 @@
                   "minLength": 1
                 }
               ]
+            },
+            "doNotDownsizeOldService": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string"
+                }
+              ]
             }
           }
         }
@@ -3482,10 +3615,19 @@
           "type": "string"
         },
         "environments": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/EnvironmentYamlV2"
-          }
+          "oneOf": [
+            {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/EnvironmentYamlV2"
+              }
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
         },
         "metadata": {
           "type": "string"
@@ -3718,7 +3860,7 @@
             "StepGroupRollback",
             "PipelineRollback",
             "ManualIntervention",
-            "ProceedWithDefaultValue"
+            "ProceedWithDefaultValues"
           ]
         }
       },
@@ -7111,7 +7253,7 @@
               "Verification",
               "DelegateProvisioning",
               "PolicyEvaluationFailure",
-              "ExecutionInputTimeoutError"
+              "InputTimeoutError"
             ]
           }
         }
@@ -7689,7 +7831,8 @@
             "AmazonS3",
             "GoogleArtifactRegistry",
             "GithubPackageRegistry",
-            "AzureArtifactsRegistry"
+            "AzureArtifacts",
+            "AmazonMachineImage"
           ]
         }
       },
@@ -7707,6 +7850,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/AcrArtifactConfig"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "AmazonMachineImage"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/AMIArtifactConfig"
               }
             }
           }
@@ -7747,14 +7906,14 @@
           "if": {
             "properties": {
               "type": {
-                "const": "AzureArtifactsRegistry"
+                "const": "AzureArtifacts"
               }
             }
           },
           "then": {
             "properties": {
               "spec": {
-                "$ref": "#/definitions/AzureArtifactConfig"
+                "$ref": "#/definitions/AzureArtifactsConfig"
               }
             }
           }
@@ -7919,7 +8078,7 @@
             "type": {
               "type": "string",
               "enum": [
-                "ProceedWithDefaultValue"
+                "ProceedWithDefaultValues"
               ]
             }
           }
@@ -8746,6 +8905,56 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "ShellScriptProvisionStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "required": [
+            "source"
+          ],
+          "properties": {
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "environmentVariables": {
+              "type": "array",
+              "items": {
+                "oneOf": [
+                  {
+                    "$ref": "#/definitions/NumberNGVariable"
+                  },
+                  {
+                    "$ref": "#/definitions/SecretNGVariable"
+                  },
+                  {
+                    "$ref": "#/definitions/StringNGVariable"
+                  }
+                ]
+              }
+            },
+            "source": {
+              "$ref": "#/definitions/ShellScriptSourceWrapper"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "ShellScriptSourceWrapper": {
       "type": "object",
       "required": [
@@ -8819,7 +9028,8 @@
             "AmazonS3",
             "GoogleArtifactRegistry",
             "GithubPackageRegistry",
-            "AzureArtifactsRegistry"
+            "AzureArtifacts",
+            "AmazonMachineImage"
           ]
         }
       },
@@ -8837,6 +9047,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/AcrArtifactConfig"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "AmazonMachineImage"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/AMIArtifactConfig"
               }
             }
           }
@@ -8877,14 +9103,14 @@
           "if": {
             "properties": {
               "type": {
-                "const": "AzureArtifactsRegistry"
+                "const": "AzureArtifacts"
               }
             }
           },
           "then": {
             "properties": {
               "spec": {
-                "$ref": "#/definitions/AzureArtifactConfig"
+                "$ref": "#/definitions/AzureArtifactsConfig"
               }
             }
           }
@@ -9600,6 +9826,22 @@
           "if": {
             "properties": {
               "type": {
+                "const": "GitOpsUpdateReleaseRepo"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/UpdateReleaseRepoStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
                 "const": "HelmDeploy"
               }
             }
@@ -9848,6 +10090,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/ServerlessAwsLambdaRollbackStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "ShellScriptProvision"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/ShellScriptProvisionStepInfo"
               }
             }
           }
@@ -10855,6 +11113,53 @@
           "$ref": "#/definitions/TerraformVarFile"
         }
       },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "UpdateReleaseRepoStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "stringMap": {
+              "$ref": "#/definitions/ParameterFieldMapStringString"
+            },
+            "variables": {
+              "type": "array",
+              "items": {
+                "oneOf": [
+                  {
+                    "$ref": "#/definitions/NumberNGVariable"
+                  },
+                  {
+                    "$ref": "#/definitions/SecretNGVariable"
+                  },
+                  {
+                    "$ref": "#/definitions/StringNGVariable"
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "ValuesManifest": {

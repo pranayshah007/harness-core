@@ -19,6 +19,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.WingsException;
+import io.harness.outbox.OutboxEvent;
 import io.harness.outbox.api.OutboxService;
 
 import software.wings.beans.Account;
@@ -178,16 +179,20 @@ public class LoginSettingsServiceImpl implements LoginSettingsService {
   private void ngAuditLoginSettings(
       String accountIdentifier, LoginSettings oldLoginSettings, LoginSettings newLoginSettings) {
     try {
-      outboxService.save(
+      OutboxEvent outboxEvent = outboxService.save(
           LoginSettingsHarnessUsernamePasswordUpdateEvent.builder()
               .accountIdentifier(accountIdentifier)
               .loginSettingsId(newLoginSettings.getUuid())
               .oldLoginSettingsYamlDTO(LoginSettingsYamlDTO.builder().loginSettings(oldLoginSettings).build())
               .newLoginSettingsYamlDTO(LoginSettingsYamlDTO.builder().loginSettings(newLoginSettings).build())
               .build());
+      log.info(
+          "NG Auth Audits: for account {} and outboxEventId {} successfully saved the audit for LoginSettingsHarnessUsernamePasswordUpdateEvent to outbox",
+          accountIdentifier, outboxEvent.getId());
     } catch (Exception ex) {
       log.error(
-          "For account {} Audit trails for LoginSettings update event failed with exception: ", accountIdentifier, ex);
+          "NG Auth Audits: for account {} saving the LoginSettingsHarnessUsernamePasswordUpdateEvent to outbox failed with exception: ",
+          accountIdentifier, ex);
     }
   }
 

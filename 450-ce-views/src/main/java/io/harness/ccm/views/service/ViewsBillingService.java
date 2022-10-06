@@ -46,7 +46,7 @@ public interface ViewsBillingService {
 
   List<String> getColumnsForTable(BigQuery bigQuery, String informationSchemaView, String table);
 
-  boolean isClusterPerspective(List<QLCEViewFilterWrapper> filters);
+  boolean isClusterPerspective(List<QLCEViewFilterWrapper> filters, List<QLCEViewGroupBy> groupBy);
 
   // For NG perspective queries
   QLCEViewGridData getEntityStatsDataPointsNg(BigQuery bigQuery, List<QLCEViewFilterWrapper> filters,

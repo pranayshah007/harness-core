@@ -20,6 +20,7 @@ import io.harness.beans.yaml.extended.reports.JUnitTestReport;
 import io.harness.beans.yaml.extended.reports.UnitTestReport;
 import io.harness.beans.yaml.extended.reports.UnitTestReportType;
 import io.harness.callback.DelegateCallbackToken;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.product.ci.engine.proto.Report;
@@ -55,13 +56,14 @@ public class RunTestsStepProtobufSerializer implements ProtobufStepSerializer<Ru
     RunTestsStep.Builder runTestsStepBuilder = RunTestsStep.newBuilder();
     String gitSafeCMD =
         SerializerUtils.getSafeGitDirectoryCmd(RunTimeInputHandler.resolveShellType(runTestsStepInfo.getShell()));
-
-    String preTestCommand = gitSafeCMD
-        + RunTimeInputHandler.resolveStringParameter(
-            "Command", "RunTests", identifier, runTestsStepInfo.getPreCommand(), false);
-    if (StringUtils.isNotEmpty(preTestCommand)) {
-      runTestsStepBuilder.setPreTestCommand(preTestCommand);
+    String preTestCommand = RunTimeInputHandler.resolveStringParameter(
+        "Command", "RunTests", identifier, runTestsStepInfo.getPreCommand(), false);
+    if (EmptyPredicate.isNotEmpty(preTestCommand) && !preTestCommand.equals("null")) {
+      preTestCommand = gitSafeCMD + preTestCommand;
+    } else {
+      preTestCommand = gitSafeCMD;
     }
+    runTestsStepBuilder.setPreTestCommand(preTestCommand);
     String postTestCommand = RunTimeInputHandler.resolveStringParameter(
         "Command", "RunTests", identifier, runTestsStepInfo.getPostCommand(), false);
     if (StringUtils.isNotEmpty(postTestCommand)) {

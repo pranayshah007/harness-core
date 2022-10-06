@@ -10,7 +10,6 @@ package io.harness.cdng.usage.impl;
 import static io.harness.cd.CDLicenseType.SERVICES;
 import static io.harness.cd.CDLicenseType.SERVICE_INSTANCES;
 import static io.harness.licensing.usage.beans.cd.CDLicenseUsageConstants.DISPLAY_NAME;
-import static io.harness.licensing.usage.beans.cd.CDLicenseUsageConstants.PERCENTILE;
 import static io.harness.licensing.usage.beans.cd.CDLicenseUsageConstants.SERVICE_INSTANCE_LIMIT;
 import static io.harness.licensing.usage.beans.cd.CDLicenseUsageConstants.TIME_PERIOD_IN_DAYS;
 
@@ -43,17 +42,17 @@ import java.time.Period;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
-import org.jooq.Record3;
-import org.jooq.Table;
 
 @OwnedBy(HarnessTeam.CDP)
 @Singleton
 public class CDLicenseUsageImpl implements LicenseUsageInterface<CDLicenseUsageDTO, CDUsageRequestParams> {
   @Inject TimeScaleDAL timeScaleDAL;
+  @Inject CdLicenseUsageUtils utils;
 
   @Override
   public CDLicenseUsageDTO getLicenseUsage(
@@ -63,6 +62,46 @@ public class CDLicenseUsageImpl implements LicenseUsageInterface<CDLicenseUsageD
     Preconditions.checkArgument(
         StringUtils.isNotBlank(accountIdentifier), "Account Identifier cannot be null or blank");
 
+    if (SERVICES.equals(usageRequest.getCdLicenseType())) {
+      return getActiveServicesLicenseUsage(accountIdentifier, module, timestamp, usageRequest);
+    } else if (SERVICE_INSTANCES.equals(usageRequest.getCdLicenseType())) {
+      return getServiceInstancesLicenseUsage(accountIdentifier, module);
+    } else {
+      throw new InvalidArgumentsException("Invalid License Type.", WingsException.USER);
+    }
+  }
+
+  private ServiceInstanceUsageDTO getServiceInstancesLicenseUsage(String accountIdentifier, ModuleType module) {
+    long serviceInstances = utils.fetchServiceInstancesOver30Days(accountIdentifier);
+    List<AggregateServiceUsageInfo> instanceCountsPerService =
+        utils.fetchInstancesPerServiceOver30Days(accountIdentifier);
+    if (CollectionUtils.isEmpty(instanceCountsPerService)) {
+      return ServiceInstanceUsageDTO.builder()
+          .activeServiceInstances(
+              UsageDataDTO.builder().count(serviceInstances).displayName(DISPLAY_NAME).references(emptyList()).build())
+          .cdLicenseType(SERVICE_INSTANCES)
+          .accountIdentifier(accountIdentifier)
+          .module(module.getDisplayName())
+          .build();
+    }
+
+    List<Services> serviceNames = timeScaleDAL.getNamesForServiceIds(
+        accountIdentifier, NgServiceInfraInfoUtils.getOrgProjectServiceTable(instanceCountsPerService));
+    return ServiceInstanceUsageDTO.builder()
+        .activeServiceInstances(UsageDataDTO.builder()
+                                    .count(serviceInstances)
+                                    .displayName(DISPLAY_NAME)
+                                    .references(buildInstancesPerServiceReferences(
+                                        accountIdentifier, instanceCountsPerService, serviceNames))
+                                    .build())
+        .cdLicenseType(SERVICE_INSTANCES)
+        .accountIdentifier(accountIdentifier)
+        .module(module.getDisplayName())
+        .build();
+  }
+
+  private CDLicenseUsageDTO getActiveServicesLicenseUsage(
+      String accountIdentifier, ModuleType module, long timestamp, CDUsageRequestParams usageRequest) {
     long startInterval = getEpochMilliNDaysAgo(timestamp, TIME_PERIOD_IN_DAYS);
     List<ServiceInfraInfo> activeServiceList =
         timeScaleDAL.getDistinctServiceWithExecutionInTimeRange(accountIdentifier, startInterval, timestamp);
@@ -71,38 +110,65 @@ public class CDLicenseUsageImpl implements LicenseUsageInterface<CDLicenseUsageD
       return getEmptyUsageData(accountIdentifier, module, usageRequest);
     }
 
-    Table<Record3<String, String, String>> activeServiceIdentifiers =
-        NgServiceInfraInfoUtils.getOrgProjectServiceTable(activeServiceList);
-    List<AggregateNgServiceInstanceStats> activeServiceWithInstanceCountList =
-        timeScaleDAL.getServiceWith95PercentileServiceInstanceCount(
-            accountIdentifier, PERCENTILE, startInterval, timestamp, activeServiceIdentifiers);
+    List<Services> serviceNames = timeScaleDAL.getNamesForServiceIds(
+        accountIdentifier, NgServiceInfraInfoUtils.getOrgProjectServiceTable(activeServiceList));
+    List<AggregateServiceUsageInfo> instanceCountsPerService =
+        utils.fetchInstancesPerServiceOver30Days(accountIdentifier);
+
+    List<AggregateNgServiceInstanceStats> instancesForActiveService =
+        instanceCountsPerService.parallelStream()
+            .filter(serviceInstanceCounts
+                -> activeServiceList.parallelStream().anyMatch(activeService
+                    -> activeService.getOrgidentifier().equals(serviceInstanceCounts.getOrgidentifier())
+                        && activeService.getProjectidentifier().equals(serviceInstanceCounts.getProjectidentifier())
+                        && activeService.getServiceId().equals(serviceInstanceCounts.getServiceId())))
+            .map(serviceInstanceCounts
+                -> new AggregateNgServiceInstanceStats(serviceInstanceCounts.getOrgidentifier(),
+                    serviceInstanceCounts.getProjectidentifier(), serviceInstanceCounts.getServiceId(),
+                    serviceInstanceCounts.getServiceInstanceCount()))
+            .collect(Collectors.toList());
 
     Map<String, Map<String, Map<String, Pair<String, Long>>>> activeServicesNameAndInstanceCount =
-        getServiceNamesMap(timeScaleDAL.getNamesForServiceIds(accountIdentifier, activeServiceIdentifiers),
-            activeServiceWithInstanceCountList);
+        getServiceNamesMap(serviceNames, instancesForActiveService);
 
-    switch (usageRequest.getCdLicenseType()) {
-      case SERVICES:
-        return ServiceUsageDTO.builder()
-            .activeServices(getServicesUsage(activeServiceList, activeServicesNameAndInstanceCount))
-            .serviceLicenses(getServicesUsageWithLicense(activeServiceList, activeServicesNameAndInstanceCount))
-            .activeServiceInstances(
-                getServicesUsageWithInstanceCount(activeServiceList, activeServicesNameAndInstanceCount))
-            .cdLicenseType(SERVICES)
-            .accountIdentifier(accountIdentifier)
-            .module(module.getDisplayName())
-            .build();
-      case SERVICE_INSTANCES:
-        return ServiceInstanceUsageDTO.builder()
-            .activeServiceInstances(
-                getServicesUsageWithInstanceCount(activeServiceList, activeServicesNameAndInstanceCount))
-            .cdLicenseType(SERVICE_INSTANCES)
-            .accountIdentifier(accountIdentifier)
-            .module(module.getDisplayName())
-            .build();
-      default:
-        throw new InvalidArgumentsException("Invalid License Type.", WingsException.USER);
-    }
+    return ServiceUsageDTO.builder()
+        .activeServices(getServicesUsage(activeServiceList, activeServicesNameAndInstanceCount))
+        .serviceLicenses(getServicesUsageWithLicense(activeServiceList, activeServicesNameAndInstanceCount))
+        .activeServiceInstances(
+            getServicesUsageWithInstanceCount(activeServiceList, activeServicesNameAndInstanceCount))
+        .cdLicenseType(SERVICES)
+        .accountIdentifier(accountIdentifier)
+        .module(module.getDisplayName())
+        .build();
+  }
+
+  private List<ReferenceDTO> buildInstancesPerServiceReferences(
+      String accountId, List<AggregateServiceUsageInfo> instanceCountsPerService, List<Services> serviceNames) {
+    return instanceCountsPerService.parallelStream()
+        .map(serviceInstanceUsage -> {
+          return ReferenceDTO.builder()
+              .accountIdentifier(accountId)
+              .orgIdentifier(serviceInstanceUsage.getOrgidentifier())
+              .projectIdentifier(serviceInstanceUsage.getProjectidentifier())
+              .identifier(serviceInstanceUsage.getServiceId())
+              .count(serviceInstanceUsage.getServiceInstanceCount())
+              .name(findServiceName(serviceInstanceUsage.getOrgidentifier(),
+                  serviceInstanceUsage.getProjectidentifier(), serviceInstanceUsage.getServiceId(), serviceNames))
+              .build();
+        })
+        .collect(Collectors.toList());
+  }
+
+  private String findServiceName(
+      String orgIdentifier, String projectIdentifier, String serviceId, List<Services> serviceNames) {
+    Optional<Services> optionalService = serviceNames.parallelStream()
+                                             .filter(service
+                                                 -> service.getOrgIdentifier().equals(orgIdentifier)
+                                                     && service.getProjectIdentifier().equals(projectIdentifier)
+                                                     && service.getIdentifier().equals(serviceId))
+                                             .findFirst();
+
+    return optionalService.isPresent() ? optionalService.get().getName() : StringUtils.EMPTY;
   }
 
   private CDLicenseUsageDTO getEmptyUsageData(

@@ -201,7 +201,7 @@ public class ViewsQueryBuilder {
 
     if (!aggregations.isEmpty()) {
       decorateQueryWithAggregations(selectQuery, aggregations);
-      decorateQueryWithSharedCostAggregations(selectQuery, groupByEntity);
+      decorateQueryWithSharedCostAggregations(selectQuery, groupByEntity, isClusterTable);
     }
 
     if (!sortCriteriaList.isEmpty()) {
@@ -991,7 +991,7 @@ public class ViewsQueryBuilder {
   }
 
   private void decorateQueryWithSharedCostAggregations(
-      SelectQuery selectQuery, List<QLCEViewFieldInput> groupByEntity) {
+      SelectQuery selectQuery, List<QLCEViewFieldInput> groupByEntity, boolean isClusterTable) {
     List<QLCEViewFieldInput> groupByBusinessMapping =
         groupByEntity.stream()
             .filter(groupBy -> groupBy.getIdentifier() == BUSINESS_MAPPING)
@@ -1003,24 +1003,28 @@ public class ViewsQueryBuilder {
       BusinessMapping businessMapping = businessMappingService.get(groupByBusinessMapping.get(0).getFieldId());
       List<SharedCost> sharedCosts = businessMapping.getSharedCosts();
       if (sharedCosts != null) {
-        sharedCosts.forEach(sharedCost -> decorateQueryWithSharedCostAggregation(selectQuery, sharedCost));
+        sharedCosts.forEach(
+            sharedCost -> decorateQueryWithSharedCostAggregation(selectQuery, sharedCost, isClusterTable));
       }
     }
   }
 
-  private void decorateQueryWithSharedCostAggregation(SelectQuery selectQuery, SharedCost sharedCost) {
+  private void decorateQueryWithSharedCostAggregation(
+      SelectQuery selectQuery, SharedCost sharedCost, boolean isClusterTable) {
     FunctionCall functionCall = getFunctionCallType(SUM);
     selectQuery.addCustomColumns(Converter.toCustomColumnSqlObject(
-        new CoalesceExpression(
-            functionCall.addCustomParams(getSQLCaseStatementBusinessMappingSharedCost(sharedCost.getRules())),
+        new CoalesceExpression(functionCall.addCustomParams(
+                                   getSQLCaseStatementBusinessMappingSharedCost(sharedCost.getRules(), isClusterTable)),
             Collections.singletonList(0)),
         modifyStringToComplyRegex(sharedCost.getName())));
   }
 
-  private CustomSql getSQLCaseStatementBusinessMappingSharedCost(List<ViewRule> sharedCostRules) {
+  private CustomSql getSQLCaseStatementBusinessMappingSharedCost(
+      List<ViewRule> sharedCostRules, boolean isClusterTable) {
+    String columnName =
+        isClusterTable ? ViewsMetaDataFields.CLUSTER_COST.getAlias() : ViewsMetaDataFields.COST.getAlias();
     CaseStatement caseStatement = new CaseStatement();
-    caseStatement.addWhen(
-        getConsolidatedRuleCondition(sharedCostRules), new CustomSql(ViewsMetaDataFields.COST.getAlias()));
+    caseStatement.addWhen(getConsolidatedRuleCondition(sharedCostRules), new CustomSql(columnName));
     caseStatement.addElseNull();
     return new CustomSql(caseStatement);
   }

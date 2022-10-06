@@ -16,6 +16,7 @@ import io.harness.cdng.artifact.bean.ArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.AcrArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.AmazonS3ArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.ArtifactoryRegistryArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.AzureArtifactsConfig;
 import io.harness.cdng.artifact.bean.yaml.CustomArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.DockerHubArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.EcrArtifactConfig;
@@ -31,6 +32,7 @@ import io.harness.cdng.artifact.outcome.AcrArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactoryArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactoryGenericArtifactOutcome;
+import io.harness.cdng.artifact.outcome.AzureArtifactsOutcome;
 import io.harness.cdng.artifact.outcome.CustomArtifactOutcome;
 import io.harness.cdng.artifact.outcome.DockerArtifactOutcome;
 import io.harness.cdng.artifact.outcome.EcrArtifactOutcome;
@@ -47,6 +49,7 @@ import io.harness.delegate.task.artifacts.S3ArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.artifactory.ArtifactoryArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.artifactory.ArtifactoryGenericArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.azure.AcrArtifactDelegateResponse;
+import io.harness.delegate.task.artifacts.azureartifacts.AzureArtifactsDelegateResponse;
 import io.harness.delegate.task.artifacts.custom.CustomArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.docker.DockerArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.ecr.EcrArtifactDelegateResponse;
@@ -61,6 +64,8 @@ import io.harness.pms.yaml.ParameterField;
 import software.wings.utils.RepositoryFormat;
 
 import java.nio.file.Paths;
+import java.util.Collections;
+import java.util.Map;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
@@ -126,17 +131,22 @@ public class ArtifactResponseToOutcomeMapper {
         return getAcrArtifactOutcome(acrArtifactConfig, acrArtifactDelegateResponse, useDelegateResponse);
       case CUSTOM_ARTIFACT:
         CustomArtifactConfig customArtifactConfig = (CustomArtifactConfig) artifactConfig;
-        if (customArtifactConfig.getScripts() != null) {
+        if (customArtifactConfig.getScripts() != null
+            && customArtifactConfig.getScripts().getFetchAllArtifacts() != null
+            && customArtifactConfig.getScripts().getFetchAllArtifacts().getShellScriptBaseStepInfo() != null
+            && customArtifactConfig.getScripts().getFetchAllArtifacts().getShellScriptBaseStepInfo().getSource()
+                != null) {
           CustomScriptInlineSource customScriptInlineSource =
               (CustomScriptInlineSource) customArtifactConfig.getScripts()
                   .getFetchAllArtifacts()
                   .getShellScriptBaseStepInfo()
                   .getSource()
                   .getSpec();
-          if (isNotEmpty(customScriptInlineSource.getScript().getValue())) {
+          if (customScriptInlineSource != null && customScriptInlineSource.getScript() != null
+              && isNotEmpty(customScriptInlineSource.getScript().getValue())) {
             CustomArtifactDelegateResponse customArtifactDelegateResponse =
                 (CustomArtifactDelegateResponse) artifactDelegateResponse;
-            return getCustomArtifactOutcome(customArtifactConfig, customArtifactDelegateResponse);
+            return getCustomArtifactOutcome(customArtifactConfig, customArtifactDelegateResponse, useDelegateResponse);
           }
         }
         return getCustomArtifactOutcome(customArtifactConfig);
@@ -159,10 +169,32 @@ public class ArtifactResponseToOutcomeMapper {
         GoogleArtifactRegistryConfig googleArtifactRegistryConfig = (GoogleArtifactRegistryConfig) artifactConfig;
         GarDelegateResponse garDelegateResponse = (GarDelegateResponse) artifactDelegateResponse;
         return getGarArtifactOutcome(googleArtifactRegistryConfig, garDelegateResponse, useDelegateResponse);
+
+      case AZURE_ARTIFACTS:
+        AzureArtifactsConfig azureArtifactsConfig = (AzureArtifactsConfig) artifactConfig;
+        AzureArtifactsDelegateResponse azureArtifactsDelegateResponse =
+            (AzureArtifactsDelegateResponse) artifactDelegateResponse;
+        return getAzureArtifactsOutcome(azureArtifactsConfig, azureArtifactsDelegateResponse, useDelegateResponse);
+
       default:
         throw new UnsupportedOperationException(
             String.format("Unknown Artifact Config type: [%s]", artifactConfig.getSourceType()));
     }
+  }
+
+  private static AzureArtifactsOutcome getAzureArtifactsOutcome(AzureArtifactsConfig azureArtifactsConfig,
+      AzureArtifactsDelegateResponse azureArtifactsDelegateResponse, boolean useDelegateResponse) {
+    return AzureArtifactsOutcome.builder()
+        .image(azureArtifactsDelegateResponse.getPackageUrl())
+        .imagePullSecret(createImagePullSecret(ArtifactUtils.getArtifactKey(azureArtifactsConfig)))
+        .packageName(azureArtifactsConfig.getPackageName().getValue())
+        .version(azureArtifactsDelegateResponse.getVersion())
+        .connectorRef(azureArtifactsConfig.getConnectorRef().getValue())
+        .type(ArtifactSourceType.AZURE_ARTIFACTS.getDisplayName())
+        .identifier(azureArtifactsConfig.getIdentifier())
+        .primaryArtifact(azureArtifactsConfig.isPrimaryArtifact())
+        .versionRegex(azureArtifactsConfig.getVersionRegex().getValue())
+        .build();
   }
 
   private static GithubPackagesArtifactOutcome getGithubPackagesArtifactOutcome(
@@ -209,6 +241,7 @@ public class ArtifactResponseToOutcomeMapper {
         .type(ArtifactSourceType.DOCKER_REGISTRY.getDisplayName())
         .primaryArtifact(dockerConfig.isPrimaryArtifact())
         .imagePullSecret(createImagePullSecret(ArtifactUtils.getArtifactKey(dockerConfig)))
+        .label(getLabels(dockerDelegateResponse))
         .build();
   }
 
@@ -235,7 +268,9 @@ public class ArtifactResponseToOutcomeMapper {
                                      : (googleArtifactRegistryConfig.getVersion() != null
                                              ? googleArtifactRegistryConfig.getVersion().getValue()
                                              : null))
-        .registryHostname(garDelegateResponse.getBuildDetails().getMetadata().get("registryHostname"))
+        .registryHostname(garDelegateResponse != null
+                ? garDelegateResponse.getBuildDetails().getMetadata().get("registryHostname")
+                : "")
         .connectorRef(googleArtifactRegistryConfig.getConnectorRef().getValue())
         .pkg(googleArtifactRegistryConfig.getPkg().getValue())
         .project(googleArtifactRegistryConfig.getProject().getValue())
@@ -334,10 +369,7 @@ public class ArtifactResponseToOutcomeMapper {
   private ArtifactoryGenericArtifactOutcome getArtifactoryGenericArtifactOutcome(
       ArtifactoryRegistryArtifactConfig artifactConfig,
       ArtifactoryGenericArtifactDelegateResponse artifactDelegateResponse, boolean useDelegateResponse) {
-    String artifactPath = useDelegateResponse ? ParameterField.isBlank(artifactConfig.getArtifactPathFilter())
-            ? Paths.get(artifactConfig.getArtifactDirectory().getValue(), artifactDelegateResponse.getArtifactPath())
-                  .toString()
-            : artifactDelegateResponse.getArtifactPath()
+    String artifactPath = useDelegateResponse ? artifactDelegateResponse.getArtifactPath()
                                               : (ParameterField.isNull(artifactConfig.getArtifactPath()) ? null
                                                       : ParameterField.isBlank(artifactConfig.getArtifactPathFilter())
                                                       ? Paths
@@ -360,7 +392,7 @@ public class ArtifactResponseToOutcomeMapper {
         .identifier(artifactConfig.getIdentifier())
         .type(ArtifactSourceType.ARTIFACTORY_REGISTRY.getDisplayName())
         .primaryArtifact(artifactConfig.isPrimaryArtifact())
-        .metadata(artifactDelegateResponse.getBuildDetails().getMetadata())
+        .metadata(useDelegateResponse ? artifactDelegateResponse.getBuildDetails().getMetadata() : null)
         .build();
   }
 
@@ -372,13 +404,13 @@ public class ArtifactResponseToOutcomeMapper {
         .build();
   }
 
-  private CustomArtifactOutcome getCustomArtifactOutcome(
-      CustomArtifactConfig artifactConfig, CustomArtifactDelegateResponse customArtifactDelegateResponse) {
+  private CustomArtifactOutcome getCustomArtifactOutcome(CustomArtifactConfig artifactConfig,
+      CustomArtifactDelegateResponse customArtifactDelegateResponse, boolean useDelegateResponse) {
     return CustomArtifactOutcome.builder()
         .identifier(artifactConfig.getIdentifier())
         .primaryArtifact(artifactConfig.isPrimaryArtifact())
         .version(artifactConfig.getVersion().getValue())
-        .metadata(customArtifactDelegateResponse.getMetadata())
+        .metadata(useDelegateResponse ? customArtifactDelegateResponse.getMetadata() : null)
         .build();
   }
 
@@ -390,7 +422,7 @@ public class ArtifactResponseToOutcomeMapper {
         .repository(acrArtifactConfig.getRepository().getValue())
         .image(getImageValue(acrArtifactDelegateResponse))
         .connectorRef(acrArtifactConfig.getConnectorRef().getValue())
-        .tag(getAcrTag(useDelegateResponse, acrArtifactDelegateResponse.getTag(), acrArtifactConfig.getTag()))
+        .tag(getAcrTag(useDelegateResponse, acrArtifactDelegateResponse, acrArtifactConfig.getTag()))
         .tagRegex(acrArtifactConfig.getTagRegex() != null ? acrArtifactConfig.getTagRegex().getValue() : null)
         .identifier(acrArtifactConfig.getIdentifier())
         .type(ArtifactSourceType.ACR.getDisplayName())
@@ -413,8 +445,11 @@ public class ArtifactResponseToOutcomeMapper {
         .build();
   }
 
-  private String getAcrTag(boolean useDelegateResponse, String delegateResponseTag, ParameterField<String> configTag) {
-    return useDelegateResponse ? delegateResponseTag : !ParameterField.isNull(configTag) ? configTag.getValue() : null;
+  private String getAcrTag(boolean useDelegateResponse, AcrArtifactDelegateResponse acrArtifactDelegateResponse,
+      ParameterField<String> configTag) {
+    return useDelegateResponse              ? acrArtifactDelegateResponse.getTag()
+        : !ParameterField.isNull(configTag) ? configTag.getValue()
+                                            : null;
   }
 
   private String getJenkinsBuild(boolean useDelegateResponse,
@@ -431,6 +466,14 @@ public class ArtifactResponseToOutcomeMapper {
     return EmptyPredicate.isNotEmpty(artifactDelegateResponse.getBuildDetails().getMetadata())
         ? artifactDelegateResponse.getBuildDetails().getMetadata().get(ArtifactMetadataKeys.IMAGE)
         : null;
+  }
+
+  private Map<String, String> getLabels(DockerArtifactDelegateResponse artifactDelegateResponse) {
+    if (artifactDelegateResponse == null || artifactDelegateResponse.getLabel() == null) {
+      return Collections.emptyMap();
+    }
+    return EmptyPredicate.isNotEmpty(artifactDelegateResponse.getLabel()) ? artifactDelegateResponse.getLabel()
+                                                                          : Collections.emptyMap();
   }
 
   private String getRegistryHostnameValue(ArtifactDelegateResponse artifactDelegateResponse) {

@@ -508,3 +508,5 @@ replace_key_value pipelineEventConsumersConfig.initiateNode.threads "$INITIATE_N
 
 replace_key_value enforcementClientConfiguration.enforcementCheckEnabled "$ENFORCEMENT_CHECK_ENABLED"
 replace_key_value segmentConfiguration.url "$SEGMENT_URL"
+
+replace_key_value enableOpentelemetry "$ENABLE_OPENTELEMETRY"

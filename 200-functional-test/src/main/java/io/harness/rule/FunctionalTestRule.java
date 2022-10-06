@@ -277,7 +277,7 @@ public class FunctionalTestRule implements MethodRule, InjectorRuleMixin, MongoR
       @Singleton
       AdvancedDatastore datastore(Morphia morphia) {
         AdvancedDatastore datastore = (AdvancedDatastore) morphia.createDatastore(mongoClient, dbName);
-        datastore.setQueryFactory(new QueryFactory());
+        datastore.setQueryFactory(new QueryFactory(MongoConfig.builder().build()));
         return datastore;
       }
 

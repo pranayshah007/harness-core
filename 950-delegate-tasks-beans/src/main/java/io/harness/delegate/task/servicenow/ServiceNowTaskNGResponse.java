@@ -13,6 +13,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.DelegateMetaInfo;
 import io.harness.delegate.beans.DelegateTaskNotifyResponseData;
 import io.harness.servicenow.ServiceNowFieldNG;
+import io.harness.servicenow.ServiceNowImportSetResponseNG;
+import io.harness.servicenow.ServiceNowStagingTable;
 import io.harness.servicenow.ServiceNowTemplate;
 import io.harness.servicenow.ServiceNowTicketNG;
 
@@ -37,4 +39,6 @@ public class ServiceNowTaskNGResponse implements DelegateTaskNotifyResponseData 
   List<ServiceNowFieldNG> serviceNowFieldNGList;
   ServiceNowTicketNG ticket;
   List<ServiceNowTemplate> serviceNowTemplateList;
+  ServiceNowImportSetResponseNG serviceNowImportSetResponseNG;
+  List<ServiceNowStagingTable> serviceNowStagingTableList;
 }

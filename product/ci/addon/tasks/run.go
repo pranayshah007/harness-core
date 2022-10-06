@@ -29,6 +29,7 @@ const (
 	outputEnvSuffix    string        = ".out"
 	cmdExitWaitTime    time.Duration = time.Duration(0)
 	batchSize                        = 100
+	boldYellowColor    string        = "\u001b[33;1m"
 )
 
 // RunTask represents interface to execute a run step
@@ -149,6 +150,10 @@ func (r *runTask) execute(ctx context.Context, retryCount int32) (map[string]str
 	cmdArgs, err := r.getEntrypoint(ctx, cmdToExecute)
 	if err != nil {
 		return nil, err
+	}
+	
+	if len(r.command) > 0 {
+		r.log.Infof("%sExecuting the following command(s):\n%s", string(boldYellowColor), r.command)
 	}
 
 	if r.detach {

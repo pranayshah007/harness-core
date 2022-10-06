@@ -25,5 +25,6 @@ public class CustomDeploymentServerInstanceInfo extends ServerInstanceInfo {
   private String hostId;
   private String hostName;
   private String instanceFetchScript;
+  private String infrastructureKey;
   private Map<String, Object> properties;
 }

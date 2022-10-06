@@ -33,7 +33,6 @@ import io.harness.spec.server.ng.model.SecretRequest;
 import io.harness.spec.server.ng.model.SecretResponse;
 import io.harness.spec.server.ng.model.SecretSpec;
 import io.harness.spec.server.ng.model.SecretTextSpec;
-import io.harness.spec.server.ng.model.ValidateSecretSlugResponse;
 
 import java.util.Collections;
 import java.util.List;
@@ -273,11 +272,10 @@ public class SecretApiImplTest extends CategoryTest {
     List<SecretType> secretTypes = secretApiUtils.toSecretTypes(Collections.singletonList("SSHKeyPath"));
     List<String> types = Collections.singletonList("SSHKeyPath");
 
-    when(ngSecretService.list(account, org, project, slugs, secretTypes, false, null, page, limit, null, false))
+    when(ngSecretService.list(account, null, null, slugs, secretTypes, false, null, page, limit, null, false))
         .thenReturn(pages);
 
-    Response response =
-        accountSecretApi.getAccountScopedSecrets(account, org, project, slugs, types, false, null, page, limit);
+    Response response = accountSecretApi.getAccountScopedSecrets(slugs, types, false, null, page, limit, account);
 
     assertThat(response.getLinks()).isNotNull();
     assertThat(response.getLinks().size()).isEqualTo(1);
@@ -306,10 +304,10 @@ public class SecretApiImplTest extends CategoryTest {
     List<SecretType> secretTypes = secretApiUtils.toSecretTypes(Collections.singletonList("SSHKeyPath"));
     List<String> types = Collections.singletonList("SSHKeyPath");
 
-    when(ngSecretService.list(account, org, project, slugs, secretTypes, false, null, page, limit, null, false))
+    when(ngSecretService.list(account, org, null, slugs, secretTypes, false, null, page, limit, null, false))
         .thenReturn(pages);
 
-    Response response = orgSecretApi.getOrgScopedSecrets(org, account, project, slugs, types, false, null, page, limit);
+    Response response = orgSecretApi.getOrgScopedSecrets(org, slugs, types, false, null, page, limit, account);
 
     assertThat(response.getLinks()).isNotNull();
     assertThat(response.getLinks().size()).isEqualTo(1);
@@ -342,7 +340,7 @@ public class SecretApiImplTest extends CategoryTest {
         .thenReturn(pages);
 
     Response response =
-        projectSecretApi.getProjectScopedSecrets(org, project, account, slugs, types, false, null, page, limit);
+        projectSecretApi.getProjectScopedSecrets(org, project, slugs, types, false, null, page, limit, account);
 
     assertThat(response.getLinks()).isNotNull();
     assertThat(response.getLinks().size()).isEqualTo(1);
@@ -491,42 +489,6 @@ public class SecretApiImplTest extends CategoryTest {
     assertThat(secretResponse.getSecret().getProject()).isNull();
     assertThat(secretResponse.getSecret().getSlug()).isEqualTo(slug);
     assertThat(secretResponse.getSecret().getName()).isEqualTo(name);
-  }
-
-  @Test
-  @Owner(developers = ASHISHSANODIA)
-  @Category(UnitTests.class)
-  public void testValidateAccountScopedSecretSlug() {
-    when(ngSecretService.validateTheIdentifierIsUnique(any(), any(), any(), any())).thenReturn(true);
-
-    Response response = accountSecretApi.validateUniqueAccountScopedSecretSlug(slug, account);
-
-    ValidateSecretSlugResponse validateSecretSlugResponse = (ValidateSecretSlugResponse) response.getEntity();
-    assertThat(validateSecretSlugResponse.isValid()).isTrue();
-  }
-
-  @Test
-  @Owner(developers = ASHISHSANODIA)
-  @Category(UnitTests.class)
-  public void testValidateOrgScopedSecretSlug() {
-    when(ngSecretService.validateTheIdentifierIsUnique(any(), any(), any(), any())).thenReturn(true);
-
-    Response response = orgSecretApi.validateUniqueOrgScopedSecretSlug(org, slug, account);
-
-    ValidateSecretSlugResponse validateSecretSlugResponse = (ValidateSecretSlugResponse) response.getEntity();
-    assertThat(validateSecretSlugResponse.isValid()).isTrue();
-  }
-
-  @Test
-  @Owner(developers = ASHISHSANODIA)
-  @Category(UnitTests.class)
-  public void testValidateProjectScopedSecretSlug() {
-    when(ngSecretService.validateTheIdentifierIsUnique(any(), any(), any(), any())).thenReturn(true);
-
-    Response response = projectSecretApi.validateUniqueProjectScopedSecretSlug(org, project, slug, account);
-
-    ValidateSecretSlugResponse validateSecretSlugResponse = (ValidateSecretSlugResponse) response.getEntity();
-    assertThat(validateSecretSlugResponse.isValid()).isTrue();
   }
 
   private Secret getTextSecret(String org, String project) {

@@ -7,6 +7,8 @@
 
 package io.harness.ngmigration.service.entity;
 
+import static software.wings.ngmigration.NGMigrationEntityType.SECRET;
+
 import static java.util.stream.Collectors.counting;
 import static java.util.stream.Collectors.groupingBy;
 
@@ -17,10 +19,13 @@ import io.harness.beans.SecretManagerConfig;
 import io.harness.connector.ConnectorDTO;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResourceClient;
+import io.harness.connector.ConnectorResponseDTO;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.Scope;
 import io.harness.exception.InvalidRequestException;
 import io.harness.gitsync.beans.YamlDTO;
+import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.ng.core.dto.secrets.SecretRequestWrapper;
 import io.harness.ngmigration.beans.BaseEntityInput;
 import io.harness.ngmigration.beans.BaseInputDefinition;
 import io.harness.ngmigration.beans.BaseProvidedInput;
@@ -32,11 +37,14 @@ import io.harness.ngmigration.beans.summary.BaseSummary;
 import io.harness.ngmigration.beans.summary.SecretManagerSummary;
 import io.harness.ngmigration.client.NGClient;
 import io.harness.ngmigration.client.PmsClient;
+import io.harness.ngmigration.dto.SecretManagerCreatedDTO;
 import io.harness.ngmigration.secrets.SecretFactory;
 import io.harness.ngmigration.service.MigratorUtility;
 import io.harness.ngmigration.service.NgMigrationService;
 import io.harness.remote.client.NGRestUtils;
+import io.harness.secretmanagers.SecretManagerConfigService;
 import io.harness.security.encryption.EncryptionType;
+import io.harness.serializer.JsonUtils;
 
 import software.wings.ngmigration.CgBasicInfo;
 import software.wings.ngmigration.CgEntityId;
@@ -55,13 +63,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import retrofit2.Response;
 
 @Slf4j
 @OwnedBy(HarnessTeam.CDC)
 public class SecretManagerMigrationService extends NgMigrationService {
   @Inject private SecretManager secretManager;
+  @Inject private SecretManagerConfigService secretManagerConfigService;
   @Inject private ConnectorResourceClient connectorResourceClient;
   @Inject private SecretFactory secretFactory;
 
@@ -101,7 +112,7 @@ public class SecretManagerMigrationService extends NgMigrationService {
 
   @Override
   public DiscoveryNode discover(String accountId, String appId, String entityId) {
-    return discover(secretManager.getSecretManager(accountId, entityId));
+    return discover(secretManagerConfigService.getSecretManager(accountId, entityId, false));
   }
 
   @Override
@@ -111,7 +122,14 @@ public class SecretManagerMigrationService extends NgMigrationService {
 
   @Override
   public void migrate(String auth, NGClient ngClient, PmsClient pmsClient, MigrationInputDTO inputDTO,
-      NGYamlFile yamlFile) throws IOException {}
+      NGYamlFile yamlFile) throws IOException {
+    if (!yamlFile.isExists()) {
+      Response<ResponseDTO<ConnectorResponseDTO>> resp =
+          ngClient.createConnector(auth, inputDTO.getAccountIdentifier(), JsonUtils.asTree(yamlFile.getYaml()))
+              .execute();
+      log.info("Secret manager creation Response details {} {}", resp.code(), resp.message());
+    }
+  }
 
   @Override
   public List<NGYamlFile> generateYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
@@ -145,21 +163,22 @@ public class SecretManagerMigrationService extends NgMigrationService {
     }
 
     List<NGYamlFile> files = new ArrayList<>();
+    SecretManagerCreatedDTO connectorConfigDTO =
+        secretFactory.getConfigDTO(secretManagerConfig, inputDTO, migratedEntities);
     NGYamlFile ngYamlFile =
         NGYamlFile.builder()
             .filename("connector/" + name + ".yaml")
             .yaml(ConnectorDTO.builder()
-                      .connectorInfo(
-                          ConnectorInfoDTO.builder()
-                              .name(name)
-                              .identifier(identifier)
-                              .description(null)
-                              .tags(null)
-                              .orgIdentifier(orgIdentifier)
-                              .projectIdentifier(projectIdentifier)
-                              .connectorType(SecretFactory.getConnectorType(secretManagerConfig))
-                              .connectorConfig(secretFactory.getConfigDTO(secretManagerConfig, migratedEntities))
-                              .build())
+                      .connectorInfo(ConnectorInfoDTO.builder()
+                                         .name(name)
+                                         .identifier(identifier)
+                                         .description(null)
+                                         .tags(null)
+                                         .orgIdentifier(orgIdentifier)
+                                         .projectIdentifier(projectIdentifier)
+                                         .connectorType(SecretFactory.getConnectorType(secretManagerConfig))
+                                         .connectorConfig(connectorConfigDTO.getConnector())
+                                         .build())
                       .build())
             .ngEntityDetail(NgEntityDetail.builder()
                                 .identifier(identifier)
@@ -175,6 +194,25 @@ public class SecretManagerMigrationService extends NgMigrationService {
                              .build())
             .build();
     files.add(ngYamlFile);
+
+    if (EmptyPredicate.isNotEmpty(connectorConfigDTO.getSecrets())) {
+      files.addAll(connectorConfigDTO.getSecrets()
+                       .stream()
+                       .map(secretDTO
+                           -> NGYamlFile.builder()
+                                  .yaml(SecretRequestWrapper.builder().secret(secretDTO).build())
+                                  .type(SECRET)
+                                  .ngEntityDetail(NgEntityDetail.builder()
+                                                      .projectIdentifier(secretDTO.getProjectIdentifier())
+                                                      .orgIdentifier(secretDTO.getOrgIdentifier())
+                                                      .identifier(secretDTO.getIdentifier())
+                                                      .build())
+                                  .filename(String.format("secret/%s.yaml", secretDTO.getName()))
+                                  .exists(false)
+                                  .cgBasicInfo(null)
+                                  .build())
+                       .collect(Collectors.toList()));
+    }
 
     migratedEntities.putIfAbsent(entityId, ngYamlFile);
 

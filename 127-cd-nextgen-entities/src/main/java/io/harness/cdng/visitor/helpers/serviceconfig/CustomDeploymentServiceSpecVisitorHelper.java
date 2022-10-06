@@ -7,6 +7,7 @@
 
 package io.harness.cdng.visitor.helpers.serviceconfig;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum.TEMPLATE;
 
 import static java.util.Objects.isNull;
@@ -51,9 +52,7 @@ public class CustomDeploymentServiceSpecVisitorHelper implements ConfigValidator
     Set<EntityDetailProtoDTO> result = new HashSet<>();
     if (!isNull(serviceSpec.getCustomDeploymentRef())) {
       String versionLabel = serviceSpec.getCustomDeploymentRef().getVersionLabel();
-      if (isNull(versionLabel)) {
-        return result;
-      }
+      versionLabel = isEmpty(versionLabel) ? "__STABLE__" : versionLabel;
       TemplateReferenceProtoDTO.Builder templateReferenceProtoDTO =
           TemplateReferenceProtoDTO.newBuilder()
               .setAccountIdentifier(StringValue.of(accountIdentifier))

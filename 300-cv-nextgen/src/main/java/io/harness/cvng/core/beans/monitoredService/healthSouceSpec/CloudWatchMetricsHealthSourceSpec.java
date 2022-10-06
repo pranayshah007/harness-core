@@ -17,6 +17,7 @@ import io.harness.cvng.core.entities.CloudWatchMetricCVConfig;
 import io.harness.cvng.core.entities.MetricPack;
 import io.harness.cvng.core.services.api.MetricPackService;
 import io.harness.cvng.core.validators.UniqueIdentifierCheck;
+import io.harness.cvng.utils.CloudWatchUtils;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.base.Preconditions;
@@ -29,7 +30,8 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.validation.Valid;
-import javax.validation.constraints.NotNull;
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotEmpty;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
@@ -46,22 +48,26 @@ import org.apache.commons.lang3.StringUtils;
 @NoArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class CloudWatchMetricsHealthSourceSpec extends MetricHealthSourceSpec {
-  @NotNull String region;
-  @NotNull String feature;
+  @NotBlank String region;
+  @NotBlank String feature;
   @Valid Set<TimeSeriesMetricPackDTO> metricThresholds;
-  @Valid @UniqueIdentifierCheck List<CloudWatchMetricDefinition> metricDefinitions;
+  @Valid @UniqueIdentifierCheck @NotEmpty List<CloudWatchMetricDefinition> metricDefinitions;
 
   @Override
   public void validate() {
-    getMetricDefinitions().forEach(metricDefinition
-        -> Preconditions.checkArgument(
-            !(Objects.nonNull(metricDefinition.getAnalysis())
-                && Objects.nonNull(metricDefinition.getAnalysis().getDeploymentVerification())
-                && Objects.nonNull(metricDefinition.getAnalysis().getDeploymentVerification().getEnabled())
-                && metricDefinition.getAnalysis().getDeploymentVerification().getEnabled()
-                && (Objects.isNull(metricDefinition.getResponseMapping())
-                    || StringUtils.isEmpty(metricDefinition.getResponseMapping().getServiceInstanceJsonPath()))),
-            "Service instance label/key/path shouldn't be empty for Deployment Verification"));
+    getMetricDefinitions().forEach(metricDefinition -> {
+      Preconditions.checkArgument(StringUtils.isNotBlank(metricDefinition.getIdentifier())
+              && metricDefinition.getIdentifier().matches(CloudWatchUtils.METRIC_QUERY_IDENTIFIER_REGEX),
+          "Metric identifier does not match the expected pattern: " + CloudWatchUtils.METRIC_QUERY_IDENTIFIER_REGEX);
+      Preconditions.checkArgument(
+          !(Objects.nonNull(metricDefinition.getAnalysis())
+              && Objects.nonNull(metricDefinition.getAnalysis().getDeploymentVerification())
+              && Objects.nonNull(metricDefinition.getAnalysis().getDeploymentVerification().getEnabled())
+              && metricDefinition.getAnalysis().getDeploymentVerification().getEnabled()
+              && (Objects.isNull(metricDefinition.getResponseMapping())
+                  || StringUtils.isEmpty(metricDefinition.getResponseMapping().getServiceInstanceJsonPath()))),
+          "Service instance label/key/path shouldn't be empty for Deployment Verification");
+    });
   }
 
   @Override
@@ -156,8 +162,8 @@ public class CloudWatchMetricsHealthSourceSpec extends MetricHealthSourceSpec {
   @NoArgsConstructor
   @FieldDefaults(level = AccessLevel.PRIVATE)
   public static class CloudWatchMetricDefinition extends HealthSourceMetricDefinition {
-    String groupName;
-    String expression;
+    @NotBlank String groupName;
+    @NotBlank String expression;
     MetricResponseMapping responseMapping;
   }
 

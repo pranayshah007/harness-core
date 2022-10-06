@@ -8,22 +8,17 @@
 package io.harness.cvng.core.entities;
 
 import static io.harness.cvng.core.utils.ErrorMessageUtils.generateErrorMessageFromParam;
-import static io.harness.data.structure.CollectionUtils.emptyIfNull;
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import io.harness.cvng.beans.CVMonitoringCategory;
 import io.harness.cvng.beans.DataSourceType;
-import io.harness.cvng.beans.ThresholdConfigType;
 import io.harness.cvng.beans.TimeSeriesMetricType;
 import io.harness.cvng.beans.stackdriver.StackDriverMetricDefinition;
-import io.harness.cvng.core.beans.HealthSourceMetricDefinition;
 import io.harness.cvng.core.beans.StackdriverDefinition;
-import io.harness.cvng.core.beans.monitoredService.TimeSeriesMetricPackDTO;
-import io.harness.cvng.core.constant.MonitoredServiceConstants;
 import io.harness.cvng.core.entities.MetricPack.MetricDefinition;
 import io.harness.cvng.core.entities.StackdriverCVConfig.MetricInfo;
+import io.harness.cvng.core.services.CVNextGenConstants;
 import io.harness.cvng.core.utils.analysisinfo.AnalysisInfoUtility;
 import io.harness.cvng.core.utils.analysisinfo.DevelopmentVerificationTransformer;
 import io.harness.cvng.core.utils.analysisinfo.LiveMonitoringTransformer;
@@ -36,10 +31,8 @@ import com.google.common.base.Preconditions;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -135,7 +128,7 @@ public class StackdriverCVConfig extends MetricCVConfig<MetricInfo> {
                                 .accountId(getAccountId())
                                 .dataSourceType(DataSourceType.STACKDRIVER)
                                 .projectIdentifier(getProjectIdentifier())
-                                .identifier(category.getDisplayName())
+                                .identifier(CVNextGenConstants.CUSTOM_PACK_IDENTIFIER)
                                 .build();
 
     stackdriverDefinitions.forEach(definition -> {
@@ -166,50 +159,6 @@ public class StackdriverCVConfig extends MetricCVConfig<MetricInfo> {
                                   .build());
     });
     this.setMetricPack(metricPack);
-  }
-
-  public void addMetricThresholds(
-      Set<TimeSeriesMetricPackDTO> timeSeriesMetricPacks, List<StackdriverDefinition> metricDefinitions) {
-    if (isEmpty(timeSeriesMetricPacks)) {
-      return;
-    }
-    Map<String, HealthSourceMetricDefinition> mapOfMetricDefinitions =
-        emptyIfNull(metricDefinitions)
-            .stream()
-            .collect(Collectors.toMap(StackdriverDefinition::getMetricName, metricDefinition -> metricDefinition));
-    getMetricPack().getMetrics().forEach(metric -> {
-      timeSeriesMetricPacks.stream()
-          .filter(timeSeriesMetricPack
-              -> timeSeriesMetricPack.getIdentifier().equalsIgnoreCase(MonitoredServiceConstants.CUSTOM_METRIC_PACK))
-          .forEach(timeSeriesMetricPackDTO -> {
-            if (!isEmpty(timeSeriesMetricPackDTO.getMetricThresholds())) {
-              timeSeriesMetricPackDTO.getMetricThresholds()
-                  .stream()
-                  .filter(metricPackDTO -> metric.getName().equals(metricPackDTO.getMetricName()))
-                  .forEach(metricPackDTO -> metricPackDTO.getTimeSeriesThresholdCriteria().forEach(criteria -> {
-                    List<TimeSeriesThreshold> timeSeriesThresholds =
-                        metric.getThresholds() != null ? metric.getThresholds() : new ArrayList<>();
-                    String metricName = metricPackDTO.getMetricName();
-                    TimeSeriesThreshold timeSeriesThreshold =
-                        TimeSeriesThreshold.builder()
-                            .accountId(getAccountId())
-                            .projectIdentifier(getProjectIdentifier())
-                            .dataSourceType(getType())
-                            .metricIdentifier(metric.getIdentifier())
-                            .metricType(metric.getType())
-                            .metricName(metricPackDTO.getMetricName())
-                            .action(metricPackDTO.getType().getTimeSeriesThresholdActionType())
-                            .criteria(criteria)
-                            .thresholdConfigType(ThresholdConfigType.USER_DEFINED)
-                            .deviationType(getDeviationType(
-                                mapOfMetricDefinitions, metricName, metric, timeSeriesMetricPackDTO.getIdentifier()))
-                            .build();
-                    timeSeriesThresholds.add(timeSeriesThreshold);
-                    metric.setThresholds(timeSeriesThresholds);
-                  }));
-            }
-          });
-    });
   }
 
   public static class StackDriverCVConfigUpdatableEntity

@@ -44,6 +44,7 @@ import io.harness.ngtriggers.beans.config.NGTriggerConfig;
 import io.harness.ngtriggers.beans.config.NGTriggerConfigV2;
 import io.harness.ngtriggers.beans.dto.BuildDetails;
 import io.harness.ngtriggers.beans.dto.LastTriggerExecutionDetails;
+import io.harness.ngtriggers.beans.dto.NGTriggerCatalogDTO;
 import io.harness.ngtriggers.beans.dto.NGTriggerDetailsResponseDTO;
 import io.harness.ngtriggers.beans.dto.NGTriggerDetailsResponseDTO.NGTriggerDetailsResponseDTOBuilder;
 import io.harness.ngtriggers.beans.dto.NGTriggerResponseDTO;
@@ -64,6 +65,7 @@ import io.harness.ngtriggers.beans.entity.metadata.GitMetadata;
 import io.harness.ngtriggers.beans.entity.metadata.NGTriggerMetadata;
 import io.harness.ngtriggers.beans.entity.metadata.WebhookMetadata;
 import io.harness.ngtriggers.beans.entity.metadata.WebhookMetadata.WebhookMetadataBuilder;
+import io.harness.ngtriggers.beans.entity.metadata.catalog.TriggerCatalogItem;
 import io.harness.ngtriggers.beans.source.NGTriggerSourceV2;
 import io.harness.ngtriggers.beans.source.NGTriggerSpecV2;
 import io.harness.ngtriggers.beans.source.NGTriggerType;
@@ -213,15 +215,27 @@ public class NGTriggerElementMapper {
   }
 
   public void copyEntityFieldsOutsideOfYml(NGTriggerEntity existingEntity, NGTriggerEntity newEntity) {
-    boolean isWebhookPollingEnabled = isWebhookPollingEnabled(
-        existingEntity.getType(), existingEntity.getAccountId(), existingEntity.getPollInterval());
     if (newEntity.getType() == ARTIFACT || newEntity.getType() == MANIFEST) {
       copyFields(existingEntity, newEntity);
-    } else if (isWebhookPollingEnabled) {
-      if (newEntity.getPollInterval() == null) {
-        throw new InvalidRequestException("Polling Interval cannot be null");
+      return;
+    }
+
+    if (newEntity.getType() == WEBHOOK) {
+      if (!GITHUB.getEntityMetadataName().equalsIgnoreCase(existingEntity.getMetadata().getWebhook().getType())) {
+        return;
       }
-      copyFields(existingEntity, newEntity);
+
+      // Currently, enabled only for GITHUB
+      boolean isWebhookPollingEnabled = isWebhookPollingEnabled(
+          existingEntity.getType(), existingEntity.getAccountId(), existingEntity.getPollInterval());
+
+      if (isWebhookPollingEnabled) {
+        if (newEntity.getPollInterval() == null) {
+          throw new InvalidRequestException("Polling Interval cannot be null");
+        }
+        // Copy entities for webhook git polling
+        copyFields(existingEntity, newEntity);
+      }
     }
   }
 
@@ -294,7 +308,8 @@ public class NGTriggerElementMapper {
           metadata.git(prepareGitMetadata(webhookTriggerConfig));
         }
 
-        if (isWebhookPollingEnabled(triggerSource.getType(), accountIdentifier, triggerSource.getPollInterval())) {
+        if (webhookTriggerConfig.getType() == GITHUB
+            && isWebhookPollingEnabled(triggerSource.getType(), accountIdentifier, triggerSource.getPollInterval())) {
           return NGTriggerMetadata.builder()
               .webhook(metadata.build())
               .buildMetadata(
@@ -344,7 +359,7 @@ public class NGTriggerElementMapper {
 
   private boolean isWebhookPollingEnabled(NGTriggerType type, String accountIdentifier, String pollInterval) {
     if (type == NGTriggerType.WEBHOOK
-        && pmsFeatureFlagService.isEnabled(accountIdentifier, FeatureName.GIT_WEBHOOK_POLLING)
+        && pmsFeatureFlagService.isEnabled(accountIdentifier, FeatureName.CD_GIT_WEBHOOK_POLLING)
         && !StringUtils.isEmpty(pollInterval)) {
       return true;
     }
@@ -402,6 +417,10 @@ public class NGTriggerElementMapper {
         .errors(e.getErrors())
         .errorResponse(true)
         .build();
+  }
+
+  public NGTriggerCatalogDTO toCatalogDTO(List<TriggerCatalogItem> list) {
+    return NGTriggerCatalogDTO.builder().catalog(list).build();
   }
 
   public TriggerWebhookEventBuilder toNGTriggerWebhookEvent(String accountIdentifier, String orgIdentifier,

@@ -93,8 +93,10 @@ public class CustomDeploymentInstanceSyncPerpetualTaskExecuter implements Perpet
     final List<CustomDeploymentServerInstanceInfo> customDeploymentServerInstanceInfos =
         InstanceMapperUtils.mapJsonToInstanceElements(taskParams.getInstanceAttributesMap(),
             taskParams.getInstancesListPath(), output.get(OUTPUT_PATH_KEY), jsonMapper);
-    customDeploymentServerInstanceInfos.forEach(
-        serverInstanceInfo -> serverInstanceInfo.setInstanceFetchScript(taskParams.getScript()));
+    customDeploymentServerInstanceInfos.forEach(serverInstanceInfo -> {
+      serverInstanceInfo.setInstanceFetchScript(taskParams.getScript());
+      serverInstanceInfo.setInfrastructureKey(taskParams.getInfrastructureKey());
+    });
 
     List<ServerInstanceInfo> serverInstanceInfos =
         customDeploymentServerInstanceInfos.stream().map(ServerInstanceInfo.class ::cast).collect(Collectors.toList());

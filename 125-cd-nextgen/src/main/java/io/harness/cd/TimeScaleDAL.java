@@ -14,8 +14,6 @@ import static io.harness.timescaledb.Tables.PIPELINE_EXECUTION_SUMMARY_CD;
 import static io.harness.timescaledb.Tables.SERVICES;
 import static io.harness.timescaledb.Tables.SERVICE_INFRA_INFO;
 
-import io.harness.aggregates.AggregateNgServiceInstanceStats;
-import io.harness.aggregates.AggregateNgServiceInstanceStats.AggregateNgServiceInstanceStatsKeys;
 import io.harness.aggregates.AggregateProjectInfo;
 import io.harness.aggregates.AggregateServiceInfo;
 import io.harness.aggregates.TimeWiseExecutionSummary;
@@ -43,30 +41,6 @@ public class TimeScaleDAL {
   public static final String SERVICE_ID = "serviceId";
 
   @Inject private DSLContext dsl;
-
-  public List<AggregateNgServiceInstanceStats> getServiceWith95PercentileServiceInstanceCount(String accountIdentifier,
-      double percentile, long startInterval, long endInterval,
-      Table<Record3<String, String, String>> orgProjectServiceTable) {
-    Field<Long> reportedAtEpoch = DSL.epoch(NG_INSTANCE_STATS.REPORTEDAT).cast(Long.class).mul(1000);
-    return dsl
-        .select(NG_INSTANCE_STATS.ORGID, NG_INSTANCE_STATS.PROJECTID, NG_INSTANCE_STATS.SERVICEID,
-            DSL.percentileDisc(percentile)
-                .withinGroupOrderBy(NG_INSTANCE_STATS.INSTANCECOUNT)
-                .as(AggregateNgServiceInstanceStatsKeys.aggregateServiceInstanceCount))
-        .from(NG_INSTANCE_STATS)
-        .where(NG_INSTANCE_STATS.ACCOUNTID.eq(accountIdentifier)
-                   .and(reportedAtEpoch.greaterOrEqual(startInterval))
-                   .and(reportedAtEpoch.lessOrEqual(endInterval)))
-        .andExists(
-            dsl.selectOne()
-                .from(orgProjectServiceTable)
-                .where(
-                    NG_INSTANCE_STATS.ORGID.eq((Field<String>) orgProjectServiceTable.field(ORG_ID))
-                        .and(NG_INSTANCE_STATS.PROJECTID.eq((Field<String>) orgProjectServiceTable.field(PROJECT_ID)))
-                        .and(NG_INSTANCE_STATS.SERVICEID.eq((Field<String>) orgProjectServiceTable.field(SERVICE_ID)))))
-        .groupBy(NG_INSTANCE_STATS.ORGID, NG_INSTANCE_STATS.PROJECTID, NG_INSTANCE_STATS.SERVICEID)
-        .fetchInto(AggregateNgServiceInstanceStats.class);
-  }
 
   public List<ServiceInfraInfo> getDistinctServiceWithExecutionInTimeRange(
       @NotNull final String accountId, Long startIntervalInMillis, Long endIntervalInMillis) {

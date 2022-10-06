@@ -79,6 +79,7 @@ public class ServiceAllInOnePlanCreatorUtils {
             .envInputs(environmentYamlV2.getEnvironmentInputs())
             .childrenNodeIds(childrenNodeIds)
             .serviceOverrideInputs(environmentYamlV2.getServiceOverrideInputs())
+            .deploymentType(serviceType)
             .build();
 
     final PlanNode node =

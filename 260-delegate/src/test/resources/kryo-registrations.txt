@@ -1498,6 +1498,7 @@
 19551:io.harness.delegate.beans.connector.ConnectorValidationParameterResponse
 19552:io.harness.delegate.beans.connector.scm.github.GithubOauthDTO
 19553:io.harness.delegate.beans.connector.scm.gitlab.GitlabOauthDTO
+19554:io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsValidationParams
 19630:io.harness.delegate.beans.connector.helm.OciHelmValidationParams
 19640:io.harness.delegate.beans.connector.helm.HttpHelmConnectivityTaskParams
 19641:io.harness.delegate.beans.connector.helm.HttpHelmConnectivityTaskResponse
@@ -1764,6 +1765,9 @@
 55423:io.harness.delegate.task.azure.arm.AzureFetchArmPreDeploymentDataTaskParameters
 55424:io.harness.delegate.task.azure.arm.AzureFetchArmPreDeploymentDataTaskResponse
 55425:io.harness.delegate.beans.executioncapability.WinrmConnectivityExecutionCapability
+55426:io.harness.delegate.task.shell.provisioner.ShellScriptProvisionTaskNGRequest
+55427:io.harness.delegate.task.shell.provisioner.ShellScriptProvisionTaskNGResponse
+55428:io.harness.delegate.beans.artifactory.ArtifactoryFetchImagePathResponse
 55470:io.harness.delegate.task.ssh.artifact.CustomArtifactDelegateConfig
 55501:io.harness.delegate.beans.instancesync.info.PdcServerInstanceInfo
 55502:io.harness.delegate.beans.instancesync.info.AzureSshWinrmServerInstanceInfo
@@ -1779,6 +1783,11 @@
 56338:io.harness.delegate.task.gitpolling.GitPollingTaskType
 56339:io.harness.delegate.beans.polling.GitPollingDelegateResponse
 56403:io.harness.delegate.beans.storeconfig.CustomRemoteStoreDelegateConfig
+57500:io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsTestConnectionTaskParams
+57501:io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsTestConnectionTaskResponse
+57502:io.harness.delegate.task.artifacts.azureartifacts.AzureArtifactsDelegateRequest
+57503:io.harness.delegate.task.artifacts.azureartifacts.AzureArtifactsDelegateResponse
+57504:io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsCapabilityHelper
 71100:software.wings.service.impl.ThirdPartyApiCallLog.ThirdPartyApiCallField
 71101:software.wings.service.impl.ThirdPartyApiCallLog.FieldType
 71102:software.wings.beans.Log
@@ -1798,6 +1807,15 @@
 73985:io.harness.delegate.beans.DelegateEntityOwner
 73986:io.harness.delegate.beans.DelegateSizeDetails
 73987:io.harness.delegate.beans.DelegateSize
+80302:software.wings.helpers.ext.azure.devops.AzureArtifactsFeeds
+80303:software.wings.helpers.ext.azure.devops.AzureArtifactsPackageFile
+80304:software.wings.helpers.ext.azure.devops.AzureArtifactsPackageFileInfo
+80305:software.wings.helpers.ext.azure.devops.AzureArtifactsPackages
+80307:software.wings.helpers.ext.azure.devops.AzureArtifactsPackageVersions
+80308:software.wings.helpers.ext.azure.devops.AzureArtifactsProtocolMetadata
+80309:software.wings.helpers.ext.azure.devops.AzureArtifactsProtocolMetadataData
+80310:software.wings.helpers.ext.azure.devops.AzureDevopsProjects
+80311:io.harness.artifactory.ArtifactoryImagePath
 83071:io.harness.delegate.beans.connector.awsconnector.AwsListEC2InstancesTaskParamsRequest
 83072:io.harness.delegate.beans.connector.awsconnector.AwsListEC2InstancesTaskResponse
 83073:software.wings.service.impl.aws.model.AwsEC2Instance
@@ -1857,6 +1875,9 @@
 97113:io.harness.servicenow.ServiceNowTemplate
 97114:io.harness.aws.AwsCFTemplatesType
 97115:io.harness.ssh.FileSourceType
+97116:io.harness.servicenow.ServiceNowImportSetResponseNG
+97117:io.harness.servicenow.ServiceNowImportSetTransformMapResult
+97118:io.harness.servicenow.ServiceNowStagingTable
 98399:io.harness.delegate.task.helm.HelmCommandRequestNG
 98400:io.harness.helm.HelmCommandType
 98401:io.harness.delegate.task.helm.HelmInstallCommandRequestNG
@@ -2341,6 +2362,7 @@
 980033:io.harness.exception.ngexception.beans.templateservice.TemplateInputsErrorDTO
 980034:io.harness.exception.ngexception.beans.templateservice.TemplateInputsErrorMetadataDTO
 980035:io.harness.exception.ngexception.AzureARMTaskException
+980037:io.harness.exception.ngexception.AzureBPTaskException
 9300122:io.harness.yaml.core.timeout.Timeout
 9800001:io.harness.beans.RecasterMap
 9800002:io.harness.licensing.beans.modules.ChaosModuleLicenseDTO
@@ -2351,3 +2373,9 @@
 9800007:io.harness.delegate.task.ssh.artifact.AwsS3ArtifactDelegateConfig
 10000001:io.harness.delegate.beans.connector.elkconnector.ELKConnectorDTO
 10000002:io.harness.delegate.beans.connector.elkconnector.ELKAuthType
+10000101:io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsConnectorDTO
+10000102:io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsCredentialsDTO
+10000103:io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsAuthenticationType
+10000109:io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsAuthenticationDTO
+10000111:io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsTokenDTO
+

@@ -29,6 +29,7 @@ import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.execution.ExecutionInfoKey;
 import io.harness.cdng.execution.helper.StageExecutionHelper;
 import io.harness.cdng.infra.InfrastructureMapper;
+import io.harness.cdng.infra.InfrastructureValidator;
 import io.harness.cdng.infra.beans.AwsInstanceFilter;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.infra.beans.PdcInfrastructureOutcome;
@@ -39,6 +40,7 @@ import io.harness.cdng.infra.yaml.InfrastructureDefinitionConfig;
 import io.harness.cdng.infra.yaml.PdcInfrastructure;
 import io.harness.cdng.infra.yaml.SshWinRmAwsInfrastructure;
 import io.harness.cdng.infra.yaml.SshWinRmAzureInfrastructure;
+import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.cdng.service.steps.ServiceStepOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.connector.ConnectorInfoDTO;
@@ -116,6 +118,7 @@ import org.mockito.MockitoAnnotations;
 public class InfrastructureTaskExecutableStepV2Test extends CategoryTest {
   @Mock private InfrastructureEntityService infrastructureEntityService;
   @Mock private InfrastructureMapper infrastructureMapper;
+  @Mock InfrastructureValidator infrastructureValidator;
   @Mock private InfrastructureStepHelper infrastructureStepHelper;
   @Mock private CDStepHelper cdStepHelper;
   @Mock private StepHelper stepHelper;
@@ -188,6 +191,30 @@ public class InfrastructureTaskExecutableStepV2Test extends CategoryTest {
         .withMessageContaining("not found")
         .withMessageContaining("infra-id")
         .withMessageContaining("env-id");
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.YOGESH)
+  @Category({UnitTests.class})
+  public void obtainTaskInfraTypeMismatch() {
+    doReturn(Optional.of(InfrastructureEntity.builder()
+                             .type(InfrastructureType.KUBERNETES_DIRECT)
+                             .deploymentType(ServiceDefinitionType.KUBERNETES)
+                             .build()))
+        .when(infrastructureEntityService)
+        .get(anyString(), anyString(), anyString(), anyString(), anyString());
+
+    assertThatExceptionOfType(InvalidRequestException.class)
+        .isThrownBy(()
+                        -> step.executeAsyncAfterRbac(ambiance,
+                            InfrastructureTaskExecutableStepV2Params.builder()
+                                .envRef(ParameterField.createValueField("env-id"))
+                                .infraRef(ParameterField.createValueField("infra-id"))
+                                .deploymentType(ServiceDefinitionType.AZURE_WEBAPP)
+                                .build(),
+                            null))
+        .withMessageContaining(
+            "Deployment type of the stage [AzureWebApp] and the infrastructure [Kubernetes] do not match");
   }
 
   @Test

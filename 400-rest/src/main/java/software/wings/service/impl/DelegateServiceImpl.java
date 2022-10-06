@@ -88,6 +88,7 @@ import io.harness.capability.service.CapabilityService;
 import io.harness.configuration.DeployMode;
 import io.harness.configuration.DeployVariant;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.delegate.beans.AutoUpgrade;
 import io.harness.delegate.beans.AvailableDelegateSizes;
 import io.harness.delegate.beans.ConnectionMode;
 import io.harness.delegate.beans.Delegate;
@@ -348,6 +349,8 @@ public class DelegateServiceImpl implements DelegateService {
   private static final long MAX_GRPC_HB_TIMEOUT = TimeUnit.MINUTES.toMillis(15);
 
   private static final Duration HEARTBEAT_EXPIRY_TIME = ofMinutes(5);
+
+  private static final long AUTO_UPGRADE_CHECK_TIME_IN_MINUTES = 90;
 
   static {
     templateConfiguration.setTemplateLoader(new ClassTemplateLoader(DelegateServiceImpl.class, "/delegatetemplates"));
@@ -850,12 +853,14 @@ public class DelegateServiceImpl implements DelegateService {
         .entrySet()
         .stream()
         .map(entry -> {
+          final long delegateCreationTime = entry.getValue().stream().mapToLong(Delegate::getCreatedAt).min().orElse(0);
           final boolean isImmutable = isNotEmpty(entry.getValue()) && entry.getValue().get(0).isImmutable();
+          final long upgraderLastUpdated = delegateGroupMap.getOrDefault(entry.getKey(), 0L);
           return DelegateScalingGroup.builder()
               .groupName(entry.getKey())
               .upgraderLastUpdated(delegateGroupMap.getOrDefault(entry.getKey(), 0L))
               .immutable(isImmutable)
-              .autoUpgrade(setAutoUpgrade(delegateGroupMap.getOrDefault(entry.getKey(), 0L)))
+              .autoUpgrade(delegateSetupService.setAutoUpgrade(upgraderLastUpdated, isImmutable, delegateCreationTime))
               .delegateGroupExpirationTime(setDelegateScalingGroupExpiration(entry.getValue()))
               .delegates(buildInnerDelegates(accountId, entry.getValue(), activeDelegateConnections, true))
               .build();
@@ -867,10 +872,6 @@ public class DelegateServiceImpl implements DelegateService {
     return isNotEmpty(delegates)
         ? delegates.stream().min(Comparator.comparing(Delegate::getExpirationTime)).get().getExpirationTime()
         : 0;
-  }
-
-  private boolean setAutoUpgrade(Long upgraderLastUpdated) {
-    return TimeUnit.MILLISECONDS.toMinutes(System.currentTimeMillis() - upgraderLastUpdated) <= 90;
   }
 
   private List<Delegate> getDelegatesWithoutScalingGroup(String accountId) {
@@ -938,7 +939,7 @@ public class DelegateServiceImpl implements DelegateService {
                   .version(delegate.getVersion());
           // Set autoUpgrade as true for legacy delegate.
           if (!delegate.isImmutable()) {
-            delegateInnerBuilder.autoUpgrade(true);
+            delegateInnerBuilder.autoUpgrade(AutoUpgrade.ON);
           }
           return delegateInnerBuilder.build();
         })
