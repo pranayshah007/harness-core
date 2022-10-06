@@ -94,6 +94,8 @@ public class K8sNodeRecommendationTasklet implements Tasklet {
   private void createTotalResourceUsageAndInsert(@NonNull JobConstants jobConstants, @NonNull NodePoolId nodePoolId) {
     TotalResourceUsage totalResourceUsage =
         k8sRecommendationDAO.maxResourceOfAllTimeBucketsForANodePool(jobConstants, nodePoolId);
+    log.info("TotalResourceUsage for 1 day {}:{} is {} between {} and {}", jobConstants.getAccountId(), nodePoolId,
+        totalResourceUsage, jobConstants.getJobStartTime(), jobConstants.getJobEndTime());
     k8sRecommendationDAO.insertNodePoolAggregated(jobConstants, nodePoolId, totalResourceUsage);
   }
 
