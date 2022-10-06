@@ -425,6 +425,45 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
   @Test
   @Owner(developers = UTKARSH_CHOUBEY)
   @Category(UnitTests.class)
+  public void testSetStableTemplateAsLastUpdatedTemplate() {
+    TemplateEntity createdEntity = templateService.create(entity, false, "");
+    assertThat(createdEntity.isStableTemplate()).isTrue();
+
+    TemplateEntity entityVersion2 = templateService.create(entity.withVersionLabel("version2"), false, "");
+
+    entityVersion2 =
+        templateService.updateTemplateEntity(entityVersion2.withDescription("Updated"), ChangeType.MODIFY, true, "");
+
+    TemplateEntity entityVersion3 = templateService.create(entity.withVersionLabel("version3"), false, "");
+    assertThat(entityVersion3.isStableTemplate()).isFalse();
+    assertThat(entityVersion3.isLastUpdatedTemplate()).isTrue();
+
+    Call<ResponseDTO<Boolean>> request = mock(Call.class);
+    try {
+      when(request.execute()).thenReturn(Response.success(ResponseDTO.newResponse(false)));
+    } catch (IOException ex) {
+    }
+    when(entitySetupUsageClient.isEntityReferenced(any(), any(), any())).thenReturn(request);
+
+    // Deleting a last updated version for a particular templateIdentifier.
+    boolean delete =
+        templateService.delete(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, "version1", null, "");
+    assertThat(delete).isTrue();
+
+    Criteria criteria =
+        templateServiceHelper.formCriteria(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, null, null, false, "", false);
+    criteria.and(TemplateEntityKeys.isLastUpdatedTemplate).is(true);
+    Pageable pageRequest = PageRequest.of(0, 10, Sort.by(Sort.Direction.DESC, TemplateEntityKeys.lastUpdatedAt));
+    Page<TemplateEntity> templateEntities =
+        templateService.list(criteria, pageRequest, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, false);
+    assertThat(templateEntities.getContent()).isNotNull();
+    assertThat(templateEntities.getContent().size()).isEqualTo(1);
+    assertThat(entityVersion3.isLastUpdatedTemplate()).isEqualTo(true);
+  }
+
+  @Test
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
   public void testDeleteAllTemplatesInAProject() {
     TemplateEntity createdEntity = templateService.create(entity, false, "");
     assertThat(createdEntity.isStableTemplate()).isTrue();
