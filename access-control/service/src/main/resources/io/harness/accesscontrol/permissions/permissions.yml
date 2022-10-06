@@ -1033,70 +1033,79 @@ permissions:
       - account
       - organization
       - project
-  - identifier: chaos_chaosdelegate_view
-    name: View a Chaos Delegate
+  - identifier: chaos_chaosinfrastructure_view
+    name: View a Chaos Infrastructure
     status: ACTIVE
     includeInAllRoles: false
     allowedScopeLevels:
       - account
       - organization
       - project
-  - identifier: chaos_chaosdelegate_edit
-    name: Edit a Chaos Delegate
+  - identifier: chaos_chaosinfrastructure_edit
+    name: Edit a Chaos Infrastructure
     status: ACTIVE
     includeInAllRoles: false
     allowedScopeLevels:
       - account
       - organization
       - project
-  - identifier: chaos_chaosdelegate_delete
-    name: Delete a Chaos Delegate
+  - identifier: chaos_chaosinfrastructure_delete
+    name: Delete a Chaos Infrastructure
     status: ACTIVE
     includeInAllRoles: false
     allowedScopeLevels:
       - account
       - organization
       - project
-  - identifier: chaos_chaosgitops_view
-    name: View Gitops
-    status: ACTIVE
-    includeInAllRoles: false
-    allowedScopeLevels:
-      - account
-      - organization
-      - project
-  - identifier: chaos_chaosgitops_edit
-    name: Edit Gitops
-    status: ACTIVE
-    includeInAllRoles: false
-    allowedScopeLevels:
-      - account
-      - organization
-      - project
-  - identifier: chaos_chaosscenario_view
-    name: View a Chaos Scenario
+  - identifier: chaos_chaosexperiment_view
+    name: View a Chaos Experiment
     status: ACTIVE
     includedInAllRoles: false
     allowedScopeLevels:
       - account
       - organization
       - project
-  - identifier: chaos_chaosscenario_edit
-    name: Edit a Chaos Scenario
+  - identifier: chaos_chaosexperiment_edit
+    name: Edit a Chaos Experiment
     status: ACTIVE
     includedInAllRoles: false
     allowedScopeLevels:
       - account
       - organization
       - project
-  - identifier: chaos_chaosscenario_delete
-    name: Delete a Chaos Scenario
+  - identifier: chaos_chaosexperiment_delete
+    name: Delete a Chaos Experiment
     status: ACTIVE
     includedInAllRoles: false
     allowedScopeLevels:
       - account
       - organization
       - project
+  - identifier: chaos_chaosgameday_view
+    name: View a Chaos GameDay
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: chaos_chaosgameday_edit
+    name: Edit a Chaos GameDay
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: chaos_chaosgameday_delete
+    name: Delete a Chaos GameDay
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+
   - identifier: core_setting_view
     name: View Settings
     status: ACTIVE

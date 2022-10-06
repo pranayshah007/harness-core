@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.licensing.beans.modules;
+package io.harness.licensing.beans.summary;
 
 import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL;
 
@@ -30,8 +30,9 @@ import lombok.experimental.SuperBuilder;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(NON_NULL)
+
 @Schema(name = "ChaosModuleLicense", description = "This contains details of the Chaos License in Harness")
-public class ChaosModuleLicenseDTO extends ModuleLicenseDTO {
+public class ChaosLicenseSummaryDTO extends LicensesWithSummaryDTO {
   Integer totalChaosExperimentRuns;
   Integer totalChaosInfrastructures;
 }

@@ -39,10 +39,10 @@ import lombok.extern.slf4j.Slf4j;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 @AllArgsConstructor(access = AccessLevel.PUBLIC, onConstructor = @__({ @Inject }))
 @Slf4j
-public class ChaosGitopsResourceImpl implements Resource {
+public class ChaosInfrastructureResourceImpl implements Resource {
   @Override
   public String getType() {
-    return "CHAOS_GITOPS";
+    return "CHAOS_INFRASTRUCTURE";
   }
 
   @Override
@@ -52,7 +52,7 @@ public class ChaosGitopsResourceImpl implements Resource {
 
   @Override
   public Optional<String> getEventFrameworkEntityType() {
-    return Optional.of(EventsFrameworkMetadataConstants.CHAOS_GITOPS);
+    return Optional.of(EventsFrameworkMetadataConstants.CHAOS_INFRASTRUCTURE);
   }
 
   @Override

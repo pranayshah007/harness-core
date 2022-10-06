@@ -84,12 +84,12 @@ resourceTypes:
     permissionKey: variable
   - identifier: CHAOS_HUB
     permissionKey: chaoshub
-  - identifier: CHAOS_DELEGATE
-    permissionKey: chaosdelegate
-  - identifier: CHAOS_GITOPS
-    permissionKey: chaosgitops
-  - identifier: CHAOS_SCENARIO
-    permissionKey: chaosscenario
+  - identifier: CHAOS_INFRASTRUCTURE
+    permissionKey: chaosinfrastructure
+  - identifier: CHAOS_EXPERIMENT
+    permissionKey: chaosexperiment
+  - identifier: CHAOS_GAMEDAY
+    permissionKey: chaosgameday
   - identifier: CCM_OVERVIEW
     permissionKey: overview
   - identifier: CCM_PERSPECTIVE

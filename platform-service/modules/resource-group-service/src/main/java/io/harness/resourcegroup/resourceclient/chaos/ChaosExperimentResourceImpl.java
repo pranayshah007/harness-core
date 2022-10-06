@@ -39,10 +39,10 @@ import lombok.extern.slf4j.Slf4j;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 @AllArgsConstructor(access = AccessLevel.PUBLIC, onConstructor = @__({ @Inject }))
 @Slf4j
-public class ChaosScenarioResourceImpl implements Resource {
+public class ChaosExperimentResourceImpl implements Resource {
   @Override
   public String getType() {
-    return "CHAOS_SCENARIO";
+    return "CHAOS_EXPERIMENT";
   }
 
   @Override
@@ -52,7 +52,7 @@ public class ChaosScenarioResourceImpl implements Resource {
 
   @Override
   public Optional<String> getEventFrameworkEntityType() {
-    return Optional.of(EventsFrameworkMetadataConstants.CHAOS_SCENARIO);
+    return Optional.of(EventsFrameworkMetadataConstants.CHAOS_EXPERIMENT);
   }
 
   @Override

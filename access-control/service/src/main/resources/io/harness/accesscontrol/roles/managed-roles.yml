@@ -124,14 +124,15 @@ roles:
         - chaos_chaoshub_view
         - chaos_chaoshub_edit
         - chaos_chaoshub_delete
-        - chaos_chaosdelegate_view
-        - chaos_chaosdelegate_edit
-        - chaos_chaosdelegate_delete
-        - chaos_chaosgitops_view
-        - chaos_chaosgitops_edit
-        - chaos_chaosscenario_view
-        - chaos_chaosscenario_edit
-        - chaos_chaosscenario_delete
+        - chaos_chaosinfrastructure_view
+        - chaos_chaosinfrastructure_edit
+        - chaos_chaosinfrastructure_delete
+        - chaos_chaosexperiment_view
+        - chaos_chaosexperiment_edit
+        - chaos_chaosexperiment_delete
+        - chaos_chaosgameday_view
+        - chaos_chaosgameday_edit
+        - chaos_chaosgameday_delete
         - core_setting_view
         - core_setting_edit
         - core_deploymentfreeze_manage
@@ -182,9 +183,9 @@ roles:
         - core_file_view
         - core_variable_view
         - chaos_chaoshub_view
-        - chaos_chaosdelegate_view
-        - chaos_chaosgitops_view
-        - chaos_chaosscenario_view
+        - chaos_chaosinfrastructure_view
+        - chaos_chaosexperiment_view
+        - chaos_chaosgameday_view
         - core_setting_view
       allowedScopeLevels:
         - project
@@ -317,14 +318,15 @@ roles:
         - chaos_chaoshub_view
         - chaos_chaoshub_edit
         - chaos_chaoshub_delete
-        - chaos_chaosdelegate_view
-        - chaos_chaosdelegate_edit
-        - chaos_chaosdelegate_delete
-        - chaos_chaosgitops_view
-        - chaos_chaosgitops_edit
-        - chaos_chaosscenario_view
-        - chaos_chaosscenario_edit
-        - chaos_chaosscenario_delete
+        - chaos_chaosinfrastructure_view
+        - chaos_chaosinfrastructure_edit
+        - chaos_chaosinfrastructure_delete
+        - chaos_chaosexperiment_view
+        - chaos_chaosexperiment_edit
+        - chaos_chaosexperiment_delete
+        - chaos_chaosgameday_view
+        - chaos_chaosgameday_edit
+        - chaos_chaosgameday_delete
         - core_setting_view
         - core_setting_edit
         - core_deploymentfreeze_manage
@@ -377,9 +379,9 @@ roles:
         - core_file_view
         - core_variable_view
         - chaos_chaoshub_view
-        - chaos_chaosdelegate_view
-        - chaos_chaosgitops_view
-        - chaos_chaosscenario_view
+        - chaos_chaosinfrastructure_view
+        - chaos_chaosexperiment_view
+        - chaos_chaosgameday_view
         - core_setting_view
       allowedScopeLevels:
         - organization
@@ -523,14 +525,15 @@ roles:
         - chaos_chaoshub_view
         - chaos_chaoshub_edit
         - chaos_chaoshub_delete
-        - chaos_chaosdelegate_view
-        - chaos_chaosdelegate_edit
-        - chaos_chaosdelegate_delete
-        - chaos_chaosgitops_view
-        - chaos_chaosgitops_edit
-        - chaos_chaosscenario_view
-        - chaos_chaosscenario_edit
-        - chaos_chaosscenario_delete
+        - chaos_chaosinfrastructure_view
+        - chaos_chaosinfrastructure_edit
+        - chaos_chaosinfrastructure_delete
+        - chaos_chaosexperiment_view
+        - chaos_chaosexperiment_edit
+        - chaos_chaosexperiment_delete
+        - chaos_chaosgameday_view
+        - chaos_chaosgameday_edit
+        - chaos_chaosgameday_delete
         - core_setting_view
         - core_setting_edit
         - ccm_overview_view
@@ -606,9 +609,9 @@ roles:
         - core_file_view
         - core_variable_view
         - chaos_chaoshub_view
-        - chaos_chaosdelegate_view
-        - chaos_chaosgitops_view
-        - chaos_chaosscenario_view
+        - chaos_chaosinfrastructure_view
+        - chaos_chaosexperiment_view
+        - chaos_chaosgameday_view
         - core_setting_view
         - ccm_overview_view
         - ccm_perspective_view
