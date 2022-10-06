@@ -7,13 +7,18 @@
 
 package io.harness.ng.core.remote;
 
+import static io.harness.NGCommonEntityConstants.DIFFERENT_ORG_IN_PAYLOAD_AND_PARAM;
+import static io.harness.NGCommonEntityConstants.DIFFERENT_SLUG_IN_PAYLOAD_AND_PARAM;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.ng.core.remote.ProjectMapper.toProject;
 import static io.harness.rule.OwnerRule.ASHISHSANODIA;
 import static io.harness.utils.PageTestUtils.getPage;
 
+import static java.lang.String.format;
 import static junit.framework.TestCase.assertEquals;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.catchThrowableOfType;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
@@ -30,6 +35,7 @@ import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.dto.ProjectDTO;
 import io.harness.ng.core.dto.ProjectFilterDTO;
 import io.harness.ng.core.entities.Project;
@@ -113,6 +119,23 @@ public class OrgProjectApiImplTest extends CategoryTest {
     assertEquals(org, entity.getProject().getOrg());
   }
 
+  @Test
+  @Owner(developers = ASHISHSANODIA)
+  @Category(UnitTests.class)
+  public void testProjectCreateForOrgMisMatch() {
+    CreateProjectRequest request = new CreateProjectRequest();
+    io.harness.spec.server.ng.model.Project proj = new io.harness.spec.server.ng.model.Project();
+    proj.setSlug(slug);
+    proj.setName(name);
+    proj.setOrg(org);
+    request.setProject(proj);
+
+    Throwable thrown = catchThrowableOfType(
+        () -> orgProjectApi.createOrgScopedProject(request, "different-org", account), InvalidRequestException.class);
+
+    assertThat(thrown).hasMessage(DIFFERENT_ORG_IN_PAYLOAD_AND_PARAM);
+  }
+
   @Test(expected = NotFoundException.class)
   @Owner(developers = ASHISHSANODIA)
   @Category(UnitTests.class)
@@ -160,8 +183,8 @@ public class OrgProjectApiImplTest extends CategoryTest {
                                                                  .build()))
                 .build());
 
-    Response response = orgProjectApi.getOrgScopedProjects(org, account, Collections.singletonList(slug), true,
-        io.harness.spec.server.ng.model.ModuleType.CD.name(), searchTerm, page, limit);
+    Response response = orgProjectApi.getOrgScopedProjects(org, Collections.singletonList(slug), true,
+        io.harness.spec.server.ng.model.ModuleType.CD.name(), searchTerm, page, limit, account, null, null);
 
     verify(projectService, times(1)).listPermittedProjects(eq(account), any(), argumentCaptor.capture());
     ProjectFilterDTO projectFilterDTO = argumentCaptor.getValue();
@@ -200,6 +223,45 @@ public class OrgProjectApiImplTest extends CategoryTest {
     assertEquals(project.getVersion().toString(), response.getEntityTag().getValue());
     assertEquals(org, entity.getProject().getOrg());
     assertEquals(slug, entity.getProject().getSlug());
+    assertEquals("updated_name", entity.getProject().getName());
+  }
+
+  @Test
+  @Owner(developers = ASHISHSANODIA)
+  @Category(UnitTests.class)
+  public void testUpdateOrgScopedProjectOrgMisMatch() {
+    UpdateProjectRequest request = new UpdateProjectRequest();
+    io.harness.spec.server.ng.model.Project proj = new io.harness.spec.server.ng.model.Project();
+    proj.setSlug(slug);
+    proj.setName("updated_name");
+    proj.setOrg(org);
+    request.setProject(proj);
+
+    Throwable thrown =
+        catchThrowableOfType(()
+                                 -> orgProjectApi.updateOrgScopedProject(request, "different-org", slug, account),
+            InvalidRequestException.class);
+
+    assertThat(thrown).hasMessage(DIFFERENT_ORG_IN_PAYLOAD_AND_PARAM);
+  }
+
+  @Test
+  @Owner(developers = ASHISHSANODIA)
+  @Category(UnitTests.class)
+  public void testUpdateOrgScopedProjectSlugMisMatch() {
+    UpdateProjectRequest request = new UpdateProjectRequest();
+    io.harness.spec.server.ng.model.Project proj = new io.harness.spec.server.ng.model.Project();
+    proj.setSlug(slug);
+    proj.setName("updated_name");
+    proj.setOrg(org);
+    request.setProject(proj);
+
+    Throwable thrown =
+        catchThrowableOfType(()
+                                 -> orgProjectApi.updateOrgScopedProject(request, org, "different-slug", account),
+            InvalidRequestException.class);
+
+    assertThat(thrown).hasMessage(DIFFERENT_SLUG_IN_PAYLOAD_AND_PARAM);
   }
 
   @Test
@@ -216,5 +278,30 @@ public class OrgProjectApiImplTest extends CategoryTest {
     ProjectResponse entity = (ProjectResponse) response.getEntity();
 
     assertEquals(slug, entity.getProject().getSlug());
+  }
+
+  @Test
+  @Owner(developers = ASHISHSANODIA)
+  @Category(UnitTests.class)
+  public void testOrgScopedProjectNotDeleted() {
+    Project project = Project.builder().identifier(slug).name(name).build();
+
+    when(projectService.delete(account, org, slug, null)).thenReturn(false);
+    when(projectService.get(account, org, slug)).thenReturn(Optional.of(project));
+
+    Throwable thrown =
+        catchThrowableOfType(() -> orgProjectApi.deleteOrgScopedProject(org, slug, account), NotFoundException.class);
+
+    assertThat(thrown).hasMessage(format("Project with slug [%s] could not be deleted", slug));
+  }
+
+  @Test
+  @Owner(developers = ASHISHSANODIA)
+  @Category(UnitTests.class)
+  public void testOrgScopedProjectDeleteNotFoundException() {
+    Throwable thrown =
+        catchThrowableOfType(() -> orgProjectApi.deleteOrgScopedProject(org, slug, account), NotFoundException.class);
+
+    assertThat(thrown).hasMessage(format("Project with org [%s] and slug [%s] not found", org, slug));
   }
 }

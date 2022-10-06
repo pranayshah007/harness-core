@@ -386,6 +386,22 @@ public class NGEncryptedDataServiceImplTest extends CategoryTest {
   @Test
   @Owner(developers = VIKAS_M)
   @Category(UnitTests.class)
+  public void testHardDelete() {
+    String accountIdentifier = randomAlphabetic(10);
+    String orgIdentifier = randomAlphabetic(10);
+    String projectIdentifier = randomAlphabetic(10);
+    String identifier = randomAlphabetic(10);
+    ArgumentCaptor<String> argumentCaptor = ArgumentCaptor.forClass(String.class);
+    when(encryptedDataDao.hardDelete(any(), any(), any(), argumentCaptor.capture()))
+        .thenReturn(NGEncryptedData.builder().build());
+    ngEncryptedDataService.hardDelete(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
+    verify(encryptedDataDao, times(1)).hardDelete(any(), any(), any(), any());
+    assertThat(identifier).isEqualTo(argumentCaptor.getValue());
+  }
+
+  @Test
+  @Owner(developers = VIKAS_M)
+  @Category(UnitTests.class)
   public void testCreateSecret_azureVault() {
     String accountIdentifier = randomAlphabetic(10);
     String orgIdentifier = randomAlphabetic(10);

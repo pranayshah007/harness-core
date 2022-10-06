@@ -10,11 +10,17 @@ package io.harness.ngmigration.service;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ngmigration.beans.MigrationInputDTO;
+import io.harness.ngmigration.dto.ApplicationFilter;
 import io.harness.ngmigration.dto.ConnectorFilter;
 import io.harness.ngmigration.dto.Filter;
 import io.harness.ngmigration.dto.ImportDTO;
 import io.harness.ngmigration.dto.SaveSummaryDTO;
 import io.harness.ngmigration.dto.SecretFilter;
+import io.harness.ngmigration.dto.SecretManagerFilter;
+import io.harness.ngmigration.service.importer.AppImportService;
+import io.harness.ngmigration.service.importer.ConnectorImportService;
+import io.harness.ngmigration.service.importer.SecretManagerImportService;
+import io.harness.ngmigration.service.importer.SecretsImportService;
 
 import software.wings.ngmigration.DiscoveryResult;
 
@@ -24,7 +30,9 @@ import javax.ws.rs.core.StreamingOutput;
 @OwnedBy(HarnessTeam.CDC)
 public class MigrationResourceService {
   @Inject private ConnectorImportService connectorImportService;
+  @Inject private SecretManagerImportService secretManagerImportService;
   @Inject private SecretsImportService secretsImportService;
+  @Inject private AppImportService appImportService;
   @Inject private DiscoveryService discoveryService;
 
   private DiscoveryResult discover(String authToken, ImportDTO importDTO) {
@@ -34,8 +42,14 @@ public class MigrationResourceService {
     if (filter instanceof ConnectorFilter) {
       return connectorImportService.discover(authToken, importDTO);
     }
+    if (filter instanceof SecretManagerFilter) {
+      return secretManagerImportService.discover(authToken, importDTO);
+    }
     if (filter instanceof SecretFilter) {
       return secretsImportService.discover(authToken, importDTO);
+    }
+    if (filter instanceof ApplicationFilter) {
+      return appImportService.discover(authToken, importDTO);
     }
     return DiscoveryResult.builder().build();
   }

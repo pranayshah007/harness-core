@@ -1,0 +1,18 @@
+customDeployment:
+  infrastructure:
+    variables:
+      - name: clusterUrl
+        type: String
+        value: <+input>
+      - name: image
+        type: Connector
+        value: account.harnessImage
+        description: "Connector"
+    instancesListPath: instances
+    instanceAttributes:
+      - name: hostName
+        jsonPath: <+input>
+        description: "IP address of the host"
+  execution:
+    stepTemplateRefs:
+      - org.OpenStackSetup

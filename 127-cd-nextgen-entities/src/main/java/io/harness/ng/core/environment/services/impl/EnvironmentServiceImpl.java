@@ -62,7 +62,6 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.google.protobuf.StringValue;
-import com.mongodb.client.result.UpdateResult;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -307,8 +306,8 @@ public class EnvironmentServiceImpl implements EnvironmentService {
 
     Criteria criteria = getAllEnvironmentsEqualityCriteriaWithinProject(accountId, orgIdentifier, projectIdentifier);
     return Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
-      UpdateResult updateResult = environmentRepository.deleteMany(criteria);
-      if (!updateResult.wasAcknowledged()) {
+      boolean deleted = environmentRepository.delete(criteria);
+      if (!deleted) {
         throw new InvalidRequestException(
             String.format("Environments under Project[%s], Organization [%s] couldn't be deleted.", projectIdentifier,
                 orgIdentifier));

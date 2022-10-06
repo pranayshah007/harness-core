@@ -70,6 +70,34 @@ public class SetupUsageHelper {
     }
   }
 
+  public void publishEntitySetupUsage(
+      EntityDetailProtoDTO referredByEntityDetail, Set<EntityDetailProtoDTO> referredEntities, String accountId) {
+    Map<String, List<EntityDetailProtoDTO>> referredEntityTypeToReferredEntities = new HashMap<>();
+    for (EntityDetailProtoDTO entityDetailProtoDTO : referredEntities) {
+      List<EntityDetailProtoDTO> entityDetailProtoDTOS =
+          referredEntityTypeToReferredEntities.getOrDefault(entityDetailProtoDTO.getType().name(), new ArrayList<>());
+      entityDetailProtoDTOS.add(entityDetailProtoDTO);
+      referredEntityTypeToReferredEntities.put(entityDetailProtoDTO.getType().name(), entityDetailProtoDTOS);
+    }
+
+    for (Map.Entry<String, List<EntityDetailProtoDTO>> entry : referredEntityTypeToReferredEntities.entrySet()) {
+      List<EntityDetailProtoDTO> entityDetailProtoDTOs = entry.getValue();
+      EntitySetupUsageCreateV2DTO entityReferenceDTO = EntitySetupUsageCreateV2DTO.newBuilder()
+                                                           .setAccountIdentifier(accountId)
+                                                           .setReferredByEntity(referredByEntityDetail)
+                                                           .addAllReferredEntities(entityDetailProtoDTOs)
+                                                           .setDeleteOldReferredByRecords(true)
+                                                           .build();
+      producer.send(
+          Message.newBuilder()
+              .putAllMetadata(ImmutableMap.of("accountId", accountId,
+                  EventsFrameworkMetadataConstants.REFERRED_ENTITY_TYPE, entry.getKey(),
+                  EventsFrameworkMetadataConstants.ACTION, EventsFrameworkMetadataConstants.FLUSH_CREATE_ACTION))
+              .setData(entityReferenceDTO.toByteString())
+              .build());
+    }
+  }
+
   public void deleteSetupUsages(@Valid SetupUsageOwnerEntity entity) {
     EntityDetailProtoDTO entityDetail =
         EntityDetailProtoDTO.newBuilder()
@@ -91,5 +119,19 @@ public class SetupUsageHelper {
                 EventsFrameworkMetadataConstants.FLUSH_CREATE_ACTION))
             .setData(entityReferenceDTO.toByteString())
             .build());
+  }
+
+  public void deleteSetupUsages(EntityDetailProtoDTO entityDetail, String accountId) {
+    EntitySetupUsageCreateV2DTO entityReferenceDTO = EntitySetupUsageCreateV2DTO.newBuilder()
+                                                         .setAccountIdentifier(accountId)
+                                                         .setReferredByEntity(entityDetail)
+                                                         .setDeleteOldReferredByRecords(true)
+                                                         .build();
+    // Send Events for all referredEntitiesType to delete them
+    producer.send(Message.newBuilder()
+                      .putAllMetadata(ImmutableMap.of("accountId", accountId, EventsFrameworkMetadataConstants.ACTION,
+                          EventsFrameworkMetadataConstants.FLUSH_CREATE_ACTION))
+                      .setData(entityReferenceDTO.toByteString())
+                      .build());
   }
 }

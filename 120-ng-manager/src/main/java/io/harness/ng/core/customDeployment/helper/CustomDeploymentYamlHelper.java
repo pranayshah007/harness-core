@@ -143,10 +143,8 @@ public class CustomDeploymentYamlHelper {
           if (!isNull(customDeploymentRef)) {
             JsonNode ref = customDeploymentRef.get("templateRef");
             JsonNode versionLabelNode = customDeploymentRef.get("versionLabel");
-            if (!isNull(versionLabelNode)) {
-              return ref.asText().equals(deploymentTemplateIdentifier)
-                  && versionLabelNode.asText().equals(versionLabel);
-            }
+            String versionLabelRef = isNull(versionLabelNode) ? "" : versionLabelNode.asText();
+            return ref.asText().equals(deploymentTemplateIdentifier) && versionLabelRef.equals(versionLabel);
           }
         }
       }
@@ -565,7 +563,8 @@ public class CustomDeploymentYamlHelper {
         if (!isNull(customDeploymentRef)) {
           JsonNode ref = customDeploymentRef.get("templateRef");
           JsonNode versionLabelNode = customDeploymentRef.get("versionLabel");
-          return ref.asText().equals(deploymentTemplateIdentifier) && versionLabelNode.asText().equals(versionLabel);
+          String versionLabelRef = isNull(versionLabelNode) ? "" : versionLabelNode.asText();
+          return ref.asText().equals(deploymentTemplateIdentifier) && versionLabelRef.equals(versionLabel);
         }
       }
     }
@@ -598,12 +597,12 @@ public class CustomDeploymentYamlHelper {
     JsonNode yamlMap = yamlConfig.getYamlMap();
     JsonNode infraDef = yamlMap.get("infrastructureDefinition");
     try {
-      if (infraDef.isNull()) {
+      if (isNull(infraDef)) {
         log.error("Infra definition is null in yaml for account id :{}", infraEntity.getAccountId());
         throw new InvalidRequestException("Infra definition is null in yaml");
       }
       JsonNode spec = infraDef.get("spec");
-      if (spec.isNull()) {
+      if (isNull(spec)) {
         log.error("spec is null in yaml for account id :{}", infraEntity.getAccountId());
         throw new InvalidRequestException("Infra definition spec is null in yaml");
       }
@@ -613,7 +612,7 @@ public class CustomDeploymentYamlHelper {
         return variables;
       }
       for (JsonNode variable : infraVariables) {
-        if (variable.isNull() || isEmpty(variable.get("name").toString()) || isEmpty(variable.get("type").toString())) {
+        if (isNull(variable) || isEmpty(variable.get("name").toString()) || isEmpty(variable.get("type").toString())) {
           throw new InvalidRequestException("Infrastructure yaml is not valid");
         }
         variables.put(variable.get("name").asText(), variable.get("type").asText());

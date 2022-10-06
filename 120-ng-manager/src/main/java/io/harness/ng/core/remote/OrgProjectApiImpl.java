@@ -7,6 +7,8 @@
 
 package io.harness.ng.core.remote;
 
+import static io.harness.NGCommonEntityConstants.DIFFERENT_ORG_IN_PAYLOAD_AND_PARAM;
+import static io.harness.NGCommonEntityConstants.DIFFERENT_SLUG_IN_PAYLOAD_AND_PARAM;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.ng.accesscontrol.PlatformPermissions.CREATE_PROJECT_PERMISSION;
@@ -64,46 +66,47 @@ public class OrgProjectApiImpl implements OrgProjectApi {
   @NGAccessControlCheck(resourceType = PROJECT, permission = DELETE_PROJECT_PERMISSION)
   @Override
   public Response deleteOrgScopedProject(
-      @OrgIdentifier String org, @ResourceIdentifier String id, @AccountIdentifier String account) {
-    return deleteProject(id, account, org);
+      @OrgIdentifier String org, @ResourceIdentifier String slug, @AccountIdentifier String account) {
+    return deleteProject(slug, account, org);
   }
 
   @NGAccessControlCheck(resourceType = PROJECT, permission = VIEW_PROJECT_PERMISSION)
   @Override
   public Response getOrgScopedProject(
-      @OrgIdentifier String org, @ResourceIdentifier String id, @AccountIdentifier String account) {
-    return getProject(id, account, org);
+      @OrgIdentifier String org, @ResourceIdentifier String slug, @AccountIdentifier String account) {
+    return getProject(slug, account, org);
   }
 
   @Override
-  public Response getOrgScopedProjects(String org, String account, List<String> project, Boolean hasModule,
-      String moduleType, String searchTerm, Integer page, Integer limit) {
-    List<ProjectResponse> projects = getProjects(account, org == null ? null : Sets.newHashSet(org), project, hasModule,
-        moduleType == null ? null : ModuleType.fromString(moduleType), searchTerm, page, limit);
+  public Response getOrgScopedProjects(String org, List<String> projects, Boolean hasModule, String moduleType,
+      String searchTerm, Integer page, Integer limit, String account, String sort, String order) {
+    List<ProjectResponse> projectResponses = getProjects(account, org == null ? null : Sets.newHashSet(org), projects,
+        hasModule, moduleType == null ? null : ModuleType.fromString(moduleType), searchTerm, page, limit, sort, order);
 
     ResponseBuilder responseBuilder = Response.ok();
 
     ResponseBuilder responseBuilderWithLinks = projectApiUtils.addLinksHeader(
-        responseBuilder, format("/v1/orgs/%s/projects", org), projects.size(), page, limit);
+        responseBuilder, format("/v1/orgs/%s/projects", org), projectResponses.size(), page, limit);
 
-    return responseBuilderWithLinks.entity(projects).build();
+    return responseBuilderWithLinks.entity(projectResponses).build();
   }
 
   @NGAccessControlCheck(resourceType = PROJECT, permission = EDIT_PROJECT_PERMISSION)
   @Override
   public Response updateOrgScopedProject(UpdateProjectRequest updateProjectRequest, @OrgIdentifier String org,
       @ResourceIdentifier String project, @AccountIdentifier String account) {
-    if (!Objects.equals(updateProjectRequest.getProject().getSlug(), project)
-        || !Objects.equals(updateProjectRequest.getProject().getOrg(), org)) {
-      throw new InvalidRequestException(
-          "Org scoped request is having different project slug or org in payload and param", USER);
+    if (!Objects.equals(updateProjectRequest.getProject().getOrg(), org)) {
+      throw new InvalidRequestException(DIFFERENT_ORG_IN_PAYLOAD_AND_PARAM, USER);
+    }
+    if (!Objects.equals(updateProjectRequest.getProject().getSlug(), project)) {
+      throw new InvalidRequestException(DIFFERENT_SLUG_IN_PAYLOAD_AND_PARAM, USER);
     }
     return updateProject(project, updateProjectRequest, account, org);
   }
 
   private Response createProject(CreateProjectRequest createProjectRequest, String account, String org) {
     if (!Objects.equals(org, createProjectRequest.getProject().getOrg())) {
-      throw new InvalidRequestException("Org scoped request is having different org in payload and param", USER);
+      throw new InvalidRequestException(DIFFERENT_ORG_IN_PAYLOAD_AND_PARAM, USER);
     }
     Project createdProject = projectService.create(account, org, projectApiUtils.getProjectDto(createProjectRequest));
     ProjectResponse projectResponse = projectApiUtils.getProjectResponse(createdProject);
@@ -114,49 +117,49 @@ public class OrgProjectApiImpl implements OrgProjectApi {
         .build();
   }
 
-  private Response updateProject(String id, UpdateProjectRequest updateProjectRequest, String account, String org) {
+  private Response updateProject(String slug, UpdateProjectRequest updateProjectRequest, String account, String org) {
     Project updatedProject =
-        projectService.update(account, org, id, projectApiUtils.getProjectDto(updateProjectRequest));
+        projectService.update(account, org, slug, projectApiUtils.getProjectDto(updateProjectRequest));
     ProjectResponse projectResponse = projectApiUtils.getProjectResponse(updatedProject);
 
     return Response.ok().entity(projectResponse).tag(updatedProject.getVersion().toString()).build();
   }
 
-  private Response getProject(String id, String account, String org) {
-    Optional<Project> projectOptional = projectService.get(account, org, id);
+  private Response getProject(String slug, String account, String org) {
+    Optional<Project> projectOptional = projectService.get(account, org, slug);
     if (!projectOptional.isPresent()) {
-      throw new NotFoundException(format("Project with org [%s] and slug [%s] not found", org, id));
+      throw new NotFoundException(format("Project with org [%s] and slug [%s] not found", org, slug));
     }
     ProjectResponse projectResponse = projectApiUtils.getProjectResponse(projectOptional.get());
 
     return Response.ok().entity(projectResponse).tag(projectOptional.get().getVersion().toString()).build();
   }
 
-  private List<ProjectResponse> getProjects(String account, Set<String> org, List<String> project, Boolean hasModule,
-      ModuleType moduleType, String searchTerm, Integer page, Integer limit) {
+  private List<ProjectResponse> getProjects(String account, Set<String> orgs, List<String> projects, Boolean hasModule,
+      ModuleType moduleType, String searchTerm, Integer page, Integer limit, String sort, String order) {
     ProjectFilterDTO projectFilterDTO = ProjectFilterDTO.builder()
                                             .searchTerm(searchTerm)
-                                            .orgIdentifiers(org)
+                                            .orgIdentifiers(orgs)
                                             .hasModule(hasModule)
                                             .moduleType(moduleType)
-                                            .identifiers(project)
+                                            .identifiers(projects)
                                             .build();
-    Page<Project> projectPages =
-        projectService.listPermittedProjects(account, projectApiUtils.getPageRequest(page, limit), projectFilterDTO);
+    Page<Project> projectPages = projectService.listPermittedProjects(
+        account, projectApiUtils.getPageRequest(page, limit, sort, order), projectFilterDTO);
 
     Page<ProjectResponse> projectResponsePage = projectPages.map(projectApiUtils::getProjectResponse);
 
     return new ArrayList<>(projectResponsePage.getContent());
   }
 
-  private Response deleteProject(String id, String account, String org) {
-    Optional<Project> projectOptional = projectService.get(account, org, id);
+  private Response deleteProject(String slug, String account, String org) {
+    Optional<Project> projectOptional = projectService.get(account, org, slug);
     if (!projectOptional.isPresent()) {
-      throw new NotFoundException(format("Project with orgIdentifier [%s] and identifier [%s] not found", org, id));
+      throw new NotFoundException(format("Project with org [%s] and slug [%s] not found", org, slug));
     }
-    boolean deleted = projectService.delete(account, org, id, null);
+    boolean deleted = projectService.delete(account, org, slug, null);
     if (!deleted) {
-      throw new NotFoundException(format("Project with orgIdentifier [%s] and identifier [%s] not found", org, id));
+      throw new NotFoundException(format("Project with slug [%s] could not be deleted", slug));
     }
     ProjectResponse projectResponse = projectApiUtils.getProjectResponse(projectOptional.get());
 

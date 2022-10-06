@@ -12,6 +12,7 @@ import static io.harness.delegate.beans.connector.ConnectorType.AZURE_REPO;
 import static io.harness.delegate.beans.connector.ConnectorType.GITHUB;
 import static io.harness.delegate.beans.connector.scm.GitConnectionType.ACCOUNT;
 import static io.harness.delegate.beans.connector.scm.GitConnectionType.REPO;
+import static io.harness.rule.OwnerRule.DEV_MITTAL;
 import static io.harness.rule.OwnerRule.JAMIE;
 import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
 
@@ -142,6 +143,32 @@ public class BuildStatusPushParametersTest extends CIExecutionTestBase {
 
     assertThat(pushParameters.getIdentifier())
         .isEqualTo("longlonglonglonglonglonglon...-longlonglonglonglonglonglon...");
+  }
+
+  @Test
+  @Owner(developers = DEV_MITTAL)
+  @Category(UnitTests.class)
+  public void testIdentifierGenerationBBSaas() throws IOException {
+    prepareRepoLevelConnector("https://bitbucket.org/invastsecjp/sumo-report-batch-worker", null);
+    ExecutionMetadata executionMetadata =
+        ExecutionMetadata.newBuilder()
+            .setExecutionUuid("executionuuid")
+            .setPipelineIdentifier(
+                "longlonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglongPipline")
+            .build();
+    BuildStatusUpdateParameter buildStatusUpdateParameter = getBuildStatusUpdateParameter(
+        "longlonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglongId",
+        "longlonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglongName");
+
+    CIBuildStatusPushParameters pushParameters = gitBuildStatusUtility.getCIBuildStatusPushParams(
+        Ambiance.newBuilder(ambiance).setMetadata(executionMetadata).build(), buildStatusUpdateParameter,
+        Status.SUCCEEDED, "sha");
+
+    assertThat(pushParameters.getDesc())
+        .isEqualTo(
+            "Execution status of Pipeline - longlonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglongPipline (executionuuid) Stage - longlonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglongName was SUCCEEDED");
+
+    assertThat(pushParameters.getIdentifier()).isEqualTo("longlonglonglong...-longlonglonglong...");
   }
 
   @Test

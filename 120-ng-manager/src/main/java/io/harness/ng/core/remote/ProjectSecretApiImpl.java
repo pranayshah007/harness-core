@@ -30,7 +30,6 @@ import io.harness.security.SecurityContextBuilder;
 import io.harness.spec.server.ng.ProjectSecretApi;
 import io.harness.spec.server.ng.model.SecretRequest;
 import io.harness.spec.server.ng.model.SecretResponse;
-import io.harness.spec.server.ng.model.ValidateSecretSlugResponse;
 
 import com.google.inject.Inject;
 import java.io.InputStream;
@@ -95,8 +94,8 @@ public class ProjectSecretApiImpl implements ProjectSecretApi {
   }
 
   @Override
-  public Response getProjectScopedSecrets(String org, String project, String account, List<String> secret,
-      List<String> type, Boolean recursive, String searchTerm, Integer page, Integer limit) {
+  public Response getProjectScopedSecrets(String org, String project, List<String> secret, List<String> type,
+      Boolean recursive, String searchTerm, Integer page, Integer limit, String account) {
     return getSecrets(account, org, project, secret, type, recursive, searchTerm, page, limit);
   }
 
@@ -123,16 +122,6 @@ public class ProjectSecretApiImpl implements ProjectSecretApi {
     return Response.ok()
         .entity(ngSecretService.updateFile(account, org, project, secret, secretDto, fileInputStream))
         .build();
-  }
-
-  @Override
-  public Response validateUniqueProjectScopedSecretSlug(String org, String project, String secret, String account) {
-    return validateSecretSlug(secret, account, org, project);
-  }
-
-  private Response validateSecretSlug(String secret, String account, String org, String project) {
-    boolean isUnique = ngSecretService.validateTheIdentifierIsUnique(account, org, project, secret);
-    return Response.ok().entity(new ValidateSecretSlugResponse().valid(isUnique)).build();
   }
 
   private Response updateSecret(

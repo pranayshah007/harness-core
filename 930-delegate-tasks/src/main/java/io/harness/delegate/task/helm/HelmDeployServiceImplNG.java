@@ -171,6 +171,7 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
     boolean isInstallUpgrade = false;
     List<KubernetesResource> resources = Collections.emptyList();
     String initWorkingDir = commandRequest.getWorkingDir();
+    ReleaseHistory releaseHistory = null;
     try {
       HelmInstallCmdResponseNG commandResponse;
       logCallback.saveExecutionLog(
@@ -201,6 +202,14 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
       prepareRepoAndCharts(commandRequest, commandRequest.getTimeoutInMillis());
 
       resources = printHelmChartKubernetesResources(commandRequest);
+
+      List<KubernetesResourceId> workloads = readResources(resources);
+
+      boolean useSteadyStateCheck = useSteadyStateCheck(commandRequest.isK8SteadyStateCheckEnabled(), logCallback);
+
+      if (useSteadyStateCheck) {
+        releaseHistory = createNewRelease(commandRequest, workloads, prevVersion);
+      }
 
       helmChartInfo = getHelmChartDetails(commandRequest);
 
@@ -241,14 +250,12 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
       commandResponse.setPrevReleaseVersion(prevVersion);
       commandResponse.setReleaseName(commandRequest.getReleaseName());
 
-      boolean useSteadyStateCheck = useSteadyStateCheck(commandRequest.isK8SteadyStateCheckEnabled(), logCallback);
-
       commandRequest.setPrevReleaseVersion(prevVersion);
       commandRequest.setNewReleaseVersion(prevVersion + 1);
 
-      List<KubernetesResourceId> workloads = useSteadyStateCheck
-          ? steadyStateSaveResources(commandRequest, resources, CommandExecutionStatus.SUCCESS)
-          : Collections.emptyList();
+      if (useSteadyStateCheck) {
+        saveReleaseHistory(commandRequest, releaseHistory, CommandExecutionStatus.SUCCESS);
+      }
 
       logCallback = markDoneAndStartNew(commandRequest, logCallback, WaitForSteadyState);
 
@@ -266,11 +273,16 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
 
     } catch (UncheckedTimeoutException e) {
       logCallback.saveExecutionLog(TIMED_OUT_IN_STEADY_STATE, LogLevel.ERROR);
+      if (isInstallUpgrade && useSteadyStateCheck(commandRequest.isK8SteadyStateCheckEnabled(), logCallback)
+          && releaseHistory != null) {
+        saveReleaseHistory(commandRequest, releaseHistory, CommandExecutionStatus.FAILURE);
+      }
       throw new HelmNGException(prevVersion, ExceptionMessageSanitizer.sanitizeException(e), isInstallUpgrade);
     } catch (Exception e) {
       Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
-      if (isInstallUpgrade && useSteadyStateCheck(commandRequest.isK8SteadyStateCheckEnabled(), logCallback)) {
-        steadyStateSaveResources(commandRequest, resources, CommandExecutionStatus.FAILURE);
+      if (isInstallUpgrade && useSteadyStateCheck(commandRequest.isK8SteadyStateCheckEnabled(), logCallback)
+          && releaseHistory != null) {
+        saveReleaseHistory(commandRequest, releaseHistory, CommandExecutionStatus.FAILURE);
       }
 
       String exceptionMessage = ExceptionUtils.getMessage(sanitizedException);
@@ -289,21 +301,6 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
         deleteDirectoryAndItsContentIfExists(Paths.get(commandRequest.getGcpKeyPath()).getParent().toString());
       }
     }
-  }
-
-  public List<KubernetesResourceId> steadyStateSaveResources(HelmInstallCommandRequestNG commandRequest,
-      List<KubernetesResource> resources, CommandExecutionStatus commandExecutionStatus) {
-    List<KubernetesResourceId> workloads = readResources(resources);
-    ReleaseHistory releaseHistory = null;
-    try {
-      releaseHistory = createNewRelease(commandRequest, workloads, commandRequest.getNewReleaseVersion());
-      saveReleaseHistory(commandRequest, releaseHistory, commandExecutionStatus);
-    } catch (IOException e) {
-      Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
-      log.error(ExceptionUtils.getMessage(sanitizedException), sanitizedException);
-      return Collections.emptyList();
-    }
-    return workloads;
   }
 
   private void setReleaseNameForContainers(List<ContainerInfo> containerInfos, String releaseName, String namespace) {

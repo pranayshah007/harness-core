@@ -23,6 +23,7 @@ import static java.util.stream.Collectors.toSet;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.delegate.beans.AutoUpgrade;
 import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.Delegate.DelegateKeys;
 import io.harness.delegate.beans.DelegateEntityOwner;
@@ -97,6 +98,8 @@ public class DelegateSetupServiceImpl implements DelegateSetupService {
   private static final Duration HEARTBEAT_EXPIRY_TIME = ofMinutes(5);
   // grpc heartbeat thread is scheduled at 5 mins, hence we are allowing a gap of 15 mins
   private static final long MAX_GRPC_HB_TIMEOUT = TimeUnit.MINUTES.toMillis(15);
+
+  private static final long AUTO_UPGRADE_CHECK_TIME_IN_MINUTES = 90;
 
   @Override
   public long getDelegateGroupCount(
@@ -406,6 +409,7 @@ public class DelegateSetupServiceImpl implements DelegateSetupService {
     String delegateGroupIdentifier = delegateGroup != null ? delegateGroup.getIdentifier() : null;
     long upgraderLastUpdated = delegateGroup != null ? delegateGroup.getUpgraderLastUpdated() : 0;
     long groupExpirationTime = groupDelegates.stream().mapToLong(Delegate::getExpirationTime).min().orElse(0);
+    long delegateCreationTime = groupDelegates.stream().mapToLong(Delegate::getCreatedAt).min().orElse(0);
     boolean immutableDelegate = isNotEmpty(groupDelegates) && groupDelegates.get(0).isImmutable();
 
     Set<String> groupCustomSelectors = delegateTagsHelper.getUnionOfDelegateGroupSelectors(delegateGroup);
@@ -462,7 +466,7 @@ public class DelegateSetupServiceImpl implements DelegateSetupService {
         .delegateGroupIdentifier(delegateGroupIdentifier)
         .delegateType(delegateType)
         .groupName(groupName)
-        .autoUpgrade(setAutoUpgrader(upgraderLastUpdated, immutableDelegate))
+        .autoUpgrade(setAutoUpgrade(upgraderLastUpdated, immutableDelegate, delegateCreationTime))
         .upgraderLastUpdated(upgraderLastUpdated)
         .delegateGroupExpirationTime(groupExpirationTime)
         .delegateDescription(delegateDescription)
@@ -478,14 +482,6 @@ public class DelegateSetupServiceImpl implements DelegateSetupService {
         .immutable(immutableDelegate)
         .groupVersion(groupVersion)
         .build();
-  }
-
-  private boolean setAutoUpgrader(long upgraderLastUpdated, boolean immutableDelegate) {
-    // Auto Upgrade is on for legacy delegates.
-    if (!immutableDelegate) {
-      return true;
-    }
-    return TimeUnit.MILLISECONDS.toMinutes(System.currentTimeMillis() - upgraderLastUpdated) <= 90;
   }
 
   private boolean isGrpcActive(String accountId, String delegateId) {
@@ -761,6 +757,23 @@ public class DelegateSetupServiceImpl implements DelegateSetupService {
         .map(
             delegateGroup -> DelegateGroupDTO.convertToDTO(delegateGroup, listDelegateGroupImplicitTags(delegateGroup)))
         .collect(Collectors.toList());
+  }
+
+  @Override
+  public AutoUpgrade setAutoUpgrade(long upgraderLastUpdated, boolean immutableDelegate, long delegateCreationTime) {
+    // Auto Upgrade is on for legacy delegates.
+    if (!immutableDelegate) {
+      return AutoUpgrade.ON;
+    }
+
+    if (TimeUnit.MILLISECONDS.toMinutes(System.currentTimeMillis() - upgraderLastUpdated)
+        <= AUTO_UPGRADE_CHECK_TIME_IN_MINUTES) {
+      return AutoUpgrade.ON;
+    } else if (TimeUnit.MILLISECONDS.toMinutes(System.currentTimeMillis() - delegateCreationTime)
+        <= AUTO_UPGRADE_CHECK_TIME_IN_MINUTES) {
+      return AutoUpgrade.SYNCHRONIZING;
+    }
+    return AutoUpgrade.OFF;
   }
 
   private boolean checkForDelegateGroupsHavingAllTags(DelegateGroup delegateGroup, DelegateGroupTags tags) {

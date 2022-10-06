@@ -25,6 +25,8 @@ import io.harness.cdng.gitops.CreatePRStepInfo;
 import io.harness.cdng.gitops.CreatePRStepParams;
 import io.harness.cdng.gitops.MergePRStepInfo;
 import io.harness.cdng.gitops.MergePRStepParams;
+import io.harness.cdng.gitops.UpdateReleaseRepoStepInfo;
+import io.harness.cdng.gitops.UpdateReleaseRepoStepParams;
 import io.harness.cdng.helm.HelmDeployStepInfo;
 import io.harness.cdng.helm.HelmDeployStepParams;
 import io.harness.cdng.helm.rollback.HelmRollbackStepInfo;
@@ -95,6 +97,8 @@ public class NGKryoRegistrar implements KryoRegistrar {
   public void register(Kryo kryo) {
     kryo.register(CreatePRStepInfo.class, 13007);
     kryo.register(CreatePRStepParams.class, 13008);
+    kryo.register(UpdateReleaseRepoStepInfo.class, 13009);
+    kryo.register(UpdateReleaseRepoStepParams.class, 13010);
 
     kryo.register(ArtifactStepParameters.class, 8001);
     kryo.register(ServiceStepParameters.class, 8008);

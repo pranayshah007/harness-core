@@ -34,7 +34,6 @@ public enum FeatureName {
   ARTIFACT_STREAM_DELEGATE_SCOPING,
   ARTIFACT_STREAM_DELEGATE_TIMEOUT,
   AUTO_ACCEPT_SAML_ACCOUNT_INVITES,
-  AZURE_US_GOV_CLOUD,
   AZURE_VMSS,
   AZURE_WEBAPP,
   BIND_FETCH_FILES_TASK_TO_DELEGATE,
@@ -337,6 +336,8 @@ public enum FeatureName {
   TEMPLATE_SCHEMA_VALIDATION,
   YAML_APIS_GRANULAR_PERMISSION,
   JENKINS_BUILD,
+  AZURE_ARTIFACTS_NG,
+  CD_AMI_ARTIFACTS_NG("AMI Artifact Source NG", HarnessTeam.CDC),
   GITHUB_PACKAGES,
   DO_NOT_RENEW_APPROLE_TOKEN(
       "CAUTION: USE THIS ONLY WHEN THE CUSTOMER DELEGATE IS IN VERSION HIGHER OR EQUAL TO 764xx. Used for disabling appRole token renewal and fetching token on the fly before CRUD",
@@ -385,7 +386,7 @@ public enum FeatureName {
   CUSTOM_SECRET_MANAGER_NG("Enable Custom Secret Manager in NG", HarnessTeam.PL),
   AZURE_ARM_BP_NG("Used to allow customers to access ARM/BP capabilities", HarnessTeam.CDP),
   CV_AWS_PROMETHEUS("Enable AWS Prometheus for CV State", HarnessTeam.CV),
-  GIT_WEBHOOK_POLLING("Used to poll git webhook recent delivery events", HarnessTeam.CDP),
+  CD_GIT_WEBHOOK_POLLING("Used to poll git webhook recent delivery events", HarnessTeam.CDP),
   MULTI_SERVICE_INFRA("Enable multiple service/environment support in NG", HarnessTeam.CDP),
   CD_TRIGGERS_REFACTOR("Enable NG Triggers UI refactoring", HarnessTeam.CDP),
   SORT_ARTIFACTS_IN_UPDATED_ORDER("Sort the collected artifacts by lastUpdatedAt", HarnessTeam.SPG),
@@ -447,7 +448,9 @@ public enum FeatureName {
   WINRM_SCRIPT_COMMAND_SPLIT(
       "Enables the new way of how to copy powershell/winrm script commands content to file on remote. (Copy is done in chunks of 4KB) ",
       HarnessTeam.CDP),
-  SERVICE_ENV_RECONCILIATION("Do reconciliation of service and env on pipeline/template save", HarnessTeam.CDC);
+  SERVICE_ENV_RECONCILIATION("Do reconciliation of service and env on pipeline/template save", HarnessTeam.CDC),
+  CD_TRIGGER_CATALOG("Enables UI for Trigger catalog for Nexus ", HarnessTeam.CDC),
+  CDS_SHOW_CREATE_PR("Start showing CreatePR step on the plan creator if enabled", HarnessTeam.GITOPS);
 
   @Deprecated
   FeatureName() {

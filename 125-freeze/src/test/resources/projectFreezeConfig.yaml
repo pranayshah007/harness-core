@@ -6,12 +6,12 @@ freeze:
   projectIdentifier: "pId"
   status: "Enabled"
   windows:
-    - timezone:
-      startTime: (YYYY-MM-DDThh:mm format)
-      endTime: (YYYY-MM-DDThh:mm format)
+    - timeZone: "America/Los_Angeles"
+      startTime: "2022-09-29T16:00"
+      endTime: "2022-09-29T18:00"
       recurrence:
         spec:
-          until: "until"
+          until: "2022-09-29T20:00"
           count: 1
         type: "Daily"
   entityConfigs:

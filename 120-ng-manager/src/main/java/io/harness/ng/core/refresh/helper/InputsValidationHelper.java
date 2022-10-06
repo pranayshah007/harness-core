@@ -133,6 +133,7 @@ public class InputsValidationHelper {
         errorNodeSummary.setValid(false);
         return;
       }
+      return;
     }
     ServiceEntity serviceEntity = entityFetchHelper.getService(accountId, orgId, projectId, serviceRef, cacheMap);
 

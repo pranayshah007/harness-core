@@ -357,7 +357,8 @@ public class NGTriggerServiceTest extends CategoryTest {
     Optional<NGTriggerEntity> optionalNGTrigger = Optional.of(ngTrigger);
     byte[] bytes = {70};
 
-    when(pmsFeatureFlagService.isEnabled(eq(ACCOUNT_ID), eq(FeatureName.GIT_WEBHOOK_POLLING))).thenReturn(Boolean.TRUE);
+    when(pmsFeatureFlagService.isEnabled(eq(ACCOUNT_ID), eq(FeatureName.CD_GIT_WEBHOOK_POLLING)))
+        .thenReturn(Boolean.TRUE);
     when(ngTriggerRepository
              .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndTargetIdentifierAndIdentifierAndDeletedNot(
                  eq(ACCOUNT_ID), eq(ORG_IDENTIFIER), eq(PROJ_IDENTIFIER), eq(PIPELINE_IDENTIFIER), eq(IDENTIFIER),

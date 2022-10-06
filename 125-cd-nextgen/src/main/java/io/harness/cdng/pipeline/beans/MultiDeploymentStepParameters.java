@@ -28,4 +28,5 @@ public class MultiDeploymentStepParameters implements StepParameters {
   @NotNull String childNodeId;
   ParameterField<Integer> maxConcurrency;
   @NotNull StrategyType strategyType;
+  String subType;
 }

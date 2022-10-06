@@ -53,7 +53,6 @@ import io.harness.ng.core.template.TemplateWithInputsResponseDTO;
 import io.harness.pms.contracts.service.VariableMergeResponseProto;
 import io.harness.pms.contracts.service.VariablesServiceGrpc.VariablesServiceBlockingStub;
 import io.harness.pms.contracts.service.VariablesServiceRequest;
-import io.harness.pms.contracts.service.VariablesServiceRequestV2;
 import io.harness.pms.mappers.VariablesResponseDtoMapper;
 import io.harness.pms.variables.VariableMergeServiceResponse;
 import io.harness.remote.client.NGRestUtils;
@@ -79,6 +78,8 @@ import io.harness.template.mappers.NGTemplateDtoMapper;
 import io.harness.template.services.NGTemplateService;
 import io.harness.template.services.NGTemplateServiceHelper;
 import io.harness.template.services.TemplateMergeService;
+import io.harness.template.services.TemplateVariableCreatorFactory;
+import io.harness.template.services.TemplateVariableCreatorService;
 import io.harness.utils.PageUtils;
 
 import com.google.inject.Inject;
@@ -166,6 +167,7 @@ public class NGTemplateResource {
   private final TemplateYamlConversionHelper templateYamlConversionHelper;
   private final TemplateReferenceHelper templateReferenceHelper;
   @Inject CustomDeploymentResourceClient customDeploymentResourceClient;
+  @Inject TemplateVariableCreatorFactory templateVariableCreatorFactory;
 
   public static final String TEMPLATE_PARAM_MESSAGE = "Template Identifier for the entity";
 
@@ -782,31 +784,10 @@ public class NGTemplateResource {
     TemplateEntity templateEntity =
         NGTemplateDtoMapper.toTemplateEntity(accountId, orgId, projectId, appliedTemplateYaml);
     String entityYaml = templateYamlConversionHelper.convertTemplateYamlToEntityYaml(templateEntity);
-    if (templateEntity.getTemplateEntityType().getOwnerTeam().equals(PIPELINE)) {
-      VariablesServiceRequestV2.Builder requestBuilder = VariablesServiceRequestV2.newBuilder();
-      requestBuilder.setAccountId(accountId);
-      if (EmptyPredicate.isNotEmpty(orgId)) {
-        requestBuilder.setOrgId(orgId);
-      }
-      if (EmptyPredicate.isNotEmpty(projectId)) {
-        requestBuilder.setProjectId(projectId);
-      }
-      requestBuilder.setYaml(entityYaml);
-      VariablesServiceRequestV2 request = requestBuilder.build();
-      VariableMergeResponseProto variables = variablesServiceBlockingStub.getVariablesV2(request);
-      VariableMergeServiceResponse variableMergeServiceResponse = VariablesResponseDtoMapper.toDto(variables);
-      return ResponseDTO.newResponse(variableMergeServiceResponse);
-    } else if (templateEntity.getTemplateEntityType().equals(TemplateEntityType.CUSTOM_DEPLOYMENT_TEMPLATE)) {
-      CustomDeploymentYamlRequestDTO requestDTO =
-          CustomDeploymentYamlRequestDTO.builder().entityYaml(entityYaml).build();
-      CustomDeploymentVariableResponseDTO customDeploymentVariableResponseDTO =
-          NGRestUtils.getResponse(customDeploymentResourceClient.getExpressionVariables(requestDTO));
-      return ResponseDTO.newResponse(
-          CustomDeploymentVariablesUtils.getVariablesFromResponse(customDeploymentVariableResponseDTO));
-    } else {
-      return ResponseDTO.newResponse(
-          YamlVariablesUtils.getVariablesFromYaml(entityYaml, templateEntity.getTemplateEntityType()));
-    }
+    TemplateVariableCreatorService ngTemplateVariableService =
+        templateVariableCreatorFactory.getVariablesService(templateEntity.getTemplateEntityType());
+    return ResponseDTO.newResponse(ngTemplateVariableService.getVariables(
+        accountId, orgId, projectId, entityYaml, templateEntity.getTemplateEntityType()));
   }
 
   @GET

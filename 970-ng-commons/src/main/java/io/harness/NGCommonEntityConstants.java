@@ -125,4 +125,13 @@ public class NGCommonEntityConstants {
   public static final String INFRA = "infra";
   public static final String OVERRIDES_ONLY = "overridesOnly";
   public static final String RUNTIME_INPUTS_TEMPLATE = "Runtime inputs template YAML";
+  public static final String ACCOUNT_SCOPED_REQUEST_NON_NULL_ORG_PROJECT =
+      "Account scoped request is having non null org or project";
+  public static final String ORG_SCOPED_REQUEST_NON_NULL_PROJECT = "Org scoped request is having non null project";
+  public static final String DIFFERENT_SLUG_IN_PAYLOAD_AND_PARAM =
+      "Request is having different slug in payload and param";
+  public static final String DIFFERENT_ORG_IN_PAYLOAD_AND_PARAM =
+      "Request is having different org in payload and param";
+  public static final String DIFFERENT_PROJECT_IN_PAYLOAD_AND_PARAM =
+      "Request is having different project in payload and param";
 }

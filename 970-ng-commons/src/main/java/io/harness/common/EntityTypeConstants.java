@@ -15,6 +15,7 @@ import io.harness.annotations.dev.OwnedBy;
 public interface EntityTypeConstants {
   String GITOPS_CREATE_PR = "CreatePR";
   String GITOPS_MERGE_PR = "MergePR";
+  String GITOPS_UPDATE_RELEASE_REPO = "GitOpsUpdateReleaseRepo";
   String PROJECTS = "Projects";
   String PIPELINES = "Pipelines";
   String PIPELINE_STEPS = "PipelineSteps";
@@ -126,4 +127,5 @@ public interface EntityTypeConstants {
   String WAIT_STEP = "Wait";
   String ARTIFACT_SOURCE_TEMPLATE = "ArtifactSource";
   String SHELL_SCRIPT_PROVISION_STEP = "ShellScriptProvision";
+  String FREEZE = "Freeze";
 }
