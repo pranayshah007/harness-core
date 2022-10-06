@@ -10,6 +10,7 @@ public abstract class RedisTraceConsumer implements Runnable {
   protected boolean handleMessage(Message message) {
     try (AutoLogContext autoLogContext = new AutoLogContext(
              message.getMessage().getMetadataMap(), AutoLogContext.OverrideBehavior.OVERRIDE_NESTS)) {
+      log.info("Events framework message {}", message.getMessage().getMetadataMap());
       return processMessage(message);
     } catch (Exception ex) {
       // This is not evicted from events framework so that it can be processed
