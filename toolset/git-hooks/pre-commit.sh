@@ -166,3 +166,9 @@ else
       done
     fi
 fi
+
+curr_branch_name=$(git branch --show-current)
+git fetch origin $curr_branch_name
+git diff $curr_branch_name origin/$curr_branch_name > check_diff.txt
+cat check_diff.txt
+rm -rf check_diff.txt
