@@ -851,6 +851,11 @@ public class NextGenModule extends AbstractModule {
         .bind(CustomEncryptor.class)
         .annotatedWith(Names.named(Encryptors.CUSTOM_ENCRYPTOR_NG.getName()))
         .to(NGManagerCustomEncryptor.class);
+
+    binder()
+        .bind(VaultEncryptor.class)
+        .annotatedWith(Names.named(Encryptors.GCP_VAULT_ENCRYPTOR.getName()))
+        .to(NGManagerVaultEncryptor.class);
   }
 
   private void registerOutboxEventHandlers() {

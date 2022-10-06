@@ -3,16 +3,17 @@
 // that can be found in the licenses directory at the root of this repository, also available at
 // https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
 
-// package created to store all data types used by hsqs
+// Package store package created to store all data types used by hsqs
 package store
 
 import (
+	"fmt"
 	"time"
 )
 
 // Request and Response Objects for HSQS API's
 
-// Request object for Registering Topic Metadata
+// RegisterTopicMetadata Request object for Registering Topic Metadata
 type RegisterTopicMetadata struct {
 	Topic      string
 	MaxRetries int
@@ -21,7 +22,7 @@ type RegisterTopicMetadata struct {
 	MaxUnProcessedMessages int
 }
 
-// Request object for Enqueuing messages
+// EnqueueRequest Request object for Enqueuing messages
 type EnqueueRequest struct {
 	Topic        string `json:"topic"`
 	SubTopic     string `json:"subTopic"`
@@ -29,25 +30,30 @@ type EnqueueRequest struct {
 	ProducerName string `json:"producerName"`
 }
 
-// Response object for Enqueuing messages
+// EnqueueResponse Response object for Enqueuing messages
 type EnqueueResponse struct {
 	// ItemID is the identifier of the task in the Queue
 	ItemID string `json:"itemId"`
 }
 
-// Error Mesaage object for Enqueuing messages
+// EnqueueErrorResponse Error Mesaage object for Enqueuing messages
 type EnqueueErrorResponse struct {
 	ErrorMessage string
 }
 
-// Request object for Dequeuing messages
+func (e *EnqueueErrorResponse) Error() string {
+	return fmt.Sprintf("EnqueueErrorResponse: message - %s",
+		e.ErrorMessage)
+}
+
+// DequeueRequest Request object for Dequeuing messages
 type DequeueRequest struct {
 	Topic        string
 	BatchSize    int
 	ConsumerName string
 }
 
-// Response object for Dequeuing messages
+// DequeueResponse Response object for Dequeuing messages
 type DequeueResponse struct {
 	ItemID       string              `json:"itemId"`
 	Timestamp    int64               `json:"timeStamp"`
@@ -56,18 +62,23 @@ type DequeueResponse struct {
 	ItemMetadata DequeueItemMetadata `json:"metadata"`
 }
 
-// DequeuingItem metadata request
+// DequeueItemMetadata DequeuingItem metadata request
 type DequeueItemMetadata struct {
 	CurrentRetryCount int
 	MaxProcessingTime float64
 }
 
-// Error Response object for Dequeue Request response
+// DequeueErrorResponse Error Response object for Dequeue Request response
 type DequeueErrorResponse struct {
 	ErrorMessage string
 }
 
-// Request object for Acknowledging a message
+func (e *DequeueErrorResponse) Error() string {
+	return fmt.Sprintf("DequeueErrorResponse: message - %s",
+		e.ErrorMessage)
+}
+
+// AckRequest Request object for Acknowledging a message
 type AckRequest struct {
 	ItemID       string
 	Topic        string
@@ -75,14 +86,19 @@ type AckRequest struct {
 	ConsumerName string
 }
 
-// Response object for Acknowledging a message
+// AckResponse Response object for Acknowledging a message
 type AckResponse struct {
 	ItemID string
 }
 
-// Error Response object for Acknowledging a message
+// AckErrorResponse Error Response object for Acknowledging a message
 type AckErrorResponse struct {
 	ErrorMessage string
+}
+
+func (e *AckErrorResponse) Error() string {
+	return fmt.Sprintf("AckErrorResponse: message - %s",
+		e.ErrorMessage)
 }
 
 type UnAckType int
@@ -96,7 +112,7 @@ func (u UnAckType) String() string {
 	return []string{"UnAckTopic", "UnAckItem"}[u]
 }
 
-// Request object for UnAck a message
+// UnAckRequest Request object for UnAck a message
 type UnAckRequest struct {
 	ItemID   string
 	Topic    string
@@ -106,7 +122,7 @@ type UnAckRequest struct {
 	Type                   UnAckType
 }
 
-// Response object for UnAck a message
+// UnAckResponse Response object for UnAck a message
 type UnAckResponse struct {
 	ItemID   string
 	Topic    string
@@ -114,7 +130,12 @@ type UnAckResponse struct {
 	Type     UnAckType
 }
 
-// Response object for UnAck a message
+// UnAckErrorResponse Response object for UnAck a message
 type UnAckErrorResponse struct {
 	ErrorMessage string
+}
+
+func (e *UnAckErrorResponse) Error() string {
+	return fmt.Sprintf("UnAckErrorResponse: message - %s",
+		e.ErrorMessage)
 }

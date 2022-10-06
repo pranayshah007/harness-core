@@ -22,6 +22,7 @@ import io.harness.cvng.core.entities.ELKCVConfig;
 import io.harness.datacollection.DataCollectionDSLService;
 import io.harness.datacollection.entity.LogDataRecord;
 import io.harness.datacollection.entity.RuntimeParameters;
+import io.harness.datacollection.exception.DataCollectionDSLException;
 import io.harness.datacollection.exception.DataCollectionException;
 import io.harness.datacollection.impl.DataCollectionServiceImpl;
 import io.harness.delegate.beans.connector.elkconnector.ELKAuthType;
@@ -139,6 +140,25 @@ public class ELKDataCollectionDSLTest extends HoverflyTestBase {
   @Test
   @Owner(developers = ARPITJ)
   @Category(UnitTests.class)
+  public void testExecute_ELK_DSL_validationWithInValidUrl() {
+    ELKConnectorValidationInfo elkConnectorValidationInfo = ELKConnectorValidationInfo.builder().build();
+    elkConnectorValidationInfo.setConnectorConfigDTO(
+        ELKConnectorDTO.builder().url("http://elk6.dev.wrongurl.io:9200/").authType(ELKAuthType.NONE).build());
+    String validationDSL = elkConnectorValidationInfo.getConnectionValidationDSL();
+    Instant instant = Instant.parse("2020-10-30T10:44:48.164Z");
+    RuntimeParameters runtimeParameters = RuntimeParameters.builder()
+                                              .startTime(elkConnectorValidationInfo.getStartTime(instant))
+                                              .endTime(elkConnectorValidationInfo.getEndTime(instant))
+                                              .commonHeaders(elkConnectorValidationInfo.collectionHeaders())
+                                              .baseUrl(elkConnectorValidationInfo.getBaseUrl())
+                                              .build();
+    assertThatThrownBy(() -> dataCollectionDSLService.execute(code, runtimeParameters, callDetails -> {}))
+        .isInstanceOf(DataCollectionDSLException.class);
+  }
+
+  @Test
+  @Owner(developers = ARPITJ)
+  @Category(UnitTests.class)
   public void testExecute_ELK_DSL_getIndex() {
     DataCollectionDSLService dataCollectionDSLService = new DataCollectionServiceImpl();
     ELKIndexCollectionRequest elkIndexCollectionRequest =
@@ -172,6 +192,36 @@ public class ELKDataCollectionDSLTest extends HoverflyTestBase {
         ELKSampleDataCollectionRequest.builder()
             .index("*")
             .query("message: error")
+            .connectorInfoDTO(ConnectorInfoDTO.builder()
+                                  .connectorConfig(ELKConnectorDTO.builder()
+                                                       .url("http://elk6.dev.harness.io:9200/")
+                                                       .authType(ELKAuthType.NONE)
+                                                       .build())
+                                  .build())
+            .build();
+
+    String indexDSL = elkSampleDataCollectionRequest.getDSL();
+    Instant instant = Instant.parse("2020-10-30T10:44:48.164Z");
+    RuntimeParameters runtimeParameters = RuntimeParameters.builder()
+                                              .startTime(elkSampleDataCollectionRequest.getStartTime(instant))
+                                              .endTime(elkSampleDataCollectionRequest.getEndTime(instant))
+                                              .otherEnvVariables(elkSampleDataCollectionRequest.fetchDslEnvVariables())
+                                              .commonHeaders(elkSampleDataCollectionRequest.collectionHeaders())
+                                              .baseUrl(elkSampleDataCollectionRequest.getBaseUrl())
+                                              .build();
+    List<?> result = (List<?>) dataCollectionDSLService.execute(indexDSL, runtimeParameters, callDetails -> {});
+    assertThat(result.size()).isEqualTo(10);
+  }
+
+  @Test
+  @Owner(developers = ARPITJ)
+  @Category(UnitTests.class)
+  public void testExecute_ELK_DSL_getSampleDataSingleQuery() {
+    DataCollectionDSLService dataCollectionDSLService = new DataCollectionServiceImpl();
+    ELKSampleDataCollectionRequest elkSampleDataCollectionRequest =
+        ELKSampleDataCollectionRequest.builder()
+            .index("*")
+            .query("error")
             .connectorInfoDTO(ConnectorInfoDTO.builder()
                                   .connectorConfig(ELKConnectorDTO.builder()
                                                        .url("http://elk6.dev.harness.io:9200/")

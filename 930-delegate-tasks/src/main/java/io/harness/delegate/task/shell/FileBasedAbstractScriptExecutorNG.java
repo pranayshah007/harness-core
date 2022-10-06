@@ -10,12 +10,10 @@ package io.harness.delegate.task.shell;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import static java.lang.String.format;
-import static org.apache.commons.lang3.StringUtils.SPACE;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.artifact.ArtifactMetadataKeys;
-import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.task.shell.ssh.ArtifactCommandUnitHandler;
 import io.harness.delegate.task.shell.ssh.SshExecutorFactoryContext;
 import io.harness.delegate.task.ssh.config.ConfigFileParameters;
@@ -107,10 +105,8 @@ public abstract class FileBasedAbstractScriptExecutorNG implements FileBasedScri
 
       @Override
       public void downloadToStream(OutputStream outputStream) throws IOException {
-        String fileContent = EmptyPredicate.isEmpty(configFileParameters.getFileContent())
-            ? SPACE
-            : configFileParameters.getFileContent();
-        try (ByteArrayInputStream bis = new ByteArrayInputStream(fileContent.getBytes(StandardCharsets.UTF_8));) {
+        try (ByteArrayInputStream bis =
+                 new ByteArrayInputStream(configFileParameters.getFileContent().getBytes(StandardCharsets.UTF_8));) {
           IOUtils.copy(bis, outputStream);
         }
       }

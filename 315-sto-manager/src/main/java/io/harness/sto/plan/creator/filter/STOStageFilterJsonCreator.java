@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Harness Inc. All rights reserved.
+ * Copyright 2022 Harness Inc. All rights reserved.
  * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
  * that can be found in the licenses directory at the root of this repository, also available at
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
@@ -8,6 +8,7 @@
 package io.harness.sto.plan.creator.filter;
 
 import static io.harness.beans.yaml.extended.infrastrucutre.Infrastructure.Type.KUBERNETES_DIRECT;
+import static io.harness.beans.yaml.extended.infrastrucutre.Infrastructure.Type.VM;
 import static io.harness.filters.FilterCreatorHelper.convertToEntityDetailProtoDTO;
 import static io.harness.git.GitClientHelper.getGitRepo;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.CI;
@@ -21,10 +22,14 @@ import io.harness.beans.stages.SecurityStageNode;
 import io.harness.beans.steps.StepSpecTypeConstants;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml;
+import io.harness.beans.yaml.extended.infrastrucutre.OSType;
+import io.harness.beans.yaml.extended.runtime.Runtime;
 import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.ci.integrationstage.IntegrationStageUtils;
+import io.harness.ci.integrationstage.K8InitializeTaskUtils;
 import io.harness.ci.plan.creator.filter.CIFilter;
 import io.harness.ci.plan.creator.filter.CIFilter.CIFilterBuilder;
+import io.harness.ci.utils.InfrastructureUtils;
 import io.harness.ci.utils.ValidationUtils;
 import io.harness.cimanager.stages.IntegrationStageConfig;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
@@ -47,6 +52,7 @@ import io.harness.yaml.extended.ci.codebase.CodeBase;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 
@@ -55,19 +61,22 @@ import lombok.extern.slf4j.Slf4j;
 public class STOStageFilterJsonCreator extends GenericStageFilterJsonCreatorV2<SecurityStageNode> {
   @Inject ConnectorUtils connectorUtils;
   @Inject private SimpleVisitorFactory simpleVisitorFactory;
+  @Inject K8InitializeTaskUtils k8InitializeTaskUtils;
   @Inject ValidationUtils validationUtils;
 
   @Override
   public Set<String> getSupportedStageTypes() {
     return ImmutableSet.of(StepSpecTypeConstants.SECURITY_STAGE);
   }
+
   @Override
   public Class<SecurityStageNode> getFieldClass() {
     return SecurityStageNode.class;
   }
+
   @Override
-  public PipelineFilter getFilter(FilterCreationContext filterCreationContext, SecurityStageNode stageElementConfig) {
-    log.info("Received filter creation request for security tests stage {}", stageElementConfig.getIdentifier());
+  public PipelineFilter getFilter(FilterCreationContext filterCreationContext, SecurityStageNode stageNode) {
+    log.info("Received filter creation request for integration stage {}", stageNode.getIdentifier());
     String accountId = filterCreationContext.getSetupMetadata().getAccountId();
     String orgIdentifier = filterCreationContext.getSetupMetadata().getOrgId();
     String projectIdentifier = filterCreationContext.getSetupMetadata().getProjectId();
@@ -110,26 +119,41 @@ public class STOStageFilterJsonCreator extends GenericStageFilterJsonCreatorV2<S
       }
     }
 
-    validateStage(stageElementConfig);
+    validateStage(stageNode);
 
-    log.info("Successfully created filter for security tests stage {}", stageElementConfig.getIdentifier());
+    log.info("Successfully created filter for integration stage {}", stageNode.getIdentifier());
     return ciFilterBuilder.build();
   }
 
-  private void validateStage(SecurityStageNode stageElementConfig) {
-    IntegrationStageConfig integrationStageConfig = (IntegrationStageConfig) stageElementConfig.getStageInfoConfig();
+  private void validateRuntime(IntegrationStageConfig integrationStageConfig) {
+    Runtime runtime = integrationStageConfig.getRuntime();
+    if (runtime != null && (runtime.getType() == Runtime.Type.CLOUD || runtime.getType() == Runtime.Type.DOCKER)) {
+      return;
+    } else {
+      throw new CIStageExecutionException(
+          "Infrastructure or runtime field with type Cloud (for vm) or type Docker (for docker) is mandatory for execution");
+    }
+  }
+
+  private void validateStage(SecurityStageNode stageNode) {
+    IntegrationStageConfig integrationStageConfig = (IntegrationStageConfig) stageNode.getStageInfoConfig();
 
     Infrastructure infrastructure = integrationStageConfig.getInfrastructure();
     if (infrastructure == null) {
-      throw new CIStageExecutionException("Infrastructure is mandatory for execution");
-    }
-    if (infrastructure.getType() == Infrastructure.Type.VM) {
-      validationUtils.validateVmInfraDependencies(integrationStageConfig.getServiceDependencies().getValue());
+      validateRuntime(integrationStageConfig);
+    } else {
+      if (infrastructure.getType() == Infrastructure.Type.VM) {
+        validationUtils.validateVmInfraDependencies(integrationStageConfig.getServiceDependencies().getValue());
+      }
+      if (infrastructure.getType() == KUBERNETES_DIRECT
+          && k8InitializeTaskUtils.getOS(infrastructure) == OSType.Windows) {
+        validationUtils.validateWindowsK8Stage(integrationStageConfig.getExecution());
+      }
     }
   }
 
   public Set<EntityDetailProtoDTO> getReferredEntities(
-      FilterCreationContext filterCreationContext, SecurityStageNode stageElementConfig) {
+      FilterCreationContext filterCreationContext, SecurityStageNode stageNode) {
     CodeBase ciCodeBase = null;
     String accountIdentifier = filterCreationContext.getSetupMetadata().getAccountId();
     String orgIdentifier = filterCreationContext.getSetupMetadata().getOrgId();
@@ -155,9 +179,9 @@ public class STOStageFilterJsonCreator extends GenericStageFilterJsonCreatorV2<S
           fullQualifiedDomainName, ciCodeBase.getConnectorRef(), EntityTypeProtoEnum.CONNECTORS));
     }
 
-    IntegrationStageConfig integrationStage = (IntegrationStageConfig) stageElementConfig.getStageInfoConfig();
+    IntegrationStageConfig integrationStage = (IntegrationStageConfig) stageNode.getStageInfoConfig();
     if (integrationStage.getInfrastructure() == null) {
-      throw new CIStageExecutionException("Input infrastructure is not set");
+      validateRuntime(integrationStage);
     } else {
       if (integrationStage.getInfrastructure().getType() == KUBERNETES_DIRECT) {
         K8sDirectInfraYaml k8sDirectInfraYaml = (K8sDirectInfraYaml) integrationStage.getInfrastructure();
@@ -172,8 +196,35 @@ public class STOStageFilterJsonCreator extends GenericStageFilterJsonCreatorV2<S
               EntityTypeProtoEnum.CONNECTORS));
         }
       }
+      Optional<EntityDetailProtoDTO> harnessImageConnectorOptional =
+          getHarnessImageConnectorReferredEntity(filterCreationContext, integrationStage.getInfrastructure(),
+              accountIdentifier, orgIdentifier, projectIdentifier);
+      harnessImageConnectorOptional.ifPresent(result::add);
     }
 
     return result;
+  }
+
+  private Optional<EntityDetailProtoDTO> getHarnessImageConnectorReferredEntity(
+      FilterCreationContext filterCreationContext, Infrastructure infrastructure, String accountIdentifier,
+      String orgIdentifier, String projectIdentifier) {
+    Optional<EntityDetailProtoDTO> optionalHarnessImageConnector = Optional.empty();
+    Optional<ParameterField<String>> optionalHarnessImageConnectorValue =
+        InfrastructureUtils.getHarnessImageConnector(infrastructure);
+
+    if (optionalHarnessImageConnectorValue.isPresent()) {
+      String fullQualifiedDomainName =
+          YamlUtils.getFullyQualifiedName(filterCreationContext.getCurrentField().getNode()) + PATH_CONNECTOR
+          + YAMLFieldNameConstants.SPEC + PATH_CONNECTOR + YAMLFieldNameConstants.PIPELINE_INFRASTRUCTURE
+          + PATH_CONNECTOR + YAMLFieldNameConstants.SPEC + PATH_CONNECTOR;
+      if (infrastructure.getType() == VM) {
+        fullQualifiedDomainName += YAMLFieldNameConstants.SPEC + PATH_CONNECTOR;
+      }
+      fullQualifiedDomainName += YAMLFieldNameConstants.HARNESS_IMAGE_CONNECTOR_REF;
+      optionalHarnessImageConnector =
+          Optional.of(convertToEntityDetailProtoDTO(accountIdentifier, orgIdentifier, projectIdentifier,
+              fullQualifiedDomainName, optionalHarnessImageConnectorValue.get(), EntityTypeProtoEnum.CONNECTORS));
+    }
+    return optionalHarnessImageConnector;
   }
 }

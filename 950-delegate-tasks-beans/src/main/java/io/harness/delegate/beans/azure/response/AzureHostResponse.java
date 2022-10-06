@@ -21,6 +21,8 @@ import lombok.experimental.SuperBuilder;
 public class AzureHostResponse extends AzureDelegateTaskResponse {
   private String hostName;
   private String address;
+  private String privateIp;
+  private String publicIp;
 
   public String getAddress() {
     if (address == null) {

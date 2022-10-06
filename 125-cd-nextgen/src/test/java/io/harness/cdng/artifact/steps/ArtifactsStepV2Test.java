@@ -20,12 +20,14 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
+import io.harness.CategoryTest;
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.artifact.bean.ArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.ArtifactListConfig;
 import io.harness.cdng.artifact.bean.yaml.ArtifactSource;
+import io.harness.cdng.artifact.bean.yaml.CustomArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.DockerHubArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.GcrArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.PrimaryArtifact;
@@ -86,7 +88,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
-public class ArtifactsStepV2Test {
+public class ArtifactsStepV2Test extends CategoryTest {
   private static final String ACCOUNT_ID = "ACCOUNT_ID";
   @Mock private NGLogCallback mockNgLogCallback;
   @Mock private ServiceStepsHelper serviceStepsHelper;
@@ -176,6 +178,42 @@ public class ArtifactsStepV2Test {
         output.getArtifactConfigMap().values().stream().map(ArtifactConfig::getIdentifier).collect(Collectors.toSet()))
         .containsExactly("primary");
     assertThat(response.getCallbackIdsCount()).isEqualTo(1);
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.YOGESH)
+  @Category(UnitTests.class)
+  public void executeAsyncOnlyPrimaryNoDelegateTaskNeeded() {
+    ArgumentCaptor<ArtifactsStepV2SweepingOutput> captor = ArgumentCaptor.forClass(ArtifactsStepV2SweepingOutput.class);
+
+    doReturn(
+        getServiceConfig(
+            ArtifactListConfig.builder()
+                .primary(
+                    PrimaryArtifact.builder()
+                        .sourceType(ArtifactSourceType.CUSTOM_ARTIFACT)
+                        .spec(CustomArtifactConfig.builder().version(ParameterField.createValueField("1.0")).build())
+                        .build())
+                .build()))
+        .when(cdStepHelper)
+        .fetchServiceConfigFromSweepingOutput(Mockito.any(Ambiance.class));
+
+    AsyncExecutableResponse response = step.executeAsync(ambiance, stepParameters, inputPackage, null);
+
+    verify(mockSweepingOutputService).consume(any(Ambiance.class), anyString(), captor.capture(), eq(""));
+    verify(expressionResolver, times(1)).updateExpressions(any(Ambiance.class), any());
+
+    ArtifactsStepV2SweepingOutput output = captor.getValue();
+
+    assertThat(output.getArtifactConfigMap()).hasSize(0);
+    assertThat(output.getPrimaryArtifactTaskId()).isNull();
+    assertThat(response.getCallbackIdsCount()).isEqualTo(0);
+
+    assertThat(output.getArtifactConfigMapForNonDelegateTaskTypes()).hasSize(1);
+    assertThat(
+        ((CustomArtifactConfig) output.getArtifactConfigMapForNonDelegateTaskTypes().get(0)).getVersion().getValue())
+        .isEqualTo("1.0");
+    assertThat(output.getArtifactConfigMapForNonDelegateTaskTypes().get(0).isPrimaryArtifact()).isTrue();
   }
 
   @Test
@@ -287,6 +325,15 @@ public class ArtifactsStepV2Test {
                                                          .build())
                                                .build())
                                   .build())
+                     .sidecar(SidecarArtifactWrapper.builder()
+                                  .sidecar(SidecarArtifact.builder()
+                                               .identifier("s3")
+                                               .sourceType(ArtifactSourceType.CUSTOM_ARTIFACT)
+                                               .spec(CustomArtifactConfig.builder()
+                                                         .version(ParameterField.createValueField("1.0"))
+                                                         .build())
+                                               .build())
+                                  .build())
                      .build()))
         .when(cdStepHelper)
         .fetchServiceConfigFromSweepingOutput(Mockito.any(Ambiance.class));
@@ -304,6 +351,12 @@ public class ArtifactsStepV2Test {
         output.getArtifactConfigMap().values().stream().map(ArtifactConfig::getIdentifier).collect(Collectors.toSet()))
         .containsExactlyInAnyOrder("s1", "s2", "primary");
     assertThat(response.getCallbackIdsCount()).isEqualTo(3);
+
+    assertThat(output.getArtifactConfigMapForNonDelegateTaskTypes()).hasSize(1);
+    assertThat(
+        ((CustomArtifactConfig) output.getArtifactConfigMapForNonDelegateTaskTypes().get(0)).getVersion().getValue())
+        .isEqualTo("1.0");
+    assertThat(output.getArtifactConfigMapForNonDelegateTaskTypes().get(0).isPrimaryArtifact()).isFalse();
   }
 
   @Test

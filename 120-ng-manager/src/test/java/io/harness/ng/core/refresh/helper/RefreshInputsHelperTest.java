@@ -11,6 +11,8 @@ import static io.harness.rule.OwnerRule.INDER;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.joor.Reflect.on;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
@@ -18,17 +20,25 @@ import io.harness.NgManagerTestBase;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.cdng.customdeployment.helper.CustomDeploymentEntitySetupHelper;
+import io.harness.cdng.gitops.service.ClusterService;
 import io.harness.eventsframework.api.Producer;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.entitysetupusage.service.EntitySetupUsageService;
+import io.harness.ng.core.environment.services.impl.EnvironmentServiceImpl;
+import io.harness.ng.core.infrastructure.services.impl.InfrastructureEntityServiceImpl;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.services.impl.ServiceEntityServiceImpl;
 import io.harness.ng.core.service.services.impl.ServiceEntitySetupUsageHelper;
 import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
 import io.harness.outbox.api.OutboxService;
+import io.harness.repositories.environment.spring.EnvironmentRepository;
+import io.harness.repositories.infrastructure.spring.InfrastructureRepository;
 import io.harness.repositories.service.spring.ServiceRepository;
 import io.harness.rule.Owner;
+import io.harness.setupusage.InfrastructureEntitySetupUsageHelper;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.io.Resources;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -50,21 +60,36 @@ public class RefreshInputsHelperTest extends NgManagerTestBase {
   @InjectMocks RefreshInputsHelper refreshInputsHelper;
   @InjectMocks EntityFetchHelper entityFetchHelper;
   @Mock ServiceRepository serviceRepository;
+  @Mock EnvironmentRepository environmentRepository;
+  @Mock InfrastructureRepository infrastructureRepository;
   @Mock EntitySetupUsageService entitySetupUsageService;
   @Mock Producer eventProducer;
   @Mock TransactionTemplate transactionTemplate;
   @Mock OutboxService outboxService;
   @Mock ServiceOverrideService serviceOverrideService;
   @Mock ServiceEntitySetupUsageHelper entitySetupUsageHelper;
+  @Mock ClusterService clusterService;
+  @Mock CustomDeploymentEntitySetupHelper customDeploymentEntitySetupHelper;
+  @Mock InfrastructureEntitySetupUsageHelper infrastructureEntitySetupUsageHelper;
   ServiceEntityServiceImpl serviceEntityService;
+  EnvironmentServiceImpl environmentService;
+  InfrastructureEntityServiceImpl infrastructureEntityService;
+  EnvironmentRefreshHelper environmentRefreshHelper;
 
   @Before
   public void setup() {
     serviceEntityService = spy(new ServiceEntityServiceImpl(serviceRepository, entitySetupUsageService, eventProducer,
         outboxService, transactionTemplate, serviceOverrideService, entitySetupUsageHelper));
+    infrastructureEntityService = spy(new InfrastructureEntityServiceImpl(infrastructureRepository, transactionTemplate,
+        outboxService, customDeploymentEntitySetupHelper, infrastructureEntitySetupUsageHelper));
+    environmentService = spy(new EnvironmentServiceImpl(environmentRepository, entitySetupUsageService, eventProducer,
+        outboxService, transactionTemplate, infrastructureEntityService, clusterService, serviceOverrideService));
+    environmentRefreshHelper = spy(new EnvironmentRefreshHelper(environmentService, infrastructureEntityService));
     on(entityFetchHelper).set("serviceEntityService", serviceEntityService);
     on(refreshInputsHelper).set("serviceEntityService", serviceEntityService);
     on(refreshInputsHelper).set("entityFetchHelper", entityFetchHelper);
+    on(refreshInputsHelper).set("environmentRefreshHelper", environmentRefreshHelper);
+    when(environmentRefreshHelper.isEnvironmentField(anyString(), any(JsonNode.class))).thenReturn(false);
   }
 
   private String readFile(String filename) {
@@ -87,7 +112,8 @@ public class RefreshInputsHelperTest extends NgManagerTestBase {
     when(serviceEntityService.get(ACCOUNT_ID, ORG_ID, PROJECT_ID, "serverless", false))
         .thenReturn(Optional.of(ServiceEntity.builder().yaml(serviceYaml).build()));
 
-    String refreshedYaml = refreshInputsHelper.refreshInputs(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYmlWithService);
+    String refreshedYaml =
+        refreshInputsHelper.refreshInputs(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYmlWithService, null);
     assertThat(refreshedYaml).isNotNull().isNotEmpty();
     assertThat(refreshedYaml).isEqualTo(pipelineYmlWithService);
   }
@@ -102,7 +128,8 @@ public class RefreshInputsHelperTest extends NgManagerTestBase {
     when(serviceEntityService.get(ACCOUNT_ID, ORG_ID, PROJECT_ID, "serverless", false))
         .thenReturn(Optional.of(ServiceEntity.builder().yaml(serviceYaml).build()));
 
-    String refreshedYaml = refreshInputsHelper.refreshInputs(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYmlWithService);
+    String refreshedYaml =
+        refreshInputsHelper.refreshInputs(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYmlWithService, null);
     assertThat(refreshedYaml).isNotNull().isNotEmpty();
     assertThat(refreshedYaml).isEqualTo(pipelineYmlWithService);
   }
@@ -117,7 +144,8 @@ public class RefreshInputsHelperTest extends NgManagerTestBase {
     when(serviceEntityService.get(ACCOUNT_ID, ORG_ID, PROJECT_ID, "serverless", false))
         .thenReturn(Optional.of(ServiceEntity.builder().yaml(serviceYaml).build()));
 
-    String refreshedYaml = refreshInputsHelper.refreshInputs(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYmlWithService);
+    String refreshedYaml =
+        refreshInputsHelper.refreshInputs(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYmlWithService, null);
     assertThat(refreshedYaml).isNotNull().isNotEmpty();
     assertThat(refreshedYaml).isEqualTo(readFile("pipeline-with-single-service-refreshed.yaml"));
   }
@@ -128,7 +156,8 @@ public class RefreshInputsHelperTest extends NgManagerTestBase {
   public void testRefreshInputsForPipelineYamlWithServiceRuntimeAndServiceInputsFixed() {
     String pipelineYmlWithService = readFile("pipeline-with-svc-runtime-serviceInputs-fixed.yaml");
 
-    String refreshedYaml = refreshInputsHelper.refreshInputs(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYmlWithService);
+    String refreshedYaml =
+        refreshInputsHelper.refreshInputs(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYmlWithService, null);
     assertThat(refreshedYaml).isNotNull();
     assertThat(refreshedYaml).isEqualTo(readFile("pipeline-with-svc-runtime-serviceInputs-fixed-refreshed.yaml"));
   }
@@ -143,7 +172,8 @@ public class RefreshInputsHelperTest extends NgManagerTestBase {
     when(serviceEntityService.get(ACCOUNT_ID, ORG_ID, PROJECT_ID, "serverless", false))
         .thenReturn(Optional.of(ServiceEntity.builder().yaml(serviceYaml).build()));
 
-    String refreshedYaml = refreshInputsHelper.refreshInputs(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYmlWithService);
+    String refreshedYaml =
+        refreshInputsHelper.refreshInputs(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYmlWithService, null);
     assertThat(refreshedYaml).isNotNull();
     assertThat(refreshedYaml).isEqualTo(readFile("pipeline-with-primaryRef-fixed-source-runtime-refreshed.yaml"));
   }
@@ -158,7 +188,8 @@ public class RefreshInputsHelperTest extends NgManagerTestBase {
     when(serviceEntityService.get(ACCOUNT_ID, ORG_ID, PROJECT_ID, "serverless", false))
         .thenReturn(Optional.of(ServiceEntity.builder().yaml(serviceYaml).build()));
 
-    String refreshedYaml = refreshInputsHelper.refreshInputs(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYmlWithService);
+    String refreshedYaml =
+        refreshInputsHelper.refreshInputs(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYmlWithService, null);
     assertThat(refreshedYaml).isNotNull();
     assertThat(refreshedYaml).isEqualTo(readFile("pipeline-with-single-service-refreshed-with-no-serviceInputs.yaml"));
   }

@@ -41,7 +41,9 @@ public class EnvironmentGroupYaml implements Visitable {
 
   @NotNull @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) private ParameterField<String> envGroupRef;
 
-  List<EnvironmentYamlV2> environments;
+  @ApiModelProperty(dataType = SwaggerConstants.ENVIRONMENT_YAML_LIST_CLASSPATH)
+  @YamlSchemaTypes(runtime)
+  ParameterField<List<EnvironmentYamlV2>> environments;
 
   @ApiModelProperty(dataType = SwaggerConstants.BOOLEAN_CLASSPATH)
   @YamlSchemaTypes(runtime)
@@ -50,8 +52,8 @@ public class EnvironmentGroupYaml implements Visitable {
   @Override
   public VisitableChildren getChildrenToWalk() {
     VisitableChildren children = VisitableChildren.builder().build();
-    if (environments != null) {
-      environments.forEach(environmentYamlV2 -> children.add("environments", environmentYamlV2));
+    if (environments != null && !environments.isExpression()) {
+      environments.getValue().forEach(environmentYamlV2 -> children.add("environments", environmentYamlV2));
     }
     return children;
   }

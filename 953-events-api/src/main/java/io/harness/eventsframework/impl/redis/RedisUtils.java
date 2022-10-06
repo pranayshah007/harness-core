@@ -34,6 +34,7 @@ import org.redisson.client.codec.StringCodec;
 public class RedisUtils {
   // Keeping this as small as possible to save on memory for redis instance
   public static final String REDIS_STREAM_INTERNAL_KEY = "o";
+  public static final String REDIS_STREAM_TRACE_ID_KEY = "trace_id";
   public static final int MAX_DEAD_LETTER_QUEUE_SIZE = 50000;
   public static final int UNACKED_RETRY_COUNT = 10;
 

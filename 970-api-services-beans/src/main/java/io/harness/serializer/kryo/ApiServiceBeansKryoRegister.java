@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.DEL;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.artifactory.ArtifactoryConfigRequest;
+import io.harness.artifactory.ArtifactoryImagePath;
 import io.harness.aws.AwsAccessKeyCredential;
 import io.harness.aws.AwsCFTemplatesType;
 import io.harness.aws.AwsConfig;
@@ -465,5 +466,6 @@ public class ApiServiceBeansKryoRegister implements KryoRegistrar {
     kryo.register(AzureArtifactsProtocolMetadata.class, 80308);
     kryo.register(AzureArtifactsProtocolMetadataData.class, 80309);
     kryo.register(AzureDevopsProjects.class, 80310);
+    kryo.register(ArtifactoryImagePath.class, 80311);
   }
 }

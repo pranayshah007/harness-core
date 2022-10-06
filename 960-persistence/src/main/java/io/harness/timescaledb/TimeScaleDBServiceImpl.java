@@ -101,6 +101,10 @@ public class TimeScaleDBServiceImpl implements TimeScaleDBService {
     ds.setPassword(config.getTimescaledbPassword());
     ds.setMinIdle(0);
     ds.setMaxIdle(10);
+    if (config.isConnectionValidationNeeded()) {
+      ds.setValidationQuery("SELECT 1");
+      ds.setTestOnBorrow(true);
+    }
 
     ds.addConnectionProperty(
         TimeScaleDBConfigFields.connectTimeout, String.valueOf(timeScaleDBConfig.getConnectTimeout()));

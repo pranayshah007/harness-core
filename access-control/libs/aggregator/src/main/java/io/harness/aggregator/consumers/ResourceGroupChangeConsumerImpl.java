@@ -164,15 +164,15 @@ public class ResourceGroupChangeConsumerImpl implements ChangeConsumer<ResourceG
         Set<ResourceSelector> resourceSelectorsAddedToResourceGroup =
             Sets.difference(newResourceSelectors, existingResourceSelectors);
 
-        numberOfACLsDeleted += aclRepository.deleteByRoleAssignmentIdAndResourceSelectors(
-            roleAssignmentDBO.getId(), resourceSelectorsRemovedFromResourceGroup);
-
         Set<String> existingPermissions =
             Sets.newHashSet(aclRepository.getDistinctPermissionsInACLsForRoleAssignment(roleAssignmentDBO.getId()));
         Set<String> existingPrincipals =
             Sets.newHashSet(aclRepository.getDistinctPrincipalsInACLsForRoleAssignment(roleAssignmentDBO.getId()));
         PrincipalType principalType =
             USER_GROUP.equals(roleAssignmentDBO.getPrincipalType()) ? USER : roleAssignmentDBO.getPrincipalType();
+
+        numberOfACLsDeleted += aclRepository.deleteByRoleAssignmentIdAndResourceSelectors(
+            roleAssignmentDBO.getId(), resourceSelectorsRemovedFromResourceGroup);
 
         List<ACL> aclsToCreate = new ArrayList<>();
 

@@ -44,7 +44,7 @@ func (h *Handler) handleQueue() echo.HandlerFunc {
 
 		enqueue, err := h.s.Enqueue(c.Request().Context(), *p)
 		if err != nil {
-			return c.JSON(http.StatusBadRequest, nil)
+			return c.JSON(http.StatusBadRequest, err)
 		}
 		return c.JSON(http.StatusOK, enqueue)
 	}
@@ -62,7 +62,7 @@ func (h *Handler) handleDequeue() echo.HandlerFunc {
 	return func(c echo.Context) error {
 		dequeue, err := h.s.Dequeue(c.Request().Context(), store.DequeueRequest{})
 		if err != nil {
-			return c.JSON(http.StatusBadRequest, nil)
+			return c.JSON(http.StatusBadRequest, err)
 		}
 		return c.JSON(http.StatusOK, dequeue)
 	}

@@ -14,8 +14,8 @@ import static io.harness.template.beans.NGTemplateConstants.TEMPLATE_INPUTS;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.exception.ngexception.NGTemplateException;
-import io.harness.ng.core.template.RefreshRequestDTO;
 import io.harness.ng.core.template.RefreshResponseDTO;
+import io.harness.ng.core.template.refresh.NgManagerRefreshRequestDTO;
 import io.harness.pms.merger.helpers.YamlRefreshHelper;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
@@ -76,8 +76,15 @@ public class TemplateInputsRefreshHelper {
     // Returning the Refreshed YAML corresponding to the ResMap
     String inputsRefreshYaml = YamlPipelineUtils.writeYamlString(refreshedTemplateInputsMap);
     if (featureFlagHelperService.isEnabled(accountId, FeatureName.SERVICE_ENV_RECONCILIATION)) {
-      RefreshResponseDTO ngManagerRefreshResponseDto = NGRestUtils.getResponse(ngManagerReconcileClient.refreshYaml(
-          accountId, orgId, projectId, RefreshRequestDTO.builder().yaml(yaml).build()));
+      Map<String, Object> resolvedTemplatesMap = templateMergeServiceHelper.mergeTemplateInputsInObject(
+          accountId, orgId, projectId, yamlNode, templateCacheMap, 0);
+      String resolvedTemplatesYaml = YamlPipelineUtils.writeYamlString(resolvedTemplatesMap);
+      RefreshResponseDTO ngManagerRefreshResponseDto =
+          NGRestUtils.getResponse(ngManagerReconcileClient.refreshYaml(accountId, orgId, projectId,
+              NgManagerRefreshRequestDTO.builder()
+                  .yaml(inputsRefreshYaml)
+                  .resolvedTemplatesYaml(resolvedTemplatesYaml)
+                  .build()));
       inputsRefreshYaml = ngManagerRefreshResponseDto.getRefreshedYaml();
     }
     return inputsRefreshYaml;

@@ -665,6 +665,19 @@ public class AzureComputeClientImpl extends AzureClient implements AzureComputeC
       VirtualMachine virtualMachine, AzureHostConnectionType hostConnectionType) {
     VirtualMachineDataBuilder builder = VirtualMachineData.builder().hostName(virtualMachine.name());
 
+    setAddress(virtualMachine, hostConnectionType, builder);
+    return builder.hostName(virtualMachine.name())
+        .privateIp(virtualMachine.getPrimaryNetworkInterface() != null
+                ? virtualMachine.getPrimaryNetworkInterface().primaryPrivateIP()
+                : null)
+        .publicIp(virtualMachine.getPrimaryPublicIPAddress() != null
+                ? virtualMachine.getPrimaryPublicIPAddress().ipAddress()
+                : null)
+        .build();
+  }
+
+  private void setAddress(
+      VirtualMachine virtualMachine, AzureHostConnectionType hostConnectionType, VirtualMachineDataBuilder builder) {
     if (AzureHostConnectionType.PUBLIC_IP.equals(hostConnectionType)
         && virtualMachine.getPrimaryPublicIPAddress() != null) {
       builder.address(virtualMachine.getPrimaryPublicIPAddress().ipAddress());
@@ -674,7 +687,5 @@ public class AzureComputeClientImpl extends AzureClient implements AzureComputeC
     } else if (AzureHostConnectionType.HOSTNAME.equals(hostConnectionType)) {
       builder.address(virtualMachine.name());
     }
-
-    return builder.build();
   }
 }

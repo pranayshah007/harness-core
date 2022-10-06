@@ -155,4 +155,69 @@ public class YamlNodeUtils {
     }
     return next;
   }
+
+  public YamlNode findFirstNodeMatchingFieldName(YamlNode yamlNode, String fieldName) {
+    if (yamlNode == null) {
+      return null;
+    }
+
+    if (yamlNode.isObject()) {
+      return findFieldNameInObject(yamlNode, fieldName);
+    } else if (yamlNode.isArray()) {
+      return findFieldNameInArray(yamlNode, fieldName);
+    } else if (fieldName.equals(yamlNode.asText())) {
+      return yamlNode;
+    }
+
+    return null;
+  }
+
+  private YamlNode findFieldNameInObject(YamlNode yamlNode, String fieldName) {
+    if (yamlNode == null) {
+      return null;
+    }
+    for (YamlField childYamlField : yamlNode.fields()) {
+      if (fieldName.equals(childYamlField.getName())) {
+        return childYamlField.getNode();
+      }
+
+      YamlNode currentYamlNode = childYamlField.getNode();
+      JsonNode value = currentYamlNode.getCurrJsonNode();
+      YamlNode requiredNode = null;
+      if (value.isArray() && !YamlUtils.checkIfNodeIsArrayWithPrimitiveTypes(value)) {
+        // Value -> Array
+        requiredNode = findFieldNameInArray(childYamlField.getNode(), fieldName);
+      } else if (value.isObject()) {
+        // Value -> Object
+        requiredNode = findFieldNameInObject(childYamlField.getNode(), fieldName);
+      }
+      if (requiredNode != null) {
+        return requiredNode;
+      }
+    }
+    return null;
+  }
+
+  private YamlNode findFieldNameInArray(YamlNode yamlNode, String fieldName) {
+    if (yamlNode == null) {
+      return null;
+    }
+    for (YamlNode arrayElement : yamlNode.asArray()) {
+      if (fieldName.equals(arrayElement.getName())) {
+        return arrayElement;
+      }
+      YamlNode requiredNode = null;
+      if (arrayElement.isArray()) {
+        // Value -> Array
+        requiredNode = findFieldNameInArray(arrayElement, fieldName);
+      } else if (arrayElement.isObject()) {
+        // Value -> Object
+        requiredNode = findFieldNameInArray(arrayElement, fieldName);
+      }
+      if (requiredNode != null) {
+        return requiredNode;
+      }
+    }
+    return null;
+  }
 }
