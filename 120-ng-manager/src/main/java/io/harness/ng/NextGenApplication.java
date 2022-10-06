@@ -135,6 +135,7 @@ import io.harness.pms.contracts.execution.events.OrchestrationEventType;
 import io.harness.pms.contracts.plan.JsonExpansionInfo;
 import io.harness.pms.events.base.PipelineEventConsumerController;
 import io.harness.pms.expressions.functors.ImagePullSecretFunctor;
+import io.harness.pms.expressions.functors.InstanceFunctor;
 import io.harness.pms.governance.EnvironmentRefExpansionHandler;
 import io.harness.pms.governance.ServiceRefExpansionHandler;
 import io.harness.pms.listener.NgOrchestrationNotifyEventListener;
@@ -670,6 +671,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     sdkFunctorMap.put(ImagePullSecretFunctor.IMAGE_PULL_SECRET, ImagePullSecretFunctor.class);
     sdkFunctorMap.put(VariableFunctor.VARIABLE, VariableFunctor.class);
     sdkFunctorMap.put(TerraformPlanJsonFunctor.TERRAFORM_PLAN_JSON, TerraformPlanJsonFunctor.class);
+    sdkFunctorMap.put(InstanceFunctor.INSTANCE, InstanceFunctor.class);
     return sdkFunctorMap;
   }
 
