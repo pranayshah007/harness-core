@@ -13,8 +13,11 @@ import static java.util.stream.Collectors.groupingBy;
 
 import io.harness.beans.WorkflowType;
 import io.harness.event.timeseries.processor.EventProcessor;
+import io.harness.event.timeseries.processor.StepEventProcessor;
 import io.harness.queue.QueuePublisher;
 
+import software.wings.api.ApprovalStateExecutionData;
+import software.wings.api.DeploymentStepTimeSeriesEvent;
 import software.wings.api.DeploymentTimeSeriesEvent;
 import software.wings.api.InstanceEvent;
 import software.wings.beans.EnvSummary;
@@ -26,6 +29,8 @@ import software.wings.service.impl.event.timeseries.TimeSeriesBatchEventInfo;
 import software.wings.service.impl.event.timeseries.TimeSeriesBatchEventInfo.DataPoint;
 import software.wings.service.impl.event.timeseries.TimeSeriesEventInfo;
 import software.wings.service.intfc.WorkflowExecutionService;
+import software.wings.sm.StateExecutionData;
+import software.wings.sm.StateExecutionInstance;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -47,7 +52,10 @@ public class UsageMetricsEventPublisher {
   @Inject private WorkflowExecutionService workflowExecutionService;
   @Inject private QueuePublisher<DeploymentTimeSeriesEvent> deploymentTimeSeriesEventQueue;
   @Inject private QueuePublisher<InstanceEvent> instanceTimeSeriesEventQueue;
+  @Inject private QueuePublisher<DeploymentStepTimeSeriesEvent> deploymentStepTimeSeriesEventQueue;
   SimpleDateFormat sdf;
+
+  private String APPROVAL = "APPROVAL";
 
   public UsageMetricsEventPublisher() {
     sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss z");
@@ -63,6 +71,71 @@ public class UsageMetricsEventPublisher {
         log.error("Failed to publish deployment time series event:[{}]", event.getId(), e);
       }
     });
+  }
+
+  public void publishDeploymentStepTimeSeriesEvent(String accountId, StateExecutionInstance stateExecutionInstance) {
+    DeploymentStepTimeSeriesEvent event = constructDeploymentStepTimeSeriesEvent(accountId, stateExecutionInstance);
+    executorService.submit(() -> {
+      try {
+        deploymentStepTimeSeriesEventQueue.send(event);
+      } catch (Exception e) {
+        log.error("Failed to publish deployment step time series event:[{}]", event.getId(), e);
+      }
+    });
+  }
+
+  private DeploymentStepTimeSeriesEvent constructDeploymentStepTimeSeriesEvent(
+      String accountId, StateExecutionInstance stateExecutionInstance) {
+    log.info("Reporting Step execution");
+    Map<String, String> stringData = new HashMap<>();
+    Map<String, Long> longData = new HashMap<>();
+    Map<String, Boolean> booleanData = new HashMap<>();
+
+    stringData.put(StepEventProcessor.ID, stateExecutionInstance.getUuid());
+    stringData.put(StepEventProcessor.APP_ID, stateExecutionInstance.getAppId());
+    stringData.put(StepEventProcessor.STEP_NAME, stateExecutionInstance.getStateName());
+    stringData.put(StepEventProcessor.STEP_TYPE, stateExecutionInstance.getStateType());
+    stringData.put(StepEventProcessor.STATUS, stateExecutionInstance.getStatus().toString());
+    stringData.put(StepEventProcessor.PARENT_TYPE, stateExecutionInstance.getExecutionType().toString());
+    stringData.put(StepEventProcessor.EXECUTION_ID, stateExecutionInstance.getExecutionUuid());
+
+    // logic for failure details
+
+    longData.put(StepEventProcessor.START_TIME, stateExecutionInstance.getStartTs());
+    longData.put(StepEventProcessor.END_TIME, stateExecutionInstance.getEndTs());
+
+    if (stateExecutionInstance.getStartTs() != null && stateExecutionInstance.getEndTs() != null)
+      longData.put(
+          StepEventProcessor.DURATION, stateExecutionInstance.getEndTs() - stateExecutionInstance.getStartTs());
+
+    longData.put(StepEventProcessor.APPROVAL_EXPIRY, stateExecutionInstance.getExpiryTs());
+
+    if (APPROVAL.equals(stateExecutionInstance.getStateType()) && stateExecutionInstance.getStateExecutionMap() != null
+        && stateExecutionInstance.getStateExecutionMap().get(stateExecutionInstance.getStateName()) != null) {
+      StateExecutionData stateExecutionData =
+          stateExecutionInstance.getStateExecutionMap().get(stateExecutionInstance.getStateName());
+      if (stateExecutionData instanceof ApprovalStateExecutionData) {
+        ApprovalStateExecutionData approvalStateExecutionData = (ApprovalStateExecutionData) stateExecutionData;
+        longData.put(StepEventProcessor.APPROVED_AT, approvalStateExecutionData.getApprovedOn());
+        stringData.put(StepEventProcessor.APPROVAL_COMMENT, approvalStateExecutionData.getComments());
+        if (approvalStateExecutionData.getApprovalStateType() != null)
+          stringData.put(
+              StepEventProcessor.APPROVAL_TYPE, approvalStateExecutionData.getApprovalStateType().toString());
+        if (approvalStateExecutionData.getApprovedBy() != null)
+          stringData.put(StepEventProcessor.APPROVED_BY, approvalStateExecutionData.getApprovedBy().getEmail());
+      }
+    }
+
+    booleanData.put(StepEventProcessor.MANUAL_INTERVENTION, stateExecutionInstance.isWaitingForManualIntervention());
+
+    return DeploymentStepTimeSeriesEvent.builder()
+        .timeSeriesEventInfo(TimeSeriesEventInfo.builder()
+                                 .accountId(accountId)
+                                 .booleanData(booleanData)
+                                 .longData(longData)
+                                 .stringData(stringData)
+                                 .build())
+        .build();
   }
 
   public DeploymentTimeSeriesEvent constructDeploymentTimeSeriesEvent(

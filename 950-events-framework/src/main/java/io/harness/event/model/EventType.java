@@ -46,6 +46,7 @@ public enum EventType {
    * Runtime entites
    */
   DEPLOYMENT_EVENT,
+  DEPLOYMENT_STEP_EVENT,
   INSTANCE_EVENT,
 
   CUSTOM,

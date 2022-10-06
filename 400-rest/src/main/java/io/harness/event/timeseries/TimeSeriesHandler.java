@@ -7,10 +7,7 @@
 
 package io.harness.event.timeseries;
 
-import static io.harness.event.model.EventType.DEPLOYMENT_EVENT;
-import static io.harness.event.model.EventType.DEPLOYMENT_VERIFIED;
-import static io.harness.event.model.EventType.INSTANCE_EVENT;
-import static io.harness.event.model.EventType.SERVICE_GUARD_SETUP;
+import static io.harness.event.model.EventType.*;
 
 import io.harness.event.handler.EventHandler;
 import io.harness.event.listener.EventListener;
@@ -19,6 +16,7 @@ import io.harness.event.timeseries.processor.DeploymentEventProcessor;
 import io.harness.event.timeseries.processor.ServiceGuardSetupEventProcessor;
 import io.harness.event.timeseries.processor.VerificationEventProcessor;
 import io.harness.event.timeseries.processor.instanceeventprocessor.InstanceEventProcessor;
+import io.harness.event.timeseries.processor.utils.DeploymentStepEventProcessor;
 import io.harness.logging.AutoLogContext;
 
 import software.wings.service.impl.event.timeseries.TimeSeriesBatchEventInfo;
@@ -34,6 +32,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class TimeSeriesHandler implements EventHandler {
   @Inject private DeploymentEventProcessor deploymentEventProcessor;
+  @Inject private DeploymentStepEventProcessor deploymentStepEventProcessor;
   @Inject private InstanceEventProcessor instanceEventProcessor;
   @Inject private VerificationEventProcessor verificationEventProcessor;
   @Inject private ServiceGuardSetupEventProcessor serviceGuardSetupEventProcessor;
@@ -44,8 +43,9 @@ public class TimeSeriesHandler implements EventHandler {
   }
 
   private void registerForEvents(EventListener eventListener) {
-    eventListener.registerEventHandler(
-        this, Sets.newHashSet(DEPLOYMENT_EVENT, INSTANCE_EVENT, DEPLOYMENT_VERIFIED, SERVICE_GUARD_SETUP));
+    eventListener.registerEventHandler(this,
+        Sets.newHashSet(
+            DEPLOYMENT_EVENT, DEPLOYMENT_STEP_EVENT, INSTANCE_EVENT, DEPLOYMENT_VERIFIED, SERVICE_GUARD_SETUP));
   }
 
   @Override
@@ -63,6 +63,14 @@ public class TimeSeriesHandler implements EventHandler {
       case DEPLOYMENT_EVENT:
         try {
           deploymentEventProcessor.processEvent((TimeSeriesEventInfo) event.getEventData().getEventInfo());
+        } catch (Exception ex) {
+          log.error(
+              "Failed to process Event : [{}] , error : [{}]", event.toString(), Arrays.toString(ex.getStackTrace()));
+        }
+        break;
+      case DEPLOYMENT_STEP_EVENT:
+        try {
+          deploymentStepEventProcessor.processEvent((TimeSeriesEventInfo) event.getEventData().getEventInfo());
         } catch (Exception ex) {
           log.error(
               "Failed to process Event : [{}] , error : [{}]", event.toString(), Arrays.toString(ex.getStackTrace()));
