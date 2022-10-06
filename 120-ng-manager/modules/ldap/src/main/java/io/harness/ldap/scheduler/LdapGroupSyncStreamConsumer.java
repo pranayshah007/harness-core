@@ -87,8 +87,6 @@ public class LdapGroupSyncStreamConsumer extends RedisTraceConsumer {
 
   @Override
   protected boolean processMessage(Message message) {
-    AtomicBoolean success = new AtomicBoolean(true);
-
     if (message.hasMessage()) {
       LdapGroupSyncDTO ldapGroupSyncDTO;
       try {
@@ -100,6 +98,6 @@ public class LdapGroupSyncStreamConsumer extends RedisTraceConsumer {
       }
     }
 
-    return success.get();
+    return true;
   }
 }
