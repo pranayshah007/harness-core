@@ -772,6 +772,16 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
                                         .setFeatureFlag(FeatureName.SHELL_SCRIPT_PROVISION_NG.name())
                                         .build();
 
+    StepInfo chaosStep = StepInfo.newBuilder()
+                             .setName("Chaos Step")
+                             .setType(StepSpecTypeConstants.CHAOS_STEP)
+                             .setStepMetaData(StepMetaData.newBuilder()
+                                                  .addAllCategory(Arrays.asList("Chaos"))
+                                                  .addFolderPaths("Chaos")
+                                                  .build())
+                             .setFeatureFlag(FeatureName.CHAOS_ENABLED.name())
+                             .build();
+
     List<StepInfo> stepInfos = new ArrayList<>();
 
     stepInfos.add(gitOpsCreatePR);
@@ -815,6 +825,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     stepInfos.add(ecsBlueGreenSwapTargetGroups);
     stepInfos.add(ecsBlueGreenRollback);
     stepInfos.add(shellScriptProvision);
+    stepInfos.add(chaosStep);
     return stepInfos;
   }
 }
