@@ -27,7 +27,7 @@ public class IteratorsConfig {
   IteratorConfig workflowExecutionMonitorIteratorConfig;
   IteratorConfig blockingCapabilityPermissionsRecordHandlerIteratorConfig;
   IteratorConfig vaultSecretManagerRenewalIteratorConfig;
-  IteratorConfig delegateTaskExpiryCheckIteratorConfig;
+  IteratorConfig delegateDisconnectDetectorIteratorConfig;
   IteratorConfig perpetualTaskRebalanceIteratorConfig;
   IteratorConfig perpetualTaskAssignmentIteratorConfig;
   IteratorConfig delegateTaskRebroadcastIteratorConfig;

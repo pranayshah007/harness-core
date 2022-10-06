@@ -83,7 +83,6 @@ public class PerpetualTaskRecordHandler implements PerpetualTaskCrudObserver {
   @Inject private PerpetualTaskRecordDao perpetualTaskRecordDao;
 
   PersistenceIterator<PerpetualTaskRecord> assignmentIterator;
-  PersistenceIterator<Account> rebalanceIterator;
 
   public void registerIterators(int perpetualTaskAssignmentThreadPoolSize, int perpetualTaskRebalanceThreadPoolSize) {
     assignmentIterator = persistenceIteratorFactory.createPumpIteratorWithDedicatedThreadPool(
@@ -107,25 +106,6 @@ public class PerpetualTaskRecordHandler implements PerpetualTaskCrudObserver {
             .entityProcessController(new CrossEnvironmentAccountStatusBasedEntityProcessController<>(accountService))
             .schedulingType(REGULAR)
             .persistenceProvider(persistenceProvider)
-            .unsorted(true)
-            .redistribute(true));
-    rebalanceIterator = persistenceIteratorFactory.createPumpIteratorWithDedicatedThreadPool(
-        PumpExecutorOptions.builder()
-            .name("PerpetualTaskRebalance")
-            .poolSize(perpetualTaskRebalanceThreadPoolSize)
-            .interval(ofMinutes(PERPETUAL_TASK_ASSIGNMENT_INTERVAL_MINUTE))
-            .build(),
-        PerpetualTaskRecordHandler.class,
-        MongoPersistenceIterator.<Account, MorphiaFilterExpander<Account>>builder()
-            .clazz(Account.class)
-            .fieldName(AccountKeys.perpetualTaskRebalanceIteration)
-            .targetInterval(ofMinutes(PERPETUAL_TASK_ASSIGNMENT_INTERVAL_MINUTE))
-            .acceptableNoAlertDelay(ofSeconds(60))
-            .acceptableExecutionTime(ofSeconds(60))
-            .handler(this::rebalance)
-            .entityProcessController(new CrossEnvironmentAccountLevelEntityProcessController(accountService))
-            .schedulingType(REGULAR)
-            .persistenceProvider(persistenceProviderAccount)
             .unsorted(true)
             .redistribute(true));
   }
@@ -256,8 +236,5 @@ public class PerpetualTaskRecordHandler implements PerpetualTaskCrudObserver {
 
   @Override
   public void onRebalanceRequired() {
-    if (rebalanceIterator != null) {
-      rebalanceIterator.wakeup();
-    }
   }
 }

@@ -3114,6 +3114,16 @@ public class DelegateServiceImpl implements DelegateService {
   }
 
   @Override
+  public void onDelegateDisconnected(String accountId, String delegateId) {
+    subject.fireInform(DelegateObserver::onDisconnected, accountId, delegateId);
+    Delegate delegate = delegateCache.get(accountId, delegateId, false);
+    delegateMetricsService.recordDelegateMetrics(delegate, DELEGATE_DISCONNECTED);
+    remoteObserverInformer.sendEvent(
+            ReflectionUtils.getMethod(DelegateObserver.class, "onDisconnected", String.class, String.class),
+            DelegateServiceImpl.class, accountId, delegateId);
+  }
+
+  @Override
   public boolean filter(String accountId, String delegateId) {
     Delegate delegate = delegateCache.get(accountId, delegateId, false);
     return delegate != null && StringUtils.equals(delegate.getAccountId(), accountId);
