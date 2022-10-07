@@ -18,7 +18,6 @@ import io.harness.ccm.cluster.entities.EcsCluster;
 import io.harness.ccm.license.CeLicenseInfo;
 import io.harness.ccm.license.CeLicenseType;
 import io.harness.cvng.state.CVNGVerificationTask;
-import io.harness.delegate.beans.NoInstalledDelegatesException;
 import io.harness.serializer.KryoRegistrar;
 
 import software.wings.api.ARMStateExecutionData;
@@ -597,6 +596,5 @@ public class ManagerKryoRegistrar implements KryoRegistrar {
     kryo.register(K8sCanaryDeleteServiceElement.class, 50016);
     kryo.register(AzureVMSSDeployStateExecutionData.class, 50017);
     kryo.register(AzureVMSSSwitchRouteStateExecutionData.class, 50018);
-    kryo.register(NoInstalledDelegatesException.class, 73988);
   }
 }

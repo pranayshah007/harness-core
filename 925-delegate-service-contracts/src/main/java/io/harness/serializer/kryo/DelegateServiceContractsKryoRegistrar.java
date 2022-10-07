@@ -10,6 +10,7 @@ package io.harness.serializer.kryo;
 import io.harness.delegate.NoEligibleDelegatesInAccountException;
 import io.harness.delegate.beans.NoAvailableDelegatesException;
 import io.harness.delegate.beans.NoDelegatesException;
+import io.harness.delegate.beans.NoInstalledDelegatesException;
 import io.harness.exception.DelegateTaskExpiredException;
 import io.harness.serializer.KryoRegistrar;
 
@@ -18,6 +19,7 @@ import com.esotericsoftware.kryo.Kryo;
 public class DelegateServiceContractsKryoRegistrar implements KryoRegistrar {
   @Override
   public void register(Kryo kryo) {
+    kryo.register(NoInstalledDelegatesException.class, 73988);
     kryo.register(NoEligibleDelegatesInAccountException.class, 73989);
     kryo.register(NoAvailableDelegatesException.class, 73990);
     kryo.register(NoDelegatesException.class, 73991);
