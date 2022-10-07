@@ -11,7 +11,6 @@ shared_dependencies = [
     "//878-ng-common-utilities:module",
     "//884-pms-commons:module",
     "//910-delegate-service-driver:module",
-    "//925-delegate-service-contracts:module",
     "//930-delegate-tasks:module",
     "//930-ng-core-clients:module",
     "//945-account-mgmt:module",
