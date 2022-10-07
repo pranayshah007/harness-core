@@ -210,6 +210,7 @@ public class TerraformProvisionTask extends AbstractDelegateRunnableTask {
     GitConfig gitConfig = parameters.getSourceRepo();
     String sourceRepoSettingId = parameters.getSourceRepoSettingId();
     LogCallback logCallback = getLogCallback(parameters);
+    String accountId = parameters.getAccountId();
 
     GitOperationContext gitOperationContext =
         GitOperationContext.builder().gitConfig(gitConfig).gitConnectorId(sourceRepoSettingId).build();
@@ -276,6 +277,7 @@ public class TerraformProvisionTask extends AbstractDelegateRunnableTask {
 
     File tfVariablesFile = null, tfBackendConfigsFile = null;
     String tfPlanJsonFilePath = null;
+    String tfHumanReadableFilePath = null;
     TerraformPlanSummary terraformPlanSummary = null;
 
     try (ActivityLogOutputStream activityLogOutputStream =
@@ -553,10 +555,9 @@ public class TerraformProvisionTask extends AbstractDelegateRunnableTask {
             .errorMessage("The terraform command exited with code " + code)
             .build();
       }
-
+      String planName = getPlanName(parameters);
       String tfPlanJsonFileId = null;
       if (parameters.isSaveTerraformJson() && parameters.isUseOptimizedTfPlanJson() && version.minVersion(0, 12)) {
-        String planName = getPlanName(parameters);
         saveExecutionLog(format("Uploading terraform %s json representation", planName), CommandExecutionStatus.RUNNING,
             INFO, logCallback);
         // We're going to read content from json plan file and ideally no one should write anything into output
@@ -570,6 +571,22 @@ public class TerraformProvisionTask extends AbstractDelegateRunnableTask {
         saveExecutionLog(format("Path to '%s' json representation is available via expression %s %n", planName,
                              parameters.getCommand() == APPLY ? TerraformPlanExpressionInterface.EXAMPLE_USAGE
                                                               : TerraformPlanExpressionInterface.DESTROY_EXAMPLE_USAGE),
+            CommandExecutionStatus.RUNNING, INFO, logCallback);
+      }
+
+      String tfPlanHumanReadableFileId = null;
+      if (parameters.isExportPlanToHumanReadableOutput()) {
+        planHumanReadableOutputStream.flush();
+        planHumanReadableOutputStream.close();
+        tfHumanReadableFilePath = planHumanReadableOutputStream.getTfHumanReadablePlanLocalPath();
+        tfPlanHumanReadableFileId = terraformBaseHelper.uploadTfPlanHumanReadable(
+            accountId, getDelegateId(), getTaskId(), parameters.getEntityId(), planName, tfHumanReadableFilePath);
+        saveExecutionLog(
+            format("Path to '%s' Terraform Human Readable Plan representation is available via expression %s %n",
+                planName,
+                parameters.getCommand() == APPLY
+                    ? TerraformPlanExpressionInterface.HUMAN_READABLE_EXAMPLE_USAGE
+                    : TerraformPlanExpressionInterface.DESTROY_HUMAN_READABLE_EXAMPLE_USAGE),
             CommandExecutionStatus.RUNNING, INFO, logCallback);
       }
 
@@ -641,6 +658,7 @@ public class TerraformProvisionTask extends AbstractDelegateRunnableTask {
               .tfPlanJson(planJsonLogOutputStream.getPlanJson())
               .tfPlanJsonFiledId(tfPlanJsonFileId)
               .tfPlanHumanReadable(planHumanReadableOutputStream.getHumanReadablePlan())
+              .tfPlanHumanReadableFileId(tfPlanHumanReadableFileId)
               .commandExecuted(parameters.getCommand())
               .sourceRepoReference(sourceRepoReference)
               .variables(parameters.getRawVariables())
