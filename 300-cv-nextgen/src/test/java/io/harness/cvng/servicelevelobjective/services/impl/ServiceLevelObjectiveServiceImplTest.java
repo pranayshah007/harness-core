@@ -930,9 +930,7 @@ public class ServiceLevelObjectiveServiceImplTest extends CvNextGenTestBase {
     List<String> verificationTaskIds =
         verificationTaskService.getSLIVerificationTaskIds(projectParams.getAccountIdentifier(), sliIds);
     List<CVNGLogDTO> cvngLogDTOs =
-        IntStream.range(0, 3)
-            .mapToObj(index -> builderFactory.executionLogDTOBuilder().traceableId(verificationTaskIds.get(0)).build())
-            .collect(Collectors.toList());
+        Arrays.asList(builderFactory.executionLogDTOBuilder().traceableId(verificationTaskIds.get(0)).build());
     cvngLogService.save(cvngLogDTOs);
 
     SLILogsFilter sliLogsFilter = SLILogsFilter.builder()
