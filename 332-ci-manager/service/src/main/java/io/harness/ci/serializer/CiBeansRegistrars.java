@@ -66,6 +66,7 @@ public class CiBeansRegistrars {
           .addAll(DelegateServiceBeansRegistrars.kryoRegistrars)
           .addAll(AccessControlClientRegistrars.kryoRegistrars)
           .addAll(DelegateTaskRegistrars.kryoRegistrars)
+          .addAll(DelegateServiceContractsRegistrars.kryoRegistrars)
           .addAll(SMCoreRegistrars.kryoRegistrars)
           .addAll(ConnectorNextGenRegistrars.kryoRegistrars)
           .addAll(LicenseManagerRegistrars.kryoRegistrars)

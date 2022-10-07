@@ -73,6 +73,7 @@ public class ManagerRegistrars {
           .addAll(AccessControlClientRegistrars.kryoRegistrars)
           .add(EventEntitiesKryoRegistrar.class)
           .addAll(DelegateTaskRegistrars.kryoRegistrars)
+          .addAll(DelegateServiceContractsRegistrars.kryoRegistrars)
           .add(NgAuthenticationServiceKryoRegistrar.class)
           .add(NgPersistenceKryoRegistrar.class)
           .build();

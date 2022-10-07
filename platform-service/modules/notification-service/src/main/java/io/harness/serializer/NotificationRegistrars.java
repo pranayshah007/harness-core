@@ -44,6 +44,7 @@ public class NotificationRegistrars {
           .add(NGCoreKryoRegistrar.class)
           .add(DelegateTasksKryoRegistrar.class)
           .add(DelegateServiceBeansKryoRegistrar.class)
+          .addAll(DelegateServiceContractsRegistrars.kryoRegistrars)
           .build();
 
   public static final ImmutableSet<Class<? extends MorphiaRegistrar>> morphiaRegistrars =
