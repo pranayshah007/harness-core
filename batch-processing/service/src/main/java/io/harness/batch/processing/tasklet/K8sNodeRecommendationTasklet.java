@@ -77,7 +77,7 @@ public class K8sNodeRecommendationTasklet implements Tasklet {
       TotalResourceUsage totalResourceUsage =
           k8sRecommendationDAO.aggregateTotalResourceRequirement(accountId, nodePoolId, startTime, endTime);
 
-      log.info("TotalResourceUsage for {}:{} is {} between {} and {}", accountId, nodePoolId, totalResourceUsage,
+      log.info("TotalResourceUsage for 7 days {}:{} is {} between {} and {}", accountId, nodePoolId, totalResourceUsage,
           startTime, endTime);
 
       try {
