@@ -96,8 +96,7 @@ public class ExecutionsApiUtils {
     stageInfo.setSuccessful((long) getStagesCount(layoutNodeDTOMap, startingNodeId, ExecutionStatus.SUCCESS));
     stageInfo.setFailed((long) getStagesCount(layoutNodeDTOMap, startingNodeId, ExecutionStatus.FAILED));
     stageInfo.setTotal((long) getStagesCount(layoutNodeDTOMap, startingNodeId));
-    stageInfo.setExecutedId(stageIdentifiers);
-    stageInfo.setExecutedNames(stagesExecutedNames);
+    stageInfo.setExecuted(stagesExecutedNames);
     return stageInfo;
   }
 
