@@ -7,6 +7,7 @@
 
 package io.harness.cvng.statemachine.services.api;
 
+import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.servicelevelobjective.beans.SLIMissingDataType;
 import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective.ServiceLevelObjectivesDetail;
@@ -60,8 +61,14 @@ public class CompositeSLOMetricAnalysisStateExecutor extends AnalysisStateExecut
               objectivesDetail.getServiceLevelObjectiveRef());
       Preconditions.checkState(simpleServiceLevelObjective.getServiceLevelIndicators().size() == 1,
           "Only one service level indicator is supported");
-      String sliId = simpleServiceLevelObjective.getServiceLevelIndicators().get(0);
-      ServiceLevelIndicator serviceLevelIndicator = serviceLevelIndicatorService.get(sliId);
+      ServiceLevelIndicator serviceLevelIndicator = serviceLevelIndicatorService.getServiceLevelIndicator(
+          ProjectParams.builder()
+              .accountIdentifier(simpleServiceLevelObjective.getAccountId())
+              .orgIdentifier(simpleServiceLevelObjective.getOrgIdentifier())
+              .projectIdentifier(simpleServiceLevelObjective.getProjectIdentifier())
+              .build(),
+          simpleServiceLevelObjective.getServiceLevelIndicators().get(0));
+      String sliId = serviceLevelIndicator.getUuid();
       List<SLIRecord> sliRecords = sliRecordService.getSLIRecords(sliId, startTime, endTime);
       serviceLevelObjectivesDetailSLIRecordMap.put(objectivesDetail, sliRecords);
       objectivesDetailSLIMissingDataTypeMap.put(objectivesDetail, serviceLevelIndicator.getSliMissingDataType());

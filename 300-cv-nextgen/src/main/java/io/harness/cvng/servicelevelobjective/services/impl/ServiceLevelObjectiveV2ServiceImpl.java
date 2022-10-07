@@ -37,27 +37,20 @@ import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2Respon
 import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObjective.AbstractServiceLevelObjectiveUpdatableEntity;
 import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObjective.ServiceLevelObjectiveV2Keys;
-import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator;
-import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
+import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective.SimpleServiceLevelObjectiveKeys;
-import io.harness.cvng.servicelevelobjective.services.api.SLOHealthIndicatorService;
-import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveV2Service;
 import io.harness.cvng.servicelevelobjective.transformer.servicelevelindicator.SLOTargetTransformer;
 import io.harness.cvng.servicelevelobjective.transformer.servicelevelobjectivev2.SLOV2Transformer;
 import io.harness.exception.DuplicateFieldException;
-import io.harness.exception.InvalidRequestException;
-import io.harness.ng.beans.PageResponse;
 import io.harness.persistence.HPersistence;
-import io.harness.utils.PageUtils;
 
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -93,13 +86,21 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
   public ServiceLevelObjectiveV2Response create(
       ProjectParams projectParams, ServiceLevelObjectiveV2DTO serviceLevelObjectiveDTO) {
     validateCreate(serviceLevelObjectiveDTO, projectParams);
-    MonitoredService monitoredService = monitoredServiceService.getMonitoredService(
-        MonitoredServiceParams.builderWithProjectParams(projectParams)
-            .monitoredServiceIdentifier(serviceLevelObjectiveDTO.getMonitoredServiceRef())
-            .build());
-    AbstractServiceLevelObjective serviceLevelObjective =
-        saveServiceLevelObjectiveV2Entity(projectParams, serviceLevelObjectiveDTO, monitoredService.isEnabled());
-    return getSLOResponse(serviceLevelObjective.getIdentifier(), projectParams);
+    if (serviceLevelObjectiveDTO.getType().equals(ServiceLevelObjectiveType.SIMPLE)) {
+      MonitoredService monitoredService = monitoredServiceService.getMonitoredService(
+          MonitoredServiceParams.builderWithProjectParams(projectParams)
+              .monitoredServiceIdentifier(serviceLevelObjectiveDTO.getMonitoredServiceRef())
+              .build());
+      SimpleServiceLevelObjective simpleServiceLevelObjective =
+          (SimpleServiceLevelObjective) saveServiceLevelObjectiveV2Entity(
+              projectParams, serviceLevelObjectiveDTO, monitoredService.isEnabled());
+      return getSLOResponse(simpleServiceLevelObjective.getIdentifier(), projectParams);
+    } else {
+      CompositeServiceLevelObjective compositeServiceLevelObjective =
+          (CompositeServiceLevelObjective) saveServiceLevelObjectiveV2Entity(
+              projectParams, serviceLevelObjectiveDTO, true);
+      return getSLOResponse(compositeServiceLevelObjective.getIdentifier(), projectParams);
+    }
   }
 
   @Override
@@ -461,7 +462,9 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
           "serviceLevelObjectiveV2 with identifier %s and orgIdentifier %s and projectIdentifier %s is already present",
           sloCreateDTO.getIdentifier(), projectParams.getOrgIdentifier(), projectParams.getProjectIdentifier()));
     }
-    validate(sloCreateDTO, projectParams);
+    if (sloCreateDTO.getType().equals(ServiceLevelObjectiveType.SIMPLE)) {
+      validate(sloCreateDTO, projectParams);
+    }
   }
 
   private void validate(ServiceLevelObjectiveV2DTO sloCreateDTO, ProjectParams projectParams) {

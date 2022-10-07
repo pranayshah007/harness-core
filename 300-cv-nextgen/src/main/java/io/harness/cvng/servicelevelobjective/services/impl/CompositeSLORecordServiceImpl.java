@@ -27,6 +27,7 @@ import io.harness.persistence.HPersistence;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableSortedSet;
 import com.google.inject.Inject;
 import java.time.Duration;
 import java.time.Instant;
@@ -188,10 +189,10 @@ public class CompositeSLORecordServiceImpl implements CompositeSLORecordService 
       }
     }
     List<CompositeSLORecord> sloRecordList = new ArrayList<>();
-    for (Instant instant : timeStampToTotalCount.keySet()) {
-      if (timeStampToBadCount.get(instant).equals(serviceLevelObjectivesDetailCompositeSLORecordMap.size())) {
-        runningGoodCount += timeStampToGoodCount.get(instant);
-        runningBadCount += timeStampToBadCount.get(instant);
+    for (Instant instant : ImmutableSortedSet.copyOf(timeStampToTotalCount.keySet())) {
+      if (timeStampToTotalCount.get(instant).equals(serviceLevelObjectivesDetailCompositeSLORecordMap.size())) {
+        runningGoodCount += timeStampToGoodCount.getOrDefault(instant, 0.0);
+        runningBadCount += timeStampToBadCount.getOrDefault(instant, 0.0);
         CompositeSLORecord sloRecord = CompositeSLORecord.builder()
                                            .runningBadCount(runningBadCount)
                                            .runningGoodCount(runningGoodCount)
@@ -237,10 +238,10 @@ public class CompositeSLORecordServiceImpl implements CompositeSLORecordService 
       }
     }
     for (Instant instant : timeStampToTotalCount.keySet()) {
-      if (timeStampToBadCount.get(instant).equals(serviceLevelObjectivesDetailCompositeSLORecordMap.size())) {
+      if (timeStampToTotalCount.get(instant).equals(serviceLevelObjectivesDetailCompositeSLORecordMap.size())) {
         CompositeSLORecord sloRecord = sloRecordMap.get(instant);
-        runningGoodCount += timeStampToGoodCount.get(instant);
-        runningBadCount += timeStampToBadCount.get(instant);
+        runningGoodCount += timeStampToGoodCount.getOrDefault(instant, 0.0);
+        runningBadCount += timeStampToBadCount.getOrDefault(instant, 0.0);
         if (Objects.nonNull(sloRecord)) {
           sloRecord.setRunningGoodCount(runningGoodCount);
           sloRecord.setRunningBadCount(runningBadCount);
@@ -296,7 +297,8 @@ public class CompositeSLORecordServiceImpl implements CompositeSLORecordService 
         .asList();
   }
 
-  private List<CompositeSLORecord> getSLORecords(String sloId, Instant startTimeStamp, Instant endTimeStamp) {
+  @VisibleForTesting
+  List<CompositeSLORecord> getSLORecords(String sloId, Instant startTimeStamp, Instant endTimeStamp) {
     return hPersistence.createQuery(CompositeSLORecord.class, excludeAuthorityCount)
         .filter(CompositeSLORecordKeys.sloId, sloId)
         .field(CompositeSLORecordKeys.timestamp)
