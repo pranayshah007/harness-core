@@ -14,7 +14,6 @@ import io.harness.gitsync.serializer.GitSyncSdkRegistrar;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.serializer.kryo.DelegateAgentBeansKryoRegister;
 import io.harness.serializer.kryo.DelegateServiceBeansKryoRegistrar;
-import io.harness.serializer.kryo.DelegateServiceContractsKryoRegistrar;
 import io.harness.serializer.kryo.NotificationBeansKryoRegistrar;
 import io.harness.serializer.kryo.PipelineServiceKryoRegistrar;
 import io.harness.serializer.kryo.WatcherBeansKryoRegister;
@@ -39,7 +38,6 @@ public class PipelineServiceModuleRegistrars {
           .addAll(AccessControlClientRegistrars.kryoRegistrars)
           .addAll(NGTriggerRegistrars.kryoRegistrars)
           .add(NotificationBeansKryoRegistrar.class)
-          .add(DelegateServiceContractsKryoRegistrar.class)
           .add(DelegateServiceBeansKryoRegistrar.class)
           .add(DelegateAgentBeansKryoRegister.class)
           .add(WatcherBeansKryoRegister.class)
