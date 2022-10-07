@@ -5,12 +5,14 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ngmigration.service.manifestfactory;
+package io.harness.ngmigration.service.manifest;
 
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.manifest.ManifestConfigType;
 import io.harness.cdng.manifest.yaml.ManifestConfig;
 import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
-import io.harness.cdng.manifest.yaml.kinds.HelmChartManifest;
+import io.harness.cdng.manifest.yaml.kinds.K8sManifest;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigType;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
 import io.harness.ngmigration.beans.ManifestProvidedEntitySpec;
@@ -26,22 +28,28 @@ import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.NGMigrationEntityType;
 
 import com.google.inject.Inject;
+import java.util.List;
 import java.util.Map;
 
-public class K8sManifestHelmSourceRepoStoreService implements NgManifestService {
+@OwnedBy(HarnessTeam.CDC)
+public class K8sManifestRemoteStoreService implements NgManifestService {
   @Inject ManifestMigrationService manifestMigrationService;
 
   @Override
   public ManifestConfigWrapper getManifestConfigWrapper(ApplicationManifest applicationManifest,
-      Map<CgEntityId, NGYamlFile> migratedEntities, ManifestProvidedEntitySpec entitySpec) {
+      Map<CgEntityId, NGYamlFile> migratedEntities, ManifestProvidedEntitySpec entitySpec,
+      List<NGYamlFile> yamlFileList) {
+    // TODO: get store from migrated connector entity
     GitFileConfig gitFileConfig = applicationManifest.getGitFileConfig();
     NgEntityDetail connector =
         migratedEntities
             .get(CgEntityId.builder().id(gitFileConfig.getConnectorId()).type(NGMigrationEntityType.CONNECTOR).build())
             .getNgEntityDetail();
 
-    HelmChartManifest helmChartManifest =
-        HelmChartManifest.builder()
+    K8sManifest k8sManifest =
+        K8sManifest
+            .builder()
+            // TODO: There needs to be a logic to build identifier of the manifest
             .identifier(MigratorUtility.generateIdentifier(applicationManifest.getUuid()))
             .skipResourceVersioning(
                 ParameterField.createValueField(applicationManifest.getSkipVersioningForAllK8sObjects()))
@@ -54,8 +62,8 @@ public class K8sManifestHelmSourceRepoStoreService implements NgManifestService 
     return ManifestConfigWrapper.builder()
         .manifest(ManifestConfig.builder()
                       .identifier(MigratorUtility.generateIdentifier(applicationManifest.getUuid()))
-                      .type(ManifestConfigType.HELM_CHART)
-                      .spec(helmChartManifest)
+                      .type(ManifestConfigType.K8_MANIFEST)
+                      .spec(k8sManifest)
                       .build())
         .build();
   }
