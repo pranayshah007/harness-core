@@ -64,6 +64,15 @@ public class PipelineExecutor {
 
   public PlanExecutionResponseDto runPipelineWithInputSetReferencesList(String accountId, String orgIdentifier,
       String projectIdentifier, String pipelineIdentifier, String moduleType, List<String> inputSetReferences,
+      String pipelineBranch, String pipelineRepoID, boolean notifyOnlyUser) {
+    String mergedRuntimeInputYaml = validateAndMergeHelper.getMergeInputSetFromPipelineTemplate(accountId,
+        orgIdentifier, projectIdentifier, pipelineIdentifier, inputSetReferences, pipelineBranch, pipelineRepoID, null);
+    return startPlanExecution(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, null, moduleType,
+        mergedRuntimeInputYaml, Collections.emptyList(), Collections.emptyMap(), false, notifyOnlyUser);
+  }
+
+  public PlanExecutionResponseDto runPipelineWithInputSetReferencesList(String accountId, String orgIdentifier,
+      String projectIdentifier, String pipelineIdentifier, String moduleType, List<String> inputSetReferences,
       String pipelineBranch, String pipelineRepoID) {
     String mergedRuntimeInputYaml = validateAndMergeHelper.getMergeInputSetFromPipelineTemplate(accountId,
         orgIdentifier, projectIdentifier, pipelineIdentifier, inputSetReferences, pipelineBranch, pipelineRepoID, null);
