@@ -3,8 +3,6 @@ package io.harness.migrations.all;
 import static io.harness.persistence.HPersistence.DEFAULT_STORE;
 import static io.harness.threading.Morpheus.sleep;
 
-import static org.apache.commons.lang3.ObjectUtils.isNotEmpty;
-
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.migrations.Migration;
@@ -70,7 +68,7 @@ public class CorrectingQuartzTriggerFrequency implements Migration {
         // Difference between previousFireTime and nextFireTime should match with interval timing (max allowed
         // difference is 10s) also Next fireTime should always be in the future, if any of these condition fails, we
         // reschedule the quartz job
-        if (isNotEmpty(previousFireTime) && isNotEmpty(nextFireTime)
+        if (previousFireTime != null && nextFireTime != null
             && (((nextFireTime.getTime() - previousFireTime.getTime()) - repeatInterval > THRESHOLD_DELAY)
                 || nextFireTime.before(Date.from(Instant.now())))) {
           SimpleTrigger trigger = null;
