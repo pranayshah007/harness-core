@@ -283,6 +283,10 @@ public class CVDataCollectionTaskServiceImpl implements CVDataCollectionTaskServ
         return CVNGPerpetualTaskState.TASK_PAUSED;
       case TASK_TO_REBALANCE:
         return CVNGPerpetualTaskState.TASK_TO_REBALANCE;
+      case TASK_NON_ASSIGNABLE:
+        return CVNGPerpetualTaskState.TASK_NON_ASSIGNABLE;
+      case TASK_INVALID:
+        return CVNGPerpetualTaskState.TASK_INVALID;
       case NO_DELEGATE_INSTALLED:
       case NO_DELEGATE_AVAILABLE:
       case NO_ELIGIBLE_DELEGATES:
