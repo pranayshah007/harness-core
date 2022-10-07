@@ -617,10 +617,11 @@ public class DataCollectionTaskServiceImplTest extends CvNextGenTestBase {
     dataCollectionTaskService.updateTaskStatus(result);
     List<ExecutionLogDTO> cvngLogs =
         cvngLogService.getExecutionLogDTOs(accountId, dataCollectionTask.getVerificationTaskId());
-    assertThat(cvngLogs).hasSize(3);
+    assertThat(cvngLogs).hasSize(4);
     assertThat(cvngLogs.stream().map(cvngLogDTO -> cvngLogDTO.getLog()).collect(Collectors.toList()))
         .containsExactlyInAnyOrder("Data collection task status: FAILED",
-            "Data collection task failed with exception: exception msg", "log message");
+            "Data collection task failed with exception: exception msg", "log message",
+            "Data collection task status: QUEUED");
   }
 
   @Test
