@@ -24,7 +24,6 @@ java_binary(
         "//:lombok",
         "//884-pms-commons:module",
         "//900-git-sync-sdk:module",
-        "//925-delegate-service-contracts:module",
         "//930-ng-core-clients:module",
         "//937-persistence-tracer:module",
         "//940-primary-version-manager:module",
