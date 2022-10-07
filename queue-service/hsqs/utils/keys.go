@@ -26,3 +26,7 @@ func GetTopicMetadataKey(topic string) string {
 func GetConsumerGroupKeyForGivenTopic(topic string) string {
 	return fmt.Sprintf("hsqs:%s:consumerGroup", topic)
 }
+
+func GetStoreAllBlockedSubTopicsFromTopicKey(topic string, subTopic string) string {
+	return fmt.Sprintf("hsqs:%s:%s:blocked", topic, subTopic)
+}
