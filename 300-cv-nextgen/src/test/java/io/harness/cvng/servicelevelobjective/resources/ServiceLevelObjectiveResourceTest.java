@@ -41,12 +41,12 @@ import com.google.inject.Injector;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
@@ -296,9 +296,7 @@ public class ServiceLevelObjectiveResourceTest extends CvNextGenTestBase {
     List<String> verificationTaskIds =
         verificationTaskService.getSLIVerificationTaskIds(builderFactory.getContext().getAccountId(), sliIds);
     List<CVNGLogDTO> cvngLogDTOs =
-        IntStream.range(0, 3)
-            .mapToObj(index -> builderFactory.executionLogDTOBuilder().traceableId(verificationTaskIds.get(0)).build())
-            .collect(Collectors.toList());
+        Arrays.asList(builderFactory.executionLogDTOBuilder().traceableId(verificationTaskIds.get(0)).build());
     cvngLogService.save(cvngLogDTOs);
 
     WebTarget webTarget = RESOURCES.client()
