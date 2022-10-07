@@ -15,7 +15,6 @@ import io.harness.steps.common.NGSectionStep;
 import io.harness.steps.common.NGSectionStepParameters;
 import io.harness.steps.fork.ForkStepParameters;
 import io.harness.steps.fork.NGForkStep;
-import io.harness.steps.section.chain.SectionChainStepParameters;
 
 import java.util.ArrayList;
 import java.util.List;
