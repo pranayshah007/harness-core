@@ -11,6 +11,7 @@ import static io.harness.rule.OwnerRule.UTSAV;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.offset;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doNothing;
@@ -105,6 +106,8 @@ public class K8sNodeRecommendationTaskletTest extends BaseTaskletTest {
 
     // #getTotalResourceUsageAndInsert
     when(k8sRecommendationDAO.maxResourceOfAllTimeBucketsForANodePool(any(), eq(nodePoolId))).thenReturn(resourceUsage);
+    when(k8sRecommendationDAO.aggregateTotalResourceRequirement(anyString(), eq(nodePoolId), any(), any()))
+        .thenReturn(resourceUsage);
     doNothing().when(k8sRecommendationDAO).insertNodePoolAggregated(any(), eq(nodePoolId), eq(resourceUsage));
 
     // #getRecommendation
@@ -157,6 +160,7 @@ public class K8sNodeRecommendationTaskletTest extends BaseTaskletTest {
     assertThat(tasklet.execute(null, chunkContext)).isNull();
 
     verify(k8sRecommendationDAO, times(0)).maxResourceOfAllTimeBucketsForANodePool(any(), any());
+    verify(k8sRecommendationDAO, times(0)).aggregateTotalResourceRequirement(anyString(), any(), any(), any());
     verify(k8sRecommendationDAO, times(0)).insertNodePoolAggregated(any(), any(), any());
     // first time it's invoked at K8sNodeRecommendationTaskletTest#setUp, due to deep stub probably, so effectively 0
     // execution.
@@ -173,6 +177,8 @@ public class K8sNodeRecommendationTaskletTest extends BaseTaskletTest {
         TotalResourceUsage.builder().sumcpu(16D).summemory(64D).maxcpu(20D).maxmemory(4.1D).build();
 
     when(k8sRecommendationDAO.maxResourceOfAllTimeBucketsForANodePool(any(), any())).thenReturn(totalResourceUsage);
+    when(k8sRecommendationDAO.aggregateTotalResourceRequirement(anyString(), any(), any(), any()))
+        .thenReturn(totalResourceUsage);
 
     // job was successful but the recommendtion was not generated and skipped
     assertThat(tasklet.execute(null, chunkContext)).isNull();
@@ -217,6 +223,8 @@ public class K8sNodeRecommendationTaskletTest extends BaseTaskletTest {
         TotalResourceUsage.builder().sumcpu(0D).summemory(64D).maxcpu(20D).maxmemory(4.1D).build();
 
     when(k8sRecommendationDAO.maxResourceOfAllTimeBucketsForANodePool(any(), any())).thenReturn(totalResourceUsage);
+    when(k8sRecommendationDAO.aggregateTotalResourceRequirement(anyString(), any(), any(), any()))
+        .thenReturn(totalResourceUsage);
 
     // job was successful but the recommendtion was not generated and skipped
     assertThat(tasklet.execute(null, chunkContext)).isNull();
@@ -436,6 +444,8 @@ public class K8sNodeRecommendationTaskletTest extends BaseTaskletTest {
 
   private RecommendClusterRequest captureRequest(TotalResourceUsage totalResourceUsage) throws Exception {
     when(k8sRecommendationDAO.maxResourceOfAllTimeBucketsForANodePool(any(), any())).thenReturn(totalResourceUsage);
+    when(k8sRecommendationDAO.aggregateTotalResourceRequirement(anyString(), any(), any(), any()))
+        .thenReturn(totalResourceUsage);
 
     ArgumentCaptor<RecommendClusterRequest> captor = ArgumentCaptor.forClass(RecommendClusterRequest.class);
 
@@ -445,6 +455,7 @@ public class K8sNodeRecommendationTaskletTest extends BaseTaskletTest {
     verify(banzaiRecommenderClient, times(2)).getRecommendation(any(), any(), any(), captor.capture());
 
     verify(k8sRecommendationDAO, times(1)).insertNodeRecommendationResponse(any(), any(), any(), any(), any(), any());
+    verify(k8sRecommendationDAO, times(1)).aggregateTotalResourceRequirement(anyString(), any(), any(), any());
 
     return captor.getAllValues().get(1);
   }
