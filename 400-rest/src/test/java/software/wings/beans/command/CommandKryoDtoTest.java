@@ -16,7 +16,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.rule.Owner;
 import io.harness.serializer.KryoRegistrar;
-import io.harness.serializer.KryoSerializerWrapper;
+import io.harness.serializer.KryoSerializer;
 
 import software.wings.beans.Variable;
 import software.wings.beans.VariableType;
@@ -33,10 +33,10 @@ import org.junit.experimental.categories.Category;
 public class CommandKryoDtoTest extends CategoryTest {
   private static final int REGISTRATION_ID = 421;
 
-  private static final KryoSerializerWrapper originalSerializer =
-      new KryoSerializerWrapper(new HashSet<>(Arrays.asList(OriginalRegistrar.class)), true);
-  private static final KryoSerializerWrapper dtoSerializer =
-      new KryoSerializerWrapper(new HashSet<>(Arrays.asList(DtoRegistrar.class)), true);
+  private static final KryoSerializer originalSerializer =
+      new KryoSerializer(new HashSet<>(Arrays.asList(OriginalRegistrar.class)), true);
+  private static final KryoSerializer dtoSerializer =
+      new KryoSerializer(new HashSet<>(Arrays.asList(DtoRegistrar.class)), true);
 
   @Test
   @Owner(developers = JOHANNES)

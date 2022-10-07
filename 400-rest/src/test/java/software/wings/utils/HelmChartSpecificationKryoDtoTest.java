@@ -15,7 +15,7 @@ import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
 import io.harness.rule.Owner;
 import io.harness.serializer.KryoRegistrar;
-import io.harness.serializer.KryoSerializerWrapper;
+import io.harness.serializer.KryoSerializer;
 
 import software.wings.beans.container.HelmChartSpecification;
 
@@ -28,10 +28,10 @@ import org.junit.experimental.categories.Category;
 public class HelmChartSpecificationKryoDtoTest extends CategoryTest {
   private static final int REGISTRATION_ID = 421;
 
-  private static final KryoSerializerWrapper originalSerializer =
-      new KryoSerializerWrapper(new HashSet<>(Arrays.asList(OriginalRegistrar.class)), true);
-  private static final KryoSerializerWrapper dtoSerializer =
-      new KryoSerializerWrapper(new HashSet<>(Arrays.asList(DtoRegistrar.class)), true);
+  private static final KryoSerializer originalSerializer =
+      new KryoSerializer(new HashSet<>(Arrays.asList(OriginalRegistrar.class)), true);
+  private static final KryoSerializer dtoSerializer =
+      new KryoSerializer(new HashSet<>(Arrays.asList(DtoRegistrar.class)), true);
 
   @Test
   @Owner(developers = JOHANNES)

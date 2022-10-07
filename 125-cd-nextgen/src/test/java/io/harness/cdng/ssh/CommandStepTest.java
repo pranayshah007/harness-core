@@ -59,6 +59,7 @@ import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
+import io.harness.serializer.KryoSerializer;
 import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.serializer.kryo.ApiServiceBeansKryoRegister;
 import io.harness.serializer.kryo.DelegateTasksBeansKryoRegister;
@@ -125,7 +126,7 @@ public class CommandStepTest extends CategoryTest {
           .commandUnits(Arrays.asList(NgInitCommandUnit.builder().build(),
               ScriptCommandUnit.builder().name("test").build(), NgCleanupCommandUnit.builder().build()))
           .build();
-  KryoSerializerWrapper serializer = new KryoSerializerWrapper(
+  KryoSerializer serializer = new KryoSerializer(
       new HashSet<>(Arrays.asList(DelegateTasksBeansKryoRegister.class, ApiServiceBeansKryoRegister.class)));
   private byte[] serializedParams = serializer.asDeflatedBytes(sshCommandTaskParameters);
 
