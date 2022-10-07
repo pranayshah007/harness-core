@@ -14,8 +14,12 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
+import io.harness.cdng.artifact.bean.ArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.AmazonS3ArtifactConfig;
 import io.harness.cdng.buckets.resources.s3.S3ResourceService;
 import io.harness.cdng.manifest.yaml.S3StoreConfig;
+import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
+import io.harness.ng.core.artifacts.resources.util.ArtifactResourceUtils;
 import io.harness.ng.core.buckets.resources.BucketsResourceUtils;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
@@ -33,14 +37,17 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import javax.validation.constraints.NotNull;
+import javax.ws.rs.BeanParam;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 
 @Api("buckets")
 @Path("/buckets/s3")
@@ -57,6 +64,7 @@ import lombok.extern.slf4j.Slf4j;
 public class S3BucketResource {
   private final S3ResourceService s3ResourceService;
   private final BucketsResourceUtils bucketsResourceUtils;
+  private final ArtifactResourceUtils artifactResourceUtils;
 
   @GET
   @Path("getBuckets")
@@ -97,6 +105,63 @@ public class S3BucketResource {
 
     Map<String, String> s3Buckets =
         s3ResourceService.getBuckets(connectorRef, region, orgIdentifier, projectIdentifier);
+
+    List<String> bucketList = new ArrayList<>(s3Buckets.values());
+
+    List<BucketResponseDTO> bucketResponse = new ArrayList<>();
+
+    for (String s : bucketList) {
+      BucketResponseDTO bucket = BucketResponseDTO.builder().bucketName(s).build();
+
+      bucketResponse.add(bucket);
+    }
+
+    return ResponseDTO.newResponse(bucketResponse);
+  }
+
+  @POST
+  @Path("v2/getBuckets")
+  @ApiOperation(value = "Gets s3 buckets", nickname = "listBucketsWithServiceV2")
+  public ResponseDTO<List<BucketResponseDTO>> getBucketsV2WithServiceV2(@QueryParam("region") String region,
+      @QueryParam("connectorRef") String awsConnectorIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
+      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.PIPELINE_KEY) String pipelineIdentifier,
+      @NotNull @QueryParam("fqnPath") String fqnPath, @NotNull String runtimeInputYaml,
+      @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceRef,
+      @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
+    // In case of ServiceV2 Calls
+    if (StringUtils.isNotBlank(serviceRef)) {
+      final ArtifactConfig artifactSpecFromService = artifactResourceUtils.locateArtifactInService(
+          accountId, orgIdentifier, projectIdentifier, serviceRef, fqnPath);
+
+      AmazonS3ArtifactConfig amazonS3ArtifactConfig = (AmazonS3ArtifactConfig) artifactSpecFromService;
+
+      if (StringUtils.isBlank(region)) {
+        region = (String) amazonS3ArtifactConfig.getRegion().fetchFinalValue();
+      }
+
+      if (StringUtils.isBlank(awsConnectorIdentifier)) {
+        awsConnectorIdentifier = (String) amazonS3ArtifactConfig.getConnectorRef().fetchFinalValue();
+      }
+    }
+
+    // Getting the resolved region in case of expressions
+    String resolvedRegion = artifactResourceUtils.getResolvedImagePath(accountId, orgIdentifier, projectIdentifier,
+        pipelineIdentifier, runtimeInputYaml, region, fqnPath, gitEntityBasicInfo, serviceRef);
+
+    // Getting the resolved awsConnectorIdentifier in case of expressions
+    String resolvedAwsConnectorIdentifier =
+        artifactResourceUtils.getResolvedImagePath(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+            runtimeInputYaml, awsConnectorIdentifier, fqnPath, gitEntityBasicInfo, serviceRef);
+
+    // Common logic in case of ServiceV1 and ServiceV2
+    IdentifierRef connectorRef = IdentifierRefHelper.getIdentifierRef(
+        resolvedAwsConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
+
+    Map<String, String> s3Buckets =
+        s3ResourceService.getBuckets(connectorRef, resolvedRegion, orgIdentifier, projectIdentifier);
 
     List<String> bucketList = new ArrayList<>(s3Buckets.values());
 
