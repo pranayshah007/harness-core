@@ -357,7 +357,6 @@ public enum FeatureName {
   NEW_LEFT_NAVBAR_SETTINGS("Used for new left navbar configuration", HarnessTeam.PL),
   SAVE_ARTIFACT_TO_DB("Saves artifact to db and proceed in artifact collection step if not found", HarnessTeam.CDC),
   NG_INLINE_MANIFEST,
-  NG_CUSTOM_REMOTE_MANIFEST,
   CI_DISABLE_RESOURCE_OPTIMIZATION(
       "Used for disabling the resource optimization, AXA had asked this flag", HarnessTeam.CI),
   ENABLE_EXPERIMENTAL_STEP_FAILURE_STRATEGIES(
