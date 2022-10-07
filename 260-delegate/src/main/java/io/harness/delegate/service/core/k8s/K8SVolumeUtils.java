@@ -17,8 +17,8 @@ import lombok.experimental.UtilityClass;
 
 @UtilityClass
 public class K8SVolumeUtils {
-  public static V1Volume fromConfigMap(final V1ConfigMap configMap) {
-    return new V1Volume().name("config-vol").configMap(new V1ConfigMapVolumeSource().name(configMap.getMetadata().getName()));
+  public static V1Volume fromConfigMap(final V1ConfigMap configMap, final String name) {
+    return new V1Volume().name(name).configMap(new V1ConfigMapVolumeSource().name(configMap.getMetadata().getName()));
   }
 
   public static V1Volume fromSecret(final V1Secret secret) {

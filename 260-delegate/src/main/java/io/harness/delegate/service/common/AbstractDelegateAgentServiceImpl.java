@@ -113,6 +113,7 @@ import retrofit2.Response;
 
 @Slf4j
 public abstract class AbstractDelegateAgentServiceImpl implements DelegateAgentService {
+  protected static final String HOST_NAME = getLocalHostName();
   private static final String DELEGATE_INSTANCE_ID = generateUuid();
   private static final int POLL_INTERVAL_SECONDS = 3;
   // Marker string to indicate task events.
@@ -120,9 +121,8 @@ public abstract class AbstractDelegateAgentServiceImpl implements DelegateAgentS
   private static final String ABORT_EVENT_MARKER = "{\"eventType\":\"DelegateTaskAbortEvent\"";
   private static final String HEARTBEAT_RESPONSE = "{\"eventType\":\"DelegateHeartbeatResponseStreaming\"";
 
-  private static final String HOST_NAME = getLocalHostName();
   private static final String DELEGATE_TYPE = System.getenv("DELEGATE_TYPE");
-  protected static final String DELEGATE_NAME =
+  public static final String DELEGATE_NAME =
       isNotBlank(System.getenv("DELEGATE_NAME")) ? System.getenv("DELEGATE_NAME") : "";
   private static final String DELEGATE_GROUP_NAME = System.getenv("DELEGATE_GROUP_NAME");
   private static final boolean DELEGATE_NG =

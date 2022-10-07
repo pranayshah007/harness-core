@@ -7,6 +7,7 @@
 
 package io.harness.delegate.service.core.k8s;
 
+import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Volume;
@@ -40,6 +41,11 @@ public class K8SJob extends V1Job {
   public K8SJob addVolume(final V1Volume volume, final String mountPath) {
     final var volumeMount = K8SVolumeUtils.createVolumeMount(volume, mountPath);
     getSpec().getTemplate().getSpec().addVolumesItem(volume).getContainers().forEach(container -> container.addVolumeMountsItem(volumeMount));
+    return this;
+  }
+
+  public K8SJob addEnvVar(final String key, final String value) {
+    getSpec().getTemplate().getSpec().getContainers().forEach(container -> container.addEnvItem(new V1EnvVar().name(key).value(value)));
     return this;
   }
 }

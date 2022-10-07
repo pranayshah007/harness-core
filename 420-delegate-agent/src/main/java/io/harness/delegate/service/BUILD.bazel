@@ -6,7 +6,8 @@ java_library(
     srcs = glob(["*.java"]),
     visibility = ["//visibility:public"],
     deps = [
-        "//920-delegate-agent-beans/src/main/proto:920_delegate_agent_beans_java_proto"
+        "//920-delegate-agent-beans/src/main/proto:920_delegate_agent_beans_java_proto",
+        "//950-delegate-tasks-beans:module",
     ],
 )
 

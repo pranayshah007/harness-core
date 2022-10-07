@@ -14,7 +14,7 @@ logging:
 
 # Delegate Config
 accountId: px7xd_BFRCi-pfWPYXVjvw
-delegateToken: a8f795667549c2296fd8c719084d4f8d
+delegateToken: 55ae5c33a4bf792360273b12c581bada
 managerUrl: https://qa.harness.io/api/
 verificationServiceUrl: https://qa.harness.io/verification/
 cvNextGenUrl: https://qa.harness.io/cv/api/
