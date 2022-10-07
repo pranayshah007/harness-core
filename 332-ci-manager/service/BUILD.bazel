@@ -8,6 +8,7 @@ shared_dependencies = [
     "//440-connector-nextgen:module",
     "//878-ng-common-utilities:module",
     "//890-sm-core:module",
+    "//925-delegate-service-contracts:module",
     "//930-delegate-tasks:module",
     "//930-ng-core-clients:module",
     "//933-ci-commons:module",
