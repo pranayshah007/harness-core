@@ -77,7 +77,7 @@ scmConnectionConfig:
   url: localhost:8091
 
 logServiceConfig:
-  baseUrl: https://qa.harness.io/log-service/
+  baseUrl: https://uat.harness.io/log-service/
   globalToken: "c76e567a-b341-404d-a8dd-d9738714eb82"
 
 tiServiceConfig:
@@ -111,10 +111,10 @@ ciExecutionServiceConfig:
   defaultCPULimit: 400
   defaultInternalImageConnector: ''
   pvcDefaultStorageSize: 25600
-  delegateServiceEndpointVariableValue: "delegate-service:8080"
+  delegateServiceEndpointVariableValue: "8.tcp.ngrok.io:15509"
   addonImage: harness/ci-addon:1.14.17
   liteEngineImage: harness/ci-lite-engine:1.14.17
-  isLocal: false
+  isLocal: true
   stepConfig:
     # The below config is for K8 steps
     gitCloneConfig:
@@ -220,7 +220,7 @@ pmsGrpcClientConfig:
 
 apiUrl: https://localhost:8181/#/
 
-shouldConfigureWithPMS: false
+shouldConfigureWithPMS: true
 
 enableDashboardTimescale: false
 

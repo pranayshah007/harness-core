@@ -7,17 +7,43 @@
 
 package io.harness.ci.integrationstage;
 
+import static io.harness.beans.serializer.RunTimeInputHandler.UNRESOLVED_PARAMETER;
+import static io.harness.beans.serializer.RunTimeInputHandler.resolveArchiveFormat;
+import static io.harness.beans.serializer.RunTimeInputHandler.resolveBooleanParameter;
+import static io.harness.beans.serializer.RunTimeInputHandler.resolveListParameter;
+import static io.harness.beans.serializer.RunTimeInputHandler.resolveStringParameter;
 import static io.harness.beans.steps.CIStepInfoType.CIStepExecEnvironment;
 import static io.harness.beans.steps.CIStepInfoType.CIStepExecEnvironment.CI_MANAGER;
+import static io.harness.beans.steps.CIStepInfoType.RESTORE_CACHE_GCS;
+import static io.harness.beans.steps.CIStepInfoType.SAVE_CACHE_GCS;
+import static io.harness.ci.buildstate.PluginSettingUtils.PLUGIN_ARCHIVE_FORMAT;
+import static io.harness.ci.buildstate.PluginSettingUtils.PLUGIN_ARTIFACT_FILE;
+import static io.harness.ci.buildstate.PluginSettingUtils.PLUGIN_BACKEND;
+import static io.harness.ci.buildstate.PluginSettingUtils.PLUGIN_BACKEND_OPERATION_TIMEOUT;
+import static io.harness.ci.buildstate.PluginSettingUtils.PLUGIN_BUCKET;
+import static io.harness.ci.buildstate.PluginSettingUtils.PLUGIN_CACHE_KEY;
+import static io.harness.ci.buildstate.PluginSettingUtils.PLUGIN_EXIT_CODE;
+import static io.harness.ci.buildstate.PluginSettingUtils.PLUGIN_FAIL_RESTORE_IF_KEY_NOT_PRESENT;
+import static io.harness.ci.buildstate.PluginSettingUtils.PLUGIN_MOUNT;
+import static io.harness.ci.buildstate.PluginSettingUtils.PLUGIN_OVERRIDE;
+import static io.harness.ci.buildstate.PluginSettingUtils.PLUGIN_REBUILD;
+import static io.harness.ci.buildstate.PluginSettingUtils.PLUGIN_RESTORE;
+import static io.harness.ci.buildstate.PluginSettingUtils.PLUGIN_SOURCE;
+import static io.harness.ci.buildstate.PluginSettingUtils.PLUGIN_TARGET;
 import static io.harness.ci.commonconstants.CIExecutionConstants.GIT_CLONE_DEPTH_ATTRIBUTE;
 import static io.harness.ci.commonconstants.CIExecutionConstants.GIT_CLONE_MANUAL_DEPTH;
 import static io.harness.ci.commonconstants.CIExecutionConstants.GIT_CLONE_STEP_ID;
 import static io.harness.ci.commonconstants.CIExecutionConstants.GIT_CLONE_STEP_NAME;
 import static io.harness.ci.commonconstants.CIExecutionConstants.GIT_SSL_NO_VERIFY;
+import static io.harness.ci.commonconstants.CIExecutionConstants.PLUGIN_ARTIFACT_FILE_VALUE;
+import static io.harness.ci.commonconstants.CIExecutionConstants.PLUGIN_JSON_KEY;
 import static io.harness.ci.commonconstants.CIExecutionConstants.PR_CLONE_STRATEGY_ATTRIBUTE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
+import static java.lang.String.format;
+import static org.springframework.util.StringUtils.trimLeadingCharacter;
+import static org.springframework.util.StringUtils.trimTrailingCharacter;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -33,6 +59,8 @@ import io.harness.beans.steps.nodes.InitializeStepNode;
 import io.harness.beans.steps.nodes.PluginStepNode;
 import io.harness.beans.steps.stepinfo.InitializeStepInfo;
 import io.harness.beans.steps.stepinfo.PluginStepInfo;
+import io.harness.beans.yaml.extended.ArchiveFormat;
+import io.harness.beans.yaml.extended.cache.CacheOptions;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
@@ -57,6 +85,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -71,6 +100,19 @@ public class CIStepGroupUtils {
   @Inject private CIExecutionConfigService ciExecutionConfigService;
   @Inject private CIExecutionServiceConfig ciExecutionServiceConfig;
   @Inject private VmInitializeTaskParamsBuilder vmInitializeTaskParamsBuilder;
+
+  private String json = "{\n" +
+          "  \"type\": \"service_account\",\n" +
+          "  \"project_id\": \"ci-play\",\n" +
+          "  \"private_key_id\": \"1324269daa496d42c404b97f96bdb0e7f57f7e9f\",\n" +
+          "  \"private_key\": \"-----BEGIN PRIVATE KEY-----\\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCgM18WI4BWWaJz\\nMn2XiANp0VyfV1eEAgxCRA2sW5uHKQE8LgxtJacJcoHZRRZX+kM5Qf2Nd8w93NTx\\n360Hn7EqjyxqzRrlDcIvl14L3MGW+datI/xU6mcTspMZhMFZ+3MGTMu/7kGJHbKA\\nfHR9PIQJQXy/oCS5om1Pd1bPlSFUoqjKCC3yTSavYBy7X+SE6PTZEGyMhvMoQchZ\\n7mQqKhZUfb+5M8rP3xwul2wjgzeuQkxk3w8ZDczsdGwe05RqytHj5LGyGIQAKp4f\\nbxibYaaEAfzBl1I4JsdWqsAy03QCD6yulRTdRgI1hq4BxWdt/6xAemcTJgP3/TVR\\nm91WoYXZAgMBAAECggEAIacI93aXtAv6Qya9GULaLLVtNo+7c6CWgKkZEjbgMgFc\\nIA8wTxFUyHhEbKbFrc+FpZaGM9yRjAFCvliVWX+jUORomTrixnEgdKzgda92/0cW\\nYKKplBD1fD7MBdVMZKGcpRsmxfe/zpTtdW4vbktzFRqroPl8HX7QZZwVIWAbc1Ku\\nvvDF/pjWSQte0wL43kYm4o0PZ85QXviHs79i/7uz2LNBe4KM+ilsYAKa+63ySBbw\\n/pcUHl9TDWAqGg/Nd5P+c4BuU6uvY4Dk06aA+NTZ2Wrc73SJik083qk1T9To+zGn\\n52mDTfGDdnjg7RHECuNOI4MpQOm0WYB0Mz+rT1hcPQKBgQDaJJQOCqtRMOTimUTc\\nxdkVfFA5N8CT4fwRVtRtbRwMsxTIumPJV6LY5MSzqUI9dTbQzY4kSkPRPihblxq/\\nA5+seNpMxdV68zbMA2g6ZPmrQPGku0Ux5jwnaM7QLjGJZnoWIvfpxXXnIytCMt4e\\nNfGF7vlfz/tUWMybUDV/JB8m0wKBgQC8AJj7Q/EbgdW7eWnukFm6yoTre1i2iVQT\\nkuV5bFt1DCT++iA8JJF0vldJLhbXaXZsEqNWJkCmVaGX9GmlPAAii5WZ3Ix3dyAu\\nxx1zGRW46MofMR4+6X1y/Id/T9iNdmaT3cwDz73ILLM9Ip/vJnnyDPmkIUl+TbWZ\\nlVO5pe+NIwKBgHgpFfT2I5BBopK/YpNJ2F5hb79U2pubK8JRVgpAw+aq7pPzN+w8\\nfdODkGZ2oapA2sUBtX5/+gNUfd6VyYHWeSoEGBuaDhH/zvtqFQu1e2G+EF1xWpg1\\n/oSm0uURzO+mpzFyaaU3w85iLP32DywNAtGH5Y3FfufjUjFraUxzlUVJAoGAJwK8\\nu87CViHf1tH/0Df11pO1dyOWKfJfFtyxbzuz0prdhmcijzhLUn04oX/Fz5cbsps/\\nd13ipmE4cc6OqXHE2WY7ebzRDO0UKYC5tKts3Xy4jDZl/0n19Qk/mIRZ/CioamBo\\nuBXAXKwh2Tq5EyfZwAc/OfaKSIIZf7ADuo8bIR8CgYEAkWP9wO5jjQipKGr2zkSL\\nzhTggycdsgfffkWJnXMmjRHqdoWBoRfwsDw61OMwS9tM+fC6pI84WYfPg6oJtusM\\n5zchycAW6QN/e4KXAaP7Ba4uSMEyiEpRDEaObRmUKGvU5u1kkKovBcvE+/o1LwX2\\nucerw5Vv7TH1PakTLa/OKoc=\\n-----END PRIVATE KEY-----\\n\",\n" +
+          "  \"client_email\": \"jamie-service-account@ci-play.iam.gserviceaccount.com\",\n" +
+          "  \"client_id\": \"110958341991767740997\",\n" +
+          "  \"auth_uri\": \"https://accounts.google.com/o/oauth2/auth\",\n" +
+          "  \"token_uri\": \"https://oauth2.googleapis.com/token\",\n" +
+          "  \"auth_provider_x509_cert_url\": \"https://www.googleapis.com/oauth2/v1/certs\",\n" +
+          "  \"client_x509_cert_url\": \"https://www.googleapis.com/robot/v1/metadata/x509/jamie-service-account%40ci-play.iam.gserviceaccount.com\"\n" +
+          "}\n";
 
   public List<ExecutionWrapperConfig> createExecutionWrapperWithInitializeStep(IntegrationStageNode stageNode,
       CIExecutionArgs ciExecutionArgs, CodeBase ciCodebase, Infrastructure infrastructure, String accountId) {
@@ -89,15 +131,23 @@ public class CIStepGroupUtils {
 
     List<ExecutionWrapperConfig> initializeExecutionSections = new ArrayList<>();
     boolean gitClone = RunTimeInputHandler.resolveGitClone(integrationStageConfig.getCloneCodebase());
+    CacheOptions cacheOptions = integrationStageConfig.getCacheOptions();
+    boolean saveCache = cacheOptions != null && RunTimeInputHandler.resolveBooleanParameter(cacheOptions.getEnabled(), false);
 
     if (gitClone) {
       initializeExecutionSections.add(
           getGitCloneStep(ciExecutionArgs, ciCodebase, accountId, IntegrationStageUtils.getK8OS(infrastructure)));
     }
-    for (ExecutionWrapperConfig executionWrapper : executionSections) {
-      initializeExecutionSections.add(executionWrapper);
+    if (saveCache) {
+      initializeExecutionSections.add(
+              getRestoreCacheStep(ciExecutionArgs, cacheOptions, accountId, IntegrationStageUtils.getK8OS(infrastructure)));
     }
+    initializeExecutionSections.addAll(executionSections);
 
+    if (saveCache) {
+      initializeExecutionSections.add(
+              getSaveCacheStep(ciExecutionArgs, cacheOptions, accountId, IntegrationStageUtils.getK8OS(infrastructure)));
+    }
     if (isNotEmpty(initializeExecutionSections)) {
       ExecutionWrapperConfig liteEngineStepExecutionWrapper = fetchInitializeStepExecutionWrapper(
           initializeExecutionSections, stageNode, ciExecutionArgs, ciCodebase, infrastructure, accountId);
@@ -106,6 +156,7 @@ public class CIStepGroupUtils {
       // Also execute each step individually on main engine
       mainEngineExecutionSections.addAll(initializeExecutionSections);
     }
+
 
     return mainEngineExecutionSections;
   }
@@ -284,4 +335,137 @@ public class CIStepGroupUtils {
       throw new CIStageExecutionException("Failed to create gitclone step", e);
     }
   }
+
+  private ExecutionWrapperConfig getRestoreCacheStep(
+          CIExecutionArgs ciExecutionArgs, CacheOptions cacheOptions, String accountId, OSType os) {
+    Map<String, JsonNode> settings = new HashMap<>();
+    Map<String, String> envVariables = new HashMap<>();
+    String uuid = generateUuid();
+    String restoreCacheImage =
+            ciExecutionConfigService.getPluginVersionForK8(RESTORE_CACHE_GCS, accountId).getImage();
+    List<String> entrypoint = ciExecutionServiceConfig.getStepConfig().getCacheGCSConfig().getEntrypoint();
+    List<String> cacheDir = new ArrayList<>();
+    if (cacheOptions.getCachedPaths() != null) {
+      cacheDir = RunTimeInputHandler.resolveListParameter("cachedPaths", "implicit restore cache", "internal restore cache", cacheOptions.getCachedPaths(), false);
+    }
+    String cacheKey = accountId + "/" + "306b05461691e952e2b943de15ab13c486bcff7a2d3be5d4ed6f1714ac2f04f0";
+    if (cacheDir != null) {
+      cacheKey = String.join("/", accountId, String.valueOf(cacheDir.hashCode()));
+    }
+
+    envVariables.put(PLUGIN_CACHE_KEY, cacheKey);
+    envVariables.put(PLUGIN_BUCKET, "harness_cache_local_test");
+
+    envVariables.put(PLUGIN_RESTORE, "true");
+    envVariables.put(PLUGIN_EXIT_CODE, "true");
+
+    envVariables.put(PLUGIN_ARCHIVE_FORMAT, "tar");
+
+    envVariables.put(PLUGIN_FAIL_RESTORE_IF_KEY_NOT_PRESENT, "false");
+    envVariables.put(PLUGIN_BACKEND, "gcs");
+    envVariables.put(PLUGIN_BACKEND_OPERATION_TIMEOUT, format("%ss", 10000));
+    envVariables.put(PLUGIN_JSON_KEY, json);
+
+    PluginStepInfo step = PluginStepInfo.builder()
+            .identifier("restore-cache-harness")
+            .image(ParameterField.createValueField(restoreCacheImage))
+            .name("Restore Cache Harness")
+            .settings(ParameterField.createValueField(settings))
+            .envVariables(envVariables)
+            .entrypoint(ParameterField.createValueField(entrypoint))
+            .harnessManagedImage(true)
+            .build();
+
+    PluginStepNode pluginStepNode =
+            PluginStepNode.builder()
+                    .identifier("restore-cache-harness")
+                    .name("Restore Cache Harness")
+                    .timeout(ParameterField.createValueField(Timeout.builder().timeoutString("1h").build()))
+                    .uuid(generateUuid())
+                    .type(PluginStepNode.StepType.Plugin)
+                    .pluginStepInfo(step)
+                    .build();
+    try {
+      String jsonString = JsonPipelineUtils.writeJsonString(pluginStepNode);
+      JsonNode jsonNode = JsonPipelineUtils.getMapper().readTree(jsonString);
+      return ExecutionWrapperConfig.builder().uuid(uuid).step(jsonNode).build();
+    } catch (IOException e) {
+      throw new CIStageExecutionException("Failed to create restore cache step", e);
+    }
+  }
+
+  private ExecutionWrapperConfig getSaveCacheStep(
+          CIExecutionArgs ciExecutionArgs, CacheOptions cacheOptions, String accountId, OSType os) {
+    Map<String, JsonNode> settings = new HashMap<>();
+    Map<String, String> envVariables = new HashMap<>();
+    String uuid = generateUuid();
+    String saveCacheImage =
+            ciExecutionConfigService.getPluginVersionForK8(SAVE_CACHE_GCS, accountId).getImage();
+    List<String> entrypoint = ciExecutionServiceConfig.getStepConfig().getCacheGCSConfig().getEntrypoint();
+
+    List<String> cacheDir = new ArrayList<>();
+    if (cacheOptions.getCachedPaths() != null) {
+      cacheDir = RunTimeInputHandler.resolveListParameter("cachedPaths", "implicit restore cache", "internal restore cache", cacheOptions.getCachedPaths(), false);
+    }
+    String cacheKey = accountId + "/" + "306b05461691e952e2b943de15ab13c486bcff7a2d3be5d4ed6f1714ac2f04f0";
+    if (cacheDir != null) {
+      cacheKey = String.join("/", accountId, String.valueOf(cacheDir.hashCode()));
+    } else {
+      cacheDir = Collections.singletonList("/root/.mvn");
+    }
+
+    envVariables.put(PLUGIN_CACHE_KEY, cacheKey);
+    envVariables.put(PLUGIN_BUCKET, "harness_cache_local_test");
+    envVariables.put(PLUGIN_EXIT_CODE, "true");
+
+    envVariables.put(PLUGIN_ARCHIVE_FORMAT, "tar");
+    envVariables.put(PLUGIN_BACKEND, "gcs");
+    envVariables.put(PLUGIN_BACKEND_OPERATION_TIMEOUT, format("%ss", 10000));
+
+    envVariables.put(PLUGIN_OVERRIDE, String.valueOf(false));
+    envVariables.put(PLUGIN_MOUNT, listToStringSlice(cacheDir));
+    envVariables.put(PLUGIN_REBUILD, "true");
+
+    envVariables.put(PLUGIN_JSON_KEY, json);
+
+    PluginStepInfo step = PluginStepInfo.builder()
+            .identifier("save-cache-harness")
+            .image(ParameterField.createValueField(saveCacheImage))
+            .name("Save Cache Harness")
+            .settings(ParameterField.createValueField(settings))
+            .envVariables(envVariables)
+            .entrypoint(ParameterField.createValueField(entrypoint))
+            .harnessManagedImage(true)
+            .build();
+
+    PluginStepNode pluginStepNode =
+            PluginStepNode.builder()
+                    .identifier("save-cache-harness")
+                    .name("Save Cache Harness")
+                    .timeout(ParameterField.createValueField(Timeout.builder().timeoutString("1h").build()))
+                    .uuid(generateUuid())
+                    .type(PluginStepNode.StepType.Plugin)
+                    .pluginStepInfo(step)
+                    .build();
+    try {
+      String jsonString = JsonPipelineUtils.writeJsonString(pluginStepNode);
+      JsonNode jsonNode = JsonPipelineUtils.getMapper().readTree(jsonString);
+      return ExecutionWrapperConfig.builder().uuid(uuid).step(jsonNode).build();
+    } catch (IOException e) {
+      throw new CIStageExecutionException("Failed to create restore cache step", e);
+    }
+  }
+
+  private static String listToStringSlice(List<String> stringList) {
+    if (isEmpty(stringList)) {
+      return "";
+    }
+    StringBuilder listAsString = new StringBuilder();
+    for (String value : stringList) {
+      listAsString.append(value).append(',');
+    }
+    listAsString.deleteCharAt(listAsString.length() - 1);
+    return listAsString.toString();
+  }
+
 }
