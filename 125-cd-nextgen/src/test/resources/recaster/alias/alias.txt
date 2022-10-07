@@ -441,6 +441,7 @@ io.harness.cdng.provision.azure.beans.AzureCreateBPPassThroughData
 io.harness.cdng.provision.azure.AzureARMRollbackStepInfo
 io.harness.cdng.provision.azure.AzureARMRollback
 io.harness.cdng.provision.azure.AzureARMRollbackStepParameters
+io.harness.cdng.service.beans.ElasticgroupServiceSpec
 io.harness.cdng.manifest.yaml.EcsTaskDefinitionManifestOutcome
 io.harness.cdng.manifest.yaml.kinds.EcsScalableTargetDefinitionManifest
 io.harness.cdng.manifest.yaml.EcsScalingPolicyDefinitionManifestOutcome
