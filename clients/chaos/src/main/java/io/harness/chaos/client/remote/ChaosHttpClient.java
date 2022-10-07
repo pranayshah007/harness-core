@@ -15,7 +15,8 @@ import retrofit2.http.Body;
 import retrofit2.http.POST;
 
 public interface ChaosHttpClient {
-  String CHAOS_ENDPOINT = "/chaos/delegate-callback";
+  @POST("/chaos/delegate-callback")
+  Call<ResponseDTO<Boolean>> pushTaskResponse(@Body ChaosApplyManifestResponse response);
 
-  @POST(CHAOS_ENDPOINT) Call<ResponseDTO<Boolean>> pushTaskResponse(@Body ChaosApplyManifestResponse response);
+  @POST("/api") Call<ResponseDTO<String>> reRunWorkflow(@Body String payload);
 }

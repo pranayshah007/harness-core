@@ -1,7 +1,5 @@
 package io.harness.cdng.chaos;
 
-import static io.harness.data.structure.UUIDGenerator.generateUuid;
-
 import io.harness.chaos.client.remote.ChaosHttpClient;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.plancreator.steps.common.StepElementParameters;
@@ -10,10 +8,12 @@ import io.harness.pms.contracts.execution.AsyncExecutableResponse;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
+import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.steps.executables.AsyncExecutable;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.tasks.ResponseData;
 
 import com.google.inject.Inject;
@@ -27,6 +27,9 @@ public class ChaosStep implements AsyncExecutable<StepElementParameters> {
 
   @Inject private ChaosHttpClient client;
 
+  private static final String BODY =
+      "{\"query\":\"mutation{ reRunChaosWorkFlow(workflowID: \"%s\", identifiers: { orgIdentifier: \"%s\", accountIdentifier: \"%s\", projectIdentifier: \"%s\" }) }\"";
+
   @Override
   public Class<StepElementParameters> getStepParametersClass() {
     return StepElementParameters.class;
@@ -35,22 +38,37 @@ public class ChaosStep implements AsyncExecutable<StepElementParameters> {
   @Override
   public AsyncExecutableResponse executeAsync(Ambiance ambiance, StepElementParameters stepParameters,
       StepInputPackage inputPackage, PassThroughData passThroughData) {
-    String uuid = generateUuid();
-    ChaosStepParameters parameters = (ChaosStepParameters) stepParameters.getSpec();
-    // TODO: Trigger chaos using the client
-    log.info("Callnack Id : {}", uuid);
-    return AsyncExecutableResponse.newBuilder().addCallbackIds(uuid).build();
+    ChaosStepParameters params = (ChaosStepParameters) stepParameters.getSpec();
+    String callbackId = triggerWorkflow(ambiance, params);
+    log.info("Triggered chaos experiment with ref: {}, workflowRunId: {}", params.getExperimentRef(), callbackId);
+    return AsyncExecutableResponse.newBuilder().addCallbackIds(callbackId).build();
+  }
+
+  private String triggerWorkflow(Ambiance ambiance, ChaosStepParameters params) {
+    try {
+      return NGRestUtils.getResponse(client.reRunWorkflow(buildPayload(ambiance, params.getExperimentRef())));
+    } catch (Exception ex) {
+      log.error("Unable to trigger chaos experiment", ex);
+      throw ex;
+    }
   }
 
   @Override
   public StepResponse handleAsyncResponse(
       Ambiance ambiance, StepElementParameters stepParameters, Map<String, ResponseData> responseDataMap) {
-    return StepResponse.builder().status(Status.SUCCEEDED).build();
+    ChaosStepNotifyData data = (ChaosStepNotifyData) responseDataMap.values().iterator().next();
+    Status status = data.isFailed() ? Status.FAILED : Status.SUCCEEDED;
+    return StepResponse.builder().status(status).build();
   }
 
   @Override
   public void handleAbort(
       Ambiance ambiance, StepElementParameters stepParameters, AsyncExecutableResponse executableResponse) {
     // TODO : Call chaos client abort hook
+  }
+
+  private String buildPayload(Ambiance ambiance, String experimentRef) {
+    return String.format(BODY, experimentRef, AmbianceUtils.getOrgIdentifier(ambiance),
+        AmbianceUtils.getAccountId(ambiance), AmbianceUtils.getProjectIdentifier(ambiance));
   }
 }
