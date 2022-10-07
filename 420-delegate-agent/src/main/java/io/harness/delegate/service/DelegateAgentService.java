@@ -7,8 +7,6 @@
 
 package io.harness.delegate.service;
 
-import java.util.Map;
-
 public interface DelegateAgentService {
   void run(boolean watched, boolean isServer);
 
@@ -25,6 +23,4 @@ public interface DelegateAgentService {
   void shutdown(boolean shouldUnregister) throws InterruptedException;
 
   void recordMetrics();
-
-  void removeExecutionFuture(String taskId);
 }

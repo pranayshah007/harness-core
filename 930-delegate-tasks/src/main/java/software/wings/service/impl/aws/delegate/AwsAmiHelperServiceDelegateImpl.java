@@ -102,6 +102,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ExecutorService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
@@ -117,6 +118,7 @@ public class AwsAmiHelperServiceDelegateImpl
   static final String BG_VERSION = "BG_VERSION";
   static final String BG_GREEN = "GREEN";
   static final String BG_BLUE = "BLUE";
+  @Inject private ExecutorService executorService;
   @Inject private DelegateLogService delegateLogService;
   @Inject private AwsAsgHelperServiceDelegate awsAsgHelperServiceDelegate;
   @Inject private AwsElbHelperServiceDelegate awsElbHelperServiceDelegate;
