@@ -26,6 +26,7 @@ import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
+import io.harness.beans.DecryptedSecretValue;
 import io.harness.connector.ConnectorCategory;
 import io.harness.data.validator.EntityIdentifier;
 import io.harness.encryption.Scope;
@@ -285,6 +286,10 @@ public class NGSecretResourceV2 {
       @QueryParam("source_category") ConnectorCategory sourceCategory,
       @Parameter(description = "Specify whether or not to include secrets from all the sub-scopes of the given Scope")
       @QueryParam(INCLUDE_SECRETS_FROM_EVERY_SUB_SCOPE) @DefaultValue("false") boolean includeSecretsFromEverySubScope,
+      @Parameter(description = "Specify whether or not to include all the Secrets"
+              + " accessible at the scope. For eg if set as true, at the Project scope we will get"
+              + " org and account Secrets also in the response") @QueryParam("includeAllSecretsAccessibleAtScope")
+      @DefaultValue("false") boolean includeAllSecretsAccessibleAtScope,
       @Parameter(description = "Page number of navigation. The default value is 0") @QueryParam(
           NGResourceFilterConstants.PAGE_KEY) @DefaultValue("0") int page,
       @Parameter(description = "Number of entries per page. The default value is 100 ") @QueryParam(
@@ -292,9 +297,9 @@ public class NGSecretResourceV2 {
     if (secretType != null) {
       secretTypes.add(secretType);
     }
-    return ResponseDTO.newResponse(
-        getNGPageResponse(ngSecretService.list(accountIdentifier, orgIdentifier, projectIdentifier, identifiers,
-            secretTypes, includeSecretsFromEverySubScope, searchTerm, page, size, sourceCategory)));
+    return ResponseDTO.newResponse(getNGPageResponse(ngSecretService.list(accountIdentifier, orgIdentifier,
+        projectIdentifier, identifiers, secretTypes, includeSecretsFromEverySubScope, searchTerm, page, size,
+        sourceCategory, includeAllSecretsAccessibleAtScope)));
   }
 
   @POST
@@ -320,7 +325,8 @@ public class NGSecretResourceV2 {
     return ResponseDTO.newResponse(getNGPageResponse(ngSecretService.list(accountIdentifier, orgIdentifier,
         projectIdentifier, secretResourceFilterDTO.getIdentifiers(), secretResourceFilterDTO.getSecretTypes(),
         secretResourceFilterDTO.isIncludeSecretsFromEverySubScope(), secretResourceFilterDTO.getSearchTerm(), page,
-        size, secretResourceFilterDTO.getSourceCategory())));
+        size, secretResourceFilterDTO.getSourceCategory(),
+        secretResourceFilterDTO.isIncludeAllSecretsAccessibleAtScope())));
   }
 
   @GET
@@ -592,6 +598,23 @@ public class NGSecretResourceV2 {
     }
     return ResponseDTO.newResponse(encryptedDataService.getEncryptionDetails(
         ngAccessWithEncryptionConsumer.getNgAccess(), ngAccessWithEncryptionConsumer.getDecryptableEntity()));
+  }
+
+  @GET
+  @Path("{identifier}/decrypt")
+  @InternalApi
+  @ApiOperation(hidden = true, value = "Get Decrypted Secret", nickname = "getDecryptedSecret")
+  @Hidden
+  public ResponseDTO<DecryptedSecretValue> getDecryptedSecretValue(
+      @Parameter(description = "Secret Identifier") @NotNull @PathParam(
+          NGCommonEntityConstants.IDENTIFIER_KEY) @EntityIdentifier String identifier,
+      @Parameter(description = ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
+          NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier) {
+    return ResponseDTO.newResponse(
+        encryptedDataService.decryptSecret(accountIdentifier, orgIdentifier, projectIdentifier, identifier));
   }
 
   private String getOrgIdentifier(String parentOrgIdentifier, @NotNull Scope scope) {

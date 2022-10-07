@@ -107,9 +107,11 @@ public class StagesPlanCreatorTest extends CategoryTest {
     LinkedHashMap<String, PlanCreationResponse> planForChildrenNodes =
         stagesPlanCreator.createPlanForChildrenNodes(context, stagesConfig);
     assertThat(planForChildrenNodes).isNotEmpty();
-    assertThat(planForChildrenNodes).hasSize(2);
+    assertThat(planForChildrenNodes).hasSize(4);
     assertThat(planForChildrenNodes.containsKey(approvalStageUuid)).isTrue();
     assertThat(planForChildrenNodes.containsKey(parallelStagesUuid)).isTrue();
+    assertThat(planForChildrenNodes.containsKey(approvalStageUuid + "_rollbackStage")).isTrue();
+    assertThat(planForChildrenNodes.containsKey(parallelStagesUuid + "_rollbackStage")).isTrue();
 
     PlanCreationResponse approvalStageResponse = planForChildrenNodes.get(approvalStageUuid);
     assertThat(approvalStageResponse.getDependencies().getDependenciesMap()).hasSize(1);

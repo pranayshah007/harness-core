@@ -10,6 +10,13 @@ package io.harness.delegate.utils;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.logging.CommandExecutionStatus.FAILURE;
 
+import static software.wings.beans.LogColor.Green;
+import static software.wings.beans.LogColor.Yellow;
+import static software.wings.beans.LogHelper.color;
+import static software.wings.beans.LogWeight.Bold;
+
+import static java.lang.Math.min;
+
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.logstreaming.CommandUnitProgress;
@@ -23,6 +30,7 @@ import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
 
 import com.google.common.collect.ImmutableSet;
+import java.text.NumberFormat;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -74,5 +82,12 @@ public class TaskExceptionUtils {
     } catch (Exception e) {
       log.error("Failed to save execution log for command unit {}", commandUnitName, e);
     }
+  }
+
+  public static String calcPercentage(int dataTransferred, long fileLength) {
+    NumberFormat defaultFormat = NumberFormat.getPercentInstance();
+    defaultFormat.setMinimumFractionDigits(2);
+    final float fraction = min(1, (float) dataTransferred / fileLength);
+    return color(defaultFormat.format(fraction), (fraction < 1) ? Yellow : Green, Bold);
   }
 }

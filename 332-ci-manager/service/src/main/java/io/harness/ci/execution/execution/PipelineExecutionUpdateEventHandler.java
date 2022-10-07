@@ -162,7 +162,8 @@ public class PipelineExecutionUpdateEventHandler implements OrchestrationEventHa
     boolean executeOnHarnessHostedDelegates = false;
     List<String> eligibleToExecuteDelegateIds = new ArrayList<>();
 
-    if (ciCleanupTaskParams.getType() == CICleanupTaskParams.Type.DLITE_VM) {
+    CICleanupTaskParams.Type type = ciCleanupTaskParams.getType();
+    if (type == CICleanupTaskParams.Type.DLITE_VM) {
       taskType = TaskType.DLITE_CI_VM_CLEANUP_TASK.getDisplayName();
       executeOnHarnessHostedDelegates = true;
       serializationFormat = SerializationFormat.JSON;
@@ -174,6 +175,14 @@ public class PipelineExecutionUpdateEventHandler implements OrchestrationEventHa
       } else {
         log.warn(
             "Unable to locate delegate ID for stage ID: {}. Cleanup task may be routed to the wrong delegate", stageId);
+      }
+    } else if (type == CICleanupTaskParams.Type.DOCKER) {
+      // TODO: Start using fetchDelegateId once we start emitting & processing the event for Docker as well
+      OptionalOutcome optionalOutput = outcomeService.resolveOptional(
+          ambiance, RefObjectUtils.getOutcomeRefObject(VmDetailsOutcome.VM_DETAILS_OUTCOME));
+      VmDetailsOutcome vmDetailsOutcome = (VmDetailsOutcome) optionalOutput.getOutcome();
+      if (vmDetailsOutcome != null && Strings.isNotBlank(vmDetailsOutcome.getDelegateId())) {
+        eligibleToExecuteDelegateIds.add(vmDetailsOutcome.getDelegateId());
       }
     }
 

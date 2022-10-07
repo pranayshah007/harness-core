@@ -90,7 +90,7 @@ public class LogStreamingTaskClient implements ILogStreamingTaskClient {
   @Override
   public void closeStream(String baseLogKeySuffix) {
     String logKeyExpected = getLogKey(baseLogKeySuffix);
-    if (primaryLogKey != logKeyExpected) {
+    if (!logKeyExpected.equals(primaryLogKey)) {
       log.warn("Log key is not as expected, actual: {} and expected: {}", primaryLogKey, logKeyExpected);
     }
     synchronized (logCache) {
@@ -137,7 +137,7 @@ public class LogStreamingTaskClient implements ILogStreamingTaskClient {
 
     String logKeyExpected = getLogKey(baseLogKeySuffix);
 
-    if (primaryLogKey != logKeyExpected) {
+    if (!logKeyExpected.equals(primaryLogKey)) {
       log.error("Log key is not as expected, actual: {} and expected: {}", primaryLogKey, logKeyExpected);
     }
     logStreamingSanitizer.sanitizeLogMessage(logLine);

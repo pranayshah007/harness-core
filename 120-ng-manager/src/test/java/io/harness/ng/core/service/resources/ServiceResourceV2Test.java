@@ -30,7 +30,6 @@ import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
-import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.OrgAndProjectValidationHelper;
 import io.harness.ng.core.beans.ServiceV2YamlMetadata;
 import io.harness.ng.core.beans.ServicesV2YamlMetadataDTO;
@@ -46,7 +45,6 @@ import io.harness.rule.Owner;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -232,26 +230,5 @@ public class ServiceResourceV2Test extends CategoryTest {
                    .map(ServiceV2YamlMetadata::getInputSetTemplateYaml)
                    .collect(Collectors.toList()))
         .containsExactlyInAnyOrder("input-set1", "input-set2");
-  }
-
-  @Test
-  @Owner(developers = TATHAGAT)
-  @Category(UnitTests.class)
-  public void testGetServicesYamlAndRuntimeInputsFail() {
-    final ServicesYamlMetadataApiInput servicesYamlMetadataApiInput =
-        ServicesYamlMetadataApiInput.builder().serviceIdentifiers(Collections.singletonList("svcId1")).build();
-
-    ServiceEntity service1 = ServiceEntity.builder().identifier("svcId1").build();
-
-    doReturn(Collections.singletonList(service1))
-        .when(serviceEntityService)
-        .getServices(anyString(), anyString(), anyString(), anyList());
-
-    assertThatThrownBy(()
-                           -> serviceResourceV2.getServicesYamlAndRuntimeInputs(
-                               servicesYamlMetadataApiInput, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER))
-        .isInstanceOf(InvalidRequestException.class)
-        .hasMessageContaining(
-            "Service with identifier svcId1 is not configured with a Service definition. Service Yaml is empty");
   }
 }

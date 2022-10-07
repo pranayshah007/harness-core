@@ -85,6 +85,7 @@ public abstract class PMSStepPlanCreatorV2<T extends PmsAbstractStepNode> extend
                         AbsoluteSdkTimeoutTrackerParameters.builder().timeout(getTimeoutString(stepElement)).build())
                     .build())
             .skipUnresolvedExpressionsCheck(stepElement.getStepSpecType().skipUnresolvedExpressionsCheck())
+            .expressionMode(stepElement.getStepSpecType().getExpressionMode())
             .build();
 
     return PlanCreationResponse.builder()

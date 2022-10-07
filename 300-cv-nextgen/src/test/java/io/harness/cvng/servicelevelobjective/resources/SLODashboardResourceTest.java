@@ -10,6 +10,7 @@ package io.harness.cvng.servicelevelobjective.resources;
 import static io.harness.rule.OwnerRule.ABHIJITH;
 import static io.harness.rule.OwnerRule.ARPITJ;
 import static io.harness.rule.OwnerRule.KAMAL;
+import static io.harness.rule.OwnerRule.KARAN_SARASWAT;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -22,7 +23,7 @@ import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceServic
 import io.harness.cvng.servicelevelobjective.beans.DayOfWeek;
 import io.harness.cvng.servicelevelobjective.beans.ErrorBudgetRisk;
 import io.harness.cvng.servicelevelobjective.beans.SLOCalenderType;
-import io.harness.cvng.servicelevelobjective.beans.SLOTarget;
+import io.harness.cvng.servicelevelobjective.beans.SLOTargetDTO;
 import io.harness.cvng.servicelevelobjective.beans.SLOTargetType;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorType;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveDTO;
@@ -35,10 +36,13 @@ import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
 import io.harness.rule.ResourceTestRule;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -82,6 +86,77 @@ public class SLODashboardResourceTest extends CvNextGenTestBase {
   }
 
   @Test
+  @Owner(developers = KARAN_SARASWAT)
+  @Category(UnitTests.class)
+  public void testGetSLODashboardWidgetsList_emptyResponse() {
+    Response response = RESOURCES.client()
+                            .target("http://localhost:9998/slo-dashboard/widgets/list")
+                            .queryParam("accountId", builderFactory.getContext().getAccountId())
+                            .queryParam("orgIdentifier", builderFactory.getContext().getOrgIdentifier())
+                            .queryParam("projectIdentifier", builderFactory.getContext().getProjectIdentifier())
+                            .request(MediaType.APPLICATION_JSON_TYPE)
+                            .get();
+    assertThat(response.getStatus()).isEqualTo(200);
+  }
+
+  @Test
+  @Owner(developers = KARAN_SARASWAT)
+  @Category(UnitTests.class)
+  public void testGetSLODashboardWidgetsList() throws JsonProcessingException {
+    MonitoredServiceDTO monitoredServiceDTO = builderFactory.monitoredServiceDTOBuilder().build();
+
+    ServiceLevelObjectiveDTO sloDTO1 = builderFactory.getServiceLevelObjectiveDTOBuilder()
+                                           .identifier("id10")
+                                           .userJourneyRef("uj10")
+                                           .type(ServiceLevelIndicatorType.AVAILABILITY)
+                                           .build();
+    serviceLevelObjectiveService.create(builderFactory.getProjectParams(), sloDTO1);
+
+    ServiceLevelObjectiveDTO sloDTO2 = builderFactory.getServiceLevelObjectiveDTOBuilder()
+                                           .identifier("id5")
+                                           .userJourneyRef("uj2")
+                                           .type(ServiceLevelIndicatorType.LATENCY)
+                                           .build();
+    serviceLevelObjectiveService.create(builderFactory.getProjectParams(), sloDTO2);
+
+    ServiceLevelObjectiveDTO sloDTO3 = builderFactory.getServiceLevelObjectiveDTOBuilder()
+                                           .identifier("id8")
+                                           .userJourneyRef("uj10")
+                                           .type(ServiceLevelIndicatorType.LATENCY)
+                                           .build();
+    serviceLevelObjectiveService.create(builderFactory.getProjectParams(), sloDTO3);
+
+    Response response = RESOURCES.client()
+                            .target("http://localhost:9998/slo-dashboard/widgets/list")
+                            .queryParam("accountId", builderFactory.getContext().getAccountId())
+                            .queryParam("orgIdentifier", builderFactory.getContext().getOrgIdentifier())
+                            .queryParam("projectIdentifier", builderFactory.getContext().getProjectIdentifier())
+                            .queryParam("userJourneyIdentifiers", "uj10")
+                            .request(MediaType.APPLICATION_JSON_TYPE)
+                            .get();
+
+    assertThat(response.getStatus()).isEqualTo(200);
+    String responseString = response.readEntity(String.class);
+    JSONObject pageResponse = new JSONObject(responseString);
+    pageResponse = (JSONObject) pageResponse.get("data");
+    assertThat(pageResponse.get("totalItems")).isEqualTo(2);
+    assertThat(pageResponse.get("pageItemCount")).isEqualTo(2);
+    JSONArray sloDashboardWidgets = (JSONArray) pageResponse.get("content");
+    assertThat(sloDashboardWidgets.length()).isEqualTo(2);
+    JSONObject sloDashboardWidget = (JSONObject) sloDashboardWidgets.get(0);
+    assertThat(sloDashboardWidget.get("sloIdentifier")).isEqualTo(sloDTO3.getIdentifier());
+    assertThat(sloDashboardWidget.get("description")).isEqualTo(sloDTO3.getDescription());
+    assertThat(sloDashboardWidget.get("monitoredServiceIdentifier")).isEqualTo(monitoredServiceDTO.getIdentifier());
+    assertThat(sloDashboardWidget.get("monitoredServiceName")).isEqualTo(monitoredServiceDTO.getName());
+    assertThat(sloDashboardWidget.get("serviceIdentifier")).isEqualTo(monitoredServiceDTO.getServiceRef());
+    assertThat(sloDashboardWidget.get("environmentIdentifier")).isEqualTo(monitoredServiceDTO.getEnvironmentRef());
+    assertThat(sloDashboardWidget.get("noOfActiveAlerts")).isEqualTo(sloDTO3.getNotificationRuleRefs().size());
+    assertThat(sloDashboardWidget.get("serviceName")).isEqualTo("Mocked service name");
+    assertThat(sloDashboardWidget.get("environmentName")).isEqualTo("Mocked env name");
+    assertThat(sloDashboardWidget.get("userJourneyIdentifier")).isEqualTo(sloDTO3.getUserJourneyRef());
+  }
+
+  @Test
   @Owner(developers = ABHIJITH)
   @Category(UnitTests.class)
   public void testGetRiskCount() {
@@ -114,7 +189,7 @@ public class SLODashboardResourceTest extends CvNextGenTestBase {
                  .identifier("id2")
                  .userJourneyRef("uj1")
                  .type(ServiceLevelIndicatorType.AVAILABILITY)
-                 .target(SLOTarget.builder()
+                 .target(SLOTargetDTO.builder()
                              .type(SLOTargetType.CALENDER)
                              .sloTargetPercentage(80.0)
                              .spec(CalenderSLOTargetSpec.builder()

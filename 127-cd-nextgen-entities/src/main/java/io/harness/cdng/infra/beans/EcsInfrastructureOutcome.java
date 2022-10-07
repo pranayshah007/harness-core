@@ -25,7 +25,7 @@ import org.springframework.data.annotation.TypeAlias;
 @JsonTypeName(InfrastructureKind.ECS)
 @TypeAlias("cdng.infra.beans.EcsInfrastructureOutcome")
 @RecasterAlias("io.harness.cdng.infra.beans.EcsInfrastructureOutcome")
-public class EcsInfrastructureOutcome extends InfrastructureDetailsAbstract implements InfrastructureOutcome {
+public class EcsInfrastructureOutcome extends InfrastructureOutcomeAbstract {
   @VariableExpression(skipVariableExpression = true) EnvironmentOutcome environment;
   String infrastructureKey;
   String connectorRef;

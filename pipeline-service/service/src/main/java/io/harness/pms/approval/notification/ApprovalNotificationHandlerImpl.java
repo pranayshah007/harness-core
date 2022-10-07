@@ -21,9 +21,9 @@ import io.harness.logging.AutoLogContext;
 import io.harness.ng.core.dto.UserGroupDTO;
 import io.harness.ng.core.dto.UserGroupFilterDTO;
 import io.harness.ng.core.dto.UserGroupFilterDTO.UserGroupFilterDTOBuilder;
-import io.harness.ng.core.notification.EmailConfigDTO;
 import io.harness.ng.core.notification.NotificationSettingConfigDTO;
 import io.harness.ng.core.notification.SlackConfigDTO;
+import io.harness.notification.NotificationRequest;
 import io.harness.notification.Team;
 import io.harness.notification.channeldetails.EmailChannel;
 import io.harness.notification.channeldetails.NotificationChannel;
@@ -184,14 +184,26 @@ public class ApprovalNotificationHandlerImpl implements ApprovalNotificationHand
         String emailTemplateId = instance.isIncludePipelineExecutionHistory()
             ? PredefinedTemplate.HARNESS_APPROVAL_EXECUTION_NOTIFICATION_EMAIL.getIdentifier()
             : PredefinedTemplate.HARNESS_APPROVAL_NOTIFICATION_EMAIL.getIdentifier();
-        EmailConfigDTO emailConfigDTO = (EmailConfigDTO) notificationSettingConfig;
+        NotificationRequest.UserGroup.Builder notifyUserGroupBuilder = NotificationRequest.UserGroup.newBuilder();
+        if (userGroup != null) {
+          notifyUserGroupBuilder.setIdentifier(userGroup.getIdentifier());
+          if (isNotEmpty(userGroup.getOrgIdentifier())) {
+            notifyUserGroupBuilder.setOrgIdentifier(userGroup.getOrgIdentifier());
+          }
+          if (isNotEmpty(userGroup.getProjectIdentifier())) {
+            notifyUserGroupBuilder.setProjectIdentifier(userGroup.getProjectIdentifier());
+          }
+        }
+
         return EmailChannel.builder()
             .accountId(userGroup.getAccountIdentifier())
+            .userGroups(new ArrayList<>(Collections.singleton(notifyUserGroupBuilder.build())))
             .team(Team.PIPELINE)
             .templateId(emailTemplateId)
             .templateData(templateData)
-            .recipients(Collections.singletonList(emailConfigDTO.getGroupEmail()))
+            .recipients(Collections.emptyList())
             .build();
+
       default:
         return null;
     }

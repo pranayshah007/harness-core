@@ -27,6 +27,7 @@
 - runAuthorCheck: `trigger authorcheck`
 - Checkstyle: `trigger checkstyle`
 - PMD: `trigger pmd`
+- Feature Name Check: `trigger featurenamecheck`
 - TI-bootstrap: `trigger ti0`
 - TI-bootstrap1: `trigger ti1`
 - TI-bootstrap2: `trigger ti2`

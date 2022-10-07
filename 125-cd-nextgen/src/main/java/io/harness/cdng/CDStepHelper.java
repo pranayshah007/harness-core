@@ -588,20 +588,12 @@ public class CDStepHelper {
     return cdFeatureFlagHelper.isEnabled(accountId, FeatureName.NEW_KUBECTL_VERSION);
   }
 
-  public boolean isOptimizeFetchFilesKustomize(String accountId) {
-    return cdFeatureFlagHelper.isEnabled(accountId, FeatureName.NG_OPTIMIZE_FETCH_FILES_KUSTOMIZE);
-  }
-
   public boolean shouldUseK8sApiForSteadyStateCheck(String accountId) {
     return cdFeatureFlagHelper.isEnabled(accountId, FeatureName.USE_K8S_API_FOR_STEADY_STATE_CHECK);
   }
 
   public boolean isSkipAddingTrackSelectorToDeployment(String accountId) {
     return cdFeatureFlagHelper.isEnabled(accountId, FeatureName.SKIP_ADDING_TRACK_LABEL_SELECTOR_IN_ROLLING);
-  }
-
-  public boolean isPruningEnabled(String accountId) {
-    return cdFeatureFlagHelper.isEnabled(accountId, FeatureName.PRUNE_KUBERNETES_RESOURCES_NG);
   }
 
   public LogCallback getLogCallback(String commandUnitName, Ambiance ambiance, boolean shouldOpenStream) {

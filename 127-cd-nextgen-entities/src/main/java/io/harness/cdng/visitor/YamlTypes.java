@@ -19,6 +19,7 @@ import io.harness.walktree.visitor.utilities.VisitorParentPathUtils;
 public interface YamlTypes {
   String GITOPS_CREATE_PR = StepSpecTypeConstants.GITOPS_CREATE_PR;
   String GITOPS_MERGE_PR = StepSpecTypeConstants.GITOPS_MERGE_PR;
+  String UPDATE_RELEASE_REPO = StepSpecTypeConstants.GITOPS_UPDATE_RELEASE_REPO;
 
   String PRIMARY_ARTIFACT = "primary";
   String PRIMARY_ARTIFACT_REF = "primaryArtifactRef";
@@ -66,6 +67,7 @@ public interface YamlTypes {
   String AZURE_TRAFFIC_SHIFT = StepSpecTypeConstants.AZURE_TRAFFIC_SHIFT;
   String AZURE_SWAP_SLOT = StepSpecTypeConstants.AZURE_SWAP_SLOT;
   String AZURE_WEBAPP_ROLLBACK = StepSpecTypeConstants.AZURE_WEBAPP_ROLLBACK;
+  String FETCH_INSTANCE_SCRIPT = StepSpecTypeConstants.CUSTOM_DEPLOYMENT_FETCH_INSTANCE_SCRIPT;
 
   String MANIFEST_LIST_CONFIG = "manifests";
   String MANIFEST_CONFIG = "manifest";
@@ -111,6 +113,14 @@ public interface YamlTypes {
   String CREDENTIALS_REF = "credentialsRef";
   String HOSTS = "hosts";
   String HOST_FILTER = "hostFilter";
+  String SIDECARS = "sidecars";
+  String SIDECAR = "sidecar";
+  String ARTIFACTS = "artifacts";
+  String ROLLBACK_STEPS = "rollbackSteps";
+  String STEPS = "steps";
+  String STRATEGY = "strategy";
+  String STEP_GROUP = "stepGroup";
+  String PRIMARY = "primary";
 
   String SUBSCRIPTION = "subscription";
   String RESOURCE_GROUP = "resourceGroup";
@@ -140,4 +150,9 @@ public interface YamlTypes {
   String APPLICATION_SETTINGS = "applicationSettings";
   String CONNECTION_STRINGS = "connectionStrings";
   String DEPLOYMENT_TYPE = "deploymentType";
+
+  String ENV_PRODUCTION = "Production";
+  String ENV_PRE_PRODUCTION = "PreProduction";
+
+  String SERVICE_ENTITIES = "services";
 }

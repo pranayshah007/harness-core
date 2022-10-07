@@ -104,6 +104,11 @@ public final class SweepingOutputInstance implements PersistentEntity, UuidAcces
                  .field(SweepingOutputInstanceKeys.createdAt)
                  .field(SweepingOutputInstanceKeys.name)
                  .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("appIdStateExecutionId")
+                 .field(SweepingOutputInstanceKeys.appId)
+                 .field(SweepingOutputInstanceKeys.stateExecutionId)
+                 .build())
         .build();
   }
 

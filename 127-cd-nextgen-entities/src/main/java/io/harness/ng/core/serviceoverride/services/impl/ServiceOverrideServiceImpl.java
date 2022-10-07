@@ -225,7 +225,7 @@ public class ServiceOverrideServiceImpl implements ServiceOverrideService {
     Criteria criteria =
         getServiceOverrideEqualityCriteriaForEnv(accountId, orgIdentifier, projectIdentifier, environmentRef);
     DeleteResult delete = serviceOverrideRepository.delete(criteria);
-    return delete.wasAcknowledged() && delete.getDeletedCount() > 0;
+    return delete.wasAcknowledged();
   }
 
   @Override
@@ -236,7 +236,7 @@ public class ServiceOverrideServiceImpl implements ServiceOverrideService {
 
     Criteria criteria = getServiceOverrideEqualityCriteriaForProj(accountId, orgIdentifier, projectIdentifier);
     DeleteResult delete = serviceOverrideRepository.delete(criteria);
-    return delete.wasAcknowledged() && delete.getDeletedCount() > 0;
+    return delete.wasAcknowledged();
   }
 
   @Override
@@ -254,7 +254,7 @@ public class ServiceOverrideServiceImpl implements ServiceOverrideService {
   }
 
   @Override
-  public String createServiceOverrideInputsYaml(String accountId, String projectIdentifier, String orgIdentifier,
+  public String createServiceOverrideInputsYaml(String accountId, String orgIdentifier, String projectIdentifier,
       String environmentIdentifier, String serviceIdentifier) {
     Map<String, Object> yamlInputs = createServiceOverrideInputsYamlInternal(
         accountId, orgIdentifier, projectIdentifier, environmentIdentifier, serviceIdentifier);

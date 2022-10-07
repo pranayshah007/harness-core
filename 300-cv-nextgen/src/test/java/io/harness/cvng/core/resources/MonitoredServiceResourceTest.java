@@ -493,7 +493,7 @@ public class MonitoredServiceResourceTest extends CvNextGenTestBase {
         builderFactory.getContext().getAccountId(), cvConfigIds);
 
     List<CVNGLogDTO> cvngLogDTOs =
-        IntStream.range(0, 3)
+        IntStream.range(0, 1)
             .mapToObj(index -> builderFactory.executionLogDTOBuilder().traceableId(verificationTaskIds.get(0)).build())
             .collect(Collectors.toList());
     cvngLogService.save(cvngLogDTOs);
@@ -694,6 +694,27 @@ public class MonitoredServiceResourceTest extends CvNextGenTestBase {
                 + "accountId %s, orgIdentifier %s and projectIdentifier %s  is not present\"",
             builderFactory.getContext().getAccountId(), builderFactory.getContext().getOrgIdentifier(),
             builderFactory.getContext().getProjectIdentifier()));
+  }
+
+  @Test
+  @Owner(developers = DEEPAK_CHHIKARA)
+  @Category(UnitTests.class)
+  public void testCreate_allHealthSources() throws IOException {
+    String[] healthSources = {"monitoredservice/healthsources/app-dynamics.yaml"};
+    for (String file : healthSources) {
+      String monitoredServiceYaml = getResource(file);
+      monitoredServiceYaml =
+          monitoredServiceYaml.replace("$orgIdentifier", builderFactory.getContext().getOrgIdentifier());
+      monitoredServiceYaml =
+          monitoredServiceYaml.replace("$projectIdentifier", builderFactory.getContext().getProjectIdentifier());
+      monitoredServiceYaml = monitoredServiceYaml.replace("$enabled", "false");
+      Response response = RESOURCES.client()
+                              .target("http://localhost:9998/monitored-service/")
+                              .queryParam("accountId", builderFactory.getContext().getAccountId())
+                              .request(MediaType.APPLICATION_JSON_TYPE)
+                              .post(Entity.json(convertToJson(monitoredServiceYaml)));
+      assertThat(response.getStatus()).isEqualTo(200);
+    }
   }
 
   private static String convertToJson(String yamlString) {

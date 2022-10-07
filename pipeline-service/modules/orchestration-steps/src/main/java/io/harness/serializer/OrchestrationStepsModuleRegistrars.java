@@ -42,8 +42,10 @@ import io.harness.steps.approval.step.servicenow.ServiceNowApprovalStepNode;
 import io.harness.steps.customstage.CustomStageNode;
 import io.harness.steps.jira.create.JiraCreateStepNode;
 import io.harness.steps.jira.update.JiraUpdateStepNode;
+import io.harness.steps.pipelinestage.PipelineStageNode;
 import io.harness.steps.policy.PolicyStepNode;
 import io.harness.steps.servicenow.create.ServiceNowCreateStepNode;
+import io.harness.steps.servicenow.importset.ServiceNowImportSetStepNode;
 import io.harness.steps.servicenow.update.ServiceNowUpdateStepNode;
 import io.harness.steps.shellscript.ShellScriptStepNode;
 import io.harness.steps.template.TemplateStepNode;
@@ -132,6 +134,18 @@ public class OrchestrationStepsModuleRegistrars {
                    .clazz(ApprovalStageNode.class)
                    .yamlSchemaMetadata(YamlSchemaMetadata.builder()
                                            .namespace(SchemaNamespaceConstants.APPROVAL)
+                                           .modulesSupported(ImmutableList.of(ModuleType.PMS))
+                                           .yamlGroup(YamlGroup.builder().group(StepCategory.STAGE.name()).build())
+                                           .build())
+                   .build())
+          .add(YamlSchemaRootClass.builder()
+                   .entityType(EntityType.PIPELINE_STAGE)
+                   .availableAtProjectLevel(true)
+                   .availableAtOrgLevel(false)
+                   .availableAtAccountLevel(false)
+                   .clazz(PipelineStageNode.class)
+                   .yamlSchemaMetadata(YamlSchemaMetadata.builder()
+                                           .namespace(SchemaNamespaceConstants.PIPELINE)
                                            .modulesSupported(ImmutableList.of(ModuleType.PMS))
                                            .yamlGroup(YamlGroup.builder().group(StepCategory.STAGE.name()).build())
                                            .build())
@@ -253,7 +267,7 @@ public class OrchestrationStepsModuleRegistrars {
                    .yamlSchemaMetadata(YamlSchemaMetadata.builder()
                                            .namespace(SchemaNamespaceConstants.PMS)
                                            .modulesSupported(Arrays.asList(ModuleType.CD, ModuleType.PMS, ModuleType.CE,
-                                               ModuleType.CF, ModuleType.CI))
+                                               ModuleType.CF, ModuleType.CI, ModuleType.STO))
                                            .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
                                            .build())
                    .build())
@@ -342,6 +356,18 @@ public class OrchestrationStepsModuleRegistrars {
                                            .build())
                    .build())
           .add(YamlSchemaRootClass.builder()
+                   .entityType(EntityType.SERVICENOW_IMPORT_SET_STEP)
+                   .availableAtProjectLevel(true)
+                   .availableAtOrgLevel(false)
+                   .availableAtAccountLevel(false)
+                   .clazz(ServiceNowImportSetStepNode.class)
+                   .yamlSchemaMetadata(YamlSchemaMetadata.builder()
+                                           .namespace(SchemaNamespaceConstants.PMS)
+                                           .modulesSupported(Arrays.asList(ModuleType.CD, ModuleType.PMS))
+                                           .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
+                                           .build())
+                   .build())
+          .add(YamlSchemaRootClass.builder()
                    .entityType(EntityType.FLAG_CONFIGURATION)
                    .availableAtProjectLevel(true)
                    .availableAtOrgLevel(false)
@@ -359,13 +385,11 @@ public class OrchestrationStepsModuleRegistrars {
                    .availableAtOrgLevel(false)
                    .availableAtAccountLevel(false)
                    .clazz(PolicyStepNode.class)
-                   .yamlSchemaMetadata(
-                       YamlSchemaMetadata.builder()
-                           .namespace(SchemaNamespaceConstants.PMS)
-                           .modulesSupported(Arrays.asList(ModuleType.values()))
-                           .featureFlags(Collections.singletonList(FeatureName.CUSTOM_POLICY_STEP.name()))
-                           .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
-                           .build())
+                   .yamlSchemaMetadata(YamlSchemaMetadata.builder()
+                                           .namespace(SchemaNamespaceConstants.PMS)
+                                           .modulesSupported(Arrays.asList(ModuleType.values()))
+                                           .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
+                                           .build())
                    .build())
           .add(YamlSchemaRootClass.builder()
                    .entityType(EntityType.STRATEGY_NODE)

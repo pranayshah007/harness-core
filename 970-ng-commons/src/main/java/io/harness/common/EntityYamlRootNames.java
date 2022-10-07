@@ -25,6 +25,7 @@ import lombok.experimental.UtilityClass;
 public class EntityYamlRootNames {
   public static final String GITOPS_CREATE_PR = "CreatePR";
   public static final String GITOPS_MERGE_PR = "MergePR";
+  public static final String GITOPS_UPDATE_RELEASE_REPO = "GitOpsUpdateReleaseRepo";
   public static final String ENVIRONMENT_GROUP = "environmentGroup";
   public static final String PROJECT = "project";
   public static final String PIPELINE = "pipeline";
@@ -49,10 +50,12 @@ public class EntityYamlRootNames {
   public static final String DEPLOYMENT_STAGE = "deploymentStage";
   public static final String FEATURE_FLAG_STAGE = "featureFlagStage";
   public static final String APPROVAL_STAGE = "approvalStage";
+  public static final String PIPELINE_STAGE = "pipelineStage";
   public static final String CUSTOM_STAGE = "customStage";
   public static final String TRIGGERS = "trigger";
   public static final String MONITORED_SERVICE = "monitoredService";
   public static final String TEMPLATE = "template";
+  public static final String FETCH_INSTANCE_SCRIPT = "fetchInstanceScript";
   public static final String GIT_REPOSITORY = "gitRepository";
   public static final String FEATURE_FLAGS = "featureFlags";
   public static final String HTTP = "Http";
@@ -76,6 +79,7 @@ public class EntityYamlRootNames {
   public static final String HELM_ROLLBACK = "HelmRollback";
   public static final String SERVICENOW_CREATE = "ServiceNowCreate";
   public static final String SERVICENOW_UPDATE = "ServiceNowUpdate";
+  public static final String SERVICENOW_IMPORT_SET = "ServiceNowImportSet";
   public static final String SERVICENOW_APPROVAL = "ServiceNowApproval";
   public static final String JIRA_APPROVAL = "JiraApproval";
   public static final String HARNESS_APPROVAL = "HarnessApproval";
@@ -130,4 +134,6 @@ public class EntityYamlRootNames {
   public static final String ECS_BLUE_GREEN_SWAP_TARGET_GROUPS = "EcsBlueGreenSwapTargetGroups";
   public static final String ECS_BLUE_GREEN_ROLLBACK = "EcsBlueGreenRollback";
   public static final String WAIT_STEP = "Wait";
+  public static final String SHELL_SCRIPT_PROVISION_STEP = "ShellScriptProvision";
+  public static final String FREEZE = "freeze";
 }

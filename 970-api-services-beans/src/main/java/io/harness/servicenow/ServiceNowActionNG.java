@@ -19,7 +19,9 @@ public enum ServiceNowActionNG {
   CREATE_TICKET("Create ticket"),
   UPDATE_TICKET("Update ticket"),
   GET_METADATA("Get Metadata"),
-  GET_TEMPLATE("Get Template");
+  GET_TEMPLATE("Get Template"),
+  IMPORT_SET("Import Set"),
+  GET_IMPORT_SET_STAGING_TABLES("Get Import Set Staging Tables");
 
   private final String displayName;
 

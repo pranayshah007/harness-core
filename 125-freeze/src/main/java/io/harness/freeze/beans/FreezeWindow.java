@@ -7,12 +7,11 @@
 
 package io.harness.freeze.beans;
 
-import java.util.TimeZone;
 import lombok.Data;
 
 @Data
 public class FreezeWindow {
-  TimeZone timeZone;
+  String timeZone;
   String startTime;
   String endTime;
   Recurrence recurrence;

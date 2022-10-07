@@ -12,6 +12,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import io.harness.capability.CapabilityParameters;
 import io.harness.capability.CapabilitySubjectPermission;
 import io.harness.capability.CapabilitySubjectPermission.CapabilitySubjectPermissionBuilder;
+import io.harness.delegate.beans.ci.CIInitializeTaskParams;
 import io.harness.delegate.beans.ci.vm.runner.PoolOwnerStepResponse;
 import io.harness.delegate.beans.executioncapability.CIVmConnectionCapability;
 import io.harness.delegate.beans.executioncapability.CapabilityResponse;
@@ -27,7 +28,14 @@ public class CIVmConnectionCapabilityCheck implements CapabilityCheck, ProtoCapa
   @Override
   public CapabilityResponse performCapabilityCheck(ExecutionCapability delegateCapability) {
     CIVmConnectionCapability connectionCapabiilty = (CIVmConnectionCapability) delegateCapability;
-    boolean isOwner = isPoolOwner(connectionCapabiilty.getPoolId(), connectionCapabiilty.getStageRuntimeId());
+    boolean isOwner;
+    // if (connectionCapabiilty.getInfraInfo().getType() == InfraInfo.Type.DOCKER) {
+    if (connectionCapabiilty.getInfraInfo() == CIInitializeTaskParams.Type.DOCKER) {
+      isOwner = true;
+    } else {
+      isOwner = isPoolOwner(connectionCapabiilty.getPoolId(), connectionCapabiilty.getStageRuntimeId());
+    }
+
     return CapabilityResponse.builder().delegateCapability(delegateCapability).validated(isOwner).build();
   }
 

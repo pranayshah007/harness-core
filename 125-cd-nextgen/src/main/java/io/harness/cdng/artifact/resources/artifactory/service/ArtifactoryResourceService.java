@@ -12,11 +12,13 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.artifact.resources.artifactory.dtos.ArtifactoryArtifactBuildDetailsDTO;
 import io.harness.cdng.artifact.resources.artifactory.dtos.ArtifactoryBuildDetailsDTO;
+import io.harness.cdng.artifact.resources.artifactory.dtos.ArtifactoryImagePathsDTO;
 import io.harness.cdng.artifact.resources.artifactory.dtos.ArtifactoryRepoDetailsDTO;
 import io.harness.cdng.artifact.resources.artifactory.dtos.ArtifactoryRequestDTO;
 import io.harness.cdng.artifact.resources.artifactory.dtos.ArtifactoryResponseDTO;
 
 import java.util.List;
+import javax.validation.constraints.NotNull;
 import lombok.NonNull;
 
 @OwnedBy(HarnessTeam.CDP)
@@ -37,4 +39,7 @@ public interface ArtifactoryResourceService {
       ArtifactoryRequestDTO artifactoryRequestDTO, String orgIdentifier, String projectIdentifier);
 
   boolean validateArtifactServer(IdentifierRef artifactoryConnectorRef, String orgIdentifier, String projectIdentifier);
+
+  ArtifactoryImagePathsDTO getImagePaths(@NonNull String repositoryType, @NonNull IdentifierRef connectorRef,
+      @NonNull String orgIdentifier, @NonNull String projectIdentifier, @NotNull String repository);
 }

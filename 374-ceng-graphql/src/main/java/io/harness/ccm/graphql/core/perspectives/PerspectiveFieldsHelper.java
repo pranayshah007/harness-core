@@ -34,6 +34,7 @@ import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.google.cloud.bigquery.BigQuery;
 import com.google.inject.Inject;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -64,7 +65,7 @@ public class PerspectiveFieldsHelper {
     List<ViewField> customFields = new ArrayList<>();
     Optional<QLCEViewFilterWrapper> viewMetadataFilter = getViewMetadataFilter(filters);
     boolean isExplorerQuery = false;
-    boolean isClusterPerspective = viewsBillingService.isClusterPerspective(filters);
+    boolean isClusterPerspective = viewsBillingService.isClusterPerspective(filters, Collections.emptyList());
     String viewId = null;
     if (viewMetadataFilter.isPresent()) {
       QLCEViewMetadataFilter metadataFilter = viewMetadataFilter.get().getViewMetadataFilter();
@@ -114,7 +115,7 @@ public class PerspectiveFieldsHelper {
               viewFieldIdentifierSetFromCustomFields, viewFieldIdentifier);
           if (viewFieldIdentifier == ViewFieldIdentifier.BUSINESS_MAPPING) {
             final Set<ViewFieldIdentifier> businessMappingViewFieldIdentifiers =
-                businessMappingDataSourceHelper.getBusinessMappingViewFieldIdentifiers(
+                businessMappingDataSourceHelper.getBusinessMappingViewFieldIdentifiersFromViewRules(
                     accountId, ceView.getViewRules());
             businessMappingViewFieldIdentifiers.forEach(businessMappingViewFieldIdentifier
                 -> addFieldIdentifierData(accountId, isClusterPerspective, fieldIdentifierData,

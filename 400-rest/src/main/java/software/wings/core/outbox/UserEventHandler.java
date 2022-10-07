@@ -24,14 +24,21 @@ import io.harness.audit.client.api.AuditClientService;
 import io.harness.context.GlobalContext;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.ng.core.AccountScope;
+import io.harness.ng.core.ResourceConstants;
 import io.harness.outbox.OutboxEvent;
 import io.harness.outbox.api.OutboxEventHandler;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.security.dto.UserPrincipal;
+import io.harness.usermembership.remote.UserMembershipClient;
 
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class UserEventHandler implements OutboxEventHandler {
   private final AuditClientService auditClientService;
+  @Inject @Named("PRIVILEGED") private UserMembershipClient userMembershipClient;
 
   @Inject
   public UserEventHandler(AuditClientService auditClientService) {
@@ -68,7 +75,22 @@ public class UserEventHandler implements OutboxEventHandler {
                                 .insertId(outboxEvent.getId())
                                 .build();
     AuthenticationInfoDTO authenticationInfoDTO = getAuthenticationInfoForLoginEvent(accountIdentifier, auditEntry);
-    return auditClientService.publishAudit(auditEntry, authenticationInfoDTO, globalContext);
+    String userId = outboxEvent.getResource().getLabels().get(ResourceConstants.LABEL_KEY_USER_ID);
+    log.info("NG Login Audits: start publishing audit for account {} and user with userId {} and outboxEventId {}",
+        accountIdentifier, userId, outboxEvent.getId());
+    try {
+      if (isUserInScope(userId, accountIdentifier)) {
+        log.info(
+            "NG Login Audits: for account {} the user with userId {} is in scope and now publishing the audit for Login",
+            accountIdentifier, userId);
+        return auditClientService.publishAudit(auditEntry, authenticationInfoDTO, globalContext);
+      }
+    } catch (Exception ex) {
+      log.warn("NG Login Audits: skipping audit for account {} and userId {} due to exception: ", accountIdentifier,
+          userId, ex);
+      return false;
+    }
+    return true;
   }
 
   private boolean handleLogin2faEvent(OutboxEvent outboxEvent) {
@@ -108,5 +130,15 @@ public class UserEventHandler implements OutboxEventHandler {
     String username = resource.getLabels().get(LABEL_KEY_RESOURCE_NAME);
     UserPrincipal principal = new UserPrincipal(userId, email, username, accountIdentifier);
     return AuthenticationInfoDTO.fromSecurityPrincipal(principal);
+  }
+
+  private boolean isUserInScope(String userId, String accountIdentifier) {
+    try {
+      return NGRestUtils.getResponse(userMembershipClient.isUserInScope(userId, accountIdentifier, null, null));
+    } catch (Exception ex) {
+      log.error("For account {} and userId {} while auditing userMembershipClient call failed with exception: ",
+          accountIdentifier, userId, ex);
+      throw ex;
+    }
   }
 }

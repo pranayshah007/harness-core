@@ -10,7 +10,6 @@ package io.harness.perpetualtask.internal;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.govern.IgnoreThrowable.ignoredOnPurpose;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
-import static io.harness.mongo.iterator.MongoPersistenceIterator.SchedulingType.IRREGULAR_SKIP_MISSED;
 import static io.harness.mongo.iterator.MongoPersistenceIterator.SchedulingType.REGULAR;
 
 import static java.lang.String.format;
@@ -96,7 +95,7 @@ public class PerpetualTaskRecordHandler implements PerpetualTaskCrudObserver {
         PerpetualTaskRecordHandler.class,
         MongoPersistenceIterator.<PerpetualTaskRecord, MorphiaFilterExpander<PerpetualTaskRecord>>builder()
             .clazz(PerpetualTaskRecord.class)
-            .fieldName(PerpetualTaskRecordKeys.assignerIterations)
+            .fieldName(PerpetualTaskRecordKeys.assignIteration)
             .targetInterval(ofMinutes(PERPETUAL_TASK_ASSIGNMENT_INTERVAL_MINUTE))
             .acceptableNoAlertDelay(ofSeconds(45))
             .acceptableExecutionTime(ofSeconds(30))
@@ -106,8 +105,9 @@ public class PerpetualTaskRecordHandler implements PerpetualTaskCrudObserver {
                        .field(PerpetualTaskRecordKeys.assignAfterMs)
                        .lessThanOrEq(System.currentTimeMillis()))
             .entityProcessController(new CrossEnvironmentAccountStatusBasedEntityProcessController<>(accountService))
-            .schedulingType(IRREGULAR_SKIP_MISSED)
+            .schedulingType(REGULAR)
             .persistenceProvider(persistenceProvider)
+            .unsorted(true)
             .redistribute(true));
     rebalanceIterator = persistenceIteratorFactory.createPumpIteratorWithDedicatedThreadPool(
         PumpExecutorOptions.builder()
@@ -126,6 +126,7 @@ public class PerpetualTaskRecordHandler implements PerpetualTaskCrudObserver {
             .entityProcessController(new CrossEnvironmentAccountLevelEntityProcessController(accountService))
             .schedulingType(REGULAR)
             .persistenceProvider(persistenceProviderAccount)
+            .unsorted(true)
             .redistribute(true));
   }
 

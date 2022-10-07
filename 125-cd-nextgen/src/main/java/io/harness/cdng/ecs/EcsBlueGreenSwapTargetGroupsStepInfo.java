@@ -1,3 +1,10 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.cdng.ecs;
 
 import io.harness.annotation.RecasterAlias;
@@ -45,8 +52,9 @@ public class EcsBlueGreenSwapTargetGroupsStepInfo
 
   @Builder(builderMethodName = "infoBuilder")
   public EcsBlueGreenSwapTargetGroupsStepInfo(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
-      String ecsBlueGreenCreateServiceFnq, String ecsBlueGreenSwapTargetGroupsFnq) {
-    super(delegateSelectors, ecsBlueGreenCreateServiceFnq, ecsBlueGreenSwapTargetGroupsFnq);
+      String ecsBlueGreenCreateServiceFnq, String ecsBlueGreenSwapTargetGroupsFnq,
+      ParameterField<Boolean> doNotDownsizeOldService) {
+    super(delegateSelectors, doNotDownsizeOldService, ecsBlueGreenCreateServiceFnq, ecsBlueGreenSwapTargetGroupsFnq);
   }
   @Override
   public StepType getStepType() {
@@ -62,6 +70,7 @@ public class EcsBlueGreenSwapTargetGroupsStepInfo
   public SpecParameters getSpecParameters() {
     return EcsBlueGreenSwapTargetGroupsStepParameters.infoBuilder()
         .delegateSelectors(this.getDelegateSelectors())
+        .doNotDownsizeOldService(this.getDoNotDownsizeOldService())
         .build();
   }
 

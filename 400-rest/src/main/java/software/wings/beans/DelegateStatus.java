@@ -11,6 +11,7 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
+import io.harness.delegate.beans.AutoUpgrade;
 import io.harness.delegate.beans.DelegateConnectionDetails;
 import io.harness.delegate.beans.DelegateInstanceStatus;
 import io.harness.delegate.beans.DelegateScope;
@@ -33,6 +34,7 @@ public class DelegateStatus {
   List<String> publishedVersions;
   List<DelegateInner> delegates;
   List<DelegateScalingGroup> scalingGroups;
+  String publishedImmutableDelegateVersion;
 
   @JsonInclude(Include.NON_NULL)
   @JsonIgnoreProperties(ignoreUnknown = true)
@@ -65,6 +67,6 @@ public class DelegateStatus {
     private long delegateExpirationTime;
     List<DelegateConnectionDetails> connections;
     String version;
-    boolean autoUpgrade;
+    AutoUpgrade autoUpgrade;
   }
 }

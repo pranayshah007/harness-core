@@ -14,6 +14,7 @@ import static io.harness.exception.WingsException.USER_SRE;
 import static io.harness.ngtriggers.beans.source.NGTriggerType.ARTIFACT;
 import static io.harness.ngtriggers.beans.source.NGTriggerType.MANIFEST;
 import static io.harness.ngtriggers.beans.source.NGTriggerType.WEBHOOK;
+import static io.harness.ngtriggers.beans.source.WebhookTriggerType.GITHUB;
 import static io.harness.pms.yaml.validation.RuntimeInputValuesValidator.validateStaticValues;
 
 import static java.util.Collections.emptyList;
@@ -46,6 +47,7 @@ import io.harness.ngtriggers.beans.entity.TriggerEventHistory;
 import io.harness.ngtriggers.beans.entity.TriggerWebhookEvent;
 import io.harness.ngtriggers.beans.entity.TriggerWebhookEvent.TriggerWebhookEventsKeys;
 import io.harness.ngtriggers.beans.entity.metadata.WebhookRegistrationStatusData;
+import io.harness.ngtriggers.beans.entity.metadata.catalog.TriggerCatalogItem;
 import io.harness.ngtriggers.beans.entity.metadata.status.PollingSubscriptionStatus;
 import io.harness.ngtriggers.beans.entity.metadata.status.StatusResult;
 import io.harness.ngtriggers.beans.entity.metadata.status.TriggerStatus;
@@ -55,11 +57,13 @@ import io.harness.ngtriggers.beans.source.NGTriggerSpecV2;
 import io.harness.ngtriggers.beans.source.artifact.BuildAware;
 import io.harness.ngtriggers.beans.source.scheduled.CronTriggerSpec;
 import io.harness.ngtriggers.beans.source.scheduled.ScheduledTriggerConfig;
+import io.harness.ngtriggers.beans.source.webhook.v2.WebhookTriggerConfigV2;
 import io.harness.ngtriggers.buildtriggers.helpers.BuildTriggerHelper;
 import io.harness.ngtriggers.events.TriggerCreateEvent;
 import io.harness.ngtriggers.events.TriggerDeleteEvent;
 import io.harness.ngtriggers.events.TriggerUpdateEvent;
 import io.harness.ngtriggers.exceptions.InvalidTriggerYamlException;
+import io.harness.ngtriggers.helpers.TriggerCatalogHelper;
 import io.harness.ngtriggers.helpers.TriggerHelper;
 import io.harness.ngtriggers.mapper.NGTriggerElementMapper;
 import io.harness.ngtriggers.mapper.TriggerFilterHelper;
@@ -128,6 +132,8 @@ import org.springframework.data.mongodb.core.query.Criteria;
 public class NGTriggerServiceImpl implements NGTriggerService {
   public static final long TRIGGER_CURRENT_YML_VERSION = 3l;
   public static final int WEBHOOK_POLLING_UNSUBSCRIBE = 0;
+  public static final int WEBHOOOk_POLLING_MIN_INTERVAL = 2;
+  public static final int WEBHOOOk_POLLING_MAX_INTERVAL = 60;
   private final NGTriggerRepository ngTriggerRepository;
   private final TriggerWebhookEventRepository webhookEventQueueRepository;
   private final TriggerEventHistoryRepository triggerEventHistoryRepository;
@@ -139,6 +145,7 @@ public class NGTriggerServiceImpl implements NGTriggerService {
   private final KryoSerializer kryoSerializer;
   private final PipelineServiceClient pipelineServiceClient;
   private final BuildTriggerHelper buildTriggerHelper;
+  private final TriggerCatalogHelper triggerCatalogHelper;
   private final PollingResourceClient pollingResourceClient;
   private final NGTriggerElementMapper ngTriggerElementMapper;
   private final OutboxService outboxService;
@@ -292,7 +299,8 @@ public class NGTriggerServiceImpl implements NGTriggerService {
     }
   }
   private void checkAndEnableWebhookPolling(NGTriggerEntity ngTriggerEntity) {
-    if (pmsFeatureFlagService.isEnabled(ngTriggerEntity.getAccountId(), FeatureName.GIT_WEBHOOK_POLLING)) {
+    if (pmsFeatureFlagService.isEnabled(ngTriggerEntity.getAccountId(), FeatureName.CD_GIT_WEBHOOK_POLLING)
+        && GITHUB.getEntityMetadataName().equalsIgnoreCase(ngTriggerEntity.getMetadata().getWebhook().getType())) {
       String webhookId = ngTriggerEntity.getTriggerStatus().getWebhookInfo().getWebhookId();
       String pollInterval = ngTriggerEntity.getPollInterval();
 
@@ -387,7 +395,8 @@ public class NGTriggerServiceImpl implements NGTriggerService {
 
   private boolean isWebhookGitPollingEnabled(NGTriggerEntity foundTriggerEntity) {
     if (foundTriggerEntity.getType() == WEBHOOK
-        && pmsFeatureFlagService.isEnabled(foundTriggerEntity.getAccountId(), FeatureName.GIT_WEBHOOK_POLLING)) {
+        && GITHUB.getEntityMetadataName().equalsIgnoreCase(foundTriggerEntity.getMetadata().getWebhook().getType())
+        && pmsFeatureFlagService.isEnabled(foundTriggerEntity.getAccountId(), FeatureName.CD_GIT_WEBHOOK_POLLING)) {
       String webhookId = foundTriggerEntity.getTriggerStatus().getWebhookInfo().getWebhookId();
       String pollInterval = foundTriggerEntity.getPollInterval();
       return !StringUtils.isEmpty(webhookId) && !StringUtils.isEmpty(pollInterval);
@@ -617,7 +626,27 @@ public class NGTriggerServiceImpl implements NGTriggerService {
     NGTriggerSpecV2 spec = triggerSource.getSpec();
     switch (triggerSource.getType()) {
       case WEBHOOK:
-        return; // TODO(adwait): define trigger source validation
+        // Validate webhook polling trigger
+        WebhookTriggerConfigV2 webhookTriggerConfig = (WebhookTriggerConfigV2) triggerSource.getSpec();
+        if (webhookTriggerConfig.getType() != GITHUB) {
+          return;
+        }
+
+        if (pmsFeatureFlagService.isEnabled(
+                triggerDetails.getNgTriggerEntity().getAccountId(), FeatureName.CD_GIT_WEBHOOK_POLLING)) {
+          String pollInterval = triggerDetails.getNgTriggerEntity().getPollInterval();
+          if (pollInterval == null) {
+            throw new InvalidArgumentsException("Poll Interval cannot be empty");
+          }
+          int pollInt = NGTimeConversionHelper.convertTimeStringToMinutesZeroAllowed(
+              triggerDetails.getNgTriggerEntity().getPollInterval());
+          if (pollInt != WEBHOOK_POLLING_UNSUBSCRIBE
+              && (pollInt < WEBHOOOk_POLLING_MIN_INTERVAL || pollInt > WEBHOOOk_POLLING_MAX_INTERVAL)) {
+            throw new InvalidArgumentsException("Poll Interval should be between " + WEBHOOOk_POLLING_MIN_INTERVAL
+                + " and " + WEBHOOOk_POLLING_MAX_INTERVAL + " minutes");
+          }
+        }
+        return; // TODO define other trigger source validation
       case SCHEDULED:
         ScheduledTriggerConfig scheduledTriggerConfig = (ScheduledTriggerConfig) triggerSource.getSpec();
         CronTriggerSpec cronTriggerSpec = (CronTriggerSpec) scheduledTriggerConfig.getSpec();
@@ -927,5 +956,9 @@ public class NGTriggerServiceImpl implements NGTriggerService {
   public Object fetchExecutionSummaryV2(String planExecutionId, String accountId, String orgId, String projectId) {
     return NGRestUtils.getResponse(
         pipelineServiceClient.getExecutionDetailV2(planExecutionId, accountId, orgId, projectId));
+  }
+  @Override
+  public List<TriggerCatalogItem> getTriggerCatalog(String accountIdentifier) {
+    return triggerCatalogHelper.getTriggerTypeToCategoryMapping(accountIdentifier);
   }
 }

@@ -42,6 +42,7 @@ import io.harness.exception.ExplanationException;
 import io.harness.exception.HintException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
+import io.harness.exception.exceptionmanager.ExceptionManager;
 import io.harness.exception.exceptionmanager.exceptionhandler.DocumentLinksConstants;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.core.NGAccess;
@@ -62,9 +63,11 @@ import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
 @Singleton
+@Slf4j
 @OwnedBy(HarnessTeam.CDC)
 public class GARResourceServiceImpl implements GARResourceService {
   private final ConnectorService connectorService;
@@ -72,6 +75,7 @@ public class GARResourceServiceImpl implements GARResourceService {
   private static final int TIMEOUTINSEC = 30;
   private static final int MAXBUILDS = -1;
   @Inject private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
+  @Inject ExceptionManager exceptionManager;
   public static final List<RegionGar> GAR_REGIONS =
       Arrays
           .asList("asia", "asia-east1", "asia-east2", "asia-northeast1", "asia-northeast2", "asia-northeast3",
@@ -205,8 +209,11 @@ public class GARResourceServiceImpl implements GARResourceService {
             .taskSetupAbstractions(abstractions)
             .taskSelectors(delegateRequest.getGcpConnectorDTO().getDelegateSelectors())
             .build();
-
-    return delegateGrpcClientWrapper.executeSyncTask(delegateTaskRequest);
+    try {
+      return delegateGrpcClientWrapper.executeSyncTask(delegateTaskRequest);
+    } catch (DelegateServiceDriverException ex) {
+      throw exceptionManager.processException(ex, WingsException.ExecutionContext.MANAGER, log);
+    }
   }
   private GARResponseDTO getGarResponseDTO(ArtifactTaskExecutionResponse artifactTaskExecutionResponse) {
     List<GarDelegateResponse> garDelegateResponses =

@@ -301,7 +301,7 @@ public class EcsCommandTaskNGHelperTest extends CategoryTest {
 
     ecsCommandTaskNGHelper.deleteScalingPolicies(awsConnectorDTO, serviceName, cluster, region, logCallback);
     verify(logCallback)
-        .saveExecutionLog(format("Deleted Scaling Policies from service %s %n", serviceName), LogLevel.INFO);
+        .saveExecutionLog(format("Deleted Scaling Policies from service %s %n%n", serviceName), LogLevel.INFO);
   }
 
   @Test
@@ -314,6 +314,6 @@ public class EcsCommandTaskNGHelperTest extends CategoryTest {
     ecsCommandTaskNGHelper.deleteScalingPolicies(awsConnectorDTO, serviceName, cluster, region, logCallback);
     verify(logCallback)
         .saveExecutionLog(
-            format("Didn't find any Scaling Policies attached to service %s %n", serviceName), LogLevel.INFO);
+            format("Didn't find any Scaling Policies attached to service %s %n%n", serviceName), LogLevel.INFO);
   }
 }

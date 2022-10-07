@@ -25,7 +25,7 @@ import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
 import io.harness.ngmigration.client.NGClient;
 import io.harness.ngmigration.client.PmsClient;
-import io.harness.ngmigration.connector.SecretFactory;
+import io.harness.ngmigration.secrets.SecretFactory;
 import io.harness.ngmigration.service.MigratorMappingService;
 import io.harness.ngmigration.service.MigratorUtility;
 import io.harness.ngmigration.service.NgMigrationService;
@@ -57,10 +57,14 @@ import retrofit2.Response;
 public class SecretMigrationService extends NgMigrationService {
   @Inject private SecretService secretService;
   @Inject private SecretNGManagerClient secretNGManagerClient;
+  @Inject private SecretFactory secretFactory;
 
   @Override
   public MigratedEntityMapping generateMappingEntity(NGYamlFile yamlFile) {
     CgBasicInfo basicInfo = yamlFile.getCgBasicInfo();
+    if (basicInfo == null) {
+      return null;
+    }
     SecretDTOV2 secretYaml = ((SecretRequestWrapper) yamlFile.getYaml()).getSecret();
     return MigratedEntityMapping.builder()
         .appId(basicInfo.getAppId())
@@ -120,33 +124,34 @@ public class SecretMigrationService extends NgMigrationService {
 
   @Override
   public List<NGYamlFile> generateYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
-      Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NgEntityDetail> migratedEntities,
+      Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities,
       NgEntityDetail ngEntityDetail) {
     EncryptedData encryptedData = (EncryptedData) entities.get(entityId).getEntity();
     List<NGYamlFile> files = new ArrayList<>();
     String identifier = MigratorUtility.generateIdentifier(encryptedData.getName());
-    files.add(
+    NGYamlFile yamlFile =
         NGYamlFile.builder()
             .type(NGMigrationEntityType.SECRET)
             .filename("secret/" + encryptedData.getName() + ".yaml")
             .yaml(SecretRequestWrapper.builder()
-                      .secret(SecretFactory.getSecret(inputDTO, identifier, encryptedData, entities, migratedEntities))
+                      .secret(secretFactory.getSecret(inputDTO, identifier, encryptedData, entities, migratedEntities))
                       .build())
+            .ngEntityDetail(NgEntityDetail.builder()
+                                .identifier(identifier)
+                                .orgIdentifier(inputDTO.getOrgIdentifier())
+                                .projectIdentifier(inputDTO.getProjectIdentifier())
+                                .build())
             .cgBasicInfo(CgBasicInfo.builder()
                              .id(encryptedData.getUuid())
                              .accountId(encryptedData.getAccountId())
                              .appId(null)
                              .type(NGMigrationEntityType.SECRET)
                              .build())
-            .build());
+            .build();
+    files.add(yamlFile);
 
     // TODO: make it more obvious that migratedEntities needs to be updated by having compile-time check
-    migratedEntities.putIfAbsent(entityId,
-        NgEntityDetail.builder()
-            .identifier(identifier)
-            .orgIdentifier(inputDTO.getOrgIdentifier())
-            .projectIdentifier(inputDTO.getProjectIdentifier())
-            .build());
+    migratedEntities.putIfAbsent(entityId, yamlFile);
 
     return files;
   }

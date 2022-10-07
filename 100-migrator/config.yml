@@ -346,7 +346,7 @@ cg:
   envPath: ""
 
   kubectlVersion: v1.13.2
-  scmVersion: 519da179
+  scmVersion: e3ee71bd
 
   ngAuthUIEnabled: false
 
@@ -680,6 +680,8 @@ cg:
     poolSize: 3
     syncInterval: 15
     defaultCronExpression: "0 0/15 * 1/1 * ? *"
+
+  enableOpentelemetry: false
 
 ngClientConfig:
   baseUrl: https://127.0.0.1:7090

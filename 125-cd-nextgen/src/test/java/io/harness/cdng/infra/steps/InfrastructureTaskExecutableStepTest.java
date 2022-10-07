@@ -30,6 +30,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EnvironmentType;
 import io.harness.category.element.UnitTests;
@@ -37,6 +38,8 @@ import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.common.beans.SetupAbstractionKeys;
 import io.harness.cdng.execution.ExecutionInfoKey;
 import io.harness.cdng.execution.helper.StageExecutionHelper;
+import io.harness.cdng.infra.InfrastructureMapper;
+import io.harness.cdng.infra.InfrastructureValidator;
 import io.harness.cdng.infra.beans.AwsInstanceFilter;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.infra.beans.SshWinRmAwsInfrastructureOutcome;
@@ -46,9 +49,13 @@ import io.harness.cdng.infra.yaml.K8sGcpInfrastructure;
 import io.harness.cdng.infra.yaml.SshWinRmAwsInfrastructure;
 import io.harness.cdng.infra.yaml.SshWinRmAwsInfrastructure.SshWinRmAwsInfrastructureBuilder;
 import io.harness.cdng.infra.yaml.SshWinRmAzureInfrastructure;
+import io.harness.cdng.instance.InstanceOutcomeHelper;
+import io.harness.cdng.instance.outcome.InstanceOutcome;
+import io.harness.cdng.instance.outcome.InstancesOutcome;
 import io.harness.cdng.service.steps.ServiceStepOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.connector.ConnectorInfoDTO;
+import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.azure.response.AzureHostResponse;
 import io.harness.delegate.beans.azure.response.AzureHostsResponse;
 import io.harness.delegate.beans.connector.ConnectorType;
@@ -101,8 +108,10 @@ import software.wings.service.impl.aws.model.AwsEC2Instance;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.junit.After;
@@ -115,8 +124,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 @OwnedBy(CDP)
-public class InfrastructureTaskExecutableStepTest {
-  //  @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
+public class InfrastructureTaskExecutableStepTest extends CategoryTest {
   @Mock private InfrastructureStepHelper infrastructureStepHelper;
   @Mock private ExecutionSweepingOutputService executionSweepingOutputService;
   @Mock private OutcomeService outcomeService;
@@ -125,7 +133,10 @@ public class InfrastructureTaskExecutableStepTest {
   @Mock private KryoSerializer kryoSerializer;
   @Mock private ThrowingSupplier throwingSupplier;
   @Mock private StageExecutionHelper stageExecutionHelper;
+  @Mock private InfrastructureMapper infrastructureMapper;
+  @Mock InfrastructureValidator infrastructureValidator;
   @Mock private NGLogCallback mockLogCallback;
+  @Mock InstanceOutcomeHelper instanceOutcomeHelper;
 
   @InjectMocks private InfrastructureTaskExecutableStep infrastructureStep = new InfrastructureTaskExecutableStep();
 
@@ -138,14 +149,15 @@ public class InfrastructureTaskExecutableStepTest {
   private final ConnectorInfoDTO azureConnectorInfoDTO =
       ConnectorInfoDTO.builder().connectorType(ConnectorType.AZURE).connectorConfig(azureConnectorDTO).build();
 
-  private final ParameterField connectorRef = ParameterField.createValueField("connectorRef");
+  private final List<ParameterField<String>> connectorRef =
+      Arrays.asList(ParameterField.createValueField("connectorRef"));
   private final AzureSshInfraDelegateConfig azureSshInfraDelegateConfig =
       AzureSshInfraDelegateConfig.sshAzureBuilder().azureConnectorDTO(azureConnectorDTO).build();
   private final AzureWinrmInfraDelegateConfig azureWinrmInfraDelegateConfig =
       AzureWinrmInfraDelegateConfig.winrmAzureBuilder().azureConnectorDTO(azureConnectorDTO).build();
   private final Infrastructure azureInfra = SshWinRmAzureInfrastructure.builder()
                                                 .credentialsRef(ParameterField.createValueField("sshKeyRef"))
-                                                .connectorRef(connectorRef)
+                                                .connectorRef(connectorRef.get(0))
                                                 .subscriptionId(ParameterField.createValueField("subscriptionId"))
                                                 .resourceGroup(ParameterField.createValueField("resourceGroup"))
                                                 .tags(ParameterField.createValueField(ImmutableMap.of("Env", "Dev")))
@@ -164,7 +176,7 @@ public class InfrastructureTaskExecutableStepTest {
       AwsWinrmInfraDelegateConfig.winrmAwsBuilder().awsConnectorDTO(awsConnectorDTO).build();
   private final Infrastructure awsInfra =
       SshWinRmAwsInfrastructure.builder()
-          .connectorRef(connectorRef)
+          .connectorRef(connectorRef.get(0))
           .credentialsRef(ParameterField.createValueField("sshKeyRef"))
           .region(ParameterField.createValueField("regionId"))
           .awsInstanceFilter(AwsInstanceFilter.builder()
@@ -200,12 +212,21 @@ public class InfrastructureTaskExecutableStepTest {
   @Owner(developers = ACASIAN)
   @Category(UnitTests.class)
   public void testObtainTaskAfterRbacWithSshAzureInfra() {
-    when(infrastructureStepHelper.validateAndGetConnector(eq(connectorRef), eq(ambiance), any()))
-        .thenReturn(azureConnectorInfoDTO);
+    when(infrastructureStepHelper.validateAndGetConnectors(eq(connectorRef), eq(ambiance), any()))
+        .thenReturn(Arrays.asList(azureConnectorInfoDTO));
     when(outcomeService.resolve(any(), eq(RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.SERVICE))))
         .thenReturn(ServiceStepOutcome.builder().type(ServiceSpecType.SSH).build());
     when(cdStepHelper.getSshInfraDelegateConfig(any(), eq(ambiance))).thenReturn(azureSshInfraDelegateConfig);
-
+    when(infrastructureMapper.toOutcome(any(), any(), any(), any(), any(), any()))
+        .thenReturn(SshWinRmAzureInfrastructureOutcome.builder()
+                        .connectorRef("connectorRef")
+                        .subscriptionId("subscriptionId")
+                        .hostConnectionType("Hostname")
+                        .tags(Map.of("Env", "Dev"))
+                        .credentialsRef("sshKeyRef")
+                        .environment(EnvironmentOutcome.builder().build())
+                        .infrastructureKey("572beaec293c79ba725f68bea0a8a1c7806dc878")
+                        .build());
     TaskRequest taskRequest =
         infrastructureStep.obtainTaskAfterRbac(ambiance, azureInfra, StepInputPackage.builder().build());
 
@@ -226,12 +247,21 @@ public class InfrastructureTaskExecutableStepTest {
   @Owner(developers = VITALIE)
   @Category(UnitTests.class)
   public void testObtainTaskAfterRbacWithSshAwsInfra() {
-    when(infrastructureStepHelper.validateAndGetConnector(eq(connectorRef), eq(ambiance), any()))
-        .thenReturn(awsConnectorInfoDTO);
+    when(infrastructureStepHelper.validateAndGetConnectors(eq(connectorRef), eq(ambiance), any()))
+        .thenReturn(Arrays.asList(awsConnectorInfoDTO));
     when(outcomeService.resolve(any(), eq(RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.SERVICE))))
         .thenReturn(ServiceStepOutcome.builder().type(ServiceSpecType.SSH).build());
     when(cdStepHelper.getSshInfraDelegateConfig(any(), eq(ambiance))).thenReturn(awsSshInfraDelegateConfig);
-
+    when(infrastructureMapper.toOutcome(any(), any(), any(), any(), any(), any()))
+        .thenReturn(SshWinRmAwsInfrastructureOutcome.builder()
+                        .connectorRef("connectorRef")
+                        .region("region")
+                        .hostConnectionType("Hostname")
+                        .tags(Map.of("testTag", "test"))
+                        .credentialsRef("sshKeyRef")
+                        .environment(EnvironmentOutcome.builder().build())
+                        .infrastructureKey("70dd2bc5aa8fc8920b04247e4151e8e1074332d3")
+                        .build());
     TaskRequest taskRequest =
         infrastructureStep.obtainTaskAfterRbac(ambiance, awsInfra, StepInputPackage.builder().build());
 
@@ -252,12 +282,21 @@ public class InfrastructureTaskExecutableStepTest {
   @Owner(developers = ACASIAN)
   @Category(UnitTests.class)
   public void testObtainTaskAfterRbacWithWinRmAzureInfra() {
-    when(infrastructureStepHelper.validateAndGetConnector(eq(connectorRef), eq(ambiance), any()))
-        .thenReturn(azureConnectorInfoDTO);
+    when(infrastructureStepHelper.validateAndGetConnectors(eq(connectorRef), eq(ambiance), any()))
+        .thenReturn(Arrays.asList(azureConnectorInfoDTO));
     when(outcomeService.resolve(any(), eq(RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.SERVICE))))
         .thenReturn(ServiceStepOutcome.builder().type(ServiceSpecType.WINRM).build());
     when(cdStepHelper.getWinRmInfraDelegateConfig(any(), eq(ambiance))).thenReturn(azureWinrmInfraDelegateConfig);
-
+    when(infrastructureMapper.toOutcome(any(), any(), any(), any(), any(), any()))
+        .thenReturn(SshWinRmAzureInfrastructureOutcome.builder()
+                        .connectorRef("connectorRef")
+                        .subscriptionId("subscriptionId")
+                        .resourceGroup("resourceGroup")
+                        .tags(Map.of("Env", "Dev"))
+                        .credentialsRef("sshKeyRef")
+                        .environment(EnvironmentOutcome.builder().build())
+                        .infrastructureKey("572beaec293c79ba725f68bea0a8a1c7806dc878")
+                        .build());
     TaskRequest taskRequest =
         infrastructureStep.obtainTaskAfterRbac(ambiance, azureInfra, StepInputPackage.builder().build());
 
@@ -278,12 +317,21 @@ public class InfrastructureTaskExecutableStepTest {
   @Owner(developers = VITALIE)
   @Category(UnitTests.class)
   public void testObtainTaskAfterRbacWithWinRmAwsInfra() {
-    when(infrastructureStepHelper.validateAndGetConnector(eq(connectorRef), eq(ambiance), any()))
-        .thenReturn(awsConnectorInfoDTO);
+    when(infrastructureStepHelper.validateAndGetConnectors(eq(connectorRef), eq(ambiance), any()))
+        .thenReturn(Arrays.asList(awsConnectorInfoDTO));
     when(outcomeService.resolve(any(), eq(RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.SERVICE))))
         .thenReturn(ServiceStepOutcome.builder().type(ServiceSpecType.WINRM).build());
     when(cdStepHelper.getWinRmInfraDelegateConfig(any(), eq(ambiance))).thenReturn(awsWinrmInfraDelegateConfig);
-
+    when(infrastructureMapper.toOutcome(any(), any(), any(), any(), any(), any()))
+        .thenReturn(SshWinRmAwsInfrastructureOutcome.builder()
+                        .connectorRef("connectorRef")
+                        .credentialsRef("sshKeyRef")
+                        .region("regionId")
+                        .tags(Map.of("testTag", "test"))
+                        .hostConnectionType("Hostname")
+                        .environment(EnvironmentOutcome.builder().build())
+                        .infrastructureKey("70dd2bc5aa8fc8920b04247e4151e8e1074332d3")
+                        .build());
     TaskRequest taskRequest =
         infrastructureStep.obtainTaskAfterRbac(ambiance, awsInfra, StepInputPackage.builder().build());
 
@@ -335,6 +383,9 @@ public class InfrastructureTaskExecutableStepTest {
         .thenReturn(new HashSet<>(Arrays.asList("host1", "host2")));
     Map<String, ResponseData> responseDataMap = ImmutableMap.of("azure-hosts-response", azureHostsResponse);
     ThrowingSupplier responseDataSupplier = StrategyHelper.buildResponseDataSupplier(responseDataMap);
+    when(instanceOutcomeHelper.saveAndGetInstancesOutcome(
+             eq(ambiance), any(InfrastructureOutcome.class), any(DelegateResponseData.class), any(Set.class)))
+        .thenReturn(getInstancesOutcome());
 
     StepResponse response =
         infrastructureStep.handleTaskResultWithSecurityContext(ambiance, azureInfra, responseDataSupplier);
@@ -353,6 +404,14 @@ public class InfrastructureTaskExecutableStepTest {
     HostsOutput hostsOutput = hostsOutputArgumentCaptor.getValue();
     assertThat(hostsOutput).isNotNull();
     assertThat(hostsOutput.getHosts()).containsExactly("host1", "host2");
+
+    Collection<StepResponse.StepOutcome> stepOutcomes = response.getStepOutcomes();
+    assertThat(stepOutcomes.contains(StepResponse.StepOutcome.builder()
+                                         .outcome(getInstancesOutcome())
+                                         .name(OutcomeExpressionConstants.INSTANCES)
+                                         .group(OutcomeExpressionConstants.INFRASTRUCTURE_GROUP)
+                                         .build()))
+        .isTrue();
   }
 
   @Test
@@ -391,6 +450,9 @@ public class InfrastructureTaskExecutableStepTest {
             .build();
     Map<String, ResponseData> responseDataMap = ImmutableMap.of("aws-hosts-response", awsListEC2InstancesTaskResponse);
     ThrowingSupplier responseDataSupplier = StrategyHelper.buildResponseDataSupplier(responseDataMap);
+    when(instanceOutcomeHelper.saveAndGetInstancesOutcome(
+             eq(ambiance), any(InfrastructureOutcome.class), any(DelegateResponseData.class), any(Set.class)))
+        .thenReturn(getInstancesOutcome());
 
     StepResponse response =
         infrastructureStep.handleTaskResultWithSecurityContext(ambiance, awsInfra, responseDataSupplier);
@@ -409,6 +471,14 @@ public class InfrastructureTaskExecutableStepTest {
     HostsOutput hostsOutput = hostsOutputArgumentCaptor.getValue();
     assertThat(hostsOutput).isNotNull();
     assertThat(hostsOutput.getHosts()).containsExactly("host1");
+
+    Collection<StepResponse.StepOutcome> stepOutcomes = response.getStepOutcomes();
+    assertThat(stepOutcomes.contains(StepResponse.StepOutcome.builder()
+                                         .outcome(getInstancesOutcome())
+                                         .name(OutcomeExpressionConstants.INSTANCES)
+                                         .group(OutcomeExpressionConstants.INFRASTRUCTURE_GROUP)
+                                         .build()))
+        .isTrue();
   }
 
   @Test
@@ -600,9 +670,11 @@ public class InfrastructureTaskExecutableStepTest {
   @Owner(developers = ABOSII)
   @Category(UnitTests.class)
   public void testValidateConnector() {
-    ParameterField<String> gcpSaConnectorRef = ParameterField.createValueField("account.gcp-sa");
-    ParameterField<String> gcpDelegateConnectorRef = ParameterField.createValueField("account.gcp-delegate");
-    ParameterField<String> missingConnectorRef = ParameterField.createValueField("account.missing");
+    List<ParameterField<String>> gcpSaConnectorRefs = Arrays.asList(ParameterField.createValueField("account.gcp-sa"));
+    List<ParameterField<String>> gcpDelegateConnectorRefs =
+        Arrays.asList(ParameterField.createValueField("account.gcp-delegate"));
+    List<ParameterField<String>> missingConnectorRefs =
+        Arrays.asList(ParameterField.createValueField("account.missing"));
 
     Ambiance ambiance = Ambiance.newBuilder().putSetupAbstractions(SetupAbstractionKeys.accountId, ACCOUNT_ID).build();
     GcpConnectorDTO gcpConnectorServiceAccount =
@@ -619,29 +691,30 @@ public class InfrastructureTaskExecutableStepTest {
             .build();
 
     doThrow(new InvalidRequestException(
-                format("Connector not found for identifier : [%s]", missingConnectorRef.getValue())))
+                format("Connector not found for identifier : [%s]", missingConnectorRefs.get(0).getValue())))
         .when(infrastructureStepHelper)
-        .validateAndGetConnector(eq(missingConnectorRef), eq(ambiance), any());
+        .validateAndGetConnectors(eq(missingConnectorRefs), eq(ambiance), any());
 
-    doReturn(ConnectorInfoDTO.builder().connectorConfig(gcpConnectorServiceAccount).build())
+    doReturn(Arrays.asList(ConnectorInfoDTO.builder().connectorConfig(gcpConnectorServiceAccount).build()))
         .when(infrastructureStepHelper)
-        .validateAndGetConnector(eq(gcpSaConnectorRef), eq(ambiance), any());
+        .validateAndGetConnectors(eq(gcpSaConnectorRefs), eq(ambiance), any());
 
-    doReturn(ConnectorInfoDTO.builder().connectorConfig(gcpConnectorInheritFromDelegate).build())
+    doReturn(Arrays.asList(ConnectorInfoDTO.builder().connectorConfig(gcpConnectorInheritFromDelegate).build()))
         .when(infrastructureStepHelper)
-        .validateAndGetConnector(eq(gcpDelegateConnectorRef), eq(ambiance), any());
+        .validateAndGetConnectors(eq(gcpDelegateConnectorRefs), eq(ambiance), any());
 
-    assertConnectorValidationMessage(K8sGcpInfrastructure.builder().connectorRef(missingConnectorRef).build(),
+    assertConnectorValidationMessage(K8sGcpInfrastructure.builder().connectorRef(missingConnectorRefs.get(0)).build(),
         "Connector not found for identifier : [account.missing]");
 
     assertThatCode(()
                        -> infrastructureStep.validateConnector(
-                           K8sGcpInfrastructure.builder().connectorRef(gcpSaConnectorRef).build(), ambiance))
+                           K8sGcpInfrastructure.builder().connectorRef(gcpSaConnectorRefs.get(0)).build(), ambiance))
         .doesNotThrowAnyException();
 
-    assertThatCode(()
-                       -> infrastructureStep.validateConnector(
-                           K8sGcpInfrastructure.builder().connectorRef(gcpDelegateConnectorRef).build(), ambiance))
+    assertThatCode(
+        ()
+            -> infrastructureStep.validateConnector(
+                K8sGcpInfrastructure.builder().connectorRef(gcpDelegateConnectorRefs.get(0)).build(), ambiance))
         .doesNotThrowAnyException();
   }
 
@@ -649,5 +722,11 @@ public class InfrastructureTaskExecutableStepTest {
     Ambiance ambiance = Ambiance.newBuilder().putSetupAbstractions(SetupAbstractionKeys.accountId, ACCOUNT_ID).build();
     assertThatThrownBy(() -> infrastructureStep.validateConnector(infrastructure, ambiance))
         .hasMessageContaining(message);
+  }
+
+  private InstancesOutcome getInstancesOutcome() {
+    return InstancesOutcome.builder()
+        .instances(List.of(InstanceOutcome.builder().name("instanceName").hostName("instanceHostname").build()))
+        .build();
   }
 }

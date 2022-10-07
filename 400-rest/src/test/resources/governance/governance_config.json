@@ -41,6 +41,28 @@
           }
         }
       ],
+      "excludeAppSelections": [
+        {
+          "filterType": "CUSTOM",
+          "apps": [
+            "aaOLwzRsTMOoSlDrjstIHQ1"
+          ],
+          "envSelection": {
+            "filterType": "CUSTOM",
+            "environments": ["env1"]
+          },
+          "serviceSelection": {
+            "filterType": "CUSTOM",
+            "services": ["service1", "service2"]
+          }
+        },
+        {
+          "filterType": "ALL",
+          "envSelection": {
+            "filterType": "ALL_NON_PROD"
+          }
+        }
+      ],
       "timeRange": {
         "durationBased": false,
         "from": 1609372800000,

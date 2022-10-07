@@ -24,6 +24,8 @@ public class CdnConfig {
   String watcherJarBasePath;
   String watcherJarPath;
   String watcherMetaDataFilePath;
+
+  // remove these two fields after examining where all its used
   Map<String, String> cdnJreTarPaths;
   String alpnJarPath;
 }

@@ -28,4 +28,5 @@ import lombok.experimental.FieldDefaults;
 @Schema(name = "ClusterBatchResponse", description = "This is the Cluster Batch Response defined in Harness")
 public class ClusterBatchResponse {
   @Schema(description = "number of clusters linked") long linked;
+  @Schema(description = "number of clusters unlinked") long unlinked;
 }

@@ -179,6 +179,7 @@ public final class VerificationJobInstance
     return getStartTime().plus(getResolvedJob().getDuration());
   }
 
+  @JsonIgnore
   public int getVerificationTasksCount() {
     return cvConfigMap.size();
   }
@@ -307,6 +308,7 @@ public final class VerificationJobInstance
     return (int) (completedTillNow.get(ChronoUnit.SECONDS) * 100.0 / total.get(ChronoUnit.SECONDS));
   }
 
+  @JsonIgnore
   public Duration getRemainingTime(Instant currentTime) {
     if (isFinalStatus()) {
       return Duration.ZERO;

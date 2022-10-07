@@ -49,9 +49,8 @@ public class AzureRepoServiceImpl implements AzureRepoService {
 
       return statusCreationResponseResponse.isSuccessful();
     } catch (Exception e) {
-      log.error("Failed to post commit status request to Azure repo with url {} and sha {} ",
-          azureRepoConfig.getAzureRepoUrl(), sha, e);
-      return false;
+      throw new InvalidRequestException(
+          format("Failed to send status for AzureRepo url %s and sha %s ", azureRepoConfig.getAzureRepoUrl(), sha), e);
     }
   }
 

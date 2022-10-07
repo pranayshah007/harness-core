@@ -9,6 +9,7 @@ package io.harness.delegate.task.artifacts;
 
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.ACR_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.AMAZON_S3_NAME;
+import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.AMI_ARTIFACTS_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.AZURE_ARTIFACTS_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.CUSTOM_ARTIFACT_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.DOCKER_REGISTRY_NAME;
@@ -29,6 +30,8 @@ public enum ArtifactSourceType {
   @JsonProperty(ECR_NAME) ECR(ECR_NAME),
   @JsonProperty(ArtifactSourceConstants.NEXUS3_REGISTRY_NAME)
   NEXUS3_REGISTRY(ArtifactSourceConstants.NEXUS3_REGISTRY_NAME),
+  @JsonProperty(ArtifactSourceConstants.NEXUS2_REGISTRY_NAME)
+  NEXUS2_REGISTRY(ArtifactSourceConstants.NEXUS2_REGISTRY_NAME),
   @JsonProperty(ArtifactSourceConstants.ARTIFACTORY_REGISTRY_NAME)
   ARTIFACTORY_REGISTRY(ArtifactSourceConstants.ARTIFACTORY_REGISTRY_NAME),
   @JsonProperty(CUSTOM_ARTIFACT_NAME) CUSTOM_ARTIFACT(CUSTOM_ARTIFACT_NAME),
@@ -37,7 +40,8 @@ public enum ArtifactSourceType {
   @JsonProperty(AMAZON_S3_NAME) AMAZONS3(AMAZON_S3_NAME),
   @JsonProperty(GOOGLE_ARTIFACT_REGISTRY_NAME) GOOGLE_ARTIFACT_REGISTRY(GOOGLE_ARTIFACT_REGISTRY_NAME),
   @JsonProperty(GITHUB_PACKAGES_NAME) GITHUB_PACKAGES(GITHUB_PACKAGES_NAME),
-  @JsonProperty(AZURE_ARTIFACTS_NAME) AZURE_ARTIFACTS(AZURE_ARTIFACTS_NAME);
+  @JsonProperty(AZURE_ARTIFACTS_NAME) AZURE_ARTIFACTS(AZURE_ARTIFACTS_NAME),
+  @JsonProperty(AMI_ARTIFACTS_NAME) AMI(AMI_ARTIFACTS_NAME);
 
   private final String displayName;
 

@@ -41,6 +41,8 @@ The core principles should rarely change and marks a significant departure from 
 
 Within the primary version, Harness provides a secondary level of versioning which allows for breaking changes at the service and implementation level.
 
+While the practical way to implement this kind of versioning in the backend is still being discussed, there are some general ideas around what we intend to follow:
+
 This versioning is represented by the date of release e.g. `2022-05-18`. This ensures the API is versioned as a whole but removes the need for the customer to keep track of different versions across multiple endpoints. However, it is still a breaking change and should so continue to be a last resort.
 
 #### Affected Services

@@ -1,3 +1,10 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.delegate.ecs;
 
 import static software.wings.beans.LogHelper.color;
@@ -6,7 +13,6 @@ import static java.lang.String.format;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.aws.beans.AwsInternalConfig;
 import io.harness.delegate.beans.ecs.EcsBlueGreenCreateServiceResult;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
@@ -67,8 +73,6 @@ public class EcsBlueGreenCreateServiceCommandTaskHandler extends EcsCommandTaskN
         iLogStreamingTaskClient, EcsCommandUnitConstants.deploy.toString(), true, commandUnitsProgress);
 
     try {
-      AwsInternalConfig awsInternalConfig =
-          awsNgConfigMapper.createAwsInternalConfig(ecsInfraConfig.getAwsConnectorDTO());
       String ecsServiceDefinitionManifestContent =
           ecsBlueGreenCreateServiceRequest.getEcsServiceDefinitionManifestContent();
       List<String> ecsScalableTargetManifestContentList =
@@ -91,13 +95,10 @@ public class EcsBlueGreenCreateServiceCommandTaskHandler extends EcsCommandTaskN
       String taskDefinitionArn = taskDefinition.taskDefinitionArn();
 
       deployLogCallback.saveExecutionLog(
-          format("Created Task Definition %s with Arn %s..%n", taskDefinitionName, taskDefinitionArn), LogLevel.INFO);
+          format("Created Task Definition %s with Arn %s..%n%n", taskDefinitionName, taskDefinitionArn), LogLevel.INFO);
 
-      // find target group arn from stage listener and stage listener rule arn
-      String targetGroupArn = ecsCommandTaskHelper.getTargetGroupArnFromLoadBalancer(ecsInfraConfig,
-          ecsBlueGreenCreateServiceRequest.getEcsLoadBalancerConfig().getStageListenerArn(),
-          ecsBlueGreenCreateServiceRequest.getEcsLoadBalancerConfig().getStageListenerRuleArn(),
-          ecsBlueGreenCreateServiceRequest.getEcsLoadBalancerConfig().getLoadBalancer(), awsInternalConfig);
+      // target group arn from stage listener and stage listener rule arn
+      String targetGroupArn = ecsBlueGreenCreateServiceRequest.getEcsLoadBalancerConfig().getStageTargetGroupArn();
 
       String serviceName = ecsCommandTaskHelper.createStageService(ecsServiceDefinitionManifestContent,
           ecsScalableTargetManifestContentList, ecsScalingPolicyManifestContentList, ecsInfraConfig, deployLogCallback,
