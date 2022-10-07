@@ -17,7 +17,7 @@ import io.harness.cdng.configfile.ConfigFileWrapper;
 import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
 import io.harness.cdng.service.ServiceSpec;
 import io.harness.cdng.visitor.helpers.serviceconfig.EcsServiceSpecVisitorHelper;
-import io.harness.cdng.visitor.helpers.serviceconfig.ElasticgroupServiceSpecVisitorHelper;
+import io.harness.cdng.visitor.helpers.serviceconfig.ElastigroupServiceSpecVisitorHelper;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.ng.core.k8s.ServiceSpecType;
 import io.harness.pms.yaml.YamlNode;
@@ -36,11 +36,11 @@ import java.util.List;
 @OwnedBy(HarnessTeam.CDP)
 @Value
 @Builder
-@JsonTypeName(ServiceSpecType.ELASTICGROUP)
-@SimpleVisitorHelper(helperClass = ElasticgroupServiceSpecVisitorHelper.class)
-@TypeAlias("elasticgroupServiceSpec")
-@RecasterAlias("io.harness.cdng.service.beans.ElasticgroupServiceSpec")
-public class ElasticgroupServiceSpec implements ServiceSpec, Visitable {
+@JsonTypeName(ServiceSpecType.ECS)
+@SimpleVisitorHelper(helperClass = ElastigroupServiceSpecVisitorHelper.class)
+@TypeAlias("elastigroupServiceSpec")
+@RecasterAlias("io.harness.cdng.service.beans.ElastigroupServiceSpec")
+public class ElastigroupServiceSpec implements ServiceSpec, Visitable {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
@@ -55,7 +55,7 @@ public class ElasticgroupServiceSpec implements ServiceSpec, Visitable {
 
   @Override
   public String getType() {
-    return ServiceDefinitionType.ELASTICGROUP.getYamlName();
+    return ServiceDefinitionType.ELASTIGROUP.getYamlName();
   }
 
   @Override

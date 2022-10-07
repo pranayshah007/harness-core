@@ -128,8 +128,8 @@ public class AddDeploymentTypeToInfrastructureEntityMigration implements NGMigra
         return ServiceDefinitionType.AZURE_WEBAPP;
       case CUSTOM_DEPLOYMENT:
         return ServiceDefinitionType.CUSTOM_DEPLOYMENT;
-      case ELASTICGROUP:
-        return ServiceDefinitionType.ELASTICGROUP;
+      case ELASTIGROUP:
+        return ServiceDefinitionType.ELASTIGROUP;
       default:
         return null;
     }

@@ -45,7 +45,10 @@ import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.GOOGLE_
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.JENKINS_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.NEXUS2_REGISTRY_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.NEXUS3_REGISTRY_NAME;
-import static io.harness.ng.core.k8s.ServiceSpecType.*;
+import static io.harness.ng.core.k8s.ServiceSpecType.AZURE_WEBAPP;
+import static io.harness.ng.core.k8s.ServiceSpecType.CUSTOM_DEPLOYMENT;
+import static io.harness.ng.core.k8s.ServiceSpecType.ECS;
+import static io.harness.ng.core.k8s.ServiceSpecType.KUBERNETES;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -205,10 +208,11 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
   private static final String PROVISIONER = "Provisioner";
   private static final String SHELL_SCRIPT_PROVISIONER_STEM_METADATA = "Shell Script Provisioner";
   private static final String SSH_WINRM = "SshWinRM";
+  private static final String ELASTIGROUP = "Elasticgroup";
 
   private static final List<String> CLOUDFORMATION_CATEGORY =
-      Arrays.asList(KUBERNETES, PROVISIONER, CLOUDFORMATION_STEP_METADATA, HELM, ECS, SSH_WINRM, ELASTICGROUP);
-  private static final List<String> TERRAFORM_CATEGORY = Arrays.asList(KUBERNETES, PROVISIONER, HELM, ECS, SSH_WINRM, ELASTICGROUP);
+      Arrays.asList(KUBERNETES, PROVISIONER, CLOUDFORMATION_STEP_METADATA, HELM, ECS, SSH_WINRM, ELASTIGROUP);
+  private static final List<String> TERRAFORM_CATEGORY = Arrays.asList(KUBERNETES, PROVISIONER, HELM, ECS, SSH_WINRM, ELASTIGROUP);
   private static final String BUILD_STEP = "Builds";
 
   private static final List<String> AZURE_RESOURCE_CATEGORY =

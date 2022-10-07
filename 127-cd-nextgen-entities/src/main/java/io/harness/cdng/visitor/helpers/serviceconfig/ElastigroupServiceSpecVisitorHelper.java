@@ -7,14 +7,14 @@
 
 package io.harness.cdng.visitor.helpers.serviceconfig;
 
-import io.harness.cdng.service.beans.ElasticgroupServiceSpec;
+import io.harness.cdng.service.beans.ElastigroupServiceSpec;
 import io.harness.walktree.visitor.validation.ConfigValidator;
 import io.harness.walktree.visitor.validation.ValidationVisitor;
 
-public class ElasticgroupServiceSpecVisitorHelper implements ConfigValidator {
+public class ElastigroupServiceSpecVisitorHelper implements ConfigValidator {
   @Override
   public Object createDummyVisitableElement(Object originalElement) {
-    return ElasticgroupServiceSpec.builder().build();
+    return ElastigroupServiceSpec.builder().build();
   }
 
   @Override

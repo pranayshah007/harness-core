@@ -86,7 +86,7 @@ public class ServiceVariableCreator {
         case ServiceSpecType.KUBERNETES:
         case ServiceSpecType.NATIVE_HELM:
         case ServiceSpecType.SERVERLESS_AWS_LAMBDA:
-        case ServiceSpecType.ELASTICGROUP:
+        case ServiceSpecType.ELASTIGROUP:
         case ServiceSpecType.ECS:
           YamlField specNode = serviceDefNode.getNode().getField(YamlTypes.SERVICE_SPEC);
           if (specNode != null) {

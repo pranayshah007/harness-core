@@ -77,7 +77,7 @@ public class ServiceDefinitionPlanCreatorTest extends CDNGTestBase {
     assertThat(supportedTypes.get(YamlTypes.SERVICE_DEFINITION))
         .containsOnly(ServiceSpecType.KUBERNETES, ServiceSpecType.SSH, ServiceSpecType.WINRM,
             ServiceSpecType.NATIVE_HELM, ServiceSpecType.SERVERLESS_AWS_LAMBDA, ServiceSpecType.AZURE_WEBAPP,
-            ServiceSpecType.ECS, ServiceSpecType.CUSTOM_DEPLOYMENT, ServiceSpecType.ELASTICGROUP);
+            ServiceSpecType.ECS, ServiceSpecType.CUSTOM_DEPLOYMENT, ServiceSpecType.ELASTIGROUP);
   }
 
   private void checksForDependencies(PlanCreationResponse planCreationResponse, String nodeUuid) {
