@@ -85,7 +85,8 @@ public class InputsValidationHelperTest extends NgManagerTestBase {
         outboxService, customDeploymentEntitySetupHelper, infrastructureEntitySetupUsageHelper));
     environmentService = spy(new EnvironmentServiceImpl(environmentRepository, entitySetupUsageService, eventProducer,
         outboxService, transactionTemplate, infrastructureEntityService, clusterService, serviceOverrideService));
-    environmentRefreshHelper = spy(new EnvironmentRefreshHelper(environmentService, infrastructureEntityService));
+    environmentRefreshHelper =
+        spy(new EnvironmentRefreshHelper(environmentService, infrastructureEntityService, serviceOverrideService));
     on(entityFetchHelper).set("serviceEntityService", serviceEntityService);
     on(inputsValidationHelper).set("serviceEntityService", serviceEntityService);
     on(inputsValidationHelper).set("entityFetchHelper", entityFetchHelper);
