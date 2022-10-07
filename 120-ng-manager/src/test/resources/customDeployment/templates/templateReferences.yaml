@@ -41,6 +41,6 @@ customDeployment:
         description: "IP address of the host"
   execution:
     stepTemplateRefs:
-      - account.accountTemplate
-      - org.orgTemplate
-      - projectTemplate
+      - "account.accountTemplate"
+      - "org.orgTemplate"
+      - "projectTemplate"

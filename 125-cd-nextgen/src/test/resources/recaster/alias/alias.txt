@@ -516,3 +516,6 @@ io.harness.cdng.provision.shellscript.ShellScriptProvisionStepParameters
 io.harness.cdng.gitops.UpdateReleaseRepoStepNode
 io.harness.cdng.gitops.UpdateReleaseRepoStepInfo
 io.harness.cdng.gitops.UpdateReleaseRepoOutcome
+io.harness.cdng.instance.outcome.InstancesOutcome
+io.harness.cdng.instance.outcome.InstanceOutcome
+io.harness.cdng.instance.outcome.HostOutcome

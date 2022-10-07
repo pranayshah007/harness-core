@@ -82,12 +82,11 @@ public class FetchInstanceScriptStepTest extends CDNGTestBase {
           .instanceFetchScript("")
           .build();
   private final Ambiance ambiance = getAmbiance();
-  private final TaskRequest taskRequest = TaskRequest.newBuilder().build();
   @Mock private LogStreamingStepClientFactory logStreamingStepClientFactory;
-  private ILogStreamingStepClient logStreamingStepClient;
 
   @Before
   public void setup() {
+    ILogStreamingStepClient logStreamingStepClient;
     logStreamingStepClient = mock(ILogStreamingStepClient.class);
     when(logStreamingStepClientFactory.getLogStreamingStepClient(any())).thenReturn(logStreamingStepClient);
   }
