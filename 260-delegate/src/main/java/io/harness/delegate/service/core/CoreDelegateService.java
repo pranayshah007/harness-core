@@ -64,7 +64,7 @@ public class CoreDelegateService extends SimpleDelegateAgent {
   @Override
   protected ImmutableList<TaskType> getSupportedTasks() {
 //    return Arrays.stream(TaskType.values()).collect(toImmutableList());
-    return ImmutableList.of(TaskType.SCRIPT);
+    return ImmutableList.of(TaskType.SCRIPT, TaskType.K8S_COMMAND_TASK, TaskType.K8S_COMMAND_TASK_NG, TaskType.KUBERNETES_SWAP_SERVICE_SELECTORS_TASK);
   }
 
   //  @Override
