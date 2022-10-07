@@ -131,13 +131,17 @@ public class RedisProducer extends AbstractProducer {
   }
 
   private void addTraceId(Map<String, String> redisData) {
-    if (!Span.getInvalid().equals(Span.current())) {
-      redisData.put(REDIS_STREAM_TRACE_ID_KEY, Span.current().getSpanContext().getTraceId());
-    } else {
-      Map<String, String> contextMap = MDC.getCopyOfContextMap();
-      if (contextMap != null && contextMap.containsKey(REDIS_STREAM_TRACE_ID_KEY)) {
-        redisData.put(REDIS_STREAM_TRACE_ID_KEY, contextMap.get(REDIS_STREAM_TRACE_ID_KEY));
+    try {
+      if (!Span.getInvalid().equals(Span.current())) {
+        redisData.put(REDIS_STREAM_TRACE_ID_KEY, Span.current().getSpanContext().getTraceId());
+      } else {
+        Map<String, String> contextMap = MDC.getCopyOfContextMap();
+        if (contextMap != null && contextMap.containsKey(REDIS_STREAM_TRACE_ID_KEY)) {
+          redisData.put(REDIS_STREAM_TRACE_ID_KEY, contextMap.get(REDIS_STREAM_TRACE_ID_KEY));
+        }
       }
+    } catch (Exception e) {
+      log.warn("Error while adding traceId ", e);
     }
   }
 }
