@@ -91,7 +91,7 @@ public class CVNGStepResourceTest extends CvNextGenTestBase {
 
     Response response = webTarget.request(MediaType.APPLICATION_JSON_TYPE).get();
     assertThat(response.getStatus()).isEqualTo(200);
-    assertThat(response.readEntity(String.class)).contains("\"totalItems\":1");
+    assertThat(response.readEntity(String.class)).contains("\"totalItems\":3");
   }
 
   @Test

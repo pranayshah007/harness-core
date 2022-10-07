@@ -84,7 +84,7 @@ public class PipelinesApiImplTest extends CategoryTest {
     pipelinesApiImpl = new PipelinesApiImpl(
         pmsPipelineService, pipelineServiceHelper, pipelineTemplateHelper, pipelineMetadataService);
     ClassLoader classLoader = this.getClass().getClassLoader();
-    String filename = "failure-strategy.yaml";
+    String filename = "simplified-yaml.yaml";
     yaml = Resources.toString(Objects.requireNonNull(classLoader.getResource(filename)), StandardCharsets.UTF_8);
     entity = PipelineEntity.builder()
                  .accountId(account)
@@ -116,7 +116,8 @@ public class PipelinesApiImplTest extends CategoryTest {
   public void testPipelineCreate() {
     PipelineCreateRequestBody pipelineRequestBody = new PipelineCreateRequestBody();
     pipelineRequestBody.setPipelineYaml(yaml);
-    // add git details
+    pipelineRequestBody.setSlug(slug);
+    pipelineRequestBody.setName(name);
     when(pmsPipelineService.create(any()))
         .thenReturn(PipelineCRUDResult.builder()
                         .pipelineEntity(entity)
@@ -161,8 +162,9 @@ public class PipelinesApiImplTest extends CategoryTest {
         .when(pipelineTemplateHelper)
         .resolveTemplateRefsInPipeline(account, org, project, yaml);
     PipelineUpdateRequestBody requestBody = new PipelineUpdateRequestBody();
-    // add Git details
     requestBody.setPipelineYaml(yaml);
+    requestBody.setSlug(slug);
+    requestBody.setName(name);
     Response response = pipelinesApiImpl.updatePipeline(requestBody, org, project, slug, account);
     assertThat(response.getEntity()).isEqualTo(slug);
   }
@@ -181,8 +183,9 @@ public class PipelinesApiImplTest extends CategoryTest {
         .when(pipelineTemplateHelper)
         .resolveTemplateRefsInPipeline(account, org, project, yaml);
     PipelineUpdateRequestBody requestBody = new PipelineUpdateRequestBody();
-    // add Git details
     requestBody.setPipelineYaml(yaml);
+    requestBody.setSlug(slug);
+    requestBody.setName(name);
     try {
       pipelinesApiImpl.updatePipeline(requestBody, org, project, slug, account);
     } catch (PolicyEvaluationFailureException e) {

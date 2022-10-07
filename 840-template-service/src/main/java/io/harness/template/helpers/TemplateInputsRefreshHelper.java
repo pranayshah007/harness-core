@@ -75,7 +75,7 @@ public class TemplateInputsRefreshHelper {
 
     // Returning the Refreshed YAML corresponding to the ResMap
     String inputsRefreshYaml = YamlPipelineUtils.writeYamlString(refreshedTemplateInputsMap);
-    if (featureFlagHelperService.isEnabled(accountId, FeatureName.SERVICE_ENV_RECONCILIATION)) {
+    if (featureFlagHelperService.isEnabled(accountId, FeatureName.CD_SERVICE_ENV_RECONCILIATION)) {
       Map<String, Object> resolvedTemplatesMap = templateMergeServiceHelper.mergeTemplateInputsInObject(
           accountId, orgId, projectId, yamlNode, templateCacheMap, 0);
       String resolvedTemplatesYaml = YamlPipelineUtils.writeYamlString(resolvedTemplatesMap);

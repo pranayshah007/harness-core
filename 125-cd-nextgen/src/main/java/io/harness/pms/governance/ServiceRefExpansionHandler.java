@@ -54,7 +54,7 @@ public class ServiceRefExpansionHandler implements JsonExpansionHandler {
         return sendErrorResponseForNotFoundService(scopedServiceId);
     }
 
-    if (!optService.isPresent()) {
+    if (optService.isEmpty()) {
       return sendErrorResponseForNotFoundService(scopedServiceId);
     }
     ServiceEntity service = optService.get();

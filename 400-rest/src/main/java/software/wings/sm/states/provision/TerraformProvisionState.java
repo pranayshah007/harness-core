@@ -389,6 +389,7 @@ public abstract class TerraformProvisionState extends State {
       // Backward compatible changes, incase delegate doesn't send this field back
       try {
         tfPlanParamBuilder.tfplanHumanReadable(executionData.getTfPlanHumanReadable());
+        tfPlanParamBuilder.tfplanHumanReadableFileId(executionData.getTfPlanHumanReadableFileId());
       } catch (Exception e) {
         String message =
             "Terraform tfplanHumanReadable not found in Delegate sent Execution Data, Possible reason could be that delegate is on a older version not supporting human readable plan for Terraform";
