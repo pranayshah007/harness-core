@@ -7,12 +7,8 @@
 
 package io.harness.cvng.servicelevelobjective.resources;
 
-import static io.harness.rule.OwnerRule.DEEPAK_CHHIKARA;
-import static io.harness.rule.OwnerRule.KAMAL;
-import static io.harness.rule.OwnerRule.KAPIL;
-
-import static org.assertj.core.api.Assertions.assertThat;
-
+import com.google.inject.Inject;
+import com.google.inject.Injector;
 import io.harness.CvNextGenTestBase;
 import io.harness.category.element.UnitTests;
 import io.harness.cvng.BuilderFactory;
@@ -35,9 +31,17 @@ import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveS
 import io.harness.rule.Owner;
 import io.harness.rule.ResourceTestRule;
 import io.harness.utils.InvalidResourceData;
+import org.json.JSONObject;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.yaml.snakeyaml.Yaml;
 
-import com.google.inject.Inject;
-import com.google.inject.Injector;
+import javax.ws.rs.client.Entity;
+import javax.ws.rs.client.WebTarget;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -47,16 +51,11 @@ import java.util.Objects;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import javax.ws.rs.client.Entity;
-import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import org.json.JSONObject;
-import org.junit.Before;
-import org.junit.ClassRule;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.yaml.snakeyaml.Yaml;
+
+import static io.harness.rule.OwnerRule.DEEPAK_CHHIKARA;
+import static io.harness.rule.OwnerRule.KAMAL;
+import static io.harness.rule.OwnerRule.KAPIL;
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class ServiceLevelObjectiveResourceTest extends CvNextGenTestBase {
   @Inject ServiceLevelObjectiveService serviceLevelObjectiveService;
@@ -314,7 +313,7 @@ public class ServiceLevelObjectiveResourceTest extends CvNextGenTestBase {
 
     Response response = webTarget.request(MediaType.APPLICATION_JSON_TYPE).get();
     assertThat(response.getStatus()).isEqualTo(200);
-    assertThat(response.readEntity(String.class)).contains("\"totalItems\":1");
+    assertThat(response.readEntity(String.class)).contains("\"totalItems\":3");
   }
 
   @Test
