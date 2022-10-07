@@ -38,12 +38,13 @@ public final class EventsFrameworkMetadataConstants {
   public static final String DELEGATE_CONFIGURATION_ENTITY = "delegateconfiguration";
   public static final String FILE_ENTITY = "file";
   public static final String USER_SCOPE_RECONCILIATION = "userScopeReconciliation";
+  public static final String CHAOS_EXPERIMENT = "chaosexperiment";
   public static final String CHAOS_HUB = "chaoshub";
-  public static final String CHAOS_AGENT = "chaosagent";
-  public static final String CHAOS_GITOPS = "chaosgitops";
-  public static final String CHAOS_WORKFLOW = "chaosworkflow";
+  public static final String CHAOS_INFRASTRUCTURE = "chaosinfrastructure";
+  public static final String CHAOS_GAMEDAY = "chaosgameday";
 
   public static final String SERVICE_ENTITY = "service";
+  public static final String DEPLOYMENT_FREEZE_ENTITY = "deploymentfreeze";
   public static final String ENVIRONMENT_ENTITY = "environment";
   public static final String ENVIRONMENT_GROUP_ENTITY = "environmentGroup";
 

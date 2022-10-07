@@ -24,7 +24,6 @@ import static java.lang.String.format;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
-import io.harness.beans.FeatureName;
 import io.harness.beans.SearchFilter.Operator;
 import io.harness.beans.SortOrder.OrderType;
 import io.harness.eraro.Level;
@@ -561,7 +560,7 @@ public class ArtifactStreamServiceBindingServiceImpl implements ArtifactStreamSe
     if (accountId == null) {
       return false;
     }
-    return featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, accountId);
+    return false;
   }
 
   @Override

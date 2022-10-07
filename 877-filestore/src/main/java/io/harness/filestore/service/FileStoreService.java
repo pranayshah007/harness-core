@@ -64,6 +64,12 @@ public interface FileStoreService {
       @NotNull String accountIdentifier, String orgIdentifier, String projectIdentifier, @NotNull String identifier);
 
   /**
+   * @param fileDTO  file DTO
+   * @return
+   */
+  Optional<FileDTO> get(@NotNull FileDTO fileDTO);
+
+  /**
    * Get the file or folder metadata by path not including content and children.
    *
    * @param accountIdentifier the account identifier

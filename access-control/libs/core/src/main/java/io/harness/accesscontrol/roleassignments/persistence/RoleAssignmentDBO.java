@@ -12,7 +12,7 @@ import static io.harness.ng.DbAliases.ACCESS_CONTROL;
 
 import io.harness.accesscontrol.AccessControlEntity;
 import io.harness.accesscontrol.principals.PrincipalType;
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EmbeddedUser;
 import io.harness.data.validator.EntityIdentifier;
@@ -51,10 +51,10 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @ToString
 @EqualsAndHashCode
 @FieldNameConstants(innerTypeName = "RoleAssignmentDBOKeys")
+@StoreIn(ACCESS_CONTROL)
 @Entity(value = "roleassignments", noClassnameStored = true)
 @Document("roleassignments")
 @TypeAlias("roleassignments")
-@StoreIn(ACCESS_CONTROL)
 public class RoleAssignmentDBO implements PersistentEntity, AccessControlEntity {
   @Setter @Id @org.mongodb.morphia.annotations.Id String id;
   @EntityIdentifier final String identifier;

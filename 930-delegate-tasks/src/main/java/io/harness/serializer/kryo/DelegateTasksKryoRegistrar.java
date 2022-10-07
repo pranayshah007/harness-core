@@ -12,12 +12,16 @@ import io.harness.beans.EncryptedDataParent;
 import io.harness.beans.SecretChangeLog;
 import io.harness.cvng.beans.SplunkSavedSearch;
 import io.harness.cvng.beans.SplunkValidationResponse;
+import io.harness.delegate.beans.ldap.LDAPTestAuthenticationRequest;
+import io.harness.delegate.beans.ldap.LdapSettingsWithEncryptedDataAndPasswordDetail;
 import io.harness.delegate.beans.ldap.LdapSettingsWithEncryptedDataDetail;
 import io.harness.delegate.beans.ldap.NGLdapDelegateTaskParameters;
 import io.harness.delegate.beans.ldap.NGLdapDelegateTaskResponse;
 import io.harness.delegate.beans.ldap.NGLdapGroupSearchTaskParameters;
 import io.harness.delegate.beans.ldap.NGLdapGroupSearchTaskResponse;
 import io.harness.delegate.beans.ldap.NGLdapGroupSyncTaskResponse;
+import io.harness.delegate.beans.ldap.NGLdapTestAuthenticationTaskParameters;
+import io.harness.delegate.beans.ldap.NGLdapTestAuthenticationTaskResponse;
 import io.harness.delegate.task.executioncapability.BatchCapabilityCheckTaskParameters;
 import io.harness.delegate.task.executioncapability.BatchCapabilityCheckTaskResponse;
 import io.harness.delegate.task.winrm.AuthenticationScheme;
@@ -91,7 +95,7 @@ import software.wings.beans.BastionConnectionAttributes;
 import software.wings.beans.BugsnagConfig;
 import software.wings.beans.ClusterSelectionCriteriaEntry;
 import software.wings.beans.ConnectionType;
-import software.wings.beans.CyberArkConfig;
+import software.wings.beans.CustomSecretNGManagerConfig;
 import software.wings.beans.DatadogConfig;
 import software.wings.beans.DockerConfig;
 import software.wings.beans.DynaTraceConfig;
@@ -223,8 +227,6 @@ import software.wings.delegatetasks.validation.capabilities.HelmCommandCapabilit
 import software.wings.delegatetasks.validation.capabilities.SSHHostValidationCapability;
 import software.wings.delegatetasks.validation.capabilities.ShellConnectionCapability;
 import software.wings.delegatetasks.validation.capabilities.WinrmHostValidationCapability;
-import software.wings.helpers.ext.azure.devops.AzureArtifactsFeed;
-import software.wings.helpers.ext.azure.devops.AzureArtifactsPackageVersion;
 import software.wings.helpers.ext.ecs.request.EcsBGRoute53DNSWeightUpdateRequest;
 import software.wings.helpers.ext.ecs.request.EcsBGRoute53ServiceSetupRequest;
 import software.wings.helpers.ext.ecs.request.EcsBGServiceSetupRequest;
@@ -596,6 +598,8 @@ public class DelegateTasksKryoRegistrar implements KryoRegistrar {
     kryo.register(PcfConfig.class, 5296);
     kryo.register(NGLdapDelegateTaskResponse.class, 5297);
     kryo.register(NGLdapDelegateTaskParameters.class, 5298);
+    kryo.register(NGLdapTestAuthenticationTaskParameters.class, 5396);
+    kryo.register(NGLdapTestAuthenticationTaskResponse.class, 5397);
     kryo.register(SmtpConfig.class, 5304);
     kryo.register(CloudWatchDataCollectionInfo.class, 5317);
     kryo.register(CloudWatchMetric.class, 5318);
@@ -743,7 +747,6 @@ public class DelegateTasksKryoRegistrar implements KryoRegistrar {
     kryo.register(AzureVaultConfig.class, 7205);
     kryo.register(ServiceNowImportSetResponse.class, 7212);
     kryo.register(ServiceNowImportSetResult.class, 7213);
-    kryo.register(CyberArkConfig.class, 7228);
     kryo.register(AppManifestKind.class, 7243);
     kryo.register(GcpKmsConfig.class, 7290);
     kryo.register(SmbConfig.class, 5551);
@@ -824,8 +827,6 @@ public class DelegateTasksKryoRegistrar implements KryoRegistrar {
     kryo.register(AwsCloudWatchMetricDataResponse.class, 7272);
     kryo.register(ElkDataCollectionInfoV2.class, 7283);
     kryo.register(AzureArtifactsPATConfig.class, 7284);
-    kryo.register(AzureArtifactsFeed.class, 7286);
-    kryo.register(AzureArtifactsPackageVersion.class, 7288);
     kryo.register(AzureArtifactsCollectionTaskParameters.class, 7289);
     kryo.register(InstanaConfig.class, 7293);
     kryo.register(InstanaInfraMetricMetadata.class, 7294);
@@ -921,6 +922,8 @@ public class DelegateTasksKryoRegistrar implements KryoRegistrar {
     kryo.register(DeploymentType.class, 5096);
     kryo.register(HostReachabilityResponse.class, 5187);
     kryo.register(LdapSettingsWithEncryptedDataDetail.class, 5188);
+    kryo.register(LdapSettingsWithEncryptedDataAndPasswordDetail.class, 5202);
+    kryo.register(LDAPTestAuthenticationRequest.class, 5225);
     kryo.register(CfCommandSetupRequest.class, 5279);
     kryo.register(ConnectivityValidationDelegateRequest.class, 5565);
     kryo.register(SshConnectionConnectivityValidationAttributes.class, 5568);
@@ -994,5 +997,6 @@ public class DelegateTasksKryoRegistrar implements KryoRegistrar {
     kryo.register(HelmChartSpecification.class, 5269);
     kryo.register(ManifestFile.class, 5539);
     kryo.register(AWSPrometheusInfo.class, 90001);
+    kryo.register(CustomSecretNGManagerConfig.class, 40114);
   }
 }

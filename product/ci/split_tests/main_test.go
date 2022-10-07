@@ -6,6 +6,7 @@
 package main
 
 import (
+	stutils "github.com/harness/harness-core/product/ci/split_tests/utils"
 	"os"
 	"testing"
 )
@@ -47,7 +48,7 @@ func Test_countLines(t *testing.T) {
 		fp, _ := os.Open(tt.fileName)
 		defer fp.Close()
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := countLines(fp)
+			got, err := stutils.CountLines(fp)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("countLines() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -104,7 +105,7 @@ func Test_splitFiles(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, got1 := splitFiles(tt.args.fileTimesMap, tt.args.splitTotal)
+			got, got1 := stutils.SplitFiles(tt.args.fileTimesMap, tt.args.splitTotal)
 			if len(got1) != len(tt.want1) {
 				t.Errorf("splitFiles() got1 = %v, want1 %v", got1, tt.want1)
 			}
@@ -152,7 +153,7 @@ func Test_processFiles(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			processFiles(tt.fileTimesMap, tt.currentFileSet)
+			stutils.ProcessFiles(tt.fileTimesMap, tt.currentFileSet, float64(1), false)
 			if len(tt.fileTimesMap) != len(tt.currentFileSet) {
 				t.Errorf("processFiles() got %v, want %v", len(tt.fileTimesMap), len(tt.currentFileSet))
 			}

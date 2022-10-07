@@ -163,7 +163,6 @@ public class AuthRuleFilterTest extends WingsBaseTest {
   public void testIsAccountLevelPermission() {
     PermissionAttribute permissionAttribute = new PermissionAttribute(PermissionType.AUDIT_VIEWER, Action.READ);
     PermissionAttribute permissionAttribute1 = new PermissionAttribute(PermissionType.APP, Action.ALL);
-
     assertThat(authRuleFilter.isAccountLevelPermissions(Arrays.asList(permissionAttribute, permissionAttribute1)))
         .isTrue();
 
@@ -199,7 +198,6 @@ public class AuthRuleFilterTest extends WingsBaseTest {
       when(resourceInfo.getResourceClass()).thenReturn(getMockResourceClass());
       when(resourceInfo.getResourceMethod()).thenReturn(getMockResourceMethod());
       when(requestContext.getMethod()).thenReturn("GET");
-      when(mockFeatureFlagService.isEnabled(FeatureName.AUDIT_TRAIL_ENHANCEMENT, ACCOUNT_ID)).thenReturn(true);
       mockUriInfo(PATH, uriInfo);
       when(harnessUserGroupService.isHarnessSupportUser(USER_ID)).thenReturn(true);
       when(harnessUserGroupService.isHarnessSupportEnabledForAccount(ACCOUNT_ID)).thenReturn(true);
@@ -222,7 +220,6 @@ public class AuthRuleFilterTest extends WingsBaseTest {
       when(resourceInfo.getResourceClass()).thenReturn(getMockResourceClass());
       when(resourceInfo.getResourceMethod()).thenReturn(getMockResourceMethod());
       when(requestContext.getMethod()).thenReturn("GET");
-      when(mockFeatureFlagService.isEnabled(FeatureName.AUDIT_TRAIL_ENHANCEMENT, ACCOUNT_ID)).thenReturn(true);
       mockUriInfo("whitelist/isEnabled", uriInfo);
       when(harnessUserGroupService.isHarnessSupportUser(USER_ID)).thenReturn(true);
       when(harnessUserGroupService.isHarnessSupportEnabledForAccount(ACCOUNT_ID)).thenReturn(true);
@@ -244,7 +241,6 @@ public class AuthRuleFilterTest extends WingsBaseTest {
       when(resourceInfo.getResourceClass()).thenReturn(getMockResourceClass());
       when(resourceInfo.getResourceMethod()).thenReturn(getMockResourceMethod());
       when(requestContext.getMethod()).thenReturn("GET");
-      when(mockFeatureFlagService.isEnabled(FeatureName.AUDIT_TRAIL_ENHANCEMENT, ACCOUNT_ID)).thenReturn(true);
       mockUriInfo(PATH, uriInfo);
       when(requestContext.getHeaderString("X-Api-Key")).thenReturn("mock-api-key");
       when(harnessUserGroupService.isHarnessSupportUser(USER_ID)).thenReturn(true);
@@ -267,7 +263,6 @@ public class AuthRuleFilterTest extends WingsBaseTest {
       when(resourceInfo.getResourceClass()).thenReturn(getMockResourceClass());
       when(resourceInfo.getResourceMethod()).thenReturn(getMockResourceMethod());
       when(requestContext.getMethod()).thenReturn("GET");
-      when(mockFeatureFlagService.isEnabled(FeatureName.AUDIT_TRAIL_ENHANCEMENT, ACCOUNT_ID)).thenReturn(false);
       mockUriInfo(PATH, uriInfo);
       when(requestContext.getHeaderString("X-Api-Key")).thenReturn(null);
       when(harnessUserGroupService.isHarnessSupportUser(USER_ID)).thenReturn(true);
@@ -437,7 +432,7 @@ public class AuthRuleFilterTest extends WingsBaseTest {
     ApiKeyEntry apiKeyEntry = ApiKeyEntry.builder().build();
     UserPermissionInfo userPermissionInfo = mockUserPermissionInfo();
     UserRestrictionInfo userRestrictionInfo = UserRestrictionInfo.builder().build();
-    when(apiKeyService.getByKey(API_KEY, ACCOUNT_ID, true)).thenReturn(apiKeyEntry);
+    when(apiKeyService.getByKey(API_KEY, ACCOUNT_ID)).thenReturn(apiKeyEntry);
     when(apiKeyService.getApiKeyPermissions(apiKeyEntry, ACCOUNT_ID)).thenReturn(userPermissionInfo);
     when(apiKeyService.getApiKeyRestrictions(apiKeyEntry, userPermissionInfo, ACCOUNT_ID))
         .thenReturn(userRestrictionInfo);
@@ -448,7 +443,7 @@ public class AuthRuleFilterTest extends WingsBaseTest {
 
     authRuleFilter.filter(requestContext);
     assertThat(requestContext.getMethod()).isEqualTo("GET");
-    verify(requestContext, times(3)).getHeaderString(API_KEY_HEADER);
+    verify(requestContext, times(4)).getHeaderString(API_KEY_HEADER);
     verify(whitelistService).checkIfFeatureIsEnabledAndWhitelisting(any(), any(), any(FeatureName.class));
     User user = UserThreadLocal.get();
     assertThat(user).isNotNull();
@@ -524,7 +519,7 @@ public class AuthRuleFilterTest extends WingsBaseTest {
   private Method getNgMockResourceMethod() {
     Class mockClass = UserResourceNG.class;
     try {
-      return mockClass.getMethod("getUser", String.class);
+      return mockClass.getMethod("getUser", String.class, Boolean.class);
     } catch (NoSuchMethodException e) {
       return null;
     }

@@ -75,11 +75,24 @@ public class NGTemplateServiceHelper {
   private final NGTemplateRepository templateRepository;
   private GitSyncSdkService gitSyncSdkService;
 
-  public Optional<TemplateEntity> getOrThrowExceptionIfInvalid(String accountId, String orgIdentifier,
+  public Optional<TemplateEntity> getTemplateOrThrowExceptionIfInvalid(String accountId, String orgIdentifier,
       String projectIdentifier, String templateIdentifier, String versionLabel, boolean deleted) {
+    return getOrThrowExceptionIfInvalid(
+        accountId, orgIdentifier, projectIdentifier, templateIdentifier, versionLabel, deleted, false);
+  }
+
+  public Optional<TemplateEntity> getMetadataOrThrowExceptionIfInvalid(String accountId, String orgIdentifier,
+      String projectIdentifier, String templateIdentifier, String versionLabel, boolean deleted) {
+    return getOrThrowExceptionIfInvalid(
+        accountId, orgIdentifier, projectIdentifier, templateIdentifier, versionLabel, deleted, true);
+  }
+
+  public Optional<TemplateEntity> getOrThrowExceptionIfInvalid(String accountId, String orgIdentifier,
+      String projectIdentifier, String templateIdentifier, String versionLabel, boolean deleted,
+      boolean getMetadataOnly) {
     try {
-      Optional<TemplateEntity> optionalTemplate =
-          getTemplate(accountId, orgIdentifier, projectIdentifier, templateIdentifier, versionLabel, deleted, false);
+      Optional<TemplateEntity> optionalTemplate = getTemplate(
+          accountId, orgIdentifier, projectIdentifier, templateIdentifier, versionLabel, deleted, getMetadataOnly);
       if (optionalTemplate.isPresent() && optionalTemplate.get().isEntityInvalid()) {
         throw new NGTemplateException(
             "Invalid Template yaml cannot be used. Please correct the template version yaml.");

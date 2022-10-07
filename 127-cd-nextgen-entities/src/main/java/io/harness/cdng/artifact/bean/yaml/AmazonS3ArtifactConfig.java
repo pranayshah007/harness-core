@@ -39,6 +39,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.experimental.Wither;
+import org.hibernate.validator.constraints.NotEmpty;
 import org.springframework.data.annotation.TypeAlias;
 
 @OwnedBy(CDC)
@@ -58,9 +59,18 @@ public class AmazonS3ArtifactConfig implements ArtifactConfig, Visitable, WithCo
   @NotNull @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @Wither ParameterField<String> connectorRef;
 
   /**
+   * Region.
+   */
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @Wither ParameterField<String> region;
+
+  /**
    * Bucket name.
    */
-  @NotNull @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @Wither ParameterField<String> bucketName;
+  @NotNull
+  @NotEmpty
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
+  @Wither
+  ParameterField<String> bucketName;
 
   /**
    * FilePath Regex
@@ -99,6 +109,9 @@ public class AmazonS3ArtifactConfig implements ArtifactConfig, Visitable, WithCo
     AmazonS3ArtifactConfig resultantConfig = this;
     if (!ParameterField.isNull(amazonS3ArtifactConfig.getConnectorRef())) {
       resultantConfig = resultantConfig.withConnectorRef(amazonS3ArtifactConfig.getConnectorRef());
+    }
+    if (!ParameterField.isNull(amazonS3ArtifactConfig.getRegion())) {
+      resultantConfig = resultantConfig.withRegion(amazonS3ArtifactConfig.getRegion());
     }
     if (!ParameterField.isNull(amazonS3ArtifactConfig.getBucketName())) {
       resultantConfig = resultantConfig.withBucketName(amazonS3ArtifactConfig.getBucketName());

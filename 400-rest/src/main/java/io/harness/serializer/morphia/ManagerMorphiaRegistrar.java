@@ -87,6 +87,7 @@ import software.wings.api.ecs.EcsRoute53WeightUpdateStateExecutionData;
 import software.wings.api.helm.ServiceHelmElements;
 import software.wings.api.instancedetails.InstanceInfoVariables;
 import software.wings.api.k8s.K8sApplicationManifestSourceInfo;
+import software.wings.api.k8s.K8sCanaryDeleteServiceElement;
 import software.wings.api.k8s.K8sExecutionSummary;
 import software.wings.api.k8s.K8sGitConfigMapInfo;
 import software.wings.api.k8s.K8sHelmDeploymentElement;
@@ -890,6 +891,7 @@ public class ManagerMorphiaRegistrar implements MorphiaRegistrar {
     w.put("api.k8s.k8sApplicationManifestInfo", K8sApplicationManifestSourceInfo.class);
     w.put("api.k8s.k8sGitConfigMapInfo", K8sGitConfigMapInfo.class);
     w.put("api.k8s.K8sHelmElement", K8sHelmDeploymentElement.class);
+    w.put("api.k8s.K8sCanaryDeleteServiceElement", K8sCanaryDeleteServiceElement.class);
     w.put("api.k8s.K8sExecutionSummary", K8sExecutionSummary.class);
     w.put("api.k8s.K8sStateExecutionData", K8sStateExecutionData.class);
     w.put("api.K8sDeploymentInfo", K8sDeploymentInfo.class);

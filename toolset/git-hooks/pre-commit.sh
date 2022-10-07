@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 # Copyright 2021 Harness Inc. All rights reserved.
 # Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
 # that can be found in the licenses directory at the root of this repository, also available at
@@ -165,4 +165,23 @@ else
             fi
       done
     fi
+fi
+
+curr_branch_name=$(git branch --show-current)
+git fetch origin $curr_branch_name
+git diff $curr_branch_name origin/$curr_branch_name > check_diff.txt
+cat check_diff.txt
+rm -rf check_diff.txt
+
+# Detect file permission changes
+
+echo "checking file permission changes......"
+git diff --summary | grep "mode change"
+x=$?
+if [[ $x -eq 0 ]]
+then
+  echo "file permission changed. please verify and restore the permissions"
+  exit 1
+else
+  echo "no file permissions changed. Good to proceed. Keep it up"
 fi

@@ -38,6 +38,7 @@ input CreateDeploymentFreezeWindowInput {
   description: String
   #Select appropriate Application(s), Environment(s), and Service(s) as applicable to the deployment freeze window.
   freezeWindows: [FreezeWindowInput]!
+  excludeFreezeWindows: [FreezeWindowInput]
   #Input the time-based entities for the deployment freeze window.
   setup: SetupInput!
   notifyTo: [String]
@@ -51,6 +52,7 @@ input UpdateDeploymentFreezeWindowInput {
   name: String!
   description: String
   freezeWindows: [FreezeWindowInput]!
+  excludeFreezeWindows: [FreezeWindowInput]
   setup: SetupInput!
   notifyTo: [String]
   userGroupSelection: UserGroupFilterInput
@@ -128,6 +130,7 @@ type DeploymentFreezeWindow {
   applicable: Boolean
   notifyTo: [String]
   freezeWindows: [FreezeWindow]
+  excludeFreezeWindows: [FreezeWindow]
   setup: Setup
   userGroupSelection: UserGroupFilter
 }

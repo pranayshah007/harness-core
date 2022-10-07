@@ -40,7 +40,21 @@ def main(event, context):
     jsonData["targetTableId"] = "%s.%s.%s" % (PROJECTID, jsonData["datasetName"], "azureVMInventory")
 
     load_into_main_table(jsonData)
+    update_vm_state(jsonData)
     print_("Completed")
+
+
+def update_vm_state(jsonData):
+    """
+    Updates the displayStatus to `VM Deleted` for those VMs which were not updated in past 1 day.
+    :return: None
+    """
+    lastUpdatedAt = datetime.date.today()  # - timedelta(days = 1)
+    query = "UPDATE `%s` set displayStatus='VM Deleted' WHERE displayStatus!='VM Deleted' and lastUpdatedAt < '%s';" % (
+        jsonData["targetTableId"], lastUpdatedAt)
+
+    run_batch_query(client, query, None, timeout=180)
+    print_("Finished updating azureVMInventory table for any deleted VMs")
 
 
 def load_into_main_table(jsonData):

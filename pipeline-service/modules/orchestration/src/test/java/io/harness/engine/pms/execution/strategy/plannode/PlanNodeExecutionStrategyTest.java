@@ -53,6 +53,7 @@ import io.harness.event.handlers.AdviserResponseRequestProcessor;
 import io.harness.exception.InvalidRequestException;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.NodeExecution.NodeExecutionBuilder;
+import io.harness.expression.ExpressionMode;
 import io.harness.plan.PlanNode;
 import io.harness.pms.PmsFeatureFlagService;
 import io.harness.pms.contracts.advisers.AdviseType;
@@ -167,14 +168,14 @@ public class PlanNodeExecutionStrategyTest extends OrchestrationTestBase {
     executionStrategy.runNode(ambiance, planNode, null);
     verify(executorService).submit(any(Runnable.class));
     doReturn(NodeExecution.builder().uuid("fda").build()).when(nodeExecutionService).save(any());
-    // waitForExecutionInputHelper.waitForExecutionInput() will not be called.FF is off.
+    // waitForExecutionInputHelper.waitForExecutionInputOrStart() will not be called.FF is off.
     verify(waitForExecutionInputHelper, never()).waitForExecutionInput(any(), any(), any());
 
     doReturn(true).when(pmsFeatureFlagService).isEnabled(any(), any(FeatureName.class));
     executionStrategy.runNode(ambiance, planNode, null);
     verify(executorService, times(2)).submit(any(Runnable.class));
-    // waitForExecutionInputHelper.waitForExecutionInput() will not be called.FF is on but executionInputTemplate is
-    // empty.
+    // waitForExecutionInputHelper.waitForExecutionInputOrStart() will not be called.FF is on but executionInputTemplate
+    // is empty.
     verify(waitForExecutionInputHelper, never()).waitForExecutionInput(any(), any(), any());
 
     planNode = PlanNode.builder()
@@ -191,10 +192,7 @@ public class PlanNodeExecutionStrategyTest extends OrchestrationTestBase {
 
     executionStrategy.runNode(ambiance, planNode, null);
     // executorService.submit will not be called this time because execution will pause for user input.
-    verify(executorService, times(2)).submit(any(Runnable.class));
-    // waitForExecutionInputHelper.waitForExecutionInput() will be called once.FF is on and executionInputTemplate is
-    // non empty.
-    verify(waitForExecutionInputHelper, times(1)).waitForExecutionInput(any(), any(), eq("executionInputTemplate"));
+    verify(executorService, times(3)).submit(any(Runnable.class));
   }
 
   @Test
@@ -572,7 +570,6 @@ public class PlanNodeExecutionStrategyTest extends OrchestrationTestBase {
                                       .levelCount(1)
                                       .status(Status.QUEUED)
                                       .unitProgresses(new ArrayList<>())
-                                      .startTs(startTs)
                                       .name(AmbianceUtils.modifyIdentifier(ambiance, node.getName()))
                                       .identifier(AmbianceUtils.modifyIdentifier(ambiance, node.getIdentifier()))
                                       .notifyId("NID")
@@ -719,6 +716,10 @@ public class PlanNodeExecutionStrategyTest extends OrchestrationTestBase {
             .setPlanId(planId)
             .addLevels(Level.newBuilder().setRuntimeId(runtimeId).setSetupId(setupId).setRetryIndex(1).build())
             .build();
+    PlanNode planNode = PlanNode.builder()
+                            .expressionMode(ExpressionMode.RETURN_NULL_IF_UNRESOLVED)
+                            .stepParameters(new PmsStepParameters())
+                            .build();
     doReturn(new Object()).when(pmsEngineExpressionService).resolve(ambiance, new PmsStepParameters(), true);
     MockedStatic<PmsStepParameters> utilities = Mockito.mockStatic(PmsStepParameters.class);
     utilities.when(() -> PmsStepParameters.parse(any(OrchestrationMap.class))).thenReturn(new PmsStepParameters());
@@ -727,7 +728,9 @@ public class PlanNodeExecutionStrategyTest extends OrchestrationTestBase {
     utilities1
         .when(() -> OrchestrationMapBackwardCompatibilityUtils.extractToOrchestrationMap(any(PmsStepParameters.class)))
         .thenReturn(new OrchestrationMap());
-    executionStrategy.resolveParameters(ambiance, new PmsStepParameters(), true);
+    executionStrategy.resolveParameters(ambiance, planNode);
+    verify(pmsEngineExpressionService, times(1))
+        .resolve(ambiance, planNode.getStepParameters(), planNode.getExpressionMode());
     verify(nodeExecutionService, times(1)).update(any(), any());
   }
 }

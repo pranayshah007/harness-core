@@ -18,6 +18,7 @@ import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.core.NGAccess;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
+import io.harness.pms.contracts.plan.TriggeredBy;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.plan.execution.SetupAbstractionKeys;
@@ -256,7 +257,10 @@ public class AmbianceUtils {
       return "_" + level.getStrategyMetadata().getCurrentIteration();
     }
     if (level.getStrategyMetadata().getMatrixMetadata().getMatrixCombinationList().isEmpty()) {
-      return StringUtils.EMPTY;
+      if (level.getStrategyMetadata().getTotalIterations() <= 0) {
+        return StringUtils.EMPTY;
+      }
+      return "_" + level.getStrategyMetadata().getCurrentIteration();
     }
     return "_"
         + level.getStrategyMetadata()
@@ -278,5 +282,10 @@ public class AmbianceUtils {
       return true;
     }
     return false;
+  }
+
+  public String getEmail(Ambiance ambiance) {
+    TriggeredBy triggeredBy = ambiance.getMetadata().getTriggerInfo().getTriggeredBy();
+    return triggeredBy.getExtraInfoOrDefault("email", null);
   }
 }

@@ -8,10 +8,12 @@
 package io.harness.repositories.instance;
 
 import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
+import static io.harness.rule.OwnerRule.VIKYATH_HAREKAL;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.InstancesTestBase;
@@ -89,15 +91,15 @@ public class InstanceRepositoryCustomImplTest extends InstancesTestBase {
   public void getActiveInstancesByAccountTest() {
     Instance instance1 = Instance.builder().instanceKey("abc").build();
     Criteria criteria1 = Criteria.where(InstanceKeys.accountIdentifier).is(ACCOUNT_ID);
-    criteria1.andOperator(Criteria.where(InstanceKeys.isDeleted).is(false));
-    criteria1.andOperator(Criteria.where(InstanceKeys.createdAt).lte(TIMESTAMP));
+    criteria1.andOperator(
+        Criteria.where(InstanceKeys.isDeleted).is(false), Criteria.where(InstanceKeys.createdAt).lte(TIMESTAMP));
     Query query1 = new Query().addCriteria(criteria1);
     when(mongoTemplate.find(query1, Instance.class)).thenReturn(Collections.singletonList(instance1));
 
     Instance instance2 = Instance.builder().instanceKey("def").build();
     Criteria criteria2 = Criteria.where(InstanceKeys.accountIdentifier).is(ACCOUNT_ID);
-    criteria2.andOperator(Criteria.where(InstanceKeys.deletedAt).gte(TIMESTAMP));
-    criteria2.andOperator(Criteria.where(InstanceKeys.createdAt).lte(TIMESTAMP));
+    criteria2.andOperator(
+        Criteria.where(InstanceKeys.deletedAt).gte(TIMESTAMP), Criteria.where(InstanceKeys.createdAt).lte(TIMESTAMP));
     Query query2 = new Query().addCriteria(criteria2);
     when(mongoTemplate.find(query2, Instance.class)).thenReturn(Collections.singletonList(instance2));
 
@@ -285,5 +287,20 @@ public class InstanceRepositoryCustomImplTest extends InstancesTestBase {
     assertThat(instanceRepositoryCustom.getActiveServiceInstanceCountBreakdown(
                    ACCOUNT_ID, ORGANIZATION_ID, PROJECT_ID, Arrays.asList(SERVICE_ID), TIMESTAMP))
         .isEqualTo(aggregationResults);
+  }
+
+  @Test
+  @Owner(developers = VIKYATH_HAREKAL)
+  @Category(UnitTests.class)
+  public void testUpdateInfrastructureMapping() {
+    String infraMappingId = "2";
+    String instanceId = "1";
+    Criteria criteria = Criteria.where(InstanceKeys.id).is(instanceId);
+    Query query = new Query().addCriteria(criteria);
+    Update update = new Update();
+    update.set(InstanceKeys.infrastructureMappingId, infraMappingId);
+
+    instanceRepositoryCustom.updateInfrastructureMapping(instanceId, infraMappingId);
+    verify(mongoTemplate).findAndModify(query, update, Instance.class);
   }
 }

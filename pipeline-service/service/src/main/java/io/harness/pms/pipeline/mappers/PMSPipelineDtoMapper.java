@@ -36,6 +36,7 @@ import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.PipelineMetadataV2;
 import io.harness.pms.pipeline.RecentExecutionInfo;
 import io.harness.pms.pipeline.RecentExecutionInfoDTO;
+import io.harness.pms.pipeline.api.PipelineRequestInfoDTO;
 import io.harness.pms.pipeline.yaml.BasicPipeline;
 import io.harness.pms.yaml.YamlUtils;
 
@@ -106,6 +107,36 @@ public class PMSPipelineDtoMapper {
     }
     pipelineEntity.setIsDraft(isDraft);
     return pipelineEntity;
+  }
+
+  public PipelineEntity toPipelineEntity(
+      PipelineRequestInfoDTO requestInfoDTO, String accountId, String orgId, String projectId, Boolean isDraft) {
+    try {
+      if (NGExpressionUtils.matchesInputSetPattern(requestInfoDTO.getIdentifier())) {
+        throw new InvalidRequestException("Pipeline identifier cannot be runtime input");
+      }
+      BasicPipeline basicPipeline = YamlUtils.read(requestInfoDTO.getYaml(), BasicPipeline.class);
+      PipelineEntity pipelineEntity = PipelineEntity.builder()
+                                          .yaml(requestInfoDTO.getYaml())
+                                          .accountId(accountId)
+                                          .orgIdentifier(orgId)
+                                          .projectIdentifier(projectId)
+                                          .name(requestInfoDTO.getName())
+                                          .identifier(requestInfoDTO.getIdentifier())
+                                          .description(requestInfoDTO.getDescription())
+                                          .tags(TagMapper.convertToList(requestInfoDTO.getTags()))
+                                          // allowStageExecutions will still be extracted from Yaml
+                                          .allowStageExecutions(basicPipeline.isAllowStageExecutions())
+                                          .build();
+
+      if (isDraft == null) {
+        isDraft = false;
+      }
+      pipelineEntity.setIsDraft(isDraft);
+      return pipelineEntity;
+    } catch (IOException e) {
+      throw new InvalidRequestException("Cannot create pipeline entity due to " + e.getMessage());
+    }
   }
 
   public PipelineEntity toPipelineEntityWithVersion(

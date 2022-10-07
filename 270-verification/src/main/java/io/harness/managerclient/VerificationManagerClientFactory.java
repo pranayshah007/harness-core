@@ -25,7 +25,6 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
-import okhttp3.ConnectionPool;
 import okhttp3.OkHttpClient;
 import retrofit2.Retrofit;
 import retrofit2.converter.jackson.JacksonConverterFactory;
@@ -65,7 +64,7 @@ public class VerificationManagerClientFactory implements Provider<VerificationMa
       final SSLSocketFactory sslSocketFactory = sslContext.getSocketFactory();
 
       return Http.getOkHttpClientWithProxyAuthSetup()
-          .connectionPool(new ConnectionPool())
+          .connectionPool(Http.connectionPool)
           .retryOnConnectionFailure(true)
           .addInterceptor(new VerificationAuthInterceptor(tokenGenerator))
           .sslSocketFactory(sslSocketFactory, (X509TrustManager) TRUST_ALL_CERTS.get(0))

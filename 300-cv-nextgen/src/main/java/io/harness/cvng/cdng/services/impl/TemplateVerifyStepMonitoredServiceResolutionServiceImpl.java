@@ -19,6 +19,7 @@ import io.harness.cvng.cdng.beans.TemplateMonitoredServiceSpec;
 import io.harness.cvng.cdng.services.api.VerifyStepMonitoredServiceResolutionService;
 import io.harness.cvng.core.beans.monitoredService.HealthSource;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO;
+import io.harness.cvng.core.beans.params.MonitoredServiceParams;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.beans.params.ServiceEnvironmentParams;
 import io.harness.cvng.core.beans.sidekick.VerificationJobInstanceCleanupSideKickData;
@@ -29,6 +30,7 @@ import io.harness.cvng.core.services.api.MonitoringSourcePerpetualTaskService;
 import io.harness.cvng.core.services.api.SideKickService;
 import io.harness.cvng.core.services.api.monitoredService.HealthSourceService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
+import io.harness.cvng.core.utils.FeatureFlagNames;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.pms.sdk.core.filter.creation.beans.FilterCreationContext;
 import io.harness.pms.yaml.YamlField;
@@ -40,6 +42,7 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import java.io.IOException;
 import java.time.Clock;
@@ -51,8 +54,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
-
+@Slf4j
 public class TemplateVerifyStepMonitoredServiceResolutionServiceImpl
     implements VerifyStepMonitoredServiceResolutionService {
   @Inject private Clock clock;
@@ -63,7 +67,7 @@ public class TemplateVerifyStepMonitoredServiceResolutionServiceImpl
   @Inject private SideKickService sideKickService;
 
   @Override
-  public ResolvedCVConfigInfo getResolvedCVConfigInfo(
+  public ResolvedCVConfigInfo fetchAndPersistResolvedCVConfigInfo(
       ServiceEnvironmentParams serviceEnvironmentParams, MonitoredServiceNode monitoredServiceNode) {
     ResolvedCVConfigInfoBuilder resolvedCVConfigInfoBuilder = ResolvedCVConfigInfo.builder();
     String executionIdentifier = generateUuid();
@@ -118,6 +122,7 @@ public class TemplateVerifyStepMonitoredServiceResolutionServiceImpl
         getTemplateYaml(templateMonitoredServiceSpec));
     if (Objects.nonNull(monitoredServiceDTO) && Objects.nonNull(monitoredServiceDTO.getSources())
         && CollectionUtils.isNotEmpty(monitoredServiceDTO.getSources().getHealthSources())) {
+      persistTemplateMonitoredService(serviceEnvironmentParams, monitoredServiceDTO);
       populateCvConfigAndHealSourceData(serviceEnvironmentParams, monitoredServiceDTO.getSources().getHealthSources(),
           resolvedCVConfigInfoBuilder, executionIdentifier);
     } else {
@@ -125,7 +130,26 @@ public class TemplateVerifyStepMonitoredServiceResolutionServiceImpl
     }
   }
 
-  private String getTemplateYaml(TemplateMonitoredServiceSpec templateMonitoredServiceSpec) {
+  private void persistTemplateMonitoredService(
+      ServiceEnvironmentParams serviceEnvironmentParams, MonitoredServiceDTO monitoredServiceDTO) {
+    try {
+      if (featureFlagService.isFeatureFlagEnabled(
+              serviceEnvironmentParams.getAccountIdentifier(), FeatureFlagNames.PERSIST_MONITORED_SERVICE_TEMPLATE_STEP)
+          && Objects.isNull(monitoredServiceService.getMonitoredService(
+              MonitoredServiceParams.builder()
+                  .projectIdentifier(serviceEnvironmentParams.getProjectIdentifier())
+                  .orgIdentifier(serviceEnvironmentParams.getOrgIdentifier())
+                  .accountIdentifier(serviceEnvironmentParams.getAccountIdentifier())
+                  .monitoredServiceIdentifier(monitoredServiceDTO.getIdentifier())
+                  .build()))) {
+        monitoredServiceService.create(serviceEnvironmentParams.getAccountIdentifier(), monitoredServiceDTO);
+      }
+    } catch (Exception e) {
+      log.error("Failed to persist monitored service: " + monitoredServiceDTO.getIdentifier(), e);
+    }
+  }
+  @VisibleForTesting
+  protected String getTemplateYaml(TemplateMonitoredServiceSpec templateMonitoredServiceSpec) {
     String monitoredServiceTemplateRef = templateMonitoredServiceSpec.getMonitoredServiceTemplateRef().getValue();
     String versionLabel = templateMonitoredServiceSpec.getVersionLabel();
     JsonNode templateInputsNode = templateMonitoredServiceSpec.getTemplateInputs();
@@ -203,7 +227,13 @@ public class TemplateVerifyStepMonitoredServiceResolutionServiceImpl
           case ARRAY:
             List<JsonNode> cleanedChildren = new ArrayList<>();
             ArrayNode arr = (ArrayNode) rootNode.get(i);
-            arr.forEach(c -> cleanedChildren.add(cleanRootNode(c, key)));
+            arr.forEach(c -> {
+              if (c.isTextual()) {
+                cleanedChildren.add(c);
+              } else {
+                cleanedChildren.add(cleanRootNode(c, key));
+              }
+            });
             map.put(i, new ArrayNode(JsonNodeFactory.instance, cleanedChildren));
             break;
           default:

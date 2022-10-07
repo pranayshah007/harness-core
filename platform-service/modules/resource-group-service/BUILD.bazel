@@ -47,6 +47,7 @@ java_library(
         "@maven//:com_google_inject_guice",
         "@maven//:com_google_protobuf_protobuf_java",
         "@maven//:io_dropwizard_dropwizard_lifecycle",
+        "@maven//:io_harness_platform_server_spec",
         "@maven//:io_swagger_swagger_annotations",
         "@maven//:javax_validation_validation_api",
         "@maven//:javax_ws_rs_javax_ws_rs_api",

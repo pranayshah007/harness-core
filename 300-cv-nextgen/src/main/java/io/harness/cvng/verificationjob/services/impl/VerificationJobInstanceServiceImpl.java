@@ -536,8 +536,6 @@ public class VerificationJobInstanceServiceImpl implements VerificationJobInstan
 
   private void createDataCollectionTasks(
       VerificationJobInstance verificationJobInstance, VerificationJob verificationJob, List<CVConfig> cvConfigs) {
-    Optional<TimeRange> preDeploymentTimeRange =
-        verificationJob.getPreActivityTimeRange(verificationJobInstance.getDeploymentStartTime());
     List<TimeRange> timeRanges =
         verificationJob.getDataCollectionTimeRanges(roundDownTo1MinBoundary(verificationJobInstance.getStartTime()));
     cvConfigs.forEach(cvConfig -> {
@@ -567,26 +565,30 @@ public class VerificationJobInstanceServiceImpl implements VerificationJobInstan
         });
         return;
       }
-
-      if (preDeploymentTimeRange.isPresent()) {
+      List<TimeRange> preDeploymentDataCollectionTimeRanges =
+          verificationJobInstance.getResolvedJob().getPreActivityDataCollectionTimeRanges(
+              verificationJobInstance.getDeploymentStartTime());
+      if (CollectionUtils.isNotEmpty(preDeploymentDataCollectionTimeRanges)) {
         DataCollectionInfo preDeploymentDataCollectionInfo =
             dataCollectionInfoMapper.toDataCollectionInfo(cvConfig, TaskType.DEPLOYMENT);
         preDeploymentDataCollectionInfo.setDataCollectionDsl(cvConfig.getDataCollectionDsl());
         preDeploymentDataCollectionInfo.setCollectHostData(verificationJob.collectHostData());
-        dataCollectionTasks.add(DeploymentDataCollectionTask.builder()
-                                    .verificationTaskId(verificationTaskId)
-                                    .dataCollectionWorkerId(getDataCollectionWorkerId(verificationJobInstance,
-                                        cvConfig.getIdentifier(), cvConfig.getConnectorIdentifier()))
-                                    .startTime(preDeploymentTimeRange.get().getStartTime())
-                                    .endTime(preDeploymentTimeRange.get().getEndTime())
-                                    .validAfter(preDeploymentTimeRange.get().getEndTime().plus(
-                                        verificationJobInstance.getDataCollectionDelay()))
-                                    .accountId(verificationJob.getAccountId())
-                                    .type(Type.DEPLOYMENT)
-                                    .status(QUEUED)
-                                    .dataCollectionInfo(preDeploymentDataCollectionInfo)
-                                    .queueAnalysis(cvConfig.queueAnalysisForPreDeploymentTask())
-                                    .build());
+        preDeploymentDataCollectionTimeRanges.forEach(timeRange -> {
+          dataCollectionTasks.add(
+              DeploymentDataCollectionTask.builder()
+                  .verificationTaskId(verificationTaskId)
+                  .dataCollectionWorkerId(getDataCollectionWorkerId(
+                      verificationJobInstance, cvConfig.getIdentifier(), cvConfig.getConnectorIdentifier()))
+                  .startTime(timeRange.getStartTime())
+                  .endTime(timeRange.getEndTime())
+                  .validAfter(timeRange.getEndTime().plus(verificationJobInstance.getDataCollectionDelay()))
+                  .accountId(verificationJob.getAccountId())
+                  .type(Type.DEPLOYMENT)
+                  .status(QUEUED)
+                  .dataCollectionInfo(preDeploymentDataCollectionInfo)
+                  .queueAnalysis(cvConfig.queueAnalysisForPreDeploymentTask())
+                  .build());
+        });
       }
 
       timeRanges.forEach(timeRange -> {

@@ -31,7 +31,6 @@ import io.harness.delegate.beans.secrets.WinRmConfigValidationTaskResponse;
 import io.harness.delegate.utils.TaskSetupAbstractionHelper;
 import io.harness.eraro.ErrorCode;
 import io.harness.errorhandling.NGErrorHelper;
-import io.harness.exception.HintException;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.ng.core.api.NGSecretServiceV2;
 import io.harness.ng.core.dto.ErrorDetail;
@@ -306,15 +305,14 @@ public class NGHostValidationServiceImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testValidateHostConnectivityWithErrorNotifyResponseData() {
     mockTaskAbstractions();
+    String errorMessage = "error message";
+    when(delegateGrpcClientWrapper.executeSyncTask(any()))
+        .thenReturn(HostConnectivityTaskResponse.builder().errorMessage(errorMessage).build());
 
-    when(delegateGrpcClientWrapper.executeSyncTask(any())).thenReturn(buildErrorNotifyResponseData());
-
-    assertThatThrownBy(()
-                           -> hostValidationService.validateHostConnectivity(HOST, ACCOUNT_IDENTIFIER, ORG_IDENTIFIER,
-                               PROJECT_IDENTIFIER, Sets.newHashSet(DELEGATE_SELECTOR)))
-        .isInstanceOf(HintException.class)
-        .hasMessage(
-            "Please make sure that your delegates are connected. Refer https://ngdocs.harness.io/article/re8kk0ex4k for more information on delegate Installation");
+    HostValidationDTO result = hostValidationService.validateHostConnectivity(
+        HOST, ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, Sets.newHashSet(DELEGATE_SELECTOR));
+    assertThat(result.getStatus()).isEqualTo(HostValidationDTO.HostValidationStatus.FAILED);
+    assertThat(result.getError().getMessage()).isEqualTo(errorMessage);
   }
 
   @Test
@@ -326,6 +324,41 @@ public class NGHostValidationServiceImplTest extends CategoryTest {
                                ORG_IDENTIFIER, PROJECT_IDENTIFIER, Sets.newHashSet(DELEGATE_SELECTOR)))
         .isInstanceOf(InvalidArgumentsException.class)
         .hasMessage("Host cannot be null or empty");
+  }
+
+  @Test
+  @Owner(developers = {VLAD})
+  @Category(UnitTests.class)
+  public void testValidateHostWithErrorResponse() {
+    mockTaskAbstractions();
+    mockSecret(SecretType.SSHKey);
+    mockEncryptionDetails();
+    String errorMessage = "error message";
+    String hostValidationFailedMessage = "Host validation check failed";
+    when(delegateGrpcClientWrapper.executeSyncTask(any()))
+        .thenReturn(HostConnectivityTaskResponse.builder().errorMessage(errorMessage).build());
+
+    HostValidationDTO result = hostValidationService.validateHost(HOST, ACCOUNT_IDENTIFIER, ORG_IDENTIFIER,
+        PROJECT_IDENTIFIER, SECRET_IDENTIFIER, Sets.newHashSet(DELEGATE_SELECTOR));
+    assertThat(result.getStatus()).isEqualTo(HostValidationDTO.HostValidationStatus.FAILED);
+    assertThat(result.getError().getMessage()).isEqualTo(hostValidationFailedMessage);
+  }
+
+  @Test
+  @Owner(developers = {VLAD})
+  @Category(UnitTests.class)
+  public void testValidateHostWithErrorNotifyResponseData() {
+    mockTaskAbstractions();
+    mockSecret(SecretType.SSHKey);
+    mockEncryptionDetails();
+    String errorMessage = "error message";
+    String hostValidationFailedMessage = "Host connectivity validation failed.";
+    when(delegateGrpcClientWrapper.executeSyncTask(any())).thenReturn(buildErrorNotifyResponseData());
+
+    HostValidationDTO result = hostValidationService.validateHost(HOST, ACCOUNT_IDENTIFIER, ORG_IDENTIFIER,
+        PROJECT_IDENTIFIER, SECRET_IDENTIFIER, Sets.newHashSet(DELEGATE_SELECTOR));
+    assertThat(result.getStatus()).isEqualTo(HostValidationDTO.HostValidationStatus.FAILED);
+    assertThat(result.getError().getMessage()).isEqualTo(hostValidationFailedMessage);
   }
 
   private void mockSecret(SecretType secretType) {

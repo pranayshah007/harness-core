@@ -12,7 +12,11 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.InvalidYamlException;
 import io.harness.exception.YamlException;
+import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.ambiance.Level;
+import io.harness.pms.merger.YamlConfig;
 import io.harness.walktree.beans.VisitableChildren;
 import io.harness.walktree.visitor.Visitable;
 
@@ -27,6 +31,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -433,5 +438,52 @@ public class YamlNode implements Visitable {
     Iterator<String> keysIterator = currJsonNode.fieldNames();
     keysIterator.forEachRemaining(keys::add);
     return keys;
+  }
+
+  // get the field/node yaml from the complete pipeline yaml.
+  public static String getNodeYaml(String yaml, Ambiance ambiance) {
+    YamlNode currentNode = null;
+    try {
+      currentNode = YamlNode.fromYamlPath(yaml, "");
+    } catch (IOException e) {
+      throw new InvalidYamlException("Yaml could not be converted to YamlNode. Please check if the yaml is correct.");
+    }
+    for (Level level : ambiance.getLevelsList()) {
+      String nodeId = level.getOriginalIdentifier();
+      if (currentNode.isArray()) {
+        for (YamlNode yamlNode : currentNode.asArray()) {
+          // Checking the immediate element if it matches the nodeId. If matches then replace the currentYamlNode with
+          // the element.
+          if (getCurrentArrayElementIfMatches(yamlNode, nodeId)) {
+            currentNode = yamlNode;
+            break;
+          } else {
+            Set<String> fieldNames = new LinkedHashSet<>();
+            yamlNode.getCurrJsonNode().fieldNames().forEachRemaining(fieldNames::add);
+
+            // Checking all children of array element if any of them matches nodeId, then replace the currentYamlNode
+            // with that child.
+            Optional<String> matchingField =
+                fieldNames.stream()
+                    .filter(fieldName -> getCurrentArrayElementIfMatches(yamlNode.gotoPath(fieldName), nodeId))
+                    .findFirst();
+            if (matchingField.isPresent()) {
+              currentNode = yamlNode.gotoPath(matchingField.get());
+              break;
+            }
+          }
+        }
+      } else {
+        currentNode = currentNode.gotoPath(nodeId);
+      }
+    }
+    return new YamlConfig(currentNode.getParentNode().getCurrJsonNode()).getYaml();
+  }
+
+  // Check if YamlNode matches the nodeId.
+  private static boolean getCurrentArrayElementIfMatches(YamlNode yamlNode, String nodeId) {
+    return yamlNode.gotoPath("identifier") != null && yamlNode.gotoPath("identifier").asText().equals(nodeId)
+        || yamlNode.gotoPath("name") != null && yamlNode.gotoPath("name").asText().equals(nodeId)
+        || yamlNode.gotoPath("key") != null && yamlNode.gotoPath("key").asText().equals(nodeId);
   }
 }

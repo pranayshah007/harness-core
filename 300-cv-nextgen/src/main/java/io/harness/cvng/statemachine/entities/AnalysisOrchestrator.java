@@ -8,7 +8,7 @@
 package io.harness.cvng.statemachine.entities;
 
 import io.harness.annotation.HarnessEntity;
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.cvng.statemachine.beans.AnalysisOrchestratorStatus;
 import io.harness.iterator.PersistentRegularIterable;
 import io.harness.mongo.index.FdIndex;
@@ -38,9 +38,9 @@ import org.mongodb.morphia.annotations.Id;
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
+@StoreIn(DbAliases.CVNG)
 @Entity(value = "analysisOrchestrators", noClassnameStored = true)
 @HarnessEntity(exportable = true)
-@StoreIn(DbAliases.CVNG)
 public class AnalysisOrchestrator
     implements PersistentEntity, UuidAware, CreatedAtAware, UpdatedAtAware, PersistentRegularIterable {
   @Id private String uuid;

@@ -43,6 +43,8 @@ public class CIVmInitializeTaskHandlerTest extends CategoryTest {
   @Mock private HttpHelper httpHelper;
   @Mock private ILogStreamingTaskClient logStreamingTaskClient;
   @InjectMocks private CIVmInitializeTaskHandler ciVmInitializeTaskHandler;
+  // private VmInfraInfo vmInfraInfo = VmInfraInfo.builder().poolId("test").build();
+  private static final CIVmInitializeTaskParams.Type vmInfraInfo = CIVmInitializeTaskParams.Type.VM;
 
   @Before
   public void setUp() {
@@ -53,7 +55,8 @@ public class CIVmInitializeTaskHandlerTest extends CategoryTest {
   @Owner(developers = SHUBHAM)
   @Category(UnitTests.class)
   public void executeTaskInternal() throws IOException {
-    CIVmInitializeTaskParams params = CIVmInitializeTaskParams.builder().stageRuntimeId("stage").build();
+    CIVmInitializeTaskParams params =
+        CIVmInitializeTaskParams.builder().stageRuntimeId("stage").infraInfo(vmInfraInfo).build();
     Response<SetupVmResponse> setupResponse =
         Response.success(SetupVmResponse.builder().instanceID("test").ipAddress("1.1.1.1").build());
     when(httpHelper.setupStageWithRetries(any())).thenReturn(setupResponse);
@@ -66,7 +69,8 @@ public class CIVmInitializeTaskHandlerTest extends CategoryTest {
   @Owner(developers = SHUBHAM)
   @Category(UnitTests.class)
   public void executeTaskInternalFailure() throws IOException {
-    CIVmInitializeTaskParams params = CIVmInitializeTaskParams.builder().stageRuntimeId("stage").build();
+    CIVmInitializeTaskParams params =
+        CIVmInitializeTaskParams.builder().stageRuntimeId("stage").infraInfo(vmInfraInfo).build();
     ResponseBody body = mock(ResponseBody.class);
     Response<SetupVmResponse> setupResponse = Response.error(400, body);
     when(httpHelper.setupStageWithRetries(any())).thenReturn(setupResponse);

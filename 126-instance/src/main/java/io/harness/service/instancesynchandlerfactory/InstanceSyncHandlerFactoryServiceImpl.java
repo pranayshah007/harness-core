@@ -16,6 +16,8 @@ import io.harness.service.instancesynchandler.AbstractInstanceSyncHandler;
 import io.harness.service.instancesynchandler.AwsSshWinrmInstanceSyncHandler;
 import io.harness.service.instancesynchandler.AzureSshWinrmInstanceSyncHandler;
 import io.harness.service.instancesynchandler.AzureWebAppInstanceSyncHandler;
+import io.harness.service.instancesynchandler.CustomDeploymentInstanceSyncHandler;
+import io.harness.service.instancesynchandler.EcsInstanceSyncHandler;
 import io.harness.service.instancesynchandler.GitOpsInstanceSyncHandler;
 import io.harness.service.instancesynchandler.K8sInstanceSyncHandler;
 import io.harness.service.instancesynchandler.NativeHelmInstanceSyncHandler;
@@ -35,9 +37,11 @@ public class InstanceSyncHandlerFactoryServiceImpl implements InstanceSyncHandle
   private final NativeHelmInstanceSyncHandler nativeHelmInstanceSyncHandler;
   private final ServerlessAwsLambdaInstanceSyncHandler serverlessAwsLambdaInstanceSyncHandler;
   private final AzureWebAppInstanceSyncHandler azureWebAppInstanceSyncHandler;
+  private final EcsInstanceSyncHandler ecsInstanceSyncHandler;
   private final PdcInstanceSyncHandler pdcInstanceSyncHandler;
   private final AzureSshWinrmInstanceSyncHandler azureSshWinrmInstanceSyncHandler;
   private final AwsSshWinrmInstanceSyncHandler awsSshWinrmInstanceSyncHandler;
+  private final CustomDeploymentInstanceSyncHandler customDeploymentInstanceSyncHandler;
   @Override
   public AbstractInstanceSyncHandler getInstanceSyncHandler(final String deploymentType, String infraKind) {
     switch (deploymentType) {
@@ -51,9 +55,13 @@ public class InstanceSyncHandlerFactoryServiceImpl implements InstanceSyncHandle
         return serverlessAwsLambdaInstanceSyncHandler;
       case ServiceSpecType.AZURE_WEBAPP:
         return azureWebAppInstanceSyncHandler;
+      case ServiceSpecType.ECS:
+        return ecsInstanceSyncHandler;
       case ServiceSpecType.SSH:
       case ServiceSpecType.WINRM:
         return getSshWinRmInstanceSyncHandler(infraKind);
+      case ServiceSpecType.CUSTOM_DEPLOYMENT:
+        return customDeploymentInstanceSyncHandler;
       default:
         throw new UnexpectedException("No instance sync handler registered for deploymentType: " + deploymentType);
     }

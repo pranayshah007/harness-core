@@ -6,8 +6,10 @@
  */
 
 package io.harness.connector.entities.embedded.customhealthconnector;
+import io.harness.annotations.StoreIn;
 import io.harness.connector.entities.Connector;
 import io.harness.delegate.beans.connector.customhealthconnector.CustomHealthMethod;
+import io.harness.ng.DbAliases;
 
 import java.util.List;
 import lombok.Builder;
@@ -20,6 +22,7 @@ import org.springframework.data.annotation.TypeAlias;
 @Value
 @Builder
 @EqualsAndHashCode(callSuper = true)
+@StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "connectors", noClassnameStored = true)
 @Persistent
 @TypeAlias("io.harness.connector.entities.embedded.customhealthconnector.CustomHealthConnector")

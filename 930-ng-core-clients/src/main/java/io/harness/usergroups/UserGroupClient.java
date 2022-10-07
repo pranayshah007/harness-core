@@ -42,4 +42,8 @@ public interface UserGroupClient {
       @Query(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
       @Query(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @Query(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier);
+
+  @GET(USER_GROUP_BASEURI + "/sso/{identifier}")
+  Call<ResponseDTO<List<UserGroupDTO>>> getSsoLinkedUserGroups(
+      @Path("identifier") String identifier, @Query(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier);
 }

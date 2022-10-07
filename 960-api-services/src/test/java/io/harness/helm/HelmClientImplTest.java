@@ -71,7 +71,7 @@ public class HelmClientImplTest extends CategoryTest {
     MockitoAnnotations.initMocks(this);
     doReturn(HelmCliResponse.builder().commandExecutionStatus(CommandExecutionStatus.SUCCESS).build())
         .when(helmClient)
-        .executeHelmCLICommand(anyString(), anyLong(), any(OutputStream.class));
+        .executeHelmCLICommand(anyString(), anyLong(), any(OutputStream.class), any());
     buildHelmInstallCommandData();
     buildHelmRollbackCommandData();
     when(k8sGlobalConfigService.getHelmPath(any(HelmVersion.class))).thenReturn("/client-tools/v3.1/helm");
@@ -397,7 +397,7 @@ public class HelmClientImplTest extends CategoryTest {
       throws Exception {
     consumer.accept(request);
     verify(helmClient, Mockito.atLeastOnce())
-        .executeHelmCLICommand(stringCaptor.capture(), anyLong(), nullable(OutputStream.class));
+        .executeHelmCLICommand(stringCaptor.capture(), anyLong(), nullable(OutputStream.class), any());
     buildHelmInstallCommandData();
     buildHelmRollbackCommandData();
     return stringCaptor.getValue();
@@ -410,7 +410,7 @@ public class HelmClientImplTest extends CategoryTest {
     String successCommand = "exit 0";
     String failCommand = "exit 1";
     // Override @Before setup
-    doCallRealMethod().when(helmClient).executeHelmCLICommand(anyString(), anyLong(), any(OutputStream.class));
+    doCallRealMethod().when(helmClient).executeHelmCLICommand(anyString(), anyLong(), any(OutputStream.class), any());
 
     assertThat(helmClient.executeHelmCLICommand(successCommand).getCommandExecutionStatus())
         .isEqualTo(CommandExecutionStatus.SUCCESS);
@@ -436,10 +436,12 @@ public class HelmClientImplTest extends CategoryTest {
     String expectedYamlMessage = "Some Yaml File\n";
     String command = "echo 'Some Yaml File'";
     String combinedOutput = errorMsg + " " + expectedYamlMessage;
-    doCallRealMethod().when(helmClient).executeHelmCLICommand(command, 1000000, errorStream1);
-    doCallRealMethod().when(helmClient).executeHelmCLICommand(command, 1000000, errorStream2);
-    HelmCliResponse helmCliResponse1 = helmClient.executeHelmCLICommand(command, 1000000, errorStream1);
-    HelmCliResponse helmCliResponse2 = helmClient.executeHelmCLICommand(command, 1000000, errorStream2);
+    doCallRealMethod().when(helmClient).executeHelmCLICommand(command, 1000000, errorStream1, Collections.emptyMap());
+    doCallRealMethod().when(helmClient).executeHelmCLICommand(command, 1000000, errorStream2, Collections.emptyMap());
+    HelmCliResponse helmCliResponse1 =
+        helmClient.executeHelmCLICommand(command, 1000000, errorStream1, Collections.emptyMap());
+    HelmCliResponse helmCliResponse2 =
+        helmClient.executeHelmCLICommand(command, 1000000, errorStream2, Collections.emptyMap());
     assertThat(helmCliResponse1.getOutput().equals(expectedYamlMessage));
     assertThat(helmCliResponse1.getErrorStreamOutput().equals(errorMsg));
     assertThat(helmCliResponse1.getOutputWithErrorStream().equals(combinedOutput));

@@ -10,6 +10,7 @@ package io.harness.cdng.artifact.outcome;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.pms.sdk.core.data.ExecutionSweepingOutput;
 import io.harness.pms.sdk.core.data.Outcome;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
@@ -23,7 +24,7 @@ import org.springframework.data.annotation.TypeAlias;
 @JsonTypeName("ArtifactsOutcome")
 @TypeAlias("artifactsOutcome")
 @RecasterAlias("io.harness.ngpipeline.artifact.bean.ArtifactsOutcome")
-public class ArtifactsOutcome implements Outcome {
+public class ArtifactsOutcome implements Outcome, ExecutionSweepingOutput {
   ArtifactOutcome primary;
   SidecarsOutcome sidecars;
 }

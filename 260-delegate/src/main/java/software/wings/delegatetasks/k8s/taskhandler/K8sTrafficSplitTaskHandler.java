@@ -36,8 +36,8 @@ import io.harness.k8s.model.K8sDelegateTaskParams;
 import io.harness.k8s.model.Kind;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.KubernetesResourceId;
-import io.harness.k8s.model.Release;
-import io.harness.k8s.model.ReleaseHistory;
+import io.harness.k8s.releasehistory.K8sLegacyRelease;
+import io.harness.k8s.releasehistory.ReleaseHistory;
 import io.harness.logging.CommandExecutionStatus;
 
 import software.wings.beans.command.ExecutionLogCallback;
@@ -71,7 +71,7 @@ public class K8sTrafficSplitTaskHandler extends K8sTaskHandler {
   @Inject private K8sTaskHelperBase k8sTaskHelperBase;
 
   private ReleaseHistory releaseHistory;
-  private Release release;
+  private K8sLegacyRelease release;
   private KubernetesConfig kubernetesConfig;
   private VirtualService virtualService;
 

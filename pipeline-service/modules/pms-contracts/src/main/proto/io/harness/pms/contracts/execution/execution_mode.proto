@@ -26,4 +26,5 @@ enum ExecutionMode {
   APPROVAL = 9;
 
   CONSTRAINT = 10;
+  WAIT_STEP = 11;
 }

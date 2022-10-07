@@ -14,6 +14,7 @@ import static java.lang.String.format;
 
 import io.harness.beans.dependencies.CIServiceInfo;
 import io.harness.beans.dependencies.DependencyElement;
+import io.harness.beans.steps.CIAbstractStepNode;
 import io.harness.beans.steps.CIStepInfo;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.ci.integrationstage.IntegrationStageUtils;
@@ -22,7 +23,6 @@ import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.plancreator.execution.ExecutionElementConfig;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
 import io.harness.plancreator.steps.ParallelStepElementConfig;
-import io.harness.plancreator.steps.StepElementConfig;
 import io.harness.plancreator.steps.StepGroupElementConfig;
 
 import com.google.inject.Inject;
@@ -73,8 +73,8 @@ public class ValidationUtils {
 
   public void validateWindowsK8StageUtil(ExecutionWrapperConfig executionWrapper) {
     if (executionWrapper.getStep() != null && !executionWrapper.getStep().isNull()) {
-      StepElementConfig stepElementConfig = IntegrationStageUtils.getStepElementConfig(executionWrapper);
-      validateWindowsK8Step(stepElementConfig);
+      CIAbstractStepNode stepNode = IntegrationStageUtils.getStepNode(executionWrapper);
+      validateWindowsK8Step(stepNode);
     } else if (executionWrapper.getParallel() != null && !executionWrapper.getParallel().isNull()) {
       ParallelStepElementConfig parallelStepElementConfig =
           IntegrationStageUtils.getParallelStepElementConfig(executionWrapper);
@@ -93,7 +93,7 @@ public class ValidationUtils {
     }
   }
 
-  private void validateWindowsK8Step(StepElementConfig stepElement) {
+  private void validateWindowsK8Step(CIAbstractStepNode stepElement) {
     if (!(stepElement.getStepSpecType() instanceof CIStepInfo)) {
       return;
     }

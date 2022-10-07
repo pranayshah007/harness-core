@@ -41,6 +41,7 @@ import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.git.TaskStatus;
 import io.harness.delegate.task.serverless.request.ServerlessGitFetchRequest;
 import io.harness.delegate.task.serverless.response.ServerlessGitFetchResponse;
+import io.harness.exception.ExceptionUtils;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.runtime.serverless.ServerlessCommandExecutionException;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
@@ -85,13 +86,13 @@ public class ServerlessGitFetchTask extends AbstractDelegateRunnableTask {
   @Override
   public DelegateResponseData run(TaskParameters parameters) {
     CommandUnitsProgress commandUnitsProgress = CommandUnitsProgress.builder().build();
+    ServerlessGitFetchRequest serverlessGitFetchRequest = (ServerlessGitFetchRequest) parameters;
+    LogCallback executionLogCallback =
+        new NGDelegateLogCallback(getLogStreamingTaskClient(), ServerlessCommandUnitConstants.fetchFiles.toString(),
+            serverlessGitFetchRequest.isShouldOpenLogStream(), commandUnitsProgress);
     try {
-      ServerlessGitFetchRequest serverlessGitFetchRequest = (ServerlessGitFetchRequest) parameters;
       log.info("Running Serverless GitFetchFilesTask for activityId {}", serverlessGitFetchRequest.getActivityId());
 
-      LogCallback executionLogCallback =
-          new NGDelegateLogCallback(getLogStreamingTaskClient(), ServerlessCommandUnitConstants.fetchFiles.toString(),
-              serverlessGitFetchRequest.isShouldOpenLogStream(), commandUnitsProgress);
       ServerlessGitFetchFileConfig serverlessGitFetchFileConfig =
           serverlessGitFetchRequest.getServerlessGitFetchFileConfig();
       executionLogCallback.saveExecutionLog(
@@ -114,6 +115,10 @@ public class ServerlessGitFetchTask extends AbstractDelegateRunnableTask {
     } catch (Exception e) {
       Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
       log.error("Exception in Git Fetch Files Task", sanitizedException);
+      executionLogCallback.saveExecutionLog(
+          color(format("%n File fetch failed with error: %s", ExceptionUtils.getMessage(sanitizedException)),
+              LogColor.Red, LogWeight.Bold),
+          LogLevel.ERROR, CommandExecutionStatus.FAILURE);
       throw new TaskNGDataException(
           UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress), sanitizedException);
     }
@@ -162,7 +167,6 @@ public class ServerlessGitFetchTask extends AbstractDelegateRunnableTask {
                 Red),
             ERROR);
       }
-      executionLogCallback.saveExecutionLog(msg, ERROR, CommandExecutionStatus.FAILURE);
       throw sanitizedException;
     }
     return filesResult;

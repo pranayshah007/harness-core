@@ -69,6 +69,8 @@ public class ApprovalNotificationHandlerImplTest extends CategoryTest {
   @Mock private ApprovalInstance approvalInstance;
   @InjectMocks ApprovalNotificationHandlerImpl approvalNotificationHandler;
   private static String accountId = "accountId";
+
+  private static String userGroupIdentifier = "userGroupIdentifier";
   private static String orgIdentifier = "orgIdentifier";
   private static String projectIdentifier = "projectIdentifier";
   private static String pipelineIdentifier = "pipelineIdentifier";
@@ -113,8 +115,10 @@ public class ApprovalNotificationHandlerImplTest extends CategoryTest {
     notificationSettingConfigDTOS.add(SlackConfigDTO.builder().build());
     notificationSettingConfigDTOS.add(EmailConfigDTO.builder().build());
 
-    List<UserGroupDTO> userGroupDTOS =
-        Collections.singletonList(UserGroupDTO.builder().notificationConfigs(notificationSettingConfigDTOS).build());
+    List<UserGroupDTO> userGroupDTOS = Collections.singletonList(UserGroupDTO.builder()
+                                                                     .identifier(userGroupIdentifier)
+                                                                     .notificationConfigs(notificationSettingConfigDTOS)
+                                                                     .build());
     when(userGroupClient.getFilteredUserGroups(any())).thenReturn(null);
     when(NGRestUtils.getResponse(any())).thenReturn(userGroupDTOS);
 
@@ -176,8 +180,10 @@ public class ApprovalNotificationHandlerImplTest extends CategoryTest {
     notificationSettingConfigDTOS.add(SlackConfigDTO.builder().build());
     notificationSettingConfigDTOS.add(EmailConfigDTO.builder().build());
 
-    List<UserGroupDTO> userGroupDTOS =
-        Collections.singletonList(UserGroupDTO.builder().notificationConfigs(notificationSettingConfigDTOS).build());
+    List<UserGroupDTO> userGroupDTOS = Collections.singletonList(UserGroupDTO.builder()
+                                                                     .identifier(userGroupIdentifier)
+                                                                     .notificationConfigs(notificationSettingConfigDTOS)
+                                                                     .build());
     when(userGroupClient.getFilteredUserGroups(any())).thenReturn(null);
     when(NGRestUtils.getResponse(any())).thenReturn(userGroupDTOS);
 
@@ -241,8 +247,10 @@ public class ApprovalNotificationHandlerImplTest extends CategoryTest {
     notificationSettingConfigDTOS.add(SlackConfigDTO.builder().build());
     notificationSettingConfigDTOS.add(EmailConfigDTO.builder().build());
 
-    List<UserGroupDTO> userGroupDTOS =
-        Collections.singletonList(UserGroupDTO.builder().notificationConfigs(notificationSettingConfigDTOS).build());
+    List<UserGroupDTO> userGroupDTOS = Collections.singletonList(UserGroupDTO.builder()
+                                                                     .identifier(userGroupIdentifier)
+                                                                     .notificationConfigs(notificationSettingConfigDTOS)
+                                                                     .build());
     when(userGroupClient.getFilteredUserGroups(any())).thenReturn(null);
     when(NGRestUtils.getResponse(any())).thenReturn(userGroupDTOS);
 
@@ -306,8 +314,10 @@ public class ApprovalNotificationHandlerImplTest extends CategoryTest {
     notificationSettingConfigDTOS.add(SlackConfigDTO.builder().build());
     notificationSettingConfigDTOS.add(EmailConfigDTO.builder().build());
 
-    List<UserGroupDTO> userGroupDTOS =
-        Collections.singletonList(UserGroupDTO.builder().notificationConfigs(notificationSettingConfigDTOS).build());
+    List<UserGroupDTO> userGroupDTOS = Collections.singletonList(UserGroupDTO.builder()
+                                                                     .identifier(userGroupIdentifier)
+                                                                     .notificationConfigs(notificationSettingConfigDTOS)
+                                                                     .build());
     when(userGroupClient.getFilteredUserGroups(any())).thenReturn(null);
     when(NGRestUtils.getResponse(any())).thenReturn(userGroupDTOS);
 
@@ -378,8 +388,10 @@ public class ApprovalNotificationHandlerImplTest extends CategoryTest {
     notificationSettingConfigDTOS.add(SlackConfigDTO.builder().build());
     notificationSettingConfigDTOS.add(EmailConfigDTO.builder().build());
 
-    List<UserGroupDTO> userGroupDTOS =
-        Collections.singletonList(UserGroupDTO.builder().notificationConfigs(notificationSettingConfigDTOS).build());
+    List<UserGroupDTO> userGroupDTOS = Collections.singletonList(UserGroupDTO.builder()
+                                                                     .identifier(userGroupIdentifier)
+                                                                     .notificationConfigs(notificationSettingConfigDTOS)
+                                                                     .build());
     when(userGroupClient.getFilteredUserGroups(any())).thenReturn(null);
     when(NGRestUtils.getResponse(any())).thenReturn(userGroupDTOS);
 

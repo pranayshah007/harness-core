@@ -22,6 +22,7 @@ import io.harness.common.NGTaskType;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.beans.connector.ConnectorType;
@@ -40,6 +41,7 @@ import io.harness.exception.DelegateServiceDriverException;
 import io.harness.exception.HintException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
+import io.harness.exception.exceptionmanager.ExceptionManager;
 import io.harness.exception.exceptionmanager.exceptionhandler.DocumentLinksConstants;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.core.NGAccess;
@@ -58,14 +60,17 @@ import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
+import lombok.extern.slf4j.Slf4j;
 
 @Singleton
+@Slf4j
 @OwnedBy(HarnessTeam.PIPELINE)
 public class GcrResourceServiceImpl implements GcrResourceService {
   private final ConnectorService connectorService;
   private final SecretManagerClientService secretManagerClientService;
   private final DelegateGrpcClientWrapper delegateGrpcClientWrapper;
   @VisibleForTesting static final int timeoutInSecs = 30;
+  @Inject ExceptionManager exceptionManager;
 
   @Inject
   public GcrResourceServiceImpl(@Named(DEFAULT_CONNECTOR_SERVICE) ConnectorService connectorService,
@@ -78,6 +83,9 @@ public class GcrResourceServiceImpl implements GcrResourceService {
   @Override
   public GcrResponseDTO getBuildDetails(IdentifierRef gcrConnectorRef, String imagePath, String registryHostname,
       String orgIdentifier, String projectIdentifier) {
+    if (EmptyPredicate.isEmpty(imagePath)) {
+      throw new InvalidRequestException("imagePath cannot be null");
+    }
     GcpConnectorDTO connector = getConnector(gcrConnectorRef);
     BaseNGAccess baseNGAccess =
         getBaseNGAccess(gcrConnectorRef.getAccountIdentifier(), orgIdentifier, projectIdentifier);
@@ -203,8 +211,11 @@ public class GcrResourceServiceImpl implements GcrResourceService {
             .taskSetupAbstraction("projectIdentifier", ngAccess.getProjectIdentifier())
             .taskSelectors(gcrRequest.getGcpConnectorDTO().getDelegateSelectors())
             .build();
-
-    return delegateGrpcClientWrapper.executeSyncTask(delegateTaskRequest);
+    try {
+      return delegateGrpcClientWrapper.executeSyncTask(delegateTaskRequest);
+    } catch (DelegateServiceDriverException ex) {
+      throw exceptionManager.processException(ex, WingsException.ExecutionContext.MANAGER, log);
+    }
   }
 
   private ArtifactTaskExecutionResponse getTaskExecutionResponse(

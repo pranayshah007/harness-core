@@ -17,6 +17,7 @@ import static io.harness.rule.OwnerRule.INDER;
 import static io.harness.rule.OwnerRule.ROHITKARELIA;
 import static io.harness.rule.OwnerRule.SRINIVAS;
 import static io.harness.rule.OwnerRule.VED;
+import static io.harness.rule.OwnerRule.VINICIUS;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
@@ -1380,6 +1381,15 @@ public class NexusServiceTest extends WingsBaseTest {
   }
 
   @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void shouldGetPackageNamesForRawNexus3x() {
+    assertThat(nexusService.getGroupIdPaths(nexusThreeConfig, "raw-group", RepositoryFormat.raw.name()))
+        .hasSize(2)
+        .contains("Raw.Sample.Package", "Raw.Sample.Package1");
+  }
+
+  @Test
   @Owner(developers = AADITI)
   @Category(UnitTests.class)
   public void shouldGetGroupIdsForMavenNexus3x() {
@@ -1492,6 +1502,21 @@ public class NexusServiceTest extends WingsBaseTest {
   }
 
   @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void shouldGetNamesForRawNexus3x() {
+    List<BuildDetails> buildDetails =
+        nexusService.getPackageNames(nexusThreeConfig, "raw-group", "Raw.Sample.Package", RepositoryFormat.raw.name());
+    assertThat(buildDetails).hasSize(1).extracting(BuildDetails::getNumber).contains("Raw.Sample.Package");
+    assertThat(buildDetails.get(0).getArtifactFileMetadataList().get(0))
+        .extracting(ArtifactFileMetadata::getFileName)
+        .isEqualTo("Raw.Sample.Package");
+    assertThat(buildDetails.get(0).getArtifactFileMetadataList().get(0))
+        .extracting(ArtifactFileMetadata::getUrl)
+        .isEqualTo("http://localhost:8881/nexus/repository/raw-group/Raw.Sample.Package");
+  }
+
+  @Test
   @Owner(developers = ROHITKARELIA)
   @Category(UnitTests.class)
   public void shouldGetVersionsForNugetNexus3xForGroupRepos() {
@@ -1504,6 +1529,21 @@ public class NexusServiceTest extends WingsBaseTest {
     assertThat(buildDetails.get(0).getArtifactFileMetadataList().get(0))
         .extracting(ArtifactFileMetadata::getUrl)
         .isEqualTo("http://localhost:8881/nexus/repository/nuget-hosted-group-repo/NuGet.Sample.Package/1.0.0.0");
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void shouldGetNamesForRawNexus3xForGroupRepos() {
+    List<BuildDetails> buildDetails = nexusService.getPackageNames(
+        nexusThreeConfig, "raw-hosted-group-repo", "Raw.Sample.Package", RepositoryFormat.raw.name());
+    assertThat(buildDetails).hasSize(1).extracting(BuildDetails::getNumber).contains("Raw.Sample.Package");
+    assertThat(buildDetails.get(0).getArtifactFileMetadataList().get(0))
+        .extracting(ArtifactFileMetadata::getFileName)
+        .isEqualTo("Raw.Sample.Package");
+    assertThat(buildDetails.get(0).getArtifactFileMetadataList().get(0))
+        .extracting(ArtifactFileMetadata::getUrl)
+        .isEqualTo("http://localhost:8881/nexus/repository/raw-hosted-group-repo/Raw.Sample.Package");
   }
 
   @Test

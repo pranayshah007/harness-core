@@ -11,7 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import static java.time.Duration.ofDays;
 
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.validator.Trimmed;
@@ -47,11 +47,11 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @OwnedBy(PIPELINE)
 @Value
 @Builder
+@StoreIn(DbAliases.PMS)
 @Entity(value = "executionSweepingOutput", noClassnameStored = true)
 @Document("executionSweepingOutput")
 @FieldNameConstants(innerTypeName = "ExecutionSweepingOutputKeys")
 @TypeAlias("executionSweepingOutput")
-@StoreIn(DbAliases.PMS)
 public class ExecutionSweepingOutputInstance implements PersistentEntity, UuidAccess {
   public static final Duration TTL = ofDays(30);
 

@@ -11,6 +11,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.stepDetail.NodeExecutionsInfo;
 import io.harness.concurrency.ConcurrentChildInstance;
+import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.data.stepdetails.PmsStepDetails;
 import io.harness.pms.data.stepparameters.PmsStepParameters;
 
@@ -32,7 +33,7 @@ public interface PmsGraphStepDetailsService {
 
   void addConcurrentChildInformation(ConcurrentChildInstance concurrentChildInstance, String nodeExecutionId);
 
-  ConcurrentChildInstance incrementCursor(String nodeExecutionId);
+  ConcurrentChildInstance incrementCursor(String nodeExecutionId, Status status);
 
   ConcurrentChildInstance fetchConcurrentChildInstance(String nodeExecutionId);
 }

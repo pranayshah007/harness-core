@@ -39,4 +39,7 @@ public class DelegateTaskRequest {
 
   // Used for harness hosted delegates
   private boolean executeOnHarnessHostedDelegates;
+
+  private boolean emitEvent;
+  private String stageId;
 }

@@ -76,7 +76,7 @@ public class ServiceEntitySetupUsageHelperTest extends CDNGEntitiesTestBase {
                                .build();
     entitySetupUsageHelper.updateSetupUsages(entity);
 
-    verify(producer, times(EntityTypeProtoEnum.values().length)).send(msgCaptor.capture());
+    verify(producer, times(1)).send(msgCaptor.capture());
 
     Message value = msgCaptor.getValue();
     EntitySetupUsageCreateV2DTO createV2DTO = EntitySetupUsageCreateV2DTO.parseFrom(value.getData());
@@ -97,7 +97,7 @@ public class ServiceEntitySetupUsageHelperTest extends CDNGEntitiesTestBase {
                        .build());
 
     assertThat(metadataMap.get("accountId")).isEqualTo("accountId");
-    assertThat(metadataMap.get("referredEntityType")).isNotNull();
+    assertThat(metadataMap.get("referredEntityType")).isNull();
     assertThat(metadataMap.get("action")).isEqualTo("flushCreate");
   }
 

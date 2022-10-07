@@ -32,6 +32,8 @@ import okhttp3.OkHttpClient;
 @Singleton
 public class ApiClientFactoryImpl implements ApiClientFactory {
   @Inject OidcTokenRetriever oidcTokenRetriever;
+  private static final long READ_TIMEOUT_IN_SECONDS = 120;
+  private static final long CONNECTION_TIMEOUT_IN_SECONDS = 60;
 
   @Override
   public ApiClient getClient(KubernetesConfig kubernetesConfig) {
@@ -41,7 +43,7 @@ public class ApiClientFactoryImpl implements ApiClientFactory {
   public static ApiClient fromKubernetesConfig(KubernetesConfig kubernetesConfig, OidcTokenRetriever tokenRetriever) {
     // should we cache the client ?
     try {
-      return createNewApiClient(kubernetesConfig, tokenRetriever);
+      return createNewApiClient(kubernetesConfig, tokenRetriever, false);
     } catch (RuntimeException e) {
       throw new KubernetesApiClientRuntimeException(e.getMessage(), e.getCause());
     } catch (Exception e) {
@@ -49,7 +51,20 @@ public class ApiClientFactoryImpl implements ApiClientFactory {
     }
   }
 
-  private static ApiClient createNewApiClient(KubernetesConfig kubernetesConfig, OidcTokenRetriever tokenRetriever) {
+  public static ApiClient fromKubernetesConfigWithReadTimeout(
+      KubernetesConfig kubernetesConfig, OidcTokenRetriever tokenRetriever) {
+    // should we cache the client ?
+    try {
+      return createNewApiClient(kubernetesConfig, tokenRetriever, true);
+    } catch (RuntimeException e) {
+      throw new KubernetesApiClientRuntimeException(e.getMessage(), e.getCause());
+    } catch (Exception e) {
+      throw new KubernetesApiClientRuntimeException(e.getMessage(), e);
+    }
+  }
+
+  private static ApiClient createNewApiClient(
+      KubernetesConfig kubernetesConfig, OidcTokenRetriever tokenRetriever, boolean useNewReadTimeoutForValidation) {
     // Enable SSL validation only if CA Certificate provided with configuration
     ClientBuilder clientBuilder = new ClientBuilder().setVerifyingSsl(isNotEmpty(kubernetesConfig.getCaCert()));
     if (isNotBlank(kubernetesConfig.getMasterUrl())) {
@@ -81,11 +96,12 @@ public class ApiClientFactoryImpl implements ApiClientFactory {
 
     ApiClient apiClient = clientBuilder.build();
     // don't timeout on client-side
-    OkHttpClient httpClient = apiClient.getHttpClient()
-                                  .newBuilder()
-                                  .readTimeout(0, TimeUnit.SECONDS)
-                                  .connectTimeout(0, TimeUnit.SECONDS)
-                                  .build();
+    OkHttpClient httpClient =
+        apiClient.getHttpClient()
+            .newBuilder()
+            .readTimeout(useNewReadTimeoutForValidation ? READ_TIMEOUT_IN_SECONDS : 0, TimeUnit.SECONDS)
+            .connectTimeout(CONNECTION_TIMEOUT_IN_SECONDS, TimeUnit.SECONDS)
+            .build();
     apiClient.setHttpClient(httpClient);
     return apiClient;
   }

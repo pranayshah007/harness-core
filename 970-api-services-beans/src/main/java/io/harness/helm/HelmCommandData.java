@@ -45,4 +45,5 @@ public class HelmCommandData {
   private String chartUrl;
   private String chartVersion;
   private String chartName;
+  private String gcpKeyPath;
 }

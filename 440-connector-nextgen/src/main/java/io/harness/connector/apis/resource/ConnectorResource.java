@@ -577,7 +577,7 @@ public class ConnectorResource {
         accountIdentifier, orgIdentifier, projectIdentifier, connectorIdentifier));
   }
 
-  // TODO(UTSAV): will be moved to 340-ce-nextgen
+  // TODO(UTSAV): will be moved to ce-nextgen
   @POST
   @Path("/getceawstemplateurl")
   @ApiOperation(value = "Get CCM Aws Connector Template URL Environment Wise", nickname = "getCEAwsTemplate")

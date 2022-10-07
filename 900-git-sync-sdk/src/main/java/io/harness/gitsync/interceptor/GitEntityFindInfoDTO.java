@@ -44,10 +44,6 @@ public class GitEntityFindInfoDTO {
   @QueryParam(GitSyncApiConstants.DEFAULT_FROM_OTHER_REPO)
   Boolean defaultFromOtherRepo;
   @Hidden
-  @Parameter(description = "Repo URL of parent entity if its remote")
-  @QueryParam(GitSyncApiConstants.PARENT_ENTITY_REPO_URL)
-  String parentEntityRepoURL;
-  @Hidden
   @Parameter(description = "Connector ref of parent entity if its remote")
   @QueryParam(GitSyncApiConstants.PARENT_ENTITY_CONNECTOR_REF)
   String parentEntityConnectorRef;
@@ -55,4 +51,16 @@ public class GitEntityFindInfoDTO {
   @Parameter(description = "Repo name of parent entity if its remote")
   @QueryParam(GitSyncApiConstants.PARENT_ENTITY_REPO_NAME)
   String parentEntityRepoName;
+  @Hidden
+  @Parameter(description = "Repo name of parent entity if its remote")
+  @QueryParam(GitSyncApiConstants.PARENT_ENTITY_ACCOUNT_IDENTIFIER)
+  String parentEntityAccountIdentifier;
+  @Hidden
+  @Parameter(description = "Repo name of parent entity if its remote")
+  @QueryParam(GitSyncApiConstants.PARENT_ENTITY_ORG_IDENTIFIER)
+  String parentEntityOrgIdentifier;
+  @Hidden
+  @Parameter(description = "Repo name of parent entity if its remote")
+  @QueryParam(GitSyncApiConstants.PARENT_ENTITY_PROJECT_IDENTIFIER)
+  String parentEntityProjectIdentifier;
 }

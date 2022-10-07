@@ -20,7 +20,6 @@ java_library(
     deps = [
         "//:lombok",
         "//420-delegate-agent:module",
-        "//490-ce-commons:module",
         "//867-polling-contracts:module",
         "//platform-service/modules/notification-service/delegate-tasks:module",
         "@maven//:org_apache_commons_commons_math3",
@@ -565,7 +564,6 @@ java_library(
         "@maven//:org_bitbucket_b_c_jose4j",
         "@maven//:org_bouncycastle_bcpg_jdk15on",
         "@maven//:org_bouncycastle_bcpkix_jdk15on",
-        "@maven//:org_bouncycastle_bcprov_ext_jdk15on",
         "@maven//:org_bouncycastle_bcprov_jdk15on",
         "@maven//:org_checkerframework_checker_compat_qual",
         "@maven//:org_checkerframework_checker_qual",

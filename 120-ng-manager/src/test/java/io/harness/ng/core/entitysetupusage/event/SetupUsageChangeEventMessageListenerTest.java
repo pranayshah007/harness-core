@@ -149,7 +149,8 @@ public class SetupUsageChangeEventMessageListenerTest extends CategoryTest {
 
     Message message = getCreateMessage(entityReferenceDTO, EntityTypeProtoEnum.PIPELINES);
     final boolean b = setupUsageChangeEventMessageListener.handleMessage(message);
-    assertThat(b).isFalse();
+    // The event should be skipped and marked as successfully processed
+    assertThat(b).isTrue();
   }
 
   @Test

@@ -166,6 +166,9 @@ public enum EntityType {
   @JsonProperty(EntityTypeConstants.APPROVAL_STAGE)
   APPROVAL_STAGE(
       ModuleType.PMS, EntityTypeConstants.APPROVAL_STAGE, IdentifierRef.class, EntityYamlRootNames.APPROVAL_STAGE),
+  @JsonProperty(EntityTypeConstants.PIPELINE_STAGE)
+  PIPELINE_STAGE(
+      ModuleType.PMS, EntityTypeConstants.PIPELINE_STAGE, IdentifierRef.class, EntityYamlRootNames.PIPELINE_STAGE),
   @JsonProperty(EntityTypeConstants.FEATURE_FLAG_STAGE)
   FEATURE_FLAG_STAGE(ModuleType.CF, EntityTypeConstants.FEATURE_FLAG_STAGE, IdentifierRef.class,
       EntityYamlRootNames.FEATURE_FLAG_STAGE),
@@ -175,6 +178,9 @@ public enum EntityType {
   @JsonProperty(EntityTypeConstants.TEMPLATE_STAGE)
   TEMPLATE_STAGE(ModuleType.TEMPLATESERVICE, EntityTypeConstants.TEMPLATE_STAGE, NGTemplateReference.class,
       EntityYamlRootNames.TEMPLATE),
+  @JsonProperty(EntityTypeConstants.TEMPLATE_CUSTOM_DEPLOYMENT)
+  TEMPLATE_CUSTOM_DEPLOYMENT(ModuleType.TEMPLATESERVICE, EntityTypeConstants.TEMPLATE_CUSTOM_DEPLOYMENT,
+      NGTemplateReference.class, EntityYamlRootNames.TEMPLATE),
   @JsonProperty(EntityTypeConstants.TRIGGERS)
   TRIGGERS(ModuleType.CD, EntityTypeConstants.TRIGGERS, TriggerReference.class, EntityYamlRootNames.TRIGGERS),
   @JsonProperty(EntityTypeConstants.MONITORED_SERVICE)
@@ -195,6 +201,9 @@ public enum EntityType {
   @JsonProperty(EntityTypeConstants.SERVICENOW_UPDATE)
   SERVICENOW_UPDATE_STEP(ModuleType.PMS, EntityTypeConstants.SERVICENOW_UPDATE, IdentifierRef.class,
       EntityYamlRootNames.SERVICENOW_UPDATE),
+  @JsonProperty(EntityTypeConstants.SERVICENOW_IMPORT_SET)
+  SERVICENOW_IMPORT_SET_STEP(ModuleType.PMS, EntityTypeConstants.SERVICENOW_IMPORT_SET, IdentifierRef.class,
+      EntityYamlRootNames.SERVICENOW_IMPORT_SET),
   @JsonProperty(EntityTypeConstants.OPAPOLICIES)
   OPAPOLICIES(ModuleType.CORE, EntityTypeConstants.OPAPOLICIES, IdentifierRef.class, EntityYamlRootNames.OPAPOLICY),
   POLICY_STEP(ModuleType.PMS, EntityTypeConstants.POLICY_STEP, IdentifierRef.class, EntityYamlRootNames.POLICY_STEP),
@@ -218,6 +227,8 @@ public enum EntityType {
       ModuleType.CI, EntityTypeConstants.SAVE_CACHE_S3, IdentifierRef.class, EntityYamlRootNames.SAVE_CACHE_S3),
   @JsonProperty(EntityTypeConstants.SECURITY)
   SECURITY(ModuleType.CI, EntityTypeConstants.SECURITY, IdentifierRef.class, EntityYamlRootNames.SECURITY),
+  @JsonProperty(EntityTypeConstants.GIT_CLONE)
+  GIT_CLONE(ModuleType.CI, EntityTypeConstants.GIT_CLONE, IdentifierRef.class, EntityYamlRootNames.GIT_CLONE),
   @JsonProperty(EntityTypeConstants.ARTIFACTORY_UPLOAD)
   ARTIFACTORY_UPLOAD(ModuleType.CI, EntityTypeConstants.ARTIFACTORY_UPLOAD, IdentifierRef.class,
       EntityYamlRootNames.ARTIFACTORY_UPLOAD),
@@ -264,6 +275,9 @@ public enum EntityType {
   @JsonProperty(EntityTypeConstants.AZURE_TRAFFIC_SHIFT)
   AZURE_TRAFFIC_SHIFT_STEP(ModuleType.CD, EntityTypeConstants.AZURE_TRAFFIC_SHIFT, IdentifierRef.class,
       EntityYamlRootNames.AZURE_TRAFFIC_SHIFT_STEP),
+  @JsonProperty(EntityTypeConstants.FETCH_INSTANCE_SCRIPT)
+  FETCH_INSTANCE_SCRIPT_STEP(ModuleType.CD, EntityTypeConstants.FETCH_INSTANCE_SCRIPT, IdentifierRef.class,
+      EntityYamlRootNames.FETCH_INSTANCE_SCRIPT),
   @JsonProperty(EntityTypeConstants.AZURE_SWAP_SLOT)
   AZURE_SWAP_SLOT_STEP(ModuleType.CD, EntityTypeConstants.AZURE_SWAP_SLOT, IdentifierRef.class,
       EntityYamlRootNames.AZURE_SWAP_SLOT_STEP),
@@ -273,13 +287,55 @@ public enum EntityType {
   @JsonProperty(EntityTypeConstants.JENKINS_BUILD)
   JENKINS_BUILD(
       ModuleType.CD, EntityTypeConstants.JENKINS_BUILD, IdentifierRef.class, EntityYamlRootNames.JENKINS_BUILD),
+  @JsonProperty(EntityTypeConstants.ECS_ROLLING_DEPLOY)
+  ECS_ROLLING_DEPLOY_STEP(ModuleType.CD, EntityTypeConstants.ECS_ROLLING_DEPLOY, IdentifierRef.class,
+      EntityYamlRootNames.ECS_ROLLING_DEPLOY),
+  @JsonProperty(EntityTypeConstants.ECS_ROLLING_ROLLBACK)
+  ECS_ROLLING_ROLLBACK_STEP(ModuleType.CD, EntityTypeConstants.ECS_ROLLING_ROLLBACK, IdentifierRef.class,
+      EntityYamlRootNames.ECS_ROLLING_ROLLBACK),
+  @JsonProperty(EntityTypeConstants.ECS_CANARY_DEPLOY)
+  ECS_CANARY_DEPLOY_STEP(
+      ModuleType.CD, EntityTypeConstants.ECS_CANARY_DEPLOY, IdentifierRef.class, EntityYamlRootNames.ECS_CANARY_DEPLOY),
+  @JsonProperty(EntityTypeConstants.ECS_CANARY_DELETE)
+  ECS_CANARY_DELETE_STEP(
+      ModuleType.CD, EntityTypeConstants.ECS_CANARY_DELETE, IdentifierRef.class, EntityYamlRootNames.ECS_CANARY_DELETE),
   @JsonProperty(EntityTypeConstants.AZURE_CREATE_ARM_RESOURCE_STEP)
   AZURE_CREATE_ARM_RESOURCE_STEP(ModuleType.CD, EntityTypeConstants.AZURE_CREATE_ARM_RESOURCE_STEP, IdentifierRef.class,
       EntityYamlRootNames.AZURE_CREATE_ARM_RESOURCE_STEP),
   @JsonProperty(EntityTypeConstants.BUILD_AND_PUSH_ACR)
   BUILD_AND_PUSH_ACR(ModuleType.CI, EntityTypeConstants.BUILD_AND_PUSH_ACR, IdentifierRef.class,
-      EntityYamlRootNames.BUILD_AND_PUSH_ACR);
-
+      EntityYamlRootNames.BUILD_AND_PUSH_ACR),
+  @JsonProperty(EntityTypeConstants.AZURE_CREATE_BP_RESOURCE_STEP)
+  AZURE_CREATE_BP_RESOURCE_STEP(ModuleType.CD, EntityTypeConstants.AZURE_CREATE_BP_RESOURCE_STEP, IdentifierRef.class,
+      EntityYamlRootNames.AZURE_CREATE_BP_RESOURCE_STEP),
+  @JsonProperty(EntityTypeConstants.AZURE_ROLLBACK_ARM_RESOURCE_STEP)
+  AZURE_ROLLBACK_ARM_RESOURCE_STEP(ModuleType.CD, EntityTypeConstants.AZURE_ROLLBACK_ARM_RESOURCE_STEP,
+      IdentifierRef.class, EntityYamlRootNames.AZURE_ROLLBACK_ARM_RESOURCE_STEP),
+  @JsonProperty(EntityTypeConstants.BACKGROUND_STEP)
+  BACKGROUND_STEP(
+      ModuleType.CI, EntityTypeConstants.BACKGROUND_STEP, IdentifierRef.class, EntityYamlRootNames.BACKGROUND_STEP),
+  @JsonProperty(EntityTypeConstants.WAIT_STEP)
+  WAIT_STEP(ModuleType.PMS, EntityTypeConstants.WAIT_STEP, IdentifierRef.class, EntityYamlRootNames.WAIT_STEP),
+  @JsonProperty(EntityTypeConstants.ARTIFACT_SOURCE_TEMPLATE)
+  ARTIFACT_SOURCE_TEMPLATE(ModuleType.TEMPLATESERVICE, EntityTypeConstants.ARTIFACT_SOURCE_TEMPLATE,
+      NGTemplateReference.class, EntityYamlRootNames.TEMPLATE),
+  @JsonProperty(EntityTypeConstants.ECS_BLUE_GREEN_CREATE_SERVICE)
+  ECS_BLUE_GREEN_CREATE_SERVICE_STEP(ModuleType.CD, EntityTypeConstants.ECS_BLUE_GREEN_CREATE_SERVICE,
+      IdentifierRef.class, EntityYamlRootNames.ECS_BLUE_GREEN_CREATE_SERVICE),
+  @JsonProperty(EntityTypeConstants.ECS_BLUE_GREEN_SWAP_TARGET_GROUPS)
+  ECS_BLUE_GREEN_SWAP_TARGET_GROUPS_STEP(ModuleType.CD, EntityTypeConstants.ECS_BLUE_GREEN_SWAP_TARGET_GROUPS,
+      IdentifierRef.class, EntityYamlRootNames.ECS_BLUE_GREEN_SWAP_TARGET_GROUPS),
+  @JsonProperty(EntityTypeConstants.ECS_BLUE_GREEN_ROLLBACK)
+  ECS_BLUE_GREEN_ROLLBACK_STEP(ModuleType.CD, EntityTypeConstants.ECS_BLUE_GREEN_ROLLBACK, IdentifierRef.class,
+      EntityYamlRootNames.ECS_BLUE_GREEN_ROLLBACK),
+  @JsonProperty(EntityTypeConstants.SHELL_SCRIPT_PROVISION_STEP)
+  SHELL_SCRIPT_PROVISION_STEP(ModuleType.CD, EntityTypeConstants.SHELL_SCRIPT_PROVISION_STEP, IdentifierRef.class,
+      EntityYamlRootNames.SHELL_SCRIPT_PROVISION_STEP),
+  @JsonProperty(EntityTypeConstants.FREEZE)
+  FREEZE(ModuleType.CD, EntityTypeConstants.FREEZE, IdentifierRef.class, EntityYamlRootNames.FREEZE),
+  @JsonProperty(EntityTypeConstants.GITOPS_UPDATE_RELEASE_REPO)
+  GITOPS_UPDATE_RELEASE_REPO(ModuleType.CD, EntityTypeConstants.GITOPS_UPDATE_RELEASE_REPO, IdentifierRef.class,
+      EntityYamlRootNames.GITOPS_UPDATE_RELEASE_REPO);
   private final ModuleType moduleType;
   String yamlName;
   List<String> yamlRootElementString;

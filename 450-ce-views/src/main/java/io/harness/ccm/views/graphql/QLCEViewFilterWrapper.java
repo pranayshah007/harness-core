@@ -7,6 +7,7 @@
 
 package io.harness.ccm.views.graphql;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Value;
@@ -20,4 +21,5 @@ public class QLCEViewFilterWrapper {
   QLCEViewTimeFilter timeFilter;
   QLCEViewMetadataFilter viewMetadataFilter;
   QLCEViewRule ruleFilter;
+  @JsonIgnore QLCEInExpressionFilter inExpressionFilter;
 }

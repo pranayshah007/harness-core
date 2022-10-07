@@ -9,6 +9,7 @@ package io.harness.delegate.task.git;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.rule.OwnerRule.TMACARI;
+import static io.harness.rule.OwnerRule.VIKYATH_HAREKAL;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
@@ -238,6 +239,34 @@ public class ScmFetchFilesHelperNGTest extends CategoryTest {
     spyScmFetchFilesHelperNG.downloadFilesUsingScm("manifests", gitStoreDelegateConfig, logCallback);
 
     File file = new File("manifests/test/test2/path.txt");
+    assertThat(file.exists()).isTrue();
+  }
+
+  @Test
+  @Owner(developers = VIKYATH_HAREKAL)
+  @Category(UnitTests.class)
+  public void testShouldDownloadFilesUsingScmByFilepathWithLeadingSlash() {
+    ScmFetchFilesHelperNG spyScmFetchFilesHelperNG = spy(scmFetchFilesHelperNG);
+    LogCallback logCallback = mock(NGDelegateLogCallback.class);
+    GitStoreDelegateConfig gitStoreDelegateConfig = GitStoreDelegateConfig.builder()
+                                                        .paths(Collections.singletonList("/test/templates"))
+                                                        .fetchType(FetchType.BRANCH)
+                                                        .branch("main")
+                                                        .build();
+    when(scmDelegateClient.processScmRequest(any()))
+        .thenReturn(FileContentBatchResponse.builder()
+                        .fileBatchContentResponse(FileBatchContentResponse.newBuilder()
+                                                      .addFileContents(FileContent.newBuilder()
+                                                                           .setStatus(200)
+                                                                           .setContent("content")
+                                                                           .setPath("test/templates/deployment.yaml")
+                                                                           .build())
+                                                      .build())
+                        .build());
+
+    spyScmFetchFilesHelperNG.downloadFilesUsingScm("manifests", gitStoreDelegateConfig, logCallback);
+
+    File file = new File("manifests/deployment.yaml");
     assertThat(file.exists()).isTrue();
   }
 }

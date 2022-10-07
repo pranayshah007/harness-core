@@ -96,7 +96,9 @@ public enum QLTaskGroup implements QLEnum {
   AZURE,
   SERVERLESS_NG,
   COMMAND_TASK_NG,
-  AZURE_NG_ARM_BLUEPRINT;
+  AZURE_NG_ARM_BLUEPRINT,
+  ECS,
+  SHELL_SCRIPT_PROVISION_NG;
 
   @Override
   public String getStringValue() {

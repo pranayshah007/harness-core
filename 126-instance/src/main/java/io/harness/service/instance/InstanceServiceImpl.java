@@ -72,7 +72,7 @@ public class InstanceServiceImpl implements InstanceService {
       if (undeleteInstance(instance) != null) {
         log.info("Undeleted instance : {}", instanceDTO);
       } else {
-        log.error("Duplicate key error while inserting instance : {}", instanceDTO);
+        log.error("Duplicate key error while inserting instance : {}", instanceDTO, duplicateKeyException);
       }
       return Optional.empty();
     }
@@ -82,6 +82,14 @@ public class InstanceServiceImpl implements InstanceService {
   @Override
   public void deleteById(String id) {
     instanceRepository.deleteById(id);
+  }
+
+  @Override
+  public void softDeleteById(String id) {
+    Criteria criteria = Criteria.where(InstanceKeys.id).is(id);
+    Update update =
+        new Update().set(InstanceKeys.isDeleted, true).set(InstanceKeys.deletedAt, System.currentTimeMillis());
+    instanceRepository.findAndModify(criteria, update);
   }
 
   @Override
@@ -237,6 +245,20 @@ public class InstanceServiceImpl implements InstanceService {
       String orgIdentifier, String projectIdentifier, List<String> serviceId, long timestampInMs) {
     return instanceRepository.getActiveServiceInstanceCountBreakdown(
         accountIdentifier, orgIdentifier, projectIdentifier, serviceId, timestampInMs);
+  }
+
+  @Override
+  public void updateInfrastructureMapping(List<String> instanceIds, String infrastructureMappingId) {
+    for (String instanceId : instanceIds) {
+      try {
+        instanceRepository.updateInfrastructureMapping(instanceId, infrastructureMappingId);
+        log.info("Updated infrastructure mapping for instance {}", instanceId);
+      } catch (DuplicateKeyException ex) {
+        log.warn("Error while update instance {}. Instance already exists with infrastructure mapping {}", instanceId,
+            infrastructureMappingId, ex);
+        softDeleteById(instanceId);
+      }
+    }
   }
 
   // ----------------------------------- PRIVATE METHODS -------------------------------------

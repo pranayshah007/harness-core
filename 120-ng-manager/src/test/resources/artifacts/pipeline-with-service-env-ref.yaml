@@ -30,7 +30,7 @@ pipeline:
                           spec:
                             tag: <+input>
           environment:
-            environmentRef: newV2Env
+            environmentRef: env1
             deployToAll: false
             infrastructureDefinitions:
               - identifier: infra
@@ -83,7 +83,7 @@ pipeline:
                             spec:
                               tag: <+input>
             environment:
-              environmentRef: newV2Env
+              environmentRef: env1
               deployToAll: false
               infrastructureDefinitions:
                 - identifier: infra

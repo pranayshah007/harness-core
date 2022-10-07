@@ -36,6 +36,7 @@ import io.harness.exception.EncryptDecryptException;
 import io.harness.exception.WingsException;
 import io.harness.mongo.MongoPersistence;
 import io.harness.mongo.PageController;
+import io.harness.mongo.metrics.HarnessConnectionPoolListener;
 import io.harness.persistence.AccountAccess;
 import io.harness.persistence.HIterator;
 import io.harness.persistence.HQuery;
@@ -97,8 +98,9 @@ public class WingsMongoPersistence extends MongoPersistence implements WingsPers
    * @param primaryDatastore   primary datastore for critical reads and writes.
    */
   @Inject
-  public WingsMongoPersistence(@Named("primaryDatastore") AdvancedDatastore primaryDatastore) {
-    super(primaryDatastore);
+  public WingsMongoPersistence(@Named("primaryDatastore") AdvancedDatastore primaryDatastore,
+      HarnessConnectionPoolListener harnessConnectionPoolListener) {
+    super(primaryDatastore, harnessConnectionPoolListener);
   }
 
   @Override

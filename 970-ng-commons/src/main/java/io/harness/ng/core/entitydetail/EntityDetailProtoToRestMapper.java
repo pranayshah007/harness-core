@@ -9,11 +9,13 @@ package io.harness.ng.core.entitydetail;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.HarnessStringUtils.nullIfEmpty;
+import static io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum.INFRASTRUCTURE;
 import static io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum.INPUT_SETS;
 import static io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum.TEMPLATE;
 
 import io.harness.EntityType;
 import io.harness.beans.IdentifierRef;
+import io.harness.beans.InfraDefReference;
 import io.harness.beans.InputSetReference;
 import io.harness.beans.NGTemplateReference;
 import io.harness.common.EntityReference;
@@ -21,6 +23,7 @@ import io.harness.encryption.Scope;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum;
 import io.harness.eventsframework.schemas.entity.IdentifierRefProtoDTO;
+import io.harness.eventsframework.schemas.entity.InfraDefinitionReferenceProtoDTO;
 import io.harness.eventsframework.schemas.entity.InputSetReferenceProtoDTO;
 import io.harness.eventsframework.schemas.entity.ScopeProtoEnum;
 import io.harness.eventsframework.schemas.entity.TemplateReferenceProtoDTO;
@@ -56,9 +59,21 @@ public class EntityDetailProtoToRestMapper {
       return createInputSetRef(entityDetail.getInputSetRef());
     } else if (entityDetail.getType() == TEMPLATE) {
       return createTemplateRef(entityDetail.getTemplateRef());
+    } else if (entityDetail.getType() == INFRASTRUCTURE) {
+      return createInfraDefRef(entityDetail.getInfraDefRef());
     } else {
       return createIdentifierRef(entityDetail.getIdentifierRef());
     }
+  }
+
+  private EntityReference createInfraDefRef(InfraDefinitionReferenceProtoDTO infraDefRef) {
+    return InfraDefReference.builder()
+        .accountIdentifier(infraDefRef.getAccountIdentifier().getValue())
+        .orgIdentifier(infraDefRef.getOrgIdentifier().getValue())
+        .projectIdentifier(infraDefRef.getProjectIdentifier().getValue())
+        .envIdentifier(infraDefRef.getEnvIdentifier().getValue())
+        .identifier(infraDefRef.getIdentifier().getValue())
+        .build();
   }
 
   private EntityReference createIdentifierRef(IdentifierRefProtoDTO identifierRef) {

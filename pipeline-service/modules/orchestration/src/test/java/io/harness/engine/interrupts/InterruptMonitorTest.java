@@ -8,7 +8,6 @@
 package io.harness.engine.interrupts;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
-import static io.harness.interrupts.Interrupt.State.PROCESSED_SUCCESSFULLY;
 import static io.harness.interrupts.Interrupt.State.PROCESSED_UNSUCCESSFULLY;
 import static io.harness.rule.OwnerRule.PRASHANT;
 
@@ -59,24 +58,6 @@ public class InterruptMonitorTest extends OrchestrationTestBase {
   @Mock private AbortHelper abortHelper;
 
   @Inject @InjectMocks private InterruptMonitor interruptMonitor;
-
-  @Test
-  @Owner(developers = PRASHANT)
-  @Category(UnitTests.class)
-  public void shouldTestActiveInterruptForCompetedPlan() {
-    String planExecutionId = generateUuid();
-    PlanExecution planExecution = PlanExecution.builder().uuid(planExecutionId).status(Status.ABORTED).build();
-    Interrupt interrupt = Interrupt.builder()
-                              .uuid(generateUuid())
-                              .planExecutionId(planExecutionId)
-                              .type(InterruptType.ABORT_ALL)
-                              .state(Interrupt.State.PROCESSING)
-                              .build();
-    when(planExecutionService.get(eq(planExecutionId))).thenReturn(planExecution);
-    interruptMonitor.handle(interrupt);
-
-    verify(interruptService).markProcessedForceful(eq(interrupt.getUuid()), eq(PROCESSED_SUCCESSFULLY), eq(true));
-  }
 
   /**
    * Setup for the test

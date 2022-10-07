@@ -33,6 +33,7 @@ import software.wings.WingsBaseTest;
 import software.wings.beans.security.access.Whitelist;
 import software.wings.beans.security.access.WhitelistStatus;
 import software.wings.exception.WingsExceptionMapper;
+import software.wings.service.intfc.HarnessUserGroupService;
 import software.wings.service.intfc.WhitelistService;
 import software.wings.utils.ResourceTestRule;
 
@@ -52,6 +53,7 @@ import org.mockito.Captor;
 @Slf4j
 public class WhitelistResourceTest extends WingsBaseTest {
   private static final WhitelistService WHITELIST_SERVICE = mock(WhitelistService.class);
+  private static final HarnessUserGroupService HARNESS_USER_GROUP_SERVICE = mock(HarnessUserGroupService.class);
 
   @Captor private ArgumentCaptor<PageRequest<Whitelist>> pageRequestArgumentCaptor;
 
@@ -59,10 +61,11 @@ public class WhitelistResourceTest extends WingsBaseTest {
    * The constant RESOURCES.
    */
   @ClassRule
-  public static final ResourceTestRule RESOURCES = ResourceTestRule.builder()
-                                                       .instance(new WhitelistResource(WHITELIST_SERVICE))
-                                                       .type(WingsExceptionMapper.class)
-                                                       .build();
+  public static final ResourceTestRule RESOURCES =
+      ResourceTestRule.builder()
+          .instance(new WhitelistResource(WHITELIST_SERVICE, HARNESS_USER_GROUP_SERVICE))
+          .type(WingsExceptionMapper.class)
+          .build();
 
   private static String WHITELIST_ID = "WHITELIST_ID";
   private static final Whitelist WHITELIST = Whitelist.builder()

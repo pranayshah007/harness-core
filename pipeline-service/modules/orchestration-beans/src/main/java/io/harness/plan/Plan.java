@@ -11,7 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 
 import io.harness.ModuleType;
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
@@ -60,10 +60,10 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Value
 @Builder
 @FieldNameConstants(innerTypeName = "PlanKeys")
+@StoreIn(DbAliases.PMS)
 @Document("plans")
 @TypeAlias("plan")
 @Entity(value = "plans")
-@StoreIn(DbAliases.PMS)
 public class Plan implements PersistentEntity, Node {
   static final long TTL_MONTHS = 6;
 

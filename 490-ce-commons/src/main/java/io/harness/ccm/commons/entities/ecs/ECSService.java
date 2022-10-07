@@ -9,7 +9,7 @@ package io.harness.ccm.commons.entities.ecs;
 
 import static io.harness.annotations.dev.HarnessTeam.CE;
 
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.commons.beans.Resource;
 import io.harness.mongo.index.CompoundMongoIndex;
@@ -21,6 +21,7 @@ import io.harness.persistence.PersistentEntity;
 import io.harness.persistence.UpdatedAtAware;
 import io.harness.persistence.UuidAware;
 
+import com.amazonaws.services.ecs.model.LaunchType;
 import com.google.common.collect.ImmutableList;
 import java.util.List;
 import java.util.Map;
@@ -61,6 +62,7 @@ public final class ECSService implements PersistentEntity, UuidAware, CreatedAtA
   String clusterId;
   String serviceArn;
   String serviceName;
+  LaunchType launchType;
   Resource resource;
   Map<String, String> labels;
   long createdAt;

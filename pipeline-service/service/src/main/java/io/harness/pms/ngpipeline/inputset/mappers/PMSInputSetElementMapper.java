@@ -18,31 +18,21 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitsync.beans.StoreType;
-import io.harness.gitsync.helpers.GitContextHelper;
-import io.harness.gitsync.interceptor.GitEntityInfo;
-import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.gitsync.sdk.EntityGitDetailsMapper;
 import io.harness.gitsync.sdk.EntityValidityDetails;
 import io.harness.ng.core.EntityDetail;
 import io.harness.ng.core.mapper.TagMapper;
 import io.harness.pms.inputset.InputSetErrorWrapperDTOPMS;
-import io.harness.pms.inputset.OverlayInputSetErrorWrapperDTOPMS;
 import io.harness.pms.merger.helpers.InputSetYamlHelper;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntityType;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetResponseDTOPMS;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetSummaryResponseDTOPMS;
-import io.harness.pms.ngpipeline.inputset.exceptions.InvalidInputSetException;
-import io.harness.pms.ngpipeline.inputset.exceptions.InvalidOverlayInputSetException;
-import io.harness.pms.ngpipeline.inputset.service.InputSetValidationHelper;
-import io.harness.pms.ngpipeline.inputset.service.PMSInputSetService;
 import io.harness.pms.ngpipeline.overlayinputset.beans.resource.OverlayInputSetResponseDTOPMS;
-import io.harness.pms.pipeline.service.PMSPipelineService;
 
 import java.util.Map;
 import lombok.experimental.UtilityClass;
-import org.springframework.data.domain.Page;
 
 @OwnedBy(PIPELINE)
 @UtilityClass
@@ -182,33 +172,6 @@ public class PMSInputSetElementMapper {
         .build();
   }
 
-  public Page<InputSetSummaryResponseDTOPMS> toInputSetSummaryResponseDTOPMSList(PMSInputSetService inputSetService,
-      PMSPipelineService pipelineService, GitSyncSdkService gitSyncSdkService, String accountId, String orgIdentifier,
-      String projectIdentifier, Page<InputSetEntity> inputSetEntities) {
-    boolean isOldGitSync = gitSyncSdkService.isGitSyncEnabled(accountId, orgIdentifier, projectIdentifier);
-    return inputSetEntities.map(inputSetEntity -> {
-      InputSetErrorWrapperDTOPMS inputSetErrorWrapperDTOPMS = null;
-      Map<String, String> overlaySetErrorDetails = null;
-      if (inputSetEntity.isEntityInvalid()) {
-        try {
-          if (isOldGitSync) {
-            GitEntityInfo gitEntityInfo = GitContextHelper.getGitEntityInfo();
-            InputSetValidationHelper.validateInputSetForOldGitSync(inputSetService, pipelineService, inputSetEntity,
-                gitEntityInfo.getBranch(), gitEntityInfo.getYamlGitConfigId());
-          } else {
-            InputSetValidationHelper.validateInputSet(inputSetService, pipelineService, inputSetEntity, false);
-          }
-        } catch (InvalidInputSetException e) {
-          inputSetErrorWrapperDTOPMS = (InputSetErrorWrapperDTOPMS) e.getMetadata();
-        } catch (InvalidOverlayInputSetException e) {
-          overlaySetErrorDetails = ((OverlayInputSetErrorWrapperDTOPMS) e.getMetadata()).getInvalidReferences();
-        }
-      }
-      return PMSInputSetElementMapper.toInputSetSummaryResponseDTOPMS(
-          inputSetEntity, inputSetErrorWrapperDTOPMS, overlaySetErrorDetails);
-    });
-  }
-
   public InputSetSummaryResponseDTOPMS toInputSetSummaryResponseDTOPMS(InputSetEntity entity,
       InputSetErrorWrapperDTOPMS inputSetErrorDetails, Map<String, String> overlaySetErrorDetails) {
     // For List View, getEntityGitDetails(...) method cant be used because for REMOTE input sets. That is because
@@ -238,6 +201,10 @@ public class PMSInputSetElementMapper {
         .storeType(entity.getStoreType())
         .connectorRef(entity.getConnectorRef())
         .build();
+  }
+
+  public InputSetSummaryResponseDTOPMS toInputSetSummaryResponseDTOPMS(InputSetEntity entity) {
+    return toInputSetSummaryResponseDTOPMS(entity, null, null);
   }
 
   public EntityDetail toEntityDetail(InputSetEntity entity) {

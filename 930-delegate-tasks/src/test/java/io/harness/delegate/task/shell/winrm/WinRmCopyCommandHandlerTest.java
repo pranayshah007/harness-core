@@ -89,21 +89,10 @@ public class WinRmCopyCommandHandlerTest {
     WinrmTaskParameters winrmTaskParameters = getWinrmTaskParameters(copyConfigCommandUnit, outputVariables);
     when(fileBasedWinRmExecutorNG.copyConfigFiles(any(ConfigFileParameters.class)))
         .thenReturn(CommandExecutionStatus.SUCCESS);
-    CommandExecutionStatus result = winRmCopyCommandHandler.handle(winrmTaskParameters, copyConfigCommandUnit,
-        iLogStreamingTaskClient, CommandUnitsProgress.builder().build(), taskContext);
-    assertThat(result).isEqualTo(CommandExecutionStatus.SUCCESS);
-  }
-
-  @Test
-  @Owner(developers = BOJAN)
-  @Category(UnitTests.class)
-  public void testShouldCopyArtifactWithWinRmExecutor() {
-    List<String> outputVariables = Collections.singletonList("variable");
-    WinrmTaskParameters winrmTaskParameters = getWinrmTaskParameters(copyArtifactCommandUnit, outputVariables);
-
-    when(fileBasedWinRmExecutorNG.copyArtifacts(any(), any())).thenReturn(CommandExecutionStatus.SUCCESS);
-    CommandExecutionStatus result = winRmCopyCommandHandler.handle(winrmTaskParameters, copyArtifactCommandUnit,
-        iLogStreamingTaskClient, CommandUnitsProgress.builder().build(), taskContext);
+    CommandExecutionStatus result = winRmCopyCommandHandler
+                                        .handle(winrmTaskParameters, copyConfigCommandUnit, iLogStreamingTaskClient,
+                                            CommandUnitsProgress.builder().build(), taskContext)
+                                        .getStatus();
     assertThat(result).isEqualTo(CommandExecutionStatus.SUCCESS);
   }
 

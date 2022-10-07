@@ -7,8 +7,10 @@
 
 package software.wings.service.impl.analysis;
 
+import io.harness.annotations.StoreIn;
 import io.harness.beans.EmbeddedUser;
 import io.harness.mongo.index.FdIndex;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
 import io.harness.persistence.CreatedAtAware;
 import io.harness.persistence.CreatedByAware;
@@ -27,6 +29,7 @@ import org.mongodb.morphia.annotations.Id;
 @Data
 @Builder
 @AllArgsConstructor
+@StoreIn(DbAliases.HARNESS)
 @org.mongodb.morphia.annotations.Entity(value = "timeSeriesKeyTransactions", noClassnameStored = true)
 @FieldNameConstants(innerTypeName = "TimeSeriesKeyTransactionsKeys")
 public class TimeSeriesKeyTransactions implements PersistentEntity, UuidAware, CreatedAtAware, CreatedByAware,

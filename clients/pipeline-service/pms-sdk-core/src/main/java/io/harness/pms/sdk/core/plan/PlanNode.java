@@ -11,6 +11,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
+import io.harness.pms.contracts.plan.ExpressionMode;
 import io.harness.pms.contracts.refobjects.RefObject;
 import io.harness.pms.contracts.steps.SkipType;
 import io.harness.pms.contracts.steps.StepType;
@@ -55,6 +56,7 @@ public class PlanNode {
 
   // Config
   boolean skipExpressionChain;
+  @Builder.Default @NotNull ExpressionMode expressionMode = ExpressionMode.RETURN_NULL_IF_UNRESOLVED;
   @Builder.Default SkipType skipGraphType = SkipType.NOOP;
   @Builder.Default boolean skipUnresolvedExpressionsCheck = true;
 }

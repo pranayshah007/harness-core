@@ -100,6 +100,7 @@ public class AwsSshWinrmInstanceSyncPerpetualTaskHandler extends InstanceSyncPer
             .addAllHosts(hosts)
             .setInfrastructureKey(infrastructure.getInfrastructureKey())
             .setInfraDelegateConfig(ByteString.copyFrom(kryoSerializer.asBytes(awsInfraDelegateConfig)))
+            .setHostConnectionType(awsInfrastructureOutcome.getHostConnectionType())
             .build();
 
     Any perpetualTaskPack = Any.pack(awsSshWinrmPerpetualTaskParamsNg);
@@ -137,8 +138,7 @@ public class AwsSshWinrmInstanceSyncPerpetualTaskHandler extends InstanceSyncPer
           .awsConnectorDTO(awsConnectorDTO)
           .region(awsInfrastructureOutcome.getRegion())
           .connectorEncryptionDataDetails(encryptedData)
-          .tags(sshEntityHelper.filterInfraTags(awsInfrastructureOutcome.getAwsInstanceFilter().getTags()))
-          .vpcIds(awsInfrastructureOutcome.getAwsInstanceFilter().getVpcs())
+          .tags(sshEntityHelper.filterInfraTags(awsInfrastructureOutcome.getTags()))
           .build();
     } else if (secretSpecDTO instanceof WinRmCredentialsSpecDTO) {
       return AwsWinrmInfraDelegateConfig.winrmAwsBuilder()
@@ -146,8 +146,7 @@ public class AwsSshWinrmInstanceSyncPerpetualTaskHandler extends InstanceSyncPer
           .awsConnectorDTO(awsConnectorDTO)
           .connectorEncryptionDataDetails(encryptedData)
           .region(awsInfrastructureOutcome.getRegion())
-          .tags(sshEntityHelper.filterInfraTags(awsInfrastructureOutcome.getAwsInstanceFilter().getTags()))
-          .vpcIds(awsInfrastructureOutcome.getAwsInstanceFilter().getVpcs())
+          .tags(sshEntityHelper.filterInfraTags(awsInfrastructureOutcome.getTags()))
           .build();
     }
     throw new InvalidArgumentsException(format("Invalid subclass %s provided for %s",

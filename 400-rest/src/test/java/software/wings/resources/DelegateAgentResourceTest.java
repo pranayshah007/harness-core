@@ -233,7 +233,7 @@ public class DelegateAgentResourceTest extends CategoryTest {
   @Category(UnitTests.class)
   public void shouldRegisterDelegate() {
     DelegateRegisterResponse registerResponse = DelegateRegisterResponse.builder().delegateId(ID_KEY).build();
-    when(delegateService.register(any(DelegateParams.class))).thenReturn(registerResponse);
+    when(delegateService.register(any(DelegateParams.class), any(boolean.class))).thenReturn(registerResponse);
     RestResponse<DelegateRegisterResponse> restResponse =
         RESOURCES.client()
             .target("/agent/delegates/register?accountId=" + ACCOUNT_ID)

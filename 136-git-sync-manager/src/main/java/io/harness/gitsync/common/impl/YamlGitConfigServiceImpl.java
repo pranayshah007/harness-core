@@ -21,6 +21,7 @@ import static io.harness.gitsync.common.remote.YamlGitConfigMapper.toYamlGitConf
 import static io.harness.ng.core.utils.URLDecoderUtility.getDecodedString;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.beans.HookEventType;
 import io.harness.beans.IdentifierRef;
 import io.harness.connector.ConnectorInfoDTO;
@@ -62,6 +63,7 @@ import io.harness.ng.webhook.UpsertWebhookResponseDTO;
 import io.harness.ng.webhook.services.api.WebhookEventService;
 import io.harness.repositories.repositories.yamlGitConfig.YamlGitConfigRepository;
 import io.harness.utils.IdentifierRefHelper;
+import io.harness.utils.NGFeatureFlagHelperService;
 
 import software.wings.utils.CryptoUtils;
 
@@ -109,6 +111,7 @@ public class YamlGitConfigServiceImpl implements YamlGitConfigService {
   private final GitSyncSettingsService gitSyncSettingsService;
   private final UserProfileHelper userProfileHelper;
   private final ScmFacilitatorService scmFacilitatorService;
+  private final NGFeatureFlagHelperService ngFeatureFlagHelperService;
 
   @Inject
   public YamlGitConfigServiceImpl(YamlGitConfigRepository yamlGitConfigRepository,
@@ -119,7 +122,7 @@ public class YamlGitConfigServiceImpl implements YamlGitConfigService {
       IdentifierRefProtoDTOHelper identifierRefProtoDTOHelper,
       @Named(EventsFrameworkConstants.SETUP_USAGE) Producer setupUsageEventProducer,
       GitSyncSettingsService gitSyncSettingsService, UserProfileHelper userProfileHelper,
-      ScmFacilitatorService scmFacilitatorService) {
+      ScmFacilitatorService scmFacilitatorService, NGFeatureFlagHelperService ngFeatureFlagHelperService) {
     this.yamlGitConfigRepository = yamlGitConfigRepository;
     this.connectorService = connectorService;
     this.gitSyncConfigEventProducer = gitSyncConfigEventProducer;
@@ -133,6 +136,7 @@ public class YamlGitConfigServiceImpl implements YamlGitConfigService {
     this.gitSyncSettingsService = gitSyncSettingsService;
     this.userProfileHelper = userProfileHelper;
     this.scmFacilitatorService = scmFacilitatorService;
+    this.ngFeatureFlagHelperService = ngFeatureFlagHelperService;
   }
 
   @Override
@@ -204,8 +208,18 @@ public class YamlGitConfigServiceImpl implements YamlGitConfigService {
   public YamlGitConfigDTO save(YamlGitConfigDTO ygs) {
     // before saving the git config, check if branch exists
     // otherwise we end-up saving invalid git configs
+    if (!canEnableOldGitSync(ygs.getAccountIdentifier(), ygs.getOrganizationIdentifier(), ygs.getProjectIdentifier())) {
+      throw new InvalidRequestException(
+          "Cannot enable Git Management for this project, please use new Git Simplified experience.");
+    }
     checkIfBranchExists(ygs);
     return saveInternal(ygs, ygs.getAccountIdentifier());
+  }
+
+  private boolean canEnableOldGitSync(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+    return ngFeatureFlagHelperService.isEnabled(accountIdentifier, FeatureName.FF_GITSYNC)
+        || ngFeatureFlagHelperService.isEnabled(accountIdentifier, FeatureName.USE_OLD_GIT_SYNC)
+        || isGitSyncEnabled(accountIdentifier, orgIdentifier, projectIdentifier);
   }
 
   void validatePresenceOfRequiredFields(Object... fields) {

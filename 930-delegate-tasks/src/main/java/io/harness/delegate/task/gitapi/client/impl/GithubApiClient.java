@@ -80,7 +80,7 @@ public class GithubApiClient implements GitApiClient {
         responseBuilder.commandExecutionStatus(CommandExecutionStatus.SUCCESS)
             .gitApiResult(GitApiFindPRTaskResponse.builder().prJson(prJson).build());
       } else {
-        responseBuilder.commandExecutionStatus(FAILURE).errorMessage("Received blank  pr details");
+        responseBuilder.commandExecutionStatus(FAILURE).errorMessage("Received blank pr details");
       }
     } catch (Exception e) {
       log.error(new StringBuilder("failed while fetching PR Details using connector: ")
@@ -124,6 +124,41 @@ public class GithubApiClient implements GitApiClient {
       responseBuilder.commandExecutionStatus(FAILURE).errorMessage(e.getMessage());
     }
 
+    return responseBuilder.build();
+  }
+
+  @Override
+  public DelegateResponseData deleteRef(GitApiTaskParams gitApiTaskParams) {
+    GitApiTaskResponseBuilder responseBuilder = GitApiTaskResponse.builder();
+    ConnectorDetails gitConnector = gitApiTaskParams.getConnectorDetails();
+    try {
+      if (gitConnector == null
+          || !gitConnector.getConnectorConfig().getClass().isAssignableFrom(GithubConnectorDTO.class)) {
+        throw new InvalidRequestException(
+            format("Invalid Connector %s, Need GithubConfig: ", gitConnector.getIdentifier()));
+      }
+      GithubConnectorDTO gitConfigDTO = (GithubConnectorDTO) gitConnector.getConnectorConfig();
+      String token = retrieveAuthToken(gitConnector);
+      String gitApiURL = getGitApiURL(gitConfigDTO.getUrl());
+      String repo = gitApiTaskParams.getRepo();
+      String ref = gitApiTaskParams.getRef();
+
+      boolean success = githubService.deleteRef(gitApiURL, token, gitApiTaskParams.getOwner(), repo, ref);
+      if (!success) {
+        String err = format("Failed to delete reference %s for github connector %s", ref, gitConnector.getIdentifier());
+        log.info(err);
+        responseBuilder.commandExecutionStatus(FAILURE).errorMessage("Failed to delete");
+      } else {
+        responseBuilder.commandExecutionStatus(CommandExecutionStatus.SUCCESS);
+      }
+    } catch (Exception e) {
+      log.error(
+          new StringBuilder(format("Failed to delete reference %s for github connector ", gitApiTaskParams.getRef()))
+              .append(gitConnector.getIdentifier())
+              .toString(),
+          e);
+      responseBuilder.commandExecutionStatus(FAILURE).errorMessage(e.getMessage());
+    }
     return responseBuilder.build();
   }
 

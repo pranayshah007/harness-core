@@ -1,0 +1,13 @@
+{
+  "request": {
+    "method": "GET",
+    "url": "/nexus/service/rest/v1/search?repository=raw-group"
+  },
+  "response": {
+    "status": 200,
+    "bodyFileName" : "/nexus/body-get-raw-packages-nexus3x.json",
+    "headers": {
+      "Content-Type": "application/json"
+    }
+  }
+}

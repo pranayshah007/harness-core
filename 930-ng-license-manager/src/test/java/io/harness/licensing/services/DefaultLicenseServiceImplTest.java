@@ -101,6 +101,7 @@ public class DefaultLicenseServiceImplTest extends CategoryTest {
   private StartTrialDTO startTrialRequestDTO;
   private AccountLicenseDTO defaultAccountLicensesDTO;
   private static final long EXPIRY_TIME = 1651518231;
+
   @Before
   public void setUp() {
     initMocks(this);
@@ -225,7 +226,7 @@ public class DefaultLicenseServiceImplTest extends CategoryTest {
     when(moduleLicenseInterface.generateFreeLicense(eq(ACCOUNT_IDENTIFIER), eq(DEFAULT_MODULE_TYPE)))
         .thenReturn(ciModuleLicenseDTO);
     when(accountService.getAccount(ACCOUNT_IDENTIFIER)).thenReturn(AccountDTO.builder().build());
-    ModuleLicenseDTO result = licenseService.startFreeLicense(ACCOUNT_IDENTIFIER, CI);
+    ModuleLicenseDTO result = licenseService.startFreeLicense(ACCOUNT_IDENTIFIER, CI, null);
     verify(accountService, times(1)).updateDefaultExperienceIfApplicable(ACCOUNT_IDENTIFIER, DefaultExperience.NG);
     verify(telemetryReporter, times(1)).sendGroupEvent(eq(ACCOUNT_IDENTIFIER), any(), any());
     verify(telemetryReporter, times(1))
@@ -268,7 +269,7 @@ public class DefaultLicenseServiceImplTest extends CategoryTest {
     when(moduleLicenseInterface.generateFreeLicense(eq(ACCOUNT_IDENTIFIER), eq(DEFAULT_MODULE_TYPE)))
         .thenReturn(cdModuleLicenseDTO);
     when(accountService.getAccount(ACCOUNT_IDENTIFIER)).thenReturn(AccountDTO.builder().build());
-    ModuleLicenseDTO result = licenseService.startFreeLicense(ACCOUNT_IDENTIFIER, CI);
+    ModuleLicenseDTO result = licenseService.startFreeLicense(ACCOUNT_IDENTIFIER, CI, null);
     verify(accountService, times(1)).updateDefaultExperienceIfApplicable(ACCOUNT_IDENTIFIER, DefaultExperience.NG);
     verify(telemetryReporter, times(1)).sendGroupEvent(eq(ACCOUNT_IDENTIFIER), any(), any());
     verify(telemetryReporter, times(1))
@@ -285,7 +286,7 @@ public class DefaultLicenseServiceImplTest extends CategoryTest {
         .thenReturn(DEFAULT_CI_MODULE_LICENSE_DTO);
     when(accountService.getAccount(ACCOUNT_IDENTIFIER)).thenReturn(AccountDTO.builder().build());
 
-    ModuleLicenseDTO result = licenseService.startTrialLicense(ACCOUNT_IDENTIFIER, startTrialRequestDTO);
+    ModuleLicenseDTO result = licenseService.startTrialLicense(ACCOUNT_IDENTIFIER, startTrialRequestDTO, null);
     verify(accountService, times(1)).updateDefaultExperienceIfApplicable(ACCOUNT_IDENTIFIER, DefaultExperience.NG);
     verify(telemetryReporter, times(1)).sendGroupEvent(eq(ACCOUNT_IDENTIFIER), any(), any());
     verify(telemetryReporter, times(1))
@@ -319,7 +320,7 @@ public class DefaultLicenseServiceImplTest extends CategoryTest {
     when(moduleLicenseInterface.generateTrialLicense(any(), eq(ACCOUNT_IDENTIFIER), eq(ModuleType.CE)))
         .thenReturn(ceModuleLicenseDTO);
     when(accountService.getAccount(ACCOUNT_IDENTIFIER)).thenReturn(AccountDTO.builder().build());
-    licenseService.startTrialLicense(ACCOUNT_IDENTIFIER, startTrialDTO);
+    licenseService.startTrialLicense(ACCOUNT_IDENTIFIER, startTrialDTO, null);
     verify(ceLicenseClient, times(1)).createCeTrial(any());
     verify(cache, times(1)).remove(any());
   }

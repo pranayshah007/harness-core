@@ -33,8 +33,13 @@ import io.harness.ff.FeatureFlagService;
 import io.harness.iterator.PersistentCronIterable;
 import io.harness.ng.core.account.AuthenticationMechanism;
 import io.harness.ng.core.account.OauthProviderType;
+import io.harness.ng.core.dto.UserGroupDTO;
+import io.harness.outbox.OutboxEvent;
+import io.harness.outbox.api.OutboxService;
 import io.harness.persistence.HIterator;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.scheduler.PersistentScheduler;
+import io.harness.usergroups.UserGroupClient;
 
 import software.wings.beans.Account;
 import software.wings.beans.Event;
@@ -44,6 +49,18 @@ import software.wings.beans.NotificationRule;
 import software.wings.beans.alert.Alert;
 import software.wings.beans.alert.AlertType;
 import software.wings.beans.alert.SSOSyncFailedAlert;
+import software.wings.beans.loginSettings.events.LdapSettingsYamlDTO;
+import software.wings.beans.loginSettings.events.LoginSettingsLDAPCreateEvent;
+import software.wings.beans.loginSettings.events.LoginSettingsLDAPDeleteEvent;
+import software.wings.beans.loginSettings.events.LoginSettingsLDAPUpdateEvent;
+import software.wings.beans.loginSettings.events.LoginSettingsOAuthCreateEvent;
+import software.wings.beans.loginSettings.events.LoginSettingsOAuthDeleteEvent;
+import software.wings.beans.loginSettings.events.LoginSettingsOAuthUpdateEvent;
+import software.wings.beans.loginSettings.events.LoginSettingsSAMLCreateEvent;
+import software.wings.beans.loginSettings.events.LoginSettingsSAMLDeleteEvent;
+import software.wings.beans.loginSettings.events.LoginSettingsSAMLUpdateEvent;
+import software.wings.beans.loginSettings.events.OAuthSettingsYamlDTO;
+import software.wings.beans.loginSettings.events.SamlSettingsYamlDTO;
 import software.wings.beans.sso.LdapConnectionSettings;
 import software.wings.beans.sso.LdapSettings;
 import software.wings.beans.sso.OauthSettings;
@@ -113,6 +130,8 @@ public class SSOSettingServiceImpl implements SSOSettingService {
   @Inject private LdapSyncJobConfig ldapSyncJobConfig;
   @Inject private SSOServiceHelper ssoServiceHelper;
   @Inject private FeatureFlagService featureFlagService;
+  @Inject private OutboxService outboxService;
+  @Inject @Named("PRIVILEGED") private UserGroupClient userGroupClient;
   static final int ONE_DAY = 86400000;
 
   @Override
@@ -168,17 +187,72 @@ public class SSOSettingServiceImpl implements SSOSettingService {
       queriedSettings.setSamlProviderType(settings.getSamlProviderType());
       queriedSettings.setClientId(settings.getClientId());
       queriedSettings.setEncryptedClientSecret(settings.getEncryptedClientSecret());
+      SamlSettings currentSamlSettings = getSamlSettingsByAccountId(settings.getAccountId());
       String ssoSettingUuid = wingsPersistence.save(queriedSettings);
       savedSettings = wingsPersistence.get(SamlSettings.class, ssoSettingUuid);
+      ngAuditLoginSettingsForSAMLUpdate(currentSamlSettings, savedSettings);
     } else {
       String ssoSettingUuid = wingsPersistence.save(settings);
       savedSettings = wingsPersistence.get(SamlSettings.class, ssoSettingUuid);
       eventPublishHelper.publishSSOEvent(settings.getAccountId());
+      ngAuditLoginSettingsForSAMLUpload(savedSettings);
     }
     auditServiceHelper.reportForAuditingUsingAccountId(settings.getAccountId(), null, settings, Event.Type.CREATE);
     log.info("Auditing creation of SAML Settings for account={}", settings.getAccountId());
 
     return savedSettings;
+  }
+
+  private void ngAuditLoginSettingsForSAMLUpload(SamlSettings newSamlSettings) {
+    try {
+      OutboxEvent outboxEvent = outboxService.save(
+          LoginSettingsSAMLCreateEvent.builder()
+              .accountIdentifier(newSamlSettings.getAccountId())
+              .newSamlSettingsYamlDTO(SamlSettingsYamlDTO.builder().samlSettings(newSamlSettings).build())
+              .build());
+      log.info(
+          "NG Auth Audits: for account {} and outboxEventId {} successfully saved the audit for LoginSettingsSAMLCreateEvent to outbox",
+          newSamlSettings.getAccountId(), outboxEvent.getId());
+    } catch (Exception ex) {
+      log.error(
+          "NG Auth Audits: for account {} saving the LoginSettingsSAMLCreateEvent to outbox failed with exception: ",
+          newSamlSettings.getAccountId(), ex);
+    }
+  }
+
+  private void ngAuditLoginSettingsForSAMLUpdate(SamlSettings oldSamlSettings, SamlSettings newSamlSettings) {
+    try {
+      OutboxEvent outboxEvent = outboxService.save(
+          LoginSettingsSAMLUpdateEvent.builder()
+              .accountIdentifier(newSamlSettings.getAccountId())
+              .oldSamlSettingsYamlDTO(SamlSettingsYamlDTO.builder().samlSettings(oldSamlSettings).build())
+              .newSamlSettingsYamlDTO(SamlSettingsYamlDTO.builder().samlSettings(newSamlSettings).build())
+              .build());
+      log.info(
+          "NG Auth Audits: for account {} and outboxEventId {} successfully saved the audit for LoginSettingsSAMLUpdateEvent to outbox",
+          newSamlSettings.getAccountId(), outboxEvent.getId());
+    } catch (Exception ex) {
+      log.error(
+          "NG Auth Audits: for account {} saving the LoginSettingsSAMLUpdateEvent to outbox failed with exception: ",
+          newSamlSettings.getAccountId(), ex);
+    }
+  }
+
+  private void ngAuditLoginSettingsForSAMLDelete(SamlSettings oldSamlSettings) {
+    try {
+      OutboxEvent outboxEvent = outboxService.save(
+          LoginSettingsSAMLDeleteEvent.builder()
+              .accountIdentifier(oldSamlSettings.getAccountId())
+              .oldSamlSettingsYamlDTO(SamlSettingsYamlDTO.builder().samlSettings(oldSamlSettings).build())
+              .build());
+      log.info(
+          "NG Auth Audits: for account {} and outboxEventId {} successfully saved the audit for LoginSettingsSAMLDeleteEvent to outbox",
+          oldSamlSettings.getAccountId(), outboxEvent.getId());
+    } catch (Exception ex) {
+      log.error(
+          "NG Auth Audits: for account {} saving the LoginSettingsSAMLDeleteEvent to outbox failed with exception: ",
+          oldSamlSettings.getAccountId(), ex);
+    }
   }
 
   @Override
@@ -190,18 +264,74 @@ public class SSOSettingServiceImpl implements SSOSettingService {
       queriedSettings.setDisplayName(settings.getDisplayName());
       queriedSettings.setAllowedProviders(settings.getAllowedProviders());
       queriedSettings.setFilter(settings.getFilter());
+      OauthSettings currentSettings = wingsPersistence.get(OauthSettings.class, queriedSettings.getUuid());
       wingsPersistence.save(queriedSettings);
       savedSettings = wingsPersistence.get(OauthSettings.class, queriedSettings.getUuid());
+      ngAuditLoginSettingsForOAuthUpdate(settings.getAccountId(), currentSettings, savedSettings);
     } else {
       String ssoSettingUuid = wingsPersistence.save(settings);
       savedSettings = wingsPersistence.get(OauthSettings.class, ssoSettingUuid);
       eventPublishHelper.publishSSOEvent(settings.getAccountId());
+      ngAuditLoginSettingsForOAuthUpload(settings.getAccountId(), savedSettings);
     }
     Account account = accountService.get(settings.getAccountId());
     accountService.update(account);
     auditServiceHelper.reportForAuditingUsingAccountId(account.getUuid(), null, settings, Event.Type.CREATE);
     log.info("Auditing creation of OAUTH Settings for account={}", settings.getAccountId());
     return savedSettings;
+  }
+
+  private void ngAuditLoginSettingsForOAuthUpload(String accountIdentifier, OauthSettings newOauthSettings) {
+    try {
+      OutboxEvent outboxEvent = outboxService.save(
+          LoginSettingsOAuthCreateEvent.builder()
+              .accountIdentifier(accountIdentifier)
+              .newOAuthSettingsYamlDTO(OAuthSettingsYamlDTO.builder().oauthSettings(newOauthSettings).build())
+              .build());
+      log.info(
+          "NG Auth Audits: for account {} and outboxEventId {} successfully saved the audit for LoginSettingsOAuthCreateEvent to outbox",
+          accountIdentifier, outboxEvent.getId());
+    } catch (Exception ex) {
+      log.error(
+          "NG Auth Audits: for account {} saving the LoginSettingsOAuthCreateEvent to outbox failed with exception: ",
+          accountIdentifier, ex);
+    }
+  }
+
+  private void ngAuditLoginSettingsForOAuthUpdate(
+      String accountIdentifier, OauthSettings oldOauthSettings, OauthSettings newOauthSettings) {
+    try {
+      OutboxEvent outboxEvent = outboxService.save(
+          LoginSettingsOAuthUpdateEvent.builder()
+              .accountIdentifier(accountIdentifier)
+              .oldOAuthSettingsYamlDTO(OAuthSettingsYamlDTO.builder().oauthSettings(oldOauthSettings).build())
+              .newOAuthSettingsYamlDTO(OAuthSettingsYamlDTO.builder().oauthSettings(newOauthSettings).build())
+              .build());
+      log.info(
+          "NG Auth Audits: for account {} and outboxEventId {} successfully saved the audit for LoginSettingsOAuthUpdateEvent to outbox",
+          accountIdentifier, outboxEvent.getId());
+    } catch (Exception ex) {
+      log.error(
+          "NG Auth Audits: for account {} saving the LoginSettingsOAuthUpdateEvent to outbox failed with exception: ",
+          accountIdentifier, ex);
+    }
+  }
+
+  private void ngAuditLoginSettingsForOAuthDelete(String accountIdentifier, OauthSettings oldOauthSettings) {
+    try {
+      OutboxEvent outboxEvent = outboxService.save(
+          LoginSettingsOAuthDeleteEvent.builder()
+              .accountIdentifier(accountIdentifier)
+              .oldOAuthSettingsYamlDTO(OAuthSettingsYamlDTO.builder().oauthSettings(oldOauthSettings).build())
+              .build());
+      log.info(
+          "NG Auth Audits: for account {} and outboxEventId {} successfully saved the audit for LoginSettingsOAuthDeleteEvent to outbox",
+          accountIdentifier, outboxEvent.getId());
+    } catch (Exception ex) {
+      log.error(
+          "NG Auth Audits: for account {} saving the LoginSettingsOAuthDeleteEvent to outbox failed with exception: ",
+          accountIdentifier, ex);
+    }
   }
 
   @Override
@@ -233,6 +363,7 @@ public class SSOSettingServiceImpl implements SSOSettingService {
     account.setOauthEnabled(false);
     accountService.update(account);
     auditServiceHelper.reportDeleteForAuditingUsingAccountId(accountId, settings);
+    ngAuditLoginSettingsForOAuthDelete(accountId, settings);
     log.info("Auditing deletion of OAUTH Settings for account={}", accountId);
     return wingsPersistence.delete(settings);
   }
@@ -244,6 +375,7 @@ public class SSOSettingServiceImpl implements SSOSettingService {
       throw new InvalidRequestException("No Saml settings found for this account");
     }
     auditServiceHelper.reportDeleteForAuditingUsingAccountId(accountId, samlSettings);
+    ngAuditLoginSettingsForSAMLDelete(samlSettings);
     log.info("Auditing deletion of SAML Settings for account={}", accountId);
     return deleteSamlSettings(samlSettings);
   }
@@ -254,6 +386,7 @@ public class SSOSettingServiceImpl implements SSOSettingService {
       throw new InvalidRequestException(
           "Deleting Saml provider with linked user groups is not allowed. Unlink the user groups first.");
     }
+    checkForLinkedSSOGroupsOnNG(samlSettings.getAccountId(), samlSettings.getUuid());
     return wingsPersistence.delete(samlSettings);
   }
 
@@ -283,7 +416,7 @@ public class SSOSettingServiceImpl implements SSOSettingService {
     if (featureFlagService.isEnabled(FeatureName.LDAP_SECRET_AUTH, settings.getAccountId())) {
       ssoServiceHelper.encryptLdapSecret(settings.getConnectionSettings(), secretManager, settings.getAccountId());
     }
-    settings.encryptLdapInlineSecret(secretManager);
+    settings.encryptLdapInlineSecret(secretManager, false);
     if (isEmpty(settings.getCronExpression())) {
       settings.setCronExpression(ldapSyncJobConfig.getDefaultCronExpression());
     }
@@ -292,6 +425,7 @@ public class SSOSettingServiceImpl implements SSOSettingService {
     LdapGroupSyncJob.add(jobScheduler, savedSettings.getAccountId(), savedSettings.getUuid());
     ldapGroupScheduledHandler.wakeup();
     auditServiceHelper.reportForAuditingUsingAccountId(settings.getAccountId(), null, settings, Event.Type.CREATE);
+    ngAuditLoginSettingsForLdapUpload(savedSettings.getAccountId(), savedSettings);
     log.info("Auditing creation of LDAP Settings for account={}", settings.getAccountId());
     eventPublishHelper.publishSSOEvent(settings.getAccountId());
     return savedSettings;
@@ -317,16 +451,19 @@ public class SSOSettingServiceImpl implements SSOSettingService {
     oldSettings.setConnectionSettings(settings.getConnectionSettings());
     oldSettings.setUserSettingsList(settings.getUserSettingsList());
     oldSettings.setGroupSettingsList(settings.getGroupSettingsList());
+    oldSettings.setDisabled(settings.isDisabled());
     if (featureFlagService.isEnabled(FeatureName.LDAP_SECRET_AUTH, settings.getAccountId())) {
       ssoServiceHelper.encryptLdapSecret(oldSettings.getConnectionSettings(), secretManager, settings.getAccountId());
     }
-    oldSettings.encryptLdapInlineSecret(secretManager);
+    oldSettings.encryptLdapInlineSecret(secretManager, false);
     oldSettings.setDefaultCronExpression(ldapSyncJobConfig.getDefaultCronExpression());
     oldSettings.setCronExpression(settings.getCronExpression());
     updateNextIterations(oldSettings);
+    LdapSettings currentLdapSettings = getLdapSettingsByUuid(oldSettings.getUuid());
     LdapSettings savedSettings = wingsPersistence.saveAndGet(LdapSettings.class, oldSettings);
     auditServiceHelper.reportForAuditingUsingAccountId(
         settings.getAccountId(), oldSettings, savedSettings, Event.Type.UPDATE);
+    ngAuditLoginSettingsForLdapUpdate(settings.getAccountId(), currentLdapSettings, savedSettings);
     log.info("Auditing updation of LDAP for account={}", savedSettings.getAccountId());
     LdapGroupSyncJob.add(jobScheduler, savedSettings.getAccountId(), savedSettings.getUuid());
     ldapGroupScheduledHandler.wakeup();
@@ -356,6 +493,7 @@ public class SSOSettingServiceImpl implements SSOSettingService {
       throw new InvalidRequestException(
           "Deleting SSO provider with linked user groups is not allowed. Unlink the user groups first.");
     }
+    checkForLinkedSSOGroupsOnNG(settings.getAccountId(), settings.getUuid());
     if (LdapConnectionSettings.INLINE_SECRET.equals(settings.getConnectionSettings().getPasswordType())) {
       secretManager.deleteSecret(
           settings.getAccountId(), settings.getConnectionSettings().getEncryptedBindPassword(), new HashMap<>(), false);
@@ -363,8 +501,62 @@ public class SSOSettingServiceImpl implements SSOSettingService {
     wingsPersistence.delete(settings);
     LdapGroupSyncJob.delete(jobScheduler, this, settings.getAccountId(), settings.getUuid());
     auditServiceHelper.reportDeleteForAuditingUsingAccountId(settings.getAccountId(), settings);
+    ngAuditLoginSettingsForLdapDelete(settings.getAccountId(), settings);
     log.info("Auditing deletion of LDAP Settings for account={}", settings.getAccountId());
     return settings;
+  }
+
+  private void ngAuditLoginSettingsForLdapUpload(String accountIdentifier, LdapSettings newLdapSettings) {
+    try {
+      OutboxEvent outboxEvent = outboxService.save(
+          LoginSettingsLDAPCreateEvent.builder()
+              .accountIdentifier(accountIdentifier)
+              .newLdapSettingsYamlDTO(LdapSettingsYamlDTO.builder().ldapSettings(newLdapSettings).build())
+              .build());
+      log.info(
+          "NG Auth Audits: for account {} and outboxEventId {} successfully saved the audit for LoginSettingsLDAPCreateEvent to outbox",
+          accountIdentifier, outboxEvent.getId());
+    } catch (Exception ex) {
+      log.error(
+          "NG Auth Audits: for account {} saving the LoginSettingsLDAPCreateEvent to outbox failed with exception: ",
+          accountIdentifier, ex);
+    }
+  }
+
+  private void ngAuditLoginSettingsForLdapUpdate(
+      String accountIdentifier, LdapSettings oldLdapSettings, LdapSettings newLdapSettings) {
+    try {
+      OutboxEvent outboxEvent = outboxService.save(
+          LoginSettingsLDAPUpdateEvent.builder()
+              .accountIdentifier(accountIdentifier)
+              .oldLdapSettingsYamlDTO(LdapSettingsYamlDTO.builder().ldapSettings(oldLdapSettings).build())
+              .newLdapSettingsYamlDTO(LdapSettingsYamlDTO.builder().ldapSettings(newLdapSettings).build())
+              .build());
+      log.info(
+          "NG Auth Audits: for account {} and outboxEventId {} successfully saved the audit for LoginSettingsLDAPUpdateEvent to outbox",
+          accountIdentifier, outboxEvent.getId());
+    } catch (Exception ex) {
+      log.error(
+          "NG Auth Audits: for account {} saving the LoginSettingsLDAPUpdateEvent to outbox failed with exception: ",
+          accountIdentifier, ex);
+    }
+  }
+
+  private void ngAuditLoginSettingsForLdapDelete(String accountIdentifier, LdapSettings oldLdapSettings) {
+    try {
+      OutboxEvent outboxEvent = outboxService.save(
+          LoginSettingsLDAPDeleteEvent.builder()
+              .accountIdentifier(accountIdentifier)
+              .oldLdapSettingsYamlDTO(LdapSettingsYamlDTO.builder().ldapSettings(oldLdapSettings).build())
+              .build());
+      log.info(
+          "NG Auth Audits: for account {} and outboxEventId {} successfully saved the audit for LoginSettingsLDAPDeleteEvent to outbox",
+          accountIdentifier, outboxEvent.getId());
+    } catch (Exception ex) {
+      log.error(
+          "NG Auth Audits: for account {} saving the LoginSettingsLDAPDeleteEvent to outbox failed with exception: ",
+          accountIdentifier, ex);
+    }
   }
 
   @Override
@@ -553,5 +745,23 @@ public class SSOSettingServiceImpl implements SSOSettingService {
         return null;
       }
     };
+  }
+
+  private void checkForLinkedSSOGroupsOnNG(final String accountId, final String ssoUuid) {
+    List<UserGroupDTO> userGroupDTOs = null;
+    if (accountService.isNextGenEnabled(accountId)) {
+      try {
+        userGroupDTOs = NGRestUtils.getResponse(userGroupClient.getSsoLinkedUserGroups(ssoUuid, accountId));
+      } catch (Exception exc) {
+        log.error(
+            "For account {} and ssoId {} for delete SSO provider request, finding linked SSO groups on NG call failed with exception: ",
+            accountId, ssoUuid, exc);
+        throw exc;
+      }
+    }
+    if (isNotEmpty(userGroupDTOs)) {
+      throw new InvalidRequestException(
+          "Deleting SSO provider with linked user groups is not allowed. Unlink the user groups in NG also first.");
+    }
   }
 }

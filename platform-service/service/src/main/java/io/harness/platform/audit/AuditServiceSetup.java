@@ -15,13 +15,13 @@ import static java.util.stream.Collectors.toSet;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.audit.retention.AuditAccountSyncService;
 import io.harness.audit.retention.AuditRetentionIteratorHandler;
-import io.harness.controller.PrimaryVersionChangeScheduler;
 import io.harness.health.HealthService;
 import io.harness.ng.core.CorrelationFilter;
+import io.harness.ng.core.TraceFilter;
 import io.harness.persistence.HPersistence;
 import io.harness.platform.remote.AuditOpenApiResource;
+import io.harness.platform.remote.VersionInfoResource;
 import io.harness.remote.CharsetResponseFilter;
-import io.harness.resource.VersionInfoResource;
 
 import com.google.inject.Injector;
 import io.dropwizard.setup.Environment;
@@ -37,6 +37,7 @@ import java.net.URL;
 import java.util.Collections;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.BooleanUtils;
 import org.glassfish.jersey.server.model.Resource;
 
 @Slf4j
@@ -57,8 +58,11 @@ public class AuditServiceSetup {
     registerHealthCheck(environment, injector);
     registerManagedBeans(environment, injector);
     registerIterators(injector);
-    registerScheduledJobs(injector);
     registerOasResource(appConfig, environment, injector);
+
+    if (BooleanUtils.isTrue(appConfig.getEnableOpentelemetry())) {
+      registerTraceFilter(environment, injector);
+    }
   }
 
   private void registerHealthCheck(Environment environment, Injector injector) {
@@ -84,16 +88,16 @@ public class AuditServiceSetup {
     environment.jersey().register(injector.getInstance(CorrelationFilter.class));
   }
 
+  private void registerTraceFilter(Environment environment, Injector injector) {
+    environment.jersey().register(injector.getInstance(TraceFilter.class));
+  }
+
   private void registerManagedBeans(Environment environment, Injector injector) {
     environment.lifecycle().manage(injector.getInstance(AuditAccountSyncService.class));
   }
 
   private void registerIterators(Injector injector) {
     injector.getInstance(AuditRetentionIteratorHandler.class).registerIterators();
-  }
-
-  private void registerScheduledJobs(Injector injector) {
-    injector.getInstance(PrimaryVersionChangeScheduler.class).registerExecutors();
   }
 
   private void registerOasResource(AuditServiceConfiguration appConfig, Environment environment, Injector injector) {

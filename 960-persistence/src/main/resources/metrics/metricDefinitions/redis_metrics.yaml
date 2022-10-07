@@ -1,0 +1,8 @@
+name: Delegate Redis Metrics
+identifier: redis_metrics
+metricGroup: redis
+metrics:
+  - metricName: redis_subscription_count
+    metricDefinition: Redis Subscription Count
+    type: LastValue
+    unit: count

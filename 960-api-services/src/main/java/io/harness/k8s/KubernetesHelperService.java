@@ -168,6 +168,10 @@ public class KubernetesHelperService {
     return ApiClientFactoryImpl.fromKubernetesConfig(kubernetesConfig, oidcTokenRetriever);
   }
 
+  public ApiClient getApiClientWithReadTimeout(KubernetesConfig kubernetesConfig) {
+    return ApiClientFactoryImpl.fromKubernetesConfigWithReadTimeout(kubernetesConfig, oidcTokenRetriever);
+  }
+
   public KubernetesClient getKubernetesClient(KubernetesConfig kubernetesConfig) {
     return getKubernetesClient(kubernetesConfig, StringUtils.EMPTY);
   }

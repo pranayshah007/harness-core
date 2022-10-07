@@ -113,9 +113,9 @@ public class DelegateTokenAuthenticatorImpl implements DelegateTokenAuthenticato
 
     final String tokenHash = DigestUtils.md5Hex(tokenString);
 
-    // we should validate from cache first, when watcher 754xx is deployed.
+    // we should validate from cache first and change this debug log to warn, when watcher 754xx is deployed.
     if (isEmpty(delegateTokenName)) {
-      log.warn("Delegate token name is empty.");
+      log.debug("Delegate token name is empty.");
     } else if (validateDelegateJWTFromCache(accountId, tokenHash, shouldSetTokenNameInGlobalContext)) {
       return;
     }
@@ -380,7 +380,8 @@ public class DelegateTokenAuthenticatorImpl implements DelegateTokenAuthenticato
     delegateMetricsService.recordDelegateMetricsPerAccount(accountId, DELEGATE_JWT_CACHE_HIT);
 
     if (!delegateJWTCacheValue.isValid()) {
-      throw new RevokedTokenException("Invalid delegate token. Delegate is using invalid token", USER_ADMIN);
+      throw new RevokedTokenException(
+          "Invalid delegate token. Delegate is using invalid or expired JWT token", USER_ADMIN);
     } else if (delegateJWTCacheValue.getExpiryInMillis() < System.currentTimeMillis()) {
       throw new InvalidRequestException("Unauthorized", EXPIRED_TOKEN, null);
     }

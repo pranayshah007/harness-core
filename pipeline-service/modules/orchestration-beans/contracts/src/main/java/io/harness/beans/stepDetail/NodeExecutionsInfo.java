@@ -9,7 +9,7 @@ package io.harness.beans.stepDetail;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.concurrency.ConcurrentChildInstance;
 import io.harness.mongo.index.CompoundMongoIndex;
@@ -35,10 +35,10 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Data
 @Builder
 @FieldNameConstants(innerTypeName = "NodeExecutionsInfoKeys")
+@StoreIn(DbAliases.PMS)
 @Entity(value = "nodeExecutionsInfo", noClassnameStored = true)
 @Document("nodeExecutionsInfo")
 @TypeAlias("nodeExecutionsInfo")
-@StoreIn(DbAliases.PMS)
 public class NodeExecutionsInfo {
   public static final long TTL_MONTHS = 6;
 

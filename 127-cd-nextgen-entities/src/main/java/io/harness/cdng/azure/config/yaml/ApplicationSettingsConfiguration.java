@@ -12,6 +12,8 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
 import io.harness.cdng.visitor.helpers.azure.ApplicationSettingsConfigurationVisitorHelper;
+import io.harness.pms.yaml.YAMLFieldNameConstants;
+import io.harness.walktree.beans.VisitableChildren;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
 import io.harness.walktree.visitor.Visitable;
 
@@ -28,4 +30,11 @@ import org.springframework.data.annotation.TypeAlias;
 @OwnedBy(HarnessTeam.CDP)
 public class ApplicationSettingsConfiguration implements Visitable {
   @NotNull StoreConfigWrapper store;
+
+  @Override
+  public VisitableChildren getChildrenToWalk() {
+    VisitableChildren children = VisitableChildren.builder().build();
+    children.add(YAMLFieldNameConstants.STORE, store);
+    return children;
+  }
 }

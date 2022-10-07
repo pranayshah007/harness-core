@@ -10,9 +10,11 @@ package io.harness.beans;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.encryption.Scope;
 import io.harness.mongo.index.FdIndex;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
 import io.harness.persistence.CreatedAtAware;
 import io.harness.persistence.CreatedByAware;
@@ -42,6 +44,7 @@ import org.mongodb.morphia.annotations.Id;
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = false)
 @FieldNameConstants(innerTypeName = "MigratedEntityMappingKeys")
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "migratedEntityMapping")
 @HarnessEntity(exportable = false)
 public class MigratedEntityMapping implements PersistentEntity, UuidAware, CreatedAtAware, CreatedByAware,

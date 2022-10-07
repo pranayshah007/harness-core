@@ -29,9 +29,9 @@ public interface OrganizationRepositoryCustom {
 
   Organization update(Query query, Update update);
 
-  Organization delete(String accountIdentifier, String identifier, Long version);
+  @Deprecated Organization delete(String accountIdentifier, String identifier, Long version);
 
-  boolean hardDelete(String accountIdentifier, String identifier, Long version);
+  Organization hardDelete(String accountIdentifier, String identifier, Long version);
 
   List<Organization> findAll(Criteria criteria);
 

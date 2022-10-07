@@ -8,8 +8,11 @@
 package software.wings.beans;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.StoreIn;
 import io.harness.mongo.index.CompoundMongoIndex;
+import io.harness.mongo.index.FdTtlIndex;
 import io.harness.mongo.index.MongoIndex;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
 import io.harness.persistence.CreatedAtAware;
 import io.harness.persistence.PersistentEntity;
@@ -20,6 +23,8 @@ import io.harness.validation.Update;
 import software.wings.yaml.gitSync.GitFileProcessingSummary;
 
 import com.google.common.collect.ImmutableList;
+import java.time.OffsetDateTime;
+import java.util.Date;
 import java.util.List;
 import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -36,6 +41,7 @@ import org.mongodb.morphia.annotations.Transient;
 @Data
 @Builder
 @AllArgsConstructor
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "gitFileActivitySummary", noClassnameStored = true)
 @FieldNameConstants(innerTypeName = "GitFileActivitySummaryKeys")
 @HarnessEntity(exportable = true)
@@ -73,4 +79,5 @@ public class GitFileActivitySummary
   private GitFileProcessingSummary fileProcessingSummary;
   @Transient private String connectorName;
   @Transient private GitRepositoryInfo repositoryInfo;
+  @Builder.Default @FdTtlIndex private Date validUntil = Date.from(OffsetDateTime.now().plusMonths(12).toInstant());
 }

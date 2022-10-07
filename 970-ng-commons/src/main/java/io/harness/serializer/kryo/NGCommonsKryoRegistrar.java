@@ -47,6 +47,7 @@ import io.harness.request.RequestContextData;
 import io.harness.request.RequestMetadata;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.serviceaccount.ServiceAccountDTO;
+import io.harness.yaml.core.timeout.Timeout;
 
 import com.esotericsoftware.kryo.Kryo;
 
@@ -98,5 +99,6 @@ public class NGCommonsKryoRegistrar implements KryoRegistrar {
 
     kryo.register(CDLicenseType.class, 930010);
     kryo.register(PageRequestDTO.class, 5216);
+    kryo.register(Timeout.class, 9300122);
   }
 }

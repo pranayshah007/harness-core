@@ -121,7 +121,7 @@ public class CVNGStep extends AsyncExecutableWithRollback {
 
     ResolvedCVConfigInfo resolvedCVConfigInfo =
         verifyStepCvConfigServiceMap.get(monitoredServiceType)
-            .getResolvedCVConfigInfo(serviceEnvironmentParams, monitoredServiceNode);
+            .fetchAndPersistResolvedCVConfigInfo(serviceEnvironmentParams, monitoredServiceNode);
     String monitoredServiceIdentifier = resolvedCVConfigInfo.getMonitoredServiceIdentifier();
     List<CVConfig> cvConfigs = resolvedCVConfigInfo.getCvConfigs();
     Instant deploymentStartTime = Instant.ofEpochMilli(

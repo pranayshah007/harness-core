@@ -202,7 +202,7 @@ public class ChangeTracker {
   }
 
   private Future<ChangeTrackingTask> recreateTaskIfCompleted(Future<ChangeTrackingTask> future) {
-    if (future.isDone()) {
+    if (future.isDone() && !executorService.isShutdown()) {
       try {
         ChangeTrackingTask task = future.get();
         String token = getResumeToken(task.getSubscribedClass());

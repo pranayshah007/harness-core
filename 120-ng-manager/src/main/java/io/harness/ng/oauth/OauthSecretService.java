@@ -18,6 +18,7 @@ import io.harness.secretmanagerclient.ValueType;
 
 import com.google.inject.Inject;
 import java.util.Date;
+import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
 
@@ -28,24 +29,27 @@ public class OauthSecretService {
   String oauthAccessTokenSecretName = "harnessoauthaccesstoken_%s_%s";
   String oauthRefreshTokenSecretName = "harnessoauthsecrettoken_%s_%s";
 
-  public OauthAccessTokenResponseDTO createSecrets(
-      String accountIdentifier, String provider, OauthAccessTokenDTO accessToken) {
+  public OauthAccessTokenResponseDTO createSecrets(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, String provider, OauthAccessTokenDTO accessToken, String secretManagerIdentifier) {
     SecretTextSpecDTO accessTokenSecretDTO = SecretTextSpecDTO.builder()
-                                                 .secretManagerIdentifier("harnessSecretManager")
+                                                 .secretManagerIdentifier(secretManagerIdentifier)
                                                  .value(accessToken.getAccessToken())
                                                  .valueType(ValueType.Inline)
                                                  .build();
     SecretTextSpecDTO refreshTokenSecretDTO = SecretTextSpecDTO.builder()
-                                                  .secretManagerIdentifier("harnessSecretManager")
+                                                  .secretManagerIdentifier(secretManagerIdentifier)
                                                   .value(accessToken.getRefreshToken())
                                                   .valueType(ValueType.Inline)
                                                   .build();
+    String randomUUID = UUID.randomUUID().toString();
     SecretResponseWrapper accessTokenResponse = ngSecretService.create(accountIdentifier,
         SecretDTOV2.builder()
             .identifier(format(oauthAccessTokenSecretName, provider, (new Date()).getTime()))
-            .name("Harness Oauth access token")
+            .name(format("Harness-Oauth-access-token-%s", randomUUID))
             .spec(accessTokenSecretDTO)
             .type(SecretType.SecretText)
+            .orgIdentifier(orgIdentifier)
+            .projectIdentifier(projectIdentifier)
             .build());
 
     // github doesn't provides refresh token
@@ -58,9 +62,11 @@ public class OauthSecretService {
     SecretResponseWrapper refreshTokenResponse = ngSecretService.create(accountIdentifier,
         SecretDTOV2.builder()
             .identifier(format(oauthRefreshTokenSecretName, provider, (new Date()).getTime()))
-            .name("Harness Oauth refresh token")
-            .spec(accessTokenSecretDTO)
+            .name(format("Harness-Oauth-refresh-token-%s", randomUUID))
+            .spec(refreshTokenSecretDTO)
             .type(SecretType.SecretText)
+            .orgIdentifier(orgIdentifier)
+            .projectIdentifier(projectIdentifier)
             .build());
     return OauthAccessTokenResponseDTO.builder()
         .accessTokenRef(accessTokenResponse.getSecret().getIdentifier())

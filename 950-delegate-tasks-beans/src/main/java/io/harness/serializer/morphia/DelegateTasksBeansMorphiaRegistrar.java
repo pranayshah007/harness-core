@@ -35,9 +35,14 @@ import io.harness.delegate.beans.executioncapability.SmtpCapability;
 import io.harness.delegate.beans.executioncapability.SocketConnectivityBulkOrExecutionCapability;
 import io.harness.delegate.beans.executioncapability.SocketConnectivityExecutionCapability;
 import io.harness.delegate.beans.executioncapability.SystemEnvCheckerCapability;
+import io.harness.delegate.beans.executioncapability.WinrmConnectivityExecutionCapability;
 import io.harness.delegate.command.CommandExecutionResult;
 import io.harness.delegate.task.HDelegateTask;
 import io.harness.delegate.task.ListNotifyResponseData;
+import io.harness.delegate.task.artifacts.azureartifacts.AzureArtifactsDelegateRequest;
+import io.harness.delegate.task.artifacts.azureartifacts.AzureArtifactsDelegateResponse;
+import io.harness.delegate.task.artifacts.custom.CustomArtifactDelegateRequest;
+import io.harness.delegate.task.artifacts.custom.CustomArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.docker.DockerArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.docker.DockerArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.gcr.GcrArtifactDelegateRequest;
@@ -148,6 +153,8 @@ public class DelegateTasksBeansMorphiaRegistrar implements MorphiaRegistrar {
     h.put("delegate.beans.executioncapability.AwsCliInstallationCapability", AwsCliInstallationCapability.class);
     h.put("delegate.beans.executioncapability.SystemEnvCheckerCapability", SystemEnvCheckerCapability.class);
     h.put("delegate.beans.executioncapability.SelectorCapability", SelectorCapability.class);
+    h.put("delegate.beans.executioncapability.WinrmConnectivityExecutionCapability",
+        WinrmConnectivityExecutionCapability.class);
     h.put("delegate.command.CommandExecutionResult", CommandExecutionResult.class);
     h.put("delegate.task.spotinst.request.SpotInstDeployTaskParameters", SpotInstDeployTaskParameters.class);
     h.put("delegate.task.spotinst.request.SpotInstSetupTaskParameters", SpotInstSetupTaskParameters.class);
@@ -159,6 +166,11 @@ public class DelegateTasksBeansMorphiaRegistrar implements MorphiaRegistrar {
     h.put("delegate.task.artifacts.request.ArtifactTaskParameters", ArtifactTaskParameters.class);
     h.put("delegate.task.artifacts.docker.DockerArtifactDelegateRequest", DockerArtifactDelegateRequest.class);
     h.put("delegate.task.artifacts.jenkins.JenkinsArtifactDelegateRequest", JenkinsArtifactDelegateRequest.class);
+    h.put("delegate.task.artifacts.azureartifacts.AzureArtifactsDelegateRequest", AzureArtifactsDelegateRequest.class);
+    h.put(
+        "delegate.task.artifacts.azureartifacts.AzureArtifactsDelegateResponse", AzureArtifactsDelegateResponse.class);
+    h.put("delegate.task.artifacts.custom.CustomArtifactDelegateRequest", CustomArtifactDelegateRequest.class);
+    h.put("delegate.task.artifacts.custom.CustomArtifactDelegateResponse", CustomArtifactDelegateResponse.class);
     h.put("delegate.task.artifacts.gcr.GcrArtifactDelegateRequest", GcrArtifactDelegateRequest.class);
     h.put("delegate.task.artifacts.gcr.GcrArtifactDelegateResponse", GcrArtifactDelegateResponse.class);
     h.put("delegate.task.gcp.request.GcpValidationRequest", GcpValidationRequest.class);

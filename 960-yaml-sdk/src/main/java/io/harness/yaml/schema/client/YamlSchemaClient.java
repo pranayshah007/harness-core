@@ -43,4 +43,9 @@ public interface YamlSchemaClient {
       @Query(NGCommonEntityConstants.ORG_KEY) String orgIdentifier, @Query("scope") Scope scope,
       @Query(NGCommonEntityConstants.ENTITY_TYPE) EntityType entityType, @Query("yamlGroup") String yamlGroup,
       @Body YamlSchemaDetailsWrapper yamlSchemaDetailsWrapper);
+  @GET("partial-yaml-schema/entityYaml")
+  Call<ResponseDTO<JsonNode>> getEntityYaml(@Query(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @Query(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @Query(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @Query(NGCommonEntityConstants.ENTITY_TYPE) EntityType entityType, @Query("scope") Scope scope);
 }

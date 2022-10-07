@@ -192,7 +192,7 @@ public class DelegateServiceGrpcImplTest extends WingsBaseTest implements Mockab
                              TaskLogAbstractions.newBuilder().putAllValues(logAbstractions).build(),
                              builder.setMode(TaskMode.SYNC).setParked(false).build(),
                              asList(SystemEnvCheckerCapability.builder().build()), taskSelectors,
-                             java.time.Duration.ZERO, false, false, Collections.emptyList())
+                             java.time.Duration.ZERO, false, false, Collections.emptyList(), false, null)
                          .getTaskId();
     assertThat(taskId1).isNotNull();
     assertThat(taskId1.getId()).isNotBlank();
@@ -206,7 +206,7 @@ public class DelegateServiceGrpcImplTest extends WingsBaseTest implements Mockab
                                TaskLogAbstractions.newBuilder().putAllValues(logAbstractions).build(),
                                builder.setMode(TaskMode.SYNC).setParked(false).build(),
                                asList(SystemEnvCheckerCapability.builder().build()), taskSelectors,
-                               java.time.Duration.ZERO, false, false, Collections.emptyList())
+                               java.time.Duration.ZERO, false, false, Collections.emptyList(), false, null)
                            .getTaskId();
     assertThat(taskId1Ng).isNotNull();
     assertThat(taskId1Ng.getId()).isNotBlank();
@@ -219,7 +219,7 @@ public class DelegateServiceGrpcImplTest extends WingsBaseTest implements Mockab
                              TaskLogAbstractions.newBuilder().putAllValues(new LinkedHashMap<>()).build(),
                              builder.setMode(TaskMode.ASYNC).setParked(false).build(),
                              asList(SystemEnvCheckerCapability.builder().build()), taskSelectors,
-                             java.time.Duration.ZERO, false, false, Collections.emptyList())
+                             java.time.Duration.ZERO, false, false, Collections.emptyList(), false, null)
                          .getTaskId();
     assertThat(taskId2).isNotNull();
     assertThat(taskId2.getId()).isNotBlank();
@@ -232,7 +232,7 @@ public class DelegateServiceGrpcImplTest extends WingsBaseTest implements Mockab
                 TaskLogAbstractions.newBuilder().putAllValues(new LinkedHashMap<>()).build(),
                 builder.setMode(TaskMode.ASYNC).setParked(true).build(),
                 asList(SystemEnvCheckerCapability.builder().build()), taskSelectors, java.time.Duration.ZERO, false,
-                false, Collections.emptyList())
+                false, Collections.emptyList(), false, null)
             .getTaskId();
     assertThat(taskId3).isNotNull();
     assertThat(taskId3.getId()).isNotBlank();
@@ -247,7 +247,7 @@ public class DelegateServiceGrpcImplTest extends WingsBaseTest implements Mockab
                 TaskLogAbstractions.newBuilder().putAllValues(new LinkedHashMap<>()).build(),
                 builder.setMode(TaskMode.SYNC).setParked(false).build(),
                 asList(SystemEnvCheckerCapability.builder().build()), taskSelectors, java.time.Duration.ZERO, false,
-                false, Collections.emptyList()))
+                false, Collections.emptyList(), false, null))
         .isInstanceOf(DelegateServiceDriverException.class)
         .hasMessage("Unexpected error occurred while submitting task.");
   }

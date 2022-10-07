@@ -52,6 +52,7 @@ import io.kubernetes.client.openapi.models.V1SecretBuilder;
 import io.kubernetes.client.openapi.models.V1StatusBuilder;
 import io.kubernetes.client.util.generic.GenericKubernetesApi;
 import io.kubernetes.client.util.generic.KubernetesApiResponse;
+import io.kubernetes.client.util.generic.options.DeleteOptions;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -71,6 +72,7 @@ public class CIK8JavaClientHandlerTest extends CategoryTest {
 
   @Mock private CoreV1Api coreV1Api;
   @Mock private GenericKubernetesApi<V1Pod, V1PodList> podClient;
+  @Mock private DeleteOptions deleteOptions;
   @Mock private Sleeper sleeper;
   @Mock private ImageSecretBuilder imageSecretBuilder;
   @InjectMocks private io.harness.delegate.task.citasks.cik8handler.k8java.CIK8JavaClientHandler cik8JavaClientHandler;
@@ -168,7 +170,7 @@ public class CIK8JavaClientHandlerTest extends CategoryTest {
     KubernetesApiResponse kubernetesApiResponse =
         new KubernetesApiResponse(new V1StatusBuilder().withStatus("Success").build(), -1);
 
-    when(podClient.delete(anyString(), anyString())).thenReturn(kubernetesApiResponse);
+    when(podClient.delete(anyString(), anyString(), any(DeleteOptions.class))).thenReturn(kubernetesApiResponse);
     assertEquals(cik8JavaClientHandler.deletePod(podClient, podName, namespace).getStatus(), "Success");
   }
 
@@ -179,7 +181,7 @@ public class CIK8JavaClientHandlerTest extends CategoryTest {
     KubernetesApiResponse kubernetesApiResponse =
         new KubernetesApiResponse(new V1StatusBuilder().withStatus("Failure").build(), 404);
 
-    when(podClient.delete(anyString(), anyString())).thenReturn(kubernetesApiResponse);
+    when(podClient.delete(anyString(), anyString(), any(DeleteOptions.class))).thenReturn(kubernetesApiResponse);
     assertThatThrownBy(() -> cik8JavaClientHandler.deletePod(podClient, podName, namespace).getStatus(), "Failure")
         .isInstanceOf(PodNotFoundException.class);
   }
@@ -191,7 +193,7 @@ public class CIK8JavaClientHandlerTest extends CategoryTest {
     KubernetesApiResponse kubernetesApiResponse =
         new KubernetesApiResponse(new V1StatusBuilder().withStatus("Failure").build(), 401);
 
-    when(podClient.delete(anyString(), anyString())).thenReturn(kubernetesApiResponse);
+    when(podClient.delete(anyString(), anyString(), any(DeleteOptions.class))).thenReturn(kubernetesApiResponse);
     assertThatThrownBy(() -> cik8JavaClientHandler.deletePod(podClient, podName, namespace).getStatus())
         .isInstanceOf(RuntimeException.class);
   }

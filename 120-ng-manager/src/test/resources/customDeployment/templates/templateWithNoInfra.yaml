@@ -1,0 +1,10 @@
+template:
+  name: OpenStack
+  identifier: OpenStack
+  tags: {}
+  description: ""
+  type: CustomDeployment
+  spec:
+    execution:
+      stepTemplateRefs:
+        - org.OpenStackSetup

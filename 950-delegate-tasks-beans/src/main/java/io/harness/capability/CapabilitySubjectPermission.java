@@ -7,12 +7,14 @@
 
 package io.harness.capability;
 
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.FdTtlIndex;
 import io.harness.mongo.index.MongoIndex;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.PersistentEntity;
 import io.harness.persistence.UuidAware;
 
@@ -29,6 +31,7 @@ import org.mongodb.morphia.annotations.Id;
 @Data
 @Builder
 @FieldNameConstants(innerTypeName = "CapabilitySubjectPermissionKeys")
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "capabilitySubjectPermission", noClassnameStored = true)
 @TargetModule(HarnessModule._460_CAPABILITY)
 public final class CapabilitySubjectPermission implements PersistentEntity, UuidAware {

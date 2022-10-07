@@ -11,12 +11,13 @@ import static io.harness.ng.DbAliases.NG_MANAGER;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.eventsframework.EventsFrameworkConfiguration;
 import io.harness.eventsframework.EventsFrameworkConstants;
 import io.harness.eventsframework.api.Consumer;
 import io.harness.eventsframework.impl.noop.NoOpConsumer;
 import io.harness.eventsframework.impl.redis.RedisConsumer;
-import io.harness.eventsframework.impl.redis.RedisUtils;
 import io.harness.redis.RedisConfig;
+import io.harness.redis.RedissonClientFactory;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.name.Names;
@@ -26,7 +27,8 @@ import org.redisson.api.RedissonClient;
 public abstract class AbstractGitSyncModule extends AbstractModule {
   @Override
   protected void configure() {
-    if (getRedisConfig().getRedisUrl().equals("dummyRedisUrl")) {
+    RedisConfig redisConfig = getEventsFrameworkConfiguration().getRedisConfig();
+    if (redisConfig.getRedisUrl().equals("dummyRedisUrl")) {
       bind(Consumer.class)
           .annotatedWith(Names.named(EventsFrameworkConstants.GIT_PUSH_EVENT_STREAM))
           .toInstance(
@@ -36,20 +38,19 @@ public abstract class AbstractGitSyncModule extends AbstractModule {
           .toInstance(
               NoOpConsumer.of(EventsFrameworkConstants.DUMMY_TOPIC_NAME, EventsFrameworkConstants.DUMMY_GROUP_NAME));
     } else {
-      // TODO check for group name
-      RedissonClient redissonClient = RedisUtils.getClient(getRedisConfig());
+      RedissonClient redissonClient = RedissonClientFactory.getClient(redisConfig);
       bind(Consumer.class)
           .annotatedWith(Names.named(EventsFrameworkConstants.GIT_PUSH_EVENT_STREAM))
           .toInstance(RedisConsumer.of(EventsFrameworkConstants.GIT_PUSH_EVENT_STREAM, NG_MANAGER, redissonClient,
               EventsFrameworkConstants.GIT_PUSH_EVENT_STREAM_MAX_PROCESSING_TIME,
-              EventsFrameworkConstants.GIT_PUSH_EVENT_STREAM_BATCH_SIZE, getRedisConfig().getEnvNamespace()));
+              EventsFrameworkConstants.GIT_PUSH_EVENT_STREAM_BATCH_SIZE, redisConfig.getEnvNamespace()));
       bind(Consumer.class)
           .annotatedWith(Names.named(EventsFrameworkConstants.GIT_BRANCH_HOOK_EVENT_STREAM))
           .toInstance(RedisConsumer.of(EventsFrameworkConstants.GIT_BRANCH_HOOK_EVENT_STREAM, NG_MANAGER,
               redissonClient, EventsFrameworkConstants.GIT_BRANCH_HOOK_EVENT_STREAM_MAX_PROCESSING_TIME,
-              EventsFrameworkConstants.GIT_BRANCH_HOOK_EVENT_STREAM_BATCH_SIZE, getRedisConfig().getEnvNamespace()));
+              EventsFrameworkConstants.GIT_BRANCH_HOOK_EVENT_STREAM_BATCH_SIZE, redisConfig.getEnvNamespace()));
     }
   }
 
-  public abstract RedisConfig getRedisConfig();
+  public abstract EventsFrameworkConfiguration getEventsFrameworkConfiguration();
 }

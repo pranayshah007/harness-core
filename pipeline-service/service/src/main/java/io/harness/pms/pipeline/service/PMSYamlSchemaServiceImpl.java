@@ -59,6 +59,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.io.IOException;
@@ -178,6 +179,9 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
     ObjectNode pipelineDefinitions = (ObjectNode) pipelineSchema.get(DEFINITIONS_NODE);
     ObjectNode pipelineStepsDefinitions = (ObjectNode) pipelineSteps.get(DEFINITIONS_NODE);
 
+    JsonNodeUtils.deletePropertiesInJsonNode(
+        (ObjectNode) pipelineSchema.get(DEFINITIONS_NODE).get("PipelineInfoConfig"), "required");
+
     ObjectNode mergedDefinitions = (ObjectNode) JsonNodeUtils.merge(pipelineDefinitions, pipelineStepsDefinitions);
 
     // Merging the schema for all steps that are moved to new schema.
@@ -237,7 +241,8 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
     return ((ObjectNode) pipelineSchema).set(DEFINITIONS_NODE, pipelineDefinitions);
   }
 
-  private void removeDuplicateIfThenFromStageElementConfig(ObjectNode stageElementConfig) {
+  @VisibleForTesting
+  void removeDuplicateIfThenFromStageElementConfig(ObjectNode stageElementConfig) {
     ArrayNode stageElementConfigAllOfNode =
         getAllOfNodeWithTypeAndSpec((ArrayNode) stageElementConfig.get(ONE_OF_NODE));
     if (stageElementConfigAllOfNode == null) {

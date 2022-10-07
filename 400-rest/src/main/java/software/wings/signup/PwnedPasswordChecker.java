@@ -32,7 +32,7 @@ import org.apache.commons.codec.digest.DigestUtils;
 @Singleton
 @TargetModule(_950_NG_SIGNUP)
 public class PwnedPasswordChecker {
-  private OkHttpClient httpClient;
+  private volatile OkHttpClient httpClient;
   private static final String BASE_API_URL = "https://api.pwnedpasswords.com/range/";
   private static final String RESPONSE_DELIMITER = ":";
   private static final int CONNECTION_TIMEOUT_SECONDS = 5;
@@ -41,10 +41,7 @@ public class PwnedPasswordChecker {
   private static final int MIN_OCCURENCES = 5;
   private static final int SHA1_LENGTH = 40;
 
-  public PwnedPasswordChecker() {
-    this.httpClient =
-        Http.getSafeOkHttpClientBuilder(BASE_API_URL, CONNECTION_TIMEOUT_SECONDS, READ_TIMEOUT_SECONDS).build();
-  }
+  public PwnedPasswordChecker() {}
 
   boolean checkIfPwned(char[] password) throws IOException {
     if (password.length == 0) {
@@ -74,7 +71,7 @@ public class PwnedPasswordChecker {
   private String[] getPotentialMatches(String sha1PasswordPrefix) throws IOException {
     Request httpGetRequest =
         new Request.Builder().url(String.format("%s%s", BASE_API_URL, sha1PasswordPrefix)).method("GET", null).build();
-    try (Response response = httpClient.newCall(httpGetRequest).execute()) {
+    try (Response response = getHttpClient().newCall(httpGetRequest).execute()) {
       if (response != null && response.isSuccessful()) {
         ResponseBody responseBody = response.body();
         if (responseBody != null) {
@@ -84,5 +81,13 @@ public class PwnedPasswordChecker {
       }
     }
     return new String[0];
+  }
+
+  private OkHttpClient getHttpClient() {
+    if (httpClient == null) {
+      httpClient =
+          Http.getSafeOkHttpClientBuilder(BASE_API_URL, CONNECTION_TIMEOUT_SECONDS, READ_TIMEOUT_SECONDS).build();
+    }
+    return httpClient;
   }
 }

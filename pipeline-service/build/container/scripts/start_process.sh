@@ -31,12 +31,24 @@ fi
 
 export JAVA_OPTS="-Xmx${MEMORY} -XX:+HeapDumpOnOutOfMemoryError -Xloggc:mygclogfilename.gc $GC_PARAMS -XX:+UseStringDeduplication -XX:StringDeduplicationAgeThreshold=2 -XX:NativeMemoryTracking=summary -XX:-UseCompressedOops -XX:+AlwaysPreTouch"
 
+if [[ "${ENABLE_REMOTE_DEBUG}" == "true" ]]; then
+  export REMOTE_DEBUG="-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=localhost:5005"
+  export JAVA_OPTS="$REMOTE_DEBUG $JAVA_OPTS"
+  echo "Enabled remote debug"
+fi
+
 if [[ "${ENABLE_APPDYNAMICS}" == "true" ]]; then
     mkdir /opt/harness/AppServerAgent-1.8-21.11.2.33305 && unzip AppServerAgent-1.8-21.11.2.33305.zip -d /opt/harness/AppServerAgent-1.8-21.11.2.33305
     node_name="-Dappdynamics.agent.nodeName=$(hostname)"
     JAVA_OPTS=$JAVA_OPTS" -javaagent:/opt/harness/AppServerAgent-1.8-21.11.2.33305/javaagent.jar -Dappdynamics.jvm.shutdown.mark.node.as.historical=true"
     JAVA_OPTS="$JAVA_OPTS $node_name"
     echo "Using Appdynamics java agent"
+fi
+
+if [[ "${ENABLE_ERROR_TRACKING}" == "true" ]] ; then
+    echo "Error Tracking is enabled"
+    JAVA_OPTS=$JAVA_OPTS" -Xshare:off -XX:-UseTypeSpeculation -XX:ReservedCodeCacheSize=512m -agentpath:/opt/harness/harness/lib/libETAgent.so"
+    echo "Using Error Tracking Java Agent"
 fi
 
 if [[ "${ENABLE_MONITORING}" == "true" ]] ; then

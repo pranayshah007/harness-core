@@ -18,6 +18,7 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.SecretManagementDelegateException;
 import io.harness.helpers.ext.vault.VaultAppRoleLoginResult;
+import io.harness.security.encryption.AccessType;
 
 import software.wings.beans.BaseVaultConfig;
 import software.wings.helpers.ext.vault.VaultAppRoleLoginRequest;
@@ -212,9 +213,10 @@ public class NGVaultTaskHelper {
     }
     String errorMsg = "";
     if (response.errorBody() != null) {
-      errorMsg =
-          String.format("Failed to %s for Vault: %s And Namespace: %s due to the following error from vault: \"%s\".",
-              operation, baseVaultConfig.getName(), baseVaultConfig.getNamespace(), response.errorBody().string());
+      errorMsg = String.format(
+          "Failed to %s for Vault: %s And Namespace: %s due to the following error from vault: \"%s\" \"%s\".",
+          operation, baseVaultConfig.getName(), baseVaultConfig.getNamespace(), response.message(),
+          response.errorBody().string());
     } else {
       errorMsg = String.format(
           "Failed to %s for Vault: %s And Namespace: %s due to the following error from vault: \"%s\".", operation,
@@ -239,6 +241,9 @@ public class NGVaultTaskHelper {
     } else if (vaultConfig.isUseK8sAuth()) {
       VaultK8sLoginResult vaultK8sLoginResult = getVaultK8sAuthLoginResult(vaultConfig);
       vaultConfig.setAuthToken(vaultK8sLoginResult.getClientToken());
+    } else if (AccessType.APP_ROLE.equals(vaultConfig.getAccessType()) && !vaultConfig.getRenewAppRoleToken()) {
+      VaultAppRoleLoginResult vaultAppRoleLoginResult = getVaultAppRoleLoginResult(vaultConfig);
+      vaultConfig.setAuthToken(vaultAppRoleLoginResult.getClientToken());
     }
     return vaultConfig.getAuthToken();
   }

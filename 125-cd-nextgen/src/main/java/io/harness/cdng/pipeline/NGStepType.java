@@ -125,6 +125,19 @@ public enum NGStepType {
   SERVERLESS_AWS_LAMBDA_ROLLBACK("Serverless Aws Lambda Rollback",
       Arrays.asList(ServiceDefinitionType.SERVERLESS_AWS_LAMBDA), "Serverless Aws Lambda",
       StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_ROLLBACK),
+  // ecs steps
+  @JsonProperty(StepSpecTypeConstants.ECS_ROLLING_DEPLOY)
+  ECS_ROLLING_DEPLOY(
+      "Ecs Rolling Deploy", Arrays.asList(ServiceDefinitionType.ECS), "ECS", StepSpecTypeConstants.ECS_ROLLING_DEPLOY),
+  @JsonProperty(StepSpecTypeConstants.ECS_ROLLING_ROLLBACK)
+  ECS_ROLLING_ROLLBACK("Ecs Rolling Rollback", Arrays.asList(ServiceDefinitionType.ECS), "ECS",
+      StepSpecTypeConstants.ECS_ROLLING_ROLLBACK),
+  @JsonProperty(StepSpecTypeConstants.ECS_CANARY_DEPLOY)
+  ECS_CANARY_DEPLOY(
+      "Ecs Canary Deploy", Arrays.asList(ServiceDefinitionType.ECS), "ECS", StepSpecTypeConstants.ECS_CANARY_DEPLOY),
+  @JsonProperty(StepSpecTypeConstants.ECS_CANARY_DELETE)
+  ECS_CANARY_DELETE(
+      "Ecs Canary Delete", Arrays.asList(ServiceDefinitionType.ECS), "ECS", StepSpecTypeConstants.ECS_CANARY_DELETE),
   // ssh steps
   @JsonProperty(StepSpecTypeConstants.COMMAND)
   COMMAND("Command", Arrays.asList(ServiceDefinitionType.SSH, ServiceDefinitionType.WINRM), "Command",
@@ -136,7 +149,26 @@ public enum NGStepType {
   // Azure ARM/BP
   @JsonProperty(StepSpecTypeConstants.AZURE_CREATE_ARM_RESOURCE)
   AZURE_CREATE_ARM_RESOURCE("Azure Create ARM", Arrays.asList(ServiceDefinitionType.values()),
-      "Infrastructure Provisioners/ARM", StepSpecTypeConstants.AZURE_CREATE_ARM_RESOURCE);
+      "Infrastructure Provisioners/ARM", StepSpecTypeConstants.AZURE_CREATE_ARM_RESOURCE),
+  @JsonProperty(StepSpecTypeConstants.AZURE_CREATE_BP_RESOURCE)
+  AZURE_CREATE_BP_RESOURCE("Azure Create Blueprint Resource", Arrays.asList(ServiceDefinitionType.values()),
+      "Infrastructure Provisioners/Azure Blueprint", StepSpecTypeConstants.AZURE_CREATE_BP_RESOURCE),
+  @JsonProperty(StepSpecTypeConstants.AZURE_ROLLBACK_ARM_RESOURCE)
+  AZURE_ROLLBACK_ARM_RESOURCE("Azure ARM Rollback", Arrays.asList(ServiceDefinitionType.values()),
+      "Infrastructure Provisioners/Azure ARM", StepSpecTypeConstants.AZURE_ROLLBACK_ARM_RESOURCE),
+
+  @JsonProperty(StepSpecTypeConstants.ECS_BLUE_GREEN_CREATE_SERVICE)
+  ECS_BLUE_GREEN_CREATE_SERVICE("Ecs Blue Green Create Service", Arrays.asList(ServiceDefinitionType.ECS), "ECS",
+      StepSpecTypeConstants.ECS_BLUE_GREEN_CREATE_SERVICE),
+  @JsonProperty(StepSpecTypeConstants.ECS_BLUE_GREEN_SWAP_TARGET_GROUPS)
+  ECS_BLUE_GREEN_SWAP_TARGET_GROUPS("Ecs Blue Green Swap Target Group", Arrays.asList(ServiceDefinitionType.ECS), "ECS",
+      StepSpecTypeConstants.ECS_BLUE_GREEN_SWAP_TARGET_GROUPS),
+  @JsonProperty(StepSpecTypeConstants.ECS_BLUE_GREEN_ROLLBACK)
+  ECS_BLUE_GREEN_ROLLBACK("Ecs Blue Green Rollback", Arrays.asList(ServiceDefinitionType.ECS), "ECS",
+      StepSpecTypeConstants.ECS_BLUE_GREEN_ROLLBACK),
+  @JsonProperty(StepSpecTypeConstants.GITOPS_UPDATE_RELEASE_REPO)
+  GITOPS_UPDATE_RELEASE_REPO("Update Release Repo", Arrays.asList(ServiceDefinitionType.KUBERNETES), "Kubernetes",
+      StepSpecTypeConstants.GITOPS_UPDATE_RELEASE_REPO);
 
   private String displayName;
   private List<ServiceDefinitionType> serviceDefinitionTypes;

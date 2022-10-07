@@ -271,7 +271,7 @@ nodes{
   @Category({GraphQLTests.class, UnitTests.class})
   public void securityManagerTypesMustBeEqualInAPIandDB() {
     // LOCAL will differ in both the secret managers.
-    assertThat(EncryptionType.values().length).isEqualTo(QLSecretManagerType.values().length + 1);
+    assertThat(EncryptionType.values().length).isEqualTo(QLSecretManagerType.values().length + 2);
   }
 
   @Test

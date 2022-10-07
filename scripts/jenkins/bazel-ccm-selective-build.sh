@@ -62,15 +62,6 @@ else
     echo "Codebase Hash:${RANDOM_CODEHASH}" > protocol.info;
   fi
 
-  if [ "${BUILD_CE_NEXTGEN}" == "true" ]; then
-    build_bazel_application 340-ce-nextgen
-    [ "$DOCKERIZE" == "true" ] && copy_ce_nextgen_jars
-  fi
-
-  if [ "${BUILD_BATCH_PROCESSING}" == "true" ]; then
-    build_bazel_application 280-batch-processing
-    [ "$DOCKERIZE" == "true" ] && copy_batch_processing_jars
-  fi
 
   if [ "${BUILD_NG_MANAGER}" == "true" ]; then
     build_bazel_application 120-ng-manager

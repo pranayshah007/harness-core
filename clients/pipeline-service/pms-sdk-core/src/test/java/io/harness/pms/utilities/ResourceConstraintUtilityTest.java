@@ -9,6 +9,7 @@ package io.harness.pms.utilities;
 
 import static io.harness.rule.OwnerRule.FERNANDOD;
 import static io.harness.rule.OwnerRule.SAHIL;
+import static io.harness.rule.OwnerRule.YOGESH;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -27,19 +28,33 @@ public class ResourceConstraintUtilityTest extends PmsSdkCoreTestBase {
   @Category(UnitTests.class)
   public void testGetResourceConstraintJsonNode() {
     String resourceConstraint = "test";
-    JsonNode jsonNode = ResourceConstraintUtility.getResourceConstraintJsonNode(resourceConstraint);
+    JsonNode jsonNode = ResourceConstraintUtility.getResourceConstraintJsonNode(resourceConstraint, "");
     assertThat(JsonNodeUtils.getString(jsonNode, "name")).isEqualTo("Resource Constraint");
     assertThat(JsonNodeUtils.getString(jsonNode, "timeout")).isEqualTo("1w");
     assertThat(JsonNodeUtils.getString(jsonNode, "type")).isEqualTo("ResourceConstraint");
     assertThat(JsonNodeUtils.getMap(jsonNode, "spec").get("name").asText()).isEqualTo("Queuing");
     assertThat(JsonNodeUtils.getMap(jsonNode, "spec").get("resourceUnit").asText()).isEqualTo(resourceConstraint);
   }
+  @Test
+  @Owner(developers = YOGESH)
+  @Category(UnitTests.class)
+  public void testGetResourceConstraintJsonNodeWithWhenCondition() {
+    String resourceConstraint = "test";
+    JsonNode jsonNode = ResourceConstraintUtility.getResourceConstraintJsonNode(resourceConstraint, "<+foo>==bar");
+    assertThat(JsonNodeUtils.getString(jsonNode, "name")).isEqualTo("Resource Constraint");
+    assertThat(JsonNodeUtils.getString(jsonNode, "timeout")).isEqualTo("1w");
+    assertThat(JsonNodeUtils.getString(jsonNode, "type")).isEqualTo("ResourceConstraint");
+    assertThat(JsonNodeUtils.getMap(jsonNode, "spec").get("name").asText()).isEqualTo("Queuing");
+    assertThat(JsonNodeUtils.getString(jsonNode, "type")).isEqualTo("ResourceConstraint");
+    assertThat(JsonNodeUtils.getMap(jsonNode, "when").get("stageStatus").asText()).isEqualTo("Success");
+    assertThat(JsonNodeUtils.getMap(jsonNode, "when").get("condition").asText()).isEqualTo("<+foo>==bar");
+  }
 
   @Test
   @Owner(developers = FERNANDOD)
   @Category(UnitTests.class)
   public void shouldResourceConstraintHasStageScope() {
-    JsonNode jsonNode = ResourceConstraintUtility.getResourceConstraintJsonNode("unitTest");
+    JsonNode jsonNode = ResourceConstraintUtility.getResourceConstraintJsonNode("unitTest", "");
     assertThat(JsonNodeUtils.getMap(jsonNode, "spec").get("holdingScope").asText()).isEqualTo("STAGE");
   }
 
@@ -47,7 +62,7 @@ public class ResourceConstraintUtilityTest extends PmsSdkCoreTestBase {
   @Owner(developers = FERNANDOD)
   @Category(UnitTests.class)
   public void shouldResourceConstraintHasOnePermits() {
-    JsonNode jsonNode = ResourceConstraintUtility.getResourceConstraintJsonNode("unitTest");
+    JsonNode jsonNode = ResourceConstraintUtility.getResourceConstraintJsonNode("unitTest", "");
     assertThat(JsonNodeUtils.getMap(jsonNode, "spec").get("permits").asInt()).isEqualTo(1);
   }
 }

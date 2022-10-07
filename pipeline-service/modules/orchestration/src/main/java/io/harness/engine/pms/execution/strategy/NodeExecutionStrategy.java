@@ -73,5 +73,5 @@ public interface NodeExecutionStrategy<P extends Node, N extends PmsNodeExecutio
 
   default void handleSdkResponseEvent(SdkResponseEventProto event) {
     throw new UnsupportedOperationException("Start execution node Supported for plan");
-  };
+  }
 }

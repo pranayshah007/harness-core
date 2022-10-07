@@ -23,6 +23,7 @@ import io.harness.pms.contracts.plan.ExecutionMetadata;
 import com.google.inject.Inject;
 import java.util.Map;
 import javax.validation.Valid;
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.PIPELINE)
@@ -47,8 +48,8 @@ public class OrchestrationServiceImpl implements OrchestrationService {
   }
 
   @Override
-  public PlanExecution executePlan(@Valid Plan plan, Map<String, String> setupAbstractions, ExecutionMetadata metadata,
-      PlanExecutionMetadata planExecutionMetadata) {
+  public PlanExecution executePlan(@Valid Plan plan, @NonNull Map<String, String> setupAbstractions,
+      ExecutionMetadata metadata, PlanExecutionMetadata planExecutionMetadata) {
     Ambiance ambiance = Ambiance.newBuilder()
                             .putAllSetupAbstractions(setupAbstractions)
                             .setPlanExecutionId(metadata.getExecutionUuid())

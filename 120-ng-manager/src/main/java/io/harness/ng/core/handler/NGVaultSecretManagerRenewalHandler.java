@@ -95,13 +95,20 @@ public class NGVaultSecretManagerRenewalHandler implements Handler<VaultConnecto
           log.info("Vault {} not configured for renewal.", vaultConnector.getUuid());
           return;
         }
+        // for existing soft deleted vault entries, do not renew token. Remove this code after existing soft deleted
+        // entries are removed from dB
+        if (vaultConnector.getDeleted()) {
+          return;
+        }
         if (!checkIfEligibleForRenewal(vaultConnector.getRenewedAt(), renewalInterval)) {
           log.info("Vault config {} renewed at {} not renewing now", vaultConnector.getUuid(),
               vaultConnector.getRenewedAt());
           return;
         }
         if (vaultConnector.getAccessType() == APP_ROLE) {
-          vaultService.renewAppRoleClientToken(vaultConnector);
+          if (vaultConnector.getRenewAppRoleToken()) {
+            vaultService.renewAppRoleClientToken(vaultConnector);
+          }
         } else {
           vaultService.renewToken(vaultConnector);
         }

@@ -12,7 +12,9 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static org.apache.commons.lang3.StringUtils.trim;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.StoreIn;
 import io.harness.mongo.index.FdUniqueIndex;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
 import io.harness.yaml.BaseYaml;
 
@@ -31,6 +33,7 @@ import org.mongodb.morphia.annotations.Entity;
 @Builder
 @EqualsAndHashCode(callSuper = false)
 @FieldNameConstants(innerTypeName = "LambdaSpecificationKeys")
+@StoreIn(DbAliases.HARNESS)
 @Entity("lambdaSpecifications")
 @HarnessEntity(exportable = true)
 public class LambdaSpecification extends DeploymentSpecification implements AccountAccess {

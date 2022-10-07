@@ -7,7 +7,9 @@
 
 package io.harness.delegate.beans;
 
+import io.harness.annotations.StoreIn;
 import io.harness.mongo.index.FdTtlIndex;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.PersistentEntity;
 
 import java.time.OffsetDateTime;
@@ -20,6 +22,7 @@ import org.mongodb.morphia.annotations.Id;
 
 @Value
 @Builder
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "delegateCallbacks", noClassnameStored = true)
 @FieldNameConstants(innerTypeName = "DelegateCallbackRecordKeys")
 public class DelegateCallbackRecord implements PersistentEntity {

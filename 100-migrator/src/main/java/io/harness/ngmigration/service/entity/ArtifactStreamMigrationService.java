@@ -115,7 +115,7 @@ public class ArtifactStreamMigrationService extends NgMigrationService {
 
   @Override
   public List<NGYamlFile> generateYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
-      Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NgEntityDetail> migratedEntities,
+      Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities,
       NgEntityDetail ngEntityDetail) {
     return new ArrayList<>();
   }
@@ -140,5 +140,10 @@ public class ArtifactStreamMigrationService extends NgMigrationService {
         .name(BaseInputDefinition.buildName(stream.getName()))
         .spec(null)
         .build();
+  }
+
+  @Override
+  public boolean canMigrate(CgEntityId id, CgEntityId root, boolean migrateAll) {
+    return migrateAll || root.getType().equals(NGMigrationEntityType.SERVICE);
   }
 }

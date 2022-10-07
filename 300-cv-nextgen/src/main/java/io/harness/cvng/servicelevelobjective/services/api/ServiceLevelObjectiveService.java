@@ -36,6 +36,7 @@ public interface ServiceLevelObjectiveService extends DeleteEntityByHandler<Serv
 
   PageResponse<ServiceLevelObjectiveResponse> get(ProjectParams projectParams, Integer offset, Integer pageSize,
       ServiceLevelObjectiveFilter serviceLevelObjectiveFilter);
+  List<ServiceLevelObjective> getAllSLOs(ProjectParams projectParams);
   List<ServiceLevelObjective> getByMonitoredServiceIdentifier(
       ProjectParams projectParams, String monitoredServiceIdentifier);
   SLORiskCountResponse getRiskCount(ProjectParams projectParams, SLODashboardApiFilter serviceLevelObjectiveFilter);
@@ -44,9 +45,11 @@ public interface ServiceLevelObjectiveService extends DeleteEntityByHandler<Serv
   PageResponse<CVNGLogDTO> getCVNGLogs(
       ProjectParams projectParams, String identifier, SLILogsFilter sliLogsFilter, PageParams pageParams);
   ServiceLevelObjective getEntity(ProjectParams projectParams, String identifier);
-
   PageResponse<ServiceLevelObjectiveResponse> getSLOForDashboard(
       ProjectParams projectParams, SLODashboardApiFilter filter, PageParams pageParams);
+  PageResponse<ServiceLevelObjective> getSLOForListView(
+      ProjectParams projectParams, SLODashboardApiFilter filter, PageParams pageParams, String filterByName);
+
   ServiceLevelObjective getFromSLIIdentifier(ProjectParams projectParams, String serviceLevelIndicatorIdentifier);
   Map<ServiceLevelObjective, SLOGraphData> getSLOGraphData(List<ServiceLevelObjective> serviceLevelObjectiveList);
   List<SLOErrorBudgetResetDTO> getErrorBudgetResetHistory(ProjectParams projectParams, String sloIdentifier);

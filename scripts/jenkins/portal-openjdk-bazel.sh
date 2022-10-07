@@ -16,11 +16,7 @@ copy_cg_manager_jars
 
 copy_event_server_jars
 
-copy_batch_processing_jars
-
 copy_change_data_capture_jars
-
-copy_ce_nextgen_jars
 
 copy_ng_manager_jars
 
@@ -274,12 +270,13 @@ cd ../..
 mkdir -p dist/debezium-service
 cd dist/debezium-service
 
-cp ${HOME}/.bazel-dirs/bin/951-debezium-service/module_deploy.jar debezium-service-capsule.jar
-cp ../../951-debezium-service/config.yml .
-cp ../../951-debezium-service/src/main/resources/redisson-jcache.yaml .
+cp ${HOME}/.bazel-dirs/bin/debezium-service/service/module_deploy.jar debezium-service-capsule.jar
+cp ../../debezium-service/config/config.yml .
+cp ../../debezium-service/service/src/main/resources/redisson-jcache.yaml .
 
 cp ../../dockerization/debezium-service/Dockerfile-debezium-service-jenkins-k8-openjdk ./Dockerfile
 cp ../../dockerization/debezium-service/Dockerfile-debezium-service-jenkins-k8-gcr-openjdk ./Dockerfile-gcr
+cp ../../dockerization/debezium-service/Dockerfile-debezium-service-cie-jdk ./Dockerfile-cie-jdk
 cp ../../dockerization/base-images/apm/inject-onprem-apm-bins-into-dockerimage.sh .
 cp ../../dockerization/base-images/apm/inject-saas-apm-bins-into-dockerimage.sh .
 cp -r ../../dockerization/debezium-service/scripts/ .
@@ -338,28 +335,6 @@ if [ ! -z ${PURPOSE} ]
 then
     echo ${PURPOSE} > purpose.txt
 fi
-
-cd ../..
-
-mkdir -p dist/accesscontrol-service
-cd dist/accesscontrol-service
-
-cp ${HOME}/.bazel-dirs/bin/access-control/service/module_deploy.jar accesscontrol-service-capsule.jar
-cp ../../access-control/config/config.yml .
-cp ../../access-control/config/keystore.jks .
-cp ../../access-control/build/container/Dockerfile-accesscontrol-service-jenkins-k8-openjdk ./Dockerfile
-cp ../../access-control/build/container/Dockerfile-accesscontrol-service-jenkins-k8-gcr-openjdk ./Dockerfile-gcr
-cp ../../dockerization/base-images/apm/inject-onprem-apm-bins-into-dockerimage.sh .
-cp ../../dockerization/base-images/apm/inject-saas-apm-bins-into-dockerimage.sh .
-cp -r ../../access-control/build/container/scripts/ .
-cp ../../protocol.info .
-echo ${JDK} > jdk.txt
-echo ${VERSION} > version.txt
-if [ ! -z ${PURPOSE} ]
-then
-    echo ${PURPOSE} > purpose.txt
-fi
-java -jar accesscontrol-service-capsule.jar scan-classpath-metadata
 
 cd ../..
 

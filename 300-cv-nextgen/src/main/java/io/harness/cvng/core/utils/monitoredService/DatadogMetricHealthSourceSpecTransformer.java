@@ -28,11 +28,12 @@ public class DatadogMetricHealthSourceSpecTransformer
         "ConnectorRef should be same for all the configs in the list.");
     List<DatadogMetricHealthDefinition> metricDefinitions = new ArrayList<>();
     cvConfigs.forEach(cvConfig -> cvConfig.getMetricInfoList().forEach(metricInfo -> {
-      RiskProfile riskProfile = RiskProfile.builder()
-                                    .category(cvConfig.getMetricPack().getCategory())
-                                    .metricType(metricInfo.getMetricType())
-                                    .thresholdTypes(cvConfig.getThresholdTypeOfMetric(metricInfo.getMetric(), cvConfig))
-                                    .build();
+      RiskProfile riskProfile =
+          RiskProfile.builder()
+              .category(cvConfig.getMetricPack().getCategory())
+              .metricType(metricInfo.getMetricType())
+              .thresholdTypes(cvConfig.getThresholdTypeOfMetric(metricInfo.getMetricName(), cvConfig))
+              .build();
       DatadogMetricHealthDefinition metricDefinition =
           DatadogMetricHealthDefinition.builder()
               .dashboardId(cvConfig.getDashboardId())
@@ -60,9 +61,11 @@ public class DatadogMetricHealthSourceSpecTransformer
 
       metricDefinitions.add(metricDefinition);
     }));
+
     return DatadogMetricHealthSourceSpec.builder()
         .feature(cvConfigs.get(0).getProductName())
         .metricDefinitions(metricDefinitions)
+        .metricPacks(addMetricPacks(cvConfigs))
         .connectorRef(cvConfigs.get(0).getConnectorIdentifier())
         .build();
   }

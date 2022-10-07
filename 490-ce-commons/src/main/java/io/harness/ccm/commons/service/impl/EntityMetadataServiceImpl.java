@@ -14,9 +14,11 @@ import io.harness.ccm.commons.entities.billing.CECloudAccount;
 import io.harness.ccm.commons.service.intf.EntityMetadataService;
 
 import com.google.inject.Inject;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.apache.commons.collections.CollectionUtils;
 
 public class EntityMetadataServiceImpl implements EntityMetadataService {
   @Inject private CECloudAccountDao cloudAccountDao;
@@ -32,9 +34,12 @@ public class EntityMetadataServiceImpl implements EntityMetadataService {
 
   @Override
   public Map<String, String> getAccountNamePerAwsAccountId(List<String> awsAccountIds, String harnessAccountId) {
-    List<CECloudAccount> awsAccounts = cloudAccountDao.getByInfraAccountId(awsAccountIds, harnessAccountId);
+    List<CECloudAccount> awsAccounts = new ArrayList<>();
+    if (CollectionUtils.isNotEmpty(awsAccountIds)) {
+      awsAccounts = cloudAccountDao.getByInfraAccountId(awsAccountIds, harnessAccountId);
+    }
     Map<String, String> accountIdToName = new HashMap<>();
-    if (awsAccounts != null) {
+    if (CollectionUtils.isNotEmpty(awsAccounts)) {
       awsAccounts.forEach(ceCloudAccount
           -> accountIdToName.putIfAbsent(ceCloudAccount.getInfraAccountId(), ceCloudAccount.getAccountName()));
     }

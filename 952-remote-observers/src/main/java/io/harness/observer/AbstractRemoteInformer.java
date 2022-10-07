@@ -73,6 +73,20 @@ public abstract class AbstractRemoteInformer {
                                            .setType4(method.getParameterTypes()[3].getName())
                                            .build());
         break;
+      case 5:
+        informantBuilder.setInformant5(Informant5.newBuilder()
+                                           .setParam1(getByteString(param[0]))
+                                           .setParam2(getByteString(param[1]))
+                                           .setParam3(getByteString(param[2]))
+                                           .setParam4(getByteString(param[3]))
+                                           .setParam5(getByteString(param[4]))
+                                           .setType1(method.getParameterTypes()[0].getName())
+                                           .setType2(method.getParameterTypes()[1].getName())
+                                           .setType3(method.getParameterTypes()[2].getName())
+                                           .setType4(method.getParameterTypes()[3].getName())
+                                           .setType5(method.getParameterTypes()[4].getName())
+                                           .build());
+        break;
       default:
         throw new UnsupportedOperationException("Only 4 params supported in subject observers");
     }

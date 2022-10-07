@@ -24,6 +24,8 @@ import io.harness.outbox.OutboxEvent;
 import io.harness.pms.events.InputSetCreateEvent;
 import io.harness.pms.events.InputSetDeleteEvent;
 import io.harness.pms.events.InputSetUpdateEvent;
+import io.harness.pms.ngpipeline.inputset.service.OverlayInputSetValidationHelper;
+import io.harness.pms.ngpipeline.inputset.service.PMSInputSetService;
 import io.harness.security.PrincipalContextData;
 import io.harness.security.dto.Principal;
 import io.harness.security.dto.ServicePrincipal;
@@ -35,12 +37,15 @@ import java.io.IOException;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public class InputSetEventHandler {
-  private ObjectMapper objectMapper;
+  private final ObjectMapper objectMapper;
   private final AuditClientService auditClientService;
+  private final PMSInputSetService inputSetService;
+
   @Inject
-  InputSetEventHandler(AuditClientService auditClientService) {
+  public InputSetEventHandler(AuditClientService auditClientService, PMSInputSetService inputSetService) {
     this.objectMapper = HObjectMapper.NG_DEFAULT_OBJECT_MAPPER;
     this.auditClientService = auditClientService;
+    this.inputSetService = inputSetService;
   }
 
   protected boolean handleInputSetCreateEvent(OutboxEvent outboxEvent) throws IOException {
@@ -86,6 +91,7 @@ public class InputSetEventHandler {
     } else if (globalContext.get(PRINCIPAL_CONTEXT) != null) {
       principal = ((PrincipalContextData) globalContext.get(PRINCIPAL_CONTEXT)).getPrincipal();
     }
+    OverlayInputSetValidationHelper.validateOverlayInputSetsForGivenInputSet(inputSetService, event.getNewInputSet());
     if (event.getIsForOldGitSync() || event.getOldInputSet() == null) {
       return true;
     }
@@ -110,6 +116,8 @@ public class InputSetEventHandler {
     } else if (globalContext.get(PRINCIPAL_CONTEXT) != null) {
       principal = ((PrincipalContextData) globalContext.get(PRINCIPAL_CONTEXT)).getPrincipal();
     }
+    OverlayInputSetValidationHelper.invalidateOverlayInputSetsReferringDeletedInputSet(
+        inputSetService, event.getInputSet());
     if (event.getIsForOldGitSync()) {
       return true;
     }

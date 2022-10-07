@@ -8,7 +8,7 @@
 package io.harness.beans;
 
 import io.harness.annotation.HarnessEntity;
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.mongo.index.FdIndex;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.CreatedAtAware;
@@ -25,9 +25,9 @@ import org.mongodb.morphia.annotations.Id;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Data
 @FieldNameConstants(innerTypeName = "PrimaryVersionKeys")
+@StoreIn(DbAliases.ALL)
 @Entity(value = "primaryVersion", noClassnameStored = true)
 @HarnessEntity(exportable = false)
-@StoreIn(DbAliases.ALL)
 public final class PrimaryVersion implements PersistentEntity, UuidAware, CreatedAtAware, UpdatedAtAware {
   public static final String GLOBAL_CONFIG_ID = "__GLOBAL_CONFIG_ID__";
   public static final String MATCH_ALL_VERSION = "*";

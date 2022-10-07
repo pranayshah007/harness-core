@@ -25,7 +25,13 @@ public enum ManifestConfigType {
   @JsonProperty(ManifestType.OpenshiftTemplate) OPEN_SHIFT_TEMPLATE(ManifestType.OpenshiftTemplate),
   @JsonProperty(ManifestType.VALUES) VALUES(ManifestType.VALUES),
   @JsonProperty(ManifestType.ServerlessAwsLambda) SERVERLESS_AWS_LAMBDA(ManifestType.ServerlessAwsLambda),
-  @JsonProperty(ManifestType.ReleaseRepo) RELEASE_REPO(ManifestType.ReleaseRepo);
+  @JsonProperty(ManifestType.ReleaseRepo) RELEASE_REPO(ManifestType.ReleaseRepo),
+  @JsonProperty(ManifestType.EcsTaskDefinition) ECS_TASK_DEFINITION(ManifestType.EcsTaskDefinition),
+  @JsonProperty(ManifestType.EcsServiceDefinition) ECS_SERVICE_DEFINITION(ManifestType.EcsServiceDefinition),
+  @JsonProperty(ManifestType.EcsScalableTargetDefinition)
+  ECS_SCALABLE_TARGET_DEFINITION(ManifestType.EcsScalableTargetDefinition),
+  @JsonProperty(ManifestType.EcsScalingPolicyDefinition)
+  ECS_SCALING_POLICY_DEFINITION(ManifestType.EcsScalingPolicyDefinition);
   private final String displayName;
 
   ManifestConfigType(String displayName) {

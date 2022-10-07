@@ -29,6 +29,7 @@ import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketUsernameTokenApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubTokenSpecDTO;
+import io.harness.delegate.beans.connector.scm.gitlab.GitlabApiAccessType;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabConnectorDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabTokenSpecDTO;
 import io.harness.exception.GitClientException;
@@ -272,7 +273,7 @@ public class ScmFetchFilesHelperTest extends WingsBaseTest {
                    .getTokenRef()
                    .getDecryptedValue())
         .isEqualTo("password".toCharArray());
-
+    assertThat(((GitlabConnectorDTO) gitLabScmConnector).getApiAccess().getType()).isEqualTo(GitlabApiAccessType.TOKEN);
     assertThat(scmFetchFilesHelper.getScmConnector(GitConfig.builder().providerType(ProviderType.GIT).build()))
         .isNull();
 

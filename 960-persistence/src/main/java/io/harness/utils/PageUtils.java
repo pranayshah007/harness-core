@@ -28,7 +28,7 @@ import org.springframework.data.domain.Sort;
 @UtilityClass
 @OwnedBy(PL)
 public class PageUtils {
-  private final String COMMA_SEPARATOR = ",";
+  public final String COMMA_SEPARATOR = ",";
 
   public static Pageable getPageRequest(int page, int size, List<String> sort) {
     if (isEmpty(sort)) {
@@ -135,6 +135,38 @@ public class PageUtils {
       }
     } catch (Exception e) {
       throw new InvalidRequestException(e.getMessage(), e);
+    }
+  }
+
+  public enum SortFields {
+    SLUG("slug"),
+    NAME("name"),
+    CREATED("created"),
+    UPDATED("updated"),
+    UNSUPPORTED(null);
+
+    private String field;
+
+    SortFields(String field) {
+      this.field = field;
+    }
+
+    public String value() {
+      return field;
+    }
+
+    @Override
+    public String toString() {
+      return String.valueOf(field);
+    }
+
+    public static SortFields fromValue(String value) {
+      for (SortFields sortField : SortFields.values()) {
+        if (String.valueOf(sortField.field).equals(value)) {
+          return sortField;
+        }
+      }
+      return null;
     }
   }
 }

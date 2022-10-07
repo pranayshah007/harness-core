@@ -15,6 +15,9 @@ import static io.harness.NGCommonEntityConstants.PROJECT_KEY;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.testframework.framework.Setup;
 
+import io.restassured.specification.RequestSpecification;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.Map;
 import javax.ws.rs.core.GenericType;
 import lombok.experimental.UtilityClass;
@@ -24,13 +27,24 @@ public class NGPipelineRestUtils {
   public static final String PIPELINE_KEY_PARAM = "{" + PIPELINE_KEY + "}";
   public static final String BASE_PATH = "pipelines";
 
-  public static String createPipeline(
-      String accountIdentifier, String orgIdentifier, String projectIdentifier, String pipelineYaml) {
-    ResponseDTO<String> pipelineResponse = Setup.ci()
-                                               .log()
-                                               .method()
-                                               .log()
-                                               .uri()
+  private static RequestSpecification getBasicSetup(String managerSetupMethodName) {
+    try {
+      Method managerSetupMethod = Setup.class.getMethod(managerSetupMethodName);
+      RequestSpecification setupResult = (RequestSpecification) managerSetupMethod.invoke(Setup.class);
+
+      return setupResult.log().method().log().uri();
+    } catch (IllegalAccessException e) {
+      throw new RuntimeException(e);
+    } catch (InvocationTargetException e) {
+      throw new RuntimeException(e);
+    } catch (NoSuchMethodException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  public static String createPipeline(String managerSetupMethodName, String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, String pipelineYaml) {
+    ResponseDTO<String> pipelineResponse = getBasicSetup(managerSetupMethodName)
                                                .basePath(BASE_PATH)
                                                .queryParam(ACCOUNT_KEY, accountIdentifier)
                                                .queryParam(ORG_KEY, orgIdentifier)
@@ -41,14 +55,10 @@ public class NGPipelineRestUtils {
     return pipelineResponse.getData();
   }
 
-  public static Map<String, Object> readPipeline(
-      String accountIdentifier, String orgIdentifier, String projectIdentifier, String pipelineName) {
+  public static Map<String, Object> readPipeline(String managerSetupMethodName, String accountIdentifier,
+      String orgIdentifier, String projectIdentifier, String pipelineName) {
     ResponseDTO<Map<String, Object>> pipelineResponse =
-        Setup.ci()
-            .log()
-            .method()
-            .log()
-            .uri()
+        getBasicSetup(managerSetupMethodName)
             .basePath(BASE_PATH)
             .queryParam(ACCOUNT_KEY, accountIdentifier)
             .queryParam(ORG_KEY, orgIdentifier)
@@ -59,13 +69,9 @@ public class NGPipelineRestUtils {
     return pipelineResponse.getData();
   }
 
-  public static String updatePipeline(String accountIdentifier, String orgIdentifier, String projectIdentifier,
-      String pipelineName, String pipelineYaml) {
-    ResponseDTO<String> pipelineResponse = Setup.ci()
-                                               .log()
-                                               .method()
-                                               .log()
-                                               .uri()
+  public static String updatePipeline(String managerSetupMethodName, String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, String pipelineName, String pipelineYaml) {
+    ResponseDTO<String> pipelineResponse = getBasicSetup(managerSetupMethodName)
                                                .basePath(BASE_PATH)
                                                .queryParam(ACCOUNT_KEY, accountIdentifier)
                                                .queryParam(ORG_KEY, orgIdentifier)
@@ -77,13 +83,9 @@ public class NGPipelineRestUtils {
     return pipelineResponse.getData();
   }
 
-  public static Boolean deletePipeline(
-      String accountIdentifier, String orgIdentifier, String projectIdentifier, String pipelineName) {
-    ResponseDTO<Boolean> pipelineResponse = Setup.ci()
-                                                .log()
-                                                .method()
-                                                .log()
-                                                .uri()
+  public static Boolean deletePipeline(String managerSetupMethodName, String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, String pipelineName) {
+    ResponseDTO<Boolean> pipelineResponse = getBasicSetup(managerSetupMethodName)
                                                 .basePath(BASE_PATH)
                                                 .queryParam(ACCOUNT_KEY, accountIdentifier)
                                                 .queryParam(ORG_KEY, orgIdentifier)

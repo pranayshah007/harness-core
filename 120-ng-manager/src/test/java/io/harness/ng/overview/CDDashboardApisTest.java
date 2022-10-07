@@ -7,7 +7,6 @@
 
 package io.harness.ng.overview;
 
-import static io.harness.NGDateUtils.getStartTimeOfNextDay;
 import static io.harness.ng.core.activityhistory.dto.TimeGroupType.DAY;
 import static io.harness.ng.overview.service.CDOverviewDashboardServiceImpl.INVALID_CHANGE_RATE;
 import static io.harness.rule.OwnerRule.MEENAKSHI;
@@ -95,24 +94,25 @@ public class CDDashboardApisTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetHealthDeploymentDashboard() {
     long startInterval = 1619568000000L;
-    long endInterval = 1619913600000L;
+    long endInterval = 1619999940000L;
     long previousInterval = 1619136000000L;
 
-    List<String> status = Arrays.asList(ExecutionStatus.SUCCESS.name(), ExecutionStatus.EXPIRED.name(),
-        ExecutionStatus.RUNNING.name(), ExecutionStatus.ABORTED.name(), ExecutionStatus.SUCCESS.name(),
-        ExecutionStatus.FAILED.name(), ExecutionStatus.FAILED.name(), ExecutionStatus.SUCCESS.name(),
-        ExecutionStatus.SUCCESS.name(), ExecutionStatus.RESOURCEWAITING.name(), ExecutionStatus.SUCCESS.name(),
+    List<String> status = Arrays.asList(ExecutionStatus.SUCCESS.name(), ExecutionStatus.IGNOREFAILED.name(),
         ExecutionStatus.EXPIRED.name(), ExecutionStatus.RUNNING.name(), ExecutionStatus.ABORTED.name(),
-        ExecutionStatus.SUCCESS.name(), ExecutionStatus.SUCCESS.name(), ExecutionStatus.FAILED.name(),
-        ExecutionStatus.SUCCESS.name(), ExecutionStatus.SUCCESS.name(), ExecutionStatus.FAILED.name());
+        ExecutionStatus.SUCCESS.name(), ExecutionStatus.FAILED.name(), ExecutionStatus.FAILED.name(),
+        ExecutionStatus.SUCCESS.name(), ExecutionStatus.SUCCESS.name(), ExecutionStatus.RESOURCEWAITING.name(),
+        ExecutionStatus.SUCCESS.name(), ExecutionStatus.EXPIRED.name(), ExecutionStatus.RUNNING.name(),
+        ExecutionStatus.ABORTED.name(), ExecutionStatus.SUCCESS.name(), ExecutionStatus.SUCCESS.name(),
+        ExecutionStatus.FAILED.name(), ExecutionStatus.SUCCESS.name(), ExecutionStatus.SUCCESS.name(),
+        ExecutionStatus.FAILED.name());
 
-    List<Long> time = Arrays.asList(1619626802000L, 1619885951000L, 1619885925000L, 1619799469000L, 1619885815000L,
-        1619972127000L, 1619799299000L, 1619885632000L, 1619799229000L, 1619626420000L, 1619281202000L, 1619540351000L,
-        1619281125000L, 1619367469000L, 1619194615000L, 1619453727000L, 1619453699000L, 1619280832000L, 1619280829000L,
-        1619453620000L);
+    List<Long> time = Arrays.asList(1619626802000L, 1619626802000L, 1619885951000L, 1619885925000L, 1619799469000L,
+        1619885815000L, 1619972127000L, 1619799299000L, 1619885632000L, 1619799229000L, 1619626420000L, 1619281202000L,
+        1619540351000L, 1619281125000L, 1619367469000L, 1619194615000L, 1619453727000L, 1619453699000L, 1619280832000L,
+        1619280829000L, 1619453620000L);
 
     List<String> env_type = Arrays.asList(EnvironmentType.Production.name(), EnvironmentType.Production.name(),
-        EnvironmentType.PreProduction.name(), EnvironmentType.PreProduction.name(),
+        EnvironmentType.Production.name(), EnvironmentType.PreProduction.name(), EnvironmentType.PreProduction.name(),
         EnvironmentType.PreProduction.name(), EnvironmentType.PreProduction.name(), EnvironmentType.Production.name(),
         EnvironmentType.PreProduction.name(), EnvironmentType.PreProduction.name(), EnvironmentType.Production.name());
 
@@ -127,7 +127,7 @@ public class CDDashboardApisTest extends CategoryTest {
     List<DeploymentDateAndCount> totalCountList = new ArrayList<>();
     totalCountList.add(DeploymentDateAndCount.builder()
                            .time(1619568000000L)
-                           .deployments(Deployment.builder().count(2).build())
+                           .deployments(Deployment.builder().count(3).build())
                            .build());
     totalCountList.add(DeploymentDateAndCount.builder()
                            .time(1619654400000L)
@@ -149,7 +149,7 @@ public class CDDashboardApisTest extends CategoryTest {
     List<DeploymentDateAndCount> successCountList = new ArrayList<>();
     successCountList.add(DeploymentDateAndCount.builder()
                              .time(1619568000000L)
-                             .deployments(Deployment.builder().count(1).build())
+                             .deployments(Deployment.builder().count(2).build())
                              .build());
     successCountList.add(DeploymentDateAndCount.builder()
                              .time(1619654400000L)
@@ -217,16 +217,13 @@ public class CDDashboardApisTest extends CategoryTest {
             .healthDeploymentInfo(
                 HealthDeploymentInfo.builder()
                     .total(TotalDeploymentInfo.builder()
-                               .count(10)
-                               .production(4L)
+                               .count(11)
+                               .production(5L)
                                .nonProduction(6L)
+                               .rate(10)
                                .countList(totalCountList)
                                .build())
-                    .success(DeploymentInfo.builder()
-                                 .count(4)
-                                 .rate((-1 / (double) 5) * 100)
-                                 .countList(successCountList)
-                                 .build())
+                    .success(DeploymentInfo.builder().count(5).rate(0).countList(successCountList).build())
                     .failure(DeploymentInfo.builder().count(4).rate(0.0).countList(failureCountList).build())
                     .active(DeploymentInfo.builder().count(2).rate(100.0).countList(activeCountList).build())
                     .build())
@@ -240,7 +237,7 @@ public class CDDashboardApisTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetExecutionDeploymentDashboard() {
     long startInterval = 1619136000000L;
-    long endInterval = 1619913600000L;
+    long endInterval = 1619999940000L;
 
     List<String> status = Arrays.asList(ExecutionStatus.SUCCESS.name(), ExecutionStatus.EXPIRED.name(),
         ExecutionStatus.RUNNING.name(), ExecutionStatus.ABORTED.name(), ExecutionStatus.SUCCESS.name(),
@@ -522,7 +519,7 @@ public class CDDashboardApisTest extends CategoryTest {
   public void testGetDeploymentsExecutionInfo() throws Exception {
     long prevStartInterval = 1619136000000L;
     long startInterval = 1619568000000L;
-    long endInterval = 1619913600000L;
+    long endInterval = 1619999940000L;
 
     Callable<DeploymentChangeRates> getDeploymentChangeRates = ()
         -> DeploymentChangeRates.builder()
@@ -593,7 +590,7 @@ public class CDDashboardApisTest extends CategoryTest {
 
     doReturn(serviceDeploymentListWrap)
         .when(cdOverviewDashboardServiceImpl)
-        .getServiceDeployments("acc", "org", "pro", startInterval, getStartTimeOfNextDay(endInterval), null, 1);
+        .getServiceDeployments("acc", "org", "pro", startInterval, endInterval, null, 1);
     doReturn(prevExecutionDeploymentWrap)
         .when(cdOverviewDashboardServiceImpl)
         .getServiceDeployments("acc", "org", "pro", prevStartInterval, startInterval, null, 1);

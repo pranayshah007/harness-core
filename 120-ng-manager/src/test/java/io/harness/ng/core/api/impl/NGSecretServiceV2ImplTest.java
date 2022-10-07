@@ -8,6 +8,7 @@
 package io.harness.ng.core.api.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.rule.OwnerRule.BOJAN;
 import static io.harness.rule.OwnerRule.PHOENIKX;
 import static io.harness.rule.OwnerRule.VITALIE;
 
@@ -24,6 +25,7 @@ import static org.mockito.Mockito.when;
 import io.harness.CategoryTest;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.IdentifierRef;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.secrets.SSHConfigValidationTaskResponse;
 import io.harness.delegate.beans.secrets.WinRmConfigValidationTaskResponse;
@@ -115,6 +117,20 @@ public class NGSecretServiceV2ImplTest extends CategoryTest {
         .thenReturn(Optional.empty());
     Optional<Secret> secretOptional = secretServiceV2.get("account", null, null, "identifier");
     assertThat(secretOptional).isEqualTo(Optional.empty());
+    verify(secretRepository)
+        .findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndIdentifier(any(), any(), any(), any());
+  }
+
+  @Test
+  @Owner(developers = BOJAN)
+  @Category(UnitTests.class)
+  public void testGetForIdentifierRef() {
+    Secret testsecret = Secret.builder().name("testsecret").build();
+    when(secretRepository.findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndIdentifier(
+             any(), any(), any(), any()))
+        .thenReturn(Optional.of(testsecret));
+    Optional<Secret> secretOptional = secretServiceV2.get(IdentifierRef.builder().identifier("test").build());
+    assertThat(secretOptional.get()).isEqualTo(testsecret);
     verify(secretRepository)
         .findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndIdentifier(any(), any(), any(), any());
   }

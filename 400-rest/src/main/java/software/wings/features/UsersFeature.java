@@ -27,7 +27,7 @@ import java.util.Map;
 @Singleton
 public class UsersFeature extends AbstractUsageLimitedFeature implements ComplianceByLimitingUsage {
   public static final String FEATURE_NAME = "USERS";
-  private static final int DEFAULT_MAX_USERS_ALLOWED = 1500;
+  private static final int DEFAULT_MAX_USERS_ALLOWED = 50000;
 
   private final UserService userService;
 

@@ -7,7 +7,7 @@
 
 package io.harness.event.service.impl;
 
-import io.harness.ccm.commons.constants.Constants;
+import io.harness.ccm.CcmConstants;
 import io.harness.ccm.commons.entities.batch.LastReceivedPublishedMessage;
 import io.harness.ccm.commons.entities.batch.LatestClusterInfo;
 import io.harness.ccm.commons.entities.events.PublishedMessage;
@@ -38,7 +38,7 @@ public class LastReceivedPublishedMessageRepositoryImpl implements LastReceivedP
 
   private static boolean containsIdentifierKey(PublishedMessage publishedMessage) {
     return publishedMessage.getAttributes().keySet().stream().anyMatch(
-        s -> s.startsWith(Constants.CLUSTER_ID_IDENTIFIER));
+        s -> s.startsWith(CcmConstants.CLUSTER_ID_IDENTIFIER));
   }
 
   @Value
@@ -55,7 +55,7 @@ public class LastReceivedPublishedMessageRepositoryImpl implements LastReceivedP
             -> publishedMessage.getAttributes()
                    .entrySet()
                    .stream()
-                   .filter(mapEntry -> mapEntry.getKey().startsWith(Constants.CLUSTER_ID_IDENTIFIER))
+                   .filter(mapEntry -> mapEntry.getKey().startsWith(CcmConstants.CLUSTER_ID_IDENTIFIER))
                    .forEach(identifier
                        -> updateLastReceivedPublishedMessage(publishedMessage.getAccountId(), identifier.getValue())));
   }

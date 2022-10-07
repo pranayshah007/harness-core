@@ -67,6 +67,9 @@ public class EnvironmentPlanCreatorV2 extends ChildrenPlanCreator<EnvironmentPla
     boolean gitOpsEnabled = (boolean) kryoSerializer.asInflatedObject(
         ctx.getDependency().getMetadataMap().get(YAMLFieldNameConstants.GITOPS_ENABLED).toByteArray());
 
+    boolean skipInstances = (boolean) kryoSerializer.asInflatedObject(
+        ctx.getDependency().getMetadataMap().get(YAMLFieldNameConstants.SKIP_INSTANCES).toByteArray());
+
     if (!gitOpsEnabled) {
       // if gitOpsEnabled is false, add dependency for infrastructure
       InfrastructureDefinitionConfig infrastructureDefinitionConfig =
@@ -82,8 +85,8 @@ public class EnvironmentPlanCreatorV2 extends ChildrenPlanCreator<EnvironmentPla
                                            .getField(YamlTypes.INFRASTRUCTURE_DEF);
 
       Infrastructure spec = infrastructureDefinitionConfig.getSpec();
-      InfrastructurePlanCreatorHelper.setInfraIdentifierAndName(
-          spec, infrastructureDefinitionConfig.getIdentifier(), infrastructureDefinitionConfig.getName());
+      InfrastructurePlanCreatorHelper.setInfraIdentifierAndName(spec, infrastructureDefinitionConfig.getIdentifier(),
+          infrastructureDefinitionConfig.getName(), skipInstances);
       PlanNode infraSpecNode = InfrastructurePmsPlanCreator.getInfraStepPlanNode(spec);
       planCreationResponseMap.put(
           infraSpecNode.getUuid(), PlanCreationResponse.builder().node(infraSpecNode.getUuid(), infraSpecNode).build());

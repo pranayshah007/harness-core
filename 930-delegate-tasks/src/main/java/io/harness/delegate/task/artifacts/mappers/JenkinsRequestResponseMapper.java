@@ -61,6 +61,7 @@ public class JenkinsRequestResponseMapper {
         .authMechanism(request.getJenkinsConnectorDTO().getAuth().getAuthType().getDisplayName())
         .username(username)
         .password(password.toCharArray())
+        .useConnectorUrlForJobExecution(request.isUseConnectorUrlForJobExecution())
         .token(token.toCharArray())
         .build();
   }

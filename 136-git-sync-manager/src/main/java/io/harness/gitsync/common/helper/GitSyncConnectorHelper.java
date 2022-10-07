@@ -35,6 +35,7 @@ import io.harness.gitsync.helpers.GitContextHelper;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.interceptor.GitSyncBranchContext;
 import io.harness.manage.GlobalContextManager;
+import io.harness.security.PrincipalContextData;
 import io.harness.tasks.DecryptGitApiAccessHelper;
 import io.harness.utils.IdentifierRefHelper;
 
@@ -105,6 +106,18 @@ public class GitSyncConnectorHelper {
   public ScmConnector getDecryptedConnector(
       String accountId, String orgIdentifier, String projectIdentifier, ScmConnector connectorDTO) {
     return decryptGitApiAccessHelper.decryptScmApiAccess(connectorDTO, accountId, projectIdentifier, orgIdentifier);
+  }
+
+  public ScmConnector getDecryptedConnectorForNewGitX(
+      String accountId, String orgIdentifier, String projectIdentifier, ScmConnector connectorDTO) {
+    PrincipalContextData currentPrincipal = GlobalContextManager.get(PrincipalContextData.PRINCIPAL_CONTEXT);
+    // setting service principal for connector decryption in case of Git Connector
+    GitSyncUtils.setGitSyncServicePrincipal();
+    ScmConnector scmConnector =
+        decryptGitApiAccessHelper.decryptScmApiAccess(connectorDTO, accountId, projectIdentifier, orgIdentifier);
+    // setting back current principal for all other operations
+    GitSyncUtils.setCurrentPrincipalContext(currentPrincipal);
+    return scmConnector;
   }
 
   public ScmConnector getDecryptedConnector(
@@ -273,7 +286,7 @@ public class GitSyncConnectorHelper {
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String connectorRef) {
     ScmConnector gitConnectorConfig =
         getScmConnector(accountIdentifier, orgIdentifier, projectIdentifier, connectorRef);
-    return getDecryptedConnector(accountIdentifier, orgIdentifier, projectIdentifier, gitConnectorConfig);
+    return getDecryptedConnectorForNewGitX(accountIdentifier, orgIdentifier, projectIdentifier, gitConnectorConfig);
   }
 
   public ScmConnector getScmConnectorForGivenRepo(

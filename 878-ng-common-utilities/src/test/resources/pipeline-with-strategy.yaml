@@ -174,8 +174,8 @@ pipeline:
                   steps:
                     - step:
                         type: Http
-                        name: <+strategy.iterations>
-                        identifier: <+strategy.iteration>
+                        name: <+step.iterations>
+                        identifier: <+step.iteration>
                         strategy:
                           repeat:
                             times: 10
@@ -187,8 +187,8 @@ pipeline:
                         timeout: 1m
                     - step:
                         type: Http
-                        name: bing
-                        identifier: bing
+                        name: <+step.iterations>
+                        identifier: <+step.iteration>
                         spec:
                           url: https://www.bing.com
                           method: GET

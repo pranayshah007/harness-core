@@ -237,11 +237,11 @@ public class InstanceDashboardServiceTest extends InstancesTestBase {
     Map<String, Map<String, Map<String, Map<String, Integer>>>> mock = new HashMap<>();
 
     ActiveServiceInstanceInfo instance1 =
-        new ActiveServiceInstanceInfo("infra1", "infraN1", "1", "a", "1", "env1", "envN1", "1", 1);
+        new ActiveServiceInstanceInfo("infra1", "infraN1", "1", "a", "1", "env1", "envN1", "1", "abc", 1);
     ActiveServiceInstanceInfo instance2 =
-        new ActiveServiceInstanceInfo("infra2", "infraN2", "2", "b", "2", "env2", "envN2", "2", 2);
+        new ActiveServiceInstanceInfo("infra2", "infraN2", "2", "b", "2", "env2", "envN2", "2", "abc", 2);
     ActiveServiceInstanceInfo instance3 =
-        new ActiveServiceInstanceInfo("infra2", "infraN2", "2", "b", "2", "env2", "envN2", "1", 3);
+        new ActiveServiceInstanceInfo("infra2", "infraN2", "2", "b", "2", "env2", "envN2", "1", null, 3);
 
     List<ActiveServiceInstanceInfo> mockList = Arrays.asList(instance1, instance2, instance3);
 

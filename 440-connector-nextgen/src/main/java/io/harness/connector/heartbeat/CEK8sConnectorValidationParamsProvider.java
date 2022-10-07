@@ -12,10 +12,14 @@ import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
 import io.harness.connector.utils.CCMKubernetesConnectorHelper;
+import io.harness.delegate.beans.connector.CEFeatures;
 import io.harness.delegate.beans.connector.ConnectorValidationParams;
 import io.harness.delegate.beans.connector.cek8s.CEKubernetesClusterConfigDTO;
+import io.harness.delegate.beans.connector.k8Connector.CEK8sValidationParams;
+import io.harness.delegate.beans.connector.k8Connector.K8sValidationParams;
 import io.harness.exception.InvalidRequestException;
 
+import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.util.Optional;
@@ -37,8 +41,15 @@ public class CEK8sConnectorValidationParamsProvider extends K8sConnectorValidati
           String.format("There does not exist a K8sCluster Cloud Provider connector with kubernetesConnectorRef=[%s]",
               scopedConnectorIdentifier));
     }
-    return super.getConnectorValidationParams(
+    ConnectorValidationParams refConnectorValidationParams = super.getConnectorValidationParams(
         k8sConnectorInfoDTO.get(), connectorName, accountIdentifier, orgIdentifier, projectIdentifier);
+    final K8sValidationParams k8sValidationParams = (K8sValidationParams) refConnectorValidationParams;
+    return CEK8sValidationParams.builder()
+        .kubernetesClusterConfigDTO(k8sValidationParams.getKubernetesClusterConfigDTO())
+        .connectorName(k8sValidationParams.getConnectorName())
+        .encryptedDataDetails(k8sValidationParams.getEncryptedDataDetails())
+        .featuresEnabled(ImmutableList.of(CEFeatures.BILLING))
+        .build();
   }
 
   private Optional<ConnectorInfoDTO> getReferencedConnectorConfig(@NotNull String scopedConnectorIdentifier,

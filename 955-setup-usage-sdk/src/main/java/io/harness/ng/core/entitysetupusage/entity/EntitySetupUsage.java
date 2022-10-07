@@ -9,7 +9,7 @@ package io.harness.ng.core.entitysetupusage.entity;
 
 import static io.harness.annotations.dev.HarnessTeam.DX;
 
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EmbeddedUser;
 import io.harness.beans.IdentifierRef.IdentifierRefKeys;
@@ -48,13 +48,12 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Builder
 @FieldNameConstants(innerTypeName = "EntitySetupUsageKeys")
 @JsonIgnoreProperties(ignoreUnknown = true)
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@StoreIn(DbAliases.NG_MANAGER)
 @Document("entitySetupUsage")
 @TypeAlias("io.harness.ng.core.entityReference.entity.EntitySetupUsage")
 @OwnedBy(DX)
-@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @Entity(value = "entitySetupUsage", noClassnameStored = true)
-@StoreIn(DbAliases.NG_MANAGER)
-@StoreIn(DbAliases.PMS)
 public class EntitySetupUsage implements PersistentEntity, NGAccountAccess {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
