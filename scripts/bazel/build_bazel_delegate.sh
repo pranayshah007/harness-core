@@ -18,7 +18,7 @@ BAZEL_ARGUMENTS="--show_timestamps --announce_rc --experimental_convenience_syml
 
 if [ $1 == "core" ]; then
   echo "building core delegate"
-  bazel ${bazelrc} build //260-delegate:module_deploy.jar ${BAZEL_ARGUMENTS}
+  bazel ${bazelrc} build //260-delegate/src/main/java/io/harness/delegate/app/platform:DelegatePlatformApplication_deploy.jar ${BAZEL_ARGUMENTS}
   cp ${BAZEL_DIRS}/bin/260-delegate/src/main/java/io/harness/delegate/app/platform/DelegatePlatformApplication_deploy.jar ./dockerization/delegate/delegate.jar
 else
   if [ $1 == "immutable" ]; then
