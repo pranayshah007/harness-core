@@ -76,10 +76,10 @@ public class PollingResource {
   @ApiOperation(hidden = true, value = "Subscribe API for polling framework.", nickname = "subscribePolling")
   public ResponseDTO<PollingResponseDTO> subscribe(byte[] pollingItem) {
     String pollingDocId = pollingService.subscribe((PollingItem) kryoSerializerWrapper.asObject(pollingItem));
-    return ResponseDTO.newResponse(
-        PollingResponseDTO.builder()
-            .pollingResponse(kryoSerializerWrapper.asBytes(PollingDocument.newBuilder().setPollingDocId(pollingDocId).build()))
-            .build());
+    return ResponseDTO.newResponse(PollingResponseDTO.builder()
+                                       .pollingResponse(kryoSerializerWrapper.asBytes(
+                                           PollingDocument.newBuilder().setPollingDocId(pollingDocId).build()))
+                                       .build());
   }
 
   @POST

@@ -32,8 +32,7 @@ import org.reflections.Reflections;
 
 @Slf4j
 public class KryoUtilTest extends WingsBaseTest {
-  @Inject
-  KryoSerializerWrapper kryoSerializerWrapper;
+  @Inject KryoSerializerWrapper kryoSerializerWrapper;
 
   Class<?> classToRunTest = ApplicationManifest.class;
 

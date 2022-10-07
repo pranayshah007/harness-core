@@ -71,8 +71,7 @@ public class ManifestPerpetualTaskExecutorTest extends DelegateTestBase {
 
   private ManifestPerpetualTaskExecutor manifestPerpetualTaskExecutor;
 
-  @Inject
-  KryoSerializerWrapper kryoSerializerWrapper;
+  @Inject KryoSerializerWrapper kryoSerializerWrapper;
 
   @Mock private ManifestRepositoryService manifestRepositoryService;
   @Mock private DelegateAgentManagerClient delegateAgentManagerClient;

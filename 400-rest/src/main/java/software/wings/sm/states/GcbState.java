@@ -117,8 +117,7 @@ public class GcbState extends State implements SweepingOutputStateMixin {
   @Transient @Inject private TemplateExpressionProcessor templateExpressionProcessor;
   @Transient @Inject private TemplateUtils templateUtils;
   @Transient @Inject private SettingsService settingsService;
-  @Transient @Inject
-  KryoSerializerWrapper kryoSerializerWrapper;
+  @Transient @Inject KryoSerializerWrapper kryoSerializerWrapper;
   @Transient @Inject InfrastructureMappingService infrastructureMappingService;
   @Transient @Inject private WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService;
 

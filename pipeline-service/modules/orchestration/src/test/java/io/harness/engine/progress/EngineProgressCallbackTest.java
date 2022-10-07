@@ -43,8 +43,7 @@ import org.mockito.Mock;
 @OwnedBy(HarnessTeam.PIPELINE)
 public class EngineProgressCallbackTest extends OrchestrationTestBase {
   @Mock NodeExecutionService nodeExecutionService;
-  @Inject
-  KryoSerializerWrapper kryoSerializerWrapper;
+  @Inject KryoSerializerWrapper kryoSerializerWrapper;
   @Mock ProgressEventPublisher progressEventPublisher;
 
   private final String nodeExecutionId = generateUuid();

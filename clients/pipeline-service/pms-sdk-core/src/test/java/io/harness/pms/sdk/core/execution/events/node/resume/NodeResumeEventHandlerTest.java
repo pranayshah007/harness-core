@@ -64,10 +64,8 @@ public class NodeResumeEventHandlerTest extends PmsSdkCoreTestBase {
   @Mock EngineObtainmentHelper engineObtainmentHelper;
   @InjectMocks NodeResumeEventHandler nodeResumeEventHandler;
   @Mock SdkNodeExecutionService sdkNodeExecutionService;
-  @Mock
-  KryoSerializerWrapper mockedKryoSerializerWrapper;
-  @Inject
-  KryoSerializerWrapper kryoSerializerWrapper1;
+  @Mock KryoSerializerWrapper mockedKryoSerializerWrapper;
+  @Inject KryoSerializerWrapper kryoSerializerWrapper1;
 
   private NodeResumeEvent nodeResumeEvent;
   private Ambiance ambiance;

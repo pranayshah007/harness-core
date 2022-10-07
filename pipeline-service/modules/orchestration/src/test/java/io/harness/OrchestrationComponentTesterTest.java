@@ -30,8 +30,7 @@ import org.mockito.Mock;
 @OwnedBy(HarnessTeam.PIPELINE)
 public class OrchestrationComponentTesterTest extends OrchestrationTestBase {
   @Mock Provider<KryoSerializerWrapper> kryoSerializerProvider;
-  @Mock
-  KryoSerializerWrapper kryoSerializerWrapper;
+  @Mock KryoSerializerWrapper kryoSerializerWrapper;
 
   @Test
   @Owner(developers = SHALINI)

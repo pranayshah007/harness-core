@@ -96,8 +96,8 @@ public class DelegateProfileServiceGrpcImpl extends DelegateProfileServiceImplBa
   private KryoSerializerWrapper kryoSerializerWrapper;
 
   @Inject
-  public DelegateProfileServiceGrpcImpl(
-      DelegateProfileService delegateProfileService, UserService userService, KryoSerializerWrapper kryoSerializerWrapper) {
+  public DelegateProfileServiceGrpcImpl(DelegateProfileService delegateProfileService, UserService userService,
+      KryoSerializerWrapper kryoSerializerWrapper) {
     this.delegateProfileService = delegateProfileService;
     this.userService = userService;
     this.kryoSerializerWrapper = kryoSerializerWrapper;

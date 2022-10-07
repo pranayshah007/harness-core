@@ -32,8 +32,7 @@ import java.util.Set;
 
 @OwnedBy(CDP)
 public class ConnectionStringsPlanCreator implements PartialPlanCreator<ConnectionStringsConfiguration> {
-  @Inject
-  KryoSerializerWrapper kryoSerializerWrapper;
+  @Inject KryoSerializerWrapper kryoSerializerWrapper;
   @Override
   public Class<ConnectionStringsConfiguration> getFieldClass() {
     return ConnectionStringsConfiguration.class;

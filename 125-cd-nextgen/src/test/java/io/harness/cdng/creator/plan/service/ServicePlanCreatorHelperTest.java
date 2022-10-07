@@ -63,8 +63,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 public class ServicePlanCreatorHelperTest extends CategoryTest {
-  @Mock
-  KryoSerializerWrapper kryoSerializerWrapper;
+  @Mock KryoSerializerWrapper kryoSerializerWrapper;
   @Mock ServiceEntityService serviceEntityService;
   private static final String ACCOUNT_ID = "account_id";
   private static final String ORG_IDENTIFIER = "orgId";

@@ -71,8 +71,7 @@ public class ManifestPerpetualTaskExecutorNgTest extends DelegateTestBase {
   private PerpetualTaskId perpetualTaskId;
   private String polling_doc_id;
 
-  @Inject
-  KryoSerializerWrapper kryoSerializerWrapper;
+  @Inject KryoSerializerWrapper kryoSerializerWrapper;
   @Mock private DelegateAgentManagerClient delegateAgentManagerClient;
   @Mock private ManifestCollectionService manifestCollectionService;
   @Mock private Call<RestResponse<Boolean>> call;

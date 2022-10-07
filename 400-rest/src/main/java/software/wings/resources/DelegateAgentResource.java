@@ -494,7 +494,8 @@ public class DelegateAgentResource {
       @QueryParam("accountId") @NotEmpty String accountId, byte[] response) {
     try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR);
          AutoLogContext ignore2 = new PerpetualTaskLogContext(perpetualTaskId, OVERRIDE_ERROR)) {
-      BuildSourceExecutionResponse executionResponse = (BuildSourceExecutionResponse) kryoSerializerWrapper.asObject(response);
+      BuildSourceExecutionResponse executionResponse =
+          (BuildSourceExecutionResponse) kryoSerializerWrapper.asObject(response);
 
       if (executionResponse.getBuildSourceResponse() != null) {
         log.debug("Received artifact collection {}", executionResponse.getBuildSourceResponse().getBuildDetails());

@@ -94,8 +94,9 @@ public class DelegateServiceGrpcClient {
 
   @Inject
   public DelegateServiceGrpcClient(DelegateServiceBlockingStub delegateServiceBlockingStub,
-                                   DelegateAsyncService delegateAsyncService, KryoSerializerWrapper kryoSerializerWrapper, DelegateSyncService delegateSyncService,
-                                   @Named("driver-installed-in-ng-service") BooleanSupplier isDriverInstalledInNgService) {
+      DelegateAsyncService delegateAsyncService, KryoSerializerWrapper kryoSerializerWrapper,
+      DelegateSyncService delegateSyncService,
+      @Named("driver-installed-in-ng-service") BooleanSupplier isDriverInstalledInNgService) {
     this.delegateServiceBlockingStub = delegateServiceBlockingStub;
     this.delegateAsyncService = delegateAsyncService;
     this.kryoSerializerWrapper = kryoSerializerWrapper;

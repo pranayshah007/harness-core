@@ -144,8 +144,7 @@ public class ShellScriptState extends State implements SweepingOutputStateMixin 
   @Inject @Transient private TemplateExpressionProcessor templateExpressionProcessor;
   @Inject @Transient private DelegateService delegateService;
   @Inject @Transient private FeatureFlagService featureFlagService;
-  @Transient @Inject
-  KryoSerializerWrapper kryoSerializerWrapper;
+  @Transient @Inject KryoSerializerWrapper kryoSerializerWrapper;
   @Inject @Transient private SSHVaultService sshVaultService;
   @Inject @Transient private WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService;
 

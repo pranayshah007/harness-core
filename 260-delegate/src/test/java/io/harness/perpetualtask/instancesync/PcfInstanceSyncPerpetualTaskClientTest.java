@@ -67,8 +67,7 @@ public class PcfInstanceSyncPerpetualTaskClientTest extends WingsBaseTest {
   @Mock SettingsService settingsService;
   @Mock SecretManager secretsManager;
   @Mock InfrastructureMappingService infraMappingService;
-  @Inject
-  KryoSerializerWrapper kryoSerializerWrapper;
+  @Inject KryoSerializerWrapper kryoSerializerWrapper;
   @InjectMocks @Inject PcfInstanceSyncPerpetualTaskClient pcfInstanceSyncPerpetualTaskClient;
 
   @Captor ArgumentCaptor<PerpetualTaskSchedule> scheduleArgumentCaptor;

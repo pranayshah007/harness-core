@@ -43,8 +43,7 @@ import org.mockito.InjectMocks;
 
 @OwnedBy(HarnessTeam.CDC)
 public class EnvironmentPlanCreatorV2Test extends CDNGTestBase {
-  @Inject
-  KryoSerializerWrapper kryoSerializerWrapper;
+  @Inject KryoSerializerWrapper kryoSerializerWrapper;
   @Inject @InjectMocks EnvironmentPlanCreatorV2 environmentPlanCreator;
 
   @Test
@@ -80,7 +79,8 @@ public class EnvironmentPlanCreatorV2Test extends CDNGTestBase {
     YamlField environmentYaml = YamlUtils.readTree(yaml);
 
     HashMap<String, ByteString> metadataDependency = new HashMap<>();
-    metadataDependency.put(YamlTypes.NEXT_UUID, ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes("service_spec")));
+    metadataDependency.put(
+        YamlTypes.NEXT_UUID, ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes("service_spec")));
     metadataDependency.put(YamlTypes.UUID, ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes("uuid")));
     PlanCreationContext ctx = PlanCreationContext.builder()
                                   .currentField(environmentYaml)

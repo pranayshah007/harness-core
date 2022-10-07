@@ -84,8 +84,7 @@ public class PerpetualTaskWorkerTest extends DelegateTestBase {
       new ManagedScheduledExecutorService("perpetualTaskTimeoutExecutor");
   @InjectMocks private PerpetualTaskWorker worker;
 
-  @Inject
-  KryoSerializerWrapper kryoSerializerWrapper;
+  @Inject KryoSerializerWrapper kryoSerializerWrapper;
 
   @Before
   public void setUp() throws ExecutionException, InterruptedException {

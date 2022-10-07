@@ -111,8 +111,8 @@ public abstract class GenericStagePlanCreator extends ChildrenPlanCreator<StageE
    */
   protected void addStrategyFieldDependencyIfPresent(PlanCreationContext ctx, StageElementConfig field,
       LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap, Map<String, ByteString> metadataMap) {
-    StrategyUtils.addStrategyFieldDependencyIfPresent(kryoSerializerWrapper, ctx, field.getUuid(), field.getIdentifier(),
-        field.getName(), planCreationResponseMap, metadataMap,
+    StrategyUtils.addStrategyFieldDependencyIfPresent(kryoSerializerWrapper, ctx, field.getUuid(),
+        field.getIdentifier(), field.getName(), planCreationResponseMap, metadataMap,
         StrategyUtils.getAdviserObtainments(ctx.getCurrentField(), kryoSerializerWrapper, false));
   }
 

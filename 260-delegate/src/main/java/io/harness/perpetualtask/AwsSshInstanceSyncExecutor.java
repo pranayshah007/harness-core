@@ -48,7 +48,8 @@ public class AwsSshInstanceSyncExecutor implements PerpetualTaskExecutor {
 
     final String region = instanceSyncParams.getRegion();
 
-    final AwsConfig awsConfig = (AwsConfig) kryoSerializerWrapper.asObject(instanceSyncParams.getAwsConfig().toByteArray());
+    final AwsConfig awsConfig =
+        (AwsConfig) kryoSerializerWrapper.asObject(instanceSyncParams.getAwsConfig().toByteArray());
     final List<EncryptedDataDetail> encryptedDataDetails =
         cast(kryoSerializerWrapper.asObject(instanceSyncParams.getEncryptedData().toByteArray()));
     final List<Filter> filters = cast(kryoSerializerWrapper.asObject(instanceSyncParams.getFilter().toByteArray()));

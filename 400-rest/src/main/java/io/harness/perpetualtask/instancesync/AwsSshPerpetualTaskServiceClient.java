@@ -67,7 +67,8 @@ public class AwsSshPerpetualTaskServiceClient implements PerpetualTaskServiceCli
 
     ByteString configBytes = ByteString.copyFrom(kryoSerializerWrapper.asBytes(taskData.getAwsConfig()));
     ByteString filterBytes = ByteString.copyFrom(kryoSerializerWrapper.asBytes(taskData.getFilters()));
-    ByteString encryptionDetailsBytes = ByteString.copyFrom(kryoSerializerWrapper.asBytes(taskData.getEncryptionDetails()));
+    ByteString encryptionDetailsBytes =
+        ByteString.copyFrom(kryoSerializerWrapper.asBytes(taskData.getEncryptionDetails()));
 
     return AwsSshInstanceSyncPerpetualTaskParams.newBuilder()
         .setRegion(taskData.getRegion())

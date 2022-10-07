@@ -64,8 +64,7 @@ public class ResumeStateUtilsTest extends WingsBaseTest {
 
   @Inject @InjectMocks private ResumeStateUtils resumeStateUtils;
   @Inject private SweepingOutputService sweepingOutputService;
-  @Inject
-  KryoSerializerWrapper kryoSerializerWrapper;
+  @Inject KryoSerializerWrapper kryoSerializerWrapper;
   @Inject private HPersistence persistence;
 
   @Mock private StateExecutionService stateExecutionService;

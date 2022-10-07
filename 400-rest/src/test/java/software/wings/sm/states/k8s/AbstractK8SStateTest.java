@@ -270,8 +270,7 @@ public class AbstractK8SStateTest extends WingsBaseTest {
   @InjectMocks K8sRollingDeploy k8sRollingDeploy = spy(new K8sRollingDeploy(K8S_DEPLOYMENT_ROLLING.name()));
 
   @Inject private HPersistence persistence;
-  @Inject
-  KryoSerializerWrapper kryoSerializerWrapper;
+  @Inject KryoSerializerWrapper kryoSerializerWrapper;
   @Inject private K8sStateHelper k8sStateHelper;
   @Inject private SweepingOutputService sweepingOutputService;
   @Inject private ApplicationManifestService applicationManifestService;

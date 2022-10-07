@@ -73,8 +73,8 @@ public class WaitForExecutionInputHelper {
       long timeout = 0;
       if (EmptyPredicate.isNotEmpty(node.getTimeoutObtainments())) {
         // We take the last timeout added as timeout for the step.
-        TimeoutParameters timeoutParameters = OrchestrationUtils.buildTimeoutParameters(
-            kryoSerializerWrapper, evaluator, node.getTimeoutObtainments().get(node.getTimeoutObtainments().size() - 1));
+        TimeoutParameters timeoutParameters = OrchestrationUtils.buildTimeoutParameters(kryoSerializerWrapper,
+            evaluator, node.getTimeoutObtainments().get(node.getTimeoutObtainments().size() - 1));
         timeout = timeoutParameters.getTimeoutMillis();
       }
 

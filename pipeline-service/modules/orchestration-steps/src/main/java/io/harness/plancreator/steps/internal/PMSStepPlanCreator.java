@@ -41,20 +41,20 @@ public class PMSStepPlanCreator extends GenericStepPMSPlanCreator {
       AdviserObtainment.Builder adviserObtainmentBuilder, RetryFailureActionConfig retryAction,
       ParameterField<Integer> retryCount, FailureStrategyActionConfig actionUnderRetry, YamlField currentField) {
     return adviserObtainmentBuilder.setType(RetryAdviserWithRollback.ADVISER_TYPE)
-        .setParameters(ByteString.copyFrom(
-            kryoSerializerWrapper.asBytes(RetryAdviserRollbackParameters.builder()
-                                       .applicableFailureTypes(failureTypes)
-                                       .nextNodeId(nextNodeUuid)
-                                       .repairActionCodeAfterRetry(toRepairAction(actionUnderRetry))
-                                       .retryCount(retryCount.getValue())
-                                       .strategyToUuid(getRollbackStrategyMap(currentField))
-                                       .waitIntervalList(retryAction.getSpecConfig()
-                                                             .getRetryIntervals()
-                                                             .getValue()
-                                                             .stream()
-                                                             .map(s -> (int) TimeoutUtils.getTimeoutInSeconds(s, 0))
-                                                             .collect(Collectors.toList()))
-                                       .build())))
+        .setParameters(ByteString.copyFrom(kryoSerializerWrapper.asBytes(
+            RetryAdviserRollbackParameters.builder()
+                .applicableFailureTypes(failureTypes)
+                .nextNodeId(nextNodeUuid)
+                .repairActionCodeAfterRetry(toRepairAction(actionUnderRetry))
+                .retryCount(retryCount.getValue())
+                .strategyToUuid(getRollbackStrategyMap(currentField))
+                .waitIntervalList(retryAction.getSpecConfig()
+                                      .getRetryIntervals()
+                                      .getValue()
+                                      .stream()
+                                      .map(s -> (int) TimeoutUtils.getTimeoutInSeconds(s, 0))
+                                      .collect(Collectors.toList()))
+                .build())))
         .build();
   }
 

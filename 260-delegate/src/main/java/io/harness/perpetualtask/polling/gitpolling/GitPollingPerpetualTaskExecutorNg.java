@@ -55,8 +55,8 @@ public class GitPollingPerpetualTaskExecutorNg implements PerpetualTaskExecutor 
     GitPollingTaskParamsNg taskParams = getTaskParams(params);
     String pollingDocId = taskParams.getPollingDocId();
     String perpetualTaskId = taskId.getId();
-    GitPollingTaskParameters gitPollingTaskParameters =
-        (GitPollingTaskParameters) kryoSerializerWrapper.asObject(taskParams.getGitpollingWebhookParams().toByteArray());
+    GitPollingTaskParameters gitPollingTaskParameters = (GitPollingTaskParameters) kryoSerializerWrapper.asObject(
+        taskParams.getGitpollingWebhookParams().toByteArray());
     GitPollingCache gitPollingCache = cache.get(pollingDocId, id -> new GitPollingCache());
 
     if (!gitPollingCache.needsToPublish()) {

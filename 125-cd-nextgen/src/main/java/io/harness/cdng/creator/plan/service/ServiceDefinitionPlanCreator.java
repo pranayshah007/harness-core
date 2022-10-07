@@ -69,8 +69,7 @@ import java.util.Set;
 
 @OwnedBy(HarnessTeam.CDC)
 public class ServiceDefinitionPlanCreator extends ChildrenPlanCreator<YamlField> {
-  @Inject
-  KryoSerializerWrapper kryoSerializerWrapper;
+  @Inject KryoSerializerWrapper kryoSerializerWrapper;
   @Inject ServiceOverrideService serviceOverrideService;
   @Inject EnvironmentService environmentService;
 

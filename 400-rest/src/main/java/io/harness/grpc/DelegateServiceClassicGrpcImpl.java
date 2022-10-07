@@ -42,7 +42,8 @@ public class DelegateServiceClassicGrpcImpl extends DelegateTaskGrpc.DelegateTas
   @Override
   public void queueTask(DelegateClassicTaskRequest request, StreamObserver<QueueTaskResponse> responseObserver) {
     try {
-      DelegateTask task = (DelegateTask) kryoSerializerWrapper.asInflatedObject(request.getDelegateTaskKryo().toByteArray());
+      DelegateTask task =
+          (DelegateTask) kryoSerializerWrapper.asInflatedObject(request.getDelegateTaskKryo().toByteArray());
 
       delegateTaskServiceClassic.queueTask(task);
 
@@ -58,12 +59,13 @@ public class DelegateServiceClassicGrpcImpl extends DelegateTaskGrpc.DelegateTas
   @Override
   public void executeTask(DelegateClassicTaskRequest request, StreamObserver<ExecuteTaskResponse> responseObserver) {
     try {
-      DelegateTask task = (DelegateTask) kryoSerializerWrapper.asInflatedObject(request.getDelegateTaskKryo().toByteArray());
+      DelegateTask task =
+          (DelegateTask) kryoSerializerWrapper.asInflatedObject(request.getDelegateTaskKryo().toByteArray());
       DelegateResponseData delegateResponseData = delegateTaskServiceClassic.executeTask(task);
-      responseObserver.onNext(
-          ExecuteTaskResponse.newBuilder()
-              .setDelegateTaskResponseKryo(ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(delegateResponseData)))
-              .build());
+      responseObserver.onNext(ExecuteTaskResponse.newBuilder()
+                                  .setDelegateTaskResponseKryo(
+                                      ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(delegateResponseData)))
+                                  .build());
       responseObserver.onCompleted();
 
     } catch (Exception ex) {
@@ -113,10 +115,10 @@ public class DelegateServiceClassicGrpcImpl extends DelegateTaskGrpc.DelegateTas
     try {
       String perpetualTaskType = request.getPerpetualTaskType();
       String accountId = request.getAccountId();
-      PerpetualTaskClientContext clientContext =
-          (PerpetualTaskClientContext) kryoSerializerWrapper.asInflatedObject(request.getClientContextKryo().toByteArray());
-      PerpetualTaskSchedule schedule =
-          (PerpetualTaskSchedule) kryoSerializerWrapper.asInflatedObject(request.getPerpetualTaskScheduleKryo().toByteArray());
+      PerpetualTaskClientContext clientContext = (PerpetualTaskClientContext) kryoSerializerWrapper.asInflatedObject(
+          request.getClientContextKryo().toByteArray());
+      PerpetualTaskSchedule schedule = (PerpetualTaskSchedule) kryoSerializerWrapper.asInflatedObject(
+          request.getPerpetualTaskScheduleKryo().toByteArray());
       boolean allowDuplicate = request.getAllowDuplicate();
       String taskDescription = request.getTaskDescription();
       String taskId = perpetualTaskService.createPerpetualTaskInternal(

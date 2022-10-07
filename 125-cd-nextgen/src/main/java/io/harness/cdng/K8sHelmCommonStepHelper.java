@@ -341,8 +341,8 @@ public class K8sHelmCommonStepHelper {
 
     String taskName = TaskType.CUSTOM_MANIFEST_VALUES_FETCH_TASK_NG.getDisplayName();
 
-    final TaskRequest taskRequest = prepareCDTaskRequest(ambiance, taskData, kryoSerializerWrapper, commandUnits, taskName,
-        TaskSelectorYaml.toTaskSelector(CollectionUtils.emptyIfNull(delegateSelectors)),
+    final TaskRequest taskRequest = prepareCDTaskRequest(ambiance, taskData, kryoSerializerWrapper, commandUnits,
+        taskName, TaskSelectorYaml.toTaskSelector(CollectionUtils.emptyIfNull(delegateSelectors)),
         stepHelper.getEnvironmentType(ambiance));
 
     K8sStepPassThroughData updatedK8sStepPassThroughData =
@@ -383,9 +383,10 @@ public class K8sHelmCommonStepHelper {
       stepLevelSelectors = ((HelmSpecParameters) stepElementParameters.getSpec()).getDelegateSelectors();
       commandUnits = ((HelmSpecParameters) stepElementParameters.getSpec()).getCommandUnits();
     }
-    final TaskRequest taskRequest = prepareCDTaskRequest(ambiance, taskData, kryoSerializerWrapper, commandUnits, taskName,
-        TaskSelectorYaml.toTaskSelector(CollectionUtils.emptyIfNull(getParameterFieldValue(stepLevelSelectors))),
-        stepHelper.getEnvironmentType(ambiance));
+    final TaskRequest taskRequest =
+        prepareCDTaskRequest(ambiance, taskData, kryoSerializerWrapper, commandUnits, taskName,
+            TaskSelectorYaml.toTaskSelector(CollectionUtils.emptyIfNull(getParameterFieldValue(stepLevelSelectors))),
+            stepHelper.getEnvironmentType(ambiance));
 
     return TaskChainResponse.builder()
         .chainEnd(false)
@@ -461,9 +462,10 @@ public class K8sHelmCommonStepHelper {
       commandUnits = ((HelmSpecParameters) stepElementParameters.getSpec()).getCommandUnits();
     }
 
-    final TaskRequest taskRequest = prepareCDTaskRequest(ambiance, taskData, kryoSerializerWrapper, commandUnits, taskName,
-        TaskSelectorYaml.toTaskSelector(CollectionUtils.emptyIfNull(getParameterFieldValue(stepLevelSelectors))),
-        stepHelper.getEnvironmentType(ambiance));
+    final TaskRequest taskRequest =
+        prepareCDTaskRequest(ambiance, taskData, kryoSerializerWrapper, commandUnits, taskName,
+            TaskSelectorYaml.toTaskSelector(CollectionUtils.emptyIfNull(getParameterFieldValue(stepLevelSelectors))),
+            stepHelper.getEnvironmentType(ambiance));
 
     K8sStepPassThroughData updatedK8sStepPassThroughData =
         k8sStepPassThroughData.toBuilder().manifestOutcomeList(new ArrayList<>(aggregatedValuesManifests)).build();

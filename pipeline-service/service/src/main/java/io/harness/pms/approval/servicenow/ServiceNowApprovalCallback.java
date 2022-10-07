@@ -76,7 +76,8 @@ public class ServiceNowApprovalCallback extends AbstractApprovalCallback impleme
     ServiceNowTaskNGResponse serviceNowTaskNGResponse;
     try {
       ResponseData responseData = response.values().iterator().next();
-      responseData = (ResponseData) kryoSerializerWrapper.asInflatedObject(((BinaryResponseData) responseData).getData());
+      responseData =
+          (ResponseData) kryoSerializerWrapper.asInflatedObject(((BinaryResponseData) responseData).getData());
       if (responseData instanceof ErrorNotifyResponseData) {
         handleErrorNotifyResponse(
             logCallback, (ErrorNotifyResponseData) responseData, "Failed to fetch ServiceNow ticket:");

@@ -61,8 +61,10 @@ public class PdcPerpetualTaskServiceClient implements PerpetualTaskServiceClient
   public Message getTaskParams(PerpetualTaskClientContext clientContext) {
     final PerpetualTaskData taskData = getPerpetualTaskData(clientContext);
 
-    ByteString settingAttributeBytes = ByteString.copyFrom(kryoSerializerWrapper.asBytes(taskData.getSettingAttribute()));
-    ByteString encryptionDetailsBytes = ByteString.copyFrom(kryoSerializerWrapper.asBytes(taskData.getEncryptedDataDetails()));
+    ByteString settingAttributeBytes =
+        ByteString.copyFrom(kryoSerializerWrapper.asBytes(taskData.getSettingAttribute()));
+    ByteString encryptionDetailsBytes =
+        ByteString.copyFrom(kryoSerializerWrapper.asBytes(taskData.getEncryptedDataDetails()));
 
     return PdcInstanceSyncPerpetualTaskParams.newBuilder()
         .addAllHostNames(taskData.getHostNames())

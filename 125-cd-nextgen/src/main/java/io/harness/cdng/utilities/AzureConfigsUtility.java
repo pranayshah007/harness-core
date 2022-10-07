@@ -83,16 +83,17 @@ public class AzureConfigsUtility {
   }
 
   public Dependency getDependencyMetadata(final String azureConfigPlanNodeId, StepParameters stepParameters,
-                                          KryoSerializerWrapper kryoSerializerWrapper, String metadataKey) {
-    Map<String, ByteString> metadataDependency =
-        prepareMetadataForAzureConfigPlanCreator(azureConfigPlanNodeId, stepParameters, kryoSerializerWrapper, metadataKey);
+      KryoSerializerWrapper kryoSerializerWrapper, String metadataKey) {
+    Map<String, ByteString> metadataDependency = prepareMetadataForAzureConfigPlanCreator(
+        azureConfigPlanNodeId, stepParameters, kryoSerializerWrapper, metadataKey);
     return Dependency.newBuilder().putAllMetadata(metadataDependency).build();
   }
 
-  private Map<String, ByteString> prepareMetadataForAzureConfigPlanCreator(
-      String azureConfigPlanNodeId, StepParameters stepParameters, KryoSerializerWrapper kryoSerializerWrapper, String metadataKey) {
+  private Map<String, ByteString> prepareMetadataForAzureConfigPlanCreator(String azureConfigPlanNodeId,
+      StepParameters stepParameters, KryoSerializerWrapper kryoSerializerWrapper, String metadataKey) {
     Map<String, ByteString> metadataDependency = new HashMap<>();
-    metadataDependency.put(YamlTypes.UUID, ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(azureConfigPlanNodeId)));
+    metadataDependency.put(
+        YamlTypes.UUID, ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(azureConfigPlanNodeId)));
     metadataDependency.put(metadataKey, ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(stepParameters)));
     return metadataDependency;
   }

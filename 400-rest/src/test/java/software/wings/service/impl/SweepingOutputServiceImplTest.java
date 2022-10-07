@@ -94,8 +94,7 @@ public class SweepingOutputServiceImplTest extends WingsBaseTest {
 
   private SweepingOutputInstance sweepingOutputInstance;
   private StateExecutionInstance stateExecutionInstance;
-  @Inject
-  KryoSerializerWrapper kryoSerializerWrapper;
+  @Inject KryoSerializerWrapper kryoSerializerWrapper;
 
   @Before
   public void setup() {

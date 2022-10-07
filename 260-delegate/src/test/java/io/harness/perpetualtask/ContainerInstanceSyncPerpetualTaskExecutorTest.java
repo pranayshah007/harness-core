@@ -79,8 +79,7 @@ public class ContainerInstanceSyncPerpetualTaskExecutorTest extends DelegateTest
   @Mock private transient ContainerService containerService;
   @Mock private AwsEcsHelperServiceDelegate awsEcsHelperServiceDelegate;
   @Mock private Call<RestResponse<Boolean>> call;
-  @Inject
-  KryoSerializerWrapper kryoSerializerWrapper;
+  @Inject KryoSerializerWrapper kryoSerializerWrapper;
 
   private ArgumentCaptor<ContainerSyncResponse> containerSyncResponseCaptor =
       ArgumentCaptor.forClass(ContainerSyncResponse.class);

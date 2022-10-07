@@ -208,8 +208,7 @@ public class VaultTest extends WingsBaseTest {
   private String kmsId;
   private String envId;
 
-  @Inject
-  KryoSerializerWrapper kryoSerializerWrapper;
+  @Inject KryoSerializerWrapper kryoSerializerWrapper;
 
   @Parameters
   public static Collection<Object[]> data() {
@@ -1668,7 +1667,8 @@ public class VaultTest extends WingsBaseTest {
     VaultConfig vaultConfig = secretManagementTestHelper.getVaultConfigWithAuthToken();
     vaultConfig.setAccountId(accountId);
 
-    String secretManagerId = vaultService.saveOrUpdateVaultConfig(accountId, kryoSerializerWrapper.clone(vaultConfig), true);
+    String secretManagerId =
+        vaultService.saveOrUpdateVaultConfig(accountId, kryoSerializerWrapper.clone(vaultConfig), true);
     verify(auditServiceHelper)
         .reportForAuditingUsingAccountId(eq(accountId), eq(null), any(VaultConfig.class), eq(Event.Type.CREATE));
 

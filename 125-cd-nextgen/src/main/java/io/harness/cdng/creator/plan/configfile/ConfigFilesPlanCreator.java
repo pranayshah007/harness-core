@@ -58,8 +58,7 @@ import lombok.experimental.FieldDefaults;
 
 @OwnedBy(HarnessTeam.CDP)
 public class ConfigFilesPlanCreator extends ChildrenPlanCreator<ConfigFiles> {
-  @Inject
-  KryoSerializerWrapper kryoSerializerWrapper;
+  @Inject KryoSerializerWrapper kryoSerializerWrapper;
 
   @Override
   public LinkedHashMap<String, PlanCreationResponse> createPlanForChildrenNodes(

@@ -54,8 +54,7 @@ public class OnSuccessAdviserTest extends PmsSdkCoreTestBase {
 
   @InjectMocks @Inject OnSuccessAdviser successAdviser;
 
-  @Inject
-  KryoSerializerWrapper kryoSerializerWrapper;
+  @Inject KryoSerializerWrapper kryoSerializerWrapper;
 
   private Ambiance ambiance;
 

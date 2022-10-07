@@ -78,8 +78,8 @@ public class ManifestPerpetualTaskExecutor implements PerpetualTaskExecutor {
     ManifestCollectionTaskParams manifestParams = getTaskParams(params);
     String appManifestId = manifestParams.getAppManifestId();
     log.info("Started manifest collection for appManifestId:{}", appManifestId);
-    ManifestCollectionParams manifestCollectionParams =
-        (ManifestCollectionParams) kryoSerializerWrapper.asObject(manifestParams.getManifestCollectionParams().toByteArray());
+    ManifestCollectionParams manifestCollectionParams = (ManifestCollectionParams) kryoSerializerWrapper.asObject(
+        manifestParams.getManifestCollectionParams().toByteArray());
 
     ArtifactsPublishedCache<HelmChart> appManifestCache = cache.get(appManifestId,
         id
@@ -185,8 +185,8 @@ public class ManifestPerpetualTaskExecutor implements PerpetualTaskExecutor {
   public boolean cleanup(PerpetualTaskId taskId, PerpetualTaskExecutionParams params) {
     ManifestCollectionTaskParams manifestParams = getTaskParams(params);
     cache.invalidate(manifestParams.getAppManifestId());
-    ManifestCollectionParams manifestCollectionParams =
-        (ManifestCollectionParams) kryoSerializerWrapper.asObject(manifestParams.getManifestCollectionParams().toByteArray());
+    ManifestCollectionParams manifestCollectionParams = (ManifestCollectionParams) kryoSerializerWrapper.asObject(
+        manifestParams.getManifestCollectionParams().toByteArray());
     try {
       manifestRepositoryService.cleanup(manifestCollectionParams);
       log.info("Cleanup completed successfully for perpetual task: {}, app manifest: {}", taskId.getId(),

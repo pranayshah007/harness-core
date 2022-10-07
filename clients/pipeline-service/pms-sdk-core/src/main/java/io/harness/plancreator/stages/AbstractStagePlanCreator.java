@@ -80,8 +80,8 @@ public abstract class AbstractStagePlanCreator<T extends AbstractStageNode> exte
    */
   public void addStrategyFieldDependencyIfPresent(PlanCreationContext ctx, AbstractStageNode field,
       Map<String, YamlField> dependenciesNodeMap, Map<String, ByteString> metadataMap) {
-    StrategyUtils.addStrategyFieldDependencyIfPresent(kryoSerializerWrapper, ctx, field.getUuid(), field.getIdentifier(),
-        field.getName(), dependenciesNodeMap, metadataMap,
+    StrategyUtils.addStrategyFieldDependencyIfPresent(kryoSerializerWrapper, ctx, field.getUuid(),
+        field.getIdentifier(), field.getName(), dependenciesNodeMap, metadataMap,
         StrategyUtils.getAdviserObtainments(ctx.getCurrentField(), kryoSerializerWrapper, false));
   }
 

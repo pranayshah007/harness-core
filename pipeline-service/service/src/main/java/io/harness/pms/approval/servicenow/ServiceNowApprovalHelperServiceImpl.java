@@ -88,10 +88,10 @@ public class ServiceNowApprovalHelperServiceImpl implements ServiceNowApprovalHe
 
   @Inject
   public ServiceNowApprovalHelperServiceImpl(ConnectorResourceClient connectorResourceClient,
-                                             PmsGitSyncHelper pmsGitSyncHelper, LogStreamingStepClientFactory logStreamingStepClientFactory,
-                                             @Named("PRIVILEGED") SecretNGManagerClient secretManagerClient, NgDelegate2TaskExecutor ngDelegate2TaskExecutor,
-                                             KryoSerializerWrapper kryoSerializerWrapper, @Named(OrchestrationPublisherName.PUBLISHER_NAME) String publisherName,
-                                             WaitNotifyEngine waitNotifyEngine) {
+      PmsGitSyncHelper pmsGitSyncHelper, LogStreamingStepClientFactory logStreamingStepClientFactory,
+      @Named("PRIVILEGED") SecretNGManagerClient secretManagerClient, NgDelegate2TaskExecutor ngDelegate2TaskExecutor,
+      KryoSerializerWrapper kryoSerializerWrapper,
+      @Named(OrchestrationPublisherName.PUBLISHER_NAME) String publisherName, WaitNotifyEngine waitNotifyEngine) {
     this.connectorResourceClient = connectorResourceClient;
     this.pmsGitSyncHelper = pmsGitSyncHelper;
     this.logStreamingStepClientFactory = logStreamingStepClientFactory;
@@ -219,16 +219,16 @@ public class ServiceNowApprovalHelperServiceImpl implements ServiceNowApprovalHe
 
   private TaskRequest prepareServiceNowTaskRequest(
       Ambiance ambiance, ServiceNowTaskNGParameters serviceNowTaskNGParameters) {
-    TaskDetails taskDetails =
-        TaskDetails.newBuilder()
-            .setKryoParameters(ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(serviceNowTaskNGParameters) == null
-                    ? new byte[] {}
-                    : kryoSerializerWrapper.asDeflatedBytes(serviceNowTaskNGParameters)))
-            .setExecutionTimeout(com.google.protobuf.Duration.newBuilder().setSeconds(20).build())
-            .setMode(TaskMode.ASYNC)
-            .setParked(false)
-            .setType(TaskType.newBuilder().setType(SERVICENOW_TASK_NG.name()).build())
-            .build();
+    TaskDetails taskDetails = TaskDetails.newBuilder()
+                                  .setKryoParameters(ByteString.copyFrom(
+                                      kryoSerializerWrapper.asDeflatedBytes(serviceNowTaskNGParameters) == null
+                                          ? new byte[] {}
+                                          : kryoSerializerWrapper.asDeflatedBytes(serviceNowTaskNGParameters)))
+                                  .setExecutionTimeout(com.google.protobuf.Duration.newBuilder().setSeconds(20).build())
+                                  .setMode(TaskMode.ASYNC)
+                                  .setParked(false)
+                                  .setType(TaskType.newBuilder().setType(SERVICENOW_TASK_NG.name()).build())
+                                  .build();
 
     List<TaskSelector> selectors = serviceNowTaskNGParameters.getDelegateSelectors()
                                        .stream()

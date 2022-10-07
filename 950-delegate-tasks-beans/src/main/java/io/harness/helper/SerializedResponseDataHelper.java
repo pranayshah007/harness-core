@@ -20,8 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class SerializedResponseDataHelper {
-  @Inject
-  KryoSerializerWrapper kryoSerializerWrapper;
+  @Inject KryoSerializerWrapper kryoSerializerWrapper;
   @Inject ObjectMapper objectMapper;
 
   public ResponseData deserialize(ResponseData responseData) {

@@ -70,8 +70,7 @@ public class AwsSshWinrmInstanceSyncPerpetualTaskHandlerTest extends InstancesTe
   private static final String SSH_SERVICE = ServiceSpecType.SSH;
   private static final int PORT = 1234;
 
-  @Mock
-  KryoSerializerWrapper kryoSerializerWrapper;
+  @Mock KryoSerializerWrapper kryoSerializerWrapper;
   @Mock NGSecretServiceV2 ngSecretServiceV2;
   @Mock SshEntityHelper sshEntityHelper;
   @Mock ServerlessEntityHelper serverlessEntityHelper;

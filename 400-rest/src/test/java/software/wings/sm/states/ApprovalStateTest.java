@@ -239,8 +239,7 @@ public class ApprovalStateTest extends WingsBaseTest {
   @Mock private FeatureFlagService featureFlagService;
   @InjectMocks private ApprovalState approvalState = new ApprovalState("ApprovalState");
 
-  @Inject
-  KryoSerializerWrapper kryoSerializerWrapper;
+  @Inject KryoSerializerWrapper kryoSerializerWrapper;
 
   private static JSONArray projects;
   private static Object statuses;

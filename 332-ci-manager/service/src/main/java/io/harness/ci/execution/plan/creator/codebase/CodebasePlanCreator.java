@@ -39,7 +39,7 @@ import org.jetbrains.annotations.NotNull;
 @OwnedBy(HarnessTeam.CI)
 public class CodebasePlanCreator {
   public static List<PlanNode> createPlanForCodeBase(YamlField ciCodeBaseField, String childNodeId,
-                                                     KryoSerializerWrapper kryoSerializerWrapper, String codeBaseNodeUUID, ExecutionSource executionSource) {
+      KryoSerializerWrapper kryoSerializerWrapper, String codeBaseNodeUUID, ExecutionSource executionSource) {
     CodeBase ciCodeBase = IntegrationStageUtils.getCiCodeBase(ciCodeBaseField.getNode());
 
     return buildCodebasePlanNodes(codeBaseNodeUUID, childNodeId, kryoSerializerWrapper, ciCodeBase, executionSource);
@@ -48,7 +48,7 @@ public class CodebasePlanCreator {
   @NotNull
   @VisibleForTesting
   static List<PlanNode> buildCodebasePlanNodes(String ciCodeBaseFieldUuid, String childNodeId,
-                                               KryoSerializerWrapper kryoSerializerWrapper, CodeBase ciCodeBase, ExecutionSource executionSource) {
+      KryoSerializerWrapper kryoSerializerWrapper, CodeBase ciCodeBase, ExecutionSource executionSource) {
     List<PlanNode> planNodeList = new ArrayList<>();
     PlanNode codeBaseDelegateTask =
         createPlanForCodeBaseTask(ciCodeBase, executionSource, OrchestrationFacilitatorType.TASK, ciCodeBaseFieldUuid);
@@ -76,8 +76,8 @@ public class CodebasePlanCreator {
             .adviserObtainment(
                 AdviserObtainment.newBuilder()
                     .setType(AdviserType.newBuilder().setType(OrchestrationAdviserTypes.ON_SUCCESS.name()).build())
-                    .setParameters(ByteString.copyFrom(
-                        kryoSerializerWrapper.asBytes(OnSuccessAdviserParameters.builder().nextNodeId(childNodeId).build())))
+                    .setParameters(ByteString.copyFrom(kryoSerializerWrapper.asBytes(
+                        OnSuccessAdviserParameters.builder().nextNodeId(childNodeId).build())))
                     .build())
             .skipGraphType(SkipType.SKIP_NODE)
             .build());

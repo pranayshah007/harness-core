@@ -65,8 +65,7 @@ public class AwsSshInstanceSyncExecutorTest extends DelegateTestBase {
   @Mock private AwsEc2HelperServiceDelegate ec2ServiceDelegate;
   @Mock private DelegateAgentManagerClient delegateAgentManagerClient;
   @Mock private Call<RestResponse<Boolean>> call;
-  @Inject
-  KryoSerializerWrapper kryoSerializerWrapper;
+  @Inject KryoSerializerWrapper kryoSerializerWrapper;
 
   @InjectMocks private AwsSshInstanceSyncExecutor executor;
 

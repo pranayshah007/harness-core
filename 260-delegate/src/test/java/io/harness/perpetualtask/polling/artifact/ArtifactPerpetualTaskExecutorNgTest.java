@@ -76,8 +76,7 @@ public class ArtifactPerpetualTaskExecutorNgTest extends DelegateTestBase {
   private PerpetualTaskId perpetualTaskId;
   private String polling_doc_id;
 
-  @Inject
-  KryoSerializerWrapper kryoSerializerWrapper;
+  @Inject KryoSerializerWrapper kryoSerializerWrapper;
   @Mock private ArtifactRepositoryServiceImpl artifactRepositoryService;
   @Mock private DelegateAgentManagerClient delegateAgentManagerClient;
   @Mock private Call<RestResponse<Boolean>> call;
@@ -105,7 +104,8 @@ public class ArtifactPerpetualTaskExecutorNgTest extends DelegateTestBase {
 
     Buffer bufferedSink = new Buffer();
     captor.getValue().writeTo(bufferedSink);
-    PollingDelegateResponse response = (PollingDelegateResponse) kryoSerializerWrapper.asObject(bufferedSink.readByteArray());
+    PollingDelegateResponse response =
+        (PollingDelegateResponse) kryoSerializerWrapper.asObject(bufferedSink.readByteArray());
     validateRunOnceOutput(response, 10001, true, 10001, 0);
   }
 

@@ -66,8 +66,7 @@ public class NativeHelmInstanceSyncPerpetualTaskHandlerTest extends InstancesTes
   private static final String ORG_IDENTIFIER = "org";
 
   @Mock K8sEntityHelper k8sEntityHelper;
-  @Mock
-  KryoSerializerWrapper kryoSerializerWrapper;
+  @Mock KryoSerializerWrapper kryoSerializerWrapper;
   @InjectMocks private NativeHelmInstanceSyncPerpetualTaskHandler nativeHelmInstanceSyncPerpetualTaskHandler;
 
   @Test

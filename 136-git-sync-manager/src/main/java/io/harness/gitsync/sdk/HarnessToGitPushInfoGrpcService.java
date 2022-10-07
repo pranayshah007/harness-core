@@ -63,8 +63,7 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(DX)
 public class HarnessToGitPushInfoGrpcService extends HarnessToGitPushInfoServiceImplBase {
   @Inject HarnessToGitHelperService harnessToGitHelperService;
-  @Inject
-  KryoSerializerWrapper kryoSerializerWrapper;
+  @Inject KryoSerializerWrapper kryoSerializerWrapper;
   @Inject EntityDetailProtoToRestMapper entityDetailProtoToRestMapper;
   @Inject ExceptionManager exceptionManager;
   private String GIT_SERVICE = "Git Service";

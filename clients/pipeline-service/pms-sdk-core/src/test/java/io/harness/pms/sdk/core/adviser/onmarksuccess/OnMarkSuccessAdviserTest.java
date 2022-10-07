@@ -46,8 +46,7 @@ public class OnMarkSuccessAdviserTest extends PmsSdkCoreTestBase {
       StepType.newBuilder().setStepCategory(StepCategory.STEP).setType(NODE_IDENTIFIER).build();
 
   @Inject OnMarkSuccessAdviser onMarkSuccessAdviser;
-  @Inject
-  KryoSerializerWrapper kryoSerializerWrapper;
+  @Inject KryoSerializerWrapper kryoSerializerWrapper;
 
   private Ambiance ambiance;
 

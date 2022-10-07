@@ -115,7 +115,8 @@ public class NativeHelmInstanceSyncPerpetualTaskHandler extends InstanceSyncPerp
     return NativeHelmDeploymentRelease.newBuilder()
         .setReleaseName(releaseData.getReleaseName())
         .addAllNamespaces(releaseData.getNamespaces())
-        .setK8SInfraDelegateConfig(ByteString.copyFrom(kryoSerializerWrapper.asBytes(releaseData.getK8sInfraDelegateConfig())))
+        .setK8SInfraDelegateConfig(
+            ByteString.copyFrom(kryoSerializerWrapper.asBytes(releaseData.getK8sInfraDelegateConfig())))
         .setHelmChartInfo(ByteString.copyFrom(kryoSerializerWrapper.asBytes(releaseData.getHelmChartInfo())))
         .build();
   }

@@ -49,8 +49,7 @@ public class OnFailAdviserTest extends PmsSdkCoreTestBase {
 
   @InjectMocks @Inject OnFailAdviser onFailAdviser;
 
-  @Inject
-  KryoSerializerWrapper kryoSerializerWrapper;
+  @Inject KryoSerializerWrapper kryoSerializerWrapper;
 
   private Ambiance ambiance;
 
@@ -98,10 +97,10 @@ public class OnFailAdviserTest extends PmsSdkCoreTestBase {
                              .addAllFailureTypes(EnumSet.of(FailureType.AUTHENTICATION_FAILURE))
                              .build())
             .toStatus(Status.FAILED)
-            .adviserParameters(
-                kryoSerializerWrapper.asBytes(io.harness.pms.sdk.core.adviser.fail.OnFailAdviserParameters.builder()
-                                           .applicableFailureTypes(EnumSet.of(FailureType.AUTHENTICATION_FAILURE))
-                                           .build()))
+            .adviserParameters(kryoSerializerWrapper.asBytes(
+                io.harness.pms.sdk.core.adviser.fail.OnFailAdviserParameters.builder()
+                    .applicableFailureTypes(EnumSet.of(FailureType.AUTHENTICATION_FAILURE))
+                    .build()))
             .build();
 
     boolean canAdvise = onFailAdviser.canAdvise(advisingEvent);
@@ -120,11 +119,11 @@ public class OnFailAdviserTest extends PmsSdkCoreTestBase {
                              .addAllFailureTypes(EnumSet.of(FailureType.AUTHENTICATION_FAILURE))
                              .build())
             .toStatus(Status.FAILED)
-            .adviserParameters(
-                kryoSerializerWrapper.asBytes(io.harness.pms.sdk.core.adviser.fail.OnFailAdviserParameters.builder()
-                                           .nextNodeId(generateUuid())
-                                           .applicableFailureTypes(EnumSet.of(FailureType.AUTHENTICATION_FAILURE))
-                                           .build()));
+            .adviserParameters(kryoSerializerWrapper.asBytes(
+                io.harness.pms.sdk.core.adviser.fail.OnFailAdviserParameters.builder()
+                    .nextNodeId(generateUuid())
+                    .applicableFailureTypes(EnumSet.of(FailureType.AUTHENTICATION_FAILURE))
+                    .build()));
 
     AdvisingEvent authFailEvent = advisingEventBuilder.build();
 
@@ -149,11 +148,11 @@ public class OnFailAdviserTest extends PmsSdkCoreTestBase {
         AdvisingEvent.<io.harness.pms.sdk.core.adviser.fail.OnFailAdviserParameters>builder()
             .ambiance(ambiance)
             .toStatus(Status.FAILED)
-            .adviserParameters(
-                kryoSerializerWrapper.asBytes(OnFailAdviserParameters.builder()
-                                           .nextNodeId(generateUuid())
-                                           .applicableFailureTypes(EnumSet.of(FailureType.AUTHENTICATION_FAILURE))
-                                           .build()));
+            .adviserParameters(kryoSerializerWrapper.asBytes(
+                OnFailAdviserParameters.builder()
+                    .nextNodeId(generateUuid())
+                    .applicableFailureTypes(EnumSet.of(FailureType.AUTHENTICATION_FAILURE))
+                    .build()));
 
     boolean canAdvise = onFailAdviser.canAdvise(advisingEventBuilder.build());
     assertThat(canAdvise).isTrue();

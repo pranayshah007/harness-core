@@ -302,13 +302,13 @@ public abstract class CVNGAbstractPlanCreatorV2<T extends CVNGAbstractStepNode> 
 
       switch (actionType) {
         case IGNORE:
-          adviserObtainmentList.add(
-              adviserObtainmentBuilder.setType(IgnoreAdviser.ADVISER_TYPE)
-                  .setParameters(ByteString.copyFrom(kryoSerializerWrapper.asBytes(IgnoreAdviserParameters.builder()
-                                                                                .applicableFailureTypes(failureTypes)
-                                                                                .nextNodeId(nextNodeUuid)
-                                                                                .build())))
-                  .build());
+          adviserObtainmentList.add(adviserObtainmentBuilder.setType(IgnoreAdviser.ADVISER_TYPE)
+                                        .setParameters(ByteString.copyFrom(
+                                            kryoSerializerWrapper.asBytes(IgnoreAdviserParameters.builder()
+                                                                              .applicableFailureTypes(failureTypes)
+                                                                              .nextNodeId(nextNodeUuid)
+                                                                              .build())))
+                                        .build());
           break;
         case RETRY:
           RetryFailureActionConfig retryAction = (RetryFailureActionConfig) action;
@@ -319,13 +319,13 @@ public abstract class CVNGAbstractPlanCreatorV2<T extends CVNGAbstractStepNode> 
               retryAction, retryCount, actionUnderRetry, currentField));
           break;
         case MARK_AS_SUCCESS:
-          adviserObtainmentList.add(
-              adviserObtainmentBuilder.setType(OnMarkSuccessAdviser.ADVISER_TYPE)
-                  .setParameters(ByteString.copyFrom(kryoSerializerWrapper.asBytes(OnMarkSuccessAdviserParameters.builder()
-                                                                                .applicableFailureTypes(failureTypes)
-                                                                                .nextNodeId(nextNodeUuid)
-                                                                                .build())))
-                  .build());
+          adviserObtainmentList.add(adviserObtainmentBuilder.setType(OnMarkSuccessAdviser.ADVISER_TYPE)
+                                        .setParameters(ByteString.copyFrom(
+                                            kryoSerializerWrapper.asBytes(OnMarkSuccessAdviserParameters.builder()
+                                                                              .applicableFailureTypes(failureTypes)
+                                                                              .nextNodeId(nextNodeUuid)
+                                                                              .build())))
+                                        .build());
 
           break;
         case ABORT:
@@ -338,9 +338,10 @@ public abstract class CVNGAbstractPlanCreatorV2<T extends CVNGAbstractStepNode> 
         case STAGE_ROLLBACK:
           OnFailRollbackParameters rollbackParameters =
               getRollbackParameters(currentField, failureTypes, RollbackStrategy.STAGE_ROLLBACK);
-          adviserObtainmentList.add(adviserObtainmentBuilder.setType(OnFailRollbackAdviser.ADVISER_TYPE)
-                                        .setParameters(ByteString.copyFrom(kryoSerializerWrapper.asBytes(rollbackParameters)))
-                                        .build());
+          adviserObtainmentList.add(
+              adviserObtainmentBuilder.setType(OnFailRollbackAdviser.ADVISER_TYPE)
+                  .setParameters(ByteString.copyFrom(kryoSerializerWrapper.asBytes(rollbackParameters)))
+                  .build());
           break;
         case MANUAL_INTERVENTION:
           ManualInterventionFailureActionConfig actionConfig = (ManualInterventionFailureActionConfig) action;
@@ -352,9 +353,10 @@ public abstract class CVNGAbstractPlanCreatorV2<T extends CVNGAbstractStepNode> 
           break;
         case PIPELINE_ROLLBACK:
           rollbackParameters = getRollbackParameters(currentField, failureTypes, RollbackStrategy.PIPELINE_ROLLBACK);
-          adviserObtainmentList.add(adviserObtainmentBuilder.setType(OnFailRollbackAdviser.ADVISER_TYPE)
-                                        .setParameters(ByteString.copyFrom(kryoSerializerWrapper.asBytes(rollbackParameters)))
-                                        .build());
+          adviserObtainmentList.add(
+              adviserObtainmentBuilder.setType(OnFailRollbackAdviser.ADVISER_TYPE)
+                  .setParameters(ByteString.copyFrom(kryoSerializerWrapper.asBytes(rollbackParameters)))
+                  .build());
           break;
         default:
           Switch.unhandled(actionType);

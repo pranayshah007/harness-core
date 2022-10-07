@@ -31,8 +31,7 @@ import java.util.Set;
 
 @OwnedBy(HarnessTeam.CDC)
 public class IndividualManifestPlanCreator implements PartialPlanCreator<ManifestConfig> {
-  @Inject
-  KryoSerializerWrapper kryoSerializerWrapper;
+  @Inject KryoSerializerWrapper kryoSerializerWrapper;
   @Override
   public Class<ManifestConfig> getFieldClass() {
     return ManifestConfig.class;

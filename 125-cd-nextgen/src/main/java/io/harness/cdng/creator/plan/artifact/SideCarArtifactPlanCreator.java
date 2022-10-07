@@ -30,8 +30,7 @@ import java.util.Set;
 
 @OwnedBy(HarnessTeam.CDC)
 public class SideCarArtifactPlanCreator implements PartialPlanCreator<SidecarArtifact> {
-  @Inject
-  KryoSerializerWrapper kryoSerializerWrapper;
+  @Inject KryoSerializerWrapper kryoSerializerWrapper;
 
   @Override
   public Class<SidecarArtifact> getFieldClass() {

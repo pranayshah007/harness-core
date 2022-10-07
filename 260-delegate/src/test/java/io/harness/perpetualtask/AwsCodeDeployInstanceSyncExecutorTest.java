@@ -65,8 +65,7 @@ public class AwsCodeDeployInstanceSyncExecutorTest extends DelegateTestBase {
   @Mock private DelegateAgentManagerClient delegateAgentManagerClient;
   @Mock private Call<RestResponse<Boolean>> call;
 
-  @Inject
-  KryoSerializerWrapper kryoSerializerWrapper;
+  @Inject KryoSerializerWrapper kryoSerializerWrapper;
 
   @InjectMocks private AwsCodeDeployInstanceSyncExecutor executor;
 

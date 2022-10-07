@@ -37,8 +37,7 @@ import java.util.Set;
 
 @OwnedBy(HarnessTeam.CDC)
 public class ApprovalStagePlanCreatorV2 extends AbstractPmsStagePlanCreator<PmsAbstractStageNode> {
-  @Inject
-  KryoSerializerWrapper kryoSerializerWrapper;
+  @Inject KryoSerializerWrapper kryoSerializerWrapper;
 
   @Override
   public Set<String> getSupportedStageTypes() {

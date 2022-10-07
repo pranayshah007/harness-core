@@ -121,8 +121,7 @@ public class K8sStateHelperTest extends WingsBaseTest {
 
   @Inject @InjectMocks private K8sStateHelper k8sStateHelper;
 
-  @Inject
-  KryoSerializerWrapper kryoSerializerWrapper;
+  @Inject KryoSerializerWrapper kryoSerializerWrapper;
   @Inject private HPersistence persistence;
 
   private static final String APPLICATION_MANIFEST_ID = "AppManifestId";

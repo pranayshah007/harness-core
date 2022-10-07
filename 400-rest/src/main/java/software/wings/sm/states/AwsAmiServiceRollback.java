@@ -185,7 +185,8 @@ public class AwsAmiServiceRollback extends AwsAmiServiceDeployState {
     if (result == null) {
       return false;
     }
-    return ((AwsAmiAllPhaseRollbackData) kryoSerializerWrapper.asInflatedObject(result.getOutput())).isAllPhaseRollbackDone();
+    return ((AwsAmiAllPhaseRollbackData) kryoSerializerWrapper.asInflatedObject(result.getOutput()))
+        .isAllPhaseRollbackDone();
   }
 
   @Override

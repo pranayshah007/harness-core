@@ -60,7 +60,8 @@ public class AzureWebAppInstanceSyncPerpetualTaskClient implements PerpetualTask
     AzureWebAppInstanceSyncPerpetualTaskClient.PerpetualTaskData perpetualTaskData =
         getPerpetualTaskData(clientContext);
 
-    ByteString azureConfigBytes = ByteString.copyFrom(kryoSerializerWrapper.asBytes(perpetualTaskData.getAzureConfig()));
+    ByteString azureConfigBytes =
+        ByteString.copyFrom(kryoSerializerWrapper.asBytes(perpetualTaskData.getAzureConfig()));
     ByteString encryptedDataBytes =
         ByteString.copyFrom(kryoSerializerWrapper.asBytes(perpetualTaskData.getEncryptedDataDetails()));
 

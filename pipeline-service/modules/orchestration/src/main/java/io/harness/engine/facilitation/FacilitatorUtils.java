@@ -19,7 +19,8 @@ public class FacilitatorUtils {
   public Duration extractWaitDurationFromDefaultParams(byte[] parameters) {
     Duration waitDuration = Duration.ofSeconds(0);
     if (parameters != null && parameters.length > 0) {
-      DefaultFacilitatorParams facilitatorParameters = (DefaultFacilitatorParams) kryoSerializerWrapper.asObject(parameters);
+      DefaultFacilitatorParams facilitatorParameters =
+          (DefaultFacilitatorParams) kryoSerializerWrapper.asObject(parameters);
       waitDuration = facilitatorParameters.getWaitDurationSeconds();
     }
     return waitDuration;

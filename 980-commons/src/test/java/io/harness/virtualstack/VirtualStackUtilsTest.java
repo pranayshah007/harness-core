@@ -28,8 +28,7 @@ import org.junit.experimental.categories.Category;
 
 @OwnedBy(HarnessTeam.PL)
 public class VirtualStackUtilsTest extends CommonsTestBase {
-  @Inject
-  KryoSerializerWrapper kryoSerializerWrapper;
+  @Inject KryoSerializerWrapper kryoSerializerWrapper;
 
   @Test
   @Owner(developers = GEORGE)

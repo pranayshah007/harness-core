@@ -75,8 +75,7 @@ public class GitPollingPerpetualTaskExecutorNgTest extends DelegateTestBase {
   private GitPollingPerpetualTaskExecutorNg gitPollingPerpetualTaskExecutorNg;
   private PerpetualTaskId perpetualTaskId;
   private String polling_doc_id;
-  @Inject
-  KryoSerializerWrapper kryoSerializerWrapper;
+  @Inject KryoSerializerWrapper kryoSerializerWrapper;
   @Mock private GitPollingServiceImpl gitPollingService;
   @Mock private DelegateAgentManagerClient delegateAgentManagerClient;
   @Mock private Call<RestResponse<Boolean>> call;
@@ -104,7 +103,8 @@ public class GitPollingPerpetualTaskExecutorNgTest extends DelegateTestBase {
 
     Buffer bufferedSink = new Buffer();
     captor.getValue().writeTo(bufferedSink);
-    PollingDelegateResponse response = (PollingDelegateResponse) kryoSerializerWrapper.asObject(bufferedSink.readByteArray());
+    PollingDelegateResponse response =
+        (PollingDelegateResponse) kryoSerializerWrapper.asObject(bufferedSink.readByteArray());
     validateRunOnceOutput(response, 10001, true, 10001, 0);
   }
 

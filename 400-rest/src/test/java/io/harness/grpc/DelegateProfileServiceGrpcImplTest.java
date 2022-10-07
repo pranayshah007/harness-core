@@ -109,8 +109,7 @@ public class DelegateProfileServiceGrpcImplTest extends WingsBaseTest {
 
   @Mock private DelegateProfileService delegateProfileService;
 
-  @Inject
-  KryoSerializerWrapper kryoSerializerWrapper;
+  @Inject KryoSerializerWrapper kryoSerializerWrapper;
 
   @Before
   public void setUp() throws Exception {

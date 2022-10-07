@@ -82,8 +82,7 @@ public class ServiceNowCreateUpdateState extends State implements SweepingOutput
   @Inject private transient SweepingOutputService sweepingOutputService;
   @Inject private transient ActivityHelperService activityHelperService;
   @Inject private transient SettingsService settingsService;
-  @Transient @Inject
-  KryoSerializerWrapper kryoSerializerWrapper;
+  @Transient @Inject KryoSerializerWrapper kryoSerializerWrapper;
   @Inject @Transient private FeatureFlagService featureFlagService;
   @Inject private transient WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService;
 

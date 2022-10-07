@@ -233,8 +233,7 @@ public class KmsTest extends WingsBaseTest {
   private String envId;
   @Mock private FeatureFlagService featureFlagService;
 
-  @Inject
-  KryoSerializerWrapper kryoSerializerWrapper;
+  @Inject KryoSerializerWrapper kryoSerializerWrapper;
 
   @Before
   public void setup() throws IOException, NoSuchFieldException, IllegalAccessException {

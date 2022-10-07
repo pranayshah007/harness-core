@@ -238,17 +238,19 @@ public class EnvironmentPlanCreatorHelper {
   }
 
   public static Map<String, ByteString> prepareMetadata(String environmentUuid, String infraSectionUuid,
-      String serviceSpecNodeId, boolean gitOpsEnabled, boolean skipInstances, KryoSerializerWrapper kryoSerializerWrapper) {
+      String serviceSpecNodeId, boolean gitOpsEnabled, boolean skipInstances,
+      KryoSerializerWrapper kryoSerializerWrapper) {
     Map<String, ByteString> metadataDependency = new HashMap<>();
 
-    metadataDependency.put(YamlTypes.NEXT_UUID, ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(serviceSpecNodeId)));
+    metadataDependency.put(
+        YamlTypes.NEXT_UUID, ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(serviceSpecNodeId)));
     metadataDependency.put(
         YamlTypes.INFRA_SECTION_UUID, ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(infraSectionUuid)));
     metadataDependency.put(YamlTypes.UUID, ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(environmentUuid)));
-    metadataDependency.put(
-        YAMLFieldNameConstants.GITOPS_ENABLED, ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(gitOpsEnabled)));
-    metadataDependency.put(
-        YAMLFieldNameConstants.SKIP_INSTANCES, ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(skipInstances)));
+    metadataDependency.put(YAMLFieldNameConstants.GITOPS_ENABLED,
+        ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(gitOpsEnabled)));
+    metadataDependency.put(YAMLFieldNameConstants.SKIP_INSTANCES,
+        ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(skipInstances)));
 
     return metadataDependency;
   }

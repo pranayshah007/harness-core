@@ -89,8 +89,8 @@ public class ServiceNowApprovalHelperServiceImplTest extends CategoryTest {
   @Before
   public void setUp() {
     serviceNowApprovalHelperService = spy(new ServiceNowApprovalHelperServiceImpl(connectorResourceClient,
-        pmsGitSyncHelper, logStreamingStepClientFactory, secretManagerClient, ngDelegate2TaskExecutor, kryoSerializerWrapper,
-        publisherName, waitNotifyEngine));
+        pmsGitSyncHelper, logStreamingStepClientFactory, secretManagerClient, ngDelegate2TaskExecutor,
+        kryoSerializerWrapper, publisherName, waitNotifyEngine));
   }
 
   @Test

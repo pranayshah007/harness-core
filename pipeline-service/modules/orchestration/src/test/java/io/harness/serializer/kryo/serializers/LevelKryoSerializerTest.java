@@ -24,8 +24,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 public class LevelKryoSerializerTest extends OrchestrationTestBase {
-  @Inject
-  KryoSerializerWrapper kryoSerializerWrapper;
+  @Inject KryoSerializerWrapper kryoSerializerWrapper;
 
   @Test
   @Owner(developers = PRASHANT)

@@ -51,8 +51,8 @@ public abstract class AbstractStepPlanCreator<T extends AbstractStepNode> implem
 
   protected void addStrategyFieldDependencyIfPresent(PlanCreationContext ctx, AbstractStepNode field,
       Map<String, YamlField> dependenciesNodeMap, Map<String, ByteString> metadataMap) {
-    StrategyUtils.addStrategyFieldDependencyIfPresent(kryoSerializerWrapper, ctx, field.getUuid(), field.getIdentifier(),
-        field.getName(), dependenciesNodeMap, metadataMap,
+    StrategyUtils.addStrategyFieldDependencyIfPresent(kryoSerializerWrapper, ctx, field.getUuid(),
+        field.getIdentifier(), field.getName(), dependenciesNodeMap, metadataMap,
         StrategyUtils.getAdviserObtainmentFromMetaDataForStep(kryoSerializerWrapper, ctx.getCurrentField()));
   }
 

@@ -75,15 +75,16 @@ public class StepGroupPMSPlanCreator extends ChildrenPlanCreator<StepGroupElemen
               .dependencies(DependenciesUtils.toDependenciesProto(stepsYamlFieldMap))
               .build());
     }
-    addStrategyFieldDependencyIfPresent(kryoSerializerWrapper, ctx, config.getUuid(), config.getName(), config.getIdentifier(),
-        responseMap, new HashMap<>(), getAdviserObtainmentFromMetaData(ctx.getCurrentField(), false));
+    addStrategyFieldDependencyIfPresent(kryoSerializerWrapper, ctx, config.getUuid(), config.getName(),
+        config.getIdentifier(), responseMap, new HashMap<>(),
+        getAdviserObtainmentFromMetaData(ctx.getCurrentField(), false));
 
     return responseMap;
   }
 
-  public void addStrategyFieldDependencyIfPresent(KryoSerializerWrapper kryoSerializerWrapper, PlanCreationContext ctx, String uuid,
-                                                  String name, String identifier, LinkedHashMap<String, PlanCreationResponse> responseMap,
-                                                  HashMap<Object, Object> objectObjectHashMap, List<AdviserObtainment> adviserObtainmentFromMetaData) {
+  public void addStrategyFieldDependencyIfPresent(KryoSerializerWrapper kryoSerializerWrapper, PlanCreationContext ctx,
+      String uuid, String name, String identifier, LinkedHashMap<String, PlanCreationResponse> responseMap,
+      HashMap<Object, Object> objectObjectHashMap, List<AdviserObtainment> adviserObtainmentFromMetaData) {
     StrategyUtils.addStrategyFieldDependencyIfPresent(kryoSerializerWrapper, ctx, uuid, name, identifier, responseMap,
         new HashMap<>(), getAdviserObtainmentFromMetaData(ctx.getCurrentField(), false));
   }

@@ -75,8 +75,7 @@ public class EcsPerpetualTaskExecutorTest extends DelegateTestBase {
   @Mock private AwsEc2HelperServiceDelegate ec2ServiceDelegate;
   @Mock private EcsMetricClient ecsMetricClient;
   @Mock private EventPublisher eventPublisher;
-  @Inject
-  KryoSerializerWrapper kryoSerializerWrapper;
+  @Inject KryoSerializerWrapper kryoSerializerWrapper;
 
   @Parameterized.Parameter public Clock clock;
   @Parameterized.Parameters(name = "{index}: with clock: {0}")

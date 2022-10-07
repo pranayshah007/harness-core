@@ -32,8 +32,7 @@ import java.util.Set;
 
 @OwnedBy(HarnessTeam.CDC)
 public class SpecNodePlanCreator implements PartialPlanCreator<YamlField> {
-  @Inject
-  KryoSerializerWrapper kryoSerializerWrapper;
+  @Inject KryoSerializerWrapper kryoSerializerWrapper;
 
   @Override
   public Class<YamlField> getFieldClass() {

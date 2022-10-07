@@ -69,8 +69,7 @@ public class KubernetesSwapServiceSelectorsTest extends WingsBaseTest {
   @Mock private K8sStateHelper k8sStateHelper;
   @Mock private InfrastructureMappingService infrastructureMappingService;
   @Mock private WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService;
-  @Inject
-  KryoSerializerWrapper kryoSerializerWrapper;
+  @Inject KryoSerializerWrapper kryoSerializerWrapper;
 
   @InjectMocks
   KubernetesSwapServiceSelectors kubernetesSwapServiceSelectors =

@@ -253,11 +253,11 @@ public class AzureCreateBPStep extends TaskChainExecutableWithRollbackAndRbac {
             .timeout(StepUtils.getTimeoutMillis(stepParameters.getTimeout(), AzureCommonHelper.DEFAULT_TIMEOUT))
             .parameters(new Object[] {parameters})
             .build();
-    final TaskRequest taskRequest =
-        StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializerWrapper, getCommandUnits(false), "Azure Blueprint",
-            TaskSelectorYaml.toTaskSelector(
-                ((AzureCreateBPStepParameters) stepParameters.getSpec()).getDelegateSelectors()),
-            stepHelper.getEnvironmentType(ambiance));
+    final TaskRequest taskRequest = StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializerWrapper,
+        getCommandUnits(false), "Azure Blueprint",
+        TaskSelectorYaml.toTaskSelector(
+            ((AzureCreateBPStepParameters) stepParameters.getSpec()).getDelegateSelectors()),
+        stepHelper.getEnvironmentType(ambiance));
 
     return TaskChainResponse.builder().taskRequest(taskRequest).passThroughData(passThroughData).chainEnd(true).build();
   }

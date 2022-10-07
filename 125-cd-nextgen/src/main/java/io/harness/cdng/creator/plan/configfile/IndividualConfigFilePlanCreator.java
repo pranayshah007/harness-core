@@ -28,8 +28,7 @@ import java.util.Map;
 import java.util.Set;
 
 public class IndividualConfigFilePlanCreator implements PartialPlanCreator<ConfigFile> {
-  @Inject
-  KryoSerializerWrapper kryoSerializerWrapper;
+  @Inject KryoSerializerWrapper kryoSerializerWrapper;
   @Override
   public Class<ConfigFile> getFieldClass() {
     return ConfigFile.class;

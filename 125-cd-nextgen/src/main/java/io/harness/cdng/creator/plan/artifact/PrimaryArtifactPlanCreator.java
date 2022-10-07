@@ -31,8 +31,7 @@ import java.util.Set;
 
 @OwnedBy(HarnessTeam.CDC)
 public class PrimaryArtifactPlanCreator implements PartialPlanCreator<PrimaryArtifact> {
-  @Inject
-  KryoSerializerWrapper kryoSerializerWrapper;
+  @Inject KryoSerializerWrapper kryoSerializerWrapper;
 
   @Override
   public Class<PrimaryArtifact> getFieldClass() {

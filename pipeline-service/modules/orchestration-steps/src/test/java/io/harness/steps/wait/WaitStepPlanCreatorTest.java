@@ -76,8 +76,8 @@ public class WaitStepPlanCreatorTest extends OrchestrationStepsTestBase {
     String childNodeUuid = generateUuid();
 
     HashMap<String, ByteString> metadataDependency = new HashMap<>();
-    metadataDependency.put(
-        YAMLFieldNameConstants.CHILD_NODE_OF_SPEC, ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(childNodeUuid)));
+    metadataDependency.put(YAMLFieldNameConstants.CHILD_NODE_OF_SPEC,
+        ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(childNodeUuid)));
     PlanCreationContext ctx = PlanCreationContext.builder()
                                   .currentField(yamlField)
                                   .dependency(Dependency.newBuilder().putAllMetadata(metadataDependency).build())
@@ -118,8 +118,8 @@ public class WaitStepPlanCreatorTest extends OrchestrationStepsTestBase {
     String childNodeUuid = generateUuid();
 
     HashMap<String, ByteString> metadataDependency = new HashMap<>();
-    metadataDependency.put(
-        YAMLFieldNameConstants.CHILD_NODE_OF_SPEC, ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(childNodeUuid)));
+    metadataDependency.put(YAMLFieldNameConstants.CHILD_NODE_OF_SPEC,
+        ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(childNodeUuid)));
     PlanCreationContext ctx = PlanCreationContext.builder()
                                   .currentField(yamlField)
                                   .dependency(Dependency.newBuilder().putAllMetadata(metadataDependency).build())

@@ -104,11 +104,12 @@ public class SecretServiceImpl implements SecretService {
   private final QueuePublisher<MigrateSecretTask> secretsMigrationProcessor;
 
   @Inject
-  public SecretServiceImpl(KryoSerializerWrapper kryoSerializerWrapper, SecretsDao secretsDao, SecretsRBACService secretsRBACService,
-                           SecretSetupUsageService secretSetupUsageService, SecretsFileService secretsFileService,
-                           SecretManagerConfigService secretManagerConfigService, SecretValidatorsRegistry secretValidatorsRegistry,
-                           SecretsAuditService secretsAuditService, KmsEncryptorsRegistry kmsRegistry, VaultEncryptorsRegistry vaultRegistry,
-                           CustomEncryptorsRegistry customRegistry, QueuePublisher<MigrateSecretTask> secretsMigrationProcessor) {
+  public SecretServiceImpl(KryoSerializerWrapper kryoSerializerWrapper, SecretsDao secretsDao,
+      SecretsRBACService secretsRBACService, SecretSetupUsageService secretSetupUsageService,
+      SecretsFileService secretsFileService, SecretManagerConfigService secretManagerConfigService,
+      SecretValidatorsRegistry secretValidatorsRegistry, SecretsAuditService secretsAuditService,
+      KmsEncryptorsRegistry kmsRegistry, VaultEncryptorsRegistry vaultRegistry, CustomEncryptorsRegistry customRegistry,
+      QueuePublisher<MigrateSecretTask> secretsMigrationProcessor) {
     this.kryoSerializerWrapper = kryoSerializerWrapper;
     this.secretsDao = secretsDao;
     this.secretsRBACService = secretsRBACService;

@@ -37,10 +37,10 @@ public abstract class InstanceSyncPerpetualTaskHandler {
     PerpetualTaskExecutionBundle.Builder builder = PerpetualTaskExecutionBundle.newBuilder();
     executionCapabilities.forEach(executionCapability
         -> builder
-               .addCapabilities(
-                   Capability.newBuilder()
-                       .setKryoCapability(ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(executionCapability)))
-                       .build())
+               .addCapabilities(Capability.newBuilder()
+                                    .setKryoCapability(
+                                        ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(executionCapability)))
+                                    .build())
                .build());
     return builder.setTaskParams(perpetualTaskPack)
         .putAllSetupAbstractions(Maps.of(NG, "true", OWNER, orgIdentifier + "/" + projectIdentifier))

@@ -45,8 +45,7 @@ import java.util.stream.Collectors;
 
 @OwnedBy(HarnessTeam.CDC)
 public class SideCarListPlanCreator extends ChildrenPlanCreator<SidecarsListWrapper> {
-  @Inject
-  KryoSerializerWrapper kryoSerializerWrapper;
+  @Inject KryoSerializerWrapper kryoSerializerWrapper;
 
   @Override
   public Class<SidecarsListWrapper> getFieldClass() {

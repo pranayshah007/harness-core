@@ -78,8 +78,9 @@ public class CustomApprovalHelperServiceImpl implements CustomApprovalHelperServ
   private final StepHelper stepHelper;
 
   @Inject
-  public CustomApprovalHelperServiceImpl(NgDelegate2TaskExecutor ngDelegate2TaskExecutor, KryoSerializerWrapper kryoSerializerWrapper,
-      WaitNotifyEngine waitNotifyEngine, LogStreamingStepClientFactory logStreamingStepClientFactory,
+  public CustomApprovalHelperServiceImpl(NgDelegate2TaskExecutor ngDelegate2TaskExecutor,
+      KryoSerializerWrapper kryoSerializerWrapper, WaitNotifyEngine waitNotifyEngine,
+      LogStreamingStepClientFactory logStreamingStepClientFactory,
       @Named(OrchestrationPublisherName.PUBLISHER_NAME) String publisherName, PmsGitSyncHelper pmsGitSyncHelper,
       ShellScriptHelperService shellScriptHelperService, ApprovalInstanceService approvalInstanceService,
       StepHelper stepHelper) {

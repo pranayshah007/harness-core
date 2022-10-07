@@ -54,8 +54,7 @@ public class SCMDataObtainerTest extends CategoryTest {
   @Mock SecretDecryptor secretDecryptor;
   @Mock ScmServiceClient scmServiceClient;
   @Mock TaskExecutionUtils taskExecutionUtils;
-  @Mock
-  KryoSerializerWrapper kryoSerializerWrapper;
+  @Mock KryoSerializerWrapper kryoSerializerWrapper;
   @InjectMocks SCMDataObtainer scmDataObtainer;
 
   @Before

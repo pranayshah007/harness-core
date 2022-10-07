@@ -86,8 +86,8 @@ public class ServicePlanCreatorHelper {
         && stageNode.getDeploymentStageConfig().getServiceConfig() != null) {
       PipelineInfrastructure infraConfig = stageNode.getDeploymentStageConfig().getInfrastructure();
       serviceDependencyMap.put(YamlTypes.INFRASTRUCTURE_STEP_PARAMETERS,
-          ByteString.copyFrom(
-              kryoSerializerWrapper.asDeflatedBytes(InfrastructurePmsPlanCreator.getInfraSectionStepParams(infraConfig, ""))));
+          ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(
+              InfrastructurePmsPlanCreator.getInfraSectionStepParams(infraConfig, ""))));
       serviceDependencyMap.put(YamlTypes.ENVIRONMENT_NODE_ID,
           ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes("environment-" + infraConfig.getUuid())));
     } // v2 serviceField

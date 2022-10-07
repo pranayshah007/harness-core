@@ -99,7 +99,8 @@ public class DelegateAsyncServiceImpl implements DelegateAsyncService {
         if (disableDeserialization) {
           responseData = BinaryResponseData.builder().data(lockedAsyncTaskResponse.getResponseData()).build();
         } else {
-          ResponseData data = (ResponseData) kryoSerializerWrapper.asInflatedObject(lockedAsyncTaskResponse.getResponseData());
+          ResponseData data =
+              (ResponseData) kryoSerializerWrapper.asInflatedObject(lockedAsyncTaskResponse.getResponseData());
           if (data instanceof SerializedResponseData) {
             responseData = data;
           } else {

@@ -39,8 +39,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class StrategyConfigPlanCreator extends ChildrenPlanCreator<StrategyConfig> {
-  @Inject
-  KryoSerializerWrapper kryoSerializerWrapper;
+  @Inject KryoSerializerWrapper kryoSerializerWrapper;
 
   @Override
   public LinkedHashMap<String, PlanCreationResponse> createPlanForChildrenNodes(
@@ -53,7 +52,8 @@ public class StrategyConfigPlanCreator extends ChildrenPlanCreator<StrategyConfi
       PlanCreationContext ctx, StrategyConfig config, List<String> childrenNodeIds) {
     ByteString strategyMetadata = ctx.getDependency().getMetadataMap().get(
         StrategyConstants.STRATEGY_METADATA + ctx.getCurrentField().getNode().getUuid());
-    StrategyMetadata metadata = (StrategyMetadata) kryoSerializerWrapper.asInflatedObject(strategyMetadata.toByteArray());
+    StrategyMetadata metadata =
+        (StrategyMetadata) kryoSerializerWrapper.asInflatedObject(strategyMetadata.toByteArray());
     String childNodeId = metadata.getChildNodeId();
     String strategyNodeId = metadata.getStrategyNodeId();
     if (EmptyPredicate.isEmpty(childNodeId) || EmptyPredicate.isEmpty(strategyNodeId)) {

@@ -38,8 +38,7 @@ public class TaskServiceTestHelper {
   public static final String HTTP_RESPONSE_BODY = "200 OK";
   public static final int HTTP_RESPONSE_CODE = 200;
 
-  @Inject
-  KryoSerializerWrapper kryoSerializerWrapper;
+  @Inject KryoSerializerWrapper kryoSerializerWrapper;
 
   public HTTPTaskResponse getHttpTaskResponse() {
     return HTTPTaskResponse.newBuilder()

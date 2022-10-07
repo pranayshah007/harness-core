@@ -33,8 +33,7 @@ import lombok.extern.slf4j.Slf4j;
 @Produces("application/x-kryo")
 @Singleton
 public class KryoMessageBodyProvider implements MessageBodyWriter<Object>, MessageBodyReader<Object> {
-  @Inject
-  KryoSerializerWrapper kryoSerializerWrapper;
+  @Inject KryoSerializerWrapper kryoSerializerWrapper;
 
   @Override
   public long getSize(final Object object, final Class<?> type, final Type genericType, final Annotation[] annotations,

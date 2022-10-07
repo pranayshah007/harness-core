@@ -32,8 +32,7 @@ import java.util.Set;
 
 @OwnedBy(CDP)
 public class StartupCommandPlanCreator implements PartialPlanCreator<StartupCommandConfiguration> {
-  @Inject
-  KryoSerializerWrapper kryoSerializerWrapper;
+  @Inject KryoSerializerWrapper kryoSerializerWrapper;
   @Override
   public Class<StartupCommandConfiguration> getFieldClass() {
     return StartupCommandConfiguration.class;

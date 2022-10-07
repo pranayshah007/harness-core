@@ -230,13 +230,13 @@ public abstract class GenericStepPMSPlanCreator implements PartialPlanCreator<St
 
       switch (actionType) {
         case IGNORE:
-          adviserObtainmentList.add(
-              adviserObtainmentBuilder.setType(IgnoreAdviser.ADVISER_TYPE)
-                  .setParameters(ByteString.copyFrom(kryoSerializerWrapper.asBytes(IgnoreAdviserParameters.builder()
-                                                                                .applicableFailureTypes(failureTypes)
-                                                                                .nextNodeId(nextNodeUuid)
-                                                                                .build())))
-                  .build());
+          adviserObtainmentList.add(adviserObtainmentBuilder.setType(IgnoreAdviser.ADVISER_TYPE)
+                                        .setParameters(ByteString.copyFrom(
+                                            kryoSerializerWrapper.asBytes(IgnoreAdviserParameters.builder()
+                                                                              .applicableFailureTypes(failureTypes)
+                                                                              .nextNodeId(nextNodeUuid)
+                                                                              .build())))
+                                        .build());
           break;
         case RETRY:
           RetryFailureActionConfig retryAction = (RetryFailureActionConfig) action;
@@ -247,13 +247,13 @@ public abstract class GenericStepPMSPlanCreator implements PartialPlanCreator<St
               retryAction, retryCount, actionUnderRetry, currentField));
           break;
         case MARK_AS_SUCCESS:
-          adviserObtainmentList.add(
-              adviserObtainmentBuilder.setType(OnMarkSuccessAdviser.ADVISER_TYPE)
-                  .setParameters(ByteString.copyFrom(kryoSerializerWrapper.asBytes(OnMarkSuccessAdviserParameters.builder()
-                                                                                .applicableFailureTypes(failureTypes)
-                                                                                .nextNodeId(nextNodeUuid)
-                                                                                .build())))
-                  .build());
+          adviserObtainmentList.add(adviserObtainmentBuilder.setType(OnMarkSuccessAdviser.ADVISER_TYPE)
+                                        .setParameters(ByteString.copyFrom(
+                                            kryoSerializerWrapper.asBytes(OnMarkSuccessAdviserParameters.builder()
+                                                                              .applicableFailureTypes(failureTypes)
+                                                                              .nextNodeId(nextNodeUuid)
+                                                                              .build())))
+                                        .build());
 
           break;
         case ABORT:
@@ -266,9 +266,10 @@ public abstract class GenericStepPMSPlanCreator implements PartialPlanCreator<St
         case STAGE_ROLLBACK:
           OnFailRollbackParameters rollbackParameters =
               getRollbackParameters(currentField, failureTypes, RollbackStrategy.STAGE_ROLLBACK);
-          adviserObtainmentList.add(adviserObtainmentBuilder.setType(OnFailRollbackAdviser.ADVISER_TYPE)
-                                        .setParameters(ByteString.copyFrom(kryoSerializerWrapper.asBytes(rollbackParameters)))
-                                        .build());
+          adviserObtainmentList.add(
+              adviserObtainmentBuilder.setType(OnFailRollbackAdviser.ADVISER_TYPE)
+                  .setParameters(ByteString.copyFrom(kryoSerializerWrapper.asBytes(rollbackParameters)))
+                  .build());
           break;
         case MANUAL_INTERVENTION:
           ManualInterventionFailureActionConfig actionConfig = (ManualInterventionFailureActionConfig) action;
@@ -280,9 +281,10 @@ public abstract class GenericStepPMSPlanCreator implements PartialPlanCreator<St
           break;
         case PIPELINE_ROLLBACK:
           rollbackParameters = getRollbackParameters(currentField, failureTypes, RollbackStrategy.PIPELINE_ROLLBACK);
-          adviserObtainmentList.add(adviserObtainmentBuilder.setType(OnFailRollbackAdviser.ADVISER_TYPE)
-                                        .setParameters(ByteString.copyFrom(kryoSerializerWrapper.asBytes(rollbackParameters)))
-                                        .build());
+          adviserObtainmentList.add(
+              adviserObtainmentBuilder.setType(OnFailRollbackAdviser.ADVISER_TYPE)
+                  .setParameters(ByteString.copyFrom(kryoSerializerWrapper.asBytes(rollbackParameters)))
+                  .build());
           break;
         default:
           Switch.unhandled(actionType);
@@ -326,19 +328,19 @@ public abstract class GenericStepPMSPlanCreator implements PartialPlanCreator<St
       AdviserObtainment.Builder adviserObtainmentBuilder, RetryFailureActionConfig retryAction,
       ParameterField<Integer> retryCount, FailureStrategyActionConfig actionUnderRetry, YamlField currentField) {
     return adviserObtainmentBuilder.setType(RetryAdviser.ADVISER_TYPE)
-        .setParameters(ByteString.copyFrom(
-            kryoSerializerWrapper.asBytes(RetryAdviserParameters.builder()
-                                       .applicableFailureTypes(failureTypes)
-                                       .nextNodeId(nextNodeUuid)
-                                       .repairActionCodeAfterRetry(toRepairAction(actionUnderRetry))
-                                       .retryCount(retryCount.getValue())
-                                       .waitIntervalList(retryAction.getSpecConfig()
-                                                             .getRetryIntervals()
-                                                             .getValue()
-                                                             .stream()
-                                                             .map(s -> (int) TimeoutUtils.getTimeoutInSeconds(s, 0))
-                                                             .collect(Collectors.toList()))
-                                       .build())))
+        .setParameters(ByteString.copyFrom(kryoSerializerWrapper.asBytes(
+            RetryAdviserParameters.builder()
+                .applicableFailureTypes(failureTypes)
+                .nextNodeId(nextNodeUuid)
+                .repairActionCodeAfterRetry(toRepairAction(actionUnderRetry))
+                .retryCount(retryCount.getValue())
+                .waitIntervalList(retryAction.getSpecConfig()
+                                      .getRetryIntervals()
+                                      .getValue()
+                                      .stream()
+                                      .map(s -> (int) TimeoutUtils.getTimeoutInSeconds(s, 0))
+                                      .collect(Collectors.toList()))
+                .build())))
         .build();
   }
 

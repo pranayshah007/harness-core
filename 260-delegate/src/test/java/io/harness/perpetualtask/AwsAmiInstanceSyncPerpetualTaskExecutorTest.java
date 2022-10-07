@@ -65,8 +65,7 @@ public class AwsAmiInstanceSyncPerpetualTaskExecutorTest extends DelegateTestBas
   private ArgumentCaptor<AwsAsgListInstancesResponse> captor =
       ArgumentCaptor.forClass(AwsAsgListInstancesResponse.class);
 
-  @Inject
-  KryoSerializerWrapper kryoSerializerWrapper;
+  @Inject KryoSerializerWrapper kryoSerializerWrapper;
 
   @InjectMocks private AwsAmiInstanceSyncPerpetualTaskExecutor executor;
 

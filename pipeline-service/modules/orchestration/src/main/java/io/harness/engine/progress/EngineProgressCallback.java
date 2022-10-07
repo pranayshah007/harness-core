@@ -32,8 +32,7 @@ import org.springframework.data.annotation.Transient;
 @OwnedBy(HarnessTeam.PIPELINE)
 public class EngineProgressCallback implements ProgressCallback {
   @Inject @Transient NodeExecutionService nodeExecutionService;
-  @Inject @Transient
-  KryoSerializerWrapper kryoSerializerWrapper;
+  @Inject @Transient KryoSerializerWrapper kryoSerializerWrapper;
   @Inject @Transient ProgressEventPublisher progressEventPublisher;
 
   Ambiance ambiance;
@@ -49,7 +48,8 @@ public class EngineProgressCallback implements ProgressCallback {
 
     try {
       // This code is only to maintain backward compatibility
-      ProgressData data = (ProgressData) kryoSerializerWrapper.asInflatedObject(((BinaryResponseData) progressData).getData());
+      ProgressData data =
+          (ProgressData) kryoSerializerWrapper.asInflatedObject(((BinaryResponseData) progressData).getData());
       if (data instanceof UnitProgressData) {
         nodeExecutionService.updateV2(getNodeExecutionId(),
             ops -> ops.set(NodeExecutionKeys.unitProgresses, ((UnitProgressData) data).getUnitProgresses()));

@@ -58,8 +58,7 @@ import retrofit2.Call;
 @RunWith(MockitoJUnitRunner.class)
 public class ConnectorHeartbeatPerpetualTaskExecutorTest extends DelegateTestBase {
   @InjectMocks ConnectorHeartbeatPerpetualTaskExecutor connectorHeartbeatPerpetualTaskExecutor;
-  @Inject
-  KryoSerializerWrapper kryoSerializerWrapper;
+  @Inject KryoSerializerWrapper kryoSerializerWrapper;
   @Mock KubernetesValidationHandler KubernetesValidationHandler;
   @Mock DelegateAgentManagerClient delegateAgentManagerClient;
   @Mock Map<String, ConnectorValidationHandler> connectorTypeToConnectorValidationHandlerMap;
@@ -101,7 +100,8 @@ public class ConnectorHeartbeatPerpetualTaskExecutorTest extends DelegateTestBas
             .connectorValidationParams(k8sValidationParams)
             .isInvalid(false)
             .build();
-    ByteString connectorConfigBytes = ByteString.copyFrom(kryoSerializerWrapper.asBytes(connectorValidationParameterResponse));
+    ByteString connectorConfigBytes =
+        ByteString.copyFrom(kryoSerializerWrapper.asBytes(connectorValidationParameterResponse));
     ConnectorHeartbeatTaskParams connectorHeartbeatTaskParams =
         ConnectorHeartbeatTaskParams.newBuilder()
             .setAccountIdentifier("accountIdentifier")

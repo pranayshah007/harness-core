@@ -211,8 +211,7 @@ public class ApprovalState extends State implements SweepingOutputStateMixin {
   @Inject private FeatureFlagService featureFlagService;
 
   @Inject @Transient private TemplateExpressionProcessor templateExpressionProcessor;
-  @Transient @Inject
-  KryoSerializerWrapper kryoSerializerWrapper;
+  @Transient @Inject KryoSerializerWrapper kryoSerializerWrapper;
 
   @Inject @Named("ServiceJobScheduler") private PersistentScheduler serviceJobScheduler;
   private Integer DEFAULT_APPROVAL_STATE_TIMEOUT_MILLIS = 7 * 24 * 60 * 60 * 1000; // 7 days

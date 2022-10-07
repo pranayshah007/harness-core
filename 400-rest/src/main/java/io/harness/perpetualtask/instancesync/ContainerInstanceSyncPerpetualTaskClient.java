@@ -71,8 +71,7 @@ public class ContainerInstanceSyncPerpetualTaskClient implements PerpetualTaskSe
   @Inject transient AwsCommandHelper awsCommandHelper;
   @Inject SecretManager secretManager;
   @Inject SettingsService settingsService;
-  @Inject
-  KryoSerializerWrapper kryoSerializerWrapper;
+  @Inject KryoSerializerWrapper kryoSerializerWrapper;
   @Inject FeatureFlagService featureFlagService;
 
   @Override

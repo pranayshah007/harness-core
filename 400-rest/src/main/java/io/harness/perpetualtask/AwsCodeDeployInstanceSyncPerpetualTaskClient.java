@@ -68,7 +68,8 @@ public class AwsCodeDeployInstanceSyncPerpetualTaskClient implements PerpetualTa
     PerpetualTaskData taskData = getPerpetualTaskData(clientContext);
     ByteString filterBytes = ByteString.copyFrom(kryoSerializerWrapper.asBytes(taskData.getFilters()));
     ByteString configBytes = ByteString.copyFrom(kryoSerializerWrapper.asBytes(taskData.getAwsConfig()));
-    ByteString encryptionDetailsBytes = ByteString.copyFrom(kryoSerializerWrapper.asBytes(taskData.getEncryptionDetails()));
+    ByteString encryptionDetailsBytes =
+        ByteString.copyFrom(kryoSerializerWrapper.asBytes(taskData.getEncryptionDetails()));
 
     return AwsCodeDeployInstanceSyncPerpetualTaskParams.newBuilder()
         .setRegion(taskData.getRegion())

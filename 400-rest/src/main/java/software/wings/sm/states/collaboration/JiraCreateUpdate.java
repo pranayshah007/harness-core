@@ -135,8 +135,7 @@ public class JiraCreateUpdate extends State implements SweepingOutputStateMixin 
   @Inject @Transient private transient SecretManager secretManager;
   @Inject @Transient private SweepingOutputService sweepingOutputService;
   @Inject @Transient private SettingsService settingsService;
-  @Transient @Inject
-  KryoSerializerWrapper kryoSerializerWrapper;
+  @Transient @Inject KryoSerializerWrapper kryoSerializerWrapper;
 
   @Getter @Setter @NotNull private JiraAction jiraAction;
   @Getter @Setter @NotNull String jiraConnectorId;

@@ -21,7 +21,6 @@ import lombok.extern.slf4j.Slf4j;
 @Singleton
 @Slf4j
 public class KryoSerializerWrapper {
-
   @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
 
   @Inject @Named("referenceTrueKryoSerializer") private KryoSerializer referenceTrueKryoSerializer;

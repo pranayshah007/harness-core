@@ -48,8 +48,7 @@ public class ManualInterventionAdviserTest extends PmsSdkCoreTestBase {
 
   @InjectMocks @Inject ManualInterventionAdviser manualInterventionAdviser;
 
-  @Inject
-  KryoSerializerWrapper kryoSerializerWrapper;
+  @Inject KryoSerializerWrapper kryoSerializerWrapper;
 
   private Ambiance ambiance;
 
@@ -94,10 +93,10 @@ public class ManualInterventionAdviserTest extends PmsSdkCoreTestBase {
                              .build())
             .toStatus(Status.FAILED)
             .fromStatus(Status.RUNNING)
-            .adviserParameters(
-                kryoSerializerWrapper.asBytes(ManualInterventionAdviserParameters.builder()
-                                           .applicableFailureTypes(EnumSet.of(FailureType.AUTHENTICATION_FAILURE))
-                                           .build()));
+            .adviserParameters(kryoSerializerWrapper.asBytes(
+                ManualInterventionAdviserParameters.builder()
+                    .applicableFailureTypes(EnumSet.of(FailureType.AUTHENTICATION_FAILURE))
+                    .build()));
 
     AdvisingEvent authFailEvent = advisingEventBuilder.build();
 
@@ -123,10 +122,10 @@ public class ManualInterventionAdviserTest extends PmsSdkCoreTestBase {
             .ambiance(ambiance)
             .toStatus(Status.FAILED)
             .fromStatus(Status.INTERVENTION_WAITING)
-            .adviserParameters(
-                kryoSerializerWrapper.asBytes(ManualInterventionAdviserParameters.builder()
-                                           .applicableFailureTypes(EnumSet.of(FailureType.AUTHENTICATION_FAILURE))
-                                           .build()));
+            .adviserParameters(kryoSerializerWrapper.asBytes(
+                ManualInterventionAdviserParameters.builder()
+                    .applicableFailureTypes(EnumSet.of(FailureType.AUTHENTICATION_FAILURE))
+                    .build()));
 
     boolean canAdvise = manualInterventionAdviser.canAdvise(advisingEventBuilder.build());
     assertThat(canAdvise).isFalse();

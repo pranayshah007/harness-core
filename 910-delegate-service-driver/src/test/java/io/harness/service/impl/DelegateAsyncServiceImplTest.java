@@ -63,7 +63,8 @@ public class DelegateAsyncServiceImplTest extends DelegateServiceDriverTestBase 
     assertThat(insertedTaskResponse.getProcessAfter()).isEqualTo(expiryEpoch);
     assertThat(insertedTaskResponse.getValidUntil()).isAfterOrEqualTo(minValidUntil);
 
-    ResponseData responseData = (ResponseData) kryoSerializerWrapper.asInflatedObject(insertedTaskResponse.getResponseData());
+    ResponseData responseData =
+        (ResponseData) kryoSerializerWrapper.asInflatedObject(insertedTaskResponse.getResponseData());
     assertThat(responseData).isInstanceOf(ErrorNotifyResponseData.class);
 
     ErrorNotifyResponseData errorNotifyResponseData = (ErrorNotifyResponseData) responseData;
@@ -111,7 +112,8 @@ public class DelegateAsyncServiceImplTest extends DelegateServiceDriverTestBase 
     // Valid Until should be from original
     assertThat(upsertedTaskResponse.getValidUntil()).isAfter(minValidUntil);
 
-    ResponseData responseData = (ResponseData) kryoSerializerWrapper.asInflatedObject(upsertedTaskResponse.getResponseData());
+    ResponseData responseData =
+        (ResponseData) kryoSerializerWrapper.asInflatedObject(upsertedTaskResponse.getResponseData());
     assertThat(responseData).isInstanceOf(StringNotifyResponseData.class);
 
     StringNotifyResponseData stringNotifyResponseData = (StringNotifyResponseData) responseData;

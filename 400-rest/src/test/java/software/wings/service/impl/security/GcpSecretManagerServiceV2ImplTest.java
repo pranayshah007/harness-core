@@ -50,8 +50,7 @@ public class GcpSecretManagerServiceV2ImplTest extends WingsBaseTest {
   @Mock private AccountService accountService;
   @Mock private PremiumFeature secretsManagementFeature;
 
-  @Inject
-  KryoSerializerWrapper kryoSerializerWrapper;
+  @Inject KryoSerializerWrapper kryoSerializerWrapper;
 
   @Before
   public void setup() throws IOException, NoSuchFieldException, IllegalAccessException {

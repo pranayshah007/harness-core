@@ -321,8 +321,8 @@ public class StepUtilsTest extends CategoryTest {
     TaskCategory taskCategory = TaskCategory.DELEGATE_TASK_V1;
     String stageId = "stageId";
     TaskRequest taskRequest =
-        StepUtils.prepareTaskRequest(ambiance, taskData, kryoSerializerWrapper, taskCategory, null, false, "taskName", null,
-            Scope.ACCOUNT, EnvironmentType.NON_PROD, false, Collections.emptyList(), true, stageId);
+        StepUtils.prepareTaskRequest(ambiance, taskData, kryoSerializerWrapper, taskCategory, null, false, "taskName",
+            null, Scope.ACCOUNT, EnvironmentType.NON_PROD, false, Collections.emptyList(), true, stageId);
     assertEquals(taskRequest.getDelegateTaskRequest().getRequest().getAccountId().getId(), accountId);
     assertEquals(taskRequest.getTaskCategory(), taskCategory);
     assertEquals(taskRequest.getDelegateTaskRequest().getRequest().getEmitEvent(), true);
@@ -330,8 +330,8 @@ public class StepUtilsTest extends CategoryTest {
     assertNotNull(taskRequest.getDelegateTaskRequest());
     assertEquals(taskRequest.getDelegateTaskRequest().getTaskName(), "taskName");
 
-    taskRequest = StepUtils.prepareTaskRequest(ambiance, taskData, kryoSerializerWrapper, taskCategory, null, false, null,
-        null, Scope.ACCOUNT, EnvironmentType.NON_PROD, false, Collections.emptyList(), false, null);
+    taskRequest = StepUtils.prepareTaskRequest(ambiance, taskData, kryoSerializerWrapper, taskCategory, null, false,
+        null, null, Scope.ACCOUNT, EnvironmentType.NON_PROD, false, Collections.emptyList(), false, null);
     assertEquals(taskRequest.getTaskCategory(), taskCategory);
     assertEquals(taskRequest.getDelegateTaskRequest().getRequest().getAccountId().getId(), accountId);
     assertNotNull(taskRequest.getDelegateTaskRequest());
@@ -339,8 +339,8 @@ public class StepUtilsTest extends CategoryTest {
     assertEquals(taskRequest.getDelegateTaskRequest().getRequest().getDetails().getMode(), TaskMode.SYNC);
 
     taskData.setAsync(true);
-    taskRequest = StepUtils.prepareTaskRequest(ambiance, taskData, kryoSerializerWrapper, taskCategory, null, false, null,
-        null, Scope.ACCOUNT, EnvironmentType.NON_PROD, false, Collections.emptyList(), false, null);
+    taskRequest = StepUtils.prepareTaskRequest(ambiance, taskData, kryoSerializerWrapper, taskCategory, null, false,
+        null, null, Scope.ACCOUNT, EnvironmentType.NON_PROD, false, Collections.emptyList(), false, null);
     assertEquals(taskRequest.getDelegateTaskRequest().getRequest().getAccountId().getId(), accountId);
     assertNotNull(taskRequest.getDelegateTaskRequest());
     assertEquals(taskRequest.getDelegateTaskRequest().getTaskName(), taskData.getTaskType());

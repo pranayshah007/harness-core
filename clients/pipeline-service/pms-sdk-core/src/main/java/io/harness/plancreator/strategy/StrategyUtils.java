@@ -174,36 +174,37 @@ public class StrategyUtils {
           Arrays.asList(
               YAMLFieldNameConstants.STEP, YAMLFieldNameConstants.STEP_GROUP, YAMLFieldNameConstants.PARALLEL));
       if (siblingField != null && siblingField.getNode().getUuid() != null) {
-        adviserObtainments.add(
-            getAdviserObtainmentsForParallelStepParent(currentField, kryoSerializerWrapper, siblingField.getNode().getUuid()));
+        adviserObtainments.add(getAdviserObtainmentsForParallelStepParent(
+            currentField, kryoSerializerWrapper, siblingField.getNode().getUuid()));
       }
     }
     return adviserObtainments;
   }
 
-  public void addStrategyFieldDependencyIfPresent(KryoSerializerWrapper kryoSerializerWrapper, PlanCreationContext ctx, String uuid,
-                                                  String name, String identifier, LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap,
-                                                  Map<String, ByteString> metadataMap, List<AdviserObtainment> adviserObtainments) {
-    addStrategyFieldDependencyIfPresent(
-        kryoSerializerWrapper, ctx, uuid, name, identifier, planCreationResponseMap, metadataMap, adviserObtainments, true);
+  public void addStrategyFieldDependencyIfPresent(KryoSerializerWrapper kryoSerializerWrapper, PlanCreationContext ctx,
+      String uuid, String name, String identifier, LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap,
+      Map<String, ByteString> metadataMap, List<AdviserObtainment> adviserObtainments) {
+    addStrategyFieldDependencyIfPresent(kryoSerializerWrapper, ctx, uuid, name, identifier, planCreationResponseMap,
+        metadataMap, adviserObtainments, true);
   }
 
-  public void addStrategyFieldDependencyIfPresent(KryoSerializerWrapper kryoSerializerWrapper, PlanCreationContext ctx, String uuid,
-                                                  String name, String identifier, LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap,
-                                                  Map<String, ByteString> metadataMap, List<AdviserObtainment> adviserObtainments, Boolean shouldProceedIfFailed) {
+  public void addStrategyFieldDependencyIfPresent(KryoSerializerWrapper kryoSerializerWrapper, PlanCreationContext ctx,
+      String uuid, String name, String identifier, LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap,
+      Map<String, ByteString> metadataMap, List<AdviserObtainment> adviserObtainments, Boolean shouldProceedIfFailed) {
     YamlField strategyField = ctx.getCurrentField().getNode().getField(YAMLFieldNameConstants.STRATEGY);
     if (strategyField != null) {
       // This is mandatory because it is the parent's responsibility to pass the nodeId and the childNodeId to the
       // strategy node
       metadataMap.put(StrategyConstants.STRATEGY_METADATA + strategyField.getNode().getUuid(),
-          ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(StrategyMetadata.builder()
-                                                                 .strategyNodeId(uuid)
-                                                                 .adviserObtainments(adviserObtainments)
-                                                                 .childNodeId(strategyField.getNode().getUuid())
-                                                                 .strategyNodeName(refineIdentifier(name))
-                                                                 .strategyNodeIdentifier(refineIdentifier(identifier))
-                                                                 .shouldProceedIfFailed(shouldProceedIfFailed)
-                                                                 .build())));
+          ByteString.copyFrom(
+              kryoSerializerWrapper.asDeflatedBytes(StrategyMetadata.builder()
+                                                        .strategyNodeId(uuid)
+                                                        .adviserObtainments(adviserObtainments)
+                                                        .childNodeId(strategyField.getNode().getUuid())
+                                                        .strategyNodeName(refineIdentifier(name))
+                                                        .strategyNodeIdentifier(refineIdentifier(identifier))
+                                                        .shouldProceedIfFailed(shouldProceedIfFailed)
+                                                        .build())));
       planCreationResponseMap.put(uuid,
           PlanCreationResponse.builder()
               .dependencies(
@@ -216,15 +217,15 @@ public class StrategyUtils {
   }
 
   public void addStrategyFieldDependencyIfPresent(KryoSerializerWrapper kryoSerializerWrapper, PlanCreationContext ctx,
-                                                  String fieldUuid, String fieldIdentifier, String fieldName, Map<String, YamlField> dependenciesNodeMap,
-                                                  Map<String, ByteString> metadataMap, List<AdviserObtainment> adviserObtainments) {
-    addStrategyFieldDependencyIfPresent(kryoSerializerWrapper, ctx, fieldUuid, fieldIdentifier, fieldName, dependenciesNodeMap,
-        metadataMap, adviserObtainments, true);
+      String fieldUuid, String fieldIdentifier, String fieldName, Map<String, YamlField> dependenciesNodeMap,
+      Map<String, ByteString> metadataMap, List<AdviserObtainment> adviserObtainments) {
+    addStrategyFieldDependencyIfPresent(kryoSerializerWrapper, ctx, fieldUuid, fieldIdentifier, fieldName,
+        dependenciesNodeMap, metadataMap, adviserObtainments, true);
   }
 
   public void addStrategyFieldDependencyIfPresent(KryoSerializerWrapper kryoSerializerWrapper, PlanCreationContext ctx,
-                                                  String fieldUuid, String fieldIdentifier, String fieldName, Map<String, YamlField> dependenciesNodeMap,
-                                                  Map<String, ByteString> metadataMap, List<AdviserObtainment> adviserObtainments, Boolean shouldProceedIfFailed) {
+      String fieldUuid, String fieldIdentifier, String fieldName, Map<String, YamlField> dependenciesNodeMap,
+      Map<String, ByteString> metadataMap, List<AdviserObtainment> adviserObtainments, Boolean shouldProceedIfFailed) {
     YamlField strategyField = ctx.getCurrentField().getNode().getField(YAMLFieldNameConstants.STRATEGY);
     if (strategyField != null) {
       dependenciesNodeMap.put(fieldUuid, strategyField);
@@ -233,13 +234,13 @@ public class StrategyUtils {
       metadataMap.put(StrategyConstants.STRATEGY_METADATA + strategyField.getNode().getUuid(),
           ByteString.copyFrom(
               kryoSerializerWrapper.asDeflatedBytes(StrategyMetadata.builder()
-                                                 .strategyNodeId(fieldUuid)
-                                                 .adviserObtainments(adviserObtainments)
-                                                 .childNodeId(strategyField.getNode().getUuid())
-                                                 .strategyNodeIdentifier(refineIdentifier(fieldIdentifier))
-                                                 .strategyNodeName(refineIdentifier(fieldName))
-                                                 .shouldProceedIfFailed(shouldProceedIfFailed)
-                                                 .build())));
+                                                        .strategyNodeId(fieldUuid)
+                                                        .adviserObtainments(adviserObtainments)
+                                                        .childNodeId(strategyField.getNode().getUuid())
+                                                        .strategyNodeIdentifier(refineIdentifier(fieldIdentifier))
+                                                        .strategyNodeName(refineIdentifier(fieldName))
+                                                        .shouldProceedIfFailed(shouldProceedIfFailed)
+                                                        .build())));
     }
   }
 

@@ -43,8 +43,7 @@ import org.junit.experimental.categories.Category;
 public class ManagerExpressionEvaluatorTest extends WingsBaseTest {
   @Inject private ManagerExpressionEvaluator expressionEvaluator;
   @Inject private SweepingOutputService sweepingOutputService;
-  @Inject
-  KryoSerializerWrapper kryoSerializerWrapper;
+  @Inject KryoSerializerWrapper kryoSerializerWrapper;
 
   @Test
   @Owner(developers = GEORGE)

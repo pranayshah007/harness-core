@@ -32,8 +32,7 @@ import java.util.Set;
 
 @OwnedBy(CDP)
 public class ApplicationSettingsPlanCreator implements PartialPlanCreator<ApplicationSettingsConfiguration> {
-  @Inject
-  KryoSerializerWrapper kryoSerializerWrapper;
+  @Inject KryoSerializerWrapper kryoSerializerWrapper;
   @Override
   public Class<ApplicationSettingsConfiguration> getFieldClass() {
     return ApplicationSettingsConfiguration.class;
@@ -48,11 +47,12 @@ public class ApplicationSettingsPlanCreator implements PartialPlanCreator<Applic
   public PlanCreationResponse createPlanForField(PlanCreationContext ctx, ApplicationSettingsConfiguration field) {
     String applicationSettingsFileId = (String) kryoSerializerWrapper.asInflatedObject(
         ctx.getDependency().getMetadataMap().get(YamlTypes.UUID).toByteArray());
-    ApplicationSettingsParameters stepParameters = (ApplicationSettingsParameters) kryoSerializerWrapper.asInflatedObject(
-        ctx.getDependency()
-            .getMetadataMap()
-            .get(PlanCreatorConstants.APPLICATION_SETTINGS_STEP_PARAMETER)
-            .toByteArray());
+    ApplicationSettingsParameters stepParameters =
+        (ApplicationSettingsParameters) kryoSerializerWrapper.asInflatedObject(
+            ctx.getDependency()
+                .getMetadataMap()
+                .get(PlanCreatorConstants.APPLICATION_SETTINGS_STEP_PARAMETER)
+                .toByteArray());
 
     PlanNode applicationSettingsPlanNode =
         PlanNode.builder()

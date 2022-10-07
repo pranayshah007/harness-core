@@ -83,7 +83,8 @@ public class JiraApprovalCallback extends AbstractApprovalCallback implements Pu
     JiraTaskNGResponse jiraTaskNGResponse;
     try {
       ResponseData responseData = response.values().iterator().next();
-      responseData = (ResponseData) kryoSerializerWrapper.asInflatedObject(((BinaryResponseData) responseData).getData());
+      responseData =
+          (ResponseData) kryoSerializerWrapper.asInflatedObject(((BinaryResponseData) responseData).getData());
       if (responseData instanceof ErrorNotifyResponseData) {
         log.warn("Jira Approval Instance failed to fetch jira issue for instance id - {}", instance.getId());
         handleErrorNotifyResponse(logCallback, (ErrorNotifyResponseData) responseData, "Failed to fetch jira issue:");

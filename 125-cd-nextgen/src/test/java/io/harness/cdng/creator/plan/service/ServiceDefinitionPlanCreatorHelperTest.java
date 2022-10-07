@@ -78,8 +78,7 @@ import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
 public class ServiceDefinitionPlanCreatorHelperTest extends CategoryTest {
-  @Mock
-  KryoSerializerWrapper kryoSerializerWrapper;
+  @Mock KryoSerializerWrapper kryoSerializerWrapper;
 
   private static final String SVC_REF = "SVC_REF";
   private static final String ENV_REF = "ENV_REF";
@@ -965,7 +964,8 @@ public class ServiceDefinitionPlanCreatorHelperTest extends CategoryTest {
 
     final String nodeUuid = ServiceDefinitionPlanCreatorHelper.addDependenciesForManifestV2(serviceField.getNode(),
         planCreationResponseMap, config, serviceOverrideConfig,
-        ngEnvironmentConfig.getNgEnvironmentInfoConfig().getNgEnvironmentGlobalOverride(), kryoSerializerWrapper, "envId");
+        ngEnvironmentConfig.getNgEnvironmentInfoConfig().getNgEnvironmentGlobalOverride(), kryoSerializerWrapper,
+        "envId");
 
     assertThat(planCreationResponseMap.size()).isEqualTo(1);
     assertThat(planCreationResponseMap.containsKey(nodeUuid)).isEqualTo(true);

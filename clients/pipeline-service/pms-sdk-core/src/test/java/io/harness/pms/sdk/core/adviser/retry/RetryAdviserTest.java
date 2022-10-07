@@ -64,8 +64,7 @@ public class RetryAdviserTest extends PmsSdkCoreTestBase {
 
   @InjectMocks @Inject RetryAdviser retryAdviser;
 
-  @Inject
-  KryoSerializerWrapper kryoSerializerWrapper;
+  @Inject KryoSerializerWrapper kryoSerializerWrapper;
 
   private Ambiance ambiance;
 

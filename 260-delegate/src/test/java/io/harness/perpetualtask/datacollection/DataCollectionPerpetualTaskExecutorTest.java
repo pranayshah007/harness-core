@@ -90,8 +90,7 @@ public class DataCollectionPerpetualTaskExecutorTest extends DelegateTestBase {
 
   private PerpetualTaskExecutionParams perpetualTaskParams;
 
-  @Inject
-  KryoSerializerWrapper kryoSerializerWrapper;
+  @Inject KryoSerializerWrapper kryoSerializerWrapper;
   @Mock CVNGParallelExecutor cvngParallelExecutor;
 
   @Before

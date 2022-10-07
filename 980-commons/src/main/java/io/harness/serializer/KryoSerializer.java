@@ -72,7 +72,7 @@ public class KryoSerializer {
   }
 
   public KryoSerializer(Set<Class<? extends KryoRegistrar>> registrars, boolean skipHarnessClassOriginRegistrarCheck,
-                        boolean shouldSetReferences) {
+      boolean shouldSetReferences) {
     this.pool = new KryoPool.Builder(() -> kryo(registrars, shouldSetReferences)).softReferences().build();
     this.skipHarnessClassOriginRegistrarCheck = skipHarnessClassOriginRegistrarCheck;
   }

@@ -35,8 +35,7 @@ public class OnMarkSuccessAdviser implements Adviser {
   public static final AdviserType ADVISER_TYPE =
       AdviserType.newBuilder().setType(OrchestrationAdviserTypes.MARK_SUCCESS.name()).build();
 
-  @Inject
-  KryoSerializerWrapper kryoSerializerWrapper;
+  @Inject KryoSerializerWrapper kryoSerializerWrapper;
 
   @Override
   public AdviserResponse onAdviseEvent(AdvisingEvent advisingEvent) {

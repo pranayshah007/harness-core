@@ -79,8 +79,8 @@ public class RemoteObserverProcessorImpl implements RemoteObserverProcessor {
   private void inform(Message message, Informant informant, String methodName, Class observer) {
     final Object observerClassObject = getObserver(observer);
     final InformantCase informantCase = informant.getInformantCase();
-    Function<ByteString, Object> objectSupplier =
-        byteString -> byteString.equals(ByteString.EMPTY) ? null : kryoSerializerWrapper.asObject(byteString.toByteArray());
+    Function<ByteString, Object> objectSupplier = byteString
+        -> byteString.equals(ByteString.EMPTY) ? null : kryoSerializerWrapper.asObject(byteString.toByteArray());
     try {
       switch (informantCase) {
         case INFORMANT0:

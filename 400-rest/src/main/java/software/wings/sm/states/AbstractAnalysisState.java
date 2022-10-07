@@ -168,8 +168,7 @@ public abstract class AbstractAnalysisState extends State implements SweepingOut
   @Inject protected CVActivityLogService cvActivityLogService;
   @Inject protected WorkflowVerificationResultService workflowVerificationResultService;
   @Inject @Transient protected SweepingOutputService sweepingOutputService;
-  @Transient @Inject
-  KryoSerializerWrapper kryoSerializerWrapper;
+  @Transient @Inject KryoSerializerWrapper kryoSerializerWrapper;
   protected String hostnameField;
 
   protected String hostnameTemplate;

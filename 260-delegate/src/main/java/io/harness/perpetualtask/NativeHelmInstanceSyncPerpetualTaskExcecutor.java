@@ -109,8 +109,8 @@ public class NativeHelmInstanceSyncPerpetualTaskExcecutor implements PerpetualTa
         .namespaces(new LinkedHashSet<>(nativeHelmDeploymentRelease.getNamespacesList()))
         .k8sInfraDelegateConfig((K8sInfraDelegateConfig) kryoSerializerWrapper.asObject(
             nativeHelmDeploymentRelease.getK8SInfraDelegateConfig().toByteArray()))
-        .helmChartInfo(
-            (HelmChartInfo) kryoSerializerWrapper.asObject(nativeHelmDeploymentRelease.getHelmChartInfo().toByteArray()))
+        .helmChartInfo((HelmChartInfo) kryoSerializerWrapper.asObject(
+            nativeHelmDeploymentRelease.getHelmChartInfo().toByteArray()))
         .build();
   }
 

@@ -153,8 +153,7 @@ public class ShellScriptStateTest extends WingsBaseTest {
 
   private ExecutionResponse asyncExecutionResponse;
 
-  @Inject
-  KryoSerializerWrapper kryoSerializerWrapper;
+  @Inject KryoSerializerWrapper kryoSerializerWrapper;
 
   @Before
   public void setUp() throws Exception {

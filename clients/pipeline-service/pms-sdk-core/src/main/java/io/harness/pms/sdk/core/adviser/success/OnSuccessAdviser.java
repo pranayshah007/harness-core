@@ -25,8 +25,7 @@ import com.google.inject.Inject;
 
 @OwnedBy(CDC)
 public class OnSuccessAdviser implements Adviser {
-  @Inject
-  KryoSerializerWrapper kryoSerializerWrapper;
+  @Inject KryoSerializerWrapper kryoSerializerWrapper;
 
   public static final AdviserType ADVISER_TYPE =
       AdviserType.newBuilder().setType(OrchestrationAdviserTypes.ON_SUCCESS.name()).build();

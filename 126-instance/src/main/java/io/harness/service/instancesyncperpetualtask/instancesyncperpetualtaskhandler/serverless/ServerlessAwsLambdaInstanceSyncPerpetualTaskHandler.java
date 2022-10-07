@@ -121,7 +121,8 @@ public class ServerlessAwsLambdaInstanceSyncPerpetualTaskHandler extends Instanc
         .setServiceName(releaseData.getServiceName())
         .setRegion(releaseData.getRegion())
         .addAllFunctions(releaseData.getFunctions())
-        .setServerlessInfraConfig(ByteString.copyFrom(kryoSerializerWrapper.asBytes(releaseData.getServerlessInfraConfig())))
+        .setServerlessInfraConfig(
+            ByteString.copyFrom(kryoSerializerWrapper.asBytes(releaseData.getServerlessInfraConfig())))
         .build();
   }
 

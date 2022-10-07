@@ -66,8 +66,7 @@ public class ArtifactPerpetualTaskExecutorTest extends DelegateTestBase {
 
   private ArtifactPerpetualTaskExecutor artifactPerpetualTaskExecutor;
 
-  @Inject
-  KryoSerializerWrapper kryoSerializerWrapper;
+  @Inject KryoSerializerWrapper kryoSerializerWrapper;
 
   @Mock private ArtifactRepositoryServiceImpl artifactRepositoryService;
   @Mock private DelegateAgentManagerClient delegateAgentManagerClient;

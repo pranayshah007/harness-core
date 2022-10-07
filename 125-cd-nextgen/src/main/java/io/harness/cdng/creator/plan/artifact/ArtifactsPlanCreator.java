@@ -58,8 +58,7 @@ import lombok.experimental.FieldDefaults;
 
 @OwnedBy(HarnessTeam.CDC)
 public class ArtifactsPlanCreator extends ChildrenPlanCreator<ArtifactListConfig> {
-  @Inject
-  KryoSerializerWrapper kryoSerializerWrapper;
+  @Inject KryoSerializerWrapper kryoSerializerWrapper;
 
   @Override
   public Class<ArtifactListConfig> getFieldClass() {
@@ -75,8 +74,8 @@ public class ArtifactsPlanCreator extends ChildrenPlanCreator<ArtifactListConfig
       String primaryId, ArtifactStepParameters params) {
     Map<String, ByteString> metadataDependency = new HashMap<>();
     metadataDependency.put(YamlTypes.UUID, ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(primaryId)));
-    metadataDependency.put(
-        PlanCreatorConstants.PRIMARY_STEP_PARAMETERS, ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(params)));
+    metadataDependency.put(PlanCreatorConstants.PRIMARY_STEP_PARAMETERS,
+        ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(params)));
     return metadataDependency;
   }
 
@@ -160,7 +159,8 @@ public class ArtifactsPlanCreator extends ChildrenPlanCreator<ArtifactListConfig
   private Map<String, ByteString> prepareMetadataForSideCarListArtifactPlanCreator(
       String sideCarsListPlanNodeId, Map<String, ArtifactStepParameters> sideCarsParametersMap) {
     Map<String, ByteString> metadataDependency = new HashMap<>();
-    metadataDependency.put(YamlTypes.UUID, ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(sideCarsListPlanNodeId)));
+    metadataDependency.put(
+        YamlTypes.UUID, ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(sideCarsListPlanNodeId)));
     metadataDependency.put(PlanCreatorConstants.SIDECARS_PARAMETERS_MAP,
         ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(sideCarsParametersMap)));
     return metadataDependency;

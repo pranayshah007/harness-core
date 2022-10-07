@@ -75,8 +75,8 @@ public class JenkinsBuildStepHelperServiceImpl implements JenkinsBuildStepHelper
 
   @Inject
   public JenkinsBuildStepHelperServiceImpl(ConnectorResourceClient connectorResourceClient,
-      @Named("PRIVILEGED") SecretManagerClientService secretManagerClientService, KryoSerializerWrapper kryoSerializerWrapper,
-      LogStreamingStepClientFactory logStreamingStepClientFactory) {
+      @Named("PRIVILEGED") SecretManagerClientService secretManagerClientService,
+      KryoSerializerWrapper kryoSerializerWrapper, LogStreamingStepClientFactory logStreamingStepClientFactory) {
     this.connectorResourceClient = connectorResourceClient;
     this.secretManagerClientService = secretManagerClientService;
     this.kryoSerializerWrapper = kryoSerializerWrapper;

@@ -40,8 +40,7 @@ import org.junit.experimental.categories.Category;
 import org.mockito.MockitoAnnotations;
 
 public class StrategyUtilsTest extends NGCommonUtilitiesTestBase {
-  @Inject
-  KryoSerializerWrapper kryoSerializerWrapper;
+  @Inject KryoSerializerWrapper kryoSerializerWrapper;
 
   @Test
   @Owner(developers = SAHIL)

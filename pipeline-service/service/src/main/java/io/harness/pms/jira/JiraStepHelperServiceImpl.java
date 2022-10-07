@@ -57,7 +57,8 @@ public class JiraStepHelperServiceImpl implements JiraStepHelperService {
 
   @Inject
   public JiraStepHelperServiceImpl(ConnectorResourceClient connectorResourceClient,
-      @Named("PRIVILEGED") SecretManagerClientService secretManagerClientService, KryoSerializerWrapper kryoSerializerWrapper) {
+      @Named("PRIVILEGED") SecretManagerClientService secretManagerClientService,
+      KryoSerializerWrapper kryoSerializerWrapper) {
     this.connectorResourceClient = connectorResourceClient;
     this.secretManagerClientService = secretManagerClientService;
     this.kryoSerializerWrapper = kryoSerializerWrapper;

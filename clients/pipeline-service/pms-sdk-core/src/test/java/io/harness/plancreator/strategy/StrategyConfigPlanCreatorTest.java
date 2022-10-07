@@ -52,8 +52,7 @@ import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
 public class StrategyConfigPlanCreatorTest extends PmsSdkCoreTestBase {
-  @Mock
-  KryoSerializerWrapper kryoSerializerWrapper;
+  @Mock KryoSerializerWrapper kryoSerializerWrapper;
   @InjectMocks StrategyConfigPlanCreator strategyConfigPlanCreator;
 
   @Test

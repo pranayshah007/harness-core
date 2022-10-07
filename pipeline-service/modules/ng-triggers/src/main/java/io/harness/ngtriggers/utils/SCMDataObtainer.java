@@ -93,8 +93,8 @@ public class SCMDataObtainer implements GitProviderBaseDataObtainer {
   @Inject ScmServiceClient scmServiceClient;
 
   @Inject
-  public SCMDataObtainer(
-      TaskExecutionUtils taskExecutionUtils, ConnectorUtils connectorUtils, KryoSerializerWrapper kryoSerializerWrapper) {
+  public SCMDataObtainer(TaskExecutionUtils taskExecutionUtils, ConnectorUtils connectorUtils,
+      KryoSerializerWrapper kryoSerializerWrapper) {
     this.taskExecutionUtils = taskExecutionUtils;
     this.connectorUtils = connectorUtils;
     this.kryoSerializerWrapper = kryoSerializerWrapper;

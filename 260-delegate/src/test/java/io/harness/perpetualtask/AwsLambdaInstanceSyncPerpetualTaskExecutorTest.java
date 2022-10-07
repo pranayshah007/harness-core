@@ -67,8 +67,7 @@ public class AwsLambdaInstanceSyncPerpetualTaskExecutorTest extends DelegateTest
   @Mock private AwsCloudWatchHelperServiceDelegate awsCloudWatchHelperServiceDelegate;
   @Mock private Call<RestResponse<Boolean>> call;
 
-  @Inject
-  KryoSerializerWrapper kryoSerializerWrapper;
+  @Inject KryoSerializerWrapper kryoSerializerWrapper;
 
   private ArgumentCaptor<AwsLambdaDetailsMetricsResponse> captor =
       ArgumentCaptor.forClass(AwsLambdaDetailsMetricsResponse.class);

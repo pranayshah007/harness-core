@@ -89,8 +89,7 @@ public class PollingPerpetualTaskServiceTest extends CDNGTestBase {
   @Mock DelegateServiceGrpcClient delegateServiceGrpcClient;
   @Mock PollingServiceImpl pollingService;
   @Mock K8sStepHelper k8sStepHelper;
-  @Inject
-  KryoSerializerWrapper kryoSerializerWrapper;
+  @Inject KryoSerializerWrapper kryoSerializerWrapper;
   @Mock ArtifactStepHelper artifactStepHelper;
   @Mock GitPollingStepHelper gitPollingStepHelper;
 

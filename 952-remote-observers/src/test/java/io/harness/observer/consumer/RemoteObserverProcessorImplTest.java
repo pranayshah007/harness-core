@@ -110,14 +110,15 @@ public class RemoteObserverProcessorImplTest extends CategoryTest {
   @Owner(developers = ABHINAV)
   @Category(UnitTests.class)
   public void process4() {
-    Informant informant = Informant.newBuilder()
-                              .setInformant4(Informant4.newBuilder()
-                                                 .setParam1(getTestObject())
-                                                 .setParam2(ByteString.copyFrom(kryoSerializerWrapper.asBytes("aac")))
-                                                 .setParam3(ByteString.copyFrom(kryoSerializerWrapper.asBytes("aacd")))
-                                                 .setParam4(ByteString.copyFrom(kryoSerializerWrapper.asBytes("aacd1"))))
-                              .setMethodName("method3")
-                              .build();
+    Informant informant =
+        Informant.newBuilder()
+            .setInformant4(Informant4.newBuilder()
+                               .setParam1(getTestObject())
+                               .setParam2(ByteString.copyFrom(kryoSerializerWrapper.asBytes("aac")))
+                               .setParam3(ByteString.copyFrom(kryoSerializerWrapper.asBytes("aacd")))
+                               .setParam4(ByteString.copyFrom(kryoSerializerWrapper.asBytes("aacd1"))))
+            .setMethodName("method3")
+            .build();
     processInternal(informant);
   }
 

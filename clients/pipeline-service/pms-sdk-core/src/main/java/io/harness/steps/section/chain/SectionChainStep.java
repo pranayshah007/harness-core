@@ -37,8 +37,7 @@ public class SectionChainStep implements ChildChainExecutable<SectionChainStepPa
                                                .setStepCategory(StepCategory.STEP)
                                                .build();
 
-  @Inject
-  KryoSerializerWrapper kryoSerializerWrapper;
+  @Inject KryoSerializerWrapper kryoSerializerWrapper;
 
   @Override
   public Class<SectionChainStepParameters> getStepParametersClass() {
@@ -54,8 +53,8 @@ public class SectionChainStep implements ChildChainExecutable<SectionChainStepPa
 
     return ChildChainExecutableResponse.newBuilder()
         .setNextChildId(sectionChainStepParameters.getChildNodeIds().get(0))
-        .setPassThroughData(
-            ByteString.copyFrom(kryoSerializerWrapper.asBytes(SectionChainPassThroughData.builder().childIndex(0).build())))
+        .setPassThroughData(ByteString.copyFrom(
+            kryoSerializerWrapper.asBytes(SectionChainPassThroughData.builder().childIndex(0).build())))
         .setLastLink(sectionChainStepParameters.getChildNodeIds().size() == 1)
         .build();
   }

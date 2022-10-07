@@ -145,8 +145,7 @@ public class HttpState extends State implements SweepingOutputStateMixin {
   @Inject private transient WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService;
   @Inject private SettingServiceHelper settingServiceHelper;
   @Inject private AccountServiceImpl accountService;
-  @Transient @Inject
-  KryoSerializerWrapper kryoSerializerWrapper;
+  @Transient @Inject KryoSerializerWrapper kryoSerializerWrapper;
 
   public HttpState() {}
 

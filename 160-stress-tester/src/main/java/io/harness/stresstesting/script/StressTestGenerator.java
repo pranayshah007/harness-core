@@ -16,8 +16,7 @@ import com.google.inject.Inject;
 
 @OwnedBy(HarnessTeam.DEL)
 public abstract class StressTestGenerator {
-  @Inject
-  KryoSerializerWrapper kryoSerializerWrapper;
+  @Inject KryoSerializerWrapper kryoSerializerWrapper;
 
   public abstract DelegateTaskStressTest makeStressTest();
 }

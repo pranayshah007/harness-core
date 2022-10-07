@@ -81,7 +81,8 @@ public class MongoDelegateTaskResultsProviderTest extends DelegateServiceTestBas
     MongoCollection<Document> mongoCollection =
         mongoClient.getDatabase("harness").getCollection("cx_delegateAsyncTaskResponses");
 
-    byte[] expectedTaskResults = kryoSerializerWrapper.asDeflatedBytes(StringNotifyResponseData.builder().data("OK").build());
+    byte[] expectedTaskResults =
+        kryoSerializerWrapper.asDeflatedBytes(StringNotifyResponseData.builder().data("OK").build());
 
     Document document = new Document();
     document.put(ID_FIELD_NAME, "taskId");

@@ -37,8 +37,8 @@ public class TaskProgressServiceImpl implements TaskProgressService {
   private DelegateTaskService delegateTaskService;
 
   @Inject
-  public TaskProgressServiceImpl(KryoSerializerWrapper kryoSerializerWrapper, DelegateCallbackRegistry delegateCallbackRegistry,
-                                 DelegateTaskService delegateTaskService) {
+  public TaskProgressServiceImpl(KryoSerializerWrapper kryoSerializerWrapper,
+      DelegateCallbackRegistry delegateCallbackRegistry, DelegateTaskService delegateTaskService) {
     this.kryoSerializerWrapper = kryoSerializerWrapper;
     this.delegateCallbackRegistry = delegateCallbackRegistry;
     this.delegateTaskService = delegateTaskService;

@@ -46,8 +46,7 @@ import java.util.Set;
 
 @OwnedBy(HarnessTeam.CDC)
 public class EnvironmentPlanCreatorV2 extends ChildrenPlanCreator<EnvironmentPlanCreatorConfig> {
-  @Inject
-  KryoSerializerWrapper kryoSerializerWrapper;
+  @Inject KryoSerializerWrapper kryoSerializerWrapper;
 
   @Override
   public Class<EnvironmentPlanCreatorConfig> getFieldClass() {

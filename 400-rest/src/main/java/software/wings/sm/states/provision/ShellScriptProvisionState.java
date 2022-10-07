@@ -113,8 +113,7 @@ public class ShellScriptProvisionState extends State implements SweepingOutputSt
   @Getter @Setter private SweepingOutputInstance.Scope sweepingOutputScope;
   @Getter @Setter private List<String> delegateSelectors;
 
-  @Transient @Inject
-  KryoSerializerWrapper kryoSerializerWrapper;
+  @Transient @Inject KryoSerializerWrapper kryoSerializerWrapper;
 
   public ShellScriptProvisionState(String name) {
     super(name, StateType.SHELL_SCRIPT_PROVISION.name());

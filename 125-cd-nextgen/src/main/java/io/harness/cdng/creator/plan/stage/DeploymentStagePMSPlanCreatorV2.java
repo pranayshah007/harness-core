@@ -244,8 +244,8 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
       addCDExecutionDependencies(planCreationResponseMap, executionField);
       addMultiDeploymentDependency(planCreationResponseMap, stageNode, ctx);
 
-      StrategyUtils.addStrategyFieldDependencyIfPresent(kryoSerializerWrapper, ctx, stageNode.getUuid(), stageNode.getName(),
-          stageNode.getIdentifier(), planCreationResponseMap, metadataMap,
+      StrategyUtils.addStrategyFieldDependencyIfPresent(kryoSerializerWrapper, ctx, stageNode.getUuid(),
+          stageNode.getName(), stageNode.getIdentifier(), planCreationResponseMap, metadataMap,
           StrategyUtils.getAdviserObtainments(ctx.getCurrentField(), kryoSerializerWrapper, false), false);
 
       return planCreationResponseMap;
@@ -446,14 +446,14 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
             .subType(subType)
             .build();
 
-    MultiDeploymentMetadata metadata =
-        MultiDeploymentMetadata.builder()
-            .multiDeploymentNodeId(ctx.getCurrentField().getNode().getUuid())
-            .multiDeploymentStepParameters(stepParameters)
-            .strategyNodeIdentifier(stageNode.getIdentifier())
-            .strategyNodeName(stageNode.getName())
-            .adviserObtainments(StrategyUtils.getAdviserObtainments(ctx.getCurrentField(), kryoSerializerWrapper, false))
-            .build();
+    MultiDeploymentMetadata metadata = MultiDeploymentMetadata.builder()
+                                           .multiDeploymentNodeId(ctx.getCurrentField().getNode().getUuid())
+                                           .multiDeploymentStepParameters(stepParameters)
+                                           .strategyNodeIdentifier(stageNode.getIdentifier())
+                                           .strategyNodeName(stageNode.getName())
+                                           .adviserObtainments(StrategyUtils.getAdviserObtainments(
+                                               ctx.getCurrentField(), kryoSerializerWrapper, false))
+                                           .build();
 
     PlanNode node = MultiDeploymentStepPlanCreator.createPlan(metadata);
     planCreationResponseMap.put(UUIDGenerator.generateUuid(), PlanCreationResponse.builder().planNode(node).build());
@@ -535,8 +535,8 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
     specYamlFieldMap.put(specNodeUuid, specField);
 
     Map<String, ByteString> specDependencyMap = new HashMap<>();
-    specDependencyMap.put(
-        YAMLFieldNameConstants.CHILD_NODE_OF_SPEC, ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(childNodeUuid)));
+    specDependencyMap.put(YAMLFieldNameConstants.CHILD_NODE_OF_SPEC,
+        ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(childNodeUuid)));
 
     Dependency specDependency = Dependency.newBuilder().putAllMetadata(specDependencyMap).build();
     return DependenciesUtils.toDependenciesProto(specYamlFieldMap)

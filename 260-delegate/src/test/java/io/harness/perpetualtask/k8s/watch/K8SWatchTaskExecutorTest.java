@@ -106,8 +106,7 @@ public class K8SWatchTaskExecutorTest extends DelegateTestBase {
   @Captor private ArgumentCaptor<Message> messageArgumentCaptor;
   @Captor private ArgumentCaptor<Map<String, String>> mapArgumentCaptor;
 
-  @Inject
-  KryoSerializerWrapper kryoSerializerWrapper;
+  @Inject KryoSerializerWrapper kryoSerializerWrapper;
 
   private static final String KUBE_SYSTEM_ID = "aa4062a7-d214-4642-8bb5-dfc32e750ed0";
   private final String WATCH_ID = "watch-id";

@@ -79,8 +79,8 @@ public class ServiceDefinitionPlanCreatorHelper {
     metadataDependency.put(YamlTypes.UUID, ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(planNodeId)));
     metadataDependency.put(
         YamlTypes.MANIFEST_LIST_CONFIG, ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(finalManifests)));
-    metadataDependency.put(
-        SERVICE_ENTITY_DEFINITION_TYPE_KEY, ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(serviceDefinitionType)));
+    metadataDependency.put(SERVICE_ENTITY_DEFINITION_TYPE_KEY,
+        ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(serviceDefinitionType)));
     return metadataDependency;
   }
 
@@ -234,12 +234,14 @@ public class ServiceDefinitionPlanCreatorHelper {
 
   @VisibleForTesting
   String addDependenciesForManifestV2(YamlNode serviceV2Node, Map<String, PlanCreationResponse> planCreationResponseMap,
-                                      NGServiceV2InfoConfig serviceV2Config, NGServiceOverrideConfig serviceOverrideConfig,
-                                      NGEnvironmentGlobalOverride envGlobalOverride, KryoSerializerWrapper kryoSerializerWrapper, String envId) throws IOException {
+      NGServiceV2InfoConfig serviceV2Config, NGServiceOverrideConfig serviceOverrideConfig,
+      NGEnvironmentGlobalOverride envGlobalOverride, KryoSerializerWrapper kryoSerializerWrapper, String envId)
+      throws IOException {
     if (isSvcOverridesManifestPresent(serviceOverrideConfig)
         || isEnvGlobalManifestOverridesPresent(envGlobalOverride)) {
       return ServiceDefinitionPlanCreatorHelper.addDependenciesForSvcAndSvcOverrideManifestsV2(serviceV2Node,
-          planCreationResponseMap, serviceV2Config, serviceOverrideConfig, envGlobalOverride, kryoSerializerWrapper, envId);
+          planCreationResponseMap, serviceV2Config, serviceOverrideConfig, envGlobalOverride, kryoSerializerWrapper,
+          envId);
     } else if (ServiceDefinitionPlanCreatorHelper.shouldCreatePlanNodeForManifestsV2(serviceV2Config)) {
       return ServiceDefinitionPlanCreatorHelper.addDependenciesForServiceManifestsV2(
           serviceV2Node, planCreationResponseMap, serviceV2Config, kryoSerializerWrapper);
@@ -249,9 +251,9 @@ public class ServiceDefinitionPlanCreatorHelper {
   }
 
   String addDependenciesForSvcAndSvcOverrideManifestsV2(YamlNode serviceV2Node,
-                                                        Map<String, PlanCreationResponse> planCreationResponseMap, NGServiceV2InfoConfig serviceV2Config,
-                                                        NGServiceOverrideConfig serviceOverrideConfig, NGEnvironmentGlobalOverride ngEnvironmentConfig,
-                                                        KryoSerializerWrapper kryoSerializerWrapper, String envId) throws IOException {
+      Map<String, PlanCreationResponse> planCreationResponseMap, NGServiceV2InfoConfig serviceV2Config,
+      NGServiceOverrideConfig serviceOverrideConfig, NGEnvironmentGlobalOverride ngEnvironmentConfig,
+      KryoSerializerWrapper kryoSerializerWrapper, String envId) throws IOException {
     YamlUpdates.Builder yamlUpdates = YamlUpdates.newBuilder();
 
     List<ManifestConfigWrapper> finalManifests = ServiceStepOverrideHelper.prepareFinalManifests(
@@ -464,8 +466,8 @@ public class ServiceDefinitionPlanCreatorHelper {
             .toBuilder()
             .putDependencyMetadata(connectionStringsYamlFieldPlanNodeId,
                 AzureConfigsUtility.getDependencyMetadata(connectionStringsYamlFieldPlanNodeId,
-                    ConnectionStringsParameters.builder().connectionStrings(connectionStrings).build(), kryoSerializerWrapper,
-                    PlanCreatorConstants.CONNECTION_STRINGS_STEP_PARAMETER))
+                    ConnectionStringsParameters.builder().connectionStrings(connectionStrings).build(),
+                    kryoSerializerWrapper, PlanCreatorConstants.CONNECTION_STRINGS_STEP_PARAMETER))
             .build());
     if (yamlUpdates.getFqnToYamlCount() > 0) {
       connectionStringsPlanCreationResponse.yamlUpdates(yamlUpdates.build());
@@ -508,8 +510,8 @@ public class ServiceDefinitionPlanCreatorHelper {
       KryoSerializerWrapper kryoSerializerWrapper) throws IOException {
     if (isSvcOverridesApplicationSettingsPresent(serviceOverrideConfig)
         || isEnvGlobalApplicationSettingsOverridesPresent(environmentGlobalOverride)) {
-      return ServiceDefinitionPlanCreatorHelper.addDependenciesForSvcAndSvcOverrideApplicationSettingsV2(
-          serviceV2Node, planCreationResponseMap, serviceOverrideConfig, environmentGlobalOverride, kryoSerializerWrapper);
+      return ServiceDefinitionPlanCreatorHelper.addDependenciesForSvcAndSvcOverrideApplicationSettingsV2(serviceV2Node,
+          planCreationResponseMap, serviceOverrideConfig, environmentGlobalOverride, kryoSerializerWrapper);
     } else if (ServiceDefinitionPlanCreatorHelper.shouldCreatePlanNodeForApplicationSettingsV2(serviceV2Config)) {
       return ServiceDefinitionPlanCreatorHelper.addDependenciesForServiceApplicationSettingsV2(
           serviceV2Node, planCreationResponseMap, serviceV2Config, kryoSerializerWrapper);
@@ -535,8 +537,8 @@ public class ServiceDefinitionPlanCreatorHelper {
 
     String applicationSettingsPlanNodeId = "applicationSettings-" + UUIDGenerator.generateUuid();
     PlanCreationResponseBuilder applicationSettingsPlanCreationResponse =
-        PlanCreationResponse.builder().dependencies(getApplicationSettingDependencies(
-            applicationSettingsPlanNodeId, finalAppSettingsConfig, kryoSerializerWrapper, appSettingsConfigFilesYamlField));
+        PlanCreationResponse.builder().dependencies(getApplicationSettingDependencies(applicationSettingsPlanNodeId,
+            finalAppSettingsConfig, kryoSerializerWrapper, appSettingsConfigFilesYamlField));
 
     if (yamlUpdates.getFqnToYamlCount() > 0) {
       applicationSettingsPlanCreationResponse.yamlUpdates(yamlUpdates.build());
@@ -576,8 +578,8 @@ public class ServiceDefinitionPlanCreatorHelper {
         .toBuilder()
         .putDependencyMetadata(applicationSettingsPlanNodeId,
             AzureConfigsUtility.getDependencyMetadata(applicationSettingsPlanNodeId,
-                ApplicationSettingsParameters.builder().applicationSettings(appSettingsConfig).build(), kryoSerializerWrapper,
-                PlanCreatorConstants.APPLICATION_SETTINGS_STEP_PARAMETER))
+                ApplicationSettingsParameters.builder().applicationSettings(appSettingsConfig).build(),
+                kryoSerializerWrapper, PlanCreatorConstants.APPLICATION_SETTINGS_STEP_PARAMETER))
         .build();
   }
 
@@ -607,8 +609,8 @@ public class ServiceDefinitionPlanCreatorHelper {
       KryoSerializerWrapper kryoSerializerWrapper) throws IOException {
     if (isSvcOverridesConnectionStringsPresent(serviceOverrideConfig)
         || isEnvGlobalConnectionStringsOverridesPresent(environmentGlobalOverride)) {
-      return ServiceDefinitionPlanCreatorHelper.addDependenciesForSvcAndSvcOverrideConnectionStringsV2(
-          serviceV2Node, planCreationResponseMap, serviceOverrideConfig, environmentGlobalOverride, kryoSerializerWrapper);
+      return ServiceDefinitionPlanCreatorHelper.addDependenciesForSvcAndSvcOverrideConnectionStringsV2(serviceV2Node,
+          planCreationResponseMap, serviceOverrideConfig, environmentGlobalOverride, kryoSerializerWrapper);
     } else if (ServiceDefinitionPlanCreatorHelper.shouldCreatePlanNodeForConnectionStringsV2(serviceV2Config)) {
       return ServiceDefinitionPlanCreatorHelper.addDependenciesForConnectionStringsV2(
           serviceV2Node, planCreationResponseMap, serviceV2Config, kryoSerializerWrapper);
@@ -619,7 +621,8 @@ public class ServiceDefinitionPlanCreatorHelper {
 
   private String addDependenciesForSvcAndSvcOverrideConnectionStringsV2(YamlNode serviceV2Node,
       Map<String, PlanCreationResponse> planCreationResponseMap, NGServiceOverrideConfig serviceOverrideConfig,
-      NGEnvironmentGlobalOverride environmentGlobalOverride, KryoSerializerWrapper kryoSerializerWrapper) throws IOException {
+      NGEnvironmentGlobalOverride environmentGlobalOverride, KryoSerializerWrapper kryoSerializerWrapper)
+      throws IOException {
     YamlUpdates.Builder yamlUpdates = YamlUpdates.newBuilder();
 
     ConnectionStringsConfiguration finalConnectionStringsConfig =
@@ -634,8 +637,8 @@ public class ServiceDefinitionPlanCreatorHelper {
 
     String connectionStringsPlanNodeId = "connectionStrings-" + UUIDGenerator.generateUuid();
     PlanCreationResponseBuilder connectionStringsPlanCreationResponse =
-        PlanCreationResponse.builder().dependencies(getConnectionStringsDependencies(
-            connectionStringsPlanNodeId, finalConnectionStringsConfig, kryoSerializerWrapper, connectionStringsYamlField));
+        PlanCreationResponse.builder().dependencies(getConnectionStringsDependencies(connectionStringsPlanNodeId,
+            finalConnectionStringsConfig, kryoSerializerWrapper, connectionStringsYamlField));
     if (yamlUpdates.getFqnToYamlCount() > 0) {
       connectionStringsPlanCreationResponse.yamlUpdates(yamlUpdates.build());
     }

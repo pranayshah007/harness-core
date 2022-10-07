@@ -125,7 +125,8 @@ public class EcsPerpetualTaskExecutor implements PerpetualTaskExecutor {
         String clusterId = ecsPerpetualTaskParams.getClusterId();
         String settingId = ecsPerpetualTaskParams.getSettingId();
         log.info("Task params cluster name {} region {} ", clusterName, region);
-        AwsConfig awsConfig = (AwsConfig) kryoSerializerWrapper.asObject(ecsPerpetualTaskParams.getAwsConfig().toByteArray());
+        AwsConfig awsConfig =
+            (AwsConfig) kryoSerializerWrapper.asObject(ecsPerpetualTaskParams.getAwsConfig().toByteArray());
         List<EncryptedDataDetail> encryptionDetails = (List<EncryptedDataDetail>) kryoSerializerWrapper.asObject(
             ecsPerpetualTaskParams.getEncryptionDetail().toByteArray());
         Instant now = Instant.now(clock);

@@ -84,10 +84,10 @@ public class ManifestPerpetualTaskHelperNg {
     PerpetualTaskExecutionBundle.Builder builder = PerpetualTaskExecutionBundle.newBuilder();
     executionCapabilities.forEach(executionCapability
         -> builder
-               .addCapabilities(
-                   Capability.newBuilder()
-                       .setKryoCapability(ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(executionCapability)))
-                       .build())
+               .addCapabilities(Capability.newBuilder()
+                                    .setKryoCapability(
+                                        ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(executionCapability)))
+                                    .build())
                .build());
     return builder.setTaskParams(perpetualTaskParams).putAllSetupAbstractions(ngTaskSetupAbstractionsWithOwner).build();
   }

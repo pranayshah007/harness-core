@@ -213,11 +213,11 @@ public class ServerlessStepCommonHelper extends ServerlessStepUtils {
     String taskName =
         TaskType.SERVERLESS_COMMAND_TASK.getDisplayName() + " : " + serverlessCommandRequest.getCommandName();
     ServerlessSpecParameters serverlessSpecParameters = (ServerlessSpecParameters) stepElementParameters.getSpec();
-    final TaskRequest taskRequest =
-        prepareCDTaskRequest(ambiance, taskData, kryoSerializerWrapper, serverlessSpecParameters.getCommandUnits(), taskName,
-            TaskSelectorYaml.toTaskSelector(
-                emptyIfNull(getParameterFieldValue(serverlessSpecParameters.getDelegateSelectors()))),
-            stepHelper.getEnvironmentType(ambiance));
+    final TaskRequest taskRequest = prepareCDTaskRequest(ambiance, taskData, kryoSerializerWrapper,
+        serverlessSpecParameters.getCommandUnits(), taskName,
+        TaskSelectorYaml.toTaskSelector(
+            emptyIfNull(getParameterFieldValue(serverlessSpecParameters.getDelegateSelectors()))),
+        stepHelper.getEnvironmentType(ambiance));
     return TaskChainResponse.builder()
         .taskRequest(taskRequest)
         .chainEnd(isChainEnd)
@@ -430,11 +430,11 @@ public class ServerlessStepCommonHelper extends ServerlessStepUtils {
                                   .build();
     String taskName = TaskType.SERVERLESS_GIT_FETCH_TASK_NG.getDisplayName();
     ServerlessSpecParameters serverlessSpecParameters = (ServerlessSpecParameters) stepElementParameters.getSpec();
-    final TaskRequest taskRequest =
-        prepareCDTaskRequest(ambiance, taskData, kryoSerializerWrapper, serverlessSpecParameters.getCommandUnits(), taskName,
-            TaskSelectorYaml.toTaskSelector(
-                emptyIfNull(getParameterFieldValue(serverlessSpecParameters.getDelegateSelectors()))),
-            stepHelper.getEnvironmentType(ambiance));
+    final TaskRequest taskRequest = prepareCDTaskRequest(ambiance, taskData, kryoSerializerWrapper,
+        serverlessSpecParameters.getCommandUnits(), taskName,
+        TaskSelectorYaml.toTaskSelector(
+            emptyIfNull(getParameterFieldValue(serverlessSpecParameters.getDelegateSelectors()))),
+        stepHelper.getEnvironmentType(ambiance));
     return TaskChainResponse.builder()
         .chainEnd(false)
         .taskRequest(taskRequest)

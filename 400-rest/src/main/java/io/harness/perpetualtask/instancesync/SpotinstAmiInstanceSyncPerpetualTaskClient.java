@@ -62,7 +62,8 @@ public class SpotinstAmiInstanceSyncPerpetualTaskClient implements PerpetualTask
     final PerpetualTaskData delegateTaskData = getPerpetualTaskData(clientContext);
 
     ByteString awsConfigBytes = ByteString.copyFrom(kryoSerializerWrapper.asBytes(delegateTaskData.getAwsConfig()));
-    ByteString spotinstConfigBytes = ByteString.copyFrom(kryoSerializerWrapper.asBytes(delegateTaskData.getSpotinstConfig()));
+    ByteString spotinstConfigBytes =
+        ByteString.copyFrom(kryoSerializerWrapper.asBytes(delegateTaskData.getSpotinstConfig()));
     ByteString awsEncryptedDataBytes =
         ByteString.copyFrom(kryoSerializerWrapper.asBytes(delegateTaskData.getAwsEncryptedDataData()));
     ByteString spotinstEncryptedDataBytes =

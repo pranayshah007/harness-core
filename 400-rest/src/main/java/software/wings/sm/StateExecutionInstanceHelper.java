@@ -19,8 +19,7 @@ import com.google.inject.Inject;
 @OwnedBy(HarnessTeam.CDC)
 @TargetModule(HarnessModule._870_CG_ORCHESTRATION)
 public class StateExecutionInstanceHelper {
-  @Inject
-  KryoSerializerWrapper kryoSerializerWrapper;
+  @Inject KryoSerializerWrapper kryoSerializerWrapper;
 
   public StateExecutionInstance clone(StateExecutionInstance instance) {
     StateExecutionInstance clone = kryoSerializerWrapper.clone(instance);

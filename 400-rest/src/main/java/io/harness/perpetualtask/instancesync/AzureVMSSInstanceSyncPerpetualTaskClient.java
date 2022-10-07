@@ -48,15 +48,15 @@ public class AzureVMSSInstanceSyncPerpetualTaskClient implements PerpetualTaskSe
   @Inject InfrastructureMappingService infraMappingService;
   @Inject SettingsService settingsService;
   @Inject SecretManager secretManager;
-  @Inject
-  KryoSerializerWrapper kryoSerializerWrapper;
+  @Inject KryoSerializerWrapper kryoSerializerWrapper;
   @Inject private transient AzureVMSSStateHelper azureVMSSStateHelper;
 
   @Override
   public Message getTaskParams(PerpetualTaskClientContext clientContext) {
     PerpetualTaskData perpetualTaskData = getPerpetualTaskData(clientContext);
 
-    ByteString azureConfigBytes = ByteString.copyFrom(kryoSerializerWrapper.asBytes(perpetualTaskData.getAzureConfig()));
+    ByteString azureConfigBytes =
+        ByteString.copyFrom(kryoSerializerWrapper.asBytes(perpetualTaskData.getAzureConfig()));
     ByteString encryptedDataBytes =
         ByteString.copyFrom(kryoSerializerWrapper.asBytes(perpetualTaskData.getEncryptedDataDetails()));
 

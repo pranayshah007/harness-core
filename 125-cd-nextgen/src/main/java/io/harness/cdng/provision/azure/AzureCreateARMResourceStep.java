@@ -380,11 +380,11 @@ public class AzureCreateARMResourceStep extends TaskChainExecutableWithRollbackA
     commandUnits.add(FETCH_RESOURCE_GROUP_TEMPLATE);
     commandUnits.addAll(getCommandUnits(passThroughData.hasGitFiles()));
 
-    final TaskRequest taskRequest =
-        StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializerWrapper, commandUnits, FETCH_RESOURCE_GROUP_TEMPLATE,
-            TaskSelectorYaml.toTaskSelector(
-                ((AzureCreateARMResourceStepParameters) stepParameters.getSpec()).getDelegateSelectors()),
-            stepHelper.getEnvironmentType(ambiance));
+    final TaskRequest taskRequest = StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializerWrapper,
+        commandUnits, FETCH_RESOURCE_GROUP_TEMPLATE,
+        TaskSelectorYaml.toTaskSelector(
+            ((AzureCreateARMResourceStepParameters) stepParameters.getSpec()).getDelegateSelectors()),
+        stepHelper.getEnvironmentType(ambiance));
 
     return TaskChainResponse.builder()
         .taskRequest(taskRequest)

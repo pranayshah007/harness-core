@@ -53,8 +53,7 @@ import org.mockito.InjectMocks;
 
 @OwnedBy(HarnessTeam.CDC)
 public class SideCarPlanCreatorTest extends CDNGTestBase {
-  @Inject
-  KryoSerializerWrapper kryoSerializerWrapper;
+  @Inject KryoSerializerWrapper kryoSerializerWrapper;
   @Inject @InjectMocks SideCarArtifactPlanCreator sidecarPlanCreator;
 
   @Test

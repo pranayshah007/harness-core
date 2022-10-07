@@ -45,8 +45,7 @@ public class OnAbortAdviserTest extends PmsSdkCoreTestBase {
       StepType.newBuilder().setStepCategory(StepCategory.STEP).setType(NODE_IDENTIFIER).build();
 
   @Inject OnAbortAdviser onAbortAdviser;
-  @Inject
-  KryoSerializerWrapper kryoSerializerWrapper;
+  @Inject KryoSerializerWrapper kryoSerializerWrapper;
 
   private Ambiance ambiance;
 

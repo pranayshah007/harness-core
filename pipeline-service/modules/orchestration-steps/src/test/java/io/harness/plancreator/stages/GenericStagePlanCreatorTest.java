@@ -54,10 +54,8 @@ public class GenericStagePlanCreatorTest extends OrchestrationStepsTestBase {
   ApprovalStageNode approvalStageConfig;
 
   @InjectMocks ApprovalStagePlanCreatorV2 approvalStagePlanCreator;
-  @Mock
-  KryoSerializerWrapper kryoSerializerWrapper;
-  @Inject
-  KryoSerializerWrapper kryoSerializerWrapperUnMocked;
+  @Mock KryoSerializerWrapper kryoSerializerWrapper;
+  @Inject KryoSerializerWrapper kryoSerializerWrapperUnMocked;
 
   @Before
   public void setUp() throws IOException {

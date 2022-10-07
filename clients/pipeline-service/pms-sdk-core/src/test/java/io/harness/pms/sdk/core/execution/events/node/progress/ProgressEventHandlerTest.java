@@ -45,8 +45,7 @@ public class ProgressEventHandlerTest extends PmsSdkCoreTestBase {
   private static String NOTIFY_ID = "notifyId";
 
   @Mock ExecutableProcessorFactory executableProcessorFactory;
-  @Mock
-  KryoSerializerWrapper kryoSerializerWrapper;
+  @Mock KryoSerializerWrapper kryoSerializerWrapper;
   @Mock SdkNodeExecutionService sdkNodeExecutionService;
 
   @InjectMocks ProgressEventHandler progressEventHandler;

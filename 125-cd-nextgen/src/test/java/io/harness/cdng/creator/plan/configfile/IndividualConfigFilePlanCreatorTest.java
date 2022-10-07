@@ -39,8 +39,7 @@ import org.mockito.InjectMocks;
 
 @OwnedBy(HarnessTeam.CDP)
 public class IndividualConfigFilePlanCreatorTest extends CDNGTestBase {
-  @Inject
-  KryoSerializerWrapper kryoSerializerWrapper;
+  @Inject KryoSerializerWrapper kryoSerializerWrapper;
   @Inject @InjectMocks IndividualConfigFilePlanCreator individualConfigFilePlanCreator;
 
   @Test

@@ -107,8 +107,7 @@ public class NGTriggerServiceImplTest extends CategoryTest {
   @Mock ExecutorService executorService;
   @Mock PollingSubscriptionHelper pollingSubscriptionHelper;
 
-  @Mock
-  KryoSerializerWrapper kryoSerializerWrapper;
+  @Mock KryoSerializerWrapper kryoSerializerWrapper;
 
   @Mock PollingResourceClient pollingResourceClient;
 

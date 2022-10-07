@@ -47,7 +47,7 @@ public class ManifestPerpetualTaskExecutorNg implements PerpetualTaskExecutor {
 
   @Inject
   public ManifestPerpetualTaskExecutorNg(KryoSerializerWrapper kryoSerializerWrapper,
-                                         ManifestCollectionService manifestCollectionService, PollingResponsePublisher pollingResponsePublisher) {
+      ManifestCollectionService manifestCollectionService, PollingResponsePublisher pollingResponsePublisher) {
     this.kryoSerializerWrapper = kryoSerializerWrapper;
     this.manifestCollectionService = manifestCollectionService;
     this.pollingResponsePublisher = pollingResponsePublisher;
@@ -91,8 +91,8 @@ public class ManifestPerpetualTaskExecutorNg implements PerpetualTaskExecutor {
   private void collectManifests(
       ManifestsCollectionCache manifestsCollectionCache, ManifestCollectionTaskParamsNg taskParams, String taskId) {
     try {
-      ManifestDelegateConfig manifestConfig =
-          (ManifestDelegateConfig) kryoSerializerWrapper.asObject(taskParams.getManifestCollectionParams().toByteArray());
+      ManifestDelegateConfig manifestConfig = (ManifestDelegateConfig) kryoSerializerWrapper.asObject(
+          taskParams.getManifestCollectionParams().toByteArray());
       List<String> chartVersions = manifestCollectionService.collectManifests(manifestConfig);
       if (isEmpty(chartVersions)) {
         log.info("No manifests present for the repository");

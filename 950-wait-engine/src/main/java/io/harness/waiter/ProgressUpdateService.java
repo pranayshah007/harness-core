@@ -61,7 +61,8 @@ public class ProgressUpdateService implements Runnable {
         }
         log.info("Starting to process progress response");
 
-        ProgressData progressData = (ProgressData) kryoSerializerWrapper.asInflatedObject(progressUpdate.getProgressData());
+        ProgressData progressData =
+            (ProgressData) kryoSerializerWrapper.asInflatedObject(progressUpdate.getProgressData());
 
         List<WaitInstance> waitInstances = persistenceWrapper.fetchWaitInstances(progressUpdate.getCorrelationId());
         for (WaitInstance waitInstance : waitInstances) {

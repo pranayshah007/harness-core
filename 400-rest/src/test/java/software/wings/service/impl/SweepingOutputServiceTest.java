@@ -32,8 +32,7 @@ import org.junit.experimental.categories.Category;
 public class SweepingOutputServiceTest extends WingsBaseTest {
   @Inject SweepingOutputService sweepingOutputService;
   @Inject HPersistence persistence;
-  @Inject
-  KryoSerializerWrapper kryoSerializerWrapper;
+  @Inject KryoSerializerWrapper kryoSerializerWrapper;
 
   @Test
   @Owner(developers = PRASHANT, intermittent = true)

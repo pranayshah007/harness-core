@@ -115,8 +115,8 @@ public class SpringPersistenceWrapper implements PersistenceWrapper {
         isError = true;
       }
       if (notifyResponse.getResponseData() != null) {
-        responseMap.put(
-            notifyResponse.getUuid(), (ResponseData) kryoSerializerWrapper.asInflatedObject(notifyResponse.getResponseData()));
+        responseMap.put(notifyResponse.getUuid(),
+            (ResponseData) kryoSerializerWrapper.asInflatedObject(notifyResponse.getResponseData()));
       }
     }
     return ProcessedMessageResponse.builder().isError(isError).responseDataMap(responseMap).build();

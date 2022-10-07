@@ -86,8 +86,7 @@ public class K8ActivityCollectionPerpetualTaskExecutorTest extends DelegateTestB
 
   private PerpetualTaskExecutionParams perpetualTaskParams;
 
-  @Inject
-  KryoSerializerWrapper kryoSerializerWrapper;
+  @Inject KryoSerializerWrapper kryoSerializerWrapper;
 
   @Before
   public void setup() throws IllegalAccessException, IOException {

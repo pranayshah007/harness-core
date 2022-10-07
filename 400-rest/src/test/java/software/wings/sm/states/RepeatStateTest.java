@@ -55,8 +55,7 @@ import org.junit.experimental.categories.Category;
 @TargetModule(HarnessModule._870_CG_ORCHESTRATION)
 @Slf4j
 public class RepeatStateTest extends WingsBaseTest {
-  @Inject
-  KryoSerializerWrapper kryoSerializerWrapper;
+  @Inject KryoSerializerWrapper kryoSerializerWrapper;
 
   /**
    * Should execute serial.

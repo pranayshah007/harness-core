@@ -99,9 +99,10 @@ public class SecretTextTest extends SMCoreTestBase {
     mockSecretsAuditService = mock(SecretsAuditService.class);
     secretSetupUsageService =
         new SecretSetupUsageServiceImpl(secretsDao, mockSecretManagerConfigService, secretSetupUsageBuilderRegistry);
-    secretService = new SecretServiceImpl(kryoSerializerWrapper, secretsDao, mockSecretsRBACService, secretSetupUsageService,
-        mockSecretsFileService, mockSecretManagerConfigService, secretValidatorsRegistry, mockSecretsAuditService,
-        kmsEncryptorsRegistry, vaultEncryptorsRegistry, customEncryptorsRegistry, queuePublisher);
+    secretService =
+        new SecretServiceImpl(kryoSerializerWrapper, secretsDao, mockSecretsRBACService, secretSetupUsageService,
+            mockSecretsFileService, mockSecretManagerConfigService, secretValidatorsRegistry, mockSecretsAuditService,
+            kmsEncryptorsRegistry, vaultEncryptorsRegistry, customEncryptorsRegistry, queuePublisher);
   }
 
   private SecretTextBuilder getBaseSecretText() {

@@ -168,9 +168,11 @@ public class EnvGroupPlanCreatorHelper {
       String environmentGroupUuid, boolean gitOpsEnabled, KryoSerializerWrapper kryoSerializerWrapper) {
     return ImmutableMap.<String, ByteString>builder()
         .put(YamlTypes.NEXT_UUID, ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(serviceSpecNodeId)))
-        .put(YamlTypes.POST_SERVICE_SPEC_UUID, ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(postServiceStepUuid)))
+        .put(YamlTypes.POST_SERVICE_SPEC_UUID,
+            ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(postServiceStepUuid)))
         .put(YamlTypes.UUID, ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(environmentGroupUuid)))
-        .put(YAMLFieldNameConstants.GITOPS_ENABLED, ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(gitOpsEnabled)))
+        .put(YAMLFieldNameConstants.GITOPS_ENABLED,
+            ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(gitOpsEnabled)))
         .build();
   }
 }

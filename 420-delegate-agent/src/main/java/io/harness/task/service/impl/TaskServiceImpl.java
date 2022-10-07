@@ -46,8 +46,8 @@ public class TaskServiceImpl extends TaskServiceGrpc.TaskServiceImplBase {
   private final ResponseDataConverterRegistry responseDataConverterRegistry;
 
   @Inject
-  public TaskServiceImpl(DelegateServiceAgentClient delegateServiceAgentClient, KryoSerializerWrapper kryoSerializerWrapper,
-      ResponseDataConverterRegistry responseDataConverterRegistry) {
+  public TaskServiceImpl(DelegateServiceAgentClient delegateServiceAgentClient,
+      KryoSerializerWrapper kryoSerializerWrapper, ResponseDataConverterRegistry responseDataConverterRegistry) {
     this.delegateServiceAgentClient = delegateServiceAgentClient;
     this.kryoSerializerWrapper = kryoSerializerWrapper;
     this.responseDataConverterRegistry = responseDataConverterRegistry;

@@ -70,8 +70,7 @@ public class SpotinstAmiInstanceSyncDelegateExecutorTest extends DelegateTestBas
 
   @InjectMocks private SpotinstAmiInstanceSyncDelegateExecutor executor;
 
-  @Inject
-  KryoSerializerWrapper kryoSerializerWrapper;
+  @Inject KryoSerializerWrapper kryoSerializerWrapper;
 
   @Before
   public void setUp() {

@@ -73,12 +73,12 @@ public class CapabilityStressTestGenerator extends StressTestGenerator {
   private SubmitTaskRequest createTaskRequest(String key, String value) {
     return SubmitTaskRequest.newBuilder()
         .setAccountId(AccountId.newBuilder().setId(ACCOUNT_ID))
-        .setDetails(
-            TaskDetails.newBuilder()
-                .setMode(TaskMode.ASYNC)
-                .setType(TaskType.newBuilder().setType("SCRIPT"))
-                .setExecutionTimeout(Durations.fromMinutes(5))
-                .setKryoParameters(ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(shellScriptTaskParameters))))
+        .setDetails(TaskDetails.newBuilder()
+                        .setMode(TaskMode.ASYNC)
+                        .setType(TaskType.newBuilder().setType("SCRIPT"))
+                        .setExecutionTimeout(Durations.fromMinutes(5))
+                        .setKryoParameters(
+                            ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(shellScriptTaskParameters))))
         .addCapabilities(generateTestCapability(key, value))
         .setQueueTimeout(Durations.fromMinutes(1))
         .build();

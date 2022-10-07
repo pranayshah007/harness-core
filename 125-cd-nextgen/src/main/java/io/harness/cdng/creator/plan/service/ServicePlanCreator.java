@@ -61,8 +61,7 @@ import java.util.Set;
 @OwnedBy(HarnessTeam.CDC)
 public class ServicePlanCreator extends ChildrenPlanCreator<ServiceConfig> {
   @Inject EnforcementValidator enforcementValidator;
-  @Inject
-  KryoSerializerWrapper kryoSerializerWrapper;
+  @Inject KryoSerializerWrapper kryoSerializerWrapper;
 
   @Override
   public Class<ServiceConfig> getFieldClass() {

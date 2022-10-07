@@ -63,8 +63,7 @@ import lombok.experimental.FieldDefaults;
 
 @OwnedBy(HarnessTeam.CDC)
 public class ManifestsPlanCreator extends ChildrenPlanCreator<ManifestsListConfigWrapper> {
-  @Inject
-  KryoSerializerWrapper kryoSerializerWrapper;
+  @Inject KryoSerializerWrapper kryoSerializerWrapper;
 
   public static final String SERVICE_ENTITY_DEFINITION_TYPE_KEY = "SERVICE_ENTITY_DEFINITION_TYPE_KEY";
 

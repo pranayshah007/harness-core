@@ -63,8 +63,7 @@ public class K8sWatchServiceDelegateTest extends DelegateTestBase {
   private static final KubernetesConfig KUBERNETES_CONFIG = KubernetesConfig.builder().build();
 
   @Rule public WireMockRule wireMockRule = new WireMockRule(65221);
-  @Inject
-  KryoSerializerWrapper kryoSerializerWrapper;
+  @Inject KryoSerializerWrapper kryoSerializerWrapper;
 
   private static final String URL_REGEX_SUFFIX = "(\\?(.*))?";
 

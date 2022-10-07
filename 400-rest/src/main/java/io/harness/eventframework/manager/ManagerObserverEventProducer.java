@@ -22,8 +22,8 @@ import java.lang.reflect.Method;
 @OwnedBy(HarnessTeam.DEL)
 public class ManagerObserverEventProducer extends AbstractRemoteInformer implements RemoteObserverInformer {
   @Inject
-  public ManagerObserverEventProducer(
-      KryoSerializerWrapper kryoSerializerWrapper, @Named(EventsFrameworkConstants.OBSERVER_EVENT_CHANNEL) Producer eventProducer) {
+  public ManagerObserverEventProducer(KryoSerializerWrapper kryoSerializerWrapper,
+      @Named(EventsFrameworkConstants.OBSERVER_EVENT_CHANNEL) Producer eventProducer) {
     super(kryoSerializerWrapper, eventProducer);
   }
 

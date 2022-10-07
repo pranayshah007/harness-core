@@ -31,8 +31,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 
 public class IgnoreAdviserTest extends PmsSdkCoreTestBase {
-  @Mock
-  KryoSerializerWrapper kryoSerializerWrapper;
+  @Mock KryoSerializerWrapper kryoSerializerWrapper;
   @InjectMocks IgnoreAdviser ignoreAdviser;
 
   @Test

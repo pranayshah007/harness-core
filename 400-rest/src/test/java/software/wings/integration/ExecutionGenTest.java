@@ -40,8 +40,7 @@ public class ExecutionGenTest extends WingsBaseTest {
   private static final SecureRandom random = new SecureRandom();
 
   @Inject private HPersistence persistence;
-  @Inject
-  KryoSerializerWrapper kryoSerializerWrapper;
+  @Inject KryoSerializerWrapper kryoSerializerWrapper;
 
   @Test
   @Owner(developers = ANUBHAW)

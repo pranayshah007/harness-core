@@ -38,8 +38,7 @@ import org.junit.experimental.categories.Category;
 @OwnedBy(PIPELINE)
 public class PmsGitSyncHelperTest extends PmsCommonsTestBase {
   @Inject PmsGitSyncHelper pmsGitSyncHelper;
-  @Inject
-  KryoSerializerWrapper kryoSerializerWrapper;
+  @Inject KryoSerializerWrapper kryoSerializerWrapper;
 
   GitSyncBranchContext gitSyncBranchContext;
   GlobalContext context;

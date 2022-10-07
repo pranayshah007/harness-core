@@ -29,8 +29,7 @@ import com.google.inject.Inject;
 
 @OwnedBy(PIPELINE)
 public class NextStepAdviser implements Adviser {
-  @Inject
-  KryoSerializerWrapper kryoSerializerWrapper;
+  @Inject KryoSerializerWrapper kryoSerializerWrapper;
   @Inject ExecutionSweepingOutputService executionSweepingOutputService;
 
   public static final AdviserType ADVISER_TYPE =

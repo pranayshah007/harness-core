@@ -60,9 +60,9 @@ public class ServiceAllInOnePlanCreatorUtils {
    *      config files
    *      azure settings
    */
-  public LinkedHashMap<String, PlanCreationResponse> addServiceNode(YamlField specField, KryoSerializerWrapper kryoSerializerWrapper,
-      ServiceYamlV2 serviceYamlV2, EnvironmentYamlV2 environmentYamlV2, String serviceNodeId, String nextNodeId,
-      ServiceDefinitionType serviceType) {
+  public LinkedHashMap<String, PlanCreationResponse> addServiceNode(YamlField specField,
+      KryoSerializerWrapper kryoSerializerWrapper, ServiceYamlV2 serviceYamlV2, EnvironmentYamlV2 environmentYamlV2,
+      String serviceNodeId, String nextNodeId, ServiceDefinitionType serviceType) {
     final ServiceYamlV2 finalServiceYaml = useFromStage(serviceYamlV2)
         ? useServiceYamlFromStage(serviceYamlV2.getUseFromStage(), specField)
         : serviceYamlV2;
@@ -96,8 +96,8 @@ public class ServiceAllInOnePlanCreatorUtils {
             .adviserObtainment(
                 AdviserObtainment.newBuilder()
                     .setType(AdviserType.newBuilder().setType(OrchestrationAdviserTypes.ON_SUCCESS.name()).build())
-                    .setParameters(ByteString.copyFrom(
-                        kryoSerializerWrapper.asBytes(OnSuccessAdviserParameters.builder().nextNodeId(nextNodeId).build())))
+                    .setParameters(ByteString.copyFrom(kryoSerializerWrapper.asBytes(
+                        OnSuccessAdviserParameters.builder().nextNodeId(nextNodeId).build())))
                     .build())
             .skipExpressionChain(true)
             .build();

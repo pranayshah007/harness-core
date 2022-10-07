@@ -56,7 +56,8 @@ public class EcsPerpetualTaskServiceClient implements PerpetualTaskServiceClient
 
     AwsConfig awsConfig = getAwsConfig(settingId);
     ByteString awsConfigBytes = ByteString.copyFrom(kryoSerializerWrapper.asBytes(awsConfig));
-    ByteString encryptionDetailBytes = ByteString.copyFrom(kryoSerializerWrapper.asBytes(getEncryptionDetails(awsConfig)));
+    ByteString encryptionDetailBytes =
+        ByteString.copyFrom(kryoSerializerWrapper.asBytes(getEncryptionDetails(awsConfig)));
 
     EcsPerpetualTaskParams ecsPerpetualTaskParams = EcsPerpetualTaskParams.newBuilder()
                                                         .setClusterName(clusterName)

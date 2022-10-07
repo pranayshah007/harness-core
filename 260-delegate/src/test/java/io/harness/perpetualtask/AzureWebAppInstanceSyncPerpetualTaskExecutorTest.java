@@ -224,7 +224,8 @@ public class AzureWebAppInstanceSyncPerpetualTaskExecutorTest extends DelegateTe
         .setResourceGroupName(RESOURCE_GROUP)
         .setAppName(APP_NAME)
         .setSlotName(DEPLOYMENT_SLOT)
-        .setAzureWebAppInfraDelegateConfig(ByteString.copyFrom(kryoSerializerWrapper.asBytes(azureWebAppInfraDelegateConfig)))
+        .setAzureWebAppInfraDelegateConfig(
+            ByteString.copyFrom(kryoSerializerWrapper.asBytes(azureWebAppInfraDelegateConfig)))
         .build();
   }
 }

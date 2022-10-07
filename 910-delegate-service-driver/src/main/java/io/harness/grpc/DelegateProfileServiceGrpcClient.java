@@ -65,8 +65,8 @@ public class DelegateProfileServiceGrpcClient {
   private final KryoSerializerWrapper kryoSerializerWrapper;
 
   @Inject
-  public DelegateProfileServiceGrpcClient(
-      DelegateProfileServiceBlockingStub delegateProfileServiceBlockingStub, KryoSerializerWrapper kryoSerializerWrapper) {
+  public DelegateProfileServiceGrpcClient(DelegateProfileServiceBlockingStub delegateProfileServiceBlockingStub,
+      KryoSerializerWrapper kryoSerializerWrapper) {
     this.delegateProfileServiceBlockingStub = delegateProfileServiceBlockingStub;
     this.kryoSerializerWrapper = kryoSerializerWrapper;
   }
@@ -215,10 +215,11 @@ public class DelegateProfileServiceGrpcClient {
   public void deleteProfile(AccountId accountId, OrgIdentifier orgIdentifier, ProjectIdentifier projectIdentifier,
       ProfileIdentifier profileIdentifier) {
     try {
-      DeleteProfileV2Request.Builder builder = DeleteProfileV2Request.newBuilder()
-                                                   .setVirtualStack(VirtualStackUtils.populateRequest(kryoSerializerWrapper))
-                                                   .setAccountId(accountId)
-                                                   .setProfileIdentifier(profileIdentifier);
+      DeleteProfileV2Request.Builder builder =
+          DeleteProfileV2Request.newBuilder()
+              .setVirtualStack(VirtualStackUtils.populateRequest(kryoSerializerWrapper))
+              .setAccountId(accountId)
+              .setProfileIdentifier(profileIdentifier);
       if (orgIdentifier != null) {
         builder.setOrgId(orgIdentifier);
       }
