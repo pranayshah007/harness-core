@@ -8,6 +8,7 @@
 package io.harness.delegate.runner;
 
 import com.google.inject.Inject;
+import com.google.inject.Injector;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import io.harness.annotations.dev.HarnessModule;
@@ -28,6 +29,7 @@ import software.wings.beans.TaskType;
 import java.io.File;
 import java.io.IOException;
 import java.util.Map;
+import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 
 import static org.joor.Reflect.on;
@@ -35,18 +37,20 @@ import static org.joor.Reflect.on;
 @Slf4j
 @Singleton
 @OwnedBy(HarnessTeam.DEL)
-@TargetModule(HarnessModule._930_DELEGATE_TASKS)
-@RequiredArgsConstructor(onConstructor = @__(@Inject))
 public class TaskFactory {
-    private Map<TaskType, Class<? extends DelegateRunnableTask>> classMap;
-    @Named("referenceFalseKryoSerializer") private KryoSerializer kryoSerializer;
-    private Configuration configuration;
+    @Inject private Injector injector;
+    @Inject private Map<TaskType, Class<? extends DelegateRunnableTask>> classMap;
+    @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer kryoSerializer;
+    @Inject private Configuration configuration;
 
     public DelegateRunnableTask getDelegateRunnableTask(TaskType type, DelegateTaskPackage delegateTaskPackage) {
-        return on(classMap.get(type)).create(delegateTaskPackage,
-            /* TBD add stream logger */null,
-            getPostExecutionFunction(), null)
+        DelegateRunnableTask delegateRunnableTask = on(classMap.get(type)).create(delegateTaskPackage,
+                /* TBD add stream logger */null,
+                getPostExecutionFunction(),
+                getPreExecutor())
             .get();
+        injector.injectMembers(delegateRunnableTask);
+        return delegateRunnableTask;
     }
 
     private Consumer<DelegateTaskResponse> getPostExecutionFunction() {
@@ -60,5 +64,9 @@ public class TaskFactory {
                 throw new WingsException(e);
             }
         };
+    }
+
+    private BooleanSupplier getPreExecutor() {
+        return () -> true;
     }
 }

@@ -431,6 +431,17 @@ public class DelegateRunnerTasksModule extends AbstractModule {
         new ThreadFactoryBuilder().setNameFormat("jenkins-%d").setPriority(Thread.NORM_PRIORITY).build());
   }
 
+    @Provides
+    @Singleton
+    @Named("verificationDataCollectorExecutor")
+    public ExecutorService verificationDataCollectorExecutor() {
+        return ThreadPool.create(4, 20, 5, TimeUnit.SECONDS,
+            new ThreadFactoryBuilder()
+                .setNameFormat("verificationDataCollector-%d")
+                .setPriority(Thread.MIN_PRIORITY)
+                .build());
+    }
+
   @Override
   protected void configure() {
     bindDelegateTasks();
@@ -675,6 +686,7 @@ public class DelegateRunnerTasksModule extends AbstractModule {
       bind(HttpService.class).to(HttpServiceImpl.class);
       bind(SecretsDelegateCacheHelperService.class).to(SecretsDelegateCacheHelperServiceImpl.class);
       bind(SecretsDelegateCacheService.class).to(SecretsDelegateCacheServiceImpl.class);
+      bind(K8sGlobalConfigService.class).to(K8sGlobalConfigServiceImpl.class);
   }
 
   // POV only
