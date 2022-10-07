@@ -4,7 +4,6 @@ import io.harness.spec.server.pipeline.ExecutionsApi;
 import io.harness.spec.server.pipeline.model.InterruptRequestBody;
 import io.harness.spec.server.pipeline.model.PipelineExecuteRequestBody;
 
-import java.util.List;
 import javax.ws.rs.core.Response;
 
 public class ExecutionsApiImpl implements ExecutionsApi {
