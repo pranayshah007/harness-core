@@ -2298,7 +2298,8 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
     PageResponse<CVNGLogDTO> cvngLogDTOResponse = monitoredServiceService.getCVNGLogs(
         monitoredServiceParams, liveMonitoringLogsFilter, PageParams.builder().page(0).size(10).build());
 
-    assertThat(cvngLogDTOResponse.getContent().size()).isEqualTo(1);
+    // Since there is no unique check on CVNGLog we will have 3 log records
+    assertThat(cvngLogDTOResponse.getContent().size()).isEqualTo(3);
     assertThat(cvngLogDTOResponse.getPageIndex()).isEqualTo(0);
     assertThat(cvngLogDTOResponse.getPageSize()).isEqualTo(10);
 
@@ -2354,7 +2355,8 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
         monitoredServiceParams, liveMonitoringLogsFilter, PageParams.builder().page(0).size(10).build());
 
     assertThat(cvngLogDTOResponse.getContent().size()).isEqualTo(1);
-    assertThat(cvngLogDTOResponse.getPageIndex()).isEqualTo(0);
+    // Since there is no unique check on CVNGLog we will have 3 log records
+    assertThat(cvngLogDTOResponse.getPageIndex()).isEqualTo(3);
     assertThat(cvngLogDTOResponse.getPageSize()).isEqualTo(10);
 
     ExecutionLogDTO executionLogDTOS = (ExecutionLogDTO) cvngLogDTOResponse.getContent().get(0);
