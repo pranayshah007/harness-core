@@ -31,7 +31,7 @@ import io.harness.pms.gitsync.PmsGitSyncHelper;
 import io.harness.pms.plan.execution.SetupAbstractionKeys;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.steps.StepHelper;
 import io.harness.steps.StepUtils;
 import io.harness.steps.approval.step.ApprovalInstanceService;
@@ -58,7 +58,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 @RunWith(MockitoJUnitRunner.class)
 public class CustomApprovalHelperServiceTest extends CategoryTest {
   @Mock private NgDelegate2TaskExecutor ngDelegate2TaskExecutor;
-  @Mock private KryoSerializer kryoSerializer;
+  @Mock private KryoSerializerWrapper kryoSerializerWrapper;
   @Mock private WaitNotifyEngine waitNotifyEngine;
   @Mock private LogStreamingStepClientFactory logStreamingStepClientFactory;
   private String publisherName;

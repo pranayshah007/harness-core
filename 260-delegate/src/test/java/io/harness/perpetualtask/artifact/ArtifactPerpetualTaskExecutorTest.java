@@ -30,7 +30,7 @@ import io.harness.perpetualtask.PerpetualTaskResponse;
 import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import software.wings.delegatetasks.buildsource.BuildSourceExecutionResponse;
 import software.wings.delegatetasks.buildsource.BuildSourceParameters;
@@ -66,7 +66,8 @@ public class ArtifactPerpetualTaskExecutorTest extends DelegateTestBase {
 
   private ArtifactPerpetualTaskExecutor artifactPerpetualTaskExecutor;
 
-  @Inject KryoSerializer kryoSerializer;
+  @Inject
+  KryoSerializerWrapper kryoSerializerWrapper;
 
   @Mock private ArtifactRepositoryServiceImpl artifactRepositoryService;
   @Mock private DelegateAgentManagerClient delegateAgentManagerClient;
@@ -77,7 +78,7 @@ public class ArtifactPerpetualTaskExecutorTest extends DelegateTestBase {
   @Before
   public void setUp() throws Exception {
     artifactPerpetualTaskExecutor =
-        new ArtifactPerpetualTaskExecutor(artifactRepositoryService, delegateAgentManagerClient, kryoSerializer);
+        new ArtifactPerpetualTaskExecutor(artifactRepositoryService, delegateAgentManagerClient, kryoSerializerWrapper);
     perpetualTaskId = PerpetualTaskId.newBuilder().setId(UUIDGenerator.generateUuid()).build();
   }
 
@@ -115,7 +116,7 @@ public class ArtifactPerpetualTaskExecutorTest extends DelegateTestBase {
                                                       .artifactStreamType(DOCKER.name())
                                                       .savedBuildDetailsKeys(new HashSet<>(asList("1", "2", "3")))
                                                       .build();
-    ByteString bytes = ByteString.copyFrom(kryoSerializer.asBytes(buildSourceParameters));
+    ByteString bytes = ByteString.copyFrom(kryoSerializerWrapper.asBytes(buildSourceParameters));
     ArtifactCollectionTaskParams artifactCollectionTaskParams = ArtifactCollectionTaskParams.newBuilder()
                                                                     .setArtifactStreamId(ARTIFACT_STREAM_ID)
                                                                     .setBuildSourceParams(bytes)

@@ -53,7 +53,7 @@ import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.steps.StepHelper;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
@@ -69,7 +69,7 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(HarnessTeam.GITOPS)
 @Slf4j
 public class MergePRStep extends TaskExecutableWithRollbackAndRbac<NGGitOpsResponse> {
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
   @Inject private StepHelper stepHelper;
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
   @Inject private CDStepHelper cdStepHelper;
@@ -232,7 +232,7 @@ public class MergePRStep extends TaskExecutableWithRollbackAndRbac<NGGitOpsRespo
 
     String taskName = TaskType.GITOPS_TASK_NG.getDisplayName();
 
-    return prepareCDTaskRequest(ambiance, taskData, kryoSerializer, gitOpsSpecParams.getCommandUnits(), taskName,
+    return prepareCDTaskRequest(ambiance, taskData, kryoSerializerWrapper, gitOpsSpecParams.getCommandUnits(), taskName,
         TaskSelectorYaml.toTaskSelector(emptyIfNull(getParameterFieldValue(gitOpsSpecParams.getDelegateSelectors()))),
         stepHelper.getEnvironmentType(ambiance));
   }

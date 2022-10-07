@@ -93,7 +93,7 @@ import io.harness.logging.ExceptionLogger;
 import io.harness.observer.RemoteObserverInformer;
 import io.harness.observer.Subject;
 import io.harness.reflection.ReflectionUtils;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.serializer.MapperUtils;
 import io.harness.state.inspection.ExpressionVariableUsage;
 import io.harness.state.inspection.StateInspectionListener;
@@ -224,7 +224,7 @@ public class StateMachineExecutor implements StateInspectionListener {
   @Inject private PipelineService pipelineService;
   @Inject private SweepingOutputService sweepingOutputService;
   @Inject private PipelineConfig pipelineConfig;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
   @Inject private RemoteObserverInformer remoteObserverInformer;
   @Inject private WorkflowExecutionUpdate workflowExecutionUpdate;
   /**
@@ -1704,7 +1704,7 @@ public class StateMachineExecutor implements StateInspectionListener {
    * @param nextState              @return
    */
   private StateExecutionInstance clone(StateExecutionInstance stateExecutionInstance, State nextState) {
-    StateExecutionInstance cloned = kryoSerializer.clone(stateExecutionInstance);
+    StateExecutionInstance cloned = kryoSerializerWrapper.clone(stateExecutionInstance);
     cloned.setContinued(false);
     cloned.setInterruptHistory(null);
     cloned.setStateExecutionDataHistory(null);

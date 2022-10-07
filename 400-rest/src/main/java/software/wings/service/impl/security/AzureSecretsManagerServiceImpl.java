@@ -27,7 +27,7 @@ import io.harness.encryptors.VaultEncryptorsRegistry;
 import io.harness.exception.AzureKeyVaultOperationException;
 import io.harness.exception.SecretManagementException;
 import io.harness.security.encryption.EncryptionType;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import software.wings.beans.AzureVaultConfig;
 import software.wings.beans.AzureVaultConfig.AzureVaultConfigKeys;
@@ -53,7 +53,7 @@ import org.mongodb.morphia.query.Query;
 public class AzureSecretsManagerServiceImpl extends AbstractSecretServiceImpl implements AzureSecretsManagerService {
   @Inject private WingsPersistence wingsPersistence;
   @Inject private AzureHelperService azureHelperService;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
   @Inject private VaultEncryptorsRegistry vaultEncryptorsRegistry;
   private static final String SECRET_KEY_NAME_SUFFIX = "_secretKey";
 
@@ -69,7 +69,7 @@ public class AzureSecretsManagerServiceImpl extends AbstractSecretServiceImpl im
 
     if (isNotEmpty(azureVaultConfig.getUuid())) {
       savedAzureVaultConfig = wingsPersistence.get(AzureVaultConfig.class, azureVaultConfig.getUuid());
-      oldConfigForAudit = kryoSerializer.clone(savedAzureVaultConfig);
+      oldConfigForAudit = kryoSerializerWrapper.clone(savedAzureVaultConfig);
 
       updateCallWithMaskedSecretKey = SECRET_MASK.equals(azureVaultConfig.getSecretKey())
           || (isEmpty(azureVaultConfig.getSecretKey()) && azureVaultConfig.getNgMetadata() != null);

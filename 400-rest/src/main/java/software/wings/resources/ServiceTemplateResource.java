@@ -19,7 +19,7 @@ import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
 import io.harness.rest.RestResponse;
 import io.harness.security.annotations.DelegateAuth;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import software.wings.beans.ConfigFile;
 import software.wings.beans.ConfigFileDto;
@@ -62,7 +62,7 @@ public class ServiceTemplateResource {
    * The Service template service.
    */
   @Inject ServiceTemplateService serviceTemplateService;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
 
   /**
    * List.
@@ -169,7 +169,7 @@ public class ServiceTemplateResource {
       @QueryParam("hostId") String hostId, @QueryParam("accountId") @NotEmpty String accountId) {
     List<ConfigFile> configFiles = serviceTemplateService.computedConfigFiles(appId, envId, templateId);
 
-    return new RestResponse<>(kryoSerializer.asString(configFiles));
+    return new RestResponse<>(kryoSerializerWrapper.asString(configFiles));
   }
 
   @DelegateAuth

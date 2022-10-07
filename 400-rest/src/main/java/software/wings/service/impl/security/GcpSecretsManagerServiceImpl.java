@@ -34,7 +34,7 @@ import io.harness.encryptors.KmsEncryptorsRegistry;
 import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.SecretManagementException;
 import io.harness.security.encryption.EncryptionType;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import software.wings.beans.GcpKmsConfig;
 import software.wings.beans.GcpKmsConfig.GcpKmsConfigKeys;
@@ -57,7 +57,7 @@ import org.mongodb.morphia.query.Query;
 public class GcpSecretsManagerServiceImpl extends AbstractSecretServiceImpl implements GcpSecretsManagerService {
   private static final String CREDENTIAL_SUFFIX = "_credentials";
   @Inject private HarnessUserGroupService harnessUserGroupService;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
   @Inject private KmsEncryptorsRegistry kmsEncryptorsRegistry;
 
   @Override
@@ -117,7 +117,7 @@ public class GcpSecretsManagerServiceImpl extends AbstractSecretServiceImpl impl
       throw new SecretManagementException(GCP_KMS_OPERATION_ERROR, message, USER_SRE);
     }
 
-    GcpKmsConfig oldConfigForAudit = kryoSerializer.clone(savedGcpKmsConfig);
+    GcpKmsConfig oldConfigForAudit = kryoSerializerWrapper.clone(savedGcpKmsConfig);
 
     if (savedGcpKmsConfig.getAccountId().equals(GLOBAL_ACCOUNT_ID)) {
       accountId = GLOBAL_ACCOUNT_ID;

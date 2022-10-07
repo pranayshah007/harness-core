@@ -46,7 +46,7 @@ import io.harness.perpetualtask.PerpetualTaskServiceClientRegistry;
 import io.harness.perpetualtask.PerpetualTaskState;
 import io.harness.perpetualtask.PerpetualTaskUnassignedReason;
 import io.harness.perpetualtask.internal.PerpetualTaskRecord.PerpetualTaskRecordKeys;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.workers.background.CrossEnvironmentAccountLevelEntityProcessController;
 import io.harness.workers.background.CrossEnvironmentAccountStatusBasedEntityProcessController;
 
@@ -79,7 +79,7 @@ public class PerpetualTaskRecordHandler implements PerpetualTaskCrudObserver {
   @Inject private MorphiaPersistenceProvider<PerpetualTaskRecord> persistenceProvider;
   @Inject private MorphiaPersistenceProvider<Account> persistenceProviderAccount;
   @Inject private AccountService accountService;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
   @Inject private PerpetualTaskRecordDao perpetualTaskRecordDao;
 
   PersistenceIterator<PerpetualTaskRecord> assignmentIterator;
@@ -229,7 +229,7 @@ public class PerpetualTaskRecordHandler implements PerpetualTaskCrudObserver {
     if (isNotEmpty(capabilityList)) {
       executionCapabilityList = capabilityList.stream()
                                     .map(capability
-                                        -> (ExecutionCapability) kryoSerializer.asInflatedObject(
+                                        -> (ExecutionCapability) kryoSerializerWrapper.asInflatedObject(
                                             capability.getKryoCapability().toByteArray()))
                                     .collect(toList());
     }

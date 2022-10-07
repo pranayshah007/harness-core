@@ -18,7 +18,7 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.facilitators.FacilitatorResponseProto;
 import io.harness.pms.execution.facilitator.DefaultFacilitatorParams;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import com.google.inject.Inject;
 import org.junit.Test;
@@ -26,14 +26,14 @@ import org.junit.experimental.categories.Category;
 
 public class TaskChainFacilitatorTest extends OrchestrationTestBase {
   @Inject private TaskChainFacilitator taskChainFacilitator;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
 
   @Test
   @Owner(developers = PRASHANT)
   @Category(UnitTests.class)
   public void shouldTestFacilitate() {
     Ambiance ambiance = Ambiance.newBuilder().build();
-    byte[] parameters = kryoSerializer.asBytes(DefaultFacilitatorParams.builder().build());
+    byte[] parameters = kryoSerializerWrapper.asBytes(DefaultFacilitatorParams.builder().build());
     FacilitatorResponseProto response = taskChainFacilitator.facilitate(ambiance, parameters);
     assertThat(response).isNotNull();
     assertThat(response.getExecutionMode()).isEqualTo(TASK_CHAIN);

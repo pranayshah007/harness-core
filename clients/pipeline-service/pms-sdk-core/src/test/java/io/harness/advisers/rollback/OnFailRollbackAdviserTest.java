@@ -32,7 +32,7 @@ import io.harness.pms.sdk.core.adviser.AdvisingEvent;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import java.util.Collections;
 import org.junit.Before;
@@ -44,7 +44,7 @@ import org.mockito.MockitoAnnotations;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public class OnFailRollbackAdviserTest extends CategoryTest {
-  @Mock private KryoSerializer kryoSerializer;
+  @Mock private KryoSerializerWrapper kryoSerializerWrapper;
   @Mock ExecutionSweepingOutputService executionSweepingOutputService;
   @InjectMocks OnFailRollbackAdviser onFailRollbackAdviser;
 
@@ -61,7 +61,7 @@ public class OnFailRollbackAdviserTest extends CategoryTest {
                  .strategy(RollbackStrategy.STAGE_ROLLBACK)
                  .strategyToUuid(Collections.singletonMap(RollbackStrategy.STAGE_ROLLBACK, "uuid1"))
                  .build())
-        .when(kryoSerializer)
+        .when(kryoSerializerWrapper)
         .asObject((byte[]) any());
     doReturn(OptionalSweepingOutput.builder().build())
         .when(executionSweepingOutputService)
@@ -88,7 +88,7 @@ public class OnFailRollbackAdviserTest extends CategoryTest {
     doReturn(OnFailRollbackParameters.builder()
                  .applicableFailureTypes(Collections.singleton(FailureType.APPLICATION_FAILURE))
                  .build())
-        .when(kryoSerializer)
+        .when(kryoSerializerWrapper)
         .asObject((byte[]) any());
 
     AdvisingEvent advisingEvent =
@@ -109,7 +109,7 @@ public class OnFailRollbackAdviserTest extends CategoryTest {
             .build();
     assertTrue(onFailRollbackAdviser.canAdvise(advisingEvent));
     doReturn(OnFailRollbackParameters.builder().applicableFailureTypes(Collections.emptySet()).build())
-        .when(kryoSerializer)
+        .when(kryoSerializerWrapper)
         .asObject((byte[]) any());
     assertFalse(onFailRollbackAdviser.canAdvise(advisingEvent));
   }

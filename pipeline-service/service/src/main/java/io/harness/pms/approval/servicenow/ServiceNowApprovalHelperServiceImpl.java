@@ -49,7 +49,7 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.secrets.remote.SecretNGManagerClient;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.servicenow.ServiceNowActionNG;
 import io.harness.steps.StepUtils;
 import io.harness.steps.approval.step.entities.ApprovalInstance.ApprovalInstanceKeys;
@@ -82,22 +82,22 @@ public class ServiceNowApprovalHelperServiceImpl implements ServiceNowApprovalHe
   private final LogStreamingStepClientFactory logStreamingStepClientFactory;
   private final SecretNGManagerClient secretManagerClient;
   private final NgDelegate2TaskExecutor ngDelegate2TaskExecutor;
-  private final KryoSerializer kryoSerializer;
+  private final KryoSerializerWrapper kryoSerializerWrapper;
   private final String publisherName;
   private final WaitNotifyEngine waitNotifyEngine;
 
   @Inject
   public ServiceNowApprovalHelperServiceImpl(ConnectorResourceClient connectorResourceClient,
-      PmsGitSyncHelper pmsGitSyncHelper, LogStreamingStepClientFactory logStreamingStepClientFactory,
-      @Named("PRIVILEGED") SecretNGManagerClient secretManagerClient, NgDelegate2TaskExecutor ngDelegate2TaskExecutor,
-      KryoSerializer kryoSerializer, @Named(OrchestrationPublisherName.PUBLISHER_NAME) String publisherName,
-      WaitNotifyEngine waitNotifyEngine) {
+                                             PmsGitSyncHelper pmsGitSyncHelper, LogStreamingStepClientFactory logStreamingStepClientFactory,
+                                             @Named("PRIVILEGED") SecretNGManagerClient secretManagerClient, NgDelegate2TaskExecutor ngDelegate2TaskExecutor,
+                                             KryoSerializerWrapper kryoSerializerWrapper, @Named(OrchestrationPublisherName.PUBLISHER_NAME) String publisherName,
+                                             WaitNotifyEngine waitNotifyEngine) {
     this.connectorResourceClient = connectorResourceClient;
     this.pmsGitSyncHelper = pmsGitSyncHelper;
     this.logStreamingStepClientFactory = logStreamingStepClientFactory;
     this.secretManagerClient = secretManagerClient;
     this.ngDelegate2TaskExecutor = ngDelegate2TaskExecutor;
-    this.kryoSerializer = kryoSerializer;
+    this.kryoSerializerWrapper = kryoSerializerWrapper;
     this.publisherName = publisherName;
     this.waitNotifyEngine = waitNotifyEngine;
   }
@@ -221,9 +221,9 @@ public class ServiceNowApprovalHelperServiceImpl implements ServiceNowApprovalHe
       Ambiance ambiance, ServiceNowTaskNGParameters serviceNowTaskNGParameters) {
     TaskDetails taskDetails =
         TaskDetails.newBuilder()
-            .setKryoParameters(ByteString.copyFrom(kryoSerializer.asDeflatedBytes(serviceNowTaskNGParameters) == null
+            .setKryoParameters(ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(serviceNowTaskNGParameters) == null
                     ? new byte[] {}
-                    : kryoSerializer.asDeflatedBytes(serviceNowTaskNGParameters)))
+                    : kryoSerializerWrapper.asDeflatedBytes(serviceNowTaskNGParameters)))
             .setExecutionTimeout(com.google.protobuf.Duration.newBuilder().setSeconds(20).build())
             .setMode(TaskMode.ASYNC)
             .setParked(false)

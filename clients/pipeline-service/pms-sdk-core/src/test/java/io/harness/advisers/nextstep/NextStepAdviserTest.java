@@ -29,7 +29,7 @@ import io.harness.pms.sdk.core.adviser.AdvisingEvent;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -40,7 +40,7 @@ import org.mockito.MockitoAnnotations;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public class NextStepAdviserTest extends CategoryTest {
-  @Mock private KryoSerializer kryoSerializer;
+  @Mock private KryoSerializerWrapper kryoSerializerWrapper;
   @Mock ExecutionSweepingOutputService executionSweepingOutputService;
   @InjectMocks NextStepAdviser nextStepAdviser;
 
@@ -55,7 +55,7 @@ public class NextStepAdviserTest extends CategoryTest {
   public void testOnAdviseEvent() {
     String nextNodeId = "nextNodeId";
     doReturn(NextStepAdviserParameters.builder().nextNodeId(nextNodeId).build())
-        .when(kryoSerializer)
+        .when(kryoSerializerWrapper)
         .asObject((byte[]) any());
     AdvisingEvent advisingEvent =
         AdvisingEvent.builder()

@@ -16,7 +16,7 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.SweepingOutputInstance.Scope;
 import io.harness.context.ContextElementType;
 import io.harness.exception.InvalidRequestException;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import software.wings.api.RancherClusterElement;
 import software.wings.api.k8s.K8sElement;
@@ -39,7 +39,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class RancherK8sBlueGreenDeploy extends K8sBlueGreenDeploy {
   @Inject private SweepingOutputService sweepingOutputService;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
   @Inject public K8sStateHelper k8sStateHelper;
   @Inject public RancherStateHelper rancherStateHelper;
 
@@ -71,7 +71,7 @@ public class RancherK8sBlueGreenDeploy extends K8sBlueGreenDeploy {
     try {
       sweepingOutputService.save(context.prepareSweepingOutputBuilder(Scope.WORKFLOW)
                                      .name("k8s")
-                                     .output(kryoSerializer.asDeflatedBytes(k8sElement))
+                                     .output(kryoSerializerWrapper.asDeflatedBytes(k8sElement))
                                      .build());
     } catch (InvalidRequestException e) {
       if (e.getCause() instanceof DuplicateKeyException) {

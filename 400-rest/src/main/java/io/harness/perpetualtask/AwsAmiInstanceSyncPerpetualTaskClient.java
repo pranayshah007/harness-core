@@ -23,7 +23,7 @@ import io.harness.beans.DelegateTask;
 import io.harness.delegate.beans.TaskData;
 import io.harness.perpetualtask.instancesync.AwsAmiInstanceSyncPerpetualTaskParams;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import software.wings.beans.AwsAmiInfrastructureMapping;
 import software.wings.beans.AwsConfig;
@@ -53,15 +53,15 @@ public class AwsAmiInstanceSyncPerpetualTaskClient implements PerpetualTaskServi
   @Inject SecretManager secretManager;
   @Inject SettingsService settingsService;
   @Inject InfrastructureMappingService infraMappingService;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
 
   @Override
   public Message getTaskParams(PerpetualTaskClientContext clientContext) {
     final PerpetualTaskData perpetualTaskData = getPerpetualTaskData(clientContext);
 
-    ByteString configBytes = ByteString.copyFrom(kryoSerializer.asBytes(perpetualTaskData.getAwsConfig()));
+    ByteString configBytes = ByteString.copyFrom(kryoSerializerWrapper.asBytes(perpetualTaskData.getAwsConfig()));
     ByteString encryptedConfigBytes =
-        ByteString.copyFrom(kryoSerializer.asBytes(perpetualTaskData.getEncryptedDataDetails()));
+        ByteString.copyFrom(kryoSerializerWrapper.asBytes(perpetualTaskData.getEncryptedDataDetails()));
 
     return AwsAmiInstanceSyncPerpetualTaskParams.newBuilder()
         .setRegion(perpetualTaskData.getRegion())

@@ -20,7 +20,7 @@ import io.harness.observer.Informant;
 import io.harness.observer.Informant.InformantCase;
 import io.harness.observer.RemoteObserver;
 import io.harness.reflection.ReflectionUtils;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
@@ -41,7 +41,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class RemoteObserverProcessorImpl implements RemoteObserverProcessor {
   Injector injector;
-  KryoSerializer kryoSerializer;
+  KryoSerializerWrapper kryoSerializerWrapper;
 
   @Override
   public boolean process(Message message, Set<RemoteObserver> remoteObservers) {
@@ -80,7 +80,7 @@ public class RemoteObserverProcessorImpl implements RemoteObserverProcessor {
     final Object observerClassObject = getObserver(observer);
     final InformantCase informantCase = informant.getInformantCase();
     Function<ByteString, Object> objectSupplier =
-        byteString -> byteString.equals(ByteString.EMPTY) ? null : kryoSerializer.asObject(byteString.toByteArray());
+        byteString -> byteString.equals(ByteString.EMPTY) ? null : kryoSerializerWrapper.asObject(byteString.toByteArray());
     try {
       switch (informantCase) {
         case INFORMANT0:

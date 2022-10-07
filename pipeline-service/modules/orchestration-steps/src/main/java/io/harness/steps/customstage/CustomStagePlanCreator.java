@@ -19,7 +19,7 @@ import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.yaml.DependenciesUtils;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.steps.StepSpecTypeConstants;
 
 import com.google.common.base.Preconditions;
@@ -33,7 +33,7 @@ import java.util.Set;
 
 @OwnedBy(HarnessTeam.CDC)
 public class CustomStagePlanCreator extends AbstractPmsStagePlanCreator<CustomStageNode> {
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
 
   @Override
   public Set<String> getSupportedStageTypes() {
@@ -95,7 +95,7 @@ public class CustomStagePlanCreator extends AbstractPmsStagePlanCreator<CustomSt
     specDependencyMap.put(specField.getNode().getUuid(), specField);
     Map<String, ByteString> specDependencyMetadataMap = new HashMap<>();
     specDependencyMetadataMap.put(YAMLFieldNameConstants.CHILD_NODE_OF_SPEC,
-        ByteString.copyFrom(kryoSerializer.asDeflatedBytes(executionField.getNode().getUuid())));
+        ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(executionField.getNode().getUuid())));
     return PlanCreationResponse.builder()
         .dependencies(DependenciesUtils.toDependenciesProto(specDependencyMap)
                           .toBuilder()

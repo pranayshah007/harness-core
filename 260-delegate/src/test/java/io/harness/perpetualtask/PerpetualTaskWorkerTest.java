@@ -22,7 +22,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.manage.ManagedScheduledExecutorService;
 import io.harness.perpetualtask.k8s.watch.K8sWatchTaskParams;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.threading.Concurrent;
 
 import software.wings.beans.KubernetesClusterConfig;
@@ -84,12 +84,13 @@ public class PerpetualTaskWorkerTest extends DelegateTestBase {
       new ManagedScheduledExecutorService("perpetualTaskTimeoutExecutor");
   @InjectMocks private PerpetualTaskWorker worker;
 
-  @Inject KryoSerializer kryoSerializer;
+  @Inject
+  KryoSerializerWrapper kryoSerializerWrapper;
 
   @Before
   public void setUp() throws ExecutionException, InterruptedException {
     kubernetesClusterConfig = KubernetesClusterConfig.builder().accountId(accountId).build();
-    ByteString bytes = ByteString.copyFrom(kryoSerializer.asBytes(kubernetesClusterConfig));
+    ByteString bytes = ByteString.copyFrom(kryoSerializerWrapper.asBytes(kubernetesClusterConfig));
     K8sWatchTaskParams k8sWatchTaskParams =
         K8sWatchTaskParams.newBuilder().setCloudProviderId(cloudProviderId).setK8SClusterConfig(bytes).build();
 

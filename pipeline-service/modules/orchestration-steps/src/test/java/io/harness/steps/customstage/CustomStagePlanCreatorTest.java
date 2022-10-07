@@ -18,7 +18,7 @@ import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.steps.StepSpecTypeConstants;
 
 import com.google.common.io.Resources;
@@ -40,7 +40,7 @@ public class CustomStagePlanCreatorTest {
 
   @InjectMocks CustomStagePlanCreator customStagePlanCreator;
 
-  @Mock private KryoSerializer kryoSerializer;
+  @Mock private KryoSerializerWrapper kryoSerializerWrapper;
   private String SOURCE_PIPELINE_YAML;
 
   @Before
@@ -93,7 +93,7 @@ public class CustomStagePlanCreatorTest {
 
     CustomStageNode customStageNode = new CustomStageNode();
     customStageNode.setUuid("tempid");
-    doReturn("temp".getBytes()).when(kryoSerializer).asDeflatedBytes(any());
+    doReturn("temp".getBytes()).when(kryoSerializerWrapper).asDeflatedBytes(any());
     assertThat(customStagePlanCreator.createPlanForChildrenNodes(ctx, customStageNode)).isNotNull();
   }
 }

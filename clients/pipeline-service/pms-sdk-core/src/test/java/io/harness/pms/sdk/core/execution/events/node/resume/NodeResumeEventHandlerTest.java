@@ -41,7 +41,7 @@ import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.pms.sdk.core.steps.io.StepResponseNotifyData;
 import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.tasks.ResponseData;
 
 import com.google.inject.Inject;
@@ -64,8 +64,10 @@ public class NodeResumeEventHandlerTest extends PmsSdkCoreTestBase {
   @Mock EngineObtainmentHelper engineObtainmentHelper;
   @InjectMocks NodeResumeEventHandler nodeResumeEventHandler;
   @Mock SdkNodeExecutionService sdkNodeExecutionService;
-  @Mock KryoSerializer mockedKryoSerializer;
-  @Inject KryoSerializer kryoSerializer1;
+  @Mock
+  KryoSerializerWrapper mockedKryoSerializerWrapper;
+  @Inject
+  KryoSerializerWrapper kryoSerializerWrapper1;
 
   private NodeResumeEvent nodeResumeEvent;
   private Ambiance ambiance;
@@ -79,10 +81,10 @@ public class NodeResumeEventHandlerTest extends PmsSdkCoreTestBase {
     Map<String, ByteString> responseDataMap = new HashMap<>();
     StepResponseNotifyData stepResponseNotifyData = StepResponseNotifyData.builder().build();
     ByteString byteString =
-        ByteString.copyFrom(kryoSerializer1.asDeflatedBytes(StepResponseNotifyData.builder().build()));
+        ByteString.copyFrom(kryoSerializerWrapper1.asDeflatedBytes(StepResponseNotifyData.builder().build()));
 
     responseDataMap.put("response", byteString);
-    when(mockedKryoSerializer.asInflatedObject(byteString.toByteArray())).thenReturn(stepResponseNotifyData);
+    when(mockedKryoSerializerWrapper.asInflatedObject(byteString.toByteArray())).thenReturn(stepResponseNotifyData);
 
     nodeResumeEvent = NodeResumeEvent.newBuilder()
                           .setExecutionMode(ExecutionMode.APPROVAL)
@@ -157,10 +159,10 @@ public class NodeResumeEventHandlerTest extends PmsSdkCoreTestBase {
   public void testHandleEventWithContextWithAsyncError() {
     Map<String, ByteString> responseDataMap = new HashMap<>();
     DummyErrorResponseData errorResponseData = DummyErrorResponseData.builder().build();
-    ByteString byteString = ByteString.copyFrom(kryoSerializer1.asDeflatedBytes(errorResponseData));
+    ByteString byteString = ByteString.copyFrom(kryoSerializerWrapper1.asDeflatedBytes(errorResponseData));
 
     responseDataMap.put("response", byteString);
-    when(mockedKryoSerializer.asInflatedObject(byteString.toByteArray())).thenReturn(errorResponseData);
+    when(mockedKryoSerializerWrapper.asInflatedObject(byteString.toByteArray())).thenReturn(errorResponseData);
 
     nodeResumeEvent = nodeResumeEvent.toBuilder().setAsyncError(true).putAllResponse(responseDataMap).build();
     nodeResumeEventHandler.handleEventWithContext(nodeResumeEvent);
@@ -174,7 +176,7 @@ public class NodeResumeEventHandlerTest extends PmsSdkCoreTestBase {
   public void testHandleEventWithContextForChildChain() {
     StepResponseNotifyData notifyData = StepResponseNotifyData.builder().status(Status.RUNNING).build();
     Map<String, ByteString> responseDataMap = new HashMap<>();
-    ByteString byteString = ByteString.copyFrom(kryoSerializer1.asDeflatedBytes(notifyData));
+    ByteString byteString = ByteString.copyFrom(kryoSerializerWrapper1.asDeflatedBytes(notifyData));
     responseDataMap.put("response", byteString);
     ByteString passThroughData =
         ByteString.copyFrom(RecastOrchestrationUtils.toBytes(TestPassThroughData.builder().data("SOME_DATA").build()));
@@ -191,7 +193,7 @@ public class NodeResumeEventHandlerTest extends PmsSdkCoreTestBase {
             .setChainDetails(ChainDetails.newBuilder().setIsEnd(true).setPassThroughData(passThroughData).build())
             .build();
 
-    when(mockedKryoSerializer.asInflatedObject(byteString.toByteArray())).thenReturn(notifyData);
+    when(mockedKryoSerializerWrapper.asInflatedObject(byteString.toByteArray())).thenReturn(notifyData);
     ExecutableProcessor executableProcessor = mock(ExecutableProcessor.class);
     when(executableProcessorFactory.obtainProcessor(ExecutionMode.CHILD_CHAIN)).thenReturn(executableProcessor);
     nodeResumeEventHandler.handleEventWithContext(childChainResumeEvent);
@@ -214,7 +216,7 @@ public class NodeResumeEventHandlerTest extends PmsSdkCoreTestBase {
   public void testHandleEventWithContextForChildChainEmptyPassThrough() {
     StepResponseNotifyData notifyData = StepResponseNotifyData.builder().status(Status.RUNNING).build();
     Map<String, ByteString> responseDataMap = new HashMap<>();
-    ByteString byteString = ByteString.copyFrom(kryoSerializer1.asDeflatedBytes(notifyData));
+    ByteString byteString = ByteString.copyFrom(kryoSerializerWrapper1.asDeflatedBytes(notifyData));
     responseDataMap.put("response", byteString);
 
     ByteString stepParameters =
@@ -228,7 +230,7 @@ public class NodeResumeEventHandlerTest extends PmsSdkCoreTestBase {
                                                 .setChainDetails(ChainDetails.newBuilder().setIsEnd(true).build())
                                                 .build();
 
-    when(mockedKryoSerializer.asInflatedObject(byteString.toByteArray())).thenReturn(notifyData);
+    when(mockedKryoSerializerWrapper.asInflatedObject(byteString.toByteArray())).thenReturn(notifyData);
     ExecutableProcessor executableProcessor = mock(ExecutableProcessor.class);
     when(executableProcessorFactory.obtainProcessor(ExecutionMode.CHILD_CHAIN)).thenReturn(executableProcessor);
     nodeResumeEventHandler.handleEventWithContext(childChainResumeEvent);
@@ -250,7 +252,7 @@ public class NodeResumeEventHandlerTest extends PmsSdkCoreTestBase {
   public void testHandleEventWithContextForTaskChain() {
     StepResponseNotifyData notifyData = StepResponseNotifyData.builder().status(Status.RUNNING).build();
     Map<String, ByteString> responseDataMap = new HashMap<>();
-    ByteString byteString = ByteString.copyFrom(kryoSerializer1.asDeflatedBytes(notifyData));
+    ByteString byteString = ByteString.copyFrom(kryoSerializerWrapper1.asDeflatedBytes(notifyData));
     responseDataMap.put("response", byteString);
     ByteString passThroughData =
         ByteString.copyFrom(RecastOrchestrationUtils.toBytes(TestPassThroughData.builder().data("SOME_DATA").build()));
@@ -267,7 +269,7 @@ public class NodeResumeEventHandlerTest extends PmsSdkCoreTestBase {
             .setChainDetails(ChainDetails.newBuilder().setIsEnd(true).setPassThroughData(passThroughData).build())
             .build();
 
-    when(mockedKryoSerializer.asInflatedObject(byteString.toByteArray())).thenReturn(notifyData);
+    when(mockedKryoSerializerWrapper.asInflatedObject(byteString.toByteArray())).thenReturn(notifyData);
     ExecutableProcessor executableProcessor = mock(ExecutableProcessor.class);
     when(executableProcessorFactory.obtainProcessor(ExecutionMode.TASK_CHAIN)).thenReturn(executableProcessor);
     nodeResumeEventHandler.handleEventWithContext(childChainResumeEvent);

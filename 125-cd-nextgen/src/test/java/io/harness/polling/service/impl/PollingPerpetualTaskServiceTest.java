@@ -60,7 +60,7 @@ import io.harness.polling.service.impl.artifact.ArtifactPerpetualTaskHelperNg;
 import io.harness.polling.service.impl.gitpolling.GitPollingPerpetualTaskHelperNg;
 import io.harness.polling.service.impl.manifest.ManifestPerpetualTaskHelperNg;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import com.google.inject.Inject;
 import com.google.protobuf.Any;
@@ -89,22 +89,23 @@ public class PollingPerpetualTaskServiceTest extends CDNGTestBase {
   @Mock DelegateServiceGrpcClient delegateServiceGrpcClient;
   @Mock PollingServiceImpl pollingService;
   @Mock K8sStepHelper k8sStepHelper;
-  @Inject KryoSerializer kryoSerializer;
+  @Inject
+  KryoSerializerWrapper kryoSerializerWrapper;
   @Mock ArtifactStepHelper artifactStepHelper;
   @Mock GitPollingStepHelper gitPollingStepHelper;
 
   @Before
   public void setup() {
     ManifestPerpetualTaskHelperNg manifestPerpetualTaskHelperNg =
-        new ManifestPerpetualTaskHelperNg(k8sStepHelper, kryoSerializer);
+        new ManifestPerpetualTaskHelperNg(k8sStepHelper, kryoSerializerWrapper);
     spyManifestPerpetualTaskHelperNg = Mockito.spy(manifestPerpetualTaskHelperNg);
 
     ArtifactPerpetualTaskHelperNg artifactPerpetualTaskHelperNg =
-        new ArtifactPerpetualTaskHelperNg(kryoSerializer, artifactStepHelper);
+        new ArtifactPerpetualTaskHelperNg(kryoSerializerWrapper, artifactStepHelper);
     spyArtifactPerpetualTaskHelperNg = Mockito.spy(artifactPerpetualTaskHelperNg);
 
     GitPollingPerpetualTaskHelperNg gitPollingPerpetualTaskHelperNg =
-        new GitPollingPerpetualTaskHelperNg(kryoSerializer, gitPollingStepHelper);
+        new GitPollingPerpetualTaskHelperNg(kryoSerializerWrapper, gitPollingStepHelper);
     spyGitPollingPerpetualTaskHelperNg = Mockito.spy(gitPollingPerpetualTaskHelperNg);
 
     pollingPerpetualTaskService =
@@ -173,7 +174,7 @@ public class PollingPerpetualTaskServiceTest extends CDNGTestBase {
     assertThat(params.getPollingDocId()).isEqualTo(UUID);
 
     ManifestDelegateConfig manifestConfig =
-        (ManifestDelegateConfig) kryoSerializer.asObject(params.getManifestCollectionParams().toByteArray());
+        (ManifestDelegateConfig) kryoSerializerWrapper.asObject(params.getManifestCollectionParams().toByteArray());
     assertThat(manifestConfig).isEqualTo(delegateConfig);
   }
 
@@ -230,7 +231,7 @@ public class PollingPerpetualTaskServiceTest extends CDNGTestBase {
     assertThat(params.getPollingDocId()).isEqualTo(UUID);
 
     ArtifactTaskParameters taskParameters =
-        (ArtifactTaskParameters) kryoSerializer.asObject(params.getArtifactCollectionParams().toByteArray());
+        (ArtifactTaskParameters) kryoSerializerWrapper.asObject(params.getArtifactCollectionParams().toByteArray());
     assertThat(taskParameters.getAccountId()).isEqualTo(ACCOUNT_ID);
     assertThat(taskParameters.getAttributes()).isEqualTo(delegateRequest);
   }
@@ -287,7 +288,7 @@ public class PollingPerpetualTaskServiceTest extends CDNGTestBase {
     assertThat(params.getPollingDocId()).isEqualTo(UUID);
 
     GitPollingTaskParameters taskParameters =
-        (GitPollingTaskParameters) kryoSerializer.asObject(params.getGitpollingWebhookParams().toByteArray());
+        (GitPollingTaskParameters) kryoSerializerWrapper.asObject(params.getGitpollingWebhookParams().toByteArray());
     assertThat(taskParameters.getAccountId()).isEqualTo(ACCOUNT_ID);
   }
 

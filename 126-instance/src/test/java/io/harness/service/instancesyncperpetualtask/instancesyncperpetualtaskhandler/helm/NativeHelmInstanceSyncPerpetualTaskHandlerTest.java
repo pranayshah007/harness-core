@@ -40,7 +40,7 @@ import io.harness.perpetualtask.PerpetualTaskExecutionBundle;
 import io.harness.perpetualtask.instancesync.NativeHelmDeploymentRelease;
 import io.harness.perpetualtask.instancesync.NativeHelmInstanceSyncPerpetualTaskParams;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
@@ -66,7 +66,8 @@ public class NativeHelmInstanceSyncPerpetualTaskHandlerTest extends InstancesTes
   private static final String ORG_IDENTIFIER = "org";
 
   @Mock K8sEntityHelper k8sEntityHelper;
-  @Mock KryoSerializer kryoSerializer;
+  @Mock
+  KryoSerializerWrapper kryoSerializerWrapper;
   @InjectMocks private NativeHelmInstanceSyncPerpetualTaskHandler nativeHelmInstanceSyncPerpetualTaskHandler;
 
   @Test
@@ -146,9 +147,9 @@ public class NativeHelmInstanceSyncPerpetualTaskHandlerTest extends InstancesTes
 
     when(k8sEntityHelper.getK8sInfraDelegateConfig(infrastructureOutcome, baseNGAccess))
         .thenReturn(k8sInfraDelegateConfig);
-    when(kryoSerializer.asBytes(nativeHelmDeploymentReleaseData.getK8sInfraDelegateConfig())).thenReturn(bytes);
-    when(kryoSerializer.asBytes(nativeHelmDeploymentReleaseData.getHelmChartInfo())).thenReturn(bytes2);
-    when(kryoSerializer.asDeflatedBytes(expectedExecutionCapabilityList.get(0))).thenReturn(bytes3);
+    when(kryoSerializerWrapper.asBytes(nativeHelmDeploymentReleaseData.getK8sInfraDelegateConfig())).thenReturn(bytes);
+    when(kryoSerializerWrapper.asBytes(nativeHelmDeploymentReleaseData.getHelmChartInfo())).thenReturn(bytes2);
+    when(kryoSerializerWrapper.asDeflatedBytes(expectedExecutionCapabilityList.get(0))).thenReturn(bytes3);
 
     PerpetualTaskExecutionBundle.Builder builder = PerpetualTaskExecutionBundle.newBuilder();
     expectedExecutionCapabilityList.forEach(executionCapability

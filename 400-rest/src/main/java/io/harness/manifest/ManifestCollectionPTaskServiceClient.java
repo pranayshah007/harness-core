@@ -16,7 +16,7 @@ import io.harness.delegate.task.manifests.request.ManifestCollectionParams;
 import io.harness.perpetualtask.PerpetualTaskClientContext;
 import io.harness.perpetualtask.PerpetualTaskServiceClient;
 import io.harness.perpetualtask.manifest.ManifestCollectionTaskParams;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import software.wings.service.impl.applicationmanifest.ManifestCollectionUtils;
 
@@ -29,7 +29,7 @@ public class ManifestCollectionPTaskServiceClient implements PerpetualTaskServic
   private static final String APP_MANIFEST_ID = ManifestCollectionPTaskClientParamsKeys.appManifestId;
   private static final String APP_ID = ManifestCollectionPTaskClientParamsKeys.appId;
   @Inject private ManifestCollectionUtils manifestCollectionUtils;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
 
   @Override
   public ManifestCollectionTaskParams getTaskParams(PerpetualTaskClientContext clientContext) {
@@ -38,7 +38,7 @@ public class ManifestCollectionPTaskServiceClient implements PerpetualTaskServic
     String appId = clientParams.get(APP_ID);
     ManifestCollectionParams manifestCollectionParams =
         manifestCollectionUtils.prepareCollectTaskParams(appManifestId, appId);
-    ByteString bytes = ByteString.copyFrom(kryoSerializer.asBytes(manifestCollectionParams));
+    ByteString bytes = ByteString.copyFrom(kryoSerializerWrapper.asBytes(manifestCollectionParams));
     return ManifestCollectionTaskParams.newBuilder()
         .setAppManifestId(appManifestId)
         .setManifestCollectionParams(bytes)

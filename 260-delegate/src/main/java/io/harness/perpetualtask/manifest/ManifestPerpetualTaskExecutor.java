@@ -26,7 +26,7 @@ import io.harness.perpetualtask.PerpetualTaskId;
 import io.harness.perpetualtask.PerpetualTaskLogContext;
 import io.harness.perpetualtask.PerpetualTaskResponse;
 import io.harness.perpetualtask.artifact.ArtifactsPublishedCache;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import software.wings.beans.appmanifest.HelmChart;
 import software.wings.delegatetasks.helm.ManifestRepoServiceType;
@@ -58,7 +58,7 @@ public class ManifestPerpetualTaskExecutor implements PerpetualTaskExecutor {
   private static final long INTERNAL_TIMEOUT_IN_MS = 120L * 1000;
 
   private final DelegateAgentManagerClient delegateAgentManagerClient;
-  private final KryoSerializer kryoSerializer;
+  private final KryoSerializerWrapper kryoSerializerWrapper;
   private final ManifestRepositoryService manifestRepositoryService;
 
   private final @Getter Cache<String, ArtifactsPublishedCache<HelmChart>> cache = Caffeine.newBuilder().build();
@@ -66,8 +66,8 @@ public class ManifestPerpetualTaskExecutor implements PerpetualTaskExecutor {
   @Inject
   public ManifestPerpetualTaskExecutor(
       @Named(ManifestRepoServiceType.HELM_COMMAND_SERVICE) ManifestRepositoryService manifestRepositoryService,
-      DelegateAgentManagerClient delegateAgentManagerClient, KryoSerializer kryoSerializer) {
-    this.kryoSerializer = kryoSerializer;
+      DelegateAgentManagerClient delegateAgentManagerClient, KryoSerializerWrapper kryoSerializerWrapper) {
+    this.kryoSerializerWrapper = kryoSerializerWrapper;
     this.manifestRepositoryService = manifestRepositoryService;
     this.delegateAgentManagerClient = delegateAgentManagerClient;
   }
@@ -79,7 +79,7 @@ public class ManifestPerpetualTaskExecutor implements PerpetualTaskExecutor {
     String appManifestId = manifestParams.getAppManifestId();
     log.info("Started manifest collection for appManifestId:{}", appManifestId);
     ManifestCollectionParams manifestCollectionParams =
-        (ManifestCollectionParams) kryoSerializer.asObject(manifestParams.getManifestCollectionParams().toByteArray());
+        (ManifestCollectionParams) kryoSerializerWrapper.asObject(manifestParams.getManifestCollectionParams().toByteArray());
 
     ArtifactsPublishedCache<HelmChart> appManifestCache = cache.get(appManifestId,
         id
@@ -146,7 +146,7 @@ public class ManifestPerpetualTaskExecutor implements PerpetualTaskExecutor {
 
   private boolean publishToManager(String accountId, String taskId, ManifestCollectionExecutionResponse response) {
     try {
-      byte[] responseSerialized = kryoSerializer.asBytes(response);
+      byte[] responseSerialized = kryoSerializerWrapper.asBytes(response);
 
       executeWithExceptions(delegateAgentManagerClient.publishManifestCollectionResult(
           taskId, accountId, RequestBody.create(MediaType.parse("application/octet-stream"), responseSerialized)));
@@ -186,7 +186,7 @@ public class ManifestPerpetualTaskExecutor implements PerpetualTaskExecutor {
     ManifestCollectionTaskParams manifestParams = getTaskParams(params);
     cache.invalidate(manifestParams.getAppManifestId());
     ManifestCollectionParams manifestCollectionParams =
-        (ManifestCollectionParams) kryoSerializer.asObject(manifestParams.getManifestCollectionParams().toByteArray());
+        (ManifestCollectionParams) kryoSerializerWrapper.asObject(manifestParams.getManifestCollectionParams().toByteArray());
     try {
       manifestRepositoryService.cleanup(manifestCollectionParams);
       log.info("Cleanup completed successfully for perpetual task: {}, app manifest: {}", taskId.getId(),

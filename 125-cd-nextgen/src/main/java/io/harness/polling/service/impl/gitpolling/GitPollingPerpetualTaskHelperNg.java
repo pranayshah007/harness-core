@@ -24,7 +24,7 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.plan.execution.SetupAbstractionKeys;
 import io.harness.polling.bean.PollingDocument;
 import io.harness.polling.bean.gitpolling.GitPollingInfo;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -39,7 +39,7 @@ import lombok.AllArgsConstructor;
 @Singleton
 @OwnedBy(HarnessTeam.CDC)
 public class GitPollingPerpetualTaskHelperNg {
-  KryoSerializer kryoSerializer;
+  KryoSerializerWrapper kryoSerializerWrapper;
   GitPollingStepHelper gitPollingStepHelper;
 
   public PerpetualTaskExecutionBundle createPerpetualTaskExecutionBundle(PollingDocument pollingDocument) {
@@ -72,7 +72,7 @@ public class GitPollingPerpetualTaskHelperNg {
     GitPollingTaskParamsNg gitPollingTaskParamsNg =
         GitPollingTaskParamsNg.newBuilder()
             .setPollingDocId(pollingDocument.getUuid())
-            .setGitpollingWebhookParams(ByteString.copyFrom(kryoSerializer.asBytes(taskParameters)))
+            .setGitpollingWebhookParams(ByteString.copyFrom(kryoSerializerWrapper.asBytes(taskParameters)))
             .build();
 
     Any perpetualTaskParams = Any.pack(gitPollingTaskParamsNg);
@@ -83,7 +83,7 @@ public class GitPollingPerpetualTaskHelperNg {
         -> builder
                .addCapabilities(
                    Capability.newBuilder()
-                       .setKryoCapability(ByteString.copyFrom(kryoSerializer.asDeflatedBytes(executionCapability)))
+                       .setKryoCapability(ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(executionCapability)))
                        .build())
                .build());
     return builder.setTaskParams(perpetualTaskParams).putAllSetupAbstractions(ngTaskSetupAbstractionsWithOwner).build();

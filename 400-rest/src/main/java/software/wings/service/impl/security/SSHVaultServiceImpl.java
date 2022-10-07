@@ -37,7 +37,7 @@ import io.harness.helpers.ext.vault.VaultAppRoleLoginResult;
 import io.harness.persistence.HPersistence;
 import io.harness.security.encryption.AccessType;
 import io.harness.security.encryption.EncryptionType;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import software.wings.beans.BaseVaultConfig;
 import software.wings.beans.BaseVaultConfig.BaseVaultConfigKeys;
@@ -66,7 +66,7 @@ import org.mongodb.morphia.query.UpdateOperations;
 public class SSHVaultServiceImpl extends BaseVaultServiceImpl implements SSHVaultService {
   private static final int NUM_OF_RETRIES = 3;
 
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
   @Inject private DelegateProxyFactory delegateProxyFactory;
   @Inject private AccountService accountService;
 
@@ -215,7 +215,7 @@ public class SSHVaultServiceImpl extends BaseVaultServiceImpl implements SSHVaul
       String accountId, SSHVaultConfig sshVaultConfig, boolean auditChanges, boolean validate) {
     SSHVaultConfig savedVaultConfigWithCredentials = getSSHVaultConfig(accountId, sshVaultConfig.getUuid());
     SSHVaultConfig oldConfigForAudit = wingsPersistence.get(SSHVaultConfig.class, sshVaultConfig.getUuid());
-    SSHVaultConfig savedVaultConfig = kryoSerializer.clone(oldConfigForAudit);
+    SSHVaultConfig savedVaultConfig = kryoSerializerWrapper.clone(oldConfigForAudit);
     // Replaced masked secrets with the real secret value.
     if (SECRET_MASK.equals(sshVaultConfig.getAuthToken())) {
       sshVaultConfig.setAuthToken(savedVaultConfigWithCredentials.getAuthToken());

@@ -41,7 +41,7 @@ import io.harness.perpetualtask.PerpetualTaskId;
 import io.harness.perpetualtask.PerpetualTaskResponse;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.SecretDecryptionService;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.verificationclient.CVNextGenServiceClient;
 
 import software.wings.delegatetasks.DelegateLogService;
@@ -72,7 +72,7 @@ public class DataCollectionPerpetualTaskExecutor implements PerpetualTaskExecuto
   @Inject private TimeSeriesDataStoreService timeSeriesDataStoreService;
   @Inject private LogRecordDataStoreService logRecordDataStoreService;
   @Inject private HostRecordDataStoreService hostRecordDataStoreService;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
 
   @Inject private DataCollectionDSLService dataCollectionDSLService;
   @Inject private CVNGRequestExecutor cvngRequestExecutor;
@@ -86,7 +86,7 @@ public class DataCollectionPerpetualTaskExecutor implements PerpetualTaskExecuto
         AnyUtils.unpack(params.getCustomizedParams(), DataCollectionPerpetualTaskParams.class);
     log.info("Executing for !! dataCollectionWorkerId: {}", taskParams.getDataCollectionWorkerId());
     CVDataCollectionInfo dataCollectionInfo =
-        (CVDataCollectionInfo) kryoSerializer.asObject(taskParams.getDataCollectionInfo().toByteArray());
+        (CVDataCollectionInfo) kryoSerializerWrapper.asObject(taskParams.getDataCollectionInfo().toByteArray());
     log.info("DataCollectionInfo {} ", dataCollectionInfo);
     try (DataCollectionLogContext ignored = new DataCollectionLogContext(
              taskParams.getDataCollectionWorkerId(), dataCollectionInfo.getDataCollectionType(), OVERRIDE_ERROR)) {

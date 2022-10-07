@@ -24,7 +24,7 @@ import io.harness.delegate.task.spotinst.request.SpotInstListElastigroupInstance
 import io.harness.perpetualtask.PerpetualTaskClientContext;
 import io.harness.perpetualtask.PerpetualTaskServiceClient;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import software.wings.beans.AwsAmiInfrastructureMapping;
 import software.wings.beans.AwsConfig;
@@ -55,18 +55,18 @@ public class SpotinstAmiInstanceSyncPerpetualTaskClient implements PerpetualTask
   @Inject InfrastructureMappingService infraMappingService;
   @Inject SettingsService settingsService;
   @Inject SecretManager secretManager;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
 
   @Override
   public Message getTaskParams(PerpetualTaskClientContext clientContext) {
     final PerpetualTaskData delegateTaskData = getPerpetualTaskData(clientContext);
 
-    ByteString awsConfigBytes = ByteString.copyFrom(kryoSerializer.asBytes(delegateTaskData.getAwsConfig()));
-    ByteString spotinstConfigBytes = ByteString.copyFrom(kryoSerializer.asBytes(delegateTaskData.getSpotinstConfig()));
+    ByteString awsConfigBytes = ByteString.copyFrom(kryoSerializerWrapper.asBytes(delegateTaskData.getAwsConfig()));
+    ByteString spotinstConfigBytes = ByteString.copyFrom(kryoSerializerWrapper.asBytes(delegateTaskData.getSpotinstConfig()));
     ByteString awsEncryptedDataBytes =
-        ByteString.copyFrom(kryoSerializer.asBytes(delegateTaskData.getAwsEncryptedDataData()));
+        ByteString.copyFrom(kryoSerializerWrapper.asBytes(delegateTaskData.getAwsEncryptedDataData()));
     ByteString spotinstEncryptedDataBytes =
-        ByteString.copyFrom(kryoSerializer.asBytes(delegateTaskData.getSpotinstEncryptedData()));
+        ByteString.copyFrom(kryoSerializerWrapper.asBytes(delegateTaskData.getSpotinstEncryptedData()));
 
     return SpotinstAmiInstanceSyncPerpetualTaskParams.newBuilder()
         .setRegion(delegateTaskData.getRegion())

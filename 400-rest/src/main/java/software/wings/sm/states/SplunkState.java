@@ -11,7 +11,7 @@ import static com.google.common.collect.ImmutableSortedMap.of;
 import static java.util.Arrays.asList;
 
 import io.harness.beans.KeyValuePair;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.tasks.ResponseData;
 
 import software.wings.api.HttpStateExecutionData;
@@ -210,7 +210,7 @@ public class SplunkState extends HttpState {
   }
 
   @Override
-  public KryoSerializer getKryoSerializer() {
-    return kryoSerializer;
+  public KryoSerializerWrapper getKryoSerializer() {
+    return kryoSerializerWrapper;
   }
 }

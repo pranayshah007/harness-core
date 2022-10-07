@@ -56,7 +56,7 @@ import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import com.google.protobuf.ByteString;
 import java.io.IOException;
@@ -78,7 +78,8 @@ import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
 public class ServiceDefinitionPlanCreatorHelperTest extends CategoryTest {
-  @Mock KryoSerializer kryoSerializer;
+  @Mock
+  KryoSerializerWrapper kryoSerializerWrapper;
 
   private static final String SVC_REF = "SVC_REF";
   private static final String ENV_REF = "ENV_REF";
@@ -173,9 +174,9 @@ public class ServiceDefinitionPlanCreatorHelperTest extends CategoryTest {
   public void testPrepareMetadataV1() {
     String uuid = UUIDGenerator.generateUuid();
     ServiceConfig serviceConfig = ServiceConfig.builder().build();
-    Mockito.when(kryoSerializer.asDeflatedBytes(any())).thenReturn("".getBytes());
+    Mockito.when(kryoSerializerWrapper.asDeflatedBytes(any())).thenReturn("".getBytes());
     Map<String, ByteString> metadataDependency =
-        ServiceDefinitionPlanCreatorHelper.prepareMetadata(uuid, serviceConfig, kryoSerializer);
+        ServiceDefinitionPlanCreatorHelper.prepareMetadata(uuid, serviceConfig, kryoSerializerWrapper);
     assertThat(metadataDependency.size()).isEqualTo(2);
     assertThat(metadataDependency.containsKey(YamlTypes.UUID)).isEqualTo(true);
     assertThat(metadataDependency.containsKey(YamlTypes.SERVICE_CONFIG)).isEqualTo(true);
@@ -187,9 +188,9 @@ public class ServiceDefinitionPlanCreatorHelperTest extends CategoryTest {
   public void testPrepareMetadataV2() {
     String uuid = UUIDGenerator.generateUuid();
     NGServiceV2InfoConfig serviceConfig = NGServiceV2InfoConfig.builder().build();
-    Mockito.when(kryoSerializer.asDeflatedBytes(any())).thenReturn("".getBytes());
+    Mockito.when(kryoSerializerWrapper.asDeflatedBytes(any())).thenReturn("".getBytes());
     Map<String, ByteString> metadataDependency =
-        ServiceDefinitionPlanCreatorHelper.prepareMetadataV2(uuid, serviceConfig, kryoSerializer);
+        ServiceDefinitionPlanCreatorHelper.prepareMetadataV2(uuid, serviceConfig, kryoSerializerWrapper);
     assertThat(metadataDependency.size()).isEqualTo(2);
     assertThat(metadataDependency.containsKey(YamlTypes.UUID)).isEqualTo(true);
     assertThat(metadataDependency.containsKey(YamlTypes.SERVICE_ENTITY)).isEqualTo(true);
@@ -333,9 +334,9 @@ public class ServiceDefinitionPlanCreatorHelperTest extends CategoryTest {
     YamlField serviceField = YamlUtils.readTree(yaml);
 
     ServiceConfig actualServiceConfig = ServiceConfig.builder().build();
-    Mockito.when(kryoSerializer.asDeflatedBytes(any())).thenReturn("".getBytes());
+    Mockito.when(kryoSerializerWrapper.asDeflatedBytes(any())).thenReturn("".getBytes());
     String nodeUuid = ServiceDefinitionPlanCreatorHelper.addDependenciesForArtifacts(
-        serviceField.getNode(), planCreationResponseMap, actualServiceConfig, kryoSerializer);
+        serviceField.getNode(), planCreationResponseMap, actualServiceConfig, kryoSerializerWrapper);
     assertThat(planCreationResponseMap.size()).isEqualTo(1);
     assertThat(planCreationResponseMap.containsKey(nodeUuid)).isEqualTo(true);
     PlanCreationResponse planCreationResponse1 = planCreationResponseMap.get(nodeUuid);
@@ -361,9 +362,9 @@ public class ServiceDefinitionPlanCreatorHelperTest extends CategoryTest {
     yaml = YamlUtils.injectUuid(yaml);
     YamlField serviceField = YamlUtils.readTree(yaml);
 
-    Mockito.when(kryoSerializer.asDeflatedBytes(any())).thenReturn("".getBytes());
+    Mockito.when(kryoSerializerWrapper.asDeflatedBytes(any())).thenReturn("".getBytes());
     String nodeUuid = ServiceDefinitionPlanCreatorHelper.addDependenciesForArtifacts(
-        serviceField.getNode(), planCreationResponseMap, actualServiceConfig, kryoSerializer);
+        serviceField.getNode(), planCreationResponseMap, actualServiceConfig, kryoSerializerWrapper);
     assertThat(planCreationResponseMap.size()).isEqualTo(1);
     assertThat(planCreationResponseMap.containsKey(nodeUuid)).isEqualTo(true);
     PlanCreationResponse planCreationResponse1 = planCreationResponseMap.get(nodeUuid);
@@ -389,9 +390,9 @@ public class ServiceDefinitionPlanCreatorHelperTest extends CategoryTest {
     yaml = YamlUtils.injectUuid(yaml);
     YamlField serviceField = YamlUtils.readTree(yaml);
 
-    Mockito.when(kryoSerializer.asDeflatedBytes(any())).thenReturn("".getBytes());
+    Mockito.when(kryoSerializerWrapper.asDeflatedBytes(any())).thenReturn("".getBytes());
     String nodeUuid = ServiceDefinitionPlanCreatorHelper.addDependenciesForArtifacts(
-        serviceField.getNode(), planCreationResponseMap, actualServiceConfig, kryoSerializer);
+        serviceField.getNode(), planCreationResponseMap, actualServiceConfig, kryoSerializerWrapper);
     assertThat(planCreationResponseMap.size()).isEqualTo(1);
     assertThat(planCreationResponseMap.containsKey(nodeUuid)).isEqualTo(true);
     PlanCreationResponse planCreationResponse1 = planCreationResponseMap.get(nodeUuid);
@@ -430,9 +431,9 @@ public class ServiceDefinitionPlanCreatorHelperTest extends CategoryTest {
     yaml = YamlUtils.injectUuid(yaml);
     YamlField serviceField = YamlUtils.readTree(yaml);
 
-    Mockito.when(kryoSerializer.asDeflatedBytes(any())).thenReturn("".getBytes());
+    Mockito.when(kryoSerializerWrapper.asDeflatedBytes(any())).thenReturn("".getBytes());
     String nodeUuid = ServiceDefinitionPlanCreatorHelper.addDependenciesForManifests(
-        serviceField.getNode(), planCreationResponseMap, actualServiceConfig, kryoSerializer);
+        serviceField.getNode(), planCreationResponseMap, actualServiceConfig, kryoSerializerWrapper);
     assertThat(planCreationResponseMap.size()).isEqualTo(1);
     assertThat(planCreationResponseMap.containsKey(nodeUuid)).isEqualTo(true);
     PlanCreationResponse planCreationResponse1 = planCreationResponseMap.get(nodeUuid);
@@ -460,9 +461,9 @@ public class ServiceDefinitionPlanCreatorHelperTest extends CategoryTest {
     yaml = YamlUtils.injectUuid(yaml);
     YamlField serviceField = YamlUtils.readTree(yaml);
 
-    Mockito.when(kryoSerializer.asDeflatedBytes(any())).thenReturn("".getBytes());
+    Mockito.when(kryoSerializerWrapper.asDeflatedBytes(any())).thenReturn("".getBytes());
     String nodeUuid = ServiceDefinitionPlanCreatorHelper.addDependenciesForManifests(
-        serviceField.getNode(), planCreationResponseMap, actualServiceConfig, kryoSerializer);
+        serviceField.getNode(), planCreationResponseMap, actualServiceConfig, kryoSerializerWrapper);
     assertThat(planCreationResponseMap.size()).isEqualTo(1);
     assertThat(planCreationResponseMap.containsKey(nodeUuid)).isEqualTo(true);
     PlanCreationResponse planCreationResponse1 = planCreationResponseMap.get(nodeUuid);
@@ -490,9 +491,9 @@ public class ServiceDefinitionPlanCreatorHelperTest extends CategoryTest {
     yaml = YamlUtils.injectUuid(yaml);
     YamlField serviceField = YamlUtils.readTree(yaml);
 
-    Mockito.when(kryoSerializer.asDeflatedBytes(any())).thenReturn("".getBytes());
+    Mockito.when(kryoSerializerWrapper.asDeflatedBytes(any())).thenReturn("".getBytes());
     String nodeUuid = ServiceDefinitionPlanCreatorHelper.addDependenciesForManifests(
-        serviceField.getNode(), planCreationResponseMap, actualServiceConfig, kryoSerializer);
+        serviceField.getNode(), planCreationResponseMap, actualServiceConfig, kryoSerializerWrapper);
     assertThat(planCreationResponseMap.size()).isEqualTo(1);
     assertThat(planCreationResponseMap.containsKey(nodeUuid)).isEqualTo(true);
     PlanCreationResponse planCreationResponse1 = planCreationResponseMap.get(nodeUuid);
@@ -520,9 +521,9 @@ public class ServiceDefinitionPlanCreatorHelperTest extends CategoryTest {
     yaml = YamlUtils.injectUuid(yaml);
     YamlField serviceField = YamlUtils.readTree(yaml);
 
-    Mockito.when(kryoSerializer.asDeflatedBytes(any())).thenReturn("".getBytes());
+    Mockito.when(kryoSerializerWrapper.asDeflatedBytes(any())).thenReturn("".getBytes());
     String nodeUuid = ServiceDefinitionPlanCreatorHelper.addDependenciesForManifests(
-        serviceField.getNode(), planCreationResponseMap, actualServiceConfig, kryoSerializer);
+        serviceField.getNode(), planCreationResponseMap, actualServiceConfig, kryoSerializerWrapper);
     assertThat(planCreationResponseMap.size()).isEqualTo(1);
     assertThat(planCreationResponseMap.containsKey(nodeUuid)).isEqualTo(true);
     PlanCreationResponse planCreationResponse1 = planCreationResponseMap.get(nodeUuid);
@@ -550,9 +551,9 @@ public class ServiceDefinitionPlanCreatorHelperTest extends CategoryTest {
     yaml = YamlUtils.injectUuid(yaml);
     YamlField serviceField = YamlUtils.readTree(yaml);
 
-    Mockito.when(kryoSerializer.asDeflatedBytes(any())).thenReturn("".getBytes());
+    Mockito.when(kryoSerializerWrapper.asDeflatedBytes(any())).thenReturn("".getBytes());
     String nodeUuid = ServiceDefinitionPlanCreatorHelper.addDependenciesForManifests(
-        serviceField.getNode(), planCreationResponseMap, actualServiceConfig, kryoSerializer);
+        serviceField.getNode(), planCreationResponseMap, actualServiceConfig, kryoSerializerWrapper);
     assertThat(planCreationResponseMap.size()).isEqualTo(1);
     assertThat(planCreationResponseMap.containsKey(nodeUuid)).isEqualTo(true);
     PlanCreationResponse planCreationResponse1 = planCreationResponseMap.get(nodeUuid);
@@ -960,11 +961,11 @@ public class ServiceDefinitionPlanCreatorHelperTest extends CategoryTest {
                     .build())
             .build();
 
-    doReturn(new byte[] {}).when(kryoSerializer).asDeflatedBytes(any());
+    doReturn(new byte[] {}).when(kryoSerializerWrapper).asDeflatedBytes(any());
 
     final String nodeUuid = ServiceDefinitionPlanCreatorHelper.addDependenciesForManifestV2(serviceField.getNode(),
         planCreationResponseMap, config, serviceOverrideConfig,
-        ngEnvironmentConfig.getNgEnvironmentInfoConfig().getNgEnvironmentGlobalOverride(), kryoSerializer, "envId");
+        ngEnvironmentConfig.getNgEnvironmentInfoConfig().getNgEnvironmentGlobalOverride(), kryoSerializerWrapper, "envId");
 
     assertThat(planCreationResponseMap.size()).isEqualTo(1);
     assertThat(planCreationResponseMap.containsKey(nodeUuid)).isEqualTo(true);
@@ -1007,11 +1008,11 @@ public class ServiceDefinitionPlanCreatorHelperTest extends CategoryTest {
                     .build())
             .build();
 
-    doReturn(new byte[] {}).when(kryoSerializer).asDeflatedBytes(any());
+    doReturn(new byte[] {}).when(kryoSerializerWrapper).asDeflatedBytes(any());
 
     final String nodeUuid = ServiceDefinitionPlanCreatorHelper.addDependenciesForConfigFilesV2(serviceField.getNode(),
         planCreationResponseMap, config, serviceOverrideConfig,
-        ngEnvironmentConfig.getNgEnvironmentInfoConfig().getNgEnvironmentGlobalOverride(), kryoSerializer);
+        ngEnvironmentConfig.getNgEnvironmentInfoConfig().getNgEnvironmentGlobalOverride(), kryoSerializerWrapper);
 
     assertThat(planCreationResponseMap.size()).isEqualTo(1);
     assertThat(planCreationResponseMap.containsKey(nodeUuid)).isEqualTo(true);
@@ -1039,13 +1040,13 @@ public class ServiceDefinitionPlanCreatorHelperTest extends CategoryTest {
 
     NGServiceV2InfoConfig config = YamlUtils.read(serviceField.getNode().toString(), NGServiceV2InfoConfig.class);
 
-    doReturn(new byte[] {}).when(kryoSerializer).asDeflatedBytes(any());
+    doReturn(new byte[] {}).when(kryoSerializerWrapper).asDeflatedBytes(any());
 
     final String nodeUuid = ServiceDefinitionPlanCreatorHelper.addDependenciesForApplicationSettingsV2(
         serviceField.getNode(), planCreationResponseMap, config, serviceConfig_With_AppSettingsAndConnectionString,
         ngEnvironmentConfig_With_AppSettingsAndConnectionString.getNgEnvironmentInfoConfig()
             .getNgEnvironmentGlobalOverride(),
-        kryoSerializer);
+        kryoSerializerWrapper);
 
     assertThat(planCreationResponseMap.size()).isEqualTo(1);
     assertThat(planCreationResponseMap.containsKey(nodeUuid)).isEqualTo(true);
@@ -1073,13 +1074,13 @@ public class ServiceDefinitionPlanCreatorHelperTest extends CategoryTest {
 
     NGServiceV2InfoConfig config = YamlUtils.read(serviceField.getNode().toString(), NGServiceV2InfoConfig.class);
 
-    doReturn(new byte[] {}).when(kryoSerializer).asDeflatedBytes(any());
+    doReturn(new byte[] {}).when(kryoSerializerWrapper).asDeflatedBytes(any());
 
     final String nodeUuid = ServiceDefinitionPlanCreatorHelper.addDependenciesForApplicationSettingsV2(
         serviceField.getNode(), planCreationResponseMap, config, serviceConfig_With_AppSettingsAndConnectionString,
         ngEnvironmentConfig_Without_SettingsAndConnectionStrings.getNgEnvironmentInfoConfig()
             .getNgEnvironmentGlobalOverride(),
-        kryoSerializer);
+        kryoSerializerWrapper);
 
     assertThat(planCreationResponseMap.size()).isEqualTo(1);
     assertThat(planCreationResponseMap.containsKey(nodeUuid)).isEqualTo(true);
@@ -1132,13 +1133,13 @@ public class ServiceDefinitionPlanCreatorHelperTest extends CategoryTest {
 
     NGServiceV2InfoConfig config = YamlUtils.read(serviceField.getNode().toString(), NGServiceV2InfoConfig.class);
 
-    doReturn(new byte[] {}).when(kryoSerializer).asDeflatedBytes(any());
+    doReturn(new byte[] {}).when(kryoSerializerWrapper).asDeflatedBytes(any());
 
     final String nodeUuid = ServiceDefinitionPlanCreatorHelper.addDependenciesForConnectionStringsV2(
         serviceField.getNode(), planCreationResponseMap, config, serviceConfig_With_AppSettingsAndConnectionString,
         ngEnvironmentConfig_With_AppSettingsAndConnectionString.getNgEnvironmentInfoConfig()
             .getNgEnvironmentGlobalOverride(),
-        kryoSerializer);
+        kryoSerializerWrapper);
 
     assertThat(planCreationResponseMap.size()).isEqualTo(1);
     assertThat(planCreationResponseMap.containsKey(nodeUuid)).isEqualTo(true);
@@ -1166,14 +1167,14 @@ public class ServiceDefinitionPlanCreatorHelperTest extends CategoryTest {
 
     NGServiceV2InfoConfig config = YamlUtils.read(serviceField.getNode().toString(), NGServiceV2InfoConfig.class);
 
-    doReturn(new byte[] {}).when(kryoSerializer).asDeflatedBytes(any());
+    doReturn(new byte[] {}).when(kryoSerializerWrapper).asDeflatedBytes(any());
 
     final String nodeUuid =
         ServiceDefinitionPlanCreatorHelper.addDependenciesForConnectionStringsV2(serviceField.getNode(),
             planCreationResponseMap, config, serviceOverrideConfig_Without_SettingsAndConnectionStrings,
             ngEnvironmentConfig_Without_SettingsAndConnectionStrings.getNgEnvironmentInfoConfig()
                 .getNgEnvironmentGlobalOverride(),
-            kryoSerializer);
+            kryoSerializerWrapper);
 
     assertThat(planCreationResponseMap.size()).isEqualTo(1);
     assertThat(planCreationResponseMap.containsKey(nodeUuid)).isEqualTo(true);

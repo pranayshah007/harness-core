@@ -43,7 +43,7 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.rule.Owner;
 import io.harness.secrets.remote.SecretNGManagerClient;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.steps.StepUtils;
 import io.harness.steps.approval.step.beans.ApprovalType;
 import io.harness.steps.approval.step.beans.CriteriaSpecWrapperDTO;
@@ -73,7 +73,7 @@ import org.powermock.modules.junit4.PowerMockRunner;
 public class ServiceNowApprovalHelperServiceImplTest extends CategoryTest {
   @Mock private NgDelegate2TaskExecutor ngDelegate2TaskExecutor;
   @Mock private ConnectorResourceClient connectorResourceClient;
-  @Mock private KryoSerializer kryoSerializer;
+  @Mock private KryoSerializerWrapper kryoSerializerWrapper;
   @Mock private SecretNGManagerClient secretManagerClient;
   @Mock private WaitNotifyEngine waitNotifyEngine;
   @Mock private LogStreamingStepClientFactory logStreamingStepClientFactory;
@@ -89,7 +89,7 @@ public class ServiceNowApprovalHelperServiceImplTest extends CategoryTest {
   @Before
   public void setUp() {
     serviceNowApprovalHelperService = spy(new ServiceNowApprovalHelperServiceImpl(connectorResourceClient,
-        pmsGitSyncHelper, logStreamingStepClientFactory, secretManagerClient, ngDelegate2TaskExecutor, kryoSerializer,
+        pmsGitSyncHelper, logStreamingStepClientFactory, secretManagerClient, ngDelegate2TaskExecutor, kryoSerializerWrapper,
         publisherName, waitNotifyEngine));
   }
 
@@ -112,7 +112,7 @@ public class ServiceNowApprovalHelperServiceImplTest extends CategoryTest {
     doReturn(ServiceNowConnectorDTO.builder().build())
         .when(serviceNowApprovalHelperService)
         .getServiceNowConnector(eq(accountId), eq(orgIdentifier), eq(projectIdentifier), any());
-    when(kryoSerializer.asDeflatedBytes(any())).thenReturn("task".getBytes());
+    when(kryoSerializerWrapper.asDeflatedBytes(any())).thenReturn("task".getBytes());
 
     ArgumentCaptor<TaskDetails> taskDetailsArgumentCaptor = ArgumentCaptor.forClass(TaskDetails.class);
     when(StepUtils.prepareTaskRequest(

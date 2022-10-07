@@ -11,7 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.data.stepparameters.PmsStepParameters;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.serializer.spring.converters.orchestrationMap.OrchestrationMapAbstractWriteConverter;
 
 import com.google.inject.Inject;
@@ -23,7 +23,7 @@ import org.springframework.data.convert.WritingConverter;
 @WritingConverter
 public class PmsStepParametersWriteConverter extends OrchestrationMapAbstractWriteConverter<PmsStepParameters> {
   @Inject
-  public PmsStepParametersWriteConverter(KryoSerializer kryoSerializer) {
-    super(kryoSerializer);
+  public PmsStepParametersWriteConverter(KryoSerializerWrapper kryoSerializerWrapper) {
+    super(kryoSerializerWrapper);
   }
 }

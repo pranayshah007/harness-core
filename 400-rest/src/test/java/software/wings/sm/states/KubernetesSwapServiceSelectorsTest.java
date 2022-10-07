@@ -31,7 +31,7 @@ import io.harness.beans.ExecutionStatus;
 import io.harness.beans.SweepingOutputInstance;
 import io.harness.category.element.UnitTests;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.tasks.ResponseData;
 
 import software.wings.WingsBaseTest;
@@ -69,7 +69,8 @@ public class KubernetesSwapServiceSelectorsTest extends WingsBaseTest {
   @Mock private K8sStateHelper k8sStateHelper;
   @Mock private InfrastructureMappingService infrastructureMappingService;
   @Mock private WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService;
-  @Inject KryoSerializer kryoSerializer;
+  @Inject
+  KryoSerializerWrapper kryoSerializerWrapper;
 
   @InjectMocks
   KubernetesSwapServiceSelectors kubernetesSwapServiceSelectors =
@@ -104,7 +105,7 @@ public class KubernetesSwapServiceSelectorsTest extends WingsBaseTest {
   @Owner(developers = ANSHUL)
   @Category(UnitTests.class)
   public void testHandleAsyncResponse() {
-    on(kubernetesSwapServiceSelectors).set("kryoSerializer", kryoSerializer);
+    on(kubernetesSwapServiceSelectors).set("kryoSerializer", kryoSerializerWrapper);
 
     KubernetesSwapServiceSelectorsResponse kubernetesSwapServiceSelectorsResponse =
         KubernetesSwapServiceSelectorsResponse.builder().executionStatus(ExecutionStatus.SUCCESS).build();

@@ -23,7 +23,7 @@ import io.harness.exception.WingsException;
 import io.harness.perpetualtask.PerpetualTaskClientContext;
 import io.harness.perpetualtask.PerpetualTaskServiceClient;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import software.wings.beans.HostConnectionAttributes;
 import software.wings.beans.HostValidationTaskParameters;
@@ -55,14 +55,14 @@ public class PdcPerpetualTaskServiceClient implements PerpetualTaskServiceClient
   @Inject private SecretManager secretManager;
   @Inject private InfrastructureMappingService infrastructureMappingService;
   @Inject private SettingsService settingsService;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
 
   @Override
   public Message getTaskParams(PerpetualTaskClientContext clientContext) {
     final PerpetualTaskData taskData = getPerpetualTaskData(clientContext);
 
-    ByteString settingAttributeBytes = ByteString.copyFrom(kryoSerializer.asBytes(taskData.getSettingAttribute()));
-    ByteString encryptionDetailsBytes = ByteString.copyFrom(kryoSerializer.asBytes(taskData.getEncryptedDataDetails()));
+    ByteString settingAttributeBytes = ByteString.copyFrom(kryoSerializerWrapper.asBytes(taskData.getSettingAttribute()));
+    ByteString encryptionDetailsBytes = ByteString.copyFrom(kryoSerializerWrapper.asBytes(taskData.getEncryptedDataDetails()));
 
     return PdcInstanceSyncPerpetualTaskParams.newBuilder()
         .addAllHostNames(taskData.getHostNames())

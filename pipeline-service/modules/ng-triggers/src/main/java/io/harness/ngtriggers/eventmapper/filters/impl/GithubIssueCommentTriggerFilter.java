@@ -44,7 +44,7 @@ import io.harness.product.ci.scm.proto.PullRequest.Builder;
 import io.harness.product.ci.scm.proto.PullRequestHook;
 import io.harness.product.ci.scm.proto.Reference;
 import io.harness.product.ci.scm.proto.User;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.service.WebhookParserSCMService;
 import io.harness.tasks.BinaryResponseData;
 import io.harness.tasks.ErrorResponseData;
@@ -66,7 +66,7 @@ import lombok.extern.slf4j.Slf4j;
 public class GithubIssueCommentTriggerFilter implements TriggerFilter {
   private TaskExecutionUtils taskExecutionUtils;
   private ConnectorUtils connectorUtils;
-  private KryoSerializer kryoSerializer;
+  private KryoSerializerWrapper kryoSerializerWrapper;
   private WebhookEventPayloadParser webhookEventPayloadParser;
   private PayloadConditionsTriggerFilter payloadConditionsTriggerFilter;
   private WebhookParserSCMService webhookParserSCMService;
@@ -237,7 +237,7 @@ public class GithubIssueCommentTriggerFilter implements TriggerFilter {
 
     if (BinaryResponseData.class.isAssignableFrom(responseData.getClass())) {
       BinaryResponseData binaryResponseData = (BinaryResponseData) responseData;
-      Object object = kryoSerializer.asInflatedObject(binaryResponseData.getData());
+      Object object = kryoSerializerWrapper.asInflatedObject(binaryResponseData.getData());
       if (object instanceof GitApiTaskResponse) {
         return (GitApiTaskResponse) object;
       } else if (object instanceof ErrorResponseData) {

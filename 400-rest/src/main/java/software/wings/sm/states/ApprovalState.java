@@ -67,7 +67,7 @@ import io.harness.expression.ExpressionReflectionUtils;
 import io.harness.ff.FeatureFlagService;
 import io.harness.logging.Misc;
 import io.harness.scheduler.PersistentScheduler;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.shell.ScriptType;
 import io.harness.tasks.ResponseData;
 
@@ -186,9 +186,8 @@ public class ApprovalState extends State implements SweepingOutputStateMixin {
    */
   @NotNull @Getter @Setter private String userGroupExpression;
 
-  @Override
-  public KryoSerializer getKryoSerializer() {
-    return kryoSerializer;
+  public KryoSerializerWrapper getKryoSerializer() {
+    return kryoSerializerWrapper;
   }
 
   public enum ApprovalStateType { JIRA, USER_GROUP, SHELL_SCRIPT, SERVICENOW }
@@ -212,7 +211,8 @@ public class ApprovalState extends State implements SweepingOutputStateMixin {
   @Inject private FeatureFlagService featureFlagService;
 
   @Inject @Transient private TemplateExpressionProcessor templateExpressionProcessor;
-  @Transient @Inject KryoSerializer kryoSerializer;
+  @Transient @Inject
+  KryoSerializerWrapper kryoSerializerWrapper;
 
   @Inject @Named("ServiceJobScheduler") private PersistentScheduler serviceJobScheduler;
   private Integer DEFAULT_APPROVAL_STATE_TIMEOUT_MILLIS = 7 * 24 * 60 * 60 * 1000; // 7 days

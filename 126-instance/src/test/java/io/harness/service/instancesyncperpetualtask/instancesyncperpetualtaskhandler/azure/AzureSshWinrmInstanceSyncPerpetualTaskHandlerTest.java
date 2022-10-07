@@ -40,7 +40,7 @@ import io.harness.ng.core.models.SecretSpec;
 import io.harness.perpetualtask.PerpetualTaskExecutionBundle;
 import io.harness.perpetualtask.instancesync.AzureSshInstanceSyncPerpetualTaskParamsNg;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
@@ -66,7 +66,8 @@ public class AzureSshWinrmInstanceSyncPerpetualTaskHandlerTest extends Instances
   private static final String SSH_SERVICE = ServiceSpecType.SSH;
   private static final int PORT = 1234;
 
-  @Mock KryoSerializer kryoSerializer;
+  @Mock
+  KryoSerializerWrapper kryoSerializerWrapper;
   @Mock NGSecretServiceV2 ngSecretServiceV2;
   @Mock SshEntityHelper sshEntityHelper;
   @Mock AzureHelperService azureHelperService;
@@ -116,8 +117,8 @@ public class AzureSshWinrmInstanceSyncPerpetualTaskHandlerTest extends Instances
 
     List<ExecutionCapability> expectedExecutionCapabilityList =
         AzureCapabilityHelper.fetchRequiredExecutionCapabilities(azureConnectorDTO, null);
-    when(kryoSerializer.asBytes(any())).thenReturn(bytes);
-    when(kryoSerializer.asDeflatedBytes(any())).thenReturn(bytes);
+    when(kryoSerializerWrapper.asBytes(any())).thenReturn(bytes);
+    when(kryoSerializerWrapper.asDeflatedBytes(any())).thenReturn(bytes);
     Any perpetualTaskPack = Any.pack(params);
 
     PerpetualTaskExecutionBundle.Builder builder = PerpetualTaskExecutionBundle.newBuilder();

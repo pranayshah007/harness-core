@@ -29,7 +29,7 @@ import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.adviser.Adviser;
 import io.harness.pms.sdk.core.adviser.AdvisingEvent;
 import io.harness.pms.sdk.core.adviser.OrchestrationAdviserTypes;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
@@ -40,7 +40,7 @@ import javax.validation.constraints.NotNull;
 
 @OwnedBy(PIPELINE)
 public class RetryAdviser implements Adviser {
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
 
   public static final AdviserType ADVISER_TYPE =
       AdviserType.newBuilder().setType(OrchestrationAdviserTypes.RETRY.name()).build();
@@ -123,6 +123,6 @@ public class RetryAdviser implements Adviser {
   @NotNull
   private RetryAdviserParameters extractParameters(AdvisingEvent advisingEvent) {
     return (RetryAdviserParameters) Preconditions.checkNotNull(
-        kryoSerializer.asObject(advisingEvent.getAdviserParameters()));
+        kryoSerializerWrapper.asObject(advisingEvent.getAdviserParameters()));
   }
 }

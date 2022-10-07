@@ -76,7 +76,7 @@ import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.ParameterField;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.steps.StepHelper;
 import io.harness.steps.StepUtils;
 import io.harness.supplier.ThrowingSupplier;
@@ -106,7 +106,7 @@ public class AzureCreateBPStep extends TaskChainExecutableWithRollbackAndRbac {
                                                .build();
   @Inject private CDFeatureFlagHelper cdFeatureFlagHelper;
   @Inject private PipelineRbacHelper pipelineRbacHelper;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
 
   @Inject private StepHelper stepHelper;
 
@@ -254,7 +254,7 @@ public class AzureCreateBPStep extends TaskChainExecutableWithRollbackAndRbac {
             .parameters(new Object[] {parameters})
             .build();
     final TaskRequest taskRequest =
-        StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer, getCommandUnits(false), "Azure Blueprint",
+        StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializerWrapper, getCommandUnits(false), "Azure Blueprint",
             TaskSelectorYaml.toTaskSelector(
                 ((AzureCreateBPStepParameters) stepParameters.getSpec()).getDelegateSelectors()),
             stepHelper.getEnvironmentType(ambiance));

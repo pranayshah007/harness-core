@@ -39,7 +39,7 @@ import io.harness.cv.WorkflowVerificationResult;
 import io.harness.cv.api.WorkflowVerificationResultService;
 import io.harness.expression.ExpressionEvaluator;
 import io.harness.ff.FeatureFlagService;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.time.Timestamp;
 import io.harness.waiter.WaitNotifyEngine;
 
@@ -168,16 +168,16 @@ public abstract class AbstractAnalysisState extends State implements SweepingOut
   @Inject protected CVActivityLogService cvActivityLogService;
   @Inject protected WorkflowVerificationResultService workflowVerificationResultService;
   @Inject @Transient protected SweepingOutputService sweepingOutputService;
-  @Transient @Inject KryoSerializer kryoSerializer;
+  @Transient @Inject
+  KryoSerializerWrapper kryoSerializerWrapper;
   protected String hostnameField;
 
   protected String hostnameTemplate;
 
   protected boolean includePreviousPhaseNodes;
 
-  @Override
-  public KryoSerializer getKryoSerializer() {
-    return kryoSerializer;
+  public KryoSerializerWrapper getKryoSerializer() {
+    return kryoSerializerWrapper;
   }
 
   @Attributes(title = "Analysis Time duration (in minutes)")

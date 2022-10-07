@@ -32,7 +32,7 @@ import io.harness.ng.core.BaseNGAccess;
 import io.harness.rule.Owner;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.service.DelegateGrpcClientWrapper;
 
 import java.util.Collections;
@@ -48,7 +48,7 @@ import org.mockito.MockitoAnnotations;
 public class EcrImagePullSecretHelperTest extends CategoryTest {
   @Mock private SecretManagerClientService secretManagerClientService;
   @Mock private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
-  @Mock private KryoSerializer kryoSerializer;
+  @Mock private KryoSerializerWrapper kryoSerializerWrapper;
   public static String accountId = "accountId";
   public static String orgId = "orgId";
   public static String projectId = "projectId";
@@ -75,8 +75,8 @@ public class EcrImagePullSecretHelperTest extends CategoryTest {
         BaseNGAccess.builder().accountIdentifier(accountId).orgIdentifier(orgId).projectIdentifier(projectId).build();
     EcrArtifactDelegateRequest ecrArtifactDelegateRequest =
         EcrArtifactDelegateRequest.builder().imagePath("imagePath").tag("1.0").build();
-    when(kryoSerializer.asDeflatedBytes(any())).thenReturn("".getBytes());
-    when(kryoSerializer.asInflatedObject(any())).thenReturn(response);
+    when(kryoSerializerWrapper.asDeflatedBytes(any())).thenReturn("".getBytes());
+    when(kryoSerializerWrapper.asInflatedObject(any())).thenReturn(response);
     when(delegateGrpcClientWrapper.executeSyncTask(any())).thenReturn(artifactTaskResponse);
     assertThat(ecrImagePullSecretHelper
                    .executeSyncTask(ecrArtifactDelegateRequest, ArtifactTaskType.GET_IMAGE_URL, baseNGAccess,

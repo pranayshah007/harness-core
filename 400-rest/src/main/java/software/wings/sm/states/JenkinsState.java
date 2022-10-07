@@ -36,7 +36,7 @@ import io.harness.data.structure.UUIDGenerator;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.beans.TaskData;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.tasks.ResponseData;
 
 import software.wings.api.InstanceElement;
@@ -122,7 +122,7 @@ public class JenkinsState extends State implements SweepingOutputStateMixin {
   @Transient @Inject private TemplateExpressionProcessor templateExpressionProcessor;
   @Transient @Inject private TemplateUtils templateUtils;
   @Transient @Inject private SettingsService settingsService;
-  @Transient @Inject private KryoSerializer kryoSerializer;
+  @Transient @Inject private KryoSerializerWrapper kryoSerializerWrapper;
   @Transient @Inject private InfrastructureMappingService infrastructureMappingService;
   @Inject private WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService;
 
@@ -609,9 +609,8 @@ public class JenkinsState extends State implements SweepingOutputStateMixin {
     activityService.updateStatus(activityId, appId, status);
   }
 
-  @Override
-  public KryoSerializer getKryoSerializer() {
-    return kryoSerializer;
+  public KryoSerializerWrapper getKryoSerializer() {
+    return kryoSerializerWrapper;
   }
 
   @Override

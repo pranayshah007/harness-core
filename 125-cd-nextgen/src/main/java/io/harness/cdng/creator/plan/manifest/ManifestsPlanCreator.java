@@ -42,7 +42,7 @@ import io.harness.pms.sdk.core.plan.creation.creators.ChildrenPlanCreator;
 import io.harness.pms.yaml.DependenciesUtils;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.steps.fork.ForkStepParameters;
 
 import com.google.inject.Inject;
@@ -63,7 +63,8 @@ import lombok.experimental.FieldDefaults;
 
 @OwnedBy(HarnessTeam.CDC)
 public class ManifestsPlanCreator extends ChildrenPlanCreator<ManifestsListConfigWrapper> {
-  @Inject KryoSerializer kryoSerializer;
+  @Inject
+  KryoSerializerWrapper kryoSerializerWrapper;
 
   public static final String SERVICE_ENTITY_DEFINITION_TYPE_KEY = "SERVICE_ENTITY_DEFINITION_TYPE_KEY";
 
@@ -77,7 +78,7 @@ public class ManifestsPlanCreator extends ChildrenPlanCreator<ManifestsListConfi
     // service v1
     ServiceDefinitionType serviceDefinitionType = null;
     if (ctx.getDependency().getMetadataMap().containsKey(YamlTypes.SERVICE_CONFIG)) {
-      ServiceConfig serviceConfig = (ServiceConfig) kryoSerializer.asInflatedObject(
+      ServiceConfig serviceConfig = (ServiceConfig) kryoSerializerWrapper.asInflatedObject(
           ctx.getDependency().getMetadataMap().get(YamlTypes.SERVICE_CONFIG).toByteArray());
 
       List<ManifestConfigWrapper> manifestListConfig =
@@ -88,16 +89,16 @@ public class ManifestsPlanCreator extends ChildrenPlanCreator<ManifestsListConfi
       manifestList = manifestListBuilder.build();
 
     } else if (ctx.getDependency().getMetadataMap().containsKey(SERVICE_ENTITY_DEFINITION_TYPE_KEY)) {
-      serviceDefinitionType = (ServiceDefinitionType) kryoSerializer.asInflatedObject(
+      serviceDefinitionType = (ServiceDefinitionType) kryoSerializerWrapper.asInflatedObject(
           ctx.getDependency().getMetadataMap().get(SERVICE_ENTITY_DEFINITION_TYPE_KEY).toByteArray());
       final List<ManifestConfigWrapper> manifestListConfig =
-          (List<ManifestConfigWrapper>) kryoSerializer.asInflatedObject(
+          (List<ManifestConfigWrapper>) kryoSerializerWrapper.asInflatedObject(
               ctx.getDependency().getMetadataMap().get(YamlTypes.MANIFEST_LIST_CONFIG).toByteArray());
 
       ManifestListBuilder manifestListBuilder = new ManifestListBuilder(manifestListConfig);
       manifestList = manifestListBuilder.build();
     } else if (ctx.getDependency().getMetadataMap().containsKey(YamlTypes.SERVICE_ENTITY)) {
-      NGServiceV2InfoConfig serviceV2InfoConfig = (NGServiceV2InfoConfig) kryoSerializer.asInflatedObject(
+      NGServiceV2InfoConfig serviceV2InfoConfig = (NGServiceV2InfoConfig) kryoSerializerWrapper.asInflatedObject(
           ctx.getDependency().getMetadataMap().get(YamlTypes.SERVICE_ENTITY).toByteArray());
 
       List<ManifestConfigWrapper> manifestListConfig =
@@ -158,16 +159,16 @@ public class ManifestsPlanCreator extends ChildrenPlanCreator<ManifestsListConfi
       String individualManifestPlanNodeId, ManifestStepParameters stepParameters) {
     Map<String, ByteString> metadataDependency = new HashMap<>();
     metadataDependency.put(
-        YamlTypes.UUID, ByteString.copyFrom(kryoSerializer.asDeflatedBytes(individualManifestPlanNodeId)));
+        YamlTypes.UUID, ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(individualManifestPlanNodeId)));
     metadataDependency.put(PlanCreatorConstants.MANIFEST_STEP_PARAMETER,
-        ByteString.copyFrom(kryoSerializer.asDeflatedBytes(stepParameters)));
+        ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(stepParameters)));
     return metadataDependency;
   }
 
   @Override
   public PlanNode createPlanForParentNode(
       PlanCreationContext ctx, ManifestsListConfigWrapper config, List<String> childrenNodeIds) {
-    String manifestsId = (String) kryoSerializer.asInflatedObject(
+    String manifestsId = (String) kryoSerializerWrapper.asInflatedObject(
         ctx.getDependency().getMetadataMap().get(YamlTypes.UUID).toByteArray());
     ForkStepParameters stepParameters = ForkStepParameters.builder().parallelNodeIds(childrenNodeIds).build();
     return PlanNode.builder()

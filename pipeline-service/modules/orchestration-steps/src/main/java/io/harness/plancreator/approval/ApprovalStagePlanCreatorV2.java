@@ -21,7 +21,7 @@ import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.yaml.DependenciesUtils;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.steps.approval.stage.ApprovalStageSpecParameters;
 import io.harness.steps.approval.stage.ApprovalStageStep;
 import io.harness.utils.CommonPlanCreatorUtils;
@@ -37,7 +37,8 @@ import java.util.Set;
 
 @OwnedBy(HarnessTeam.CDC)
 public class ApprovalStagePlanCreatorV2 extends AbstractPmsStagePlanCreator<PmsAbstractStageNode> {
-  @Inject KryoSerializer kryoSerializer;
+  @Inject
+  KryoSerializerWrapper kryoSerializerWrapper;
 
   @Override
   public Set<String> getSupportedStageTypes() {

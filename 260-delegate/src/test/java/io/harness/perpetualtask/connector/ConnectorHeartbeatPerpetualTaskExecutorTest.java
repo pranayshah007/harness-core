@@ -35,7 +35,7 @@ import io.harness.perpetualtask.PerpetualTaskId;
 import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import com.google.inject.Inject;
 import com.google.protobuf.Any;
@@ -58,7 +58,8 @@ import retrofit2.Call;
 @RunWith(MockitoJUnitRunner.class)
 public class ConnectorHeartbeatPerpetualTaskExecutorTest extends DelegateTestBase {
   @InjectMocks ConnectorHeartbeatPerpetualTaskExecutor connectorHeartbeatPerpetualTaskExecutor;
-  @Inject KryoSerializer kryoSerializer;
+  @Inject
+  KryoSerializerWrapper kryoSerializerWrapper;
   @Mock KubernetesValidationHandler KubernetesValidationHandler;
   @Mock DelegateAgentManagerClient delegateAgentManagerClient;
   @Mock Map<String, ConnectorValidationHandler> connectorTypeToConnectorValidationHandlerMap;
@@ -67,7 +68,7 @@ public class ConnectorHeartbeatPerpetualTaskExecutorTest extends DelegateTestBas
   @Before
   public void setup() throws IllegalAccessException, IOException {
     MockitoAnnotations.initMocks(this);
-    FieldUtils.writeField(connectorHeartbeatPerpetualTaskExecutor, "kryoSerializer", kryoSerializer, true);
+    FieldUtils.writeField(connectorHeartbeatPerpetualTaskExecutor, "kryoSerializer", kryoSerializerWrapper, true);
     doReturn(KubernetesValidationHandler).when(connectorTypeToConnectorValidationHandlerMap).get(Matchers.any());
     doReturn(call)
         .when(delegateAgentManagerClient)
@@ -100,7 +101,7 @@ public class ConnectorHeartbeatPerpetualTaskExecutorTest extends DelegateTestBas
             .connectorValidationParams(k8sValidationParams)
             .isInvalid(false)
             .build();
-    ByteString connectorConfigBytes = ByteString.copyFrom(kryoSerializer.asBytes(connectorValidationParameterResponse));
+    ByteString connectorConfigBytes = ByteString.copyFrom(kryoSerializerWrapper.asBytes(connectorValidationParameterResponse));
     ConnectorHeartbeatTaskParams connectorHeartbeatTaskParams =
         ConnectorHeartbeatTaskParams.newBuilder()
             .setAccountIdentifier("accountIdentifier")

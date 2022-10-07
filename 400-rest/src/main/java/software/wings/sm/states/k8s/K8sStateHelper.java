@@ -49,7 +49,7 @@ import io.harness.k8s.manifest.ManifestHelper;
 import io.harness.k8s.model.K8sPod;
 import io.harness.k8s.model.KubernetesResource;
 import io.harness.logging.CommandExecutionStatus;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import software.wings.api.k8s.K8sElement;
 import software.wings.beans.ContainerInfrastructureMapping;
@@ -116,7 +116,7 @@ public class K8sStateHelper {
   @Inject private transient AwsCommandHelper awsCommandHelper;
   @Inject private ContainerDeploymentManagerHelper containerDeploymentManagerHelper;
   @Inject private FeatureFlagService featureFlagService;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
   @Inject private EnvironmentService environmentService;
   @Inject private WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService;
 
@@ -408,7 +408,7 @@ public class K8sStateHelper {
     if (result == null) {
       return null;
     }
-    return (K8sElement) kryoSerializer.asInflatedObject(result.getOutput());
+    return (K8sElement) kryoSerializerWrapper.asInflatedObject(result.getOutput());
   }
 
   public Set<String> getRenderedAndTrimmedSelectors(ExecutionContext context, List<String> delegateSelectors) {

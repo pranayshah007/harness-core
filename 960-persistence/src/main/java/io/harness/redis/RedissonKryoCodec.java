@@ -18,7 +18,7 @@ import io.harness.reflection.HarnessReflections;
 import io.harness.serializer.ClassResolver;
 import io.harness.serializer.HKryo;
 import io.harness.serializer.KryoRegistrar;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.Registration;
@@ -54,7 +54,7 @@ public class RedissonKryoCodec extends KryoCodec {
         kryoRegistrar.register(kryo);
 
         try {
-          KryoSerializer.check(previousState, classResolver.getRegistrations());
+          KryoSerializerWrapper.check(previousState, classResolver.getRegistrations());
         } catch (Exception exception) {
           throw new IllegalStateException(
               format("Check for registration of %s failed", clazz.getCanonicalName()), exception);

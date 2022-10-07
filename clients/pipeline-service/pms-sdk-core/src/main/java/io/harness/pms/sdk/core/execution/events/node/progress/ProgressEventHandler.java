@@ -19,7 +19,7 @@ import io.harness.pms.sdk.core.execution.ExecutableProcessorFactory;
 import io.harness.pms.sdk.core.execution.ProgressPackage;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.tasks.ProgressData;
 
 import com.google.common.collect.ImmutableMap;
@@ -34,7 +34,7 @@ import lombok.extern.slf4j.Slf4j;
 @Singleton
 public class ProgressEventHandler extends PmsBaseEventHandler<ProgressEvent> {
   @Inject private ExecutableProcessorFactory executableProcessorFactory;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
 
   @Override
   protected String getMetricPrefix(ProgressEvent message) {
@@ -58,7 +58,7 @@ public class ProgressEventHandler extends PmsBaseEventHandler<ProgressEvent> {
       StepParameters stepParameters =
           RecastOrchestrationUtils.fromJson(event.getStepParameters().toStringUtf8(), StepParameters.class);
       ProgressData progressData =
-          (ProgressData) kryoSerializer.asInflatedObject(event.getProgressBytes().toByteArray());
+          (ProgressData) kryoSerializerWrapper.asInflatedObject(event.getProgressBytes().toByteArray());
 
       ExecutableProcessor processor = executableProcessorFactory.obtainProcessor(event.getExecutionMode());
       ProgressPackage progressPackage = ProgressPackage.builder()

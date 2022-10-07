@@ -27,7 +27,7 @@ import io.harness.perpetualtask.PerpetualTaskResponse;
 import io.harness.perpetualtask.datacollection.k8s.ChangeIntelSharedInformerFactory;
 import io.harness.perpetualtask.k8s.watch.K8sWatchServiceDelegate.WatcherGroup;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import software.wings.delegatetasks.cvng.K8InfoDataService;
 
@@ -48,7 +48,7 @@ public class K8ActivityCollectionPerpetualTaskExecutor implements PerpetualTaskE
   private final Map<String, WatcherGroup> watchMap = new ConcurrentHashMap<>();
   @Inject private K8InfoDataService k8InfoDataService;
 
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
   @Inject private ChangeIntelSharedInformerFactory changeIntelSharedInformerFactory;
   @Inject private ApiClientFactory apiClientFactory;
   @Inject private Injector injector;
@@ -62,7 +62,7 @@ public class K8ActivityCollectionPerpetualTaskExecutor implements PerpetualTaskE
       log.info("Executing for !! changeSourceId: {}", taskParams.getDataCollectionWorkerId());
       watchMap.computeIfAbsent(taskId.getId(), id -> {
         CVDataCollectionInfo dataCollectionInfo =
-            (CVDataCollectionInfo) kryoSerializer.asObject(taskParams.getDataCollectionInfo().toByteArray());
+            (CVDataCollectionInfo) kryoSerializerWrapper.asObject(taskParams.getDataCollectionInfo().toByteArray());
         log.info("for {} DataCollectionInfo {} ", taskParams.getDataCollectionWorkerId(), dataCollectionInfo);
 
         KubernetesClusterConfigDTO kubernetesClusterConfig =

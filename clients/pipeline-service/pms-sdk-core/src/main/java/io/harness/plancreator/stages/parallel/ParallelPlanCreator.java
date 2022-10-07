@@ -32,7 +32,7 @@ import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.steps.fork.ForkStepParameters;
 import io.harness.steps.fork.NGForkStep;
 
@@ -50,7 +50,7 @@ import java.util.stream.Collectors;
 
 @OwnedBy(PIPELINE)
 public class ParallelPlanCreator extends ChildrenPlanCreator<YamlField> {
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
 
   @Override
   public Class<YamlField> getFieldClass() {
@@ -148,12 +148,12 @@ public class ParallelPlanCreator extends ChildrenPlanCreator<YamlField> {
         YamlNode parallelNodeInStage = YamlUtils.findParentNode(currentField.getNode(), YAMLFieldNameConstants.STAGE);
         if (parallelNodeInStage != null) {
           adviserObtainment = StrategyUtils.getAdviserObtainmentsForParallelStepParent(
-              currentField, kryoSerializer, siblingField.getNode().getUuid());
+              currentField, kryoSerializerWrapper, siblingField.getNode().getUuid());
         } else {
           adviserObtainment =
               AdviserObtainment.newBuilder()
                   .setType(AdviserType.newBuilder().setType(OrchestrationAdviserTypes.NEXT_STAGE.name()).build())
-                  .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(
+                  .setParameters(ByteString.copyFrom(kryoSerializerWrapper.asBytes(
                       NextStepAdviserParameters.builder().nextNodeId(siblingField.getNode().getUuid()).build())))
                   .build();
         }

@@ -59,7 +59,7 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.timeout.trackers.absolute.AbsoluteTimeoutTrackerFactory;
 import io.harness.utils.TimeoutUtils;
 import io.harness.when.utils.RunInfoUtils;
@@ -89,7 +89,7 @@ import java.util.stream.Collectors;
 @OwnedBy(PIPELINE)
 // Todo: Refactor this so as to split into more classes (PIE-1339)
 public abstract class GenericStepPMSPlanCreator implements PartialPlanCreator<StepElementConfig> {
-  @Inject protected KryoSerializer kryoSerializer;
+  @Inject protected KryoSerializerWrapper kryoSerializerWrapper;
 
   public abstract Set<String> getSupportedStepTypes();
 
@@ -232,7 +232,7 @@ public abstract class GenericStepPMSPlanCreator implements PartialPlanCreator<St
         case IGNORE:
           adviserObtainmentList.add(
               adviserObtainmentBuilder.setType(IgnoreAdviser.ADVISER_TYPE)
-                  .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(IgnoreAdviserParameters.builder()
+                  .setParameters(ByteString.copyFrom(kryoSerializerWrapper.asBytes(IgnoreAdviserParameters.builder()
                                                                                 .applicableFailureTypes(failureTypes)
                                                                                 .nextNodeId(nextNodeUuid)
                                                                                 .build())))
@@ -249,7 +249,7 @@ public abstract class GenericStepPMSPlanCreator implements PartialPlanCreator<St
         case MARK_AS_SUCCESS:
           adviserObtainmentList.add(
               adviserObtainmentBuilder.setType(OnMarkSuccessAdviser.ADVISER_TYPE)
-                  .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(OnMarkSuccessAdviserParameters.builder()
+                  .setParameters(ByteString.copyFrom(kryoSerializerWrapper.asBytes(OnMarkSuccessAdviserParameters.builder()
                                                                                 .applicableFailureTypes(failureTypes)
                                                                                 .nextNodeId(nextNodeUuid)
                                                                                 .build())))
@@ -259,7 +259,7 @@ public abstract class GenericStepPMSPlanCreator implements PartialPlanCreator<St
         case ABORT:
           adviserObtainmentList.add(
               adviserObtainmentBuilder.setType(OnAbortAdviser.ADVISER_TYPE)
-                  .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(
+                  .setParameters(ByteString.copyFrom(kryoSerializerWrapper.asBytes(
                       OnAbortAdviserParameters.builder().applicableFailureTypes(failureTypes).build())))
                   .build());
           break;
@@ -267,7 +267,7 @@ public abstract class GenericStepPMSPlanCreator implements PartialPlanCreator<St
           OnFailRollbackParameters rollbackParameters =
               getRollbackParameters(currentField, failureTypes, RollbackStrategy.STAGE_ROLLBACK);
           adviserObtainmentList.add(adviserObtainmentBuilder.setType(OnFailRollbackAdviser.ADVISER_TYPE)
-                                        .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(rollbackParameters)))
+                                        .setParameters(ByteString.copyFrom(kryoSerializerWrapper.asBytes(rollbackParameters)))
                                         .build());
           break;
         case MANUAL_INTERVENTION:
@@ -281,7 +281,7 @@ public abstract class GenericStepPMSPlanCreator implements PartialPlanCreator<St
         case PIPELINE_ROLLBACK:
           rollbackParameters = getRollbackParameters(currentField, failureTypes, RollbackStrategy.PIPELINE_ROLLBACK);
           adviserObtainmentList.add(adviserObtainmentBuilder.setType(OnFailRollbackAdviser.ADVISER_TYPE)
-                                        .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(rollbackParameters)))
+                                        .setParameters(ByteString.copyFrom(kryoSerializerWrapper.asBytes(rollbackParameters)))
                                         .build());
           break;
         default:
@@ -313,7 +313,7 @@ public abstract class GenericStepPMSPlanCreator implements PartialPlanCreator<St
       AdviserObtainment.Builder adviserObtainmentBuilder, ManualInterventionFailureActionConfig actionConfig,
       FailureStrategyActionConfig actionUnderManualIntervention, YamlField currentField) {
     return adviserObtainmentBuilder.setType(ManualInterventionAdviser.ADVISER_TYPE)
-        .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(
+        .setParameters(ByteString.copyFrom(kryoSerializerWrapper.asBytes(
             ManualInterventionAdviserParameters.builder()
                 .applicableFailureTypes(failureTypes)
                 .timeoutAction(toRepairAction(actionUnderManualIntervention))
@@ -327,7 +327,7 @@ public abstract class GenericStepPMSPlanCreator implements PartialPlanCreator<St
       ParameterField<Integer> retryCount, FailureStrategyActionConfig actionUnderRetry, YamlField currentField) {
     return adviserObtainmentBuilder.setType(RetryAdviser.ADVISER_TYPE)
         .setParameters(ByteString.copyFrom(
-            kryoSerializer.asBytes(RetryAdviserParameters.builder()
+            kryoSerializerWrapper.asBytes(RetryAdviserParameters.builder()
                                        .applicableFailureTypes(failureTypes)
                                        .nextNodeId(nextNodeUuid)
                                        .repairActionCodeAfterRetry(toRepairAction(actionUnderRetry))
@@ -356,7 +356,7 @@ public abstract class GenericStepPMSPlanCreator implements PartialPlanCreator<St
       if (siblingField != null && siblingField.getNode().getUuid() != null) {
         return AdviserObtainment.newBuilder()
             .setType(AdviserType.newBuilder().setType(OrchestrationAdviserTypes.ON_SUCCESS.name()).build())
-            .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(
+            .setParameters(ByteString.copyFrom(kryoSerializerWrapper.asBytes(
                 OnSuccessAdviserParameters.builder().nextNodeId(siblingField.getNode().getUuid()).build())))
             .build();
       }
@@ -373,7 +373,7 @@ public abstract class GenericStepPMSPlanCreator implements PartialPlanCreator<St
       if (siblingField != null && siblingField.getNode().getUuid() != null) {
         return AdviserObtainment.newBuilder()
             .setType(AdviserType.newBuilder().setType(OrchestrationAdviserTypes.NEXT_STEP.name()).build())
-            .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(
+            .setParameters(ByteString.copyFrom(kryoSerializerWrapper.asBytes(
                 NextStepAdviserParameters.builder().nextNodeId(siblingField.getNode().getUuid()).build())))
             .build();
       }

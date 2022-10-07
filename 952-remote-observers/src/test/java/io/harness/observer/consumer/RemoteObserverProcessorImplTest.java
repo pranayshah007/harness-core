@@ -27,7 +27,7 @@ import io.harness.observer.RemoteObserver;
 import io.harness.observer.RemoteObserverConstants;
 import io.harness.rule.Owner;
 import io.harness.serializer.KryoRegistrar;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.google.common.collect.ImmutableMap;
@@ -46,7 +46,7 @@ import org.mockito.MockitoAnnotations;
 @Slf4j
 public class RemoteObserverProcessorImplTest extends CategoryTest {
   Injector injector;
-  KryoSerializer kryoSerializer;
+  KryoSerializerWrapper kryoSerializerWrapper;
   RemoteObserverProcessorImpl remoteObserverProcessor;
 
   @Before
@@ -54,8 +54,8 @@ public class RemoteObserverProcessorImplTest extends CategoryTest {
     injector = mock(Injector.class);
     final ImmutableSet<Class<? extends KryoRegistrar>> kryos =
         ImmutableSet.<Class<? extends KryoRegistrar>>builder().add(TestKryoRegistrar.class).build();
-    kryoSerializer = new KryoSerializer(kryos);
-    remoteObserverProcessor = spy(new RemoteObserverProcessorImpl(injector, kryoSerializer));
+    kryoSerializerWrapper = new KryoSerializerWrapper(kryos);
+    remoteObserverProcessor = spy(new RemoteObserverProcessorImpl(injector, kryoSerializerWrapper));
     MockitoAnnotations.initMocks(this);
   }
 
@@ -86,7 +86,7 @@ public class RemoteObserverProcessorImplTest extends CategoryTest {
     Informant informant = Informant.newBuilder()
                               .setInformant2(Informant2.newBuilder()
                                                  .setParam1(getTestObject())
-                                                 .setParam2(ByteString.copyFrom(kryoSerializer.asBytes("aac"))))
+                                                 .setParam2(ByteString.copyFrom(kryoSerializerWrapper.asBytes("aac"))))
                               .setMethodName("method2")
                               .build();
     processInternal(informant);
@@ -99,8 +99,8 @@ public class RemoteObserverProcessorImplTest extends CategoryTest {
     Informant informant = Informant.newBuilder()
                               .setInformant3(Informant3.newBuilder()
                                                  .setParam1(getTestObject())
-                                                 .setParam2(ByteString.copyFrom(kryoSerializer.asBytes("aac")))
-                                                 .setParam3(ByteString.copyFrom(kryoSerializer.asBytes("aacd"))))
+                                                 .setParam2(ByteString.copyFrom(kryoSerializerWrapper.asBytes("aac")))
+                                                 .setParam3(ByteString.copyFrom(kryoSerializerWrapper.asBytes("aacd"))))
                               .setMethodName("method3")
                               .build();
     processInternal(informant);
@@ -113,9 +113,9 @@ public class RemoteObserverProcessorImplTest extends CategoryTest {
     Informant informant = Informant.newBuilder()
                               .setInformant4(Informant4.newBuilder()
                                                  .setParam1(getTestObject())
-                                                 .setParam2(ByteString.copyFrom(kryoSerializer.asBytes("aac")))
-                                                 .setParam3(ByteString.copyFrom(kryoSerializer.asBytes("aacd")))
-                                                 .setParam4(ByteString.copyFrom(kryoSerializer.asBytes("aacd1"))))
+                                                 .setParam2(ByteString.copyFrom(kryoSerializerWrapper.asBytes("aac")))
+                                                 .setParam3(ByteString.copyFrom(kryoSerializerWrapper.asBytes("aacd")))
+                                                 .setParam4(ByteString.copyFrom(kryoSerializerWrapper.asBytes("aacd1"))))
                               .setMethodName("method3")
                               .build();
     processInternal(informant);
@@ -188,6 +188,6 @@ public class RemoteObserverProcessorImplTest extends CategoryTest {
   }
 
   private ByteString getTestObject() {
-    return ByteString.copyFrom(kryoSerializer.asBytes(new SampleObserverClass.TestClass("test")));
+    return ByteString.copyFrom(kryoSerializerWrapper.asBytes(new SampleObserverClass.TestClass("test")));
   }
 }

@@ -40,7 +40,7 @@ import io.harness.pms.sdk.core.plan.PlanNode;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import com.google.protobuf.ByteString;
 import java.io.IOException;
@@ -60,7 +60,7 @@ public class ServiceAllInOnePlanCreatorUtils {
    *      config files
    *      azure settings
    */
-  public LinkedHashMap<String, PlanCreationResponse> addServiceNode(YamlField specField, KryoSerializer kryoSerializer,
+  public LinkedHashMap<String, PlanCreationResponse> addServiceNode(YamlField specField, KryoSerializerWrapper kryoSerializerWrapper,
       ServiceYamlV2 serviceYamlV2, EnvironmentYamlV2 environmentYamlV2, String serviceNodeId, String nextNodeId,
       ServiceDefinitionType serviceType) {
     final ServiceYamlV2 finalServiceYaml = useFromStage(serviceYamlV2)
@@ -97,7 +97,7 @@ public class ServiceAllInOnePlanCreatorUtils {
                 AdviserObtainment.newBuilder()
                     .setType(AdviserType.newBuilder().setType(OrchestrationAdviserTypes.ON_SUCCESS.name()).build())
                     .setParameters(ByteString.copyFrom(
-                        kryoSerializer.asBytes(OnSuccessAdviserParameters.builder().nextNodeId(nextNodeId).build())))
+                        kryoSerializerWrapper.asBytes(OnSuccessAdviserParameters.builder().nextNodeId(nextNodeId).build())))
                     .build())
             .skipExpressionChain(true)
             .build();

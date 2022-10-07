@@ -23,7 +23,7 @@ import io.harness.pms.contracts.execution.failure.FailureType;
 import io.harness.pms.sdk.core.PmsSdkCoreTestBase;
 import io.harness.pms.sdk.core.adviser.AdvisingEvent;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -31,7 +31,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 
 public class IgnoreAdviserTest extends PmsSdkCoreTestBase {
-  @Mock KryoSerializer kryoSerializer;
+  @Mock
+  KryoSerializerWrapper kryoSerializerWrapper;
   @InjectMocks IgnoreAdviser ignoreAdviser;
 
   @Test
@@ -54,7 +55,7 @@ public class IgnoreAdviserTest extends PmsSdkCoreTestBase {
             .toStatus(Status.FAILED)
             .failureInfo(FailureInfo.newBuilder().addFailureTypes(FailureType.APPLICATION_FAILURE).build())
             .build();
-    when(kryoSerializer.asObject(nullable(byte[].class))).thenReturn(IgnoreAdviserParameters.builder().build());
+    when(kryoSerializerWrapper.asObject(nullable(byte[].class))).thenReturn(IgnoreAdviserParameters.builder().build());
     assertThat(ignoreAdviser.canAdvise(advisingEvent)).isFalse();
   }
 }

@@ -20,7 +20,7 @@ import io.harness.delegate.task.azure.request.AzureVMSSListVMDataParameters;
 import io.harness.perpetualtask.PerpetualTaskClientContext;
 import io.harness.perpetualtask.PerpetualTaskServiceClient;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import software.wings.beans.AzureConfig;
 import software.wings.beans.AzureVMSSInfrastructureMapping;
@@ -48,16 +48,17 @@ public class AzureVMSSInstanceSyncPerpetualTaskClient implements PerpetualTaskSe
   @Inject InfrastructureMappingService infraMappingService;
   @Inject SettingsService settingsService;
   @Inject SecretManager secretManager;
-  @Inject KryoSerializer kryoSerializer;
+  @Inject
+  KryoSerializerWrapper kryoSerializerWrapper;
   @Inject private transient AzureVMSSStateHelper azureVMSSStateHelper;
 
   @Override
   public Message getTaskParams(PerpetualTaskClientContext clientContext) {
     PerpetualTaskData perpetualTaskData = getPerpetualTaskData(clientContext);
 
-    ByteString azureConfigBytes = ByteString.copyFrom(kryoSerializer.asBytes(perpetualTaskData.getAzureConfig()));
+    ByteString azureConfigBytes = ByteString.copyFrom(kryoSerializerWrapper.asBytes(perpetualTaskData.getAzureConfig()));
     ByteString encryptedDataBytes =
-        ByteString.copyFrom(kryoSerializer.asBytes(perpetualTaskData.getEncryptedDataDetails()));
+        ByteString.copyFrom(kryoSerializerWrapper.asBytes(perpetualTaskData.getEncryptedDataDetails()));
 
     return AzureVmssInstanceSyncPerpetualTaskParams.newBuilder()
         .setSubscriptionId(perpetualTaskData.getSubscriptionId())

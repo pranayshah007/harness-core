@@ -25,7 +25,7 @@ import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.logstreaming.NGLogCallback;
 import io.harness.pms.approval.AbstractApprovalCallback;
 import io.harness.pms.contracts.ambiance.Ambiance;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.servicenow.ServiceNowTicketNG;
 import io.harness.servicenow.TicketNG;
 import io.harness.steps.approval.step.beans.ApprovalStatus;
@@ -49,7 +49,7 @@ import lombok.extern.slf4j.Slf4j;
 public class ServiceNowApprovalCallback extends AbstractApprovalCallback implements PushThroughNotifyCallback {
   private final String approvalInstanceId;
   @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
 
   @Builder
   public ServiceNowApprovalCallback(String approvalInstanceId) {
@@ -76,7 +76,7 @@ public class ServiceNowApprovalCallback extends AbstractApprovalCallback impleme
     ServiceNowTaskNGResponse serviceNowTaskNGResponse;
     try {
       ResponseData responseData = response.values().iterator().next();
-      responseData = (ResponseData) kryoSerializer.asInflatedObject(((BinaryResponseData) responseData).getData());
+      responseData = (ResponseData) kryoSerializerWrapper.asInflatedObject(((BinaryResponseData) responseData).getData());
       if (responseData instanceof ErrorNotifyResponseData) {
         handleErrorNotifyResponse(
             logCallback, (ErrorNotifyResponseData) responseData, "Failed to fetch ServiceNow ticket:");

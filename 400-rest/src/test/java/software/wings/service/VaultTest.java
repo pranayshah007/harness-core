@@ -74,7 +74,7 @@ import io.harness.secrets.SecretService;
 import io.harness.security.encryption.EncryptedRecord;
 import io.harness.security.encryption.EncryptionConfig;
 import io.harness.security.encryption.EncryptionType;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.threading.Morpheus;
 
 import software.wings.EncryptTestUtils;
@@ -208,7 +208,8 @@ public class VaultTest extends WingsBaseTest {
   private String kmsId;
   private String envId;
 
-  @Inject KryoSerializer kryoSerializer;
+  @Inject
+  KryoSerializerWrapper kryoSerializerWrapper;
 
   @Parameters
   public static Collection<Object[]> data() {
@@ -540,7 +541,7 @@ public class VaultTest extends WingsBaseTest {
     vaultConfig.setName(name);
     vaultConfig.setAccountId(accountId);
 
-    vaultService.saveOrUpdateVaultConfig(accountId, kryoSerializer.clone(vaultConfig), true);
+    vaultService.saveOrUpdateVaultConfig(accountId, kryoSerializerWrapper.clone(vaultConfig), true);
 
     VaultConfig savedConfig = (VaultConfig) secretManagerConfigService.getDefaultSecretManager(accountId);
     assertThat(savedConfig.getAuthToken()).isEqualTo(vaultConfig.getAuthToken());
@@ -555,7 +556,7 @@ public class VaultTest extends WingsBaseTest {
     vaultConfig.maskSecrets();
 
     // Masked Secrets, only name and default flag should be updated.
-    vaultService.saveOrUpdateVaultConfig(accountId, kryoSerializer.clone(vaultConfig), true);
+    vaultService.saveOrUpdateVaultConfig(accountId, kryoSerializerWrapper.clone(vaultConfig), true);
 
     VaultConfig modifiedSavedConfig = vaultService.getVaultConfig(accountId, savedConfig.getUuid());
     assertThat(modifiedSavedConfig.getAuthToken()).isEqualTo(savedConfig.getAuthToken());
@@ -1667,14 +1668,14 @@ public class VaultTest extends WingsBaseTest {
     VaultConfig vaultConfig = secretManagementTestHelper.getVaultConfigWithAuthToken();
     vaultConfig.setAccountId(accountId);
 
-    String secretManagerId = vaultService.saveOrUpdateVaultConfig(accountId, kryoSerializer.clone(vaultConfig), true);
+    String secretManagerId = vaultService.saveOrUpdateVaultConfig(accountId, kryoSerializerWrapper.clone(vaultConfig), true);
     verify(auditServiceHelper)
         .reportForAuditingUsingAccountId(eq(accountId), eq(null), any(VaultConfig.class), eq(Event.Type.CREATE));
 
     vaultConfig.setUuid(secretManagerId);
     vaultConfig.setDefault(false);
     vaultConfig.setName(vaultConfig.getName() + "_Updated");
-    vaultService.saveOrUpdateVaultConfig(accountId, kryoSerializer.clone(vaultConfig), true);
+    vaultService.saveOrUpdateVaultConfig(accountId, kryoSerializerWrapper.clone(vaultConfig), true);
     verify(auditServiceHelper)
         .reportForAuditingUsingAccountId(
             eq(accountId), any(VaultConfig.class), any(VaultConfig.class), eq(Event.Type.UPDATE));
@@ -1689,7 +1690,7 @@ public class VaultTest extends WingsBaseTest {
   public void secretText_createdBeforeLocalEncryption_shouldBeReturned() throws Exception {
     VaultConfig vaultConfig = secretManagementTestHelper.getVaultConfigWithAuthToken();
     vaultConfig.setAccountId(accountId);
-    vaultService.saveOrUpdateVaultConfig(accountId, kryoSerializer.clone(vaultConfig), true);
+    vaultService.saveOrUpdateVaultConfig(accountId, kryoSerializerWrapper.clone(vaultConfig), true);
 
     String secretName = UUID.randomUUID().toString();
     SecretText secretText = SecretText.builder()

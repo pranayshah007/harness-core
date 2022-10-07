@@ -51,7 +51,7 @@ import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.steps.fork.ForkStepParameters;
 
 import com.google.inject.Inject;
@@ -76,7 +76,7 @@ import org.mockito.InjectMocks;
 
 @OwnedBy(HarnessTeam.CDC)
 public class ManifestPlanCreatorTest extends CDNGTestBase {
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
   @Inject @InjectMocks ManifestsPlanCreator manifestsPlanCreator;
 
   private static final String ACCOUNT_ID = "account_id";
@@ -124,7 +124,7 @@ public class ManifestPlanCreatorTest extends CDNGTestBase {
 
     Map<String, ByteString> metadataDependency = new HashMap<>();
     metadataDependency.put(
-        YamlTypes.SERVICE_CONFIG, ByteString.copyFrom(kryoSerializer.asDeflatedBytes(serviceConfig)));
+        YamlTypes.SERVICE_CONFIG, ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(serviceConfig)));
 
     Dependency dependency = Dependency.newBuilder().putAllMetadata(metadataDependency).build();
     YamlField manifestsYamlField = getYamlFieldFromGivenFileName("cdng/plan/manifests/manifests.yml");
@@ -160,7 +160,7 @@ public class ManifestPlanCreatorTest extends CDNGTestBase {
 
     Map<String, ByteString> metadataDependency = new HashMap<>();
     metadataDependency.put(
-        YamlTypes.SERVICE_CONFIG, ByteString.copyFrom(kryoSerializer.asDeflatedBytes(serviceConfig)));
+        YamlTypes.SERVICE_CONFIG, ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(serviceConfig)));
 
     Dependency dependency = Dependency.newBuilder().putAllMetadata(metadataDependency).build();
     YamlField manifestsYamlField = getYamlFieldFromGivenFileName("cdng/plan/manifests/manifests.yml");
@@ -185,7 +185,7 @@ public class ManifestPlanCreatorTest extends CDNGTestBase {
     assertThat(metadataMap.containsKey(YamlTypes.UUID)).isEqualTo(true);
     assertThat(metadataMap.containsKey(PlanCreatorConstants.MANIFEST_STEP_PARAMETER)).isEqualTo(true);
 
-    ManifestStepParameters stepParameters = (ManifestStepParameters) kryoSerializer.asInflatedObject(
+    ManifestStepParameters stepParameters = (ManifestStepParameters) kryoSerializerWrapper.asInflatedObject(
         metadataMap.get(PlanCreatorConstants.MANIFEST_STEP_PARAMETER).toByteArray());
     return stepParameters.getIdentifier();
   }
@@ -219,7 +219,7 @@ public class ManifestPlanCreatorTest extends CDNGTestBase {
     List<String> childrenNodeId = Arrays.asList("child1", "child2");
     HashMap<String, ByteString> metadataDependency = new HashMap<>();
     String uuid = UUIDGenerator.generateUuid();
-    metadataDependency.put(YamlTypes.UUID, ByteString.copyFrom(kryoSerializer.asDeflatedBytes(uuid)));
+    metadataDependency.put(YamlTypes.UUID, ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(uuid)));
     Dependency dependency = Dependency.newBuilder().putAllMetadata(metadataDependency).build();
     PlanCreationContext ctx = PlanCreationContext.builder().dependency(dependency).build();
     PlanNode planForParentNode = manifestsPlanCreator.createPlanForParentNode(ctx, null, childrenNodeId);
@@ -325,9 +325,9 @@ public class ManifestPlanCreatorTest extends CDNGTestBase {
             .build();
     Map<String, ByteString> metadataDependency = new HashMap<>();
     metadataDependency.put(SERVICE_ENTITY_DEFINITION_TYPE_KEY,
-        ByteString.copyFrom(kryoSerializer.asDeflatedBytes(ServiceDefinitionType.KUBERNETES)));
+        ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(ServiceDefinitionType.KUBERNETES)));
     metadataDependency.put(YamlTypes.MANIFEST_LIST_CONFIG,
-        ByteString.copyFrom(kryoSerializer.asDeflatedBytes(Arrays.asList(valuesManifest1, valuesManifest2))));
+        ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(Arrays.asList(valuesManifest1, valuesManifest2))));
 
     Dependency dependency = Dependency.newBuilder().putAllMetadata(metadataDependency).build();
     YamlField manifestsYamlField = getYamlFieldFromGivenFileName("cdng/plan/manifests/manifests.yml");
@@ -363,7 +363,7 @@ public class ManifestPlanCreatorTest extends CDNGTestBase {
 
     Map<String, ByteString> metadataDependency = new HashMap<>();
     metadataDependency.put(
-        YamlTypes.SERVICE_CONFIG, ByteString.copyFrom(kryoSerializer.asDeflatedBytes(serviceConfig)));
+        YamlTypes.SERVICE_CONFIG, ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(serviceConfig)));
 
     Dependency dependency = Dependency.newBuilder().putAllMetadata(metadataDependency).build();
     YamlField manifestsYamlField = getYamlFieldFromGivenFileName("cdng/plan/manifests/manifests.yml");

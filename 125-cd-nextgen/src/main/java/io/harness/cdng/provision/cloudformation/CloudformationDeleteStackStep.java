@@ -46,7 +46,7 @@ import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.steps.StepHelper;
 import io.harness.steps.StepUtils;
 import io.harness.supplier.ThrowingSupplier;
@@ -68,7 +68,7 @@ public class CloudformationDeleteStackStep extends TaskExecutableWithRollbackAnd
                                                .setStepCategory(StepCategory.STEP)
                                                .build();
   @Inject private CloudformationStepHelper cloudFormationStepHelper;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
   @Inject private PipelineRbacHelper pipelineRbacHelper;
   @Inject private StepHelper stepHelper;
   @Inject private CloudformationConfigDAL cloudformationConfigDAL;
@@ -183,7 +183,7 @@ public class CloudformationDeleteStackStep extends TaskExecutableWithRollbackAnd
             .parameters(new Object[] {builder.build()})
             .build();
 
-    return StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
+    return StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializerWrapper,
         Collections.singletonList(CloudformationCommandUnit.DeleteStack.name()),
         TaskType.CLOUDFORMATION_TASK_NG.getDisplayName(),
         TaskSelectorYaml.toTaskSelector(emptyIfNull(getParameterFieldValue(parameters.getDelegateSelectors()))),

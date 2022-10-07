@@ -23,7 +23,7 @@ import io.harness.pms.contracts.execution.failure.FailureType;
 import io.harness.pms.execution.utils.StatusUtils;
 import io.harness.pms.sdk.core.adviser.Adviser;
 import io.harness.pms.sdk.core.adviser.AdvisingEvent;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.yaml.core.failurestrategy.NGFailureActionTypeConstants;
 
 import com.google.inject.Inject;
@@ -37,7 +37,7 @@ public class ManualInterventionAdviserWithRollback implements Adviser {
   public static final AdviserType ADVISER_TYPE =
       AdviserType.newBuilder().setType(CommonAdviserTypes.MANUAL_INTERVENTION_WITH_ROLLBACK.name()).build();
 
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
 
   @Override
   public AdviserResponse onAdviseEvent(AdvisingEvent advisingEvent) {
@@ -80,7 +80,7 @@ public class ManualInterventionAdviserWithRollback implements Adviser {
     if (isEmpty(adviserParameters)) {
       return null;
     }
-    return (ManualInterventionAdviserRollbackParameters) kryoSerializer.asObject(adviserParameters);
+    return (ManualInterventionAdviserRollbackParameters) kryoSerializerWrapper.asObject(adviserParameters);
   }
 
   private RepairActionCode getReformedRepairActionCode(RepairActionCode repairActionCode) {

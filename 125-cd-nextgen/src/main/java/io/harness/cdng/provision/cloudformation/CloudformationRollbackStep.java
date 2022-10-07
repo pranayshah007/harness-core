@@ -49,7 +49,7 @@ import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.steps.StepHelper;
 import io.harness.steps.StepUtils;
 import io.harness.supplier.ThrowingSupplier;
@@ -72,7 +72,7 @@ import lombok.extern.slf4j.Slf4j;
 public class CloudformationRollbackStep extends TaskExecutableWithRollbackAndRbac<CloudformationTaskNGResponse> {
   @Inject CloudformationStepHelper cloudformationStepHelper;
   @Inject CloudformationConfigDAL cloudformationConfigDAL;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
   @Inject private StepHelper stepHelper;
   @Inject private EngineExpressionService engineExpressionService;
   @Inject private CDStepHelper cdStepHelper;
@@ -174,7 +174,7 @@ public class CloudformationRollbackStep extends TaskExecutableWithRollbackAndRba
                             .parameters(new Object[] {cloudformationTaskNGParameters})
                             .build();
 
-    return StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
+    return StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializerWrapper,
         Collections.singletonList(cloudformationTaskNGParameters.getCfCommandUnit().name()),
         TaskType.CLOUDFORMATION_TASK_NG.getDisplayName(),
         TaskSelectorYaml.toTaskSelector(

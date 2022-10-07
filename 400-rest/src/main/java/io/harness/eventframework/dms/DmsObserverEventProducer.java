@@ -13,7 +13,7 @@ import io.harness.eventsframework.EventsFrameworkConstants;
 import io.harness.eventsframework.api.Producer;
 import io.harness.observer.AbstractRemoteInformer;
 import io.harness.observer.RemoteObserverInformer;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
@@ -23,8 +23,8 @@ import java.lang.reflect.Method;
 public class DmsObserverEventProducer extends AbstractRemoteInformer implements RemoteObserverInformer {
   @Inject
   public DmsObserverEventProducer(
-      KryoSerializer kryoSerializer, @Named(EventsFrameworkConstants.OBSERVER_EVENT_CHANNEL) Producer eventProducer) {
-    super(kryoSerializer, eventProducer);
+      KryoSerializerWrapper kryoSerializerWrapper, @Named(EventsFrameworkConstants.OBSERVER_EVENT_CHANNEL) Producer eventProducer) {
+    super(kryoSerializerWrapper, eventProducer);
   }
 
   @Override

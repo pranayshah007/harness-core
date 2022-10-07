@@ -85,7 +85,7 @@ import io.harness.product.ci.scm.proto.PushHook;
 import io.harness.rule.Owner;
 import io.harness.secrets.SecretDecryptor;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.tasks.BinaryResponseData;
 import io.harness.utils.ConnectorUtils;
 
@@ -114,7 +114,7 @@ public class TriggerFilePathConditionFilterTest extends CategoryTest {
   @Mock private TaskExecutionUtils taskExecutionUtils;
   @Mock private NGTriggerElementMapper ngTriggerElementMapper;
   @Mock private NGTriggerService ngTriggerService;
-  @Mock private KryoSerializer kryoSerializer;
+  @Mock private KryoSerializerWrapper kryoSerializerWrapper;
   @Mock private ConnectorUtils connectorUtils;
   @Mock private SecretDecryptor secretDecryptor;
   @Inject @InjectMocks private FilepathTriggerFilter filter;
@@ -186,7 +186,7 @@ public class TriggerFilePathConditionFilterTest extends CategoryTest {
     on(filter).set("scmFilePathEvaluatorFactory", scmFilePathEvaluatorFactory);
     on(scmFilePathEvaluatorOnManager).set("secretDecryptor", secretDecryptor);
     on(scmFilePathEvaluatorOnDelegate).set("taskExecutionUtils", taskExecutionUtils);
-    on(scmFilePathEvaluatorOnDelegate).set("kryoSerializer", kryoSerializer);
+    on(scmFilePathEvaluatorOnDelegate).set("kryoSerializer", kryoSerializerWrapper);
   }
 
   @Test
@@ -259,7 +259,7 @@ public class TriggerFilePathConditionFilterTest extends CategoryTest {
     when(taskExecutionUtils.executeSyncTask(any(DelegateTaskRequest.class)))
         .thenReturn(BinaryResponseData.builder().data(data).build());
     doReturn(ScmPathFilterEvaluationTaskResponse.builder().matched(true).build())
-        .when(kryoSerializer)
+        .when(kryoSerializerWrapper)
         .asInflatedObject(data);
 
     ArgumentCaptor<DelegateTaskRequest> argumentCaptor = ArgumentCaptor.forClass(DelegateTaskRequest.class);
@@ -284,7 +284,7 @@ public class TriggerFilePathConditionFilterTest extends CategoryTest {
 
     // DelegateTask returns Error
     doReturn(ErrorNotifyResponseData.builder().errorMessage("error").build())
-        .when(kryoSerializer)
+        .when(kryoSerializerWrapper)
         .asInflatedObject(data);
     assertThat(filter.initiateSCMTaskAndEvaluate(filterRequestData, triggerDetails, pathCondition)).isFalse();
   }
@@ -424,7 +424,7 @@ public class TriggerFilePathConditionFilterTest extends CategoryTest {
     when(taskExecutionUtils.executeSyncTask(any(DelegateTaskRequest.class)))
         .thenReturn(BinaryResponseData.builder().data(data).build());
     doReturn(ScmPathFilterEvaluationTaskResponse.builder().matched(true).build())
-        .when(kryoSerializer)
+        .when(kryoSerializerWrapper)
         .asInflatedObject(data);
 
     ArgumentCaptor<DelegateTaskRequest> argumentCaptor = ArgumentCaptor.forClass(DelegateTaskRequest.class);
@@ -564,7 +564,7 @@ public class TriggerFilePathConditionFilterTest extends CategoryTest {
     when(taskExecutionUtils.executeSyncTask(any(DelegateTaskRequest.class)))
         .thenReturn(BinaryResponseData.builder().data(data).build());
     doReturn(ScmPathFilterEvaluationTaskResponse.builder().matched(true).build())
-        .when(kryoSerializer)
+        .when(kryoSerializerWrapper)
         .asInflatedObject(data);
 
     ArgumentCaptor<DelegateTaskRequest> argumentCaptor = ArgumentCaptor.forClass(DelegateTaskRequest.class);

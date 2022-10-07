@@ -24,7 +24,7 @@ import io.harness.polling.contracts.PollingItem;
 import io.harness.polling.contracts.service.PollingDocument;
 import io.harness.polling.service.intfc.PollingService;
 import io.harness.security.annotations.InternalApi;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
@@ -54,7 +54,7 @@ import org.hibernate.validator.constraints.NotEmpty;
 @Slf4j
 @OwnedBy(HarnessTeam.CDC)
 public class PollingResource {
-  private KryoSerializer kryoSerializer;
+  private KryoSerializerWrapper kryoSerializerWrapper;
   private PollingResponseHandler pollingResponseHandler;
   private PollingService pollingService;
 
@@ -66,7 +66,7 @@ public class PollingResource {
     try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR);
          AutoLogContext ignore2 = new PerpetualTaskLogContext(perpetualTaskId, OVERRIDE_ERROR)) {
       PollingDelegateResponse executionResponse =
-          (PollingDelegateResponse) kryoSerializer.asObject(serializedExecutionResponse);
+          (PollingDelegateResponse) kryoSerializerWrapper.asObject(serializedExecutionResponse);
       pollingResponseHandler.handlePollingResponse(perpetualTaskId, accountId, executionResponse);
     }
   }
@@ -75,10 +75,10 @@ public class PollingResource {
   @Path("subscribe")
   @ApiOperation(hidden = true, value = "Subscribe API for polling framework.", nickname = "subscribePolling")
   public ResponseDTO<PollingResponseDTO> subscribe(byte[] pollingItem) {
-    String pollingDocId = pollingService.subscribe((PollingItem) kryoSerializer.asObject(pollingItem));
+    String pollingDocId = pollingService.subscribe((PollingItem) kryoSerializerWrapper.asObject(pollingItem));
     return ResponseDTO.newResponse(
         PollingResponseDTO.builder()
-            .pollingResponse(kryoSerializer.asBytes(PollingDocument.newBuilder().setPollingDocId(pollingDocId).build()))
+            .pollingResponse(kryoSerializerWrapper.asBytes(PollingDocument.newBuilder().setPollingDocId(pollingDocId).build()))
             .build());
   }
 
@@ -86,6 +86,6 @@ public class PollingResource {
   @Path("unsubscribe")
   @ApiOperation(hidden = true, value = "Unsubscribe API for polling framework.", nickname = "unsubscribePolling")
   public Boolean unsubscribe(byte[] pollingItem) {
-    return pollingService.unsubscribe((PollingItem) kryoSerializer.asObject(pollingItem));
+    return pollingService.unsubscribe((PollingItem) kryoSerializerWrapper.asObject(pollingItem));
   }
 }

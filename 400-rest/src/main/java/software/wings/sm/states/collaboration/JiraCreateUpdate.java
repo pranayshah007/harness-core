@@ -41,7 +41,7 @@ import io.harness.jira.JiraCustomFieldValue;
 import io.harness.jira.JiraField;
 import io.harness.jira.JiraIssueType;
 import io.harness.jira.JiraProjectData;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.tasks.ResponseData;
 
 import software.wings.api.jira.JiraExecutionData;
@@ -135,7 +135,8 @@ public class JiraCreateUpdate extends State implements SweepingOutputStateMixin 
   @Inject @Transient private transient SecretManager secretManager;
   @Inject @Transient private SweepingOutputService sweepingOutputService;
   @Inject @Transient private SettingsService settingsService;
-  @Transient @Inject KryoSerializer kryoSerializer;
+  @Transient @Inject
+  KryoSerializerWrapper kryoSerializerWrapper;
 
   @Getter @Setter @NotNull private JiraAction jiraAction;
   @Getter @Setter @NotNull String jiraConnectorId;
@@ -887,9 +888,8 @@ public class JiraCreateUpdate extends State implements SweepingOutputStateMixin 
     return matcher.matches();
   }
 
-  @Override
-  public KryoSerializer getKryoSerializer() {
-    return kryoSerializer;
+  public KryoSerializerWrapper getKryoSerializer() {
+    return kryoSerializerWrapper;
   }
 
   @Override

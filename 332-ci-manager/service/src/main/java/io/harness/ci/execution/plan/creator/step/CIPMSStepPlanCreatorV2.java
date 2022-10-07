@@ -214,7 +214,7 @@ public abstract class CIPMSStepPlanCreatorV2<T extends CIAbstractStepNode> exten
         case IGNORE:
           adviserObtainmentList.add(
               adviserObtainmentBuilder.setType(IgnoreAdviser.ADVISER_TYPE)
-                  .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(IgnoreAdviserParameters.builder()
+                  .setParameters(ByteString.copyFrom(kryoSerializerWrapper.asBytes(IgnoreAdviserParameters.builder()
                                                                                 .applicableFailureTypes(failureTypes)
                                                                                 .nextNodeId(nextNodeUuid)
                                                                                 .build())))
@@ -231,7 +231,7 @@ public abstract class CIPMSStepPlanCreatorV2<T extends CIAbstractStepNode> exten
         case MARK_AS_SUCCESS:
           adviserObtainmentList.add(
               adviserObtainmentBuilder.setType(OnMarkSuccessAdviser.ADVISER_TYPE)
-                  .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(OnMarkSuccessAdviserParameters.builder()
+                  .setParameters(ByteString.copyFrom(kryoSerializerWrapper.asBytes(OnMarkSuccessAdviserParameters.builder()
                                                                                 .applicableFailureTypes(failureTypes)
                                                                                 .nextNodeId(nextNodeUuid)
                                                                                 .build())))
@@ -241,7 +241,7 @@ public abstract class CIPMSStepPlanCreatorV2<T extends CIAbstractStepNode> exten
         case ABORT:
           adviserObtainmentList.add(
               adviserObtainmentBuilder.setType(OnAbortAdviser.ADVISER_TYPE)
-                  .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(
+                  .setParameters(ByteString.copyFrom(kryoSerializerWrapper.asBytes(
                       OnAbortAdviserParameters.builder().applicableFailureTypes(failureTypes).build())))
                   .build());
           break;
@@ -249,7 +249,7 @@ public abstract class CIPMSStepPlanCreatorV2<T extends CIAbstractStepNode> exten
           OnFailRollbackParameters rollbackParameters =
               getRollbackParameters(currentField, failureTypes, RollbackStrategy.STAGE_ROLLBACK);
           adviserObtainmentList.add(adviserObtainmentBuilder.setType(OnFailRollbackAdviser.ADVISER_TYPE)
-                                        .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(rollbackParameters)))
+                                        .setParameters(ByteString.copyFrom(kryoSerializerWrapper.asBytes(rollbackParameters)))
                                         .build());
           break;
         case MANUAL_INTERVENTION:
@@ -263,14 +263,14 @@ public abstract class CIPMSStepPlanCreatorV2<T extends CIAbstractStepNode> exten
         case PROCEED_WITH_DEFAULT_VALUES:
           adviserObtainmentList.add(
               adviserObtainmentBuilder.setType(ProceedWithDefaultValueAdviser.ADVISER_TYPE)
-                  .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(
+                  .setParameters(ByteString.copyFrom(kryoSerializerWrapper.asBytes(
                       ProceedWithDefaultAdviserParameters.builder().applicableFailureTypes(failureTypes).build())))
                   .build());
           break;
         case PIPELINE_ROLLBACK:
           rollbackParameters = getRollbackParameters(currentField, failureTypes, RollbackStrategy.PIPELINE_ROLLBACK);
           adviserObtainmentList.add(adviserObtainmentBuilder.setType(OnFailRollbackAdviser.ADVISER_TYPE)
-                                        .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(rollbackParameters)))
+                                        .setParameters(ByteString.copyFrom(kryoSerializerWrapper.asBytes(rollbackParameters)))
                                         .build());
           break;
         default:
@@ -284,7 +284,7 @@ public abstract class CIPMSStepPlanCreatorV2<T extends CIAbstractStepNode> exten
       AdviserObtainment.Builder adviserObtainmentBuilder, ManualInterventionFailureActionConfig actionConfig,
       FailureStrategyActionConfig actionUnderManualIntervention) {
     return adviserObtainmentBuilder.setType(ManualInterventionAdviserWithRollback.ADVISER_TYPE)
-        .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(
+        .setParameters(ByteString.copyFrom(kryoSerializerWrapper.asBytes(
             ManualInterventionAdviserRollbackParameters.builder()
                 .applicableFailureTypes(failureTypes)
                 .timeoutAction(GenericPlanCreatorUtils.toRepairAction(actionUnderManualIntervention))
@@ -303,7 +303,7 @@ public abstract class CIPMSStepPlanCreatorV2<T extends CIAbstractStepNode> exten
       if (siblingField != null && siblingField.getNode().getUuid() != null) {
         return AdviserObtainment.newBuilder()
             .setType(AdviserType.newBuilder().setType(OrchestrationAdviserTypes.NEXT_STEP.name()).build())
-            .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(
+            .setParameters(ByteString.copyFrom(kryoSerializerWrapper.asBytes(
                 NextStepAdviserParameters.builder().nextNodeId(siblingField.getNode().getUuid()).build())))
             .build();
       }
@@ -315,7 +315,7 @@ public abstract class CIPMSStepPlanCreatorV2<T extends CIAbstractStepNode> exten
       AdviserObtainment.Builder adviserObtainmentBuilder, RetryFailureActionConfig retryAction,
       ParameterField<Integer> retryCount, FailureStrategyActionConfig actionUnderRetry, YamlField currentField) {
     return adviserObtainmentBuilder.setType(RetryAdviserWithRollback.ADVISER_TYPE)
-        .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(
+        .setParameters(ByteString.copyFrom(kryoSerializerWrapper.asBytes(
             RetryAdviserRollbackParameters.builder()
                 .applicableFailureTypes(failureTypes)
                 .nextNodeId(nextNodeUuid)
@@ -342,7 +342,7 @@ public abstract class CIPMSStepPlanCreatorV2<T extends CIAbstractStepNode> exten
       if (siblingField != null && siblingField.getNode().getUuid() != null) {
         return AdviserObtainment.newBuilder()
             .setType(AdviserType.newBuilder().setType(OrchestrationAdviserTypes.ON_SUCCESS.name()).build())
-            .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(
+            .setParameters(ByteString.copyFrom(kryoSerializerWrapper.asBytes(
                 OnSuccessAdviserParameters.builder().nextNodeId(siblingField.getNode().getUuid()).build())))
             .build();
       }

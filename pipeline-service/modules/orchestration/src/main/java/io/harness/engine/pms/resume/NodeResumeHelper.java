@@ -18,7 +18,7 @@ import io.harness.pms.contracts.data.StepOutcomeRef;
 import io.harness.pms.contracts.execution.ChildChainExecutableResponse;
 import io.harness.pms.contracts.execution.ExecutionMode;
 import io.harness.pms.sdk.core.steps.io.StepResponseNotifyData;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
@@ -34,7 +34,7 @@ import java.util.stream.Collectors;
 public class NodeResumeHelper {
   @Inject private NodeExecutionService nodeExecutionService;
   @Inject private PmsOutcomeService pmsOutcomeService;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
   @Inject private NodeResumeEventPublisher nodeResumeEventPublisher;
 
   public void resume(NodeExecution nodeExecution, Map<String, ByteString> responseMap, boolean isError) {
@@ -60,7 +60,7 @@ public class NodeResumeHelper {
                                                 .stepOutcomeRefs(refMap.get(ce.getUuid()))
                                                 .adviserResponse(ce.getAdviserResponse())
                                                 .build();
-        byteResponseMap.put(ce.getUuid(), ByteString.copyFrom(kryoSerializer.asDeflatedBytes(notifyData)));
+        byteResponseMap.put(ce.getUuid(), ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(notifyData)));
       }
       return byteResponseMap;
     }

@@ -116,7 +116,7 @@ import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.ParameterField;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.steps.StepHelper;
 
 import software.wings.beans.LogColor;
@@ -151,7 +151,7 @@ public class K8sHelmCommonStepHelper {
   @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
   @Inject private FileStoreService fileStoreService;
   @Inject protected OutcomeService outcomeService;
-  @Inject protected KryoSerializer kryoSerializer;
+  @Inject protected KryoSerializerWrapper kryoSerializerWrapper;
   @Inject protected StepHelper stepHelper;
   @Inject protected CDStepHelper cdStepHelper;
 
@@ -341,7 +341,7 @@ public class K8sHelmCommonStepHelper {
 
     String taskName = TaskType.CUSTOM_MANIFEST_VALUES_FETCH_TASK_NG.getDisplayName();
 
-    final TaskRequest taskRequest = prepareCDTaskRequest(ambiance, taskData, kryoSerializer, commandUnits, taskName,
+    final TaskRequest taskRequest = prepareCDTaskRequest(ambiance, taskData, kryoSerializerWrapper, commandUnits, taskName,
         TaskSelectorYaml.toTaskSelector(CollectionUtils.emptyIfNull(delegateSelectors)),
         stepHelper.getEnvironmentType(ambiance));
 
@@ -383,7 +383,7 @@ public class K8sHelmCommonStepHelper {
       stepLevelSelectors = ((HelmSpecParameters) stepElementParameters.getSpec()).getDelegateSelectors();
       commandUnits = ((HelmSpecParameters) stepElementParameters.getSpec()).getCommandUnits();
     }
-    final TaskRequest taskRequest = prepareCDTaskRequest(ambiance, taskData, kryoSerializer, commandUnits, taskName,
+    final TaskRequest taskRequest = prepareCDTaskRequest(ambiance, taskData, kryoSerializerWrapper, commandUnits, taskName,
         TaskSelectorYaml.toTaskSelector(CollectionUtils.emptyIfNull(getParameterFieldValue(stepLevelSelectors))),
         stepHelper.getEnvironmentType(ambiance));
 
@@ -461,7 +461,7 @@ public class K8sHelmCommonStepHelper {
       commandUnits = ((HelmSpecParameters) stepElementParameters.getSpec()).getCommandUnits();
     }
 
-    final TaskRequest taskRequest = prepareCDTaskRequest(ambiance, taskData, kryoSerializer, commandUnits, taskName,
+    final TaskRequest taskRequest = prepareCDTaskRequest(ambiance, taskData, kryoSerializerWrapper, commandUnits, taskName,
         TaskSelectorYaml.toTaskSelector(CollectionUtils.emptyIfNull(getParameterFieldValue(stepLevelSelectors))),
         stepHelper.getEnvironmentType(ambiance));
 

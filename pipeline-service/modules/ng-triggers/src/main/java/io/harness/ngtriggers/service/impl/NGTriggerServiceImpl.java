@@ -89,7 +89,7 @@ import io.harness.remote.client.NGRestUtils;
 import io.harness.repositories.spring.NGTriggerRepository;
 import io.harness.repositories.spring.TriggerEventHistoryRepository;
 import io.harness.repositories.spring.TriggerWebhookEventRepository;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import com.cronutils.model.Cron;
 import com.cronutils.model.CronType;
@@ -142,7 +142,7 @@ public class NGTriggerServiceImpl implements NGTriggerService {
   private final TriggerValidationHandler triggerValidationHandler;
   private final PollingSubscriptionHelper pollingSubscriptionHelper;
   private final ExecutorService executorService;
-  private final KryoSerializer kryoSerializer;
+  private final KryoSerializerWrapper kryoSerializerWrapper;
   private final PipelineServiceClient pipelineServiceClient;
   private final BuildTriggerHelper buildTriggerHelper;
   private final TriggerCatalogHelper triggerCatalogHelper;
@@ -198,7 +198,7 @@ public class NGTriggerServiceImpl implements NGTriggerService {
     PollingItem pollingItem = pollingSubscriptionHelper.generatePollingItem(ngTriggerEntity);
 
     try {
-      byte[] pollingItemBytes = kryoSerializer.asBytes(pollingItem);
+      byte[] pollingItemBytes = kryoSerializerWrapper.asBytes(pollingItem);
 
       if (!ngTriggerEntity.getEnabled()
           && executePollingUnSubscription(ngTriggerEntity, pollingItemBytes).equals(Boolean.TRUE)) {
@@ -211,7 +211,7 @@ public class NGTriggerServiceImpl implements NGTriggerService {
       } else {
         ResponseDTO<PollingResponseDTO> responseDTO = executePollingSubscription(ngTriggerEntity, pollingItemBytes);
         PollingDocument pollingDocument =
-            (PollingDocument) kryoSerializer.asObject(responseDTO.getData().getPollingResponse());
+            (PollingDocument) kryoSerializerWrapper.asObject(responseDTO.getData().getPollingResponse());
         updatePollingRegistrationStatus(ngTriggerEntity, pollingDocument, StatusResult.SUCCESS);
       }
     } catch (Exception exception) {
@@ -410,7 +410,7 @@ public class NGTriggerServiceImpl implements NGTriggerService {
       executorService.submit(() -> {
         try {
           PollingItem pollingItem = pollingSubscriptionHelper.generatePollingItem(ngTriggerEntity);
-          if (!executePollingUnSubscription(ngTriggerEntity, kryoSerializer.asBytes(pollingItem))) {
+          if (!executePollingUnSubscription(ngTriggerEntity, kryoSerializerWrapper.asBytes(pollingItem))) {
             log.warn(String.format("Trigger %s failed to unsubsribe from Polling", ngTriggerEntity.getIdentifier()));
           }
         } catch (Exception exception) {

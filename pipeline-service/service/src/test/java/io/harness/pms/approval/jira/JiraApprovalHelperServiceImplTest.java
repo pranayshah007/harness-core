@@ -37,7 +37,7 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.rule.Owner;
 import io.harness.secrets.remote.SecretNGManagerClient;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.steps.StepUtils;
 import io.harness.steps.approval.step.beans.ApprovalType;
 import io.harness.steps.approval.step.beans.CriteriaSpecWrapperDTO;
@@ -63,7 +63,7 @@ import org.powermock.modules.junit4.PowerMockRunner;
 public class JiraApprovalHelperServiceImplTest extends CategoryTest {
   @Mock private NgDelegate2TaskExecutor ngDelegate2TaskExecutor;
   @Mock private ConnectorResourceClient connectorResourceClient;
-  @Mock private KryoSerializer kryoSerializer;
+  @Mock private KryoSerializerWrapper kryoSerializerWrapper;
   @Mock private SecretNGManagerClient secretManagerClient;
   @Mock private WaitNotifyEngine waitNotifyEngine;
   @Mock private LogStreamingStepClientFactory logStreamingStepClientFactory;
@@ -79,7 +79,7 @@ public class JiraApprovalHelperServiceImplTest extends CategoryTest {
   @Before
   public void setUp() {
     jiraApprovalHelperService = spy(new JiraApprovalHelperServiceImpl(ngDelegate2TaskExecutor, connectorResourceClient,
-        kryoSerializer, secretManagerClient, waitNotifyEngine, logStreamingStepClientFactory, publisherName,
+        kryoSerializerWrapper, secretManagerClient, waitNotifyEngine, logStreamingStepClientFactory, publisherName,
         pmsGitSyncHelper, null));
   }
 

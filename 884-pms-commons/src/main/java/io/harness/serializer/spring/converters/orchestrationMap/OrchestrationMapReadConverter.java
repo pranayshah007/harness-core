@@ -11,7 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.data.OrchestrationMap;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -23,7 +23,7 @@ import org.springframework.data.convert.ReadingConverter;
 @Singleton
 @ReadingConverter
 public class OrchestrationMapReadConverter implements Converter<Binary, OrchestrationMap> {
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
 
   @Override
   public OrchestrationMap convert(Binary binary) {
@@ -31,6 +31,6 @@ public class OrchestrationMapReadConverter implements Converter<Binary, Orchestr
       return null;
     }
 
-    return (OrchestrationMap) kryoSerializer.asInflatedObject(binary.getData());
+    return (OrchestrationMap) kryoSerializerWrapper.asInflatedObject(binary.getData());
   }
 }

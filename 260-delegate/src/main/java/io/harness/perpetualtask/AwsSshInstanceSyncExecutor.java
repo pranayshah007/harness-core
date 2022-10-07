@@ -18,7 +18,7 @@ import io.harness.grpc.utils.AnyUtils;
 import io.harness.managerclient.DelegateAgentManagerClient;
 import io.harness.perpetualtask.instancesync.AwsSshInstanceSyncPerpetualTaskParams;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import software.wings.beans.AwsConfig;
 import software.wings.service.impl.aws.model.AwsEc2ListInstancesResponse;
@@ -38,7 +38,7 @@ import org.eclipse.jetty.server.Response;
 public class AwsSshInstanceSyncExecutor implements PerpetualTaskExecutor {
   @Inject private AwsEc2HelperServiceDelegate ec2ServiceDelegate;
   @Inject private DelegateAgentManagerClient delegateAgentManagerClient;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
 
   @Override
   public PerpetualTaskResponse runOnce(
@@ -48,10 +48,10 @@ public class AwsSshInstanceSyncExecutor implements PerpetualTaskExecutor {
 
     final String region = instanceSyncParams.getRegion();
 
-    final AwsConfig awsConfig = (AwsConfig) kryoSerializer.asObject(instanceSyncParams.getAwsConfig().toByteArray());
+    final AwsConfig awsConfig = (AwsConfig) kryoSerializerWrapper.asObject(instanceSyncParams.getAwsConfig().toByteArray());
     final List<EncryptedDataDetail> encryptedDataDetails =
-        cast(kryoSerializer.asObject(instanceSyncParams.getEncryptedData().toByteArray()));
-    final List<Filter> filters = cast(kryoSerializer.asObject(instanceSyncParams.getFilter().toByteArray()));
+        cast(kryoSerializerWrapper.asObject(instanceSyncParams.getEncryptedData().toByteArray()));
+    final List<Filter> filters = cast(kryoSerializerWrapper.asObject(instanceSyncParams.getFilter().toByteArray()));
 
     final AwsEc2ListInstancesResponse awsResponse = getInstances(region, awsConfig, encryptedDataDetails, filters);
     try {

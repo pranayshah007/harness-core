@@ -30,7 +30,7 @@ import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.steps.fork.ForkStepParameters;
 
 import com.google.inject.Inject;
@@ -53,7 +53,8 @@ import org.mockito.InjectMocks;
 
 @OwnedBy(HarnessTeam.CDC)
 public class SideCarListPlanCreatorTest extends CDNGTestBase {
-  @Inject KryoSerializer kryoSerializer;
+  @Inject
+  KryoSerializerWrapper kryoSerializerWrapper;
   @Inject @InjectMocks SideCarListPlanCreator sidecarListPlanCreator;
 
   @Test
@@ -164,7 +165,7 @@ public class SideCarListPlanCreatorTest extends CDNGTestBase {
     List<String> childrenNodeId = Arrays.asList("child1", "child2");
     HashMap<String, ByteString> metadataDependency = new HashMap<>();
     String uuid = UUIDGenerator.generateUuid();
-    metadataDependency.put(YamlTypes.UUID, ByteString.copyFrom(kryoSerializer.asDeflatedBytes(uuid)));
+    metadataDependency.put(YamlTypes.UUID, ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(uuid)));
     Dependency dependency = Dependency.newBuilder().putAllMetadata(metadataDependency).build();
     PlanCreationContext ctx = PlanCreationContext.builder().dependency(dependency).build();
     PlanNode planForParentNode = sidecarListPlanCreator.createPlanForParentNode(ctx, null, childrenNodeId);
@@ -193,7 +194,7 @@ public class SideCarListPlanCreatorTest extends CDNGTestBase {
     sideCarsParametersMap.put("sidecar2", ArtifactStepParameters.builder().identifier("sidecar2").build());
     sideCarsParametersMap.put("sidecar3", ArtifactStepParameters.builder().identifier("sidecar3").build());
     metadataDependency.put(PlanCreatorConstants.SIDECARS_PARAMETERS_MAP,
-        ByteString.copyFrom(kryoSerializer.asDeflatedBytes(sideCarsParametersMap)));
+        ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(sideCarsParametersMap)));
     Dependency dependency = Dependency.newBuilder().putAllMetadata(metadataDependency).build();
     PlanCreationContext ctx =
         PlanCreationContext.builder().currentField(sidecarsListYamlField).dependency(dependency).build();

@@ -43,7 +43,7 @@ import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.provision.TerraformConstants;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.steps.StepHelper;
 import io.harness.steps.StepUtils;
 import io.harness.supplier.ThrowingSupplier;
@@ -67,7 +67,7 @@ public class TerraformDestroyStep extends TaskExecutableWithRollbackAndRbac<Terr
                                                .setStepCategory(StepCategory.STEP)
                                                .build();
 
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
   @Inject private TerraformStepHelper helper;
   @Inject private CDFeatureFlagHelper cdFeatureFlagHelper;
   @Inject private PipelineRbacHelper pipelineRbacHelper;
@@ -170,7 +170,7 @@ public class TerraformDestroyStep extends TaskExecutableWithRollbackAndRbac<Terr
             .timeout(StepUtils.getTimeoutMillis(stepElementParameters.getTimeout(), TerraformConstants.DEFAULT_TIMEOUT))
             .parameters(new Object[] {builder.build()})
             .build();
-    return StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
+    return StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializerWrapper,
         Collections.singletonList(TerraformCommandUnit.Destroy.name()), TaskType.TERRAFORM_TASK_NG.getDisplayName(),
         TaskSelectorYaml.toTaskSelector(parameters.getDelegateSelectors()), stepHelper.getEnvironmentType(ambiance));
   }
@@ -215,7 +215,7 @@ public class TerraformDestroyStep extends TaskExecutableWithRollbackAndRbac<Terr
             .timeout(StepUtils.getTimeoutMillis(stepElementParameters.getTimeout(), TerraformConstants.DEFAULT_TIMEOUT))
             .parameters(new Object[] {builder.build()})
             .build();
-    return StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
+    return StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializerWrapper,
         Collections.singletonList(TerraformCommandUnit.Destroy.name()), TaskType.TERRAFORM_TASK_NG.getDisplayName(),
         TaskSelectorYaml.toTaskSelector(parameters.getDelegateSelectors()), stepHelper.getEnvironmentType(ambiance));
   }
@@ -262,7 +262,7 @@ public class TerraformDestroyStep extends TaskExecutableWithRollbackAndRbac<Terr
             .timeout(StepUtils.getTimeoutMillis(stepElementParameters.getTimeout(), TerraformConstants.DEFAULT_TIMEOUT))
             .parameters(new Object[] {builder.build()})
             .build();
-    return StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
+    return StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializerWrapper,
         Collections.singletonList(TerraformCommandUnit.Destroy.name()), TaskType.TERRAFORM_TASK_NG.getDisplayName(),
         TaskSelectorYaml.toTaskSelector(parameters.getDelegateSelectors()), stepHelper.getEnvironmentType(ambiance));
   }

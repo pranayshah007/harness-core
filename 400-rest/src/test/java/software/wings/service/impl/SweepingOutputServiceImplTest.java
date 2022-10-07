@@ -37,7 +37,7 @@ import io.harness.beans.SweepingOutputInstance.SweepingOutputInstanceBuilder;
 import io.harness.category.element.UnitTests;
 import io.harness.deployment.InstanceDetails;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import software.wings.WingsBaseTest;
 import software.wings.api.ContextElementParamMapper;
@@ -94,7 +94,8 @@ public class SweepingOutputServiceImplTest extends WingsBaseTest {
 
   private SweepingOutputInstance sweepingOutputInstance;
   private StateExecutionInstance stateExecutionInstance;
-  @Inject KryoSerializer kryoSerializer;
+  @Inject
+  KryoSerializerWrapper kryoSerializerWrapper;
 
   @Before
   public void setup() {
@@ -123,7 +124,7 @@ public class SweepingOutputServiceImplTest extends WingsBaseTest {
 
     sweepingOutputInstance =
         sweepingOutputService.save(sweepingOutputBuilder.name(SWEEPING_OUTPUT_NAME)
-                                       .output(kryoSerializer.asBytes(SWEEPING_OUTPUT_CONTENT))
+                                       .output(kryoSerializerWrapper.asBytes(SWEEPING_OUTPUT_CONTENT))
                                        .value(SweepingOutputData.builder().text(SWEEPING_OUTPUT_CONTENT).build())
                                        .build());
   }
@@ -145,7 +146,7 @@ public class SweepingOutputServiceImplTest extends WingsBaseTest {
 
     assertThat(savedSweepingOutputInstance.getValueOutput()).isNotEmpty();
     SweepingOutput sweepingOutput =
-        (SweepingOutput) kryoSerializer.asObject(savedSweepingOutputInstance.getValueOutput());
+        (SweepingOutput) kryoSerializerWrapper.asObject(savedSweepingOutputInstance.getValueOutput());
     assertThat(sweepingOutput).isNotNull();
     assertThat(sweepingOutput).isInstanceOf(SweepingOutputData.class);
     assertThat(((SweepingOutputData) sweepingOutput).getText()).isEqualTo(SWEEPING_OUTPUT_CONTENT);

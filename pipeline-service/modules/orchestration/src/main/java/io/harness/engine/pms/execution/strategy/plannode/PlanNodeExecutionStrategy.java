@@ -56,7 +56,7 @@ import io.harness.pms.execution.utils.NodeProjectionUtils;
 import io.harness.pms.execution.utils.StatusUtils;
 import io.harness.pms.sdk.core.steps.io.StepResponseNotifyData;
 import io.harness.pms.utils.OrchestrationMapBackwardCompatibilityUtils;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.waiter.WaitNotifyEngine;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -96,7 +96,7 @@ public class PlanNodeExecutionStrategy extends AbstractNodeExecutionStrategy<Pla
   @Inject private WaitNotifyEngine waitNotifyEngine;
   @Inject private OrchestrationEngine orchestrationEngine;
   @Inject private PmsOutcomeService outcomeService;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
   @Inject @Named("EngineExecutorService") ExecutorService executorService;
   @Inject WaitForExecutionInputHelper waitForExecutionInputHelper;
   @Inject PmsFeatureFlagService pmsFeatureFlagService;
@@ -140,7 +140,7 @@ public class PlanNodeExecutionStrategy extends AbstractNodeExecutionStrategy<Pla
     // TODO (prashant) : This is a hack right now to serialize in binary as findAndModify is not honoring converter
     // for maps Find a better way to do this
     nodeExecutionService.update(nodeExecutionId,
-        ops -> ops.set(NodeExecutionKeys.resolvedParams, kryoSerializer.asDeflatedBytes(resolvedParameters)));
+        ops -> ops.set(NodeExecutionKeys.resolvedParams, kryoSerializerWrapper.asDeflatedBytes(resolvedParameters)));
     log.info("Resolved to step parameters");
   }
 

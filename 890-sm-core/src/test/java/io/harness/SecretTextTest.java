@@ -51,7 +51,7 @@ import io.harness.secrets.validation.SecretValidatorsRegistry;
 import io.harness.security.encryption.EncryptedRecordData;
 import io.harness.security.encryption.EncryptionType;
 import io.harness.security.encryption.SecretManagerType;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import software.wings.beans.KmsConfig;
 import software.wings.beans.LocalEncryptionConfig;
@@ -73,7 +73,7 @@ import org.mockito.ArgumentCaptor;
 @OwnedBy(HarnessTeam.PL)
 public class SecretTextTest extends SMCoreTestBase {
   @Inject private HPersistence hPersistence;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
   @Inject private SecretValidatorsRegistry secretValidatorsRegistry;
   @Inject private SecretSetupUsageBuilderRegistry secretSetupUsageBuilderRegistry;
   @Inject private QueuePublisher<MigrateSecretTask> queuePublisher;
@@ -99,7 +99,7 @@ public class SecretTextTest extends SMCoreTestBase {
     mockSecretsAuditService = mock(SecretsAuditService.class);
     secretSetupUsageService =
         new SecretSetupUsageServiceImpl(secretsDao, mockSecretManagerConfigService, secretSetupUsageBuilderRegistry);
-    secretService = new SecretServiceImpl(kryoSerializer, secretsDao, mockSecretsRBACService, secretSetupUsageService,
+    secretService = new SecretServiceImpl(kryoSerializerWrapper, secretsDao, mockSecretsRBACService, secretSetupUsageService,
         mockSecretsFileService, mockSecretManagerConfigService, secretValidatorsRegistry, mockSecretsAuditService,
         kmsEncryptorsRegistry, vaultEncryptorsRegistry, customEncryptorsRegistry, queuePublisher);
   }

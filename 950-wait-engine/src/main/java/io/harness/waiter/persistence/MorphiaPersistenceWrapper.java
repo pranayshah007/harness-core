@@ -19,7 +19,7 @@ import io.harness.exception.GeneralException;
 import io.harness.persistence.HIterator;
 import io.harness.persistence.HKeyIterator;
 import io.harness.persistence.HPersistence;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.tasks.ResponseData;
 import io.harness.waiter.NotifyResponse;
 import io.harness.waiter.NotifyResponse.NotifyResponseKeys;
@@ -49,7 +49,7 @@ import org.mongodb.morphia.query.UpdateOperations;
 @OwnedBy(HarnessTeam.DEL)
 public class MorphiaPersistenceWrapper implements PersistenceWrapper {
   @Inject private HPersistence hPersistence;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
 
   private FindAndModifyOptions findAndModifyOptions =
       new FindAndModifyOptions().writeConcern(WriteConcern.MAJORITY).upsert(false).returnNew(false);
@@ -93,7 +93,7 @@ public class MorphiaPersistenceWrapper implements PersistenceWrapper {
         }
         if (notifyResponse.getResponseData() != null) {
           responseMap.put(notifyResponse.getUuid(),
-              (ResponseData) kryoSerializer.asInflatedObject(notifyResponse.getResponseData()));
+              (ResponseData) kryoSerializerWrapper.asInflatedObject(notifyResponse.getResponseData()));
         }
       }
     }

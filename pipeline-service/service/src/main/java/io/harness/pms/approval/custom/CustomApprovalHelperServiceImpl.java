@@ -37,7 +37,7 @@ import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.gitsync.PmsGitSyncBranchContextGuard;
 import io.harness.pms.gitsync.PmsGitSyncHelper;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.steps.StepHelper;
 import io.harness.steps.StepUtils;
 import io.harness.steps.approval.step.ApprovalInstanceService;
@@ -68,7 +68,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class CustomApprovalHelperServiceImpl implements CustomApprovalHelperService {
   private final NgDelegate2TaskExecutor ngDelegate2TaskExecutor;
-  private final KryoSerializer kryoSerializer;
+  private final KryoSerializerWrapper kryoSerializerWrapper;
   private final WaitNotifyEngine waitNotifyEngine;
   private final LogStreamingStepClientFactory logStreamingStepClientFactory;
   private final String publisherName;
@@ -78,13 +78,13 @@ public class CustomApprovalHelperServiceImpl implements CustomApprovalHelperServ
   private final StepHelper stepHelper;
 
   @Inject
-  public CustomApprovalHelperServiceImpl(NgDelegate2TaskExecutor ngDelegate2TaskExecutor, KryoSerializer kryoSerializer,
+  public CustomApprovalHelperServiceImpl(NgDelegate2TaskExecutor ngDelegate2TaskExecutor, KryoSerializerWrapper kryoSerializerWrapper,
       WaitNotifyEngine waitNotifyEngine, LogStreamingStepClientFactory logStreamingStepClientFactory,
       @Named(OrchestrationPublisherName.PUBLISHER_NAME) String publisherName, PmsGitSyncHelper pmsGitSyncHelper,
       ShellScriptHelperService shellScriptHelperService, ApprovalInstanceService approvalInstanceService,
       StepHelper stepHelper) {
     this.ngDelegate2TaskExecutor = ngDelegate2TaskExecutor;
-    this.kryoSerializer = kryoSerializer;
+    this.kryoSerializerWrapper = kryoSerializerWrapper;
     this.waitNotifyEngine = waitNotifyEngine;
     this.logStreamingStepClientFactory = logStreamingStepClientFactory;
     this.publisherName = publisherName;
@@ -181,7 +181,7 @@ public class CustomApprovalHelperServiceImpl implements CustomApprovalHelperServ
                             .timeout(instance.getScriptTimeout().getValue().getTimeoutInMillis())
                             .build();
     List<TaskSelector> selectors = TaskSelectorYaml.toTaskSelector(instance.getDelegateSelectors());
-    return StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
+    return StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializerWrapper,
         CollectionUtils.emptyIfNull(StepUtils.generateLogKeys(
             StepUtils.generateLogAbstractions(ambiance), Collections.singletonList(ShellScriptTaskNG.COMMAND_UNIT))),
         null, null, selectors, stepHelper.getEnvironmentType(ambiance));
@@ -198,7 +198,7 @@ public class CustomApprovalHelperServiceImpl implements CustomApprovalHelperServ
 
     List<TaskSelector> selectors = TaskSelectorYaml.toTaskSelector(instance.getDelegateSelectors());
 
-    return StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
+    return StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializerWrapper,
         Arrays.asList(WinRmShellScriptTaskNG.INIT_UNIT, WinRmShellScriptTaskNG.COMMAND_UNIT), null, selectors,
         stepHelper.getEnvironmentType(ambiance));
   }

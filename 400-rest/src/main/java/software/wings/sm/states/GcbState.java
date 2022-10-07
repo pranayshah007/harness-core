@@ -40,7 +40,7 @@ import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.beans.TaskData;
 import io.harness.exception.UnsupportedOperationException;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.tasks.ResponseData;
 
 import software.wings.api.GcbExecutionData;
@@ -117,7 +117,8 @@ public class GcbState extends State implements SweepingOutputStateMixin {
   @Transient @Inject private TemplateExpressionProcessor templateExpressionProcessor;
   @Transient @Inject private TemplateUtils templateUtils;
   @Transient @Inject private SettingsService settingsService;
-  @Transient @Inject KryoSerializer kryoSerializer;
+  @Transient @Inject
+  KryoSerializerWrapper kryoSerializerWrapper;
   @Transient @Inject InfrastructureMappingService infrastructureMappingService;
   @Transient @Inject private WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService;
 
@@ -408,9 +409,8 @@ public class GcbState extends State implements SweepingOutputStateMixin {
     }
   }
 
-  @Override
-  public KryoSerializer getKryoSerializer() {
-    return kryoSerializer;
+  public KryoSerializerWrapper getKryoSerializer() {
+    return kryoSerializerWrapper;
   }
 
   @VisibleForTesting

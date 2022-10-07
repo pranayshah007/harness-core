@@ -44,7 +44,7 @@ import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.serializer.JsonUtils;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.steps.matrix.StrategyConstants;
 import io.harness.steps.matrix.StrategyMetadata;
 import io.harness.strategy.StrategyValidationUtils;
@@ -96,7 +96,7 @@ public class StrategyUtils {
   }
 
   public List<AdviserObtainment> getAdviserObtainments(
-      YamlField stageField, KryoSerializer kryoSerializer, boolean checkForStrategy) {
+      YamlField stageField, KryoSerializerWrapper kryoSerializerWrapper, boolean checkForStrategy) {
     List<AdviserObtainment> adviserObtainments = new ArrayList<>();
     if (stageField != null && stageField.getNode() != null) {
       // if parent is parallel, then we need not add nextStepAdvise as all the executions will happen in parallel
@@ -112,7 +112,7 @@ public class StrategyUtils {
         adviserObtainments.add(
             AdviserObtainment.newBuilder()
                 .setType(AdviserType.newBuilder().setType(OrchestrationAdviserTypes.NEXT_STAGE.name()).build())
-                .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(
+                .setParameters(ByteString.copyFrom(kryoSerializerWrapper.asBytes(
                     NextStepAdviserParameters.builder().nextNodeId(siblingField.getNode().getUuid()).build())))
                 .build());
       }
@@ -164,7 +164,7 @@ public class StrategyUtils {
   }
 
   public List<AdviserObtainment> getAdviserObtainmentFromMetaDataForStep(
-      KryoSerializer kryoSerializer, YamlField currentField) {
+      KryoSerializerWrapper kryoSerializerWrapper, YamlField currentField) {
     if (currentField.checkIfParentIsParallel(STEPS)) {
       return new ArrayList<>();
     }
@@ -175,28 +175,28 @@ public class StrategyUtils {
               YAMLFieldNameConstants.STEP, YAMLFieldNameConstants.STEP_GROUP, YAMLFieldNameConstants.PARALLEL));
       if (siblingField != null && siblingField.getNode().getUuid() != null) {
         adviserObtainments.add(
-            getAdviserObtainmentsForParallelStepParent(currentField, kryoSerializer, siblingField.getNode().getUuid()));
+            getAdviserObtainmentsForParallelStepParent(currentField, kryoSerializerWrapper, siblingField.getNode().getUuid()));
       }
     }
     return adviserObtainments;
   }
 
-  public void addStrategyFieldDependencyIfPresent(KryoSerializer kryoSerializer, PlanCreationContext ctx, String uuid,
-      String name, String identifier, LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap,
-      Map<String, ByteString> metadataMap, List<AdviserObtainment> adviserObtainments) {
+  public void addStrategyFieldDependencyIfPresent(KryoSerializerWrapper kryoSerializerWrapper, PlanCreationContext ctx, String uuid,
+                                                  String name, String identifier, LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap,
+                                                  Map<String, ByteString> metadataMap, List<AdviserObtainment> adviserObtainments) {
     addStrategyFieldDependencyIfPresent(
-        kryoSerializer, ctx, uuid, name, identifier, planCreationResponseMap, metadataMap, adviserObtainments, true);
+        kryoSerializerWrapper, ctx, uuid, name, identifier, planCreationResponseMap, metadataMap, adviserObtainments, true);
   }
 
-  public void addStrategyFieldDependencyIfPresent(KryoSerializer kryoSerializer, PlanCreationContext ctx, String uuid,
-      String name, String identifier, LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap,
-      Map<String, ByteString> metadataMap, List<AdviserObtainment> adviserObtainments, Boolean shouldProceedIfFailed) {
+  public void addStrategyFieldDependencyIfPresent(KryoSerializerWrapper kryoSerializerWrapper, PlanCreationContext ctx, String uuid,
+                                                  String name, String identifier, LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap,
+                                                  Map<String, ByteString> metadataMap, List<AdviserObtainment> adviserObtainments, Boolean shouldProceedIfFailed) {
     YamlField strategyField = ctx.getCurrentField().getNode().getField(YAMLFieldNameConstants.STRATEGY);
     if (strategyField != null) {
       // This is mandatory because it is the parent's responsibility to pass the nodeId and the childNodeId to the
       // strategy node
       metadataMap.put(StrategyConstants.STRATEGY_METADATA + strategyField.getNode().getUuid(),
-          ByteString.copyFrom(kryoSerializer.asDeflatedBytes(StrategyMetadata.builder()
+          ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(StrategyMetadata.builder()
                                                                  .strategyNodeId(uuid)
                                                                  .adviserObtainments(adviserObtainments)
                                                                  .childNodeId(strategyField.getNode().getUuid())
@@ -215,16 +215,16 @@ public class StrategyUtils {
     }
   }
 
-  public void addStrategyFieldDependencyIfPresent(KryoSerializer kryoSerializer, PlanCreationContext ctx,
-      String fieldUuid, String fieldIdentifier, String fieldName, Map<String, YamlField> dependenciesNodeMap,
-      Map<String, ByteString> metadataMap, List<AdviserObtainment> adviserObtainments) {
-    addStrategyFieldDependencyIfPresent(kryoSerializer, ctx, fieldUuid, fieldIdentifier, fieldName, dependenciesNodeMap,
+  public void addStrategyFieldDependencyIfPresent(KryoSerializerWrapper kryoSerializerWrapper, PlanCreationContext ctx,
+                                                  String fieldUuid, String fieldIdentifier, String fieldName, Map<String, YamlField> dependenciesNodeMap,
+                                                  Map<String, ByteString> metadataMap, List<AdviserObtainment> adviserObtainments) {
+    addStrategyFieldDependencyIfPresent(kryoSerializerWrapper, ctx, fieldUuid, fieldIdentifier, fieldName, dependenciesNodeMap,
         metadataMap, adviserObtainments, true);
   }
 
-  public void addStrategyFieldDependencyIfPresent(KryoSerializer kryoSerializer, PlanCreationContext ctx,
-      String fieldUuid, String fieldIdentifier, String fieldName, Map<String, YamlField> dependenciesNodeMap,
-      Map<String, ByteString> metadataMap, List<AdviserObtainment> adviserObtainments, Boolean shouldProceedIfFailed) {
+  public void addStrategyFieldDependencyIfPresent(KryoSerializerWrapper kryoSerializerWrapper, PlanCreationContext ctx,
+                                                  String fieldUuid, String fieldIdentifier, String fieldName, Map<String, YamlField> dependenciesNodeMap,
+                                                  Map<String, ByteString> metadataMap, List<AdviserObtainment> adviserObtainments, Boolean shouldProceedIfFailed) {
     YamlField strategyField = ctx.getCurrentField().getNode().getField(YAMLFieldNameConstants.STRATEGY);
     if (strategyField != null) {
       dependenciesNodeMap.put(fieldUuid, strategyField);
@@ -232,7 +232,7 @@ public class StrategyUtils {
       // strategy node
       metadataMap.put(StrategyConstants.STRATEGY_METADATA + strategyField.getNode().getUuid(),
           ByteString.copyFrom(
-              kryoSerializer.asDeflatedBytes(StrategyMetadata.builder()
+              kryoSerializerWrapper.asDeflatedBytes(StrategyMetadata.builder()
                                                  .strategyNodeId(fieldUuid)
                                                  .adviserObtainments(adviserObtainments)
                                                  .childNodeId(strategyField.getNode().getUuid())
@@ -348,19 +348,19 @@ public class StrategyUtils {
   }
 
   public AdviserObtainment getAdviserObtainmentsForParallelStepParent(
-      YamlField currentField, KryoSerializer kryoSerializer, String siblingId) {
+      YamlField currentField, KryoSerializerWrapper kryoSerializerWrapper, String siblingId) {
     boolean isStepInsideRollback = YamlUtils.findParentNode(currentField.getNode(), ROLLBACK_STEPS) != null;
     if (!isStepInsideRollback) {
       return AdviserObtainment.newBuilder()
           .setType(AdviserType.newBuilder().setType(OrchestrationAdviserTypes.NEXT_STEP.name()).build())
           .setParameters(ByteString.copyFrom(
-              kryoSerializer.asBytes(NextStepAdviserParameters.builder().nextNodeId(siblingId).build())))
+              kryoSerializerWrapper.asBytes(NextStepAdviserParameters.builder().nextNodeId(siblingId).build())))
           .build();
     } else {
       return AdviserObtainment.newBuilder()
           .setType(AdviserType.newBuilder().setType(OrchestrationAdviserTypes.ON_SUCCESS.name()).build())
           .setParameters(ByteString.copyFrom(
-              kryoSerializer.asBytes(OnSuccessAdviserParameters.builder().nextNodeId(siblingId).build())))
+              kryoSerializerWrapper.asBytes(OnSuccessAdviserParameters.builder().nextNodeId(siblingId).build())))
           .build();
     }
   }

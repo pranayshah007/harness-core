@@ -91,7 +91,7 @@ import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.steps.OutputExpressionConstants;
 import io.harness.steps.StepHelper;
 import io.harness.steps.environment.EnvironmentOutcome;
@@ -130,7 +130,7 @@ public class InfrastructureTaskExecutableStepTest extends CategoryTest {
   @Mock private OutcomeService outcomeService;
   @Mock private CDStepHelper cdStepHelper;
   @Mock private StepHelper stepHelper;
-  @Mock private KryoSerializer kryoSerializer;
+  @Mock private KryoSerializerWrapper kryoSerializerWrapper;
   @Mock private ThrowingSupplier throwingSupplier;
   @Mock private StageExecutionHelper stageExecutionHelper;
   @Mock private InfrastructureMapper infrastructureMapper;

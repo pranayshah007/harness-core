@@ -51,7 +51,7 @@ import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.utils.YamlPipelineUtils;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -238,17 +238,17 @@ public class EnvironmentPlanCreatorHelper {
   }
 
   public static Map<String, ByteString> prepareMetadata(String environmentUuid, String infraSectionUuid,
-      String serviceSpecNodeId, boolean gitOpsEnabled, boolean skipInstances, KryoSerializer kryoSerializer) {
+      String serviceSpecNodeId, boolean gitOpsEnabled, boolean skipInstances, KryoSerializerWrapper kryoSerializerWrapper) {
     Map<String, ByteString> metadataDependency = new HashMap<>();
 
-    metadataDependency.put(YamlTypes.NEXT_UUID, ByteString.copyFrom(kryoSerializer.asDeflatedBytes(serviceSpecNodeId)));
+    metadataDependency.put(YamlTypes.NEXT_UUID, ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(serviceSpecNodeId)));
     metadataDependency.put(
-        YamlTypes.INFRA_SECTION_UUID, ByteString.copyFrom(kryoSerializer.asDeflatedBytes(infraSectionUuid)));
-    metadataDependency.put(YamlTypes.UUID, ByteString.copyFrom(kryoSerializer.asDeflatedBytes(environmentUuid)));
+        YamlTypes.INFRA_SECTION_UUID, ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(infraSectionUuid)));
+    metadataDependency.put(YamlTypes.UUID, ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(environmentUuid)));
     metadataDependency.put(
-        YAMLFieldNameConstants.GITOPS_ENABLED, ByteString.copyFrom(kryoSerializer.asDeflatedBytes(gitOpsEnabled)));
+        YAMLFieldNameConstants.GITOPS_ENABLED, ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(gitOpsEnabled)));
     metadataDependency.put(
-        YAMLFieldNameConstants.SKIP_INSTANCES, ByteString.copyFrom(kryoSerializer.asDeflatedBytes(skipInstances)));
+        YAMLFieldNameConstants.SKIP_INSTANCES, ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(skipInstances)));
 
     return metadataDependency;
   }
@@ -256,7 +256,7 @@ public class EnvironmentPlanCreatorHelper {
   public void addEnvironmentV2Dependency(Map<String, PlanCreationResponse> planCreationResponseMap,
       EnvironmentPlanCreatorConfig environmentPlanCreatorConfig, YamlField originalEnvironmentField,
       boolean gitOpsEnabled, boolean skipInstances, String environmentUuid, String infraSectionUuid,
-      String serviceSpecNodeUuid, KryoSerializer kryoSerializer) throws IOException {
+      String serviceSpecNodeUuid, KryoSerializerWrapper kryoSerializerWrapper) throws IOException {
     YamlField updatedEnvironmentYamlField =
         fetchEnvironmentPlanCreatorConfigYaml(environmentPlanCreatorConfig, originalEnvironmentField);
     Map<String, YamlField> environmentYamlFieldMap = new HashMap<>();
@@ -265,7 +265,7 @@ public class EnvironmentPlanCreatorHelper {
     // preparing meta data
     final Dependency envDependency = Dependency.newBuilder()
                                          .putAllMetadata(prepareMetadata(environmentUuid, infraSectionUuid,
-                                             serviceSpecNodeUuid, gitOpsEnabled, skipInstances, kryoSerializer))
+                                             serviceSpecNodeUuid, gitOpsEnabled, skipInstances, kryoSerializerWrapper))
                                          .build();
 
     planCreationResponseMap.put(environmentUuid,

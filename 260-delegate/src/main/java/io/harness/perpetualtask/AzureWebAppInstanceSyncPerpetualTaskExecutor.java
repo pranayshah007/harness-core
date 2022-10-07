@@ -35,7 +35,7 @@ import io.harness.perpetualtask.instancesync.AzureWebAppDeploymentRelease;
 import io.harness.perpetualtask.instancesync.AzureWebAppNGInstanceSyncPerpetualTaskParams;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.SecretDecryptionService;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import com.google.inject.Inject;
 import java.time.Instant;
@@ -51,7 +51,7 @@ import lombok.extern.slf4j.Slf4j;
 public class AzureWebAppInstanceSyncPerpetualTaskExecutor implements PerpetualTaskExecutor {
   private static final String SUCCESS_RESPONSE_MSG = "success";
 
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
   @Inject private AzureAppServiceService azureAppServiceService;
   @Inject private AzureConnectorMapper azureConnectorMapper;
   @Inject private DelegateAgentManagerClient delegateAgentManagerClient;
@@ -98,7 +98,7 @@ public class AzureWebAppInstanceSyncPerpetualTaskExecutor implements PerpetualTa
         .subscriptionId(azureWebAppDeploymentRelease.getSubscriptionId())
         .resourceGroupName(azureWebAppDeploymentRelease.getResourceGroupName())
         .slotName(azureWebAppDeploymentRelease.getSlotName())
-        .azureWebAppInfraDelegateConfig((AzureWebAppInfraDelegateConfig) kryoSerializer.asObject(
+        .azureWebAppInfraDelegateConfig((AzureWebAppInfraDelegateConfig) kryoSerializerWrapper.asObject(
             azureWebAppDeploymentRelease.getAzureWebAppInfraDelegateConfig().toByteArray()))
         .build();
   }

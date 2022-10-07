@@ -74,7 +74,7 @@ import io.harness.secrets.SecretMigrationEventListener;
 import io.harness.secrets.SecretService;
 import io.harness.security.encryption.EncryptedRecord;
 import io.harness.security.encryption.EncryptionType;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.stream.BoundedInputStream;
 import io.harness.testlib.RealMongo;
 
@@ -233,7 +233,8 @@ public class KmsTest extends WingsBaseTest {
   private String envId;
   @Mock private FeatureFlagService featureFlagService;
 
-  @Inject KryoSerializer kryoSerializer;
+  @Inject
+  KryoSerializerWrapper kryoSerializerWrapper;
 
   @Before
   public void setup() throws IOException, NoSuchFieldException, IllegalAccessException {
@@ -311,7 +312,7 @@ public class KmsTest extends WingsBaseTest {
         (LocalEncryptionConfig) secretManagerConfigService.getDefaultSecretManager(UUID.randomUUID().toString());
     assertThat(localEncryptionConfig).isNotNull();
 
-    kmsResource.saveGlobalKmsConfig(accountId, kryoSerializer.clone(kmsConfig));
+    kmsResource.saveGlobalKmsConfig(accountId, kryoSerializerWrapper.clone(kmsConfig));
 
     KmsConfig savedConfig =
         (KmsConfig) secretManagerConfigService.getDefaultSecretManager(UUID.randomUUID().toString());
@@ -327,7 +328,7 @@ public class KmsTest extends WingsBaseTest {
     KmsConfig globalKmsConfig = secretManagementTestHelper.getKmsConfig();
     globalKmsConfig.setName("Global config");
     globalKmsConfig.setDefault(true);
-    kmsResource.saveGlobalKmsConfig(accountId, kryoSerializer.clone(globalKmsConfig));
+    kmsResource.saveGlobalKmsConfig(accountId, kryoSerializerWrapper.clone(globalKmsConfig));
 
     KmsConfig savedGlobalKmsConfig = kmsService.getGlobalKmsConfig();
     assertThat(savedGlobalKmsConfig).isNotNull();
@@ -382,7 +383,7 @@ public class KmsTest extends WingsBaseTest {
     KmsConfig kmsConfig = secretManagementTestHelper.getKmsConfig();
     kmsConfig.setAccountId(accountId);
 
-    kmsResource.saveKmsConfig(kmsConfig.getAccountId(), kryoSerializer.clone(kmsConfig));
+    kmsResource.saveKmsConfig(kmsConfig.getAccountId(), kryoSerializerWrapper.clone(kmsConfig));
 
     KmsConfig savedConfig = (KmsConfig) secretManagerConfigService.getDefaultSecretManager(kmsConfig.getAccountId());
     kmsConfig.setUuid(savedConfig.getUuid());
@@ -399,7 +400,7 @@ public class KmsTest extends WingsBaseTest {
     kmsConfig.setName(name);
     kmsConfig.setAccountId(accountId);
 
-    kmsResource.saveKmsConfig(kmsConfig.getAccountId(), kryoSerializer.clone(kmsConfig));
+    kmsResource.saveKmsConfig(kmsConfig.getAccountId(), kryoSerializerWrapper.clone(kmsConfig));
 
     KmsConfig savedConfig = (KmsConfig) secretManagerConfigService.getDefaultSecretManager(kmsConfig.getAccountId());
     kmsConfig.setUuid(savedConfig.getUuid());
@@ -444,7 +445,7 @@ public class KmsTest extends WingsBaseTest {
     kmsConfig.setName(name);
     kmsConfig.setAccountId(accountId);
 
-    kmsService.saveKmsConfig(accountId, kryoSerializer.clone(kmsConfig));
+    kmsService.saveKmsConfig(accountId, kryoSerializerWrapper.clone(kmsConfig));
 
     KmsConfig savedConfig = (KmsConfig) secretManagerConfigService.getDefaultSecretManager(accountId);
     assertThat(savedConfig.getAccessKey()).isEqualTo(kmsConfig.getAccessKey());
@@ -460,7 +461,7 @@ public class KmsTest extends WingsBaseTest {
     kmsConfig.maskSecrets();
 
     // Masked Secrets, only name and default flag should be updated.
-    kmsService.saveKmsConfig(accountId, kryoSerializer.clone(kmsConfig));
+    kmsService.saveKmsConfig(accountId, kryoSerializerWrapper.clone(kmsConfig));
 
     KmsConfig modifiedSavedConfig = kmsService.getKmsConfig(accountId, savedConfig.getUuid());
     assertThat(modifiedSavedConfig.getAccessKey()).isEqualTo(savedConfig.getAccessKey());
@@ -1585,7 +1586,7 @@ public class KmsTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void kmsEncryptionSaveGlobalConfig() {
     KmsConfig kmsConfig = secretManagementTestHelper.getKmsConfig();
-    kmsResource.saveGlobalKmsConfig(GLOBAL_ACCOUNT_ID, kryoSerializer.clone(kmsConfig));
+    kmsResource.saveGlobalKmsConfig(GLOBAL_ACCOUNT_ID, kryoSerializerWrapper.clone(kmsConfig));
     assertThat(wingsPersistence.createQuery(KmsConfig.class).count()).isEqualTo(1);
 
     KmsConfig savedKmsConfig = (KmsConfig) secretManagerConfigService.getDefaultSecretManager(accountId);
@@ -1609,7 +1610,7 @@ public class KmsTest extends WingsBaseTest {
   public void listEncryptedValues() {
     KmsConfig kmsConfig = secretManagementTestHelper.getKmsConfig();
     kmsConfig.setAccountId(accountId);
-    kmsResource.saveKmsConfig(accountId, kryoSerializer.clone(kmsConfig));
+    kmsResource.saveKmsConfig(accountId, kryoSerializerWrapper.clone(kmsConfig));
 
     int numOfSettingAttributes = 5;
     List<SettingAttribute> settingAttributes =
@@ -1655,12 +1656,12 @@ public class KmsTest extends WingsBaseTest {
     KmsConfig kmsConfig1 = secretManagementTestHelper.getKmsConfig();
     kmsConfig1.setDefault(true);
     kmsConfig1.setName(UUID.randomUUID().toString());
-    kmsResource.saveKmsConfig(accountId, kryoSerializer.clone(kmsConfig1));
+    kmsResource.saveKmsConfig(accountId, kryoSerializerWrapper.clone(kmsConfig1));
 
     KmsConfig kmsConfig2 = secretManagementTestHelper.getKmsConfig();
     kmsConfig2.setDefault(false);
     kmsConfig2.setName(UUID.randomUUID().toString());
-    String kms2Id = kmsResource.saveKmsConfig(accountId, kryoSerializer.clone(kmsConfig2)).getResource();
+    String kms2Id = kmsResource.saveKmsConfig(accountId, kryoSerializerWrapper.clone(kmsConfig2)).getResource();
 
     Collection<SecretManagerConfig> kmsConfigs =
         secretManagerConfigService.listSecretManagersByType(accountId, EncryptionType.KMS, true);
@@ -1698,7 +1699,7 @@ public class KmsTest extends WingsBaseTest {
     kmsConfig2.setName(UUID.randomUUID().toString());
     kmsConfig2.setDefault(true);
 
-    kmsResource.saveKmsConfig(accountId, kryoSerializer.clone(kmsConfig2));
+    kmsResource.saveKmsConfig(accountId, kryoSerializerWrapper.clone(kmsConfig2));
 
     kmsConfigs = secretManagerConfigService.listSecretManagersByType(accountId, EncryptionType.KMS, true);
     assertThat(kmsConfigs).hasSize(2);
@@ -1881,10 +1882,10 @@ public class KmsTest extends WingsBaseTest {
     KmsConfig globalKmsConfig = secretManagementTestHelper.getKmsConfig();
     globalKmsConfig.setDefault(false);
     globalKmsConfig.setName("global-kms-config");
-    kmsResource.saveGlobalKmsConfig(accountId, kryoSerializer.clone(globalKmsConfig));
+    kmsResource.saveGlobalKmsConfig(accountId, kryoSerializerWrapper.clone(globalKmsConfig));
 
     KmsConfig kmsConfig = secretManagementTestHelper.getKmsConfig();
-    kmsResource.saveKmsConfig(accountId, kryoSerializer.clone(kmsConfig));
+    kmsResource.saveKmsConfig(accountId, kryoSerializerWrapper.clone(kmsConfig));
 
     Collection<SecretManagerConfig> kmsConfigs =
         secretManagerConfigService.listSecretManagersByType(accountId, EncryptionType.KMS, true);
@@ -1952,7 +1953,7 @@ public class KmsTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void listKmsConfig() {
     KmsConfig kmsConfig = secretManagementTestHelper.getKmsConfig();
-    kmsResource.saveKmsConfig(accountId, kryoSerializer.clone(kmsConfig));
+    kmsResource.saveKmsConfig(accountId, kryoSerializerWrapper.clone(kmsConfig));
 
     Collection<SecretManagerConfig> kmsConfigs =
         secretManagerConfigService.listSecretManagersByType(accountId, EncryptionType.KMS, true);
@@ -2936,14 +2937,14 @@ public class KmsTest extends WingsBaseTest {
     KmsConfig kmsConfig = secretManagementTestHelper.getKmsConfig();
     kmsConfig.setAccountId(accountId);
 
-    String secretManagerId = kmsService.saveKmsConfig(accountId, kryoSerializer.clone(kmsConfig));
+    String secretManagerId = kmsService.saveKmsConfig(accountId, kryoSerializerWrapper.clone(kmsConfig));
     verify(auditServiceHelper)
         .reportForAuditingUsingAccountId(eq(accountId), eq(null), any(KmsConfig.class), eq(Event.Type.CREATE));
 
     kmsConfig.setUuid(secretManagerId);
     kmsConfig.setDefault(false);
     kmsConfig.setName(kmsConfig.getName() + "_Updated");
-    kmsService.saveKmsConfig(accountId, kryoSerializer.clone(kmsConfig));
+    kmsService.saveKmsConfig(accountId, kryoSerializerWrapper.clone(kmsConfig));
     verify(auditServiceHelper)
         .reportForAuditingUsingAccountId(
             eq(accountId), any(KmsConfig.class), any(KmsConfig.class), eq(Event.Type.UPDATE));

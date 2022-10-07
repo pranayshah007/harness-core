@@ -14,7 +14,7 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.SweepingOutputInstance;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import software.wings.service.intfc.sweepingoutput.SweepingOutputService;
 import software.wings.sm.ExecutionContext;
@@ -26,7 +26,7 @@ public interface SweepingOutputStateMixin {
 
   SweepingOutputInstance.Scope getSweepingOutputScope();
 
-  KryoSerializer getKryoSerializer();
+  KryoSerializerWrapper getKryoSerializer();
 
   default void handleSweepingOutput(
       SweepingOutputService sweepingOutputService, ExecutionContext context, Object data) {

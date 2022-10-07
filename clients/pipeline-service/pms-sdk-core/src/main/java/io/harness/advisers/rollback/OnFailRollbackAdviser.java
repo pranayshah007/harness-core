@@ -25,7 +25,7 @@ import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
@@ -39,7 +39,7 @@ import lombok.extern.slf4j.Slf4j;
 public class OnFailRollbackAdviser implements Adviser {
   public static final AdviserType ADVISER_TYPE =
       AdviserType.newBuilder().setType(CommonAdviserTypes.ON_FAIL_ROLLBACK.name()).build();
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
   @Inject ExecutionSweepingOutputService executionSweepingOutputService;
 
   @Override
@@ -90,6 +90,6 @@ public class OnFailRollbackAdviser implements Adviser {
   @NotNull
   private OnFailRollbackParameters extractParameters(AdvisingEvent advisingEvent) {
     return (OnFailRollbackParameters) Preconditions.checkNotNull(
-        kryoSerializer.asObject(advisingEvent.getAdviserParameters()));
+        kryoSerializerWrapper.asObject(advisingEvent.getAdviserParameters()));
   }
 }

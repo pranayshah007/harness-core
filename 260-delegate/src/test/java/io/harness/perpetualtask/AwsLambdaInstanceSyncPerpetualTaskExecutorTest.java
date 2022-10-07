@@ -31,7 +31,7 @@ import io.harness.perpetualtask.instancesync.AwsLambdaInstanceSyncPerpetualTaskP
 import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import software.wings.beans.AwsConfig;
 import software.wings.service.impl.aws.model.request.AwsCloudWatchStatisticsRequest;
@@ -67,7 +67,8 @@ public class AwsLambdaInstanceSyncPerpetualTaskExecutorTest extends DelegateTest
   @Mock private AwsCloudWatchHelperServiceDelegate awsCloudWatchHelperServiceDelegate;
   @Mock private Call<RestResponse<Boolean>> call;
 
-  @Inject KryoSerializer kryoSerializer;
+  @Inject
+  KryoSerializerWrapper kryoSerializerWrapper;
 
   private ArgumentCaptor<AwsLambdaDetailsMetricsResponse> captor =
       ArgumentCaptor.forClass(AwsLambdaDetailsMetricsResponse.class);
@@ -76,7 +77,7 @@ public class AwsLambdaInstanceSyncPerpetualTaskExecutorTest extends DelegateTest
 
   @Before
   public void setup() {
-    on(executor).set("kryoSerializer", kryoSerializer);
+    on(executor).set("kryoSerializer", kryoSerializerWrapper);
   }
 
   @Test
@@ -199,8 +200,8 @@ public class AwsLambdaInstanceSyncPerpetualTaskExecutorTest extends DelegateTest
 
   private PerpetualTaskExecutionParams getPerpetualTaskParams() {
     ByteString configBytes =
-        ByteString.copyFrom(kryoSerializer.asBytes(AwsConfig.builder().accountId("accountId").build()));
-    ByteString encryptionDetailsBytes = ByteString.copyFrom(kryoSerializer.asBytes(new ArrayList<>()));
+        ByteString.copyFrom(kryoSerializerWrapper.asBytes(AwsConfig.builder().accountId("accountId").build()));
+    ByteString encryptionDetailsBytes = ByteString.copyFrom(kryoSerializerWrapper.asBytes(new ArrayList<>()));
 
     AwsLambdaInstanceSyncPerpetualTaskParams params = AwsLambdaInstanceSyncPerpetualTaskParams.newBuilder()
                                                           .setAwsConfig(configBytes)

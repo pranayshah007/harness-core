@@ -26,7 +26,7 @@ import io.harness.pms.sdk.core.execution.ExecutableProcessor;
 import io.harness.pms.sdk.core.execution.ExecutableProcessorFactory;
 import io.harness.pms.sdk.core.execution.SdkNodeExecutionService;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.tasks.ProgressData;
 
 import com.google.inject.Inject;
@@ -45,7 +45,8 @@ public class ProgressEventHandlerTest extends PmsSdkCoreTestBase {
   private static String NOTIFY_ID = "notifyId";
 
   @Mock ExecutableProcessorFactory executableProcessorFactory;
-  @Mock KryoSerializer kryoSerializer;
+  @Mock
+  KryoSerializerWrapper kryoSerializerWrapper;
   @Mock SdkNodeExecutionService sdkNodeExecutionService;
 
   @InjectMocks ProgressEventHandler progressEventHandler;
@@ -93,7 +94,7 @@ public class ProgressEventHandlerTest extends PmsSdkCoreTestBase {
   @Owner(developers = SAHIL)
   @Category(UnitTests.class)
   public void testHandleEventWithContextWithNullResponse() {
-    Mockito.when(kryoSerializer.asInflatedObject(any())).thenReturn(DummyProgressData.builder().build());
+    Mockito.when(kryoSerializerWrapper.asInflatedObject(any())).thenReturn(DummyProgressData.builder().build());
     progressEventHandler.handleEventWithContext(progressEvent);
   }
 

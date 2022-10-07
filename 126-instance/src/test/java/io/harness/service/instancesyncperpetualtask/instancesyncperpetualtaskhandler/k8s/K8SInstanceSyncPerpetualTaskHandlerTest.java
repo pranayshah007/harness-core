@@ -37,7 +37,7 @@ import io.harness.perpetualtask.PerpetualTaskExecutionBundle;
 import io.harness.perpetualtask.instancesync.K8sDeploymentRelease;
 import io.harness.perpetualtask.instancesync.K8sInstanceSyncPerpetualTaskParams;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
@@ -61,7 +61,8 @@ public class K8SInstanceSyncPerpetualTaskHandlerTest extends InstancesTestBase {
   private static final String ORG_IDENTIFIER = "org";
 
   @Mock K8sEntityHelper k8sEntityHelper;
-  @Mock KryoSerializer kryoSerializer;
+  @Mock
+  KryoSerializerWrapper kryoSerializerWrapper;
   @InjectMocks K8SInstanceSyncPerpetualTaskHandler k8SInstanceSyncPerpetualTaskHandler;
 
   @Test
@@ -128,7 +129,7 @@ public class K8SInstanceSyncPerpetualTaskHandlerTest extends InstancesTestBase {
 
     when(k8sEntityHelper.getK8sInfraDelegateConfig(infrastructureOutcome, baseNGAccess))
         .thenReturn(k8sInfraDelegateConfig);
-    when(kryoSerializer.asBytes(k8sDeploymentReleaseData.getK8sInfraDelegateConfig())).thenReturn(bytes);
+    when(kryoSerializerWrapper.asBytes(k8sDeploymentReleaseData.getK8sInfraDelegateConfig())).thenReturn(bytes);
 
     PerpetualTaskExecutionBundle.Builder builder = PerpetualTaskExecutionBundle.newBuilder();
     expectedExecutionCapabilityList.forEach(executionCapability

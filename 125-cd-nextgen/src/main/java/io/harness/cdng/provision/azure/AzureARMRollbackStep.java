@@ -52,7 +52,7 @@ import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.steps.StepHelper;
 import io.harness.steps.StepUtils;
 import io.harness.supplier.ThrowingSupplier;
@@ -73,7 +73,7 @@ public class AzureARMRollbackStep extends TaskExecutableWithRollbackAndRbac<Azur
   @Inject private AzureCommonHelper azureCommonHelper;
   @Inject private AzureARMConfigDAL azureARMConfigDAL;
   @Inject private CDStepHelper cdStepHelper;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
   @Inject private StepHelper stepHelper;
   @Inject private CDFeatureFlagHelper cdFeatureFlagHelper;
 
@@ -176,7 +176,7 @@ public class AzureARMRollbackStep extends TaskExecutableWithRollbackAndRbac<Azur
                             .timeout(StepUtils.getTimeoutMillis(stepElementParameters.getTimeout(), DEFAULT_TIMEOUT))
                             .parameters(new Object[] {data})
                             .build();
-    return StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
+    return StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializerWrapper,
         Arrays.asList(AzureConstants.EXECUTE_ARM_DEPLOYMENT, AzureConstants.ARM_DEPLOYMENT_STEADY_STATE,
             AzureConstants.ARM_DEPLOYMENT_OUTPUTS),
         TaskType.AZURE_NG_ARM.getDisplayName(),

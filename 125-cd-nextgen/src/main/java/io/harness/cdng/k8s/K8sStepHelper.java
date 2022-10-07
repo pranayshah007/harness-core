@@ -148,7 +148,7 @@ public class K8sStepHelper extends K8sHelmCommonStepHelper {
 
     String taskName = TaskType.K8S_COMMAND_TASK_NG.getDisplayName() + " : " + k8sDeployRequest.getCommandName();
     K8sSpecParameters k8SSpecParameters = (K8sSpecParameters) stepElementParameters.getSpec();
-    final TaskRequest taskRequest = prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
+    final TaskRequest taskRequest = prepareCDTaskRequest(ambiance, taskData, kryoSerializerWrapper,
         k8SSpecParameters.getCommandUnits(), taskName,
         TaskSelectorYaml.toTaskSelector(emptyIfNull(getParameterFieldValue(k8SSpecParameters.getDelegateSelectors()))),
         stepHelper.getEnvironmentType(ambiance));

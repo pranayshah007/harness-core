@@ -34,7 +34,7 @@ import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.pms.sdk.core.steps.io.StepResponseNotifyData;
 import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.tasks.ResponseData;
 
 import com.google.common.base.Preconditions;
@@ -54,7 +54,7 @@ public class NodeResumeEventHandler extends PmsBaseEventHandler<NodeResumeEvent>
   @Inject private SdkNodeExecutionService sdkNodeExecutionService;
   @Inject private EngineObtainmentHelper engineObtainmentHelper;
   @Inject private ExecutableProcessorFactory executableProcessorFactory;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
 
   @Override
   protected String getMetricPrefix(NodeResumeEvent message) {
@@ -78,7 +78,7 @@ public class NodeResumeEventHandler extends PmsBaseEventHandler<NodeResumeEvent>
     Map<String, ResponseData> response = new HashMap<>();
     if (EmptyPredicate.isNotEmpty(event.getResponseMap())) {
       event.getResponseMap().forEach(
-          (k, v) -> response.put(k, (ResponseData) kryoSerializer.asInflatedObject(v.toByteArray())));
+          (k, v) -> response.put(k, (ResponseData) kryoSerializerWrapper.asInflatedObject(v.toByteArray())));
     }
 
     String nodeExecutionId = AmbianceUtils.obtainCurrentRuntimeId(event.getAmbiance());

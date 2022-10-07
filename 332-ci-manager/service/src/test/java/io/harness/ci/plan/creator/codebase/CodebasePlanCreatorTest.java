@@ -26,7 +26,7 @@ import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.sdk.core.plan.PlanNode;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.yaml.extended.ci.codebase.Build;
 import io.harness.yaml.extended.ci.codebase.BuildType;
 import io.harness.yaml.extended.ci.codebase.CodeBase;
@@ -43,7 +43,7 @@ import org.mockito.Mock;
 
 @OwnedBy(HarnessTeam.CI)
 public class CodebasePlanCreatorTest extends CategoryTest {
-  @Mock private KryoSerializer kryoSerializer;
+  @Mock private KryoSerializerWrapper kryoSerializerWrapper;
 
   private String codeBaseFieldUuid;
   private String childNodeId;
@@ -52,7 +52,7 @@ public class CodebasePlanCreatorTest extends CategoryTest {
 
   @Before
   public void setUp() throws Exception {
-    kryoSerializer = mock(KryoSerializer.class);
+    kryoSerializerWrapper = mock(KryoSerializerWrapper.class);
     codeBaseFieldUuid = UUIDGenerator.generateUuid();
     childNodeId = UUIDGenerator.generateUuid();
     executionSource = ManualExecutionSource.builder().branch("main").build();
@@ -74,9 +74,9 @@ public class CodebasePlanCreatorTest extends CategoryTest {
   @Owner(developers = ALEKSANDAR)
   @Category(UnitTests.class)
   public void shouldCreatePlanForCodeBase() {
-    when(kryoSerializer.asBytes(any())).thenReturn(ByteArray.copyFrom("randomBytes").toByteArray());
+    when(kryoSerializerWrapper.asBytes(any())).thenReturn(ByteArray.copyFrom("randomBytes").toByteArray());
     List<PlanNode> planNodeList = CodebasePlanCreator.buildCodebasePlanNodes(
-        codeBaseFieldUuid, childNodeId, kryoSerializer, codeBase, executionSource);
+        codeBaseFieldUuid, childNodeId, kryoSerializerWrapper, codeBase, executionSource);
     assertThat(planNodeList).hasSize(3);
     assertThat(planNodeList).allMatch(planNode -> planNode.getUuid().contains(codeBaseFieldUuid));
     Optional<PlanNode> codeBasePlanNode =

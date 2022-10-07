@@ -40,7 +40,7 @@ import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.steps.StepUtils;
 import io.harness.steps.servicenow.ServiceNowStepHelperService;
 import io.harness.steps.servicenow.ServiceNowTicketOutcome;
@@ -65,15 +65,15 @@ import java.util.stream.Collectors;
 public class ServiceNowStepHelperServiceImpl implements ServiceNowStepHelperService {
   private final ConnectorResourceClient connectorResourceClient;
   private final SecretManagerClientService secretManagerClientService;
-  private final KryoSerializer kryoSerializer;
+  private final KryoSerializerWrapper kryoSerializerWrapper;
   private static final String NULL_VALUE = "null";
 
   @Inject
   public ServiceNowStepHelperServiceImpl(ConnectorResourceClient connectorResourceClient,
-      @Named("PRIVILEGED") SecretManagerClientService secretManagerClientService, KryoSerializer kryoSerializer) {
+      @Named("PRIVILEGED") SecretManagerClientService secretManagerClientService, KryoSerializerWrapper kryoSerializerWrapper) {
     this.connectorResourceClient = connectorResourceClient;
     this.secretManagerClientService = secretManagerClientService;
-    this.kryoSerializer = kryoSerializer;
+    this.kryoSerializerWrapper = kryoSerializerWrapper;
   }
 
   @Override
@@ -113,7 +113,7 @@ public class ServiceNowStepHelperServiceImpl implements ServiceNowStepHelperServ
                             .taskType(NGTaskType.SERVICENOW_TASK_NG.name())
                             .parameters(new Object[] {params})
                             .build();
-    return StepUtils.prepareTaskRequest(ambiance, taskData, kryoSerializer, TaskCategory.DELEGATE_TASK_V2,
+    return StepUtils.prepareTaskRequest(ambiance, taskData, kryoSerializerWrapper, TaskCategory.DELEGATE_TASK_V2,
         Collections.emptyList(), false, taskName,
         params.getDelegateSelectors()
             .stream()

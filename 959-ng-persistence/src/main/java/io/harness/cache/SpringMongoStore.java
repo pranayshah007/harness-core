@@ -15,7 +15,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cache.SpringCacheEntity.SpringCacheEntityKeys;
 import io.harness.data.structure.EmptyPredicate;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.springdata.HMongoTemplate;
 
 import com.google.inject.Inject;
@@ -40,7 +40,7 @@ public class SpringMongoStore implements DistributedStore {
   private static final int VERSION = 1;
 
   @Inject private MongoTemplate mongoTemplate;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
 
   @Override
   public <T extends Distributable> T get(long algorithmId, long structureHash, String key, List<String> params) {
@@ -118,7 +118,7 @@ public class SpringMongoStore implements DistributedStore {
         return null;
       }
 
-      return (T) kryoSerializer.asInflatedObject(cacheEntity.getEntity());
+      return (T) kryoSerializerWrapper.asInflatedObject(cacheEntity.getEntity());
     } catch (RuntimeException ex) {
       log.error("Failed to obtain from cache", ex);
     }
@@ -141,7 +141,7 @@ public class SpringMongoStore implements DistributedStore {
       Update update = new Update()
                           .setOnInsert(SpringCacheEntityKeys.canonicalKey, canonicalKey)
                           .set(SpringCacheEntityKeys.contextValue, contextValue)
-                          .set(SpringCacheEntityKeys.entity, kryoSerializer.asDeflatedBytes(entity))
+                          .set(SpringCacheEntityKeys.entity, kryoSerializerWrapper.asDeflatedBytes(entity))
                           .set(SpringCacheEntityKeys.validUntil, Date.from(OffsetDateTime.now().plus(ttl).toInstant()))
                           .set(SpringCacheEntityKeys.entityUpdatedAt, entityLastUpdatedAt);
 

@@ -43,7 +43,7 @@ import io.harness.beans.DelegateTask;
 import io.harness.category.element.UnitTests;
 import io.harness.perpetualtask.instancesync.AwsCodeDeployInstanceSyncPerpetualTaskParams;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import software.wings.annotation.EncryptableSetting;
 import software.wings.api.DeploymentType;
@@ -83,7 +83,7 @@ public class AwsCodeDeployInstanceSyncPerpetualTaskClientTest extends CategoryTe
   @InjectMocks AwsCodeDeployInstanceSyncPerpetualTaskClient client;
   @Mock private AppService appService;
   @Mock private EnvironmentService environmentService;
-  @Mock private KryoSerializer kryoSerializer;
+  @Mock private KryoSerializerWrapper kryoSerializerWrapper;
   private CodeDeployInfrastructureMapping infraMapping;
 
   @Before
@@ -117,7 +117,7 @@ public class AwsCodeDeployInstanceSyncPerpetualTaskClientTest extends CategoryTe
         Environment.Builder.anEnvironment().accountId(ACCOUNT_ID).uuid(ENV_ID).appId(APP_ID).name(ENV_NAME).build())
         .when(environmentService)
         .get(any(), any());
-    when(kryoSerializer.asBytes(any()))
+    when(kryoSerializerWrapper.asBytes(any()))
         .thenAnswer(invocationOnMock -> String.valueOf(invocationOnMock.hashCode()).getBytes());
   }
 

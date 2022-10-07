@@ -35,7 +35,7 @@ import io.harness.pms.sdk.core.adviser.AdvisingEvent;
 import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
@@ -48,7 +48,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @OwnedBy(PIPELINE)
 public class RetryAdviserWithRollback implements Adviser {
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
   @Inject ExecutionSweepingOutputService executionSweepingOutputService;
 
   public static final AdviserType ADVISER_TYPE =
@@ -146,6 +146,6 @@ public class RetryAdviserWithRollback implements Adviser {
   @NotNull
   private RetryAdviserRollbackParameters extractParameters(AdvisingEvent advisingEvent) {
     return (RetryAdviserRollbackParameters) Preconditions.checkNotNull(
-        kryoSerializer.asObject(advisingEvent.getAdviserParameters()));
+        kryoSerializerWrapper.asObject(advisingEvent.getAdviserParameters()));
   }
 }

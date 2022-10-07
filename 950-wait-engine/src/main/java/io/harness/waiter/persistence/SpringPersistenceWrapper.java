@@ -21,7 +21,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.GeneralException;
 import io.harness.exception.InvalidArgumentsException;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.springdata.SpringDataMongoUtils;
 import io.harness.tasks.ResponseData;
 import io.harness.timeout.TimeoutEngine;
@@ -60,7 +60,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 @OwnedBy(HarnessTeam.PIPELINE)
 public class SpringPersistenceWrapper implements PersistenceWrapper {
   @Inject private MongoTemplate mongoTemplate;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
   @Inject private TimeoutEngine timeoutEngine;
   @Inject private TransactionTemplate transactionTemplate;
 
@@ -116,7 +116,7 @@ public class SpringPersistenceWrapper implements PersistenceWrapper {
       }
       if (notifyResponse.getResponseData() != null) {
         responseMap.put(
-            notifyResponse.getUuid(), (ResponseData) kryoSerializer.asInflatedObject(notifyResponse.getResponseData()));
+            notifyResponse.getUuid(), (ResponseData) kryoSerializerWrapper.asInflatedObject(notifyResponse.getResponseData()));
       }
     }
     return ProcessedMessageResponse.builder().isError(isError).responseDataMap(responseMap).build();

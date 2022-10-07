@@ -30,7 +30,7 @@ import io.harness.pms.sdk.core.PmsSdkCoreTestBase;
 import io.harness.pms.sdk.core.adviser.AdvisingEvent;
 import io.harness.pms.sdk.core.adviser.AdvisingEvent.AdvisingEventBuilder;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import com.google.inject.Inject;
 import java.util.EnumSet;
@@ -49,7 +49,8 @@ public class OnFailAdviserTest extends PmsSdkCoreTestBase {
 
   @InjectMocks @Inject OnFailAdviser onFailAdviser;
 
-  @Inject KryoSerializer kryoSerializer;
+  @Inject
+  KryoSerializerWrapper kryoSerializerWrapper;
 
   private Ambiance ambiance;
 
@@ -75,7 +76,7 @@ public class OnFailAdviserTest extends PmsSdkCoreTestBase {
         AdvisingEvent.builder()
             .ambiance(ambiance)
             .toStatus(Status.FAILED)
-            .adviserParameters(kryoSerializer.asBytes(
+            .adviserParameters(kryoSerializerWrapper.asBytes(
                 io.harness.pms.sdk.core.adviser.fail.OnFailAdviserParameters.builder().nextNodeId(nextNodeId).build()))
             .build();
     AdviserResponse adviserResponse = onFailAdviser.onAdviseEvent(advisingEvent);
@@ -98,7 +99,7 @@ public class OnFailAdviserTest extends PmsSdkCoreTestBase {
                              .build())
             .toStatus(Status.FAILED)
             .adviserParameters(
-                kryoSerializer.asBytes(io.harness.pms.sdk.core.adviser.fail.OnFailAdviserParameters.builder()
+                kryoSerializerWrapper.asBytes(io.harness.pms.sdk.core.adviser.fail.OnFailAdviserParameters.builder()
                                            .applicableFailureTypes(EnumSet.of(FailureType.AUTHENTICATION_FAILURE))
                                            .build()))
             .build();
@@ -120,7 +121,7 @@ public class OnFailAdviserTest extends PmsSdkCoreTestBase {
                              .build())
             .toStatus(Status.FAILED)
             .adviserParameters(
-                kryoSerializer.asBytes(io.harness.pms.sdk.core.adviser.fail.OnFailAdviserParameters.builder()
+                kryoSerializerWrapper.asBytes(io.harness.pms.sdk.core.adviser.fail.OnFailAdviserParameters.builder()
                                            .nextNodeId(generateUuid())
                                            .applicableFailureTypes(EnumSet.of(FailureType.AUTHENTICATION_FAILURE))
                                            .build()));
@@ -149,7 +150,7 @@ public class OnFailAdviserTest extends PmsSdkCoreTestBase {
             .ambiance(ambiance)
             .toStatus(Status.FAILED)
             .adviserParameters(
-                kryoSerializer.asBytes(OnFailAdviserParameters.builder()
+                kryoSerializerWrapper.asBytes(OnFailAdviserParameters.builder()
                                            .nextNodeId(generateUuid())
                                            .applicableFailureTypes(EnumSet.of(FailureType.AUTHENTICATION_FAILURE))
                                            .build()));

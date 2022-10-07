@@ -56,7 +56,7 @@ import io.harness.context.ContextElementType;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.tasks.ResponseData;
 
 import software.wings.WingsBaseTest;
@@ -109,7 +109,7 @@ public class ShellScriptProvisionStateTest extends WingsBaseTest {
   @Mock protected FeatureFlagService featureFlagService;
   @Mock protected ManagerExecutionLogCallback logCallback;
 
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
 
   @InjectMocks
   private ShellScriptProvisionState state =
@@ -117,7 +117,7 @@ public class ShellScriptProvisionStateTest extends WingsBaseTest {
 
   @Before
   public void setUp() throws Exception {
-    Reflect.on(state).set("kryoSerializer", kryoSerializer);
+    Reflect.on(state).set("kryoSerializer", kryoSerializerWrapper);
     state.setProvisionerId(PROVISIONER_ID);
     doReturn(logCallback)
         .when(infrastructureProvisionerService)

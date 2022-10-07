@@ -36,7 +36,7 @@ import io.harness.perpetualtask.instancesync.K8sContainerInstanceSyncPerpetualTa
 import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import software.wings.beans.AwsConfig;
 import software.wings.beans.SettingAttribute;
@@ -79,7 +79,8 @@ public class ContainerInstanceSyncPerpetualTaskExecutorTest extends DelegateTest
   @Mock private transient ContainerService containerService;
   @Mock private AwsEcsHelperServiceDelegate awsEcsHelperServiceDelegate;
   @Mock private Call<RestResponse<Boolean>> call;
-  @Inject KryoSerializer kryoSerializer;
+  @Inject
+  KryoSerializerWrapper kryoSerializerWrapper;
 
   private ArgumentCaptor<ContainerSyncResponse> containerSyncResponseCaptor =
       ArgumentCaptor.forClass(ContainerSyncResponse.class);
@@ -91,7 +92,7 @@ public class ContainerInstanceSyncPerpetualTaskExecutorTest extends DelegateTest
 
   @Before
   public void setup() {
-    on(executor).set("kryoSerializer", kryoSerializer);
+    on(executor).set("kryoSerializer", kryoSerializerWrapper);
   }
 
   @Test
@@ -325,9 +326,9 @@ public class ContainerInstanceSyncPerpetualTaskExecutorTest extends DelegateTest
 
   private PerpetualTaskExecutionParams getContainerInstancePerpetualTaskParams() {
     AwsConfig awsConfig = AwsConfig.builder().accountId("accountId").build();
-    ByteString configBytes = ByteString.copyFrom(kryoSerializer.asBytes(
+    ByteString configBytes = ByteString.copyFrom(kryoSerializerWrapper.asBytes(
         SettingAttribute.Builder.aSettingAttribute().withAccountId("accountId").withValue(awsConfig).build()));
-    ByteString encryptionDetailsBytes = ByteString.copyFrom(kryoSerializer.asBytes(new ArrayList<>()));
+    ByteString encryptionDetailsBytes = ByteString.copyFrom(kryoSerializerWrapper.asBytes(new ArrayList<>()));
 
     ContainerInstanceSyncPerpetualTaskParams params =
         ContainerInstanceSyncPerpetualTaskParams.newBuilder()
@@ -346,9 +347,9 @@ public class ContainerInstanceSyncPerpetualTaskExecutorTest extends DelegateTest
 
   private PerpetualTaskExecutionParams getContainerInstancePerpetualTaskParamsHelm() {
     AwsConfig awsConfig = AwsConfig.builder().accountId("accountId").build();
-    ByteString configBytes = ByteString.copyFrom(kryoSerializer.asBytes(
+    ByteString configBytes = ByteString.copyFrom(kryoSerializerWrapper.asBytes(
         SettingAttribute.Builder.aSettingAttribute().withAccountId("accountId").withValue(awsConfig).build()));
-    ByteString encryptionDetailsBytes = ByteString.copyFrom(kryoSerializer.asBytes(new ArrayList<>()));
+    ByteString encryptionDetailsBytes = ByteString.copyFrom(kryoSerializerWrapper.asBytes(new ArrayList<>()));
 
     ContainerInstanceSyncPerpetualTaskParams params =
         ContainerInstanceSyncPerpetualTaskParams.newBuilder()
@@ -367,7 +368,7 @@ public class ContainerInstanceSyncPerpetualTaskExecutorTest extends DelegateTest
 
   private PerpetualTaskExecutionParams getK8sPerpetualTaskParams() {
     ByteString configBytes =
-        ByteString.copyFrom(kryoSerializer.asBytes(K8sClusterConfig.builder().namespace("namespace").build()));
+        ByteString.copyFrom(kryoSerializerWrapper.asBytes(K8sClusterConfig.builder().namespace("namespace").build()));
 
     ContainerInstanceSyncPerpetualTaskParams params =
         ContainerInstanceSyncPerpetualTaskParams.newBuilder()

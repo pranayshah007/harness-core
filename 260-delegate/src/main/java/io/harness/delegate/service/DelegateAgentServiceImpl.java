@@ -152,7 +152,7 @@ import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.EncryptedRecord;
 import io.harness.security.encryption.EncryptionConfig;
 import io.harness.serializer.JsonUtils;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.taskprogress.TaskProgressClient;
 import io.harness.threading.Schedulable;
 import io.harness.utils.ProcessControl;
@@ -344,7 +344,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   @Inject(optional = true) @Nullable private LogStreamingClient logStreamingClient;
   @Inject DelegateTaskFactory delegateTaskFactory;
   @Inject(optional = true) @Nullable private DelegateServiceAgentClient delegateServiceAgentClient;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
   @Nullable @Inject(optional = true) private ChronicleEventTailer chronicleEventTailer;
   @Inject HarnessMetricRegistry metricRegistry;
 
@@ -2160,7 +2160,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
                                                .taskId(delegateTaskPackage.getDelegateTaskId())
                                                .delegateCallbackToken(delegateTaskPackage.getDelegateCallbackToken())
                                                .delegateServiceAgentClient(delegateServiceAgentClient)
-                                               .kryoSerializer(kryoSerializer)
+                                               .kryoSerializerWrapper(kryoSerializerWrapper)
                                                .build());
     }
 

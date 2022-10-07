@@ -41,7 +41,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.expression.ExpressionReflectionUtils;
 import io.harness.ff.FeatureFlagService;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.tasks.ResponseData;
 
 import software.wings.api.ScriptStateExecutionData;
@@ -113,7 +113,8 @@ public class ShellScriptProvisionState extends State implements SweepingOutputSt
   @Getter @Setter private SweepingOutputInstance.Scope sweepingOutputScope;
   @Getter @Setter private List<String> delegateSelectors;
 
-  @Transient @Inject KryoSerializer kryoSerializer;
+  @Transient @Inject
+  KryoSerializerWrapper kryoSerializerWrapper;
 
   public ShellScriptProvisionState(String name) {
     super(name, StateType.SHELL_SCRIPT_PROVISION.name());
@@ -341,9 +342,8 @@ public class ShellScriptProvisionState extends State implements SweepingOutputSt
     return results;
   }
 
-  @Override
-  public KryoSerializer getKryoSerializer() {
-    return kryoSerializer;
+  public KryoSerializerWrapper getKryoSerializer() {
+    return kryoSerializerWrapper;
   }
 
   private void renderTaskParameters(ExecutionContext context, TaskParameters parameters, int expressionFunctorToken) {

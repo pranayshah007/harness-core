@@ -36,7 +36,7 @@ import io.harness.product.ci.scm.proto.Commit;
 import io.harness.product.ci.scm.proto.ParseWebhookResponse;
 import io.harness.product.ci.scm.proto.PushHook;
 import io.harness.product.ci.scm.proto.User;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.tasks.BinaryResponseData;
 import io.harness.tasks.ErrorResponseData;
 import io.harness.tasks.ResponseData;
@@ -57,7 +57,7 @@ import lombok.extern.slf4j.Slf4j;
 public class AwsCodeCommitDataObtainer implements GitProviderBaseDataObtainer {
   private final TaskExecutionUtils taskExecutionUtils;
   private final ConnectorUtils connectorUtils;
-  private final KryoSerializer kryoSerializer;
+  private final KryoSerializerWrapper kryoSerializerWrapper;
   private final WebhookEventPayloadParser webhookEventPayloadParser;
 
   @Override
@@ -131,7 +131,7 @@ public class AwsCodeCommitDataObtainer implements GitProviderBaseDataObtainer {
 
     if (BinaryResponseData.class.isAssignableFrom(responseData.getClass())) {
       BinaryResponseData binaryResponseData = (BinaryResponseData) responseData;
-      Object object = kryoSerializer.asInflatedObject(binaryResponseData.getData());
+      Object object = kryoSerializerWrapper.asInflatedObject(binaryResponseData.getData());
       if (object instanceof AwsCodeCommitApiTaskResponse) {
         return (AwsCodeCommitApiTaskResponse) object;
       } else if (object instanceof ErrorResponseData) {

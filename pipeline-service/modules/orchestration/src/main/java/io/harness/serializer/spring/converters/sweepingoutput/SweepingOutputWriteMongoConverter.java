@@ -11,7 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.sdk.core.data.ExecutionSweepingOutput;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -23,15 +23,15 @@ import org.springframework.data.convert.WritingConverter;
 @Singleton
 @WritingConverter
 public class SweepingOutputWriteMongoConverter implements Converter<ExecutionSweepingOutput, Binary> {
-  private final KryoSerializer kryoSerializer;
+  private final KryoSerializerWrapper kryoSerializerWrapper;
 
   @Inject
-  public SweepingOutputWriteMongoConverter(KryoSerializer kryoSerializer) {
-    this.kryoSerializer = kryoSerializer;
+  public SweepingOutputWriteMongoConverter(KryoSerializerWrapper kryoSerializerWrapper) {
+    this.kryoSerializerWrapper = kryoSerializerWrapper;
   }
 
   @Override
   public Binary convert(ExecutionSweepingOutput sweepingOutput) {
-    return new Binary(kryoSerializer.asBytes(sweepingOutput));
+    return new Binary(kryoSerializerWrapper.asBytes(sweepingOutput));
   }
 }

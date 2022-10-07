@@ -40,7 +40,7 @@ import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
@@ -53,7 +53,8 @@ import org.mockito.InjectMocks;
 
 @OwnedBy(HarnessTeam.CDC)
 public class SideCarPlanCreatorTest extends CDNGTestBase {
-  @Inject KryoSerializer kryoSerializer;
+  @Inject
+  KryoSerializerWrapper kryoSerializerWrapper;
   @Inject @InjectMocks SideCarArtifactPlanCreator sidecarPlanCreator;
 
   @Test
@@ -106,11 +107,11 @@ public class SideCarPlanCreatorTest extends CDNGTestBase {
     String identifier = "sidecar1";
     ArtifactStepParameters artifactStepParameters = ArtifactStepParameters.builder().identifier(identifier).build();
 
-    metadataDependency.put(YamlTypes.UUID, ByteString.copyFrom(kryoSerializer.asDeflatedBytes(uuid)));
+    metadataDependency.put(YamlTypes.UUID, ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(uuid)));
     metadataDependency.put(
-        PlanCreatorConstants.IDENTIFIER, ByteString.copyFrom(kryoSerializer.asDeflatedBytes(identifier)));
+        PlanCreatorConstants.IDENTIFIER, ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(identifier)));
     metadataDependency.put(PlanCreatorConstants.SIDECAR_STEP_PARAMETERS,
-        ByteString.copyFrom(kryoSerializer.asDeflatedBytes(artifactStepParameters)));
+        ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(artifactStepParameters)));
     Dependency dependency = Dependency.newBuilder().putAllMetadata(metadataDependency).build();
     PlanCreationContext ctx = PlanCreationContext.builder().dependency(dependency).build();
     PlanCreationResponse sidecarPlanCreationResponse = sidecarPlanCreator.createPlanForField(ctx, null);
@@ -137,11 +138,11 @@ public class SideCarPlanCreatorTest extends CDNGTestBase {
             .spec(CustomArtifactConfig.builder().version(new ParameterField<>()).build())
             .build();
 
-    metadataDependency.put(YamlTypes.UUID, ByteString.copyFrom(kryoSerializer.asDeflatedBytes(uuid)));
+    metadataDependency.put(YamlTypes.UUID, ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(uuid)));
     metadataDependency.put(
-        PlanCreatorConstants.IDENTIFIER, ByteString.copyFrom(kryoSerializer.asDeflatedBytes(identifier)));
+        PlanCreatorConstants.IDENTIFIER, ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(identifier)));
     metadataDependency.put(PlanCreatorConstants.SIDECAR_STEP_PARAMETERS,
-        ByteString.copyFrom(kryoSerializer.asDeflatedBytes(artifactStepParameters)));
+        ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(artifactStepParameters)));
     Dependency dependency = Dependency.newBuilder().putAllMetadata(metadataDependency).build();
     PlanCreationContext ctx = PlanCreationContext.builder().dependency(dependency).build();
     PlanCreationResponse sidecarPlanCreationResponse = sidecarPlanCreator.createPlanForField(ctx, null);
@@ -183,11 +184,11 @@ public class SideCarPlanCreatorTest extends CDNGTestBase {
             .spec(CustomArtifactConfig.builder().scripts(customArtifactScripts).build())
             .build();
 
-    metadataDependency.put(YamlTypes.UUID, ByteString.copyFrom(kryoSerializer.asDeflatedBytes(uuid)));
+    metadataDependency.put(YamlTypes.UUID, ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(uuid)));
     metadataDependency.put(
-        PlanCreatorConstants.IDENTIFIER, ByteString.copyFrom(kryoSerializer.asDeflatedBytes(identifier)));
+        PlanCreatorConstants.IDENTIFIER, ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(identifier)));
     metadataDependency.put(PlanCreatorConstants.SIDECAR_STEP_PARAMETERS,
-        ByteString.copyFrom(kryoSerializer.asDeflatedBytes(artifactStepParameters)));
+        ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(artifactStepParameters)));
     Dependency dependency = Dependency.newBuilder().putAllMetadata(metadataDependency).build();
     PlanCreationContext ctx = PlanCreationContext.builder().dependency(dependency).build();
     PlanCreationResponse sidecarPlanCreationResponse = sidecarPlanCreator.createPlanForField(ctx, null);
@@ -213,11 +214,11 @@ public class SideCarPlanCreatorTest extends CDNGTestBase {
                                                         .spec(CustomArtifactConfig.builder().scripts(null).build())
                                                         .build();
 
-    metadataDependency.put(YamlTypes.UUID, ByteString.copyFrom(kryoSerializer.asDeflatedBytes(uuid)));
+    metadataDependency.put(YamlTypes.UUID, ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(uuid)));
     metadataDependency.put(
-        PlanCreatorConstants.IDENTIFIER, ByteString.copyFrom(kryoSerializer.asDeflatedBytes(identifier)));
+        PlanCreatorConstants.IDENTIFIER, ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(identifier)));
     metadataDependency.put(PlanCreatorConstants.SIDECAR_STEP_PARAMETERS,
-        ByteString.copyFrom(kryoSerializer.asDeflatedBytes(artifactStepParameters)));
+        ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(artifactStepParameters)));
     Dependency dependency = Dependency.newBuilder().putAllMetadata(metadataDependency).build();
     PlanCreationContext ctx = PlanCreationContext.builder().dependency(dependency).build();
     PlanCreationResponse sidecarPlanCreationResponse = sidecarPlanCreator.createPlanForField(ctx, null);
@@ -256,11 +257,11 @@ public class SideCarPlanCreatorTest extends CDNGTestBase {
                                                                   .build())
                                                         .build();
 
-    metadataDependency.put(YamlTypes.UUID, ByteString.copyFrom(kryoSerializer.asDeflatedBytes(uuid)));
+    metadataDependency.put(YamlTypes.UUID, ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(uuid)));
     metadataDependency.put(
-        PlanCreatorConstants.IDENTIFIER, ByteString.copyFrom(kryoSerializer.asDeflatedBytes(identifier)));
+        PlanCreatorConstants.IDENTIFIER, ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(identifier)));
     metadataDependency.put(PlanCreatorConstants.SIDECAR_STEP_PARAMETERS,
-        ByteString.copyFrom(kryoSerializer.asDeflatedBytes(artifactStepParameters)));
+        ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(artifactStepParameters)));
     Dependency dependency = Dependency.newBuilder().putAllMetadata(metadataDependency).build();
     PlanCreationContext ctx = PlanCreationContext.builder().dependency(dependency).build();
     PlanCreationResponse sidecarPlanCreationResponse = sidecarPlanCreator.createPlanForField(ctx, null);

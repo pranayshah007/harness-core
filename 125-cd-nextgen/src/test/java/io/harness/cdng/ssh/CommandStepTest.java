@@ -59,7 +59,7 @@ import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.serializer.kryo.ApiServiceBeansKryoRegister;
 import io.harness.serializer.kryo.DelegateTasksBeansKryoRegister;
 import io.harness.steps.StepHelper;
@@ -85,7 +85,7 @@ import org.mockito.MockitoAnnotations;
 public class CommandStepTest extends CategoryTest {
   @Mock private SshCommandStepHelper sshCommandStepHelper;
   @Mock private StepHelper stepHelper;
-  @Mock private KryoSerializer kryoSerializer;
+  @Mock private KryoSerializerWrapper kryoSerializerWrapper;
   @Mock private OutcomeService outcomeService;
 
   @Mock private CDStepHelper cdStepHelper;
@@ -125,7 +125,7 @@ public class CommandStepTest extends CategoryTest {
           .commandUnits(Arrays.asList(NgInitCommandUnit.builder().build(),
               ScriptCommandUnit.builder().name("test").build(), NgCleanupCommandUnit.builder().build()))
           .build();
-  KryoSerializer serializer = new KryoSerializer(
+  KryoSerializerWrapper serializer = new KryoSerializerWrapper(
       new HashSet<>(Arrays.asList(DelegateTasksBeansKryoRegister.class, ApiServiceBeansKryoRegister.class)));
   private byte[] serializedParams = serializer.asDeflatedBytes(sshCommandTaskParameters);
 
@@ -136,7 +136,7 @@ public class CommandStepTest extends CategoryTest {
         .when(sshCommandStepHelper)
         .buildCommandTaskParameters(ambiance, commandStepParameters);
     doReturn(EnvironmentType.ALL).when(stepHelper).getEnvironmentType(ambiance);
-    doReturn(serializedParams).when(kryoSerializer).asDeflatedBytes(sshCommandTaskParameters);
+    doReturn(serializedParams).when(kryoSerializerWrapper).asDeflatedBytes(sshCommandTaskParameters);
   }
 
   @Test

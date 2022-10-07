@@ -23,7 +23,7 @@ import io.harness.pms.sdk.core.plan.PlanNode;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.sdk.core.plan.creation.creators.PartialPlanCreator;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import com.google.inject.Inject;
 import java.util.Collections;
@@ -32,7 +32,8 @@ import java.util.Set;
 
 @OwnedBy(CDP)
 public class ApplicationSettingsPlanCreator implements PartialPlanCreator<ApplicationSettingsConfiguration> {
-  @Inject KryoSerializer kryoSerializer;
+  @Inject
+  KryoSerializerWrapper kryoSerializerWrapper;
   @Override
   public Class<ApplicationSettingsConfiguration> getFieldClass() {
     return ApplicationSettingsConfiguration.class;
@@ -45,9 +46,9 @@ public class ApplicationSettingsPlanCreator implements PartialPlanCreator<Applic
 
   @Override
   public PlanCreationResponse createPlanForField(PlanCreationContext ctx, ApplicationSettingsConfiguration field) {
-    String applicationSettingsFileId = (String) kryoSerializer.asInflatedObject(
+    String applicationSettingsFileId = (String) kryoSerializerWrapper.asInflatedObject(
         ctx.getDependency().getMetadataMap().get(YamlTypes.UUID).toByteArray());
-    ApplicationSettingsParameters stepParameters = (ApplicationSettingsParameters) kryoSerializer.asInflatedObject(
+    ApplicationSettingsParameters stepParameters = (ApplicationSettingsParameters) kryoSerializerWrapper.asInflatedObject(
         ctx.getDependency()
             .getMetadataMap()
             .get(PlanCreatorConstants.APPLICATION_SETTINGS_STEP_PARAMETER)

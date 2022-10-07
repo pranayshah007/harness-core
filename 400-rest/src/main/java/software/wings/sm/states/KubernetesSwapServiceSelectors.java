@@ -31,7 +31,7 @@ import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.k8s.KubernetesConvention;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.tasks.ResponseData;
 
 import software.wings.api.ContainerServiceElement;
@@ -95,7 +95,7 @@ public class KubernetesSwapServiceSelectors extends State {
   @Inject private transient K8sStateHelper k8sStateHelper;
   @Inject private ContainerMasterUrlHelper containerMasterUrlHelper;
   @Inject private SweepingOutputService sweepingOutputService;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
   @Inject private WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService;
 
   @Getter @Setter @Attributes(title = "Service One") private String service1;
@@ -346,13 +346,13 @@ public class KubernetesSwapServiceSelectors extends State {
     if (result == null) {
       return null;
     }
-    return (K8sSwapServiceElement) kryoSerializer.asInflatedObject(result.getOutput());
+    return (K8sSwapServiceElement) kryoSerializerWrapper.asInflatedObject(result.getOutput());
   }
 
   private void saveK8sSwapServiceElement(ExecutionContext context, K8sSwapServiceElement k8sSwapServiceElement) {
     sweepingOutputService.save(context.prepareSweepingOutputBuilder(Scope.WORKFLOW)
                                    .name(getSweepingOutputName(context))
-                                   .output(kryoSerializer.asDeflatedBytes(k8sSwapServiceElement))
+                                   .output(kryoSerializerWrapper.asDeflatedBytes(k8sSwapServiceElement))
                                    .build());
   }
 

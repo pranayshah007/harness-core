@@ -31,7 +31,7 @@ import io.harness.pms.sdk.core.AmbianceTestUtils;
 import io.harness.pms.sdk.core.PmsSdkCoreTestBase;
 import io.harness.pms.sdk.core.adviser.AdvisingEvent;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import com.google.inject.Inject;
 import java.util.EnumSet;
@@ -54,7 +54,8 @@ public class OnSuccessAdviserTest extends PmsSdkCoreTestBase {
 
   @InjectMocks @Inject OnSuccessAdviser successAdviser;
 
-  @Inject KryoSerializer kryoSerializer;
+  @Inject
+  KryoSerializerWrapper kryoSerializerWrapper;
 
   private Ambiance ambiance;
 
@@ -78,7 +79,7 @@ public class OnSuccessAdviserTest extends PmsSdkCoreTestBase {
     AdvisingEvent advisingEvent = AdvisingEvent.builder()
                                       .ambiance(ambiance)
                                       .toStatus(Status.FAILED)
-                                      .adviserParameters(kryoSerializer.asBytes(getOnSuccessParams()))
+                                      .adviserParameters(kryoSerializerWrapper.asBytes(getOnSuccessParams()))
                                       .build();
     AdviserResponse adviserResponse = successAdviser.onAdviseEvent(advisingEvent);
 
@@ -96,7 +97,7 @@ public class OnSuccessAdviserTest extends PmsSdkCoreTestBase {
       AdvisingEvent advisingEvent = AdvisingEvent.builder()
                                         .ambiance(ambiance)
                                         .toStatus(status)
-                                        .adviserParameters(kryoSerializer.asBytes(getOnSuccessParams()))
+                                        .adviserParameters(kryoSerializerWrapper.asBytes(getOnSuccessParams()))
                                         .build();
       assertThat(successAdviser.canAdvise(advisingEvent)).isTrue();
     }

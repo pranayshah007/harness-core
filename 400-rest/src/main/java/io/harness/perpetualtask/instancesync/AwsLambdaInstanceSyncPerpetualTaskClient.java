@@ -26,7 +26,7 @@ import io.harness.delegate.beans.TaskData;
 import io.harness.perpetualtask.PerpetualTaskClientContext;
 import io.harness.perpetualtask.PerpetualTaskServiceClient;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import software.wings.beans.AwsConfig;
 import software.wings.beans.AwsLambdaInfraStructureMapping;
@@ -60,15 +60,15 @@ public class AwsLambdaInstanceSyncPerpetualTaskClient implements PerpetualTaskSe
   @Inject SecretManager secretManager;
   @Inject SettingsService settingsService;
   @Inject InfrastructureMappingService infraMappingService;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
 
   @Override
   public Message getTaskParams(PerpetualTaskClientContext clientContext) {
     final PerpetualTaskData perpetualTaskData = getPerpetualTaskData(clientContext);
 
-    ByteString awsConfigBytes = ByteString.copyFrom(kryoSerializer.asBytes(perpetualTaskData.getAwsConfig()));
+    ByteString awsConfigBytes = ByteString.copyFrom(kryoSerializerWrapper.asBytes(perpetualTaskData.getAwsConfig()));
     ByteString encryptedAwsConfigBytes =
-        ByteString.copyFrom(kryoSerializer.asBytes(perpetualTaskData.getEncryptedDataDetails()));
+        ByteString.copyFrom(kryoSerializerWrapper.asBytes(perpetualTaskData.getEncryptedDataDetails()));
 
     return AwsLambdaInstanceSyncPerpetualTaskParams.newBuilder()
         .setAwsConfig(awsConfigBytes)

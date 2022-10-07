@@ -18,14 +18,15 @@ import io.harness.pms.execution.utils.StatusUtils;
 import io.harness.pms.sdk.core.adviser.Adviser;
 import io.harness.pms.sdk.core.adviser.AdvisingEvent;
 import io.harness.pms.sdk.core.adviser.OrchestrationAdviserTypes;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 
 @OwnedBy(CDC)
 public class OnSuccessAdviser implements Adviser {
-  @Inject KryoSerializer kryoSerializer;
+  @Inject
+  KryoSerializerWrapper kryoSerializerWrapper;
 
   public static final AdviserType ADVISER_TYPE =
       AdviserType.newBuilder().setType(OrchestrationAdviserTypes.ON_SUCCESS.name()).build();
@@ -33,7 +34,7 @@ public class OnSuccessAdviser implements Adviser {
   @Override
   public AdviserResponse onAdviseEvent(AdvisingEvent advisingEvent) {
     OnSuccessAdviserParameters parameters = (OnSuccessAdviserParameters) Preconditions.checkNotNull(
-        kryoSerializer.asObject(advisingEvent.getAdviserParameters()));
+        kryoSerializerWrapper.asObject(advisingEvent.getAdviserParameters()));
     return AdviserResponse.newBuilder()
         .setNextStepAdvise(NextStepAdvise.newBuilder().setNextNodeId(parameters.getNextNodeId()).build())
         .setType(AdviseType.NEXT_STEP)

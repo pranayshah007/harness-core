@@ -21,7 +21,7 @@ import io.harness.exception.TriggerException;
 import io.harness.exception.WingsException;
 import io.harness.ngtriggers.beans.source.webhook.v2.TriggerEventDataCondition;
 import io.harness.ngtriggers.eventmapper.filters.dto.FilterRequestData;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.tasks.BinaryResponseData;
 import io.harness.tasks.ErrorResponseData;
 import io.harness.tasks.ResponseData;
@@ -38,7 +38,7 @@ import lombok.AllArgsConstructor;
 @OwnedBy(HarnessTeam.CI)
 public class SCMFilePathEvaluatorOnDelegate extends SCMFilePathEvaluator {
   private TaskExecutionUtils taskExecutionUtils;
-  private KryoSerializer kryoSerializer;
+  private KryoSerializerWrapper kryoSerializerWrapper;
 
   @Override
   public ScmPathFilterEvaluationTaskResponse execute(FilterRequestData filterRequestData,
@@ -73,7 +73,7 @@ public class SCMFilePathEvaluatorOnDelegate extends SCMFilePathEvaluator {
 
     if (BinaryResponseData.class.isAssignableFrom(responseData.getClass())) {
       BinaryResponseData binaryResponseData = (BinaryResponseData) responseData;
-      Object object = kryoSerializer.asInflatedObject(binaryResponseData.getData());
+      Object object = kryoSerializerWrapper.asInflatedObject(binaryResponseData.getData());
       if (object instanceof ScmPathFilterEvaluationTaskResponse) {
         return (ScmPathFilterEvaluationTaskResponse) object;
       } else if (object instanceof ErrorResponseData) {

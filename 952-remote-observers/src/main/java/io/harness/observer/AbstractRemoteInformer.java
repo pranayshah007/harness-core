@@ -11,7 +11,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.eventsframework.api.Producer;
 import io.harness.eventsframework.producer.Message;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.ByteString;
@@ -21,11 +21,11 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(HarnessTeam.DEL)
 @Slf4j
 public abstract class AbstractRemoteInformer {
-  private final KryoSerializer kryoSerializer;
+  private final KryoSerializerWrapper kryoSerializerWrapper;
   private final Producer eventProducer;
 
-  public AbstractRemoteInformer(KryoSerializer kryoSerializer, Producer eventProducer) {
-    this.kryoSerializer = kryoSerializer;
+  public AbstractRemoteInformer(KryoSerializerWrapper kryoSerializerWrapper, Producer eventProducer) {
+    this.kryoSerializerWrapper = kryoSerializerWrapper;
     this.eventProducer = eventProducer;
   }
 
@@ -106,7 +106,7 @@ public abstract class AbstractRemoteInformer {
     if (object == null) {
       return ByteString.EMPTY;
     }
-    final byte[] bytes = kryoSerializer.asBytes(object);
+    final byte[] bytes = kryoSerializerWrapper.asBytes(object);
     return ByteString.copyFrom(bytes);
   }
 }

@@ -21,7 +21,7 @@ import io.harness.perpetualtask.PerpetualTaskExecutionParams;
 import io.harness.perpetualtask.PerpetualTaskExecutor;
 import io.harness.perpetualtask.PerpetualTaskId;
 import io.harness.perpetualtask.PerpetualTaskResponse;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import software.wings.delegatetasks.buildsource.BuildSourceExecutionResponse;
 import software.wings.delegatetasks.buildsource.BuildSourceParameters;
@@ -52,15 +52,15 @@ public class ArtifactPerpetualTaskExecutor implements PerpetualTaskExecutor {
 
   private final ArtifactRepositoryServiceImpl artifactRepositoryService;
   private final DelegateAgentManagerClient delegateAgentManagerClient;
-  private final KryoSerializer kryoSerializer;
+  private final KryoSerializerWrapper kryoSerializerWrapper;
 
   private final Cache<String, ArtifactsPublishedCache<BuildDetails>> cache = Caffeine.newBuilder().build();
 
   @Inject
   public ArtifactPerpetualTaskExecutor(ArtifactRepositoryServiceImpl artifactRepositoryService,
-      DelegateAgentManagerClient delegateAgentManagerClient, KryoSerializer kryoSerializer) {
+      DelegateAgentManagerClient delegateAgentManagerClient, KryoSerializerWrapper kryoSerializerWrapper) {
     this.artifactRepositoryService = artifactRepositoryService;
-    this.kryoSerializer = kryoSerializer;
+    this.kryoSerializerWrapper = kryoSerializerWrapper;
     this.delegateAgentManagerClient = delegateAgentManagerClient;
   }
 
@@ -73,7 +73,7 @@ public class ArtifactPerpetualTaskExecutor implements PerpetualTaskExecutor {
     String artifactStreamId = artifactCollectionTaskParams.getArtifactStreamId();
     log.info("Running artifact collection for artifactStreamId: {}", artifactStreamId);
 
-    final BuildSourceParameters buildSourceParameters = (BuildSourceParameters) kryoSerializer.asObject(
+    final BuildSourceParameters buildSourceParameters = (BuildSourceParameters) kryoSerializerWrapper.asObject(
         artifactCollectionTaskParams.getBuildSourceParams().toByteArray());
     String accountId = buildSourceParameters.getAccountId();
 
@@ -202,7 +202,7 @@ public class ArtifactPerpetualTaskExecutor implements PerpetualTaskExecutor {
   private boolean publishToManager(String accountId, String artifactStreamId, PerpetualTaskId taskId,
       BuildSourceExecutionResponse buildSourceExecutionResponse) {
     try {
-      byte[] responseSerialized = kryoSerializer.asBytes(buildSourceExecutionResponse);
+      byte[] responseSerialized = kryoSerializerWrapper.asBytes(buildSourceExecutionResponse);
 
       executeWithExceptions(delegateAgentManagerClient.publishArtifactCollectionResult(taskId.getId(), accountId,
           RequestBody.create(MediaType.parse("application/octet-stream"), responseSerialized)));

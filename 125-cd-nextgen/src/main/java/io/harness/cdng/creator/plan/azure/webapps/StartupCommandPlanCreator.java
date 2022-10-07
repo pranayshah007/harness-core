@@ -23,7 +23,7 @@ import io.harness.pms.sdk.core.plan.PlanNode;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.sdk.core.plan.creation.creators.PartialPlanCreator;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import com.google.inject.Inject;
 import java.util.Collections;
@@ -32,7 +32,8 @@ import java.util.Set;
 
 @OwnedBy(CDP)
 public class StartupCommandPlanCreator implements PartialPlanCreator<StartupCommandConfiguration> {
-  @Inject KryoSerializer kryoSerializer;
+  @Inject
+  KryoSerializerWrapper kryoSerializerWrapper;
   @Override
   public Class<StartupCommandConfiguration> getFieldClass() {
     return StartupCommandConfiguration.class;
@@ -45,9 +46,9 @@ public class StartupCommandPlanCreator implements PartialPlanCreator<StartupComm
 
   @Override
   public PlanCreationResponse createPlanForField(PlanCreationContext ctx, StartupCommandConfiguration field) {
-    String startupCommandFileId = (String) kryoSerializer.asInflatedObject(
+    String startupCommandFileId = (String) kryoSerializerWrapper.asInflatedObject(
         ctx.getDependency().getMetadataMap().get(YamlTypes.UUID).toByteArray());
-    StartupCommandParameters stepParameters = (StartupCommandParameters) kryoSerializer.asInflatedObject(
+    StartupCommandParameters stepParameters = (StartupCommandParameters) kryoSerializerWrapper.asInflatedObject(
         ctx.getDependency().getMetadataMap().get(PlanCreatorConstants.STARTUP_COMMAND_STEP_PARAMETER).toByteArray());
 
     PlanNode startupCommandPlanNode =

@@ -15,7 +15,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.category.element.UnitTests;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import software.wings.WingsBaseTest;
 import software.wings.beans.appmanifest.ApplicationManifest;
@@ -32,7 +32,8 @@ import org.reflections.Reflections;
 
 @Slf4j
 public class KryoUtilTest extends WingsBaseTest {
-  @Inject KryoSerializer kryoSerializer;
+  @Inject
+  KryoSerializerWrapper kryoSerializerWrapper;
 
   Class<?> classToRunTest = ApplicationManifest.class;
 
@@ -45,7 +46,7 @@ public class KryoUtilTest extends WingsBaseTest {
     getAllInvolvedClasses(classesInvolved, classToRunTest, reflection);
     Set<Class<?>> errorClasses = new HashSet<>();
     classesInvolved.forEach(clazz -> {
-      if (!kryoSerializer.isRegistered(clazz) && !isAbstractOrInterface(clazz)) {
+      if (!kryoSerializerWrapper.isRegistered(clazz) && !isAbstractOrInterface(clazz)) {
         log.error("Class [{}] not registered in kryo.", clazz);
         errorClasses.add(clazz);
       }

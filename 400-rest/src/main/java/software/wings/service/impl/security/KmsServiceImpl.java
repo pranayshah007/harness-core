@@ -33,7 +33,7 @@ import io.harness.exception.SecretManagementException;
 import io.harness.exception.WingsException;
 import io.harness.secretmanagerclient.NGEncryptedDataMetadata;
 import io.harness.security.encryption.EncryptionType;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import software.wings.beans.KmsConfig;
 import software.wings.beans.KmsConfig.KmsConfigKeys;
@@ -60,7 +60,7 @@ public class KmsServiceImpl extends AbstractSecretServiceImpl implements KmsServ
   public static final String SECRET_KEY_SUFFIX = "_secretKey";
   public static final String ARN_SUFFIX = "_arn";
   public static final String KMS_NAME_PATTERN = "^[0-9a-zA-Z-' _!]+$";
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
   @Inject private KmsEncryptorsRegistry kmsEncryptorsRegistry;
 
   @Override
@@ -108,7 +108,7 @@ public class KmsServiceImpl extends AbstractSecretServiceImpl implements KmsServ
 
       // secret field un-decrypted version of saved KMS config
       savedKmsConfig = wingsPersistence.get(KmsConfig.class, kmsConfig.getUuid());
-      oldConfigForAudit = kryoSerializer.clone(savedKmsConfig);
+      oldConfigForAudit = kryoSerializerWrapper.clone(savedKmsConfig);
     }
 
     // Validate every time when secret manager config change submitted

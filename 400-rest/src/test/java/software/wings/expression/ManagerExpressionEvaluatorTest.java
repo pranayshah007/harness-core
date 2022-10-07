@@ -20,7 +20,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import io.harness.beans.SweepingOutputInstance;
 import io.harness.category.element.UnitTests;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import software.wings.WingsBaseTest;
 import software.wings.api.HostElement;
@@ -43,7 +43,8 @@ import org.junit.experimental.categories.Category;
 public class ManagerExpressionEvaluatorTest extends WingsBaseTest {
   @Inject private ManagerExpressionEvaluator expressionEvaluator;
   @Inject private SweepingOutputService sweepingOutputService;
-  @Inject KryoSerializer kryoSerializer;
+  @Inject
+  KryoSerializerWrapper kryoSerializerWrapper;
 
   @Test
   @Owner(developers = GEORGE)
@@ -118,7 +119,7 @@ public class ManagerExpressionEvaluatorTest extends WingsBaseTest {
                                        .appId(appId)
                                        .pipelineExecutionId(pipelineExecutionId)
                                        .workflowExecutionId(workflowExecutionId)
-                                       .output(kryoSerializer.asDeflatedBytes(ImmutableMap.of("text", "bar")))
+                                       .output(kryoSerializerWrapper.asDeflatedBytes(ImmutableMap.of("text", "bar")))
                                        .build());
 
     Map<String, Object> context =
@@ -126,7 +127,7 @@ public class ManagerExpressionEvaluatorTest extends WingsBaseTest {
             .put("context",
                 SweepingOutputFunctor.builder()
                     .sweepingOutputService(sweepingOutputService)
-                    .kryoSerializer(kryoSerializer)
+                    .kryoSerializerWrapper(kryoSerializerWrapper)
                     .sweepingOutputInquiryBuilder(SweepingOutputInquiry.builder()
                                                       .appId(appId)
                                                       .pipelineExecutionId(pipelineExecutionId)
@@ -158,7 +159,7 @@ public class ManagerExpressionEvaluatorTest extends WingsBaseTest {
                                        .appId(appId)
                                        .pipelineExecutionId(pipelineExecutionId)
                                        .workflowExecutionId(workflowExecutionId)
-                                       .output(kryoSerializer.asDeflatedBytes(ImmutableMap.of("text", "bar")))
+                                       .output(kryoSerializerWrapper.asDeflatedBytes(ImmutableMap.of("text", "bar")))
                                        .build());
 
     Map<String, Object> context =
@@ -166,7 +167,7 @@ public class ManagerExpressionEvaluatorTest extends WingsBaseTest {
             .put("workflow",
                 SweepingOutputValue.builder()
                     .sweepingOutputService(sweepingOutputService)
-                    .kryoSerializer(kryoSerializer)
+                    .kryoSerializerWrapper(kryoSerializerWrapper)
                     .sweepingOutputInquiry(SweepingOutputInquiry.builder()
                                                .name("workflow")
                                                .appId(appId)

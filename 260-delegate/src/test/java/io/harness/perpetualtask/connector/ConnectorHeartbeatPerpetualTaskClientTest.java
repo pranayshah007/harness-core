@@ -31,7 +31,7 @@ import io.harness.perpetualtask.PerpetualTaskClientContext;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import software.wings.WingsBaseTest;
 
@@ -51,7 +51,7 @@ import retrofit2.Response;
 
 @OwnedBy(DX)
 public class ConnectorHeartbeatPerpetualTaskClientTest extends WingsBaseTest {
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
   @Mock private ConnectorResourceClient connectorResourceClient;
   @Mock private SecretManagerClientService ngSecretManagerService;
   @Mock private Call<ResponseDTO<ConnectorValidationParameterResponse>> call;
@@ -79,7 +79,7 @@ public class ConnectorHeartbeatPerpetualTaskClientTest extends WingsBaseTest {
             .isInvalid(false)
             .build();
     when(call.execute()).thenReturn(Response.success(ResponseDTO.newResponse(connectorValidationParameterResponse)));
-    FieldUtils.writeField(connectorHeartbeatPerpetualTaskClient, "kryoSerializer", kryoSerializer, true);
+    FieldUtils.writeField(connectorHeartbeatPerpetualTaskClient, "kryoSerializer", kryoSerializerWrapper, true);
     Map<String, String> connectorDetails = ImmutableMap.of(ACCOUNT_KEY, accountIdentifier, ORG_KEY, orgIdentifier,
         PROJECT_KEY, projectIdentifier, CONNECTOR_IDENTIFIER_KEY, identifier);
     perpetualTaskClientContext = PerpetualTaskClientContext.builder().clientParams(connectorDetails).build();

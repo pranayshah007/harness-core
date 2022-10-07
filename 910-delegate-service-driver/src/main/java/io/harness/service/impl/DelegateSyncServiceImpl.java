@@ -22,7 +22,7 @@ import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.WingsException;
 import io.harness.persistence.HPersistence;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.service.intfc.DelegateSyncService;
 import io.harness.tasks.BinaryResponseData;
 import io.harness.tasks.ResponseData;
@@ -47,7 +47,7 @@ import org.jooq.tools.StringUtils;
 @OwnedBy(HarnessTeam.DEL)
 public class DelegateSyncServiceImpl implements DelegateSyncService {
   @Inject private HPersistence persistence;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
   @Inject @Named("disableDeserialization") private boolean disableDeserialization;
 
   @VisibleForTesting public final ConcurrentMap<String, AtomicLong> syncTaskWaitMap = new ConcurrentHashMap<>();
@@ -127,7 +127,7 @@ public class DelegateSyncServiceImpl implements DelegateSyncService {
       return (T) BinaryResponseData.builder().data(taskResponse.getResponseData()).build();
     }
     // throw exception here
-    Object response = kryoSerializer.asInflatedObject(taskResponse.getResponseData());
+    Object response = kryoSerializerWrapper.asInflatedObject(taskResponse.getResponseData());
     if (response instanceof ErrorNotifyResponseData) {
       WingsException exception = ((ErrorNotifyResponseData) response).getException();
       // if task registered to error handling framework on delegate, then exception won't be null
@@ -136,6 +136,6 @@ public class DelegateSyncServiceImpl implements DelegateSyncService {
       }
     }
 
-    return (T) kryoSerializer.asInflatedObject(taskResponse.getResponseData());
+    return (T) kryoSerializerWrapper.asInflatedObject(taskResponse.getResponseData());
   }
 }

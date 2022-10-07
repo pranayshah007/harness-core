@@ -31,7 +31,7 @@ import io.harness.perpetualtask.PerpetualTaskSchedule;
 import io.harness.perpetualtask.PerpetualTaskService;
 import io.harness.perpetualtask.internal.PerpetualTaskRecord;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import software.wings.WingsBaseTest;
 import software.wings.beans.PcfConfig;
@@ -67,7 +67,8 @@ public class PcfInstanceSyncPerpetualTaskClientTest extends WingsBaseTest {
   @Mock SettingsService settingsService;
   @Mock SecretManager secretsManager;
   @Mock InfrastructureMappingService infraMappingService;
-  @Inject KryoSerializer kryoSerializer;
+  @Inject
+  KryoSerializerWrapper kryoSerializerWrapper;
   @InjectMocks @Inject PcfInstanceSyncPerpetualTaskClient pcfInstanceSyncPerpetualTaskClient;
 
   @Captor ArgumentCaptor<PerpetualTaskSchedule> scheduleArgumentCaptor;

@@ -11,7 +11,7 @@ import static software.wings.security.PermissionAttribute.PermissionType.LOGGED_
 
 import io.harness.rest.RestResponse;
 import io.harness.security.annotations.DelegateAuth;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import software.wings.beans.Log;
 import software.wings.delegatetasks.DelegateStateType;
@@ -46,7 +46,7 @@ public class LogResource {
   @Inject private LogService logService;
   @Inject private LogVerificationService logVerificationService;
   @Inject private ContinuousVerificationService cvManagerService;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
 
   @DelegateAuth
   @POST
@@ -55,7 +55,7 @@ public class LogResource {
   @ExceptionMetered
   public RestResponse<Boolean> batchSave(
       @PathParam("activityId") String activityId, @PathParam("unitName") String unitName, byte[] logSerialized) {
-    Log logObject = (Log) kryoSerializer.asObject(logSerialized);
+    Log logObject = (Log) kryoSerializerWrapper.asObject(logSerialized);
 
     return new RestResponse<>(logService.batchedSaveCommandUnitLogs(activityId, unitName, logObject));
   }

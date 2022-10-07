@@ -15,7 +15,7 @@ import io.harness.exception.UnexpectedException;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.serializer.JsonUtils;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.inject.Inject;
@@ -35,7 +35,7 @@ public class NGRestClientExecutor {
   public static final String DEFAULT_CONNECTION_ERROR_MESSAGE =
       "Unable to connect to upstream systems, please try again.";
   private static final MediaType APPLICATION_KRYO_MEDIA_TYPE = MediaType.parse("application/x-kryo");
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
 
   public <T> T getResponse(Call<ResponseDTO<T>> request) {
     try {
@@ -48,7 +48,7 @@ public class NGRestClientExecutor {
           ErrorDTO errorDTO;
           if (response.errorBody().contentType().toString().startsWith(APPLICATION_KRYO_MEDIA_TYPE.toString())) {
             byte[] bytes = response.errorBody().bytes();
-            errorDTO = (ErrorDTO) kryoSerializer.asObject(bytes);
+            errorDTO = (ErrorDTO) kryoSerializerWrapper.asObject(bytes);
           } else {
             errorDTO = JsonUtils.asObject(response.errorBody().string(), new TypeReference<ErrorDTO>() {});
           }

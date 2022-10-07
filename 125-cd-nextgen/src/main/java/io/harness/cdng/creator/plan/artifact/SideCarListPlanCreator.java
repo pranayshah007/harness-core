@@ -29,7 +29,7 @@ import io.harness.pms.sdk.core.plan.creation.creators.ChildrenPlanCreator;
 import io.harness.pms.yaml.DependenciesUtils;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.steps.fork.ForkStepParameters;
 
 import com.google.inject.Inject;
@@ -45,7 +45,8 @@ import java.util.stream.Collectors;
 
 @OwnedBy(HarnessTeam.CDC)
 public class SideCarListPlanCreator extends ChildrenPlanCreator<SidecarsListWrapper> {
-  @Inject KryoSerializer kryoSerializer;
+  @Inject
+  KryoSerializerWrapper kryoSerializerWrapper;
 
   @Override
   public Class<SidecarsListWrapper> getFieldClass() {
@@ -65,7 +66,7 @@ public class SideCarListPlanCreator extends ChildrenPlanCreator<SidecarsListWrap
     YamlField sideCarsYamlField = ctx.getCurrentField();
 
     Map<String, ArtifactStepParameters> sideCarsParametersMap =
-        (Map<String, ArtifactStepParameters>) kryoSerializer.asInflatedObject(
+        (Map<String, ArtifactStepParameters>) kryoSerializerWrapper.asInflatedObject(
             ctx.getDependency().getMetadataMap().get(PlanCreatorConstants.SIDECARS_PARAMETERS_MAP).toByteArray());
 
     List<YamlNode> yamlNodes = Optional.of(sideCarsYamlField.getNode().asArray()).orElse(Collections.emptyList());
@@ -106,16 +107,16 @@ public class SideCarListPlanCreator extends ChildrenPlanCreator<SidecarsListWrap
       String individualSideCarPlanNodeId, ArtifactStepParameters stepParameters) {
     Map<String, ByteString> metadataDependency = new HashMap<>();
     metadataDependency.put(
-        YamlTypes.UUID, ByteString.copyFrom(kryoSerializer.asDeflatedBytes(individualSideCarPlanNodeId)));
+        YamlTypes.UUID, ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(individualSideCarPlanNodeId)));
     metadataDependency.put(PlanCreatorConstants.SIDECAR_STEP_PARAMETERS,
-        ByteString.copyFrom(kryoSerializer.asDeflatedBytes(stepParameters)));
+        ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(stepParameters)));
     return metadataDependency;
   }
 
   @Override
   public PlanNode createPlanForParentNode(
       PlanCreationContext ctx, SidecarsListWrapper config, List<String> childrenNodeIds) {
-    String sideCarsPlanNodeId = (String) kryoSerializer.asInflatedObject(
+    String sideCarsPlanNodeId = (String) kryoSerializerWrapper.asInflatedObject(
         ctx.getDependency().getMetadataMap().get(YamlTypes.UUID).toByteArray());
 
     ForkStepParameters stepParameters = ForkStepParameters.builder().parallelNodeIds(childrenNodeIds).build();

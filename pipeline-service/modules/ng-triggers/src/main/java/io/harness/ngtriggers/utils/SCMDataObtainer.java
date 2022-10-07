@@ -58,7 +58,7 @@ import io.harness.product.ci.scm.proto.PullRequestHook;
 import io.harness.product.ci.scm.proto.SCMGrpc;
 import io.harness.secrets.SecretDecryptor;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.service.ScmServiceClient;
 import io.harness.tasks.BinaryResponseData;
 import io.harness.tasks.ErrorResponseData;
@@ -82,7 +82,7 @@ import org.apache.commons.lang3.StringUtils;
 public class SCMDataObtainer implements GitProviderBaseDataObtainer {
   private final TaskExecutionUtils taskExecutionUtils;
   private final ConnectorUtils connectorUtils;
-  private final KryoSerializer kryoSerializer;
+  private final KryoSerializerWrapper kryoSerializerWrapper;
   public static final String GIT_URL_SUFFIX = ".git";
   public static final String PATH_SEPARATOR = "/";
   public static final String AZURE_REPO_BASE_URL = "azure.com";
@@ -94,10 +94,10 @@ public class SCMDataObtainer implements GitProviderBaseDataObtainer {
 
   @Inject
   public SCMDataObtainer(
-      TaskExecutionUtils taskExecutionUtils, ConnectorUtils connectorUtils, KryoSerializer kryoSerializer) {
+      TaskExecutionUtils taskExecutionUtils, ConnectorUtils connectorUtils, KryoSerializerWrapper kryoSerializerWrapper) {
     this.taskExecutionUtils = taskExecutionUtils;
     this.connectorUtils = connectorUtils;
-    this.kryoSerializer = kryoSerializer;
+    this.kryoSerializerWrapper = kryoSerializerWrapper;
   }
 
   @Override
@@ -287,7 +287,7 @@ public class SCMDataObtainer implements GitProviderBaseDataObtainer {
 
       if (BinaryResponseData.class.isAssignableFrom(responseData.getClass())) {
         BinaryResponseData binaryResponseData = (BinaryResponseData) responseData;
-        Object object = kryoSerializer.asInflatedObject(binaryResponseData.getData());
+        Object object = kryoSerializerWrapper.asInflatedObject(binaryResponseData.getData());
         if (ScmGitRefTaskResponseData.class.isAssignableFrom(object.getClass())) {
           ScmGitRefTaskResponseData scmGitRefTaskResponseData = (ScmGitRefTaskResponseData) object;
           try {

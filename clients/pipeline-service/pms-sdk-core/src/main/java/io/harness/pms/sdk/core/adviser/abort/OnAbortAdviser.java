@@ -21,7 +21,7 @@ import io.harness.pms.execution.utils.StatusUtils;
 import io.harness.pms.sdk.core.adviser.Adviser;
 import io.harness.pms.sdk.core.adviser.AdvisingEvent;
 import io.harness.pms.sdk.core.adviser.OrchestrationAdviserTypes;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
@@ -33,7 +33,7 @@ public class OnAbortAdviser implements Adviser {
   public static final AdviserType ADVISER_TYPE =
       AdviserType.newBuilder().setType(OrchestrationAdviserTypes.ABORT.name()).build();
 
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
 
   @Override
   public AdviserResponse onAdviseEvent(AdvisingEvent advisingEvent) {
@@ -57,6 +57,6 @@ public class OnAbortAdviser implements Adviser {
 
   private OnAbortAdviserParameters extractParameters(AdvisingEvent advisingEvent) {
     return (OnAbortAdviserParameters) Preconditions.checkNotNull(
-        kryoSerializer.asObject(advisingEvent.getAdviserParameters()));
+        kryoSerializerWrapper.asObject(advisingEvent.getAdviserParameters()));
   }
 }

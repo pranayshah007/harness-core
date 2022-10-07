@@ -16,7 +16,7 @@ import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.dtos.InfrastructureMappingDTO;
 import io.harness.dtos.deploymentinfo.DeploymentInfoDTO;
 import io.harness.perpetualtask.PerpetualTaskExecutionBundle;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import com.google.inject.Inject;
 import com.google.protobuf.Any;
@@ -26,7 +26,7 @@ import javax.validation.constraints.NotNull;
 import org.apache.groovy.util.Maps;
 
 public abstract class InstanceSyncPerpetualTaskHandler {
-  @Inject protected KryoSerializer kryoSerializer;
+  @Inject protected KryoSerializerWrapper kryoSerializerWrapper;
 
   public abstract PerpetualTaskExecutionBundle getExecutionBundle(InfrastructureMappingDTO infrastructureMappingDTO,
       List<DeploymentInfoDTO> deploymentInfoDTOList, InfrastructureOutcome infrastructureOutcome);
@@ -39,7 +39,7 @@ public abstract class InstanceSyncPerpetualTaskHandler {
         -> builder
                .addCapabilities(
                    Capability.newBuilder()
-                       .setKryoCapability(ByteString.copyFrom(kryoSerializer.asDeflatedBytes(executionCapability)))
+                       .setKryoCapability(ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(executionCapability)))
                        .build())
                .build());
     return builder.setTaskParams(perpetualTaskPack)

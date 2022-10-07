@@ -63,7 +63,7 @@ import io.harness.persistence.HPersistence;
 import io.harness.polling.client.PollingResourceClient;
 import io.harness.rest.RestResponse;
 import io.harness.security.annotations.DelegateAuth;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import software.wings.beans.Account;
 import software.wings.core.managerConfiguration.ConfigurationController;
@@ -123,7 +123,7 @@ public class DelegateAgentResource {
   private InstanceHelper instanceHelper;
   private ManifestCollectionResponseHandler manifestCollectionResponseHandler;
   private ConnectorHearbeatPublisher connectorHearbeatPublisher;
-  private KryoSerializer kryoSerializer;
+  private KryoSerializerWrapper kryoSerializerWrapper;
   private ConfigurationController configurationController;
   private FeatureFlagService featureFlagService;
   private DelegateTaskServiceClassic delegateTaskServiceClassic;
@@ -135,7 +135,7 @@ public class DelegateAgentResource {
       DelegateRequestRateLimiter delegateRequestRateLimiter, SubdomainUrlHelperIntfc subdomainUrlHelper,
       ArtifactCollectionResponseHandler artifactCollectionResponseHandler, InstanceHelper instanceHelper,
       ManifestCollectionResponseHandler manifestCollectionResponseHandler,
-      ConnectorHearbeatPublisher connectorHearbeatPublisher, KryoSerializer kryoSerializer,
+      ConnectorHearbeatPublisher connectorHearbeatPublisher, KryoSerializerWrapper kryoSerializerWrapper,
       ConfigurationController configurationController, FeatureFlagService featureFlagService,
       DelegateTaskServiceClassic delegateTaskServiceClassic, PollingResourceClient pollingResourceClient,
       InstanceSyncResponsePublisher instanceSyncResponsePublisher) {
@@ -148,7 +148,7 @@ public class DelegateAgentResource {
     this.artifactCollectionResponseHandler = artifactCollectionResponseHandler;
     this.manifestCollectionResponseHandler = manifestCollectionResponseHandler;
     this.connectorHearbeatPublisher = connectorHearbeatPublisher;
-    this.kryoSerializer = kryoSerializer;
+    this.kryoSerializerWrapper = kryoSerializerWrapper;
     this.configurationController = configurationController;
     this.featureFlagService = featureFlagService;
     this.delegateTaskServiceClassic = delegateTaskServiceClassic;
@@ -473,7 +473,7 @@ public class DelegateAgentResource {
     try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR);
          AutoLogContext ignore2 = new DelegateLogContext(delegateId, OVERRIDE_ERROR)) {
       log.debug("About to convert logsBlob byte array into ThirdPartyApiCallLog.");
-      List<ThirdPartyApiCallLog> logs = (List<ThirdPartyApiCallLog>) kryoSerializer.asObject(logsBlob);
+      List<ThirdPartyApiCallLog> logs = (List<ThirdPartyApiCallLog>) kryoSerializerWrapper.asObject(logsBlob);
       log.debug("LogsBlob byte array converted successfully into ThirdPartyApiCallLog.");
 
       persistence.save(logs);
@@ -494,7 +494,7 @@ public class DelegateAgentResource {
       @QueryParam("accountId") @NotEmpty String accountId, byte[] response) {
     try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR);
          AutoLogContext ignore2 = new PerpetualTaskLogContext(perpetualTaskId, OVERRIDE_ERROR)) {
-      BuildSourceExecutionResponse executionResponse = (BuildSourceExecutionResponse) kryoSerializer.asObject(response);
+      BuildSourceExecutionResponse executionResponse = (BuildSourceExecutionResponse) kryoSerializerWrapper.asObject(response);
 
       if (executionResponse.getBuildSourceResponse() != null) {
         log.debug("Received artifact collection {}", executionResponse.getBuildSourceResponse().getBuildDetails());
@@ -543,7 +543,7 @@ public class DelegateAgentResource {
     try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR);
          AutoLogContext ignore2 = new PerpetualTaskLogContext(perpetualTaskId, OVERRIDE_ERROR)) {
       ManifestCollectionExecutionResponse executionResponse =
-          (ManifestCollectionExecutionResponse) kryoSerializer.asObject(serializedExecutionResponse);
+          (ManifestCollectionExecutionResponse) kryoSerializerWrapper.asObject(serializedExecutionResponse);
 
       if (executionResponse.getManifestCollectionResponse() != null) {
         log.debug("Received manifest collection {}", executionResponse.getManifestCollectionResponse().getHelmCharts());

@@ -55,7 +55,7 @@ import io.harness.owner.OrgIdentifier;
 import io.harness.owner.ProjectIdentifier;
 import io.harness.paging.PageRequestGrpc;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import software.wings.WingsBaseTest;
 import software.wings.beans.User;
@@ -109,7 +109,8 @@ public class DelegateProfileServiceGrpcImplTest extends WingsBaseTest {
 
   @Mock private DelegateProfileService delegateProfileService;
 
-  @Inject KryoSerializer kryoSerializer;
+  @Inject
+  KryoSerializerWrapper kryoSerializerWrapper;
 
   @Before
   public void setUp() throws Exception {
@@ -119,13 +120,13 @@ public class DelegateProfileServiceGrpcImplTest extends WingsBaseTest {
     DelegateProfileServiceGrpc.DelegateProfileServiceBlockingStub delegateProfileServiceBlockingStub =
         DelegateProfileServiceGrpc.newBlockingStub(channel);
     delegateProfileServiceGrpcClient =
-        new DelegateProfileServiceGrpcClient(delegateProfileServiceBlockingStub, kryoSerializer);
+        new DelegateProfileServiceGrpcClient(delegateProfileServiceBlockingStub, kryoSerializerWrapper);
 
     //    delegateProfileService = mock(DelegateProfileService.class);
     UserService userService = mock(UserService.class);
     when(userService.getUserFromCacheOrDB(anyString())).thenReturn(new User());
     DelegateProfileServiceGrpcImpl delegateProfileServiceGrpcImpl =
-        new DelegateProfileServiceGrpcImpl(delegateProfileService, userService, kryoSerializer);
+        new DelegateProfileServiceGrpcImpl(delegateProfileService, userService, kryoSerializerWrapper);
 
     Server server = InProcessServerBuilder.forName(serverName)
                         .directExecutor()

@@ -38,7 +38,7 @@ import io.harness.perpetualtask.polling.PollingResponsePublisher;
 import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import com.google.inject.Inject;
 import com.google.protobuf.Any;
@@ -75,7 +75,8 @@ public class GitPollingPerpetualTaskExecutorNgTest extends DelegateTestBase {
   private GitPollingPerpetualTaskExecutorNg gitPollingPerpetualTaskExecutorNg;
   private PerpetualTaskId perpetualTaskId;
   private String polling_doc_id;
-  @Inject KryoSerializer kryoSerializer;
+  @Inject
+  KryoSerializerWrapper kryoSerializerWrapper;
   @Mock private GitPollingServiceImpl gitPollingService;
   @Mock private DelegateAgentManagerClient delegateAgentManagerClient;
   @Mock private Call<RestResponse<Boolean>> call;
@@ -83,9 +84,9 @@ public class GitPollingPerpetualTaskExecutorNgTest extends DelegateTestBase {
   @Before
   public void setup() {
     PollingResponsePublisher pollingResponsePublisher =
-        new PollingResponsePublisher(kryoSerializer, delegateAgentManagerClient);
+        new PollingResponsePublisher(kryoSerializerWrapper, delegateAgentManagerClient);
     gitPollingPerpetualTaskExecutorNg =
-        new GitPollingPerpetualTaskExecutorNg(kryoSerializer, gitPollingService, pollingResponsePublisher);
+        new GitPollingPerpetualTaskExecutorNg(kryoSerializerWrapper, gitPollingService, pollingResponsePublisher);
     perpetualTaskId = PerpetualTaskId.newBuilder().setId(UUIDGenerator.generateUuid()).build();
     polling_doc_id = UUIDGenerator.generateUuid();
   }
@@ -103,7 +104,7 @@ public class GitPollingPerpetualTaskExecutorNgTest extends DelegateTestBase {
 
     Buffer bufferedSink = new Buffer();
     captor.getValue().writeTo(bufferedSink);
-    PollingDelegateResponse response = (PollingDelegateResponse) kryoSerializer.asObject(bufferedSink.readByteArray());
+    PollingDelegateResponse response = (PollingDelegateResponse) kryoSerializerWrapper.asObject(bufferedSink.readByteArray());
     validateRunOnceOutput(response, 10001, true, 10001, 0);
   }
 
@@ -123,7 +124,7 @@ public class GitPollingPerpetualTaskExecutorNgTest extends DelegateTestBase {
     GitPollingTaskParamsNg taskParams =
         GitPollingTaskParamsNg.newBuilder()
             .setPollingDocId(polling_doc_id)
-            .setGitpollingWebhookParams(ByteString.copyFrom(kryoSerializer.asBytes(gitPollingTaskParameters)))
+            .setGitpollingWebhookParams(ByteString.copyFrom(kryoSerializerWrapper.asBytes(gitPollingTaskParameters)))
             .build();
 
     PerpetualTaskExecutionParams executionParams =

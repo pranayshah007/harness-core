@@ -20,7 +20,7 @@ import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.sdk.core.plan.creation.creators.PartialPlanCreator;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import com.google.inject.Inject;
 import java.util.Arrays;
@@ -31,7 +31,8 @@ import java.util.Set;
 
 @OwnedBy(HarnessTeam.CDC)
 public class PrimaryArtifactPlanCreator implements PartialPlanCreator<PrimaryArtifact> {
-  @Inject KryoSerializer kryoSerializer;
+  @Inject
+  KryoSerializerWrapper kryoSerializerWrapper;
 
   @Override
   public Class<PrimaryArtifact> getFieldClass() {
@@ -52,9 +53,9 @@ public class PrimaryArtifactPlanCreator implements PartialPlanCreator<PrimaryArt
 
   @Override
   public PlanCreationResponse createPlanForField(PlanCreationContext ctx, PrimaryArtifact artifactInfo) {
-    String primaryId = (String) kryoSerializer.asInflatedObject(
+    String primaryId = (String) kryoSerializerWrapper.asInflatedObject(
         ctx.getDependency().getMetadataMap().get(YamlTypes.UUID).toByteArray());
-    StepParameters stepParameters = (StepParameters) kryoSerializer.asInflatedObject(
+    StepParameters stepParameters = (StepParameters) kryoSerializerWrapper.asInflatedObject(
         ctx.getDependency().getMetadataMap().get(PlanCreatorConstants.PRIMARY_STEP_PARAMETERS).toByteArray());
     ArtifactStepParameters artifactStepParameters = (ArtifactStepParameters) stepParameters;
 

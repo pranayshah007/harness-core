@@ -32,7 +32,7 @@ import io.harness.logging.CommandExecutionStatus;
 import io.harness.managerclient.DelegateAgentManagerClient;
 import io.harness.ng.core.k8s.ServiceSpecType;
 import io.harness.perpetualtask.instancesync.AzureSshInstanceSyncPerpetualTaskParamsNg;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import software.wings.delegatetasks.azure.AzureAsyncTaskHelper;
 
@@ -51,7 +51,7 @@ public class AzureSshWinrmInstanceSyncPerpetualTaskExecutor implements Perpetual
   private static final Set<String> VALID_SERVICE_TYPES = ImmutableSet.of(ServiceSpecType.SSH, ServiceSpecType.WINRM);
 
   @Inject private DelegateAgentManagerClient delegateAgentManagerClient;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
   @Inject private AzureAsyncTaskHelper azureAsyncTaskHelper;
 
   @Override
@@ -87,7 +87,7 @@ public class AzureSshWinrmInstanceSyncPerpetualTaskExecutor implements Perpetual
   }
 
   private Set<String> getAzureHosts(AzureSshInstanceSyncPerpetualTaskParamsNg taskParams) {
-    AzureInfraDelegateConfig infraConfig = (AzureInfraDelegateConfig) kryoSerializer.asObject(
+    AzureInfraDelegateConfig infraConfig = (AzureInfraDelegateConfig) kryoSerializerWrapper.asObject(
         taskParams.getAzureSshWinrmInfraDelegateConfig().toByteArray());
 
     AzureOSType azureOSType =

@@ -32,7 +32,7 @@ import io.harness.pms.sdk.core.plan.creation.creators.ChildrenPlanCreator;
 import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.when.utils.RunInfoUtils;
 
 import com.google.common.base.Preconditions;
@@ -48,7 +48,7 @@ import lombok.SneakyThrows;
 @OwnedBy(PIPELINE)
 @TargetModule(HarnessModule._882_PMS_SDK_CORE)
 public abstract class GenericStagePlanCreator extends ChildrenPlanCreator<StageElementConfig> {
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
 
   public abstract Set<String> getSupportedStageTypes();
 
@@ -96,7 +96,7 @@ public abstract class GenericStagePlanCreator extends ChildrenPlanCreator<StageE
             FacilitatorObtainment.newBuilder()
                 .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.CHILD).build())
                 .build())
-        .adviserObtainments(StrategyUtils.getAdviserObtainments(ctx.getCurrentField(), kryoSerializer, true))
+        .adviserObtainments(StrategyUtils.getAdviserObtainments(ctx.getCurrentField(), kryoSerializerWrapper, true))
         .build();
   }
 
@@ -111,9 +111,9 @@ public abstract class GenericStagePlanCreator extends ChildrenPlanCreator<StageE
    */
   protected void addStrategyFieldDependencyIfPresent(PlanCreationContext ctx, StageElementConfig field,
       LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap, Map<String, ByteString> metadataMap) {
-    StrategyUtils.addStrategyFieldDependencyIfPresent(kryoSerializer, ctx, field.getUuid(), field.getIdentifier(),
+    StrategyUtils.addStrategyFieldDependencyIfPresent(kryoSerializerWrapper, ctx, field.getUuid(), field.getIdentifier(),
         field.getName(), planCreationResponseMap, metadataMap,
-        StrategyUtils.getAdviserObtainments(ctx.getCurrentField(), kryoSerializer, false));
+        StrategyUtils.getAdviserObtainments(ctx.getCurrentField(), kryoSerializerWrapper, false));
   }
 
   @Override

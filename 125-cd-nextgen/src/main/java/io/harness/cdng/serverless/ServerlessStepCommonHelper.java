@@ -84,7 +84,7 @@ import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.steps.StepHelper;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
@@ -106,7 +106,7 @@ import org.hibernate.validator.constraints.NotEmpty;
 public class ServerlessStepCommonHelper extends ServerlessStepUtils {
   @Inject private EngineExpressionService engineExpressionService;
   @Inject private ServerlessEntityHelper serverlessEntityHelper;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
   @Inject private StepHelper stepHelper;
   private static final String PRIMARY_ARTIFACT_PATH_FOR_NON_ECR = "<+artifact.path>";
   private static final String PRIMARY_ARTIFACT_PATH_FOR_ECR = "<+artifact.image>";
@@ -214,7 +214,7 @@ public class ServerlessStepCommonHelper extends ServerlessStepUtils {
         TaskType.SERVERLESS_COMMAND_TASK.getDisplayName() + " : " + serverlessCommandRequest.getCommandName();
     ServerlessSpecParameters serverlessSpecParameters = (ServerlessSpecParameters) stepElementParameters.getSpec();
     final TaskRequest taskRequest =
-        prepareCDTaskRequest(ambiance, taskData, kryoSerializer, serverlessSpecParameters.getCommandUnits(), taskName,
+        prepareCDTaskRequest(ambiance, taskData, kryoSerializerWrapper, serverlessSpecParameters.getCommandUnits(), taskName,
             TaskSelectorYaml.toTaskSelector(
                 emptyIfNull(getParameterFieldValue(serverlessSpecParameters.getDelegateSelectors()))),
             stepHelper.getEnvironmentType(ambiance));
@@ -431,7 +431,7 @@ public class ServerlessStepCommonHelper extends ServerlessStepUtils {
     String taskName = TaskType.SERVERLESS_GIT_FETCH_TASK_NG.getDisplayName();
     ServerlessSpecParameters serverlessSpecParameters = (ServerlessSpecParameters) stepElementParameters.getSpec();
     final TaskRequest taskRequest =
-        prepareCDTaskRequest(ambiance, taskData, kryoSerializer, serverlessSpecParameters.getCommandUnits(), taskName,
+        prepareCDTaskRequest(ambiance, taskData, kryoSerializerWrapper, serverlessSpecParameters.getCommandUnits(), taskName,
             TaskSelectorYaml.toTaskSelector(
                 emptyIfNull(getParameterFieldValue(serverlessSpecParameters.getDelegateSelectors()))),
             stepHelper.getEnvironmentType(ambiance));

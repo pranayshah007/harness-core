@@ -21,7 +21,7 @@ import io.harness.exception.WingsException;
 import io.harness.exception.exceptionmanager.exceptionhandler.ExceptionHandler;
 import io.harness.logging.ExceptionLogger;
 import io.harness.reflection.ReflectionUtils;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -35,7 +35,7 @@ import org.slf4j.Logger;
 @OwnedBy(HarnessTeam.DX)
 public class ExceptionManager {
   @Inject private Map<Class<? extends Exception>, ExceptionHandler> exceptionHandler;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
 
   public final String DEFAULT_ERROR_MESSAGE = "NULL EXCEPTION";
 
@@ -136,7 +136,7 @@ public class ExceptionManager {
   }
 
   private boolean isExceptionKryoRegistered(WingsException wingsException) {
-    return kryoSerializer.isRegistered(wingsException.getClass());
+    return kryoSerializerWrapper.isRegistered(wingsException.getClass());
   }
 
   private WingsException handleExceptionIfNotKryoRegistered(Exception exception) {

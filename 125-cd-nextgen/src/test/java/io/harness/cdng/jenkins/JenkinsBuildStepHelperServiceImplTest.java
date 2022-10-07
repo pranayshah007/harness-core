@@ -37,7 +37,7 @@ import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.rule.Owner;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.steps.StepUtils;
 
 import java.util.Optional;
@@ -55,7 +55,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 public class JenkinsBuildStepHelperServiceImplTest extends CategoryTest {
   @Mock private ConnectorResourceClient connectorResourceClient;
   @Mock private SecretManagerClientService secretManagerClientService;
-  @Mock private KryoSerializer kryoSerializer;
+  @Mock private KryoSerializerWrapper kryoSerializerWrapper;
   @InjectMocks JenkinsBuildStepHelperServiceImpl jenkinsBuildStepHelperService;
   ArtifactTaskExecutionResponse artifactTaskExecutionResponse;
 

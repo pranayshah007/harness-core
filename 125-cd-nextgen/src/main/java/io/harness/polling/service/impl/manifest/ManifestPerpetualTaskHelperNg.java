@@ -25,7 +25,7 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.plan.execution.SetupAbstractionKeys;
 import io.harness.polling.bean.PollingDocument;
 import io.harness.polling.bean.manifest.ManifestInfo;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -41,7 +41,7 @@ import lombok.AllArgsConstructor;
 @OwnedBy(HarnessTeam.CDC)
 public class ManifestPerpetualTaskHelperNg {
   K8sStepHelper k8sStepHelper;
-  KryoSerializer kryoSerializer;
+  KryoSerializerWrapper kryoSerializerWrapper;
 
   public PerpetualTaskExecutionBundle createPerpetualTaskExecutionBundle(PollingDocument pollingDocument) {
     Any perpetualTaskParams;
@@ -74,7 +74,7 @@ public class ManifestPerpetualTaskHelperNg {
           ManifestCollectionTaskParamsNg.newBuilder()
               .setAccountId(accountId)
               .setPollingDocId(pollingDocument.getUuid())
-              .setManifestCollectionParams(ByteString.copyFrom(kryoSerializer.asBytes(helmManifest)))
+              .setManifestCollectionParams(ByteString.copyFrom(kryoSerializerWrapper.asBytes(helmManifest)))
               .build();
       perpetualTaskParams = Any.pack(manifestCollectionTaskParamsNg);
     } else {
@@ -86,7 +86,7 @@ public class ManifestPerpetualTaskHelperNg {
         -> builder
                .addCapabilities(
                    Capability.newBuilder()
-                       .setKryoCapability(ByteString.copyFrom(kryoSerializer.asDeflatedBytes(executionCapability)))
+                       .setKryoCapability(ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(executionCapability)))
                        .build())
                .build());
     return builder.setTaskParams(perpetualTaskParams).putAllSetupAbstractions(ngTaskSetupAbstractionsWithOwner).build();

@@ -21,7 +21,7 @@ import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.strategy.StrategyValidationUtils;
 
 import com.google.common.base.Charsets;
@@ -40,7 +40,8 @@ import org.junit.experimental.categories.Category;
 import org.mockito.MockitoAnnotations;
 
 public class StrategyUtilsTest extends NGCommonUtilitiesTestBase {
-  @Inject KryoSerializer kryoSerializer;
+  @Inject
+  KryoSerializerWrapper kryoSerializerWrapper;
 
   @Test
   @Owner(developers = SAHIL)

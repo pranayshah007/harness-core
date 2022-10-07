@@ -24,7 +24,7 @@ import io.harness.perpetualtask.PerpetualTaskId;
 import io.harness.perpetualtask.PerpetualTaskResponse;
 import io.harness.perpetualtask.polling.ArtifactCollectionTaskParamsNg;
 import io.harness.perpetualtask.polling.PollingResponsePublisher;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
@@ -42,7 +42,7 @@ import lombok.extern.slf4j.Slf4j;
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @Slf4j
 public class ArtifactPerpetualTaskExecutorNg implements PerpetualTaskExecutor {
-  private final KryoSerializer kryoSerializer;
+  private final KryoSerializerWrapper kryoSerializerWrapper;
   private final ArtifactRepositoryServiceImpl artifactRepositoryService;
   private final PollingResponsePublisher pollingResponsePublisher;
 
@@ -56,7 +56,7 @@ public class ArtifactPerpetualTaskExecutorNg implements PerpetualTaskExecutor {
     String pollingDocId = taskParams.getPollingDocId();
     String perpetualTaskId = taskId.getId();
     ArtifactTaskParameters artifactTaskParameters =
-        (ArtifactTaskParameters) kryoSerializer.asObject(taskParams.getArtifactCollectionParams().toByteArray());
+        (ArtifactTaskParameters) kryoSerializerWrapper.asObject(taskParams.getArtifactCollectionParams().toByteArray());
     ArtifactsCollectionCache artifactsCollectionCache = cache.get(pollingDocId, id -> new ArtifactsCollectionCache());
 
     Instant startTime = Instant.now();

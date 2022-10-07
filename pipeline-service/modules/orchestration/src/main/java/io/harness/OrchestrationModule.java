@@ -68,7 +68,7 @@ import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.helpers.PmsFeatureFlagHelper;
 import io.harness.pms.sdk.core.waiter.AsyncWaitEngine;
 import io.harness.queue.TimerScheduledExecutorService;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.testing.TestExecution;
 import io.harness.threading.ThreadPool;
 import io.harness.version.VersionInfoManager;
@@ -165,7 +165,7 @@ public class OrchestrationModule extends AbstractModule implements ServersModule
 
     MapBinder<String, TestExecution> testExecutionMapBinder =
         MapBinder.newMapBinder(binder(), String.class, TestExecution.class);
-    Provider<KryoSerializer> kryoSerializerProvider = getProvider(Key.get(KryoSerializer.class));
+    Provider<KryoSerializerWrapper> kryoSerializerProvider = getProvider(Key.get(KryoSerializerWrapper.class));
     testExecutionMapBinder.addBinding("Callback Kryo Registration")
         .toInstance(() -> OrchestrationComponentTester.testKryoRegistration(kryoSerializerProvider));
 

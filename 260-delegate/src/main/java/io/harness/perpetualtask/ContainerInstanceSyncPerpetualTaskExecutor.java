@@ -28,7 +28,7 @@ import io.harness.perpetualtask.instancesync.ContainerInstanceSyncPerpetualTaskP
 import io.harness.perpetualtask.instancesync.ContainerServicePerpetualTaskParams;
 import io.harness.perpetualtask.instancesync.K8sContainerInstanceSyncPerpetualTaskParams;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import software.wings.beans.AwsConfig;
 import software.wings.beans.SettingAttribute;
@@ -58,7 +58,7 @@ public class ContainerInstanceSyncPerpetualTaskExecutor implements PerpetualTask
   @Inject private K8sTaskHelper k8sTaskHelper;
   @Inject private ContainerDeploymentDelegateHelper containerDeploymentDelegateHelper;
   @Inject private ContainerService containerService;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
   @Inject private K8sTaskHelperBase k8sTaskHelperBase;
   @Inject private AwsEcsHelperServiceDelegate awsEcsHelperServiceDelegate;
 
@@ -76,7 +76,7 @@ public class ContainerInstanceSyncPerpetualTaskExecutor implements PerpetualTask
 
   private PerpetualTaskResponse executeContainerServiceSyncTask(
       PerpetualTaskId taskId, ContainerServicePerpetualTaskParams containerServicePerpetualTaskParams) {
-    final SettingAttribute settingAttribute = (SettingAttribute) kryoSerializer.asObject(
+    final SettingAttribute settingAttribute = (SettingAttribute) kryoSerializerWrapper.asObject(
         containerServicePerpetualTaskParams.getSettingAttribute().toByteArray());
 
     ContainerSyncResponse responseData =
@@ -94,7 +94,7 @@ public class ContainerInstanceSyncPerpetualTaskExecutor implements PerpetualTask
   private ContainerSyncResponse getContainerSyncResponse(
       ContainerServicePerpetualTaskParams containerServicePerpetualTaskParams, SettingAttribute settingAttribute) {
     @SuppressWarnings("unchecked")
-    final List<EncryptedDataDetail> encryptedDataDetails = (List<EncryptedDataDetail>) kryoSerializer.asObject(
+    final List<EncryptedDataDetail> encryptedDataDetails = (List<EncryptedDataDetail>) kryoSerializerWrapper.asObject(
         containerServicePerpetualTaskParams.getEncryptionDetails().toByteArray());
 
     ContainerServiceParams request =
@@ -146,7 +146,7 @@ public class ContainerInstanceSyncPerpetualTaskExecutor implements PerpetualTask
 
   private PerpetualTaskResponse executeK8sContainerSyncTask(
       PerpetualTaskId taskId, K8sContainerInstanceSyncPerpetualTaskParams k8sContainerInstanceSyncPerpetualTaskParams) {
-    final K8sClusterConfig k8sClusterConfig = (K8sClusterConfig) kryoSerializer.asObject(
+    final K8sClusterConfig k8sClusterConfig = (K8sClusterConfig) kryoSerializerWrapper.asObject(
         k8sContainerInstanceSyncPerpetualTaskParams.getK8SClusterConfig().toByteArray());
     KubernetesConfig kubernetesConfig = containerDeploymentDelegateHelper.getKubernetesConfig(k8sClusterConfig, true);
 

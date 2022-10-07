@@ -30,7 +30,7 @@ import io.harness.ng.core.k8s.ServiceSpecType;
 import io.harness.perpetualtask.instancesync.AwsSshInstanceSyncPerpetualTaskParamsNg;
 import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import software.wings.service.impl.aws.model.AwsEC2Instance;
 
@@ -60,7 +60,7 @@ public class AwsSshWinrmPerpetualTaskExecutorNgTest extends DelegateTestBase {
   @Mock private Call<RestResponse<Boolean>> call;
   @Mock private AwsListEC2InstancesDelegateTaskHelper awsListEC2InstancesDelegateTaskHelper;
   @Mock private AwsASGDelegateTaskHelper awsASGDelegateTaskHelper;
-  @Mock private KryoSerializer kryoSerializer;
+  @Mock private KryoSerializerWrapper kryoSerializerWrapper;
 
   @InjectMocks private AwsSshWinrmPerpetualTaskExecutorNg executor;
   @Captor private ArgumentCaptor<SshWinrmInstanceSyncPerpetualTaskResponse> perpetualTaskResponseCaptor;
@@ -83,7 +83,7 @@ public class AwsSshWinrmPerpetualTaskExecutorNgTest extends DelegateTestBase {
                  .region("r1")
                  .tags(Collections.singletonMap("tag1", "value"))
                  .build())
-        .when(kryoSerializer)
+        .when(kryoSerializerWrapper)
         .asObject(any(byte[].class));
   }
 

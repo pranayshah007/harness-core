@@ -17,7 +17,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.DelegateTaskProgressResponse;
 import io.harness.persistence.HPersistence;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.service.intfc.DelegateProgressService;
 import io.harness.tasks.BinaryResponseData;
 import io.harness.tasks.ProgressData;
@@ -37,7 +37,7 @@ import org.mongodb.morphia.query.UpdateOperations;
 @OwnedBy(HarnessTeam.DEL)
 public class DelegateProgressServiceImpl implements DelegateProgressService {
   @Inject private HPersistence persistence;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
   @Inject private WaitNotifyEngine waitNotifyEngine;
   @Inject @Named("disableDeserialization") private boolean disableDeserialization;
   private static final int DELETE_TRESHOLD = 1000;
@@ -68,7 +68,7 @@ public class DelegateProgressServiceImpl implements DelegateProgressService {
         log.info("Process won the task progress response {}.", lockedTaskProgressResponse.getUuid());
         ProgressData data = disableDeserialization
             ? BinaryResponseData.builder().data(lockedTaskProgressResponse.getProgressData()).build()
-            : (ProgressData) kryoSerializer.asInflatedObject(lockedTaskProgressResponse.getProgressData());
+            : (ProgressData) kryoSerializerWrapper.asInflatedObject(lockedTaskProgressResponse.getProgressData());
 
         waitNotifyEngine.progressOn(lockedTaskProgressResponse.getCorrelationId(), data);
 

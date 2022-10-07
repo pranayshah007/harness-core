@@ -17,7 +17,7 @@ import io.harness.beans.ExecutionStatus;
 import io.harness.grpc.utils.AnyUtils;
 import io.harness.managerclient.DelegateAgentManagerClient;
 import io.harness.perpetualtask.instancesync.PdcInstanceSyncPerpetualTaskParams;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import software.wings.beans.HostReachabilityInfo;
 import software.wings.beans.SettingAttribute;
@@ -35,7 +35,7 @@ import org.eclipse.jetty.server.Response;
 @OwnedBy(CDP)
 public class PdcInstanceSyncExecutor implements PerpetualTaskExecutor {
   @Inject private DelegateAgentManagerClient delegateAgentManagerClient;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
   @Inject private HostValidationService hostValidationService;
 
   @Override
@@ -45,7 +45,7 @@ public class PdcInstanceSyncExecutor implements PerpetualTaskExecutor {
         AnyUtils.unpack(params.getCustomizedParams(), PdcInstanceSyncPerpetualTaskParams.class);
 
     final SettingAttribute settingAttribute =
-        (SettingAttribute) kryoSerializer.asObject(instanceSyncParams.getSettingAttribute().toByteArray());
+        (SettingAttribute) kryoSerializerWrapper.asObject(instanceSyncParams.getSettingAttribute().toByteArray());
     HostReachabilityResponse response;
     try {
       List<HostReachabilityInfo> hostReachabilityInfos =

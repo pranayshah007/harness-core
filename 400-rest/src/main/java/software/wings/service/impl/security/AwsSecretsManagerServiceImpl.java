@@ -24,7 +24,7 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryptors.VaultEncryptorsRegistry;
 import io.harness.exception.SecretManagementException;
 import io.harness.security.encryption.EncryptionType;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import software.wings.beans.AwsSecretsManagerConfig;
 import software.wings.beans.AwsSecretsManagerConfig.AwsSecretsManagerConfigKeys;
@@ -44,7 +44,7 @@ import org.mongodb.morphia.query.Query;
 public class AwsSecretsManagerServiceImpl extends AbstractSecretServiceImpl implements AwsSecretsManagerService {
   private static final String SECRET_KEY_NAME_SUFFIX = "_secretKey";
   private static final String AWS_SECRETS_MANAGER_VALIDATION_URL = "aws_secrets_manager_validation";
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
   @Inject private VaultEncryptorsRegistry vaultEncryptorsRegistry;
 
   @Override
@@ -77,7 +77,7 @@ public class AwsSecretsManagerServiceImpl extends AbstractSecretServiceImpl impl
       credentialChanged = isCredentialChanged(secretsManagerConfig, savedSecretsManagerConfig);
       // secret field un-decrypted version of saved AWS config
       savedSecretsManagerConfig = wingsPersistence.get(AwsSecretsManagerConfig.class, secretsManagerConfig.getUuid());
-      oldConfigForAudit = kryoSerializer.clone(savedSecretsManagerConfig);
+      oldConfigForAudit = kryoSerializerWrapper.clone(savedSecretsManagerConfig);
     }
 
     // Validate every time when secret manager config change submitted

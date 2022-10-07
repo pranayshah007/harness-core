@@ -13,7 +13,7 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.managerclient.DelegateAgentManagerClient;
 import io.harness.rest.RestResponse;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import software.wings.beans.ConfigFileDto;
 import software.wings.delegatetasks.DelegateConfigService;
@@ -29,7 +29,7 @@ import lombok.extern.slf4j.Slf4j;
 @TargetModule(HarnessModule._420_DELEGATE_AGENT)
 public class DelegateConfigServiceImpl implements DelegateConfigService {
   @Inject private DelegateAgentManagerClient delegateAgentManagerClient;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
 
   @Override
   public List<ConfigFileDto> getConfigFiles(String appId, String envId, String uuid, String hostId, String accountId)

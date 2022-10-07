@@ -39,7 +39,7 @@ import io.harness.logstreaming.ILogStreamingStepClient;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.steps.approval.step.ApprovalInstanceService;
 import io.harness.steps.approval.step.beans.ApprovalStatus;
 import io.harness.steps.approval.step.beans.ApprovalType;
@@ -70,7 +70,7 @@ import org.powermock.modules.junit4.PowerMockRunner;
 public class JiraApprovalCallbackTest extends CategoryTest {
   @Mock private ApprovalInstanceService approvalInstanceService;
   @Mock private LogStreamingStepClientFactory logStreamingStepClientFactory;
-  @Mock private KryoSerializer kryoSerializer;
+  @Mock private KryoSerializerWrapper kryoSerializerWrapper;
   private static String approvalInstanceId = "approvalInstanceId";
   @Mock ILogStreamingStepClient iLogStreamingStepClient;
   @Mock NGErrorHelper ngErrorHelper;
@@ -85,7 +85,7 @@ public class JiraApprovalCallbackTest extends CategoryTest {
     jiraApprovalCallback = spy(JiraApprovalCallback.builder().build());
     on(jiraApprovalCallback).set("approvalInstanceService", approvalInstanceService);
     on(jiraApprovalCallback).set("logStreamingStepClientFactory", logStreamingStepClientFactory);
-    on(jiraApprovalCallback).set("kryoSerializer", kryoSerializer);
+    on(jiraApprovalCallback).set("kryoSerializer", kryoSerializerWrapper);
     on(jiraApprovalCallback).set("ngErrorHelper", ngErrorHelper);
   }
 
@@ -106,7 +106,7 @@ public class JiraApprovalCallbackTest extends CategoryTest {
     Map<String, ResponseData> response = new HashMap<>();
     response.put("data", BinaryResponseData.builder().build());
     doReturn(JiraTaskNGResponse.builder().issue(new JiraIssueNG()).build())
-        .when(kryoSerializer)
+        .when(kryoSerializerWrapper)
         .asInflatedObject(any());
     doReturn(iLogStreamingStepClient).when(logStreamingStepClientFactory).getLogStreamingStepClient(ambiance);
     doReturn(instance).when(approvalInstanceService).get(approvalInstanceId);
@@ -128,13 +128,13 @@ public class JiraApprovalCallbackTest extends CategoryTest {
     instance.setApprovalCriteria(null);
     assertThatThrownBy(() -> jiraApprovalCallback.push(response)).isInstanceOf(HarnessJiraException.class);
 
-    doReturn(JiraTaskNGResponse.builder().build()).when(kryoSerializer).asInflatedObject(any());
+    doReturn(JiraTaskNGResponse.builder().build()).when(kryoSerializerWrapper).asInflatedObject(any());
     jiraApprovalCallback.push(response);
     // To test case of error in kryo serialization
-    doReturn(ErrorNotifyResponseData.builder().build()).when(kryoSerializer).asInflatedObject(any());
+    doReturn(ErrorNotifyResponseData.builder().build()).when(kryoSerializerWrapper).asInflatedObject(any());
     jiraApprovalCallback.push(response);
     // To throw exception while casting the response to ResponseData and catch the exception
-    doReturn(null).when(kryoSerializer).asInflatedObject(any());
+    doReturn(null).when(kryoSerializerWrapper).asInflatedObject(any());
     jiraApprovalCallback.push(response);
   }
 

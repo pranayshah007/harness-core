@@ -22,7 +22,7 @@ import io.harness.pms.execution.utils.StatusUtils;
 import io.harness.pms.sdk.core.adviser.Adviser;
 import io.harness.pms.sdk.core.adviser.AdvisingEvent;
 import io.harness.pms.sdk.core.adviser.OrchestrationAdviserTypes;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import com.google.inject.Inject;
 import com.google.protobuf.Duration;
@@ -34,7 +34,7 @@ public class ManualInterventionAdviser implements Adviser {
   public static final AdviserType ADVISER_TYPE =
       AdviserType.newBuilder().setType(OrchestrationAdviserTypes.MANUAL_INTERVENTION.name()).build();
 
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
 
   @Override
   public AdviserResponse onAdviseEvent(AdvisingEvent advisingEvent) {
@@ -73,6 +73,6 @@ public class ManualInterventionAdviser implements Adviser {
     if (isEmpty(adviserParameters)) {
       return null;
     }
-    return (ManualInterventionAdviserParameters) kryoSerializer.asObject(adviserParameters);
+    return (ManualInterventionAdviserParameters) kryoSerializerWrapper.asObject(adviserParameters);
   }
 }

@@ -32,7 +32,7 @@ import io.harness.exception.SecretManagementException;
 import io.harness.exception.WingsException;
 import io.harness.helpers.ext.gcp.GcpRegion;
 import io.harness.security.encryption.EncryptionType;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import software.wings.beans.GcpSecretsManagerConfig;
 import software.wings.beans.GcpSecretsManagerConfig.GcpSecretsManagerConfigKeys;
@@ -66,7 +66,7 @@ import org.mongodb.morphia.query.Query;
 @Slf4j
 public class GcpSecretsManagerServiceV2Impl extends AbstractSecretServiceImpl implements GcpSecretsManagerServiceV2 {
   private static final String CREDENTIAL_SUFFIX = "_credentials";
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
 
   @Override
   public GcpSecretsManagerConfig getGcpSecretsManagerConfig(String accountId, String configId) {
@@ -120,7 +120,7 @@ public class GcpSecretsManagerServiceV2Impl extends AbstractSecretServiceImpl im
       throw new SecretManagementException(GCP_SECRET_MANAGER_OPERATION_ERROR, message, USER_SRE);
     }
 
-    GcpSecretsManagerConfig oldConfigForAudit = kryoSerializer.clone(savedGcpSecretManagerConfig);
+    GcpSecretsManagerConfig oldConfigForAudit = kryoSerializerWrapper.clone(savedGcpSecretManagerConfig);
 
     if (savedGcpSecretManagerConfig.getAccountId().equals(GLOBAL_ACCOUNT_ID)) {
       accountId = GLOBAL_ACCOUNT_ID;

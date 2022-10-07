@@ -37,7 +37,7 @@ import io.harness.pms.sdk.core.PmsSdkCoreTestBase;
 import io.harness.pms.sdk.core.adviser.AdvisingEvent;
 import io.harness.pms.sdk.core.adviser.AdvisingEvent.AdvisingEventBuilder;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
@@ -64,7 +64,8 @@ public class RetryAdviserTest extends PmsSdkCoreTestBase {
 
   @InjectMocks @Inject RetryAdviser retryAdviser;
 
-  @Inject KryoSerializer kryoSerializer;
+  @Inject
+  KryoSerializerWrapper kryoSerializerWrapper;
 
   private Ambiance ambiance;
 
@@ -89,7 +90,7 @@ public class RetryAdviserTest extends PmsSdkCoreTestBase {
         AdvisingEvent.builder()
             .ambiance(ambiance)
             .toStatus(Status.FAILED)
-            .adviserParameters(kryoSerializer.asBytes(getRetryParams(RepairActionCode.IGNORE)))
+            .adviserParameters(kryoSerializerWrapper.asBytes(getRetryParams(RepairActionCode.IGNORE)))
             .build();
     AdviserResponse adviserResponse = retryAdviser.onAdviseEvent(advisingEvent);
 
@@ -112,7 +113,7 @@ public class RetryAdviserTest extends PmsSdkCoreTestBase {
             .ambiance(ambiance)
             .toStatus(Status.FAILED)
             .retryIds(retryIds)
-            .adviserParameters(kryoSerializer.asBytes(getRetryParams(RepairActionCode.MANUAL_INTERVENTION)))
+            .adviserParameters(kryoSerializerWrapper.asBytes(getRetryParams(RepairActionCode.MANUAL_INTERVENTION)))
             .build();
     AdviserResponse adviserResponse = retryAdviser.onAdviseEvent(advisingEvent);
 
@@ -135,7 +136,7 @@ public class RetryAdviserTest extends PmsSdkCoreTestBase {
             .ambiance(ambiance)
             .toStatus(Status.FAILED)
             .retryIds(retryIds)
-            .adviserParameters(kryoSerializer.asBytes(getRetryParams(RepairActionCode.END_EXECUTION)))
+            .adviserParameters(kryoSerializerWrapper.asBytes(getRetryParams(RepairActionCode.END_EXECUTION)))
             .build();
     AdviserResponse adviserResponse = retryAdviser.onAdviseEvent(advisingEvent);
 
@@ -157,7 +158,7 @@ public class RetryAdviserTest extends PmsSdkCoreTestBase {
             .ambiance(ambiance)
             .toStatus(Status.FAILED)
             .retryIds(retryIds)
-            .adviserParameters(kryoSerializer.asBytes(getRetryParams(RepairActionCode.ON_FAIL)))
+            .adviserParameters(kryoSerializerWrapper.asBytes(getRetryParams(RepairActionCode.ON_FAIL)))
             .build();
     AdviserResponse adviserResponse = retryAdviser.onAdviseEvent(advisingEvent);
 
@@ -177,7 +178,7 @@ public class RetryAdviserTest extends PmsSdkCoreTestBase {
             .ambiance(ambiance)
             .toStatus(Status.FAILED)
             .retryIds(retryIds)
-            .adviserParameters(kryoSerializer.asBytes(getRetryParams(RepairActionCode.MARK_AS_SUCCESS)))
+            .adviserParameters(kryoSerializerWrapper.asBytes(getRetryParams(RepairActionCode.MARK_AS_SUCCESS)))
             .build();
     AdviserResponse adviserResponse = retryAdviser.onAdviseEvent(advisingEvent);
 
@@ -196,7 +197,7 @@ public class RetryAdviserTest extends PmsSdkCoreTestBase {
             .ambiance(ambiance)
             .retryIds(Arrays.asList(generateUuid(), generateUuid(), generateUuid(), generateUuid()))
             .toStatus(Status.FAILED)
-            .adviserParameters(kryoSerializer.asBytes(getRetryParams(RepairActionCode.IGNORE)))
+            .adviserParameters(kryoSerializerWrapper.asBytes(getRetryParams(RepairActionCode.IGNORE)))
             .build();
     AdviserResponse adviserResponse = retryAdviser.onAdviseEvent(advisingEvent);
 
@@ -216,7 +217,7 @@ public class RetryAdviserTest extends PmsSdkCoreTestBase {
             .ambiance(ambiance)
             .retryIds(Arrays.asList(generateUuid(), generateUuid(), generateUuid(), generateUuid(), generateUuid()))
             .toStatus(Status.FAILED)
-            .adviserParameters(kryoSerializer.asBytes(getRetryParams(RepairActionCode.IGNORE)))
+            .adviserParameters(kryoSerializerWrapper.asBytes(getRetryParams(RepairActionCode.IGNORE)))
             .build();
     AdviserResponse adviserResponse = retryAdviser.onAdviseEvent(advisingEvent);
 
@@ -233,7 +234,7 @@ public class RetryAdviserTest extends PmsSdkCoreTestBase {
             .ambiance(ambiance)
             .retryIds(Arrays.asList(generateUuid(), generateUuid(), generateUuid(), generateUuid(), generateUuid()))
             .toStatus(Status.INTERVENTION_WAITING)
-            .adviserParameters(kryoSerializer.asBytes(getRetryParams(RepairActionCode.IGNORE)))
+            .adviserParameters(kryoSerializerWrapper.asBytes(getRetryParams(RepairActionCode.IGNORE)))
             .build();
     assertThat(retryAdviser.canAdvise(advisingEvent)).isTrue();
   }
@@ -250,7 +251,7 @@ public class RetryAdviserTest extends PmsSdkCoreTestBase {
                              .addAllFailureTypes(EnumSet.of(FailureType.AUTHENTICATION_FAILURE))
                              .build())
             .toStatus(Status.FAILED)
-            .adviserParameters(kryoSerializer.asBytes(getRetryParams(RepairActionCode.IGNORE)));
+            .adviserParameters(kryoSerializerWrapper.asBytes(getRetryParams(RepairActionCode.IGNORE)));
 
     AdvisingEvent authFailEvent = advisingEventBuilder.build();
     boolean canAdvise = retryAdviser.canAdvise(authFailEvent);
@@ -274,7 +275,7 @@ public class RetryAdviserTest extends PmsSdkCoreTestBase {
         AdvisingEvent.builder()
             .ambiance(ambiance)
             .toStatus(Status.FAILED)
-            .adviserParameters(kryoSerializer.asBytes(getRetryParams(RepairActionCode.IGNORE)))
+            .adviserParameters(kryoSerializerWrapper.asBytes(getRetryParams(RepairActionCode.IGNORE)))
             .failureInfo(FailureInfo.newBuilder()
                              .addAllFailureTypes(Collections.singletonList(FailureType.APPLICATION_FAILURE))
                              .addFailureData(FailureData.newBuilder()

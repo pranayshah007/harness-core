@@ -9,7 +9,7 @@ package io.harness.waiter;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.tasks.ProgressData;
 import io.harness.waiter.persistence.PersistenceWrapper;
 
@@ -30,7 +30,7 @@ import lombok.extern.slf4j.Slf4j;
 public class ProgressUpdateService implements Runnable {
   @Inject private Injector injector;
   @Inject private PersistenceWrapper persistenceWrapper;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
   @Inject private WaitInstanceService waitInstanceService;
 
   private final LoadingCache<String, String> busyCorrelationIds = CacheBuilder.newBuilder()
@@ -61,7 +61,7 @@ public class ProgressUpdateService implements Runnable {
         }
         log.info("Starting to process progress response");
 
-        ProgressData progressData = (ProgressData) kryoSerializer.asInflatedObject(progressUpdate.getProgressData());
+        ProgressData progressData = (ProgressData) kryoSerializerWrapper.asInflatedObject(progressUpdate.getProgressData());
 
         List<WaitInstance> waitInstances = persistenceWrapper.fetchWaitInstances(progressUpdate.getCorrelationId());
         for (WaitInstance waitInstance : waitInstances) {

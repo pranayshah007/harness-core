@@ -16,7 +16,7 @@ import io.harness.pms.sdk.core.adviser.Adviser;
 import io.harness.pms.sdk.core.adviser.AdvisingEvent;
 import io.harness.pms.sdk.core.adviser.OrchestrationAdviserTypes;
 import io.harness.pms.sdk.core.adviser.ProceedWithDefaultAdviserParameters;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
@@ -25,7 +25,7 @@ import javax.validation.constraints.NotNull;
 public class ProceedWithDefaultValueAdviser implements Adviser {
   public static final AdviserType ADVISER_TYPE =
       AdviserType.newBuilder().setType(OrchestrationAdviserTypes.PROCEED_WITH_DEFAULT.name()).build();
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
 
   @Override
   public AdviserResponse onAdviseEvent(AdvisingEvent advisingEvent) {
@@ -43,6 +43,6 @@ public class ProceedWithDefaultValueAdviser implements Adviser {
   @NotNull
   private ProceedWithDefaultAdviserParameters extractParameters(AdvisingEvent advisingEvent) {
     return (ProceedWithDefaultAdviserParameters) Preconditions.checkNotNull(
-        kryoSerializer.asObject(advisingEvent.getAdviserParameters()));
+        kryoSerializerWrapper.asObject(advisingEvent.getAdviserParameters()));
   }
 }

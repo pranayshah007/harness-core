@@ -33,7 +33,7 @@ import io.harness.logstreaming.ILogStreamingStepClient;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.servicenow.ServiceNowTicketNG;
 import io.harness.servicenow.TicketNG;
 import io.harness.steps.approval.step.ApprovalInstanceService;
@@ -65,7 +65,7 @@ import org.powermock.modules.junit4.PowerMockRunner;
 public class ServiceNowApprovalCallbackTest extends CategoryTest {
   @Mock private ApprovalInstanceService approvalInstanceService;
   @Mock private LogStreamingStepClientFactory logStreamingStepClientFactory;
-  @Mock private KryoSerializer kryoSerializer;
+  @Mock private KryoSerializerWrapper kryoSerializerWrapper;
   private static String approvalInstanceId = "approvalInstanceId";
   @Mock ILogStreamingStepClient iLogStreamingStepClient;
   @Mock NGErrorHelper ngErrorHelper;
@@ -80,7 +80,7 @@ public class ServiceNowApprovalCallbackTest extends CategoryTest {
     serviceNowApprovalCallback = spy(ServiceNowApprovalCallback.builder().build());
     on(serviceNowApprovalCallback).set("approvalInstanceService", approvalInstanceService);
     on(serviceNowApprovalCallback).set("logStreamingStepClientFactory", logStreamingStepClientFactory);
-    on(serviceNowApprovalCallback).set("kryoSerializer", kryoSerializer);
+    on(serviceNowApprovalCallback).set("kryoSerializer", kryoSerializerWrapper);
     on(serviceNowApprovalCallback).set("ngErrorHelper", ngErrorHelper);
   }
 
@@ -102,7 +102,7 @@ public class ServiceNowApprovalCallbackTest extends CategoryTest {
     Map<String, ResponseData> response = new HashMap<>();
     response.put("data", BinaryResponseData.builder().build());
     doReturn(ServiceNowTaskNGResponse.builder().ticket(new ServiceNowTicketNG()).build())
-        .when(kryoSerializer)
+        .when(kryoSerializerWrapper)
         .asInflatedObject(any());
     doReturn(iLogStreamingStepClient).when(logStreamingStepClientFactory).getLogStreamingStepClient(ambiance);
     doReturn(instance).when(approvalInstanceService).get(approvalInstanceId);
@@ -154,13 +154,13 @@ public class ServiceNowApprovalCallbackTest extends CategoryTest {
     instance.setApprovalCriteria(null);
     assertThatThrownBy(() -> serviceNowApprovalCallback.push(response)).isInstanceOf(ServiceNowException.class);
 
-    doReturn(ServiceNowTaskNGResponse.builder().build()).when(kryoSerializer).asInflatedObject(any());
+    doReturn(ServiceNowTaskNGResponse.builder().build()).when(kryoSerializerWrapper).asInflatedObject(any());
     serviceNowApprovalCallback.push(response);
     // To test case of error in kryo serialization
-    doReturn(ErrorNotifyResponseData.builder().build()).when(kryoSerializer).asInflatedObject(any());
+    doReturn(ErrorNotifyResponseData.builder().build()).when(kryoSerializerWrapper).asInflatedObject(any());
     serviceNowApprovalCallback.push(response);
     // To throw exception while casting the response to ResponseData and catch the exception
-    doReturn(null).when(kryoSerializer).asInflatedObject(any());
+    doReturn(null).when(kryoSerializerWrapper).asInflatedObject(any());
     serviceNowApprovalCallback.push(response);
   }
 

@@ -36,7 +36,7 @@ import io.harness.perpetualtask.polling.PollingResponsePublisher;
 import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import com.google.inject.Inject;
 import com.google.protobuf.Any;
@@ -71,7 +71,8 @@ public class ManifestPerpetualTaskExecutorNgTest extends DelegateTestBase {
   private PerpetualTaskId perpetualTaskId;
   private String polling_doc_id;
 
-  @Inject KryoSerializer kryoSerializer;
+  @Inject
+  KryoSerializerWrapper kryoSerializerWrapper;
   @Mock private DelegateAgentManagerClient delegateAgentManagerClient;
   @Mock private ManifestCollectionService manifestCollectionService;
   @Mock private Call<RestResponse<Boolean>> call;
@@ -79,9 +80,9 @@ public class ManifestPerpetualTaskExecutorNgTest extends DelegateTestBase {
   @Before
   public void setup() {
     PollingResponsePublisher pollingResponsePublisher =
-        new PollingResponsePublisher(kryoSerializer, delegateAgentManagerClient);
+        new PollingResponsePublisher(kryoSerializerWrapper, delegateAgentManagerClient);
     manifestPerpetualTaskExecutor =
-        new ManifestPerpetualTaskExecutorNg(kryoSerializer, manifestCollectionService, pollingResponsePublisher);
+        new ManifestPerpetualTaskExecutorNg(kryoSerializerWrapper, manifestCollectionService, pollingResponsePublisher);
     perpetualTaskId = PerpetualTaskId.newBuilder().setId(UUIDGenerator.generateUuid()).build();
     polling_doc_id = UUIDGenerator.generateUuid();
   }
@@ -100,7 +101,7 @@ public class ManifestPerpetualTaskExecutorNgTest extends DelegateTestBase {
     Buffer bufferedSink = new Buffer();
     captor.getValue().writeTo(bufferedSink);
     PollingDelegateResponse pollingDelegateResponse =
-        (PollingDelegateResponse) kryoSerializer.asObject(bufferedSink.readByteArray());
+        (PollingDelegateResponse) kryoSerializerWrapper.asObject(bufferedSink.readByteArray());
 
     validateRunOnceOutput(pollingDelegateResponse, 10001, 10001, 0, true);
   }
@@ -118,7 +119,7 @@ public class ManifestPerpetualTaskExecutorNgTest extends DelegateTestBase {
     verify(delegateAgentManagerClient, times(1)).publishPollingResult(anyString(), anyString(), captor.capture());
     captor.getValue().writeTo(bufferedSink);
     PollingDelegateResponse pollingDelegateResponse1 =
-        (PollingDelegateResponse) kryoSerializer.asObject(bufferedSink.readByteArray());
+        (PollingDelegateResponse) kryoSerializerWrapper.asObject(bufferedSink.readByteArray());
     validateRunOnceOutput(pollingDelegateResponse1, 10001, 10001, 0, true);
 
     // now repo has 2-10005 versions.
@@ -129,7 +130,7 @@ public class ManifestPerpetualTaskExecutorNgTest extends DelegateTestBase {
 
     captor.getValue().writeTo(bufferedSink);
     PollingDelegateResponse pollingDelegateResponse2 =
-        (PollingDelegateResponse) kryoSerializer.asObject(bufferedSink.readByteArray());
+        (PollingDelegateResponse) kryoSerializerWrapper.asObject(bufferedSink.readByteArray());
 
     validateRunOnceOutput(pollingDelegateResponse2, 10004, 5, 2, false);
   }
@@ -147,7 +148,7 @@ public class ManifestPerpetualTaskExecutorNgTest extends DelegateTestBase {
     Buffer bufferedSink = new Buffer();
     captor.getValue().writeTo(bufferedSink);
     PollingDelegateResponse pollingDelegateResponse =
-        (PollingDelegateResponse) kryoSerializer.asObject(bufferedSink.readByteArray());
+        (PollingDelegateResponse) kryoSerializerWrapper.asObject(bufferedSink.readByteArray());
     assertThat(pollingDelegateResponse.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.FAILURE);
     assertThat(pollingDelegateResponse.getErrorMessage()).isEqualTo("COLLECTION_ERROR");
   }
@@ -180,7 +181,7 @@ public class ManifestPerpetualTaskExecutorNgTest extends DelegateTestBase {
         ManifestCollectionTaskParamsNg.newBuilder()
             .setAccountId(ACCOUNT_ID)
             .setPollingDocId(polling_doc_id)
-            .setManifestCollectionParams(ByteString.copyFrom(kryoSerializer.asBytes(manifestDelegateConfig)))
+            .setManifestCollectionParams(ByteString.copyFrom(kryoSerializerWrapper.asBytes(manifestDelegateConfig)))
             .build();
 
     PerpetualTaskExecutionParams executionParams =
@@ -224,7 +225,7 @@ public class ManifestPerpetualTaskExecutorNgTest extends DelegateTestBase {
         ManifestCollectionTaskParamsNg.newBuilder()
             .setAccountId(ACCOUNT_ID)
             .setPollingDocId(polling_doc_id)
-            .setManifestCollectionParams(ByteString.copyFrom(kryoSerializer.asBytes(manifestDelegateConfig)))
+            .setManifestCollectionParams(ByteString.copyFrom(kryoSerializerWrapper.asBytes(manifestDelegateConfig)))
             .build();
 
     PerpetualTaskExecutionParams executionParams =

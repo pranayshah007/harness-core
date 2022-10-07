@@ -60,7 +60,7 @@ import io.harness.perpetualtask.PerpetualTaskClientContext;
 import io.harness.perpetualtask.PerpetualTaskClientContext.PerpetualTaskClientContextBuilder;
 import io.harness.perpetualtask.PerpetualTaskId;
 import io.harness.perpetualtask.PerpetualTaskService;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.service.intfc.DelegateCallbackRegistry;
 import io.harness.service.intfc.DelegateTaskService;
 
@@ -93,19 +93,19 @@ public class DelegateServiceGrpcImpl extends DelegateServiceImplBase {
   private DelegateCallbackRegistry delegateCallbackRegistry;
   private PerpetualTaskService perpetualTaskService;
   private DelegateService delegateService;
-  private KryoSerializer kryoSerializer;
+  private KryoSerializerWrapper kryoSerializerWrapper;
   private DelegateTaskService delegateTaskService;
   private DelegateTaskServiceClassic delegateTaskServiceClassic;
 
   @Inject
   public DelegateServiceGrpcImpl(DelegateCallbackRegistry delegateCallbackRegistry,
       PerpetualTaskService perpetualTaskService, DelegateService delegateService,
-      DelegateTaskService delegateTaskService, KryoSerializer kryoSerializer,
+      DelegateTaskService delegateTaskService, KryoSerializerWrapper kryoSerializerWrapper,
       DelegateTaskServiceClassic delegateTaskServiceClassic) {
     this.delegateCallbackRegistry = delegateCallbackRegistry;
     this.perpetualTaskService = perpetualTaskService;
     this.delegateService = delegateService;
-    this.kryoSerializer = kryoSerializer;
+    this.kryoSerializerWrapper = kryoSerializerWrapper;
     this.delegateTaskService = delegateTaskService;
     this.delegateTaskServiceClassic = delegateTaskServiceClassic;
   }
@@ -123,7 +123,7 @@ public class DelegateServiceGrpcImpl extends DelegateServiceImplBase {
       List<ExecutionCapability> capabilities = request.getCapabilitiesList()
                                                    .stream()
                                                    .map(capability
-                                                       -> (ExecutionCapability) kryoSerializer.asInflatedObject(
+                                                       -> (ExecutionCapability) kryoSerializerWrapper.asInflatedObject(
                                                            capability.getKryoCapability().toByteArray()))
                                                    .collect(Collectors.toList());
 
@@ -193,7 +193,7 @@ public class DelegateServiceGrpcImpl extends DelegateServiceImplBase {
     if (taskDetails.getParametersCase().equals(TaskDetails.ParametersCase.KRYO_PARAMETERS)) {
       serializationFormat = SerializationFormat.KRYO;
       data = taskDetails.getKryoParameters().toByteArray();
-      parameters = new Object[] {kryoSerializer.asInflatedObject(data)};
+      parameters = new Object[] {kryoSerializerWrapper.asInflatedObject(data)};
     } else if (taskDetails.getParametersCase().equals(TaskDetails.ParametersCase.JSON_PARAMETERS)) {
       serializationFormat = SerializationFormat.JSON;
       data = taskDetails.getJsonParameters().toStringUtf8().getBytes(StandardCharsets.UTF_8);
@@ -258,7 +258,7 @@ public class DelegateServiceGrpcImpl extends DelegateServiceImplBase {
           DelegateTaskResponse.builder()
               .responseCode(DelegateTaskResponse.ResponseCode.OK)
               .accountId(request.getAccountId().getId())
-              .response((DelegateResponseData) kryoSerializer.asInflatedObject(
+              .response((DelegateResponseData) kryoSerializerWrapper.asInflatedObject(
                   request.getTaskResponseData().getKryoResultsData().toByteArray()))
               .build();
       delegateTaskService.processDelegateResponse(
@@ -277,7 +277,7 @@ public class DelegateServiceGrpcImpl extends DelegateServiceImplBase {
     try {
       delegateTaskServiceClassic.publishTaskProgressResponse(request.getAccountId().getId(),
           request.getCallbackToken().getToken(), request.getTaskId().getId(),
-          (DelegateProgressData) kryoSerializer.asInflatedObject(
+          (DelegateProgressData) kryoSerializerWrapper.asInflatedObject(
               request.getTaskResponseData().getKryoResultsData().toByteArray()));
       responseObserver.onNext(SendTaskProgressResponse.newBuilder().setSuccess(true).build());
       responseObserver.onCompleted();

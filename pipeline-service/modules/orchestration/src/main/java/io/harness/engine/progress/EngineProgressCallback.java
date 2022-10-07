@@ -15,7 +15,7 @@ import io.harness.engine.progress.publisher.ProgressEventPublisher;
 import io.harness.execution.NodeExecution.NodeExecutionKeys;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.tasks.BinaryResponseData;
 import io.harness.tasks.ProgressData;
 import io.harness.waiter.ProgressCallback;
@@ -32,7 +32,8 @@ import org.springframework.data.annotation.Transient;
 @OwnedBy(HarnessTeam.PIPELINE)
 public class EngineProgressCallback implements ProgressCallback {
   @Inject @Transient NodeExecutionService nodeExecutionService;
-  @Inject @Transient KryoSerializer kryoSerializer;
+  @Inject @Transient
+  KryoSerializerWrapper kryoSerializerWrapper;
   @Inject @Transient ProgressEventPublisher progressEventPublisher;
 
   Ambiance ambiance;
@@ -48,7 +49,7 @@ public class EngineProgressCallback implements ProgressCallback {
 
     try {
       // This code is only to maintain backward compatibility
-      ProgressData data = (ProgressData) kryoSerializer.asInflatedObject(((BinaryResponseData) progressData).getData());
+      ProgressData data = (ProgressData) kryoSerializerWrapper.asInflatedObject(((BinaryResponseData) progressData).getData());
       if (data instanceof UnitProgressData) {
         nodeExecutionService.updateV2(getNodeExecutionId(),
             ops -> ops.set(NodeExecutionKeys.unitProgresses, ((UnitProgressData) data).getUnitProgresses()));

@@ -17,7 +17,7 @@ import io.harness.pms.sdk.PmsSdkModuleUtils;
 import io.harness.pms.sdk.core.plan.PlanNode;
 import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 import io.harness.pms.timeout.SdkTimeoutObtainment;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.timeout.contracts.TimeoutObtainment;
 
 import com.google.inject.Inject;
@@ -32,7 +32,7 @@ import java.util.stream.Collectors;
 @Singleton
 public class PlanNodeProtoMapper {
   @Inject @Named(PmsSdkModuleUtils.SDK_SERVICE_NAME) String serviceName;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
 
   public PlanNodeProto toPlanNodeProtoWithDecoratedFields(PlanNode node) {
     PlanNodeProto.Builder builder =
@@ -79,7 +79,7 @@ public class PlanNodeProtoMapper {
         .map(entry
             -> TimeoutObtainment.newBuilder()
                    .setDimension(entry.getDimension())
-                   .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(entry.getParameters())))
+                   .setParameters(ByteString.copyFrom(kryoSerializerWrapper.asBytes(entry.getParameters())))
                    .build())
         .collect(Collectors.toList());
   }

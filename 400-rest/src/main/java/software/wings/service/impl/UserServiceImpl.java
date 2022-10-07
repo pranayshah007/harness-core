@@ -120,7 +120,7 @@ import io.harness.persistence.UuidAware;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.sanitizer.HtmlInputSanitizer;
 import io.harness.security.dto.UserPrincipal;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.signup.dto.SignupInviteDTO;
 import io.harness.telemetry.Destination;
 import io.harness.telemetry.TelemetryReporter;
@@ -345,7 +345,7 @@ public class UserServiceImpl implements UserService {
   @Inject private software.wings.service.impl.AuditServiceHelper auditServiceHelper;
   @Inject private SubdomainUrlHelperIntfc subdomainUrlHelper;
   @Inject private TOTPAuthHandler totpAuthHandler;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
   @Inject private LicenseService licenseService;
   @Inject private HarnessCacheManager harnessCacheManager;
   @Inject private VersionInfoManager versionInfoManager;
@@ -1334,7 +1334,7 @@ public class UserServiceImpl implements UserService {
     boolean autoInviteAcceptanceEnabled = accountService.isAutoInviteAcceptanceEnabled(accountId);
 
     for (String email : userInvite.getEmails()) {
-      UserInvite userInviteClone = kryoSerializer.clone(userInvite);
+      UserInvite userInviteClone = kryoSerializerWrapper.clone(userInvite);
       userInviteClone.setEmail(email.trim().toLowerCase());
       inviteOperationResponses.add(
           inviteUser(userInviteClone, !autoInviteAcceptanceEnabled, autoInviteAcceptanceEnabled));

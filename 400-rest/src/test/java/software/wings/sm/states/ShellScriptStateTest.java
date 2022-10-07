@@ -69,7 +69,7 @@ import io.harness.ff.FeatureFlagService;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.rule.Owner;
 import io.harness.security.SimpleEncryption;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.shell.ShellExecutionData;
 
 import software.wings.WingsBaseTest;
@@ -153,7 +153,8 @@ public class ShellScriptStateTest extends WingsBaseTest {
 
   private ExecutionResponse asyncExecutionResponse;
 
-  @Inject KryoSerializer kryoSerializer;
+  @Inject
+  KryoSerializerWrapper kryoSerializerWrapper;
 
   @Before
   public void setUp() throws Exception {
@@ -185,7 +186,7 @@ public class ShellScriptStateTest extends WingsBaseTest {
   @Owner(developers = AADITI)
   @Category(UnitTests.class)
   public void shouldHandleAsyncResponseOnShellScriptSuccessAndSaveSweepingOutput() {
-    Reflect.on(shellScriptState).set("kryoSerializer", kryoSerializer);
+    Reflect.on(shellScriptState).set("kryoSerializer", kryoSerializerWrapper);
     when(executionContext.getStateExecutionData())
         .thenReturn(ScriptStateExecutionData.builder().activityId(ACTIVITY_ID).build());
     when(executionContext.prepareSweepingOutputBuilder(any(SweepingOutputInstance.Scope.class)))

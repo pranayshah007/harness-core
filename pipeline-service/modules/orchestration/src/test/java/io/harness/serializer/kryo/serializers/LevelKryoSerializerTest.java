@@ -17,14 +17,15 @@ import io.harness.category.element.UnitTests;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import com.google.inject.Inject;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 public class LevelKryoSerializerTest extends OrchestrationTestBase {
-  @Inject KryoSerializer kryoSerializer;
+  @Inject
+  KryoSerializerWrapper kryoSerializerWrapper;
 
   @Test
   @Owner(developers = PRASHANT)
@@ -39,10 +40,10 @@ public class LevelKryoSerializerTest extends OrchestrationTestBase {
                       .setIdentifier("identifier")
                       .build();
 
-    byte[] levelBytes = kryoSerializer.asBytes(level);
+    byte[] levelBytes = kryoSerializerWrapper.asBytes(level);
     assertThat(levelBytes).isNotEmpty();
 
-    Level deserializedLevel = (Level) kryoSerializer.asObject(levelBytes);
+    Level deserializedLevel = (Level) kryoSerializerWrapper.asObject(levelBytes);
     assertThat(deserializedLevel.getRuntimeId()).isEqualTo(runtimeId);
     assertThat(deserializedLevel.getSetupId()).isEqualTo(setupId);
     assertThat(deserializedLevel.getStepType()).isNotNull();

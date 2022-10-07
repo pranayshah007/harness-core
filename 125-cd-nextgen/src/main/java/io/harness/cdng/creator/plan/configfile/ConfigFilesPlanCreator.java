@@ -38,7 +38,7 @@ import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.sdk.core.plan.creation.creators.ChildrenPlanCreator;
 import io.harness.pms.yaml.DependenciesUtils;
 import io.harness.pms.yaml.YamlField;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.steps.fork.ForkStepParameters;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -58,7 +58,8 @@ import lombok.experimental.FieldDefaults;
 
 @OwnedBy(HarnessTeam.CDP)
 public class ConfigFilesPlanCreator extends ChildrenPlanCreator<ConfigFiles> {
-  @Inject KryoSerializer kryoSerializer;
+  @Inject
+  KryoSerializerWrapper kryoSerializerWrapper;
 
   @Override
   public LinkedHashMap<String, PlanCreationResponse> createPlanForChildrenNodes(
@@ -67,7 +68,7 @@ public class ConfigFilesPlanCreator extends ChildrenPlanCreator<ConfigFiles> {
 
     if (ctx.getDependency().getMetadataMap().containsKey(YamlTypes.SERVICE_CONFIG)) {
       // v1
-      ServiceConfig serviceConfig = (ServiceConfig) kryoSerializer.asInflatedObject(
+      ServiceConfig serviceConfig = (ServiceConfig) kryoSerializerWrapper.asInflatedObject(
           ctx.getDependency().getMetadataMap().get(YamlTypes.SERVICE_CONFIG).toByteArray());
 
       ConfigFileList configFileList = new ConfigFileListBuilder()
@@ -87,7 +88,7 @@ public class ConfigFilesPlanCreator extends ChildrenPlanCreator<ConfigFiles> {
             identifierToConfigFileStepParametersEntry.getValue(), configFilesYamlField, planCreationResponseMap);
       }
     } else if (ctx.getDependency().getMetadataMap().containsKey(YamlTypes.CONFIG_FILES)) {
-      List<ConfigFileWrapper> configFiles = (List<ConfigFileWrapper>) kryoSerializer.asInflatedObject(
+      List<ConfigFileWrapper> configFiles = (List<ConfigFileWrapper>) kryoSerializerWrapper.asInflatedObject(
           ctx.getDependency().getMetadataMap().get(YamlTypes.CONFIG_FILES).toByteArray());
       ConfigFileList configFileList = new ConfigFileListBuilder().addConfigFiles(configFiles).build();
       if (isEmpty(configFileList.getConfigFiles())) {
@@ -105,7 +106,7 @@ public class ConfigFilesPlanCreator extends ChildrenPlanCreator<ConfigFiles> {
 
     else if (ctx.getDependency().getMetadataMap().containsKey(YamlTypes.SERVICE_ENTITY)) {
       // v2
-      NGServiceV2InfoConfig serviceV2InfoConfig = (NGServiceV2InfoConfig) kryoSerializer.asInflatedObject(
+      NGServiceV2InfoConfig serviceV2InfoConfig = (NGServiceV2InfoConfig) kryoSerializerWrapper.asInflatedObject(
           ctx.getDependency().getMetadataMap().get(YamlTypes.SERVICE_ENTITY).toByteArray());
       ConfigFileList configFileList =
           new ConfigFileListBuilder().addServiceDefinition(serviceV2InfoConfig.getServiceDefinition()).build();
@@ -166,15 +167,15 @@ public class ConfigFilesPlanCreator extends ChildrenPlanCreator<ConfigFiles> {
       String individualConfigFilePlanNodeId, ConfigFileStepParameters stepParameters) {
     Map<String, ByteString> metadataDependency = new HashMap<>();
     metadataDependency.put(
-        YamlTypes.UUID, ByteString.copyFrom(kryoSerializer.asDeflatedBytes(individualConfigFilePlanNodeId)));
+        YamlTypes.UUID, ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(individualConfigFilePlanNodeId)));
     metadataDependency.put(PlanCreatorConstants.CONFIG_FILE_STEP_PARAMETER,
-        ByteString.copyFrom(kryoSerializer.asDeflatedBytes(stepParameters)));
+        ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(stepParameters)));
     return metadataDependency;
   }
 
   @Override
   public PlanNode createPlanForParentNode(PlanCreationContext ctx, ConfigFiles config, List<String> childrenNodeIds) {
-    String configFilesId = (String) kryoSerializer.asInflatedObject(
+    String configFilesId = (String) kryoSerializerWrapper.asInflatedObject(
         ctx.getDependency().getMetadataMap().get(YamlTypes.UUID).toByteArray());
 
     ForkStepParameters stepParameters = ForkStepParameters.builder().parallelNodeIds(childrenNodeIds).build();

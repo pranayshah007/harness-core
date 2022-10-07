@@ -45,7 +45,7 @@ import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.SecretDecryptionService;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.verificationclient.CVNextGenServiceClient;
 
 import com.google.common.collect.Lists;
@@ -90,12 +90,13 @@ public class DataCollectionPerpetualTaskExecutorTest extends DelegateTestBase {
 
   private PerpetualTaskExecutionParams perpetualTaskParams;
 
-  @Inject KryoSerializer kryoSerializer;
+  @Inject
+  KryoSerializerWrapper kryoSerializerWrapper;
   @Mock CVNGParallelExecutor cvngParallelExecutor;
 
   @Before
   public void setup() throws IllegalAccessException, IOException {
-    on(dataCollector).set("kryoSerializer", kryoSerializer);
+    on(dataCollector).set("kryoSerializer", kryoSerializerWrapper);
     cvngRequestExecutor = new CVNGRequestExecutor();
     FieldUtils.writeField(dataCollector, "cvngRequestExecutor", cvngRequestExecutor, true);
     FieldUtils.writeField(cvngRequestExecutor, "executorService", Executors.newFixedThreadPool(1), true);
@@ -168,7 +169,7 @@ public class DataCollectionPerpetualTaskExecutorTest extends DelegateTestBase {
                                                     .connectorConfigDTO(appDynamicsConnectorDTO)
                                                     .encryptedDataDetails(encryptedDataDetailList)
                                                     .build();
-    ByteString bytes = ByteString.copyFrom(kryoSerializer.asBytes(cvDataCollectionInfo));
+    ByteString bytes = ByteString.copyFrom(kryoSerializerWrapper.asBytes(cvDataCollectionInfo));
     perpetualTaskParams = PerpetualTaskExecutionParams.newBuilder()
                               .setCustomizedParams(Any.pack(DataCollectionPerpetualTaskParams.newBuilder()
                                                                 .setAccountId(accountId)

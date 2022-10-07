@@ -118,7 +118,7 @@ import io.harness.logging.CommandExecutionStatus;
 import io.harness.manifest.CustomSourceConfig;
 import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.tasks.ResponseData;
 
 import software.wings.WingsBaseTest;
@@ -270,7 +270,8 @@ public class AbstractK8SStateTest extends WingsBaseTest {
   @InjectMocks K8sRollingDeploy k8sRollingDeploy = spy(new K8sRollingDeploy(K8S_DEPLOYMENT_ROLLING.name()));
 
   @Inject private HPersistence persistence;
-  @Inject KryoSerializer kryoSerializer;
+  @Inject
+  KryoSerializerWrapper kryoSerializerWrapper;
   @Inject private K8sStateHelper k8sStateHelper;
   @Inject private SweepingOutputService sweepingOutputService;
   @Inject private ApplicationManifestService applicationManifestService;
@@ -326,7 +327,7 @@ public class AbstractK8SStateTest extends WingsBaseTest {
     on(k8sRollingDeploy).set("workflowStandardParamsExtensionService", workflowStandardParamsExtensionService);
     on(k8sCanaryDeploy).set("workflowStandardParamsExtensionService", workflowStandardParamsExtensionService);
 
-    on(abstractK8SState).set("kryoSerializer", kryoSerializer);
+    on(abstractK8SState).set("kryoSerializer", kryoSerializerWrapper);
     on(abstractK8SState).set("sweepingOutputService", sweepingOutputService);
     on(abstractK8SState).set("applicationManifestService", applicationManifestService);
     on(abstractK8SState).set("k8sStateHelper", k8sStateHelper);
@@ -1516,7 +1517,7 @@ public class AbstractK8SStateTest extends WingsBaseTest {
     SweepingOutputInstance sweepingOutputInstance =
         context.prepareSweepingOutputBuilder(SweepingOutputInstance.Scope.WORKFLOW)
             .name("k8s")
-            .output(kryoSerializer.asDeflatedBytes(k8sElement))
+            .output(kryoSerializerWrapper.asDeflatedBytes(k8sElement))
             .build();
 
     doReturn(sweepingOutputInstance).when(mockedSweepingOutputService).find(any());

@@ -10,7 +10,7 @@ package io.harness.virtualstack;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.manage.GlobalContextManager;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import com.google.protobuf.ByteString;
 import lombok.experimental.UtilityClass;
@@ -20,11 +20,11 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(HarnessTeam.PL)
 @Slf4j
 public class VirtualStackUtils {
-  public VirtualStackRequest populateRequest(KryoSerializer kryoSerializer) {
+  public VirtualStackRequest populateRequest(KryoSerializerWrapper kryoSerializerWrapper) {
     VirtualStackRequest.Builder builder = VirtualStackRequest.newBuilder();
     try {
       builder.setGlobalContext(
-          ByteString.copyFrom(kryoSerializer.asDeflatedBytes(GlobalContextManager.obtainGlobalContext())));
+          ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(GlobalContextManager.obtainGlobalContext())));
 
     } catch (Exception exception) {
       log.error("Make sure deflating the global object is supported", exception);

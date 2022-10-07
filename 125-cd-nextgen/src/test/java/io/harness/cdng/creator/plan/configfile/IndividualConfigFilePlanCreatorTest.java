@@ -26,7 +26,7 @@ import io.harness.pms.sdk.core.plan.PlanNode;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
@@ -39,7 +39,8 @@ import org.mockito.InjectMocks;
 
 @OwnedBy(HarnessTeam.CDP)
 public class IndividualConfigFilePlanCreatorTest extends CDNGTestBase {
-  @Inject KryoSerializer kryoSerializer;
+  @Inject
+  KryoSerializerWrapper kryoSerializerWrapper;
   @Inject @InjectMocks IndividualConfigFilePlanCreator individualConfigFilePlanCreator;
 
   @Test
@@ -69,9 +70,9 @@ public class IndividualConfigFilePlanCreatorTest extends CDNGTestBase {
     ConfigFileStepParameters configFileStepParameters =
         ConfigFileStepParameters.builder().identifier(identifier).build();
 
-    metadataDependency.put(YamlTypes.UUID, ByteString.copyFrom(kryoSerializer.asDeflatedBytes(uuid)));
+    metadataDependency.put(YamlTypes.UUID, ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(uuid)));
     metadataDependency.put(PlanCreatorConstants.CONFIG_FILE_STEP_PARAMETER,
-        ByteString.copyFrom(kryoSerializer.asDeflatedBytes(configFileStepParameters)));
+        ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(configFileStepParameters)));
     Dependency dependency = Dependency.newBuilder().putAllMetadata(metadataDependency).build();
     PlanCreationContext ctx = PlanCreationContext.builder().dependency(dependency).build();
 

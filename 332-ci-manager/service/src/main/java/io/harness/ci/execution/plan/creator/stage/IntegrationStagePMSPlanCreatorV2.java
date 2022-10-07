@@ -64,7 +64,7 @@ import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.timeout.trackers.absolute.AbsoluteTimeoutTrackerFactory;
 import io.harness.when.utils.RunInfoUtils;
 import io.harness.yaml.extended.ci.codebase.CodeBase;
@@ -88,7 +88,7 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(HarnessTeam.CI)
 public class IntegrationStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<IntegrationStageNode> {
   @Inject private CIIntegrationStageModifier ciIntegrationStageModifier;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
   @Inject private ConnectorUtils connectorUtils;
   @Inject private CILicenseService ciLicenseService;
 
@@ -186,7 +186,7 @@ public class IntegrationStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<I
             FacilitatorObtainment.newBuilder()
                 .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.CHILD).build())
                 .build())
-        .adviserObtainments(StrategyUtils.getAdviserObtainments(ctx.getCurrentField(), kryoSerializer, true))
+        .adviserObtainments(StrategyUtils.getAdviserObtainments(ctx.getCurrentField(), kryoSerializerWrapper, true))
         .build();
   }
 
@@ -229,7 +229,7 @@ public class IntegrationStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<I
     if (ciCodeBaseField != null) {
       String codeBaseNodeUUID = generateUuid();
       List<PlanNode> codeBasePlanNodeList = CodebasePlanCreator.createPlanForCodeBase(
-          ciCodeBaseField, executionNodeUUid, kryoSerializer, codeBaseNodeUUID, executionSource);
+          ciCodeBaseField, executionNodeUUid, kryoSerializerWrapper, codeBaseNodeUUID, executionSource);
       if (isNotEmpty(codeBasePlanNodeList)) {
         for (PlanNode planNode : codeBasePlanNodeList) {
           planCreationResponseMap.put(

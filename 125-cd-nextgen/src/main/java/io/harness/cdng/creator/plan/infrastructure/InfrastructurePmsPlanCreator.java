@@ -57,7 +57,7 @@ import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.steps.common.NGSectionStepParameters;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -136,8 +136,8 @@ public class InfrastructurePmsPlanCreator {
   }
 
   public static LinkedHashMap<String, PlanCreationResponse> createPlanForInfraSectionV2(YamlNode infraSectionNode,
-      String infraStepNodeUuid, InfrastructureDefinitionConfig infrastructureDefinitionConfig,
-      KryoSerializer kryoSerializer, String infraSectionUuid) {
+                                                                                        String infraStepNodeUuid, InfrastructureDefinitionConfig infrastructureDefinitionConfig,
+                                                                                        KryoSerializerWrapper kryoSerializerWrapper, String infraSectionUuid) {
     InfraSectionStepParameters infraSectionStepParameters =
         getInfraSectionStepParamsFromConfig(infrastructureDefinitionConfig, infraStepNodeUuid);
     LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap = new LinkedHashMap<>();
@@ -146,7 +146,7 @@ public class InfrastructurePmsPlanCreator {
     planNodeBuilder = planNodeBuilder.stepParameters(infraSectionStepParameters);
 
     List<AdviserObtainment> adviserObtainments =
-        getAdviserObtainmentFromMetaDataToExecution(infraSectionNode.getParentNode(), kryoSerializer);
+        getAdviserObtainmentFromMetaDataToExecution(infraSectionNode.getParentNode(), kryoSerializerWrapper);
 
     // adding RC dependency
     boolean allowSimultaneousDeployments = infrastructureDefinitionConfig.isAllowSimultaneousDeployments();
@@ -155,7 +155,7 @@ public class InfrastructurePmsPlanCreator {
       // Passing infra section parent node since rbac will be created parallel to environment node
       YamlField rcYamlField = addResourceConstraintDependency(
           infraSectionNode.getParentNode().getParentNode(), planCreationResponseMap, null);
-      adviserObtainments = getAdviserObtainmentFromMetaDataToResourceConstraint(rcYamlField, kryoSerializer);
+      adviserObtainments = getAdviserObtainmentFromMetaDataToResourceConstraint(rcYamlField, kryoSerializerWrapper);
     }
 
     PlanNode infraSectionPlanNode = planNodeBuilder.adviserObtainments(adviserObtainments).build();
@@ -168,9 +168,9 @@ public class InfrastructurePmsPlanCreator {
   }
 
   public static PlanNode createPlanForGitopsClusters(YamlField envField, String infraSectionUuid,
-      EnvironmentPlanCreatorConfig envConfig, KryoSerializer kryoSerializer) {
+      EnvironmentPlanCreatorConfig envConfig, KryoSerializerWrapper kryoSerializerWrapper) {
     List<AdviserObtainment> adviserObtainmentFromMetaDataToExecution =
-        getAdviserObtainmentFromMetaDataToExecution(envField.getNode(), kryoSerializer);
+        getAdviserObtainmentFromMetaDataToExecution(envField.getNode(), kryoSerializerWrapper);
     PlanNodeBuilder planNodeBuilder =
         ClusterPlanCreatorUtils.getGitopsClustersStepPlanNodeBuilder(infraSectionUuid, envConfig);
     planNodeBuilder.adviserObtainments(adviserObtainmentFromMetaDataToExecution);
@@ -178,9 +178,9 @@ public class InfrastructurePmsPlanCreator {
   }
 
   public static PlanNode createPlanForGitopsClusters(YamlField envField, String postServiceSpecUuid,
-      EnvGroupPlanCreatorConfig envGroupPlanCreatorConfig, KryoSerializer kryoSerializer) {
+      EnvGroupPlanCreatorConfig envGroupPlanCreatorConfig, KryoSerializerWrapper kryoSerializerWrapper) {
     List<AdviserObtainment> adviserObtainmentFromMetaDataToExecution =
-        getAdviserObtainmentFromMetaDataToExecution(envField.getNode(), kryoSerializer);
+        getAdviserObtainmentFromMetaDataToExecution(envField.getNode(), kryoSerializerWrapper);
     PlanNodeBuilder planNodeBuilder =
         ClusterPlanCreatorUtils.getGitopsClustersStepPlanNodeBuilder(postServiceSpecUuid, envGroupPlanCreatorConfig);
     planNodeBuilder.adviserObtainments(adviserObtainmentFromMetaDataToExecution);
@@ -188,7 +188,7 @@ public class InfrastructurePmsPlanCreator {
   }
 
   public LinkedHashMap<String, PlanCreationResponse> createPlanForInfraSectionV1(YamlNode infraSectionNode,
-      String infraStepNodeUuid, PipelineInfrastructure pipelineInfrastructure, KryoSerializer kryoSerializer,
+      String infraStepNodeUuid, PipelineInfrastructure pipelineInfrastructure, KryoSerializerWrapper kryoSerializerWrapper,
       String infraSectionUuid) {
     InfraSectionStepParameters infraSectionStepParameters =
         getInfraSectionStepParams(pipelineInfrastructure, infraStepNodeUuid);
@@ -202,7 +202,7 @@ public class InfrastructurePmsPlanCreator {
     }
 
     List<AdviserObtainment> adviserObtainments =
-        getAdviserObtainmentFromMetaDataToExecution(infraSectionNode, kryoSerializer);
+        getAdviserObtainmentFromMetaDataToExecution(infraSectionNode, kryoSerializerWrapper);
 
     // adding RC dependency
     boolean allowSimultaneousDeployments = ResourceConstraintUtility.isSimultaneousDeploymentsAllowed(
@@ -211,7 +211,7 @@ public class InfrastructurePmsPlanCreator {
     if (!allowSimultaneousDeployments) {
       YamlField rcYamlField =
           addResourceConstraintDependency(infraSectionNode.getParentNode(), planCreationResponseMap, null);
-      adviserObtainments = getAdviserObtainmentFromMetaDataToResourceConstraint(rcYamlField, kryoSerializer);
+      adviserObtainments = getAdviserObtainmentFromMetaDataToResourceConstraint(rcYamlField, kryoSerializerWrapper);
     }
 
     PlanNode infraSectionPlanNode = planNodeBuilder.adviserObtainments(adviserObtainments).build();
@@ -275,7 +275,7 @@ public class InfrastructurePmsPlanCreator {
   }
 
   private List<AdviserObtainment> getAdviserObtainmentFromMetaDataToExecution(
-      YamlNode currentNode, KryoSerializer kryoSerializer) {
+      YamlNode currentNode, KryoSerializerWrapper kryoSerializerWrapper) {
     List<AdviserObtainment> adviserObtainments = new ArrayList<>();
     if (currentNode != null) {
       YamlField siblingField = currentNode.nextSiblingNodeFromParentObject("execution");
@@ -283,7 +283,7 @@ public class InfrastructurePmsPlanCreator {
         adviserObtainments.add(
             AdviserObtainment.newBuilder()
                 .setType(AdviserType.newBuilder().setType(OrchestrationAdviserTypes.ON_SUCCESS.name()).build())
-                .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(
+                .setParameters(ByteString.copyFrom(kryoSerializerWrapper.asBytes(
                     OnSuccessAdviserParameters.builder().nextNodeId(siblingField.getNode().getUuid()).build())))
                 .build());
       }
@@ -293,12 +293,12 @@ public class InfrastructurePmsPlanCreator {
   }
 
   private List<AdviserObtainment> getAdviserObtainmentFromMetaDataToResourceConstraint(
-      YamlField resourceConstraintField, KryoSerializer kryoSerializer) {
+      YamlField resourceConstraintField, KryoSerializerWrapper kryoSerializerWrapper) {
     List<AdviserObtainment> adviserObtainments = new ArrayList<>();
     adviserObtainments.add(
         AdviserObtainment.newBuilder()
             .setType(AdviserType.newBuilder().setType(OrchestrationAdviserTypes.ON_SUCCESS.name()).build())
-            .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(
+            .setParameters(ByteString.copyFrom(kryoSerializerWrapper.asBytes(
                 OnSuccessAdviserParameters.builder().nextNodeId(resourceConstraintField.getNode().getUuid()).build())))
             .build());
     adviserObtainments.add(AdviserObtainment.newBuilder().setType(RollbackCustomAdviser.ADVISER_TYPE).build());
@@ -324,7 +324,7 @@ public class InfrastructurePmsPlanCreator {
    */
 
   public LinkedHashMap<String, PlanCreationResponse> createPlanForProvisioner(PipelineInfrastructure actualInfraConfig,
-      YamlField infraField, String infraStepNodeId, KryoSerializer kryoSerializer) {
+      YamlField infraField, String infraStepNodeId, KryoSerializerWrapper kryoSerializerWrapper) {
     if (!isProvisionerConfigured(actualInfraConfig)) {
       return new LinkedHashMap<>();
     }
@@ -344,7 +344,7 @@ public class InfrastructurePmsPlanCreator {
 
     // Add provisioner Node
     PlanNode provisionerPlanNode = getProvisionerPlanNode(
-        provisionerYamlField, stepsYamlField.getNode().getUuid(), infraStepNodeId, kryoSerializer);
+        provisionerYamlField, stepsYamlField.getNode().getUuid(), infraStepNodeId, kryoSerializerWrapper);
     responseMap.put(provisionerPlanNode.getUuid(),
         PlanCreationResponse.builder().node(provisionerPlanNode.getUuid(), provisionerPlanNode).build());
 
@@ -365,7 +365,7 @@ public class InfrastructurePmsPlanCreator {
   }
 
   private PlanNode getProvisionerPlanNode(
-      YamlField provisionerYamlField, String childNodeId, String infraStepNodeId, KryoSerializer kryoSerializer) {
+      YamlField provisionerYamlField, String childNodeId, String infraStepNodeId, KryoSerializerWrapper kryoSerializerWrapper) {
     StepParameters stepParameters =
         NGSectionStepParameters.builder().childNodeId(childNodeId).logMessage("Provisioner Section").build();
     return PlanNode.builder()
@@ -382,7 +382,7 @@ public class InfrastructurePmsPlanCreator {
             AdviserObtainment.newBuilder()
                 .setType(AdviserType.newBuilder().setType(OrchestrationAdviserTypes.ON_SUCCESS.name()).build())
                 .setParameters(ByteString.copyFrom(
-                    kryoSerializer.asBytes(OnSuccessAdviserParameters.builder().nextNodeId(infraStepNodeId).build())))
+                    kryoSerializerWrapper.asBytes(OnSuccessAdviserParameters.builder().nextNodeId(infraStepNodeId).build())))
                 .build())
         .skipGraphType(SkipType.SKIP_NODE)
         .build();
@@ -413,11 +413,11 @@ public class InfrastructurePmsPlanCreator {
 
   public static List<AdviserObtainment> addResourceConstraintDependency(
       LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap, YamlField specField,
-      KryoSerializer kryoSerializer) {
+      KryoSerializerWrapper kryoSerializerWrapper) {
     final String whenCondition =
         String.format("<+%s.addRcStep> == \"true\"", OutcomeExpressionConstants.INFRA_TASK_EXECUTABLE_STEP_OUTPUT);
     YamlField rcYamlField =
         addResourceConstraintDependency(specField.getNode(), planCreationResponseMap, whenCondition);
-    return getAdviserObtainmentFromMetaDataToResourceConstraint(rcYamlField, kryoSerializer);
+    return getAdviserObtainmentFromMetaDataToResourceConstraint(rcYamlField, kryoSerializerWrapper);
   }
 }

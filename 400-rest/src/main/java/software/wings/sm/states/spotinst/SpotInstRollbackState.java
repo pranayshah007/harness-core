@@ -14,7 +14,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SweepingOutputInstance;
 import io.harness.beans.SweepingOutputInstance.Scope;
 import io.harness.delegate.task.spotinst.request.SpotInstDeployTaskParameters;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.spotinst.model.ElastiGroup;
 
 import software.wings.beans.Activity;
@@ -38,7 +38,7 @@ import com.google.inject.Inject;
 public class SpotInstRollbackState extends SpotInstDeployState {
   @Inject private transient SpotInstStateHelper spotInstStateHelper;
   @Inject private transient SweepingOutputService sweepingOutputService;
-  @Inject private transient KryoSerializer kryoSerializer;
+  @Inject private transient KryoSerializerWrapper kryoSerializerWrapper;
 
   public SpotInstRollbackState(String name) {
     super(name, StateType.SPOTINST_ROLLBACK.name());
@@ -93,7 +93,7 @@ public class SpotInstRollbackState extends SpotInstDeployState {
     if (result == null) {
       return false;
     }
-    return ((SpotinstAllPhaseRollbackData) kryoSerializer.asInflatedObject(result.getOutput()))
+    return ((SpotinstAllPhaseRollbackData) kryoSerializerWrapper.asInflatedObject(result.getOutput()))
         .isAllPhaseRollbackDone();
   }
 
@@ -101,7 +101,7 @@ public class SpotInstRollbackState extends SpotInstDeployState {
   protected void markAllPhaseRollbackDone(ExecutionContext context) {
     sweepingOutputService.save(context.prepareSweepingOutputBuilder(Scope.WORKFLOW)
                                    .name(ELASTI_GROUP_ALL_PHASE_ROLLBACK)
-                                   .output(kryoSerializer.asDeflatedBytes(
+                                   .output(kryoSerializerWrapper.asDeflatedBytes(
                                        SpotinstAllPhaseRollbackData.builder().allPhaseRollbackDone(true).build()))
                                    .build());
   }

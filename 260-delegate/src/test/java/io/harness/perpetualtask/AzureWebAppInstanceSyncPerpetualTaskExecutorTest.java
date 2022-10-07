@@ -51,7 +51,7 @@ import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
 import io.harness.security.encryption.SecretDecryptionService;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import com.google.inject.Inject;
 import com.google.protobuf.Any;
@@ -77,7 +77,7 @@ public class AzureWebAppInstanceSyncPerpetualTaskExecutorTest extends DelegateTe
   private static final String PERPETUAL_TASK_ID = "perpetualTaskId";
   private static final String ACCOUNT_ID = "accountId";
 
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
   @Mock private Call<RestResponse<Boolean>> call;
   @Mock private AzureAppServiceService azureAppServiceService;
   @Mock private AzureConnectorMapper azureConnectorMapper;
@@ -92,7 +92,7 @@ public class AzureWebAppInstanceSyncPerpetualTaskExecutorTest extends DelegateTe
 
   @Before
   public void setUp() throws IOException {
-    on(azureWebAppInstanceSyncPerpetualTaskExecutor).set("kryoSerializer", kryoSerializer);
+    on(azureWebAppInstanceSyncPerpetualTaskExecutor).set("kryoSerializer", kryoSerializerWrapper);
     doReturn(call)
         .when(delegateAgentManagerClient)
         .processInstanceSyncNGResult(anyString(), anyString(), perpetualTaskResponseCaptor.capture());
@@ -224,7 +224,7 @@ public class AzureWebAppInstanceSyncPerpetualTaskExecutorTest extends DelegateTe
         .setResourceGroupName(RESOURCE_GROUP)
         .setAppName(APP_NAME)
         .setSlotName(DEPLOYMENT_SLOT)
-        .setAzureWebAppInfraDelegateConfig(ByteString.copyFrom(kryoSerializer.asBytes(azureWebAppInfraDelegateConfig)))
+        .setAzureWebAppInfraDelegateConfig(ByteString.copyFrom(kryoSerializerWrapper.asBytes(azureWebAppInfraDelegateConfig)))
         .build();
   }
 }

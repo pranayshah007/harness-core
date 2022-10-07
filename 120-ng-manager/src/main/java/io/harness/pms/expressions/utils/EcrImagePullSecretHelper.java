@@ -31,7 +31,7 @@ import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.core.NGAccess;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.service.DelegateGrpcClientWrapper;
 
 import com.google.inject.Inject;
@@ -48,7 +48,7 @@ import lombok.extern.slf4j.Slf4j;
 public class EcrImagePullSecretHelper {
   @Named("PRIVILEGED") @Inject private SecretManagerClientService secretManagerClientService;
   @Inject private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
   @Inject ExceptionManager exceptionManager;
 
   BaseNGAccess getBaseNGAccess(String accountId, String orgIdentifier, String projectIdentifier) {

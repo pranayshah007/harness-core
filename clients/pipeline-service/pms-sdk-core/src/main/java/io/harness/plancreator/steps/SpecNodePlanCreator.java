@@ -21,7 +21,7 @@ import io.harness.pms.sdk.core.plan.creation.creators.PartialPlanCreator;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.steps.NGSpecStep;
 import io.harness.steps.common.NGSectionStepParameters;
 
@@ -32,7 +32,8 @@ import java.util.Set;
 
 @OwnedBy(HarnessTeam.CDC)
 public class SpecNodePlanCreator implements PartialPlanCreator<YamlField> {
-  @Inject KryoSerializer kryoSerializer;
+  @Inject
+  KryoSerializerWrapper kryoSerializerWrapper;
 
   @Override
   public Class<YamlField> getFieldClass() {
@@ -46,7 +47,7 @@ public class SpecNodePlanCreator implements PartialPlanCreator<YamlField> {
 
   @Override
   public PlanCreationResponse createPlanForField(PlanCreationContext ctx, YamlField config) {
-    String childNodeId = (String) kryoSerializer.asInflatedObject(
+    String childNodeId = (String) kryoSerializerWrapper.asInflatedObject(
         ctx.getDependency().getMetadataMap().get(YAMLFieldNameConstants.CHILD_NODE_OF_SPEC).toByteArray());
     StepParameters stepParameters =
         NGSectionStepParameters.builder().childNodeId(childNodeId).logMessage("Spec Element").build();

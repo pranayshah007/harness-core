@@ -65,7 +65,7 @@ import io.harness.manage.GlobalContextManager.GlobalContextGuard;
 import io.harness.owner.OrgIdentifier;
 import io.harness.owner.ProjectIdentifier;
 import io.harness.paging.PageRequestGrpc;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import software.wings.beans.User;
 import software.wings.security.UserThreadLocal;
@@ -93,14 +93,14 @@ import lombok.extern.slf4j.Slf4j;
 public class DelegateProfileServiceGrpcImpl extends DelegateProfileServiceImplBase {
   private DelegateProfileService delegateProfileService;
   private UserService userService;
-  private KryoSerializer kryoSerializer;
+  private KryoSerializerWrapper kryoSerializerWrapper;
 
   @Inject
   public DelegateProfileServiceGrpcImpl(
-      DelegateProfileService delegateProfileService, UserService userService, KryoSerializer kryoSerializer) {
+      DelegateProfileService delegateProfileService, UserService userService, KryoSerializerWrapper kryoSerializerWrapper) {
     this.delegateProfileService = delegateProfileService;
     this.userService = userService;
-    this.kryoSerializer = kryoSerializer;
+    this.kryoSerializerWrapper = kryoSerializerWrapper;
   }
 
   @Override
@@ -250,7 +250,7 @@ public class DelegateProfileServiceGrpcImpl extends DelegateProfileServiceImplBa
 
   @Override
   public void addProfile(AddProfileRequest request, StreamObserver<AddProfileResponse> responseObserver) {
-    try (GlobalContextGuard guard = initGlobalContextGuard(kryoSerializer, request.getVirtualStack())) {
+    try (GlobalContextGuard guard = initGlobalContextGuard(kryoSerializerWrapper, request.getVirtualStack())) {
       DelegateProfile delegateProfile = delegateProfileService.add(convert(request.getProfile()));
 
       responseObserver.onNext(AddProfileResponse.newBuilder().setProfile(convert(delegateProfile)).build());
@@ -263,7 +263,7 @@ public class DelegateProfileServiceGrpcImpl extends DelegateProfileServiceImplBa
 
   @Override
   public void updateProfile(UpdateProfileRequest request, StreamObserver<UpdateProfileResponse> responseObserver) {
-    try (GlobalContextGuard guard = initGlobalContextGuard(kryoSerializer, request.getVirtualStack())) {
+    try (GlobalContextGuard guard = initGlobalContextGuard(kryoSerializerWrapper, request.getVirtualStack())) {
       DelegateProfile delegateProfile = delegateProfileService.update(convert(request.getProfile()));
 
       if (delegateProfile != null) {
@@ -282,7 +282,7 @@ public class DelegateProfileServiceGrpcImpl extends DelegateProfileServiceImplBa
 
   @Override
   public void updateProfileV2(UpdateProfileRequest request, StreamObserver<UpdateProfileResponse> responseObserver) {
-    try (GlobalContextGuard guard = initGlobalContextGuard(kryoSerializer, request.getVirtualStack())) {
+    try (GlobalContextGuard guard = initGlobalContextGuard(kryoSerializerWrapper, request.getVirtualStack())) {
       DelegateProfile delegateProfile = delegateProfileService.updateV2(convert(request.getProfile()));
 
       if (delegateProfile != null) {
@@ -301,7 +301,7 @@ public class DelegateProfileServiceGrpcImpl extends DelegateProfileServiceImplBa
 
   @Override
   public void deleteProfile(DeleteProfileRequest request, StreamObserver<DeleteProfileResponse> responseObserver) {
-    try (GlobalContextGuard guard = initGlobalContextGuard(kryoSerializer, request.getVirtualStack())) {
+    try (GlobalContextGuard guard = initGlobalContextGuard(kryoSerializerWrapper, request.getVirtualStack())) {
       delegateProfileService.delete(request.getAccountId().getId(), request.getProfileId().getId());
       responseObserver.onNext(DeleteProfileResponse.newBuilder().build());
       responseObserver.onCompleted();
@@ -314,7 +314,7 @@ public class DelegateProfileServiceGrpcImpl extends DelegateProfileServiceImplBa
 
   @Override
   public void deleteProfileV2(DeleteProfileV2Request request, StreamObserver<DeleteProfileResponse> responseObserver) {
-    try (GlobalContextGuard guard = initGlobalContextGuard(kryoSerializer, request.getVirtualStack())) {
+    try (GlobalContextGuard guard = initGlobalContextGuard(kryoSerializerWrapper, request.getVirtualStack())) {
       delegateProfileService.deleteProfileV2(request.getAccountId().getId(),
           DelegateEntityOwnerHelper.buildOwner(request.getOrgId() != null ? request.getOrgId().getId() : null,
               request.getProjectId() != null ? request.getProjectId().getId() : null),
@@ -331,7 +331,7 @@ public class DelegateProfileServiceGrpcImpl extends DelegateProfileServiceImplBa
   @Override
   public void updateProfileSelectors(
       UpdateProfileSelectorsRequest request, StreamObserver<UpdateProfileSelectorsResponse> responseObserver) {
-    try (GlobalContextGuard guard = initGlobalContextGuard(kryoSerializer, request.getVirtualStack())) {
+    try (GlobalContextGuard guard = initGlobalContextGuard(kryoSerializerWrapper, request.getVirtualStack())) {
       List<String> selectors = null;
       if (isNotEmpty(request.getSelectorsList())) {
         selectors = request.getSelectorsList().stream().map(ProfileSelector::getSelector).collect(Collectors.toList());
@@ -357,7 +357,7 @@ public class DelegateProfileServiceGrpcImpl extends DelegateProfileServiceImplBa
   @Override
   public void updateProfileSelectorsV2(
       UpdateProfileSelectorsV2Request request, StreamObserver<UpdateProfileSelectorsResponse> responseObserver) {
-    try (GlobalContextGuard guard = initGlobalContextGuard(kryoSerializer, request.getVirtualStack())) {
+    try (GlobalContextGuard guard = initGlobalContextGuard(kryoSerializerWrapper, request.getVirtualStack())) {
       List<String> selectors = null;
       if (isNotEmpty(request.getSelectorsList())) {
         selectors = request.getSelectorsList().stream().map(ProfileSelector::getSelector).collect(Collectors.toList());

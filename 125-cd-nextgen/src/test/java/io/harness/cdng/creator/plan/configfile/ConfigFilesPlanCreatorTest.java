@@ -43,7 +43,7 @@ import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.steps.fork.ForkStepParameters;
 
 import com.google.inject.Inject;
@@ -66,7 +66,7 @@ import org.mockito.InjectMocks;
 
 @OwnedBy(CDP)
 public class ConfigFilesPlanCreatorTest extends CDNGTestBase {
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
   @Inject @InjectMocks ConfigFilesPlanCreator configFilesPlanCreator;
 
   @Test
@@ -92,7 +92,7 @@ public class ConfigFilesPlanCreatorTest extends CDNGTestBase {
     List<String> childrenNodeIds = Arrays.asList("childNodeIdentifier1", "childNodeIdentifier1");
     HashMap<String, ByteString> metadataDependency = new HashMap<>();
     String uuid = UUIDGenerator.generateUuid();
-    metadataDependency.put(YamlTypes.UUID, ByteString.copyFrom(kryoSerializer.asDeflatedBytes(uuid)));
+    metadataDependency.put(YamlTypes.UUID, ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(uuid)));
     Dependency dependency = Dependency.newBuilder().putAllMetadata(metadataDependency).build();
     PlanCreationContext ctx = PlanCreationContext.builder().dependency(dependency).build();
 
@@ -152,7 +152,7 @@ public class ConfigFilesPlanCreatorTest extends CDNGTestBase {
 
     Map<String, ByteString> metadataDependency = new HashMap<>();
     metadataDependency.put(
-        YamlTypes.SERVICE_CONFIG, ByteString.copyFrom(kryoSerializer.asDeflatedBytes(serviceConfig)));
+        YamlTypes.SERVICE_CONFIG, ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(serviceConfig)));
 
     Dependency dependency = Dependency.newBuilder().putAllMetadata(metadataDependency).build();
     YamlField configFilesYamlNodes = readYaml("cdng/plan/configfiles/configFiles.yml");
@@ -186,7 +186,7 @@ public class ConfigFilesPlanCreatorTest extends CDNGTestBase {
 
     Map<String, ByteString> metadataDependency = new HashMap<>();
     metadataDependency.put(
-        YamlTypes.SERVICE_ENTITY, ByteString.copyFrom(kryoSerializer.asDeflatedBytes(serviceConfig)));
+        YamlTypes.SERVICE_ENTITY, ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(serviceConfig)));
 
     Dependency dependency = Dependency.newBuilder().putAllMetadata(metadataDependency).build();
     YamlField configFilesYamlNodes = readYaml("cdng/plan/configfiles/configFiles.yml");
@@ -238,7 +238,7 @@ public class ConfigFilesPlanCreatorTest extends CDNGTestBase {
     assertThat(metadataMap.containsKey(YamlTypes.UUID)).isEqualTo(true);
     assertThat(metadataMap.containsKey(PlanCreatorConstants.CONFIG_FILE_STEP_PARAMETER)).isEqualTo(true);
 
-    ConfigFileStepParameters stepParameters = (ConfigFileStepParameters) kryoSerializer.asInflatedObject(
+    ConfigFileStepParameters stepParameters = (ConfigFileStepParameters) kryoSerializerWrapper.asInflatedObject(
         metadataMap.get(PlanCreatorConstants.CONFIG_FILE_STEP_PARAMETER).toByteArray());
     return stepParameters.getIdentifier();
   }

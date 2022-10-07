@@ -8,18 +8,18 @@
 package io.harness.engine.facilitation;
 
 import io.harness.pms.execution.facilitator.DefaultFacilitatorParams;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import com.google.inject.Inject;
 import java.time.Duration;
 
 public class FacilitatorUtils {
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
 
   public Duration extractWaitDurationFromDefaultParams(byte[] parameters) {
     Duration waitDuration = Duration.ofSeconds(0);
     if (parameters != null && parameters.length > 0) {
-      DefaultFacilitatorParams facilitatorParameters = (DefaultFacilitatorParams) kryoSerializer.asObject(parameters);
+      DefaultFacilitatorParams facilitatorParameters = (DefaultFacilitatorParams) kryoSerializerWrapper.asObject(parameters);
       waitDuration = facilitatorParameters.getWaitDurationSeconds();
     }
     return waitDuration;

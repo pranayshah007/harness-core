@@ -33,7 +33,7 @@ import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.pms.contracts.execution.failure.FailureType;
 import io.harness.pms.sdk.core.adviser.AdvisingEvent;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.yaml.core.failurestrategy.NGFailureActionTypeConstants;
 
 import java.util.Collections;
@@ -46,7 +46,7 @@ import org.mockito.MockitoAnnotations;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public class ManualInterventionAdviserWithRollbackTest extends CategoryTest {
-  @Mock private KryoSerializer kryoSerializer;
+  @Mock private KryoSerializerWrapper kryoSerializerWrapper;
   @InjectMocks ManualInterventionAdviserWithRollback manualInterventionAdviserWithRollback;
 
   @Before
@@ -62,7 +62,7 @@ public class ManualInterventionAdviserWithRollbackTest extends CategoryTest {
                  .timeout(60)
                  .timeoutAction(RepairActionCode.MANUAL_INTERVENTION)
                  .build())
-        .when(kryoSerializer)
+        .when(kryoSerializerWrapper)
         .asObject((byte[]) any());
     AdvisingEvent advisingEvent =
         AdvisingEvent.builder()
@@ -78,7 +78,7 @@ public class ManualInterventionAdviserWithRollbackTest extends CategoryTest {
 
     doReturn(
         ManualInterventionAdviserRollbackParameters.builder().timeout(60).timeoutAction(STEP_GROUP_ROLLBACK).build())
-        .when(kryoSerializer)
+        .when(kryoSerializerWrapper)
         .asObject((byte[]) any());
     adviserResponse = manualInterventionAdviserWithRollback.onAdviseEvent(advisingEvent);
     assertEquals(adviserResponse.getInterventionWaitAdvise().getRepairActionCode(), CUSTOM_FAILURE);
@@ -86,7 +86,7 @@ public class ManualInterventionAdviserWithRollbackTest extends CategoryTest {
         NGFailureActionTypeConstants.STEP_GROUP_ROLLBACK);
 
     doReturn(ManualInterventionAdviserRollbackParameters.builder().timeout(60).timeoutAction(STAGE_ROLLBACK).build())
-        .when(kryoSerializer)
+        .when(kryoSerializerWrapper)
         .asObject((byte[]) any());
     adviserResponse = manualInterventionAdviserWithRollback.onAdviseEvent(advisingEvent);
     assertEquals(adviserResponse.getInterventionWaitAdvise().getRepairActionCode(), CUSTOM_FAILURE);
@@ -113,13 +113,13 @@ public class ManualInterventionAdviserWithRollbackTest extends CategoryTest {
                         .failureInfo(FailureInfo.newBuilder().addFailureTypes(FailureType.APPLICATION_FAILURE).build())
                         .build();
     doReturn(ManualInterventionAdviserRollbackParameters.builder().build())
-        .when(kryoSerializer)
+        .when(kryoSerializerWrapper)
         .asObject((byte[]) any());
     assertFalse(manualInterventionAdviserWithRollback.canAdvise(advisingEvent));
     doReturn(ManualInterventionAdviserRollbackParameters.builder()
                  .applicableFailureTypes(Collections.singleton(FailureType.APPLICATION_FAILURE))
                  .build())
-        .when(kryoSerializer)
+        .when(kryoSerializerWrapper)
         .asObject((byte[]) any());
     assertTrue(manualInterventionAdviserWithRollback.canAdvise(advisingEvent));
 

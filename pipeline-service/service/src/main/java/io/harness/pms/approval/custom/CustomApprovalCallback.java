@@ -23,7 +23,7 @@ import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.logstreaming.NGLogCallback;
 import io.harness.pms.approval.AbstractApprovalCallback;
 import io.harness.pms.contracts.ambiance.Ambiance;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.servicenow.TicketNG;
 import io.harness.shell.ShellExecutionData;
 import io.harness.steps.approval.step.beans.ApprovalStatus;
@@ -55,7 +55,7 @@ public class CustomApprovalCallback extends AbstractApprovalCallback implements 
   private final String approvalInstanceId;
 
   @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
   @Inject private ShellScriptHelperService shellScriptHelperService;
   @Inject private CustomApprovalInstanceHandler customApprovalInstanceHandler;
 
@@ -94,7 +94,7 @@ public class CustomApprovalCallback extends AbstractApprovalCallback implements 
     ShellScriptTaskResponseNG scriptTaskResponse;
     try {
       ResponseData responseData = response.values().iterator().next();
-      responseData = (ResponseData) kryoSerializer.asInflatedObject(((BinaryResponseData) responseData).getData());
+      responseData = (ResponseData) kryoSerializerWrapper.asInflatedObject(((BinaryResponseData) responseData).getData());
       if (responseData instanceof ErrorNotifyResponseData) {
         log.warn("Failed to run Custom Approval script");
         logCallback.saveExecutionLog("Failed to run custom approval script: " + responseData, LogLevel.WARN);

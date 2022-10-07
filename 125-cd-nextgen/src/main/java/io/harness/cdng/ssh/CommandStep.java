@@ -51,7 +51,7 @@ import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.shell.ShellExecutionData;
 import io.harness.steps.StepHelper;
 import io.harness.steps.StepUtils;
@@ -72,7 +72,7 @@ public class CommandStep extends TaskExecutableWithRollbackAndRbac<CommandTaskRe
   public static final StepType STEP_TYPE =
       StepType.newBuilder().setType(ExecutionNodeType.COMMAND.getYamlType()).setStepCategory(StepCategory.STEP).build();
 
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
   @Inject private StepHelper stepHelper;
   @Inject private CDStepHelper cdStepHelper;
   @Inject private SshCommandStepHelper sshCommandStepHelper;
@@ -111,7 +111,7 @@ public class CommandStep extends TaskExecutableWithRollbackAndRbac<CommandTaskRe
           taskParameters.getCommandUnits().stream().map(cu -> cu.getName()).collect(Collectors.toList());
       String taskName = TaskType.COMMAND_TASK_NG.getDisplayName();
 
-      return StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer, commandExecutionUnits, taskName,
+      return StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializerWrapper, commandExecutionUnits, taskName,
           TaskSelectorYaml.toTaskSelector(
               emptyIfNull(getParameterFieldValue(executeCommandStepParameters.getDelegateSelectors()))),
           stepHelper.getEnvironmentType(ambiance));

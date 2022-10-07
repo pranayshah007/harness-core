@@ -29,7 +29,7 @@ import io.harness.logging.CommandExecutionStatus;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.tasks.BinaryResponseData;
 import io.harness.tasks.ProgressData;
 
@@ -43,7 +43,8 @@ import org.mockito.Mock;
 @OwnedBy(HarnessTeam.PIPELINE)
 public class EngineProgressCallbackTest extends OrchestrationTestBase {
   @Mock NodeExecutionService nodeExecutionService;
-  @Inject KryoSerializer kryoSerializer;
+  @Inject
+  KryoSerializerWrapper kryoSerializerWrapper;
   @Mock ProgressEventPublisher progressEventPublisher;
 
   private final String nodeExecutionId = generateUuid();
@@ -55,7 +56,7 @@ public class EngineProgressCallbackTest extends OrchestrationTestBase {
     engineProgressCallback =
         EngineProgressCallback.builder()
             .nodeExecutionService(nodeExecutionService)
-            .kryoSerializer(kryoSerializer)
+            .kryoSerializerWrapper(kryoSerializerWrapper)
             .progressEventPublisher(progressEventPublisher)
             .ambiance(Ambiance.newBuilder().addLevels(Level.newBuilder().setRuntimeId(nodeExecutionId).build()).build())
             .build();
@@ -78,7 +79,7 @@ public class EngineProgressCallbackTest extends OrchestrationTestBase {
     String correlationId = generateUuid();
     UnitProgressData unitProgressData = UnitProgressData.builder().unitProgresses(new ArrayList<>()).build();
     BinaryResponseData binaryResponseData =
-        BinaryResponseData.builder().data(kryoSerializer.asDeflatedBytes(unitProgressData)).build();
+        BinaryResponseData.builder().data(kryoSerializerWrapper.asDeflatedBytes(unitProgressData)).build();
 
     when(progressEventPublisher.publishEvent(nodeExecutionId, binaryResponseData)).thenReturn(null);
 
@@ -96,7 +97,7 @@ public class EngineProgressCallbackTest extends OrchestrationTestBase {
     CommandUnitStatusProgress commandUnitStatusProgress =
         CommandUnitStatusProgress.builder().commandExecutionStatus(CommandExecutionStatus.SUCCESS).build();
     BinaryResponseData binaryResponseData =
-        BinaryResponseData.builder().data(kryoSerializer.asDeflatedBytes(commandUnitStatusProgress)).build();
+        BinaryResponseData.builder().data(kryoSerializerWrapper.asDeflatedBytes(commandUnitStatusProgress)).build();
 
     when(progressEventPublisher.publishEvent(nodeExecutionId, binaryResponseData)).thenReturn(null);
 

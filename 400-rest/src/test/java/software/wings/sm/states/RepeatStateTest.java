@@ -26,7 +26,7 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.category.element.UnitTests;
 import io.harness.context.ContextElementType;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import software.wings.WingsBaseTest;
 import software.wings.api.ServiceElement;
@@ -55,7 +55,8 @@ import org.junit.experimental.categories.Category;
 @TargetModule(HarnessModule._870_CG_ORCHESTRATION)
 @Slf4j
 public class RepeatStateTest extends WingsBaseTest {
-  @Inject KryoSerializer kryoSerializer;
+  @Inject
+  KryoSerializerWrapper kryoSerializerWrapper;
 
   /**
    * Should execute serial.
@@ -73,7 +74,7 @@ public class RepeatStateTest extends WingsBaseTest {
     when(workflowExecutionService.checkIfOnDemand(any(), any())).thenReturn(false);
     RepeatState repeatState = new RepeatState(stateName);
     repeatState.setWorkflowExecutionService(workflowExecutionService);
-    repeatState.setKryoSerializer(kryoSerializer);
+    repeatState.setKryoSerializer(kryoSerializerWrapper);
     repeatState.setRepeatElementExpression("services()");
     repeatState.setExecutionStrategy(ExecutionStrategy.SERIAL);
     repeatState.setRepeatTransitionStateName("abc");
@@ -109,7 +110,7 @@ public class RepeatStateTest extends WingsBaseTest {
 
     RepeatState repeatState = new RepeatState(stateName);
     repeatState.setWorkflowExecutionService(workflowExecutionService);
-    repeatState.setKryoSerializer(kryoSerializer);
+    repeatState.setKryoSerializer(kryoSerializerWrapper);
     repeatState.setRepeatElementExpression("services()");
     repeatState.setExecutionStrategy(ExecutionStrategy.PARALLEL);
     repeatState.setRepeatTransitionStateName("abc");

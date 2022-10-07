@@ -19,7 +19,7 @@ import io.harness.delegate.beans.DelegateProgressData;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.grpc.DelegateTaskGrpcUtils;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.service.intfc.DelegateCallbackRegistry;
 import io.harness.service.intfc.DelegateTaskService;
 import io.harness.service.intfc.TaskProgressService;
@@ -33,13 +33,13 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class TaskProgressServiceImpl implements TaskProgressService {
   private DelegateCallbackRegistry delegateCallbackRegistry;
-  private KryoSerializer kryoSerializer;
+  private KryoSerializerWrapper kryoSerializerWrapper;
   private DelegateTaskService delegateTaskService;
 
   @Inject
-  public TaskProgressServiceImpl(KryoSerializer kryoSerializer, DelegateCallbackRegistry delegateCallbackRegistry,
-      DelegateTaskService delegateTaskService) {
-    this.kryoSerializer = kryoSerializer;
+  public TaskProgressServiceImpl(KryoSerializerWrapper kryoSerializerWrapper, DelegateCallbackRegistry delegateCallbackRegistry,
+                                 DelegateTaskService delegateTaskService) {
+    this.kryoSerializerWrapper = kryoSerializerWrapper;
     this.delegateCallbackRegistry = delegateCallbackRegistry;
     this.delegateTaskService = delegateTaskService;
   }
@@ -51,7 +51,7 @@ public class TaskProgressServiceImpl implements TaskProgressService {
           DelegateTaskResponse.builder()
               .responseCode(DelegateTaskResponse.ResponseCode.OK)
               .accountId(request.getAccountId().getId())
-              .response((DelegateResponseData) kryoSerializer.asInflatedObject(
+              .response((DelegateResponseData) kryoSerializerWrapper.asInflatedObject(
                   request.getTaskResponseData().getKryoResultsData().toByteArray()))
               .build();
       delegateTaskService.processDelegateResponse(
@@ -69,7 +69,7 @@ public class TaskProgressServiceImpl implements TaskProgressService {
     try {
       delegateTaskService.publishTaskProgressResponse(request.getAccountId().getId(),
           request.getCallbackToken().getToken(), request.getTaskId().getId(),
-          (DelegateProgressData) kryoSerializer.asInflatedObject(
+          (DelegateProgressData) kryoSerializerWrapper.asInflatedObject(
               request.getTaskResponseData().getKryoResultsData().toByteArray()));
       return SendTaskProgressResponse.newBuilder().setSuccess(true).build();
     } catch (Exception ex) {

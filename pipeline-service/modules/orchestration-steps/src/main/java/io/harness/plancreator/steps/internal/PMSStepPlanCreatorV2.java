@@ -53,7 +53,7 @@ public abstract class PMSStepPlanCreatorV2<T extends PmsAbstractStepNode> extend
     }
 
     List<AdviserObtainment> adviserObtainmentFromMetaData =
-        PmsStepPlanCreatorUtils.getAdviserObtainmentFromMetaData(kryoSerializer, ctx.getCurrentField());
+        PmsStepPlanCreatorUtils.getAdviserObtainmentFromMetaData(kryoSerializerWrapper, ctx.getCurrentField());
     Map<String, YamlField> dependenciesNodeMap = new HashMap<>();
     Map<String, ByteString> metadataMap = new HashMap<>();
     stepElement.setIdentifier(StrategyUtils.getIdentifierWithExpression(ctx, stepElement.getIdentifier()));

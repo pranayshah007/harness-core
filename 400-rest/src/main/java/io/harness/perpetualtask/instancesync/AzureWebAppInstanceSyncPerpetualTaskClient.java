@@ -21,7 +21,7 @@ import io.harness.delegate.task.azure.appservice.webapp.request.AzureWebAppListW
 import io.harness.perpetualtask.PerpetualTaskClientContext;
 import io.harness.perpetualtask.PerpetualTaskServiceClient;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import software.wings.beans.AzureConfig;
 import software.wings.beans.AzureWebAppInfrastructureMapping;
@@ -52,7 +52,7 @@ public class AzureWebAppInstanceSyncPerpetualTaskClient implements PerpetualTask
   @Inject private InfrastructureMappingService infraMappingService;
   @Inject private SettingsService settingsService;
   @Inject private SecretManager secretManager;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
   @Inject private AzureVMSSStateHelper azureVMSSStateHelper;
 
   @Override
@@ -60,9 +60,9 @@ public class AzureWebAppInstanceSyncPerpetualTaskClient implements PerpetualTask
     AzureWebAppInstanceSyncPerpetualTaskClient.PerpetualTaskData perpetualTaskData =
         getPerpetualTaskData(clientContext);
 
-    ByteString azureConfigBytes = ByteString.copyFrom(kryoSerializer.asBytes(perpetualTaskData.getAzureConfig()));
+    ByteString azureConfigBytes = ByteString.copyFrom(kryoSerializerWrapper.asBytes(perpetualTaskData.getAzureConfig()));
     ByteString encryptedDataBytes =
-        ByteString.copyFrom(kryoSerializer.asBytes(perpetualTaskData.getEncryptedDataDetails()));
+        ByteString.copyFrom(kryoSerializerWrapper.asBytes(perpetualTaskData.getEncryptedDataDetails()));
 
     return AzureWebAppInstanceSyncPerpetualProtoTaskParams.newBuilder()
         .setAzureConfig(azureConfigBytes)

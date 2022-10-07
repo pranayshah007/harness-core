@@ -50,7 +50,7 @@ import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.service.DelegateGrpcClientWrapper;
 import io.harness.steps.StepUtils;
 import io.harness.supplier.ThrowingSupplier;
@@ -67,7 +67,7 @@ import java.util.stream.Collectors;
 public class JenkinsBuildStepHelperServiceImpl implements JenkinsBuildStepHelperService {
   private final ConnectorResourceClient connectorResourceClient;
   private final SecretManagerClientService secretManagerClientService;
-  private final KryoSerializer kryoSerializer;
+  private final KryoSerializerWrapper kryoSerializerWrapper;
   private final LogStreamingStepClientFactory logStreamingStepClientFactory;
   @Inject private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
   @VisibleForTesting static final int timeoutInSecs = 30;
@@ -75,11 +75,11 @@ public class JenkinsBuildStepHelperServiceImpl implements JenkinsBuildStepHelper
 
   @Inject
   public JenkinsBuildStepHelperServiceImpl(ConnectorResourceClient connectorResourceClient,
-      @Named("PRIVILEGED") SecretManagerClientService secretManagerClientService, KryoSerializer kryoSerializer,
+      @Named("PRIVILEGED") SecretManagerClientService secretManagerClientService, KryoSerializerWrapper kryoSerializerWrapper,
       LogStreamingStepClientFactory logStreamingStepClientFactory) {
     this.connectorResourceClient = connectorResourceClient;
     this.secretManagerClientService = secretManagerClientService;
-    this.kryoSerializer = kryoSerializer;
+    this.kryoSerializerWrapper = kryoSerializerWrapper;
     this.logStreamingStepClientFactory = logStreamingStepClientFactory;
   }
 
@@ -127,7 +127,7 @@ public class JenkinsBuildStepHelperServiceImpl implements JenkinsBuildStepHelper
                               .taskType(NGTaskType.JENKINS_ARTIFACT_TASK_NG.name())
                               .parameters(new Object[] {artifactTaskParameters})
                               .build();
-      return StepUtils.prepareTaskRequest(ambiance, taskData, kryoSerializer, TaskCategory.DELEGATE_TASK_V2,
+      return StepUtils.prepareTaskRequest(ambiance, taskData, kryoSerializerWrapper, TaskCategory.DELEGATE_TASK_V2,
           Collections.singletonList(COMMAND_UNIT), true, taskName,
           params.getDelegateSelectors()
               .stream()

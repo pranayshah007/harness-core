@@ -30,7 +30,7 @@ import io.harness.perpetualtask.instancesync.AwsSshInstanceSyncPerpetualTaskPara
 import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import software.wings.beans.AwsConfig;
 import software.wings.service.impl.aws.model.AwsEc2ListInstancesResponse;
@@ -65,7 +65,8 @@ public class AwsSshInstanceSyncExecutorTest extends DelegateTestBase {
   @Mock private AwsEc2HelperServiceDelegate ec2ServiceDelegate;
   @Mock private DelegateAgentManagerClient delegateAgentManagerClient;
   @Mock private Call<RestResponse<Boolean>> call;
-  @Inject KryoSerializer kryoSerializer;
+  @Inject
+  KryoSerializerWrapper kryoSerializerWrapper;
 
   @InjectMocks private AwsSshInstanceSyncExecutor executor;
 
@@ -74,7 +75,7 @@ public class AwsSshInstanceSyncExecutorTest extends DelegateTestBase {
 
   @Before
   public void setup() {
-    on(executor).set("kryoSerializer", kryoSerializer);
+    on(executor).set("kryoSerializer", kryoSerializerWrapper);
     MockitoAnnotations.initMocks(executor);
   }
 
@@ -164,9 +165,9 @@ public class AwsSshInstanceSyncExecutorTest extends DelegateTestBase {
 
   private PerpetualTaskExecutionParams getPerpetualTaskParams() {
     ByteString configBytes =
-        ByteString.copyFrom(kryoSerializer.asBytes(AwsConfig.builder().accountId("accountId").build()));
-    ByteString filterBytes = ByteString.copyFrom(kryoSerializer.asBytes(Arrays.asList(new Filter())));
-    ByteString encryptionDetailsBytes = ByteString.copyFrom(kryoSerializer.asBytes(new ArrayList<>()));
+        ByteString.copyFrom(kryoSerializerWrapper.asBytes(AwsConfig.builder().accountId("accountId").build()));
+    ByteString filterBytes = ByteString.copyFrom(kryoSerializerWrapper.asBytes(Arrays.asList(new Filter())));
+    ByteString encryptionDetailsBytes = ByteString.copyFrom(kryoSerializerWrapper.asBytes(new ArrayList<>()));
 
     AwsSshInstanceSyncPerpetualTaskParams params = AwsSshInstanceSyncPerpetualTaskParams.newBuilder()
                                                        .setAwsConfig(configBytes)

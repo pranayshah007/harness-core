@@ -32,7 +32,7 @@ import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.sdk.core.plan.creation.creators.ChildrenPlanCreator;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
@@ -46,7 +46,8 @@ import java.util.Set;
 
 @OwnedBy(HarnessTeam.CDC)
 public class EnvironmentPlanCreatorV2 extends ChildrenPlanCreator<EnvironmentPlanCreatorConfig> {
-  @Inject KryoSerializer kryoSerializer;
+  @Inject
+  KryoSerializerWrapper kryoSerializerWrapper;
 
   @Override
   public Class<EnvironmentPlanCreatorConfig> getFieldClass() {
@@ -64,10 +65,10 @@ public class EnvironmentPlanCreatorV2 extends ChildrenPlanCreator<EnvironmentPla
       PlanCreationContext ctx, EnvironmentPlanCreatorConfig config) {
     final LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap = new LinkedHashMap<>();
 
-    boolean gitOpsEnabled = (boolean) kryoSerializer.asInflatedObject(
+    boolean gitOpsEnabled = (boolean) kryoSerializerWrapper.asInflatedObject(
         ctx.getDependency().getMetadataMap().get(YAMLFieldNameConstants.GITOPS_ENABLED).toByteArray());
 
-    boolean skipInstances = (boolean) kryoSerializer.asInflatedObject(
+    boolean skipInstances = (boolean) kryoSerializerWrapper.asInflatedObject(
         ctx.getDependency().getMetadataMap().get(YAMLFieldNameConstants.SKIP_INSTANCES).toByteArray());
 
     if (!gitOpsEnabled) {
@@ -97,15 +98,15 @@ public class EnvironmentPlanCreatorV2 extends ChildrenPlanCreator<EnvironmentPla
       planCreationResponseMap.put(infraDefPlanNode.getUuid(),
           PlanCreationResponse.builder().node(infraDefPlanNode.getUuid(), infraDefPlanNode).build());
 
-      String infraSectionUuid = (String) kryoSerializer.asInflatedObject(
+      String infraSectionUuid = (String) kryoSerializerWrapper.asInflatedObject(
           ctx.getDependency().getMetadataMap().get(YamlTypes.INFRA_SECTION_UUID).toByteArray());
       planCreationResponseMap.putAll(InfrastructurePmsPlanCreator.createPlanForInfraSectionV2(infraField.getNode(),
-          infraDefPlanNode.getUuid(), infrastructureDefinitionConfig, kryoSerializer, infraSectionUuid));
+          infraDefPlanNode.getUuid(), infrastructureDefinitionConfig, kryoSerializerWrapper, infraSectionUuid));
     } else {
-      String infraSectionUuid = (String) kryoSerializer.asInflatedObject(
+      String infraSectionUuid = (String) kryoSerializerWrapper.asInflatedObject(
           ctx.getDependency().getMetadataMap().get(YamlTypes.INFRA_SECTION_UUID).toByteArray());
       PlanNode gitopsNode = InfrastructurePmsPlanCreator.createPlanForGitopsClusters(
-          ctx.getCurrentField(), infraSectionUuid, config, kryoSerializer);
+          ctx.getCurrentField(), infraSectionUuid, config, kryoSerializerWrapper);
       planCreationResponseMap.put(gitopsNode.getUuid(), PlanCreationResponse.builder().planNode(gitopsNode).build());
     }
     return planCreationResponseMap;
@@ -120,14 +121,14 @@ public class EnvironmentPlanCreatorV2 extends ChildrenPlanCreator<EnvironmentPla
     EnvironmentStepParameters environmentStepParameters =
         EnvironmentMapper.toEnvironmentStepParameters(environmentPlanCreatorConfig);
 
-    String serviceSpecNodeUuid = (String) kryoSerializer.asInflatedObject(
+    String serviceSpecNodeUuid = (String) kryoSerializerWrapper.asInflatedObject(
         ctx.getDependency().getMetadataMap().get(YamlTypes.NEXT_UUID).toByteArray());
 
-    String uuid = (String) kryoSerializer.asInflatedObject(
+    String uuid = (String) kryoSerializerWrapper.asInflatedObject(
         ctx.getDependency().getMetadataMap().get(YamlTypes.UUID).toByteArray());
 
     ByteString advisorParameters = ByteString.copyFrom(
-        kryoSerializer.asBytes(OnSuccessAdviserParameters.builder().nextNodeId(serviceSpecNodeUuid).build()));
+        kryoSerializerWrapper.asBytes(OnSuccessAdviserParameters.builder().nextNodeId(serviceSpecNodeUuid).build()));
 
     return PlanNode.builder()
         .uuid(uuid)

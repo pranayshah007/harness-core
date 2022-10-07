@@ -62,7 +62,7 @@ import io.harness.ff.FeatureFlagService;
 import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
 import io.harness.security.SimpleEncryption;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.terraform.expression.TerraformPlanExpressionInterface;
 
 import software.wings.api.ContextElementParamMapper;
@@ -215,7 +215,7 @@ public class ExecutionContextImpl implements DeploymentExecutionContext {
   @Inject private transient InfrastructureDefinitionService infrastructureDefinitionService;
   @Inject private transient StateExecutionService stateExecutionService;
   @Inject private transient ArtifactStreamServiceBindingService artifactStreamServiceBindingService;
-  @Inject private transient KryoSerializer kryoSerializer;
+  @Inject private transient KryoSerializerWrapper kryoSerializerWrapper;
   @Inject private transient CustomDeploymentTypeService customDeploymentTypeService;
   @Inject private transient HelmChartService helmChartService;
   @Inject private transient FileService fileService;
@@ -619,7 +619,7 @@ public class ExecutionContextImpl implements DeploymentExecutionContext {
     if (result == null) {
       return null;
     }
-    return (Map<String, Artifact>) kryoSerializer.asInflatedObject(result.getOutput());
+    return (Map<String, Artifact>) kryoSerializerWrapper.asInflatedObject(result.getOutput());
   }
 
   private boolean isArtifactVariableForService(String serviceId, ArtifactVariable artifactVariable) {
@@ -1028,7 +1028,7 @@ public class ExecutionContextImpl implements DeploymentExecutionContext {
     contextMap.put("context",
         SweepingOutputFunctor.builder()
             .sweepingOutputService(sweepingOutputService)
-            .kryoSerializer(kryoSerializer)
+            .kryoSerializerWrapper(kryoSerializerWrapper)
             .sweepingOutputInquiryBuilder(prepareSweepingOutputInquiryBuilder())
             .build());
 

@@ -30,7 +30,7 @@ import io.harness.exception.WingsException;
 import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
 import io.harness.security.encryption.EncryptionType;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import software.wings.SecretManagementTestHelper;
 import software.wings.WingsBaseTest;
@@ -63,7 +63,8 @@ public class AwsSecretsManagerServiceImplTest extends WingsBaseTest {
   @Inject private SecretManagementTestHelper secretManagementTestHelper;
   @Inject private SecretManager secretManager;
 
-  @Inject KryoSerializer kryoSerializer;
+  @Inject
+  KryoSerializerWrapper kryoSerializerWrapper;
 
   private String accountId;
 
@@ -145,7 +146,7 @@ public class AwsSecretsManagerServiceImplTest extends WingsBaseTest {
     awsSecretManagerConfig.setAccountId(accountId);
 
     String savedConfigId =
-        awsSecretsManagerService.saveAwsSecretsManagerConfig(accountId, kryoSerializer.clone(awsSecretManagerConfig));
+        awsSecretsManagerService.saveAwsSecretsManagerConfig(accountId, kryoSerializerWrapper.clone(awsSecretManagerConfig));
 
     AwsSecretsManagerConfig updatedAwsSecretManagerConfig =
         awsSecretsManagerService.getAwsSecretsManagerConfig(accountId, savedConfigId);
@@ -155,7 +156,7 @@ public class AwsSecretsManagerServiceImplTest extends WingsBaseTest {
     updatedAwsSecretManagerConfig.maskSecrets();
 
     awsSecretsManagerService.saveAwsSecretsManagerConfig(
-        accountId, kryoSerializer.clone(updatedAwsSecretManagerConfig));
+        accountId, kryoSerializerWrapper.clone(updatedAwsSecretManagerConfig));
 
     assertEquals(
         "UpdatedConfig", awsSecretsManagerService.getAwsSecretsManagerConfig(accountId, savedConfigId).getName());
@@ -169,7 +170,7 @@ public class AwsSecretsManagerServiceImplTest extends WingsBaseTest {
     awsSecretManagerConfig.setAccountId(accountId);
 
     String savedConfigId =
-        awsSecretsManagerService.saveAwsSecretsManagerConfig(accountId, kryoSerializer.clone(awsSecretManagerConfig));
+        awsSecretsManagerService.saveAwsSecretsManagerConfig(accountId, kryoSerializerWrapper.clone(awsSecretManagerConfig));
 
     AwsSecretsManagerConfig savedAwsSecretManagerConfig =
         awsSecretsManagerService.getAwsSecretsManagerConfig(accountId, savedConfigId);
@@ -177,7 +178,7 @@ public class AwsSecretsManagerServiceImplTest extends WingsBaseTest {
     savedAwsSecretManagerConfig.setUuid(savedConfigId);
     savedAwsSecretManagerConfig.setSecretKey("UpdatedSecretKey");
 
-    awsSecretsManagerService.saveAwsSecretsManagerConfig(accountId, kryoSerializer.clone(savedAwsSecretManagerConfig));
+    awsSecretsManagerService.saveAwsSecretsManagerConfig(accountId, kryoSerializerWrapper.clone(savedAwsSecretManagerConfig));
 
     assertEquals("UpdatedSecretKey",
         awsSecretsManagerService.getAwsSecretsManagerConfig(accountId, savedConfigId).getSecretKey());
@@ -191,7 +192,7 @@ public class AwsSecretsManagerServiceImplTest extends WingsBaseTest {
     awsSecretManagerConfig.setAccountId(accountId);
 
     String savedConfigId =
-        awsSecretsManagerService.saveAwsSecretsManagerConfig(accountId, kryoSerializer.clone(awsSecretManagerConfig));
+        awsSecretsManagerService.saveAwsSecretsManagerConfig(accountId, kryoSerializerWrapper.clone(awsSecretManagerConfig));
 
     assertNotNull(awsSecretsManagerService.getAwsSecretsManagerConfig(accountId, savedConfigId));
 
@@ -208,7 +209,7 @@ public class AwsSecretsManagerServiceImplTest extends WingsBaseTest {
     awsSecretManagerConfig.setAccountId(accountId);
 
     String savedConfigId =
-        awsSecretsManagerService.saveAwsSecretsManagerConfig(accountId, kryoSerializer.clone(awsSecretManagerConfig));
+        awsSecretsManagerService.saveAwsSecretsManagerConfig(accountId, kryoSerializerWrapper.clone(awsSecretManagerConfig));
 
     persistence.save(EncryptedData.builder()
                          .accountId(accountId)

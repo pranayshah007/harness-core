@@ -96,7 +96,7 @@ import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.steps.StepHelper;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
@@ -115,7 +115,7 @@ import org.hibernate.validator.constraints.NotEmpty;
 public class EcsStepCommonHelper extends EcsStepUtils {
   @Inject private EngineExpressionService engineExpressionService;
   @Inject private EcsEntityHelper ecsEntityHelper;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
   @Inject private StepHelper stepHelper;
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
   private static final String TARGET_GROUP_ARN_EXPRESSION = "<+targetGroupArn>";
@@ -381,7 +381,7 @@ public class EcsStepCommonHelper extends EcsStepUtils {
 
     EcsSpecParameters ecsSpecParameters = (EcsSpecParameters) stepElementParameters.getSpec();
 
-    final TaskRequest taskRequest = prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
+    final TaskRequest taskRequest = prepareCDTaskRequest(ambiance, taskData, kryoSerializerWrapper,
         ecsSpecParameters.getCommandUnits(), taskName,
         TaskSelectorYaml.toTaskSelector(emptyIfNull(getParameterFieldValue(ecsSpecParameters.getDelegateSelectors()))),
         stepHelper.getEnvironmentType(ambiance));
@@ -918,7 +918,7 @@ public class EcsStepCommonHelper extends EcsStepUtils {
 
     EcsSpecParameters ecsSpecParameters = (EcsSpecParameters) stepElementParameters.getSpec();
 
-    final TaskRequest taskRequest = prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
+    final TaskRequest taskRequest = prepareCDTaskRequest(ambiance, taskData, kryoSerializerWrapper,
         ecsSpecParameters.getCommandUnits(), taskName,
         TaskSelectorYaml.toTaskSelector(emptyIfNull(getParameterFieldValue(ecsSpecParameters.getDelegateSelectors()))),
         stepHelper.getEnvironmentType(ambiance));

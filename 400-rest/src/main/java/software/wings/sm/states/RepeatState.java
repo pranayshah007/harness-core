@@ -21,7 +21,7 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.ExecutionStatus;
 import io.harness.context.ContextElementType;
 import io.harness.exception.WingsException;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.tasks.ResponseData;
 
 import software.wings.api.ExecutionDataValue;
@@ -71,7 +71,7 @@ public class RepeatState extends State {
   @SchemaIgnore private String repeatTransitionStateName;
 
   @Transient @Inject private WorkflowExecutionService workflowExecutionService;
-  @Transient @Inject private KryoSerializer kryoSerializer;
+  @Transient @Inject private KryoSerializerWrapper kryoSerializerWrapper;
   @Transient @Inject private RepeatStateHelper repeatStateHelper;
 
   /**
@@ -87,8 +87,8 @@ public class RepeatState extends State {
     this.workflowExecutionService = workflowExecutionService;
   }
 
-  public void setKryoSerializer(KryoSerializer kryoSerializer) {
-    this.kryoSerializer = kryoSerializer;
+  public void setKryoSerializer(KryoSerializerWrapper kryoSerializerWrapper) {
+    this.kryoSerializerWrapper = kryoSerializerWrapper;
   }
 
   /**
@@ -243,7 +243,7 @@ public class RepeatState extends State {
   private void processChildState(StateExecutionInstance stateExecutionInstance, List<String> correlationIds,
       ExecutionResponseBuilder executionResponseBuilder, ContextElement repeatElement) {
     String notifyId = stateExecutionInstance.getUuid() + "-repeat-" + repeatElement.getUuid();
-    StateExecutionInstance childStateExecutionInstance = kryoSerializer.clone(stateExecutionInstance);
+    StateExecutionInstance childStateExecutionInstance = kryoSerializerWrapper.clone(stateExecutionInstance);
     childStateExecutionInstance.setStateParams(null);
     childStateExecutionInstance.setDisplayName(repeatTransitionStateName);
     childStateExecutionInstance.setStateName(repeatTransitionStateName);

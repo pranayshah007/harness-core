@@ -24,7 +24,7 @@ import io.harness.perpetualtask.PerpetualTaskId;
 import io.harness.perpetualtask.PerpetualTaskResponse;
 import io.harness.perpetualtask.polling.GitPollingTaskParamsNg;
 import io.harness.perpetualtask.polling.PollingResponsePublisher;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
@@ -42,7 +42,7 @@ import lombok.extern.slf4j.Slf4j;
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @Slf4j
 public class GitPollingPerpetualTaskExecutorNg implements PerpetualTaskExecutor {
-  private final KryoSerializer kryoSerializer;
+  private final KryoSerializerWrapper kryoSerializerWrapper;
   private final GitPollingServiceImpl gitPollingService;
   private final PollingResponsePublisher pollingResponsePublisher;
 
@@ -56,7 +56,7 @@ public class GitPollingPerpetualTaskExecutorNg implements PerpetualTaskExecutor 
     String pollingDocId = taskParams.getPollingDocId();
     String perpetualTaskId = taskId.getId();
     GitPollingTaskParameters gitPollingTaskParameters =
-        (GitPollingTaskParameters) kryoSerializer.asObject(taskParams.getGitpollingWebhookParams().toByteArray());
+        (GitPollingTaskParameters) kryoSerializerWrapper.asObject(taskParams.getGitpollingWebhookParams().toByteArray());
     GitPollingCache gitPollingCache = cache.get(pollingDocId, id -> new GitPollingCache());
 
     if (!gitPollingCache.needsToPublish()) {

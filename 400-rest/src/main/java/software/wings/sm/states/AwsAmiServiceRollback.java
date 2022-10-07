@@ -23,7 +23,7 @@ import io.harness.beans.SweepingOutputInstance;
 import io.harness.beans.SweepingOutputInstance.Scope;
 import io.harness.context.ContextElementType;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import software.wings.api.AmiServiceDeployElement;
 import software.wings.api.AmiServiceSetupElement;
@@ -55,7 +55,7 @@ import lombok.Setter;
 @OwnedBy(CDP)
 public class AwsAmiServiceRollback extends AwsAmiServiceDeployState {
   @Getter @Setter @Attributes(title = "Rollback all phases at once") private boolean rollbackAllPhasesAtOnce;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
   @Inject private AwsAmiServiceStateHelper awsAmiServiceStateHelper;
 
   public AwsAmiServiceRollback(String name) {
@@ -173,7 +173,7 @@ public class AwsAmiServiceRollback extends AwsAmiServiceDeployState {
   private void markAllPhaseRollbackDone(ExecutionContext context) {
     sweepingOutputService.save(context.prepareSweepingOutputBuilder(Scope.WORKFLOW)
                                    .name(AWS_AMI_ALL_PHASE_ROLLBACK_NAME)
-                                   .output(kryoSerializer.asDeflatedBytes(
+                                   .output(kryoSerializerWrapper.asDeflatedBytes(
                                        AwsAmiAllPhaseRollbackData.builder().allPhaseRollbackDone(true).build()))
                                    .build());
   }
@@ -185,7 +185,7 @@ public class AwsAmiServiceRollback extends AwsAmiServiceDeployState {
     if (result == null) {
       return false;
     }
-    return ((AwsAmiAllPhaseRollbackData) kryoSerializer.asInflatedObject(result.getOutput())).isAllPhaseRollbackDone();
+    return ((AwsAmiAllPhaseRollbackData) kryoSerializerWrapper.asInflatedObject(result.getOutput())).isAllPhaseRollbackDone();
   }
 
   @Override

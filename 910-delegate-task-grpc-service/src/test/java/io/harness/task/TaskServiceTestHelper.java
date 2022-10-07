@@ -14,7 +14,7 @@ import io.harness.delegate.TaskResponseData;
 import io.harness.delegate.beans.DelegateStringResponseData;
 import io.harness.delegate.task.stepstatus.StepStatusTaskResponseData;
 import io.harness.serializer.KryoRegistrar;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.task.converters.ResponseDataConverter;
 import io.harness.task.converters.ResponseDataConverterRegistry;
 import io.harness.task.service.HTTPTaskResponse;
@@ -38,7 +38,8 @@ public class TaskServiceTestHelper {
   public static final String HTTP_RESPONSE_BODY = "200 OK";
   public static final int HTTP_RESPONSE_CODE = 200;
 
-  @Inject KryoSerializer kryoSerializer;
+  @Inject
+  KryoSerializerWrapper kryoSerializerWrapper;
 
   public HTTPTaskResponse getHttpTaskResponse() {
     return HTTPTaskResponse.newBuilder()
@@ -79,15 +80,15 @@ public class TaskServiceTestHelper {
   }
 
   public byte[] getDeflatedHttpResponseData() {
-    return kryoSerializer.asDeflatedBytes(getDummyHTTPResponseData());
+    return kryoSerializerWrapper.asDeflatedBytes(getDummyHTTPResponseData());
   }
 
   public byte[] getDeflatedJiraResponseData() {
-    return kryoSerializer.asDeflatedBytes(getDummyJIRAResponseData());
+    return kryoSerializerWrapper.asDeflatedBytes(getDummyJIRAResponseData());
   }
 
   public byte[] getDeflatedStepStatusTaskResponseData() {
-    return kryoSerializer.asDeflatedBytes(getStepStatusTaskResponseData());
+    return kryoSerializerWrapper.asDeflatedBytes(getStepStatusTaskResponseData());
   }
 
   public TaskStatusData getTaskResponseData() {
@@ -105,7 +106,7 @@ public class TaskServiceTestHelper {
   public TaskResponseData getTaskProgressResponseData() {
     return TaskResponseData.newBuilder()
         .setKryoResultsData(ByteString.copyFrom(
-            kryoSerializer.asDeflatedBytes(DelegateStringResponseData.builder().data("Test").build())))
+            kryoSerializerWrapper.asDeflatedBytes(DelegateStringResponseData.builder().data("Test").build())))
         .build();
   }
 

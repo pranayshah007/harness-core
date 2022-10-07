@@ -29,7 +29,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ServiceNowException;
 import io.harness.exception.WingsException;
 import io.harness.ff.FeatureFlagService;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.tasks.ResponseData;
 
 import software.wings.api.ServiceNowExecutionData;
@@ -82,7 +82,8 @@ public class ServiceNowCreateUpdateState extends State implements SweepingOutput
   @Inject private transient SweepingOutputService sweepingOutputService;
   @Inject private transient ActivityHelperService activityHelperService;
   @Inject private transient SettingsService settingsService;
-  @Transient @Inject KryoSerializer kryoSerializer;
+  @Transient @Inject
+  KryoSerializerWrapper kryoSerializerWrapper;
   @Inject @Transient private FeatureFlagService featureFlagService;
   @Inject private transient WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService;
 
@@ -248,9 +249,8 @@ public class ServiceNowCreateUpdateState extends State implements SweepingOutput
     return (ServiceNowConfig) snowSettingAttribute.getValue();
   }
 
-  @Override
-  public KryoSerializer getKryoSerializer() {
-    return kryoSerializer;
+  public KryoSerializerWrapper getKryoSerializer() {
+    return kryoSerializerWrapper;
   }
 
   @Override

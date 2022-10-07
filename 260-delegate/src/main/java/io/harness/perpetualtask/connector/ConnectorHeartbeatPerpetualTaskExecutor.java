@@ -32,7 +32,7 @@ import io.harness.perpetualtask.PerpetualTaskExecutionParams;
 import io.harness.perpetualtask.PerpetualTaskExecutor;
 import io.harness.perpetualtask.PerpetualTaskId;
 import io.harness.perpetualtask.PerpetualTaskResponse;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -52,7 +52,7 @@ import org.eclipse.jetty.server.Response;
 public class ConnectorHeartbeatPerpetualTaskExecutor implements PerpetualTaskExecutor {
   private static final String ERROR_MSG_INVALID_YAML = "Invalid yaml";
   Map<String, ConnectorValidationHandler> connectorTypeToConnectorValidationHandlerMap;
-  private KryoSerializer kryoSerializer;
+  private KryoSerializerWrapper kryoSerializerWrapper;
   private DelegateAgentManagerClient delegateAgentManagerClient;
 
   @Override
@@ -65,7 +65,7 @@ public class ConnectorHeartbeatPerpetualTaskExecutor implements PerpetualTaskExe
     String projectIdentifier = taskParams.getProjectIdentifier().getValue();
     String connectorIdentifier = taskParams.getConnectorIdentifier();
     final ConnectorValidationParameterResponse connectorValidationParameterResponse =
-        (ConnectorValidationParameterResponse) kryoSerializer.asObject(
+        (ConnectorValidationParameterResponse) kryoSerializerWrapper.asObject(
             taskParams.getConnectorValidationParameterResponse().toByteArray());
     final ConnectorValidationParams connectorValidationParams =
         connectorValidationParameterResponse.getConnectorValidationParams();

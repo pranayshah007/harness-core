@@ -41,7 +41,7 @@ import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import com.google.inject.Inject;
 import java.util.ArrayList;
@@ -60,7 +60,7 @@ public class InitializeTaskStepTest extends CIExecutionTestBase {
   @Mock private BuildSetupUtils buildSetupUtils;
   @Mock private CIDelegateTaskExecutor ciDelegateTaskExecutor;
   @Mock private ExecutionSweepingOutputService executionSweepingOutputResolver;
-  @Mock private KryoSerializer kryoSerializer;
+  @Mock private KryoSerializerWrapper kryoSerializerWrapper;
   @Mock private BuildJobEnvInfoBuilder buildJobEnvInfoBuilder;
   @Mock private SerializedResponseDataHelper serializedResponseDataHelper;
   @InjectMocks private InitializeTaskStep initializeTaskStep;

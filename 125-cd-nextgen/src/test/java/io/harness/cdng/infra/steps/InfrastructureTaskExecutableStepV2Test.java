@@ -90,7 +90,7 @@ import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.service.DelegateGrpcClientWrapper;
 import io.harness.steps.EntityReferenceExtractorUtils;
 import io.harness.steps.StepHelper;
@@ -134,7 +134,7 @@ public class InfrastructureTaskExecutableStepV2Test extends CategoryTest {
   @Mock private PipelineRbacHelper pipelineRbacHelper;
   @Mock private OutcomeService outcomeService;
   @Mock private ExecutionSweepingOutputService sweepingOutputService;
-  @Mock private KryoSerializer kryoSerializer;
+  @Mock private KryoSerializerWrapper kryoSerializerWrapper;
   @Mock private NGLogCallback logCallback;
   @Spy InstanceOutcomeHelper instanceOutcomeHelper;
 
@@ -161,7 +161,7 @@ public class InfrastructureTaskExecutableStepV2Test extends CategoryTest {
 
     doReturn(io.harness.beans.EnvironmentType.NON_PROD).when(stepHelper).getEnvironmentType(any(Ambiance.class));
 
-    doReturn("bytes".getBytes()).when(kryoSerializer).asDeflatedBytes(any());
+    doReturn("bytes".getBytes()).when(kryoSerializerWrapper).asDeflatedBytes(any());
 
     doReturn(logCallback).when(infrastructureStepHelper).getInfrastructureLogCallback(any(Ambiance.class));
 

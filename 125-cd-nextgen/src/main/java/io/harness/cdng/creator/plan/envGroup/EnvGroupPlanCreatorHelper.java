@@ -38,7 +38,7 @@ import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.utils.YamlPipelineUtils;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -60,7 +60,7 @@ import java.util.stream.Collectors;
 public class EnvGroupPlanCreatorHelper {
   @Inject private EnvironmentGroupService environmentGroupService;
   @Inject private EnvironmentService environmentService;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
 
   public EnvGroupPlanCreatorConfig createEnvGroupPlanCreatorConfig(
       PlanCreationContextValue metadata, EnvironmentGroupYaml envGroupYaml) {
@@ -148,7 +148,7 @@ public class EnvGroupPlanCreatorHelper {
     // preparing meta data
     final Dependency envGroupDependency = Dependency.newBuilder()
                                               .putAllMetadata(prepareMetadata(serviceSpecNodeUuid, postServiceStepUuid,
-                                                  envGroupUuid, gitOpsEnabled, kryoSerializer))
+                                                  envGroupUuid, gitOpsEnabled, kryoSerializerWrapper))
                                               .build();
 
     planCreationResponseMap.put(envGroupUuid,
@@ -165,12 +165,12 @@ public class EnvGroupPlanCreatorHelper {
   }
 
   private Map<String, ByteString> prepareMetadata(String serviceSpecNodeId, String postServiceStepUuid,
-      String environmentGroupUuid, boolean gitOpsEnabled, KryoSerializer kryoSerializer) {
+      String environmentGroupUuid, boolean gitOpsEnabled, KryoSerializerWrapper kryoSerializerWrapper) {
     return ImmutableMap.<String, ByteString>builder()
-        .put(YamlTypes.NEXT_UUID, ByteString.copyFrom(kryoSerializer.asDeflatedBytes(serviceSpecNodeId)))
-        .put(YamlTypes.POST_SERVICE_SPEC_UUID, ByteString.copyFrom(kryoSerializer.asDeflatedBytes(postServiceStepUuid)))
-        .put(YamlTypes.UUID, ByteString.copyFrom(kryoSerializer.asDeflatedBytes(environmentGroupUuid)))
-        .put(YAMLFieldNameConstants.GITOPS_ENABLED, ByteString.copyFrom(kryoSerializer.asDeflatedBytes(gitOpsEnabled)))
+        .put(YamlTypes.NEXT_UUID, ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(serviceSpecNodeId)))
+        .put(YamlTypes.POST_SERVICE_SPEC_UUID, ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(postServiceStepUuid)))
+        .put(YamlTypes.UUID, ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(environmentGroupUuid)))
+        .put(YAMLFieldNameConstants.GITOPS_ENABLED, ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(gitOpsEnabled)))
         .build();
   }
 }

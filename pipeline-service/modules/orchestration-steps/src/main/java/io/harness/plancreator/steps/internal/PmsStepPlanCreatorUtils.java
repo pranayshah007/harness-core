@@ -46,7 +46,7 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.utils.TimeoutUtils;
 import io.harness.yaml.core.failurestrategy.FailureStrategyActionConfig;
 import io.harness.yaml.core.failurestrategy.FailureStrategyConfig;
@@ -72,7 +72,7 @@ import lombok.experimental.UtilityClass;
 @UtilityClass
 public class PmsStepPlanCreatorUtils {
   public List<AdviserObtainment> getAdviserObtainmentFromMetaData(
-      KryoSerializer kryoSerializer, YamlField currentField) {
+      KryoSerializerWrapper kryoSerializerWrapper, YamlField currentField) {
     boolean isStepInsideRollback = false;
     if (YamlUtils.findParentNode(currentField.getNode(), ROLLBACK_STEPS) != null) {
       isStepInsideRollback = true;
@@ -80,20 +80,20 @@ public class PmsStepPlanCreatorUtils {
 
     // Adding adviser obtainment list from the failure strategy.
     List<AdviserObtainment> adviserObtainmentList =
-        new ArrayList<>(getAdviserObtainmentForFailureStrategy(kryoSerializer, currentField, isStepInsideRollback));
+        new ArrayList<>(getAdviserObtainmentForFailureStrategy(kryoSerializerWrapper, currentField, isStepInsideRollback));
 
     /*
      * Adding OnSuccess adviser if step is inside rollback section else adding NextStep adviser for when condition to
      * work.
      */
     if (isStepInsideRollback) {
-      AdviserObtainment onSuccessAdviserObtainment = getOnSuccessAdviserObtainment(kryoSerializer, currentField);
+      AdviserObtainment onSuccessAdviserObtainment = getOnSuccessAdviserObtainment(kryoSerializerWrapper, currentField);
       if (onSuccessAdviserObtainment != null) {
         adviserObtainmentList.add(onSuccessAdviserObtainment);
       }
     } else {
       // Always add nextStep adviser at last, as its priority is less than, Do not change the order.
-      AdviserObtainment nextStepAdviserObtainment = getNextStepAdviserObtainment(kryoSerializer, currentField);
+      AdviserObtainment nextStepAdviserObtainment = getNextStepAdviserObtainment(kryoSerializerWrapper, currentField);
       if (nextStepAdviserObtainment != null) {
         adviserObtainmentList.add(nextStepAdviserObtainment);
       }
@@ -103,7 +103,7 @@ public class PmsStepPlanCreatorUtils {
   }
 
   @VisibleForTesting
-  AdviserObtainment getNextStepAdviserObtainment(KryoSerializer kryoSerializer, YamlField currentField) {
+  AdviserObtainment getNextStepAdviserObtainment(KryoSerializerWrapper kryoSerializerWrapper, YamlField currentField) {
     if (currentField != null && currentField.getNode() != null) {
       if (GenericPlanCreatorUtils.checkIfStepIsInParallelSection(currentField)
           || StrategyUtils.isWrappedUnderStrategy(currentField)) {
@@ -113,7 +113,7 @@ public class PmsStepPlanCreatorUtils {
       if (siblingField != null && siblingField.getNode().getUuid() != null) {
         return AdviserObtainment.newBuilder()
             .setType(AdviserType.newBuilder().setType(OrchestrationAdviserTypes.NEXT_STEP.name()).build())
-            .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(
+            .setParameters(ByteString.copyFrom(kryoSerializerWrapper.asBytes(
                 NextStepAdviserParameters.builder().nextNodeId(siblingField.getNode().getUuid()).build())))
             .build();
       }
@@ -122,7 +122,7 @@ public class PmsStepPlanCreatorUtils {
   }
 
   @VisibleForTesting
-  AdviserObtainment getOnSuccessAdviserObtainment(KryoSerializer kryoSerializer, YamlField currentField) {
+  AdviserObtainment getOnSuccessAdviserObtainment(KryoSerializerWrapper kryoSerializerWrapper, YamlField currentField) {
     if (currentField != null && currentField.getNode() != null) {
       if (GenericPlanCreatorUtils.checkIfStepIsInParallelSection(currentField)
           || StrategyUtils.isWrappedUnderStrategy(currentField)) {
@@ -132,7 +132,7 @@ public class PmsStepPlanCreatorUtils {
       if (siblingField != null && siblingField.getNode().getUuid() != null) {
         return AdviserObtainment.newBuilder()
             .setType(AdviserType.newBuilder().setType(OrchestrationAdviserTypes.ON_SUCCESS.name()).build())
-            .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(
+            .setParameters(ByteString.copyFrom(kryoSerializerWrapper.asBytes(
                 OnSuccessAdviserParameters.builder().nextNodeId(siblingField.getNode().getUuid()).build())))
             .build();
       }
@@ -142,7 +142,7 @@ public class PmsStepPlanCreatorUtils {
 
   @VisibleForTesting
   List<AdviserObtainment> getAdviserObtainmentForFailureStrategy(
-      KryoSerializer kryoSerializer, YamlField currentField, boolean isStepInsideRollback) {
+      KryoSerializerWrapper kryoSerializerWrapper, YamlField currentField, boolean isStepInsideRollback) {
     List<AdviserObtainment> adviserObtainmentList = new ArrayList<>();
     List<FailureStrategyConfig> stageFailureStrategies =
         getFieldFailureStrategies(currentField, STAGE, isStepInsideRollback);
@@ -181,7 +181,7 @@ public class PmsStepPlanCreatorUtils {
         case IGNORE:
           adviserObtainmentList.add(
               adviserObtainmentBuilder.setType(IgnoreAdviser.ADVISER_TYPE)
-                  .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(IgnoreAdviserParameters.builder()
+                  .setParameters(ByteString.copyFrom(kryoSerializerWrapper.asBytes(IgnoreAdviserParameters.builder()
                                                                                 .applicableFailureTypes(failureTypes)
                                                                                 .nextNodeId(nextNodeUuid)
                                                                                 .build())))
@@ -192,13 +192,13 @@ public class PmsStepPlanCreatorUtils {
           FailureStrategiesUtils.validateRetryFailureAction(retryAction);
           ParameterField<Integer> retryCount = retryAction.getSpecConfig().getRetryCount();
           FailureStrategyActionConfig actionUnderRetry = retryAction.getSpecConfig().getOnRetryFailure().getAction();
-          adviserObtainmentList.add(getRetryAdviserObtainment(kryoSerializer, failureTypes, nextNodeUuid,
+          adviserObtainmentList.add(getRetryAdviserObtainment(kryoSerializerWrapper, failureTypes, nextNodeUuid,
               adviserObtainmentBuilder, retryAction, retryCount, actionUnderRetry, currentField));
           break;
         case MARK_AS_SUCCESS:
           adviserObtainmentList.add(
               adviserObtainmentBuilder.setType(OnMarkSuccessAdviser.ADVISER_TYPE)
-                  .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(OnMarkSuccessAdviserParameters.builder()
+                  .setParameters(ByteString.copyFrom(kryoSerializerWrapper.asBytes(OnMarkSuccessAdviserParameters.builder()
                                                                                 .applicableFailureTypes(failureTypes)
                                                                                 .nextNodeId(nextNodeUuid)
                                                                                 .build())))
@@ -208,7 +208,7 @@ public class PmsStepPlanCreatorUtils {
         case ABORT:
           adviserObtainmentList.add(
               adviserObtainmentBuilder.setType(OnAbortAdviser.ADVISER_TYPE)
-                  .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(
+                  .setParameters(ByteString.copyFrom(kryoSerializerWrapper.asBytes(
                       OnAbortAdviserParameters.builder().applicableFailureTypes(failureTypes).build())))
                   .build());
           break;
@@ -216,7 +216,7 @@ public class PmsStepPlanCreatorUtils {
           OnFailRollbackParameters rollbackParameters =
               getRollbackParameters(currentField, failureTypes, RollbackStrategy.STAGE_ROLLBACK);
           adviserObtainmentList.add(adviserObtainmentBuilder.setType(OnFailRollbackAdviser.ADVISER_TYPE)
-                                        .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(rollbackParameters)))
+                                        .setParameters(ByteString.copyFrom(kryoSerializerWrapper.asBytes(rollbackParameters)))
                                         .build());
           break;
         case MANUAL_INTERVENTION:
@@ -225,19 +225,19 @@ public class PmsStepPlanCreatorUtils {
           FailureStrategyActionConfig actionUnderManualIntervention =
               actionConfig.getSpecConfig().getOnTimeout().getAction();
           adviserObtainmentList.add(getManualInterventionAdviserObtainment(
-              kryoSerializer, failureTypes, adviserObtainmentBuilder, actionConfig, actionUnderManualIntervention));
+              kryoSerializerWrapper, failureTypes, adviserObtainmentBuilder, actionConfig, actionUnderManualIntervention));
           break;
         case PROCEED_WITH_DEFAULT_VALUES:
           adviserObtainmentList.add(
               adviserObtainmentBuilder.setType(ProceedWithDefaultValueAdviser.ADVISER_TYPE)
-                  .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(
+                  .setParameters(ByteString.copyFrom(kryoSerializerWrapper.asBytes(
                       ProceedWithDefaultAdviserParameters.builder().applicableFailureTypes(failureTypes).build())))
                   .build());
           break;
         case PIPELINE_ROLLBACK:
           rollbackParameters = getRollbackParameters(currentField, failureTypes, RollbackStrategy.PIPELINE_ROLLBACK);
           adviserObtainmentList.add(adviserObtainmentBuilder.setType(OnFailRollbackAdviser.ADVISER_TYPE)
-                                        .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(rollbackParameters)))
+                                        .setParameters(ByteString.copyFrom(kryoSerializerWrapper.asBytes(rollbackParameters)))
                                         .build());
           break;
         default:
@@ -280,11 +280,11 @@ public class PmsStepPlanCreatorUtils {
   }
 
   @VisibleForTesting
-  AdviserObtainment getRetryAdviserObtainment(KryoSerializer kryoSerializer, Set<FailureType> failureTypes,
-      String nextNodeUuid, AdviserObtainment.Builder adviserObtainmentBuilder, RetryFailureActionConfig retryAction,
-      ParameterField<Integer> retryCount, FailureStrategyActionConfig actionUnderRetry, YamlField currentField) {
+  AdviserObtainment getRetryAdviserObtainment(KryoSerializerWrapper kryoSerializerWrapper, Set<FailureType> failureTypes,
+                                              String nextNodeUuid, AdviserObtainment.Builder adviserObtainmentBuilder, RetryFailureActionConfig retryAction,
+                                              ParameterField<Integer> retryCount, FailureStrategyActionConfig actionUnderRetry, YamlField currentField) {
     return adviserObtainmentBuilder.setType(RetryAdviserWithRollback.ADVISER_TYPE)
-        .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(
+        .setParameters(ByteString.copyFrom(kryoSerializerWrapper.asBytes(
             RetryAdviserRollbackParameters.builder()
                 .applicableFailureTypes(failureTypes)
                 .nextNodeId(nextNodeUuid)
@@ -319,11 +319,11 @@ public class PmsStepPlanCreatorUtils {
   }
 
   @VisibleForTesting
-  AdviserObtainment getManualInterventionAdviserObtainment(KryoSerializer kryoSerializer, Set<FailureType> failureTypes,
-      AdviserObtainment.Builder adviserObtainmentBuilder, ManualInterventionFailureActionConfig actionConfig,
-      FailureStrategyActionConfig actionUnderManualIntervention) {
+  AdviserObtainment getManualInterventionAdviserObtainment(KryoSerializerWrapper kryoSerializerWrapper, Set<FailureType> failureTypes,
+                                                           AdviserObtainment.Builder adviserObtainmentBuilder, ManualInterventionFailureActionConfig actionConfig,
+                                                           FailureStrategyActionConfig actionUnderManualIntervention) {
     return adviserObtainmentBuilder.setType(ManualInterventionAdviserWithRollback.ADVISER_TYPE)
-        .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(
+        .setParameters(ByteString.copyFrom(kryoSerializerWrapper.asBytes(
             ManualInterventionAdviserRollbackParameters.builder()
                 .applicableFailureTypes(failureTypes)
                 .timeoutAction(GenericPlanCreatorUtils.toRepairAction(actionUnderManualIntervention))

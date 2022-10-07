@@ -16,7 +16,7 @@ import io.harness.context.GlobalContext;
 import io.harness.context.GlobalContextData;
 import io.harness.context.MdcGlobalContextData;
 import io.harness.logging.AutoLogContext;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.virtualstack.VirtualStackRequest;
 
 import java.util.Map;
@@ -79,13 +79,13 @@ public class GlobalContextManager {
   }
 
   public static GlobalContextGuard initGlobalContextGuard(
-      KryoSerializer kryoSerializer, VirtualStackRequest virtualStackRequest) {
+      KryoSerializerWrapper kryoSerializerWrapper, VirtualStackRequest virtualStackRequest) {
     GlobalContext globalContext = null;
     if (virtualStackRequest == null || virtualStackRequest.getGlobalContext() == null) {
       globalContext = new GlobalContext();
     } else {
       globalContext =
-          (GlobalContext) kryoSerializer.asInflatedObject(virtualStackRequest.getGlobalContext().toByteArray());
+          (GlobalContext) kryoSerializerWrapper.asInflatedObject(virtualStackRequest.getGlobalContext().toByteArray());
     }
     return new GlobalContextGuard(globalContext);
   }

@@ -51,7 +51,7 @@ import io.harness.expression.ExpressionReflectionUtils;
 import io.harness.ff.FeatureFlagService;
 import io.harness.security.SimpleEncryption;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.shell.AccessType;
 import io.harness.shell.AuthenticationScheme;
 import io.harness.shell.KerberosConfig;
@@ -144,7 +144,8 @@ public class ShellScriptState extends State implements SweepingOutputStateMixin 
   @Inject @Transient private TemplateExpressionProcessor templateExpressionProcessor;
   @Inject @Transient private DelegateService delegateService;
   @Inject @Transient private FeatureFlagService featureFlagService;
-  @Transient @Inject KryoSerializer kryoSerializer;
+  @Transient @Inject
+  KryoSerializerWrapper kryoSerializerWrapper;
   @Inject @Transient private SSHVaultService sshVaultService;
   @Inject @Transient private WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService;
 
@@ -159,9 +160,8 @@ public class ShellScriptState extends State implements SweepingOutputStateMixin 
 
   @NotEmpty @Getter @Setter @Attributes(title = "delegateSelectors") private List<String> delegateSelectors;
 
-  @Override
-  public KryoSerializer getKryoSerializer() {
-    return kryoSerializer;
+  public KryoSerializerWrapper getKryoSerializer() {
+    return kryoSerializerWrapper;
   }
 
   @NotEmpty

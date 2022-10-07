@@ -27,7 +27,7 @@ import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.steps.matrix.StrategyConstants;
 import io.harness.steps.matrix.StrategyMetadata;
 import io.harness.steps.matrix.StrategyStep;
@@ -52,7 +52,8 @@ import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
 public class StrategyConfigPlanCreatorTest extends PmsSdkCoreTestBase {
-  @Mock KryoSerializer kryoSerializer;
+  @Mock
+  KryoSerializerWrapper kryoSerializerWrapper;
   @InjectMocks StrategyConfigPlanCreator strategyConfigPlanCreator;
 
   @Test
@@ -83,7 +84,7 @@ public class StrategyConfigPlanCreatorTest extends PmsSdkCoreTestBase {
                                             .adviserObtainments(new ArrayList<>())
                                             .build();
     metadataMap.put(StrategyConstants.STRATEGY_METADATA + strategyNodeId, ByteString.EMPTY);
-    Mockito.when(kryoSerializer.asInflatedObject(Mockito.any())).thenReturn(strategyMetadata);
+    Mockito.when(kryoSerializerWrapper.asInflatedObject(Mockito.any())).thenReturn(strategyMetadata);
     PlanCreationContext context = PlanCreationContext.builder()
                                       .dependency(Dependency.newBuilder().putAllMetadata(metadataMap).build())
                                       .currentField(approvalStageYamlField.getNode().getField("strategy"))

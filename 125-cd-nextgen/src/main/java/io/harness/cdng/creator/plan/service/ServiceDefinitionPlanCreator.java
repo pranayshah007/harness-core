@@ -53,7 +53,7 @@ import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
@@ -69,7 +69,8 @@ import java.util.Set;
 
 @OwnedBy(HarnessTeam.CDC)
 public class ServiceDefinitionPlanCreator extends ChildrenPlanCreator<YamlField> {
-  @Inject KryoSerializer kryoSerializer;
+  @Inject
+  KryoSerializerWrapper kryoSerializerWrapper;
   @Inject ServiceOverrideService serviceOverrideService;
   @Inject EnvironmentService environmentService;
 
@@ -109,7 +110,7 @@ public class ServiceDefinitionPlanCreator extends ChildrenPlanCreator<YamlField>
   @Override
   public PlanNode createPlanForParentNode(
       PlanCreationContext ctx, YamlField serviceDefField, List<String> childrenNodeIds) {
-    String envNodeUuid = (String) kryoSerializer.asInflatedObject(
+    String envNodeUuid = (String) kryoSerializerWrapper.asInflatedObject(
         ctx.getDependency().getMetadataMap().get(YamlTypes.ENVIRONMENT_NODE_ID).toByteArray());
     String type = serviceDefField.getNode().getField(YAMLFieldNameConstants.TYPE).getNode().asText();
     ServiceDefinitionStepParameters stepParameters =
@@ -138,13 +139,13 @@ public class ServiceDefinitionPlanCreator extends ChildrenPlanCreator<YamlField>
         ServiceDefinitionPlanCreatorHelper.validateCreatePlanNodeForArtifacts(serviceConfig);
     if (createPlanForArtifacts) {
       String artifactNodeId = ServiceDefinitionPlanCreatorHelper.addDependenciesForArtifacts(
-          serviceConfigNode, planCreationResponseMap, serviceConfig, kryoSerializer);
+          serviceConfigNode, planCreationResponseMap, serviceConfig, kryoSerializerWrapper);
       serviceSpecChildrenIds.add(artifactNodeId);
     }
 
     if (ServiceDefinitionPlanCreatorHelper.shouldCreatePlanNodeForManifests(serviceConfig)) {
       String manifestPlanNodeId = ServiceDefinitionPlanCreatorHelper.addDependenciesForManifests(
-          serviceConfigNode, planCreationResponseMap, serviceConfig, kryoSerializer);
+          serviceConfigNode, planCreationResponseMap, serviceConfig, kryoSerializerWrapper);
       serviceSpecChildrenIds.add(manifestPlanNodeId);
     }
 
@@ -161,21 +162,21 @@ public class ServiceDefinitionPlanCreator extends ChildrenPlanCreator<YamlField>
       StartupCommandConfiguration startupCommand = azureWebAppServiceSpec.getStartupCommand();
       if (startupCommand != null) {
         String startupCommandPlanNodeId = ServiceDefinitionPlanCreatorHelper.addDependenciesForStartupCommand(
-            serviceConfigNode, planCreationResponseMap, serviceConfig, kryoSerializer);
+            serviceConfigNode, planCreationResponseMap, serviceConfig, kryoSerializerWrapper);
         serviceSpecChildrenIds.add(startupCommandPlanNodeId);
       }
 
       ApplicationSettingsConfiguration applicationSettings = azureWebAppServiceSpec.getApplicationSettings();
       if (applicationSettings != null) {
         String applicationSettingsPlanNodeId = ServiceDefinitionPlanCreatorHelper.addDependenciesForApplicationSettings(
-            serviceConfigNode, planCreationResponseMap, serviceConfig, kryoSerializer);
+            serviceConfigNode, planCreationResponseMap, serviceConfig, kryoSerializerWrapper);
         serviceSpecChildrenIds.add(applicationSettingsPlanNodeId);
       }
 
       ConnectionStringsConfiguration connectionStrings = azureWebAppServiceSpec.getConnectionStrings();
       if (connectionStrings != null) {
         String connectionStringsPlanNodeId = ServiceDefinitionPlanCreatorHelper.addDependenciesForConnectionStrings(
-            serviceConfigNode, planCreationResponseMap, serviceConfig, kryoSerializer);
+            serviceConfigNode, planCreationResponseMap, serviceConfig, kryoSerializerWrapper);
         serviceSpecChildrenIds.add(connectionStringsPlanNodeId);
       }
     }
@@ -193,11 +194,11 @@ public class ServiceDefinitionPlanCreator extends ChildrenPlanCreator<YamlField>
         ServiceDefinitionPlanCreatorHelper.validateCreatePlanNodeForArtifactsV2(ngServiceV2InfoConfig);
     if (createPlanForArtifacts) {
       String artifactNodeId = ServiceDefinitionPlanCreatorHelper.addDependenciesForArtifactsV2(
-          serviceV2Node, planCreationResponseMap, ngServiceV2InfoConfig, kryoSerializer);
+          serviceV2Node, planCreationResponseMap, ngServiceV2InfoConfig, kryoSerializerWrapper);
       serviceSpecChildrenIds.add(artifactNodeId);
     }
 
-    final Map<String, Object> svcPlanCreatorEnvDeps = (Map) kryoSerializer.asInflatedObject(
+    final Map<String, Object> svcPlanCreatorEnvDeps = (Map) kryoSerializerWrapper.asInflatedObject(
         ctx.getDependency().getMetadataMap().get(SVC_PLAN_CREATOR_ENVIRONMENT_DEPS).toByteArray());
 
     final NGServiceOverrideConfig serviceOverrideConfig =
@@ -208,14 +209,14 @@ public class ServiceDefinitionPlanCreator extends ChildrenPlanCreator<YamlField>
 
     final String manifestPlanNodeId =
         ServiceDefinitionPlanCreatorHelper.addDependenciesForManifestV2(serviceV2Node, planCreationResponseMap,
-            ngServiceV2InfoConfig, serviceOverrideConfig, environmentGlobalOverride, kryoSerializer, envId);
+            ngServiceV2InfoConfig, serviceOverrideConfig, environmentGlobalOverride, kryoSerializerWrapper, envId);
     if (isNotBlank(manifestPlanNodeId)) {
       serviceSpecChildrenIds.add(manifestPlanNodeId);
     }
 
     final String configFilesPlanNodeId =
         ServiceDefinitionPlanCreatorHelper.addDependenciesForConfigFilesV2(serviceV2Node, planCreationResponseMap,
-            ngServiceV2InfoConfig, serviceOverrideConfig, environmentGlobalOverride, kryoSerializer);
+            ngServiceV2InfoConfig, serviceOverrideConfig, environmentGlobalOverride, kryoSerializerWrapper);
     if (isNotBlank(configFilesPlanNodeId)) {
       serviceSpecChildrenIds.add(configFilesPlanNodeId);
     }
@@ -227,14 +228,14 @@ public class ServiceDefinitionPlanCreator extends ChildrenPlanCreator<YamlField>
       StartupCommandConfiguration startupCommand = azureWebAppServiceSpec.getStartupCommand();
       if (startupCommand != null) {
         String startupCommandPlanNodeId = ServiceDefinitionPlanCreatorHelper.addDependenciesForStartupCommandV2(
-            serviceV2Node, planCreationResponseMap, ngServiceV2InfoConfig, kryoSerializer);
+            serviceV2Node, planCreationResponseMap, ngServiceV2InfoConfig, kryoSerializerWrapper);
         serviceSpecChildrenIds.add(startupCommandPlanNodeId);
       }
 
       final String applicationSettingsPlanNodeId =
           ServiceDefinitionPlanCreatorHelper.addDependenciesForApplicationSettingsV2(serviceV2Node,
               planCreationResponseMap, ngServiceV2InfoConfig, serviceOverrideConfig, environmentGlobalOverride,
-              kryoSerializer);
+              kryoSerializerWrapper);
       if (isNotBlank(applicationSettingsPlanNodeId)) {
         serviceSpecChildrenIds.add(applicationSettingsPlanNodeId);
       }
@@ -242,7 +243,7 @@ public class ServiceDefinitionPlanCreator extends ChildrenPlanCreator<YamlField>
       final String connectionStringsPlanNodeId =
           ServiceDefinitionPlanCreatorHelper.addDependenciesForConnectionStringsV2(serviceV2Node,
               planCreationResponseMap, ngServiceV2InfoConfig, serviceOverrideConfig, environmentGlobalOverride,
-              kryoSerializer);
+              kryoSerializerWrapper);
       if (isNotBlank(connectionStringsPlanNodeId)) {
         serviceSpecChildrenIds.add(connectionStringsPlanNodeId);
       }
@@ -316,7 +317,7 @@ public class ServiceDefinitionPlanCreator extends ChildrenPlanCreator<YamlField>
     String configFilesPlanNodeId = "configFiles-" + UUIDGenerator.generateUuid();
 
     Map<String, ByteString> metadataDependency =
-        ServiceDefinitionPlanCreatorHelper.prepareMetadata(configFilesPlanNodeId, serviceConfig, kryoSerializer);
+        ServiceDefinitionPlanCreatorHelper.prepareMetadata(configFilesPlanNodeId, serviceConfig, kryoSerializerWrapper);
 
     Map<String, YamlField> dependenciesMap = new HashMap<>();
     dependenciesMap.put(configFilesPlanNodeId, configFilesYamlField);

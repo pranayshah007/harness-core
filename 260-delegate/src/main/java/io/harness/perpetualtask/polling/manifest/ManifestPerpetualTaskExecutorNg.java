@@ -22,7 +22,7 @@ import io.harness.perpetualtask.PerpetualTaskId;
 import io.harness.perpetualtask.PerpetualTaskResponse;
 import io.harness.perpetualtask.polling.ManifestCollectionTaskParamsNg;
 import io.harness.perpetualtask.polling.PollingResponsePublisher;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
@@ -38,7 +38,7 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(HarnessTeam.CDC)
 @Singleton
 public class ManifestPerpetualTaskExecutorNg implements PerpetualTaskExecutor {
-  private final KryoSerializer kryoSerializer;
+  private final KryoSerializerWrapper kryoSerializerWrapper;
   private final ManifestCollectionService manifestCollectionService;
   private final PollingResponsePublisher pollingResponsePublisher;
 
@@ -46,9 +46,9 @@ public class ManifestPerpetualTaskExecutorNg implements PerpetualTaskExecutor {
   private static final long TIMEOUT_IN_MILLIS = 120L * 1000;
 
   @Inject
-  public ManifestPerpetualTaskExecutorNg(KryoSerializer kryoSerializer,
-      ManifestCollectionService manifestCollectionService, PollingResponsePublisher pollingResponsePublisher) {
-    this.kryoSerializer = kryoSerializer;
+  public ManifestPerpetualTaskExecutorNg(KryoSerializerWrapper kryoSerializerWrapper,
+                                         ManifestCollectionService manifestCollectionService, PollingResponsePublisher pollingResponsePublisher) {
+    this.kryoSerializerWrapper = kryoSerializerWrapper;
     this.manifestCollectionService = manifestCollectionService;
     this.pollingResponsePublisher = pollingResponsePublisher;
   }
@@ -79,7 +79,7 @@ public class ManifestPerpetualTaskExecutorNg implements PerpetualTaskExecutor {
     ManifestCollectionTaskParamsNg taskParams = getTaskParams(params);
     cache.invalidate(taskParams.getPollingDocId());
     ManifestDelegateConfig manifestConfig =
-        (ManifestDelegateConfig) kryoSerializer.asObject(taskParams.getManifestCollectionParams().toByteArray());
+        (ManifestDelegateConfig) kryoSerializerWrapper.asObject(taskParams.getManifestCollectionParams().toByteArray());
     manifestCollectionService.cleanup(manifestConfig);
     return true;
   }
@@ -92,7 +92,7 @@ public class ManifestPerpetualTaskExecutorNg implements PerpetualTaskExecutor {
       ManifestsCollectionCache manifestsCollectionCache, ManifestCollectionTaskParamsNg taskParams, String taskId) {
     try {
       ManifestDelegateConfig manifestConfig =
-          (ManifestDelegateConfig) kryoSerializer.asObject(taskParams.getManifestCollectionParams().toByteArray());
+          (ManifestDelegateConfig) kryoSerializerWrapper.asObject(taskParams.getManifestCollectionParams().toByteArray());
       List<String> chartVersions = manifestCollectionService.collectManifests(manifestConfig);
       if (isEmpty(chartVersions)) {
         log.info("No manifests present for the repository");

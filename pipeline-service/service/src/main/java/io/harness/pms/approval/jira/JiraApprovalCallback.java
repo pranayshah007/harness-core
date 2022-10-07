@@ -26,7 +26,7 @@ import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.logstreaming.NGLogCallback;
 import io.harness.pms.approval.AbstractApprovalCallback;
 import io.harness.pms.contracts.ambiance.Ambiance;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.servicenow.TicketNG;
 import io.harness.steps.approval.step.beans.ApprovalStatus;
 import io.harness.steps.approval.step.beans.CriteriaSpecDTO;
@@ -53,7 +53,7 @@ public class JiraApprovalCallback extends AbstractApprovalCallback implements Pu
   private final String approvalInstanceId;
 
   @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
 
   @Builder
   public JiraApprovalCallback(String approvalInstanceId) {
@@ -83,7 +83,7 @@ public class JiraApprovalCallback extends AbstractApprovalCallback implements Pu
     JiraTaskNGResponse jiraTaskNGResponse;
     try {
       ResponseData responseData = response.values().iterator().next();
-      responseData = (ResponseData) kryoSerializer.asInflatedObject(((BinaryResponseData) responseData).getData());
+      responseData = (ResponseData) kryoSerializerWrapper.asInflatedObject(((BinaryResponseData) responseData).getData());
       if (responseData instanceof ErrorNotifyResponseData) {
         log.warn("Jira Approval Instance failed to fetch jira issue for instance id - {}", instance.getId());
         handleErrorNotifyResponse(logCallback, (ErrorNotifyResponseData) responseData, "Failed to fetch jira issue:");

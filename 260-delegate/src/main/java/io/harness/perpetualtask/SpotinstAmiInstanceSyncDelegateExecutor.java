@@ -21,7 +21,7 @@ import io.harness.logging.CommandExecutionStatus;
 import io.harness.managerclient.DelegateAgentManagerClient;
 import io.harness.perpetualtask.instancesync.SpotinstAmiInstanceSyncPerpetualTaskParams;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import software.wings.beans.AwsConfig;
 import software.wings.beans.SpotInstConfig;
@@ -41,7 +41,7 @@ public class SpotinstAmiInstanceSyncDelegateExecutor implements PerpetualTaskExe
   @Inject private EncryptionService encryptionService;
   @Inject private SpotInstSyncTaskHandler taskHandler;
   @Inject private DelegateAgentManagerClient delegateAgentManagerClient;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
 
   @Override
   public PerpetualTaskResponse runOnce(
@@ -50,9 +50,9 @@ public class SpotinstAmiInstanceSyncDelegateExecutor implements PerpetualTaskExe
 
     final SpotinstAmiInstanceSyncPerpetualTaskParams taskParams =
         AnyUtils.unpack(params.getCustomizedParams(), SpotinstAmiInstanceSyncPerpetualTaskParams.class);
-    final AwsConfig awsConfig = (AwsConfig) kryoSerializer.asObject(taskParams.getAwsConfig().toByteArray());
+    final AwsConfig awsConfig = (AwsConfig) kryoSerializerWrapper.asObject(taskParams.getAwsConfig().toByteArray());
     final SpotInstConfig spotInstConfig =
-        (SpotInstConfig) kryoSerializer.asObject(taskParams.getSpotinstConfig().toByteArray());
+        (SpotInstConfig) kryoSerializerWrapper.asObject(taskParams.getSpotinstConfig().toByteArray());
 
     SpotInstTaskExecutionResponse instanceSyncResponse = executeSyncTask(taskParams, awsConfig, spotInstConfig);
 
@@ -78,9 +78,9 @@ public class SpotinstAmiInstanceSyncDelegateExecutor implements PerpetualTaskExe
   private SpotInstTaskExecutionResponse executeSyncTask(
       SpotinstAmiInstanceSyncPerpetualTaskParams taskParams, AwsConfig awsConfig, SpotInstConfig spotInstConfig) {
     final List<EncryptedDataDetail> awsEncryptedDataDetails =
-        (List<EncryptedDataDetail>) kryoSerializer.asObject(taskParams.getAwsEncryptedData().toByteArray());
+        (List<EncryptedDataDetail>) kryoSerializerWrapper.asObject(taskParams.getAwsEncryptedData().toByteArray());
     final List<EncryptedDataDetail> spotinstEncryptedDataDetails =
-        (List<EncryptedDataDetail>) kryoSerializer.asObject(taskParams.getSpotinstEncryptedData().toByteArray());
+        (List<EncryptedDataDetail>) kryoSerializerWrapper.asObject(taskParams.getSpotinstEncryptedData().toByteArray());
 
     encryptionService.decrypt(awsConfig, awsEncryptedDataDetails, true);
     ExceptionMessageSanitizer.storeAllSecretsForSanitizing(awsConfig, awsEncryptedDataDetails);

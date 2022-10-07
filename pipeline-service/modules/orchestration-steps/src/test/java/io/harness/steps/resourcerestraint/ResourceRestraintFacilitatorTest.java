@@ -32,7 +32,7 @@ import io.harness.pms.execution.facilitator.DefaultFacilitatorParams;
 import io.harness.pms.sdk.core.execution.events.node.facilitate.FacilitatorResponse;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.steps.resourcerestraint.beans.AcquireMode;
 import io.harness.steps.resourcerestraint.beans.HoldingScope;
 import io.harness.steps.resourcerestraint.beans.ResourceRestraint;
@@ -55,7 +55,7 @@ public class ResourceRestraintFacilitatorTest extends OrchestrationStepsTestBase
   private static final ParameterField<String> RESOURCE_UNIT =
       ParameterField.<String>builder().value(generateUuid()).build();
 
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
   @Mock private ResourceRestraintInstanceService resourceRestraintInstanceService;
   @Mock private ResourceRestraintService resourceRestraintService;
   @Mock private PmsEngineExpressionService pmsEngineExpressionService;
@@ -94,7 +94,7 @@ public class ResourceRestraintFacilitatorTest extends OrchestrationStepsTestBase
                             .addAllLevels(Collections.singletonList(
                                 Level.newBuilder().setRuntimeId(uuid).setSetupId(planNodeId).build()))
                             .build();
-    byte[] parameters = kryoSerializer.asBytes(DefaultFacilitatorParams.builder().build());
+    byte[] parameters = kryoSerializerWrapper.asBytes(DefaultFacilitatorParams.builder().build());
     ResourceRestraintSpecParameters specParameters = ResourceRestraintSpecParameters.builder()
                                                          .resourceUnit(RESOURCE_UNIT)
                                                          .acquireMode(AcquireMode.ACCUMULATE)
@@ -129,7 +129,7 @@ public class ResourceRestraintFacilitatorTest extends OrchestrationStepsTestBase
                             .addAllLevels(Collections.singletonList(
                                 Level.newBuilder().setRuntimeId(uuid).setSetupId(planNodeId).build()))
                             .build();
-    byte[] parameters = kryoSerializer.asBytes(DefaultFacilitatorParams.builder().build());
+    byte[] parameters = kryoSerializerWrapper.asBytes(DefaultFacilitatorParams.builder().build());
     ResourceRestraintSpecParameters specParameters = ResourceRestraintSpecParameters.builder()
                                                          .resourceUnit(RESOURCE_UNIT)
                                                          .acquireMode(AcquireMode.ENSURE)

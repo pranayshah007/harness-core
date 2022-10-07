@@ -44,7 +44,7 @@ import io.harness.perpetualtask.internal.PerpetualTaskRecord;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -64,7 +64,7 @@ public class K8sWatchTaskServiceImplTest extends CategoryTest {
   private static final String ACCOUNT_ID = "kmpySmUISimoRrJL6NL73w";
   private static final String TASK_ID = "1xz66buyQ5KYoeeHthDRJw";
 
-  @Mock private KryoSerializer kryoSerializer;
+  @Mock private KryoSerializerWrapper kryoSerializerWrapper;
   @Mock private PerpetualTaskService perpetualTaskService;
   @Mock private SecretManagerClientService ngSecretService;
   @Mock(answer = RETURNS_DEEP_STUBS) private ConnectorResourceClient connectorResourceClient;
@@ -112,8 +112,8 @@ public class K8sWatchTaskServiceImplTest extends CategoryTest {
   }
 
   private void mockCreateExecutionBundle() throws IOException {
-    when(kryoSerializer.asBytes(any())).thenReturn(new byte[] {'a'});
-    when(kryoSerializer.asDeflatedBytes(any())).thenReturn(new byte[] {'a'});
+    when(kryoSerializerWrapper.asBytes(any())).thenReturn(new byte[] {'a'});
+    when(kryoSerializerWrapper.asDeflatedBytes(any())).thenReturn(new byte[] {'a'});
 
     CEKubernetesClusterConfigDTO ceKubernetesClusterConfigDTO =
         CEKubernetesClusterConfigDTO.builder().connectorRef("K8s_ce").build();

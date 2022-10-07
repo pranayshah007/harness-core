@@ -37,7 +37,7 @@ import io.harness.pms.yaml.DependenciesUtils;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.utils.YamlPipelineUtils;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -57,7 +57,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 public class ServicePlanCreatorHelper {
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
   @Inject private ServiceEntityService serviceEntityService;
   @Inject private ServicePlanCreator servicePlanCreator;
 
@@ -87,22 +87,22 @@ public class ServicePlanCreatorHelper {
       PipelineInfrastructure infraConfig = stageNode.getDeploymentStageConfig().getInfrastructure();
       serviceDependencyMap.put(YamlTypes.INFRASTRUCTURE_STEP_PARAMETERS,
           ByteString.copyFrom(
-              kryoSerializer.asDeflatedBytes(InfrastructurePmsPlanCreator.getInfraSectionStepParams(infraConfig, ""))));
+              kryoSerializerWrapper.asDeflatedBytes(InfrastructurePmsPlanCreator.getInfraSectionStepParams(infraConfig, ""))));
       serviceDependencyMap.put(YamlTypes.ENVIRONMENT_NODE_ID,
-          ByteString.copyFrom(kryoSerializer.asDeflatedBytes("environment-" + infraConfig.getUuid())));
+          ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes("environment-" + infraConfig.getUuid())));
     } // v2 serviceField
     else {
       serviceDependencyMap.put(
-          YamlTypes.ENVIRONMENT_NODE_ID, ByteString.copyFrom(kryoSerializer.asDeflatedBytes(environmentUuid)));
+          YamlTypes.ENVIRONMENT_NODE_ID, ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(environmentUuid)));
       serviceDependencyMap.put(
-          YamlTypes.NEXT_UUID, ByteString.copyFrom(kryoSerializer.asDeflatedBytes(infraSectionUuid)));
+          YamlTypes.NEXT_UUID, ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(infraSectionUuid)));
       if (overridesFromEnvironment != null) {
         final Map<String, Object> overridesDependencyMap = new HashMap<>();
         overridesDependencyMap.put(ENVIRONMENT_CONFIG, overridesFromEnvironment.getEnvironmentGlobalOverride());
         overridesDependencyMap.put(SVC_OVERRIDE_CONFIG, overridesFromEnvironment.getServiceOverrideConfig());
         overridesDependencyMap.put(ENVIRONMENT_ID, overridesFromEnvironment.getEnvIdentifier());
         serviceDependencyMap.put(SVC_PLAN_CREATOR_ENVIRONMENT_DEPS,
-            ByteString.copyFrom(kryoSerializer.asDeflatedBytes(overridesDependencyMap)));
+            ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(overridesDependencyMap)));
       }
     }
 

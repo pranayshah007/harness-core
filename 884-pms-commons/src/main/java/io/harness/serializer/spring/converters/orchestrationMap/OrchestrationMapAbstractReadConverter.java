@@ -11,7 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.data.OrchestrationMap;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import org.bson.types.Binary;
 import org.springframework.core.convert.converter.Converter;
@@ -20,10 +20,10 @@ import org.springframework.core.convert.converter.Converter;
 @SuppressWarnings("unchecked")
 public abstract class OrchestrationMapAbstractReadConverter<T extends OrchestrationMap>
     implements Converter<Binary, T> {
-  private final KryoSerializer kryoSerializer;
+  private final KryoSerializerWrapper kryoSerializerWrapper;
 
-  public OrchestrationMapAbstractReadConverter(KryoSerializer kryoSerializer) {
-    this.kryoSerializer = kryoSerializer;
+  public OrchestrationMapAbstractReadConverter(KryoSerializerWrapper kryoSerializerWrapper) {
+    this.kryoSerializerWrapper = kryoSerializerWrapper;
   }
 
   @Override
@@ -32,6 +32,6 @@ public abstract class OrchestrationMapAbstractReadConverter<T extends Orchestrat
       return null;
     }
 
-    return (T) kryoSerializer.asInflatedObject(binary.getData());
+    return (T) kryoSerializerWrapper.asInflatedObject(binary.getData());
   }
 }

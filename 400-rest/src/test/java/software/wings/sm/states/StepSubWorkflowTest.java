@@ -39,7 +39,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.exception.WingsException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.tasks.ResponseData;
 
 import software.wings.WingsBaseTest;
@@ -85,7 +85,7 @@ public class StepSubWorkflowTest extends WingsBaseTest {
   @Mock private WorkflowExecutionService workflowExecutionService;
   @Mock private FeatureFlagService featureFlagService;
   @Mock private SweepingOutputService sweepingOutputService;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
 
   private List<ElementExecutionSummary> elementExecutionSummaries = new ArrayList<>();
 
@@ -120,7 +120,7 @@ public class StepSubWorkflowTest extends WingsBaseTest {
     phaseStepSubWorkflow.setStepsInParallel(true);
     phaseStepSubWorkflow.setDefaultFailureStrategy(true);
     Reflect.on(phaseStepSubWorkflow).set("featureFlagService", featureFlagService);
-    Reflect.on(phaseStepSubWorkflow).set("kryoSerializer", kryoSerializer);
+    Reflect.on(phaseStepSubWorkflow).set("kryoSerializer", kryoSerializerWrapper);
     when(featureFlagService.isEnabled(any(), any())).thenReturn(false);
     doReturn(ACCOUNT_ID).when(context).getAccountId();
 
@@ -160,7 +160,7 @@ public class StepSubWorkflowTest extends WingsBaseTest {
     PhaseStepSubWorkflow phaseStepSubWorkflow = new PhaseStepSubWorkflow(PHASE_STEP);
     phaseStepSubWorkflow.setPhaseStepType(PhaseStepType.CONTAINER_DEPLOY);
     Reflect.on(phaseStepSubWorkflow).set("featureFlagService", featureFlagService);
-    Reflect.on(phaseStepSubWorkflow).set("kryoSerializer", kryoSerializer);
+    Reflect.on(phaseStepSubWorkflow).set("kryoSerializer", kryoSerializerWrapper);
     when(featureFlagService.isEnabled(any(), any())).thenReturn(false);
     doReturn(ACCOUNT_ID).when(context).getAccountId();
 

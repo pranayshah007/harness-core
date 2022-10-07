@@ -14,7 +14,7 @@ import static java.lang.String.format;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SweepingOutputInstance;
 import io.harness.expression.LateBindingMap;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import software.wings.exception.SweepingOutputException;
 import software.wings.service.intfc.sweepingoutput.SweepingOutputInquiry.SweepingOutputInquiryBuilder;
@@ -31,7 +31,7 @@ import lombok.Value;
 public class SweepingOutputFunctor extends LateBindingMap {
   transient SweepingOutputInquiryBuilder sweepingOutputInquiryBuilder;
   transient SweepingOutputService sweepingOutputService;
-  transient KryoSerializer kryoSerializer;
+  transient KryoSerializerWrapper kryoSerializerWrapper;
 
   public synchronized Object output(String name) {
     SweepingOutputInstance sweepingOutputInstance =
@@ -44,7 +44,7 @@ public class SweepingOutputFunctor extends LateBindingMap {
       return sweepingOutputInstance.getValue();
     }
 
-    return kryoSerializer.asInflatedObject(sweepingOutputInstance.getOutput());
+    return kryoSerializerWrapper.asInflatedObject(sweepingOutputInstance.getOutput());
   }
 
   @Override

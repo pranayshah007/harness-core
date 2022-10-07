@@ -182,7 +182,7 @@ import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.steps.EntityReferenceExtractorUtils;
 import io.harness.steps.StepHelper;
 import io.harness.supplier.ThrowingSupplier;
@@ -227,7 +227,7 @@ public class K8sStepHelperTest extends CategoryTest {
   @Mock private EngineExpressionService engineExpressionService;
   @Mock private OutcomeService outcomeService;
   @Mock private K8sStepExecutor k8sStepExecutor;
-  @Mock private KryoSerializer kryoSerializer;
+  @Mock private KryoSerializerWrapper kryoSerializerWrapper;
   @Mock private StepHelper stepHelper;
   @Mock private EntityReferenceExtractorUtils entityReferenceExtractorUtils;
   @Mock private PipelineRbacHelper pipelineRbacHelper;
@@ -890,7 +890,7 @@ public class K8sStepHelperTest extends CategoryTest {
     assertThat(valuesManifestOutcome.getIdentifier()).isEqualTo(k8sManifestOutcome.getIdentifier());
     assertThat(valuesManifestOutcome.getStore()).isEqualTo(k8sManifestOutcome.getStore());
     ArgumentCaptor<Object> argumentCaptor = ArgumentCaptor.forClass(Object.class);
-    verify(kryoSerializer, times(2)).asDeflatedBytes(argumentCaptor.capture());
+    verify(kryoSerializerWrapper, times(2)).asDeflatedBytes(argumentCaptor.capture());
     TaskParameters taskParameters = (TaskParameters) argumentCaptor.getAllValues().get(0);
     assertThat(taskParameters).isInstanceOf(GitFetchRequest.class);
     GitFetchRequest gitFetchRequest = (GitFetchRequest) taskParameters;
@@ -1098,7 +1098,7 @@ public class K8sStepHelperTest extends CategoryTest {
     List<ManifestFiles> manifestFiles = k8sStepPassThroughData.getManifestFiles();
     assertThat(manifestFiles.size()).isEqualTo(0);
     ArgumentCaptor<Object> argumentCaptor = ArgumentCaptor.forClass(Object.class);
-    verify(kryoSerializer, times(5)).asDeflatedBytes(argumentCaptor.capture());
+    verify(kryoSerializerWrapper, times(5)).asDeflatedBytes(argumentCaptor.capture());
     TaskParameters taskParameters = (TaskParameters) argumentCaptor.getAllValues().get(0);
     assertThat(taskParameters).isInstanceOf(GitFetchRequest.class);
     GitFetchRequest gitFetchRequest = (GitFetchRequest) taskParameters;
@@ -1184,7 +1184,7 @@ public class K8sStepHelperTest extends CategoryTest {
     assertThat(valuesManifestOutcome.get(0).getIdentifier()).isEqualTo(helmChartManifestOutcome.getIdentifier());
     assertThat(valuesManifestOutcome.get(0).getStore()).isEqualTo(helmChartManifestOutcome.getStore());
     ArgumentCaptor<Object> argumentCaptor = ArgumentCaptor.forClass(Object.class);
-    verify(kryoSerializer, times(3)).asDeflatedBytes(argumentCaptor.capture());
+    verify(kryoSerializerWrapper, times(3)).asDeflatedBytes(argumentCaptor.capture());
     TaskParameters taskParameters = (TaskParameters) argumentCaptor.getAllValues().get(0);
     assertThat(taskParameters).isInstanceOf(GitFetchRequest.class);
     GitFetchRequest gitFetchRequest = (GitFetchRequest) taskParameters;
@@ -1297,7 +1297,7 @@ public class K8sStepHelperTest extends CategoryTest {
     List<ManifestFiles> manifestFiles = passThroughData.getManifestFiles();
     assertThat(manifestFiles.size()).isEqualTo(0);
     ArgumentCaptor<Object> argumentCaptor = ArgumentCaptor.forClass(Object.class);
-    verify(kryoSerializer, times(5)).asDeflatedBytes(argumentCaptor.capture());
+    verify(kryoSerializerWrapper, times(5)).asDeflatedBytes(argumentCaptor.capture());
     TaskParameters taskParameters = (TaskParameters) argumentCaptor.getAllValues().get(0);
     assertThat(taskParameters).isInstanceOf(GitFetchRequest.class);
     GitFetchRequest gitFetchRequest = (GitFetchRequest) taskParameters;
@@ -1445,7 +1445,7 @@ public class K8sStepHelperTest extends CategoryTest {
     assertThat(passThroughData.getCustomFetchContent()).isNull();
     assertThat(passThroughData.getZippedManifestFileId()).isNull();
     ArgumentCaptor<Object> argumentCaptor = ArgumentCaptor.forClass(Object.class);
-    verify(kryoSerializer, times(1)).asDeflatedBytes(argumentCaptor.capture());
+    verify(kryoSerializerWrapper, times(1)).asDeflatedBytes(argumentCaptor.capture());
     TaskParameters taskParameters = (TaskParameters) argumentCaptor.getAllValues().get(0);
     assertThat(taskParameters).isInstanceOf(CustomManifestValuesFetchParams.class);
     CustomManifestValuesFetchParams customManifestValuesFetchRequest = (CustomManifestValuesFetchParams) taskParameters;
@@ -1535,7 +1535,7 @@ public class K8sStepHelperTest extends CategoryTest {
     assertThat(passThroughData.getCustomFetchContent()).isNull();
     assertThat(passThroughData.getZippedManifestFileId()).isNull();
     ArgumentCaptor<Object> argumentCaptor = ArgumentCaptor.forClass(Object.class);
-    verify(kryoSerializer, times(1)).asDeflatedBytes(argumentCaptor.capture());
+    verify(kryoSerializerWrapper, times(1)).asDeflatedBytes(argumentCaptor.capture());
     TaskParameters taskParameters = (TaskParameters) argumentCaptor.getAllValues().get(0);
     assertThat(taskParameters).isInstanceOf(CustomManifestValuesFetchParams.class);
     CustomManifestValuesFetchParams customManifestValuesFetchRequest = (CustomManifestValuesFetchParams) taskParameters;
@@ -1615,7 +1615,7 @@ public class K8sStepHelperTest extends CategoryTest {
     assertThat(taskChainResponse.getPassThroughData()).isNotNull();
     assertThat(taskChainResponse.getPassThroughData()).isInstanceOf(K8sStepPassThroughData.class);
     ArgumentCaptor<TaskParameters> taskParametersArgumentCaptor = ArgumentCaptor.forClass(TaskParameters.class);
-    verify(kryoSerializer, times(2)).asDeflatedBytes(taskParametersArgumentCaptor.capture());
+    verify(kryoSerializerWrapper, times(2)).asDeflatedBytes(taskParametersArgumentCaptor.capture());
     TaskParameters taskParameters = taskParametersArgumentCaptor.getAllValues().get(0);
     assertThat(taskParameters).isInstanceOf(HelmValuesFetchRequest.class);
     HelmValuesFetchRequest helmValuesFetchRequest = (HelmValuesFetchRequest) taskParameters;
@@ -1746,7 +1746,7 @@ public class K8sStepHelperTest extends CategoryTest {
     List<ManifestFiles> manifestFiles = passThroughData.getManifestFiles();
     assertThat(manifestFiles.size()).isEqualTo(0);
     ArgumentCaptor<TaskParameters> taskParametersArgumentCaptor = ArgumentCaptor.forClass(TaskParameters.class);
-    verify(kryoSerializer, times(2)).asDeflatedBytes(taskParametersArgumentCaptor.capture());
+    verify(kryoSerializerWrapper, times(2)).asDeflatedBytes(taskParametersArgumentCaptor.capture());
     TaskParameters taskParameters = taskParametersArgumentCaptor.getAllValues().get(0);
     assertThat(taskParameters).isInstanceOf(HelmValuesFetchRequest.class);
     HelmValuesFetchRequest helmValuesFetchRequest = (HelmValuesFetchRequest) taskParameters;
@@ -1841,7 +1841,7 @@ public class K8sStepHelperTest extends CategoryTest {
     assertThat(taskChainResponse.getPassThroughData()).isNotNull();
     assertThat(taskChainResponse.getPassThroughData()).isInstanceOf(K8sStepPassThroughData.class);
     ArgumentCaptor<TaskParameters> taskParametersArgumentCaptor = ArgumentCaptor.forClass(TaskParameters.class);
-    verify(kryoSerializer, times(3)).asDeflatedBytes(taskParametersArgumentCaptor.capture());
+    verify(kryoSerializerWrapper, times(3)).asDeflatedBytes(taskParametersArgumentCaptor.capture());
     TaskParameters taskParameters = taskParametersArgumentCaptor.getAllValues().get(0);
     assertThat(taskParameters).isInstanceOf(HelmValuesFetchRequest.class);
     HelmValuesFetchRequest helmValuesFetchRequest = (HelmValuesFetchRequest) taskParameters;
@@ -1970,7 +1970,7 @@ public class K8sStepHelperTest extends CategoryTest {
     List<ManifestFiles> manifestFiles = passThroughData.getManifestFiles();
     assertThat(manifestFiles.size()).isEqualTo(0);
     ArgumentCaptor<TaskParameters> taskParametersArgumentCaptor = ArgumentCaptor.forClass(TaskParameters.class);
-    verify(kryoSerializer, times(3)).asDeflatedBytes(taskParametersArgumentCaptor.capture());
+    verify(kryoSerializerWrapper, times(3)).asDeflatedBytes(taskParametersArgumentCaptor.capture());
     TaskParameters taskParameters = taskParametersArgumentCaptor.getAllValues().get(0);
     assertThat(taskParameters).isInstanceOf(HelmValuesFetchRequest.class);
     HelmValuesFetchRequest helmValuesFetchRequest = (HelmValuesFetchRequest) taskParameters;
@@ -2243,7 +2243,7 @@ public class K8sStepHelperTest extends CategoryTest {
     assertThat(taskChainResponse.getPassThroughData()).isNotNull();
     assertThat(taskChainResponse.getPassThroughData()).isInstanceOf(K8sStepPassThroughData.class);
     ArgumentCaptor<TaskParameters> taskParametersArgumentCaptor = ArgumentCaptor.forClass(TaskParameters.class);
-    verify(kryoSerializer, times(2)).asDeflatedBytes(taskParametersArgumentCaptor.capture());
+    verify(kryoSerializerWrapper, times(2)).asDeflatedBytes(taskParametersArgumentCaptor.capture());
     TaskParameters taskParameters = taskParametersArgumentCaptor.getAllValues().get(0);
     assertThat(taskParameters).isInstanceOf(HelmValuesFetchRequest.class);
     HelmValuesFetchRequest helmValuesFetchRequest = (HelmValuesFetchRequest) taskParameters;
@@ -2366,7 +2366,7 @@ public class K8sStepHelperTest extends CategoryTest {
     List<ManifestFiles> manifestFiles = passThroughData.getManifestFiles();
     assertThat(manifestFiles.size()).isEqualTo(0);
     ArgumentCaptor<TaskParameters> taskParametersArgumentCaptor = ArgumentCaptor.forClass(TaskParameters.class);
-    verify(kryoSerializer, times(2)).asDeflatedBytes(taskParametersArgumentCaptor.capture());
+    verify(kryoSerializerWrapper, times(2)).asDeflatedBytes(taskParametersArgumentCaptor.capture());
     TaskParameters taskParameters = taskParametersArgumentCaptor.getAllValues().get(0);
     assertThat(taskParameters).isInstanceOf(HelmValuesFetchRequest.class);
     HelmValuesFetchRequest helmValuesFetchRequest = (HelmValuesFetchRequest) taskParameters;
@@ -3575,7 +3575,7 @@ public class K8sStepHelperTest extends CategoryTest {
         k8sStepPassThroughData.getLocalStoreFileMapContents();
     assertThat(localStoreFetchFilesResultMap.get("OpenShiftParam3").getLocalStoreFileContents().size()).isEqualTo(1);
     ArgumentCaptor<Object> argumentCaptor = ArgumentCaptor.forClass(Object.class);
-    verify(kryoSerializer, times(4)).asDeflatedBytes(argumentCaptor.capture());
+    verify(kryoSerializerWrapper, times(4)).asDeflatedBytes(argumentCaptor.capture());
     TaskParameters taskParameters = (TaskParameters) argumentCaptor.getAllValues().get(0);
     assertThat(taskParameters).isInstanceOf(GitFetchRequest.class);
     GitFetchRequest gitFetchRequest = (GitFetchRequest) taskParameters;
@@ -3733,7 +3733,7 @@ public class K8sStepHelperTest extends CategoryTest {
     assertThat(k8sStepPassThroughData.getCustomFetchContent()).isNull();
     assertThat(k8sStepPassThroughData.getZippedManifestFileId()).isNull();
     ArgumentCaptor<Object> argumentCaptor = ArgumentCaptor.forClass(Object.class);
-    verify(kryoSerializer, times(1)).asDeflatedBytes(argumentCaptor.capture());
+    verify(kryoSerializerWrapper, times(1)).asDeflatedBytes(argumentCaptor.capture());
     TaskParameters taskParameters = (TaskParameters) argumentCaptor.getAllValues().get(0);
     assertThat(taskParameters).isInstanceOf(CustomManifestValuesFetchParams.class);
     CustomManifestValuesFetchParams customManifestValuesFetchRequest = (CustomManifestValuesFetchParams) taskParameters;
@@ -3923,7 +3923,7 @@ public class K8sStepHelperTest extends CategoryTest {
     assertThat(KustomizePatchesManifestOutcome.get(2).getStore())
         .isEqualTo(kustomizePatchesManifestOutcome1.getStore());
     ArgumentCaptor<Object> argumentCaptor = ArgumentCaptor.forClass(Object.class);
-    verify(kryoSerializer, times(4)).asDeflatedBytes(argumentCaptor.capture());
+    verify(kryoSerializerWrapper, times(4)).asDeflatedBytes(argumentCaptor.capture());
     TaskParameters taskParameters = (TaskParameters) argumentCaptor.getAllValues().get(0);
     assertThat(taskParameters).isInstanceOf(GitFetchRequest.class);
     GitFetchRequest gitFetchRequest = (GitFetchRequest) taskParameters;

@@ -29,7 +29,7 @@ import io.harness.pms.sdk.core.PmsSdkCoreTestBase;
 import io.harness.pms.sdk.core.adviser.AdvisingEvent;
 import io.harness.pms.sdk.core.adviser.AdvisingEvent.AdvisingEventBuilder;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import com.google.inject.Inject;
 import java.util.EnumSet;
@@ -48,7 +48,8 @@ public class ManualInterventionAdviserTest extends PmsSdkCoreTestBase {
 
   @InjectMocks @Inject ManualInterventionAdviser manualInterventionAdviser;
 
-  @Inject KryoSerializer kryoSerializer;
+  @Inject
+  KryoSerializerWrapper kryoSerializerWrapper;
 
   private Ambiance ambiance;
 
@@ -73,7 +74,7 @@ public class ManualInterventionAdviserTest extends PmsSdkCoreTestBase {
         AdvisingEvent.<ManualInterventionAdviserParameters>builder()
             .ambiance(ambiance)
             .toStatus(Status.FAILED)
-            .adviserParameters(kryoSerializer.asBytes(ManualInterventionAdviserParameters.builder().build()))
+            .adviserParameters(kryoSerializerWrapper.asBytes(ManualInterventionAdviserParameters.builder().build()))
             .build();
     AdviserResponse adviserResponse = manualInterventionAdviser.onAdviseEvent(advisingEvent);
     assertThat(adviserResponse.getType()).isEqualTo(AdviseType.INTERVENTION_WAIT);
@@ -94,7 +95,7 @@ public class ManualInterventionAdviserTest extends PmsSdkCoreTestBase {
             .toStatus(Status.FAILED)
             .fromStatus(Status.RUNNING)
             .adviserParameters(
-                kryoSerializer.asBytes(ManualInterventionAdviserParameters.builder()
+                kryoSerializerWrapper.asBytes(ManualInterventionAdviserParameters.builder()
                                            .applicableFailureTypes(EnumSet.of(FailureType.AUTHENTICATION_FAILURE))
                                            .build()));
 
@@ -123,7 +124,7 @@ public class ManualInterventionAdviserTest extends PmsSdkCoreTestBase {
             .toStatus(Status.FAILED)
             .fromStatus(Status.INTERVENTION_WAITING)
             .adviserParameters(
-                kryoSerializer.asBytes(ManualInterventionAdviserParameters.builder()
+                kryoSerializerWrapper.asBytes(ManualInterventionAdviserParameters.builder()
                                            .applicableFailureTypes(EnumSet.of(FailureType.AUTHENTICATION_FAILURE))
                                            .build()));
 

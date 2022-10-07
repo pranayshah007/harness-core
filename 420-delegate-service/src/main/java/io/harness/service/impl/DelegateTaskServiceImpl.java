@@ -30,7 +30,7 @@ import io.harness.observer.Subject;
 import io.harness.persistence.HIterator;
 import io.harness.persistence.HPersistence;
 import io.harness.reflection.ReflectionUtils;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.service.dto.RetryDelegate;
 import io.harness.service.intfc.DelegateCallbackRegistry;
 import io.harness.service.intfc.DelegateCallbackService;
@@ -60,7 +60,7 @@ public class DelegateTaskServiceImpl implements DelegateTaskService {
   @Inject private VersionInfoManager versionInfoManager;
   @Inject private WaitNotifyEngine waitNotifyEngine;
   @Inject private DelegateCallbackRegistry delegateCallbackRegistry;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
 
   @Getter private Subject<DelegateTaskRetryObserver> retryObserverSubject = new Subject<>();
   @Inject private RemoteObserverInformer remoteObserverInformer;
@@ -163,7 +163,7 @@ public class DelegateTaskServiceImpl implements DelegateTaskService {
       return;
     }
     delegateCallbackService.publishTaskProgressResponse(
-        delegateTaskId, generateUuid(), kryoSerializer.asDeflatedBytes(responseData));
+        delegateTaskId, generateUuid(), kryoSerializerWrapper.asDeflatedBytes(responseData));
   }
 
   @Override
@@ -195,10 +195,10 @@ public class DelegateTaskServiceImpl implements DelegateTaskService {
 
       if (delegateTask.getData().isAsync()) {
         delegateCallbackService.publishAsyncTaskResponse(
-            delegateTask.getUuid(), kryoSerializer.asDeflatedBytes(response.getResponse()));
+            delegateTask.getUuid(), kryoSerializerWrapper.asDeflatedBytes(response.getResponse()));
       } else {
         delegateCallbackService.publishSyncTaskResponse(
-            delegateTask.getUuid(), kryoSerializer.asDeflatedBytes(response.getResponse()));
+            delegateTask.getUuid(), kryoSerializerWrapper.asDeflatedBytes(response.getResponse()));
       }
     } catch (Exception ex) {
       log.error("Failed publishing task response", ex);
@@ -216,7 +216,7 @@ public class DelegateTaskServiceImpl implements DelegateTaskService {
     } else {
       persistence.save(DelegateSyncTaskResponse.builder()
                            .uuid(delegateTask.getUuid())
-                           .responseData(kryoSerializer.asDeflatedBytes(response.getResponse()))
+                           .responseData(kryoSerializerWrapper.asDeflatedBytes(response.getResponse()))
                            .build());
     }
   }

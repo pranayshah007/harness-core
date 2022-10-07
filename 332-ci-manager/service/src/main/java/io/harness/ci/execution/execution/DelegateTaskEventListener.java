@@ -15,7 +15,7 @@ import io.harness.ng.core.event.MessageListener;
 import io.harness.observer.Informant;
 import io.harness.observer.Informant5;
 import io.harness.repositories.CITaskDetailsRepository;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -28,13 +28,13 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Singleton
 public class DelegateTaskEventListener implements MessageListener {
-  private KryoSerializer kryoSerializer;
+  private KryoSerializerWrapper kryoSerializerWrapper;
   private static final String OBSERVER_CLASS_NAME_KEY = "observer_class_name";
   private static final String OBSERVER_CLASS_NAME_VALUE = "software.wings.service.impl.CIDelegateTaskObserver";
   @Inject CITaskDetailsRepository ciTaskDetailsRepository;
   @Inject
-  public DelegateTaskEventListener(KryoSerializer kryoSerializer) {
-    this.kryoSerializer = kryoSerializer;
+  public DelegateTaskEventListener(KryoSerializerWrapper kryoSerializerWrapper) {
+    this.kryoSerializerWrapper = kryoSerializerWrapper;
   }
 
   @Override
@@ -52,11 +52,11 @@ public class DelegateTaskEventListener implements MessageListener {
           ByteString stageIdEncrypted = informant5.getParam4();
           ByteString taskTypeEncrypted = informant5.getParam5();
 
-          String accountId = (String) kryoSerializer.asObject(accountIdEncrypted.toByteArray());
-          String taskId = (String) kryoSerializer.asObject(taskIdEncrypted.toByteArray());
-          String delegateId = (String) kryoSerializer.asObject(delegateIdEncrypted.toByteArray());
-          String stageId = (String) kryoSerializer.asObject(stageIdEncrypted.toByteArray());
-          String taskType = (String) kryoSerializer.asObject(taskTypeEncrypted.toByteArray());
+          String accountId = (String) kryoSerializerWrapper.asObject(accountIdEncrypted.toByteArray());
+          String taskId = (String) kryoSerializerWrapper.asObject(taskIdEncrypted.toByteArray());
+          String delegateId = (String) kryoSerializerWrapper.asObject(delegateIdEncrypted.toByteArray());
+          String stageId = (String) kryoSerializerWrapper.asObject(stageIdEncrypted.toByteArray());
+          String taskType = (String) kryoSerializerWrapper.asObject(taskTypeEncrypted.toByteArray());
 
           if (Strings.isNotBlank(stageId) && DLITE_CI_VM_INITIALIZE_TASK.toString().equals(taskType)) {
             CITaskDetails ciTaskDetails = CITaskDetails.builder()

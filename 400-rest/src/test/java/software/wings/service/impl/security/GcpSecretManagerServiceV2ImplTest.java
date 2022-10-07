@@ -22,7 +22,7 @@ import io.harness.data.structure.UUIDGenerator;
 import io.harness.exception.SecretManagementException;
 import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import software.wings.WingsBaseTest;
 import software.wings.beans.Account;
@@ -50,7 +50,8 @@ public class GcpSecretManagerServiceV2ImplTest extends WingsBaseTest {
   @Mock private AccountService accountService;
   @Mock private PremiumFeature secretsManagementFeature;
 
-  @Inject KryoSerializer kryoSerializer;
+  @Inject
+  KryoSerializerWrapper kryoSerializerWrapper;
 
   @Before
   public void setup() throws IOException, NoSuchFieldException, IllegalAccessException {
@@ -99,7 +100,7 @@ public class GcpSecretManagerServiceV2ImplTest extends WingsBaseTest {
     gcpSecretsManagerConfig.setAccountId(accountId);
 
     String savedConfigId = gcpSecretsManagerService.saveGcpSecretsManagerConfig(
-        accountId, kryoSerializer.clone(gcpSecretsManagerConfig), false);
+        accountId, kryoSerializerWrapper.clone(gcpSecretsManagerConfig), false);
 
     GcpSecretsManagerConfig gcpSecretManagerToUpdate =
         gcpSecretsManagerService.getGcpSecretsManagerConfig(accountId, savedConfigId);
@@ -109,7 +110,7 @@ public class GcpSecretManagerServiceV2ImplTest extends WingsBaseTest {
     gcpSecretManagerToUpdate.maskSecrets();
 
     gcpSecretsManagerService.saveGcpSecretsManagerConfig(
-        accountId, kryoSerializer.clone(gcpSecretManagerToUpdate), false);
+        accountId, kryoSerializerWrapper.clone(gcpSecretManagerToUpdate), false);
 
     assertEquals(
         "UpdatedConfig", gcpSecretsManagerService.getGcpSecretsManagerConfig(accountId, savedConfigId).getName());
@@ -123,7 +124,7 @@ public class GcpSecretManagerServiceV2ImplTest extends WingsBaseTest {
     gcpSecretsManagerConfig.setAccountId(accountId);
     doNothing().when(gcpSecretsManagerService).validateSecretsManagerConfig(anyString(), any());
     String savedConfigId = gcpSecretsManagerService.saveGcpSecretsManagerConfig(
-        accountId, kryoSerializer.clone(gcpSecretsManagerConfig), false);
+        accountId, kryoSerializerWrapper.clone(gcpSecretsManagerConfig), false);
 
     GcpSecretsManagerConfig gcpSecretManagerToUpdate =
         gcpSecretsManagerService.getGcpSecretsManagerConfig(accountId, savedConfigId);
@@ -132,7 +133,7 @@ public class GcpSecretManagerServiceV2ImplTest extends WingsBaseTest {
     gcpSecretManagerToUpdate.setCredentials("UpdatedCredentials".toCharArray());
 
     String updatedConfigId = gcpSecretsManagerService.updateGcpSecretsManagerConfig(
-        accountId, kryoSerializer.clone(gcpSecretManagerToUpdate));
+        accountId, kryoSerializerWrapper.clone(gcpSecretManagerToUpdate));
 
     assertEquals(savedConfigId, updatedConfigId);
   }

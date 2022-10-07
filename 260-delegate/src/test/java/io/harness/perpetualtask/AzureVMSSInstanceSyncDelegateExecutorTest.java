@@ -32,7 +32,7 @@ import io.harness.managerclient.DelegateAgentManagerClient;
 import io.harness.perpetualtask.instancesync.AzureVmssInstanceSyncPerpetualTaskParams;
 import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import software.wings.beans.AzureConfig;
 import software.wings.delegatetasks.azure.taskhandler.AzureVMSSSyncTaskHandler;
@@ -61,11 +61,11 @@ public class AzureVMSSInstanceSyncDelegateExecutorTest extends DelegateTestBase 
   @Mock private Call<RestResponse<Boolean>> mockCall;
 
   @InjectMocks private AzureVMSSInstanceSyncDelegateExecutor executor;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
 
   @Before
   public void setUp() {
-    on(executor).set("kryoSerializer", kryoSerializer);
+    on(executor).set("kryoSerializer", kryoSerializerWrapper);
     when(mockDelegateAgentManagerClient.publishInstanceSyncResult(
              anyString(), anyString(), any(DelegateResponseData.class)))
         .thenReturn(mockCall);
@@ -107,8 +107,8 @@ public class AzureVMSSInstanceSyncDelegateExecutorTest extends DelegateTestBase 
 
   private PerpetualTaskExecutionParams getPerpetualTaskParams() {
     ByteString azureConfigBytes =
-        ByteString.copyFrom(kryoSerializer.asBytes(AzureConfig.builder().accountId("acct-id").build()));
-    ByteString azureEncryptedDetailsBytes = ByteString.copyFrom(kryoSerializer.asBytes(new ArrayList<>()));
+        ByteString.copyFrom(kryoSerializerWrapper.asBytes(AzureConfig.builder().accountId("acct-id").build()));
+    ByteString azureEncryptedDetailsBytes = ByteString.copyFrom(kryoSerializerWrapper.asBytes(new ArrayList<>()));
 
     AzureVmssInstanceSyncPerpetualTaskParams taskParams = AzureVmssInstanceSyncPerpetualTaskParams.newBuilder()
                                                               .setAzureConfig(azureConfigBytes)

@@ -45,7 +45,7 @@ import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.expression.ExpressionReflectionUtils;
 import io.harness.ff.FeatureFlagService;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.tasks.ResponseData;
 
 import software.wings.api.HttpStateExecutionData;
@@ -145,7 +145,8 @@ public class HttpState extends State implements SweepingOutputStateMixin {
   @Inject private transient WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService;
   @Inject private SettingServiceHelper settingServiceHelper;
   @Inject private AccountServiceImpl accountService;
-  @Transient @Inject KryoSerializer kryoSerializer;
+  @Transient @Inject
+  KryoSerializerWrapper kryoSerializerWrapper;
 
   public HttpState() {}
 
@@ -643,9 +644,8 @@ public class HttpState extends State implements SweepingOutputStateMixin {
     }
   }
 
-  @Override
-  public KryoSerializer getKryoSerializer() {
-    return kryoSerializer;
+  public KryoSerializerWrapper getKryoSerializer() {
+    return kryoSerializerWrapper;
   }
 
   /**

@@ -30,7 +30,7 @@ import io.harness.logging.CommandExecutionStatus;
 import io.harness.managerclient.DelegateAgentManagerClient;
 import io.harness.ng.core.k8s.ServiceSpecType;
 import io.harness.perpetualtask.instancesync.AwsSshInstanceSyncPerpetualTaskParamsNg;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.yaml.infra.HostConnectionTypeKind;
 
 import software.wings.service.impl.aws.model.AwsEC2Instance;
@@ -52,7 +52,7 @@ public class AwsSshWinrmPerpetualTaskExecutorNg implements PerpetualTaskExecutor
   @Inject private DelegateAgentManagerClient delegateAgentManagerClient;
   @Inject private AwsListEC2InstancesDelegateTaskHelper awsListEC2InstancesDelegateTaskHelper;
   @Inject private AwsASGDelegateTaskHelper awsASGDelegateTaskHelper;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
 
   @Override
   public PerpetualTaskResponse runOnce(
@@ -107,7 +107,7 @@ public class AwsSshWinrmPerpetualTaskExecutorNg implements PerpetualTaskExecutor
 
   private List<AwsEC2Instance> getAwsEC2Instance(AwsSshInstanceSyncPerpetualTaskParamsNg taskParams) {
     AwsInfraDelegateConfig infraConfig =
-        (AwsInfraDelegateConfig) kryoSerializer.asObject(taskParams.getInfraDelegateConfig().toByteArray());
+        (AwsInfraDelegateConfig) kryoSerializerWrapper.asObject(taskParams.getInfraDelegateConfig().toByteArray());
 
     if (EmptyPredicate.isNotEmpty(infraConfig.getAutoScalingGroupName())) { // ASG
       return awsASGDelegateTaskHelper.getInstances(infraConfig.getAwsConnectorDTO(),

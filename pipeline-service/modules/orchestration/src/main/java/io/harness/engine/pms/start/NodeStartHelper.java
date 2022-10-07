@@ -40,7 +40,7 @@ import io.harness.pms.events.base.PmsEventCategory;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.execution.utils.StatusUtils;
 import io.harness.pms.utils.OrchestrationMapBackwardCompatibilityUtils;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.springdata.TransactionHelper;
 import io.harness.timeout.TimeoutCallback;
 import io.harness.timeout.TimeoutEngine;
@@ -66,7 +66,7 @@ import org.springframework.data.mongodb.core.query.Update;
 public class NodeStartHelper {
   @Inject private PmsEventSender eventSender;
   @Inject private NodeExecutionService nodeExecutionService;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
   @Inject private TimeoutEngine timeoutEngine;
   @Inject private PlanService planService;
   @Inject private PmsEngineExpressionService pmsEngineExpressionService;
@@ -146,7 +146,7 @@ public class NodeStartHelper {
     EngineExpressionEvaluator evaluator = pmsEngineExpressionService.prepareExpressionEvaluator(ambiance);
     for (TimeoutObtainment timeoutObtainment : timeoutObtainments) {
       TimeoutParameters timeoutParameters =
-          OrchestrationUtils.buildTimeoutParameters(kryoSerializer, evaluator, timeoutObtainment);
+          OrchestrationUtils.buildTimeoutParameters(kryoSerializerWrapper, evaluator, timeoutObtainment);
       TimeoutInstance instance =
           timeoutEngine.registerTimeout(timeoutObtainment.getDimension(), timeoutParameters, timeoutCallback);
       timeoutInstanceIds.add(instance.getUuid());

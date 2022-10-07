@@ -38,7 +38,7 @@ import io.harness.product.ci.scm.proto.Commit;
 import io.harness.product.ci.scm.proto.ListCommitsInPRResponse;
 import io.harness.rule.Owner;
 import io.harness.secrets.SecretDecryptor;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.service.ScmServiceClient;
 import io.harness.tasks.BinaryResponseData;
 
@@ -54,7 +54,8 @@ public class SCMDataObtainerTest extends CategoryTest {
   @Mock SecretDecryptor secretDecryptor;
   @Mock ScmServiceClient scmServiceClient;
   @Mock TaskExecutionUtils taskExecutionUtils;
-  @Mock KryoSerializer kryoSerializer;
+  @Mock
+  KryoSerializerWrapper kryoSerializerWrapper;
   @InjectMocks SCMDataObtainer scmDataObtainer;
 
   @Before
@@ -95,7 +96,7 @@ public class SCMDataObtainerTest extends CategoryTest {
                                       .build())
                       .build()
                       .toByteArray();
-    when(kryoSerializer.asInflatedObject(any()))
+    when(kryoSerializerWrapper.asInflatedObject(any()))
         .thenReturn(ScmGitRefTaskResponseData.builder().listCommitsInPRResponse(list).build());
 
     List<Commit> commits = scmDataObtainer.getCommitsInPr(connectorDetails, triggerDetails, 3);
@@ -143,7 +144,7 @@ public class SCMDataObtainerTest extends CategoryTest {
                                       .build())
                       .build()
                       .toByteArray();
-    when(kryoSerializer.asInflatedObject(any()))
+    when(kryoSerializerWrapper.asInflatedObject(any()))
         .thenReturn(ScmGitRefTaskResponseData.builder().listCommitsInPRResponse(list).build());
 
     List<Commit> commits = scmDataObtainer.getCommitsInPr(connectorDetails, triggerDetails, 3);

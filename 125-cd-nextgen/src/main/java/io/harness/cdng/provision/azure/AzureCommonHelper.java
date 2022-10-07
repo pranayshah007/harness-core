@@ -55,7 +55,7 @@ import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.steps.StepHelper;
 
 import software.wings.beans.TaskType;
@@ -91,7 +91,7 @@ public class AzureCommonHelper {
   public static final String BP_TEMPLATE_TYPE = "Azure BluePrint Folder";
 
   @Named("PRIVILEGED") @Inject private SecretManagerClientService secretManagerClientService;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
   @Inject private StepHelper stepHelper;
 
   public GitStoreDelegateConfig getGitStoreDelegateConfig(StoreConfig store, Ambiance ambiance, List<String> paths) {
@@ -173,7 +173,7 @@ public class AzureCommonHelper {
                                   .parameters(new Object[] {gitFetchRequest})
                                   .build();
 
-    final TaskRequest taskRequest = prepareCDTaskRequest(ambiance, taskData, kryoSerializer, commandUnits,
+    final TaskRequest taskRequest = prepareCDTaskRequest(ambiance, taskData, kryoSerializerWrapper, commandUnits,
         TaskType.GIT_FETCH_NEXT_GEN_TASK.getDisplayName(), TaskSelectorYaml.toTaskSelector(delegateSelector),
         stepHelper.getEnvironmentType(ambiance));
 

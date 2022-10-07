@@ -45,7 +45,7 @@ import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.provision.TerraformConstants;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.steps.StepHelper;
 import io.harness.steps.StepUtils;
 import io.harness.supplier.ThrowingSupplier;
@@ -69,7 +69,7 @@ public class TerraformPlanStep extends TaskExecutableWithRollbackAndRbac<Terrafo
                                                .setStepCategory(StepCategory.STEP)
                                                .build();
 
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
   @Inject private TerraformStepHelper helper;
   @Inject private PipelineRbacHelper pipelineRbacHelper;
   @Inject private StepHelper stepHelper;
@@ -164,7 +164,7 @@ public class TerraformPlanStep extends TaskExecutableWithRollbackAndRbac<Terrafo
             .timeout(StepUtils.getTimeoutMillis(stepElementParameters.getTimeout(), TerraformConstants.DEFAULT_TIMEOUT))
             .parameters(new Object[] {builder.build()})
             .build();
-    return StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
+    return StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializerWrapper,
         Collections.singletonList(TerraformCommandUnit.Plan.name()), TaskType.TERRAFORM_TASK_NG.getDisplayName(),
         TaskSelectorYaml.toTaskSelector(planStepParameters.getDelegateSelectors()),
         stepHelper.getEnvironmentType(ambiance));

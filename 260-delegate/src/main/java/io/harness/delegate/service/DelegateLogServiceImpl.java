@@ -37,7 +37,7 @@ import io.harness.managerclient.DelegateAgentManagerClient;
 import io.harness.managerclient.VerificationServiceClient;
 import io.harness.observer.Subject;
 import io.harness.rest.RestResponse;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.verificationclient.CVNextGenServiceClient;
 
 import software.wings.beans.Log;
@@ -103,7 +103,7 @@ public class DelegateLogServiceImpl implements DelegateLogService {
   private DelegateAgentManagerClient delegateAgentManagerClient;
   private final Subject<LogSanitizer> logSanitizerSubject = new Subject<>();
   private VerificationServiceClient verificationServiceClient;
-  private final KryoSerializer kryoSerializer;
+  private final KryoSerializerWrapper kryoSerializerWrapper;
   private HashMap<String, Integer> activityLogSize = new LinkedHashMap<String, Integer>() {
     @Override
     protected boolean removeEldestEntry(Map.Entry eldest) {
@@ -115,7 +115,7 @@ public class DelegateLogServiceImpl implements DelegateLogService {
   @Inject
   public DelegateLogServiceImpl(DelegateAgentManagerClient delegateAgentManagerClient,
       @Named("asyncExecutor") ExecutorService executorService, VerificationServiceClient verificationServiceClient,
-      KryoSerializer kryoSerializer) {
+      KryoSerializerWrapper kryoSerializerWrapper) {
     this.delegateAgentManagerClient = delegateAgentManagerClient;
     this.verificationServiceClient = verificationServiceClient;
     this.cache = Caffeine.newBuilder()
@@ -139,7 +139,7 @@ public class DelegateLogServiceImpl implements DelegateLogService {
                             .removalListener(this::dispatchCVNGLogs)
                             .build();
 
-    this.kryoSerializer = kryoSerializer;
+    this.kryoSerializerWrapper = kryoSerializerWrapper;
 
     Executors.newSingleThreadScheduledExecutor(new ThreadFactoryBuilder().setNameFormat("delegate-log-service").build())
         .scheduleAtFixedRate(
@@ -279,7 +279,7 @@ public class DelegateLogServiceImpl implements DelegateLogService {
         logObject.setCommandExecutionStatus(commandUnitStatus);
         logObject.setCreatedAt(System.currentTimeMillis());
 
-        byte[] logSerialized = kryoSerializer.asBytes(logObject);
+        byte[] logSerialized = kryoSerializerWrapper.asBytes(logObject);
 
         log.debug("Dispatched logObject status- [{}] [{}] for activityId [{}]", logObject.getCommandUnitName(),
             logObject.getCommandExecutionStatus(), activityId);
@@ -312,7 +312,7 @@ public class DelegateLogServiceImpl implements DelegateLogService {
             log.debug("Dispatching {} api call logs for [{}] [{}]", logsList.size(), stateExecutionId, accountId);
 
             log.debug("Converting the logs into a byte array.");
-            byte[] logsListAsBytes = kryoSerializer.asBytes(logsList);
+            byte[] logsListAsBytes = kryoSerializerWrapper.asBytes(logsList);
             RequestBody logsAsRequestBody =
                 RequestBody.create(MediaType.parse("application/octet-stream"), logsListAsBytes);
             log.debug("Logs successfully converted!");

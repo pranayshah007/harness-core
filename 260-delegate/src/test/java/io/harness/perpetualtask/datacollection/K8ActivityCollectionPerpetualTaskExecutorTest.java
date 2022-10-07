@@ -43,7 +43,7 @@ import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import software.wings.delegatetasks.cvng.K8InfoDataService;
 
@@ -86,7 +86,8 @@ public class K8ActivityCollectionPerpetualTaskExecutorTest extends DelegateTestB
 
   private PerpetualTaskExecutionParams perpetualTaskParams;
 
-  @Inject KryoSerializer kryoSerializer;
+  @Inject
+  KryoSerializerWrapper kryoSerializerWrapper;
 
   @Before
   public void setup() throws IllegalAccessException, IOException {
@@ -94,7 +95,7 @@ public class K8ActivityCollectionPerpetualTaskExecutorTest extends DelegateTestB
     when(apiClient.setVerifyingSsl(anyBoolean())).thenReturn(apiClient);
     when(apiClient.escapeString(anyString())).thenReturn(generateUuid());
     when(apiClientFactory.getClient(any())).thenReturn(apiClient);
-    on(dataCollector).set("kryoSerializer", kryoSerializer);
+    on(dataCollector).set("kryoSerializer", kryoSerializerWrapper);
     accountId = generateUuid();
 
     SecretRefData secretRefData = SecretRefData.builder()
@@ -152,7 +153,7 @@ public class K8ActivityCollectionPerpetualTaskExecutorTest extends DelegateTestB
                                            .build()))
                                    .build())
             .build();
-    ByteString bytes = ByteString.copyFrom(kryoSerializer.asBytes(k8ActivityDataCollectionInfo));
+    ByteString bytes = ByteString.copyFrom(kryoSerializerWrapper.asBytes(k8ActivityDataCollectionInfo));
     perpetualTaskParams = PerpetualTaskExecutionParams.newBuilder()
                               .setCustomizedParams(Any.pack(K8ActivityCollectionPerpetualTaskParams.newBuilder()
                                                                 .setAccountId(accountId)

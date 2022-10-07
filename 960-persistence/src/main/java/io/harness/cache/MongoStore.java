@@ -18,7 +18,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cache.CacheEntity.CacheEntityKeys;
 import io.harness.govern.IgnoreThrowable;
 import io.harness.persistence.HPersistence;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -41,7 +41,7 @@ public class MongoStore implements DistributedStore {
   private static final int version = 1;
 
   @Inject HPersistence hPersistence;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
 
   String canonicalKey(long algorithmId, long structureHash, String key, List<String> params) {
     if (isEmpty(params)) {
@@ -78,7 +78,7 @@ public class MongoStore implements DistributedStore {
         return null;
       }
 
-      return (T) kryoSerializer.asInflatedObject(cacheEntity.getEntity());
+      return (T) kryoSerializerWrapper.asInflatedObject(cacheEntity.getEntity());
     } catch (RuntimeException ex) {
       log.error("Failed to obtain from cache", ex);
     }
@@ -109,7 +109,7 @@ public class MongoStore implements DistributedStore {
       final UpdateOperations<CacheEntity> updateOperations = hPersistence.createUpdateOperations(CacheEntity.class);
       updateOperations.set(CacheEntityKeys.contextValue, contextValue);
       updateOperations.set(CacheEntityKeys.canonicalKey, canonicalKey);
-      updateOperations.set(CacheEntityKeys.entity, kryoSerializer.asDeflatedBytes(entity));
+      updateOperations.set(CacheEntityKeys.entity, kryoSerializerWrapper.asDeflatedBytes(entity));
       updateOperations.set(CacheEntityKeys.validUntil, Date.from(OffsetDateTime.now().plus(ttl).toInstant()));
       if (isNotEmpty(accountId)) {
         updateOperations.set(CacheEntityKeys.accountId, accountId);

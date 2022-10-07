@@ -34,7 +34,7 @@ import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.shell.ShellExecutionData;
 import io.harness.steps.OutputExpressionConstants;
 import io.harness.steps.StepHelper;
@@ -55,7 +55,7 @@ import lombok.extern.slf4j.Slf4j;
 public class ShellScriptStep extends TaskExecutableWithRollback<ShellScriptTaskResponseNG> {
   public static final StepType STEP_TYPE = StepSpecTypeConstants.SHELL_SCRIPT_STEP_TYPE;
 
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
   @Inject private StepHelper stepHelper;
   @Inject private ShellScriptHelperService shellScriptHelperService;
   @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
@@ -93,7 +93,7 @@ public class ShellScriptStep extends TaskExecutableWithRollback<ShellScriptTaskR
             .parameters(new Object[] {taskParameters})
             .timeout(StepUtils.getTimeoutMillis(stepParameters.getTimeout(), StepUtils.DEFAULT_STEP_TIMEOUT))
             .build();
-    return StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
+    return StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializerWrapper,
         CollectionUtils.emptyIfNull(StepUtils.generateLogKeys(
             StepUtils.generateLogAbstractions(ambiance), Collections.singletonList(ShellScriptTaskNG.COMMAND_UNIT))),
         null, null, TaskSelectorYaml.toTaskSelector(shellScriptStepParameters.getDelegateSelectors()),
@@ -116,7 +116,7 @@ public class ShellScriptStep extends TaskExecutableWithRollback<ShellScriptTaskR
             .parameters(new Object[] {taskParameters})
             .timeout(StepUtils.getTimeoutMillis(stepParameters.getTimeout(), StepUtils.DEFAULT_STEP_TIMEOUT))
             .build();
-    return StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer, units,
+    return StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializerWrapper, units,
         TaskType.WIN_RM_SHELL_SCRIPT_TASK_NG.getDisplayName(),
         TaskSelectorYaml.toTaskSelector(shellScriptStepParameters.getDelegateSelectors()),
         stepHelper.getEnvironmentType(ambiance));

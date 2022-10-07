@@ -18,7 +18,7 @@ import io.harness.grpc.utils.AnyUtils;
 import io.harness.managerclient.DelegateAgentManagerClient;
 import io.harness.perpetualtask.instancesync.AwsCodeDeployInstanceSyncPerpetualTaskParams;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import software.wings.beans.AwsConfig;
 import software.wings.service.impl.aws.model.AwsCodeDeployListDeploymentInstancesResponse;
@@ -39,17 +39,17 @@ import org.eclipse.jetty.server.Response;
 public class AwsCodeDeployInstanceSyncExecutor implements PerpetualTaskExecutor {
   @Inject private AwsEc2HelperServiceDelegate ec2ServiceDelegate;
   @Inject private DelegateAgentManagerClient delegateAgentManagerClient;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
 
   @Override
   public PerpetualTaskResponse runOnce(
       PerpetualTaskId taskId, PerpetualTaskExecutionParams params, Instant heartbeatTime) {
     final AwsCodeDeployInstanceSyncPerpetualTaskParams taskParams =
         AnyUtils.unpack(params.getCustomizedParams(), AwsCodeDeployInstanceSyncPerpetualTaskParams.class);
-    final List<Filter> filters = (List<Filter>) kryoSerializer.asObject(taskParams.getFilter().toByteArray());
-    final AwsConfig awsConfig = (AwsConfig) kryoSerializer.asObject(taskParams.getAwsConfig().toByteArray());
+    final List<Filter> filters = (List<Filter>) kryoSerializerWrapper.asObject(taskParams.getFilter().toByteArray());
+    final AwsConfig awsConfig = (AwsConfig) kryoSerializerWrapper.asObject(taskParams.getAwsConfig().toByteArray());
     final List<EncryptedDataDetail> encryptedDataDetails =
-        (List<EncryptedDataDetail>) kryoSerializer.asObject(taskParams.getEncryptedData().toByteArray());
+        (List<EncryptedDataDetail>) kryoSerializerWrapper.asObject(taskParams.getEncryptedData().toByteArray());
 
     AwsCodeDeployListDeploymentInstancesResponse instancesListResponse =
         getCodeDeployResponse(taskParams.getRegion(), filters, awsConfig, encryptedDataDetails);

@@ -23,7 +23,7 @@ import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.pms.sdk.core.steps.io.StepResponseNotifyData;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.tasks.ResponseData;
 
 import com.google.inject.Inject;
@@ -37,7 +37,8 @@ public class SectionChainStep implements ChildChainExecutable<SectionChainStepPa
                                                .setStepCategory(StepCategory.STEP)
                                                .build();
 
-  @Inject KryoSerializer kryoSerializer;
+  @Inject
+  KryoSerializerWrapper kryoSerializerWrapper;
 
   @Override
   public Class<SectionChainStepParameters> getStepParametersClass() {
@@ -54,7 +55,7 @@ public class SectionChainStep implements ChildChainExecutable<SectionChainStepPa
     return ChildChainExecutableResponse.newBuilder()
         .setNextChildId(sectionChainStepParameters.getChildNodeIds().get(0))
         .setPassThroughData(
-            ByteString.copyFrom(kryoSerializer.asBytes(SectionChainPassThroughData.builder().childIndex(0).build())))
+            ByteString.copyFrom(kryoSerializerWrapper.asBytes(SectionChainPassThroughData.builder().childIndex(0).build())))
         .setLastLink(sectionChainStepParameters.getChildNodeIds().size() == 1)
         .build();
   }
@@ -64,14 +65,14 @@ public class SectionChainStep implements ChildChainExecutable<SectionChainStepPa
       SectionChainStepParameters sectionChainStepParameters, StepInputPackage inputPackage, ByteString passThroughData,
       Map<String, ResponseData> responseDataMap) {
     SectionChainPassThroughData chainPassThroughData =
-        (SectionChainPassThroughData) kryoSerializer.asObject(passThroughData.toByteArray());
+        (SectionChainPassThroughData) kryoSerializerWrapper.asObject(passThroughData.toByteArray());
     int nextChildIndex = chainPassThroughData.getChildIndex() + 1;
     String previousChildId = responseDataMap.keySet().iterator().next();
     boolean lastLink = nextChildIndex + 1 == sectionChainStepParameters.getChildNodeIds().size();
     chainPassThroughData.setChildIndex(nextChildIndex);
     return ChildChainExecutableResponse.newBuilder()
         .setPassThroughData(ByteString.copyFrom(
-            kryoSerializer.asBytes(SectionChainPassThroughData.builder().childIndex(nextChildIndex).build())))
+            kryoSerializerWrapper.asBytes(SectionChainPassThroughData.builder().childIndex(nextChildIndex).build())))
         .setNextChildId(sectionChainStepParameters.getChildNodeIds().get(nextChildIndex))
         .setLastLink(lastLink)
         .setPreviousChildId(previousChildId)

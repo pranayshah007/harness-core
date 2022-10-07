@@ -40,7 +40,7 @@ import io.harness.helpers.ext.vault.SecretEngineSummary;
 import io.harness.helpers.ext.vault.VaultAppRoleLoginResult;
 import io.harness.persistence.HPersistence;
 import io.harness.security.encryption.EncryptionType;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.templatizedsm.RuntimeCredentialsInjector;
 
 import software.wings.beans.BaseVaultConfig;
@@ -73,7 +73,7 @@ import org.mongodb.morphia.query.UpdateOperations;
 @Slf4j
 @TargetModule(_890_SM_CORE)
 public class VaultServiceImpl extends BaseVaultServiceImpl implements VaultService, RuntimeCredentialsInjector {
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
   @Inject private VaultEncryptorsRegistry vaultEncryptorsRegistry;
   @Inject private AccountService accountService;
 
@@ -91,7 +91,7 @@ public class VaultServiceImpl extends BaseVaultServiceImpl implements VaultServi
   String updateVaultConfig(String accountId, VaultConfig vaultConfig, boolean auditChanges, boolean validate) {
     VaultConfig savedVaultConfigWithCredentials = getVaultConfig(accountId, vaultConfig.getUuid());
     VaultConfig oldConfigForAudit = wingsPersistence.get(VaultConfig.class, vaultConfig.getUuid());
-    VaultConfig savedVaultConfig = kryoSerializer.clone(oldConfigForAudit);
+    VaultConfig savedVaultConfig = kryoSerializerWrapper.clone(oldConfigForAudit);
     // Replaced masked secrets with the real secret value.
     if (SECRET_MASK.equals(vaultConfig.getAuthToken())) {
       vaultConfig.setAuthToken(savedVaultConfigWithCredentials.getAuthToken());
@@ -388,7 +388,7 @@ public class VaultServiceImpl extends BaseVaultServiceImpl implements VaultServi
       return Optional.empty();
     }
 
-    VaultConfig vaultConfig = (VaultConfig) kryoSerializer.clone(secretManagerConfig);
+    VaultConfig vaultConfig = (VaultConfig) kryoSerializerWrapper.clone(secretManagerConfig);
     for (String templatizedField : secretManagerConfig.getTemplatizedFields()) {
       String templatizedFieldValue = runtimeParameters.get(templatizedField);
       if (isBlank(templatizedFieldValue)) {

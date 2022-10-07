@@ -34,7 +34,7 @@ import io.harness.pms.sdk.core.steps.executables.TaskExecutable;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepOutcome;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.steps.StepUtils;
 import io.harness.supplier.ThrowingSupplier;
 
@@ -58,7 +58,7 @@ public class ArtifactStep implements TaskExecutable<ArtifactStepParameters, Arti
   private static final long DEFAULT_TIMEOUT = TimeUnit.MINUTES.toMillis(1);
 
   @Inject private ArtifactStepHelper artifactStepHelper;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
   @Inject private ServiceStepsHelper serviceStepsHelper;
 
   @Override
@@ -107,7 +107,7 @@ public class ArtifactStep implements TaskExecutable<ArtifactStepParameters, Arti
               LogColor.Cyan, LogWeight.Bold));
     }
     List<TaskSelector> delegateSelectors = artifactStepHelper.getDelegateSelectors(finalArtifact, ambiance);
-    return StepUtils.prepareTaskRequestWithTaskSelector(ambiance, taskData, kryoSerializer,
+    return StepUtils.prepareTaskRequestWithTaskSelector(ambiance, taskData, kryoSerializerWrapper,
         TaskCategory.DELEGATE_TASK_V2, Collections.emptyList(), false, taskName, delegateSelectors);
   }
 

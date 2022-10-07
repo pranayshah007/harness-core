@@ -35,7 +35,7 @@ import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.steps.StepUtils;
 import io.harness.steps.jira.JiraIssueOutcome;
 import io.harness.steps.jira.JiraStepHelperService;
@@ -52,15 +52,15 @@ import java.util.stream.Collectors;
 public class JiraStepHelperServiceImpl implements JiraStepHelperService {
   private final ConnectorResourceClient connectorResourceClient;
   private final SecretManagerClientService secretManagerClientService;
-  private final KryoSerializer kryoSerializer;
+  private final KryoSerializerWrapper kryoSerializerWrapper;
   private static final String NULL_VALUE = "null";
 
   @Inject
   public JiraStepHelperServiceImpl(ConnectorResourceClient connectorResourceClient,
-      @Named("PRIVILEGED") SecretManagerClientService secretManagerClientService, KryoSerializer kryoSerializer) {
+      @Named("PRIVILEGED") SecretManagerClientService secretManagerClientService, KryoSerializerWrapper kryoSerializerWrapper) {
     this.connectorResourceClient = connectorResourceClient;
     this.secretManagerClientService = secretManagerClientService;
-    this.kryoSerializer = kryoSerializer;
+    this.kryoSerializerWrapper = kryoSerializerWrapper;
   }
 
   @Override
@@ -101,7 +101,7 @@ public class JiraStepHelperServiceImpl implements JiraStepHelperService {
                             .taskType(NGTaskType.JIRA_TASK_NG.name())
                             .parameters(new Object[] {params})
                             .build();
-    return StepUtils.prepareTaskRequest(ambiance, taskData, kryoSerializer, TaskCategory.DELEGATE_TASK_V2,
+    return StepUtils.prepareTaskRequest(ambiance, taskData, kryoSerializerWrapper, TaskCategory.DELEGATE_TASK_V2,
         Collections.emptyList(), false, taskName,
         params.getDelegateSelectors()
             .stream()

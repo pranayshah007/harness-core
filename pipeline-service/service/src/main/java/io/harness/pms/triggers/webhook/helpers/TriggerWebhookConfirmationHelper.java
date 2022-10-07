@@ -29,7 +29,7 @@ import io.harness.ngtriggers.beans.dto.eventmapping.WebhookEventProcessingResult
 import io.harness.ngtriggers.beans.entity.TriggerWebhookEvent;
 import io.harness.ngtriggers.beans.response.TriggerEventResponse;
 import io.harness.ngtriggers.helpers.TriggerEventResponseHelper;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.tasks.BinaryResponseData;
 import io.harness.tasks.ErrorResponseData;
 import io.harness.tasks.ResponseData;
@@ -47,7 +47,7 @@ import lombok.extern.slf4j.Slf4j;
 public class TriggerWebhookConfirmationHelper {
   private final DelegateServiceGrpcClient delegateServiceGrpcClient;
   private final Supplier<DelegateCallbackToken> delegateCallbackTokenSupplier;
-  private final KryoSerializer kryoSerializer;
+  private final KryoSerializerWrapper kryoSerializerWrapper;
 
   public WebhookEventProcessingResult handleTriggerWebhookConfirmationEvent(TriggerWebhookEvent event) {
     try {
@@ -117,7 +117,7 @@ public class TriggerWebhookConfirmationHelper {
 
     if (BinaryResponseData.class.isAssignableFrom(responseData.getClass())) {
       BinaryResponseData binaryResponseData = (BinaryResponseData) responseData;
-      Object object = kryoSerializer.asInflatedObject(binaryResponseData.getData());
+      Object object = kryoSerializerWrapper.asInflatedObject(binaryResponseData.getData());
       if (object instanceof AwsCodeCommitApiTaskResponse) {
         return (AwsCodeCommitApiTaskResponse) object;
       } else if (object instanceof ErrorResponseData) {

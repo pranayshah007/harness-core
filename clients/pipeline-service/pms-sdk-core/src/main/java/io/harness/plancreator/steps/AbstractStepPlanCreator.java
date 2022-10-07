@@ -18,7 +18,7 @@ import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.sdk.core.plan.creation.creators.PartialPlanCreator;
 import io.harness.pms.yaml.YamlField;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
@@ -28,7 +28,7 @@ import java.util.Set;
 
 @OwnedBy(PIPELINE)
 public abstract class AbstractStepPlanCreator<T extends AbstractStepNode> implements PartialPlanCreator<T> {
-  @Inject protected KryoSerializer kryoSerializer;
+  @Inject protected KryoSerializerWrapper kryoSerializerWrapper;
 
   public abstract Set<String> getSupportedStepTypes();
 
@@ -51,9 +51,9 @@ public abstract class AbstractStepPlanCreator<T extends AbstractStepNode> implem
 
   protected void addStrategyFieldDependencyIfPresent(PlanCreationContext ctx, AbstractStepNode field,
       Map<String, YamlField> dependenciesNodeMap, Map<String, ByteString> metadataMap) {
-    StrategyUtils.addStrategyFieldDependencyIfPresent(kryoSerializer, ctx, field.getUuid(), field.getIdentifier(),
+    StrategyUtils.addStrategyFieldDependencyIfPresent(kryoSerializerWrapper, ctx, field.getUuid(), field.getIdentifier(),
         field.getName(), dependenciesNodeMap, metadataMap,
-        StrategyUtils.getAdviserObtainmentFromMetaDataForStep(kryoSerializer, ctx.getCurrentField()));
+        StrategyUtils.getAdviserObtainmentFromMetaDataForStep(kryoSerializerWrapper, ctx.getCurrentField()));
   }
 
   @Override public abstract PlanCreationResponse createPlanForField(PlanCreationContext ctx, T stepElement);

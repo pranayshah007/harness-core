@@ -28,7 +28,7 @@ import io.harness.cv.api.WorkflowVerificationResultService;
 import io.harness.ff.FeatureFlagService;
 import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.tasks.ResponseData;
 import io.harness.waiter.NotifyResponse;
 
@@ -77,7 +77,7 @@ public class AbstractMetricAnalysisStateTest extends WingsBaseTest {
   @Inject private AppService appService;
   @Inject protected MetricDataAnalysisService metricAnalysisService;
   @Inject protected CVActivityLogService cvActivityLogService;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
   @Inject private FeatureTestHelper featureTestHelper;
   @Inject protected WorkflowVerificationResultService workflowVerificationResultService;
   @Mock private ExecutionContext executionContext;
@@ -458,7 +458,7 @@ public class AbstractMetricAnalysisStateTest extends WingsBaseTest {
     final NotifyResponse notifyResponse = persistence.get(NotifyResponse.class, correlationId);
     assertThat(notifyResponse).isNotNull();
     VerificationDataAnalysisResponse verificationDataAnalysisResponse =
-        (VerificationDataAnalysisResponse) kryoSerializer.asInflatedObject(notifyResponse.getResponseData());
+        (VerificationDataAnalysisResponse) kryoSerializerWrapper.asInflatedObject(notifyResponse.getResponseData());
     assertThat(verificationDataAnalysisResponse.getExecutionStatus()).isEqualTo(executionStatus);
     assertThat(verificationDataAnalysisResponse.getStateExecutionData().getStatus()).isEqualTo(executionStatus);
 

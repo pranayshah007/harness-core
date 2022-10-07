@@ -78,7 +78,7 @@ public class CapabilityStressTestGenerator extends StressTestGenerator {
                 .setMode(TaskMode.ASYNC)
                 .setType(TaskType.newBuilder().setType("SCRIPT"))
                 .setExecutionTimeout(Durations.fromMinutes(5))
-                .setKryoParameters(ByteString.copyFrom(kryoSerializer.asDeflatedBytes(shellScriptTaskParameters))))
+                .setKryoParameters(ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(shellScriptTaskParameters))))
         .addCapabilities(generateTestCapability(key, value))
         .setQueueTimeout(Durations.fromMinutes(1))
         .build();
@@ -86,7 +86,7 @@ public class CapabilityStressTestGenerator extends StressTestGenerator {
 
   private Capability generateTestCapability(String key, String value) {
     return Capability.newBuilder()
-        .setKryoCapability(ByteString.copyFrom(kryoSerializer.asDeflatedBytes(
+        .setKryoCapability(ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(
             SystemEnvCheckerCapability.builder().systemPropertyName(key).comparate(value).build())))
         .build();
   }

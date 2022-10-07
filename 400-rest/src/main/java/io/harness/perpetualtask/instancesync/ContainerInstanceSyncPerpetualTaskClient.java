@@ -29,7 +29,7 @@ import io.harness.ff.FeatureFlagService;
 import io.harness.perpetualtask.PerpetualTaskClientContext;
 import io.harness.perpetualtask.PerpetualTaskServiceClient;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import software.wings.annotation.EncryptableSetting;
 import software.wings.beans.AzureKubernetesInfrastructureMapping;
@@ -71,7 +71,8 @@ public class ContainerInstanceSyncPerpetualTaskClient implements PerpetualTaskSe
   @Inject transient AwsCommandHelper awsCommandHelper;
   @Inject SecretManager secretManager;
   @Inject SettingsService settingsService;
-  @Inject KryoSerializer kryoSerializer;
+  @Inject
+  KryoSerializerWrapper kryoSerializerWrapper;
   @Inject FeatureFlagService featureFlagService;
 
   @Override
@@ -82,8 +83,8 @@ public class ContainerInstanceSyncPerpetualTaskClient implements PerpetualTaskSe
   }
 
   private Message buildContainerInstanceSyncTaskParams(ContainerInstanceSyncPerpetualTaskData taskData) {
-    ByteString settingAttribute = ByteString.copyFrom(kryoSerializer.asBytes(taskData.getSettingAttribute()));
-    ByteString encryptionDetails = ByteString.copyFrom(kryoSerializer.asBytes(taskData.getEncryptionDetails()));
+    ByteString settingAttribute = ByteString.copyFrom(kryoSerializerWrapper.asBytes(taskData.getSettingAttribute()));
+    ByteString encryptionDetails = ByteString.copyFrom(kryoSerializerWrapper.asBytes(taskData.getEncryptionDetails()));
 
     return ContainerInstanceSyncPerpetualTaskParams.newBuilder()
         .setContainerType(taskData.getContainerType())
@@ -103,7 +104,7 @@ public class ContainerInstanceSyncPerpetualTaskClient implements PerpetualTaskSe
   }
 
   private Message buildK8ContainerInstanceSyncTaskParams(ContainerInstanceSyncPerpetualTaskData taskData) {
-    ByteString clusterConfig = ByteString.copyFrom(kryoSerializer.asBytes(taskData.getK8sClusterConfig()));
+    ByteString clusterConfig = ByteString.copyFrom(kryoSerializerWrapper.asBytes(taskData.getK8sClusterConfig()));
 
     return ContainerInstanceSyncPerpetualTaskParams.newBuilder()
         .setContainerType(taskData.getContainerType())

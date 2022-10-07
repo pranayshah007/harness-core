@@ -22,14 +22,15 @@ import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 
 @OwnedBy(PIPELINE)
 public class NextStepAdviser implements Adviser {
-  @Inject KryoSerializer kryoSerializer;
+  @Inject
+  KryoSerializerWrapper kryoSerializerWrapper;
   @Inject ExecutionSweepingOutputService executionSweepingOutputService;
 
   public static final AdviserType ADVISER_TYPE =
@@ -37,7 +38,7 @@ public class NextStepAdviser implements Adviser {
   @Override
   public AdviserResponse onAdviseEvent(AdvisingEvent advisingEvent) {
     NextStepAdviserParameters nextStepAdviserParameters = (NextStepAdviserParameters) Preconditions.checkNotNull(
-        kryoSerializer.asObject(advisingEvent.getAdviserParameters()));
+        kryoSerializerWrapper.asObject(advisingEvent.getAdviserParameters()));
     return AdviserResponse.newBuilder()
         .setNextStepAdvise(NextStepAdvise.newBuilder().setNextNodeId(nextStepAdviserParameters.getNextNodeId()).build())
         .setType(AdviseType.NEXT_STEP)

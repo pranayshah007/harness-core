@@ -14,7 +14,7 @@ import static software.wings.beans.VariableType.ARTIFACT;
 
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.SweepingOutputInstance;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import software.wings.beans.Variable;
 import software.wings.beans.artifact.Artifact;
@@ -33,7 +33,7 @@ public class TemplateUtils {
   private static final Pattern p = Pattern.compile("\\$\\{(.*?)\\}");
 
   @Inject private SweepingOutputService sweepingOutputService;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
 
   private void processArtifactVariable(ExecutionContext context, Variable variable) {
     String expression = getExpression(variable.getValue());
@@ -47,7 +47,7 @@ public class TemplateUtils {
     }
     sweepingOutputService.ensure(context.prepareSweepingOutputBuilder(SweepingOutputInstance.Scope.STATE)
                                      .name(name)
-                                     .output(kryoSerializer.asDeflatedBytes(artifact))
+                                     .output(kryoSerializerWrapper.asDeflatedBytes(artifact))
                                      .build());
   }
 

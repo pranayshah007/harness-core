@@ -42,7 +42,7 @@ import io.harness.ng.core.models.SecretSpec;
 import io.harness.perpetualtask.PerpetualTaskExecutionBundle;
 import io.harness.perpetualtask.instancesync.AwsSshInstanceSyncPerpetualTaskParamsNg;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.yaml.infra.HostConnectionTypeKind;
 
 import com.google.protobuf.Any;
@@ -70,7 +70,8 @@ public class AwsSshWinrmInstanceSyncPerpetualTaskHandlerTest extends InstancesTe
   private static final String SSH_SERVICE = ServiceSpecType.SSH;
   private static final int PORT = 1234;
 
-  @Mock KryoSerializer kryoSerializer;
+  @Mock
+  KryoSerializerWrapper kryoSerializerWrapper;
   @Mock NGSecretServiceV2 ngSecretServiceV2;
   @Mock SshEntityHelper sshEntityHelper;
   @Mock ServerlessEntityHelper serverlessEntityHelper;
@@ -125,8 +126,8 @@ public class AwsSshWinrmInstanceSyncPerpetualTaskHandlerTest extends InstancesTe
 
     List<ExecutionCapability> expectedExecutionCapabilityList =
         AwsCapabilityHelper.fetchRequiredExecutionCapabilities(awsConnectorDTO, null);
-    when(kryoSerializer.asBytes(any())).thenReturn(bytes);
-    when(kryoSerializer.asDeflatedBytes(any())).thenReturn(bytes);
+    when(kryoSerializerWrapper.asBytes(any())).thenReturn(bytes);
+    when(kryoSerializerWrapper.asDeflatedBytes(any())).thenReturn(bytes);
     Any perpetualTaskPack = Any.pack(params);
 
     PerpetualTaskExecutionBundle.Builder builder = PerpetualTaskExecutionBundle.newBuilder();

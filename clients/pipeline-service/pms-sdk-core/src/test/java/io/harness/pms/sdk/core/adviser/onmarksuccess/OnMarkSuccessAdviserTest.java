@@ -29,7 +29,7 @@ import io.harness.pms.sdk.core.adviser.AdvisingEvent;
 import io.harness.pms.sdk.core.adviser.marksuccess.OnMarkSuccessAdviser;
 import io.harness.pms.sdk.core.adviser.marksuccess.OnMarkSuccessAdviserParameters;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import com.google.inject.Inject;
 import java.util.EnumSet;
@@ -46,7 +46,8 @@ public class OnMarkSuccessAdviserTest extends PmsSdkCoreTestBase {
       StepType.newBuilder().setStepCategory(StepCategory.STEP).setType(NODE_IDENTIFIER).build();
 
   @Inject OnMarkSuccessAdviser onMarkSuccessAdviser;
-  @Inject KryoSerializer kryoSerializer;
+  @Inject
+  KryoSerializerWrapper kryoSerializerWrapper;
 
   private Ambiance ambiance;
 
@@ -70,7 +71,7 @@ public class OnMarkSuccessAdviserTest extends PmsSdkCoreTestBase {
     AdvisingEvent advisingEvent = AdvisingEvent.builder()
                                       .ambiance(ambiance)
                                       .toStatus(Status.SUCCEEDED)
-                                      .adviserParameters(kryoSerializer.asBytes(
+                                      .adviserParameters(kryoSerializerWrapper.asBytes(
                                           OnMarkSuccessAdviserParameters.builder().nextNodeId(nextNodeId).build()))
                                       .build();
     AdviserResponse adviserResponse = onMarkSuccessAdviser.onAdviseEvent(advisingEvent);
@@ -87,7 +88,7 @@ public class OnMarkSuccessAdviserTest extends PmsSdkCoreTestBase {
         AdvisingEvent.builder()
             .ambiance(ambiance)
             .toStatus(Status.FAILED)
-            .adviserParameters(kryoSerializer.asBytes(OnMarkSuccessAdviserParameters.builder().build()))
+            .adviserParameters(kryoSerializerWrapper.asBytes(OnMarkSuccessAdviserParameters.builder().build()))
             .build();
     boolean canAdvise = onMarkSuccessAdviser.canAdvise(advisingEvent);
     assertThat(canAdvise).isTrue();
@@ -97,7 +98,7 @@ public class OnMarkSuccessAdviserTest extends PmsSdkCoreTestBase {
   @Owner(developers = ALEXEI)
   @Category(UnitTests.class)
   public void shouldTestCanAdviseWithFailureTypes() {
-    byte[] paramBytes = kryoSerializer.asBytes(
+    byte[] paramBytes = kryoSerializerWrapper.asBytes(
         OnMarkSuccessAdviserParameters.builder()
             .applicableFailureTypes(EnumSet.of(FailureType.CONNECTIVITY_FAILURE, FailureType.AUTHENTICATION_FAILURE))
             .build());

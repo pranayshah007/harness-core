@@ -29,7 +29,7 @@ import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.when.utils.RunInfoUtils;
 
 import com.google.common.base.Preconditions;
@@ -43,7 +43,7 @@ import lombok.SneakyThrows;
 @OwnedBy(PIPELINE)
 @TargetModule(HarnessModule._882_PMS_SDK_CORE)
 public abstract class AbstractPmsStagePlanCreator<T extends PmsAbstractStageNode> extends AbstractStagePlanCreator<T> {
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
 
   public abstract Set<String> getSupportedStageTypes();
 

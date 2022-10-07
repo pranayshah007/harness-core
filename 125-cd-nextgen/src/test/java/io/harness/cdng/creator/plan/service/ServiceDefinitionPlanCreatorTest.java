@@ -27,7 +27,7 @@ import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import com.google.inject.Inject;
 import java.io.IOException;
@@ -47,7 +47,7 @@ public class ServiceDefinitionPlanCreatorTest extends CDNGTestBase {
   @InjectMocks @Inject ServiceDefinitionPlanCreator serviceDefinitionPlanCreator;
   @Mock private EnvironmentService environmentService;
   @Mock private ServiceOverrideService serviceOverrideService;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
 
   private static final String ACCOUNT_ID = "account_id";
   private static final String ORG_IDENTIFIER = "orgId";

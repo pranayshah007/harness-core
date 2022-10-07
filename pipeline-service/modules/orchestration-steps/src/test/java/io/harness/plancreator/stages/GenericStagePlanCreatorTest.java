@@ -29,7 +29,7 @@ import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.steps.approval.stage.ApprovalStageNode;
 
 import com.google.common.base.Charsets;
@@ -54,8 +54,10 @@ public class GenericStagePlanCreatorTest extends OrchestrationStepsTestBase {
   ApprovalStageNode approvalStageConfig;
 
   @InjectMocks ApprovalStagePlanCreatorV2 approvalStagePlanCreator;
-  @Mock KryoSerializer kryoSerializer;
-  @Inject KryoSerializer kryoSerializerUnMocked;
+  @Mock
+  KryoSerializerWrapper kryoSerializerWrapper;
+  @Inject
+  KryoSerializerWrapper kryoSerializerWrapperUnMocked;
 
   @Before
   public void setUp() throws IOException {
@@ -86,8 +88,8 @@ public class GenericStagePlanCreatorTest extends OrchestrationStepsTestBase {
     assertThat(sibling).isNotNull();
     NextStepAdviserParameters nextStepAdviserParameters =
         NextStepAdviserParameters.builder().nextNodeId(sibling.getNode().getUuid()).build();
-    byte[] siblingAsBytes = kryoSerializerUnMocked.asBytes(nextStepAdviserParameters);
-    doReturn(siblingAsBytes).when(kryoSerializer).asBytes(nextStepAdviserParameters);
+    byte[] siblingAsBytes = kryoSerializerWrapperUnMocked.asBytes(nextStepAdviserParameters);
+    doReturn(siblingAsBytes).when(kryoSerializerWrapper).asBytes(nextStepAdviserParameters);
 
     PlanNode approvalStagePlanNode =
         approvalStagePlanCreator.createPlanForParentNode(approvalStageContext, approvalStageConfig, null);

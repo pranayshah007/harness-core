@@ -18,7 +18,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.exception.WingsException;
 import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.testlib.RealMongo;
 
 import software.wings.WingsBaseTest;
@@ -32,7 +32,8 @@ import org.junit.experimental.categories.Category;
 public class SweepingOutputServiceTest extends WingsBaseTest {
   @Inject SweepingOutputService sweepingOutputService;
   @Inject HPersistence persistence;
-  @Inject KryoSerializer kryoSerializer;
+  @Inject
+  KryoSerializerWrapper kryoSerializerWrapper;
 
   @Test
   @Owner(developers = PRASHANT, intermittent = true)
@@ -47,7 +48,7 @@ public class SweepingOutputServiceTest extends WingsBaseTest {
             .appId(generateUuid())
             .pipelineExecutionId(generateUuid())
             .workflowExecutionId(generateUuid())
-            .output(kryoSerializer.asDeflatedBytes(ImmutableMap.of("foo", "bar")));
+            .output(kryoSerializerWrapper.asDeflatedBytes(ImmutableMap.of("foo", "bar")));
 
     sweepingOutputService.save(builder.uuid(generateUuid()).build());
     assertThatThrownBy(() -> sweepingOutputService.save(builder.uuid(generateUuid()).build()))

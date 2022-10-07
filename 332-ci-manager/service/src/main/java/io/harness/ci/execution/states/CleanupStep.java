@@ -35,7 +35,7 @@ import io.harness.pms.sdk.core.steps.executables.TaskExecutable;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.service.DelegateGrpcClientWrapper;
 import io.harness.steps.StepUtils;
 import io.harness.supplier.ThrowingSupplier;
@@ -59,7 +59,7 @@ public class CleanupStep implements TaskExecutable<CleanupStepInfo, K8sTaskExecu
   @Inject ExecutionSweepingOutputService executionSweepingOutputResolver;
   @Inject private ConnectorUtils connectorUtils;
   @Inject private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
   @Override
   public Class<CleanupStepInfo> getStepParametersClass() {
     return CleanupStepInfo.class;
@@ -105,7 +105,7 @@ public class CleanupStep implements TaskExecutable<CleanupStepInfo, K8sTaskExecu
                                   .build();
 
     return StepUtils.prepareTaskRequest(
-        ambiance, taskData, kryoSerializer, false, Collections.emptyList(), false, null);
+        ambiance, taskData, kryoSerializerWrapper, false, Collections.emptyList(), false, null);
   }
 
   @Override

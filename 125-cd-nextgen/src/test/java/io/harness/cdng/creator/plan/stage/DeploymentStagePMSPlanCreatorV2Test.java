@@ -35,7 +35,7 @@ import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.utils.NGFeatureFlagHelperService;
 import io.harness.yaml.core.failurestrategy.FailureStrategyConfig;
 import io.harness.yaml.core.failurestrategy.NGFailureType;
@@ -70,7 +70,7 @@ import org.mockito.MockitoAnnotations;
 @RunWith(JUnitParamsRunner.class)
 public class DeploymentStagePMSPlanCreatorV2Test extends CDNGTestBase {
   @Mock private NGFeatureFlagHelperService featureFlagHelperService;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
   @InjectMocks private DeploymentStagePMSPlanCreatorV2 deploymentStagePMSPlanCreator;
   private AutoCloseable mocks;
   ObjectMapper mapper = new ObjectMapper();
@@ -78,7 +78,7 @@ public class DeploymentStagePMSPlanCreatorV2Test extends CDNGTestBase {
   public void setUp() throws Exception {
     mocks = MockitoAnnotations.openMocks(this);
 
-    Reflect.on(deploymentStagePMSPlanCreator).set("kryoSerializer", kryoSerializer);
+    Reflect.on(deploymentStagePMSPlanCreator).set("kryoSerializer", kryoSerializerWrapper);
   }
 
   @After

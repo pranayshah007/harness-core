@@ -29,7 +29,7 @@ import io.harness.managerclient.DelegateAgentManagerClient;
 import io.harness.managerclient.VerificationServiceClient;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import software.wings.beans.Log;
 
@@ -50,7 +50,7 @@ public class DelegateLogServiceImplTest extends CategoryTest {
   @Mock private DelegateAgentManagerClient delegateAgentManagerClient;
   @Mock private VerificationServiceClient verificationServiceClient;
   @Mock private ExecutorService executorService;
-  @Mock private KryoSerializer kryoSerializer;
+  @Mock private KryoSerializerWrapper kryoSerializerWrapper;
   private DelegateLogServiceImpl delegateLogService;
   @Captor private ArgumentCaptor<Log> logCaptor;
 
@@ -58,7 +58,7 @@ public class DelegateLogServiceImplTest extends CategoryTest {
   public void setUp() throws Exception {
     MockitoAnnotations.initMocks(this);
     delegateLogService = Mockito.spy(new DelegateLogServiceImpl(
-        delegateAgentManagerClient, executorService, verificationServiceClient, kryoSerializer));
+        delegateAgentManagerClient, executorService, verificationServiceClient, kryoSerializerWrapper));
   }
 
   /**

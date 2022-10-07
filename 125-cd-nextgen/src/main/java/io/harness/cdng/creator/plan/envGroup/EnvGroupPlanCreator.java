@@ -31,7 +31,7 @@ import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.sdk.core.plan.creation.creators.ChildrenPlanCreator;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
@@ -43,7 +43,8 @@ import java.util.Set;
 
 @OwnedBy(HarnessTeam.CDC)
 public class EnvGroupPlanCreator extends ChildrenPlanCreator<EnvGroupPlanCreatorConfig> {
-  @Inject KryoSerializer kryoSerializer;
+  @Inject
+  KryoSerializerWrapper kryoSerializerWrapper;
   @Override
   public Class<EnvGroupPlanCreatorConfig> getFieldClass() {
     return EnvGroupPlanCreatorConfig.class;
@@ -59,13 +60,13 @@ public class EnvGroupPlanCreator extends ChildrenPlanCreator<EnvGroupPlanCreator
       PlanCreationContext ctx, EnvGroupPlanCreatorConfig config) {
     final LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap = new LinkedHashMap<>();
 
-    boolean gitOpsEnabled = (boolean) kryoSerializer.asInflatedObject(
+    boolean gitOpsEnabled = (boolean) kryoSerializerWrapper.asInflatedObject(
         ctx.getDependency().getMetadataMap().get(YAMLFieldNameConstants.GITOPS_ENABLED).toByteArray());
     if (gitOpsEnabled) {
-      String postServiceStepUuid = (String) kryoSerializer.asInflatedObject(
+      String postServiceStepUuid = (String) kryoSerializerWrapper.asInflatedObject(
           ctx.getDependency().getMetadataMap().get(YamlTypes.POST_SERVICE_SPEC_UUID).toByteArray());
       PlanNode gitopsNode = InfrastructurePmsPlanCreator.createPlanForGitopsClusters(
-          ctx.getCurrentField(), postServiceStepUuid, config, kryoSerializer);
+          ctx.getCurrentField(), postServiceStepUuid, config, kryoSerializerWrapper);
       planCreationResponseMap.put(gitopsNode.getUuid(), PlanCreationResponse.builder().planNode(gitopsNode).build());
     }
     return planCreationResponseMap;
@@ -76,14 +77,14 @@ public class EnvGroupPlanCreator extends ChildrenPlanCreator<EnvGroupPlanCreator
       PlanCreationContext ctx, EnvGroupPlanCreatorConfig config, List<String> childrenNodeIds) {
     EnvironmentStepParameters environmentStepParameters = EnvironmentMapper.toEnvironmentStepParameters(config);
 
-    String serviceSpecNodeUuid = (String) kryoSerializer.asInflatedObject(
+    String serviceSpecNodeUuid = (String) kryoSerializerWrapper.asInflatedObject(
         ctx.getDependency().getMetadataMap().get(YamlTypes.NEXT_UUID).toByteArray());
 
-    String uuid = (String) kryoSerializer.asInflatedObject(
+    String uuid = (String) kryoSerializerWrapper.asInflatedObject(
         ctx.getDependency().getMetadataMap().get(YamlTypes.UUID).toByteArray());
 
     ByteString advisorParameters = ByteString.copyFrom(
-        kryoSerializer.asBytes(OnSuccessAdviserParameters.builder().nextNodeId(serviceSpecNodeUuid).build()));
+        kryoSerializerWrapper.asBytes(OnSuccessAdviserParameters.builder().nextNodeId(serviceSpecNodeUuid).build()));
     return PlanNode.builder()
         .uuid(uuid)
         .stepType(EnvironmentStepV2.STEP_TYPE)

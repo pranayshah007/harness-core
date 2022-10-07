@@ -11,7 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.data.OrchestrationMap;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -23,13 +23,13 @@ import org.springframework.data.convert.WritingConverter;
 @Singleton
 @WritingConverter
 public class OrchestrationMapWriteConverter implements Converter<OrchestrationMap, Binary> {
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
 
   @Override
   public Binary convert(OrchestrationMap orchestrationMap) {
     if (orchestrationMap == null) {
       return null;
     }
-    return new Binary(kryoSerializer.asDeflatedBytes(orchestrationMap));
+    return new Binary(kryoSerializerWrapper.asDeflatedBytes(orchestrationMap));
   }
 }

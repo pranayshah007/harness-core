@@ -100,7 +100,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnexpectedException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.tasks.ResponseData;
 import io.harness.waiter.WaitNotifyEngine;
 
@@ -239,7 +239,8 @@ public class ApprovalStateTest extends WingsBaseTest {
   @Mock private FeatureFlagService featureFlagService;
   @InjectMocks private ApprovalState approvalState = new ApprovalState("ApprovalState");
 
-  @Inject KryoSerializer kryoSerializer;
+  @Inject
+  KryoSerializerWrapper kryoSerializerWrapper;
 
   private static JSONArray projects;
   private static Object statuses;
@@ -834,7 +835,7 @@ public class ApprovalStateTest extends WingsBaseTest {
     when(context.renderExpression(any(), any(StateExecutionContext.class)))
         .thenAnswer(invocationOnMock -> invocationOnMock.getArgument(0, String.class));
     when(context.prepareSweepingOutputBuilder(any())).thenReturn(SweepingOutputInstance.builder());
-    Reflect.on(approvalState).set("kryoSerializer", kryoSerializer);
+    Reflect.on(approvalState).set("kryoSerializer", kryoSerializerWrapper);
     approvalState.setSweepingOutputName("test");
     approvalState.setVariables(asList(NameValuePair.builder().name("test").value("test").valueType("TEXT").build()));
     verifyUserGroupSweepingOutput();
@@ -2148,7 +2149,7 @@ public class ApprovalStateTest extends WingsBaseTest {
     verify(sweepingOutputService, times(1)).save(captor.capture());
 
     SweepingOutputInstance sweepingOutput = captor.getValue();
-    Map<String, Object> data = (Map<String, Object>) kryoSerializer.asInflatedObject(sweepingOutput.getOutput());
+    Map<String, Object> data = (Map<String, Object>) kryoSerializerWrapper.asInflatedObject(sweepingOutput.getOutput());
 
     reset(sweepingOutputService);
     return data.keySet().stream().collect(Collectors.toList());

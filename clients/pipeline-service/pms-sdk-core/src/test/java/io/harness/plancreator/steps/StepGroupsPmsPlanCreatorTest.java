@@ -22,7 +22,7 @@ import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.steps.common.steps.stepgroup.StepGroupStep;
 
 import com.google.common.base.Charsets;
@@ -40,7 +40,7 @@ import org.mockito.InjectMocks;
 
 @OwnedBy(PIPELINE)
 public class StepGroupsPmsPlanCreatorTest extends PmsSdkCoreTestBase {
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
   @Inject @InjectMocks StepGroupPMSPlanCreator stepGroupPMSPlanCreator;
   YamlField stepGroupYamlField;
   StepGroupElementConfig stepElementConfig;

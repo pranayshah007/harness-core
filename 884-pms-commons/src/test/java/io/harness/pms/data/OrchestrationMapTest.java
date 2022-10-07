@@ -16,7 +16,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import com.google.inject.Inject;
 import com.mongodb.MongoClient;
@@ -34,7 +34,7 @@ public class OrchestrationMapTest extends PmsCommonsTestBase {
   private static final String KEY = "a";
   private static final Integer VALUE = 11;
 
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
 
   /**
    * This method tests value persisted in database for {@link OrchestrationMap}
@@ -57,7 +57,7 @@ public class OrchestrationMapTest extends PmsCommonsTestBase {
         + "ZTbvK6K4zzLLFTlsmpXGdqnT+Tahnc";
 
     byte[] bytes = obtainDbObject(binaryWithoutEqualsSignAtTheEnd);
-    Object deserializedObject = kryoSerializer.asInflatedObject(bytes);
+    Object deserializedObject = kryoSerializerWrapper.asInflatedObject(bytes);
 
     assertThat(deserializedObject).isInstanceOf(OrchestrationMap.class);
     OrchestrationMap orchestrationMap = (OrchestrationMap) deserializedObject;

@@ -24,7 +24,7 @@ import io.harness.perpetualtask.PerpetualTaskClientContext;
 import io.harness.perpetualtask.PerpetualTaskService;
 import io.harness.perpetualtask.PerpetualTaskServiceClient;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import software.wings.api.DeploymentType;
 import software.wings.beans.AwsConfig;
@@ -59,15 +59,15 @@ public class AwsSshPerpetualTaskServiceClient implements PerpetualTaskServiceCli
   @Inject private ServiceResourceService serviceResourceService;
   @Inject private AwsUtils awsUtils;
   @Inject private SettingsService settingsService;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
 
   @Override
   public Message getTaskParams(PerpetualTaskClientContext clientContext) {
     final PerpetualTaskData taskData = getPerpetualTaskData(clientContext);
 
-    ByteString configBytes = ByteString.copyFrom(kryoSerializer.asBytes(taskData.getAwsConfig()));
-    ByteString filterBytes = ByteString.copyFrom(kryoSerializer.asBytes(taskData.getFilters()));
-    ByteString encryptionDetailsBytes = ByteString.copyFrom(kryoSerializer.asBytes(taskData.getEncryptionDetails()));
+    ByteString configBytes = ByteString.copyFrom(kryoSerializerWrapper.asBytes(taskData.getAwsConfig()));
+    ByteString filterBytes = ByteString.copyFrom(kryoSerializerWrapper.asBytes(taskData.getFilters()));
+    ByteString encryptionDetailsBytes = ByteString.copyFrom(kryoSerializerWrapper.asBytes(taskData.getEncryptionDetails()));
 
     return AwsSshInstanceSyncPerpetualTaskParams.newBuilder()
         .setRegion(taskData.getRegion())

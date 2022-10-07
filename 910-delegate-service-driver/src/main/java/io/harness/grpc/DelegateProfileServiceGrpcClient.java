@@ -45,7 +45,7 @@ import io.harness.exception.DelegateServiceDriverException;
 import io.harness.owner.OrgIdentifier;
 import io.harness.owner.ProjectIdentifier;
 import io.harness.paging.PageRequestGrpc;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.virtualstack.VirtualStackUtils;
 
 import com.google.inject.Inject;
@@ -62,13 +62,13 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(HarnessTeam.DEL)
 public class DelegateProfileServiceGrpcClient {
   private final DelegateProfileServiceBlockingStub delegateProfileServiceBlockingStub;
-  private final KryoSerializer kryoSerializer;
+  private final KryoSerializerWrapper kryoSerializerWrapper;
 
   @Inject
   public DelegateProfileServiceGrpcClient(
-      DelegateProfileServiceBlockingStub delegateProfileServiceBlockingStub, KryoSerializer kryoSerializer) {
+      DelegateProfileServiceBlockingStub delegateProfileServiceBlockingStub, KryoSerializerWrapper kryoSerializerWrapper) {
     this.delegateProfileServiceBlockingStub = delegateProfileServiceBlockingStub;
-    this.kryoSerializer = kryoSerializer;
+    this.kryoSerializerWrapper = kryoSerializerWrapper;
   }
   public DelegateProfilePageResponseGrpc listProfiles(AccountId accountId, PageRequestGrpc pageRequest, boolean isNg,
       OrgIdentifier orgIdentifier, ProjectIdentifier projectIdentifier) {
@@ -151,7 +151,7 @@ public class DelegateProfileServiceGrpcClient {
       validateScopingRules(delegateProfileGrpc.getScopingRulesList());
       AddProfileResponse addProfileResponse = delegateProfileServiceBlockingStub.addProfile(
           AddProfileRequest.newBuilder()
-              .setVirtualStack(VirtualStackUtils.populateRequest(kryoSerializer))
+              .setVirtualStack(VirtualStackUtils.populateRequest(kryoSerializerWrapper))
               .setProfile(delegateProfileGrpc)
               .build());
 
@@ -166,7 +166,7 @@ public class DelegateProfileServiceGrpcClient {
       validateScopingRules(delegateProfileGrpc.getScopingRulesList());
       UpdateProfileResponse updateProfileResponse = delegateProfileServiceBlockingStub.updateProfile(
           UpdateProfileRequest.newBuilder()
-              .setVirtualStack(VirtualStackUtils.populateRequest(kryoSerializer))
+              .setVirtualStack(VirtualStackUtils.populateRequest(kryoSerializerWrapper))
               .setProfile(delegateProfileGrpc)
               .build());
 
@@ -185,7 +185,7 @@ public class DelegateProfileServiceGrpcClient {
       validateScopingRules(delegateProfileGrpc.getScopingRulesList());
       UpdateProfileResponse updateProfileResponse = delegateProfileServiceBlockingStub.updateProfileV2(
           UpdateProfileRequest.newBuilder()
-              .setVirtualStack(VirtualStackUtils.populateRequest(kryoSerializer))
+              .setVirtualStack(VirtualStackUtils.populateRequest(kryoSerializerWrapper))
               .setProfile(delegateProfileGrpc)
               .build());
 
@@ -203,7 +203,7 @@ public class DelegateProfileServiceGrpcClient {
     try {
       delegateProfileServiceBlockingStub.deleteProfile(
           DeleteProfileRequest.newBuilder()
-              .setVirtualStack(VirtualStackUtils.populateRequest(kryoSerializer))
+              .setVirtualStack(VirtualStackUtils.populateRequest(kryoSerializerWrapper))
               .setAccountId(accountId)
               .setProfileId(profileId)
               .build());
@@ -216,7 +216,7 @@ public class DelegateProfileServiceGrpcClient {
       ProfileIdentifier profileIdentifier) {
     try {
       DeleteProfileV2Request.Builder builder = DeleteProfileV2Request.newBuilder()
-                                                   .setVirtualStack(VirtualStackUtils.populateRequest(kryoSerializer))
+                                                   .setVirtualStack(VirtualStackUtils.populateRequest(kryoSerializerWrapper))
                                                    .setAccountId(accountId)
                                                    .setProfileIdentifier(profileIdentifier);
       if (orgIdentifier != null) {
@@ -241,7 +241,7 @@ public class DelegateProfileServiceGrpcClient {
       UpdateProfileSelectorsResponse updateProfileSelectorsResponse =
           delegateProfileServiceBlockingStub.updateProfileSelectors(
               UpdateProfileSelectorsRequest.newBuilder()
-                  .setVirtualStack(VirtualStackUtils.populateRequest(kryoSerializer))
+                  .setVirtualStack(VirtualStackUtils.populateRequest(kryoSerializerWrapper))
                   .setAccountId(accountId)
                   .setProfileId(profileId)
                   .addAllSelectors(selectors)
@@ -267,7 +267,7 @@ public class DelegateProfileServiceGrpcClient {
 
       UpdateProfileSelectorsV2Request.Builder builder =
           UpdateProfileSelectorsV2Request.newBuilder()
-              .setVirtualStack(VirtualStackUtils.populateRequest(kryoSerializer))
+              .setVirtualStack(VirtualStackUtils.populateRequest(kryoSerializerWrapper))
               .setAccountId(accountId)
               .setProfileIdentifier(profileIdentifier)
               .addAllSelectors(selectors);

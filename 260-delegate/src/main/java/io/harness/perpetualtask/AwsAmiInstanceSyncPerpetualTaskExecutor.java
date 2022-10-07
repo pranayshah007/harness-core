@@ -18,7 +18,7 @@ import io.harness.grpc.utils.AnyUtils;
 import io.harness.managerclient.DelegateAgentManagerClient;
 import io.harness.perpetualtask.instancesync.AwsAmiInstanceSyncPerpetualTaskParams;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import software.wings.beans.AwsConfig;
 import software.wings.service.impl.aws.model.AwsAsgListInstancesResponse;
@@ -37,7 +37,7 @@ import org.eclipse.jetty.server.Response;
 public class AwsAmiInstanceSyncPerpetualTaskExecutor implements PerpetualTaskExecutor {
   @Inject private AwsAsgHelperServiceDelegate awsAsgHelperServiceDelegate;
   @Inject private DelegateAgentManagerClient delegateAgentManagerClient;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
 
   @Override
   public PerpetualTaskResponse runOnce(
@@ -47,11 +47,11 @@ public class AwsAmiInstanceSyncPerpetualTaskExecutor implements PerpetualTaskExe
     final AwsAmiInstanceSyncPerpetualTaskParams taskParams =
         AnyUtils.unpack(params.getCustomizedParams(), AwsAmiInstanceSyncPerpetualTaskParams.class);
 
-    final AwsConfig awsConfig = (AwsConfig) kryoSerializer.asObject(taskParams.getAwsConfig().toByteArray());
+    final AwsConfig awsConfig = (AwsConfig) kryoSerializerWrapper.asObject(taskParams.getAwsConfig().toByteArray());
 
     @SuppressWarnings("unchecked")
     final List<EncryptedDataDetail> encryptedDataDetails =
-        (List<EncryptedDataDetail>) kryoSerializer.asObject(taskParams.getEncryptedData().toByteArray());
+        (List<EncryptedDataDetail>) kryoSerializerWrapper.asObject(taskParams.getEncryptedData().toByteArray());
 
     final AwsAsgListInstancesResponse awsResponse = getAwsResponse(taskParams, awsConfig, encryptedDataDetails);
 

@@ -18,7 +18,7 @@ import io.harness.ccm.cluster.entities.ClusterRecord;
 import io.harness.delegate.beans.TaskData;
 import io.harness.perpetualtask.PerpetualTaskClientContext;
 import io.harness.perpetualtask.PerpetualTaskServiceClient;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import software.wings.beans.TaskType;
 import software.wings.helpers.ext.k8s.request.K8sClusterConfig;
@@ -34,7 +34,7 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(CE)
 public class K8sWatchPerpetualTaskServiceClient implements PerpetualTaskServiceClient {
   @Inject private K8sClusterConfigFactory k8sClusterConfigFactory;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
   @Inject private ClusterRecordService clusterRecordService;
 
   private static final String CLOUD_PROVIDER_ID = "cloudProviderId";
@@ -52,7 +52,7 @@ public class K8sWatchPerpetualTaskServiceClient implements PerpetualTaskServiceC
       clusterName = clusterRecord.getCluster().getClusterName();
     }
     K8sClusterConfig config = k8sClusterConfigFactory.getK8sClusterConfig(clusterId);
-    ByteString bytes = ByteString.copyFrom(kryoSerializer.asBytes(config));
+    ByteString bytes = ByteString.copyFrom(kryoSerializerWrapper.asBytes(config));
 
     // TODO(Tang): throw exception upon validation failure
 
@@ -69,7 +69,7 @@ public class K8sWatchPerpetualTaskServiceClient implements PerpetualTaskServiceC
     K8sWatchTaskParams params = getTaskParams(clientContext);
 
     K8sClusterConfig k8sClusterConfig =
-        (K8sClusterConfig) kryoSerializer.asObject(params.getK8SClusterConfig().toByteArray());
+        (K8sClusterConfig) kryoSerializerWrapper.asObject(params.getK8SClusterConfig().toByteArray());
 
     K8sTaskParameters k8sTaskParameters =
         new K8sTaskParameters("", "", "", "", k8sClusterConfig, "", "", 0, APPLY, null, null, false, false, true);

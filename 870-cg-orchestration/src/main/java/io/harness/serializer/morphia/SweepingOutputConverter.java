@@ -8,7 +8,7 @@
 package io.harness.serializer.morphia;
 
 import io.harness.beans.SweepingOutput;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -18,7 +18,7 @@ import org.mongodb.morphia.mapping.MappedField;
 
 @Singleton
 public class SweepingOutputConverter extends TypeConverter implements SimpleValueConverter {
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
 
   public SweepingOutputConverter() {
     super(SweepingOutput.class);
@@ -29,7 +29,7 @@ public class SweepingOutputConverter extends TypeConverter implements SimpleValu
     if (value == null) {
       return null;
     }
-    return kryoSerializer.asBytes(value);
+    return kryoSerializerWrapper.asBytes(value);
   }
 
   @Override
@@ -37,6 +37,6 @@ public class SweepingOutputConverter extends TypeConverter implements SimpleValu
     if (fromDBObject == null) {
       return null;
     }
-    return kryoSerializer.asObject((byte[]) fromDBObject);
+    return kryoSerializerWrapper.asObject((byte[]) fromDBObject);
   }
 }

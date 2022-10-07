@@ -124,7 +124,7 @@ public class NativeHelmStepHelper extends K8sHelmCommonStepHelper {
 
     String taskName = TaskType.HELM_COMMAND_TASK_NG.getDisplayName() + " : " + helmCommandRequest.getCommandName();
     HelmSpecParameters helmSpecParameters = (HelmSpecParameters) stepElementParameters.getSpec();
-    final TaskRequest taskRequest = prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
+    final TaskRequest taskRequest = prepareCDTaskRequest(ambiance, taskData, kryoSerializerWrapper,
         helmSpecParameters.getCommandUnits(), taskName,
         TaskSelectorYaml.toTaskSelector(emptyIfNull(getParameterFieldValue(helmSpecParameters.getDelegateSelectors()))),
         stepHelper.getEnvironmentType(ambiance));

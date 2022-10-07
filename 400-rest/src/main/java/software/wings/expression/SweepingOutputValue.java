@@ -12,7 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SweepingOutputInstance;
 import io.harness.expression.LateBindingValue;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import software.wings.service.intfc.sweepingoutput.SweepingOutputInquiry;
 import software.wings.service.intfc.sweepingoutput.SweepingOutputService;
@@ -23,7 +23,7 @@ import lombok.Builder;
 @Builder
 public class SweepingOutputValue implements LateBindingValue {
   private SweepingOutputService sweepingOutputService;
-  private KryoSerializer kryoSerializer;
+  private KryoSerializerWrapper kryoSerializerWrapper;
   private SweepingOutputInquiry sweepingOutputInquiry;
 
   @Override
@@ -37,6 +37,6 @@ public class SweepingOutputValue implements LateBindingValue {
       return sweepingOutputInstance.getValue();
     }
 
-    return kryoSerializer.asInflatedObject(sweepingOutputInstance.getOutput());
+    return kryoSerializerWrapper.asInflatedObject(sweepingOutputInstance.getOutput());
   }
 }

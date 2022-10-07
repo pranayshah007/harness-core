@@ -26,7 +26,7 @@ import io.harness.pms.execution.utils.StatusUtils;
 import io.harness.pms.sdk.core.execution.NodeExecutionUtils;
 import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 import io.harness.pms.timeout.SdkTimeoutTrackerParameters;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.timeout.TimeoutParameters;
 import io.harness.timeout.contracts.TimeoutObtainment;
 
@@ -82,12 +82,12 @@ public class OrchestrationUtils {
   }
 
   public TimeoutParameters buildTimeoutParameters(
-      KryoSerializer kryoSerializer, EngineExpressionEvaluator evaluator, TimeoutObtainment timeoutObtainment) {
+      KryoSerializerWrapper kryoSerializerWrapper, EngineExpressionEvaluator evaluator, TimeoutObtainment timeoutObtainment) {
     // TODO (prashant) : Change this this should not be kryo we should trat then exactly like step parameters. Should be
     // json string bytes Evaluate timeout expressions and convert sdk timeout parameters to timeout engine specific
     // parameters.
     SdkTimeoutTrackerParameters sdkTimeoutTrackerParameters =
-        (SdkTimeoutTrackerParameters) kryoSerializer.asObject(timeoutObtainment.getParameters().toByteArray());
+        (SdkTimeoutTrackerParameters) kryoSerializerWrapper.asObject(timeoutObtainment.getParameters().toByteArray());
     sdkTimeoutTrackerParameters = resolve(evaluator, sdkTimeoutTrackerParameters);
     return sdkTimeoutTrackerParameters.prepareTimeoutParameters();
   }

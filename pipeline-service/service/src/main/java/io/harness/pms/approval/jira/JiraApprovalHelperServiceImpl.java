@@ -45,7 +45,7 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.secrets.remote.SecretNGManagerClient;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.steps.StepUtils;
 import io.harness.steps.approval.step.entities.ApprovalInstance.ApprovalInstanceKeys;
 import io.harness.steps.approval.step.jira.JiraApprovalHelperService;
@@ -75,7 +75,7 @@ import lombok.extern.slf4j.Slf4j;
 public class JiraApprovalHelperServiceImpl implements JiraApprovalHelperService {
   private final NgDelegate2TaskExecutor ngDelegate2TaskExecutor;
   private final ConnectorResourceClient connectorResourceClient;
-  private final KryoSerializer kryoSerializer;
+  private final KryoSerializerWrapper kryoSerializerWrapper;
   private final SecretNGManagerClient secretManagerClient;
   private final WaitNotifyEngine waitNotifyEngine;
   private final LogStreamingStepClientFactory logStreamingStepClientFactory;
@@ -84,14 +84,14 @@ public class JiraApprovalHelperServiceImpl implements JiraApprovalHelperService 
 
   @Inject
   public JiraApprovalHelperServiceImpl(NgDelegate2TaskExecutor ngDelegate2TaskExecutor,
-      ConnectorResourceClient connectorResourceClient, KryoSerializer kryoSerializer,
+      ConnectorResourceClient connectorResourceClient, KryoSerializerWrapper kryoSerializerWrapper,
       @Named("PRIVILEGED") SecretNGManagerClient secretManagerClient, WaitNotifyEngine waitNotifyEngine,
       LogStreamingStepClientFactory logStreamingStepClientFactory,
       @Named(OrchestrationPublisherName.PUBLISHER_NAME) String publisherName, PmsGitSyncHelper pmsGitSyncHelper,
       JiraStepHelperService jiraStepHelperService) {
     this.ngDelegate2TaskExecutor = ngDelegate2TaskExecutor;
     this.connectorResourceClient = connectorResourceClient;
-    this.kryoSerializer = kryoSerializer;
+    this.kryoSerializerWrapper = kryoSerializerWrapper;
     this.secretManagerClient = secretManagerClient;
     this.waitNotifyEngine = waitNotifyEngine;
     this.logStreamingStepClientFactory = logStreamingStepClientFactory;
@@ -187,9 +187,9 @@ public class JiraApprovalHelperServiceImpl implements JiraApprovalHelperService 
   private TaskRequest prepareJiraTaskRequest(Ambiance ambiance, JiraTaskNGParameters jiraTaskNGParameters) {
     TaskDetails taskDetails =
         TaskDetails.newBuilder()
-            .setKryoParameters(ByteString.copyFrom(kryoSerializer.asDeflatedBytes(jiraTaskNGParameters) == null
+            .setKryoParameters(ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(jiraTaskNGParameters) == null
                     ? new byte[] {}
-                    : kryoSerializer.asDeflatedBytes(jiraTaskNGParameters)))
+                    : kryoSerializerWrapper.asDeflatedBytes(jiraTaskNGParameters)))
             .setExecutionTimeout(com.google.protobuf.Duration.newBuilder().setSeconds(20).build())
             .setMode(TaskMode.ASYNC)
             .setParked(false)

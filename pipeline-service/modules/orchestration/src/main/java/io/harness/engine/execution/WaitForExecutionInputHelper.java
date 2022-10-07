@@ -28,7 +28,7 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.yaml.YamlNode;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.timeout.TimeoutParameters;
 import io.harness.waiter.WaitNotifyEngine;
 
@@ -50,7 +50,7 @@ public class WaitForExecutionInputHelper {
   @Inject PlanExecutionMetadataService planExecutionMetadataService;
   @Inject @Named(OrchestrationPublisherName.PUBLISHER_NAME) private String publisherName;
 
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
   @Inject private PmsEngineExpressionService pmsEngineExpressionService;
   @Inject private PmsFeatureFlagService pmsFeatureFlagService;
 
@@ -74,7 +74,7 @@ public class WaitForExecutionInputHelper {
       if (EmptyPredicate.isNotEmpty(node.getTimeoutObtainments())) {
         // We take the last timeout added as timeout for the step.
         TimeoutParameters timeoutParameters = OrchestrationUtils.buildTimeoutParameters(
-            kryoSerializer, evaluator, node.getTimeoutObtainments().get(node.getTimeoutObtainments().size() - 1));
+            kryoSerializerWrapper, evaluator, node.getTimeoutObtainments().get(node.getTimeoutObtainments().size() - 1));
         timeout = timeoutParameters.getTimeoutMillis();
       }
 

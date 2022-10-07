@@ -161,7 +161,7 @@ import io.harness.logging.ExceptionLogger;
 import io.harness.persistence.HIterator;
 import io.harness.persistence.HPersistence;
 import io.harness.queue.QueuePublisher;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.serializer.MapperUtils;
 import io.harness.service.EventService;
 import io.harness.state.inspection.StateInspectionService;
@@ -466,7 +466,7 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
   @Inject private ArtifactStreamHelper artifactStreamHelper;
   @Inject private DeploymentAuthHandler deploymentAuthHandler;
   @Inject private AuthService authService;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
   @Inject private HelmChartService helmChartService;
   @Inject private StateInspectionService stateInspectionService;
   @Inject private ApplicationManifestService applicationManifestService;
@@ -2482,7 +2482,7 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
                                    .prepareSweepingOutputBuilder(workflowExecution.getAppId(),
                                        workflowExecution.getUuid(), null, null, null, Scope.PIPELINE)
                                    .name("pipeline")
-                                   .output(kryoSerializer.asDeflatedBytes(pipelineElement))
+                                   .output(kryoSerializerWrapper.asDeflatedBytes(pipelineElement))
                                    .build());
   }
 
@@ -3591,7 +3591,7 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
       }
 
       try {
-        ExecutionInterrupt executionInterruptClone = kryoSerializer.clone(executionInterrupt);
+        ExecutionInterrupt executionInterruptClone = kryoSerializerWrapper.clone(executionInterrupt);
         executionInterruptClone.setUuid(generateUuid());
         executionInterruptClone.setExecutionUuid(workflowExecution2.getUuid());
         executionInterruptManager.registerExecutionInterrupt(executionInterruptClone);

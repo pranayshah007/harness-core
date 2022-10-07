@@ -164,7 +164,7 @@ public abstract class CVNGAbstractPlanCreatorV2<T extends CVNGAbstractStepNode> 
       if (siblingField != null && siblingField.getNode().getUuid() != null) {
         return AdviserObtainment.newBuilder()
             .setType(AdviserType.newBuilder().setType(OrchestrationAdviserTypes.NEXT_STEP.name()).build())
-            .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(
+            .setParameters(ByteString.copyFrom(kryoSerializerWrapper.asBytes(
                 NextStepAdviserParameters.builder().nextNodeId(siblingField.getNode().getUuid()).build())))
             .build();
       }
@@ -181,7 +181,7 @@ public abstract class CVNGAbstractPlanCreatorV2<T extends CVNGAbstractStepNode> 
       if (siblingField != null && siblingField.getNode().getUuid() != null) {
         return AdviserObtainment.newBuilder()
             .setType(AdviserType.newBuilder().setType(OrchestrationAdviserTypes.ON_SUCCESS.name()).build())
-            .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(
+            .setParameters(ByteString.copyFrom(kryoSerializerWrapper.asBytes(
                 OnSuccessAdviserParameters.builder().nextNodeId(siblingField.getNode().getUuid()).build())))
             .build();
       }
@@ -204,7 +204,7 @@ public abstract class CVNGAbstractPlanCreatorV2<T extends CVNGAbstractStepNode> 
       AdviserObtainment.Builder adviserObtainmentBuilder, RetryFailureActionConfig retryAction,
       ParameterField<Integer> retryCount, FailureStrategyActionConfig actionUnderRetry, YamlField currentField) {
     return adviserObtainmentBuilder.setType(RetryAdviserWithRollback.ADVISER_TYPE)
-        .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(
+        .setParameters(ByteString.copyFrom(kryoSerializerWrapper.asBytes(
             RetryAdviserRollbackParameters.builder()
                 .applicableFailureTypes(failureTypes)
                 .nextNodeId(nextNodeUuid)
@@ -225,7 +225,7 @@ public abstract class CVNGAbstractPlanCreatorV2<T extends CVNGAbstractStepNode> 
       AdviserObtainment.Builder adviserObtainmentBuilder, ManualInterventionFailureActionConfig actionConfig,
       FailureStrategyActionConfig actionUnderManualIntervention) {
     return adviserObtainmentBuilder.setType(ManualInterventionAdviserWithRollback.ADVISER_TYPE)
-        .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(
+        .setParameters(ByteString.copyFrom(kryoSerializerWrapper.asBytes(
             ManualInterventionAdviserRollbackParameters.builder()
                 .applicableFailureTypes(failureTypes)
                 .timeoutAction(GenericPlanCreatorUtils.toRepairAction(actionUnderManualIntervention))
@@ -304,7 +304,7 @@ public abstract class CVNGAbstractPlanCreatorV2<T extends CVNGAbstractStepNode> 
         case IGNORE:
           adviserObtainmentList.add(
               adviserObtainmentBuilder.setType(IgnoreAdviser.ADVISER_TYPE)
-                  .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(IgnoreAdviserParameters.builder()
+                  .setParameters(ByteString.copyFrom(kryoSerializerWrapper.asBytes(IgnoreAdviserParameters.builder()
                                                                                 .applicableFailureTypes(failureTypes)
                                                                                 .nextNodeId(nextNodeUuid)
                                                                                 .build())))
@@ -321,7 +321,7 @@ public abstract class CVNGAbstractPlanCreatorV2<T extends CVNGAbstractStepNode> 
         case MARK_AS_SUCCESS:
           adviserObtainmentList.add(
               adviserObtainmentBuilder.setType(OnMarkSuccessAdviser.ADVISER_TYPE)
-                  .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(OnMarkSuccessAdviserParameters.builder()
+                  .setParameters(ByteString.copyFrom(kryoSerializerWrapper.asBytes(OnMarkSuccessAdviserParameters.builder()
                                                                                 .applicableFailureTypes(failureTypes)
                                                                                 .nextNodeId(nextNodeUuid)
                                                                                 .build())))
@@ -331,7 +331,7 @@ public abstract class CVNGAbstractPlanCreatorV2<T extends CVNGAbstractStepNode> 
         case ABORT:
           adviserObtainmentList.add(
               adviserObtainmentBuilder.setType(OnAbortAdviser.ADVISER_TYPE)
-                  .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(
+                  .setParameters(ByteString.copyFrom(kryoSerializerWrapper.asBytes(
                       OnAbortAdviserParameters.builder().applicableFailureTypes(failureTypes).build())))
                   .build());
           break;
@@ -339,7 +339,7 @@ public abstract class CVNGAbstractPlanCreatorV2<T extends CVNGAbstractStepNode> 
           OnFailRollbackParameters rollbackParameters =
               getRollbackParameters(currentField, failureTypes, RollbackStrategy.STAGE_ROLLBACK);
           adviserObtainmentList.add(adviserObtainmentBuilder.setType(OnFailRollbackAdviser.ADVISER_TYPE)
-                                        .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(rollbackParameters)))
+                                        .setParameters(ByteString.copyFrom(kryoSerializerWrapper.asBytes(rollbackParameters)))
                                         .build());
           break;
         case MANUAL_INTERVENTION:
@@ -353,7 +353,7 @@ public abstract class CVNGAbstractPlanCreatorV2<T extends CVNGAbstractStepNode> 
         case PIPELINE_ROLLBACK:
           rollbackParameters = getRollbackParameters(currentField, failureTypes, RollbackStrategy.PIPELINE_ROLLBACK);
           adviserObtainmentList.add(adviserObtainmentBuilder.setType(OnFailRollbackAdviser.ADVISER_TYPE)
-                                        .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(rollbackParameters)))
+                                        .setParameters(ByteString.copyFrom(kryoSerializerWrapper.asBytes(rollbackParameters)))
                                         .build());
           break;
         default:

@@ -48,7 +48,7 @@ import io.harness.security.Principal;
 import io.harness.security.PrincipalContextData;
 import io.harness.security.PrincipalProtoMapper;
 import io.harness.security.SourcePrincipalContextData;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
@@ -63,7 +63,8 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(DX)
 public class HarnessToGitPushInfoGrpcService extends HarnessToGitPushInfoServiceImplBase {
   @Inject HarnessToGitHelperService harnessToGitHelperService;
-  @Inject KryoSerializer kryoSerializer;
+  @Inject
+  KryoSerializerWrapper kryoSerializerWrapper;
   @Inject EntityDetailProtoToRestMapper entityDetailProtoToRestMapper;
   @Inject ExceptionManager exceptionManager;
   private String GIT_SERVICE = "Git Service";

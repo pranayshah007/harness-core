@@ -11,14 +11,14 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ci.plan.creator.CICreatorUtils;
 import io.harness.plancreator.steps.GenericStepPMSPlanCreator;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import com.google.inject.Inject;
 import java.util.Set;
 
 @OwnedBy(HarnessTeam.CI)
 public class CIPMSStepPlanCreator extends GenericStepPMSPlanCreator {
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
 
   @Override
   public Set<String> getSupportedStepTypes() {

@@ -72,7 +72,7 @@ import io.harness.perpetualtask.instancesync.InstanceSyncResponsePublisher;
 import io.harness.polling.client.PollingResourceClient;
 import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.service.intfc.DelegateTaskService;
 
 import software.wings.beans.Account;
@@ -143,7 +143,7 @@ public class DelegateAgentResourceTest extends CategoryTest {
   private static final ManifestCollectionResponseHandler manifestCollectionResponseHandler =
       mock(ManifestCollectionResponseHandler.class);
   private static final ConnectorHearbeatPublisher connectorHearbeatPublisher = mock(ConnectorHearbeatPublisher.class);
-  private static final KryoSerializer kryoSerializer = mock(KryoSerializer.class);
+  private static final KryoSerializerWrapper KRYO_SERIALIZER_WRAPPER = mock(KryoSerializerWrapper.class);
   private static final FeatureFlagService featureFlagService = mock(FeatureFlagService.class);
   private static final PollingResourceClient pollResourceClient = mock(PollingResourceClient.class);
 
@@ -160,7 +160,7 @@ public class DelegateAgentResourceTest extends CategoryTest {
           .instance(new DelegateAgentResource(delegateService, accountService, wingsPersistence,
               delegateRequestRateLimiter, subdomainUrlHelper, artifactCollectionResponseHandler,
               instanceSyncResponseHandler, manifestCollectionResponseHandler, connectorHearbeatPublisher,
-              kryoSerializer, configurationController, featureFlagService, delegateTaskServiceClassic,
+              KRYO_SERIALIZER_WRAPPER, configurationController, featureFlagService, delegateTaskServiceClassic,
               pollResourceClient, instanceSyncResponsePublisher))
           .instance(new AbstractBinder() {
             @Override
@@ -277,7 +277,7 @@ public class DelegateAgentResourceTest extends CategoryTest {
             .buildSourceResponse(BuildSourceResponse.builder().build())
             .build();
 
-    when(kryoSerializer.asObject(any(byte[].class))).thenReturn(buildSourceExecutionResponse);
+    when(KRYO_SERIALIZER_WRAPPER.asObject(any(byte[].class))).thenReturn(buildSourceExecutionResponse);
 
     RequestBody requestBody = RequestBody.create(okhttp3.MediaType.parse("application/octet-stream"), "");
 
@@ -508,7 +508,7 @@ public class DelegateAgentResourceTest extends CategoryTest {
                           .build());
     }
 
-    when(kryoSerializer.asObject(any(byte[].class))).thenReturn(apiCallLogs);
+    when(KRYO_SERIALIZER_WRAPPER.asObject(any(byte[].class))).thenReturn(apiCallLogs);
 
     RESOURCES.client()
         .target("/agent/delegates/" + DELEGATE_ID + "/state-executions?delegateId=" + DELEGATE_ID

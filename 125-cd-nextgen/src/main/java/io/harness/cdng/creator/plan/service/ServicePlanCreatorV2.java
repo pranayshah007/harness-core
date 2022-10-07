@@ -39,7 +39,7 @@ import io.harness.pms.sdk.core.plan.creation.creators.ChildrenPlanCreator;
 import io.harness.pms.yaml.DependenciesUtils;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlField;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
@@ -52,7 +52,7 @@ import java.util.Set;
 
 @OwnedBy(HarnessTeam.CDC)
 public class ServicePlanCreatorV2 extends ChildrenPlanCreator<NGServiceV2InfoConfig> {
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
   @Inject private EnforcementValidator enforcementValidator;
 
   @Override
@@ -94,7 +94,7 @@ public class ServicePlanCreatorV2 extends ChildrenPlanCreator<NGServiceV2InfoCon
             .serviceRef(ParameterField.createValueField(config.getIdentifier()))
             .build();
 
-    String infraSectionNodeUUid = (String) kryoSerializer.asInflatedObject(
+    String infraSectionNodeUUid = (String) kryoSerializerWrapper.asInflatedObject(
         ctx.getDependency().getMetadataMap().get(YamlTypes.NEXT_UUID).toByteArray());
 
     // Creating service section node
@@ -112,7 +112,7 @@ public class ServicePlanCreatorV2 extends ChildrenPlanCreator<NGServiceV2InfoCon
         .adviserObtainment(
             AdviserObtainment.newBuilder()
                 .setType(AdviserType.newBuilder().setType(OrchestrationAdviserTypes.ON_SUCCESS.name()).build())
-                .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(
+                .setParameters(ByteString.copyFrom(kryoSerializerWrapper.asBytes(
                     OnSuccessAdviserParameters.builder().nextNodeId(infraSectionNodeUUid).build())))
                 .build())
         .build();
@@ -137,7 +137,7 @@ public class ServicePlanCreatorV2 extends ChildrenPlanCreator<NGServiceV2InfoCon
             .adviserObtainment(
                 AdviserObtainment.newBuilder()
                     .setType(AdviserType.newBuilder().setType(OrchestrationAdviserTypes.ON_SUCCESS.name()).build())
-                    .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(
+                    .setParameters(ByteString.copyFrom(kryoSerializerWrapper.asBytes(
                         OnSuccessAdviserParameters.builder().nextNodeId(serviceDefinitionNodeId).build())))
                     .build())
             .skipExpressionChain(true)

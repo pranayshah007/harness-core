@@ -24,7 +24,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
 import io.harness.security.encryption.EncryptionType;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import software.wings.SecretManagementTestHelper;
 import software.wings.WingsBaseTest;
@@ -47,7 +47,7 @@ import org.mockito.Mock;
 public class AzureSecretsManagerServiceImplTest extends WingsBaseTest {
   @Inject private SecretManager secretManager;
   @Inject private HPersistence persistence;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
   @Inject private SecretManagementTestHelper secretManagementTestHelper;
 
   @Inject @InjectMocks private AzureSecretsManagerService azureSecretsManagerService;
@@ -104,7 +104,7 @@ public class AzureSecretsManagerServiceImplTest extends WingsBaseTest {
     azureVaultConfig.setAccountId(accountId);
 
     String savedConfigId =
-        azureSecretsManagerService.saveAzureSecretsManagerConfig(accountId, kryoSerializer.clone(azureVaultConfig));
+        azureSecretsManagerService.saveAzureSecretsManagerConfig(accountId, kryoSerializerWrapper.clone(azureVaultConfig));
 
     AzureVaultConfig updatedAzureVaultConfig = azureSecretsManagerService.getEncryptionConfig(accountId, savedConfigId);
 
@@ -112,7 +112,7 @@ public class AzureSecretsManagerServiceImplTest extends WingsBaseTest {
     updatedAzureVaultConfig.setName("UpdatedConfig");
     updatedAzureVaultConfig.maskSecrets();
 
-    azureSecretsManagerService.saveAzureSecretsManagerConfig(accountId, kryoSerializer.clone(updatedAzureVaultConfig));
+    azureSecretsManagerService.saveAzureSecretsManagerConfig(accountId, kryoSerializerWrapper.clone(updatedAzureVaultConfig));
 
     assertEquals("UpdatedConfig", azureSecretsManagerService.getEncryptionConfig(accountId, savedConfigId).getName());
   }
@@ -125,14 +125,14 @@ public class AzureSecretsManagerServiceImplTest extends WingsBaseTest {
     azureVaultConfig.setAccountId(accountId);
 
     String savedConfigId =
-        azureSecretsManagerService.saveAzureSecretsManagerConfig(accountId, kryoSerializer.clone(azureVaultConfig));
+        azureSecretsManagerService.saveAzureSecretsManagerConfig(accountId, kryoSerializerWrapper.clone(azureVaultConfig));
 
     AzureVaultConfig savedAzureVaultConfig = azureSecretsManagerService.getEncryptionConfig(accountId, savedConfigId);
 
     savedAzureVaultConfig.setUuid(savedConfigId);
     savedAzureVaultConfig.setSecretKey("UpdatedSecretKey");
 
-    azureSecretsManagerService.saveAzureSecretsManagerConfig(accountId, kryoSerializer.clone(savedAzureVaultConfig));
+    azureSecretsManagerService.saveAzureSecretsManagerConfig(accountId, kryoSerializerWrapper.clone(savedAzureVaultConfig));
 
     assertEquals(
         "UpdatedSecretKey", azureSecretsManagerService.getEncryptionConfig(accountId, savedConfigId).getSecretKey());
@@ -146,7 +146,7 @@ public class AzureSecretsManagerServiceImplTest extends WingsBaseTest {
     azureVaultConfig.setAccountId(accountId);
 
     String savedConfigId =
-        azureSecretsManagerService.saveAzureSecretsManagerConfig(accountId, kryoSerializer.clone(azureVaultConfig));
+        azureSecretsManagerService.saveAzureSecretsManagerConfig(accountId, kryoSerializerWrapper.clone(azureVaultConfig));
 
     assertNotNull(azureSecretsManagerService.getEncryptionConfig(accountId, savedConfigId));
 
@@ -164,7 +164,7 @@ public class AzureSecretsManagerServiceImplTest extends WingsBaseTest {
     azureVaultConfig.setAccountId(accountId);
 
     String savedConfigId =
-        azureSecretsManagerService.saveAzureSecretsManagerConfig(accountId, kryoSerializer.clone(azureVaultConfig));
+        azureSecretsManagerService.saveAzureSecretsManagerConfig(accountId, kryoSerializerWrapper.clone(azureVaultConfig));
 
     persistence.save(EncryptedData.builder()
                          .accountId(accountId)

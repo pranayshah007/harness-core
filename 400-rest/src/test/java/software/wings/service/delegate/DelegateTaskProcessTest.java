@@ -95,7 +95,7 @@ import io.harness.observer.Subject;
 import io.harness.outbox.api.OutboxService;
 import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.service.intfc.DelegateCache;
 import io.harness.service.intfc.DelegateProfileObserver;
 import io.harness.service.intfc.DelegateSyncService;
@@ -236,7 +236,7 @@ public class DelegateTaskProcessTest extends WingsBaseTest {
 
   @Inject private FeatureTestHelper featureTestHelper;
   @Inject private DelegateConnectionDao delegateConnectionDao;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
 
   private final int port = LocalhostUtils.findFreePort();
   @Rule public WireMockRule wireMockRule = new WireMockRule(port);

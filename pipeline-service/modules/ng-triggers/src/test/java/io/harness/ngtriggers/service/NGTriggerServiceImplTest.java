@@ -65,7 +65,7 @@ import io.harness.polling.contracts.PollingItem;
 import io.harness.polling.contracts.PollingPayloadData;
 import io.harness.repositories.spring.NGTriggerRepository;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.utils.YamlPipelineUtils;
 
 import com.google.common.io.Resources;
@@ -107,7 +107,8 @@ public class NGTriggerServiceImplTest extends CategoryTest {
   @Mock ExecutorService executorService;
   @Mock PollingSubscriptionHelper pollingSubscriptionHelper;
 
-  @Mock KryoSerializer kryoSerializer;
+  @Mock
+  KryoSerializerWrapper kryoSerializerWrapper;
 
   @Mock PollingResourceClient pollingResourceClient;
 
@@ -378,7 +379,7 @@ public class NGTriggerServiceImplTest extends CategoryTest {
     when(pollingSubscriptionHelper.generatePollingItem(eq(ngTrigger))).thenReturn(pollingItem);
     when(pollingResourceClient.unsubscribe(any())).thenReturn(call);
     when(call.execute()).thenReturn(Response.success(Boolean.TRUE));
-    when(kryoSerializer.asBytes(any(PollingItem.class))).thenReturn(bytes);
+    when(kryoSerializerWrapper.asBytes(any(PollingItem.class))).thenReturn(bytes);
 
     Boolean res =
         ngTriggerServiceImpl.delete(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, IDENTIFIER, null);

@@ -36,7 +36,7 @@ import io.harness.pms.yaml.DependenciesUtils;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.steps.common.steps.stepgroup.StepGroupStep;
 import io.harness.steps.common.steps.stepgroup.StepGroupStepParameters;
 import io.harness.when.utils.RunInfoUtils;
@@ -55,7 +55,7 @@ import java.util.Set;
 
 @OwnedBy(PIPELINE)
 public class StepGroupPMSPlanCreator extends ChildrenPlanCreator<StepGroupElementConfig> {
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
 
   @Override
   public LinkedHashMap<String, PlanCreationResponse> createPlanForChildrenNodes(
@@ -75,16 +75,16 @@ public class StepGroupPMSPlanCreator extends ChildrenPlanCreator<StepGroupElemen
               .dependencies(DependenciesUtils.toDependenciesProto(stepsYamlFieldMap))
               .build());
     }
-    addStrategyFieldDependencyIfPresent(kryoSerializer, ctx, config.getUuid(), config.getName(), config.getIdentifier(),
+    addStrategyFieldDependencyIfPresent(kryoSerializerWrapper, ctx, config.getUuid(), config.getName(), config.getIdentifier(),
         responseMap, new HashMap<>(), getAdviserObtainmentFromMetaData(ctx.getCurrentField(), false));
 
     return responseMap;
   }
 
-  public void addStrategyFieldDependencyIfPresent(KryoSerializer kryoSerializer, PlanCreationContext ctx, String uuid,
-      String name, String identifier, LinkedHashMap<String, PlanCreationResponse> responseMap,
-      HashMap<Object, Object> objectObjectHashMap, List<AdviserObtainment> adviserObtainmentFromMetaData) {
-    StrategyUtils.addStrategyFieldDependencyIfPresent(kryoSerializer, ctx, uuid, name, identifier, responseMap,
+  public void addStrategyFieldDependencyIfPresent(KryoSerializerWrapper kryoSerializerWrapper, PlanCreationContext ctx, String uuid,
+                                                  String name, String identifier, LinkedHashMap<String, PlanCreationResponse> responseMap,
+                                                  HashMap<Object, Object> objectObjectHashMap, List<AdviserObtainment> adviserObtainmentFromMetaData) {
+    StrategyUtils.addStrategyFieldDependencyIfPresent(kryoSerializerWrapper, ctx, uuid, name, identifier, responseMap,
         new HashMap<>(), getAdviserObtainmentFromMetaData(ctx.getCurrentField(), false));
   }
 
@@ -165,7 +165,7 @@ public class StepGroupPMSPlanCreator extends ChildrenPlanCreator<StepGroupElemen
       adviserObtainments.add(
           AdviserObtainment.newBuilder()
               .setType(AdviserType.newBuilder().setType(OrchestrationAdviserTypes.NEXT_STEP.name()).build())
-              .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(
+              .setParameters(ByteString.copyFrom(kryoSerializerWrapper.asBytes(
                   NextStepAdviserParameters.builder().nextNodeId(siblingField.getNode().getUuid()).build())))
               .build());
     }
@@ -181,7 +181,7 @@ public class StepGroupPMSPlanCreator extends ChildrenPlanCreator<StepGroupElemen
       adviserObtainments.add(
           AdviserObtainment.newBuilder()
               .setType(AdviserType.newBuilder().setType(OrchestrationAdviserTypes.ON_SUCCESS.name()).build())
-              .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(
+              .setParameters(ByteString.copyFrom(kryoSerializerWrapper.asBytes(
                   OnSuccessAdviserParameters.builder().nextNodeId(siblingField.getNode().getUuid()).build())))
               .build());
     }

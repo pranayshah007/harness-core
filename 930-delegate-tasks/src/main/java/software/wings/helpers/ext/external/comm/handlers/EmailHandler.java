@@ -12,7 +12,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import io.harness.concurrent.HTimeLimiter;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import software.wings.helpers.ext.external.comm.CollaborationHandler;
 import software.wings.helpers.ext.external.comm.CollaborationProviderRequest;
@@ -41,7 +41,7 @@ import org.mongodb.morphia.annotations.Transient;
 public class EmailHandler implements CollaborationHandler {
   @Inject private Mailer mailer;
   @Inject private EmailUtils emailHelperUtil;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
 
   @Inject @Transient private transient EncryptionService encryptionService;
   private static final TimeLimiter timeLimiter = HTimeLimiter.create();
@@ -89,7 +89,7 @@ public class EmailHandler implements CollaborationHandler {
           if (isNotEmpty(smtpConfig.getPassword())) {
             props.setProperty("mail.smtp.auth", "true");
           }
-          SmtpConfig config = kryoSerializer.clone(smtpConfig);
+          SmtpConfig config = kryoSerializerWrapper.clone(smtpConfig);
           encryptionService.decrypt(config, encryptionDetails, false);
           if (config.isUseSSL()) {
             props.put("mail.smtp.socketFactory.class", "javax.net.ssl.SSLSocketFactory");

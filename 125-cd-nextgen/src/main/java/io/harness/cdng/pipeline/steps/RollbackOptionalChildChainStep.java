@@ -23,7 +23,7 @@ import io.harness.pms.sdk.core.steps.executables.ChildChainExecutable;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponseNotifyData;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.steps.section.chain.SectionChainPassThroughData;
 import io.harness.tasks.ResponseData;
 
@@ -37,7 +37,7 @@ public class RollbackOptionalChildChainStep implements ChildChainExecutable<Roll
       StepType.newBuilder().setType("ROLLBACK_OPTIONAL_CHILD_CHAIN").setStepCategory(StepCategory.STEP).build();
 
   @Inject private PlanCreatorHelper planCreatorHelper;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
   @Inject ExecutionSweepingOutputService executionSweepingOutputService;
 
   @Override
@@ -68,7 +68,7 @@ public class RollbackOptionalChildChainStep implements ChildChainExecutable<Roll
       RollbackOptionalChildChainStepParameters stepParameters, StepInputPackage inputPackage,
       ByteString passThroughData, Map<String, ResponseData> responseDataMap) {
     SectionChainPassThroughData sectionChainPassThroughData =
-        (SectionChainPassThroughData) kryoSerializer.asObject(passThroughData.toByteArray());
+        (SectionChainPassThroughData) kryoSerializerWrapper.asObject(passThroughData.toByteArray());
     int index = sectionChainPassThroughData.getChildIndex() + 1;
 
     for (int i = index; i < stepParameters.getChildNodes().size(); i++) {
@@ -98,6 +98,6 @@ public class RollbackOptionalChildChainStep implements ChildChainExecutable<Roll
   }
 
   private ByteString obtainPassThroughData(SectionChainPassThroughData passThroughData) {
-    return ByteString.copyFrom(kryoSerializer.asBytes(passThroughData));
+    return ByteString.copyFrom(kryoSerializerWrapper.asBytes(passThroughData));
   }
 }

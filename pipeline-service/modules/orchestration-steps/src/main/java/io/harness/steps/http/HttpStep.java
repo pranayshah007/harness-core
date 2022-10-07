@@ -37,7 +37,7 @@ import io.harness.pms.sdk.core.steps.io.StepResponse.StepOutcome;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.steps.StepSpecTypeConstants;
 import io.harness.steps.StepUtils;
 import io.harness.supplier.ThrowingSupplier;
@@ -56,7 +56,7 @@ import lombok.extern.slf4j.Slf4j;
 public class HttpStep extends TaskExecutableWithRollback<HttpStepResponse> {
   public static final StepType STEP_TYPE = StepSpecTypeConstants.HTTP_STEP_TYPE;
 
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
   @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
 
   @Override
@@ -103,7 +103,7 @@ public class HttpStep extends TaskExecutableWithRollback<HttpStepResponse> {
             .build();
 
     return StepUtils.prepareTaskRequestWithTaskSelector(
-        ambiance, taskData, kryoSerializer, TaskSelectorYaml.toTaskSelector(httpStepParameters.delegateSelectors));
+        ambiance, taskData, kryoSerializerWrapper, TaskSelectorYaml.toTaskSelector(httpStepParameters.delegateSelectors));
   }
 
   @Override

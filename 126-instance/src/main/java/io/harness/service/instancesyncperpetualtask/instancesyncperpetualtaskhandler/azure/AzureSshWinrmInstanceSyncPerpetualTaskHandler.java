@@ -99,7 +99,7 @@ public class AzureSshWinrmInstanceSyncPerpetualTaskHandler extends InstanceSyncP
             .setServiceType(serviceType)
             .setInfrastructureKey(infrastructure.getInfrastructureKey())
             .addAllHosts(hosts)
-            .setAzureSshWinrmInfraDelegateConfig(ByteString.copyFrom(kryoSerializer.asBytes(azureInfraDelegateConfig)))
+            .setAzureSshWinrmInfraDelegateConfig(ByteString.copyFrom(kryoSerializerWrapper.asBytes(azureInfraDelegateConfig)))
             .build();
 
     Any perpetualTaskPack = Any.pack(azureInstanceSyncPerpetualTaskParamsNg);

@@ -31,7 +31,7 @@ import io.harness.pms.contracts.execution.failure.FailureType;
 import io.harness.pms.sdk.core.adviser.AdvisingEvent;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -45,7 +45,7 @@ import org.mockito.MockitoAnnotations;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public class RetryAdviserWithRollbackTest extends CategoryTest {
-  @Mock private KryoSerializer kryoSerializer;
+  @Mock private KryoSerializerWrapper kryoSerializerWrapper;
   @Mock ExecutionSweepingOutputService executionSweepingOutputService;
   @InjectMocks RetryAdviserWithRollback retryAdviserWithRollback;
 
@@ -63,7 +63,7 @@ public class RetryAdviserWithRollbackTest extends CategoryTest {
                  .waitIntervalList(Collections.singletonList(10))
                  .retryCount(1)
                  .build())
-        .when(kryoSerializer)
+        .when(kryoSerializerWrapper)
         .asObject((byte[]) any());
     List<String> retryIds = new ArrayList<>();
     retryIds.add("id1");
@@ -90,7 +90,7 @@ public class RetryAdviserWithRollbackTest extends CategoryTest {
                  .waitIntervalList(Collections.singletonList(10))
                  .retryCount(1)
                  .build())
-        .when(kryoSerializer)
+        .when(kryoSerializerWrapper)
         .asObject((byte[]) any());
     adviserResponse = retryAdviserWithRollback.onAdviseEvent(advisingEvent);
     assertEquals(adviserResponse.getType(), AdviseType.END_PLAN);
@@ -100,7 +100,7 @@ public class RetryAdviserWithRollbackTest extends CategoryTest {
                  .waitIntervalList(Collections.singletonList(10))
                  .retryCount(1)
                  .build())
-        .when(kryoSerializer)
+        .when(kryoSerializerWrapper)
         .asObject((byte[]) any());
     adviserResponse = retryAdviserWithRollback.onAdviseEvent(advisingEvent);
     assertEquals(adviserResponse.getType(), AdviseType.IGNORE_FAILURE);
@@ -110,7 +110,7 @@ public class RetryAdviserWithRollbackTest extends CategoryTest {
                  .waitIntervalList(Collections.singletonList(10))
                  .retryCount(1)
                  .build())
-        .when(kryoSerializer)
+        .when(kryoSerializerWrapper)
         .asObject((byte[]) any());
     adviserResponse = retryAdviserWithRollback.onAdviseEvent(advisingEvent);
     assertEquals(adviserResponse.getType(), AdviseType.NEXT_STEP);
@@ -120,7 +120,7 @@ public class RetryAdviserWithRollbackTest extends CategoryTest {
                  .waitIntervalList(Collections.singletonList(10))
                  .retryCount(1)
                  .build())
-        .when(kryoSerializer)
+        .when(kryoSerializerWrapper)
         .asObject((byte[]) any());
     adviserResponse = retryAdviserWithRollback.onAdviseEvent(advisingEvent);
     assertEquals(adviserResponse.getType(), AdviseType.NEXT_STEP);
@@ -130,7 +130,7 @@ public class RetryAdviserWithRollbackTest extends CategoryTest {
                  .waitIntervalList(Collections.singletonList(10))
                  .retryCount(1)
                  .build())
-        .when(kryoSerializer)
+        .when(kryoSerializerWrapper)
         .asObject((byte[]) any());
     adviserResponse = retryAdviserWithRollback.onAdviseEvent(advisingEvent);
     assertEquals(adviserResponse.getType(), AdviseType.NEXT_STEP);
@@ -141,7 +141,7 @@ public class RetryAdviserWithRollbackTest extends CategoryTest {
                  .waitIntervalList(Collections.singletonList(10))
                  .retryCount(1)
                  .build())
-        .when(kryoSerializer)
+        .when(kryoSerializerWrapper)
         .asObject((byte[]) any());
     adviserResponse = retryAdviserWithRollback.onAdviseEvent(advisingEvent);
     assertEquals(adviserResponse.getType(), AdviseType.MARK_SUCCESS);
@@ -151,7 +151,7 @@ public class RetryAdviserWithRollbackTest extends CategoryTest {
                  .waitIntervalList(Collections.singletonList(10))
                  .retryCount(1)
                  .build())
-        .when(kryoSerializer)
+        .when(kryoSerializerWrapper)
         .asObject((byte[]) any());
     AdvisingEvent finalAdvisingEvent = advisingEvent;
     assertThatThrownBy(() -> retryAdviserWithRollback.onAdviseEvent(finalAdvisingEvent));
@@ -167,7 +167,7 @@ public class RetryAdviserWithRollbackTest extends CategoryTest {
                  .waitIntervalList(Collections.singletonList(10))
                  .retryCount(1)
                  .build())
-        .when(kryoSerializer)
+        .when(kryoSerializerWrapper)
         .asObject((byte[]) any());
 
     AdvisingEvent advisingEvent =
@@ -201,7 +201,7 @@ public class RetryAdviserWithRollbackTest extends CategoryTest {
                  .waitIntervalList(Collections.singletonList(10))
                  .retryCount(1)
                  .build())
-        .when(kryoSerializer)
+        .when(kryoSerializerWrapper)
         .asObject((byte[]) any());
     assertFalse(retryAdviserWithRollback.canAdvise(advisingEvent));
   }

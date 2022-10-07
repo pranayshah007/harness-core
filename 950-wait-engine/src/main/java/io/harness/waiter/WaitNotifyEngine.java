@@ -19,7 +19,7 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.logging.AutoLogRemoveContext;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.tasks.ErrorResponseData;
 import io.harness.tasks.ProgressData;
 import io.harness.tasks.ResponseData;
@@ -53,7 +53,7 @@ public class WaitNotifyEngine {
   public static final int MIN_WAIT_INSTANCE_TIMEOUT = 3;
 
   @Inject private PersistenceWrapper persistenceWrapper;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
   @Inject private NotifyQueuePublisherRegister publisherRegister;
 
   public String waitForAllOn(String publisherName, NotifyCallback notifyCallback, String... correlationIds) {
@@ -126,7 +126,7 @@ public class WaitNotifyEngine {
                                   .uuid(generateUuid())
                                   .correlationId(correlationId)
                                   .createdAt(currentTimeMillis())
-                                  .progressData(kryoSerializer.asDeflatedBytes(progressData))
+                                  .progressData(kryoSerializerWrapper.asDeflatedBytes(progressData))
                                   .build());
     } catch (Exception exception) {
       log.error("Failed to notify for progress of type " + progressData.getClass().getSimpleName(), exception);
@@ -150,7 +150,7 @@ public class WaitNotifyEngine {
       persistenceWrapper.save(NotifyResponse.builder()
                                   .uuid(correlationId)
                                   .createdAt(currentTimeMillis())
-                                  .responseData(kryoSerializer.asDeflatedBytes(response))
+                                  .responseData(kryoSerializerWrapper.asDeflatedBytes(response))
                                   .error(error || response instanceof ErrorResponseData)
                                   .build());
       long queryEndTime = stopwatch.elapsed(TimeUnit.MILLISECONDS);

@@ -10,7 +10,7 @@ package io.harness.serializer.spring;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.waiter.NotifyCallback;
 
 import com.google.inject.Inject;
@@ -23,13 +23,13 @@ import org.springframework.data.convert.ReadingConverter;
 @Singleton
 @ReadingConverter
 public class NotifyCallbackReadConverter implements Converter<Binary, NotifyCallback> {
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
 
   @Override
   public NotifyCallback convert(Binary data) {
     if (data == null) {
       return null;
     }
-    return (NotifyCallback) kryoSerializer.asInflatedObject(data.getData());
+    return (NotifyCallback) kryoSerializerWrapper.asInflatedObject(data.getData());
   }
 }

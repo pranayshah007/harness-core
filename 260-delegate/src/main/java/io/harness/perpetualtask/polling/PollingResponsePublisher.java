@@ -13,7 +13,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.polling.PollingDelegateResponse;
 import io.harness.managerclient.DelegateAgentManagerClient;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import com.google.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
@@ -23,19 +23,19 @@ import okhttp3.RequestBody;
 @OwnedBy(HarnessTeam.CDC)
 @Slf4j
 public class PollingResponsePublisher {
-  private final KryoSerializer kryoSerializer;
+  private final KryoSerializerWrapper kryoSerializerWrapper;
   private final DelegateAgentManagerClient delegateAgentManagerClient;
 
   @Inject
   public PollingResponsePublisher(
-      KryoSerializer kryoSerializer, DelegateAgentManagerClient delegateAgentManagerClient) {
-    this.kryoSerializer = kryoSerializer;
+      KryoSerializerWrapper kryoSerializerWrapper, DelegateAgentManagerClient delegateAgentManagerClient) {
+    this.kryoSerializerWrapper = kryoSerializerWrapper;
     this.delegateAgentManagerClient = delegateAgentManagerClient;
   }
 
   public boolean publishToManger(String taskId, PollingDelegateResponse pollingDelegateResponse) {
     try {
-      byte[] responseSerialized = kryoSerializer.asBytes(pollingDelegateResponse);
+      byte[] responseSerialized = kryoSerializerWrapper.asBytes(pollingDelegateResponse);
 
       executeWithExceptions(
           delegateAgentManagerClient.publishPollingResult(taskId, pollingDelegateResponse.getAccountId(),

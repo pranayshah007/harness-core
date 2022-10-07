@@ -19,7 +19,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.engine.pms.resume.EngineResumeCallback;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import com.esotericsoftware.kryo.KryoException;
 import com.google.inject.Provider;
@@ -29,18 +29,19 @@ import org.mockito.Mock;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public class OrchestrationComponentTesterTest extends OrchestrationTestBase {
-  @Mock Provider<KryoSerializer> kryoSerializerProvider;
-  @Mock KryoSerializer kryoSerializer;
+  @Mock Provider<KryoSerializerWrapper> kryoSerializerProvider;
+  @Mock
+  KryoSerializerWrapper kryoSerializerWrapper;
 
   @Test
   @Owner(developers = SHALINI)
   @Category(UnitTests.class)
   public void testTestKryoRegistration() {
-    doReturn(kryoSerializer).when(kryoSerializerProvider).get();
-    doReturn(true).when(kryoSerializer).isRegistered(any());
+    doReturn(kryoSerializerWrapper).when(kryoSerializerProvider).get();
+    doReturn(true).when(kryoSerializerWrapper).isRegistered(any());
     assertThatCode(() -> OrchestrationComponentTester.testKryoRegistration(kryoSerializerProvider))
         .doesNotThrowAnyException();
-    doReturn(false).when(kryoSerializer).isRegistered(EngineResumeCallback.class);
+    doReturn(false).when(kryoSerializerWrapper).isRegistered(EngineResumeCallback.class);
     assertThatThrownBy(() -> {
       OrchestrationComponentTester.testKryoRegistration(kryoSerializerProvider);
     }).isInstanceOf(KryoException.class);

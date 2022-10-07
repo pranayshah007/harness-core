@@ -19,7 +19,7 @@ import io.harness.delegate.task.stepstatus.artifact.DockerArtifactDescriptor;
 import io.harness.delegate.task.stepstatus.artifact.DockerArtifactMetadata;
 import io.harness.delegate.task.stepstatus.artifact.FileArtifactDescriptor;
 import io.harness.delegate.task.stepstatus.artifact.FileArtifactMetadata;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.task.converters.ResponseDataConverterRegistry;
 import io.harness.task.service.SendTaskProgressRequest;
 import io.harness.task.service.SendTaskProgressResponse;
@@ -42,14 +42,14 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(CI)
 public class TaskServiceImpl extends TaskServiceGrpc.TaskServiceImplBase {
   private final DelegateServiceAgentClient delegateServiceAgentClient;
-  private final KryoSerializer kryoSerializer;
+  private final KryoSerializerWrapper kryoSerializerWrapper;
   private final ResponseDataConverterRegistry responseDataConverterRegistry;
 
   @Inject
-  public TaskServiceImpl(DelegateServiceAgentClient delegateServiceAgentClient, KryoSerializer kryoSerializer,
+  public TaskServiceImpl(DelegateServiceAgentClient delegateServiceAgentClient, KryoSerializerWrapper kryoSerializerWrapper,
       ResponseDataConverterRegistry responseDataConverterRegistry) {
     this.delegateServiceAgentClient = delegateServiceAgentClient;
-    this.kryoSerializer = kryoSerializer;
+    this.kryoSerializerWrapper = kryoSerializerWrapper;
     this.responseDataConverterRegistry = responseDataConverterRegistry;
   }
 
@@ -94,7 +94,7 @@ public class TaskServiceImpl extends TaskServiceGrpc.TaskServiceImplBase {
                                 .build())
                 .build();
         boolean success = delegateServiceAgentClient.sendTaskStatus(request.getAccountId(), request.getTaskId(),
-            request.getCallbackToken(), kryoSerializer.asDeflatedBytes(responseData));
+            request.getCallbackToken(), kryoSerializerWrapper.asDeflatedBytes(responseData));
         if (success) {
           log.info(
               "Successfully updated task status in sendTaskSTatus call,  accountId:{}, taskId:{}, callbackToken:{}, status: {}",

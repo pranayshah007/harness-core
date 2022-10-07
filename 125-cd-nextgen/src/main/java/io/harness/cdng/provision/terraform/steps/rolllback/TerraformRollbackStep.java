@@ -51,7 +51,7 @@ import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.provision.TerraformConstants;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.steps.StepHelper;
 import io.harness.steps.StepUtils;
 import io.harness.supplier.ThrowingSupplier;
@@ -72,7 +72,7 @@ public class TerraformRollbackStep extends TaskExecutableWithRollbackAndRbac<Ter
                                                .setStepCategory(StepCategory.STEP)
                                                .build();
 
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
   @Inject private TerraformConfigHelper terraformConfigHelper;
   @Inject private TerraformStepHelper terraformStepHelper;
   @Inject ExecutionSweepingOutputService executionSweepingOutputService;
@@ -177,7 +177,7 @@ public class TerraformRollbackStep extends TaskExecutableWithRollbackAndRbac<Ter
               .build();
 
       ParameterField<List<TaskSelectorYaml>> delegateSelectors = stepParametersSpec.getDelegateSelectors();
-      return StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
+      return StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializerWrapper,
           Collections.singletonList(TerraformCommandUnit.Rollback.name()), TaskType.TERRAFORM_TASK_NG.getDisplayName(),
           TaskSelectorYaml.toTaskSelector(delegateSelectors), stepHelper.getEnvironmentType(ambiance));
     }

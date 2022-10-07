@@ -26,7 +26,7 @@ import io.harness.manage.GlobalContextManager;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
@@ -38,7 +38,8 @@ import org.junit.experimental.categories.Category;
 @OwnedBy(PIPELINE)
 public class PmsGitSyncHelperTest extends PmsCommonsTestBase {
   @Inject PmsGitSyncHelper pmsGitSyncHelper;
-  @Inject KryoSerializer kryoSerializer;
+  @Inject
+  KryoSerializerWrapper kryoSerializerWrapper;
 
   GitSyncBranchContext gitSyncBranchContext;
   GlobalContext context;
@@ -56,7 +57,7 @@ public class PmsGitSyncHelperTest extends PmsCommonsTestBase {
     context = new GlobalContext();
     context.setGlobalContextRecord(gitSyncBranchContext);
     GlobalContextManager.set(context);
-    contextBytes = ByteString.copyFrom(kryoSerializer.asDeflatedBytes(gitSyncBranchContext));
+    contextBytes = ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(gitSyncBranchContext));
   }
 
   @Test

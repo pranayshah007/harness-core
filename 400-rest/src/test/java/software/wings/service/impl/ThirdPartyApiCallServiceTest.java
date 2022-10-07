@@ -16,7 +16,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import io.harness.category.element.UnitTests;
 import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import software.wings.WingsBaseTest;
 import software.wings.resources.ActivityResource;
@@ -43,7 +43,7 @@ public class ThirdPartyApiCallServiceTest extends WingsBaseTest {
   private String appId;
   @Inject private DelegateAgentResource delegateResource;
   @Inject private ActivityResource activityResource;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
 
   @Before
   public void setup() throws IOException, NoSuchFieldException, IllegalAccessException {
@@ -87,7 +87,7 @@ public class ThirdPartyApiCallServiceTest extends WingsBaseTest {
                           .createdAt(i + 1)
                           .build());
     }
-    delegateResource.saveApiCallLogs(delegateId, accountId, kryoSerializer.asBytes(apiCallLogs));
+    delegateResource.saveApiCallLogs(delegateId, accountId, kryoSerializerWrapper.asBytes(apiCallLogs));
 
     RestResponse<List<ThirdPartyApiCallLog>> restResponse =
         activityResource.listLogs(appId, stateExecutionId, 0, 0, aPageRequest().build());

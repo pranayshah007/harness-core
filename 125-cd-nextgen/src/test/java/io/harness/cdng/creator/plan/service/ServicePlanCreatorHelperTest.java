@@ -37,7 +37,7 @@ import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.utils.YamlPipelineUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -63,7 +63,8 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 public class ServicePlanCreatorHelperTest extends CategoryTest {
-  @Mock KryoSerializer kryoSerializer;
+  @Mock
+  KryoSerializerWrapper kryoSerializerWrapper;
   @Mock ServiceEntityService serviceEntityService;
   private static final String ACCOUNT_ID = "account_id";
   private static final String ORG_IDENTIFIER = "orgId";
@@ -87,7 +88,7 @@ public class ServicePlanCreatorHelperTest extends CategoryTest {
 
     String serviceNodeId = serviceField.getNode().getUuid();
     byte[] dummyValue = new byte[10];
-    doReturn(dummyValue).when(kryoSerializer).asDeflatedBytes(any());
+    doReturn(dummyValue).when(kryoSerializerWrapper).asDeflatedBytes(any());
     Dependencies dependencies = servicePlanCreatorHelper.getDependenciesForService(serviceField,
         DeploymentStageNode.builder()
             .deploymentStageConfig(DeploymentStageConfig.builder()

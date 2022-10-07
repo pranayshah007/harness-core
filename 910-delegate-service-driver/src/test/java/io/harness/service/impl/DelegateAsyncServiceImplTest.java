@@ -18,7 +18,7 @@ import io.harness.delegate.beans.DelegateAsyncTaskResponse;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.service.intfc.DelegateAsyncService;
 import io.harness.tasks.ResponseData;
 import io.harness.waiter.StringNotifyResponseData;
@@ -33,7 +33,7 @@ import org.junit.experimental.categories.Category;
 public class DelegateAsyncServiceImplTest extends DelegateServiceDriverTestBase {
   @Inject private DelegateAsyncService delegateAsyncService;
   @Inject private HPersistence hPersistence;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
 
   /**
    * This test is for when the record is inserted from the timeout method and when the task completes it will override
@@ -63,7 +63,7 @@ public class DelegateAsyncServiceImplTest extends DelegateServiceDriverTestBase 
     assertThat(insertedTaskResponse.getProcessAfter()).isEqualTo(expiryEpoch);
     assertThat(insertedTaskResponse.getValidUntil()).isAfterOrEqualTo(minValidUntil);
 
-    ResponseData responseData = (ResponseData) kryoSerializer.asInflatedObject(insertedTaskResponse.getResponseData());
+    ResponseData responseData = (ResponseData) kryoSerializerWrapper.asInflatedObject(insertedTaskResponse.getResponseData());
     assertThat(responseData).isInstanceOf(ErrorNotifyResponseData.class);
 
     ErrorNotifyResponseData errorNotifyResponseData = (ErrorNotifyResponseData) responseData;
@@ -87,7 +87,7 @@ public class DelegateAsyncServiceImplTest extends DelegateServiceDriverTestBase 
     String savedTaskId = hPersistence.save(DelegateAsyncTaskResponse.builder()
                                                .uuid(taskId)
                                                .processAfter(currentTimeStamp)
-                                               .responseData(kryoSerializer.asDeflatedBytes(
+                                               .responseData(kryoSerializerWrapper.asDeflatedBytes(
                                                    StringNotifyResponseData.builder().data("DATA_FROM_TASK").build()))
                                                .build());
 
@@ -111,7 +111,7 @@ public class DelegateAsyncServiceImplTest extends DelegateServiceDriverTestBase 
     // Valid Until should be from original
     assertThat(upsertedTaskResponse.getValidUntil()).isAfter(minValidUntil);
 
-    ResponseData responseData = (ResponseData) kryoSerializer.asInflatedObject(upsertedTaskResponse.getResponseData());
+    ResponseData responseData = (ResponseData) kryoSerializerWrapper.asInflatedObject(upsertedTaskResponse.getResponseData());
     assertThat(responseData).isInstanceOf(StringNotifyResponseData.class);
 
     StringNotifyResponseData stringNotifyResponseData = (StringNotifyResponseData) responseData;

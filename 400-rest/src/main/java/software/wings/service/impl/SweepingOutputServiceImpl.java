@@ -22,7 +22,7 @@ import io.harness.beans.SweepingOutputInstance.SweepingOutputInstanceBuilder;
 import io.harness.beans.SweepingOutputInstance.SweepingOutputInstanceKeys;
 import io.harness.deployment.InstanceDetails;
 import io.harness.exception.InvalidRequestException;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import software.wings.api.InstanceElement;
 import software.wings.api.instancedetails.InstanceInfoVariables;
@@ -56,14 +56,14 @@ import org.mongodb.morphia.query.UpdateOperations;
 @Slf4j
 public class SweepingOutputServiceImpl implements SweepingOutputService {
   @Inject private WingsPersistence wingsPersistence;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
   @Inject private WorkflowExecutionService workflowExecutionService;
 
   @Override
   public SweepingOutputInstance save(SweepingOutputInstance sweepingOutputInstance) {
     try {
       if (sweepingOutputInstance.getValue() != null && isEmpty(sweepingOutputInstance.getValueOutput())) {
-        sweepingOutputInstance.setValueOutput(kryoSerializer.asBytes(sweepingOutputInstance.getValue()));
+        sweepingOutputInstance.setValueOutput(kryoSerializerWrapper.asBytes(sweepingOutputInstance.getValue()));
       }
       wingsPersistence.save(sweepingOutputInstance);
       return sweepingOutputInstance;
@@ -139,7 +139,7 @@ public class SweepingOutputServiceImpl implements SweepingOutputService {
       return null;
     }
     if (!isEmpty(sweepingOutputInstance.getValueOutput())) {
-      return (T) kryoSerializer.asObject(sweepingOutputInstance.getValueOutput());
+      return (T) kryoSerializerWrapper.asObject(sweepingOutputInstance.getValueOutput());
     }
     return (T) sweepingOutputInstance.getValue();
   }
@@ -154,7 +154,7 @@ public class SweepingOutputServiceImpl implements SweepingOutputService {
     return sweepingOutputInstances.stream()
         .map(soi -> {
           if (!isEmpty(soi.getValueOutput())) {
-            return (T) kryoSerializer.asObject(soi.getValueOutput());
+            return (T) kryoSerializerWrapper.asObject(soi.getValueOutput());
           }
           return (T) soi.getValue();
         })
@@ -236,7 +236,7 @@ public class SweepingOutputServiceImpl implements SweepingOutputService {
     addFilters(sweepingOutputInquiry, query);
     SweepingOutputInstance instance = query.get();
     if (instance != null && !isEmpty(instance.getValueOutput())) {
-      instance.setValue((SweepingOutput) kryoSerializer.asObject(instance.getValueOutput()));
+      instance.setValue((SweepingOutput) kryoSerializerWrapper.asObject(instance.getValueOutput()));
       return instance;
     }
     return instance;

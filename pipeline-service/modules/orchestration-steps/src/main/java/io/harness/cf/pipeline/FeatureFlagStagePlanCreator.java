@@ -29,7 +29,7 @@ import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.pms.yaml.DependenciesUtils;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.steps.cf.FeatureFlagStageStep;
 import io.harness.steps.common.NGSectionStepParameters;
 
@@ -48,7 +48,7 @@ import java.util.Set;
 // the getSpecParameters method should behave for CF.
 @OwnedBy(HarnessTeam.CF)
 public class FeatureFlagStagePlanCreator extends ChildrenPlanCreator<StageElementConfig> {
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
   @Override
   public LinkedHashMap<String, PlanCreationResponse> createPlanForChildrenNodes(
       PlanCreationContext ctx, StageElementConfig config) {
@@ -117,7 +117,7 @@ public class FeatureFlagStagePlanCreator extends ChildrenPlanCreator<StageElemen
         adviserObtainments.add(
             AdviserObtainment.newBuilder()
                 .setType(AdviserType.newBuilder().setType(OrchestrationAdviserTypes.NEXT_STAGE.name()).build())
-                .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(
+                .setParameters(ByteString.copyFrom(kryoSerializerWrapper.asBytes(
                     NextStepAdviserParameters.builder().nextNodeId(siblingField.getNode().getUuid()).build())))
                 .build());
       }

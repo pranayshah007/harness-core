@@ -71,7 +71,7 @@ import io.harness.manifest.CustomManifestSource;
 import io.harness.manifest.CustomManifestSource.CustomManifestSourceBuilder;
 import io.harness.manifest.CustomSourceConfig;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.tasks.ResponseData;
 
 import software.wings.api.HostElement;
@@ -202,7 +202,7 @@ public abstract class AbstractK8sState extends State implements K8sStateExecutor
   @Inject private FeatureFlagService featureFlagService;
   @Inject private OpenShiftManagerService openShiftManagerService;
   @Inject private InstanceService instanceService;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
   @Inject private GitConfigHelperService gitConfigHelperService;
   @Inject public K8sStateHelper k8sStateHelper;
   @Inject private WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService;
@@ -608,7 +608,7 @@ public abstract class AbstractK8sState extends State implements K8sStateExecutor
   public void saveK8sElement(ExecutionContext context, K8sElement k8sElement) {
     sweepingOutputService.save(context.prepareSweepingOutputBuilder(Scope.WORKFLOW)
                                    .name("k8s")
-                                   .output(kryoSerializer.asDeflatedBytes(k8sElement))
+                                   .output(kryoSerializerWrapper.asDeflatedBytes(k8sElement))
                                    .build());
   }
 

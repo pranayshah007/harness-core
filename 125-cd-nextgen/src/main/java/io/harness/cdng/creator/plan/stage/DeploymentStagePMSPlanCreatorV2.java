@@ -69,7 +69,7 @@ import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.strategy.StrategyValidationUtils;
 import io.harness.utils.NGFeatureFlagHelperService;
 import io.harness.when.utils.RunInfoUtils;
@@ -124,7 +124,7 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(CDC)
 @Slf4j
 public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<DeploymentStageNode> {
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
   @Inject private EnvironmentService environmentService;
   @Inject private NGFeatureFlagHelperService featureFlagHelperService;
 
@@ -244,9 +244,9 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
       addCDExecutionDependencies(planCreationResponseMap, executionField);
       addMultiDeploymentDependency(planCreationResponseMap, stageNode, ctx);
 
-      StrategyUtils.addStrategyFieldDependencyIfPresent(kryoSerializer, ctx, stageNode.getUuid(), stageNode.getName(),
+      StrategyUtils.addStrategyFieldDependencyIfPresent(kryoSerializerWrapper, ctx, stageNode.getUuid(), stageNode.getName(),
           stageNode.getIdentifier(), planCreationResponseMap, metadataMap,
-          StrategyUtils.getAdviserObtainments(ctx.getCurrentField(), kryoSerializer, false), false);
+          StrategyUtils.getAdviserObtainments(ctx.getCurrentField(), kryoSerializerWrapper, false), false);
 
       return planCreationResponseMap;
     } catch (IOException e) {
@@ -303,7 +303,7 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
   private List<AdviserObtainment> addResourceConstraintDependencyWithWhenCondition(
       LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap, YamlField specField) {
     return InfrastructurePmsPlanCreator.addResourceConstraintDependency(
-        planCreationResponseMap, specField, kryoSerializer);
+        planCreationResponseMap, specField, kryoSerializerWrapper);
   }
 
   private boolean useNewFlow(PlanCreationContext ctx, DeploymentStageNode stageNode) {
@@ -359,7 +359,7 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
 
       if (InfrastructurePmsPlanCreator.isProvisionerConfigured(pipelineInfrastructure)) {
         planCreationResponseMap.putAll(InfrastructurePmsPlanCreator.createPlanForProvisioner(
-            pipelineInfrastructure, infraField, infraStepNode.getUuid(), kryoSerializer));
+            pipelineInfrastructure, infraField, infraStepNode.getUuid(), kryoSerializerWrapper));
         infraSectionNodeChildId = InfrastructurePmsPlanCreator.getProvisionerNodeId(infraField);
       }
 
@@ -372,7 +372,7 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
 
       YamlNode infraNode = infraField.getNode();
       planCreationResponseMap.putAll(InfrastructurePmsPlanCreator.createPlanForInfraSectionV1(
-          infraNode, infraDefPlanNode.getUuid(), pipelineInfrastructure, kryoSerializer, infraNode.getUuid()));
+          infraNode, infraDefPlanNode.getUuid(), pipelineInfrastructure, kryoSerializerWrapper, infraNode.getUuid()));
     } else if (envGroupYaml != null) {
       final boolean gitOpsEnabled = isGitopsEnabled(stageNode.getDeploymentStageConfig());
       EnvGroupPlanCreatorConfig config =
@@ -399,7 +399,7 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
 
       EnvironmentPlanCreatorHelper.addEnvironmentV2Dependency(planCreationResponseMap, environmentPlanCreatorConfig,
           specField.getNode().getField(YamlTypes.ENVIRONMENT_YAML), gitOpsEnabled, skipInstances, environmentUuid,
-          postServiceStepUuid, serviceSpecNodeUuid, kryoSerializer);
+          postServiceStepUuid, serviceSpecNodeUuid, kryoSerializerWrapper);
     }
     return overridesBuilder.build();
   }
@@ -452,7 +452,7 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
             .multiDeploymentStepParameters(stepParameters)
             .strategyNodeIdentifier(stageNode.getIdentifier())
             .strategyNodeName(stageNode.getName())
-            .adviserObtainments(StrategyUtils.getAdviserObtainments(ctx.getCurrentField(), kryoSerializer, false))
+            .adviserObtainments(StrategyUtils.getAdviserObtainments(ctx.getCurrentField(), kryoSerializerWrapper, false))
             .build();
 
     PlanNode node = MultiDeploymentStepPlanCreator.createPlan(metadata);
@@ -504,7 +504,7 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
     }
     String serviceNodeId = service.getUuid();
     planCreationResponseMap.putAll(ServiceAllInOnePlanCreatorUtils.addServiceNode(
-        specField, kryoSerializer, service, environment, serviceNodeId, nextNodeId, deploymentType));
+        specField, kryoSerializerWrapper, service, environment, serviceNodeId, nextNodeId, deploymentType));
     return serviceNodeId;
   }
   private String addInfrastructureNode(LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap,
@@ -536,7 +536,7 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
 
     Map<String, ByteString> specDependencyMap = new HashMap<>();
     specDependencyMap.put(
-        YAMLFieldNameConstants.CHILD_NODE_OF_SPEC, ByteString.copyFrom(kryoSerializer.asDeflatedBytes(childNodeUuid)));
+        YAMLFieldNameConstants.CHILD_NODE_OF_SPEC, ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(childNodeUuid)));
 
     Dependency specDependency = Dependency.newBuilder().putAllMetadata(specDependencyMap).build();
     return DependenciesUtils.toDependenciesProto(specYamlFieldMap)

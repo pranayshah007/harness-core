@@ -14,7 +14,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.ExecutionStatus;
 import io.harness.beans.ExecutionStatusResponseData;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.tasks.ResponseData;
 
 import software.wings.beans.NameValuePair;
@@ -45,7 +45,7 @@ public class SubWorkflowState extends State {
   private List<NameValuePair> variableOverrides;
 
   @Transient @Inject private WorkflowExecutionService workflowExecutionService;
-  @Transient @Inject private KryoSerializer kryoSerializer;
+  @Transient @Inject private KryoSerializerWrapper kryoSerializerWrapper;
 
   /**
    * Instantiates a new repeat state.
@@ -79,7 +79,7 @@ public class SubWorkflowState extends State {
   }
 
   protected StateExecutionInstance getSpawningInstance(StateExecutionInstance stateExecutionInstance) {
-    StateExecutionInstance childStateExecutionInstance = kryoSerializer.clone(stateExecutionInstance);
+    StateExecutionInstance childStateExecutionInstance = kryoSerializerWrapper.clone(stateExecutionInstance);
     childStateExecutionInstance.setStateParams(null);
 
     childStateExecutionInstance.setChildStateMachineId(subWorkflowId);

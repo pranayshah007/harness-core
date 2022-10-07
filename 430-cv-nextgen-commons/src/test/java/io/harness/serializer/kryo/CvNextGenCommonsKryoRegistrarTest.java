@@ -18,7 +18,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.cvng.beans.DataCollectionInfo;
 import io.harness.reflection.CodeUtils;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -35,11 +35,11 @@ import org.reflections.Reflections;
 
 @Slf4j
 public class CvNextGenCommonsKryoRegistrarTest extends CvNextGenCommonsTestBase {
-  KryoSerializer kryoSerializer;
+  KryoSerializerWrapper kryoSerializerWrapper;
 
   @Before
   public void before() {
-    kryoSerializer = new KryoSerializer(
+    kryoSerializerWrapper = new KryoSerializerWrapper(
         new HashSet<>(Arrays.asList(CvNextGenCommonsKryoRegistrar.class, CvNextGenBeansKryoRegistrar.class)));
   }
 
@@ -53,7 +53,7 @@ public class CvNextGenCommonsKryoRegistrarTest extends CvNextGenCommonsTestBase 
     classesToTest.forEach(classToTest -> getAllInvolvedClasses(classesInvolved, classToTest, reflection));
     Set<Class<?>> errorClasses = new HashSet<>();
     classesInvolved.forEach(clazz -> {
-      if (!kryoSerializer.isRegistered(clazz) && !isAbstractOrInterface(clazz)) {
+      if (!kryoSerializerWrapper.isRegistered(clazz) && !isAbstractOrInterface(clazz)) {
         log.error("Class [{}] not registered in kryo.", clazz);
         errorClasses.add(clazz);
       }

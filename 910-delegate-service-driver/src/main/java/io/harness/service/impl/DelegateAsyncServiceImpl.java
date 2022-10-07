@@ -21,7 +21,7 @@ import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.beans.SerializedResponseData;
 import io.harness.persistence.HPersistence;
 import io.harness.queue.QueueController;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.service.intfc.DelegateAsyncService;
 import io.harness.tasks.BinaryResponseData;
 import io.harness.tasks.ResponseData;
@@ -47,7 +47,7 @@ import org.mongodb.morphia.query.UpdateOperations;
 @OwnedBy(HarnessTeam.DEL)
 public class DelegateAsyncServiceImpl implements DelegateAsyncService {
   @Inject private HPersistence persistence;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
   @Inject private WaitNotifyEngine waitNotifyEngine;
   @Inject @Named("disableDeserialization") private boolean disableDeserialization;
   @Inject @Named("enablePrimaryCheck") private boolean enablePrimaryCheck;
@@ -99,7 +99,7 @@ public class DelegateAsyncServiceImpl implements DelegateAsyncService {
         if (disableDeserialization) {
           responseData = BinaryResponseData.builder().data(lockedAsyncTaskResponse.getResponseData()).build();
         } else {
-          ResponseData data = (ResponseData) kryoSerializer.asInflatedObject(lockedAsyncTaskResponse.getResponseData());
+          ResponseData data = (ResponseData) kryoSerializerWrapper.asInflatedObject(lockedAsyncTaskResponse.getResponseData());
           if (data instanceof SerializedResponseData) {
             responseData = data;
           } else {
@@ -162,7 +162,7 @@ public class DelegateAsyncServiceImpl implements DelegateAsyncService {
   }
 
   @Getter(lazy = true)
-  private final byte[] timeoutMessage = kryoSerializer.asDeflatedBytes(
+  private final byte[] timeoutMessage = kryoSerializerWrapper.asDeflatedBytes(
       ErrorNotifyResponseData.builder()
           .errorMessage("Delegate service did not provide response and the task time-outed")
           .build());

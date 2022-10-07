@@ -19,7 +19,7 @@ import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.steps.StepSpecTypeConstants;
 import io.harness.supplier.ThrowingSupplier;
 
@@ -31,7 +31,7 @@ import lombok.extern.slf4j.Slf4j;
 public class EmailStep extends TaskExecutableWithRollback<EmailStepResponse> {
   public static final StepType STEP_TYPE = StepSpecTypeConstants.EMAIL_STEP_TYPE;
 
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
   @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
   @Override
   public Class<StepElementParameters> getStepParametersClass() {

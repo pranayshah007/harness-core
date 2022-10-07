@@ -36,7 +36,7 @@ import io.harness.perpetualtask.k8s.informer.ClusterDetails;
 import io.harness.perpetualtask.k8s.metrics.client.impl.DefaultK8sMetricsClient;
 import io.harness.perpetualtask.k8s.metrics.collector.K8sMetricCollector;
 import io.harness.perpetualtask.k8s.utils.ApiExceptionLogger;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import software.wings.helpers.ext.container.ContainerDeploymentDelegateHelper;
 import software.wings.helpers.ext.k8s.request.K8sClusterConfig;
@@ -76,18 +76,18 @@ public class K8SWatchTaskExecutor implements PerpetualTaskExecutor {
   private final EventPublisher eventPublisher;
   private final K8sWatchServiceDelegate k8sWatchServiceDelegate;
   private final ApiClientFactoryImpl apiClientFactory;
-  private final KryoSerializer kryoSerializer;
+  private final KryoSerializerWrapper kryoSerializerWrapper;
   private final ContainerDeploymentDelegateHelper containerDeploymentDelegateHelper;
   private final K8sConnectorHelper k8sConnectorHelper;
 
   @Inject
   public K8SWatchTaskExecutor(EventPublisher eventPublisher, K8sWatchServiceDelegate k8sWatchServiceDelegate,
-      ApiClientFactoryImpl apiClientFactory, KryoSerializer kryoSerializer,
+      ApiClientFactoryImpl apiClientFactory, KryoSerializerWrapper kryoSerializerWrapper,
       ContainerDeploymentDelegateHelper containerDeploymentDelegateHelper, K8sConnectorHelper k8sConnectorHelper) {
     this.eventPublisher = eventPublisher;
     this.k8sWatchServiceDelegate = k8sWatchServiceDelegate;
     this.apiClientFactory = apiClientFactory;
-    this.kryoSerializer = kryoSerializer;
+    this.kryoSerializerWrapper = kryoSerializerWrapper;
     this.containerDeploymentDelegateHelper = containerDeploymentDelegateHelper;
     this.k8sConnectorHelper = k8sConnectorHelper;
   }
@@ -234,13 +234,13 @@ public class K8SWatchTaskExecutor implements PerpetualTaskExecutor {
     if (watchTaskParams.getK8SClusterConfig().size() != 0) {
       // Supporting deprecated K8sWatchTaskParams field
       K8sClusterConfig k8sClusterConfig =
-          (K8sClusterConfig) kryoSerializer.asObject(watchTaskParams.getK8SClusterConfig().toByteArray());
+          (K8sClusterConfig) kryoSerializerWrapper.asObject(watchTaskParams.getK8SClusterConfig().toByteArray());
 
       return containerDeploymentDelegateHelper.getKubernetesConfig(k8sClusterConfig, false);
     }
 
     K8sClusterInfo k8sClusterInfo =
-        (K8sClusterInfo) kryoSerializer.asObject(watchTaskParams.getK8SClusterInfo().toByteArray());
+        (K8sClusterInfo) kryoSerializerWrapper.asObject(watchTaskParams.getK8SClusterInfo().toByteArray());
 
     return k8sConnectorHelper.getKubernetesConfig(
         (KubernetesClusterConfigDTO) k8sClusterInfo.getConnectorConfigDTO(), k8sClusterInfo.getEncryptedDataDetails());

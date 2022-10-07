@@ -17,7 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import io.harness.WaitEngineTestBase;
 import io.harness.category.element.UnitTests;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.testlib.RealMongo;
 import io.harness.threading.Morpheus;
 import io.harness.waiter.persistence.PersistenceWrapper;
@@ -32,7 +32,7 @@ public class ProgressUpdateServiceTest extends WaitEngineTestBase {
   String waitInstanceId = generateUuid();
   String correlationId = generateUuid();
   @Inject private PersistenceWrapper persistenceWrapper;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
   @Inject private WaitInstanceService waitInstanceService;
 
   @Test
@@ -55,7 +55,7 @@ public class ProgressUpdateServiceTest extends WaitEngineTestBase {
                                 .correlationId(correlationId)
                                 .createdAt(currentTimeMillis() - 1000)
                                 .expireProcessing(currentTimeMillis() + 60000)
-                                .progressData(kryoSerializer.asDeflatedBytes(
+                                .progressData(kryoSerializerWrapper.asDeflatedBytes(
                                     StringNotifyProgressData.builder().data("progress1-" + generateUuid()).build()))
                                 .build());
 
@@ -64,7 +64,7 @@ public class ProgressUpdateServiceTest extends WaitEngineTestBase {
                                 .correlationId(correlationId)
                                 .createdAt(currentTimeMillis())
                                 .expireProcessing(currentTimeMillis())
-                                .progressData(kryoSerializer.asDeflatedBytes(
+                                .progressData(kryoSerializerWrapper.asDeflatedBytes(
                                     StringNotifyProgressData.builder().data("progress1-" + generateUuid()).build()))
                                 .build());
 

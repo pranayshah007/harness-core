@@ -22,7 +22,7 @@ import io.harness.beans.OrchestrationWorkflowType;
 import io.harness.beans.SweepingOutputInstance.Scope;
 import io.harness.context.ContextElementType;
 import io.harness.exception.InvalidRequestException;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.serializer.MapperUtils;
 import io.harness.tasks.ResponseData;
 
@@ -107,7 +107,7 @@ public class PhaseSubWorkflow extends SubWorkflowState {
   @Inject @Transient private SweepingOutputService sweepingOutputService;
   @Inject @Transient private PhaseSubWorkflowHelperService phaseSubWorkflowHelperService;
   @Inject @Transient private SettingsService settingsService;
-  @Inject @Transient private KryoSerializer kryoSerializer;
+  @Inject @Transient private KryoSerializerWrapper kryoSerializerWrapper;
   @Inject @Transient private WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService;
 
   @Override

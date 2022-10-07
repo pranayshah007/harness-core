@@ -29,7 +29,7 @@ import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.steps.StepSpecTypeConstants;
 import io.harness.yaml.core.timeout.Timeout;
 
@@ -43,7 +43,7 @@ import org.junit.experimental.categories.Category;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public class WaitStepPlanCreatorTest extends OrchestrationStepsTestBase {
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
   @Inject private WaitStepPlanCreator waitStepPlanCreator;
 
   @Test
@@ -77,7 +77,7 @@ public class WaitStepPlanCreatorTest extends OrchestrationStepsTestBase {
 
     HashMap<String, ByteString> metadataDependency = new HashMap<>();
     metadataDependency.put(
-        YAMLFieldNameConstants.CHILD_NODE_OF_SPEC, ByteString.copyFrom(kryoSerializer.asDeflatedBytes(childNodeUuid)));
+        YAMLFieldNameConstants.CHILD_NODE_OF_SPEC, ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(childNodeUuid)));
     PlanCreationContext ctx = PlanCreationContext.builder()
                                   .currentField(yamlField)
                                   .dependency(Dependency.newBuilder().putAllMetadata(metadataDependency).build())
@@ -119,7 +119,7 @@ public class WaitStepPlanCreatorTest extends OrchestrationStepsTestBase {
 
     HashMap<String, ByteString> metadataDependency = new HashMap<>();
     metadataDependency.put(
-        YAMLFieldNameConstants.CHILD_NODE_OF_SPEC, ByteString.copyFrom(kryoSerializer.asDeflatedBytes(childNodeUuid)));
+        YAMLFieldNameConstants.CHILD_NODE_OF_SPEC, ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(childNodeUuid)));
     PlanCreationContext ctx = PlanCreationContext.builder()
                                   .currentField(yamlField)
                                   .dependency(Dependency.newBuilder().putAllMetadata(metadataDependency).build())

@@ -8,7 +8,7 @@
 package io.harness.helper;
 
 import io.harness.delegate.beans.SerializedResponseData;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.tasks.ResponseData;
 
 import software.wings.beans.SerializationFormat;
@@ -20,7 +20,8 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class SerializedResponseDataHelper {
-  @Inject KryoSerializer kryoSerializer;
+  @Inject
+  KryoSerializerWrapper kryoSerializerWrapper;
   @Inject ObjectMapper objectMapper;
 
   public ResponseData deserialize(ResponseData responseData) {
@@ -36,7 +37,7 @@ public class SerializedResponseDataHelper {
           return null;
         }
       } else {
-        return (ResponseData) kryoSerializer.asInflatedObject(serializedResponseData.serialize());
+        return (ResponseData) kryoSerializerWrapper.asInflatedObject(serializedResponseData.serialize());
       }
     }
     return responseData;

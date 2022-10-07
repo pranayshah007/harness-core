@@ -53,7 +53,7 @@ import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.tasks.ResponseData;
 import io.harness.tasks.Task;
 
@@ -79,7 +79,7 @@ import org.mockito.MockitoAnnotations;
 
 @OwnedBy(PIPELINE)
 public class StepUtilsTest extends CategoryTest {
-  @Mock private KryoSerializer kryoSerializer;
+  @Mock private KryoSerializerWrapper kryoSerializerWrapper;
 
   @Before
   public void setUp() {
@@ -321,7 +321,7 @@ public class StepUtilsTest extends CategoryTest {
     TaskCategory taskCategory = TaskCategory.DELEGATE_TASK_V1;
     String stageId = "stageId";
     TaskRequest taskRequest =
-        StepUtils.prepareTaskRequest(ambiance, taskData, kryoSerializer, taskCategory, null, false, "taskName", null,
+        StepUtils.prepareTaskRequest(ambiance, taskData, kryoSerializerWrapper, taskCategory, null, false, "taskName", null,
             Scope.ACCOUNT, EnvironmentType.NON_PROD, false, Collections.emptyList(), true, stageId);
     assertEquals(taskRequest.getDelegateTaskRequest().getRequest().getAccountId().getId(), accountId);
     assertEquals(taskRequest.getTaskCategory(), taskCategory);
@@ -330,7 +330,7 @@ public class StepUtilsTest extends CategoryTest {
     assertNotNull(taskRequest.getDelegateTaskRequest());
     assertEquals(taskRequest.getDelegateTaskRequest().getTaskName(), "taskName");
 
-    taskRequest = StepUtils.prepareTaskRequest(ambiance, taskData, kryoSerializer, taskCategory, null, false, null,
+    taskRequest = StepUtils.prepareTaskRequest(ambiance, taskData, kryoSerializerWrapper, taskCategory, null, false, null,
         null, Scope.ACCOUNT, EnvironmentType.NON_PROD, false, Collections.emptyList(), false, null);
     assertEquals(taskRequest.getTaskCategory(), taskCategory);
     assertEquals(taskRequest.getDelegateTaskRequest().getRequest().getAccountId().getId(), accountId);
@@ -339,7 +339,7 @@ public class StepUtilsTest extends CategoryTest {
     assertEquals(taskRequest.getDelegateTaskRequest().getRequest().getDetails().getMode(), TaskMode.SYNC);
 
     taskData.setAsync(true);
-    taskRequest = StepUtils.prepareTaskRequest(ambiance, taskData, kryoSerializer, taskCategory, null, false, null,
+    taskRequest = StepUtils.prepareTaskRequest(ambiance, taskData, kryoSerializerWrapper, taskCategory, null, false, null,
         null, Scope.ACCOUNT, EnvironmentType.NON_PROD, false, Collections.emptyList(), false, null);
     assertEquals(taskRequest.getDelegateTaskRequest().getRequest().getAccountId().getId(), accountId);
     assertNotNull(taskRequest.getDelegateTaskRequest());

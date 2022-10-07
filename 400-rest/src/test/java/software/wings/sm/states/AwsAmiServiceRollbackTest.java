@@ -54,7 +54,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.context.ContextElementType;
 import io.harness.ff.FeatureFlagService;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import software.wings.WingsBaseTest;
 import software.wings.api.AmiServiceDeployElement;
@@ -116,7 +116,7 @@ public class AwsAmiServiceRollbackTest extends WingsBaseTest {
   @Mock private ArtifactStreamService mockArtifactStreamService;
   @Mock private ActivityService mockActivityService;
   @Mock private DelegateService mockDelegateService;
-  @Mock private KryoSerializer kryoSerializer;
+  @Mock private KryoSerializerWrapper kryoSerializerWrapper;
   @Mock private StateExecutionService stateExecutionService;
   @Mock private FeatureFlagService featureFlagService;
   @Mock private WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService;

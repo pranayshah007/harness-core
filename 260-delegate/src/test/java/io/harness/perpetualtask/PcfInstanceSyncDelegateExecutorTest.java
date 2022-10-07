@@ -30,7 +30,7 @@ import io.harness.perpetualtask.instancesync.PcfInstanceSyncPerpetualTaskParams;
 import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import com.google.inject.Inject;
 import com.google.protobuf.Any;
@@ -59,7 +59,7 @@ public class PcfInstanceSyncDelegateExecutorTest extends DelegateTestBase {
   private static final String SUCCESS = "success";
   private static final String NULL_CF_INSTANCE_SYNC_RESPONSE_RETURNED = "Null cfInstanceSyncResponse returned";
 
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
   @Mock private DelegateAgentManagerClient delegateAgentManagerClient;
   @Mock private Call<RestResponse<Boolean>> call;
   @Mock private PcfDelegateTaskHelper pcfDelegateTaskHelper;
@@ -70,7 +70,7 @@ public class PcfInstanceSyncDelegateExecutorTest extends DelegateTestBase {
 
   @Before
   public void setUp() throws IOException {
-    on(pcfInstanceSyncDelegateExecutor).set("kryoSerializer", kryoSerializer);
+    on(pcfInstanceSyncDelegateExecutor).set("kryoSerializer", kryoSerializerWrapper);
     doReturn(call)
         .when(delegateAgentManagerClient)
         .publishInstanceSyncResult(any(), any(), perpetualTaskResponseCaptor.capture());
@@ -148,8 +148,8 @@ public class PcfInstanceSyncDelegateExecutorTest extends DelegateTestBase {
             .setApplicationName(APP_NAME)
             .setOrgName(ORG_NAME)
             .setSpace(SPACE)
-            .setEncryptedData(ByteString.copyFrom(kryoSerializer.asBytes(Collections.emptyList())))
-            .setPcfConfig(ByteString.copyFrom(kryoSerializer.asBytes(CfInternalConfig.builder().build())))
+            .setEncryptedData(ByteString.copyFrom(kryoSerializerWrapper.asBytes(Collections.emptyList())))
+            .setPcfConfig(ByteString.copyFrom(kryoSerializerWrapper.asBytes(CfInternalConfig.builder().build())))
             .build();
     return PerpetualTaskExecutionParams.newBuilder().setCustomizedParams(Any.pack(message)).build();
   }

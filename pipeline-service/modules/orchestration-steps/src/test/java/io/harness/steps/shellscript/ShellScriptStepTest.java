@@ -33,7 +33,7 @@ import io.harness.pms.plan.execution.SetupAbstractionKeys;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepOutcome;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.shell.ExecuteCommandResponse;
 import io.harness.shell.ShellExecutionData;
 import io.harness.steps.StepHelper;
@@ -65,7 +65,7 @@ import org.powermock.modules.junit4.PowerMockRunner;
 public class ShellScriptStepTest extends CategoryTest {
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
-  @Mock private KryoSerializer kryoSerializer;
+  @Mock private KryoSerializerWrapper kryoSerializerWrapper;
   @Mock private StepHelper stepHelper;
   @Mock private ShellScriptHelperService shellScriptHelperService;
   @Mock private LogStreamingStepClientFactory logStreamingStepClientFactory;

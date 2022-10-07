@@ -28,7 +28,7 @@ import io.harness.pms.sdk.core.AmbianceTestUtils;
 import io.harness.pms.sdk.core.PmsSdkCoreTestBase;
 import io.harness.pms.sdk.core.adviser.AdvisingEvent;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import com.google.inject.Inject;
 import java.util.EnumSet;
@@ -45,7 +45,8 @@ public class OnAbortAdviserTest extends PmsSdkCoreTestBase {
       StepType.newBuilder().setStepCategory(StepCategory.STEP).setType(NODE_IDENTIFIER).build();
 
   @Inject OnAbortAdviser onAbortAdviser;
-  @Inject KryoSerializer kryoSerializer;
+  @Inject
+  KryoSerializerWrapper kryoSerializerWrapper;
 
   private Ambiance ambiance;
 
@@ -75,7 +76,7 @@ public class OnAbortAdviserTest extends PmsSdkCoreTestBase {
   @Owner(developers = ALEXEI)
   @Category(UnitTests.class)
   public void shouldTestCanAdvise() {
-    byte[] paramBytes = kryoSerializer.asBytes(OnAbortAdviserParameters.builder().build());
+    byte[] paramBytes = kryoSerializerWrapper.asBytes(OnAbortAdviserParameters.builder().build());
     AdvisingEvent advisingEvent =
         AdvisingEvent.builder().ambiance(ambiance).toStatus(Status.ABORTED).adviserParameters(paramBytes).build();
     boolean canAdvise = onAbortAdviser.canAdvise(advisingEvent);
@@ -86,7 +87,7 @@ public class OnAbortAdviserTest extends PmsSdkCoreTestBase {
   @Owner(developers = ALEXEI)
   @Category(UnitTests.class)
   public void shouldTestCanAdviseWithFailureTypes() {
-    byte[] paramBytes = kryoSerializer.asBytes(
+    byte[] paramBytes = kryoSerializerWrapper.asBytes(
         OnAbortAdviserParameters.builder()
             .applicableFailureTypes(EnumSet.of(FailureType.CONNECTIVITY_FAILURE, FailureType.AUTHENTICATION_FAILURE))
             .build());

@@ -26,7 +26,7 @@ import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
@@ -43,7 +43,8 @@ import org.mockito.InjectMocks;
 
 @OwnedBy(HarnessTeam.CDC)
 public class EnvironmentPlanCreatorV2Test extends CDNGTestBase {
-  @Inject KryoSerializer kryoSerializer;
+  @Inject
+  KryoSerializerWrapper kryoSerializerWrapper;
   @Inject @InjectMocks EnvironmentPlanCreatorV2 environmentPlanCreator;
 
   @Test
@@ -79,8 +80,8 @@ public class EnvironmentPlanCreatorV2Test extends CDNGTestBase {
     YamlField environmentYaml = YamlUtils.readTree(yaml);
 
     HashMap<String, ByteString> metadataDependency = new HashMap<>();
-    metadataDependency.put(YamlTypes.NEXT_UUID, ByteString.copyFrom(kryoSerializer.asDeflatedBytes("service_spec")));
-    metadataDependency.put(YamlTypes.UUID, ByteString.copyFrom(kryoSerializer.asDeflatedBytes("uuid")));
+    metadataDependency.put(YamlTypes.NEXT_UUID, ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes("service_spec")));
+    metadataDependency.put(YamlTypes.UUID, ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes("uuid")));
     PlanCreationContext ctx = PlanCreationContext.builder()
                                   .currentField(environmentYaml)
                                   .dependency(Dependency.newBuilder().putAllMetadata(metadataDependency).build())

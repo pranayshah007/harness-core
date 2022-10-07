@@ -50,7 +50,7 @@ import io.harness.perpetualtask.internal.PerpetualTaskRecord;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.secrets.remote.SecretNGManagerClient;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import software.wings.beans.SyncTaskContext;
 import software.wings.delegatetasks.DelegateProxyFactory;
@@ -72,7 +72,7 @@ import org.jetbrains.annotations.NotNull;
 @OwnedBy(CV)
 public class CVDataCollectionTaskServiceImpl implements CVDataCollectionTaskService {
   @Inject private PerpetualTaskService perpetualTaskService;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
   @Inject @Named("PRIVILEGED") private SecretNGManagerClient secretNGManagerClient;
   @Inject private DelegateProxyFactory delegateProxyFactory;
 
@@ -127,7 +127,7 @@ public class CVDataCollectionTaskServiceImpl implements CVDataCollectionTaskServ
             DataCollectionPerpetualTaskParams.newBuilder()
                 .setAccountId(accountId)
                 .setDataCollectionWorkerId(bundle.getDataCollectionWorkerId())
-                .setDataCollectionInfo(ByteString.copyFrom(kryoSerializer.asBytes(cvDataCollectionInfo)))
+                .setDataCollectionInfo(ByteString.copyFrom(kryoSerializerWrapper.asBytes(cvDataCollectionInfo)))
                 .build();
         perpetualTaskPack = Any.pack(params);
         break;
@@ -147,7 +147,7 @@ public class CVDataCollectionTaskServiceImpl implements CVDataCollectionTaskServ
             K8ActivityCollectionPerpetualTaskParams.newBuilder()
                 .setAccountId(accountId)
                 .setDataCollectionWorkerId(bundle.getDataCollectionWorkerId())
-                .setDataCollectionInfo(ByteString.copyFrom(kryoSerializer.asBytes(cvDataCollectionInfo)))
+                .setDataCollectionInfo(ByteString.copyFrom(kryoSerializerWrapper.asBytes(cvDataCollectionInfo)))
                 .build();
         perpetualTaskPack = Any.pack(k8ActivityCollectionPerpetualTaskParams);
         break;
@@ -176,7 +176,7 @@ public class CVDataCollectionTaskServiceImpl implements CVDataCollectionTaskServ
         -> builder
                .addCapabilities(
                    Capability.newBuilder()
-                       .setKryoCapability(ByteString.copyFrom(kryoSerializer.asDeflatedBytes(executionCapability)))
+                       .setKryoCapability(ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(executionCapability)))
                        .build())
                .build());
     return builder.setTaskParams(perpetualTaskPack)

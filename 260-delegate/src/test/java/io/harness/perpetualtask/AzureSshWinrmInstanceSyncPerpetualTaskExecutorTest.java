@@ -29,7 +29,7 @@ import io.harness.ng.core.k8s.ServiceSpecType;
 import io.harness.perpetualtask.instancesync.AzureSshInstanceSyncPerpetualTaskParamsNg;
 import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import software.wings.delegatetasks.azure.AzureAsyncTaskHelper;
 
@@ -58,7 +58,7 @@ public class AzureSshWinrmInstanceSyncPerpetualTaskExecutorTest extends Delegate
   @Mock private DelegateAgentManagerClient delegateAgentManagerClient;
   @Mock private Call<RestResponse<Boolean>> call;
   @Mock private AzureAsyncTaskHelper azureAsyncTaskHelper;
-  @Mock private KryoSerializer kryoSerializer;
+  @Mock private KryoSerializerWrapper kryoSerializerWrapper;
 
   @InjectMocks private AzureSshWinrmInstanceSyncPerpetualTaskExecutor executor;
   @Captor private ArgumentCaptor<SshWinrmInstanceSyncPerpetualTaskResponse> perpetualTaskResponseCaptor;
@@ -84,7 +84,7 @@ public class AzureSshWinrmInstanceSyncPerpetualTaskExecutorTest extends Delegate
                  .tags(new HashMap<>())
                  .hostConnectionType("PublicIP")
                  .build())
-        .when(kryoSerializer)
+        .when(kryoSerializerWrapper)
         .asObject(any(byte[].class));
   }
 

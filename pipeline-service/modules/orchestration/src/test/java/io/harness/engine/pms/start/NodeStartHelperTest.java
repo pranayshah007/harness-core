@@ -43,7 +43,7 @@ import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.timeout.AbsoluteSdkTimeoutTrackerParameters;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.timeout.contracts.TimeoutObtainment;
 import io.harness.timeout.trackers.absolute.AbsoluteTimeoutTrackerFactory;
 
@@ -64,7 +64,7 @@ public class NodeStartHelperTest extends OrchestrationTestBase {
   @Mock private PlanService planService;
   @Mock private NodeExecutionService nodeExecutionService;
   @Mock private PmsEventSender pmsEventSender;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
   @Inject @InjectMocks private NodeStartHelper nodeStartHelper;
 
   @Test
@@ -130,7 +130,7 @@ public class NodeStartHelperTest extends OrchestrationTestBase {
                             .stepType(StepType.newBuilder().setType("DUMMY_TYPE").build())
                             .timeoutObtainment(TimeoutObtainment.newBuilder()
                                                    .setDimension(AbsoluteTimeoutTrackerFactory.DIMENSION)
-                                                   .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(
+                                                   .setParameters(ByteString.copyFrom(kryoSerializerWrapper.asBytes(
                                                        AbsoluteSdkTimeoutTrackerParameters.builder()
                                                            .timeout(ParameterField.createValueField("30m"))
                                                            .build())))

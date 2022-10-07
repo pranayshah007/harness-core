@@ -34,7 +34,7 @@ import io.harness.managerclient.DelegateAgentManagerClient;
 import io.harness.perpetualtask.instancesync.AzureWebAppInstanceSyncPerpetualProtoTaskParams;
 import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import software.wings.beans.AzureConfig;
 import software.wings.delegatetasks.azure.appservice.webapp.taskhandler.AzureWebAppListWebAppInstancesTaskHandler;
@@ -64,11 +64,11 @@ public class AzureWebAppInstanceSyncDelegateExecutorTest extends DelegateTestBas
   @Mock private Call<RestResponse<Boolean>> mockCall;
 
   @InjectMocks private AzureWebAppInstanceSyncDelegateExecutor executor;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
 
   @Before
   public void setUp() throws IOException {
-    on(executor).set("kryoSerializer", kryoSerializer);
+    on(executor).set("kryoSerializer", kryoSerializerWrapper);
     when(mockDelegateAgentManagerClient.publishInstanceSyncResult(
              anyString(), anyString(), any(DelegateResponseData.class)))
         .thenReturn(mockCall);
@@ -162,8 +162,8 @@ public class AzureWebAppInstanceSyncDelegateExecutorTest extends DelegateTestBas
 
   private PerpetualTaskExecutionParams getPerpetualTaskParams() {
     ByteString azureConfigBytes =
-        ByteString.copyFrom(kryoSerializer.asBytes(AzureConfig.builder().accountId("acct-id").build()));
-    ByteString azureEncryptedDetailsBytes = ByteString.copyFrom(kryoSerializer.asBytes(new ArrayList<>()));
+        ByteString.copyFrom(kryoSerializerWrapper.asBytes(AzureConfig.builder().accountId("acct-id").build()));
+    ByteString azureEncryptedDetailsBytes = ByteString.copyFrom(kryoSerializerWrapper.asBytes(new ArrayList<>()));
     AzureWebAppInstanceSyncPerpetualProtoTaskParams taskParams =
         AzureWebAppInstanceSyncPerpetualProtoTaskParams.newBuilder()
             .setAzureConfig(azureConfigBytes)

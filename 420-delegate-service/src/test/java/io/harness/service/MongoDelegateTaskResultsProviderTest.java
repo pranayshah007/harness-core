@@ -19,7 +19,7 @@ import io.harness.callback.MongoDatabase;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.DelegateAsyncTaskResponse.DelegateAsyncTaskResponseKeys;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.service.impl.DelegateCallbackRegistryImpl;
 import io.harness.service.intfc.DelegateTaskResultsProvider;
 import io.harness.waiter.StringNotifyResponseData;
@@ -40,7 +40,7 @@ import org.junit.experimental.categories.Category;
 
 public class MongoDelegateTaskResultsProviderTest extends DelegateServiceTestBase {
   @Inject DelegateCallbackRegistryImpl delegateCallbackRegistry;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
 
   public static MongoServer MONGO_SERVER;
 
@@ -81,7 +81,7 @@ public class MongoDelegateTaskResultsProviderTest extends DelegateServiceTestBas
     MongoCollection<Document> mongoCollection =
         mongoClient.getDatabase("harness").getCollection("cx_delegateAsyncTaskResponses");
 
-    byte[] expectedTaskResults = kryoSerializer.asDeflatedBytes(StringNotifyResponseData.builder().data("OK").build());
+    byte[] expectedTaskResults = kryoSerializerWrapper.asDeflatedBytes(StringNotifyResponseData.builder().data("OK").build());
 
     Document document = new Document();
     document.put(ID_FIELD_NAME, "taskId");

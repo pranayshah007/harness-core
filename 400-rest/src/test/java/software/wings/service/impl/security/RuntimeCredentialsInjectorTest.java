@@ -20,7 +20,7 @@ import static org.mockito.Mockito.verify;
 import io.harness.beans.SecretManagerConfig;
 import io.harness.category.element.UnitTests;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import software.wings.WingsBaseTest;
 import software.wings.beans.VaultConfig;
@@ -43,7 +43,7 @@ public class RuntimeCredentialsInjectorTest extends WingsBaseTest {
   @Mock private AlertService alertService;
   @InjectMocks @Inject private VaultServiceImpl vaultService;
 
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
 
   @Before
   public void setup() {
@@ -56,7 +56,7 @@ public class RuntimeCredentialsInjectorTest extends WingsBaseTest {
   public void testUpdateRuntimeParameters_shouldSucceed() {
     SecretManagerConfig vaultConfig = VaultConfig.builder().build();
     VaultServiceImpl spyVaultService = spy(vaultService);
-    Reflect.on(spyVaultService).set("kryoSerializer", kryoSerializer);
+    Reflect.on(spyVaultService).set("kryoSerializer", kryoSerializerWrapper);
     vaultConfig.setTemplatizedFields(Lists.newArrayList("authToken"));
 
     doReturn("vaultId").when(spyVaultService).updateVaultConfig(any(), any(), anyBoolean(), anyBoolean());
@@ -74,7 +74,7 @@ public class RuntimeCredentialsInjectorTest extends WingsBaseTest {
   public void testUpdateRuntimeParameters_shouldFailDueToSecretManagerNotTemplatized() {
     SecretManagerConfig vaultConfig = VaultConfig.builder().build();
     VaultServiceImpl spyVaultService = spy(vaultService);
-    Reflect.on(spyVaultService).set("kryoSerializer", kryoSerializer);
+    Reflect.on(spyVaultService).set("kryoSerializer", kryoSerializerWrapper);
 
     Optional<SecretManagerConfig> updatedVaultConfig = spyVaultService.updateRuntimeCredentials(
         vaultConfig, Maps.newHashMap(ImmutableMap.of("authToken", "abcde")), true);

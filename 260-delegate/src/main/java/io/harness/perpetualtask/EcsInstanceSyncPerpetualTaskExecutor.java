@@ -27,7 +27,7 @@ import io.harness.logging.CommandExecutionStatus;
 import io.harness.managerclient.DelegateAgentManagerClient;
 import io.harness.perpetualtask.instancesync.EcsDeploymentRelease;
 import io.harness.perpetualtask.instancesync.EcsInstanceSyncPerpetualTaskParams;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import com.google.inject.Inject;
 import java.time.Instant;
@@ -42,7 +42,7 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(HarnessTeam.CDP)
 public class EcsInstanceSyncPerpetualTaskExecutor implements PerpetualTaskExecutor {
   private static final String SUCCESS_RESPONSE_MSG = "success";
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
   @Inject private DelegateAgentManagerClient delegateAgentManagerClient;
   @Inject private EcsTaskHelperBase ecsTaskHelperBase;
 
@@ -90,7 +90,7 @@ public class EcsInstanceSyncPerpetualTaskExecutor implements PerpetualTaskExecut
   private EcsDeploymentReleaseData toEcsDeploymentReleaseData(EcsDeploymentRelease ecsDeploymentRelease) {
     return EcsDeploymentReleaseData.builder()
         .ecsInfraConfig(
-            (EcsInfraConfig) kryoSerializer.asObject(ecsDeploymentRelease.getEcsInfraConfig().toByteArray()))
+            (EcsInfraConfig) kryoSerializerWrapper.asObject(ecsDeploymentRelease.getEcsInfraConfig().toByteArray()))
         .serviceName(ecsDeploymentRelease.getServiceName())
         .build();
   }

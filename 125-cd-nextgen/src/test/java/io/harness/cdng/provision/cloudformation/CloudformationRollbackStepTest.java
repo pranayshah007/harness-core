@@ -49,7 +49,7 @@ import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.steps.StepHelper;
 import io.harness.steps.StepUtils;
 
@@ -89,7 +89,7 @@ public class CloudformationRollbackStepTest extends CategoryTest {
 
   @Mock CloudformationStepHelper cloudformationStepHelper;
   @Mock CloudformationConfigDAL cloudformationConfigDAL;
-  @Mock private KryoSerializer kryoSerializer;
+  @Mock private KryoSerializerWrapper kryoSerializerWrapper;
   @Mock private StepHelper stepHelper;
   @Mock private EngineExpressionService engineExpressionService;
   @Mock private CDStepHelper cdStepHelper;

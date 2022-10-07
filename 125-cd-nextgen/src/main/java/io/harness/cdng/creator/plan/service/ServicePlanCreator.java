@@ -45,7 +45,7 @@ import io.harness.pms.yaml.DependenciesUtils;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
@@ -61,7 +61,8 @@ import java.util.Set;
 @OwnedBy(HarnessTeam.CDC)
 public class ServicePlanCreator extends ChildrenPlanCreator<ServiceConfig> {
   @Inject EnforcementValidator enforcementValidator;
-  @Inject KryoSerializer kryoSerializer;
+  @Inject
+  KryoSerializerWrapper kryoSerializerWrapper;
 
   @Override
   public Class<ServiceConfig> getFieldClass() {
@@ -100,16 +101,16 @@ public class ServicePlanCreator extends ChildrenPlanCreator<ServiceConfig> {
     ByteString infraSectionStepParams =
         ctx.getDependency().getMetadataMap().get(YamlTypes.INFRASTRUCTURE_STEP_PARAMETERS);
     InfraSectionStepParameters infraSectionStepParameters =
-        (InfraSectionStepParameters) kryoSerializer.asInflatedObject(infraSectionStepParams.toByteArray());
+        (InfraSectionStepParameters) kryoSerializerWrapper.asInflatedObject(infraSectionStepParams.toByteArray());
 
     YamlNode serviceNode = serviceConfigField.getNode();
     String serviceConfigNodeId = serviceNode.getUuid();
 
     // Environment uuid
-    String envNodeUuid = (String) kryoSerializer.asInflatedObject(
+    String envNodeUuid = (String) kryoSerializerWrapper.asInflatedObject(
         ctx.getDependency().getMetadataMap().get(YamlTypes.ENVIRONMENT_NODE_ID).toByteArray());
 
-    addEnvironmentStepNode(infraSectionStepParameters, planCreationResponseMap, kryoSerializer,
+    addEnvironmentStepNode(infraSectionStepParameters, planCreationResponseMap, kryoSerializerWrapper,
         serviceConfig.getServiceDefinition().getServiceSpec().getUuid(), envNodeUuid);
     addServiceNode(
         serviceConfig, planCreationResponseMap, serviceConfigNodeId, serviceConfig.getServiceDefinition().getUuid());
@@ -178,7 +179,7 @@ public class ServicePlanCreator extends ChildrenPlanCreator<ServiceConfig> {
             .adviserObtainment(
                 AdviserObtainment.newBuilder()
                     .setType(AdviserType.newBuilder().setType(OrchestrationAdviserTypes.ON_SUCCESS.name()).build())
-                    .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(
+                    .setParameters(ByteString.copyFrom(kryoSerializerWrapper.asBytes(
                         OnSuccessAdviserParameters.builder().nextNodeId(serviceDefinitionNodeId).build())))
                     .build())
             .skipExpressionChain(false)
@@ -189,10 +190,10 @@ public class ServicePlanCreator extends ChildrenPlanCreator<ServiceConfig> {
   }
 
   private String addEnvironmentStepNode(InfraSectionStepParameters infraSectionStepParameters,
-      LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap, KryoSerializer kryoSerializer,
+      LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap, KryoSerializerWrapper kryoSerializerWrapper,
       String serviceSpecNodeUuid, String envNodeUuid) {
     ByteString advisorParameters = ByteString.copyFrom(
-        kryoSerializer.asBytes(OnSuccessAdviserParameters.builder().nextNodeId(serviceSpecNodeUuid).build()));
+        kryoSerializerWrapper.asBytes(OnSuccessAdviserParameters.builder().nextNodeId(serviceSpecNodeUuid).build()));
     PlanNode node =
         EnvironmentPlanCreatorHelper.getPlanNode(envNodeUuid, infraSectionStepParameters, advisorParameters);
     planCreationResponseMap.put(node.getUuid(), PlanCreationResponse.builder().node(node.getUuid(), node).build());
@@ -207,7 +208,7 @@ public class ServicePlanCreator extends ChildrenPlanCreator<ServiceConfig> {
         adviserObtainments.add(
             AdviserObtainment.newBuilder()
                 .setType(AdviserType.newBuilder().setType(OrchestrationAdviserTypes.ON_SUCCESS.name()).build())
-                .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(
+                .setParameters(ByteString.copyFrom(kryoSerializerWrapper.asBytes(
                     OnSuccessAdviserParameters.builder().nextNodeId(siblingField.getNode().getUuid()).build())))
                 .build());
       }

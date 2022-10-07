@@ -37,7 +37,7 @@ import io.harness.perpetualtask.internal.PerpetualTaskRecord;
 import io.harness.perpetualtask.k8s.watch.K8sWatchTaskParams;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.utils.IdentifierRefHelper;
 import io.harness.utils.RestCallToNGManagerClientUtils;
 
@@ -59,7 +59,7 @@ import org.jetbrains.annotations.NotNull;
 @Slf4j
 @OwnedBy(HarnessTeam.CE)
 public class K8sWatchTaskServiceImpl implements K8sWatchTaskService {
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
   @Inject private PerpetualTaskService perpetualTaskService;
   @Inject private SecretManagerClientService ngSecretService;
   @Inject private ConnectorResourceClient connectorResourceClient;
@@ -141,7 +141,7 @@ public class K8sWatchTaskServiceImpl implements K8sWatchTaskService {
             .setClusterId(bundle.getClusterId())
             .setClusterName(bundle.getClusterName())
             .setCloudProviderId(bundle.getCloudProviderId())
-            .setK8SClusterInfo(ByteString.copyFrom(kryoSerializer.asBytes(k8sClusterInfo)))
+            .setK8SClusterInfo(ByteString.copyFrom(kryoSerializerWrapper.asBytes(k8sClusterInfo)))
             .build();
 
     return Any.pack(k8sWatchTaskParams);
@@ -167,7 +167,7 @@ public class K8sWatchTaskServiceImpl implements K8sWatchTaskService {
         -> builder
                .addCapabilities(
                    Capability.newBuilder()
-                       .setKryoCapability(ByteString.copyFrom(kryoSerializer.asDeflatedBytes(executionCapability)))
+                       .setKryoCapability(ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(executionCapability)))
                        .build())
                .build());
     return builder.setTaskParams(perpetualTaskPack).putAllSetupAbstractions(ngTaskSetupAbstractionsWithOwner).build();

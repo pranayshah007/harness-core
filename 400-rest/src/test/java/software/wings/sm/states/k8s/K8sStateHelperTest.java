@@ -61,7 +61,7 @@ import io.harness.k8s.model.KubernetesResource;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import software.wings.WingsBaseTest;
 import software.wings.beans.AwsConfig;
@@ -121,7 +121,8 @@ public class K8sStateHelperTest extends WingsBaseTest {
 
   @Inject @InjectMocks private K8sStateHelper k8sStateHelper;
 
-  @Inject KryoSerializer kryoSerializer;
+  @Inject
+  KryoSerializerWrapper kryoSerializerWrapper;
   @Inject private HPersistence persistence;
 
   private static final String APPLICATION_MANIFEST_ID = "AppManifestId";

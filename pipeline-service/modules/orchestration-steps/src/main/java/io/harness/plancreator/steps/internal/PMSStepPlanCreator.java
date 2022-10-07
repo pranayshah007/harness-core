@@ -42,7 +42,7 @@ public class PMSStepPlanCreator extends GenericStepPMSPlanCreator {
       ParameterField<Integer> retryCount, FailureStrategyActionConfig actionUnderRetry, YamlField currentField) {
     return adviserObtainmentBuilder.setType(RetryAdviserWithRollback.ADVISER_TYPE)
         .setParameters(ByteString.copyFrom(
-            kryoSerializer.asBytes(RetryAdviserRollbackParameters.builder()
+            kryoSerializerWrapper.asBytes(RetryAdviserRollbackParameters.builder()
                                        .applicableFailureTypes(failureTypes)
                                        .nextNodeId(nextNodeUuid)
                                        .repairActionCodeAfterRetry(toRepairAction(actionUnderRetry))
@@ -63,7 +63,7 @@ public class PMSStepPlanCreator extends GenericStepPMSPlanCreator {
       AdviserObtainment.Builder adviserObtainmentBuilder, ManualInterventionFailureActionConfig actionConfig,
       FailureStrategyActionConfig actionUnderManualIntervention, YamlField currentField) {
     return adviserObtainmentBuilder.setType(ManualInterventionAdviserWithRollback.ADVISER_TYPE)
-        .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(
+        .setParameters(ByteString.copyFrom(kryoSerializerWrapper.asBytes(
             ManualInterventionAdviserRollbackParameters.builder()
                 .applicableFailureTypes(failureTypes)
                 .timeoutAction(toRepairAction(actionUnderManualIntervention))

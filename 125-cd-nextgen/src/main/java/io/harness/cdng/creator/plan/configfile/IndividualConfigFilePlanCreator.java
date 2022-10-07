@@ -20,7 +20,7 @@ import io.harness.pms.sdk.core.plan.PlanNode;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.sdk.core.plan.creation.creators.PartialPlanCreator;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import com.google.inject.Inject;
 import java.util.Collections;
@@ -28,7 +28,8 @@ import java.util.Map;
 import java.util.Set;
 
 public class IndividualConfigFilePlanCreator implements PartialPlanCreator<ConfigFile> {
-  @Inject KryoSerializer kryoSerializer;
+  @Inject
+  KryoSerializerWrapper kryoSerializerWrapper;
   @Override
   public Class<ConfigFile> getFieldClass() {
     return ConfigFile.class;
@@ -41,9 +42,9 @@ public class IndividualConfigFilePlanCreator implements PartialPlanCreator<Confi
 
   @Override
   public PlanCreationResponse createPlanForField(PlanCreationContext ctx, ConfigFile field) {
-    String configFileId = (String) kryoSerializer.asInflatedObject(
+    String configFileId = (String) kryoSerializerWrapper.asInflatedObject(
         ctx.getDependency().getMetadataMap().get(YamlTypes.UUID).toByteArray());
-    ConfigFileStepParameters stepParameters = (ConfigFileStepParameters) kryoSerializer.asInflatedObject(
+    ConfigFileStepParameters stepParameters = (ConfigFileStepParameters) kryoSerializerWrapper.asInflatedObject(
         ctx.getDependency().getMetadataMap().get(PlanCreatorConstants.CONFIG_FILE_STEP_PARAMETER).toByteArray());
 
     PlanNode customFilePlanNode =

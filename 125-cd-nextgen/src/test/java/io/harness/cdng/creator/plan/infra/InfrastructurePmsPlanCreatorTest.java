@@ -36,7 +36,7 @@ import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import com.google.inject.Inject;
 import java.io.IOException;
@@ -49,7 +49,7 @@ import org.junit.experimental.categories.Category;
 
 @OwnedBy(HarnessTeam.CDC)
 public class InfrastructurePmsPlanCreatorTest extends CDNGTestBase {
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
   @Test
   @Owner(developers = PRASHANTSHARMA)
   @Category(UnitTests.class)
@@ -150,7 +150,7 @@ public class InfrastructurePmsPlanCreatorTest extends CDNGTestBase {
   public void testAddResourceConstraintDependency() {
     YamlField rc = new YamlField(new YamlNode("rc", null));
     List<AdviserObtainment> adviserObtainments =
-        InfrastructurePmsPlanCreator.addResourceConstraintDependency(new LinkedHashMap<>(), rc, kryoSerializer);
+        InfrastructurePmsPlanCreator.addResourceConstraintDependency(new LinkedHashMap<>(), rc, kryoSerializerWrapper);
     assertThat(adviserObtainments).hasSize(2);
   }
 }

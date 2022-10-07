@@ -20,7 +20,7 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.SweepingOutputInstance;
 import io.harness.exception.InvalidRequestException;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import software.wings.beans.ArtifactVariable;
 import software.wings.beans.EntityType;
@@ -43,7 +43,7 @@ import java.util.Map;
 public class MultiArtifactWorkflowExecutionServiceHelper {
   @Inject private SweepingOutputService sweepingOutputService;
   @Inject private ArtifactService artifactService;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
 
   public void saveArtifactsToSweepingOutput(
       ExecutionArgs executionArgs, WorkflowExecution workflowExecution, String workflowId, String accountId) {
@@ -53,7 +53,7 @@ public class MultiArtifactWorkflowExecutionServiceHelper {
                                      .prepareSweepingOutputBuilder(workflowExecution.getAppId(), null,
                                          workflowExecution.getUuid(), null, null, SweepingOutputInstance.Scope.WORKFLOW)
                                      .name("artifacts")
-                                     .output(kryoSerializer.asDeflatedBytes(workflowVariables))
+                                     .output(kryoSerializerWrapper.asDeflatedBytes(workflowVariables))
                                      .build());
     }
   }

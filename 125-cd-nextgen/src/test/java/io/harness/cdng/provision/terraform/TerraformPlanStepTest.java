@@ -62,7 +62,7 @@ import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.steps.StepHelper;
 import io.harness.steps.StepUtils;
 
@@ -90,7 +90,7 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 @OwnedBy(HarnessTeam.CDP)
 public class TerraformPlanStepTest extends CategoryTest {
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
-  @Mock private KryoSerializer kryoSerializer;
+  @Mock private KryoSerializerWrapper kryoSerializerWrapper;
   @Mock private CDFeatureFlagHelper cdFeatureFlagHelper;
   @Mock private TerraformStepHelper terraformStepHelper;
   @Mock private TerraformConfigHelper terraformConfigHelper;

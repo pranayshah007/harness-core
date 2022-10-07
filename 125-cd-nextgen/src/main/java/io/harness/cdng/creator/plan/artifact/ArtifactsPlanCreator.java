@@ -38,7 +38,7 @@ import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse.PlanCrea
 import io.harness.pms.sdk.core.plan.creation.creators.ChildrenPlanCreator;
 import io.harness.pms.yaml.DependenciesUtils;
 import io.harness.pms.yaml.YamlField;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.steps.fork.ForkStepParameters;
 
 import com.google.inject.Inject;
@@ -58,7 +58,8 @@ import lombok.experimental.FieldDefaults;
 
 @OwnedBy(HarnessTeam.CDC)
 public class ArtifactsPlanCreator extends ChildrenPlanCreator<ArtifactListConfig> {
-  @Inject KryoSerializer kryoSerializer;
+  @Inject
+  KryoSerializerWrapper kryoSerializerWrapper;
 
   @Override
   public Class<ArtifactListConfig> getFieldClass() {
@@ -73,9 +74,9 @@ public class ArtifactsPlanCreator extends ChildrenPlanCreator<ArtifactListConfig
   public Map<String, ByteString> prepareMetadataForPrimaryArtifactPlanCreator(
       String primaryId, ArtifactStepParameters params) {
     Map<String, ByteString> metadataDependency = new HashMap<>();
-    metadataDependency.put(YamlTypes.UUID, ByteString.copyFrom(kryoSerializer.asDeflatedBytes(primaryId)));
+    metadataDependency.put(YamlTypes.UUID, ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(primaryId)));
     metadataDependency.put(
-        PlanCreatorConstants.PRIMARY_STEP_PARAMETERS, ByteString.copyFrom(kryoSerializer.asDeflatedBytes(params)));
+        PlanCreatorConstants.PRIMARY_STEP_PARAMETERS, ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(params)));
     return metadataDependency;
   }
 
@@ -84,11 +85,11 @@ public class ArtifactsPlanCreator extends ChildrenPlanCreator<ArtifactListConfig
       PlanCreationContext ctx, ArtifactListConfig config) {
     LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap = new LinkedHashMap<>();
 
-    String artifactsId = (String) kryoSerializer.asInflatedObject(
+    String artifactsId = (String) kryoSerializerWrapper.asInflatedObject(
         ctx.getDependency().getMetadataMap().get(YamlTypes.UUID).toByteArray());
     // service v1
     if (ctx.getDependency().getMetadataMap().containsKey(YamlTypes.SERVICE_CONFIG)) {
-      ServiceConfig serviceConfig = (ServiceConfig) kryoSerializer.asInflatedObject(
+      ServiceConfig serviceConfig = (ServiceConfig) kryoSerializerWrapper.asInflatedObject(
           ctx.getDependency().getMetadataMap().get(YamlTypes.SERVICE_CONFIG).toByteArray());
       ArtifactListConfig artifactListConfig = serviceConfig.getServiceDefinition().getServiceSpec().getArtifacts();
       ArtifactListBuilder artifactListBuilder = new ArtifactListBuilder(artifactListConfig);
@@ -107,7 +108,7 @@ public class ArtifactsPlanCreator extends ChildrenPlanCreator<ArtifactListConfig
             ctx.getCurrentField(), artifactsId, artifactList.getSidecars(), planCreationResponseMap);
       }
     } else if (ctx.getDependency().getMetadataMap().containsKey(YamlTypes.SERVICE_ENTITY)) {
-      NGServiceV2InfoConfig serviceV2InfoConfig = (NGServiceV2InfoConfig) kryoSerializer.asInflatedObject(
+      NGServiceV2InfoConfig serviceV2InfoConfig = (NGServiceV2InfoConfig) kryoSerializerWrapper.asInflatedObject(
           ctx.getDependency().getMetadataMap().get(YamlTypes.SERVICE_ENTITY).toByteArray());
       ArtifactListConfig artifactListConfig =
           serviceV2InfoConfig.getServiceDefinition().getServiceSpec().getArtifacts();
@@ -159,9 +160,9 @@ public class ArtifactsPlanCreator extends ChildrenPlanCreator<ArtifactListConfig
   private Map<String, ByteString> prepareMetadataForSideCarListArtifactPlanCreator(
       String sideCarsListPlanNodeId, Map<String, ArtifactStepParameters> sideCarsParametersMap) {
     Map<String, ByteString> metadataDependency = new HashMap<>();
-    metadataDependency.put(YamlTypes.UUID, ByteString.copyFrom(kryoSerializer.asDeflatedBytes(sideCarsListPlanNodeId)));
+    metadataDependency.put(YamlTypes.UUID, ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(sideCarsListPlanNodeId)));
     metadataDependency.put(PlanCreatorConstants.SIDECARS_PARAMETERS_MAP,
-        ByteString.copyFrom(kryoSerializer.asDeflatedBytes(sideCarsParametersMap)));
+        ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(sideCarsParametersMap)));
     return metadataDependency;
   }
 
@@ -192,7 +193,7 @@ public class ArtifactsPlanCreator extends ChildrenPlanCreator<ArtifactListConfig
   @Override
   public PlanNode createPlanForParentNode(
       PlanCreationContext ctx, ArtifactListConfig config, List<String> childrenNodeIds) {
-    String artifactsId = (String) kryoSerializer.asInflatedObject(
+    String artifactsId = (String) kryoSerializerWrapper.asInflatedObject(
         ctx.getDependency().getMetadataMap().get(YamlTypes.UUID).toByteArray());
 
     ForkStepParameters stepParameters = ForkStepParameters.builder().parallelNodeIds(childrenNodeIds).build();

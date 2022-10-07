@@ -33,7 +33,7 @@ import io.harness.perpetualtask.instancesync.AwsCodeDeployInstanceSyncPerpetualT
 import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import software.wings.beans.AwsConfig;
 import software.wings.service.impl.aws.model.AwsCodeDeployListDeploymentInstancesResponse;
@@ -65,13 +65,14 @@ public class AwsCodeDeployInstanceSyncExecutorTest extends DelegateTestBase {
   @Mock private DelegateAgentManagerClient delegateAgentManagerClient;
   @Mock private Call<RestResponse<Boolean>> call;
 
-  @Inject KryoSerializer kryoSerializer;
+  @Inject
+  KryoSerializerWrapper kryoSerializerWrapper;
 
   @InjectMocks private AwsCodeDeployInstanceSyncExecutor executor;
 
   @Before
   public void setup() throws IOException {
-    on(executor).set("kryoSerializer", kryoSerializer);
+    on(executor).set("kryoSerializer", kryoSerializerWrapper);
 
     doReturn(singletonList(new Instance()))
         .when(ec2ServiceDelegate)
@@ -154,15 +155,15 @@ public class AwsCodeDeployInstanceSyncExecutorTest extends DelegateTestBase {
 
   private PerpetualTaskExecutionParams getPerpetualTaskParams() {
     ByteString configBytes =
-        ByteString.copyFrom(kryoSerializer.asBytes(AwsConfig.builder().accountId("accountId").build()));
-    ByteString encryptionDetailsBytes = ByteString.copyFrom(kryoSerializer.asBytes(new ArrayList<>()));
+        ByteString.copyFrom(kryoSerializerWrapper.asBytes(AwsConfig.builder().accountId("accountId").build()));
+    ByteString encryptionDetailsBytes = ByteString.copyFrom(kryoSerializerWrapper.asBytes(new ArrayList<>()));
     AwsCodeDeployInstanceSyncPerpetualTaskParams.Builder paramsBuilder =
         AwsCodeDeployInstanceSyncPerpetualTaskParams.newBuilder();
 
     paramsBuilder.setRegion("us-east-1");
     paramsBuilder.setAwsConfig(configBytes);
     paramsBuilder.setEncryptedData(encryptionDetailsBytes);
-    ByteString filterBytes = ByteString.copyFrom(kryoSerializer.asBytes(singletonList(new Filter())));
+    ByteString filterBytes = ByteString.copyFrom(kryoSerializerWrapper.asBytes(singletonList(new Filter())));
     paramsBuilder.setFilter(filterBytes);
 
     return PerpetualTaskExecutionParams.newBuilder().setCustomizedParams(Any.pack(paramsBuilder.build())).build();

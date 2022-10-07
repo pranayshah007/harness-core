@@ -85,7 +85,7 @@ import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.steps.StepHelper;
 import io.harness.steps.StepUtils;
 import io.harness.supplier.ThrowingSupplier;
@@ -129,7 +129,7 @@ public class CloudformationStepHelper {
   @Named(DEFAULT_CONNECTOR_SERVICE) @Inject private ConnectorService connectorService;
   @Inject private CDStepHelper cdStepHelper;
   @Inject private GitConfigAuthenticationInfoHelper gitConfigAuthenticationInfoHelper;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
   @Inject private StepHelper stepHelper;
   @Inject private S3UriParser s3UriParser;
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
@@ -702,7 +702,7 @@ public class CloudformationStepHelper {
                                   .parameters(new Object[] {gitFetchRequest})
                                   .build();
 
-    final TaskRequest taskRequest = prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
+    final TaskRequest taskRequest = prepareCDTaskRequest(ambiance, taskData, kryoSerializerWrapper,
         Arrays.asList(K8sCommandUnitConstants.FetchFiles, CloudformationCommandUnit.CreateStack.name()),
         TaskType.GIT_FETCH_NEXT_GEN_TASK.getDisplayName(),
         StepUtils.getTaskSelectors(stepElementParameters.getDelegateSelectors()),
@@ -732,7 +732,7 @@ public class CloudformationStepHelper {
                                   .parameters(new Object[] {awsS3FetchFilesTaskParams})
                                   .build();
 
-    final TaskRequest taskRequest = prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
+    final TaskRequest taskRequest = prepareCDTaskRequest(ambiance, taskData, kryoSerializerWrapper,
         Arrays.asList(K8sCommandUnitConstants.FetchFiles, CloudformationCommandUnit.CreateStack.name()),
         TaskType.FETCH_S3_FILE_TASK_NG.getDisplayName(),
         StepUtils.getTaskSelectors(stepElementParameters.getDelegateSelectors()),

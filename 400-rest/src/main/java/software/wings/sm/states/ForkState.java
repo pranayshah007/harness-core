@@ -17,7 +17,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.ExecutionStatus;
 import io.harness.beans.ExecutionStatusResponseData;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.tasks.ResponseData;
 
 import software.wings.api.ExecutionDataValue;
@@ -47,7 +47,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @TargetModule(HarnessModule._870_CG_ORCHESTRATION)
 public class ForkState extends State {
-  @Inject transient KryoSerializer kryoSerializer;
+  @Inject transient KryoSerializerWrapper kryoSerializerWrapper;
   @SchemaIgnore private List<String> forkStateNames = new ArrayList<>();
 
   /**
@@ -76,7 +76,7 @@ public class ForkState extends State {
     forkStateExecutionData.setElements(new ArrayList<>());
     for (String state : forkStateNames) {
       ForkElement element = ForkElement.builder().stateName(state).parentId(stateExecutionInstance.getUuid()).build();
-      StateExecutionInstance childStateExecutionInstance = kryoSerializer.clone(stateExecutionInstance);
+      StateExecutionInstance childStateExecutionInstance = kryoSerializerWrapper.clone(stateExecutionInstance);
       childStateExecutionInstance.setStateParams(null);
 
       childStateExecutionInstance.setContextElement(element);

@@ -32,7 +32,7 @@ import io.harness.delegate.beans.executioncapability.SelectorCapability;
 import io.harness.exception.UnexpectedException;
 import io.harness.perpetualtask.PerpetualTaskClientContext;
 import io.harness.perpetualtask.PerpetualTaskServiceClient;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.utils.RestCallToNGManagerClientUtils;
 
 import software.wings.beans.TaskType;
@@ -56,7 +56,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Singleton
 public class ConnectorHeartbeatPerpetualTaskClient implements PerpetualTaskServiceClient {
-  private KryoSerializer kryoSerializer;
+  private KryoSerializerWrapper kryoSerializerWrapper;
   private ConnectorResourceClient connectorResourceClient;
 
   @Override
@@ -69,7 +69,7 @@ public class ConnectorHeartbeatPerpetualTaskClient implements PerpetualTaskServi
     final ConnectorValidationParameterResponse connectorValidationParameterResponse =
         getConnectorValidationParameterResponse(clientParams);
     ByteString connectorValidatorBytes =
-        ByteString.copyFrom(kryoSerializer.asBytes(connectorValidationParameterResponse));
+        ByteString.copyFrom(kryoSerializerWrapper.asBytes(connectorValidationParameterResponse));
     ConnectorHeartbeatTaskParams.Builder connectorHeartbeatTaskParamsBuilder =
         ConnectorHeartbeatTaskParams.newBuilder()
             .setAccountIdentifier(accountIdentifier)

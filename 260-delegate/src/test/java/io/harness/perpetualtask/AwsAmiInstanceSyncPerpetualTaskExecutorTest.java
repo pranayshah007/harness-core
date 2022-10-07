@@ -30,7 +30,7 @@ import io.harness.perpetualtask.instancesync.AwsAmiInstanceSyncPerpetualTaskPara
 import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import software.wings.beans.AwsConfig;
 import software.wings.service.impl.aws.model.AwsAsgListInstancesResponse;
@@ -65,13 +65,14 @@ public class AwsAmiInstanceSyncPerpetualTaskExecutorTest extends DelegateTestBas
   private ArgumentCaptor<AwsAsgListInstancesResponse> captor =
       ArgumentCaptor.forClass(AwsAsgListInstancesResponse.class);
 
-  @Inject KryoSerializer kryoSerializer;
+  @Inject
+  KryoSerializerWrapper kryoSerializerWrapper;
 
   @InjectMocks private AwsAmiInstanceSyncPerpetualTaskExecutor executor;
 
   @Before
   public void setup() {
-    on(executor).set("kryoSerializer", kryoSerializer);
+    on(executor).set("kryoSerializer", kryoSerializerWrapper);
   }
 
   @Test
@@ -164,8 +165,8 @@ public class AwsAmiInstanceSyncPerpetualTaskExecutorTest extends DelegateTestBas
 
   private PerpetualTaskExecutionParams getPerpetualTaskParams() {
     ByteString configBytes =
-        ByteString.copyFrom(kryoSerializer.asBytes(AwsConfig.builder().accountId("accountId").build()));
-    ByteString encryptionDetailsBytes = ByteString.copyFrom(kryoSerializer.asBytes(new ArrayList<>()));
+        ByteString.copyFrom(kryoSerializerWrapper.asBytes(AwsConfig.builder().accountId("accountId").build()));
+    ByteString encryptionDetailsBytes = ByteString.copyFrom(kryoSerializerWrapper.asBytes(new ArrayList<>()));
 
     AwsAmiInstanceSyncPerpetualTaskParams params = AwsAmiInstanceSyncPerpetualTaskParams.newBuilder()
                                                        .setAwsConfig(configBytes)

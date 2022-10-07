@@ -25,7 +25,7 @@ import io.harness.pms.sdk.core.adviser.OrchestrationAdviserTypes;
 import io.harness.pms.sdk.core.adviser.success.OnSuccessAdviserParameters;
 import io.harness.pms.sdk.core.plan.PlanNode;
 import io.harness.pms.yaml.YamlField;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.yaml.extended.ci.codebase.CodeBase;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -39,16 +39,16 @@ import org.jetbrains.annotations.NotNull;
 @OwnedBy(HarnessTeam.CI)
 public class CodebasePlanCreator {
   public static List<PlanNode> createPlanForCodeBase(YamlField ciCodeBaseField, String childNodeId,
-      KryoSerializer kryoSerializer, String codeBaseNodeUUID, ExecutionSource executionSource) {
+                                                     KryoSerializerWrapper kryoSerializerWrapper, String codeBaseNodeUUID, ExecutionSource executionSource) {
     CodeBase ciCodeBase = IntegrationStageUtils.getCiCodeBase(ciCodeBaseField.getNode());
 
-    return buildCodebasePlanNodes(codeBaseNodeUUID, childNodeId, kryoSerializer, ciCodeBase, executionSource);
+    return buildCodebasePlanNodes(codeBaseNodeUUID, childNodeId, kryoSerializerWrapper, ciCodeBase, executionSource);
   }
 
   @NotNull
   @VisibleForTesting
   static List<PlanNode> buildCodebasePlanNodes(String ciCodeBaseFieldUuid, String childNodeId,
-      KryoSerializer kryoSerializer, CodeBase ciCodeBase, ExecutionSource executionSource) {
+                                               KryoSerializerWrapper kryoSerializerWrapper, CodeBase ciCodeBase, ExecutionSource executionSource) {
     List<PlanNode> planNodeList = new ArrayList<>();
     PlanNode codeBaseDelegateTask =
         createPlanForCodeBaseTask(ciCodeBase, executionSource, OrchestrationFacilitatorType.TASK, ciCodeBaseFieldUuid);
@@ -77,7 +77,7 @@ public class CodebasePlanCreator {
                 AdviserObtainment.newBuilder()
                     .setType(AdviserType.newBuilder().setType(OrchestrationAdviserTypes.ON_SUCCESS.name()).build())
                     .setParameters(ByteString.copyFrom(
-                        kryoSerializer.asBytes(OnSuccessAdviserParameters.builder().nextNodeId(childNodeId).build())))
+                        kryoSerializerWrapper.asBytes(OnSuccessAdviserParameters.builder().nextNodeId(childNodeId).build())))
                     .build())
             .skipGraphType(SkipType.SKIP_NODE)
             .build());

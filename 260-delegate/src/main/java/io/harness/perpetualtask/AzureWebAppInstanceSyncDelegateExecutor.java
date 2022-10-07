@@ -21,7 +21,7 @@ import io.harness.logging.CommandExecutionStatus;
 import io.harness.managerclient.DelegateAgentManagerClient;
 import io.harness.perpetualtask.instancesync.AzureWebAppInstanceSyncPerpetualProtoTaskParams;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import software.wings.delegatetasks.azure.appservice.webapp.taskhandler.AzureWebAppListWebAppInstancesTaskHandler;
 import software.wings.service.intfc.security.EncryptionService;
@@ -37,7 +37,7 @@ import org.eclipse.jetty.server.Response;
 public class AzureWebAppInstanceSyncDelegateExecutor implements PerpetualTaskExecutor {
   @Inject private EncryptionService encryptionService;
   @Inject private DelegateAgentManagerClient delegateAgentManagerClient;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
   @Inject private AzureWebAppListWebAppInstancesTaskHandler listWebAppInstancesTaskHandler;
 
   @Override
@@ -48,7 +48,7 @@ public class AzureWebAppInstanceSyncDelegateExecutor implements PerpetualTaskExe
     AzureWebAppInstanceSyncPerpetualProtoTaskParams taskParams =
         AnyUtils.unpack(params.getCustomizedParams(), AzureWebAppInstanceSyncPerpetualProtoTaskParams.class);
     software.wings.beans.AzureConfig azureConfig =
-        (software.wings.beans.AzureConfig) kryoSerializer.asObject(taskParams.getAzureConfig().toByteArray());
+        (software.wings.beans.AzureConfig) kryoSerializerWrapper.asObject(taskParams.getAzureConfig().toByteArray());
     AzureTaskExecutionResponse azureTaskExecutionResponse = executeSyncTask(taskParams, azureConfig);
     try {
       log.info(
@@ -67,7 +67,7 @@ public class AzureWebAppInstanceSyncDelegateExecutor implements PerpetualTaskExe
   private AzureTaskExecutionResponse executeSyncTask(
       AzureWebAppInstanceSyncPerpetualProtoTaskParams taskParams, software.wings.beans.AzureConfig azureConfig) {
     List<EncryptedDataDetail> encryptedDataDetails =
-        (List<EncryptedDataDetail>) kryoSerializer.asObject(taskParams.getAzureEncryptedData().toByteArray());
+        (List<EncryptedDataDetail>) kryoSerializerWrapper.asObject(taskParams.getAzureEncryptedData().toByteArray());
     encryptionService.decrypt(azureConfig, encryptedDataDetails, true);
 
     AzureAppServiceTaskParameters parameters = AzureWebAppListWebAppInstancesParameters.builder()

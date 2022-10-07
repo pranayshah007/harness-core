@@ -39,7 +39,7 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.plan.execution.SetupAbstractionKeys;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.servicenow.TicketNG;
 import io.harness.shell.ExecuteCommandResponse;
 import io.harness.shell.ShellExecutionData;
@@ -79,7 +79,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 @RunWith(MockitoJUnitRunner.class)
 public class CustomApprovalCallbackTest extends CategoryTest {
   @Mock private LogStreamingStepClientFactory logStreamingStepClientFactory;
-  @Mock private KryoSerializer kryoSerializer;
+  @Mock private KryoSerializerWrapper kryoSerializerWrapper;
   @Mock private ShellScriptHelperService shellScriptHelperService;
   @Mock private CustomApprovalInstanceHandler customApprovalInstanceHandler;
   @Mock private ApprovalInstanceService approvalInstanceService;
@@ -99,7 +99,7 @@ public class CustomApprovalCallbackTest extends CategoryTest {
   public void setup() {
     customApprovalCallback = spy(CustomApprovalCallback.builder().approvalInstanceId(APPROVAL_INSTANCE_ID).build());
     on(customApprovalCallback).set("logStreamingStepClientFactory", logStreamingStepClientFactory);
-    on(customApprovalCallback).set("kryoSerializer", kryoSerializer);
+    on(customApprovalCallback).set("kryoSerializer", kryoSerializerWrapper);
     on(customApprovalCallback).set("shellScriptHelperService", shellScriptHelperService);
     on(customApprovalCallback).set("customApprovalInstanceHandler", customApprovalInstanceHandler);
     on(customApprovalCallback).set("approvalInstanceService", approvalInstanceService);
@@ -165,7 +165,7 @@ public class CustomApprovalCallbackTest extends CategoryTest {
     instance.setDeadline(Long.MAX_VALUE);
     ErrorNotifyResponseData errorNotifyResponseData =
         ErrorNotifyResponseData.builder().errorMessage("Script failed!").build();
-    when(kryoSerializer.asInflatedObject(any())).thenReturn(errorNotifyResponseData);
+    when(kryoSerializerWrapper.asInflatedObject(any())).thenReturn(errorNotifyResponseData);
     when(approvalInstanceService.get(eq(APPROVAL_INSTANCE_ID))).thenReturn(instance);
     customApprovalCallback.push(ImmutableMap.of("xyz", BinaryResponseData.builder().build()));
     verify(approvalInstanceService, never()).finalizeStatus(anyString(), any(), nullable(TicketNG.class));
@@ -210,7 +210,7 @@ public class CustomApprovalCallbackTest extends CategoryTest {
                     .build())
             .build();
 
-    when(kryoSerializer.asInflatedObject(any())).thenReturn(response);
+    when(kryoSerializerWrapper.asInflatedObject(any())).thenReturn(response);
     when(approvalInstanceService.get(eq(APPROVAL_INSTANCE_ID))).thenReturn(instance);
     customApprovalCallback.push(ImmutableMap.of("xyz", BinaryResponseData.builder().build()));
     verify(approvalInstanceService).finalizeStatus(anyString(), eq(ApprovalStatus.APPROVED), any(TicketNG.class));
@@ -251,7 +251,7 @@ public class CustomApprovalCallbackTest extends CategoryTest {
                     .build())
             .build();
 
-    when(kryoSerializer.asInflatedObject(any())).thenReturn(response);
+    when(kryoSerializerWrapper.asInflatedObject(any())).thenReturn(response);
     when(shellScriptHelperService.prepareShellScriptOutcome(eq(sweepingOutput), eq(outputVars)))
         .thenReturn(ShellScriptOutcome.builder().outputVariables(ImmutableMap.of("Status", "APPROVED")).build());
     when(approvalInstanceService.get(eq(APPROVAL_INSTANCE_ID))).thenReturn(instance);
@@ -294,7 +294,7 @@ public class CustomApprovalCallbackTest extends CategoryTest {
                     .build())
             .build();
 
-    when(kryoSerializer.asInflatedObject(any())).thenReturn(response);
+    when(kryoSerializerWrapper.asInflatedObject(any())).thenReturn(response);
     when(shellScriptHelperService.prepareShellScriptOutcome(eq(sweepingOutput), eq(outputVars)))
         .thenReturn(ShellScriptOutcome.builder().outputVariables(null).build());
     when(approvalInstanceService.get(eq(APPROVAL_INSTANCE_ID))).thenReturn(instance);
@@ -353,7 +353,7 @@ public class CustomApprovalCallbackTest extends CategoryTest {
                     .build())
             .build();
 
-    when(kryoSerializer.asInflatedObject(any())).thenReturn(response);
+    when(kryoSerializerWrapper.asInflatedObject(any())).thenReturn(response);
     when(approvalInstanceService.get(eq(APPROVAL_INSTANCE_ID))).thenReturn(instance);
     customApprovalCallback.push(ImmutableMap.of("xyz", BinaryResponseData.builder().build()));
     verify(approvalInstanceService).finalizeStatus(anyString(), eq(ApprovalStatus.REJECTED), any(TicketNG.class));

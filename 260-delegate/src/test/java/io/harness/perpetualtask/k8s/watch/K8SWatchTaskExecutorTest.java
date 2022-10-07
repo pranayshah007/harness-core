@@ -46,7 +46,7 @@ import io.harness.perpetualtask.k8s.metrics.client.model.node.NodeMetricsList;
 import io.harness.perpetualtask.k8s.metrics.client.model.pod.PodMetrics;
 import io.harness.perpetualtask.k8s.metrics.client.model.pod.PodMetricsList;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import software.wings.helpers.ext.container.ContainerDeploymentDelegateHelper;
 import software.wings.helpers.ext.k8s.request.K8sClusterConfig;
@@ -106,7 +106,8 @@ public class K8SWatchTaskExecutorTest extends DelegateTestBase {
   @Captor private ArgumentCaptor<Message> messageArgumentCaptor;
   @Captor private ArgumentCaptor<Map<String, String>> mapArgumentCaptor;
 
-  @Inject KryoSerializer kryoSerializer;
+  @Inject
+  KryoSerializerWrapper kryoSerializerWrapper;
 
   private static final String KUBE_SYSTEM_ID = "aa4062a7-d214-4642-8bb5-dfc32e750ed0";
   private final String WATCH_ID = "watch-id";
@@ -128,7 +129,7 @@ public class K8SWatchTaskExecutorTest extends DelegateTestBase {
     doReturn(apiClient).when(apiClientFactory).getClient(any(KubernetesConfig.class));
 
     k8SWatchTaskExecutor = new K8SWatchTaskExecutor(eventPublisher, k8sWatchServiceDelegate, apiClientFactory,
-        kryoSerializer, containerDeploymentDelegateHelper, k8sConnectorHelper);
+        kryoSerializerWrapper, containerDeploymentDelegateHelper, k8sConnectorHelper);
 
     stubFor(get(urlPathEqualTo("/api/v1/namespaces/kube-system"))
                 .willReturn(aResponse().withStatus(200).withBody(new Gson().toJson(new V1NamespaceBuilder()
@@ -242,7 +243,7 @@ public class K8SWatchTaskExecutorTest extends DelegateTestBase {
         .setCloudProviderId(CLOUD_PROVIDER_ID)
         .setClusterId(CLUSTER_ID)
         .setClusterName(CLUSTER_NAME)
-        .setK8SClusterInfo(ByteString.copyFrom(kryoSerializer.asBytes(k8sClusterInfo)))
+        .setK8SClusterInfo(ByteString.copyFrom(kryoSerializerWrapper.asBytes(k8sClusterInfo)))
         .build();
   }
 
@@ -253,7 +254,7 @@ public class K8SWatchTaskExecutorTest extends DelegateTestBase {
         .setCloudProviderId(CLOUD_PROVIDER_ID)
         .setClusterId(CLUSTER_ID)
         .setClusterName(CLUSTER_NAME)
-        .setK8SClusterConfig(ByteString.copyFrom(kryoSerializer.asBytes(config)))
+        .setK8SClusterConfig(ByteString.copyFrom(kryoSerializerWrapper.asBytes(config)))
         .build();
   }
 

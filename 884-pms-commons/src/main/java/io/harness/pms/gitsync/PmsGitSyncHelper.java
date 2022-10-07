@@ -19,7 +19,7 @@ import io.harness.gitsync.scm.beans.ScmGitMetaDataContext;
 import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.manage.GlobalContextManager;
 import io.harness.pms.contracts.ambiance.Ambiance;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -28,7 +28,7 @@ import com.google.protobuf.ByteString;
 @OwnedBy(HarnessTeam.PIPELINE)
 @Singleton
 public class PmsGitSyncHelper {
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
 
   public EntityGitDetails getEntityGitDetailsFromBytes(ByteString gitSyncBranchContextBytes) {
     GitSyncBranchContext gitSyncBranchContext = deserializeGitSyncBranchContext(gitSyncBranchContextBytes);
@@ -80,13 +80,13 @@ public class PmsGitSyncHelper {
       return null;
     }
     byte[] bytes = byteString.toByteArray();
-    return isEmpty(bytes) ? null : (GitSyncBranchContext) kryoSerializer.asInflatedObject(bytes);
+    return isEmpty(bytes) ? null : (GitSyncBranchContext) kryoSerializerWrapper.asInflatedObject(bytes);
   }
 
   public ByteString serializeGitSyncBranchContext(GitSyncBranchContext gitSyncBranchContext) {
     if (gitSyncBranchContext == null) {
       return null;
     }
-    return ByteString.copyFrom(kryoSerializer.asDeflatedBytes(gitSyncBranchContext));
+    return ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(gitSyncBranchContext));
   }
 }

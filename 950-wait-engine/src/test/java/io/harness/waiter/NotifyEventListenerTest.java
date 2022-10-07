@@ -21,7 +21,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.tasks.ProgressData;
 import io.harness.tasks.ResponseData;
 import io.harness.testlib.RealMongo;
@@ -48,7 +48,7 @@ public class NotifyEventListenerTest extends WaitEngineTestBase {
   @Inject private NotifyEventListener notifyEventListener;
   @Inject private HPersistence hPersistence;
   @Inject private MongoTemplate mongoTemplate;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
 
   @Before
   public void setupResponseMap() {
@@ -99,7 +99,7 @@ public class NotifyEventListenerTest extends WaitEngineTestBase {
   public NotifyResponse populateNotifyResponse(String correlationId, TestResponseData responseData) {
     return NotifyResponse.builder()
         .uuid(correlationId)
-        .responseData(kryoSerializer.asDeflatedBytes(responseData))
+        .responseData(kryoSerializerWrapper.asDeflatedBytes(responseData))
         .error(false)
         .build();
   }

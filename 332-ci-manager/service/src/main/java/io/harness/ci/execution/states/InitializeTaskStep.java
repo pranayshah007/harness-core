@@ -73,7 +73,7 @@ import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.steps.StepUtils;
 import io.harness.steps.executable.TaskExecutableWithRbac;
 import io.harness.supplier.ThrowingSupplier;
@@ -113,7 +113,7 @@ public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementPar
   @Inject private ExecutionSweepingOutputService executionSweepingOutputResolver;
   @Inject private VmInitializeTaskParamsBuilder vmInitializeTaskParamsBuilder;
   @Inject private DockerInitializeTaskParamsBuilder dockerInitializeTaskParamsBuilder;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
   @Inject private CIDelegateTaskExecutor ciDelegateTaskExecutor;
   @Inject private PipelineRbacHelper pipelineRbacHelper;
   @Inject ExecutionSweepingOutputService executionSweepingOutputService;
@@ -240,7 +240,7 @@ public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementPar
     }
 
     return StepUtils.prepareTaskRequest(ambiance, getTaskData(stepElementParameters, buildSetupTaskParams),
-        kryoSerializer, TaskCategory.DELEGATE_TASK_V2, Collections.emptyList(), true, null, taskSelectors,
+        kryoSerializerWrapper, TaskCategory.DELEGATE_TASK_V2, Collections.emptyList(), true, null, taskSelectors,
         Scope.PROJECT, EnvironmentType.ALL, executeOnHarnessHostedDelegates, new ArrayList<>(), emitEvent, stageId);
   }
 

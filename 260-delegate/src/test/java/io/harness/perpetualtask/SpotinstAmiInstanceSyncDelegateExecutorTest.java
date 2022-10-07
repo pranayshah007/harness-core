@@ -35,7 +35,7 @@ import io.harness.perpetualtask.instancesync.SpotinstAmiInstanceSyncPerpetualTas
 import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import software.wings.annotation.EncryptableSetting;
 import software.wings.beans.AwsConfig;
@@ -70,11 +70,12 @@ public class SpotinstAmiInstanceSyncDelegateExecutorTest extends DelegateTestBas
 
   @InjectMocks private SpotinstAmiInstanceSyncDelegateExecutor executor;
 
-  @Inject KryoSerializer kryoSerializer;
+  @Inject
+  KryoSerializerWrapper kryoSerializerWrapper;
 
   @Before
   public void setUp() {
-    on(executor).set("kryoSerializer", kryoSerializer);
+    on(executor).set("kryoSerializer", kryoSerializerWrapper);
     when(
         delegateAgentManagerClient.publishInstanceSyncResult(anyString(), anyString(), any(DelegateResponseData.class)))
         .thenReturn(call);
@@ -176,11 +177,11 @@ public class SpotinstAmiInstanceSyncDelegateExecutorTest extends DelegateTestBas
 
   private PerpetualTaskExecutionParams getPerpetualTaskParams() {
     ByteString awsConfigBytes =
-        ByteString.copyFrom(kryoSerializer.asBytes(AwsConfig.builder().accountId("accountId").build()));
+        ByteString.copyFrom(kryoSerializerWrapper.asBytes(AwsConfig.builder().accountId("accountId").build()));
     ByteString spotinstConfigBytes =
-        ByteString.copyFrom(kryoSerializer.asBytes(SpotInstConfig.builder().accountId("accountId").build()));
-    ByteString awsEncryptionDetailsBytes = ByteString.copyFrom(kryoSerializer.asBytes(new ArrayList<>()));
-    ByteString spotinstEncryptionDetailsBytes = ByteString.copyFrom(kryoSerializer.asBytes(new ArrayList<>()));
+        ByteString.copyFrom(kryoSerializerWrapper.asBytes(SpotInstConfig.builder().accountId("accountId").build()));
+    ByteString awsEncryptionDetailsBytes = ByteString.copyFrom(kryoSerializerWrapper.asBytes(new ArrayList<>()));
+    ByteString spotinstEncryptionDetailsBytes = ByteString.copyFrom(kryoSerializerWrapper.asBytes(new ArrayList<>()));
 
     SpotinstAmiInstanceSyncPerpetualTaskParams taskParams =
         SpotinstAmiInstanceSyncPerpetualTaskParams.newBuilder()

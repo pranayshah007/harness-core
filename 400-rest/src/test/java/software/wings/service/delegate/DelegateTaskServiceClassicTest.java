@@ -104,7 +104,7 @@ import io.harness.observer.Subject;
 import io.harness.persistence.HPersistence;
 import io.harness.rule.Cache;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.service.intfc.DelegateCache;
 import io.harness.service.intfc.DelegateProfileObserver;
 import io.harness.service.intfc.DelegateSyncService;
@@ -196,7 +196,7 @@ public class DelegateTaskServiceClassicTest extends WingsBaseTest {
   @Mock private AlertService alertService;
 
   @Inject private FeatureTestHelper featureTestHelper;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
   @Inject private TestUtils testUtils;
 
   private int port = LocalhostUtils.findFreePort();

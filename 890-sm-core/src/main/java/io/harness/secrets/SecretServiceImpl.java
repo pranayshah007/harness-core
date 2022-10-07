@@ -62,7 +62,7 @@ import io.harness.security.encryption.EncryptedRecord;
 import io.harness.security.encryption.EncryptedRecordData;
 import io.harness.security.encryption.EncryptionType;
 import io.harness.security.encryption.SecretManagerType;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import software.wings.security.UsageRestrictions;
 
@@ -100,16 +100,16 @@ public class SecretServiceImpl implements SecretService {
   private final KmsEncryptorsRegistry kmsRegistry;
   private final VaultEncryptorsRegistry vaultRegistry;
   private final CustomEncryptorsRegistry customRegistry;
-  private final KryoSerializer kryoSerializer;
+  private final KryoSerializerWrapper kryoSerializerWrapper;
   private final QueuePublisher<MigrateSecretTask> secretsMigrationProcessor;
 
   @Inject
-  public SecretServiceImpl(KryoSerializer kryoSerializer, SecretsDao secretsDao, SecretsRBACService secretsRBACService,
-      SecretSetupUsageService secretSetupUsageService, SecretsFileService secretsFileService,
-      SecretManagerConfigService secretManagerConfigService, SecretValidatorsRegistry secretValidatorsRegistry,
-      SecretsAuditService secretsAuditService, KmsEncryptorsRegistry kmsRegistry, VaultEncryptorsRegistry vaultRegistry,
-      CustomEncryptorsRegistry customRegistry, QueuePublisher<MigrateSecretTask> secretsMigrationProcessor) {
-    this.kryoSerializer = kryoSerializer;
+  public SecretServiceImpl(KryoSerializerWrapper kryoSerializerWrapper, SecretsDao secretsDao, SecretsRBACService secretsRBACService,
+                           SecretSetupUsageService secretSetupUsageService, SecretsFileService secretsFileService,
+                           SecretManagerConfigService secretManagerConfigService, SecretValidatorsRegistry secretValidatorsRegistry,
+                           SecretsAuditService secretsAuditService, KmsEncryptorsRegistry kmsRegistry, VaultEncryptorsRegistry vaultRegistry,
+                           CustomEncryptorsRegistry customRegistry, QueuePublisher<MigrateSecretTask> secretsMigrationProcessor) {
+    this.kryoSerializerWrapper = kryoSerializerWrapper;
     this.secretsDao = secretsDao;
     this.secretsRBACService = secretsRBACService;
     this.secretManagerConfigService = secretManagerConfigService;
@@ -219,7 +219,7 @@ public class SecretServiceImpl implements SecretService {
     SecretManagerConfig secretManagerConfig = secretManagerConfigService.getSecretManager(
         accountId, existingRecord.getKmsId(), existingRecord.getEncryptionType(), secret.getRuntimeParameters());
     secret.setKmsId(secretManagerConfig.getUuid());
-    EncryptedData oldRecord = kryoSerializer.clone(existingRecord);
+    EncryptedData oldRecord = kryoSerializerWrapper.clone(existingRecord);
     secretValidatorsRegistry.getSecretValidator(secretManagerConfig.getEncryptionType())
         .validateSecretUpdate(secret, existingRecord, secretManagerConfig);
     if (validateScopes) {
@@ -262,7 +262,7 @@ public class SecretServiceImpl implements SecretService {
           throw new SecretManagementException(RESOURCE_NOT_FOUND,
               format("Could not find secret with id %s in account %s", existingRecordId, accountId), USER);
         });
-    EncryptedData oldRecord = kryoSerializer.clone(existingRecord);
+    EncryptedData oldRecord = kryoSerializerWrapper.clone(existingRecord);
     HarnessSecret harnessSecret;
     if (inheritScopesFromSM) {
       harnessSecret = HarnessSecret.builder()
@@ -496,7 +496,7 @@ public class SecretServiceImpl implements SecretService {
   private char[] fetchSecretValue(
       String accountId, EncryptedData encryptedData, SecretManagerConfig secretManagerConfig) {
     char[] value;
-    EncryptedData encryptedRecord = kryoSerializer.clone(encryptedData);
+    EncryptedData encryptedRecord = kryoSerializerWrapper.clone(encryptedData);
     if (encryptedData.getType() == CONFIG_FILE && secretManagerConfig.getType() == KMS) {
       char[] fileId = encryptedRecord.getEncryptedValue();
       encryptedRecord.setEncryptedValue(secretsFileService.getFileContents(String.valueOf(fileId)));

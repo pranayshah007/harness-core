@@ -22,7 +22,7 @@ import io.harness.managerclient.DelegateAgentManagerClient;
 import io.harness.perpetualtask.instancesync.PdcInstanceSyncPerpetualTaskParams;
 import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import software.wings.beans.HostReachabilityInfo;
 import software.wings.beans.SettingAttribute;
@@ -51,7 +51,7 @@ import retrofit2.Call;
 @RunWith(MockitoJUnitRunner.class)
 @OwnedBy(CDP)
 public class PdcInstanceSyncExecutorTest extends DelegateTestBase {
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
   @Mock private DelegateAgentManagerClient delegateAgentManagerClient;
   @Mock private Call<RestResponse<Boolean>> call;
   @Mock private HostValidationService hostValidationService;
@@ -63,7 +63,7 @@ public class PdcInstanceSyncExecutorTest extends DelegateTestBase {
 
   @Before
   public void setUp() throws IOException {
-    on(pdcInstanceSyncExecutor).set("kryoSerializer", kryoSerializer);
+    on(pdcInstanceSyncExecutor).set("kryoSerializer", kryoSerializerWrapper);
     doReturn(call)
         .when(delegateAgentManagerClient)
         .publishInstanceSyncResult(any(), any(), perpetualTaskResponseCaptor.capture());
@@ -97,8 +97,8 @@ public class PdcInstanceSyncExecutorTest extends DelegateTestBase {
         PdcInstanceSyncPerpetualTaskParams.newBuilder()
             .addHostNames("h1")
             .addHostNames("h2")
-            .setEncryptedData(ByteString.copyFrom(kryoSerializer.asBytes(Collections.emptyList())))
-            .setSettingAttribute(ByteString.copyFrom(kryoSerializer.asBytes(new SettingAttribute())))
+            .setEncryptedData(ByteString.copyFrom(kryoSerializerWrapper.asBytes(Collections.emptyList())))
+            .setSettingAttribute(ByteString.copyFrom(kryoSerializerWrapper.asBytes(new SettingAttribute())))
             .build();
 
     return PerpetualTaskExecutionParams.newBuilder().setCustomizedParams(Any.pack(message)).build();

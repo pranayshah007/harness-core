@@ -44,7 +44,7 @@ import io.harness.perpetualtask.PerpetualTaskLogContext;
 import io.harness.perpetualtask.PerpetualTaskResponse;
 import io.harness.perpetualtask.ecs.support.EcsMetricClient;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import software.wings.beans.AwsConfig;
 import software.wings.service.intfc.aws.delegate.AwsEc2HelperServiceDelegate;
@@ -98,20 +98,20 @@ public class EcsPerpetualTaskExecutor implements PerpetualTaskExecutor {
   private final EcsMetricClient ecsMetricClient;
   private final EventPublisher eventPublisher;
   private final Clock clock;
-  private final KryoSerializer kryoSerializer;
+  private final KryoSerializerWrapper kryoSerializerWrapper;
 
   private Cache<String, EcsActiveInstancesCache> cache = Caffeine.newBuilder().build();
 
   @Inject
   public EcsPerpetualTaskExecutor(AwsEcsHelperServiceDelegate ecsHelperServiceDelegate,
       AwsEc2HelperServiceDelegate ec2ServiceDelegate, EcsMetricClient ecsMetricClient, EventPublisher eventPublisher,
-      Clock clock, KryoSerializer kryoSerializer) {
+      Clock clock, KryoSerializerWrapper kryoSerializerWrapper) {
     this.ecsHelperServiceDelegate = ecsHelperServiceDelegate;
     this.ec2ServiceDelegate = ec2ServiceDelegate;
     this.ecsMetricClient = ecsMetricClient;
     this.eventPublisher = eventPublisher;
     this.clock = clock;
-    this.kryoSerializer = kryoSerializer;
+    this.kryoSerializerWrapper = kryoSerializerWrapper;
   }
 
   @Override
@@ -125,8 +125,8 @@ public class EcsPerpetualTaskExecutor implements PerpetualTaskExecutor {
         String clusterId = ecsPerpetualTaskParams.getClusterId();
         String settingId = ecsPerpetualTaskParams.getSettingId();
         log.info("Task params cluster name {} region {} ", clusterName, region);
-        AwsConfig awsConfig = (AwsConfig) kryoSerializer.asObject(ecsPerpetualTaskParams.getAwsConfig().toByteArray());
-        List<EncryptedDataDetail> encryptionDetails = (List<EncryptedDataDetail>) kryoSerializer.asObject(
+        AwsConfig awsConfig = (AwsConfig) kryoSerializerWrapper.asObject(ecsPerpetualTaskParams.getAwsConfig().toByteArray());
+        List<EncryptedDataDetail> encryptionDetails = (List<EncryptedDataDetail>) kryoSerializerWrapper.asObject(
             ecsPerpetualTaskParams.getEncryptionDetail().toByteArray());
         Instant now = Instant.now(clock);
 

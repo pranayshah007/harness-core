@@ -21,7 +21,7 @@ import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.steps.matrix.StrategyConstants;
 import io.harness.steps.matrix.StrategyMetadata;
 import io.harness.steps.matrix.StrategyStep;
@@ -39,7 +39,8 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class StrategyConfigPlanCreator extends ChildrenPlanCreator<StrategyConfig> {
-  @Inject KryoSerializer kryoSerializer;
+  @Inject
+  KryoSerializerWrapper kryoSerializerWrapper;
 
   @Override
   public LinkedHashMap<String, PlanCreationResponse> createPlanForChildrenNodes(
@@ -52,7 +53,7 @@ public class StrategyConfigPlanCreator extends ChildrenPlanCreator<StrategyConfi
       PlanCreationContext ctx, StrategyConfig config, List<String> childrenNodeIds) {
     ByteString strategyMetadata = ctx.getDependency().getMetadataMap().get(
         StrategyConstants.STRATEGY_METADATA + ctx.getCurrentField().getNode().getUuid());
-    StrategyMetadata metadata = (StrategyMetadata) kryoSerializer.asInflatedObject(strategyMetadata.toByteArray());
+    StrategyMetadata metadata = (StrategyMetadata) kryoSerializerWrapper.asInflatedObject(strategyMetadata.toByteArray());
     String childNodeId = metadata.getChildNodeId();
     String strategyNodeId = metadata.getStrategyNodeId();
     if (EmptyPredicate.isEmpty(childNodeId) || EmptyPredicate.isEmpty(strategyNodeId)) {

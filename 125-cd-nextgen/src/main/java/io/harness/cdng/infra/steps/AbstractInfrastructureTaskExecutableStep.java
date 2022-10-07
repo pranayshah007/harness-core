@@ -97,7 +97,7 @@ import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.pms.yaml.ParameterField;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.steps.OutputExpressionConstants;
 import io.harness.steps.StepHelper;
 import io.harness.steps.StepUtils;
@@ -130,7 +130,7 @@ abstract class AbstractInfrastructureTaskExecutableStep {
   @Inject protected OutcomeService outcomeService;
   @Inject protected CDStepHelper cdStepHelper;
   @Inject protected ExecutionSweepingOutputService executionSweepingOutputService;
-  @Inject protected KryoSerializer kryoSerializer;
+  @Inject protected KryoSerializerWrapper kryoSerializerWrapper;
   @Inject protected StepHelper stepHelper;
   @Inject protected StageExecutionHelper stageExecutionHelper;
   @Inject protected InfrastructureMapper infrastructureMapper;
@@ -487,7 +487,7 @@ abstract class AbstractInfrastructureTaskExecutableStep {
             .map(TaskSelectorYaml::new)
             .collect(Collectors.toList());
 
-    TaskRequest taskRequest = StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
+    TaskRequest taskRequest = StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializerWrapper,
         Collections.singletonList("Execute"), taskData.getTaskType(),
         TaskSelectorYaml.toTaskSelector(emptyIfNull(taskSelectorYamlList)), stepHelper.getEnvironmentType(ambiance));
     return new TaskRequestData(taskRequest, taskData, taskSelectorYamlList);
@@ -531,7 +531,7 @@ abstract class AbstractInfrastructureTaskExecutableStep {
                                                       .map(delegateSelector -> new TaskSelectorYaml(delegateSelector))
                                                       .collect(Collectors.toList());
 
-    TaskRequest taskRequest = StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
+    TaskRequest taskRequest = StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializerWrapper,
         Collections.singletonList("Execute"), taskData.getTaskType(),
         TaskSelectorYaml.toTaskSelector(emptyIfNull(taskSelectorYamlList)), stepHelper.getEnvironmentType(ambiance));
 

@@ -30,7 +30,7 @@ import io.harness.perpetualtask.k8s.informer.SharedInformerFactoryFactory;
 import io.harness.perpetualtask.k8s.utils.K8sClusterHelper;
 import io.harness.perpetualtask.k8s.utils.K8sWatcherHelper;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import software.wings.helpers.ext.k8s.request.K8sClusterConfig;
 
@@ -63,7 +63,8 @@ public class K8sWatchServiceDelegateTest extends DelegateTestBase {
   private static final KubernetesConfig KUBERNETES_CONFIG = KubernetesConfig.builder().build();
 
   @Rule public WireMockRule wireMockRule = new WireMockRule(65221);
-  @Inject KryoSerializer kryoSerializer;
+  @Inject
+  KryoSerializerWrapper kryoSerializerWrapper;
 
   private static final String URL_REGEX_SUFFIX = "(\\?(.*))?";
 
@@ -109,7 +110,7 @@ public class K8sWatchServiceDelegateTest extends DelegateTestBase {
     String clusterId = UUID.randomUUID().toString();
     String cloudProviderId = UUID.randomUUID().toString();
 
-    ByteString k8sClusterConfig = ByteString.copyFrom(kryoSerializer.asBytes(
+    ByteString k8sClusterConfig = ByteString.copyFrom(kryoSerializerWrapper.asBytes(
         K8sClusterConfig.builder().clusterName("test-cluster").namespace("namespace").cloudProvider(null).build()));
 
     K8sWatchTaskParams k8sWatchTaskParams = K8sWatchTaskParams.newBuilder()
@@ -137,7 +138,7 @@ public class K8sWatchServiceDelegateTest extends DelegateTestBase {
   public void shouldCreateClusterEventWatch() {
     String clusterId = UUID.randomUUID().toString();
     String cloudProviderId = UUID.randomUUID().toString();
-    ByteString k8sClusterConfig = ByteString.copyFrom(kryoSerializer.asBytes(
+    ByteString k8sClusterConfig = ByteString.copyFrom(kryoSerializerWrapper.asBytes(
         K8sClusterConfig.builder().clusterName("test-cluster").namespace("namespace").cloudProvider(null).build()));
     K8sWatchTaskParams k8sWatchTaskParams = K8sWatchTaskParams.newBuilder()
                                                 .setK8SClusterConfig(k8sClusterConfig)
@@ -156,7 +157,7 @@ public class K8sWatchServiceDelegateTest extends DelegateTestBase {
   public void shouldNotCreateDuplicateWatch() {
     String clusterId = UUID.randomUUID().toString();
     String cloudProviderId = UUID.randomUUID().toString();
-    ByteString k8sClusterConfig = ByteString.copyFrom(kryoSerializer.asBytes(
+    ByteString k8sClusterConfig = ByteString.copyFrom(kryoSerializerWrapper.asBytes(
         K8sClusterConfig.builder().clusterName("test-cluster").namespace("namespace").cloudProvider(null).build()));
     K8sWatchTaskParams k8sWatchTaskParams = K8sWatchTaskParams.newBuilder()
                                                 .setK8SClusterConfig(k8sClusterConfig)
@@ -184,7 +185,7 @@ public class K8sWatchServiceDelegateTest extends DelegateTestBase {
   public void shouldCreateMultipleWatchesIfNotDuplicate() {
     String clusterId = UUID.randomUUID().toString();
     String cloudProviderId1 = UUID.randomUUID().toString();
-    ByteString k8sClusterConfig1 = ByteString.copyFrom(kryoSerializer.asBytes(
+    ByteString k8sClusterConfig1 = ByteString.copyFrom(kryoSerializerWrapper.asBytes(
         K8sClusterConfig.builder().clusterName("test-cluster1").namespace("namespace1").cloudProvider(null).build()));
     K8sWatchTaskParams k8sWatchTaskParams1 = K8sWatchTaskParams.newBuilder()
                                                  .setClusterId("clusterId1")
@@ -193,7 +194,7 @@ public class K8sWatchServiceDelegateTest extends DelegateTestBase {
                                                  .setClusterId(clusterId)
                                                  .build();
     String cloudProviderId2 = UUID.randomUUID().toString();
-    ByteString k8sClusterConfig2 = ByteString.copyFrom(kryoSerializer.asBytes(
+    ByteString k8sClusterConfig2 = ByteString.copyFrom(kryoSerializerWrapper.asBytes(
         K8sClusterConfig.builder().clusterName("test-cluster2").namespace("namespace2").cloudProvider(null).build()));
     K8sWatchTaskParams k8sWatchTaskParams2 = K8sWatchTaskParams.newBuilder()
                                                  .setClusterId("clusterId2")
@@ -213,7 +214,7 @@ public class K8sWatchServiceDelegateTest extends DelegateTestBase {
   public void shouldDeletePodWatch() throws Exception {
     String clusterId = UUID.randomUUID().toString();
     String cloudProviderId = UUID.randomUUID().toString();
-    ByteString k8sClusterConfig = ByteString.copyFrom(kryoSerializer.asBytes(
+    ByteString k8sClusterConfig = ByteString.copyFrom(kryoSerializerWrapper.asBytes(
         K8sClusterConfig.builder().clusterName("test-cluster").namespace("namespace").cloudProvider(null).build()));
     K8sWatchTaskParams k8sWatchTaskParams = K8sWatchTaskParams.newBuilder()
                                                 .setK8SClusterConfig(k8sClusterConfig)
@@ -232,7 +233,7 @@ public class K8sWatchServiceDelegateTest extends DelegateTestBase {
   public void shouldDeleteNodeWatch() throws Exception {
     String clusterId = UUID.randomUUID().toString();
     String cloudProviderId = UUID.randomUUID().toString();
-    ByteString k8sClusterConfig = ByteString.copyFrom(kryoSerializer.asBytes(
+    ByteString k8sClusterConfig = ByteString.copyFrom(kryoSerializerWrapper.asBytes(
         K8sClusterConfig.builder().clusterName("test-cluster").namespace("namespace").cloudProvider(null).build()));
     K8sWatchTaskParams k8sWatchTaskParams = K8sWatchTaskParams.newBuilder()
                                                 .setK8SClusterConfig(k8sClusterConfig)

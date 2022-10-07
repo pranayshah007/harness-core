@@ -9,7 +9,7 @@ package io.harness;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.waiter.NotifyCallback;
 
 import com.esotericsoftware.kryo.KryoException;
@@ -23,8 +23,8 @@ import org.reflections.Reflections;
 
 @Slf4j
 public class OrchestrationComponentTester {
-  public static void testKryoRegistration(Provider<KryoSerializer> kryoSerializerProvider) {
-    KryoSerializer kryoSerializer = kryoSerializerProvider.get();
+  public static void testKryoRegistration(Provider<KryoSerializerWrapper> kryoSerializerProvider) {
+    KryoSerializerWrapper kryoSerializerWrapper = kryoSerializerProvider.get();
     Reflections reflections = new Reflections("io.harness", "software.wings");
     Set<Class<? extends NotifyCallback>> callbacks = reflections.getSubTypesOf(NotifyCallback.class)
                                                          .stream()
@@ -32,7 +32,7 @@ public class OrchestrationComponentTester {
                                                          .collect(Collectors.toSet());
     List<Class<? extends NotifyCallback>> unregisteredClasses = new ArrayList<>();
     for (Class<? extends NotifyCallback> callback : callbacks) {
-      if (!kryoSerializer.isRegistered(callback)) {
+      if (!kryoSerializerWrapper.isRegistered(callback)) {
         log.error("Class should be registered with kryo : {}", callback.getName());
         unregisteredClasses.add(callback);
       }

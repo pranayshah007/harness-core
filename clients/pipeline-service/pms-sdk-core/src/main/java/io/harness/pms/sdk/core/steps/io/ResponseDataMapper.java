@@ -11,7 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.tasks.BinaryResponseData;
 import io.harness.tasks.ResponseData;
 
@@ -24,13 +24,13 @@ import java.util.Map;
 @OwnedBy(CDC)
 @Singleton
 public class ResponseDataMapper {
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
 
   public Map<String, ResponseData> fromResponseDataProto(Map<String, ByteString> byteStringMap) {
     Map<String, ResponseData> responseDataMap = new HashMap<>();
     if (EmptyPredicate.isNotEmpty(byteStringMap)) {
       byteStringMap.forEach(
-          (k, v) -> responseDataMap.put(k, (ResponseData) kryoSerializer.asInflatedObject(v.toByteArray())));
+          (k, v) -> responseDataMap.put(k, (ResponseData) kryoSerializerWrapper.asInflatedObject(v.toByteArray())));
     }
     return responseDataMap;
   }
@@ -43,7 +43,7 @@ public class ResponseDataMapper {
           // This implies this is coming from the PMS driver module. Eventually this will be the only way
           byteStringMap.put(k, ByteString.copyFrom(((BinaryResponseData) v).getData()));
         } else {
-          byteStringMap.put(k, ByteString.copyFrom(kryoSerializer.asDeflatedBytes(v)));
+          byteStringMap.put(k, ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(v)));
         }
       });
     }
