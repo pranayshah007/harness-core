@@ -84,7 +84,8 @@ public class RefreshInputsHelperTest extends NgManagerTestBase {
         outboxService, customDeploymentEntitySetupHelper, infrastructureEntitySetupUsageHelper));
     environmentService = spy(new EnvironmentServiceImpl(environmentRepository, entitySetupUsageService, eventProducer,
         outboxService, transactionTemplate, infrastructureEntityService, clusterService, serviceOverrideService));
-    environmentRefreshHelper = spy(new EnvironmentRefreshHelper(environmentService, infrastructureEntityService));
+    environmentRefreshHelper =
+        spy(new EnvironmentRefreshHelper(environmentService, infrastructureEntityService, serviceOverrideService));
     on(entityFetchHelper).set("serviceEntityService", serviceEntityService);
     on(refreshInputsHelper).set("serviceEntityService", serviceEntityService);
     on(refreshInputsHelper).set("entityFetchHelper", entityFetchHelper);

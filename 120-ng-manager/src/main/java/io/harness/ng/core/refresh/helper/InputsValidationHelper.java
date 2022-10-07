@@ -106,7 +106,7 @@ public class InputsValidationHelper {
       if (serviceEntityService.isServiceField(fieldName, value)) {
         validateServiceInputs(currentYamlNode, context, inputsValidationResponse);
         continue;
-      } else if (environmentRefreshHelper.isEnvironmentField(fieldName, value)) {
+      } else if (inputsValidationResponse.isValid() && environmentRefreshHelper.isEnvironmentField(fieldName, value)) {
         environmentRefreshHelper.validateEnvironmentInputs(currentYamlNode, context, inputsValidationResponse);
         continue;
       }
