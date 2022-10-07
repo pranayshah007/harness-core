@@ -7,6 +7,7 @@
 
 package io.harness.delegate.runner;
 
+import io.harness.delegate.configuration.DelegateConfiguration;
 import io.harness.delegate.runner.modules.DelegateRunnerModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -14,11 +15,15 @@ import io.harness.threading.CurrentThreadExecutor;
 import io.harness.threading.ExecutorModule;
 import lombok.extern.slf4j.Slf4j;
 
+import static io.harness.delegate.clienttools.InstallUtils.setupClientTools;
+
 @Slf4j
 public class DelegateRunner {
   public void run(final String configFileName) {
     ExecutorModule.getInstance().setExecutorService(new CurrentThreadExecutor());
     final Injector injector = Guice.createInjector(new DelegateRunnerModule(configFileName));
+    DelegateConfiguration delegateConfiguration = injector.getInstance(DelegateConfiguration.class);
+    setupClientTools(delegateConfiguration);
     injector.getInstance(DelegateRunnerCommand.class).run();
   }
 
