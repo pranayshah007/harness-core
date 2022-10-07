@@ -43,6 +43,7 @@ public class RollbackStagePlanCreator {
             .stepParameters(
                 NGSectionStepParameters.builder()
                     .childNodeId(stageNode.getUuid() + NGCommonUtilPlanCreationConstants.COMBINED_ROLLBACK_ID_SUFFIX)
+                    .logMessage("Rollback Stage for " + stageNode.getIdentifier())
                     .build())
             .facilitatorObtainment(
                 FacilitatorObtainment.newBuilder()
