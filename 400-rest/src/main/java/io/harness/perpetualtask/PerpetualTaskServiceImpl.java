@@ -145,7 +145,7 @@ public class PerpetualTaskServiceImpl implements PerpetualTaskService, DelegateO
                                        .perpetualTaskType(perpetualTaskType)
                                        .clientContext(clientContext)
                                        .timeoutMillis(Durations.toMillis(schedule.getTimeout()))
-                                       .intervalSeconds(getTaskTimeInterval(schedule, accountId, perpetualTaskType))
+                                       .intervalSeconds(getTaskTimeInterval(schedule))
                                        .delegateId("")
                                        .state(PerpetualTaskState.TASK_UNASSIGNED)
                                        .taskDescription(taskDescription)
@@ -363,8 +363,7 @@ public class PerpetualTaskServiceImpl implements PerpetualTaskService, DelegateO
     // do nothing
   }
 
-  long getTaskTimeInterval(PerpetualTaskSchedule schedule, String accountId, String perpetualTaskType) {
-    long intervalSeconds = schedule.getInterval().getSeconds();
-    return intervalSeconds;
+  long getTaskTimeInterval(PerpetualTaskSchedule schedule) {
+    return schedule.getInterval().getSeconds();
   }
 }
