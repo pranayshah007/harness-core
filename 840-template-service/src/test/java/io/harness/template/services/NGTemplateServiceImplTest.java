@@ -16,6 +16,7 @@ import static io.harness.rule.OwnerRule.UTKARSH_CHOUBEY;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.joor.Reflect.on;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doNothing;
@@ -52,6 +53,8 @@ import io.harness.ng.core.dto.ProjectResponse;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.template.TemplateEntityType;
 import io.harness.ng.core.template.TemplateListType;
+import io.harness.ng.core.template.TemplateMergeResponseDTO;
+import io.harness.ng.core.template.TemplateReferenceSummary;
 import io.harness.ng.core.template.TemplateWithInputsResponseDTO;
 import io.harness.ng.core.template.exception.NGTemplateResolveExceptionV2;
 import io.harness.organization.remote.OrganizationClient;
@@ -88,6 +91,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.Callable;
@@ -321,6 +325,47 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
     boolean delete = templateService.delete(
         ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, TEMPLATE_VERSION_LABEL, null, "");
     assertThat(delete).isTrue();
+  }
+
+  @Test
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void testCheckTemplateAccess() {
+    List<TemplateReferenceSummary> templateReferenceSummaryList = new ArrayList<>();
+    templateReferenceSummaryList.add(TemplateReferenceSummary.builder()
+                                         .templateIdentifier("template1")
+                                         .versionLabel("1")
+                                         .scope(Scope.PROJECT)
+                                         .fqn("pipeline.stages.qaStage.spec.execution.steps.shellScriptStep11")
+                                         .stableTemplate(false)
+                                         .moduleInfo(new HashSet<>())
+                                         .build());
+    templateReferenceSummaryList.add(TemplateReferenceSummary.builder()
+                                         .templateIdentifier("template1")
+                                         .versionLabel("1")
+                                         .scope(Scope.ORG)
+                                         .fqn("pipeline.stages.qaStage.spec.execution.steps.shellScriptStep12")
+                                         .stableTemplate(true)
+                                         .moduleInfo(new HashSet<>())
+                                         .build());
+    templateReferenceSummaryList.add(TemplateReferenceSummary.builder()
+                                         .templateIdentifier("template2")
+                                         .versionLabel("1")
+                                         .scope(Scope.ACCOUNT)
+                                         .fqn("pipeline.stages.qaStage.spec.execution.steps.approval")
+                                         .stableTemplate(false)
+                                         .moduleInfo(new HashSet<>())
+                                         .build());
+    TemplateMergeResponseDTO templateMergeResponseDTO = TemplateMergeResponseDTO.builder()
+                                                            .mergedPipelineYaml(yaml)
+                                                            .templateReferenceSummaries(templateReferenceSummaryList)
+                                                            .build();
+    templateService.checkLinkedTemplateAccess(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, templateMergeResponseDTO);
+    verify(accessControlClient).checkForAccessOrThrow(eq(ResourceScope.of(ACCOUNT_ID, null, null)), any(), any());
+    verify(accessControlClient)
+        .checkForAccessOrThrow(eq(ResourceScope.of(ACCOUNT_ID, ORG_IDENTIFIER, null)), any(), any());
+    verify(accessControlClient)
+        .checkForAccessOrThrow(eq(ResourceScope.of(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER)), any(), any());
   }
 
   @Test
