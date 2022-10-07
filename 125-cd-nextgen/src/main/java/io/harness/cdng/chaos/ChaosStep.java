@@ -1,6 +1,7 @@
 package io.harness.cdng.chaos;
 
 import io.harness.chaos.client.beans.ChaosQuery;
+import io.harness.chaos.client.beans.ChaosRerunResponse;
 import io.harness.chaos.client.remote.ChaosHttpClient;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.plancreator.steps.common.StepElementParameters;
@@ -19,6 +20,7 @@ import io.harness.tasks.ResponseData;
 
 import com.google.inject.Inject;
 import java.util.Map;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -28,6 +30,7 @@ public class ChaosStep implements AsyncExecutable<StepElementParameters> {
 
   @Inject private ChaosHttpClient client;
 
+  @SuppressWarnings("checkstyle:RegexpSinglelineCheck")
   private static final String BODY =
       "mutation{\n  reRunChaosWorkFlow(\n    workflowID: \"%s\",\n    identifiers:{\n      orgIdentifier: \"%s\",\n      projectIdentifier: \"%s\",\n      accountIdentifier: \"%s\"\n    }\n  )\n}";
 
@@ -45,9 +48,15 @@ public class ChaosStep implements AsyncExecutable<StepElementParameters> {
     return AsyncExecutableResponse.newBuilder().addCallbackIds(callbackId).build();
   }
 
+  @SneakyThrows
   private String triggerWorkflow(Ambiance ambiance, ChaosStepParameters params) {
     try {
-      return NGRestUtils.getResponse(client.reRunWorkflow(buildPayload(ambiance, params.getExperimentRef())));
+      ChaosRerunResponse response =
+          NGRestUtils.getResponse(client.reRunWorkflow(buildPayload(ambiance, params.getExperimentRef())));
+      if (response != null && response.isSuccessful()) {
+        return response.getNotifyId();
+      }
+      throw new ChaosRerunException(response.getErrors().get(0).getMessage());
     } catch (Exception ex) {
       log.error("Unable to trigger chaos experiment", ex);
       throw ex;

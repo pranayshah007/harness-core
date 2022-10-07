@@ -1569,6 +1569,25 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "ChaosStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "required": [
+            "experimentRef"
+          ],
+          "properties": {
+            "experimentRef": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "CloudformationCreateStackStepConfiguration": {
       "type": "object",
       "required": [
@@ -9626,6 +9645,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/AzureWebAppRollbackStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Chaos"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/ChaosStepInfo"
               }
             }
           }

@@ -1,3 +1,6 @@
+io.harness.cdng.chaos.ChaosStepParameters
+io.harness.cdng.chaos.ChaosStepNode
+io.harness.cdng.chaos.ChaosStepInfo
 io.harness.cdng.customdeployment.CustomDeploymentSecretNGVariable
 io.harness.cdng.customdeployment.CustomDeploymentConnectorNGVariable
 io.harness.cdng.customdeployment.CustomDeploymentNumberNGVariable

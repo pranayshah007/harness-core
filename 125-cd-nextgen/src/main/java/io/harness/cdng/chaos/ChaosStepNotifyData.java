@@ -8,7 +8,7 @@ import lombok.Value;
 @Value
 @Builder
 public class ChaosStepNotifyData implements ResponseData {
-  enum Phase { ERROR, HALTED, COMPLETED }
+  enum Phase { PENDING, ERROR, HALTED, COMPLETED }
 
   Phase phase;
   String experimentRunId;
