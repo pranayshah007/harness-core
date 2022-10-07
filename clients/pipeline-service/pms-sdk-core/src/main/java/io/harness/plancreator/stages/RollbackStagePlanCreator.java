@@ -12,11 +12,12 @@ import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.steps.common.NGSectionStep;
-import io.harness.steps.section.chain.SectionChainStep;
+import io.harness.steps.common.NGSectionStepParameters;
+import io.harness.steps.fork.ForkStepParameters;
+import io.harness.steps.fork.NGForkStep;
 import io.harness.steps.section.chain.SectionChainStepParameters;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import lombok.experimental.UtilityClass;
@@ -24,11 +25,6 @@ import lombok.experimental.UtilityClass;
 @UtilityClass
 @OwnedBy(HarnessTeam.PIPELINE)
 public class RollbackStagePlanCreator {
-  FacilitatorObtainment facilitatorObtainment =
-      FacilitatorObtainment.newBuilder()
-          .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.CHILD_CHAIN).build())
-          .build();
-
   public PlanCreationResponse createPlanForRollbackStage(YamlField stageYamlField) {
     YamlNode stageNode = stageYamlField.getNode();
     if (Objects.equals(stageNode.getFieldName(), YAMLFieldNameConstants.PARALLEL)) {
@@ -38,17 +34,21 @@ public class RollbackStagePlanCreator {
   }
 
   PlanCreationResponse createPlanForSingleStage(YamlNode stageNode) {
-    // todo: handle non cd stages
-    List<String> childNodeIDs =
-        Collections.singletonList(stageNode.getUuid() + NGCommonUtilPlanCreationConstants.COMBINED_ROLLBACK_ID_SUFFIX);
+    // todo: create rollback node for non cd stages
     PlanNode rollbackStagePlanNode =
         PlanNode.builder()
             .uuid(stageNode.getUuid() + "_rollbackStage")
             .name(stageNode.getName() + " " + NGCommonUtilPlanCreationConstants.ROLLBACK_STAGE_NODE_NAME)
             .identifier(stageNode.getUuid() + "_rollbackStage")
-            .stepType(SectionChainStep.STEP_TYPE)
-            .stepParameters(SectionChainStepParameters.builder().childNodeIds(childNodeIDs).build())
-            .facilitatorObtainment(facilitatorObtainment)
+            .stepType(NGSectionStep.STEP_TYPE)
+            .stepParameters(
+                NGSectionStepParameters.builder()
+                    .childNodeId(stageNode.getUuid() + NGCommonUtilPlanCreationConstants.COMBINED_ROLLBACK_ID_SUFFIX)
+                    .build())
+            .facilitatorObtainment(
+                FacilitatorObtainment.newBuilder()
+                    .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.CHILD).build())
+                    .build())
             .skipExpressionChain(true)
             .build();
     return PlanCreationResponse.builder().node(rollbackStagePlanNode.getUuid(), rollbackStagePlanNode).build();
@@ -68,9 +68,12 @@ public class RollbackStagePlanCreator {
             .uuid(parallelStageNode.getUuid() + "_rollbackStage")
             .name(NGCommonUtilPlanCreationConstants.ROLLBACK_STAGE_NODE_NAME)
             .identifier(parallelStageNode.getUuid() + "_rollbackStage")
-            .stepType(NGSectionStep.STEP_TYPE)
-            .stepParameters(SectionChainStepParameters.builder().childNodeIds(childNodeIDs).build())
-            .facilitatorObtainment(facilitatorObtainment)
+            .stepType(NGForkStep.STEP_TYPE)
+            .stepParameters(ForkStepParameters.builder().parallelNodeIds(childNodeIDs).build())
+            .facilitatorObtainment(
+                FacilitatorObtainment.newBuilder()
+                    .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.CHILDREN).build())
+                    .build())
             .skipExpressionChain(true)
             .build();
     PlanCreationResponse parallelBlockResponse =
