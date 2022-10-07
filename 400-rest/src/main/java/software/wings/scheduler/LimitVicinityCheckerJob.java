@@ -27,6 +27,7 @@ import org.quartz.JobBuilder;
 import org.quartz.JobDetail;
 import org.quartz.JobExecutionContext;
 import org.quartz.SimpleScheduleBuilder;
+import org.quartz.SimpleTrigger;
 import org.quartz.TriggerBuilder;
 
 /**
@@ -43,6 +44,13 @@ public class LimitVicinityCheckerJob implements Job {
   @Inject private BackgroundExecutorService executorService;
   @Inject private BackgroundSchedulerLocker persistentLocker;
   @Inject private LimitVicinityHandler limitVicinityHandler;
+
+  public static TriggerBuilder<SimpleTrigger> vicinityTriggerBuilder(String accountId) {
+    return TriggerBuilder.newTrigger()
+        .withIdentity(accountId, GROUP)
+        .withSchedule(
+            SimpleScheduleBuilder.simpleSchedule().withIntervalInMinutes(SYNC_INTERVAL_IN_MINUTES).repeatForever());
+  }
 
   public static void addWithDelay(PersistentScheduler jobScheduler, String accountId) {
     // Add some randomness in the trigger start time to avoid overloading quartz by firing jobs at the same time.
@@ -61,11 +69,7 @@ public class LimitVicinityCheckerJob implements Job {
                         .usingJobData(ACCOUNT_ID_KEY, accountId)
                         .build();
 
-    TriggerBuilder triggerBuilder =
-        TriggerBuilder.newTrigger()
-            .withIdentity(accountId, GROUP)
-            .withSchedule(
-                SimpleScheduleBuilder.simpleSchedule().withIntervalInMinutes(SYNC_INTERVAL_IN_MINUTES).repeatForever());
+    TriggerBuilder triggerBuilder = vicinityTriggerBuilder(accountId);
     if (triggerStartTime != null) {
       triggerBuilder.startAt(triggerStartTime);
     }
