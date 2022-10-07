@@ -9,6 +9,7 @@ package io.harness.template.services;
 
 import static io.harness.rule.OwnerRule.ADITHYA;
 
+import static junit.framework.TestCase.assertFalse;
 import static junit.framework.TestCase.assertTrue;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -19,6 +20,7 @@ import static org.mockito.Mockito.mockStatic;
 import static org.powermock.api.mockito.PowerMockito.doReturn;
 import static org.powermock.api.mockito.PowerMockito.when;
 
+import io.harness.beans.FeatureName;
 import io.harness.beans.Scope;
 import io.harness.category.element.UnitTests;
 import io.harness.context.GlobalContext;
@@ -198,6 +200,36 @@ public class TemplateGitXServiceImplTest {
 
     boolean isNewGitXEnabled = templateGitXService.isNewGitXEnabledAndIsRemoteEntity(templateToSave, branchInfo);
     assertTrue(isNewGitXEnabled);
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testShouldHideRemoteTemplates() {
+    when(ngTemplateFeatureFlagHelperService.isEnabled(ACCOUNT_IDENTIFIER, FeatureName.USE_OLD_GIT_SYNC))
+        .thenReturn(true);
+    when(ngTemplateFeatureFlagHelperService.isEnabled(ACCOUNT_IDENTIFIER, FeatureName.NG_TEMPLATE_GITX))
+        .thenReturn(true);
+    when(gitSyncSdkService.isGitSimplificationEnabled(any(), any(), any())).thenReturn(true);
+    boolean shouldHide =
+        templateGitXService.shouldHideRemoteTemplates(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER);
+    assertTrue(shouldHide);
+
+    when(gitSyncSdkService.isGitSimplificationEnabled(any(), any(), any())).thenReturn(false);
+    shouldHide = templateGitXService.shouldHideRemoteTemplates(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER);
+    assertFalse(shouldHide);
+
+    when(ngTemplateFeatureFlagHelperService.isEnabled(ACCOUNT_IDENTIFIER, FeatureName.USE_OLD_GIT_SYNC))
+        .thenReturn(true);
+    when(ngTemplateFeatureFlagHelperService.isEnabled(ACCOUNT_IDENTIFIER, FeatureName.NG_TEMPLATE_GITX))
+        .thenReturn(false);
+    shouldHide = templateGitXService.shouldHideRemoteTemplates(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER);
+    assertFalse(shouldHide);
+
+    when(ngTemplateFeatureFlagHelperService.isEnabled(ACCOUNT_IDENTIFIER, FeatureName.USE_OLD_GIT_SYNC))
+        .thenReturn(false);
+    shouldHide = templateGitXService.shouldHideRemoteTemplates(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER);
+    assertTrue(shouldHide);
   }
 
   @Test
