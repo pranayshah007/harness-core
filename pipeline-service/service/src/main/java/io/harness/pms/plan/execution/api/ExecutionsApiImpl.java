@@ -1,14 +1,24 @@
 package io.harness.pms.plan.execution.api;
 
+import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.accesscontrol.NGAccessControlCheck;
+import io.harness.accesscontrol.OrgIdentifier;
+import io.harness.accesscontrol.ProjectIdentifier;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidRequestException;
+import io.harness.gitaware.helper.GitAwareContextHelper;
+import io.harness.gitsync.interceptor.GitEntityInfo;
+import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.pms.annotations.PipelineServiceAuth;
+import io.harness.pms.gitsync.PmsGitSyncHelper;
 import io.harness.pms.plan.execution.PipelineExecutor;
 import io.harness.pms.plan.execution.PlanExecutionResponseDto;
+import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
+import io.harness.pms.plan.execution.service.PMSExecutionService;
 import io.harness.pms.rbac.PipelineRbacPermissions;
 import io.harness.spec.server.pipeline.ExecutionsApi;
+import io.harness.spec.server.pipeline.model.ExecutionsDetailsSummary;
 import io.harness.spec.server.pipeline.model.InterruptRequestBody;
 import io.harness.spec.server.pipeline.model.PipelineExecuteRequestBody;
 import io.harness.spec.server.pipeline.model.PipelineExecuteResponseBody;
@@ -26,11 +36,14 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ExecutionsApiImpl implements ExecutionsApi {
   @Inject private final PipelineExecutor pipelineExecutor;
+  @Inject private final PMSExecutionService pmsExecutionService;
+  @Inject private final PmsGitSyncHelper pmsGitSyncHelper;
 
   @Override
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_EXECUTE)
-  public Response executePipeline(PipelineExecuteRequestBody requestBody, String org, String project, String pipeline,
-      String account, String branchGitX) {
+  public Response executePipeline(PipelineExecuteRequestBody requestBody, @OrgIdentifier String org,
+      @ProjectIdentifier String project, String pipeline, @AccountIdentifier String account, String branchGitX) {
+    GitAwareContextHelper.populateGitDetails(GitEntityInfo.builder().branch(branchGitX).build());
     if (requestBody.getInputSetRefs() != null && requestBody.getRuntimeYaml() != null) {
       throw new InvalidRequestException(
           "Both InputSetReferences and RuntimeInputYAML are passed, please pass only either.");
@@ -53,8 +66,21 @@ public class ExecutionsApiImpl implements ExecutionsApi {
 
   @Override
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_VIEW)
-  public Response getExecutionDetails(String org, String project, String execution, String account) {
-    return null;
+  public Response getExecutionDetails(@OrgIdentifier String org, @ProjectIdentifier String project, String execution,
+      @AccountIdentifier String account) {
+    PipelineExecutionSummaryEntity executionSummaryEntity =
+        pmsExecutionService.getPipelineExecutionSummaryEntity(account, org, project, execution, false);
+    EntityGitDetails entityGitDetails;
+    if (executionSummaryEntity.getEntityGitDetails() == null) {
+      entityGitDetails =
+          pmsGitSyncHelper.getEntityGitDetailsFromBytes(executionSummaryEntity.getGitSyncBranchContext());
+    } else {
+      entityGitDetails = executionSummaryEntity.getEntityGitDetails();
+    }
+    pmsExecutionService.sendGraphUpdateEvent(executionSummaryEntity);
+    ExecutionsDetailsSummary summary =
+        ExecutionsApiUtils.getExecutionDetailsSummary(executionSummaryEntity, entityGitDetails);
+    return Response.ok().entity(summary).build();
   }
 
   @Override
