@@ -658,7 +658,7 @@ public class EcsStepCommonHelper extends EcsStepUtils {
       ecsServiceDefinitionFileContent =
           engineExpressionService.renderExpression(ambiance, ecsServiceDefinitionFileContent);
     } else {
-      ecsServiceDefinitionFileContent = ecsGitFetchPassThroughData.getTaskDefinitionHarnessFileContent();
+      ecsServiceDefinitionFileContent = ecsGitFetchPassThroughData.getServiceDefinitionHarnessFileContent();
     }
 
     // Get ecsScalableTargetManifestContentList from ecsGitFetchResponse if present
