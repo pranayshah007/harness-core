@@ -5,13 +5,14 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ngmigration.service.manifestfactory;
+package io.harness.ngmigration.service.manifest;
 
 import io.harness.exception.InvalidRequestException;
 
 import software.wings.beans.appmanifest.AppManifestKind;
 import software.wings.beans.appmanifest.ApplicationManifest;
 import software.wings.beans.appmanifest.StoreType;
+import software.wings.service.intfc.ApplicationManifestService;
 
 import com.google.inject.Inject;
 
@@ -19,6 +20,8 @@ public class NgManifestFactory {
   @Inject K8sManifestRemoteStoreService k8sManifestRemoteStoreService;
   @Inject K8sManifestHelmSourceRepoStoreService k8sManifestHelmSourceRepoStoreService;
   @Inject ValuesManifestRemoteStoreService valuesManifestRemoteStoreService;
+  @Inject K8sManifestLocalStoreService k8sManifestLocalStoreService;
+  @Inject ApplicationManifestService applicationManifestService;
 
   public NgManifestService getNgManifestService(ApplicationManifest applicationManifest) {
     if (applicationManifest.getKind() == null) {
@@ -30,6 +33,8 @@ public class NgManifestFactory {
     switch (appManifestKind) {
       case K8S_MANIFEST:
         switch (storeType) {
+          case Local:
+            return k8sManifestLocalStoreService;
           case Remote:
             return k8sManifestRemoteStoreService;
           case HelmSourceRepo:
