@@ -9,6 +9,7 @@ package io.harness.cdng.service.steps;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.ng.core.environment.mappers.EnvironmentMapper.toNGEnvironmentConfig;
 
 import static java.lang.String.format;
 
@@ -24,7 +25,6 @@ import io.harness.cdng.manifest.steps.ManifestsOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.data.structure.CollectionUtils;
-import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnresolvedExpressionsException;
 import io.harness.executions.steps.ExecutionNodeType;
@@ -167,6 +167,12 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
               AmbianceUtils.getProjectIdentifier(ambiance), envRef.getValue(), false);
       if (environment.isEmpty()) {
         throw new InvalidRequestException("Environment " + envRef.getValue() + " not found");
+      }
+
+      // handle old environments
+      if (isEmpty(environment.get().getYaml())) {
+        NGEnvironmentConfig ngEnvironmentConfig = toNGEnvironmentConfig(environment.get());
+        environment.get().setYaml(io.harness.ng.core.environment.mappers.EnvironmentMapper.toYaml(ngEnvironmentConfig));
       }
 
       NGEnvironmentConfig ngEnvironmentConfig;
@@ -407,7 +413,7 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
 
   private void addEnvVariables(
       Map<String, Object> variables, Map<String, Object> envVariables, NGLogCallback logCallback) {
-    if (EmptyPredicate.isEmpty(envVariables)) {
+    if (isEmpty(envVariables)) {
       return;
     }
 

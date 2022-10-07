@@ -1,0 +1,30 @@
+{
+  "pipeline": {
+    "name": "parentPipeline",
+    "identifier": "parentPipeline",
+    "projectIdentifier": "parentPipelineProject",
+    "orgIdentifier": "default",
+    "tags": {
+      "__uuid": "vDSvcNoES8-v2i4PsR_EPg"
+    },
+    "stages": [
+      {
+        "stage": {
+          "name": "childPipeline",
+          "identifier": "childPipeline",
+          "description": "",
+          "type": "Pipeline",
+          "spec": {
+            "pipeline": "childPipelineIdentifier",
+            "org": "childPipelineOrg",
+            "project": "childPipelineProject",
+            "__uuid": "QI3_RIg8TQeB9QQOEAiM8w"
+          }
+        },
+        "__uuid": "tA9GOy9nR3-spMTx2kpKaw"
+      }
+    ],
+    "__uuid": "CRPECVboRjGi9bHpIqbRyw"
+  },
+  "__uuid": "LYeF7J0hQMuoFf3yBt7HBA"
+}

@@ -55,7 +55,7 @@ public class MultiDeploymentSpawnerStep extends ChildrenExecutableWithRollbackAn
 
   @Override
   public void validateResources(Ambiance ambiance, MultiDeploymentStepParameters stepParameters) {
-    // Todo: Check if user has access permission on service and environment
+    // Do Nothing
   }
 
   @Override
@@ -206,6 +206,9 @@ public class MultiDeploymentSpawnerStep extends ChildrenExecutableWithRollbackAn
   }
 
   private List<Map<String, String>> getEnvironmentsMap(List<EnvironmentYamlV2> environments) {
+    if (EmptyPredicate.isEmpty(environments)) {
+      throw new InvalidYamlException("No value of environment provided. Please provide atleast one value");
+    }
     List<Map<String, String>> environmentsMap = new ArrayList<>();
     for (EnvironmentYamlV2 environmentYamlV2 : environments) {
       if (ParameterField.isNull(environmentYamlV2.getInfrastructureDefinitions())) {
@@ -231,6 +234,9 @@ public class MultiDeploymentSpawnerStep extends ChildrenExecutableWithRollbackAn
       throw new InvalidYamlException("Expression could not be resolved for services yaml");
     }
     List<ServiceYamlV2> services = servicesYaml.getValues().getValue();
+    if (services.isEmpty()) {
+      throw new InvalidYamlException("No value of services provided. Please provide atleast one value");
+    }
     List<Map<String, String>> environmentsMap = new ArrayList<>();
     for (ServiceYamlV2 service : services) {
       environmentsMap.add(MultiDeploymentSpawnerUtils.getMapFromServiceYaml(service));
