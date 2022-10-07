@@ -1,5 +1,6 @@
 package io.harness.cdng.chaos;
 
+import io.harness.chaos.client.beans.ChaosQuery;
 import io.harness.chaos.client.remote.ChaosHttpClient;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.plancreator.steps.common.StepElementParameters;
@@ -28,7 +29,7 @@ public class ChaosStep implements AsyncExecutable<StepElementParameters> {
   @Inject private ChaosHttpClient client;
 
   private static final String BODY =
-      "{\"query\":\"mutation{ reRunChaosWorkFlow(workflowID: \"%s\", identifiers: { orgIdentifier: \"%s\", accountIdentifier: \"%s\", projectIdentifier: \"%s\" }) }\"";
+      "mutation{\n  reRunChaosWorkFlow(\n    workflowID: \"%s\",\n    identifiers:{\n      orgIdentifier: \"%s\",\n      projectIdentifier: \"%s\",\n      accountIdentifier: \"%s\"\n    }\n  )\n}";
 
   @Override
   public Class<StepElementParameters> getStepParametersClass() {
@@ -67,8 +68,9 @@ public class ChaosStep implements AsyncExecutable<StepElementParameters> {
     // TODO : Call chaos client abort hook
   }
 
-  private String buildPayload(Ambiance ambiance, String experimentRef) {
-    return String.format(BODY, experimentRef, AmbianceUtils.getOrgIdentifier(ambiance),
-        AmbianceUtils.getAccountId(ambiance), AmbianceUtils.getProjectIdentifier(ambiance));
+  private ChaosQuery buildPayload(Ambiance ambiance, String experimentRef) {
+    String query = String.format(BODY, experimentRef, AmbianceUtils.getOrgIdentifier(ambiance),
+        AmbianceUtils.getProjectIdentifier(ambiance), AmbianceUtils.getAccountId(ambiance));
+    return ChaosQuery.builder().query(query).build();
   }
 }
