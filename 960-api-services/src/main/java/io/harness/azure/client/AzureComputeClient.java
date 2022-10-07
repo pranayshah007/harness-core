@@ -15,6 +15,8 @@ import io.harness.azure.model.AzureUserAuthVMInstanceData;
 import io.harness.azure.model.AzureVMSSTagsData;
 import io.harness.azure.model.VirtualMachineData;
 
+import software.wings.beans.AzureImageGallery;
+
 import com.microsoft.azure.management.appservice.DeploymentSlot;
 import com.microsoft.azure.management.compute.GalleryImage;
 import com.microsoft.azure.management.compute.VirtualMachineScaleSet;
@@ -155,6 +157,7 @@ public interface AzureComputeClient {
    */
   List<String> listResourceGroupsNamesBySubscriptionId(AzureConfig azureConfig, String subscriptionId);
 
+  List<AzureImageGallery> listImageGalleries(AzureConfig azureConfig, String subscriptionId, String resourceGroup);
   /**
    * Check if all VMSS Instances are stopped.
    *
