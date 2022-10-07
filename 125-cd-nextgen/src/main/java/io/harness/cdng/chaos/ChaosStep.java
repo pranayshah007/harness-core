@@ -30,10 +30,8 @@ public class ChaosStep implements AsyncExecutable<StepElementParameters> {
 
   @Inject private ChaosHttpClient client;
 
-  //BEGIN SUPPRESSION
   private static final String BODY =
       "mutation{\n  reRunChaosWorkFlow(\n    workflowID: \"%s\",\n    identifiers:{\n      orgIdentifier: \"%s\",\n      projectIdentifier: \"%s\",\n      accountIdentifier: \"%s\"\n    }\n  )\n}";
-  //END SUPPRESSION
 
   @Override
   public Class<StepElementParameters> getStepParametersClass() {

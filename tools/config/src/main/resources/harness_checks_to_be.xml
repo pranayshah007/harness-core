@@ -32,10 +32,4 @@
     <module name="TreeWalker">
         <module name="io.harness.checks.StringLiteralsCheck"/>
     </module>
-
-    <module name="SuppressionCommentFilter">
-        <property name="offCommentFormat" value="BEGIN SUPPRESSION"/>
-        <property name="onCommentFormat" value="END SUPPRESSION"/>
-    </module>
-
 </module>
