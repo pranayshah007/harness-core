@@ -22,7 +22,6 @@ import io.harness.spec.server.template.model.TemplateFilterProperties;
 import io.harness.spec.server.template.model.TemplateUpdateRequestBody;
 
 import com.google.inject.Inject;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import javax.ws.rs.core.Response;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -34,6 +33,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class AccountTemplatesApiImpl implements AccountTemplateApi {
   private final TemplateResourceApiUtils templateResourceApiUtils;
+  @Inject TemplateResourceApiMapper templateResourceApiMapper;
   @Override
   public Response createTemplatesAcc(TemplateCreateRequestBody templateCreateRequestBody,
       @AccountIdentifier String account, Boolean isStable, String comments) {

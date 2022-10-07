@@ -23,7 +23,6 @@ import io.harness.spec.server.template.model.TemplateFilterProperties;
 import io.harness.spec.server.template.model.TemplateUpdateRequestBody;
 
 import com.google.inject.Inject;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import javax.ws.rs.core.Response;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;

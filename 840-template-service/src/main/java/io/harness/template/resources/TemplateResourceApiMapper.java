@@ -7,16 +7,7 @@
 
 package io.harness.template.resources;
 
-import static io.harness.NGCommonEntityConstants.NEXT_REL;
-import static io.harness.NGCommonEntityConstants.PAGE;
-import static io.harness.NGCommonEntityConstants.PAGE_SIZE;
-import static io.harness.NGCommonEntityConstants.PREVIOUS_REL;
-import static io.harness.NGCommonEntityConstants.SELF_REL;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
-
-import static java.lang.Long.parseLong;
-import static java.lang.String.format;
-import static javax.ws.rs.core.UriBuilder.fromPath;
 
 import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.interceptor.GitEntityInfo;
@@ -31,24 +22,8 @@ import io.harness.spec.server.template.model.TemplateWithInputsResponse;
 import io.harness.template.beans.TemplateResponseDTO;
 import io.harness.template.entity.TemplateEntity.TemplateEntityKeys;
 
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
-import io.dropwizard.jersey.validation.JerseyViolationException;
-import java.util.ArrayList;
-import java.util.Set;
-import javax.validation.ConstraintViolation;
-import javax.validation.Validator;
-import javax.ws.rs.core.Link;
-import javax.ws.rs.core.Response.ResponseBuilder;
-
-@Singleton
 public class TemplateResourceApiMapper {
   public static final String TEMPLATE = "TEMPLATE";
-  //    private final Validator validator;
-  //    @Inject
-  //    public TemplateResourceApiMapper(Validator validator) {
-  //        this.validator = validator;
-  //    }
 
   public TemplateWithInputsResponse toTemplateWithInputResponse(TemplateWithInputsResponseDTO templateInput) {
     String templateInputYaml = templateInput.getTemplateInputs();
@@ -56,22 +31,12 @@ public class TemplateResourceApiMapper {
     TemplateWithInputsResponse templateWithInputsResponse = new TemplateWithInputsResponse();
     templateWithInputsResponse.setInputYaml(templateInputYaml);
     templateWithInputsResponse.setTemplateResponse(toTemplateResponse(templateResponse));
-    Validator validator = null;
-    Set<ConstraintViolation<TemplateWithInputsResponse>> violations = validator.validate(templateWithInputsResponse);
-    if (!violations.isEmpty()) {
-      throw new JerseyViolationException(violations, null);
-    }
     return templateWithInputsResponse;
   }
   public TemplateWithInputsResponse toTemplateResponseDefault(TemplateResponseDTO templateResponse) {
     TemplateWithInputsResponse templateWithInputsResponse = new TemplateWithInputsResponse();
     templateWithInputsResponse.setInputYaml("Input YAML not requested");
     templateWithInputsResponse.setTemplateResponse(toTemplateResponse(templateResponse));
-    Validator validator = null;
-    Set<ConstraintViolation<TemplateWithInputsResponse>> violations = validator.validate(templateWithInputsResponse);
-    if (!violations.isEmpty()) {
-      throw new JerseyViolationException(violations, null);
-    }
     return templateWithInputsResponse;
   }
 
@@ -91,7 +56,7 @@ public class TemplateResourceApiMapper {
     templateResponse.setEntityType(templateEntityType);
     templateResponse.setChildType(templateResponseDTO.getChildType());
     TemplateResponse.ScopeEnum scopeEnum =
-        TemplateResponse.ScopeEnum.fromValue(templateResponseDTO.getTemplateScope().toString());
+        TemplateResponse.ScopeEnum.fromValue(templateResponseDTO.getTemplateScope().getYamlRepresentation());
     templateResponse.setScope(scopeEnum);
     templateResponse.setVersion(templateResponseDTO.getVersion());
     templateResponse.setGitDetails(toEntityGitDetails(templateResponseDTO.getGitDetails()));
@@ -101,10 +66,6 @@ public class TemplateResourceApiMapper {
     templateResponse.setStoreType(storeTypeEnum);
     templateResponse.setConnectorRef(templateResponseDTO.getConnectorRef());
     templateResponse.setStableTemplate(templateResponseDTO.isStableTemplate());
-    //        Set<ConstraintViolation<TemplateResponse>> violations = validator.validate(templateResponse);
-    //        if (!violations.isEmpty()) {
-    //            throw new JerseyViolationException(violations, null);
-    //        }
     return templateResponse;
   }
 
@@ -125,7 +86,7 @@ public class TemplateResourceApiMapper {
     templateMetadataSummaryResponse.setEntityType(templateEntityType);
     templateMetadataSummaryResponse.setChildType(templateMetadataSummaryResponseDTO.getChildType());
     TemplateMetadataSummaryResponse.ScopeEnum scopeEnum = TemplateMetadataSummaryResponse.ScopeEnum.fromValue(
-        templateMetadataSummaryResponseDTO.getTemplateScope().toString());
+        templateMetadataSummaryResponseDTO.getTemplateScope().getYamlRepresentation());
     templateMetadataSummaryResponse.setScope(scopeEnum);
     templateMetadataSummaryResponse.setVersion(templateMetadataSummaryResponseDTO.getVersion());
     templateMetadataSummaryResponse.setGitDetails(
@@ -137,10 +98,6 @@ public class TemplateResourceApiMapper {
     templateMetadataSummaryResponse.setStoreType(storeTypeEnum);
     templateMetadataSummaryResponse.setConnectorRef(templateMetadataSummaryResponseDTO.getConnectorRef());
     templateMetadataSummaryResponse.setStableTemplate(templateMetadataSummaryResponseDTO.getStableTemplate());
-    //        Set<ConstraintViolation<TemplateMetadataSummaryResponse>> violations =
-    //        validator.validate(templateMetadataSummaryResponse); if (!violations.isEmpty()) {
-    //            throw new JerseyViolationException(violations, null);
-    //        }
     return templateMetadataSummaryResponse;
   }
 
