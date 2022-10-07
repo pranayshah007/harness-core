@@ -11,7 +11,6 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.DHRUVX;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
@@ -119,16 +118,15 @@ public class CloudWatchServiceImplTest extends CvNextGenTestBase {
   @Test
   @Owner(developers = DHRUVX)
   @Category(UnitTests.class)
-  public void testFetchSampleData_unexpectedMultipleTimeSeriesResponse() throws IOException {
+  public void testFetchSampleData_multipleTimeSeriesResponse() throws IOException {
     String responseObject = readResource("sample-metric-data-multiple-time-series.json");
     when(verificationManagerService.getDataCollectionResponse(
              anyString(), anyString(), anyString(), any(DataCollectionRequest.class)))
         .thenReturn(responseObject);
+    Map sampleDataResponse = cloudWatchService.fetchSampleData(builderFactory.getProjectParams(), connectorIdentifier,
+        generateUuid(), generateUuid(), generateUuid(), generateUuid(), generateUuid());
 
-    assertThatThrownBy(()
-                           -> cloudWatchService.fetchSampleData(builderFactory.getProjectParams(), connectorIdentifier,
-                               generateUuid(), generateUuid(), generateUuid(), generateUuid(), generateUuid()))
-        .hasMessageContaining("Single time-series expected.");
+    assertThat(sampleDataResponse).isNotNull();
   }
 
   private String readResource(String fileName) throws IOException {

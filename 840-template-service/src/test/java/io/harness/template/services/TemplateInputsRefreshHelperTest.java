@@ -62,7 +62,7 @@ public class TemplateInputsRefreshHelperTest extends TemplateServiceTestBase {
     on(templateInputsRefreshHelper).set("templateMergeServiceHelper", templateMergeServiceHelper);
     on(templateInputsRefreshHelper).set("featureFlagHelperService", featureFlagHelperService);
     on(templateInputsRefreshHelper).set("ngManagerReconcileClient", ngManagerReconcileClient);
-    when(featureFlagHelperService.isEnabled(ACCOUNT_ID, FeatureName.SERVICE_ENV_RECONCILIATION)).thenReturn(false);
+    when(featureFlagHelperService.isEnabled(ACCOUNT_ID, FeatureName.CD_SERVICE_ENV_RECONCILIATION)).thenReturn(false);
   }
 
   @Test

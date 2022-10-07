@@ -21,6 +21,7 @@ import io.harness.cdng.ecs.beans.EcsBlueGreenPrepareRollbackDataOutcome;
 import io.harness.cdng.ecs.beans.EcsExecutionPassThroughData;
 import io.harness.cdng.ecs.beans.EcsGitFetchFailurePassThroughData;
 import io.harness.cdng.ecs.beans.EcsGitFetchPassThroughData;
+import io.harness.cdng.ecs.beans.EcsGitFetchPassThroughData.EcsGitFetchPassThroughDataBuilder;
 import io.harness.cdng.ecs.beans.EcsManifestsContent;
 import io.harness.cdng.ecs.beans.EcsPrepareRollbackDataPassThroughData;
 import io.harness.cdng.ecs.beans.EcsRollingRollbackDataOutcome;
@@ -233,6 +234,8 @@ public class EcsStepCommonHelper extends EcsStepUtils {
       }
     }
 
+    EcsGitFetchPassThroughDataBuilder ecsGitFetchPassThroughDataBuilder = EcsGitFetchPassThroughData.builder();
+
     // Render expressions for all file content fetched from Harness File Store
 
     if (ecsTaskDefinitionFileContent != null) {
@@ -247,6 +250,7 @@ public class EcsStepCommonHelper extends EcsStepUtils {
         ecsServiceDefinitionFileContent =
             ecsServiceDefinitionFileContent.replace(TARGET_GROUP_ARN_EXPRESSION, key.toString());
       }
+      ecsGitFetchPassThroughDataBuilder.targetGroupArnKey(key.toString());
       ecsServiceDefinitionFileContent =
           engineExpressionService.renderExpression(ambiance, ecsServiceDefinitionFileContent);
     }
@@ -268,8 +272,7 @@ public class EcsStepCommonHelper extends EcsStepUtils {
     }
 
     EcsGitFetchPassThroughData ecsGitFetchPassThroughData =
-        EcsGitFetchPassThroughData.builder()
-            .infrastructureOutcome(infrastructureOutcome)
+        ecsGitFetchPassThroughDataBuilder.infrastructureOutcome(infrastructureOutcome)
             .taskDefinitionHarnessFileContent(ecsTaskDefinitionFileContent)
             .serviceDefinitionHarnessFileContent(ecsServiceDefinitionFileContent)
             .scalableTargetHarnessFileContentList(ecsScalableTargetFileContentList)
@@ -640,8 +643,13 @@ public class EcsStepCommonHelper extends EcsStepUtils {
       ecsTaskDefinitionFileContent = ecsGitFetchPassThroughData.getTaskDefinitionHarnessFileContent();
     }
 
-    long timeStamp = System.currentTimeMillis();
-    StringBuilder key = new StringBuilder().append(timeStamp).append("targetGroup");
+    StringBuilder key = new StringBuilder();
+    if (ecsGitFetchPassThroughData.getTargetGroupArnKey() != null) {
+      key = key.append(ecsGitFetchPassThroughData.getTargetGroupArnKey());
+    } else {
+      long timeStamp = System.currentTimeMillis();
+      key = key.append(timeStamp).append("targetGroup");
+    }
 
     // Get ecsServiceDefinitionFileContent from ecsGitFetchResponse
     FetchFilesResult ecsServiceDefinitionFetchFileResult =

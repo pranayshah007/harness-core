@@ -46,6 +46,7 @@ import io.harness.delegate.beans.azure.response.AzureDeploymentSlotResponse;
 import io.harness.delegate.beans.azure.response.AzureDeploymentSlotsResponse;
 import io.harness.delegate.beans.azure.response.AzureHostResponse;
 import io.harness.delegate.beans.azure.response.AzureHostsResponse;
+import io.harness.delegate.beans.azure.response.AzureImageGalleriesResponse;
 import io.harness.delegate.beans.azure.response.AzureLocationsResponse;
 import io.harness.delegate.beans.azure.response.AzureMngGroupsResponse;
 import io.harness.delegate.beans.azure.response.AzureRegistriesResponse;
@@ -177,7 +178,24 @@ public class AzureAsyncTaskHelper {
 
     return response;
   }
+  public AzureImageGalleriesResponse listImageGalleries(List<EncryptedDataDetail> encryptionDetails,
+      AzureConnectorDTO azureConnector, String subscriptionId, String resourceGroup) {
+    log.info(format("Fetching Azure image galleries for subscription %s for %s user type", subscriptionId,
+        azureConnector.getCredential().getAzureCredentialType().getDisplayName()));
 
+    log.trace(format("User: \n%s", azureConnector.toString()));
+    AzureConfig azureConfig = AcrRequestResponseMapper.toAzureInternalConfig(azureConnector.getCredential(),
+        encryptionDetails, azureConnector.getCredential().getAzureCredentialType(),
+        azureConnector.getAzureEnvironmentType(), secretDecryptionService);
+    AzureImageGalleriesResponse response;
+    response =
+        AzureImageGalleriesResponse.builder()
+            .azureImageGalleries(azureComputeClient.listImageGalleries(azureConfig, subscriptionId, resourceGroup))
+            .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+            .build();
+
+    return response;
+  }
   public AzureWebAppNamesResponse listWebAppNames(List<EncryptedDataDetail> encryptionDetails,
       AzureConnectorDTO azureConnector, String subscriptionId, String resourceGroup) {
     AzureConfig azureConfig = AcrRequestResponseMapper.toAzureInternalConfig(azureConnector.getCredential(),

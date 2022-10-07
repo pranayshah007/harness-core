@@ -132,10 +132,14 @@ import io.harness.observer.consumer.AbstractRemoteObserverModule;
 import io.harness.outbox.OutboxEventPollService;
 import io.harness.persistence.HPersistence;
 import io.harness.pms.contracts.execution.events.OrchestrationEventType;
+import io.harness.pms.contracts.plan.ExpansionRequestType;
 import io.harness.pms.contracts.plan.JsonExpansionInfo;
+import io.harness.pms.contracts.steps.StepCategory;
+import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.events.base.PipelineEventConsumerController;
 import io.harness.pms.expressions.functors.ImagePullSecretFunctor;
 import io.harness.pms.expressions.functors.InstanceFunctor;
+import io.harness.pms.governance.EnvironmentExpansionHandler;
 import io.harness.pms.governance.EnvironmentRefExpansionHandler;
 import io.harness.pms.governance.ServiceRefExpansionHandler;
 import io.harness.pms.listener.NgOrchestrationNotifyEventListener;
@@ -689,15 +693,33 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
                                                          .jsonExpansionInfo(serviceRefInfo)
                                                          .expansionHandler(ServiceRefExpansionHandler.class)
                                                          .build();
+
     JsonExpansionInfo envRefInfo =
-        JsonExpansionInfo.newBuilder().setKey(YamlTypes.ENVIRONMENT_REF).setExpansionType(KEY).build();
+        JsonExpansionInfo.newBuilder()
+            .setKey("stage/spec/infrastructure/environmentRef")
+            .setExpansionType(ExpansionRequestType.LOCAL_FQN)
+            .setStageType(StepType.newBuilder().setStepCategory(StepCategory.STAGE).setType("Deployment").build())
+            .build();
     JsonExpansionHandlerInfo envRefHandlerInfo = JsonExpansionHandlerInfo.builder()
                                                      .jsonExpansionInfo(envRefInfo)
                                                      .expansionHandler(EnvironmentRefExpansionHandler.class)
                                                      .build();
+
+    JsonExpansionInfo envInfo =
+        JsonExpansionInfo.newBuilder()
+            .setKey("stage/spec/environment")
+            .setExpansionType(ExpansionRequestType.LOCAL_FQN)
+            .setStageType(StepType.newBuilder().setStepCategory(StepCategory.STAGE).setType("Deployment").build())
+            .build();
+    JsonExpansionHandlerInfo envHandlerInfo = JsonExpansionHandlerInfo.builder()
+                                                  .jsonExpansionInfo(envInfo)
+                                                  .expansionHandler(EnvironmentExpansionHandler.class)
+                                                  .build();
+
     jsonExpansionHandlers.add(connRefHandlerInfo);
     jsonExpansionHandlers.add(serviceRefHandlerInfo);
     jsonExpansionHandlers.add(envRefHandlerInfo);
+    jsonExpansionHandlers.add(envHandlerInfo);
     return jsonExpansionHandlers;
   }
 
