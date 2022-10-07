@@ -21,6 +21,7 @@ shared_dependencies = [
     "//950-telemetry:module",
     "//890-sm-core:module",
     "//910-delegate-service-driver:module",
+    "//925-delegate-service-contracts:module",
     "//930-ng-core-clients:module",
     "//940-feature-flag:module",
     "//940-primary-version-manager:module",

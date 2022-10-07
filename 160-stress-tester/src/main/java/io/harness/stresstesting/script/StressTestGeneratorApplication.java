@@ -10,7 +10,7 @@ package io.harness.stresstesting.script;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.govern.ProviderModule;
-import io.harness.serializer.DelegateServiceBeansRegistrars;
+import io.harness.serializer.DelegateServiceContractsRegistrars;
 import io.harness.serializer.KryoModule;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.serializer.ManagerRegistrars;
@@ -38,7 +38,7 @@ public class StressTestGeneratorApplication {
       @Singleton
       Set<Class<? extends KryoRegistrar> > registrars() {
         return ImmutableSet.<Class<? extends KryoRegistrar> >builder()
-            .addAll(DelegateServiceBeansRegistrars.kryoRegistrars)
+            .addAll(DelegateServiceContractsRegistrars.kryoRegistrars)
             .addAll(ManagerRegistrars.kryoRegistrars)
             .build();
       }
