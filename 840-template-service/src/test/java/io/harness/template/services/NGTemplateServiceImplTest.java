@@ -201,7 +201,7 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
     Call<RestResponse<Boolean>> ffCall = mock(Call.class);
     when(ffCall.execute()).thenReturn(Response.success(new RestResponse<>(false)));
 
-    when(featureFlagHelperService.isEnabled(ACCOUNT_ID, FeatureName.SERVICE_ENV_RECONCILIATION)).thenReturn(false);
+    when(featureFlagHelperService.isEnabled(ACCOUNT_ID, FeatureName.CD_SERVICE_ENV_RECONCILIATION)).thenReturn(false);
   }
 
   @Test
