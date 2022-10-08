@@ -99,7 +99,7 @@ public class CustomApprovalCallbackTest extends CategoryTest {
   public void setup() {
     customApprovalCallback = spy(CustomApprovalCallback.builder().approvalInstanceId(APPROVAL_INSTANCE_ID).build());
     on(customApprovalCallback).set("logStreamingStepClientFactory", logStreamingStepClientFactory);
-    on(customApprovalCallback).set("kryoSerializer", kryoSerializerWrapper);
+    on(customApprovalCallback).set("kryoSerializerWrapper", kryoSerializerWrapper);
     on(customApprovalCallback).set("shellScriptHelperService", shellScriptHelperService);
     on(customApprovalCallback).set("customApprovalInstanceHandler", customApprovalInstanceHandler);
     on(customApprovalCallback).set("approvalInstanceService", approvalInstanceService);

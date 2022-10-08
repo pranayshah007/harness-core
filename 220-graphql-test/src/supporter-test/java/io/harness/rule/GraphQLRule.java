@@ -13,6 +13,8 @@ import static io.harness.logging.LoggingInitializer.initializeLogging;
 
 import static org.mockito.Mockito.mock;
 
+import com.google.inject.Provider;
+import com.google.inject.name.Named;
 import io.harness.AccessControlClientConfiguration;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -47,7 +49,9 @@ import io.harness.observer.consumer.AbstractRemoteObserverModule;
 import io.harness.redis.RedisConfig;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.security.DelegateTokenAuthenticator;
+import io.harness.serializer.KryoModule;
 import io.harness.serializer.KryoRegistrar;
+import io.harness.serializer.KryoSerializer;
 import io.harness.serializer.ManagerRegistrars;
 import io.harness.serializer.kryo.TestManagerKryoRegistrar;
 import io.harness.service.DelegateServiceModule;
@@ -330,6 +334,7 @@ public class GraphQLRule implements MethodRule, InjectorRuleMixin, MongoRuleMixi
     modules.add(new AuthModule());
     modules.add(new SSOModule());
     modules.add(new SignupModule());
+    modules.add(KryoModule.getInstance());
     modules.add(new GcpMarketplaceIntegrationModule());
     return modules;
   }

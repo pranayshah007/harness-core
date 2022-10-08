@@ -80,7 +80,7 @@ public class ServiceNowApprovalCallbackTest extends CategoryTest {
     serviceNowApprovalCallback = spy(ServiceNowApprovalCallback.builder().build());
     on(serviceNowApprovalCallback).set("approvalInstanceService", approvalInstanceService);
     on(serviceNowApprovalCallback).set("logStreamingStepClientFactory", logStreamingStepClientFactory);
-    on(serviceNowApprovalCallback).set("kryoSerializer", kryoSerializerWrapper);
+    on(serviceNowApprovalCallback).set("kryoSerializerWrapper", kryoSerializerWrapper);
     on(serviceNowApprovalCallback).set("ngErrorHelper", ngErrorHelper);
   }
 

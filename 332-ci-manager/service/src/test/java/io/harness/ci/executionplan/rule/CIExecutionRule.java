@@ -70,6 +70,7 @@ import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.rule.Cache;
 import io.harness.rule.InjectorRuleMixin;
 import io.harness.secrets.SecretDecryptor;
+import io.harness.serializer.KryoModule;
 import io.harness.service.ScmServiceClient;
 import io.harness.springdata.SpringPersistenceTestModule;
 import io.harness.testlib.module.MongoRuleMixin;
@@ -288,6 +289,7 @@ public class CIExecutionRule implements MethodRule, InjectorRuleMixin, MongoRule
       }
     });
     modules.add(PmsSdkModule.getInstance(getPmsSdkConfiguration()));
+    modules.add(KryoModule.getInstance());
     return modules;
   }
 

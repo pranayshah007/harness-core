@@ -77,8 +77,7 @@ public class DeploymentStagePMSPlanCreatorV2Test extends CDNGTestBase {
   @Before
   public void setUp() throws Exception {
     mocks = MockitoAnnotations.openMocks(this);
-
-    Reflect.on(deploymentStagePMSPlanCreator).set("kryoSerializer", kryoSerializerWrapper);
+    Reflect.on(deploymentStagePMSPlanCreator).set("kryoSerializerWrapper", kryoSerializerWrapper);
   }
 
   @After

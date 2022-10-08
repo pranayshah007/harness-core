@@ -94,7 +94,7 @@ public class K8ActivityCollectionPerpetualTaskExecutorTest extends DelegateTestB
     when(apiClient.setVerifyingSsl(anyBoolean())).thenReturn(apiClient);
     when(apiClient.escapeString(anyString())).thenReturn(generateUuid());
     when(apiClientFactory.getClient(any())).thenReturn(apiClient);
-    on(dataCollector).set("kryoSerializer", kryoSerializerWrapper);
+    on(dataCollector).set("kryoSerializerWrapper", kryoSerializerWrapper);
     accountId = generateUuid();
 
     SecretRefData secretRefData = SecretRefData.builder()

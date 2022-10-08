@@ -91,7 +91,7 @@ public class ContainerInstanceSyncPerpetualTaskExecutorTest extends DelegateTest
 
   @Before
   public void setup() {
-    on(executor).set("kryoSerializer", kryoSerializerWrapper);
+    on(executor).set("kryoSerializerWrapper", kryoSerializerWrapper);
   }
 
   @Test

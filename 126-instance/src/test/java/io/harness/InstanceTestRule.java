@@ -20,6 +20,7 @@ import io.harness.mongo.MongoPersistence;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.persistence.HPersistence;
 import io.harness.rule.InjectorRuleMixin;
+import io.harness.serializer.KryoModule;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.serializer.ManagerRegistrars;
 import io.harness.service.instance.InstanceService;
@@ -73,6 +74,7 @@ public class InstanceTestRule implements InjectorRuleMixin, MethodRule, MongoRul
         bind(InstanceService.class).to(InstanceServiceImpl.class);
         install(new MetricsModule());
         install(new InstanceSyncMonitoringModule());
+        install(KryoModule.getInstance());
       }
     });
 

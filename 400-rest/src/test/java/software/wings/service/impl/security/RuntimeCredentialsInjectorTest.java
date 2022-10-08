@@ -56,7 +56,7 @@ public class RuntimeCredentialsInjectorTest extends WingsBaseTest {
   public void testUpdateRuntimeParameters_shouldSucceed() {
     SecretManagerConfig vaultConfig = VaultConfig.builder().build();
     VaultServiceImpl spyVaultService = spy(vaultService);
-    Reflect.on(spyVaultService).set("kryoSerializer", kryoSerializerWrapper);
+    Reflect.on(spyVaultService).set("kryoSerializerWrapper", kryoSerializerWrapper);
     vaultConfig.setTemplatizedFields(Lists.newArrayList("authToken"));
 
     doReturn("vaultId").when(spyVaultService).updateVaultConfig(any(), any(), anyBoolean(), anyBoolean());
@@ -74,7 +74,7 @@ public class RuntimeCredentialsInjectorTest extends WingsBaseTest {
   public void testUpdateRuntimeParameters_shouldFailDueToSecretManagerNotTemplatized() {
     SecretManagerConfig vaultConfig = VaultConfig.builder().build();
     VaultServiceImpl spyVaultService = spy(vaultService);
-    Reflect.on(spyVaultService).set("kryoSerializer", kryoSerializerWrapper);
+    Reflect.on(spyVaultService).set("kryoSerializerWrapper", kryoSerializerWrapper);
 
     Optional<SecretManagerConfig> updatedVaultConfig = spyVaultService.updateRuntimeCredentials(
         vaultConfig, Maps.newHashMap(ImmutableMap.of("authToken", "abcde")), true);

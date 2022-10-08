@@ -834,7 +834,7 @@ public class ApprovalStateTest extends WingsBaseTest {
     when(context.renderExpression(any(), any(StateExecutionContext.class)))
         .thenAnswer(invocationOnMock -> invocationOnMock.getArgument(0, String.class));
     when(context.prepareSweepingOutputBuilder(any())).thenReturn(SweepingOutputInstance.builder());
-    Reflect.on(approvalState).set("kryoSerializer", kryoSerializerWrapper);
+    Reflect.on(approvalState).set("kryoSerializerWrapper", kryoSerializerWrapper);
     approvalState.setSweepingOutputName("test");
     approvalState.setVariables(asList(NameValuePair.builder().name("test").value("test").valueType("TEXT").build()));
     verifyUserGroupSweepingOutput();

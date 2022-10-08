@@ -65,7 +65,7 @@ public class AzureVMSSInstanceSyncDelegateExecutorTest extends DelegateTestBase 
 
   @Before
   public void setUp() {
-    on(executor).set("kryoSerializer", kryoSerializerWrapper);
+    on(executor).set("kryoSerializerWrapper", kryoSerializerWrapper);
     when(mockDelegateAgentManagerClient.publishInstanceSyncResult(
              anyString(), anyString(), any(DelegateResponseData.class)))
         .thenReturn(mockCall);

@@ -95,7 +95,7 @@ public class DataCollectionPerpetualTaskExecutorTest extends DelegateTestBase {
 
   @Before
   public void setup() throws IllegalAccessException, IOException {
-    on(dataCollector).set("kryoSerializer", kryoSerializerWrapper);
+    on(dataCollector).set("kryoSerializerWrapper", kryoSerializerWrapper);
     cvngRequestExecutor = new CVNGRequestExecutor();
     FieldUtils.writeField(dataCollector, "cvngRequestExecutor", cvngRequestExecutor, true);
     FieldUtils.writeField(cvngRequestExecutor, "executorService", Executors.newFixedThreadPool(1), true);

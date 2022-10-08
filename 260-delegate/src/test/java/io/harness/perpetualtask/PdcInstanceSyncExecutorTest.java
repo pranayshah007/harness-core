@@ -63,7 +63,7 @@ public class PdcInstanceSyncExecutorTest extends DelegateTestBase {
 
   @Before
   public void setUp() throws IOException {
-    on(pdcInstanceSyncExecutor).set("kryoSerializer", kryoSerializerWrapper);
+    on(pdcInstanceSyncExecutor).set("kryoSerializerWrapper", kryoSerializerWrapper);
     doReturn(call)
         .when(delegateAgentManagerClient)
         .publishInstanceSyncResult(any(), any(), perpetualTaskResponseCaptor.capture());

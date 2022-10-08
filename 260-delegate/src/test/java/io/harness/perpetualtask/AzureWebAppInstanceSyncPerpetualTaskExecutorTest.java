@@ -92,7 +92,7 @@ public class AzureWebAppInstanceSyncPerpetualTaskExecutorTest extends DelegateTe
 
   @Before
   public void setUp() throws IOException {
-    on(azureWebAppInstanceSyncPerpetualTaskExecutor).set("kryoSerializer", kryoSerializerWrapper);
+    on(azureWebAppInstanceSyncPerpetualTaskExecutor).set("kryoSerializerWrapper", kryoSerializerWrapper);
     doReturn(call)
         .when(delegateAgentManagerClient)
         .processInstanceSyncNGResult(anyString(), anyString(), perpetualTaskResponseCaptor.capture());

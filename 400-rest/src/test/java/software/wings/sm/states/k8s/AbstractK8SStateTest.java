@@ -326,7 +326,7 @@ public class AbstractK8SStateTest extends WingsBaseTest {
     on(k8sRollingDeploy).set("workflowStandardParamsExtensionService", workflowStandardParamsExtensionService);
     on(k8sCanaryDeploy).set("workflowStandardParamsExtensionService", workflowStandardParamsExtensionService);
 
-    on(abstractK8SState).set("kryoSerializer", kryoSerializerWrapper);
+    on(abstractK8SState).set("kryoSerializerWrapper", kryoSerializerWrapper);
     on(abstractK8SState).set("sweepingOutputService", sweepingOutputService);
     on(abstractK8SState).set("applicationManifestService", applicationManifestService);
     on(abstractK8SState).set("k8sStateHelper", k8sStateHelper);

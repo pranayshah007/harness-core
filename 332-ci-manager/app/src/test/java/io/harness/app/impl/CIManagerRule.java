@@ -45,6 +45,7 @@ import io.harness.rule.Cache;
 import io.harness.rule.InjectorRuleMixin;
 import io.harness.serializer.CiBeansRegistrars;
 import io.harness.serializer.ConnectorNextGenRegistrars;
+import io.harness.serializer.KryoModule;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.serializer.PersistenceRegistrars;
 import io.harness.serializer.PrimaryVersionManagerRegistrars;
@@ -94,6 +95,7 @@ public class CIManagerRule implements MethodRule, InjectorRuleMixin, MongoRuleMi
     List<Module> modules = new ArrayList<>();
     modules.add(YamlSdkModule.getInstance());
     modules.add(PrimaryVersionManagerModule.getInstance());
+    modules.add(KryoModule.getInstance());
     modules.add(new ProviderModule() {
       @Provides
       @Singleton

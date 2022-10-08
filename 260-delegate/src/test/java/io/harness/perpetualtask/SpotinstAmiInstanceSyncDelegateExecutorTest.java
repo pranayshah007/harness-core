@@ -74,7 +74,7 @@ public class SpotinstAmiInstanceSyncDelegateExecutorTest extends DelegateTestBas
 
   @Before
   public void setUp() {
-    on(executor).set("kryoSerializer", kryoSerializerWrapper);
+    on(executor).set("kryoSerializerWrapper", kryoSerializerWrapper);
     when(
         delegateAgentManagerClient.publishInstanceSyncResult(anyString(), anyString(), any(DelegateResponseData.class)))
         .thenReturn(call);

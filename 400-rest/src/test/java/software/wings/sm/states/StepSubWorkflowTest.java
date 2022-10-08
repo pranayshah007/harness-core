@@ -120,7 +120,7 @@ public class StepSubWorkflowTest extends WingsBaseTest {
     phaseStepSubWorkflow.setStepsInParallel(true);
     phaseStepSubWorkflow.setDefaultFailureStrategy(true);
     Reflect.on(phaseStepSubWorkflow).set("featureFlagService", featureFlagService);
-    Reflect.on(phaseStepSubWorkflow).set("kryoSerializer", kryoSerializerWrapper);
+    Reflect.on(phaseStepSubWorkflow).set("kryoSerializerWrapper", kryoSerializerWrapper);
     when(featureFlagService.isEnabled(any(), any())).thenReturn(false);
     doReturn(ACCOUNT_ID).when(context).getAccountId();
 
@@ -160,7 +160,7 @@ public class StepSubWorkflowTest extends WingsBaseTest {
     PhaseStepSubWorkflow phaseStepSubWorkflow = new PhaseStepSubWorkflow(PHASE_STEP);
     phaseStepSubWorkflow.setPhaseStepType(PhaseStepType.CONTAINER_DEPLOY);
     Reflect.on(phaseStepSubWorkflow).set("featureFlagService", featureFlagService);
-    Reflect.on(phaseStepSubWorkflow).set("kryoSerializer", kryoSerializerWrapper);
+    Reflect.on(phaseStepSubWorkflow).set("kryoSerializerWrapper", kryoSerializerWrapper);
     when(featureFlagService.isEnabled(any(), any())).thenReturn(false);
     doReturn(ACCOUNT_ID).when(context).getAccountId();
 

@@ -68,7 +68,7 @@ public class AzureWebAppInstanceSyncDelegateExecutorTest extends DelegateTestBas
 
   @Before
   public void setUp() throws IOException {
-    on(executor).set("kryoSerializer", kryoSerializerWrapper);
+    on(executor).set("kryoSerializerWrapper", kryoSerializerWrapper);
     when(mockDelegateAgentManagerClient.publishInstanceSyncResult(
              anyString(), anyString(), any(DelegateResponseData.class)))
         .thenReturn(mockCall);

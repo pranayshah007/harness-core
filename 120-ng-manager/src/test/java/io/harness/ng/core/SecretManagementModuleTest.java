@@ -16,6 +16,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.MockitoAnnotations.initMocks;
 
+import com.google.inject.Provider;
 import io.harness.CategoryTest;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.account.AccountClient;
@@ -51,6 +52,7 @@ import io.harness.rule.Owner;
 import io.harness.secretmanagerclient.SecretManagementClientModule;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.serializer.KryoRegistrar;
+import io.harness.serializer.KryoSerializer;
 import io.harness.serializer.NextGenRegistrars;
 import io.harness.service.DelegateGrpcClientWrapper;
 import io.harness.template.remote.TemplateResourceClient;
@@ -263,6 +265,23 @@ public class SecretManagementModuleTest extends CategoryTest {
       @Singleton
       TemplateResourceClient getTemplateResourceClient() {
         return mock(TemplateResourceClient.class);
+      }
+    });
+    modules.add(new ProviderModule() {
+      @Provides
+      @Named("referenceFalseKryoSerializer")
+      @Singleton
+      KryoSerializer getKryoSerializer(Provider<Set<Class<? extends KryoRegistrar>>> provider) {
+        return new KryoSerializer(provider.get(), false, false);
+      }
+    });
+
+    modules.add(new ProviderModule() {
+      @Provides
+      @Named("referenceTrueKryoSerializer")
+      @Singleton
+      KryoSerializer getKryoSerializer(Provider<Set<Class<? extends KryoRegistrar>>> provider) {
+        return new KryoSerializer(provider.get(), false, false);
       }
     });
 

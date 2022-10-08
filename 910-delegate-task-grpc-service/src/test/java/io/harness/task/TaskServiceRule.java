@@ -12,6 +12,7 @@ import io.harness.factory.ClosingFactoryModule;
 import io.harness.govern.ProviderModule;
 import io.harness.govern.ServersModule;
 import io.harness.rule.InjectorRuleMixin;
+import io.harness.serializer.KryoModule;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.serializer.kryo.DelegateTasksBeansKryoRegister;
 import io.harness.threading.CurrentThreadExecutor;
@@ -82,6 +83,7 @@ public class TaskServiceRule implements MethodRule, InjectorRuleMixin {
         bind(TaskServiceTestHelper.class).in(Singleton.class);
       }
     });
+    modules.add(KryoModule.getInstance());
     return modules;
   }
 

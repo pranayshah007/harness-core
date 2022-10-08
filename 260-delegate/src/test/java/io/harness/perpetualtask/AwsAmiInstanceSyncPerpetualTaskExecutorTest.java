@@ -71,7 +71,7 @@ public class AwsAmiInstanceSyncPerpetualTaskExecutorTest extends DelegateTestBas
 
   @Before
   public void setup() {
-    on(executor).set("kryoSerializer", kryoSerializerWrapper);
+    on(executor).set("kryoSerializerWrapper", kryoSerializerWrapper);
   }
 
   @Test

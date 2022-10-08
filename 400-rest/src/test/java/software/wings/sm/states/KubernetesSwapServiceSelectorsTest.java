@@ -104,7 +104,7 @@ public class KubernetesSwapServiceSelectorsTest extends WingsBaseTest {
   @Owner(developers = ANSHUL)
   @Category(UnitTests.class)
   public void testHandleAsyncResponse() {
-    on(kubernetesSwapServiceSelectors).set("kryoSerializer", kryoSerializerWrapper);
+    on(kubernetesSwapServiceSelectors).set("kryoSerializerWrapper", kryoSerializerWrapper);
 
     KubernetesSwapServiceSelectorsResponse kubernetesSwapServiceSelectorsResponse =
         KubernetesSwapServiceSelectorsResponse.builder().executionStatus(ExecutionStatus.SUCCESS).build();

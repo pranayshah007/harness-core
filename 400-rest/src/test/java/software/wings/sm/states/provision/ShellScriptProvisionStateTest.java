@@ -117,7 +117,7 @@ public class ShellScriptProvisionStateTest extends WingsBaseTest {
 
   @Before
   public void setUp() throws Exception {
-    Reflect.on(state).set("kryoSerializer", kryoSerializerWrapper);
+    Reflect.on(state).set("kryoSerializerWrapper", kryoSerializerWrapper);
     state.setProvisionerId(PROVISIONER_ID);
     doReturn(logCallback)
         .when(infrastructureProvisionerService)

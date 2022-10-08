@@ -186,7 +186,7 @@ public class TriggerFilePathConditionFilterTest extends CategoryTest {
     on(filter).set("scmFilePathEvaluatorFactory", scmFilePathEvaluatorFactory);
     on(scmFilePathEvaluatorOnManager).set("secretDecryptor", secretDecryptor);
     on(scmFilePathEvaluatorOnDelegate).set("taskExecutionUtils", taskExecutionUtils);
-    on(scmFilePathEvaluatorOnDelegate).set("kryoSerializer", kryoSerializerWrapper);
+    on(scmFilePathEvaluatorOnDelegate).set("kryoSerializerWrapper", kryoSerializerWrapper);
   }
 
   @Test

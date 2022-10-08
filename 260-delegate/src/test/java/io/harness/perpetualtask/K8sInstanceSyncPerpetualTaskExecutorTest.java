@@ -83,7 +83,7 @@ public class K8sInstanceSyncPerpetualTaskExecutorTest extends DelegateTestBase {
 
   @Before
   public void setUp() throws IOException {
-    on(k8sInstanceSyncPerpetualTaskExecutor).set("kryoSerializer", kryoSerializerWrapper);
+    on(k8sInstanceSyncPerpetualTaskExecutor).set("kryoSerializerWrapper", kryoSerializerWrapper);
     doReturn(call)
         .when(delegateAgentManagerClient)
         .processInstanceSyncNGResult(anyString(), anyString(), perpetualTaskResponseCaptor.capture());

@@ -85,7 +85,7 @@ public class JiraApprovalCallbackTest extends CategoryTest {
     jiraApprovalCallback = spy(JiraApprovalCallback.builder().build());
     on(jiraApprovalCallback).set("approvalInstanceService", approvalInstanceService);
     on(jiraApprovalCallback).set("logStreamingStepClientFactory", logStreamingStepClientFactory);
-    on(jiraApprovalCallback).set("kryoSerializer", kryoSerializerWrapper);
+    on(jiraApprovalCallback).set("kryoSerializerWrapper", kryoSerializerWrapper);
     on(jiraApprovalCallback).set("ngErrorHelper", ngErrorHelper);
   }
 

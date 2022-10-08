@@ -71,7 +71,7 @@ public class AwsCodeDeployInstanceSyncExecutorTest extends DelegateTestBase {
 
   @Before
   public void setup() throws IOException {
-    on(executor).set("kryoSerializer", kryoSerializerWrapper);
+    on(executor).set("kryoSerializerWrapper", kryoSerializerWrapper);
 
     doReturn(singletonList(new Instance()))
         .when(ec2ServiceDelegate)

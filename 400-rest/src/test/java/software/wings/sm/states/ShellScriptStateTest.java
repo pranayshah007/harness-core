@@ -185,7 +185,7 @@ public class ShellScriptStateTest extends WingsBaseTest {
   @Owner(developers = AADITI)
   @Category(UnitTests.class)
   public void shouldHandleAsyncResponseOnShellScriptSuccessAndSaveSweepingOutput() {
-    Reflect.on(shellScriptState).set("kryoSerializer", kryoSerializerWrapper);
+    Reflect.on(shellScriptState).set("kryoSerializerWrapper", kryoSerializerWrapper);
     when(executionContext.getStateExecutionData())
         .thenReturn(ScriptStateExecutionData.builder().activityId(ACTIVITY_ID).build());
     when(executionContext.prepareSweepingOutputBuilder(any(SweepingOutputInstance.Scope.class)))

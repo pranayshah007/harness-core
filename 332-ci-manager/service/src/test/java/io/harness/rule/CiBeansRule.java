@@ -9,6 +9,7 @@ package io.harness.rule;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 
+import com.google.inject.Provider;
 import io.harness.CIBeansModule;
 import io.harness.callback.DelegateCallbackToken;
 import io.harness.ci.config.CIExecutionServiceConfig;
@@ -22,6 +23,7 @@ import io.harness.morphia.MorphiaRegistrar;
 import io.harness.serializer.CiBeansRegistrars;
 import io.harness.serializer.KryoModule;
 import io.harness.serializer.KryoRegistrar;
+import io.harness.serializer.KryoSerializer;
 import io.harness.testing.ComponentTestsModule;
 import io.harness.testlib.module.MongoRuleMixin;
 import io.harness.threading.CurrentThreadExecutor;
@@ -160,6 +162,23 @@ public class CiBeansRule implements MethodRule, InjectorRuleMixin, MongoRuleMixi
       @Singleton
       ObjectFactory objectFactory() {
         return new DefaultCreator();
+      }
+    });
+    modules.add(new ProviderModule() {
+      @Provides
+      @Named("referenceFalseKryoSerializer")
+      @Singleton
+      KryoSerializer getKryoSerializer(Provider<Set<Class<? extends KryoRegistrar>>> provider) {
+        return new KryoSerializer(provider.get(), false, false);
+      }
+    });
+
+    modules.add(new ProviderModule() {
+      @Provides
+      @Named("referenceTrueKryoSerializer")
+      @Singleton
+      KryoSerializer getKryoSerializer(Provider<Set<Class<? extends KryoRegistrar>>> provider) {
+        return new KryoSerializer(provider.get(), false, false);
       }
     });
     return modules;
