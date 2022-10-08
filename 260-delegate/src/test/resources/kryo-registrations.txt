@@ -1851,9 +1851,11 @@
 97017:io.harness.jira.JiraIssueTransitionsNG
 97018:io.harness.jira.JiraIssueUpdateMetadataNG
 97019:io.harness.jira.JiraUpdateIssueRequestNG
+97020:io.harness.jira.JiraIssueCreateMetadataNGIssueTypes
 97021:io.harness.globalcontex.EntityOperationIdentifier
 97022:io.harness.globalcontex.EntityOperationIdentifier.EntityOperation
 97023:io.harness.pcf.model.CfCliVersion
+97024:io.harness.jira.JiraIssueCreateMetadataNGFields
 97031:io.harness.k8s.model.KubernetesResourceId
 97032:io.harness.exception.HelmClientException
 97033:io.harness.helm.HelmCliCommandType

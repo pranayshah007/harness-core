@@ -11,9 +11,10 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
-import io.harness.jira.deserializer.JiraProjectDeserializer;
+import io.harness.jira.deserializer.JiraIssueCreateMetadataIssueTypesDeserializer;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -26,28 +27,21 @@ import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 
 @OwnedBy(CDC)
 @Data
 @NoArgsConstructor
-@EqualsAndHashCode(callSuper = true)
 @FieldDefaults(level = AccessLevel.PRIVATE)
+@JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonIgnoreProperties(ignoreUnknown = true)
-@JsonDeserialize(using = JiraProjectDeserializer.class)
-public class JiraProjectNG extends JiraProjectBasicNG {
-  @JsonProperty("issuetypes") @NotNull Map<String, JiraIssueTypeNG> issueTypes = new HashMap<>();
+@JsonDeserialize(using = JiraIssueCreateMetadataIssueTypesDeserializer.class)
+public class JiraIssueCreateMetadataNGIssueTypes {
+  @JsonProperty("values") @NotNull Map<String, JiraIssueTypeNG> issueTypes = new HashMap<>();
 
-  public JiraProjectNG(JsonNode node) {
-    super(node);
-    addIssueTypes(node.get("issuetypes"));
-  }
-
-  public JiraProjectNG(JiraIssueCreateMetadataNGIssueTypes jiraIssueCreateMetadataNGIssueTypes) {
-    jiraIssueCreateMetadataNGIssueTypes.getIssueTypes().values().forEach(
-        issueType -> this.issueTypes.put(issueType.getName(), issueType));
+  public JiraIssueCreateMetadataNGIssueTypes(JsonNode node) {
+    addIssueTypes(node.get("values"));
   }
 
   private void addIssueTypes(JsonNode node) {
@@ -56,9 +50,9 @@ public class JiraProjectNG extends JiraProjectBasicNG {
     }
 
     ArrayNode issueTypes = (ArrayNode) node;
-    issueTypes.forEach(it -> {
-      JiraIssueTypeNG issueType = new JiraIssueTypeNG(it);
-      this.issueTypes.put(issueType.getName(), issueType);
+    issueTypes.forEach(issueType -> {
+      JiraIssueTypeNG jiraIssueTypeNG = new JiraIssueTypeNG(issueType);
+      this.issueTypes.put(jiraIssueTypeNG.getName(), jiraIssueTypeNG);
     });
   }
 

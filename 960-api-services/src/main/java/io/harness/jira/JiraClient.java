@@ -19,6 +19,7 @@ import io.harness.network.Http;
 import io.harness.network.SafeHttpCall;
 import io.harness.validation.Validator;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -187,15 +188,36 @@ public class JiraClient {
    * @param ignoreComment should not fetch comment
    * @return the issue create metadata
    */
-  public JiraIssueCreateMetadataNG getIssueCreateMetadata(
-      String projectKey, String issueType, String expand, boolean fetchStatus, boolean ignoreComment) {
-    JiraIssueCreateMetadataNG createMetadata =
-        executeCall(restClient.getIssueCreateMetadata(EmptyPredicate.isEmpty(projectKey) ? null : projectKey,
-                        EmptyPredicate.isEmpty(issueType) ? null : issueType,
-                        EmptyPredicate.isEmpty(expand) ? "projects.issuetypes.fields" : expand),
-            "fetching create metadata");
-    if (!ignoreComment) {
-      createMetadata.addField(COMMENT_FIELD);
+  public JiraIssueCreateMetadataNG getIssueCreateMetadata(String projectKey, String issueType, String expand,
+      boolean fetchStatus, boolean ignoreComment, boolean ffEnabled) {
+    JiraIssueCreateMetadataNG createMetadata = new JiraIssueCreateMetadataNG();
+    JiraInstanceData jiraInstanceData = getInstanceData();
+    if (jiraInstanceData.deploymentType == JiraInstanceData.JiraDeploymentType.SERVER && ffEnabled) {
+      if (issueType == null) {
+        JiraIssueCreateMetadataNGIssueTypes createMetadataNGIssueTypes = executeCall(
+            restClient.getIssueCreateMetadataIssueTypes(EmptyPredicate.isEmpty(projectKey) ? null : projectKey),
+            "fetching create metadata V2");
+        originalMetadataFromNewIssueTypeMetadata(projectKey, createMetadata, createMetadataNGIssueTypes);
+      } else {
+        JiraIssueTypeNG issueTypeNG = getIssueTypeFromName(issueType, projectKey);
+        JiraIssueCreateMetadataNGFields createMetadataNGFields =
+            executeCall(restClient.getIssueCreateMetadataFields(EmptyPredicate.isEmpty(projectKey) ? null : projectKey,
+                            EmptyPredicate.isEmpty(issueTypeNG.getId()) ? null : issueTypeNG.getId()),
+                "fetching create metadata");
+        if (!ignoreComment) {
+          createMetadataNGFields.addField(COMMENT_FIELD);
+        }
+        originalMetadataFromNewFieldsMetadata(projectKey, createMetadata, issueTypeNG, createMetadataNGFields);
+      }
+    } else {
+      createMetadata =
+          executeCall(restClient.getIssueCreateMetadata(EmptyPredicate.isEmpty(projectKey) ? null : projectKey,
+                          EmptyPredicate.isEmpty(issueType) ? null : issueType,
+                          EmptyPredicate.isEmpty(expand) ? "projects.issuetypes.fields" : expand),
+              "fetching create metadata");
+      if (!ignoreComment) {
+        createMetadata.addField(COMMENT_FIELD);
+      }
     }
 
     if (fetchStatus) {
@@ -217,6 +239,34 @@ public class JiraClient {
     }
 
     return createMetadata;
+  }
+
+  @VisibleForTesting
+  void originalMetadataFromNewIssueTypeMetadata(String projectKey, JiraIssueCreateMetadataNG createMetadata,
+      JiraIssueCreateMetadataNGIssueTypes createMetadataNGIssueTypes) {
+    JiraProjectNG jiraProjectNG = new JiraProjectNG(createMetadataNGIssueTypes);
+    jiraProjectNG.setKey(projectKey);
+    Map<String, JiraProjectNG> projects = new HashMap<>();
+    projects.put(projectKey, jiraProjectNG);
+    createMetadata.setProjects(projects);
+  }
+
+  @VisibleForTesting
+  void originalMetadataFromNewFieldsMetadata(String projectKey, JiraIssueCreateMetadataNG createMetadata,
+      JiraIssueTypeNG issueTypeNG, JiraIssueCreateMetadataNGFields createMetadataNGFields) {
+    JiraIssueTypeNG jiraIssueTypeNG = new JiraIssueTypeNG(createMetadataNGFields);
+    jiraIssueTypeNG.setId(issueTypeNG.getId());
+    jiraIssueTypeNG.setName(issueTypeNG.getName());
+    jiraIssueTypeNG.setDescription(issueTypeNG.getDescription());
+    jiraIssueTypeNG.setSubTask(issueTypeNG.isSubTask());
+    Map<String, JiraIssueTypeNG> issueTypes = new HashMap<>();
+    issueTypes.put(jiraIssueTypeNG.getName(), jiraIssueTypeNG);
+    JiraProjectNG jiraProjectNG = new JiraProjectNG();
+    jiraProjectNG.setKey(projectKey);
+    jiraProjectNG.setIssueTypes(issueTypes);
+    Map<String, JiraProjectNG> projects = new HashMap<>();
+    projects.put(projectKey, jiraProjectNG);
+    createMetadata.setProjects(projects);
   }
 
   /**
@@ -273,8 +323,9 @@ public class JiraClient {
    * @return the created issue
    */
   public JiraIssueNG createIssue(@NotBlank String projectKey, @NotBlank String issueTypeName,
-      Map<String, String> fields, boolean checkRequiredFields) {
-    JiraIssueCreateMetadataNG createMetadata = getIssueCreateMetadata(projectKey, issueTypeName, null, false, false);
+      Map<String, String> fields, boolean checkRequiredFields, boolean ffEnabled) {
+    JiraIssueCreateMetadataNG createMetadata =
+        getIssueCreateMetadata(projectKey, issueTypeName, null, false, false, ffEnabled);
     JiraProjectNG project = createMetadata.getProjects().get(projectKey);
     if (project == null) {
       throw new InvalidRequestException(String.format("Invalid project: %s", projectKey));
@@ -448,5 +499,17 @@ public class JiraClient {
                             .addConverterFactory(JacksonConverterFactory.create())
                             .build();
     return retrofit.create(JiraRestClient.class);
+  }
+
+  private JiraIssueTypeNG getIssueTypeFromName(String issueTypeName, String projectKey) {
+    JiraIssueCreateMetadataNGIssueTypes createMetadataIssueTypes =
+        executeCall(restClient.getIssueCreateMetadataIssueTypes(EmptyPredicate.isEmpty(projectKey) ? null : projectKey),
+            "fetching create metadata V2");
+    JiraIssueTypeNG issueType = createMetadataIssueTypes.getIssueTypes().get(issueTypeName);
+    if (issueType == null) {
+      throw new InvalidRequestException(
+          String.format("Invalid issue type in project %s: %s", projectKey, issueTypeName));
+    }
+    return issueType;
   }
 }

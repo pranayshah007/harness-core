@@ -448,6 +448,7 @@ public enum FeatureName {
   WINRM_SCRIPT_COMMAND_SPLIT(
       "Enables the new way of how to copy powershell/winrm script commands content to file on remote. (Copy is done in chunks of 4KB) ",
       HarnessTeam.CDP),
+  SPG_USE_NEW_METADATA("To use new metadata endpoint for jira server version greater than 9.0", HarnessTeam.SPG),
   CD_SERVICE_ENV_RECONCILIATION("Do reconciliation of service and env on pipeline/template save", HarnessTeam.CDC),
   CD_TRIGGER_CATALOG("Enables UI for Trigger catalog for Nexus ", HarnessTeam.CDC),
   CDS_SHOW_CREATE_PR("Start showing CreatePR step on the plan creator if enabled", HarnessTeam.GITOPS);

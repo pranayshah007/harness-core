@@ -11,15 +11,15 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
-import io.harness.jackson.JsonNodeUtils;
-import io.harness.jira.deserializer.JiraIssueTypeDeserializer;
+import io.harness.exception.InvalidArgumentsException;
+import io.harness.jira.deserializer.JiraIssueCreateMetadataFieldsDeserializer;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -36,29 +36,37 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonIgnoreProperties(ignoreUnknown = true)
-@JsonDeserialize(using = JiraIssueTypeDeserializer.class)
-public class JiraIssueTypeNG {
-  @NotNull String id;
-  @NotNull String name;
-  String description;
-  boolean isSubTask;
+@JsonDeserialize(using = JiraIssueCreateMetadataFieldsDeserializer.class)
+public class JiraIssueCreateMetadataNGFields {
+  @JsonProperty("values") @NotNull Map<String, JiraFieldNG> fields = new HashMap<>();
   @NotNull List<JiraStatusNG> statuses = new ArrayList<>();
-  @NotNull Map<String, JiraFieldNG> fields = new HashMap<>();
+  private static final String REPORTER_FIELD = "reporter";
 
-  public JiraIssueTypeNG(JsonNode node) {
-    this.id = JsonNodeUtils.mustGetString(node, "id");
-    this.name = JsonNodeUtils.mustGetString(node, "name");
-    this.description = JsonNodeUtils.getString(node, "description");
-    this.isSubTask = JsonNodeUtils.getBoolean(node, "subtask", false);
+  public JiraIssueCreateMetadataNGFields(JsonNode node) {
     updateStatuses(node.get("statuses"));
-    addFields(node.get("fields"));
+    addFields(node.get("values"));
   }
 
-  public JiraIssueTypeNG(JiraIssueCreateMetadataNGFields jiraIssueCreateMetadataNGFields) {
-    this.statuses.addAll(jiraIssueCreateMetadataNGFields.getStatuses());
-    jiraIssueCreateMetadataNGFields.getFields().values().forEach(field -> this.fields.put(field.getName(), field));
-  }
+  private void addFields(JsonNode node) {
+    if (node == null || !node.isArray()) {
+      return;
+    }
 
+    ArrayNode fields = (ArrayNode) node;
+    JiraFieldNG.addStatusField(this.fields, statuses);
+    fields.forEach(field -> {
+      JiraFieldNG jiraFieldNG;
+      try {
+        jiraFieldNG = new JiraFieldNG(field.get("fieldId").asText(), field);
+      } catch (InvalidArgumentsException ignored) {
+        return;
+      }
+      if (jiraFieldNG.getKey().equals(REPORTER_FIELD)) {
+        return;
+      }
+      this.fields.put(jiraFieldNG.getName(), jiraFieldNG);
+    });
+  }
   private void updateStatuses(JsonNode node) {
     if (node == null || !node.isArray()) {
       return;
@@ -66,16 +74,6 @@ public class JiraIssueTypeNG {
 
     ArrayNode statuses = (ArrayNode) node;
     statuses.forEach(s -> this.statuses.add(new JiraStatusNG(s)));
-  }
-
-  private void addFields(JsonNode node) {
-    if (node == null || !node.isObject()) {
-      return;
-    }
-
-    ObjectNode fields = (ObjectNode) node;
-    JiraFieldNG.addStatusField(this.fields, statuses);
-    fields.fields().forEachRemaining(f -> JiraFieldNG.addFields(this.fields, f.getKey(), f.getValue()));
   }
 
   public void updateStatuses(List<JiraStatusNG> statuses) {
@@ -88,7 +86,6 @@ public class JiraIssueTypeNG {
     this.fields.remove(JiraConstantsNG.STATUS_NAME);
     JiraFieldNG.addStatusField(this.fields, statuses);
   }
-
   public void addField(JiraFieldNG field) {
     if (field != null) {
       this.fields.put(field.getName(), field);
