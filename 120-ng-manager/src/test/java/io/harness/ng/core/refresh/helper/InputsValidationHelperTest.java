@@ -12,7 +12,8 @@ import static io.harness.rule.OwnerRule.INDER;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.joor.Reflect.on;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
@@ -27,11 +28,13 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.entitysetupusage.service.EntitySetupUsageService;
 import io.harness.ng.core.environment.services.impl.EnvironmentServiceImpl;
 import io.harness.ng.core.infrastructure.services.impl.InfrastructureEntityServiceImpl;
+import io.harness.ng.core.refresh.bean.EntityRefreshContext;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.services.impl.ServiceEntityServiceImpl;
 import io.harness.ng.core.service.services.impl.ServiceEntitySetupUsageHelper;
 import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
 import io.harness.outbox.api.OutboxService;
+import io.harness.pms.yaml.YamlNode;
 import io.harness.repositories.environment.spring.EnvironmentRepository;
 import io.harness.repositories.infrastructure.spring.InfrastructureRepository;
 import io.harness.repositories.service.spring.ServiceRepository;
@@ -39,10 +42,10 @@ import io.harness.rule.Owner;
 import io.harness.setupusage.InfrastructureEntitySetupUsageHelper;
 import io.harness.template.beans.refresh.v2.InputsValidationResponse;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.io.Resources;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Collections;
 import java.util.Objects;
 import java.util.Optional;
 import org.junit.Before;
@@ -91,7 +94,6 @@ public class InputsValidationHelperTest extends NgManagerTestBase {
     on(inputsValidationHelper).set("serviceEntityService", serviceEntityService);
     on(inputsValidationHelper).set("entityFetchHelper", entityFetchHelper);
     on(inputsValidationHelper).set("environmentRefreshHelper", environmentRefreshHelper);
-    when(environmentRefreshHelper.isEnvironmentField(anyString(), any(JsonNode.class))).thenReturn(false);
   }
 
   private String readFile(String filename) {
@@ -107,12 +109,18 @@ public class InputsValidationHelperTest extends NgManagerTestBase {
   @Test
   @Owner(developers = INDER)
   @Category(UnitTests.class)
-  public void testValidateInputsForPipelineYamlWithValidService() {
+  public void testValidateInputsForPipelineYamlWithValidServiceServiceEnvironmentAndInfra() {
     String pipelineYmlWithService = readFile("pipeline-with-single-service.yaml");
     String serviceYaml = readFile("serverless-service-valid.yaml");
 
     when(serviceEntityService.get(ACCOUNT_ID, ORG_ID, PROJECT_ID, "serverless", false))
         .thenReturn(Optional.of(ServiceEntity.builder().yaml(serviceYaml).build()));
+    doReturn(null).when(environmentService).createEnvironmentInputsYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, "testenv");
+    doReturn("infrastructureDefinitions:\n"
+        + "  - identifier: \"infra2\"\n")
+        .when(infrastructureEntityService)
+        .createInfrastructureInputsFromYamlV2(
+            ACCOUNT_ID, ORG_ID, PROJECT_ID, "testenv", Collections.singletonList("infra2"), false);
 
     InputsValidationResponse validationResponse =
         inputsValidationHelper.validateInputsForYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYmlWithService, null);
@@ -125,6 +133,10 @@ public class InputsValidationHelperTest extends NgManagerTestBase {
   @Owner(developers = INDER)
   @Category(UnitTests.class)
   public void testValidateInputsForPipelineYamlWithInvalidServiceHavingFixedPrimaryArtifactRef() {
+    doNothing()
+        .when(environmentRefreshHelper)
+        .validateEnvironmentInputs(
+            any(YamlNode.class), any(EntityRefreshContext.class), any(InputsValidationResponse.class));
     String pipelineYmlWithService = readFile("pipeline-with-single-service.yaml");
     String serviceYaml = readFile("serverless-service.yaml");
 
@@ -142,6 +154,10 @@ public class InputsValidationHelperTest extends NgManagerTestBase {
   @Owner(developers = INDER)
   @Category(UnitTests.class)
   public void testValidateInputsForPipelineYamlWithServiceRuntimeAndServiceInputsFixed() {
+    doNothing()
+        .when(environmentRefreshHelper)
+        .validateEnvironmentInputs(
+            any(YamlNode.class), any(EntityRefreshContext.class), any(InputsValidationResponse.class));
     String pipelineYmlWithService = readFile("pipeline-with-svc-runtime-serviceInputs-fixed.yaml");
 
     InputsValidationResponse validationResponse =
@@ -155,6 +171,10 @@ public class InputsValidationHelperTest extends NgManagerTestBase {
   @Owner(developers = INDER)
   @Category(UnitTests.class)
   public void testValidateInputsForPipelineYamlWithPrimaryRefFixedAndSourcesRuntime() {
+    doNothing()
+        .when(environmentRefreshHelper)
+        .validateEnvironmentInputs(
+            any(YamlNode.class), any(EntityRefreshContext.class), any(InputsValidationResponse.class));
     String pipelineYmlWithService = readFile("pipeline-with-primaryRef-fixed-source-runtime.yaml");
     String serviceYaml = readFile("serverless-service.yaml");
 
@@ -172,6 +192,10 @@ public class InputsValidationHelperTest extends NgManagerTestBase {
   @Owner(developers = INDER)
   @Category(UnitTests.class)
   public void testValidateInputsForPipelineYamlWithServiceInputsEmptyInService() {
+    doNothing()
+        .when(environmentRefreshHelper)
+        .validateEnvironmentInputs(
+            any(YamlNode.class), any(EntityRefreshContext.class), any(InputsValidationResponse.class));
     String pipelineYmlWithService = readFile("pipeline-with-single-service.yaml");
     String serviceYaml = readFile("serverless-service-with-all-values-fixed.yaml");
 
@@ -189,6 +213,10 @@ public class InputsValidationHelperTest extends NgManagerTestBase {
   @Owner(developers = INDER)
   @Category(UnitTests.class)
   public void testValidateInputsForPipelineYamlWithServiceInputsEmptyInServiceAndNoServiceInputsInLinkedYaml() {
+    doNothing()
+        .when(environmentRefreshHelper)
+        .validateEnvironmentInputs(
+            any(YamlNode.class), any(EntityRefreshContext.class), any(InputsValidationResponse.class));
     String pipelineYmlWithService = readFile("pipeline-with-no-serviceInputs.yaml");
     String serviceYaml = readFile("serverless-service-with-all-values-fixed.yaml");
 
@@ -199,6 +227,101 @@ public class InputsValidationHelperTest extends NgManagerTestBase {
         inputsValidationHelper.validateInputsForYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYmlWithService, null);
     assertThat(validationResponse).isNotNull();
     assertThat(validationResponse.isValid()).isTrue();
+    assertThat(validationResponse.getChildrenErrorNodes()).isNullOrEmpty();
+  }
+
+  @Test
+  @Owner(developers = INDER)
+  @Category(UnitTests.class)
+  public void testValidateInputsForPipelineYamlWithEnvRefRuntimeButInfraDefsFixed() {
+    String pipelineYmlWithService = readFile("env/pipeline-with-env-ref-runtime-and-envInputs-infraDefs-fixed.yaml");
+    String serviceYaml = readFile("serverless-service-with-all-values-fixed.yaml");
+
+    when(serviceEntityService.get(ACCOUNT_ID, ORG_ID, PROJECT_ID, "serverless", false))
+        .thenReturn(Optional.of(ServiceEntity.builder().yaml(serviceYaml).build()));
+
+    InputsValidationResponse validationResponse =
+        inputsValidationHelper.validateInputsForYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYmlWithService, null);
+    assertThat(validationResponse).isNotNull();
+    assertThat(validationResponse.isValid()).isFalse();
+    assertThat(validationResponse.getChildrenErrorNodes()).isNullOrEmpty();
+  }
+
+  @Test
+  @Owner(developers = INDER)
+  @Category(UnitTests.class)
+  public void testValidateInputsForPipelineYamlWithEnvRefInfraDefsAndEnvInputsRuntime() {
+    String pipelineYmlWithService = readFile("env/pipeline-with-envRef-envInputs-infraDefs-runtime.yaml");
+    String serviceYaml = readFile("serverless-service-with-all-values-fixed.yaml");
+
+    when(serviceEntityService.get(ACCOUNT_ID, ORG_ID, PROJECT_ID, "serverless", false))
+        .thenReturn(Optional.of(ServiceEntity.builder().yaml(serviceYaml).build()));
+
+    InputsValidationResponse validationResponse =
+        inputsValidationHelper.validateInputsForYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYmlWithService, null);
+    assertThat(validationResponse).isNotNull();
+    assertThat(validationResponse.isValid()).isTrue();
+    assertThat(validationResponse.getChildrenErrorNodes()).isNullOrEmpty();
+  }
+
+  @Test
+  @Owner(developers = INDER)
+  @Category(UnitTests.class)
+  public void testValidateInputsForPipelineYamlWithEnvRefFixedAndEnvInputsIncorrect() {
+    String pipelineYmlWithService = readFile("env/pipeline-with-fixed-envRef-incorrect-envInputs.yaml");
+    String serviceYaml = readFile("serverless-service-with-all-values-fixed.yaml");
+
+    when(serviceEntityService.get(ACCOUNT_ID, ORG_ID, PROJECT_ID, "serverless", false))
+        .thenReturn(Optional.of(ServiceEntity.builder().yaml(serviceYaml).build()));
+    doReturn(null).when(environmentService).createEnvironmentInputsYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, "testenv");
+
+    InputsValidationResponse validationResponse =
+        inputsValidationHelper.validateInputsForYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYmlWithService, null);
+    assertThat(validationResponse).isNotNull();
+    assertThat(validationResponse.isValid()).isFalse();
+    assertThat(validationResponse.getChildrenErrorNodes()).isNullOrEmpty();
+  }
+
+  @Test
+  @Owner(developers = INDER)
+  @Category(UnitTests.class)
+  public void testValidateInputsForPipelineYamlWithEnvRefFixedAndInfraDefsIncorrect() {
+    String pipelineYmlWithService = readFile("env/pipeline-with-env-ref-fixed-and-infraDefs-incorrect.yaml");
+    String serviceYaml = readFile("serverless-service-with-all-values-fixed.yaml");
+
+    when(serviceEntityService.get(ACCOUNT_ID, ORG_ID, PROJECT_ID, "serverless", false))
+        .thenReturn(Optional.of(ServiceEntity.builder().yaml(serviceYaml).build()));
+    doReturn(null).when(environmentService).createEnvironmentInputsYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, "testenv");
+    doReturn("infrastructureDefinitions:\n"
+        + "- identifier: \"IDENTIFIER\"")
+        .when(infrastructureEntityService)
+        .createInfrastructureInputsFromYamlV2(
+            ACCOUNT_ID, ORG_ID, PROJECT_ID, "testenv", Collections.singletonList("IDENTIFIER"), false);
+
+    InputsValidationResponse validationResponse =
+        inputsValidationHelper.validateInputsForYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYmlWithService, null);
+    assertThat(validationResponse).isNotNull();
+    assertThat(validationResponse.isValid()).isFalse();
+    assertThat(validationResponse.getChildrenErrorNodes()).isNullOrEmpty();
+  }
+
+  @Test
+  @Owner(developers = INDER)
+  @Category(UnitTests.class)
+  public void testValidateInfraInTemplateInputsWithNoEnvRef() {
+    String templateWithInfraFixed = readFile("env/pipTemplate-with-infra-fixed.yaml");
+    String resolvedTemplateWithInfraFixed = readFile("env/pipTemplate-with-infra-fixed-resoved.yaml");
+
+    doReturn("infrastructureDefinitions:\n"
+        + "- identifier: \"infra1\"")
+        .when(infrastructureEntityService)
+        .createInfrastructureInputsFromYamlV2(
+            ACCOUNT_ID, ORG_ID, PROJECT_ID, "testenv", Collections.singletonList("infra1"), false);
+
+    InputsValidationResponse validationResponse = inputsValidationHelper.validateInputsForYaml(
+        ACCOUNT_ID, ORG_ID, PROJECT_ID, templateWithInfraFixed, resolvedTemplateWithInfraFixed);
+    assertThat(validationResponse).isNotNull();
+    assertThat(validationResponse.isValid()).isFalse();
     assertThat(validationResponse.getChildrenErrorNodes()).isNullOrEmpty();
   }
 }

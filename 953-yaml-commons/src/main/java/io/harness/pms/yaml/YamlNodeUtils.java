@@ -165,7 +165,7 @@ public class YamlNodeUtils {
       return findFieldNameInObject(yamlNode, fieldName);
     } else if (yamlNode.isArray()) {
       return findFieldNameInArray(yamlNode, fieldName);
-    } else if (fieldName.equals(yamlNode.asText())) {
+    } else if (fieldName.equals(yamlNode.getFieldName())) {
       return yamlNode;
     }
 
