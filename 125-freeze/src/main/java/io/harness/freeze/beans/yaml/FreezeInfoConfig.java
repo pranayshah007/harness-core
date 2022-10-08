@@ -44,7 +44,7 @@ public class FreezeInfoConfig {
   String orgIdentifier;
   String projectIdentifier;
 
-  @JsonProperty("status") FreezeStatus status;
+  @NotNull @JsonProperty("status") FreezeStatus status;
 
   @JsonProperty("windows") List<FreezeWindow> windows;
 

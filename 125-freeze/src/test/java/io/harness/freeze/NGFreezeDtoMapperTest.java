@@ -91,13 +91,12 @@ public class NGFreezeDtoMapperTest extends CategoryTest {
   @Owner(developers = ABHINAV_MITTAL)
   @Category(UnitTests.class)
   public void testToTemplateDto1() {
-    FreezeConfig freezeConfig = new FreezeConfig();
-    FreezeInfoConfig freezeInfoConfig = FreezeInfoConfig.builder().identifier("id").name("name").build();
+    FreezeInfoConfig freezeInfoConfig =
+        FreezeInfoConfig.builder().identifier("id").name("name").status(FreezeStatus.ENABLED).build();
     List<EntityConfig> entities = new LinkedList<>();
     List<FreezeEntityRule> freezeEntityRules = new LinkedList<>();
     FreezeEntityRule freezeEntityRule = new FreezeEntityRule();
     List<FreezeWindow> windows = new LinkedList<>();
-    freezeInfoConfig.setStatus(FreezeStatus.ENABLED);
     freezeInfoConfig.setDescription(ParameterField.<String>builder().value("desc").build());
     //    freezeInfoConfig.setOrgIdentifier("oId");
     //    freezeInfoConfig.setProjectIdentifier("pId");
@@ -110,6 +109,8 @@ public class NGFreezeDtoMapperTest extends CategoryTest {
     entities.add(entity);
     freezeEntityRule.setEntityConfigList(entities);
     freezeEntityRules.add(freezeEntityRule);
+
+    FreezeConfig freezeConfig = FreezeConfig.builder().freezeInfoConfig(freezeInfoConfig).build();
     freezeConfig.setFreezeInfoConfig(freezeInfoConfig);
     FreezeWindow freezeWindow = new FreezeWindow();
     freezeWindow.setEndTime("Asd");
@@ -118,7 +119,6 @@ public class NGFreezeDtoMapperTest extends CategoryTest {
     Recurrence recurrence = new Recurrence();
     recurrence.setRecurrenceType(RecurrenceType.DAILY);
     RecurrenceSpec recurrenceSpec = new RecurrenceSpec();
-    recurrenceSpec.setCount(1);
     recurrenceSpec.setUntil("until");
     recurrence.setSpec(recurrenceSpec);
     freezeWindow.setRecurrence(recurrence);

@@ -21,10 +21,12 @@ import io.harness.freeze.entity.FreezeConfigEntity;
 import io.harness.freeze.helpers.FreezeFilterHelper;
 import io.harness.freeze.mappers.NGFreezeDtoMapper;
 import io.harness.freeze.service.FreezeCRUDService;
+import io.harness.freeze.service.FreezeSchemaService;
 import io.harness.repositories.FreezeConfigRepository;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
@@ -37,6 +39,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
 @Slf4j
 public class FreezeCRUDServiceImpl implements FreezeCRUDService {
   private final FreezeConfigRepository freezeConfigRepository;
+  private final FreezeSchemaService freezeSchemaService;
 
   static final String FREEZE_CONFIG_DOES_NOT_EXIST_ERROR_TEMPLATE =
       "Freeze Config for freezeIdentifier: %s , ogrIdentifier: %s , projIdentifier: %s doesn't exist";
@@ -47,13 +50,19 @@ public class FreezeCRUDServiceImpl implements FreezeCRUDService {
       "Can't update global freeze with identifier: '%s'. Please use _GLOBAL_ as the id";
 
   @Inject
-  public FreezeCRUDServiceImpl(FreezeConfigRepository freezeConfigRepository) {
+  public FreezeCRUDServiceImpl(FreezeConfigRepository freezeConfigRepository, FreezeSchemaService freezeSchemaService) {
     this.freezeConfigRepository = freezeConfigRepository;
+    this.freezeSchemaService = freezeSchemaService;
   }
 
   @Override
   public FreezeResponseDTO createFreezeConfig(
       String deploymentFreezeYaml, String accountId, String orgId, String projectId) {
+    try {
+      freezeSchemaService.validateYamlSchema(deploymentFreezeYaml);
+    } catch (IOException e) {
+      log.error("Freeze Config could not be validated for yaml: " + deploymentFreezeYaml);
+    }
     FreezeConfigEntity freezeConfigEntity =
         NGFreezeDtoMapper.toFreezeConfigEntityManual(accountId, orgId, projectId, deploymentFreezeYaml);
     return createFreezeConfig(freezeConfigEntity);
@@ -61,6 +70,11 @@ public class FreezeCRUDServiceImpl implements FreezeCRUDService {
 
   public FreezeResponseDTO createGlobalFreezeConfig(
       String deploymentFreezeYaml, String accountId, String orgId, String projectId) {
+    try {
+      freezeSchemaService.validateYamlSchema(deploymentFreezeYaml);
+    } catch (IOException e) {
+      log.error("Freeze Config could not be validated for yaml: " + deploymentFreezeYaml);
+    }
     FreezeConfigEntity freezeConfigEntity =
         NGFreezeDtoMapper.toFreezeConfigEntityGlobal(accountId, orgId, projectId, deploymentFreezeYaml);
     return createFreezeConfig(freezeConfigEntity);
@@ -84,6 +98,11 @@ public class FreezeCRUDServiceImpl implements FreezeCRUDService {
   @Override
   public FreezeResponseDTO manageGlobalFreezeConfig(
       String deploymentFreezeYaml, String accountId, String orgId, String projectId) {
+    try {
+      freezeSchemaService.validateYamlSchema(deploymentFreezeYaml);
+    } catch (IOException e) {
+      log.error("Freeze Config could not be validated for yaml: " + deploymentFreezeYaml);
+    }
     FreezeConfigEntity freezeConfigEntity =
         NGFreezeDtoMapper.toFreezeConfigEntityGlobal(accountId, orgId, projectId, deploymentFreezeYaml);
     if (!freezeConfigEntity.getIdentifier().equals("_GLOBAL")) {
@@ -97,6 +116,11 @@ public class FreezeCRUDServiceImpl implements FreezeCRUDService {
   @Override
   public FreezeResponseDTO updateFreezeConfig(
       String deploymentFreezeYaml, String accountId, String orgId, String projectId, String freezeIdentifier) {
+    try {
+      freezeSchemaService.validateYamlSchema(deploymentFreezeYaml);
+    } catch (IOException e) {
+      log.error("Freeze Config could not be validated for yaml: " + deploymentFreezeYaml);
+    }
     FreezeConfigEntity updatedFreezeConfigEntity =
         NGFreezeDtoMapper.toFreezeConfigEntityManual(accountId, orgId, projectId, deploymentFreezeYaml);
     Optional<FreezeConfigEntity> freezeConfigEntityOptional =
@@ -210,6 +234,11 @@ public class FreezeCRUDServiceImpl implements FreezeCRUDService {
       return NGFreezeDtoMapper.prepareFreezeResponseDto(freezeConfigEntity);
     } else {
       String globalFreezeYaml = createGlobalFreezeConfigYaml();
+      try {
+        freezeSchemaService.validateYamlSchema(globalFreezeYaml);
+      } catch (IOException e) {
+        log.error("Freeze Config could not be validated for yaml: " + globalFreezeYaml);
+      }
       return createGlobalFreezeConfig(globalFreezeYaml, accountId, orgId, projectId);
     }
   }
@@ -236,9 +265,13 @@ public class FreezeCRUDServiceImpl implements FreezeCRUDService {
   }
 
   private String createGlobalFreezeConfigYaml() {
-    FreezeConfig freezeConfig = new FreezeConfig();
-    freezeConfig.setFreezeInfoConfig(
-        FreezeInfoConfig.builder().identifier("_GLOBAL_").name("Global Freeze").status(FreezeStatus.DISABLED).build());
+    FreezeConfig freezeConfig = FreezeConfig.builder()
+                                    .freezeInfoConfig(FreezeInfoConfig.builder()
+                                                          .identifier("_GLOBAL_")
+                                                          .name("Global Freeze")
+                                                          .status(FreezeStatus.DISABLED)
+                                                          .build())
+                                    .build();
     return NGFreezeDtoMapper.toYaml(freezeConfig);
   }
 }

@@ -53,12 +53,6 @@ public class FreezeTimeUtils {
     } else {
       Long lastWindowEndTimeEpoch =
           getEpochValueFromDateString(freezeWindow.getRecurrence().getSpec().getUntil(), timeZone);
-      int maxNoOfRecurrences = 0;
-      if (lastWindowEndTimeEpoch == null) {
-        maxNoOfRecurrences = freezeWindow.getRecurrence().getSpec().getCount();
-        lastWindowEndTimeEpoch = getEpochValue(
-            freezeWindow.getRecurrence().getRecurrenceType(), firstWindowEndTime, timeZone, maxNoOfRecurrences);
-      }
       if (getCurrentTime() > lastWindowEndTimeEpoch) {
         return null;
       } else {
