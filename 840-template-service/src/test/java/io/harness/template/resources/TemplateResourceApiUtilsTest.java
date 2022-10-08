@@ -48,11 +48,7 @@ import io.harness.template.TemplateFilterPropertiesDTO;
 import io.harness.template.beans.PermissionTypes;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.entity.TemplateEntity.TemplateEntityKeys;
-import io.harness.template.helpers.TemplateReferenceHelper;
-import io.harness.template.helpers.TemplateYamlConversionHelper;
 import io.harness.template.services.NGTemplateService;
-import io.harness.template.services.NGTemplateServiceHelper;
-import io.harness.template.services.TemplateMergeService;
 import io.harness.template.services.TemplateVariableCreatorFactory;
 
 import com.google.common.io.Resources;
