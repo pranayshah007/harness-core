@@ -66,7 +66,6 @@ import io.harness.repositories.user.spring.UserMembershipRepository;
 import io.harness.repositories.user.spring.UserMetadataRepository;
 import io.harness.rule.Owner;
 import io.harness.user.remote.UserClient;
-import io.harness.utils.NGFeatureFlagHelperService;
 import io.harness.utils.PageTestUtils;
 
 import com.google.common.collect.Lists;
@@ -105,14 +104,10 @@ public class NgUserServiceImplTest extends CategoryTest {
   @Mock private AccountOrgProjectHelper accountOrgProjectHelper;
   @Mock private LicenseService licenseService;
   @Mock private LastAdminCheckService lastAdminCheckService;
-  @Mock private NGFeatureFlagHelperService ngFeatureFlagHelperService;
   @Mock private DefaultUserGroupService defaultUserGroupService;
   @Spy @Inject @InjectMocks private NgUserServiceImpl ngUserService;
   private String accountIdentifier;
   private String orgIdentifier;
-  private static final String ACCOUNT_VIEWER = "_account_viewer";
-  private static final String ORGANIZATION_VIEWER = "_organization_viewer";
-  private static final String PROJECT_VIEWER = "_project_viewer";
 
   @Before
   public void setup() throws NoSuchFieldException {
@@ -353,24 +348,15 @@ public class NgUserServiceImplTest extends CategoryTest {
     }
     when(userMetadataRepository.findDistinctByUserId(userId))
         .thenReturn(Optional.of(UserMetadata.builder().userId(userId).build()));
-    boolean isAccountBasicRoleFeatureFlag = false;
-    when(ngFeatureFlagHelperService.isEnabled(
-             scope.getAccountIdentifier(), io.harness.beans.FeatureName.ACCOUNT_BASIC_ROLE))
-        .thenReturn(isAccountBasicRoleFeatureFlag);
-    doNothing()
-        .when(ngUserService)
-        .addUserToScopeInternal(userId, UserMembershipUpdateSource.USER, scope, getDefaultRoleIdentifier(scope),
-            isAccountBasicRoleFeatureFlag);
+    doNothing().when(ngUserService).addUserToScopeInternal(userId, UserMembershipUpdateSource.USER, scope);
 
     parentScopes.forEach(parentScope
         -> doNothing()
                .when(ngUserService)
-               .addUserToScopeInternal(userId, UserMembershipUpdateSource.USER, parentScope,
-                   getDefaultRoleIdentifier(parentScope), isAccountBasicRoleFeatureFlag));
+               .addUserToScopeInternal(userId, UserMembershipUpdateSource.USER, parentScope));
     doNothing()
         .when(ngUserService)
-        .createRoleAssignments(
-            userId, scope, createRoleAssignmentDTOs(roleBindings, userId, scope), isAccountBasicRoleFeatureFlag);
+        .createRoleAssignments(userId, scope, createRoleAssignmentDTOs(roleBindings, userId, scope), false);
 
     UserGroupFilterDTO userGroupFilterDTO =
         UserGroupFilterDTO.builder()
@@ -388,15 +374,6 @@ public class NgUserServiceImplTest extends CategoryTest {
     when(userGroupService.list(userGroupFilterDTO)).thenReturn(userGroupsResult);
 
     doNothing().when(userGroupService).addUserToUserGroups(scope, userId, userGroups);
-  }
-
-  private String getDefaultRoleIdentifier(Scope scope) {
-    if (isNotEmpty(scope.getProjectIdentifier())) {
-      return PROJECT_VIEWER;
-    } else if (isNotEmpty(scope.getOrgIdentifier())) {
-      return ORGANIZATION_VIEWER;
-    }
-    return ACCOUNT_VIEWER;
   }
 
   private int getRank(Scope scope) {
@@ -417,9 +394,8 @@ public class NgUserServiceImplTest extends CategoryTest {
 
   private void assertAddUserToScope(Scope scope, List<String> userIds, List<String> userGroups) {
     verify(userMetadataRepository, times(userIds.size())).findDistinctByUserId(any());
-    verify(ngUserService, times(userIds.size() * getRank(scope)))
-        .addUserToScopeInternal(any(), any(), any(), any(), anyBoolean());
-    verify(ngUserService, times(userIds.size() * 2)).createRoleAssignments(any(), any(), any(), anyBoolean());
+    verify(ngUserService, times(userIds.size() * getRank(scope))).addUserToScopeInternal(any(), any(), any());
+    verify(ngUserService, times(userIds.size())).createRoleAssignments(any(), any(), any(), anyBoolean());
     verify(userGroupService, times(isEmpty(userGroups) ? 0 : userIds.size())).list(any(UserGroupFilterDTO.class));
     verify(userGroupService, times(userIds.size())).addUserToUserGroups(any(Scope.class), any(), any());
   }
