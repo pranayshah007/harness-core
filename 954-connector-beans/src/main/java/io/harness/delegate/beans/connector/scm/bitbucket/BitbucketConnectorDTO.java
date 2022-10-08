@@ -148,6 +148,7 @@ public class BitbucketConnectorDTO
 
   @Override
   public String getFileUrl(String branchName, String filePath, GitRepositoryDTO gitRepositoryDTO) {
+    restructureGitRepositoryIfRequired(gitRepositoryDTO);
     ScmConnectorHelper.validateGetFileUrlParams(branchName, filePath);
     String repoUrl = removeStartingAndEndingSlash(getGitConnectionUrl(gitRepositoryDTO));
     filePath = removeStartingAndEndingSlash(filePath);
@@ -200,8 +201,11 @@ public class BitbucketConnectorDTO
       log.error("Exception occurred while parsing bitbucket server url.", ex);
       throw new InvalidRequestException("Exception occurred while parsing bitbucket server url.");
     }
-    return String.format("%s/projects/%s/repos/%s/browse/%s?at=refs/heads/%s", hostUrl,
-        getGitRepositoryDetails().getOrg(), gitRepositoryDTO.getName(), filePath, branchName);
+
+    String org = gitRepositoryDTO.getOrg() != null ? gitRepositoryDTO.getOrg() : getGitRepositoryDetails().getOrg();
+    String repoName = gitRepositoryDTO.getName();
+    return String.format(
+        "%s/projects/%s/repos/%s/browse/%s?at=refs/heads/%s", hostUrl, org, repoName, filePath, branchName);
   }
 
   /*
@@ -228,6 +232,17 @@ public class BitbucketConnectorDTO
           }
         }
       }
+    }
+  }
+
+  private void restructureGitRepositoryIfRequired(GitRepositoryDTO gitRepositoryDTO) {
+    // Its required in case user gives account url as the url and "project(or org)/repo" as the repo
+    // It helps to handle further computations easily
+    if (gitRepositoryDTO.getName() != null && gitRepositoryDTO.getName().contains("/")) {
+      String org = gitRepositoryDTO.getName().substring(0, gitRepositoryDTO.getName().indexOf("/"));
+      String repoName = gitRepositoryDTO.getName().substring(gitRepositoryDTO.getName().indexOf("/") + 1);
+      gitRepositoryDTO.setOrg(org);
+      gitRepositoryDTO.setName(repoName);
     }
   }
 }
