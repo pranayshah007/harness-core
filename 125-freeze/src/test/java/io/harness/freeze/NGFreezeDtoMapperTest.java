@@ -92,15 +92,13 @@ public class NGFreezeDtoMapperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testToTemplateDto1() {
     FreezeConfig freezeConfig = new FreezeConfig();
-    FreezeInfoConfig freezeInfoConfig = new FreezeInfoConfig();
+    FreezeInfoConfig freezeInfoConfig = FreezeInfoConfig.builder().identifier("id").name("name").build();
     List<EntityConfig> entities = new LinkedList<>();
     List<FreezeEntityRule> freezeEntityRules = new LinkedList<>();
     FreezeEntityRule freezeEntityRule = new FreezeEntityRule();
     List<FreezeWindow> windows = new LinkedList<>();
     freezeInfoConfig.setStatus(FreezeStatus.ENABLED);
     freezeInfoConfig.setDescription(ParameterField.<String>builder().value("desc").build());
-    freezeInfoConfig.setIdentifier("id");
-    freezeInfoConfig.setName("name");
     //    freezeInfoConfig.setOrgIdentifier("oId");
     //    freezeInfoConfig.setProjectIdentifier("pId");
     freezeInfoConfig.setRules(freezeEntityRules);

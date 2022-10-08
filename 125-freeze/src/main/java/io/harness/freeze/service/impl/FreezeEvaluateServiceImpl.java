@@ -15,7 +15,7 @@ import io.harness.freeze.beans.FreezeEntityType;
 import io.harness.freeze.beans.FreezeStatus;
 import io.harness.freeze.beans.FreezeType;
 import io.harness.freeze.beans.response.FreezeSummaryResponseDTO;
-import io.harness.freeze.entity.FreezeConfigEntity;
+import io.harness.freeze.entity.FreezeConfigEntity.FreezeConfigEntityKeys;
 import io.harness.freeze.helpers.FreezeFilterHelper;
 import io.harness.freeze.helpers.FreezeTimeUtils;
 import io.harness.freeze.service.FreezeEvaluateService;
@@ -49,8 +49,7 @@ public class FreezeEvaluateServiceImpl implements FreezeEvaluateService {
     List<FreezeSummaryResponseDTO> freezeSummaryResponseDTOList = new LinkedList<>();
     Criteria criteria = FreezeFilterHelper.createCriteriaForGetList(
         accountId, orgIdentifier, projectIdentifier, null, FreezeType.MANUAL, FreezeStatus.ENABLED, null, null);
-    PageRequest pageRequest =
-        PageRequest.of(0, 100, Sort.by(Sort.Direction.DESC, FreezeConfigEntity.FreezeConfigEntityKeys.createdAt));
+    PageRequest pageRequest = PageRequest.of(0, 100, Sort.by(Sort.Direction.DESC, FreezeConfigEntityKeys.createdAt));
     Page<FreezeSummaryResponseDTO> result = freezeCRUDService.list(criteria, pageRequest);
     List<FreezeSummaryResponseDTO> configs = result.getContent();
     for (FreezeSummaryResponseDTO freezeSummaryResponseDTO : configs) {
@@ -67,8 +66,7 @@ public class FreezeEvaluateServiceImpl implements FreezeEvaluateService {
   public boolean globalFreezeActive(String accountId, String orgIdentifier, String projectIdentifier) {
     Criteria criteria = FreezeFilterHelper.createCriteriaForGetList(
         accountId, orgIdentifier, projectIdentifier, null, FreezeType.GLOBAL, FreezeStatus.ENABLED, null, null);
-    PageRequest pageRequest =
-        PageRequest.of(0, 1, Sort.by(Sort.Direction.DESC, FreezeConfigEntity.FreezeConfigEntityKeys.createdAt));
+    PageRequest pageRequest = PageRequest.of(0, 1, Sort.by(Sort.Direction.DESC, FreezeConfigEntityKeys.createdAt));
     Page<FreezeSummaryResponseDTO> result = freezeCRUDService.list(criteria, pageRequest);
     List<FreezeSummaryResponseDTO> configs = result.getContent();
     for (FreezeSummaryResponseDTO freezeSummaryResponseDTO : configs) {
@@ -98,8 +96,7 @@ public class FreezeEvaluateServiceImpl implements FreezeEvaluateService {
 
     Criteria criteria = FreezeFilterHelper.createCriteriaForGetList(
         accountId, orgId, projectId, null, FreezeType.MANUAL, FreezeStatus.ENABLED, null, null);
-    PageRequest pageRequest =
-        PageRequest.of(0, 100, Sort.by(Sort.Direction.DESC, FreezeConfigEntity.FreezeConfigEntityKeys.createdAt));
+    PageRequest pageRequest = PageRequest.of(0, 100, Sort.by(Sort.Direction.DESC, FreezeConfigEntityKeys.createdAt));
     Page<FreezeSummaryResponseDTO> result = freezeCRUDService.list(criteria, pageRequest);
     List<FreezeSummaryResponseDTO> configs = result.getContent();
 
