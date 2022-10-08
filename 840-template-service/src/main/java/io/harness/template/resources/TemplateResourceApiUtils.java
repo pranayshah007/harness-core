@@ -244,16 +244,10 @@ public class TemplateResourceApiUtils {
     filterProperties.setChildTypes(templateFilterProperties.getChildTypes());
     List<TemplateEntityType> templateEntityTypes = templateFilterProperties.getEntityTypes()
                                                        .stream()
-                                                       .map(TemplateResourceApiUtils::mapToTemplateEntity)
+                                                       .map(x -> TemplateEntityType.getTemplateType(x.toString()))
                                                        .collect(Collectors.toList());
     filterProperties.setTemplateEntityTypes(templateEntityTypes);
     return filterProperties;
-  }
-
-  public static TemplateEntityType mapToTemplateEntity(
-      io.harness.spec.server.template.model.TemplateFilterProperties.EntityTypesEnum entityTypesEnum) {
-    TemplateEntityType templateEntityType = TemplateEntityType.getTemplateType(entityTypesEnum.toString());
-    return templateEntityType;
   }
 
   public ResponseBuilder addLinksHeader(

@@ -44,6 +44,7 @@ import io.harness.spec.server.template.model.TemplateMetadataSummaryResponse;
 import io.harness.spec.server.template.model.TemplateResponse;
 import io.harness.spec.server.template.model.TemplateUpdateStableResponse;
 import io.harness.spec.server.template.model.TemplateWithInputsResponse;
+import io.harness.template.TemplateFilterPropertiesDTO;
 import io.harness.template.beans.PermissionTypes;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.entity.TemplateEntity.TemplateEntityKeys;
@@ -89,12 +90,8 @@ public class TemplateResourceApiUtilsTest extends CategoryTest {
 
   TemplateResourceApiUtils templateResourceApiUtils;
   @Mock NGTemplateService templateService;
-  @Mock NGTemplateServiceHelper templateServiceHelper;
   @Mock AccessControlClient accessControlClient;
-  @Mock TemplateMergeService templateMergeService;
   @Inject VariablesServiceBlockingStub variablesServiceBlockingStub;
-  @Mock TemplateYamlConversionHelper templateYamlConversionHelper;
-  @Mock TemplateReferenceHelper templateReferenceHelper;
   @Mock CustomDeploymentResourceClient customDeploymentResourceClient;
   @Mock TemplateVariableCreatorFactory templateVariableCreatorFactory;
   @Mock TemplateResourceApiMapper templateResourceApiMapper;
@@ -383,5 +380,32 @@ public class TemplateResourceApiUtilsTest extends CategoryTest {
     verify(accessControlClient)
         .checkForAccessOrThrow(ResourceScope.of(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER),
             Resource.of(TEMPLATE, null), PermissionTypes.TEMPLATE_VIEW_PERMISSION);
+  }
+
+  @Test
+  @Owner(developers = TARUN_UBA)
+  @Category(UnitTests.class)
+  public void testFilterProperties() {
+    TemplateFilterProperties templateFilterProperties = new TemplateFilterProperties();
+    List<String> names = Collections.singletonList("Example_template");
+    List<String> ids = Collections.singletonList("example_template");
+    String description = "Sample_description";
+    List<TemplateFilterProperties.EntityTypesEnum> entityType =
+        Collections.singletonList(TemplateFilterProperties.EntityTypesEnum.STAGE);
+    List<String> childType = Collections.singletonList("example_child_type");
+    templateFilterProperties.setDescription(description);
+    templateFilterProperties.setChildTypes(childType);
+    templateFilterProperties.setEntityTypes(entityType);
+    templateFilterProperties.setIdentifiers(ids);
+    templateFilterProperties.setNames(names);
+
+    TemplateFilterPropertiesDTO templateFilterPropertiesDTO =
+        templateResourceApiUtils.toFilterProperties(templateFilterProperties);
+
+    assertEquals(names, templateFilterPropertiesDTO.getTemplateNames());
+    assertEquals(description, templateFilterPropertiesDTO.getDescription());
+    assertEquals(childType, templateFilterPropertiesDTO.getChildTypes());
+    assertEquals(ids, templateFilterPropertiesDTO.getTemplateIdentifiers());
+    assertEquals(entityType.get(0).toString(), templateFilterPropertiesDTO.getTemplateEntityTypes().get(0).toString());
   }
 }
