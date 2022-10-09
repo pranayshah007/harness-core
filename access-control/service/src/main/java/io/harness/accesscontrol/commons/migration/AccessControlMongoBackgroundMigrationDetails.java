@@ -54,7 +54,8 @@ public class AccessControlMongoBackgroundMigrationDetails implements MigrationDe
         .add(Pair.of(11, NoopMigration.class))
         .add(Pair.of(12, ACLAddBooleanFieldsMigration.class))
         .add(Pair.of(13, NoopMigration.class))
-        .add(Pair.of(14, UserRoleAssignmentRemovalMigration.class))
+        .add(Pair.of(14, NoopMigration.class))
+        .add(Pair.of(15, UserRoleAssignmentRemovalMigration.class))
         .build();
   }
 }
