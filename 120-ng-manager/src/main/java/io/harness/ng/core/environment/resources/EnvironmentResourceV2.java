@@ -483,8 +483,8 @@ public class EnvironmentResourceV2 {
 
   @POST
   @Path("/serviceOverrides")
-  @ApiOperation(value = "upsert a Service Override", nickname = "upsertServiceOverride")
-  @Operation(operationId = "upsertServiceOverride", summary = "Upsert",
+  @ApiOperation(value = "upsert a Service Override for an Environment", nickname = "upsertServiceOverride")
+  @Operation(operationId = "upsertServiceOverride", summary = "upsert a Service Override for an Environment",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
