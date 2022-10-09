@@ -7,19 +7,35 @@
 
 package software.wings.service.impl;
 
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
-import com.mongodb.BasicDBObject;
+import static io.harness.beans.EnvironmentType.ALL;
+import static io.harness.beans.EnvironmentType.NON_PROD;
+import static io.harness.beans.EnvironmentType.PROD;
+import static io.harness.beans.ExecutionStatus.SUCCESS;
+import static io.harness.beans.WorkflowType.ORCHESTRATION;
+import static io.harness.beans.WorkflowType.PIPELINE;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.time.EpochUtils.PST_ZONE_ID;
+import static io.harness.validation.Validator.notNullCheck;
+
+import static java.util.Comparator.comparing;
+import static java.util.Comparator.reverseOrder;
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.toList;
+import static org.mongodb.morphia.aggregation.Accumulator.accumulator;
+import static org.mongodb.morphia.aggregation.Group.addToSet;
+import static org.mongodb.morphia.aggregation.Group.first;
+import static org.mongodb.morphia.aggregation.Group.grouping;
+import static org.mongodb.morphia.aggregation.Group.id;
+import static org.mongodb.morphia.aggregation.Projection.expression;
+import static org.mongodb.morphia.aggregation.Projection.projection;
+
 import io.harness.beans.EnvironmentType;
 import io.harness.beans.ExecutionStatus;
 import io.harness.beans.FeatureName;
 import io.harness.ff.FeatureFlagService;
 import io.harness.time.EpochUtils;
-import org.apache.commons.collections.CollectionUtils;
-import org.mongodb.morphia.AdvancedDatastore;
-import org.mongodb.morphia.aggregation.Accumulator;
-import org.mongodb.morphia.aggregation.AggregationPipeline;
-import org.mongodb.morphia.query.Query;
+
 import software.wings.beans.ElementExecutionSummary;
 import software.wings.beans.User;
 import software.wings.beans.WorkflowExecution;
@@ -36,6 +52,9 @@ import software.wings.security.UserThreadLocal;
 import software.wings.service.intfc.StatisticsService;
 import software.wings.service.intfc.WorkflowExecutionService;
 
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
+import com.mongodb.BasicDBObject;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Date;
@@ -47,27 +66,10 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-
-import static io.harness.beans.EnvironmentType.ALL;
-import static io.harness.beans.EnvironmentType.NON_PROD;
-import static io.harness.beans.EnvironmentType.PROD;
-import static io.harness.beans.ExecutionStatus.SUCCESS;
-import static io.harness.beans.WorkflowType.ORCHESTRATION;
-import static io.harness.beans.WorkflowType.PIPELINE;
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.time.EpochUtils.PST_ZONE_ID;
-import static io.harness.validation.Validator.notNullCheck;
-import static java.util.Comparator.comparing;
-import static java.util.Comparator.reverseOrder;
-import static java.util.stream.Collectors.groupingBy;
-import static java.util.stream.Collectors.toList;
-import static org.mongodb.morphia.aggregation.Group.addToSet;
-import static org.mongodb.morphia.aggregation.Group.first;
-import static org.mongodb.morphia.aggregation.Group.grouping;
-import static org.mongodb.morphia.aggregation.Group.id;
-import static org.mongodb.morphia.aggregation.Projection.expression;
-import static org.mongodb.morphia.aggregation.Projection.projection;
+import org.apache.commons.collections.CollectionUtils;
+import org.mongodb.morphia.AdvancedDatastore;
+import org.mongodb.morphia.aggregation.AggregationPipeline;
+import org.mongodb.morphia.query.Query;
 
 @Singleton
 public class StatisticsServiceImpl implements StatisticsService {
@@ -354,7 +356,7 @@ public class StatisticsServiceImpl implements StatisticsService {
                              new BasicDBObject("date", "$day").append("timezone", "America/Los_Angeles"))),
                 projection("createdAt", "createdAt"))
             .group(id(grouping("date")), grouping("createdAt", first("createdAt")),
-                grouping("count", Accumulator.accumulator("$sum", 1)));
+                grouping("count", accumulator("$sum", 1)));
     totalFailedExecutionAggregation.aggregate(ExecutionCount.class)
         .forEachRemaining(e -> getExecutionCount(failedExecutionCount, e));
     return failedExecutionCount;
@@ -367,14 +369,14 @@ public class StatisticsServiceImpl implements StatisticsService {
     AggregationPipeline totalExecutionAggregation =
         datastore.createAggregation(WorkflowExecution.class)
             .match(baseQuery)
-            .project(projection("day", expression("$add", new Date(0), "$createdAt")),
-                projection("createdAt", "createdAt"))
+            .project(
+                projection("day", expression("$add", new Date(0), "$createdAt")), projection("createdAt", "createdAt"))
             .project(projection("date",
                          expression("$dayOfYear",
                              new BasicDBObject("date", "$day").append("timezone", "America/Los_Angeles"))),
                 projection("createdAt", "createdAt"))
             .group(id(grouping("date")), grouping("createdAt", first("createdAt")),
-                grouping("count", Accumulator.accumulator("$sum", 1)));
+                grouping("count", accumulator("$sum", 1)));
     totalExecutionAggregation.aggregate(ExecutionCount.class)
         .forEachRemaining(e -> getExecutionCount(totalExecutionCount, e));
     return totalExecutionCount;
