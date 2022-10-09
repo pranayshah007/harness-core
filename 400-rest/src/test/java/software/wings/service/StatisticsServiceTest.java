@@ -130,6 +130,46 @@ public class StatisticsServiceTest extends WingsBaseTest {
   }
 
   @Test
+  @Owner(developers = ABHINAV)
+  @Category(UnitTests.class)
+  public void shouldGetServiceInstanceStatisticsNew() {
+    when(appService.list(any(PageRequest.class)))
+        .thenReturn(aPageResponse().withResponse(asList(anApplication().uuid(APP_ID).name(APP_NAME).build())).build());
+
+    List<ElementExecutionSummary> serviceExecutionSummaries =
+        asList(anElementExecutionSummary()
+                   .withStatus(SUCCESS)
+                   .withContextElement(ServiceElement.builder().name(SERVICE_NAME).uuid(SERVICE_ID).build())
+                   .build());
+    List<ElementExecutionSummary> serviceFailureExecutionSummaries =
+        asList(anElementExecutionSummary()
+                   .withStatus(FAILED)
+                   .withContextElement(ServiceElement.builder().name(SERVICE_NAME).uuid(SERVICE_ID).build())
+                   .build());
+
+    List<WorkflowExecution> executions =
+        constructWorkflowExecutions(serviceExecutionSummaries, serviceFailureExecutionSummaries);
+
+    when(workflowExecutionService.obtainWorkflowExecutions(anyString(), anyLong(), any())).thenReturn(executions);
+
+    ServiceInstanceStatistics statistics = statisticsService.getServiceInstanceStatistics(ACCOUNT_ID, null, 30);
+    assertThat(statistics.getStatsMap()).isNotEmpty();
+    assertThat(statistics.getStatsMap().get(PROD))
+        .hasSize(1)
+        .containsExactlyInAnyOrder(TopConsumer.builder()
+                                       .appId(APP_ID)
+                                       .appName(APP_NAME)
+                                       .serviceId(SERVICE_ID)
+                                       .serviceName(SERVICE_NAME)
+                                       .successfulActivityCount(2)
+                                       .failedActivityCount(0)
+                                       .totalCount(2)
+                                       .build());
+
+    assertThat(statistics.getStatsMap().get(NON_PROD)).hasSize(1);
+  }
+
+  @Test
   @Owner(developers = SRINIVAS)
   @Category(UnitTests.class)
   public void shouldGetDeploymentStatistics() {

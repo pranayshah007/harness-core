@@ -377,6 +377,104 @@ public class StatisticsServiceImpl implements StatisticsService {
         .forEachRemaining(e -> getExecutionCount(totalExecutionCount, e));
     return totalExecutionCount;
   }
+
+  @Override
+  public ServiceInstanceStatistics getServiceInstanceStatisticsNew(
+      String accountId, List<String> appIds, int numOfDays) {
+    long fromDateEpochMilli = getEpochMilliPSTZone(numOfDays);
+
+    ServiceInstanceStatistics instanceStats = new ServiceInstanceStatistics();
+    Query<WorkflowExecution> baseQuery = wingsPersistence.createQuery(WorkflowExecution.class)
+                                             .field(WorkflowExecutionKeys.createdAt)
+                                             .greaterThanOrEq(fromDateEpochMilli)
+                                             .filter(WorkflowExecutionKeys.accountId, accountId);
+    AdvancedDatastore datastore = wingsPersistence.getDatastore(WorkflowExecution.class);
+    addRbacAndAppIdFilterToBaseQuery(baseQuery, appIds);
+
+    Query<WorkflowExecution> prodEnvBaseQuery = baseQuery.cloneQuery().filter(WorkflowExecutionKeys.envType, PROD);
+    Query<WorkflowExecution> nonProdEnvBaseQuery =
+        baseQuery.cloneQuery().filter(WorkflowExecutionKeys.envType, NON_PROD);
+
+    Comparator<TopConsumer> byCount = comparing(TopConsumer::getTotalCount, reverseOrder());
+
+    List<TopConsumer> allTopConsumers = new ArrayList<>();
+
+    //      if (!ExecutionStatus.isFinalStatus(execution.getStatus())) {
+    //        continue;
+    //      }
+    //      final List<ElementExecutionSummary> serviceExecutionSummaries = new ArrayList<>();
+    //      if (execution.getWorkflowType() == PIPELINE && execution.getPipelineExecution() != null
+    //              && isNotEmpty(execution.getPipelineExecution().getPipelineStageExecutions())) {
+    //        execution.getPipelineExecution()
+    //                .getPipelineStageExecutions()
+    //                .stream()
+    //                .filter(pipelineStageExecution -> pipelineStageExecution.getWorkflowExecutions() != null)
+    //                .flatMap(pipelineStageExecution -> pipelineStageExecution.getWorkflowExecutions().stream())
+    //                .filter(workflowExecution -> workflowExecution.getServiceExecutionSummaries() != null)
+    //                .forEach(workflowExecution -> {
+    //                  serviceExecutionSummaries.addAll(workflowExecution.getServiceExecutionSummaries());
+    //                });
+    //      } else if (execution.getServiceExecutionSummaries() != null) {
+    //        serviceExecutionSummaries.addAll(execution.getServiceExecutionSummaries());
+    //      }
+    //      Map<String, ElementExecutionSummary> serviceExecutionStatusMap = new HashMap<>();
+    //      for (ElementExecutionSummary serviceExecutionSummary : serviceExecutionSummaries) {
+    //        if (serviceExecutionSummary.getContextElement() == null) {
+    //          continue;
+    //        }
+    //        String serviceId = serviceExecutionSummary.getContextElement().getUuid();
+    //        serviceExecutionStatusMap.put(serviceId, serviceExecutionSummary);
+    //      }
+    //      for (ElementExecutionSummary serviceExecutionSummary : serviceExecutionStatusMap.values()) {
+    //        String serviceId = serviceExecutionSummary.getContextElement().getUuid();
+    //        ExecutionStatus serviceExecutionStatus = serviceExecutionSummary.getStatus();
+    //        if (serviceExecutionStatus == null) {
+    //          serviceExecutionStatus = execution.getStatus();
+    //        }
+    //        TopConsumer topConsumer;
+    //        if (!topConsumerMap.containsKey(serviceId)) {
+    //          TopConsumer tempConsumer = TopConsumer.builder()
+    //                  .appId(execution.getAppId())
+    //                  .appName(execution.getAppName())
+    //                  .serviceId(serviceId)
+    //                  .serviceName(serviceExecutionSummary.getContextElement().getName())
+    //                  .build();
+    //          topConsumerMap.put(serviceId, tempConsumer);
+    //          topConsumers.add(tempConsumer);
+    //        }
+    //        topConsumer = topConsumerMap.get(serviceId);
+    //        if (serviceExecutionStatus == SUCCESS) {
+    //          topConsumer.setSuccessfulActivityCount(topConsumer.getSuccessfulActivityCount() + 1);
+    //          topConsumer.setTotalCount(topConsumer.getTotalCount() + 1);
+    //        } else {
+    //          topConsumer.setFailedActivityCount(topConsumer.getFailedActivityCount() + 1);
+    //          topConsumer.setTotalCount(topConsumer.getTotalCount() + 1);
+    //        }
+    //      }
+    //
+
+    getTopServicesDeployed(allTopConsumers, workflowExecutions);
+
+    allTopConsumers = allTopConsumers.stream().sorted(byCount).collect(toList());
+
+    Map<EnvironmentType, List<WorkflowExecution>> wflExecutionByEnvType =
+        workflowExecutions.stream().collect(groupingBy(wex -> PROD == wex.getEnvType() ? PROD : NON_PROD));
+
+    List<TopConsumer> prodTopConsumers = new ArrayList<>();
+    getTopServicesDeployed(prodTopConsumers, wflExecutionByEnvType.get(PROD));
+    prodTopConsumers = prodTopConsumers.stream().sorted(byCount).collect(toList());
+
+    List<TopConsumer> nonProdTopConsumers = new ArrayList<>();
+    getTopServicesDeployed(nonProdTopConsumers, wflExecutionByEnvType.get(NON_PROD));
+
+    nonProdTopConsumers = nonProdTopConsumers.stream().sorted(byCount).collect(toList());
+
+    instanceStats.getStatsMap().put(ALL, allTopConsumers);
+    instanceStats.getStatsMap().put(PROD, prodTopConsumers);
+    instanceStats.getStatsMap().put(NON_PROD, nonProdTopConsumers);
+    return instanceStats;
+  }
+
   @Override
   public ServiceInstanceStatistics getServiceInstanceStatistics(String accountId, List<String> appIds, int numOfDays) {
     long fromDateEpochMilli = getEpochMilliPSTZone(numOfDays);
