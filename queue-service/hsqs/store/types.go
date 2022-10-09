@@ -18,7 +18,8 @@ type RegisterTopicMetadata struct {
 	Topic      string
 	MaxRetries int
 	// time in nanoseconds
-	MaxProcessingTime      time.Duration
+	// swagger:strfmt maxProcessingTime
+	MaxProcessingTime      time.Duration `json:"maxProcessingTime" type:integer`
 	MaxUnProcessedMessages int
 }
 
@@ -36,7 +37,7 @@ type EnqueueResponse struct {
 	ItemID string `json:"itemId"`
 }
 
-// EnqueueErrorResponse Error Mesaage object for Enqueuing messages
+// EnqueueErrorResponse Error Message object for Enqueuing messages
 type EnqueueErrorResponse struct {
 	ErrorMessage string
 }
@@ -113,12 +114,13 @@ func (u UnAckType) String() string {
 }
 
 // UnAckRequest Request object for UnAck a message
+// swagger:model UnAckRequest
 type UnAckRequest struct {
 	ItemID   string
 	Topic    string
 	SubTopic string
 	// Retry topic + subtopic after RetryAfterTimeDuration nanoseconds
-	RetryAfterTimeDuration time.Duration
+	RetryAfterTimeDuration time.Duration `json:"retryTimeAfterDuration"`
 	Type                   UnAckType
 }
 

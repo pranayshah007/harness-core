@@ -648,12 +648,39 @@ public class GovernanceConfigServiceImpl implements GovernanceConfigService {
   }
 
   private void validateAppEnvFilter(TimeRangeBasedFreezeConfig deploymentFreeze) {
+    validateAppEnvServiceFilterValues(deploymentFreeze.getAppSelections());
     validateAppEnvFilterTypes(deploymentFreeze.getAppSelections());
     validateAppEnvFilterOneAppWhenEnvFilterTypeIsCustom(deploymentFreeze.getAppSelections());
     validateAppEnvFilterOneAppWhenServiceFilterTypeIsCustom(deploymentFreeze.getAppSelections());
+    validateAppEnvServiceFilterValues(deploymentFreeze.getAppSelections());
     validateAppEnvFilterTypes(deploymentFreeze.getExcludeAppSelections());
     validateAppEnvFilterOneAppWhenEnvFilterTypeIsCustom(deploymentFreeze.getExcludeAppSelections());
     validateAppEnvFilterOneAppWhenServiceFilterTypeIsCustom(deploymentFreeze.getExcludeAppSelections());
+  }
+
+  private void validateAppEnvServiceFilterValues(List<ApplicationFilter> appSelections) {
+    for (ApplicationFilter selection : appSelections) {
+      if (selection.getFilterType() == BlackoutWindowFilterType.CUSTOM) {
+        if (((CustomAppFilter) selection).getApps().stream().anyMatch(EmptyPredicate::isEmpty)) {
+          throw new InvalidRequestException("Application filter must contain valid app Ids");
+        }
+      }
+      if (selection.getEnvSelection() != null
+          && selection.getEnvSelection().getFilterType() == EnvironmentFilterType.CUSTOM) {
+        if (((CustomEnvFilter) selection.getEnvSelection())
+                .getEnvironments()
+                .stream()
+                .anyMatch(EmptyPredicate::isEmpty)) {
+          throw new InvalidRequestException("Environment filter must contain valid env Ids");
+        }
+      }
+      if (selection.getServiceSelection() != null
+          && selection.getServiceSelection().getFilterType() == ServiceFilterType.CUSTOM) {
+        if (selection.getServiceSelection().getServices().stream().anyMatch(EmptyPredicate::isEmpty)) {
+          throw new InvalidRequestException("Service filter must contain valid service Ids");
+        }
+      }
+    }
   }
 
   private void validateAppEnvFilterTypes(List<ApplicationFilter> appSelections) {

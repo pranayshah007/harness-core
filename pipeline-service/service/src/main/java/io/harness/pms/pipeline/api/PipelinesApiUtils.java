@@ -38,9 +38,11 @@ import io.harness.spec.server.pipeline.model.GitCreateDetails;
 import io.harness.spec.server.pipeline.model.GitDetails;
 import io.harness.spec.server.pipeline.model.GitUpdateDetails;
 import io.harness.spec.server.pipeline.model.NodeInfo;
+import io.harness.spec.server.pipeline.model.PipelineCreateRequestBody;
 import io.harness.spec.server.pipeline.model.PipelineGetResponseBody;
 import io.harness.spec.server.pipeline.model.PipelineListResponseBody;
 import io.harness.spec.server.pipeline.model.PipelineListResponseBody.StoreTypeEnum;
+import io.harness.spec.server.pipeline.model.PipelineUpdateRequestBody;
 import io.harness.spec.server.pipeline.model.RecentExecutionInfo;
 import io.harness.spec.server.pipeline.model.RecentExecutionInfo.ExecutionStatusEnum;
 import io.harness.spec.server.pipeline.model.YAMLSchemaErrorWrapper;
@@ -378,6 +380,32 @@ public class PipelinesApiUtils {
         .baseBranch(gitDetails.getBaseBranch())
         .lastCommitId(gitDetails.getLastCommitId())
         .lastObjectId(gitDetails.getLastObjectId())
+        .build();
+  }
+
+  public static PipelineRequestInfoDTO mapCreateToRequestInfoDTO(PipelineCreateRequestBody createRequestBody) {
+    if (createRequestBody == null) {
+      throw new InvalidRequestException("Create Request Body cannot be null.");
+    }
+    return PipelineRequestInfoDTO.builder()
+        .identifier(createRequestBody.getSlug())
+        .name(createRequestBody.getName())
+        .yaml(createRequestBody.getPipelineYaml())
+        .description(createRequestBody.getDescription())
+        .tags(createRequestBody.getTags())
+        .build();
+  }
+
+  public static PipelineRequestInfoDTO mapUpdateToRequestInfoDTO(PipelineUpdateRequestBody updateRequestBody) {
+    if (updateRequestBody == null) {
+      throw new InvalidRequestException("Update Request Body cannot be null.");
+    }
+    return PipelineRequestInfoDTO.builder()
+        .identifier(updateRequestBody.getSlug())
+        .name(updateRequestBody.getName())
+        .yaml(updateRequestBody.getPipelineYaml())
+        .description(updateRequestBody.getDescription())
+        .tags(updateRequestBody.getTags())
         .build();
   }
 }

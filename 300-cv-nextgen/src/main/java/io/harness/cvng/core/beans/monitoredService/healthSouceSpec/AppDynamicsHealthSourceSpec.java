@@ -68,8 +68,9 @@ public class AppDynamicsHealthSourceSpec extends MetricHealthSourceSpec {
                 && Objects.nonNull(metricDefinition.getAnalysis().getDeploymentVerification())
                 && Objects.nonNull(metricDefinition.getAnalysis().getDeploymentVerification().getEnabled())
                 && metricDefinition.getAnalysis().getDeploymentVerification().getEnabled()
-                && StringUtils.isEmpty(
-                    metricDefinition.getAnalysis().getDeploymentVerification().getServiceInstanceMetricPath())),
+                && (StringUtils.isEmpty(
+                        metricDefinition.getAnalysis().getDeploymentVerification().getServiceInstanceMetricPath())
+                    && StringUtils.isEmpty(metricDefinition.getCompleteServiceInstanceMetricPath()))),
             "Service metric path shouldn't be empty for Deployment Verification"));
   }
 

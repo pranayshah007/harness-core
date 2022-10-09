@@ -1,0 +1,9 @@
+{
+  "environmentRef": "my_environment",
+  "deployToAll": false,
+  "infrastructureDefinitions": [
+    {
+      "identifier": "infra_without_connectorRef"
+    }
+  ]
+}

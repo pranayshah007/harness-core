@@ -116,14 +116,17 @@ public class NGAccountSetupService {
   public void setupAccountForNG(String accountIdentifier) {
     if (!accountOrgProjectValidator.isPresent(accountIdentifier, null, null)) {
       log.info(String.format(
-          "Account with accountIdentifier %s not found, skipping creation of Default Organization", accountIdentifier));
+          "[NGAccountSetupService]: Account with accountIdentifier %s not found, skipping creation of Default Organization",
+          accountIdentifier));
       return;
     }
     Scope accountScope = Scope.of(accountIdentifier, null, null);
     defaultUserGroupService.create(accountScope, emptyList());
     Organization defaultOrg = createDefaultOrg(accountIdentifier);
     if (featureFlagService.isGlobalEnabled(FeatureName.CREATE_DEFAULT_PROJECT)) {
+      log.info(String.format("[NGAccountSetupService]: Setting up default project for account %s", accountIdentifier));
       Project defaultProject = createDefaultProject(accountIdentifier, defaultOrg.getIdentifier());
+      log.info(String.format("[NGAccountSetupService]: Setting up all levels rbac for account %s", accountIdentifier));
       setupAllLevelRBAC(defaultOrg.getAccountIdentifier(), defaultOrg.getIdentifier(), defaultProject.getIdentifier());
     } else {
       setupRBAC(defaultOrg.getAccountIdentifier(), defaultOrg.getIdentifier());
@@ -133,7 +136,9 @@ public class NGAccountSetupService {
     log.info("[NGAccountSetupService]: Global SM Created Successfully for account{}", accountIdentifier);
     harnessSMManager.createHarnessSecretManager(accountIdentifier, null, null);
     ciDefaultEntityManager.createCIDefaultEntities(accountIdentifier, null, null);
+    log.info("[NGAccountSetupService]: CI Default Entities Created Successfully for account{}", accountIdentifier);
     accountSettingService.setUpDefaultAccountSettings(accountIdentifier);
+    log.info("[NGAccountSetupService]: Default Account Settings Created Successfully for account{}", accountIdentifier);
     createSampleFiles(accountIdentifier);
   }
 
@@ -153,7 +158,8 @@ public class NGAccountSetupService {
   private Organization createDefaultOrg(String accountIdentifier) {
     Optional<Organization> organization = organizationService.get(accountIdentifier, DEFAULT_ORG_IDENTIFIER);
     if (organization.isPresent()) {
-      log.info(String.format("Default Organization for account %s already present", accountIdentifier));
+      log.info(String.format(
+          "[NGAccountSetupService]: Default Organization for account %s already present", accountIdentifier));
       return organization.get();
     }
     OrganizationDTO createOrganizationDTO = OrganizationDTO.builder().build();
@@ -162,21 +168,25 @@ public class NGAccountSetupService {
     createOrganizationDTO.setTags(emptyMap());
     createOrganizationDTO.setDescription("Default Organization");
     createOrganizationDTO.setHarnessManaged(true);
-    return organizationService.create(accountIdentifier, createOrganizationDTO);
+    Organization defaultOrganization = organizationService.create(accountIdentifier, createOrganizationDTO);
+    log.info(String.format("[NGAccountSetupService]: Created default org for account %s", accountIdentifier));
+    return defaultOrganization;
   }
 
   private Project createDefaultProject(String accountIdentifier, String organizationIdentifier) {
     Optional<Project> project =
         projectService.get(accountIdentifier, organizationIdentifier, DEFAULT_PROJECT_IDENTIFIER);
     if (project.isPresent()) {
-      log.info(String.format(
-          "Default Project for account %s organization %s already present", accountIdentifier, organizationIdentifier));
+      log.info(String.format("[NGAccountSetupService]: Default Project for account %s organization %s already present",
+          accountIdentifier, organizationIdentifier));
       return project.get();
     }
     ProjectDTO createProjectDTO = ProjectDTO.builder().build();
     createProjectDTO.setIdentifier(DEFAULT_PROJECT_IDENTIFIER);
     createProjectDTO.setName(DEFAULT_PROJECT_NAME);
-    return projectService.create(accountIdentifier, organizationIdentifier, createProjectDTO);
+    Project defaultProject = projectService.create(accountIdentifier, organizationIdentifier, createProjectDTO);
+    log.info(String.format("[NGAccountSetupService]: Default project created for account %s", accountIdentifier));
+    return defaultProject;
   }
 
   private void setupAllLevelRBAC(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
@@ -226,6 +236,7 @@ public class NGAccountSetupService {
       accessControlMigrationService.save(
           AccessControlMigration.builder().accountIdentifier(accountIdentifier).orgIdentifier(orgIdentifier).build());
     }
+    log.info(String.format("[NGAccountSetupService]: Rbac setup completed for account: %s", accountIdentifier));
   }
 
   private boolean hasAdmin(Scope scope) {
