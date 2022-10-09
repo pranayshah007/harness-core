@@ -32,7 +32,6 @@ import io.harness.accesscontrol.roleassignments.api.RoleAssignmentDTO;
 import io.harness.accesscontrol.roleassignments.api.RoleAssignmentFilterDTO;
 import io.harness.accesscontrol.roleassignments.api.RoleAssignmentResponseDTO;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.beans.Scope;
 import io.harness.beans.ScopeLevel;
 import io.harness.exception.DuplicateFieldException;
@@ -65,17 +64,14 @@ import org.springframework.data.mongodb.core.query.Criteria;
 public class DefaultUserGroupServiceImpl implements DefaultUserGroupService {
   private final UserGroupService userGroupService;
   private final AccessControlAdminClient accessControlAdminClient;
-  private final NGFeatureFlagHelperService ngFeatureFlagHelperService;
   private final UserMembershipRepository userMembershipRepository;
   private static final String DEBUG_MESSAGE = "DefaultUserGroupServiceImpl: ";
 
   @Inject
   public DefaultUserGroupServiceImpl(UserGroupService userGroupService,
-      AccessControlAdminClient accessControlAdminClient, NGFeatureFlagHelperService ngFeatureFlagHelperService,
-      UserMembershipRepository userMembershipRepository) {
+      AccessControlAdminClient accessControlAdminClient, UserMembershipRepository userMembershipRepository) {
     this.userGroupService = userGroupService;
     this.accessControlAdminClient = accessControlAdminClient;
-    this.ngFeatureFlagHelperService = ngFeatureFlagHelperService;
     this.userMembershipRepository = userMembershipRepository;
   }
 
@@ -197,12 +193,8 @@ public class DefaultUserGroupServiceImpl implements DefaultUserGroupService {
   private void createRoleAssignmentsForAccount(String principalIdentifier, Scope scope) {
     createRoleAssignment(
         principalIdentifier, scope, true, ACCOUNT_BASIC_ROLE, DEFAULT_ACCOUNT_LEVEL_RESOURCE_GROUP_IDENTIFIER);
-    boolean isAccountBasicFeatureFlagEnabled =
-        ngFeatureFlagHelperService.isEnabled(scope.getAccountIdentifier(), FeatureName.ACCOUNT_BASIC_ROLE_ONLY);
-    if (!isAccountBasicFeatureFlagEnabled) {
-      createRoleAssignment(
+    createRoleAssignment(
           principalIdentifier, scope, false, ACCOUNT_VIEWER_ROLE, DEFAULT_ACCOUNT_LEVEL_RESOURCE_GROUP_IDENTIFIER);
-    }
   }
 
   @Override
