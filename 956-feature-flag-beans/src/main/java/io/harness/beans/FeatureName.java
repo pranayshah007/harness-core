@@ -451,7 +451,9 @@ public enum FeatureName {
       HarnessTeam.CDP),
   CD_SERVICE_ENV_RECONCILIATION("Do reconciliation of service and env on pipeline/template save", HarnessTeam.CDC),
   CD_TRIGGER_CATALOG("Enables UI for Trigger catalog for Nexus ", HarnessTeam.CDC),
-  CDS_SHOW_CREATE_PR("Start showing CreatePR step on the plan creator if enabled", HarnessTeam.GITOPS);
+  CDS_SHOW_CREATE_PR("Start showing CreatePR step on the plan creator if enabled", HarnessTeam.GITOPS),
+  SPG_DASHBOARD_STATS_OPTIMIZE(
+      "Dashboard stats slow api call optimization. Also solves MOM issue in CG.", HarnessTeam.SPG);
 
   @Deprecated
   FeatureName() {

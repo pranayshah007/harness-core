@@ -11,13 +11,12 @@ import static io.harness.beans.EnvironmentType.ALL;
 import static io.harness.beans.EnvironmentType.NON_PROD;
 import static io.harness.beans.EnvironmentType.PROD;
 import static io.harness.beans.ExecutionStatus.SUCCESS;
+import static io.harness.beans.WorkflowType.ORCHESTRATION;
 import static io.harness.beans.WorkflowType.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.time.EpochUtils.PST_ZONE_ID;
 import static io.harness.validation.Validator.notNullCheck;
-
-import static software.wings.beans.WorkflowExecution.WorkflowExecutionKeys;
 
 import static java.util.Comparator.comparing;
 import static java.util.Comparator.reverseOrder;
@@ -31,28 +30,48 @@ import io.harness.ff.FeatureFlagService;
 import io.harness.time.EpochUtils;
 
 import software.wings.beans.ElementExecutionSummary;
+import software.wings.beans.User;
 import software.wings.beans.WorkflowExecution;
+import software.wings.beans.WorkflowExecution.WorkflowExecutionKeys;
 import software.wings.beans.stats.DeploymentStatistics;
 import software.wings.beans.stats.DeploymentStatistics.AggregatedDayStats;
 import software.wings.beans.stats.DeploymentStatistics.AggregatedDayStats.DayStat;
 import software.wings.beans.stats.ServiceInstanceStatistics;
 import software.wings.beans.stats.TopConsumer;
+import software.wings.dl.WingsPersistence;
+import software.wings.security.UserPermissionInfo;
+import software.wings.security.UserRequestContext;
+import software.wings.security.UserThreadLocal;
 import software.wings.service.intfc.StatisticsService;
 import software.wings.service.intfc.WorkflowExecutionService;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.mongodb.BasicDBObject;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import org.apache.commons.collections.CollectionUtils;
+import org.mongodb.morphia.AdvancedDatastore;
+import org.mongodb.morphia.aggregation.Accumulator;
+import org.mongodb.morphia.aggregation.AggregationPipeline;
+import org.mongodb.morphia.aggregation.Group;
+import org.mongodb.morphia.aggregation.Projection;
+import org.mongodb.morphia.query.Query;
 
 @Singleton
 public class StatisticsServiceImpl implements StatisticsService {
   @Inject private WorkflowExecutionService workflowExecutionService;
   @Inject private FeatureFlagService featureFlagService;
+  @Inject private WingsPersistence wingsPersistence;
 
   private static final String[] workflowExecutionKeys = {WorkflowExecutionKeys.uuid, WorkflowExecutionKeys.accountId,
       WorkflowExecutionKeys.appId, WorkflowExecutionKeys.appName, WorkflowExecutionKeys.createdAt,
@@ -112,6 +131,252 @@ public class StatisticsServiceImpl implements StatisticsService {
     return deploymentStats;
   }
 
+  public void addRbacAndAppIdFilterToBaseQuery(Query<WorkflowExecution> query, List<String> appIds) {
+    User user = UserThreadLocal.get();
+    // If its not a user operation, return
+    if (user == null) {
+      return;
+    }
+
+    UserRequestContext userRequestContext = user.getUserRequestContext();
+    // No user request context set by the filter.
+    if (userRequestContext == null) {
+      return;
+    }
+    if (userRequestContext.isAppIdFilterRequired()) {
+      if (CollectionUtils.isNotEmpty(userRequestContext.getAppIds())) {
+        UserPermissionInfo userPermissionInfo = userRequestContext.getUserPermissionInfo();
+        if (userPermissionInfo.isHasAllAppAccess()) {
+          query.field("accountId").equal(userRequestContext.getAccountId());
+        } else {
+          if (isNotEmpty(appIds)) {
+            List<String> appIdsWithPerms = appIdMerged(appIds, userRequestContext.getAppIds());
+            query.field("appId").in(appIdsWithPerms);
+          } else {
+            query.field("appId").in(userRequestContext.getAppIds());
+          }
+        }
+      }
+    }
+  }
+
+  private List<String> appIdMerged(List<String> appIds, Set<String> appIdsWithPerms) {
+    Set<String> appIdSet = new HashSet<>(appIds);
+    Set<String> appIdWithPermsSet = new HashSet<>(appIdsWithPerms);
+    return appIdSet.stream()
+        .map(appId -> {
+          if (appIdWithPermsSet.contains(appId)) {
+            return appId;
+          }
+          return null;
+        })
+        .filter(Objects::nonNull)
+        .collect(Collectors.toList());
+  }
+
+  @Override
+  public DeploymentStatistics getDeploymentStatisticsNew(String accountId, List<String> appIds, int numOfDays) {
+    long fromDateEpochMilli = getEpochMilliPSTZone(numOfDays);
+    Query<WorkflowExecution> baseQuery = wingsPersistence.createQuery(WorkflowExecution.class)
+                                             .field(WorkflowExecutionKeys.createdAt)
+                                             .greaterThanOrEq(fromDateEpochMilli)
+                                             .filter(WorkflowExecutionKeys.accountId, accountId);
+    AdvancedDatastore datastore = wingsPersistence.getDatastore(WorkflowExecution.class);
+    addRbacAndAppIdFilterToBaseQuery(baseQuery, appIds);
+
+    Query<WorkflowExecution> prodEnvBaseQuery = baseQuery.cloneQuery().filter(WorkflowExecutionKeys.envType, PROD);
+    Query<WorkflowExecution> nonProdEnvBaseQuery =
+        baseQuery.cloneQuery().filter(WorkflowExecutionKeys.envType, NON_PROD);
+
+    DeploymentStatistics deploymentStats = new DeploymentStatistics();
+    AggregatedDayStats prodEnvStats = getAggregatedDayStats(numOfDays, prodEnvBaseQuery, datastore);
+    AggregatedDayStats nonProdEnvStats = getAggregatedDayStats(numOfDays, nonProdEnvBaseQuery, datastore);
+    deploymentStats.getStatsMap().put(PROD, prodEnvStats);
+    deploymentStats.getStatsMap().put(NON_PROD, nonProdEnvStats);
+    deploymentStats.getStatsMap().put(
+        ALL, merge(deploymentStats.getStatsMap().get(PROD), deploymentStats.getStatsMap().get(NON_PROD)));
+    return deploymentStats;
+  }
+
+  private AggregatedDayStats getAggregatedDayStats(
+      int numOfDays, Query<WorkflowExecution> baseQuery, AdvancedDatastore datastore) {
+    Map<Long, Integer> dayIndexTotalExecutionCountMap = new HashMap<>();
+    Map<Long, Integer> dayIndexFailedExecutionCountMap = new HashMap<>();
+    Map<Long, Integer> dayIndexInstancesDeployedViaWorkflowCountMap = new HashMap<>();
+    Map<Long, Integer> dayIndexInstancesDeployedViaPipelineCountMap = new HashMap<>();
+
+    List<ExecutionCount> totalExecutionCount = getTotalExecutionsPerDay(baseQuery, datastore);
+    List<ExecutionCount> failedExecutionCount = getFailedExecutionsPerDay(baseQuery, datastore);
+    List<ExecutionCount> instancesDeployedViaWorkflow = getInstancesDeployedViaWorkflowPerDay(baseQuery, datastore);
+    List<ExecutionCount> instancesDeployedViaPipeline = getInstancedDeployedViaPipelinePerDay(baseQuery, datastore);
+
+    totalExecutionCount.forEach(executionCount -> populateDayCountMap(dayIndexTotalExecutionCountMap, executionCount));
+    failedExecutionCount.forEach(
+        executionCount -> populateDayCountMap(dayIndexFailedExecutionCountMap, executionCount));
+    instancesDeployedViaPipeline.forEach(
+        executionCount -> populateDayCountMap(dayIndexInstancesDeployedViaPipelineCountMap, executionCount));
+    instancesDeployedViaWorkflow.forEach(
+        executionCount -> populateDayCountMap(dayIndexInstancesDeployedViaWorkflowCountMap, executionCount));
+    int aggTotalCount = 0;
+    int aggFailureCount = 0;
+    int aggInstanceCount = 0;
+    List<DayStat> dayStats = new ArrayList<>();
+
+    for (int i = 0; i < numOfDays; i++) {
+      Long timeOffset = getEpochMilliPSTZone(numOfDays - i);
+
+      int failedInDay = dayIndexFailedExecutionCountMap.getOrDefault(timeOffset, 0);
+      aggFailureCount += failedInDay;
+
+      int totalInDay = dayIndexTotalExecutionCountMap.getOrDefault(timeOffset, 0);
+      aggTotalCount += totalInDay;
+
+      int instancesDeployedInDay = 0;
+      instancesDeployedInDay += dayIndexInstancesDeployedViaPipelineCountMap.getOrDefault(timeOffset, 0);
+      instancesDeployedInDay += dayIndexInstancesDeployedViaWorkflowCountMap.getOrDefault(timeOffset, 0);
+      aggInstanceCount += instancesDeployedInDay;
+
+      dayStats.add(DayStat.builder()
+                       .totalCount(totalInDay)
+                       .failedCount(failedInDay)
+                       .instancesCount(instancesDeployedInDay)
+                       .date(timeOffset)
+                       .build());
+    }
+
+    return AggregatedDayStats.builder()
+        .daysStats(dayStats)
+        .failedCount(aggFailureCount)
+        .totalCount(aggTotalCount)
+        .instancesCount(aggInstanceCount)
+        .build();
+  }
+
+  private void populateDayCountMap(Map<Long, Integer> dayIndexTotalExecutionCountMap, ExecutionCount executionCount) {
+    long createdAt = executionCount.getCreatedAt();
+    long startOfTheDayEpoch = EpochUtils.obtainStartOfTheDayEpoch(createdAt, PST_ZONE_ID);
+    dayIndexTotalExecutionCountMap.put(startOfTheDayEpoch, executionCount.getCount());
+  }
+
+  private List<ExecutionCount> getInstancedDeployedViaPipelinePerDay(
+      Query<WorkflowExecution> baseQuery, AdvancedDatastore datastore) {
+    List<ExecutionCount> instancesDeployedViaPipeline = new ArrayList<>();
+    Query<WorkflowExecution> pipelineInstancesDeployedQuery = baseQuery.cloneQuery();
+    pipelineInstancesDeployedQuery.and(pipelineInstancesDeployedQuery.and(
+        pipelineInstancesDeployedQuery.criteria(WorkflowExecutionKeys.workflowType).equal(PIPELINE),
+        pipelineInstancesDeployedQuery.criteria(WorkflowExecutionKeys.pipelineExecution).exists()));
+    AggregationPipeline pipelineInstancesDeployedAggregation =
+        datastore.createAggregation(WorkflowExecution.class)
+            .match(pipelineInstancesDeployedQuery)
+            .unwind(WorkflowExecutionKeys.pipelineExecution_pipelineStageExecutions)
+            .unwind(WorkflowExecutionKeys.pipelineExecution_pipelineStageExecutions + ".workflowExecutions")
+            .project(Projection.projection("_id", "_id"),
+                Projection.projection("$serviceExecutionSummaries",
+                    "pipelineExecution_pipelineStageExecutions.workflowExecutions.serviceExecutionSummaries"),
+                Projection.projection("createdAt", "createdAt"))
+            .project(Projection.projection("day", Projection.expression("$add", new Date(0), "$createdAt")),
+                Projection.projection(
+                    WorkflowExecutionKeys.serviceExecutionSummaries, WorkflowExecutionKeys.serviceExecutionSummaries),
+                Projection.projection("createdAt", "createdAt"))
+            .project(Projection.projection("date",
+                         Projection.expression("$dayOfYear",
+                             new BasicDBObject("date", "$day").append("timezone", "America/Los_Angeles"))),
+                Projection.projection(
+                    WorkflowExecutionKeys.serviceExecutionSummaries, WorkflowExecutionKeys.serviceExecutionSummaries),
+                Projection.projection("createdAt", "createdAt"))
+            .unwind("serviceExecutionSummaries")
+            .unwind("serviceExecutionSummaries.instanceStatusSummaries")
+            .unwind("serviceExecutionSummaries.instanceStatusSummaries.instanceElement")
+            .group(Group.id(Group.grouping("date")), Group.grouping("createdAt", Group.first("createdAt")),
+                Group.grouping("serviceExecutionSummaries",
+                    Group.addToSet("serviceExecutionSummaries.instanceStatusSummaries.instanceElement.uuid")))
+            .project(Projection.expression("count", new BasicDBObject("$size", "$serviceExecutionSummaries")),
+                Projection.projection("_id", "_id"), Projection.projection("createdAt", "createdAt"));
+    pipelineInstancesDeployedAggregation.aggregate(ExecutionCount.class).forEachRemaining(e -> {
+      getExecutionCount(instancesDeployedViaPipeline, e);
+    });
+    return instancesDeployedViaPipeline;
+  }
+
+  private void getExecutionCount(List<ExecutionCount> resultList, ExecutionCount e) {
+    ExecutionCount executionCount =
+        ExecutionCount.builder().count(e.getCount())._id(e.get_id()).createdAt(e.getCreatedAt()).build();
+    resultList.add(executionCount);
+  }
+
+  private List<ExecutionCount> getInstancesDeployedViaWorkflowPerDay(
+      Query<WorkflowExecution> baseQuery, AdvancedDatastore datastore) {
+    List<ExecutionCount> instancesDeployedViaWorkflow = new ArrayList<>();
+    Query<WorkflowExecution> workflowInstancesDeployed = baseQuery.cloneQuery();
+    workflowInstancesDeployed.and(
+        workflowInstancesDeployed.criteria(WorkflowExecutionKeys.workflowType).equal(ORCHESTRATION));
+    AggregationPipeline workflowInstancesDeployedAggregation =
+        datastore.createAggregation(WorkflowExecution.class)
+            .match(workflowInstancesDeployed)
+            .project(Projection.projection("day", Projection.expression("$add", new Date(0), "$createdAt")),
+                Projection.projection(
+                    WorkflowExecutionKeys.serviceExecutionSummaries, WorkflowExecutionKeys.serviceExecutionSummaries),
+                Projection.projection("createdAt", "createdAt"))
+            .project(Projection.projection("date",
+                         Projection.expression("$dayOfYear",
+                             new BasicDBObject("date", "$day").append("timezone", "America/Los_Angeles"))),
+                Projection.projection(
+                    WorkflowExecutionKeys.serviceExecutionSummaries, WorkflowExecutionKeys.serviceExecutionSummaries),
+                Projection.projection("createdAt", "createdAt"))
+            .unwind("serviceExecutionSummaries")
+            .unwind("serviceExecutionSummaries.instanceStatusSummaries")
+            .unwind("serviceExecutionSummaries.instanceStatusSummaries.instanceElement")
+            .group(Group.id(Group.grouping("date")), Group.grouping("createdAt", Group.first("createdAt")),
+                Group.grouping("serviceExecutionSummaries",
+                    Group.addToSet("serviceExecutionSummaries.instanceStatusSummaries.instanceElement.uuid")))
+            .project(Projection.expression("count", new BasicDBObject("$size", "$serviceExecutionSummaries")),
+                Projection.projection("_id", "_id"), Projection.projection("createdAt", "createdAt"));
+    workflowInstancesDeployedAggregation.aggregate(ExecutionCount.class)
+        .forEachRemaining(e -> getExecutionCount(instancesDeployedViaWorkflow, e));
+    return instancesDeployedViaWorkflow;
+  }
+
+  private List<ExecutionCount> getFailedExecutionsPerDay(
+      Query<WorkflowExecution> baseQuery, AdvancedDatastore datastore) {
+    List<ExecutionCount> failedExecutionCount = new ArrayList<>();
+    Query<WorkflowExecution> totalFailedExecutions = baseQuery.cloneQuery();
+    totalFailedExecutions.and(
+        totalFailedExecutions.criteria(WorkflowExecutionKeys.status).in(ExecutionStatus.negativeStatuses()));
+    AggregationPipeline totalFailedExecutionAggregation =
+        datastore.createAggregation(WorkflowExecution.class)
+            .match(totalFailedExecutions)
+            .project(Projection.projection("day", Projection.expression("$add", new Date(0), "$createdAt")),
+                Projection.projection("createdAt", "createdAt"), Projection.projection("createdAt", "createdAt"))
+            .project(Projection.projection("date",
+                         Projection.expression("$dayOfYear",
+                             new BasicDBObject("date", "$day").append("timezone", "America/Los_Angeles"))),
+                Projection.projection("createdAt", "createdAt"))
+            .group(Group.id(Group.grouping("date")), Group.grouping("createdAt", Group.first("createdAt")),
+                Group.grouping("count", Accumulator.accumulator("$sum", 1)));
+    totalFailedExecutionAggregation.aggregate(ExecutionCount.class)
+        .forEachRemaining(e -> getExecutionCount(failedExecutionCount, e));
+    return failedExecutionCount;
+  }
+
+  private List<ExecutionCount> getTotalExecutionsPerDay(
+      Query<WorkflowExecution> baseQuery, AdvancedDatastore datastore) {
+    List<ExecutionCount> totalExecutionCount = new ArrayList<>();
+
+    AggregationPipeline totalExecutionAggregation =
+        datastore.createAggregation(WorkflowExecution.class)
+            .match(baseQuery)
+            .project(Projection.projection("day", Projection.expression("$add", new Date(0), "$createdAt")),
+                Projection.projection("createdAt", "createdAt"))
+            .project(Projection.projection("date",
+                         Projection.expression("$dayOfYear",
+                             new BasicDBObject("date", "$day").append("timezone", "America/Los_Angeles"))),
+                Projection.projection("createdAt", "createdAt"))
+            .group(Group.id(Group.grouping("date")), Group.grouping("createdAt", Group.first("createdAt")),
+                Group.grouping("count", Accumulator.accumulator("$sum", 1)));
+    totalExecutionAggregation.aggregate(ExecutionCount.class)
+        .forEachRemaining(e -> getExecutionCount(totalExecutionCount, e));
+    return totalExecutionCount;
+  }
   @Override
   public ServiceInstanceStatistics getServiceInstanceStatistics(String accountId, List<String> appIds, int numOfDays) {
     long fromDateEpochMilli = getEpochMilliPSTZone(numOfDays);
