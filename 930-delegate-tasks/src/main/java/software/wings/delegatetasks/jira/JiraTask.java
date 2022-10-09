@@ -691,7 +691,7 @@ public class JiraTask extends AbstractDelegateRunnableTask {
 
     try {
       Map<String, String> fields = extractFieldsFromCGParameters(parameters, userTypeFields);
-      JiraIssueNG issue = jira.createIssue(parameters.getProject(), parameters.getIssueType(), fields, false);
+      JiraIssueNG issue = jira.createIssue(parameters.getProject(), parameters.getIssueType(), fields, false, false);
       log.info("Script execution finished with status SUCCESS");
 
       return JiraExecutionData.builder()

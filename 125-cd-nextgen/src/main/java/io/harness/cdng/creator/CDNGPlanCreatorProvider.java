@@ -147,6 +147,7 @@ import io.harness.cdng.creator.variables.K8sRollingStepVariableCreator;
 import io.harness.cdng.creator.variables.K8sScaleStepVariableCreator;
 import io.harness.cdng.creator.variables.ServerlessAwsLambdaDeployStepVariableCreator;
 import io.harness.cdng.creator.variables.ServerlessAwsLambdaRollbackStepVariableCreator;
+import io.harness.cdng.creator.variables.StepGroupVariableCreator;
 import io.harness.cdng.customDeployment.variablecreator.FetchInstanceScriptStepVariableCreator;
 import io.harness.cdng.jenkins.jenkinsstep.JenkinsBuildStepVariableCreator;
 import io.harness.cdng.jenkins.jenkinsstep.JenkinsCreateStepPlanCreator;
@@ -224,6 +225,9 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
   private static final Set<String> EMPTY_FILTER_IDENTIFIERS = Sets.newHashSet(SIDECARS, SPEC, SERVICE_CONFIG,
       CONFIG_FILE, STARTUP_COMMAND, APPLICATION_SETTINGS, ARTIFACTS, ROLLBACK_STEPS, CONNECTION_STRINGS, STEPS,
       CONFIG_FILES, ENVIRONMENT_GROUP_YAML, SERVICE_ENTITY, MANIFEST_LIST_CONFIG, STEP_GROUP);
+  private static final Set<String> EMPTY_VARIABLE_IDENTIFIERS = Sets.newHashSet(SIDECARS, SPEC, SERVICE_CONFIG,
+      CONFIG_FILE, STARTUP_COMMAND, APPLICATION_SETTINGS, ARTIFACTS, ROLLBACK_STEPS, CONNECTION_STRINGS, STEPS,
+      CONFIG_FILES, ENVIRONMENT_GROUP_YAML, SERVICE_ENTITY, MANIFEST_LIST_CONFIG);
   private static final Set<String> EMPTY_SIDECAR_TYPES = Sets.newHashSet(CUSTOM_ARTIFACT_NAME, JENKINS_NAME,
       DOCKER_REGISTRY_NAME, ACR_NAME, AMAZON_S3_NAME, ARTIFACTORY_REGISTRY_NAME, ECR_NAME,
       GOOGLE_ARTIFACT_REGISTRY_NAME, GCR_NAME, NEXUS3_REGISTRY_NAME, GITHUB_PACKAGES_NAME, AZURE_ARTIFACTS_NAME);
@@ -343,7 +347,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
 
   @Override
   public List<VariableCreator> getVariableCreators() {
-    Set<String> emptyVariableIdentifiers = new HashSet<>(EMPTY_FILTER_IDENTIFIERS);
+    Set<String> emptyVariableIdentifiers = new HashSet<>(EMPTY_VARIABLE_IDENTIFIERS);
     emptyVariableIdentifiers.add(YAMLFieldNameConstants.PARALLEL);
 
     List<VariableCreator> variableCreators = new ArrayList<>();
@@ -358,6 +362,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     variableCreators.add(new GitOpsUpdateReleaseRepoStepVariableCreator());
     variableCreators.add(deploymentStageVariableCreator);
     variableCreators.add(new ExecutionVariableCreator());
+    variableCreators.add(new StepGroupVariableCreator());
     variableCreators.add(new K8sApplyStepVariableCreator());
     variableCreators.add(new K8sBGSwapServicesVariableCreator());
     variableCreators.add(new K8sBlueGreenStepVariableCreator());

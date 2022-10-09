@@ -16,6 +16,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.environment.services.EnvironmentService;
 import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
 import io.harness.ng.core.refresh.bean.EntityRefreshContext;
+import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
 import io.harness.pms.merger.YamlConfig;
 import io.harness.pms.merger.fqn.FQN;
 import io.harness.pms.merger.helpers.RuntimeInputsValidator;
@@ -46,12 +47,14 @@ import lombok.extern.slf4j.Slf4j;
 public class EnvironmentRefreshHelper {
   EnvironmentService environmentService;
   InfrastructureEntityService infrastructureEntityService;
+  ServiceOverrideService serviceOverrideService;
   private static final String STAGES_KEY = "stages";
   private static final String DUMMY_NODE = "dummy";
 
   public boolean isEnvironmentField(String fieldName, JsonNode envValue) {
     return YamlTypes.ENVIRONMENT_YAML.equals(fieldName) && envValue.isObject()
-        && (envValue.get(YamlTypes.ENVIRONMENT_REF) != null || envValue.get(YamlTypes.INFRASTRUCTURE_DEFS) != null);
+        && (envValue.get(YamlTypes.ENVIRONMENT_REF) != null || envValue.get(YamlTypes.INFRASTRUCTURE_DEFS) != null
+            || isNodeNotNullAndValueRuntime(envValue.get(YamlTypes.SERVICE_OVERRIDE_INPUTS)));
   }
 
   public void validateEnvironmentInputs(
@@ -61,11 +64,14 @@ public class EnvironmentRefreshHelper {
     String envRefValue;
     ObjectMapper mapper = new ObjectMapper();
     JsonNode infraDefsNode = envJsonNode.get(YamlTypes.INFRASTRUCTURE_DEFS);
+    JsonNode serviceOverrideInputs = envJsonNode.get(YamlTypes.SERVICE_OVERRIDE_INPUTS);
     if (envRefJsonNode != null) {
       envRefValue = envRefJsonNode.asText();
       JsonNode envInputsNode = envJsonNode.get(YamlTypes.ENVIRONMENT_INPUTS);
       if (NGExpressionUtils.isRuntimeOrExpressionField(envRefValue)) {
-        if (!isNodeValueRuntime(envInputsNode) || !isNodeValueRuntime(infraDefsNode)) {
+        if (isNodeNotNullAndNotHaveRuntimeValue(envInputsNode)
+            || (infraDefsNode != null && isNodeNotNullAndNotHaveRuntimeValue(infraDefsNode))
+            || (serviceOverrideInputs != null && isNodeNotNullAndNotHaveRuntimeValue(serviceOverrideInputs))) {
           errorNodeSummary.setValid(false);
         }
         return;
@@ -76,33 +82,143 @@ public class EnvironmentRefreshHelper {
         return;
       }
 
-      validateInfraDefsInput(context, errorNodeSummary, envRefValue, mapper, infraDefsNode);
+      // infraDefinitions inputs are not valid, no need to check for serviceOverride Inputs.
+      if (!validateInfraDefsInput(context, errorNodeSummary, envRefValue, mapper, infraDefsNode)) {
+        return;
+      }
+
+      validateServiceOverrideInputsWithEnvRef(
+          entityNode, context, errorNodeSummary, envRefJsonNode, mapper, serviceOverrideInputs);
     } else {
+      if (serviceOverrideInputs == null && infraDefsNode == null) {
+        return;
+      }
+      YamlNode stageYamlNodeInResolvedTemplatesYaml =
+          getCorrespondingStageNodeInResolvedTemplatesYaml(entityNode, context.getResolvedTemplatesYamlNode());
+      if (stageYamlNodeInResolvedTemplatesYaml == null) {
+        log.warn("Could not find corresponding stage node in resolved templates yaml. Exiting.");
+        return;
+      }
+
       if (infraDefsNode != null) {
-        YamlNode envNodeInResolvedTemplatesYaml =
-            getEnvNodeFromResolvedTemplatesYaml(entityNode, context.getResolvedTemplatesYamlNode());
-        if (envNodeInResolvedTemplatesYaml == null) {
-          log.warn("Env node in Resolved templates yaml is null");
+        if (!validateInfraDefsWithoutEnvRef(
+                context, errorNodeSummary, mapper, infraDefsNode, stageYamlNodeInResolvedTemplatesYaml)) {
           return;
-        }
-        JsonNode infraDefsNodeInResolvedTemplatesYaml =
-            envNodeInResolvedTemplatesYaml.getField(YamlTypes.INFRASTRUCTURE_DEFS).getNode().getCurrJsonNode();
-        if (infraDefsNodeInResolvedTemplatesYaml == null) {
-          log.warn("Something wrong happened finding infraDefinitions node in resolved templates yaml");
-          return;
-        }
-        if (checkIfInfraDefsToBeValidated(infraDefsNode, infraDefsNodeInResolvedTemplatesYaml, mapper)) {
-          JsonNode envRefNode =
-              envNodeInResolvedTemplatesYaml.getField(YamlTypes.ENVIRONMENT_REF).getNode().getCurrJsonNode();
-          if (envRefNode == null) {
-            log.warn("Skipping because couldn't find envRef value");
-            return;
-          }
-          envRefValue = envRefNode.asText();
-          validateInfraDefsInput(context, errorNodeSummary, envRefValue, mapper, infraDefsNode);
         }
       }
+
+      if (serviceOverrideInputs != null) {
+        validateServiceOverrideInputsWithoutEnvRef(
+            context, errorNodeSummary, mapper, serviceOverrideInputs, stageYamlNodeInResolvedTemplatesYaml);
+      }
     }
+  }
+
+  private void validateServiceOverrideInputsWithEnvRef(YamlNode entityNode, EntityRefreshContext context,
+      InputsValidationResponse errorNodeSummary, JsonNode envRefJsonNode, ObjectMapper mapper,
+      JsonNode serviceOverrideInputs) {
+    YamlNode stageYamlNodeInResolvedTemplatesYaml =
+        getCorrespondingStageNodeInResolvedTemplatesYaml(entityNode, context.getResolvedTemplatesYamlNode());
+    if (stageYamlNodeInResolvedTemplatesYaml == null) {
+      log.warn("Could not find corresponding stage node in resolved templates yaml. Exiting.");
+      return;
+    }
+
+    YamlNode serviceNodeInResolvedTemplatesYaml =
+        YamlNodeUtils.goToPathUsingFqn(stageYamlNodeInResolvedTemplatesYaml, "spec.service");
+    if (serviceNodeInResolvedTemplatesYaml == null) {
+      log.warn("Env node in Resolved templates yaml is null");
+      return;
+    }
+    JsonNode serviceRefInResolvedTemplatesYaml =
+        serviceNodeInResolvedTemplatesYaml.getField(YamlTypes.SERVICE_REF).getNode().getCurrJsonNode();
+    validateServiceOverrideInputs(
+        context, errorNodeSummary, mapper, serviceOverrideInputs, serviceRefInResolvedTemplatesYaml, envRefJsonNode);
+  }
+
+  private void validateServiceOverrideInputsWithoutEnvRef(EntityRefreshContext context,
+      InputsValidationResponse errorNodeSummary, ObjectMapper mapper, JsonNode serviceOverrideInputs,
+      YamlNode stageYamlNodeInResolvedTemplatesYaml) {
+    YamlNode serviceNodeInResolvedTemplatesYaml =
+        YamlNodeUtils.goToPathUsingFqn(stageYamlNodeInResolvedTemplatesYaml, "spec.service");
+    if (serviceNodeInResolvedTemplatesYaml == null) {
+      log.warn("Env node in Resolved templates yaml is null");
+      return;
+    }
+    YamlNode envNodeInResolvedTemplatesYaml =
+        YamlNodeUtils.goToPathUsingFqn(stageYamlNodeInResolvedTemplatesYaml, "spec.environment");
+    if (envNodeInResolvedTemplatesYaml == null) {
+      log.warn("Env node in Resolved templates yaml is null");
+      return;
+    }
+    JsonNode serviceRefInResolvedTemplatesYaml =
+        serviceNodeInResolvedTemplatesYaml.getField(YamlTypes.SERVICE_REF).getNode().getCurrJsonNode();
+    JsonNode envRefInResolvedTemplatesYaml =
+        envNodeInResolvedTemplatesYaml.getField(YamlTypes.ENVIRONMENT_REF).getNode().getCurrJsonNode();
+    validateServiceOverrideInputs(context, errorNodeSummary, mapper, serviceOverrideInputs,
+        serviceRefInResolvedTemplatesYaml, envRefInResolvedTemplatesYaml);
+  }
+
+  private void validateServiceOverrideInputs(EntityRefreshContext context, InputsValidationResponse errorNodeSummary,
+      ObjectMapper mapper, JsonNode serviceOverrideInputs, JsonNode serviceRefInResolvedTemplatesYaml,
+      JsonNode envRefInResolvedTemplatesYaml) {
+    if (serviceRefInResolvedTemplatesYaml == null || envRefInResolvedTemplatesYaml == null) {
+      log.warn("Service ref or env ref in yaml is null. Exiting.");
+      return;
+    }
+    if (isNodeNotNullAndValueRuntime(serviceRefInResolvedTemplatesYaml)
+        || isNodeNotNullAndValueRuntime(envRefInResolvedTemplatesYaml)) {
+      if (isNodeNotNullAndNotHaveRuntimeValue(serviceOverrideInputs)) {
+        errorNodeSummary.setValid(false);
+      }
+      return;
+    }
+
+    String serviceOverrideInputsYaml =
+        serviceOverrideService.createServiceOverrideInputsYaml(context.getAccountId(), context.getOrgId(),
+            context.getProjectId(), envRefInResolvedTemplatesYaml.asText(), serviceRefInResolvedTemplatesYaml.asText());
+    if (EmptyPredicate.isEmpty(serviceOverrideInputsYaml)) {
+      if (serviceOverrideInputs != null) {
+        errorNodeSummary.setValid(false);
+      }
+      return;
+    }
+
+    ObjectNode linkedServiceOverridesInputs = mapper.createObjectNode();
+    linkedServiceOverridesInputs.set(YamlTypes.SERVICE_OVERRIDE_INPUTS, serviceOverrideInputs);
+    String linkedServiceOverridesYaml = YamlPipelineUtils.writeYamlString(linkedServiceOverridesInputs);
+    if (!RuntimeInputsValidator.validateInputsAgainstSourceNode(
+            linkedServiceOverridesYaml, serviceOverrideInputsYaml)) {
+      errorNodeSummary.setValid(false);
+    }
+  }
+
+  private boolean validateInfraDefsWithoutEnvRef(EntityRefreshContext context,
+      InputsValidationResponse errorNodeSummary, ObjectMapper mapper, JsonNode infraDefsNode,
+      YamlNode stageYamlNodeInResolvedTemplatesYaml) {
+    YamlNode envNodeInResolvedTemplatesYaml =
+        YamlNodeUtils.goToPathUsingFqn(stageYamlNodeInResolvedTemplatesYaml, "spec.environment");
+    if (envNodeInResolvedTemplatesYaml == null) {
+      log.warn("Env node in Resolved templates yaml is null");
+      return true;
+    }
+    JsonNode infraDefsNodeInResolvedTemplatesYaml =
+        envNodeInResolvedTemplatesYaml.getField(YamlTypes.INFRASTRUCTURE_DEFS).getNode().getCurrJsonNode();
+    if (infraDefsNodeInResolvedTemplatesYaml == null) {
+      log.warn("Something wrong happened finding infraDefinitions node in resolved templates yaml");
+      return true;
+    }
+    if (checkIfInfraDefsToBeValidated(infraDefsNode, infraDefsNodeInResolvedTemplatesYaml, mapper)) {
+      JsonNode envRefNode =
+          envNodeInResolvedTemplatesYaml.getField(YamlTypes.ENVIRONMENT_REF).getNode().getCurrJsonNode();
+      if (envRefNode == null) {
+        log.warn("Skipping because couldn't find envRef value");
+        return true;
+      }
+      String envRefValue = envRefNode.asText();
+      return validateInfraDefsInput(context, errorNodeSummary, envRefValue, mapper, infraDefsNode);
+    }
+    return true;
   }
 
   public JsonNode refreshEnvironmentInputs(YamlNode entityNode, EntityRefreshContext context) {
@@ -111,48 +227,148 @@ public class EnvironmentRefreshHelper {
     String envRefValue;
     ObjectMapper mapper = new ObjectMapper();
     JsonNode infraDefsNode = envObjectNode.get(YamlTypes.INFRASTRUCTURE_DEFS);
+    JsonNode serviceOverrideInputs = envObjectNode.get(YamlTypes.SERVICE_OVERRIDE_INPUTS);
     if (envRefJsonNode != null) {
       envRefValue = envRefJsonNode.asText();
       JsonNode envInputsNode = envObjectNode.get(YamlTypes.ENVIRONMENT_INPUTS);
       if (NGExpressionUtils.isRuntimeOrExpressionField(envRefValue)) {
-        if (!isNodeValueRuntime(envObjectNode)) {
-          envObjectNode.put(YamlTypes.ENVIRONMENT_INPUTS, "<+input>");
-        }
-        if (!isNodeValueRuntime(infraDefsNode)) {
+        envObjectNode.put(YamlTypes.ENVIRONMENT_INPUTS, "<+input>");
+        if (infraDefsNode != null && isNodeNotNullAndNotHaveRuntimeValue(infraDefsNode)) {
           envObjectNode.put(YamlTypes.INFRASTRUCTURE_DEFS, "<+input>");
+        }
+        if (serviceOverrideInputs != null && isNodeNotNullAndNotHaveRuntimeValue(serviceOverrideInputs)) {
+          envObjectNode.put(YamlTypes.SERVICE_OVERRIDE_INPUTS, "<+input>");
         }
         return envObjectNode;
       }
 
       refreshEnvInputs(context, envRefValue, mapper, envObjectNode, envInputsNode);
       refreshInfraDefsInput(context, envRefValue, mapper, envObjectNode, infraDefsNode);
+      refreshServiceOverrideInputsWithEnvRef(
+          entityNode, context, envObjectNode, envRefJsonNode, mapper, serviceOverrideInputs);
     } else {
+      if (serviceOverrideInputs == null && infraDefsNode == null) {
+        return envObjectNode;
+      }
+      YamlNode stageYamlNodeInResolvedTemplatesYaml =
+          getCorrespondingStageNodeInResolvedTemplatesYaml(entityNode, context.getResolvedTemplatesYamlNode());
+      if (stageYamlNodeInResolvedTemplatesYaml == null) {
+        log.warn("Could not find corresponding stage node in resolved templates yaml. Exiting.");
+        return envObjectNode;
+      }
       if (infraDefsNode != null) {
-        YamlNode envNodeInResolvedTemplatesYaml =
-            getEnvNodeFromResolvedTemplatesYaml(entityNode, context.getResolvedTemplatesYamlNode());
-        if (envNodeInResolvedTemplatesYaml == null) {
-          log.warn("Env node in Resolved templates yaml is null");
-          return envObjectNode;
-        }
-        JsonNode infraDefsNodeInResolvedTemplatesYaml =
-            envNodeInResolvedTemplatesYaml.getField(YamlTypes.INFRASTRUCTURE_DEFS).getNode().getCurrJsonNode();
-        if (infraDefsNodeInResolvedTemplatesYaml == null) {
-          log.warn("Something wrong happened finding infraDefinitions node in resolved templates yaml");
-          return envObjectNode;
-        }
-        if (checkIfInfraDefsToBeValidated(infraDefsNode, infraDefsNodeInResolvedTemplatesYaml, mapper)) {
-          JsonNode envRefNode =
-              envNodeInResolvedTemplatesYaml.getField(YamlTypes.ENVIRONMENT_REF).getNode().getCurrJsonNode();
-          if (envRefNode == null) {
-            log.warn("Skipping because couldn't find envRef value");
-            return envObjectNode;
-          }
-          envRefValue = envRefNode.asText();
-          refreshInfraDefsInput(context, envRefValue, mapper, envObjectNode, infraDefsNode);
-        }
+        refreshInfraDefsWithoutEnvRef(
+            context, envObjectNode, mapper, infraDefsNode, stageYamlNodeInResolvedTemplatesYaml);
+      }
+      if (serviceOverrideInputs != null) {
+        refreshServiceOverrideInputsWithoutEnvRef(
+            context, envObjectNode, mapper, serviceOverrideInputs, stageYamlNodeInResolvedTemplatesYaml);
       }
     }
     return envObjectNode;
+  }
+
+  private void refreshServiceOverrideInputsWithEnvRef(YamlNode entityNode, EntityRefreshContext context,
+      ObjectNode envObjectNode, JsonNode envRefJsonNode, ObjectMapper mapper, JsonNode serviceOverrideInputs) {
+    YamlNode stageYamlNodeInResolvedTemplatesYaml =
+        getCorrespondingStageNodeInResolvedTemplatesYaml(entityNode, context.getResolvedTemplatesYamlNode());
+    if (stageYamlNodeInResolvedTemplatesYaml == null) {
+      log.warn("Could not find corresponding stage node in resolved templates yaml. Exiting.");
+      return;
+    }
+    YamlNode serviceNodeInResolvedTemplatesYaml =
+        YamlNodeUtils.goToPathUsingFqn(stageYamlNodeInResolvedTemplatesYaml, "spec.service");
+    if (serviceNodeInResolvedTemplatesYaml == null) {
+      log.warn("Env node in Resolved templates yaml is null");
+      return;
+    }
+    JsonNode serviceRefInResolvedTemplatesYaml =
+        serviceNodeInResolvedTemplatesYaml.getField(YamlTypes.SERVICE_REF).getNode().getCurrJsonNode();
+    refreshServiceOverrideInputs(
+        context, envObjectNode, mapper, serviceOverrideInputs, serviceRefInResolvedTemplatesYaml, envRefJsonNode);
+  }
+
+  private void refreshServiceOverrideInputs(EntityRefreshContext context, ObjectNode envObjectNode, ObjectMapper mapper,
+      JsonNode serviceOverrideInputs, JsonNode serviceRefInResolvedTemplatesYaml,
+      JsonNode envRefInResolvedTemplatesYaml) {
+    if (serviceRefInResolvedTemplatesYaml == null || envRefInResolvedTemplatesYaml == null) {
+      log.warn("Service ref or env ref in yaml is null. Exiting.");
+      return;
+    }
+    if (isNodeNotNullAndValueRuntime(serviceRefInResolvedTemplatesYaml)
+        || isNodeNotNullAndValueRuntime(envRefInResolvedTemplatesYaml)) {
+      if (isNodeNotNullAndNotHaveRuntimeValue(serviceOverrideInputs)) {
+        envObjectNode.put(YamlTypes.SERVICE_OVERRIDE_INPUTS, "<+input>");
+      }
+      return;
+    }
+
+    String serviceOverrideInputsYaml =
+        serviceOverrideService.createServiceOverrideInputsYaml(context.getAccountId(), context.getOrgId(),
+            context.getProjectId(), envRefInResolvedTemplatesYaml.asText(), serviceRefInResolvedTemplatesYaml.asText());
+    if (EmptyPredicate.isEmpty(serviceOverrideInputsYaml)) {
+      if (serviceOverrideInputs != null) {
+        envObjectNode.remove(YamlTypes.SERVICE_OVERRIDE_INPUTS);
+      }
+      return;
+    }
+
+    ObjectNode linkedServiceOverridesInputs = mapper.createObjectNode();
+    linkedServiceOverridesInputs.set(YamlTypes.SERVICE_OVERRIDE_INPUTS, serviceOverrideInputs);
+    String linkedServiceOverridesYaml = YamlPipelineUtils.writeYamlString(linkedServiceOverridesInputs);
+
+    JsonNode refreshedJsonNode =
+        YamlRefreshHelper.refreshYamlFromSourceYaml(linkedServiceOverridesYaml, serviceOverrideInputsYaml);
+    envObjectNode.set(YamlTypes.SERVICE_OVERRIDE_INPUTS, refreshedJsonNode.get(YamlTypes.SERVICE_OVERRIDE_INPUTS));
+  }
+
+  private void refreshServiceOverrideInputsWithoutEnvRef(EntityRefreshContext context, ObjectNode envObjectNode,
+      ObjectMapper mapper, JsonNode serviceOverrideInputs, YamlNode stageYamlNodeInResolvedTemplatesYaml) {
+    YamlNode serviceNodeInResolvedTemplatesYaml =
+        YamlNodeUtils.goToPathUsingFqn(stageYamlNodeInResolvedTemplatesYaml, "spec.service");
+    if (serviceNodeInResolvedTemplatesYaml == null) {
+      log.warn("Env node in Resolved templates yaml is null");
+      return;
+    }
+    YamlNode envNodeInResolvedTemplatesYaml =
+        YamlNodeUtils.goToPathUsingFqn(stageYamlNodeInResolvedTemplatesYaml, "spec.environment");
+    if (envNodeInResolvedTemplatesYaml == null) {
+      log.warn("Env node in Resolved templates yaml is null");
+      return;
+    }
+    JsonNode serviceRefInResolvedTemplatesYaml =
+        serviceNodeInResolvedTemplatesYaml.getField(YamlTypes.SERVICE_REF).getNode().getCurrJsonNode();
+    JsonNode envRefInResolvedTemplatesYaml =
+        envNodeInResolvedTemplatesYaml.getField(YamlTypes.ENVIRONMENT_REF).getNode().getCurrJsonNode();
+    refreshServiceOverrideInputs(context, envObjectNode, mapper, serviceOverrideInputs,
+        serviceRefInResolvedTemplatesYaml, envRefInResolvedTemplatesYaml);
+  }
+
+  private void refreshInfraDefsWithoutEnvRef(EntityRefreshContext context, ObjectNode envObjectNode,
+      ObjectMapper mapper, JsonNode infraDefsNode, YamlNode stageYamlNodeInResolvedTemplatesYaml) {
+    String envRefValue;
+    YamlNode envNodeInResolvedTemplatesYaml =
+        YamlNodeUtils.goToPathUsingFqn(stageYamlNodeInResolvedTemplatesYaml, "spec.environment");
+    if (envNodeInResolvedTemplatesYaml == null) {
+      log.warn("Env node in Resolved templates yaml is null");
+      return;
+    }
+    JsonNode infraDefsNodeInResolvedTemplatesYaml =
+        envNodeInResolvedTemplatesYaml.getField(YamlTypes.INFRASTRUCTURE_DEFS).getNode().getCurrJsonNode();
+    if (infraDefsNodeInResolvedTemplatesYaml == null) {
+      log.warn("Something wrong happened finding infraDefinitions node in resolved templates yaml");
+      return;
+    }
+    if (checkIfInfraDefsToBeValidated(infraDefsNode, infraDefsNodeInResolvedTemplatesYaml, mapper)) {
+      JsonNode envRefNode =
+          envNodeInResolvedTemplatesYaml.getField(YamlTypes.ENVIRONMENT_REF).getNode().getCurrJsonNode();
+      if (envRefNode == null) {
+        log.warn("Skipping because couldn't find envRef value");
+        return;
+      }
+      envRefValue = envRefNode.asText();
+      refreshInfraDefsInput(context, envRefValue, mapper, envObjectNode, infraDefsNode);
+    }
   }
 
   private void refreshInfraDefsInput(EntityRefreshContext context, String envRefValue, ObjectMapper mapper,
@@ -205,13 +421,13 @@ public class EnvironmentRefreshHelper {
     envObjectNode.set(YamlTypes.ENVIRONMENT_INPUTS, refreshedJsonNode.get(YamlTypes.ENVIRONMENT_INPUTS));
   }
 
-  private void validateInfraDefsInput(EntityRefreshContext context, InputsValidationResponse errorNodeSummary,
+  private boolean validateInfraDefsInput(EntityRefreshContext context, InputsValidationResponse errorNodeSummary,
       String envRefValue, ObjectMapper mapper, JsonNode infraDefsNode) {
     if (infraDefsNode == null) {
-      return;
+      return true;
     }
     if (NGExpressionUtils.isRuntimeOrExpressionField(infraDefsNode.asText())) {
-      return;
+      return true;
     }
     List<String> infraDefIdentifiers = collectAllInfraIdentifiers(infraDefsNode);
     if (EmptyPredicate.isNotEmpty(infraDefIdentifiers)) {
@@ -219,7 +435,7 @@ public class EnvironmentRefreshHelper {
           context.getAccountId(), context.getOrgId(), context.getProjectId(), envRefValue, infraDefIdentifiers, false);
       if (EmptyPredicate.isEmpty(infraInputs)) {
         errorNodeSummary.setValid(false);
-        return;
+        return false;
       }
 
       ObjectNode linkedInfraDefs = mapper.createObjectNode();
@@ -230,12 +446,15 @@ public class EnvironmentRefreshHelper {
       JsonNode infraInputsNode = readTree(infraInputs);
       JsonNode dummyInfraInputsNode = addDummyRootToJsonNode(infraInputsNode, mapper);
 
+      // TODO(@Inder): Create another validation method taking jsonNodes instead of yaml
       if (!RuntimeInputsValidator.validateInputsAgainstSourceNode(
               YamlPipelineUtils.writeYamlString(dummyLinkedInfraDefs),
               YamlPipelineUtils.writeYamlString(dummyInfraInputsNode))) {
         errorNodeSummary.setValid(false);
+        return false;
       }
     }
+    return true;
   }
 
   private JsonNode readTree(String yaml) {
@@ -307,23 +526,20 @@ public class EnvironmentRefreshHelper {
     return infraDefs;
   }
 
-  private YamlNode getEnvNodeFromResolvedTemplatesYaml(YamlNode entityNode, YamlNode resolvedTemplatesYamlNode) {
+  private YamlNode getCorrespondingStageNodeInResolvedTemplatesYaml(
+      YamlNode entityNode, YamlNode resolvedTemplatesYamlNode) {
     String stageIdentifier = getStageIdentifierForGivenEnvironmentField(entityNode);
     if (stageIdentifier == null) {
       log.warn("Stage not found, returning null");
       return null;
     }
-    YamlNode stageYamlNodeInResolvedTemplatesYaml =
-        findStageWithGivenIdentifier(resolvedTemplatesYamlNode, stageIdentifier);
-    return YamlNodeUtils.goToPathUsingFqn(stageYamlNodeInResolvedTemplatesYaml, "spec.environment");
+    return findStageWithGivenIdentifier(resolvedTemplatesYamlNode, stageIdentifier);
   }
 
-  boolean isNodeValueRuntime(JsonNode jsonNode) {
-    if (jsonNode == null) {
-      return false;
-    }
-    return !(jsonNode.isObject()
-        || (jsonNode.isValueNode() && !NGExpressionUtils.matchesInputSetPattern(jsonNode.asText())));
+  boolean isNodeNotNullAndNotHaveRuntimeValue(JsonNode jsonNode) {
+    return jsonNode != null
+        && (jsonNode.isObject() || jsonNode.isArray()
+            || (jsonNode.isValueNode() && !NGExpressionUtils.matchesInputSetPattern(jsonNode.asText())));
   }
 
   private String getStageIdentifierForGivenEnvironmentField(YamlNode entityNode) {
@@ -369,5 +585,9 @@ public class EnvironmentRefreshHelper {
     ObjectNode dummyObjectNode = mapper.createObjectNode();
     dummyObjectNode.set(DUMMY_NODE, node);
     return dummyObjectNode;
+  }
+
+  private boolean isNodeNotNullAndValueRuntime(JsonNode node) {
+    return node != null && node.isValueNode() && NGExpressionUtils.matchesInputSetPattern(node.asText());
   }
 }

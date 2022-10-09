@@ -54,6 +54,8 @@ import io.harness.azure.utility.AzureResourceUtility;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 
+import software.wings.beans.AzureImageGallery;
+
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Singleton;
 import com.microsoft.azure.PagedList;
@@ -281,6 +283,23 @@ public class AzureComputeClientImpl extends AzureClient implements AzureComputeC
     log.debug("Start listing resource groups names for subscriptionId {}", subscriptionId);
     List<ResourceGroup> resourceGroupList = azure.resourceGroups().list();
     return resourceGroupList.stream().map(HasName::name).collect(Collectors.toList());
+  }
+
+  @Override
+  public List<AzureImageGallery> listImageGalleries(
+      AzureConfig azureConfig, String subscriptionId, String resourceGroup) {
+    Azure azure = getAzureClient(azureConfig, subscriptionId);
+    return azure.galleries()
+        .listByResourceGroup(resourceGroup)
+        .stream()
+        .map(ig
+            -> AzureImageGallery.builder()
+                   .name(ig.name())
+                   .subscriptionId(subscriptionId)
+                   .resourceGroupName(resourceGroup)
+                   .regionName(ig.regionName())
+                   .build())
+        .collect(Collectors.toList());
   }
 
   @Override

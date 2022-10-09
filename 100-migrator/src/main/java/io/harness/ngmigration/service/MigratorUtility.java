@@ -13,9 +13,14 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.Scope;
 import io.harness.encryption.SecretRefData;
 import io.harness.exception.InvalidArgumentsException;
+import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.ng.core.filestore.dto.FileDTO;
+import io.harness.ngmigration.beans.FileYamlDTO;
 import io.harness.ngmigration.beans.InputDefaults;
+import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
+import io.harness.ngmigration.client.NGClient;
 import io.harness.ngmigration.secrets.SecretFactory;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.yaml.core.variables.NGVariable;
@@ -28,16 +33,27 @@ import software.wings.beans.ServiceVariableType;
 import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.NGMigrationEntityType;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import lombok.extern.slf4j.Slf4j;
+import okhttp3.MediaType;
+import okhttp3.RequestBody;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.CaseUtils;
+import retrofit2.Response;
 
+@Slf4j
 public class MigratorUtility {
+  public static String generateManifestIdentifier(String name) {
+    return generateIdentifier(name);
+  }
+
   public static String generateIdentifier(String name) {
-    return CaseUtils.toCamelCase(name.replaceAll("[^A-Za-z0-9]", " ").trim(), false, ' ');
+    String generated = CaseUtils.toCamelCase(name.replaceAll("[^A-Za-z0-9]", " ").trim(), false, ' ');
+    return Character.isDigit(generated.charAt(0)) ? "_" + generated : generated;
   }
 
   public static ParameterField<String> getParameterField(String value) {
@@ -62,6 +78,8 @@ public class MigratorUtility {
         return SecretFactory.isStoredInHarnessSecretManager(file) ? Integer.MIN_VALUE : 5;
       case CONNECTOR:
         return 10;
+      case MANIFEST:
+        return 15;
       case SERVICE:
         return 20;
       case ENVIRONMENT:
@@ -146,5 +164,27 @@ public class MigratorUtility {
       });
     }
     return variables;
+  }
+
+  public static void createFile(String auth, NGClient ngClient, MigrationInputDTO inputDTO, FileYamlDTO fileYamlDTO) {
+    RequestBody identifier = RequestBody.create(MediaType.parse("text/plain"), fileYamlDTO.getIdentifier());
+    RequestBody name = RequestBody.create(MediaType.parse("text/plain"), fileYamlDTO.getName());
+    RequestBody fileUsage = RequestBody.create(MediaType.parse("text/plain"), fileYamlDTO.getFileUsage());
+    RequestBody type = RequestBody.create(MediaType.parse("text/plain"), "FILE");
+    RequestBody parentIdentifier = RequestBody.create(MediaType.parse("text/plain"), "Root");
+    RequestBody mimeType = RequestBody.create(MediaType.parse("text/plain"), "txt");
+    RequestBody content = RequestBody.create(MediaType.parse("application/octet-stream"), fileYamlDTO.getContent());
+
+    Response<ResponseDTO<FileDTO>> resp = null;
+    try {
+      resp = ngClient
+                 .createFileInFileStore(auth, inputDTO.getAccountIdentifier(), inputDTO.getOrgIdentifier(),
+                     inputDTO.getProjectIdentifier(), content, name, identifier, fileUsage, type, parentIdentifier,
+                     mimeType)
+                 .execute();
+      log.info("Connector creation Response details {} {}", resp.code(), resp.message());
+    } catch (IOException e) {
+      log.error("Failed to create file", e);
+    }
   }
 }

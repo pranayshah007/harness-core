@@ -89,7 +89,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.domain.Page;
@@ -729,14 +728,22 @@ public class NGTemplateServiceImpl implements NGTemplateService {
   public void checkLinkedTemplateAccess(
       String accountId, String orgId, String projectId, TemplateMergeResponseDTO templateMergeResponseDTO) {
     if (EmptyPredicate.isNotEmpty(templateMergeResponseDTO.getTemplateReferenceSummaries())) {
-      Set<String> templateIdentifiers = templateMergeResponseDTO.getTemplateReferenceSummaries()
-                                            .stream()
-                                            .map(TemplateReferenceSummary::getTemplateIdentifier)
-                                            .collect(Collectors.toSet());
-      templateIdentifiers.forEach(templateIdentifier
-          -> accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgId, projectId),
-              Resource.of(NGTemplateResource.TEMPLATE, templateIdentifier),
-              PermissionTypes.TEMPLATE_ACCESS_PERMISSION));
+      for (TemplateReferenceSummary templateReferenceSummary :
+          templateMergeResponseDTO.getTemplateReferenceSummaries()) {
+        String templateIdentifier = templateReferenceSummary.getTemplateIdentifier();
+        Scope scope = templateReferenceSummary.getScope();
+        String templateOrgIdentifier = null;
+        String templateProjIdentifier = null;
+        if (scope.equals(Scope.ORG)) {
+          templateOrgIdentifier = orgId;
+        } else if (scope.equals(Scope.PROJECT)) {
+          templateOrgIdentifier = orgId;
+          templateProjIdentifier = projectId;
+        }
+        accessControlClient.checkForAccessOrThrow(
+            ResourceScope.of(accountId, templateOrgIdentifier, templateProjIdentifier),
+            Resource.of(NGTemplateResource.TEMPLATE, templateIdentifier), PermissionTypes.TEMPLATE_ACCESS_PERMISSION);
+      }
     }
   }
 

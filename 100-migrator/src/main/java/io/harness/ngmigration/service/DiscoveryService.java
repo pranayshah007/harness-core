@@ -13,6 +13,7 @@ import static io.harness.ngmigration.utils.NGMigrationConstants.VIZ_FILE_NAME;
 import static io.harness.ngmigration.utils.NGMigrationConstants.VIZ_TEMP_DIR_PREFIX;
 
 import static software.wings.ngmigration.NGMigrationEntityType.ENVIRONMENT;
+import static software.wings.ngmigration.NGMigrationEntityType.MANIFEST;
 
 import static java.util.stream.Collectors.groupingBy;
 
@@ -342,8 +343,8 @@ public class DiscoveryService {
     zipFile.getParentFile().mkdirs();
     try (ZipOutputStream out = new ZipOutputStream(new FileOutputStream(zipFile))) {
       for (NGYamlFile file : ngYamlFiles) {
-        if (file.isExists()) {
-          // TODO: @vaibhav.si Add the mapping to the response
+        if (MANIFEST.equals(file.getType()) || file.isExists()) {
+          // TODO: @deepak.puthraya Add the mapping to the response
           continue;
         }
         ZipEntry e = new ZipEntry(file.getFilename());

@@ -178,7 +178,8 @@ public class ArtifactConfigToDelegateReqMapper {
         customScriptInlineSource.getScript().fetchFinalValue().toString(),
         NGVariablesUtils.getStringMapVariables(artifactConfig.getScripts().getFetchAllArtifacts().getAttributes(), 0L),
         NGVariablesUtils.getStringMapVariables(artifactConfig.getInputs(), 0L), artifactConfig.getVersion().getValue(),
-        AmbianceUtils.obtainCurrentRuntimeId(ambiance), artifactConfig.getTimeout().getValue().getTimeoutInMillis(),
+        ambiance != null ? AmbianceUtils.obtainCurrentRuntimeId(ambiance) : "",
+        artifactConfig.getTimeout() != null ? artifactConfig.getTimeout().getValue().getTimeoutInMillis() : 600000L,
         AmbianceUtils.getAccountId(ambiance));
   }
 

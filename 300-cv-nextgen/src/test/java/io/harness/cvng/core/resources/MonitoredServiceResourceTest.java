@@ -493,7 +493,7 @@ public class MonitoredServiceResourceTest extends CvNextGenTestBase {
         builderFactory.getContext().getAccountId(), cvConfigIds);
 
     List<CVNGLogDTO> cvngLogDTOs =
-        IntStream.range(0, 3)
+        IntStream.range(0, 1)
             .mapToObj(index -> builderFactory.executionLogDTOBuilder().traceableId(verificationTaskIds.get(0)).build())
             .collect(Collectors.toList());
     cvngLogService.save(cvngLogDTOs);

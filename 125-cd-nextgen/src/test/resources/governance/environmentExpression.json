@@ -1,0 +1,5 @@
+{
+  "environmentRef": "<+input>",
+  "deployToAll": false,
+  "infrastructureDefinitions": "<+input>"
+}

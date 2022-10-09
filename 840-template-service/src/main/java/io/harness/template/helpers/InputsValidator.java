@@ -110,7 +110,7 @@ public class InputsValidator {
     YamlNode yamlNode = validateAndGetYamlNode(yaml);
     InputsValidationResponse templateInputsValidationResponse =
         validateTemplateInputs(accountId, orgId, projectId, yamlNode, templateCacheMap, depth);
-    if (featureFlagHelperService.isEnabled(accountId, FeatureName.SERVICE_ENV_RECONCILIATION)) {
+    if (featureFlagHelperService.isEnabled(accountId, FeatureName.CD_SERVICE_ENV_RECONCILIATION)) {
       Map<String, Object> resolvedTemplatesMap = templateMergeServiceHelper.mergeTemplateInputsInObject(
           accountId, orgId, projectId, yamlNode, templateCacheMap, 0);
       String resolvedTemplatesYaml = YamlPipelineUtils.writeYamlString(resolvedTemplatesMap);

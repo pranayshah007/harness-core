@@ -570,7 +570,8 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
 
     ObjectNode primaryArtifactObjectNode = (ObjectNode) primaryArtifactField.getNode().getCurrJsonNode();
     if (NGExpressionUtils.matchesInputSetPattern(primaryArtifactRefValue)) {
-      if (EmptyPredicate.isNotEmpty(primaryArtifactRef)) {
+      if (EmptyPredicate.isNotEmpty(primaryArtifactRef)
+          && !NGExpressionUtils.matchesInputSetPattern(primaryArtifactRef)) {
         primaryArtifactRefValue = primaryArtifactRef;
       } else {
         primaryArtifactObjectNode.remove(YamlTypes.ARTIFACT_SOURCES);
