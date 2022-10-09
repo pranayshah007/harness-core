@@ -1,10 +1,3 @@
-/*
- * Copyright 2022 Harness Inc. All rights reserved.
- * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
- * that can be found in the licenses directory at the root of this repository, also available at
- * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
- */
-
 package io.harness.cdng.ecs;
 
 import static com.fasterxml.jackson.annotation.JsonTypeInfo.As.EXTERNAL_PROPERTY;
@@ -31,27 +24,27 @@ import org.springframework.data.annotation.TypeAlias;
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-@JsonTypeName(StepSpecTypeConstants.ECS_CANARY_DELETE)
-@TypeAlias("ecsCanaryDeleteStepNode")
-@RecasterAlias("io.harness.cdng.ecs.EcsCanaryDeleteStepNode")
-public class EcsCanaryDeleteStepNode extends CdAbstractStepNode {
-  @JsonProperty("type") @NotNull EcsCanaryDeleteStepNode.StepType type = StepType.EcsCanaryDelete;
+@JsonTypeName(StepSpecTypeConstants.ECS_RUN_TASK)
+@TypeAlias("ecsRunTaskStepNode")
+@RecasterAlias("io.harness.cdng.ecs.EcsRunTaskStepNode")
+public class EcsRunTaskStepNode extends CdAbstractStepNode {
+  @JsonProperty("type") @NotNull EcsRunTaskStepNode.StepType type = StepType.EcsRunTask;
   @JsonProperty("spec")
   @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
-  EcsCanaryDeleteStepInfo ecsCanaryDeleteStepInfo;
+  EcsRunTaskStepInfo ecsRunTaskStepInfo;
 
   @Override
   public String getType() {
-    return StepSpecTypeConstants.ECS_CANARY_DELETE;
+    return StepSpecTypeConstants.ECS_RUN_TASK;
   }
 
   @Override
   public StepSpecType getStepSpecType() {
-    return ecsCanaryDeleteStepInfo;
+    return ecsRunTaskStepInfo;
   }
 
   enum StepType {
-    EcsCanaryDelete(StepSpecTypeConstants.ECS_CANARY_DELETE);
+    EcsRunTask(StepSpecTypeConstants.ECS_RUN_TASK);
     @Getter String name;
     StepType(String name) {
       this.name = name;

@@ -14,17 +14,10 @@ import java.util.List;
 import lombok.Builder;
 import lombok.Data;
 
-@OwnedBy(HarnessTeam.CDP)
 @Data
 @Builder
-public class EcsTask {
-  private String clusterArn;
-  private String taskArn;
-  private String taskDefinitionArn;
-  private String launchType;
-  private String serviceName;
-  private List<EcsContainer> containers; // list of containers
-  private Long startedAt;
-  private String startedBy;
-  private Long version;
+@OwnedBy(HarnessTeam.CDP)
+public class EcsRunTaskResult {
+  private String region;
+  private List<EcsTask> ecsTasks;
 }

@@ -2268,6 +2268,12 @@
 573536:io.harness.delegate.task.ecs.response.EcsBlueGreenRollbackResponse
 573537:io.harness.delegate.beans.ecs.EcsBlueGreenRollbackResult
 573538:io.harness.delegate.task.ecs.EcsLoadBalancerConfig
+573539:io.harness.delegate.task.ecs.request.EcsGitFetchRunTaskRequest
+573540:io.harness.delegate.task.ecs.response.EcsGitFetchRunTaskResponse
+573541:io.harness.delegate.task.ecs.EcsGitFetchRunTaskFileConfig
+573542:io.harness.delegate.task.ecs.request.EcsRunTaskRequest
+573543:io.harness.delegate.task.ecs.response.EcsRunTaskResponse
+573544:io.harness.delegate.beans.ecs.EcsRunTaskResult
 600001:io.harness.ng.core.dto.secrets.WinRmCredentialsSpecDTO
 600002:io.harness.secretmanagerclient.WinRmAuthScheme
 600003:io.harness.ng.core.dto.secrets.NTLMConfigDTO

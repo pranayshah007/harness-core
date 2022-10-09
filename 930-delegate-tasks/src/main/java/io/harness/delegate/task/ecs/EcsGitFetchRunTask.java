@@ -1,10 +1,3 @@
-/*
- * Copyright 2022 Harness Inc. All rights reserved.
- * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
- * that can be found in the licenses directory at the root of this repository, also available at
- * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
- */
-
 package io.harness.delegate.task.ecs;
 
 import static io.harness.logging.LogLevel.ERROR;
@@ -35,12 +28,11 @@ import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
 import io.harness.delegate.exception.TaskNGDataException;
 import io.harness.delegate.task.AbstractDelegateRunnableTask;
 import io.harness.delegate.task.TaskParameters;
-import io.harness.delegate.task.ecs.request.EcsGitFetchRequest;
-import io.harness.delegate.task.ecs.response.EcsGitFetchResponse;
+import io.harness.delegate.task.ecs.request.EcsGitFetchRunTaskRequest;
+import io.harness.delegate.task.ecs.response.EcsGitFetchRunTaskResponse;
 import io.harness.delegate.task.git.GitFetchTaskHelper;
 import io.harness.delegate.task.git.TaskStatus;
 import io.harness.ecs.EcsCommandUnitConstants;
-import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.git.model.FetchFilesResult;
 import io.harness.logging.CommandExecutionStatus;
@@ -54,23 +46,21 @@ import software.wings.beans.LogWeight;
 import com.google.inject.Inject;
 import java.io.IOException;
 import java.nio.file.NoSuchFileException;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.NotImplementedException;
 import org.jose4j.lang.JoseException;
 
 @Slf4j
 @OwnedBy(HarnessTeam.CDP)
-public class EcsGitFetchTask extends AbstractDelegateRunnableTask {
+public class EcsGitFetchRunTask extends AbstractDelegateRunnableTask {
   @Inject private GitDecryptionHelper gitDecryptionHelper;
   @Inject private GitFetchTaskHelper gitFetchTaskHelper;
 
-  public EcsGitFetchTask(DelegateTaskPackage delegateTaskPackage, ILogStreamingTaskClient logStreamingTaskClient,
+  public EcsGitFetchRunTask(DelegateTaskPackage delegateTaskPackage, ILogStreamingTaskClient logStreamingTaskClient,
       Consumer<DelegateTaskResponse> consumer, BooleanSupplier preExecute) {
     super(delegateTaskPackage, logStreamingTaskClient, consumer, preExecute);
     SecretSanitizerThreadLocal.addAll(delegateTaskPackage.getSecrets());
@@ -85,81 +75,61 @@ public class EcsGitFetchTask extends AbstractDelegateRunnableTask {
   public DelegateResponseData run(TaskParameters parameters) throws IOException, JoseException {
     CommandUnitsProgress commandUnitsProgress = CommandUnitsProgress.builder().build();
     try {
-      EcsGitFetchRequest ecsGitFetchRequest = (EcsGitFetchRequest) parameters;
+      EcsGitFetchRunTaskRequest ecsGitFetchRunTaskRequest = (EcsGitFetchRunTaskRequest) parameters;
 
-      log.info("Running Ecs Git Fetch Task for activityId {}", ecsGitFetchRequest.getActivityId());
+      log.info("Running Ecs Git Fetch Run Task for activityId {}", ecsGitFetchRunTaskRequest.getActivityId());
 
       LogCallback executionLogCallback =
           new NGDelegateLogCallback(getLogStreamingTaskClient(), EcsCommandUnitConstants.fetchManifests.toString(),
-              ecsGitFetchRequest.isShouldOpenLogStream(), commandUnitsProgress);
+              ecsGitFetchRunTaskRequest.isShouldOpenLogStream(), commandUnitsProgress);
 
       // Fetch Ecs Task Definition
-      EcsGitFetchFileConfig ecsTaskDefinitionGitFetchFileConfig =
-          ecsGitFetchRequest.getEcsTaskDefinitionGitFetchFileConfig();
+      EcsGitFetchRunTaskFileConfig taskDefinitionEcsGitFetchRunTaskFileConfig =
+          ecsGitFetchRunTaskRequest.getTaskDefinitionEcsGitFetchRunTaskFileConfig();
 
       FetchFilesResult ecsTaskDefinitionFetchFilesResult = null;
-      if (ecsTaskDefinitionGitFetchFileConfig != null) {
-        ecsTaskDefinitionFetchFilesResult = fetchManifestFile(
-            ecsTaskDefinitionGitFetchFileConfig, executionLogCallback, ecsGitFetchRequest.getAccountId());
-      }
-      // Fetch Ecs Service Definition
-      EcsGitFetchFileConfig ecsServiceDefinitionGitFetchFileConfig =
-          ecsGitFetchRequest.getEcsServiceDefinitionGitFetchFileConfig();
-
-      FetchFilesResult ecsServiceDefinitionFetchFilesResult = null;
-      if (ecsServiceDefinitionGitFetchFileConfig != null) {
-        ecsServiceDefinitionFetchFilesResult = fetchManifestFile(
-            ecsServiceDefinitionGitFetchFileConfig, executionLogCallback, ecsGitFetchRequest.getAccountId());
+      if (taskDefinitionEcsGitFetchRunTaskFileConfig != null) {
+        ecsTaskDefinitionFetchFilesResult = fetchFile(
+            taskDefinitionEcsGitFetchRunTaskFileConfig, executionLogCallback, ecsGitFetchRunTaskRequest.getAccountId());
+        executionLogCallback.saveExecutionLog(
+            color(format("%nFetched task definition from Git successfully..%n"), LogColor.White, LogWeight.Bold), INFO);
       }
 
-      List<FetchFilesResult> ecsScalableTargetFetchFilesResults = new ArrayList<>();
-      if (CollectionUtils.isNotEmpty(ecsGitFetchRequest.getEcsScalableTargetGitFetchFileConfigs())) {
-        for (EcsGitFetchFileConfig ecsScalableTargetGitFetchFileConfig :
-            ecsGitFetchRequest.getEcsScalableTargetGitFetchFileConfigs()) {
-          FetchFilesResult ecsScalableTargetFetchFilesResult = fetchManifestFile(
-              ecsScalableTargetGitFetchFileConfig, executionLogCallback, ecsGitFetchRequest.getAccountId());
-          ecsScalableTargetFetchFilesResults.add(ecsScalableTargetFetchFilesResult);
-        }
+      // Fetch Ecs Run Task Request Definition
+      EcsGitFetchRunTaskFileConfig ecsRunTaskRequestDefinitionEcsGitFetchRunTaskFileConfig =
+          ecsGitFetchRunTaskRequest.getEcsRunTaskRequestDefinitionEcsGitFetchRunTaskFileConfig();
+
+      FetchFilesResult ecsRunTaskRequestDefinitionFetchFilesResult = null;
+      if (ecsRunTaskRequestDefinitionEcsGitFetchRunTaskFileConfig != null) {
+        ecsRunTaskRequestDefinitionFetchFilesResult = fetchFile(ecsRunTaskRequestDefinitionEcsGitFetchRunTaskFileConfig,
+            executionLogCallback, ecsGitFetchRunTaskRequest.getAccountId());
+        executionLogCallback.saveExecutionLog(
+            color(format("%nFetched ecs run task request definition from Git successfully..%n"), LogColor.White,
+                LogWeight.Bold),
+            INFO);
       }
 
-      List<FetchFilesResult> ecsScalingPolicyFetchFilesResults = new ArrayList<>();
-      if (CollectionUtils.isNotEmpty(ecsGitFetchRequest.getEcsScalingPolicyGitFetchFileConfigs())) {
-        for (EcsGitFetchFileConfig ecsScalingPolicyGitFetchFileConfig :
-            ecsGitFetchRequest.getEcsScalingPolicyGitFetchFileConfigs()) {
-          FetchFilesResult ecsScalingPolicyFetchFilesResult = fetchManifestFile(
-              ecsScalingPolicyGitFetchFileConfig, executionLogCallback, ecsGitFetchRequest.getAccountId());
-          ecsScalingPolicyFetchFilesResults.add(ecsScalingPolicyFetchFilesResult);
-        }
-      }
+      executionLogCallback.saveExecutionLog("Done", INFO, CommandExecutionStatus.SUCCESS);
 
-      executionLogCallback.saveExecutionLog(
-          color(format("%nFetched all manifests successfully..%n"), LogColor.White, LogWeight.Bold), INFO,
-          CommandExecutionStatus.SUCCESS);
-
-      return EcsGitFetchResponse.builder()
+      return EcsGitFetchRunTaskResponse.builder()
           .taskStatus(TaskStatus.SUCCESS)
           .ecsTaskDefinitionFetchFilesResult(ecsTaskDefinitionFetchFilesResult)
-          .ecsServiceDefinitionFetchFilesResult(ecsServiceDefinitionFetchFilesResult)
-          .ecsScalableTargetFetchFilesResults(ecsScalableTargetFetchFilesResults)
-          .ecsScalingPolicyFetchFilesResults(ecsScalingPolicyFetchFilesResults)
+          .ecsRunTaskDefinitionRequestFetchFilesResult(ecsRunTaskRequestDefinitionFetchFilesResult)
           .unitProgressData(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress))
           .build();
 
     } catch (Exception e) {
       Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
-      log.error("Exception in Git Fetch Files Task", sanitizedException);
+      log.error("Exception in ecs run task git fetch task", sanitizedException);
       throw new TaskNGDataException(
           UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress), sanitizedException);
     }
   }
 
-  private FetchFilesResult fetchManifestFile(EcsGitFetchFileConfig ecsGitFetchFileConfig,
+  private FetchFilesResult fetchFile(EcsGitFetchRunTaskFileConfig ecsGitFetchRunTaskFileConfig,
       LogCallback executionLogCallback, String accountId) throws Exception {
-    executionLogCallback.saveExecutionLog(
-        color(format("Fetching %s config file with identifier: %s", ecsGitFetchFileConfig.getManifestType(),
-                  ecsGitFetchFileConfig.getIdentifier()),
-            White, Bold));
-    GitStoreDelegateConfig gitStoreDelegateConfig = ecsGitFetchFileConfig.getGitStoreDelegateConfig();
+    executionLogCallback.saveExecutionLog(color(format("Fetching ecs run task config file"), White, Bold));
+    GitStoreDelegateConfig gitStoreDelegateConfig = ecsGitFetchRunTaskFileConfig.getGitStoreDelegateConfig();
     executionLogCallback.saveExecutionLog("Git connector Url: " + gitStoreDelegateConfig.getGitConfigDTO().getUrl());
     String fetchTypeInfo;
     GitConfigDTO gitConfigDTO = null;
@@ -181,42 +151,27 @@ public class EcsGitFetchTask extends AbstractDelegateRunnableTask {
     FetchFilesResult filesResult = null;
     try {
       if (EmptyPredicate.isNotEmpty(gitStoreDelegateConfig.getPaths())) {
-        String filePath = ecsGitFetchFileConfig.getGitStoreDelegateConfig().getPaths().get(0);
+        String filePath = ecsGitFetchRunTaskFileConfig.getGitStoreDelegateConfig().getPaths().get(0);
 
         List<String> filePaths = Collections.singletonList(filePath);
         gitFetchTaskHelper.printFileNames(executionLogCallback, filePaths);
-        try {
-          filesResult =
-              gitFetchTaskHelper.fetchFileFromRepo(gitStoreDelegateConfig, filePaths, accountId, gitConfigDTO);
-        } catch (Exception e) {
-          throw NestedExceptionUtils.hintWithExplanationException(
-              format(
-                  "Please checks files %s configured Manifest section in Harness Service are correct. Check if git credentials are correct.",
-                  filePaths),
-              format("Error while fetching files %s from Git repo %s", filePaths,
-                  ecsGitFetchFileConfig.getGitStoreDelegateConfig().getGitConfigDTO().getUrl()),
-              e);
-        }
+        filesResult = gitFetchTaskHelper.fetchFileFromRepo(gitStoreDelegateConfig, filePaths, accountId, gitConfigDTO);
       }
       executionLogCallback.saveExecutionLog(
-          color(format("%nFetch Config File completed successfully..%n"), LogColor.White, LogWeight.Bold), INFO);
+          color(
+              format("%nFetching ecs run task config file completed successfully..%n"), LogColor.White, LogWeight.Bold),
+          INFO);
       executionLogCallback.saveExecutionLog("Done..\n", LogLevel.INFO);
     } catch (Exception ex) {
       Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(ex);
-      String msg = "Exception in processing GitFetchFilesTask. " + sanitizedException.getMessage();
+      String msg = "Exception while fetching ecs run task config file" + sanitizedException.getMessage();
       if (sanitizedException.getCause() instanceof NoSuchFileException) {
         log.error(msg, sanitizedException);
-        executionLogCallback.saveExecutionLog(
-            color(format("No manifest file found with identifier: %s.", ecsGitFetchFileConfig.getIdentifier()), Red),
-            ERROR);
+        executionLogCallback.saveExecutionLog(color(format("Ecs run task config file not found"), Red), ERROR);
       }
       executionLogCallback.saveExecutionLog(msg, ERROR, CommandExecutionStatus.FAILURE);
       throw sanitizedException;
     }
     return filesResult;
-  }
-
-  public boolean isSupportingErrorFramework() {
-    return true;
   }
 }

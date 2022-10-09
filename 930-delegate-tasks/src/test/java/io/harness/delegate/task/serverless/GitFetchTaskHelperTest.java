@@ -29,6 +29,7 @@ import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.beans.storeconfig.FetchType;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
 import io.harness.delegate.task.git.GitFetchFilesTaskHelper;
+import io.harness.delegate.task.git.GitFetchTaskHelper;
 import io.harness.delegate.task.git.ScmFetchFilesHelperNG;
 import io.harness.git.GitClientV2;
 import io.harness.logging.LogCallback;
@@ -50,7 +51,7 @@ import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 
 @OwnedBy(CDP)
-public class ServerlessGitFetchTaskHelperTest extends CategoryTest {
+public class GitFetchTaskHelperTest extends CategoryTest {
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
   @Mock private GitClientV2 gitClientV2;
@@ -61,7 +62,7 @@ public class ServerlessGitFetchTaskHelperTest extends CategoryTest {
   @Mock private GitDecryptionHelper gitDecryptionHelper;
   @Mock private LogCallback executionLogCallback;
 
-  @InjectMocks private ServerlessGitFetchTaskHelper serverlessGitFetchTaskHelper;
+  @InjectMocks private GitFetchTaskHelper serverlessGitFetchTaskHelper;
 
   private static final String accountId = "accountId";
 
@@ -69,14 +70,14 @@ public class ServerlessGitFetchTaskHelperTest extends CategoryTest {
   @Owner(developers = PIYUSH_BHUWALKA)
   @Category(UnitTests.class)
   public void getCompleteFilePathTest() {
-    assertThat(ServerlessGitFetchTaskHelper.getCompleteFilePath("a", "b")).isEqualTo("ab");
+    assertThat(GitFetchTaskHelper.getCompleteFilePath("a", "b")).isEqualTo("ab");
   }
 
   @Test
   @Owner(developers = PIYUSH_BHUWALKA)
   @Category(UnitTests.class)
   public void getCompleteFilePathTestWhenFolderEmpty() {
-    assertThat(ServerlessGitFetchTaskHelper.getCompleteFilePath(null, "b")).isEqualTo("b");
+    assertThat(GitFetchTaskHelper.getCompleteFilePath(null, "b")).isEqualTo("b");
   }
 
   @Test
