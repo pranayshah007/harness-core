@@ -80,7 +80,7 @@ public class AzureArtifactsResourceServiceImpl implements AzureArtifactsResource
 
   @Override
   public List<AzureArtifactsPackage> listAzureArtifactsPackages(IdentifierRef connectorRef, String accountId,
-      String orgIdentifier, String projectIdentifier, String org, String project, String feed, String packageType) {
+      String orgIdentifier, String projectIdentifier, String project, String feed, String packageType) {
     AzureArtifactsConnectorDTO azureArtifactsConnector = getConnector(connectorRef);
 
     BaseNGAccess baseNGAccess = getBaseNGAccess(connectorRef.getAccountIdentifier(), orgIdentifier, projectIdentifier);
@@ -109,7 +109,7 @@ public class AzureArtifactsResourceServiceImpl implements AzureArtifactsResource
 
   @Override
   public List<BuildDetails> listVersionsOfAzureArtifactsPackage(IdentifierRef connectorRef, String accountId,
-      String orgIdentifier, String projectIdentifier, String org, String project, String feed, String packageType,
+      String orgIdentifier, String projectIdentifier, String project, String feed, String packageType,
       String packageName, String versionRegex) {
     AzureArtifactsConnectorDTO azureArtifactsConnector = getConnector(connectorRef);
 
@@ -138,8 +138,8 @@ public class AzureArtifactsResourceServiceImpl implements AzureArtifactsResource
 
   @Override
   public BuildDetails getLastSuccessfulVersion(IdentifierRef connectorRef, String accountId, String orgIdentifier,
-      String projectIdentifier, String org, String project, String feed, String packageType, String packageName,
-      String version, String versionRegex) {
+      String projectIdentifier, String project, String feed, String packageType, String packageName, String version,
+      String versionRegex) {
     AzureArtifactsConnectorDTO azureArtifactsConnector = getConnector(connectorRef);
 
     BaseNGAccess baseNGAccess = getBaseNGAccess(connectorRef.getAccountIdentifier(), orgIdentifier, projectIdentifier);
@@ -168,7 +168,7 @@ public class AzureArtifactsResourceServiceImpl implements AzureArtifactsResource
 
   @Override
   public List<AzureDevopsProject> listAzureArtifactsProjects(
-      IdentifierRef connectorRef, String accountId, String orgIdentifier, String projectIdentifier, String org) {
+      IdentifierRef connectorRef, String accountId, String orgIdentifier, String projectIdentifier) {
     AzureArtifactsConnectorDTO azureArtifactsConnector = getConnector(connectorRef);
 
     BaseNGAccess baseNGAccess = getBaseNGAccess(connectorRef.getAccountIdentifier(), orgIdentifier, projectIdentifier);
@@ -196,8 +196,8 @@ public class AzureArtifactsResourceServiceImpl implements AzureArtifactsResource
   }
 
   @Override
-  public List<AzureArtifactsFeed> listAzureArtifactsFeeds(IdentifierRef connectorRef, String accountId,
-      String orgIdentifier, String projectIdentifier, String org, String project) {
+  public List<AzureArtifactsFeed> listAzureArtifactsFeeds(
+      IdentifierRef connectorRef, String accountId, String orgIdentifier, String projectIdentifier, String project) {
     AzureArtifactsConnectorDTO azureArtifactsConnector = getConnector(connectorRef);
 
     BaseNGAccess baseNGAccess = getBaseNGAccess(connectorRef.getAccountIdentifier(), orgIdentifier, projectIdentifier);
