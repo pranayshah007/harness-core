@@ -77,7 +77,9 @@ public class PrimaryArtifact implements Visitable {
     this.sources = sources;
     if (EmptyPredicate.isNotEmpty(sources)) {
       for (ArtifactSource source : this.sources) {
-        source.getSpec().setIdentifier(source.getIdentifier());
+        if (source.getSpec() != null) {
+          source.getSpec().setIdentifier(source.getIdentifier());
+        }
       }
     }
     this.metadata = metadata;

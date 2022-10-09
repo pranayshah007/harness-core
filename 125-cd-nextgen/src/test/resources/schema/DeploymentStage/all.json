@@ -399,9 +399,7 @@
     "ArtifactSource": {
       "type": "object",
       "required": [
-        "identifier",
-        "spec",
-        "type"
+        "identifier"
       ],
       "properties": {
         "identifier": {
@@ -409,6 +407,13 @@
         },
         "metadata": {
           "type": "string"
+        },
+        "name": {
+          "type": "string",
+          "pattern": "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,63}$"
+        },
+        "template": {
+          "$ref": "#/definitions/TemplateLinkConfig"
         },
         "type": {
           "type": "string",
@@ -9059,6 +9064,13 @@
         "identifier": {
           "type": "string"
         },
+        "name": {
+          "type": "string",
+          "pattern": "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,63}$"
+        },
+        "template": {
+          "$ref": "#/definitions/TemplateLinkConfig"
+        },
         "type": {
           "type": "string",
           "enum": [
@@ -10751,6 +10763,28 @@
               "type": "string"
             }
           ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "TemplateLinkConfig": {
+      "type": "object",
+      "required": [
+        "templateRef"
+      ],
+      "properties": {
+        "templateInputs": {
+          "$ref": "#/definitions/JsonNode"
+        },
+        "templateRef": {
+          "type": "string"
+        },
+        "templateVariables": {
+          "$ref": "#/definitions/JsonNode"
+        },
+        "versionLabel": {
+          "type": "string",
+          "pattern": "^[0-9a-zA-Z][^\\s]{0,63}$"
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
