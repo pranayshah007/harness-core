@@ -354,7 +354,7 @@ public class GcpSecretsManagerEncryptor implements VaultEncryptor {
               "Was not able to reach GCP Secrets Manager using given credentials. Please check your credentials and try again";
       throw new SecretManagementException(GCP_SECRET_MANAGER_OPERATION_ERROR, message, e, WingsException.USER);
     }
-    log.info("Test connection to GCP Secrets Manager V2 Succeeded for {}", gcpSecretsManagerConfig.getName());
+    log.info("Test connection to GCP Secrets Manager Succeeded for {}", gcpSecretsManagerConfig.getName());
     return true;
   }
 }
