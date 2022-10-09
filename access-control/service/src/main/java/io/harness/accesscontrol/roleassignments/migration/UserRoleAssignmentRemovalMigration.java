@@ -7,12 +7,9 @@ import static io.harness.NGConstants.ORGANIZATION_VIEWER_ROLE;
 import static io.harness.NGConstants.PROJECT_VIEWER_ROLE;
 import static io.harness.accesscontrol.principals.PrincipalType.USER;
 import static io.harness.accesscontrol.resources.resourcegroups.HarnessResourceGroupConstants.DEFAULT_ACCOUNT_LEVEL_RESOURCE_GROUP_IDENTIFIER;
-import static io.harness.beans.FeatureName.ACCOUNT_BASIC_ROLE;
-import static io.harness.beans.FeatureName.ACCOUNT_BASIC_ROLE_ONLY;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.NGConstants;
-import io.harness.accesscontrol.commons.helpers.FeatureFlagHelperService;
 import io.harness.accesscontrol.roleassignments.persistence.RoleAssignmentDBO.RoleAssignmentDBOKeys;
 import io.harness.accesscontrol.roleassignments.persistence.repositories.RoleAssignmentRepository;
 import io.harness.accesscontrol.scopes.harness.HarnessScopeLevel;
@@ -40,15 +37,13 @@ import org.springframework.data.mongodb.core.query.Criteria;
 @OwnedBy(HarnessTeam.PL)
 public class UserRoleAssignmentRemovalMigration implements NGMigration {
   private final RoleAssignmentRepository roleAssignmentRepository;
-  private final FeatureFlagHelperService featureFlagHelperService;
   private final AccountClient accountClient;
   private static final String DEBUG_MESSAGE = "UserRoleAssignmentRemovalMigration: ";
 
   @Inject
-  public UserRoleAssignmentRemovalMigration(RoleAssignmentRepository roleAssignmentRepository,
-      FeatureFlagHelperService featureFlagHelperService, AccountClient accountClient) {
+  public UserRoleAssignmentRemovalMigration(
+      RoleAssignmentRepository roleAssignmentRepository, AccountClient accountClient) {
     this.roleAssignmentRepository = roleAssignmentRepository;
-    this.featureFlagHelperService = featureFlagHelperService;
     this.accountClient = accountClient;
   }
 
@@ -80,26 +75,14 @@ public class UserRoleAssignmentRemovalMigration implements NGMigration {
         accountDTOS.stream().filter(AccountDTO::isNextGenEnabled).collect(Collectors.toList());
     log.info(DEBUG_MESSAGE + String.format("%s accounts fetch", ngEnabledAccounts.size()));
     HashSet<String> targetAccounts = new HashSet<>();
-    HashSet<String> targetAccountsWithOrganizationAndProject = new HashSet<>();
     for (AccountDTO accountDTO : ngEnabledAccounts) {
-      boolean isAccountBasicRoleEnabled =
-          featureFlagHelperService.isEnabled(ACCOUNT_BASIC_ROLE, accountDTO.getIdentifier());
-      boolean isAccountBasicRoleOnlyEnabled =
-          featureFlagHelperService.isEnabled(ACCOUNT_BASIC_ROLE_ONLY, accountDTO.getIdentifier());
-      if (isAccountBasicRoleEnabled) {
-        if (!isAccountBasicRoleOnlyEnabled) {
-          targetAccounts.add(accountDTO.getIdentifier());
-        }
-        targetAccountsWithOrganizationAndProject.add(accountDTO.getIdentifier());
-      }
+      targetAccounts.add(accountDTO.getIdentifier());
     }
 
     if (isNotEmpty(targetAccounts)) {
       deleteAccountScopeRoleAssignments(targetAccounts);
-    }
-    if (isNotEmpty(targetAccountsWithOrganizationAndProject)) {
-      deleteOrganizationScopeRoleAssignments(targetAccountsWithOrganizationAndProject);
-      deleteProjectScopeRoleAssignments(targetAccountsWithOrganizationAndProject);
+      deleteOrganizationScopeRoleAssignments(targetAccounts);
+      deleteProjectScopeRoleAssignments(targetAccounts);
     }
   }
 

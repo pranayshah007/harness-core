@@ -11,7 +11,6 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.accesscontrol.acl.migration.ACLAddBooleanFieldsMigration;
 import io.harness.accesscontrol.resources.resourcegroups.migration.MultipleManagedResourceGroupMigration;
-import io.harness.accesscontrol.roleassignments.migration.AccountBasicRoleAssignmentAdditionMigration;
 import io.harness.accesscontrol.roleassignments.migration.RoleAssignmentPrincipalScopeLevelMigration;
 import io.harness.accesscontrol.roleassignments.migration.RoleAssignmentResourceGroupMigration;
 import io.harness.accesscontrol.roleassignments.migration.RoleAssignmentScopeAdditionMigration;
@@ -54,7 +53,7 @@ public class AccessControlMongoBackgroundMigrationDetails implements MigrationDe
         .add(Pair.of(10, RoleAssignmentPrincipalScopeLevelMigration.class))
         .add(Pair.of(11, NoopMigration.class))
         .add(Pair.of(12, ACLAddBooleanFieldsMigration.class))
-        .add(Pair.of(13, AccountBasicRoleAssignmentAdditionMigration.class))
+        .add(Pair.of(13, NoopMigration.class))
         .add(Pair.of(14, UserRoleAssignmentRemovalMigration.class))
         .build();
   }
