@@ -24,6 +24,4 @@ public class DelegateRunnerCommandImpl implements DelegateRunnerCommand {
         TaskType.valueOf(delegateTaskPackage.getData().getTaskType()), delegateTaskPackage);
     taskRunner.run();
   }
-
-
 }
