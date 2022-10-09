@@ -194,7 +194,7 @@ public class DefaultUserGroupServiceImpl implements DefaultUserGroupService {
     createRoleAssignment(
         principalIdentifier, scope, true, ACCOUNT_BASIC_ROLE, DEFAULT_ACCOUNT_LEVEL_RESOURCE_GROUP_IDENTIFIER);
     createRoleAssignment(
-          principalIdentifier, scope, false, ACCOUNT_VIEWER_ROLE, DEFAULT_ACCOUNT_LEVEL_RESOURCE_GROUP_IDENTIFIER);
+        principalIdentifier, scope, false, ACCOUNT_VIEWER_ROLE, DEFAULT_ACCOUNT_LEVEL_RESOURCE_GROUP_IDENTIFIER);
   }
 
   @Override
