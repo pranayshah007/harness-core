@@ -53,14 +53,14 @@ public class StatisticsResource {
     if (featureFlagService.isEnabled(FeatureName.SPG_DASHBOARD_STATS_OPTIMIZE, accountId)) {
       deploymentStatistics = statisticsService.getDeploymentStatistics(accountId, appIds, numOfDays);
       DeploymentStatistics finalDeploymentStatistics = deploymentStatistics;
-      executorService.submit(() -> dataCompatisionLogging(accountId, numOfDays, appIds, finalDeploymentStatistics));
+      executorService.submit(() -> dataComparisionLogging(accountId, numOfDays, appIds, finalDeploymentStatistics));
     } else {
       deploymentStatistics = statisticsService.getDeploymentStatisticsNew(accountId, appIds, numOfDays);
     }
     return new RestResponse<>(deploymentStatistics);
   }
 
-  private void dataCompatisionLogging(
+  private void dataComparisionLogging(
       String accountId, Integer numOfDays, List<String> appIds, DeploymentStatistics finalDeploymentStatistics) {
     DeploymentStatistics deploymentStatisticsNew =
         statisticsService.getDeploymentStatisticsNew(accountId, appIds, numOfDays);
