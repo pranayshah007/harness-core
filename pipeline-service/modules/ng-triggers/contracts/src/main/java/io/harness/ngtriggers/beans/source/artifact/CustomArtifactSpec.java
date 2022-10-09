@@ -8,13 +8,15 @@
 package io.harness.ngtriggers.beans.source.artifact;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
-import static io.harness.ngtriggers.Constants.GITHUB_PACKAGES;
+import static io.harness.ngtriggers.Constants.CUSTOM_ARTIFACT;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ngtriggers.beans.source.webhook.v2.TriggerEventDataCondition;
+import io.harness.yaml.core.variables.NGVariable;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.util.List;
+import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
 
@@ -22,21 +24,23 @@ import lombok.Data;
 @Builder
 @JsonIgnoreProperties(ignoreUnknown = true)
 @OwnedBy(CDC)
-public class GithubPackagesSpec implements ArtifactTypeSpec {
-  String connectorRef;
+public class CustomArtifactSpec implements ArtifactTypeSpec {
   List<TriggerEventDataCondition> eventConditions;
-  String org;
-  String packageName;
-  String packageType;
+  String version;
+  String artifactsArrayPath;
+  String script;
+  String versionPath;
+  Map<String, String> metadata;
+  List<NGVariable> inputs;
 
   @Override
   public String fetchConnectorRef() {
-    return connectorRef;
+    return null;
   }
 
   @Override
   public String fetchBuildType() {
-    return GITHUB_PACKAGES;
+    return CUSTOM_ARTIFACT;
   }
 
   @Override

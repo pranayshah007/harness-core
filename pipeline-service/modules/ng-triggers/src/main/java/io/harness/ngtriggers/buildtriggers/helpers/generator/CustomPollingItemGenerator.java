@@ -13,7 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.ngtriggers.beans.entity.NGTriggerEntity;
 import io.harness.ngtriggers.buildtriggers.helpers.BuildTriggerHelper;
 import io.harness.ngtriggers.buildtriggers.helpers.dtos.BuildTriggerOpsData;
-import io.harness.polling.contracts.GithubPackagesPollingPayload;
+import io.harness.polling.contracts.CustomPayload;
 import io.harness.polling.contracts.PollingItem;
 import io.harness.polling.contracts.PollingPayloadData;
 import io.harness.polling.contracts.Type;
@@ -25,25 +25,27 @@ import lombok.AllArgsConstructor;
 @Singleton
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @OwnedBy(CDC)
-public class GithubPackagesPollingItemGenerator implements PollingItemGenerator {
+public class CustomPollingItemGenerator implements PollingItemGenerator {
   @Inject BuildTriggerHelper buildTriggerHelper;
+
   @Override
   public PollingItem generatePollingItem(BuildTriggerOpsData buildTriggerOpsData) {
     NGTriggerEntity ngTriggerEntity = buildTriggerOpsData.getTriggerDetails().getNgTriggerEntity();
     PollingItem.Builder builder = getBaseInitializedPollingItem(ngTriggerEntity);
-    String connectorRef = buildTriggerHelper.validateAndFetchFromJsonNode(buildTriggerOpsData, "spec.connectorRef");
-    String packageName = buildTriggerHelper.validateAndFetchFromJsonNode(buildTriggerOpsData, "spec.packageName");
-    String org = buildTriggerHelper.validateAndFetchFromJsonNode(buildTriggerOpsData, "spec.org");
-    String packageType = buildTriggerHelper.validateAndFetchFromJsonNode(buildTriggerOpsData, "spec.packageType");
+    String script = buildTriggerHelper.validateAndFetchFromJsonNode(
+        buildTriggerOpsData, "spec.scripts.fetchAllArtifacts.spec.source.spec.script");
+    String artifactsArrayPath = buildTriggerHelper.validateAndFetchFromJsonNode(
+        buildTriggerOpsData, "spec.scripts.fetchAllArtifacts.artifactsArrayPath");
+    String versionPath = buildTriggerHelper.validateAndFetchFromJsonNode(
+        buildTriggerOpsData, "spec.scripts.fetchAllArtifacts.versionPath");
     return builder
         .setPollingPayloadData(PollingPayloadData.newBuilder()
-                                   .setConnectorRef(connectorRef)
-                                   .setType(Type.GITHUB_PACKAGES)
-                                   .setGithubPackagesPollingPayload(GithubPackagesPollingPayload.newBuilder()
-                                                                        .setOrg(org)
-                                                                        .setPackageName(packageName)
-                                                                        .setPackageType(packageType)
-                                                                        .build())
+                                   .setType(Type.CUSTOM_ARTIFACT)
+                                   .setCustomPayload(CustomPayload.newBuilder()
+                                                         .setArtifactsArrayPath(artifactsArrayPath)
+                                                         .setVersionPath(versionPath)
+                                                         .setScript(script)
+                                                         .build())
                                    .build())
         .build();
   }
