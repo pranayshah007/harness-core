@@ -50,7 +50,7 @@ public class StatisticsResource {
   public RestResponse<DeploymentStatistics> deploymentStats(@QueryParam("accountId") String accountId,
       @DefaultValue("30") @QueryParam("numOfDays") Integer numOfDays, @QueryParam("appId") List<String> appIds) {
     DeploymentStatistics deploymentStatistics;
-    if (featureFlagService.isEnabled(FeatureName.SPG_DASHBOARD_STATS_OPTIMIZE, accountId)) {
+    if (featureFlagService.isEnabled(FeatureName.SPG_DASHBOARD_STATS_OLD_WAY, accountId)) {
       deploymentStatistics = statisticsService.getDeploymentStatistics(accountId, appIds, numOfDays);
       DeploymentStatistics finalDeploymentStatistics = deploymentStatistics;
       executorService.submit(() -> dataComparisionLogging(accountId, numOfDays, appIds, finalDeploymentStatistics));
