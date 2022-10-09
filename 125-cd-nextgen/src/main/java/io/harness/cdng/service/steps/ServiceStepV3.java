@@ -15,12 +15,14 @@ import static java.lang.String.format;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.Scope;
 import io.harness.beans.common.VariablesSweepingOutput;
 import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
 import io.harness.cdng.configfile.steps.ConfigFilesOutcome;
 import io.harness.cdng.creator.plan.environment.EnvironmentMapper;
 import io.harness.cdng.creator.plan.environment.EnvironmentPlanCreatorHelper;
 import io.harness.cdng.expressions.CDExpressionResolver;
+import io.harness.cdng.freeze.FreezeOutcome;
 import io.harness.cdng.manifest.steps.ManifestsOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.cdng.visitor.YamlTypes;
@@ -28,6 +30,9 @@ import io.harness.data.structure.CollectionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnresolvedExpressionsException;
 import io.harness.executions.steps.ExecutionNodeType;
+import io.harness.freeze.beans.FreezeEntityType;
+import io.harness.freeze.beans.response.FreezeSummaryResponseDTO;
+import io.harness.freeze.service.FreezeEvaluateService;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogLevel;
 import io.harness.logstreaming.NGLogCallback;
@@ -44,6 +49,7 @@ import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
 import io.harness.ng.core.serviceoverride.yaml.NGServiceOverrideConfig;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.ChildrenExecutableResponse;
+import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
@@ -70,6 +76,7 @@ import io.harness.yaml.utils.NGVariablesUtils;
 import software.wings.beans.LogColor;
 import software.wings.beans.LogHelper;
 
+import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -90,6 +97,7 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
   public static final StepType STEP_TYPE =
       StepType.newBuilder().setType(ExecutionNodeType.SERVICE_V3.getName()).setStepCategory(StepCategory.STEP).build();
   public static final String SERVICE_SWEEPING_OUTPUT = "serviceSweepingOutput";
+  public static final String FREEZE_SWEEPING_OUTPUT = "freezeSweepingOutput";
   public static final String SERVICE_MANIFESTS_SWEEPING_OUTPUT = "serviceManifestsSweepingOutput";
   public static final String SERVICE_CONFIG_FILES_SWEEPING_OUTPUT = "serviceConfigFilesSweepingOutput";
 
@@ -100,6 +108,8 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
   @Inject private CDExpressionResolver expressionResolver;
   @Inject private ServiceOverrideService serviceOverrideService;
   @Inject private ServiceStepOverrideHelper serviceStepOverrideHelper;
+
+  @Inject private FreezeEvaluateService freezeEvaluateService;
 
   @Override
   public Class<ServiceStepV3Parameters> getStepParametersClass() {
@@ -114,9 +124,20 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
 
       saveExecutionLog(logCallback, "Starting service step...");
 
-      final ServicePartResponse servicePartResponse = executeServicePart(ambiance, stepParameters);
+      Map<FreezeEntityType, List<String>> entityMap = new HashMap<>();
 
-      executeEnvironmentPart(ambiance, stepParameters, servicePartResponse, logCallback);
+      Scope scope = null;
+
+      final ServicePartResponse servicePartResponse = executeServicePart(ambiance, stepParameters, entityMap, scope);
+
+      executeEnvironmentPart(ambiance, stepParameters, servicePartResponse, logCallback, entityMap);
+
+      List<FreezeSummaryResponseDTO> freezeSummaryResponseDTOList = freezeEvaluateService.getActiveFreezeEntities(
+          scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(), entityMap);
+      if (freezeSummaryResponseDTOList != null && freezeSummaryResponseDTOList.size() > 0) {
+        sweepingOutputService.consume(ambiance, FREEZE_SWEEPING_OUTPUT,
+            FreezeOutcome.builder().frozen(true).activeFreezeConfigs(freezeSummaryResponseDTOList).build(), "");
+      }
 
       return ChildrenExecutableResponse.newBuilder()
           .addAllLogKeys(CollectionUtils.emptyIfNull(
@@ -146,7 +167,8 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
   }
 
   private void executeEnvironmentPart(Ambiance ambiance, ServiceStepV3Parameters parameters,
-      ServicePartResponse servicePartResponse, NGLogCallback logCallback) throws IOException {
+      ServicePartResponse servicePartResponse, NGLogCallback logCallback, Map<FreezeEntityType, List<String>> entityMap)
+      throws IOException {
     final ParameterField<String> envRef = parameters.getEnvRef();
     final ParameterField<Map<String, Object>> envInputs = parameters.getEnvInputs();
     if (ParameterField.isNull(envRef)) {
@@ -191,6 +213,11 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
         ngServiceOverrides =
             mergeSvcOverrideInputs(ngServiceOverridesEntity.get().getYaml(), parameters.getServiceOverrideInputs());
       }
+
+      entityMap.put(FreezeEntityType.ORG, Lists.newArrayList(environment.get().getOrgIdentifier()));
+      entityMap.put(FreezeEntityType.PROJECT, Lists.newArrayList(environment.get().getProjectIdentifier()));
+      entityMap.put(FreezeEntityType.ENVIRONMENT, Lists.newArrayList(environment.get().getIdentifier()));
+      entityMap.put(FreezeEntityType.ENV_TYPE, Lists.newArrayList(environment.get().getType().name()));
 
       final EnvironmentOutcome environmentOutcome =
           EnvironmentMapper.toEnvironmentOutcome(environment.get(), ngEnvironmentConfig, ngServiceOverrides);
@@ -246,6 +273,20 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
   @Override
   public StepResponse handleChildrenResponse(
       Ambiance ambiance, ServiceStepV3Parameters stepParameters, Map<String, ResponseData> responseDataMap) {
+    final List<StepResponse.StepOutcome> stepOutcomes = new ArrayList<>();
+
+    final FreezeOutcome freezeOutcome = (FreezeOutcome) sweepingOutputService.resolve(
+        ambiance, RefObjectUtils.getOutcomeRefObject(ServiceStepV3.FREEZE_SWEEPING_OUTPUT));
+
+    if (freezeOutcome != null && freezeOutcome.isFrozen()) {
+      stepOutcomes.add(StepResponse.StepOutcome.builder()
+                           .name(OutcomeExpressionConstants.FREEZE_OUTCOME)
+                           .outcome(freezeOutcome)
+                           .group(StepCategory.STAGE.name())
+                           .build());
+      StepResponse.builder().stepOutcomes(stepOutcomes).status(Status.FREEZE_FAILED).build();
+    }
+
     final ServiceSweepingOutput serviceSweepingOutput = (ServiceSweepingOutput) sweepingOutputService.resolve(
         ambiance, RefObjectUtils.getOutcomeRefObject(ServiceStepV3.SERVICE_SWEEPING_OUTPUT));
 
@@ -274,7 +315,6 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
       saveExecutionLog(logCallback, "Completed service step", LogLevel.INFO, CommandExecutionStatus.SUCCESS);
     }
 
-    final List<StepResponse.StepOutcome> stepOutcomes = new ArrayList<>();
     stepOutcomes.add(
         StepResponse.StepOutcome.builder()
             .name(OutcomeExpressionConstants.SERVICE)
@@ -318,7 +358,8 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
     return stepResponse.withStepOutcomes(stepOutcomes);
   }
 
-  private ServicePartResponse executeServicePart(Ambiance ambiance, ServiceStepV3Parameters stepParameters) {
+  private ServicePartResponse executeServicePart(Ambiance ambiance, ServiceStepV3Parameters stepParameters,
+      Map<FreezeEntityType, List<String>> entityMap, Scope scope) {
     final Optional<ServiceEntity> serviceOpt =
         serviceEntityService.get(AmbianceUtils.getAccountId(ambiance), AmbianceUtils.getOrgIdentifier(ambiance),
             AmbianceUtils.getProjectIdentifier(ambiance), stepParameters.getServiceRef().getValue(), false);
@@ -348,6 +389,15 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
       throw new InvalidRequestException("corrupt service yaml for service " + serviceEntity.getIdentifier(), e);
     }
 
+    entityMap.put(FreezeEntityType.ORG, Lists.newArrayList(serviceEntity.getOrgIdentifier()));
+    entityMap.put(FreezeEntityType.PROJECT, Lists.newArrayList(serviceEntity.getProjectIdentifier()));
+    entityMap.put(FreezeEntityType.SERVICE, Lists.newArrayList(serviceEntity.getIdentifier()));
+    scope = Scope.builder()
+                .accountIdentifier(serviceEntity.getAccountId())
+                .orgIdentifier(serviceEntity.getOrgIdentifier())
+                .projectIdentifier(serviceEntity.getProjectIdentifier())
+                .build();
+
     sweepingOutputService.consume(ambiance, SERVICE_SWEEPING_OUTPUT,
         ServiceSweepingOutput.builder().finalServiceYaml(mergedServiceYaml).build(), "");
 
@@ -355,6 +405,7 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
 
     serviceStepsHelper.validateResources(ambiance, ngServiceConfig);
 
+    // Add the reason in serviceOutcome;
     ServiceStepOutcome outcome = ServiceStepOutcome.fromServiceStepV2(serviceEntity.getIdentifier(),
         serviceEntity.getName(), ngServiceV2InfoConfig.getServiceDefinition().getType().getYamlName(),
         serviceEntity.getDescription(), ngServiceV2InfoConfig.getTags(), serviceEntity.getGitOpsEnabled());
