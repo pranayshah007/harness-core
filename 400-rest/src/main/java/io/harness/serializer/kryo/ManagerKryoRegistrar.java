@@ -22,7 +22,6 @@ import io.harness.delegate.NoEligibleDelegatesInAccountException;
 import io.harness.delegate.beans.NoAvailableDelegatesException;
 import io.harness.delegate.beans.NoDelegatesException;
 import io.harness.delegate.beans.NoInstalledDelegatesException;
-import io.harness.exception.DelegateTaskExpiredException;
 import io.harness.serializer.KryoRegistrar;
 
 import software.wings.api.ARMStateExecutionData;
@@ -605,6 +604,5 @@ public class ManagerKryoRegistrar implements KryoRegistrar {
     kryo.register(NoEligibleDelegatesInAccountException.class, 73989);
     kryo.register(NoAvailableDelegatesException.class, 73990);
     kryo.register(NoDelegatesException.class, 73991);
-    kryo.register(DelegateTaskExpiredException.class, 980036);
   }
 }
