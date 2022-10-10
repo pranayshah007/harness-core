@@ -12,13 +12,14 @@ import io.harness.serializer.kryo.KryoRequest;
 
 import retrofit2.Call;
 import retrofit2.http.Body;
+import retrofit2.http.Headers;
 import retrofit2.http.POST;
 import retrofit2.http.Path;
 import retrofit2.http.Query;
 
 public interface DelegateCoreClient {
+  @Headers({"Content-Type: application/x-kryo-v2"})
   @POST("task/{taskId}/execution-response")
   @KryoRequest
-  Call<Void> taskResponse(@Path("taskId") final String taskId, @Query("accountId") final String accountId,
-      @Body final DelegateTaskResponse delegateTaskResponse);
+  Call<Void> taskResponse(@Path("taskId") final String taskId, @Body final DelegateTaskResponse delegateTaskResponse);
 }

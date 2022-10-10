@@ -7,13 +7,17 @@
 
 package io.harness.delegate.taskagent.client.delegate;
 
-import io.harness.delegate.taskagent.servicediscovery.ServiceDiscovery;
-import io.harness.delegate.taskagent.servicediscovery.ServiceEndpoint;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.guava.GuavaModule;
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.google.inject.Singleton;
 import io.harness.exception.SslContextBuilderException;
 import io.harness.network.Http;
 import io.harness.network.NoopHostnameVerifier;
 import io.harness.security.X509SslContextBuilder;
 import io.harness.security.X509TrustManagerBuilder;
+import io.harness.serializer.kryo.DelegateKryoConverterFactory;
 import io.harness.serializer.kryo.KryoConverterFactory;
 
 import com.google.inject.Inject;
@@ -22,22 +26,27 @@ import java.util.concurrent.TimeUnit;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.X509TrustManager;
 import lombok.RequiredArgsConstructor;
-import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
+import okhttp3.logging.HttpLoggingInterceptor;
 import retrofit2.Retrofit;
+import retrofit2.converter.jackson.JacksonConverterFactory;
 
 // FixMe: This add deps to 980-commons which we don't want after POC
+@Singleton
 @RequiredArgsConstructor
 public class DelegateCoreClientFactory implements Provider<DelegateCoreClient> {
-  @Inject private KryoConverterFactory kryoConverterFactory;
+  @Inject private DelegateKryoConverterFactory kryoConverterFactory;
   final static OkHttpClient HTTP_CLIENT = getUnsafeOkHttpClient();
+  final static ObjectMapper OBJECT_MAPPER =
+      new ObjectMapper().registerModules(new Jdk8Module(), new GuavaModule(), new JavaTimeModule());
 
-  private DelegateCoreClient createDelegateCoreClient(final ServiceEndpoint serviceEndpoint) {
-    final HttpUrl baseUrl =
-        new HttpUrl.Builder().host(serviceEndpoint.getHost()).port(serviceEndpoint.getPort()).scheme("https").build();
+  private DelegateCoreClient createDelegateCoreClient(final String coreDelegateBaseUrl) {
 
     final Retrofit retrofit =
-        new Retrofit.Builder().baseUrl(baseUrl).client(HTTP_CLIENT).addConverterFactory(kryoConverterFactory).build();
+        new Retrofit.Builder().baseUrl(coreDelegateBaseUrl).client(HTTP_CLIENT)
+            .addConverterFactory(kryoConverterFactory)
+            .addConverterFactory(JacksonConverterFactory.create(OBJECT_MAPPER))
+            .build();
     return retrofit.create(DelegateCoreClient.class);
   }
 
@@ -58,18 +67,20 @@ public class DelegateCoreClientFactory implements Provider<DelegateCoreClient> {
 
     return Http.getOkHttpClientWithProxyAuthSetup()
         .hostnameVerifier(new NoopHostnameVerifier())
-        .sslSocketFactory(sslContext.getSocketFactory(), trustManager)
+        //.sslSocketFactory(sslContext.getSocketFactory(), trustManager)
         .connectionPool(Http.connectionPool)
         .retryOnConnectionFailure(true)
         // API is public for POC
         //            .addInterceptor(new io.harness.managerclient.DelegateAuthInterceptor(this.tokenGenerator))
         .readTimeout(1, TimeUnit.MINUTES)
+        //.addInterceptor(new HttpLoggingInterceptor().setLevel(HttpLoggingInterceptor.Level.BODY))
         .build();
   }
 
   @Override
   public DelegateCoreClient get() {
     //return createDelegateCoreClient(ServiceDiscovery.getDelegateServiceEndpoint("delegate_service"));
-    return createDelegateCoreClient(new ServiceEndpoint("localhost", 3460));
+    //return createDelegateCoreClient(System.getenv("CORE_DELEGATE_BASE_URL"));
+    return createDelegateCoreClient("http://localhost:3460/api/");
   }
 }

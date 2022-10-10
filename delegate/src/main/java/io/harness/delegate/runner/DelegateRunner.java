@@ -39,7 +39,7 @@ public class DelegateRunner {
     (new DelegateRunner()).run("runner_config.yml");
     log.info("Delegate runner exited");
     // FIXME: properly shutdown every process
-    //System.exit(0);
+    System.exit(0);
   }
 
   private void shutdown(final Injector injector) {

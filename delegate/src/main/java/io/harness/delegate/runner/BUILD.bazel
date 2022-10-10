@@ -13,7 +13,6 @@ java_library(
         "//930-delegate-tasks:module",
         "//930-delegate-tasks/src/main/proto/io/harness:930_delegate_tasks_java_proto",
         "//950-delegate-tasks-beans:module",
-        "//delegate/src/main/java/io/harness/delegate/taskagent/servicediscovery:module",
         "//delegate/src/main/java/io/harness/delegate/taskagent/client/delegate:module",
         "//960-api-services:module",
         "@maven//:com_squareup_retrofit2_converter_protobuf",

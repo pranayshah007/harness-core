@@ -68,7 +68,12 @@ public class TaskFactory {
         log.error("Writing result to file failed", e);
         throw new WingsException(e);
       }
-      delegateCoreClient.taskResponse(taskResponse.getAccountId(), taskId, taskResponse);
+      try {
+        delegateCoreClient.taskResponse(taskId, taskResponse).execute();
+      } catch (IOException e) {
+        log.error("Send task response failed.", e);
+        throw new WingsException(e);
+      }
     };
   }
 
