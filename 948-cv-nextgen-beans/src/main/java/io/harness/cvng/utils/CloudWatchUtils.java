@@ -90,18 +90,18 @@ public class CloudWatchUtils {
     Map<String, Object> dslEnvVariables =
         populateCommonDslEnvVariables(region, group, service, connectorDTO, collectHostData);
 
-    List<List<Map<String, Object>>> requestBodies = null;
+    List<List<Map<String, Object>>> requestBodies = new ArrayList<>();
     List<String> metricNames = new ArrayList<>();
     List<String> metricIdentifiers = new ArrayList<>();
     if (CollectionUtils.isNotEmpty(cloudWatchMetricInfoDTOs)) {
-      requestBodies =
-          cloudWatchMetricInfoDTOs.stream()
-              .map(dto -> {
-                metricNames.add(dto.getMetricName());
-                metricIdentifiers.add(dto.getMetricIdentifier());
-                return getRequestPayload(dto.getFinalExpression(), dto.getMetricName(), dto.getMetricIdentifier());
-              })
-              .collect(Collectors.toList());
+      requestBodies.addAll(cloudWatchMetricInfoDTOs.stream()
+                               .map(dto -> {
+                                 metricNames.add(dto.getMetricName());
+                                 metricIdentifiers.add(dto.getMetricIdentifier());
+                                 return getRequestPayload(
+                                     dto.getFinalExpression(), dto.getMetricName(), dto.getMetricIdentifier());
+                               })
+                               .collect(Collectors.toList()));
     }
     dslEnvVariables.put("bodies", requestBodies);
     dslEnvVariables.put("metricNames", metricNames);

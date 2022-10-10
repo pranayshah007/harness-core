@@ -181,6 +181,28 @@ public class CloudWatchMetricsDataCollectionDSLTest extends HoverflyCVNextGenTes
     assertThat(timeSeriesRecords.get(0).getMetricIdentifier()).isEqualTo(identifier);
   }
 
+  @Test
+  @Owner(developers = DHRUVX)
+  @Category(UnitTests.class)
+  public void testCollectData_withNoRequestBodies() {
+    dataCollectionInfo.setCollectHostData(true);
+    Instant instant = Instant.ofEpochMilli(1663333097219L);
+    RuntimeParameters runtimeParameters =
+        RuntimeParameters.builder()
+            .startTime(instant.minusSeconds(3600))
+            .endTime(instant)
+            .commonHeaders(dataCollectionInfo.collectionHeaders(testAwsConnector))
+            .otherEnvVariables(dataCollectionInfo.getDslEnvVariables(testAwsConnector))
+            .baseUrl(dataCollectionInfo.getBaseUrl(testAwsConnector))
+            .build();
+    runtimeParameters.getOtherEnvVariables().put("bodies", null);
+    DataCollectionDSLService dataCollectionDSLService = new DataCollectionServiceImpl();
+    dataCollectionDSLService.registerDatacollectionExecutorService(executorService);
+    List<TimeSeriesRecord> timeSeriesRecords = (List<TimeSeriesRecord>) dataCollectionDSLService.execute(
+        metricPack.getDataCollectionDsl(), runtimeParameters, callDetails -> {});
+    assertThat(timeSeriesRecords).hasSize(0);
+  }
+
   private MetricPack createMetricPack(
       Set<MetricPack.MetricDefinition> metricDefinitions, String identifier, CVMonitoringCategory category) {
     return MetricPack.builder()
