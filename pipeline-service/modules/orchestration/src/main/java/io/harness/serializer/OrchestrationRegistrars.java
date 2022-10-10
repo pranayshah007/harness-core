@@ -154,6 +154,7 @@ public class OrchestrationRegistrars {
           .addAll(DelegateTaskRegistrars.kryoRegistrars)
           .addAll(AccessControlClientRegistrars.kryoRegistrars)
           .addAll(FiltersRegistrars.kryoRegistrars)
+          .addAll(DelegateServiceContractsRegistrars.kryoRegistrars)
           .build();
 
   public static final ImmutableSet<Class<? extends MorphiaRegistrar>> morphiaRegistrars =
