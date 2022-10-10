@@ -21,11 +21,14 @@ import io.harness.pms.pipeline.api.PipelinesApiUtils;
 import io.harness.pms.plan.execution.PlanExecutionResponseDto;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.plan.execution.beans.dto.GraphLayoutNodeDTO;
+import io.harness.pms.plan.execution.beans.dto.InterruptDTO;
 import io.harness.pms.stages.BasicStageInfo;
 import io.harness.pms.stages.StageExecutionSelectorHelper;
 import io.harness.spec.server.pipeline.model.ExecutionsDetailsSummary;
 import io.harness.spec.server.pipeline.model.ExecutionsDetailsSummary.TriggerTypeEnum;
 import io.harness.spec.server.pipeline.model.Graph;
+import io.harness.spec.server.pipeline.model.InterruptResponseBody;
+import io.harness.spec.server.pipeline.model.InterruptResponseBody.InterruptTypeEnum;
 import io.harness.spec.server.pipeline.model.PipelineExecuteResponseBody;
 import io.harness.spec.server.pipeline.model.StageInfo;
 
@@ -166,5 +169,13 @@ public class ExecutionsApiUtils {
 
   public static Graph getGraph(OrchestrationGraphDTO orchestrationGraph, boolean fullGraph) {
     return null;
+  }
+
+  public static InterruptResponseBody getInterruptResponse(InterruptDTO interruptDTO) {
+    InterruptResponseBody interruptResponseBody = new InterruptResponseBody();
+    interruptResponseBody.setExecution(interruptDTO.getPlanExecutionId());
+    interruptResponseBody.setInterrupt(interruptDTO.getId());
+    interruptResponseBody.setInterruptType(InterruptTypeEnum.fromValue(interruptDTO.getType().getDisplayName()));
+    return interruptResponseBody;
   }
 }
