@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.steps.pipelinestage;
+package io.harness.pms.pipelinestage;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
@@ -13,27 +13,38 @@ import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.doReturn;
 
+import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
+import io.harness.pms.contracts.plan.SetupMetadata;
+import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.filter.PipelineFilter;
+import io.harness.pms.pipeline.service.PMSPipelineServiceImpl;
+import io.harness.pms.pipelinestage.helper.PipelineStageHelper;
 import io.harness.pms.sdk.core.filter.creation.beans.FilterCreationContext;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
+import io.harness.steps.pipelinestage.PipelineStageNode;
 
 import java.io.IOException;
+import java.util.Optional;
 import java.util.Set;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 
-public class PipelineStageFilterCreatorTest {
+public class PipelineStageFilterCreatorTest extends CategoryTest {
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
+  @Mock PipelineStageHelper pipelineStageHelper;
+  @Mock PMSPipelineServiceImpl pmsPipelineService;
   @InjectMocks PipelineStageFilterCreator pipelineStageFilterCreator;
 
   @Test
@@ -77,8 +88,14 @@ public class PipelineStageFilterCreatorTest {
 
     YamlField pipelineStageYamlField = YamlUtils.injectUuidInYamlField(yamlField);
     FilterCreationContext filterCreationContext =
-        FilterCreationContext.builder().currentField(pipelineStageYamlField).build();
+        FilterCreationContext.builder()
+            .setupMetadata(SetupMetadata.newBuilder().setAccountId("acc").setOrgId("org").setProjectId("org").build())
+            .currentField(pipelineStageYamlField)
+            .build();
 
+    doReturn(Optional.of(PipelineEntity.builder().yaml(yamlField).build()))
+        .when(pmsPipelineService)
+        .getWithoutPerformingValidations("acc", "org", "project", "childPipeline", false);
     assertThatCode(()
                        -> pipelineStageFilterCreator.handleNode(
                            filterCreationContext, YamlUtils.read(yamlField, PipelineStageNode.class)))
