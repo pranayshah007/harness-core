@@ -36,6 +36,8 @@ import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
 import io.harness.ngmigration.client.NGClient;
 import io.harness.ngmigration.client.PmsClient;
+import io.harness.ngmigration.dto.ImportError;
+import io.harness.ngmigration.dto.MigrationImportSummaryDTO;
 import io.harness.ngmigration.service.MigratorMappingService;
 import io.harness.ngmigration.service.MigratorUtility;
 import io.harness.ngmigration.service.NgMigrationService;
@@ -152,26 +154,33 @@ public class EnvironmentMigrationService extends NgMigrationService {
   }
 
   @Override
-  public void migrate(String auth, NGClient ngClient, PmsClient pmsClient, MigrationInputDTO inputDTO,
-      NGYamlFile yamlFile) throws IOException {
-    if (!yamlFile.isExists()) {
-      NGEnvironmentInfoConfig environmentConfig =
-          ((NGEnvironmentConfig) yamlFile.getYaml()).getNgEnvironmentInfoConfig();
-      EnvironmentRequestDTO environmentRequestDTO = EnvironmentRequestDTO.builder()
-                                                        .identifier(environmentConfig.getIdentifier())
-                                                        .type(environmentConfig.getType())
-                                                        .orgIdentifier(environmentConfig.getOrgIdentifier())
-                                                        .projectIdentifier(environmentConfig.getProjectIdentifier())
-                                                        .name(environmentConfig.getName())
-                                                        .tags(environmentConfig.getTags())
-                                                        .description(environmentConfig.getDescription())
-                                                        .yaml(getYamlString(yamlFile))
-                                                        .build();
-      Response<ResponseDTO<ConnectorResponseDTO>> resp =
-          ngClient.createEnvironment(auth, inputDTO.getAccountIdentifier(), JsonUtils.asTree(environmentRequestDTO))
-              .execute();
-      log.info("Environment creation Response details {} {}", resp.code(), resp.message());
+  public MigrationImportSummaryDTO migrate(String auth, NGClient ngClient, PmsClient pmsClient,
+      MigrationInputDTO inputDTO, NGYamlFile yamlFile) throws IOException {
+    if (yamlFile.isExists()) {
+      return MigrationImportSummaryDTO.builder()
+          .errors(
+              Collections.singletonList(ImportError.builder()
+                                            .message("Environment was not migrated as it was already imported before")
+                                            .entity(yamlFile.getCgBasicInfo())
+                                            .build()))
+          .build();
     }
+    NGEnvironmentInfoConfig environmentConfig = ((NGEnvironmentConfig) yamlFile.getYaml()).getNgEnvironmentInfoConfig();
+    EnvironmentRequestDTO environmentRequestDTO = EnvironmentRequestDTO.builder()
+                                                      .identifier(environmentConfig.getIdentifier())
+                                                      .type(environmentConfig.getType())
+                                                      .orgIdentifier(environmentConfig.getOrgIdentifier())
+                                                      .projectIdentifier(environmentConfig.getProjectIdentifier())
+                                                      .name(environmentConfig.getName())
+                                                      .tags(environmentConfig.getTags())
+                                                      .description(environmentConfig.getDescription())
+                                                      .yaml(getYamlString(yamlFile))
+                                                      .build();
+    Response<ResponseDTO<ConnectorResponseDTO>> resp =
+        ngClient.createEnvironment(auth, inputDTO.getAccountIdentifier(), JsonUtils.asTree(environmentRequestDTO))
+            .execute();
+    log.info("Environment creation Response details {} {}", resp.code(), resp.message());
+    return handleResp(yamlFile, resp);
   }
 
   @Override

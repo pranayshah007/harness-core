@@ -41,6 +41,8 @@ import io.harness.ngmigration.beans.summary.BaseSummary;
 import io.harness.ngmigration.beans.summary.ServiceSummary;
 import io.harness.ngmigration.client.NGClient;
 import io.harness.ngmigration.client.PmsClient;
+import io.harness.ngmigration.dto.ImportError;
+import io.harness.ngmigration.dto.MigrationImportSummaryDTO;
 import io.harness.ngmigration.expressions.MigratorExpressionUtils;
 import io.harness.ngmigration.service.MigratorMappingService;
 import io.harness.ngmigration.service.MigratorUtility;
@@ -196,22 +198,30 @@ public class ServiceMigrationService extends NgMigrationService {
   }
 
   @Override
-  public void migrate(String auth, NGClient ngClient, PmsClient pmsClient, MigrationInputDTO inputDTO,
-      NGYamlFile yamlFile) throws IOException {
-    if (!yamlFile.isExists()) {
-      ServiceRequestDTO serviceRequestDTO =
-          ServiceRequestDTO.builder()
-              .description(null)
-              .identifier(yamlFile.getNgEntityDetail().getIdentifier())
-              .name(((NGServiceConfig) yamlFile.getYaml()).getNgServiceV2InfoConfig().getName())
-              .orgIdentifier(yamlFile.getNgEntityDetail().getOrgIdentifier())
-              .projectIdentifier(yamlFile.getNgEntityDetail().getProjectIdentifier())
-              .yaml(getYamlString(yamlFile))
-              .build();
-      Response<ResponseDTO<ServiceResponse>> resp =
-          ngClient.createService(auth, inputDTO.getAccountIdentifier(), JsonUtils.asTree(serviceRequestDTO)).execute();
-      log.info("Service creation Response details {} {}", resp.code(), resp.message());
+  public MigrationImportSummaryDTO migrate(String auth, NGClient ngClient, PmsClient pmsClient,
+      MigrationInputDTO inputDTO, NGYamlFile yamlFile) throws IOException {
+    if (yamlFile.isExists()) {
+      log.info("Skipping creation of service as it already exists");
+      return MigrationImportSummaryDTO.builder()
+          .errors(Collections.singletonList(ImportError.builder()
+                                                .message("Service was not migrated as it was already imported before")
+                                                .entity(yamlFile.getCgBasicInfo())
+                                                .build()))
+          .build();
     }
+    ServiceRequestDTO serviceRequestDTO =
+        ServiceRequestDTO.builder()
+            .description(null)
+            .identifier(yamlFile.getNgEntityDetail().getIdentifier())
+            .name(((NGServiceConfig) yamlFile.getYaml()).getNgServiceV2InfoConfig().getName())
+            .orgIdentifier(yamlFile.getNgEntityDetail().getOrgIdentifier())
+            .projectIdentifier(yamlFile.getNgEntityDetail().getProjectIdentifier())
+            .yaml(getYamlString(yamlFile))
+            .build();
+    Response<ResponseDTO<ServiceResponse>> resp =
+        ngClient.createService(auth, inputDTO.getAccountIdentifier(), JsonUtils.asTree(serviceRequestDTO)).execute();
+    log.info("Service creation Response details {} {}", resp.code(), resp.message());
+    return handleResp(yamlFile, resp);
   }
 
   @Override

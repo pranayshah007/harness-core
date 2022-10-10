@@ -23,6 +23,7 @@ public class EcsStepExecutorParams {
   String ecsServiceDefinitionManifestContent;
   List<String> ecsScalableTargetManifestContentList;
   List<String> ecsScalingPolicyManifestContentList;
+  String ecsRunTaskRequestDefinitionManifestContent;
   String targetGroupArnKey;
   String prodTargetGroupArn;
   String stageTargetGroupArn;

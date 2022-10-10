@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.delegate.task.serverless;
+package io.harness.delegate.task.git;
 
 import static io.harness.git.model.GitRepositoryType.YAML;
 
@@ -18,8 +18,6 @@ import io.harness.connector.service.git.NGGitService;
 import io.harness.connector.task.git.GitDecryptionHelper;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
-import io.harness.delegate.task.git.GitFetchFilesTaskHelper;
-import io.harness.delegate.task.git.ScmFetchFilesHelperNG;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.git.GitClientV2;
 import io.harness.git.model.FetchFilesByPathRequest;
@@ -35,7 +33,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @OwnedBy(HarnessTeam.CDP)
-public class ServerlessGitFetchTaskHelper {
+public class GitFetchTaskHelper {
   @Inject private GitClientV2 gitClientV2;
   @Inject private GitFetchFilesTaskHelper gitFetchFilesTaskHelper;
   @Inject private ScmFetchFilesHelperNG scmFetchFilesHelper;

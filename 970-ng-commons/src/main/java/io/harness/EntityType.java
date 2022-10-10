@@ -335,7 +335,10 @@ public enum EntityType {
   FREEZE(ModuleType.CD, EntityTypeConstants.FREEZE, IdentifierRef.class, EntityYamlRootNames.FREEZE),
   @JsonProperty(EntityTypeConstants.GITOPS_UPDATE_RELEASE_REPO)
   GITOPS_UPDATE_RELEASE_REPO(ModuleType.CD, EntityTypeConstants.GITOPS_UPDATE_RELEASE_REPO, IdentifierRef.class,
-      EntityYamlRootNames.GITOPS_UPDATE_RELEASE_REPO);
+      EntityYamlRootNames.GITOPS_UPDATE_RELEASE_REPO),
+  @JsonProperty(EntityTypeConstants.ECS_RUN_TASK)
+  ECS_RUN_TASK_STEP(
+      ModuleType.CD, EntityTypeConstants.ECS_RUN_TASK, IdentifierRef.class, EntityYamlRootNames.ECS_RUN_TASK);
   private final ModuleType moduleType;
   String yamlName;
   List<String> yamlRootElementString;

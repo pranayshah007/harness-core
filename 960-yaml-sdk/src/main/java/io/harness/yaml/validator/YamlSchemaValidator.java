@@ -82,6 +82,19 @@ public class YamlSchemaValidator {
     return validateMsg.stream().map(ValidationMessage::getMessage).collect(Collectors.toSet());
   }
 
+  public Set<ValidationMessage> validateWithDetailedMessage(String yaml, JsonSchema schema) throws IOException {
+    JsonNode jsonNode = mapper.readTree(yaml);
+    return schema.validate(jsonNode);
+  }
+
+  public Set<ValidationMessage> validateWithDetailedMessage(String yaml, EntityType entityType) throws IOException {
+    if (!schemas.containsKey(entityType)) {
+      throw new InvalidRequestException("No schema found for entityType.");
+    }
+    JsonSchema schema = schemas.get(entityType);
+    return validateWithDetailedMessage(yaml, schema);
+  }
+
   public Set<String> validate(String yaml, String stringSchema, boolean shouldValidateParallelStageCount,
       int allowedParallelStages, String pathToJsonNode) throws IOException {
     JsonNode jsonNode = mapper.readTree(yaml);
@@ -90,10 +103,14 @@ public class YamlSchemaValidator {
         JsonSchemaFactory.builder(JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V7)).build();
     JsonSchema schema = factory.getSchema(stringSchema);
     Set<ValidationMessage> validateMsg = schema.validate(jsonNode);
+    return processAndHandleValidationMessage(jsonNode, validateMsg);
+  }
+
+  public Set<String> processAndHandleValidationMessage(JsonNode yaml, Set<ValidationMessage> validateMsg) {
     if (!validateMsg.isEmpty()) {
       log.error(validateMsg.stream().map(ValidationMessage::getMessage).collect(Collectors.joining("\n")));
     }
-    Set<ValidationMessage> processValidationMessages = processValidationMessages(validateMsg, jsonNode);
+    Set<ValidationMessage> processValidationMessages = processValidationMessages(validateMsg, yaml);
     StringBuilder combinedValidationMessage = new StringBuilder();
     if (!processValidationMessages.isEmpty()) {
       List<YamlSchemaErrorDTO> errorDTOS = new ArrayList<>();
@@ -101,8 +118,8 @@ public class YamlSchemaValidator {
         errorDTOS.add(YamlSchemaErrorDTO.builder()
                           .messageWithFQN(validationMessage.getMessage())
                           .message(removeFqnFromErrorMessage(validationMessage.getMessage()))
-                          .stageInfo(SchemaValidationUtils.getStageErrorInfo(validationMessage.getPath(), jsonNode))
-                          .stepInfo(SchemaValidationUtils.getStepErrorInfo(validationMessage.getPath(), jsonNode))
+                          .stageInfo(SchemaValidationUtils.getStageErrorInfo(validationMessage.getPath(), yaml))
+                          .stepInfo(SchemaValidationUtils.getStepErrorInfo(validationMessage.getPath(), yaml))
                           .fqn(validationMessage.getPath())
                           .build());
         combinedValidationMessage.append(validationMessage.getMessage());

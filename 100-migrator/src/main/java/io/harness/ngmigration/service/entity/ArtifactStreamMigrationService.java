@@ -23,8 +23,6 @@ import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
 import io.harness.ngmigration.beans.summary.ArtifactStreamSummary;
 import io.harness.ngmigration.beans.summary.BaseSummary;
-import io.harness.ngmigration.client.NGClient;
-import io.harness.ngmigration.client.PmsClient;
 import io.harness.ngmigration.service.MigratorUtility;
 import io.harness.ngmigration.service.NgMigrationService;
 
@@ -40,7 +38,6 @@ import software.wings.ngmigration.NGMigrationStatus;
 import software.wings.service.intfc.ArtifactStreamService;
 
 import com.google.inject.Inject;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -108,10 +105,6 @@ public class ArtifactStreamMigrationService extends NgMigrationService {
             Collections.singletonList(String.format("%s artifact source is not supported", artifactStream.getName())))
         .build();
   }
-
-  @Override
-  public void migrate(String auth, NGClient ngClient, PmsClient pmsClient, MigrationInputDTO inputDTO,
-      NGYamlFile yamlFile) throws IOException {}
 
   @Override
   public List<NGYamlFile> generateYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,

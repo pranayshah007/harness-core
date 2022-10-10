@@ -37,6 +37,8 @@ import io.harness.ngmigration.beans.summary.BaseSummary;
 import io.harness.ngmigration.beans.summary.SecretManagerSummary;
 import io.harness.ngmigration.client.NGClient;
 import io.harness.ngmigration.client.PmsClient;
+import io.harness.ngmigration.dto.ImportError;
+import io.harness.ngmigration.dto.MigrationImportSummaryDTO;
 import io.harness.ngmigration.dto.SecretManagerCreatedDTO;
 import io.harness.ngmigration.secrets.SecretFactory;
 import io.harness.ngmigration.service.MigratorUtility;
@@ -58,6 +60,7 @@ import software.wings.service.intfc.security.SecretManager;
 import com.google.inject.Inject;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -121,14 +124,24 @@ public class SecretManagerMigrationService extends NgMigrationService {
   }
 
   @Override
-  public void migrate(String auth, NGClient ngClient, PmsClient pmsClient, MigrationInputDTO inputDTO,
-      NGYamlFile yamlFile) throws IOException {
-    if (!yamlFile.isExists()) {
-      Response<ResponseDTO<ConnectorResponseDTO>> resp =
-          ngClient.createConnector(auth, inputDTO.getAccountIdentifier(), JsonUtils.asTree(yamlFile.getYaml()))
-              .execute();
-      log.info("Secret manager creation Response details {} {}", resp.code(), resp.message());
+  public MigrationImportSummaryDTO migrate(String auth, NGClient ngClient, PmsClient pmsClient,
+      MigrationInputDTO inputDTO, NGYamlFile yamlFile) throws IOException {
+    if (yamlFile.isExists()) {
+      return MigrationImportSummaryDTO.builder()
+          .errors(Collections.singletonList(
+              ImportError.builder()
+                  .message("Secret manager was not migrated as it was already imported before")
+                  .entity(yamlFile.getCgBasicInfo())
+                  .build()))
+          .build();
     }
+    if ("harnessSecretManager".equals(yamlFile.getNgEntityDetail().getIdentifier())) {
+      return null;
+    }
+    Response<ResponseDTO<ConnectorResponseDTO>> resp =
+        ngClient.createConnector(auth, inputDTO.getAccountIdentifier(), JsonUtils.asTree(yamlFile.getYaml())).execute();
+    log.info("Secret manager creation Response details {} {}", resp.code(), resp.message());
+    return handleResp(yamlFile, resp);
   }
 
   @Override

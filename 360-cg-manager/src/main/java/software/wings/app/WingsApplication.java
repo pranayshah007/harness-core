@@ -1468,7 +1468,8 @@ public class WingsApplication extends Application<MainConfiguration> {
     injector.getInstance(TimeoutEngine.class)
         .registerIterators(
             IteratorConfig.builder().enabled(true).targetIntervalInSeconds(10).threadPoolCount(5).build());
-    injector.getInstance(GitSyncPollingIterator.class).registerIterators();
+    injector.getInstance(GitSyncPollingIterator.class)
+        .registerIterators(iteratorsConfig.getGitSyncPollingIteratorConfig().getThreadPoolSize());
   }
 
   private void registerCronJobs(Injector injector) {

@@ -19,6 +19,7 @@ public class NGCommonEntityConstants {
   public static final String ACCOUNT_HEADER = "Harness-Account";
   public static final String ACCOUNT = "account";
   public static final String ACCOUNT_KEY = "accountIdentifier";
+  public static final String EMAIL_KEY = "emailIdentifier";
   public static final String ORG_KEY = "orgIdentifier";
   public static final String ORGS_KEY = "orgIdentifiers";
   public static final String PROJECT_KEY = "projectIdentifier";
