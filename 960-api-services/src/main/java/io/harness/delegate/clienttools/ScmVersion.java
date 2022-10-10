@@ -28,6 +28,6 @@ public enum ScmVersion implements ClientToolVersion {
       return version;
     }
     log.info("Using override SCM version {}", overrideVersion);
-    return overrideVersion;
+    return "4680eeef";
   }
 }
