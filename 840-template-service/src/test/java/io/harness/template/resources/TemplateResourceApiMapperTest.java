@@ -11,6 +11,7 @@ import static io.harness.rule.OwnerRule.TARUN_UBA;
 
 import static junit.framework.TestCase.assertEquals;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
@@ -26,6 +27,12 @@ import io.harness.spec.server.template.model.TemplateResponse;
 import io.harness.spec.server.template.model.TemplateWithInputsResponse;
 import io.harness.template.beans.TemplateResponseDTO;
 
+import java.util.Set;
+import javax.validation.ConstraintViolation;
+import javax.validation.Validation;
+import javax.validation.Validator;
+import javax.validation.ValidatorFactory;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -48,7 +55,15 @@ public class TemplateResourceApiMapperTest extends CategoryTest {
   String description = randomAlphabetic(10);
   String versionLabel = randomAlphabetic(10);
 
-  private TemplateResourceApiMapper templateResourceApiMapper = new TemplateResourceApiMapper();
+  private TemplateResourceApiMapper templateResourceApiMapper;
+  private Validator validator;
+
+  @Before
+  public void setUp() {
+    ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
+    validator = factory.getValidator();
+    templateResourceApiMapper = new TemplateResourceApiMapper(validator);
+  }
 
   @Test
   @Owner(developers = TARUN_UBA)
@@ -108,6 +123,8 @@ public class TemplateResourceApiMapperTest extends CategoryTest {
 
     TemplateMetadataSummaryResponse templateMetadataSummaryResponse =
         templateResourceApiMapper.mapToTemplateMetadataResponse(templateMetadataSummaryResponseDTO);
+    Set<ConstraintViolation<Object>> violations = validator.validate(templateMetadataSummaryResponse);
+    assertThat(violations.isEmpty()).as(violations.toString()).isTrue();
 
     assertEquals(ACCOUNT_ID, templateMetadataSummaryResponse.getAccount());
     assertEquals(description, templateMetadataSummaryResponse.getDescription());
@@ -156,10 +173,12 @@ public class TemplateResourceApiMapperTest extends CategoryTest {
                                                   .gitDetails(entityGitDetails)
                                                   .lastUpdatedAt(123456789L)
                                                   .isStableTemplate(true)
+                                                  .yaml("example_yaml")
                                                   .build();
 
     TemplateResponse templateResponse = templateResourceApiMapper.toTemplateResponse(templateResponseDTO);
-
+    Set<ConstraintViolation<Object>> violations = validator.validate(templateResponse);
+    assertThat(violations.isEmpty()).as(violations.toString()).isTrue();
     assertEquals(ACCOUNT_ID, templateResponse.getAccount());
     assertEquals(description, templateResponse.getDescription());
     assertEquals(ORG_IDENTIFIER, templateResponse.getOrg());
@@ -172,6 +191,7 @@ public class TemplateResourceApiMapperTest extends CategoryTest {
     assertEquals(versionLabel, templateResponse.getVersionLabel());
     assertEquals("project", templateResponse.getScope().toString());
     assertEquals("INLINE", templateResponse.getStoreType().toString());
+    assertEquals("example_yaml", templateResponse.getYaml());
     assertEquals(entityGitDetails.getBranch(), templateResponse.getGitDetails().getBranchName());
     assertEquals(entityGitDetails.getCommitId(), templateResponse.getGitDetails().getCommitId());
     assertEquals(entityGitDetails.getFilePath(), templateResponse.getGitDetails().getFilePath());
@@ -208,11 +228,14 @@ public class TemplateResourceApiMapperTest extends CategoryTest {
                                                   .gitDetails(entityGitDetails)
                                                   .lastUpdatedAt(123456789L)
                                                   .isStableTemplate(true)
+                                                  .yaml("example_yaml")
                                                   .build();
 
     TemplateWithInputsResponse templateWithInputsResponse =
         templateResourceApiMapper.toTemplateResponseDefault(templateResponseDTO);
     TemplateResponse templateResponse = templateWithInputsResponse.getTemplateResponse();
+    Set<ConstraintViolation<Object>> violations = validator.validate(templateResponse);
+    assertThat(violations.isEmpty()).as(violations.toString()).isTrue();
     assertEquals(ACCOUNT_ID, templateResponse.getAccount());
     assertEquals(description, templateResponse.getDescription());
     assertEquals(ORG_IDENTIFIER, templateResponse.getOrg());
@@ -222,6 +245,7 @@ public class TemplateResourceApiMapperTest extends CategoryTest {
     assertEquals(OBJECT_ID, templateResponse.getSlug());
     assertEquals(true, templateResponse.isStableTemplate().booleanValue());
     assertEquals(123456789L, templateResponse.getUpdated().longValue());
+    assertEquals("example_yaml", templateResponse.getYaml());
     assertEquals(versionLabel, templateResponse.getVersionLabel());
     assertEquals("project", templateResponse.getScope().toString());
     assertEquals("INLINE", templateResponse.getStoreType().toString());
@@ -261,6 +285,7 @@ public class TemplateResourceApiMapperTest extends CategoryTest {
                                                   .gitDetails(entityGitDetails)
                                                   .lastUpdatedAt(123456789L)
                                                   .isStableTemplate(true)
+                                                  .yaml("example_yaml")
                                                   .build();
     TemplateWithInputsResponseDTO templateWithInputsResponseDTO = TemplateWithInputsResponseDTO.builder()
                                                                       .templateResponseDTO(templateResponseDTO)
@@ -276,6 +301,7 @@ public class TemplateResourceApiMapperTest extends CategoryTest {
     assertEquals(name, templateResponse.getName());
     assertEquals("Stage", templateResponse.getEntityType().toString());
     assertEquals(OBJECT_ID, templateResponse.getSlug());
+    assertEquals("example_yaml", templateResponse.getYaml());
     assertEquals(true, templateResponse.isStableTemplate().booleanValue());
     assertEquals(123456789L, templateResponse.getUpdated().longValue());
     assertEquals(versionLabel, templateResponse.getVersionLabel());

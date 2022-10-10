@@ -33,7 +33,6 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class AccountTemplatesApiImpl implements AccountTemplateApi {
   private final TemplateResourceApiUtils templateResourceApiUtils;
-  @Inject TemplateResourceApiMapper templateResourceApiMapper;
   @Override
   public Response createTemplatesAcc(TemplateCreateRequestBody templateCreateRequestBody,
       @AccountIdentifier String account, Boolean isStable, String comments) {

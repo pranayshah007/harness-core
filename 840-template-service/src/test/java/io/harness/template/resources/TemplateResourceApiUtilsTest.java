@@ -26,7 +26,6 @@ import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
-import io.harness.customDeployment.remote.CustomDeploymentResourceClient;
 import io.harness.encryption.Scope;
 import io.harness.exception.InvalidRequestException;
 import io.harness.git.model.ChangeType;
@@ -49,7 +48,6 @@ import io.harness.template.beans.PermissionTypes;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.entity.TemplateEntity.TemplateEntityKeys;
 import io.harness.template.services.NGTemplateService;
-import io.harness.template.services.TemplateVariableCreatorFactory;
 
 import com.google.common.io.Resources;
 import com.google.inject.Inject;
@@ -73,6 +71,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.AdditionalAnswers;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.data.domain.PageImpl;
@@ -84,12 +83,10 @@ import org.springframework.data.domain.Sort;
 public class TemplateResourceApiUtilsTest extends CategoryTest {
   @Rule public final GrpcCleanupRule grpcCleanup = new GrpcCleanupRule();
 
-  TemplateResourceApiUtils templateResourceApiUtils;
+  @InjectMocks TemplateResourceApiUtils templateResourceApiUtils;
   @Mock NGTemplateService templateService;
   @Mock AccessControlClient accessControlClient;
   @Inject VariablesServiceBlockingStub variablesServiceBlockingStub;
-  @Mock CustomDeploymentResourceClient customDeploymentResourceClient;
-  @Mock TemplateVariableCreatorFactory templateVariableCreatorFactory;
   @Mock TemplateResourceApiMapper templateResourceApiMapper;
 
   private final String ACCOUNT_ID = "account_id";
@@ -135,8 +132,6 @@ public class TemplateResourceApiUtilsTest extends CategoryTest {
     // Create a VariablesStub using the in-process channel;
     variablesServiceBlockingStub = VariablesServiceGrpc.newBlockingStub(channel);
 
-    templateResourceApiUtils = new TemplateResourceApiUtils(templateService, accessControlClient,
-        customDeploymentResourceClient, templateVariableCreatorFactory, templateResourceApiMapper);
     ClassLoader classLoader = this.getClass().getClassLoader();
     String filename = "template.yaml";
     yaml = Resources.toString(Objects.requireNonNull(classLoader.getResource(filename)), StandardCharsets.UTF_8);

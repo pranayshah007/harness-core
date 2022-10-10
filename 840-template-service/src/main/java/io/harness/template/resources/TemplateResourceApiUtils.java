@@ -28,7 +28,6 @@ import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.customDeployment.remote.CustomDeploymentResourceClient;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.git.model.ChangeType;
@@ -52,7 +51,6 @@ import io.harness.template.beans.TemplateResponseDTO;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.mappers.NGTemplateDtoMapper;
 import io.harness.template.services.NGTemplateService;
-import io.harness.template.services.TemplateVariableCreatorFactory;
 
 import com.google.inject.Inject;
 import java.util.ArrayList;
@@ -78,8 +76,6 @@ public class TemplateResourceApiUtils {
 
   private final NGTemplateService templateService;
   private final AccessControlClient accessControlClient;
-  @Inject CustomDeploymentResourceClient customDeploymentResourceClient;
-  @Inject TemplateVariableCreatorFactory templateVariableCreatorFactory;
   private final TemplateResourceApiMapper templateResourceApiMapper;
 
   public Response getTemplate(@AccountIdentifier String account, @OrgIdentifier String org,
