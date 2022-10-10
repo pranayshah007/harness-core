@@ -14,6 +14,7 @@ import io.harness.cdng.configfile.ConfigFileWrapper;
 import io.harness.cdng.configfile.mapper.ConfigFileOutcomeMapper;
 import io.harness.cdng.configfile.validator.IndividualConfigFileStepValidator;
 import io.harness.cdng.expressions.CDExpressionResolver;
+import io.harness.cdng.freeze.FreezeOutcome;
 import io.harness.cdng.service.steps.ServiceStepV3;
 import io.harness.cdng.steps.EmptyStepParameters;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
@@ -53,6 +54,13 @@ public class ConfigFilesStepV2 extends AbstractConfigFileStep implements SyncExe
   @Override
   public StepResponse executeSync(Ambiance ambiance, EmptyStepParameters stepParameters, StepInputPackage inputPackage,
       PassThroughData passThroughData) {
+    final FreezeOutcome freezeOutcome = (FreezeOutcome) sweepingOutputService.resolve(
+        ambiance, RefObjectUtils.getOutcomeRefObject(ServiceStepV3.FREEZE_SWEEPING_OUTPUT));
+
+    if (freezeOutcome != null && freezeOutcome.isFrozen()) {
+      return StepResponse.builder().status(Status.SKIPPED).build();
+    }
+
     final NgConfigFilesMetadataSweepingOutput configFilesSweepingOutput =
         fetchConfigFilesMetadataFromSweepingOutput(ambiance);
 

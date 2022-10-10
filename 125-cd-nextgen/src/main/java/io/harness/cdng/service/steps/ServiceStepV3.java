@@ -15,7 +15,6 @@ import static java.lang.String.format;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.Scope;
 import io.harness.beans.common.VariablesSweepingOutput;
 import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
 import io.harness.cdng.configfile.steps.ConfigFilesOutcome;
@@ -31,6 +30,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnresolvedExpressionsException;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.freeze.beans.FreezeEntityType;
+import io.harness.freeze.beans.FreezeScopeDetails;
 import io.harness.freeze.beans.response.FreezeSummaryResponseDTO;
 import io.harness.freeze.service.FreezeEvaluateService;
 import io.harness.logging.CommandExecutionStatus;
@@ -126,7 +126,7 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
 
       Map<FreezeEntityType, List<String>> entityMap = new HashMap<>();
 
-      Scope scope = null;
+      FreezeScopeDetails scope = new FreezeScopeDetails();
 
       final ServicePartResponse servicePartResponse = executeServicePart(ambiance, stepParameters, entityMap, scope);
 
@@ -284,7 +284,7 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
                            .outcome(freezeOutcome)
                            .group(StepCategory.STAGE.name())
                            .build());
-      StepResponse.builder().stepOutcomes(stepOutcomes).status(Status.FREEZE_FAILED).build();
+      return StepResponse.builder().stepOutcomes(stepOutcomes).status(Status.FREEZE_FAILED).build();
     }
 
     final ServiceSweepingOutput serviceSweepingOutput = (ServiceSweepingOutput) sweepingOutputService.resolve(
@@ -359,7 +359,7 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
   }
 
   private ServicePartResponse executeServicePart(Ambiance ambiance, ServiceStepV3Parameters stepParameters,
-      Map<FreezeEntityType, List<String>> entityMap, Scope scope) {
+      Map<FreezeEntityType, List<String>> entityMap, FreezeScopeDetails scope) {
     final Optional<ServiceEntity> serviceOpt =
         serviceEntityService.get(AmbianceUtils.getAccountId(ambiance), AmbianceUtils.getOrgIdentifier(ambiance),
             AmbianceUtils.getProjectIdentifier(ambiance), stepParameters.getServiceRef().getValue(), false);
@@ -392,11 +392,9 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
     entityMap.put(FreezeEntityType.ORG, Lists.newArrayList(serviceEntity.getOrgIdentifier()));
     entityMap.put(FreezeEntityType.PROJECT, Lists.newArrayList(serviceEntity.getProjectIdentifier()));
     entityMap.put(FreezeEntityType.SERVICE, Lists.newArrayList(serviceEntity.getIdentifier()));
-    scope = Scope.builder()
-                .accountIdentifier(serviceEntity.getAccountId())
-                .orgIdentifier(serviceEntity.getOrgIdentifier())
-                .projectIdentifier(serviceEntity.getProjectIdentifier())
-                .build();
+    scope.setAccountIdentifier(serviceEntity.getAccountId());
+    scope.setOrgIdentifier(serviceEntity.getOrgIdentifier());
+    scope.setProjectIdentifier(serviceEntity.getProjectIdentifier());
 
     sweepingOutputService.consume(ambiance, SERVICE_SWEEPING_OUTPUT,
         ServiceSweepingOutput.builder().finalServiceYaml(mergedServiceYaml).build(), "");

@@ -22,6 +22,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.expressions.CDExpressionResolver;
+import io.harness.cdng.freeze.FreezeOutcome;
 import io.harness.cdng.manifest.mappers.ManifestOutcomeMapper;
 import io.harness.cdng.manifest.yaml.ManifestAttributes;
 import io.harness.cdng.manifest.yaml.ManifestConfig;
@@ -41,6 +42,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.ng.core.NGAccess;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.execution.AsyncExecutableResponse;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
@@ -87,6 +89,12 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters> {
   @Override
   public StepResponse executeSync(Ambiance ambiance, EmptyStepParameters stepParameters, StepInputPackage inputPackage,
       PassThroughData passThroughData) {
+    final FreezeOutcome freezeOutcome = (FreezeOutcome) sweepingOutputService.resolve(
+        ambiance, RefObjectUtils.getOutcomeRefObject(ServiceStepV3.FREEZE_SWEEPING_OUTPUT));
+
+    if (freezeOutcome != null && freezeOutcome.isFrozen()) {
+      return StepResponse.builder().status(Status.SKIPPED).build();
+    }
     final NgManifestsMetadataSweepingOutput ngManifestsMetadataSweepingOutput =
         fetchManifestsMetadataFromSweepingOutput(ambiance);
 

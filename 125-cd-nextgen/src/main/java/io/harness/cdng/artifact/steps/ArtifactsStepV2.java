@@ -27,6 +27,8 @@ import io.harness.cdng.artifact.outcome.SidecarsOutcome;
 import io.harness.cdng.artifact.utils.ArtifactStepHelper;
 import io.harness.cdng.artifact.utils.ArtifactUtils;
 import io.harness.cdng.expressions.CDExpressionResolver;
+import io.harness.cdng.freeze.FreezeOutcome;
+import io.harness.cdng.service.steps.ServiceStepV3;
 import io.harness.cdng.service.steps.ServiceStepsHelper;
 import io.harness.cdng.steps.EmptyStepParameters;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
@@ -107,6 +109,12 @@ public class ArtifactsStepV2 implements AsyncExecutable<EmptyStepParameters> {
   @Override
   public AsyncExecutableResponse executeAsync(Ambiance ambiance, EmptyStepParameters stepParameters,
       StepInputPackage inputPackage, PassThroughData passThroughData) {
+    final FreezeOutcome freezeOutcome = (FreezeOutcome) sweepingOutputService.resolve(
+        ambiance, RefObjectUtils.getOutcomeRefObject(ServiceStepV3.FREEZE_SWEEPING_OUTPUT));
+
+    if (freezeOutcome != null && freezeOutcome.isFrozen()) {
+      return AsyncExecutableResponse.newBuilder().build();
+    }
     final Optional<NGServiceV2InfoConfig> serviceOptional = cdStepHelper.fetchServiceConfigFromSweepingOutput(ambiance);
     if (serviceOptional.isEmpty()) {
       return AsyncExecutableResponse.newBuilder().build();

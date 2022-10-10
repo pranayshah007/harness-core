@@ -52,7 +52,7 @@ public enum ExecutionStatus {
   @JsonIgnore APPROVAL_WAITING(Status.APPROVAL_WAITING, true),
   @JsonIgnore APPROVAL_REJECTED(Status.APPROVAL_REJECTED, true),
   @JsonIgnore WAITING(Status.RESOURCE_WAITING, "Waiting", true),
-  @JsonIgnore ABORTED_DUE_TO_FREEZE(Status.FREEZE_FAILED, "AbortedDueToFreeze", true);
+  @JsonIgnore ABORTED_DUE_TO_FREEZE(Status.FREEZE_FAILED, "AbortedDueToFreeze");
 
   Status engineStatus;
   String displayName;
