@@ -1057,7 +1057,7 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
               break;
           }
         }
-        if (costTargetBucketNames.contains(name)) {
+        if (Objects.nonNull(cost) && costTargetBucketNames.contains(name)) {
           entityCosts.put(name, cost);
           totalCost += cost;
         }
