@@ -68,9 +68,10 @@ public class AppDynamicsHealthSourceSpec extends MetricHealthSourceSpec {
                 && Objects.nonNull(metricDefinition.getAnalysis().getDeploymentVerification())
                 && Objects.nonNull(metricDefinition.getAnalysis().getDeploymentVerification().getEnabled())
                 && metricDefinition.getAnalysis().getDeploymentVerification().getEnabled()
-                && StringUtils.isEmpty(
-                    metricDefinition.getAnalysis().getDeploymentVerification().getServiceInstanceMetricPath())),
-            "Service metric path shouldnt be empty for Deployment Verification"));
+                && (StringUtils.isEmpty(
+                        metricDefinition.getAnalysis().getDeploymentVerification().getServiceInstanceMetricPath())
+                    && StringUtils.isEmpty(metricDefinition.getCompleteServiceInstanceMetricPath()))),
+            "Service metric path shouldn't be empty for Deployment Verification"));
   }
 
   @Override
@@ -163,7 +164,7 @@ public class AppDynamicsHealthSourceSpec extends MetricHealthSourceSpec {
                            return appDynamicsCVConfig;
                          })
                          .collect(Collectors.toList()));
-    cvConfigs.forEach(appDynamicsCVConfig -> appDynamicsCVConfig.addMetricThresholds(metricPacks));
+    cvConfigs.forEach(appDynamicsCVConfig -> appDynamicsCVConfig.addMetricThresholds(metricPacks, metricDefinitions));
     cvConfigs.stream()
         .filter(cvConfig -> CollectionUtils.isNotEmpty(cvConfig.getMetricInfos()))
         .flatMap(cvConfig -> cvConfig.getMetricInfos().stream())

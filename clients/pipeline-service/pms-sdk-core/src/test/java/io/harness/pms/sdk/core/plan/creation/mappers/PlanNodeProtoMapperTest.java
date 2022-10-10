@@ -13,11 +13,13 @@ import static junit.framework.TestCase.assertEquals;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.category.element.UnitTests;
+import io.harness.pms.contracts.plan.ExpressionMode;
 import io.harness.pms.contracts.plan.PlanNodeProto;
 import io.harness.pms.contracts.steps.SkipType;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.sdk.core.PmsSdkCoreTestBase;
 import io.harness.pms.sdk.core.plan.PlanNode;
+import io.harness.pms.sdk.core.plan.PlanNode.PlanNodeBuilder;
 import io.harness.rule.Owner;
 import io.harness.serializer.KryoSerializer;
 
@@ -35,19 +37,18 @@ public class PlanNodeProtoMapperTest extends PmsSdkCoreTestBase {
   @Owner(developers = SAHIL)
   @Category(UnitTests.class)
   public void testToPlanNodeProtoWithDecoratedFields() {
-    PlanNode planNode = PlanNode.builder()
-                            .name("name")
-                            .stageFqn("fqn")
-                            .uuid("uuid")
-                            .stepType(StepType.newBuilder().getDefaultInstanceForType())
-                            .identifier("identifier")
-                            .skipExpressionChain(false)
-                            .skipGraphType(SkipType.SKIP_NODE)
-                            .skipUnresolvedExpressionsCheck(true)
-                            .whenCondition("when")
-                            .skipCondition("skip")
-                            .group("group")
-                            .build();
+    PlanNodeBuilder planNodeBuilder = PlanNode.builder()
+                                          .name("name")
+                                          .stageFqn("fqn")
+                                          .uuid("uuid")
+                                          .stepType(StepType.newBuilder().getDefaultInstanceForType())
+                                          .identifier("identifier")
+                                          .skipExpressionChain(false)
+                                          .skipGraphType(SkipType.SKIP_NODE)
+                                          .skipUnresolvedExpressionsCheck(true)
+                                          .whenCondition("when")
+                                          .skipCondition("skip")
+                                          .group("group");
     PlanNodeProto.Builder response = PlanNodeProto.newBuilder()
                                          .setName("name")
                                          .setStageFqn("fqn")
@@ -56,18 +57,26 @@ public class PlanNodeProtoMapperTest extends PmsSdkCoreTestBase {
                                          .setStepType(StepType.newBuilder().getDefaultInstanceForType())
                                          .setIdentifier("identifier")
                                          .setSkipExpressionChain(false)
+                                         .setExpressionMode(ExpressionMode.RETURN_NULL_IF_UNRESOLVED)
                                          .setSkipType(SkipType.SKIP_NODE)
                                          .setSkipUnresolvedExpressionsCheck(true)
                                          .setWhenCondition("when")
                                          .setSkipCondition("skip")
                                          .setGroup("group");
-    assertThat(planNodeProtoMapper.toPlanNodeProtoWithDecoratedFields(planNode)).isEqualTo(response.build());
+    assertThat(planNodeProtoMapper.toPlanNodeProtoWithDecoratedFields(planNodeBuilder.build()))
+        .isEqualTo(response.build());
 
     // setting executionInputTemplate to some value. So planNodeProto should have this field.
-    planNode.setExecutionInputTemplate("executionInputTemplate");
-    assertThat(planNodeProtoMapper.toPlanNodeProtoWithDecoratedFields(planNode)).isNotEqualTo(response.build());
-
+    planNodeBuilder.executionInputTemplate("executionInputTemplate");
+    assertThat(planNodeProtoMapper.toPlanNodeProtoWithDecoratedFields(planNodeBuilder.build()))
+        .isNotEqualTo(response.build());
+    ExpressionMode expressionMode = ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED;
+    assertThat(
+        planNodeProtoMapper.toPlanNodeProtoWithDecoratedFields(planNodeBuilder.expressionMode(expressionMode).build())
+            .getExpressionMode())
+        .isEqualTo(expressionMode);
+    response.setExpressionMode(expressionMode);
     response.setExecutionInputTemplate("executionInputTemplate");
-    assertEquals(planNodeProtoMapper.toPlanNodeProtoWithDecoratedFields(planNode), response.build());
+    assertEquals(planNodeProtoMapper.toPlanNodeProtoWithDecoratedFields(planNodeBuilder.build()), response.build());
   }
 }

@@ -13,10 +13,13 @@ import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 import static io.harness.polling.contracts.Type.ACR;
 import static io.harness.polling.contracts.Type.AMAZON_S3;
 import static io.harness.polling.contracts.Type.ARTIFACTORY;
+import static io.harness.polling.contracts.Type.CUSTOM_ARTIFACT;
 import static io.harness.polling.contracts.Type.DOCKER_HUB;
 import static io.harness.polling.contracts.Type.ECR;
 import static io.harness.polling.contracts.Type.GCR;
 import static io.harness.polling.contracts.Type.GCS_HELM;
+import static io.harness.polling.contracts.Type.GITHUB_PACKAGES;
+import static io.harness.polling.contracts.Type.GOOGLE_ARTIFACT_REGISTRY;
 import static io.harness.polling.contracts.Type.HTTP_HELM;
 import static io.harness.polling.contracts.Type.JENKINS;
 import static io.harness.polling.contracts.Type.NEXUS3;
@@ -49,9 +52,12 @@ import io.harness.polling.bean.artifact.AcrArtifactInfo;
 import io.harness.polling.bean.artifact.ArtifactInfo;
 import io.harness.polling.bean.artifact.ArtifactPolledResponse;
 import io.harness.polling.bean.artifact.ArtifactoryRegistryArtifactInfo;
+import io.harness.polling.bean.artifact.CustomArtifactInfo;
 import io.harness.polling.bean.artifact.DockerHubArtifactInfo;
 import io.harness.polling.bean.artifact.EcrArtifactInfo;
+import io.harness.polling.bean.artifact.GARArtifactInfo;
 import io.harness.polling.bean.artifact.GcrArtifactInfo;
+import io.harness.polling.bean.artifact.GithubPackagesArtifactInfo;
 import io.harness.polling.bean.artifact.JenkinsArtifactInfo;
 import io.harness.polling.bean.artifact.NexusRegistryArtifactInfo;
 import io.harness.polling.bean.artifact.S3ArtifactInfo;
@@ -369,6 +375,18 @@ public class PollingResponseHandler {
       case JENKINS:
         polledResponseResultBuilder.name(((JenkinsArtifactInfo) artifactInfo).getJobName());
         polledResponseResultBuilder.type(JENKINS);
+        break;
+      case CUSTOM_ARTIFACT:
+        polledResponseResultBuilder.name(((CustomArtifactInfo) artifactInfo).getArtifactsArrayPath());
+        polledResponseResultBuilder.type(CUSTOM_ARTIFACT);
+        break;
+      case GOOGLE_ARTIFACT_REGISTRY:
+        polledResponseResultBuilder.name(((GARArtifactInfo) artifactInfo).getPkg());
+        polledResponseResultBuilder.type(GOOGLE_ARTIFACT_REGISTRY);
+        break;
+      case GITHUB_PACKAGES:
+        polledResponseResultBuilder.name(((GithubPackagesArtifactInfo) artifactInfo).getPackageName());
+        polledResponseResultBuilder.type(GITHUB_PACKAGES);
         break;
       default:
         throw new InvalidRequestException("Unsupported Artifact Type " + artifactInfo.getType().getDisplayName());

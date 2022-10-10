@@ -12,7 +12,9 @@ import static io.harness.rule.OwnerRule.GEORGE;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.category.element.UnitTests;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.HPersistence;
+import io.harness.persistence.Store;
 import io.harness.rule.Owner;
 
 import software.wings.WingsBaseTest;
@@ -47,8 +49,8 @@ public class MongoIndexesTest extends WingsBaseTest {
     morphia.getMapper().getOptions().setMapSubPackages(true);
     morphia.map(classes);
 
-    List<IndexCreator> indexCreators =
-        IndexManagerSession.allIndexes(persistence.getDatastore(Account.class), morphia, null, null);
+    List<IndexCreator> indexCreators = IndexManagerSession.allIndexes(
+        persistence.getDatastore(Account.class), morphia, Store.builder().name(DbAliases.HARNESS).build());
 
     List<String> indexes = indexCreators.stream()
                                .map(creator

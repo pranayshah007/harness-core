@@ -16,7 +16,10 @@ import lombok.experimental.UtilityClass;
 @OwnedBy(PL)
 @UtilityClass
 public class NGCommonEntityConstants {
+  public static final String ACCOUNT_HEADER = "Harness-Account";
+  public static final String ACCOUNT = "account";
   public static final String ACCOUNT_KEY = "accountIdentifier";
+  public static final String EMAIL_KEY = "emailIdentifier";
   public static final String ORG_KEY = "orgIdentifier";
   public static final String ORGS_KEY = "orgIdentifiers";
   public static final String PROJECT_KEY = "projectIdentifier";
@@ -49,10 +52,15 @@ public class NGCommonEntityConstants {
   public static final String REFERRED_ENTITY_TYPE = "referredEntityType";
   public static final String REFERRED_BY_ENTITY_TYPE = "referredByEntityType";
   public static final String MODULE_TYPE = "moduleType";
+  public static final String REFERER = "referer";
   public static final String ENTITY_TYPE = "entityType";
   public static final String SEARCH_TERM = "searchTerm";
   public static final String USER_ID = "userId";
   public static final String PAGE = "page";
+  public static final String PAGE_SIZE = "page_size";
+  public static final String SELF_REL = "self";
+  public static final String PREVIOUS_REL = "previous";
+  public static final String NEXT_REL = "next";
   public static final String SIZE = "size";
   public static final String MASK_SECRETS = "maskSecrets";
   public static final String CONNECTOR_IDENTIFIER_REF = "connectorIdentifierRef";
@@ -64,7 +72,7 @@ public class NGCommonEntityConstants {
   public static final Integer MAX_PAGE_SIZE = 10000;
   public static final String EXPIRY_TIME = "expiryTime";
 
-  // TODO(UTSAV): Move to 340-ce-nextgen
+  // TODO(UTSAV): Move to ce-nextgen
   public static final String IS_EVENTS_ENABLED = "eventsEnabled";
   public static final String IS_OPTIMIZATION_ENABLED = "optimizationEnabled";
   public static final String IS_CUR_ENABLED = "curEnabled";
@@ -118,4 +126,13 @@ public class NGCommonEntityConstants {
   public static final String INFRA = "infra";
   public static final String OVERRIDES_ONLY = "overridesOnly";
   public static final String RUNTIME_INPUTS_TEMPLATE = "Runtime inputs template YAML";
+  public static final String ACCOUNT_SCOPED_REQUEST_NON_NULL_ORG_PROJECT =
+      "Account scoped request is having non null org or project";
+  public static final String ORG_SCOPED_REQUEST_NON_NULL_PROJECT = "Org scoped request is having non null project";
+  public static final String DIFFERENT_SLUG_IN_PAYLOAD_AND_PARAM =
+      "Request is having different slug in payload and param";
+  public static final String DIFFERENT_ORG_IN_PAYLOAD_AND_PARAM =
+      "Request is having different org in payload and param";
+  public static final String DIFFERENT_PROJECT_IN_PAYLOAD_AND_PARAM =
+      "Request is having different project in payload and param";
 }

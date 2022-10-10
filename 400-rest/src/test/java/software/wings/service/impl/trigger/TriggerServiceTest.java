@@ -10,6 +10,7 @@ package software.wings.service.impl.trigger;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.beans.ExecutionStatus.SUCCESS;
 import static io.harness.beans.FeatureName.GITHUB_WEBHOOK_AUTHENTICATION;
+import static io.harness.beans.FeatureName.SERVICE_ID_FILTER_FOR_TRIGGERS;
 import static io.harness.beans.PageResponse.PageResponseBuilder.aPageResponse;
 import static io.harness.beans.WorkflowType.ORCHESTRATION;
 import static io.harness.beans.WorkflowType.PIPELINE;
@@ -337,6 +338,7 @@ public class TriggerServiceTest extends WingsBaseTest {
 
     when(settingsService.fetchGitConfigFromConnectorId(any())).thenReturn(gitConfig);
     when(featureFlagService.isEnabled(FeatureName.HELM_CHART_AS_ARTIFACT, ACCOUNT_ID)).thenReturn(true);
+    when(featureFlagService.isEnabled(SERVICE_ID_FILTER_FOR_TRIGGERS, ACCOUNT_ID)).thenReturn(true);
   }
 
   @Test
@@ -1514,7 +1516,7 @@ public class TriggerServiceTest extends WingsBaseTest {
     verify(workflowExecutionService).triggerEnvExecution(any(), any(), any(ExecutionArgs.class), any(Trigger.class));
     verify(artifactStreamService, times(4)).get(ARTIFACT_STREAM_ID);
     verify(artifactService).getArtifactByBuildNumber(artifactStream, ARTIFACT_FILTER, false);
-    verify(workflowExecutionService).obtainLastGoodDeployedArtifacts(APP_ID, WORKFLOW_ID);
+    verify(workflowExecutionService).obtainLastGoodDeployedArtifacts(APP_ID, WORKFLOW_ID, SERVICE_ID);
     verify(workflowService, times(2)).readWorkflow(APP_ID, WORKFLOW_ID);
   }
 
@@ -1570,7 +1572,7 @@ public class TriggerServiceTest extends WingsBaseTest {
     verify(workflowExecutionService).triggerEnvExecution(any(), any(), any(ExecutionArgs.class), any(Trigger.class));
     verify(artifactStreamService, times(4)).get(ARTIFACT_STREAM_ID);
     verify(artifactService).getArtifactByBuildNumber(artifactStream, ARTIFACT_FILTER, false);
-    verify(workflowExecutionService).obtainLastGoodDeployedArtifacts(APP_ID, WORKFLOW_ID);
+    verify(workflowExecutionService).obtainLastGoodDeployedArtifacts(APP_ID, WORKFLOW_ID, SERVICE_ID);
     verify(workflowService, times(2)).readWorkflow(APP_ID, WORKFLOW_ID);
     verify(workflowService).fetchWorkflowName(APP_ID, WORKFLOW_ID);
   }
@@ -1589,7 +1591,8 @@ public class TriggerServiceTest extends WingsBaseTest {
 
     pipelineCompletionMocks(singletonList(artifact));
 
-    when(workflowExecutionService.obtainLastGoodDeployedArtifacts(APP_ID, PIPELINE_ID)).thenReturn(asList(artifact));
+    when(workflowExecutionService.obtainLastGoodDeployedArtifacts(APP_ID, PIPELINE_ID, SERVICE_ID))
+        .thenReturn(asList(artifact));
 
     triggerService.triggerExecutionPostPipelineCompletionAsync(APP_ID, PIPELINE_ID);
     verify(workflowExecutionService).triggerEnvExecution(any(), any(), any(ExecutionArgs.class), any(Trigger.class));
@@ -1617,7 +1620,8 @@ public class TriggerServiceTest extends WingsBaseTest {
 
     pipelineCompletionMocks(singletonList(artifact));
 
-    when(workflowExecutionService.obtainLastGoodDeployedArtifacts(APP_ID, PIPELINE_ID)).thenReturn(asList(artifact));
+    when(workflowExecutionService.obtainLastGoodDeployedArtifacts(APP_ID, PIPELINE_ID, SERVICE_ID))
+        .thenReturn(asList(artifact));
 
     triggerService.triggerExecutionPostPipelineCompletionAsync(APP_ID, PIPELINE_ID);
     verify(workflowExecutionService, times(2))
@@ -1695,7 +1699,7 @@ public class TriggerServiceTest extends WingsBaseTest {
 
     scheduledTriggerMocks();
 
-    when(workflowExecutionService.obtainLastGoodDeployedArtifacts(APP_ID, PIPELINE_ID))
+    when(workflowExecutionService.obtainLastGoodDeployedArtifacts(APP_ID, PIPELINE_ID, SERVICE_ID))
         .thenReturn(asList(artifact, artifact2));
 
     triggerService.save(scheduledConditionTrigger);
@@ -1718,7 +1722,7 @@ public class TriggerServiceTest extends WingsBaseTest {
 
     scheduledTriggerMocks();
 
-    when(workflowExecutionService.obtainLastGoodDeployedArtifacts(APP_ID, PIPELINE_ID))
+    when(workflowExecutionService.obtainLastGoodDeployedArtifacts(APP_ID, PIPELINE_ID, SERVICE_ID))
         .thenReturn(asList(artifact, artifact2));
 
     scheduledConditionTrigger.setDisabled(true);
@@ -1739,7 +1743,8 @@ public class TriggerServiceTest extends WingsBaseTest {
   public void shouldNotTriggerScheduledExecutionMissingArtifacts() {
     Artifact artifact = prepareArtifact(ARTIFACT_ID);
     scheduledTriggerMocks();
-    when(workflowExecutionService.obtainLastGoodDeployedArtifacts(APP_ID, PIPELINE_ID)).thenReturn(asList(artifact));
+    when(workflowExecutionService.obtainLastGoodDeployedArtifacts(APP_ID, PIPELINE_ID, SERVICE_ID))
+        .thenReturn(asList(artifact));
 
     triggerService.save(scheduledConditionTrigger);
 
@@ -2100,7 +2105,7 @@ public class TriggerServiceTest extends WingsBaseTest {
     verify(artifactStreamService, times(11)).get(ARTIFACT_STREAM_ID);
     verify(artifactService).getArtifactByBuildNumber(artifactStream, ARTIFACT_FILTER, false);
 
-    verify(workflowExecutionService).obtainLastGoodDeployedArtifacts(APP_ID, PIPELINE_ID);
+    verify(workflowExecutionService).obtainLastGoodDeployedArtifacts(APP_ID, PIPELINE_ID, SERVICE_ID);
   }
 
   @Test
@@ -2155,7 +2160,7 @@ public class TriggerServiceTest extends WingsBaseTest {
     verify(artifactStreamService, times(7)).get(ARTIFACT_STREAM_ID);
     verify(artifactService).getArtifactByBuildNumber(artifactStream, ARTIFACT_FILTER, false);
 
-    verify(workflowExecutionService).obtainLastGoodDeployedArtifacts(APP_ID, WORKFLOW_ID);
+    verify(workflowExecutionService).obtainLastGoodDeployedArtifacts(APP_ID, WORKFLOW_ID, SERVICE_ID);
     verify(workflowService, times(4)).readWorkflow(APP_ID, WORKFLOW_ID);
   }
 
@@ -4009,7 +4014,7 @@ public class TriggerServiceTest extends WingsBaseTest {
 
     scheduledTriggerMocks();
 
-    when(workflowExecutionService.obtainLastGoodDeployedArtifacts(APP_ID, PIPELINE_ID))
+    when(workflowExecutionService.obtainLastGoodDeployedArtifacts(APP_ID, PIPELINE_ID, SERVICE_ID))
         .thenReturn(asList(artifact, artifact2));
 
     ScheduledTriggerCondition scheduledTriggerCondition =

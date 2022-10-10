@@ -1,0 +1,23 @@
+spec:
+  execution:
+    rollbackSteps:
+      - stepGroup:
+          identifier: Step_Group_Rollback_<+phase>
+          name: "Step Group Rollback"
+          strategy:
+            repeat:
+              items: <+stage.output.hosts>
+              start: <+start>
+              end: <+end>
+              unit: <+unit>
+          steps:
+            - step:
+                name: "Rollback"
+                identifier: Rollback_<+phase>
+                type: Command
+                timeout: 10m
+                spec:
+                  onDelegate: false
+                  environmentVariables: []
+                  outputVariables: []
+                  commandUnits: []

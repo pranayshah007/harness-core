@@ -19,4 +19,5 @@ public class CustomerDetailDTO {
   private String billingEmail;
   private String companyName;
   private String defaultSource;
+  private AddressDto address;
 }

@@ -22,6 +22,7 @@ import io.harness.rest.RestResponse;
 
 import software.wings.beans.ResourceConstraintUsage;
 import software.wings.security.PermissionAttribute.ResourceType;
+import software.wings.security.annotations.ApiKeyAuthorized;
 import software.wings.security.annotations.AuthRule;
 import software.wings.security.annotations.ListAPI;
 import software.wings.security.annotations.Scope;
@@ -57,6 +58,7 @@ public class ResourceConstraintResource {
   @ExceptionMetered
   @ListAPI(ResourceType.SETTING)
   @AuthRule(permissionType = LOGGED_IN)
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
   public RestResponse<PageResponse<ResourceConstraint>> list(
       @QueryParam("accountId") String accountId, @BeanParam PageRequest<ResourceConstraint> pageRequest) {
     return new RestResponse<>(resourceConstraintService.list(pageRequest));

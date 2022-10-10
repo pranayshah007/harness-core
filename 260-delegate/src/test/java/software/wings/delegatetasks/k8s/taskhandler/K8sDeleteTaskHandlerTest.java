@@ -217,4 +217,20 @@ public class K8sDeleteTaskHandlerTest extends WingsBaseTest {
     assertThat(deletedResources.stream().map(KubernetesResourceId::getKind).collect(Collectors.toSet()))
         .containsExactlyInAnyOrder("Deployment", "Service");
   }
+
+  @Test
+  @Owner(developers = OwnerRule.TARUN_UBA)
+  @Category(UnitTests.class)
+  public void deleteCanaryWorkloadResources() throws Exception {
+    doReturn(KubernetesConfig.builder().build())
+        .when(deploymentDelegateHelper)
+        .getKubernetesConfig(any(K8sClusterConfig.class), eq(false));
+    doReturn(true).when(k8sTaskHelper).fetchManifestFilesAndWriteToDirectory(any(), any(), any(), anyLong());
+
+    K8sDeleteTaskParameters deleteAllResources =
+        K8sDeleteTaskParameters.builder().k8sCanaryDelete(true).resources("${k8s.canaryWorkload}").build();
+    final K8sTaskExecutionResponse taskResponse = handler.executeTaskInternal(deleteAllResources, taskParams);
+
+    verify(k8sTaskHelperBase, times(1)).getReleaseHistoryData(any(), any());
+  }
 }

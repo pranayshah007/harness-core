@@ -15,6 +15,9 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.cdng.infra.beans.host.HostFilter;
+import io.harness.cdng.infra.beans.host.HostNamesFilter;
+import io.harness.delegate.beans.connector.pdcconnector.HostFilterType;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
@@ -30,7 +33,12 @@ public class CdngPdcInfrastructureYamlTest extends CategoryTest {
       PdcInfrastructure.builder()
           .credentialsRef(ParameterField.createValueField("some-key-ref"))
           .connectorRef(ParameterField.createValueField("some-connector-ref"))
-          .hostFilters(ParameterField.createValueField(Arrays.asList("host-1", "host-2")))
+          .hostFilter(HostFilter.builder()
+                          .type(HostFilterType.HOST_NAMES)
+                          .spec(HostNamesFilter.builder()
+                                    .value(ParameterField.createValueField(Arrays.asList("host-1", "host-2")))
+                                    .build())
+                          .build())
           .delegateSelectors(ParameterField.createValueField(
               Arrays.asList(new TaskSelectorYaml("selector-1"), new TaskSelectorYaml("selector-2"))))
           .build();
@@ -43,14 +51,19 @@ public class CdngPdcInfrastructureYamlTest extends CategoryTest {
         PdcInfrastructure.builder()
             .credentialsRef(ParameterField.createValueField("another-key-ref"))
             .connectorRef(ParameterField.createValueField("another-connector-ref"))
-            .hostFilters(ParameterField.createValueField(Arrays.asList("host-3", "host-4")))
+            .hostFilter(HostFilter.builder()
+                            .type(HostFilterType.HOST_NAMES)
+                            .spec(HostNamesFilter.builder()
+                                      .value(ParameterField.createValueField(Arrays.asList("host-3", "host-4")))
+                                      .build())
+                            .build())
             .build();
 
     assertThat(infrastructure.applyOverrides(infrastructureNew))
         .extracting(PdcInfrastructure::getCredentialsRef, PdcInfrastructure::getConnectorRef,
-            PdcInfrastructure::getHostFilters, PdcInfrastructure::getDelegateSelectors)
+            PdcInfrastructure::getHostFilter, PdcInfrastructure::getDelegateSelectors)
         .containsExactly(infrastructureNew.getCredentialsRef(), infrastructureNew.getConnectorRef(),
-            infrastructureNew.getHostFilters(), infrastructure.getDelegateSelectors());
+            infrastructureNew.getHostFilter(), infrastructure.getDelegateSelectors());
   }
 
   @Test

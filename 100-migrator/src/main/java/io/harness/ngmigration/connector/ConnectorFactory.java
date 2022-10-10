@@ -7,30 +7,69 @@
 
 package io.harness.ngmigration.connector;
 
+import static software.wings.settings.SettingVariableTypes.ARTIFACTORY;
+import static software.wings.settings.SettingVariableTypes.AWS;
+import static software.wings.settings.SettingVariableTypes.AZURE;
+import static software.wings.settings.SettingVariableTypes.DOCKER;
+import static software.wings.settings.SettingVariableTypes.GCP;
+import static software.wings.settings.SettingVariableTypes.GIT;
+import static software.wings.settings.SettingVariableTypes.HTTP_HELM_REPO;
+import static software.wings.settings.SettingVariableTypes.JENKINS;
+import static software.wings.settings.SettingVariableTypes.JIRA;
+import static software.wings.settings.SettingVariableTypes.KUBERNETES_CLUSTER;
+import static software.wings.settings.SettingVariableTypes.NEXUS;
+import static software.wings.settings.SettingVariableTypes.OCI_HELM_REPO;
+import static software.wings.settings.SettingVariableTypes.SERVICENOW;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
-import software.wings.beans.DockerConfig;
-import software.wings.beans.GitConfig;
-import software.wings.beans.KubernetesClusterConfig;
 import software.wings.beans.SettingAttribute;
+import software.wings.settings.SettingVariableTypes;
+
+import com.google.common.collect.ImmutableMap;
+import java.util.Map;
 
 @OwnedBy(HarnessTeam.CDC)
 public class ConnectorFactory {
+  private static final BaseConnector artifactoryConnector = new ArtifactoryConnectorImpl();
+  private static final BaseConnector nexusConnector = new NexusConnectorImpl();
   private static final BaseConnector dockerConnector = new DockerConnectorImpl();
   private static final BaseConnector kubernetesConnector = new KubernetesConnectorImpl();
   private static final BaseConnector gitConnector = new GitConnectorImpl();
+  private static final BaseConnector gcpConnector = new GcpConnectorImpl();
+  private static final BaseConnector azureConnector = new AzureConnectorImpl();
+  private static final BaseConnector httpHelmConnector = new HttpHelmConnectorImpl();
+  private static final BaseConnector awsConnector = new AWSConnectorImpl();
+  private static final BaseConnector ociHelmConnector = new OCIHelmConnectorImpl();
   private static final BaseConnector unsupportedConnector = new UnsupportedConnectorImpl();
 
+  private static final BaseConnector jiraConnector = new JiraConnectorImpl();
+  private static final BaseConnector serviceNowConnector = new ServiceNowConnectorImpl();
+
+  private static final BaseConnector jenkinsConnector = new JenkinsConnectorImpl();
+
+  public static final Map<SettingVariableTypes, BaseConnector> CONNECTOR_FACTORY_MAP =
+      ImmutableMap.<SettingVariableTypes, BaseConnector>builder()
+          .put(NEXUS, nexusConnector)
+          .put(ARTIFACTORY, artifactoryConnector)
+          .put(DOCKER, dockerConnector)
+          .put(KUBERNETES_CLUSTER, kubernetesConnector)
+          .put(GIT, gitConnector)
+          .put(GCP, gcpConnector)
+          .put(AZURE, azureConnector)
+          .put(HTTP_HELM_REPO, httpHelmConnector)
+          .put(AWS, awsConnector)
+          .put(OCI_HELM_REPO, ociHelmConnector)
+          .put(JIRA, jiraConnector)
+          .put(SERVICENOW, serviceNowConnector)
+          .put(JENKINS, jenkinsConnector)
+          .build();
+
   public static BaseConnector getConnector(SettingAttribute settingAttribute) {
-    if (settingAttribute.getValue() instanceof DockerConfig) {
-      return dockerConnector;
-    }
-    if (settingAttribute.getValue() instanceof KubernetesClusterConfig) {
-      return kubernetesConnector;
-    }
-    if (settingAttribute.getValue() instanceof GitConfig) {
-      return gitConnector;
+    SettingVariableTypes settingVariableTypes = settingAttribute.getValue().getSettingType();
+    if (CONNECTOR_FACTORY_MAP.containsKey(settingVariableTypes)) {
+      return CONNECTOR_FACTORY_MAP.get(settingAttribute.getValue().getSettingType());
     }
     return unsupportedConnector;
   }

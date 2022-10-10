@@ -15,6 +15,7 @@ import io.harness.engine.executions.plan.PlanExecutionMetadataService;
 import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.engine.pms.data.PmsEngineExpressionService;
 import io.harness.engine.utils.OrchestrationUtils;
+import io.harness.exception.InvalidRequestException;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.PlanExecution;
 import io.harness.execution.PlanExecutionMetadata;
@@ -24,6 +25,9 @@ import io.harness.notification.PipelineEventTypeConstants;
 import io.harness.notification.bean.NotificationChannelWrapper;
 import io.harness.notification.bean.NotificationRules;
 import io.harness.notification.bean.PipelineEvent;
+import io.harness.notification.channelDetails.NotificationChannelType;
+import io.harness.notification.channelDetails.PmsEmailChannel;
+import io.harness.notification.channelDetails.PmsNotificationChannel;
 import io.harness.notification.channeldetails.NotificationChannel;
 import io.harness.notification.notificationclient.NotificationClient;
 import io.harness.pms.approval.notification.ApprovalNotificationHandlerImpl;
@@ -35,10 +39,13 @@ import io.harness.pms.helpers.PipelineExpressionHelper;
 import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.pipeline.yaml.BasicPipeline;
 import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlUtils;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -72,6 +79,15 @@ public class NotificationHelper {
 
   public void sendNotification(
       Ambiance ambiance, PipelineEventType pipelineEventType, NodeExecution nodeExecution, Long updatedAt) {
+    PlanExecutionMetadata planExecutionMetadata = getPlanExecutionMetadata(ambiance.getPlanExecutionId());
+    boolean notifyOnlyMe = Boolean.TRUE.equals(planExecutionMetadata.getNotifyOnlyUser());
+    if (notifyOnlyMe) {
+      if (PipelineEventType.notifyOnlyUserEvents.contains(pipelineEventType)) {
+        sendNotificationOnlyToUserWhoTriggeredPipeline(ambiance, pipelineEventType, nodeExecution, updatedAt, true);
+      }
+      return;
+    }
+
     if (!ambiance.getMetadata().getIsNotificationConfigured()) {
       return;
     }
@@ -80,7 +96,7 @@ public class NotificationHelper {
     String orgIdentifier = AmbianceUtils.getOrgIdentifier(ambiance);
     String projectIdentifier = AmbianceUtils.getProjectIdentifier(ambiance);
 
-    String yaml = obtainYaml(ambiance.getPlanExecutionId());
+    String yaml = planExecutionMetadata.getYaml();
     if (EmptyPredicate.isEmpty(yaml)) {
       log.error("Empty yaml found in executionMetaData for execution id: {}", ambiance.getPlanExecutionId());
       return;
@@ -99,21 +115,23 @@ public class NotificationHelper {
       sendNotificationInternal(notificationRules, pipelineEventType, identifier, accountId,
           constructTemplateData(
               ambiance, pipelineEventType, nodeExecution, updatedAt, orgIdentifier, projectIdentifier),
-          orgIdentifier, projectIdentifier, ambiance);
+          orgIdentifier, projectIdentifier, ambiance, notifyOnlyMe);
     } catch (Exception ex) {
       log.error("Exception occurred in sendNotificationInternal", ex);
     }
   }
 
-  private void sendNotificationInternal(List<NotificationRules> notificationRulesList,
-      PipelineEventType pipelineEventType, String identifier, String accountIdentifier,
-      Map<String, String> notificationContent, String orgIdentifier, String projectIdentifier, Ambiance ambiance) {
+  @VisibleForTesting
+  void sendNotificationInternal(List<NotificationRules> notificationRulesList, PipelineEventType pipelineEventType,
+      String identifier, String accountIdentifier, Map<String, String> notificationContent, String orgIdentifier,
+      String projectIdentifier, Ambiance ambiance, boolean notifyOnlyMe) {
     for (NotificationRules notificationRules : notificationRulesList) {
       if (!notificationRules.isEnabled()) {
         continue;
       }
       List<PipelineEvent> pipelineEvents = notificationRules.getPipelineEvents();
-      boolean shouldSendNotification = shouldSendNotification(pipelineEvents, pipelineEventType, identifier);
+      boolean shouldSendNotification =
+          notifyOnlyMe || shouldSendNotification(pipelineEvents, pipelineEventType, identifier);
       if (shouldSendNotification) {
         NotificationChannelWrapper wrapper = notificationRules.getNotificationChannelWrapper().getValue();
         if (wrapper.getType() != null) {
@@ -140,8 +158,8 @@ public class NotificationHelper {
     return String.format("pms_%s_%s_plain", level.toLowerCase(), channelType.toLowerCase());
   }
 
-  private boolean shouldSendNotification(List<PipelineEvent> pipelineEvents,
-      io.harness.notification.PipelineEventType pipelineEventType, String identifier) {
+  private boolean shouldSendNotification(
+      List<PipelineEvent> pipelineEvents, PipelineEventType pipelineEventType, String identifier) {
     String pipelineEventTypeLevel = pipelineEventType.getLevel();
     for (PipelineEvent pipelineEvent : pipelineEvents) {
       io.harness.notification.PipelineEventType thisEventType = pipelineEvent.getType();
@@ -175,12 +193,66 @@ public class NotificationHelper {
     return pipelineExpressionHelper.generatePipelineUrl(ambiance);
   }
 
-  String obtainYaml(String planExecutionId) {
+  PlanExecutionMetadata getPlanExecutionMetadata(String planExecutionId) {
     Optional<PlanExecutionMetadata> optional = planExecutionMetadataService.findByPlanExecutionId(planExecutionId);
+    if (!optional.isPresent()) {
+      throw new InvalidRequestException("PlanExecutionMetadata not found!");
+    }
+    return optional.get();
+  }
+
+  String obtainYaml(String planExecutionId) {
+    Optional<PlanExecutionMetadata> optional = Optional.ofNullable(getPlanExecutionMetadata(planExecutionId));
     return optional.map(PlanExecutionMetadata::getYaml).orElse(null);
   }
 
-  private Map<String, String> constructTemplateData(Ambiance ambiance, PipelineEventType pipelineEventType,
+  @VisibleForTesting
+  void sendNotificationOnlyToUserWhoTriggeredPipeline(Ambiance ambiance, PipelineEventType pipelineEventType,
+      NodeExecution nodeExecution, Long updatedAt, boolean notifyOnlyMe) {
+    String identifier = nodeExecution != null ? AmbianceUtils.obtainStepIdentifier(nodeExecution.getAmbiance()) : "";
+    String accountId = AmbianceUtils.getAccountId(ambiance);
+    String orgIdentifier = AmbianceUtils.getOrgIdentifier(ambiance);
+    String projectIdentifier = AmbianceUtils.getProjectIdentifier(ambiance);
+
+    NotificationRules notificationRules = createNotificationRules(ambiance, pipelineEventType);
+
+    try (AutoLogContext ignore = AmbianceUtils.autoLogContext(ambiance)) {
+      sendNotificationInternal(Collections.singletonList(notificationRules), pipelineEventType, identifier, accountId,
+          constructTemplateData(
+              ambiance, pipelineEventType, nodeExecution, updatedAt, orgIdentifier, projectIdentifier),
+          orgIdentifier, projectIdentifier, ambiance, notifyOnlyMe);
+    } catch (Exception ex) {
+      log.error("Exception occurred in sendNotificationInternal", ex);
+    }
+  }
+
+  @VisibleForTesting
+  NotificationRules createNotificationRules(Ambiance ambiance, PipelineEventType pipelineEventType) {
+    List<PipelineEvent> pipelineEvents =
+        Collections.singletonList(PipelineEvent.builder().type(pipelineEventType).build());
+
+    // Currently Email is HardCoded, other channel types would be supported in future
+    String email = AmbianceUtils.getEmail(ambiance);
+    List<String> recipientList = Collections.singletonList(email);
+    PmsNotificationChannel pmsNotificationChannel =
+        PmsEmailChannel.builder().recipients(recipientList).userGroups(Collections.EMPTY_LIST).build();
+
+    NotificationChannelWrapper notificationChannelWrapper = NotificationChannelWrapper.builder()
+                                                                .type(NotificationChannelType.EMAIL)
+                                                                .notificationChannel(pmsNotificationChannel)
+                                                                .build();
+    ParameterField<NotificationChannelWrapper> notificationChannelWrapperField =
+        ParameterField.createValueField(notificationChannelWrapper);
+
+    return NotificationRules.builder()
+        .enabled(true)
+        .pipelineEvents(pipelineEvents)
+        .notificationChannelWrapper(notificationChannelWrapperField)
+        .build();
+  }
+
+  @VisibleForTesting
+  Map<String, String> constructTemplateData(Ambiance ambiance, PipelineEventType pipelineEventType,
       NodeExecution nodeExecution, Long updatedAt, String orgIdentifier, String projectIdentifier) {
     Map<String, String> templateData = new HashMap<>();
     PlanExecution planExecution = planExecutionService.get(ambiance.getPlanExecutionId());

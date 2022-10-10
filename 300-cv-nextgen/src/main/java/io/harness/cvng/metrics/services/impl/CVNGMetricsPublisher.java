@@ -7,12 +7,15 @@
 
 package io.harness.cvng.metrics.services.impl;
 
+import static io.harness.cvng.analysis.entities.LearningEngineTask.ExecutionStatus.QUEUED;
+
 import static org.mongodb.morphia.aggregation.Accumulator.accumulator;
 import static org.mongodb.morphia.aggregation.Group.grouping;
 import static org.mongodb.morphia.aggregation.Group.id;
 
 import io.harness.cvng.analysis.entities.LearningEngineTask;
 import io.harness.cvng.analysis.entities.LearningEngineTask.LearningEngineTaskKeys;
+import io.harness.cvng.analysis.entities.LearningEngineTask.LearningEngineTaskType;
 import io.harness.cvng.beans.DataCollectionExecutionStatus;
 import io.harness.cvng.cdng.entities.CVNGStepTask;
 import io.harness.cvng.cdng.entities.CVNGStepTask.CVNGStepTaskKeys;
@@ -48,6 +51,7 @@ import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 import org.mongodb.morphia.annotations.Id;
 import org.mongodb.morphia.query.Query;
+import org.mongodb.morphia.query.Sort;
 
 @Slf4j
 public class CVNGMetricsPublisher implements MetricsPublisher, MetricDefinitionInitializer {
@@ -90,6 +94,7 @@ public class CVNGMetricsPublisher implements MetricsPublisher, MetricDefinitionI
   @Override
   public void recordMetrics() {
     sendTaskStatusMetrics();
+    sendLEAutoscaleMetrics();
   }
   @VisibleForTesting
   void sendTaskStatusMetrics() {
@@ -125,6 +130,35 @@ public class CVNGMetricsPublisher implements MetricsPublisher, MetricDefinitionI
     });
   }
 
+  private void sendLEAutoscaleMetrics() {
+    long now = Instant.now().toEpochMilli();
+    LearningEngineTask earliestTask = hPersistence.createQuery(LearningEngineTask.class)
+                                          .filter(LearningEngineTaskKeys.taskStatus, QUEUED)
+                                          .order(Sort.ascending(LearningEngineTaskKeys.lastUpdatedAt))
+                                          .get();
+    long timeSinceTask = earliestTask == null ? 0l : now - earliestTask.getLastUpdatedAt();
+    metricService.recordMetric("learning_engine_max_queued_time", timeSinceTask);
+
+    LearningEngineTask earliestDeploymentTask = hPersistence.createQuery(LearningEngineTask.class)
+                                                    .filter(LearningEngineTaskKeys.taskStatus, QUEUED)
+                                                    .field(LearningEngineTaskKeys.analysisType)
+                                                    .in(LearningEngineTaskType.getDeploymentTaskTypes())
+                                                    .order(Sort.ascending(LearningEngineTaskKeys.lastUpdatedAt))
+                                                    .get();
+
+    timeSinceTask = earliestDeploymentTask == null ? 0l : now - earliestDeploymentTask.getLastUpdatedAt();
+    metricService.recordMetric("learning_engine_deployment_max_queued_time", timeSinceTask);
+
+    LearningEngineTask earliestLiveHealthTask = hPersistence.createQuery(LearningEngineTask.class)
+                                                    .filter(LearningEngineTaskKeys.taskStatus, QUEUED)
+                                                    .field(LearningEngineTaskKeys.analysisType)
+                                                    .notIn(LearningEngineTaskType.getDeploymentTaskTypes())
+                                                    .order(Sort.ascending(LearningEngineTaskKeys.lastUpdatedAt))
+                                                    .get();
+
+    timeSinceTask = earliestLiveHealthTask == null ? 0l : now - earliestLiveHealthTask.getLastUpdatedAt();
+    metricService.recordMetric("learning_engine_service_health_max_queued_time", timeSinceTask);
+  }
   @Override
   public List<MetricConfiguration> getMetricConfiguration() {
     List<MetricConfiguration.Metric> metrics = new ArrayList<>();

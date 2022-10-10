@@ -84,8 +84,7 @@ public class CVNGStepVariableCreatorTest extends CvNextGenTestBase {
             "pipeline.stages.QA_deployment.spec.execution.steps.canaryDepoyment.steps.Verify.timeout",
             "pipeline.stages.QA_deployment.spec.execution.steps.canaryDepoyment.steps.Verify.description",
             "pipeline.stages.QA_deployment.spec.execution.steps.canaryDepoyment.steps.Verify.name",
-            "pipeline.stages.QA_deployment.spec.execution.steps.canaryDepoyment.steps.Verify.spec.spec.sensitivity",
-            "pipeline.stages.QA_deployment.spec.execution.steps.canaryDepoyment.steps.Verify.spec.monitoredService.spec.monitoredServiceRef");
+            "pipeline.stages.QA_deployment.spec.execution.steps.canaryDepoyment.steps.Verify.spec.spec.sensitivity");
 
     String stepUuid = stepField.getNode().getUuid();
 

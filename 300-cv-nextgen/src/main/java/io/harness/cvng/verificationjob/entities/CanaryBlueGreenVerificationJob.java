@@ -17,7 +17,9 @@ import io.harness.cvng.beans.job.Sensitivity;
 import io.harness.cvng.core.beans.TimeRange;
 
 import com.google.common.base.Preconditions;
+import java.time.Duration;
 import java.time.Instant;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -96,6 +98,16 @@ public abstract class CanaryBlueGreenVerificationJob extends VerificationJob {
   public Optional<TimeRange> getPreActivityTimeRange(Instant deploymentStartTime) {
     return Optional.of(
         TimeRange.builder().startTime(deploymentStartTime.minus(getDuration())).endTime(deploymentStartTime).build());
+  }
+
+  @Override
+  public List<TimeRange> getPreActivityDataCollectionTimeRanges(Instant deploymentStartTime) {
+    Optional<TimeRange> optionalTimeRange = getPreActivityTimeRange(deploymentStartTime);
+    if (!optionalTimeRange.isPresent()) {
+      return Collections.emptyList();
+    }
+    TimeRange timeRange = optionalTimeRange.get();
+    return getTimeRangeBuckets(timeRange.getStartTime(), timeRange.getEndTime(), Duration.ofMinutes(5));
   }
 
   @Override

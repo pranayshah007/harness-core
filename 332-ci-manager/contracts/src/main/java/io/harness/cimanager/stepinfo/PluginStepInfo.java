@@ -16,6 +16,7 @@ import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.string;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.SwaggerConstants;
 import io.harness.beans.steps.CIStepInfo;
 import io.harness.beans.steps.CIStepInfoType;
 import io.harness.beans.steps.TypeInfo;
@@ -80,9 +81,9 @@ public class PluginStepInfo implements CIStepInfo, WithConnectorRef {
   @NotNull @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> connectorRef;
   private ContainerResource resources;
 
-  @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
-  @ApiModelProperty(hidden = true)
-  private List<String> entrypoint;
+  @YamlSchemaTypes(value = {string})
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
+  private ParameterField<List<String>> entrypoint;
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
   private Map<String, String> envVariables;
@@ -106,7 +107,7 @@ public class PluginStepInfo implements CIStepInfo, WithConnectorRef {
       "entrypoint", "envVariables", "harnessInternalImage", "privileged", "runAsUser", "imagePullPolicy"})
   public PluginStepInfo(String identifier, String name, Integer retry, ParameterField<Map<String, JsonNode>> settings,
       ParameterField<String> image, ParameterField<String> connectorRef, ContainerResource resources,
-      ParameterField<UnitTestReport> reports, List<String> entrypoint, Map<String, String> envVariables,
+      ParameterField<UnitTestReport> reports, ParameterField<List<String>> entrypoint, Map<String, String> envVariables,
       boolean harnessManagedImage, ParameterField<Boolean> privileged, ParameterField<Integer> runAsUser,
       ParameterField<ImagePullPolicy> imagePullPolicy) {
     this.identifier = identifier;

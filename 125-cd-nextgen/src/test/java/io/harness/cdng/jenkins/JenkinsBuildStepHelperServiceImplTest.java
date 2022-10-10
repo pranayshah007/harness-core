@@ -10,12 +10,14 @@ package io.harness.cdng.jenkins;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.rule.OwnerRule.SHIVAM;
 
+import static junit.framework.TestCase.assertEquals;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.ExecutionStatus;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.jenkins.jenkinsstep.JenkinsBuildStepHelperServiceImpl;
 import io.harness.common.NGTimeConversionHelper;
@@ -26,8 +28,12 @@ import io.harness.delegate.beans.connector.docker.DockerConnectorDTO;
 import io.harness.delegate.beans.connector.jenkins.JenkinsConnectorDTO;
 import io.harness.delegate.task.artifacts.jenkins.JenkinsArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.response.ArtifactTaskExecutionResponse;
+import io.harness.delegate.task.artifacts.response.ArtifactTaskResponse;
+import io.harness.delegate.task.jenkins.JenkinsBuildTaskNGResponse;
 import io.harness.exception.InvalidRequestException;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.rule.Owner;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
@@ -92,5 +98,31 @@ public class JenkinsBuildStepHelperServiceImplTest extends CategoryTest {
                        -> jenkinsBuildStepHelperService.prepareTaskRequest(
                            JenkinsArtifactDelegateRequest.builder(), ambiance, "connectorref", "time", "task"))
         .isInstanceOf(RuntimeException.class);
+  }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void testPrepareStepResponse() throws Exception {
+    StepResponse stepResponse = jenkinsBuildStepHelperService.prepareStepResponse(
+        ()
+            -> ArtifactTaskResponse.builder()
+                   .artifactTaskExecutionResponse(
+                       ArtifactTaskExecutionResponse.builder()
+                           .jenkinsBuildTaskNGResponse(
+                               JenkinsBuildTaskNGResponse.builder().executionStatus(ExecutionStatus.FAILED).build())
+                           .build())
+                   .build());
+    assertEquals(stepResponse.getStatus(), Status.FAILED);
+    stepResponse = jenkinsBuildStepHelperService.prepareStepResponse(
+        ()
+            -> ArtifactTaskResponse.builder()
+                   .artifactTaskExecutionResponse(
+                       ArtifactTaskExecutionResponse.builder()
+                           .jenkinsBuildTaskNGResponse(
+                               JenkinsBuildTaskNGResponse.builder().executionStatus(ExecutionStatus.SUCCESS).build())
+                           .build())
+                   .build());
+    assertEquals(stepResponse.getStatus(), Status.SUCCEEDED);
   }
 }

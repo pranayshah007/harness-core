@@ -148,6 +148,7 @@ public class MetricServiceImpl implements MetricService {
     }
     List<MetricConfiguration> metricConfigDefinitions = new ArrayList<>();
     long startTime = Instant.now().toEpochMilli();
+
     Set<String> metricFiles =
         new Reflections("metrics", new ResourcesScanner()).getResources(Pattern.compile(".*\\.yaml"));
     Set<String> metricDefinitionFileNames =
@@ -275,7 +276,7 @@ public class MetricServiceImpl implements MetricService {
       MetricGroup group = metricGroupMap.get(metricConfiguration.getMetricGroup());
       List<String> labelNames =
           group == null || group.getLabels() == null ? Arrays.asList(ENV_LABEL) : group.getLabels();
-      Map<String, String> labelVals = group == null ? new HashMap<>() : getLabelValues(labelNames);
+      Map<String, String> labelVals = getLabelValues(labelNames);
       Map<TagKey, String> tagsMap = new HashMap<>();
       for (String labelName : labelNames) {
         if (labelVals.containsKey(labelName)) {
@@ -284,7 +285,7 @@ public class MetricServiceImpl implements MetricService {
       }
       recordTaggedStat(tagsMap, cvngMetric.getMeasure(), value);
     } catch (Exception ex) {
-      log.error("Exception occurred while registering a metric", ex);
+      log.debug("Exception occurred while registering a metric", ex);
     }
   }
 

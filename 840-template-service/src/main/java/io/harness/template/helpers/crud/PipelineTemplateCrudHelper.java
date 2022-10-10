@@ -35,6 +35,7 @@ import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import lombok.AccessLevel;
@@ -77,7 +78,7 @@ public class PipelineTemplateCrudHelper implements TemplateCrudHelper {
       checkAndThrowExceptionOnErrorResponse(templateEntity, referenceResponse);
 
       EntityReferenceResponse response = referenceResponse.getReferenceResponse();
-      //    templateEntity.setModules(new HashSet<>(response.getModuleInfoList()));
+      templateEntity.setModules(new HashSet<>(response.getModuleInfoList()));
       return correctFQNsOfReferredEntities(response.getReferredEntitiesList(), templateEntity.getTemplateEntityType());
 
     } catch (InvalidIdentifierRefException ex) {

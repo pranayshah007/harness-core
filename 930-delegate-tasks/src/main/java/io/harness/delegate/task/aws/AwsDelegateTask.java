@@ -47,6 +47,8 @@ public class AwsDelegateTask extends AbstractDelegateRunnableTask {
   @Inject private AwsListVpcDelegateTaskHelper awsListVpcDelegateTaskHelper;
   @Inject private AwsListTagsDelegateTaskHelper awsListTagsDelegateTaskHelper;
   @Inject private AwsListLoadBalancersDelegateTaskHelper awsListLoadBalancersDelegateTaskHelper;
+  @Inject private AwsECSDelegateTaskHelper awsECSDelegateTaskHelper;
+  @Inject private AwsElasticLoadBalancersDelegateTaskHelper awsElasticLoadBalancersDelegateTaskHelper;
 
   public AwsDelegateTask(DelegateTaskPackage delegateTaskPackage, ILogStreamingTaskClient logStreamingTaskClient,
       Consumer<DelegateTaskResponse> consumer, BooleanSupplier preExecute) {
@@ -100,6 +102,14 @@ public class AwsDelegateTask extends AbstractDelegateRunnableTask {
         return awsListTagsDelegateTaskHelper.getTagList((AwsListTagsTaskParamsRequest) awsTaskParams);
       case LIST_LOAD_BALANCERS:
         return awsListLoadBalancersDelegateTaskHelper.getLoadBalancerList(awsTaskParams);
+      case LIST_ECS_CLUSTERS:
+        return awsECSDelegateTaskHelper.getEcsClustersList(awsTaskParams);
+      case LIST_ELASTIC_LOAD_BALANCERS:
+        return awsElasticLoadBalancersDelegateTaskHelper.getElbList(awsTaskParams);
+      case LIST_ELASTIC_LOAD_BALANCER_LISTENERS:
+        return awsElasticLoadBalancersDelegateTaskHelper.getElbListenerList(awsTaskParams);
+      case LIST_ELASTIC_LOAD_BALANCER_LISTENER_RULE:
+        return awsElasticLoadBalancersDelegateTaskHelper.getElbListenerRulesList(awsTaskParams);
       default:
         throw new InvalidRequestException("Task type not identified");
     }

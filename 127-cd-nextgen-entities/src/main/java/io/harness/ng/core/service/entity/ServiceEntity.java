@@ -9,8 +9,8 @@ package io.harness.ng.core.service.entity;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
-import io.harness.annotation.StoreIn;
 import io.harness.annotations.ChangeDataCapture;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.data.structure.EmptyPredicate;
@@ -24,6 +24,7 @@ import io.harness.ng.core.common.beans.NGTag;
 import io.harness.ng.core.service.mappers.NGServiceEntityMapper;
 import io.harness.ng.core.service.yaml.NGServiceConfig;
 import io.harness.persistence.PersistentEntity;
+import io.harness.template.yaml.TemplateRefHelper;
 
 import com.google.common.collect.ImmutableList;
 import java.util.List;
@@ -48,12 +49,12 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Data
 @Builder
 @FieldNameConstants(innerTypeName = "ServiceEntityKeys")
+@StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "servicesNG", noClassnameStored = true)
 @Document("servicesNG")
 @TypeAlias("io.harness.ng.core.service.entity.ServiceEntity")
 @ChangeDataCapture(table = "services", dataStore = "ng-harness", fields = {}, handler = "Services")
 @ChangeDataCapture(table = "tags_info", dataStore = "ng-harness", fields = {}, handler = "TagsInfoCD")
-@StoreIn(DbAliases.NG_MANAGER)
 public class ServiceEntity implements PersistentEntity {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
@@ -111,5 +112,12 @@ public class ServiceEntity implements PersistentEntity {
       return NGServiceEntityMapper.toYaml(ngServiceConfig);
     }
     return yaml;
+  }
+
+  public boolean hasTemplateReferences() {
+    if (EmptyPredicate.isEmpty(yaml)) {
+      return false;
+    }
+    return TemplateRefHelper.hasTemplateRef(yaml);
   }
 }

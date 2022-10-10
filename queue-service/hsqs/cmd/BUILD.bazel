@@ -1,0 +1,22 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "cmd",
+    srcs = [
+        "root.go",
+        "server.go",
+    ],
+    importpath = "github.com/harness/harness-core/queue-service/hsqs/cmd",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//queue-service/hsqs/config",
+        "//queue-service/hsqs/docs",
+        "//queue-service/hsqs/handler",
+        "//queue-service/hsqs/router",
+        "//queue-service/hsqs/store/redis",
+        "@com_github_joho_godotenv//:godotenv",
+        "@com_github_labstack_echo_v4//:echo",
+        "@com_github_spf13_cobra//:cobra",
+        "@com_github_swaggo_echo_swagger//:echo-swagger",
+    ],
+)

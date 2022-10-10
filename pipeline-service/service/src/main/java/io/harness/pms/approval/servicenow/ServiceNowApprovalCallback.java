@@ -30,6 +30,7 @@ import io.harness.servicenow.ServiceNowTicketNG;
 import io.harness.servicenow.TicketNG;
 import io.harness.steps.approval.step.beans.ApprovalStatus;
 import io.harness.steps.approval.step.beans.CriteriaSpecDTO;
+import io.harness.steps.approval.step.entities.ApprovalInstance;
 import io.harness.steps.approval.step.servicenow.entities.ServiceNowApprovalInstance;
 import io.harness.steps.approval.step.servicenow.evaluation.ServiceNowCriteriaEvaluator;
 import io.harness.tasks.BinaryResponseData;
@@ -101,8 +102,8 @@ public class ServiceNowApprovalCallback extends AbstractApprovalCallback impleme
     }
 
     try {
-      checkApprovalAndRejectionCriteria(serviceNowTaskNGResponse.getTicket(), instance, logCallback,
-          instance.getApprovalCriteria(), instance.getRejectionCriteria());
+      checkApprovalAndRejectionCriteriaAndWithinChangeWindow(serviceNowTaskNGResponse.getTicket(), instance,
+          logCallback, instance.getApprovalCriteria(), instance.getRejectionCriteria());
     } catch (Exception ex) {
       if (ex instanceof ApprovalStepNGException && ((ApprovalStepNGException) ex).isFatal()) {
         handleFatalException(instance, logCallback, (ApprovalStepNGException) ex);
@@ -121,5 +122,22 @@ public class ServiceNowApprovalCallback extends AbstractApprovalCallback impleme
   @Override
   protected boolean evaluateCriteria(TicketNG ticket, CriteriaSpecDTO criteriaSpec) {
     return ServiceNowCriteriaEvaluator.evaluateCriteria((ServiceNowTicketNG) ticket, criteriaSpec);
+  }
+
+  @Override
+  protected boolean evaluateWithinChangeWindow(TicketNG ticket, ApprovalInstance instance, NGLogCallback logCallback) {
+    return ServiceNowCriteriaEvaluator.validateWithinChangeWindow(
+        (ServiceNowTicketNG) ticket, (ServiceNowApprovalInstance) instance, logCallback);
+  }
+
+  @Override
+  protected void handleFatalException(
+      ApprovalInstance instance, NGLogCallback logCallback, ApprovalStepNGException ex) {
+    log.error("Error while evaluating approval/rejection/change window criteria", ex);
+    String errorMessage = String.format("Fatal error evaluating approval/rejection/change window criteria: %s",
+        ngErrorHelper.getErrorSummary(ex.getMessage()));
+    logCallback.saveExecutionLog(
+        LogHelper.color(errorMessage, LogColor.Red), LogLevel.INFO, CommandExecutionStatus.FAILURE);
+    approvalInstanceService.finalizeStatus(instance.getId(), ApprovalStatus.FAILED, errorMessage);
   }
 }

@@ -197,4 +197,12 @@ public class TemplateServiceConfiguration extends Configuration {
   public static Collection<Class<?>> getOAS3ResourceClassesOnly() {
     return getResourceClasses().stream().filter(x -> x.isAnnotationPresent(Tag.class)).collect(Collectors.toList());
   }
+
+  public List<String> getDbAliases() {
+    List<String> dbAliases = new ArrayList<>();
+    if (mongoConfig != null) {
+      dbAliases.add(mongoConfig.getAliasDBName());
+    }
+    return dbAliases;
+  }
 }

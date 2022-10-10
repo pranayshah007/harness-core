@@ -30,6 +30,7 @@ import io.harness.delegate.task.ssh.config.FileDelegateConfig;
 import io.harness.delegate.task.ssh.config.SecretConfigFile;
 import io.harness.encryption.SecretRefHelper;
 import io.harness.exception.InvalidRequestException;
+import io.harness.filestore.dto.node.FileNodeDTO;
 import io.harness.filestore.dto.node.FileStoreNodeDTO;
 import io.harness.filestore.service.FileStoreService;
 import io.harness.ng.core.BaseNGAccess;
@@ -53,6 +54,25 @@ public class SshWinRmConfigFileHelper {
   @Inject private FileStoreService fileStoreService;
   @Inject private NGEncryptedDataService ngEncryptedDataService;
   @Inject private CDExpressionResolver cdExpressionResolver;
+
+  public String fetchFileContent(FileReference fileReference) {
+    Optional<FileStoreNodeDTO> file = fileStoreService.getWithChildrenByPath(fileReference.getAccountIdentifier(),
+        fileReference.getOrgIdentifier(), fileReference.getProjectIdentifier(), fileReference.getPath(), true);
+
+    if (!file.isPresent()) {
+      throw new InvalidRequestException(format("File not found in local file store, path [%s], scope: [%s]",
+          fileReference.getPath(), fileReference.getScope()));
+    }
+
+    FileStoreNodeDTO fileStoreNodeDTO = file.get();
+
+    if (!(fileStoreNodeDTO instanceof FileNodeDTO)) {
+      throw new InvalidRequestException(format(
+          "Requested file is a folder, path [%s], scope: [%s]", fileReference.getPath(), fileReference.getScope()));
+    }
+
+    return ((FileNodeDTO) fileStoreNodeDTO).getContent();
+  }
 
   public FileDelegateConfig getFileDelegateConfig(
       Map<String, ConfigFileOutcome> configFilesOutcome, Ambiance ambiance) {

@@ -9,6 +9,7 @@ package io.harness.pms.pipeline.service;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.pms.contracts.governance.ExpansionPlacementStrategy.APPEND;
 import static io.harness.telemetry.Destination.AMPLITUDE;
 
 import static org.springframework.data.mongodb.core.query.Criteria.where;
@@ -36,15 +37,19 @@ import io.harness.gitaware.helper.GitAwareEntityHelper;
 import io.harness.gitsync.helpers.GitContextHelper;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.interceptor.GitSyncBranchContext;
+import io.harness.gitsync.scm.beans.ScmGitMetaData;
 import io.harness.governance.GovernanceMetadata;
 import io.harness.governance.PolicySetMetadata;
 import io.harness.ng.core.common.beans.NGTag.NGTagKeys;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
+import io.harness.ng.core.template.TemplateReferenceSummary;
 import io.harness.ng.core.template.exception.NGTemplateResolveExceptionV2;
 import io.harness.opaclient.model.OpaConstants;
+import io.harness.opaclient.model.PipelineGovernanceGitConfig;
 import io.harness.pms.PmsFeatureFlagService;
 import io.harness.pms.contracts.governance.ExpansionRequestMetadata;
 import io.harness.pms.contracts.governance.ExpansionResponseBatch;
+import io.harness.pms.contracts.governance.ExpansionResponseProto;
 import io.harness.pms.filter.creation.FilterCreatorMergeService;
 import io.harness.pms.filter.creation.FilterCreatorMergeServiceResponse;
 import io.harness.pms.filter.utils.ModuleInfoFilterUtils;
@@ -55,6 +60,7 @@ import io.harness.pms.governance.ExpansionRequestsExtractor;
 import io.harness.pms.governance.ExpansionsMerger;
 import io.harness.pms.governance.JsonExpander;
 import io.harness.pms.instrumentaion.PipelineInstrumentationConstants;
+import io.harness.pms.instrumentaion.PipelineInstrumentationUtils;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.PipelineEntity.PipelineEntityKeys;
 import io.harness.pms.pipeline.PipelineEntityUtils;
@@ -76,6 +82,7 @@ import com.google.protobuf.ByteString;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -141,8 +148,22 @@ public class PMSPipelineServiceHelper {
     PipelineEntity newEntity = pipelineEntity.withStageCount(filtersAndStageCount.getStageCount())
                                    .withStageNames(filtersAndStageCount.getStageNames());
     newEntity.getFilters().clear();
-    if (isNotEmpty(filtersAndStageCount.getFilters())) {
-      filtersAndStageCount.getFilters().forEach((key, value) -> newEntity.getFilters().put(key, Document.parse(value)));
+    try {
+      if (isNotEmpty(filtersAndStageCount.getFilters())) {
+        filtersAndStageCount.getFilters().forEach(
+            (key, value)
+                -> newEntity.getFilters().put(key, isNotEmpty(value) ? Document.parse(value) : Document.parse("{}")));
+      }
+
+      if (isNotEmpty(pipelineEntity.getTemplateModules())) {
+        for (String module : pipelineEntity.getTemplateModules()) {
+          if (!newEntity.getFilters().containsKey(module)) {
+            newEntity.getFilters().put(module, Document.parse("{}"));
+          }
+        }
+      }
+    } catch (Exception e) {
+      log.error("Unable to parse the Filter value", e);
     }
     return newEntity;
   }
@@ -239,11 +260,22 @@ public class PMSPipelineServiceHelper {
         pipelineTemplateHelper.resolveTemplateRefsInPipeline(pipelineEntity, checkAgainstOPAPolicies);
     String resolveTemplateRefsInPipeline = templateMergeResponseDTO.getMergedPipelineYaml();
     pmsYamlSchemaService.validateYamlSchema(accountId, orgIdentifier, projectIdentifier, resolveTemplateRefsInPipeline);
+
+    // Add Template Module Info temporarily to Pipeline Entity
+    HashSet<String> templateModuleInfo = new HashSet<>();
+    if (isNotEmpty(templateMergeResponseDTO.getTemplateReferenceSummaries())) {
+      for (TemplateReferenceSummary templateReferenceSummary :
+          templateMergeResponseDTO.getTemplateReferenceSummaries()) {
+        templateModuleInfo.addAll(templateReferenceSummary.getModuleInfo());
+      }
+    }
+    pipelineEntity.setTemplateModules(templateModuleInfo);
+
     // validate unique fqn in resolveTemplateRefsInPipeline
     pmsYamlSchemaService.validateUniqueFqn(resolveTemplateRefsInPipeline);
     if (checkAgainstOPAPolicies) {
-      String expandedPipelineJSON = fetchExpandedPipelineJSONFromYaml(
-          accountId, orgIdentifier, projectIdentifier, templateMergeResponseDTO.getMergedPipelineYamlWithTemplateRef());
+      String expandedPipelineJSON = fetchExpandedPipelineJSONFromYaml(accountId, orgIdentifier, projectIdentifier,
+          templateMergeResponseDTO.getMergedPipelineYamlWithTemplateRef(), false);
       return governanceService.evaluateGovernancePolicies(expandedPipelineJSON, accountId, orgIdentifier,
           projectIdentifier, OpaConstants.OPA_EVALUATION_ACTION_PIPELINE_SAVE, "");
     }
@@ -251,7 +283,7 @@ public class PMSPipelineServiceHelper {
   }
 
   public String fetchExpandedPipelineJSONFromYaml(
-      String accountId, String orgIdentifier, String projectIdentifier, String pipelineYaml) {
+      String accountId, String orgIdentifier, String projectIdentifier, String pipelineYaml, boolean isExecution) {
     if (!pmsFeatureFlagService.isEnabled(accountId, FeatureName.OPA_PIPELINE_GOVERNANCE)) {
       return pipelineYaml;
     }
@@ -262,10 +294,31 @@ public class PMSPipelineServiceHelper {
     Set<ExpansionRequest> expansionRequests = expansionRequestsExtractor.fetchExpansionRequests(pipelineYaml);
     Set<ExpansionResponseBatch> expansionResponseBatches =
         jsonExpander.fetchExpansionResponses(expansionRequests, expansionRequestMetadata);
+
+    // During Execution more details can be added to Final expandedYaml via below method
+    if (isExecution) {
+      addGitDetailsToExpandedYaml(expansionResponseBatches);
+    }
+
     String mergeExpansions = ExpansionsMerger.mergeExpansions(pipelineYaml, expansionResponseBatches);
     log.info("[PMS_GOVERNANCE] Pipeline Json Expansion took {}ms for projectId {}, orgId {}, accountId {}",
         System.currentTimeMillis() - start, projectIdentifier, orgIdentifier, accountId);
     return mergeExpansions;
+  }
+
+  void addGitDetailsToExpandedYaml(Set<ExpansionResponseBatch> expansionResponseBatches) {
+    ScmGitMetaData scmGitMetaData = GitAwareContextHelper.getScmGitMetaData();
+    if (checkIfRemotePipeline(scmGitMetaData)) {
+      // Adding GitConfig to expanded Yaml
+      expansionResponseBatches.add(getGitDetailsAsExecutionResponse(scmGitMetaData));
+    }
+  }
+
+  boolean checkIfRemotePipeline(ScmGitMetaData scmGitMetaData) {
+    if (EmptyPredicate.isEmpty(scmGitMetaData.getBranchName())) {
+      return false;
+    }
+    return true;
   }
 
   ExpansionRequestMetadata getRequestMetadata(
@@ -352,6 +405,7 @@ public class PMSPipelineServiceHelper {
     properties.put(PIPELINE_SAVE_ACTION_TYPE, actionType);
     properties.put(PipelineInstrumentationConstants.MODULE_NAME,
         PipelineEntityUtils.getModuleNameFromPipelineEntity(entity, "cd"));
+    properties.put(PipelineInstrumentationConstants.STAGE_TYPES, PipelineInstrumentationUtils.getStageTypes(entity));
     telemetryReporter.sendTrackEvent(PIPELINE_SAVE, null, entity.getAccountId(), properties,
         Collections.singletonMap(AMPLITUDE, true), io.harness.telemetry.Category.GLOBAL);
   }
@@ -459,5 +513,30 @@ public class PMSPipelineServiceHelper {
   private boolean isAlreadyImported(String accountIdentifier, String repoURL, String filePath) {
     Long totalInstancesOfYAML = pmsPipelineRepository.countFileInstances(accountIdentifier, repoURL, filePath);
     return totalInstancesOfYAML > 0;
+  }
+
+  ExpansionResponseBatch getGitDetailsAsExecutionResponse(ScmGitMetaData scmGitMetaData) {
+    PipelineGovernanceGitConfig pipelineGovernanceGitConfig = getPipelineGovernanceGitConfigInfo(scmGitMetaData);
+
+    String gitDetailsJson = JsonUtils.asJson(pipelineGovernanceGitConfig);
+    ExpansionResponseProto gitConfig = ExpansionResponseProto.newBuilder()
+                                           .setFqn(YAMLFieldNameConstants.PIPELINE)
+                                           .setKey(PipelineGovernanceGitConfig.GIT_CONFIG)
+                                           .setValue(gitDetailsJson)
+                                           .setSuccess(true)
+                                           .setPlacement(APPEND)
+                                           .build();
+
+    return ExpansionResponseBatch.newBuilder()
+        .addAllExpansionResponseProto(Collections.singletonList(gitConfig))
+        .build();
+  }
+
+  PipelineGovernanceGitConfig getPipelineGovernanceGitConfigInfo(ScmGitMetaData scmGitMetaData) {
+    return PipelineGovernanceGitConfig.builder()
+        .branch(scmGitMetaData.getBranchName())
+        .filePath(scmGitMetaData.getFilePath())
+        .repoName(scmGitMetaData.getRepoName())
+        .build();
   }
 }

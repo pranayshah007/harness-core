@@ -186,6 +186,13 @@ public class CommandLibraryServerApplication extends Application<CommandLibraryS
             .put(DelegateTaskProgressResponse.class, "delegateTaskProgressResponses")
             .build();
       }
+
+      @Provides
+      @Singleton
+      @Named("dbAliases")
+      public List<String> getDbAliases() {
+        return configuration.getDbAliases();
+      }
     });
 
     modules.add(new CommandLibraryServerModule(configuration));

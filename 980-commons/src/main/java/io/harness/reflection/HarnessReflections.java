@@ -17,7 +17,9 @@ import java.util.concurrent.atomic.AtomicReference;
 import lombok.experimental.UtilityClass;
 import org.reflections.Reflections;
 import org.reflections.serializers.JsonSerializer;
+import org.reflections.util.ClasspathHelper;
 import org.reflections.util.ConfigurationBuilder;
+import org.reflections.util.FilterBuilder;
 
 @OwnedBy(HarnessTeam.PL)
 @UtilityClass
@@ -34,7 +36,16 @@ public class HarnessReflections {
 
         reflections.set(new Reflections(config).collect(CLASSPATH_METADATA_FILE));
       } else {
-        reflections.set(new Reflections(HarnessPackages.IO_HARNESS, HarnessPackages.SOFTWARE_WINGS));
+        FilterBuilder filter = new FilterBuilder();
+        filter.includePackage(HarnessPackages.IO_HARNESS);
+        filter.includePackage(HarnessPackages.SOFTWARE_WINGS);
+
+        ConfigurationBuilder builder = new ConfigurationBuilder()
+                                           .useParallelExecutor()
+                                           .addUrls(ClasspathHelper.forPackage(HarnessPackages.IO_HARNESS))
+                                           .addUrls(ClasspathHelper.forPackage(HarnessPackages.SOFTWARE_WINGS))
+                                           .filterInputsBy(filter);
+        reflections.set(new Reflections(builder));
       }
     }
 

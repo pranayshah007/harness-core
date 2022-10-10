@@ -49,10 +49,12 @@ public interface AwsResourceService {
    * @param awsConnectorRef the IdentifierRef of the aws connector
    * @param orgIdentifier the org identifier
    * @param projectIdentifier the project identifier
+   * @param region AWS region
    *
    * @return the list of rolesARNs
    */
-  Map<String, String> getRolesARNs(IdentifierRef awsConnectorRef, String orgIdentifier, String projectIdentifier);
+  Map<String, String> getRolesARNs(
+      IdentifierRef awsConnectorRef, String orgIdentifier, String projectIdentifier, String region);
 
   /**
    * Get all parameter keys for a cloudformation template
@@ -138,4 +140,52 @@ public interface AwsResourceService {
    */
   List<String> getASGNames(
       IdentifierRef awsConnectorRef, String orgIdentifier, String projectIdentifier, String region);
+
+  /**
+   * Get list of AWS clusters
+   *
+   * @param awsConnectorRef the IdentifierRef of the aws connector
+   * @param orgIdentifier is the org id
+   * @param projectIdentifier is the project id
+   * @param region AWS region
+   * @return list of AWS clusters
+   */
+  List<String> getClusterNames(
+      IdentifierRef awsConnectorRef, String orgIdentifier, String projectIdentifier, String region);
+
+  /**
+   * Get list of AWS elastic load balancers
+   *
+   * @param awsConnectorRef the IdentifierRef of the aws connector
+   * @param orgIdentifier is the org id
+   * @param projectIdentifier is the project id
+   * @param region AWS region
+   * @return list of AWS elastic load balancers
+   */
+  List<String> getElasticLoadBalancerNames(
+      IdentifierRef awsConnectorRef, String orgIdentifier, String projectIdentifier, String region);
+
+  /**
+   * Get list of AWS elastic load balancer listeners arn
+   *
+   * @param awsConnectorRef the IdentifierRef of the aws connector
+   * @param orgIdentifier is the org id
+   * @param projectIdentifier is the project id
+   * @param region AWS region
+   * @return map of AWS elastic load balancer listeners arn
+   */
+  Map<String, String> getElasticLoadBalancerListenersArn(IdentifierRef awsConnectorRef, String orgIdentifier,
+      String projectIdentifier, String region, String elasticLoadBalancer);
+
+  /**
+   * Get list of AWS elastic load balancer listener rules
+   *
+   * @param awsConnectorRef the IdentifierRef of the aws connector
+   * @param orgIdentifier is the org id
+   * @param projectIdentifier is the project id
+   * @param region AWS region
+   * @return list of AWS elastic load balancer listener rules
+   */
+  List<String> getElasticLoadBalancerListenerRules(IdentifierRef awsConnectorRef, String orgIdentifier,
+      String projectIdentifier, String region, String elasticLoadBalancer, String listenerArn);
 }

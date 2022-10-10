@@ -33,6 +33,7 @@ import io.harness.delegate.task.ssh.ScriptCommandUnit;
 import io.harness.delegate.task.ssh.artifact.ArtifactoryArtifactDelegateConfig;
 import io.harness.exception.InvalidRequestException;
 import io.harness.logging.CommandExecutionStatus;
+import io.harness.logging.LogCallback;
 import io.harness.ng.core.dto.secrets.SSHKeySpecDTO;
 import io.harness.rule.Owner;
 import io.harness.security.encryption.EncryptedDataDetail;
@@ -63,6 +64,7 @@ public class SshScriptCommandHandlerTest extends CategoryTest {
   @Mock ScriptProcessExecutor scriptProcessExecutor;
   @Mock SshScriptExecutorFactory sshScriptExecutorFactory;
   @Mock Map<String, Object> taskContext;
+  @Mock LogCallback logCallback;
 
   final String COMMAND = "echo test";
   final SSHKeySpecDTO SSH_KEY_SPEC = SSHKeySpecDTO.builder().build();
@@ -89,8 +91,10 @@ public class SshScriptCommandHandlerTest extends CategoryTest {
     when(scriptSshExecutor.executeCommandString(COMMAND, outputVariables))
         .thenReturn(ExecuteCommandResponse.builder().status(CommandExecutionStatus.SUCCESS).build());
 
-    CommandExecutionStatus status = sshScriptCommandHandler.handle(
-        getParameters(false), scriptCommandUnit, logStreamingTaskClient, commandUnitsProgress, taskContext);
+    CommandExecutionStatus status =
+        sshScriptCommandHandler
+            .handle(getParameters(false), scriptCommandUnit, logStreamingTaskClient, commandUnitsProgress, taskContext)
+            .getStatus();
     assertThat(status).isEqualTo(CommandExecutionStatus.SUCCESS);
     ArgumentCaptor<SshExecutorFactoryContext> contextArgumentCaptor =
         ArgumentCaptor.forClass(SshExecutorFactoryContext.class);
@@ -105,9 +109,12 @@ public class SshScriptCommandHandlerTest extends CategoryTest {
     doReturn(scriptProcessExecutor).when(sshScriptExecutorFactory).getExecutor(any());
     when(scriptProcessExecutor.executeCommandString(COMMAND, outputVariables))
         .thenReturn(ExecuteCommandResponse.builder().status(CommandExecutionStatus.SUCCESS).build());
+    when(scriptProcessExecutor.getLogCallback()).thenReturn(logCallback);
 
-    CommandExecutionStatus status = sshScriptCommandHandler.handle(
-        getParameters(true), scriptCommandUnit, logStreamingTaskClient, commandUnitsProgress, taskContext);
+    CommandExecutionStatus status =
+        sshScriptCommandHandler
+            .handle(getParameters(true), scriptCommandUnit, logStreamingTaskClient, commandUnitsProgress, taskContext)
+            .getStatus();
     assertThat(status).isEqualTo(CommandExecutionStatus.SUCCESS);
     ArgumentCaptor<SshExecutorFactoryContext> contextArgumentCaptor =
         ArgumentCaptor.forClass(SshExecutorFactoryContext.class);

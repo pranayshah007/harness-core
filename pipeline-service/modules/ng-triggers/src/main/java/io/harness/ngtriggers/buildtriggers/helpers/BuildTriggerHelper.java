@@ -20,6 +20,7 @@ import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.jackson.JsonNodeUtils;
+import io.harness.ngtriggers.beans.config.NGTriggerConfigV2;
 import io.harness.ngtriggers.beans.dto.TriggerDetails;
 import io.harness.ngtriggers.beans.entity.NGTriggerEntity;
 import io.harness.ngtriggers.beans.source.NGTriggerSpecV2;
@@ -37,9 +38,12 @@ import io.harness.polling.contracts.AcrPayload;
 import io.harness.polling.contracts.AmazonS3Payload;
 import io.harness.polling.contracts.ArtifactoryRegistryPayload;
 import io.harness.polling.contracts.BuildInfo;
+import io.harness.polling.contracts.CustomPayload;
 import io.harness.polling.contracts.DockerHubPayload;
 import io.harness.polling.contracts.EcrPayload;
+import io.harness.polling.contracts.GARPayload;
 import io.harness.polling.contracts.GcrPayload;
+import io.harness.polling.contracts.GithubPackagesPollingPayload;
 import io.harness.polling.contracts.JenkinsPayload;
 import io.harness.polling.contracts.PollingItem;
 import io.harness.polling.contracts.PollingPayloadData;
@@ -66,10 +70,12 @@ import org.apache.logging.log4j.util.Strings;
 public class BuildTriggerHelper {
   private PipelineServiceClient pipelineServiceClient;
 
-  public Optional<String> fetchPipelineForTrigger(NGTriggerEntity ngTriggerEntity) {
+  public Optional<String> fetchPipelineForTrigger(TriggerDetails triggerDetails) {
+    NGTriggerEntity ngTriggerEntity = triggerDetails.getNgTriggerEntity();
+    NGTriggerConfigV2 ngTriggerConfigV2 = triggerDetails.getNgTriggerConfigV2();
     PMSPipelineResponseDTO response = NGRestUtils.getResponse(pipelineServiceClient.getPipelineByIdentifier(
         ngTriggerEntity.getTargetIdentifier(), ngTriggerEntity.getAccountId(), ngTriggerEntity.getOrgIdentifier(),
-        ngTriggerEntity.getProjectIdentifier(), null, null, false));
+        ngTriggerEntity.getProjectIdentifier(), ngTriggerConfigV2.getPipelineBranchName(), null, false));
 
     return response != null ? Optional.of(response.getYamlPipeline()) : Optional.empty();
   }
@@ -124,7 +130,8 @@ public class BuildTriggerHelper {
           "Type filed is not present in Trigger Spec. Its needed for Artifact/Manifest Triggers");
     }
 
-    if (!typeFromPipeline.asText().equals(typeFromTrigger.asText())) {
+    if (buildTriggerOpsData.getTriggerDetails().getNgTriggerEntity().getWithServiceV2() == false
+        && !typeFromPipeline.asText().equals(typeFromTrigger.asText())) {
       throw new InvalidRequestException(new StringBuilder(128)
                                             .append("Artifact/Manifest Type in Trigger: ")
                                             .append(typeFromTrigger.asText())
@@ -149,16 +156,19 @@ public class BuildTriggerHelper {
       throws Exception {
     Map<String, JsonNode> triggerManifestSpecMap = fetchTriggerBuildSpecMap(triggerDetails.getNgTriggerEntity());
 
-    String stageRef = triggerManifestSpecMap.get("stageIdentifier").asText();
-    String buildRef = triggerManifestSpecMap.get("manifestRef").asText();
-    List<String> keys = Arrays.asList(
-        "pipeline.stages.stage[identifier:STAGE_REF].spec.serviceConfig.serviceDefinition.spec.manifests.manifest[identifier:BUILD_REF]",
-        "pipeline.stages.stage[identifier:STAGE_REF].spec.serviceConfig.stageOverrides.manifests.manifest[identifier:BUILD_REF]",
-        "pipeline.stages.PARALLEL.stage[identifier:STAGE_REF].spec.serviceConfig.serviceDefinition.spec.manifests.manifest[identifier:BUILD_REF]",
-        "pipeline.stages.PARALLEL.stage[identifier:STAGE_REF].spec.serviceConfig.stageOverrides.manifests.manifest[identifier:BUILD_REF]");
+    Map<String, Object> pipelineBuildSpecMap = new HashMap<>();
 
-    Map<String, Object> pipelineBuildSpecMap =
-        generateFinalMapWithBuildSpecFromPipeline(pipelineYml, stageRef, buildRef, keys);
+    if (triggerManifestSpecMap.containsKey("stageIdentifier") && triggerManifestSpecMap.containsKey("manifestRef")) {
+      String stageRef = triggerManifestSpecMap.get("stageIdentifier").asText();
+      String buildRef = triggerManifestSpecMap.get("manifestRef").asText();
+      List<String> keys = Arrays.asList(
+          "pipeline.stages.stage[identifier:STAGE_REF].spec.serviceConfig.serviceDefinition.spec.manifests.manifest[identifier:BUILD_REF]",
+          "pipeline.stages.stage[identifier:STAGE_REF].spec.serviceConfig.stageOverrides.manifests.manifest[identifier:BUILD_REF]",
+          "pipeline.stages.PARALLEL.stage[identifier:STAGE_REF].spec.serviceConfig.serviceDefinition.spec.manifests.manifest[identifier:BUILD_REF]",
+          "pipeline.stages.PARALLEL.stage[identifier:STAGE_REF].spec.serviceConfig.stageOverrides.manifests.manifest[identifier:BUILD_REF]");
+
+      pipelineBuildSpecMap = generateFinalMapWithBuildSpecFromPipeline(pipelineYml, stageRef, buildRef, keys);
+    }
 
     Map<String, Object> manifestTriggerSpecMap = convertMapForExprEvaluation(triggerManifestSpecMap);
     return BuildTriggerOpsData.builder()
@@ -172,32 +182,34 @@ public class BuildTriggerHelper {
       throws Exception {
     Map<String, JsonNode> triggerArtifactSpecMap = fetchTriggerBuildSpecMap(triggerDetails.getNgTriggerEntity());
 
-    String stageRef = triggerArtifactSpecMap.get("stageIdentifier").asText();
-    String buildRef = triggerArtifactSpecMap.get("artifactRef").asText();
+    Map<String, Object> pipelineBuildSpecMap = new HashMap<>();
 
-    List<String> keys = new ArrayList<>();
+    if (triggerArtifactSpecMap.containsKey("stageIdentifier") && triggerArtifactSpecMap.containsKey("artifactRef")) {
+      String stageRef = triggerArtifactSpecMap.get("stageIdentifier").asText();
+      String buildRef = triggerArtifactSpecMap.get("artifactRef").asText();
 
-    if (buildRef.equals("primary")) {
-      keys.add(
-          "pipeline.stages.stage[identifier:STAGE_REF].spec.serviceConfig.serviceDefinition.spec.artifacts.primary");
-      keys.add("pipeline.stages.stage[identifier:STAGE_REF].spec.serviceConfig.stageOverrides.artifacts.primary");
-      keys.add(
-          "pipeline.stages.parallel.stage[identifier:STAGE_REF].spec.serviceConfig.serviceDefinition.spec.artifacts.primary");
-      keys.add(
-          "pipeline.stages.parallel.stage[identifier:STAGE_REF].spec.serviceConfig.stageOverrides.artifacts.primary");
-    } else {
-      keys.add(
-          "pipeline.stages.stage[identifier:STAGE_REF].spec.serviceConfig.serviceDefinition.spec.artifacts.sidecars.sidecar[identifier:BUILD_REF]");
-      keys.add(
-          "pipeline.stages.stage[identifier:STAGE_REF].spec.serviceConfig.stageOverrides.artifacts.sidecars.sidecar[identifier:BUILD_REF]");
-      keys.add(
-          "pipeline.stages.parallel.stage[identifier:STAGE_REF].spec.serviceConfig.serviceDefinition.spec.artifacts.sidecars.sidecar[identifier:BUILD_REF]");
-      keys.add(
-          "pipeline.stages.parallel.stage[identifier:STAGE_REF].spec.serviceConfig.stageOverrides.artifacts.sidecars.sidecar[identifier:BUILD_REF]");
+      List<String> keys = new ArrayList<>();
+
+      if (buildRef.equals("primary")) {
+        keys.add(
+            "pipeline.stages.stage[identifier:STAGE_REF].spec.serviceConfig.serviceDefinition.spec.artifacts.primary");
+        keys.add("pipeline.stages.stage[identifier:STAGE_REF].spec.serviceConfig.stageOverrides.artifacts.primary");
+        keys.add(
+            "pipeline.stages.parallel.stage[identifier:STAGE_REF].spec.serviceConfig.serviceDefinition.spec.artifacts.primary");
+        keys.add(
+            "pipeline.stages.parallel.stage[identifier:STAGE_REF].spec.serviceConfig.stageOverrides.artifacts.primary");
+      } else {
+        keys.add(
+            "pipeline.stages.stage[identifier:STAGE_REF].spec.serviceConfig.serviceDefinition.spec.artifacts.sidecars.sidecar[identifier:BUILD_REF]");
+        keys.add(
+            "pipeline.stages.stage[identifier:STAGE_REF].spec.serviceConfig.stageOverrides.artifacts.sidecars.sidecar[identifier:BUILD_REF]");
+        keys.add(
+            "pipeline.stages.parallel.stage[identifier:STAGE_REF].spec.serviceConfig.serviceDefinition.spec.artifacts.sidecars.sidecar[identifier:BUILD_REF]");
+        keys.add(
+            "pipeline.stages.parallel.stage[identifier:STAGE_REF].spec.serviceConfig.stageOverrides.artifacts.sidecars.sidecar[identifier:BUILD_REF]");
+      }
+      pipelineBuildSpecMap = generateFinalMapWithBuildSpecFromPipeline(pipelineYml, stageRef, buildRef, keys);
     }
-    Map<String, Object> pipelineBuildSpecMap =
-        generateFinalMapWithBuildSpecFromPipeline(pipelineYml, stageRef, buildRef, keys);
-
     Map<String, Object> manifestTriggerSpecMap = convertMapForExprEvaluation(triggerArtifactSpecMap);
     return BuildTriggerOpsData.builder()
         .pipelineBuildSpecMap(pipelineBuildSpecMap)
@@ -234,7 +246,7 @@ public class BuildTriggerHelper {
 
   public void validatePollingItemForArtifact(PollingItem pollingItem) {
     String error = checkFiledValueError("ConnectorRef", pollingItem.getPollingPayloadData().getConnectorRef());
-    if (isNotBlank(error)) {
+    if (isNotBlank(error) && !pollingItem.getPollingPayloadData().hasCustomPayload()) {
       throw new InvalidRequestException(error);
     }
 
@@ -253,6 +265,12 @@ public class BuildTriggerHelper {
       validatePollingItemForS3(pollingItem);
     } else if (pollingPayloadData.hasJenkinsPayload()) {
       validatePollingItemForJenkins(pollingItem);
+    } else if (pollingPayloadData.hasCustomPayload()) {
+      validatePollingItemForCustom(pollingItem);
+    } else if (pollingPayloadData.hasGarPayload()) {
+      validatePollingItemForGoogleArtifactRegistry(pollingItem);
+    } else if (pollingPayloadData.hasGithubPackagesPollingPayload()) {
+      validatePollingItemForGithubPackages(pollingItem);
     } else {
       throw new InvalidRequestException("Invalid Polling Type");
     }
@@ -270,6 +288,33 @@ public class BuildTriggerHelper {
     JenkinsPayload jenkinsPayload = pollingItem.getPollingPayloadData().getJenkinsPayload();
 
     String error = checkFiledValueError("jobName", jenkinsPayload.getJobName());
+    if (isNotBlank(error)) {
+      throw new InvalidRequestException(error);
+    }
+  }
+  private void validatePollingItemForGithubPackages(PollingItem pollingItem) {
+    GithubPackagesPollingPayload githubPackagesPollingPayload =
+        pollingItem.getPollingPayloadData().getGithubPackagesPollingPayload();
+    String error = checkFiledValueError("package Name", githubPackagesPollingPayload.getPackageName());
+    if (isNotBlank(error)) {
+      throw new InvalidRequestException(error);
+    }
+  }
+
+  private void validatePollingItemForGoogleArtifactRegistry(PollingItem pollingItem) {
+    GARPayload garPayload = pollingItem.getPollingPayloadData().getGarPayload();
+
+    String error = checkFiledValueError("Package", garPayload.getPkg());
+
+    if (isNotBlank(error)) {
+      throw new InvalidRequestException(error);
+    }
+  }
+
+  private void validatePollingItemForCustom(PollingItem pollingItem) {
+    CustomPayload customPayload = pollingItem.getPollingPayloadData().getCustomPayload();
+
+    String error = checkFiledValueError("script", customPayload.getScript());
     if (isNotBlank(error)) {
       throw new InvalidRequestException(error);
     }

@@ -12,6 +12,8 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.delegate.task.helm.HelmTaskHelperBase.getChartDirectory;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.filesystem.FileIo.createDirectoryIfDoesNotExist;
+import static io.harness.filesystem.FileIo.deleteDirectoryAndItsContentIfExists;
+import static io.harness.filesystem.FileIo.waitForDirectoryToBeAccessibleOutOfProcess;
 import static io.harness.govern.Switch.unhandled;
 import static io.harness.k8s.manifest.ManifestHelper.values_filename;
 import static io.harness.k8s.model.Kind.Namespace;
@@ -40,6 +42,7 @@ import io.harness.delegate.k8s.openshift.OpenShiftDelegateService;
 import io.harness.delegate.task.helm.CustomManifestFetchTaskHelper;
 import io.harness.delegate.task.helm.HelmChartInfo;
 import io.harness.delegate.task.helm.HelmCommandFlag;
+import io.harness.delegate.task.helm.HelmTaskHelperBase;
 import io.harness.delegate.task.k8s.K8sTaskHelperBase;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
@@ -88,6 +91,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.hibernate.validator.constraints.NotEmpty;
 
@@ -108,6 +112,7 @@ public class K8sTaskHelper {
   @Inject private ContainerDeploymentDelegateHelper containerDeploymentDelegateHelper;
   @Inject private ScmFetchFilesHelper scmFetchFilesHelper;
   @Inject private CustomManifestFetchTaskHelper customManifestFetchTaskHelper;
+  @Inject private HelmTaskHelperBase helmTaskHelperBase;
 
   public boolean doStatusCheckAllResourcesForHelm(Kubectl client, List<KubernetesResourceId> resourceIds, String ocPath,
       String workingDir, String namespace, String kubeconfigPath, ExecutionLogCallback executionLogCallback)
@@ -488,10 +493,30 @@ public class K8sTaskHelper {
     try {
       executionLogCallback.saveExecutionLog(color(format("%nFetching files from helm chart repo"), White, Bold));
       helmTaskHelper.printHelmChartInfoInExecutionLogs(helmChartConfigParams, executionLogCallback);
+      helmTaskHelper.modifyRepoNameToIncludeBucket(helmChartConfigParams);
+      boolean isEnvVarSet = helmTaskHelperBase.isHelmLocalRepoSet();
+      if (isEnvVarSet) {
+        String parentDir = helmTaskHelperBase.getHelmLocalRepositoryCompletePath(helmChartConfigParams.getRepoName(),
+            helmChartConfigParams.getChartName(), helmChartConfigParams.getChartVersion());
+        createDirectoryIfDoesNotExist(parentDir);
+        waitForDirectoryToBeAccessibleOutOfProcess(parentDir, 10);
+        helmTaskHelper.populateChartToLocalHelmRepo(
+            helmChartConfigParams, timeoutInMillis, parentDir, delegateManifestConfig.getHelmCommandFlag());
+        String localChartDirectory = getChartDirectory(parentDir, helmChartConfigParams.getChartName());
 
-      helmTaskHelper.downloadChartFiles(
-          helmChartConfigParams, destinationDirectory, timeoutInMillis, delegateManifestConfig.getHelmCommandFlag());
-
+        String workingDirectory = helmTaskHelper.createDirectory(
+            Paths.get(destinationDirectory, helmChartConfigParams.getChartName()).toString());
+        log.info("Copying locally present chart from directory: {} to current working directory: {} \n",
+            localChartDirectory, workingDirectory);
+        File dest = new File(workingDirectory);
+        File src = new File(localChartDirectory);
+        deleteDirectoryAndItsContentIfExists(dest.getAbsolutePath());
+        FileUtils.copyDirectory(src, dest);
+        FileIo.waitForDirectoryToBeAccessibleOutOfProcess(dest.getPath(), 10);
+      } else {
+        helmTaskHelper.downloadChartFiles(
+            helmChartConfigParams, destinationDirectory, timeoutInMillis, delegateManifestConfig.getHelmCommandFlag());
+      }
       executionLogCallback.saveExecutionLog(color("Successfully fetched following files:", White, Bold));
       executionLogCallback.saveExecutionLog(k8sTaskHelperBase.getManifestFileNamesInLogFormat(destinationDirectory));
       executionLogCallback.saveExecutionLog("Done.", INFO, CommandExecutionStatus.SUCCESS);

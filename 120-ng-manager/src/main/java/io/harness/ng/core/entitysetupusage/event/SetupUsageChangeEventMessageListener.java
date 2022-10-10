@@ -74,7 +74,8 @@ public class SetupUsageChangeEventMessageListener implements MessageListener {
     try (AutoLogContext ignore1 = new NgEventLogContext(messageId, OVERRIDE_ERROR)) {
       Map<String, String> metadataMap = message.getMessage().getMetadataMap();
       if (metadataMap.containsKey(REFERRED_ENTITY_TYPE) && !handledByNgCore(metadataMap.get(REFERRED_ENTITY_TYPE))) {
-        return false;
+        log.info("Skipping processing the message {}", message);
+        return true;
       }
       final GitEntityInfo newBranch = getGitEntityInfoFromMessage(message);
       try (GlobalContextManager.GlobalContextGuard guard = GlobalContextManager.ensureGlobalContextGuard()) {

@@ -10,7 +10,7 @@ package io.harness.ng.authenticationsettings.impl;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.expression.SecretString.SECRET_MASK;
-import static io.harness.remote.client.RestClientUtils.getResponse;
+import static io.harness.remote.client.CGRestUtils.getResponse;
 
 import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.annotations.dev.HarnessTeam;
@@ -192,6 +192,7 @@ public class AuthenticationSettingsServiceImpl implements AuthenticationSettings
                        .displayName(ldapSettings.getDisplayName())
                        .cronExpression(ldapSettings.getCronExpression())
                        .nextIterations(ldapSettings.getNextIterations())
+                       .disabled(ldapSettings.isDisabled())
                        .build());
       }
     }
@@ -280,14 +281,17 @@ public class AuthenticationSettingsServiceImpl implements AuthenticationSettings
   }
 
   @Override
-  public LDAPSettings createLdapSettings(String accountIdentifier, LDAPSettings ldapSettings) {
+  @FeatureRestrictionCheck(FeatureRestrictionName.LDAP_SUPPORT)
+  public LDAPSettings createLdapSettings(
+      @NotNull @AccountIdentifier String accountIdentifier, LDAPSettings ldapSettings) {
     log.info("NGLDAP: Create ldap settings call for accountId {}", accountIdentifier);
     return fromCGLdapSettings(getResponse(
         managerClient.createLdapSettings(accountIdentifier, toCGLdapSettings(ldapSettings, accountIdentifier))));
   }
 
   @Override
-  public LDAPSettings updateLdapSettings(String accountIdentifier, LDAPSettings ldapSettings) {
+  public LDAPSettings updateLdapSettings(
+      @NotNull @AccountIdentifier String accountIdentifier, LDAPSettings ldapSettings) {
     log.info("NGLDAP: Update ldap settings call for accountId {}, ldap name {}", accountIdentifier,
         ldapSettings.getDisplayName());
     return fromCGLdapSettings(getResponse(
@@ -295,8 +299,16 @@ public class AuthenticationSettingsServiceImpl implements AuthenticationSettings
   }
 
   @Override
-  public void deleteLdapSettings(String accountIdentifier) {
+  public void deleteLdapSettings(@NotNull @AccountIdentifier String accountIdentifier) {
     log.info("NGLDAP: Delete ldap settings call for accountId {}", accountIdentifier);
+    LdapSettings settings = getResponse(managerClient.getLdapSettings(accountIdentifier));
+    if (settings == null) {
+      throw new InvalidRequestException("No Ldap Settings found for this account: " + accountIdentifier);
+    }
+    if (isNotEmpty(userGroupService.getUserGroupsBySsoId(accountIdentifier, settings.getUuid()))) {
+      throw new InvalidRequestException(
+          "Deleting Ldap provider with linked user groups is not allowed. Unlink the user groups first");
+    }
     getResponse(managerClient.deleteLdapSettings(accountIdentifier));
   }
 
@@ -309,6 +321,7 @@ public class AuthenticationSettingsServiceImpl implements AuthenticationSettings
         .displayName(ldapSettings.getDisplayName())
         .cronExpression(ldapSettings.getCronExpression())
         .nextIterations(ldapSettings.getNextIterations())
+        .disabled(ldapSettings.isDisabled())
         .build();
   }
 
@@ -324,6 +337,7 @@ public class AuthenticationSettingsServiceImpl implements AuthenticationSettings
 
     toLdapSettings.setUuid(ldapSettings.getIdentifier());
     toLdapSettings.setCronExpression(ldapSettings.getCronExpression());
+    toLdapSettings.setDisabled(ldapSettings.isDisabled());
     return toLdapSettings;
   }
 }

@@ -11,9 +11,12 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.ngtriggers.Constants.ACR;
 import static io.harness.ngtriggers.Constants.AMAZON_S3;
 import static io.harness.ngtriggers.Constants.ARTIFACTORY_REGISTRY;
+import static io.harness.ngtriggers.Constants.CUSTOM_ARTIFACT;
 import static io.harness.ngtriggers.Constants.DOCKER_REGISTRY;
 import static io.harness.ngtriggers.Constants.ECR;
 import static io.harness.ngtriggers.Constants.GCR;
+import static io.harness.ngtriggers.Constants.GITHUB_PACKAGES;
+import static io.harness.ngtriggers.Constants.GOOGLE_ARTIFACT_REGISTRY;
 import static io.harness.ngtriggers.Constants.JENKINS;
 import static io.harness.ngtriggers.Constants.NEXUS3_REGISTRY;
 
@@ -36,7 +39,10 @@ import java.util.List;
       @JsonSubTypes.Type(value = ArtifactoryRegistrySpec.class, name = ARTIFACTORY_REGISTRY),
       @JsonSubTypes.Type(value = AcrSpec.class, name = ACR),
       @JsonSubTypes.Type(value = AmazonS3RegistrySpec.class, name = AMAZON_S3),
-      @JsonSubTypes.Type(value = JenkinsRegistrySpec.class, name = JENKINS)
+      @JsonSubTypes.Type(value = JenkinsRegistrySpec.class, name = JENKINS),
+      @JsonSubTypes.Type(value = CustomArtifactSpec.class, name = CUSTOM_ARTIFACT),
+      @JsonSubTypes.Type(value = GarSpec.class, name = GOOGLE_ARTIFACT_REGISTRY),
+      @JsonSubTypes.Type(value = GithubPackagesSpec.class, name = GITHUB_PACKAGES)
 })
 
 @OwnedBy(PIPELINE)

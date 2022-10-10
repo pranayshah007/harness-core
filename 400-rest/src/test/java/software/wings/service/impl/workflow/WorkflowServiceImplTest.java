@@ -167,7 +167,6 @@ public class WorkflowServiceImplTest extends WingsBaseTest {
   @Before
   public void setUp() {
     when(featureFlagService.isEnabled(eq(FeatureName.HELM_CHART_AS_ARTIFACT), anyString())).thenReturn(true);
-    when(featureFlagService.isEnabled(eq(FeatureName.ARTIFACT_STREAM_REFACTOR), anyString())).thenReturn(false);
     when(featureFlagService.isEnabled(eq(FeatureName.TIMEOUT_FAILURE_SUPPORT), anyString())).thenReturn(false);
   }
 
@@ -212,7 +211,7 @@ public class WorkflowServiceImplTest extends WingsBaseTest {
     when(query.get()).thenReturn(workflowExecution);
     PageResponse<Artifact> pageResponse = new PageResponse<>();
     pageResponse.setResponse(artifacts);
-    when(artifactService.listArtifactsForService(APP_ID, SERVICE_ID, new PageRequest<>())).thenReturn(pageResponse);
+    when(artifactService.listArtifactsForService(eq(APP_ID), eq(SERVICE_ID), any())).thenReturn(pageResponse);
     WorkflowServiceImpl workflowServiceImpl = (WorkflowServiceImpl) workflowService;
     LastDeployedArtifactInformation artifactInformation = workflowServiceImpl.fetchLastDeployedArtifact(
         workflow, asList(ARTIFACT_STREAM_ID, ARTIFACT_STREAM_ID_ARTIFACTORY), SERVICE_ID);
@@ -441,7 +440,7 @@ public class WorkflowServiceImplTest extends WingsBaseTest {
             .withArtifactStreamId(ARTIFACT_STREAM_ID)
             .withMetadata(new ArtifactMetadata(Collections.singletonMap(ArtifactMetadataKeys.buildNo, BUILD_NO + 2)))
             .build()));
-    when(artifactService.listArtifactsForService(APP_ID, SERVICE_ID, new PageRequest<>())).thenReturn(pageResponse);
+    when(artifactService.listArtifactsForService(eq(APP_ID), eq(SERVICE_ID), any())).thenReturn(pageResponse);
     when(helmChartService.listHelmChartsForService(APP_ID, SERVICE_ID, null, new PageRequest<>(), true))
         .thenReturn(ImmutableMap.of(APP_MANIFEST_NAME,
             asList(HelmChart.builder()
@@ -750,7 +749,7 @@ public class WorkflowServiceImplTest extends WingsBaseTest {
     when(query.get()).thenReturn(workflowExecution);
     PageResponse<Artifact> pageResponse = new PageResponse<>();
     pageResponse.setResponse(artifacts);
-    when(artifactService.listArtifactsForService(APP_ID, SERVICE_ID, new PageRequest<>())).thenReturn(pageResponse);
+    when(artifactService.listArtifactsForService(eq(APP_ID), eq(SERVICE_ID), any())).thenReturn(pageResponse);
     WorkflowServiceImpl workflowServiceImpl = (WorkflowServiceImpl) workflowService;
     LastDeployedArtifactInformation artifactInformation = workflowServiceImpl.fetchLastDeployedArtifact(
         workflow, asList(ARTIFACT_STREAM_ID, ARTIFACT_STREAM_ID_ARTIFACTORY), SERVICE_ID);

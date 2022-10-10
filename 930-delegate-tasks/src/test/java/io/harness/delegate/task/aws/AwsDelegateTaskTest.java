@@ -168,10 +168,12 @@ public class AwsDelegateTaskTest extends CategoryTest {
   @Owner(developers = ACASIAN)
   @Category(UnitTests.class)
   public void testShouldHandleValidationTask() {
-    AwsConnectorDTO awsConnectorDTO =
-        AwsConnectorDTO.builder()
-            .credential(AwsCredentialDTO.builder().awsCredentialType(AwsCredentialType.INHERIT_FROM_DELEGATE).build())
-            .build();
+    AwsConnectorDTO awsConnectorDTO = AwsConnectorDTO.builder()
+                                          .credential(AwsCredentialDTO.builder()
+                                                          .awsCredentialType(AwsCredentialType.INHERIT_FROM_DELEGATE)
+                                                          .testRegion("us-east-1")
+                                                          .build())
+                                          .build();
     AwsTaskParams awsTaskParams = AwsTaskParams.builder()
                                       .awsConnector(awsConnectorDTO)
                                       .awsTaskType(AwsTaskType.VALIDATE)
@@ -191,7 +193,7 @@ public class AwsDelegateTaskTest extends CategoryTest {
     assertThat(awsValidateTaskResponse.getConnectorValidationResult().getTestedAt()).isNotNull();
 
     verify(awsNgConfigMapper, times(1)).mapAwsConfigWithDecryption(any(), any());
-    verify(awsClient, times(1)).validateAwsAccountCredential(eq(awsConfig));
+    verify(awsClient, times(1)).validateAwsAccountCredential(eq(awsConfig), eq("us-east-1"));
   }
 
   @Test
@@ -200,7 +202,8 @@ public class AwsDelegateTaskTest extends CategoryTest {
   public void testShouldHandleValidationTaskIRSA() {
     AwsConnectorDTO awsConnectorDTO =
         AwsConnectorDTO.builder()
-            .credential(AwsCredentialDTO.builder().awsCredentialType(AwsCredentialType.IRSA).build())
+            .credential(
+                AwsCredentialDTO.builder().awsCredentialType(AwsCredentialType.IRSA).testRegion("us-east-1").build())
             .build();
     AwsTaskParams awsTaskParams = AwsTaskParams.builder()
                                       .awsConnector(awsConnectorDTO)
@@ -223,7 +226,7 @@ public class AwsDelegateTaskTest extends CategoryTest {
     assertThat(awsConfig.isIRSA()).isEqualTo(true);
 
     verify(awsNgConfigMapper, times(1)).mapAwsConfigWithDecryption(any(), any());
-    verify(awsClient, times(1)).validateAwsAccountCredential(eq(awsConfig));
+    verify(awsClient, times(1)).validateAwsAccountCredential(eq(awsConfig), eq("us-east-1"));
   }
 
   @Test

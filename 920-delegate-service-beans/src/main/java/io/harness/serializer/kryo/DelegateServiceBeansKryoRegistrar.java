@@ -7,7 +7,6 @@
 
 package io.harness.serializer.kryo;
 
-import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.DelegateEntityOwner;
 import io.harness.delegate.beans.DelegateProfile;
 import io.harness.delegate.beans.DelegateScope;
@@ -21,7 +20,6 @@ import com.esotericsoftware.kryo.Kryo;
 public class DelegateServiceBeansKryoRegistrar implements KryoRegistrar {
   @Override
   public void register(Kryo kryo) {
-    kryo.register(Delegate.class, 40031);
     kryo.register(DelegateScope.class, 73982);
     kryo.register(DelegateSelectionLogParams.class, 73983);
     kryo.register(DelegateProfile.class, 73984);

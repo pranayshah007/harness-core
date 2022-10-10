@@ -8,12 +8,14 @@
 package software.wings.delegatetasks.validation;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.FdTtlIndex;
 import io.harness.mongo.index.MongoIndex;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
 import io.harness.persistence.PersistentEntity;
 import io.harness.persistence.UpdatedAtAware;
@@ -35,6 +37,7 @@ import org.mongodb.morphia.annotations.Id;
 
 @Data
 @Builder
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "delegateConnectionResults", noClassnameStored = true)
 @HarnessEntity(exportable = false)
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -48,6 +51,12 @@ public class DelegateConnectionResult implements PersistentEntity, UuidAware, Up
                  .unique(true)
                  .field(DelegateConnectionResultKeys.accountId)
                  .field(DelegateConnectionResultKeys.delegateId)
+                 .field(DelegateConnectionResultKeys.criteria)
+                 .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("delegateConnectionResultsMatchingCriteriaIdx")
+                 .unique(false)
+                 .field(DelegateConnectionResultKeys.accountId)
                  .field(DelegateConnectionResultKeys.criteria)
                  .build())
         .build();

@@ -65,4 +65,6 @@ public interface InstanceRepositoryCustom {
       String orgIdentifier, String projectIdentifier, List<String> serviceId, long timestampInMs);
 
   Instance findFirstInstance(Criteria criteria);
+
+  void updateInfrastructureMapping(String instanceId, String infrastructureMappingId);
 }

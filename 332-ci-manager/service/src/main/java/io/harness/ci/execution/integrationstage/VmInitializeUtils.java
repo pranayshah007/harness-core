@@ -8,10 +8,30 @@
 package io.harness.ci.integrationstage;
 
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveOSType;
+import static io.harness.ci.commonconstants.CIExecutionConstants.ACCOUNT_ID_ATTR;
+import static io.harness.ci.commonconstants.CIExecutionConstants.ADDON_VOLUME;
+import static io.harness.ci.commonconstants.CIExecutionConstants.ADDON_VOL_MOUNT_PATH;
+import static io.harness.ci.commonconstants.CIExecutionConstants.BUILD_NUMBER_ATTR;
+import static io.harness.ci.commonconstants.CIExecutionConstants.HARNESS_ACCOUNT_ID_VARIABLE;
+import static io.harness.ci.commonconstants.CIExecutionConstants.HARNESS_BUILD_ID_VARIABLE;
+import static io.harness.ci.commonconstants.CIExecutionConstants.HARNESS_EXECUTION_ID_VARIABLE;
+import static io.harness.ci.commonconstants.CIExecutionConstants.HARNESS_ORG_ID_VARIABLE;
+import static io.harness.ci.commonconstants.CIExecutionConstants.HARNESS_PIPELINE_ID_VARIABLE;
+import static io.harness.ci.commonconstants.CIExecutionConstants.HARNESS_PROJECT_ID_VARIABLE;
+import static io.harness.ci.commonconstants.CIExecutionConstants.HARNESS_STAGE_ID_VARIABLE;
+import static io.harness.ci.commonconstants.CIExecutionConstants.ORG_ID_ATTR;
+import static io.harness.ci.commonconstants.CIExecutionConstants.OSX_ADDON_MOUNT_PATH;
 import static io.harness.ci.commonconstants.CIExecutionConstants.OSX_STEP_MOUNT_PATH;
+import static io.harness.ci.commonconstants.CIExecutionConstants.PIPELINE_EXECUTION_ID_ATTR;
+import static io.harness.ci.commonconstants.CIExecutionConstants.PIPELINE_ID_ATTR;
+import static io.harness.ci.commonconstants.CIExecutionConstants.PROJECT_ID_ATTR;
 import static io.harness.ci.commonconstants.CIExecutionConstants.SHARED_VOLUME_PREFIX;
+import static io.harness.ci.commonconstants.CIExecutionConstants.STAGE_ID_ATTR;
+import static io.harness.ci.commonconstants.CIExecutionConstants.STAGE_RUNTIME_ID_ATTR;
 import static io.harness.ci.commonconstants.CIExecutionConstants.STEP_MOUNT_PATH;
 import static io.harness.ci.commonconstants.CIExecutionConstants.STEP_VOLUME;
+import static io.harness.common.STOExecutionConstants.STO_SERVICE_ENDPOINT_VARIABLE;
+import static io.harness.common.STOExecutionConstants.STO_SERVICE_TOKEN_VARIABLE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
@@ -19,28 +39,30 @@ import static java.lang.String.format;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.beans.plugin.compatible.PluginCompatibleStep;
+import io.harness.beans.steps.CIAbstractStepNode;
 import io.harness.beans.steps.CIStepInfo;
+import io.harness.beans.steps.stepinfo.BackgroundStepInfo;
 import io.harness.beans.steps.stepinfo.RunStepInfo;
 import io.harness.beans.steps.stepinfo.RunTestsStepInfo;
+import io.harness.beans.sweepingoutputs.StageDetails;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.beans.yaml.extended.infrastrucutre.VmInfraSpec;
 import io.harness.beans.yaml.extended.infrastrucutre.VmInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.VmPoolYaml;
 import io.harness.ci.buildstate.PluginSettingUtils;
-import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.cimanager.stages.IntegrationStageConfig;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
 import io.harness.plancreator.steps.ParallelStepElementConfig;
-import io.harness.plancreator.steps.StepElementConfig;
 import io.harness.plancreator.steps.StepGroupElementConfig;
+import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.stoserviceclient.STOServiceUtils;
 
-import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.HashMap;
 import java.util.List;
@@ -51,13 +73,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @OwnedBy(HarnessTeam.CI)
 public class VmInitializeUtils {
-  @Inject CIFeatureFlagService featureFlagService;
-
   public void validateStageConfig(IntegrationStageConfig integrationStageConfig, String accountId) {
-    if (!featureFlagService.isEnabled(FeatureName.CI_VM_INFRASTRUCTURE, accountId)) {
-      throw new CIStageExecutionException("infrastructure VM is not allowed");
-    }
-
     for (ExecutionWrapperConfig executionWrapper : integrationStageConfig.getExecution().getSteps()) {
       validateStageConfigUtil(executionWrapper);
     }
@@ -65,8 +81,8 @@ public class VmInitializeUtils {
 
   private void validateStageConfigUtil(ExecutionWrapperConfig executionWrapper) {
     if (executionWrapper.getStep() != null && !executionWrapper.getStep().isNull()) {
-      StepElementConfig stepElementConfig = IntegrationStageUtils.getStepElementConfig(executionWrapper);
-      validateStepConfig(stepElementConfig);
+      CIAbstractStepNode stepNode = IntegrationStageUtils.getStepNode(executionWrapper);
+      validateStepConfig(stepNode);
     } else if (executionWrapper.getParallel() != null && !executionWrapper.getParallel().isNull()) {
       ParallelStepElementConfig parallelStepElementConfig =
           IntegrationStageUtils.getParallelStepElementConfig(executionWrapper);
@@ -85,12 +101,15 @@ public class VmInitializeUtils {
     }
   }
 
-  private void validateStepConfig(StepElementConfig stepElementConfig) {
+  private void validateStepConfig(CIAbstractStepNode stepElementConfig) {
     if (stepElementConfig.getStepSpecType() instanceof CIStepInfo) {
       CIStepInfo ciStepInfo = (CIStepInfo) stepElementConfig.getStepSpecType();
       switch (ciStepInfo.getNonYamlInfo().getStepInfoType()) {
         case RUN:
           validateRunStepConnector((RunStepInfo) ciStepInfo);
+          break;
+        case BACKGROUND:
+          validateBackgroundStepConnector((BackgroundStepInfo) ciStepInfo);
           break;
         case RUN_TESTS:
           validateRunTestsStepConnector((RunTestsStepInfo) ciStepInfo);
@@ -122,6 +141,15 @@ public class VmInitializeUtils {
     }
   }
 
+  private void validateBackgroundStepConnector(BackgroundStepInfo backgroundStepInfo) {
+    if (backgroundStepInfo.getImage() != null && backgroundStepInfo.getConnectorRef() == null) {
+      throw new CIStageExecutionException("connector ref can't be empty if image is provided");
+    }
+    if (backgroundStepInfo.getImage() == null && backgroundStepInfo.getConnectorRef() != null) {
+      throw new CIStageExecutionException("image can't be empty if connector ref is provided");
+    }
+  }
+
   private void validatePluginStepConnector(PluginCompatibleStep pluginStepInfo) {
     List<String> baseImageConnectorRefs = PluginSettingUtils.getBaseImageConnectorRefs(pluginStepInfo);
     if (baseImageConnectorRefs != null) {
@@ -129,10 +157,50 @@ public class VmInitializeUtils {
     }
   }
 
+  public Map<String, String> getSTOServiceEnvVariables(STOServiceUtils stoServiceUtils, String accountId) {
+    Map<String, String> envVars = new HashMap<>();
+    final String stoServiceBaseUrl = stoServiceUtils.getStoServiceConfig().getBaseUrl();
+
+    String stoServiceToken = "token";
+
+    // Make a call to the STO service and get back the token.
+    try {
+      stoServiceToken = stoServiceUtils.getSTOServiceToken(accountId);
+    } catch (Exception e) {
+      log.error("Could not call token endpoint for STO service", e);
+    }
+
+    envVars.put(STO_SERVICE_TOKEN_VARIABLE, stoServiceToken);
+    envVars.put(STO_SERVICE_ENDPOINT_VARIABLE, stoServiceBaseUrl);
+
+    return envVars;
+  }
+
+  public Map<String, String> getCommonStepEnvVariables(String stageID, Ambiance ambiance) {
+    Map<String, String> envVars = new HashMap<>();
+    final String accountID = AmbianceUtils.getAccountId(ambiance);
+    final String orgID = AmbianceUtils.getOrgIdentifier(ambiance);
+    final String projectID = AmbianceUtils.getProjectIdentifier(ambiance);
+    final String pipelineID = ambiance.getMetadata().getPipelineIdentifier();
+    final int buildNumber = ambiance.getMetadata().getRunSequence();
+    final String executionID = ambiance.getPlanExecutionId();
+
+    envVars.put(HARNESS_ACCOUNT_ID_VARIABLE, accountID);
+    envVars.put(HARNESS_PROJECT_ID_VARIABLE, projectID);
+    envVars.put(HARNESS_ORG_ID_VARIABLE, orgID);
+    envVars.put(HARNESS_PIPELINE_ID_VARIABLE, pipelineID);
+    envVars.put(HARNESS_BUILD_ID_VARIABLE, String.valueOf(buildNumber));
+    envVars.put(HARNESS_STAGE_ID_VARIABLE, stageID);
+    envVars.put(HARNESS_EXECUTION_ID_VARIABLE, executionID);
+    return envVars;
+  }
+
   public Map<String, String> getVolumeToMountPath(ParameterField<List<String>> parameterSharedPaths, OSType os) {
     Map<String, String> volumeToMountPath = new HashMap<>();
     String stepMountPath = getStepMountPath(os);
+    String addonMountPath = getAddonMountPath(os);
     volumeToMountPath.put(STEP_VOLUME, stepMountPath);
+    volumeToMountPath.put(ADDON_VOLUME, addonMountPath);
 
     if (parameterSharedPaths == null) {
       return volumeToMountPath;
@@ -166,13 +234,21 @@ public class VmInitializeUtils {
     return STEP_MOUNT_PATH;
   }
 
+  private String getAddonMountPath(OSType os) {
+    if (os.equals(OSType.MacOS)) {
+      return OSX_ADDON_MOUNT_PATH;
+    }
+    return ADDON_VOL_MOUNT_PATH;
+  }
+
   public String getWorkDir(OSType os) {
     return getStepMountPath(os);
   }
 
-  public OSType getOS(Infrastructure infrastructure) {
+  public static OSType getOS(Infrastructure infrastructure) {
     // Only linux is supported now for runs on infrastructure
-    if (infrastructure.getType() == Infrastructure.Type.HOSTED_VM) {
+    Infrastructure.Type infraType = infrastructure.getType();
+    if (infraType == Infrastructure.Type.HOSTED_VM) {
       return OSType.Linux;
     }
 
@@ -191,5 +267,27 @@ public class VmInitializeUtils {
 
     VmPoolYaml vmPoolYaml = (VmPoolYaml) vmInfraYaml.getSpec();
     return resolveOSType(vmPoolYaml.getSpec().getOs());
+  }
+
+  public Map<String, String> getBuildTags(Ambiance ambiance, StageDetails stageDetails) {
+    final String accountID = AmbianceUtils.getAccountId(ambiance);
+    final String orgID = AmbianceUtils.getOrgIdentifier(ambiance);
+    final String projectID = AmbianceUtils.getProjectIdentifier(ambiance);
+    final String pipelineID = ambiance.getMetadata().getPipelineIdentifier();
+    final String pipelineExecutionID = ambiance.getPlanExecutionId();
+    final int buildNumber = ambiance.getMetadata().getRunSequence();
+    final String stageID = stageDetails.getStageID();
+    final String stageRuntimeID = stageDetails.getStageRuntimeID();
+
+    Map<String, String> tags = new HashMap<>();
+    tags.put(ACCOUNT_ID_ATTR, accountID);
+    tags.put(ORG_ID_ATTR, orgID);
+    tags.put(PROJECT_ID_ATTR, projectID);
+    tags.put(PIPELINE_ID_ATTR, pipelineID);
+    tags.put(PIPELINE_EXECUTION_ID_ATTR, pipelineExecutionID);
+    tags.put(STAGE_ID_ATTR, stageID);
+    tags.put(STAGE_RUNTIME_ID_ATTR, stageRuntimeID);
+    tags.put(BUILD_NUMBER_ATTR, String.valueOf(buildNumber));
+    return tags;
   }
 }

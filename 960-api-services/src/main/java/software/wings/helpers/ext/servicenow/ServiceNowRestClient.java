@@ -101,6 +101,9 @@ public interface ServiceNowRestClient {
   Call<JsonNode> getTemplate(@Header("Authorization") String authorization, @Path("ticketType") String ticketType,
       @Query("sysparm_query") String query, @Query("sysparm_display_value") String displayValue);
 
+  @GET("/api/now/table/sys_db_object?sysparm_query=super_class.label=Import%20Set%20Row")
+  Call<JsonNode> getStagingTableList(@Header("Authorization") String authorization);
+
   // Scripted API to list templates
   @GET("/api/x_harne_harness_ap/template/list")
   Call<JsonNode> getTemplateList(@Header("Authorization") String authorization, @Header("ticketType") String ticketType,

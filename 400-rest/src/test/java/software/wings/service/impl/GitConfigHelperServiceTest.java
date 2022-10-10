@@ -18,7 +18,6 @@ import static software.wings.beans.yaml.GitCommand.GitCommandType.VALIDATE;
 import static software.wings.utils.WingsTestConstants.ACCOUNT_ID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doReturn;
@@ -27,11 +26,9 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.beans.DelegateTask;
-import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.GeneralException;
 import io.harness.exception.InvalidRequestException;
-import io.harness.ff.FeatureFlagService;
 import io.harness.rule.Owner;
 import io.harness.security.encryption.EncryptedDataDetail;
 
@@ -57,7 +54,6 @@ import org.mockito.Mock;
 public class GitConfigHelperServiceTest extends WingsBaseTest {
   @Mock ExecutionContext context;
   @Mock DelegateService delegateService;
-  @Mock FeatureFlagService featureFlagService;
 
   @Inject @InjectMocks private GitConfigHelperService gitConfigHelperService;
 
@@ -85,34 +81,14 @@ public class GitConfigHelperServiceTest extends WingsBaseTest {
   @Test
   @Owner(developers = ARVIND)
   @Category(UnitTests.class)
-  public void validateGitConfigTestFeatureOnUrlTypeAccount() throws Exception {
-    doReturn(true).when(featureFlagService).isEnabled(FeatureName.GIT_ACCOUNT_SUPPORT, ACCOUNT_ID);
+  public void validateGitConfigTestUrlTypeAccount() throws Exception {
     validateGitConfigUrlTypeAccount();
   }
 
   @Test
   @Owner(developers = ARVIND)
   @Category(UnitTests.class)
-  public void validateGitConfigTestFeatureOffUrlTypeAccount() throws Exception {
-    doReturn(false).when(featureFlagService).isEnabled(FeatureName.GIT_ACCOUNT_SUPPORT, ACCOUNT_ID);
-    assertThatExceptionOfType(InvalidRequestException.class)
-        .isThrownBy(this::validateGitConfigUrlTypeAccount)
-        .withMessageContaining("Account level git connector is not enabled");
-  }
-
-  @Test
-  @Owner(developers = ARVIND)
-  @Category(UnitTests.class)
-  public void validateGitConfigTestFeatureOnUrlTypeRepo() throws Exception {
-    doReturn(true).when(featureFlagService).isEnabled(FeatureName.GIT_ACCOUNT_SUPPORT, ACCOUNT_ID);
-    validateGitConfigUrlTypeRepo();
-  }
-
-  @Test
-  @Owner(developers = ARVIND)
-  @Category(UnitTests.class)
-  public void validateGitConfigTestFeatureOffUrlTypeRepo() throws Exception {
-    doReturn(false).when(featureFlagService).isEnabled(FeatureName.GIT_ACCOUNT_SUPPORT, ACCOUNT_ID);
+  public void validateGitConfigTestUrlTypeRepo() throws Exception {
     validateGitConfigUrlTypeRepo();
   }
 

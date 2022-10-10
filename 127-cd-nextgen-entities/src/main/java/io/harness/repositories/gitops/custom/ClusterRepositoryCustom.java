@@ -26,5 +26,6 @@ public interface ClusterRepositoryCustom {
   long bulkCreate(@NotNull List<Cluster> cluster);
   Cluster update(@NotNull Criteria criteria, @NotNull Cluster cluster);
   DeleteResult delete(@NotNull Criteria criteria);
+  long bulkDelete(@NotNull Criteria criteria);
   Cluster findOne(@NotNull Criteria criteria);
 }

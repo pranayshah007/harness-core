@@ -127,7 +127,8 @@ public class CVNGStepUtils {
     Preconditions.checkNotNull(yamlNode, "Invalid yaml. Can't find stage spec.");
     if (yamlNode.getField(CVNGStepUtils.STAGES_KEY) != null) {
       for (YamlNode stageNode : yamlNode.getField(CVNGStepUtils.STAGES_KEY).getNode().asArray()) {
-        if (identifier.equals(stageNode.getField(CVNGStepUtils.STAGE_KEY).getNode().getIdentifier())) {
+        if (stageNode.getField(CVNGStepUtils.STAGE_KEY) != null
+            && identifier.equals(stageNode.getField(CVNGStepUtils.STAGE_KEY).getNode().getIdentifier())) {
           return stageNode.getField(CVNGStepUtils.STAGE_KEY).getNode();
         }
       }

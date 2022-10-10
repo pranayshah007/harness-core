@@ -323,7 +323,9 @@ public class TimeSeriesRecordServiceImpl implements TimeSeriesRecordService {
     List<TimeSeriesThreshold> metricPackThresholds = metricPackService.getMetricPackThresholds(
         metricCVConfig.getAccountId(), metricCVConfig.getOrgIdentifier(), metricCVConfig.getProjectIdentifier(),
         metricCVConfig.getMetricPack().getIdentifier(), metricCVConfig.getType());
-
+    // For backward compatibility
+    metricPackThresholds.forEach(metricPackThreshold
+        -> metricPackThreshold.setDeviationType(metricPackThreshold.getMetricType().getDeviationType()));
     Set<String> includedMetrics = metricCVConfig.getMetricPack()
                                       .getMetrics()
                                       .stream()
@@ -339,7 +341,10 @@ public class TimeSeriesRecordServiceImpl implements TimeSeriesRecordService {
       for (MetricDefinition metricDefinition : metricCVConfig.getMetricPack().getMetrics()) {
         if (isNotEmpty(metricDefinition.getThresholds())) {
           for (TimeSeriesThreshold timeSeriesThreshold : metricDefinition.getThresholds()) {
-            if (ThresholdConfigType.CUSTOMER.equals(timeSeriesThreshold.getThresholdConfigType())) {
+            if (ThresholdConfigType.USER_DEFINED.equals(timeSeriesThreshold.getThresholdConfigType())) {
+              if (Objects.isNull(timeSeriesThreshold.getDeviationType())) {
+                timeSeriesThreshold.setDeviationType(timeSeriesThreshold.getMetricType().getDeviationType());
+              }
               metricPackThresholds.add(timeSeriesThreshold);
             }
           }
@@ -359,6 +364,8 @@ public class TimeSeriesRecordServiceImpl implements TimeSeriesRecordService {
                                                .occurrenceCount(timeSeriesThreshold.getCriteria().getOccurrenceCount())
                                                .thresholdType(timeSeriesThreshold.getCriteria().getThresholdType())
                                                .value(timeSeriesThreshold.getCriteria().getValue())
+                                               .thresholdConfigType(timeSeriesThreshold.getThresholdConfigType())
+                                               .deviationType(timeSeriesThreshold.getDeviationType())
                                                .build()));
 
     // add data source level thresholds
@@ -368,8 +375,9 @@ public class TimeSeriesRecordServiceImpl implements TimeSeriesRecordService {
         .filter(MetricDefinition::isIncluded)
         .forEach(metricDefinition -> {
           if (isNotEmpty(metricDefinition.getThresholds())) {
-            metricDefinition.getThresholds().forEach(timeSeriesThreshold
-                -> timeSeriesMetricDefinitions.add(
+            metricDefinition.getThresholds().forEach(timeSeriesThreshold -> {
+              if (!ThresholdConfigType.USER_DEFINED.equals(timeSeriesThreshold.getThresholdConfigType())) {
+                timeSeriesMetricDefinitions.add(
                     TimeSeriesMetricDefinition.builder()
                         .metricName(metricDefinition.getName())
                         .metricIdentifier(metricDefinition.getIdentifier())
@@ -381,7 +389,13 @@ public class TimeSeriesRecordServiceImpl implements TimeSeriesRecordService {
                         .occurrenceCount(timeSeriesThreshold.getCriteria().getOccurrenceCount())
                         .thresholdType(timeSeriesThreshold.getCriteria().getThresholdType())
                         .value(timeSeriesThreshold.getCriteria().getValue())
-                        .build()));
+                        .thresholdConfigType(timeSeriesThreshold.getThresholdConfigType())
+                        .deviationType(timeSeriesThreshold.getDeviationType() == null
+                                ? metricDefinition.getType().getDeviationType()
+                                : timeSeriesThreshold.getDeviationType())
+                        .build());
+              }
+            });
           }
         });
     return timeSeriesMetricDefinitions;

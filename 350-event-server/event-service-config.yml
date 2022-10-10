@@ -11,6 +11,7 @@ harness-mongo:
   maxConnectionIdleTime: 600000
   connectionsPerHost: 300
   indexManagerMode: AUTO
+  aliasDBName: harness
 
 events-mongo:
   uri: mongodb://localhost:27017/events
@@ -19,6 +20,7 @@ events-mongo:
   maxConnectionIdleTime: 600000
   connectionsPerHost: 300
   indexManagerMode: AUTO
+  aliasDBName: events
 
 secretsConfiguration:
   secretResolutionEnabled: false

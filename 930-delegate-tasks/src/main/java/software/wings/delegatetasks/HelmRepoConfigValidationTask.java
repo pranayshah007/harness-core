@@ -110,19 +110,6 @@ public class HelmRepoConfigValidationTask extends AbstractDelegateRunnableTask {
     helmTaskHelper.initHelm(workingDirectory, helmVersion, DEFAULT_TIMEOUT_IN_MILLIS);
     String repoName = convertBase64UuidToCanonicalForm(generateUuid());
 
-    if (helmRepoConfig instanceof AmazonS3HelmRepoConfig) {
-      ((AmazonS3HelmRepoConfig) helmRepoConfig)
-          .setUseLatestChartMuseumVersion(taskParams.isUseLatestChartMuseumVersion());
-
-    } else if (helmRepoConfig instanceof GCSHelmRepoConfig) {
-      ((GCSHelmRepoConfig) helmRepoConfig).setUseLatestChartMuseumVersion(taskParams.isUseLatestChartMuseumVersion());
-    }
-
-    if (!taskParams.isUseOCIHelmRepo() && helmRepoConfig.getSettingType().equals(OCI_HELM_REPO)) {
-      unhandled(helmRepoConfig.getSettingType());
-      throw new WingsException("Unhandled type of helm repo config. Type : " + helmRepoConfig.getSettingType());
-    }
-
     switch (helmRepoConfig.getSettingType()) {
       case HTTP_HELM_REPO:
         tryAddingHttpHelmRepo(helmRepoConfig, repoName, taskParams.getRepoDisplayName(), workingDirectory);

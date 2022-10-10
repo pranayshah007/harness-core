@@ -11,12 +11,13 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.ConnectorType;
-import io.harness.exception.UnsupportedOperationException;
-import io.harness.ngmigration.beans.NgEntityDetail;
+import io.harness.exception.InvalidRequestException;
+import io.harness.ngmigration.beans.NGYamlFile;
 
 import software.wings.beans.SettingAttribute;
 import software.wings.ngmigration.CgEntityId;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -28,7 +29,7 @@ public class UnsupportedConnectorImpl implements BaseConnector {
   }
 
   @Override
-  public String getSecretId(SettingAttribute settingAttribute) {
+  public List<String> getSecretIds(SettingAttribute settingAttribute) {
     return null;
   }
 
@@ -38,8 +39,8 @@ public class UnsupportedConnectorImpl implements BaseConnector {
   }
 
   @Override
-  public ConnectorConfigDTO getConfigDTO(SettingAttribute settingAttribute, Set<CgEntityId> childEntities,
-      Map<CgEntityId, NgEntityDetail> migratedEntities) {
-    throw new UnsupportedOperationException(settingAttribute.getName() + "is not supported for migration");
+  public ConnectorConfigDTO getConfigDTO(
+      SettingAttribute settingAttribute, Set<CgEntityId> childEntities, Map<CgEntityId, NGYamlFile> migratedEntities) {
+    throw new InvalidRequestException(settingAttribute.getName() + " is not supported for migration");
   }
 }

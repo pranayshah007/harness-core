@@ -36,6 +36,7 @@ public class HelmCommandDataMapperNG {
             .namespace(helmCommandRequestNG.getNamespace())
             .valueMap(helmChartManifestDelegateConfig.getHelmCommandFlag().getValueMap())
             .isHelmCmdFlagsNull(helmChartManifestDelegateConfig.getHelmCommandFlag() == null)
+            .gcpKeyPath(helmCommandRequestNG.getGcpKeyPath())
             .build();
 
     if (helmCommandRequestNG instanceof HelmInstallCommandRequestNG) {

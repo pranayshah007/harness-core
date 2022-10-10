@@ -16,6 +16,7 @@ import io.harness.accesscontrol.roleassignments.persistence.repositories.RoleAss
 import io.harness.annotations.dev.OwnedBy;
 
 import com.google.inject.Singleton;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
@@ -66,6 +67,8 @@ public class RoleAssignmentChangeConsumerImpl implements ChangeConsumer<RoleAssi
 
   private long createACLs(RoleAssignmentDBO roleAssignment) {
     List<ACL> aclsToCreate = changeConsumerService.getAClsForRoleAssignment(roleAssignment);
+    aclsToCreate.addAll(
+        changeConsumerService.getImplicitACLsForRoleAssignment(roleAssignment, new HashSet<>(), new HashSet<>()));
     return aclRepository.insertAllIgnoringDuplicates(aclsToCreate);
   }
 

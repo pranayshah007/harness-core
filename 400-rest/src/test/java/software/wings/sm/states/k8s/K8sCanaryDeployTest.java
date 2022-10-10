@@ -15,6 +15,7 @@ import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.ANSHUL;
 import static io.harness.rule.OwnerRule.BOJANA;
+import static io.harness.rule.OwnerRule.TARUN_UBA;
 import static io.harness.rule.OwnerRule.TMACARI;
 import static io.harness.rule.OwnerRule.YOGESH;
 
@@ -151,6 +152,7 @@ public class K8sCanaryDeployTest extends CategoryTest {
     when(k8sStateHelper.fetchContainerInfrastructureMapping(context))
         .thenReturn(aGcpKubernetesInfrastructureMapping().build());
     doReturn(RELEASE_NAME).when(k8sCanaryDeploy).fetchReleaseName(any(), any());
+    doNothing().when(k8sCanaryDeploy).saveK8sCanaryDeployRun(any());
     doReturn(K8sDelegateManifestConfig.builder().build())
         .when(k8sCanaryDeploy)
         .createDelegateManifestConfig(any(), any());
@@ -193,6 +195,7 @@ public class K8sCanaryDeployTest extends CategoryTest {
         .thenReturn(aGcpKubernetesInfrastructureMapping().build());
     doReturn(kubernetesResources).when(k8sStateHelper).getResourcesFromSweepingOutput(any(), anyString());
     doReturn(RELEASE_NAME).when(k8sCanaryDeploy).fetchReleaseName(any(), any());
+    doNothing().when(k8sCanaryDeploy).saveK8sCanaryDeployRun(any());
     doReturn(K8sDelegateManifestConfig.builder().build())
         .when(k8sCanaryDeploy)
         .createDelegateManifestConfig(any(), any());
@@ -442,5 +445,34 @@ public class K8sCanaryDeployTest extends CategoryTest {
     stateExecutionInstance.setStateExecutionMap(
         ImmutableMap.of(stateExecutionInstance.getDisplayName(), stateExecutionData));
     doReturn(application).when(workflowStandardParamsExtensionService).getApp(standardParams);
+  }
+
+  @Test
+  @Owner(developers = TARUN_UBA)
+  @Category(UnitTests.class)
+  public void testSaveK8sCanaryDeploy() {
+    k8sCanaryDeploy.setInheritManifests(true);
+    List<KubernetesResource> kubernetesResources = new ArrayList<>();
+    kubernetesResources.add(KubernetesResource.builder().build());
+    doReturn(true).when(k8sStateHelper).isExportManifestsEnabled(any());
+    when(applicationManifestUtils.getApplicationManifests(context, AppManifestKind.VALUES)).thenReturn(new HashMap<>());
+    when(k8sStateHelper.fetchContainerInfrastructureMapping(context))
+        .thenReturn(aGcpKubernetesInfrastructureMapping().build());
+    doReturn(kubernetesResources).when(k8sStateHelper).getResourcesFromSweepingOutput(any(), anyString());
+    doReturn(RELEASE_NAME).when(k8sCanaryDeploy).fetchReleaseName(any(), any());
+    doNothing().when(k8sCanaryDeploy).saveK8sCanaryDeployRun(any());
+    doReturn(K8sDelegateManifestConfig.builder().build())
+        .when(k8sCanaryDeploy)
+        .createDelegateManifestConfig(any(), any());
+    doReturn(emptyList()).when(k8sCanaryDeploy).fetchRenderedValuesFiles(any(), any());
+    doReturn(ExecutionResponse.builder().build()).when(k8sCanaryDeploy).queueK8sDelegateTask(any(), any(), any());
+    ApplicationManifest applicationManifest =
+        ApplicationManifest.builder().skipVersioningForAllK8sObjects(true).storeType(Local).build();
+    Map<K8sValuesLocation, ApplicationManifest> applicationManifestMap = new HashMap<>();
+    applicationManifestMap.put(K8sValuesLocation.Service, applicationManifest);
+    doReturn(applicationManifestMap).when(k8sCanaryDeploy).fetchApplicationManifests(any());
+    doNothing().when(k8sCanaryDeploy).saveK8sCanaryDeployRun(context);
+    k8sCanaryDeploy.executeK8sTask(context, ACTIVITY_ID);
+    verify(k8sCanaryDeploy, times(1)).saveK8sCanaryDeployRun(context);
   }
 }

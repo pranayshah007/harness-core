@@ -9,7 +9,6 @@ package io.harness.cvng.core.entities;
 
 import static io.harness.cvng.core.utils.ErrorMessageUtils.generateErrorMessageFromParam;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -58,10 +57,6 @@ public class NewRelicCVConfig extends MetricCVConfig<NewRelicMetricInfo> {
   private HealthSourceQueryType queryType;
 
   boolean customQuery;
-
-  public boolean isCustomQuery() {
-    return isNotEmpty(metricInfos);
-  }
 
   @Override
   public DataSourceType getType() {

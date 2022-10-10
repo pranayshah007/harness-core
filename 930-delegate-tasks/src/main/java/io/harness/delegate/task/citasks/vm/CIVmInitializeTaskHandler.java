@@ -149,10 +149,11 @@ public class CIVmInitializeTaskHandler implements CIInitializeTaskHandler {
                                            .commitLink(env.getOrDefault(DRONE_COMMIT_LINK, ""))
                                            .build();
 
+    String stageId = params.getStageRuntimeId();
     SetupVmRequest.Config config = SetupVmRequest.Config.builder()
                                        .envs(env)
                                        .secrets(secrets)
-                                       .network(SetupVmRequest.Network.builder().id(NETWORK_ID).build())
+                                       .network(SetupVmRequest.Network.builder().id(NETWORK_ID + "-" + stageId).build())
                                        .logConfig(SetupVmRequest.LogConfig.builder()
                                                       .url(params.getLogStreamUrl())
                                                       .token(params.getLogSvcToken())
@@ -162,12 +163,15 @@ public class CIVmInitializeTaskHandler implements CIInitializeTaskHandler {
                                        .tiConfig(tiConfig)
                                        .volumes(getVolumes(params.getVolToMountPath()))
                                        .build();
+
     return SetupVmRequest.builder()
-        .id(params.getStageRuntimeId())
+        .id(stageId)
         .correlationID(taskId)
         .poolID(params.getPoolID())
         .config(config)
         .logKey(params.getLogKey())
+        .tags(params.getTags())
+        .infraType(params.getInfraInfo().toString())
         .build();
   }
 

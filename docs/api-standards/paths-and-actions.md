@@ -10,6 +10,7 @@ This document describes the default URL schema for Harness APIs.
   * [Organization Scoped](#organization-scoped)
   * [Account Scoped](#account-scoped)
 - [Naming Conventions and Casing](#naming-conventions-and-casing)
+- [Ingress](#ingress)
 
 
 ## Canonical Paths
@@ -93,3 +94,14 @@ use: /audit-trails/audit-trail-name
 not: /audit_trails/audit-trail-name
 not: /auditTrails/audit-trail-name
 ```
+
+## Ingress
+
+In order to expose the new APIs without redundancies in their path, we will be using Ingress rules to map our created APIs to point specifically to our endpoints.
+```
+use: https://app.harness.io/v1/orgs/{org}/projects/{project}/resources
+not: https://app.harness.io/gateway/v1/orgs/{org}/projects/{project}/resources
+not: https://app.harness.io/gateway/service/api/v1/orgs/{org}/projects/{project}/resources
+```
+
+For more details regarding Ingress rules, please refer to [this](https://harness.atlassian.net/wiki/spaces/PLATFORM/pages/21061108683/RFC-002+-+Remove+gateway+and+micro+service+details+from+API).

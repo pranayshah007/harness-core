@@ -36,6 +36,7 @@ import io.harness.delegate.beans.connector.scm.github.GithubApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubTokenSpecDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabApiAccessDTO;
+import io.harness.delegate.beans.connector.scm.gitlab.GitlabApiAccessType;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabConnectorDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabTokenSpecDTO;
 import io.harness.encryption.SecretRefData;
@@ -203,6 +204,7 @@ public class ScmFetchFilesHelper {
         .url(gitConfig.getRepoUrl())
         .connectionType(REPO)
         .apiAccess(GitlabApiAccessDTO.builder()
+                       .type(GitlabApiAccessType.TOKEN)
                        .spec(GitlabTokenSpecDTO.builder()
                                  .tokenRef(SecretRefData.builder().decryptedValue(gitConfig.getPassword()).build())
                                  .build())

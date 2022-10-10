@@ -34,6 +34,10 @@ import io.harness.azure.model.AzureARMTemplate.AzureARMTemplateBuilder;
 import io.harness.azure.model.AzureConfig;
 import io.harness.azure.model.AzureDeploymentMode;
 import io.harness.category.element.UnitTests;
+import io.harness.exception.runtime.azure.AzureARMManagementScopeException;
+import io.harness.exception.runtime.azure.AzureARMResourceGroupScopeException;
+import io.harness.exception.runtime.azure.AzureARMSubscriptionScopeException;
+import io.harness.exception.runtime.azure.AzureARMTenantScopeException;
 import io.harness.network.Http;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
@@ -535,7 +539,7 @@ public class AzureManagementClientImplTest extends CategoryTest {
     assertThat(deploymentStatus.equalsIgnoreCase("Succeeded")).isTrue();
     doReturn(false).when(mockDeploymentsInner).checkExistence(eq(resourceGroup), eq(deploymentName));
     assertThatThrownBy(() -> azureManagementClient.getARMDeploymentStatus(context))
-        .isInstanceOf(IllegalArgumentException.class)
+        .isInstanceOf(AzureARMResourceGroupScopeException.class)
         .hasMessageContaining(String.format(DEPLOYMENT_DOES_NOT_EXIST_RESOURCE_GROUP, deploymentName, resourceGroup));
 
     // subscription scope
@@ -546,7 +550,7 @@ public class AzureManagementClientImplTest extends CategoryTest {
     assertThat(deploymentStatus.equalsIgnoreCase("Succeeded")).isTrue();
     doReturn(false).when(mockDeploymentsInner).checkExistenceAtSubscriptionScope(eq(deploymentName));
     assertThatThrownBy(() -> azureManagementClient.getARMDeploymentStatus(context))
-        .isInstanceOf(IllegalArgumentException.class)
+        .isInstanceOf(AzureARMSubscriptionScopeException.class)
         .hasMessageContaining(String.format(DEPLOYMENT_DOES_NOT_EXIST_SUBSCRIPTION, deploymentName, subscriptionId));
 
     // management group scope
@@ -564,7 +568,7 @@ public class AzureManagementClientImplTest extends CategoryTest {
         .when(mockDeploymentsInner)
         .checkExistenceAtManagementGroupScope(eq(managementGroup), eq(deploymentName));
     assertThatThrownBy(() -> azureManagementClient.getARMDeploymentStatus(context))
-        .isInstanceOf(IllegalArgumentException.class)
+        .isInstanceOf(AzureARMManagementScopeException.class)
         .hasMessageContaining(
             String.format(DEPLOYMENT_DOES_NOT_EXIST_MANAGEMENT_GROUP, deploymentName, managementGroup));
 
@@ -577,7 +581,7 @@ public class AzureManagementClientImplTest extends CategoryTest {
     assertThat(deploymentStatus.equalsIgnoreCase("Succeeded")).isTrue();
     doReturn(false).when(mockDeploymentsInner).checkExistenceAtTenantScope(eq(deploymentName));
     assertThatThrownBy(() -> azureManagementClient.getARMDeploymentStatus(context))
-        .isInstanceOf(IllegalArgumentException.class)
+        .isInstanceOf(AzureARMTenantScopeException.class)
         .hasMessageContaining(String.format(DEPLOYMENT_DOES_NOT_EXIST_TENANT, deploymentName, tenantId));
   }
 

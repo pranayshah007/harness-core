@@ -1,0 +1,12 @@
+environment:
+  name: envtest
+  identifier: envtest
+  tags:
+    key_yaml: value_yaml
+  type: Production
+  orgIdentifier: default
+  projectIdentifier: pq
+  variables:
+    - name: a
+      type: String
+      value: valueab

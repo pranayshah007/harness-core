@@ -10,7 +10,7 @@ package io.harness.migration.service.impl;
 import static io.harness.annotations.dev.HarnessTeam.DX;
 
 import io.harness.annotation.HarnessEntity;
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.migration.beans.MigrationType;
 import io.harness.migration.entities.NGSchema;
@@ -21,8 +21,8 @@ import org.mongodb.morphia.annotations.Entity;
 import org.springframework.data.annotation.Persistent;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+@StoreIn(DbAliases.TEST)
 @Entity(value = "ngschema")
-@StoreIn(DbAliases.NG_MANAGER)
 @Document("ngschema")
 @HarnessEntity(exportable = true)
 @Persistent

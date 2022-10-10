@@ -12,17 +12,22 @@ import static io.harness.rule.OwnerRule.VIKYATH_HAREKAL;
 import static junit.framework.TestCase.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.InstancesTestBase;
+import io.harness.account.AccountClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.infra.beans.K8sDirectInfrastructureOutcome;
 import io.harness.delegate.beans.instancesync.InstanceSyncPerpetualTaskResponse;
@@ -49,6 +54,7 @@ import io.harness.ng.core.environment.beans.EnvironmentType;
 import io.harness.ng.core.environment.services.EnvironmentService;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.services.ServiceEntityService;
+import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 import io.harness.service.deploymentsummary.DeploymentSummaryService;
 import io.harness.service.infrastructuremapping.InfrastructureMappingService;
@@ -59,6 +65,7 @@ import io.harness.service.instancesyncperpetualtaskinfo.InstanceSyncPerpetualTas
 
 import com.google.inject.Inject;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
@@ -73,12 +80,16 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import retrofit2.Call;
+import retrofit2.Response;
 
 @OwnedBy(HarnessTeam.CDP)
 public class InstanceSyncServiceTest extends InstancesTestBase {
   AutoCloseable openMocks;
+  private static final String OLD_INFRA_MAPPING_ID = "de6a4a1a772862b9a965c202";
   private static final String TEST_INFRA_MAPPING_ID = "62b9a965c202de6a4a1a7728";
   private static final String TEST_ACCOUNT_ID = "TestAccountId";
+  private static final String TEST_UUID = "TestUuid";
   private static final String TEST_RELEASE_NAME1 = "release-9a854787f0afbb105cf115d533f7a54624e1ba57";
   private static final String TEST_RELEASE_NAME2 = "release-115d533f7a54624e1ba579a854787f0afbb105cf";
   private static final String TEST_INSTANCESYNC_KEY1 =
@@ -86,6 +97,7 @@ public class InstanceSyncServiceTest extends InstancesTestBase {
   private static final String TEST_INSTANCESYNC_KEY2 =
       "K8sInstanceInfoDTO_rollingdeploy-deploy-64dfd95958-ag67f_default_harness/todolist-sample:10";
   private static final String TEST_ORG_ID = "TestOrgId";
+  private static final String OLD_PROJECT_ID = "oldinstancesynctest";
   private static final String TEST_PROJECT_ID = "instancesynctest";
   private static final String TEST_INFRA_KIND = "KubernetesDirect";
   private static final String TEST_CONNECTOR_REF = "minikube";
@@ -122,6 +134,7 @@ public class InstanceSyncServiceTest extends InstancesTestBase {
   @Mock private DeploymentSummaryService deploymentSummaryService;
   @Mock private InstanceSyncServiceUtils instanceSyncServiceUtils;
   @Mock private InstanceSyncMonitoringService instanceSyncMonitoringService;
+  @Mock private AccountClient accountClient;
 
   @Before
   public void setUp() throws Exception {
@@ -132,7 +145,7 @@ public class InstanceSyncServiceTest extends InstancesTestBase {
     instanceSyncService = new InstanceSyncServiceImpl(persistentLocker, instanceSyncPerpetualTaskService,
         instanceSyncPerpetualTaskInfoService, instanceSyncHandlerFactoryService, infrastructureMappingService,
         instanceService, deploymentSummaryService, instanceSyncHelper, instanceSyncServiceUtils,
-        instanceSyncMonitoringService);
+        instanceSyncMonitoringService, accountClient);
 
     ServiceEntity serviceEntity = ServiceEntity.builder().name(TEST_SERVICE_NAME).identifier(TEST_SERVICE_ID).build();
     when(serviceEntityService.get(anyString(), anyString(), anyString(), anyString(), anyBoolean()))
@@ -142,6 +155,9 @@ public class InstanceSyncServiceTest extends InstancesTestBase {
     when(environmentService.get(anyString(), anyString(), anyString(), anyString(), anyBoolean()))
         .thenReturn(Optional.of(environment));
     doNothing().when(instanceSyncMonitoringService).recordMetrics(any(), anyBoolean(), anyLong());
+    Call<RestResponse<Boolean>> request = mock(Call.class);
+    when(request.execute()).thenReturn(Response.success(new RestResponse<>(true)));
+    when(accountClient.isFeatureFlagEnabled(eq(FeatureName.FIX_CORRUPTED_INSTANCES.name()), any())).thenReturn(request);
   }
 
   @After
@@ -361,6 +377,58 @@ public class InstanceSyncServiceTest extends InstancesTestBase {
   @Test
   @Owner(developers = VIKYATH_HAREKAL)
   @Category(UnitTests.class)
+  public void testProcessInstanceSyncForNewDeploymentWithCorruptedInstances() {
+    // Construct method param - DeploymentEvent
+    DeploymentSummaryDTO deploymentSummaryDTO = getMockDeploymentSummary(TEST_INFRA_KEY1, TEST_POD_NAME2);
+    DeploymentEvent deploymentEvent = new DeploymentEvent(deploymentSummaryDTO, null, null);
+
+    // Mock methods
+    when(instanceSyncPerpetualTaskService.createPerpetualTask(any(), any(), any(), any()))
+        .thenReturn(PERPETUAL_TASK_ID);
+    when(deploymentSummaryService.getLatestByInstanceKey(
+             TEST_RELEASE_NAME1, deploymentSummaryDTO.getInfrastructureMapping()))
+        .thenReturn(Optional.of(deploymentSummaryDTO));
+    when(instanceSyncPerpetualTaskInfoService.save(any()))
+        .thenReturn(getMockInstanceSyncPerpetualTaskInfo(TEST_RELEASE_NAME1));
+    when(instanceSyncServiceUtils.getSyncKeyToInstancesFromServerMap(any(), any()))
+        .thenReturn(mockSyncKeyToInstancesFromServerMap(deploymentSummaryDTO.getServerInstanceInfoList().get(0)));
+    when(instanceSyncServiceUtils.initMapForTrackingFinalListOfInstances()).thenReturn(initInstancesToBeModified());
+
+    // Mock corrupted instances
+    InfrastructureMappingDTO oldInfraMappingDTO = getMockInfraMapping(TEST_INFRA_KEY1);
+    oldInfraMappingDTO.setId(OLD_INFRA_MAPPING_ID);
+    oldInfraMappingDTO.setProjectIdentifier(OLD_PROJECT_ID);
+    List<InfrastructureMappingDTO> infraMappingDTOs =
+        new ArrayList<>(Arrays.asList(oldInfraMappingDTO, deploymentSummaryDTO.getInfrastructureMapping()));
+    when(infrastructureMappingService.getAllByInfrastructureKey(TEST_ACCOUNT_ID, TEST_INFRA_KEY1))
+        .thenReturn(infraMappingDTOs);
+
+    InstanceDTO instanceDTO = getMockInstanceDTO(TEST_POD_NAME1, TEST_INSTANCESYNC_KEY1);
+    when(instanceService.getActiveInstancesByInfrastructureMappingId(
+             TEST_ACCOUNT_ID, TEST_ORG_ID, TEST_PROJECT_ID, OLD_INFRA_MAPPING_ID))
+        .thenReturn(Collections.singletonList(instanceDTO));
+    when(instanceSyncServiceUtils.getSyncKeyToInstances(any(), any())).thenReturn(mockSyncKeyToInstances(instanceDTO));
+    doNothing().when(instanceService).updateInfrastructureMapping(anyList(), eq(TEST_INFRA_MAPPING_ID));
+
+    instanceSyncService.processInstanceSyncForNewDeployment(deploymentEvent);
+
+    // Verify 1 instance is added. Delete and Update are never called
+    verify(instanceSyncServiceUtils).processInstances(instancesToBeModifiedCaptor.capture());
+    Map<OperationsOnInstances, List<InstanceDTO>> instancesToBeModified = instancesToBeModifiedCaptor.getValue();
+    assertEquals(1, instancesToBeModified.get(OperationsOnInstances.DELETE).size());
+    InstanceDTO instanceToBeDeleted = instancesToBeModified.get(OperationsOnInstances.DELETE).get(0);
+    assertEquals(TEST_INSTANCESYNC_KEY1, instanceToBeDeleted.getInstanceKey());
+    assertEquals(TEST_INFRA_MAPPING_ID, instanceToBeDeleted.getInfrastructureMappingId());
+    assertEquals(0, instancesToBeModified.get(OperationsOnInstances.UPDATE).size());
+    assertEquals(1, instancesToBeModified.get(OperationsOnInstances.ADD).size());
+    InstanceDTO instanceToBeAdded = instancesToBeModified.get(OperationsOnInstances.ADD).get(0);
+    assertEquals(TEST_INSTANCESYNC_KEY2, instanceToBeAdded.getInstanceKey());
+    assertEquals(TEST_INFRA_MAPPING_ID, instanceToBeAdded.getInfrastructureMappingId());
+  }
+
+  @Test
+  @Owner(developers = VIKYATH_HAREKAL)
+  @Category(UnitTests.class)
   public void testProcessInstanceSyncByPerpetualTaskWhenServerInstanceIsNotPresent() {
     InstanceSyncPerpetualTaskResponse response = K8sInstanceSyncPerpetualTaskResponse.builder().build();
     instanceSyncService.processInstanceSyncByPerpetualTask(TEST_ACCOUNT_ID, PERPETUAL_TASK_ID, response);
@@ -524,6 +592,7 @@ public class InstanceSyncServiceTest extends InstancesTestBase {
                                           .containerList(Collections.singletonList(getMockK8sContainer()))
                                           .build();
     return InstanceDTO.builder()
+        .uuid(TEST_UUID)
         .accountIdentifier(TEST_ACCOUNT_ID)
         .orgIdentifier(TEST_ORG_ID)
         .projectIdentifier(TEST_PROJECT_ID)

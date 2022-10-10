@@ -10,6 +10,7 @@ package software.wings.api;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
@@ -17,6 +18,7 @@ import io.harness.beans.EmbeddedUser;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.mongo.index.SortCompoundMongoIndex;
+import io.harness.ng.DbAliases;
 
 import software.wings.beans.Base;
 import software.wings.beans.infrastructure.instance.key.deployment.AwsAmiDeploymentKey;
@@ -40,6 +42,7 @@ import org.mongodb.morphia.annotations.Entity;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "deploymentSummary", noClassnameStored = true)
 @HarnessEntity(exportable = false)
 @FieldNameConstants(innerTypeName = "DeploymentSummaryKeys")
@@ -102,6 +105,13 @@ public class DeploymentSummary extends Base {
                  .name("inframappingId_awsAmiDeploymentKeyAsgName_createdAtDesc")
                  .field(DeploymentSummaryKeys.infraMappingId)
                  .field(DeploymentSummaryKeys.AWS_AMI_DEPLOYMENT_KEY_ASG_NAME)
+                 .descSortField(DeploymentSummaryKeys.CREATED_AT)
+                 .build())
+        .add(SortCompoundMongoIndex.builder()
+                 .name("inframappingId_awsLambdafunction_awsLambdaVersion_createdAtDesc")
+                 .field(DeploymentSummaryKeys.infraMappingId)
+                 .field(DeploymentSummaryKeys.AWS_LAMBDA_DEPLOYMENT_FUNCTION_KEY_NAME)
+                 .field(DeploymentSummaryKeys.AWS_LAMBDA_DEPLOYMENT_VERSION_KEY_NAME)
                  .descSortField(DeploymentSummaryKeys.CREATED_AT)
                  .build())
         .build();
@@ -192,5 +202,7 @@ public class DeploymentSummary extends Base {
     public static final String CONTAINER_KEY_NEW_VERSION = "containerDeploymentKey.newVersion";
     public static final String AWS_CODE_DEPLOY_DEPLOYMENT_KEY_KEY = "awsCodeDeployDeploymentKey.key";
     public static final String AWS_AMI_DEPLOYMENT_KEY_ASG_NAME = "awsAmiDeploymentKey.autoScalingGroupName";
+    public static final String AWS_LAMBDA_DEPLOYMENT_FUNCTION_KEY_NAME = "awsLambdaDeploymentKey.functionName";
+    public static final String AWS_LAMBDA_DEPLOYMENT_VERSION_KEY_NAME = "awsLambdaDeploymentKey.version";
   }
 }

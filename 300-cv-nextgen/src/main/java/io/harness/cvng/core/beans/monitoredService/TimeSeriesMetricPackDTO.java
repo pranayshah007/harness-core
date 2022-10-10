@@ -80,22 +80,35 @@ public class TimeSeriesMetricPackDTO {
         count = ((FailMetricThresholdSpec) spec).getSpec().getCount();
       }
       if (Objects.nonNull(criteria.getSpec().greaterThan)) {
-        timeSeriesThresholdCriterias.add(TimeSeriesThresholdCriteria.builder()
-                                             .type(criteria.getType().getTimeSeriesThresholdComparisonType())
-                                             .action(spec.getAction().getTimeSeriesCustomThresholdActions())
-                                             .occurrenceCount(count)
-                                             .thresholdType(TimeSeriesThresholdType.ACT_WHEN_HIGHER)
-                                             .value(criteria.getType().getRatio(criteria.getSpec().greaterThan))
-                                             .build());
+        TimeSeriesThresholdCriteria timeSeriesThresholdCriteria =
+            TimeSeriesThresholdCriteria.builder()
+                .type(criteria.getType().getTimeSeriesThresholdComparisonType())
+                .action(spec.getAction().getTimeSeriesCustomThresholdActions())
+                .occurrenceCount(count)
+                .value(criteria.getType().getRatio(criteria.getSpec().greaterThan))
+                .build();
+        if (MetricThresholdActionType.IGNORE.equals(type)) {
+          timeSeriesThresholdCriteria.setThresholdType(TimeSeriesThresholdType.ACT_WHEN_LOWER);
+        } else {
+          timeSeriesThresholdCriteria.setThresholdType(TimeSeriesThresholdType.ACT_WHEN_HIGHER);
+        }
+        timeSeriesThresholdCriterias.add(timeSeriesThresholdCriteria);
       }
       if (Objects.nonNull(criteria.getSpec().lessThan)) {
-        timeSeriesThresholdCriterias.add(TimeSeriesThresholdCriteria.builder()
-                                             .type(criteria.getType().getTimeSeriesThresholdComparisonType())
-                                             .action(spec.getAction().getTimeSeriesCustomThresholdActions())
-                                             .occurrenceCount(count)
-                                             .thresholdType(TimeSeriesThresholdType.ACT_WHEN_LOWER)
-                                             .value(criteria.getType().getRatio(criteria.getSpec().lessThan))
-                                             .build());
+        TimeSeriesThresholdCriteria timeSeriesThresholdCriteria =
+            TimeSeriesThresholdCriteria.builder()
+                .type(criteria.getType().getTimeSeriesThresholdComparisonType())
+                .action(spec.getAction().getTimeSeriesCustomThresholdActions())
+                .occurrenceCount(count)
+                .thresholdType(TimeSeriesThresholdType.ACT_WHEN_HIGHER)
+                .value(criteria.getType().getRatio(criteria.getSpec().lessThan))
+                .build();
+        if (MetricThresholdActionType.IGNORE.equals(type)) {
+          timeSeriesThresholdCriteria.setThresholdType(TimeSeriesThresholdType.ACT_WHEN_HIGHER);
+        } else {
+          timeSeriesThresholdCriteria.setThresholdType(TimeSeriesThresholdType.ACT_WHEN_LOWER);
+        }
+        timeSeriesThresholdCriterias.add(timeSeriesThresholdCriteria);
       }
       return timeSeriesThresholdCriterias;
     }

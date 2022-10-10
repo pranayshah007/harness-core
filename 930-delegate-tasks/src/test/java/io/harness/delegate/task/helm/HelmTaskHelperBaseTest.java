@@ -144,9 +144,22 @@ public class HelmTaskHelperBaseTest extends CategoryTest {
             .status("failed")
             .description("failed due to Forbidden: spec.persistentvolumesource is immutable after creation")
             .build();
-    assertThatThrownBy(() -> helmTaskHelperBase.processHelmReleaseHistOutput(releaseInfo))
+    assertThatThrownBy(() -> helmTaskHelperBase.processHelmReleaseHistOutput(releaseInfo, false))
         .isInstanceOf(HelmClientException.class)
         .hasMessageContaining("immutable after creation");
+  }
+
+  @Test
+  @Owner(developers = ACHYUTH)
+  @Category(UnitTests.class)
+  public void testProcessHelmReleaseHistOutputIgnoreHelmHistFail() {
+    ReleaseInfo releaseInfo =
+        ReleaseInfo.builder()
+            .chart("nginx-0.1.0")
+            .status("failed")
+            .description("failed due to Forbidden: spec.persistentvolumesource is immutable after creation")
+            .build();
+    assertThatCode(() -> helmTaskHelperBase.processHelmReleaseHistOutput(releaseInfo, true)).doesNotThrowAnyException();
   }
 
   @Test
@@ -340,6 +353,7 @@ public class HelmTaskHelperBaseTest extends CategoryTest {
 
     HelmChartManifestDelegateConfig helmChartManifestDelegateConfig =
         HelmChartManifestDelegateConfig.builder()
+            .useCache(true)
             .chartName(CHART_NAME)
             .chartVersion(CHART_VERSION)
             .helmVersion(V3)
@@ -365,19 +379,21 @@ public class HelmTaskHelperBaseTest extends CategoryTest {
 
     doNothing()
         .when(helmTaskHelperBase)
-        .addRepo(REPO_NAME, REPO_DISPLAY_NAME, repoUrl, username, password, chartOutput, V3, timeout, "");
+        .addRepo(eq(REPO_NAME), eq(REPO_DISPLAY_NAME), eq(repoUrl), eq(username), eq(password), eq(chartOutput), eq(V3),
+            eq(timeout), anyString());
     doNothing()
         .when(helmTaskHelperBase)
-        .fetchChartFromRepo(REPO_NAME, REPO_DISPLAY_NAME, CHART_NAME, CHART_VERSION, chartOutput, V3,
-            emptyHelmCommandFlag, timeout, false, "");
+        .fetchChartFromRepo(eq(REPO_NAME), eq(REPO_DISPLAY_NAME), eq(CHART_NAME), eq(CHART_VERSION), eq(chartOutput),
+            eq(V3), eq(emptyHelmCommandFlag), eq(timeout), eq(false), anyString());
 
     helmTaskHelperBase.downloadChartFilesFromHttpRepo(helmChartManifestDelegateConfig, chartOutput, timeout);
 
     verify(helmTaskHelperBase, times(1))
-        .addRepo(REPO_NAME, REPO_DISPLAY_NAME, repoUrl, username, password, chartOutput, V3, timeout, "");
+        .addRepo(eq(REPO_NAME), eq(REPO_DISPLAY_NAME), eq(repoUrl), eq(username), eq(password), eq(chartOutput), eq(V3),
+            eq(timeout), anyString());
     verify(helmTaskHelperBase, times(1))
-        .fetchChartFromRepo(REPO_NAME, REPO_DISPLAY_NAME, CHART_NAME, CHART_VERSION, chartOutput, V3,
-            emptyHelmCommandFlag, timeout, false, "");
+        .fetchChartFromRepo(eq(REPO_NAME), eq(REPO_DISPLAY_NAME), eq(CHART_NAME), eq(CHART_VERSION), eq(chartOutput),
+            eq(V3), eq(emptyHelmCommandFlag), eq(timeout), eq(false), anyString());
   }
 
   @Test
@@ -393,7 +409,7 @@ public class HelmTaskHelperBaseTest extends CategoryTest {
     HelmChartManifestDelegateConfig helmChartManifestDelegateConfig =
         HelmChartManifestDelegateConfig.builder()
             .chartName(CHART_NAME)
-
+            .useCache(true)
             .chartVersion(CHART_VERSION)
             .helmVersion(V3)
             .helmCommandFlag(emptyHelmCommandFlag)
@@ -421,19 +437,19 @@ public class HelmTaskHelperBaseTest extends CategoryTest {
 
     doNothing()
         .when(helmTaskHelperBase)
-        .loginOciRegistry(repoUrl, username, password, HelmVersion.V380, timeout, chartOutput);
+        .loginOciRegistry(eq(repoUrl), eq(username), eq(password), eq(HelmVersion.V380), eq(timeout), eq(chartOutput));
     doNothing()
         .when(helmTaskHelperBase)
-        .fetchChartFromRepo(updatedRepoName, REPO_DISPLAY_NAME, CHART_NAME, CHART_VERSION, chartOutput,
-            HelmVersion.V380, emptyHelmCommandFlag, timeout, false, "");
+        .fetchChartFromRepo(eq(updatedRepoName), eq(REPO_DISPLAY_NAME), eq(CHART_NAME), eq(CHART_VERSION),
+            eq(chartOutput), eq(HelmVersion.V380), eq(emptyHelmCommandFlag), eq(timeout), eq(false), anyString());
 
     helmTaskHelperBase.downloadChartFilesFromOciRepo(helmChartManifestDelegateConfig, chartOutput, timeout);
 
     verify(helmTaskHelperBase, times(1))
-        .loginOciRegistry(repoUrl, username, password, HelmVersion.V380, timeout, chartOutput);
+        .loginOciRegistry(eq(repoUrl), eq(username), eq(password), eq(HelmVersion.V380), eq(timeout), eq(chartOutput));
     verify(helmTaskHelperBase, times(1))
-        .fetchChartFromRepo(updatedRepoName, REPO_DISPLAY_NAME, CHART_NAME, CHART_VERSION, chartOutput,
-            HelmVersion.V380, emptyHelmCommandFlag, timeout, false, "");
+        .fetchChartFromRepo(eq(updatedRepoName), eq(REPO_DISPLAY_NAME), eq(CHART_NAME), eq(CHART_VERSION),
+            eq(chartOutput), eq(HelmVersion.V380), eq(emptyHelmCommandFlag), eq(timeout), eq(false), anyString());
   }
 
   @Test
@@ -446,6 +462,7 @@ public class HelmTaskHelperBaseTest extends CategoryTest {
 
     HelmChartManifestDelegateConfig helmChartManifestDelegateConfig =
         HelmChartManifestDelegateConfig.builder()
+            .useCache(true)
             .chartName(CHART_NAME)
             .chartVersion(CHART_VERSION)
             .helmVersion(V3)
@@ -464,19 +481,21 @@ public class HelmTaskHelperBaseTest extends CategoryTest {
 
     doNothing()
         .when(helmTaskHelperBase)
-        .addRepo(REPO_NAME, REPO_DISPLAY_NAME, repoUrl, null, null, chartOutput, V3, timeout, "");
+        .addRepo(eq(REPO_NAME), eq(REPO_DISPLAY_NAME), eq(repoUrl), eq(null), eq(null), eq(chartOutput), eq(V3),
+            eq(timeout), anyString());
     doNothing()
         .when(helmTaskHelperBase)
-        .fetchChartFromRepo(REPO_NAME, REPO_DISPLAY_NAME, CHART_NAME, CHART_VERSION, chartOutput, V3,
-            emptyHelmCommandFlag, timeout, false, "");
+        .fetchChartFromRepo(eq(REPO_NAME), eq(REPO_DISPLAY_NAME), eq(CHART_NAME), eq(CHART_VERSION), eq(chartOutput),
+            eq(V3), eq(emptyHelmCommandFlag), eq(timeout), eq(false), anyString());
 
     helmTaskHelperBase.downloadChartFilesFromHttpRepo(helmChartManifestDelegateConfig, chartOutput, timeout);
 
     verify(helmTaskHelperBase, times(1))
-        .addRepo(REPO_NAME, REPO_DISPLAY_NAME, repoUrl, null, null, chartOutput, V3, timeout, "");
+        .addRepo(eq(REPO_NAME), eq(REPO_DISPLAY_NAME), eq(repoUrl), eq(null), eq(null), eq(chartOutput), eq(V3),
+            eq(timeout), anyString());
     verify(helmTaskHelperBase, times(1))
-        .fetchChartFromRepo(REPO_NAME, REPO_DISPLAY_NAME, CHART_NAME, CHART_VERSION, chartOutput, V3,
-            emptyHelmCommandFlag, timeout, false, "");
+        .fetchChartFromRepo(eq(REPO_NAME), eq(REPO_DISPLAY_NAME), eq(CHART_NAME), eq(CHART_VERSION), eq(chartOutput),
+            eq(V3), eq(emptyHelmCommandFlag), eq(timeout), eq(false), anyString());
   }
 
   @Test
@@ -575,6 +594,7 @@ public class HelmTaskHelperBaseTest extends CategoryTest {
     final String resourceDirectory = "resourceDirectory";
     final long timeoutInMillis = 90000L;
     final HelmChartManifestDelegateConfig manifest = HelmChartManifestDelegateConfig.builder()
+                                                         .useCache(false)
                                                          .chartName(CHART_NAME)
                                                          .chartVersion(CHART_VERSION)
                                                          .storeDelegateConfig(storeDelegateConfig)
@@ -585,12 +605,12 @@ public class HelmTaskHelperBaseTest extends CategoryTest {
     doReturn(chartmuseumClient).when(ngChartmuseumClientFactory).createClient(storeDelegateConfig, resourceDirectory);
     doNothing()
         .when(helmTaskHelperBase)
-        .addChartMuseumRepo(
-            REPO_NAME, REPO_DISPLAY_NAME, CHARTMUSEUM_SERVER_PORT, destinationDirectory, V3, timeoutInMillis, "");
+        .addChartMuseumRepo(eq(REPO_NAME), eq(REPO_DISPLAY_NAME), eq(CHARTMUSEUM_SERVER_PORT), eq(destinationDirectory),
+            eq(V3), eq(timeoutInMillis), anyString());
     doNothing()
         .when(helmTaskHelperBase)
-        .fetchChartFromRepo(REPO_NAME, REPO_DISPLAY_NAME, CHART_NAME, CHART_VERSION, destinationDirectory, V3, null,
-            timeoutInMillis, false, "");
+        .fetchChartFromRepo(eq(REPO_NAME), eq(REPO_DISPLAY_NAME), eq(CHART_NAME), eq(CHART_VERSION),
+            eq(destinationDirectory), eq(V3), any(), eq(timeoutInMillis), eq(false), anyString());
     doReturn(new ProcessResult(0, null))
         .when(helmTaskHelperBase)
         .executeCommand(anyMap(), anyString(), anyString(), anyString(), anyLong(), any());
@@ -601,11 +621,11 @@ public class HelmTaskHelperBaseTest extends CategoryTest {
     verify(chartmuseumClient, times(1)).start();
     verify(chartmuseumClient, times(1)).stop(chartMuseumServer);
     verify(helmTaskHelperBase, times(1))
-        .addChartMuseumRepo(REPO_NAME + "-some-bucket", REPO_DISPLAY_NAME, CHARTMUSEUM_SERVER_PORT,
-            destinationDirectory, V3, timeoutInMillis, "");
+        .addChartMuseumRepo(eq(REPO_NAME + "-some-bucket"), eq(REPO_DISPLAY_NAME), eq(CHARTMUSEUM_SERVER_PORT),
+            eq(destinationDirectory), eq(V3), eq(timeoutInMillis), anyString());
     verify(helmTaskHelperBase, times(1))
-        .fetchChartFromRepo(REPO_NAME + "-some-bucket", REPO_DISPLAY_NAME, CHART_NAME, CHART_VERSION,
-            destinationDirectory, V3, null, timeoutInMillis, false, "");
+        .fetchChartFromRepo(eq(REPO_NAME + "-some-bucket"), eq(REPO_DISPLAY_NAME), eq(CHART_NAME), eq(CHART_VERSION),
+            eq(destinationDirectory), eq(V3), any(), eq(timeoutInMillis), eq(false), anyString());
   }
 
   @Test
@@ -846,7 +866,7 @@ public class HelmTaskHelperBaseTest extends CategoryTest {
 
     doAnswer(invocationOnMock -> invocationOnMock.getArgument(0, String.class))
         .when(helmTaskHelperBase)
-        .createDirectory(directory);
+        .createDirectoryIfNotExist(directory);
     doReturn(new ProcessResult(0, new ProcessOutput(getHelmCollectionResult().getBytes())))
         .when(helmTaskHelperBase)
         .executeCommand(anyMap(), eq(V_3_HELM_SEARCH_REPO_COMMAND), eq(directory), anyString(), eq(timeout),
@@ -887,7 +907,7 @@ public class HelmTaskHelperBaseTest extends CategoryTest {
 
     doAnswer(invocationOnMock -> invocationOnMock.getArgument(0, String.class))
         .when(helmTaskHelperBase)
-        .createDirectory(directory);
+        .createDirectoryIfNotExist(directory);
     doReturn(new ProcessResult(0, new ProcessOutput(getHelmCollectionResult().getBytes())))
         .when(helmTaskHelperBase)
         .executeCommand(anyMap(), eq(V_2_HELM_SEARCH_REPO_COMMAND), eq(directory), anyString(), eq(timeout),
@@ -937,7 +957,7 @@ public class HelmTaskHelperBaseTest extends CategoryTest {
         .createNewDirectoryAtPath(RESOURCE_DIR_BASE);
     doAnswer(invocationOnMock -> invocationOnMock.getArgument(0, String.class))
         .when(helmTaskHelperBase)
-        .createDirectory(directory);
+        .createDirectoryIfNotExist(directory);
     doReturn(new ProcessResult(0, new ProcessOutput(getHelmCollectionResult().getBytes())))
         .when(helmTaskHelperBase)
         .executeCommand(anyMap(), eq(V_3_HELM_SEARCH_REPO_COMMAND), eq(directory), anyString(), eq(timeout),
@@ -968,7 +988,7 @@ public class HelmTaskHelperBaseTest extends CategoryTest {
     doReturn(new ProcessResult(0, null)).when(processExecutor).execute();
     doAnswer(invocationOnMock -> invocationOnMock.getArgument(0, String.class))
         .when(helmTaskHelperBase)
-        .createDirectory(directory);
+        .createDirectoryIfNotExist(directory);
     doReturn(new ProcessResult(0, new ProcessOutput("".getBytes())))
         .when(helmTaskHelperBase)
         .executeCommand(anyMap(), eq(V_3_HELM_SEARCH_REPO_COMMAND), eq(directory), anyString(), eq(timeout),
@@ -1025,7 +1045,7 @@ public class HelmTaskHelperBaseTest extends CategoryTest {
         .createNewDirectoryAtPath(RESOURCE_DIR_BASE);
     doAnswer(invocationOnMock -> invocationOnMock.getArgument(0, String.class))
         .when(helmTaskHelperBase)
-        .createDirectory(directory);
+        .createDirectoryIfNotExist(directory);
 
     assertThatThrownBy(() -> helmTaskHelperBase.fetchChartVersions(helmChartManifestDelegateConfig, timeout, directory))
         .isInstanceOf(HelmClientException.class)

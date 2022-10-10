@@ -28,6 +28,7 @@ import io.harness.delegate.beans.connector.scm.github.GithubApiAccessSpecDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubApiAccessType;
 import io.harness.delegate.beans.connector.scm.github.GithubAppSpecDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubOauthDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubTokenSpecDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabApiAccessSpecDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabApiAccessType;
@@ -90,6 +91,8 @@ public class GitTokenRetriever {
               .githubUrl(getGitApiURL(gitConfigDTO.getUrl()))
               .build();
       token = githubService.getToken(githubAppConfig);
+    } else if (apiAccessType == GithubApiAccessType.OAUTH) {
+      token = String.valueOf(((GithubOauthDTO) decryptableEntity).getTokenRef().getDecryptedValue());
     } else {
       throw new CIStageExecutionException(
           format("Unsupported access type %s for github accessType. Use Token Access", apiAccessType));

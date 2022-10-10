@@ -18,7 +18,11 @@ import java.util.Set;
 @OwnedBy(PIPELINE)
 public interface ExecutionInputService {
   boolean continueExecution(String nodeExecutionId, String executionInputYaml);
+  boolean continueWithDefault(String nodeExecutionId);
   ExecutionInputInstance getExecutionInputInstance(String nodeExecutionId);
+
+  boolean isPresent(String nodeExecutionId);
+
   ExecutionInputInstance save(ExecutionInputInstance executionInputInstance);
   List<ExecutionInputInstance> getExecutionInputInstances(Set<String> nodeExecutionIds);
 }

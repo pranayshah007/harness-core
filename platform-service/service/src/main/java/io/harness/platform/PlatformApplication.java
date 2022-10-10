@@ -24,6 +24,7 @@ import io.harness.AuthorizationServiceHeader;
 import io.harness.GodInjector;
 import io.harness.accesscontrol.NGAccessDeniedExceptionMapper;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.govern.ProviderModule;
 import io.harness.health.HealthService;
 import io.harness.maintenance.MaintenanceController;
 import io.harness.metrics.MetricRegistryModule;
@@ -56,6 +57,10 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Key;
+import com.google.inject.Module;
+import com.google.inject.Provides;
+import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import com.google.inject.name.Names;
 import io.dropwizard.Application;
 import io.dropwizard.configuration.EnvironmentVariableSubstitutor;
@@ -137,16 +142,27 @@ public class PlatformApplication extends Application<PlatformConfiguration> {
     log.info("Starting Platform Application ...");
     ConfigSecretUtils.resolveSecrets(appConfig.getSecretsConfiguration(), appConfig);
     MaintenanceController.forceMaintenance(true);
+    Module providerModule = new ProviderModule() {
+      @Provides
+      @Singleton
+      @Named("dbAliases")
+      public List<String> getDbAliases() {
+        return appConfig.getDbAliases();
+      }
+    };
     GodInjector godInjector = new GodInjector();
     godInjector.put(NOTIFICATION_SERVICE,
-        Guice.createInjector(new NotificationServiceModule(appConfig), new MetricRegistryModule(metricRegistry)));
+        Guice.createInjector(
+            new NotificationServiceModule(appConfig), new MetricRegistryModule(metricRegistry), providerModule));
     if (appConfig.getResoureGroupServiceConfig().isEnableResourceGroup()) {
       godInjector.put(RESOURCE_GROUP_SERVICE,
-          Guice.createInjector(new ResourceGroupServiceModule(appConfig), new MetricRegistryModule(metricRegistry)));
+          Guice.createInjector(
+              new ResourceGroupServiceModule(appConfig), new MetricRegistryModule(metricRegistry), providerModule));
     }
     if (appConfig.getAuditServiceConfig().isEnableAuditService()) {
       godInjector.put(AUDIT_SERVICE,
-          Guice.createInjector(new AuditServiceModule(appConfig), new MetricRegistryModule(metricRegistry)));
+          Guice.createInjector(
+              new AuditServiceModule(appConfig), new MetricRegistryModule(metricRegistry), providerModule));
     }
 
     godInjector.put(PLATFORM_SERVICE,

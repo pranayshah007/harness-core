@@ -11,7 +11,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
 import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
-import static io.harness.springdata.TransactionUtils.DEFAULT_TRANSACTION_RETRY_POLICY;
+import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
@@ -22,6 +22,7 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.eventsframework.api.Producer;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.entitysetupusage.service.EntitySetupUsageService;
+import io.harness.ng.core.events.EnvironmentUpdatedEvent;
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity;
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity.NGServiceOverridesEntityKeys;
 import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
@@ -65,7 +66,7 @@ public class ServiceOverrideServiceImpl implements ServiceOverrideService {
   private final EntitySetupUsageService entitySetupUsageService;
   private final Producer eventProducer;
   private final OutboxService outboxService;
-  private final RetryPolicy<Object> transactionRetryPolicy = DEFAULT_TRANSACTION_RETRY_POLICY;
+  private final RetryPolicy<Object> transactionRetryPolicy = DEFAULT_RETRY_POLICY;
   @Inject @Named(OUTBOX_TRANSACTION_TEMPLATE) private final TransactionTemplate transactionTemplate;
 
   @Inject
@@ -94,6 +95,10 @@ public class ServiceOverrideServiceImpl implements ServiceOverrideService {
     validateOverrideValues(requestServiceOverride);
     Criteria criteria = getServiceOverrideEqualityCriteria(requestServiceOverride);
 
+    Optional<NGServiceOverridesEntity> serviceOverrideOptional = get(requestServiceOverride.getAccountId(),
+        requestServiceOverride.getOrgIdentifier(), requestServiceOverride.getProjectIdentifier(),
+        requestServiceOverride.getEnvironmentRef(), requestServiceOverride.getServiceRef());
+
     return Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
       NGServiceOverridesEntity tempResult = serviceOverrideRepository.upsert(criteria, requestServiceOverride);
       if (tempResult == null) {
@@ -102,7 +107,27 @@ public class ServiceOverrideServiceImpl implements ServiceOverrideService {
             requestServiceOverride.getProjectIdentifier(), requestServiceOverride.getOrgIdentifier(),
             requestServiceOverride.getEnvironmentRef(), requestServiceOverride.getServiceRef()));
       }
-      // todo: events for outbox service
+      if (serviceOverrideOptional.isPresent()) {
+        outboxService.save(EnvironmentUpdatedEvent.builder()
+                               .accountIdentifier(requestServiceOverride.getAccountId())
+                               .orgIdentifier(requestServiceOverride.getOrgIdentifier())
+                               .status(EnvironmentUpdatedEvent.Status.UPDATED)
+                               .resourceType(EnvironmentUpdatedEvent.ResourceType.SERVICE_OVERRIDE)
+                               .projectIdentifier(requestServiceOverride.getProjectIdentifier())
+                               .newServiceOverridesEntity(requestServiceOverride)
+                               .oldServiceOverridesEntity(serviceOverrideOptional.get())
+                               .build());
+      } else {
+        outboxService.save(EnvironmentUpdatedEvent.builder()
+                               .accountIdentifier(requestServiceOverride.getAccountId())
+                               .orgIdentifier(requestServiceOverride.getOrgIdentifier())
+                               .status(EnvironmentUpdatedEvent.Status.CREATED)
+                               .resourceType(EnvironmentUpdatedEvent.ResourceType.SERVICE_OVERRIDE)
+                               .projectIdentifier(requestServiceOverride.getProjectIdentifier())
+                               .newServiceOverridesEntity(requestServiceOverride)
+                               .build());
+      }
+
       return tempResult;
     }));
   }
@@ -119,6 +144,7 @@ public class ServiceOverrideServiceImpl implements ServiceOverrideService {
       }
     }
     if (variableOverrides != null) {
+      variableOverrides.removeIf(Objects::isNull);
       Set<String> variableKeys = new HashSet<>();
       Set<String> duplicates = new HashSet<>();
       int emptyOverrides = 0;
@@ -159,7 +185,6 @@ public class ServiceOverrideServiceImpl implements ServiceOverrideService {
                                                           .build();
 
     // todo: check for override usage in pipelines
-    // todo: outbox events
     Criteria criteria = getServiceOverrideEqualityCriteria(serviceOverridesEntity);
 
     Optional<NGServiceOverridesEntity> entityOptional =
@@ -172,6 +197,14 @@ public class ServiceOverrideServiceImpl implements ServiceOverrideService {
               "Service Override for Service [%s], Environment [%s], Project[%s], Organization [%s] couldn't be deleted.",
               serviceRef, environmentRef, projectIdentifier, orgIdentifier));
         }
+        outboxService.save(EnvironmentUpdatedEvent.builder()
+                               .accountIdentifier(accountId)
+                               .orgIdentifier(orgIdentifier)
+                               .projectIdentifier(projectIdentifier)
+                               .status(EnvironmentUpdatedEvent.Status.DELETED)
+                               .resourceType(EnvironmentUpdatedEvent.ResourceType.SERVICE_OVERRIDE)
+                               .oldServiceOverridesEntity(entityOptional.get())
+                               .build());
         return true;
       }));
     } else {
@@ -192,7 +225,7 @@ public class ServiceOverrideServiceImpl implements ServiceOverrideService {
     Criteria criteria =
         getServiceOverrideEqualityCriteriaForEnv(accountId, orgIdentifier, projectIdentifier, environmentRef);
     DeleteResult delete = serviceOverrideRepository.delete(criteria);
-    return delete.wasAcknowledged() && delete.getDeletedCount() > 0;
+    return delete.wasAcknowledged();
   }
 
   @Override
@@ -203,7 +236,7 @@ public class ServiceOverrideServiceImpl implements ServiceOverrideService {
 
     Criteria criteria = getServiceOverrideEqualityCriteriaForProj(accountId, orgIdentifier, projectIdentifier);
     DeleteResult delete = serviceOverrideRepository.delete(criteria);
-    return delete.wasAcknowledged() && delete.getDeletedCount() > 0;
+    return delete.wasAcknowledged();
   }
 
   @Override
@@ -221,7 +254,7 @@ public class ServiceOverrideServiceImpl implements ServiceOverrideService {
   }
 
   @Override
-  public String createServiceOverrideInputsYaml(String accountId, String projectIdentifier, String orgIdentifier,
+  public String createServiceOverrideInputsYaml(String accountId, String orgIdentifier, String projectIdentifier,
       String environmentIdentifier, String serviceIdentifier) {
     Map<String, Object> yamlInputs = createServiceOverrideInputsYamlInternal(
         accountId, orgIdentifier, projectIdentifier, environmentIdentifier, serviceIdentifier);
@@ -239,7 +272,7 @@ public class ServiceOverrideServiceImpl implements ServiceOverrideService {
     if (serviceOverridesEntityOptional.isPresent()) {
       String yaml = serviceOverridesEntityOptional.get().getYaml();
       if (isEmpty(yaml)) {
-        throw new InvalidRequestException("");
+        throw new InvalidRequestException("Service overrides yaml is empty.");
       }
       try {
         String serviceOverrideInputs = RuntimeInputFormHelper.createRuntimeInputForm(yaml, true);

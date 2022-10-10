@@ -7,6 +7,9 @@
 
 package io.harness.cdng.provision.azure;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -14,7 +17,7 @@ import io.harness.beans.SwaggerConstants;
 import io.harness.cdng.manifest.ManifestStoreType;
 import io.harness.cdng.manifest.yaml.GitStoreConfig;
 import io.harness.cdng.manifest.yaml.harness.HarnessStore;
-import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
+import io.harness.common.ParameterFieldHelper;
 import io.harness.exception.InvalidRequestException;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
@@ -36,14 +39,13 @@ import lombok.experimental.FieldDefaults;
 @OwnedBy(HarnessTeam.CDP)
 @RecasterAlias("io.harness.cdng.provision.azure.AzureCreateARMResourceStepConfiguration")
 public class AzureCreateARMResourceStepConfiguration {
-  private static final String ARM = "ARM";
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
   String uuid;
 
   @NotNull @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> connectorRef;
-  @NotNull AzureCreateARMResourceTemplateFile template;
+  @NotNull AzureTemplateFile template;
 
   AzureCreateARMResourceParameterFile parameters;
 
@@ -53,13 +55,9 @@ public class AzureCreateARMResourceStepConfiguration {
     Validator.notNullCheck("Template file can't be empty", template);
     Validator.notNullCheck("Connector ref can't be empty", connectorRef);
     Validator.notNullCheck("Scope can't be empty", scope);
-    isNumberOfFilesValid(template.getStore(), "Number of files in template file should be equal to 1");
-    isNumberOfFilesValid(parameters.getStore(), "Number of files in parameters file should be equal to 1");
+    isNumberOfFilesValid(template, "Number of files in template file should be equal to 1");
+    isNumberOfFilesValid(parameters, "Number of files in parameters file should be equal 1 or 0");
     scope.getSpec().validateParams();
-  }
-
-  public String getType() {
-    return ARM;
   }
 
   public AzureCreateARMResourceStepConfigurationParameters toStepParameters() {
@@ -72,17 +70,62 @@ public class AzureCreateARMResourceStepConfiguration {
   }
 
   // Check that the number of parameters files is 1.
-  private void isNumberOfFilesValid(StoreConfigWrapper store, String errMsg) {
-    if (ManifestStoreType.isInGitSubset(store.getSpec().getKind())) {
-      GitStoreConfig gitStoreConfig = (GitStoreConfig) store.getSpec();
+
+  private void isNumberOfFilesValid(AzureTemplateFile template, String errMsg) {
+    if (ManifestStoreType.isInGitSubset(template.getStore().getSpec().getKind())) {
+      GitStoreConfig gitStoreConfig = (GitStoreConfig) template.getStore().getSpec();
       if (gitStoreConfig.getPaths().getValue() == null || gitStoreConfig.getPaths().getValue().size() != 1) {
         throw new InvalidRequestException(errMsg);
-      } else if (Objects.equals(store.getSpec().getKind(), ManifestStoreType.HARNESS)) {
-        HarnessStore harnessStore = (HarnessStore) store.getSpec();
-        if (harnessStore.getFiles().getValue() == null || harnessStore.getFiles().getValue().size() != 1) {
+      }
+    } else if (Objects.equals(template.getStore().getSpec().getKind(), ManifestStoreType.HARNESS)) {
+      HarnessStore harnessStore = (HarnessStore) template.getStore().getSpec();
+      if (isNotEmpty(ParameterFieldHelper.getParameterFieldValue(harnessStore.getFiles()))
+          && isNotEmpty(ParameterFieldHelper.getParameterFieldValue(harnessStore.getSecretFiles()))) {
+        throw new InvalidRequestException("Only one one files / secretFiles should be set for template");
+      }
+      if (isEmpty(ParameterFieldHelper.getParameterFieldValue(harnessStore.getFiles()))
+          && isEmpty(ParameterFieldHelper.getParameterFieldValue(harnessStore.getSecretFiles()))) {
+        throw new InvalidRequestException("At least one one files / secretFiles should be set for template");
+      }
+      if (isNotEmpty(ParameterFieldHelper.getParameterFieldValue(harnessStore.getFiles()))) {
+        if (ParameterFieldHelper.getParameterFieldValue(harnessStore.getFiles()).size() != 1) {
           throw new InvalidRequestException(errMsg);
-        } else {
-          throw new InvalidRequestException("Unsupported store type");
+        }
+      }
+      if (isNotEmpty(ParameterFieldHelper.getParameterFieldValue(harnessStore.getSecretFiles()))) {
+        if (ParameterFieldHelper.getParameterFieldValue(harnessStore.getSecretFiles()).size() != 1) {
+          throw new InvalidRequestException(errMsg);
+        }
+      }
+    }
+  }
+
+  private void isNumberOfFilesValid(AzureCreateARMResourceParameterFile parameters, String errMsg) {
+    if (parameters != null) {
+      if (ManifestStoreType.isInGitSubset(parameters.getStore().getSpec().getKind())) {
+        GitStoreConfig gitStoreConfig = (GitStoreConfig) parameters.getStore().getSpec();
+        if (gitStoreConfig.getPaths().getValue() == null || gitStoreConfig.getPaths().getValue().size() > 1) {
+          throw new InvalidRequestException(errMsg);
+        }
+      } else if (Objects.equals(parameters.getStore().getSpec().getKind(), ManifestStoreType.HARNESS)) {
+        HarnessStore harnessStore = (HarnessStore) parameters.getStore().getSpec();
+        if (isNotEmpty(ParameterFieldHelper.getParameterFieldValue(harnessStore.getFiles()))
+            && isNotEmpty(ParameterFieldHelper.getParameterFieldValue(harnessStore.getSecretFiles()))) {
+          throw new InvalidRequestException("Only one one files / secretFiles should be set for parameters");
+        }
+        if (isEmpty(ParameterFieldHelper.getParameterFieldValue(harnessStore.getFiles()))
+            && isEmpty(ParameterFieldHelper.getParameterFieldValue(harnessStore.getSecretFiles()))) {
+          throw new InvalidRequestException("At least one one files / secretFiles should be set for parameters");
+        }
+        if (isNotEmpty(ParameterFieldHelper.getParameterFieldValue(harnessStore.getFiles()))) {
+          if (ParameterFieldHelper.getParameterFieldValue(harnessStore.getFiles()).size() > 1) {
+            throw new InvalidRequestException(errMsg);
+          }
+        }
+        if (isNotEmpty(ParameterFieldHelper.getParameterFieldValue(harnessStore.getSecretFiles()))) {
+          if (ParameterFieldHelper.getParameterFieldValue(harnessStore.getSecretFiles()).size() > 1) {
+            throw new InvalidRequestException(errMsg);
+          }
         }
       }
     }

@@ -80,6 +80,9 @@ public interface TerraformBaseHelper {
 
   EncryptedRecordData encryptPlan(byte[] content, String planName, EncryptionConfig encryptionConfig);
 
+  EncryptedRecordData encryptPlan(byte[] readAllBytes, TerraformTaskNGParameters taskNGParameters, String delegateId,
+      String taskId) throws IOException;
+
   String getPlanName(TerraformCommand terraformCommand);
 
   void performCleanupOfTfDirs(TerraformTaskNGParameters parameters, LogCallback logCallback);
@@ -92,6 +95,8 @@ public interface TerraformBaseHelper {
   String uploadTfPlanJson(String accountId, String delegateId, String taskId, String entityId, String planName,
       String localFilePath) throws IOException;
 
+  String uploadTfPlanHumanReadable(String accountId, String delegateId, String taskId, String entityId, String planName,
+      String humanReadablePlan) throws IOException;
   TerraformPlanSummary processTerraformPlanSummary(
       int exitCode, LogCallback logCallback, PlanLogOutputStream planLogOutputStream);
 

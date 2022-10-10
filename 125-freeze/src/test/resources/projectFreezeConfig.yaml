@@ -1,0 +1,48 @@
+freeze:
+  identifier: "id"
+  name: "name"
+  description: "desc"
+  orgIdentifier: "oId"
+  projectIdentifier: "pId"
+  status: "Enabled"
+  windows:
+    - timeZone: "America/Los_Angeles"
+      startTime: "2022-09-29T16:00"
+      endTime: "2022-09-29T18:00"
+      recurrence:
+        spec:
+          until: "2022-09-29T20:00"
+        type: "Daily"
+  entityConfigs:
+    - name: "rule1"
+      entities:
+      - filterType: "All"
+        type: "Service"
+        entityRefs:
+          - "serv1"
+          - "serv2"
+      - filterType: "Equals"
+        type: "Project"
+        entityRefs:
+          - "pip1"
+          - "pip2"
+      - filterType: "Equals"
+        type: "Org"
+        entityRefs:
+          - "pip1"
+          - "pip2"
+      - filterType: "Equals"
+        type: "EnvType"
+        entityRefs:
+          - "PROD"
+      - filterType: "Equals"
+        type: "Environment"
+        entityRefs:
+          - "pip1"
+          - "pip2"
+    - name: "rule2"
+      entity:
+        - filterType: "All"
+          type: "Service"
+        - filterType: "All"
+          type: "EnvType"

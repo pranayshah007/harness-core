@@ -106,7 +106,6 @@ public class WorkflowStandardParamsMapperTest extends WingsBaseTest {
     when(settingsService.getGlobalSettingAttributesByType(ACCOUNT_ID, SettingVariableTypes.APP_DYNAMICS.name()))
         .thenReturn(Lists.newArrayList(aSettingAttribute().withUuid("id").build()));
     on(appService).set("settingsService", settingsService);
-    when(featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, ACCOUNT_ID)).thenReturn(false);
   }
 
   /**
@@ -347,7 +346,7 @@ public class WorkflowStandardParamsMapperTest extends WingsBaseTest {
         injector.getInstance(EnvironmentService.class),
         artifactStreamServiceBindingService != null ? artifactStreamServiceBindingService
                                                     : injector.getInstance(ArtifactStreamServiceBindingService.class),
-        helmChartService != null ? helmChartService : injector.getInstance(HelmChartService.class));
+        helmChartService != null ? helmChartService : injector.getInstance(HelmChartService.class), featureFlagService);
 
     return new WorkflowStandardParamsParamMapper(this.injector.getInstance(SubdomainUrlHelperIntfc.class),
         this.injector.getInstance(WorkflowExecutionService.class),

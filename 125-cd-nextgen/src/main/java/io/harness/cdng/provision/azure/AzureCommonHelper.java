@@ -9,6 +9,7 @@ package io.harness.cdng.provision.azure;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig.GitStoreDelegateConfigBuilder;
 import static io.harness.steps.StepUtils.prepareCDTaskRequest;
@@ -34,34 +35,44 @@ import io.harness.delegate.beans.connector.scm.GitConnectionType;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.delegate.beans.connector.scm.adapter.ScmConnectorMapper;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
+import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
 import io.harness.delegate.task.git.GitFetchFilesConfig;
 import io.harness.delegate.task.git.GitFetchRequest;
-import io.harness.k8s.K8sCommandUnitConstants;
+import io.harness.logging.UnitProgress;
 import io.harness.ng.core.NGAccess;
 import io.harness.ng.core.dto.secrets.SSHKeySpecDTO;
+import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
+import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepHelper;
-import io.harness.steps.StepUtils;
 
 import software.wings.beans.TaskType;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.IOUtils;
 
 @Slf4j
 @OwnedBy(CDP)
@@ -140,10 +151,19 @@ public class AzureCommonHelper {
 
   public TaskChainResponse getGitFetchFileTaskChainResponse(Ambiance ambiance,
       List<GitFetchFilesConfig> gitFetchFilesConfigs, StepElementParameters stepElementParameters,
-      PassThroughData passThroughData) {
+      PassThroughData passThroughData, List<String> commandUnits, CommandUnitsProgress commandUnitsProgress) {
+    ParameterField<List<TaskSelectorYaml>> delegateSelector;
+    if (stepElementParameters.getSpec() instanceof AzureCreateBPStepParameters) {
+      delegateSelector = ((AzureCreateBPStepParameters) stepElementParameters.getSpec()).getDelegateSelectors();
+    } else {
+      delegateSelector =
+          ((AzureCreateARMResourceStepParameters) stepElementParameters.getSpec()).getDelegateSelectors();
+    }
     GitFetchRequest gitFetchRequest = GitFetchRequest.builder()
                                           .gitFetchFilesConfigs(gitFetchFilesConfigs)
                                           .accountId(AmbianceUtils.getAccountId(ambiance))
+                                          .closeLogStream(true)
+                                          .commandUnitsProgress(commandUnitsProgress)
                                           .build();
 
     final TaskData taskData = TaskData.builder()
@@ -153,10 +173,8 @@ public class AzureCommonHelper {
                                   .parameters(new Object[] {gitFetchRequest})
                                   .build();
 
-    final TaskRequest taskRequest = prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
-        Arrays.asList(K8sCommandUnitConstants.FetchFiles, AzureCommandUnit.Create.name()),
-        TaskType.GIT_FETCH_NEXT_GEN_TASK.getDisplayName(),
-        StepUtils.getTaskSelectors(stepElementParameters.getDelegateSelectors()),
+    final TaskRequest taskRequest = prepareCDTaskRequest(ambiance, taskData, kryoSerializer, commandUnits,
+        TaskType.GIT_FETCH_NEXT_GEN_TASK.getDisplayName(), TaskSelectorYaml.toTaskSelector(delegateSelector),
         stepHelper.getEnvironmentType(ambiance));
 
     return TaskChainResponse.builder()
@@ -166,7 +184,7 @@ public class AzureCommonHelper {
         .build();
   }
 
-  boolean isTemplateStoredOnGit(AzureCreateARMResourceTemplateFile azureCreateTemplateFileSpec) {
+  boolean isTemplateStoredOnGit(AzureTemplateFile azureCreateTemplateFileSpec) {
     return ManifestStoreType.isInGitSubset(azureCreateTemplateFileSpec.getStore().getSpec().getKind());
   }
 
@@ -180,17 +198,17 @@ public class AzureCommonHelper {
 
   AzureDeploymentMode retrieveDeploymentMode(ARMScopeType scopeType, String mode) {
     if (ARMScopeType.RESOURCE_GROUP == scopeType) {
-      return mode != null ? AzureDeploymentMode.valueOf(mode) : AzureDeploymentMode.INCREMENTAL;
+      return mode != null ? AzureDeploymentMode.valueOf(mode.toUpperCase()) : AzureDeploymentMode.INCREMENTAL;
     }
     return AzureDeploymentMode.INCREMENTAL;
   }
 
   List<GitFetchFilesConfig> getParametersGitFetchFileConfigs(
       Ambiance ambiance, AzureCreateARMResourceStepConfigurationParameters stepConfiguration) {
-    GitStoreConfig gitStoreConfig = (GitStoreConfig) stepConfiguration.getParameters().getStore().getSpec();
-    List<String> paths = new ArrayList<>(ParameterFieldHelper.getParameterFieldValue(gitStoreConfig.getPaths()));
     if (stepConfiguration.getParameters() != null
         && ManifestStoreType.isInGitSubset(stepConfiguration.getParameters().getStore().getSpec().getKind())) {
+      GitStoreConfig gitStoreConfig = (GitStoreConfig) stepConfiguration.getParameters().getStore().getSpec();
+      List<String> paths = new ArrayList<>(ParameterFieldHelper.getParameterFieldValue(gitStoreConfig.getPaths()));
       return new ArrayList<>(
           Collections.singletonList(GitFetchFilesConfig.builder()
                                         .manifestType(AZURE_PARAMETER_TYPE)
@@ -201,5 +219,30 @@ public class AzureCommonHelper {
     }
 
     return new ArrayList<>();
+  }
+
+  public StepResponse getFailureResponse(List<UnitProgress> unitProgresses, String errorMessage) {
+    return StepResponse.builder()
+        .unitProgressList(unitProgresses)
+        .status(Status.FAILED)
+        .failureInfo(FailureInfo.newBuilder().setErrorMessage(errorMessage).build())
+        .build();
+  }
+
+  protected Map<String, Object> getARMOutputs(String outputs) {
+    Map<String, Object> outputMap = new LinkedHashMap<>();
+    if (isEmpty(outputs)) {
+      return outputMap;
+    }
+    try {
+      TypeReference<HashMap<String, Object>> typeRef = new TypeReference<HashMap<String, Object>>() {};
+      Map<String, Object> json = new ObjectMapper().readValue(IOUtils.toInputStream(outputs), typeRef);
+
+      json.forEach((key, object) -> outputMap.put(key, ((Map<String, Object>) object).get("value")));
+    } catch (IOException exception) {
+      log.warn("Exception while parsing ARM outputs", exception);
+      return new LinkedHashMap<>();
+    }
+    return outputMap;
   }
 }

@@ -35,7 +35,7 @@ public class GrowthTrendEvaluatorTest extends CategoryTest {
   @Owner(developers = MOHIT_GARG)
   @Category(UnitTests.class)
   public void testTuneQueryInterval() {
-    long startTimeInMs = 1620032424000L; // May 3, 2021 9:00:24 AM UTC
+    long startTimeInMs = 1620086400000L; // May 4, 2021 00:00:00 AM UTC
     long endTimeInMs = 1621768944000L; // May 23, 2021 11:22:24 AM UTC
 
     Pair<Long, Long> resultTimestamp =
@@ -79,7 +79,7 @@ public class GrowthTrendEvaluatorTest extends CategoryTest {
   @Owner(developers = MOHIT_GARG)
   @Category(UnitTests.class)
   public void testGetGrowthTrend() {
-    long startTimeInMs = 1620032424000L; // May 3, 2021 9:00:24 AM UTC
+    long startTimeInMs = 1620086400000L; // May 4, 2021 00:00:00 AM UTC
     long endTimeInMs = 1621768944000L; // May 23, 2021 11:22:24 AM UTC
 
     List<EntityStatusDetails> entities = new ArrayList<>();

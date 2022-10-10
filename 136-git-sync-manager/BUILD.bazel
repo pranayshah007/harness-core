@@ -14,6 +14,7 @@ java_library(
         "//:lombok",
         "//400-rest:module",
         "//440-connector-nextgen:module",
+        "//878-ng-common-utilities:module",
         "//940-primary-version-manager:module",
         "//940-secret-manager-client:module",
         "//950-delegate-tasks-beans:module",

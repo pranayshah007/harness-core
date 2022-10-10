@@ -24,6 +24,7 @@ import static io.harness.logging.LogLevel.ERROR;
 import static io.harness.logging.LogLevel.INFO;
 import static io.harness.logging.LogLevel.WARN;
 import static io.harness.provision.TerraformConstants.ACTIVITY_ID_BASED_TF_BASE_DIR;
+import static io.harness.provision.TerraformConstants.PLAN_HUMAN_READABLE_TXT_FILE_NAME;
 import static io.harness.provision.TerraformConstants.TERRAFORM_APPLY_PLAN_FILE_VAR_NAME;
 import static io.harness.provision.TerraformConstants.TERRAFORM_DESTROY_PLAN_FILE_OUTPUT_NAME;
 import static io.harness.provision.TerraformConstants.TERRAFORM_DESTROY_PLAN_FILE_VAR_NAME;
@@ -434,12 +435,12 @@ public class TerraformBaseHelperImpl implements TerraformBaseHelper {
     String planName =
         terraformCommand == APPLY ? TERRAFORM_PLAN_FILE_OUTPUT_NAME : TERRAFORM_DESTROY_PLAN_FILE_OUTPUT_NAME;
     logCallback.saveExecutionLog(
-        format("%nGenerating json representation of %s %n", planName), INFO, CommandExecutionStatus.RUNNING);
+        format("%nGenerating JSON representation of %s %n", planName), INFO, CommandExecutionStatus.RUNNING);
     CliResponse response =
         terraformClient.show(planName, timeoutInMillis, envVars, scriptDirectory, logCallback, planJsonLogOutputStream);
     if (!useOptimizedTfPlan && response.getCommandExecutionStatus().equals(CommandExecutionStatus.SUCCESS)) {
       logCallback.saveExecutionLog(
-          format("%nJson representation of %s is exported as a variable %s %n", planName,
+          format("%nJSON representation of %s is exported as a variable %s %n", planName,
               terraformCommand == APPLY ? TERRAFORM_APPLY_PLAN_FILE_VAR_NAME : TERRAFORM_DESTROY_PLAN_FILE_VAR_NAME),
           INFO, CommandExecutionStatus.RUNNING);
     }
@@ -512,6 +513,25 @@ public class TerraformBaseHelperImpl implements TerraformBaseHelper {
 
   public EncryptedRecordData encryptPlan(byte[] content, String planName, EncryptionConfig encryptionConfig) {
     return (EncryptedRecordData) encryptDecryptHelper.encryptContent(content, planName, encryptionConfig);
+  }
+
+  public EncryptedRecordData encryptPlan(
+      byte[] content, TerraformTaskNGParameters taskNGParameters, String delegateId, String taskId) throws IOException {
+    if (taskNGParameters.isUseOptimizedTfPlan()) {
+      DelegateFile planDelegateFile =
+          aDelegateFile()
+              .withAccountId(taskNGParameters.getAccountId())
+              .withDelegateId(delegateId)
+              .withTaskId(taskId)
+              .withEntityId(taskNGParameters.getEntityId())
+              .withBucket(FileBucket.TERRAFORM_PLAN)
+              .withFileName(format(TERRAFORM_PLAN_FILE_OUTPUT_NAME, taskNGParameters.getPlanName()))
+              .build();
+      return (EncryptedRecordData) encryptDecryptHelper.encryptFile(
+          content, taskNGParameters.getPlanName(), taskNGParameters.getEncryptionConfig(), planDelegateFile);
+    }
+
+    return encryptPlan(content, taskNGParameters.getPlanName(), taskNGParameters.getEncryptionConfig());
   }
 
   @NotNull
@@ -1032,6 +1052,24 @@ public class TerraformBaseHelperImpl implements TerraformBaseHelper {
       delegateFileManagerBase.upload(delegateFile, fileStream);
     }
 
+    return delegateFile.getFileId();
+  }
+
+  @Override
+  public String uploadTfPlanHumanReadable(String accountId, String delegateId, String taskId, String entityId,
+      String planName, String localFilePath) throws IOException {
+    final DelegateFile delegateFile = aDelegateFile()
+                                          .withAccountId(accountId)
+                                          .withDelegateId(delegateId)
+                                          .withTaskId(taskId)
+                                          .withEntityId(entityId)
+                                          .withBucket(FileBucket.TERRAFORM_HUMAN_READABLE_PLAN)
+                                          .withFileName(format(PLAN_HUMAN_READABLE_TXT_FILE_NAME, planName))
+                                          .build();
+
+    try (InputStream fileStream = new FileInputStream(localFilePath)) {
+      delegateFileManagerBase.upload(delegateFile, fileStream);
+    }
     return delegateFile.getFileId();
   }
 }

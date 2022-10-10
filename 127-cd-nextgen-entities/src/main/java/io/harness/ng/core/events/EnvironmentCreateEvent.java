@@ -16,6 +16,7 @@ import io.harness.ng.core.ProjectScope;
 import io.harness.ng.core.Resource;
 import io.harness.ng.core.ResourceScope;
 import io.harness.ng.core.environment.beans.Environment;
+import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
@@ -30,6 +31,7 @@ public class EnvironmentCreateEvent implements Event {
   private String accountIdentifier;
   private String orgIdentifier;
   private String projectIdentifier;
+  private InfrastructureEntity infrastructure;
   private Environment environment;
 
   @JsonIgnore

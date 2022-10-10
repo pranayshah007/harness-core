@@ -108,7 +108,7 @@ public class TemplateMergeServiceHelper {
       return templateCacheMap.get(templateUniqueIdentifier);
     }
 
-    Optional<TemplateEntity> templateEntity = templateServiceHelper.getOrThrowExceptionIfInvalid(
+    Optional<TemplateEntity> templateEntity = templateServiceHelper.getTemplateOrThrowExceptionIfInvalid(
         templateIdentifierRef.getAccountIdentifier(), templateIdentifierRef.getOrgIdentifier(),
         templateIdentifierRef.getProjectIdentifier(), templateIdentifierRef.getIdentifier(), versionLabel, false);
     if (!templateEntity.isPresent()) {

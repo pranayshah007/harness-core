@@ -8,11 +8,14 @@
 package io.harness.azure.client;
 
 import io.harness.azure.model.AzureConfig;
+import io.harness.azure.model.AzureHostConnectionType;
 import io.harness.azure.model.AzureMachineImageArtifact;
 import io.harness.azure.model.AzureOSType;
 import io.harness.azure.model.AzureUserAuthVMInstanceData;
 import io.harness.azure.model.AzureVMSSTagsData;
 import io.harness.azure.model.VirtualMachineData;
+
+import software.wings.beans.AzureImageGallery;
 
 import com.microsoft.azure.management.appservice.DeploymentSlot;
 import com.microsoft.azure.management.compute.GalleryImage;
@@ -154,6 +157,7 @@ public interface AzureComputeClient {
    */
   List<String> listResourceGroupsNamesBySubscriptionId(AzureConfig azureConfig, String subscriptionId);
 
+  List<AzureImageGallery> listImageGalleries(AzureConfig azureConfig, String subscriptionId, String resourceGroup);
   /**
    * Check if all VMSS Instances are stopped.
    *
@@ -315,8 +319,9 @@ public interface AzureComputeClient {
    * @param resourceGroup
    * @param osType
    * @param tags
+   * @param hostConnectionType
    * @return
    */
   List<VirtualMachineData> listHosts(AzureConfig azureConfig, String subscriptionId, String resourceGroup,
-      AzureOSType osType, Map<String, String> tags);
+      AzureOSType osType, Map<String, String> tags, AzureHostConnectionType hostConnectionType);
 }

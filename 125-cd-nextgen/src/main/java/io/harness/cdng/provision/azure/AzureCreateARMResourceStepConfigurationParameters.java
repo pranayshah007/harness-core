@@ -21,7 +21,7 @@ import lombok.Data;
 @RecasterAlias("io.harness.cdng.provision.azure.AzureCreateARMResourceStepConfigurationParameters")
 public class AzureCreateARMResourceStepConfigurationParameters {
   ParameterField<String> connectorRef;
-  AzureCreateARMResourceTemplateFile templateFile;
+  AzureTemplateFile templateFile;
   AzureCreateARMResourceParameterFile parameters;
   AzureCreateARMResourceStepScope scope;
 }

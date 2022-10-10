@@ -10,6 +10,7 @@ package io.harness.debezium;
 import io.harness.eventsframework.api.Producer;
 import io.harness.eventsframework.producer.Message;
 
+import com.google.common.annotations.VisibleForTesting;
 import io.debezium.embedded.EmbeddedEngineChangeEvent;
 import io.debezium.engine.ChangeEvent;
 import io.debezium.engine.DebeziumEngine;
@@ -71,7 +72,8 @@ public class EventsFrameworkChangeConsumer implements MongoCollectionChangeConsu
     recordCommitter.markBatchFinished();
   }
 
-  private Optional<OpType> getOperationType(SourceRecord sourceRecord) {
+  @VisibleForTesting
+  Optional<OpType> getOperationType(SourceRecord sourceRecord) {
     return Optional.ofNullable(sourceRecord.headers().lastWithName(OP_FIELD))
         .flatMap(x -> OpType.fromString((String) x.value()));
   }

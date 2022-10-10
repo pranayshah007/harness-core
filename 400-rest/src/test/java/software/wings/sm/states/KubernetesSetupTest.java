@@ -313,8 +313,8 @@ public class KubernetesSetupTest extends WingsBaseTest {
     when(serviceResourceService.getContainerTaskByDeploymentType(APP_ID, SERVICE_ID, DeploymentType.KUBERNETES.name()))
         .thenReturn(kubernetesContainerTask);
 
-    workflowStandardParamsExtensionService = new WorkflowStandardParamsExtensionService(
-        appService, null, artifactService, environmentService, artifactStreamServiceBindingService, null);
+    workflowStandardParamsExtensionService = new WorkflowStandardParamsExtensionService(appService, null,
+        artifactService, environmentService, artifactStreamServiceBindingService, null, featureFlagService);
     on(kubernetesSetup).set("workflowStandardParamsExtensionService", workflowStandardParamsExtensionService);
 
     contextElementParamMapperFactory =

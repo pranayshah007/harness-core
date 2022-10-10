@@ -8,7 +8,7 @@
 package io.harness.pms.sdk;
 
 import io.harness.annotation.HarnessEntity;
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.mongo.index.FdIndex;
@@ -46,11 +46,11 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Builder
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldNameConstants(innerTypeName = "PmsSdkInstanceKeys")
+@StoreIn(DbAliases.PMS)
 @Entity(value = "pmsSdkInstances", noClassnameStored = true)
 @Document("pmsSdkInstances")
 @TypeAlias("pmsSdkInstances")
 @HarnessEntity(exportable = false)
-@StoreIn(DbAliases.PMS)
 public class PmsSdkInstance implements PersistentEntity, UuidAware {
   @Setter @NonFinal @Id @org.mongodb.morphia.annotations.Id String uuid;
 

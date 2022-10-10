@@ -34,6 +34,7 @@ import io.harness.factory.ClosingFactory;
 import io.harness.gitsync.persistance.testing.GitSyncablePersistenceTestModule;
 import io.harness.govern.ProviderModule;
 import io.harness.govern.ServersModule;
+import io.harness.mongo.MongoConfig;
 import io.harness.mongo.MongoPersistence;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.ng.core.entitysetupusage.EntitySetupUsageModule;
@@ -52,6 +53,7 @@ import io.harness.serializer.KryoModule;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.serializer.ManagerRegistrars;
 import io.harness.springdata.HTransactionTemplate;
+import io.harness.template.remote.TemplateResourceClient;
 import io.harness.testlib.module.MongoRuleMixin;
 import io.harness.testlib.module.TestMongoModule;
 import io.harness.threading.CurrentThreadExecutor;
@@ -167,6 +169,12 @@ public class CDNGEntitiesTestRule implements InjectorRuleMixin, MethodRule, Mong
       }
 
       @Provides
+      @Singleton
+      MongoConfig mongoConfig() {
+        return MongoConfig.builder().build();
+      }
+
+      @Provides
       @Named("yaml-schema-subtypes")
       @Singleton
       public Map<Class<?>, Set<Class<?>>> yamlSchemaSubtypes() {
@@ -178,6 +186,12 @@ public class CDNGEntitiesTestRule implements InjectorRuleMixin, MethodRule, Mong
       @Singleton
       public boolean getSerializationForDelegate() {
         return false;
+      }
+
+      @Provides
+      @Singleton
+      TemplateResourceClient getTemplateResourceClient() {
+        return mock(TemplateResourceClient.class);
       }
     });
     modules.add(new AbstractModule() {

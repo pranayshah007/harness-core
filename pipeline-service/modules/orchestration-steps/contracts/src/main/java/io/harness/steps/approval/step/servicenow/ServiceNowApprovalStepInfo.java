@@ -24,6 +24,7 @@ import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.steps.StepSpecTypeConstants;
 import io.harness.steps.approval.step.beans.CriteriaSpecWrapper;
+import io.harness.steps.approval.step.beans.ServiceNowChangeWindowSpec;
 import io.harness.yaml.YamlSchemaTypes;
 import io.harness.yaml.core.VariableExpression;
 
@@ -59,6 +60,7 @@ public class ServiceNowApprovalStepInfo implements PMSStepInfo, WithConnectorRef
   @NotNull @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> ticketType;
   @NotNull @VariableExpression(skipVariableExpression = true) CriteriaSpecWrapper approvalCriteria;
   @VariableExpression(skipVariableExpression = true) CriteriaSpecWrapper rejectionCriteria;
+  ServiceNowChangeWindowSpec changeWindow;
 
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
   @YamlSchemaTypes(value = {runtime})
@@ -83,6 +85,7 @@ public class ServiceNowApprovalStepInfo implements PMSStepInfo, WithConnectorRef
         .approvalCriteria(approvalCriteria)
         .rejectionCriteria(rejectionCriteria)
         .delegateSelectors(delegateSelectors)
+        .changeWindowSpec(changeWindow)
         .build();
   }
 

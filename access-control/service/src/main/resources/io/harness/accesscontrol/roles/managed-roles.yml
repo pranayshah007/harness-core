@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: rolesConfiguration
-version: 34
+version: 36
 roles:
     - identifier: _project_admin
       name: Project Admin
@@ -70,6 +70,7 @@ roles:
         - ff_environment_view
         - ff_featureflag_toggle
         - core_template_access
+        - core_template_copy
         - core_template_delete
         - core_template_edit
         - core_template_view
@@ -123,16 +124,20 @@ roles:
         - chaos_chaoshub_view
         - chaos_chaoshub_edit
         - chaos_chaoshub_delete
-        - chaos_chaosagent_view
-        - chaos_chaosagent_edit
-        - chaos_chaosagent_delete
-        - chaos_chaosgitops_view
-        - chaos_chaosgitops_edit
-        - chaos_chaosworkflow_view
-        - chaos_chaosworkflow_edit
-        - chaos_chaosworkflow_delete
+        - chaos_chaosinfrastructure_view
+        - chaos_chaosinfrastructure_edit
+        - chaos_chaosinfrastructure_delete
+        - chaos_chaosexperiment_view
+        - chaos_chaosexperiment_edit
+        - chaos_chaosexperiment_delete
+        - chaos_chaosgameday_view
+        - chaos_chaosgameday_edit
+        - chaos_chaosgameday_delete
         - core_setting_view
         - core_setting_edit
+        - core_deploymentfreeze_manage
+        - core_deploymentfreeze_override
+        - core_deploymentfreeze_global
       allowedScopeLevels:
         - project
       managed: true
@@ -178,9 +183,9 @@ roles:
         - core_file_view
         - core_variable_view
         - chaos_chaoshub_view
-        - chaos_chaosagent_view
-        - chaos_chaosgitops_view
-        - chaos_chaosworkflow_view
+        - chaos_chaosinfrastructure_view
+        - chaos_chaosexperiment_view
+        - chaos_chaosgameday_view
         - core_setting_view
       allowedScopeLevels:
         - project
@@ -239,6 +244,7 @@ roles:
         - core_resourcegroup_edit
         - core_resourcegroup_delete
         - core_template_access
+        - core_template_copy
         - core_template_delete
         - core_template_edit
         - core_template_view
@@ -312,16 +318,20 @@ roles:
         - chaos_chaoshub_view
         - chaos_chaoshub_edit
         - chaos_chaoshub_delete
-        - chaos_chaosagent_view
-        - chaos_chaosagent_edit
-        - chaos_chaosagent_delete
-        - chaos_chaosgitops_view
-        - chaos_chaosgitops_edit
-        - chaos_chaosworkflow_view
-        - chaos_chaosworkflow_edit
-        - chaos_chaosworkflow_delete
+        - chaos_chaosinfrastructure_view
+        - chaos_chaosinfrastructure_edit
+        - chaos_chaosinfrastructure_delete
+        - chaos_chaosexperiment_view
+        - chaos_chaosexperiment_edit
+        - chaos_chaosexperiment_delete
+        - chaos_chaosgameday_view
+        - chaos_chaosgameday_edit
+        - chaos_chaosgameday_delete
         - core_setting_view
         - core_setting_edit
+        - core_deploymentfreeze_manage
+        - core_deploymentfreeze_override
+        - core_deploymentfreeze_global
       allowedScopeLevels:
         - organization
       managed: true
@@ -369,9 +379,9 @@ roles:
         - core_file_view
         - core_variable_view
         - chaos_chaoshub_view
-        - chaos_chaosagent_view
-        - chaos_chaosgitops_view
-        - chaos_chaosworkflow_view
+        - chaos_chaosinfrastructure_view
+        - chaos_chaosexperiment_view
+        - chaos_chaosgameday_view
         - core_setting_view
       allowedScopeLevels:
         - organization
@@ -439,6 +449,7 @@ roles:
         - core_dashboards_view
         - core_dashboards_edit
         - core_template_access
+        - core_template_copy
         - core_template_delete
         - core_template_edit
         - core_template_view
@@ -514,14 +525,15 @@ roles:
         - chaos_chaoshub_view
         - chaos_chaoshub_edit
         - chaos_chaoshub_delete
-        - chaos_chaosagent_view
-        - chaos_chaosagent_edit
-        - chaos_chaosagent_delete
-        - chaos_chaosgitops_view
-        - chaos_chaosgitops_edit
-        - chaos_chaosworkflow_view
-        - chaos_chaosworkflow_edit
-        - chaos_chaosworkflow_delete
+        - chaos_chaosinfrastructure_view
+        - chaos_chaosinfrastructure_edit
+        - chaos_chaosinfrastructure_delete
+        - chaos_chaosexperiment_view
+        - chaos_chaosexperiment_edit
+        - chaos_chaosexperiment_delete
+        - chaos_chaosgameday_view
+        - chaos_chaosgameday_edit
+        - chaos_chaosgameday_delete
         - core_setting_view
         - core_setting_edit
         - ccm_overview_view
@@ -543,6 +555,9 @@ roles:
         - ccm_folder_view
         - ccm_folder_edit
         - ccm_folder_delete
+        - core_deploymentfreeze_manage
+        - core_deploymentfreeze_override
+        - core_deploymentfreeze_global
       allowedScopeLevels:
         - account
       managed: true
@@ -594,9 +609,9 @@ roles:
         - core_file_view
         - core_variable_view
         - chaos_chaoshub_view
-        - chaos_chaosagent_view
-        - chaos_chaosgitops_view
-        - chaos_chaosworkflow_view
+        - chaos_chaosinfrastructure_view
+        - chaos_chaosexperiment_view
+        - chaos_chaosgameday_view
         - core_setting_view
         - ccm_overview_view
         - ccm_perspective_view
@@ -635,6 +650,7 @@ roles:
         - core_variable_view
         - core_template_view
         - core_template_access
+        - core_template_copy
         - core_setting_view
       allowedScopeLevels:
         - project

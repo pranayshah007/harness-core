@@ -8,10 +8,12 @@
 package software.wings.prune;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
+import io.harness.ng.DbAliases;
 import io.harness.queue.Queuable;
 
 import java.time.Duration;
@@ -23,6 +25,7 @@ import org.mongodb.morphia.annotations.Entity;
 
 @Value
 @EqualsAndHashCode(callSuper = true)
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "pruneQueue2", noClassnameStored = true)
 @HarnessEntity(exportable = false)
 @OwnedBy(HarnessTeam.CDC)

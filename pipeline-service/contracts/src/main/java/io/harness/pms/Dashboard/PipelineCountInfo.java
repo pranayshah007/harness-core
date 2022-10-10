@@ -23,4 +23,6 @@ public class PipelineCountInfo {
   private long total;
   private long success;
   private long failure;
+  private long expired;
+  private long aborted;
 }

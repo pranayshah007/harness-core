@@ -24,6 +24,7 @@ import static io.harness.beans.ExecutionStatus.WAITING;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.GEORGE;
 import static io.harness.rule.OwnerRule.POOJA;
+import static io.harness.rule.OwnerRule.VINICIUS;
 
 import static software.wings.beans.ExecutionStrategy.PARALLEL;
 import static software.wings.sm.StateExecutionInstance.Builder.aStateExecutionInstance;
@@ -290,6 +291,26 @@ public class GraphRendererTest extends WingsBaseTest {
     assertThat(GraphRenderer.aggregateStatus(asList(SUCCESS, FAILED, ERROR))).isEqualTo(ERROR);
     assertThat(GraphRenderer.aggregateStatus(asList(SUCCESS, FAILED))).isEqualTo(FAILED);
     assertThat(GraphRenderer.aggregateStatus(asList(SUCCESS))).isEqualTo(SUCCESS);
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void testAggregateStatusWithNull() {
+    assertThat(GraphRenderer.aggregateStatus(asList(NEW, null, NEW))).isEqualTo(NEW);
+    assertThat(GraphRenderer.aggregateStatus(asList(STARTING, null, STARTING))).isEqualTo(STARTING);
+    assertThat(GraphRenderer.aggregateStatus(asList(null, RUNNING, RUNNING))).isEqualTo(RUNNING);
+    assertThat(GraphRenderer.aggregateStatus(asList(SUCCESS, null, SUCCESS))).isEqualTo(NEW);
+
+    assertThat(GraphRenderer.aggregateStatus(asList(null, NEW, STARTING, RUNNING, SUCCESS, DISCONTINUING, ABORTED,
+                   FAILED, QUEUED, SCHEDULED, ERROR, WAITING, PAUSING, PAUSED, RESUMED)))
+        .isEqualTo(WAITING);
+    assertThat(GraphRenderer.aggregateStatus(asList(null, NEW, STARTING, RUNNING, SUCCESS, DISCONTINUING, ABORTED,
+                   FAILED, QUEUED, SCHEDULED, ERROR, PAUSING, PAUSED, RESUMED)))
+        .isEqualTo(PAUSED);
+    assertThat(GraphRenderer.aggregateStatus(asList(null, NEW, SUCCESS, ABORTED, FAILED, ERROR))).isEqualTo(NEW);
+    assertThat(GraphRenderer.aggregateStatus(asList(null, SUCCESS, ABORTED, FAILED, ERROR))).isEqualTo(NEW);
+    assertThat(GraphRenderer.aggregateStatus(asList(SUCCESS, null))).isEqualTo(NEW);
   }
 
   @Test

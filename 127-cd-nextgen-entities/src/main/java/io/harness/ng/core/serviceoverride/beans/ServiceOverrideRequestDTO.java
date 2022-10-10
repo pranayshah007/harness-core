@@ -34,7 +34,7 @@ import lombok.experimental.FieldDefaults;
 public class ServiceOverrideRequestDTO {
   @Schema(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) String orgIdentifier;
   @Schema(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) String projectIdentifier;
-  @Schema(description = NGCommonEntityConstants.ENV_PARAM_MESSAGE) String environmentRef;
-  @Schema(description = NGCommonEntityConstants.SERVICE_PARAM_MESSAGE) String serviceRef;
+  @Schema(description = NGCommonEntityConstants.ENV_PARAM_MESSAGE) String environmentIdentifier;
+  @Schema(description = NGCommonEntityConstants.SERVICE_PARAM_MESSAGE) String serviceIdentifier;
   @Schema(description = "Yaml for the Service Override entity") String yaml;
 }

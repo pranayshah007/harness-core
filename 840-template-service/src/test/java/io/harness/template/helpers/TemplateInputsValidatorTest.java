@@ -20,9 +20,11 @@ import static org.mockito.Mockito.when;
 import io.harness.TemplateServiceTestBase;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.template.TemplateEntityType;
+import io.harness.reconcile.remote.NgManagerReconcileClient;
 import io.harness.rule.Owner;
 import io.harness.template.beans.refresh.ErrorNodeSummary;
 import io.harness.template.beans.refresh.NodeInfo;
@@ -32,6 +34,7 @@ import io.harness.template.beans.yaml.NGTemplateConfig;
 import io.harness.template.beans.yaml.NGTemplateInfoConfig;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.services.NGTemplateServiceHelper;
+import io.harness.template.utils.NGTemplateFeatureFlagHelperService;
 import io.harness.utils.YamlPipelineUtils;
 
 import com.google.common.io.Resources;
@@ -51,14 +54,21 @@ public class TemplateInputsValidatorTest extends TemplateServiceTestBase {
   private static final String ACCOUNT_ID = "ACCOUNT_ID";
   private static final String ORG_ID = "orgId";
   private static final String PROJECT_ID = "projId";
+  @InjectMocks InputsValidator inputsValidator;
   @InjectMocks TemplateInputsValidator templateInputsValidator;
   @InjectMocks TemplateMergeServiceHelper templateMergeServiceHelper;
   @Mock NGTemplateServiceHelper templateServiceHelper;
+  @Mock NGTemplateFeatureFlagHelperService featureFlagHelperService;
+  @Mock NgManagerReconcileClient ngManagerReconcileClient;
 
   @Before
   public void setup() {
     on(templateMergeServiceHelper).set("templateServiceHelper", templateServiceHelper);
-    on(templateInputsValidator).set("templateMergeServiceHelper", templateMergeServiceHelper);
+    on(inputsValidator).set("templateMergeServiceHelper", templateMergeServiceHelper);
+    on(inputsValidator).set("featureFlagHelperService", featureFlagHelperService);
+    on(inputsValidator).set("ngManagerReconcileClient", ngManagerReconcileClient);
+    on(templateInputsValidator).set("inputsValidator", inputsValidator);
+    when(featureFlagHelperService.isEnabled(ACCOUNT_ID, FeatureName.CD_SERVICE_ENV_RECONCILIATION)).thenReturn(false);
   }
 
   private String readFile(String filename) {
@@ -114,7 +124,7 @@ public class TemplateInputsValidatorTest extends TemplateServiceTestBase {
                                         .templateEntityType(TemplateEntityType.STAGE_TEMPLATE)
                                         .yaml(yaml)
                                         .build();
-    when(templateServiceHelper.getOrThrowExceptionIfInvalid(
+    when(templateServiceHelper.getTemplateOrThrowExceptionIfInvalid(
              anyString(), anyString(), anyString(), any(), any(), eq(false)))
         .thenReturn(Optional.of(templateEntity));
     assertThatThrownBy(()
@@ -132,7 +142,8 @@ public class TemplateInputsValidatorTest extends TemplateServiceTestBase {
     String stepTemplateYaml = readFile("step-template.yaml");
 
     TemplateEntity stepTemplate = convertYamlToTemplateEntity(stepTemplateYaml);
-    when(templateServiceHelper.getOrThrowExceptionIfInvalid(ACCOUNT_ID, ORG_ID, PROJECT_ID, "httpTemplate", "1", false))
+    when(templateServiceHelper.getTemplateOrThrowExceptionIfInvalid(
+             ACCOUNT_ID, ORG_ID, PROJECT_ID, "httpTemplate", "1", false))
         .thenReturn(Optional.of(stepTemplate));
 
     ValidateTemplateInputsResponseDTO response = templateInputsValidator.validateNestedTemplateInputsForTemplates(
@@ -149,7 +160,8 @@ public class TemplateInputsValidatorTest extends TemplateServiceTestBase {
     String stepTemplateYaml = readFile("step-template.yaml");
 
     TemplateEntity stepTemplate = convertYamlToTemplateEntity(stepTemplateYaml);
-    when(templateServiceHelper.getOrThrowExceptionIfInvalid(ACCOUNT_ID, ORG_ID, PROJECT_ID, "httpTemplate", "1", false))
+    when(templateServiceHelper.getTemplateOrThrowExceptionIfInvalid(
+             ACCOUNT_ID, ORG_ID, PROJECT_ID, "httpTemplate", "1", false))
         .thenReturn(Optional.of(stepTemplate));
 
     TemplateEntity stageTemplate = convertYamlToTemplateEntity(stageTemplateWithInCorrectInputs);
@@ -189,15 +201,16 @@ public class TemplateInputsValidatorTest extends TemplateServiceTestBase {
     TemplateEntity stageTemplateWithInCorrectInputs = convertYamlToTemplateEntity(stageTemplateWithInCorrectInputsYaml);
     TemplateEntity stageTemplateWithCorrectInputs = convertYamlToTemplateEntity(stageTemplateWithCorrectInputsYaml);
     TemplateEntity stepTemplate = convertYamlToTemplateEntity(stepTemplateYaml);
-    when(templateServiceHelper.getOrThrowExceptionIfInvalid(ACCOUNT_ID, ORG_ID, PROJECT_ID, "httpTemplate", "1", false))
+    when(templateServiceHelper.getTemplateOrThrowExceptionIfInvalid(
+             ACCOUNT_ID, ORG_ID, PROJECT_ID, "httpTemplate", "1", false))
         .thenReturn(Optional.of(stepTemplate));
-    when(
-        templateServiceHelper.getOrThrowExceptionIfInvalid(ACCOUNT_ID, ORG_ID, PROJECT_ID, "stageTemplate", "1", false))
+    when(templateServiceHelper.getTemplateOrThrowExceptionIfInvalid(
+             ACCOUNT_ID, ORG_ID, PROJECT_ID, "stageTemplate", "1", false))
         .thenReturn(Optional.of(stageTemplateWithInCorrectInputs));
-    when(
-        templateServiceHelper.getOrThrowExceptionIfInvalid(ACCOUNT_ID, ORG_ID, PROJECT_ID, "stageTemplate", "2", false))
+    when(templateServiceHelper.getTemplateOrThrowExceptionIfInvalid(
+             ACCOUNT_ID, ORG_ID, PROJECT_ID, "stageTemplate", "2", false))
         .thenReturn(Optional.of(stageTemplateWithCorrectInputs));
-    when(templateServiceHelper.getOrThrowExceptionIfInvalid(
+    when(templateServiceHelper.getTemplateOrThrowExceptionIfInvalid(
              ACCOUNT_ID, ORG_ID, PROJECT_ID, "pipelineTemplate", "1", false))
         .thenReturn(Optional.of(pipelineTemplateWithIncorrectInputs));
 
@@ -248,13 +261,14 @@ public class TemplateInputsValidatorTest extends TemplateServiceTestBase {
     TemplateEntity stageTemplateWithInCorrectInputs = convertYamlToTemplateEntity(stageTemplateWithInCorrectInputsYaml);
     TemplateEntity stageTemplateWithCorrectInputs = convertYamlToTemplateEntity(stageTemplateWithCorrectInputsYaml);
     TemplateEntity stepTemplate = convertYamlToTemplateEntity(stepTemplateYaml);
-    when(templateServiceHelper.getOrThrowExceptionIfInvalid(ACCOUNT_ID, ORG_ID, PROJECT_ID, "httpTemplate", "1", false))
+    when(templateServiceHelper.getTemplateOrThrowExceptionIfInvalid(
+             ACCOUNT_ID, ORG_ID, PROJECT_ID, "httpTemplate", "1", false))
         .thenReturn(Optional.of(stepTemplate));
-    when(
-        templateServiceHelper.getOrThrowExceptionIfInvalid(ACCOUNT_ID, ORG_ID, PROJECT_ID, "stageTemplate", "1", false))
+    when(templateServiceHelper.getTemplateOrThrowExceptionIfInvalid(
+             ACCOUNT_ID, ORG_ID, PROJECT_ID, "stageTemplate", "1", false))
         .thenReturn(Optional.of(stageTemplateWithInCorrectInputs));
-    when(
-        templateServiceHelper.getOrThrowExceptionIfInvalid(ACCOUNT_ID, ORG_ID, PROJECT_ID, "stageTemplate", "2", false))
+    when(templateServiceHelper.getTemplateOrThrowExceptionIfInvalid(
+             ACCOUNT_ID, ORG_ID, PROJECT_ID, "stageTemplate", "2", false))
         .thenReturn(Optional.of(stageTemplateWithCorrectInputs));
 
     ValidateTemplateInputsResponseDTO response = templateInputsValidator.validateNestedTemplateInputsForGivenYaml(
@@ -263,6 +277,10 @@ public class TemplateInputsValidatorTest extends TemplateServiceTestBase {
     assertThat(response.isValidYaml()).isFalse();
     assertThat(response.getErrorNodeSummary()).isNotNull();
     ErrorNodeSummary errorNodeSummary = response.getErrorNodeSummary();
+    assertThat(errorNodeSummary.getNodeInfo()).isNotNull();
+    assertThat(errorNodeSummary.getNodeInfo().getIdentifier()).isEqualTo("pipelineTest");
+    assertThat(errorNodeSummary.getNodeInfo().getName()).isEqualTo("Test Pipline");
+    assertThat(errorNodeSummary.getNodeInfo().getLocalFqn()).isEqualTo("pipeline");
     assertThat(errorNodeSummary.getChildrenErrorNodes()).isNotNull().isNotEmpty().hasSize(2);
 
     ErrorNodeSummary firstChild = errorNodeSummary.getChildrenErrorNodes().get(0);

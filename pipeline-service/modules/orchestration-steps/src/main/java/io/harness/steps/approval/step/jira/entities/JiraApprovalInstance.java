@@ -11,8 +11,10 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ng.DbAliases;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -38,6 +40,7 @@ import org.springframework.data.annotation.TypeAlias;
 @Builder
 @FieldNameConstants(innerTypeName = "JiraApprovalInstanceKeys")
 @EqualsAndHashCode(callSuper = false)
+@StoreIn(DbAliases.PMS)
 @Entity(value = "approvalInstances", noClassnameStored = true)
 @Persistent
 @TypeAlias("jiraApprovalInstances")
@@ -45,6 +48,7 @@ public class JiraApprovalInstance extends ApprovalInstance {
   @NotEmpty String connectorRef;
   @NotEmpty String issueKey;
   String issueType;
+  String projectKey;
   @NotNull CriteriaSpecWrapperDTO approvalCriteria;
   CriteriaSpecWrapperDTO rejectionCriteria;
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
@@ -67,6 +71,8 @@ public class JiraApprovalInstance extends ApprovalInstance {
 
     String issueType = specParameters.getIssueType();
 
+    String projectKey = specParameters.getProjectKey();
+
     JiraApprovalInstance instance =
         JiraApprovalInstance.builder()
             .connectorRef(connectorRef)
@@ -77,6 +83,7 @@ public class JiraApprovalInstance extends ApprovalInstance {
                 CriteriaSpecWrapperDTO.fromCriteriaSpecWrapper(specParameters.getRejectionCriteria(), true))
             .delegateSelectors(specParameters.getDelegateSelectors())
             .issueType(issueType)
+            .projectKey(projectKey)
             .build();
     instance.updateFromStepParameters(ambiance, stepParameters);
     return instance;

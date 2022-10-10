@@ -119,6 +119,13 @@ public class CiBeansRule implements MethodRule, InjectorRuleMixin, MongoRuleMixi
 
       @Provides
       @Singleton
+      @Named("dbAliases")
+      public List<String> getDbAliases() {
+        return Collections.EMPTY_LIST;
+      }
+
+      @Provides
+      @Singleton
       Set<Class<? extends TypeConverter>> morphiaConverters() {
         return ImmutableSet.<Class<? extends TypeConverter>>builder().build();
       }

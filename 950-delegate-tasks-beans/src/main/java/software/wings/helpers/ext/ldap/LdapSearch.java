@@ -185,9 +185,9 @@ public class LdapSearch implements LdapValidator {
         return search.execute(request).getResult();
       } catch (Exception e) {
         log.error("Error querying second time to LDAP server with old logic ", e);
+        throw e;
       }
     }
-    return null;
   }
 
   public SearchDnResolver getSearchDnResolver(String userFilter) {

@@ -8,7 +8,9 @@
 package software.wings.beans.container;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.StoreIn;
 import io.harness.mongo.index.FdUniqueIndex;
+import io.harness.ng.DbAliases;
 
 import software.wings.beans.DeploymentSpecification;
 
@@ -28,6 +30,7 @@ import org.mongodb.morphia.annotations.Entity;
 @Builder
 @EqualsAndHashCode(callSuper = false)
 @FieldNameConstants(innerTypeName = "UserDataSpecificationKeys")
+@StoreIn(DbAliases.HARNESS)
 @Entity("userDataSpecifications")
 @HarnessEntity(exportable = true)
 public class UserDataSpecification extends DeploymentSpecification {

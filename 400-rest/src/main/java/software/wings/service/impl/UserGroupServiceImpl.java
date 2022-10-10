@@ -21,6 +21,7 @@ import static io.harness.validation.Validator.unEqualCheck;
 import static software.wings.beans.security.UserGroup.DEFAULT_ACCOUNT_ADMIN_USER_GROUP_NAME;
 import static software.wings.beans.security.UserGroupSearchTermType.APPLICATION_NAME;
 import static software.wings.scheduler.LdapGroupSyncJob.add;
+import static software.wings.security.PermissionAttribute.Action.ABORT_WORKFLOW;
 import static software.wings.security.PermissionAttribute.Action.EXECUTE;
 import static software.wings.security.PermissionAttribute.Action.EXECUTE_PIPELINE;
 import static software.wings.security.PermissionAttribute.Action.EXECUTE_WORKFLOW;
@@ -620,7 +621,7 @@ public class UserGroupServiceImpl implements UserGroupService {
     UserGroup userGroup = get(accountId, userGroupId);
     checkImplicitPermissions(accountPermissions, accountId, userGroup.getName());
     checkDeploymentPermissions(userGroup);
-    validateAppFilterForAppPermissions(appPermissions, accountId);
+    validateAppFilterForAppPermissions(appPermissions);
     UpdateOperations<UserGroup> operations = wingsPersistence.createUpdateOperations(UserGroup.class);
     setUnset(operations, UserGroupKeys.appPermissions, appPermissions);
     AccountPermissions accountPermissionsUpdate =
@@ -649,6 +650,10 @@ public class UserGroupServiceImpl implements UserGroupService {
             actionSet.add(EXECUTE_PIPELINE);
             actionSet.add(EXECUTE_WORKFLOW);
             actionSet.add(EXECUTE_WORKFLOW_ROLLBACK);
+            actionSet.add(ABORT_WORKFLOW);
+          }
+          if (action != null && action.equals(EXECUTE_WORKFLOW)) {
+            actionSet.add(ABORT_WORKFLOW);
           }
           actionSet.add(action);
         });
@@ -760,7 +765,7 @@ public class UserGroupServiceImpl implements UserGroupService {
     mongoPersistence.update(userGroup, ops);
   }
 
-  private void validateAppFilterForAppPermissions(Set<AppPermission> appPermissions, String accountId) {
+  private void validateAppFilterForAppPermissions(Set<AppPermission> appPermissions) {
     if (appPermissions == null) {
       return;
     }
@@ -784,14 +789,10 @@ public class UserGroupServiceImpl implements UserGroupService {
           }
           break;
         case AppFilter.FilterType.EXCLUDE_SELECTED:
-          if (featureFlagService.isEnabled(FeatureName.CG_RBAC_EXCLUSION, accountId)) {
-            if (isAppPermissionWithEmptyIds(appPermission)) {
-              throw new InvalidRequestException("Invalid Request: Please provide atleast one application");
-            } else if (isEntityFilterWithCustomIds(entityFilter)) {
-              throw new InvalidRequestException("Invalid Request: Cannot add custom entities to a Dynamic Filter");
-            }
-          } else {
-            throw new InvalidRequestException("Invalid Request: Please provide a valid application filter");
+          if (isAppPermissionWithEmptyIds(appPermission)) {
+            throw new InvalidRequestException("Invalid Request: Please provide atleast one application");
+          } else if (isEntityFilterWithCustomIds(entityFilter)) {
+            throw new InvalidRequestException("Invalid Request: Cannot add custom entities to a Dynamic Filter");
           }
           break;
         default:
@@ -804,7 +805,7 @@ public class UserGroupServiceImpl implements UserGroupService {
   public UserGroup updatePermissions(UserGroup userGroup) {
     checkImplicitPermissions(userGroup.getAccountPermissions(), userGroup.getAccountId(), userGroup.getName());
     checkDeploymentPermissions(userGroup);
-    validateAppFilterForAppPermissions(userGroup.getAppPermissions(), userGroup.getAccountId());
+    validateAppFilterForAppPermissions(userGroup.getAppPermissions());
     AccountPermissions accountPermissions =
         Optional.ofNullable(userGroup.getAccountPermissions()).orElse(AccountPermissions.builder().build());
     userGroup.setAccountPermissions(accountPermissions);

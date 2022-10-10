@@ -32,6 +32,6 @@ public class CopyCommandUnit implements NgCommandUnit {
 
   @Override
   public String getWorkingDirectory() {
-    return destinationPath;
+    return null;
   }
 }

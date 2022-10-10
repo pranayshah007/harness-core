@@ -11,6 +11,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.artifact.bean.ArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.NexusRegistryArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryDockerConfig;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.pms.yaml.ParameterField;
 
@@ -33,11 +34,19 @@ public class NexusRegistryArtifactInfo implements ArtifactInfo {
 
   @Override
   public ArtifactConfig toArtifactConfig() {
-    return NexusRegistryArtifactConfig.builder()
-        .connectorRef(ParameterField.<String>builder().value(connectorRef).build())
-        .repository(ParameterField.<String>builder().value(repositoryName).build())
-        .artifactPath(ParameterField.<String>builder().value(artifactPath).build())
-        .repositoryFormat(ParameterField.<String>builder().value(repositoryFormat).build())
-        .build();
+    if (repositoryFormat.equalsIgnoreCase("docker")) {
+      NexusRegistryDockerConfig nexusRegistryDockerConfig =
+          NexusRegistryDockerConfig.builder()
+              .artifactPath(ParameterField.<String>builder().value(artifactPath).build())
+              .build();
+      return NexusRegistryArtifactConfig.builder()
+          .connectorRef(ParameterField.<String>builder().value(connectorRef).build())
+          .repository(ParameterField.<String>builder().value(repositoryName).build())
+          .repositoryFormat(ParameterField.<String>builder().value(repositoryFormat).build())
+          .nexusRegistryConfigSpec(nexusRegistryDockerConfig)
+          .build();
+    } else {
+      throw new RuntimeException(String.format("Repository format %s is not supported", repositoryFormat));
+    }
   }
 }

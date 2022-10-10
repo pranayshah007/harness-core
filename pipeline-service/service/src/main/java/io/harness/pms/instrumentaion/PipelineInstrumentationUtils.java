@@ -12,18 +12,26 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.eraro.ErrorCode;
 import io.harness.eraro.ResponseMessage;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.experimental.UtilityClass;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 @UtilityClass
+@Slf4j
 public class PipelineInstrumentationUtils {
   public String getIdentityFromAmbiance(Ambiance ambiance) {
     if (!ambiance.getMetadata().getTriggerInfo().getTriggeredBy().getExtraInfoMap().get("email").isEmpty()) {
@@ -68,5 +76,34 @@ public class PipelineInstrumentationUtils {
         .map(ResponseMessage::getMessage)
         .collect(Collectors.toList())
         .toString();
+  }
+
+  public static List<String> getStageTypes(PipelineEntity pipelineEntity) {
+    if (pipelineEntity == null || pipelineEntity.getYaml() == null) {
+      return Collections.emptyList();
+    }
+
+    String yaml = pipelineEntity.getYaml();
+    try {
+      JsonNode jsonNode = new ObjectMapper(new YAMLFactory()).readTree(yaml);
+      JsonNode stagesJsonNode = jsonNode.get("pipeline").get("stages");
+      List<String> res = new ArrayList<>();
+      if (stagesJsonNode.isArray()) {
+        for (JsonNode stageNode : stagesJsonNode) {
+          if (stageNode.get("parallel") != null) {
+            JsonNode parallelStagesNode = stageNode.get("parallel");
+            for (JsonNode stageNodeInsideParallel : parallelStagesNode) {
+              res.add(stageNodeInsideParallel.get("stage").get("type").textValue());
+            }
+          } else {
+            res.add(stageNode.get("stage").get("type").textValue());
+          }
+        }
+      }
+      return res;
+    } catch (Exception ex) {
+      log.error(String.format("Unable to parse stage types from Pipeline yaml: %s", yaml), ex);
+      return Collections.emptyList();
+    }
   }
 }

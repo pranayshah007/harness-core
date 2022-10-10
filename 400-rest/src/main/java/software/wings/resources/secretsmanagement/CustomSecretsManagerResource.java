@@ -8,14 +8,12 @@
 package software.wings.resources.secretsmanagement;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
-import static io.harness.beans.FeatureName.CUSTOM_SECRETS_MANAGER;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
 import static software.wings.security.PermissionAttribute.PermissionType.MANAGE_SECRET_MANAGERS;
 import static software.wings.security.PermissionAttribute.ResourceType.SETTING;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.exception.HintException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
@@ -60,7 +58,6 @@ public class CustomSecretsManagerResource {
   @Path("{configId}")
   public RestResponse<CustomSecretsManagerConfig> getCustomSecretsManagerConfig(
       @QueryParam("accountId") String accountId, @PathParam("configId") String configId) {
-    checkIfFeatureAvailable(accountId);
     try (AutoLogContext ignore = new AccountLogContext(accountId, OVERRIDE_ERROR)) {
       return new RestResponse<>(customSecretsManagerService.getSecretsManager(accountId, configId));
     }
@@ -70,7 +67,6 @@ public class CustomSecretsManagerResource {
   @Path("validate")
   public RestResponse<Boolean> validateCustomSecretsManagerConfig(
       @QueryParam("accountId") String accountId, CustomSecretsManagerConfig customSecretsManagerConfig) {
-    checkIfFeatureAvailable(accountId);
     try (AutoLogContext ignore = new AccountLogContext(accountId, OVERRIDE_ERROR)) {
       return new RestResponse<>(
           customSecretsManagerService.validateSecretsManager(accountId, customSecretsManagerConfig));
@@ -80,7 +76,6 @@ public class CustomSecretsManagerResource {
   @PUT
   public RestResponse<String> saveCustomSecretsManagerConfig(
       @QueryParam("accountId") String accountId, CustomSecretsManagerConfig customSecretsManagerConfig) {
-    checkIfFeatureAvailable(accountId);
     try (AutoLogContext ignore = new AccountLogContext(accountId, OVERRIDE_ERROR)) {
       return new RestResponse<>(customSecretsManagerService.saveSecretsManager(accountId, customSecretsManagerConfig));
     }
@@ -90,7 +85,6 @@ public class CustomSecretsManagerResource {
   @Path("{configId}")
   public RestResponse<String> updateCustomSecretsManagerConfig(@QueryParam("accountId") String accountId,
       @PathParam("configId") String configId, CustomSecretsManagerConfig customSecretsManagerConfig) {
-    checkIfFeatureAvailable(accountId);
     try (AutoLogContext ignore = new AccountLogContext(accountId, OVERRIDE_ERROR)) {
       customSecretsManagerConfig.setUuid(configId);
       return new RestResponse<>(
@@ -102,15 +96,8 @@ public class CustomSecretsManagerResource {
   @Path("{configId}")
   public RestResponse<Boolean> deleteCustomSecretsManagerConfig(
       @QueryParam("accountId") String accountId, @PathParam("configId") String configId) {
-    checkIfFeatureAvailable(accountId);
     try (AutoLogContext ignore = new AccountLogContext(accountId, OVERRIDE_ERROR)) {
       return new RestResponse<>(customSecretsManagerService.deleteSecretsManager(accountId, configId));
-    }
-  }
-
-  private void checkIfFeatureAvailable(String accountId) {
-    if (!featureFlagService.isEnabled(CUSTOM_SECRETS_MANAGER, accountId)) {
-      throw new HintException("This feature is not available for your account");
     }
   }
 }

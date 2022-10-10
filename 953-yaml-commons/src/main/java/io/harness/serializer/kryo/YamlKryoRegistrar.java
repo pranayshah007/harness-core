@@ -10,6 +10,7 @@ package io.harness.serializer.kryo;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.plancreator.customDeployment.StepTemplateRef;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.yaml.core.variables.NGVariableType;
@@ -33,5 +34,6 @@ public class YamlKryoRegistrar implements KryoRegistrar {
     kryo.register(ContainerResource.Limits.class, 35014);
     kryo.register(NGVariableType.class, 88501);
     kryo.register(SecretNGVariable.class, 88502);
+    kryo.register(StepTemplateRef.class, 88503);
   }
 }

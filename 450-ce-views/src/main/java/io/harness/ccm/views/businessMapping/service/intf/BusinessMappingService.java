@@ -20,4 +20,5 @@ public interface BusinessMappingService {
   boolean delete(String uuid, String accountIdentifier);
   List<BusinessMapping> list(String accountId);
   List<ViewField> getBusinessMappingViewFields(String accountId);
+  List<String> getCostTargetNames(String businessMappingId, String accountId, String searchString);
 }

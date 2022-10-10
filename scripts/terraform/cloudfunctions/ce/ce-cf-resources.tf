@@ -1523,6 +1523,9 @@ resource "google_cloudfunctions_function" "ce-gcp-disk-inventory-data-load-funct
   }
 }
 
+data "google_app_engine_default_service_account" "default" {
+}
+
 resource "google_cloudfunctions2_function" "ce-azure-vm-inventory-data-function" {
   provider = google-beta
   name = "ce-azure-vm-inventory-data-terraform"
@@ -1549,6 +1552,7 @@ resource "google_cloudfunctions2_function" "ce-azure-vm-inventory-data-function"
         enable_for_accounts = ""
         GCP_PROJECT = "${var.projectId}"
     }
+    service_account_email = data.google_app_engine_default_service_account.default.email
   }
 }
 

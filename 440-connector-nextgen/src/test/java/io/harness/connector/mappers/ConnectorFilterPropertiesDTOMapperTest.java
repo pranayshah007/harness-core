@@ -65,6 +65,8 @@ public class ConnectorFilterPropertiesDTOMapperTest extends CategoryTest {
         .isEqualTo(connectorFilter.getConnectorIdentifiers());
     assertThat(connectorFilterProperties.getDescription()).isEqualTo(connectorFilter.getDescription());
     assertThat(connectorFilterProperties.getTags().size()).isEqualTo(1);
+    assertThat(connectorFilterProperties.getConnectorConnectivityModes())
+        .isEqualTo(connectorFilter.getConnectorConnectivityModes());
   }
 
   @Test
@@ -90,5 +92,7 @@ public class ConnectorFilterPropertiesDTOMapperTest extends CategoryTest {
         .isEqualTo(connectorFilter.getConnectorIdentifiers());
     assertThat(connectorFilterProperties.getDescription()).isEqualTo(connectorFilter.getDescription());
     assertThat(connectorFilterProperties.getTags().size()).isEqualTo(2);
+    assertThat(connectorFilterProperties.getConnectorConnectivityModes())
+        .isEqualTo(connectorFilter.getConnectorConnectivityModes());
   }
 }

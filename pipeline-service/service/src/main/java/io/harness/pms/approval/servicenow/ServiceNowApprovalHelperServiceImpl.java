@@ -238,7 +238,7 @@ public class ServiceNowApprovalHelperServiceImpl implements ServiceNowApprovalHe
     return StepUtils.prepareTaskRequest(ambiance, taskDetails, new ArrayList<>(), selectors, null, false);
   }
 
-  private void validateField(String name, String value) {
+  private void validateField(String value, String name) {
     if (isBlank(value)) {
       throw new InvalidRequestException(format("Field %s can't be empty", name));
     }

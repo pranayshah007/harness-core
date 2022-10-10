@@ -1,122 +1,114 @@
 spec:
   execution:
     steps:
-      - step:
-          name: "Deploy"
-          identifier: Deploy
-          type: Command
-          timeout: 10m
+      - stepGroup:
+          name: Phase
+          identifier: Phase
           strategy:
             repeat:
               items: <+stage.output.hosts>
               maxConcurrency: <+maxConcurrency>
-              start: 0
-              end: <+end>
+              partitionSize: <+partitionSize>
               unit: <+unit>
-          spec:
-            host: <+repeat.item>
-            onDelegate: false
-            environmentVariables: [ ]
-            outputVariables: [ ]
-            commandUnits:
-              - identifier: Setup_Runtime_Paths
-                name: Setup Runtime Paths
-                type: Script
-                spec:
-                  shell: Bash
-                  source:
-                    type: Inline
-                    spec:
-                      script: |-
-                        # Execute as root and pass environment variables
-                        # su -p -
-                        
-                        # Execute as root via user credentials (with root privileges)
-                        # sudo -E su -p -
-                        
-                        # Env variables are defined with the following values: 
-                        # HARNESS_RUNTIME_PATH: deployment_type/service_name/env_name/runtime
-                        # HARNESS_BACKUP_PATH: deployment_type/service_name/env_name/backup
-                        # HARNESS_STAGING_PATH: deployment_type/service_name/env_name/staging
-                        
-                        mkdir -p $HARNESS_RUNTIME_PATH
-                        mkdir -p $HARNESS_BACKUP_PATH
-                        mkdir -p $HARNESS_STAGING_PATH
-              - identifier: Copy_Artifact
-                name: "Copy Artifact"
-                type: Copy
-                spec:
-                  sourceType: Artifact
-                  destinationPath: $HARNESS_RUNTIME_PATH
-              - identifier: Copy_Config
-                name: "Copy Config"
-                type: Copy
-                spec:
-                  sourceType: Config
-                  destinationPath: $HARNESS_RUNTIME_PATH
-      - step:
-          type: Verify
-          name: Verify
-          identifier: Verify
-          timeout: 2h
-          spec: { }
+          steps:
+            - stepGroup:
+                name: Phase Group
+                identifier: phase_group
+                strategy:
+                  repeat:
+                    items: <+repeat.partition>
+                steps:
+                  - step:
+                      name: "Deploy"
+                      type: Command
+                      identifier: Deploy
+                      timeout: 10m
+                      spec:
+                        onDelegate: false
+                        environmentVariables: [ ]
+                        outputVariables: [ ]
+                        commandUnits:
+                          - identifier: Setup_Runtime_Paths
+                            name: "Setup Runtime Paths"
+                            type: Script
+                            spec:
+                              shell: Bash
+                              source:
+                                type: Inline
+                                spec:
+                                  script: |-
+                                    <+setup_runtime_paths_script_war>
+                          - identifier: Copy_Artifact
+                            name: "Copy Artifact"
+                            type: Copy
+                            spec:
+                              sourceType: Artifact
+                              destinationPath: $HOME/<+service.name>/<+env.name>
+                          - identifier: Copy_Config
+                            name: "Copy Config"
+                            type: Copy
+                            spec:
+                              sourceType: Config
+                              destinationPath: $HOME/<+service.name>/<+env.name>
+                  - step:
+                      type: Verify
+                      name: Verify
+                      identifier: Verify
+                      timeout: 2h
+                      spec: { }
     rollbackSteps:
-      - step:
-          name: "Rollback"
-          identifier: Rollback
-          type: Command
-          timeout: 10m
+      - stepGroup:
+          name: Phase
+          identifier: Phase
           strategy:
             repeat:
               items: <+stage.output.hosts>
               maxConcurrency: <+maxConcurrency>
-              start: 0
-              end: <+end>
+              partitionSize: <+partitionSize>
               unit: <+unit>
-          spec:
-            host: <+repeat.item>
-            onDelegate: false
-            environmentVariables: [ ]
-            outputVariables: [ ]
-            commandUnits:
-              - identifier: Setup_Runtime_Paths_Rollback
-                name: Setup Runtime Paths Rollback
-                type: Script
-                spec:
-                  shell: Bash
-                  source:
-                    type: Inline
-                    spec:
-                      script: |-
-                        # Execute as root and pass environment variables
-                        # su -p -
-                        
-                        # Execute as root via user credentials (with root privileges)
-                        # sudo -E su -p -
-                        
-                        # Env variables are defined with the following values: 
-                        # HARNESS_RUNTIME_PATH: deployment_type/service_name/env_name/runtime
-                        # HARNESS_BACKUP_PATH: deployment_type/service_name/env_name/backup
-                        # HARNESS_STAGING_PATH: deployment_type/service_name/env_name/staging
-                        
-                        mkdir -p $HARNESS_RUNTIME_PATH
-                        mkdir -p $HARNESS_BACKUP_PATH
-                        mkdir -p $HARNESS_STAGING_PATH
-              - identifier: Copy_Artifact_Rollback
-                name: "Copy Artifact Rollback"
-                type: Copy
-                spec:
-                  sourceType: Artifact
-                  destinationPath: $HARNESS_RUNTIME_PATH
-              - identifier: Copy_Config_Rollback
-                name: "Copy Config Rollback"
-                type: Copy
-                spec:
-                  sourceType: Config
-                  destinationPath: $HARNESS_RUNTIME_PATH
-      - step:
-          type: Verify
-          name: Verify Rollback
-          identifier: Verify_Rollback
-          timeout: 2h
-          spec: { }
+          steps:
+            - stepGroup:
+                name: Phase Group Rollback
+                identifier: phase_group_rollback
+                strategy:
+                  repeat:
+                    items: <+repeat.partition>
+                steps:
+                  - step:
+                      name: "Rollback"
+                      identifier: Rollback
+                      type: Command
+                      timeout: 10m
+                      spec:
+                        onDelegate: false
+                        environmentVariables: [ ]
+                        outputVariables: [ ]
+                        commandUnits:
+                          - identifier: Setup_Runtime_Paths_Rollback
+                            name: "Setup Runtime Paths Rollback"
+                            type: Script
+                            spec:
+                              shell: Bash
+                              source:
+                                type: Inline
+                                spec:
+                                  script: |-
+                                    <+setup_runtime_paths_script_war>
+                          - identifier: Copy_Artifact_Rollback
+                            name: "Copy Artifact Rollback"
+                            type: Copy
+                            spec:
+                              sourceType: Artifact
+                              destinationPath: $HOME/<+service.name>/<+env.name>
+                          - identifier: Copy_Config_Rollback
+                            name: "Copy Config Rollback"
+                            type: Copy
+                            spec:
+                              sourceType: Config
+                              destinationPath: $HOME/<+service.name>/<+env.name>
+                  - step:
+                      type: Verify
+                      name: Verify Rollback
+                      identifier: Verify_Rollback
+                      timeout: 2h
+                      spec: { }

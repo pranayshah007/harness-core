@@ -23,6 +23,7 @@ public class ExecutionInputDTOMapper {
         .inputTemplate(executionInputInstance.getTemplate())
         .inputInstanceId(executionInputInstance.getInputInstanceId())
         .userInput(executionInputInstance.getUserInput())
+        .fieldYaml(executionInputInstance.getFieldYaml())
         .build();
   }
 }

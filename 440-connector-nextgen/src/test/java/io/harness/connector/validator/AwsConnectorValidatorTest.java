@@ -161,7 +161,7 @@ public class AwsConnectorValidatorTest extends CategoryTest {
                         .secretKeyRef(SecretRefData.builder().build())
                         .accessKey("accessKey")
                         .build());
-    doNothing().when(awsClient).validateAwsAccountCredential(any());
+    doNothing().when(awsClient).validateAwsAccountCredential(any(), any());
     AwsValidationHandler awsValidationHandler = mock(AwsValidationHandler.class);
     on(awsValidationHandler).set("ngConfigMapper", ngConfigMapper);
     on(awsValidationHandler).set("awsClient", awsClient);

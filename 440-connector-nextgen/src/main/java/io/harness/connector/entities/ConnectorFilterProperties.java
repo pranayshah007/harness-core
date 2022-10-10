@@ -9,6 +9,7 @@ package io.harness.connector.entities;
 
 import io.harness.connector.ConnectivityStatus;
 import io.harness.connector.ConnectorCategory;
+import io.harness.connector.ConnectorConnectivityMode;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.filter.entity.FilterProperties;
 
@@ -39,4 +40,5 @@ public class ConnectorFilterProperties extends FilterProperties {
   List<ConnectorCategory> categories;
   List<ConnectivityStatus> connectivityStatuses;
   Boolean inheritingCredentialsFromDelegate;
+  List<ConnectorConnectivityMode> connectorConnectivityModes;
 }

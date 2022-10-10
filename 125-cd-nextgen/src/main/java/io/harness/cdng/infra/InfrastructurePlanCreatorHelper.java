@@ -12,6 +12,8 @@ import static java.lang.String.format;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.infra.yaml.AzureWebAppInfrastructure;
+import io.harness.cdng.infra.yaml.CustomDeploymentInfrastructure;
+import io.harness.cdng.infra.yaml.EcsInfrastructure;
 import io.harness.cdng.infra.yaml.Infrastructure;
 import io.harness.cdng.infra.yaml.InfrastructureConfig;
 import io.harness.cdng.infra.yaml.K8SDirectInfrastructure;
@@ -63,12 +65,19 @@ public class InfrastructurePlanCreatorHelper {
     return infrastructureConfigs;
   }
 
-  public void setInfraIdentifierAndName(Infrastructure infrastructure, String infraIdentifier, String infraName) {
+  public void setInfraIdentifierAndName(
+      Infrastructure infrastructure, String infraIdentifier, String infraName, boolean skipInstances) {
     switch (infrastructure.getKind()) {
       case InfrastructureKind.KUBERNETES_DIRECT:
         K8SDirectInfrastructure k8SDirectInfrastructure = (K8SDirectInfrastructure) infrastructure;
         k8SDirectInfrastructure.setInfraIdentifier(infraIdentifier);
         k8SDirectInfrastructure.setInfraName(infraName);
+        return;
+
+      case InfrastructureKind.CUSTOM_DEPLOYMENT:
+        CustomDeploymentInfrastructure customDeploymentInfrastructure = (CustomDeploymentInfrastructure) infrastructure;
+        customDeploymentInfrastructure.setInfraIdentifier(infraIdentifier);
+        customDeploymentInfrastructure.setInfraName(infraName);
         return;
 
       case InfrastructureKind.KUBERNETES_GCP:
@@ -94,24 +103,33 @@ public class InfrastructurePlanCreatorHelper {
         PdcInfrastructure pdcInfrastructure = (PdcInfrastructure) infrastructure;
         pdcInfrastructure.setInfraName(infraName);
         pdcInfrastructure.setInfraIdentifier(infraIdentifier);
+        pdcInfrastructure.setSkipInstances(skipInstances);
         return;
 
       case InfrastructureKind.SSH_WINRM_AWS:
         SshWinRmAwsInfrastructure sshWinRmAwsInfrastructure = (SshWinRmAwsInfrastructure) infrastructure;
         sshWinRmAwsInfrastructure.setInfraName(infraName);
         sshWinRmAwsInfrastructure.setInfraIdentifier(infraIdentifier);
+        sshWinRmAwsInfrastructure.setSkipInstances(skipInstances);
         return;
 
       case InfrastructureKind.SSH_WINRM_AZURE:
         SshWinRmAzureInfrastructure sshWinRmAzureInfrastructure = (SshWinRmAzureInfrastructure) infrastructure;
         sshWinRmAzureInfrastructure.setInfraName(infraName);
         sshWinRmAzureInfrastructure.setInfraIdentifier(infraIdentifier);
+        sshWinRmAzureInfrastructure.setSkipInstances(skipInstances);
         return;
 
       case InfrastructureKind.AZURE_WEB_APP:
         AzureWebAppInfrastructure azureWebAppInfrastructure = (AzureWebAppInfrastructure) infrastructure;
         azureWebAppInfrastructure.setInfraName(infraName);
         azureWebAppInfrastructure.setInfraIdentifier(infraIdentifier);
+        return;
+
+      case InfrastructureKind.ECS:
+        EcsInfrastructure ecsInfrastructure = (EcsInfrastructure) infrastructure;
+        ecsInfrastructure.setInfraName(infraName);
+        ecsInfrastructure.setInfraIdentifier(infraIdentifier);
         return;
 
       default:

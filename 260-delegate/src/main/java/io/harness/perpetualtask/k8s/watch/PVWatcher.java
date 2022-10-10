@@ -7,8 +7,8 @@
 
 package io.harness.perpetualtask.k8s.watch;
 
-import static io.harness.ccm.commons.constants.Constants.CLUSTER_ID_IDENTIFIER;
-import static io.harness.ccm.commons.constants.Constants.UID;
+import static io.harness.ccm.CcmConstants.CLUSTER_ID_IDENTIFIER;
+import static io.harness.ccm.CcmConstants.UID;
 import static io.harness.perpetualtask.k8s.watch.PVEvent.EventType.EVENT_TYPE_EXPANSION;
 import static io.harness.perpetualtask.k8s.watch.PVEvent.EventType.EVENT_TYPE_STOP;
 
@@ -22,6 +22,8 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.event.client.EventPublisher;
 import io.harness.grpc.utils.HTimestamps;
 import io.harness.perpetualtask.k8s.informer.ClusterDetails;
+import io.harness.perpetualtask.k8s.utils.ApiExceptionLogger;
+import io.harness.perpetualtask.k8s.utils.ApiInfoLogger;
 import io.harness.perpetualtask.k8s.utils.K8sWatcherHelper;
 
 import com.github.benmanes.caffeine.cache.Caffeine;
@@ -44,7 +46,6 @@ import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.Collections;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.TimeUnit;
@@ -103,17 +104,19 @@ public class PVWatcher implements ResourceEventHandler<V1PersistentVolume> {
         .sharedIndexInformerFor(
             (CallGeneratorParams callGeneratorParams)
                 -> {
-              log.info("PV watcher :: Resource version: {}, timeoutSeconds: {}, watch: {}",
+              ApiInfoLogger.logInfoIfNotSeenRecently(
+                  "PV watcher :: Resource version: {}, timeoutSeconds: {}, watch: {}",
                   callGeneratorParams.resourceVersion, callGeneratorParams.timeoutSeconds, callGeneratorParams.watch);
-              if (!"0".equals(callGeneratorParams.resourceVersion)
-                  && Objects.nonNull(callGeneratorParams.timeoutSeconds)) {
-                K8sWatcherHelper.updateLastSeen(
-                    String.format(K8sWatcherHelper.PV_WATCHER_PREFIX, clusterId), Instant.now());
-              }
+              K8sWatcherHelper.updateLastSeen(
+                  String.format(K8sWatcherHelper.PV_WATCHER_PREFIX, clusterId), Instant.now());
               try {
                 return coreV1Api.listPersistentVolumeCall(null, null, null, null, null, null,
                     callGeneratorParams.resourceVersion, null, callGeneratorParams.timeoutSeconds,
                     callGeneratorParams.watch, null);
+              } catch (IllegalArgumentException ex) {
+                ApiExceptionLogger.logErrorIfNotSeenRecently(
+                    ex, String.format("IllegalArgumentException: %s", ex.getMessage()));
+                throw ex;
               } catch (Exception e) {
                 log.error("Unknown exception occurred for listPersistentVolumeCall", e);
                 throw e;
