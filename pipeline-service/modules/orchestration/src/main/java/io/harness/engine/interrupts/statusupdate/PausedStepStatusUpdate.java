@@ -33,7 +33,7 @@ public class PausedStepStatusUpdate implements NodeStatusUpdateHandler {
   public void handleNodeStatusUpdate(NodeUpdateInfo nodeStatusUpdateInfo) {
     NodeExecution nodeExecution = nodeStatusUpdateInfo.getNodeExecution();
     if (nodeExecution.getParentId() == null) {
-      planExecutionService.updateCalculatedStatus(nodeStatusUpdateInfo.getPlanExecutionId());
+      planExecutionService.updateStatus(nodeStatusUpdateInfo.getPlanExecutionId(), PAUSED);
       return;
     }
     List<NodeExecution> flowingChildren = nodeExecutionService.findByParentIdAndStatusIn(
@@ -41,6 +41,6 @@ public class PausedStepStatusUpdate implements NodeStatusUpdateHandler {
     if (isEmpty(flowingChildren)) {
       nodeExecutionService.updateStatusWithOps(nodeExecution.getParentId(), PAUSED, null, EnumSet.noneOf(Status.class));
     }
-    planExecutionService.updateCalculatedStatus(nodeStatusUpdateInfo.getPlanExecutionId());
+    planExecutionService.updateStatus(nodeStatusUpdateInfo.getPlanExecutionId(), PAUSED);
   }
 }
