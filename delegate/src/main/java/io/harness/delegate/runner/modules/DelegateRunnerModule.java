@@ -7,13 +7,7 @@
 
 package io.harness.delegate.runner.modules;
 
-import com.google.inject.Provider;
-import com.google.inject.Provides;
-import com.google.inject.name.Named;
 import io.harness.delegate.beans.DelegateTaskPackage;
-
-import com.google.inject.AbstractModule;
-import com.google.inject.Singleton;
 import io.harness.delegate.configuration.DelegateConfiguration;
 import io.harness.delegate.runner.DelegateRunnerCommand;
 import io.harness.delegate.runner.DelegateRunnerCommandImpl;
@@ -23,12 +17,20 @@ import io.harness.delegate.runner.config.DelegateConfigurationProvider;
 import io.harness.delegate.runner.taskloader.DelegateTaskPackageProvider;
 import io.harness.delegate.runner.taskloader.TaskPackageReader;
 import io.harness.delegate.runner.taskloader.TaskPackageReaderImpl;
+import io.harness.delegate.taskagent.client.delegate.DelegateCoreClient;
+import io.harness.delegate.taskagent.client.delegate.DelegateCoreClientFactory;
+import io.harness.delegate.taskagent.servicediscovery.ServiceDiscovery;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.serializer.KryoSerializer;
+
+import com.google.inject.AbstractModule;
+import com.google.inject.Provider;
+import com.google.inject.Provides;
+import com.google.inject.Singleton;
+import com.google.inject.name.Named;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-
-import java.util.Set;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -40,6 +42,7 @@ public class DelegateRunnerModule extends AbstractModule {
     install(new DelegateRunnerTasksModule());
     install(new DelegateManagerClientModule());
     install(new DelegateRunnerKryoModule());
+    install(new DelegateCoreClientModule());
     bind(Configuration.class).toProvider(new ConfigurationProvider(configFileName)).in(Singleton.class);
     bind(DelegateConfiguration.class).toProvider(new DelegateConfigurationProvider()).in(Singleton.class);
     bind(DelegateRunnerCommand.class).to(DelegateRunnerCommandImpl.class).in(Singleton.class);
@@ -53,5 +56,4 @@ public class DelegateRunnerModule extends AbstractModule {
   public KryoSerializer getKryoSerializer(Provider<Set<Class<? extends KryoRegistrar>>> provider) {
     return new KryoSerializer(provider.get(), false, false);
   }
-
 }

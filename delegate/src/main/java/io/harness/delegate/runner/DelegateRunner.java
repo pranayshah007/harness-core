@@ -7,21 +7,21 @@
 
 package io.harness.delegate.runner;
 
-import ch.qos.logback.classic.LoggerContext;
+import static io.harness.delegate.clienttools.InstallUtils.setupClientTools;
+
 import io.harness.delegate.configuration.DelegateConfiguration;
 import io.harness.delegate.runner.modules.DelegateRunnerModule;
-import com.google.inject.Guice;
-import com.google.inject.Injector;
 import io.harness.threading.CurrentThreadExecutor;
 import io.harness.threading.ExecutorModule;
+
+import ch.qos.logback.classic.LoggerContext;
+import com.google.inject.Guice;
+import com.google.inject.Injector;
+import java.util.concurrent.ExecutorService;
 import lombok.extern.slf4j.Slf4j;
 import org.asynchttpclient.DefaultAsyncHttpClient;
 import org.slf4j.ILoggerFactory;
 import org.slf4j.LoggerFactory;
-
-import java.util.concurrent.ExecutorService;
-
-import static io.harness.delegate.clienttools.InstallUtils.setupClientTools;
 
 @Slf4j
 public class DelegateRunner {
@@ -43,18 +43,17 @@ public class DelegateRunner {
   }
 
   private void shutdown(final Injector injector) {
-      injector.getInstance(ExecutorService.class).shutdown();
-      log.info("Executor services have been shut down.");
+    injector.getInstance(ExecutorService.class).shutdown();
+    log.info("Executor services have been shut down.");
 
-      injector.getInstance(DefaultAsyncHttpClient.class).close();
-      log.info("Async HTTP client has been closed.");
+    injector.getInstance(DefaultAsyncHttpClient.class).close();
+    log.info("Async HTTP client has been closed.");
 
-      final ILoggerFactory loggerFactory = LoggerFactory.getILoggerFactory();
-      if (loggerFactory instanceof LoggerContext) {
-        final LoggerContext context = (LoggerContext) loggerFactory;
-        context.stop();
-      }
-      log.info("Log manager has been shutdown and logs have been flushed.");
+    final ILoggerFactory loggerFactory = LoggerFactory.getILoggerFactory();
+    if (loggerFactory instanceof LoggerContext) {
+      final LoggerContext context = (LoggerContext) loggerFactory;
+      context.stop();
+    }
+    log.info("Log manager has been shutdown and logs have been flushed.");
   }
-
 }

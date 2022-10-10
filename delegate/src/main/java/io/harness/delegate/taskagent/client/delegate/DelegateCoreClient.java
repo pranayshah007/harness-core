@@ -8,6 +8,7 @@
 package io.harness.delegate.taskagent.client.delegate;
 
 import io.harness.delegate.beans.DelegateTaskResponse;
+import io.harness.serializer.kryo.KryoRequest;
 
 import retrofit2.Call;
 import retrofit2.http.Body;
@@ -17,6 +18,7 @@ import retrofit2.http.Query;
 
 public interface DelegateCoreClient {
   @POST("task/{taskId}/execution-response")
-  Call<Void> taskResponse(@Query("accountId") final String accountId, @Path("taskId") final String taskId,
+  @KryoRequest
+  Call<Void> taskResponse(@Path("taskId") final String taskId, @Query("accountId") final String accountId,
       @Body final DelegateTaskResponse delegateTaskResponse);
 }

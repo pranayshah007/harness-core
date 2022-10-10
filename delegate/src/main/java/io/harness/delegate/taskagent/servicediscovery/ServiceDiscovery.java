@@ -7,6 +7,7 @@
 
 package io.harness.delegate.taskagent.servicediscovery;
 
+import java.util.Locale;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 
@@ -17,8 +18,10 @@ public class ServiceDiscovery {
   private static final String SERVICE_PORT_TEMPLATE = "%s_SERVICE_PORT";
   public ServiceEndpoint getDelegateServiceEndpoint(final String delegateName) {
     final String delegateServiceName = getDelegateServiceName(delegateName);
-    final String delegateHost = System.getenv(String.format(SERVICE_HOST_TEMPLATE, delegateServiceName));
-    final String delegatePort = System.getenv(String.format(SERVICE_PORT_TEMPLATE, delegateServiceName));
+    final String delegateHost =
+        System.getenv(String.format(SERVICE_HOST_TEMPLATE, delegateServiceName.toUpperCase(Locale.ROOT)));
+    final String delegatePort =
+        System.getenv(String.format(SERVICE_PORT_TEMPLATE, delegateServiceName.toUpperCase(Locale.ROOT)));
 
     try {
       return new ServiceEndpoint(delegateHost, Integer.parseInt(delegatePort));
@@ -32,6 +35,6 @@ public class ServiceDiscovery {
   }
 
   private static String getDelegateServiceName(final String delegateName) {
-    return "delegate-service";
+    return "delegate_service";
   }
 }
