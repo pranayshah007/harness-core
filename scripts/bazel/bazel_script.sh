@@ -125,6 +125,7 @@ BAZEL_MODULES="\
   //920-delegate-service-beans:module \
   //920-ng-signup:module \
   //925-enforcement-service:module \
+  //925-delegate-service-contracts:module \
   //930-delegate-tasks:module \
   //930-ng-core-clients:module \
   //932-connector-task:module \
@@ -326,6 +327,7 @@ build_bazel_module 910-delegate-service-driver
 build_bazel_module 910-delegate-task-grpc-service
 build_bazel_module 920-delegate-agent-beans
 build_bazel_module 920-delegate-service-beans
+build_bazel_module 925-delegate-service-contracts
 build_bazel_module 930-delegate-tasks
 build_bazel_module 930-ng-core-clients
 build_bazel_module 932-connector-task
