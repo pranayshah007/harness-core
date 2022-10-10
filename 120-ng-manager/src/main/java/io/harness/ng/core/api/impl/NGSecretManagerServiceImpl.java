@@ -52,7 +52,6 @@ import io.github.resilience4j.core.IntervalFunction;
 import io.github.resilience4j.retry.Retry;
 import io.github.resilience4j.retry.RetryConfig;
 import io.github.resilience4j.retry.RetryRegistry;
-
 import java.util.EnumSet;
 import java.util.Set;
 import java.util.function.Supplier;
