@@ -16,6 +16,7 @@ import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.pms.annotations.PipelineServiceAuth;
 import io.harness.pms.gitsync.PmsGitSyncHelper;
+import io.harness.pms.ngpipeline.inputset.helpers.ValidateAndMergeHelper;
 import io.harness.pms.plan.execution.PipelineExecutor;
 import io.harness.pms.plan.execution.PlanExecutionInterruptType;
 import io.harness.pms.plan.execution.PlanExecutionResponseDto;
@@ -30,8 +31,10 @@ import io.harness.spec.server.pipeline.model.InterruptRequestBody;
 import io.harness.spec.server.pipeline.model.InterruptResponseBody;
 import io.harness.spec.server.pipeline.model.PipelineExecuteRequestBody;
 import io.harness.spec.server.pipeline.model.PipelineExecuteResponseBody;
+import io.harness.spec.server.pipeline.model.RuntimeYAMLTemplate;
 
 import com.google.inject.Inject;
+import java.util.Collections;
 import java.util.List;
 import javax.ws.rs.core.Response;
 import lombok.AccessLevel;
@@ -47,6 +50,7 @@ public class ExecutionsApiImpl implements ExecutionsApi {
   @Inject private final PMSExecutionService pmsExecutionService;
   @Inject private final PmsGitSyncHelper pmsGitSyncHelper;
   @Inject private final AccessControlClient accessControlClient;
+  @Inject private final ValidateAndMergeHelper validateAndMergeHelper;
 
   @Override
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_EXECUTE)
@@ -122,7 +126,14 @@ public class ExecutionsApiImpl implements ExecutionsApi {
   public Response getRuntimeTemplate(@OrgIdentifier String org, @ProjectIdentifier String project,
       @ResourceIdentifier String pipeline, @AccountIdentifier String account, List<String> stageIds,
       String branchGitX) {
-    return null;
+    log.info(String.format(
+        "Get template for pipeline %s in project %s, org %s, account %s", pipeline, project, org, account));
+    if (stageIds == null) {
+      stageIds = Collections.emptyList();
+    }
+    RuntimeYAMLTemplate response = ExecutionsApiUtils.getRuntimeYAMLTemplate(
+        validateAndMergeHelper.getInputSetTemplateResponseDTO(account, org, project, pipeline, stageIds));
+    return Response.ok().entity(response).build();
   }
 
   @Override

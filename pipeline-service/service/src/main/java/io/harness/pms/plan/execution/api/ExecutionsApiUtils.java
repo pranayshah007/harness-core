@@ -17,6 +17,7 @@ import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.plan.TriggerType;
 import io.harness.pms.execution.ExecutionStatus;
+import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetTemplateResponseDTOPMS;
 import io.harness.pms.pipeline.api.PipelinesApiUtils;
 import io.harness.pms.plan.execution.PlanExecutionResponseDto;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
@@ -30,6 +31,7 @@ import io.harness.spec.server.pipeline.model.Graph;
 import io.harness.spec.server.pipeline.model.InterruptResponseBody;
 import io.harness.spec.server.pipeline.model.InterruptResponseBody.InterruptTypeEnum;
 import io.harness.spec.server.pipeline.model.PipelineExecuteResponseBody;
+import io.harness.spec.server.pipeline.model.RuntimeYAMLTemplate;
 import io.harness.spec.server.pipeline.model.StageInfo;
 
 import java.util.LinkedHashMap;
@@ -177,5 +179,12 @@ public class ExecutionsApiUtils {
     interruptResponseBody.setInterrupt(interruptDTO.getId());
     interruptResponseBody.setInterruptType(InterruptTypeEnum.fromValue(interruptDTO.getType().getDisplayName()));
     return interruptResponseBody;
+  }
+
+  public static RuntimeYAMLTemplate getRuntimeYAMLTemplate(InputSetTemplateResponseDTOPMS templateDTO) {
+    RuntimeYAMLTemplate yamlTemplate = new RuntimeYAMLTemplate();
+    yamlTemplate.setRuntimeYaml(templateDTO.getInputSetTemplateYaml());
+    yamlTemplate.setReplaceExpression(templateDTO.getReplacedExpressions());
+    return yamlTemplate;
   }
 }
