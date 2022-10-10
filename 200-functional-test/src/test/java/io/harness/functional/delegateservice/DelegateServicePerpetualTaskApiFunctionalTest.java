@@ -26,7 +26,7 @@ import io.harness.perpetualtask.TaskClientParams;
 import io.harness.perpetualtask.example.SamplePerpetualTaskParams;
 import io.harness.perpetualtask.internal.PerpetualTaskRecord;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.service.intfc.DelegateAsyncService;
 import io.harness.service.intfc.DelegateSyncService;
 import io.harness.threading.Poller;
@@ -48,7 +48,7 @@ import org.junit.experimental.categories.Category;
 public class DelegateServicePerpetualTaskApiFunctionalTest extends AbstractFunctionalTest {
   @Inject private DelegateServiceBlockingStub delegateServiceBlockingStub;
   @Inject private DelegateAsyncService delegateAsyncService;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
   @Inject private WingsPersistence wingsPersistence;
   @Inject private DelegateSyncService delegateSyncService;
 
@@ -58,15 +58,15 @@ public class DelegateServicePerpetualTaskApiFunctionalTest extends AbstractFunct
   @Ignore("We need to find better way to register if the task is executed")
   public void testPerpetualTaskExecution() throws InterruptedException {
     DelegateServiceGrpcClient delegateServiceGrpcClient = new DelegateServiceGrpcClient(
-        delegateServiceBlockingStub, delegateAsyncService, kryoSerializer, delegateSyncService, () -> false);
+        delegateServiceBlockingStub, delegateAsyncService, kryoSerializerWrapper, delegateSyncService, () -> false);
 
     Map<String, String> clientParamMap = new HashMap<>();
     clientParamMap.put("countryName", "testCountry");
 
     PerpetualTaskSchedule schedule = PerpetualTaskSchedule.newBuilder()
-                                         .setInterval(Durations.fromSeconds(30))
-                                         .setTimeout(Durations.fromSeconds(30))
-                                         .build();
+        .setInterval(Durations.fromSeconds(30))
+        .setTimeout(Durations.fromSeconds(30))
+        .build();
 
     PerpetualTaskId perpetualTaskId = delegateServiceGrpcClient.createPerpetualTask(
         AccountId.newBuilder().setId(getAccount().getUuid()).build(), PerpetualTaskType.SAMPLE, schedule,
@@ -97,12 +97,12 @@ public class DelegateServicePerpetualTaskApiFunctionalTest extends AbstractFunct
     String countryName = "testCountry2";
 
     DelegateServiceGrpcClient delegateServiceGrpcClient = new DelegateServiceGrpcClient(
-        delegateServiceBlockingStub, delegateAsyncService, kryoSerializer, delegateSyncService, () -> false);
+        delegateServiceBlockingStub, delegateAsyncService, kryoSerializerWrapper, delegateSyncService, () -> false);
 
     PerpetualTaskSchedule schedule = PerpetualTaskSchedule.newBuilder()
-                                         .setInterval(Durations.fromSeconds(30))
-                                         .setTimeout(Durations.fromSeconds(30))
-                                         .build();
+        .setInterval(Durations.fromSeconds(30))
+        .setTimeout(Durations.fromSeconds(30))
+        .build();
 
     PerpetualTaskId perpetualTaskId = delegateServiceGrpcClient.createPerpetualTask(
         AccountId.newBuilder().setId(getAccount().getUuid()).build(), PerpetualTaskType.SAMPLE, schedule,
