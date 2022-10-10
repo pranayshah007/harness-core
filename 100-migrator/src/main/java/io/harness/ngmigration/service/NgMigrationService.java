@@ -173,7 +173,7 @@ public abstract class NgMigrationService {
   protected <T> MigrationImportSummaryDTO handleResp(NGYamlFile yamlFile, Response<ResponseDTO<T>> resp)
       throws IOException {
     if (resp.code() >= 200 && resp.code() < 300) {
-      return MigrationImportSummaryDTO.builder().errors(Collections.emptyList()).build();
+      return MigrationImportSummaryDTO.builder().success(true).errors(Collections.emptyList()).build();
     }
     Map<String, Object> error = JsonUtils.asObject(
         resp.errorBody() != null ? resp.errorBody().string() : "{}", new TypeReference<Map<String, Object>>() {});

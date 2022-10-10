@@ -28,6 +28,7 @@ import io.harness.gitsync.beans.YamlDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.service.dto.ServiceRequestDTO;
 import io.harness.ng.core.service.dto.ServiceResponse;
+import io.harness.ng.core.service.dto.ServiceResponseDTO;
 import io.harness.ng.core.service.yaml.NGServiceConfig;
 import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
 import io.harness.ngmigration.beans.BaseEntityInput;
@@ -49,7 +50,10 @@ import io.harness.ngmigration.service.MigratorUtility;
 import io.harness.ngmigration.service.NgMigrationService;
 import io.harness.ngmigration.service.servicev2.ServiceV2Factory;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.serializer.JsonUtils;
+import io.harness.service.remote.ServiceResourceClient;
+import io.harness.utils.YamlPipelineUtils;
 
 import software.wings.api.DeploymentType;
 import software.wings.beans.Service;
@@ -89,6 +93,7 @@ public class ServiceMigrationService extends NgMigrationService {
   @Inject private ManifestMigrationService manifestMigrationService;
   @Inject private MigratorExpressionUtils migratorExpressionUtils;
   @Inject private ApplicationManifestService applicationManifestService;
+  @Inject private ServiceResourceClient serviceResourceClient;
 
   @Override
   public MigratedEntityMapping generateMappingEntity(NGYamlFile yamlFile) {
@@ -272,6 +277,7 @@ public class ServiceMigrationService extends NgMigrationService {
                                                  .accountId(service.getAccountId())
                                                  .appId(service.getAppId())
                                                  .id(service.getUuid())
+                                                 .name(service.getName())
                                                  .type(SERVICE)
                                                  .build())
                                 .build();
@@ -281,7 +287,19 @@ public class ServiceMigrationService extends NgMigrationService {
 
   @Override
   protected YamlDTO getNGEntity(NgEntityDetail ngEntityDetail, String accountIdentifier) {
-    return null;
+    try {
+      ServiceResponse response =
+          NGRestUtils.getResponse(serviceResourceClient.getService(ngEntityDetail.getIdentifier(), accountIdentifier,
+              ngEntityDetail.getOrgIdentifier(), ngEntityDetail.getProjectIdentifier()));
+      if (response == null || response.getService() == null) {
+        return null;
+      }
+      ServiceResponseDTO responseDTO = response.getService();
+      return YamlPipelineUtils.read(responseDTO.getYaml(), NGServiceConfig.class);
+    } catch (Exception ex) {
+      log.error("Error when getting service - ", ex);
+      return null;
+    }
   }
 
   @Override

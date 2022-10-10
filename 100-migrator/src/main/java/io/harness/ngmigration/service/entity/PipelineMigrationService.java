@@ -173,7 +173,7 @@ public class PipelineMigrationService extends NgMigrationService {
           inputDTO.getOrgIdentifier(), inputDTO.getProjectIdentifier(),
           RequestBody.create(MediaType.parse("application/yaml"), YamlUtils.write(yamlFile.getYaml()))));
       log.info("Pipeline creation successful");
-      return MigrationImportSummaryDTO.builder().errors(Collections.emptyList()).build();
+      return MigrationImportSummaryDTO.builder().success(true).errors(Collections.emptyList()).build();
     } catch (Exception ex) {
       log.error("Pipeline creation failed - ", ex);
       return MigrationImportSummaryDTO.builder()
@@ -248,6 +248,7 @@ public class PipelineMigrationService extends NgMigrationService {
                                                .id(pipeline.getUuid())
                                                .accountId(pipeline.getAccountId())
                                                .appId(pipeline.getAppId())
+                                               .name(pipeline.getName())
                                                .type(NGMigrationEntityType.PIPELINE)
                                                .build())
                               .build();

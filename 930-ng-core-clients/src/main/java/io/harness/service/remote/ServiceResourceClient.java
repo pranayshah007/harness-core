@@ -23,6 +23,7 @@ import retrofit2.Call;
 import retrofit2.http.Body;
 import retrofit2.http.GET;
 import retrofit2.http.POST;
+import retrofit2.http.Path;
 import retrofit2.http.Query;
 
 @OwnedBy(PIPELINE)
@@ -42,4 +43,9 @@ public interface ServiceResourceClient {
       @Query(NGCommonEntityConstants.ORG_KEY) String orgId,
       @Query(NGCommonEntityConstants.PROJECT_KEY) String projectId,
       @Body ArtifactSourceYamlRequestDTO artifactSourceYamlRequestDTO);
+
+  @GET(SERVICE_API + "/{serviceIdentifier}")
+  Call<ResponseDTO<ServiceResponse>> getService(@Path("serviceIdentifier") String serviceIdentifier,
+      @Query("accountIdentifier") String accountId, @Query("orgIdentifier") String orgIdentifier,
+      @Query("projectIdentifier") String projectIdentifier);
 }

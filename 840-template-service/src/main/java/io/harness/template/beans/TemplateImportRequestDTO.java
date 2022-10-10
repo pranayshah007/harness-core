@@ -32,7 +32,7 @@ import lombok.experimental.FieldDefaults;
 @Schema(name = "TemplateImportRequest",
     description = "Contains basic information required to be linked with imported Template YAML")
 public class TemplateImportRequestDTO {
-  @Schema(description = "Expected Identifier of the Template to be imported") String templateIdentifier;
+  @Schema(description = "Expected Name of the Template to be imported") String templateName;
   @Schema(description = "Expected Version of the Template to be imported") String templateVersion;
   @Schema(description = "Expected Description of the Template to be imported") String templateDescription;
 }

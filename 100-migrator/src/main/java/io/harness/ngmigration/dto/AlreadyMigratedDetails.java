@@ -9,11 +9,10 @@ package io.harness.ngmigration.dto;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.ngmigration.beans.NgEntityDetail;
 
-import software.wings.ngmigration.NGMigrationEntityType;
+import software.wings.ngmigration.CgBasicInfo;
 
-import java.util.List;
-import java.util.Map;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -24,8 +23,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class SaveSummaryDTO {
-  private Map<NGMigrationEntityType, EntityMigratedStats> stats;
-  private List<ImportError> errors;
-  private List<AlreadyMigratedDetails> alreadyMigratedDetails;
+public class AlreadyMigratedDetails {
+  private CgBasicInfo cgEntityDetail;
+  private NgEntityDetail ngEntityDetail;
 }
