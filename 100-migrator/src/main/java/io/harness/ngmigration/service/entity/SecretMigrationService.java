@@ -142,25 +142,26 @@ public class SecretMigrationService extends NgMigrationService {
     EncryptedData encryptedData = (EncryptedData) entities.get(entityId).getEntity();
     List<NGYamlFile> files = new ArrayList<>();
     String identifier = MigratorUtility.generateIdentifier(encryptedData.getName());
-    NGYamlFile yamlFile =
-        NGYamlFile.builder()
-            .type(NGMigrationEntityType.SECRET)
-            .filename("secret/" + encryptedData.getName() + ".yaml")
-            .yaml(SecretRequestWrapper.builder()
-                      .secret(secretFactory.getSecret(inputDTO, identifier, encryptedData, entities, migratedEntities))
-                      .build())
-            .ngEntityDetail(NgEntityDetail.builder()
-                                .identifier(identifier)
-                                .orgIdentifier(inputDTO.getOrgIdentifier())
-                                .projectIdentifier(inputDTO.getProjectIdentifier())
-                                .build())
-            .cgBasicInfo(CgBasicInfo.builder()
-                             .id(encryptedData.getUuid())
-                             .accountId(encryptedData.getAccountId())
-                             .appId(null)
-                             .type(NGMigrationEntityType.SECRET)
-                             .build())
-            .build();
+    SecretDTOV2 secretDTOV2 = secretFactory.getSecret(inputDTO, identifier, encryptedData, entities, migratedEntities);
+    if (secretDTOV2 == null) {
+      return files;
+    }
+    NGYamlFile yamlFile = NGYamlFile.builder()
+                              .type(NGMigrationEntityType.SECRET)
+                              .filename("secret/" + encryptedData.getName() + ".yaml")
+                              .yaml(SecretRequestWrapper.builder().secret(secretDTOV2).build())
+                              .ngEntityDetail(NgEntityDetail.builder()
+                                                  .identifier(identifier)
+                                                  .orgIdentifier(inputDTO.getOrgIdentifier())
+                                                  .projectIdentifier(inputDTO.getProjectIdentifier())
+                                                  .build())
+                              .cgBasicInfo(CgBasicInfo.builder()
+                                               .id(encryptedData.getUuid())
+                                               .accountId(encryptedData.getAccountId())
+                                               .appId(null)
+                                               .type(NGMigrationEntityType.SECRET)
+                                               .build())
+                              .build();
     files.add(yamlFile);
 
     // TODO: make it more obvious that migratedEntities needs to be updated by having compile-time check
