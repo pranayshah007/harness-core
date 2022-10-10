@@ -67,7 +67,9 @@ public enum FeatureName {
   DISABLE_LOGML_NEURAL_NET,
   DISABLE_METRIC_NAME_CURLY_BRACE_CHECK,
   DISABLE_SERVICEGUARD_LOG_ALERTS,
-  DISABLE_WINRM_COMMAND_ENCODING,
+  DISABLE_WINRM_COMMAND_ENCODING(
+      "To disable Base64 encoding done to WinRM command script which is sent to remote server for execution",
+      HarnessTeam.CDP),
   ENABLE_WINRM_ENV_VARIABLES,
   FF_PIPELINE,
   FF_GITSYNC,
