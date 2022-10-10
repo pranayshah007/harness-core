@@ -11,6 +11,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.execution.StagesExecutionMetadata;
+import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.plan.TriggerType;
@@ -65,6 +66,9 @@ public class ExecutionsApiUtils {
     summary.setRunNumber(executionSummaryEntity.getRunSequence());
     summary.setFailureMessage(executionSummaryEntity.getFailureInfo().getMessage());
     summary.setStageInfo(getStageInfo(executionSummaryEntity));
+    // code for Module Info population
+    summary.setConnectorRef(executionSummaryEntity.getConnectorRef());
+    summary.setStoreType(getStoreTypeEnum(executionSummaryEntity.getStoreType()));
     return summary;
   }
 
@@ -149,5 +153,12 @@ public class ExecutionsApiUtils {
       return count;
     }
     return count + getStagesCount(layoutNodeDTOMap, nodeDTO.getEdgeLayoutList().getNextIds().get(0));
+  }
+
+  public static ExecutionsDetailsSummary.StoreTypeEnum getStoreTypeEnum(StoreType storeType) {
+    if (storeType == null) {
+      return null;
+    }
+    return ExecutionsDetailsSummary.StoreTypeEnum.fromValue(storeType.name());
   }
 }
