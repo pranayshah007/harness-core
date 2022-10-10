@@ -12,7 +12,6 @@ import static io.harness.rule.OwnerRule.SANDESH;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.batch.processing.anomalydetection.helpers.TimeSeriesUtils;
 import io.harness.batch.processing.anomalydetection.models.StatsModel;
@@ -28,7 +27,7 @@ import org.mockito.runners.MockitoJUnitRunner;
 
 @RunWith(MockitoJUnitRunner.class)
 @OwnedBy(CE)
-public class TimeSeriesUtilTest extends CategoryTest {
+public class TimeSeriesUtilTest {
   StatsModel statsModel;
 
   @Before

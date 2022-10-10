@@ -19,7 +19,6 @@ java_library(
         "//890-sm-core:module",
         "//910-delegate-service-driver:module",
         "//920-delegate-service-beans:module",
-        "//925-delegate-service-contracts:module",
         "//930-delegate-tasks:module",
         "//930-ng-core-clients:module",
         "//950-delegate-tasks-beans:module",

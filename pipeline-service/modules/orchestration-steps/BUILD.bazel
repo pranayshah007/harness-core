@@ -16,7 +16,6 @@ java_library(
         "//:lombok",
         "//878-ng-common-utilities:module",
         "//880-pipeline-cd-commons:module",
-        "//925-delegate-service-contracts:module",
         "//950-telemetry:module",
         "//953-yaml-commons:module",
         "//955-delegate-beans:module",
