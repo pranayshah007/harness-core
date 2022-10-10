@@ -69,6 +69,7 @@ public class DelegateCoreClientFactory implements Provider<DelegateCoreClient> {
 
   @Override
   public DelegateCoreClient get() {
-    return createDelegateCoreClient(ServiceDiscovery.getDelegateServiceEndpoint("delegate-service"));
+    //return createDelegateCoreClient(ServiceDiscovery.getDelegateServiceEndpoint("delegate_service"));
+    return createDelegateCoreClient(new ServiceEndpoint("localhost", 3460));
   }
 }
