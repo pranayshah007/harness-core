@@ -227,6 +227,7 @@ public class ConnectorMigrationService extends NgMigrationService {
                              .accountId(settingAttribute.getAccountId())
                              .appId(null)
                              .id(settingAttribute.getUuid())
+                             .name(settingAttribute.getName())
                              .type(NGMigrationEntityType.CONNECTOR)
                              .build())
             .build();

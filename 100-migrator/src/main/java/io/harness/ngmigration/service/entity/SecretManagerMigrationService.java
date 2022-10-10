@@ -203,6 +203,7 @@ public class SecretManagerMigrationService extends NgMigrationService {
                              .accountId(secretManagerConfig.getAccountId())
                              .appId(null)
                              .id(secretManagerConfig.getUuid())
+                             .name(secretManagerConfig.getName())
                              .type(NGMigrationEntityType.SECRET_MANAGER)
                              .build())
             .build();

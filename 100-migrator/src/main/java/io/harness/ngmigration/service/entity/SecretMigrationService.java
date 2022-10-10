@@ -159,6 +159,7 @@ public class SecretMigrationService extends NgMigrationService {
                                                .id(encryptedData.getUuid())
                                                .accountId(encryptedData.getAccountId())
                                                .appId(null)
+                                               .name(encryptedData.getName())
                                                .type(NGMigrationEntityType.SECRET)
                                                .build())
                               .build();
