@@ -7,10 +7,7 @@
 
 package io.harness.perpetualtask.internal;
 
-import static io.harness.rule.OwnerRule.HITESH;
-import static io.harness.rule.OwnerRule.MATT;
-import static io.harness.rule.OwnerRule.VUK;
-
+import static io.harness.rule.OwnerRule.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.category.element.UnitTests;
@@ -30,6 +27,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
+
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
@@ -193,6 +192,29 @@ public class PerpetualTaskRecordDaoTest extends WingsBaseTest {
     assertThat(task).isNotNull();
     assertThat(task.getState()).isEqualTo(PerpetualTaskState.TASK_TO_REBALANCE);
     assertThat(task.getDelegateId()).isEqualTo("test-delegate-id1");
+    assertThat(task.getClientContext()).isEqualTo(clientContext);
+  }
+
+  @Test
+  @Owner(developers = VISHAL_BHATIA)
+  @Category(UnitTests.class)
+  public void testMarkBatchOfPerpetualTasksWithNoHeartBeatToRebalanceForAccount() {
+    long intervalValue = 600;
+    long multipleInterval = TimeUnit.SECONDS.toMillis(4 * intervalValue);
+    PerpetualTaskClientContext clientContext = getClientContext();
+    PerpetualTaskRecord perpetualTaskRecord = getPerpetualTaskRecord();
+    perpetualTaskRecord.setLastHeartbeat(System.currentTimeMillis()-multipleInterval);
+    perpetualTaskRecord.setState(PerpetualTaskState.TASK_ASSIGNED);
+    perpetualTaskRecord.setIntervalSeconds(intervalValue * 10);
+
+    String taskId = perpetualTaskRecordDao.save(perpetualTaskRecord);
+
+    perpetualTaskRecordDao.markBatchOfPerpetualTasksWithNoHeartBeatToRebalanceForAccount(ACCOUNT_ID);
+    PerpetualTaskRecord task = perpetualTaskRecordDao.getTask(taskId);
+
+    assertThat(task).isNotNull();
+    assertThat(task.getState()).isEqualTo(PerpetualTaskState.TASK_TO_REBALANCE);
+    assertThat(task.getLastHeartbeat()).isLessThanOrEqualTo(multipleInterval);
     assertThat(task.getClientContext()).isEqualTo(clientContext);
   }
 

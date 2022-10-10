@@ -220,8 +220,8 @@ public class PerpetualTaskRecordDao {
   }
 
   public void markBatchOfPerpetualTasksWithNoHeartBeatToRebalanceForAccount(String accountId) {
-    long intervalValue = Long.valueOf(PerpetualTaskRecordKeys.intervalSeconds);
-    long multipleInterval = (3 * intervalValue) / 1000;
+    long intervalValue = Long.parseLong(PerpetualTaskRecordKeys.intervalSeconds);
+    long multipleInterval = TimeUnit.SECONDS.toMillis(3 * intervalValue);
     Query<PerpetualTaskRecord> queryToUpdate = persistence.createQuery(PerpetualTaskRecord.class)
                                                    .filter(PerpetualTaskRecordKeys.accountId, accountId)
                                                    .filter(PerpetualTaskRecordKeys.state, TASK_ASSIGNED)
