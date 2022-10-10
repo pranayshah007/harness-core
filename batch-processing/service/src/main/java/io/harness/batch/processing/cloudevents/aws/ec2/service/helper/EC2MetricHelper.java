@@ -16,17 +16,15 @@ import com.amazonaws.services.cloudwatch.model.Statistic;
 import com.amazonaws.services.ecs.model.Cluster;
 import com.amazonaws.services.ecs.model.Service;
 import com.google.common.collect.Iterables;
+import io.harness.batch.processing.cloudevents.aws.ec2.service.response.Ec2UtilzationData;
+import io.harness.batch.processing.cloudevents.aws.ec2.service.response.MetricValue;
 import io.harness.batch.processing.cloudevents.aws.ecs.service.support.intfc.AwsCloudWatchHelperService;
 import io.harness.batch.processing.cloudevents.aws.ecs.service.tasklet.support.request.AwsCloudWatchMetricDataRequest;
-import io.harness.batch.processing.cloudevents.aws.ecs.service.tasklet.support.response.EcsUtilizationData;
-import io.harness.batch.processing.cloudevents.aws.ecs.service.tasklet.support.response.MetricValue;
-import io.harness.ccm.commons.entities.billing.CECluster;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import software.wings.beans.AwsCrossAccountAttributes;
 
-import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -74,10 +72,11 @@ public class EC2MetricHelper {
         return "id_" + md5Hex(("m_" + metricName + "s_" + stat + "i_" + instanceId).getBytes(UTF_8));
     }
 
-    public List<EcsUtilizationData> getUtilizationMetrics(AwsCrossAccountAttributes awsCrossAccountAttributes,
+    public List<Ec2UtilzationData> getUtilizationMetrics(AwsCrossAccountAttributes awsCrossAccountAttributes,
                                                           Date startTime, Date endTime, String instanceId, String region) {
         // Aggregate all the individual metric queries we need into a single query.
         List<MetricDataQuery> aggregatedQuery = new ArrayList<>();
+        log.info("entred in utilisation metric func!");
         for (Statistic stat : Arrays.asList(Average, Maximum)) {
             for (String metricName : Arrays.asList(CPU_UTILIZATION, MEMORY_UTILIZATION)) {
                 // instance level metrics
@@ -106,18 +105,19 @@ public class EC2MetricHelper {
                     .collect(Collectors.toMap(MetricDataResult::getId, Function.identity())));
         });
         log.info("metricDataResultMap = {}", metricDataResultMap.toString());
-        return null;
+        if (metricDataResultMap.containsKey("890436954479")) {
+            log.info("metricDataResultMap(890436954479) = {}", metricDataResultMap.get("890436954479").toString());
+        }
+        List<Ec2UtilzationData> utilizationMetrics = new ArrayList<>();
+        utilizationMetrics.add(extractMetricResult(metricDataResultMap, instanceId));
+        return utilizationMetrics;
     }
 
-    private EcsUtilizationData extractMetricResult(Map<String, MetricDataResult> metricDataResultMap, Cluster cluster,
-                                                   String instanceId) {
-        EcsUtilizationData.EcsUtilizationDataBuilder metrics = EcsUtilizationData.builder()
-                .clusterArn(cluster.getClusterArn())
-                .clusterName(cluster.getClusterName())
-                .clusterId(instanceId)
-                .settingId(instanceId);
+    private Ec2UtilzationData extractMetricResult(Map<String, MetricDataResult> metricDataResultMap, String instanceId) {
+        Ec2UtilzationData.Ec2UtilzationDataBuilder metrics = Ec2UtilzationData.builder()
+                .instanceId(instanceId);
 
-        List<MetricValue> metricValues = new ArrayList<>();
+        List<io.harness.batch.processing.cloudevents.aws.ec2.service.response.MetricValue> metricValues = new ArrayList<>();
         for (Statistic stat : Arrays.asList(Average, Maximum)) {
             for (String metricName : Arrays.asList(CPU_UTILIZATION, MEMORY_UTILIZATION)) {
                 MetricDataResult mdr = metricDataResultMap.get(generateId(metricName, stat.toString(), instanceId));

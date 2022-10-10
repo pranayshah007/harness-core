@@ -1,11 +1,17 @@
 package io.harness.batch.processing.cloudevents.aws.ec2.service.tasklet;
 
 import com.google.inject.Singleton;
+import io.harness.batch.processing.billing.timeseries.data.InstanceUtilizationData;
+import io.harness.batch.processing.billing.timeseries.service.impl.UtilizationDataServiceImpl;
 import io.harness.batch.processing.ccm.CCMJobConstants;
 import io.harness.batch.processing.cloudevents.aws.ec2.service.helper.EC2MetricHelper;
+import io.harness.batch.processing.cloudevents.aws.ec2.service.response.Ec2UtilzationData;
+import io.harness.batch.processing.cloudevents.aws.ec2.service.response.MetricValue;
 import io.harness.batch.processing.cloudevents.aws.ecs.service.tasklet.support.ng.NGConnectorHelper;
+import io.harness.batch.processing.cloudevents.aws.ecs.service.tasklet.support.response.EcsUtilizationData;
 import io.harness.ccm.commons.beans.JobConstants;
 import io.harness.ccm.commons.entities.billing.CECloudAccount;
+import io.harness.ccm.commons.entities.billing.CECluster;
 import io.harness.ccm.setup.CECloudAccountDao;
 import io.harness.connector.ConnectivityStatus;
 import io.harness.connector.ConnectorInfoDTO;
@@ -13,6 +19,7 @@ import io.harness.connector.ConnectorResponseDTO;
 import io.harness.delegate.beans.connector.CEFeatures;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.ceawsconnector.CEAwsConnectorDTO;
+import io.harness.exception.InvalidRequestException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.StepContribution;
 import org.springframework.batch.core.scope.context.ChunkContext;
@@ -25,12 +32,17 @@ import software.wings.beans.SettingAttribute;
 import software.wings.beans.ce.CEAwsConfig;
 import software.wings.service.intfc.instance.CloudToHarnessMappingService;
 
+import java.time.Duration;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static io.harness.batch.processing.ccm.UtilizationInstanceType.*;
 import static software.wings.beans.SettingAttribute.SettingCategory.CE_CONNECTOR;
 import static software.wings.settings.SettingVariableTypes.CE_AWS;
 
@@ -41,6 +53,7 @@ public class AWSEC2RecommendationTasklet  implements Tasklet {
     @Autowired private CloudToHarnessMappingService cloudToHarnessMappingService;
     @Autowired private CECloudAccountDao ceCloudAccountDao;
     @Autowired private NGConnectorHelper ngConnectorHelper;
+    @Autowired private UtilizationDataServiceImpl utilizationDataService;
 
     @Override
     public RepeatStatus execute(StepContribution stepContribution, ChunkContext chunkContext) throws Exception {
@@ -54,19 +67,105 @@ public class AWSEC2RecommendationTasklet  implements Tasklet {
         Map<String, AwsCrossAccountAttributes> infraAccCrossArnMap = getCrossAccountAttributes(accountId);
         log.info("infraAccCrossArnMap.size = {}", infraAccCrossArnMap.size());
 
-        for (Map.Entry<String, AwsCrossAccountAttributes> entry : infraAccCrossArnMap.entrySet()) {
-            log.info("Key = {} Value = {}", entry.getKey(), entry.getValue());
+        if (!infraAccCrossArnMap.isEmpty()) {
+            for (Map.Entry<String, AwsCrossAccountAttributes> entry : infraAccCrossArnMap.entrySet()) {
+                log.info("Key = {} Value = {}", entry.getKey(), entry.getValue());
+                Instant now = Instant.now().truncatedTo(ChronoUnit.HOURS);
+                if (entry.getKey().equals("890436954479")) {
+                    log.info("found the harness-ce account");
+                    List<Ec2UtilzationData> utilzationData =
+                            ec2MetricHelper.getUtilizationMetrics(entry.getValue(), Date.from(now.minus(2, ChronoUnit.HOURS)),
+                            Date.from(now.minus(1, ChronoUnit.HOURS)), "i-0fbd100c13bf0f7b4", "us-east-1");
+                    updateUtilData(accountId, utilzationData);
+                }
+            }
         }
-
-//        AwsCrossAccountAttributes awsCrossArn = infraAccCrossArnMap.get();
 
         return null;
     }
 
-//    private syncEC2UtilizationData(String instanceId, String accountId) {
-//
-//        ec2MetricHelper.getUtilizationMetrics(instanceId);
-//    }
+    private void updateUtilData(String accountId, List<Ec2UtilzationData> utilizationMetricsList) {
+        List<InstanceUtilizationData> instanceUtilizationDataList = new ArrayList<>();
+        utilizationMetricsList.forEach(utilizationMetrics -> {
+            String instanceId;
+            String instanceType;
+            instanceId = utilizationMetrics.getInstanceId();
+            instanceType = EC2_INSTANCE;
+
+            // Initialising List of Metrics to handle Utilization Metrics Downtime (Ideally this will be of size 1)
+            // We do not need a Default value as such a scenario will never exist, if there is no data. It will not be
+            // inserted to DB.
+            List<Double> cpuUtilizationAvgList = new ArrayList<>();
+            List<Double> cpuUtilizationMaxList = new ArrayList<>();
+            List<Double> memoryUtilizationAvgList = new ArrayList<>();
+            List<Double> memoryUtilizationMaxList = new ArrayList<>();
+            List<Date> startTimestampList = new ArrayList<>();
+            int metricsListSize = 0;
+
+            for (MetricValue utilizationMetric : utilizationMetrics.getMetricValues()) {
+                // Assumption that size of all the metrics and timestamps will be same across the 4 metrics
+                startTimestampList = utilizationMetric.getTimestamps();
+                List<Double> metricsList = utilizationMetric.getValues();
+                metricsListSize = metricsList.size();
+
+                switch (utilizationMetric.getStatistic()) {
+                    case "Maximum":
+                        switch (utilizationMetric.getMetricName()) {
+                            case "MemoryUtilization":
+                                memoryUtilizationMaxList = metricsList;
+                                break;
+                            case "CPUUtilization":
+                                cpuUtilizationMaxList = metricsList;
+                                break;
+                            default:
+                                throw new InvalidRequestException("Invalid Utilization metric name");
+                        }
+                        break;
+                    case "Average":
+                        switch (utilizationMetric.getMetricName()) {
+                            case "MemoryUtilization":
+                                memoryUtilizationAvgList = metricsList;
+                                break;
+                            case "CPUUtilization":
+                                cpuUtilizationAvgList = metricsList;
+                                break;
+                            default:
+                                throw new InvalidRequestException("Invalid Utilization metric name");
+                        }
+                        break;
+                    default:
+                        throw new InvalidRequestException("Invalid Utilization metric Statistic");
+                }
+            }
+
+            // POJO and insertion to DB
+            for (int metricIndex = 0; metricIndex < metricsListSize; metricIndex++) {
+                long startTime = startTimestampList.get(metricIndex).toInstant().toEpochMilli();
+                long oneHourMillis = Duration.ofHours(1).toMillis();
+
+                InstanceUtilizationData utilizationData =
+                        InstanceUtilizationData.builder()
+                                .accountId(accountId)
+                                .instanceId(instanceId)
+                                .instanceType(instanceType)
+                                .cpuUtilizationMax(getScaledUtilValue(cpuUtilizationMaxList.get(metricIndex)))
+                                .cpuUtilizationAvg(getScaledUtilValue(cpuUtilizationAvgList.get(metricIndex)))
+                                .memoryUtilizationMax(getScaledUtilValue(memoryUtilizationMaxList.get(metricIndex)))
+                                .memoryUtilizationAvg(getScaledUtilValue(memoryUtilizationAvgList.get(metricIndex)))
+                                .startTimestamp(startTime)
+                                .endTimestamp(startTime + oneHourMillis)
+                                .build();
+
+                instanceUtilizationDataList.add(utilizationData);
+            }
+        });
+
+        utilizationDataService.create(instanceUtilizationDataList);
+    }
+
+    private double getScaledUtilValue(double value) {
+        return value / 100;
+    }
 
     private Map<String, AwsCrossAccountAttributes> getCrossAccountAttributes(String accountId) {
         List<SettingAttribute> ceConnectorsList =
