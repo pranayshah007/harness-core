@@ -17,6 +17,8 @@ import io.harness.cdng.artifact.resources.artifactory.service.ArtifactoryResourc
 import io.harness.cdng.artifact.resources.artifactory.service.ArtifactoryResourceServiceImpl;
 import io.harness.cdng.artifact.resources.azureartifacts.AzureArtifactsResourceService;
 import io.harness.cdng.artifact.resources.azureartifacts.AzureArtifactsResourceServiceImpl;
+import io.harness.cdng.artifact.resources.custom.CustomResourceService;
+import io.harness.cdng.artifact.resources.custom.CustomResourceServiceImpl;
 import io.harness.cdng.artifact.resources.docker.service.DockerResourceService;
 import io.harness.cdng.artifact.resources.docker.service.DockerResourceServiceImpl;
 import io.harness.cdng.artifact.resources.ecr.service.EcrResourceService;
@@ -133,6 +135,7 @@ public class NGModule extends AbstractModule {
     bind(ClusterService.class).to(ClusterServiceImpl.class);
     bind(InfrastructureEntityService.class).to(InfrastructureEntityServiceImpl.class);
     bind(ServiceOverrideService.class).to(ServiceOverrideServiceImpl.class);
+    bind(CustomResourceService.class).to(CustomResourceServiceImpl.class);
     bind(ScheduledExecutorService.class)
         .annotatedWith(Names.named("CdTelemetryPublisherExecutor"))
         .toInstance(new ScheduledThreadPoolExecutor(1,
