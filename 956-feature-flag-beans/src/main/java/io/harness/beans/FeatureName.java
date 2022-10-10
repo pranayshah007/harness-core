@@ -325,7 +325,6 @@ public enum FeatureName {
   CVNG_SPLUNK_METRICS,
   AUTO_FREE_MODULE_LICENSE,
   SRM_LICENSE_ENABLED,
-  AZURE_WEBAPP_NG,
   ACCOUNT_BASIC_ROLE_ONLY,
   SEARCH_USERGROUP_BY_APPLICATION("Search in usergroup by application in CG", HarnessTeam.SPG),
   GITOPS_BYO_ARGO,
@@ -423,8 +422,6 @@ public enum FeatureName {
       "merge context elements workflow variables while resuming pipeline from a stage", HarnessTeam.SPG),
   USE_TEXT_SEARCH_FOR_EXECUTION(
       "With this instead of using regex search we will use text search for CD page in CG", HarnessTeam.SPG),
-  AZURE_WEBAPP_NG_S3_ARTIFACTS(
-      "UI FF to enable AWS S3 as an artifact source option for Azure Web App NG", HarnessTeam.CDP),
   DEL_EVALUATE_SECRET_EXPRESSION_SYNC(
       "FF to disable asynchronous evaluation of secrets. With FF set to true and pipeline has more than one secret, they will get evaluate one after other",
       HarnessTeam.DEL),
