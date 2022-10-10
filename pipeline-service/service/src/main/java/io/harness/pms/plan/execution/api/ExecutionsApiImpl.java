@@ -19,6 +19,8 @@ import io.harness.pms.plan.execution.service.PMSExecutionService;
 import io.harness.pms.rbac.PipelineRbacPermissions;
 import io.harness.spec.server.pipeline.ExecutionsApi;
 import io.harness.spec.server.pipeline.model.ExecutionsDetailsSummary;
+import io.harness.spec.server.pipeline.model.ExecutionsDetailsSummaryWithGraph;
+import io.harness.spec.server.pipeline.model.Graph;
 import io.harness.spec.server.pipeline.model.InterruptRequestBody;
 import io.harness.spec.server.pipeline.model.PipelineExecuteRequestBody;
 import io.harness.spec.server.pipeline.model.PipelineExecuteResponseBody;
@@ -87,7 +89,23 @@ public class ExecutionsApiImpl implements ExecutionsApi {
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_VIEW)
   public Response getExecutionDetailsGraph(
       String org, String project, String execution, String account, String stageNode, Boolean fullGraph) {
-    return null;
+    PipelineExecutionSummaryEntity executionSummaryEntity =
+        pmsExecutionService.getPipelineExecutionSummaryEntity(account, org, project, execution, false);
+    EntityGitDetails entityGitDetails;
+    if (executionSummaryEntity.getEntityGitDetails() == null) {
+      entityGitDetails =
+          pmsGitSyncHelper.getEntityGitDetailsFromBytes(executionSummaryEntity.getGitSyncBranchContext());
+    } else {
+      entityGitDetails = executionSummaryEntity.getEntityGitDetails();
+    }
+    ExecutionsDetailsSummary summary =
+        ExecutionsApiUtils.getExecutionDetailsSummary(executionSummaryEntity, entityGitDetails);
+    Graph graph =
+        ExecutionsApiUtils.getGraph(pmsExecutionService.getOrchestrationGraph(stageNode, execution, null), fullGraph);
+    ExecutionsDetailsSummaryWithGraph summaryWithGraph = new ExecutionsDetailsSummaryWithGraph();
+    summaryWithGraph.setSummary(summary);
+    summaryWithGraph.setGraph(graph);
+    return Response.ok().entity(summaryWithGraph).build();
   }
 
   @Override

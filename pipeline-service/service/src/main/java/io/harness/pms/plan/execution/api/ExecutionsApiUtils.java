@@ -10,6 +10,7 @@ package io.harness.pms.plan.execution.api;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.dto.OrchestrationGraphDTO;
 import io.harness.execution.StagesExecutionMetadata;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.sdk.EntityGitDetails;
@@ -24,6 +25,7 @@ import io.harness.pms.stages.BasicStageInfo;
 import io.harness.pms.stages.StageExecutionSelectorHelper;
 import io.harness.spec.server.pipeline.model.ExecutionsDetailsSummary;
 import io.harness.spec.server.pipeline.model.ExecutionsDetailsSummary.TriggerTypeEnum;
+import io.harness.spec.server.pipeline.model.Graph;
 import io.harness.spec.server.pipeline.model.PipelineExecuteResponseBody;
 import io.harness.spec.server.pipeline.model.StageInfo;
 
@@ -160,5 +162,9 @@ public class ExecutionsApiUtils {
       return null;
     }
     return ExecutionsDetailsSummary.StoreTypeEnum.fromValue(storeType.name());
+  }
+
+  public static Graph getGraph(OrchestrationGraphDTO orchestrationGraph, boolean fullGraph) {
+    return null;
   }
 }
