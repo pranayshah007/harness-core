@@ -40,6 +40,7 @@ public class KryoSerializerWrapper {
     try {
       return referenceFalseKryoSerializer.asString(obj);
     } catch (KryoException kryoException) {
+      log.info("Using kryo serializer on 'asString' method with setReference of true");
       return referenceTrueKryoSerializer.asString(obj);
     }
   }
@@ -48,6 +49,7 @@ public class KryoSerializerWrapper {
     try {
       return referenceFalseKryoSerializer.asBytes(obj);
     } catch (KryoException kryoException) {
+      log.info("Using kryo serializer on 'asBytes' method with setReference of true");
       return referenceTrueKryoSerializer.asBytes(obj);
     }
   }
@@ -56,6 +58,7 @@ public class KryoSerializerWrapper {
     try {
       return referenceFalseKryoSerializer.asDeflatedBytes(obj);
     } catch (KryoException kryoException) {
+      log.info("Using kryo serializer on 'asDeflatedBytes' method with setReference of true");
       return referenceTrueKryoSerializer.asDeflatedBytes(obj);
     }
   }
@@ -64,6 +67,7 @@ public class KryoSerializerWrapper {
     try {
       referenceFalseKryoSerializer.writeToStream(obj, outputStream);
     } catch (KryoException kryoException) {
+      log.info("Using kryo serializer on 'writeToStream' method with setReference of true");
       referenceTrueKryoSerializer.writeToStream(obj, outputStream);
     }
   }
@@ -72,6 +76,7 @@ public class KryoSerializerWrapper {
     try {
       return referenceFalseKryoSerializer.clone(obj);
     } catch (KryoException kryoException) {
+      log.info("Using kryo serializer on 'clone' method with setReference of true");
       return referenceTrueKryoSerializer.clone(obj);
     }
   }
@@ -80,6 +85,7 @@ public class KryoSerializerWrapper {
     try {
       return referenceFalseKryoSerializer.asObject(bytes);
     } catch (KryoException kryoException) {
+      log.info("Using kryo serializer on 'asObject' method for 'byte[]' with setReference of true");
       return referenceTrueKryoSerializer.asObject(bytes);
     }
   }
@@ -88,6 +94,7 @@ public class KryoSerializerWrapper {
     try {
       return referenceFalseKryoSerializer.asInflatedObject(bytes);
     } catch (KryoException kryoException) {
+      log.info("Using kryo serializer on 'asInflatedObject' method with setReference of true");
       return referenceTrueKryoSerializer.asInflatedObject(bytes);
     }
   }
@@ -96,6 +103,7 @@ public class KryoSerializerWrapper {
     try {
       return referenceFalseKryoSerializer.asObject(base64);
     } catch (KryoException kryoException) {
+      log.info("Using kryo serializer on 'asObject' method for 'String' with setReference of true");
       return referenceTrueKryoSerializer.asObject(base64);
     }
   }
@@ -104,6 +112,7 @@ public class KryoSerializerWrapper {
     try {
       return referenceFalseKryoSerializer.isRegistered(cls);
     } catch (KryoException kryoException) {
+      log.info("Using kryo serializer on 'isRegistered' method with setReference of true");
       return referenceTrueKryoSerializer.isRegistered(cls);
     }
   }
