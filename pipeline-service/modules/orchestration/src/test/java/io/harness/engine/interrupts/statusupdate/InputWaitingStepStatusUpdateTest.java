@@ -61,7 +61,7 @@ public class InputWaitingStepStatusUpdateTest extends CategoryTest {
 
     inputWaitingStepStatusUpdate.handleNodeStatusUpdate(nodeUpdateInfo);
 
-    verify(planExecutionService, times(1)).updateCalculatedStatus(planExecutionId);
+    verify(planExecutionService, times(1)).updateStatus(planExecutionId, INPUT_WAITING);
 
     nodeUpdateInfo = NodeUpdateInfo.builder()
                          .nodeExecution(NodeExecution.builder()

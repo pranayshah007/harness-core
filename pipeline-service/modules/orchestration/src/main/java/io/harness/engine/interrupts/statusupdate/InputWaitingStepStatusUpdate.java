@@ -32,7 +32,7 @@ public class InputWaitingStepStatusUpdate implements NodeStatusUpdateHandler {
   public void handleNodeStatusUpdate(NodeUpdateInfo nodeStatusUpdateInfo) {
     NodeExecution nodeExecution = nodeStatusUpdateInfo.getNodeExecution();
     if (nodeExecution.getParentId() == null) {
-      planExecutionService.updateCalculatedStatus(nodeStatusUpdateInfo.getPlanExecutionId());
+      planExecutionService.updateStatus(nodeStatusUpdateInfo.getPlanExecutionId(), INPUT_WAITING);
       return;
     }
     // flowingChildren will always be empty currently. Will see later.
@@ -42,6 +42,6 @@ public class InputWaitingStepStatusUpdate implements NodeStatusUpdateHandler {
       nodeExecutionService.updateStatusWithOps(
           nodeExecution.getParentId(), INPUT_WAITING, null, EnumSet.noneOf(Status.class));
     }
-    planExecutionService.updateCalculatedStatus(nodeStatusUpdateInfo.getPlanExecutionId());
+    planExecutionService.updateStatus(nodeStatusUpdateInfo.getPlanExecutionId(), INPUT_WAITING);
   }
 }
