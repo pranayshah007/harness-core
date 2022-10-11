@@ -12,6 +12,7 @@ import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.security.annotations.InternalApi;
+import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.security.annotations.PublicApi;
 
 import com.codahale.metrics.annotation.ExceptionMetered;
@@ -59,13 +60,14 @@ import javax.ws.rs.core.MediaType;
       , @ApiResponse(code = 500, response = ErrorDTO.class, message = "Internal server error")
     })
 
-@PublicApi
+@NextGenManagerAuth
 public class policyManagement {
   private final PolicyStoreService policyStoreService;
-
+  private final CCMRbacHelper rbacHelper;
   @Inject
   public policyManagement(PolicyStoreService policyStoreService, CCMRbacHelper rbacHelper) {
     this.policyStoreService = policyStoreService;
+    this.rbacHelper = rbacHelper;
   }
 
   // Internal API for OOTB policy creation
@@ -87,6 +89,7 @@ public class policyManagement {
              NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @RequestBody(required = true,
           description = "Request body containing Policy store object") @Valid CreatePolicyDTO createPolicyDTO) {
+    rbacHelper.checkPolicyEditPermission(accountId, null, null);
     PolicyStore policyStore = createPolicyDTO.getPolicyStore();
     policyStore.setAccountId(accountId);
     policyStoreService.save(policyStore);
@@ -113,6 +116,7 @@ public class policyManagement {
                    NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @RequestBody(required = true,
           description = "Request body containing ceViewFolder object") @Valid CreatePolicyDTO createPolicyDTO) {
+    rbacHelper.checkPolicyEditPermission(accountId, null, null);
     PolicyStore policyStore = createPolicyDTO.getPolicyStore();
     policyStore.setAccountId(accountId);
     policyStoreService.update(policyStore);
@@ -142,6 +146,7 @@ public class policyManagement {
              NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @PathParam("policyId") @Parameter(
           required = true, description = "Unique identifier for the policy") @NotNull @Valid String uuid) {
+   rbacHelper.checkPolicyDeletePermission(accountId, null, null);
     boolean result = policyStoreService.delete(accountId, uuid);
     return ResponseDTO.newResponse(result);
   }
@@ -163,6 +168,7 @@ public class policyManagement {
                  NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @RequestBody(
           required = true, description = "Request body containing ceViewFolder object") @Valid ListDTO listDTO) {
+ rbacHelper.checkPolicyViewPermission(accountId, null, null);
     QueryFeild query = listDTO.getQueryFeild();
     List<PolicyStore> Policies = new ArrayList<>();
     query.setAccountId(accountId);

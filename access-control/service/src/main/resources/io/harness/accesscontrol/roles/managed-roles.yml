@@ -558,6 +558,9 @@ roles:
         - core_deploymentfreeze_manage
         - core_deploymentfreeze_override
         - core_deploymentfreeze_global
+        - ccm_policy_delete
+        - ccm_policy_view
+        - ccm_policy_delete
       allowedScopeLevels:
         - account
       managed: true
@@ -772,6 +775,9 @@ roles:
         - ccm_loadBalancer_edit
         - ccm_loadBalancer_delete
         - ccm_overview_view
+        - ccm_policy_delete
+        - ccm_policy_view
+        - ccm_policy_delete
       managed: true
       allowedScopeLevels:
         - account
