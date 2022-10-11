@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.app;
+package io.harness.sto;
 
 import static io.harness.rule.OwnerRule.SERGEY;
 
@@ -13,6 +13,8 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import io.harness.app.STOManagerApplication;
+import io.harness.app.STOManagerConfiguration;
 import io.harness.category.element.UnitTests;
 import io.harness.rule.Owner;
 
