@@ -11,6 +11,7 @@ import io.harness.ccm.utils.LogAccountIdentifier;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.security.annotations.InternalApi;
 import io.harness.security.annotations.PublicApi;
 
 import com.codahale.metrics.annotation.ExceptionMetered;
@@ -20,6 +21,7 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
+import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -69,8 +71,8 @@ public class policyManagement {
   // Internal API for OOTB policy creation
 
   @POST
-  //    @Hidden
-  //    @InternalApi
+  @Hidden
+  @InternalApi
   @Path("add")
   @Consumes(MediaType.APPLICATION_JSON)
   @ApiOperation(value = "Add a new policy internal api", nickname = "addPolicyNameInternal")
@@ -94,8 +96,8 @@ public class policyManagement {
   // Update a policy already made
 
   @PUT
-  //    @Hidden
-  //    @InternalApi
+  @Hidden
+  @InternalApi
   @Path("update")
   @Consumes(MediaType.APPLICATION_JSON)
   @ApiOperation(value = "Update a existing OOTB Policy", nickname = "updatePolicy")
@@ -120,8 +122,8 @@ public class policyManagement {
   // Internal API for deletion of OOTB policies
 
   @DELETE
-  //    @Hidden
-  //    @InternalApi
+  @Hidden
+  @InternalApi
   @Path("{policyId}")
   @Timed
   @ExceptionMetered
