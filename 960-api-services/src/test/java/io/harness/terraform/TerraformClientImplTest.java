@@ -144,7 +144,7 @@ public class TerraformClientImplTest extends CategoryTest {
   }
 
   @Test
-  @Owner(developers = TATHAGAT)
+  @Owner(developers = TARUN_UBA)
   @Category(UnitTests.class)
   public void testPlanCommandWithDestroy() throws InterruptedException, IOException, TimeoutException {
     CliResponse cliResponse = getCliResponse();
