@@ -88,7 +88,7 @@ public class HostSamplingStateExecutorTest extends CategoryTest {
             .startTime(Instant.now().plus(Duration.ofMinutes(2)))
             .resolvedJob(builderFactory.canaryVerificationJobBuilder().build())
             .build();
-    hostSamplingState.setVerificationJobInstance(verificationJobInstance);
+    hostSamplingState.setVerificationJobInstanceId(verificationJobInstance.getUuid());
 
     Optional<TimeRange> preDeploymentTimeRange = verificationJobInstance.getResolvedJob().getPreActivityTimeRange(
         verificationJobInstance.getDeploymentStartTime());
@@ -115,7 +115,7 @@ public class HostSamplingStateExecutorTest extends CategoryTest {
             .startTime(Instant.now().plus(Duration.ofMinutes(2)))
             .resolvedJob(builderFactory.canaryVerificationJobBuilder().build())
             .build();
-    hostSamplingState.setVerificationJobInstance(verificationJobInstance);
+    hostSamplingState.setVerificationJobInstanceId(verificationJobInstance.getUuid());
     String taskId = generateUuid();
     hostSamplingState.setStatus(AnalysisStatus.RUNNING);
     hostSamplingState.setTestHosts(new HashSet<>());
@@ -136,7 +136,7 @@ public class HostSamplingStateExecutorTest extends CategoryTest {
             .startTime(Instant.now().plus(Duration.ofMinutes(2)))
             .resolvedJob(builderFactory.canaryVerificationJobBuilder().build())
             .build();
-    hostSamplingState.setVerificationJobInstance(verificationJobInstance);
+    hostSamplingState.setVerificationJobInstanceId(verificationJobInstance.getUuid());
     String taskId = generateUuid();
     hostSamplingState.setStatus(AnalysisStatus.RUNNING);
     hostSamplingState.setTestHosts(new HashSet<>(Collections.singleton("abc")));
@@ -157,7 +157,7 @@ public class HostSamplingStateExecutorTest extends CategoryTest {
             .startTime(Instant.now().plus(Duration.ofMinutes(2)))
             .resolvedJob(builderFactory.canaryVerificationJobBuilder().build())
             .build();
-    hostSamplingState.setVerificationJobInstance(verificationJobInstance);
+    hostSamplingState.setVerificationJobInstanceId(verificationJobInstance.getUuid());
     hostSamplingState.setRetryCount(2);
     hostSamplingState.setStatus(AnalysisStatus.FAILED);
     hostSamplingState = (HostSamplingState) hostSamplingStateExecutor.handleRerun(hostSamplingState);
@@ -191,7 +191,7 @@ public class HostSamplingStateExecutorTest extends CategoryTest {
             .startTime(Instant.now().plus(Duration.ofMinutes(2)))
             .resolvedJob(builderFactory.canaryVerificationJobBuilder().build())
             .build();
-    hostSamplingState.setVerificationJobInstance(verificationJobInstance);
+    hostSamplingState.setVerificationJobInstanceId(verificationJobInstance.getUuid());
     hostSamplingState.setRetryCount(1);
     hostSamplingState = (HostSamplingState) hostSamplingStateExecutor.handleRetry(hostSamplingState);
 

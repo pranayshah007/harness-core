@@ -23,13 +23,13 @@ import io.harness.cvng.analysis.beans.ServiceGuardTimeSeriesAnalysisDTO;
 import io.harness.cvng.analysis.beans.ServiceGuardTxnMetricAnalysisDataDTO.MetricSumDTO;
 import io.harness.cvng.analysis.beans.TimeSeriesAnomaliesDTO;
 import io.harness.cvng.analysis.beans.TimeSeriesRecordDTO;
-import io.harness.cvng.analysis.entities.CanaryMetricLearningEngineTask;
 import io.harness.cvng.analysis.entities.DeploymentTimeSeriesAnalysis;
 import io.harness.cvng.analysis.entities.LearningEngineTask;
 import io.harness.cvng.analysis.entities.LearningEngineTask.ExecutionStatus;
 import io.harness.cvng.analysis.entities.LearningEngineTask.LearningEngineTaskType;
 import io.harness.cvng.analysis.entities.TimeSeriesCanaryLearningEngineTask;
 import io.harness.cvng.analysis.entities.TimeSeriesCanaryLearningEngineTask.DeploymentVerificationTaskInfo;
+import io.harness.cvng.analysis.entities.TimeSeriesCanaryLearningEngineTask_v2;
 import io.harness.cvng.analysis.entities.TimeSeriesCumulativeSums;
 import io.harness.cvng.analysis.entities.TimeSeriesCumulativeSums.TimeSeriesCumulativeSumsKeys;
 import io.harness.cvng.analysis.entities.TimeSeriesLearningEngineTask;
@@ -75,6 +75,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -116,7 +117,7 @@ public class TimeSeriesAnalysisServiceImpl implements TimeSeriesAnalysisService 
 
   @Override
   public List<String> scheduleCanaryAnalysis(AnalysisInput analysisInput) {
-    CanaryMetricLearningEngineTask timeSeriesTask = createCanaryMetricLearningEngineTask(analysisInput);
+    TimeSeriesCanaryLearningEngineTask_v2 timeSeriesTask = createCanaryMetricLearningEngineTask(analysisInput);
     learningEngineTaskService.createLearningEngineTasks(Arrays.asList(timeSeriesTask));
     // TODO: find a good way to return all taskIDs
     return Arrays.asList(timeSeriesTask.getUuid());
@@ -220,15 +221,15 @@ public class TimeSeriesAnalysisServiceImpl implements TimeSeriesAnalysisService 
     return timeSeriesLearningEngineTask;
   }
 
-  private CanaryMetricLearningEngineTask createCanaryMetricLearningEngineTask(AnalysisInput input) {
+  private TimeSeriesCanaryLearningEngineTask_v2 createCanaryMetricLearningEngineTask(AnalysisInput input) {
     String taskId = generateUuid();
     VerificationJobInstance verificationJobInstance = verificationJobInstanceService.getVerificationJobInstance(
         verificationTaskService.getVerificationJobInstanceId(input.getVerificationTaskId()));
     CanaryBlueGreenVerificationJob verificationJob =
         (CanaryBlueGreenVerificationJob) verificationJobInstance.getResolvedJob();
     Preconditions.checkNotNull(verificationJobInstance, "verificationJobInstance can not be null");
-    CanaryMetricLearningEngineTask timeSeriesLearningEngineTask =
-        CanaryMetricLearningEngineTask.builder()
+    TimeSeriesCanaryLearningEngineTask_v2 timeSeriesLearningEngineTask =
+        TimeSeriesCanaryLearningEngineTask_v2.builder()
             .preDeploymentDataUrl(preDeploymentDataUrlCanary(input, verificationJobInstance, verificationJob))
             .postDeploymentDataUrl(postDeploymentDataUrlCanary(input, verificationJobInstance))
             .dataLength(
@@ -593,10 +594,12 @@ public class TimeSeriesAnalysisServiceImpl implements TimeSeriesAnalysisService 
   }
 
   @Override
-  public List<TimeSeriesRecordDTO> getMetricTimeSeriesRecordDTOs(
-      String verificationTaskId, Instant startTime, Instant endTime, Set<String> controlHosts, Set<String> testHosts) {
+  public List<TimeSeriesRecordDTO> getMetricTimeSeriesRecordDTOs(String verificationTaskId, Instant startTime,
+      Instant endTime, List<String> controlHosts, List<String> testHosts) {
+    Set<String> controlHostsSet = new HashSet<>(controlHosts);
+    Set<String> testHostSet = new HashSet<>(testHosts);
     List<TimeSeriesRecordDTO> timeSeriesRecordDTOS = timeSeriesRecordService.getMetricTimeSeriesRecordDTOs(
-        verificationTaskId, startTime, endTime, controlHosts, testHosts);
+        verificationTaskId, startTime, endTime, controlHostsSet, testHostSet);
     // in LE we pass metric identifier as the metric_name, as metric_name is the identifier for LE.
     timeSeriesRecordDTOS.forEach(
         timeSeriesRecordDTO -> timeSeriesRecordDTO.setMetricName(timeSeriesRecordDTO.getMetricIdentifier()));

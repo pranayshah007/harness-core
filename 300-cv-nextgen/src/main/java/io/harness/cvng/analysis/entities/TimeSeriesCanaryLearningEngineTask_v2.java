@@ -13,7 +13,7 @@ import lombok.Value;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-public class CanaryMetricLearningEngineTask extends LearningEngineTask {
+public class TimeSeriesCanaryLearningEngineTask_v2 extends LearningEngineTask {
   private String preDeploymentDataUrl;
   private String postDeploymentDataUrl;
   private String metricTemplateUrl;

@@ -55,7 +55,7 @@ public class TimeSeriesAnalysisResource {
   public RestResponse<List<TimeSeriesRecordDTO>>
   getTimeSeriesRecords(@QueryParam("verificationTaskId") @NotNull String verificationTaskId,
       @QueryParam("startTime") @NotNull Long startTime, @QueryParam("endTime") @NotNull Long endTime,
-      @QueryParam("controlHosts") Set<String> controlHosts, @QueryParam("testHosts") Set<String> testHosts) {
+      @QueryParam("controlHosts") List<String> controlHosts, @QueryParam("testHosts") List<String> testHosts) {
     return new RestResponse<>(timeSeriesAnalysisService.getMetricTimeSeriesRecordDTOs(
         verificationTaskId, Instant.ofEpochMilli(startTime), Instant.ofEpochMilli(endTime), controlHosts, testHosts));
   }
