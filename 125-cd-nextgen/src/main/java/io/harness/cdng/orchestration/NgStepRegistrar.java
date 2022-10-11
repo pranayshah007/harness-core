@@ -35,6 +35,7 @@ import io.harness.cdng.ecs.EcsCanaryDeleteStep;
 import io.harness.cdng.ecs.EcsCanaryDeployStep;
 import io.harness.cdng.ecs.EcsRollingDeployStep;
 import io.harness.cdng.ecs.EcsRollingRollbackStep;
+import io.harness.cdng.ecs.EcsRunTaskStep;
 import io.harness.cdng.gitops.CreatePRStep;
 import io.harness.cdng.gitops.MergePRStep;
 import io.harness.cdng.gitops.UpdateReleaseRepoStep;
@@ -177,6 +178,7 @@ public class NgStepRegistrar {
     engineSteps.put(EcsBlueGreenCreateServiceStep.STEP_TYPE, EcsBlueGreenCreateServiceStep.class);
     engineSteps.put(EcsBlueGreenSwapTargetGroupsStep.STEP_TYPE, EcsBlueGreenSwapTargetGroupsStep.class);
     engineSteps.put(EcsBlueGreenRollbackStep.STEP_TYPE, EcsBlueGreenRollbackStep.class);
+    engineSteps.put(EcsRunTaskStep.STEP_TYPE, EcsRunTaskStep.class);
 
     engineSteps.put(AzureCreateARMResourceStep.STEP_TYPE, AzureCreateARMResourceStep.class);
     engineSteps.put(MultiDeploymentSpawnerStep.STEP_TYPE, MultiDeploymentSpawnerStep.class);

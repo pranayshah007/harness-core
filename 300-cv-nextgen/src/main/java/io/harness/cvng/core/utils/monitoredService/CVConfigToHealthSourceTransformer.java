@@ -54,4 +54,24 @@ public interface CVConfigToHealthSourceTransformer<C extends CVConfig, T extends
     }
     return metricPacks;
   }
+
+  default Set<TimeSeriesMetricPackDTO> addCustomMetricPacks(List<? extends MetricCVConfig> cvConfigs) {
+    Set<TimeSeriesMetricPackDTO> metricPacks = new HashSet<>();
+    List<TimeSeriesMetricPackDTO.MetricThreshold> customMetricThresholds = new ArrayList<>();
+    cvConfigs.forEach(cvConfig -> {
+      String identifier = MonitoredServiceConstants.CUSTOM_METRIC_PACK;
+      List<TimeSeriesMetricPackDTO.MetricThreshold> metricThresholds = cvConfig.getMetricThresholdDTOs();
+      if (isNotEmpty(metricThresholds)) {
+        metricThresholds.forEach(metricThreshold -> metricThreshold.setMetricType(identifier));
+        customMetricThresholds.addAll(metricThresholds);
+      }
+    });
+    if (isNotEmpty(customMetricThresholds)) {
+      metricPacks.add(TimeSeriesMetricPackDTO.builder()
+                          .identifier(MonitoredServiceConstants.CUSTOM_METRIC_PACK)
+                          .metricThresholds(customMetricThresholds)
+                          .build());
+    }
+    return metricPacks;
+  }
 }

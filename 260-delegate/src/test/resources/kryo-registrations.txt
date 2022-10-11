@@ -1851,9 +1851,11 @@
 97017:io.harness.jira.JiraIssueTransitionsNG
 97018:io.harness.jira.JiraIssueUpdateMetadataNG
 97019:io.harness.jira.JiraUpdateIssueRequestNG
+97020:io.harness.jira.JiraIssueCreateMetadataNGIssueTypes
 97021:io.harness.globalcontex.EntityOperationIdentifier
 97022:io.harness.globalcontex.EntityOperationIdentifier.EntityOperation
 97023:io.harness.pcf.model.CfCliVersion
+97024:io.harness.jira.JiraIssueCreateMetadataNGFields
 97031:io.harness.k8s.model.KubernetesResourceId
 97032:io.harness.exception.HelmClientException
 97033:io.harness.helm.HelmCliCommandType
@@ -2266,6 +2268,12 @@
 573536:io.harness.delegate.task.ecs.response.EcsBlueGreenRollbackResponse
 573537:io.harness.delegate.beans.ecs.EcsBlueGreenRollbackResult
 573538:io.harness.delegate.task.ecs.EcsLoadBalancerConfig
+573539:io.harness.delegate.task.ecs.request.EcsGitFetchRunTaskRequest
+573540:io.harness.delegate.task.ecs.response.EcsGitFetchRunTaskResponse
+573541:io.harness.delegate.task.ecs.EcsGitFetchRunTaskFileConfig
+573542:io.harness.delegate.task.ecs.request.EcsRunTaskRequest
+573543:io.harness.delegate.task.ecs.response.EcsRunTaskResponse
+573544:io.harness.delegate.beans.ecs.EcsRunTaskResult
 600001:io.harness.ng.core.dto.secrets.WinRmCredentialsSpecDTO
 600002:io.harness.secretmanagerclient.WinRmAuthScheme
 600003:io.harness.ng.core.dto.secrets.NTLMConfigDTO

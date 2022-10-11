@@ -9,6 +9,8 @@ package io.harness.ngmigration.service;
 
 import static software.wings.ngmigration.NGMigrationEntityType.SECRET;
 
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.Scope;
 import io.harness.encryption.SecretRefData;
@@ -32,12 +34,20 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.CaseUtils;
 
+@OwnedBy(HarnessTeam.CDC)
+@Slf4j
 public class MigratorUtility {
+  public static String generateManifestIdentifier(String name) {
+    return generateIdentifier(name);
+  }
+
   public static String generateIdentifier(String name) {
-    return CaseUtils.toCamelCase(name.replaceAll("[^A-Za-z0-9]", " ").trim(), false, ' ');
+    String generated = CaseUtils.toCamelCase(name.replaceAll("[^A-Za-z0-9]", " ").trim(), false, ' ');
+    return Character.isDigit(generated.charAt(0)) ? "_" + generated : generated;
   }
 
   public static ParameterField<String> getParameterField(String value) {
@@ -62,6 +72,8 @@ public class MigratorUtility {
         return SecretFactory.isStoredInHarnessSecretManager(file) ? Integer.MIN_VALUE : 5;
       case CONNECTOR:
         return 10;
+      case MANIFEST:
+        return 15;
       case SERVICE:
         return 20;
       case ENVIRONMENT:

@@ -320,19 +320,21 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_VIEW)
   public ResponseDTO<PMSPipelineSummaryResponseDTO> getPipelineSummary(@NotNull @AccountIdentifier String accountId,
       @NotNull @OrgIdentifier String orgId, @NotNull @ProjectIdentifier String projectId,
-      @ResourceIdentifier String pipelineId, GitEntityFindInfoDTO gitEntityBasicInfo) {
+      @ResourceIdentifier String pipelineId, GitEntityFindInfoDTO gitEntityBasicInfo, Boolean getMetadataOnly) {
     log.info(
         String.format("Get pipeline summary for pipeline with with identifier %s in project %s, org %s, account %s",
             pipelineId, projectId, orgId, accountId));
 
     Optional<PipelineEntity> pipelineEntity;
-    pipelineEntity = pmsPipelineService.getWithoutPerformingValidations(accountId, orgId, projectId, pipelineId, false);
+    pipelineEntity = pmsPipelineService.getPipelineWithoutPerformingValidations(
+        accountId, orgId, projectId, pipelineId, false, Boolean.TRUE.equals(getMetadataOnly));
 
-    PMSPipelineSummaryResponseDTO pipelineSummary =
-        PMSPipelineDtoMapper.preparePipelineSummary(pipelineEntity.orElseThrow(
+    PMSPipelineSummaryResponseDTO pipelineSummary = PMSPipelineDtoMapper.preparePipelineSummary(
+        pipelineEntity.orElseThrow(
             ()
                 -> new EntityNotFoundException(
-                    String.format("Pipeline with the given ID: %s does not exist or has been deleted", pipelineId))));
+                    String.format("Pipeline with the given ID: %s does not exist or has been deleted", pipelineId))),
+        getMetadataOnly);
 
     return ResponseDTO.newResponse(pipelineSummary);
   }
