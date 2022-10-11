@@ -7,6 +7,9 @@
 
 package io.harness.pms.plan.execution.api;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+
 import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.accesscontrol.NGAccessControlCheck;
 import io.harness.accesscontrol.OrgIdentifier;
@@ -76,16 +79,16 @@ public class ExecutionsApiImpl implements ExecutionsApi {
       @ProjectIdentifier String project, @ResourceIdentifier String pipeline, @AccountIdentifier String account,
       String branchGitX) {
     GitAwareContextHelper.populateGitDetails(GitEntityInfo.builder().branch(branchGitX).build());
-    if (requestBody.getInputSetRefs() != null && requestBody.getRuntimeYaml() != null) {
+    if (isNotEmpty(requestBody.getInputSetRefs()) && isNotEmpty(requestBody.getRuntimeYaml())) {
       throw new InvalidRequestException(
           "Both InputSetReferences and RuntimeInputYAML are passed, please pass only either.");
     }
-    if (requestBody.getInputSetRefs() == null && requestBody.getRuntimeYaml() == null) {
+    if (isEmpty(requestBody.getInputSetRefs()) && isEmpty(requestBody.getRuntimeYaml())) {
       throw new InvalidRequestException(
           "Both InputSetReferences and RuntimeInputYAML are null, please pass one of them.");
     }
     PlanExecutionResponseDto oldExecutionResponseDto;
-    if (requestBody.getInputSetRefs() != null) {
+    if (isNotEmpty(requestBody.getInputSetRefs())) {
       oldExecutionResponseDto = pipelineExecutor.runPipelineWithInputSetReferencesList(account, org, project, pipeline,
           null, requestBody.getInputSetRefs(), branchGitX, null, requestBody.isNotifyExecutorOnly());
     } else {
