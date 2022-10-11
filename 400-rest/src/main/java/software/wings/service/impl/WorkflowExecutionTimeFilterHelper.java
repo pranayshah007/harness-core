@@ -25,6 +25,7 @@ import software.wings.beans.WorkflowExecution.WorkflowExecutionKeys;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -101,6 +102,7 @@ public class WorkflowExecutionTimeFilterHelper {
   PageRequest<WorkflowExecution> populatePageRequestFilters(PageRequest<WorkflowExecution> pageRequest) {
     Mapper mapper = ((DatastoreImpl) hPersistence.getDatastore(WorkflowExecution.class)).getMapper();
     PageRequest<WorkflowExecution> copiedPageRequest = pageRequest.copy();
+    pageRequest.setFilters(new ArrayList<>());
     copiedPageRequest.populateFilters(
         copiedPageRequest.getUriInfo().getQueryParameters(), mapper.getMappedClass(WorkflowExecution.class), mapper);
     return copiedPageRequest;
