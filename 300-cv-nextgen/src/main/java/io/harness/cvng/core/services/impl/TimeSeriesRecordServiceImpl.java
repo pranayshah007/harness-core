@@ -525,7 +525,7 @@ public class TimeSeriesRecordServiceImpl implements TimeSeriesRecordService {
   }
 
   @Override
-  public List<TimeSeriesRecordDTO> getMetricTimeSeriesRecordDTOs(
+  public List<TimeSeriesRecordDTO> getDeploymentMetricTimeSeriesRecordDTOs(
       String verificationTaskId, Instant startTime, Instant endTime, Set<String> controlHosts, Set<String> testHosts) {
     List<TimeSeriesRecord> timeSeriesRecords = getTimeSeriesRecords(verificationTaskId, startTime, endTime);
     List<TimeSeriesRecordDTO> timeSeriesRecordDTOS = new ArrayList<>();

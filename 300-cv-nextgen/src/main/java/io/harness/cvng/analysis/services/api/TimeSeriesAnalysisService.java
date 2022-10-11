@@ -27,7 +27,7 @@ import java.util.Set;
 public interface TimeSeriesAnalysisService {
   List<String> scheduleServiceGuardAnalysis(AnalysisInput input);
   List<String> scheduleCanaryVerificationTaskAnalysis(AnalysisInput analysisInput);
-  List<String> scheduleCanaryAnalysis(AnalysisInput analysisInput);
+  List<String> scheduleDeploymentTimeSeriesAnalysis(AnalysisInput analysisInput);
   List<String> scheduleTestVerificationTaskAnalysis(AnalysisInput analysisInput);
   void logDeploymentVerificationProgress(AnalysisInput analysisInput, AnalysisStatus analysisStatus);
 
@@ -38,7 +38,7 @@ public interface TimeSeriesAnalysisService {
   Map<String, Map<String, List<TimeSeriesAnomaliesDTO>>> getLongTermAnomalies(String verificationTaskId);
   List<TimeSeriesMetricDefinition> getMetricTemplate(String cvConfigId);
   List<TimeSeriesRecordDTO> getTimeSeriesRecordDTOs(String verificationTaskId, Instant startTime, Instant endTime);
-  List<TimeSeriesRecordDTO> getMetricTimeSeriesRecordDTOs(
+  List<TimeSeriesRecordDTO> getDeploymentMetricTimeSeriesRecordDTOs(
       String verificationTaskId, Instant startTime, Instant endTime, List<String> controlHosts, List<String> testHosts);
   void saveAnalysis(String taskId, ServiceGuardTimeSeriesAnalysisDTO analysis);
   void saveAnalysis(String taskId, DeploymentTimeSeriesAnalysisDTO analysis);

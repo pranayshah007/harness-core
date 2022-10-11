@@ -39,7 +39,7 @@ public interface TimeSeriesRecordService {
    * @return
    */
   List<TimeSeriesRecordDTO> getTimeSeriesRecordDTOs(String verificationTaskId, Instant startTime, Instant endTime);
-  List<TimeSeriesRecordDTO> getMetricTimeSeriesRecordDTOs(
+  List<TimeSeriesRecordDTO> getDeploymentMetricTimeSeriesRecordDTOs(
       String verificationTaskId, Instant startTime, Instant endTime, Set<String> controlHosts, Set<String> testHosts);
   TimeSeriesTestDataDTO getMetricGroupDataForRange(
       String verificationTaskId, Instant startTime, Instant endTime, String metricName, List<String> groupNames);

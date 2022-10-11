@@ -15,18 +15,18 @@ import io.harness.cvng.statemachine.entities.CanaryAnalysisState;
 import java.util.List;
 
 public class CanaryAnalysisStateExecutor extends TimeSeriesAnalysisStateExecutor<CanaryAnalysisState> {
-    @Override
-    public AnalysisState handleRetry(CanaryAnalysisState analysisState) {
-        if (analysisState.getRetryCount() >= getMaxRetry()) {
-            analysisState.setStatus(AnalysisStatus.FAILED);
-        } else {
-            return handleRerun(analysisState);
-        }
-        return analysisState;
+  @Override
+  public AnalysisState handleRetry(CanaryAnalysisState analysisState) {
+    if (analysisState.getRetryCount() >= getMaxRetry()) {
+      analysisState.setStatus(AnalysisStatus.FAILED);
+    } else {
+      return handleRerun(analysisState);
     }
+    return analysisState;
+  }
 
-    @Override
-    protected List<String> scheduleAnalysis(AnalysisInput analysisInput) {
-        return timeSeriesAnalysisService.scheduleCanaryAnalysis(analysisInput);
-    }
+  @Override
+  protected List<String> scheduleAnalysis(AnalysisInput analysisInput) {
+    return timeSeriesAnalysisService.scheduleDeploymentTimeSeriesAnalysis(analysisInput);
+  }
 }
