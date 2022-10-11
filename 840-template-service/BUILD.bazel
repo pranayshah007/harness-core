@@ -112,6 +112,7 @@ java_library(
         "@maven//:org_mockito_mockito_core",
         "@maven//:org_mockito_mockito_inline",
         "@maven//:org_powermock_powermock_api_mockito2",
+        "@maven//:org_junit_jupiter_junit_jupiter_api",
     ],
 )
 

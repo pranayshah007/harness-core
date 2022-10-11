@@ -200,4 +200,67 @@ public class S3BucketResource {
 
     return ResponseDTO.newResponse(artifactPathDTOS);
   }
+
+  @POST
+  @Path("v2/getFilePaths")
+  @ApiOperation(value = "Gets s3 file paths", nickname = "getFilePathsV2ForS3")
+  public ResponseDTO<List<FilePathDTO>> getFilePathsForServiceV2(@QueryParam("region") String region,
+      @QueryParam("connectorRef") String awsConnectorIdentifier, @NotNull @QueryParam("bucketName") String bucketName,
+      @QueryParam("filePathRegex") String filePathRegex,
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.PIPELINE_KEY) String pipelineIdentifier,
+      @NotNull @QueryParam("fqnPath") String fqnPath, @NotNull String runtimeInputYaml,
+      @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceRef,
+      @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
+    // In case of ServiceV2 Calls
+    if (StringUtils.isNotBlank(serviceRef)) {
+      final ArtifactConfig artifactSpecFromService = artifactResourceUtils.locateArtifactInService(
+          accountId, orgIdentifier, projectIdentifier, serviceRef, fqnPath);
+
+      AmazonS3ArtifactConfig amazonS3ArtifactConfig = (AmazonS3ArtifactConfig) artifactSpecFromService;
+
+      if (StringUtils.isBlank(region)) {
+        region = (String) amazonS3ArtifactConfig.getRegion().fetchFinalValue();
+      }
+
+      if (StringUtils.isBlank(awsConnectorIdentifier)) {
+        awsConnectorIdentifier = (String) amazonS3ArtifactConfig.getConnectorRef().fetchFinalValue();
+      }
+
+      if (StringUtils.isBlank(bucketName)) {
+        bucketName = (String) amazonS3ArtifactConfig.getBucketName().fetchFinalValue();
+      }
+    }
+
+    // Getting the resolved region in case of expressions
+    String resolvedRegion = artifactResourceUtils.getResolvedImagePath(accountId, orgIdentifier, projectIdentifier,
+        pipelineIdentifier, runtimeInputYaml, region, fqnPath, gitEntityBasicInfo, serviceRef);
+
+    // Getting the resolved awsConnectorIdentifier in case of expressions
+    String resolvedAwsConnectorIdentifier =
+        artifactResourceUtils.getResolvedImagePath(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+            runtimeInputYaml, awsConnectorIdentifier, fqnPath, gitEntityBasicInfo, serviceRef);
+
+    // Getting the resolved bucketName in case of expressions
+    String resolvedBucketName = artifactResourceUtils.getResolvedImagePath(accountId, orgIdentifier, projectIdentifier,
+        pipelineIdentifier, runtimeInputYaml, bucketName, fqnPath, gitEntityBasicInfo, serviceRef);
+
+    // Common logic in case of ServiceV1 and ServiceV2
+    IdentifierRef connectorRef = IdentifierRefHelper.getIdentifierRef(
+        resolvedAwsConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
+
+    List<BuildDetails> s3ArtifactPaths = s3ResourceService.getFilePaths(
+        connectorRef, resolvedRegion, resolvedBucketName, filePathRegex, orgIdentifier, projectIdentifier);
+
+    List<FilePathDTO> artifactPathDTOS = new ArrayList<>();
+
+    for (BuildDetails s : s3ArtifactPaths) {
+      FilePathDTO artifactPathDTO = FilePathDTO.builder().buildDetails(s).build();
+      artifactPathDTOS.add(artifactPathDTO);
+    }
+
+    return ResponseDTO.newResponse(artifactPathDTOS);
+  }
 }

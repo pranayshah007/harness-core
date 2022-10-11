@@ -454,6 +454,32 @@ public class NGTemplateRepositoryCustomImpl implements NGTemplateRepositoryCusto
     }
   }
 
+  @Override
+  public Long countFileInstances(String accountIdentifier, String repoURL, String filePath) {
+    return countTemplates(Criteria.where(TemplateEntityKeys.accountId)
+                              .is(accountIdentifier)
+                              .and(TemplateEntityKeys.repoURL)
+                              .is(repoURL)
+                              .and(TemplateEntityKeys.filePath)
+                              .is(filePath));
+  }
+
+  @Override
+  public TemplateEntity importFlowSaveTemplate(TemplateEntity templateEntity, String comments) {
+    TemplateEntity savedTemplateEntity = mongoTemplate.save(templateEntity);
+    if (shouldLogAudits(
+            templateEntity.getAccountId(), templateEntity.getOrgIdentifier(), templateEntity.getProjectIdentifier())) {
+      outboxService.save(new TemplateCreateEvent(templateEntity.getAccountIdentifier(),
+          templateEntity.getOrgIdentifier(), templateEntity.getProjectIdentifier(), templateEntity, comments));
+    }
+    return savedTemplateEntity;
+  }
+
+  private Long countTemplates(Criteria criteria) {
+    Query query = new Query().addCriteria(criteria);
+    return mongoTemplate.count(query, TemplateEntity.class);
+  }
+
   private Criteria buildCriteria(TemplateEntity templateEntity) {
     return Criteria.where(TemplateEntityKeys.accountId)
         .is(templateEntity.getAccountId())

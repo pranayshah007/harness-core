@@ -79,6 +79,7 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
     JenkinsArtifactConfig jenkinsArtifactConfig = JenkinsArtifactConfig.builder()
                                                       .artifactPath(ParameterField.createValueField("ARTIFACT"))
                                                       .jobName(ParameterField.createValueField("JOB"))
+                                                      .build(ParameterField.createValueField("build"))
                                                       .build();
     JenkinsConnectorDTO connectorDTO = JenkinsConnectorDTO.builder().build();
     List<EncryptedDataDetail> encryptedDataDetailList = Collections.emptyList();
@@ -94,6 +95,7 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
     assertThat(jenkinsArtifactDelegateRequest.getSourceType()).isEqualTo(ArtifactSourceType.JENKINS);
     assertThat(jenkinsArtifactDelegateRequest.getJobName()).isEqualTo(jenkinsArtifactConfig.getJobName().getValue());
     assertThat(jenkinsArtifactDelegateRequest.getConnectorRef()).isEqualTo("");
+    assertThat(jenkinsArtifactDelegateRequest.getBuildNumber()).isEqualTo("build");
   }
 
   @Test

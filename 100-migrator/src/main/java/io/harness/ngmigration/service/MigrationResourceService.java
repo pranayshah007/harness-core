@@ -17,10 +17,12 @@ import io.harness.ngmigration.dto.ImportDTO;
 import io.harness.ngmigration.dto.SaveSummaryDTO;
 import io.harness.ngmigration.dto.SecretFilter;
 import io.harness.ngmigration.dto.SecretManagerFilter;
+import io.harness.ngmigration.dto.ServiceFilter;
 import io.harness.ngmigration.service.importer.AppImportService;
 import io.harness.ngmigration.service.importer.ConnectorImportService;
 import io.harness.ngmigration.service.importer.SecretManagerImportService;
 import io.harness.ngmigration.service.importer.SecretsImportService;
+import io.harness.ngmigration.service.importer.ServiceImportService;
 
 import software.wings.ngmigration.DiscoveryResult;
 
@@ -33,6 +35,7 @@ public class MigrationResourceService {
   @Inject private SecretManagerImportService secretManagerImportService;
   @Inject private SecretsImportService secretsImportService;
   @Inject private AppImportService appImportService;
+  @Inject private ServiceImportService serviceImportService;
   @Inject private DiscoveryService discoveryService;
 
   private DiscoveryResult discover(String authToken, ImportDTO importDTO) {
@@ -51,14 +54,15 @@ public class MigrationResourceService {
     if (filter instanceof ApplicationFilter) {
       return appImportService.discover(authToken, importDTO);
     }
+    if (filter instanceof ServiceFilter) {
+      return serviceImportService.discover(authToken, importDTO);
+    }
     return DiscoveryResult.builder().build();
   }
 
   public SaveSummaryDTO save(String authToken, ImportDTO importDTO) {
     DiscoveryResult discoveryResult = discover(authToken, importDTO);
-    discoveryService.migrateEntity(authToken, getMigrationInput(importDTO), discoveryResult, false);
-    // TODO: Create summary from migrated entites
-    return SaveSummaryDTO.builder().build();
+    return discoveryService.migrateEntity(authToken, getMigrationInput(importDTO), discoveryResult);
   }
 
   public StreamingOutput exportYaml(String authToken, ImportDTO importDTO) {
@@ -72,9 +76,5 @@ public class MigrationResourceService {
         .projectIdentifier(importDTO.getDestinationDetails().getProjectIdentifier())
         .migrateReferencedEntities(importDTO.isMigrateReferencedEntities())
         .build();
-  }
-
-  public void save(String authToken, DiscoveryResult discoveryResult, MigrationInputDTO inputDTO) {
-    discoveryService.migrateEntity(authToken, inputDTO, discoveryResult, true);
   }
 }

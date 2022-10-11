@@ -9,10 +9,13 @@ package io.harness.cvng.metrics.beans;
 
 import io.harness.metrics.AutoMetricContext;
 
+import java.time.Duration;
+
 public class LETaskMetricContext extends AutoMetricContext {
-  public LETaskMetricContext(String accountId, String leTaskType, String status) {
+  public LETaskMetricContext(String accountId, String leTaskType, String status, Duration analysisDuration) {
     put("accountId", accountId);
     put("leTaskType", leTaskType);
     put("leTaskStatus", status);
+    put("analysisDurationMinutes", Long.toString(analysisDuration.toMinutes()));
   }
 }
