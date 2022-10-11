@@ -78,6 +78,7 @@ public class ExecutionsApiImpl implements ExecutionsApi {
   public Response executePipeline(PipelineExecuteRequestBody requestBody, @OrgIdentifier String org,
       @ProjectIdentifier String project, @ResourceIdentifier String pipeline, @AccountIdentifier String account,
       String branchGitX) {
+    // to be added: Execution URL
     GitAwareContextHelper.populateGitDetails(GitEntityInfo.builder().branch(branchGitX).build());
     if (isNotEmpty(requestBody.getInputSetRefs()) && isNotEmpty(requestBody.getRuntimeYaml())) {
       throw new InvalidRequestException(
@@ -101,6 +102,7 @@ public class ExecutionsApiImpl implements ExecutionsApi {
 
   @Override
   public Response getExecutionDetails(String org, String project, String execution, String account) {
+    // module info to be populated, failure info can be enhanced
     PipelineExecutionSummaryEntity executionSummaryEntity =
         pmsExecutionService.getPipelineExecutionSummaryEntity(account, org, project, execution, false);
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(account, org, project),
@@ -121,6 +123,7 @@ public class ExecutionsApiImpl implements ExecutionsApi {
   @Override
   public Response getExecutionDetailsGraph(
       String org, String project, String execution, String account, String stageNode, Boolean fullGraph) {
+    // above plus Graph needs to be added
     PipelineExecutionSummaryEntity executionSummaryEntity =
         pmsExecutionService.getPipelineExecutionSummaryEntity(account, org, project, execution, false);
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(account, org, project),
@@ -147,6 +150,7 @@ public class ExecutionsApiImpl implements ExecutionsApi {
   public Response getRuntimeTemplate(@OrgIdentifier String org, @ProjectIdentifier String project,
       @ResourceIdentifier String pipeline, @AccountIdentifier String account, List<String> stageIds,
       String branchGitX) {
+    // complete
     log.info(String.format(
         "Get template for pipeline %s in project %s, org %s, account %s", pipeline, project, org, account));
     if (stageIds == null) {
@@ -164,6 +168,8 @@ public class ExecutionsApiImpl implements ExecutionsApi {
       String pipelineId, String filterId, List<String> status, Boolean myDeployments, String repositoryCI,
       String branchCI, String tagCI, String prSourceCI, String prTargetCI, List<String> services, List<String> envs,
       List<String> infras, String branchGitX) {
+    // need to populate Query Param filters in backend. Also, existing Impl has a Request Body (filter properties
+    // object) which is not in Docs, need to add that in Spec.
     log.info("Retrieving List of Executions.");
     GitAwareContextHelper.populateGitDetails(GitEntityInfo.builder().branch(branchGitX).build());
     ByteString gitSyncBranchContext = pmsGitSyncHelper.getGitSyncBranchContextBytesThreadLocal();
@@ -176,6 +182,7 @@ public class ExecutionsApiImpl implements ExecutionsApi {
     Pageable pageRequest =
         PageUtils.getPageRequest(page, limit, sortingList, Sort.by(Direction.DESC, PipelineEntityKeys.lastUpdatedAt));
 
+    /* Comment from old Impl. */
     // NOTE: We are getting entity git details from git context and not pipeline entity as we'll have to make DB calls
     // to fetch them and each might have a different branch context so we cannot even batch them. The only data missing
     // because of this approach is objectId which UI doesn't use.
@@ -186,7 +193,7 @@ public class ExecutionsApiImpl implements ExecutionsApi {
                     e.getEntityGitDetails() != null
                         ? e.getEntityGitDetails()
                         : pmsGitSyncHelper.getEntityGitDetailsFromBytes(e.getGitSyncBranchContext())));
-
+    // graph / layout node map should be populated here
     ResponseBuilder responseBuilder = Response.ok();
     ResponseBuilder responseBuilderWithLinks = PipelinesApiUtils.addLinksHeader(responseBuilder,
         String.format("/v1/orgs/%s/projects/%s/executions", org, project),
@@ -197,6 +204,7 @@ public class ExecutionsApiImpl implements ExecutionsApi {
   @Override
   public Response registerInterrupt(
       InterruptRequestBody interruptRequestBody, String org, String project, String execution, String account) {
+    // complete
     PipelineExecutionSummaryEntity executionSummaryEntity =
         pmsExecutionService.getPipelineExecutionSummaryEntity(account, org, project, execution, false);
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(account, org, project),

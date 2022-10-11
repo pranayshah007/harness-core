@@ -51,6 +51,7 @@ public class ExecutionsApiUtils {
     responseBody.setGitDetails(PipelinesApiUtils.getGitDetails(oldExecutionResponseDto.getGitDetails()));
     responseBody.setStatus(
         ExecutionsApiUtils.getExecuteResponseBodyStatus(oldExecutionResponseDto.getPlanExecution().getStatus()));
+    // code for Execution URL
     return responseBody;
   }
 
@@ -73,9 +74,10 @@ public class ExecutionsApiUtils {
     summary.setTriggerType(getTrigger(executionSummaryEntity.getExecutionTriggerInfo()));
     summary.setRunNumber(executionSummaryEntity.getRunSequence());
     if (executionSummaryEntity.getFailureInfo() != null) {
-      summary.setFailureMessage(executionSummaryEntity.getFailureInfo().getMessage());
+      summary.setFailureMessage(
+          executionSummaryEntity.getFailureInfo().getMessage()); // can add more fields in Failure Info
     }
-    summary.setStageInfo(getStageInfo(executionSummaryEntity));
+    summary.setStageInfo(getStageInfo(executionSummaryEntity)); // method replicated here from existing Impl.
     // code for Module Info population
     summary.setConnectorRef(executionSummaryEntity.getConnectorRef());
     summary.setStoreType(getStoreTypeEnum(executionSummaryEntity.getStoreType()));
@@ -173,6 +175,7 @@ public class ExecutionsApiUtils {
   }
 
   public static Graph getGraph(OrchestrationGraphDTO orchestrationGraph, boolean fullGraph) {
+    // code for Graph population here
     return null;
   }
 
