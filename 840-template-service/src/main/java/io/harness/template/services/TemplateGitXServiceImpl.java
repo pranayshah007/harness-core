@@ -22,8 +22,8 @@ import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorDTO;
 import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorWrapperDTO;
 import io.harness.gitaware.dto.GitContextRequestParams;
 import io.harness.gitaware.helper.GitAwareContextHelper;
-import io.harness.gitsync.beans.StoreType;
 import io.harness.gitaware.helper.GitAwareEntityHelper;
+import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.gitsync.scm.SCMGitSyncHelper;
@@ -118,7 +118,7 @@ public class TemplateGitXServiceImpl implements TemplateGitXService {
   public boolean isNewGitXEnabledAndIsRemoteEntity(TemplateEntity templateToSave, GitEntityInfo gitEntityInfo) {
     return isNewGitXEnabled(templateToSave.getAccountIdentifier(), templateToSave.getOrgIdentifier(),
                templateToSave.getProjectIdentifier())
-        && TemplateUtils.isRemoteEntity(gitEntityInfo);
+        && (TemplateUtils.isRemoteEntity(gitEntityInfo) || StoreType.REMOTE.equals(templateToSave.getStoreType()));
   }
 
   @Override
@@ -263,9 +263,5 @@ public class TemplateGitXServiceImpl implements TemplateGitXService {
     InvalidYamlException invalidYamlException = new InvalidYamlException(errorMessage, errorWrapperDTO);
     invalidYamlException.setYaml(pipelineYaml);
     return invalidYamlException;
-  private boolean isGitSimplificationEnabledForAProject(TemplateEntity templateToSave, GitEntityInfo gitEntityInfo) {
-    return gitSyncSdkService.isGitSimplificationEnabled(templateToSave.getAccountIdentifier(),
-               templateToSave.getOrgIdentifier(), templateToSave.getProjectIdentifier())
-        && (TemplateUtils.isRemoteEntity(gitEntityInfo) || StoreType.REMOTE.equals(templateToSave.getStoreType()));
   }
 }
