@@ -1,14 +1,15 @@
 package io.harness.migrations.all;
 
 import static io.harness.persistence.HPersistence.DEFAULT_STORE;
-import static io.harness.threading.Morpheus.sleep;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.migrations.Migration;
-import io.harness.persistence.HPersistence;
+import io.harness.persistence.HIterator;
 import io.harness.scheduler.PersistentScheduler;
 
+import software.wings.beans.Account;
+import software.wings.dl.WingsPersistence;
 import software.wings.scheduler.AlertCheckJob;
 import software.wings.scheduler.InstanceStatsCollectorJob;
 import software.wings.scheduler.LimitVicinityCheckerJob;
@@ -16,11 +17,9 @@ import software.wings.scheduler.LimitVicinityCheckerJob;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import com.mongodb.BasicDBObject;
-import com.mongodb.BulkWriteOperation;
 import com.mongodb.DBCollection;
 import com.mongodb.DBCursor;
 import com.mongodb.DBObject;
-import java.time.Duration;
 import java.time.Instant;
 import java.util.Date;
 import lombok.extern.slf4j.Slf4j;
@@ -29,8 +28,13 @@ import org.quartz.SimpleTrigger;
 @OwnedBy(HarnessTeam.SPG)
 @Slf4j
 public class CorrectingQuartzTriggerFrequency implements Migration {
-  @Inject private HPersistence persistence;
+  @Inject private WingsPersistence wingsPersistence;
   @Inject @Named("BackgroundJobScheduler") private PersistentScheduler persistentScheduler;
+
+  @Inject private InstanceStatsCollectorJob instanceStatsCollectorJob;
+
+  @Inject private AlertCheckJob alertCheckJob;
+  @Inject private LimitVicinityCheckerJob limitVicinityCheckerJob;
 
   private static final String COLLECTION_NAME = "quartz_triggers";
   private static final String STATE = "waiting";
@@ -46,25 +50,35 @@ public class CorrectingQuartzTriggerFrequency implements Migration {
   @Override
   public void migrate() {
     log.info("{}: Starting migration", DEBUG_LINE);
+    try (HIterator<Account> accounts = new HIterator<>(wingsPersistence.createQuery(Account.class).fetch())) {
+      while (accounts.hasNext()) {
+        Account account = accounts.next();
+        log.info(String.join(
+            DEBUG_LINE, " Starting Migration for correcting corrupt quartz jobs", account.getAccountName()));
+        migrateCorruptQuartzJobsForAnAccount(account);
+      }
+    } catch (Exception ex) {
+      log.info(String.join(DEBUG_LINE, " Exception while fetching Accounts"));
+    }
+  }
 
-    DBCollection collection = persistence.getCollection(DEFAULT_STORE, COLLECTION_NAME);
-    BulkWriteOperation bulkOperation = collection.initializeUnorderedBulkOperation();
-    BasicDBObject matchCondition = new BasicDBObject("state", STATE);
+  private void migrateCorruptQuartzJobsForAnAccount(Account account) {
+    DBCollection collection = wingsPersistence.getCollection(DEFAULT_STORE, COLLECTION_NAME);
+    BasicDBObject matchCondition = new BasicDBObject("keyName", account.getUuid()).append("state", STATE);
     BasicDBObject projection = new BasicDBObject("_id", true)
                                    .append("nextFireTime", true)
                                    .append("previousFireTime", true)
                                    .append("repeatInterval", true)
                                    .append("keyName", true)
                                    .append("keyGroup", true);
-    DBCursor dataRecords = collection.find(matchCondition, projection).limit(1000);
-    int counter = 0;
+    DBCursor dataRecords = collection.find(matchCondition, projection);
+    log.info(String.join(DEBUG_LINE, " Migration started for account ", account.getUuid()));
     try {
       while (dataRecords.hasNext()) {
         DBObject dataRecord = dataRecords.next();
         Date nextFireTime = (Date) dataRecord.get("nextFireTime");
         Date previousFireTime = (Date) dataRecord.get("previousFireTime");
         Long repeatInterval = (Long) dataRecord.get("repeatInterval");
-        counter++;
         // Difference between previousFireTime and nextFireTime should match with interval timing (max allowed
         // difference is 10s) also Next fireTime should always be in the future, if any of these condition fails, we
         // reschedule the quartz job
@@ -75,13 +89,13 @@ public class CorrectingQuartzTriggerFrequency implements Migration {
           String accountId = dataRecord.get("keyName").toString();
           switch (dataRecord.get("keyGroup").toString()) {
             case ALERT_CHECK_CRON_GROUP:
-              trigger = AlertCheckJob.alertTriggerBuilder(accountId).build();
+              trigger = alertCheckJob.getAlertTriggerBuilder(accountId).build();
               break;
             case INSTANCE_STATS_COLLECT_CRON_GROUP:
-              trigger = InstanceStatsCollectorJob.instanceStatsTriggerBuilder(accountId).build();
+              trigger = instanceStatsCollectorJob.getInstanceStatsTriggerBuilder(accountId).build();
               break;
             case LIMIT_VICINITY_CHECKER_CRON_GROUP:
-              trigger = LimitVicinityCheckerJob.vicinityTriggerBuilder(accountId).build();
+              trigger = limitVicinityCheckerJob.getLimitVicinityTriggerBuilder(accountId).build();
               break;
             default:
               continue;
@@ -90,15 +104,10 @@ public class CorrectingQuartzTriggerFrequency implements Migration {
             persistentScheduler.rescheduleJob(trigger.getKey(), trigger);
           }
         }
-        if (counter != 0 && counter % 1000 == 0) {
-          bulkOperation.execute();
-          sleep(Duration.ofMillis(200));
-          bulkOperation = collection.initializeUnorderedBulkOperation();
-          dataRecords = collection.find(matchCondition, projection).limit(1000);
-        }
       }
+      log.info(String.join(DEBUG_LINE, " Migration completed for account ", account.getUuid()));
     } catch (Exception e) {
-      log.error("{} failed with exception {}", DEBUG_LINE, e.getMessage());
+      log.error("{} failed with exception {}, for account {}", DEBUG_LINE, e.getMessage(), account.getUuid());
     }
   }
 }

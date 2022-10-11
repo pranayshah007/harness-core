@@ -72,13 +72,17 @@ public class InstanceStatsCollectorJob implements Job {
   @Inject private IInstanceReconService instanceReconService;
   @Inject private FeatureFlagService featureFlagService;
 
-  public static TriggerBuilder<SimpleTrigger> instanceStatsTriggerBuilder(String accountId) {
+  private static TriggerBuilder<SimpleTrigger> instanceStatsTriggerBuilder(String accountId) {
     return TriggerBuilder.newTrigger()
         .withIdentity(accountId, GROUP)
         .withSchedule(SimpleScheduleBuilder.simpleSchedule()
                           .withIntervalInMinutes(SYNC_INTERVAL)
                           .repeatForever()
                           .withMisfireHandlingInstructionNowWithExistingCount());
+  }
+
+  public TriggerBuilder<SimpleTrigger> getInstanceStatsTriggerBuilder(String accountId) {
+    return instanceStatsTriggerBuilder(accountId);
   }
 
   public static void addWithDelay(PersistentScheduler jobScheduler, String accountId) {

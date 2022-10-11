@@ -45,11 +45,15 @@ public class LimitVicinityCheckerJob implements Job {
   @Inject private BackgroundSchedulerLocker persistentLocker;
   @Inject private LimitVicinityHandler limitVicinityHandler;
 
-  public static TriggerBuilder<SimpleTrigger> vicinityTriggerBuilder(String accountId) {
+  private static TriggerBuilder<SimpleTrigger> vicinityTriggerBuilder(String accountId) {
     return TriggerBuilder.newTrigger()
         .withIdentity(accountId, GROUP)
         .withSchedule(
             SimpleScheduleBuilder.simpleSchedule().withIntervalInMinutes(SYNC_INTERVAL_IN_MINUTES).repeatForever());
+  }
+
+  public TriggerBuilder<SimpleTrigger> getLimitVicinityTriggerBuilder(String accountId) {
+    return vicinityTriggerBuilder(accountId);
   }
 
   public static void addWithDelay(PersistentScheduler jobScheduler, String accountId) {

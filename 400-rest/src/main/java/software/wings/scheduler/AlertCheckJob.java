@@ -76,10 +76,14 @@ public class AlertCheckJob implements Job {
 
   @Inject private ExecutorService executorService;
 
-  public static TriggerBuilder<SimpleTrigger> alertTriggerBuilder(String accountId) {
+  private static TriggerBuilder<SimpleTrigger> alertTriggerBuilder(String accountId) {
     return TriggerBuilder.newTrigger()
         .withIdentity(accountId, GROUP)
         .withSchedule(SimpleScheduleBuilder.simpleSchedule().withIntervalInSeconds(POLL_INTERVAL).repeatForever());
+  }
+
+  public TriggerBuilder<SimpleTrigger> getAlertTriggerBuilder(String accountId) {
+    return alertTriggerBuilder(accountId);
   }
   public static void addWithDelay(PersistentScheduler jobScheduler, String accountId) {
     // Add some randomness in the trigger start time to avoid overloading quartz by firing jobs at the same time.
