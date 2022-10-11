@@ -9,10 +9,7 @@ package io.harness.terraform;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.provision.TerraformConstants.TERRAFORM_PLAN_FILE_OUTPUT_NAME;
-import static io.harness.rule.OwnerRule.ABOSII;
-import static io.harness.rule.OwnerRule.ARVIND;
-import static io.harness.rule.OwnerRule.BOGDAN;
-import static io.harness.rule.OwnerRule.ROHITKARELIA;
+import static io.harness.rule.OwnerRule.*;
 import static io.harness.terraform.TerraformConstants.DEFAULT_TERRAFORM_COMMAND_TIMEOUT;
 
 import static java.lang.String.format;
@@ -147,7 +144,7 @@ public class TerraformClientImplTest extends CategoryTest {
   }
 
   @Test
-  @Owner(developers = ROHITKARELIA)
+  @Owner(developers = TATHAGAT)
   @Category(UnitTests.class)
   public void testPlanCommandWithDestroy() throws InterruptedException, IOException, TimeoutException {
     CliResponse cliResponse = getCliResponse();
