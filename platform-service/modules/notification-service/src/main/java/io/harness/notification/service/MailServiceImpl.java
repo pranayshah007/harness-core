@@ -145,15 +145,9 @@ public class MailServiceImpl implements ChannelService {
   }
 
   public NotificationTaskResponse sendEmail(EmailDTO emailDTO) {
-    List<String> emails = emailDTO.getRecipients();
-    List<String> ccEmails = emailDTO.getCcRecipients();
+    List<String> emails = new ArrayList<>(emailDTO.getToRecipients());
+    List<String> ccEmails = new ArrayList<>(emailDTO.getCcRecipients());
     String accountId = emailDTO.getAccountId();
-    if (emails == null) {
-      emails = new ArrayList<>();
-    }
-    if (ccEmails == null) {
-      ccEmails = new ArrayList<>();
-    }
     if (Objects.isNull(accountId)) {
       throw new NotificationException(
           String.format("No account id encountered for %s.", emailDTO.getNotificationId()), DEFAULT_ERROR_CODE, USER);
@@ -197,6 +191,7 @@ public class MailServiceImpl implements ChannelService {
     notPresentEmails.addAll(getAbsentEmails(ccEmails, accountId));
     if (!notPresentEmails.isEmpty()) {
       emails.removeAll(notPresentEmails);
+      ccEmails.removeAll(notPresentEmails);
       if (StringUtils.isNotEmpty(errorMessage)) {
         errorMessage = errorMessage.concat(" ");
       }

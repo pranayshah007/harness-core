@@ -42,11 +42,11 @@ import io.harness.service.DelegateGrpcClientWrapper;
 import io.harness.userng.remote.UserNGClient;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.List;
+import java.util.HashSet;
 import java.util.Optional;
+import java.util.Set;
 import lombok.SneakyThrows;
 import org.junit.Before;
 import org.junit.Test;
@@ -256,8 +256,8 @@ public class MailServiceImplTest extends CategoryTest {
     final EmailDTO emailDTO = EmailDTO.builder()
                                   .notificationId("notificationId")
                                   .accountId(accountId)
-                                  .recipients(Collections.singletonList("email@harness.io"))
-                                  .ccRecipients(Collections.singletonList("email@harness.io"))
+                                  .toRecipients(new HashSet<>(Collections.singletonList("email@harness.io")))
+                                  .ccRecipients(new HashSet<>(Collections.singletonList("email@harness.io")))
                                   .build();
     NotificationProcessingResponse notificationExpectedResponse =
         NotificationProcessingResponse.builder().result(Arrays.asList(true)).shouldRetry(false).build();
@@ -274,7 +274,12 @@ public class MailServiceImplTest extends CategoryTest {
   @Owner(developers = RICHA)
   @Category(UnitTests.class)
   public void sendEmail_no_emails() {
-    final EmailDTO emailDTO = EmailDTO.builder().notificationId("notificationId").accountId(accountId).build();
+    final EmailDTO emailDTO = EmailDTO.builder()
+                                  .notificationId("notificationId")
+                                  .toRecipients(Collections.emptySet())
+                                  .ccRecipients(Collections.emptySet())
+                                  .accountId(accountId)
+                                  .build();
     NotificationProcessingResponse notificationExpectedResponse =
         NotificationProcessingResponse.builder().result(Arrays.asList(true)).shouldRetry(false).build();
     when(mailSender.send(any(), any(), any(), any(), any(), any())).thenReturn(notificationExpectedResponse);
@@ -289,12 +294,12 @@ public class MailServiceImplTest extends CategoryTest {
   @Owner(developers = RICHA)
   @Category(UnitTests.class)
   public void sendEmail_invalid_emails() {
-    List<String> emails = new ArrayList<>();
+    Set<String> emails = new HashSet<>();
     emails.add("email_harness.io");
     final EmailDTO emailDTO = EmailDTO.builder()
                                   .notificationId("notificationId")
                                   .accountId(accountId)
-                                  .recipients(emails)
+                                  .toRecipients(emails)
                                   .ccRecipients(emails)
                                   .build();
     NotificationProcessingResponse notificationExpectedResponse =
@@ -312,8 +317,8 @@ public class MailServiceImplTest extends CategoryTest {
   public void sendEmail_no_account_id() {
     final EmailDTO emailDTO = EmailDTO.builder()
                                   .notificationId("notificationId")
-                                  .recipients(Collections.singletonList("email@harness.io"))
-                                  .ccRecipients(Collections.singletonList("email@harness.io"))
+                                  .toRecipients(new HashSet<>(Collections.singletonList("email@harness.io")))
+                                  .ccRecipients(new HashSet<>(Collections.singletonList("email@harness.io")))
                                   .build();
     NotificationProcessingResponse notificationExpectedResponse =
         NotificationProcessingResponse.builder().result(Arrays.asList(true)).shouldRetry(false).build();
@@ -331,8 +336,8 @@ public class MailServiceImplTest extends CategoryTest {
   public void sendEmail_response_wrong() {
     final EmailDTO emailDTO = EmailDTO.builder()
                                   .notificationId("notificationId")
-                                  .recipients(Collections.singletonList("email@harness.io"))
-                                  .ccRecipients(Collections.singletonList("email@harness.io"))
+                                  .toRecipients(new HashSet<>(Collections.singletonList("email@harness.io")))
+                                  .ccRecipients(new HashSet<>(Collections.singletonList("email@harness.io")))
                                   .build();
     NotificationProcessingResponse notificationExpectedResponse =
         NotificationProcessingResponse.builder().result(Arrays.asList(false)).shouldRetry(false).build();
