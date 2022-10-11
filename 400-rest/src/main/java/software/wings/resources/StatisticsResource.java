@@ -50,10 +50,12 @@ public class StatisticsResource {
   public RestResponse<DeploymentStatistics> deploymentStats(@QueryParam("accountId") String accountId,
       @DefaultValue("30") @QueryParam("numOfDays") Integer numOfDays, @QueryParam("appId") List<String> appIds) {
     DeploymentStatistics deploymentStatistics;
-    if (featureFlagService.isEnabled(FeatureName.SPG_DASHBOARD_STATS_OPTIMIZE, accountId)) {
+    if (featureFlagService.isNotEnabled(FeatureName.SPG_DASHBOARD_STATS_OPTIMIZE_DEPLOYMENTS, accountId)) {
       deploymentStatistics = statisticsService.getDeploymentStatistics(accountId, appIds, numOfDays);
       DeploymentStatistics finalDeploymentStatistics = deploymentStatistics;
-      executorService.submit(() -> dataComparisionLogging(accountId, numOfDays, appIds, finalDeploymentStatistics));
+      if (featureFlagService.isEnabled(FeatureName.SPG_LIVE_DASHBOARD_STATS_DEBUGGING, accountId)) {
+        executorService.submit(() -> dataComparisionLogging(accountId, numOfDays, appIds, finalDeploymentStatistics));
+      }
     } else {
       deploymentStatistics = statisticsService.getDeploymentStatisticsNew(accountId, appIds, numOfDays);
     }
@@ -76,6 +78,25 @@ public class StatisticsResource {
   @ExceptionMetered
   public RestResponse<ServiceInstanceStatistics> instanceStats(@QueryParam("accountId") String accountId,
       @DefaultValue("30") @QueryParam("numOfDays") Integer numOfDays, @QueryParam("appId") List<String> appIds) {
-    return new RestResponse<>(statisticsService.getServiceInstanceStatistics(accountId, appIds, numOfDays));
+    ServiceInstanceStatistics serviceInstanceStatistics;
+    if (featureFlagService.isNotEnabled(FeatureName.SPG_DASHBOARD_STATS_OPTIMIZE_ACTIVE_SERVICES, accountId)) {
+      serviceInstanceStatistics = statisticsService.getServiceInstanceStatistics(accountId, appIds, numOfDays);
+      if (featureFlagService.isEnabled(FeatureName.SPG_LIVE_DASHBOARD_STATS_DEBUGGING, accountId)) {
+        executorService.submit(() -> dataComparisionLogging(accountId, numOfDays, appIds, serviceInstanceStatistics));
+      }
+    } else {
+      serviceInstanceStatistics = statisticsService.getServiceInstanceStatisticsNew(accountId, appIds, numOfDays);
+    }
+    return new RestResponse<>(serviceInstanceStatistics);
+  }
+
+  private void dataComparisionLogging(
+      String accountId, Integer numOfDays, List<String> appIds, ServiceInstanceStatistics finalDeploymentStatistics) {
+    ServiceInstanceStatistics serviceInstanceStatistics =
+        statisticsService.getServiceInstanceStatisticsNew(accountId, appIds, numOfDays);
+    if (finalDeploymentStatistics != null && !finalDeploymentStatistics.equals(serviceInstanceStatistics)) {
+      log.error("DEBUG LOG: old way service-instance stats: [{}], new way service-instance stats:[{}]",
+          finalDeploymentStatistics, serviceInstanceStatistics);
+    }
   }
 }

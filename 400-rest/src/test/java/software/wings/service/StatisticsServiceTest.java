@@ -150,9 +150,9 @@ public class StatisticsServiceTest extends WingsBaseTest {
     List<WorkflowExecution> executions =
         constructWorkflowExecutions(serviceExecutionSummaries, serviceFailureExecutionSummaries);
 
-    when(workflowExecutionService.obtainWorkflowExecutions(anyString(), anyLong(), any())).thenReturn(executions);
+    wingsPersistence.save(executions);
 
-    ServiceInstanceStatistics statistics = statisticsService.getServiceInstanceStatistics(ACCOUNT_ID, null, 30);
+    ServiceInstanceStatistics statistics = statisticsService.getServiceInstanceStatisticsNew(ACCOUNT_ID, null, 30);
     assertThat(statistics.getStatsMap()).isNotEmpty();
     assertThat(statistics.getStatsMap().get(PROD))
         .hasSize(1)

@@ -11,6 +11,7 @@ import static io.harness.beans.EnvironmentType.ALL;
 import static io.harness.beans.EnvironmentType.NON_PROD;
 import static io.harness.beans.EnvironmentType.PROD;
 import static io.harness.beans.ExecutionStatus.SUCCESS;
+import static io.harness.beans.ExecutionStatus.finalStatuses;
 import static io.harness.beans.WorkflowType.ORCHESTRATION;
 import static io.harness.beans.WorkflowType.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -22,6 +23,9 @@ import static java.util.Comparator.comparing;
 import static java.util.Comparator.reverseOrder;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toList;
+import static org.mongodb.morphia.aggregation.Group.addToSet;
+import static org.mongodb.morphia.aggregation.Group.grouping;
+import static org.mongodb.morphia.aggregation.Projection.projection;
 
 import io.harness.beans.EnvironmentType;
 import io.harness.beans.ExecutionStatus;
@@ -49,6 +53,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.mongodb.BasicDBObject;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
@@ -59,7 +64,8 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import org.apache.commons.collections.CollectionUtils;
+import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 import org.mongodb.morphia.AdvancedDatastore;
 import org.mongodb.morphia.aggregation.Accumulator;
 import org.mongodb.morphia.aggregation.AggregationPipeline;
@@ -68,6 +74,7 @@ import org.mongodb.morphia.aggregation.Projection;
 import org.mongodb.morphia.query.Query;
 
 @Singleton
+@Slf4j
 public class StatisticsServiceImpl implements StatisticsService {
   @Inject private WorkflowExecutionService workflowExecutionService;
   @Inject private FeatureFlagService featureFlagService;
@@ -144,7 +151,7 @@ public class StatisticsServiceImpl implements StatisticsService {
       return;
     }
     if (userRequestContext.isAppIdFilterRequired()) {
-      if (CollectionUtils.isNotEmpty(userRequestContext.getAppIds())) {
+      if (isNotEmpty(userRequestContext.getAppIds())) {
         UserPermissionInfo userPermissionInfo = userRequestContext.getUserPermissionInfo();
         if (userPermissionInfo.isHasAllAppAccess()) {
           query.field("accountId").equal(userRequestContext.getAccountId());
@@ -270,28 +277,28 @@ public class StatisticsServiceImpl implements StatisticsService {
             .match(pipelineInstancesDeployedQuery)
             .unwind(WorkflowExecutionKeys.pipelineExecution_pipelineStageExecutions)
             .unwind(WorkflowExecutionKeys.pipelineExecution_pipelineStageExecutions + ".workflowExecutions")
-            .project(Projection.projection("_id", "_id"),
-                Projection.projection("$serviceExecutionSummaries",
+            .project(projection("_id", "_id"),
+                projection("serviceExecutionSummaries",
                     "pipelineExecution_pipelineStageExecutions.workflowExecutions.serviceExecutionSummaries"),
-                Projection.projection("createdAt", "createdAt"))
-            .project(Projection.projection("day", Projection.expression("$add", new Date(0), "$createdAt")),
-                Projection.projection(
+                projection("createdAt", "createdAt"))
+            .project(projection("day", Projection.expression("$add", new Date(0), "$createdAt")),
+                projection(
                     WorkflowExecutionKeys.serviceExecutionSummaries, WorkflowExecutionKeys.serviceExecutionSummaries),
-                Projection.projection("createdAt", "createdAt"))
-            .project(Projection.projection("date",
+                projection("createdAt", "createdAt"))
+            .project(projection("date",
                          Projection.expression("$dayOfYear",
                              new BasicDBObject("date", "$day").append("timezone", "America/Los_Angeles"))),
-                Projection.projection(
+                projection(
                     WorkflowExecutionKeys.serviceExecutionSummaries, WorkflowExecutionKeys.serviceExecutionSummaries),
-                Projection.projection("createdAt", "createdAt"))
+                projection("createdAt", "createdAt"))
             .unwind("serviceExecutionSummaries")
             .unwind("serviceExecutionSummaries.instanceStatusSummaries")
             .unwind("serviceExecutionSummaries.instanceStatusSummaries.instanceElement")
-            .group(Group.id(Group.grouping("date")), Group.grouping("createdAt", Group.first("createdAt")),
-                Group.grouping("serviceExecutionSummaries",
-                    Group.addToSet("serviceExecutionSummaries.instanceStatusSummaries.instanceElement.uuid")))
+            .group(Group.id(grouping("date")), grouping("createdAt", Group.first("createdAt")),
+                grouping("serviceExecutionSummaries",
+                    addToSet("serviceExecutionSummaries.instanceStatusSummaries.instanceElement.uuid")))
             .project(Projection.expression("count", new BasicDBObject("$size", "$serviceExecutionSummaries")),
-                Projection.projection("_id", "_id"), Projection.projection("createdAt", "createdAt"));
+                projection("_id", "_id"), projection("createdAt", "createdAt"));
     pipelineInstancesDeployedAggregation.aggregate(ExecutionCount.class).forEachRemaining(e -> {
       getExecutionCount(instancesDeployedViaPipeline, e);
     });
@@ -313,24 +320,24 @@ public class StatisticsServiceImpl implements StatisticsService {
     AggregationPipeline workflowInstancesDeployedAggregation =
         datastore.createAggregation(WorkflowExecution.class)
             .match(workflowInstancesDeployed)
-            .project(Projection.projection("day", Projection.expression("$add", new Date(0), "$createdAt")),
-                Projection.projection(
+            .project(projection("day", Projection.expression("$add", new Date(0), "$createdAt")),
+                projection(
                     WorkflowExecutionKeys.serviceExecutionSummaries, WorkflowExecutionKeys.serviceExecutionSummaries),
-                Projection.projection("createdAt", "createdAt"))
-            .project(Projection.projection("date",
+                projection("createdAt", "createdAt"))
+            .project(projection("date",
                          Projection.expression("$dayOfYear",
                              new BasicDBObject("date", "$day").append("timezone", "America/Los_Angeles"))),
-                Projection.projection(
+                projection(
                     WorkflowExecutionKeys.serviceExecutionSummaries, WorkflowExecutionKeys.serviceExecutionSummaries),
-                Projection.projection("createdAt", "createdAt"))
+                projection("createdAt", "createdAt"))
             .unwind("serviceExecutionSummaries")
             .unwind("serviceExecutionSummaries.instanceStatusSummaries")
             .unwind("serviceExecutionSummaries.instanceStatusSummaries.instanceElement")
-            .group(Group.id(Group.grouping("date")), Group.grouping("createdAt", Group.first("createdAt")),
-                Group.grouping("serviceExecutionSummaries",
-                    Group.addToSet("serviceExecutionSummaries.instanceStatusSummaries.instanceElement.uuid")))
+            .group(Group.id(grouping("date")), grouping("createdAt", Group.first("createdAt")),
+                grouping("serviceExecutionSummaries",
+                    addToSet("serviceExecutionSummaries.instanceStatusSummaries.instanceElement.uuid")))
             .project(Projection.expression("count", new BasicDBObject("$size", "$serviceExecutionSummaries")),
-                Projection.projection("_id", "_id"), Projection.projection("createdAt", "createdAt"));
+                projection("_id", "_id"), projection("createdAt", "createdAt"));
     workflowInstancesDeployedAggregation.aggregate(ExecutionCount.class)
         .forEachRemaining(e -> getExecutionCount(instancesDeployedViaWorkflow, e));
     return instancesDeployedViaWorkflow;
@@ -345,14 +352,14 @@ public class StatisticsServiceImpl implements StatisticsService {
     AggregationPipeline totalFailedExecutionAggregation =
         datastore.createAggregation(WorkflowExecution.class)
             .match(totalFailedExecutions)
-            .project(Projection.projection("day", Projection.expression("$add", new Date(0), "$createdAt")),
-                Projection.projection("createdAt", "createdAt"), Projection.projection("createdAt", "createdAt"))
-            .project(Projection.projection("date",
+            .project(projection("day", Projection.expression("$add", new Date(0), "$createdAt")),
+                projection("createdAt", "createdAt"), projection("createdAt", "createdAt"))
+            .project(projection("date",
                          Projection.expression("$dayOfYear",
                              new BasicDBObject("date", "$day").append("timezone", "America/Los_Angeles"))),
-                Projection.projection("createdAt", "createdAt"))
-            .group(Group.id(Group.grouping("date")), Group.grouping("createdAt", Group.first("createdAt")),
-                Group.grouping("count", Accumulator.accumulator("$sum", 1)));
+                projection("createdAt", "createdAt"))
+            .group(Group.id(grouping("date")), grouping("createdAt", Group.first("createdAt")),
+                grouping("count", Accumulator.accumulator("$sum", 1)));
     totalFailedExecutionAggregation.aggregate(ExecutionCount.class)
         .forEachRemaining(e -> getExecutionCount(failedExecutionCount, e));
     return failedExecutionCount;
@@ -365,14 +372,14 @@ public class StatisticsServiceImpl implements StatisticsService {
     AggregationPipeline totalExecutionAggregation =
         datastore.createAggregation(WorkflowExecution.class)
             .match(baseQuery)
-            .project(Projection.projection("day", Projection.expression("$add", new Date(0), "$createdAt")),
-                Projection.projection("createdAt", "createdAt"))
-            .project(Projection.projection("date",
+            .project(projection("day", Projection.expression("$add", new Date(0), "$createdAt")),
+                projection("createdAt", "createdAt"))
+            .project(projection("date",
                          Projection.expression("$dayOfYear",
                              new BasicDBObject("date", "$day").append("timezone", "America/Los_Angeles"))),
-                Projection.projection("createdAt", "createdAt"))
-            .group(Group.id(Group.grouping("date")), Group.grouping("createdAt", Group.first("createdAt")),
-                Group.grouping("count", Accumulator.accumulator("$sum", 1)));
+                projection("createdAt", "createdAt"))
+            .group(Group.id(grouping("date")), grouping("createdAt", Group.first("createdAt")),
+                grouping("count", Accumulator.accumulator("$sum", 1)));
     totalExecutionAggregation.aggregate(ExecutionCount.class)
         .forEachRemaining(e -> getExecutionCount(totalExecutionCount, e));
     return totalExecutionCount;
@@ -390,6 +397,7 @@ public class StatisticsServiceImpl implements StatisticsService {
                                              .filter(WorkflowExecutionKeys.accountId, accountId);
     AdvancedDatastore datastore = wingsPersistence.getDatastore(WorkflowExecution.class);
     addRbacAndAppIdFilterToBaseQuery(baseQuery, appIds);
+    baseQuery.field(WorkflowExecutionKeys.status).in(finalStatuses());
 
     Query<WorkflowExecution> prodEnvBaseQuery = baseQuery.cloneQuery().filter(WorkflowExecutionKeys.envType, PROD);
     Query<WorkflowExecution> nonProdEnvBaseQuery =
@@ -397,82 +405,137 @@ public class StatisticsServiceImpl implements StatisticsService {
 
     Comparator<TopConsumer> byCount = comparing(TopConsumer::getTotalCount, reverseOrder());
 
-    List<TopConsumer> allTopConsumers = new ArrayList<>();
+    List<TopConsumer> allEnvTopConsumers = getTopConsumers(baseQuery, datastore, byCount);
+    List<TopConsumer> prodEnvTopConsumers = getTopConsumers(prodEnvBaseQuery, datastore, byCount);
+    List<TopConsumer> nonProdEnvTopConsumers = getTopConsumers(nonProdEnvBaseQuery, datastore, byCount);
 
-    //      if (!ExecutionStatus.isFinalStatus(execution.getStatus())) {
-    //        continue;
-    //      }
-    //      final List<ElementExecutionSummary> serviceExecutionSummaries = new ArrayList<>();
-    //      if (execution.getWorkflowType() == PIPELINE && execution.getPipelineExecution() != null
-    //              && isNotEmpty(execution.getPipelineExecution().getPipelineStageExecutions())) {
-    //        execution.getPipelineExecution()
-    //                .getPipelineStageExecutions()
-    //                .stream()
-    //                .filter(pipelineStageExecution -> pipelineStageExecution.getWorkflowExecutions() != null)
-    //                .flatMap(pipelineStageExecution -> pipelineStageExecution.getWorkflowExecutions().stream())
-    //                .filter(workflowExecution -> workflowExecution.getServiceExecutionSummaries() != null)
-    //                .forEach(workflowExecution -> {
-    //                  serviceExecutionSummaries.addAll(workflowExecution.getServiceExecutionSummaries());
-    //                });
-    //      } else if (execution.getServiceExecutionSummaries() != null) {
-    //        serviceExecutionSummaries.addAll(execution.getServiceExecutionSummaries());
-    //      }
-    //      Map<String, ElementExecutionSummary> serviceExecutionStatusMap = new HashMap<>();
-    //      for (ElementExecutionSummary serviceExecutionSummary : serviceExecutionSummaries) {
-    //        if (serviceExecutionSummary.getContextElement() == null) {
-    //          continue;
-    //        }
-    //        String serviceId = serviceExecutionSummary.getContextElement().getUuid();
-    //        serviceExecutionStatusMap.put(serviceId, serviceExecutionSummary);
-    //      }
-    //      for (ElementExecutionSummary serviceExecutionSummary : serviceExecutionStatusMap.values()) {
-    //        String serviceId = serviceExecutionSummary.getContextElement().getUuid();
-    //        ExecutionStatus serviceExecutionStatus = serviceExecutionSummary.getStatus();
-    //        if (serviceExecutionStatus == null) {
-    //          serviceExecutionStatus = execution.getStatus();
-    //        }
-    //        TopConsumer topConsumer;
-    //        if (!topConsumerMap.containsKey(serviceId)) {
-    //          TopConsumer tempConsumer = TopConsumer.builder()
-    //                  .appId(execution.getAppId())
-    //                  .appName(execution.getAppName())
-    //                  .serviceId(serviceId)
-    //                  .serviceName(serviceExecutionSummary.getContextElement().getName())
-    //                  .build();
-    //          topConsumerMap.put(serviceId, tempConsumer);
-    //          topConsumers.add(tempConsumer);
-    //        }
-    //        topConsumer = topConsumerMap.get(serviceId);
-    //        if (serviceExecutionStatus == SUCCESS) {
-    //          topConsumer.setSuccessfulActivityCount(topConsumer.getSuccessfulActivityCount() + 1);
-    //          topConsumer.setTotalCount(topConsumer.getTotalCount() + 1);
-    //        } else {
-    //          topConsumer.setFailedActivityCount(topConsumer.getFailedActivityCount() + 1);
-    //          topConsumer.setTotalCount(topConsumer.getTotalCount() + 1);
-    //        }
-    //      }
-    //
-
-    getTopServicesDeployed(allTopConsumers, workflowExecutions);
-
-    allTopConsumers = allTopConsumers.stream().sorted(byCount).collect(toList());
-
-    Map<EnvironmentType, List<WorkflowExecution>> wflExecutionByEnvType =
-        workflowExecutions.stream().collect(groupingBy(wex -> PROD == wex.getEnvType() ? PROD : NON_PROD));
-
-    List<TopConsumer> prodTopConsumers = new ArrayList<>();
-    getTopServicesDeployed(prodTopConsumers, wflExecutionByEnvType.get(PROD));
-    prodTopConsumers = prodTopConsumers.stream().sorted(byCount).collect(toList());
-
-    List<TopConsumer> nonProdTopConsumers = new ArrayList<>();
-    getTopServicesDeployed(nonProdTopConsumers, wflExecutionByEnvType.get(NON_PROD));
-
-    nonProdTopConsumers = nonProdTopConsumers.stream().sorted(byCount).collect(toList());
-
-    instanceStats.getStatsMap().put(ALL, allTopConsumers);
-    instanceStats.getStatsMap().put(PROD, prodTopConsumers);
-    instanceStats.getStatsMap().put(NON_PROD, nonProdTopConsumers);
+    instanceStats.getStatsMap().put(ALL, allEnvTopConsumers);
+    instanceStats.getStatsMap().put(PROD, prodEnvTopConsumers);
+    instanceStats.getStatsMap().put(NON_PROD, nonProdEnvTopConsumers);
     return instanceStats;
+  }
+
+  private List<TopConsumer> getTopConsumers(
+      Query<WorkflowExecution> baseQuery, AdvancedDatastore datastore, Comparator<TopConsumer> comparator) {
+    Map<String, TopConsumer> topConsumerMap = new HashMap<>();
+
+    Query<WorkflowExecution> queryForWorkflow = getWorkflowExecutionQuery(baseQuery);
+    populateTopConsumerMapForWorkflow(datastore, topConsumerMap, queryForWorkflow);
+
+    Query<WorkflowExecution> queryForPipeline = getPipelineExecutionQuery(baseQuery);
+    populateTopConsumerMapForPipeline(datastore, topConsumerMap, queryForPipeline);
+
+    return topConsumerMap.values().stream().sorted(comparator).collect(Collectors.toList());
+  }
+
+  private Query<WorkflowExecution> getPipelineExecutionQuery(Query<WorkflowExecution> baseQuery) {
+    Query<WorkflowExecution> queryForPipeline = baseQuery.cloneQuery();
+    baseQuery.filter(WorkflowExecutionKeys.workflowType, PIPELINE);
+    return queryForPipeline;
+  }
+
+  @NotNull
+  private Query<WorkflowExecution> getWorkflowExecutionQuery(Query<WorkflowExecution> baseQuery) {
+    Query<WorkflowExecution> queryForWorkflow = baseQuery.cloneQuery();
+    queryForWorkflow.filter(WorkflowExecutionKeys.workflowType, ORCHESTRATION);
+    return queryForWorkflow;
+  }
+
+  private void populateTopConsumerMapForPipeline(
+      AdvancedDatastore datastore, Map<String, TopConsumer> topConsumerMap, Query<WorkflowExecution> query) {
+    AggregationPipeline pipelineServiceDeployedAggregation =
+        datastore.createAggregation(WorkflowExecution.class)
+            .match(query)
+            .unwind(WorkflowExecutionKeys.pipelineExecution_pipelineStageExecutions)
+            .unwind(WorkflowExecutionKeys.pipelineExecution_pipelineStageExecutions + ".workflowExecutions")
+            .project(projection(WorkflowExecutionKeys.serviceExecutionSummaries,
+                         WorkflowExecutionKeys.pipelineExecution_pipelineStageExecutions + ".workflowExecutions"
+                             + WorkflowExecutionKeys.serviceExecutionSummaries),
+                projection("createdAt", "createdAt"),
+                projection(WorkflowExecutionKeys.status, WorkflowExecutionKeys.status), projection("appId", "appId"),
+                projection("appName", "appName"))
+            .unwind(WorkflowExecutionKeys.serviceExecutionSummaries);
+
+    addServiceGroupingLogic(pipelineServiceDeployedAggregation);
+
+    pipelineServiceDeployedAggregation.aggregate(ConsumersInfo.class).forEachRemaining(consumersInfo -> {
+      populateTopConsumerMap(topConsumerMap, consumersInfo);
+    });
+  }
+
+  private void populateTopConsumerMapForWorkflow(
+      AdvancedDatastore datastore, Map<String, TopConsumer> topConsumerMap, Query<WorkflowExecution> queryForWorkflow) {
+    AggregationPipeline workflowServiceDeployedAggregation =
+        datastore.createAggregation(WorkflowExecution.class)
+            .match(queryForWorkflow)
+            .project(projection(WorkflowExecutionKeys.serviceExecutionSummaries,
+                         WorkflowExecutionKeys.serviceExecutionSummaries),
+                projection("createdAt", "createdAt"),
+                projection(WorkflowExecutionKeys.status, WorkflowExecutionKeys.status), projection("appId", "appId"),
+                projection("appName", "appName"))
+            .unwind("serviceExecutionSummaries");
+    addServiceGroupingLogic(workflowServiceDeployedAggregation);
+
+    workflowServiceDeployedAggregation.aggregate(ConsumersInfo.class).forEachRemaining(consumersInfo -> {
+      populateTopConsumerMap(topConsumerMap, consumersInfo);
+    });
+  }
+  private void populateTopConsumerMap(Map<String, TopConsumer> topConsumerMap, ConsumersInfo consumersInfo) {
+    if (!topConsumerMap.containsKey(consumersInfo.getServiceId())) {
+      TopConsumer.TopConsumerBuilder topConsumerBuilder = TopConsumer.builder()
+                                                              .serviceId(consumersInfo.getServiceId())
+                                                              .serviceName(consumersInfo.getServiceName())
+                                                              .appId(consumersInfo.getAppId())
+                                                              .appName(consumersInfo.getAppName())
+                                                              .totalCount(consumersInfo.getCount());
+      if (consumersInfo.getStatus().equals(SUCCESS)) {
+        topConsumerBuilder.successfulActivityCount(consumersInfo.getCount());
+      } else {
+        topConsumerBuilder.failedActivityCount(consumersInfo.getCount());
+      }
+      topConsumerMap.put(consumersInfo.getServiceId(), topConsumerBuilder.build());
+    } else {
+      TopConsumer topConsumer = topConsumerMap.get(consumersInfo.getServiceId());
+      if (consumersInfo.getStatus().equals(SUCCESS)) {
+        topConsumer.setSuccessfulActivityCount(topConsumer.getSuccessfulActivityCount() + consumersInfo.getCount());
+      } else {
+        topConsumer.setFailedActivityCount(consumersInfo.getCount() + topConsumer.getFailedActivityCount());
+      }
+      topConsumer.setTotalCount(topConsumer.getTotalCount() + consumersInfo.getCount());
+    }
+  }
+
+  private void addServiceGroupingLogic(AggregationPipeline aggregationPipeline) {
+    aggregationPipeline
+        .project(projection(
+                     WorkflowExecutionKeys.serviceExecutionSummaries, WorkflowExecutionKeys.serviceExecutionSummaries),
+            projection("createdAt", "createdAt"),
+            projection(WorkflowExecutionKeys.status, WorkflowExecutionKeys.status),
+            projection("originalStatus",
+                Projection.expression("$cond",
+                    new BasicDBObject(
+                        "if", new BasicDBObject("$eq", Arrays.asList("$serviceExecutionSummaries.status", null)))
+                        .append("then", "$status")
+                        .append("else", "$serviceExecutionSummaries.status"))),
+            projection("appId", "appId"), projection("appName", "appName"))
+        .project(projection(
+                     WorkflowExecutionKeys.serviceExecutionSummaries, WorkflowExecutionKeys.serviceExecutionSummaries),
+            projection("createdAt", "createdAt"),
+            projection(WorkflowExecutionKeys.status, WorkflowExecutionKeys.status),
+            projection("finalStatus",
+                Projection.expression("$cond",
+                    new BasicDBObject("if", new BasicDBObject("$eq", Arrays.asList("$originalStatus", "SUCCESS")))
+                        .append("then", "SUCCESS")
+                        .append("else", "FAILED"))),
+            projection("appId", "appId"), projection("appName", "appName"))
+        .group(Group.id(grouping("serviceId", "serviceExecutionSummaries.contextElement.uuid"),
+                   grouping("status", "finalStatus")),
+            grouping("appId", Group.first("appId")), grouping("appName", Group.first("appName")),
+            grouping("serviceName", Group.first("serviceExecutionSummaries.contextElement.name")),
+            grouping("count", Accumulator.accumulator("$sum", 1)))
+        .project(projection("status", "_id.status"), projection("serviceId", "_id.serviceId"),
+            projection("appId", "appId"), projection("appName", "appName"), projection("serviceName", "serviceName"),
+            projection("count", "count"), projection("_id").suppress());
   }
 
   @Override

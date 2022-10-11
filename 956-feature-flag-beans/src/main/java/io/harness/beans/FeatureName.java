@@ -452,8 +452,11 @@ public enum FeatureName {
   CD_SERVICE_ENV_RECONCILIATION("Do reconciliation of service and env on pipeline/template save", HarnessTeam.CDC),
   CD_TRIGGER_CATALOG("Enables UI for Trigger catalog for Nexus ", HarnessTeam.CDC),
   CDS_SHOW_CREATE_PR("Start showing CreatePR step on the plan creator if enabled", HarnessTeam.GITOPS),
-  SPG_DASHBOARD_STATS_OPTIMIZE(
-      "Dashboard stats slow api call optimization. Also solves MOM issue in CG.", HarnessTeam.SPG);
+  SPG_DASHBOARD_STATS_OPTIMIZE_DEPLOYMENTS(
+      "Dashboard stats slow api call optimization. Also solves MOM issue in CG.", HarnessTeam.SPG),
+  SPG_DASHBOARD_STATS_OPTIMIZE_ACTIVE_SERVICES(
+      "Active services slow api call optimization. Also solves MOM issue in CG.", HarnessTeam.SPG),
+  SPG_LIVE_DASHBOARD_STATS_DEBUGGING("Live debugging for dashboard stats in CG", HarnessTeam.SPG);
 
   @Deprecated
   FeatureName() {
