@@ -750,6 +750,7 @@ public class WingsApplication extends Application<MainConfiguration> {
     }
 
     // Register collection iterators
+    log.info("The value for enableIterators is : {} ", configuration.isEnableIterators());
     if (configuration.isEnableIterators()) {
       if (isManager()) {
         registerIteratorsManager(configuration.getIteratorsConfig(), injector);
