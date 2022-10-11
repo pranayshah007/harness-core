@@ -23,6 +23,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.MigratedEntityMapping;
 import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
 import io.harness.cdng.service.beans.ServiceConfig;
+import io.harness.cdng.service.beans.ServiceDefinition;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.gitsync.beans.YamlDTO;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -248,20 +249,23 @@ public class ServiceMigrationService extends NgMigrationService {
     List<ManifestConfigWrapper> manifestConfigWrapperList =
         manifestMigrationService.getManifests(manifests, inputDTO, entities, graph, migratedEntities);
 
-    NGServiceConfig serviceYaml =
-        NGServiceConfig.builder()
-            .ngServiceV2InfoConfig(
-                NGServiceV2InfoConfig.builder()
-                    .name(name)
-                    .description(service.getDescription())
-                    .gitOpsEnabled(false)
-                    .identifier(identifier)
-                    .tags(new HashMap<>())
-                    .useFromStage(null)
-                    .serviceDefinition(ServiceV2Factory.getService2Mapper(service).getServiceDefinition(
-                        inputDTO, entities, graph, service, migratedEntities, manifestConfigWrapperList))
-                    .build())
-            .build();
+    ServiceDefinition serviceDefinition = ServiceV2Factory.getService2Mapper(service).getServiceDefinition(
+        inputDTO, entities, graph, service, migratedEntities, manifestConfigWrapperList);
+    if (serviceDefinition == null) {
+      return Collections.emptyList();
+    }
+
+    NGServiceConfig serviceYaml = NGServiceConfig.builder()
+                                      .ngServiceV2InfoConfig(NGServiceV2InfoConfig.builder()
+                                                                 .name(name)
+                                                                 .description(service.getDescription())
+                                                                 .gitOpsEnabled(false)
+                                                                 .identifier(identifier)
+                                                                 .tags(new HashMap<>())
+                                                                 .useFromStage(null)
+                                                                 .serviceDefinition(serviceDefinition)
+                                                                 .build())
+                                      .build();
     NGYamlFile ngYamlFile = NGYamlFile.builder()
                                 .filename(String.format("service/%s/%s.yaml", service.getAppId(), service.getName()))
                                 .yaml(serviceYaml)

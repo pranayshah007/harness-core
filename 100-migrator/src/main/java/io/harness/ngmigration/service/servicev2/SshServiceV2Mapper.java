@@ -12,14 +12,13 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.artifact.bean.yaml.ArtifactListConfig;
 import io.harness.cdng.artifact.bean.yaml.PrimaryArtifact;
 import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
-import io.harness.cdng.service.beans.KubernetesServiceSpec;
-import io.harness.cdng.service.beans.KubernetesServiceSpec.KubernetesServiceSpecBuilder;
 import io.harness.cdng.service.beans.ServiceDefinition;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
+import io.harness.cdng.service.beans.SshServiceSpec;
+import io.harness.cdng.service.beans.SshServiceSpec.SshServiceSpecBuilder;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.service.MigratorUtility;
-import io.harness.yaml.core.variables.NGVariable;
 
 import software.wings.beans.Service;
 import software.wings.ngmigration.CgEntityId;
@@ -30,22 +29,20 @@ import java.util.Map;
 import java.util.Set;
 
 @OwnedBy(HarnessTeam.CDC)
-public class K8sServiceV2Mapper implements ServiceV2Mapper {
+public class SshServiceV2Mapper implements ServiceV2Mapper {
   @Override
   public ServiceDefinition getServiceDefinition(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
       Map<CgEntityId, Set<CgEntityId>> graph, Service service, Map<CgEntityId, NGYamlFile> migratedEntities,
       List<ManifestConfigWrapper> manifests) {
     PrimaryArtifact primaryArtifact = getPrimaryArtifactStream(inputDTO, entities, graph, service, migratedEntities);
-    KubernetesServiceSpecBuilder kubernetesServiceSpec = KubernetesServiceSpec.builder();
-    List<NGVariable> variables = MigratorUtility.getVariables(service.getServiceVariables(), migratedEntities);
+    SshServiceSpecBuilder sshServiceSpecBuilder = SshServiceSpec.builder();
     if (primaryArtifact != null) {
-      kubernetesServiceSpec.artifacts(ArtifactListConfig.builder().primary(primaryArtifact).build());
+      sshServiceSpecBuilder.artifacts(ArtifactListConfig.builder().primary(primaryArtifact).build());
     }
-    kubernetesServiceSpec.manifests(manifests);
-    kubernetesServiceSpec.variables(variables);
+    sshServiceSpecBuilder.variables(MigratorUtility.getVariables(service.getServiceVariables(), migratedEntities));
     return ServiceDefinition.builder()
-        .type(ServiceDefinitionType.KUBERNETES)
-        .serviceSpec(kubernetesServiceSpec.build())
+        .type(ServiceDefinitionType.SSH)
+        .serviceSpec(sshServiceSpecBuilder.build())
         .build();
   }
 }

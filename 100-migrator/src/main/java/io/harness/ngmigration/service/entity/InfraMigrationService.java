@@ -18,6 +18,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.MigratedEntityMapping;
 import io.harness.cdng.infra.InfrastructureDef;
+import io.harness.cdng.infra.yaml.Infrastructure;
 import io.harness.cdng.infra.yaml.InfrastructureConfig;
 import io.harness.cdng.infra.yaml.InfrastructureDefinitionConfig;
 import io.harness.cdng.infra.yaml.K8SDirectInfrastructure;
@@ -212,6 +213,10 @@ public class InfraMigrationService extends NgMigrationService {
     InfraDefMapper infraDefMapper = infraMapperFactory.getInfraDefMapper(infra);
     NGYamlFile envNgYamlFile =
         migratedEntities.get(CgEntityId.builder().id(infra.getEnvId()).type(ENVIRONMENT).build());
+    Infrastructure infraSpec = infraDefMapper.getSpec(infra, migratedEntities);
+    if (infraSpec == null) {
+      return Collections.emptyList();
+    }
     InfrastructureConfig infrastructureConfig =
         InfrastructureConfig.builder()
             .infrastructureDefinitionConfig(
@@ -221,7 +226,7 @@ public class InfraMigrationService extends NgMigrationService {
                     .projectIdentifier(projectIdentifier)
                     .identifier(identifier)
                     .environmentRef(MigratorUtility.getIdentifierWithScope(envNgYamlFile.getNgEntityDetail()))
-                    .spec(infraDefMapper.getSpec(infra, migratedEntities))
+                    .spec(infraSpec)
                     .type(infraDefMapper.getInfrastructureType(infra))
                     .deploymentType(infraDefMapper.getServiceDefinition(infra))
                     .build())
