@@ -16,7 +16,6 @@ import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.plan.ExecutionTriggerInfo;
-import io.harness.pms.contracts.plan.TriggerType;
 import io.harness.pms.execution.ExecutionStatus;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetTemplateResponseDTOPMS;
 import io.harness.pms.pipeline.api.PipelinesApiUtils;

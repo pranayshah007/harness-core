@@ -28,11 +28,15 @@ import io.harness.pms.gitsync.PmsGitSyncHelper;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetTemplateResponseDTOPMS;
 import io.harness.pms.ngpipeline.inputset.helpers.ValidateAndMergeHelper;
 import io.harness.pms.plan.execution.PipelineExecutor;
+import io.harness.pms.plan.execution.PlanExecutionInterruptType;
 import io.harness.pms.plan.execution.PlanExecutionResponseDto;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
+import io.harness.pms.plan.execution.beans.dto.InterruptDTO;
 import io.harness.pms.plan.execution.service.PMSExecutionService;
 import io.harness.rule.Owner;
 import io.harness.spec.server.pipeline.model.ExecutionsDetailsSummary;
+import io.harness.spec.server.pipeline.model.InterruptRequestBody;
+import io.harness.spec.server.pipeline.model.InterruptResponseBody;
 import io.harness.spec.server.pipeline.model.PipelineExecuteRequestBody;
 import io.harness.spec.server.pipeline.model.PipelineExecuteResponseBody;
 import io.harness.spec.server.pipeline.model.RuntimeYAMLTemplate;
@@ -177,6 +181,7 @@ public class ExecutionsApiImplTest extends CategoryTest {
     assertEquals(execution, executionsDetailsSummary.getSlug());
     assertEquals(0, (int) executionsDetailsSummary.getRunNumber());
   }
+
   @Test
   @Owner(developers = MANKRIT)
   @Category(UnitTests.class)
@@ -197,5 +202,27 @@ public class ExecutionsApiImplTest extends CategoryTest {
     RuntimeYAMLTemplate yamlTemplate2 = (RuntimeYAMLTemplate) response.getEntity();
     assertEquals(yamlTemplate2.getRuntimeYaml(), inputSetYaml);
     verify(validateAndMergeHelper, times(1)).getInputSetTemplateResponseDTO(account, org, project, pipeline, stages);
+  }
+
+  @Test
+  @Owner(developers = MANKRIT)
+  @Category(UnitTests.class)
+  public void testRegisterInterrupt() {
+    InterruptDTO interruptDTO =
+        InterruptDTO.builder().id("id").planExecutionId(execution).type(PlanExecutionInterruptType.ABORT).build();
+    doReturn(executionSummaryEntity)
+        .when(pmsExecutionService)
+        .getPipelineExecutionSummaryEntity(account, org, project, execution, false);
+    doNothing().when(accessControlClient).checkForAccessOrThrow(any(), any(), any());
+    doReturn(interruptDTO).when(pmsExecutionService).registerInterrupt(any(), any(), any());
+
+    InterruptRequestBody interruptRequestBody = new InterruptRequestBody();
+    interruptRequestBody.setInterruptType(InterruptRequestBody.InterruptTypeEnum.ABORT);
+    Response response = executionsApi.registerInterrupt(interruptRequestBody, org, project, execution, account);
+    InterruptResponseBody interruptResponseBody = (InterruptResponseBody) response.getEntity();
+
+    assertEquals(interruptResponseBody.getInterrupt(), "id");
+    assertEquals(interruptResponseBody.getInterruptType(), InterruptResponseBody.InterruptTypeEnum.ABORT);
+    assertEquals(interruptResponseBody.getExecution(), execution);
   }
 }
