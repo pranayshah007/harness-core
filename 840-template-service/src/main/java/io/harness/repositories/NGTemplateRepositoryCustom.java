@@ -85,4 +85,8 @@ public interface NGTemplateRepositoryCustom {
   boolean deleteAllTemplatesInAProject(String accountId, String orgId, String projectId);
 
   boolean deleteAllOrgLevelTemplates(String accountId, String orgId);
+
+  Long countFileInstances(String accountIdentifier, String repoURL, String filePath);
+
+  TemplateEntity importFlowSaveTemplate(TemplateEntity templateEntity, String comments);
 }

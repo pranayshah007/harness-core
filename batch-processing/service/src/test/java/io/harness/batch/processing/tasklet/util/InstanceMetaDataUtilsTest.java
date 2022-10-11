@@ -13,6 +13,7 @@ import static io.harness.rule.OwnerRule.HITESH;
 import static io.harness.rule.OwnerRule.UTSAV;
 
 import static junit.framework.TestCase.assertFalse;
+import static junit.framework.TestCase.assertNull;
 import static junit.framework.TestCase.assertTrue;
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -57,7 +58,14 @@ public class InstanceMetaDataUtilsTest extends BatchProcessingTestBase {
   public void testPopulateNodePoolNameFromLabel() throws Exception {
     assertTrue(isNodePoolNameCorrect(ImmutableMap.of(K8sCCMConstants.GKE_NODE_POOL_KEY, NODE_POOL_NAME)));
     assertTrue(isNodePoolNameCorrect(ImmutableMap.of(K8sCCMConstants.AKS_NODE_POOL_KEY, NODE_POOL_NAME)));
+    assertTrue(isNodePoolNameCorrect(ImmutableMap.of(K8sCCMConstants.KOPS_NODE_POOL_KEY, NODE_POOL_NAME)));
     assertTrue(isNodePoolNameCorrect(ImmutableMap.of(K8sCCMConstants.EKSCTL_NODE_POOL_KEY, NODE_POOL_NAME)));
+    assertFalse(isNodePoolNameCorrect(ImmutableMap.of(K8sCCMConstants.SPOT_INSTANCE_NODE_LIFECYCLE, "spot")));
+    assertFalse(isNodePoolNameCorrect(ImmutableMap.of(K8sCCMConstants.SPOT_INSTANCE_NODE_LIFECYCLE, "od")));
+    assertNull(getNodePoolName(ImmutableMap.of(
+        K8sCCMConstants.AKS_NODE_POOL_KEY, NODE_POOL_NAME, K8sCCMConstants.SPOT_INSTANCE_NODE_LIFECYCLE, "od")));
+    assertNull(getNodePoolName(ImmutableMap.of(
+        K8sCCMConstants.AKS_NODE_POOL_KEY, NODE_POOL_NAME, K8sCCMConstants.SPOT_INSTANCE_NODE_LIFECYCLE, "spot")));
   }
 
   private static boolean isNodePoolNameCorrect(Map<String, String> labelsMap) {
@@ -65,6 +73,13 @@ public class InstanceMetaDataUtilsTest extends BatchProcessingTestBase {
 
     InstanceMetaDataUtils.populateNodePoolNameFromLabel(labelsMap, metaData);
     return NODE_POOL_NAME.equals(metaData.get(InstanceMetaDataConstants.NODE_POOL_NAME));
+  }
+
+  private static String getNodePoolName(Map<String, String> labelsMap) {
+    Map<String, String> metaData = new HashMap<>();
+
+    InstanceMetaDataUtils.populateNodePoolNameFromLabel(labelsMap, metaData);
+    return metaData.get(InstanceMetaDataConstants.NODE_POOL_NAME);
   }
 
   @Test

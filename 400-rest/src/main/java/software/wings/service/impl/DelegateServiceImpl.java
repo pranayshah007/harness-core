@@ -88,6 +88,7 @@ import io.harness.capability.service.CapabilityService;
 import io.harness.configuration.DeployMode;
 import io.harness.configuration.DeployVariant;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.delegate.beans.AutoUpgrade;
 import io.harness.delegate.beans.AvailableDelegateSizes;
 import io.harness.delegate.beans.ConnectionMode;
 import io.harness.delegate.beans.Delegate;
@@ -222,7 +223,6 @@ import software.wings.service.intfc.security.SecretManager;
 
 import com.github.zafarkhaja.semver.Version;
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Preconditions;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
@@ -292,6 +292,7 @@ import org.atmosphere.cpr.BroadcasterFactory;
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 import org.hibernate.validator.internal.engine.path.PathImpl;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.mongodb.morphia.Key;
 import org.mongodb.morphia.query.Query;
 import org.mongodb.morphia.query.UpdateOperations;
@@ -338,10 +339,6 @@ public class DelegateServiceImpl implements DelegateService {
   private static final String README = "README";
   private static final String README_TXT = "/README.txt";
   private static final String EMPTY_VERSION = "0.0.0";
-  private static final String JRE_DIRECTORY = "jreDirectory";
-  private static final String JRE_MAC_DIRECTORY = "jreMacDirectory";
-  private static final String JRE_TAR_PATH = "jreTarPath";
-  private static final String ALPN_JAR_PATH = "alpnJarPath";
   private static final String JRE_VERSION_KEY = "jreVersion";
   private static final String ENV_ENV_VAR = "ENV";
   private static final String SAMPLE_DELEGATE_NAME = "harness-sample-k8s-delegate";
@@ -352,6 +349,8 @@ public class DelegateServiceImpl implements DelegateService {
   private static final long MAX_GRPC_HB_TIMEOUT = TimeUnit.MINUTES.toMillis(15);
 
   private static final Duration HEARTBEAT_EXPIRY_TIME = ofMinutes(5);
+
+  private static final long AUTO_UPGRADE_CHECK_TIME_IN_MINUTES = 90;
 
   static {
     templateConfiguration.setTemplateLoader(new ClassTemplateLoader(DelegateServiceImpl.class, "/delegatetemplates"));
@@ -520,6 +519,7 @@ public class DelegateServiceImpl implements DelegateService {
             .notEqual(DelegateInstanceStatus.DELETED)
             .project(DelegateKeys.accountId, true)
             .project(DelegateKeys.tags, true)
+            .project(DelegateKeys.tagsFromYaml, true)
             .project(DelegateKeys.delegateName, true)
             .project(DelegateKeys.hostName, true)
             .project(DelegateKeys.delegateProfileId, true)
@@ -621,7 +621,7 @@ public class DelegateServiceImpl implements DelegateService {
 
   @Override
   public Set<String> retrieveDelegateSelectors(Delegate delegate, boolean fetchFromCache) {
-    Set<String> selectors = delegate.getTags() == null ? new HashSet<>() : new HashSet<>(delegate.getTags());
+    Set<String> selectors = new HashSet<>(getUnionOfTags(delegate));
     if (delegate.isNg()) {
       DelegateGroup delegateGroup = fetchFromCache
           ? delegateCache.getDelegateGroup(delegate.getAccountId(), delegate.getDelegateGroupId())
@@ -853,12 +853,14 @@ public class DelegateServiceImpl implements DelegateService {
         .entrySet()
         .stream()
         .map(entry -> {
+          final long delegateCreationTime = entry.getValue().stream().mapToLong(Delegate::getCreatedAt).min().orElse(0);
           final boolean isImmutable = isNotEmpty(entry.getValue()) && entry.getValue().get(0).isImmutable();
+          final long upgraderLastUpdated = delegateGroupMap.getOrDefault(entry.getKey(), 0L);
           return DelegateScalingGroup.builder()
               .groupName(entry.getKey())
               .upgraderLastUpdated(delegateGroupMap.getOrDefault(entry.getKey(), 0L))
               .immutable(isImmutable)
-              .autoUpgrade(setAutoUpgrade(delegateGroupMap.getOrDefault(entry.getKey(), 0L)))
+              .autoUpgrade(delegateSetupService.setAutoUpgrade(upgraderLastUpdated, isImmutable, delegateCreationTime))
               .delegateGroupExpirationTime(setDelegateScalingGroupExpiration(entry.getValue()))
               .delegates(buildInnerDelegates(accountId, entry.getValue(), activeDelegateConnections, true))
               .build();
@@ -870,10 +872,6 @@ public class DelegateServiceImpl implements DelegateService {
     return isNotEmpty(delegates)
         ? delegates.stream().min(Comparator.comparing(Delegate::getExpirationTime)).get().getExpirationTime()
         : 0;
-  }
-
-  private boolean setAutoUpgrade(Long upgraderLastUpdated) {
-    return TimeUnit.MILLISECONDS.toMinutes(System.currentTimeMillis() - upgraderLastUpdated) <= 90;
   }
 
   private List<Delegate> getDelegatesWithoutScalingGroup(String accountId) {
@@ -897,7 +895,7 @@ public class DelegateServiceImpl implements DelegateService {
     delegates.stream()
         .filter(delegate -> !filterInactiveDelegates || perDelegateConnections.containsKey(delegate.getUuid()))
         .forEach(delegate -> delegateTokensNameList.add(delegate.getDelegateTokenName()));
-    // TODO: Arpit fetch the tokenStatus from cache instead of db.
+
     Map<String, Boolean> delegateTokenStatusMap =
         delegateNgTokenService.isDelegateTokenActive(accountId, delegateTokensNameList);
 
@@ -926,7 +924,7 @@ public class DelegateServiceImpl implements DelegateService {
                   .ceEnabled(delegate.isCeEnabled())
                   .excludeScopes(delegate.getExcludeScopes())
                   .includeScopes(delegate.getIncludeScopes())
-                  .tags(delegate.getTags())
+                  .tags(getUnionOfTags(delegate))
                   .profileExecutedAt(delegate.getProfileExecutedAt())
                   .profileError(delegate.isProfileError())
                   .grpcActive(connections.stream().allMatch(connection
@@ -941,11 +939,22 @@ public class DelegateServiceImpl implements DelegateService {
                   .version(delegate.getVersion());
           // Set autoUpgrade as true for legacy delegate.
           if (!delegate.isImmutable()) {
-            delegateInnerBuilder.autoUpgrade(true);
+            delegateInnerBuilder.autoUpgrade(AutoUpgrade.ON);
           }
           return delegateInnerBuilder.build();
         })
         .collect(toList());
+  }
+
+  private List<String> getUnionOfTags(Delegate delegate) {
+    Set<String> delegateTags = new HashSet<>();
+    if (isNotEmpty(delegate.getTagsFromYaml())) {
+      delegateTags.addAll(delegate.getTagsFromYaml());
+    }
+    if (isNotEmpty(delegate.getTags())) {
+      delegateTags.addAll(delegate.getTags());
+    }
+    return new ArrayList<>(delegateTags);
   }
 
   @Override
@@ -1165,7 +1174,7 @@ public class DelegateServiceImpl implements DelegateService {
     }
 
     existingDelegate.setUseCdn(mainConfiguration.useCdnForDelegateStorage());
-    existingDelegate.setUseJreVersion(getTargetJreVersion(delegate.getAccountId()));
+    existingDelegate.setUseJreVersion(getTargetJreVersion());
     return existingDelegate;
   }
 
@@ -1192,6 +1201,41 @@ public class DelegateServiceImpl implements DelegateService {
       log.info("Updating tags for all delegates in a group {}", delegate.getDelegateGroupName());
       updatedDelegate = updateAllCgDelegatesInGroup(delegate, updateOperations, "TAGS");
     } else {
+      updatedDelegate = updateDelegate(delegate, updateOperations);
+    }
+
+    auditServiceHelper.reportForAuditingUsingAccountId(
+        delegate.getAccountId(), delegate, updatedDelegate, Type.UPDATE_TAG);
+    log.info("Auditing updation of Tags for delegate={} in account={}", delegate.getUuid(), delegate.getAccountId());
+
+    return updatedDelegate;
+  }
+
+  // UI will send a list of yaml+ui tags, so first separate out the respective tags and then update in db.
+  public Delegate updateTagsFromUI(final Delegate delegate, @NotNull DelegateTags delegateTags) {
+    List<String> tagsFromYaml = Optional.ofNullable(delegate.getTagsFromYaml()).orElseGet(Collections::emptyList);
+
+    List<String> tagsFromUI = delegateTags.getTags();
+
+    // keep those tags which are in
+    List<String> updatedListOfTagsFromYaml =
+        tagsFromYaml.stream().filter(tag -> tagsFromUI.contains(tag)).collect(toList());
+
+    // remove yaml tags from UI List
+    List<String> updatedListOfTagsFromUI =
+        tagsFromUI.stream().filter(tag -> !tagsFromYaml.contains(tag)).collect(toList());
+
+    UpdateOperations<Delegate> updateOperations = persistence.createUpdateOperations(Delegate.class);
+    setUnset(updateOperations, DelegateKeys.tags, updatedListOfTagsFromUI);
+    log.info("Updating delegate tags : Delegate:{} tags:{}", delegate.getUuid(), delegateTags.getTags());
+
+    Delegate updatedDelegate = null;
+    if (isGroupedCgDelegate(delegate)) {
+      // update for delegateGroup here
+      log.info("Updating tags for all delegates in a group {}", delegate.getDelegateGroupName());
+      updatedDelegate = updateAllCgDelegatesInGroup(delegate, updateOperations, "TAGS");
+    } else {
+      setUnset(updateOperations, DelegateKeys.tagsFromYaml, updatedListOfTagsFromYaml);
       updatedDelegate = updateDelegate(delegate, updateOperations);
     }
 
@@ -1528,19 +1572,8 @@ public class DelegateServiceImpl implements DelegateService {
       }
     }
 
-    JreConfig jreConfig = getJreConfig(templateParameters.getAccountId(), templateParameters.isWatcher());
+    params.put(JRE_VERSION_KEY, getTargetJreVersion());
 
-    Preconditions.checkNotNull(jreConfig, "jreConfig cannot be null");
-
-    params.put(JRE_VERSION_KEY, jreConfig.getVersion());
-    params.put(JRE_DIRECTORY, jreConfig.getJreDirectory());
-    params.put(JRE_MAC_DIRECTORY, jreConfig.getJreMacDirectory());
-    params.put(JRE_TAR_PATH, jreConfig.getJreTarPath());
-    params.put("isJdk11Watcher", String.valueOf(isJdk11Watcher(templateParameters.getAccountId())));
-
-    if (jreConfig.getAlpnJarPath() != null) {
-      params.put(ALPN_JAR_PATH, jreConfig.getAlpnJarPath());
-    }
     params.put("enableCE", String.valueOf(templateParameters.isCeEnabled()));
 
     if (isNotBlank(templateParameters.getDelegateTags())) {
@@ -1723,56 +1756,14 @@ public class DelegateServiceImpl implements DelegateService {
   }
 
   /**
-   * Returns JreConfig for a given account Id on the basis of UPGRADE_JRE and USE_CDN_FOR_STORAGE_FILES FeatureFlags.
+   * Returns delegate's JRE version
    *
    * @return
    */
-  private JreConfig getJreConfig(final String accountId, final boolean isWatcher) {
-    final boolean enabled = !isWatcher || isJdk11Watcher(accountId);
-    final String jreVersion = enabled ? mainConfiguration.getMigrateToJre() : mainConfiguration.getCurrentJre();
+  private String getTargetJreVersion() {
+    final String jreVersion = mainConfiguration.getMigrateToJre();
     JreConfig jreConfig = mainConfiguration.getJreConfigs().get(jreVersion);
-    final CdnConfig cdnConfig = mainConfiguration.getCdnConfig();
-
-    if (mainConfiguration.useCdnForDelegateStorage() && cdnConfig != null) {
-      final String tarPath = cdnConfig.getCdnJreTarPaths().get(jreVersion);
-      final String alpnJarPath = cdnConfig.getAlpnJarPath();
-      jreConfig = JreConfig.builder()
-                      .version(jreConfig.getVersion())
-                      .jreDirectory(jreConfig.getJreDirectory())
-                      .jreMacDirectory(jreConfig.getJreMacDirectory())
-                      .jreTarPath(tarPath)
-                      .alpnJarPath(enabled ? null : alpnJarPath)
-                      .build();
-    }
-    return jreConfig;
-  }
-
-  private boolean isJdk11Watcher(final String accountId) {
-    if (DeployMode.isOnPrem(mainConfiguration.getDeployMode().name())) {
-      return true;
-    }
-    final String watcherVersion =
-        substringBefore(delegateVersionService.getWatcherJarVersions(accountId), "-").trim().split("\\.")[2];
-    try {
-      final int jdk11_base_watcher_version = 75276;
-      if (Integer.parseInt(watcherVersion) < jdk11_base_watcher_version) {
-        return false;
-      }
-      return true;
-    } catch (Exception e) {
-      log.error("Unable to get watcher version, will start watcher with jdk8 ", e);
-      return false;
-    }
-  }
-
-  /**
-   * Returns delegate's JRE version for a given account Id
-   *
-   * @param accountId
-   * @return
-   */
-  private String getTargetJreVersion(final String accountId) {
-    return getJreConfig(accountId, false).getVersion();
+    return jreConfig.getVersion();
   }
 
   private String getDelegateBuildVersion(String delegateVersion) {
@@ -2691,7 +2682,7 @@ public class DelegateServiceImpl implements DelegateService {
             .delegateRandomToken(delegateParams.getDelegateRandomToken())
             .keepAlivePacket(delegateParams.isKeepAlivePacket())
             // if delegate is ng then save tags only in delegate group.
-            .tags(delegateParams.isNg() ? null : delegateParams.getTags())
+            .tagsFromYaml(delegateParams.isNg() ? null : delegateParams.getTags())
             .polllingModeEnabled(delegateParams.isPollingModeEnabled())
             .proxy(delegateParams.isProxy())
             .sampleDelegate(delegateParams.isSampleDelegate())
@@ -2718,7 +2709,10 @@ public class DelegateServiceImpl implements DelegateService {
       }
       return delegateRegisterResponse;
     } else {
-      return registerResponseFromDelegate(upsertDelegateOperation(existingDelegate, delegate, delegateSetupDetails));
+      Delegate registeredDelegate = upsertDelegateOperation(existingDelegate, delegate, delegateSetupDetails);
+      updateDelegateYamlTagsAfterReRegistering(
+          registeredDelegate.getAccountId(), registeredDelegate.getUuid(), delegate.getTagsFromYaml());
+      return registerResponseFromDelegate(registeredDelegate);
     }
   }
 
@@ -2738,6 +2732,7 @@ public class DelegateServiceImpl implements DelegateService {
       final String accountId, final String hostName, final boolean ng, final String delegateType, final String ip) {
     final Query<Delegate> delegateQuery = persistence.createQuery(Delegate.class)
                                               .filter(DelegateKeys.accountId, accountId)
+                                              .filter(DelegateKeys.ng, ng)
                                               .filter(DelegateKeys.hostName, hostName);
     // For delegates running in a kubernetes cluster we include lowercase account ID in the hostname to identify it.
     // We ignore IP address because that can change with every restart of the pod.
@@ -2832,6 +2827,18 @@ public class DelegateServiceImpl implements DelegateService {
       }
     }
     return registeredDelegate;
+  }
+
+  private void updateDelegateYamlTagsAfterReRegistering(
+      @NotBlank String accountId, @NotBlank String delegateId, @Nullable List<String> yamlTags) {
+    Query<Delegate> delegateQuery = persistence.createQuery(Delegate.class)
+                                        .filter(DelegateKeys.accountId, accountId)
+                                        .filter(DelegateKeys.uuid, delegateId);
+
+    UpdateOperations<Delegate> updateOperations = persistence.createUpdateOperations(Delegate.class);
+    setUnset(updateOperations, DelegateKeys.tagsFromYaml, yamlTags);
+
+    persistence.update(delegateQuery, updateOperations);
   }
 
   private void broadcastDelegateHeartBeatResponse(Delegate delegate, Delegate registeredDelegate) {
@@ -3132,7 +3139,7 @@ public class DelegateServiceImpl implements DelegateService {
     final Delegate registeredDelegate = handleEcsDelegateRegistration(delegate);
     updateExistingDelegateWithSequenceConfigData(registeredDelegate);
     registeredDelegate.setUseCdn(mainConfiguration.useCdnForDelegateStorage());
-    registeredDelegate.setUseJreVersion(getTargetJreVersion(delegate.getAccountId()));
+    registeredDelegate.setUseJreVersion(getTargetJreVersion());
 
     return registeredDelegate;
   }
@@ -4325,6 +4332,7 @@ public class DelegateServiceImpl implements DelegateService {
     Query<Delegate> delegateQuery = persistence.createQuery(Delegate.class)
                                         .filter(DelegateKeys.accountId, accountId)
                                         .filter(DelegateKeys.delegateName, delegateName)
+                                        .filter(DelegateGroupKeys.ng, isNg)
                                         .field(DelegateKeys.status)
                                         .notEqual(DelegateInstanceStatus.DELETED);
     if (delegateQuery.get() != null) {

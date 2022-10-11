@@ -319,14 +319,15 @@ public class ShellScriptTaskTest extends WingsBaseTest {
                                        .build();
     ArgumentCaptor<WinRmSessionConfig> winRmSessionConfigArgumentCaptor =
         ArgumentCaptor.forClass(WinRmSessionConfig.class);
-    when(winrmExecutorFactory.getExecutor(any(WinRmSessionConfig.class), anyBoolean(), eq(true)))
+    when(winrmExecutorFactory.getExecutor(any(WinRmSessionConfig.class), anyBoolean(), eq(true), eq(false)))
         .thenReturn(defaultWinRmExecutor);
     when(defaultWinRmExecutor.executeCommandString(anyString(), anyList(), anyList(), any()))
         .thenReturn(ExecuteCommandResponse.builder().status(CommandExecutionStatus.SUCCESS).build());
     CommandExecutionResult commandExecutionResult = shellScriptTask.run(params);
     assertThat(commandExecutionResult).isNotNull();
     assertThat(commandExecutionResult.getStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
-    verify(winrmExecutorFactory).getExecutor(winRmSessionConfigArgumentCaptor.capture(), anyBoolean(), eq(true));
+    verify(winrmExecutorFactory)
+        .getExecutor(winRmSessionConfigArgumentCaptor.capture(), anyBoolean(), eq(true), eq(false));
     WinRmSessionConfig winRmSessionConfig = winRmSessionConfigArgumentCaptor.getValue();
     assertThat(winRmSessionConfig).isNotNull();
     assertThat(winRmSessionConfig.getAccountId()).isEqualTo(ACCOUNT_ID);

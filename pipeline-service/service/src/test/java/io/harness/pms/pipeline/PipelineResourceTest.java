@@ -437,9 +437,10 @@ public class PipelineResourceTest extends CategoryTest {
   public void testGetPipelineSummary() {
     doReturn(Optional.of(entityWithVersion))
         .when(pmsPipelineService)
-        .getWithoutPerformingValidations(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, false);
-    ResponseDTO<PMSPipelineSummaryResponseDTO> pipelineSummary =
-        pipelineResource.getPipelineSummary(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null);
+        .getPipelineWithoutPerformingValidations(
+            ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, false, false);
+    ResponseDTO<PMSPipelineSummaryResponseDTO> pipelineSummary = pipelineResource.getPipelineSummary(
+        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null, false);
     assertThat(pipelineSummary.getData().getName()).isEqualTo(PIPELINE_IDENTIFIER);
     assertThat(pipelineSummary.getData().getIdentifier()).isEqualTo(PIPELINE_IDENTIFIER);
     assertThat(pipelineSummary.getData().getDescription()).isNull();
@@ -457,12 +458,12 @@ public class PipelineResourceTest extends CategoryTest {
 
     doReturn(Optional.empty())
         .when(pmsPipelineService)
-        .getWithoutPerformingValidations(
-            ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, incorrectPipelineIdentifier, false);
+        .getPipelineWithoutPerformingValidations(
+            ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, incorrectPipelineIdentifier, false, true);
 
     assertThatThrownBy(()
                            -> pipelineResource.getPipelineSummary(
-                               ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, incorrectPipelineIdentifier, null))
+                               ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, incorrectPipelineIdentifier, null, false))
         .isInstanceOf(EntityNotFoundException.class)
         .hasMessage(String.format(
             "Pipeline with the given ID: %s does not exist or has been deleted", incorrectPipelineIdentifier));

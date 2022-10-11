@@ -90,7 +90,9 @@ public class SerializerUtils {
     String safeDirScript;
     if (shellType == CIShellType.SH || shellType == CIShellType.BASH) {
       safeDirScript = "set +x\n"
-          + "git config --global --add safe.directory '*' &>/dev/null | true\n"
+          + "if git --version &>/dev/null; then\n"
+          + "git config --global --add safe.directory '*'\n"
+          + "fi\n"
           + "set -x\n";
     } else {
       safeDirScript = "try\n"

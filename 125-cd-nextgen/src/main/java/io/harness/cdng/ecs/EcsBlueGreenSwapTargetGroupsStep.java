@@ -194,12 +194,12 @@ public class EcsBlueGreenSwapTargetGroupsStep extends TaskExecutableWithRollback
     EcsLoadBalancerConfig ecsLoadBalancerConfig =
         EcsLoadBalancerConfig.builder()
             .loadBalancer(ecsBlueGreenPrepareRollbackDataOutcome.getLoadBalancer())
-            .prodListenerArn(ecsBlueGreenPrepareRollbackDataOutcome.getListenerArn())
-            .prodListenerRuleArn(ecsBlueGreenPrepareRollbackDataOutcome.getListenerRuleArn())
-            .prodTargetGroupArn(ecsBlueGreenPrepareRollbackDataOutcome.getTargetGroupArn())
-            .stageListenerArn(ecsBlueGreenCreateServiceDataOutcome.getListenerArn())
-            .stageListenerRuleArn(ecsBlueGreenCreateServiceDataOutcome.getListenerRuleArn())
-            .stageTargetGroupArn(ecsBlueGreenCreateServiceDataOutcome.getTargetGroupArn())
+            .prodListenerArn(ecsBlueGreenPrepareRollbackDataOutcome.getProdListenerArn())
+            .prodListenerRuleArn(ecsBlueGreenPrepareRollbackDataOutcome.getProdListenerRuleArn())
+            .prodTargetGroupArn(ecsBlueGreenPrepareRollbackDataOutcome.getProdTargetGroupArn())
+            .stageListenerArn(ecsBlueGreenPrepareRollbackDataOutcome.getStageListenerArn())
+            .stageListenerRuleArn(ecsBlueGreenPrepareRollbackDataOutcome.getStageListenerRuleArn())
+            .stageTargetGroupArn(ecsBlueGreenPrepareRollbackDataOutcome.getStageTargetGroupArn())
             .build();
 
     EcsBlueGreenSwapTargetGroupsRequest ecsBlueGreenSwapTargetGroupsRequest =
@@ -214,6 +214,9 @@ public class EcsBlueGreenSwapTargetGroupsStep extends TaskExecutableWithRollback
             .oldServiceName(ecsBlueGreenPrepareRollbackDataOutcome.getServiceName())
             .newServiceName(ecsBlueGreenCreateServiceDataOutcome.getServiceName())
             .isFirstDeployment(ecsBlueGreenPrepareRollbackDataOutcome.isFirstDeployment())
+            .doNotDownsizeOldService(
+                ecsBlueGreenSwapTargetGroupsStepParameters.getDoNotDownsizeOldService().getValue() != null
+                && ecsBlueGreenSwapTargetGroupsStepParameters.getDoNotDownsizeOldService().getValue())
             .build();
 
     EcsBlueGreenSwapTargetGroupsStartOutcome ecsBlueGreenSwapTargetGroupsStartOutcome =

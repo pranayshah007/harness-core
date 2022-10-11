@@ -154,6 +154,14 @@ public interface EnvironmentService extends OwnedByApplication {
    * @param environmentType The type of environment needed
    * @return A map of the ids of environments in the given application and of the given type grouped by applications
    */
+  Map<String, Set<String>> getAppIdEnvIdMap(Set<String> appIds);
+
+  /**
+   * Get EnvIds map by AppIds.
+   *
+   * @param appIds
+   * @return
+   */
   Map<String, Set<String>> getAppIdEnvIdMapByType(Set<String> appIds, EnvironmentType environmentType);
 
   /**

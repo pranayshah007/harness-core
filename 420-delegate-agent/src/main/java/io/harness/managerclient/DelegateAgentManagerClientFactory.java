@@ -27,6 +27,7 @@ import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
+import com.google.inject.Singleton;
 import com.google.protobuf.ExtensionRegistryLite;
 import java.util.concurrent.TimeUnit;
 import javax.net.ssl.SSLContext;
@@ -42,6 +43,7 @@ import retrofit2.converter.protobuf.ProtoConverterFactory;
 
 @Slf4j
 @OwnedBy(HarnessTeam.DEL)
+@Singleton
 public class DelegateAgentManagerClientFactory
     implements Provider<io.harness.managerclient.DelegateAgentManagerClient> {
   @Inject private VersionInfoManager versionInfoManager;
@@ -52,6 +54,7 @@ public class DelegateAgentManagerClientFactory
   private final String clientCertificateFilePath;
   private final String clientCertificateKeyFilePath;
   private final boolean trustAllCertificates;
+  private final OkHttpClient httpClient;
 
   DelegateAgentManagerClientFactory(String baseUrl, TokenGenerator tokenGenerator, String clientCertificateFilePath,
       String clientCertificateKeyFilePath, boolean trustAllCertificates) {
@@ -60,6 +63,7 @@ public class DelegateAgentManagerClientFactory
     this.clientCertificateFilePath = clientCertificateFilePath;
     this.clientCertificateKeyFilePath = clientCertificateKeyFilePath;
     this.trustAllCertificates = trustAllCertificates;
+    this.httpClient = this.trustAllCertificates ? this.getUnsafeOkHttpClient() : this.getSafeOkHttpClient();
   }
 
   @Override
@@ -69,7 +73,6 @@ public class DelegateAgentManagerClientFactory
     objectMapper.registerModule(new GuavaModule());
     objectMapper.registerModule(new JavaTimeModule());
 
-    OkHttpClient httpClient = this.trustAllCertificates ? this.getUnsafeOkHttpClient() : this.getSafeOkHttpClient();
     ExtensionRegistryLite registryLite = ExtensionRegistryLite.newInstance();
     Retrofit retrofit = new Retrofit.Builder()
                             .baseUrl(this.baseUrl)

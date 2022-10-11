@@ -45,7 +45,6 @@ public interface ServiceLevelObjectiveService extends DeleteEntityByHandler<Serv
   PageResponse<CVNGLogDTO> getCVNGLogs(
       ProjectParams projectParams, String identifier, SLILogsFilter sliLogsFilter, PageParams pageParams);
   ServiceLevelObjective getEntity(ProjectParams projectParams, String identifier);
-
   PageResponse<ServiceLevelObjectiveResponse> getSLOForDashboard(
       ProjectParams projectParams, SLODashboardApiFilter filter, PageParams pageParams);
   PageResponse<ServiceLevelObjective> getSLOForListView(

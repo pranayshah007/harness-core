@@ -276,13 +276,30 @@ public class ResourceGroupApiUtils {
       return PageRequest.builder().pageIndex(page).pageSize(limit).build();
     }
     if (order == null || (!order.equalsIgnoreCase("asc") && !order.equalsIgnoreCase("desc"))) {
-      throw new InvalidRequestException("Order of sorting unidentified or null.");
+      throw new InvalidRequestException("Order of sorting unidentified or null. Accepted values: ASC / DESC");
     }
-    return PageRequest.builder()
-        .pageIndex(page)
-        .pageSize(limit)
-        .sortOrders(new ArrayList<>(Collections.singleton(new SortOrder(field + "," + order))))
-        .build();
+    List<SortOrder> sortOrders = null;
+    if (field != null) {
+      switch (field) {
+        case "slug":
+          field = "identifier";
+          break;
+        case "name":
+          break;
+        case "created":
+          field = "createdAt";
+          break;
+        case "updated":
+          field = "lastUpdatedAt";
+          break;
+        default:
+          throw new InvalidRequestException(
+              "Field provided for sorting unidentified. Accepted values: slug / name / created / updated");
+      }
+      SortOrder sortOrder = new SortOrder(field + "," + order);
+      sortOrders = Collections.singletonList(sortOrder);
+    }
+    return PageRequest.builder().pageIndex(page).pageSize(limit).sortOrders(sortOrders).build();
   }
 
   public static ResponseBuilder addLinksHeader(

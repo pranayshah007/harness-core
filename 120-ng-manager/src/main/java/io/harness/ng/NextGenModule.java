@@ -96,7 +96,11 @@ import io.harness.file.NGFileServiceModule;
 import io.harness.filestore.NgFileStoreModule;
 import io.harness.filestore.outbox.FileEventHandler;
 import io.harness.freeze.service.FreezeCRUDService;
+import io.harness.freeze.service.FreezeEvaluateService;
+import io.harness.freeze.service.FreezeSchemaService;
 import io.harness.freeze.service.impl.FreezeCRUDServiceImpl;
+import io.harness.freeze.service.impl.FreezeEvaluateServiceImpl;
+import io.harness.freeze.service.impl.FreezeSchemaServiceImpl;
 import io.harness.gitops.GitopsResourceClientModule;
 import io.harness.gitsync.GitSyncConfigClientModule;
 import io.harness.gitsync.GitSyncModule;
@@ -185,6 +189,8 @@ import io.harness.ng.core.outbox.TokenEventHandler;
 import io.harness.ng.core.outbox.UserEventHandler;
 import io.harness.ng.core.outbox.UserGroupEventHandler;
 import io.harness.ng.core.outbox.VariableEventHandler;
+import io.harness.ng.core.refresh.service.EntityRefreshService;
+import io.harness.ng.core.refresh.service.EntityRefreshServiceImpl;
 import io.harness.ng.core.schema.YamlBaseUrlService;
 import io.harness.ng.core.services.OrganizationService;
 import io.harness.ng.core.services.ProjectService;
@@ -623,6 +629,8 @@ public class NextGenModule extends AbstractModule {
         appConfig.getNextGenConfig().getManagerServiceSecret(), NG_MANAGER.getServiceId()));
     bind(NgGlobalKmsService.class).to(NgGlobalKmsServiceImpl.class);
     bind(FreezeCRUDService.class).to(FreezeCRUDServiceImpl.class);
+    bind(FreezeEvaluateService.class).to(FreezeEvaluateServiceImpl.class);
+    bind(FreezeSchemaService.class).to(FreezeSchemaServiceImpl.class);
     install(new ProviderModule() {
       @Provides
       @Singleton
@@ -772,6 +780,7 @@ public class NextGenModule extends AbstractModule {
     bind(PollingService.class).to(PollingServiceImpl.class);
     bind(PollingPerpetualTaskService.class).to(PollingPerpetualTaskServiceImpl.class);
     bind(JenkinsBuildStepHelperService.class).to(JenkinsBuildStepHelperServiceImpl.class);
+    bind(EntityRefreshService.class).to(EntityRefreshServiceImpl.class);
     if (!appConfig.getShouldConfigureWithPMS().equals(TRUE)) {
       bind(EngineExpressionService.class).to(NoopEngineExpressionServiceImpl.class);
     }
@@ -848,6 +857,11 @@ public class NextGenModule extends AbstractModule {
         .bind(CustomEncryptor.class)
         .annotatedWith(Names.named(Encryptors.CUSTOM_ENCRYPTOR_NG.getName()))
         .to(NGManagerCustomEncryptor.class);
+
+    binder()
+        .bind(VaultEncryptor.class)
+        .annotatedWith(Names.named(Encryptors.GCP_VAULT_ENCRYPTOR.getName()))
+        .to(NGManagerVaultEncryptor.class);
   }
 
   private void registerOutboxEventHandlers() {

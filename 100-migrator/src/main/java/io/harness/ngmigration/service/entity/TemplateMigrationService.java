@@ -16,6 +16,7 @@ import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
 import io.harness.ngmigration.client.NGClient;
 import io.harness.ngmigration.client.PmsClient;
+import io.harness.ngmigration.dto.MigrationImportSummaryDTO;
 import io.harness.ngmigration.service.NgMigrationService;
 
 import software.wings.beans.template.Template;
@@ -79,8 +80,8 @@ public class TemplateMigrationService extends NgMigrationService {
   }
 
   @Override
-  public void migrate(String auth, NGClient ngClient, PmsClient pmsClient, MigrationInputDTO inputDTO,
-      NGYamlFile yamlFile) throws IOException {
+  public MigrationImportSummaryDTO migrate(String auth, NGClient ngClient, PmsClient pmsClient,
+      MigrationInputDTO inputDTO, NGYamlFile yamlFile) throws IOException {
     throw new InvalidRequestException("Migrate is not supported for templates");
   }
 

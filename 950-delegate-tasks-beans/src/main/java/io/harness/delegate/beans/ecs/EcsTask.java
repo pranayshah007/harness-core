@@ -24,7 +24,7 @@ public class EcsTask {
   private String launchType;
   private String serviceName;
   private List<EcsContainer> containers; // list of containers
-  private long startedAt;
+  private Long startedAt;
   private String startedBy;
   private Long version;
 }

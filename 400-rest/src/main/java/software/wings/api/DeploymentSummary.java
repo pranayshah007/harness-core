@@ -107,6 +107,13 @@ public class DeploymentSummary extends Base {
                  .field(DeploymentSummaryKeys.AWS_AMI_DEPLOYMENT_KEY_ASG_NAME)
                  .descSortField(DeploymentSummaryKeys.CREATED_AT)
                  .build())
+        .add(SortCompoundMongoIndex.builder()
+                 .name("inframappingId_awsLambdafunction_awsLambdaVersion_createdAtDesc")
+                 .field(DeploymentSummaryKeys.infraMappingId)
+                 .field(DeploymentSummaryKeys.AWS_LAMBDA_DEPLOYMENT_FUNCTION_KEY_NAME)
+                 .field(DeploymentSummaryKeys.AWS_LAMBDA_DEPLOYMENT_VERSION_KEY_NAME)
+                 .descSortField(DeploymentSummaryKeys.CREATED_AT)
+                 .build())
         .build();
   }
 
@@ -195,5 +202,7 @@ public class DeploymentSummary extends Base {
     public static final String CONTAINER_KEY_NEW_VERSION = "containerDeploymentKey.newVersion";
     public static final String AWS_CODE_DEPLOY_DEPLOYMENT_KEY_KEY = "awsCodeDeployDeploymentKey.key";
     public static final String AWS_AMI_DEPLOYMENT_KEY_ASG_NAME = "awsAmiDeploymentKey.autoScalingGroupName";
+    public static final String AWS_LAMBDA_DEPLOYMENT_FUNCTION_KEY_NAME = "awsLambdaDeploymentKey.functionName";
+    public static final String AWS_LAMBDA_DEPLOYMENT_VERSION_KEY_NAME = "awsLambdaDeploymentKey.version";
   }
 }

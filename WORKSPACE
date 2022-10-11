@@ -1134,8 +1134,8 @@ go_repository(
 go_repository(
     name = "com_github_drone_go_scm",
     importpath = "github.com/drone/go-scm",
-    sum = "h1:H2nUtly+xsrVMlbmI2a+C9okAjgEYThL9wb4FgIXglg=",
-    version = "v1.27.1-0.20220914214843-b1a365cc57af",
+    sum = "h1:etbHrY65OMp3/vjs4LHW4zNcb9av8VHJRVA4E7MZxes=",
+    version = "v1.27.1-0.20220927200245-ed290da0ed40",
 )
 
 go_repository(
@@ -4795,9 +4795,10 @@ plain_artifacts = [
     "io.gsonfire:gson-fire:1.8.3",
     "io.harness.cv:data-collection-dsl:0.41-RELEASE",
     "io.harness:ff-java-server-sdk:1.0.5.1",
-    "io.harness:access-control-server-spec:1.0.7",
-    "io.harness:ng-manager-server-spec:1.0.16",
-    "io.harness:platform-server-spec:1.0.9",
+    "io.harness:access-control-server-spec:1.0.8",
+    "io.harness:ng-manager-server-spec:1.0.25",
+    "io.harness:platform-server-spec:1.0.10",
+    "io.harness:pipeline-server-spec:1.0.12",
     "io.jsonwebtoken:jjwt:0.9.1",
     "io.kubernetes:client-java-api:16.0.0",
     "io.kubernetes:client-java-extended:16.0.0",
@@ -4976,7 +4977,7 @@ plain_artifacts = [
     "org.coursera:metrics-datadog:1.1.13",
     "org.cryptacular:cryptacular:1.1.4",
     "org.javassist:javassist:3.27.0-GA",
-    "org.glassfish:jakarta.el:3.0.3",
+    "org.glassfish:jakarta.el:3.0.4",
     "org.eclipse.jetty.http2:http2-common:9.4.48.v20220622",
     "org.eclipse.jetty.http2:http2-hpack:9.4.48.v20220622",
     "org.eclipse.jetty.http2:http2-server:9.4.48.v20220622",
@@ -5139,7 +5140,7 @@ plain_artifacts = [
     "org.xerial.snappy:snappy-java:1.1.7.3",
     "org.xmlunit:xmlunit-core:2.3.0",
     "org.xmlunit:xmlunit-matchers:2.3.0",
-    "org.yaml:snakeyaml:1.28",
+    "org.yaml:snakeyaml:1.31",
     "org.zeroturnaround:zt-exec:1.9",
     "ru.vyarus:guice-validator:1.2.0",
     "com.amazonaws:aws-encryption-sdk-java:2.3.3",
@@ -5147,7 +5148,7 @@ plain_artifacts = [
     "stax:stax-api:1.0.1",
     "stax:stax:1.2.0",
     "wsdl4j:wsdl4j:1.6.3",
-    "xerces:xercesImpl:2.12.0",
+    "xerces:xercesImpl:2.12.2",
     "xml-apis:xml-apis:1.4.01",
     "xml-resolver:xml-resolver:1.2",
     "xpp3:xpp3:1.1.3.3",
@@ -5157,6 +5158,7 @@ plain_artifacts = [
     "io.swagger.core.v3:swagger-annotations:2.2.0",
     "io.swagger.core.v3:swagger-models:2.2.0",
     "io.swagger.core.v3:swagger-integration:2.2.0",
+    "io.opentelemetry:opentelemetry-api:1.18.0",
 ]
 
 amazon_artifacts = [

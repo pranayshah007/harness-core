@@ -9,6 +9,7 @@ package io.harness.telemetry.service;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.cd.CDLicenseType.SERVICES;
+import static io.harness.cd.CDLicenseType.SERVICE_INSTANCES;
 import static io.harness.rule.OwnerRule.LOVISH_BANSAL;
 import static io.harness.telemetry.Destination.ALL;
 
@@ -33,6 +34,8 @@ import io.harness.cdlicense.bean.CgServiceUsage;
 import io.harness.cdng.usage.impl.CDLicenseUsageImpl;
 import io.harness.licensing.usage.beans.UsageDataDTO;
 import io.harness.licensing.usage.beans.cd.CDLicenseUsageDTO;
+import io.harness.licensing.usage.beans.cd.ServiceInstanceUsageDTO;
+import io.harness.licensing.usage.beans.cd.ServiceUsageDTO;
 import io.harness.licensing.usage.params.CDUsageRequestParams;
 import io.harness.ng.core.dto.AccountDTO;
 import io.harness.repositories.telemetry.CdTelemetryStatusRepository;
@@ -68,14 +71,26 @@ public class CdTelemetryPublisherTest extends CategoryTest {
   @Owner(developers = LOVISH_BANSAL)
   @Category(UnitTests.class)
   public void testRecordTelemetry() {
-    CDLicenseUsageDTO cdLicenseUsage = CDLicenseUsageDTO.builder()
-                                           .activeServices(UsageDataDTO.builder().count(20L).build())
-                                           .activeServiceInstances(UsageDataDTO.builder().count(30L).build())
-                                           .build();
-    doReturn(cdLicenseUsage)
+    ServiceUsageDTO cdServiceLicenseUsage = ServiceUsageDTO.builder()
+                                                .activeServices(UsageDataDTO.builder().count(20L).build())
+                                                .serviceLicenses(UsageDataDTO.builder().count(25L).build())
+                                                .activeServiceInstances(UsageDataDTO.builder().count(30L).build())
+                                                .build();
+    doReturn(cdServiceLicenseUsage)
         .when(licenseUsageInterface)
         .getLicenseUsage(anyString(), eq(ModuleType.CD), anyLong(),
             eq(CDUsageRequestParams.builder().cdLicenseType(SERVICES).build()));
+
+    ServiceInstanceUsageDTO serviceInstancesLicenseUsage =
+        ServiceInstanceUsageDTO.builder()
+            .activeServices(UsageDataDTO.builder().count(20L).build())
+            .activeServiceInstances(UsageDataDTO.builder().count(30L).build())
+            .build();
+    doReturn(serviceInstancesLicenseUsage)
+        .when(licenseUsageInterface)
+        .getLicenseUsage(anyString(), eq(ModuleType.CD), anyLong(),
+            eq(CDUsageRequestParams.builder().cdLicenseType(SERVICE_INSTANCES).build()));
+
     doReturn(true).when(cdTelemetryStatusRepository).updateTimestampIfOlderThan(anyString(), anyLong(), anyLong());
     AccountDTO accountDTO1 = AccountDTO.builder().identifier("acc1").build();
     AccountDTO accountDTO2 = AccountDTO.builder().identifier("acc2").build();
@@ -94,27 +109,29 @@ public class CdTelemetryPublisherTest extends CategoryTest {
             .build();
     doReturn(cgLicenseUsage).when(telemetryPublisher).getCgLicenseUsageInfo("acc1");
     doReturn(cgLicenseUsage).when(telemetryPublisher).getCgLicenseUsageInfo("acc2");
+    doReturn(33L).when(telemetryPublisher).getCgServiceInstancesUsageInfo("acc1");
+    doReturn(43L).when(telemetryPublisher).getCgServiceInstancesUsageInfo("acc2");
 
     HashMap<String, Object> firstAccountExpectedMap = new HashMap<>();
     firstAccountExpectedMap.put("group_type", "Account");
     firstAccountExpectedMap.put("group_id", "acc1");
-    firstAccountExpectedMap.put("cd_license_services_used", cdLicenseUsage.getActiveServices().getCount());
+    firstAccountExpectedMap.put("cd_license_services_used", cdServiceLicenseUsage.getServiceLicenses().getCount());
     firstAccountExpectedMap.put(
-        "cd_license_service_instances_used", cdLicenseUsage.getActiveServiceInstances().getCount());
+        "cd_license_service_instances_used", serviceInstancesLicenseUsage.getActiveServiceInstances().getCount());
     firstAccountExpectedMap.put("account_deploy_type", null);
-    firstAccountExpectedMap.put("cd_license_cg_services_used", 2L);
-    firstAccountExpectedMap.put("cd_license_cg_service_instances_used", 31L);
+    firstAccountExpectedMap.put("cd_license_cg_services_used", 3L);
+    firstAccountExpectedMap.put("cd_license_cg_service_instances_used", 33L);
     firstAccountExpectedMap.put("harness_cluster_id", "someCluster");
 
     HashMap<String, Object> secondAccountExpectedMap = new HashMap<>();
     secondAccountExpectedMap.put("group_type", "Account");
     secondAccountExpectedMap.put("group_id", "acc2");
-    secondAccountExpectedMap.put("cd_license_services_used", cdLicenseUsage.getActiveServices().getCount());
+    secondAccountExpectedMap.put("cd_license_services_used", cdServiceLicenseUsage.getServiceLicenses().getCount());
     secondAccountExpectedMap.put(
-        "cd_license_service_instances_used", cdLicenseUsage.getActiveServiceInstances().getCount());
+        "cd_license_service_instances_used", serviceInstancesLicenseUsage.getActiveServiceInstances().getCount());
     secondAccountExpectedMap.put("account_deploy_type", null);
-    secondAccountExpectedMap.put("cd_license_cg_services_used", 2L);
-    secondAccountExpectedMap.put("cd_license_cg_service_instances_used", 31L);
+    secondAccountExpectedMap.put("cd_license_cg_services_used", 3L);
+    secondAccountExpectedMap.put("cd_license_cg_service_instances_used", 43L);
     secondAccountExpectedMap.put("harness_cluster_id", "someCluster");
 
     telemetryPublisher.recordTelemetry();

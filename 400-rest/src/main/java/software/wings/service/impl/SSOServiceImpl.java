@@ -36,6 +36,7 @@ import io.harness.exception.WingsException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.ng.core.account.AuthenticationMechanism;
 import io.harness.ng.core.account.OauthProviderType;
+import io.harness.outbox.OutboxEvent;
 import io.harness.outbox.api.OutboxService;
 import io.harness.security.encryption.EncryptedDataDetail;
 
@@ -229,14 +230,18 @@ public class SSOServiceImpl implements SSOService {
   private void ngAuditLoginSettings(
       String accountIdentifier, AuthenticationMechanism oldAuthMechanism, AuthenticationMechanism newAuthMechanism) {
     try {
-      outboxService.save(
+      OutboxEvent outboxEvent = outboxService.save(
           LoginSettingsAuthMechanismUpdateEvent.builder()
               .accountIdentifier(accountIdentifier)
               .oldAuthMechanismYamlDTO(AuthMechanismYamlDTO.builder().authenticationMechanism(oldAuthMechanism).build())
               .newAuthMechanismYamlDTO(AuthMechanismYamlDTO.builder().authenticationMechanism(newAuthMechanism).build())
               .build());
+      log.info(
+          "NG Auth Audits: for account {} and outboxEventId {} successfully saved the audit for LoginSettingsAuthMechanismUpdateEvent to outbox",
+          accountIdentifier, outboxEvent.getId());
     } catch (Exception ex) {
-      log.error("For account {} Audit trails for Authentication Mechanism Update event failed with exception: ",
+      log.error(
+          "NG Auth Audits: for account {} saving the LoginSettingsAuthMechanismUpdateEvent to outbox failed with exception: ",
           accountIdentifier, ex);
     }
   }

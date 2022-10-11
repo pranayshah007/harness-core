@@ -38,8 +38,8 @@ if [[ ( -z "$DISABLE_CLIENT_TOOLS") || ("$DISABLE_CLIENT_TOOLS" = "false") ]]; t
   && curl -s -L -o client-tools/kustomize/v3.5.4/kustomize https://app.harness.io/public/shared/tools/kustomize/release/v3.5.4/bin/linux/$ARCH/kustomize \
   && mkdir -m 777 -p client-tools/kustomize/v4.0.0 \
   && curl -s -L -o client-tools/kustomize/v4.0.0/kustomize https://app.harness.io/public/shared/tools/kustomize/release/v4.0.0/bin/linux/$ARCH/kustomize \
-  && mkdir -m 777 -p client-tools/scm/519da179 \
-  && curl -s -L -o client-tools/scm/519da179/scm https://app.harness.io/public/shared/tools/scm/release/519da179/bin/linux/$ARCH/scm
+  && mkdir -m 777 -p client-tools/scm/e3ee71bd \
+  && curl -s -L -o client-tools/scm/e3ee71bd/scm https://app.harness.io/public/shared/tools/scm/release/e3ee71bd/bin/linux/$ARCH/scm
 else
   echo "Client tools are disabled"
 fi

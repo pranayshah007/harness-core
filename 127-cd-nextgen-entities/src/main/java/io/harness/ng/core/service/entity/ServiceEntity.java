@@ -24,6 +24,7 @@ import io.harness.ng.core.common.beans.NGTag;
 import io.harness.ng.core.service.mappers.NGServiceEntityMapper;
 import io.harness.ng.core.service.yaml.NGServiceConfig;
 import io.harness.persistence.PersistentEntity;
+import io.harness.template.yaml.TemplateRefHelper;
 
 import com.google.common.collect.ImmutableList;
 import java.util.List;
@@ -111,5 +112,12 @@ public class ServiceEntity implements PersistentEntity {
       return NGServiceEntityMapper.toYaml(ngServiceConfig);
     }
     return yaml;
+  }
+
+  public boolean hasTemplateReferences() {
+    if (EmptyPredicate.isEmpty(yaml)) {
+      return false;
+    }
+    return TemplateRefHelper.hasTemplateRef(yaml);
   }
 }

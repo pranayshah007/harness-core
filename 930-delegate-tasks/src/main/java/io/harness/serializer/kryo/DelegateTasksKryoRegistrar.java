@@ -227,8 +227,6 @@ import software.wings.delegatetasks.validation.capabilities.HelmCommandCapabilit
 import software.wings.delegatetasks.validation.capabilities.SSHHostValidationCapability;
 import software.wings.delegatetasks.validation.capabilities.ShellConnectionCapability;
 import software.wings.delegatetasks.validation.capabilities.WinrmHostValidationCapability;
-import software.wings.helpers.ext.azure.devops.AzureArtifactsFeed;
-import software.wings.helpers.ext.azure.devops.AzureArtifactsPackageVersion;
 import software.wings.helpers.ext.ecs.request.EcsBGRoute53DNSWeightUpdateRequest;
 import software.wings.helpers.ext.ecs.request.EcsBGRoute53ServiceSetupRequest;
 import software.wings.helpers.ext.ecs.request.EcsBGServiceSetupRequest;
@@ -829,8 +827,6 @@ public class DelegateTasksKryoRegistrar implements KryoRegistrar {
     kryo.register(AwsCloudWatchMetricDataResponse.class, 7272);
     kryo.register(ElkDataCollectionInfoV2.class, 7283);
     kryo.register(AzureArtifactsPATConfig.class, 7284);
-    kryo.register(AzureArtifactsFeed.class, 7286);
-    kryo.register(AzureArtifactsPackageVersion.class, 7288);
     kryo.register(AzureArtifactsCollectionTaskParameters.class, 7289);
     kryo.register(InstanaConfig.class, 7293);
     kryo.register(InstanaInfraMetricMetadata.class, 7294);

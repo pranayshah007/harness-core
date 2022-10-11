@@ -16,6 +16,7 @@ import static io.harness.pms.yaml.YAMLFieldNameConstants.IDENTIFIER;
 import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static org.apache.commons.lang3.StringUtils.isBlank;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.customdeployment.helper.CustomDeploymentEntitySetupHelper;
@@ -27,6 +28,7 @@ import io.harness.exception.UnexpectedException;
 import io.harness.ng.DuplicateKeyExceptionParser;
 import io.harness.ng.core.events.EnvironmentUpdatedEvent;
 import io.harness.ng.core.infrastructure.InfrastructureType;
+import io.harness.ng.core.infrastructure.dto.InfrastructureYamlMetadata;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity.InfrastructureEntityKeys;
 import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
@@ -36,6 +38,7 @@ import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.repositories.UpsertOptions;
 import io.harness.repositories.infrastructure.spring.InfrastructureRepository;
+import io.harness.setupusage.InfrastructureEntitySetupUsageHelper;
 import io.harness.utils.YamlPipelineUtils;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -80,6 +83,7 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
   private final RetryPolicy<Object> transactionRetryPolicy = DEFAULT_RETRY_POLICY;
   private final OutboxService outboxService;
   @Inject CustomDeploymentEntitySetupHelper customDeploymentEntitySetupHelper;
+  @Inject private InfrastructureEntitySetupUsageHelper infrastructureEntitySetupUsageHelper;
 
   private static final String DUP_KEY_EXP_FORMAT_STRING_FOR_PROJECT =
       "Infrastructure [%s] under Environment [%s] Project[%s], Organization [%s] in Account [%s] already exists";
@@ -103,18 +107,22 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
       if (infraEntity.getType() == InfrastructureType.CUSTOM_DEPLOYMENT) {
         customDeploymentEntitySetupHelper.addReferencesInEntitySetupUsage(infraEntity);
       }
-      return Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
-        InfrastructureEntity infrastructureEntity = infrastructureRepository.save(infraEntity);
-        outboxService.save(EnvironmentUpdatedEvent.builder()
-                               .accountIdentifier(infraEntity.getAccountId())
-                               .orgIdentifier(infraEntity.getOrgIdentifier())
-                               .status(EnvironmentUpdatedEvent.Status.CREATED)
-                               .resourceType(EnvironmentUpdatedEvent.ResourceType.INFRASTRUCTURE)
-                               .projectIdentifier(infraEntity.getProjectIdentifier())
-                               .newInfrastructureEntity(infraEntity)
-                               .build());
-        return infrastructureEntity;
-      }));
+      InfrastructureEntity createdInfra =
+          Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
+            InfrastructureEntity infrastructureEntity = infrastructureRepository.save(infraEntity);
+            outboxService.save(EnvironmentUpdatedEvent.builder()
+                                   .accountIdentifier(infraEntity.getAccountId())
+                                   .orgIdentifier(infraEntity.getOrgIdentifier())
+                                   .status(EnvironmentUpdatedEvent.Status.CREATED)
+                                   .resourceType(EnvironmentUpdatedEvent.ResourceType.INFRASTRUCTURE)
+                                   .projectIdentifier(infraEntity.getProjectIdentifier())
+                                   .newInfrastructureEntity(infraEntity)
+                                   .build());
+            return infrastructureEntity;
+          }));
+      infrastructureEntitySetupUsageHelper.updateSetupUsages(createdInfra);
+
+      return createdInfra;
 
     } catch (DuplicateKeyException ex) {
       throw new DuplicateFieldException(
@@ -145,25 +153,28 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
         get(requestInfra.getAccountId(), requestInfra.getOrgIdentifier(), requestInfra.getProjectIdentifier(),
             requestInfra.getEnvIdentifier(), requestInfra.getIdentifier());
     if (infraEntityOptional.isPresent()) {
-      return Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
-        InfrastructureEntity updatedResult = infrastructureRepository.update(criteria, requestInfra);
-        if (updatedResult == null) {
-          throw new InvalidRequestException(String.format(
-              "Infrastructure [%s] under Environment [%s], Project [%s], Organization [%s] couldn't be updated or doesn't exist.",
-              requestInfra.getIdentifier(), requestInfra.getEnvIdentifier(), requestInfra.getProjectIdentifier(),
-              requestInfra.getOrgIdentifier()));
-        }
-        outboxService.save(EnvironmentUpdatedEvent.builder()
-                               .accountIdentifier(requestInfra.getAccountId())
-                               .orgIdentifier(requestInfra.getOrgIdentifier())
-                               .status(EnvironmentUpdatedEvent.Status.UPDATED)
-                               .resourceType(EnvironmentUpdatedEvent.ResourceType.INFRASTRUCTURE)
-                               .projectIdentifier(requestInfra.getProjectIdentifier())
-                               .newInfrastructureEntity(requestInfra)
-                               .oldInfrastructureEntity(infraEntityOptional.get())
-                               .build());
-        return updatedResult;
-      }));
+      InfrastructureEntity updatedInfra =
+          Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
+            InfrastructureEntity updatedResult = infrastructureRepository.update(criteria, requestInfra);
+            if (updatedResult == null) {
+              throw new InvalidRequestException(String.format(
+                  "Infrastructure [%s] under Environment [%s], Project [%s], Organization [%s] couldn't be updated or doesn't exist.",
+                  requestInfra.getIdentifier(), requestInfra.getEnvIdentifier(), requestInfra.getProjectIdentifier(),
+                  requestInfra.getOrgIdentifier()));
+            }
+            outboxService.save(EnvironmentUpdatedEvent.builder()
+                                   .accountIdentifier(requestInfra.getAccountId())
+                                   .orgIdentifier(requestInfra.getOrgIdentifier())
+                                   .status(EnvironmentUpdatedEvent.Status.UPDATED)
+                                   .resourceType(EnvironmentUpdatedEvent.ResourceType.INFRASTRUCTURE)
+                                   .projectIdentifier(requestInfra.getProjectIdentifier())
+                                   .newInfrastructureEntity(requestInfra)
+                                   .oldInfrastructureEntity(infraEntityOptional.get())
+                                   .build());
+            return updatedResult;
+          }));
+      infrastructureEntitySetupUsageHelper.updateSetupUsages(updatedInfra);
+      return updatedInfra;
     } else {
       throw new InvalidRequestException(
           String.format("Infrastructure [%s] under Environment [%s], Project [%s], Organization [%s] doesn't exist.",
@@ -178,24 +189,27 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
     setNameIfNotPresent(requestInfra);
     modifyInfraRequest(requestInfra);
     Criteria criteria = getInfrastructureEqualityCriteria(requestInfra);
-    return Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
-      InfrastructureEntity result = infrastructureRepository.upsert(criteria, requestInfra);
-      if (result == null) {
-        throw new InvalidRequestException(String.format(
-            "Infrastructure [%s] under Environment [%s] Project[%s], Organization [%s] couldn't be upserted.",
-            requestInfra.getIdentifier(), requestInfra.getEnvIdentifier(), requestInfra.getProjectIdentifier(),
-            requestInfra.getOrgIdentifier()));
-      }
-      outboxService.save(EnvironmentUpdatedEvent.builder()
-                             .accountIdentifier(requestInfra.getAccountId())
-                             .orgIdentifier(requestInfra.getOrgIdentifier())
-                             .status(EnvironmentUpdatedEvent.Status.UPSERTED)
-                             .resourceType(EnvironmentUpdatedEvent.ResourceType.INFRASTRUCTURE)
-                             .projectIdentifier(requestInfra.getProjectIdentifier())
-                             .newInfrastructureEntity(requestInfra)
-                             .build());
-      return result;
-    }));
+    InfrastructureEntity upsertedInfra =
+        Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
+          InfrastructureEntity result = infrastructureRepository.upsert(criteria, requestInfra);
+          if (result == null) {
+            throw new InvalidRequestException(String.format(
+                "Infrastructure [%s] under Environment [%s] Project[%s], Organization [%s] couldn't be upserted.",
+                requestInfra.getIdentifier(), requestInfra.getEnvIdentifier(), requestInfra.getProjectIdentifier(),
+                requestInfra.getOrgIdentifier()));
+          }
+          outboxService.save(EnvironmentUpdatedEvent.builder()
+                                 .accountIdentifier(requestInfra.getAccountId())
+                                 .orgIdentifier(requestInfra.getOrgIdentifier())
+                                 .status(EnvironmentUpdatedEvent.Status.UPSERTED)
+                                 .resourceType(EnvironmentUpdatedEvent.ResourceType.INFRASTRUCTURE)
+                                 .projectIdentifier(requestInfra.getProjectIdentifier())
+                                 .newInfrastructureEntity(requestInfra)
+                                 .build());
+          return result;
+        }));
+    infrastructureEntitySetupUsageHelper.updateSetupUsages(upsertedInfra);
+    return upsertedInfra;
   }
 
   @Override
@@ -229,6 +243,9 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
               "Infrastructure [%s] under Environment [%s], Project[%s], Organization [%s] couldn't be deleted.",
               infraIdentifier, envIdentifier, projectIdentifier, orgIdentifier));
         }
+
+        infraEntityOptional.ifPresent(
+            infrastructureEntity -> infrastructureEntitySetupUsageHelper.deleteSetupUsages(infrastructureEntity));
 
         outboxService.save(EnvironmentUpdatedEvent.builder()
                                .accountIdentifier(accountId)
@@ -269,7 +286,7 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
 
     Criteria criteria = getInfrastructureEqualityCriteriaForProject(accountId, orgIdentifier, projectIdentifier);
     DeleteResult deleteResult = infrastructureRepository.delete(criteria);
-    return deleteResult.wasAcknowledged() && deleteResult.getDeletedCount() > 0;
+    return deleteResult.wasAcknowledged();
   }
 
   private void setObsoleteAsFalse(InfrastructureEntity requestInfra) {
@@ -347,16 +364,30 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
         accountIdentifier, orgIdentifier, projectIdentifier, envIdentifier);
   }
   @Override
-  public String createInfrastructureInputsFromYaml(String accountId, String projectIdentifier, String orgIdentifier,
+  public String createInfrastructureInputsFromYaml(String accountId, String orgIdentifier, String projectIdentifier,
       String environmentIdentifier, List<String> infraIdentifiers, boolean deployToAll) {
-    Map<String, Object> yamlInputs = createInfrastructureInputsYamlInternal(
-        accountId, orgIdentifier, projectIdentifier, environmentIdentifier, deployToAll, infraIdentifiers);
+    Map<String, Object> yamlInputs = createInfrastructureInputsYamlInternal(accountId, orgIdentifier, projectIdentifier,
+        environmentIdentifier, deployToAll, infraIdentifiers, new HashMap<>());
 
     if (isEmpty(yamlInputs)) {
       return null;
     }
     return YamlPipelineUtils.writeYamlString(yamlInputs);
   }
+
+  @Override
+  public String createInfrastructureInputsFromYamlV2(String accountId, String orgIdentifier, String projectIdentifier,
+      String environmentIdentifier, List<String> infraIdentifiers, boolean deployToAll) {
+    Map<String, Object> infraDefsInputMap = new HashMap<>();
+    createInfrastructureInputsYamlInternal(accountId, orgIdentifier, projectIdentifier, environmentIdentifier,
+        deployToAll, infraIdentifiers, infraDefsInputMap);
+
+    if (isEmpty(infraDefsInputMap)) {
+      return null;
+    }
+    return YamlPipelineUtils.writeYamlString(infraDefsInputMap);
+  }
+
   @Override
   public UpdateResult batchUpdateInfrastructure(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String envIdentifier, List<String> infraIdentifier, Update update) {
@@ -364,52 +395,59 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
         accountIdentifier, orgIdentifier, projectIdentifier, envIdentifier, infraIdentifier, update);
   }
 
-  public Map<String, Object> createInfrastructureInputsYamlInternal(String accountId, String orgIdentifier,
-      String projectIdentifier, String envIdentifier, boolean deployToAll, List<String> infraIdentifiers) {
+  private Map<String, Object> createInfrastructureInputsYamlInternal(String accountId, String orgIdentifier,
+      String projectIdentifier, String envIdentifier, boolean deployToAll, List<String> infraIdentifiers,
+      Map<String, Object> infraDefsInputsMap) {
     Map<String, Object> yamlInputs = new HashMap<>();
     // create one mapper for all infra defs
     ObjectMapper mapper = new ObjectMapper();
     List<Object> infraDefinitionInputList = new ArrayList<>();
+    List<Object> infraDefinitionInputListV2 = new ArrayList<>();
     if (deployToAll) {
       List<InfrastructureEntity> infrastructureEntities =
           getAllInfrastructureFromEnvIdentifier(accountId, orgIdentifier, projectIdentifier, envIdentifier);
 
       for (InfrastructureEntity infraEntity : infrastructureEntities) {
-        createInfraDefinitionInputs(infraEntity, infraDefinitionInputList, mapper);
+        createInfraDefinitionInputs(infraEntity, infraDefinitionInputList, mapper, infraDefinitionInputListV2);
       }
     } else {
       List<InfrastructureEntity> infrastructureEntities = getAllInfrastructureFromIdentifierList(
           accountId, orgIdentifier, projectIdentifier, envIdentifier, infraIdentifiers);
       for (InfrastructureEntity infraEntity : infrastructureEntities) {
-        createInfraDefinitionInputs(infraEntity, infraDefinitionInputList, mapper);
+        createInfraDefinitionInputs(infraEntity, infraDefinitionInputList, mapper, infraDefinitionInputListV2);
       }
     }
     if (isNotEmpty(infraDefinitionInputList)) {
       yamlInputs.put(YamlTypes.INFRASTRUCTURE_DEFS, infraDefinitionInputList);
     }
+    if (isNotEmpty(infraDefinitionInputListV2)) {
+      infraDefsInputsMap.put(YamlTypes.INFRASTRUCTURE_DEFS, infraDefinitionInputListV2);
+    }
     return yamlInputs;
   }
 
-  private void createInfraDefinitionInputs(
-      InfrastructureEntity infraEntity, List<Object> infraDefinitionInputList, ObjectMapper mapper) {
+  private void createInfraDefinitionInputs(InfrastructureEntity infraEntity, List<Object> infraDefinitionInputList,
+      ObjectMapper mapper, List<Object> infraDefinitionInputListV2) {
     String yaml = infraEntity.getYaml();
     if (isEmpty(yaml)) {
       throw new InvalidRequestException("Infrastructure Yaml cannot be empty");
     }
     try {
+      ObjectNode infraNode = mapper.createObjectNode();
+      infraNode.put(IDENTIFIER, infraEntity.getIdentifier());
       String infraDefinitionInputs = RuntimeInputFormHelper.createRuntimeInputForm(yaml, true);
       if (isEmpty(infraDefinitionInputs)) {
+        infraDefinitionInputListV2.add(infraNode);
         return;
       }
 
       YamlField infrastructureDefinitionYamlField =
           YamlUtils.readTree(infraDefinitionInputs).getNode().getField(YamlTypes.INFRASTRUCTURE_DEF);
       ObjectNode infraDefinitionNode = (ObjectNode) infrastructureDefinitionYamlField.getNode().getCurrJsonNode();
-      ObjectNode infraNode = mapper.createObjectNode();
-      infraNode.set(IDENTIFIER, infraDefinitionNode.get(IDENTIFIER));
       infraNode.set(YamlTypes.INPUTS, infraDefinitionNode);
 
       infraDefinitionInputList.add(infraNode);
+      infraDefinitionInputListV2.add(infraNode);
     } catch (IOException e) {
       throw new InvalidRequestException("Error occurred while creating Service Override inputs ", e);
     }
@@ -493,5 +531,94 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
         .is(orgIdentifier)
         .and(InfrastructureEntityKeys.projectIdentifier)
         .is(projectIdentifier);
+  }
+
+  public List<InfrastructureYamlMetadata> createInfrastructureYamlMetadata(String accountId, String orgIdentifier,
+      String projectIdentifier, String environmentIdentifier, List<String> infraIds) {
+    List<InfrastructureEntity> infrastructureEntities = getAllInfrastructureFromIdentifierList(
+        accountId, orgIdentifier, projectIdentifier, environmentIdentifier, infraIds);
+    List<InfrastructureYamlMetadata> infrastructureYamlMetadataList = new ArrayList<>();
+    infrastructureEntities.forEach(infrastructureEntity
+        -> infrastructureYamlMetadataList.add(createInfrastructureYamlMetadataInternal(infrastructureEntity)));
+    return infrastructureYamlMetadataList;
+  }
+
+  private InfrastructureYamlMetadata createInfrastructureYamlMetadataInternal(
+      InfrastructureEntity infrastructureEntity) {
+    if (isBlank(infrastructureEntity.getYaml())) {
+      log.info(
+          "Infrastructure with identifier {} is not configured with an Infrastructure definition. Infrastructure Yaml is empty",
+          infrastructureEntity.getIdentifier());
+      return InfrastructureYamlMetadata.builder()
+          .infrastructureIdentifier(infrastructureEntity.getIdentifier())
+          .infrastructureYaml("")
+          .inputSetTemplateYaml("")
+          .build();
+    }
+
+    final String infrastructureInputSetYaml = createInfrastructureInputsFromYaml(infrastructureEntity.getAccountId(),
+        infrastructureEntity.getOrgIdentifier(), infrastructureEntity.getProjectIdentifier(),
+        infrastructureEntity.getEnvIdentifier(), infrastructureEntity.getIdentifier());
+    return InfrastructureYamlMetadata.builder()
+        .infrastructureIdentifier(infrastructureEntity.getIdentifier())
+        .infrastructureYaml(infrastructureEntity.getYaml())
+        .inputSetTemplateYaml(infrastructureInputSetYaml)
+        .build();
+  }
+
+  @Override
+  public String createInfrastructureInputsFromYaml(String accountId, String orgIdentifier, String projectIdentifier,
+      String environmentIdentifier, String infraIdentifier) {
+    Map<String, Object> yamlInputs = createInfrastructureInputsYamlInternal(
+        accountId, orgIdentifier, projectIdentifier, environmentIdentifier, infraIdentifier);
+
+    if (isEmpty(yamlInputs)) {
+      return null;
+    }
+    return YamlPipelineUtils.writeYamlString(yamlInputs);
+  }
+
+  InfrastructureEntity getInfrastructureFromEnvAndInfraIdentifier(
+      String accountId, String orgId, String projectId, String envId, String infraId) {
+    Optional<InfrastructureEntity> infrastructureEntity =
+        infrastructureRepository.findByAccountIdAndOrgIdentifierAndProjectIdentifierAndEnvIdentifierAndIdentifier(
+            accountId, orgId, projectId, envId, infraId);
+    if (infrastructureEntity.isPresent()) {
+      return infrastructureEntity.get();
+    } else {
+      return null;
+    }
+  }
+
+  private Map<String, Object> createInfrastructureInputsYamlInternal(
+      String accountId, String orgIdentifier, String projectIdentifier, String envIdentifier, String infraIdentifier) {
+    Map<String, Object> yamlInputs = new HashMap<>();
+    InfrastructureEntity infrastructureEntity = getInfrastructureFromEnvAndInfraIdentifier(
+        accountId, orgIdentifier, projectIdentifier, envIdentifier, infraIdentifier);
+    ObjectMapper mapper = new ObjectMapper();
+    ObjectNode infraDefinition = createInfraDefinitionInputs(infrastructureEntity, mapper);
+    if (infraDefinition != null) {
+      yamlInputs.put("infrastructureInputs", infraDefinition);
+    }
+    return yamlInputs;
+  }
+
+  private ObjectNode createInfraDefinitionInputs(InfrastructureEntity infraEntity, ObjectMapper mapper) {
+    String yaml = infraEntity.getYaml();
+    if (isEmpty(yaml)) {
+      throw new InvalidRequestException("Infrastructure Yaml cannot be empty");
+    }
+    try {
+      String infraDefinitionInputs = RuntimeInputFormHelper.createRuntimeInputForm(yaml, true);
+      if (isEmpty(infraDefinitionInputs)) {
+        return null;
+      }
+
+      YamlField infrastructureDefinitionYamlField =
+          YamlUtils.readTree(infraDefinitionInputs).getNode().getField(YamlTypes.INFRASTRUCTURE_DEF);
+      return (ObjectNode) infrastructureDefinitionYamlField.getNode().getCurrJsonNode();
+    } catch (IOException e) {
+      throw new InvalidRequestException("Error occurred while creating Service Override inputs ", e);
+    }
   }
 }

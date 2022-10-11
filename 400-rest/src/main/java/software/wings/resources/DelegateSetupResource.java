@@ -330,8 +330,7 @@ public class DelegateSetupResource {
     try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR);
          AutoLogContext ignore2 = new DelegateLogContext(delegateId, OVERRIDE_ERROR)) {
       Delegate delegate = delegateCache.get(accountId, delegateId, true);
-      delegate.setTags(delegateTags.getTags());
-      return new RestResponse<>(delegateService.updateTags(delegate));
+      return new RestResponse<>(delegateService.updateTagsFromUI(delegate, delegateTags));
     }
   }
 

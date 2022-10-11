@@ -48,7 +48,8 @@ public class ChartMuseumCapabilityCheck implements CapabilityCheck, ProtoCapabil
     if (parameters.getCapabilityCase() != CapabilityParameters.CapabilityCase.CHART_MUSEUM_PARAMETERS) {
       return builder.permissionResult(PermissionResult.DENIED).build();
     }
-    String chartMuseumPath = getChartMuseumPath(false);
+    boolean useLatestChartmuseumVersion = parameters.getChartMuseumParameters().getUseLatestChartMuseumVersion();
+    String chartMuseumPath = getChartMuseumPath(useLatestChartmuseumVersion);
     if (isBlank(chartMuseumPath)) {
       return builder.permissionResult(PermissionResult.DENIED).build();
     }

@@ -241,11 +241,24 @@ public class AwsHelperResource {
   @GET
   @Path("clusters")
   @ApiOperation(value = "Get clusters", nickname = "clusters")
-  public ResponseDTO<List<String>> getClusterNames(@NotNull @QueryParam("awsConnectorRef") String awsConnectorRef,
+  public ResponseDTO<List<String>> getClusterNames(@QueryParam("awsConnectorRef") String awsConnectorRef,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
-      @NotNull @QueryParam("region") String region) {
+      @QueryParam("region") String region,
+      @Parameter(description = NGCommonEntityConstants.ENV_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ENVIRONMENT_KEY) String envId,
+      @Parameter(description = NGCommonEntityConstants.INFRADEF_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.INFRA_DEFINITION_KEY) String infraDefinitionId) {
+    if (isEmpty(awsConnectorRef)) {
+      InfrastructureDefinitionConfig infrastructureDefinitionConfig = getInfrastructureDefinitionConfig(
+          accountIdentifier, orgIdentifier, projectIdentifier, envId, infraDefinitionId);
+      if (infrastructureDefinitionConfig.getSpec() != null) {
+        EcsInfrastructure infrastructure = (EcsInfrastructure) infrastructureDefinitionConfig.getSpec();
+        awsConnectorRef = infrastructure.getConnectorRef().getValue();
+        region = infrastructure.getRegion().getValue();
+      }
+    }
     IdentifierRef connectorRef =
         IdentifierRefHelper.getIdentifierRef(awsConnectorRef, accountIdentifier, orgIdentifier, projectIdentifier);
     return ResponseDTO.newResponse(

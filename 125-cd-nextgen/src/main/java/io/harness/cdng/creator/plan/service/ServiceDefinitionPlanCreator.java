@@ -30,21 +30,15 @@ import io.harness.cdng.visitor.YamlTypes;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.exception.InvalidRequestException;
-import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.beans.NGEnvironmentGlobalOverride;
-import io.harness.ng.core.environment.mappers.EnvironmentMapper;
 import io.harness.ng.core.environment.services.EnvironmentService;
-import io.harness.ng.core.environment.yaml.NGEnvironmentConfig;
 import io.harness.ng.core.k8s.ServiceSpecType;
 import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
-import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity;
-import io.harness.ng.core.serviceoverride.mapper.NGServiceOverrideEntityConfigMapper;
 import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
 import io.harness.ng.core.serviceoverride.yaml.NGServiceOverrideConfig;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.contracts.plan.Dependency;
-import io.harness.pms.contracts.plan.PlanCreationContextValue;
 import io.harness.pms.contracts.plan.YamlUpdates;
 import io.harness.pms.contracts.steps.SkipType;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
@@ -61,7 +55,6 @@ import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.serializer.KryoSerializer;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
@@ -72,7 +65,6 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 
 @OwnedBy(HarnessTeam.CDC)
@@ -258,27 +250,6 @@ public class ServiceDefinitionPlanCreator extends ChildrenPlanCreator<YamlField>
 
     // Add serviceSpec node
     addServiceSpecNodeV2(ngServiceV2InfoConfig, planCreationResponseMap, serviceSpecChildrenIds);
-  }
-
-  @VisibleForTesting
-  NGServiceOverrideConfig fetchServiceOverrideConfig(
-      PlanCreationContext ctx, NGServiceV2InfoConfig serviceV2InfoConfig, String envRef) {
-    PlanCreationContextValue metadata = ctx.getMetadata();
-    final Optional<NGServiceOverridesEntity> serviceOverridesEntity =
-        serviceOverrideService.get(metadata.getAccountIdentifier(), metadata.getOrgIdentifier(),
-            metadata.getProjectIdentifier(), envRef, serviceV2InfoConfig.getIdentifier());
-
-    return serviceOverridesEntity.map(NGServiceOverrideEntityConfigMapper::toNGServiceOverrideConfig).orElse(null);
-  }
-
-  @VisibleForTesting
-  NGEnvironmentConfig fetchEnvironmentConfig(PlanCreationContext ctx, KryoSerializer kryoSerializer) {
-    ParameterField<String> envRefField = (ParameterField<String>) kryoSerializer.asInflatedObject(
-        ctx.getDependency().getMetadataMap().get(YamlTypes.ENVIRONMENT_REF).toByteArray());
-    PlanCreationContextValue metadata = ctx.getMetadata();
-    Optional<Environment> environment = environmentService.get(metadata.getAccountIdentifier(),
-        metadata.getOrgIdentifier(), metadata.getProjectIdentifier(), envRefField.getValue(), false);
-    return EnvironmentMapper.toNGEnvironmentConfig(environment.get());
   }
 
   private void addServiceSpecNode(ServiceConfig serviceConfig,

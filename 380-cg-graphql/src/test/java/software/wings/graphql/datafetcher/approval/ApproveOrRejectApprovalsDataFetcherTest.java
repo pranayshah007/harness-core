@@ -17,7 +17,8 @@ import static software.wings.sm.states.ApprovalState.ApprovalStateType.SERVICENO
 import static software.wings.sm.states.ApprovalState.ApprovalStateType.SHELL_SCRIPT;
 import static software.wings.sm.states.ApprovalState.ApprovalStateType.USER_GROUP;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doThrow;
@@ -297,17 +298,19 @@ public class ApproveOrRejectApprovalsDataFetcherTest extends AbstractDataFetcher
                                                    .approvalStateType(USER_GROUP)
                                                    .variables(null)
                                                    .build();
-
+    when(featureFlagService.isEnabled(FeatureName.SPG_ENABLE_EMAIL_VALIDATION, accountId)).thenReturn(true);
     when(userService.getUserByEmail(email)).thenReturn(user);
     when(authService.getUserGroups(accountId, user)).thenReturn(mockUserGroupList);
-    assertThat(approveOrRejectApprovalsDataFetcher.hasValidUserEmail(email, accountId, executionData)).isTrue();
-    assertThat(approveOrRejectApprovalsDataFetcher.isUserPresentInApiKey(email, mockApiKeyEntry)).isTrue();
+    assertThatCode(()
+                       -> approveOrRejectApprovalsDataFetcher.validateEmailWithApprovalUserGroups(
+                           email, accountId, executionData.getUserGroups()))
+        .doesNotThrowAnyException();
   }
 
   @Test
   @Owner(developers = RAFAEL)
   @Category(UnitTests.class)
-  public void shouldReturnFalseWhenTheEmailIsEmpty() throws Exception {
+  public void shouldThrowWhenTheEmailIsEmpty() throws Exception {
     String email = "";
     String accountId = "xpto";
     UserGroup ug = UserGroup.builder().uuid("ug1").build();
@@ -335,49 +338,13 @@ public class ApproveOrRejectApprovalsDataFetcherTest extends AbstractDataFetcher
                                                    .approvalStateType(USER_GROUP)
                                                    .variables(null)
                                                    .build();
-
+    when(featureFlagService.isEnabled(FeatureName.SPG_ENABLE_EMAIL_VALIDATION, accountId)).thenReturn(true);
     when(userService.getUserByEmail(email)).thenReturn(null);
     when(authService.getUserGroups(accountId, user)).thenReturn(mockUserGroupList);
-    assertThat(approveOrRejectApprovalsDataFetcher.hasValidUserEmail(email, accountId, executionData)).isFalse();
-    assertThat(approveOrRejectApprovalsDataFetcher.isUserPresentInApiKey(email, mockApiKeyEntry)).isFalse();
-  }
-
-  @Test
-  @Owner(developers = RAFAEL)
-  @Category(UnitTests.class)
-  public void shouldReturnFalseWhenTheEmailIsNull() throws Exception {
-    String email = null;
-    String accountId = "xpto";
-    UserGroup ug = UserGroup.builder().uuid("ug1").build();
-    List<UserGroup> mockUserGroupList = List.of(ug);
-    List<String> mockStringUserGroupList = List.of("ug1");
-    User user = User.Builder.anUser()
-                    .uuid("userid")
-                    .name("test")
-                    .userGroups(mockUserGroupList)
-                    .email(email)
-                    .emailVerified(true)
-                    .build();
-    ApiKeyEntry mockApiKeyEntry = ApiKeyEntry.builder()
-                                      .accountId(accountId)
-                                      .uuid("uuid")
-                                      .userGroups(mockUserGroupList)
-                                      .userGroupIds(mockStringUserGroupList)
-                                      .build();
-    ApprovalStateExecutionData executionData = ApprovalStateExecutionData.builder()
-                                                   .approvalId("approvalId")
-                                                   .approvedBy(new EmbeddedUser())
-                                                   .userGroups(mockStringUserGroupList)
-                                                   .comments("comments")
-                                                   .approvalFromSlack(false)
-                                                   .approvalStateType(USER_GROUP)
-                                                   .variables(null)
-                                                   .build();
-
-    when(userService.getUserByEmail(email)).thenReturn(null);
-    when(authService.getUserGroups(accountId, user)).thenReturn(mockUserGroupList);
-    assertThat(approveOrRejectApprovalsDataFetcher.hasValidUserEmail(email, accountId, executionData)).isFalse();
-    assertThat(approveOrRejectApprovalsDataFetcher.isUserPresentInApiKey(email, mockApiKeyEntry)).isFalse();
+    assertThatThrownBy(()
+                           -> approveOrRejectApprovalsDataFetcher.validateEmailWithApprovalUserGroups(
+                               email, accountId, executionData.getUserGroups()))
+        .isInstanceOf(InvalidRequestException.class);
   }
 
   @Test
@@ -418,8 +385,7 @@ public class ApproveOrRejectApprovalsDataFetcherTest extends AbstractDataFetcher
     when(graphQLContext.get("apiKeyEntry")).thenReturn(apiKeyEntry);
     when(userService.getUserByEmail(email)).thenReturn(user);
     when(authService.getUserGroups(accountId, user)).thenReturn(mockUserGroupList);
-    when(featureFlagService.isEnabled(eq(FeatureName.SPG_ENABLE_EMAIL_TO_APPROVE_OR_REJECT_GRAPHQL), anyString()))
-        .thenReturn(true);
+    when(featureFlagService.isEnabled(eq(FeatureName.SPG_ENABLE_EMAIL_VALIDATION), anyString())).thenReturn(true);
 
     doThrow(new GraphQLException(executionData.getApprovalStateType() + " Approval Type not supported", USER))
         .when(approveOrRejectApprovalsDataFetcher)
@@ -465,8 +431,7 @@ public class ApproveOrRejectApprovalsDataFetcherTest extends AbstractDataFetcher
     when(graphQLContext.get("apiKeyEntry")).thenReturn(apiKeyEntry);
     when(userService.getUserByEmail(email)).thenReturn(user);
     when(authService.getUserGroups(accountId, user)).thenReturn(mockUserGroupList);
-    when(featureFlagService.isEnabled(eq(FeatureName.SPG_ENABLE_EMAIL_TO_APPROVE_OR_REJECT_GRAPHQL), anyString()))
-        .thenReturn(true);
+    when(featureFlagService.isEnabled(eq(FeatureName.SPG_ENABLE_EMAIL_VALIDATION), anyString())).thenReturn(true);
 
     doThrow(new GraphQLException(executionData.getApprovalStateType() + " Approval Type not supported", USER))
         .when(approveOrRejectApprovalsDataFetcher)
@@ -511,8 +476,7 @@ public class ApproveOrRejectApprovalsDataFetcherTest extends AbstractDataFetcher
     when(graphQLContext.get("apiKeyEntry")).thenReturn(apiKeyEntry);
     when(userService.getUserByEmail(email)).thenReturn(user);
     when(authService.getUserGroups(accountId, user)).thenReturn(mockUserGroupList);
-    when(featureFlagService.isEnabled(eq(FeatureName.SPG_ENABLE_EMAIL_TO_APPROVE_OR_REJECT_GRAPHQL), anyString()))
-        .thenReturn(true);
+    when(featureFlagService.isEnabled(eq(FeatureName.SPG_ENABLE_EMAIL_VALIDATION), anyString())).thenReturn(true);
 
     doThrow(new GraphQLException(executionData.getApprovalStateType() + " Approval Type not supported", USER))
         .when(approveOrRejectApprovalsDataFetcher)

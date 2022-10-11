@@ -7,6 +7,7 @@
 
 package io.harness.ngtriggers.resource;
 
+import static io.harness.NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import static javax.ws.rs.core.HttpHeaders.IF_MATCH;
@@ -24,6 +25,7 @@ import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ngtriggers.beans.config.NGTriggerConfigV2;
+import io.harness.ngtriggers.beans.dto.NGTriggerCatalogDTO;
 import io.harness.ngtriggers.beans.dto.NGTriggerDetailsResponseDTO;
 import io.harness.ngtriggers.beans.dto.NGTriggerResponseDTO;
 import io.harness.pms.annotations.PipelineServiceAuth;
@@ -57,6 +59,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import org.hibernate.validator.constraints.NotBlank;
 
 @Api("triggers")
 @Path("triggers")
@@ -248,4 +251,18 @@ public interface NGTriggerResource {
   @ExceptionMetered
   RestResponse<String>
   generateWebhookToken();
+
+  @GET
+  @Path("catalog")
+  @ApiOperation(value = "Get Trigger catalog", nickname = "getTriggerCatalog")
+  @Operation(operationId = "getTriggerCatalog", summary = "Lists all Triggers",
+      description = "Lists all the Triggers for the given Account ID.",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Returns the Trigger catalogue response")
+      })
+  ResponseDTO<NGTriggerCatalogDTO>
+  getTriggerCatalog(@Parameter(description = ACCOUNT_PARAM_MESSAGE, required = true) @NotBlank @QueryParam(
+      NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier);
 }

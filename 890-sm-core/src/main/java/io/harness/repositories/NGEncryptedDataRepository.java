@@ -18,6 +18,9 @@ public interface NGEncryptedDataRepository {
   Long deleteNGEncryptedDataByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndIdentifier(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier);
 
+  NGEncryptedData hardDeleteNGEncryptedDataByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndIdentifier(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier);
+
   String getCollectionName();
 
   NGEncryptedData save(NGEncryptedData ngEncryptedData);

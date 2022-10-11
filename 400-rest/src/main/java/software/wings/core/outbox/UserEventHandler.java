@@ -76,17 +76,18 @@ public class UserEventHandler implements OutboxEventHandler {
                                 .build();
     AuthenticationInfoDTO authenticationInfoDTO = getAuthenticationInfoForLoginEvent(accountIdentifier, auditEntry);
     String userId = outboxEvent.getResource().getLabels().get(ResourceConstants.LABEL_KEY_USER_ID);
-    log.info("NG Login Event Audit: start publishing audit for account {} and user with userId {} ", accountIdentifier,
-        userId);
+    log.info("NG Login Audits: start publishing audit for account {} and user with userId {} and outboxEventId {}",
+        accountIdentifier, userId, outboxEvent.getId());
     try {
       if (isUserInScope(userId, accountIdentifier)) {
         log.info(
-            "NG Login Event Audit: for account {} the user with userId {} is in scope and now publishing the audits",
+            "NG Login Audits: for account {} the user with userId {} is in scope and now publishing the audit for Login",
             accountIdentifier, userId);
         return auditClientService.publishAudit(auditEntry, authenticationInfoDTO, globalContext);
       }
     } catch (Exception ex) {
-      log.warn("Skipping audit for account {} and userId {} due to exception: ", accountIdentifier, userId, ex);
+      log.warn("NG Login Audits: skipping audit for account {} and userId {} due to exception: ", accountIdentifier,
+          userId, ex);
       return false;
     }
     return true;

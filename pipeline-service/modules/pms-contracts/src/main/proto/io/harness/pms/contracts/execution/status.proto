@@ -39,4 +39,5 @@ enum Status {
 
   APPROVAL_REJECTED = 20;
   INPUT_WAITING = 21;
+  WAIT_STEP_RUNNING = 22;
 }

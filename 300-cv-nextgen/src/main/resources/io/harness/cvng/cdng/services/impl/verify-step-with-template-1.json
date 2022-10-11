@@ -1,0 +1,28 @@
+{
+  "type": "Application",
+  "sources": {
+    "healthSources": [
+      {
+        "identifier": "datadog",
+        "type": "DatadogLog",
+        "spec": {
+          "queries": [
+            {
+              "identifier": "Datadog_Logs_Query",
+              "query": "abc",
+              "serviceInstanceIdentifier": "Instance",
+              "indexes": [
+                "abc"
+              ],
+              "__uuid": "0jcJWXc-RUG7AvlsBGiPrg"
+            }
+          ],
+          "__uuid": "51aKLy3rSWG3Ehbo7LGogA"
+        },
+        "__uuid": "YAXW0QhEQQejM-dUxuYriA"
+      }
+    ],
+    "__uuid": "c_MI21gbTxuW2HOEpdpaZg"
+  },
+  "__uuid": "eztJnVBbQJaWWsLL-SDKqA"
+}

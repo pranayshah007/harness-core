@@ -25,8 +25,10 @@ import io.harness.cdng.ecs.EcsCanaryDeleteStepNode;
 import io.harness.cdng.ecs.EcsCanaryDeployStepNode;
 import io.harness.cdng.ecs.EcsRollingDeployStepNode;
 import io.harness.cdng.ecs.EcsRollingRollbackStepNode;
+import io.harness.cdng.ecs.EcsRunTaskStepNode;
 import io.harness.cdng.gitops.CreatePRStepNode;
 import io.harness.cdng.gitops.MergePRStepNode;
+import io.harness.cdng.gitops.UpdateReleaseRepoStepNode;
 import io.harness.cdng.helm.HelmDeployStepNode;
 import io.harness.cdng.helm.HelmRollbackStepNode;
 import io.harness.cdng.jenkins.jenkinsstep.JenkinsBuildStepNode;
@@ -46,6 +48,7 @@ import io.harness.cdng.provision.azure.AzureCreateBPStepNode;
 import io.harness.cdng.provision.cloudformation.CloudformationCreateStackStepNode;
 import io.harness.cdng.provision.cloudformation.CloudformationDeleteStackStepNode;
 import io.harness.cdng.provision.cloudformation.CloudformationRollbackStepNode;
+import io.harness.cdng.provision.shellscript.ShellScriptProvisionStepNode;
 import io.harness.cdng.provision.terraform.TerraformApplyStepNode;
 import io.harness.cdng.provision.terraform.TerraformDestroyStepNode;
 import io.harness.cdng.provision.terraform.TerraformPlanStepNode;
@@ -157,6 +160,18 @@ public class CDNGRegistrars {
                    .availableAtOrgLevel(false)
                    .availableAtAccountLevel(false)
                    .clazz(MergePRStepNode.class)
+                   .yamlSchemaMetadata(YamlSchemaMetadata.builder()
+                                           .namespace(SchemaNamespaceConstants.CD)
+                                           .modulesSupported(Collections.singletonList(ModuleType.CD))
+                                           .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
+                                           .build())
+                   .build())
+          .add(YamlSchemaRootClass.builder()
+                   .entityType(EntityType.GITOPS_UPDATE_RELEASE_REPO)
+                   .availableAtProjectLevel(true)
+                   .availableAtOrgLevel(false)
+                   .availableAtAccountLevel(false)
+                   .clazz(UpdateReleaseRepoStepNode.class)
                    .yamlSchemaMetadata(YamlSchemaMetadata.builder()
                                            .namespace(SchemaNamespaceConstants.CD)
                                            .modulesSupported(Collections.singletonList(ModuleType.CD))
@@ -572,6 +587,18 @@ public class CDNGRegistrars {
                                            .build())
                    .build())
           .add(YamlSchemaRootClass.builder()
+                   .entityType(EntityType.ECS_RUN_TASK_STEP)
+                   .availableAtProjectLevel(true)
+                   .availableAtOrgLevel(false)
+                   .availableAtAccountLevel(false)
+                   .clazz(EcsRunTaskStepNode.class)
+                   .yamlSchemaMetadata(YamlSchemaMetadata.builder()
+                                           .namespace(SchemaNamespaceConstants.CD)
+                                           .modulesSupported(Collections.singletonList(ModuleType.CD))
+                                           .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
+                                           .build())
+                   .build())
+          .add(YamlSchemaRootClass.builder()
                    .entityType(EntityType.ECS_BLUE_GREEN_CREATE_SERVICE_STEP)
                    .availableAtProjectLevel(true)
                    .availableAtOrgLevel(false)
@@ -604,6 +631,18 @@ public class CDNGRegistrars {
                    .yamlSchemaMetadata(YamlSchemaMetadata.builder()
                                            .namespace(SchemaNamespaceConstants.CD)
                                            .modulesSupported(Collections.singletonList(ModuleType.CD))
+                                           .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
+                                           .build())
+                   .build())
+          .add(YamlSchemaRootClass.builder()
+                   .entityType(EntityType.SHELL_SCRIPT_PROVISION_STEP)
+                   .availableAtProjectLevel(true)
+                   .availableAtOrgLevel(false)
+                   .availableAtAccountLevel(false)
+                   .clazz(ShellScriptProvisionStepNode.class)
+                   .yamlSchemaMetadata(YamlSchemaMetadata.builder()
+                                           .namespace(SchemaNamespaceConstants.CD)
+                                           .modulesSupported(Arrays.asList(ModuleType.CD, ModuleType.PMS))
                                            .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
                                            .build())
                    .build())

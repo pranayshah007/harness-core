@@ -19,7 +19,6 @@ import static com.google.common.collect.Sets.newHashSet;
 import static java.lang.String.format;
 import static java.lang.System.currentTimeMillis;
 import static java.time.Duration.ofSeconds;
-import static java.util.stream.Collectors.toList;
 import static org.apache.commons.codec.digest.DigestUtils.sha1Hex;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.mongodb.morphia.mapping.Mapper.ID_KEY;
@@ -94,10 +93,15 @@ import com.google.common.util.concurrent.TimeLimiter;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.mongodb.BasicDBObject;
+import com.mongodb.DBCollection;
+import com.mongodb.DBCursor;
+import com.mongodb.DBObject;
 import io.fabric8.utils.Lists;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.time.Duration;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -382,16 +386,16 @@ public class AuditServiceImpl implements AuditService {
   @Override
   public void deleteAuditRecords(long retentionMillis) {
     final int batchSize = 1000;
-    final int limit = 5000;
-    final long days = TimeUnit.DAYS.convert(retentionMillis, TimeUnit.MILLISECONDS);
-    log.info("Start: Deleting audit records older than {} time", currentTimeMillis() - retentionMillis);
+    final int limit = 3000;
+    final long days = Instant.ofEpochMilli(retentionMillis).until(Instant.now(), ChronoUnit.DAYS);
+    List<ObjectId> fileIdsTobeDeletedList = new ArrayList<>();
     try {
       log.info("Start: Deleting audit records older than {} days", days);
       HTimeLimiter.callInterruptible21(timeLimiter, Duration.ofMinutes(10), () -> {
         while (true) {
           List<AuditHeader> auditHeaders = wingsPersistence.createQuery(AuditHeader.class, excludeAuthority)
                                                .field(AuditHeaderKeys.createdAt)
-                                               .lessThan(currentTimeMillis() - retentionMillis)
+                                               .lessThan(retentionMillis)
                                                .asList(new FindOptions().limit(limit).batchSize(batchSize));
           if (isEmpty(auditHeaders)) {
             log.info("No more audit records older than {} days", days);
@@ -399,38 +403,39 @@ public class AuditServiceImpl implements AuditService {
           }
           try {
             log.info("Deleting {} audit records", auditHeaders.size());
-
-            List<ObjectId> requestPayloadIds =
-                auditHeaders.stream()
-                    .filter(auditHeader -> auditHeader.getRequestPayloadUuid() != null)
-                    .map(auditHeader -> new ObjectId(auditHeader.getRequestPayloadUuid()))
-                    .collect(toList());
-            List<ObjectId> responsePayloadIds =
-                auditHeaders.stream()
-                    .filter(auditHeader -> auditHeader.getResponsePayloadUuid() != null)
-                    .map(auditHeader -> new ObjectId(auditHeader.getResponsePayloadUuid()))
-                    .collect(toList());
             wingsPersistence.getCollection(DEFAULT_STORE, "audits")
                 .remove(new BasicDBObject(
                     ID_KEY, new BasicDBObject("$in", auditHeaders.stream().map(AuditHeader::getUuid).toArray())));
 
-            if (isNotEmpty(requestPayloadIds)) {
-              wingsPersistence.getCollection(DEFAULT_STORE, "audits.files")
-                  .remove(new BasicDBObject(ID_KEY, new BasicDBObject("$in", requestPayloadIds.toArray())));
-              wingsPersistence.getCollection(DEFAULT_STORE, "audits.chunks")
-                  .remove(new BasicDBObject("files_id", new BasicDBObject("$in", requestPayloadIds.toArray())));
+            // Deleting Audit Files and Chunks
+
+            DBCollection auditFilesCollection = wingsPersistence.getCollection(DEFAULT_STORE, "audits.files");
+            DBCollection auditChunksCollection = wingsPersistence.getCollection(DEFAULT_STORE, "audits.chunks");
+            final BasicDBObject filter = new BasicDBObject().append(
+                "uploadDate", new BasicDBObject("$lt", Instant.ofEpochMilli(retentionMillis)));
+            BasicDBObject projection = new BasicDBObject("_id", Boolean.TRUE);
+            DBCursor fileIdsToBeDeleted =
+                auditFilesCollection.find(filter, projection).limit(limit).batchSize(batchSize);
+
+            log.info("Deleting {} audit Files and its related chunks", fileIdsToBeDeleted.size());
+            while (fileIdsToBeDeleted.hasNext()) {
+              DBObject record = fileIdsToBeDeleted.next();
+              String uuId = record.get("_id").toString();
+              fileIdsTobeDeletedList.add(new ObjectId(uuId));
+            }
+            if (isNotEmpty(fileIdsTobeDeletedList)) {
+              // Deleting the chunks if they exist
+              auditChunksCollection.remove(
+                  new BasicDBObject("files_id", new BasicDBObject("$in", fileIdsTobeDeletedList.toArray())));
+              // Deleting the audit files
+              auditFilesCollection.remove(
+                  new BasicDBObject("_id", new BasicDBObject("$in", fileIdsTobeDeletedList.toArray())));
             }
 
-            if (isNotEmpty(requestPayloadIds)) {
-              wingsPersistence.getCollection(DEFAULT_STORE, "audits.files")
-                  .remove(new BasicDBObject(ID_KEY, new BasicDBObject("$in", responsePayloadIds.toArray())));
-              wingsPersistence.getCollection(DEFAULT_STORE, "audits.chunks")
-                  .remove(new BasicDBObject("files_id", new BasicDBObject("$in", responsePayloadIds.toArray())));
-            }
           } catch (Exception ex) {
             log.warn("Failed to delete {} audit records", auditHeaders.size(), ex);
           }
-          log.info("Successfully deleted {} audit records", auditHeaders.size());
+          log.info("Successfully deleted {} audits, audit files and chunks", auditHeaders.size());
           if (auditHeaders.size() < limit) {
             return true;
           }

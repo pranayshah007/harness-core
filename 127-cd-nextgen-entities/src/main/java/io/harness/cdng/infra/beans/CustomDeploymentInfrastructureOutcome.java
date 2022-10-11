@@ -26,8 +26,7 @@ import org.springframework.data.annotation.TypeAlias;
 @JsonTypeName(InfrastructureKind.CUSTOM_DEPLOYMENT)
 @TypeAlias("cdng.infra.beans.CustomDeploymentInfrastructureOutcome")
 @RecasterAlias("io.harness.cdng.infra.beans.CustomDeploymentInfrastructureOutcome")
-public class CustomDeploymentInfrastructureOutcome
-    extends InfrastructureDetailsAbstract implements InfrastructureOutcome {
+public class CustomDeploymentInfrastructureOutcome extends InfrastructureOutcomeAbstract {
   String instancesListPath;
   Map<String, String> instanceAttributes;
   String instanceFetchScript;

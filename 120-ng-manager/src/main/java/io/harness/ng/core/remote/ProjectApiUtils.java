@@ -39,6 +39,7 @@ import javax.validation.Validator;
 import javax.ws.rs.core.Link;
 import javax.ws.rs.core.Response.ResponseBuilder;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.EnumUtils;
 import org.springframework.data.domain.Pageable;
 
 public class ProjectApiUtils {
@@ -126,9 +127,36 @@ public class ProjectApiUtils {
     return tags.stream().collect(Collectors.toMap(NGTag::getKey, NGTag::getValue));
   }
 
-  public Pageable getPageRequest(int page, int limit) {
-    SortOrder order = aSortOrder().withField(ProjectKeys.lastModifiedAt, DESC).build();
-    return PageUtils.getPageRequest(new PageRequest(page, limit, ImmutableList.of(order)));
+  public Pageable getPageRequest(int page, int limit, String sort, String order) {
+    List<SortOrder> sortOrders;
+    String mappedFieldName = getFieldName(sort);
+    if (mappedFieldName != null) {
+      SortOrder.OrderType fieldOrder = EnumUtils.getEnum(SortOrder.OrderType.class, order, DESC);
+      sortOrders = ImmutableList.of(aSortOrder().withField(mappedFieldName, fieldOrder).build());
+    } else {
+      sortOrders = ImmutableList.of(aSortOrder().withField(ProjectKeys.lastModifiedAt, DESC).build());
+    }
+    return PageUtils.getPageRequest(new PageRequest(page, limit, sortOrders));
+  }
+
+  private String getFieldName(String sort) {
+    PageUtils.SortFields sortField = PageUtils.SortFields.fromValue(sort);
+    if (sortField == null) {
+      sortField = PageUtils.SortFields.UNSUPPORTED;
+    }
+    switch (sortField) {
+      case SLUG:
+        return ProjectKeys.identifier;
+      case NAME:
+        return ProjectKeys.name;
+      case CREATED:
+        return ProjectKeys.createdAt;
+      case UPDATED:
+        return ProjectKeys.lastModifiedAt;
+      case UNSUPPORTED:
+      default:
+        return null;
+    }
   }
 
   public ResponseBuilder addLinksHeader(

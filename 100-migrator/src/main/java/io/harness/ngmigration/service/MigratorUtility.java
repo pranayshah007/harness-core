@@ -9,25 +9,45 @@ package io.harness.ngmigration.service;
 
 import static software.wings.ngmigration.NGMigrationEntityType.SECRET;
 
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.Scope;
 import io.harness.encryption.SecretRefData;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.ngmigration.beans.InputDefaults;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
+import io.harness.ngmigration.secrets.SecretFactory;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.yaml.core.variables.NGVariable;
+import io.harness.yaml.core.variables.NGVariableType;
+import io.harness.yaml.core.variables.SecretNGVariable;
+import io.harness.yaml.core.variables.StringNGVariable;
 
+import software.wings.beans.ServiceVariable;
+import software.wings.beans.ServiceVariableType;
 import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.NGMigrationEntityType;
 
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.text.CaseUtils;
 
+@OwnedBy(HarnessTeam.CDC)
+@Slf4j
 public class MigratorUtility {
+  public static String generateManifestIdentifier(String name) {
+    return generateIdentifier(name);
+  }
+
   public static String generateIdentifier(String name) {
-    return name.trim().toLowerCase().replaceAll("[^A-Za-z0-9]", "");
+    String generated = CaseUtils.toCamelCase(name.replaceAll("[^A-Za-z0-9]", " ").trim(), false, ' ');
+    return Character.isDigit(generated.charAt(0)) ? "_" + generated : generated;
   }
 
   public static ParameterField<String> getParameterField(String value) {
@@ -44,16 +64,22 @@ public class MigratorUtility {
   // This is for sorting entities while creating
   private static int toInt(NGYamlFile file) {
     switch (file.getType()) {
+      case APPLICATION:
+        return 0;
       case SECRET_MANAGER:
         return 1;
       case SECRET:
-        return 5;
+        return SecretFactory.isStoredInHarnessSecretManager(file) ? Integer.MIN_VALUE : 5;
       case CONNECTOR:
         return 10;
+      case MANIFEST:
+        return 15;
       case SERVICE:
         return 20;
       case ENVIRONMENT:
         return 25;
+      case INFRA:
+        return 35;
       case PIPELINE:
         return 50;
       default:
@@ -83,7 +109,13 @@ public class MigratorUtility {
   }
 
   public static SecretRefData getSecretRef(Map<CgEntityId, NGYamlFile> migratedEntities, String secretId) {
+    if (secretId == null) {
+      return null;
+    }
     CgEntityId secretEntityId = CgEntityId.builder().id(secretId).type(SECRET).build();
+    if (!migratedEntities.containsKey(secretEntityId)) {
+      return SecretRefData.builder().identifier("__PLEASE_FIX_ME__").scope(Scope.PROJECT).build();
+    }
     NgEntityDetail migratedSecret = migratedEntities.get(secretEntityId).getNgEntityDetail();
     return SecretRefData.builder()
         .identifier(migratedSecret.getIdentifier())
@@ -102,5 +134,29 @@ public class MigratorUtility {
       return identifier;
     }
     return "org." + identifier;
+  }
+
+  public static List<NGVariable> getVariables(
+      List<ServiceVariable> serviceVariables, Map<CgEntityId, NGYamlFile> migratedEntities) {
+    List<NGVariable> variables = new ArrayList<>();
+    if (EmptyPredicate.isNotEmpty(serviceVariables)) {
+      serviceVariables.forEach(serviceVariable -> {
+        if (serviceVariable.getType().equals(ServiceVariableType.ENCRYPTED_TEXT)) {
+          variables.add(SecretNGVariable.builder()
+                            .type(NGVariableType.SECRET)
+                            .value(ParameterField.createValueField(
+                                MigratorUtility.getSecretRef(migratedEntities, serviceVariable.getEncryptedValue())))
+                            .name(serviceVariable.getName())
+                            .build());
+        } else {
+          variables.add(StringNGVariable.builder()
+                            .type(NGVariableType.STRING)
+                            .name(serviceVariable.getName())
+                            .value(ParameterField.createValueField(String.valueOf(serviceVariable.getValue())))
+                            .build());
+        }
+      });
+    }
+    return variables;
   }
 }

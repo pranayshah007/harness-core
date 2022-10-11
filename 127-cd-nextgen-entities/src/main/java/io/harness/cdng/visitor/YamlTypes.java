@@ -19,6 +19,7 @@ import io.harness.walktree.visitor.utilities.VisitorParentPathUtils;
 public interface YamlTypes {
   String GITOPS_CREATE_PR = StepSpecTypeConstants.GITOPS_CREATE_PR;
   String GITOPS_MERGE_PR = StepSpecTypeConstants.GITOPS_MERGE_PR;
+  String UPDATE_RELEASE_REPO = StepSpecTypeConstants.GITOPS_UPDATE_RELEASE_REPO;
 
   String PRIMARY_ARTIFACT = "primary";
   String PRIMARY_ARTIFACT_REF = "primaryArtifactRef";
@@ -58,6 +59,7 @@ public interface YamlTypes {
   String ECS_ROLLING_ROLLBACK = StepSpecTypeConstants.ECS_ROLLING_ROLLBACK;
   String ECS_CANARY_DEPLOY = StepSpecTypeConstants.ECS_CANARY_DEPLOY;
   String ECS_CANARY_DELETE = StepSpecTypeConstants.ECS_CANARY_DELETE;
+  String ECS_RUN_TASK = StepSpecTypeConstants.ECS_RUN_TASK;
   String ECS_BLUE_GREEN_CREATE_SERVICE = StepSpecTypeConstants.ECS_BLUE_GREEN_CREATE_SERVICE;
   String ECS_BLUE_GREEN_SWAP_TARGET_GROUPS = StepSpecTypeConstants.ECS_BLUE_GREEN_SWAP_TARGET_GROUPS;
   String ECS_BLUE_GREEN_ROLLBACK = StepSpecTypeConstants.ECS_BLUE_GREEN_ROLLBACK;
@@ -152,4 +154,6 @@ public interface YamlTypes {
 
   String ENV_PRODUCTION = "Production";
   String ENV_PRE_PRODUCTION = "PreProduction";
+
+  String SERVICE_ENTITIES = "services";
 }

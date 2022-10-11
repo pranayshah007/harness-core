@@ -227,7 +227,7 @@ public class PmsStepPlanCreatorUtils {
           adviserObtainmentList.add(getManualInterventionAdviserObtainment(
               kryoSerializer, failureTypes, adviserObtainmentBuilder, actionConfig, actionUnderManualIntervention));
           break;
-        case PROCEED_WITH_DEFAULT_VALUE:
+        case PROCEED_WITH_DEFAULT_VALUES:
           adviserObtainmentList.add(
               adviserObtainmentBuilder.setType(ProceedWithDefaultValueAdviser.ADVISER_TYPE)
                   .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(

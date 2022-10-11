@@ -8,6 +8,8 @@
 package io.harness.delegate.task.winrm;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.delegate.task.winrm.WinRmExecutorHelper.constructCommandsList;
+import static io.harness.delegate.task.winrm.WinRmExecutorHelper.constructPSScriptWithCommands;
 import static io.harness.delegate.task.winrm.WinRmExecutorHelper.getScriptExecutingCommand;
 import static io.harness.logging.CommandExecutionStatus.FAILURE;
 import static io.harness.logging.CommandExecutionStatus.RUNNING;
@@ -38,6 +40,7 @@ import io.harness.shell.ShellExecutionData.ShellExecutionDataBuilder;
 import software.wings.core.winrm.executors.WinRmExecutor;
 import software.wings.utils.ExecutionLogWriter;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
@@ -61,19 +64,23 @@ public class DefaultWinRmExecutor implements WinRmExecutor {
   public static final String POWERSHELL_NO_PROFILE = "Powershell -NoProfile ";
   public static final String POWERSHELL = "Powershell ";
   public static final String SECRET_MASK = "************";
+  private static final String NEWLINE_MARK = "__NL";
+  private static final String NEWLINE_SPLIT = NEWLINE_MARK + "\r\n";
 
   protected LogCallback logCallback;
   private final WinRmSessionConfig config;
   private final boolean disableCommandEncoding;
+  private final boolean winrmScriptCommandSplit;
   private final boolean shouldSaveExecutionLogs;
   private final String powershell;
 
   public DefaultWinRmExecutor(LogCallback logCallback, boolean shouldSaveExecutionLogs, WinRmSessionConfig config,
-      boolean disableCommandEncoding) {
+      boolean disableCommandEncoding, boolean winrmScriptCommandSplit) {
     this.logCallback = logCallback;
     this.shouldSaveExecutionLogs = shouldSaveExecutionLogs;
     this.config = config;
     this.disableCommandEncoding = disableCommandEncoding;
+    this.winrmScriptCommandSplit = winrmScriptCommandSplit;
 
     if (this.config.isUseNoProfile()) {
       powershell = POWERSHELL_NO_PROFILE;
@@ -116,9 +123,17 @@ public class DefaultWinRmExecutor implements WinRmExecutor {
       String psScriptFile = null;
       if (disableCommandEncoding) {
         psScriptFile = getPSScriptFile();
-        exitCode = session.executeCommandsList(WinRmExecutorHelper.constructPSScriptWithCommands(
-                                                   command, psScriptFile, powershell, config.getCommandParameters()),
-            outputWriter, errorWriter, false, getScriptExecutingCommand(psScriptFile, powershell));
+        if (winrmScriptCommandSplit) {
+          List<String> commandList =
+              constructCommandsList(command, psScriptFile, powershell, config.getCommandParameters());
+          exitCode = session.executeCommandsListV2(
+              commandList, outputWriter, errorWriter, false, getScriptExecutingCommand(psScriptFile, powershell), true);
+        } else {
+          List<List<String>> commandList =
+              constructPSScriptWithCommands(command, psScriptFile, powershell, config.getCommandParameters());
+          exitCode = session.executeCommandsList(
+              commandList, outputWriter, errorWriter, false, getScriptExecutingCommand(psScriptFile, powershell));
+        }
       } else {
         exitCode = session.executeCommandString(
             WinRmExecutorHelper.psWrappedCommandWithEncoding(command, powershell, config.getCommandParameters()),
@@ -142,7 +157,8 @@ public class DefaultWinRmExecutor implements WinRmExecutor {
     return commandExecutionStatus;
   }
 
-  private String addEnvVariablesCollector(
+  @VisibleForTesting
+  String addEnvVariablesCollector(
       String command, List<String> envVariablesToCollect, String envVariablesOutputFileName) {
     StringBuilder wrapperCommand = new StringBuilder(command);
     wrapperCommand.append('\n');
@@ -152,6 +168,10 @@ public class DefaultWinRmExecutor implements WinRmExecutor {
           .append("=\"\n $e+=$Env:")
           .append(env)
           .append("\n Write-Output $e | Out-File -Encoding UTF8 -append -FilePath '")
+          .append(envVariablesOutputFileName)
+          .append("'\n Write-Output \"")
+          .append(NEWLINE_MARK)
+          .append("\" | Out-File -Encoding UTF8 -append -FilePath '")
           .append(envVariablesOutputFileName)
           .append("'\n");
     }
@@ -205,9 +225,18 @@ public class DefaultWinRmExecutor implements WinRmExecutor {
       if (disableCommandEncoding) {
         psScriptFile = getPSScriptFile();
 
-        exitCode = session.executeCommandsList(WinRmExecutorHelper.constructPSScriptWithCommands(
-                                                   command, psScriptFile, powershell, config.getCommandParameters()),
-            outputWriter, errorWriter, false, getScriptExecutingCommand(psScriptFile, powershell));
+        if (winrmScriptCommandSplit) {
+          List<String> commandList =
+              constructCommandsList(command, psScriptFile, powershell, config.getCommandParameters());
+          exitCode = session.executeCommandsListV2(
+              commandList, outputWriter, errorWriter, false, getScriptExecutingCommand(psScriptFile, powershell), true);
+        } else {
+          List<List<String>> commandList =
+              constructPSScriptWithCommands(command, psScriptFile, powershell, config.getCommandParameters());
+          exitCode = session.executeCommandsList(
+              commandList, outputWriter, errorWriter, false, getScriptExecutingCommand(psScriptFile, powershell));
+        }
+
       } else {
         exitCode = session.executeCommandString(
             WinRmExecutorHelper.psWrappedCommandWithEncoding(command, powershell, config.getCommandParameters()),
@@ -264,9 +293,18 @@ public class DefaultWinRmExecutor implements WinRmExecutor {
       int exitCode;
       if (disableCommandEncoding) {
         psScriptFile = getPSScriptFile();
-        exitCode = session.executeCommandsList(WinRmExecutorHelper.constructPSScriptWithCommands(commandWithoutEncoding,
-                                                   psScriptFile, powershell, config.getCommandParameters()),
-            outputAccumulator, errorAccumulator, true, getScriptExecutingCommand(psScriptFile, powershell));
+        if (winrmScriptCommandSplit) {
+          List<String> commandList =
+              constructCommandsList(commandWithoutEncoding, psScriptFile, powershell, config.getCommandParameters());
+          exitCode = session.executeCommandsListV2(commandList, outputAccumulator, errorAccumulator, true,
+              getScriptExecutingCommand(psScriptFile, powershell), true);
+        } else {
+          List<List<String>> commandList = constructPSScriptWithCommands(
+              commandWithoutEncoding, psScriptFile, powershell, config.getCommandParameters());
+          exitCode = session.executeCommandsList(commandList, outputAccumulator, errorAccumulator, true,
+              getScriptExecutingCommand(psScriptFile, powershell));
+        }
+
       } else {
         exitCode = session.executeCommandString(
             WinRmExecutorHelper.psWrappedCommandWithEncoding(command, powershell, config.getCommandParameters()),
@@ -285,7 +323,7 @@ public class DefaultWinRmExecutor implements WinRmExecutor {
         // removing UTF-8 and UTF-16 BOMs if any
         fileContents = new String(decodedBytes, StandardCharsets.UTF_8).replace("\uFEFF", "").replace("\uEFBBBF", "");
       }
-      String[] lines = fileContents.split("\n");
+      String[] lines = fileContents.split(NEWLINE_SPLIT);
       saveExecutionLog(color("\n\nScript Output: ", White, Bold), INFO);
       for (String line : lines) {
         int index = line.indexOf('=');

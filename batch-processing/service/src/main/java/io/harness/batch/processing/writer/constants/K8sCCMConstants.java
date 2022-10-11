@@ -26,11 +26,15 @@ public class K8sCCMConstants {
   public static final String AKS_NODE_POOL_KEY = "agentpool";
   public static final String EKSCTL_NODE_POOL_KEY = "alpha.eksctl.io/nodegroup-name";
   public static final String EKS_NODE_POOL_KEY = "eks.amazonaws.com/nodegroup";
+  public static final String KOPS_NODE_POOL_KEY = "kops.k8s.io/instancegroup";
   public static final String COMPUTE_TYPE = "eks.amazonaws.com/compute-type";
   public static final String UNALLOCATED = "Unallocated";
   public static final String DEFAULT_DEPLOYMENT_TYPE = "Pod";
   public static final String AWS_FARGATE_COMPUTE_TYPE = "fargate";
   public static final String NODE_POOL_NAME_KEY = "node-pool-name";
+  public static final String SPOT_INSTANCE_NODE_LIFECYCLE = "spotinst~io/node-lifecycle";
+  public static final String SPOT_INSTANCE = "spot";
+  public static final String ON_DEMAND_INSTANCE = "od";
 
   private K8sCCMConstants() {}
 }

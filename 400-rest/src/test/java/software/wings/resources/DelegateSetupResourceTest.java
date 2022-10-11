@@ -470,7 +470,7 @@ public class DelegateSetupResourceTest extends CategoryTest {
         .request()
         .put(entity(delegateTags, MediaType.APPLICATION_JSON), new GenericType<RestResponse<Delegate>>() {});
 
-    verify(delegateService, atLeastOnce()).updateTags(delegate);
+    verify(delegateService, atLeastOnce()).updateTagsFromUI(delegate, delegateTags);
   }
 
   @Test

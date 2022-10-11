@@ -275,10 +275,6 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
           format("envGroupRef should be present in stage [%s]. Please add it and try again",
               YamlUtils.getFullyQualifiedName(filterCreationContext.getCurrentField().getNode())));
     }
-    if (gitOpsEnabled != Boolean.TRUE) {
-      throw new InvalidYamlRuntimeException(
-          "Deploy to all environment groups is not supported yet. Please try deploying to specific infrastructure and try again");
-    }
   }
 
   private void addFiltersForServices(FilterCreationContext filterCreationContext, CdFilterBuilder filterBuilder,

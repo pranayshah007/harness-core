@@ -41,8 +41,6 @@ import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
 import io.harness.ngmigration.beans.summary.BaseSummary;
 import io.harness.ngmigration.beans.summary.WorkflowSummary;
-import io.harness.ngmigration.client.NGClient;
-import io.harness.ngmigration.client.PmsClient;
 import io.harness.ngmigration.expressions.MigratorExpressionUtils;
 import io.harness.ngmigration.service.MigratorUtility;
 import io.harness.ngmigration.service.NgMigrationService;
@@ -84,7 +82,6 @@ import software.wings.yaml.workflow.StepYaml;
 
 import com.google.inject.Inject;
 import io.fabric8.utils.Lists;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -247,10 +244,6 @@ public class WorkflowMigrationService extends NgMigrationService {
             String.format("Workflow %s of type %s is not supported with migration", workflow.getName(), workflowType)))
         .build();
   }
-
-  @Override
-  public void migrate(String auth, NGClient ngClient, PmsClient pmsClient, MigrationInputDTO inputDTO,
-      NGYamlFile yamlFile) throws IOException {}
 
   public StageElementWrapperConfig getNgStage(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
       Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities) {

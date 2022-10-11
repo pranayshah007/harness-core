@@ -38,6 +38,7 @@ public enum ExecutionStatus {
   @JsonProperty("ResourceWaiting") RESOURCEWAITING(Status.RESOURCE_WAITING, "ResourceWaiting"),
   @JsonProperty("InterventionWaiting") INTERVENTIONWAITING(Status.INTERVENTION_WAITING, "InterventionWaiting"),
   @JsonProperty("ApprovalWaiting") APPROVALWAITING(Status.APPROVAL_WAITING, "ApprovalWaiting"),
+  @JsonProperty("WaitStepRunning") WAITSTEPRUNNING(Status.WAIT_STEP_RUNNING, "WaitStepRunning"),
   @JsonProperty("Success") SUCCESS(Status.SUCCEEDED, "Success"),
   @JsonProperty("Suspended") SUSPENDED(Status.SUSPENDED, "Suspended"),
   @JsonProperty("Skipped") SKIPPED(Status.SKIPPED, "Skipped"),

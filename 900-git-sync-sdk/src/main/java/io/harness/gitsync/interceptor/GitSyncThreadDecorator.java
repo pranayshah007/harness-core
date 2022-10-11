@@ -38,10 +38,6 @@ import lombok.extern.slf4j.Slf4j;
 public class GitSyncThreadDecorator implements ContainerRequestFilter, ContainerResponseFilter {
   @Override
   public void filter(ContainerRequestContext requestContext) {
-    String path = requestContext.getUriInfo().getPath();
-    if (path.contains("v1")) {
-      return;
-    }
     MultivaluedMap<String, String> pathParameters = requestContext.getUriInfo().getPathParameters();
     MultivaluedMap<String, String> queryParameters = requestContext.getUriInfo().getQueryParameters();
     final String branchName =

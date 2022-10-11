@@ -110,6 +110,7 @@ import io.harness.mongo.iterator.IteratorConfig;
 import io.harness.mongo.tracing.TraceMode;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.ng.core.CorrelationFilter;
+import io.harness.ng.core.TraceFilter;
 import io.harness.observer.NoOpRemoteObserverInformerImpl;
 import io.harness.observer.RemoteObserver;
 import io.harness.observer.RemoteObserverInformer;
@@ -260,6 +261,7 @@ import software.wings.service.impl.compliance.DeploymentFreezeActivationHandler;
 import software.wings.service.impl.compliance.DeploymentFreezeDeactivationHandler;
 import software.wings.service.impl.event.DeploymentTimeSeriesEventListener;
 import software.wings.service.impl.infrastructuredefinition.InfrastructureDefinitionServiceImpl;
+import software.wings.service.impl.instance.AuditCleanupJob;
 import software.wings.service.impl.instance.DeploymentEventListener;
 import software.wings.service.impl.instance.InstanceEventListener;
 import software.wings.service.impl.instance.InstanceSyncPerpetualTaskMigrationJob;
@@ -354,6 +356,7 @@ import javax.validation.ValidatorFactory;
 import javax.validation.executable.ValidateOnExecution;
 import javax.ws.rs.Path;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.atmosphere.cpr.AtmosphereServlet;
 import org.atmosphere.cpr.BroadcasterFactory;
@@ -681,6 +684,10 @@ public class WingsApplication extends Application<MainConfiguration> {
     registerAuthFilters(configuration, environment, injector);
     registerCorrelationFilter(environment, injector);
     registerRequestContextFilter(environment);
+
+    if (BooleanUtils.isTrue(configuration.getEnableOpentelemetry())) {
+      registerTraceFilter(environment, injector);
+    }
 
     if (isManager()) {
       harnessMetricRegistry = injector.getInstance(HarnessMetricRegistry.class);
@@ -1154,6 +1161,7 @@ public class WingsApplication extends Application<MainConfiguration> {
     environment.lifecycle().manage(injector.getInstance(NotifierScheduledExecutorService.class));
     environment.lifecycle().manage((Managed) injector.getInstance(ExecutorService.class));
     environment.lifecycle().manage(injector.getInstance(MaintenanceController.class));
+    environment.lifecycle().manage(injector.getInstance(AuditCleanupJob.class));
   }
 
   private void registerManagedBeansManager(
@@ -1182,6 +1190,10 @@ public class WingsApplication extends Application<MainConfiguration> {
 
   private void registerCorrelationFilter(Environment environment, Injector injector) {
     environment.jersey().register(injector.getInstance(CorrelationFilter.class));
+  }
+
+  private void registerTraceFilter(Environment environment, Injector injector) {
+    environment.jersey().register(injector.getInstance(TraceFilter.class));
   }
 
   private void registerRequestContextFilter(Environment environment) {
@@ -1458,7 +1470,8 @@ public class WingsApplication extends Application<MainConfiguration> {
     injector.getInstance(TimeoutEngine.class)
         .registerIterators(
             IteratorConfig.builder().enabled(true).targetIntervalInSeconds(10).threadPoolCount(5).build());
-    injector.getInstance(GitSyncPollingIterator.class).registerIterators();
+    injector.getInstance(GitSyncPollingIterator.class)
+        .registerIterators(iteratorsConfig.getGitSyncPollingIteratorConfig().getThreadPoolSize());
   }
 
   private void registerCronJobs(Injector injector) {
