@@ -28,11 +28,6 @@ public class NoOpTemplateGitXServiceImpl implements TemplateGitXService {
   }
 
   @Override
-  public boolean shouldHideRemoteTemplates(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
-    return false;
-  }
-
-  @Override
   public String checkForFileUniquenessAndGetRepoURL(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String templateIdentifier, boolean isForceImport) {
     return null;

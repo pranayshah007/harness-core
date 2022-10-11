@@ -45,6 +45,9 @@ public class TemplateFilterPropertiesDTO extends FilterPropertiesDTO {
   String description;
   List<TemplateEntityType> templateEntityTypes;
   List<String> childTypes;
+  String accountIdentifier;
+  String orgIdentifier;
+  String projectIdentifier;
 
   @Override
   public FilterType getFilterType() {

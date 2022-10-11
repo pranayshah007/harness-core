@@ -205,36 +205,6 @@ public class TemplateGitXServiceImplTest {
   @Test
   @Owner(developers = ADITHYA)
   @Category(UnitTests.class)
-  public void testShouldHideRemoteTemplates() {
-    when(ngTemplateFeatureFlagHelperService.isEnabled(ACCOUNT_IDENTIFIER, FeatureName.USE_OLD_GIT_SYNC))
-        .thenReturn(true);
-    when(ngTemplateFeatureFlagHelperService.isEnabled(ACCOUNT_IDENTIFIER, FeatureName.NG_TEMPLATE_GITX))
-        .thenReturn(true);
-    when(gitSyncSdkService.isGitSimplificationEnabled(any(), any(), any())).thenReturn(true);
-    boolean shouldHide =
-        templateGitXService.shouldHideRemoteTemplates(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER);
-    assertTrue(shouldHide);
-
-    when(gitSyncSdkService.isGitSimplificationEnabled(any(), any(), any())).thenReturn(false);
-    shouldHide = templateGitXService.shouldHideRemoteTemplates(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER);
-    assertFalse(shouldHide);
-
-    when(ngTemplateFeatureFlagHelperService.isEnabled(ACCOUNT_IDENTIFIER, FeatureName.USE_OLD_GIT_SYNC))
-        .thenReturn(true);
-    when(ngTemplateFeatureFlagHelperService.isEnabled(ACCOUNT_IDENTIFIER, FeatureName.NG_TEMPLATE_GITX))
-        .thenReturn(false);
-    shouldHide = templateGitXService.shouldHideRemoteTemplates(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER);
-    assertFalse(shouldHide);
-
-    when(ngTemplateFeatureFlagHelperService.isEnabled(ACCOUNT_IDENTIFIER, FeatureName.USE_OLD_GIT_SYNC))
-        .thenReturn(false);
-    shouldHide = templateGitXService.shouldHideRemoteTemplates(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER);
-    assertTrue(shouldHide);
-  }
-
-  @Test
-  @Owner(developers = ADITHYA)
-  @Category(UnitTests.class)
   public void testImportTemplateFromRemote() {
     InvalidRequestException thrownException = new InvalidRequestException(
         "Requested metadata params do not match the values found in the YAML on Git for these fields: [identifier, versionLabel, orgIdentifier, projectIdentifier]");

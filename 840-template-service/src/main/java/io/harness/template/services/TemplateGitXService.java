@@ -21,8 +21,6 @@ public interface TemplateGitXService {
 
   boolean isNewGitXEnabled(String accountIdentifier, String orgIdentifier, String projectIdentifier);
 
-  boolean shouldHideRemoteTemplates(String accountIdentifier, String orgIdentifier, String projectIdentifier);
-
   String checkForFileUniquenessAndGetRepoURL(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       String templateIdentifier, boolean isForceImport);
 

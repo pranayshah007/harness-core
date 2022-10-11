@@ -31,6 +31,7 @@ import io.harness.filter.FilterType;
 import io.harness.filter.dto.FilterDTO;
 import io.harness.filter.service.FilterService;
 import io.harness.git.model.ChangeType;
+import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.interceptor.GitSyncBranchContext;
 import io.harness.gitsync.persistance.GitSyncSdkService;
@@ -74,6 +75,7 @@ public class NGTemplateServiceHelper {
   private final FilterService filterService;
   private final NGTemplateRepository templateRepository;
   private GitSyncSdkService gitSyncSdkService;
+  private TemplateGitXService templateGitXService;
 
   public Optional<TemplateEntity> getTemplateOrThrowExceptionIfInvalid(String accountId, String orgIdentifier,
       String projectIdentifier, String templateIdentifier, String versionLabel, boolean deleted) {
@@ -157,6 +159,16 @@ public class NGTemplateServiceHelper {
     } else {
       criteria.and(TemplateEntityKeys.orgIdentifier).is(orgId);
       criteria.and(TemplateEntityKeys.projectIdentifier).is(projectId);
+    }
+
+    if (filterProperties != null && filterProperties.getAccountIdentifier() != null) {
+      if (gitSyncSdkService.isGitSyncEnabled(filterProperties.getAccountIdentifier(),
+              filterProperties.getOrgIdentifier(), filterProperties.getProjectIdentifier())) {
+        criteria.and("storeType").in(StoreType.INLINE.name(), null);
+      } else if (!templateGitXService.isNewGitXEnabled(filterProperties.getAccountIdentifier(),
+                     filterProperties.getOrgIdentifier(), filterProperties.getProjectIdentifier())) {
+        criteria.and("storeType").in(StoreType.INLINE.name(), null);
+      }
     }
 
     criteria.and(TemplateEntityKeys.deleted).is(deleted);
