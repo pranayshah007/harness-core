@@ -272,7 +272,7 @@ public class ServiceOverrideServiceImpl implements ServiceOverrideService {
     if (serviceOverridesEntityOptional.isPresent()) {
       String yaml = serviceOverridesEntityOptional.get().getYaml();
       if (isEmpty(yaml)) {
-        throw new InvalidRequestException("Service overrides yaml is empty.");
+        throw new InvalidRequestException("");
       }
       try {
         String serviceOverrideInputs = RuntimeInputFormHelper.createRuntimeInputForm(yaml, true);

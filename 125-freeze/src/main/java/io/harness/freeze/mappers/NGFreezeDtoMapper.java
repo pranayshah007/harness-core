@@ -74,7 +74,6 @@ public class NGFreezeDtoMapper {
         .orgIdentifier(freezeConfigEntity.getOrgIdentifier())
         .projectIdentifier(freezeConfigEntity.getProjectIdentifier())
         .freezeWindows(freezeConfig.getFreezeInfoConfig().getWindows())
-        .rules(freezeConfig.getFreezeInfoConfig().getRules())
         .identifier(freezeConfigEntity.getIdentifier())
         .description(freezeConfigEntity.getDescription())
         .name(freezeConfigEntity.getName())
@@ -117,7 +116,7 @@ public class NGFreezeDtoMapper {
         .build();
   }
 
-  public Scope getScopeFromFreezeDto(String orgId, String projId) {
+  private Scope getScopeFromFreezeDto(String orgId, String projId) {
     if (EmptyPredicate.isNotEmpty(projId)) {
       return Scope.PROJECT;
     }

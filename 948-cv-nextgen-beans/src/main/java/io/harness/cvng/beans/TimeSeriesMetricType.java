@@ -28,24 +28,14 @@ public enum TimeSeriesMetricType {
                              .criteria("> 0.1")
                              .type(TimeSeriesThresholdComparisonType.RATIO)
                              .deviationType(DeviationType.HIGHER_IS_RISKY)
-                             .build(),
-          TimeSeriesThresholdCriteria.builder()
-              .criteria("> 0")
-              .deviationType(DeviationType.HIGHER_IS_RISKY)
-              .type(TimeSeriesThresholdComparisonType.DELTA)
-              .build())),
+                             .build())),
 
   THROUGHPUT("THROUGHPUT",
       Lists.newArrayList(TimeSeriesThresholdCriteria.builder()
                              .criteria("> 0.1")
                              .type(TimeSeriesThresholdComparisonType.RATIO)
                              .deviationType(DeviationType.LOWER_IS_RISKY)
-                             .build(),
-          TimeSeriesThresholdCriteria.builder()
-              .criteria("> 0")
-              .deviationType(DeviationType.LOWER_IS_RISKY)
-              .type(TimeSeriesThresholdComparisonType.DELTA)
-              .build())),
+                             .build())),
 
   ERROR("ERROR",
       Lists.newArrayList(TimeSeriesThresholdCriteria.builder()
@@ -76,12 +66,7 @@ public enum TimeSeriesMetricType {
                              .criteria("> 0")
                              .type(TimeSeriesThresholdComparisonType.RATIO)
                              .deviationType(DeviationType.BOTH_ARE_RISKY)
-                             .build(),
-          TimeSeriesThresholdCriteria.builder()
-              .criteria("> 0")
-              .type(TimeSeriesThresholdComparisonType.DELTA)
-              .deviationType(DeviationType.BOTH_ARE_RISKY)
-              .build()));
+                             .build()));
 
   private String name;
   private List<TimeSeriesThresholdCriteria> thresholds;

@@ -15,7 +15,6 @@ import static io.harness.ngtriggers.beans.source.NGTriggerType.WEBHOOK;
 import static io.harness.ngtriggers.beans.source.artifact.ArtifactType.ACR;
 import static io.harness.ngtriggers.beans.source.artifact.ArtifactType.AMAZON_S3;
 import static io.harness.ngtriggers.beans.source.artifact.ArtifactType.ARTIFACTORY_REGISTRY;
-import static io.harness.ngtriggers.beans.source.artifact.ArtifactType.CUSTOM_ARTIFACT;
 import static io.harness.ngtriggers.beans.source.artifact.ArtifactType.DOCKER_REGISTRY;
 import static io.harness.ngtriggers.beans.source.artifact.ArtifactType.ECR;
 import static io.harness.ngtriggers.beans.source.artifact.ArtifactType.GCR;
@@ -49,7 +48,6 @@ public class GeneratorFactory {
   private final AcrPollingItemGenerator acrPollingItemGenerator;
   private final JenkinsPollingItemGenerator jenkinsPollingItemGenerator;
   private final GitPollingItemGenerator gitPollingItemGenerator;
-  private final CustomPollingItemGenerator customPollingItemGenerator;
   private final GARPollingItemGenerator garPollingItemGenerator;
   private final GithubPackagesPollingItemGenerator githubPackagesPollingItemGenerator;
   public PollingItemGenerator retrievePollingItemGenerator(BuildTriggerOpsData buildTriggerOpsData) {
@@ -81,8 +79,6 @@ public class GeneratorFactory {
       return s3PollingItemGenerator;
     } else if (JENKINS.getValue().equals(buildType)) {
       return jenkinsPollingItemGenerator;
-    } else if (CUSTOM_ARTIFACT.getValue().equals(buildType)) {
-      return customPollingItemGenerator;
     } else if (GoogleArtifactRegistry.getValue().equals(buildType)) {
       return garPollingItemGenerator;
     } else if (GITHUB_PACKAGES.getValue().equals(buildType)) {

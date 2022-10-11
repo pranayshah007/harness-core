@@ -72,34 +72,20 @@ public class CIK8CleanupTaskHandler implements CICleanupTaskHandler {
         ApiClient apiClient = apiClientFactory.getClient(kubernetesConfig);
         CoreV1Api coreV1Api = new CoreV1Api(apiClient);
 
-        boolean podsDeleted;
-        try {
-          podsDeleted = deletePods(coreV1Api, namespace, taskParams.getPodNameList());
-        } catch (Exception ex) {
-          podsDeleted = false;
-          log.error("Failed to delete pod {}", taskParams.getPodNameList(), ex);
-        }
-
-        if (!podsDeleted) {
-          log.error("Failed to delete pod {}", taskParams.getPodNameList());
-        }
-
-        boolean serviceDeleted = deleteServices(coreV1Api, namespace, taskParams.getServiceNameList());
-        if (!serviceDeleted) {
-          log.error("Failed to delete service {}", taskParams.getPodNameList());
-        }
-        boolean secretsDeleted =
-            deleteSecrets(coreV1Api, namespace, taskParams.getPodNameList(), taskParams.getCleanupContainerNames());
-
-        if (!secretsDeleted) {
-          log.error("Failed to delete secrets {}", taskParams.getPodNameList());
-        }
-        if (podsDeleted && serviceDeleted && secretsDeleted) {
-          return K8sTaskExecutionResponse.builder().commandExecutionStatus(CommandExecutionStatus.SUCCESS).build();
+        boolean podsDeleted = deletePods(coreV1Api, namespace, taskParams.getPodNameList());
+        if (podsDeleted) {
+          boolean serviceDeleted = deleteServices(coreV1Api, namespace, taskParams.getServiceNameList());
+          boolean secretsDeleted =
+              deleteSecrets(coreV1Api, namespace, taskParams.getPodNameList(), taskParams.getCleanupContainerNames());
+          if (podsDeleted && serviceDeleted && secretsDeleted) {
+            return K8sTaskExecutionResponse.builder().commandExecutionStatus(CommandExecutionStatus.SUCCESS).build();
+          } else {
+            return K8sTaskExecutionResponse.builder().commandExecutionStatus(CommandExecutionStatus.FAILURE).build();
+          }
         } else {
+          log.error("Failed to delete pod {}", taskParams.getPodNameList());
           return K8sTaskExecutionResponse.builder().commandExecutionStatus(CommandExecutionStatus.FAILURE).build();
         }
-
       } catch (Exception ex) {
         log.error("Exception in processing CI K8 delete setup task: {}", taskParams, ex);
         return K8sTaskExecutionResponse.builder()
@@ -159,28 +145,17 @@ public class CIK8CleanupTaskHandler implements CICleanupTaskHandler {
     }
     for (String podName : podNameList) {
       String secretName = getSecretName(podName);
-      Boolean isDeleted = false;
-      try {
-        isDeleted = cik8JavaClientHandler.deleteSecret(coreV1Api, namespace, secretName);
-        if (isDeleted.equals(Boolean.FALSE)) {
-          log.error("Failed to delete secret {}", secretName);
-          isSuccess = false;
-        }
-      } catch (Exception ex) {
-        log.error("Failed to delete secret {}", secretName, ex.getMessage());
+      Boolean isDeleted = cik8JavaClientHandler.deleteSecret(coreV1Api, namespace, secretName);
+      if (isDeleted.equals(Boolean.FALSE)) {
+        log.error("Failed to delete secret {}", secretName);
         isSuccess = false;
       }
 
       // Delete all secrets associated with secret volumes
       for (String secretKey : secretVolumesHelper.getAllSecretKeys(podName)) {
-        try {
-          isDeleted = cik8JavaClientHandler.deleteSecret(coreV1Api, namespace, secretKey);
-          if (isDeleted.equals(Boolean.FALSE)) {
-            log.error("Failed to delete secret {}", secretKey);
-            isSuccess = false;
-          }
-        } catch (Exception ex) {
-          log.error("Failed to delete secret {}", secretName, ex.getMessage());
+        isDeleted = cik8JavaClientHandler.deleteSecret(coreV1Api, namespace, secretKey);
+        if (isDeleted.equals(Boolean.FALSE)) {
+          log.error("Failed to delete secret {}", secretKey);
           isSuccess = false;
         }
       }
@@ -188,14 +163,8 @@ public class CIK8CleanupTaskHandler implements CICleanupTaskHandler {
       if (isNotEmpty(containerNames)) {
         for (String containerName : containerNames) {
           String containerSecretName = format("%s-image-%s", podName, containerName);
-          Boolean isDeletedContainerImageSecret = false;
-          try {
-            isDeletedContainerImageSecret =
-                cik8JavaClientHandler.deleteSecret(coreV1Api, namespace, containerSecretName);
-          } catch (Exception ex) {
-            log.error("Failed to delete secret {}", secretName, ex.getMessage());
-            isSuccess = false;
-          }
+          Boolean isDeletedContainerImageSecret =
+              cik8JavaClientHandler.deleteSecret(coreV1Api, namespace, containerSecretName);
           if (isDeletedContainerImageSecret.equals(Boolean.FALSE)) {
             log.error("Failed to delete secret {}", containerSecretName);
             isSuccess = false;

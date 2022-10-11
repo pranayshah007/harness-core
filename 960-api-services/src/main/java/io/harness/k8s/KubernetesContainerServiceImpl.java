@@ -2011,8 +2011,10 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
                           CompressedReleaseHistoryFlag, "true"))
                       .build();
     } else {
-      configMap.putDataItem(ReleaseHistoryKeyName, compressedB64EncodedReleaseHistory);
-      configMap.putDataItem(CompressedReleaseHistoryFlag, "true");
+      Map data = configMap.getData();
+      data.put(ReleaseHistoryKeyName, compressedB64EncodedReleaseHistory);
+      data.put(CompressedReleaseHistoryFlag, "true");
+      configMap.setData(data);
     }
 
     return createOrReplaceConfigMap(kubernetesConfig, configMap);
@@ -2033,8 +2035,10 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
                        CompressedReleaseHistoryFlag, new byte[] {(byte) 1}))
                    .build();
     } else {
-      secret.putDataItem(ReleaseHistoryKeyName, compressedReleaseHistory);
-      secret.putDataItem(CompressedReleaseHistoryFlag, new byte[] {(byte) 1});
+      Map data = secret.getData();
+      data.put(ReleaseHistoryKeyName, compressedReleaseHistory);
+      data.put(CompressedReleaseHistoryFlag, new byte[] {(byte) 1});
+      secret.setData(data);
     }
 
     return createOrReplaceSecret(kubernetesConfig, secret);

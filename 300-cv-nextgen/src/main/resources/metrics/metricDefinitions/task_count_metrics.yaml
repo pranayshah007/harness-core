@@ -1,6 +1,6 @@
 name: Task count metrics
 identifier: task_count_metrics
-metricGroup: verify_step_metric_group
+metricGroup: account
 metrics:
   - metricName: verification_job_instance_timeout_count
     metricDefinition: verification job instance timeout count

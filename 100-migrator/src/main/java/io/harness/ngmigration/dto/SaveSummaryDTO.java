@@ -12,7 +12,6 @@ import io.harness.annotations.dev.OwnedBy;
 
 import software.wings.ngmigration.NGMigrationEntityType;
 
-import java.util.List;
 import java.util.Map;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -25,7 +24,5 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class SaveSummaryDTO {
-  private Map<NGMigrationEntityType, EntityMigratedStats> stats;
-  private List<ImportError> errors;
-  private List<AlreadyMigratedDetails> alreadyMigratedDetails;
+  Map<NGMigrationEntityType, Object> stats;
 }

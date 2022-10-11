@@ -37,11 +37,11 @@ public class GitSyncPollingIterator implements MongoPersistenceIterator.Handler<
   @Inject private FeatureFlagService featureFlagService;
   @Inject YamlChangeSetService yamlChangeSetService;
 
-  public void registerIterators(int threadPollSize) {
+  public void registerIterators() {
     persistenceIteratorFactory.createPumpIteratorWithDedicatedThreadPool(
         PersistenceIteratorFactory.PumpExecutorOptions.builder()
             .name("GitSyncPollingIterator")
-            .poolSize(threadPollSize)
+            .poolSize(5)
             .interval(ofMinutes(1))
             .build(),
         YamlGitConfig.class,

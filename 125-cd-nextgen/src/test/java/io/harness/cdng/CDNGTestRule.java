@@ -72,7 +72,6 @@ import io.harness.serializer.ManagerRegistrars;
 import io.harness.service.intfc.DelegateAsyncService;
 import io.harness.service.intfc.DelegateSyncService;
 import io.harness.springdata.HTransactionTemplate;
-import io.harness.template.remote.TemplateResourceClient;
 import io.harness.testlib.module.MongoRuleMixin;
 import io.harness.testlib.module.TestMongoModule;
 import io.harness.threading.CurrentThreadExecutor;
@@ -223,12 +222,6 @@ public class CDNGTestRule implements InjectorRuleMixin, MethodRule, MongoRuleMix
       @Singleton
       public TimeScaleDBConfig getTimeScaleDBConfig() {
         return TimeScaleDBConfig.builder().build();
-      }
-
-      @Provides
-      @Singleton
-      TemplateResourceClient getTemplateResourceClient() {
-        return mock(TemplateResourceClient.class);
       }
     });
     modules.add(new AbstractModule() {

@@ -14,6 +14,7 @@ import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.artifact.bean.ArtifactConfig;
+import io.harness.cdng.visitor.helpers.artifact.ArtifactSpecWrapperVisitorHelper;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlNode;
@@ -37,7 +38,7 @@ import org.springframework.data.annotation.TypeAlias;
 @Data
 @NoArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
-@SimpleVisitorHelper(helperClass = ArtifactSourceConfigVisitorHelper.class)
+@SimpleVisitorHelper(helperClass = ArtifactSpecWrapperVisitorHelper.class) // check visitor helper logic
 @TypeAlias("artifactSourceConfig")
 @RecasterAlias("io.harness.cdng.artifact.bean.yaml.ArtifactSourceConfig")
 public class ArtifactSourceConfig implements Visitable {

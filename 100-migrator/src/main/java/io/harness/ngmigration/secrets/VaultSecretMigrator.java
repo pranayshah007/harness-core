@@ -71,10 +71,10 @@ public class VaultSecretMigrator implements SecretMigrator {
                                                 .isReadOnly(vaultConfig.isReadOnly())
                                                 .delegateSelectors(vaultConfig.getDelegateSelectors());
 
-    String secretIdentifier =
+    String secretId =
         String.format("migratedHarnessSecret_%s", MigratorUtility.generateIdentifier(vaultConfig.getName()));
     NgEntityDetail secretEntityDetail = NgEntityDetail.builder()
-                                            .identifier(secretIdentifier)
+                                            .identifier(secretId)
                                             .orgIdentifier(inputDTO.getOrgIdentifier())
                                             .projectIdentifier(inputDTO.getProjectIdentifier())
                                             .build();
@@ -82,22 +82,18 @@ public class VaultSecretMigrator implements SecretMigrator {
 
     // Handle Auth Token
     if (StringUtils.isNotBlank(vaultConfig.getAuthToken())) {
-      SecretDTOV2 authTokenNG = getSecretDTO(vaultConfig, inputDTO, secretIdentifier, vaultConfig.getAuthToken());
-      connectorDTO.useK8sAuth(false).authToken(SecretRefData.builder()
-                                                   .scope(MigratorUtility.getScope(secretEntityDetail))
-                                                   .identifier(secretIdentifier)
-                                                   .build());
+      SecretDTOV2 authTokenNG = getSecretDTO(vaultConfig, inputDTO, secretId, vaultConfig.getAuthToken());
+      connectorDTO.useK8sAuth(false).authToken(
+          SecretRefData.builder().scope(MigratorUtility.getScope(secretEntityDetail)).identifier(secretId).build());
 
       secrets.add(authTokenNG);
     }
 
     // Handle App Role
     if (StringUtils.isNotBlank(vaultConfig.getSecretId())) {
-      SecretDTOV2 appRoleSecret = getSecretDTO(vaultConfig, inputDTO, secretIdentifier, vaultConfig.getSecretId());
-      connectorDTO.useK8sAuth(false).authToken(SecretRefData.builder()
-                                                   .scope(MigratorUtility.getScope(secretEntityDetail))
-                                                   .identifier(secretIdentifier)
-                                                   .build());
+      SecretDTOV2 appRoleSecret = getSecretDTO(vaultConfig, inputDTO, secretId, vaultConfig.getSecretId());
+      connectorDTO.useK8sAuth(false).authToken(
+          SecretRefData.builder().scope(MigratorUtility.getScope(secretEntityDetail)).identifier(secretId).build());
       secrets.add(appRoleSecret);
     }
 
@@ -118,11 +114,11 @@ public class VaultSecretMigrator implements SecretMigrator {
   }
 
   private SecretDTOV2 getSecretDTO(
-      VaultConfig vaultConfig, MigrationInputDTO inputDTO, String secretIdentifier, String actualSecret) {
+      VaultConfig vaultConfig, MigrationInputDTO inputDTO, String secretId, String actualSecret) {
     return SecretDTOV2.builder()
-        .identifier(secretIdentifier)
-        .name(secretIdentifier)
-        .description(String.format("Auto Generated Secret for Secret Manager - %s", vaultConfig.getName()))
+        .identifier(secretId)
+        .name(String.format("Auto Generated Secret for Secret Manager - %s", vaultConfig.getName()))
+        .description("Auto generated secret by Harness.")
         .orgIdentifier(inputDTO.getOrgIdentifier())
         .projectIdentifier(inputDTO.getProjectIdentifier())
         .type(SecretType.SecretText)

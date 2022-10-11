@@ -16,9 +16,9 @@ import org.jetbrains.annotations.NotNull;
 
 @Singleton
 public class MigratorExpressionUtils {
-  public Object render(Object object) {
+  public void render(Object object) {
     Map<String, Object> context = prepareContextMap();
-    return ExpressionEvaluatorUtils.updateExpressions(object, new MigratorResolveFunctor(context));
+    ExpressionEvaluatorUtils.updateExpressions(object, new MigratorResolveFunctor(context));
   }
 
   @NotNull

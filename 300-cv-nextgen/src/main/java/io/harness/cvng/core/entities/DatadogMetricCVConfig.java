@@ -16,6 +16,7 @@ import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.beans.TimeSeriesMetricType;
 import io.harness.cvng.core.beans.DatadogMetricHealthDefinition;
 import io.harness.cvng.core.entities.DatadogMetricCVConfig.MetricInfo;
+import io.harness.cvng.core.services.CVNextGenConstants;
 import io.harness.cvng.core.utils.analysisinfo.AnalysisInfoUtility;
 import io.harness.cvng.core.utils.analysisinfo.DevelopmentVerificationTransformer;
 import io.harness.cvng.core.utils.analysisinfo.LiveMonitoringTransformer;
@@ -61,7 +62,7 @@ public class DatadogMetricCVConfig extends MetricCVConfig<MetricInfo> {
                                 .accountId(getAccountId())
                                 .dataSourceType(DataSourceType.DATADOG_METRICS)
                                 .projectIdentifier(getProjectIdentifier())
-                                .identifier(category.getDisplayName())
+                                .identifier(CVNextGenConstants.CUSTOM_PACK_IDENTIFIER)
                                 .build();
 
     datadogMetricDefinitions.forEach(definition -> {

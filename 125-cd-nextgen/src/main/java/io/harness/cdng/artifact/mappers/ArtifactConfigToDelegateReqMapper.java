@@ -151,10 +151,8 @@ public class ArtifactConfigToDelegateReqMapper {
       JenkinsConnectorDTO connectorDTO, List<EncryptedDataDetail> encryptedDataDetails, String connectorRef) {
     String artifactPath = artifactConfig.getArtifactPath() != null ? artifactConfig.getArtifactPath().getValue() : "";
     String jobName = artifactConfig.getJobName() != null ? artifactConfig.getJobName().getValue() : "";
-    String buildNumber = artifactConfig.getBuild() != null ? artifactConfig.getBuild().getValue() : "";
-    return ArtifactDelegateRequestUtils.getJenkinsDelegateArtifactRequest(connectorRef, connectorDTO,
-        encryptedDataDetails, ArtifactSourceType.JENKINS, null, null, jobName, Arrays.asList(artifactPath),
-        buildNumber);
+    return ArtifactDelegateRequestUtils.getJenkinsDelegateRequest(connectorRef, connectorDTO, encryptedDataDetails,
+        ArtifactSourceType.JENKINS, null, null, jobName, Arrays.asList(artifactPath));
   }
   public CustomArtifactDelegateRequest getCustomDelegateRequest(
       CustomArtifactConfig artifactConfig, Ambiance ambiance) {
@@ -180,8 +178,7 @@ public class ArtifactConfigToDelegateReqMapper {
         customScriptInlineSource.getScript().fetchFinalValue().toString(),
         NGVariablesUtils.getStringMapVariables(artifactConfig.getScripts().getFetchAllArtifacts().getAttributes(), 0L),
         NGVariablesUtils.getStringMapVariables(artifactConfig.getInputs(), 0L), artifactConfig.getVersion().getValue(),
-        ambiance != null ? AmbianceUtils.obtainCurrentRuntimeId(ambiance) : "",
-        artifactConfig.getTimeout() != null ? artifactConfig.getTimeout().getValue().getTimeoutInMillis() : 600000L,
+        AmbianceUtils.obtainCurrentRuntimeId(ambiance), artifactConfig.getTimeout().getValue().getTimeoutInMillis(),
         AmbianceUtils.getAccountId(ambiance));
   }
 

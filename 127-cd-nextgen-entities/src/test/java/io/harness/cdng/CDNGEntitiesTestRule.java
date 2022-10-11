@@ -53,7 +53,6 @@ import io.harness.serializer.KryoModule;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.serializer.ManagerRegistrars;
 import io.harness.springdata.HTransactionTemplate;
-import io.harness.template.remote.TemplateResourceClient;
 import io.harness.testlib.module.MongoRuleMixin;
 import io.harness.testlib.module.TestMongoModule;
 import io.harness.threading.CurrentThreadExecutor;
@@ -186,12 +185,6 @@ public class CDNGEntitiesTestRule implements InjectorRuleMixin, MethodRule, Mong
       @Singleton
       public boolean getSerializationForDelegate() {
         return false;
-      }
-
-      @Provides
-      @Singleton
-      TemplateResourceClient getTemplateResourceClient() {
-        return mock(TemplateResourceClient.class);
       }
     });
     modules.add(new AbstractModule() {

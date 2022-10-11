@@ -63,7 +63,7 @@ public class ServiceFilterHelperTest extends CategoryTest {
     Set<String> excludedFields = new HashSet<>(Arrays.asList(ServiceEntityKeys.id, ServiceEntityKeys.createdAt,
         ServiceEntityKeys.deletedAt, ServiceEntityKeys.version, ServiceEntityKeys.objectIdOfYaml,
         ServiceEntityKeys.isFromDefaultBranch, ServiceEntityKeys.branch, ServiceEntityKeys.yamlGitConfigRef,
-        ServiceEntityKeys.filePath, ServiceEntityKeys.rootFolder, "class", "templateReference"));
+        ServiceEntityKeys.filePath, ServiceEntityKeys.rootFolder, "class"));
 
     for (PropertyDescriptor propertyDescriptor : propertyDescriptors) {
       boolean shouldExist =

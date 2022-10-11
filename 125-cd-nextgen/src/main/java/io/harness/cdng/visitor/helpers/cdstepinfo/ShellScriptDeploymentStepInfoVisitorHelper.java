@@ -14,7 +14,7 @@ import io.harness.walktree.visitor.validation.ConfigValidator;
 import io.harness.walktree.visitor.validation.ValidationVisitor;
 
 @OwnedBy(HarnessTeam.CDP)
-public class ShellScriptProvisionStepInfoVisitorHelper implements ConfigValidator {
+public class ShellScriptDeploymentStepInfoVisitorHelper implements ConfigValidator {
   @Override
   public Object createDummyVisitableElement(Object originalElement) {
     return ShellScriptProvisionStepInfo.infoBuilder().build();

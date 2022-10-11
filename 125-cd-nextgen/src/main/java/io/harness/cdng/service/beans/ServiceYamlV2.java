@@ -28,7 +28,6 @@ import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
 import lombok.Getter;
-import lombok.experimental.FieldNameConstants;
 
 @Data
 @Builder
@@ -36,7 +35,6 @@ import lombok.experimental.FieldNameConstants;
 @OwnedBy(CDC)
 @RecasterAlias("io.harness.cdng.service.beans.ServiceYamlV2")
 @OneOfField(fields = {"serviceRef", "useFromStage"})
-@FieldNameConstants(innerTypeName = "keys")
 public class ServiceYamlV2 implements Visitable {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })

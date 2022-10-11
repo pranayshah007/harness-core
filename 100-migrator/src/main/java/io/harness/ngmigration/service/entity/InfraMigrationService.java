@@ -41,8 +41,6 @@ import io.harness.ngmigration.beans.summary.BaseSummary;
 import io.harness.ngmigration.beans.summary.InfraDefSummary;
 import io.harness.ngmigration.client.NGClient;
 import io.harness.ngmigration.client.PmsClient;
-import io.harness.ngmigration.dto.ImportError;
-import io.harness.ngmigration.dto.MigrationImportSummaryDTO;
 import io.harness.ngmigration.expressions.MigratorExpressionUtils;
 import io.harness.ngmigration.service.MigratorMappingService;
 import io.harness.ngmigration.service.MigratorUtility;
@@ -169,35 +167,27 @@ public class InfraMigrationService extends NgMigrationService {
   }
 
   @Override
-  public MigrationImportSummaryDTO migrate(String auth, NGClient ngClient, PmsClient pmsClient,
-      MigrationInputDTO inputDTO, NGYamlFile yamlFile) throws IOException {
-    if (yamlFile.isExists()) {
-      return MigrationImportSummaryDTO.builder()
-          .errors(Collections.singletonList(
-              ImportError.builder()
-                  .message("Infrastructure was not migrated as it was already imported before")
-                  .entity(yamlFile.getCgBasicInfo())
-                  .build()))
-          .build();
+  public void migrate(String auth, NGClient ngClient, PmsClient pmsClient, MigrationInputDTO inputDTO,
+      NGYamlFile yamlFile) throws IOException {
+    if (!yamlFile.isExists()) {
+      InfrastructureDefinitionConfig infraConfig =
+          ((InfrastructureConfig) yamlFile.getYaml()).getInfrastructureDefinitionConfig();
+      InfrastructureRequestDTO infraReqDTO = InfrastructureRequestDTO.builder()
+                                                 .identifier(infraConfig.getIdentifier())
+                                                 .type(infraConfig.getType())
+                                                 .orgIdentifier(infraConfig.getOrgIdentifier())
+                                                 .projectIdentifier(infraConfig.getProjectIdentifier())
+                                                 .name(infraConfig.getName())
+                                                 .tags(infraConfig.getTags())
+                                                 .type(infraConfig.getType())
+                                                 .environmentRef(infraConfig.getEnvironmentRef())
+                                                 .description(infraConfig.getDescription())
+                                                 .yaml(getYamlString(yamlFile))
+                                                 .build();
+      Response<ResponseDTO<ConnectorResponseDTO>> resp =
+          ngClient.createInfrastructure(auth, inputDTO.getAccountIdentifier(), JsonUtils.asTree(infraReqDTO)).execute();
+      log.info("Infrastructure creation Response details {} {}", resp.code(), resp.message());
     }
-    InfrastructureDefinitionConfig infraConfig =
-        ((InfrastructureConfig) yamlFile.getYaml()).getInfrastructureDefinitionConfig();
-    InfrastructureRequestDTO infraReqDTO = InfrastructureRequestDTO.builder()
-                                               .identifier(infraConfig.getIdentifier())
-                                               .type(infraConfig.getType())
-                                               .orgIdentifier(infraConfig.getOrgIdentifier())
-                                               .projectIdentifier(infraConfig.getProjectIdentifier())
-                                               .name(infraConfig.getName())
-                                               .tags(infraConfig.getTags())
-                                               .type(infraConfig.getType())
-                                               .environmentRef(infraConfig.getEnvironmentRef())
-                                               .description(infraConfig.getDescription())
-                                               .yaml(getYamlString(yamlFile))
-                                               .build();
-    Response<ResponseDTO<ConnectorResponseDTO>> resp =
-        ngClient.createInfrastructure(auth, inputDTO.getAccountIdentifier(), JsonUtils.asTree(infraReqDTO)).execute();
-    log.info("Infrastructure creation Response details {} {}", resp.code(), resp.message());
-    return handleResp(yamlFile, resp);
   }
 
   @Override
@@ -252,7 +242,6 @@ public class InfraMigrationService extends NgMigrationService {
                              .accountId(infra.getAccountId())
                              .appId(infra.getAppId())
                              .id(infra.getUuid())
-                             .name(infra.getName())
                              .type(NGMigrationEntityType.INFRA)
                              .build())
             .build();

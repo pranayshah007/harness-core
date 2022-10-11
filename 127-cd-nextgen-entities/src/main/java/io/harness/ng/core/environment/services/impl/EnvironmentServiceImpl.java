@@ -390,12 +390,11 @@ public class EnvironmentServiceImpl implements EnvironmentService {
     Map<String, Object> yamlInputs = new HashMap<>();
     Optional<Environment> environment = get(accountId, orgIdentifier, projectIdentifier, envIdentifier, false);
     if (environment.isPresent()) {
-      if (EmptyPredicate.isEmpty(environment.get().fetchNonEmptyYaml())) {
+      if (EmptyPredicate.isEmpty(environment.get().getYaml())) {
         throw new InvalidRequestException("Environment yaml cannot be empty");
       }
       try {
-        String environmentInputsYaml =
-            RuntimeInputFormHelper.createRuntimeInputForm(environment.get().fetchNonEmptyYaml(), true);
+        String environmentInputsYaml = RuntimeInputFormHelper.createRuntimeInputForm(environment.get().getYaml(), true);
         if (isEmpty(environmentInputsYaml)) {
           return null;
         }

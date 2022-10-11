@@ -83,9 +83,8 @@ public class JiraTaskNGHandler {
 
   public JiraTaskNGResponse getIssueCreateMetadata(JiraTaskNGParameters params) {
     JiraClient jiraClient = getJiraClient(params);
-    JiraIssueCreateMetadataNG createMetadata =
-        jiraClient.getIssueCreateMetadata(params.getProjectKey(), params.getIssueType(), params.getExpand(),
-            params.isFetchStatus(), params.isIgnoreComment(), params.isNewMetadata());
+    JiraIssueCreateMetadataNG createMetadata = jiraClient.getIssueCreateMetadata(params.getProjectKey(),
+        params.getIssueType(), params.getExpand(), params.isFetchStatus(), params.isIgnoreComment());
 
     return JiraTaskNGResponse.builder().issueCreateMetadata(createMetadata).build();
   }
@@ -98,10 +97,11 @@ public class JiraTaskNGHandler {
 
   public JiraTaskNGResponse createIssue(JiraTaskNGParameters params) {
     JiraClient jiraClient = getJiraClient(params);
+
     Set<String> userTypeFields = new HashSet<>();
     if (EmptyPredicate.isNotEmpty(params.getFields())) {
-      JiraIssueCreateMetadataNG createMetadata = jiraClient.getIssueCreateMetadata(
-          params.getProjectKey(), params.getIssueType(), null, false, false, params.isNewMetadata());
+      JiraIssueCreateMetadataNG createMetadata =
+          jiraClient.getIssueCreateMetadata(params.getProjectKey(), params.getIssueType(), null, false, false);
       JiraProjectNG project = createMetadata.getProjects().get(params.getProjectKey());
       if (project != null) {
         JiraIssueTypeNG issueType = project.getIssueTypes().get(params.getIssueType());
@@ -115,8 +115,7 @@ public class JiraTaskNGHandler {
         }
       }
     }
-    JiraIssueNG issue = jiraClient.createIssue(
-        params.getProjectKey(), params.getIssueType(), params.getFields(), true, params.isNewMetadata());
+    JiraIssueNG issue = jiraClient.createIssue(params.getProjectKey(), params.getIssueType(), params.getFields(), true);
     return JiraTaskNGResponse.builder().issue(issue).build();
   }
 

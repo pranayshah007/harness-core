@@ -32,5 +32,4 @@ public class IteratorsConfig {
   IteratorConfig perpetualTaskAssignmentIteratorConfig;
   IteratorConfig delegateTaskRebroadcastIteratorConfig;
   IteratorConfig failDelegateTaskIteratorConfig;
-  IteratorConfig gitSyncPollingIteratorConfig;
 }

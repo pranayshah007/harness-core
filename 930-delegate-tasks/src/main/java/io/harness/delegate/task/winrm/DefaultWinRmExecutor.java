@@ -40,7 +40,6 @@ import io.harness.shell.ShellExecutionData.ShellExecutionDataBuilder;
 import software.wings.core.winrm.executors.WinRmExecutor;
 import software.wings.utils.ExecutionLogWriter;
 
-import com.google.common.annotations.VisibleForTesting;
 import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
@@ -64,8 +63,6 @@ public class DefaultWinRmExecutor implements WinRmExecutor {
   public static final String POWERSHELL_NO_PROFILE = "Powershell -NoProfile ";
   public static final String POWERSHELL = "Powershell ";
   public static final String SECRET_MASK = "************";
-  private static final String NEWLINE_MARK = "__NL";
-  private static final String NEWLINE_SPLIT = NEWLINE_MARK + "\r\n";
 
   protected LogCallback logCallback;
   private final WinRmSessionConfig config;
@@ -157,8 +154,7 @@ public class DefaultWinRmExecutor implements WinRmExecutor {
     return commandExecutionStatus;
   }
 
-  @VisibleForTesting
-  String addEnvVariablesCollector(
+  private String addEnvVariablesCollector(
       String command, List<String> envVariablesToCollect, String envVariablesOutputFileName) {
     StringBuilder wrapperCommand = new StringBuilder(command);
     wrapperCommand.append('\n');
@@ -168,10 +164,6 @@ public class DefaultWinRmExecutor implements WinRmExecutor {
           .append("=\"\n $e+=$Env:")
           .append(env)
           .append("\n Write-Output $e | Out-File -Encoding UTF8 -append -FilePath '")
-          .append(envVariablesOutputFileName)
-          .append("'\n Write-Output \"")
-          .append(NEWLINE_MARK)
-          .append("\" | Out-File -Encoding UTF8 -append -FilePath '")
           .append(envVariablesOutputFileName)
           .append("'\n");
     }
@@ -323,7 +315,7 @@ public class DefaultWinRmExecutor implements WinRmExecutor {
         // removing UTF-8 and UTF-16 BOMs if any
         fileContents = new String(decodedBytes, StandardCharsets.UTF_8).replace("\uFEFF", "").replace("\uEFBBBF", "");
       }
-      String[] lines = fileContents.split(NEWLINE_SPLIT);
+      String[] lines = fileContents.split("\n");
       saveExecutionLog(color("\n\nScript Output: ", White, Bold), INFO);
       for (String line : lines) {
         int index = line.indexOf('=');

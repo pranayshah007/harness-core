@@ -23,7 +23,6 @@ import io.harness.metrics.AutoMetricContext;
 
 import com.google.common.base.Preconditions;
 import com.google.inject.Singleton;
-import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -44,8 +43,7 @@ public class MetricContextBuilder {
         learningEngineTask
         -> new LETaskMetricContext(learningEngineTask.getAccountId(),
             learningEngineTask.getType().toString().toLowerCase(),
-            learningEngineTask.getTaskStatus().name().toLowerCase(),
-            Duration.between(learningEngineTask.getAnalysisStartTime(), learningEngineTask.getAnalysisEndTime())));
+            learningEngineTask.getTaskStatus().name().toLowerCase()));
     addToObjContextMap(AnalysisStateMachine.class,
         analysisStateMachine
         -> new AnalysisStateMachineContext(

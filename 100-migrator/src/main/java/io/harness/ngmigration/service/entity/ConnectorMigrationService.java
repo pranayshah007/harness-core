@@ -34,8 +34,6 @@ import io.harness.ngmigration.client.NGClient;
 import io.harness.ngmigration.client.PmsClient;
 import io.harness.ngmigration.connector.BaseConnector;
 import io.harness.ngmigration.connector.ConnectorFactory;
-import io.harness.ngmigration.dto.ImportError;
-import io.harness.ngmigration.dto.MigrationImportSummaryDTO;
 import io.harness.ngmigration.service.MigratorMappingService;
 import io.harness.ngmigration.service.MigratorUtility;
 import io.harness.ngmigration.service.NgMigrationService;
@@ -153,20 +151,14 @@ public class ConnectorMigrationService extends NgMigrationService {
   }
 
   @Override
-  public MigrationImportSummaryDTO migrate(String auth, NGClient ngClient, PmsClient pmsClient,
-      MigrationInputDTO inputDTO, NGYamlFile yamlFile) throws IOException {
-    if (yamlFile.isExists()) {
-      return MigrationImportSummaryDTO.builder()
-          .errors(Collections.singletonList(ImportError.builder()
-                                                .message("Connector was not migrated as it was already imported before")
-                                                .entity(yamlFile.getCgBasicInfo())
-                                                .build()))
-          .build();
+  public void migrate(String auth, NGClient ngClient, PmsClient pmsClient, MigrationInputDTO inputDTO,
+      NGYamlFile yamlFile) throws IOException {
+    if (!yamlFile.isExists()) {
+      Response<ResponseDTO<ConnectorResponseDTO>> resp =
+          ngClient.createConnector(auth, inputDTO.getAccountIdentifier(), JsonUtils.asTree(yamlFile.getYaml()))
+              .execute();
+      log.info("Connector creation Response details {} {}", resp.code(), resp.message());
     }
-    Response<ResponseDTO<ConnectorResponseDTO>> resp =
-        ngClient.createConnector(auth, inputDTO.getAccountIdentifier(), JsonUtils.asTree(yamlFile.getYaml())).execute();
-    log.info("Connector creation Response details {} {}", resp.code(), resp.message());
-    return handleResp(yamlFile, resp);
   }
 
   @Override
@@ -227,7 +219,6 @@ public class ConnectorMigrationService extends NgMigrationService {
                              .accountId(settingAttribute.getAccountId())
                              .appId(null)
                              .id(settingAttribute.getUuid())
-                             .name(settingAttribute.getName())
                              .type(NGMigrationEntityType.CONNECTOR)
                              .build())
             .build();

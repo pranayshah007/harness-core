@@ -25,5 +25,4 @@ public class CgBasicInfo {
   private String appId;
   private String accountId;
   private NGMigrationEntityType type;
-  private String name;
 }

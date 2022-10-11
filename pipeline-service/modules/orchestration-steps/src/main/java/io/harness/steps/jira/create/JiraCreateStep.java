@@ -11,7 +11,6 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.EntityType;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.beans.IdentifierRef;
 import io.harness.delegate.task.jira.JiraTaskNGParameters;
 import io.harness.delegate.task.jira.JiraTaskNGParameters.JiraTaskNGParametersBuilder;
@@ -24,7 +23,6 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
-import io.harness.pms.helpers.PmsFeatureFlagHelper;
 import io.harness.pms.rbac.PipelineRbacHelper;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
@@ -45,7 +43,6 @@ public class JiraCreateStep extends TaskExecutableWithRollbackAndRbac<JiraTaskNG
 
   @Inject private JiraStepHelperService jiraStepHelperService;
   @Inject private PipelineRbacHelper pipelineRbacHelper;
-  @Inject private PmsFeatureFlagHelper pmsFeatureFlagHelper;
 
   @Override
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
@@ -71,8 +68,6 @@ public class JiraCreateStep extends TaskExecutableWithRollbackAndRbac<JiraTaskNG
             .action(JiraActionNG.CREATE_ISSUE)
             .projectKey(specParameters.getProjectKey().getValue())
             .issueType(specParameters.getIssueType().getValue())
-            .newMetadata(
-                pmsFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.SPG_USE_NEW_METADATA))
             .delegateSelectors(
                 StepUtils.getDelegateSelectorListFromTaskSelectorYaml(specParameters.getDelegateSelectors()))
             .fields(JiraStepUtils.processJiraFieldsInParameters(specParameters.getFields()));

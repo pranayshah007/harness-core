@@ -1,8 +1,7 @@
 environment:
   name: envtest
   identifier: envtest
-  tags:
-    key_yaml: value_yaml
+  tags: {}
   type: Production
   orgIdentifier: default
   projectIdentifier: pq

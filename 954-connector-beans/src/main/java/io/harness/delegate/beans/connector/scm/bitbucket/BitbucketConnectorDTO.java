@@ -155,7 +155,7 @@ public class BitbucketConnectorDTO
       String httpRepoUrl = GitClientHelper.getCompleteHTTPUrlForBitbucketSaas(repoUrl);
       return String.format("%s/src/%s/%s", httpRepoUrl, branchName, filePath);
     }
-    return getFileUrlForBitbucketServer(repoUrl, branchName, filePath, gitRepositoryDTO);
+    return getFileUrlForBitbucketServer(repoUrl, branchName, filePath);
   }
 
   @Override
@@ -187,8 +187,7 @@ public class BitbucketConnectorDTO
     }
   }
 
-  private String getFileUrlForBitbucketServer(
-      String repoUrl, String branchName, String filePath, GitRepositoryDTO gitRepositoryDTO) {
+  private String getFileUrlForBitbucketServer(String repoUrl, String branchName, String filePath) {
     if (GitAuthType.SSH.equals(authentication.getAuthType())) {
       repoUrl = GitClientHelper.getCompleteHTTPUrlFromSSHUrlForBitbucketServer(repoUrl);
     }
@@ -200,18 +199,8 @@ public class BitbucketConnectorDTO
       log.error("Exception occurred while parsing bitbucket server url.", ex);
       throw new InvalidRequestException("Exception occurred while parsing bitbucket server url.");
     }
-
-    String org, repoName;
-    if (gitRepositoryDTO.getName() != null && gitRepositoryDTO.getName().contains("/")) {
-      org = gitRepositoryDTO.getName().substring(0, gitRepositoryDTO.getName().indexOf("/"));
-      repoName = gitRepositoryDTO.getName().substring(gitRepositoryDTO.getName().indexOf("/") + 1);
-    } else {
-      org = getGitRepositoryDetails().getOrg();
-      repoName = gitRepositoryDTO.getName();
-    }
-
-    return String.format(
-        "%s/projects/%s/repos/%s/browse/%s?at=refs/heads/%s", hostUrl, org, repoName, filePath, branchName);
+    return String.format("%s/projects/%s/repos/%s/browse/%s?at=refs/heads/%s", hostUrl,
+        getGitRepositoryDetails().getOrg(), getGitRepositoryDetails().getName(), filePath, branchName);
   }
 
   /*
