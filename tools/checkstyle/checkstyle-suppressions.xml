@@ -22,5 +22,5 @@
   <suppress checks="SingleLineJavadoc" files=".*"/>
   <suppress checks="RegexpSingleline" files="./125-cd-nextgen/src/main/java/io/harness/cdng/chaos/ChaosStep.java"/>
   <suppress checks="RegexpSingleline" files="ChaosStep.java"/>
-  <suppress checks="Header" files=".*ChaosStep.java"/>
+  <suppress checks="RegexpSingleline" files=".*ChaosStep.java"/>
 </suppressions>
