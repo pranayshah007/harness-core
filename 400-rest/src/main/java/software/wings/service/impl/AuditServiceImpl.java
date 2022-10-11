@@ -386,7 +386,6 @@ public class AuditServiceImpl implements AuditService {
   @Override
   public void deleteAuditRecords(long retentionMillis) {
     final int batchSize = 1000;
-    final int limit = 3000;
     final long days = Instant.ofEpochMilli(retentionMillis).until(Instant.now(), ChronoUnit.DAYS);
     List<ObjectId> fileIdsTobeDeletedList = new ArrayList<>();
     try {
@@ -396,7 +395,7 @@ public class AuditServiceImpl implements AuditService {
           List<AuditHeader> auditHeaders = wingsPersistence.createQuery(AuditHeader.class, excludeAuthority)
                                                .field(AuditHeaderKeys.createdAt)
                                                .lessThan(retentionMillis)
-                                               .asList(new FindOptions().limit(limit).batchSize(batchSize));
+                                               .asList(new FindOptions().batchSize(batchSize));
           if (isEmpty(auditHeaders)) {
             log.info("No more audit records older than {} days", days);
             return true;
@@ -414,8 +413,7 @@ public class AuditServiceImpl implements AuditService {
             final BasicDBObject filter = new BasicDBObject().append(
                 "uploadDate", new BasicDBObject("$lt", Instant.ofEpochMilli(retentionMillis)));
             BasicDBObject projection = new BasicDBObject("_id", Boolean.TRUE);
-            DBCursor fileIdsToBeDeleted =
-                auditFilesCollection.find(filter, projection).limit(limit).batchSize(batchSize);
+            DBCursor fileIdsToBeDeleted = auditFilesCollection.find(filter, projection).batchSize(batchSize);
 
             log.info("Deleting {} audit Files and its related chunks", fileIdsToBeDeleted.size());
             while (fileIdsToBeDeleted.hasNext()) {
@@ -436,9 +434,6 @@ public class AuditServiceImpl implements AuditService {
             log.warn("Failed to delete {} audit records", auditHeaders.size(), ex);
           }
           log.info("Successfully deleted {} audits, audit files and chunks", auditHeaders.size());
-          if (auditHeaders.size() < limit) {
-            return true;
-          }
           sleep(ofSeconds(2L));
         }
       });

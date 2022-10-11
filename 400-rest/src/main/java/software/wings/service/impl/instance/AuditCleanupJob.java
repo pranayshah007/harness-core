@@ -50,11 +50,9 @@ public class AuditCleanupJob implements Managed {
 
   @VisibleForTesting
   public void run() {
-    if (isWeekend()) {
-      log.info("Audit Cleanup Job Started @ {}", Instant.now());
-      long toBeDeletedTillTimestamp =
-          LocalDateTime.now().minusMonths(retentionTimeInMonths).toInstant(ZoneOffset.UTC).toEpochMilli();
-      auditService.deleteAuditRecords(toBeDeletedTillTimestamp);
-    }
+    log.info("Audit Cleanup Job Started @ {}", Instant.now());
+    long toBeDeletedTillTimestamp =
+        LocalDateTime.now().minusMonths(retentionTimeInMonths).toInstant(ZoneOffset.UTC).toEpochMilli();
+    auditService.deleteAuditRecords(toBeDeletedTillTimestamp);
   }
 }
