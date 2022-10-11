@@ -18,8 +18,10 @@ import io.harness.cdng.azure.config.yaml.ConnectionStringsConfiguration;
 import io.harness.cdng.azure.config.yaml.StartupCommandConfiguration;
 import io.harness.cdng.configfile.ConfigFileWrapper;
 import io.harness.cdng.creator.plan.PlanCreatorConstants;
+import io.harness.cdng.elastigroup.config.yaml.StartupScriptConfiguration;
 import io.harness.cdng.service.ServiceSpec;
 import io.harness.cdng.service.beans.AzureWebAppServiceSpec;
+import io.harness.cdng.service.beans.ElastigroupServiceSpec;
 import io.harness.cdng.service.beans.ServiceConfig;
 import io.harness.cdng.service.steps.ServiceDefinitionStep;
 import io.harness.cdng.service.steps.ServiceDefinitionStepParameters;
@@ -177,6 +179,17 @@ public class ServiceDefinitionPlanCreator extends ChildrenPlanCreator<YamlField>
         String connectionStringsPlanNodeId = ServiceDefinitionPlanCreatorHelper.addDependenciesForConnectionStrings(
             serviceConfigNode, planCreationResponseMap, serviceConfig, kryoSerializer);
         serviceSpecChildrenIds.add(connectionStringsPlanNodeId);
+      }
+    }
+
+    if (serviceConfig.getServiceDefinition().getServiceSpec() instanceof ElastigroupServiceSpec) {
+      ElastigroupServiceSpec elastigroupServiceSpec =
+              (ElastigroupServiceSpec) serviceConfig.getServiceDefinition().getServiceSpec();
+      StartupScriptConfiguration startupScript = elastigroupServiceSpec.getStartupScript();
+      if (startupScript != null) {
+        String startupScriptPlanNodeId = ServiceDefinitionPlanCreatorHelper.addDependenciesForStartupCommand(
+                serviceConfigNode, planCreationResponseMap, serviceConfig, kryoSerializer);
+        serviceSpecChildrenIds.add(startupScriptPlanNodeId);
       }
     }
 

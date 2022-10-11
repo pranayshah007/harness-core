@@ -20,15 +20,14 @@ import io.harness.cdng.azure.webapp.ConnectionStringsParameters;
 import io.harness.cdng.azure.webapp.StartupCommandParameters;
 import io.harness.cdng.configfile.ConfigFileWrapper;
 import io.harness.cdng.creator.plan.PlanCreatorConstants;
+import io.harness.cdng.elastigroup.config.yaml.StartupScriptConfiguration;
 import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
 import io.harness.cdng.service.beans.AzureWebAppServiceSpec;
+import io.harness.cdng.service.beans.ElastigroupServiceSpec;
 import io.harness.cdng.service.beans.ServiceConfig;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.cdng.service.steps.ServiceStepOverrideHelper;
-import io.harness.cdng.utilities.ArtifactsUtility;
-import io.harness.cdng.utilities.AzureConfigsUtility;
-import io.harness.cdng.utilities.ConfigFileUtility;
-import io.harness.cdng.utilities.ManifestsUtility;
+import io.harness.cdng.utilities.*;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.ng.core.environment.beans.NGEnvironmentGlobalOverride;
@@ -415,6 +414,34 @@ public class ServiceDefinitionPlanCreatorHelper {
     }
     planCreationResponseMap.put(startupCommandPlanNodeId, startupCommandPlanCreationResponse.build());
     return startupCommandPlanNodeId;
+  }
+
+  String addDependenciesForStartupScript(YamlNode serviceConfigNode,
+                                          Map<String, PlanCreationResponse> planCreationResponseMap, ServiceConfig serviceConfig,
+                                          KryoSerializer kryoSerializer) {
+    YamlUpdates.Builder yamlUpdates = YamlUpdates.newBuilder();
+    boolean isUseFromStage = serviceConfig.getUseFromStage() != null;
+    YamlField startupScriptYamlField = AzureConfigsUtility.fetchAzureConfigYamlFieldAndSetYamlUpdates(
+            serviceConfigNode, isUseFromStage, yamlUpdates, YamlTypes.STARTUP_SCRIPT);
+    String startupScriptPlanNodeId = "startupScript-" + UUIDGenerator.generateUuid();
+
+    StartupScriptConfiguration startupScript =
+            ((ElastigroupServiceSpec) serviceConfig.getServiceDefinition().getServiceSpec()).getStartupScript();
+    Map<String, YamlField> dependenciesMap = new HashMap<>();
+    dependenciesMap.put(startupScriptPlanNodeId, startupScriptYamlField);
+    PlanCreationResponseBuilder startupScriptPlanCreationResponse = PlanCreationResponse.builder().dependencies(
+            DependenciesUtils.toDependenciesProto(dependenciesMap)
+                    .toBuilder()
+                    .putDependencyMetadata(startupScriptPlanNodeId,
+                            ElastigroupConfigsUtility.getDependencyMetadata(startupScriptPlanNodeId,
+                                    StartupCommandParameters.builder().startupCommand(startupScript).build(), kryoSerializer,
+                                    PlanCreatorConstants.STARTUP_COMMAND_STEP_PARAMETER))
+                    .build());
+    if (yamlUpdates.getFqnToYamlCount() > 0) {
+      startupScriptPlanCreationResponse.yamlUpdates(yamlUpdates.build());
+    }
+    planCreationResponseMap.put(startupScriptPlanNodeId, startupScriptPlanCreationResponse.build());
+    return startupScriptPlanNodeId;
   }
 
   String addDependenciesForApplicationSettings(YamlNode serviceConfigNode,
