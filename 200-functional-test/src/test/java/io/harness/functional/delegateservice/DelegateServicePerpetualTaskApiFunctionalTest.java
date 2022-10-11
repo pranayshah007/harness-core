@@ -64,9 +64,9 @@ public class DelegateServicePerpetualTaskApiFunctionalTest extends AbstractFunct
     clientParamMap.put("countryName", "testCountry");
 
     PerpetualTaskSchedule schedule = PerpetualTaskSchedule.newBuilder()
-        .setInterval(Durations.fromSeconds(30))
-        .setTimeout(Durations.fromSeconds(30))
-        .build();
+                                         .setInterval(Durations.fromSeconds(30))
+                                         .setTimeout(Durations.fromSeconds(30))
+                                         .build();
 
     PerpetualTaskId perpetualTaskId = delegateServiceGrpcClient.createPerpetualTask(
         AccountId.newBuilder().setId(getAccount().getUuid()).build(), PerpetualTaskType.SAMPLE, schedule,
@@ -100,9 +100,9 @@ public class DelegateServicePerpetualTaskApiFunctionalTest extends AbstractFunct
         delegateServiceBlockingStub, delegateAsyncService, kryoSerializerWrapper, delegateSyncService, () -> false);
 
     PerpetualTaskSchedule schedule = PerpetualTaskSchedule.newBuilder()
-        .setInterval(Durations.fromSeconds(30))
-        .setTimeout(Durations.fromSeconds(30))
-        .build();
+                                         .setInterval(Durations.fromSeconds(30))
+                                         .setTimeout(Durations.fromSeconds(30))
+                                         .build();
 
     PerpetualTaskId perpetualTaskId = delegateServiceGrpcClient.createPerpetualTask(
         AccountId.newBuilder().setId(getAccount().getUuid()).build(), PerpetualTaskType.SAMPLE, schedule,

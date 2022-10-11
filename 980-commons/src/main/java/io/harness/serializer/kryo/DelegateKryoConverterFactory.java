@@ -34,7 +34,7 @@ public class DelegateKryoConverterFactory extends Factory {
   public Converter<?, RequestBody> requestBodyConverter(
       Type type, Annotation[] parameterAnnotations, Annotation[] methodAnnotations, Retrofit retrofit) {
     if (stream(methodAnnotations)
-        .anyMatch(annotation -> annotation.annotationType().isAssignableFrom(KryoRequest.class))) {
+            .anyMatch(annotation -> annotation.annotationType().isAssignableFrom(KryoRequest.class))) {
       return value -> RequestBody.create(MEDIA_TYPE, kryoSerializerWrapper.asBytes(value));
     }
     return null;

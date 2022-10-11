@@ -37,7 +37,7 @@ public class DelegateKryoMessageBodyProvider implements MessageBodyWriter<Object
 
   @Override
   public long getSize(final Object object, final Class<?> type, final Type genericType, final Annotation[] annotations,
-                      final MediaType mediaType) {
+      final MediaType mediaType) {
     return -1;
   }
 
@@ -49,7 +49,7 @@ public class DelegateKryoMessageBodyProvider implements MessageBodyWriter<Object
 
   @Override
   public void writeTo(final Object object, final Class<?> type, final Type genericType, final Annotation[] annotations,
-                      final MediaType mediaType, final MultivaluedMap<String, Object> httpHeaders, final OutputStream entityStream)
+      final MediaType mediaType, final MultivaluedMap<String, Object> httpHeaders, final OutputStream entityStream)
       throws IOException, WebApplicationException {
     byte[] bytes = null;
     try {
@@ -76,7 +76,7 @@ public class DelegateKryoMessageBodyProvider implements MessageBodyWriter<Object
 
   @Override
   public Object readFrom(final Class<Object> type, final Type genericType, final Annotation[] annotations,
-                         final MediaType mediaType, final MultivaluedMap<String, String> httpHeaders, final InputStream entityStream)
+      final MediaType mediaType, final MultivaluedMap<String, String> httpHeaders, final InputStream entityStream)
       throws IOException, WebApplicationException {
     byte[] bytes = ByteStreams.toByteArray(entityStream);
     return kryoSerializerWrapper.asObject(bytes);

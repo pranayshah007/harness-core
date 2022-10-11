@@ -94,9 +94,9 @@ public class DelegateServiceGrpcClient {
 
   @Inject
   public DelegateServiceGrpcClient(DelegateServiceBlockingStub delegateServiceBlockingStub,
-                                   DelegateAsyncService delegateAsyncService, KryoSerializerWrapper kryoSerializerWrapper,
-                                   DelegateSyncService delegateSyncService,
-                                   @Named("driver-installed-in-ng-service") BooleanSupplier isDriverInstalledInNgService) {
+      DelegateAsyncService delegateAsyncService, KryoSerializerWrapper kryoSerializerWrapper,
+      DelegateSyncService delegateSyncService,
+      @Named("driver-installed-in-ng-service") BooleanSupplier isDriverInstalledInNgService) {
     this.delegateServiceBlockingStub = delegateServiceBlockingStub;
     this.delegateAsyncService = delegateAsyncService;
     this.kryoSerializerWrapper = kryoSerializerWrapper;
@@ -148,10 +148,10 @@ public class DelegateServiceGrpcClient {
   }
 
   public SubmitTaskResponse submitTask(DelegateCallbackToken delegateCallbackToken, AccountId accountId,
-                                       TaskSetupAbstractions taskSetupAbstractions, TaskLogAbstractions taskLogAbstractions, TaskDetails taskDetails,
-                                       List<ExecutionCapability> capabilities, List<String> taskSelectors, Duration holdFor, boolean forceExecute,
-                                       boolean executeOnHarnessHostedDelegates, List<String> eligibleToExecuteDelegateIds, boolean emitEvent,
-                                       String stageId) {
+      TaskSetupAbstractions taskSetupAbstractions, TaskLogAbstractions taskLogAbstractions, TaskDetails taskDetails,
+      List<ExecutionCapability> capabilities, List<String> taskSelectors, Duration holdFor, boolean forceExecute,
+      boolean executeOnHarnessHostedDelegates, List<String> eligibleToExecuteDelegateIds, boolean emitEvent,
+      String stageId) {
     try {
       if (taskSetupAbstractions == null || taskSetupAbstractions.getValuesCount() == 0) {
         Map<String, String> setupAbstractions = new HashMap<>();
@@ -162,9 +162,9 @@ public class DelegateServiceGrpcClient {
         // This should allow a consumer of the client to override the value, if the one provided by this client is not
         // appropriate
         taskSetupAbstractions = TaskSetupAbstractions.newBuilder()
-            .putAllValues(taskSetupAbstractions.getValuesMap())
-            .putValues("ng", String.valueOf(isDriverInstalledInNgService))
-            .build();
+                                    .putAllValues(taskSetupAbstractions.getValuesMap())
+                                    .putValues("ng", String.valueOf(isDriverInstalledInNgService))
+                                    .build();
       }
 
       SubmitTaskRequest.Builder submitTaskRequestBuilder =
@@ -187,8 +187,8 @@ public class DelegateServiceGrpcClient {
             capabilities.stream()
                 .map(capability
                     -> Capability.newBuilder()
-                    .setKryoCapability(ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(capability)))
-                    .build())
+                           .setKryoCapability(ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(capability)))
+                           .build())
                 .collect(toList()));
       }
 
@@ -205,7 +205,7 @@ public class DelegateServiceGrpcClient {
       }
 
       SubmitTaskResponse response = delegateServiceBlockingStub.withDeadlineAfter(30, TimeUnit.SECONDS)
-          .submitTask(submitTaskRequestBuilder.build());
+                                        .submitTask(submitTaskRequestBuilder.build());
 
       if (taskDetails.getMode() == TaskMode.ASYNC) {
         delegateAsyncService.setupTimeoutForTask(response.getTaskId().getId(),
@@ -222,7 +222,7 @@ public class DelegateServiceGrpcClient {
   }
 
   private SubmitTaskResponse submitTaskInternal(TaskMode taskMode, DelegateTaskRequest taskRequest,
-                                                DelegateCallbackToken delegateCallbackToken, Duration holdFor) {
+      DelegateCallbackToken delegateCallbackToken, Duration holdFor) {
     final TaskParameters taskParameters = taskRequest.getTaskParameters();
 
     final List<ExecutionCapability> capabilities = (taskParameters instanceof ExecutionCapabilityDemander)
@@ -290,17 +290,17 @@ public class DelegateServiceGrpcClient {
   }
 
   public PerpetualTaskId createPerpetualTask(AccountId accountId, String type, PerpetualTaskSchedule schedule,
-                                             PerpetualTaskClientContextDetails context, boolean allowDuplicate, String taskDescription) {
+      PerpetualTaskClientContextDetails context, boolean allowDuplicate, String taskDescription) {
     try {
       CreatePerpetualTaskResponse response = delegateServiceBlockingStub.withDeadlineAfter(30, TimeUnit.SECONDS)
-          .createPerpetualTask(CreatePerpetualTaskRequest.newBuilder()
-              .setAccountId(accountId)
-              .setType(type)
-              .setSchedule(schedule)
-              .setContext(context)
-              .setAllowDuplicate(allowDuplicate)
-              .setTaskDescription(taskDescription)
-              .build());
+                                                 .createPerpetualTask(CreatePerpetualTaskRequest.newBuilder()
+                                                                          .setAccountId(accountId)
+                                                                          .setType(type)
+                                                                          .setSchedule(schedule)
+                                                                          .setContext(context)
+                                                                          .setAllowDuplicate(allowDuplicate)
+                                                                          .setTaskDescription(taskDescription)
+                                                                          .build());
 
       return response.getPerpetualTaskId();
     } catch (StatusRuntimeException ex) {
@@ -309,18 +309,18 @@ public class DelegateServiceGrpcClient {
   }
 
   public PerpetualTaskId createPerpetualTask(AccountId accountId, String type, PerpetualTaskSchedule schedule,
-                                             PerpetualTaskClientContextDetails context, boolean allowDuplicate, String taskDescription, String clientTaskId) {
+      PerpetualTaskClientContextDetails context, boolean allowDuplicate, String taskDescription, String clientTaskId) {
     try {
       CreatePerpetualTaskResponse response = delegateServiceBlockingStub.withDeadlineAfter(30, TimeUnit.SECONDS)
-          .createPerpetualTask(CreatePerpetualTaskRequest.newBuilder()
-              .setAccountId(accountId)
-              .setType(type)
-              .setClientTaskId(clientTaskId)
-              .setSchedule(schedule)
-              .setContext(context)
-              .setAllowDuplicate(allowDuplicate)
-              .setTaskDescription(taskDescription)
-              .build());
+                                                 .createPerpetualTask(CreatePerpetualTaskRequest.newBuilder()
+                                                                          .setAccountId(accountId)
+                                                                          .setType(type)
+                                                                          .setClientTaskId(clientTaskId)
+                                                                          .setSchedule(schedule)
+                                                                          .setContext(context)
+                                                                          .setAllowDuplicate(allowDuplicate)
+                                                                          .setTaskDescription(taskDescription)
+                                                                          .build());
 
       return response.getPerpetualTaskId();
     } catch (StatusRuntimeException ex) {
@@ -332,9 +332,9 @@ public class DelegateServiceGrpcClient {
     try {
       delegateServiceBlockingStub.withDeadlineAfter(30, TimeUnit.SECONDS)
           .deletePerpetualTask(DeletePerpetualTaskRequest.newBuilder()
-              .setAccountId(accountId)
-              .setPerpetualTaskId(perpetualTaskId)
-              .build());
+                                   .setAccountId(accountId)
+                                   .setPerpetualTaskId(perpetualTaskId)
+                                   .build());
     } catch (StatusRuntimeException ex) {
       throw new DelegateServiceDriverException("Unexpected error occurred while deleting perpetual task.", ex);
     }
@@ -345,10 +345,10 @@ public class DelegateServiceGrpcClient {
     try {
       delegateServiceBlockingStub.withDeadlineAfter(30, TimeUnit.SECONDS)
           .resetPerpetualTask(ResetPerpetualTaskRequest.newBuilder()
-              .setAccountId(accountId)
-              .setPerpetualTaskId(perpetualTaskId)
-              .setTaskExecutionBundle(taskExecutionBundle)
-              .build());
+                                  .setAccountId(accountId)
+                                  .setPerpetualTaskId(perpetualTaskId)
+                                  .setTaskExecutionBundle(taskExecutionBundle)
+                                  .build());
     } catch (StatusRuntimeException ex) {
       throw new DelegateServiceDriverException("Unexpected error occurred while resetting perpetual task.", ex);
     }

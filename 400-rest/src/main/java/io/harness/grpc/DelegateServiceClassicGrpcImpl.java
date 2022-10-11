@@ -63,9 +63,9 @@ public class DelegateServiceClassicGrpcImpl extends DelegateTaskGrpc.DelegateTas
           (DelegateTask) kryoSerializerWrapper.asInflatedObject(request.getDelegateTaskKryo().toByteArray());
       DelegateResponseData delegateResponseData = delegateTaskServiceClassic.executeTask(task);
       responseObserver.onNext(ExecuteTaskResponse.newBuilder()
-          .setDelegateTaskResponseKryo(
-              ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(delegateResponseData)))
-          .build());
+                                  .setDelegateTaskResponseKryo(
+                                      ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(delegateResponseData)))
+                                  .build());
       responseObserver.onCompleted();
 
     } catch (Exception ex) {
