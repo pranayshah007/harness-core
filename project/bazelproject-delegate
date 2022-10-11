@@ -11,6 +11,7 @@ directories:
   910-delegate-task-grpc-service
   920-delegate-agent-beans
   920-delegate-service-beans
+  925-delegate-service-contracts
   930-delegate-tasks
   955-alert-beans
   955-delegate-beans
