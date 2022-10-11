@@ -1825,6 +1825,7 @@
 80309:software.wings.helpers.ext.azure.devops.AzureArtifactsProtocolMetadataData
 80310:software.wings.helpers.ext.azure.devops.AzureDevopsProjects
 80311:io.harness.artifactory.ArtifactoryImagePath
+80312:io.harness.ngtriggers.WebhookSecretData
 83071:io.harness.delegate.beans.connector.awsconnector.AwsListEC2InstancesTaskParamsRequest
 83072:io.harness.delegate.beans.connector.awsconnector.AwsListEC2InstancesTaskResponse
 83073:software.wings.service.impl.aws.model.AwsEC2Instance
@@ -1840,6 +1841,8 @@
 83083:io.harness.delegate.beans.connector.awsconnector.AwsListElbListenerRulesTaskParamsRequest
 83084:io.harness.delegate.beans.connector.awsconnector.AwsListElbListenerRulesTaskResponse
 83085:io.harness.delegate.beans.connector.awsconnector.AwsListElbListenersTaskResponse
+83086:io.harness.delegate.beans.trigger.TriggerAuthenticationTaskParams
+83087:io.harness.delegate.beans.trigger.TriggerAuthenticationTaskResponse
 90001:software.wings.service.impl.apm.AWSPrometheusInfo
 95001:io.harness.delegate.beans.logstreaming.UnitProgressData
 97001:io.harness.jira.JiraActionNG
@@ -2382,6 +2385,7 @@
 980035:io.harness.exception.ngexception.AzureARMTaskException
 980037:io.harness.exception.ngexception.AzureBPTaskException
 9300122:io.harness.yaml.core.timeout.Timeout
+9300123:io.harness.beans.WebhookEncryptedSecretDTO
 9800001:io.harness.beans.RecasterMap
 9800002:io.harness.licensing.beans.modules.ChaosModuleLicenseDTO
 9800003:io.harness.delegate.task.ssh.artifact.JenkinsArtifactDelegateConfig

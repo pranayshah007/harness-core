@@ -330,6 +330,8 @@ import io.harness.delegate.beans.storeconfig.HttpHelmStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.LocalFileStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.OciHelmStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.S3HelmStoreDelegateConfig;
+import io.harness.delegate.beans.trigger.TriggerAuthenticationTaskParams;
+import io.harness.delegate.beans.trigger.TriggerAuthenticationTaskResponse;
 import io.harness.delegate.command.CommandExecutionResult;
 import io.harness.delegate.exception.DelegateRetryableException;
 import io.harness.delegate.exception.EcsNGException;
@@ -1627,6 +1629,8 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(AwsListElbListenerRulesTaskParamsRequest.class, 83083);
     kryo.register(AwsListElbListenerRulesTaskResponse.class, 83084);
     kryo.register(AwsListElbListenersTaskResponse.class, 83085);
+    kryo.register(TriggerAuthenticationTaskParams.class, 83086);
+    kryo.register(TriggerAuthenticationTaskResponse.class, 83087);
 
     // WinRm
     kryo.register(WinRmCredentialsSpecDTO.class, 600001);
