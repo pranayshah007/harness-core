@@ -4,14 +4,14 @@ import com.google.inject.Singleton;
 import io.harness.batch.processing.billing.timeseries.data.InstanceUtilizationData;
 import io.harness.batch.processing.billing.timeseries.service.impl.UtilizationDataServiceImpl;
 import io.harness.batch.processing.ccm.CCMJobConstants;
+import io.harness.batch.processing.cloudevents.aws.ec2.service.AWSEC2RecommendationService;
 import io.harness.batch.processing.cloudevents.aws.ec2.service.helper.EC2MetricHelper;
+import io.harness.batch.processing.cloudevents.aws.ec2.service.request.EC2RecommendationRequest;
 import io.harness.batch.processing.cloudevents.aws.ec2.service.response.Ec2UtilzationData;
 import io.harness.batch.processing.cloudevents.aws.ec2.service.response.MetricValue;
 import io.harness.batch.processing.cloudevents.aws.ecs.service.tasklet.support.ng.NGConnectorHelper;
-import io.harness.batch.processing.cloudevents.aws.ecs.service.tasklet.support.response.EcsUtilizationData;
 import io.harness.ccm.commons.beans.JobConstants;
 import io.harness.ccm.commons.entities.billing.CECloudAccount;
-import io.harness.ccm.commons.entities.billing.CECluster;
 import io.harness.ccm.setup.CECloudAccountDao;
 import io.harness.connector.ConnectivityStatus;
 import io.harness.connector.ConnectorInfoDTO;
@@ -42,7 +42,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static io.harness.batch.processing.ccm.UtilizationInstanceType.*;
+import static io.harness.batch.processing.ccm.UtilizationInstanceType.EC2_INSTANCE;
 import static software.wings.beans.SettingAttribute.SettingCategory.CE_CONNECTOR;
 import static software.wings.settings.SettingVariableTypes.CE_AWS;
 
@@ -50,6 +50,7 @@ import static software.wings.settings.SettingVariableTypes.CE_AWS;
 @Singleton
 public class AWSEC2RecommendationTasklet  implements Tasklet {
     @Autowired private EC2MetricHelper ec2MetricHelper;
+    @Autowired private AWSEC2RecommendationService awsec2RecommendationService;
     @Autowired private CloudToHarnessMappingService cloudToHarnessMappingService;
     @Autowired private CECloudAccountDao ceCloudAccountDao;
     @Autowired private NGConnectorHelper ngConnectorHelper;
@@ -73,10 +74,22 @@ public class AWSEC2RecommendationTasklet  implements Tasklet {
                 Instant now = Instant.now().truncatedTo(ChronoUnit.HOURS);
                 if (entry.getKey().equals("890436954479")) {
                     log.info("found the harness-ce account");
+
                     List<Ec2UtilzationData> utilzationData =
                             ec2MetricHelper.getUtilizationMetrics(entry.getValue(), Date.from(now.minus(2, ChronoUnit.HOURS)),
                             Date.from(now.minus(1, ChronoUnit.HOURS)), "i-0fbd100c13bf0f7b4", "us-east-1");
                     updateUtilData(accountId, utilzationData);
+                    log.info("Started recomm data retrieval for us-east-1");
+                    awsec2RecommendationService.getRecommendations(EC2RecommendationRequest.builder()
+                                    .region("us-east-1")
+                                    .awsCrossAccountAttributes(entry.getValue())
+                                    .build());
+                    log.info("Started recomm data retrieval for us-west-1");
+                    awsec2RecommendationService.getRecommendations(EC2RecommendationRequest.builder()
+                            .region("us-west-1")
+                            .awsCrossAccountAttributes(entry.getValue())
+                            .build());
+                    log.info("exiting the ec2 recomm!");
                 }
             }
         }
