@@ -14,6 +14,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.service.PMSPipelineTemplateHelper;
+import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
@@ -42,12 +43,16 @@ public class PipelineStageHelper {
   private void containsPipelineStage(String yaml) {
     try {
       YamlField pipelineYamlField = YamlUtils.readTree(yaml);
-      List<YamlNode> stages =
-          pipelineYamlField.getNode().getField("pipeline").getNode().getField("stages").getNode().asArray();
+      List<YamlNode> stages = pipelineYamlField.getNode()
+                                  .getField(YAMLFieldNameConstants.PIPELINE)
+                                  .getNode()
+                                  .getField(YAMLFieldNameConstants.STAGES)
+                                  .getNode()
+                                  .asArray();
       for (YamlNode yamlNode : stages) {
-        if (yamlNode.getField("stage") != null) {
+        if (yamlNode.getField(YAMLFieldNameConstants.STAGE) != null) {
           containsPipelineStageInStageNode(yamlNode);
-        } else if (yamlNode.getField("parallel") != null) {
+        } else if (yamlNode.getField(YAMLFieldNameConstants.PARALLEL) != null) {
           containsPipelineStageInParallelNode(yamlNode);
         }
       }
@@ -57,9 +62,9 @@ public class PipelineStageHelper {
   }
 
   private void containsPipelineStageInParallelNode(YamlNode yamlNode) {
-    List<YamlNode> stageInParallel = yamlNode.getField("parallel").getNode().asArray();
+    List<YamlNode> stageInParallel = yamlNode.getField(YAMLFieldNameConstants.PARALLEL).getNode().asArray();
     for (YamlNode stage : stageInParallel) {
-      if (stage.getField("stage") != null) {
+      if (stage.getField(YAMLFieldNameConstants.STAGE) != null) {
         containsPipelineStageInStageNode(stage);
       } else {
         throw new InvalidRequestException("Parallel stages contains entity other than stage");
@@ -68,8 +73,9 @@ public class PipelineStageHelper {
   }
 
   private void containsPipelineStageInStageNode(YamlNode yamlNode) {
-    if (yamlNode.getField("stage") != null && yamlNode.getField("stage").getNode() != null
-        && yamlNode.getField("stage").getNode().getType().equals("pipeline")) {
+    if (yamlNode.getField(YAMLFieldNameConstants.STAGE) != null
+        && yamlNode.getField(YAMLFieldNameConstants.STAGE).getNode() != null
+        && yamlNode.getField(YAMLFieldNameConstants.STAGE).getNode().getType().equals("Pipeline")) {
       throw new InvalidRequestException("Nested pipeline is not supported");
     }
   }
