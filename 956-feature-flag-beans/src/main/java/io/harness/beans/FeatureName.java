@@ -67,7 +67,9 @@ public enum FeatureName {
   DISABLE_LOGML_NEURAL_NET,
   DISABLE_METRIC_NAME_CURLY_BRACE_CHECK,
   DISABLE_SERVICEGUARD_LOG_ALERTS,
-  DISABLE_WINRM_COMMAND_ENCODING,
+  DISABLE_WINRM_COMMAND_ENCODING(
+      "To disable Base64 encoding done to WinRM command script which is sent to remote server for execution",
+      HarnessTeam.CDP),
   ENABLE_WINRM_ENV_VARIABLES,
   FF_PIPELINE,
   FF_GITSYNC,
@@ -326,7 +328,6 @@ public enum FeatureName {
   CVNG_SPLUNK_METRICS,
   AUTO_FREE_MODULE_LICENSE,
   SRM_LICENSE_ENABLED,
-  AZURE_WEBAPP_NG,
   ACCOUNT_BASIC_ROLE_ONLY,
   SEARCH_USERGROUP_BY_APPLICATION("Search in usergroup by application in CG", HarnessTeam.SPG),
   GITOPS_BYO_ARGO,
@@ -403,8 +404,6 @@ public enum FeatureName {
   VALIDATE_PHASES_AND_ROLLBACK("Validate that each phase has your own rollback phase", HarnessTeam.SPG),
   OPTIMIZED_TF_PLAN_NG(
       "Enables uploading Terraform plan to GCS/MongoGridFS instead of saving to sweeping output", HarnessTeam.CDP),
-  SERVICE_V2_EXPRESSION(
-      "Allow service reference to be an expression in a pipeline for the new service entity", HarnessTeam.CDC),
   CIE_HOSTED_VMS(
       "Enables hosted VMs in favor of hosted K8s for CIE. This flag will be deprecated once all the feature work has been checked in",
       HarnessTeam.CI),
@@ -424,8 +423,6 @@ public enum FeatureName {
       "merge context elements workflow variables while resuming pipeline from a stage", HarnessTeam.SPG),
   USE_TEXT_SEARCH_FOR_EXECUTION(
       "With this instead of using regex search we will use text search for CD page in CG", HarnessTeam.SPG),
-  AZURE_WEBAPP_NG_S3_ARTIFACTS(
-      "UI FF to enable AWS S3 as an artifact source option for Azure Web App NG", HarnessTeam.CDP),
   DEL_EVALUATE_SECRET_EXPRESSION_SYNC(
       "FF to disable asynchronous evaluation of secrets. With FF set to true and pipeline has more than one secret, they will get evaluate one after other",
       HarnessTeam.DEL),

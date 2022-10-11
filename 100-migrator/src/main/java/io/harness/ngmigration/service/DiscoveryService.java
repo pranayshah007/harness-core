@@ -32,6 +32,8 @@ import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.summary.BaseSummary;
 import io.harness.ngmigration.client.NGClient;
 import io.harness.ngmigration.client.PmsClient;
+import io.harness.ngmigration.dto.AlreadyMigratedDetails;
+import io.harness.ngmigration.dto.EntityMigratedStats;
 import io.harness.ngmigration.dto.MigrationImportSummaryDTO;
 import io.harness.ngmigration.dto.SaveSummaryDTO;
 import io.harness.ngmigration.utils.NGMigrationConstants;
@@ -313,16 +315,30 @@ public class DiscoveryService {
     PmsClient pmsClient = getRestClient(pipelineServiceClientConfig, PmsClient.class);
     // Sort such that we create secrets first then connectors and so on.
     MigratorUtility.sort(ngYamlFiles);
-    SaveSummaryDTO summaryDTO = SaveSummaryDTO.builder().errors(new ArrayList<>()).build();
+    SaveSummaryDTO summaryDTO = SaveSummaryDTO.builder()
+                                    .errors(new ArrayList<>())
+                                    .stats(new HashMap<>())
+                                    .alreadyMigratedDetails(new ArrayList<>())
+                                    .build();
+
     for (NGYamlFile file : ngYamlFiles) {
       try {
+        summaryDTO.getStats().putIfAbsent(file.getType(), new EntityMigratedStats());
         NgMigrationService ngMigration = migrationFactory.getMethod(file.getType());
         if (!file.isExists()) {
           MigrationImportSummaryDTO importSummaryDTO = ngMigration.migrate(auth, ngClient, pmsClient, inputDTO, file);
+          if (importSummaryDTO != null && importSummaryDTO.isSuccess()) {
+            summaryDTO.getStats().get(file.getType()).incrementSuccessfullyMigrated();
+          }
           if (importSummaryDTO != null && EmptyPredicate.isNotEmpty(importSummaryDTO.getErrors())) {
             summaryDTO.getErrors().addAll(importSummaryDTO.getErrors());
           }
         } else {
+          summaryDTO.getStats().get(file.getType()).incrementAlreadyMigrated();
+          summaryDTO.getAlreadyMigratedDetails().add(AlreadyMigratedDetails.builder()
+                                                         .cgEntityDetail(file.getCgBasicInfo())
+                                                         .ngEntityDetail(file.getNgEntityDetail())
+                                                         .build());
           log.info("Skipping creation of entity with basic info {}", file.getCgBasicInfo());
         }
         migratorMappingService.mapCgNgEntity(file);

@@ -2732,6 +2732,7 @@ public class DelegateServiceImpl implements DelegateService {
       final String accountId, final String hostName, final boolean ng, final String delegateType, final String ip) {
     final Query<Delegate> delegateQuery = persistence.createQuery(Delegate.class)
                                               .filter(DelegateKeys.accountId, accountId)
+                                              .filter(DelegateKeys.ng, ng)
                                               .filter(DelegateKeys.hostName, hostName);
     // For delegates running in a kubernetes cluster we include lowercase account ID in the hostname to identify it.
     // We ignore IP address because that can change with every restart of the pod.
@@ -4331,6 +4332,7 @@ public class DelegateServiceImpl implements DelegateService {
     Query<Delegate> delegateQuery = persistence.createQuery(Delegate.class)
                                         .filter(DelegateKeys.accountId, accountId)
                                         .filter(DelegateKeys.delegateName, delegateName)
+                                        .filter(DelegateGroupKeys.ng, isNg)
                                         .field(DelegateKeys.status)
                                         .notEqual(DelegateInstanceStatus.DELETED);
     if (delegateQuery.get() != null) {

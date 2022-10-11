@@ -25,6 +25,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class SaveSummaryDTO {
-  private Map<NGMigrationEntityType, Object> stats;
+  private Map<NGMigrationEntityType, EntityMigratedStats> stats;
   private List<ImportError> errors;
+  private List<AlreadyMigratedDetails> alreadyMigratedDetails;
 }

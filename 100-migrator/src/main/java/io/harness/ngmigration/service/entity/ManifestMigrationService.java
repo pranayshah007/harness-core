@@ -250,6 +250,7 @@ public class ManifestMigrationService extends NgMigrationService {
                                .accountId(applicationManifest.getAccountId())
                                .appId(applicationManifest.getAppId())
                                .id(applicationManifest.getUuid())
+                               .name(applicationManifest.getName())
                                .type(NGMigrationEntityType.MANIFEST)
                                .build())
               .build();

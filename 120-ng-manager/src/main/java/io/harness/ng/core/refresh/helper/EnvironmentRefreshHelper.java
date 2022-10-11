@@ -279,9 +279,15 @@ public class EnvironmentRefreshHelper {
     YamlNode serviceNodeInResolvedTemplatesYaml =
         YamlNodeUtils.goToPathUsingFqn(stageYamlNodeInResolvedTemplatesYaml, "spec.service");
     if (serviceNodeInResolvedTemplatesYaml == null) {
-      log.warn("Env node in Resolved templates yaml is null");
+      log.warn("service node in Resolved templates yaml is null");
       return;
     }
+
+    // ex. use from stage
+    if (serviceNodeInResolvedTemplatesYaml.getField(YamlTypes.SERVICE_REF) == null) {
+      return;
+    }
+
     JsonNode serviceRefInResolvedTemplatesYaml =
         serviceNodeInResolvedTemplatesYaml.getField(YamlTypes.SERVICE_REF).getNode().getCurrJsonNode();
     refreshServiceOverrideInputs(

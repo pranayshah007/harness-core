@@ -252,6 +252,7 @@ public class InfraMigrationService extends NgMigrationService {
                              .accountId(infra.getAccountId())
                              .appId(infra.getAppId())
                              .id(infra.getUuid())
+                             .name(infra.getName())
                              .type(NGMigrationEntityType.INFRA)
                              .build())
             .build();

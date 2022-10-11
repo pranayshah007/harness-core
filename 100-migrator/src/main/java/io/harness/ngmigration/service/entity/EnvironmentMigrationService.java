@@ -243,6 +243,7 @@ public class EnvironmentMigrationService extends NgMigrationService {
                                                  .accountId(environment.getAccountId())
                                                  .appId(environment.getAppId())
                                                  .id(environment.getUuid())
+                                                 .name(environment.getName())
                                                  .type(NGMigrationEntityType.ENVIRONMENT)
                                                  .build())
                                 .build();

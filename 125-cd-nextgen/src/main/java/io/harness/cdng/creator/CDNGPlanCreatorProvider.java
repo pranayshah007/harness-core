@@ -690,7 +690,6 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setType(StepSpecTypeConstants.AZURE_SLOT_DEPLOYMENT)
             .setFeatureRestrictionName(FeatureRestrictionName.AZURE_SLOT_DEPLOYMENT.name())
             .setStepMetaData(StepMetaData.newBuilder().addCategory("AzureWebApp").addFolderPaths("AzureWebApp").build())
-            .setFeatureFlag(FeatureName.AZURE_WEBAPP_NG.name())
             .build();
 
     StepInfo azureWebAppTrafficShift =
@@ -699,7 +698,6 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setType(StepSpecTypeConstants.AZURE_TRAFFIC_SHIFT)
             .setFeatureRestrictionName(FeatureRestrictionName.AZURE_TRAFFIC_SHIFT.name())
             .setStepMetaData(StepMetaData.newBuilder().addCategory("AzureWebApp").addFolderPaths("AzureWebApp").build())
-            .setFeatureFlag(FeatureName.AZURE_WEBAPP_NG.name())
             .build();
 
     StepInfo azureWebAppSwapSlot =
@@ -708,7 +706,6 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setType(StepSpecTypeConstants.AZURE_SWAP_SLOT)
             .setFeatureRestrictionName(FeatureRestrictionName.AZURE_SWAP_SLOT.name())
             .setStepMetaData(StepMetaData.newBuilder().addCategory("AzureWebApp").addFolderPaths("AzureWebApp").build())
-            .setFeatureFlag(FeatureName.AZURE_WEBAPP_NG.name())
             .build();
 
     StepInfo azureWebAppRollback =
@@ -717,7 +714,6 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setType(StepSpecTypeConstants.AZURE_WEBAPP_ROLLBACK)
             .setFeatureRestrictionName(FeatureRestrictionName.AZURE_WEBAPP_ROLLBACK.name())
             .setStepMetaData(StepMetaData.newBuilder().addCategory("AzureWebApp").addFolderPaths("AzureWebApp").build())
-            .setFeatureFlag(FeatureName.AZURE_WEBAPP_NG.name())
             .build();
 
     StepInfo jenkinsBuildStepInfo =
