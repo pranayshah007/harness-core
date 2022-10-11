@@ -10,6 +10,7 @@ import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitsync.interceptor.GitEntityInfo;
@@ -17,6 +18,8 @@ import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.pms.annotations.PipelineServiceAuth;
 import io.harness.pms.gitsync.PmsGitSyncHelper;
 import io.harness.pms.ngpipeline.inputset.helpers.ValidateAndMergeHelper;
+import io.harness.pms.pipeline.PipelineEntity;
+import io.harness.pms.pipeline.api.PipelinesApiUtils;
 import io.harness.pms.plan.execution.PipelineExecutor;
 import io.harness.pms.plan.execution.PlanExecutionInterruptType;
 import io.harness.pms.plan.execution.PlanExecutionResponseDto;
@@ -32,14 +35,21 @@ import io.harness.spec.server.pipeline.model.InterruptResponseBody;
 import io.harness.spec.server.pipeline.model.PipelineExecuteRequestBody;
 import io.harness.spec.server.pipeline.model.PipelineExecuteResponseBody;
 import io.harness.spec.server.pipeline.model.RuntimeYAMLTemplate;
+import io.harness.utils.PageUtils;
 
 import com.google.inject.Inject;
+import com.google.protobuf.ByteString;
 import java.util.Collections;
 import java.util.List;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.ResponseBuilder;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.mongodb.core.query.Criteria;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
@@ -143,7 +153,34 @@ public class ExecutionsApiImpl implements ExecutionsApi {
       String pipelineId, String filterId, List<String> status, Boolean myDeployments, String repositoryCI,
       String branchCI, String tagCI, String prSourceCI, String prTargetCI, List<String> services, List<String> envs,
       List<String> infras, String branchGitX) {
-    return null;
+    log.info("Retrieving List of Executions.");
+    GitAwareContextHelper.populateGitDetails(GitEntityInfo.builder().branch(branchGitX).build());
+    ByteString gitSyncBranchContext = pmsGitSyncHelper.getGitSyncBranchContextBytesThreadLocal();
+    if (EmptyPredicate.isEmpty(branchGitX)) {
+      gitSyncBranchContext = null;
+    }
+    Criteria criteria = pmsExecutionService.formCriteria(account, org, project, pipelineId, filterId, null, null,
+        searchTerm, ExecutionsApiUtils.getStatusList(status), myDeployments, false, gitSyncBranchContext, true);
+    List<String> sortingList = PipelinesApiUtils.getSorting(sort, order);
+    Pageable pageRequest = PageUtils.getPageRequest(
+        page, limit, sortingList, Sort.by(Sort.Direction.DESC, PipelineEntity.PipelineEntityKeys.lastUpdatedAt));
+
+    // NOTE: We are getting entity git details from git context and not pipeline entity as we'll have to make DB calls
+    // to fetch them and each might have a different branch context so we cannot even batch them. The only data missing
+    // because of this approach is objectId which UI doesn't use.
+    Page<ExecutionsDetailsSummary> executionsDetailsSummaryPage =
+        pmsExecutionService.getPipelineExecutionSummaryEntity(criteria, pageRequest)
+            .map(e
+                -> ExecutionsApiUtils.getExecutionDetailsSummary(e,
+                    e.getEntityGitDetails() != null
+                        ? e.getEntityGitDetails()
+                        : pmsGitSyncHelper.getEntityGitDetailsFromBytes(e.getGitSyncBranchContext())));
+
+    ResponseBuilder responseBuilder = Response.ok();
+    ResponseBuilder responseBuilderWithLinks = PipelinesApiUtils.addLinksHeader(responseBuilder,
+        String.format("/v1/orgs/%s/projects/%s/executions", org, project),
+        executionsDetailsSummaryPage.getContent().size(), page, limit);
+    return responseBuilderWithLinks.entity(executionsDetailsSummaryPage.getContent()).build();
   }
 
   @Override

@@ -37,6 +37,7 @@ import io.harness.spec.server.pipeline.model.StageInfo;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public class ExecutionsApiUtils {
@@ -186,5 +187,12 @@ public class ExecutionsApiUtils {
     yamlTemplate.setRuntimeYaml(templateDTO.getInputSetTemplateYaml());
     yamlTemplate.setReplaceExpression(templateDTO.getReplacedExpressions());
     return yamlTemplate;
+  }
+
+  public static List<ExecutionStatus> getStatusList(List<String> statusList){
+    if (statusList == null){
+      return null;
+    }
+    return statusList.stream().map(ExecutionStatus::getExecutionStatus).collect(Collectors.toList());
   }
 }
