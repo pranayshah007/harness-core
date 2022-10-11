@@ -18,5 +18,7 @@ public interface StatisticsService {
 
   DeploymentStatistics getDeploymentStatisticsNew(String accountId, List<String> appIds, int numOfDays);
 
+  ServiceInstanceStatistics getServiceInstanceStatisticsNew(String accountId, List<String> appIds, int numOfDays);
+
   ServiceInstanceStatistics getServiceInstanceStatistics(@NotNull String accountId, List<String> appIds, int numOfDays);
 }
