@@ -57,6 +57,8 @@ import io.harness.ccm.rbac.CCMRbacHelper;
 import io.harness.ccm.rbac.CCMRbacHelperImpl;
 import io.harness.ccm.remote.mapper.anomaly.AnomalyFilterPropertiesMapper;
 import io.harness.ccm.remote.mapper.recommendation.CCMRecommendationFilterPropertiesMapper;
+import io.harness.ccm.remote.resources.policies.PolicyStoreService;
+import io.harness.ccm.remote.resources.policies.PolicyStoreServiceImpl;
 import io.harness.ccm.service.impl.AWSBucketPolicyHelperServiceImpl;
 import io.harness.ccm.service.impl.AWSOrganizationHelperServiceImpl;
 import io.harness.ccm.service.impl.AnomalyServiceImpl;
@@ -327,7 +329,7 @@ public class CENextGenModule extends AbstractModule {
     registerOutboxEventHandlers();
     bind(OutboxEventHandler.class).to(CENextGenOutboxEventHandler.class);
     bind(CCMRbacHelper.class).to(CCMRbacHelperImpl.class);
-
+    bind(PolicyStoreService.class).to(PolicyStoreServiceImpl.class);
     registerEventsFrameworkMessageListeners();
 
     bindRetryOnExceptionInterceptor();
