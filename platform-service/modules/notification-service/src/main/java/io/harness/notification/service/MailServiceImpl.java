@@ -20,6 +20,8 @@ import static org.apache.commons.lang3.StringUtils.stripToNull;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DelegateTaskRequest;
+import io.harness.delegate.beans.DelegateResponseData;
+import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.beans.MailTaskParams;
 import io.harness.delegate.beans.NotificationProcessingResponse;
 import io.harness.delegate.beans.NotificationTaskResponse;
@@ -268,8 +270,13 @@ public class MailServiceImpl implements ChannelService {
                                   .build())
               .executionTimeout(Duration.ofMinutes(1L))
               .build();
-      notificationTaskResponse =
-          (NotificationTaskResponse) delegateGrpcClientWrapper.executeSyncTask(delegateTaskRequest);
+      DelegateResponseData responseData = delegateGrpcClientWrapper.executeSyncTask(delegateTaskRequest);
+      if (responseData instanceof ErrorNotifyResponseData) {
+        throw new NotificationException("Failed to send email. Check SMTP configuration.", DEFAULT_ERROR_CODE, USER);
+      } else {
+        notificationTaskResponse =
+            (NotificationTaskResponse) delegateGrpcClientWrapper.executeSyncTask(delegateTaskRequest);
+      }
     } else {
       notificationProcessingResponse =
           mailSender.send(emailIds, ccEmailIds, subject, body, notificationId, smtpConfigDefault);
