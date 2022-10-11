@@ -7,23 +7,12 @@
 
 package io.harness.ccm.rbac;
 
-import static io.harness.ccm.rbac.CCMRbacPermissions.BUDGET_CREATE_AND_EDIT;
-import static io.harness.ccm.rbac.CCMRbacPermissions.BUDGET_DELETE;
-import static io.harness.ccm.rbac.CCMRbacPermissions.BUDGET_VIEW;
-import static io.harness.ccm.rbac.CCMRbacPermissions.COST_CATEGORY_CREATE_AND_EDIT;
-import static io.harness.ccm.rbac.CCMRbacPermissions.COST_CATEGORY_DELETE;
-import static io.harness.ccm.rbac.CCMRbacPermissions.COST_CATEGORY_VIEW;
-import static io.harness.ccm.rbac.CCMRbacPermissions.COST_OVERVIEW_VIEW;
-import static io.harness.ccm.rbac.CCMRbacPermissions.FOLDER_CREATE_AND_EDIT;
-import static io.harness.ccm.rbac.CCMRbacPermissions.FOLDER_DELETE;
-import static io.harness.ccm.rbac.CCMRbacPermissions.FOLDER_VIEW;
-import static io.harness.ccm.rbac.CCMRbacPermissions.PERSPECTIVE_CREATE_AND_EDIT;
-import static io.harness.ccm.rbac.CCMRbacPermissions.PERSPECTIVE_DELETE;
-import static io.harness.ccm.rbac.CCMRbacPermissions.PERSPECTIVE_VIEW;
+import static io.harness.ccm.rbac.CCMRbacPermissions.*;
 import static io.harness.ccm.rbac.CCMResources.BUDGET;
 import static io.harness.ccm.rbac.CCMResources.COST_CATEGORY;
 import static io.harness.ccm.rbac.CCMResources.FOLDER;
 import static io.harness.ccm.rbac.CCMResources.PERSPECTIVE;
+import static io.harness.ccm.rbac.CCMResources.POLICY;
 
 import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
@@ -41,6 +30,7 @@ public class CCMRbacHelperImpl implements CCMRbacHelper {
   private static final String RESOURCE_FOLDER = "Folders";
   private static final String RESOURCE_PERSPECTIVE = "Perspectives";
   private static final String RESOURCE_BUDGET = "Budgets";
+  private static final String RESOURCE_POLICY = "Policies";
 
   @Override
   public void checkFolderViewPermission(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
@@ -150,6 +140,28 @@ public class CCMRbacHelperImpl implements CCMRbacHelper {
   public boolean hasCostOverviewPermission(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
     return accessControlClient.hasAccess(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
         Resource.of(PERSPECTIVE, null), COST_OVERVIEW_VIEW);
+  }
+
+  @Override
+  public void checkPolicyEditPermission(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
+            Resource.of(POLICY, null), POLICY_CREATE_AND_EDIT,
+            String.format(PERMISSION_MISSING_MESSAGE, EDIT_PERMISSION, RESOURCE_POLICY));
+
+  }
+  @Override
+  public void checkPolicyViewPermission(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+
+    System.out.println("in checkPolicyViewPermission ");
+    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
+            Resource.of(POLICY, null), POLICY_VIEW,
+            String.format(PERMISSION_MISSING_MESSAGE, VIEW_PERMISSION, RESOURCE_POLICY));
+  }
+  @Override
+  public void checkPolicyDeletePermission(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
+            Resource.of(POLICY, null), POLICY_DELETE,
+            String.format(PERMISSION_MISSING_MESSAGE, DELETE_PERMISSION, RESOURCE_POLICY));
   }
 
   public void checkPerspectiveOnlyViewPermission(
