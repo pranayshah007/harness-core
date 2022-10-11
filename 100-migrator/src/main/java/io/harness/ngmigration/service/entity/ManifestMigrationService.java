@@ -22,6 +22,7 @@ import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
 import io.harness.cdng.manifest.yaml.harness.HarnessStore;
 import io.harness.datacollection.utils.EmptyPredicate;
 import io.harness.delegate.beans.storeconfig.FetchType;
+import io.harness.encryption.Scope;
 import io.harness.exception.InvalidRequestException;
 import io.harness.gitsync.beans.YamlDTO;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -121,6 +122,7 @@ public class ManifestMigrationService extends NgMigrationService {
     CgEntityNode cgEntityNode = CgEntityNode.builder()
                                     .entityId(cgEntityId)
                                     .entity(appManifest)
+                                    .appId(appManifest.getAppId())
                                     .id(appManifest.getUuid())
                                     .type(NGMigrationEntityType.MANIFEST)
                                     .build();
@@ -220,8 +222,8 @@ public class ManifestMigrationService extends NgMigrationService {
       throw new InvalidRequestException("No service found for manifest");
     }
     Service service = (Service) serviceNode.getEntity();
-    String projectIdentifier = inputDTO.getProjectIdentifier();
-    String orgIdentifier = inputDTO.getOrgIdentifier();
+    String projectIdentifier = MigratorUtility.getProjectIdentifier(Scope.PROJECT, inputDTO);
+    String orgIdentifier = MigratorUtility.getOrgIdentifier(Scope.PROJECT, inputDTO);
     String fileUsage = FileUsage.MANIFEST_FILE.name();
     return manifestFiles.stream()
         .map(manifestFile -> {
@@ -287,7 +289,7 @@ public class ManifestMigrationService extends NgMigrationService {
       ApplicationManifest applicationManifest = (ApplicationManifest) manifestNode.getEntity();
       migratorExpressionUtils.render(applicationManifest);
       BaseProvidedInput manifestInput =
-          inputDTO.getInputs() == null ? null : inputDTO.getInputs().get(manifestEntityId);
+          inputDTO.getOverrides() == null ? null : inputDTO.getOverrides().get(manifestEntityId);
       ManifestProvidedEntitySpec entitySpec = null;
       if (manifestInput != null && manifestInput.getSpec() != null) {
         entitySpec = JsonUtils.treeToValue(manifestInput.getSpec(), ManifestProvidedEntitySpec.class);

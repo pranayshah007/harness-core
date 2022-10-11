@@ -90,6 +90,7 @@ public class AppMigrationService extends NgMigrationService {
     return DiscoveryNode.builder()
         .entityNode(CgEntityNode.builder()
                         .id(appId)
+                        .appId(appId)
                         .type(NGMigrationEntityType.APPLICATION)
                         .entity(entity)
                         .entityId(CgEntityId.builder().type(NGMigrationEntityType.APPLICATION).id(appId).build())

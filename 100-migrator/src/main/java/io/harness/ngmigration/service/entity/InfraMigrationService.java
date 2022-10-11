@@ -32,7 +32,6 @@ import io.harness.ng.core.infrastructure.InfrastructureType;
 import io.harness.ng.core.infrastructure.dto.InfrastructureRequestDTO;
 import io.harness.ngmigration.beans.BaseEntityInput;
 import io.harness.ngmigration.beans.BaseInputDefinition;
-import io.harness.ngmigration.beans.BaseProvidedInput;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.MigratorInputType;
 import io.harness.ngmigration.beans.NGYamlFile;
@@ -74,7 +73,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import retrofit2.Response;
 
 @OwnedBy(HarnessTeam.CDC)
@@ -132,6 +130,7 @@ public class InfraMigrationService extends NgMigrationService {
     CgEntityId infraEntityId = CgEntityId.builder().type(NGMigrationEntityType.INFRA).id(entityId).build();
     CgEntityNode infraNode = CgEntityNode.builder()
                                  .id(entityId)
+                                 .appId(infra.getAppId())
                                  .type(NGMigrationEntityType.INFRA)
                                  .entityId(infraEntityId)
                                  .entity(infra)
@@ -206,18 +205,10 @@ public class InfraMigrationService extends NgMigrationService {
       NgEntityDetail ngEntityDetail) {
     InfrastructureDefinition infra = (InfrastructureDefinition) entities.get(entityId).getEntity();
     migratorExpressionUtils.render(infra);
-    String name = infra.getName();
-    String identifier = MigratorUtility.generateIdentifier(name);
-    String projectIdentifier = null;
-    String orgIdentifier = null;
-    if (inputDTO.getInputs() != null && inputDTO.getInputs().containsKey(entityId)) {
-      // TODO: @deepakputhraya We should handle if the connector needs to be reused.
-      BaseProvidedInput input = inputDTO.getInputs().get(entityId);
-      identifier = StringUtils.isNotBlank(input.getIdentifier()) ? input.getIdentifier() : identifier;
-      name = StringUtils.isNotBlank(input.getIdentifier()) ? input.getName() : name;
-    }
-    projectIdentifier = inputDTO.getProjectIdentifier();
-    orgIdentifier = inputDTO.getOrgIdentifier();
+    String name = MigratorUtility.generateName(inputDTO.getOverrides(), entityId, infra.getName());
+    String identifier = MigratorUtility.generateIdentifierDefaultName(inputDTO.getOverrides(), entityId, name);
+    String projectIdentifier = MigratorUtility.getProjectIdentifier(Scope.PROJECT, inputDTO);
+    String orgIdentifier = MigratorUtility.getOrgIdentifier(Scope.PROJECT, inputDTO);
     InfraDefMapper infraDefMapper = infraMapperFactory.getInfraDefMapper(infra);
     NGYamlFile envNgYamlFile =
         migratedEntities.get(CgEntityId.builder().id(infra.getEnvId()).type(ENVIRONMENT).build());

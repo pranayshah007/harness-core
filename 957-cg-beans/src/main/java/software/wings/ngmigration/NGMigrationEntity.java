@@ -18,4 +18,6 @@ public interface NGMigrationEntity {
   default String getMigrationEntityName() {
     return "";
   }
+
+  @JsonIgnore CgBasicInfo getCgBasicInfo();
 }

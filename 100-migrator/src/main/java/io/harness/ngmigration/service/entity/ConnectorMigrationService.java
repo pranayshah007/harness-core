@@ -23,7 +23,6 @@ import io.harness.gitsync.beans.YamlDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ngmigration.beans.BaseEntityInput;
 import io.harness.ngmigration.beans.BaseInputDefinition;
-import io.harness.ngmigration.beans.BaseProvidedInput;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.MigratorInputType;
 import io.harness.ngmigration.beans.NGYamlFile;
@@ -174,29 +173,11 @@ public class ConnectorMigrationService extends NgMigrationService {
       Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities,
       NgEntityDetail ngEntityDetail) {
     SettingAttribute settingAttribute = (SettingAttribute) entities.get(entityId).getEntity();
-    String name = settingAttribute.getName();
-    String identifier = MigratorUtility.generateIdentifier(settingAttribute.getName());
-    String projectIdentifier = null;
-    String orgIdentifier = null;
-    Scope scope =
-        MigratorUtility.getDefaultScope(inputDTO.getDefaults(), NGMigrationEntityType.CONNECTOR, Scope.PROJECT);
-    // Handle this connector specific values
-    if (inputDTO.getInputs() != null && inputDTO.getInputs().containsKey(entityId)) {
-      // TODO: @deepakputhraya We should handle if the connector needs to be reused.
-      BaseProvidedInput input = inputDTO.getInputs().get(entityId);
-      identifier = StringUtils.isNotBlank(input.getIdentifier()) ? input.getIdentifier() : identifier;
-      name = StringUtils.isNotBlank(input.getIdentifier()) ? input.getName() : name;
-      if (input.getScope() != null) {
-        scope = input.getScope();
-      }
-    }
-    if (Scope.PROJECT.equals(scope)) {
-      projectIdentifier = inputDTO.getProjectIdentifier();
-      orgIdentifier = inputDTO.getOrgIdentifier();
-    }
-    if (Scope.ORG.equals(scope)) {
-      orgIdentifier = inputDTO.getOrgIdentifier();
-    }
+    String name = MigratorUtility.generateName(inputDTO.getOverrides(), entityId, settingAttribute.getName());
+    String identifier = MigratorUtility.generateIdentifierDefaultName(inputDTO.getOverrides(), entityId, name);
+    Scope scope = MigratorUtility.getDefaultScope(inputDTO, entityId, Scope.PROJECT);
+    String projectIdentifier = MigratorUtility.getProjectIdentifier(scope, inputDTO);
+    String orgIdentifier = MigratorUtility.getOrgIdentifier(scope, inputDTO);
 
     List<NGYamlFile> files = new ArrayList<>();
     Set<CgEntityId> childEntities = graph.get(entityId);
@@ -223,13 +204,7 @@ public class ConnectorMigrationService extends NgMigrationService {
                                 .orgIdentifier(orgIdentifier)
                                 .projectIdentifier(projectIdentifier)
                                 .build())
-            .cgBasicInfo(CgBasicInfo.builder()
-                             .accountId(settingAttribute.getAccountId())
-                             .appId(null)
-                             .id(settingAttribute.getUuid())
-                             .name(settingAttribute.getName())
-                             .type(NGMigrationEntityType.CONNECTOR)
-                             .build())
+            .cgBasicInfo(settingAttribute.getCgBasicInfo())
             .build();
     files.add(ngYamlFile);
     migratedEntities.putIfAbsent(entityId, ngYamlFile);

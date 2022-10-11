@@ -14,11 +14,11 @@ import static java.lang.String.format;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.MigratedEntityMapping;
+import io.harness.encryption.Scope;
 import io.harness.exception.InvalidRequestException;
 import io.harness.gitsync.beans.YamlDTO;
 import io.harness.ngmigration.beans.BaseEntityInput;
 import io.harness.ngmigration.beans.BaseInputDefinition;
-import io.harness.ngmigration.beans.BaseProvidedInput;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.MigratorInputType;
 import io.harness.ngmigration.beans.NGYamlFile;
@@ -63,7 +63,6 @@ import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.MediaType;
 import okhttp3.RequestBody;
-import org.apache.commons.lang3.StringUtils;
 
 @Slf4j
 @OwnedBy(HarnessTeam.CDC)
@@ -103,6 +102,7 @@ public class PipelineMigrationService extends NgMigrationService {
     CgEntityId pipelineEntityId = CgEntityId.builder().type(NGMigrationEntityType.PIPELINE).id(entityId).build();
     CgEntityNode pipelineNode = CgEntityNode.builder()
                                     .id(entityId)
+                                    .appId(pipeline.getAppId())
                                     .type(NGMigrationEntityType.PIPELINE)
                                     .entityId(pipelineEntityId)
                                     .entity(pipeline)
@@ -191,15 +191,10 @@ public class PipelineMigrationService extends NgMigrationService {
       NgEntityDetail ngEntityDetail) {
     Pipeline pipeline = (Pipeline) entities.get(entityId).getEntity();
     migratorExpressionUtils.render(pipeline);
-    String name = pipeline.getName();
-    String identifier = MigratorUtility.generateIdentifier(pipeline.getName());
-    String projectIdentifier = inputDTO.getProjectIdentifier();
-    String orgIdentifier = inputDTO.getOrgIdentifier();
-    if (inputDTO.getInputs() != null && inputDTO.getInputs().containsKey(entityId)) {
-      BaseProvidedInput input = inputDTO.getInputs().get(entityId);
-      identifier = StringUtils.isNotBlank(input.getIdentifier()) ? input.getIdentifier() : identifier;
-      name = StringUtils.isNotBlank(input.getIdentifier()) ? input.getName() : name;
-    }
+    String name = MigratorUtility.generateName(inputDTO.getOverrides(), entityId, pipeline.getName());
+    String identifier = MigratorUtility.generateIdentifierDefaultName(inputDTO.getOverrides(), entityId, name);
+    String projectIdentifier = MigratorUtility.getProjectIdentifier(Scope.PROJECT, inputDTO);
+    String orgIdentifier = MigratorUtility.getOrgIdentifier(Scope.PROJECT, inputDTO);
 
     List<StageElementWrapperConfig> ngStages = new ArrayList<>();
     if (isNotEmpty(pipeline.getPipelineStages())) {

@@ -32,8 +32,8 @@ import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.summary.BaseSummary;
 import io.harness.ngmigration.client.NGClient;
 import io.harness.ngmigration.client.PmsClient;
-import io.harness.ngmigration.dto.AlreadyMigratedDetails;
 import io.harness.ngmigration.dto.EntityMigratedStats;
+import io.harness.ngmigration.dto.MigratedDetails;
 import io.harness.ngmigration.dto.MigrationImportSummaryDTO;
 import io.harness.ngmigration.dto.SaveSummaryDTO;
 import io.harness.ngmigration.utils.NGMigrationConstants;
@@ -319,6 +319,7 @@ public class DiscoveryService {
                                     .errors(new ArrayList<>())
                                     .stats(new HashMap<>())
                                     .alreadyMigratedDetails(new ArrayList<>())
+                                    .successfullyMigratedDetails(new ArrayList<>())
                                     .build();
 
     for (NGYamlFile file : ngYamlFiles) {
@@ -329,13 +330,17 @@ public class DiscoveryService {
           MigrationImportSummaryDTO importSummaryDTO = ngMigration.migrate(auth, ngClient, pmsClient, inputDTO, file);
           if (importSummaryDTO != null && importSummaryDTO.isSuccess()) {
             summaryDTO.getStats().get(file.getType()).incrementSuccessfullyMigrated();
+            summaryDTO.getSuccessfullyMigratedDetails().add(MigratedDetails.builder()
+                                                                .cgEntityDetail(file.getCgBasicInfo())
+                                                                .ngEntityDetail(file.getNgEntityDetail())
+                                                                .build());
           }
           if (importSummaryDTO != null && EmptyPredicate.isNotEmpty(importSummaryDTO.getErrors())) {
             summaryDTO.getErrors().addAll(importSummaryDTO.getErrors());
           }
         } else {
           summaryDTO.getStats().get(file.getType()).incrementAlreadyMigrated();
-          summaryDTO.getAlreadyMigratedDetails().add(AlreadyMigratedDetails.builder()
+          summaryDTO.getAlreadyMigratedDetails().add(MigratedDetails.builder()
                                                          .cgEntityDetail(file.getCgBasicInfo())
                                                          .ngEntityDetail(file.getNgEntityDetail())
                                                          .build());

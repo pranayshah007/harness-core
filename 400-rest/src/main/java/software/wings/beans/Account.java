@@ -13,6 +13,7 @@ import static io.harness.delegate.beans.DelegateConfiguration.DelegateConfigurat
 import static software.wings.beans.Account.AccountKeys;
 import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
 import static software.wings.common.VerificationConstants.SERVICE_GUAARD_LIMIT;
+import static software.wings.ngmigration.NGMigrationEntityType.ACCOUNT;
 
 import io.harness.annotation.HarnessEntity;
 import io.harness.annotations.ChangeDataCapture;
@@ -37,6 +38,7 @@ import io.harness.security.EncryptionInterface;
 import io.harness.security.SimpleEncryption;
 import io.harness.validation.Create;
 
+import software.wings.ngmigration.CgBasicInfo;
 import software.wings.ngmigration.NGMigrationEntity;
 import software.wings.yaml.BaseEntityYaml;
 
@@ -225,6 +227,18 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
   @Override
   public String getMigrationEntityName() {
     return getCompanyName() + " " + getAccountName();
+  }
+
+  @JsonIgnore
+  @Override
+  public CgBasicInfo getCgBasicInfo() {
+    return CgBasicInfo.builder()
+        .id(getUuid())
+        .name(getAccountName())
+        .type(ACCOUNT)
+        .appId(getAppId())
+        .accountId(getUuid())
+        .build();
   }
 
   public boolean isNextGenEnabled() {

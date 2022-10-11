@@ -16,6 +16,7 @@ import io.harness.beans.SecretManagerConfig;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.dto.secrets.SecretDTOV2;
+import io.harness.ng.core.dto.secrets.SecretDTOV2.SecretDTOV2Builder;
 import io.harness.ng.core.dto.secrets.SecretRequestWrapper;
 import io.harness.ng.core.dto.secrets.SecretSpecDTO;
 import io.harness.ng.core.dto.secrets.SecretTextSpecDTO;
@@ -70,21 +71,13 @@ public class SecretFactory {
     throw new InvalidRequestException("Unsupported secret manager");
   }
 
-  public SecretDTOV2 getSecret(MigrationInputDTO inputDTO, String identifier, EncryptedData encryptedData,
-      Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities) {
+  public SecretDTOV2Builder getSecret(EncryptedData encryptedData, Map<CgEntityId, CgEntityNode> entities,
+      Map<CgEntityId, NGYamlFile> migratedEntities) {
     SecretSpecDTO secretSpecDTO = getSecretSpec(encryptedData, entities, migratedEntities);
     if (secretSpecDTO == null) {
       return null;
     }
-    return SecretDTOV2.builder()
-        .type(SecretText)
-        .name(encryptedData.getName())
-        .identifier(identifier)
-        .description(null)
-        .orgIdentifier(inputDTO.getOrgIdentifier())
-        .projectIdentifier(inputDTO.getProjectIdentifier())
-        .spec(secretSpecDTO)
-        .build();
+    return SecretDTOV2.builder().type(SecretText).spec(secretSpecDTO);
   }
 
   private SecretSpecDTO getSecretSpec(EncryptedData encryptedData, Map<CgEntityId, CgEntityNode> entities,

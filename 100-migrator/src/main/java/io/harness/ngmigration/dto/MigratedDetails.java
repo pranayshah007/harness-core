@@ -23,7 +23,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class AlreadyMigratedDetails {
+public class MigratedDetails {
   private CgBasicInfo cgEntityDetail;
   private NgEntityDetail ngEntityDetail;
 }
