@@ -71,6 +71,17 @@ public class PMSPipelineDtoMapper {
         : null;
   }
 
+  private EntityGitDetails getEntityGitDetailsForMetadataResponse(PipelineEntity pipelineEntity) {
+    EntityGitDetails entityGitDetails = pipelineEntity.getStoreType() == null
+        ? EntityGitDetailsMapper.mapEntityGitDetails(pipelineEntity)
+        : pipelineEntity.getStoreType() == StoreType.REMOTE ? GitAwareContextHelper.getEntityGitDetails(pipelineEntity)
+                                                            : null;
+    if (entityGitDetails != null) {
+      entityGitDetails.setRepoUrl(pipelineEntity.getRepoURL());
+    }
+    return entityGitDetails;
+  }
+
   public EntityValidityDetails getEntityValidityDetails(PipelineEntity pipelineEntity) {
     return pipelineEntity.getStoreType() != null || !pipelineEntity.isEntityInvalid()
         ? EntityValidityDetails.builder().valid(true).build()
@@ -161,7 +172,10 @@ public class PMSPipelineDtoMapper {
     return withVersion;
   }
 
-  public PMSPipelineSummaryResponseDTO preparePipelineSummary(PipelineEntity pipelineEntity) {
+  public PMSPipelineSummaryResponseDTO preparePipelineSummary(PipelineEntity pipelineEntity, Boolean getMetadataOnly) {
+    if (Boolean.TRUE.equals(getMetadataOnly)) {
+      return preparePipelineSummary(pipelineEntity, getEntityGitDetailsForMetadataResponse(pipelineEntity));
+    }
     return preparePipelineSummary(pipelineEntity, getEntityGitDetails(pipelineEntity));
   }
 
@@ -170,10 +184,7 @@ public class PMSPipelineDtoMapper {
     // For List View, getEntityGitDetails(...) method cant be used because for REMOTE pipelines. That is because
     // GitAwareContextHelper.getEntityGitDetailsFromScmGitMetadata() cannot be used, because there won't be any
     // SCM Context set in the List call.
-    EntityGitDetails entityGitDetails = pipelineEntity.getStoreType() == null
-        ? EntityGitDetailsMapper.mapEntityGitDetails(pipelineEntity)
-        : pipelineEntity.getStoreType() == StoreType.REMOTE ? GitAwareContextHelper.getEntityGitDetails(pipelineEntity)
-                                                            : null;
+    EntityGitDetails entityGitDetails = getEntityGitDetailsForMetadataResponse(pipelineEntity);
     PMSPipelineSummaryResponseDTO pmsPipelineSummaryResponseDTO =
         preparePipelineSummary(pipelineEntity, entityGitDetails);
     List<RecentExecutionInfoDTO> recentExecutionsInfo =

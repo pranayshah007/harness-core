@@ -95,7 +95,7 @@ public class PipelineStageFilterCreatorTest extends CategoryTest {
 
     doReturn(Optional.of(PipelineEntity.builder().yaml(yamlField).build()))
         .when(pmsPipelineService)
-        .getWithoutPerformingValidations("acc", "org", "project", "childPipeline", false);
+        .getPipelineWithoutPerformingValidations("acc", "org", "project", "childPipeline", false, false);
     assertThatCode(()
                        -> pipelineStageFilterCreator.handleNode(
                            filterCreationContext, YamlUtils.read(yamlField, PipelineStageNode.class)))

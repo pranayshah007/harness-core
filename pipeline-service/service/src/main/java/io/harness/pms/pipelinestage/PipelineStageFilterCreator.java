@@ -64,9 +64,9 @@ public class PipelineStageFilterCreator extends GenericStageFilterJsonCreatorV2<
       throw new InvalidRequestException("Pipeline Inputs and Pipeline Input Set references are not allowed together");
     }
 
-    Optional<PipelineEntity> childPipelineEntity =
-        pmsPipelineService.getWithoutPerformingValidations(filterCreationContext.getSetupMetadata().getAccountId(),
-            pipelineStageConfig.getOrg(), pipelineStageConfig.getProject(), pipelineStageConfig.getPipeline(), false);
+    Optional<PipelineEntity> childPipelineEntity = pmsPipelineService.getPipelineWithoutPerformingValidations(
+        filterCreationContext.getSetupMetadata().getAccountId(), pipelineStageConfig.getOrg(),
+        pipelineStageConfig.getProject(), pipelineStageConfig.getPipeline(), false, false);
 
     if (!childPipelineEntity.isPresent()) {
       throw new InvalidRequestException(
