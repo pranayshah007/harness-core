@@ -10,7 +10,11 @@ import "context"
 type Store interface {
 	Enqueue(ctx context.Context, request EnqueueRequest) (*EnqueueResponse, error)
 
-	Dequeue(ctx context.Context, request DequeueRequest) (*DequeueResponse, error)
+	Dequeue(ctx context.Context, request DequeueRequest) ([]*DequeueResponse, error)
+
+	Ack(ctx context.Context, request AckRequest) (*AckResponse, error)
+
+	UnAck(ctx context.Context, request UnAckRequest) (*UnAckResponse, error)
 
 	// TODO : more apis
 	// CheckStatus(taskId string) Status (QUEUED | PROCESSING | FAILED | ....)

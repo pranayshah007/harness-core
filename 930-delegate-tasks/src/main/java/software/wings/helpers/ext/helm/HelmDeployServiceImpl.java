@@ -13,7 +13,9 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.clienttools.ClientTool.OC;
 import static io.harness.delegate.task.helm.HelmTaskHelperBase.getChartDirectory;
 import static io.harness.exception.WingsException.USER;
+import static io.harness.filesystem.FileIo.createDirectoryIfDoesNotExist;
 import static io.harness.filesystem.FileIo.deleteDirectoryAndItsContentIfExists;
+import static io.harness.filesystem.FileIo.waitForDirectoryToBeAccessibleOutOfProcess;
 import static io.harness.helm.HelmCommandType.LIST_RELEASE;
 import static io.harness.helm.HelmCommandType.RELEASE_HISTORY;
 import static io.harness.helm.HelmConstants.DEFAULT_TILLER_CONNECTION_TIMEOUT_MILLIS;
@@ -437,22 +439,16 @@ public class HelmDeployServiceImpl implements HelmDeployService {
     HelmChartConfigParams helmChartConfigParams = commandRequest.getRepoConfig().getHelmChartConfigParams();
     helmTaskHelperBase.modifyRepoNameToIncludeBucket(helmChartConfigParams);
     boolean isEnvVarSet = helmTaskHelperBase.isHelmLocalRepoSet();
-    boolean isChartPresent = false;
     String workingDirectory;
     if (isEnvVarSet) {
       workingDirectory = helmTaskHelperBase.getHelmLocalRepositoryCompletePath(helmChartConfigParams.getRepoName(),
           helmChartConfigParams.getChartName(), helmChartConfigParams.getChartVersion());
-      if (helmTaskHelperBase.doesChartExistInLocalRepo(helmChartConfigParams.getRepoName(),
-              helmChartConfigParams.getChartName(), helmChartConfigParams.getChartVersion())) {
-        isChartPresent = true;
-      } else {
-        throw new InvalidRequestException(
-            "Env Variable HELM_LOCAL_REPOSITORY set, expecting chart directory to exist locally after helm fetch but did not find it \n");
-      }
+      createDirectoryIfDoesNotExist(workingDirectory);
+      waitForDirectoryToBeAccessibleOutOfProcess(workingDirectory, 10);
+      helmTaskHelper.populateChartToLocalHelmRepo(
+          helmChartConfigParams, timeoutInMillis, workingDirectory, commandRequest.getHelmCommandFlag());
     } else {
       workingDirectory = Paths.get(getWorkingDirectory(commandRequest)).toString();
-    }
-    if (!isChartPresent) {
       helmTaskHelper.downloadChartFiles(
           helmChartConfigParams, workingDirectory, timeoutInMillis, commandRequest.getHelmCommandFlag());
     }

@@ -72,6 +72,10 @@ public class SecretFactory {
 
   public SecretDTOV2 getSecret(MigrationInputDTO inputDTO, String identifier, EncryptedData encryptedData,
       Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities) {
+    SecretSpecDTO secretSpecDTO = getSecretSpec(encryptedData, entities, migratedEntities);
+    if (secretSpecDTO == null) {
+      return null;
+    }
     return SecretDTOV2.builder()
         .type(SecretText)
         .name(encryptedData.getName())
@@ -79,7 +83,7 @@ public class SecretFactory {
         .description(null)
         .orgIdentifier(inputDTO.getOrgIdentifier())
         .projectIdentifier(inputDTO.getProjectIdentifier())
-        .spec(getSecretSpec(encryptedData, entities, migratedEntities))
+        .spec(secretSpecDTO)
         .build();
   }
 
@@ -87,6 +91,9 @@ public class SecretFactory {
       Map<CgEntityId, NGYamlFile> migratedEntities) {
     CgEntityId secretManagerId =
         CgEntityId.builder().type(NGMigrationEntityType.SECRET_MANAGER).id(encryptedData.getKmsId()).build();
+    if (!entities.containsKey(secretManagerId)) {
+      return null;
+    }
     SecretManagerConfig secretManagerConfig = (SecretManagerConfig) entities.get(secretManagerId).getEntity();
 
     return getSecretMigrator(secretManagerConfig)

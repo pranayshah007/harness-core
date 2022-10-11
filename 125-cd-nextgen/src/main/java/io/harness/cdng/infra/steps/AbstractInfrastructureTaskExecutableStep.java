@@ -31,7 +31,6 @@ import io.harness.cdng.execution.helper.StageExecutionHelper;
 import io.harness.cdng.infra.InfrastructureMapper;
 import io.harness.cdng.infra.InfrastructureValidator;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
-import io.harness.cdng.infra.beans.SshWinRmAwsInfrastructureOutcome;
 import io.harness.cdng.infra.yaml.AzureWebAppInfrastructure;
 import io.harness.cdng.infra.yaml.CustomDeploymentInfrastructure;
 import io.harness.cdng.infra.yaml.Infrastructure;
@@ -42,15 +41,15 @@ import io.harness.cdng.infra.yaml.PdcInfrastructure;
 import io.harness.cdng.infra.yaml.ServerlessAwsLambdaInfrastructure;
 import io.harness.cdng.infra.yaml.SshWinRmAwsInfrastructure;
 import io.harness.cdng.infra.yaml.SshWinRmAzureInfrastructure;
+import io.harness.cdng.instance.InstanceOutcomeHelper;
+import io.harness.cdng.instance.outcome.InstancesOutcome;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.cdng.service.steps.ServiceStepOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.connector.ConnectorInfoDTO;
-import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.structure.HarnessStringUtils;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.TaskData;
-import io.harness.delegate.beans.azure.response.AzureHostResponse;
 import io.harness.delegate.beans.azure.response.AzureHostsResponse;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
@@ -106,10 +105,8 @@ import io.harness.steps.environment.EnvironmentOutcome;
 import io.harness.steps.shellscript.HostsOutput;
 import io.harness.steps.shellscript.SshInfraDelegateConfigOutput;
 import io.harness.steps.shellscript.WinRmInfraDelegateConfigOutput;
-import io.harness.yaml.infra.HostConnectionTypeKind;
 
 import software.wings.beans.TaskType;
-import software.wings.service.impl.aws.model.AwsEC2Instance;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
@@ -139,6 +136,7 @@ abstract class AbstractInfrastructureTaskExecutableStep {
   @Inject protected InfrastructureMapper infrastructureMapper;
   @Inject CustomDeploymentInfrastructureHelper customDeploymentInfrastructureHelper;
   @Inject private InfrastructureValidator infrastructureValidator;
+  @Inject protected InstanceOutcomeHelper instanceOutcomeHelper;
 
   @Data
   @AllArgsConstructor
@@ -285,7 +283,11 @@ abstract class AbstractInfrastructureTaskExecutableStep {
       NGLogCallback logCallback, InfrastructureOutcome infrastructureOutcome, ExecutionInfoKey executionInfoKey,
       long startTime) {
     Set<String> hostNames =
-        azureHostsResponse.getHosts().stream().map(AzureHostResponse::getAddress).collect(Collectors.toSet());
+        azureHostsResponse.getHosts()
+            .stream()
+            .map(azureHost
+                -> instanceOutcomeHelper.mapToHostNameBasedOnHostConnectionTypeAzure(infrastructureOutcome, azureHost))
+            .collect(Collectors.toSet());
     if (isEmpty(hostNames)) {
       saveExecutionLogSafely(logCallback,
           color("No host(s) found for specified infrastructure or filter did not match any instance(s)", Red));
@@ -300,7 +302,10 @@ abstract class AbstractInfrastructureTaskExecutableStep {
     executionSweepingOutputService.consume(ambiance, OutputExpressionConstants.OUTPUT,
         HostsOutput.builder().hosts(filteredHosts).build(), StepCategory.STAGE.name());
 
-    return buildSuccessStepResponse(ambiance, infrastructureOutcome, logCallback, executionInfoKey, startTime);
+    InstancesOutcome instancesOutcome = instanceOutcomeHelper.saveAndGetInstancesOutcome(
+        ambiance, infrastructureOutcome, azureHostsResponse, filteredHosts);
+    return buildSuccessStepResponse(
+        ambiance, infrastructureOutcome, logCallback, executionInfoKey, startTime, instancesOutcome);
   }
 
   StepResponse publishAwsHosts(AwsListEC2InstancesTaskResponse awsListEC2InstancesTaskResponse, boolean skipInstances,
@@ -308,7 +313,9 @@ abstract class AbstractInfrastructureTaskExecutableStep {
       ExecutionInfoKey executionInfoKey, long startTime) {
     Set<String> hostNames = awsListEC2InstancesTaskResponse.getInstances()
                                 .stream()
-                                .map(awsEC2Instance -> mapToAddress(awsEC2Instance, infrastructureOutcome))
+                                .map(awsEC2Instance
+                                    -> instanceOutcomeHelper.mapToHostNameBasedOnHostConnectionTypeAWS(
+                                        infrastructureOutcome, awsEC2Instance))
                                 .collect(Collectors.toSet());
     if (isEmpty(hostNames)) {
       saveExecutionLogSafely(logCallback,
@@ -324,26 +331,10 @@ abstract class AbstractInfrastructureTaskExecutableStep {
     executionSweepingOutputService.consume(ambiance, OutputExpressionConstants.OUTPUT,
         HostsOutput.builder().hosts(filteredHosts).build(), StepCategory.STAGE.name());
 
-    return buildSuccessStepResponse(ambiance, infrastructureOutcome, logCallback, executionInfoKey, startTime);
-  }
-
-  private String mapToAddress(AwsEC2Instance awsEC2Instance, InfrastructureOutcome infrastructureOutcome) {
-    if (!(infrastructureOutcome instanceof SshWinRmAwsInfrastructureOutcome)) {
-      throw new InvalidRequestException(
-          format("Not supported infrastructure kind : [%s]", infrastructureOutcome.getKind()));
-    }
-    final String hostConnectionType =
-        ((SshWinRmAwsInfrastructureOutcome) infrastructureOutcome).getHostConnectionType();
-
-    if (HostConnectionTypeKind.PUBLIC_IP.equals(hostConnectionType)
-        && EmptyPredicate.isNotEmpty(awsEC2Instance.getPublicIp())) {
-      return awsEC2Instance.getPublicIp();
-    } else if (HostConnectionTypeKind.PRIVATE_IP.equals(hostConnectionType)
-        && EmptyPredicate.isNotEmpty(awsEC2Instance.getPrivateIp())) {
-      return awsEC2Instance.getPrivateIp();
-    } else {
-      return awsEC2Instance.getHostname(); // default
-    }
+    InstancesOutcome instancesOutcome = instanceOutcomeHelper.saveAndGetInstancesOutcome(
+        ambiance, infrastructureOutcome, awsListEC2InstancesTaskResponse, filteredHosts);
+    return buildSuccessStepResponse(
+        ambiance, infrastructureOutcome, logCallback, executionInfoKey, startTime, instancesOutcome);
   }
 
   StepResponse handleTaskException(long startTime, Exception e, NGLogCallback logCallback) throws Exception {
@@ -356,7 +347,7 @@ abstract class AbstractInfrastructureTaskExecutableStep {
   }
 
   StepResponse buildSuccessStepResponse(Ambiance ambiance, InfrastructureOutcome infrastructureOutcome,
-      NGLogCallback logCallback, ExecutionInfoKey executionInfoKey, long startTime) {
+      NGLogCallback logCallback, ExecutionInfoKey executionInfoKey, long startTime, InstancesOutcome instancesOutcome) {
     if (logCallback != null) {
       logCallback.saveExecutionLog(
           color("Completed infrastructure step", Green), LogLevel.INFO, CommandExecutionStatus.SUCCESS);
@@ -373,6 +364,11 @@ abstract class AbstractInfrastructureTaskExecutableStep {
         .stepOutcome(StepResponse.StepOutcome.builder()
                          .outcome(infrastructureOutcome)
                          .name(OutcomeExpressionConstants.OUTPUT)
+                         .group(OutcomeExpressionConstants.INFRASTRUCTURE_GROUP)
+                         .build())
+        .stepOutcome(StepResponse.StepOutcome.builder()
+                         .outcome(instancesOutcome)
+                         .name(OutcomeExpressionConstants.INSTANCES)
                          .group(OutcomeExpressionConstants.INFRASTRUCTURE_GROUP)
                          .build())
         .unitProgressList(Collections.singletonList(UnitProgress.newBuilder()

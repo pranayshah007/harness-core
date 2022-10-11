@@ -31,7 +31,7 @@ public class ArtifactoryTaskParams extends ConnectorTaskParams implements Execut
   String filePath;
   int maxVersions;
 
-  public enum TaskType { VALIDATE, FETCH_REPOSITORIES, FETCH_BUILDS }
+  public enum TaskType { VALIDATE, FETCH_REPOSITORIES, FETCH_BUILDS, FETCH_IMAGE_PATHS }
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {

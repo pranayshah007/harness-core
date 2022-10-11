@@ -10,10 +10,12 @@ package software.wings.security.authentication;
 import static io.harness.eraro.ErrorCode.INVALID_CREDENTIAL;
 import static io.harness.eraro.ErrorCode.USER_DOES_NOT_EXIST;
 import static io.harness.exception.WingsException.USER;
+import static io.harness.ng.core.account.AuthenticationMechanism.SAML;
 import static io.harness.ng.core.account.AuthenticationMechanism.USER_PASSWORD;
 import static io.harness.ng.core.account.DefaultExperience.CG;
 import static io.harness.ng.core.account.DefaultExperience.NG;
 import static io.harness.rule.OwnerRule.AMAN;
+import static io.harness.rule.OwnerRule.KAPIL;
 import static io.harness.rule.OwnerRule.LAZAR;
 import static io.harness.rule.OwnerRule.PHOENIKX;
 import static io.harness.rule.OwnerRule.RUSHABH;
@@ -105,25 +107,29 @@ public class AuthenticationManagerTest extends WingsBaseTest {
   @Inject @InjectMocks private AuthenticationManager authenticationManager;
 
   @Test
-  @Owner(developers = RUSHABH)
+  @Owner(developers = KAPIL)
   @Category(UnitTests.class)
-  public void getAuthenticationMechanism() {
-    User mockUser = mock(User.class);
-    Account account1 = mock(Account.class);
-    Account account2 = mock(Account.class);
+  public void getAccount_withAccountIdAsNULL() {
+    Account defaultAccount = anAccount().withUuid("defaultAccount").build();
+    Account nonDefaultAccount = anAccount().withUuid("nonDefaultAccount").build();
+    User user = anUser()
+                    .name("testUser")
+                    .defaultAccountId("defaultAccount")
+                    .accounts(Arrays.asList(defaultAccount, nonDefaultAccount))
+                    .build();
 
-    when(mockUser.getAccounts()).thenReturn(Arrays.asList(account1, account2));
-    when(AUTHENTICATION_UTL.getUser("testUser", WingsException.USER)).thenReturn(mockUser);
-    assertThat(authenticationManager.getAuthenticationMechanism("testUser")).isEqualTo(USER_PASSWORD);
+    when(AUTHENTICATION_UTL.getUser("testUser", WingsException.USER)).thenReturn(user);
+    assertThat(authenticationManager.getAccount("testUser")).isEqualTo(defaultAccount);
+    defaultAccount.setAuthenticationMechanism(AuthenticationMechanism.SAML);
+    assertThat(authenticationManager.getAccount("testUser").getAuthenticationMechanism()).isEqualTo(SAML);
 
-    when(mockUser.getAccounts()).thenReturn(Arrays.asList(account1));
-    when(account1.getAuthenticationMechanism()).thenReturn(USER_PASSWORD);
-    assertThat(authenticationManager.getAuthenticationMechanism("testUser")).isEqualTo(USER_PASSWORD);
-
-    when(mockUser.getAccounts()).thenReturn(Arrays.asList(account1));
-    when(account1.getAuthenticationMechanism()).thenReturn(io.harness.ng.core.account.AuthenticationMechanism.SAML);
-    assertThat(authenticationManager.getAuthenticationMechanism("testUser"))
-        .isEqualTo(io.harness.ng.core.account.AuthenticationMechanism.SAML);
+    user = anUser()
+               .name("testUser")
+               .defaultAccountId(null)
+               .accounts(Arrays.asList(nonDefaultAccount, defaultAccount))
+               .build();
+    when(AUTHENTICATION_UTL.getUser("testUser", WingsException.USER)).thenReturn(user);
+    assertThat(authenticationManager.getAccount("testUser")).isEqualTo(nonDefaultAccount);
   }
 
   @Test
@@ -172,7 +178,7 @@ public class AuthenticationManagerTest extends WingsBaseTest {
   }
 
   @Test
-  @Owner(developers = RUSHABH)
+  @Owner(developers = KAPIL)
   @Category(UnitTests.class)
   public void getLoginTypeResponse() {
     User mockUser = mock(User.class);
@@ -188,10 +194,6 @@ public class AuthenticationManagerTest extends WingsBaseTest {
     LoginTypeResponse loginTypeResponse = authenticationManager.getLoginTypeResponse("testUser");
     assertThat(loginTypeResponse.getAuthenticationMechanism()).isEqualTo(USER_PASSWORD);
     assertThat(loginTypeResponse.getSSORequest()).isNull();
-
-    when(mockUser.getAccounts()).thenReturn(Arrays.asList(account1, account2));
-    when(AUTHENTICATION_UTL.getUser("testUser", WingsException.USER)).thenReturn(mockUser);
-    assertThat(authenticationManager.getAuthenticationMechanism("testUser")).isEqualTo(USER_PASSWORD);
 
     loginTypeResponse = authenticationManager.getLoginTypeResponse("testUser");
     assertThat(loginTypeResponse.getAuthenticationMechanism()).isEqualTo(USER_PASSWORD);
@@ -245,26 +247,33 @@ public class AuthenticationManagerTest extends WingsBaseTest {
   }
 
   @Test
-  @Owner(developers = RUSHABH)
+  @Owner(developers = KAPIL)
   @Category(UnitTests.class)
   public void authenticate() {
-    User mockUser = spy(new User());
-    AuthenticationResponse authenticationResponse = spy(new AuthenticationResponse(mockUser));
-    mockUser.setUuid("TestUUID");
+    Account defaultAccount = anAccount().withUuid("defaultAccount").build();
+    User user = anUser()
+                    .name("testUser")
+                    .uuid("TestUUID")
+                    .defaultAccountId("defaultAccount")
+                    .accounts(Arrays.asList(defaultAccount))
+                    .build();
+    when(AUTHENTICATION_UTL.getUser("testUser", WingsException.USER)).thenReturn(user);
+
+    AuthenticationResponse authenticationResponse = spy(new AuthenticationResponse(user));
     PortalConfig portalConfig = mock(PortalConfig.class);
     when(portalConfig.getAuthTokenExpiryInMillis()).thenReturn(System.currentTimeMillis());
     when(MAIN_CONFIGURATION.getPortal()).thenReturn(portalConfig);
-    Account account1 = mock(Account.class);
-    when(mockUser.getAccounts()).thenReturn(Arrays.asList(account1));
-    when(AUTHENTICATION_UTL.getUser("testUser@test.com", WingsException.USER)).thenReturn(mockUser);
-
+    when(AUTHENTICATION_UTL.getUser("testUser@test.com", WingsException.USER)).thenReturn(user);
     when(PASSWORD_BASED_AUTH_HANDLER.authenticate(Matchers.anyString(), Matchers.anyString()))
         .thenReturn(authenticationResponse);
+
     User authenticatedUser = mock(User.class);
     when(authenticatedUser.getToken()).thenReturn("TestToken");
-    when(AUTHSERVICE.generateBearerTokenForUser(mockUser)).thenReturn(authenticatedUser);
-    User user = authenticationManager.defaultLogin(Base64.encodeBase64String("testUser@test.com:password".getBytes()));
-    assertThat(user.getToken()).isEqualTo("TestToken");
+    when(AUTHSERVICE.generateBearerTokenForUser(user)).thenReturn(authenticatedUser);
+
+    User resultUser =
+        authenticationManager.defaultLogin(Base64.encodeBase64String("testUser@test.com:password".getBytes()));
+    assertThat(resultUser.getToken()).isEqualTo("TestToken");
     assertThat(authenticatedUser.getLastLogin() != 0L);
     assertThat(authenticatedUser.getLastLogin() <= System.currentTimeMillis());
   }
@@ -273,25 +282,30 @@ public class AuthenticationManagerTest extends WingsBaseTest {
   @Owner(developers = AMAN)
   @Category(UnitTests.class)
   public void testCredentialDecoding() {
-    User mockUser = spy(new User());
-    AuthenticationResponse authenticationResponse = spy(new AuthenticationResponse(mockUser));
-    mockUser.setUuid(UUID);
+    Account defaultAccount = anAccount().withUuid("defaultAccount").build();
+    User user = anUser()
+                    .name("testUser")
+                    .uuid(UUID)
+                    .defaultAccountId("defaultAccount")
+                    .accounts(Arrays.asList(defaultAccount))
+                    .build();
+    when(AUTHENTICATION_UTL.getUser("testUser", WingsException.USER)).thenReturn(user);
+
+    AuthenticationResponse authenticationResponse = spy(new AuthenticationResponse(user));
     PortalConfig portalConfig = mock(PortalConfig.class);
     when(portalConfig.getAuthTokenExpiryInMillis()).thenReturn(System.currentTimeMillis());
     when(MAIN_CONFIGURATION.getPortal()).thenReturn(portalConfig);
-    Account account1 = mock(Account.class);
-    when(mockUser.getAccounts()).thenReturn(Arrays.asList(account1));
-    when(AUTHENTICATION_UTL.getUser(USER_NAME, WingsException.USER)).thenReturn(mockUser);
-
+    when(AUTHENTICATION_UTL.getUser(USER_NAME, WingsException.USER)).thenReturn(user);
     when(PASSWORD_BASED_AUTH_HANDLER.authenticate(Matchers.anyString(), Matchers.anyString()))
         .thenReturn(authenticationResponse);
     User authenticatedUser = mock(User.class);
     when(authenticatedUser.getToken()).thenReturn(TEST_TOKEN);
-    when(AUTHSERVICE.generateBearerTokenForUser(mockUser)).thenReturn(authenticatedUser);
+    when(AUTHSERVICE.generateBearerTokenForUser(user)).thenReturn(authenticatedUser);
 
     // trying with testUser@test.com:prefix:suffix:abc
     String password = PASSWORD_WITH_SPECIAL_CHARECTERS;
-    User user = authenticationManager.defaultLogin(Base64.encodeBase64String((USER_NAME + ":" + password).getBytes()));
+    User resultUser =
+        authenticationManager.defaultLogin(Base64.encodeBase64String((USER_NAME + ":" + password).getBytes()));
 
     verify(PASSWORD_BASED_AUTH_HANDLER, times(1)).authenticate(argCaptor.capture());
 
@@ -353,10 +367,10 @@ public class AuthenticationManagerTest extends WingsBaseTest {
   }
 
   @Test
-  @Owner(developers = PHOENIKX)
+  @Owner(developers = KAPIL)
   @Category(UnitTests.class)
   public void testAuditForDefaultLogin() {
-    Account account = anAccount().withUuid("AccountId1").build();
+    Account account = anAccount().withUuid("AccountId1").withAuthenticationMechanism(USER_PASSWORD).build();
     AuthenticationManager spyAuthenticationManager = spy(authenticationManager);
     User userToBeReturned = anUser()
                                 .twoFactorAuthenticationEnabled(false)
@@ -367,7 +381,7 @@ public class AuthenticationManagerTest extends WingsBaseTest {
 
     when(PASSWORD_BASED_AUTH_HANDLER.authenticate(any(), any()))
         .thenReturn(new AuthenticationResponse(userToBeReturned));
-    doReturn(USER_PASSWORD).when(spyAuthenticationManager).getAuthenticationMechanism(any());
+    doReturn(account).when(spyAuthenticationManager).getAccount(any());
     when(AUTHSERVICE.generateBearerTokenForUser(any())).thenReturn(userToBeReturned);
     doNothing().when(AUTHSERVICE).auditLogin(any(), any());
 
@@ -401,23 +415,31 @@ public class AuthenticationManagerTest extends WingsBaseTest {
   @Owner(developers = VIKAS_M)
   @Category(UnitTests.class)
   public void testHarnessLocalLoginNgAdmin() throws IOException {
-    String accountId = "AccountId1";
-    Account account = anAccount().withUuid(accountId).withDefaultExperience(NG).build();
-    User mockUser = mock(User.class);
+    String accountId = "defaultAccount";
+    Account defaultAccount = anAccount().withUuid("defaultAccount").withDefaultExperience(NG).build();
+    User user = anUser()
+                    .name("testUser")
+                    .uuid("TestUUID")
+                    .defaultAccountId("defaultAccount")
+                    .accounts(Arrays.asList(defaultAccount))
+                    .build();
+    when(AUTHENTICATION_UTL.getUser("testUser", WingsException.USER)).thenReturn(user);
+
     User authenticatedUser = mock(User.class);
-    String basicToken = Base64.encodeBase64String(("UserName"
+    String basicToken = Base64.encodeBase64String(("testUser"
         + ":password")
                                                       .getBytes());
-    AuthenticationResponse authenticationResponse = spy(new AuthenticationResponse(mockUser));
+    AuthenticationResponse authenticationResponse = spy(new AuthenticationResponse(user));
     when(PASSWORD_BASED_AUTH_HANDLER.authenticate(Matchers.anyString(), Matchers.anyString()))
         .thenReturn(authenticationResponse);
-    when(AUTHSERVICE.generateBearerTokenForUser(mockUser)).thenReturn(authenticatedUser);
+    when(AUTHSERVICE.generateBearerTokenForUser(user)).thenReturn(authenticatedUser);
     doNothing().when(AUTHSERVICE).auditLogin(any(), any());
-    when(accountService.get(accountId)).thenReturn(account);
+    when(accountService.get(accountId)).thenReturn(defaultAccount);
     Call<ResponseDTO<Boolean>> request = mock(Call.class);
     doReturn(request).when(userMembershipClient).isUserAdmin(any(), anyString());
     ResponseDTO<Boolean> mockResponse = ResponseDTO.newResponse(true);
     doReturn(Response.success(mockResponse)).when(request).execute();
+
     assertThat(authenticationManager.loginUsingHarnessPassword(basicToken, accountId)).isEqualTo(authenticatedUser);
   }
 
@@ -425,18 +447,25 @@ public class AuthenticationManagerTest extends WingsBaseTest {
   @Owner(developers = VIKAS_M)
   @Category(UnitTests.class)
   public void testHarnessLocalLoginNgNotAdmin() throws IOException {
-    String accountId = "AccountId1";
-    Account account = anAccount().withUuid(accountId).withDefaultExperience(NG).build();
-    User mockUser = mock(User.class);
+    String accountId = "defaultAccount";
+    Account defaultAccount = anAccount().withUuid("defaultAccount").withDefaultExperience(NG).build();
+    User user = anUser()
+                    .name("testUser")
+                    .uuid("TestUUID")
+                    .defaultAccountId("defaultAccount")
+                    .accounts(Arrays.asList(defaultAccount))
+                    .build();
+    when(AUTHENTICATION_UTL.getUser("testUser", WingsException.USER)).thenReturn(user);
+
     User authenticatedUser = mock(User.class);
-    String basicToken = Base64.encodeBase64String(("UserName"
+    String basicToken = Base64.encodeBase64String(("testUser"
         + ":password")
                                                       .getBytes());
-    AuthenticationResponse authenticationResponse = spy(new AuthenticationResponse(mockUser));
+    AuthenticationResponse authenticationResponse = spy(new AuthenticationResponse(user));
     when(PASSWORD_BASED_AUTH_HANDLER.authenticate(any(), any())).thenReturn(authenticationResponse);
-    when(AUTHSERVICE.generateBearerTokenForUser(mockUser)).thenReturn(authenticatedUser);
+    when(AUTHSERVICE.generateBearerTokenForUser(user)).thenReturn(authenticatedUser);
     doNothing().when(AUTHSERVICE).auditLogin(any(), any());
-    when(accountService.get(accountId)).thenReturn(account);
+    when(accountService.get(accountId)).thenReturn(defaultAccount);
     Call<ResponseDTO<Boolean>> request = mock(Call.class);
     doReturn(request).when(userMembershipClient).isUserAdmin(any(), anyString());
     ResponseDTO<Boolean> mockResponse = ResponseDTO.newResponse(false);
@@ -448,22 +477,30 @@ public class AuthenticationManagerTest extends WingsBaseTest {
   @Owner(developers = VIKAS_M)
   @Category(UnitTests.class)
   public void testHarnessLocalLoginCgAdmin() {
-    String accountId = "AccountId1";
-    Account account = anAccount().withUuid(accountId).withDefaultExperience(CG).build();
-    User mockUser = mock(User.class);
+    String accountId = "defaultAccount";
+    Account defaultAccount = anAccount().withUuid("defaultAccount").withDefaultExperience(CG).build();
+    User user = anUser()
+                    .name("testUser")
+                    .uuid("TestUUID")
+                    .defaultAccountId("defaultAccount")
+                    .accounts(Arrays.asList(defaultAccount))
+                    .build();
+    when(AUTHENTICATION_UTL.getUser("testUser", WingsException.USER)).thenReturn(user);
+
     User authenticatedUser = mock(User.class);
-    String basicToken = Base64.encodeBase64String(("UserName"
+    String basicToken = Base64.encodeBase64String(("testUser"
         + ":password")
                                                       .getBytes());
-    AuthenticationResponse authenticationResponse = spy(new AuthenticationResponse(mockUser));
+    AuthenticationResponse authenticationResponse = spy(new AuthenticationResponse(user));
     when(PASSWORD_BASED_AUTH_HANDLER.authenticate(Matchers.anyString(), Matchers.anyString()))
         .thenReturn(authenticationResponse);
-    when(AUTHSERVICE.generateBearerTokenForUser(mockUser)).thenReturn(authenticatedUser);
+    when(AUTHSERVICE.generateBearerTokenForUser(user)).thenReturn(authenticatedUser);
     doNothing().when(AUTHSERVICE).auditLogin(any(), any());
-    when(accountService.get(accountId)).thenReturn(account);
+    when(accountService.get(accountId)).thenReturn(defaultAccount);
     UserPermissionInfo userPermissionInfo = UserPermissionInfo.builder().build();
     when(AUTHSERVICE.getUserPermissionInfo(accountId, authenticatedUser, false)).thenReturn(userPermissionInfo);
     when(USER_SERVICE.isUserAccountAdmin(any(), any())).thenReturn(true);
+
     assertThat(authenticationManager.loginUsingHarnessPassword(basicToken, accountId)).isEqualTo(authenticatedUser);
   }
 
@@ -471,22 +508,30 @@ public class AuthenticationManagerTest extends WingsBaseTest {
   @Owner(developers = VIKAS_M)
   @Category(UnitTests.class)
   public void testHarnessLocalLoginCgNonAdmin() {
-    String accountId = "AccountId1";
-    Account account = anAccount().withUuid(accountId).withDefaultExperience(CG).build();
-    User mockUser = mock(User.class);
+    String accountId = "defaultAccount";
+    Account defaultAccount = anAccount().withUuid("defaultAccount").withDefaultExperience(CG).build();
+    User user = anUser()
+                    .name("testUser")
+                    .uuid("TestUUID")
+                    .defaultAccountId("defaultAccount")
+                    .accounts(Arrays.asList(defaultAccount))
+                    .build();
+    when(AUTHENTICATION_UTL.getUser("testUser", WingsException.USER)).thenReturn(user);
+
     User authenticatedUser = mock(User.class);
-    String basicToken = Base64.encodeBase64String(("UserName"
+    String basicToken = Base64.encodeBase64String(("testUser"
         + ":password")
                                                       .getBytes());
-    AuthenticationResponse authenticationResponse = spy(new AuthenticationResponse(mockUser));
+    AuthenticationResponse authenticationResponse = spy(new AuthenticationResponse(user));
     when(PASSWORD_BASED_AUTH_HANDLER.authenticate(Matchers.anyString(), Matchers.anyString()))
         .thenReturn(authenticationResponse);
-    when(AUTHSERVICE.generateBearerTokenForUser(mockUser)).thenReturn(authenticatedUser);
+    when(AUTHSERVICE.generateBearerTokenForUser(user)).thenReturn(authenticatedUser);
     doNothing().when(AUTHSERVICE).auditLogin(any(), any());
-    when(accountService.get(accountId)).thenReturn(account);
+    when(accountService.get(accountId)).thenReturn(defaultAccount);
     UserPermissionInfo userPermissionInfo = UserPermissionInfo.builder().build();
     when(AUTHSERVICE.getUserPermissionInfo(accountId, authenticatedUser, false)).thenReturn(userPermissionInfo);
     when(USER_SERVICE.isUserAccountAdmin(any(), any())).thenReturn(false);
+
     assertThat(authenticationManager.loginUsingHarnessPassword(basicToken, accountId)).isEqualTo(WingsException.class);
   }
 }

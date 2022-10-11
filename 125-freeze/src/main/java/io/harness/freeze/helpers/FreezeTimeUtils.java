@@ -53,12 +53,6 @@ public class FreezeTimeUtils {
     } else {
       Long lastWindowEndTimeEpoch =
           getEpochValueFromDateString(freezeWindow.getRecurrence().getSpec().getUntil(), timeZone);
-      int maxNoOfRecurrences = 0;
-      if (lastWindowEndTimeEpoch == null) {
-        maxNoOfRecurrences = freezeWindow.getRecurrence().getSpec().getCount();
-        lastWindowEndTimeEpoch = getEpochValue(
-            freezeWindow.getRecurrence().getRecurrenceType(), firstWindowEndTime, timeZone, maxNoOfRecurrences);
-      }
       if (getCurrentTime() > lastWindowEndTimeEpoch) {
         return null;
       } else {
@@ -90,10 +84,13 @@ public class FreezeTimeUtils {
 
   private boolean currentWindowIsActive(Long windowStartTime, Long windowEndTime) {
     Long currentTime = getCurrentTime();
-    if (currentTime > windowStartTime && currentTime < windowEndTime) {
-      return true;
-    }
-    return false;
+    return currentTime > windowStartTime && currentTime < windowEndTime;
+  }
+
+  public boolean currentWindowIsActive(CurrentOrUpcomingActiveWindow currentOrUpcomingActiveWindow) {
+    return currentOrUpcomingActiveWindow != null
+        && currentWindowIsActive(
+            currentOrUpcomingActiveWindow.getStartTime(), currentOrUpcomingActiveWindow.getEndTime());
   }
 
   private Long getEpochValue(RecurrenceType offsetType, String dateString, TimeZone timeZone, int offsetValue) {

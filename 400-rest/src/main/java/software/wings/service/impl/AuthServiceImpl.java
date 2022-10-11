@@ -53,6 +53,7 @@ import io.harness.exception.UnauthorizedException;
 import io.harness.exception.WingsException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.logging.AutoLogContext;
+import io.harness.outbox.OutboxEvent;
 import io.harness.outbox.api.OutboxService;
 import io.harness.persistence.HPersistence;
 import io.harness.security.DelegateTokenAuthenticator;
@@ -1252,11 +1253,14 @@ public class AuthServiceImpl implements AuthService {
     if (Objects.nonNull(loggedInUser) && Objects.nonNull(accountIds)) {
       for (String accountIdentifier : accountIds) {
         try {
-          outboxService.save(new LoginEvent(
+          OutboxEvent outboxEvent = outboxService.save(new LoginEvent(
               accountIdentifier, loggedInUser.getUuid(), loggedInUser.getEmail(), loggedInUser.getName()));
+          log.info(
+              "NG Login Audits: for account {} and outboxEventId {} successfully saved the audit for LoginEvent to outbox",
+              accountIdentifier, outboxEvent.getId());
         } catch (Exception ex) {
-          log.warn("For account {} and userId {} the Audit trails for User Login event failed with exception: ",
-              accountIdentifier, loggedInUser.getUuid(), ex);
+          log.error("NG Login Audits: for account {} saving the LoginEvent to outbox failed with exception: ",
+              accountIdentifier, ex);
         }
       }
     }

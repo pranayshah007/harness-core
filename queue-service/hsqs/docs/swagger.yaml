@@ -1,5 +1,21 @@
 basePath: /
 definitions:
+  store.AckRequest:
+    properties:
+      consumerName:
+        type: string
+      itemID:
+        type: string
+      subTopic:
+        type: string
+      topic:
+        type: string
+    type: object
+  store.AckResponse:
+    properties:
+      itemID:
+        type: string
+    type: object
   store.DequeueItemMetadata:
     properties:
       currentRetryCount:
@@ -50,6 +66,33 @@ definitions:
         description: ItemID is the identifier of the task in the Queue
         type: string
     type: object
+  store.UnAckRequest:
+    properties:
+      itemID:
+        type: string
+      retryTimeAfterDuration:
+        description: |-
+          Retry topic + subtopic after RetryAfterTimeDuration nanoseconds
+          RetryAfterTimeDuration time.Duration `json:"retryTimeAfterDuration"`
+        type: integer
+      subTopic:
+        type: string
+      topic:
+        type: string
+      type:
+        type: integer
+    type: object
+  store.UnAckResponse:
+    properties:
+      itemID:
+        type: string
+      subTopic:
+        type: string
+      topic:
+        type: string
+      type:
+        type: integer
+    type: object
 host: localhost:9091
 info:
   contact:
@@ -64,6 +107,26 @@ info:
   title: Swagger Doc- hsqs
   version: "1.0"
 paths:
+  /v1/ack:
+    post:
+      consumes:
+      - application/json
+      description: Ack a Redis message consumed successfully
+      parameters:
+      - description: query params
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/store.AckRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/store.AckResponse'
+      summary: Ack a Redis message
   /v1/dequeue:
     post:
       consumes:
@@ -104,6 +167,26 @@ paths:
           schema:
             $ref: '#/definitions/store.EnqueueResponse'
       summary: Enqueue
+  /v1/unack:
+    post:
+      consumes:
+      - application/json
+      description: UnAck a Redis message or SubTopic to stop processing
+      parameters:
+      - description: query params
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/store.UnAckRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/store.UnAckResponse'
+      summary: UnAck a Redis message or SubTopic
 schemes:
 - http
 swagger: "2.0"

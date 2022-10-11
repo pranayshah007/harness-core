@@ -32,6 +32,10 @@ import java.util.stream.Collectors;
 
 @OwnedBy(HarnessTeam.CDC)
 public interface ServiceV2Mapper {
+  default boolean isMigrationSupported() {
+    return true;
+  }
+
   ServiceDefinition getServiceDefinition(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
       Map<CgEntityId, Set<CgEntityId>> graph, Service service, Map<CgEntityId, NGYamlFile> migratedEntities,
       List<ManifestConfigWrapper> manifests);

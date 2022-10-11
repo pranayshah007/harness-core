@@ -11,9 +11,13 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
 
+import lombok.experimental.UtilityClass;
+
 @OwnedBy(PIPELINE)
-public interface ExpansionKeysConstants {
-  String CONNECTOR_EXPANSION_KEY = "connector";
-  String SERVICE_EXPANSION_KEY = "service";
-  String ENV_EXPANSION_KEY = "environment";
+@UtilityClass
+public class ExpansionKeysConstants {
+  public String CONNECTOR_EXPANSION_KEY = "connector";
+  public String SERVICE_EXPANSION_KEY = "service";
+  public String ENV_EXPANSION_KEY = "environment";
+  public String INFRA_EXPANSION_KEY = "infrastructure";
 }

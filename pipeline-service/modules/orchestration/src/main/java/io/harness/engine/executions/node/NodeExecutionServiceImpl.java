@@ -150,6 +150,14 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
   }
 
   @Override
+  public Optional<NodeExecution> getPipelineNodeExecution(@NonNull String planExecutionId) {
+    Query query = query(where(NodeExecutionKeys.planExecutionId).is(planExecutionId))
+                      .addCriteria(where(NodeExecutionKeys.stepCategory).is(StepCategory.PIPELINE))
+                      .with(Sort.by(Direction.ASC, NodeExecutionKeys.createdAt));
+    return Optional.ofNullable(mongoTemplate.findOne(query, NodeExecution.class));
+  }
+
+  @Override
   public List<NodeExecution> findByParentIdAndStatusIn(String parentId, EnumSet<Status> flowingStatuses) {
     Query query = query(where(NodeExecutionKeys.parentId).is(parentId))
                       .addCriteria(where(NodeExecutionKeys.status).in(flowingStatuses))

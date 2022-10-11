@@ -124,4 +124,5 @@ enum EntityTypeProtoEnum {
   FREEZE = 111;
   GITOPS_UPDATE_RELEASE_REPO = 112;
   CHAOS_STEP = 113;
+
 }

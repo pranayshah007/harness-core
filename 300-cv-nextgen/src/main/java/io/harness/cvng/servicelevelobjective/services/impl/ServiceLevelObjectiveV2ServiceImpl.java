@@ -215,6 +215,9 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
     updateOperations.set(ServiceLevelObjectiveV2Keys.sloTarget,
         sloTargetTypeSLOTargetTransformerMap.get(serviceLevelObjectiveV2DTO.getSloTarget().getType())
             .getSLOTarget(serviceLevelObjectiveV2DTO.getSloTarget().getSpec()));
+    if (abstractServiceLevelObjective.getType().equals(ServiceLevelObjectiveType.SIMPLE)) {
+      updateOperations.set(SimpleServiceLevelObjectiveKeys.serviceLevelIndicators, serviceLevelIndicators);
+    }
     updateOperations.set(ServiceLevelObjectiveV2Keys.notificationRuleRefs,
         getNotificationRuleRefs(projectParams, abstractServiceLevelObjective, serviceLevelObjectiveV2DTO));
     hPersistence.update(abstractServiceLevelObjective, updateOperations);

@@ -47,7 +47,7 @@ public class JiraFieldNG {
     this.allowedValues = new ArrayList<>();
   }
 
-  private JiraFieldNG(String key, JsonNode node) {
+  JiraFieldNG(String key, JsonNode node) {
     this.key = JsonNodeUtils.getString(node, "key", key);
     this.name = JsonNodeUtils.mustGetString(node, "name");
     this.required = JsonNodeUtils.getBoolean(node, "required", false);

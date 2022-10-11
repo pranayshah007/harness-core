@@ -854,6 +854,12 @@ public class NGTemplateResource {
       @Parameter(description = TEMPLATE_PARAM_MESSAGE) @PathParam(
           "templateIdentifier") @ResourceIdentifier String templateIdentifier,
       @BeanParam GitImportInfoDTO gitImportInfoDTO, TemplateImportRequestDTO templateImportRequestDTO) {
-    return ResponseDTO.newResponse(TemplateImportSaveResponse.builder().build());
+    TemplateEntity importedTemplateFromRemote =
+        templateService.importTemplateFromRemote(accountIdentifier, orgIdentifier, projectIdentifier,
+            templateIdentifier, templateImportRequestDTO, gitImportInfoDTO.getIsForceImport());
+    return ResponseDTO.newResponse(TemplateImportSaveResponse.builder()
+                                       .templateIdentifier(importedTemplateFromRemote.getIdentifier())
+                                       .templateVersion(importedTemplateFromRemote.getVersionLabel())
+                                       .build());
   }
 }

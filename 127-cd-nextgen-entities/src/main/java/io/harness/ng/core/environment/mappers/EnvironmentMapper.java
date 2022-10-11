@@ -63,7 +63,18 @@ public class EnvironmentMapper {
       validate(ngEnvironmentConfig);
       validateEnvGlobalOverrides(ngEnvironmentConfig);
 
-      environment = toNGEnvironmentEntity(accountId, ngEnvironmentConfig, environmentRequestDTO.getColor());
+      environment = Environment.builder()
+                        .identifier(environmentRequestDTO.getIdentifier())
+                        .accountId(accountId)
+                        .orgIdentifier(environmentRequestDTO.getOrgIdentifier())
+                        .projectIdentifier(environmentRequestDTO.getProjectIdentifier())
+                        .name(environmentRequestDTO.getName())
+                        .color(Optional.ofNullable(environmentRequestDTO.getColor()).orElse(HARNESS_BLUE))
+                        .description(environmentRequestDTO.getDescription())
+                        .type(environmentRequestDTO.getType())
+                        .tags(convertToList(environmentRequestDTO.getTags()))
+                        .build();
+
       environment.setYaml(environmentRequestDTO.getYaml());
       if (isEmpty(environment.getYaml())) {
         environment.setYaml(EnvironmentMapper.toYaml(ngEnvironmentConfig));

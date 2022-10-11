@@ -1,0 +1,1 @@
+{"environment":{"name":"dev_environment","tags":{}},"allowSimultaneousDeployments":false,"infrastructureDefinition":{"type":"KubernetesDirect","spec":{"namespace":"default","releaseName":"release_name"}}}

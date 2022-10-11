@@ -1,0 +1,7 @@
+{
+  "environmentRef": "my_environment",
+  "deployToAll": false,
+  "infrastructureDefinition": {
+      "identifier": "my_infra"
+    }
+}

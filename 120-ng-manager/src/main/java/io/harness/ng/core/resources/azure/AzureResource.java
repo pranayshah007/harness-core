@@ -22,6 +22,7 @@ import io.harness.cdng.infra.yaml.Infrastructure;
 import io.harness.cdng.infra.yaml.InfrastructureDefinitionConfig;
 import io.harness.cdng.k8s.resources.azure.dtos.AzureClustersDTO;
 import io.harness.cdng.k8s.resources.azure.dtos.AzureDeploymentSlotsDTO;
+import io.harness.cdng.k8s.resources.azure.dtos.AzureImageGalleriesDTO;
 import io.harness.cdng.k8s.resources.azure.dtos.AzureLocationsDTO;
 import io.harness.cdng.k8s.resources.azure.dtos.AzureManagementGroupsDTO;
 import io.harness.cdng.k8s.resources.azure.dtos.AzureResourceGroupsDTO;
@@ -143,7 +144,23 @@ public class AzureResource {
     return ResponseDTO.newResponse(
         azureResourceService.getResourceGroups(connectorRef, orgIdentifier, projectIdentifier, subscriptionId));
   }
-
+  @GET
+  @Path("subscriptions/{subscriptionId}/resourceGroups/{resourceGroup}/imageGalleries")
+  @ApiOperation(
+      value = "Gets azure image Galleries by resource group", nickname = "GetsazureimageGalleriesbyresourcegroup")
+  public ResponseDTO<AzureImageGalleriesDTO>
+  getImageGalleries(@QueryParam("connectorRef") String azureConnectorIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @PathParam("subscriptionId") String subscriptionId, @QueryParam("fqnPath") String fqnPath,
+      @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceRef,
+      @PathParam("resourceGroup") String resourceGroup) {
+    IdentifierRef connectorRef =
+        IdentifierRefHelper.getIdentifierRef(azureConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
+    return ResponseDTO.newResponse(azureResourceService.getImageGallery(
+        connectorRef, orgIdentifier, projectIdentifier, subscriptionId, resourceGroup));
+  }
   @GET
   @Path("v2/resourceGroups")
   @ApiOperation(value = "Gets azure resource groups V2", nickname = "getAzureResourceGroupsV2")
