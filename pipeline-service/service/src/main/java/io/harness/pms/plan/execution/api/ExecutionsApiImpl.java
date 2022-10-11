@@ -25,7 +25,7 @@ import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.pms.annotations.PipelineServiceAuth;
 import io.harness.pms.gitsync.PmsGitSyncHelper;
 import io.harness.pms.ngpipeline.inputset.helpers.ValidateAndMergeHelper;
-import io.harness.pms.pipeline.PipelineEntity;
+import io.harness.pms.pipeline.PipelineEntity.PipelineEntityKeys;
 import io.harness.pms.pipeline.api.PipelinesApiUtils;
 import io.harness.pms.plan.execution.PipelineExecutor;
 import io.harness.pms.plan.execution.PlanExecutionInterruptType;
@@ -56,6 +56,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Sort.Direction;
 import org.springframework.data.mongodb.core.query.Criteria;
 
 @OwnedBy(HarnessTeam.PIPELINE)
@@ -169,8 +170,8 @@ public class ExecutionsApiImpl implements ExecutionsApi {
     Criteria criteria = pmsExecutionService.formCriteria(account, org, project, pipelineId, filterId, null, null,
         searchTerm, ExecutionsApiUtils.getStatusList(status), myDeployments, false, gitSyncBranchContext, true);
     List<String> sortingList = PipelinesApiUtils.getSorting(sort, order);
-    Pageable pageRequest = PageUtils.getPageRequest(
-        page, limit, sortingList, Sort.by(Sort.Direction.DESC, PipelineEntity.PipelineEntityKeys.lastUpdatedAt));
+    Pageable pageRequest =
+        PageUtils.getPageRequest(page, limit, sortingList, Sort.by(Direction.DESC, PipelineEntityKeys.lastUpdatedAt));
 
     // NOTE: We are getting entity git details from git context and not pipeline entity as we'll have to make DB calls
     // to fetch them and each might have a different branch context so we cannot even batch them. The only data missing

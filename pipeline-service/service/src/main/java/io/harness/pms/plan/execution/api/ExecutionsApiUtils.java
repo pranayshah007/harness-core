@@ -189,8 +189,8 @@ public class ExecutionsApiUtils {
     return yamlTemplate;
   }
 
-  public static List<ExecutionStatus> getStatusList(List<String> statusList){
-    if (statusList == null){
+  public static List<ExecutionStatus> getStatusList(List<String> statusList) {
+    if (statusList == null) {
       return null;
     }
     return statusList.stream().map(ExecutionStatus::getExecutionStatus).collect(Collectors.toList());
