@@ -18,6 +18,7 @@ import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.servicenow.ServiceNowFieldNG;
+import io.harness.servicenow.ServiceNowStagingTable;
 import io.harness.servicenow.ServiceNowTemplate;
 import io.harness.servicenow.ServiceNowTicketTypeDTO;
 import io.harness.servicenow.ServiceNowTicketTypeNG;
@@ -67,6 +68,22 @@ public class ServiceNowResource {
         Arrays.stream(ServiceNowTicketTypeNG.values())
             .map(ticketType -> new ServiceNowTicketTypeDTO(ticketType.name(), ticketType.getDisplayName()))
             .collect(Collectors.toList()));
+  }
+
+  @GET
+  @Path("stagingTable")
+  @ApiOperation(value = "Get serviceNow staging tables", nickname = "getServiceNowStagingTables")
+  public ResponseDTO<List<ServiceNowStagingTable>> getStagingTables(
+      @NotNull @QueryParam("connectorRef") String serviceNowConnectorRef,
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgId,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectId,
+      @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
+    IdentifierRef connectorRef =
+        IdentifierRefHelper.getIdentifierRef(serviceNowConnectorRef, accountId, orgId, projectId);
+    List<ServiceNowStagingTable> stagingTableList =
+        serviceNowResourceService.getStagingTableList(connectorRef, orgId, projectId);
+    return ResponseDTO.newResponse(stagingTableList);
   }
 
   @GET

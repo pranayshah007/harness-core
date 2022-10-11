@@ -30,6 +30,7 @@ import io.harness.encryption.Scope;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.exception.InvalidRequestException;
 import io.harness.git.model.ChangeType;
+import io.harness.gitaware.helper.GitImportInfoDTO;
 import io.harness.gitsync.interceptor.GitEntityCreateInfoDTO;
 import io.harness.gitsync.interceptor.GitEntityDeleteInfoDTO;
 import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
@@ -52,7 +53,6 @@ import io.harness.ng.core.template.TemplateWithInputsResponseDTO;
 import io.harness.pms.contracts.service.VariableMergeResponseProto;
 import io.harness.pms.contracts.service.VariablesServiceGrpc.VariablesServiceBlockingStub;
 import io.harness.pms.contracts.service.VariablesServiceRequest;
-import io.harness.pms.contracts.service.VariablesServiceRequestV2;
 import io.harness.pms.mappers.VariablesResponseDtoMapper;
 import io.harness.pms.variables.VariableMergeServiceResponse;
 import io.harness.remote.client.NGRestUtils;
@@ -63,6 +63,8 @@ import io.harness.template.beans.PageParamsDTO;
 import io.harness.template.beans.PermissionTypes;
 import io.harness.template.beans.TemplateDeleteListRequestDTO;
 import io.harness.template.beans.TemplateFilterProperties;
+import io.harness.template.beans.TemplateImportRequestDTO;
+import io.harness.template.beans.TemplateImportSaveResponse;
 import io.harness.template.beans.TemplateResponseDTO;
 import io.harness.template.beans.TemplateWrapperResponseDTO;
 import io.harness.template.beans.yaml.NGTemplateConfig;
@@ -76,6 +78,8 @@ import io.harness.template.mappers.NGTemplateDtoMapper;
 import io.harness.template.services.NGTemplateService;
 import io.harness.template.services.NGTemplateServiceHelper;
 import io.harness.template.services.TemplateMergeService;
+import io.harness.template.services.TemplateVariableCreatorFactory;
+import io.harness.template.services.TemplateVariableCreatorService;
 import io.harness.utils.PageUtils;
 
 import com.google.inject.Inject;
@@ -163,6 +167,7 @@ public class NGTemplateResource {
   private final TemplateYamlConversionHelper templateYamlConversionHelper;
   private final TemplateReferenceHelper templateReferenceHelper;
   @Inject CustomDeploymentResourceClient customDeploymentResourceClient;
+  @Inject TemplateVariableCreatorFactory templateVariableCreatorFactory;
 
   public static final String TEMPLATE_PARAM_MESSAGE = "Template Identifier for the entity";
 
@@ -764,6 +769,7 @@ public class NGTemplateResource {
             description = "Returns all Variables used that are valid to be used as expression in template.")
       })
   @ApiOperation(value = "Create variables for Template", nickname = "createVariablesV2")
+  @Hidden
   public ResponseDTO<VariableMergeServiceResponse>
   createVariablesV2(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE,
                         required = true) @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
@@ -778,31 +784,10 @@ public class NGTemplateResource {
     TemplateEntity templateEntity =
         NGTemplateDtoMapper.toTemplateEntity(accountId, orgId, projectId, appliedTemplateYaml);
     String entityYaml = templateYamlConversionHelper.convertTemplateYamlToEntityYaml(templateEntity);
-    if (templateEntity.getTemplateEntityType().getOwnerTeam().equals(PIPELINE)) {
-      VariablesServiceRequestV2.Builder requestBuilder = VariablesServiceRequestV2.newBuilder();
-      requestBuilder.setAccountId(accountId);
-      if (EmptyPredicate.isNotEmpty(orgId)) {
-        requestBuilder.setOrgId(orgId);
-      }
-      if (EmptyPredicate.isNotEmpty(projectId)) {
-        requestBuilder.setProjectId(projectId);
-      }
-      requestBuilder.setYaml(entityYaml);
-      VariablesServiceRequestV2 request = requestBuilder.build();
-      VariableMergeResponseProto variables = variablesServiceBlockingStub.getVariablesV2(request);
-      VariableMergeServiceResponse variableMergeServiceResponse = VariablesResponseDtoMapper.toDto(variables);
-      return ResponseDTO.newResponse(variableMergeServiceResponse);
-    } else if (templateEntity.getTemplateEntityType().equals(TemplateEntityType.CUSTOM_DEPLOYMENT_TEMPLATE)) {
-      CustomDeploymentYamlRequestDTO requestDTO =
-          CustomDeploymentYamlRequestDTO.builder().entityYaml(entityYaml).build();
-      CustomDeploymentVariableResponseDTO customDeploymentVariableResponseDTO =
-          NGRestUtils.getResponse(customDeploymentResourceClient.getExpressionVariables(requestDTO));
-      return ResponseDTO.newResponse(
-          CustomDeploymentVariablesUtils.getVariablesFromResponse(customDeploymentVariableResponseDTO));
-    } else {
-      return ResponseDTO.newResponse(
-          YamlVariablesUtils.getVariablesFromYaml(entityYaml, templateEntity.getTemplateEntityType()));
-    }
+    TemplateVariableCreatorService ngTemplateVariableService =
+        templateVariableCreatorFactory.getVariablesService(templateEntity.getTemplateEntityType());
+    return ResponseDTO.newResponse(ngTemplateVariableService.getVariables(
+        accountId, orgId, projectId, entityYaml, templateEntity.getTemplateEntityType()));
   }
 
   @GET
@@ -850,5 +835,31 @@ public class NGTemplateResource {
       @NotNull TemplateReferenceRequestDTO templateReferenceRequestDTO) {
     return ResponseDTO.newResponse(templateReferenceHelper.getNestedTemplateReferences(
         accountId, orgId, projectId, templateReferenceRequestDTO.getYaml(), false));
+  }
+
+  @POST
+  @Path("/import/{templateIdentifier}")
+  @ApiOperation(value = "import template from git", nickname = "importTemplate")
+  @Operation(operationId = "importTemplate", summary = "import template from git",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "import template from git")
+      })
+  @Hidden
+  public ResponseDTO<TemplateImportSaveResponse>
+  importTemplateFromGit(@NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @Parameter(description = TEMPLATE_PARAM_MESSAGE) @PathParam(
+          "templateIdentifier") @ResourceIdentifier String templateIdentifier,
+      @BeanParam GitImportInfoDTO gitImportInfoDTO, TemplateImportRequestDTO templateImportRequestDTO) {
+    TemplateEntity importedTemplateFromRemote =
+        templateService.importTemplateFromRemote(accountIdentifier, orgIdentifier, projectIdentifier,
+            templateIdentifier, templateImportRequestDTO, gitImportInfoDTO.getIsForceImport());
+    return ResponseDTO.newResponse(TemplateImportSaveResponse.builder()
+                                       .templateIdentifier(importedTemplateFromRemote.getIdentifier())
+                                       .templateVersion(importedTemplateFromRemote.getVersionLabel())
+                                       .build());
   }
 }

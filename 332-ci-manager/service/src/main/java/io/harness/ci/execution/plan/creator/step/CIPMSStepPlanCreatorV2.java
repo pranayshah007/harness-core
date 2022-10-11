@@ -133,6 +133,7 @@ public abstract class CIPMSStepPlanCreatorV2<T extends CIAbstractStepNode> exten
                         AbsoluteSdkTimeoutTrackerParameters.builder().timeout(getTimeoutString(stepElement)).build())
                     .build())
             .skipUnresolvedExpressionsCheck(stepElement.getStepSpecType().skipUnresolvedExpressionsCheck())
+            .expressionMode(stepElement.getStepSpecType().getExpressionMode())
             .build();
     return PlanCreationResponse.builder()
         .node(stepPlanNode.getUuid(), stepPlanNode)
@@ -259,12 +260,18 @@ public abstract class CIPMSStepPlanCreatorV2<T extends CIAbstractStepNode> exten
           adviserObtainmentList.add(getManualInterventionAdviserObtainment(
               failureTypes, adviserObtainmentBuilder, actionConfig, actionUnderManualIntervention));
           break;
-        case PROCEED_WITH_DEFAULT_VALUE:
+        case PROCEED_WITH_DEFAULT_VALUES:
           adviserObtainmentList.add(
               adviserObtainmentBuilder.setType(ProceedWithDefaultValueAdviser.ADVISER_TYPE)
                   .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(
                       ProceedWithDefaultAdviserParameters.builder().applicableFailureTypes(failureTypes).build())))
                   .build());
+          break;
+        case PIPELINE_ROLLBACK:
+          rollbackParameters = getRollbackParameters(currentField, failureTypes, RollbackStrategy.PIPELINE_ROLLBACK);
+          adviserObtainmentList.add(adviserObtainmentBuilder.setType(OnFailRollbackAdviser.ADVISER_TYPE)
+                                        .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(rollbackParameters)))
+                                        .build());
           break;
         default:
           Switch.unhandled(actionType);
@@ -421,6 +428,8 @@ public abstract class CIPMSStepPlanCreatorV2<T extends CIAbstractStepNode> exten
         RollbackStrategy.STAGE_ROLLBACK, stageNodeId + NGCommonUtilPlanCreationConstants.COMBINED_ROLLBACK_ID_SUFFIX);
     rollbackStrategyStringMap.put(
         RollbackStrategy.STEP_GROUP_ROLLBACK, GenericPlanCreatorUtils.getStepGroupRollbackStepsNodeId(currentField));
+    rollbackStrategyStringMap.put(
+        RollbackStrategy.PIPELINE_ROLLBACK, GenericPlanCreatorUtils.getRollbackStageNodeId(currentField));
     return rollbackStrategyStringMap;
   }
 }

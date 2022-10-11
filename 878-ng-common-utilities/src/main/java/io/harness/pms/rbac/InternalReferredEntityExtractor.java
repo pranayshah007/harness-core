@@ -32,7 +32,8 @@ public class InternalReferredEntityExtractor {
   private static final int MAX_PAGE_SIZE = 50;
 
   private static final Map<EntityType, EntityType> referredByEntityTypeToReferredEntityTypeMap =
-      Map.of(EntityType.CONNECTORS, EntityType.SECRETS, EntityType.SERVICE, EntityType.CONNECTORS);
+      Map.of(EntityType.CONNECTORS, EntityType.SECRETS, EntityType.SERVICE, EntityType.CONNECTORS,
+          EntityType.INFRASTRUCTURE, EntityType.CONNECTORS);
 
   @Inject private EntitySetupUsageClient entitySetupUsageClient;
 

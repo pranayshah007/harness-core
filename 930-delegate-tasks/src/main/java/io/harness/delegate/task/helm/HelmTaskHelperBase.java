@@ -254,12 +254,15 @@ public class HelmTaskHelperBase {
         .build();
   }
 
-  public void processHelmReleaseHistOutput(ReleaseInfo releaseInfo) {
+  public void processHelmReleaseHistOutput(ReleaseInfo releaseInfo, boolean ignoreHelmHistFailure) {
+    String msg = "Release History command passed but there is an issue with latest release, details: \n"
+        + releaseInfo.getDescription();
     if (checkIfFailed(releaseInfo.getDescription()) || checkIfFailed(releaseInfo.getStatus())) {
-      throw new HelmClientException(
-          "Release History command passed but there is an issue with latest release, details: \n"
-              + releaseInfo.getDescription(),
-          USER, HelmCliCommandType.RELEASE_HISTORY);
+      if (!ignoreHelmHistFailure) {
+        throw new HelmClientException(msg, USER, HelmCliCommandType.RELEASE_HISTORY);
+      }
+      log.error(msg);
+      log.info("Deliberately ignoring this error and proceeding with install/upgrade \n");
     }
   }
 
@@ -468,11 +471,13 @@ public class HelmTaskHelperBase {
                                   .normalize()
                                   .toAbsolutePath()
                                   .toString();
-
-    createDirectoryIfDoesNotExist(workingDirectory);
-    waitForDirectoryToBeAccessibleOutOfProcess(workingDirectory, 10);
-
+    createAndWaitForDir(workingDirectory);
     return workingDirectory;
+  }
+
+  public void createAndWaitForDir(String dir) throws IOException {
+    createDirectoryIfDoesNotExist(dir);
+    waitForDirectoryToBeAccessibleOutOfProcess(dir, 10);
   }
 
   public void removeRepo(String repoName, String workingDirectory, HelmVersion helmVersion, long timeoutInMillis) {
@@ -959,7 +964,7 @@ public class HelmTaskHelperBase {
     } else {
       workingDirectory = getHelmLocalRepositoryCompletePath(
           repoName, helmChartManifestDelegateConfig.getChartName(), helmChartManifestDelegateConfig.getChartVersion());
-      createDirectoryIfDoesNotExist(workingDirectory);
+      createAndWaitForDir(workingDirectory);
       populateChartToLocalHelmRepo(helmChartManifestDelegateConfig, timeoutInMillis, logCallback, workingDirectory);
     }
 
@@ -976,7 +981,7 @@ public class HelmTaskHelperBase {
     }
   }
 
-  private void populateChartToLocalHelmRepo(HelmChartManifestDelegateConfig helmChartConfig, long timeoutInMillis,
+  public void populateChartToLocalHelmRepo(HelmChartManifestDelegateConfig helmChartConfig, long timeoutInMillis,
       LogCallback logCallback, String workingDirectory) throws Exception {
     try {
       String repoName = getRepoNameNG(helmChartConfig.getStoreDelegateConfig());
@@ -1174,10 +1179,7 @@ public class HelmTaskHelperBase {
 
   public String createDirectoryIfNotExist(String directoryBase) throws IOException {
     String workingDirectory = Paths.get(directoryBase).normalize().toAbsolutePath().toString();
-
-    createDirectoryIfDoesNotExist(workingDirectory);
-    waitForDirectoryToBeAccessibleOutOfProcess(workingDirectory, 10);
-
+    createAndWaitForDir(workingDirectory);
     return workingDirectory;
   }
 

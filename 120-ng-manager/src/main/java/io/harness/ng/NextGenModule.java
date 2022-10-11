@@ -31,6 +31,7 @@ import static io.harness.eventsframework.EventsFrameworkMetadataConstants.CONNEC
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ENVIRONMENT_GROUP_ENTITY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.PROJECT_ENTITY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.SECRET_ENTITY;
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.TEMPLATE_ENTITY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.USER_ENTITY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.USER_SCOPE_RECONCILIATION;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.VARIABLE_ENTITY;
@@ -61,6 +62,7 @@ import io.harness.callback.MongoDatabase;
 import io.harness.ccm.license.remote.CeLicenseClientModule;
 import io.harness.cd.license.CdLicenseUsageCgModule;
 import io.harness.cdng.NGModule;
+import io.harness.cdng.customDeployment.EventListener.CustomDeploymentEntityCRUDStreamEventListener;
 import io.harness.cdng.fileservice.FileServiceClient;
 import io.harness.cdng.fileservice.FileServiceClientFactory;
 import io.harness.cdng.jenkins.jenkinsstep.JenkinsBuildStepHelperService;
@@ -84,6 +86,7 @@ import io.harness.encryptors.clients.LocalEncryptor;
 import io.harness.enforcement.EnforcementModule;
 import io.harness.enforcement.client.EnforcementClientModule;
 import io.harness.entitysetupusageclient.EntitySetupUsageClientModule;
+import io.harness.eventsframework.EventsFrameworkConfiguration;
 import io.harness.eventsframework.EventsFrameworkConstants;
 import io.harness.eventsframework.EventsFrameworkMetadataConstants;
 import io.harness.exception.exceptionmanager.ExceptionModule;
@@ -93,7 +96,11 @@ import io.harness.file.NGFileServiceModule;
 import io.harness.filestore.NgFileStoreModule;
 import io.harness.filestore.outbox.FileEventHandler;
 import io.harness.freeze.service.FreezeCRUDService;
+import io.harness.freeze.service.FreezeEvaluateService;
+import io.harness.freeze.service.FreezeSchemaService;
 import io.harness.freeze.service.impl.FreezeCRUDServiceImpl;
+import io.harness.freeze.service.impl.FreezeEvaluateServiceImpl;
+import io.harness.freeze.service.impl.FreezeSchemaServiceImpl;
 import io.harness.gitops.GitopsResourceClientModule;
 import io.harness.gitsync.GitSyncConfigClientModule;
 import io.harness.gitsync.GitSyncModule;
@@ -182,6 +189,8 @@ import io.harness.ng.core.outbox.TokenEventHandler;
 import io.harness.ng.core.outbox.UserEventHandler;
 import io.harness.ng.core.outbox.UserGroupEventHandler;
 import io.harness.ng.core.outbox.VariableEventHandler;
+import io.harness.ng.core.refresh.service.EntityRefreshService;
+import io.harness.ng.core.refresh.service.EntityRefreshServiceImpl;
 import io.harness.ng.core.schema.YamlBaseUrlService;
 import io.harness.ng.core.services.OrganizationService;
 import io.harness.ng.core.services.ProjectService;
@@ -473,8 +482,8 @@ public class NextGenModule extends AbstractModule {
     install(new NGSettingModule(appConfig));
     install(new AbstractPersistenceTracerModule() {
       @Override
-      protected RedisConfig redisConfigProvider() {
-        return appConfig.getEventsFrameworkConfiguration().getRedisConfig();
+      protected EventsFrameworkConfiguration eventsFrameworkConfiguration() {
+        return appConfig.getEventsFrameworkConfiguration();
       }
 
       @Override
@@ -620,6 +629,8 @@ public class NextGenModule extends AbstractModule {
         appConfig.getNextGenConfig().getManagerServiceSecret(), NG_MANAGER.getServiceId()));
     bind(NgGlobalKmsService.class).to(NgGlobalKmsServiceImpl.class);
     bind(FreezeCRUDService.class).to(FreezeCRUDServiceImpl.class);
+    bind(FreezeEvaluateService.class).to(FreezeEvaluateServiceImpl.class);
+    bind(FreezeSchemaService.class).to(FreezeSchemaServiceImpl.class);
     install(new ProviderModule() {
       @Provides
       @Singleton
@@ -769,6 +780,7 @@ public class NextGenModule extends AbstractModule {
     bind(PollingService.class).to(PollingServiceImpl.class);
     bind(PollingPerpetualTaskService.class).to(PollingPerpetualTaskServiceImpl.class);
     bind(JenkinsBuildStepHelperService.class).to(JenkinsBuildStepHelperServiceImpl.class);
+    bind(EntityRefreshService.class).to(EntityRefreshServiceImpl.class);
     if (!appConfig.getShouldConfigureWithPMS().equals(TRUE)) {
       bind(EngineExpressionService.class).to(NoopEngineExpressionServiceImpl.class);
     }
@@ -845,6 +857,11 @@ public class NextGenModule extends AbstractModule {
         .bind(CustomEncryptor.class)
         .annotatedWith(Names.named(Encryptors.CUSTOM_ENCRYPTOR_NG.getName()))
         .to(NGManagerCustomEncryptor.class);
+
+    binder()
+        .bind(VaultEncryptor.class)
+        .annotatedWith(Names.named(Encryptors.GCP_VAULT_ENCRYPTOR.getName()))
+        .to(NGManagerVaultEncryptor.class);
   }
 
   private void registerOutboxEventHandlers() {
@@ -884,6 +901,9 @@ public class NextGenModule extends AbstractModule {
     bind(MessageListener.class)
         .annotatedWith(Names.named(VARIABLE_ENTITY + ENTITY_CRUD))
         .to(VariableEntityCRUDStreamListener.class);
+    bind(MessageListener.class)
+        .annotatedWith(Names.named(TEMPLATE_ENTITY + ENTITY_CRUD))
+        .to(CustomDeploymentEntityCRUDStreamEventListener.class);
     bind(MessageListener.class).annotatedWith(Names.named(INSTANCE_STATS)).to(InstanceStatsEventListener.class);
     bind(MessageListener.class)
         .annotatedWith(Names.named(EventsFrameworkMetadataConstants.USER_GROUP + ENTITY_CRUD))

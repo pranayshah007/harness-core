@@ -65,7 +65,7 @@ public class GcrPollingItemGeneratorTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGcrPollingItemGeneration_pipelineContainsFixedValuesExceptTag() throws Exception {
     TriggerDetails triggerDetails =
-        ngTriggerElementMapper.toTriggerDetails("acc", "org", "proj", ngTriggerYaml_artifact_gcr);
+        ngTriggerElementMapper.toTriggerDetails("acc", "org", "proj", ngTriggerYaml_artifact_gcr, false);
     triggerDetails.getNgTriggerEntity().getMetadata().getBuildMetadata().setPollingConfig(
         PollingConfig.builder().signature("sig1").build());
     BuildTriggerOpsData buildTriggerOpsData = buildTriggerHelper.generateBuildTriggerOpsDataForArtifact(
@@ -86,7 +86,7 @@ public class GcrPollingItemGeneratorTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGcrPollingItemGeneration_pipelineContainsAllRuntimeInputs() throws Exception {
     TriggerDetails triggerDetails =
-        ngTriggerElementMapper.toTriggerDetails("acc", "org", "proj", ngTriggerYaml_artifact_gcr);
+        ngTriggerElementMapper.toTriggerDetails("acc", "org", "proj", ngTriggerYaml_artifact_gcr, false);
     triggerDetails.getNgTriggerEntity().getMetadata().getBuildMetadata().setPollingConfig(
         PollingConfig.builder().signature("sig1").build());
     BuildTriggerOpsData buildTriggerOpsData = buildTriggerHelper.generateBuildTriggerOpsDataForArtifact(

@@ -23,6 +23,7 @@ import io.harness.beans.yaml.extended.TIBuildTool;
 import io.harness.beans.yaml.extended.TIDotNetBuildEnvName;
 import io.harness.beans.yaml.extended.TIDotNetVersion;
 import io.harness.beans.yaml.extended.TILanguage;
+import io.harness.beans.yaml.extended.TISplitStrategy;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.beans.yaml.extended.infrastrucutre.k8.Toleration;
 import io.harness.beans.yaml.extended.platform.ArchType;
@@ -110,6 +111,14 @@ public class RunTimeInputHandler {
       return null;
     } else {
       return TIBuildTool.fromString(buildTool.fetchFinalValue().toString()).getYamlName();
+    }
+  }
+
+  public static String resolveSplitStrategy(ParameterField<TISplitStrategy> splitStrategy) {
+    if (splitStrategy == null || splitStrategy.isExpression() || splitStrategy.getValue() == null) {
+      return null;
+    } else {
+      return TISplitStrategy.fromString(splitStrategy.fetchFinalValue().toString()).getYamlName();
     }
   }
 

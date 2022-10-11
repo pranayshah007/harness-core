@@ -32,7 +32,7 @@ import org.springframework.data.annotation.TypeAlias;
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 @JsonTypeName(StepSpecTypeConstants.ECS_CANARY_DELETE)
-@TypeAlias("EcsCanaryDeleteStepNode")
+@TypeAlias("ecsCanaryDeleteStepNode")
 @RecasterAlias("io.harness.cdng.ecs.EcsCanaryDeleteStepNode")
 public class EcsCanaryDeleteStepNode extends CdAbstractStepNode {
   @JsonProperty("type") @NotNull EcsCanaryDeleteStepNode.StepType type = StepType.EcsCanaryDelete;

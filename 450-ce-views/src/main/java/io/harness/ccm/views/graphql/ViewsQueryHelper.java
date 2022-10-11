@@ -580,4 +580,18 @@ public class ViewsQueryHelper {
         .value(filterTime)
         .build();
   }
+
+  public String getSearchValueFromBusinessMappingFilter(List<QLCEViewFilterWrapper> filters, String businessMappingId) {
+    String searchString = "";
+    for (QLCEViewFilterWrapper filter : filters) {
+      if (filter.getIdFilter() != null && filter.getIdFilter().getField().getFieldId().equals(businessMappingId)) {
+        try {
+          searchString = filter.getIdFilter().getValues()[0];
+        } catch (Exception e) {
+          log.info("Error while fetching business mapping search value: ", e);
+        }
+      }
+    }
+    return searchString;
+  }
 }

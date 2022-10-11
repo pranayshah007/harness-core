@@ -97,9 +97,14 @@ public interface Constants {
   String ACR = "Acr";
   String JENKINS = "Jenkins";
   String AMAZON_S3 = "AmazonS3";
+  String CUSTOM_ARTIFACT = "CustomArtifact";
   String GOOGLE_ARTIFACT_REGISTRY = "GoogleArtifactRegistry";
   String GITHUB_PACKAGES = "GithubPackageRegistry";
 
   String MANIFEST_VERSION = "<+trigger.manifest.version>";
   String ARTIFACT_VERSION = "<+trigger.artifact.build>";
+
+  String TRIGGER_CATEGORY = "Category of this Trigger.";
+  String TRIGGER_TYPE_LIST_BY_CATEGORY = "List of Trigger types corresponding to a specific category.";
+  String TRIGGER_CATALOGUE_LIST = "List of Trigger category and Trigger types corresponding to a specific category.";
 }

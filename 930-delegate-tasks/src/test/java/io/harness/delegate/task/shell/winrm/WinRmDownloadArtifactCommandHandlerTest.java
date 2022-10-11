@@ -73,7 +73,8 @@ public class WinRmDownloadArtifactCommandHandlerTest {
 
   @Before
   public void setup() {
-    when(winRmExecutorFactoryNG.getExecutor(any(), anyBoolean(), any(), any())).thenReturn(defaultWinRmExecutor);
+    when(winRmExecutorFactoryNG.getExecutor(any(), anyBoolean(), anyBoolean(), any(), any()))
+        .thenReturn(defaultWinRmExecutor);
     when(artifactHandlers.get(ARTIFACTORY)).thenReturn(artifactoryArtifactDownloadHandler);
     when(artifactoryArtifactDownloadHandler.getCommandString(any(), any(), any())).thenReturn(COMMAND_STRING);
     when(defaultWinRmExecutor.getLogCallback()).thenReturn(new NoopExecutionCallback());

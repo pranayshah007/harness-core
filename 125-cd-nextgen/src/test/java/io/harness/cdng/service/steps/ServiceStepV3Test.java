@@ -26,6 +26,7 @@ import io.harness.cdng.manifest.yaml.kinds.K8sManifest;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.data.structure.UUIDGenerator;
+import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnresolvedExpressionsException;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.services.EnvironmentService;
@@ -117,6 +118,24 @@ public class ServiceStepV3Test {
   @Test
   @Owner(developers = OwnerRule.YOGESH)
   @Category(UnitTests.class)
+  public void executeSyncServiceTypeMismatch() {
+    // SSH Service
+    final ServiceEntity serviceEntity = testServiceEntity();
+    mockService(serviceEntity);
+
+    assertThatExceptionOfType(InvalidRequestException.class)
+        .isThrownBy(()
+                        -> step.obtainChildren(buildAmbiance(),
+                            ServiceStepV3Parameters.builder()
+                                .serviceRef(ParameterField.createValueField("svcid"))
+                                .deploymentType(ServiceDefinitionType.ECS)
+                                .build(),
+                            null));
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.YOGESH)
+  @Category(UnitTests.class)
   public void executeSync() {
     final ServiceEntity serviceEntity = testServiceEntity();
     final Environment environment = testEnvEntity();
@@ -157,6 +176,30 @@ public class ServiceStepV3Test {
     assertThat(envOutcome.getIdentifier()).isEqualTo(environment.getIdentifier());
     assertThat(envOutcome.getName()).isEqualTo(environment.getName());
     assertThat(variablesSweepingOutput.keySet()).containsExactly("numbervar1", "secretvar", "numbervar", "stringvar");
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.YOGESH)
+  @Category(UnitTests.class)
+  public void executeWithOldEnv() {
+    final ServiceEntity serviceEntity = testServiceEntity();
+    final Environment environment = testEnvEntity();
+
+    mockService(serviceEntity);
+
+    // old env without yaml
+    environment.setYaml(null);
+    mockEnv(environment);
+
+    ChildrenExecutableResponse response = step.obtainChildren(buildAmbiance(),
+        ServiceStepV3Parameters.builder()
+            .serviceRef(ParameterField.createValueField(serviceEntity.getIdentifier()))
+            .envRef(ParameterField.createValueField(environment.getIdentifier()))
+            .childrenNodeIds(new ArrayList<>())
+            .build(),
+        null);
+
+    assertThat(response.getLogKeysCount()).isEqualTo(1);
   }
 
   @Test

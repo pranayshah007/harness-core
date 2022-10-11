@@ -1,3 +1,10 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.ng.core.remote;
 
 import static io.harness.exception.WingsException.USER;
@@ -23,7 +30,6 @@ import io.harness.security.SecurityContextBuilder;
 import io.harness.spec.server.ng.ProjectSecretApi;
 import io.harness.spec.server.ng.model.SecretRequest;
 import io.harness.spec.server.ng.model.SecretResponse;
-import io.harness.spec.server.ng.model.ValidateSecretSlugResponse;
 
 import com.google.inject.Inject;
 import java.io.InputStream;
@@ -88,8 +94,8 @@ public class ProjectSecretApiImpl implements ProjectSecretApi {
   }
 
   @Override
-  public Response getProjectScopedSecrets(String org, String project, String account, List<String> secret,
-      List<String> type, Boolean recursive, String searchTerm, Integer page, Integer limit) {
+  public Response getProjectScopedSecrets(String org, String project, List<String> secret, List<String> type,
+      Boolean recursive, String searchTerm, Integer page, Integer limit, String account) {
     return getSecrets(account, org, project, secret, type, recursive, searchTerm, page, limit);
   }
 
@@ -116,16 +122,6 @@ public class ProjectSecretApiImpl implements ProjectSecretApi {
     return Response.ok()
         .entity(ngSecretService.updateFile(account, org, project, secret, secretDto, fileInputStream))
         .build();
-  }
-
-  @Override
-  public Response validateUniqueProjectScopedSecretSlug(String org, String project, String secret, String account) {
-    return validateSecretSlug(secret, account, org, project);
-  }
-
-  private Response validateSecretSlug(String secret, String account, String org, String project) {
-    boolean isUnique = ngSecretService.validateTheIdentifierIsUnique(account, org, project, secret);
-    return Response.ok().entity(new ValidateSecretSlugResponse().valid(isUnique)).build();
   }
 
   private Response updateSecret(
@@ -175,9 +171,10 @@ public class ProjectSecretApiImpl implements ProjectSecretApi {
       Boolean recursive, String searchTerm, Integer page, Integer limit) {
     List<SecretType> secretTypes = secretApiUtils.toSecretTypes(type);
 
-    List<SecretResponseWrapper> content = getNGPageResponse(
-        ngSecretService.list(account, org, project, secret, secretTypes, recursive, searchTerm, page, limit, null))
-                                              .getContent();
+    List<SecretResponseWrapper> content =
+        getNGPageResponse(ngSecretService.list(account, org, project, secret, secretTypes, recursive, searchTerm, page,
+                              limit, null, false))
+            .getContent();
 
     List<SecretResponse> secretResponse =
         content.stream().map(secretApiUtils::toSecretResponse).collect(Collectors.toList());

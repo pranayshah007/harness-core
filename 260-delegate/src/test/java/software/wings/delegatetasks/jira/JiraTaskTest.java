@@ -9,6 +9,7 @@ package software.wings.delegatetasks.jira;
 
 import static io.harness.rule.OwnerRule.AGORODETKI;
 import static io.harness.rule.OwnerRule.LUCAS_SALES;
+import static io.harness.rule.OwnerRule.RAFAEL;
 import static io.harness.rule.OwnerRule.ROHITKARELIA;
 import static io.harness.rule.OwnerRule.UTKARSH_CHOUBEY;
 
@@ -46,6 +47,7 @@ import io.harness.jira.JiraCustomFieldValue;
 import io.harness.jira.JiraField;
 import io.harness.jira.JiraInstanceData;
 import io.harness.jira.JiraIssueNG;
+import io.harness.jira.JiraRestClient;
 import io.harness.jira.JiraUserData;
 import io.harness.rule.Owner;
 
@@ -126,6 +128,7 @@ public class JiraTaskTest extends CategoryTest {
   @Mock private Issue issue;
   @Mock private JiraIssueNG issueNG;
   @Mock private JiraClient jiraClient;
+  @Mock private JiraRestClient jiraRestClient;
   @Mock private io.harness.jira.JiraClient jiraNGClient;
   @Mock private Project project;
   @Mock private FluentUpdate update;
@@ -258,9 +261,11 @@ public class JiraTaskTest extends CategoryTest {
     List<JiraUserData> userDataList = Arrays.asList(new JiraUserData("accountId", "Lucas", true, "id"));
 
     doReturn(jiraNGClient).when(spyJiraTask).getNGJiraClient(taskParameters);
-    doReturn(issueNG).when(jiraNGClient).createIssue(any(), any(), anyMap(), anyBoolean());
+    doReturn(issueNG).when(jiraNGClient).createIssue(any(), any(), anyMap(), anyBoolean(), anyBoolean());
     doReturn(userDataList).when(jiraNGClient).getUsers(any(), any(), any());
-    doThrow(new JiraClientException("error")).when(jiraNGClient).createIssue(any(), any(), anyMap(), anyBoolean());
+    doThrow(new JiraClientException("error"))
+        .when(jiraNGClient)
+        .createIssue(any(), any(), anyMap(), anyBoolean(), anyBoolean());
 
     DelegateResponseData delegateResponseData = spyJiraTask.run(new Object[] {taskParameters});
     assertThat(delegateResponseData).hasFieldOrPropertyWithValue("executionStatus", ExecutionStatus.FAILED);
@@ -276,9 +281,11 @@ public class JiraTaskTest extends CategoryTest {
     List<JiraUserData> userDataList = Arrays.asList(new JiraUserData("accountId", "Lucas", true, "id"));
 
     doReturn(jiraNGClient).when(spyJiraTask).getNGJiraClient(taskParameters);
-    doReturn(issueNG).when(jiraNGClient).createIssue(any(), any(), anyMap(), anyBoolean());
+    doReturn(issueNG).when(jiraNGClient).createIssue(any(), any(), anyMap(), anyBoolean(), anyBoolean());
     doReturn(userDataList).when(jiraNGClient).getUsers(any(), any(), any());
-    doReturn(mock(JiraIssueNG.class)).when(jiraNGClient).createIssue(any(), any(), anyMap(), anyBoolean());
+    doReturn(mock(JiraIssueNG.class))
+        .when(jiraNGClient)
+        .createIssue(any(), any(), anyMap(), anyBoolean(), anyBoolean());
     JiraExecutionData jiraExecutionData =
         JiraExecutionData.builder()
             .jiraAction(JiraAction.CREATE_TICKET_NG)
@@ -292,7 +299,8 @@ public class JiraTaskTest extends CategoryTest {
     DelegateResponseData delegateResponseData = spyJiraTask.run(new Object[] {taskParameters});
     verify(jiraNGClient).getUsers(taskParameters.getUserQuery(), null, null);
     verify(jiraNGClient)
-        .createIssue(eq(taskParameters.getProject()), eq(taskParameters.getIssueType()), anyMap(), anyBoolean());
+        .createIssue(
+            eq(taskParameters.getProject()), eq(taskParameters.getIssueType()), anyMap(), anyBoolean(), anyBoolean());
     assertThat(delegateResponseData).isEqualToComparingFieldByField(jiraExecutionData);
   }
   @Test
@@ -325,6 +333,25 @@ public class JiraTaskTest extends CategoryTest {
     verify(jiraNGClient).getUsers(taskParameters.getUserQuery(), null, null);
     assertThat(delegateResponseData).isEqualToComparingFieldByField(jiraExecutionData);
   }
+
+  @Test
+  @Owner(developers = RAFAEL)
+  @Category(UnitTests.class)
+  public void shouldExtractTimeTrackingSuccessfully() {
+    JiraTaskParameters taskParameters = getTaskParams(JiraAction.CREATE_TICKET_NG);
+    Map<String, JiraCustomFieldValue> customFields = new HashMap<>();
+    Map<String, String> userTypeFields = null;
+    customFields.put("TimeTracking:OriginalEstimate", new JiraCustomFieldValue("timetracking", "1d 2h"));
+    customFields.put("TimeTracking:RemainingEstimate", new JiraCustomFieldValue("timetracking", "4h"));
+    taskParameters.setCustomFields(customFields);
+
+    jiraTask.setCustomFieldsOnCreate(taskParameters, create);
+    Map<String, String> extracted = jiraTask.extractFieldsFromCGParameters(taskParameters, userTypeFields);
+
+    assertThat(extracted.get("Original Estimate")).isEqualTo("1d 2h");
+    assertThat(extracted.get("Remaining Estimate")).isEqualTo("4h");
+  }
+
   @Test
   @Owner(developers = AGORODETKI)
   @Category(UnitTests.class)
@@ -932,6 +959,7 @@ public class JiraTaskTest extends CategoryTest {
   @Category(UnitTests.class)
   public void shouldReturnSuccessfulExecutionForCheckJiraApproval() throws JiraException {
     JiraTaskParameters taskParameters = getTaskParams(JiraAction.CHECK_APPROVAL);
+
     doReturn(jiraClient).when(spyJiraTask).getJiraClient(taskParameters);
     when(jiraClient.getIssue(JIRA_ISSUE_ID)).thenReturn(issue);
     when(issue.getField(STATUS)).thenReturn(singletonMap("name", "To Do"));

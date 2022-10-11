@@ -1,0 +1,27 @@
+{
+  "environment" : {
+    "name" : "dev_environment",
+    "tags" : { }
+  },
+  "allowSimultaneousDeployments" : false,
+  "infrastructureDefinition" : {
+    "type" : "KubernetesDirect",
+    "spec" : {
+      "namespace" : "harness",
+      "releaseName" : "dev-0001",
+      "connector" : {
+        "name" : "k8s_connector_name",
+        "identifier" : null,
+        "description" : null,
+        "orgIdentifier" : null,
+        "projectIdentifier" : null,
+        "tags" : null,
+        "type" : null,
+        "spec" : {
+          "credential" : null,
+          "delegateSelectors" : [ "del-1" ]
+        }
+      }
+    }
+  }
+}

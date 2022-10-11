@@ -25,6 +25,7 @@ import io.harness.event.payloads.CeExceptionMessage;
 import io.harness.grpc.utils.HTimestamps;
 import io.harness.perpetualtask.k8s.informer.ClusterDetails;
 import io.harness.perpetualtask.k8s.utils.ApiExceptionLogger;
+import io.harness.perpetualtask.k8s.utils.ApiInfoLogger;
 import io.harness.perpetualtask.k8s.utils.K8sWatcherHelper;
 
 import com.google.common.collect.ImmutableMap;
@@ -55,7 +56,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListSet;
 import lombok.extern.slf4j.Slf4j;
@@ -116,13 +116,11 @@ public class PodWatcher implements ResourceEventHandler<V1Pod> {
         .sharedIndexInformerFor(
             (CallGeneratorParams callGeneratorParams)
                 -> {
-              log.info("Pod watcher :: Resource version: {}, timeoutSeconds: {}, watch: {}",
+              ApiInfoLogger.logInfoIfNotSeenRecently(
+                  "Pod watcher :: Resource version: {}, timeoutSeconds: {}, watch: {}",
                   callGeneratorParams.resourceVersion, callGeneratorParams.timeoutSeconds, callGeneratorParams.watch);
-              if (!"0".equals(callGeneratorParams.resourceVersion)
-                  && Objects.nonNull(callGeneratorParams.timeoutSeconds)) {
-                K8sWatcherHelper.updateLastSeen(
-                    String.format(K8sWatcherHelper.POD_WATCHER_PREFIX, clusterId), Instant.now());
-              }
+              K8sWatcherHelper.updateLastSeen(
+                  String.format(K8sWatcherHelper.POD_WATCHER_PREFIX, clusterId), Instant.now());
               try {
                 return coreV1Api.listPodForAllNamespacesCall(null, null, null, null, null, null,
                     callGeneratorParams.resourceVersion, null, callGeneratorParams.timeoutSeconds,

@@ -9,7 +9,7 @@ package io.harness.notification.service;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.rule.OwnerRule.ANKUSH;
-import static io.harness.rule.OwnerRule.VUK;
+import static io.harness.rule.OwnerRule.RICHA;
 
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertTrue;
@@ -17,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.when;
+import static org.powermock.api.mockito.PowerMockito.mockStatic;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
@@ -27,28 +28,38 @@ import io.harness.notification.NotificationRequest;
 import io.harness.notification.SmtpConfig;
 import io.harness.notification.exception.NotificationException;
 import io.harness.notification.remote.SmtpConfigResponse;
+import io.harness.notification.remote.dto.EmailDTO;
 import io.harness.notification.remote.dto.EmailSettingDTO;
 import io.harness.notification.remote.dto.NotificationSettingDTO;
 import io.harness.notification.senders.MailSenderImpl;
 import io.harness.notification.service.MailServiceImpl.EmailTemplate;
 import io.harness.notification.service.api.NotificationSettingsService;
 import io.harness.notification.service.api.NotificationTemplateService;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.rule.Owner;
 import io.harness.serializer.YamlUtils;
 import io.harness.service.DelegateGrpcClientWrapper;
+import io.harness.userng.remote.UserNGClient;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import lombok.SneakyThrows;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 
 @OwnedBy(PL)
+@RunWith(PowerMockRunner.class)
+@PrepareForTest(NGRestUtils.class)
 public class MailServiceImplTest extends CategoryTest {
   @Mock private NotificationSettingsService notificationSettingsService;
   @Mock private NotificationTemplateService notificationTemplateService;
@@ -56,6 +67,7 @@ public class MailServiceImplTest extends CategoryTest {
   @Mock private SmtpConfig smtpConfigDefault;
   @Mock private MailSenderImpl mailSender;
   @Mock private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
+  @Mock private UserNGClient userNGClient;
   private MailServiceImpl mailService;
   private String accountId = "accountId";
   private String mailTemplateName = "email_test";
@@ -67,9 +79,11 @@ public class MailServiceImplTest extends CategoryTest {
   public void setUp() throws Exception {
     MockitoAnnotations.initMocks(this);
     mailService = new MailServiceImpl(notificationSettingsService, notificationTemplateService, yamlUtils,
-        smtpConfigDefault, mailSender, delegateGrpcClientWrapper);
+        smtpConfigDefault, mailSender, delegateGrpcClientWrapper, userNGClient);
     emailTemplate.setBody("this is test mail");
     emailTemplate.setSubject("test notification");
+    mockStatic(NGRestUtils.class);
+    when(NGRestUtils.getResponse(any())).thenReturn(true);
   }
 
   @Test
@@ -140,7 +154,7 @@ public class MailServiceImplTest extends CategoryTest {
         .thenReturn(Optional.empty(), Optional.of("This is a test notification"));
     when(notificationSettingsService.getSendNotificationViaDelegate(eq(accountId))).thenReturn(false);
     when(notificationSettingsService.getSmtpConfig(eq(accountId))).thenReturn(Optional.of(smtpConfigDefault));
-    when(mailSender.send(any(), any(), any(), any(), any())).thenReturn(notificationExpectedResponse);
+    when(mailSender.send(any(), any(), any(), any(), any(), any())).thenReturn(notificationExpectedResponse);
     when(yamlUtils.read(any(), (TypeReference<EmailTemplate>) any())).thenReturn(emailTemplate);
     when(notificationSettingsService.getSmtpConfigResponse(eq(accountId))).thenReturn(new SmtpConfigResponse());
 
@@ -159,7 +173,7 @@ public class MailServiceImplTest extends CategoryTest {
 
   @SneakyThrows
   @Test
-  @Owner(developers = VUK)
+  @Owner(developers = ANKUSH)
   @Category(UnitTests.class)
   public void sendNotification_ValidCaseMailUserGroup() {
     NotificationRequest notificationRequest =
@@ -182,7 +196,7 @@ public class MailServiceImplTest extends CategoryTest {
         .thenReturn(Optional.empty(), Optional.of("This is a test notification"));
     when(notificationSettingsService.getSendNotificationViaDelegate(eq(accountId))).thenReturn(false);
     when(notificationSettingsService.getSmtpConfig(eq(accountId))).thenReturn(Optional.of(smtpConfigDefault));
-    when(mailSender.send(any(), any(), any(), any(), any())).thenReturn(notificationExpectedResponse);
+    when(mailSender.send(any(), any(), any(), any(), any(), any())).thenReturn(notificationExpectedResponse);
     when(yamlUtils.read(any(), (TypeReference<EmailTemplate>) any())).thenReturn(emailTemplate);
     when(notificationSettingsService.getSmtpConfigResponse(eq(accountId))).thenReturn(new SmtpConfigResponse());
 
@@ -226,11 +240,106 @@ public class MailServiceImplTest extends CategoryTest {
         EmailSettingDTO.builder().accountId(accountId).recipient("email@harness.io").build();
     NotificationProcessingResponse notificationExpectedResponse =
         NotificationProcessingResponse.builder().result(Arrays.asList(true)).shouldRetry(false).build();
-    when(mailSender.send(any(), any(), any(), any(), any())).thenReturn(notificationExpectedResponse);
+    when(mailSender.send(any(), any(), any(), any(), any(), any())).thenReturn(notificationExpectedResponse);
     when(notificationTemplateService.getTemplateAsString(any(), any()))
         .thenReturn(Optional.of("This is a test notification"));
     when(yamlUtils.read(any(), (TypeReference<EmailTemplate>) any())).thenReturn(emailTemplate);
     boolean response = mailService.sendTestNotification(notificationSettingDTO4);
     assertTrue(response);
+  }
+
+  @SneakyThrows
+  @Test
+  @Owner(developers = RICHA)
+  @Category(UnitTests.class)
+  public void sendEmail_ValidRequest() {
+    final EmailDTO emailDTO = EmailDTO.builder()
+                                  .notificationId("notificationId")
+                                  .accountId(accountId)
+                                  .recipients(Collections.singletonList("email@harness.io"))
+                                  .ccRecipients(Collections.singletonList("email@harness.io"))
+                                  .build();
+    NotificationProcessingResponse notificationExpectedResponse =
+        NotificationProcessingResponse.builder().result(Arrays.asList(true)).shouldRetry(false).build();
+    when(mailSender.send(any(), any(), any(), any(), any(), any())).thenReturn(notificationExpectedResponse);
+    when(notificationTemplateService.getTemplateAsString(any(), any()))
+        .thenReturn(Optional.of("This is a test notification"));
+    when(yamlUtils.read(any(), (TypeReference<EmailTemplate>) any())).thenReturn(emailTemplate);
+    NotificationTaskResponse response = mailService.sendEmail(emailDTO);
+    assertTrue(response.getProcessingResponse().getResult().iterator().next());
+  }
+
+  @SneakyThrows
+  @Test
+  @Owner(developers = RICHA)
+  @Category(UnitTests.class)
+  public void sendEmail_no_emails() {
+    final EmailDTO emailDTO = EmailDTO.builder().notificationId("notificationId").accountId(accountId).build();
+    NotificationProcessingResponse notificationExpectedResponse =
+        NotificationProcessingResponse.builder().result(Arrays.asList(true)).shouldRetry(false).build();
+    when(mailSender.send(any(), any(), any(), any(), any(), any())).thenReturn(notificationExpectedResponse);
+    when(notificationTemplateService.getTemplateAsString(any(), any()))
+        .thenReturn(Optional.of("This is a test notification"));
+    when(yamlUtils.read(any(), (TypeReference<EmailTemplate>) any())).thenReturn(emailTemplate);
+    assertThatThrownBy(() -> mailService.sendEmail(emailDTO)).isInstanceOf(NotificationException.class);
+  }
+
+  @SneakyThrows
+  @Test
+  @Owner(developers = RICHA)
+  @Category(UnitTests.class)
+  public void sendEmail_invalid_emails() {
+    List<String> emails = new ArrayList<>();
+    emails.add("email_harness.io");
+    final EmailDTO emailDTO = EmailDTO.builder()
+                                  .notificationId("notificationId")
+                                  .accountId(accountId)
+                                  .recipients(emails)
+                                  .ccRecipients(emails)
+                                  .build();
+    NotificationProcessingResponse notificationExpectedResponse =
+        NotificationProcessingResponse.builder().result(Arrays.asList(true)).shouldRetry(false).build();
+    when(mailSender.send(any(), any(), any(), any(), any(), any())).thenReturn(notificationExpectedResponse);
+    when(notificationTemplateService.getTemplateAsString(any(), any()))
+        .thenReturn(Optional.of("This is a test notification"));
+    when(yamlUtils.read(any(), (TypeReference<EmailTemplate>) any())).thenReturn(emailTemplate);
+    assertThatThrownBy(() -> mailService.sendEmail(emailDTO)).isInstanceOf(NotificationException.class);
+  }
+  @SneakyThrows
+  @Test
+  @Owner(developers = RICHA)
+  @Category(UnitTests.class)
+  public void sendEmail_no_account_id() {
+    final EmailDTO emailDTO = EmailDTO.builder()
+                                  .notificationId("notificationId")
+                                  .recipients(Collections.singletonList("email@harness.io"))
+                                  .ccRecipients(Collections.singletonList("email@harness.io"))
+                                  .build();
+    NotificationProcessingResponse notificationExpectedResponse =
+        NotificationProcessingResponse.builder().result(Arrays.asList(true)).shouldRetry(false).build();
+    when(mailSender.send(any(), any(), any(), any(), any(), any())).thenReturn(notificationExpectedResponse);
+    when(notificationTemplateService.getTemplateAsString(any(), any()))
+        .thenReturn(Optional.of("This is a test notification"));
+    when(yamlUtils.read(any(), (TypeReference<EmailTemplate>) any())).thenReturn(emailTemplate);
+    assertThatThrownBy(() -> mailService.sendEmail(emailDTO)).isInstanceOf(NotificationException.class);
+  }
+
+  @SneakyThrows
+  @Test
+  @Owner(developers = RICHA)
+  @Category(UnitTests.class)
+  public void sendEmail_response_wrong() {
+    final EmailDTO emailDTO = EmailDTO.builder()
+                                  .notificationId("notificationId")
+                                  .recipients(Collections.singletonList("email@harness.io"))
+                                  .ccRecipients(Collections.singletonList("email@harness.io"))
+                                  .build();
+    NotificationProcessingResponse notificationExpectedResponse =
+        NotificationProcessingResponse.builder().result(Arrays.asList(false)).shouldRetry(false).build();
+    when(mailSender.send(any(), any(), any(), any(), any(), any())).thenReturn(notificationExpectedResponse);
+    when(notificationTemplateService.getTemplateAsString(any(), any()))
+        .thenReturn(Optional.of("This is a test notification"));
+    when(yamlUtils.read(any(), (TypeReference<EmailTemplate>) any())).thenReturn(emailTemplate);
+    assertThatThrownBy(() -> mailService.sendEmail(emailDTO)).isInstanceOf(NotificationException.class);
   }
 }

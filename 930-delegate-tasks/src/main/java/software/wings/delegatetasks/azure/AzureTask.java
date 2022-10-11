@@ -9,6 +9,7 @@ package software.wings.delegatetasks.azure;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.azure.model.AzureHostConnectionType;
 import io.harness.azure.model.AzureOSType;
 import io.harness.connector.ConnectorValidationResult;
 import io.harness.connector.task.azure.AzureValidationHandler;
@@ -82,6 +83,17 @@ public class AzureTask extends AbstractDelegateRunnableTask {
         return azureAsyncTaskHelper.listResourceGroups(azureTaskParams.getEncryptionDetails(),
             azureTaskParams.getAzureConnector(),
             azureTaskParams.getAdditionalParams().get(AzureAdditionalParams.SUBSCRIPTION_ID));
+      case LIST_IMAGE_GALLERIES:
+        validateAzureResourceExist(azureTaskParams,
+            "Could not retrieve any image galleries because of invalid parameter(s)",
+            AzureAdditionalParams.SUBSCRIPTION_ID);
+        validateAzureResourceExist(azureTaskParams,
+            "Could not retrieve any image galleries because of invalid parameter(s)",
+            AzureAdditionalParams.RESOURCE_GROUP);
+        return azureAsyncTaskHelper.listImageGalleries(azureTaskParams.getEncryptionDetails(),
+            azureTaskParams.getAzureConnector(),
+            azureTaskParams.getAdditionalParams().get(AzureAdditionalParams.SUBSCRIPTION_ID),
+            azureTaskParams.getAdditionalParams().get(AzureAdditionalParams.RESOURCE_GROUP));
       case LIST_WEBAPP_NAMES:
         msg = "Could not retrieve any Azure Web App names because of invalid parameter(s)";
         validateAzureResourceExist(azureTaskParams, msg, AzureAdditionalParams.SUBSCRIPTION_ID);
@@ -147,7 +159,8 @@ public class AzureTask extends AbstractDelegateRunnableTask {
             azureTaskParams.getAdditionalParams().get(AzureAdditionalParams.RESOURCE_GROUP),
             AzureOSType.fromString(azureTaskParams.getAdditionalParams().get(AzureAdditionalParams.OS_TYPE)),
             (Map<String, String>) azureTaskParams.getParams().get("tags"),
-            Boolean.parseBoolean(azureTaskParams.getAdditionalParams().get(AzureAdditionalParams.USE_PUBLIC_DNS)));
+            AzureHostConnectionType.fromString(
+                azureTaskParams.getAdditionalParams().get(AzureAdditionalParams.HOST_CONNECTION_TYPE)));
       default:
         throw new InvalidRequestException("Task type not identified");
     }

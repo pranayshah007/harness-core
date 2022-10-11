@@ -15,6 +15,7 @@ import io.harness.cvng.core.services.api.MetricDataCollectionInfoMapper;
 
 import java.util.List;
 import java.util.stream.Collectors;
+import org.apache.commons.collections4.CollectionUtils;
 
 public class NewRelicDataCollectionInfoMapper
     extends MetricDataCollectionInfoMapper<NewRelicDataCollectionInfo, NewRelicCVConfig> {
@@ -30,7 +31,7 @@ public class NewRelicDataCollectionInfoMapper
     if (cvConfig.isCustomQuery()) {
       newRelicDataCollectionInfo.setGroupName(cvConfig.getGroupName());
       newRelicDataCollectionInfo.setCustomQuery(true);
-      List<NewRelicMetricInfoDTO> metricInfoDTOS = cvConfig.getMetricInfos()
+      List<NewRelicMetricInfoDTO> metricInfoDTOS = CollectionUtils.emptyIfNull(cvConfig.getMetricInfos())
                                                        .stream()
                                                        .map(newRelicMetricInfo -> generateInfoDTO(newRelicMetricInfo))
                                                        .collect(Collectors.toList());

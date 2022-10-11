@@ -82,6 +82,8 @@ public class NGRestUtils {
       errorMessage = restResponse.getMessage();
       throw new InvalidRequestException(
           StringUtils.isEmpty(errorMessage) ? defaultErrorMessage : errorMessage, restResponse.getMetadata());
+    } catch (InvalidRequestException e) {
+      throw e;
     } catch (Exception e) {
       log.error("Error while converting rest response to ErrorDTO", e);
       throw new InvalidRequestException(StringUtils.isEmpty(errorMessage) ? defaultErrorMessage : errorMessage);

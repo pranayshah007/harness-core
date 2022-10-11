@@ -17,9 +17,6 @@ java_library(
     name = "module",
     testonly = True,
     srcs = glob(["src/main/java/**/*.java"]),
-    resource_jars = [
-        ":abstract-module",
-    ],
     resources = [
         "//990-commons-test/src/main/resources:resource",
     ],

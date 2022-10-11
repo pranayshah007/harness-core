@@ -110,6 +110,12 @@ public class GitFullSyncEntityInfo implements PersistentEntity, PersistentRegula
                  .collation(
                      Collation.builder().locale(CollationLocale.ENGLISH).strength(CollationStrength.PRIMARY).build())
                  .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("account_org_project__idx")
+                 .field(GitFullSyncEntityInfoKeys.accountIdentifier)
+                 .field(GitFullSyncEntityInfoKeys.orgIdentifier)
+                 .field(GitFullSyncEntityInfoKeys.projectIdentifier)
+                 .build())
         .build();
   }
 }

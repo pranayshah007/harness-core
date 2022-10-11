@@ -18,6 +18,11 @@ import io.harness.cdng.artifact.resources.nexus.dtos.NexusResponseDTO;
 public interface NexusResourceService {
   NexusResponseDTO getBuildDetails(IdentifierRef nexusConnectorRef, String repositoryName, String repositoryPort,
       String artifactPath, String repositoryFormat, String artifactRepositoryUrl, String orgIdentifier,
+      String projectIdentifier, String groupId, String artifactId, String extension, String classifier,
+      String packageName);
+
+  NexusResponseDTO getBuildDetails(IdentifierRef nexusConnectorRef, String repositoryName, String repositoryPort,
+      String artifactPath, String repositoryFormat, String artifactRepositoryUrl, String orgIdentifier,
       String projectIdentifier);
 
   NexusBuildDetailsDTO getSuccessfulBuild(IdentifierRef nexusConnectorRef, String repositoryName, String repositoryPort,

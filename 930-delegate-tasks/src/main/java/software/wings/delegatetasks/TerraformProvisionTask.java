@@ -69,6 +69,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.TerraformCommandExecutionException;
 import io.harness.exception.WingsException;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
+import io.harness.filesystem.FileIo;
 import io.harness.git.model.GitRepositoryType;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
@@ -91,6 +92,7 @@ import software.wings.api.TerraformExecutionData;
 import software.wings.api.TerraformExecutionData.TerraformExecutionDataBuilder;
 import software.wings.api.terraform.TfVarGitSource;
 import software.wings.beans.GitConfig;
+import software.wings.beans.GitOperationContext;
 import software.wings.beans.LogColor;
 import software.wings.beans.LogHelper;
 import software.wings.beans.LogWeight;
@@ -101,6 +103,7 @@ import software.wings.beans.delegation.TerraformProvisionParameters;
 import software.wings.beans.yaml.GitFetchFilesRequest;
 import software.wings.delegatetasks.validation.terraform.TerraformTaskUtils;
 import software.wings.service.impl.AwsHelperService;
+import software.wings.service.impl.yaml.GitClientHelper;
 import software.wings.service.intfc.security.EncryptionService;
 import software.wings.service.intfc.yaml.GitClient;
 
@@ -126,7 +129,6 @@ import java.io.OutputStreamWriter;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -154,6 +156,7 @@ import org.zeroturnaround.exec.stream.LogOutputStream;
 @OwnedBy(CDP)
 public class TerraformProvisionTask extends AbstractDelegateRunnableTask {
   @Inject private GitClient gitClient;
+  @Inject private GitClientHelper gitClientHelper;
   @Inject private EncryptionService encryptionService;
   @Inject private DelegateLogService logService;
   @Inject private DelegateFileManager delegateFileManager;
@@ -207,6 +210,10 @@ public class TerraformProvisionTask extends AbstractDelegateRunnableTask {
     GitConfig gitConfig = parameters.getSourceRepo();
     String sourceRepoSettingId = parameters.getSourceRepoSettingId();
     LogCallback logCallback = getLogCallback(parameters);
+    String accountId = parameters.getAccountId();
+
+    GitOperationContext gitOperationContext =
+        GitOperationContext.builder().gitConfig(gitConfig).gitConnectorId(sourceRepoSettingId).build();
 
     if (isNotEmpty(gitConfig.getBranch())) {
       saveExecutionLog("Branch: " + gitConfig.getBranch(), CommandExecutionStatus.RUNNING, INFO, logCallback);
@@ -220,8 +227,18 @@ public class TerraformProvisionTask extends AbstractDelegateRunnableTask {
           CommandExecutionStatus.RUNNING, INFO, logCallback);
     }
     EncryptedRecordData encryptedTfPlan = parameters.getEncryptedTfPlan();
-    encryptionService.decrypt(gitConfig, parameters.getSourceRepoEncryptionDetails(), false);
-    ExceptionMessageSanitizer.storeAllSecretsForSanitizing(gitConfig, parameters.getSourceRepoEncryptionDetails());
+    try {
+      encryptionService.decrypt(gitConfig, parameters.getSourceRepoEncryptionDetails(), false);
+      ExceptionMessageSanitizer.storeAllSecretsForSanitizing(gitConfig, parameters.getSourceRepoEncryptionDetails());
+      gitClient.ensureRepoLocallyClonedAndUpdated(gitOperationContext);
+    } catch (RuntimeException ex) {
+      Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(ex);
+      log.error("Exception in processing git operation", sanitizedException);
+      return TerraformExecutionData.builder()
+          .executionStatus(ExecutionStatus.FAILED)
+          .errorMessage(TerraformTaskUtils.getGitExceptionMessageIfExists(sanitizedException))
+          .build();
+    }
 
     String baseDir = parameters.isUseActivityIdBasedTfBaseDir()
         ? terraformBaseHelper.activityIdBasedBaseDir(
@@ -241,28 +258,18 @@ public class TerraformProvisionTask extends AbstractDelegateRunnableTask {
         && parameters.getRemoteBackendConfig().getGitFileConfig() != null) {
       fetchBackendConfigGitFiles(parameters, backendConfigsDir, logCallback);
     }
-    String latestCommitSHA;
+
     try {
-      latestCommitSHA = gitClient.downloadFiles(gitConfig,
-          GitFetchFilesRequest.builder()
-              .branch(parameters.getSourceRepo().getBranch())
-              .commitId(gitConfig.getReference())
-              .filePaths(Collections.singletonList(""))
-              .useBranch(isEmpty(gitConfig.getReference()))
-              .gitConnectorId(parameters.getSourceRepoSettingId())
-              .recursive(true)
-              .build(),
-          workingDir, true);
+      copyFilesToWorkingDirectory(gitClientHelper.getRepoDirectory(gitOperationContext), workingDir);
     } catch (Exception ex) {
       Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(ex);
-      log.error("Exception in downloading the provisioner script from git repository", sanitizedException);
+      log.error("Exception in copying files to provisioner specific directory", sanitizedException);
       FileUtils.deleteQuietly(new File(baseDir));
       return TerraformExecutionData.builder()
           .executionStatus(ExecutionStatus.FAILED)
           .errorMessage(ExceptionUtils.getMessage(sanitizedException))
           .build();
     }
-
     String scriptDirectory = terraformBaseHelper.resolveScriptDirectory(workingDir, parameters.getScriptPath());
     log.info("Script Directory: " + scriptDirectory);
     saveExecutionLog(
@@ -270,6 +277,7 @@ public class TerraformProvisionTask extends AbstractDelegateRunnableTask {
 
     File tfVariablesFile = null, tfBackendConfigsFile = null;
     String tfPlanJsonFilePath = null;
+    String tfHumanReadableFilePath = null;
     TerraformPlanSummary terraformPlanSummary = null;
 
     try (ActivityLogOutputStream activityLogOutputStream =
@@ -280,7 +288,9 @@ public class TerraformProvisionTask extends AbstractDelegateRunnableTask {
          PlanHumanReadableOutputStream planHumanReadableOutputStream = new PlanHumanReadableOutputStream();
          PlanLogOutputStream planLogOutputStream = new PlanLogOutputStream()) {
       ensureLocalCleanup(scriptDirectory);
-      String sourceRepoReference = parameters.getCommitId() != null ? parameters.getCommitId() : latestCommitSHA;
+      String sourceRepoReference = parameters.getCommitId() != null
+          ? parameters.getCommitId()
+          : getLatestCommitSHAFromLocalRepo(gitOperationContext);
 
       Map<String, String> awsAuthEnvVariables = null;
       if (parameters.getAwsConfig() != null && parameters.getAwsConfigEncryptionDetails() != null) {
@@ -545,10 +555,9 @@ public class TerraformProvisionTask extends AbstractDelegateRunnableTask {
             .errorMessage("The terraform command exited with code " + code)
             .build();
       }
-
+      String planName = getPlanName(parameters);
       String tfPlanJsonFileId = null;
       if (parameters.isSaveTerraformJson() && parameters.isUseOptimizedTfPlanJson() && version.minVersion(0, 12)) {
-        String planName = getPlanName(parameters);
         saveExecutionLog(format("Uploading terraform %s json representation", planName), CommandExecutionStatus.RUNNING,
             INFO, logCallback);
         // We're going to read content from json plan file and ideally no one should write anything into output
@@ -562,6 +571,22 @@ public class TerraformProvisionTask extends AbstractDelegateRunnableTask {
         saveExecutionLog(format("Path to '%s' json representation is available via expression %s %n", planName,
                              parameters.getCommand() == APPLY ? TerraformPlanExpressionInterface.EXAMPLE_USAGE
                                                               : TerraformPlanExpressionInterface.DESTROY_EXAMPLE_USAGE),
+            CommandExecutionStatus.RUNNING, INFO, logCallback);
+      }
+
+      String tfPlanHumanReadableFileId = null;
+      if (parameters.isExportPlanToHumanReadableOutput()) {
+        planHumanReadableOutputStream.flush();
+        planHumanReadableOutputStream.close();
+        tfHumanReadableFilePath = planHumanReadableOutputStream.getTfHumanReadablePlanLocalPath();
+        tfPlanHumanReadableFileId = terraformBaseHelper.uploadTfPlanHumanReadable(
+            accountId, getDelegateId(), getTaskId(), parameters.getEntityId(), planName, tfHumanReadableFilePath);
+        saveExecutionLog(
+            format("Path to '%s' Terraform Human Readable Plan representation is available via expression %s %n",
+                planName,
+                parameters.getCommand() == APPLY
+                    ? TerraformPlanExpressionInterface.HUMAN_READABLE_EXAMPLE_USAGE
+                    : TerraformPlanExpressionInterface.DESTROY_HUMAN_READABLE_EXAMPLE_USAGE),
             CommandExecutionStatus.RUNNING, INFO, logCallback);
       }
 
@@ -633,6 +658,7 @@ public class TerraformProvisionTask extends AbstractDelegateRunnableTask {
               .tfPlanJson(planJsonLogOutputStream.getPlanJson())
               .tfPlanJsonFiledId(tfPlanJsonFileId)
               .tfPlanHumanReadable(planHumanReadableOutputStream.getHumanReadablePlan())
+              .tfPlanHumanReadableFileId(tfPlanHumanReadableFileId)
               .commandExecuted(parameters.getCommand())
               .sourceRepoReference(sourceRepoReference)
               .variables(parameters.getRawVariables())
@@ -1002,6 +1028,18 @@ public class TerraformProvisionTask extends AbstractDelegateRunnableTask {
     return TerraformExecutionData.builder().executionStatus(ExecutionStatus.FAILED).errorMessage(message).build();
   }
 
+  /*
+  Copies Files from the directory common to the git connector to a directory specific to the app
+  and provisioner
+   */
+  private void copyFilesToWorkingDirectory(String sourceDir, String destinationDir) throws IOException {
+    File dest = new File(destinationDir);
+    File src = new File(sourceDir);
+    deleteDirectoryAndItsContentIfExists(dest.getAbsolutePath());
+    FileUtils.copyDirectory(src, dest);
+    FileIo.waitForDirectoryToBeAccessibleOutOfProcess(dest.getPath(), 10);
+  }
+
   @VisibleForTesting
   public void getCommandLineVariableParams(TerraformProvisionParameters parameters, File tfVariablesFile,
       StringBuilder executeParams, StringBuilder uiLogParams) throws IOException {
@@ -1049,7 +1087,8 @@ public class TerraformProvisionTask extends AbstractDelegateRunnableTask {
                                           .environment(envVars)
                                           .timeout(timeout, TimeUnit.MILLISECONDS)
                                           .directory(Paths.get(scriptDir).toFile())
-                                          .redirectOutput(logOutputStream);
+                                          .redirectOutput(logOutputStream)
+                                          .redirectError(logOutputStream);
 
     ProcessResult processResult = processExecutor.execute();
     String output = processResult.outputUTF8();
@@ -1068,7 +1107,8 @@ public class TerraformProvisionTask extends AbstractDelegateRunnableTask {
                                           .command("/bin/sh", "-c", joinedCommands)
                                           .readOutput(true)
                                           .environment(envVars)
-                                          .redirectOutput(logOutputStream);
+                                          .redirectOutput(logOutputStream)
+                                          .redirectError(logOutputStream);
 
     ProcessResult processResult = processExecutor.execute();
     return processResult.getExitValue();
@@ -1114,6 +1154,10 @@ public class TerraformProvisionTask extends AbstractDelegateRunnableTask {
   @NotNull
   private String getPlanName(TerraformProvisionParameters parameters) {
     return terraformBaseHelper.getPlanName(parameters.getCommand());
+  }
+
+  public String getLatestCommitSHAFromLocalRepo(GitOperationContext gitOperationContext) {
+    return terraformBaseHelper.getLatestCommitSHA(new File(gitClientHelper.getRepoDirectory(gitOperationContext)));
   }
 
   private void saveExecutionLog(

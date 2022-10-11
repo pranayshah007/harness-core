@@ -32,6 +32,7 @@ public class ExecutableProcessorFactory {
     switch (mode) {
       case ASYNC:
       case APPROVAL:
+      case WAIT_STEP:
       case CONSTRAINT:
         executeStrategy = new AsyncStrategy();
         break;

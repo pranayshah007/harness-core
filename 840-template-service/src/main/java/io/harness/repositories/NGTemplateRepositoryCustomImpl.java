@@ -92,7 +92,7 @@ public class NGTemplateRepositoryCustomImpl implements NGTemplateRepositoryCusto
       }
       return savedTemplateEntity;
     }
-    if (templateGitXService.isNewGitXEnabled(templateToSave, gitEntityInfo)) {
+    if (templateGitXService.isNewGitXEnabledAndIsRemoteEntity(templateToSave, gitEntityInfo)) {
       Scope scope = TemplateUtils.buildScope(templateToSave);
       String yamlToPush = templateToSave.getYaml();
       addGitParamsToTemplateEntity(templateToSave, gitEntityInfo);
@@ -292,7 +292,7 @@ public class NGTemplateRepositoryCustomImpl implements NGTemplateRepositoryCusto
       ChangeType changeType, String comments, TemplateUpdateEventType templateUpdateEventType, boolean skipAudits) {
     GitAwareContextHelper.initDefaultScmGitMetaData();
     GitEntityInfo gitEntityInfo = GitContextHelper.getGitEntityInfo();
-    if (templateGitXService.isNewGitXEnabled(templateToUpdate, gitEntityInfo)) {
+    if (templateGitXService.isNewGitXEnabledAndIsRemoteEntity(templateToUpdate, gitEntityInfo)) {
       Scope scope = TemplateUtils.buildScope(templateToUpdate);
       gitAwareEntityHelper.updateEntityOnGit(templateToUpdate, templateToUpdate.getYaml(), scope);
     } else if (templateToUpdate.getStoreType() == StoreType.REMOTE) {
@@ -452,6 +452,32 @@ public class NGTemplateRepositoryCustomImpl implements NGTemplateRepositoryCusto
       log.error(errorMessage, e);
       return false;
     }
+  }
+
+  @Override
+  public Long countFileInstances(String accountIdentifier, String repoURL, String filePath) {
+    return countTemplates(Criteria.where(TemplateEntityKeys.accountId)
+                              .is(accountIdentifier)
+                              .and(TemplateEntityKeys.repoURL)
+                              .is(repoURL)
+                              .and(TemplateEntityKeys.filePath)
+                              .is(filePath));
+  }
+
+  @Override
+  public TemplateEntity importFlowSaveTemplate(TemplateEntity templateEntity, String comments) {
+    TemplateEntity savedTemplateEntity = mongoTemplate.save(templateEntity);
+    if (shouldLogAudits(
+            templateEntity.getAccountId(), templateEntity.getOrgIdentifier(), templateEntity.getProjectIdentifier())) {
+      outboxService.save(new TemplateCreateEvent(templateEntity.getAccountIdentifier(),
+          templateEntity.getOrgIdentifier(), templateEntity.getProjectIdentifier(), templateEntity, comments));
+    }
+    return savedTemplateEntity;
+  }
+
+  private Long countTemplates(Criteria criteria) {
+    Query query = new Query().addCriteria(criteria);
+    return mongoTemplate.count(query, TemplateEntity.class);
   }
 
   private Criteria buildCriteria(TemplateEntity templateEntity) {

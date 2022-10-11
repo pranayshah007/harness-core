@@ -35,10 +35,10 @@ import io.harness.pms.contracts.execution.ExecutionMode;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.start.NodeStartEvent;
 import io.harness.pms.contracts.facilitators.FacilitatorResponseProto;
-import io.harness.pms.data.OrchestrationMap;
 import io.harness.pms.data.stepparameters.PmsStepParameters;
 import io.harness.pms.events.base.PmsEventCategory;
 import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.pms.execution.utils.StatusUtils;
 import io.harness.pms.utils.OrchestrationMapBackwardCompatibilityUtils;
 import io.harness.serializer.KryoSerializer;
 import io.harness.springdata.TransactionHelper;
@@ -80,9 +80,14 @@ public class NodeStartHelper {
     PlanNode node = planService.fetchNode(ambiance.getPlanId(), AmbianceUtils.obtainCurrentSetupId(ambiance));
     NodeExecution nodeExecution = prepareNodeExecutionForInvocation(ambiance, targetStatus, node);
     if (nodeExecution == null) {
+      nodeExecution = nodeExecutionService.get(nodeExecutionId);
+      // We can mark the nodeExecution as either discontinuing, aborted or expired if nodeExecution is in queued state.
+      // If the nodeExecution is in that state then we should do no-op
+      if (StatusUtils.abortInProgressStatuses().contains(nodeExecution.getStatus())) {
+        return;
+      }
       // This is just for debugging if this is happening then the node status has changed from QUEUED
       // This should never happen
-      nodeExecution = nodeExecutionService.get(nodeExecutionId);
       log.warn("Not Starting node execution. Cannot transition from {} to {}", nodeExecution.getStatus(), targetStatus);
       throw new NodeExecutionUpdateFailedException("Cannot Start node Execution");
     }
@@ -108,7 +113,7 @@ public class NodeStartHelper {
     String nodeExecutionId = AmbianceUtils.obtainCurrentRuntimeId(ambiance);
     return transactionHelper.performTransaction(() -> {
       List<String> timeoutInstanceIds = registerTimeouts(ambiance, planNode.getTimeoutObtainments());
-      resolveInputs(ambiance, planNode.getStepInputs(), planNode.isSkipUnresolvedExpressionsCheck());
+      resolveInputs(ambiance, planNode);
       return nodeExecutionService.updateStatusWithOps(nodeExecutionId, targetStatus, ops -> {
         setUnset(ops, NodeExecutionKeys.timeoutInstanceIds, timeoutInstanceIds);
         updateStartTsInNodeExecution(ops, ambiance);
@@ -122,6 +127,8 @@ public class NodeStartHelper {
         return Status.RESOURCE_WAITING;
       case APPROVAL:
         return Status.APPROVAL_WAITING;
+      case WAIT_STEP:
+        return Status.WAIT_STEP_RUNNING;
       case ASYNC:
         return Status.ASYNC_WAITING;
       default:
@@ -148,10 +155,11 @@ public class NodeStartHelper {
     return timeoutInstanceIds;
   }
 
-  private void resolveInputs(Ambiance ambiance, OrchestrationMap stepInputs, boolean skipUnresolvedCheck) {
+  private void resolveInputs(Ambiance ambiance, PlanNode planNode) {
     String nodeExecutionId = AmbianceUtils.obtainCurrentRuntimeId(ambiance);
     log.info("Starting to Resolve step Inputs");
-    Object resolvedInputs = pmsEngineExpressionService.resolve(ambiance, stepInputs, skipUnresolvedCheck);
+    Object resolvedInputs =
+        pmsEngineExpressionService.resolve(ambiance, planNode.getStepInputs(), planNode.getExpressionMode());
     PmsStepParameters parameterInputs =
         PmsStepParameters.parse(OrchestrationMapBackwardCompatibilityUtils.extractToOrchestrationMap(resolvedInputs));
     pmsGraphStepDetailsService.addStepInputs(nodeExecutionId, ambiance.getPlanExecutionId(), parameterInputs);

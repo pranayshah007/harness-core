@@ -1426,6 +1426,43 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
   }
 
   @Test
+  @Owner(developers = KARAN_SARASWAT)
+  @Category(UnitTests.class)
+  public void testGetYamlTemplate_accountScope() {
+    ProjectParams updatedProjectParams = projectParams;
+    projectParams.setOrgIdentifier(null);
+    projectParams.setProjectIdentifier(null);
+
+    assert (monitoredServiceService.getYamlTemplate(updatedProjectParams, MonitoredServiceType.APPLICATION))
+        .equals("monitoredService:\n"
+            + "  identifier:\n"
+            + "  type: Application\n"
+            + "  name:\n"
+            + "  desc:\n"
+            + "  serviceRef:\n"
+            + "  environmentRef:\n"
+            + "  sources:\n"
+            + "    healthSources:\n"
+            + "    changeSources:\n"
+            + "      - name: Harness CD Next Gen\n"
+            + "        identifier: harness_cd_next_gen\n"
+            + "        type: HarnessCDNextGen\n"
+            + "        enabled : true\n");
+
+    assert (monitoredServiceService.getYamlTemplate(updatedProjectParams, MonitoredServiceType.INFRASTRUCTURE))
+        .equals("monitoredService:\n"
+            + "  identifier:\n"
+            + "  type: Infrastructure\n"
+            + "  name:\n"
+            + "  desc:\n"
+            + "  serviceRef:\n"
+            + "  environmentRef:\n"
+            + "  sources:\n"
+            + "    healthSources:\n"
+            + "    changeSources:\n");
+  }
+
+  @Test
   @Owner(developers = ANJAN)
   @Category(UnitTests.class)
   public void testListOfMonitoredServices() {
@@ -2261,7 +2298,8 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
     PageResponse<CVNGLogDTO> cvngLogDTOResponse = monitoredServiceService.getCVNGLogs(
         monitoredServiceParams, liveMonitoringLogsFilter, PageParams.builder().page(0).size(10).build());
 
-    assertThat(cvngLogDTOResponse.getContent().size()).isEqualTo(1);
+    // Since there is no unique check on CVNGLog we will have 3 log records
+    assertThat(cvngLogDTOResponse.getContent().size()).isEqualTo(3);
     assertThat(cvngLogDTOResponse.getPageIndex()).isEqualTo(0);
     assertThat(cvngLogDTOResponse.getPageSize()).isEqualTo(10);
 
@@ -2315,8 +2353,8 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
             .build();
     PageResponse<CVNGLogDTO> cvngLogDTOResponse = monitoredServiceService.getCVNGLogs(
         monitoredServiceParams, liveMonitoringLogsFilter, PageParams.builder().page(0).size(10).build());
-
-    assertThat(cvngLogDTOResponse.getContent().size()).isEqualTo(1);
+    // Since there is no unique check on CVNGLog we will have 3 log records
+    assertThat(cvngLogDTOResponse.getContent().size()).isEqualTo(3);
     assertThat(cvngLogDTOResponse.getPageIndex()).isEqualTo(0);
     assertThat(cvngLogDTOResponse.getPageSize()).isEqualTo(10);
 

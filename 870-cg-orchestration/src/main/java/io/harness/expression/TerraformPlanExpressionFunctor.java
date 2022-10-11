@@ -72,6 +72,20 @@ public class TerraformPlanExpressionFunctor implements ExpressionFunctor, Terraf
         DELEGATE_EXPRESSION, cachedTerraformPlanParam.getTfPlanJsonFileId(), expressionFunctorToken, "jsonFilePath");
   }
 
+  @Override
+  public String humanReadableFilePath() {
+    if (cachedTerraformPlanParam == null) {
+      TerraformPlanParam terraformPlanParam = findTerraformPlanParam();
+      if (terraformPlanParam == null) {
+        return null;
+      }
+      this.cachedTerraformPlanParam = terraformPlanParam;
+    }
+
+    return format(HUMAN_READABLE_DELEGATE_EXPRESSION, cachedTerraformPlanParam.getTfplanHumanReadableFileId(),
+        expressionFunctorToken, "humanReadableFilePath");
+  }
+
   private TerraformPlanParam findTerraformPlanParam() {
     TerraformPlanParam terraformPlanParam = obtainTfPlanFunction.apply(this.planSweepingOutputName);
     if (terraformPlanParam == null) {

@@ -344,6 +344,7 @@ public class SshCommandStepHelper extends CDStepHelper {
             cdFeatureFlagHelper.isEnabled(accountId, FeatureName.WINRM_KERBEROS_CACHE_UNIQUE_FILE))
         .disableWinRMCommandEncodingFFSet(
             cdFeatureFlagHelper.isEnabled(accountId, FeatureName.DISABLE_WINRM_COMMAND_ENCODING))
+        .winrmScriptCommandSplit(cdFeatureFlagHelper.isEnabled(accountId, FeatureName.WINRM_SCRIPT_COMMAND_SPLIT))
         .build();
   }
 
@@ -371,6 +372,7 @@ public class SshCommandStepHelper extends CDStepHelper {
             cdFeatureFlagHelper.isEnabled(accountId, FeatureName.WINRM_KERBEROS_CACHE_UNIQUE_FILE))
         .disableWinRMCommandEncodingFFSet(
             cdFeatureFlagHelper.isEnabled(accountId, FeatureName.DISABLE_WINRM_COMMAND_ENCODING))
+        .winrmScriptCommandSplit(cdFeatureFlagHelper.isEnabled(accountId, FeatureName.WINRM_SCRIPT_COMMAND_SPLIT))
         .build();
   }
 
@@ -518,7 +520,7 @@ public class SshCommandStepHelper extends CDStepHelper {
         .collect(Collectors.toList());
   }
 
-  private String getShellScript(Ambiance ambiance, @Nonnull ShellScriptSourceWrapper shellScriptSourceWrapper) {
+  public String getShellScript(Ambiance ambiance, @Nonnull ShellScriptSourceWrapper shellScriptSourceWrapper) {
     if (INLINE.equals(shellScriptSourceWrapper.getType())) {
       ShellScriptInlineSource shellScriptInlineSource = (ShellScriptInlineSource) shellScriptSourceWrapper.getSpec();
       return (String) shellScriptInlineSource.getScript().fetchFinalValue();

@@ -90,7 +90,8 @@ public class TemplateMergeServiceImpl implements TemplateMergeService {
     TemplateInputsErrorMetadataDTO errorResponse = templateMergeServiceHelper.validateLinkedTemplateInputsInYaml(
         accountId, orgId, projectId, yamlNode, templateCacheMap);
     if (errorResponse != null) {
-      throw new NGTemplateResolveException("Exception in resolving template refs in given yaml.", USER, errorResponse);
+      throw new NGTemplateResolveException(
+          "Exception in resolving template refs in given yaml.", USER, errorResponse, null);
     }
     return getTemplateMergeResponseDTO(
         accountId, orgId, projectId, yaml, getMergedYamlWithTemplateField, yamlNode, templateCacheMap);
@@ -110,7 +111,7 @@ public class TemplateMergeServiceImpl implements TemplateMergeService {
             accountId, orgId, projectId, yaml, templateCacheMap);
     if (!validateTemplateInputsResponse.isValidYaml()) {
       throw new NGTemplateResolveExceptionV2(
-          "Exception in resolving template refs in given yaml.", USER, validateTemplateInputsResponse);
+          "Exception in resolving template refs in given yaml.", USER, validateTemplateInputsResponse, null);
     }
     return getTemplateMergeResponseDTO(
         accountId, orgId, projectId, yaml, getMergedYamlWithTemplateField, yamlNode, templateCacheMap);

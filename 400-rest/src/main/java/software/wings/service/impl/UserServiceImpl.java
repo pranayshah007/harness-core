@@ -1453,10 +1453,13 @@ public class UserServiceImpl implements UserService {
     if (!isInviteAcceptanceRequired) {
       addUserToUserGroups(accountId, user, userGroups, false, true);
     }
-    if (!isInviteAcceptanceRequired && accountService.isSSOEnabled(account)) {
-      sendUserInvitationToOnlySsoAccountMail(account, user);
-    } else {
-      sendNewInvitationMail(userInvite, account, user);
+    boolean isSSOEnabled = accountService.isSSOEnabled(account);
+    if (!(isSSOEnabled && featureFlagService.isEnabled(FeatureName.PL_NO_EMAIL_FOR_SAML_ACCOUNT_INVITES, accountId))) {
+      if (!isInviteAcceptanceRequired && isSSOEnabled) {
+        sendUserInvitationToOnlySsoAccountMail(account, user);
+      } else {
+        sendNewInvitationMail(userInvite, account, user);
+      }
     }
 
     auditServiceHelper.reportForAuditingUsingAccountId(
@@ -3020,12 +3023,19 @@ public class UserServiceImpl implements UserService {
    */
   @Override
   public User get(String userId) {
+    return get(userId, true);
+  }
+
+  @Override
+  public User get(String userId, boolean includeSupportAccounts) {
     User user = wingsPersistence.get(User.class, userId);
     if (user == null) {
       throw new UnauthorizedException(EXC_MSG_USER_DOESNT_EXIST, USER);
     }
 
-    loadSupportAccounts(user);
+    if (includeSupportAccounts) {
+      loadSupportAccounts(user);
+    }
 
     List<Account> accounts = user.getAccounts();
     if (isNotEmpty(accounts)) {

@@ -9,6 +9,7 @@ package io.harness.template.helpers;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.template.beans.NGTemplateConstants.CUSTOM_DEPLOYMENT_TEMPLATE;
 import static io.harness.template.beans.NGTemplateConstants.STABLE_VERSION;
 import static io.harness.template.beans.NGTemplateConstants.TEMPLATE;
 import static io.harness.template.beans.NGTemplateConstants.TEMPLATE_INPUTS;
@@ -121,7 +122,9 @@ public class TemplateReferenceHelper {
         List<FQNNode> fqnList = new ArrayList<>(key.getFqnList());
         FQNNode lastNode = fqnList.get(fqnList.size() - 1);
         FQNNode secondLastNode = fqnList.get(fqnList.size() - 2);
-        if (TEMPLATE_REF.equals(lastNode.getKey()) && TEMPLATE.equals(secondLastNode.getKey())) {
+        if (TEMPLATE_REF.equals(lastNode.getKey())
+            && (TEMPLATE.equals(secondLastNode.getKey())
+                || CUSTOM_DEPLOYMENT_TEMPLATE.equals(secondLastNode.getKey()))) {
           String identifier = ((JsonNode) fqnToValueMap.get(key)).asText();
           IdentifierRef templateIdentifierRef =
               IdentifierRefHelper.getIdentifierRef(identifier, accountId, orgId, projectId);

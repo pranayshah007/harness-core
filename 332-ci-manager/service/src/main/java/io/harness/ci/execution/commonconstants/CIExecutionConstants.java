@@ -32,6 +32,7 @@ public class CIExecutionConstants {
   public static final String STEP_VOLUME = "harness";
   public static final String STEP_MOUNT_PATH = "/harness";
   public static final String OSX_STEP_MOUNT_PATH = "/tmp/harness";
+  public static final String OSX_ADDON_MOUNT_PATH = "/tmp/addon";
   public static final String STEP_WORK_DIR = STEP_MOUNT_PATH;
   public static final String ETC_DIR = "/etc";
 
@@ -65,10 +66,10 @@ public class CIExecutionConstants {
   // Container constants for setting up addon binary
   public static final String SETUP_ADDON_CONTAINER_NAME = "setup-addon";
   public static final String UNIX_SETUP_ADDON_ARGS =
-      "mkdir -p /addon/bin; mkdir -p /addon/tmp; chmod -R 776 /addon/tmp; if [ -e /usr/local/bin/ci-addon-linux-amd64 ];then cp /usr/local/bin/ci-addon-linux-amd64 /addon/bin/ci-addon;else cp /usr/local/bin/ci-addon-linux /addon/bin/ci-addon;fi; chmod +x /addon/bin/ci-addon; cp /usr/local/bin/java-agent.jar /addon/bin/java-agent.jar; chmod +x /addon/bin/java-agent.jar; cp /usr/local/bin/split_tests /addon/bin/split_tests; chmod +x /addon/bin/split_tests; export PATH=$PATH:/addon/bin";
+      "mkdir -p /addon/bin; mkdir -p /addon/tmp; chmod -R 776 /addon/tmp; if [ -e /usr/local/bin/ci-addon-linux-amd64 ];then cp /usr/local/bin/ci-addon-linux-amd64 /addon/bin/ci-addon;else cp /usr/local/bin/ci-addon-linux /addon/bin/ci-addon;fi; chmod +x /addon/bin/ci-addon; cp /usr/local/bin/java-agent.jar /addon/bin/java-agent.jar; chmod +x /addon/bin/java-agent.jar; if [ -e /usr/local/bin/split_tests ];then cp /usr/local/bin/split_tests /addon/bin/split_tests; chmod +x /addon/bin/split_tests; export PATH=$PATH:/addon/bin; fi;";
 
   public static final String WIN_SETUP_ADDON_ARGS =
-      "mkdir /addon/bin; mkdir /addon/tmp; cp C:/addon.exe /addon/bin/addon.exe; cp C:/split_tests.exe /addon/bin/split_tests.exe";
+      "mkdir /addon/bin; mkdir /addon/tmp; cp C:/addon.exe /addon/bin/addon.exe; If (Test-Path -Path C:/split_tests.exe ) {cp C:/split_tests.exe /addon/bin/split_tests.exe}";
 
   public static final String ADDON_VOLUME = "addon";
   public static final String ADDON_VOL_MOUNT_PATH = "/addon";

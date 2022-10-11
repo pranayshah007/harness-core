@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdlicense.bean.CgActiveServicesUsageInfo;
+import io.harness.cdlicense.bean.CgServiceInstancesUsageInfo;
 import io.harness.cdlicense.impl.CgCdLicenseUsageService;
 import io.harness.exception.InvalidRequestException;
 import io.harness.rest.RestResponse;
@@ -45,5 +46,17 @@ public class CdLicenseUsageResource {
 
     log.info("Fetching CD license usage info in CG for account: [{}]", accountId);
     return new RestResponse<>(licenseUsageService.getActiveServiceLicenseUsage(accountId));
+  }
+
+  @GET
+  @Path("/service-instance")
+  public RestResponse<CgServiceInstancesUsageInfo> getServiceInstancesUsage(@QueryParam("accountId") String accountId) {
+    if (StringUtils.isBlank(accountId)) {
+      throw new InvalidRequestException("Empty accountId is not a valid value");
+    }
+
+    CgServiceInstancesUsageInfo usage = licenseUsageService.getServiceInstancesUsage(accountId);
+    log.info("Fetched service instances usage as: [{}], for account: [{}]", usage, accountId);
+    return new RestResponse<>(usage);
   }
 }

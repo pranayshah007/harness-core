@@ -52,6 +52,7 @@ public class CustomDeploymentInstanceSyncHandler extends AbstractInstanceSyncHan
     CustomDeploymentInstanceInfoDTO deploymentPackageInstanceInfoDTO =
         (CustomDeploymentInstanceInfoDTO) instanceInfoDTO;
     return CustomDeploymentInfrastructureDetails.builder()
+        .properties(deploymentPackageInstanceInfoDTO.getProperties())
         .hostname(deploymentPackageInstanceInfoDTO.getHostname())
         .build();
   }
@@ -67,6 +68,7 @@ public class CustomDeploymentInstanceSyncHandler extends AbstractInstanceSyncHan
 
     return CustomDeploymentInstanceInfoDTO.builder()
         .hostname(customDeploymentServerInstanceInfo.getHostName())
+        .infrastructureKey(((CustomDeploymentServerInstanceInfo) serverInstanceInfo).getInfrastructureKey())
         .properties(customDeploymentServerInstanceInfo.getProperties())
         .build();
   }
@@ -85,12 +87,10 @@ public class CustomDeploymentInstanceSyncHandler extends AbstractInstanceSyncHan
       throw new InvalidArgumentsException(
           Pair.of("serverInstanceInfo", "Must be instance of CustomDeploymentServerInstanceInfo"));
     }
-
-    CustomDeploymentServerInstanceInfo customDeploymentServerInstanceInfo =
-        (CustomDeploymentServerInstanceInfo) serverInstanceInfoList.get(0);
-
     return CustomDeploymentNGDeploymentInfoDTO.builder()
-        .instanceFetchScript(customDeploymentServerInstanceInfo.getInstanceFetchScript())
+        .instanceFetchScript(
+            ((CustomDeploymentServerInstanceInfo) serverInstanceInfoList.get(0)).getInstanceFetchScript())
+        .infratructureKey(infrastructureOutcome.getInfrastructureKey())
         .build();
   }
 }

@@ -181,6 +181,6 @@ public class PipelineEntity
     if (EmptyPredicate.isEmpty(getData())) {
       return false;
     }
-    return TemplateRefHelper.hasTemplateRef(getData());
+    return TemplateRefHelper.hasTemplateRefOrCustomDeploymentRef(getData());
   }
 }

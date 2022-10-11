@@ -19,4 +19,7 @@ public interface NGEncryptedDataDao {
   NGEncryptedData get(String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier);
 
   boolean delete(String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier);
+
+  NGEncryptedData hardDelete(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier);
 }

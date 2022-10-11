@@ -791,7 +791,7 @@ public class ArtifactoryClientImpl {
                 repositoryFormat, repositoryKey, artifactPath)));
   }
 
-  private List<String> listDockerImages(Artifactory artifactory, String repository) {
+  public List<String> listDockerImages(Artifactory artifactory, String repository) {
     List<String> images = new ArrayList<>();
     String repoKey = ArtifactUtilities.trimSlashforwardChars(repository);
     String errorOnListingDockerimages = "Error occurred while listing docker images from artifactory %s for Repo %s";

@@ -12,6 +12,7 @@ public interface ArtifactSourceConstants {
   String GCR_NAME = "Gcr";
   String ECR_NAME = "Ecr";
   String NEXUS3_REGISTRY_NAME = "Nexus3Registry";
+  String NEXUS2_REGISTRY_NAME = "Nexus2Registry";
   String ARTIFACTORY_REGISTRY_NAME = "ArtifactoryRegistry";
   String ACR_NAME = "Acr";
   String CUSTOM_ARTIFACT_NAME = "CustomArtifact";
@@ -20,5 +21,6 @@ public interface ArtifactSourceConstants {
   String AMAZON_S3_NAME = "AmazonS3";
   String GITHUB_PACKAGES_NAME = "GithubPackageRegistry";
   String GOOGLE_ARTIFACT_REGISTRY_NAME = "GoogleArtifactRegistry";
-  String AZURE_ARTIFACTS_NAME = "AzureArtifactsRegistry";
+  String AZURE_ARTIFACTS_NAME = "AzureArtifacts";
+  String AMI_ARTIFACTS_NAME = "AmazonMachineImage";
 }

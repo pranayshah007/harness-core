@@ -9,6 +9,7 @@ package io.harness.cdng.service.steps;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.ng.core.environment.mappers.EnvironmentMapper.toNGEnvironmentConfig;
 
 import static java.lang.String.format;
 
@@ -18,12 +19,12 @@ import io.harness.beans.common.VariablesSweepingOutput;
 import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
 import io.harness.cdng.configfile.steps.ConfigFilesOutcome;
 import io.harness.cdng.creator.plan.environment.EnvironmentMapper;
+import io.harness.cdng.creator.plan.environment.EnvironmentPlanCreatorHelper;
 import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.manifest.steps.ManifestsOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.data.structure.CollectionUtils;
-import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnresolvedExpressionsException;
 import io.harness.executions.steps.ExecutionNodeType;
@@ -38,7 +39,7 @@ import io.harness.ng.core.service.services.ServiceEntityService;
 import io.harness.ng.core.service.yaml.NGServiceConfig;
 import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity;
-import io.harness.ng.core.serviceoverride.mapper.NGServiceOverrideEntityConfigMapper;
+import io.harness.ng.core.serviceoverride.mapper.ServiceOverridesMapper;
 import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
 import io.harness.ng.core.serviceoverride.yaml.NGServiceOverrideConfig;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -110,6 +111,7 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
     validate(stepParameters);
     try {
       final NGLogCallback logCallback = serviceStepsHelper.getServiceLogCallback(ambiance, true);
+
       saveExecutionLog(logCallback, "Starting service step...");
 
       final ServicePartResponse servicePartResponse = executeServicePart(ambiance, stepParameters);
@@ -167,6 +169,12 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
         throw new InvalidRequestException("Environment " + envRef.getValue() + " not found");
       }
 
+      // handle old environments
+      if (isEmpty(environment.get().getYaml())) {
+        NGEnvironmentConfig ngEnvironmentConfig = toNGEnvironmentConfig(environment.get());
+        environment.get().setYaml(io.harness.ng.core.environment.mappers.EnvironmentMapper.toYaml(ngEnvironmentConfig));
+      }
+
       NGEnvironmentConfig ngEnvironmentConfig;
       try {
         ngEnvironmentConfig = mergeEnvironmentInputs(environment.get().getYaml(), envInputs);
@@ -178,9 +186,12 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
       final Optional<NGServiceOverridesEntity> ngServiceOverridesEntity =
           serviceOverrideService.get(AmbianceUtils.getAccountId(ambiance), AmbianceUtils.getOrgIdentifier(ambiance),
               AmbianceUtils.getProjectIdentifier(ambiance), envRef.getValue(), parameters.getServiceRef().getValue());
+      NGServiceOverrideConfig ngServiceOverrides = NGServiceOverrideConfig.builder().build();
+      if (ngServiceOverridesEntity.isPresent()) {
+        ngServiceOverrides =
+            mergeSvcOverrideInputs(ngServiceOverridesEntity.get().getYaml(), parameters.getServiceOverrideInputs());
+      }
 
-      final NGServiceOverrideConfig ngServiceOverrides = NGServiceOverrideEntityConfigMapper.toNGServiceOverrideConfig(
-          ngServiceOverridesEntity.orElse(NGServiceOverridesEntity.builder().build()));
       final EnvironmentOutcome environmentOutcome =
           EnvironmentMapper.toEnvironmentOutcome(environment.get(), ngEnvironmentConfig, ngServiceOverrides);
 
@@ -197,6 +208,21 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
           servicePartResponse.getNgServiceConfig(), ngServiceOverrides, ngEnvironmentConfig, ambiance,
           SERVICE_CONFIG_FILES_SWEEPING_OUTPUT);
     }
+  }
+
+  private NGServiceOverrideConfig mergeSvcOverrideInputs(
+      String originalOverridesYaml, ParameterField<Map<String, Object>> serviceOverrideInputs) {
+    NGServiceOverrideConfig serviceOverrideConfig = NGServiceOverrideConfig.builder().build();
+
+    if (ParameterField.isNull(serviceOverrideInputs) || isEmpty(serviceOverrideInputs.getValue())) {
+      return ServiceOverridesMapper.toNGServiceOverrideConfig(originalOverridesYaml);
+    }
+    final String mergedYaml = EnvironmentPlanCreatorHelper.resolveServiceOverrideInputs(
+        originalOverridesYaml, serviceOverrideInputs.getValue());
+    if (isNotEmpty(mergedYaml)) {
+      serviceOverrideConfig = ServiceOverridesMapper.toNGServiceOverrideConfig(mergedYaml);
+    }
+    return serviceOverrideConfig;
   }
 
   private void processServiceVariables(Ambiance ambiance, ServicePartResponse servicePartResponse,
@@ -301,6 +327,13 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
     }
 
     final ServiceEntity serviceEntity = serviceOpt.get();
+
+    if (serviceEntity.getType() != null && stepParameters.getDeploymentType() != null
+        && serviceEntity.getType() != stepParameters.getDeploymentType()) {
+      throw new InvalidRequestException(format("Deployment type of the stage [%s] and the service [%s] do not match",
+          stepParameters.getDeploymentType().getYamlName(), serviceEntity.getType().getYamlName()));
+    }
+
     final String mergedServiceYaml;
     if (stepParameters.getInputs() != null && isNotEmpty(stepParameters.getInputs().getValue())) {
       mergedServiceYaml = mergeServiceInputsIntoService(serviceEntity.getYaml(), stepParameters.getInputs().getValue());
@@ -380,7 +413,7 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
 
   private void addEnvVariables(
       Map<String, Object> variables, Map<String, Object> envVariables, NGLogCallback logCallback) {
-    if (EmptyPredicate.isEmpty(envVariables)) {
+    if (isEmpty(envVariables)) {
       return;
     }
 

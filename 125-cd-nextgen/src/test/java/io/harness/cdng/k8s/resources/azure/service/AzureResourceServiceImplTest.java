@@ -10,6 +10,7 @@ package io.harness.cdng.k8s.resources.azure.service;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.rule.OwnerRule.MLUKIC;
 import static io.harness.rule.OwnerRule.VLICA;
+import static io.harness.rule.OwnerRule.vivekveman;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
@@ -26,12 +27,14 @@ import io.harness.category.element.UnitTests;
 import io.harness.cdng.azure.AzureHelperService;
 import io.harness.cdng.k8s.resources.azure.dtos.AzureClustersDTO;
 import io.harness.cdng.k8s.resources.azure.dtos.AzureDeploymentSlotsDTO;
+import io.harness.cdng.k8s.resources.azure.dtos.AzureImageGalleriesDTO;
 import io.harness.cdng.k8s.resources.azure.dtos.AzureResourceGroupsDTO;
 import io.harness.cdng.k8s.resources.azure.dtos.AzureSubscriptionsDTO;
 import io.harness.cdng.k8s.resources.azure.dtos.AzureWebAppNamesDTO;
 import io.harness.delegate.beans.azure.response.AzureClustersResponse;
 import io.harness.delegate.beans.azure.response.AzureDeploymentSlotResponse;
 import io.harness.delegate.beans.azure.response.AzureDeploymentSlotsResponse;
+import io.harness.delegate.beans.azure.response.AzureImageGalleriesResponse;
 import io.harness.delegate.beans.azure.response.AzureResourceGroupsResponse;
 import io.harness.delegate.beans.azure.response.AzureSubscriptionsResponse;
 import io.harness.delegate.beans.azure.response.AzureWebAppNamesResponse;
@@ -51,6 +54,9 @@ import io.harness.encryption.SecretRefData;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.rule.Owner;
 
+import software.wings.beans.AzureImageGallery;
+
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -258,6 +264,42 @@ public class AzureResourceServiceImplTest extends CategoryTest {
     assertThat(azureClustersDTO.getClusters().get(0).getCluster()).isEqualTo("aks1");
     assertThat(azureClustersDTO.getClusters().get(1).getCluster()).isEqualTo("aks2");
     assertThat(azureClustersDTO.getClusters().get(2).getCluster()).isEqualTo("aks3");
+  }
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testGetImageGallery() {
+    IdentifierRef identifierRef = IdentifierRef.builder()
+                                      .accountIdentifier(ACCOUNT_ID)
+                                      .identifier("identifier")
+                                      .projectIdentifier(PROJECT_IDENTIFIER)
+                                      .orgIdentifier(ORG_IDENTIFIER)
+                                      .build();
+    AzureConnectorDTO azureConnectorDTO = getSPConnector(AzureSecretType.SECRET_KEY);
+
+    when(azureHelperService.getConnector(identifierRef)).thenReturn(azureConnectorDTO);
+
+    AzureImageGallery azureImageGallery = new AzureImageGallery();
+    azureImageGallery.setName("name");
+    azureImageGallery.setRegionName("region");
+    azureImageGallery.setResourceGroupName("resourceGroupName");
+    azureImageGallery.setSubscriptionId("subscriptionId");
+    List<AzureImageGallery> imageGalleryList = new ArrayList<>();
+    imageGalleryList.add(azureImageGallery);
+    when(azureHelperService.executeSyncTask(any(), any(), anyString()))
+        .thenReturn(AzureImageGalleriesResponse.builder()
+                        .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+                        .azureImageGalleries(imageGalleryList)
+                        .build());
+
+    AzureImageGalleriesDTO azureImageGalleriesDTO = azureResourceService.getImageGallery(
+        identifierRef, ORG_IDENTIFIER, PROJECT_IDENTIFIER, ACR_SUBSCRIPTION_ID, "resourceGroupName");
+    assertThat(azureImageGalleriesDTO).isNotNull();
+    assertThat(azureImageGalleriesDTO.getAzureImageGalleries().size()).isEqualTo(1);
+
+    verify(azureHelperService, times(1)).executeSyncTask(any(), any(), anyString());
+
+    assertThat(azureImageGalleriesDTO.getAzureImageGalleries()).isEqualTo(imageGalleryList);
   }
 
   private AzureConnectorDTO getSPConnector(AzureSecretType azureSecretType) {

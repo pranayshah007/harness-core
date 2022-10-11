@@ -98,6 +98,9 @@ java_binary(
     ]),
     data = [":resource"],
     main_class = "software.wings.app.WingsApplication",
+    resources = [
+        "//360-cg-manager/src/main/resources:resource",
+    ],
     visibility = ["//visibility:public"],
     deps = shared_dependencies,
 )

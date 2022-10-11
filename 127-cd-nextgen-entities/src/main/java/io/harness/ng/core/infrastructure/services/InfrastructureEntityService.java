@@ -9,9 +9,11 @@ package io.harness.ng.core.infrastructure.services;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.ng.core.infrastructure.dto.InfrastructureYamlMetadata;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
 import io.harness.repositories.UpsertOptions;
 
+import com.mongodb.client.result.UpdateResult;
 import java.util.List;
 import java.util.Optional;
 import javax.validation.constraints.NotNull;
@@ -19,6 +21,7 @@ import org.hibernate.validator.constraints.NotEmpty;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Update;
 
 @OwnedBy(HarnessTeam.CDC)
 public interface InfrastructureEntityService {
@@ -54,6 +57,18 @@ public interface InfrastructureEntityService {
   List<InfrastructureEntity> getAllInfrastructureFromEnvIdentifier(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String envIdentifier);
 
-  String createInfrastructureInputsFromYaml(String accountId, String projectIdentifier, String orgIdentifier,
+  String createInfrastructureInputsFromYaml(String accountId, String orgIdentifier, String projectIdentifier,
       String environmentIdentifier, List<String> infraIdentifiers, boolean deployToAll);
+
+  String createInfrastructureInputsFromYamlV2(String accountId, String orgIdentifier, String projectIdentifier,
+      String environmentIdentifier, List<String> infraIdentifiers, boolean deployToAll);
+
+  UpdateResult batchUpdateInfrastructure(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String envIdentifier, List<String> infraIdentifier, Update update);
+
+  List<InfrastructureYamlMetadata> createInfrastructureYamlMetadata(String accountId, String orgIdentifier,
+      String projectIdentifier, String environmentIdentifier, List<String> infraIds);
+
+  String createInfrastructureInputsFromYaml(String accountId, String orgIdentifier, String projectIdentifier,
+      String environmentIdentifier, String infraIdentifier);
 }

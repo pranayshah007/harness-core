@@ -138,6 +138,8 @@ public enum NGStepType {
   @JsonProperty(StepSpecTypeConstants.ECS_CANARY_DELETE)
   ECS_CANARY_DELETE(
       "Ecs Canary Delete", Arrays.asList(ServiceDefinitionType.ECS), "ECS", StepSpecTypeConstants.ECS_CANARY_DELETE),
+  @JsonProperty(StepSpecTypeConstants.ECS_RUN_TASK)
+  ECS_RUN_TASK("Ecs Run Task", Arrays.asList(ServiceDefinitionType.ECS), "ECS", StepSpecTypeConstants.ECS_RUN_TASK),
   // ssh steps
   @JsonProperty(StepSpecTypeConstants.COMMAND)
   COMMAND("Command", Arrays.asList(ServiceDefinitionType.SSH, ServiceDefinitionType.WINRM), "Command",
@@ -155,7 +157,20 @@ public enum NGStepType {
       "Infrastructure Provisioners/Azure Blueprint", StepSpecTypeConstants.AZURE_CREATE_BP_RESOURCE),
   @JsonProperty(StepSpecTypeConstants.AZURE_ROLLBACK_ARM_RESOURCE)
   AZURE_ROLLBACK_ARM_RESOURCE("Azure ARM Rollback", Arrays.asList(ServiceDefinitionType.values()),
-      "Infrastructure Provisioners/Azure ARM", StepSpecTypeConstants.AZURE_ROLLBACK_ARM_RESOURCE);
+      "Infrastructure Provisioners/Azure ARM", StepSpecTypeConstants.AZURE_ROLLBACK_ARM_RESOURCE),
+
+  @JsonProperty(StepSpecTypeConstants.ECS_BLUE_GREEN_CREATE_SERVICE)
+  ECS_BLUE_GREEN_CREATE_SERVICE("Ecs Blue Green Create Service", Arrays.asList(ServiceDefinitionType.ECS), "ECS",
+      StepSpecTypeConstants.ECS_BLUE_GREEN_CREATE_SERVICE),
+  @JsonProperty(StepSpecTypeConstants.ECS_BLUE_GREEN_SWAP_TARGET_GROUPS)
+  ECS_BLUE_GREEN_SWAP_TARGET_GROUPS("Ecs Blue Green Swap Target Group", Arrays.asList(ServiceDefinitionType.ECS), "ECS",
+      StepSpecTypeConstants.ECS_BLUE_GREEN_SWAP_TARGET_GROUPS),
+  @JsonProperty(StepSpecTypeConstants.ECS_BLUE_GREEN_ROLLBACK)
+  ECS_BLUE_GREEN_ROLLBACK("Ecs Blue Green Rollback", Arrays.asList(ServiceDefinitionType.ECS), "ECS",
+      StepSpecTypeConstants.ECS_BLUE_GREEN_ROLLBACK),
+  @JsonProperty(StepSpecTypeConstants.GITOPS_UPDATE_RELEASE_REPO)
+  GITOPS_UPDATE_RELEASE_REPO("Update Release Repo", Arrays.asList(ServiceDefinitionType.KUBERNETES), "Kubernetes",
+      StepSpecTypeConstants.GITOPS_UPDATE_RELEASE_REPO);
 
   private String displayName;
   private List<ServiceDefinitionType> serviceDefinitionTypes;

@@ -40,7 +40,6 @@ import software.wings.beans.sso.SAMLProviderType;
 import software.wings.beans.sso.SSOSettings;
 import software.wings.beans.sso.SSOType;
 import software.wings.beans.sso.SamlSettings;
-import software.wings.helpers.ext.ldap.LdapResponse;
 import software.wings.security.authentication.LoginTypeResponse;
 import software.wings.security.authentication.SSOConfig;
 
@@ -193,6 +192,7 @@ public class AuthenticationSettingsServiceImpl implements AuthenticationSettings
                        .displayName(ldapSettings.getDisplayName())
                        .cronExpression(ldapSettings.getCronExpression())
                        .nextIterations(ldapSettings.getNextIterations())
+                       .disabled(ldapSettings.isDisabled())
                        .build());
       }
     }
@@ -312,14 +312,6 @@ public class AuthenticationSettingsServiceImpl implements AuthenticationSettings
     getResponse(managerClient.deleteLdapSettings(accountIdentifier));
   }
 
-  @Override
-  public LdapResponse testLDAPLogin(
-      @NotNull @AccountIdentifier String accountIdentifier, String email, String password) {
-    log.info("NGLDAP: Test ldap authentication in accountId {}", accountIdentifier);
-    return getResponse(managerClient.testLdapAuthentication(
-        accountIdentifier, createPartFromString(email), createPartFromString(password)));
-  }
-
   private LDAPSettings fromCGLdapSettings(LdapSettings ldapSettings) {
     return LDAPSettings.builder()
         .identifier(ldapSettings.getUuid())
@@ -329,6 +321,7 @@ public class AuthenticationSettingsServiceImpl implements AuthenticationSettings
         .displayName(ldapSettings.getDisplayName())
         .cronExpression(ldapSettings.getCronExpression())
         .nextIterations(ldapSettings.getNextIterations())
+        .disabled(ldapSettings.isDisabled())
         .build();
   }
 
@@ -344,6 +337,7 @@ public class AuthenticationSettingsServiceImpl implements AuthenticationSettings
 
     toLdapSettings.setUuid(ldapSettings.getIdentifier());
     toLdapSettings.setCronExpression(ldapSettings.getCronExpression());
+    toLdapSettings.setDisabled(ldapSettings.isDisabled());
     return toLdapSettings;
   }
 }

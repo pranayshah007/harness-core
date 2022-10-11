@@ -163,7 +163,11 @@ public class CustomManifestFetchTaskHelper {
             : customManifestService.readFilesContent(
                 defaultSourceWorkingDirectory, customManifestSource.getFilePaths());
 
-        fetchedFilesContent.put(fetchFileConfig.getKey(), valuesContent);
+        if (fetchedFilesContent.containsKey(fetchFileConfig.getKey())) {
+          fetchedFilesContent.get(fetchFileConfig.getKey()).addAll(valuesContent);
+        } else {
+          fetchedFilesContent.put(fetchFileConfig.getKey(), valuesContent);
+        }
 
       } catch (IOException e) {
         Throwable cause = e.getCause();

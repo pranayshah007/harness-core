@@ -35,8 +35,12 @@ func NewMavenRunner(log *zap.SugaredLogger, fs filesystem.FileSystem, factory ex
 	}
 }
 
-func (b *mavenRunner) AutoDetectPackages() ([]string, error) {
-	return DetectPkgs(b.log, b.fs)
+func (m *mavenRunner) AutoDetectPackages() ([]string, error) {
+	return DetectPkgs(m.log, m.fs)
+}
+
+func (m *mavenRunner) AutoDetectTests(ctx context.Context) ([]types.RunnableTest, error) {
+	return GetJavaTests(m.log, m.fs)
 }
 
 func (m *mavenRunner) GetCmd(ctx context.Context, tests []types.RunnableTest, userArgs, agentConfigPath string, ignoreInstr, runAll bool) (string, error) {

@@ -12,7 +12,7 @@ import io.harness.cvng.core.beans.sli.SLIOnboardingGraphs;
 import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorDTO;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
-import io.harness.cvng.servicelevelobjective.entities.ServiceLevelObjective.TimePeriod;
+import io.harness.cvng.servicelevelobjective.entities.TimePeriod;
 
 import java.util.List;
 

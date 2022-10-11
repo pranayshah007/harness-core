@@ -1,3 +1,10 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.ngsettings;
 
 import static com.google.inject.Key.get;
@@ -6,6 +13,7 @@ import static com.google.inject.name.Names.named;
 import io.harness.annotation.HarnessRepo;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.mongo.MongoConfig;
 import io.harness.springdata.HMongoTemplate;
 
 import com.google.inject.Injector;
@@ -58,7 +66,7 @@ public class NgSettingsPersistenceTestConfig extends AbstractMongoConfiguration 
   @Bean(name = "primary")
   @Primary
   public MongoTemplate mongoTemplate() throws Exception {
-    return new HMongoTemplate(mongoDbFactory(), mappingMongoConverter());
+    return new HMongoTemplate(mongoDbFactory(), mappingMongoConverter(), MongoConfig.builder().build());
   }
 
   @Override

@@ -127,14 +127,14 @@ public class InfrastructurePmsPlanCreatorTest extends CDNGTestBase {
                                               .inputs(ParameterField.createValueField(Map.of("k", "v")))
                                               .build())))
             .build(),
-        Collections.singletonList(AdviserObtainment.newBuilder().build()));
+        Collections.singletonList(AdviserObtainment.newBuilder().build()), null);
 
     assertThat(node.getName()).isEqualTo("Infrastructure Section");
     assertThat(node.getIdentifier()).isEqualTo("infrastructure");
     assertThat(node.getStepType()).isEqualTo(InfrastructureTaskExecutableStepV2.STEP_TYPE);
     assertThat(node.getGroup()).isEqualTo("infrastructureGroup");
     assertThat(node.getAdviserObtainments()).hasSize(1);
-    assertThat(node.getFacilitatorObtainments().get(0).getType().getType()).isEqualTo("TASK");
+    assertThat(node.getFacilitatorObtainments().get(0).getType().getType()).isEqualTo("ASYNC");
 
     InfrastructureTaskExecutableStepV2Params stepParameters =
         (InfrastructureTaskExecutableStepV2Params) node.getStepParameters();

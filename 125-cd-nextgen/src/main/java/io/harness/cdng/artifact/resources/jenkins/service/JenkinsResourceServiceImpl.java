@@ -40,6 +40,7 @@ import io.harness.exception.ExplanationException;
 import io.harness.exception.HintException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
+import io.harness.exception.exceptionmanager.ExceptionManager;
 import io.harness.exception.exceptionmanager.exceptionhandler.DocumentLinksConstants;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.core.NGAccess;
@@ -59,11 +60,14 @@ import java.util.Optional;
 import javax.annotation.Nonnull;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class JenkinsResourceServiceImpl implements JenkinsResourceService {
   private final ConnectorService connectorService;
   private final SecretManagerClientService secretManagerClientService;
   @Inject private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
+  @Inject ExceptionManager exceptionManager;
   @VisibleForTesting static final int timeoutInSecs = 30;
 
   @Inject
@@ -82,7 +86,7 @@ public class JenkinsResourceServiceImpl implements JenkinsResourceService {
     List<EncryptedDataDetail> encryptionDetails = getEncryptionDetails(connector, baseNGAccess);
     JenkinsArtifactDelegateRequest jenkinsRequest =
         ArtifactDelegateRequestUtils.getJenkinsDelegateRequest(jenkinsConnectorRef.getIdentifier(), connector,
-            encryptionDetails, ArtifactSourceType.JENKINS, null, parentJobName, null, null);
+            encryptionDetails, ArtifactSourceType.JENKINS, null, parentJobName, null, null, null);
     try {
       ArtifactTaskExecutionResponse artifactTaskExecutionResponse = executeSyncTask(
           jenkinsRequest, ArtifactTaskType.GET_JOBS, baseNGAccess, "Jenkins Get Job task failure due to error");
@@ -201,7 +205,11 @@ public class JenkinsResourceServiceImpl implements JenkinsResourceService {
           .taskSetupAbstraction("owner", ngAccess.getOrgIdentifier() + "/" + ngAccess.getProjectIdentifier());
     }
     final DelegateTaskRequest delegateTaskRequest = delegateTaskRequestBuilder.build();
-    return delegateGrpcClientWrapper.executeSyncTask(delegateTaskRequest);
+    try {
+      return delegateGrpcClientWrapper.executeSyncTask(delegateTaskRequest);
+    } catch (DelegateServiceDriverException ex) {
+      throw exceptionManager.processException(ex, WingsException.ExecutionContext.MANAGER, log);
+    }
   }
 
   private ArtifactTaskExecutionResponse getTaskExecutionResponse(

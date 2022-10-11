@@ -17,6 +17,7 @@ import io.harness.ng.core.template.TemplateMergeResponseDTO;
 import io.harness.ng.core.template.TemplateWithInputsResponseDTO;
 import io.harness.template.beans.FilterParamsDTO;
 import io.harness.template.beans.PageParamsDTO;
+import io.harness.template.beans.TemplateImportRequestDTO;
 import io.harness.template.entity.TemplateEntity;
 
 import java.util.Optional;
@@ -76,4 +77,7 @@ public interface NGTemplateService {
   boolean deleteAllTemplatesInAProject(String accountId, String orgId, String projectId);
 
   boolean deleteAllOrgLevelTemplates(String accountId, String orgId);
+
+  TemplateEntity importTemplateFromRemote(String accountId, String orgIdentifier, String projectIdentifier,
+      String templateIdentifier, TemplateImportRequestDTO templateImportRequest, boolean isForceImport);
 }

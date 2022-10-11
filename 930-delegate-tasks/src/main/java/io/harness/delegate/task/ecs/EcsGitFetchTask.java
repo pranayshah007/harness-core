@@ -37,9 +37,10 @@ import io.harness.delegate.task.AbstractDelegateRunnableTask;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.ecs.request.EcsGitFetchRequest;
 import io.harness.delegate.task.ecs.response.EcsGitFetchResponse;
+import io.harness.delegate.task.git.GitFetchTaskHelper;
 import io.harness.delegate.task.git.TaskStatus;
-import io.harness.delegate.task.serverless.ServerlessGitFetchTaskHelper;
 import io.harness.ecs.EcsCommandUnitConstants;
+import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.git.model.FetchFilesResult;
 import io.harness.logging.CommandExecutionStatus;
@@ -67,7 +68,7 @@ import org.jose4j.lang.JoseException;
 @OwnedBy(HarnessTeam.CDP)
 public class EcsGitFetchTask extends AbstractDelegateRunnableTask {
   @Inject private GitDecryptionHelper gitDecryptionHelper;
-  @Inject private ServerlessGitFetchTaskHelper serverlessGitFetchTaskHelper;
+  @Inject private GitFetchTaskHelper gitFetchTaskHelper;
 
   public EcsGitFetchTask(DelegateTaskPackage delegateTaskPackage, ILogStreamingTaskClient logStreamingTaskClient,
       Consumer<DelegateTaskResponse> consumer, BooleanSupplier preExecute) {
@@ -96,15 +97,20 @@ public class EcsGitFetchTask extends AbstractDelegateRunnableTask {
       EcsGitFetchFileConfig ecsTaskDefinitionGitFetchFileConfig =
           ecsGitFetchRequest.getEcsTaskDefinitionGitFetchFileConfig();
 
-      FetchFilesResult ecsTaskDefinitionFetchFilesResult = fetchManifestFile(
-          ecsTaskDefinitionGitFetchFileConfig, executionLogCallback, ecsGitFetchRequest.getAccountId());
-
+      FetchFilesResult ecsTaskDefinitionFetchFilesResult = null;
+      if (ecsTaskDefinitionGitFetchFileConfig != null) {
+        ecsTaskDefinitionFetchFilesResult = fetchManifestFile(
+            ecsTaskDefinitionGitFetchFileConfig, executionLogCallback, ecsGitFetchRequest.getAccountId());
+      }
       // Fetch Ecs Service Definition
       EcsGitFetchFileConfig ecsServiceDefinitionGitFetchFileConfig =
           ecsGitFetchRequest.getEcsServiceDefinitionGitFetchFileConfig();
 
-      FetchFilesResult ecsServiceDefinitionFetchFilesResult = fetchManifestFile(
-          ecsServiceDefinitionGitFetchFileConfig, executionLogCallback, ecsGitFetchRequest.getAccountId());
+      FetchFilesResult ecsServiceDefinitionFetchFilesResult = null;
+      if (ecsServiceDefinitionGitFetchFileConfig != null) {
+        ecsServiceDefinitionFetchFilesResult = fetchManifestFile(
+            ecsServiceDefinitionGitFetchFileConfig, executionLogCallback, ecsGitFetchRequest.getAccountId());
+      }
 
       List<FetchFilesResult> ecsScalableTargetFetchFilesResults = new ArrayList<>();
       if (CollectionUtils.isNotEmpty(ecsGitFetchRequest.getEcsScalableTargetGitFetchFileConfigs())) {
@@ -165,7 +171,7 @@ public class EcsGitFetchTask extends AbstractDelegateRunnableTask {
     executionLogCallback.saveExecutionLog(fetchTypeInfo);
     if (gitStoreDelegateConfig.isOptimizedFilesFetch()) {
       executionLogCallback.saveExecutionLog("Using optimized file fetch ");
-      serverlessGitFetchTaskHelper.decryptGitStoreConfig(gitStoreDelegateConfig);
+      gitFetchTaskHelper.decryptGitStoreConfig(gitStoreDelegateConfig);
     } else {
       gitConfigDTO = ScmConnectorMapper.toGitConfigDTO(gitStoreDelegateConfig.getGitConfigDTO());
       gitDecryptionHelper.decryptGitConfig(gitConfigDTO, gitStoreDelegateConfig.getEncryptedDataDetails());
@@ -178,9 +184,19 @@ public class EcsGitFetchTask extends AbstractDelegateRunnableTask {
         String filePath = ecsGitFetchFileConfig.getGitStoreDelegateConfig().getPaths().get(0);
 
         List<String> filePaths = Collections.singletonList(filePath);
-        serverlessGitFetchTaskHelper.printFileNames(executionLogCallback, filePaths);
-        filesResult =
-            serverlessGitFetchTaskHelper.fetchFileFromRepo(gitStoreDelegateConfig, filePaths, accountId, gitConfigDTO);
+        gitFetchTaskHelper.printFileNames(executionLogCallback, filePaths);
+        try {
+          filesResult =
+              gitFetchTaskHelper.fetchFileFromRepo(gitStoreDelegateConfig, filePaths, accountId, gitConfigDTO);
+        } catch (Exception e) {
+          throw NestedExceptionUtils.hintWithExplanationException(
+              format(
+                  "Please checks files %s configured Manifest section in Harness Service are correct. Check if git credentials are correct.",
+                  filePaths),
+              format("Error while fetching files %s from Git repo %s", filePaths,
+                  ecsGitFetchFileConfig.getGitStoreDelegateConfig().getGitConfigDTO().getUrl()),
+              e);
+        }
       }
       executionLogCallback.saveExecutionLog(
           color(format("%nFetch Config File completed successfully..%n"), LogColor.White, LogWeight.Bold), INFO);
@@ -198,5 +214,9 @@ public class EcsGitFetchTask extends AbstractDelegateRunnableTask {
       throw sanitizedException;
     }
     return filesResult;
+  }
+
+  public boolean isSupportingErrorFramework() {
+    return true;
   }
 }

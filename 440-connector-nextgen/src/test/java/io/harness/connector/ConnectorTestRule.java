@@ -37,6 +37,7 @@ import io.harness.gitsync.persistance.testing.NoOpGitAwarePersistenceImpl;
 import io.harness.govern.ProviderModule;
 import io.harness.govern.ServersModule;
 import io.harness.grpc.DelegateServiceGrpcClient;
+import io.harness.mongo.MongoConfig;
 import io.harness.mongo.MongoPersistence;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.ng.core.activityhistory.service.NGActivityService;
@@ -50,6 +51,7 @@ import io.harness.persistence.HPersistence;
 import io.harness.remote.CEAwsSetupConfig;
 import io.harness.remote.CEAzureSetupConfig;
 import io.harness.remote.CEGcpSetupConfig;
+import io.harness.remote.client.ClientMode;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.rule.InjectorRuleMixin;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
@@ -122,6 +124,9 @@ public class ConnectorTestRule implements InjectorRuleMixin, MethodRule, MongoRu
         bind(OrganizationService.class).toInstance(mock(OrganizationService.class));
         bind(NGActivityService.class).toInstance(mock(NGActivityService.class));
         bind(SecretManagerClientService.class).toInstance(mock(SecretManagerClientService.class));
+        bind(SecretManagerClientService.class)
+            .annotatedWith(Names.named(ClientMode.PRIVILEGED.name()))
+            .toInstance(mock(SecretManagerClientService.class));
         bind(DecryptionHelper.class).toInstance(mock(DecryptionHelperViaManager.class));
         bind(SecretNGManagerClient.class).toInstance(mock(SecretNGManagerClient.class));
         bind(DelegateServiceGrpcClient.class).toInstance(mock(DelegateServiceGrpcClient.class));
@@ -188,6 +193,12 @@ public class ConnectorTestRule implements InjectorRuleMixin, MethodRule, MongoRu
         return ImmutableSet.<Class<? extends MorphiaRegistrar>>builder()
             .addAll(ConnectorNextGenRegistrars.morphiaRegistrars)
             .build();
+      }
+
+      @Provides
+      @Singleton
+      MongoConfig mongoConfig() {
+        return MongoConfig.builder().build();
       }
 
       @Provides
