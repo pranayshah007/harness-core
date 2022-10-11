@@ -19,7 +19,7 @@ type RegisterTopicMetadata struct {
 	MaxRetries int
 	// time in nanoseconds
 	// swagger:strfmt maxProcessingTime
-	MaxProcessingTime      time.Duration `json:"maxProcessingTime" type:integer`
+	MaxProcessingTime      time.Duration `json:"maxProcessingTime"`
 	MaxUnProcessedMessages int
 }
 

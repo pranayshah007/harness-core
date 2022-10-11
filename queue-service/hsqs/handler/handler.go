@@ -32,6 +32,7 @@ func (h *Handler) Register(g *echo.Group) {
 // @Accept      json
 // @Produce     json
 // @Param       request body store.EnqueueRequest true "query params"
+// @Param 		Authorization header string true "Authorization"
 // @Success     200 {object} store.EnqueueResponse
 // @Router      /v1/queue [POST]
 func (h *Handler) handleEnqueue() echo.HandlerFunc {
@@ -58,6 +59,7 @@ func (h *Handler) handleEnqueue() echo.HandlerFunc {
 // @Accept      json
 // @Produce     json
 // @Param       request body store.DequeueRequest true "query params"
+// @Param 		Authorization header string true "Authorization"
 // @Success     200 {object} store.DequeueResponse
 // @Router      /v1/dequeue [POST]
 func (h *Handler) handleDequeue() echo.HandlerFunc {
@@ -83,6 +85,7 @@ func (h *Handler) handleDequeue() echo.HandlerFunc {
 // @Accept      json
 // @Produce     json
 // @Param       request body store.AckRequest true "query params"
+// @Param 		Authorization header string true "Authorization"
 // @Success     200 {object} store.AckResponse
 // @Router      /v1/ack [POST]
 func (h *Handler) ack() echo.HandlerFunc {
@@ -108,6 +111,7 @@ func (h *Handler) ack() echo.HandlerFunc {
 // @Accept      json
 // @Produce     json
 // @Param       request body store.UnAckRequest true "query params"
+// @Param 		Authorization header string true "Authorization"
 // @Success     200 {object} store.UnAckResponse
 // @Router      /v1/unack [POST]
 func (h *Handler) unAck() echo.HandlerFunc {
