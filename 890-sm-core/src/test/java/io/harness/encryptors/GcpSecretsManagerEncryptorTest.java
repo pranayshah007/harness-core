@@ -270,7 +270,8 @@ public class GcpSecretsManagerEncryptorTest extends CategoryTest {
   @Owner(developers = SHREYAS)
   @Category(UnitTests.class)
   public void test_whenThereAreNoSecretsShouldPass() {
-    gcpSecretsManagerEncryptor.validateSecretManagerConfiguration(accountId, gcpSecretsManagerConfig);
+    assertThat(gcpSecretsManagerEncryptor.validateSecretManagerConfiguration(accountId, gcpSecretsManagerConfig))
+        .isTrue();
   }
 
   @Test
@@ -281,6 +282,7 @@ public class GcpSecretsManagerEncryptorTest extends CategoryTest {
     secrets.add(Secret.newBuilder().build());
     secrets.add(Secret.newBuilder().build());
     when(listSecretsPagedResponse.iterateAll()).thenReturn(secrets);
-    gcpSecretsManagerEncryptor.validateSecretManagerConfiguration(accountId, gcpSecretsManagerConfig);
+    assertThat(gcpSecretsManagerEncryptor.validateSecretManagerConfiguration(accountId, gcpSecretsManagerConfig))
+        .isTrue();
   }
 }
