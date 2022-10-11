@@ -58,6 +58,7 @@ public class InstanceMetaDataUtilsTest extends BatchProcessingTestBase {
   public void testPopulateNodePoolNameFromLabel() throws Exception {
     assertTrue(isNodePoolNameCorrect(ImmutableMap.of(K8sCCMConstants.GKE_NODE_POOL_KEY, NODE_POOL_NAME)));
     assertTrue(isNodePoolNameCorrect(ImmutableMap.of(K8sCCMConstants.AKS_NODE_POOL_KEY, NODE_POOL_NAME)));
+    assertTrue(isNodePoolNameCorrect(ImmutableMap.of(K8sCCMConstants.KOPS_NODE_POOL_KEY, NODE_POOL_NAME)));
     assertTrue(isNodePoolNameCorrect(ImmutableMap.of(K8sCCMConstants.EKSCTL_NODE_POOL_KEY, NODE_POOL_NAME)));
     assertFalse(isNodePoolNameCorrect(ImmutableMap.of(K8sCCMConstants.SPOT_INSTANCE_NODE_LIFECYCLE, "spot")));
     assertFalse(isNodePoolNameCorrect(ImmutableMap.of(K8sCCMConstants.SPOT_INSTANCE_NODE_LIFECYCLE, "od")));
