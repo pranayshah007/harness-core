@@ -38,7 +38,7 @@ import retrofit.http.Body;
 @Consumes({"application/json", "text/yaml", "text/html", "text/plain"})
 @Slf4j
 @NextGenManagerAuth
-public class ChaosK8sResource {
+public class ChaosResource {
   ChaosService chaosService;
 
   @POST
@@ -49,5 +49,18 @@ public class ChaosK8sResource {
       @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier, @Body ChaosK8sRequest request) {
     String taskId = chaosService.applyK8sManifest(request);
     return ResponseDTO.newResponse(taskId);
+  }
+
+  @POST
+  @Path("/notify")
+  @InternalApi
+  @ApiOperation(value = "Notify on completion of chaos experiment", nickname = "chaosStepNotify", hidden = true)
+  public ResponseDTO<Boolean> chaosStepNotify(@Body ChaosStepNotifyResponse stepNotifyResponse) {
+    try {
+      chaosService.notifyStep(stepNotifyResponse.getNotifyId(), stepNotifyResponse.getData());
+      return ResponseDTO.newResponse(true);
+    } catch (Exception e) {
+      return ResponseDTO.newResponse(true);
+    }
   }
 }

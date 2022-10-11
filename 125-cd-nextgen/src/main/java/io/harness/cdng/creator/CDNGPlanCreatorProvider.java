@@ -57,6 +57,9 @@ import io.harness.cdng.azure.webapp.variablecreator.AzureWebAppRollbackStepVaria
 import io.harness.cdng.azure.webapp.variablecreator.AzureWebAppSlotDeploymentStepVariableCreator;
 import io.harness.cdng.azure.webapp.variablecreator.AzureWebAppSwapSlotStepVariableCreator;
 import io.harness.cdng.azure.webapp.variablecreator.AzureWebAppTrafficShiftStepVariableCreator;
+import io.harness.cdng.chaos.ChaosStepFilterJsonCreator;
+import io.harness.cdng.chaos.ChaosStepPlanCreator;
+import io.harness.cdng.chaos.ChaosStepVariableCreator;
 import io.harness.cdng.creator.filters.DeploymentStageFilterJsonCreatorV2;
 import io.harness.cdng.creator.plan.CDStepGroupPmsPlanCreator;
 import io.harness.cdng.creator.plan.CDStepsPlanCreator;
@@ -322,6 +325,9 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
 
     planCreators.add(new AzureARMRollbackResourceStepPlanCreator());
     planCreators.add(new ShellScriptProvisionStepPlanCreator());
+
+    // CHaos
+    planCreators.add(new ChaosStepPlanCreator());
     injectorUtils.injectMembers(planCreators);
     return planCreators;
   }
@@ -336,6 +342,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     filterJsonCreators.add(new ParallelGenericFilterJsonCreator());
     filterJsonCreators.add(new StepGroupPmsFilterJsonCreator());
     filterJsonCreators.add(new CDPMSCommandStepFilterJsonCreator());
+    filterJsonCreators.add(new ChaosStepFilterJsonCreator());
     filterJsonCreators.add(new EmptyAnyFilterJsonCreator(EMPTY_FILTER_IDENTIFIERS));
     filterJsonCreators.add(new EmptyAnyFilterJsonCreator(Sets.newHashSet(STRATEGY)));
     filterJsonCreators.add(new EmptyFilterJsonCreator(SIDECAR, EMPTY_SIDECAR_TYPES));
@@ -408,6 +415,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     variableCreators.add(new AzureCreateBPStepVariableCreator());
     variableCreators.add(new AzureARMRollbackStepVariableCreator());
     variableCreators.add(new ShellScriptProvisionStepVariableCreator());
+    variableCreators.add(new ChaosStepVariableCreator());
     return variableCreators;
   }
 
@@ -785,6 +793,15 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
                                         .setFeatureFlag(FeatureName.SHELL_SCRIPT_PROVISION_NG.name())
                                         .build();
 
+    StepInfo chaosStep =
+        StepInfo.newBuilder()
+            .setName("Chaos Step")
+            .setType(StepSpecTypeConstants.CHAOS_STEP)
+            .setStepMetaData(
+                StepMetaData.newBuilder().addAllCategory(Arrays.asList("Chaos")).addFolderPaths("Chaos").build())
+            .setFeatureFlag(FeatureName.CHAOS_ENABLED.name())
+            .build();
+
     List<StepInfo> stepInfos = new ArrayList<>();
 
     stepInfos.add(gitOpsCreatePR);
@@ -829,6 +846,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     stepInfos.add(ecsBlueGreenSwapTargetGroups);
     stepInfos.add(ecsBlueGreenRollback);
     stepInfos.add(shellScriptProvision);
+    stepInfos.add(chaosStep);
     return stepInfos;
   }
 }
