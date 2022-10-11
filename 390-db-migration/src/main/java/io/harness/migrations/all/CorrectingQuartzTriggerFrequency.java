@@ -45,8 +45,6 @@ public class CorrectingQuartzTriggerFrequency implements Migration {
 
   private static final String LIMIT_VICINITY_CHECKER_CRON_GROUP = "LIMIT_VICINITY_CHECKER_CRON_GROUP";
 
-  private static final Long THRESHOLD_DELAY = 10000L;
-
   @Override
   public void migrate() {
     log.info("{}: Starting migration", DEBUG_LINE);
@@ -83,7 +81,7 @@ public class CorrectingQuartzTriggerFrequency implements Migration {
         // difference is 10s) also Next fireTime should always be in the future, if any of these condition fails, we
         // reschedule the quartz job
         if (previousFireTime != null && nextFireTime != null
-            && (((nextFireTime.getTime() - previousFireTime.getTime()) - repeatInterval > THRESHOLD_DELAY)
+            && (((nextFireTime.getTime() - previousFireTime.getTime()) != repeatInterval)
                 || nextFireTime.before(Date.from(Instant.now())))) {
           SimpleTrigger trigger = null;
           String accountId = dataRecord.get("keyName").toString();
