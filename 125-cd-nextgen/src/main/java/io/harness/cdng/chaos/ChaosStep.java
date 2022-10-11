@@ -29,10 +29,12 @@ public class ChaosStep implements AsyncExecutable<StepElementParameters> {
       StepType.newBuilder().setType(StepSpecTypeConstants.CHAOS_STEP).setStepCategory(StepCategory.STEP).build();
 
   @Inject private ChaosHttpClient client;
-
+  
+  //CHECKSTYLE:OFF
   private static final String BODY =
       "mutation{\n  reRunChaosWorkFlow(\n    workflowID: \"%s\",\n    identifiers:{\n      orgIdentifier: \"%s\",\n      projectIdentifier: \"%s\",\n      accountIdentifier: \"%s\"\n    }\n  )\n}";
-
+  //CHECKSTYLE:ON
+  
   @Override
   public Class<StepElementParameters> getStepParametersClass() {
     return StepElementParameters.class;
