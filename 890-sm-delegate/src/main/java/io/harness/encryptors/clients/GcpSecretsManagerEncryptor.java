@@ -332,46 +332,24 @@ public class GcpSecretsManagerEncryptor implements VaultEncryptor {
   @Override
   public boolean validateSecretManagerConfiguration(String accountId, EncryptionConfig encryptionConfig) {
     GcpSecretsManagerConfig gcpSecretsManagerConfig = (GcpSecretsManagerConfig) encryptionConfig;
-    validateUserInput(gcpSecretsManagerConfig);
     try {
-      GoogleCredentials credentials =
-          GoogleCredentials
-              .fromStream(new ByteArrayInputStream(String.valueOf(gcpSecretsManagerConfig.getCredentials()).getBytes()))
-              .createScoped(Lists.newArrayList("https://www.googleapis.com/auth/cloud-platform"));
-      FixedCredentialsProvider credentialsProvider = FixedCredentialsProvider.create(credentials);
-      SecretManagerServiceSettings settings =
-          SecretManagerServiceSettings.newBuilder().setCredentialsProvider(credentialsProvider).build();
+      GoogleCredentials credentials = getGoogleCredentials(gcpSecretsManagerConfig);
+      SecretManagerServiceClient client = getGcpSecretsManagerClient(credentials);
       String projectId = getProjectId(credentials);
-      try (SecretManagerServiceClient client = SecretManagerServiceClient.create(settings)) {
-        ProjectName projectName = ProjectName.of(projectId);
-        // Get all secrets.
-        SecretManagerServiceClient.ListSecretsPagedResponse pagedResponse = client.listSecrets(projectName);
-        // List all secrets.
-        pagedResponse.iterateAll().forEach(secret
-            -> {
-                // do nothing as we are just testing connectivity
-            });
-      }
+      ProjectName projectName = ProjectName.of(projectId);
+      // Get all secrets.
+      SecretManagerServiceClient.ListSecretsPagedResponse pagedResponse = client.listSecrets(projectName);
+      // List all secrets.
+      pagedResponse.iterateAll().forEach(secret
+          -> {
+              // do nothing as we are just testing connectivity
+          });
     } catch (IOException e) {
       String message =
-          "Was not able to reach GCP Secrets Manager using given credentials. Please check your credentials and try again";
+          "Was not able to reach GCP Secrets Manager using the given credentials. Please check your credentials and try again";
       throw new SecretManagementException(GCP_SECRET_MANAGER_OPERATION_ERROR, message, e, WingsException.USER);
     }
-    log.info("Test connection to GCP Secrets Manager V2 Succeeded for {}", gcpSecretsManagerConfig.getName());
+    log.info("Test connection to GCP Secrets Manager Succeeded for {}", gcpSecretsManagerConfig.getName());
     return true;
-  }
-
-  private void validateUserInput(GcpSecretsManagerConfig gcpSecretsManagerConfig) {
-    Pattern nameValidator = Pattern.compile("^[0-9a-zA-Z-' !]+$");
-    if (EmptyPredicate.isEmpty(gcpSecretsManagerConfig.getName())
-        || !nameValidator.matcher(gcpSecretsManagerConfig.getName()).find()) {
-      String message =
-          "Name cannot be empty and can only have alphanumeric, hyphen, single inverted comma, space and exclamation mark characters.";
-      throw new SecretManagementException(GCP_SECRET_MANAGER_OPERATION_ERROR, message, USER_SRE);
-    }
-    if (EmptyPredicate.isEmpty(gcpSecretsManagerConfig.getCredentials())) {
-      String message = "Credentials file is not uploaded.";
-      throw new SecretManagementException(GCP_SECRET_MANAGER_OPERATION_ERROR, message, USER_SRE);
-    }
   }
 }
