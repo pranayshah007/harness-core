@@ -23,9 +23,16 @@ import org.apache.commons.io.FileUtils;
 public class ConfigurationProvider implements Provider<Configuration> {
   private final String configFileName;
 
-  private Configuration getRunnerConfiguration(final String configFileName) {
+  private Configuration getRunnerConfiguration(final String configFilePath) {
     log.info("Working Directory = " + System.getProperty("user.dir"));
-    final File configFile = new File(configFileName);
+    final File configFile = new File(configFilePath);
+    if (!configFile.exists()) {
+      log.info("Runner config not exist, using default config settings.");
+      return Configuration.builder()
+          .taskFilePath("/etc/config/config.yaml")
+          .delegateConfigurationPath("/etc/delegate-config/config.yaml")
+          .build();
+    }
     try {
       return new YamlUtils().read(FileUtils.readFileToString(configFile, UTF_8), Configuration.class);
     } catch (final IOException e) {
