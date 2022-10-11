@@ -30,9 +30,7 @@ cp ../../access-control/config/config.yml .
 cp ../../access-control/config/keystore.jks .
 cp ../../dockerization/base-images/apm/inject-onprem-apm-bins-into-dockerimage.sh .
 cp ../../dockerization/base-images/apm/inject-saas-apm-bins-into-dockerimage.sh .
-cp ../../access-control/build/container/Dockerfile-accesscontrol-service-jenkins-k8-openjdk ./Dockerfile
 cp ../../access-control/build/container/Dockerfile-accesscontrol-service-cie-jdk ./Dockerfile-cie-jdk
-cp ../../access-control/build/container/Dockerfile-accesscontrol-service-jenkins-k8-gcr-openjdk ./Dockerfile-gcr
 cp -r ../../access-control/build/container/scripts/ .
 java -jar accesscontrol-service-capsule.jar scan-classpath-metadata
 
