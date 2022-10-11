@@ -16,6 +16,7 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import io.harness.delegate.task.ssh.SshInfraDelegateConfig;
 import io.harness.delegate.task.utils.PhysicalDataCenterUtils;
 import io.harness.exception.InvalidArgumentsException;
+import io.harness.secretmanagerclient.SSHAuthScheme;
 
 import java.time.Duration;
 import lombok.Builder;
@@ -48,6 +49,11 @@ public class SshConnectivityExecutionCapability implements ExecutionCapability {
     if (isNotBlank(port)) {
       builder.append(':').append(port);
     }
+
+    if (sshInfraDelegateConfig.getSshKeySpecDto().getAuth().getAuthScheme() == SSHAuthScheme.Kerberos) {
+      builder.append(":kerberos");
+    }
+
     return builder.toString();
   }
 
