@@ -1776,6 +1776,7 @@
 55426:io.harness.delegate.task.shell.provisioner.ShellScriptProvisionTaskNGRequest
 55427:io.harness.delegate.task.shell.provisioner.ShellScriptProvisionTaskNGResponse
 55428:io.harness.delegate.beans.artifactory.ArtifactoryFetchImagePathResponse
+55435:io.harness.delegate.beans.executioncapability.SshConnectivityExecutionCapability
 55470:io.harness.delegate.task.ssh.artifact.CustomArtifactDelegateConfig
 55501:io.harness.delegate.beans.instancesync.info.PdcServerInstanceInfo
 55502:io.harness.delegate.beans.instancesync.info.AzureSshWinrmServerInstanceInfo

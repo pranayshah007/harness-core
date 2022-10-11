@@ -8,7 +8,6 @@
 package software.wings.delegatetasks.validation.capabilitycheck;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.rule.OwnerRule.BOJAN;
 import static io.harness.rule.OwnerRule.VITALIE;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -24,27 +23,27 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.executioncapability.CapabilityResponse;
-import io.harness.delegate.beans.executioncapability.WinrmConnectivityExecutionCapability;
+import io.harness.delegate.beans.executioncapability.SshConnectivityExecutionCapability;
 import io.harness.delegate.task.executioncapability.SocketConnectivityCapabilityCheck;
-import io.harness.delegate.task.ssh.PdcWinRmInfraDelegateConfig;
-import io.harness.delegate.task.winrm.WinRmSession;
-import io.harness.delegate.task.winrm.WinRmSessionConfig;
+import io.harness.delegate.task.ssh.PdcSshInfraDelegateConfig;
 import io.harness.encryption.SecretRefData;
-import io.harness.ng.core.dto.secrets.KerberosWinRmConfigDTO;
-import io.harness.ng.core.dto.secrets.NTLMConfigDTO;
+import io.harness.ng.core.dto.secrets.KerberosConfigDTO;
+import io.harness.ng.core.dto.secrets.SSHAuthDTO;
+import io.harness.ng.core.dto.secrets.SSHConfigDTO;
+import io.harness.ng.core.dto.secrets.SSHKeySpecDTO;
 import io.harness.ng.core.dto.secrets.TGTGenerationMethod;
 import io.harness.ng.core.dto.secrets.TGTKeyTabFilePathSpecDTO;
 import io.harness.ng.core.dto.secrets.TGTPasswordSpecDTO;
-import io.harness.ng.core.dto.secrets.WinRmAuthDTO;
-import io.harness.ng.core.dto.secrets.WinRmCredentialsSpecDTO;
 import io.harness.rule.Owner;
-import io.harness.secretmanagerclient.WinRmAuthScheme;
+import io.harness.secretmanagerclient.SSHAuthScheme;
 import io.harness.security.encryption.SecretDecryptionService;
+import io.harness.shell.SshSessionConfig;
 
 import software.wings.WingsBaseTest;
 
 import com.google.common.collect.Sets;
 import com.jcraft.jsch.JSchException;
+import com.jcraft.jsch.Session;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
@@ -55,32 +54,32 @@ import org.mockito.Spy;
 
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)
 @OwnedBy(CDP)
-public class WinrmHostConnectionCapabilityCheckTest extends WingsBaseTest {
+public class SshHostConnectionCapabilityCheckTest extends WingsBaseTest {
   private static final char[] DECRYPTED_PASSWORD_VALUE = {'t', 'e', 's', 't'};
-  @Mock private WinRmSession mockSession;
+  @Mock private Session mockSession;
   @Mock private SecretDecryptionService secretDecryptionService;
-  @Spy @InjectMocks private WinrmHostConnectionCapabilityCheck spyCapabilityCheck;
+  @Spy @InjectMocks private SshHostConnectionCapabilityCheck spyCapabilityCheck;
 
   @Test
   @Owner(developers = VITALIE)
   @Category(UnitTests.class)
   public void shouldPerformCapabilityCheckKerberosPwd() throws JSchException {
-    WinrmConnectivityExecutionCapability capability =
-        WinrmConnectivityExecutionCapability.builder()
-            .winRmInfraDelegateConfig(
-                PdcWinRmInfraDelegateConfig.builder()
-                    .winRmCredentials(WinRmCredentialsSpecDTO.builder()
-                                          .port(1234)
-                                          .auth(WinRmAuthDTO.builder()
-                                                    .type(WinRmAuthScheme.Kerberos)
-                                                    .spec(KerberosWinRmConfigDTO.builder()
-                                                              .tgtGenerationMethod(TGTGenerationMethod.Password)
-                                                              .build())
-                                                    .build())
-                                          .build())
+    SshConnectivityExecutionCapability capability =
+        SshConnectivityExecutionCapability.builder()
+            .sshInfraDelegateConfig(
+                PdcSshInfraDelegateConfig.builder()
+                    .sshKeySpecDto(SSHKeySpecDTO.builder()
+                                       .port(1234)
+                                       .auth(SSHAuthDTO.builder()
+                                                 .type(SSHAuthScheme.Kerberos)
+                                                 .spec(KerberosConfigDTO.builder()
+                                                           .tgtGenerationMethod(TGTGenerationMethod.Password)
+                                                           .spec(TGTPasswordSpecDTO.builder().build())
+                                                           .build())
+                                                 .build())
+                                       .build())
                     .hosts(Sets.newHashSet("host1"))
                     .build())
-            .useWinRMKerberosUniqueCacheFile(true)
             .host("host1")
             .build();
 
@@ -89,7 +88,7 @@ public class WinrmHostConnectionCapabilityCheckTest extends WingsBaseTest {
                         .password(SecretRefData.builder().decryptedValue(DECRYPTED_PASSWORD_VALUE).build())
                         .build());
 
-    doReturn(mockSession).when(spyCapabilityCheck).connect(any(WinRmSessionConfig.class));
+    doReturn(mockSession).when(spyCapabilityCheck).connect(any(SshSessionConfig.class));
     CapabilityResponse capabilityResponse = spyCapabilityCheck.performCapabilityCheck(capability);
     assertThat(capabilityResponse).isNotNull();
     assertThat(capabilityResponse.isValidated()).isTrue();
@@ -99,16 +98,16 @@ public class WinrmHostConnectionCapabilityCheckTest extends WingsBaseTest {
   @Owner(developers = VITALIE)
   @Category(UnitTests.class)
   public void shouldPerformCapabilityCheckKerberosTGT() throws JSchException {
-    WinrmConnectivityExecutionCapability capability =
-        WinrmConnectivityExecutionCapability.builder()
-            .winRmInfraDelegateConfig(
-                PdcWinRmInfraDelegateConfig.builder()
-                    .winRmCredentials(
-                        WinRmCredentialsSpecDTO.builder()
+    SshConnectivityExecutionCapability capability =
+        SshConnectivityExecutionCapability.builder()
+            .sshInfraDelegateConfig(
+                PdcSshInfraDelegateConfig.builder()
+                    .sshKeySpecDto(
+                        SSHKeySpecDTO.builder()
                             .port(1234)
-                            .auth(WinRmAuthDTO.builder()
-                                      .type(WinRmAuthScheme.Kerberos)
-                                      .spec(KerberosWinRmConfigDTO.builder()
+                            .auth(SSHAuthDTO.builder()
+                                      .type(SSHAuthScheme.Kerberos)
+                                      .spec(KerberosConfigDTO.builder()
                                                 .tgtGenerationMethod(TGTGenerationMethod.KeyTabFilePath)
                                                 .spec(TGTKeyTabFilePathSpecDTO.builder().keyPath("path").build())
                                                 .build())
@@ -116,11 +115,13 @@ public class WinrmHostConnectionCapabilityCheckTest extends WingsBaseTest {
                             .build())
                     .hosts(Sets.newHashSet("host1"))
                     .build())
-            .useWinRMKerberosUniqueCacheFile(true)
             .host("host1")
             .build();
 
-    doReturn(mockSession).when(spyCapabilityCheck).connect(any(WinRmSessionConfig.class));
+    when(secretDecryptionService.decrypt(any(), any()))
+        .thenReturn(TGTKeyTabFilePathSpecDTO.builder().keyPath("path").build());
+
+    doReturn(mockSession).when(spyCapabilityCheck).connect(any(SshSessionConfig.class));
     CapabilityResponse capabilityResponse = spyCapabilityCheck.performCapabilityCheck(capability);
     assertThat(capabilityResponse).isNotNull();
     assertThat(capabilityResponse.isValidated()).isTrue();
@@ -129,20 +130,19 @@ public class WinrmHostConnectionCapabilityCheckTest extends WingsBaseTest {
   @Test
   @Owner(developers = VITALIE)
   @Category(UnitTests.class)
-  public void shouldPerformCapabilityCheckNtlm() {
-    WinrmConnectivityExecutionCapability capability =
-        WinrmConnectivityExecutionCapability.builder()
-            .winRmInfraDelegateConfig(PdcWinRmInfraDelegateConfig.builder()
-                                          .winRmCredentials(WinRmCredentialsSpecDTO.builder()
-                                                                .port(1234)
-                                                                .auth(WinRmAuthDTO.builder()
-                                                                          .type(WinRmAuthScheme.NTLM)
-                                                                          .spec(NTLMConfigDTO.builder().build())
-                                                                          .build())
-                                                                .build())
-                                          .hosts(Sets.newHashSet("host1"))
-                                          .build())
-            .useWinRMKerberosUniqueCacheFile(true)
+  public void shouldPerformCapabilityCheckSsh() {
+    SshConnectivityExecutionCapability capability =
+        SshConnectivityExecutionCapability.builder()
+            .sshInfraDelegateConfig(PdcSshInfraDelegateConfig.builder()
+                                        .sshKeySpecDto(SSHKeySpecDTO.builder()
+                                                           .port(1234)
+                                                           .auth(SSHAuthDTO.builder()
+                                                                     .type(SSHAuthScheme.SSH)
+                                                                     .spec(SSHConfigDTO.builder().build())
+                                                                     .build())
+                                                           .build())
+                                        .hosts(Sets.newHashSet("host1"))
+                                        .build())
             .host("host1")
             .build();
 
@@ -156,25 +156,25 @@ public class WinrmHostConnectionCapabilityCheckTest extends WingsBaseTest {
   }
 
   @Test
-  @Owner(developers = BOJAN)
+  @Owner(developers = VITALIE)
   @Category(UnitTests.class)
-  public void shouldPerformCapabilityCheckFalse() throws JSchException {
-    WinrmConnectivityExecutionCapability capability =
-        WinrmConnectivityExecutionCapability.builder()
-            .winRmInfraDelegateConfig(
-                PdcWinRmInfraDelegateConfig.builder()
-                    .winRmCredentials(WinRmCredentialsSpecDTO.builder()
-                                          .port(1234)
-                                          .auth(WinRmAuthDTO.builder()
-                                                    .type(WinRmAuthScheme.Kerberos)
-                                                    .spec(KerberosWinRmConfigDTO.builder()
-                                                              .tgtGenerationMethod(TGTGenerationMethod.Password)
-                                                              .build())
-                                                    .build())
-                                          .build())
+  public void shouldPerformCapabilityCheckKerberosFails() throws JSchException {
+    SshConnectivityExecutionCapability capability =
+        SshConnectivityExecutionCapability.builder()
+            .sshInfraDelegateConfig(
+                PdcSshInfraDelegateConfig.builder()
+                    .sshKeySpecDto(SSHKeySpecDTO.builder()
+                                       .port(1234)
+                                       .auth(SSHAuthDTO.builder()
+                                                 .type(SSHAuthScheme.Kerberos)
+                                                 .spec(KerberosConfigDTO.builder()
+                                                           .tgtGenerationMethod(TGTGenerationMethod.Password)
+                                                           .spec(TGTPasswordSpecDTO.builder().build())
+                                                           .build())
+                                                 .build())
+                                       .build())
                     .hosts(Sets.newHashSet("host1"))
                     .build())
-            .useWinRMKerberosUniqueCacheFile(true)
             .host("host1")
             .build();
 
@@ -183,7 +183,7 @@ public class WinrmHostConnectionCapabilityCheckTest extends WingsBaseTest {
                         .password(SecretRefData.builder().decryptedValue(DECRYPTED_PASSWORD_VALUE).build())
                         .build());
 
-    doThrow(new RuntimeException()).when(spyCapabilityCheck).connect(any(WinRmSessionConfig.class));
+    doThrow(new RuntimeException()).when(spyCapabilityCheck).connect(any(SshSessionConfig.class));
     CapabilityResponse capabilityResponse = spyCapabilityCheck.performCapabilityCheck(capability);
     assertThat(capabilityResponse).isNotNull();
     assertThat(capabilityResponse.isValidated()).isFalse();

@@ -272,6 +272,7 @@ import io.harness.delegate.beans.executioncapability.SmbConnectionCapability;
 import io.harness.delegate.beans.executioncapability.SmtpCapability;
 import io.harness.delegate.beans.executioncapability.SocketConnectivityBulkOrExecutionCapability;
 import io.harness.delegate.beans.executioncapability.SocketConnectivityExecutionCapability;
+import io.harness.delegate.beans.executioncapability.SshConnectivityExecutionCapability;
 import io.harness.delegate.beans.executioncapability.SystemEnvCheckerCapability;
 import io.harness.delegate.beans.executioncapability.WinrmConnectivityExecutionCapability;
 import io.harness.delegate.beans.git.GitCommandExecutionResponse;
@@ -1865,5 +1866,6 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(ShellScriptProvisionTaskNGRequest.class, 55426);
     kryo.register(ShellScriptProvisionTaskNGResponse.class, 55427);
     kryo.register(ArtifactoryFetchImagePathResponse.class, 55428);
+    kryo.register(SshConnectivityExecutionCapability.class, 55435);
   }
 }

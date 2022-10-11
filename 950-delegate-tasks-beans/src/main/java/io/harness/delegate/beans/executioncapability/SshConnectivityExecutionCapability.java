@@ -13,7 +13,7 @@ import static io.harness.exception.WingsException.USER_SRE;
 import static java.lang.String.format;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
-import io.harness.delegate.task.ssh.WinRmInfraDelegateConfig;
+import io.harness.delegate.task.ssh.SshInfraDelegateConfig;
 import io.harness.delegate.task.utils.PhysicalDataCenterUtils;
 import io.harness.exception.InvalidArgumentsException;
 
@@ -23,12 +23,10 @@ import lombok.Value;
 
 @Value
 @Builder
-public class WinrmConnectivityExecutionCapability implements ExecutionCapability {
-  private static final String UNKNOWN_HOST = "Unknown host";
-  private final CapabilityType capabilityType = CapabilityType.NG_WINRM_HOST_CONNECTION;
+public class SshConnectivityExecutionCapability implements ExecutionCapability {
+  private final CapabilityType capabilityType = CapabilityType.NG_SSH_HOST_CONNECTION;
 
-  WinRmInfraDelegateConfig winRmInfraDelegateConfig;
-  boolean useWinRMKerberosUniqueCacheFile;
+  SshInfraDelegateConfig sshInfraDelegateConfig;
   String host;
 
   @Override
@@ -38,9 +36,9 @@ public class WinrmConnectivityExecutionCapability implements ExecutionCapability
 
   @Override
   public String fetchCapabilityBasis() {
-    StringBuilder builder = new StringBuilder(128);
+    StringBuilder builder = new StringBuilder();
 
-    String port = String.valueOf(winRmInfraDelegateConfig.getWinRmCredentials().getPort());
+    String port = String.valueOf(sshInfraDelegateConfig.getSshKeySpecDto().getPort());
     String extractedHost = PhysicalDataCenterUtils.extractHostnameFromHost(host).orElseThrow(
         ()
             -> new InvalidArgumentsException(
@@ -65,8 +63,8 @@ public class WinrmConnectivityExecutionCapability implements ExecutionCapability
 
   @Override
   public String getCapabilityToString() {
-    String authScheme = winRmInfraDelegateConfig.getWinRmCredentials() != null
-        ? winRmInfraDelegateConfig.getWinRmCredentials().getAuth().getAuthScheme().toString()
+    String authScheme = sshInfraDelegateConfig.getSshKeySpecDto().getAuth() != null
+        ? sshInfraDelegateConfig.getSshKeySpecDto().getAuth().getAuthScheme().toString()
         : " no authentication details";
     String host = fetchCapabilityBasis();
     return isNotEmpty(host) ? String.format("Capability to connect %s with %s", host, authScheme) : null;
