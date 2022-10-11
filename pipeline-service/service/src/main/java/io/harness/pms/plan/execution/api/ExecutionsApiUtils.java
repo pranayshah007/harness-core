@@ -15,6 +15,7 @@ import io.harness.execution.StagesExecutionMetadata;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.contracts.plan.ExecutionTriggerInfo;
 import io.harness.pms.contracts.plan.TriggerType;
 import io.harness.pms.execution.ExecutionStatus;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetTemplateResponseDTOPMS;
@@ -70,9 +71,11 @@ public class ExecutionsApiUtils {
     summary.setStatus(getExecutionDetailsStatus(executionSummaryEntity.getStatus()));
     summary.setStarted(executionSummaryEntity.getStartTs());
     summary.setEnded(executionSummaryEntity.getEndTs());
-    summary.setTriggerType(getTrigger(executionSummaryEntity.getExecutionTriggerInfo().getTriggerType()));
+    summary.setTriggerType(getTrigger(executionSummaryEntity.getExecutionTriggerInfo()));
     summary.setRunNumber(executionSummaryEntity.getRunSequence());
-    summary.setFailureMessage(executionSummaryEntity.getFailureInfo().getMessage());
+    if (executionSummaryEntity.getFailureInfo() != null) {
+      summary.setFailureMessage(executionSummaryEntity.getFailureInfo().getMessage());
+    }
     summary.setStageInfo(getStageInfo(executionSummaryEntity));
     // code for Module Info population
     summary.setConnectorRef(executionSummaryEntity.getConnectorRef());
@@ -87,11 +90,11 @@ public class ExecutionsApiUtils {
     return ExecutionsDetailsSummary.StatusEnum.fromValue(statusOld.name());
   }
 
-  public static TriggerTypeEnum getTrigger(TriggerType triggerType) {
-    if (triggerType == null) {
+  public static TriggerTypeEnum getTrigger(ExecutionTriggerInfo triggerInfo) {
+    if (triggerInfo == null || triggerInfo.getTriggerType() == null) {
       return null;
     }
-    return TriggerTypeEnum.fromValue(triggerType.name());
+    return TriggerTypeEnum.fromValue(triggerInfo.getTriggerType().name());
   }
 
   public static StageInfo getStageInfo(PipelineExecutionSummaryEntity executionSummaryEntity) {
