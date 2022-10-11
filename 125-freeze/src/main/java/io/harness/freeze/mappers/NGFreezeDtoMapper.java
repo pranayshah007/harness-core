@@ -25,9 +25,19 @@ import lombok.experimental.UtilityClass;
 @UtilityClass
 public class NGFreezeDtoMapper {
   public FreezeConfigEntity toFreezeConfigEntity(
-      String accountId, String orgId, String projectId, String freezeConfigYaml) {
+      String accountId, String orgId, String projectId, String freezeConfigYaml, FreezeType type) {
     FreezeConfig freezeConfig = toFreezeConfig(freezeConfigYaml);
-    return toFreezeConfigEntityResponse(accountId, freezeConfig, freezeConfigYaml, orgId, projectId);
+    return toFreezeConfigEntityResponse(accountId, freezeConfig, freezeConfigYaml, type, orgId, projectId);
+  }
+
+  public FreezeConfigEntity toFreezeConfigEntityGlobal(
+      String accountId, String orgId, String projectId, String freezeConfigYaml) {
+    return toFreezeConfigEntity(accountId, orgId, projectId, freezeConfigYaml, FreezeType.GLOBAL);
+  }
+
+  public FreezeConfigEntity toFreezeConfigEntityManual(
+      String accountId, String orgId, String projectId, String freezeConfigYaml) {
+    return toFreezeConfigEntity(accountId, orgId, projectId, freezeConfigYaml, FreezeType.MANUAL);
   }
 
   public FreezeConfig toFreezeConfig(String freezeConfigYaml) {
@@ -64,6 +74,7 @@ public class NGFreezeDtoMapper {
         .orgIdentifier(freezeConfigEntity.getOrgIdentifier())
         .projectIdentifier(freezeConfigEntity.getProjectIdentifier())
         .freezeWindows(freezeConfig.getFreezeInfoConfig().getWindows())
+        .rules(freezeConfig.getFreezeInfoConfig().getRules())
         .identifier(freezeConfigEntity.getIdentifier())
         .description(freezeConfigEntity.getDescription())
         .name(freezeConfigEntity.getName())
@@ -83,8 +94,8 @@ public class NGFreezeDtoMapper {
     return YamlPipelineUtils.writeYamlString(freezeConfig);
   }
 
-  private FreezeConfigEntity toFreezeConfigEntityResponse(
-      String accountId, FreezeConfig freezeConfig, String freezeConfigYaml, String orgId, String projectId) {
+  private FreezeConfigEntity toFreezeConfigEntityResponse(String accountId, FreezeConfig freezeConfig,
+      String freezeConfigYaml, FreezeType type, String orgId, String projectId) {
     //    validateFreezeYaml(freezeConfig, orgId, projectId);
     String description = null;
     if (freezeConfig.getFreezeInfoConfig().getDescription() != null) {
@@ -101,12 +112,12 @@ public class NGFreezeDtoMapper {
         .status(freezeConfig.getFreezeInfoConfig().getStatus())
         .description(description)
         .tags(TagMapper.convertToList(freezeConfig.getFreezeInfoConfig().getTags()))
-        .type(FreezeType.MANUAL)
+        .type(type)
         .freezeScope(getScopeFromFreezeDto(orgId, projectId))
         .build();
   }
 
-  private Scope getScopeFromFreezeDto(String orgId, String projId) {
+  public Scope getScopeFromFreezeDto(String orgId, String projId) {
     if (EmptyPredicate.isNotEmpty(projId)) {
       return Scope.PROJECT;
     }

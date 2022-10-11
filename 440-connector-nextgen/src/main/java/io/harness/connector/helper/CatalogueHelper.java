@@ -35,6 +35,7 @@ public class CatalogueHelper {
         Arrays.stream(ConnectorType.values())
             .filter(enumFilter.filter(accountIdentifier, FeatureName.SSH_NG))
             .filter(enumFilter.filter(accountIdentifier, FeatureName.JENKINS_ARTIFACT))
+            .filter(enumFilter.filter(accountIdentifier, FeatureName.AZURE_ARTIFACTS_NG))
             .collect(Collectors.groupingBy(ConnectorRegistryFactory::getConnectorCategory));
     return connectorCategoryListMap.entrySet()
         .stream()

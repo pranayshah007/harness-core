@@ -138,6 +138,8 @@ public enum NGStepType {
   @JsonProperty(StepSpecTypeConstants.ECS_CANARY_DELETE)
   ECS_CANARY_DELETE(
       "Ecs Canary Delete", Arrays.asList(ServiceDefinitionType.ECS), "ECS", StepSpecTypeConstants.ECS_CANARY_DELETE),
+  @JsonProperty(StepSpecTypeConstants.ECS_RUN_TASK)
+  ECS_RUN_TASK("Ecs Run Task", Arrays.asList(ServiceDefinitionType.ECS), "ECS", StepSpecTypeConstants.ECS_RUN_TASK),
   // ssh steps
   @JsonProperty(StepSpecTypeConstants.COMMAND)
   COMMAND("Command", Arrays.asList(ServiceDefinitionType.SSH, ServiceDefinitionType.WINRM), "Command",
@@ -165,7 +167,10 @@ public enum NGStepType {
       StepSpecTypeConstants.ECS_BLUE_GREEN_SWAP_TARGET_GROUPS),
   @JsonProperty(StepSpecTypeConstants.ECS_BLUE_GREEN_ROLLBACK)
   ECS_BLUE_GREEN_ROLLBACK("Ecs Blue Green Rollback", Arrays.asList(ServiceDefinitionType.ECS), "ECS",
-      StepSpecTypeConstants.ECS_BLUE_GREEN_ROLLBACK);
+      StepSpecTypeConstants.ECS_BLUE_GREEN_ROLLBACK),
+  @JsonProperty(StepSpecTypeConstants.GITOPS_UPDATE_RELEASE_REPO)
+  GITOPS_UPDATE_RELEASE_REPO("Update Release Repo", Arrays.asList(ServiceDefinitionType.KUBERNETES), "Kubernetes",
+      StepSpecTypeConstants.GITOPS_UPDATE_RELEASE_REPO);
 
   private String displayName;
   private List<ServiceDefinitionType> serviceDefinitionTypes;

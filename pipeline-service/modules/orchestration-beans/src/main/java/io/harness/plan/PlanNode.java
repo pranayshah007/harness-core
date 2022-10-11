@@ -10,6 +10,8 @@ package io.harness.plan;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.exception.InvalidRequestException;
+import io.harness.expression.ExpressionMode;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.plan.PlanNodeProto;
@@ -66,7 +68,9 @@ public class PlanNode implements Node {
   // Config
   boolean skipExpressionChain;
   @Builder.Default SkipType skipGraphType = SkipType.NOOP;
-  @Builder.Default boolean skipUnresolvedExpressionsCheck = true;
+  @Builder.Default @Deprecated boolean skipUnresolvedExpressionsCheck = true;
+
+  @Builder.Default ExpressionMode expressionMode = ExpressionMode.RETURN_NULL_IF_UNRESOLVED;
 
   public static PlanNode fromPlanNodeProto(PlanNodeProto planNodeProto) {
     if (planNodeProto == null) {
@@ -89,10 +93,27 @@ public class PlanNode implements Node {
         .skipExpressionChain(planNodeProto.getSkipExpressionChain())
         .skipGraphType(planNodeProto.getSkipType())
         .skipUnresolvedExpressionsCheck(planNodeProto.getSkipUnresolvedExpressionsCheck())
+        .expressionMode(fromExpressionModeProto(planNodeProto.getExpressionMode()))
         .serviceName(planNodeProto.getServiceName())
         .stepInputs(OrchestrationMap.parse(planNodeProto.getStepInputs()))
         .executionInputTemplate(planNodeProto.getExecutionInputTemplate())
         .build();
+  }
+
+  public static ExpressionMode fromExpressionModeProto(io.harness.pms.contracts.plan.ExpressionMode mode) {
+    if (mode == null) {
+      return ExpressionMode.RETURN_NULL_IF_UNRESOLVED;
+    }
+    switch (mode.getNumber()) {
+      case 0:
+        return ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED;
+      case 1:
+        return ExpressionMode.RETURN_NULL_IF_UNRESOLVED;
+      case 2:
+        return ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED;
+      default:
+        throw new InvalidRequestException(String.format("Provided expression mode %s is not handled.", mode));
+    }
   }
 
   @Override

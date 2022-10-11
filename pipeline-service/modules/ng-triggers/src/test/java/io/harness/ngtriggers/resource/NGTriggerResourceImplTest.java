@@ -27,6 +27,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ngtriggers.beans.config.NGTriggerConfigV2;
 import io.harness.ngtriggers.beans.dto.LastTriggerExecutionDetails;
+import io.harness.ngtriggers.beans.dto.NGTriggerCatalogDTO;
 import io.harness.ngtriggers.beans.dto.NGTriggerDetailsResponseDTO;
 import io.harness.ngtriggers.beans.dto.NGTriggerResponseDTO;
 import io.harness.ngtriggers.beans.dto.TriggerDetails;
@@ -35,6 +36,9 @@ import io.harness.ngtriggers.beans.entity.NGTriggerEntity;
 import io.harness.ngtriggers.beans.entity.NGTriggerEntity.NGTriggerEntityKeys;
 import io.harness.ngtriggers.beans.entity.metadata.NGTriggerMetadata;
 import io.harness.ngtriggers.beans.entity.metadata.WebhookMetadata;
+import io.harness.ngtriggers.beans.entity.metadata.catalog.TriggerCatalogItem;
+import io.harness.ngtriggers.beans.entity.metadata.catalog.TriggerCatalogType;
+import io.harness.ngtriggers.beans.entity.metadata.catalog.TriggerCategory;
 import io.harness.ngtriggers.beans.source.NGTriggerType;
 import io.harness.ngtriggers.beans.source.scheduled.CronTriggerSpec;
 import io.harness.ngtriggers.beans.source.scheduled.ScheduledTriggerConfig;
@@ -50,10 +54,13 @@ import io.harness.utils.YamlPipelineUtils;
 import com.google.common.io.Resources;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -465,5 +472,64 @@ public class NGTriggerResourceImplTest extends CategoryTest {
             .create(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, ngTriggerYaml, false, false)
             .getData();
     assertThat(responseDTO).isEqualTo(ngTriggerResponseDTOBitbucketPRComment);
+  }
+
+  @Test
+  @Owner(developers = SRIDHAR)
+  @Category(UnitTests.class)
+  public void testGetTriggerCatalog() {
+    Set<TriggerCatalogType> catalogTypes = new HashSet<>();
+    catalogTypes.add(TriggerCatalogType.ECR);
+    catalogTypes.add(TriggerCatalogType.ACR);
+    List<TriggerCatalogItem> triggerCatalogItems = Arrays.asList(
+        TriggerCatalogItem.builder().category(TriggerCategory.ARTIFACT).triggerCatalogType(catalogTypes).build());
+    when(ngTriggerService.getTriggerCatalog(ACCOUNT_ID)).thenReturn(triggerCatalogItems);
+    when(ngTriggerElementMapper.toCatalogDTO(triggerCatalogItems))
+        .thenReturn(NGTriggerCatalogDTO.builder().catalog(triggerCatalogItems).build());
+
+    NGTriggerCatalogDTO responseDTO = ngTriggerResource.getTriggerCatalog(ACCOUNT_ID).getData();
+
+    assertThat(responseDTO.getCatalog().size()).isEqualTo(1);
+    assertThat(responseDTO.getCatalog().get(0).getCategory()).isEqualTo(TriggerCategory.ARTIFACT);
+    assertThat(responseDTO.getCatalog().get(0).getTriggerCatalogType().size()).isEqualTo(2);
+  }
+
+  @Test
+  @Owner(developers = SRIDHAR)
+  @Category(UnitTests.class)
+  public void testGetTriggerCatalogScheduled() {
+    Set<TriggerCatalogType> catalogTypes = new HashSet<>();
+    catalogTypes.add(TriggerCatalogType.SCHEDULED);
+    List<TriggerCatalogItem> triggerCatalogItems = Arrays.asList(
+        TriggerCatalogItem.builder().category(TriggerCategory.SCHEDULED).triggerCatalogType(catalogTypes).build());
+    when(ngTriggerService.getTriggerCatalog(ACCOUNT_ID)).thenReturn(triggerCatalogItems);
+    when(ngTriggerElementMapper.toCatalogDTO(triggerCatalogItems))
+        .thenReturn(NGTriggerCatalogDTO.builder().catalog(triggerCatalogItems).build());
+
+    NGTriggerCatalogDTO responseDTO = ngTriggerResource.getTriggerCatalog(ACCOUNT_ID).getData();
+
+    assertThat(responseDTO.getCatalog().size()).isEqualTo(1);
+    assertThat(responseDTO.getCatalog().get(0).getCategory()).isEqualTo(TriggerCategory.SCHEDULED);
+    assertThat(responseDTO.getCatalog().get(0).getTriggerCatalogType().size()).isEqualTo(1);
+  }
+
+  @Test
+  @Owner(developers = SRIDHAR)
+  @Category(UnitTests.class)
+  public void testGetTriggerCatalogWebhook() {
+    Set<TriggerCatalogType> catalogTypes = new HashSet<>();
+    catalogTypes.add(TriggerCatalogType.GITHUB);
+    catalogTypes.add(TriggerCatalogType.GITLAB);
+    List<TriggerCatalogItem> triggerCatalogItems = Arrays.asList(
+        TriggerCatalogItem.builder().category(TriggerCategory.WEBHOOK).triggerCatalogType(catalogTypes).build());
+    when(ngTriggerService.getTriggerCatalog(ACCOUNT_ID)).thenReturn(triggerCatalogItems);
+    when(ngTriggerElementMapper.toCatalogDTO(triggerCatalogItems))
+        .thenReturn(NGTriggerCatalogDTO.builder().catalog(triggerCatalogItems).build());
+
+    NGTriggerCatalogDTO responseDTO = ngTriggerResource.getTriggerCatalog(ACCOUNT_ID).getData();
+
+    assertThat(responseDTO.getCatalog().size()).isEqualTo(1);
+    assertThat(responseDTO.getCatalog().get(0).getCategory()).isEqualTo(TriggerCategory.WEBHOOK);
+    assertThat(responseDTO.getCatalog().get(0).getTriggerCatalogType().size()).isEqualTo(2);
   }
 }

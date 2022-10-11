@@ -49,19 +49,19 @@ public class AuditClientServiceImpl implements AuditClientService {
   }
 
   public boolean publishAudit(AuditEntry auditEntry, GlobalContext globalContext) {
-    AuditEventDTO auditEventDTO = getAuditEventDTO(auditEntry, globalContext);
+    AuditEventDTO auditEventDTO = getAuditEventDTO(auditEntry, globalContext, null);
     return getResponse(auditClient.createAudit(auditEventDTO));
   }
 
   @Override
   public boolean publishAudit(
       AuditEntry auditEntry, AuthenticationInfoDTO authenticationInfo, GlobalContext globalContext) {
-    AuditEventDTO auditEventDTO = getAuditEventDTO(auditEntry, globalContext);
-    auditEventDTO.setAuthenticationInfo(authenticationInfo);
+    AuditEventDTO auditEventDTO = getAuditEventDTO(auditEntry, globalContext, authenticationInfo);
     return getResponse(auditClient.createAudit(auditEventDTO));
   }
 
-  private AuditEventDTO getAuditEventDTO(AuditEntry auditEntry, GlobalContext globalContext) {
+  private AuditEventDTO getAuditEventDTO(
+      AuditEntry auditEntry, GlobalContext globalContext, AuthenticationInfoDTO authenticationInfoDTO) {
     HttpRequestInfo httpRequestInfo = null;
     RequestMetadata requestMetadata = null;
     Principal principal = null;
@@ -96,13 +96,12 @@ public class AuditClientServiceImpl implements AuditClientService {
                                                     .environment(auditEntry.getEnvironment())
                                                     .yamlDiffRecord(yamlDiffRecordDTO)
                                                     .timestamp(auditEntry.getTimestamp());
-
-    if (principal != null) {
+    if (authenticationInfoDTO != null) {
+      auditEventDTOBuilder.authenticationInfo(authenticationInfoDTO);
+    } else if (principal != null) {
       auditEventDTOBuilder.authenticationInfo(fromSecurityPrincipal(principal));
     } else {
-      log.error(String.format(
-          "[AUDIT_ERROR]: Principal not found for audit entry with insertId %s, this should not happen. Please check!!",
-          auditEntry.getInsertId()));
+      logAuthenticationInfoError(auditEntry);
       auditEventDTOBuilder.authenticationInfo(
           fromSecurityPrincipal(new ServicePrincipal(String.valueOf(PrincipalType.SYSTEM))));
     }
@@ -116,5 +115,16 @@ public class AuditClientServiceImpl implements AuditClientService {
       auditEventDTOBuilder.internalInfo(ImmutableMap.of(CORRELATION_ID, correlationId));
     }
     return auditEventDTOBuilder.build();
+  }
+
+  private void logAuthenticationInfoError(AuditEntry auditEntry) {
+    String resourceInfo = "";
+    if (auditEntry.getResource() != null) {
+      resourceInfo = String.format("resourceIdentifier [%s], resourceType [%s]",
+          auditEntry.getResource().getIdentifier(), auditEntry.getResource().getType());
+    }
+    log.error(String.format(
+        "[AUDIT_ERROR]: Principal not found for audit entry with insertId [%s] on resource {%s}, action [%s], module [%s]. This should not happen. Please check!!",
+        auditEntry.getInsertId(), resourceInfo, auditEntry.getAction(), auditEntry.getModule()));
   }
 }

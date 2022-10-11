@@ -67,6 +67,9 @@ public class MigratorMappingService {
   public boolean doesMappingExist(NGYamlFile yamlFile) {
     CgBasicInfo cgBasicInfo = yamlFile.getCgBasicInfo();
     MigratedEntityMapping mapping = ngMigrationFactory.getMethod(yamlFile.getType()).generateMappingEntity(yamlFile);
+    if (mapping == null) {
+      return false;
+    }
     NgEntityDetail ngEntityDetail = NgEntityDetail.builder()
                                         .identifier(mapping.getIdentifier())
                                         .projectIdentifier(mapping.getProjectIdentifier())

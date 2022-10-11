@@ -37,8 +37,8 @@ import io.harness.delegate.task.AbstractDelegateRunnableTask;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.ecs.request.EcsGitFetchRequest;
 import io.harness.delegate.task.ecs.response.EcsGitFetchResponse;
+import io.harness.delegate.task.git.GitFetchTaskHelper;
 import io.harness.delegate.task.git.TaskStatus;
-import io.harness.delegate.task.serverless.ServerlessGitFetchTaskHelper;
 import io.harness.ecs.EcsCommandUnitConstants;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
@@ -68,7 +68,7 @@ import org.jose4j.lang.JoseException;
 @OwnedBy(HarnessTeam.CDP)
 public class EcsGitFetchTask extends AbstractDelegateRunnableTask {
   @Inject private GitDecryptionHelper gitDecryptionHelper;
-  @Inject private ServerlessGitFetchTaskHelper serverlessGitFetchTaskHelper;
+  @Inject private GitFetchTaskHelper gitFetchTaskHelper;
 
   public EcsGitFetchTask(DelegateTaskPackage delegateTaskPackage, ILogStreamingTaskClient logStreamingTaskClient,
       Consumer<DelegateTaskResponse> consumer, BooleanSupplier preExecute) {
@@ -171,7 +171,7 @@ public class EcsGitFetchTask extends AbstractDelegateRunnableTask {
     executionLogCallback.saveExecutionLog(fetchTypeInfo);
     if (gitStoreDelegateConfig.isOptimizedFilesFetch()) {
       executionLogCallback.saveExecutionLog("Using optimized file fetch ");
-      serverlessGitFetchTaskHelper.decryptGitStoreConfig(gitStoreDelegateConfig);
+      gitFetchTaskHelper.decryptGitStoreConfig(gitStoreDelegateConfig);
     } else {
       gitConfigDTO = ScmConnectorMapper.toGitConfigDTO(gitStoreDelegateConfig.getGitConfigDTO());
       gitDecryptionHelper.decryptGitConfig(gitConfigDTO, gitStoreDelegateConfig.getEncryptedDataDetails());
@@ -184,10 +184,10 @@ public class EcsGitFetchTask extends AbstractDelegateRunnableTask {
         String filePath = ecsGitFetchFileConfig.getGitStoreDelegateConfig().getPaths().get(0);
 
         List<String> filePaths = Collections.singletonList(filePath);
-        serverlessGitFetchTaskHelper.printFileNames(executionLogCallback, filePaths);
+        gitFetchTaskHelper.printFileNames(executionLogCallback, filePaths);
         try {
-          filesResult = serverlessGitFetchTaskHelper.fetchFileFromRepo(
-              gitStoreDelegateConfig, filePaths, accountId, gitConfigDTO);
+          filesResult =
+              gitFetchTaskHelper.fetchFileFromRepo(gitStoreDelegateConfig, filePaths, accountId, gitConfigDTO);
         } catch (Exception e) {
           throw NestedExceptionUtils.hintWithExplanationException(
               format(

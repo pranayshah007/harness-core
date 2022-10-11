@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.task.winrm.WinRmExecutorHelper.PARTITION_SIZE_IN_BYTES;
 import static io.harness.delegate.utils.TaskExceptionUtils.calcPercentage;
+import static io.harness.logging.CommandExecutionStatus.FAILURE;
 import static io.harness.logging.CommandExecutionStatus.RUNNING;
 import static io.harness.logging.LogLevel.INFO;
 import static io.harness.windows.CmdUtils.escapeEnvValueSpecialChars;
@@ -225,9 +226,17 @@ public class WinRmSession implements AutoCloseable {
       if (isNotEmpty(scriptExecCommand)) {
         commandList.add(scriptExecCommand);
       }
-      return executeAllCommands(commandList, output, error, isOutputWriter, isScriptFileExecution);
+      statusCode = executeAllCommands(commandList, output, error, isOutputWriter, isScriptFileExecution);
+      if (statusCode != 0) {
+        log.warn("Transferring script data to PowerShell script file failed.");
+      }
+      return statusCode;
     } else {
       statusCode = executeAllCommands(commandList, output, error, isOutputWriter, isScriptFileExecution);
+      if (statusCode != 0) {
+        log.warn("Transferring script data to PowerShell script file failed.");
+        return statusCode;
+      }
       if (isNotEmpty(scriptExecCommand)) {
         statusCode = shell.execute(scriptExecCommand, output, error);
       }
@@ -248,13 +257,14 @@ public class WinRmSession implements AutoCloseable {
     for (String command : commandList) {
       int fileLength = commandList.stream().mapToInt(c -> c.getBytes().length).sum();
       statusCode = executeCommandString(command, output, error, isOutputWriter);
+      if (statusCode != 0) {
+        logCallback.saveExecutionLog("Transferring script data to PowerShell script file failed.", INFO, FAILURE);
+        return statusCode;
+      }
       if (isScriptFileExecution) {
         logCallback.saveExecutionLog(format("Transferred %s data to PowerShell script file...\n",
                                          calcPercentage(chunkNumber * PARTITION_SIZE_IN_BYTES, fileLength)),
             INFO, RUNNING);
-      }
-      if (statusCode != 0) {
-        return statusCode;
       }
       chunkNumber++;
     }

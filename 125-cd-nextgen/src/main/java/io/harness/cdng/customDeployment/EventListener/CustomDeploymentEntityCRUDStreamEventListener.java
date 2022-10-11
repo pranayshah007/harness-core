@@ -98,7 +98,6 @@ public class CustomDeploymentEntityCRUDStreamEventListener implements MessageLis
     } catch (Exception e) {
       log.error("Could not Update the infra for deployment template change for account identifier :{}",
           entityChangeDTO.getAccountIdentifier());
-      throw new InvalidRequestException("Could not Update the infra for deployment template change ");
     }
     return true;
   }

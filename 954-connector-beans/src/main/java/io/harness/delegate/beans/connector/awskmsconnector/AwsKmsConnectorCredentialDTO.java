@@ -10,7 +10,6 @@ package io.harness.delegate.beans.connector.awskmsconnector;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.SecretManagerDescriptionConstants;
-import io.harness.annotation.RecasterFieldName;
 import io.harness.annotations.dev.OwnedBy;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -39,10 +38,8 @@ import lombok.experimental.FieldDefaults;
 public class AwsKmsConnectorCredentialDTO {
   @Schema(description = SecretManagerDescriptionConstants.AWS_CREDENTIAL)
   @NotNull
-  @RecasterFieldName(name = "type")
   @JsonProperty("type")
   AwsKmsCredentialType credentialType;
-  @RecasterFieldName(name = "spec")
   @JsonProperty("spec")
   @JsonTypeInfo(
       use = JsonTypeInfo.Id.NAME, property = "type", include = JsonTypeInfo.As.EXTERNAL_PROPERTY, visible = true)

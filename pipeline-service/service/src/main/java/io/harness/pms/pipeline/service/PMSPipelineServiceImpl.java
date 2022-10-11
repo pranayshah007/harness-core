@@ -206,8 +206,8 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   @Override
   public Optional<PipelineEntity> get(
       String accountId, String orgIdentifier, String projectIdentifier, String identifier, boolean deleted) {
-    Optional<PipelineEntity> optionalPipelineEntity =
-        getWithoutPerformingValidations(accountId, orgIdentifier, projectIdentifier, identifier, deleted);
+    Optional<PipelineEntity> optionalPipelineEntity = getPipelineWithoutPerformingValidations(
+        accountId, orgIdentifier, projectIdentifier, identifier, deleted, false);
     if (!optionalPipelineEntity.isPresent()) {
       throw new EntityNotFoundException(
           PipelineCRUDErrorResponse.errorMessageForPipelineNotFound(orgIdentifier, projectIdentifier, identifier));
@@ -231,16 +231,16 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   }
 
   @Override
-  public Optional<PipelineEntity> getWithoutPerformingValidations(
-      String accountId, String orgIdentifier, String projectIdentifier, String identifier, boolean deleted) {
+  public Optional<PipelineEntity> getPipelineWithoutPerformingValidations(String accountId, String orgIdentifier,
+      String projectIdentifier, String identifier, boolean deleted, boolean getMetadataOnlyIfApplicable) {
     Optional<PipelineEntity> optionalPipelineEntity;
     try {
       if (gitSyncSdkService.isGitSyncEnabled(accountId, orgIdentifier, projectIdentifier)) {
         optionalPipelineEntity =
             pmsPipelineRepository.findForOldGitSync(accountId, orgIdentifier, projectIdentifier, identifier, !deleted);
       } else {
-        optionalPipelineEntity =
-            pmsPipelineRepository.find(accountId, orgIdentifier, projectIdentifier, identifier, !deleted, false);
+        optionalPipelineEntity = pmsPipelineRepository.find(
+            accountId, orgIdentifier, projectIdentifier, identifier, !deleted, getMetadataOnlyIfApplicable);
       }
     } catch (ExplanationException | HintException | ScmException e) {
       log.error(String.format("Error while retrieving pipeline [%s]", identifier), e);

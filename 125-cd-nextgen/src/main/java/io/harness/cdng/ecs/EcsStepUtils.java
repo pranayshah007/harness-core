@@ -59,6 +59,18 @@ public class EcsStepUtils extends CDStepHelper {
         gitStoreConfig, connectorDTO, manifestOutcome, gitStoreConfig.getPaths().getValue(), ambiance);
   }
 
+  public GitStoreDelegateConfig getGitStoreDelegateConfigForRunTask(
+      Ambiance ambiance, ManifestOutcome manifestOutcome) {
+    GitStoreConfig gitStoreConfig = (GitStoreConfig) manifestOutcome.getStore();
+    String connectorId = gitStoreConfig.getConnectorRef().getValue();
+    String validationMessage = format("Ecs run task configuration");
+    ConnectorInfoDTO connectorDTO = getConnectorDTO(connectorId, ambiance);
+    validateManifest(gitStoreConfig.getKind(), connectorDTO, validationMessage);
+
+    return getGitStoreDelegateConfig(
+        gitStoreConfig, connectorDTO, manifestOutcome, gitStoreConfig.getPaths().getValue(), ambiance);
+  }
+
   private ConnectorInfoDTO getConnectorDTO(String connectorId, Ambiance ambiance) {
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
     return ecsEntityHelper.getConnectorInfoDTO(connectorId, ngAccess);

@@ -817,6 +817,82 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "AzureArtifactsAuthentication": {
+      "type": "object",
+      "required": [
+        "spec"
+      ],
+      "properties": {
+        "spec": {
+          "$ref": "#/definitions/AzureArtifactsHttpCredentials"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "AzureArtifactsConnector": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ConnectorConfigDTO"
+        },
+        {
+          "type": "object",
+          "required": [
+            "auth",
+            "azureArtifactsUrl"
+          ],
+          "properties": {
+            "auth": {
+              "$ref": "#/definitions/AzureArtifactsAuthentication"
+            },
+            "azureArtifactsUrl": {
+              "type": "string"
+            },
+            "delegateSelectors": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string"
+              }
+            },
+            "executeOnDelegate": {
+              "type": "boolean"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "AzureArtifactsHttpCredentials": {
+      "type": "object",
+      "required": [
+        "spec",
+        "type"
+      ],
+      "properties": {
+        "spec": {
+          "$ref": "#/definitions/AzureArtifactsUsernameToken"
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "PersonalAccessToken"
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "AzureArtifactsUsernameToken": {
+      "type": "object",
+      "required": [
+        "tokenRef"
+      ],
+      "properties": {
+        "tokenRef": {
+          "type": "string"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "AzureAuthCredentialDTO": {
       "type": "object",
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -1933,7 +2009,8 @@
             "OciHelmRepo",
             "CustomSecretManager",
             "ELK",
-            "GcpSecretManager"
+            "GcpSecretManager",
+            "AzureArtifacts"
           ]
         }
       },
@@ -2031,6 +2108,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/AzureConnector"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "AzureArtifacts"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/AzureArtifactsConnector"
               }
             }
           }

@@ -15,6 +15,7 @@ import io.harness.annotations.dev.OwnedBy;
 public interface StepSpecTypeConstants {
   String GITOPS_CREATE_PR = "CreatePR";
   String GITOPS_MERGE_PR = "MergePR";
+  String GITOPS_UPDATE_RELEASE_REPO = "GitOpsUpdateReleaseRepo";
   String CLOUDFORMATION_CREATE_STACK = "CreateStack";
   String CLOUDFORMATION_DELETE_STACK = "DeleteStack";
   String CLOUDFORMATION_ROLLBACK_STACK = "RollbackStack";
@@ -61,6 +62,7 @@ public interface StepSpecTypeConstants {
   String ECS_ROLLING_ROLLBACK = "EcsRollingRollback";
   String ECS_CANARY_DEPLOY = "EcsCanaryDeploy";
   String ECS_CANARY_DELETE = "EcsCanaryDelete";
+  String ECS_RUN_TASK = "EcsRunTask";
   String ECS_BLUE_GREEN_CREATE_SERVICE = "EcsBlueGreenCreateService";
   String ECS_BLUE_GREEN_SWAP_TARGET_GROUPS = "EcsBlueGreenSwapTargetGroups";
   String ECS_BLUE_GREEN_ROLLBACK = "EcsBlueGreenRollback";

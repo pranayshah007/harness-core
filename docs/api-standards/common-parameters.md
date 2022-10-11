@@ -25,7 +25,7 @@
 | Field Name | Type    | Default | Validation     | Description                                                                                                                                                                                     |
 |------------|---------|---------|----------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | order      | string  | desc    | enum(asc,desc) | Order to sort on                                                                                                                                                                                |
-| sort       | string  | none    |                | The field to sort against. Note: only fields with good indexing strategies should be allowed for sorting. Typical default to internal creation consistent order eg mongo `_id`field or similar. |
+| sort       | string  | none    |                | The field to sort against. Note: Specify the fields which are to be used for sorting. Thought should be given to operational overhead of sort fields. |
 | limit      | int     | 30      | min(1)         | Pagination: Number of items to return                                                                                                                                                           |
 | page       | int     | 1       | min(1)         | Pagination page number strategy: Specify the page number within the paginated collection related to the number of items in each page                                                            |
 | after      |         | none    |                | Pagination cursor strategy: Returns items after the given cursor value within sort criteria.                                                                                                    |
@@ -35,21 +35,6 @@
 | slug       | string  | none    |                | Limit to the provided resource slugs                                                                                                                                                            |
 | tag        | string  | none    |                | Limit to the provided tags                                                                                                                                                                      |
 | recursive  | boolean | false   |                | Expand current scope to include all child scopes within the hierarchy                                                                                                                           |
-
-
-
-
-
-
-## Item Query Parameters
-
-| Field Name | Description | Default | Type | Validation |
-|------------|-------------|---------|------|------------|
-|            |             |         |      |            |
-
-
-## Common Request Headers
-
 
 ## Common Response Headers
 

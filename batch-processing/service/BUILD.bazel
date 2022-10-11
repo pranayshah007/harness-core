@@ -62,6 +62,9 @@ java_binary(
         "//batch-processing/service/src/main/resources:resource",
     ],
     visibility = ["//visibility:public"],
+    runtime_deps = [
+        "@maven//:org_postgresql_postgresql",
+    ],
     deps = shared_dependencies,
 )
 

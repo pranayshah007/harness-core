@@ -521,6 +521,7 @@ public class DeploymentStageVariableCreatorTest extends CategoryTest {
                 "artifacts.primary.image", "artifacts.primary.imagePullSecret", "artifacts.primary.label",
                 "artifacts.primary.registryHostname", "artifacts.primary.region", "artifacts.primary.repositoryName",
                 "artifacts.primary.artifactPath", "artifacts.primary.repositoryFormat", "artifacts.primary.metadata",
+                "artifacts.primary.artifactDirectory", "artifacts.primary.artifactPathFilter",
                 "artifacts.primary.subscription", "artifacts.primary.registry", "artifacts.primary.repository",
                 "artifacts.primary.project", "artifacts.primary.package", "artifacts.primary.version",
                 "artifacts.primary.versionRegex", "serviceVariables.envVar1", "serviceVariables.svar1"))

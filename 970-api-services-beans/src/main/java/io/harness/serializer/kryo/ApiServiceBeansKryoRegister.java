@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.DEL;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.artifactory.ArtifactoryConfigRequest;
+import io.harness.artifactory.ArtifactoryImagePath;
 import io.harness.aws.AwsAccessKeyCredential;
 import io.harness.aws.AwsCFTemplatesType;
 import io.harness.aws.AwsConfig;
@@ -65,6 +66,8 @@ import io.harness.jira.JiraFieldNG;
 import io.harness.jira.JiraFieldSchemaNG;
 import io.harness.jira.JiraFieldTypeNG;
 import io.harness.jira.JiraIssueCreateMetadataNG;
+import io.harness.jira.JiraIssueCreateMetadataNGFields;
+import io.harness.jira.JiraIssueCreateMetadataNGIssueTypes;
 import io.harness.jira.JiraIssueNG;
 import io.harness.jira.JiraIssueTransitionNG;
 import io.harness.jira.JiraIssueTransitionRequestNG;
@@ -397,10 +400,11 @@ public class ApiServiceBeansKryoRegister implements KryoRegistrar {
     kryo.register(JiraIssueTransitionsNG.class, 97017);
     kryo.register(JiraIssueUpdateMetadataNG.class, 97018);
     kryo.register(JiraUpdateIssueRequestNG.class, 97019);
-
+    kryo.register(JiraIssueCreateMetadataNGIssueTypes.class, 97020);
     kryo.register(EntityOperationIdentifier.class, 97021);
     kryo.register(EntityOperationIdentifier.EntityOperation.class, 97022);
     kryo.register(CfCliVersion.class, 97023);
+    kryo.register(JiraIssueCreateMetadataNGFields.class, 97024);
     kryo.register(KubernetesResourceId.class, 97031);
     kryo.register(HelmClientException.class, 97032);
     kryo.register(HelmCliCommandType.class, 97033);
@@ -465,5 +469,6 @@ public class ApiServiceBeansKryoRegister implements KryoRegistrar {
     kryo.register(AzureArtifactsProtocolMetadata.class, 80308);
     kryo.register(AzureArtifactsProtocolMetadataData.class, 80309);
     kryo.register(AzureDevopsProjects.class, 80310);
+    kryo.register(ArtifactoryImagePath.class, 80311);
   }
 }

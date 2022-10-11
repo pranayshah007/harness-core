@@ -127,7 +127,7 @@ public class InfrastructurePmsPlanCreatorTest extends CDNGTestBase {
                                               .inputs(ParameterField.createValueField(Map.of("k", "v")))
                                               .build())))
             .build(),
-        Collections.singletonList(AdviserObtainment.newBuilder().build()));
+        Collections.singletonList(AdviserObtainment.newBuilder().build()), null);
 
     assertThat(node.getName()).isEqualTo("Infrastructure Section");
     assertThat(node.getIdentifier()).isEqualTo("infrastructure");

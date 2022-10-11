@@ -95,6 +95,8 @@ public interface TerraformBaseHelper {
   String uploadTfPlanJson(String accountId, String delegateId, String taskId, String entityId, String planName,
       String localFilePath) throws IOException;
 
+  String uploadTfPlanHumanReadable(String accountId, String delegateId, String taskId, String entityId, String planName,
+      String humanReadablePlan) throws IOException;
   TerraformPlanSummary processTerraformPlanSummary(
       int exitCode, LogCallback logCallback, PlanLogOutputStream planLogOutputStream);
 

@@ -68,11 +68,11 @@ import org.apache.commons.lang3.StringUtils;
 @Slf4j
 @OwnedBy(CDP)
 public class HostValidationServiceImpl implements HostValidationService {
-  private static final int MAX_NR_OF_THREADS_PER_EXECUTOR = 5;
-
   @Inject private EncryptionService encryptionService;
   @Inject private TimeLimiter timeLimiter;
   @Inject private SecretManagementDelegateService secretManagementDelegateService;
+
+  private final Executor hostsReachabilityExecutor = new ManagedExecutorService(Executors.newFixedThreadPool(5));
 
   @Override
   public List<HostValidationResponse> validateHost(List<String> hostNames, SettingAttribute connectionSetting,
@@ -149,9 +149,6 @@ public class HostValidationServiceImpl implements HostValidationService {
                                .reachable(SocketConnectivityCapabilityCheck.connectableHost(host, port))
                                .build());
     } else {
-      int nrOfThreads = Math.min(hostNames.size(), MAX_NR_OF_THREADS_PER_EXECUTOR);
-      Executor hostsReachabilityExecutor = new ManagedExecutorService(Executors.newFixedThreadPool(nrOfThreads));
-
       List<CompletableFuture<HostReachabilityInfo>> completableFutureList =
           hostNames.stream()
               .map(host

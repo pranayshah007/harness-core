@@ -9,6 +9,7 @@ package software.wings.scheduler;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.logging.AutoLogContext.OverrideBehavior;
 import static io.harness.obfuscate.Obfuscator.obfuscate;
 
 import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
@@ -20,6 +21,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.delegate.beans.Delegate;
+import io.harness.logging.AccountLogContext;
 import io.harness.scheduler.PersistentScheduler;
 
 import software.wings.app.MainConfiguration;
@@ -114,20 +116,24 @@ public class AlertCheckJob implements Job {
 
   @VisibleForTesting
   void executeInternal(String accountId) {
-    log.info("Checking account " + accountId + " for alert conditions.");
-    List<Delegate> delegates = delegateService.getNonDeletedDelegatesForAccount(accountId);
+    try (AccountLogContext ignore1 = new AccountLogContext(accountId, OverrideBehavior.OVERRIDE_ERROR)) {
+      log.info("Checking account " + accountId + " for alert conditions.");
+      List<Delegate> delegates = delegateService.getNonDeletedDelegatesForAccount(accountId);
 
-    if (isEmpty(delegates)) {
-      Account account = wingsPersistence.get(Account.class, accountId);
-      if (account == null) {
-        jobScheduler.deleteJob(accountId, GROUP);
-        return;
+      if (isEmpty(delegates)) {
+        Account account = wingsPersistence.get(Account.class, accountId);
+        if (account == null) {
+          jobScheduler.deleteJob(accountId, GROUP);
+          return;
+        }
       }
+      if (!isEmpty(delegates)) {
+        checkIfAnyDelegatesAreDown(accountId, delegates);
+      }
+      checkForInvalidValidSMTP(accountId);
+    } catch (Exception e) {
+      log.error("Exception happened in alert check for account {}", accountId);
     }
-    if (!isEmpty(delegates)) {
-      checkIfAnyDelegatesAreDown(accountId, delegates);
-    }
-    checkForInvalidValidSMTP(accountId);
   }
 
   @VisibleForTesting

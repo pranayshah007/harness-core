@@ -17,6 +17,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import java.util.stream.Collectors;
 import lombok.experimental.UtilityClass;
+import org.apache.commons.collections.CollectionUtils;
 import software.amazon.awssdk.services.applicationautoscaling.model.PutScalingPolicyRequest;
 import software.amazon.awssdk.services.applicationautoscaling.model.RegisterScalableTargetRequest;
 import software.amazon.awssdk.services.applicationautoscaling.model.ScalableTarget;
@@ -63,10 +64,12 @@ public class EcsMapper {
         .launchType(task.launchTypeAsString())
         .taskArn(task.taskArn())
         .taskDefinitionArn(task.taskDefinitionArn())
-        .startedAt(task.startedAt().getEpochSecond())
+        .startedAt(task.startedAt() != null ? task.startedAt().getEpochSecond() : null)
         .startedBy(task.startedBy())
         .version(task.version())
-        .containers(task.containers().stream().map(EcsMapper::toEcsContainer).collect(Collectors.toList()))
+        .containers(CollectionUtils.isNotEmpty(task.containers())
+                ? task.containers().stream().map(EcsMapper::toEcsContainer).collect(Collectors.toList())
+                : null)
         .build();
   }
 

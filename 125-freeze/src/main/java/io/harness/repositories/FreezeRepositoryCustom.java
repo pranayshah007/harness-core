@@ -24,4 +24,6 @@ public interface FreezeRepositoryCustom {
 
   Optional<FreezeConfigEntity> findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifier(
       String accountId, String orgIdentifier, String projectIdentifier, String freezeId);
+  Optional<FreezeConfigEntity> findGlobalByAccountIdAndOrgIdentifierAndProjectIdentifier(
+      String accountId, String orgIdentifier, String projectIdentifier);
 }
