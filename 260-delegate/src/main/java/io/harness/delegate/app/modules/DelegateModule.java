@@ -331,6 +331,7 @@ import io.harness.delegate.task.shell.winrm.WinRmCopyCommandHandler;
 import io.harness.delegate.task.shell.winrm.WinRmDownloadArtifactCommandHandler;
 import io.harness.delegate.task.shell.winrm.WinRmInitCommandHandler;
 import io.harness.delegate.task.shell.winrm.WinRmScriptCommandHandler;
+import io.harness.delegate.task.spot.SpotDelegateTask;
 import io.harness.delegate.task.ssh.NGCommandUnitType;
 import io.harness.delegate.task.ssh.artifact.SshWinRmArtifactType;
 import io.harness.delegate.task.stepstatus.StepStatusTask;
@@ -1745,6 +1746,7 @@ public class DelegateModule extends AbstractModule {
     mapBinder.addBinding(TaskType.KUBERNETES_STEADY_STATE_CHECK_TASK).toInstance(KubernetesSteadyStateCheckTask.class);
     mapBinder.addBinding(TaskType.PCF_COMMAND_TASK).toInstance(PcfCommandTask.class);
     mapBinder.addBinding(TaskType.SPOTINST_COMMAND_TASK).toInstance(SpotInstTask.class);
+    mapBinder.addBinding(TaskType.SPOT_TASK_NG).toInstance(SpotDelegateTask.class);
     mapBinder.addBinding(TaskType.ECS_COMMAND_TASK).toInstance(EcsCommandTask.class);
     mapBinder.addBinding(TaskType.COLLABORATION_PROVIDER_TASK).toInstance(CollaborationProviderTask.class);
     mapBinder.addBinding(TaskType.PROMETHEUS_METRIC_DATA_PER_HOST).toInstance(ServiceImplDelegateTask.class);

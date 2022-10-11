@@ -1592,6 +1592,14 @@
 20103:io.harness.ng.core.account.AuthenticationMechanism
 20104:io.harness.ng.core.account.ServiceAccountConfig
 20105:io.harness.steps.shellscript.ShellType
+21001:io.harness.delegate.beans.connector.spotconnector.SpotConnectorDTO
+21002:io.harness.delegate.beans.connector.spotconnector.SpotCredentialDTO
+21003:io.harness.delegate.beans.connector.spotconnector.SpotCredentialSpecDTO
+21004:io.harness.delegate.beans.connector.spotconnector.SpotCredentialType
+21005:io.harness.delegate.beans.connector.spotconnector.SpotManualConfigSpecDTO
+21006:io.harness.delegate.beans.connector.spotconnector.SpotValidateTaskResponse
+21007:io.harness.delegate.beans.connector.spotconnector.SpotTaskParams
+21008:io.harness.delegate.beans.connector.spotconnector.SpotTaskType
 22001:io.harness.ng.core.common.beans.NGTag
 22004:io.harness.ng.core.common.beans.KeyValuePair
 22005:io.harness.ng.core.ResourceScope
@@ -2387,4 +2395,3 @@
 10000103:io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsAuthenticationType
 10000109:io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsAuthenticationDTO
 10000111:io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsTokenDTO
-

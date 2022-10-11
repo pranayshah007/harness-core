@@ -35,6 +35,7 @@ public enum ConnectorType implements EntitySubtype {
   @JsonProperty("Gcp") GCP("Gcp"),
   @JsonProperty("Aws") AWS("Aws"),
   @JsonProperty("Azure") AZURE("Azure"),
+  @JsonProperty("Spot") SPOT("Spot"),
 
   @JsonProperty("Artifactory") ARTIFACTORY("Artifactory"),
   @JsonProperty("Jira") JIRA("Jira"),
