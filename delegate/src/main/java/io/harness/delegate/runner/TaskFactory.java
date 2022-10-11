@@ -59,15 +59,15 @@ public class TaskFactory {
 
   private Consumer<DelegateTaskResponse> getPostExecutionFunction(final String taskId) {
     return taskResponse -> {
-      log.info("debug: writing result to file: {}", configuration.getResultFilePath());
-      byte[] data = kryoSerializer.asBytes(taskResponse);
-      File output = new File(configuration.getResultFilePath());
-      try {
-        FileUtils.writeByteArrayToFile(output, data);
-      } catch (IOException e) {
-        log.error("Writing result to file failed", e);
-        throw new WingsException(e);
-      }
+//      log.info("debug: writing result to file: {}", configuration.getResultFilePath());
+//      byte[] data = kryoSerializer.asBytes(taskResponse);
+//      File output = new File(configuration.getResultFilePath());
+//      try {
+//        FileUtils.writeByteArrayToFile(output, data);
+//      } catch (IOException e) {
+//        log.error("Writing result to file failed", e);
+//        throw new WingsException(e);
+//      }
       try {
         delegateCoreClient.taskResponse(taskId, taskResponse).execute();
       } catch (IOException e) {

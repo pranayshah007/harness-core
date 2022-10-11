@@ -80,7 +80,7 @@ public class DelegateCoreClientFactory implements Provider<DelegateCoreClient> {
   @Override
   public DelegateCoreClient get() {
     //return createDelegateCoreClient(ServiceDiscovery.getDelegateServiceEndpoint("delegate_service"));
-    //return createDelegateCoreClient(System.getenv("CORE_DELEGATE_BASE_URL"));
-    return createDelegateCoreClient("http://localhost:3460/api/");
+    return createDelegateCoreClient(System.getenv("CORE_DELEGATE_BASE_URL"));
+    //return createDelegateCoreClient("http://localhost:3460/api/");
   }
 }
