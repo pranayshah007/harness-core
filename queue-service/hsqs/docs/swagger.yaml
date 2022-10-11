@@ -29,6 +29,8 @@ definitions:
         type: integer
       consumerName:
         type: string
+      maxWaitDuration:
+        type: integer
       topic:
         type: string
     type: object
@@ -71,9 +73,7 @@ definitions:
       itemID:
         type: string
       retryTimeAfterDuration:
-        description: |-
-          Retry topic + subtopic after RetryAfterTimeDuration nanoseconds
-          RetryAfterTimeDuration time.Duration `json:"retryTimeAfterDuration"`
+        description: Retry topic + subtopic after RetryAfterTimeDuration nanoseconds
         type: integer
       subTopic:
         type: string

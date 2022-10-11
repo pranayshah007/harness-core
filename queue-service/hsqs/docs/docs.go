@@ -201,6 +201,9 @@ const docTemplate = `{
                 "consumerName": {
                     "type": "string"
                 },
+                "maxWaitDuration": {
+                    "type": "integer"
+                },
                 "topic": {
                     "type": "string"
                 }
@@ -265,7 +268,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "retryTimeAfterDuration": {
-                    "description": "Retry topic + subtopic after RetryAfterTimeDuration nanoseconds\nRetryAfterTimeDuration time.Duration ` + "`" + `json:\"retryTimeAfterDuration\"` + "`" + `",
+                    "description": "Retry topic + subtopic after RetryAfterTimeDuration nanoseconds",
                     "type": "integer"
                 },
                 "subTopic": {

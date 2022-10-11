@@ -7,7 +7,7 @@ package utils
 
 import "fmt"
 
-// GetStoreAllQueuesTopicKey key, all subtopics list is stored having actual stream redis key
+// GetStoreAllSubTopicsFromTopicKey key, all subtopics list is stored having actual stream redis key
 func GetStoreAllSubTopicsFromTopicKey(requestTopicName string) string {
 	return fmt.Sprintf("hsqs:%s:subtopics", requestTopicName)
 }

@@ -20,13 +20,13 @@ func NewHandler(s store.Store) *Handler {
 }
 
 func (h *Handler) Register(g *echo.Group) {
-	g.POST("/queue", h.handleQueue())
+	g.POST("/queue", h.handleEnqueue())
 	g.POST("/dequeue", h.handleDequeue())
 	g.POST("/ack", h.ack())
 	g.POST("/unack", h.unAck())
 }
 
-// handleQueue godoc
+// handleEnqueue godoc
 // @Summary     Enqueue
 // @Description Enqueue the request
 // @Accept      json
@@ -34,7 +34,7 @@ func (h *Handler) Register(g *echo.Group) {
 // @Param       request body store.EnqueueRequest true "query params"
 // @Success     200 {object} store.EnqueueResponse
 // @Router      /v1/queue [POST]
-func (h *Handler) handleQueue() echo.HandlerFunc {
+func (h *Handler) handleEnqueue() echo.HandlerFunc {
 	return func(c echo.Context) error {
 
 		// bind request body to enqueue request
