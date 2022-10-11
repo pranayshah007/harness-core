@@ -163,6 +163,8 @@ public class StatisticsServiceImpl implements StatisticsService {
             query.field("appId").in(userRequestContext.getAppIds());
           }
         }
+      } else {
+        log.error("Some unexpected error occurred");
       }
     }
   }
@@ -193,7 +195,7 @@ public class StatisticsServiceImpl implements StatisticsService {
 
     Query<WorkflowExecution> prodEnvBaseQuery = baseQuery.cloneQuery().filter(WorkflowExecutionKeys.envType, PROD);
     Query<WorkflowExecution> nonProdEnvBaseQuery =
-        baseQuery.cloneQuery().filter(WorkflowExecutionKeys.envType, NON_PROD);
+        baseQuery.cloneQuery().field(WorkflowExecutionKeys.envType).notEqual(PROD);
 
     DeploymentStatistics deploymentStats = new DeploymentStatistics();
     AggregatedDayStats prodEnvStats = getAggregatedDayStats(numOfDays, prodEnvBaseQuery, datastore);
@@ -401,7 +403,7 @@ public class StatisticsServiceImpl implements StatisticsService {
 
     Query<WorkflowExecution> prodEnvBaseQuery = baseQuery.cloneQuery().filter(WorkflowExecutionKeys.envType, PROD);
     Query<WorkflowExecution> nonProdEnvBaseQuery =
-        baseQuery.cloneQuery().filter(WorkflowExecutionKeys.envType, NON_PROD);
+        baseQuery.cloneQuery().field(WorkflowExecutionKeys.envType).notEqual(PROD);
 
     Comparator<TopConsumer> byCount = comparing(TopConsumer::getTotalCount, reverseOrder());
 
