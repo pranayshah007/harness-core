@@ -29,4 +29,6 @@ public class FfSubscriptionDTO {
   private String edition;
   private boolean premiumSupport;
   private CustomerDTO customer;
+  private boolean isMonthly = paymentFreq.trim().equalsIgnoreCase("monthly");
+  private boolean isYearly = paymentFreq.trim().equalsIgnoreCase("yearly");
 }
