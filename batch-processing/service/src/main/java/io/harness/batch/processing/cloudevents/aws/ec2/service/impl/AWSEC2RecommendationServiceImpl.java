@@ -30,7 +30,8 @@ public class AWSEC2RecommendationServiceImpl implements AWSEC2RecommendationServ
 
         GetRightsizingRecommendationRequest recommendationRequest = new GetRightsizingRecommendationRequest()
                 .withConfiguration(new RightsizingRecommendationConfiguration()
-                        .withRecommendationTarget(RecommendationTarget.SAME_INSTANCE_FAMILY));
+                        .withRecommendationTarget(RecommendationTarget.SAME_INSTANCE_FAMILY))
+                .withService("AmazonEC2");
         String nextPageToken = null;
         List<RightsizingRecommendation> recommendationsResult = new ArrayList<>();
         do {
