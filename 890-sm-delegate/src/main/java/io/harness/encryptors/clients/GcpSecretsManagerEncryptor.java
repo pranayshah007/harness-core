@@ -17,7 +17,6 @@ import static io.harness.exception.WingsException.USER_SRE;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SecretText;
-import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryptors.VaultEncryptor;
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.SecretManagementException;
@@ -53,7 +52,6 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Pattern;
 import javax.validation.executable.ValidateOnExecution;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
