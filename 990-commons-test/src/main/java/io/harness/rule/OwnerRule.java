@@ -301,6 +301,7 @@ public class OwnerRule implements TestRule {
   public static final String JIMIT_GANDHI = "jimit.gandhi";
   public static final String XINGCHI_JIN = "xingchi.jin";
   public static final String RAGHAV_MURALI = "raghavendra.murali";
+  public static final String SAHIBA = "sahiba.khan";
   @Deprecated public static final String UNKNOWN = "unknown";
 
   private static UserInfoBuilder defaultUserInfo(String user) {
