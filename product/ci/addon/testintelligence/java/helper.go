@@ -34,17 +34,70 @@ func getFiles(path string) ([]string, error) {
 	return matches, err
 }
 
-// GetJavaTests returns list of RunnableTests in the workspace
+// GetJavaTests returns list of RunnableTests in the workspace with java extension.
 // In case of errors, return empty list
-func GetJavaTests(log *zap.SugaredLogger, fs filesystem.FileSystem) ([]types.RunnableTest, error) {
+func GetJavaTests() ([]types.RunnableTest, error) {
 	tests := make([]types.RunnableTest, 0)
-	//excludeList := []string{} // exclude any instances of these packages from the package list
 	wp, err := getWorkspace()
 	if err != nil {
 		return tests, err
 	}
 
 	files, _ := getFiles(fmt.Sprintf("%s/**/*.java", wp))
+	for _, path := range files {
+		if path == "" {
+			continue
+		}
+		node, _ := utils.ParseJavaNode(path)
+		if node.Type != utils.NodeType_TEST {
+			continue
+		}
+		test := types.RunnableTest{
+			Pkg:   node.Pkg,
+			Class: node.Class,
+		}
+		tests = append(tests, test)
+	}
+	return tests, nil
+}
+
+// GetScalaTests returns list of RunnableTests in the workspace with scala extension.
+// In case of errors, return empty list
+func GetScalaTests() ([]types.RunnableTest, error) {
+	tests := make([]types.RunnableTest, 0)
+	wp, err := getWorkspace()
+	if err != nil {
+		return tests, err
+	}
+
+	files, _ := getFiles(fmt.Sprintf("%s/**/*.scala", wp))
+	for _, path := range files {
+		if path == "" {
+			continue
+		}
+		node, _ := utils.ParseJavaNode(path)
+		if node.Type != utils.NodeType_TEST {
+			continue
+		}
+		test := types.RunnableTest{
+			Pkg:   node.Pkg,
+			Class: node.Class,
+		}
+		tests = append(tests, test)
+	}
+	return tests, nil
+}
+
+// GetKotlinTests returns list of RunnableTests in the workspace with kotlin extension.
+// In case of errors, return empty list
+func GetKotlinTests() ([]types.RunnableTest, error) {
+	tests := make([]types.RunnableTest, 0)
+	wp, err := getWorkspace()
+	if err != nil {
+		return tests, err
+	}
+
+	files, _ := getFiles(fmt.Sprintf("%s/**/*.kt", wp))
 	for _, path := range files {
 		if path == "" {
 			continue
