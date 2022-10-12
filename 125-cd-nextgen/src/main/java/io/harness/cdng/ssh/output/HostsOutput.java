@@ -5,22 +5,22 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.steps.shellscript;
+package io.harness.cdng.ssh.output;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.delegate.task.ssh.WinRmInfraDelegateConfig;
 import io.harness.pms.sdk.core.data.ExecutionSweepingOutput;
 
+import java.util.Set;
 import lombok.Builder;
 import lombok.Value;
 
 @Value
 @Builder
 @OwnedBy(CDP)
-@RecasterAlias("io.harness.steps.shellscript.WinRmInfraDelegateConfigOutput")
-public class WinRmInfraDelegateConfigOutput implements ExecutionSweepingOutput {
-  WinRmInfraDelegateConfig winRmInfraDelegateConfig;
+@RecasterAlias("io.harness.cdng.ssh.output.HostsOutput")
+public class HostsOutput implements ExecutionSweepingOutput {
+  Set<String> hosts;
 }
