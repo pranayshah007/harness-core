@@ -11,6 +11,8 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants.INFRA_TASK_EXECUTABLE_STEP_OUTPUT;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.data.structure.HarnessStringUtils.emptyIfNull;
+import static io.harness.eraro.ErrorCode.GENERAL_ERROR;
 import static io.harness.logging.LogCallbackUtils.saveExecutionLogSafely;
 
 import static software.wings.beans.LogColor.Green;
@@ -25,6 +27,7 @@ import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.execution.ExecutionInfoKey;
 import io.harness.cdng.execution.helper.ExecutionInfoKeyMapper;
 import io.harness.cdng.execution.helper.StageExecutionHelper;
+import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.infra.InfrastructureMapper;
 import io.harness.cdng.infra.InfrastructureValidator;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
@@ -47,8 +50,8 @@ import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.k8s.K8sInfraDelegateConfig;
 import io.harness.delegate.task.ssh.SshInfraDelegateConfig;
 import io.harness.delegate.task.ssh.WinRmInfraDelegateConfig;
+import io.harness.eraro.Level;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
-import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.logging.CommandExecutionStatus;
@@ -67,6 +70,7 @@ import io.harness.pms.contracts.execution.AsyncExecutableResponse;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureData;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
+import io.harness.pms.contracts.execution.failure.FailureType;
 import io.harness.pms.contracts.plan.ExecutionPrincipalInfo;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
@@ -124,6 +128,8 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
   @Inject private InfrastructureMapper infrastructureMapper;
   @Inject private InfrastructureValidator infrastructureValidator;
 
+  @Inject private CDExpressionResolver resolver;
+
   @Override
   public Class<InfrastructureTaskExecutableStepV2Params> getStepParametersClass() {
     return InfrastructureTaskExecutableStepV2Params.class;
@@ -144,6 +150,8 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
     final Infrastructure infraSpec = infrastructureConfig.getInfrastructureDefinitionConfig().getSpec();
 
     validateResources(ambiance, infraSpec);
+
+    resolver.updateExpressions(ambiance, infraSpec);
 
     final NGLogCallback logCallback = infrastructureStepHelper.getInfrastructureLogCallback(ambiance, true, LOG_SUFFIX);
     // Create delegate task for infra if needed
@@ -170,16 +178,11 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
     try (PmsSecurityContextEventGuard securityContextEventGuard = new PmsSecurityContextEventGuard(ambiance)) {
       return handleAsyncResponseInternal(ambiance, responseDataMap);
     } catch (Exception ex) {
-      return StepResponse.builder()
-          .status(Status.FAILED)
-          .failureInfo(FailureInfo.newBuilder()
-                           .addFailureData(FailureData.newBuilder().setMessage(ExceptionUtils.getMessage(ex)).build())
-                           .build())
-          .build();
+      return prepareFailureResponse(ex);
     }
   }
 
-  private StepResponse handleAsyncResponseInternal(Ambiance ambiance, Map<String, ResponseData> responseDataMap) {
+  StepResponse handleAsyncResponseInternal(Ambiance ambiance, Map<String, ResponseData> responseDataMap) {
     final InfrastructureTaskExecutableStepSweepingOutput infraOutput = fetchInfraStepOutputOrThrow(ambiance);
     final NGLogCallback logCallback = infrastructureStepHelper.getInfrastructureLogCallback(ambiance, LOG_SUFFIX);
 
@@ -475,6 +478,19 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
         .executeOnHarnessHostedDelegates(submitTaskRequest.getExecuteOnHarnessHostedDelegates())
         .emitEvent(submitTaskRequest.getEmitEvent())
         .stageId(submitTaskRequest.getStageId())
+        .build();
+  }
+
+  private StepResponse prepareFailureResponse(Exception ex) {
+    FailureData failureData = FailureData.newBuilder()
+                                  .addFailureTypes(FailureType.APPLICATION_FAILURE)
+                                  .setLevel(Level.ERROR.name())
+                                  .setCode(GENERAL_ERROR.name())
+                                  .setMessage(emptyIfNull(ex.getMessage()))
+                                  .build();
+    return StepResponse.builder()
+        .status(Status.FAILED)
+        .failureInfo(FailureInfo.newBuilder().addFailureData(failureData).build())
         .build();
   }
 }

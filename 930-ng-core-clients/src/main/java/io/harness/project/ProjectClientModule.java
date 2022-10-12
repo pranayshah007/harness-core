@@ -21,6 +21,7 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Key;
 import com.google.inject.Provides;
 import com.google.inject.Scopes;
+import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
 
@@ -49,6 +50,7 @@ public class ProjectClientModule extends AbstractModule {
 
   @Provides
   @Named("PRIVILEGED")
+  @Singleton
   private ProjectHttpClientFactory privilegedProjectHttpClientFactory(KryoConverterFactory kryoConverterFactory) {
     return new ProjectHttpClientFactory(projectManagerClientConfig, serviceSecret, new ServiceTokenGenerator(),
         kryoConverterFactory, clientId, ClientMode.PRIVILEGED);
@@ -56,6 +58,7 @@ public class ProjectClientModule extends AbstractModule {
 
   @Provides
   @Named("NON_PRIVILEGED")
+  @Singleton
   private ProjectHttpClientFactory nonPrivilegedProjectHttpClientFactory(KryoConverterFactory kryoConverterFactory) {
     return new ProjectHttpClientFactory(projectManagerClientConfig, serviceSecret, new ServiceTokenGenerator(),
         kryoConverterFactory, clientId, ClientMode.NON_PRIVILEGED);

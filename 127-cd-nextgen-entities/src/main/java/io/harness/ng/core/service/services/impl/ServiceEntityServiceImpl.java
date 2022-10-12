@@ -765,4 +765,10 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
       return false;
     }
   }
+
+  public Optional<ServiceEntity> getService(
+      String accountId, String orgIdentifier, String projectIdentifier, String serviceIdentifier) {
+    return serviceRepository.findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifier(
+        accountId, orgIdentifier, projectIdentifier, serviceIdentifier);
+  }
 }

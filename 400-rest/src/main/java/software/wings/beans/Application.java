@@ -10,6 +10,8 @@ package software.wings.beans;
 import static io.harness.annotations.dev.HarnessModule._957_CG_BEANS;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
+import static software.wings.ngmigration.NGMigrationEntityType.APPLICATION;
+
 import static java.util.Arrays.asList;
 
 import io.harness.annotation.HarnessEntity;
@@ -29,6 +31,7 @@ import io.harness.persistence.NameAccess;
 
 import software.wings.beans.entityinterface.KeywordsAware;
 import software.wings.beans.entityinterface.TagAware;
+import software.wings.ngmigration.CgBasicInfo;
 import software.wings.ngmigration.NGMigrationEntity;
 import software.wings.yaml.BaseEntityYaml;
 import software.wings.yaml.gitSync.YamlGitConfig;
@@ -129,6 +132,18 @@ public class Application extends Base implements KeywordsAware, NameAccess, TagA
   @Override
   public String getMigrationEntityName() {
     return getName();
+  }
+
+  @JsonIgnore
+  @Override
+  public CgBasicInfo getCgBasicInfo() {
+    return CgBasicInfo.builder()
+        .id(getUuid())
+        .name(getName())
+        .type(APPLICATION)
+        .appId(getAppId())
+        .accountId(getAccountId())
+        .build();
   }
 
   /**

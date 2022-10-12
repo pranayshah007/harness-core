@@ -10,18 +10,21 @@ package io.harness.ng.core.environment.beans;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.annotations.ApiModel;
-import java.util.Map;
+import java.util.List;
 import lombok.AccessLevel;
 import lombok.Builder;
-import lombok.Data;
+import lombok.Value;
 import lombok.experimental.FieldDefaults;
 
-@Data
+@Value
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@ApiModel("EnvironmentYamlMetadataDTO")
-public class EnvironmentInputsetYamlandServiceOverridesMetadataDTO {
-  Map<String, EnvironmentInputsetYamlAndServiceOverridesMetadata> environmentsInputYamlAndServiceOverrides;
+@ApiModel("EnvironmentInputsetYamlAndServiceOverridesMetadata")
+public class EnvironmentInputSetYamlAndServiceOverridesMetadata {
+  String envRef;
+  String envYaml;
+  String envRuntimeInputYaml;
+  List<ServiceOverridesMetadata> servicesOverrides;
 }

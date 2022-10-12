@@ -9,7 +9,6 @@ package io.harness.ngmigration.service.infra;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.exception.InvalidRequestException;
 
 import software.wings.infra.InfrastructureDefinition;
 
@@ -17,6 +16,7 @@ import com.google.inject.Inject;
 
 @OwnedBy(HarnessTeam.CDC)
 public class InfraMapperFactory {
+  private static final UnsupportedInfraDefMapper unsupportedInfraDefMapper = new UnsupportedInfraDefMapper();
   @Inject K8sInfraDefMapper k8sInfraDefMapper;
   @Inject NativeHelmInfraDefMapper helmInfraDefMapper;
 
@@ -27,7 +27,7 @@ public class InfraMapperFactory {
       case HELM:
         return helmInfraDefMapper;
       default:
-        throw new InvalidRequestException("Unsupported Infrastructure");
+        return unsupportedInfraDefMapper;
     }
   }
 }

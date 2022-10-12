@@ -119,6 +119,11 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/store.AckRequest'
+      - description: Authorization
+        in: header
+        name: Authorization
+        required: true
+        type: string
       produces:
       - application/json
       responses:
@@ -139,6 +144,11 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/store.DequeueRequest'
+      - description: Authorization
+        in: header
+        name: Authorization
+        required: true
+        type: string
       produces:
       - application/json
       responses:
@@ -159,6 +169,11 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/store.EnqueueRequest'
+      - description: Authorization
+        in: header
+        name: Authorization
+        required: true
+        type: string
       produces:
       - application/json
       responses:
@@ -179,6 +194,11 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/store.UnAckRequest'
+      - description: Authorization
+        in: header
+        name: Authorization
+        required: true
+        type: string
       produces:
       - application/json
       responses:

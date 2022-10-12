@@ -8,6 +8,8 @@
 package io.harness.chaos.client.remote;
 
 import io.harness.chaos.client.beans.ChaosApplyManifestResponse;
+import io.harness.chaos.client.beans.ChaosQuery;
+import io.harness.chaos.client.beans.ChaosRerunResponse;
 import io.harness.ng.core.dto.ResponseDTO;
 
 import retrofit2.Call;
@@ -15,7 +17,8 @@ import retrofit2.http.Body;
 import retrofit2.http.POST;
 
 public interface ChaosHttpClient {
-  String CHAOS_ENDPOINT = "/chaos/delegate-callback";
+  @POST("/chaos/delegate-callback")
+  Call<ResponseDTO<Boolean>> pushTaskResponse(@Body ChaosApplyManifestResponse response);
 
-  @POST(CHAOS_ENDPOINT) Call<ResponseDTO<Boolean>> pushTaskResponse(@Body ChaosApplyManifestResponse response);
+  @POST("/query") Call<ResponseDTO<ChaosRerunResponse>> reRunWorkflow(@Body ChaosQuery query);
 }

@@ -24,6 +24,37 @@ func TestGetBazelCmd(t *testing.T) {
 	// Will add this once we have a more generic implementation.
 }
 
+func TestGetBazelCmd_DuplicateTests(t *testing.T) {
+	ctrl, ctx := gomock.WithContext(context.Background(), t)
+	defer ctrl.Finish()
+
+	log, _ := logs.GetObservedLogger(zap.InfoLevel)
+	fs := filesystem.NewMockFileSystem(ctrl)
+
+	cmdFactory := mexec.NewMockCmdContextFactory(ctrl)
+	cmd := mexec.NewMockCommand(ctrl)
+	runner := NewBazelRunner(log.Sugar(), fs, cmdFactory)
+
+	t1 := types.RunnableTest{Pkg: "pkg1", Class: "cls1"}
+	t2 := types.RunnableTest{Pkg: "pkg1", Class: "cls1"}
+	t3 := types.RunnableTest{Pkg: "pkg2", Class: "cls2"}
+	tests := []types.RunnableTest{t1, t2, t3}
+	expectedCmd := "bazel  --define=HARNESS_ARGS=-javaagent:/addon/bin/java-agent.jar=/test/tmp/config.ini //module1:pkg1.cls1 //module1:pkg2.cls2"
+
+	c := fmt.Sprintf("%s query 'attr(name, %s.%s, //...)'", bazelCmd, "pkg1", "cls1")
+	cmdArgs := append(make([]interface{}, 0), "-c", c)
+	cmdFactory.EXPECT().CmdContextWithSleep(ctx, time.Duration(0), "sh", cmdArgs...).Return(cmd)
+	cmd.EXPECT().Output().Return([]byte("//module1:pkg1.cls1"), nil)
+
+	c = fmt.Sprintf("%s query 'attr(name, %s.%s, //...)'", bazelCmd, "pkg2", "cls2")
+	cmdArgs = append(make([]interface{}, 0), "-c", c)
+	cmdFactory.EXPECT().CmdContextWithSleep(ctx, time.Duration(0), "sh", cmdArgs...).Return(cmd)
+	cmd.EXPECT().Output().Return([]byte("//module1:pkg2.cls2"), nil)
+
+	command, _ := runner.GetCmd(ctx, tests, "", "/test/tmp/config.ini", false, false)
+	assert.Equal(t, expectedCmd, command)
+}
+
 func TestGetBazelCmd_TestsWithRules(t *testing.T) {
 	ctrl, ctx := gomock.WithContext(context.Background(), t)
 	defer ctrl.Finish()
@@ -39,9 +70,9 @@ func TestGetBazelCmd_TestsWithRules(t *testing.T) {
 	t2 := types.RunnableTest{Pkg: "pkg1", Class: "cls2"}
 	t2.Autodetect.Rule = "//module1:pkg1.cls2"
 	t3 := types.RunnableTest{Pkg: "pkg2", Class: "cls2"}
-	t3.Autodetect.Rule = "//module1:pkg2/cls2"
+	t3.Autodetect.Rule = "//module1:pkg2.cls2"
 	tests := []types.RunnableTest{t1, t2, t3}
-	expectedCmd := "bazel  --define=HARNESS_ARGS=-javaagent:/addon/bin/java-agent.jar=/test/tmp/config.ini //module1:pkg1.cls1 //module1:pkg1.cls2 //module1:pkg2/cls2"
+	expectedCmd := "bazel  --define=HARNESS_ARGS=-javaagent:/addon/bin/java-agent.jar=/test/tmp/config.ini //module1:pkg1.cls1 //module1:pkg1.cls2 //module1:pkg2.cls2"
 
 	cmd, _ := runner.GetCmd(ctx, tests, "", "/test/tmp/config.ini", false, false)
 	assert.Equal(t, expectedCmd, cmd)

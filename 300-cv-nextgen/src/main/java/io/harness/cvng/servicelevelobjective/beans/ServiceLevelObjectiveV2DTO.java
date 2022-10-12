@@ -38,8 +38,8 @@ import lombok.experimental.FieldDefaults;
     description = "This is the Service Level Objective V2 entity defined in Harness")
 public class ServiceLevelObjectiveV2DTO implements YamlDTO {
   @ApiModelProperty(required = true) @NotNull @EntityIdentifier ServiceLevelObjectiveType type;
-  @ApiModelProperty(required = true) @EntityIdentifier String orgIdentifier;
-  @ApiModelProperty(required = true) @EntityIdentifier String projectIdentifier;
+  @ApiModelProperty(required = true) @EntityIdentifier(allowBlank = true) String orgIdentifier;
+  @ApiModelProperty(required = true) @EntityIdentifier(allowBlank = true) String projectIdentifier;
   @ApiModelProperty(required = true) @NotNull @EntityIdentifier String identifier;
   @ApiModelProperty(required = true) @NotNull @NGEntityName String name;
   String description;

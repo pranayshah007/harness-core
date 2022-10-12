@@ -28,6 +28,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.execution.ExecutionInfoKey;
 import io.harness.cdng.execution.helper.StageExecutionHelper;
+import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.infra.InfrastructureMapper;
 import io.harness.cdng.infra.InfrastructureValidator;
 import io.harness.cdng.infra.beans.AwsInstanceFilter;
@@ -35,6 +36,7 @@ import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.infra.beans.PdcInfrastructureOutcome;
 import io.harness.cdng.infra.beans.SshWinRmAwsInfrastructureOutcome;
 import io.harness.cdng.infra.beans.SshWinRmAzureInfrastructureOutcome;
+import io.harness.cdng.infra.yaml.Infrastructure;
 import io.harness.cdng.infra.yaml.InfrastructureConfig;
 import io.harness.cdng.infra.yaml.InfrastructureDefinitionConfig;
 import io.harness.cdng.infra.yaml.PdcInfrastructure;
@@ -76,6 +78,7 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.AsyncExecutableResponse;
 import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.contracts.execution.failure.FailureData;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.contracts.plan.ExecutionPrincipalInfo;
 import io.harness.pms.contracts.plan.PrincipalType;
@@ -136,6 +139,7 @@ public class InfrastructureTaskExecutableStepV2Test extends CategoryTest {
   @Mock private ExecutionSweepingOutputService sweepingOutputService;
   @Mock private KryoSerializer kryoSerializer;
   @Mock private NGLogCallback logCallback;
+  @Mock private CDExpressionResolver resolver;
   @Spy InstanceOutcomeHelper instanceOutcomeHelper;
 
   @Mock private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
@@ -325,6 +329,8 @@ public class InfrastructureTaskExecutableStepV2Test extends CategoryTest {
     assertThat(asyncExecutableResponse.getLogKeys(0))
         .isEqualTo(
             "accountId:ACCOUNT_ID/orgId:ORG_ID/projectId:PROJECT_ID/pipelineId:/runSequence:0/level0:infrastructure-commandUnit:Execute");
+
+    verify(resolver, times(1)).updateExpressions(any(Ambiance.class), any(Infrastructure.class));
   }
 
   @Test
@@ -362,6 +368,8 @@ public class InfrastructureTaskExecutableStepV2Test extends CategoryTest {
             .infraRef(ParameterField.createValueField("infra-id"))
             .build(),
         null);
+
+    verify(resolver, times(1)).updateExpressions(any(Ambiance.class), any(Infrastructure.class));
 
     ArgumentCaptor<DelegateTaskRequest> captor = ArgumentCaptor.forClass(DelegateTaskRequest.class);
     verify(delegateGrpcClientWrapper, times(1)).submitAsyncTask(captor.capture(), eq(Duration.ZERO));
@@ -411,13 +419,13 @@ public class InfrastructureTaskExecutableStepV2Test extends CategoryTest {
             .build(),
         null);
 
+    verify(resolver, times(1)).updateExpressions(any(Ambiance.class), any(Infrastructure.class));
+
     ArgumentCaptor<DelegateTaskRequest> captor = ArgumentCaptor.forClass(DelegateTaskRequest.class);
     verify(delegateGrpcClientWrapper, times(1)).submitAsyncTask(captor.capture(), eq(Duration.ZERO));
 
     DelegateTaskRequest delegateTaskRequest = captor.getValue();
 
-    //    assertThat(delegateTaskRequest.getUnitsCount()).isEqualTo(1);
-    //    assertThat(delegateTaskRequest.getUnits(0)).isEqualTo("Execute");
     assertThat(delegateTaskRequest.getTaskType()).isEqualTo("NG_AZURE_TASK");
 
     verifyTaskRequest(delegateTaskRequest);
@@ -591,6 +599,21 @@ public class InfrastructureTaskExecutableStepV2Test extends CategoryTest {
     verify(sweepingOutputService, times(1))
         .consume(any(Ambiance.class), eq("output"), eq(HostsOutput.builder().hosts(Set.of("h1", "h2")).build()),
             eq("STAGE"));
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.YOGESH)
+  @Category(UnitTests.class)
+  public void testExceptionInHandleResponse() {
+    // introduce an exception
+    doReturn(null).when(sweepingOutputService).resolve(any(Ambiance.class), any());
+
+    StepResponse stepResponse = step.handleAsyncResponse(buildAmbiance(), null, null);
+
+    assertThat(stepResponse.getStatus()).isEqualTo(Status.FAILED);
+    FailureData failureData = stepResponse.getFailureInfo().getFailureData(0);
+
+    assertThat(failureData.getCode()).isEqualTo("GENERAL_ERROR");
   }
 
   private AwsEC2Instance mockAwsInstance(String id) {

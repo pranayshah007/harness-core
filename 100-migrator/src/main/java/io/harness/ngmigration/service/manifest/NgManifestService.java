@@ -15,6 +15,7 @@ import io.harness.ngmigration.beans.NGYamlFile;
 
 import software.wings.beans.appmanifest.ApplicationManifest;
 import software.wings.ngmigration.CgEntityId;
+import software.wings.ngmigration.CgEntityNode;
 
 import java.util.List;
 import java.util.Map;
@@ -22,6 +23,6 @@ import java.util.Map;
 @OwnedBy(HarnessTeam.CDC)
 public interface NgManifestService {
   ManifestConfigWrapper getManifestConfigWrapper(ApplicationManifest applicationManifest,
-      Map<CgEntityId, NGYamlFile> migratedEntities, ManifestProvidedEntitySpec entitySpec,
-      List<NGYamlFile> yamlFileList);
+      Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities,
+      ManifestProvidedEntitySpec entitySpec, List<NGYamlFile> yamlFileList);
 }

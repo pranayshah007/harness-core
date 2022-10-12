@@ -38,14 +38,17 @@ import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageDTO;
 import io.harness.ng.core.entitysetupusage.service.EntitySetupUsageService;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.beans.Environment.EnvironmentKeys;
-import io.harness.ng.core.environment.beans.EnvironmentInputsetYamlAndServiceOverridesMetadata;
-import io.harness.ng.core.environment.beans.EnvironmentInputsetYamlandServiceOverridesMetadataDTO;
+import io.harness.ng.core.environment.beans.EnvironmentInputSetYamlAndServiceOverridesMetadata;
+import io.harness.ng.core.environment.beans.EnvironmentInputSetYamlAndServiceOverridesMetadataDTO;
+import io.harness.ng.core.environment.beans.ServiceOverridesMetadata;
 import io.harness.ng.core.environment.services.EnvironmentService;
 import io.harness.ng.core.events.EnvironmentCreateEvent;
 import io.harness.ng.core.events.EnvironmentDeleteEvent;
 import io.harness.ng.core.events.EnvironmentUpdatedEvent;
 import io.harness.ng.core.events.EnvironmentUpsertEvent;
 import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
+import io.harness.ng.core.service.entity.ServiceEntity;
+import io.harness.ng.core.service.services.ServiceEntityService;
 import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
 import io.harness.outbox.api.OutboxService;
 import io.harness.pms.merger.helpers.RuntimeInputFormHelper;
@@ -103,13 +106,14 @@ public class EnvironmentServiceImpl implements EnvironmentService {
   private final InfrastructureEntityService infrastructureEntityService;
   private final ClusterService clusterService;
   private final ServiceOverrideService serviceOverrideService;
+  private final ServiceEntityService serviceEntityService;
 
   @Inject
   public EnvironmentServiceImpl(EnvironmentRepository environmentRepository,
       EntitySetupUsageService entitySetupUsageService, @Named(ENTITY_CRUD) Producer eventProducer,
       OutboxService outboxService, TransactionTemplate transactionTemplate,
       InfrastructureEntityService infrastructureEntityService, ClusterService clusterService,
-      ServiceOverrideService serviceOverrideService) {
+      ServiceOverrideService serviceOverrideService, ServiceEntityService serviceEntityService) {
     this.environmentRepository = environmentRepository;
     this.entitySetupUsageService = entitySetupUsageService;
     this.eventProducer = eventProducer;
@@ -118,6 +122,7 @@ public class EnvironmentServiceImpl implements EnvironmentService {
     this.infrastructureEntityService = infrastructureEntityService;
     this.clusterService = clusterService;
     this.serviceOverrideService = serviceOverrideService;
+    this.serviceEntityService = serviceEntityService;
   }
 
   @Override
@@ -512,26 +517,44 @@ public class EnvironmentServiceImpl implements EnvironmentService {
     return false;
   }
 
-  public EnvironmentInputsetYamlandServiceOverridesMetadataDTO getEnvironmentsInputYamlAndServiceOverridesMetadata(
+  public EnvironmentInputSetYamlAndServiceOverridesMetadataDTO getEnvironmentsInputYamlAndServiceOverridesMetadata(
       String accountId, String orgIdentifier, String projectIdentifier, List<String> envIdentifiers,
       List<String> serviceIdentifiers) {
-    Map<String, EnvironmentInputsetYamlAndServiceOverridesMetadata> environmentYamlMetadataMap = new HashMap<>();
+    List<EnvironmentInputSetYamlAndServiceOverridesMetadata> environmentInputSetYamlAndServiceOverridesMetadataList =
+        new ArrayList<>();
     for (String env : envIdentifiers) {
-      String inputYaml = createEnvironmentInputsYaml(accountId, orgIdentifier, projectIdentifier, env);
-      Map<String, String> serviceOverridesYaml = new HashMap<>();
-      for (String serviceId : serviceIdentifiers) {
-        String serviceOverrides = serviceOverrideService.createServiceOverrideInputsYaml(
-            accountId, orgIdentifier, projectIdentifier, env, serviceId);
-        serviceOverridesYaml.put(serviceId, serviceOverrides);
+      Optional<Environment> environment =
+          environmentRepository.findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifier(
+              accountId, orgIdentifier, projectIdentifier, env);
+      if (environment.isPresent()) {
+        String inputYaml = createEnvironmentInputsYaml(accountId, orgIdentifier, projectIdentifier, env);
+        List<ServiceOverridesMetadata> serviceOverridesMetadataList = new ArrayList<>();
+        for (String serviceId : serviceIdentifiers) {
+          Optional<ServiceEntity> serviceEntity =
+              serviceEntityService.getService(accountId, orgIdentifier, projectIdentifier, serviceId);
+          if (serviceEntity.isPresent()) {
+            String serviceOverrides = serviceOverrideService.createServiceOverrideInputsYaml(
+                accountId, orgIdentifier, projectIdentifier, env, serviceId);
+            serviceOverridesMetadataList.add(ServiceOverridesMetadata.builder()
+                                                 .serviceRef(serviceId)
+                                                 .serviceOverridesYaml(serviceOverrides)
+                                                 .serviceYaml(serviceEntity.get().getYaml())
+                                                 .serviceRuntimeInputYaml(serviceEntityService.createServiceInputsYaml(
+                                                     serviceEntity.get().getYaml(), serviceId))
+                                                 .build());
+          }
+        }
+        environmentInputSetYamlAndServiceOverridesMetadataList.add(
+            EnvironmentInputSetYamlAndServiceOverridesMetadata.builder()
+                .envRef(env)
+                .envRuntimeInputYaml(inputYaml)
+                .servicesOverrides(serviceOverridesMetadataList)
+                .envYaml(environment.get().getYaml())
+                .build());
       }
-      environmentYamlMetadataMap.put(env,
-          EnvironmentInputsetYamlAndServiceOverridesMetadata.builder()
-              .runtimeInputYaml(inputYaml)
-              .serviceOverridesYaml(serviceOverridesYaml)
-              .build());
     }
-    return EnvironmentInputsetYamlandServiceOverridesMetadataDTO.builder()
-        .environmentsInputYamlAndServiceOverrides(environmentYamlMetadataMap)
+    return EnvironmentInputSetYamlAndServiceOverridesMetadataDTO.builder()
+        .environmentsInputYamlAndServiceOverrides(environmentInputSetYamlAndServiceOverridesMetadataList)
         .build();
   }
 }

@@ -19,6 +19,7 @@ import io.harness.serializer.kryo.KryoConverterFactory;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Scopes;
+import com.google.inject.Singleton;
 
 @OwnedBy(HarnessTeam.PL)
 public class NgConnectorManagerClientModule extends AbstractModule {
@@ -31,6 +32,7 @@ public class NgConnectorManagerClientModule extends AbstractModule {
   }
 
   @Provides
+  @Singleton
   private NgConnectorManagerClientFactory connectorManagerClientFactory(KryoConverterFactory kryoConverterFactory) {
     return new NgConnectorManagerClientFactory(
         managerClientConfig, managerServiceSecret, new ServiceTokenGenerator(), kryoConverterFactory);

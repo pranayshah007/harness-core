@@ -19,6 +19,7 @@ import com.google.inject.Inject;
 public class NgManifestFactory {
   @Inject K8sManifestRemoteStoreService k8sManifestRemoteStoreService;
   @Inject K8sManifestHelmSourceRepoStoreService k8sManifestHelmSourceRepoStoreService;
+  @Inject K8sManifestHelmChartRepoStoreService k8sManifestHelmChartRepoStoreService;
   @Inject ValuesManifestRemoteStoreService valuesManifestRemoteStoreService;
   @Inject K8sManifestLocalStoreService k8sManifestLocalStoreService;
   @Inject ApplicationManifestService applicationManifestService;
@@ -39,6 +40,8 @@ public class NgManifestFactory {
             return k8sManifestRemoteStoreService;
           case HelmSourceRepo:
             return k8sManifestHelmSourceRepoStoreService;
+          case HelmChartRepo:
+            return k8sManifestHelmChartRepoStoreService;
           default:
             throw new InvalidRequestException(String.format(
                 "%s storetype is currently not supported for %s appManifestKind", storeType, appManifestKind));

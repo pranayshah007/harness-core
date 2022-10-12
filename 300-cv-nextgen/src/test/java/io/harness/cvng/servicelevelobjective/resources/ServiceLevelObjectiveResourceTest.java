@@ -44,7 +44,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.ws.rs.client.Entity;
@@ -145,7 +144,7 @@ public class ServiceLevelObjectiveResourceTest extends CvNextGenTestBase {
                                     .expectedResponseCode(500)
                                     .build());
     for (InvalidResourceData invalidResourceData : invalidResourceDataList) {
-      String sloJson = replace(sloYaml, invalidResourceData);
+      String sloJson = InvalidResourceData.replace(sloYaml, invalidResourceData);
       Response response = RESOURCES.client()
                               .target("http://localhost:9998/slo/")
                               .queryParam("accountId", builderFactory.getContext().getAccountId())
@@ -474,26 +473,5 @@ public class ServiceLevelObjectiveResourceTest extends CvNextGenTestBase {
     sloYaml = sloYaml.replace(
         "$healthSourceRef", monitoredServiceDTO.getSources().getHealthSources().iterator().next().getIdentifier());
     return sloYaml;
-  }
-
-  private String replace(String text, InvalidResourceData invalidResourceData) {
-    Yaml yaml = new Yaml();
-    Map<String, Object> map = yaml.load(text);
-    JSONObject jsonObject = new JSONObject(map);
-    JSONObject iteratorObject = jsonObject;
-    if (Objects.nonNull(invalidResourceData.getPath())) {
-      String[] path = invalidResourceData.getPath().split("\\\\");
-      for (String value : path) {
-        JSONObject dataObject = iteratorObject.optJSONObject(value);
-        if (Objects.nonNull(dataObject)) {
-          iteratorObject = iteratorObject.getJSONObject(value);
-        } else {
-          iteratorObject = iteratorObject.getJSONArray(value).getJSONObject(0);
-        }
-      }
-    }
-    iteratorObject.remove(invalidResourceData.getProperty());
-    iteratorObject.put(invalidResourceData.getProperty(), invalidResourceData.getReplacementValue());
-    return jsonObject.toString();
   }
 }

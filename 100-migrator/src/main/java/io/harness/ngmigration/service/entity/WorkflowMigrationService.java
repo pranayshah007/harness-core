@@ -147,8 +147,13 @@ public class WorkflowMigrationService extends NgMigrationService {
     Workflow workflow = (Workflow) entity;
     String entityId = workflow.getUuid();
     CgEntityId workflowEntityId = CgEntityId.builder().type(WORKFLOW).id(entityId).build();
-    CgEntityNode workflowNode =
-        CgEntityNode.builder().id(entityId).type(WORKFLOW).entityId(workflowEntityId).entity(workflow).build();
+    CgEntityNode workflowNode = CgEntityNode.builder()
+                                    .id(entityId)
+                                    .type(WORKFLOW)
+                                    .appId(workflow.getAppId())
+                                    .entityId(workflowEntityId)
+                                    .entity(workflow)
+                                    .build();
 
     Set<CgEntityId> children = new HashSet<>();
     if (EmptyPredicate.isNotEmpty(workflow.getServices())) {

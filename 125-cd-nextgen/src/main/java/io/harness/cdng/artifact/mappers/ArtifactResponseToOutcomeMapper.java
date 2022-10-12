@@ -194,6 +194,10 @@ public class ArtifactResponseToOutcomeMapper {
         .identifier(azureArtifactsConfig.getIdentifier())
         .primaryArtifact(azureArtifactsConfig.isPrimaryArtifact())
         .versionRegex(azureArtifactsConfig.getVersionRegex().getValue())
+        .feed(azureArtifactsConfig.getFeed().getValue())
+        .project(azureArtifactsConfig.getProject().getValue())
+        .packageType(azureArtifactsConfig.getPackageType().getValue())
+        .scope(azureArtifactsConfig.getScope().getValue())
         .build();
   }
 

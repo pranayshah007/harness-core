@@ -61,7 +61,7 @@ var serverCmd = &cobra.Command{
 
 func startServer(c *config.Config) {
 
-	r := router.New(c.Debug)
+	r := router.New(c)
 	r.GET("/swagger/*", echoSwagger.WrapHandler)
 	r.GET("/", func(c echo.Context) error {
 		return c.String(http.StatusOK, "Hello, World!")

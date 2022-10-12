@@ -34,5 +34,5 @@ public class MigrationInputDTO {
   private List<DiscoverEntityInput> entities;
   private Map<NGMigrationEntityType, InputDefaults> defaults;
   private boolean migrateReferencedEntities;
-  @JsonDeserialize(keyUsing = CgEntityIdDeserializer.class) private Map<CgEntityId, BaseProvidedInput> inputs;
+  @JsonDeserialize(keyUsing = CgEntityIdDeserializer.class) private Map<CgEntityId, BaseProvidedInput> overrides;
 }

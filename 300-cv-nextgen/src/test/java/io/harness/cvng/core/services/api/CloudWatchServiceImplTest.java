@@ -30,7 +30,6 @@ import com.google.common.base.Charsets;
 import com.google.common.io.Resources;
 import com.google.inject.Inject;
 import java.io.IOException;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.apache.commons.lang3.reflect.FieldUtils;
@@ -60,14 +59,6 @@ public class CloudWatchServiceImplTest extends CvNextGenTestBase {
     when(nextGenService.get(anyString(), anyString(), anyString(), anyString()))
         .then(invocation
             -> Optional.of(ConnectorInfoDTO.builder().connectorConfig(AwsConnectorDTO.builder().build()).build()));
-  }
-
-  @Test
-  @Owner(developers = DHRUVX)
-  @Category(UnitTests.class)
-  public void testFetchRegions() {
-    List<String> regions = cloudWatchService.fetchRegions();
-    assertThat(regions).isNotNull();
   }
 
   @Test

@@ -121,7 +121,7 @@ public class KryoSerializer {
     }
   }
 
-  private void writeToStream(Object obj, OutputStream outputStream) {
+  public void writeToStream(Object obj, OutputStream outputStream) {
     try {
       Output output = new Output(outputStream);
       pool.run(kryo -> {

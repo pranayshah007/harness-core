@@ -7,12 +7,11 @@
 
 package software.wings.jersey;
 
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import com.google.common.io.ByteStreams;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.google.inject.name.Named;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -34,7 +33,7 @@ import lombok.extern.slf4j.Slf4j;
 @Produces("application/x-kryo-v2")
 @Singleton
 public class DelegateKryoMessageBodyProvider implements MessageBodyWriter<Object>, MessageBodyReader<Object> {
-  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
 
   @Override
   public long getSize(final Object object, final Class<?> type, final Type genericType, final Annotation[] annotations,
@@ -56,7 +55,7 @@ public class DelegateKryoMessageBodyProvider implements MessageBodyWriter<Object
     try {
       // We are seeing occasional failures writing delegate tasks where it fails with broken pipe.
       // Separating the kryo serialization from writing to the stream to identify the real cause of the issue.
-      bytes = kryoSerializer.asBytes(object);
+      bytes = kryoSerializerWrapper.asBytes(object);
       entityStream.write(bytes);
       entityStream.flush();
     } catch (Exception e) {
@@ -80,6 +79,6 @@ public class DelegateKryoMessageBodyProvider implements MessageBodyWriter<Object
       final MediaType mediaType, final MultivaluedMap<String, String> httpHeaders, final InputStream entityStream)
       throws IOException, WebApplicationException {
     byte[] bytes = ByteStreams.toByteArray(entityStream);
-    return kryoSerializer.asObject(bytes);
+    return kryoSerializerWrapper.asObject(bytes);
   }
 }

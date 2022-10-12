@@ -68,4 +68,6 @@ public interface StepSpecTypeConstants {
   String ECS_BLUE_GREEN_ROLLBACK = "EcsBlueGreenRollback";
 
   String SHELL_SCRIPT_PROVISION = "ShellScriptProvision";
+
+  String CHAOS_STEP = "Chaos";
 }

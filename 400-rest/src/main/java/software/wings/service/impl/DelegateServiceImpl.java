@@ -166,7 +166,7 @@ import io.harness.persistence.HPersistence;
 import io.harness.persistence.UuidAware;
 import io.harness.reflection.ReflectionUtils;
 import io.harness.serializer.JsonUtils;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.service.intfc.AgentMtlsEndpointService;
 import io.harness.service.intfc.DelegateCache;
 import io.harness.service.intfc.DelegateCallbackRegistry;
@@ -386,7 +386,7 @@ public class DelegateServiceImpl implements DelegateService {
   @Inject private SystemEnvironment sysenv;
   @Inject private DelegateSyncService delegateSyncService;
   @Inject private DelegateTaskService delegateTaskService;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
   @Inject private DelegateCallbackRegistry delegateCallbackRegistry;
   @Inject private EmailNotificationService emailNotificationService;
   @Inject private DelegateGrpcConfig delegateGrpcConfig;
@@ -2732,7 +2732,6 @@ public class DelegateServiceImpl implements DelegateService {
       final String accountId, final String hostName, final boolean ng, final String delegateType, final String ip) {
     final Query<Delegate> delegateQuery = persistence.createQuery(Delegate.class)
                                               .filter(DelegateKeys.accountId, accountId)
-                                              .filter(DelegateKeys.ng, ng)
                                               .filter(DelegateKeys.hostName, hostName);
     // For delegates running in a kubernetes cluster we include lowercase account ID in the hostname to identify it.
     // We ignore IP address because that can change with every restart of the pod.
@@ -4332,7 +4331,6 @@ public class DelegateServiceImpl implements DelegateService {
     Query<Delegate> delegateQuery = persistence.createQuery(Delegate.class)
                                         .filter(DelegateKeys.accountId, accountId)
                                         .filter(DelegateKeys.delegateName, delegateName)
-                                        .filter(DelegateGroupKeys.ng, isNg)
                                         .field(DelegateKeys.status)
                                         .notEqual(DelegateInstanceStatus.DELETED);
     if (delegateQuery.get() != null) {
