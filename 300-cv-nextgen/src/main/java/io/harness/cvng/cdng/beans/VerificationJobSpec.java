@@ -54,6 +54,9 @@ public abstract class VerificationJobSpec {
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH, value = "Possible values: [Low, Medium, High]")
   ParameterField<String> sensitivity;
 
+  @ApiModelProperty(dataType = SwaggerConstants.BOOLEAN_CLASSPATH, value = "Possible values: [true, false]")
+  ParameterField<Boolean> failOnNoAnalysis;
+
   @ApiModelProperty(hidden = true)
   public VerificationJobBuilder getVerificationJobBuilder() {
     VerificationJobBuilder verificationJobBuilder = verificationJobBuilder();

@@ -383,8 +383,15 @@ public class VerificationJobInstanceServiceImpl implements VerificationJobInstan
         return ActivityVerificationStatus.IN_PROGRESS;
       case SUCCESS:
         Optional<Risk> risk = getLatestRisk(verificationJobInstance);
+
         if (risk.isPresent()) {
-          if (risk.get().isLessThanEq(Risk.OBSERVE)) {
+          boolean isFailOnNoAnalysisUnSet = verificationJobInstance.getResolvedJob() == null
+              || verificationJobInstance.getResolvedJob().getFailOnNoAnalysis() == null
+              || verificationJobInstance.getResolvedJob().getFailOnNoAnalysis().getValue() == null;
+          if (risk.get().isLessThanEq(Risk.OBSERVE)
+              && (isFailOnNoAnalysisUnSet
+                  || Boolean.FALSE.equals(
+                      Boolean.valueOf(verificationJobInstance.getResolvedJob().getFailOnNoAnalysis().getValue())))) {
             return ActivityVerificationStatus.VERIFICATION_PASSED;
           } else {
             return ActivityVerificationStatus.VERIFICATION_FAILED;

@@ -211,6 +211,13 @@ public class CVNGStep extends AsyncExecutableWithRollback {
       CVNGStepParameter stepParameters, ServiceEnvironmentParams serviceEnvironmentParams, Instant deploymentStartTime,
       String monitoredServiceIdentifier, List<CVConfig> cvConfigs) {
     Instant verificationStartTime = clock.instant();
+    RuntimeParameter failOnNoAnalysisFromParam =
+        stepParameters.getFailOnNoAnalysis() == null || stepParameters.getFailOnNoAnalysis().getValue() == null
+        ? null
+        : RuntimeParameter.builder()
+              .isRuntimeParam(stepParameters.getFailOnNoAnalysis().isExecutionInput())
+              .value(stepParameters.getFailOnNoAnalysis().getValue().toString())
+              .build();
     VerificationJob verificationJob =
         stepParameters.getVerificationJobBuilder()
             .monitoredServiceIdentifier(monitoredServiceIdentifier)
@@ -220,6 +227,7 @@ public class CVNGStep extends AsyncExecutableWithRollback {
             .orgIdentifier(serviceEnvironmentParams.getOrgIdentifier())
             .accountId(serviceEnvironmentParams.getAccountIdentifier())
             .monitoredServiceIdentifier(monitoredServiceIdentifier)
+            .failOnNoAnalysis(failOnNoAnalysisFromParam)
             .cvConfigs(cvConfigs)
             .build();
     VerificationJobInstanceBuilder verificationJobInstanceBuilder =
@@ -256,6 +264,14 @@ public class CVNGStep extends AsyncExecutableWithRollback {
       ServiceEnvironmentParams serviceEnvironmentParams, Ambiance ambiance, Instant activityStartTime,
       String monitoredServiceIdentifier, List<CVConfig> cvConfigs) {
     Instant startTime = clock.instant();
+    // TODO set the mapping - check why 2 places.
+    RuntimeParameter failOnNoAnalysisFromParam =
+        stepParameters.getFailOnNoAnalysis() == null || stepParameters.getFailOnNoAnalysis().getValue() == null
+        ? null
+        : RuntimeParameter.builder()
+              .isRuntimeParam(stepParameters.getFailOnNoAnalysis().isExecutionInput())
+              .value(stepParameters.getFailOnNoAnalysis().getValue().toString())
+              .build();
     VerificationJob verificationJob =
         stepParameters.getVerificationJobBuilder()
             .serviceIdentifier(RuntimeParameter.builder().value(stepParameters.getServiceIdentifier()).build())
@@ -265,6 +281,7 @@ public class CVNGStep extends AsyncExecutableWithRollback {
             .accountId(serviceEnvironmentParams.getAccountIdentifier())
             .monitoredServiceIdentifier(monitoredServiceIdentifier)
             .cvConfigs(cvConfigs)
+            .failOnNoAnalysis(failOnNoAnalysisFromParam)
             .build();
     DeploymentActivity deploymentActivity =
         DeploymentActivity.builder()
