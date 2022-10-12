@@ -9,7 +9,6 @@ package io.harness.spotinst.model;
 
 public interface SpotInstConstants {
   String spotInstBaseUrl = "https://api.spotinst.io/";
-  String spotInstHealthUrl = spotInstBaseUrl + "healthcheck";
   long SPOTINST_REST_TIMEOUT_MINUTES = 2;
   int listElastiGroupsQueryTime = 365;
   int elastiGroupsToKeep = 3;
