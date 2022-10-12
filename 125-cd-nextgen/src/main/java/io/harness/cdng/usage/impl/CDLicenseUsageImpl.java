@@ -57,7 +57,10 @@ public class CDLicenseUsageImpl implements LicenseUsageInterface<CDLicenseUsageD
   @Inject TimeScaleDAL timeScaleDAL;
   @Inject CdLicenseUsageUtils utils;
 
-  private final Cache<String, CDLicenseUsageDTO> cache =
+  private final Cache<String, CDLicenseUsageDTO> serviceLicenseCache =
+      Caffeine.newBuilder().expireAfterWrite(Duration.ofHours(6L)).maximumSize(600L).build();
+
+  private final Cache<String, CDLicenseUsageDTO> serviceInstanceLicenseCache =
       Caffeine.newBuilder().expireAfterWrite(Duration.ofHours(6L)).maximumSize(600L).build();
 
   @Override
@@ -69,10 +72,11 @@ public class CDLicenseUsageImpl implements LicenseUsageInterface<CDLicenseUsageD
         StringUtils.isNotBlank(accountIdentifier), "Account Identifier cannot be null or blank");
 
     if (SERVICES.equals(usageRequest.getCdLicenseType())) {
-      return cache.get(
+      return serviceLicenseCache.get(
           accountIdentifier, accountId -> getActiveServicesLicenseUsage(accountId, module, timestamp, usageRequest));
     } else if (SERVICE_INSTANCES.equals(usageRequest.getCdLicenseType())) {
-      return cache.get(accountIdentifier, accountId -> getServiceInstancesLicenseUsage(accountId, module));
+      return serviceInstanceLicenseCache.get(
+          accountIdentifier, accountId -> getServiceInstancesLicenseUsage(accountId, module));
     } else {
       throw new InvalidArgumentsException("Invalid License Type.", WingsException.USER);
     }
