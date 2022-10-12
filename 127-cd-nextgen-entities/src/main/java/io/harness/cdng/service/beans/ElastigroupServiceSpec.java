@@ -37,7 +37,7 @@ import java.util.List;
 @OwnedBy(HarnessTeam.CDP)
 @Value
 @Builder
-@JsonTypeName(ServiceSpecType.ECS)
+@JsonTypeName(ServiceSpecType.ELASTIGROUP)
 @SimpleVisitorHelper(helperClass = ElastigroupServiceSpecVisitorHelper.class)
 @TypeAlias("elastigroupServiceSpec")
 @RecasterAlias("io.harness.cdng.service.beans.ElastigroupServiceSpec")

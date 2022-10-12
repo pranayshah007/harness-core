@@ -66,7 +66,5 @@ public interface StepSpecTypeConstants {
   String ECS_BLUE_GREEN_SWAP_TARGET_GROUPS = "EcsBlueGreenSwapTargetGroups";
   String ECS_BLUE_GREEN_ROLLBACK = "EcsBlueGreenRollback";
 
-  String ELASTICGROUP_DEPLOY = "ElastigroupDeploy";
-
   String SHELL_SCRIPT_PROVISION = "ShellScriptProvision";
 }

@@ -10,28 +10,7 @@ package io.harness.cdng.creator;
 import static io.harness.cdng.manifest.ManifestType.EcsScalingPolicyDefinition;
 import static io.harness.cdng.manifest.ManifestType.EcsTaskDefinition;
 import static io.harness.cdng.manifest.ManifestType.ServerlessAwsLambda;
-import static io.harness.cdng.visitor.YamlTypes.APPLICATION_SETTINGS;
-import static io.harness.cdng.visitor.YamlTypes.ARTIFACTS;
-import static io.harness.cdng.visitor.YamlTypes.CONFIG_FILE;
-import static io.harness.cdng.visitor.YamlTypes.CONFIG_FILES;
-import static io.harness.cdng.visitor.YamlTypes.CONNECTION_STRINGS;
-import static io.harness.cdng.visitor.YamlTypes.ENVIRONMENT_GROUP_YAML;
-import static io.harness.cdng.visitor.YamlTypes.ENVIRONMENT_YAML;
-import static io.harness.cdng.visitor.YamlTypes.K8S_MANIFEST;
-import static io.harness.cdng.visitor.YamlTypes.MANIFEST_CONFIG;
-import static io.harness.cdng.visitor.YamlTypes.MANIFEST_LIST_CONFIG;
-import static io.harness.cdng.visitor.YamlTypes.PRIMARY;
-import static io.harness.cdng.visitor.YamlTypes.ROLLBACK_STEPS;
-import static io.harness.cdng.visitor.YamlTypes.SERVICE_CONFIG;
-import static io.harness.cdng.visitor.YamlTypes.SERVICE_DEFINITION;
-import static io.harness.cdng.visitor.YamlTypes.SERVICE_ENTITY;
-import static io.harness.cdng.visitor.YamlTypes.SIDECAR;
-import static io.harness.cdng.visitor.YamlTypes.SIDECARS;
-import static io.harness.cdng.visitor.YamlTypes.SPEC;
-import static io.harness.cdng.visitor.YamlTypes.STARTUP_COMMAND;
-import static io.harness.cdng.visitor.YamlTypes.STEPS;
-import static io.harness.cdng.visitor.YamlTypes.STEP_GROUP;
-import static io.harness.cdng.visitor.YamlTypes.STRATEGY;
+import static io.harness.cdng.visitor.YamlTypes.*;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.ACR_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.AMAZON_S3_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.ARTIFACTORY_REGISTRY_NAME;
@@ -148,6 +127,7 @@ import io.harness.cdng.creator.variables.K8sScaleStepVariableCreator;
 import io.harness.cdng.creator.variables.ServerlessAwsLambdaDeployStepVariableCreator;
 import io.harness.cdng.creator.variables.ServerlessAwsLambdaRollbackStepVariableCreator;
 import io.harness.cdng.customDeployment.variablecreator.FetchInstanceScriptStepVariableCreator;
+import io.harness.cdng.elastigroup.webapp.StartupScriptPlanCreator;
 import io.harness.cdng.jenkins.jenkinsstep.JenkinsBuildStepVariableCreator;
 import io.harness.cdng.jenkins.jenkinsstep.JenkinsCreateStepPlanCreator;
 import io.harness.cdng.manifest.ManifestType;
@@ -220,10 +200,10 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
   private static final String AZURE_RESOURCE_STEP_METADATA = "Azure Provisioner";
 
   private static final List<String> SHELL_SCRIPT_PROVISIONER_CATEGORY =
-      Arrays.asList(KUBERNETES, PROVISIONER, HELM, AZURE_WEBAPP, ECS);
+      Arrays.asList(KUBERNETES, PROVISIONER, HELM, AZURE_WEBAPP, ECS, ELASTIGROUP);
 
   private static final Set<String> EMPTY_FILTER_IDENTIFIERS = Sets.newHashSet(SIDECARS, SPEC, SERVICE_CONFIG,
-      CONFIG_FILE, STARTUP_COMMAND, APPLICATION_SETTINGS, ARTIFACTS, ROLLBACK_STEPS, CONNECTION_STRINGS, STEPS,
+      CONFIG_FILE, STARTUP_COMMAND, STARTUP_SCRIPT, APPLICATION_SETTINGS, ARTIFACTS, ROLLBACK_STEPS, CONNECTION_STRINGS, STEPS,
       CONFIG_FILES, ENVIRONMENT_GROUP_YAML, SERVICE_ENTITY, MANIFEST_LIST_CONFIG, STEP_GROUP);
   private static final Set<String> EMPTY_SIDECAR_TYPES = Sets.newHashSet(CUSTOM_ARTIFACT_NAME, JENKINS_NAME,
       DOCKER_REGISTRY_NAME, ACR_NAME, AMAZON_S3_NAME, ARTIFACTORY_REGISTRY_NAME, ECR_NAME,
@@ -240,7 +220,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
           NEXUS2_REGISTRY_NAME, GITHUB_PACKAGES_NAME, AZURE_ARTIFACTS_NAME);
   private static final Set<String> EMPTY_SERVICE_DEFINITION_TYPES =
       Sets.newHashSet(ManifestType.ServerlessAwsLambda, DelegateType.ECS, ServiceSpecType.NATIVE_HELM,
-          ServiceSpecType.SSH, AZURE_WEBAPP, ServiceSpecType.WINRM, KUBERNETES, CUSTOM_DEPLOYMENT);
+          ServiceSpecType.SSH, AZURE_WEBAPP, ServiceSpecType.WINRM, KUBERNETES, CUSTOM_DEPLOYMENT, ServiceSpecType.ELASTIGROUP);
 
   @Inject InjectorUtils injectorUtils;
   @Inject DeploymentStageVariableCreator deploymentStageVariableCreator;
@@ -316,6 +296,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
 
     planCreators.add(new AzureARMRollbackResourceStepPlanCreator());
     planCreators.add(new ShellScriptProvisionStepPlanCreator());
+
     injectorUtils.injectMembers(planCreators);
     return planCreators;
   }

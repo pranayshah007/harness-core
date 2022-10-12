@@ -187,7 +187,7 @@ public class ServiceDefinitionPlanCreator extends ChildrenPlanCreator<YamlField>
               (ElastigroupServiceSpec) serviceConfig.getServiceDefinition().getServiceSpec();
       StartupScriptConfiguration startupScript = elastigroupServiceSpec.getStartupScript();
       if (startupScript != null) {
-        String startupScriptPlanNodeId = ServiceDefinitionPlanCreatorHelper.addDependenciesForStartupCommand(
+        String startupScriptPlanNodeId = ServiceDefinitionPlanCreatorHelper.addDependenciesForStartupScript(
                 serviceConfigNode, planCreationResponseMap, serviceConfig, kryoSerializer);
         serviceSpecChildrenIds.add(startupScriptPlanNodeId);
       }

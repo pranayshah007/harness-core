@@ -146,6 +146,7 @@ public interface YamlTypes {
   String STARTUP_COMMAND = "startupCommand";
   String STARTUP_SCRIPT = "startupScript";
   String AZURE_SERVICE_SETTINGS_STEP = "Azure_Service_Settings";
+  String ELASTIGROUP_SERVICE_SETTINGS_STEP = "Elastigroup_Service_Settings";
 
   String APPLICATION_SETTINGS = "applicationSettings";
   String CONNECTION_STRINGS = "connectionStrings";

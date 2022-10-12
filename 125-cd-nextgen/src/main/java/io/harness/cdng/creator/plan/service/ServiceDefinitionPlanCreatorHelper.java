@@ -21,6 +21,7 @@ import io.harness.cdng.azure.webapp.StartupCommandParameters;
 import io.harness.cdng.configfile.ConfigFileWrapper;
 import io.harness.cdng.creator.plan.PlanCreatorConstants;
 import io.harness.cdng.elastigroup.config.yaml.StartupScriptConfiguration;
+import io.harness.cdng.elastigroup.webapp.StartupScriptParameters;
 import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
 import io.harness.cdng.service.beans.AzureWebAppServiceSpec;
 import io.harness.cdng.service.beans.ElastigroupServiceSpec;
@@ -434,7 +435,7 @@ public class ServiceDefinitionPlanCreatorHelper {
                     .toBuilder()
                     .putDependencyMetadata(startupScriptPlanNodeId,
                             ElastigroupConfigsUtility.getDependencyMetadata(startupScriptPlanNodeId,
-                                    StartupCommandParameters.builder().startupCommand(startupScript).build(), kryoSerializer,
+                                    StartupScriptParameters.builder().startupScript(startupScript).build(), kryoSerializer,
                                     PlanCreatorConstants.STARTUP_COMMAND_STEP_PARAMETER))
                     .build());
     if (yamlUpdates.getFqnToYamlCount() > 0) {
