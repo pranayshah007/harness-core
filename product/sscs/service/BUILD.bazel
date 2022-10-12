@@ -1,0 +1,16 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_binary")
+
+go_library(
+    name = "sscs-lib",
+    srcs = glob(["**/*.go"]),
+    importpath = "github.com/harness/harness-core/product/sscs/service",
+    deps = [
+        "//product/sscs/service/sbom:sbom"
+    ],
+)
+
+go_binary(
+    name = "sscs",
+    embed = [":sscs-lib"],
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,10 @@
+derive_targets_from_directories: true
+
+build_flags:
+  --announce_rc
+  --show_timestamps
+
+directories:
+  product/sscs
+
+derive_targets_from_directories: true
