@@ -51,4 +51,8 @@ public class PolicyStoreServiceImpl implements PolicyStoreService {
   public List<PolicyStore> findByTagAndResource(String resource, String tag, String accountId) {
     return policyStoreDao.findByTagAndResource(resource, tag, accountId);
   }
+  @Override
+  public List<PolicyStore> findByStability(String isStablePolicy, String accountId) {
+    return policyStoreDao.findByStability(isStablePolicy, accountId);
+  }
 }
