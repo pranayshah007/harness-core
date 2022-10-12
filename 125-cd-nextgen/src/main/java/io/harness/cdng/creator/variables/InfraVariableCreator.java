@@ -247,7 +247,6 @@ public class InfraVariableCreator {
     addVariableForYamlType(YamlTypes.CLUSTER, infraSpecNode, yamlPropertiesMap);
   }
 
-  //What is the purpose?
   private void addVariablesForElastigroupInfra(YamlField infraDefNode, Map<String, YamlProperties> yamlPropertiesMap) {
     YamlField infraSpecNode = infraDefNode.getNode().getField(YamlTypes.SPEC);
     if (infraSpecNode == null) {

@@ -26,7 +26,7 @@ import org.springframework.data.annotation.TypeAlias;
 @Builder
 @SimpleVisitorHelper(helperClass = StartupCommandConfigurationVisitorHelper.class)
 @TypeAlias("elastigroupConfiguration")
-@RecasterAlias("io.harness.cdng.azure.config.yaml.ElastigroupConfiguration")
+@RecasterAlias("io.harness.cdng.spot.config.yaml.ElastigroupConfiguration")
 @OwnedBy(HarnessTeam.CDP)
 public class ElastigroupConfiguration implements Visitable {
   @NotNull StoreConfigWrapper store;

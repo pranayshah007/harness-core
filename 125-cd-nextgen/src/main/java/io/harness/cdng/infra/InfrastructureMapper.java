@@ -241,6 +241,7 @@ public class InfrastructureMapper {
         ElastigroupInfrastructureOutcome elastigroupInfrastructureOutcome =
             ElastigroupInfrastructureOutcome.builder()
                 .connectorRef(elastigroupInfrastructure.getConnectorRef().getValue())
+                .environment(environmentOutcome)
                 .configuration(elastigroupInfrastructure.getConfiguration().getStore().getSpec())
                 .infrastructureKey(InfrastructureKey.generate(
                     service, environmentOutcome, elastigroupInfrastructure.getInfrastructureKeyValues()))

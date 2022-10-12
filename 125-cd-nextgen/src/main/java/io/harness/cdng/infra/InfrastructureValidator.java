@@ -233,7 +233,7 @@ public class InfrastructureValidator {
     }
 
     if (null == infrastructure.getConfiguration()) {
-      throw new InvalidArgumentsException(Pair.of("connectorRef", "cannot be empty"));
+      throw new InvalidArgumentsException(Pair.of("configuration", "cannot be empty"));
     }
   }
 
