@@ -7,9 +7,11 @@
 
 package io.harness.batch.processing.pricing.service.impl;
 
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
 import io.harness.batch.processing.pricing.gcp.bigquery.BigQueryHelperService;
 import io.harness.batch.processing.pricing.service.impl.util.CloudResourceIdHelper;
-import io.harness.batch.processing.pricing.service.intfc.AwsCustomBillingService;
+import io.harness.batch.processing.pricing.service.intfc.GcpCustomBillingService;
 import io.harness.batch.processing.pricing.vmpricing.VMInstanceBillingData;
 import io.harness.ccm.commons.entities.batch.InstanceData;
 
@@ -24,20 +26,21 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+@OwnedBy(HarnessTeam.CE)
 @Service
 @Slf4j
-public class AwsCustomBillingServiceImpl implements AwsCustomBillingService {
+public class GcpCustomBillingServiceImpl implements GcpCustomBillingService {
   private BigQueryHelperService bigQueryHelperService;
   private CloudResourceIdHelper cloudResourceIdHelper;
 
   @Autowired
-  public AwsCustomBillingServiceImpl(
+  public GcpCustomBillingServiceImpl(
       BigQueryHelperService bigQueryHelperService, CloudResourceIdHelper cloudResourceIdHelper) {
     this.bigQueryHelperService = bigQueryHelperService;
     this.cloudResourceIdHelper = cloudResourceIdHelper;
   }
 
-  private Cache<CacheKey, VMInstanceBillingData> awsResourceBillingCache =
+  private Cache<CacheKey, VMInstanceBillingData> gcpResourceBillingCache =
       Caffeine.newBuilder().expireAfterWrite(1, TimeUnit.HOURS).build();
 
   @Value
@@ -48,36 +51,33 @@ public class AwsCustomBillingServiceImpl implements AwsCustomBillingService {
   }
 
   @Override
-  public void updateAwsEC2BillingDataCache(
-      List<String> resourceIds, Instant startTime, Instant endTime, String dataSetId) {
-    Map<String, VMInstanceBillingData> awsEC2BillingData =
-        bigQueryHelperService.getAwsEC2BillingData(resourceIds, startTime, endTime, dataSetId);
-    awsEC2BillingData.forEach(
-        (resourceId, vmInstanceBillingData)
-            -> awsResourceBillingCache.put(new CacheKey(resourceId, startTime, endTime), vmInstanceBillingData));
-  }
-
-  @Override
-  public void updateEksFargateDataCache(
-      List<String> resourceIds, Instant startTime, Instant endTime, String dataSetId) {
-    Map<String, VMInstanceBillingData> eksFargateBillingData =
-        bigQueryHelperService.getEKSFargateBillingData(resourceIds, startTime, endTime, dataSetId);
-    eksFargateBillingData.forEach(
-        (resourceId, vmInstanceBillingData)
-            -> awsResourceBillingCache.put(new CacheKey(resourceId, startTime, endTime), vmInstanceBillingData));
-  }
-
-  @Override
   public VMInstanceBillingData getComputeVMPricingInfo(InstanceData instanceData, Instant startTime, Instant endTime) {
     String resourceId = cloudResourceIdHelper.getResourceId(instanceData);
     if (null != resourceId) {
-      return awsResourceBillingCache.getIfPresent(new CacheKey(resourceId, startTime, endTime));
+      VMInstanceBillingData vmInstanceBillingData =
+          gcpResourceBillingCache.getIfPresent(new CacheKey(resourceId, startTime, endTime));
+      if (vmInstanceBillingData == null) {
+        return null;
+      }
+      log.debug(
+          "GCP: fetching custom data from cache. ComputeCost: {}, CPU Cost: {}, MemoryCost: {}, resourceId: {}, startTime: {}, endTime: {}",
+          vmInstanceBillingData.getComputeCost(), vmInstanceBillingData.getCpuCost(),
+          vmInstanceBillingData.getMemoryCost(), resourceId, startTime, endTime);
+      return vmInstanceBillingData;
     }
     return null;
   }
 
   @Override
-  public VMInstanceBillingData getFargateVMPricingInfo(String resourceId, Instant startTime, Instant endTime) {
-    return awsResourceBillingCache.getIfPresent(new CacheKey(resourceId, startTime, endTime));
+  public void updateGcpVMBillingDataCache(
+      List<String> resourceIds, Instant startTime, Instant endTime, String dataSetId) {
+    Map<String, VMInstanceBillingData> gcpVMBillingData =
+        bigQueryHelperService.getGcpVMBillingData(resourceIds, startTime, endTime, dataSetId);
+    gcpVMBillingData.forEach((resourceId, vmInstanceBillingData) -> {
+      String cleanedResourceId = resourceId.substring(resourceId.lastIndexOf('/') + 1);
+      log.debug("GCP: Updated Key (resourceId) is: {}", cleanedResourceId);
+
+      gcpResourceBillingCache.put(new CacheKey(cleanedResourceId, startTime, endTime), vmInstanceBillingData);
+    });
   }
 }
