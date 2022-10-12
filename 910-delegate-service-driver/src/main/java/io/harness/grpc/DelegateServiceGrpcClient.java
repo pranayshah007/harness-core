@@ -53,7 +53,7 @@ import io.harness.perpetualtask.PerpetualTaskClientContextDetails;
 import io.harness.perpetualtask.PerpetualTaskExecutionBundle;
 import io.harness.perpetualtask.PerpetualTaskId;
 import io.harness.perpetualtask.PerpetualTaskSchedule;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 import io.harness.service.intfc.DelegateAsyncService;
 import io.harness.service.intfc.DelegateSyncService;
 import io.harness.tasks.ResponseData;
@@ -87,18 +87,19 @@ import org.apache.commons.lang3.NotImplementedException;
 public class DelegateServiceGrpcClient {
   private final DelegateServiceBlockingStub delegateServiceBlockingStub;
   private final DelegateAsyncService delegateAsyncService;
-  private final KryoSerializer kryoSerializer;
+  private final KryoSerializerWrapper kryoSerializerWrapper;
   private final DelegateSyncService delegateSyncService;
   private final boolean isDriverInstalledInNgService;
   @Inject private ObjectMapper objectMapper;
 
   @Inject
   public DelegateServiceGrpcClient(DelegateServiceBlockingStub delegateServiceBlockingStub,
-      DelegateAsyncService delegateAsyncService, KryoSerializer kryoSerializer, DelegateSyncService delegateSyncService,
+      DelegateAsyncService delegateAsyncService, KryoSerializerWrapper kryoSerializerWrapper,
+      DelegateSyncService delegateSyncService,
       @Named("driver-installed-in-ng-service") BooleanSupplier isDriverInstalledInNgService) {
     this.delegateServiceBlockingStub = delegateServiceBlockingStub;
     this.delegateAsyncService = delegateAsyncService;
-    this.kryoSerializer = kryoSerializer;
+    this.kryoSerializerWrapper = kryoSerializerWrapper;
     this.delegateSyncService = delegateSyncService;
     this.isDriverInstalledInNgService = isDriverInstalledInNgService.getAsBoolean();
   }
@@ -186,7 +187,7 @@ public class DelegateServiceGrpcClient {
             capabilities.stream()
                 .map(capability
                     -> Capability.newBuilder()
-                           .setKryoCapability(ByteString.copyFrom(kryoSerializer.asDeflatedBytes(capability)))
+                           .setKryoCapability(ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(capability)))
                            .build())
                 .collect(toList()));
       }
@@ -243,7 +244,7 @@ public class DelegateServiceGrpcClient {
         throw new InvalidRequestException("Could not serialize the task request", e);
       }
     } else {
-      taskDetailsBuilder.setKryoParameters(ByteString.copyFrom(kryoSerializer.asDeflatedBytes(taskParameters)));
+      taskDetailsBuilder.setKryoParameters(ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(taskParameters)));
     }
 
     return submitTask(delegateCallbackToken, AccountId.newBuilder().setId(taskRequest.getAccountId()).build(),

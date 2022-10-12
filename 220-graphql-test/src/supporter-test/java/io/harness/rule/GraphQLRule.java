@@ -47,6 +47,7 @@ import io.harness.observer.consumer.AbstractRemoteObserverModule;
 import io.harness.redis.RedisConfig;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.security.DelegateTokenAuthenticator;
+import io.harness.serializer.KryoModule;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.serializer.ManagerRegistrars;
 import io.harness.serializer.kryo.TestManagerKryoRegistrar;
@@ -331,6 +332,7 @@ public class GraphQLRule implements MethodRule, InjectorRuleMixin, MongoRuleMixi
     modules.add(new SSOModule());
     modules.add(new SignupModule());
     modules.add(new GcpMarketplaceIntegrationModule());
+    modules.add(KryoModule.getInstance());
     return modules;
   }
 
