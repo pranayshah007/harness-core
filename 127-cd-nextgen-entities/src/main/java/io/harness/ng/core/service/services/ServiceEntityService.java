@@ -80,4 +80,7 @@ public interface ServiceEntityService {
       String accountIdentifier, String orgIdentifier, String projectIdentifier, List<String> serviceIdentifiers);
 
   boolean isServiceField(String fieldName, JsonNode value);
+
+  Optional<ServiceEntity> getService(
+      String accountId, String orgIdentifier, String projectIdentifier, String serviceIdentifier);
 }
