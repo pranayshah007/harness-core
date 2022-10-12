@@ -34,9 +34,12 @@ import io.harness.licensing.usage.params.CDUsageRequestParams;
 import io.harness.timescaledb.tables.pojos.ServiceInfraInfo;
 import io.harness.timescaledb.tables.pojos.Services;
 
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.Period;
 import java.util.HashMap;
@@ -54,6 +57,9 @@ public class CDLicenseUsageImpl implements LicenseUsageInterface<CDLicenseUsageD
   @Inject TimeScaleDAL timeScaleDAL;
   @Inject CdLicenseUsageUtils utils;
 
+  private final Cache<String, CDLicenseUsageDTO> cache =
+      Caffeine.newBuilder().expireAfterWrite(Duration.ofHours(6L)).maximumSize(600L).build();
+
   @Override
   public CDLicenseUsageDTO getLicenseUsage(
       String accountIdentifier, ModuleType module, long timestamp, CDUsageRequestParams usageRequest) {
@@ -63,9 +69,10 @@ public class CDLicenseUsageImpl implements LicenseUsageInterface<CDLicenseUsageD
         StringUtils.isNotBlank(accountIdentifier), "Account Identifier cannot be null or blank");
 
     if (SERVICES.equals(usageRequest.getCdLicenseType())) {
-      return getActiveServicesLicenseUsage(accountIdentifier, module, timestamp, usageRequest);
+      return cache.get(
+          accountIdentifier, accountId -> getActiveServicesLicenseUsage(accountId, module, timestamp, usageRequest));
     } else if (SERVICE_INSTANCES.equals(usageRequest.getCdLicenseType())) {
-      return getServiceInstancesLicenseUsage(accountIdentifier, module);
+      return cache.get(accountIdentifier, accountId -> getServiceInstancesLicenseUsage(accountId, module));
     } else {
       throw new InvalidArgumentsException("Invalid License Type.", WingsException.USER);
     }
