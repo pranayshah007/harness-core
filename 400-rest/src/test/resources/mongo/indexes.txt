@@ -198,6 +198,7 @@ delegateSelectionLogTaskMetadata {"name": "validUntil_1", "background": true, "e
 delegateSequenceConfig {"name": "appId_1", "background": true} {"appId": 1}
 delegateSequenceConfig {"name": "createdAt_1", "background": true} {"createdAt": 1}
 delegateSequenceConfig {"name": "uniqueDelegateSequenceIdx", "unique": true} {"accountId": 1, "hostName": 1, "sequenceNum": 1}
+delegateTasks {"name": "createdAt_1", "background": true} {"createdAt": 1}
 delegateTasks {"name": "delegateTaskFailIteration_1", "background": true} {"delegateTaskFailIteration": 1}
 delegateTasks {"name": "expiry_1", "background": true} {"expiry": 1}
 delegateTasks {"name": "index", "background": true} {"status": 1, "expiry": 1}
