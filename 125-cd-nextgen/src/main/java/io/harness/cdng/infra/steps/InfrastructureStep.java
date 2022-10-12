@@ -373,8 +373,8 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
     if (InfrastructureKind.ELASTIGROUP.equals(infrastructure.getKind())) {
       if (!(connectorInfo.get(0).getConnectorConfig() instanceof SpotConnectorDTO)) {
         throw new InvalidRequestException(format("Invalid connector type [%s] for identifier: [%s], expected [%s]",
-                connectorInfo.get(0).getConnectorType().name(), infrastructure.getConnectorReference().getValue(),
-                ConnectorType.SPOT.name()));
+            connectorInfo.get(0).getConnectorType().name(), infrastructure.getConnectorReference().getValue(),
+            ConnectorType.SPOT.name()));
       }
     }
 

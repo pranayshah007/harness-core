@@ -10,6 +10,7 @@ package io.harness.cdng.infra;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.rule.OwnerRule.ABHISHEK;
 import static io.harness.rule.OwnerRule.ACASIAN;
+import static io.harness.rule.OwnerRule.ARVIND;
 import static io.harness.rule.OwnerRule.FILIP;
 import static io.harness.rule.OwnerRule.MLUKIC;
 import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
@@ -24,6 +25,7 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.infra.beans.AzureWebAppInfrastructureOutcome;
+import io.harness.cdng.infra.beans.ElastigroupInfrastructureOutcome;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.infra.beans.InfrastructureOutcomeAbstract;
 import io.harness.cdng.infra.beans.K8sAzureInfrastructureOutcome;
@@ -38,13 +40,19 @@ import io.harness.cdng.infra.beans.host.dto.AllHostsFilterDTO;
 import io.harness.cdng.infra.beans.host.dto.HostFilterDTO;
 import io.harness.cdng.infra.beans.host.dto.HostNamesFilterDTO;
 import io.harness.cdng.infra.yaml.AzureWebAppInfrastructure;
+import io.harness.cdng.infra.yaml.ElastigroupInfrastructure;
 import io.harness.cdng.infra.yaml.K8SDirectInfrastructure;
 import io.harness.cdng.infra.yaml.K8sAzureInfrastructure;
 import io.harness.cdng.infra.yaml.K8sGcpInfrastructure;
 import io.harness.cdng.infra.yaml.PdcInfrastructure;
 import io.harness.cdng.infra.yaml.ServerlessAwsLambdaInfrastructure;
 import io.harness.cdng.infra.yaml.SshWinRmAzureInfrastructure;
+import io.harness.cdng.manifest.yaml.InlineStoreConfig;
+import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
+import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigType;
+import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
 import io.harness.cdng.service.steps.ServiceStepOutcome;
+import io.harness.cdng.spot.config.yaml.ElastigroupConfiguration;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
@@ -193,6 +201,36 @@ public class InfrastructureMapperTest extends CategoryTest {
 
     InfrastructureOutcome infrastructureOutcome = infrastructureMapper.toOutcome(
         serverlessAwsLambdaInfrastructure, environment, serviceOutcome, "accountId", "projId", "orgId");
+    assertThat(infrastructureOutcome).isEqualTo(expectedOutcome);
+  }
+
+  @Test
+  @Owner(developers = ARVIND)
+  @Category(UnitTests.class)
+  public void testElastigroupInfraMapper() {
+    StoreConfig storeConfig =
+        InlineStoreConfig.builder().content(ParameterField.createValueField("this is content")).build();
+    ElastigroupInfrastructure infrastructure =
+        ElastigroupInfrastructure.builder()
+            .connectorRef(ParameterField.createValueField("connectorId"))
+            .configuration(
+                ElastigroupConfiguration.builder()
+                    .store(StoreConfigWrapper.builder().type(StoreConfigType.INLINE).spec(storeConfig).build())
+                    .build())
+            .build();
+
+    ElastigroupInfrastructureOutcome expectedOutcome =
+        ElastigroupInfrastructureOutcome.builder()
+            .connectorRef("connectorId")
+            .configuration(storeConfig)
+            .environment(environment)
+            .infrastructureKey("bef2304c702e57cf3f33982f5473222df5c1731f")
+            .build();
+
+    expectedOutcome.setConnector(Connector.builder().name("my_connector").build());
+
+    InfrastructureOutcome infrastructureOutcome =
+        infrastructureMapper.toOutcome(infrastructure, environment, serviceOutcome, "accountId", "projId", "orgId");
     assertThat(infrastructureOutcome).isEqualTo(expectedOutcome);
   }
 
