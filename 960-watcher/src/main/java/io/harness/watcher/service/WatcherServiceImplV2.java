@@ -188,7 +188,7 @@ public class WatcherServiceImplV2 implements WatcherService {
   private void sendHeartbeat() {
     try {
       Map<String, Object> heartbeatData = new HashMap<>();
-      heartbeatData.put(WATCHER_HEARTBEAT, clock.millis());
+//      heartbeatData.put(WATCHER_HEARTBEAT, clock.millis());
       heartbeatData.put(WATCHER_PROCESS, getProcessId());
       heartbeatData.put(WATCHER_VERSION, watcherConstants.getVersion());
       messageService.putAllData(WATCHER_DATA, heartbeatData);
