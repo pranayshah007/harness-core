@@ -3,7 +3,7 @@ package software.wings.scheduler.account;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.mongo.iterator.MongoPersistenceIterator.SchedulingType.REGULAR;
 
-import static java.time.Duration.ofHours;
+import static java.time.Duration.ofDays;
 import static java.time.Duration.ofMinutes;
 import static java.time.Duration.ofSeconds;
 
@@ -43,15 +43,15 @@ public class NameChangeAccountHandler implements MongoPersistenceIterator.Handle
         PersistenceIteratorFactory.PumpExecutorOptions.builder()
             .name("AccountNameChange")
             .poolSize(2)
-            .interval(ofMinutes(1))
+            .interval(ofDays(1))
             .build(),
         NameChangeAccountHandler.class,
         MongoPersistenceIterator.<Account, MorphiaFilterExpander<Account>>builder()
             .clazz(Account.class)
             .fieldName(Account.AccountKeys.accountNameChangeIteration)
-            .targetInterval(ofMinutes(1))
+            .targetInterval(ofMinutes(300))
             .acceptableNoAlertDelay(ofMinutes(300))
-            .acceptableExecutionTime(ofSeconds(120))
+            .acceptableExecutionTime(ofSeconds(300))
             .persistenceProvider(persistenceProvider)
             .handler(this)
             .schedulingType(REGULAR)
