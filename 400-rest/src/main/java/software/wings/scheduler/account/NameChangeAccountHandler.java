@@ -9,6 +9,7 @@ import static java.time.Duration.ofSeconds;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.cf.client.api.CfClient;
 import io.harness.cf.client.dto.Target;
 import io.harness.iterator.PersistenceIteratorFactory;
@@ -47,7 +48,7 @@ public class NameChangeAccountHandler implements MongoPersistenceIterator.Handle
         NameChangeAccountHandler.class,
         MongoPersistenceIterator.<Account, MorphiaFilterExpander<Account>>builder()
             .clazz(Account.class)
-            .fieldName(Account.AccountKeys.name)
+            .fieldName(Account.AccountKeys.accountNameChangeIteration)
             .targetInterval(ofMinutes(1))
             .acceptableNoAlertDelay(ofMinutes(300))
             .acceptableExecutionTime(ofSeconds(120))
@@ -65,7 +66,9 @@ public class NameChangeAccountHandler implements MongoPersistenceIterator.Handle
     if (isEmpty(oldName) || !oldName.equals(name)) {
       caffeineAccountCache.put(accountId, name);
       Target target = Target.builder().identifier(accountId).name(name).build();
-      cfClient.get().boolVariation("test", target, false);
+      for (FeatureName featureName : FeatureName.values()) {
+        cfClient.get().boolVariation(featureName.name(), target, false);
+      }
     }
   }
 }

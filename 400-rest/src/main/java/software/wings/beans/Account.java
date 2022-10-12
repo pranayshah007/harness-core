@@ -167,6 +167,7 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
   @FdIndex private long delegateTelemetryPublisherIteration;
   @FdIndex private long delegateTaskRebroadcastIteration;
   @FdIndex private Long perpetualTaskRebalanceIteration;
+  @FdIndex private Long accountNameChangeIteration;
 
   // adding this to avoid kryo exception. Its not used anymore, check DEL-5047
   @Deprecated private long delegateTaskFailIteration;
@@ -498,6 +499,11 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
       return;
     }
 
+    else if (AccountKeys.accountNameChangeIteration.equals(fieldName)) {
+      this.accountNameChangeIteration = nextIteration;
+      return;
+    }
+
     throw new IllegalArgumentException("Invalid fieldName " + fieldName);
   }
 
@@ -553,6 +559,10 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
 
     else if (AccountKeys.perpetualTaskRebalanceIteration.equals(fieldName)) {
       return this.perpetualTaskRebalanceIteration;
+    }
+
+    else if (AccountKeys.accountNameChangeIteration.equals(fieldName)) {
+      return this.accountNameChangeIteration;
     }
 
     throw new IllegalArgumentException("Invalid fieldName " + fieldName);
@@ -880,6 +890,7 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
     public static final String resourceLookupSyncIteration = "resourceLookupSyncIteration";
     public static final String instanceStatsMetricsPublisherInteration = "instanceStatsMetricsPublisherIteration";
     public static final String delegateTaskRebroadcastIteration = "delegateTaskRebroadcastIteration";
+    public static final String accountNameChangeIteration = "accountNameChangeIteration";
     public static final String DELEGATE_CONFIGURATION_DELEGATE_VERSIONS =
         delegateConfiguration + "." + DelegateConfigurationKeys.delegateVersions;
   }
