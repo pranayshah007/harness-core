@@ -18,6 +18,7 @@ shared_dependencies = [
     "//450-ce-views:module",
     "//480-pricing-service:module",
     "//490-ce-commons:module",
+    "//925-delegate-service-contracts:module",
     "//950-telemetry:module",
     "//959-psql-database-models:module",
     "//clients/notification:module",
