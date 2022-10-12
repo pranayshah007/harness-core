@@ -19,6 +19,7 @@ import io.harness.mongo.iterator.provider.MorphiaPersistenceProvider;
 
 import software.wings.app.JobsFrequencyConfig;
 import software.wings.beans.Account;
+import software.wings.beans.Account.AccountKeys;
 import software.wings.service.intfc.AccountService;
 
 import com.github.benmanes.caffeine.cache.Cache;
@@ -48,7 +49,7 @@ public class NameChangeAccountHandler implements MongoPersistenceIterator.Handle
         NameChangeAccountHandler.class,
         MongoPersistenceIterator.<Account, MorphiaFilterExpander<Account>>builder()
             .clazz(Account.class)
-            .fieldName(Account.AccountKeys.accountNameChangeIteration)
+            .fieldName(AccountKeys.accountNameChangeIteration)
             .targetInterval(ofMinutes(300))
             .acceptableNoAlertDelay(ofMinutes(300))
             .acceptableExecutionTime(ofSeconds(300))
