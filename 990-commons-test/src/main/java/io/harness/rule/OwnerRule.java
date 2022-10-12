@@ -304,6 +304,7 @@ public class OwnerRule implements TestRule {
   public static final String XINGCHI_JIN = "xingchi.jin";
   public static final String RAGHAV_MURALI = "raghavendra.murali";
   public static final String KAPIL_GARG = "kapil.garg";
+  public static final String SAHIBA = "sahiba.khan";
   @Deprecated public static final String UNKNOWN = "unknown";
 
   private static UserInfoBuilder defaultUserInfo(String user) {
