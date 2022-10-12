@@ -190,6 +190,12 @@ public class SecretManagerImpl implements SecretManager, EncryptedSettingAttribu
   @Override
   public Optional<EncryptedDataDetail> encryptedDataDetails(
       String accountId, String fieldName, String encryptedDataId, String workflowExecutionId) {
+    return encryptedDataDetails(accountId, fieldName, encryptedDataId, workflowExecutionId, true);
+  }
+
+  @Override
+  public Optional<EncryptedDataDetail> encryptedDataDetails(String accountId, String fieldName, String encryptedDataId,
+      String workflowExecutionId, boolean updateSecretUsage) {
     EncryptedData encryptedData = wingsPersistence.createQuery(EncryptedData.class)
                                       .filter(EncryptedDataKeys.accountId, accountId)
                                       .filter(EncryptedDataKeys.ID_KEY, encryptedDataId)
@@ -205,12 +211,18 @@ public class SecretManagerImpl implements SecretManager, EncryptedSettingAttribu
         return Optional.empty();
       }
     }
-    return getEncryptedDataDetails(accountId, fieldName, encryptedData, workflowExecutionId);
+    return getEncryptedDataDetails(accountId, fieldName, encryptedData, workflowExecutionId, updateSecretUsage);
   }
 
   @Override
   public Optional<EncryptedDataDetail> getEncryptedDataDetails(
       String accountId, String fieldName, EncryptedData encryptedData, String workflowExecutionId) {
+    return getEncryptedDataDetails(accountId, fieldName, encryptedData, workflowExecutionId, true);
+  }
+
+  @Override
+  public Optional<EncryptedDataDetail> getEncryptedDataDetails(String accountId, String fieldName,
+      EncryptedData encryptedData, String workflowExecutionId, boolean updateSecretUsage) {
     SecretManagerConfig encryptionConfig = secretManagerConfigService.getSecretManager(
         accountId, encryptedData.getKmsId(), encryptedData.getEncryptionType());
 
@@ -258,7 +270,9 @@ public class SecretManagerImpl implements SecretManager, EncryptedSettingAttribu
                                 .fieldName(fieldName)
                                 .build();
     }
-    this.updateUsageLogsForSecretText(workflowExecutionId, encryptedData);
+    if (updateSecretUsage) {
+      this.updateUsageLogsForSecretText(workflowExecutionId, encryptedData);
+    }
     return Optional.ofNullable(encryptedDataDetail);
   }
 
@@ -270,6 +284,12 @@ public class SecretManagerImpl implements SecretManager, EncryptedSettingAttribu
   @Override
   public List<EncryptedDataDetail> getEncryptionDetails(
       EncryptableSetting object, String appId, String workflowExecutionId) {
+    return getEncryptionDetails(object, appId, workflowExecutionId, true);
+  }
+
+  @Override
+  public List<EncryptedDataDetail> getEncryptionDetails(
+      EncryptableSetting object, String appId, String workflowExecutionId, boolean updateSecretUsage) {
     // NOTE: appId should not used anywhere in this method
     if (object.isDecrypted()) {
       return Collections.emptyList();
@@ -304,7 +324,7 @@ public class SecretManagerImpl implements SecretManager, EncryptedSettingAttribu
           }
 
           Optional<EncryptedDataDetail> encryptedDataDetail =
-              encryptedDataDetails(object.getAccountId(), f.getName(), id, workflowExecutionId);
+              encryptedDataDetails(object.getAccountId(), f.getName(), id, workflowExecutionId, updateSecretUsage);
           if (encryptedDataDetail.isPresent()) {
             encryptedDataDetails.add(encryptedDataDetail.get());
           }
