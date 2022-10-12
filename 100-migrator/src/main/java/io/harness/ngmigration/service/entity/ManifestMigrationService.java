@@ -297,20 +297,19 @@ public class ManifestMigrationService extends NgMigrationService {
       List<NGYamlFile> files = getYamlFilesForManifest(applicationManifest, inputDTO, entities);
       NgManifestService ngManifestService = manifestFactory.getNgManifestService(applicationManifest);
 
-      ManifestConfigWrapper manifestConfigWrapper =
-          ngManifestService.getManifestConfigWrapper(applicationManifest, migratedEntities, entitySpec, files);
+      ManifestConfigWrapper manifestConfigWrapper = ngManifestService.getManifestConfigWrapper(
+          applicationManifest, entities, migratedEntities, entitySpec, files);
       ngManifests.add(manifestConfigWrapper);
     }
     return ngManifests;
   }
 
-  // TODO: use scoped connectorRef ref
   public GitStore getGitStore(
-      GitFileConfig gitFileConfig, ManifestProvidedEntitySpec manifestInput, String connectorRef) {
+      GitFileConfig gitFileConfig, ManifestProvidedEntitySpec manifestInput, NgEntityDetail connector) {
     GitStoreBuilder gitStoreBuilder =
         GitStore.builder()
             .commitId(ParameterField.createValueField(gitFileConfig.getCommitId()))
-            .connectorRef(ParameterField.createValueField(connectorRef))
+            .connectorRef(ParameterField.createValueField(MigratorUtility.getIdentifierWithScope(connector)))
             .gitFetchType(gitFileConfig.isUseBranch() ? FetchType.BRANCH : FetchType.COMMIT)
             .repoName(ParameterField.createValueField(gitFileConfig.getRepoName()));
     if (manifestInput != null) {

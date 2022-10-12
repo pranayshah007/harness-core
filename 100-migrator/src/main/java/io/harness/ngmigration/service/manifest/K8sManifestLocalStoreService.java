@@ -25,6 +25,7 @@ import io.harness.pms.yaml.ParameterField;
 
 import software.wings.beans.appmanifest.ApplicationManifest;
 import software.wings.ngmigration.CgEntityId;
+import software.wings.ngmigration.CgEntityNode;
 import software.wings.service.intfc.ApplicationManifestService;
 
 import com.google.inject.Inject;
@@ -38,8 +39,8 @@ public class K8sManifestLocalStoreService implements NgManifestService {
 
   @Override
   public ManifestConfigWrapper getManifestConfigWrapper(ApplicationManifest applicationManifest,
-      Map<CgEntityId, NGYamlFile> migratedEntities, ManifestProvidedEntitySpec entitySpec,
-      List<NGYamlFile> yamlFileList) {
+      Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities,
+      ManifestProvidedEntitySpec entitySpec, List<NGYamlFile> yamlFileList) {
     if (EmptyPredicate.isEmpty(yamlFileList)) {
       throw new InvalidRequestException("No manifest files found in inline manifests");
     }

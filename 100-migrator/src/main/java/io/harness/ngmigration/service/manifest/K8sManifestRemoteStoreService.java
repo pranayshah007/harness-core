@@ -25,6 +25,7 @@ import io.harness.pms.yaml.ParameterField;
 import software.wings.beans.GitFileConfig;
 import software.wings.beans.appmanifest.ApplicationManifest;
 import software.wings.ngmigration.CgEntityId;
+import software.wings.ngmigration.CgEntityNode;
 import software.wings.ngmigration.NGMigrationEntityType;
 
 import com.google.inject.Inject;
@@ -37,8 +38,8 @@ public class K8sManifestRemoteStoreService implements NgManifestService {
 
   @Override
   public ManifestConfigWrapper getManifestConfigWrapper(ApplicationManifest applicationManifest,
-      Map<CgEntityId, NGYamlFile> migratedEntities, ManifestProvidedEntitySpec entitySpec,
-      List<NGYamlFile> yamlFileList) {
+      Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities,
+      ManifestProvidedEntitySpec entitySpec, List<NGYamlFile> yamlFileList) {
     // TODO: get store from migrated connector entity
     GitFileConfig gitFileConfig = applicationManifest.getGitFileConfig();
     NgEntityDetail connector =
@@ -56,7 +57,7 @@ public class K8sManifestRemoteStoreService implements NgManifestService {
             .store(ParameterField.createValueField(
                 StoreConfigWrapper.builder()
                     .type(StoreConfigType.GIT)
-                    .spec(manifestMigrationService.getGitStore(gitFileConfig, entitySpec, connector.getIdentifier()))
+                    .spec(manifestMigrationService.getGitStore(gitFileConfig, entitySpec, connector))
                     .build()))
             .build();
     return ManifestConfigWrapper.builder()
