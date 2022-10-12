@@ -59,7 +59,7 @@ import io.harness.perpetualtask.PerpetualTaskService;
 import io.harness.perpetualtask.PerpetualTaskType;
 import io.harness.perpetualtask.TaskClientParams;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializerWrapper;
+import io.harness.serializer.KryoSerializer;
 import io.harness.service.intfc.DelegateAsyncService;
 import io.harness.service.intfc.DelegateCallbackRegistry;
 import io.harness.service.intfc.DelegateSyncService;
@@ -116,7 +116,7 @@ public class DelegateServiceGrpcImplTest extends WingsBaseTest implements Mockab
   private DelegateService delegateService;
   private DelegateTaskServiceClassic delegateTaskServiceClassic;
   @Inject private DelegateAsyncService delegateAsyncService;
-  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
+  @Inject private KryoSerializer kryoSerializer;
   private DelegateSyncService delegateSyncService;
   private DelegateTaskService delegateTaskService;
 
@@ -137,7 +137,7 @@ public class DelegateServiceGrpcImplTest extends WingsBaseTest implements Mockab
     DelegateServiceGrpc.DelegateServiceBlockingStub delegateServiceBlockingStub =
         DelegateServiceGrpc.newBlockingStub(channel);
     delegateServiceGrpcClient = new DelegateServiceGrpcClient(
-        delegateServiceBlockingStub, delegateAsyncService, kryoSerializerWrapper, delegateSyncService, () -> false);
+        delegateServiceBlockingStub, delegateAsyncService, kryoSerializer, delegateSyncService, () -> false);
     delegateServiceAgentClient = mock(DelegateServiceAgentClient.class);
     delegateSyncService = mock(DelegateSyncService.class);
 
@@ -147,7 +147,7 @@ public class DelegateServiceGrpcImplTest extends WingsBaseTest implements Mockab
     delegateTaskServiceClassic = mock(DelegateTaskServiceClassic.class);
     delegateTaskService = mock(DelegateTaskService.class);
     delegateServiceGrpcImpl = new DelegateServiceGrpcImpl(delegateCallbackRegistry, perpetualTaskService,
-        delegateService, delegateTaskService, kryoSerializerWrapper, delegateTaskServiceClassic);
+        delegateService, delegateTaskService, kryoSerializer, delegateTaskServiceClassic);
 
     server =
         InProcessServerBuilder.forName(serverName).directExecutor().addService(delegateServiceGrpcImpl).build().start();
@@ -158,7 +158,7 @@ public class DelegateServiceGrpcImplTest extends WingsBaseTest implements Mockab
   @Owner(developers = MARKO)
   @Category(UnitTests.class)
   public void testSubmitTask() {
-    ByteString kryoParams = ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(ScriptType.BASH));
+    ByteString kryoParams = ByteString.copyFrom(kryoSerializer.asDeflatedBytes(ScriptType.BASH));
 
     Map<String, String> setupAbstractions = new HashMap<>();
     setupAbstractions.put(Cd1SetupFields.APP_ID_FIELD, "appId");
@@ -343,7 +343,7 @@ public class DelegateServiceGrpcImplTest extends WingsBaseTest implements Mockab
     DelegateCallbackToken token = delegateServiceGrpcClient.registerCallback(delegateCallback);
 
     ProgressData testData = DelegateStringProgressData.builder().data("Example").build();
-    byte[] testDataBytes = kryoSerializerWrapper.asDeflatedBytes(testData);
+    byte[] testDataBytes = kryoSerializer.asDeflatedBytes(testData);
     assertThat(delegateServiceAgentClient.sendTaskProgressUpdate(AccountId.newBuilder().setId(accountId).build(),
                    TaskId.newBuilder().setId(taskId).build(), token, testDataBytes))
         .isEqualTo(true);
@@ -438,7 +438,7 @@ public class DelegateServiceGrpcImplTest extends WingsBaseTest implements Mockab
             .setExecutionBundle(PerpetualTaskExecutionBundle.newBuilder()
                                     .addCapabilities(Capability.newBuilder()
                                                          .setKryoCapability(ByteString.copyFrom(
-                                                             kryoSerializerWrapper.asDeflatedBytes(selectorCapability)))
+                                                             kryoSerializer.asDeflatedBytes(selectorCapability)))
                                                          .build())
                                     .putSetupAbstractions("ng", "true")
                                     .build())

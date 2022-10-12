@@ -23,7 +23,7 @@ import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.perpetualtask.PerpetualTaskClientContext;
 import io.harness.perpetualtask.PerpetualTaskSchedule;
 import io.harness.perpetualtask.PerpetualTaskService;
-import io.harness.serializer.KryoSerializerWrapper;
+import io.harness.serializer.KryoSerializer;
 
 import software.wings.service.intfc.DelegateTaskServiceClassic;
 
@@ -35,15 +35,14 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @OwnedBy(HarnessTeam.DEL)
 public class DelegateServiceClassicGrpcImpl extends DelegateTaskGrpc.DelegateTaskImplBase {
-  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
+  @Inject private KryoSerializer kryoSerializer;
   @Inject private DelegateTaskServiceClassic delegateTaskServiceClassic;
   @Inject private PerpetualTaskService perpetualTaskService;
 
   @Override
   public void queueTask(DelegateClassicTaskRequest request, StreamObserver<QueueTaskResponse> responseObserver) {
     try {
-      DelegateTask task =
-          (DelegateTask) kryoSerializerWrapper.asInflatedObject(request.getDelegateTaskKryo().toByteArray());
+      DelegateTask task = (DelegateTask) kryoSerializer.asInflatedObject(request.getDelegateTaskKryo().toByteArray());
 
       delegateTaskServiceClassic.queueTask(task);
 
@@ -59,13 +58,12 @@ public class DelegateServiceClassicGrpcImpl extends DelegateTaskGrpc.DelegateTas
   @Override
   public void executeTask(DelegateClassicTaskRequest request, StreamObserver<ExecuteTaskResponse> responseObserver) {
     try {
-      DelegateTask task =
-          (DelegateTask) kryoSerializerWrapper.asInflatedObject(request.getDelegateTaskKryo().toByteArray());
+      DelegateTask task = (DelegateTask) kryoSerializer.asInflatedObject(request.getDelegateTaskKryo().toByteArray());
       DelegateResponseData delegateResponseData = delegateTaskServiceClassic.executeTask(task);
-      responseObserver.onNext(ExecuteTaskResponse.newBuilder()
-                                  .setDelegateTaskResponseKryo(
-                                      ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(delegateResponseData)))
-                                  .build());
+      responseObserver.onNext(
+          ExecuteTaskResponse.newBuilder()
+              .setDelegateTaskResponseKryo(ByteString.copyFrom(kryoSerializer.asDeflatedBytes(delegateResponseData)))
+              .build());
       responseObserver.onCompleted();
 
     } catch (Exception ex) {
@@ -83,7 +81,7 @@ public class DelegateServiceClassicGrpcImpl extends DelegateTaskGrpc.DelegateTas
       DelegateTask delegateTask = delegateTaskServiceClassic.abortTask(accountId, delegateTaskId);
       responseObserver.onNext(
           AbortTaskResponse.newBuilder()
-              .setDelegateTaskKryo(ByteString.copyFrom(kryoSerializerWrapper.asDeflatedBytes(delegateTask)))
+              .setDelegateTaskKryo(ByteString.copyFrom(kryoSerializer.asDeflatedBytes(delegateTask)))
               .build());
       responseObserver.onCompleted();
 
@@ -115,10 +113,10 @@ public class DelegateServiceClassicGrpcImpl extends DelegateTaskGrpc.DelegateTas
     try {
       String perpetualTaskType = request.getPerpetualTaskType();
       String accountId = request.getAccountId();
-      PerpetualTaskClientContext clientContext = (PerpetualTaskClientContext) kryoSerializerWrapper.asInflatedObject(
-          request.getClientContextKryo().toByteArray());
-      PerpetualTaskSchedule schedule = (PerpetualTaskSchedule) kryoSerializerWrapper.asInflatedObject(
-          request.getPerpetualTaskScheduleKryo().toByteArray());
+      PerpetualTaskClientContext clientContext =
+          (PerpetualTaskClientContext) kryoSerializer.asInflatedObject(request.getClientContextKryo().toByteArray());
+      PerpetualTaskSchedule schedule =
+          (PerpetualTaskSchedule) kryoSerializer.asInflatedObject(request.getPerpetualTaskScheduleKryo().toByteArray());
       boolean allowDuplicate = request.getAllowDuplicate();
       String taskDescription = request.getTaskDescription();
       String taskId = perpetualTaskService.createPerpetualTaskInternal(
