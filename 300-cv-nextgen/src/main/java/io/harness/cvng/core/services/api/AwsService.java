@@ -7,11 +7,8 @@
 
 package io.harness.cvng.core.services.api;
 
-import io.harness.cvng.core.beans.params.ProjectParams;
+import java.util.List;
 
-import java.util.Map;
-
-public interface CloudWatchService {
-  Map fetchSampleData(ProjectParams projectParams, String connectorIdentifier, String tracingId, String expression,
-      String region, String metricName, String metricIdentifier);
+public interface AwsService {
+  List<String> fetchRegions();
 }
