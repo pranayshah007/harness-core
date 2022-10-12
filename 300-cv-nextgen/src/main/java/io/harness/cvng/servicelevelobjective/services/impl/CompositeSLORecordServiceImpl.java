@@ -179,13 +179,17 @@ public class CompositeSLORecordServiceImpl implements CompositeSLORecordService 
           double goodCount = timeStampToGoodCount.getOrDefault(sliRecord.getTimestamp(), 0.0);
           goodCount += objectivesDetail.getWeightagePercentage() / 100;
           timeStampToGoodCount.put(sliRecord.getTimestamp(), goodCount);
-        } else {
+          timeStampToTotalCount.put(
+              sliRecord.getTimestamp(), timeStampToTotalCount.getOrDefault(sliRecord.getTimestamp(), 0) + 1);
+        } else if (SLIRecord.SLIState.BAD.equals(sliRecord.getSliState())
+            || (SLIRecord.SLIState.NO_DATA.equals(sliRecord.getSliState())
+                && objectivesDetailSLIMissingDataTypeMap.get(objectivesDetail).equals(SLIMissingDataType.BAD))) {
           double badCount = timeStampToBadCount.getOrDefault(sliRecord.getTimestamp(), 0.0);
           badCount += objectivesDetail.getWeightagePercentage() / 100;
           timeStampToBadCount.put(sliRecord.getTimestamp(), badCount);
+          timeStampToTotalCount.put(
+              sliRecord.getTimestamp(), timeStampToTotalCount.getOrDefault(sliRecord.getTimestamp(), 0) + 1);
         }
-        timeStampToTotalCount.put(
-            sliRecord.getTimestamp(), timeStampToTotalCount.getOrDefault(sliRecord.getTimestamp(), 0) + 1);
       }
     }
     List<CompositeSLORecord> sloRecordList = new ArrayList<>();
@@ -216,7 +220,7 @@ public class CompositeSLORecordServiceImpl implements CompositeSLORecordService 
         getSLORecords(verificationTaskId, startTime, endTime.plus(1, ChronoUnit.MINUTES));
     Map<Instant, CompositeSLORecord> sloRecordMap =
         toBeUpdatedSLORecords.stream().collect(Collectors.toMap(CompositeSLORecord::getTimestamp, Function.identity()));
-    List<CompositeSLORecord> updateOrCreateSLIRecords = new ArrayList<>();
+    List<CompositeSLORecord> updateOrCreateSLORecords = new ArrayList<>();
     Map<Instant, Double> timeStampToGoodCount = new HashMap<>();
     Map<Instant, Double> timeStampToBadCount = new HashMap<>();
     Map<Instant, Integer> timeStampToTotalCount = new HashMap<>();
@@ -228,16 +232,20 @@ public class CompositeSLORecordServiceImpl implements CompositeSLORecordService 
           double goodCount = timeStampToGoodCount.getOrDefault(sliRecord.getTimestamp(), 0.0);
           goodCount += objectivesDetail.getWeightagePercentage() / 100;
           timeStampToGoodCount.put(sliRecord.getTimestamp(), goodCount);
-        } else {
+          timeStampToTotalCount.put(
+              sliRecord.getTimestamp(), timeStampToTotalCount.getOrDefault(sliRecord.getTimestamp(), 0) + 1);
+        } else if (SLIRecord.SLIState.BAD.equals(sliRecord.getSliState())
+            || (SLIRecord.SLIState.NO_DATA.equals(sliRecord.getSliState())
+                && objectivesDetailSLIMissingDataTypeMap.get(objectivesDetail).equals(SLIMissingDataType.BAD))) {
           double badCount = timeStampToBadCount.getOrDefault(sliRecord.getTimestamp(), 0.0);
           badCount += objectivesDetail.getWeightagePercentage() / 100;
           timeStampToBadCount.put(sliRecord.getTimestamp(), badCount);
+          timeStampToTotalCount.put(
+              sliRecord.getTimestamp(), timeStampToTotalCount.getOrDefault(sliRecord.getTimestamp(), 0) + 1);
         }
-        timeStampToTotalCount.put(
-            sliRecord.getTimestamp(), timeStampToTotalCount.getOrDefault(sliRecord.getTimestamp(), 0) + 1);
       }
     }
-    for (Instant instant : timeStampToTotalCount.keySet()) {
+    for (Instant instant : ImmutableSortedSet.copyOf(timeStampToTotalCount.keySet())) {
       if (timeStampToTotalCount.get(instant).equals(serviceLevelObjectivesDetailCompositeSLORecordMap.size())) {
         CompositeSLORecord sloRecord = sloRecordMap.get(instant);
         runningGoodCount += timeStampToGoodCount.getOrDefault(instant, 0.0);
@@ -256,10 +264,10 @@ public class CompositeSLORecordServiceImpl implements CompositeSLORecordService 
                           .timestamp(instant)
                           .build();
         }
-        updateOrCreateSLIRecords.add(sloRecord);
+        updateOrCreateSLORecords.add(sloRecord);
       }
     }
-    hPersistence.save(updateOrCreateSLIRecords);
+    hPersistence.save(updateOrCreateSLORecords);
   }
 
   private List<CompositeSLORecord> compositeSLORecords(
