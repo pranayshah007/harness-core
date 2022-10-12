@@ -11,7 +11,6 @@ import io.harness.ccm.utils.LogAccountIdentifier;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
-import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.security.annotations.PublicApi;
 
 import com.codahale.metrics.annotation.ExceptionMetered;
@@ -58,7 +57,8 @@ import javax.ws.rs.core.MediaType;
       , @ApiResponse(code = 500, response = ErrorDTO.class, message = "Internal server error")
     })
 
-@NextGenManagerAuth
+//@NextGenManagerAuth
+@PublicApi
 public class PolicyManagement {
   private final PolicyStoreService policyStoreService;
   private final CCMRbacHelper rbacHelper;
@@ -87,7 +87,7 @@ public class PolicyManagement {
              NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @RequestBody(required = true,
           description = "Request body containing Policy store object") @Valid CreatePolicyDTO createPolicyDTO) {
-    // rbacHelper.checkPolicyEditPermission(accountId, null, null);
+    rbacHelper.checkPolicyEditPermission(accountId, null, null);
     PolicyStore policyStore = createPolicyDTO.getPolicyStore();
     policyStore.setAccountId(accountId);
     policyStoreService.save(policyStore);
