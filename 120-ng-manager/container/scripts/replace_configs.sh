@@ -568,3 +568,5 @@ replace_key_value gitopsResourceClientConfig.secret "$GITOPS_SERVICE_SECRET"
 replace_key_value subscriptionConfig.stripeApiKey "$STRIPE_API_KEY"
 
 replace_key_value enableOpentelemetry "$ENABLE_OPENTELEMETRY"
+
+replace_key_value chaosServiceClientConfig.baseUrl "$CHAOS_SERVICE_BASE_URL"
