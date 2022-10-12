@@ -16,6 +16,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.NestedExceptionUtils;
 import io.harness.git.model.ChangeType;
 import io.harness.gitaware.dto.GitContextRequestParams;
 import io.harness.gitaware.helper.GitAwareContextHelper;
@@ -96,7 +97,7 @@ public class NGTemplateRepositoryCustomImpl implements NGTemplateRepositoryCusto
       Scope scope = TemplateUtils.buildScope(templateToSave);
       String yamlToPush = templateToSave.getYaml();
       addGitParamsToTemplateEntity(templateToSave, gitEntityInfo);
-
+      gitAwareEntityHelper.validateFilePathHasCorrectExtension(gitEntityInfo.getFilePath());
       gitAwareEntityHelper.createEntityOnGit(templateToSave, yamlToPush, scope);
     } else {
       if (templateToSave.getProjectIdentifier() != null) {

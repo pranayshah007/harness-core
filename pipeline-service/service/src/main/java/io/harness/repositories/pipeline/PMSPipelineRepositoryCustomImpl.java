@@ -131,7 +131,7 @@ public class PMSPipelineRepositoryCustomImpl implements PMSPipelineRepositoryCus
       Scope scope = buildScope(pipelineToSave);
       String yamlToPush = pipelineToSave.getYaml();
       addGitParamsToPipelineEntity(pipelineToSave, gitEntityInfo);
-
+      gitAwareEntityHelper.validateFilePathHasCorrectExtension(gitEntityInfo.getFilePath());
       gitAwareEntityHelper.createEntityOnGit(pipelineToSave, yamlToPush, scope);
     } else {
       log.info(String.format(

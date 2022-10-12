@@ -12,6 +12,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.NestedExceptionUtils;
 import io.harness.gitaware.dto.GitContextRequestParams;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.scm.SCMGitSyncHelper;
@@ -34,6 +35,11 @@ public class GitAwareEntityHelper {
   @Inject SCMGitSyncHelper scmGitSyncHelper;
   public static final String DEFAULT = "__default__";
   public static final String HARNESS_FOLDER_EXTENSION_WITH_SEPARATOR = ".harness/";
+  public static final String FILE_PATH_INVALID_HINT = "Please check if the requested filepath is valid.";
+  public static final String FILE_PATH_INVALID_EXTENSION_EXPLANATION =
+      "Harness File should have [.yaml] or [.yml] extension.";
+
+  public static final String FILE_PATH_INVALID_EXTENSION_ERROR_FORMAT = "FilePath [%s] doesn't have right extension.";
 
   public GitAware fetchEntityFromRemote(
       GitAware entity, Scope scope, GitContextRequestParams gitContextRequestParams, Map<String, String> contextMap) {
@@ -201,5 +207,13 @@ public class GitAwareEntityHelper {
     return scmGitSyncHelper
         .getRepoUrl(scope, gitEntityInfo.getRepoName(), gitEntityInfo.getConnectorRef(), Collections.emptyMap())
         .getRepoUrl();
+  }
+
+  public void validateFilePathHasCorrectExtension(String filePath) {
+    if (!filePath.endsWith(".yaml") && !filePath.endsWith(".yml")) {
+      throw NestedExceptionUtils.hintWithExplanationException(FILE_PATH_INVALID_HINT,
+          FILE_PATH_INVALID_EXTENSION_EXPLANATION,
+          new InvalidRequestException(String.format(FILE_PATH_INVALID_EXTENSION_ERROR_FORMAT, filePath)));
+    }
   }
 }
