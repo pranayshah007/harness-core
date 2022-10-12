@@ -50,7 +50,6 @@ public class ServiceLevelObjectiveV2DTO implements YamlDTO {
   @Valid ServiceLevelIndicatorType serviceLevelIndicatorType;
   @Valid List<ServiceLevelIndicatorDTO> serviceLevelIndicators;
   @Valid List<ServiceLevelObjectiveDetailsDTO> serviceLevelObjectivesDetails;
-  @Valid int sloVersion;
   @Valid @NotNull SLOTargetDTO sloTarget;
   List<NotificationRuleRefDTO> notificationRuleRefs;
 

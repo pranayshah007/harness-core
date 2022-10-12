@@ -1020,7 +1020,6 @@ public class BuilderFactory {
                        .sloTargetPercentage(80.0)
                        .spec(RollingSLOTargetSpec.builder().periodLength("30d").build())
                        .build())
-        .sloVersion(0)
         .serviceLevelObjectivesDetails(List.of(ServiceLevelObjectiveDetailsDTO.builder()
                                                    .serviceLevelObjectiveRef("uuid1")
                                                    .weightagePercentage(75.0)

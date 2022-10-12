@@ -57,7 +57,7 @@ public class CompositeSLOTransformer implements SLOV2Transformer<CompositeServic
                            .build())
                 .collect(Collectors.toList()))
         .sloTargetPercentage(serviceLevelObjectiveV2DTO.getSloTarget().getSloTargetPercentage())
-        .version(serviceLevelObjectiveV2DTO.getSloVersion())
+        .version(0)
         .enabled(isEnabled)
         .build();
   }
@@ -94,7 +94,6 @@ public class CompositeSLOTransformer implements SLOV2Transformer<CompositeServic
                        .sloTargetPercentage(serviceLevelObjective.getSloTargetPercentage())
                        .build())
         .tags(TagMapper.convertToMap(serviceLevelObjective.getTags()))
-        .sloVersion(serviceLevelObjective.getVersion())
         .userJourneyRefs(serviceLevelObjective.getUserJourneyIdentifiers())
         .build();
   }

@@ -11,6 +11,7 @@ import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2DTO;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.util.List;
+import java.util.Optional;
 import javax.validation.constraints.Size;
 import lombok.Builder;
 import lombok.Data;
@@ -37,6 +38,11 @@ public class CompositeServiceLevelObjective extends AbstractServiceLevelObjectiv
   public static class ServiceLevelObjectivesDetail {
     String serviceLevelObjectiveRef;
     Double weightagePercentage;
+  }
+
+  @Override
+  public Optional<String> mayBeGetMonitoredServiceIdentifier() {
+    return Optional.empty();
   }
 
   public static class CompositeServiceLevelObjectiveUpdatableEntity

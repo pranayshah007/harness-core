@@ -182,8 +182,7 @@ public class SLOHealthIndicatorServiceImpl implements SLOHealthIndicatorService 
     SLOGraphData sloGraphData = getGraphData(projectParams, serviceLevelObjective);
     String monitoredServiceIdentifier = "";
     if (serviceLevelObjective.getType().equals(ServiceLevelObjectiveType.SIMPLE)) {
-      monitoredServiceIdentifier =
-          ((SimpleServiceLevelObjective) serviceLevelObjective).getMonitoredServiceIdentifier();
+      monitoredServiceIdentifier = serviceLevelObjective.mayBeGetMonitoredServiceIdentifier().get();
     }
     if (Objects.isNull(sloHealthIndicator)) {
       SLOHealthIndicator newSloHealthIndicator =
