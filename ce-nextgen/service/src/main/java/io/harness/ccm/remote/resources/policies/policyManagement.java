@@ -60,7 +60,8 @@ import javax.ws.rs.core.MediaType;
       , @ApiResponse(code = 500, response = ErrorDTO.class, message = "Internal server error")
     })
 
-@NextGenManagerAuth
+//@NextGenManagerAuth
+@PublicApi
 public class policyManagement {
   private final PolicyStoreService policyStoreService;
   private final CCMRbacHelper rbacHelper;
@@ -73,8 +74,8 @@ public class policyManagement {
   // Internal API for OOTB policy creation
 
   @POST
-  @Hidden
-  @InternalApi
+//  @Hidden
+//  @InternalApi
   @Path("add")
   @Consumes(MediaType.APPLICATION_JSON)
   @ApiOperation(value = "Add a new policy internal api", nickname = "addPolicyNameInternal")
@@ -89,7 +90,7 @@ public class policyManagement {
              NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @RequestBody(required = true,
           description = "Request body containing Policy store object") @Valid CreatePolicyDTO createPolicyDTO) {
-    rbacHelper.checkPolicyEditPermission(accountId, null, null);
+    //rbacHelper.checkPolicyEditPermission(accountId, null, null);
     PolicyStore policyStore = createPolicyDTO.getPolicyStore();
     policyStore.setAccountId(accountId);
     policyStoreService.save(policyStore);
@@ -99,8 +100,8 @@ public class policyManagement {
   // Update a policy already made
 
   @PUT
-  @Hidden
-  @InternalApi
+//  @Hidden
+//  @InternalApi
   @Path("update")
   @Consumes(MediaType.APPLICATION_JSON)
   @ApiOperation(value = "Update a existing OOTB Policy", nickname = "updatePolicy")
@@ -116,18 +117,19 @@ public class policyManagement {
                    NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @RequestBody(required = true,
           description = "Request body containing ceViewFolder object") @Valid CreatePolicyDTO createPolicyDTO) {
-    rbacHelper.checkPolicyEditPermission(accountId, null, null);
+    //rbacHelper.checkPolicyEditPermission(accountId, null, null);
     PolicyStore policyStore = createPolicyDTO.getPolicyStore();
+    policyStore.toDTO();
     policyStore.setAccountId(accountId);
     policyStoreService.update(policyStore);
-    return ResponseDTO.newResponse(policyStore.toDTO());
+    return ResponseDTO.newResponse(policyStore);
   }
 
   // Internal API for deletion of OOTB policies
 
   @DELETE
-  @Hidden
-  @InternalApi
+//  @Hidden
+//  @InternalApi
   @Path("{policyId}")
   @Timed
   @ExceptionMetered
@@ -146,7 +148,7 @@ public class policyManagement {
              NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @PathParam("policyId") @Parameter(
           required = true, description = "Unique identifier for the policy") @NotNull @Valid String uuid) {
-   rbacHelper.checkPolicyDeletePermission(accountId, null, null);
+   //rbacHelper.checkPolicyDeletePermission(accountId, null, null);
     boolean result = policyStoreService.delete(accountId, uuid);
     return ResponseDTO.newResponse(result);
   }
@@ -168,13 +170,16 @@ public class policyManagement {
                  NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @RequestBody(
           required = true, description = "Request body containing ceViewFolder object") @Valid ListDTO listDTO) {
- rbacHelper.checkPolicyViewPermission(accountId, null, null);
+ //rbacHelper.checkPolicyViewPermission(accountId, null, null);
     QueryFeild query = listDTO.getQueryFeild();
     List<PolicyStore> Policies = new ArrayList<>();
     query.setAccountId(accountId);
     String uuid = query.getUuid();
     String orgIdentifier = query.getOrgIdentifier();
     String projectIdentifier = query.getProjectIdentifier();
+    String cloudProvider = query.getCloudProvider();
+    String isStablePolicy= query.getIsStablePolicy();
+    String isOOTBPolicy= query.getIsOOTBPolicy();
     String resource = query.getResource();
     String tags = query.getTags();
     if (uuid != null) {
