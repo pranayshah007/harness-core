@@ -2303,7 +2303,6 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
     final String workflowId = context.getWorkflowId();
     List<NameValuePair> tags = workflowExecutionUpdate.resolveDeploymentTags(context, workflowId);
     workflowExecutionUpdate.addTagsToWorkflowExecution(tags);
-
     stateMachineExecutor.startExecution(stateMachine, stateExecutionInstance);
     updateStartStatus(workflowExecution.getAppId(), workflowExecution.getUuid(), RUNNING, false);
     savedWorkflowExecution = wingsPersistence.getWithAppId(
