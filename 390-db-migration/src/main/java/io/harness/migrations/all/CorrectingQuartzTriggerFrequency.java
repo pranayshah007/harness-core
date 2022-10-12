@@ -77,9 +77,7 @@ public class CorrectingQuartzTriggerFrequency implements Migration {
         Date nextFireTime = (Date) dataRecord.get("nextFireTime");
         Date previousFireTime = (Date) dataRecord.get("previousFireTime");
         Long repeatInterval = (Long) dataRecord.get("repeatInterval");
-        // Difference between previousFireTime and nextFireTime should match with interval timing (max allowed
-        // difference is 10s) also Next fireTime should always be in the future, if any of these condition fails, we
-        // reschedule the quartz job
+
         if (previousFireTime != null && nextFireTime != null
             && (((nextFireTime.getTime() - previousFireTime.getTime()) != repeatInterval)
                 || nextFireTime.before(Date.from(Instant.now())))) {
