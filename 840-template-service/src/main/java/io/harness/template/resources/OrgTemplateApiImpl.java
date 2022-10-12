@@ -19,10 +19,10 @@ import io.harness.spec.server.template.model.GitCreateDetails;
 import io.harness.spec.server.template.model.GitFindDetails;
 import io.harness.spec.server.template.model.GitUpdateDetails;
 import io.harness.spec.server.template.model.TemplateCreateRequestBody;
-import io.harness.spec.server.template.model.TemplateFilterProperties;
 import io.harness.spec.server.template.model.TemplateUpdateRequestBody;
 
 import com.google.inject.Inject;
+import java.util.List;
 import javax.ws.rs.core.Response;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -49,24 +49,28 @@ public class OrgTemplateApiImpl implements OrgTemplateApi {
 
   @Override
   public Response getTemplateOrg(@ResourceIdentifier String templateIdentifier, @OrgIdentifier String org,
-      String versionLabel, GitFindDetails gitFindDetails, @AccountIdentifier String account, Boolean getInputYaml) {
-    return templateResourceApiUtils.getTemplate(
-        account, org, null, templateIdentifier, versionLabel, false, gitFindDetails, getInputYaml);
+      String versionLabel, @AccountIdentifier String account, Boolean getInputYaml, String branch,
+      String parentConnectorRef, String parentRepoName, String parentAccountId, String parentOrgId,
+      String parentProjectId) {
+    return templateResourceApiUtils.getTemplate(account, org, null, templateIdentifier, versionLabel, false, branch,
+        parentConnectorRef, parentRepoName, parentAccountId, parentOrgId, parentProjectId, getInputYaml);
   }
 
   @Override
   public Response getTemplateStableOrg(@OrgIdentifier String org, @ResourceIdentifier String templateIdentifier,
-      GitFindDetails gitFindDetails, @AccountIdentifier String account, Boolean getInputYaml) {
-    return templateResourceApiUtils.getTemplate(
-        account, org, null, templateIdentifier, null, false, gitFindDetails, getInputYaml);
+      @AccountIdentifier String account, Boolean getInputYaml, String branch, String parentConnectorRef,
+      String parentRepoName, String parentAccountId, String parentOrgId, String parentProjectId) {
+    return templateResourceApiUtils.getTemplate(account, org, null, templateIdentifier, null, false, branch,
+        parentConnectorRef, parentRepoName, parentAccountId, parentOrgId, parentProjectId, getInputYaml);
   }
 
   @Override
-  public Response getTemplatesListOrg(@OrgIdentifier String org, TemplateFilterProperties templateFilterProperties,
-      @AccountIdentifier String account, Integer page, Integer limit, String sort, String order, String searchTerm,
-      String listType, Boolean recursive) {
-    return templateResourceApiUtils.getTemplates(
-        account, org, null, page, limit, sort, order, searchTerm, listType, recursive, templateFilterProperties);
+  public Response getTemplatesListOrg(@OrgIdentifier String org, @AccountIdentifier String account, Integer page,
+      Integer limit, String sort, String order, String searchTerm, String listType, Boolean recursive,
+      List<String> names, List<String> identifiers, String description, List<String> entityTypes,
+      List<String> child_types) {
+    return templateResourceApiUtils.getTemplates(account, org, null, page, limit, sort, order, searchTerm, listType,
+        recursive, names, identifiers, description, entityTypes, child_types);
   }
 
   @Override

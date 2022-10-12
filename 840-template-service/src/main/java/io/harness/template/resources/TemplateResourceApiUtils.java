@@ -32,6 +32,7 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.git.model.ChangeType;
 import io.harness.gitaware.helper.GitAwareContextHelper;
+import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.ng.core.template.TemplateEntityType;
 import io.harness.ng.core.template.TemplateListType;
 import io.harness.ng.core.template.TemplateMetadataSummaryResponseDTO;
@@ -80,10 +81,19 @@ public class TemplateResourceApiUtils {
 
   public Response getTemplate(@AccountIdentifier String account, @OrgIdentifier String org,
       @ProjectIdentifier String project, @ResourceIdentifier String templateIdentifier, String versionLabel,
-      boolean deleted, GitFindDetails gitFindDetails, Boolean getInputYaml) {
+      boolean deleted, String branch, String parentConnectorRef, String parentRepoName, String parentAccountId,
+      String parentOrgId, String parentProjectId, Boolean getInputYaml) {
     // if label is not given, return stable template
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(account, org, project),
         Resource.of(TEMPLATE, templateIdentifier), PermissionTypes.TEMPLATE_VIEW_PERMISSION);
+    GitAwareContextHelper.populateGitDetails(GitEntityInfo.builder()
+                                                 .branch(branch)
+                                                 .parentEntityConnectorRef(parentConnectorRef)
+                                                 .parentEntityRepoName(parentRepoName)
+                                                 .parentEntityAccountIdentifier(parentAccountId)
+                                                 .parentEntityOrgIdentifier(parentOrgId)
+                                                 .parentEntityProjectIdentifier(parentProjectId)
+                                                 .build());
     if (getInputYaml == true) {
       // returns template along with templateInputs yaml
       log.info(String.format(
@@ -146,6 +156,7 @@ public class TemplateResourceApiUtils {
       GitFindDetails gitEntityBasicInfo, String comments) {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(account, org, project),
         Resource.of(TEMPLATE, templateIdentifier), PermissionTypes.TEMPLATE_EDIT_PERMISSION);
+    GitAwareContextHelper.populateGitDetails(templateResourceApiMapper.populateGitFindDetails(gitEntityBasicInfo));
     log.info(String.format(
         "Updating Stable Template with identifier %s with versionLabel %s in project %s, org %s, account %s",
         templateIdentifier, versionLabel, project, org, account));
@@ -193,12 +204,19 @@ public class TemplateResourceApiUtils {
 
   public Response getTemplates(@AccountIdentifier String account, @OrgIdentifier String org,
       @ProjectIdentifier String project, int page, int limit, String sort, String order, String searchTerm,
-      String listType, boolean recursive,
-      io.harness.spec.server.template.model.TemplateFilterProperties templatefilterProperties) {
+      String listType, boolean recursive, List<String> names, List<String> identifiers, String description,
+      List<String> entityTypes, List<String> child_types) {
     accessControlClient.checkForAccessOrThrow(
         ResourceScope.of(account, org, project), Resource.of(TEMPLATE, null), PermissionTypes.TEMPLATE_VIEW_PERMISSION);
     log.info(String.format("Get List of templates in project: %s, org: %s, account: %s", project, org, account));
-    TemplateFilterPropertiesDTO filterProperties = toFilterProperties(templatefilterProperties);
+    TemplateFilterPropertiesDTO filterProperties = new TemplateFilterPropertiesDTO();
+    List<TemplateEntityType> templateEntityTypes =
+        entityTypes.stream().map(x -> TemplateEntityType.getTemplateType(x)).collect(Collectors.toList());
+    filterProperties.setTemplateEntityTypes(templateEntityTypes);
+    filterProperties.setTemplateNames(names);
+    filterProperties.setDescription(description);
+    filterProperties.setTemplateIdentifiers(identifiers);
+    filterProperties.setChildTypes(child_types);
     TemplateFilterProperties templateFilterProperties =
         NGTemplateDtoMapper.toTemplateFilterProperties(filterProperties);
     TemplateListType templateListType = TemplateListType.getTemplateType(listType);

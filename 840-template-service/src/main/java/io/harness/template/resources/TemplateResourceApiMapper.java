@@ -15,6 +15,7 @@ import io.harness.ng.core.template.TemplateMetadataSummaryResponseDTO;
 import io.harness.ng.core.template.TemplateWithInputsResponseDTO;
 import io.harness.spec.server.template.model.EntityGitDetails;
 import io.harness.spec.server.template.model.GitCreateDetails;
+import io.harness.spec.server.template.model.GitFindDetails;
 import io.harness.spec.server.template.model.GitUpdateDetails;
 import io.harness.spec.server.template.model.TemplateMetadataSummaryResponse;
 import io.harness.spec.server.template.model.TemplateResponse;
@@ -204,6 +205,19 @@ public class TemplateResourceApiMapper {
         .baseBranch(gitDetails.getBaseBranch())
         .lastCommitId(gitDetails.getLastCommitId())
         .lastObjectId(gitDetails.getLastObjectId())
+        .build();
+  }
+  public GitEntityInfo populateGitFindDetails(GitFindDetails gitDetails) {
+    if (gitDetails == null) {
+      return GitEntityInfo.builder().build();
+    }
+    return GitEntityInfo.builder()
+        .branch(gitDetails.getBranchName())
+        .parentEntityProjectIdentifier(gitDetails.getParentProjectId())
+        .parentEntityOrgIdentifier(gitDetails.getParentOrgId())
+        .parentEntityAccountIdentifier(gitDetails.getParentAccountId())
+        .parentEntityRepoName(gitDetails.getParentRepoName())
+        .parentEntityConnectorRef(gitDetails.getParentConnectorRef())
         .build();
   }
 }

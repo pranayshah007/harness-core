@@ -43,7 +43,6 @@ import io.harness.spec.server.template.model.TemplateMetadataSummaryResponse;
 import io.harness.spec.server.template.model.TemplateResponse;
 import io.harness.spec.server.template.model.TemplateUpdateStableResponse;
 import io.harness.spec.server.template.model.TemplateWithInputsResponse;
-import io.harness.template.TemplateFilterPropertiesDTO;
 import io.harness.template.beans.PermissionTypes;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.entity.TemplateEntity.TemplateEntityKeys;
@@ -227,8 +226,8 @@ public class TemplateResourceApiUtilsTest extends CategoryTest {
     templateWithInputsResponse.setTemplateResponse(templateResponse);
     templateWithInputsResponse.setInputYaml("Input YAML not requested");
     when(templateResourceApiMapper.toTemplateResponseDefault(any())).thenReturn(templateWithInputsResponse);
-    Response response = templateResourceApiUtils.getTemplate(
-        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, TEMPLATE_VERSION_LABEL, false, null, false);
+    Response response = templateResourceApiUtils.getTemplate(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
+        TEMPLATE_IDENTIFIER, TEMPLATE_VERSION_LABEL, false, null, null, null, null, null, null, false);
     TemplateWithInputsResponse templateResponseInput = (TemplateWithInputsResponse) response.getEntity();
     assertThat(response.getEntityTag().getValue()).isEqualTo("1");
     assertEquals(templateResponseInput.getTemplateResponse().getSlug(), TEMPLATE_IDENTIFIER);
@@ -246,9 +245,10 @@ public class TemplateResourceApiUtilsTest extends CategoryTest {
     doReturn(Optional.empty())
         .when(templateService)
         .get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, incorrectTemplateIdentifier, TEMPLATE_VERSION_LABEL, false);
-    assertThatThrownBy(()
-                           -> templateResourceApiUtils.getTemplate(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
-                               incorrectTemplateIdentifier, TEMPLATE_VERSION_LABEL, false, null, false))
+    assertThatThrownBy(
+        ()
+            -> templateResourceApiUtils.getTemplate(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
+                incorrectTemplateIdentifier, TEMPLATE_VERSION_LABEL, false, null, null, null, null, null, null, false))
         .isInstanceOf(InvalidRequestException.class);
   }
 
@@ -360,7 +360,8 @@ public class TemplateResourceApiUtilsTest extends CategoryTest {
     doReturn(templateEntities).when(templateService).listTemplateMetadata(any(), any(), any(), any(), any());
     TemplateFilterProperties templateFilterProperties = new TemplateFilterProperties();
     Response response = templateResourceApiUtils.getTemplates(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, 0, 25, null,
-        null, null, TemplateListType.ALL_TEMPLATE_TYPE.toString(), false, templateFilterProperties);
+        null, null, TemplateListType.ALL_TEMPLATE_TYPE.toString(), false, null, null, null,
+        Collections.singletonList("Stage"), null);
     List<TemplateMetadataSummaryResponse> templates = (List<TemplateMetadataSummaryResponse>) response.getEntity();
     assertThat(templates).isNotEmpty();
     assertThat(templates.size()).isEqualTo(1);
@@ -371,32 +372,5 @@ public class TemplateResourceApiUtilsTest extends CategoryTest {
     verify(accessControlClient)
         .checkForAccessOrThrow(ResourceScope.of(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER),
             Resource.of(TEMPLATE, null), PermissionTypes.TEMPLATE_VIEW_PERMISSION);
-  }
-
-  @Test
-  @Owner(developers = TARUN_UBA)
-  @Category(UnitTests.class)
-  public void testFilterProperties() {
-    TemplateFilterProperties templateFilterProperties = new TemplateFilterProperties();
-    List<String> names = Collections.singletonList("Example_template");
-    List<String> ids = Collections.singletonList("example_template");
-    String description = "Sample_description";
-    List<TemplateFilterProperties.EntityTypesEnum> entityType =
-        Collections.singletonList(TemplateFilterProperties.EntityTypesEnum.STAGE);
-    List<String> childType = Collections.singletonList("example_child_type");
-    templateFilterProperties.setDescription(description);
-    templateFilterProperties.setChildTypes(childType);
-    templateFilterProperties.setEntityTypes(entityType);
-    templateFilterProperties.setIdentifiers(ids);
-    templateFilterProperties.setNames(names);
-
-    TemplateFilterPropertiesDTO templateFilterPropertiesDTO =
-        templateResourceApiUtils.toFilterProperties(templateFilterProperties);
-
-    assertEquals(names, templateFilterPropertiesDTO.getTemplateNames());
-    assertEquals(description, templateFilterPropertiesDTO.getDescription());
-    assertEquals(childType, templateFilterPropertiesDTO.getChildTypes());
-    assertEquals(ids, templateFilterPropertiesDTO.getTemplateIdentifiers());
-    assertEquals(entityType.get(0).toString(), templateFilterPropertiesDTO.getTemplateEntityTypes().get(0).toString());
   }
 }
