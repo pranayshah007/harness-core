@@ -84,4 +84,11 @@ public class PolicyStoreDao {
     log.info("Updated policy: {}", policyStore.getUuid());
     return policyStore;
   }
+
+  public List<PolicyStore> findByStability(String isStablePolicy, String accountId) {
+    Query<PolicyStore> query = hPersistence.createQuery(PolicyStore.class)
+            .filter(PolicyStore.PolicyId.isStablePolicy, isStablePolicy)
+            .filter(PolicyStore.PolicyId.accountId, accountId);
+    return query.asList();
+  }
 }
