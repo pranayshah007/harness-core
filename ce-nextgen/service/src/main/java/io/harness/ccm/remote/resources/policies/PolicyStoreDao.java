@@ -14,6 +14,7 @@ import org.mongodb.morphia.query.UpdateOperations;
 public class PolicyStoreDao {
   @Inject private HPersistence hPersistence;
   public boolean save(PolicyStore policyStore) {
+    log.info("created: {}", hPersistence.save(policyStore));
     return hPersistence.save(policyStore) != null;
   }
 
@@ -23,6 +24,7 @@ public class PolicyStoreDao {
                                    .equal(accountId)
                                    .field(PolicyStore.PolicyId.uuid)
                                    .equal(uuid);
+    log.info("deleted policy: {}", uuid);
     return hPersistence.delete(query);
   }
   public List<PolicyStore> list(String accountId) {
@@ -39,7 +41,6 @@ public class PolicyStoreDao {
     Query<PolicyStore> query = hPersistence.createQuery(PolicyStore.class)
                                    .filter(PolicyStore.PolicyId.tags, tag)
                                    .filter(PolicyStore.PolicyId.accountId, accountId);
-    System.out.println(query);
     return query.asList();
   }
 
@@ -58,8 +59,7 @@ public class PolicyStoreDao {
                                    .filter(PolicyStore.PolicyId.resource, resource)
                                    .filter(PolicyStore.PolicyId.tags, tag)
                                    .filter(PolicyStore.PolicyId.accountId, accountId);
-    System.out.println(query);
-
+    log.info("Query: {}", query);
     return query.asList();
   }
 
@@ -74,14 +74,14 @@ public class PolicyStoreDao {
             .set(PolicyStore.PolicyId.resource, policyStore.getResource())
             .set(PolicyStore.PolicyId.name, policyStore.getName())
             .set(PolicyStore.PolicyId.description, policyStore.getDescription())
-            .set(PolicyStore.PolicyId.policy, policyStore.getPolicy())
+            .set(PolicyStore.PolicyId.policyYaml, policyStore.getPolicyYaml())
+            .set(PolicyStore.PolicyId.isStablePolicy, policyStore.getIsStablePolicy())
+            .set(PolicyStore.PolicyId.isOOTBPolicy, policyStore.getIsOOTBPolicy())
             .set(PolicyStore.PolicyId.tags, policyStore.getTags())
             .set(PolicyStore.PolicyId.lastUpdatedAt, policyStore.getLastUpdatedAt());
 
     hPersistence.update(query, updateOperations);
-    System.out.println(updateOperations);
-    System.out.println(query);
-
+    log.info("Updated policy: {}", policyStore.getUuid());
     return policyStore;
   }
 }

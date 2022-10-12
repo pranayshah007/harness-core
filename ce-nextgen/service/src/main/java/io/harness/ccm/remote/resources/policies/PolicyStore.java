@@ -43,8 +43,6 @@ public final class PolicyStore implements PersistentEntity, UuidAware, CreatedAt
                  .name("policy")
                  .field(PolicyId.uuid)
                  .field(PolicyId.accountId)
-                 .field(PolicyId.orgIdentifier)
-                 .field(PolicyId.projectIdentifier)
                  .field(PolicyId.cloudProvider)
                  .build())
         .add(CompoundMongoIndex.builder().name("sort1").field(PolicyId.lastUpdatedAt).build())
