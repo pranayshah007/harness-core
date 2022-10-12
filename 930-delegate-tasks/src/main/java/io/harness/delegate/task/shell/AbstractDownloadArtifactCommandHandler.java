@@ -14,7 +14,8 @@ import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.DOWNL
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.NO_DESTINATION_DOWNLOAD_ARTIFACT_PATH_SPECIFIED;
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.NO_DESTINATION_DOWNLOAD_ARTIFACT_PATH_SPECIFIED_EXPLANATION;
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.NO_DESTINATION_DOWNLOAD_PATH_SPECIFIED_HINT;
-import static io.harness.delegate.utils.ArtifactoryUtils.getArtifactFileName;
+import static io.harness.delegate.utils.NexusUtils.getNexusArtifactFileName;
+import static io.harness.delegate.utils.NexusUtils.getNexusVersion;
 import static io.harness.logging.CommandExecutionStatus.FAILURE;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.logging.LogLevel.ERROR;
@@ -30,10 +31,13 @@ import io.harness.delegate.task.ssh.CopyCommandUnit;
 import io.harness.delegate.task.ssh.NgCommandUnit;
 import io.harness.delegate.task.ssh.NgDownloadArtifactCommandUnit;
 import io.harness.delegate.task.ssh.artifact.CustomArtifactDelegateConfig;
+import io.harness.delegate.task.ssh.artifact.NexusArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.SkipCopyArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.SshWinRmArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.SshWinRmArtifactType;
 import io.harness.delegate.task.winrm.ArtifactDownloadHandler;
+import io.harness.delegate.utils.ArtifactoryUtils;
+import io.harness.delegate.utils.NexusVersion;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.runtime.WinRmCommandExecutionException;
@@ -105,8 +109,8 @@ public abstract class AbstractDownloadArtifactCommandHandler implements CommandH
     }
 
     logCallback.saveExecutionLog(format("Begin execution of command: %s", commandUnit.getName()), INFO);
-    logCallback.saveExecutionLog("Downloading artifact from " + artifactDelegateConfig.getArtifactType() + " to "
-            + commandUnit.getDestinationPath() + "\\" + getArtifactFileName(artifactDelegateConfig.getArtifactPath()),
+    logCallback.saveExecutionLog("Downloading artifact from " + getArtifactType(artifactDelegateConfig) + " to "
+            + commandUnit.getDestinationPath() + "\\" + getArtifactFileName(artifactDelegateConfig),
         INFO);
 
     if (isEmpty(commandUnit.getDestinationPath())) {
@@ -145,6 +149,26 @@ public abstract class AbstractDownloadArtifactCommandHandler implements CommandH
       throw new RuntimeException("Cannot get command string for download artifact");
     }
     return command;
+  }
+
+  public String getArtifactType(SshWinRmArtifactDelegateConfig artifactDelegateConfig) {
+    SshWinRmArtifactType artifactType = artifactDelegateConfig.getArtifactType();
+    if (SshWinRmArtifactType.NEXUS_PACKAGE == artifactType) {
+      return getNexusVersion((NexusArtifactDelegateConfig) artifactDelegateConfig).name();
+    }
+
+    return artifactType.name();
+  }
+
+  public String getArtifactFileName(SshWinRmArtifactDelegateConfig artifactDelegateConfig) {
+    if (artifactDelegateConfig instanceof NexusArtifactDelegateConfig) {
+      NexusArtifactDelegateConfig nexusArtifactDelegateConfig = (NexusArtifactDelegateConfig) artifactDelegateConfig;
+      NexusVersion nexusVersion = getNexusVersion(nexusArtifactDelegateConfig);
+      return getNexusArtifactFileName(nexusVersion, nexusArtifactDelegateConfig.getRepositoryFormat(),
+          nexusArtifactDelegateConfig.getArtifactUrl());
+    }
+
+    return ArtifactoryUtils.getArtifactFileName(artifactDelegateConfig.getArtifactPath());
   }
 
   public abstract BaseScriptExecutor getExecutor(CommandTaskParameters commandTaskParameters, NgCommandUnit commandUnit,
