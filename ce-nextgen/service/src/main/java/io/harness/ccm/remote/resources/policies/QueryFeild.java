@@ -31,16 +31,25 @@ public class QueryFeild {
     String resource;
     @Schema(description = NGCommonEntityConstants.TAGS)
     String tags;
+    @Schema(description = "cloudProvider")
+    String cloudProvider;
+    @Schema(description = "isStablePolicy")
+    String isStablePolicy;
+    @Schema(description = "isOOTBPolicy")
+    String isOOTBPolicy;
 
     @Builder
     public QueryFeild toDTO(String uuid, String accountId,String orgIdentifier,  String projectIdentifier, String resource,
-                            String tags ) {
+                            String tags,String cloudProvider,String isStablePolicy,String isOOTBPolicy ) {
         this.uuid=uuid;
         this.accountId=accountId;
         this.orgIdentifier=orgIdentifier;
         this.projectIdentifier=projectIdentifier;
         this.resource=resource;
         this.tags=tags;
+        this.cloudProvider=cloudProvider;
+        this.isStablePolicy=isStablePolicy;
+        this.isOOTBPolicy=isOOTBPolicy;
         return QueryFeild.this;
     }
 
