@@ -20,6 +20,7 @@ import io.harness.webhook.remote.WebhookEventHttpClientFactory;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Scopes;
+import com.google.inject.Singleton;
 
 @OwnedBy(DX)
 public class WebhookEventClientModule extends AbstractModule {
@@ -35,6 +36,7 @@ public class WebhookEventClientModule extends AbstractModule {
   }
 
   @Provides
+  @Singleton
   private WebhookEventHttpClientFactory modulesHttpClientFactory(KryoConverterFactory kryoConverterFactory) {
     return new WebhookEventHttpClientFactory(serviceHttpClientConfig, serviceSecret, new ServiceTokenGenerator(),
         kryoConverterFactory, clientId, ClientMode.PRIVILEGED);
