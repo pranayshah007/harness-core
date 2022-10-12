@@ -516,7 +516,7 @@ io.harness.cdng.ecs.EcsRunTaskStepInfo
 io.harness.cdng.manifest.yaml.EcsRunTaskRequestDefinitionManifestOutcome
 io.harness.cdng.ecs.EcsRunTaskStepParameters
 io.harness.cdng.ecs.EcsRunTaskStepNode
-io.harness.cdng.provision.azure.ShellScriptProvisionOutcome
+io.harness.cdng.provision.shellscript.ShellScriptProvisionOutcome
 io.harness.cdng.provision.shellscript.ShellScriptProvisionStepInfo
 io.harness.cdng.provision.shellscript.ShellScriptProvisionStepNode
 io.harness.cdng.provision.shellscript.ShellScriptProvisionStepParameters
