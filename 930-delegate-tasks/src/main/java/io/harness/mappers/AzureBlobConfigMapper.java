@@ -1,0 +1,62 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
+package io.harness.mappers;
+
+import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.mappers.SecretManagerConfigMapper.ngMetaDataFromDto;
+
+import io.harness.annotations.dev.OwnedBy;
+import io.harness.ng.core.mapper.TagMapper;
+import io.harness.secretmanagerclient.NGSecretManagerMetadata;
+import io.harness.secretmanagerclient.dto.azureblob.AzureBlobConfigDTO;
+import io.harness.secretmanagerclient.dto.azureblob.AzureBlobConfigUpdateDTO;
+
+import software.wings.beans.AzureBlobConfig;
+
+import java.util.Optional;
+import lombok.experimental.UtilityClass;
+
+@UtilityClass
+@OwnedBy(PL)
+public class AzureBlobConfigMapper {
+  public static AzureBlobConfig fromDTO(AzureBlobConfigDTO azureBlobConfigDTO) {
+    AzureBlobConfig azureBlobConfig = AzureBlobConfig.builder()
+                                          .name(azureBlobConfigDTO.getName())
+                                          .clientId(azureBlobConfigDTO.getClientId())
+                                          .secretKey(azureBlobConfigDTO.getSecretKey())
+                                          .tenantId(azureBlobConfigDTO.getTenantId())
+                                          .containerURL(azureBlobConfigDTO.getContainerURL())
+                                          .azureEnvironmentType(azureBlobConfigDTO.getAzureEnvironmentType())
+                                          .delegateSelectors(azureBlobConfigDTO.getDelegateSelectors())
+                                          .build();
+    azureBlobConfig.setNgMetadata(ngMetaDataFromDto(azureBlobConfigDTO));
+    azureBlobConfig.setAccountId(azureBlobConfigDTO.getAccountIdentifier());
+    azureBlobConfig.setEncryptionType(azureBlobConfigDTO.getEncryptionType());
+    azureBlobConfig.setDefault(azureBlobConfigDTO.isDefault());
+    return azureBlobConfig;
+  }
+
+  public static AzureBlobConfig applyUpdate(AzureBlobConfig blobConfig, AzureBlobConfigUpdateDTO updateDTO) {
+    blobConfig.setClientId(updateDTO.getClientId());
+    blobConfig.setAzureEnvironmentType(updateDTO.getAzureEnvironmentType());
+    blobConfig.setTenantId(updateDTO.getTenantId());
+    blobConfig.setContainerURL(updateDTO.getContainerURL());
+    if (Optional.ofNullable(updateDTO.getSecretKey()).isPresent()) {
+      blobConfig.setSecretKey(updateDTO.getSecretKey());
+    }
+    blobConfig.setDefault(updateDTO.isDefault());
+    blobConfig.setName(updateDTO.getName());
+
+    if (!Optional.ofNullable(blobConfig.getNgMetadata()).isPresent()) {
+      blobConfig.setNgMetadata(NGSecretManagerMetadata.builder().build());
+    }
+    blobConfig.getNgMetadata().setTags(TagMapper.convertToList(updateDTO.getTags()));
+    blobConfig.getNgMetadata().setDescription(updateDTO.getDescription());
+    return blobConfig;
+  }
+}

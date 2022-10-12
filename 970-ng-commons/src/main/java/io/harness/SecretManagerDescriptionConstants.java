@@ -63,4 +63,12 @@ public class SecretManagerDescriptionConstants {
       "This is the authentication token used to connect underlying secret manager.";
   public static final String GOOGLE_SECRET_MANAGER_CREDENTIALS =
       "Reference to the secret containing credentials of IAM service account for Google Secret Manager";
+  public static final String AZURE_CLIENT_ID = "Client/Application ID of the Azure App.";
+  public static final String AZURE_SECRET_KEY =
+      "This is the Harness text secret with the Azure authentication key as its value.";
+  public static final String AZURE_TENANT_ID =
+      "The Azure Active Directory (AAD) directory ID where you created your application.";
+  public static final String AZURE_STORAGE_CONTAINER_URL =
+      "Container URL of the Azure Storage Container where blob is to be stored.";
+  public static final String AZURE_ENV_TYPE = "This specifies the Azure Environment type, which is AZURE by default.";
 }

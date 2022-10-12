@@ -63,6 +63,7 @@ import software.wings.api.terragrunt.TerragruntProvisionInheritPlanElement;
 import software.wings.beans.APMVerificationConfig;
 import software.wings.beans.AppDynamicsConfig;
 import software.wings.beans.AwsSecretsManagerConfig;
+import software.wings.beans.AzureBlobConfig;
 import software.wings.beans.AzureConfig;
 import software.wings.beans.AzureVaultConfig;
 import software.wings.beans.BambooConfig;
@@ -190,6 +191,7 @@ public class DelegateTasksMorphiaRegistrar implements MorphiaRegistrar {
     set.add(NewRelicMetricDataRecord.class);
     set.add(DelegateConnectionResult.class);
     set.add(AwsSecretsManagerConfig.class);
+    set.add(AzureBlobConfig.class);
     set.add(AzureVaultConfig.class);
     set.add(GcpKmsConfig.class);
     set.add(GcpSecretsManagerConfig.class);
@@ -269,6 +271,7 @@ public class DelegateTasksMorphiaRegistrar implements MorphiaRegistrar {
     w.put("service.impl.elk.ElkDataCollectionInfo", ElkDataCollectionInfo.class);
     w.put("service.impl.logz.LogzDataCollectionInfo", LogzDataCollectionInfo.class);
     w.put("beans.AwsSecretsManagerConfig", AwsSecretsManagerConfig.class);
+    w.put("beans.AzureBlobConfig", AzureBlobConfig.class);
     w.put("beans.AzureVaultConfig", AzureVaultConfig.class);
     w.put("beans.GcpKmsConfig", GcpKmsConfig.class);
     w.put("beans.GcpSecretsManagerConfig", GcpSecretsManagerConfig.class);

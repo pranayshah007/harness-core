@@ -29,6 +29,7 @@ import io.harness.connector.entities.embedded.awssecretmanager.AwsSecretManagerC
 import io.harness.connector.entities.embedded.azureartifacts.AzureArtifactsAuthentication;
 import io.harness.connector.entities.embedded.azureartifacts.AzureArtifactsConnector;
 import io.harness.connector.entities.embedded.azureartifacts.AzureArtifactsTokenCredentials;
+import io.harness.connector.entities.embedded.azureblobconnector.AzureBlobConnector;
 import io.harness.connector.entities.embedded.azureconnector.AzureConfig;
 import io.harness.connector.entities.embedded.azureconnector.AzureManagedIdentityCredential;
 import io.harness.connector.entities.embedded.azureconnector.AzureManualCredential;
@@ -122,6 +123,7 @@ public class ConnectorMorphiaClassesRegistrar implements MorphiaRegistrar {
     set.add(AwsKmsConnector.class);
     set.add(AwsSecretManagerConnector.class);
     set.add(AzureKeyVaultConnector.class);
+    set.add(AzureBlobConnector.class);
     set.add(GcpKmsConnector.class);
     set.add(LocalConnector.class);
     set.add(AppDynamicsConnector.class);
