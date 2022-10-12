@@ -11,4 +11,5 @@ public interface PolicyStoreService {
   List<PolicyStore> findByTag(String tag, String accountId);
   PolicyStore listid(String accountId, String uuid);
   List<PolicyStore> findByTagAndResource(String resource, String tag, String accountId);
+  List<PolicyStore> findByStability(String isStablePolicy, String accountId);
 }
