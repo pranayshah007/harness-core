@@ -9,6 +9,7 @@ package io.harness.subscription.services.impl;
 
 import io.harness.ModuleType;
 import io.harness.beans.FeatureName;
+import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnsupportedOperationException;
 import io.harness.licensing.Edition;
@@ -196,6 +197,9 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     subscriptionItems.add(ItemParams.builder().priceId(mauPriceId.getId()).quantity(1L).build());
 
     if (subscriptionDTO.isPremiumSupport()) {
+      if (subscriptionDTO.isMonthly()) {
+        throw new InvalidArgumentsException("Cannot subscribe to premium support with a monthly renewal rate.");
+      }
       val mauSupportPriceId = stripeHelper.getPrice(ModuleType.CF, "MAU_SUPPORT", subscriptionDTO.getEdition(),
           subscriptionDTO.getPaymentFreq(), subscriptionDTO.getNumberOfMau());
 

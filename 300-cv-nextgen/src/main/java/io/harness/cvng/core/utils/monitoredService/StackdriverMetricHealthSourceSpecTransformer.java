@@ -66,7 +66,7 @@ public class StackdriverMetricHealthSourceSpecTransformer
     });
     return StackdriverMetricHealthSourceSpec.builder()
         .metricDefinitions(metricDefinitions)
-        .metricPacks(addMetricPacks(cvConfigs))
+        .metricPacks(addCustomMetricPacks(cvConfigs))
         .connectorRef(cvConfigs.get(0).getConnectorIdentifier())
         .build();
   }

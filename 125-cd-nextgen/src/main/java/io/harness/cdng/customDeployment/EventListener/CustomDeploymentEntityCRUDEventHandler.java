@@ -41,14 +41,16 @@ public class CustomDeploymentEntityCRUDEventHandler {
   @Inject EntitySetupUsageService entitySetupUsageService;
   @Inject InfrastructureEntityService infrastructureEntityService;
   @Inject TemplateResourceClient templateResourceClient;
+  public static final String STABLE_VERSION = "__STABLE__";
   public boolean updateInfraAsObsolete(
       String accountRef, String orgRef, String projectRef, String identifier, String versionLabel) {
     Scope scope =
         Scope.builder().accountIdentifier(accountRef).orgIdentifier(orgRef).projectIdentifier(projectRef).build();
     String entityFQN = getFullyQualifiedIdentifier(accountRef, orgRef, projectRef, identifier) + "/";
-    if (versionLabel != null) {
-      entityFQN = entityFQN + versionLabel + "/";
+    if (versionLabel == null) {
+      versionLabel = STABLE_VERSION;
     }
+    entityFQN = entityFQN + versionLabel + "/";
     List<EntitySetupUsageDTO> entitySetupUsages = entitySetupUsageService.listAllEntityUsagePerReferredEntityScope(
         scope, entityFQN, EntityType.TEMPLATE, EntityType.INFRASTRUCTURE, null, null);
     if (entitySetupUsages.isEmpty()) {
@@ -99,6 +101,9 @@ public class CustomDeploymentEntityCRUDEventHandler {
   }
   public String getTemplateYaml(
       String accountRef, String orgRef, String projectRef, String identifier, String versionLabel) {
+    if (versionLabel.equals(STABLE_VERSION)) {
+      versionLabel = null;
+    }
     TemplateResponseDTO response = NGRestUtils.getResponse(
         templateResourceClient.get(identifier, accountRef, orgRef, projectRef, versionLabel, false));
     return response.getYaml();

@@ -10,7 +10,9 @@ package io.harness.ngmigration.beans;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
+import software.wings.ngmigration.CgBasicInfo;
 import software.wings.ngmigration.NGMigrationEntity;
+import software.wings.ngmigration.NGMigrationEntityType;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -24,8 +26,14 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class DummyNode implements NGMigrationEntity {
   private String name;
+
   @Override
   public String getMigrationEntityName() {
     return name;
+  }
+
+  @Override
+  public CgBasicInfo getCgBasicInfo() {
+    return CgBasicInfo.builder().type(NGMigrationEntityType.DUMMY_HEAD).name(name).build();
   }
 }

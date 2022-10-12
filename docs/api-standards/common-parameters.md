@@ -25,7 +25,7 @@
 | Field Name | Type    | Default | Validation     | Description                                                                                                                                                                                     |
 |------------|---------|---------|----------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | order      | string  | desc    | enum(asc,desc) | Order to sort on                                                                                                                                                                                |
-| sort       | string  | none    |                | The field to sort against. Note: Specify the fields which are to be used for sorting as an enum. |
+| sort       | string  | none    |                | The field to sort against. Note: Specify the fields which are to be used for sorting. Thought should be given to operational overhead of sort fields. |
 | limit      | int     | 30      | min(1)         | Pagination: Number of items to return                                                                                                                                                           |
 | page       | int     | 1       | min(1)         | Pagination page number strategy: Specify the page number within the paginated collection related to the number of items in each page                                                            |
 | after      |         | none    |                | Pagination cursor strategy: Returns items after the given cursor value within sort criteria.                                                                                                    |
@@ -36,20 +36,8 @@
 | tag        | string  | none    |                | Limit to the provided tags                                                                                                                                                                      |
 | recursive  | boolean | false   |                | Expand current scope to include all child scopes within the hierarchy                                                                                                                           |
 
-
-
-## Common Request Headers
-| Header Name  | Type   | Description |
-|--------------|--------|-------------|
-| Harness-Account | string | Account Identifier. This is expected to be picked up from the x-api-key, hence, it is not compulsory to pass this header parameter. |
-
-
 ## Common Response Headers
 
 | Header Name  | Type   | Description |
 |--------------|--------|-------------|
 | X-Request-ID | string | A short random string to corolate a request to a log message within the bounds of an account and relative time. eg urlencoded base64 of 6 bytes |
-
-## Git Experience Parameters
-
-Parameters related to Git Experience must be passed through the Request Body instead of Query Parameters, except in the case of GET calls. Going forward, these will not be picked up directly from thread context, rather, they will be explicitly populated at the Resource Layer.

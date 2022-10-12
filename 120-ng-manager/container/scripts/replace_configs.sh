@@ -93,7 +93,7 @@ if [[ "" != "$MONGO_TRACE_MODE" ]]; then
 fi
 
 if [[ "" != "$MONGO_MAX_OPERATION_TIME_IN_MILLIS" ]]; then
-  export $MONGO_MAX_OPERATION_TIME_IN_MILLIS; yq -i '.mongo.maxOperationTimeInMillis=env(MONGO_MAX_OPERATION_TIME_IN_MILLIS)' $CONFIG_FILE
+  export MONGO_MAX_OPERATION_TIME_IN_MILLIS; yq -i '.mongo.maxOperationTimeInMillis=env(MONGO_MAX_OPERATION_TIME_IN_MILLIS)' $CONFIG_FILE
 fi
 
 if [[ "" != "$MONGO_CONNECT_TIMEOUT" ]]; then

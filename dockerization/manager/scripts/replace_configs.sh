@@ -511,9 +511,12 @@ if [[ "" != "$BACKGROUND_SCHEDULER_CLUSTERED" ]]; then
 fi
 
 if [[ "" != "$ENABLE_CRONS" ]]; then
-  export ENABLE_CRONS; yq -i '.enableIterators=env(ENABLE_CRONS)' $CONFIG_FILE
   export ENABLE_CRONS; yq -i '.backgroundScheduler.enabled=env(ENABLE_CRONS)' $CONFIG_FILE
   export ENABLE_CRONS; yq -i '.serviceScheduler.enabled=env(ENABLE_CRONS)' $CONFIG_FILE
+fi
+
+if [[ "" != "$ENABLE_ITERATORS" ]]; then
+  export ENABLE_ITERATORS; yq -i '.enableIterators=env(ENABLE_ITERATORS)' $CONFIG_FILE
 fi
 
 if [[ "" != "$ALLOW_TRIAL_REGISTRATION" ]]; then

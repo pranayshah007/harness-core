@@ -9,7 +9,6 @@ package io.harness.ngmigration.service.servicev2;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.exception.InvalidRequestException;
 
 import software.wings.api.DeploymentType;
 import software.wings.beans.Service;
@@ -17,7 +16,10 @@ import software.wings.beans.Service;
 @OwnedBy(HarnessTeam.CDC)
 public class ServiceV2Factory {
   private static final ServiceV2Mapper k8sServiceV2Mapper = new K8sServiceV2Mapper();
+  private static final ServiceV2Mapper sshServiceV2Mapper = new SshServiceV2Mapper();
+  private static final ServiceV2Mapper winrmServiceV2Mapper = new WinrmServiceV2Mapper();
   private static final ServiceV2Mapper nativeHelmServiceV2Mapper = new NativeHelmServiceV2Mapper();
+  private static final ServiceV2Mapper unsupportedServiceV2Mapper = new UnsupportedServiceV2Mapper();
 
   public static ServiceV2Mapper getService2Mapper(Service service) {
     if (DeploymentType.KUBERNETES.equals(service.getDeploymentType())) {
@@ -26,7 +28,12 @@ public class ServiceV2Factory {
     if (DeploymentType.HELM.equals(service.getDeploymentType())) {
       return nativeHelmServiceV2Mapper;
     }
-    throw new InvalidRequestException(
-        String.format("Service of deployment type %s supported", service.getDeploymentType()));
+    if (DeploymentType.SSH.equals(service.getDeploymentType())) {
+      return sshServiceV2Mapper;
+    }
+    if (DeploymentType.WINRM.equals(service.getDeploymentType())) {
+      return winrmServiceV2Mapper;
+    }
+    return unsupportedServiceV2Mapper;
   }
 }

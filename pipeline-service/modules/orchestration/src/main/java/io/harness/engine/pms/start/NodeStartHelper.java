@@ -35,7 +35,6 @@ import io.harness.pms.contracts.execution.ExecutionMode;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.start.NodeStartEvent;
 import io.harness.pms.contracts.facilitators.FacilitatorResponseProto;
-import io.harness.pms.data.OrchestrationMap;
 import io.harness.pms.data.stepparameters.PmsStepParameters;
 import io.harness.pms.events.base.PmsEventCategory;
 import io.harness.pms.execution.utils.AmbianceUtils;
@@ -114,7 +113,7 @@ public class NodeStartHelper {
     String nodeExecutionId = AmbianceUtils.obtainCurrentRuntimeId(ambiance);
     return transactionHelper.performTransaction(() -> {
       List<String> timeoutInstanceIds = registerTimeouts(ambiance, planNode.getTimeoutObtainments());
-      resolveInputs(ambiance, planNode.getStepInputs(), planNode.isSkipUnresolvedExpressionsCheck());
+      resolveInputs(ambiance, planNode);
       return nodeExecutionService.updateStatusWithOps(nodeExecutionId, targetStatus, ops -> {
         setUnset(ops, NodeExecutionKeys.timeoutInstanceIds, timeoutInstanceIds);
         updateStartTsInNodeExecution(ops, ambiance);
@@ -156,10 +155,11 @@ public class NodeStartHelper {
     return timeoutInstanceIds;
   }
 
-  private void resolveInputs(Ambiance ambiance, OrchestrationMap stepInputs, boolean skipUnresolvedCheck) {
+  private void resolveInputs(Ambiance ambiance, PlanNode planNode) {
     String nodeExecutionId = AmbianceUtils.obtainCurrentRuntimeId(ambiance);
     log.info("Starting to Resolve step Inputs");
-    Object resolvedInputs = pmsEngineExpressionService.resolve(ambiance, stepInputs, skipUnresolvedCheck);
+    Object resolvedInputs =
+        pmsEngineExpressionService.resolve(ambiance, planNode.getStepInputs(), planNode.getExpressionMode());
     PmsStepParameters parameterInputs =
         PmsStepParameters.parse(OrchestrationMapBackwardCompatibilityUtils.extractToOrchestrationMap(resolvedInputs));
     pmsGraphStepDetailsService.addStepInputs(nodeExecutionId, ambiance.getPlanExecutionId(), parameterInputs);

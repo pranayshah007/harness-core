@@ -76,6 +76,10 @@ RUN INSTALL_PKGS="autoconf \
   rpm -V $INSTALL_PKGS && \
   yum -y clean all --enablerepo='*'
 
+RUN npm i -d minimist@1.2.6 json-schema@0.4.0 y18n@5.0.5 ssri@8.0.1 tar@6.1.9 path-parse@1.0.7 ansi-regex@4.1.1 got@12.1.0 hosted-git-info@3.0.8 && \
+    curl -sL https://rpm.nodesource.com/setup_current.x | bash - && \
+    yum remove -y nodejs npm && \
+    yum install -y nodejs
 
 RUN INSTALL_PKGS="python38 python38-devel python38-setuptools python38-pip nss_wrapper \
         httpd httpd-devel mod_ssl mod_auth_gssapi mod_ldap \
@@ -96,5 +100,6 @@ RUN INSTALL_PKGS="python38 python38-devel python38-setuptools python38-pip nss_w
     pip uninstall -y pip-upgrade-outdated && \
     rm -rf ~/.cache/pip/selfcheck/* && \
     rm -rf ~/.cache/pip/http/*
+
 
 USER 65534

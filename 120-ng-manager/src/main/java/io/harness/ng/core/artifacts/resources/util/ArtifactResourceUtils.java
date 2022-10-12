@@ -16,6 +16,7 @@ import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.artifact.bean.ArtifactConfig;
+import io.harness.cdng.visitor.YamlTypes;
 import io.harness.common.NGExpressionUtils;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.evaluators.CDYamlExpressionEvaluator;
@@ -43,6 +44,7 @@ import io.harness.template.yaml.TemplateRefHelper;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.databind.node.TextNode;
 import com.google.inject.Inject;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -138,8 +140,9 @@ public class ArtifactResourceUtils {
     for (Map.Entry<FQN, Object> mapEntry : fqnToObjectMap.entrySet()) {
       String nodeStageIdentifier = mapEntry.getKey().getStageIdentifier();
       String fieldName = mapEntry.getKey().getFieldName();
-      if (stageIdentifier.equals(nodeStageIdentifier) && "serviceRef".equals(fieldName)) {
-        return mapEntry.getValue().toString();
+      if (stageIdentifier.equals(nodeStageIdentifier) && YamlTypes.SERVICE_REF.equals(fieldName)
+          && mapEntry.getValue() instanceof TextNode) {
+        return ((TextNode) mapEntry.getValue()).asText();
       }
     }
     return null;
@@ -157,8 +160,9 @@ public class ArtifactResourceUtils {
     for (Map.Entry<FQN, Object> mapEntry : fqnToObjectMap.entrySet()) {
       String nodeStageIdentifier = mapEntry.getKey().getStageIdentifier();
       String fieldName = mapEntry.getKey().getFieldName();
-      if (stageIdentifier.equals(nodeStageIdentifier) && "environmentRef".equals(fieldName)) {
-        return mapEntry.getValue().toString();
+      if (stageIdentifier.equals(nodeStageIdentifier) && YamlTypes.ENVIRONMENT_REF.equals(fieldName)
+          && mapEntry.getValue() instanceof TextNode) {
+        return ((TextNode) mapEntry.getValue()).asText();
       }
     }
     return null;

@@ -27,6 +27,7 @@ message PollingPayloadData {
     GitPollingPayload gitPollPayload = 14;
     GARPayload garPayload = 15;
     GithubPackagesPollingPayload githubPackagesPollingPayload = 16;
+    CustomPayload customPayload = 17;
   }
 }
 
@@ -46,6 +47,7 @@ enum Type {
   GIT_POLL = 12;
   GOOGLE_ARTIFACT_REGISTRY = 13;
   GITHUB_PACKAGES = 14;
+  CUSTOM_ARTIFACT = 15;
 }
 
 message HttpHelmPayload {
@@ -124,6 +126,13 @@ message GitPollingPayload {
   string webhookId = 2;
   int32 pollInterval = 3;
 }
+
+message CustomPayload {
+  string script = 1;
+  string artifactsArrayPath = 2;
+  string versionPath = 3;
+}
+
 message GARPayload {
   string region = 1;
   string project = 2;

@@ -12,7 +12,6 @@ freeze:
       recurrence:
         spec:
           until: "2022-09-29T20:00"
-          count: 1
         type: "Daily"
   entityConfigs:
     - name: "rule1"

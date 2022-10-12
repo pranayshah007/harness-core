@@ -16,6 +16,7 @@ import io.harness.exception.InvalidYamlException;
 import io.harness.exception.YamlException;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
+import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.merger.YamlConfig;
 import io.harness.walktree.beans.VisitableChildren;
 import io.harness.walktree.visitor.Visitable;
@@ -50,6 +51,7 @@ public class YamlNode implements Visitable {
   public static final String NAME_FIELD_NAME = "name";
   public static final String KEY_FIELD_NAME = "key";
   public static final String TEMPLATE_FIELD_NAME = "template";
+  public static final String STRATEGY_IDENTIFIER_POSTFIX_ESCAPED = "<\\+strategy.identifierPostFix>";
 
   public static final String PATH_SEP = "/";
 
@@ -449,7 +451,10 @@ public class YamlNode implements Visitable {
       throw new InvalidYamlException("Yaml could not be converted to YamlNode. Please check if the yaml is correct.");
     }
     for (Level level : ambiance.getLevelsList()) {
-      String nodeId = level.getOriginalIdentifier();
+      if (level.getStepType().getStepCategory() == StepCategory.STRATEGY) {
+        continue;
+      }
+      String nodeId = level.getOriginalIdentifier().replaceAll(STRATEGY_IDENTIFIER_POSTFIX_ESCAPED, "");
       if (currentNode.isArray()) {
         for (YamlNode yamlNode : currentNode.asArray()) {
           // Checking the immediate element if it matches the nodeId. If matches then replace the currentYamlNode with

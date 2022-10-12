@@ -257,10 +257,10 @@
         <property name="message" value="Do not static import for constants from FieldNameConstants"/>
     </module>
 
-    <module name="RegexpSingleline">
-        <property name="format" value="[Ww]orkFlow"/>
-        <property name="message" value="Workflow is a single word"/>
-    </module>
+<!--    <module name="RegexpSingleline">-->
+<!--        <property name="format" value="[Ww]orkFlow"/>-->
+<!--        <property name="message" value="Workflow is a single word"/>-->
+<!--    </module>-->
 
     <module name="RegexpSingleline">
         <property name="format" value="[Oo]ffSet"/>

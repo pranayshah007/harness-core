@@ -8,6 +8,7 @@
 package io.harness.ngmigration.service.entity;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.encryption.Scope.PROJECT;
 
 import static software.wings.ngmigration.NGMigrationEntityType.ARTIFACT_STREAM;
 import static software.wings.ngmigration.NGMigrationEntityType.MANIFEST;
@@ -22,17 +23,17 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.MigratedEntityMapping;
 import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
 import io.harness.cdng.service.beans.ServiceConfig;
+import io.harness.cdng.service.beans.ServiceDefinition;
 import io.harness.data.structure.EmptyPredicate;
-import io.harness.encryption.Scope;
 import io.harness.gitsync.beans.YamlDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.service.dto.ServiceRequestDTO;
 import io.harness.ng.core.service.dto.ServiceResponse;
+import io.harness.ng.core.service.dto.ServiceResponseDTO;
 import io.harness.ng.core.service.yaml.NGServiceConfig;
 import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
 import io.harness.ngmigration.beans.BaseEntityInput;
 import io.harness.ngmigration.beans.BaseInputDefinition;
-import io.harness.ngmigration.beans.BaseProvidedInput;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.MigratorInputType;
 import io.harness.ngmigration.beans.NGYamlFile;
@@ -41,13 +42,18 @@ import io.harness.ngmigration.beans.summary.BaseSummary;
 import io.harness.ngmigration.beans.summary.ServiceSummary;
 import io.harness.ngmigration.client.NGClient;
 import io.harness.ngmigration.client.PmsClient;
+import io.harness.ngmigration.dto.ImportError;
+import io.harness.ngmigration.dto.MigrationImportSummaryDTO;
 import io.harness.ngmigration.expressions.MigratorExpressionUtils;
 import io.harness.ngmigration.service.MigratorMappingService;
 import io.harness.ngmigration.service.MigratorUtility;
 import io.harness.ngmigration.service.NgMigrationService;
 import io.harness.ngmigration.service.servicev2.ServiceV2Factory;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.serializer.JsonUtils;
+import io.harness.service.remote.ServiceResourceClient;
+import io.harness.utils.YamlPipelineUtils;
 
 import software.wings.api.DeploymentType;
 import software.wings.beans.Service;
@@ -76,7 +82,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import retrofit2.Response;
 
 @OwnedBy(HarnessTeam.CDC)
@@ -87,6 +92,7 @@ public class ServiceMigrationService extends NgMigrationService {
   @Inject private ManifestMigrationService manifestMigrationService;
   @Inject private MigratorExpressionUtils migratorExpressionUtils;
   @Inject private ApplicationManifestService applicationManifestService;
+  @Inject private ServiceResourceClient serviceResourceClient;
 
   @Override
   public MigratedEntityMapping generateMappingEntity(NGYamlFile yamlFile) {
@@ -133,8 +139,13 @@ public class ServiceMigrationService extends NgMigrationService {
     Service service = (Service) entity;
     String serviceId = service.getUuid();
     CgEntityId serviceEntityId = CgEntityId.builder().type(SERVICE).id(serviceId).build();
-    CgEntityNode serviceEntityNode =
-        CgEntityNode.builder().id(serviceId).type(SERVICE).entityId(serviceEntityId).entity(service).build();
+    CgEntityNode serviceEntityNode = CgEntityNode.builder()
+                                         .id(serviceId)
+                                         .type(SERVICE)
+                                         .appId(service.getAppId())
+                                         .entityId(serviceEntityId)
+                                         .entity(service)
+                                         .build();
     List<ArtifactStream> artifactStreams =
         artifactStreamService.getArtifactStreamsForService(service.getAppId(), serviceId);
     List<ApplicationManifest> applicationManifests =
@@ -196,22 +207,30 @@ public class ServiceMigrationService extends NgMigrationService {
   }
 
   @Override
-  public void migrate(String auth, NGClient ngClient, PmsClient pmsClient, MigrationInputDTO inputDTO,
-      NGYamlFile yamlFile) throws IOException {
-    if (!yamlFile.isExists()) {
-      ServiceRequestDTO serviceRequestDTO =
-          ServiceRequestDTO.builder()
-              .description(null)
-              .identifier(yamlFile.getNgEntityDetail().getIdentifier())
-              .name(((NGServiceConfig) yamlFile.getYaml()).getNgServiceV2InfoConfig().getName())
-              .orgIdentifier(yamlFile.getNgEntityDetail().getOrgIdentifier())
-              .projectIdentifier(yamlFile.getNgEntityDetail().getProjectIdentifier())
-              .yaml(getYamlString(yamlFile))
-              .build();
-      Response<ResponseDTO<ServiceResponse>> resp =
-          ngClient.createService(auth, inputDTO.getAccountIdentifier(), JsonUtils.asTree(serviceRequestDTO)).execute();
-      log.info("Service creation Response details {} {}", resp.code(), resp.message());
+  public MigrationImportSummaryDTO migrate(String auth, NGClient ngClient, PmsClient pmsClient,
+      MigrationInputDTO inputDTO, NGYamlFile yamlFile) throws IOException {
+    if (yamlFile.isExists()) {
+      log.info("Skipping creation of service as it already exists");
+      return MigrationImportSummaryDTO.builder()
+          .errors(Collections.singletonList(ImportError.builder()
+                                                .message("Service was not migrated as it was already imported before")
+                                                .entity(yamlFile.getCgBasicInfo())
+                                                .build()))
+          .build();
     }
+    ServiceRequestDTO serviceRequestDTO =
+        ServiceRequestDTO.builder()
+            .description(null)
+            .identifier(yamlFile.getNgEntityDetail().getIdentifier())
+            .name(((NGServiceConfig) yamlFile.getYaml()).getNgServiceV2InfoConfig().getName())
+            .orgIdentifier(yamlFile.getNgEntityDetail().getOrgIdentifier())
+            .projectIdentifier(yamlFile.getNgEntityDetail().getProjectIdentifier())
+            .yaml(getYamlString(yamlFile))
+            .build();
+    Response<ResponseDTO<ServiceResponse>> resp =
+        ngClient.createService(auth, inputDTO.getAccountIdentifier(), JsonUtils.asTree(serviceRequestDTO)).execute();
+    log.info("Service creation Response details {} {}", resp.code(), resp.message());
+    return handleResp(yamlFile, resp);
   }
 
   @Override
@@ -219,15 +238,10 @@ public class ServiceMigrationService extends NgMigrationService {
       Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities,
       NgEntityDetail ngEntityDetail) {
     Service service = (Service) entities.get(entityId).getEntity();
-    String name = service.getName();
-    String identifier = MigratorUtility.generateIdentifier(name);
-
-    if (inputDTO.getInputs() != null && inputDTO.getInputs().containsKey(entityId)) {
-      // TODO: @deepakputhraya We should handle if the service needs to be reused.
-      BaseProvidedInput input = inputDTO.getInputs().get(entityId);
-      identifier = StringUtils.isNotBlank(input.getIdentifier()) ? input.getIdentifier() : identifier;
-      name = StringUtils.isNotBlank(input.getIdentifier()) ? input.getName() : name;
-    }
+    String name = MigratorUtility.generateName(inputDTO.getOverrides(), entityId, service.getName());
+    String identifier = MigratorUtility.generateIdentifierDefaultName(inputDTO.getOverrides(), entityId, name);
+    String projectIdentifier = MigratorUtility.getProjectIdentifier(PROJECT, inputDTO);
+    String orgIdentifier = MigratorUtility.getOrgIdentifier(PROJECT, inputDTO);
 
     migratorExpressionUtils.render(service);
     Set<CgEntityId> manifests =
@@ -235,35 +249,33 @@ public class ServiceMigrationService extends NgMigrationService {
     List<ManifestConfigWrapper> manifestConfigWrapperList =
         manifestMigrationService.getManifests(manifests, inputDTO, entities, graph, migratedEntities);
 
-    NGServiceConfig serviceYaml =
-        NGServiceConfig.builder()
-            .ngServiceV2InfoConfig(
-                NGServiceV2InfoConfig.builder()
-                    .name(name)
-                    .description(service.getDescription())
-                    .gitOpsEnabled(false)
-                    .identifier(identifier)
-                    .tags(new HashMap<>())
-                    .useFromStage(null)
-                    .serviceDefinition(ServiceV2Factory.getService2Mapper(service).getServiceDefinition(
-                        inputDTO, entities, graph, service, migratedEntities, manifestConfigWrapperList))
-                    .build())
-            .build();
+    ServiceDefinition serviceDefinition = ServiceV2Factory.getService2Mapper(service).getServiceDefinition(
+        inputDTO, entities, graph, service, migratedEntities, manifestConfigWrapperList);
+    if (serviceDefinition == null) {
+      return Collections.emptyList();
+    }
+
+    NGServiceConfig serviceYaml = NGServiceConfig.builder()
+                                      .ngServiceV2InfoConfig(NGServiceV2InfoConfig.builder()
+                                                                 .name(name)
+                                                                 .description(service.getDescription())
+                                                                 .gitOpsEnabled(false)
+                                                                 .identifier(identifier)
+                                                                 .tags(new HashMap<>())
+                                                                 .useFromStage(null)
+                                                                 .serviceDefinition(serviceDefinition)
+                                                                 .build())
+                                      .build();
     NGYamlFile ngYamlFile = NGYamlFile.builder()
                                 .filename(String.format("service/%s/%s.yaml", service.getAppId(), service.getName()))
                                 .yaml(serviceYaml)
                                 .type(SERVICE)
                                 .ngEntityDetail(NgEntityDetail.builder()
                                                     .identifier(identifier)
-                                                    .orgIdentifier(inputDTO.getOrgIdentifier())
-                                                    .projectIdentifier(inputDTO.getProjectIdentifier())
+                                                    .orgIdentifier(orgIdentifier)
+                                                    .projectIdentifier(projectIdentifier)
                                                     .build())
-                                .cgBasicInfo(CgBasicInfo.builder()
-                                                 .accountId(service.getAccountId())
-                                                 .appId(service.getAppId())
-                                                 .id(service.getUuid())
-                                                 .type(SERVICE)
-                                                 .build())
+                                .cgBasicInfo(service.getCgBasicInfo())
                                 .build();
     migratedEntities.putIfAbsent(entityId, ngYamlFile);
     return Collections.singletonList(ngYamlFile);
@@ -271,7 +283,19 @@ public class ServiceMigrationService extends NgMigrationService {
 
   @Override
   protected YamlDTO getNGEntity(NgEntityDetail ngEntityDetail, String accountIdentifier) {
-    return null;
+    try {
+      ServiceResponse response =
+          NGRestUtils.getResponse(serviceResourceClient.getService(ngEntityDetail.getIdentifier(), accountIdentifier,
+              ngEntityDetail.getOrgIdentifier(), ngEntityDetail.getProjectIdentifier()));
+      if (response == null || response.getService() == null) {
+        return null;
+      }
+      ServiceResponseDTO responseDTO = response.getService();
+      return YamlPipelineUtils.read(responseDTO.getYaml(), NGServiceConfig.class);
+    } catch (Exception ex) {
+      log.error("Error when getting service - ", ex);
+      return null;
+    }
   }
 
   @Override
@@ -287,7 +311,7 @@ public class ServiceMigrationService extends NgMigrationService {
         .migrationStatus(MigratorInputType.CREATE_NEW)
         .identifier(BaseInputDefinition.buildIdentifier(MigratorUtility.generateIdentifier(service.getName())))
         .name(BaseInputDefinition.buildName(service.getName()))
-        .scope(BaseInputDefinition.buildScope(Scope.PROJECT))
+        .scope(BaseInputDefinition.buildScope(PROJECT))
         .spec(null)
         .build();
   }
