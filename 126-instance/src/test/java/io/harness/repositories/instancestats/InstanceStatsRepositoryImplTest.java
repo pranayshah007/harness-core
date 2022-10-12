@@ -8,6 +8,7 @@
 package io.harness.repositories.instancestats;
 
 import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
+import static io.harness.rule.OwnerRule.VIKYATH_HAREKAL;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
@@ -30,6 +31,8 @@ import org.mockito.Mock;
 
 public class InstanceStatsRepositoryImplTest extends InstancesTestBase {
   private final String ACCOUNT_ID = "acc";
+  private final String ORG_ID = "org";
+  private final String PROJECT_ID = "proj";
   private final String SERVICE_ID = "service";
   private final String ENVIRONMENT_ID = "envID";
   private final Timestamp timestamp = new Timestamp(1234l);
@@ -46,6 +49,9 @@ public class InstanceStatsRepositoryImplTest extends InstancesTestBase {
     when(timeScaleDBService.getDBConnection()).thenReturn(dbConnection);
     when(dbConnection.prepareStatement(InstanceStatsQuery.FETCH_LATEST_RECORD.query())).thenReturn(statement);
     statement.setString(1, ACCOUNT_ID);
+    statement.setString(2, ORG_ID);
+    statement.setString(3, PROJECT_ID);
+    statement.setString(4, SERVICE_ID);
     when(statement.executeQuery()).thenReturn(resultSet);
     when(resultSet.next()).thenReturn(true);
     when(resultSet.getString(io.harness.repositories.instancestats.InstanceStatsFields.ACCOUNTID.fieldName()))
@@ -55,10 +61,51 @@ public class InstanceStatsRepositoryImplTest extends InstancesTestBase {
     when(resultSet.getString(io.harness.repositories.instancestats.InstanceStatsFields.SERVICEID.fieldName()))
         .thenReturn(SERVICE_ID);
     when(resultSet.getTimestamp(InstanceStatsFields.REPORTEDAT.fieldName())).thenReturn(timestamp);
-    InstanceStats instanceStats = instanceStatsRepository.getLatestRecord(ACCOUNT_ID);
+    InstanceStats instanceStats = instanceStatsRepository.getLatestRecord(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID);
     assertThat(instanceStats.getAccountId()).isEqualTo(ACCOUNT_ID);
     assertThat(instanceStats.getEnvId()).isEqualTo(ENVIRONMENT_ID);
     assertThat(instanceStats.getServiceId()).isEqualTo(SERVICE_ID);
     assertThat(instanceStats.getReportedAt()).isEqualTo(timestamp);
+  }
+
+  @Test
+  @Owner(developers = VIKYATH_HAREKAL)
+  @Category(UnitTests.class)
+  public void getLatestRecordTestShouldPassOnRetry() throws SQLException {
+    when(timeScaleDBService.getDBConnection()).thenReturn(dbConnection);
+    when(dbConnection.prepareStatement(InstanceStatsQuery.FETCH_LATEST_RECORD.query())).thenReturn(statement);
+    statement.setString(1, ACCOUNT_ID);
+    statement.setString(2, ORG_ID);
+    statement.setString(3, PROJECT_ID);
+    statement.setString(4, SERVICE_ID);
+    when(statement.executeQuery()).thenThrow(new SQLException()).thenReturn(resultSet);
+    when(resultSet.next()).thenReturn(true);
+    when(resultSet.getString(io.harness.repositories.instancestats.InstanceStatsFields.ACCOUNTID.fieldName()))
+        .thenReturn(ACCOUNT_ID);
+    when(resultSet.getString(io.harness.repositories.instancestats.InstanceStatsFields.ENVID.fieldName()))
+        .thenReturn(ENVIRONMENT_ID);
+    when(resultSet.getString(io.harness.repositories.instancestats.InstanceStatsFields.SERVICEID.fieldName()))
+        .thenReturn(SERVICE_ID);
+    when(resultSet.getTimestamp(InstanceStatsFields.REPORTEDAT.fieldName())).thenReturn(timestamp);
+    InstanceStats instanceStats = instanceStatsRepository.getLatestRecord(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID);
+    assertThat(instanceStats.getAccountId()).isEqualTo(ACCOUNT_ID);
+    assertThat(instanceStats.getEnvId()).isEqualTo(ENVIRONMENT_ID);
+    assertThat(instanceStats.getServiceId()).isEqualTo(SERVICE_ID);
+    assertThat(instanceStats.getReportedAt()).isEqualTo(timestamp);
+  }
+
+  @Test
+  @Owner(developers = VIKYATH_HAREKAL)
+  @Category(UnitTests.class)
+  public void getLatestRecordTestShouldFailAfterAllRetries() throws SQLException {
+    when(timeScaleDBService.getDBConnection()).thenReturn(dbConnection);
+    when(dbConnection.prepareStatement(InstanceStatsQuery.FETCH_LATEST_RECORD.query())).thenReturn(statement);
+    statement.setString(1, ACCOUNT_ID);
+    statement.setString(2, ORG_ID);
+    statement.setString(3, PROJECT_ID);
+    statement.setString(4, SERVICE_ID);
+    when(statement.executeQuery()).thenThrow(new SQLException());
+    InstanceStats instanceStats = instanceStatsRepository.getLatestRecord(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID);
+    assertThat(instanceStats).isNull();
   }
 }

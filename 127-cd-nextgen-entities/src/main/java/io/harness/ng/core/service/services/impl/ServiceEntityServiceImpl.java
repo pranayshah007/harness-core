@@ -435,6 +435,13 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
   }
 
   @Override
+  public List<ServiceEntity> getNonDeletedServices(String accountIdentifier) {
+    Criteria criteria =
+        Criteria.where(ServiceEntityKeys.accountId).is(accountIdentifier).and(ServiceEntityKeys.deleted).is(false);
+    return serviceRepository.findAll(criteria);
+  }
+
+  @Override
   public boolean isServiceField(String fieldName, JsonNode serviceValue) {
     return YamlTypes.SERVICE_ENTITY.equals(fieldName) && serviceValue.isObject()
         && serviceValue.get(YamlTypes.SERVICE_REF) != null;
