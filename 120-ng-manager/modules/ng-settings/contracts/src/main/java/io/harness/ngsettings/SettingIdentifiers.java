@@ -7,4 +7,6 @@
 
 package io.harness.ngsettings;
 
-public class SettingIdentifier {}
+public class SettingIdentifiers {
+  public static String DISABLE_HARNESS_BUILT_IN_SECRET_MANAGER = "disable_harness_built_in_secret_manager";
+}

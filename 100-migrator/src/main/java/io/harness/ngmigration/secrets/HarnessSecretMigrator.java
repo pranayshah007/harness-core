@@ -7,11 +7,15 @@
 
 package io.harness.ngmigration.secrets;
 
+import static io.harness.secretmanagerclient.SecretType.SecretText;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EncryptedData;
 import io.harness.beans.SecretManagerConfig;
 import io.harness.exception.SecretManagementException;
+import io.harness.ng.core.dto.secrets.SecretDTOV2;
+import io.harness.ng.core.dto.secrets.SecretDTOV2.SecretDTOV2Builder;
 import io.harness.ng.core.dto.secrets.SecretTextSpecDTO;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
@@ -31,7 +35,7 @@ public class HarnessSecretMigrator implements SecretMigrator {
   @Inject private SecretService secretService;
 
   @Override
-  public SecretTextSpecDTO getSecretSpec(
+  public SecretDTOV2Builder getSecretDTOBuilder(
       EncryptedData encryptedData, SecretManagerConfig vaultConfig, String secretManagerIdentifier) {
     String value = "PLACE_HOLDER_SECRET";
     try {
@@ -39,11 +43,13 @@ public class HarnessSecretMigrator implements SecretMigrator {
     } catch (SecretManagementException e) {
       log.warn("There was an error with fetching actual secret value", e);
     }
-    return SecretTextSpecDTO.builder()
-        .valueType(ValueType.Inline)
-        .value(value)
-        .secretManagerIdentifier(secretManagerIdentifier)
-        .build();
+    return SecretDTOV2.builder()
+        .type(SecretText)
+        .spec(SecretTextSpecDTO.builder()
+                  .valueType(ValueType.Inline)
+                  .value(value)
+                  .secretManagerIdentifier(secretManagerIdentifier)
+                  .build());
   }
 
   @Override
