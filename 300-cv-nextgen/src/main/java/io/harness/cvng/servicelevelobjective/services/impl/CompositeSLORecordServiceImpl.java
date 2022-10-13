@@ -334,7 +334,8 @@ public class CompositeSLORecordServiceImpl implements CompositeSLORecordService 
         .get();
   }
 
-  private CompositeSLORecord getLatestCompositeSLORecord(String sloId) {
+  @Override
+  public CompositeSLORecord getLatestCompositeSLORecord(String sloId) {
     return hPersistence.createQuery(CompositeSLORecord.class, excludeAuthorityCount)
         .filter(CompositeSLORecordKeys.sloId, sloId)
         .order(Sort.descending(CompositeSLORecordKeys.timestamp))
