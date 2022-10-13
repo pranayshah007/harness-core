@@ -635,6 +635,7 @@ public class NgUserServiceImpl implements NgUserService {
                                     .externallyManaged(userInfo.isExternallyManaged())
                                     .build();
     try {
+      log.info("NG User Invite: saving to userMetadata");
       userMetadataRepository.save(userMetadata);
     } catch (DuplicateKeyException e) {
       log.info(
@@ -668,6 +669,7 @@ public class NgUserServiceImpl implements NgUserService {
     Failsafe.with(transactionRetryPolicy).get(() -> {
       UserMembership userMembership = null;
       try {
+        log.info("NG User Invite: saved user to userMembershipV2");
         userMembership = userMembershipRepository.save(UserMembership.builder().userId(userId).scope(scope).build());
       } catch (DuplicateKeyException e) {
         //  This is benign. Move on.

@@ -68,6 +68,7 @@ import io.harness.notification.Team;
 import io.harness.notification.channeldetails.EmailChannel;
 import io.harness.notification.channeldetails.EmailChannel.EmailChannelBuilder;
 import io.harness.notification.notificationclient.NotificationClient;
+import io.harness.notification.notificationclient.NotificationResult;
 import io.harness.outbox.api.OutboxService;
 import io.harness.remote.client.CGRestUtils;
 import io.harness.repositories.invites.spring.InviteRepository;
@@ -360,6 +361,7 @@ public class InviteServiceImpl implements InviteService {
       String accountIdentifier, String jwtToken, String email, boolean isScimInvite) {
     UserInviteDTO userInviteDTO =
         UserInviteDTO.builder().accountId(accountIdentifier).email(email).name(email).token(jwtToken).build();
+    log.info("NG User Invite: calling using userClient to createUserAndCompleteNGInvite");
     CGRestUtils.getResponse(userClient.createUserAndCompleteNGInvite(userInviteDTO, isScimInvite));
   }
 
@@ -599,6 +601,7 @@ public class InviteServiceImpl implements InviteService {
       boolean isAutoInviteAcceptanceEnabled) throws URISyntaxException, UnsupportedEncodingException {
     updateJWTTokenInInvite(invite);
     if (isPLNoEmailForSamlAccountInvitesEnabled && isSSOEnabled) {
+      log.info("NG User Invite: both isPLNoEmailForSamlAccountInvitesEnabled and isSSOEnabled is enabled");
       return;
     }
     String url = isNgAuthUIEnabled ? getAcceptInviteUrl(invite) : getInvitationMailEmbedUrl(invite);
@@ -608,6 +611,7 @@ public class InviteServiceImpl implements InviteService {
                                                   .team(Team.PL)
                                                   .userGroups(Collections.emptyList());
     if (isAutoInviteAcceptanceEnabled && isSSOEnabled) {
+      log.info("NG User Invite: both isAutoInviteAcceptanceEnabled and isSSOEnabled is enabled");
       emailChannelBuilder.templateId(EMAIL_NOTIFY_TEMPLATE_ID);
     } else {
       emailChannelBuilder.templateId(EMAIL_INVITE_TEMPLATE_ID);
@@ -625,7 +629,9 @@ public class InviteServiceImpl implements InviteService {
       templateData.put("accountname", accountOrgProjectHelper.getAccountName(invite.getAccountIdentifier()));
     }
     emailChannelBuilder.templateData(templateData);
-    notificationClient.sendNotificationAsync(emailChannelBuilder.build());
+    NotificationResult notificationResult = notificationClient.sendNotificationAsync(emailChannelBuilder.build());
+    log.info("NG User Invite: send notification is successful for notificationId {} and templateId {}",
+        notificationResult.getNotificationId(), emailChannelBuilder.build().getTemplateId());
   }
 
   private void ngAuditUserInviteCreateEvent(Invite invite) {
@@ -689,10 +695,12 @@ public class InviteServiceImpl implements InviteService {
                       .projectIdentifier(invite.getProjectIdentifier())
                       .build();
 
+    log.info("NG User Invite: adding user to scope");
     ngUserService.addUserToScope(
         user.getUuid(), scope, invite.getRoleBindings(), invite.getUserGroups(), ACCEPTED_INVITE);
     // Adding user to the account for sign in flow to work
     ngUserService.addUserToCG(user.getUuid(), scope);
+    log.info("NG User Invite: marking invite as approved and deleted");
     markInviteApprovedAndDeleted(invite);
     // telemetry for adding user to an account
     sendInviteAcceptTelemetryEvents(user, invite);

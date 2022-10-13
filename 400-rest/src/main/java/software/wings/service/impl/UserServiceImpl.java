@@ -1983,14 +1983,22 @@ public class UserServiceImpl implements UserService {
       user.setPasswordHash(hashpw(userInvite.getPassword(), BCrypt.gensalt()));
     }
     user = createUser(user, accountId);
+    log.info("NG User invite: user successfully created in CG");
     user = checkIfTwoFactorAuthenticationIsEnabledForAccount(user, account);
     if (user.isTwoFactorAuthenticationEnabled()) {
       totpAuthHandler.sendTwoFactorAuthenticationResetEmail(user);
     }
     // Empty user group list because this user invite is from NG and the method adds user to CG user groups
+    log.info("NG User invite: moving user's list of pending accounts to accounts");
     moveAccountFromPendingToConfirmed(user, account, Collections.emptyList(), true);
+    log.info("NG User invite: successfully moved user's list of pending accounts to accounts");
     eventPublishHelper.publishUserRegistrationCompletionEvent(userInvite.getAccountId(), user);
-    NGRestUtils.getResponse(ngInviteClient.completeInvite(userInvite.getToken()));
+    try {
+      log.info("NG User Invite: calling ngInviteClient.completeInvite()");
+      NGRestUtils.getResponse(ngInviteClient.completeInvite(userInvite.getToken()));
+    } catch (Exception ex) {
+      log.error("NG User Invite: while calling ngInviteClient.completeInvite() an expection: ", ex);
+    }
   }
 
   private boolean validateNgInvite(UserInviteDTO userInvite) {
@@ -3965,6 +3973,7 @@ public class UserServiceImpl implements UserService {
   private void moveAccountFromPendingToConfirmed(
       User existingUser, Account invitationAccount, List<UserGroup> userGroups, boolean markEmailVerified) {
     addUserToUserGroups(invitationAccount.getUuid(), existingUser, userGroups, false, false);
+    log.info("NG User Invite: user added to user groups");
     String invitationAccountId = invitationAccount.getUuid();
     List<Account> newAccountsList = new ArrayList<>(existingUser.getAccounts());
     if (newAccountsList.stream().map(Account::getUuid).noneMatch(invitationAccountId::equals)) {
