@@ -13,8 +13,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anySet;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doCallRealMethod;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
@@ -130,7 +132,7 @@ public class InfrastructureTaskExecutableStepV2Test extends CategoryTest {
   @Mock private InfrastructureMapper infrastructureMapper;
   @Mock InfrastructureValidator infrastructureValidator;
   @Mock private InfrastructureStepHelper infrastructureStepHelper;
-  @Mock private CDStepHelper cdStepHelper;
+  @Mock private CDStepHelper cdStepHelper = Mockito.spy(CDStepHelper.class);
   @Mock private StepHelper stepHelper;
   @Mock private StageExecutionHelper stageExecutionHelper;
   @Mock private EntityReferenceExtractorUtils entityReferenceExtractorUtils;
@@ -175,6 +177,8 @@ public class InfrastructureTaskExecutableStepV2Test extends CategoryTest {
         .thenAnswer(invocationOnMock -> invocationOnMock.getArgument(3, Set.class));
 
     Mockito.doReturn("taskId").when(delegateGrpcClientWrapper).submitAsyncTask(any(), any());
+
+    doCallRealMethod().when(cdStepHelper).mapTaskRequestToDelegateTaskRequest(any(), any(), anySet());
   }
 
   @After
