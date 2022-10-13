@@ -5,13 +5,14 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.cdng.customDeployment.EventListener;
+package io.harness.cdng.customDeployment.eventlistener;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ACTION;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.CREATE_ACTION;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.DELETE_ACTION;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ENTITY_TYPE;
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.TEMPLATE_ENTITY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.UPDATE_ACTION;
 
 import static software.wings.beans.AccountType.log;
@@ -39,19 +40,18 @@ public class CustomDeploymentEntityCRUDStreamEventListener implements MessageLis
   public boolean handleMessage(Message message) {
     if (message != null && message.hasMessage()) {
       Map<String, String> metadataMap = message.getMessage().getMetadataMap();
-      if (metadataMap != null && metadataMap.get(ENTITY_TYPE) != null) {
-        processChangeEvent(message);
+      if (metadataMap.get(ENTITY_TYPE) != null) {
+        return processChangeEvent(message);
       }
     }
     return true;
   }
 
   private boolean processChangeEvent(Message message) {
-    if (message != null && message.hasMessage() && message.getMessage().getMetadataMap() != null
-        && message.getMessage().getMetadataMap().containsKey(ENTITY_TYPE)) {
+    if (message != null && message.hasMessage() && message.getMessage().getMetadataMap().containsKey(ENTITY_TYPE)) {
       final Map<String, String> metadata = message.getMessage().getMetadataMap();
       final String entityType = metadata.get(ENTITY_TYPE);
-      if (Objects.equals(entityType, "TEMPLATE")) {
+      if (Objects.equals(entityType, TEMPLATE_ENTITY.toUpperCase())) {
         EntityChangeDTO entityChangeDTO;
         try {
           entityChangeDTO = EntityChangeDTO.parseFrom(message.getMessage().getData());
@@ -63,11 +63,10 @@ public class CustomDeploymentEntityCRUDStreamEventListener implements MessageLis
         if (action != null) {
           switch (action) {
             case CREATE_ACTION:
-              return processCreateEvent(entityChangeDTO);
             case DELETE_ACTION:
-              return processDeleteEvent(entityChangeDTO);
+              return true;
             case UPDATE_ACTION:
-              return processRestoreEvent(entityChangeDTO);
+              return processUpdateEvent(entityChangeDTO);
             default:
           }
         }
@@ -76,7 +75,7 @@ public class CustomDeploymentEntityCRUDStreamEventListener implements MessageLis
     return true;
   }
 
-  private boolean processRestoreEvent(EntityChangeDTO entityChangeDTO) {
+  private boolean processUpdateEvent(EntityChangeDTO entityChangeDTO) {
     try {
       if (Objects.equals(entityChangeDTO.getMetadataMap().get("templateType"),
               TemplateEntityType.CUSTOM_DEPLOYMENT_TEMPLATE.toString())) {
@@ -99,13 +98,6 @@ public class CustomDeploymentEntityCRUDStreamEventListener implements MessageLis
       log.error("Could not Update the infra for deployment template change for account identifier :{}",
           entityChangeDTO.getAccountIdentifier());
     }
-    return true;
-  }
-
-  private boolean processCreateEvent(EntityChangeDTO entityChangeDTO) {
-    return true;
-  }
-  private boolean processDeleteEvent(EntityChangeDTO entityChangeDTO) {
     return true;
   }
 }

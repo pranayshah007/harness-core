@@ -62,7 +62,7 @@ import io.harness.callback.MongoDatabase;
 import io.harness.ccm.license.remote.CeLicenseClientModule;
 import io.harness.cd.license.CdLicenseUsageCgModule;
 import io.harness.cdng.NGModule;
-import io.harness.cdng.customDeployment.EventListener.CustomDeploymentEntityCRUDStreamEventListener;
+import io.harness.cdng.customDeployment.eventlistener.CustomDeploymentEntityCRUDStreamEventListener;
 import io.harness.cdng.fileservice.FileServiceClient;
 import io.harness.cdng.fileservice.FileServiceClientFactory;
 import io.harness.cdng.jenkins.jenkinsstep.JenkinsBuildStepHelperService;

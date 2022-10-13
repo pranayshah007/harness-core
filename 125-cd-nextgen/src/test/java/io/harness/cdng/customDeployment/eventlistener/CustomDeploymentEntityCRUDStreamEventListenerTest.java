@@ -1,3 +1,10 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.cdng.customDeployment.eventlistener;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
@@ -11,14 +18,13 @@ import static io.harness.rule.OwnerRule.ANIL;
 import static junit.framework.TestCase.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
-import io.harness.cdng.customDeployment.EventListener.CustomDeploymentEntityCRUDEventHandler;
-import io.harness.cdng.customDeployment.EventListener.CustomDeploymentEntityCRUDStreamEventListener;
 import io.harness.eventsframework.consumer.Message;
 import io.harness.eventsframework.entity_crud.EntityChangeDTO;
 import io.harness.ng.core.template.TemplateEntityType;
@@ -106,7 +112,10 @@ public class CustomDeploymentEntityCRUDStreamEventListenerTest extends CategoryT
                                           .setData(bytes)
                                           .build())
                           .build();
-
+    doReturn(true)
+        .when(deploymentTemplateEntityCRUDEventHandler)
+        .updateInfraAsObsolete(
+            eq("accountIdentifier"), eq("orgId"), eq("projectId"), eq("deploymentTemplateId"), eq("1"));
     assertTrue(deploymentEntityEventListener.handleMessage(message));
     verify(deploymentTemplateEntityCRUDEventHandler, times(1))
         .updateInfraAsObsolete(
@@ -135,7 +144,10 @@ public class CustomDeploymentEntityCRUDStreamEventListenerTest extends CategoryT
                                           .setData(bytes)
                                           .build())
                           .build();
-
+    doReturn(true)
+        .when(deploymentTemplateEntityCRUDEventHandler)
+        .updateInfraAsObsolete(
+            eq("accountIdentifier"), eq("orgId"), eq("projectId"), eq("deploymentTemplateId"), eq("1"));
     assertTrue(deploymentEntityEventListener.handleMessage(message));
     verify(deploymentTemplateEntityCRUDEventHandler, times(1))
         .updateInfraAsObsolete(
