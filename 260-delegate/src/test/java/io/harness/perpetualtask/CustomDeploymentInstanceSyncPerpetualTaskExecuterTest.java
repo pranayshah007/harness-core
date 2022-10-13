@@ -1,3 +1,10 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.perpetualtask;
 
 import static io.harness.perpetualtask.CustomDeploymentInstanceSyncPerpetualTaskExecuter.OUTPUT_PATH_KEY;
@@ -28,8 +35,6 @@ import io.harness.rule.Owner;
 import io.harness.shell.ExecuteCommandResponse;
 import io.harness.shell.ScriptProcessExecutor;
 import io.harness.shell.ShellExecutionData;
-
-import software.wings.sm.states.customdeploymentng.InstanceMapperUtils;
 
 import com.google.protobuf.Any;
 import java.io.IOException;
@@ -140,9 +145,10 @@ public class CustomDeploymentInstanceSyncPerpetualTaskExecuterTest extends Deleg
     assertThat(argumentCaptorValue.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
     List<ServerInstanceInfo> serverInstanceDetails = argumentCaptorValue.getServerInstanceDetails();
     assertThat(serverInstanceDetails.size()).isEqualTo(4);
-    List<String> instancesHostNames = serverInstanceDetails.stream()
-                                          .map(server -> ((CustomDeploymentServerInstanceInfo) server).getHostName())
-                                          .collect(Collectors.toList());
+    List<String> instancesHostNames =
+        serverInstanceDetails.stream()
+            .map(server -> ((CustomDeploymentServerInstanceInfo) server).getInstanceName())
+            .collect(Collectors.toList());
     assertThat(instancesHostNames).contains("1.1", "2.2", "3.3", "4.4");
   }
 
@@ -210,7 +216,7 @@ public class CustomDeploymentInstanceSyncPerpetualTaskExecuterTest extends Deleg
 
     String instancesListPath = "items";
     Map<String, String> attributes = new HashMap<>();
-    attributes.put(InstanceMapperUtils.hostname, "listenAddress");
+    attributes.put("instancename", "listenAddress");
     CustomDeploymentNGInstanceSyncPerpetualTaskParams taskParams =
         CustomDeploymentNGInstanceSyncPerpetualTaskParams.newBuilder()
             .setAccountId("accountId")

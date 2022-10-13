@@ -7,6 +7,8 @@
 
 package software.wings.search.entities.infradefinition;
 
+import io.harness.event.reconciliation.service.InfrastructureDefinitionEntityReconServiceImpl;
+import io.harness.event.reconciliation.service.LookerEntityReconService;
 import io.harness.persistence.PersistentEntity;
 
 import software.wings.infra.InfrastructureDefinition;
@@ -19,6 +21,7 @@ import java.util.Set;
 
 public class InfrastructureDefinitionTimeScaleEntity implements TimeScaleEntity<InfrastructureDefinition> {
   @Inject private InfrastructureDefinitonTimescaleChangeHandler infrastructureDefinitonTimescaleChangeHandler;
+  @Inject private InfrastructureDefinitionEntityReconServiceImpl infrastructureDefinitionEntityReconService;
   @Inject private MigrateInfraDefinitionToTimescaleDB migrateInfraDefinitionToTimescaleDB;
 
   public static final Class<InfrastructureDefinition> SOURCE_ENTITY_CLASS = InfrastructureDefinition.class;
@@ -29,8 +32,18 @@ public class InfrastructureDefinitionTimeScaleEntity implements TimeScaleEntity<
   }
 
   @Override
+  public String getMigrationClassName() {
+    return migrateInfraDefinitionToTimescaleDB.getTimescaleDBClass();
+  }
+
+  @Override
   public ChangeHandler getChangeHandler() {
     return infrastructureDefinitonTimescaleChangeHandler;
+  }
+
+  @Override
+  public LookerEntityReconService getReconService() {
+    return infrastructureDefinitionEntityReconService;
   }
 
   @Override
@@ -43,5 +56,15 @@ public class InfrastructureDefinitionTimeScaleEntity implements TimeScaleEntity<
   @Override
   public boolean runMigration(String accountId) {
     return migrateInfraDefinitionToTimescaleDB.runTimeScaleMigration(accountId);
+  }
+
+  @Override
+  public void savetoTimescale(InfrastructureDefinition entity) {
+    migrateInfraDefinitionToTimescaleDB.saveToTimeScale(entity);
+  }
+
+  @Override
+  public void deleteFromTimescale(String id) {
+    migrateInfraDefinitionToTimescaleDB.deleteFromTimescale(id);
   }
 }

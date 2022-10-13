@@ -7,6 +7,8 @@
 
 package software.wings.search.entities.user;
 
+import io.harness.event.reconciliation.service.LookerEntityReconService;
+import io.harness.event.reconciliation.service.UserEntityReconServiceImpl;
 import io.harness.persistence.PersistentEntity;
 
 import software.wings.beans.User;
@@ -19,6 +21,7 @@ import java.util.Set;
 
 public class UserTimeScaleEntity implements TimeScaleEntity<User> {
   @Inject private UserTimescaleChangeHandler userTimescaleChangeHandler;
+  @Inject private UserEntityReconServiceImpl userEntityReconService;
   @Inject private MigrateUsersToTimeScaleDB migrateUsersToTimeScaleDB;
 
   public static final Class<User> SOURCE_ENTITY_CLASS = User.class;
@@ -29,8 +32,18 @@ public class UserTimeScaleEntity implements TimeScaleEntity<User> {
   }
 
   @Override
+  public String getMigrationClassName() {
+    return migrateUsersToTimeScaleDB.getTimescaleDBClass();
+  }
+
+  @Override
   public ChangeHandler getChangeHandler() {
     return userTimescaleChangeHandler;
+  }
+
+  @Override
+  public LookerEntityReconService getReconService() {
+    return userEntityReconService;
   }
 
   @Override
@@ -48,5 +61,15 @@ public class UserTimeScaleEntity implements TimeScaleEntity<User> {
   @Override
   public boolean runMigration(String accountId) {
     return migrateUsersToTimeScaleDB.runTimeScaleMigration(accountId);
+  }
+
+  @Override
+  public void savetoTimescale(User entity) {
+    migrateUsersToTimeScaleDB.saveToTimeScale(entity);
+  }
+
+  @Override
+  public void deleteFromTimescale(String id) {
+    migrateUsersToTimeScaleDB.deleteFromTimescale(id);
   }
 }

@@ -157,4 +157,8 @@ public interface YamlTypes {
   String ENV_PRE_PRODUCTION = "PreProduction";
 
   String SERVICE_ENTITIES = "services";
+
+  String PIPELINE = "pipeline";
+  String PARALLEL_STAGE = "parallel";
+  String STAGES = "stages";
 }
