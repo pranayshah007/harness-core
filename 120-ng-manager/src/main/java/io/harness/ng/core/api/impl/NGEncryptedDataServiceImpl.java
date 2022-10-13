@@ -158,6 +158,7 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
         dto.getProjectIdentifier(), secret.getSecretManagerIdentifier(), false);
 
     NGEncryptedData encryptedData = buildNGEncryptedData(accountIdentifier, dto, secretManager);
+    encryptedData.setAdditionalMetadata(dto.getSpec().additionalMetadata);
 
     switch (secret.getValueType()) {
       case Inline:

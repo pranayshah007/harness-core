@@ -8,6 +8,7 @@
 package io.harness.ng.core.dto.secrets;
 
 import io.harness.ng.core.models.SecretSpec;
+import io.harness.security.encryption.AdditionalMetadata;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -28,4 +29,5 @@ public abstract class SecretSpecDTO {
   public abstract Optional<String> getErrorMessageForInvalidYaml();
 
   public abstract SecretSpec toEntity();
+  public AdditionalMetadata additionalMetadata;
 }
