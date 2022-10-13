@@ -217,7 +217,7 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
       if (useNewFlow(ctx, stageNode)) {
         List<AdviserObtainment> adviserObtainments =
             addResourceConstraintDependencyWithWhenCondition(planCreationResponseMap, specField);
-        String infraNodeId = addInfrastructureNode(planCreationResponseMap, stageNode, adviserObtainments);
+        String infraNodeId = addInfrastructureNode(specField, planCreationResponseMap, stageNode, adviserObtainments);
         String serviceNodeId = addServiceNode(specField, planCreationResponseMap, stageNode, infraNodeId);
         addSpecNode(planCreationResponseMap, specField, serviceNodeId);
       } else {
@@ -503,8 +503,8 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
         specField, kryoSerializer, service, environment, serviceNodeId, nextNodeId, deploymentType));
     return serviceNodeId;
   }
-  private String addInfrastructureNode(LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap,
-      DeploymentStageNode stageNode, List<AdviserObtainment> adviserObtainments) throws IOException {
+  private String addInfrastructureNode(YamlField specField, LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap,
+                                       DeploymentStageNode stageNode, List<AdviserObtainment> adviserObtainments) throws IOException {
     EnvironmentYamlV2 environment;
     if (stageNode.getDeploymentStageConfig().getEnvironments() != null
         || stageNode.getDeploymentStageConfig().getEnvironmentGroup() != null) {
@@ -515,6 +515,9 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
     PlanNode node = InfrastructurePmsPlanCreator.getInfraTaskExecutableStepV2PlanNode(environment, adviserObtainments,
         stageNode.getDeploymentStageConfig().getDeploymentType(), stageNode.skipInstances);
     planCreationResponseMap.put(node.getUuid(), PlanCreationResponse.builder().planNode(node).build());
+
+    InfrastructurePmsPlanCreator.createPlanForProvisionerV2(environment, node.getUuid(), kryoSerializer);
+
     return node.getUuid();
   }
 

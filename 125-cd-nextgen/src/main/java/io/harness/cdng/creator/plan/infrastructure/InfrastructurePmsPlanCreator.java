@@ -321,10 +321,6 @@ public class InfrastructurePmsPlanCreator {
         .build();
   }
 
-  /**
-   * Method returns actual InfraStructure object by resolving useFromStage if present.
-   */
-
   public LinkedHashMap<String, PlanCreationResponse> createPlanForProvisioner(PipelineInfrastructure actualInfraConfig,
       YamlField infraField, String infraStepNodeId, KryoSerializer kryoSerializer) {
     if (!isProvisionerConfigured(actualInfraConfig)) {
@@ -351,6 +347,39 @@ public class InfrastructurePmsPlanCreator {
         PlanCreationResponse.builder().node(provisionerPlanNode.getUuid(), provisionerPlanNode).build());
 
     return responseMap;
+  }
+
+  public LinkedHashMap<String, PlanCreationResponse> createPlanForProvisionerV2(
+      EnvironmentYamlV2 environmentYamlV2, YamlField envField, String infraStepNodeId,
+      KryoSerializer kryoSerializer) {
+    if (!isProvisionerConfigured(environmentYamlV2)) {
+      return new LinkedHashMap<>();
+    }
+    validateProvisionerConfig(environmentYamlV2.getProvisioner());
+
+
+    YamlField provisionerYamlField = envField.getNode().getField(YAMLFieldNameConstants.PROVISIONER);
+    YamlField stepsYamlField = provisionerYamlField.getNode().getField(YAMLFieldNameConstants.STEPS);
+
+    // Add each step dependency
+    LinkedHashMap<String, PlanCreationResponse> responseMap = new LinkedHashMap<>();
+
+    Map<String, YamlField> stepsYamlFieldMap = new HashMap<>();
+    stepsYamlFieldMap.put(stepsYamlField.getNode().getUuid(), stepsYamlField);
+    responseMap.put(stepsYamlField.getNode().getUuid(),
+        PlanCreationResponse.builder().dependencies(DependenciesUtils.toDependenciesProto(stepsYamlFieldMap)).build());
+
+    // Add provisioner Node
+    PlanNode provisionerPlanNode = getProvisionerPlanNode(
+        provisionerYamlField, stepsYamlField.getNode().getUuid(), infraStepNodeId, kryoSerializer);
+    responseMap.put(provisionerPlanNode.getUuid(),
+        PlanCreationResponse.builder().node(provisionerPlanNode.getUuid(), provisionerPlanNode).build());
+
+    return responseMap;
+  }
+
+  private static boolean isProvisionerConfigured(EnvironmentYamlV2 environmentYamlV2) {
+    return environmentYamlV2 != null && environmentYamlV2.getProvisioner() != null;
   }
 
   private static void validateProvisionerConfig(@NotNull ExecutionElementConfig provisioner) {
