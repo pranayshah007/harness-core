@@ -81,20 +81,14 @@ public class StencilPostProcessor {
   }
 
   public <T extends Stencil> Stream<Stencil> processStencil(T t, String appId, Map<String, String> args) {
-    long startTime;
+    long startTime = -System.currentTimeMillis();
     Stencil stencil = t.getOverridingStencil();
 
-    startTime = -System.currentTimeMillis();
     stencil = processStencilFields(t, appId, args, stencil);
-    log.info("processStencilFields take {} ms", startTime + System.currentTimeMillis());
-
-    startTime = -System.currentTimeMillis();
     stencil = processStencilMethods(t, appId, args, stencil);
-    log.info("processStencilMethods take {} ms", startTime + System.currentTimeMillis());
 
     Stream<Stencil> returnValue = Stream.of(stencil);
 
-    startTime = -System.currentTimeMillis();
     if (stream(t.getTypeClass().getDeclaredFields())
             .filter(field -> field.getAnnotation(Expand.class) != null)
             .findFirst()
@@ -115,9 +109,7 @@ public class StencilPostProcessor {
                           return Stream.of(stencilForExpand);
                         });
     }
-    log.info("processStencilExpand take {} ms", startTime + System.currentTimeMillis());
 
-    startTime = -System.currentTimeMillis();
     if (stream(t.getTypeClass().getDeclaredMethods())
             .map(method -> method.getAnnotation(DefaultValue.class))
             .anyMatch(Objects::nonNull)) {
@@ -138,8 +130,8 @@ public class StencilPostProcessor {
           });
       returnValue = stencils.stream();
     }
-    log.info("processStencilDefaultValue take {} ms", startTime + System.currentTimeMillis());
 
+    log.info("processStencil take {} ms", startTime + System.currentTimeMillis());
     return returnValue;
   }
 

@@ -1,112 +1,22 @@
 #Any edit in this file should accompany an increment in version.
 name : settingsConfiguration
-version : 2
+version : 3
 settings :
-  - identifier: test_setting_CI_1
-    name: Test CI setting
-    category : CI
-    groupIdentifier: group_1
-    defaultValue: default
-    valueType : STRING
-    allowOverrides : true
-    allowedScopes :
-      - ACCOUNT
-      - ORGANIZATION
-  - identifier: test_setting_CI_2
-    name: Test CI setting
-    category: CI
-    defaultValue: 2
-    valueType: NUMBER
-    groupIdentifier: group_1
-    allowedScopes:
-      - ACCOUNT
-      - ORGANIZATION
-      - PROJECT
-  - identifier: test_setting_CI_3
-    name: Test CI setting
-    category: CI
-    groupIdentifier: group_1
-    valueType: BOOLEAN
-    allowedScopes:
-      - ACCOUNT
-      - ORGANIZATION
-      - PROJECT
-  - identifier: test_setting_CI_4
-    name: Test CI setting
-    category: CI
-    groupIdentifier: group_2
-    valueType: STRING
-    allowOverrides: false
-    allowedScopes:
-      - ACCOUNT
-      - ORGANIZATION
-      - PROJECT
-  - identifier: test_setting_CI_5
-    name: Test CI setting
-    category: CI
-    groupIdentifier: group_2
-    defaultValue: v2
-    valueType: STRING
-    allowedValues:
-      - v1
-      - v2
-      - v3
-      - v4
-    allowOverrides: true
-    allowedScopes:
-      - ACCOUNT
-      - ORGANIZATION
-      - PROJECT
-  - identifier: test_setting_CI_6
-    name: Test CI setting
-    category: CI
-    defaultValue: default
-    valueType: STRING
-    allowOverrides: false
-    allowedScopes:
-      - ACCOUNT
-      - ORGANIZATION
-      - PROJECT
-  - identifier: test_setting_CI_7
-    name: Test CI setting
-    category: CI
-    defaultValue: default
-    valueType: STRING
-    allowOverrides: true
-    allowedScopes:
-      - ACCOUNT
-      - ORGANIZATION
-      - PROJECT
-  - identifier: test_setting_CD_1
-    name: Test CD setting
+  - identifier: mandate_webhook_secrets_for_github_triggers_CD
+    name: Mandate Webhook Secrets for Github Triggers - CD
     category: CD
-    defaultValue: true
+    defaultValue: false
     valueType: BOOLEAN
     allowOverrides: true
     allowedScopes:
       - ACCOUNT
       - ORGANIZATION
-  - identifier: test_setting_CD_2
-    name: Test CD setting
-    category: CD
-    defaultValue: 1
-    valueType: NUMBER
-    allowedValues:
-      - 1
-      - 2
-      - 3
-      - 4
-      - 5
-    allowOverrides: true
-    allowedScopes:
-      - ACCOUNT
-      - ORGANIZATION
       - PROJECT
-  - identifier: test_setting_CD_3
-    name: Test CD setting
-    category: CD
-    defaultValue: default
-    valueType: STRING
+  - identifier: mandate_webhook_secrets_for_github_triggers_CI
+    name: Mandate Webhook Secrets for Github Triggers - CI
+    category: CI
+    defaultValue: false
+    valueType: BOOLEAN
     allowOverrides: true
     allowedScopes:
       - ACCOUNT

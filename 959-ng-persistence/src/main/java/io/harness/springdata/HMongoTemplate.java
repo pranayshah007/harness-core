@@ -98,11 +98,9 @@ public class HMongoTemplate extends MongoTemplate implements HealthMonitor {
       return super.findAndModify(query, update, options, entityClass, collectionName);
     } catch (UncategorizedMongoDbException ex) {
       if (isMongoExecutionTimeoutException(ex)) {
-        logAndUnsetTimeoutInQuery(query, collectionName, ex);
-        return super.findAndModify(query, update, options, entityClass, collectionName);
-      } else {
-        throw ex;
+        logMongoExecutionTimeoutException(query, collectionName, ex);
       }
+      throw ex;
     }
   }
 
@@ -132,15 +130,13 @@ public class HMongoTemplate extends MongoTemplate implements HealthMonitor {
       list = super.find(query, entityClass, collectionName);
     } catch (UncategorizedMongoDbException ex) {
       if (isMongoExecutionTimeoutException(ex)) {
-        logAndUnsetTimeoutInQuery(query, collectionName, ex);
-        list = super.find(query, entityClass, collectionName);
-      } else {
-        throw ex;
+        logMongoExecutionTimeoutException(query, collectionName, ex);
       }
+      throw ex;
     }
     if (checkIfListIsLarge(list)) {
       log.warn("find query {} returns {} items for collection {}. Consider using an Iterator to avoid causing OOM",
-          query, list.size(), collectionName);
+          query, list.size(), collectionName, new Exception());
     }
     return list;
   }
@@ -161,11 +157,9 @@ public class HMongoTemplate extends MongoTemplate implements HealthMonitor {
       return super.findOne(query, entityClass, collectionName);
     } catch (UncategorizedMongoDbException ex) {
       if (isMongoExecutionTimeoutException(ex)) {
-        logAndUnsetTimeoutInQuery(query, collectionName, ex);
-        return super.findOne(query, entityClass, collectionName);
-      } else {
-        throw ex;
+        logMongoExecutionTimeoutException(query, collectionName, ex);
       }
+      throw ex;
     }
   }
 
@@ -181,16 +175,14 @@ public class HMongoTemplate extends MongoTemplate implements HealthMonitor {
       list = super.findDistinct(query, field, collectionName, entityClass, resultClass);
     } catch (UncategorizedMongoDbException ex) {
       if (isMongoExecutionTimeoutException(ex)) {
-        logAndUnsetTimeoutInQuery(query, collectionName, ex);
-        list = super.findDistinct(query, field, collectionName, entityClass, resultClass);
-      } else {
-        throw ex;
+        logMongoExecutionTimeoutException(query, collectionName, ex);
       }
+      throw ex;
     }
     if (checkIfListIsLarge(list)) {
       log.warn(
           "findDistinct query {} returns {} items for collection {}. Consider using an Iterator to avoid causing OOM",
-          query, list.size(), collectionName);
+          query, list.size(), collectionName, new Exception());
     }
     return list;
   }
@@ -206,11 +198,9 @@ public class HMongoTemplate extends MongoTemplate implements HealthMonitor {
       return super.findAndReplace(query, replacement, options, entityType, collectionName, resultType);
     } catch (UncategorizedMongoDbException ex) {
       if (isMongoExecutionTimeoutException(ex)) {
-        logAndUnsetTimeoutInQuery(query, collectionName, ex);
-        return super.findAndReplace(query, replacement, options, entityType, collectionName, resultType);
-      } else {
-        throw ex;
+        logMongoExecutionTimeoutException(query, collectionName, ex);
       }
+      throw ex;
     }
   }
 
@@ -224,11 +214,9 @@ public class HMongoTemplate extends MongoTemplate implements HealthMonitor {
       return super.findAndRemove(query, entityClass, collectionName);
     } catch (UncategorizedMongoDbException ex) {
       if (isMongoExecutionTimeoutException(ex)) {
-        logAndUnsetTimeoutInQuery(query, collectionName, ex);
-        return super.findAndRemove(query, entityClass, collectionName);
-      } else {
-        throw ex;
+        logMongoExecutionTimeoutException(query, collectionName, ex);
       }
+      throw ex;
     }
   }
 
@@ -243,16 +231,14 @@ public class HMongoTemplate extends MongoTemplate implements HealthMonitor {
       list = super.findAllAndRemove(query, entityClass, collectionName);
     } catch (UncategorizedMongoDbException ex) {
       if (isMongoExecutionTimeoutException(ex)) {
-        logAndUnsetTimeoutInQuery(query, collectionName, ex);
-        list = super.findAllAndRemove(query, entityClass, collectionName);
-      } else {
-        throw ex;
+        logMongoExecutionTimeoutException(query, collectionName, ex);
       }
+      throw ex;
     }
     if (checkIfListIsLarge(list)) {
       log.warn(
           "FindAllAndRemove query {} returns {} items for collection {}. Consider using an Iterator to avoid causing OOM",
-          query, list.size(), collectionName);
+          query, list.size(), collectionName, new Exception());
     }
     return list;
   }
@@ -268,11 +254,9 @@ public class HMongoTemplate extends MongoTemplate implements HealthMonitor {
       return super.mapReduce(query, inputCollectionName, mapFunction, reduceFunction, mapReduceOptions, entityClass);
     } catch (UncategorizedMongoDbException ex) {
       if (isMongoExecutionTimeoutException(ex)) {
-        logAndUnsetTimeoutInQuery(query, inputCollectionName, ex);
-        return super.mapReduce(query, inputCollectionName, mapFunction, reduceFunction, mapReduceOptions, entityClass);
-      } else {
-        throw ex;
+        logMongoExecutionTimeoutException(query, inputCollectionName, ex);
       }
+      throw ex;
     }
   }
 
@@ -285,11 +269,8 @@ public class HMongoTemplate extends MongoTemplate implements HealthMonitor {
       if (isMongoExecutionTimeoutException(ex)) {
         log.error("count operation for collection [{}] exceeded max time limit of [{}] ms with error {}.",
             collectionName, maxOperationInMillis, ex);
-        options.maxTime(0, TimeUnit.MILLISECONDS);
-        return super.doCount(collectionName, filter, options);
-      } else {
-        throw ex;
       }
+      throw ex;
     }
   }
 
@@ -303,11 +284,9 @@ public class HMongoTemplate extends MongoTemplate implements HealthMonitor {
       return super.stream(query, entityType, collectionName);
     } catch (UncategorizedMongoDbException ex) {
       if (isMongoExecutionTimeoutException(ex)) {
-        logAndUnsetTimeoutInQuery(query, collectionName, ex);
-        return super.stream(query, entityType, collectionName);
-      } else {
-        throw ex;
+        logMongoExecutionTimeoutException(query, collectionName, ex);
       }
+      throw ex;
     }
   }
 
@@ -320,11 +299,9 @@ public class HMongoTemplate extends MongoTemplate implements HealthMonitor {
       super.executeQuery(query, collectionName, dch);
     } catch (UncategorizedMongoDbException ex) {
       if (isMongoExecutionTimeoutException(ex)) {
-        logAndUnsetTimeoutInQuery(query, collectionName, ex);
-        super.executeQuery(query, collectionName, dch);
-      } else {
-        throw ex;
+        logMongoExecutionTimeoutException(query, collectionName, ex);
       }
+      throw ex;
     }
   }
 
@@ -336,7 +313,7 @@ public class HMongoTemplate extends MongoTemplate implements HealthMonitor {
     final AggregationResults<O> results = super.aggregate(aggregation, collectionName, outputType, context);
     if (checkIfListIsLarge(results.getMappedResults())) {
       log.warn("Aggregate query {} returns {} items for collection {}. Consider using an Iterator to avoid causing OOM",
-          aggregation, results.getMappedResults().size(), collectionName);
+          aggregation, results.getMappedResults().size(), collectionName, new Exception());
     }
     return results;
   }
@@ -359,9 +336,8 @@ public class HMongoTemplate extends MongoTemplate implements HealthMonitor {
     return list.size() > 1000;
   }
 
-  private void logAndUnsetTimeoutInQuery(Query query, String collectionName, Exception ex) {
+  private void logMongoExecutionTimeoutException(Query query, String collectionName, Exception ex) {
     log.error(ERROR_MSG_QUERY_EXCEEDED_TIME_LIMIT, query, collectionName, maxOperationInMillis, ex);
-    query.maxTime(Duration.ofMillis(0));
   }
 
   private boolean isMongoExecutionTimeoutException(Exception ex) {

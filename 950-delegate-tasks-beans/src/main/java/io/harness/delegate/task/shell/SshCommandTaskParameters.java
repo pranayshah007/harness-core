@@ -8,17 +8,11 @@
 package io.harness.delegate.task.shell;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.delegate.task.utils.PhysicalDataCenterConstants.DEFAULT_SSH_PORT;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.delegate.beans.connector.awsconnector.AwsCapabilityHelper;
-import io.harness.delegate.beans.connector.azureconnector.AzureCapabilityHelper;
-import io.harness.delegate.beans.connector.pdcconnector.PhysicalDataCenterConnectorCapabilityHelper;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
+import io.harness.delegate.beans.executioncapability.SshConnectivityExecutionCapability;
 import io.harness.delegate.capability.EncryptedDataDetailsCapabilityHelper;
-import io.harness.delegate.task.ssh.AwsSshInfraDelegateConfig;
-import io.harness.delegate.task.ssh.AzureSshInfraDelegateConfig;
-import io.harness.delegate.task.ssh.PdcSshInfraDelegateConfig;
 import io.harness.delegate.task.ssh.SshInfraDelegateConfig;
 import io.harness.expression.ExpressionEvaluator;
 
@@ -40,38 +34,15 @@ public class SshCommandTaskParameters extends CommandTaskParameters {
       return;
     }
 
-    if (sshInfraDelegateConfig instanceof PdcSshInfraDelegateConfig) {
-      PdcSshInfraDelegateConfig pdcSshInfraDelegateConfig = (PdcSshInfraDelegateConfig) sshInfraDelegateConfig;
-      if (pdcSshInfraDelegateConfig.getPhysicalDataCenterConnectorDTO() != null) {
-        capabilities.addAll(PhysicalDataCenterConnectorCapabilityHelper.fetchRequiredExecutionCapabilities(
-            pdcSshInfraDelegateConfig.getPhysicalDataCenterConnectorDTO(), maskingEvaluator,
-            getDefaultPort(pdcSshInfraDelegateConfig)));
-      }
-      capabilities.addAll(EncryptedDataDetailsCapabilityHelper.fetchExecutionCapabilitiesForEncryptedDataDetails(
-          pdcSshInfraDelegateConfig.getEncryptionDataDetails(), maskingEvaluator));
-    } else if (sshInfraDelegateConfig instanceof AzureSshInfraDelegateConfig) {
-      AzureSshInfraDelegateConfig azureSshInfraDelegateConfig = (AzureSshInfraDelegateConfig) sshInfraDelegateConfig;
-      if (azureSshInfraDelegateConfig.getAzureConnectorDTO() != null) {
-        capabilities.addAll(AzureCapabilityHelper.fetchRequiredExecutionCapabilities(
-            azureSshInfraDelegateConfig.getAzureConnectorDTO(), maskingEvaluator));
-      }
-      capabilities.addAll(EncryptedDataDetailsCapabilityHelper.fetchExecutionCapabilitiesForEncryptedDataDetails(
-          azureSshInfraDelegateConfig.getEncryptionDataDetails(), maskingEvaluator));
-    } else if (sshInfraDelegateConfig instanceof AwsSshInfraDelegateConfig) {
-      AwsSshInfraDelegateConfig awsSshInfraDelegateConfig = (AwsSshInfraDelegateConfig) sshInfraDelegateConfig;
-      if (awsSshInfraDelegateConfig.getAwsConnectorDTO() != null) {
-        capabilities.addAll(AwsCapabilityHelper.fetchRequiredExecutionCapabilities(
-            awsSshInfraDelegateConfig.getAwsConnectorDTO(), maskingEvaluator));
-      }
-      capabilities.addAll(EncryptedDataDetailsCapabilityHelper.fetchExecutionCapabilitiesForEncryptedDataDetails(
-          awsSshInfraDelegateConfig.getEncryptionDataDetails(), maskingEvaluator));
+    if (sshInfraDelegateConfig.getSshKeySpecDto() != null
+        && sshInfraDelegateConfig.getSshKeySpecDto().getAuth() != null) {
+      capabilities.add(SshConnectivityExecutionCapability.builder()
+                           .sshInfraDelegateConfig(sshInfraDelegateConfig)
+                           .host(host)
+                           .build());
     }
-  }
 
-  private String getDefaultPort(PdcSshInfraDelegateConfig pdcSshInfraDelegateConfig) {
-    return pdcSshInfraDelegateConfig.getSshKeySpecDto() == null
-            || pdcSshInfraDelegateConfig.getSshKeySpecDto().getPort() == 0
-        ? DEFAULT_SSH_PORT
-        : String.valueOf(pdcSshInfraDelegateConfig.getSshKeySpecDto().getPort());
+    capabilities.addAll(EncryptedDataDetailsCapabilityHelper.fetchExecutionCapabilitiesForEncryptedDataDetails(
+        sshInfraDelegateConfig.getEncryptionDataDetails(), maskingEvaluator));
   }
 }

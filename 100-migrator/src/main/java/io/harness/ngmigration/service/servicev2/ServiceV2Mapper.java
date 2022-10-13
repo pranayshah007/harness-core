@@ -13,10 +13,13 @@ import static software.wings.ngmigration.NGMigrationEntityType.ARTIFACT_STREAM;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.artifact.bean.yaml.PrimaryArtifact;
 import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
 import io.harness.cdng.service.beans.ServiceDefinition;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
+import io.harness.ngmigration.service.artifactstream.ArtifactStreamFactory;
 
 import software.wings.beans.Service;
 import software.wings.beans.artifact.ArtifactStream;
@@ -52,5 +55,18 @@ public interface ServiceV2Mapper {
           .collect(Collectors.toList());
     }
     return new ArrayList<>();
+  }
+
+  default PrimaryArtifact getPrimaryArtifactStream(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
+      Map<CgEntityId, Set<CgEntityId>> graph, Service service, Map<CgEntityId, NGYamlFile> migratedEntities) {
+    List<ArtifactStream> artifactStreams = getArtifactStream(entities, graph, service);
+    PrimaryArtifact primaryArtifact = null;
+    if (EmptyPredicate.isNotEmpty(artifactStreams)) {
+      ArtifactStream artifactStream =
+          artifactStreams.stream().findFirst().orElseThrow(() -> new IllegalStateException(""));
+      primaryArtifact = ArtifactStreamFactory.getArtifactStreamMapper(artifactStream)
+                            .getArtifactDetails(inputDTO, entities, graph, artifactStream, migratedEntities);
+    }
+    return primaryArtifact;
   }
 }

@@ -114,7 +114,6 @@ public class EcsSteadyStateCheckTask extends AbstractDelegateRunnableTask {
               .build();
       ecsContainerService.waitForTasksToBeInRunningStateWithHandledExceptions(updateCountRequestData);
 
-      // Now poll for events API to notify of steady state
       executionLogCallback.saveExecutionLog(
           String.format("Starting to wait for steady state for Ecs service: %s in Ecs cluster: %s.",
               params.getServiceName(), params.getClusterName()));

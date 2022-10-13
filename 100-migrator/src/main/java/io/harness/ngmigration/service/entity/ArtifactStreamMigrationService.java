@@ -75,6 +75,7 @@ public class ArtifactStreamMigrationService extends NgMigrationService {
         CgEntityId.builder().type(NGMigrationEntityType.ARTIFACT_STREAM).id(entityId).build();
     CgEntityNode artifactStreamNode = CgEntityNode.builder()
                                           .id(entityId)
+                                          .appId(artifactStream.getAppId())
                                           .type(NGMigrationEntityType.ARTIFACT_STREAM)
                                           .entityId(artifactStreamEntityId)
                                           .entity(artifactStream)

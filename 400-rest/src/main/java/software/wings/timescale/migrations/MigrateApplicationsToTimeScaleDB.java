@@ -10,6 +10,7 @@ package software.wings.timescale.migrations;
 import static io.harness.persistence.HQuery.excludeAuthority;
 
 import static software.wings.beans.Application.ApplicationKeys;
+import static software.wings.timescale.migrations.TimescaleEntityMigrationHelper.deleteFromTimescaleDB;
 
 import io.harness.persistence.HIterator;
 import io.harness.timescaledb.TimeScaleDBService;
@@ -28,7 +29,7 @@ import org.mongodb.morphia.query.FindOptions;
 
 @Slf4j
 @Singleton
-public class MigrateApplicationsToTimeScaleDB {
+public class MigrateApplicationsToTimeScaleDB implements TimeScaleEntityMigrationInterface {
   @Inject TimeScaleDBService timeScaleDBService;
 
   @Inject WingsPersistence wingsPersistence;
@@ -37,6 +38,8 @@ public class MigrateApplicationsToTimeScaleDB {
 
   private static final String upsert_statement =
       "INSERT INTO CG_APPLICATIONS (ID,NAME,ACCOUNT_ID,CREATED_AT,LAST_UPDATED_AT,CREATED_BY,LAST_UPDATED_BY) VALUES (?,?,?,?,?,?,?) ON CONFLICT(ID) DO UPDATE SET NAME = excluded.NAME,ACCOUNT_ID = excluded.ACCOUNT_ID,CREATED_AT = excluded.CREATED_AT,LAST_UPDATED_AT = excluded.LAST_UPDATED_AT,CREATED_BY = excluded.CREATED_BY,LAST_UPDATED_BY = excluded.LAST_UPDATED_BY;";
+
+  private static final String TABLE_NAME = "CG_APPLICATIONS";
 
   public boolean runTimeScaleMigration(String accountId) {
     if (!timeScaleDBService.isValid()) {
@@ -55,7 +58,7 @@ public class MigrateApplicationsToTimeScaleDB {
                                    .fetch(findOptions_applications))) {
         while (iterator.hasNext()) {
           Application application = iterator.next();
-          prepareTimeScaleQueries(application);
+          saveToTimeScale(application);
           count++;
         }
       }
@@ -68,7 +71,7 @@ public class MigrateApplicationsToTimeScaleDB {
     return true;
   }
 
-  private void prepareTimeScaleQueries(Application application) {
+  public void saveToTimeScale(Application application) {
     long startTime = System.currentTimeMillis();
     boolean successful = false;
     int retryCount = 0;
@@ -111,5 +114,13 @@ public class MigrateApplicationsToTimeScaleDB {
         7, application.getLastUpdatedBy() != null ? application.getLastUpdatedBy().getName() : null);
 
     upsertPreparedStatement.execute();
+  }
+
+  public void deleteFromTimescale(String id) {
+    deleteFromTimescaleDB(id, timeScaleDBService, MAX_RETRY, TABLE_NAME);
+  }
+
+  public String getTimescaleDBClass() {
+    return TABLE_NAME;
   }
 }

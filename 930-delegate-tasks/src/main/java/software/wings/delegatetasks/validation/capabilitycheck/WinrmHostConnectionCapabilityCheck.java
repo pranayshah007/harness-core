@@ -22,20 +22,19 @@ import io.harness.delegate.beans.executioncapability.CapabilityResponse.Capabili
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.WinrmConnectivityExecutionCapability;
 import io.harness.delegate.task.executioncapability.CapabilityCheck;
+import io.harness.delegate.task.executioncapability.SocketConnectivityCapabilityCheck;
 import io.harness.delegate.task.ssh.WinRmInfraDelegateConfig;
 import io.harness.delegate.task.winrm.AuthenticationScheme;
 import io.harness.delegate.task.winrm.WinRmSession;
 import io.harness.delegate.task.winrm.WinRmSessionConfig;
 import io.harness.exception.InvalidArgumentsException;
-import io.harness.exception.InvalidRequestException;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.logging.NoopExecutionCallback;
 import io.harness.ng.core.dto.secrets.KerberosWinRmConfigDTO;
-import io.harness.ng.core.dto.secrets.NTLMConfigDTO;
 import io.harness.ng.core.dto.secrets.TGTKeyTabFilePathSpecDTO;
 import io.harness.ng.core.dto.secrets.TGTPasswordSpecDTO;
 import io.harness.ng.core.dto.secrets.WinRmAuthDTO;
-import io.harness.ng.core.dto.secrets.WinRmCredentialsSpecDTO;
+import io.harness.secretmanagerclient.WinRmAuthScheme;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.SecretDecryptionService;
 
@@ -59,71 +58,40 @@ public class WinrmHostConnectionCapabilityCheck implements CapabilityCheck {
 
     WinRmInfraDelegateConfig winRmInfraDelegateConfig = capability.getWinRmInfraDelegateConfig();
 
-    if (winRmInfraDelegateConfig.getHosts().isEmpty()) {
-      throw new InvalidRequestException("Hosts list cannot be empty");
+    WinRmAuthDTO winRmAuthDTO = winRmInfraDelegateConfig.getWinRmCredentials().getAuth();
+    int port = winRmInfraDelegateConfig.getWinRmCredentials().getPort();
+    String host =
+        extractHostnameFromHost(capability.getHost())
+            .orElseThrow(()
+                             -> new InvalidArgumentsException(
+                                 format("Failed to extract host name, host: %s, port: %s", capability.getHost(), port),
+                                 USER_SRE));
+
+    if (winRmAuthDTO.getAuthScheme() == WinRmAuthScheme.Kerberos) {
+      // connect with Kerberos to ensure it is configured correctly on delegate
+      KerberosWinRmConfigDTO kerberosWinRmConfigDTO = (KerberosWinRmConfigDTO) winRmAuthDTO.getSpec();
+      WinRmSessionConfig config = generateWinRmSessionConfigForKerberos(host, kerberosWinRmConfigDTO,
+          winRmInfraDelegateConfig.getEncryptionDataDetails(), port, capability.isUseWinRMKerberosUniqueCacheFile());
+      log.info("Validating Winrm Session to Host: {}, Port: {}, useSsl: {}", config.getHostname(), config.getPort(),
+          config.isUseSSL());
+
+      try (WinRmSession ignore = connect(config)) {
+        capabilityResponseBuilder.validated(true);
+      } catch (Exception e) {
+        log.info("Exception in WinrmSession Connection: ", ExceptionMessageSanitizer.sanitizeException(e));
+        capabilityResponseBuilder.validated(false);
+      }
+    } else {
+      // just check socket connectivity
+      capabilityResponseBuilder.validated(SocketConnectivityCapabilityCheck.connectableHost(host, port));
     }
 
-    WinRmSessionConfig config =
-        createWinrmSessionConfig(winRmInfraDelegateConfig, capability.isUseWinRMKerberosUniqueCacheFile());
-    log.info("Validating Winrm Session to Host: {}, Port: {}, useSsl: {}", config.getHostname(), config.getPort(),
-        config.isUseSSL());
-
-    try (WinRmSession ignore = connect(config)) {
-      capabilityResponseBuilder.validated(true);
-    } catch (Exception e) {
-      log.info("Exception in WinrmSession Connection: ", ExceptionMessageSanitizer.sanitizeException(e));
-      capabilityResponseBuilder.validated(false);
-    }
     return capabilityResponseBuilder.build();
   }
 
   @VisibleForTesting
   WinRmSession connect(WinRmSessionConfig config) throws JSchException {
     return new WinRmSession(config, new NoopExecutionCallback());
-  }
-
-  private WinRmSessionConfig createWinrmSessionConfig(
-      WinRmInfraDelegateConfig pdcWinrmInfraDelegateConfig, boolean useWinRMKerberosUniqueCacheFile) {
-    WinRmCredentialsSpecDTO winRmCredentials = pdcWinrmInfraDelegateConfig.getWinRmCredentials();
-    WinRmAuthDTO winRmAuthDTO = winRmCredentials.getAuth();
-    int port = winRmCredentials.getPort();
-    String firstHost = pdcWinrmInfraDelegateConfig.getHosts().iterator().next();
-    String host = extractHostnameFromHost(firstHost).orElseThrow(
-        ()
-            -> new InvalidArgumentsException(
-                format("Not found hostName, host: %s, extracted port: %s", firstHost, port), USER_SRE));
-    switch (winRmAuthDTO.getAuthScheme()) {
-      case NTLM:
-        NTLMConfigDTO ntlmConfigDTO = (NTLMConfigDTO) winRmAuthDTO.getSpec();
-        return generateWinRmSessionConfigForNTLM(
-            host, ntlmConfigDTO, pdcWinrmInfraDelegateConfig.getEncryptionDataDetails(), port);
-      case Kerberos:
-        KerberosWinRmConfigDTO kerberosWinRmConfigDTO = (KerberosWinRmConfigDTO) winRmAuthDTO.getSpec();
-        return generateWinRmSessionConfigForKerberos(host, kerberosWinRmConfigDTO,
-            pdcWinrmInfraDelegateConfig.getEncryptionDataDetails(), port, useWinRMKerberosUniqueCacheFile);
-      default:
-        throw new IllegalArgumentException("Invalid authSchema provided:" + winRmAuthDTO.getAuthScheme());
-    }
-  }
-
-  private WinRmSessionConfig generateWinRmSessionConfigForNTLM(
-      String host, NTLMConfigDTO ntlmConfigDTO, List<EncryptedDataDetail> encryptionDetails, int port) {
-    NTLMConfigDTO decryptedNTLMConfigDTO =
-        (NTLMConfigDTO) secretDecryptionService.decrypt(ntlmConfigDTO, encryptionDetails);
-
-    return WinRmSessionConfig.builder()
-        .workingDirectory(WINDOWS_HOME_DIR)
-        .hostname(host)
-        .timeout(SESSION_TIMEOUT)
-        .authenticationScheme(AuthenticationScheme.NTLM)
-        .domain(ntlmConfigDTO.getDomain())
-        .port(port)
-        .username(ntlmConfigDTO.getUsername())
-        .useSSL(ntlmConfigDTO.isUseSSL())
-        .useNoProfile(ntlmConfigDTO.isUseNoProfile())
-        .skipCertChecks(ntlmConfigDTO.isSkipCertChecks())
-        .password(String.valueOf(decryptedNTLMConfigDTO.getPassword().getDecryptedValue()))
-        .build();
   }
 
   private WinRmSessionConfig generateWinRmSessionConfigForKerberos(String host,

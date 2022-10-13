@@ -7,6 +7,8 @@
 
 package io.harness.ngmigration.service;
 
+import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.MigratedEntityMapping;
@@ -88,7 +90,7 @@ public class MigratorMappingService {
             .filter(MigratedEntityMappingKeys.identifier, ngEntityDetail.getIdentifier())
             .filter(MigratedEntityMappingKeys.scope,
                 getScope(ngEntityDetail.getOrgIdentifier(), ngEntityDetail.getProjectIdentifier()));
-    if (StringUtils.isNotBlank(cgBasicInfo.getAppId())) {
+    if (StringUtils.isNotBlank(cgBasicInfo.getAppId()) && !GLOBAL_APP_ID.equals(cgBasicInfo.getAppId())) {
       query.filter(MigratedEntityMappingKeys.appId, cgBasicInfo.getAppId());
     }
     return EmptyPredicate.isNotEmpty(query.asList());

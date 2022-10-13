@@ -137,7 +137,9 @@ public class PlanExecutionStrategy implements NodeExecutionStrategy<Plan, PlanEx
       planExecution = planExecutionService.updateStatus(
           ambiance.getPlanExecutionId(), ERRORED, ops -> ops.set(PlanExecutionKeys.endTs, System.currentTimeMillis()));
     }
-    eventEmitter.emitEvent(buildEndEvent(ambiance, planExecution.getStatus()));
+    if (planExecution != null) {
+      eventEmitter.emitEvent(buildEndEvent(ambiance, planExecution.getStatus()));
+    }
     orchestrationEndSubject.fireInform(OrchestrationEndObserver::onEnd, ambiance);
   }
 

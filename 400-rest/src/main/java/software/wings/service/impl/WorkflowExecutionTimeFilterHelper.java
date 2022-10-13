@@ -100,7 +100,7 @@ public class WorkflowExecutionTimeFilterHelper {
   @VisibleForTesting
   PageRequest<WorkflowExecution> populatePageRequestFilters(PageRequest<WorkflowExecution> pageRequest) {
     Mapper mapper = ((DatastoreImpl) hPersistence.getDatastore(WorkflowExecution.class)).getMapper();
-    PageRequest<WorkflowExecution> copiedPageRequest = pageRequest.copy();
+    PageRequest<WorkflowExecution> copiedPageRequest = pageRequest.deepCopy();
     copiedPageRequest.populateFilters(
         copiedPageRequest.getUriInfo().getQueryParameters(), mapper.getMappedClass(WorkflowExecution.class), mapper);
     return copiedPageRequest;

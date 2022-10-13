@@ -89,4 +89,10 @@ public class SshExceptionConstants {
       + "S3 artifact path and bucket.";
   public final String S3_ARTIFACT_DOWNLOAD_EXPLANATION = "Failed to download S3 artifact with path: %s from"
       + " %s bucket";
+
+  public final String NEXUS_ARTIFACT_DOWNLOAD_FAILED = "Failed while downloading Nexus Artifact"
+      + " with identifier: %s";
+  public final String NEXUS_ARTIFACT_DOWNLOAD_HINT = "Please review the Nexus Artifact Details and check the"
+      + " repository and package details. We recommend also checking for the artifact on Nexus server";
+  public final String NEXUS_ARTIFACT_DOWNLOAD_EXPLANATION = "Failed to download Nexus Artifact with id: %s";
 }

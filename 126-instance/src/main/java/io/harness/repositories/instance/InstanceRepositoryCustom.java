@@ -26,7 +26,8 @@ public interface InstanceRepositoryCustom {
 
   Instance findAndModify(Criteria criteria, Update update);
 
-  List<Instance> getActiveInstancesByAccount(String accountIdentifier, long timestamp);
+  List<Instance> getActiveInstancesByAccountOrgProjectAndService(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, String serviceIdentifier, long timestamp);
 
   List<Instance> getInstancesDeployedInInterval(String accountIdentifier, long startTimestamp, long endTimeStamp);
 

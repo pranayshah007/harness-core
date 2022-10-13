@@ -152,6 +152,10 @@ if [[ "" != "$ANALYTIC_MONGO_TAG_NAME" ]]; then
  export ANALYTIC_MONGO_TAG_NAME; yq -i '.mongo.analyticNodeConfig.mongoTagKey=env(ANALYTIC_MONGO_TAG_NAME)' $CONFIG_FILE
 fi
 
+if [[ "" != "$MONGO_MAX_OPERATION_TIME_IN_MILLIS" ]]; then
+  export MONGO_MAX_OPERATION_TIME_IN_MILLIS; yq -i '.mongo.maxOperationTimeInMillis=env(MONGO_MAX_OPERATION_TIME_IN_MILLIS)' $CONFIG_FILE
+fi
+
 if [[ "" != "$ANALYTIC_MONGO_TAG_VALUE" ]]; then
  export ANALYTIC_MONGO_TAG_VALUE; yq -i '.mongo.analyticNodeConfig.mongoTagValue=env(ANALYTIC_MONGO_TAG_VALUE)' $CONFIG_FILE
 fi
@@ -511,9 +515,12 @@ if [[ "" != "$BACKGROUND_SCHEDULER_CLUSTERED" ]]; then
 fi
 
 if [[ "" != "$ENABLE_CRONS" ]]; then
-  export ENABLE_CRONS; yq -i '.enableIterators=env(ENABLE_CRONS)' $CONFIG_FILE
   export ENABLE_CRONS; yq -i '.backgroundScheduler.enabled=env(ENABLE_CRONS)' $CONFIG_FILE
   export ENABLE_CRONS; yq -i '.serviceScheduler.enabled=env(ENABLE_CRONS)' $CONFIG_FILE
+fi
+
+if [[ "" != "$ENABLE_ITERATORS" ]]; then
+  export ENABLE_ITERATORS; yq -i '.enableIterators=env(ENABLE_ITERATORS)' $CONFIG_FILE
 fi
 
 if [[ "" != "$ALLOW_TRIAL_REGISTRATION" ]]; then

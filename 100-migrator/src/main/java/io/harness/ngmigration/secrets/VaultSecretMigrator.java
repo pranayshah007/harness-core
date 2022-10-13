@@ -13,6 +13,7 @@ import io.harness.beans.EncryptedData;
 import io.harness.beans.SecretManagerConfig;
 import io.harness.delegate.beans.connector.vaultconnector.VaultConnectorDTO;
 import io.harness.delegate.beans.connector.vaultconnector.VaultConnectorDTO.VaultConnectorDTOBuilder;
+import io.harness.encryption.Scope;
 import io.harness.encryption.SecretRefData;
 import io.harness.ng.core.dto.secrets.SecretDTOV2;
 import io.harness.ng.core.dto.secrets.SecretTextSpecDTO;
@@ -26,6 +27,7 @@ import io.harness.secretmanagerclient.ValueType;
 
 import software.wings.beans.VaultConfig;
 import software.wings.ngmigration.CgEntityId;
+import software.wings.ngmigration.NGMigrationEntityType;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -57,6 +59,12 @@ public class VaultSecretMigrator implements SecretMigrator {
       Map<CgEntityId, NGYamlFile> migratedEntities) {
     VaultConfig vaultConfig = (VaultConfig) secretManagerConfig;
 
+    Scope scope = MigratorUtility.getDefaultScope(inputDTO,
+        CgEntityId.builder().type(NGMigrationEntityType.SECRET_MANAGER).id(vaultConfig.getUuid()).build(),
+        Scope.PROJECT);
+    String projectIdentifier = MigratorUtility.getProjectIdentifier(scope, inputDTO);
+    String orgIdentifier = MigratorUtility.getOrgIdentifier(scope, inputDTO);
+
     VaultConnectorDTOBuilder connectorDTO = VaultConnectorDTO.builder()
                                                 .appRoleId(vaultConfig.getAppRoleId())
                                                 .basePath(vaultConfig.getBasePath())
@@ -75,8 +83,8 @@ public class VaultSecretMigrator implements SecretMigrator {
         String.format("migratedHarnessSecret_%s", MigratorUtility.generateIdentifier(vaultConfig.getName()));
     NgEntityDetail secretEntityDetail = NgEntityDetail.builder()
                                             .identifier(secretIdentifier)
-                                            .orgIdentifier(inputDTO.getOrgIdentifier())
-                                            .projectIdentifier(inputDTO.getProjectIdentifier())
+                                            .orgIdentifier(orgIdentifier)
+                                            .projectIdentifier(projectIdentifier)
                                             .build();
     List<SecretDTOV2> secrets = new ArrayList<>();
 

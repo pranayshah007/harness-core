@@ -15,7 +15,10 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.Scope;
 import io.harness.encryption.SecretRefData;
 import io.harness.exception.InvalidArgumentsException;
+import io.harness.exception.InvalidRequestException;
+import io.harness.ngmigration.beans.BaseProvidedInput;
 import io.harness.ngmigration.beans.InputDefaults;
+import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
 import io.harness.ngmigration.secrets.SecretFactory;
@@ -46,6 +49,9 @@ public class MigratorUtility {
   }
 
   public static String generateIdentifier(String name) {
+    if (StringUtils.isBlank(name)) {
+      return "";
+    }
     String generated = CaseUtils.toCamelCase(name.replaceAll("[^A-Za-z0-9]", " ").trim(), false, ' ');
     return Character.isDigit(generated.charAt(0)) ? "_" + generated : generated;
   }
@@ -87,13 +93,21 @@ public class MigratorUtility {
     }
   }
 
-  public static Scope getDefaultScope(Map<NGMigrationEntityType, InputDefaults> inputDefaultsMap,
-      NGMigrationEntityType entityType, Scope defaultScope) {
-    if (inputDefaultsMap == null || !inputDefaultsMap.containsKey(entityType)) {
+  public static Scope getDefaultScope(MigrationInputDTO inputDTO, CgEntityId entityId, Scope defaultScope) {
+    NGMigrationEntityType entityType = entityId.getType();
+    if (inputDTO == null) {
       return defaultScope;
     }
-    return inputDefaultsMap.get(entityType).getScope() != null ? inputDefaultsMap.get(entityType).getScope()
-                                                               : defaultScope;
+    Scope scope = defaultScope;
+    Map<NGMigrationEntityType, InputDefaults> defaults = inputDTO.getDefaults();
+    if (defaults != null && defaults.containsKey(entityType) && defaults.get(entityType).getScope() != null) {
+      scope = defaults.get(entityType).getScope();
+    }
+    Map<CgEntityId, BaseProvidedInput> inputs = inputDTO.getOverrides();
+    if (inputs != null && inputs.containsKey(entityId) && inputs.get(entityId).getScope() != null) {
+      scope = inputs.get(entityId).getScope();
+    }
+    return scope;
   }
 
   public static Scope getScope(NgEntityDetail entityDetail) {
@@ -158,5 +172,49 @@ public class MigratorUtility {
       });
     }
     return variables;
+  }
+
+  public static String generateIdentifier(
+      Map<CgEntityId, BaseProvidedInput> inputs, CgEntityId entityId, String defaultIdentifier) {
+    if (inputs == null || !inputs.containsKey(entityId) || StringUtils.isBlank(inputs.get(entityId).getIdentifier())) {
+      return defaultIdentifier;
+    }
+    return inputs.get(entityId).getIdentifier();
+  }
+
+  public static String generateIdentifierDefaultName(
+      Map<CgEntityId, BaseProvidedInput> inputs, CgEntityId entityId, String name) {
+    if (inputs == null || !inputs.containsKey(entityId) || StringUtils.isBlank(inputs.get(entityId).getIdentifier())) {
+      return generateIdentifier(name);
+    }
+    return inputs.get(entityId).getIdentifier();
+  }
+
+  public static String generateName(
+      Map<CgEntityId, BaseProvidedInput> inputs, CgEntityId entityId, String defaultName) {
+    if (inputs == null || !inputs.containsKey(entityId) || StringUtils.isBlank(inputs.get(entityId).getName())) {
+      return defaultName;
+    }
+    return inputs.get(entityId).getName();
+  }
+
+  public static String getOrgIdentifier(Scope scope, MigrationInputDTO inputDTO) {
+    if (Scope.ACCOUNT.equals(scope)) {
+      return null;
+    }
+    if (StringUtils.isBlank(inputDTO.getOrgIdentifier())) {
+      throw new InvalidRequestException("Trying to scope entity to Org but no org identifier provided in input");
+    }
+    return inputDTO.getOrgIdentifier();
+  }
+
+  public static String getProjectIdentifier(Scope scope, MigrationInputDTO inputDTO) {
+    if (Scope.ACCOUNT.equals(scope) || Scope.ORG.equals(scope)) {
+      return null;
+    }
+    if (StringUtils.isAllBlank(inputDTO.getOrgIdentifier(), inputDTO.getProjectIdentifier())) {
+      throw new InvalidRequestException("Trying to scope entity to Project but org/project identifier(s) are missing");
+    }
+    return inputDTO.getProjectIdentifier();
   }
 }

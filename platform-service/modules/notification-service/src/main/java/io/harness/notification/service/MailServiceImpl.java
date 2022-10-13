@@ -20,6 +20,8 @@ import static org.apache.commons.lang3.StringUtils.stripToNull;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DelegateTaskRequest;
+import io.harness.delegate.beans.DelegateResponseData;
+import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.beans.MailTaskParams;
 import io.harness.delegate.beans.NotificationProcessingResponse;
 import io.harness.delegate.beans.NotificationTaskResponse;
@@ -145,15 +147,9 @@ public class MailServiceImpl implements ChannelService {
   }
 
   public NotificationTaskResponse sendEmail(EmailDTO emailDTO) {
-    List<String> emails = emailDTO.getRecipients();
-    List<String> ccEmails = emailDTO.getCcRecipients();
+    List<String> emails = new ArrayList<>(emailDTO.getToRecipients());
+    List<String> ccEmails = new ArrayList<>(emailDTO.getCcRecipients());
     String accountId = emailDTO.getAccountId();
-    if (emails == null) {
-      emails = new ArrayList<>();
-    }
-    if (ccEmails == null) {
-      ccEmails = new ArrayList<>();
-    }
     if (Objects.isNull(accountId)) {
       throw new NotificationException(
           String.format("No account id encountered for %s.", emailDTO.getNotificationId()), DEFAULT_ERROR_CODE, USER);
@@ -197,6 +193,7 @@ public class MailServiceImpl implements ChannelService {
     notPresentEmails.addAll(getAbsentEmails(ccEmails, accountId));
     if (!notPresentEmails.isEmpty()) {
       emails.removeAll(notPresentEmails);
+      ccEmails.removeAll(notPresentEmails);
       if (StringUtils.isNotEmpty(errorMessage)) {
         errorMessage = errorMessage.concat(" ");
       }
@@ -273,8 +270,13 @@ public class MailServiceImpl implements ChannelService {
                                   .build())
               .executionTimeout(Duration.ofMinutes(1L))
               .build();
-      notificationTaskResponse =
-          (NotificationTaskResponse) delegateGrpcClientWrapper.executeSyncTask(delegateTaskRequest);
+      DelegateResponseData responseData = delegateGrpcClientWrapper.executeSyncTask(delegateTaskRequest);
+      if (responseData instanceof ErrorNotifyResponseData) {
+        throw new NotificationException("Failed to send email. Check SMTP configuration.", DEFAULT_ERROR_CODE, USER);
+      } else {
+        notificationTaskResponse =
+            (NotificationTaskResponse) delegateGrpcClientWrapper.executeSyncTask(delegateTaskRequest);
+      }
     } else {
       notificationProcessingResponse =
           mailSender.send(emailIds, ccEmailIds, subject, body, notificationId, smtpConfigDefault);

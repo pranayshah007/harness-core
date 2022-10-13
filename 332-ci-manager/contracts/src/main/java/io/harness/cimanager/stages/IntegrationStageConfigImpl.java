@@ -14,6 +14,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
 import io.harness.beans.dependencies.DependencyElement;
+import io.harness.beans.yaml.extended.cache.CacheOptions;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.UseFromStageInfraYaml;
 import io.harness.beans.yaml.extended.platform.Platform;
@@ -76,4 +77,7 @@ public class IntegrationStageConfigImpl implements IntegrationStageConfig {
   @YamlSchemaTypes(value = {SupportedPossibleFieldTypes.runtime})
   @ApiModelProperty(dataType = SwaggerConstants.BOOLEAN_CLASSPATH)
   private ParameterField<Boolean> cloneCodebase;
+
+  @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type", visible = true, defaultImpl = CacheOptions.class)
+  private CacheOptions cacheOptions;
 }

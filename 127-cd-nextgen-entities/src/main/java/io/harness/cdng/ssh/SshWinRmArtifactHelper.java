@@ -9,6 +9,7 @@ package io.harness.cdng.ssh;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER;
 
@@ -39,6 +40,7 @@ import io.harness.delegate.task.ssh.artifact.ArtifactoryDockerArtifactDelegateCo
 import io.harness.delegate.task.ssh.artifact.AwsS3ArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.CustomArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.JenkinsArtifactDelegateConfig;
+import io.harness.delegate.task.ssh.artifact.NexusArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.NexusDockerArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.SshWinRmArtifactDelegateConfig;
 import io.harness.exception.InvalidRequestException;
@@ -53,6 +55,7 @@ import io.harness.utils.IdentifierRefHelper;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import javax.annotation.Nonnull;
@@ -60,6 +63,8 @@ import javax.annotation.Nonnull;
 @Singleton
 @OwnedBy(CDP)
 public class SshWinRmArtifactHelper {
+  private static final List<String> NEXUS_PACKAGE_SUPPORTED_TYPES = Arrays.asList("maven", "npm", "nuget");
+
   @Named(DEFAULT_CONNECTOR_SERVICE) @Inject private ConnectorService connectorService;
   @Named("PRIVILEGED") @Inject private SecretManagerClientService secretManagerClientService;
   @Inject private FeatureFlagService featureFlagService;
@@ -114,7 +119,20 @@ public class SshWinRmArtifactHelper {
           .build();
     } else if (artifactOutcome instanceof NexusArtifactOutcome) {
       NexusArtifactOutcome nexusArtifactOutcome = (NexusArtifactOutcome) artifactOutcome;
+      validateArtifactOutcome(nexusArtifactOutcome);
+
       connectorDTO = getConnectorInfoDTO(nexusArtifactOutcome.getConnectorRef(), ngAccess);
+      if (NEXUS_PACKAGE_SUPPORTED_TYPES.contains(nexusArtifactOutcome.getRepositoryFormat())) {
+        return NexusArtifactDelegateConfig.builder()
+            .identifier(nexusArtifactOutcome.getIdentifier())
+            .connectorDTO(connectorDTO)
+            .encryptedDataDetails(getArtifactEncryptionDataDetails(connectorDTO, ngAccess))
+            .isCertValidationRequired(false)
+            .artifactUrl(nexusArtifactOutcome.getArtifactPath())
+            .repositoryFormat(nexusArtifactOutcome.getRepositoryFormat())
+            .build();
+      }
+
       return NexusDockerArtifactDelegateConfig.builder()
           .identifier(nexusArtifactOutcome.getIdentifier())
           .connectorDTO(connectorDTO)
@@ -202,5 +220,14 @@ public class SshWinRmArtifactHelper {
       throw new InvalidRequestException(format("Connector not found for identifier : [%s]", connectorId), USER);
     }
     return connectorDTO.get().getConnector();
+  }
+
+  private void validateArtifactOutcome(ArtifactOutcome artifactOutcome) {
+    if (artifactOutcome instanceof NexusArtifactOutcome
+        && NEXUS_PACKAGE_SUPPORTED_TYPES.contains(((NexusArtifactOutcome) artifactOutcome).getRepositoryFormat())) {
+      if (isEmpty(((NexusArtifactOutcome) artifactOutcome).getArtifactPath())) {
+        throw new InvalidRequestException("Nexus artifact outcome path cannot be null or empty");
+      }
+    }
   }
 }
