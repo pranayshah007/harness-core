@@ -34,9 +34,17 @@ public class MigratorExpressionUtils {
     context.put("env.description", "<+env.description>");
     context.put("env.environmentType", "<+env.type>");
 
+    // Service Expressions
+    context.put("service.name", "<+service.name>");
+    context.put("service.description", "<+service.description>");
+
     // Artifact Expressions
     context.put("artifact.metadata.image", "<+artifact.image>");
     context.put("artifact.source.dockerconfig", "<+artifact.imagePullSecret>");
+
+    // Application Expressions
+    context.put("app.name", "<+project.name>");
+    context.put("app.description", "<+project.description>");
 
     // Variables
     context.put("workflow.variables", new WorkflowVariablesMigratorFunctor());
