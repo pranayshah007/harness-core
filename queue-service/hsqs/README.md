@@ -14,4 +14,6 @@ Default run configuration (for Goland) is already present in the repo in
 
 Use below command to run using bazel
 
-bazel build //queue-service/hsqs/...
+1. `bazel build //queue-service/hsqs/...` to create bazel build
+
+2. `swag init -g cmd/server.go` from hsqs folder to generate swagger               

@@ -10,6 +10,7 @@ package software.wings.beans;
 import static io.harness.beans.EnvironmentType.NON_PROD;
 
 import static software.wings.beans.Environment.Builder.anEnvironment;
+import static software.wings.ngmigration.NGMigrationEntityType.ENVIRONMENT;
 import static software.wings.yaml.YamlHelper.trimYaml;
 
 import static java.util.Arrays.asList;
@@ -36,6 +37,7 @@ import software.wings.beans.entityinterface.ApplicationAccess;
 import software.wings.beans.entityinterface.KeywordsAware;
 import software.wings.beans.entityinterface.TagAware;
 import software.wings.infra.InfrastructureDefinition;
+import software.wings.ngmigration.CgBasicInfo;
 import software.wings.ngmigration.NGMigrationEntity;
 import software.wings.yaml.BaseEntityYaml;
 
@@ -281,6 +283,18 @@ public class Environment
   @Override
   public String getMigrationEntityName() {
     return getName();
+  }
+
+  @JsonIgnore
+  @Override
+  public CgBasicInfo getCgBasicInfo() {
+    return CgBasicInfo.builder()
+        .id(getUuid())
+        .name(getName())
+        .type(ENVIRONMENT)
+        .appId(getAppId())
+        .accountId(getAccountId())
+        .build();
   }
 
   /**

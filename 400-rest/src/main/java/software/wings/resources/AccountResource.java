@@ -35,6 +35,8 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.licensing.beans.modules.AccountLicenseDTO;
 import io.harness.licensing.beans.modules.ModuleLicenseDTO;
+import io.harness.licensing.beans.modules.SMPEncLicenseDTO;
+import io.harness.licensing.beans.modules.SMPLicenseRequestDTO;
 import io.harness.licensing.remote.admin.AdminLicenseHttpClient;
 import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
@@ -80,6 +82,7 @@ import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import io.dropwizard.jersey.PATCH;
 import io.swagger.annotations.Api;
+import io.swagger.v3.oas.annotations.Hidden;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -662,6 +665,27 @@ public class AccountResource {
       return RestResponse.Builder.aRestResponse()
           .withResponseMessages(
               Lists.newArrayList(ResponseMessage.builder().message("User not allowed to query licenses").build()))
+          .build();
+    }
+  }
+
+  @POST
+  @Path("{accountId}/smp/licenses/generate")
+  @Hidden
+  public RestResponse<SMPEncLicenseDTO> generateSMPLicense(
+      @PathParam("accountId") String accountId, @Body SMPLicenseRequestDTO licenseRequestDTO) {
+    User existingUser = UserThreadLocal.get();
+    if (existingUser == null) {
+      throw new InvalidRequestException("Invalid User");
+    }
+
+    if (harnessUserGroupService.isHarnessSupportUser(existingUser.getUuid())) {
+      return new RestResponse<>(getResponse(
+          adminLicenseHttpClient.generateSMPLicense(licenseRequestDTO.getCustomerAccountId(), licenseRequestDTO)));
+    } else {
+      return RestResponse.Builder.aRestResponse()
+          .withResponseMessages(
+              Lists.newArrayList(ResponseMessage.builder().message("User not allowed to generate smp license").build()))
           .build();
     }
   }

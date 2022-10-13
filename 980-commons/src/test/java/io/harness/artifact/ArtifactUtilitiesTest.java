@@ -7,6 +7,7 @@
 
 package io.harness.artifact;
 
+import static io.harness.rule.OwnerRule.IVAN;
 import static io.harness.rule.OwnerRule.PUNEET;
 import static io.harness.rule.OwnerRule.SRINIVAS;
 
@@ -94,5 +95,19 @@ public class ArtifactUtilitiesTest extends CategoryTest {
     assertThat(ArtifactUtilities.getFileParentPath("harness\\todolist-*.zip")).isEqualTo("harness");
     assertThat(ArtifactUtilities.getFileParentPath("prefix*")).isEqualTo("");
     assertThat(ArtifactUtilities.getFileParentPath("")).isEqualTo("");
+  }
+
+  @Test
+  @Owner(developers = IVAN)
+  @Category(UnitTests.class)
+  public void getArtifactNameTest() {
+    assertThat(ArtifactUtilities.getArtifactName(null)).isEqualTo(null);
+    assertThat(ArtifactUtilities.getArtifactName("")).isEqualTo("");
+    assertThat(ArtifactUtilities.getArtifactName(
+                   "https://nexus3.dev.harness.io/repository/maven-releases/mygroup/myartifact/1.8/myartifact-1.8.war"))
+        .isEqualTo("myartifact-1.8.war");
+    assertThat(ArtifactUtilities.getArtifactName(
+                   "https://nexus3.dev.harness.io/repository/maven-releases/mygroup/myartifact/1.8/"))
+        .isEqualTo("");
   }
 }

@@ -572,9 +572,6 @@ public class NGTemplateServiceImpl implements NGTemplateService {
   public Page<TemplateEntity> list(Criteria criteria, Pageable pageable, String accountId, String orgIdentifier,
       String projectIdentifier, Boolean getDistinctFromBranches) {
     enforcementClientService.checkAvailability(FeatureRestrictionName.TEMPLATE_SERVICE, accountId);
-    if (templateGitXService.isNewGitXEnabled(accountId, orgIdentifier, projectIdentifier)) {
-      criteria.and("storeType").in(StoreType.INLINE.name(), null);
-    }
     if (Boolean.TRUE.equals(getDistinctFromBranches)
         && gitSyncSdkService.isGitSyncEnabled(accountId, orgIdentifier, projectIdentifier)) {
       return templateRepository.findAll(criteria, pageable, accountId, orgIdentifier, projectIdentifier, true);

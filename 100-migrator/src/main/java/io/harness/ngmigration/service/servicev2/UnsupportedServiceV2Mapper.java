@@ -9,7 +9,6 @@ package io.harness.ngmigration.service.servicev2;
 
 import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
 import io.harness.cdng.service.beans.ServiceDefinition;
-import io.harness.exception.InvalidRequestException;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
 
@@ -31,7 +30,6 @@ public class UnsupportedServiceV2Mapper implements ServiceV2Mapper {
   public ServiceDefinition getServiceDefinition(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
       Map<CgEntityId, Set<CgEntityId>> graph, Service service, Map<CgEntityId, NGYamlFile> migratedEntities,
       List<ManifestConfigWrapper> manifests) {
-    throw new InvalidRequestException(
-        String.format("Service of deployment type %s supported", service.getDeploymentType()));
+    return null;
   }
 }

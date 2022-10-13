@@ -39,7 +39,7 @@ public class SecretsImportService implements ImportService {
   @Inject DiscoveryService discoveryService;
 
   private static final Set<EncryptionType> SUPPORTED_SECRET_MANAGERS =
-      Sets.newHashSet(EncryptionType.VAULT, EncryptionType.LOCAL);
+      Sets.newHashSet(EncryptionType.VAULT, EncryptionType.LOCAL, EncryptionType.AWS_SECRETS_MANAGER);
 
   public DiscoveryResult discover(String authToken, ImportDTO importDTO) {
     try {

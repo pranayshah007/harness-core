@@ -232,6 +232,9 @@ import io.harness.delegate.beans.connector.servicenow.ServiceNowValidationParams
 import io.harness.delegate.beans.connector.servicenow.connection.ServiceNowTestConnectionTaskNGResponse;
 import io.harness.delegate.beans.connector.splunkconnector.SplunkConnectionTaskParams;
 import io.harness.delegate.beans.connector.splunkconnector.SplunkConnectionTaskResponse;
+import io.harness.delegate.beans.connector.spotconnector.SpotTaskParams;
+import io.harness.delegate.beans.connector.spotconnector.SpotTaskType;
+import io.harness.delegate.beans.connector.spotconnector.SpotValidateTaskResponse;
 import io.harness.delegate.beans.connector.vaultconnector.VaultValidationParams;
 import io.harness.delegate.beans.ecs.EcsBlueGreenCreateServiceResult;
 import io.harness.delegate.beans.ecs.EcsBlueGreenPrepareRollbackDataResult;
@@ -269,6 +272,7 @@ import io.harness.delegate.beans.executioncapability.SmbConnectionCapability;
 import io.harness.delegate.beans.executioncapability.SmtpCapability;
 import io.harness.delegate.beans.executioncapability.SocketConnectivityBulkOrExecutionCapability;
 import io.harness.delegate.beans.executioncapability.SocketConnectivityExecutionCapability;
+import io.harness.delegate.beans.executioncapability.SshConnectivityExecutionCapability;
 import io.harness.delegate.beans.executioncapability.SystemEnvCheckerCapability;
 import io.harness.delegate.beans.executioncapability.WinrmConnectivityExecutionCapability;
 import io.harness.delegate.beans.git.GitCommandExecutionResponse;
@@ -326,6 +330,8 @@ import io.harness.delegate.beans.storeconfig.HttpHelmStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.LocalFileStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.OciHelmStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.S3HelmStoreDelegateConfig;
+import io.harness.delegate.beans.trigger.TriggerAuthenticationTaskParams;
+import io.harness.delegate.beans.trigger.TriggerAuthenticationTaskResponse;
 import io.harness.delegate.command.CommandExecutionResult;
 import io.harness.delegate.exception.DelegateRetryableException;
 import io.harness.delegate.exception.EcsNGException;
@@ -710,6 +716,7 @@ import io.harness.delegate.task.ssh.artifact.ArtifactoryDockerArtifactDelegateCo
 import io.harness.delegate.task.ssh.artifact.AwsS3ArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.CustomArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.JenkinsArtifactDelegateConfig;
+import io.harness.delegate.task.ssh.artifact.NexusArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.NexusDockerArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.SkipCopyArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.SshWinRmArtifactDelegateConfig;
@@ -1277,6 +1284,10 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(S3HelmStoreDelegateConfig.class, 19702);
     kryo.register(GcsHelmStoreDelegateConfig.class, 19703);
 
+    kryo.register(SpotValidateTaskResponse.class, 21006);
+    kryo.register(SpotTaskParams.class, 21007);
+    kryo.register(SpotTaskType.class, 21008);
+
     kryo.register(SecretType.class, 543214);
     kryo.register(ValueType.class, 543215);
     kryo.register(SSHKeySpecDTO.class, 543222);
@@ -1619,6 +1630,8 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(AwsListElbListenerRulesTaskParamsRequest.class, 83083);
     kryo.register(AwsListElbListenerRulesTaskResponse.class, 83084);
     kryo.register(AwsListElbListenersTaskResponse.class, 83085);
+    kryo.register(TriggerAuthenticationTaskParams.class, 83086);
+    kryo.register(TriggerAuthenticationTaskResponse.class, 83087);
 
     // WinRm
     kryo.register(WinRmCredentialsSpecDTO.class, 600001);
@@ -1858,5 +1871,7 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(ShellScriptProvisionTaskNGRequest.class, 55426);
     kryo.register(ShellScriptProvisionTaskNGResponse.class, 55427);
     kryo.register(ArtifactoryFetchImagePathResponse.class, 55428);
+    kryo.register(NexusArtifactDelegateConfig.class, 55429);
+    kryo.register(SshConnectivityExecutionCapability.class, 55435);
   }
 }

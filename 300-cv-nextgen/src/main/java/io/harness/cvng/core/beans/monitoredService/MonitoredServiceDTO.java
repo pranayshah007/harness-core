@@ -48,7 +48,7 @@ public class MonitoredServiceDTO {
   @ApiModelProperty(required = true) @NotNull @EntityIdentifier String serviceRef;
   @EntityIdentifier String environmentRef;
   List<String> environmentRefList;
-  @ApiModelProperty(required = true) @NotNull @Size(max = 128) Map<String, String> tags;
+  @Size(max = 128) Map<String, String> tags;
   @Valid Sources sources;
   @Valid Set<ServiceDependencyDTO> dependencies;
   List<NotificationRuleRefDTO> notificationRuleRefs;

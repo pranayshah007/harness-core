@@ -164,7 +164,6 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
       PlanCreationContext ctx, DeploymentStageNode stageNode, List<String> childrenNodeIds) {
     stageNode.setIdentifier(getIdentifierWithExpression(ctx, stageNode, stageNode.getIdentifier()));
     stageNode.setName(getIdentifierWithExpression(ctx, stageNode, stageNode.getName()));
-    DeploymentStageConfig config = stageNode.getDeploymentStageConfig();
     StageElementParametersBuilder stageParameters = CdStepParametersUtils.getStageParameters(stageNode);
     YamlField specField =
         Preconditions.checkNotNull(ctx.getCurrentField().getNode().getField(YAMLFieldNameConstants.SPEC));
@@ -259,7 +258,8 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
     Map<String, GraphLayoutNode> stageYamlFieldMap = new LinkedHashMap<>();
     YamlField yamlField = context.getCurrentField();
     if (config.getDeploymentStageConfig().getServices() != null
-        || config.getDeploymentStageConfig().getEnvironments() != null) {
+        || config.getDeploymentStageConfig().getEnvironments() != null
+        || config.getDeploymentStageConfig().getEnvironmentGroup() != null) {
       YamlField siblingField = yamlField.getNode().nextSiblingFromParentArray(
           yamlField.getName(), Arrays.asList(YAMLFieldNameConstants.STAGE, YAMLFieldNameConstants.PARALLEL));
       EdgeLayoutList edgeLayoutList;

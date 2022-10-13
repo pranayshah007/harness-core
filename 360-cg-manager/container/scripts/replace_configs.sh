@@ -117,7 +117,7 @@ if [[ "" != "$MONGO_TRACE_MODE" ]]; then
 fi
 
 if [[ "" != "$MONGO_MAX_OPERATION_TIME_IN_MILLIS" ]]; then
-  export $MONGO_MAX_OPERATION_TIME_IN_MILLIS; yq -i '.mongo.maxOperationTimeInMillis=env(MONGO_MAX_OPERATION_TIME_IN_MILLIS)' $CONFIG_FILE
+  export MONGO_MAX_OPERATION_TIME_IN_MILLIS; yq -i '.mongo.maxOperationTimeInMillis=env(MONGO_MAX_OPERATION_TIME_IN_MILLIS)' $CONFIG_FILE
 fi
 
 if [[ "" != "$MONGO_SSL_CONFIG" ]]; then
@@ -519,9 +519,12 @@ if [[ "" != "$BACKGROUND_SCHEDULER_CLUSTERED" ]]; then
 fi
 
 if [[ "" != "$ENABLE_CRONS" ]]; then
-  export ENABLE_CRONS; yq -i '.enableIterators=env(ENABLE_CRONS)' $CONFIG_FILE
   export ENABLE_CRONS; yq -i '.backgroundScheduler.enabled=env(ENABLE_CRONS)' $CONFIG_FILE
   export ENABLE_CRONS; yq -i '.serviceScheduler.enabled=env(ENABLE_CRONS)' $CONFIG_FILE
+fi
+
+if [[ "" != "$ENABLE_ITERATORS" ]]; then
+  export ENABLE_ITERATORS; yq -i '.enableIterators=env(ENABLE_ITERATORS)' $CONFIG_FILE
 fi
 
 if [[ "" != "$ALLOW_TRIAL_REGISTRATION" ]]; then
@@ -1037,6 +1040,4 @@ if [[ "" != "$AGENT_MTLS_SUBDOMAIN" ]]; then
   export AGENT_MTLS_SUBDOMAIN; yq -i '.agentMtlsSubdomain=env(AGENT_MTLS_SUBDOMAIN)' $CONFIG_FILE
 fi
 
-if [[ "" != "$CD_TSDB_RETENTION_PERIOD_MONTHS" ]]; then
-  export CD_TSDB_RETENTION_PERIOD_MONTHS; yq -i '.cdTsDbRetentionPeriodMonths=env(CD_TSDB_RETENTION_PERIOD_MONTHS)' $CD_TSDB_RETENTION_PERIOD_MONTHS
-fi
+replace_key_value cdTsDbRetentionPeriodMonths "$CD_TSDB_RETENTION_PERIOD_MONTHS"

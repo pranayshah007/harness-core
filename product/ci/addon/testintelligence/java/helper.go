@@ -46,7 +46,7 @@ func GetJavaTests(log *zap.SugaredLogger, fs filesystem.FileSystem) ([]types.Run
 
 	files, _ := getFiles(fmt.Sprintf("%s/**/*.java", wp))
 	for _, path := range files {
-		if len(path) == 0 {
+		if path == "" {
 			continue
 		}
 		node, _ := utils.ParseJavaNode(path)

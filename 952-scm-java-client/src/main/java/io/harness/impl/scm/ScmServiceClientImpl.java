@@ -23,6 +23,7 @@ import io.harness.beans.gitsync.GitFileDetails;
 import io.harness.beans.gitsync.GitFilePathDetails;
 import io.harness.beans.gitsync.GitPRCreateRequest;
 import io.harness.beans.gitsync.GitWebhookDetails;
+import io.harness.connector.ManagerExecutable;
 import io.harness.constants.Constants;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
@@ -826,12 +827,22 @@ public class ScmServiceClientImpl implements ScmServiceClient {
   public GetUserReposResponse getUserRepos(
       ScmConnector scmConnector, io.harness.beans.PageRequestDTO pageRequest, SCMGrpc.SCMBlockingStub scmBlockingStub) {
     Provider gitProvider = scmGitProviderMapper.mapToSCMGitProvider(scmConnector);
+    Boolean executeOnDelegate = Boolean.TRUE;
+    int maxRetries = 1;
+    if (scmConnector instanceof ManagerExecutable) {
+      executeOnDelegate = ((ManagerExecutable) scmConnector).getExecuteOnDelegate();
+    }
+    // Adding retry only on manager as delegate already has retry logic
+    if (!executeOnDelegate) {
+      maxRetries = 4;
+    }
     return ScmGrpcClientUtils.retryAndProcessException(scmBlockingStub::getUserRepos,
         GetUserReposRequest.newBuilder()
             .setPagination(PageRequest.newBuilder().setPage(pageRequest.getPageIndex() + 1).build())
             .setProvider(gitProvider)
             .setFetchAllRepos(pageRequest.isFetchAll())
-            .build());
+            .build(),
+        maxRetries);
   }
 
   @Override

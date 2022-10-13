@@ -29,6 +29,7 @@ import io.harness.pms.yaml.YamlUtils;
 import io.harness.preflight.PreFlightCheckMetadata;
 import io.harness.remote.client.NGRestUtils;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -76,9 +77,29 @@ public class ConnectorPreflightHandler {
       existingIdentifiers.add(refIdentifier);
       scopeToConnectorIdentifiers.put(refScope, existingIdentifiers);
     }
-    List<ConnectorResponseDTO> connectorResponses =
+    List<ConnectorResponseDTO> connectorResponseDTO =
         getConnectorResponses(accountIdentifier, orgIdentifier, projectIdentifier, scopeToConnectorIdentifiers);
-    return getConnectorCheckResponse(fqnToObjectMapMergedYaml, connectorResponses, connectorIdentifierToFqn);
+
+    // filtering connectorResponseDTO to get only the actually referred connectors in Yaml, as currently NG Manager is
+    // fetching connectorResponses of all the connectors having same identifier
+    List<ConnectorResponseDTO> finalResponse = filterConnectorResponse(connectorResponseDTO, connectorUsages);
+    return getConnectorCheckResponse(fqnToObjectMapMergedYaml, finalResponse, connectorIdentifierToFqn);
+  }
+
+  @VisibleForTesting
+  List<ConnectorResponseDTO> filterConnectorResponse(
+      List<ConnectorResponseDTO> connectorResponseDTO, List<EntityDetail> connectorUsages) {
+    List<ConnectorResponseDTO> filteredConnectorResponse = new ArrayList<>();
+    for (ConnectorResponseDTO responseDTO : connectorResponseDTO) {
+      if (connectorUsages.stream().anyMatch(connectorUse
+              -> connectorUse.getEntityRef().getBranch().equals(responseDTO.getGitDetails().getBranch())
+                  && connectorUse.getEntityRef().getRepoIdentifier().equals(
+                      responseDTO.getGitDetails().getRepoIdentifier())
+                  && connectorUse.getEntityRef().getIdentifier().equals(responseDTO.getConnector().getIdentifier()))) {
+        filteredConnectorResponse.add(responseDTO);
+      }
+    }
+    return filteredConnectorResponse;
   }
 
   public List<ConnectorResponseDTO> getConnectorResponses(String accountIdentifier, String orgIdentifier,

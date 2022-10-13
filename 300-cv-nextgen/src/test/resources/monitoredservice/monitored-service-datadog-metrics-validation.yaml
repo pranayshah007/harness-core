@@ -1,0 +1,69 @@
+---
+monitoredService:
+  type: "Application"
+  serviceRef: "template"
+  environmentRef: "datadogm"
+  tags: {}
+  sources:
+    changeSources:
+      - identifier: "harness_cd_next_gen"
+        type: "HarnessCDNextGen"
+        name: "Harness CD Next Gen"
+        enabled: true
+        category: "Deployment"
+        spec: {}
+    healthSources:
+      - identifier: "ddm"
+        type: "DatadogMetrics"
+        name: "ddm"
+        spec:
+          connectorRef: "<+monitoredService.variables.connector>"
+          feature: "Datadog Cloud Metrics"
+          metricDefinitions:
+            - identifier: "m1"
+              dashboardName: "g1"
+              metricPath: "m1"
+              metricName: "m1"
+              metric: "kubernetes.cpu.usage.total"
+              metricTags: []
+              isManualQuery: true
+              isCustomCreatedMetric: true
+              serviceInstanceIdentifierTag: "<+monitoredService.variables.ServiceLabelInstance>"
+              groupingQuery: "kubernetes.cpu.usage.total{*} by {<+monitoredService.variables.ServiceLabelInstance>}.rollup(avg,\
+            \ 60)"
+              query: "<+monitoredService.variables.Query>"
+              sli:
+                enabled: true
+              analysis:
+                riskProfile:
+                  metricType: "RESP_TIME"
+                  category: "Performance"
+                  thresholdTypes:
+                    - "ACT_WHEN_HIGHER"
+                liveMonitoring:
+                  enabled: true
+                deploymentVerification:
+                  enabled: true
+                  serviceInstanceFieldName: "<+monitoredService.variables.ServiceLabelInstance>"
+          metricPacks:
+            - identifier: "Custom"
+              metricThresholds: []
+  variables:
+    - name: "Query"
+      type: "String"
+      value: "kubernetes.cpu.usage.total{*}.rollup(avg, 60)"
+    - name: "connector"
+      type: "String"
+      value: "dd"
+    - name: "ServiceLabelInstance"
+      type: "String"
+      value: "host"
+  template:
+    templateRef: "datadog"
+    versionLabel: "version7"
+    templateInputs:
+      type: "Application"
+      serviceRef: "template"
+      environmentRef: "datadogm"
+  identifier: "<+monitoredService.serviceRef>_<+monitoredService.environmentRef>"
+  name: "<+monitoredService.serviceRef>_<+monitoredService.environmentRef>"

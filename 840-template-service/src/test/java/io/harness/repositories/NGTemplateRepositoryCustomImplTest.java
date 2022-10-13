@@ -246,6 +246,16 @@ public class NGTemplateRepositoryCustomImplTest {
                                         .storeType(StoreType.REMOTE)
                                         .build();
 
+    GitEntityInfo branchInfo = GitEntityInfo.builder()
+                                   .storeType(StoreType.REMOTE)
+                                   .connectorRef(connectorRef)
+                                   .repoName(repoName)
+                                   .branch(branch)
+                                   .filePath(filePath)
+                                   .build();
+
+    setupGitContext(branchInfo);
+
     doReturn(templateEntity).when(mongoTemplate).findOne(any(), any());
     doReturn(templateEntity).when(gitAwareEntityHelper).fetchEntityFromRemote(any(), any(), any(), any());
     Optional<TemplateEntity> optionalPipelineEntity =
@@ -296,6 +306,16 @@ public class NGTemplateRepositoryCustomImplTest {
                                         .storeType(StoreType.REMOTE)
                                         .build();
 
+    GitEntityInfo branchInfo = GitEntityInfo.builder()
+                                   .storeType(StoreType.REMOTE)
+                                   .connectorRef(connectorRef)
+                                   .repoName(repoName)
+                                   .branch(branch)
+                                   .filePath(filePath)
+                                   .build();
+
+    setupGitContext(branchInfo);
+
     doReturn(templateEntity).when(mongoTemplate).findOne(any(), any());
     doReturn(templateEntity).when(gitAwareEntityHelper).fetchEntityFromRemote(any(), any(), any(), any());
     Optional<TemplateEntity> optionalPipelineEntity =
@@ -345,6 +365,16 @@ public class NGTemplateRepositoryCustomImplTest {
                                         .yaml(pipelineYaml)
                                         .storeType(StoreType.REMOTE)
                                         .build();
+
+    GitEntityInfo branchInfo = GitEntityInfo.builder()
+                                   .storeType(StoreType.REMOTE)
+                                   .connectorRef(connectorRef)
+                                   .repoName(repoName)
+                                   .branch(branch)
+                                   .filePath(filePath)
+                                   .build();
+
+    setupGitContext(branchInfo);
 
     doReturn(templateEntity).when(mongoTemplate).findOne(any(), any());
     doReturn(templateEntity).when(gitAwareEntityHelper).fetchEntityFromRemote(any(), any(), any(), any());

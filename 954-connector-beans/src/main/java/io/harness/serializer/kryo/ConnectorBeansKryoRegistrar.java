@@ -207,6 +207,11 @@ import io.harness.delegate.beans.connector.scm.gitlab.GitlabUsernamePasswordDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabUsernameTokenDTO;
 import io.harness.delegate.beans.connector.servicenow.ServiceNowConnectorDTO;
 import io.harness.delegate.beans.connector.splunkconnector.SplunkConnectorDTO;
+import io.harness.delegate.beans.connector.spotconnector.SpotConnectorDTO;
+import io.harness.delegate.beans.connector.spotconnector.SpotCredentialDTO;
+import io.harness.delegate.beans.connector.spotconnector.SpotCredentialSpecDTO;
+import io.harness.delegate.beans.connector.spotconnector.SpotCredentialType;
+import io.harness.delegate.beans.connector.spotconnector.SpotManualConfigSpecDTO;
 import io.harness.delegate.beans.connector.sumologic.SumoLogicConnectorDTO;
 import io.harness.delegate.beans.connector.vaultconnector.VaultConnectorDTO;
 import io.harness.serializer.KryoRegistrar;
@@ -404,6 +409,12 @@ public class ConnectorBeansKryoRegistrar implements KryoRegistrar {
     kryo.register(AzureSystemAssignedMSIAuthDTO.class, 19809);
     kryo.register(AzureMSIAuthUADTO.class, 19810);
     kryo.register(AzureMSIAuthSADTO.class, 19811);
+    kryo.register(SpotConnectorDTO.class, 21001);
+    kryo.register(SpotCredentialDTO.class, 21002);
+    kryo.register(SpotCredentialSpecDTO.class, 21003);
+    kryo.register(SpotCredentialType.class, 21004);
+    kryo.register(SpotManualConfigSpecDTO.class, 21005);
+
     kryo.register(JenkinsAuthCredentialsDTO.class, 29112);
     kryo.register(JenkinsAuthenticationDTO.class, 29113);
     kryo.register(JenkinsAuthType.class, 29114);

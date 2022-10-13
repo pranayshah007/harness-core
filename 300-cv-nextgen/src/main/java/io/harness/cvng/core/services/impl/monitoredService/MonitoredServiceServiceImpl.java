@@ -77,6 +77,7 @@ import io.harness.cvng.core.services.api.monitoredService.HealthSourceService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
 import io.harness.cvng.core.services.api.monitoredService.ServiceDependencyService;
 import io.harness.cvng.core.utils.FeatureFlagNames;
+import io.harness.cvng.core.utils.template.MonitoredServiceValidator;
 import io.harness.cvng.core.utils.template.MonitoredServiceYamlExpressionEvaluator;
 import io.harness.cvng.core.utils.template.TemplateFacade;
 import io.harness.cvng.dashboard.services.api.HeatMapService;
@@ -291,6 +292,7 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
     monitoredServiceDTO = (MonitoredServiceDTO) yamlExpressionEvaluator.resolve(monitoredServiceDTO, false);
     monitoredServiceDTO.setProjectIdentifier(projectParams.getProjectIdentifier());
     monitoredServiceDTO.setOrgIdentifier(projectParams.getOrgIdentifier());
+    MonitoredServiceValidator.validateMSDTO(monitoredServiceDTO);
     return monitoredServiceDTO;
   }
 

@@ -1592,6 +1592,14 @@
 20103:io.harness.ng.core.account.AuthenticationMechanism
 20104:io.harness.ng.core.account.ServiceAccountConfig
 20105:io.harness.steps.shellscript.ShellType
+21001:io.harness.delegate.beans.connector.spotconnector.SpotConnectorDTO
+21002:io.harness.delegate.beans.connector.spotconnector.SpotCredentialDTO
+21003:io.harness.delegate.beans.connector.spotconnector.SpotCredentialSpecDTO
+21004:io.harness.delegate.beans.connector.spotconnector.SpotCredentialType
+21005:io.harness.delegate.beans.connector.spotconnector.SpotManualConfigSpecDTO
+21006:io.harness.delegate.beans.connector.spotconnector.SpotValidateTaskResponse
+21007:io.harness.delegate.beans.connector.spotconnector.SpotTaskParams
+21008:io.harness.delegate.beans.connector.spotconnector.SpotTaskType
 22001:io.harness.ng.core.common.beans.NGTag
 22004:io.harness.ng.core.common.beans.KeyValuePair
 22005:io.harness.ng.core.ResourceScope
@@ -1668,6 +1676,7 @@
 40100:software.wings.beans.ce.CEAzureConfig
 40113:com.amazonaws.services.cloudformation.model.StackStatus
 40114:software.wings.beans.CustomSecretNGManagerConfig
+40115:io.harness.delegate.utils.NexusVersion
 50002:software.wings.api.RancherClusterElement
 50004:software.wings.delegatetasks.rancher.RancherResolveClustersTaskParameters
 50005:software.wings.delegatetasks.rancher.RancherResolveClustersResponse
@@ -1768,6 +1777,8 @@
 55426:io.harness.delegate.task.shell.provisioner.ShellScriptProvisionTaskNGRequest
 55427:io.harness.delegate.task.shell.provisioner.ShellScriptProvisionTaskNGResponse
 55428:io.harness.delegate.beans.artifactory.ArtifactoryFetchImagePathResponse
+55429:io.harness.delegate.task.ssh.artifact.NexusArtifactDelegateConfig
+55435:io.harness.delegate.beans.executioncapability.SshConnectivityExecutionCapability
 55470:io.harness.delegate.task.ssh.artifact.CustomArtifactDelegateConfig
 55501:io.harness.delegate.beans.instancesync.info.PdcServerInstanceInfo
 55502:io.harness.delegate.beans.instancesync.info.AzureSshWinrmServerInstanceInfo
@@ -1816,6 +1827,7 @@
 80309:software.wings.helpers.ext.azure.devops.AzureArtifactsProtocolMetadataData
 80310:software.wings.helpers.ext.azure.devops.AzureDevopsProjects
 80311:io.harness.artifactory.ArtifactoryImagePath
+80312:io.harness.ngtriggers.WebhookSecretData
 83071:io.harness.delegate.beans.connector.awsconnector.AwsListEC2InstancesTaskParamsRequest
 83072:io.harness.delegate.beans.connector.awsconnector.AwsListEC2InstancesTaskResponse
 83073:software.wings.service.impl.aws.model.AwsEC2Instance
@@ -1831,6 +1843,8 @@
 83083:io.harness.delegate.beans.connector.awsconnector.AwsListElbListenerRulesTaskParamsRequest
 83084:io.harness.delegate.beans.connector.awsconnector.AwsListElbListenerRulesTaskResponse
 83085:io.harness.delegate.beans.connector.awsconnector.AwsListElbListenersTaskResponse
+83086:io.harness.delegate.beans.trigger.TriggerAuthenticationTaskParams
+83087:io.harness.delegate.beans.trigger.TriggerAuthenticationTaskResponse
 90001:software.wings.service.impl.apm.AWSPrometheusInfo
 95001:io.harness.delegate.beans.logstreaming.UnitProgressData
 97001:io.harness.jira.JiraActionNG
@@ -2373,6 +2387,7 @@
 980035:io.harness.exception.ngexception.AzureARMTaskException
 980037:io.harness.exception.ngexception.AzureBPTaskException
 9300122:io.harness.yaml.core.timeout.Timeout
+9300123:io.harness.beans.WebhookEncryptedSecretDTO
 9800001:io.harness.beans.RecasterMap
 9800002:io.harness.licensing.beans.modules.ChaosModuleLicenseDTO
 9800003:io.harness.delegate.task.ssh.artifact.JenkinsArtifactDelegateConfig
@@ -2387,4 +2402,3 @@
 10000103:io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsAuthenticationType
 10000109:io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsAuthenticationDTO
 10000111:io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsTokenDTO
-

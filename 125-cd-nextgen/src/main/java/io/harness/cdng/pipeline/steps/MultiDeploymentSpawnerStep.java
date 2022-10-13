@@ -74,7 +74,7 @@ public class MultiDeploymentSpawnerStep extends ChildrenExecutableWithRollbackAn
       int currentIteration = 0;
       int totalIterations = environmentsMapList.size();
       int maxConcurrency = 1;
-      if (stepParameters.getEnvironments().getEnvironmentsMetadata() != null
+      if (stepParameters.getEnvironments() != null && stepParameters.getEnvironments().getEnvironmentsMetadata() != null
           && stepParameters.getEnvironments().getEnvironmentsMetadata().getParallel() != null
           && stepParameters.getEnvironments().getEnvironmentsMetadata().getParallel()) {
         maxConcurrency = 0;

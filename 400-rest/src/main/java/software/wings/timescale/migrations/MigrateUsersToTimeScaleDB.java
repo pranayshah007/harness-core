@@ -9,6 +9,7 @@ package software.wings.timescale.migrations;
 
 import static io.harness.persistence.HQuery.excludeAuthority;
 
+import static software.wings.timescale.migrations.TimescaleEntityMigrationHelper.deleteFromTimescaleDB;
 import static software.wings.timescale.migrations.TimescaleEntityMigrationHelper.insertArrayData;
 
 import io.harness.persistence.HIterator;
@@ -30,7 +31,7 @@ import org.mongodb.morphia.query.FindOptions;
 
 @Slf4j
 @Singleton
-public class MigrateUsersToTimeScaleDB {
+public class MigrateUsersToTimeScaleDB implements TimeScaleEntityMigrationInterface {
   @Inject TimeScaleDBService timeScaleDBService;
   @Inject WingsPersistence wingsPersistence;
   @Inject AccountService accountService;
@@ -39,6 +40,8 @@ public class MigrateUsersToTimeScaleDB {
 
   private static final String upsert_statement =
       "INSERT INTO CG_USERS (ID,NAME,ACCOUNT_IDS,EMAIL,CREATED_AT,LAST_UPDATED_AT,CREATED_BY,LAST_UPDATED_BY) VALUES (?,?,?,?,?,?,?,?) ON CONFLICT(ID) DO UPDATE SET NAME = excluded.NAME,ACCOUNT_IDS = excluded.ACCOUNT_IDS,EMAIL = excluded.EMAIL,CREATED_AT = excluded.CREATED_AT,LAST_UPDATED_AT = excluded.LAST_UPDATED_AT,CREATED_BY = excluded.CREATED_BY,LAST_UPDATED_BY = excluded.LAST_UPDATED_BY;";
+
+  private static final String TABLE_NAME = "CG_USERS";
 
   public boolean runTimeScaleMigration(String accountId) {
     if (!timeScaleDBService.isValid()) {
@@ -56,7 +59,7 @@ public class MigrateUsersToTimeScaleDB {
                                                           .fetch(findOptions_users))) {
         while (iterator.hasNext()) {
           User user = iterator.next();
-          prepareTimeScaleQueries(user);
+          saveToTimeScale(user);
           count++;
         }
       }
@@ -69,7 +72,7 @@ public class MigrateUsersToTimeScaleDB {
     return true;
   }
 
-  private void prepareTimeScaleQueries(User user) {
+  public void saveToTimeScale(User user) {
     long startTime = System.currentTimeMillis();
     boolean successful = false;
     int retryCount = 0;
@@ -117,5 +120,13 @@ public class MigrateUsersToTimeScaleDB {
     upsertPreparedStatement.setString(8, last_updated_by);
 
     upsertPreparedStatement.execute();
+  }
+
+  public void deleteFromTimescale(String id) {
+    deleteFromTimescaleDB(id, timeScaleDBService, MAX_RETRY, TABLE_NAME);
+  }
+
+  public String getTimescaleDBClass() {
+    return TABLE_NAME;
   }
 }

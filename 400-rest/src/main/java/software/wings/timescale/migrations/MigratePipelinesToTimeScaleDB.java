@@ -10,6 +10,7 @@ package software.wings.timescale.migrations;
 import static io.harness.persistence.HQuery.excludeAuthority;
 
 import static software.wings.beans.Pipeline.PipelineKeys;
+import static software.wings.timescale.migrations.TimescaleEntityMigrationHelper.deleteFromTimescaleDB;
 import static software.wings.timescale.migrations.TimescaleEntityMigrationHelper.insertArrayData;
 
 import io.harness.persistence.HIterator;
@@ -35,7 +36,7 @@ import org.mongodb.morphia.query.FindOptions;
 
 @Slf4j
 @Singleton
-public class MigratePipelinesToTimeScaleDB {
+public class MigratePipelinesToTimeScaleDB implements TimeScaleEntityMigrationInterface {
   @Inject TimeScaleDBService timeScaleDBService;
 
   @Inject WingsPersistence wingsPersistence;
@@ -44,6 +45,8 @@ public class MigratePipelinesToTimeScaleDB {
 
   private static final String upsert_statement =
       "INSERT INTO CG_PIPELINES (ID,NAME,ACCOUNT_ID,APP_ID,ENV_IDS,WORKFLOW_IDS,CREATED_AT,LAST_UPDATED_AT,CREATED_BY,LAST_UPDATED_BY) VALUES (?,?,?,?,?,?,?,?,?,?) ON CONFLICT(ID) DO UPDATE SET NAME = excluded.NAME,ACCOUNT_ID = excluded.ACCOUNT_ID,APP_ID = excluded.APP_ID,ENV_IDS = excluded.ENV_IDS,WORKFLOW_IDS = excluded.WORKFLOW_IDS,CREATED_AT = excluded.CREATED_AT,LAST_UPDATED_AT = excluded.LAST_UPDATED_AT,CREATED_BY = excluded.CREATED_BY,LAST_UPDATED_BY = excluded.LAST_UPDATED_BY;";
+
+  private static final String TABLE_NAME = "CG_PIPELINES";
 
   public boolean runTimeScaleMigration(String accountId) {
     if (!timeScaleDBService.isValid()) {
@@ -61,7 +64,7 @@ public class MigratePipelinesToTimeScaleDB {
                                                               .fetch(findOptions_pipelines))) {
         while (iterator.hasNext()) {
           Pipeline pipeline = iterator.next();
-          prepareTimeScaleQueries(pipeline);
+          saveToTimeScale(pipeline);
           count++;
         }
       }
@@ -74,7 +77,7 @@ public class MigratePipelinesToTimeScaleDB {
     return true;
   }
 
-  private void prepareTimeScaleQueries(Pipeline pipeline) {
+  public void saveToTimeScale(Pipeline pipeline) {
     long startTime = System.currentTimeMillis();
     boolean successful = false;
     int retryCount = 0;
@@ -153,5 +156,13 @@ public class MigratePipelinesToTimeScaleDB {
     upsertPreparedStatement.setString(10, updated_by);
 
     upsertPreparedStatement.execute();
+  }
+
+  public void deleteFromTimescale(String id) {
+    deleteFromTimescaleDB(id, timeScaleDBService, MAX_RETRY, TABLE_NAME);
+  }
+
+  public String getTimescaleDBClass() {
+    return TABLE_NAME;
   }
 }

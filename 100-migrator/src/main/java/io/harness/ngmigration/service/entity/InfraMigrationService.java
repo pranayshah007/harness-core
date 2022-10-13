@@ -18,6 +18,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.MigratedEntityMapping;
 import io.harness.cdng.infra.InfrastructureDef;
+import io.harness.cdng.infra.yaml.Infrastructure;
 import io.harness.cdng.infra.yaml.InfrastructureConfig;
 import io.harness.cdng.infra.yaml.InfrastructureDefinitionConfig;
 import io.harness.cdng.infra.yaml.K8SDirectInfrastructure;
@@ -32,7 +33,6 @@ import io.harness.ng.core.infrastructure.InfrastructureType;
 import io.harness.ng.core.infrastructure.dto.InfrastructureRequestDTO;
 import io.harness.ngmigration.beans.BaseEntityInput;
 import io.harness.ngmigration.beans.BaseInputDefinition;
-import io.harness.ngmigration.beans.BaseProvidedInput;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.MigratorInputType;
 import io.harness.ngmigration.beans.NGYamlFile;
@@ -74,7 +74,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import retrofit2.Response;
 
 @OwnedBy(HarnessTeam.CDC)
@@ -132,6 +131,7 @@ public class InfraMigrationService extends NgMigrationService {
     CgEntityId infraEntityId = CgEntityId.builder().type(NGMigrationEntityType.INFRA).id(entityId).build();
     CgEntityNode infraNode = CgEntityNode.builder()
                                  .id(entityId)
+                                 .appId(infra.getAppId())
                                  .type(NGMigrationEntityType.INFRA)
                                  .entityId(infraEntityId)
                                  .entity(infra)
@@ -205,22 +205,18 @@ public class InfraMigrationService extends NgMigrationService {
       Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities,
       NgEntityDetail ngEntityDetail) {
     InfrastructureDefinition infra = (InfrastructureDefinition) entities.get(entityId).getEntity();
-    migratorExpressionUtils.render(infra);
-    String name = infra.getName();
-    String identifier = MigratorUtility.generateIdentifier(name);
-    String projectIdentifier = null;
-    String orgIdentifier = null;
-    if (inputDTO.getInputs() != null && inputDTO.getInputs().containsKey(entityId)) {
-      // TODO: @deepakputhraya We should handle if the connector needs to be reused.
-      BaseProvidedInput input = inputDTO.getInputs().get(entityId);
-      identifier = StringUtils.isNotBlank(input.getIdentifier()) ? input.getIdentifier() : identifier;
-      name = StringUtils.isNotBlank(input.getIdentifier()) ? input.getName() : name;
-    }
-    projectIdentifier = inputDTO.getProjectIdentifier();
-    orgIdentifier = inputDTO.getOrgIdentifier();
+    migratorExpressionUtils.render(infra, inputDTO.getCustomExpressions());
+    String name = MigratorUtility.generateName(inputDTO.getOverrides(), entityId, infra.getName());
+    String identifier = MigratorUtility.generateIdentifierDefaultName(inputDTO.getOverrides(), entityId, name);
+    String projectIdentifier = MigratorUtility.getProjectIdentifier(Scope.PROJECT, inputDTO);
+    String orgIdentifier = MigratorUtility.getOrgIdentifier(Scope.PROJECT, inputDTO);
     InfraDefMapper infraDefMapper = infraMapperFactory.getInfraDefMapper(infra);
     NGYamlFile envNgYamlFile =
         migratedEntities.get(CgEntityId.builder().id(infra.getEnvId()).type(ENVIRONMENT).build());
+    Infrastructure infraSpec = infraDefMapper.getSpec(infra, migratedEntities);
+    if (infraSpec == null) {
+      return Collections.emptyList();
+    }
     InfrastructureConfig infrastructureConfig =
         InfrastructureConfig.builder()
             .infrastructureDefinitionConfig(
@@ -230,7 +226,7 @@ public class InfraMigrationService extends NgMigrationService {
                     .projectIdentifier(projectIdentifier)
                     .identifier(identifier)
                     .environmentRef(MigratorUtility.getIdentifierWithScope(envNgYamlFile.getNgEntityDetail()))
-                    .spec(infraDefMapper.getSpec(infra, migratedEntities))
+                    .spec(infraSpec)
                     .type(infraDefMapper.getInfrastructureType(infra))
                     .deploymentType(infraDefMapper.getServiceDefinition(infra))
                     .build())
@@ -286,7 +282,7 @@ public class InfraMigrationService extends NgMigrationService {
   public InfrastructureDef getInfraDef(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
       Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities) {
     InfrastructureDefinition infrastructureDefinition = (InfrastructureDefinition) entities.get(entityId).getEntity();
-    migratorExpressionUtils.render(infrastructureDefinition);
+    migratorExpressionUtils.render(infrastructureDefinition, inputDTO.getCustomExpressions());
 
     if (infrastructureDefinition.getCloudProviderType() != KUBERNETES_CLUSTER) {
       throw new InvalidRequestException("Only support K8s deployment");

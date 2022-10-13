@@ -8,7 +8,6 @@
 package software.wings.service.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
-import static io.harness.beans.FeatureName.RESOURCE_CONSTRAINT_SCOPE_PIPELINE_ENABLED;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER;
@@ -46,7 +45,6 @@ import io.harness.distribution.constraint.UnableToRegisterConsumerException;
 import io.harness.distribution.constraint.UnableToSaveConstraintException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
-import io.harness.ff.FeatureFlagService;
 import io.harness.persistence.HIterator;
 import io.harness.validation.Create;
 import io.harness.validation.Update;
@@ -97,7 +95,6 @@ import ru.vyarus.guice.validator.group.annotation.ValidationGroups;
 public class ResourceConstraintServiceImpl implements ResourceConstraintService, ConstraintRegistry {
   @Inject private WorkflowExecutionService workflowExecutionService;
   @Inject private StateExecutionService stateExecutionService;
-  @Inject private FeatureFlagService featureFlagService;
 
   @Inject private WaitNotifyEngine waitNotifyEngine;
   @Inject private WingsPersistence wingsPersistence;
@@ -227,12 +224,8 @@ public class ResourceConstraintServiceImpl implements ResourceConstraintService,
     boolean finished = false;
     switch (holdingScope) {
       case PIPELINE:
-        if (featureFlagService.isEnabled(RESOURCE_CONSTRAINT_SCOPE_PIPELINE_ENABLED, instance.getAccountId())) {
-          finished = workflowExecutionService.checkWorkflowExecutionInFinalStatus(
-              instance.getAppId(), instance.getReleaseEntityId());
-          break;
-        }
-        unhandled(holdingScope);
+        finished = workflowExecutionService.checkWorkflowExecutionInFinalStatus(
+            instance.getAppId(), instance.getReleaseEntityId());
         break;
       case WORKFLOW:
         finished = workflowExecutionService.checkWorkflowExecutionInFinalStatus(
@@ -361,15 +354,12 @@ public class ResourceConstraintServiceImpl implements ResourceConstraintService,
 
         HoldingScope scope = HoldingScope.valueOf(instance.getReleaseEntityType());
         switch (scope) {
-          case PIPELINE:
-            if (featureFlagService.isEnabled(RESOURCE_CONSTRAINT_SCOPE_PIPELINE_ENABLED, accountId)) {
-              final WorkflowExecution workflowExecution = workflowExecutionService.fetchWorkflowExecution(
-                  instance.getAppId(), instance.getReleaseEntityId(), WorkflowExecutionKeys.name);
-              builder.releaseEntityName(workflowExecution.getName());
-              break;
-            }
-            unhandled(scope);
+          case PIPELINE: {
+            final WorkflowExecution workflowExecution = workflowExecutionService.fetchWorkflowExecution(
+                instance.getAppId(), instance.getReleaseEntityId(), WorkflowExecutionKeys.name);
+            builder.releaseEntityName(workflowExecution.getName());
             break;
+          }
           case WORKFLOW: {
             final WorkflowExecution workflowExecution = workflowExecutionService.fetchWorkflowExecution(
                 instance.getAppId(), instance.getReleaseEntityId(), WorkflowExecutionKeys.name);
