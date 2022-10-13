@@ -13,6 +13,7 @@ import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.artifact.bean.yaml.ArtifactListConfig;
+import io.harness.cdng.azure.config.yaml.StartupCommandConfiguration;
 import io.harness.cdng.configfile.ConfigFileWrapper;
 import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
 import io.harness.cdng.service.ServiceSpec;
@@ -49,6 +50,7 @@ public class ElastigroupServiceSpec implements ServiceSpec, Visitable {
   ArtifactListConfig artifacts;
   List<ManifestConfigWrapper> manifests;
   List<ConfigFileWrapper> configFiles;
+  StartupCommandConfiguration startupCommand;
 
   // For Visitor Framework Impl
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;

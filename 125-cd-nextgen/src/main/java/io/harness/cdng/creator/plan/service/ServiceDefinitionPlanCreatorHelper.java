@@ -22,6 +22,7 @@ import io.harness.cdng.configfile.ConfigFileWrapper;
 import io.harness.cdng.creator.plan.PlanCreatorConstants;
 import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
 import io.harness.cdng.service.beans.AzureWebAppServiceSpec;
+import io.harness.cdng.service.beans.ElastigroupServiceSpec;
 import io.harness.cdng.service.beans.ServiceConfig;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.cdng.service.steps.ServiceStepOverrideHelper;
@@ -410,6 +411,34 @@ public class ServiceDefinitionPlanCreatorHelper {
                     StartupCommandParameters.builder().startupCommand(startupCommand).build(), kryoSerializer,
                     PlanCreatorConstants.STARTUP_COMMAND_STEP_PARAMETER))
             .build());
+    if (yamlUpdates.getFqnToYamlCount() > 0) {
+      startupCommandPlanCreationResponse.yamlUpdates(yamlUpdates.build());
+    }
+    planCreationResponseMap.put(startupCommandPlanNodeId, startupCommandPlanCreationResponse.build());
+    return startupCommandPlanNodeId;
+  }
+
+  String addDependenciesForStartupCommand1(YamlNode serviceConfigNode,
+                                          Map<String, PlanCreationResponse> planCreationResponseMap, ServiceConfig serviceConfig,
+                                          KryoSerializer kryoSerializer) {
+    YamlUpdates.Builder yamlUpdates = YamlUpdates.newBuilder();
+    boolean isUseFromStage = serviceConfig.getUseFromStage() != null;
+    YamlField startupCommandYamlField = AzureConfigsUtility.fetchAzureConfigYamlFieldAndSetYamlUpdates(
+            serviceConfigNode, isUseFromStage, yamlUpdates, YamlTypes.STARTUP_COMMAND);
+    String startupCommandPlanNodeId = "startupCommnad-" + UUIDGenerator.generateUuid();
+
+    StartupCommandConfiguration startupCommand =
+            ((ElastigroupServiceSpec) serviceConfig.getServiceDefinition().getServiceSpec()).getStartupCommand();
+    Map<String, YamlField> dependenciesMap = new HashMap<>();
+    dependenciesMap.put(startupCommandPlanNodeId, startupCommandYamlField);
+    PlanCreationResponseBuilder startupCommandPlanCreationResponse = PlanCreationResponse.builder().dependencies(
+            DependenciesUtils.toDependenciesProto(dependenciesMap)
+                    .toBuilder()
+                    .putDependencyMetadata(startupCommandPlanNodeId,
+                            AzureConfigsUtility.getDependencyMetadata(startupCommandPlanNodeId,
+                                    StartupCommandParameters.builder().startupCommand(startupCommand).build(), kryoSerializer,
+                                    PlanCreatorConstants.STARTUP_COMMAND_STEP_PARAMETER))
+                    .build());
     if (yamlUpdates.getFqnToYamlCount() > 0) {
       startupCommandPlanCreationResponse.yamlUpdates(yamlUpdates.build());
     }
