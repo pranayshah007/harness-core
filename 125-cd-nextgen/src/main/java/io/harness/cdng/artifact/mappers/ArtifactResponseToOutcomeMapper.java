@@ -333,6 +333,7 @@ public class ArtifactResponseToOutcomeMapper {
         .primaryArtifact(artifactConfig.isPrimaryArtifact())
         .imagePullSecret(createImagePullSecret(ArtifactUtils.getArtifactKey(artifactConfig)))
         .registryHostname(getRegistryHostnameValue(artifactDelegateResponse))
+        .metadata(useDelegateResponse ? getMetadata(artifactDelegateResponse) : null)
         .build();
   }
 
@@ -355,6 +356,7 @@ public class ArtifactResponseToOutcomeMapper {
         .primaryArtifact(artifactConfig.isPrimaryArtifact())
         .imagePullSecret(createImagePullSecret(ArtifactUtils.getArtifactKey(artifactConfig)))
         .registryHostname(getRegistryHostnameValue(artifactDelegateResponse))
+        .metadata(useDelegateResponse ? getMetadata(artifactDelegateResponse) : null)
         .artifactPath(artifactPath)
         .build();
   }
@@ -494,6 +496,15 @@ public class ArtifactResponseToOutcomeMapper {
     }
     return EmptyPredicate.isNotEmpty(artifactDelegateResponse.getBuildDetails().getMetadata())
         ? artifactDelegateResponse.getBuildDetails().getMetadata().get(ArtifactMetadataKeys.REGISTRY_HOSTNAME)
+        : null;
+  }
+
+  private Map<String, String> getMetadata(ArtifactDelegateResponse artifactDelegateResponse) {
+    if (artifactDelegateResponse == null || artifactDelegateResponse.getBuildDetails() == null) {
+      return null;
+    }
+    return EmptyPredicate.isNotEmpty(artifactDelegateResponse.getBuildDetails().getMetadata())
+        ? artifactDelegateResponse.getBuildDetails().getMetadata()
         : null;
   }
 
