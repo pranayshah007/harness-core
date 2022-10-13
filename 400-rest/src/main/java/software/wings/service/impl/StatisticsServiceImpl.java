@@ -155,7 +155,9 @@ public class StatisticsServiceImpl implements StatisticsService {
       if (isNotEmpty(userRequestContext.getAppIds())) {
         UserPermissionInfo userPermissionInfo = userRequestContext.getUserPermissionInfo();
         if (userPermissionInfo.isHasAllAppAccess()) {
-          query.field("accountId").equal(userRequestContext.getAccountId());
+          return;
+          // not required since we are adding in base query the accountid
+          //          query.field("accountId").equal(userRequestContext.getAccountId());
         } else {
           if (isNotEmpty(appIds)) {
             List<String> appIdsWithPerms = appIdMerged(appIds, userRequestContext.getAppIds());
@@ -190,7 +192,9 @@ public class StatisticsServiceImpl implements StatisticsService {
     Query<WorkflowExecution> baseQuery = wingsPersistence.createQuery(WorkflowExecution.class)
                                              .field(WorkflowExecutionKeys.createdAt)
                                              .greaterThanOrEq(fromDateEpochMilli)
-                                             .filter(WorkflowExecutionKeys.accountId, accountId);
+                                             .filter(WorkflowExecutionKeys.accountId, accountId)
+                                             .field(WorkflowExecutionKeys.pipelineExecutionId)
+                                             .doesNotExist();
     AdvancedDatastore datastore = wingsPersistence.getDefaultAnalyticsDatastore(WorkflowExecution.class);
     addRbacAndAppIdFilterToBaseQuery(baseQuery, appIds);
 
@@ -282,7 +286,7 @@ public class StatisticsServiceImpl implements StatisticsService {
             .unwind(WorkflowExecutionKeys.pipelineExecution_pipelineStageExecutions + ".workflowExecutions")
             .project(projection("_id", "_id"),
                 projection("serviceExecutionSummaries",
-                    "pipelineExecution_pipelineStageExecutions.workflowExecutions.serviceExecutionSummaries"),
+                    "pipelineExecution.pipelineStageExecutions.workflowExecutions.serviceExecutionSummaries"),
                 projection("createdAt", "createdAt"))
             .project(projection("day", Projection.expression("$add", new Date(0), "$createdAt")),
                 projection(
@@ -397,7 +401,9 @@ public class StatisticsServiceImpl implements StatisticsService {
     Query<WorkflowExecution> baseQuery = wingsPersistence.createQuery(WorkflowExecution.class)
                                              .field(WorkflowExecutionKeys.createdAt)
                                              .greaterThanOrEq(fromDateEpochMilli)
-                                             .filter(WorkflowExecutionKeys.accountId, accountId);
+                                             .filter(WorkflowExecutionKeys.accountId, accountId)
+                                             .field(WorkflowExecutionKeys.pipelineExecutionId)
+                                             .doesNotExist();
     AdvancedDatastore datastore = wingsPersistence.getDefaultAnalyticsDatastore(WorkflowExecution.class);
     addRbacAndAppIdFilterToBaseQuery(baseQuery, appIds);
     baseQuery.field(WorkflowExecutionKeys.status).in(finalStatuses());
@@ -449,11 +455,12 @@ public class StatisticsServiceImpl implements StatisticsService {
     AggregationPipeline pipelineServiceDeployedAggregation =
         datastore.createAggregation(WorkflowExecution.class)
             .match(query)
+            .unwind(WorkflowExecutionKeys.pipelineExecution)
             .unwind(WorkflowExecutionKeys.pipelineExecution_pipelineStageExecutions)
             .unwind(WorkflowExecutionKeys.pipelineExecution_pipelineStageExecutions + ".workflowExecutions")
             .project(projection(WorkflowExecutionKeys.serviceExecutionSummaries,
                          WorkflowExecutionKeys.pipelineExecution_pipelineStageExecutions + ".workflowExecutions"
-                             + WorkflowExecutionKeys.serviceExecutionSummaries),
+                             + "." + WorkflowExecutionKeys.serviceExecutionSummaries),
                 projection("createdAt", "createdAt"),
                 projection(WorkflowExecutionKeys.status, WorkflowExecutionKeys.status), projection("appId", "appId"),
                 projection("appName", "appName"))
