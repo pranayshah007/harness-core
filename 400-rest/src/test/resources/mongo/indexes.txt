@@ -499,6 +499,9 @@ logMlFeedbackRecords {"name": "stateExecutionId_1", "background": true} {"stateE
 logMlFeedbackRecords {"name": "unique_log_feedback", "unique": true} {"applicationId": 1, "stateExecutionId": 1, "clusterType": 1, "clusterLabel": 1}
 logMlFeedbackRecords {"name": "workflowExecutionId_1", "background": true} {"workflowExecutionId": 1}
 loginSettings {"name": "accountId_1", "background": true} {"accountId": 1}
+lookerEntityReconciliation {"name": "accountId_durationEndTs", "background": true} {"accountId": 1, "durationEndTs": 1}
+lookerEntityReconciliation {"name": "accountId_reconciliationStatus", "background": true} {"accountId": 1, "reconciliationStatus": 1}
+lookerEntityReconciliation {"name": "ttl_1", "background": true, "expireAfterSeconds": 0} {"ttl": 1}
 managerConfiguration {"name": "appId_1", "background": true} {"appId": 1}
 managerConfiguration {"name": "createdAt_1", "background": true} {"createdAt": 1}
 manifestFile {"name": "accountId_1", "background": true} {"accountId": 1}

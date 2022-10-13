@@ -41,12 +41,10 @@ import io.harness.cdng.instance.outcome.InstancesOutcome;
 import io.harness.cdng.service.steps.ServiceStepOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.cdng.visitor.YamlTypes;
+import io.harness.data.structure.CollectionUtils;
 import io.harness.data.structure.EmptyPredicate;
-import io.harness.delegate.SubmitTaskRequest;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
-import io.harness.delegate.beans.TaskData;
-import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.k8s.K8sInfraDelegateConfig;
 import io.harness.delegate.task.ssh.SshInfraDelegateConfig;
 import io.harness.delegate.task.ssh.WinRmInfraDelegateConfig;
@@ -100,7 +98,6 @@ import java.time.Duration;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -156,9 +153,15 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
     final NGLogCallback logCallback = infrastructureStepHelper.getInfrastructureLogCallback(ambiance, true, LOG_SUFFIX);
     // Create delegate task for infra if needed
     if (isTaskStep(infraSpec.getKind())) {
-      TaskRequestData taskRequest = obtainTaskInternal(ambiance, infraSpec, logCallback,
+      final TaskRequestData taskRequest = obtainTaskInternal(ambiance, infraSpec, logCallback,
           !infrastructureConfig.getInfrastructureDefinitionConfig().isAllowSimultaneousDeployments());
-      String taskId = delegateGrpcClientWrapper.submitAsyncTask(mapToDelegateTaskRequest(taskRequest), Duration.ZERO);
+      final DelegateTaskRequest delegateTaskRequest =
+          cdStepHelper.mapTaskRequestToDelegateTaskRequest(taskRequest.getTaskRequest(), taskRequest.getTaskData(),
+              CollectionUtils.emptyIfNull(taskRequest.getTaskSelectorYamls())
+                  .stream()
+                  .map(TaskSelectorYaml::getDelegateSelectors)
+                  .collect(Collectors.toSet()));
+      String taskId = delegateGrpcClientWrapper.submitAsyncTask(delegateTaskRequest, Duration.ZERO);
       return AsyncExecutableResponse.newBuilder()
           .addCallbackIds(taskId)
           .addAllLogKeys(StepUtils.generateLogKeys(ambiance, List.of(LOG_SUFFIX)))
@@ -456,29 +459,6 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
       AsyncExecutableResponse executableResponse) {
     final NGLogCallback logCallback = infrastructureStepHelper.getInfrastructureLogCallback(ambiance, LOG_SUFFIX);
     logCallback.saveExecutionLog("Infrastructure Step was aborted", LogLevel.ERROR, CommandExecutionStatus.FAILURE);
-  }
-
-  private DelegateTaskRequest mapToDelegateTaskRequest(TaskRequestData taskRequestData) {
-    SubmitTaskRequest submitTaskRequest = taskRequestData.getTaskRequest().getDelegateTaskRequest().getRequest();
-    List<TaskSelectorYaml> taskSelectorYamls = taskRequestData.getTaskSelectorYamls();
-    TaskData taskData = taskRequestData.getTaskData();
-    return DelegateTaskRequest.builder()
-        .taskParameters((TaskParameters) taskData.getParameters()[0])
-        .taskType(taskData.getTaskType())
-        .parked(taskData.isParked())
-        .accountId(submitTaskRequest.getAccountId().getId())
-        .taskSetupAbstractions(submitTaskRequest.getSetupAbstractions().getValuesMap())
-        .taskSelectors(
-            taskSelectorYamls.stream().map(TaskSelectorYaml::getDelegateSelectors).collect(Collectors.toSet()))
-        .executionTimeout(Duration.ofMillis(taskData.getTimeout()))
-        .logStreamingAbstractions(new LinkedHashMap<>(submitTaskRequest.getLogAbstractions().getValuesMap()))
-        .forceExecute(submitTaskRequest.getForceExecute())
-        .expressionFunctorToken(taskRequestData.getTaskData().getExpressionFunctorToken())
-        .eligibleToExecuteDelegateIds(submitTaskRequest.getEligibleToExecuteDelegateIdsList())
-        .executeOnHarnessHostedDelegates(submitTaskRequest.getExecuteOnHarnessHostedDelegates())
-        .emitEvent(submitTaskRequest.getEmitEvent())
-        .stageId(submitTaskRequest.getStageId())
-        .build();
   }
 
   private StepResponse prepareFailureResponse(Exception ex) {

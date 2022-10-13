@@ -355,7 +355,10 @@ public class InfrastructureResource {
           NGResourceFilterConstants.SEARCH_TERM_KEY) String searchTerm,
       @Parameter(description = "List of InfrastructureIds") @QueryParam("infraIdentifiers")
       List<String> infraIdentifiers, @QueryParam("deploymentType") ServiceDefinitionType deploymentType,
+      @Parameter(description = "The Identifier of deployment template if infrastructure is of type custom deployment")
       @QueryParam("deploymentTemplateIdentifier") String deploymentTemplateIdentifier,
+      @Parameter(
+          description = "The version label of deployment template if infrastructure is of type custom deployment")
       @QueryParam("versionLabel") String versionLabel,
       @Parameter(
           description =

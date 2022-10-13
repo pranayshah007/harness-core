@@ -230,8 +230,13 @@ public class ManifestMigrationService extends NgMigrationService {
           // TODO: Fix the identifier & name
           String identifier =
               MigratorUtility.generateManifestIdentifier(service.getName() + " " + manifestFile.getFileName());
+          if (applicationManifest.getKind().equals(AppManifestKind.VALUES)) {
+            identifier = MigratorUtility.generateManifestIdentifier(
+                service.getName() + " ValuesOverride " + manifestFile.getFileName());
+          }
           String name = identifier;
-          String content = (String) migratorExpressionUtils.render(manifestFile.getFileContent());
+          String content =
+              (String) migratorExpressionUtils.render(manifestFile.getFileContent(), inputDTO.getCustomExpressions());
           return NGYamlFile.builder()
               .type(NGMigrationEntityType.MANIFEST)
               .filename(null)
@@ -287,7 +292,7 @@ public class ManifestMigrationService extends NgMigrationService {
     for (CgEntityId manifestEntityId : manifestEntityIds) {
       CgEntityNode manifestNode = entities.get(manifestEntityId);
       ApplicationManifest applicationManifest = (ApplicationManifest) manifestNode.getEntity();
-      migratorExpressionUtils.render(applicationManifest);
+      migratorExpressionUtils.render(applicationManifest, inputDTO.getCustomExpressions());
       BaseProvidedInput manifestInput =
           inputDTO.getOverrides() == null ? null : inputDTO.getOverrides().get(manifestEntityId);
       ManifestProvidedEntitySpec entitySpec = null;

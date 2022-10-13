@@ -5,6 +5,6 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.event.reconciliation.deployment;
+package io.harness.event.reconciliation;
 
 public enum ReconciliationStatus { IN_PROGRESS, SUCCESS, FAILED }

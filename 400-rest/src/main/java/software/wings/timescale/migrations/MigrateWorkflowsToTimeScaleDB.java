@@ -10,6 +10,7 @@ package software.wings.timescale.migrations;
 import static io.harness.persistence.HQuery.excludeAuthority;
 
 import static software.wings.beans.Workflow.WorkflowKeys;
+import static software.wings.timescale.migrations.TimescaleEntityMigrationHelper.deleteFromTimescaleDB;
 import static software.wings.timescale.migrations.TimescaleEntityMigrationHelper.insertArrayData;
 
 import io.harness.persistence.HIterator;
@@ -32,7 +33,7 @@ import org.mongodb.morphia.query.FindOptions;
 
 @Slf4j
 @Singleton
-public class MigrateWorkflowsToTimeScaleDB {
+public class MigrateWorkflowsToTimeScaleDB implements TimeScaleEntityMigrationInterface {
   @Inject TimeScaleDBService timeScaleDBService;
 
   @Inject WingsPersistence wingsPersistence;
@@ -41,6 +42,8 @@ public class MigrateWorkflowsToTimeScaleDB {
 
   private static final String upsert_statement =
       "INSERT INTO CG_WORKFLOWS (ID,NAME,ACCOUNT_ID,ORCHESTRATION_WORKFLOW_TYPE,ENV_ID,APP_ID,SERVICE_IDS,DEPLOYMENT_TYPE,CREATED_AT,LAST_UPDATED_AT,CREATED_BY,LAST_UPDATED_BY) VALUES (?,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(ID) DO UPDATE SET NAME = excluded.NAME,ACCOUNT_ID = excluded.ACCOUNT_ID,ORCHESTRATION_WORKFLOW_TYPE = excluded.ORCHESTRATION_WORKFLOW_TYPE,ENV_ID = excluded.ENV_ID,APP_ID = excluded.APP_ID,SERVICE_IDS = excluded.SERVICE_IDS,DEPLOYMENT_TYPE = excluded.DEPLOYMENT_TYPE,CREATED_AT = excluded.CREATED_AT,LAST_UPDATED_AT = excluded.LAST_UPDATED_AT,CREATED_BY = excluded.CREATED_BY,LAST_UPDATED_BY = excluded.LAST_UPDATED_BY;";
+
+  private static final String TABLE_NAME = "CG_WORKFLOWS";
 
   public boolean runTimeScaleMigration(String accountId) {
     if (!timeScaleDBService.isValid()) {
@@ -58,7 +61,7 @@ public class MigrateWorkflowsToTimeScaleDB {
                                                               .fetch(findOptions_workflows))) {
         while (iterator.hasNext()) {
           Workflow workflow = iterator.next();
-          prepareTimeScaleQueries(workflow);
+          saveToTimeScale(workflow);
           count++;
         }
       }
@@ -71,7 +74,7 @@ public class MigrateWorkflowsToTimeScaleDB {
     return true;
   }
 
-  private void prepareTimeScaleQueries(Workflow workflow) {
+  public void saveToTimeScale(Workflow workflow) {
     long startTime = System.currentTimeMillis();
     boolean successful = false;
     int retryCount = 0;
@@ -134,5 +137,13 @@ public class MigrateWorkflowsToTimeScaleDB {
     upsertPreparedStatement.setString(12, last_updated_by);
 
     upsertPreparedStatement.execute();
+  }
+
+  public void deleteFromTimescale(String id) {
+    deleteFromTimescaleDB(id, timeScaleDBService, MAX_RETRY, TABLE_NAME);
+  }
+
+  public String getTimescaleDBClass() {
+    return TABLE_NAME;
   }
 }
