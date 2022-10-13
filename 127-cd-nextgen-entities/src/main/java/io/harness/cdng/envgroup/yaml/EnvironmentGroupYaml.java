@@ -52,7 +52,7 @@ public class EnvironmentGroupYaml implements Visitable {
   @Override
   public VisitableChildren getChildrenToWalk() {
     VisitableChildren children = VisitableChildren.builder().build();
-    if (environments != null && !environments.isExpression()) {
+    if (ParameterField.isNotNull(environments) && !environments.isExpression()) {
       environments.getValue().forEach(environmentYamlV2 -> children.add("environments", environmentYamlV2));
     }
     return children;
