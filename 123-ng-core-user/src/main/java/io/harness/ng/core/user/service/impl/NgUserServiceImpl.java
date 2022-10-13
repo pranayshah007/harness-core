@@ -298,6 +298,7 @@ public class NgUserServiceImpl implements NgUserService {
       return user.map(UserMetadataMapper::toDTO);
     } else {
       Optional<UserInfo> userInfo = CGRestUtils.getResponse(userClient.getUserByEmailId(email));
+      log.info("NG User Invite: userInfo = {}", userInfo.get());
       UserMetadataDTO userMetadataDTO = userInfo
                                             .map(user
                                                 -> UserMetadataDTO.builder()

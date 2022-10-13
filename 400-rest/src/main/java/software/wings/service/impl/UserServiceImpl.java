@@ -1995,7 +1995,9 @@ public class UserServiceImpl implements UserService {
     eventPublishHelper.publishUserRegistrationCompletionEvent(userInvite.getAccountId(), user);
     try {
       log.info("NG User Invite: calling ngInviteClient.completeInvite()");
-      NGRestUtils.getResponse(ngInviteClient.completeInvite(userInvite.getToken()));
+      boolean managerToNgManagerCallResponse =
+          NGRestUtils.getResponse(ngInviteClient.completeInvite(userInvite.getToken()));
+      log.info("NG User Invite: managerToNgManagerCallResponse = {}", managerToNgManagerCallResponse);
     } catch (Exception ex) {
       log.error("NG User Invite: while calling ngInviteClient.completeInvite() an expection: ", ex);
     }

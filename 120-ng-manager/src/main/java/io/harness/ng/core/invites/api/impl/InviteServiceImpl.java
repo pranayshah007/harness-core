@@ -681,6 +681,7 @@ public class InviteServiceImpl implements InviteService {
 
   @Override
   public boolean completeInvite(Optional<Invite> inviteOpt) {
+    log.info("NG User Invite: call from manager has arrived to ng-manager");
     if (!inviteOpt.isPresent()) {
       return false;
     }
