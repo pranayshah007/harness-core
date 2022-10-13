@@ -7,6 +7,7 @@
 
 package io.harness.ngmigration.expressions;
 
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.expression.ExpressionEvaluatorUtils;
 
 import com.google.inject.Singleton;
@@ -16,13 +17,13 @@ import org.jetbrains.annotations.NotNull;
 
 @Singleton
 public class MigratorExpressionUtils {
-  public Object render(Object object) {
-    Map<String, Object> context = prepareContextMap();
+  public Object render(Object object, Map<String, String> customExpressions) {
+    Map<String, Object> context = prepareContextMap(customExpressions);
     return ExpressionEvaluatorUtils.updateExpressions(object, new MigratorResolveFunctor(context));
   }
 
   @NotNull
-  Map<String, Object> prepareContextMap() {
+  Map<String, Object> prepareContextMap(Map<String, String> customExpressions) {
     Map<String, Object> context = new HashMap<>();
     // Infra Expressions
     context.put("infra.kubernetes.namespace", "<+infra.namespace>");
@@ -44,6 +45,10 @@ public class MigratorExpressionUtils {
 
     // Secrets
     context.put("secrets", new SecretMigratorFunctor());
+
+    if (EmptyPredicate.isNotEmpty(customExpressions)) {
+      context.putAll(customExpressions);
+    }
 
     return context;
   }
