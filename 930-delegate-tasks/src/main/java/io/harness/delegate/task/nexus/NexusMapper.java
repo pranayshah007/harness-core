@@ -9,17 +9,26 @@ package io.harness.delegate.task.nexus;
 
 import static io.harness.utils.FieldWithPlainTextOrSecretValueHelper.getSecretAsStringFromPlainTextOrSecretRef;
 
+import static java.lang.String.format;
+
 import io.harness.delegate.beans.connector.nexusconnector.NexusAuthType;
 import io.harness.delegate.beans.connector.nexusconnector.NexusConnectorDTO;
 import io.harness.delegate.beans.connector.nexusconnector.NexusUsernamePasswordAuthDTO;
+import io.harness.delegate.task.ssh.artifact.NexusArtifactDelegateConfig;
 import io.harness.encryption.SecretRefData;
+import io.harness.exception.InvalidRequestException;
+import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.nexus.NexusRequest;
 import io.harness.nexus.NexusRequest.NexusRequestBuilder;
+import io.harness.security.encryption.SecretDecryptionService;
 
+import com.google.inject.Inject;
 import com.google.inject.Singleton;
 
 @Singleton
 public class NexusMapper {
+  @Inject private SecretDecryptionService secretDecryptionService;
+
   public NexusRequest toNexusRequest(NexusConnectorDTO nexusConnectorDTO) {
     final NexusRequestBuilder nexusRequestBuilder =
         NexusRequest.builder()
@@ -41,5 +50,43 @@ public class NexusMapper {
         .username(username)
         .password(passwordRef.getDecryptedValue())
         .build();
+  }
+
+  public NexusRequest toNexusRequest(NexusArtifactDelegateConfig nexusArtifactDelegateConfig) {
+    NexusConnectorDTO nexusConnectorDTO =
+        (NexusConnectorDTO) nexusArtifactDelegateConfig.getConnectorDTO().getConnectorConfig();
+    NexusAuthType authType = nexusConnectorDTO.getAuth().getAuthType();
+
+    if (NexusAuthType.USER_PASSWORD == authType) {
+      NexusUsernamePasswordAuthDTO credentials =
+          (NexusUsernamePasswordAuthDTO) nexusConnectorDTO.getAuth().getCredentials();
+      secretDecryptionService.decrypt(credentials, nexusArtifactDelegateConfig.getEncryptedDataDetails());
+      ExceptionMessageSanitizer.storeAllSecretsForSanitizing(
+          nexusConnectorDTO, nexusArtifactDelegateConfig.getEncryptedDataDetails());
+
+      String username =
+          getSecretAsStringFromPlainTextOrSecretRef(credentials.getUsername(), credentials.getUsernameRef());
+      char[] decryptedValue = credentials.getPasswordRef().getDecryptedValue();
+
+      return NexusRequest.builder()
+          .nexusUrl(nexusConnectorDTO.getNexusServerUrl())
+          .version(nexusConnectorDTO.getVersion())
+          .username(username)
+          .password(decryptedValue)
+          .hasCredentials(true)
+          .isCertValidationRequired(nexusArtifactDelegateConfig.isCertValidationRequired())
+          .artifactRepositoryUrl(nexusArtifactDelegateConfig.getArtifactUrl())
+          .build();
+    } else if (NexusAuthType.ANONYMOUS == authType) {
+      return NexusRequest.builder()
+          .nexusUrl(nexusConnectorDTO.getNexusServerUrl())
+          .version(nexusConnectorDTO.getVersion())
+          .hasCredentials(false)
+          .isCertValidationRequired(nexusArtifactDelegateConfig.isCertValidationRequired())
+          .artifactRepositoryUrl(nexusArtifactDelegateConfig.getArtifactUrl())
+          .build();
+    }
+
+    throw new InvalidRequestException(format("Unsupported Nexus auth type: %s", authType));
   }
 }

@@ -23,6 +23,7 @@ import lombok.experimental.FieldDefaults;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class EnvironmentInputsetYamlAndServiceOverridesMetadataInput {
-  @NotNull List<String> envIdentifiers;
+  List<String> envIdentifiers;
   @NotNull List<String> serviceIdentifiers;
+  String envGroupIdentifier;
 }

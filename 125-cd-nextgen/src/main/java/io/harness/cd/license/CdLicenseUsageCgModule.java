@@ -16,6 +16,7 @@ import io.harness.serializer.kryo.KryoConverterFactory;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Scopes;
+import com.google.inject.Singleton;
 
 @OwnedBy(HarnessTeam.CDP)
 public class CdLicenseUsageCgModule extends AbstractModule {
@@ -35,6 +36,7 @@ public class CdLicenseUsageCgModule extends AbstractModule {
   }
 
   @Provides
+  @Singleton
   private CdLicenseUsageCgClientFactory clientFactory(KryoConverterFactory kryoConverterFactory) {
     return new CdLicenseUsageCgClientFactory(
         serviceHttpClientConfig, serviceSecret, new ServiceTokenGenerator(), kryoConverterFactory, clientId);

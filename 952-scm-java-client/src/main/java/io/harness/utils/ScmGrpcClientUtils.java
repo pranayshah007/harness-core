@@ -28,11 +28,19 @@ import net.jodah.failsafe.RetryPolicy;
 @Slf4j
 @OwnedBy(PL)
 public class ScmGrpcClientUtils {
-  private static final RetryPolicy<Object> RETRY_POLICY = createRetryPolicy();
+  private static final RetryPolicy<Object> RETRY_POLICY = createRetryPolicy(1);
 
   public <T, R> R retryAndProcessException(Function<T, R> fn, T arg) {
     try {
       return Failsafe.with(RETRY_POLICY).get(() -> fn.apply(arg));
+    } catch (Exception ex) {
+      throw processException(ex);
+    }
+  }
+
+  public <T, R> R retryAndProcessException(Function<T, R> fn, T arg, int maxRetries) {
+    try {
+      return Failsafe.with(createRetryPolicy(maxRetries)).get(() -> fn.apply(arg));
     } catch (Exception ex) {
       throw processException(ex);
     }
@@ -52,10 +60,10 @@ public class ScmGrpcClientUtils {
     }
   }
 
-  private RetryPolicy<Object> createRetryPolicy() {
+  private RetryPolicy<Object> createRetryPolicy(int maxRetries) {
     return new RetryPolicy<>()
         .withDelay(Duration.ofMillis(750))
-        .withMaxAttempts(1)
+        .withMaxAttempts(maxRetries)
         .onFailedAttempt(event
             -> log.warn(String.format("Scm grpc retry attempt: %d", event.getAttemptCount()), event.getLastFailure()))
         .handleIf(throwable -> {

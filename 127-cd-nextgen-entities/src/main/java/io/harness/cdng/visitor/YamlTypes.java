@@ -111,6 +111,7 @@ public interface YamlTypes {
   String COMMAND_FLAGS_WRAPPER = "commandFlags";
   String REGION = "region";
   String STAGE = "stage";
+  String TEMPLATE = "template";
   String CREDENTIALS_REF = "credentialsRef";
   String HOSTS = "hosts";
   String HOST_FILTER = "hostFilter";
@@ -156,4 +157,8 @@ public interface YamlTypes {
   String ENV_PRE_PRODUCTION = "PreProduction";
 
   String SERVICE_ENTITIES = "services";
+
+  String PIPELINE = "pipeline";
+  String PARALLEL_STAGE = "parallel";
+  String STAGES = "stages";
 }

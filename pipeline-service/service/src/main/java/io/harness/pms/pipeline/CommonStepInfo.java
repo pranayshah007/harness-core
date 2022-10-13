@@ -15,11 +15,11 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.enforcement.constants.FeatureRestrictionName;
 import io.harness.pms.contracts.steps.StepInfo;
 import io.harness.pms.contracts.steps.StepMetaData;
-import io.harness.pms.helpers.PmsFeatureFlagHelper;
 import io.harness.steps.FolderPathConstants;
 import io.harness.steps.StepCategoryConstants;
 import io.harness.steps.StepSpecTypeConstants;
 import io.harness.steps.policy.PolicyStepConstants;
+import io.harness.utils.PmsFeatureFlagHelper;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;

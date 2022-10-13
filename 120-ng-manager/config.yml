@@ -170,7 +170,7 @@ templateServiceClientConfig:
   readTimeOutSeconds: 15
 
 chaosServiceClientConfig:
-  baseUrl: http://localhost:8080
+  baseUrl: ${CHAOS_SERVICE_BASE_URL:-http://localhost:8080}
   connectTimeOutSeconds: 15
   readTimeOutSeconds: 15
 

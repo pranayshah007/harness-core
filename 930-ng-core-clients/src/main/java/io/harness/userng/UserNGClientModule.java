@@ -17,6 +17,7 @@ import io.harness.userng.remote.UserNGHttpClientFactory;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Scopes;
+import com.google.inject.Singleton;
 
 public class UserNGClientModule extends AbstractModule {
   private static UserNGClientModule instance;
@@ -40,6 +41,7 @@ public class UserNGClientModule extends AbstractModule {
   }
 
   @Provides
+  @Singleton
   private UserNGHttpClientFactory userNGHttpClientFactory(KryoConverterFactory kryoConverterFactory) {
     return new UserNGHttpClientFactory(serviceHttpClientConfig, serviceSecret, new ServiceTokenGenerator(),
         kryoConverterFactory, clientId, ClientMode.NON_PRIVILEGED);

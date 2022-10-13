@@ -81,7 +81,7 @@ public class SecretManagerFunctorTest extends WingsBaseTest {
     List<EncryptedDataDetail> localEncryptedDetails = Arrays.asList(
         EncryptedDataDetail.builder().encryptedData(SecretManager.buildRecordData(encryptedData)).build());
 
-    when(secretManager.getEncryptionDetails(serviceVariable, APP_ID, WORKFLOW_EXECUTION_ID))
+    when(secretManager.getEncryptionDetails(serviceVariable, APP_ID, WORKFLOW_EXECUTION_ID, true))
         .thenReturn(localEncryptedDetails);
 
     doAnswer((Answer<Void>) invocation -> {
@@ -161,7 +161,7 @@ public class SecretManagerFunctorTest extends WingsBaseTest {
                           .encryptionConfig(kmsConfig)
                           .build());
 
-    when(secretManager.getEncryptionDetails(serviceVariable, APP_ID, WORKFLOW_EXECUTION_ID))
+    when(secretManager.getEncryptionDetails(serviceVariable, APP_ID, WORKFLOW_EXECUTION_ID, true))
         .thenReturn(nonLocalEncryptedVariables);
 
     String decryptedValue = (String) secretManagerFunctor.obtain(secretName, token);

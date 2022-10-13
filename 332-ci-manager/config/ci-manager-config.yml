@@ -115,6 +115,9 @@ ciExecutionServiceConfig:
   addonImage: harness/ci-addon:1.14.19
   liteEngineImage: harness/ci-lite-engine:1.14.19
   isLocal: false
+  cacheIntelligenceConfig:
+    bucket: "gcp_bucket"
+    serviceKey: "gcp_service_key"
   stepConfig:
     # The below config is for K8 steps
     gitCloneConfig:

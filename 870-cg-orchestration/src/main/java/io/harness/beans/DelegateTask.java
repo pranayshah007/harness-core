@@ -151,7 +151,7 @@ public class DelegateTask implements PersistentEntity, UuidAware, CreatedAtAware
   // This extra field is pointless, we should use the task uuid.
   @Deprecated private String waitId;
 
-  private long createdAt;
+  @FdIndex private long createdAt;
   private long lastUpdatedAt;
 
   private Status status;

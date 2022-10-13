@@ -104,9 +104,6 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
           infraEntity.getAccountId(), infraEntity.getIdentifier(), infraEntity.getEnvIdentifier());
       setNameIfNotPresent(infraEntity);
       modifyInfraRequest(infraEntity);
-      if (infraEntity.getType() == InfrastructureType.CUSTOM_DEPLOYMENT) {
-        customDeploymentEntitySetupHelper.addReferencesInEntitySetupUsage(infraEntity);
-      }
       InfrastructureEntity createdInfra =
           Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
             InfrastructureEntity infrastructureEntity = infrastructureRepository.save(infraEntity);
@@ -121,7 +118,9 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
             return infrastructureEntity;
           }));
       infrastructureEntitySetupUsageHelper.updateSetupUsages(createdInfra);
-
+      if (infraEntity.getType() == InfrastructureType.CUSTOM_DEPLOYMENT) {
+        customDeploymentEntitySetupHelper.addReferencesInEntitySetupUsage(infraEntity);
+      }
       return createdInfra;
 
     } catch (DuplicateKeyException ex) {
@@ -145,9 +144,6 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
     setObsoleteAsFalse(requestInfra);
     setNameIfNotPresent(requestInfra);
     modifyInfraRequest(requestInfra);
-    if (requestInfra.getType() == InfrastructureType.CUSTOM_DEPLOYMENT) {
-      customDeploymentEntitySetupHelper.addReferencesInEntitySetupUsage(requestInfra);
-    }
     Criteria criteria = getInfrastructureEqualityCriteria(requestInfra);
     Optional<InfrastructureEntity> infraEntityOptional =
         get(requestInfra.getAccountId(), requestInfra.getOrgIdentifier(), requestInfra.getProjectIdentifier(),
@@ -174,6 +170,9 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
             return updatedResult;
           }));
       infrastructureEntitySetupUsageHelper.updateSetupUsages(updatedInfra);
+      if (requestInfra.getType() == InfrastructureType.CUSTOM_DEPLOYMENT) {
+        customDeploymentEntitySetupHelper.addReferencesInEntitySetupUsage(requestInfra);
+      }
       return updatedInfra;
     } else {
       throw new InvalidRequestException(
