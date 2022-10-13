@@ -675,6 +675,12 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
         }
       }
     }
+
+    // Group by is only needed in case of business mapping
+    if (!viewsQueryHelper.isGroupByBusinessMappingPresent(groupBy)) {
+      groupBy = Collections.emptyList();
+    }
+
     String businessMappingId = viewsQueryHelper.getBusinessMappingIdFromGroupBy(groupBy);
     List<String> businessMappingIdsFromRulesAndFilters = getBusinessMappingIdsFromRulesAndFilters(filters);
     BusinessMapping businessMapping =
