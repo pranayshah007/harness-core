@@ -20,7 +20,7 @@ import lombok.Value;
 @Value
 @Builder
 @OwnedBy(CDP)
-@RecasterAlias("io.harness.cdng.ssh.output.WinRmInfraDelegateConfigOutput")
+@RecasterAlias("io.harness.steps.shellscript.WinRmInfraDelegateConfigOutput")
 public class WinRmInfraDelegateConfigOutput implements ExecutionSweepingOutput {
   WinRmInfraDelegateConfig winRmInfraDelegateConfig;
 }

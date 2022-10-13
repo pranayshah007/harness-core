@@ -527,6 +527,3 @@ io.harness.cdng.gitops.UpdateReleaseRepoOutcome
 io.harness.cdng.instance.outcome.InstancesOutcome
 io.harness.cdng.instance.outcome.InstanceOutcome
 io.harness.cdng.instance.outcome.HostOutcome
-io.harness.cdng.ssh.output.HostsOutput
-io.harness.cdng.ssh.output.SshInfraDelegateConfigOutput
-io.harness.cdng.ssh.output.WinRmInfraDelegateConfigOutput

@@ -20,7 +20,7 @@ import lombok.Value;
 @Value
 @Builder
 @OwnedBy(CDP)
-@RecasterAlias("io.harness.cdng.ssh.output.HostsOutput")
+@RecasterAlias("io.harness.steps.shellscript.HostsOutput")
 public class HostsOutput implements ExecutionSweepingOutput {
   Set<String> hosts;
 }
