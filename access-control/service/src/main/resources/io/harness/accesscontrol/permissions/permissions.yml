@@ -1261,20 +1261,20 @@ permissions:
       - organization
       - project
   - identifier: ccm_policy_edit
-      name: Edit a CCM Governance Policy
-      status: ACTIVE
-      includedInAllRoles: false
-      allowedScopeLevels:
-        - account
+    name: Edit a CCM Governance Policy
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
   - identifier: ccm_policy_view
-      name: View a CCM Governance Policy
-      status: ACTIVE
-      includedInAllRoles: false
-      allowedScopeLevels:
-        - account
+    name: View a CCM Governance Policy
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
   - identifier: ccm_policy_delete
-      name: Delete a CCM Governance Policy
-      status: ACTIVE
-      includedInAllRoles: false
-      allowedScopeLevels:
-        - account
+    name: Delete a CCM Governance Policy
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account

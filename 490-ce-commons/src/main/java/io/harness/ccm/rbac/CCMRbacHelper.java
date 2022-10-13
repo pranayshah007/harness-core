@@ -30,8 +30,9 @@ public interface CCMRbacHelper {
 
   boolean hasCostOverviewPermission(String accountIdentifier, String orgIdentifier, String projectIdentifier);
   void checkPolicyEditPermission(String accountIdentifier, String orgIdentifier, String projectIdentifier);
-  void checkPolicyViewPermission(String accountIdentifier, String orgIdentifier, String projectIdentifier) ;
+  void checkPolicyViewPermission(String accountIdentifier, String orgIdentifier, String projectIdentifier);
   void checkPolicyDeletePermission(String accountIdentifier, String orgIdentifier, String projectIdentifier);
 
-  }
-
+  void checkPerspectiveOnlyViewPermission(
+          String accountIdentifier, String orgIdentifier, String projectIdentifier);
+}
