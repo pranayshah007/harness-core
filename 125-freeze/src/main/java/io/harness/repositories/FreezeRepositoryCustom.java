@@ -7,6 +7,7 @@
 
 package io.harness.repositories;
 
+import io.harness.freeze.beans.FreezeStatus;
 import io.harness.freeze.entity.FreezeConfigEntity;
 
 import com.mongodb.client.result.DeleteResult;
@@ -25,5 +26,5 @@ public interface FreezeRepositoryCustom {
   Optional<FreezeConfigEntity> findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifier(
       String accountId, String orgIdentifier, String projectIdentifier, String freezeId);
   Optional<FreezeConfigEntity> findGlobalByAccountIdAndOrgIdentifierAndProjectIdentifier(
-      String accountId, String orgIdentifier, String projectIdentifier);
+      String accountId, String orgIdentifier, String projectIdentifier, FreezeStatus freezeStatus);
 }

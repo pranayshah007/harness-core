@@ -105,7 +105,7 @@ public class FreezeCRUDServiceImpl implements FreezeCRUDService {
     }
     FreezeConfigEntity freezeConfigEntity =
         NGFreezeDtoMapper.toFreezeConfigEntityGlobal(accountId, orgId, projectId, deploymentFreezeYaml);
-    if (!freezeConfigEntity.getIdentifier().equals("_GLOBAL")) {
+    if (!freezeConfigEntity.getIdentifier().equals("_GLOBAL_")) {
       throw new NGFreezeException(
           String.format(GLOBAL_FREEZE_CONFIG_WITH_WRONG_IDENTIFIER, freezeConfigEntity.getIdentifier()));
     }
@@ -227,8 +227,8 @@ public class FreezeCRUDServiceImpl implements FreezeCRUDService {
   @Override
   public FreezeResponseDTO getGlobalFreeze(String accountId, String orgId, String projectId) {
     Optional<FreezeConfigEntity> freezeConfigEntityOptional =
-        freezeConfigRepository.findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifier(
-            accountId, orgId, projectId, "_GLOBAL_");
+        freezeConfigRepository.findGlobalByAccountIdAndOrgIdentifierAndProjectIdentifier(
+            accountId, orgId, projectId, null);
     if (freezeConfigEntityOptional.isPresent()) {
       FreezeConfigEntity freezeConfigEntity = freezeConfigEntityOptional.get();
       return NGFreezeDtoMapper.prepareFreezeResponseDto(freezeConfigEntity);
