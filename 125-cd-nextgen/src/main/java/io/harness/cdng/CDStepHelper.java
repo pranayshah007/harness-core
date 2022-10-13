@@ -29,6 +29,7 @@ import static org.apache.commons.lang3.StringUtils.trim;
 import static org.apache.commons.lang3.StringUtils.trimToEmpty;
 
 import io.harness.beans.DecryptableEntity;
+import io.harness.beans.DelegateTaskRequest;
 import io.harness.beans.FeatureName;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
@@ -57,6 +58,7 @@ import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.helper.GitApiAccessDecryptionHelper;
 import io.harness.connector.services.ConnectorService;
 import io.harness.connector.validator.scmValidators.GitConfigAuthenticationInfoHelper;
+import io.harness.delegate.SubmitTaskRequest;
 import io.harness.delegate.TaskSelector;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConnectorDTO;
@@ -94,6 +96,7 @@ import io.harness.delegate.beans.connector.scm.gitlab.GitlabUsernameTokenDTO;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.beans.storeconfig.FetchType;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
+import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.git.GitFetchFilesConfig;
 import io.harness.delegate.task.k8s.K8sInfraDelegateConfig;
 import io.harness.delegate.task.ssh.SshInfraDelegateConfig;
@@ -146,8 +149,10 @@ import io.harness.validation.Validator;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.io.IOException;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -739,5 +744,27 @@ public class CDStepHelper {
     }
 
     return Optional.ofNullable(ngServiceConfig.getNgServiceV2InfoConfig());
+  }
+
+  @Nonnull
+  public DelegateTaskRequest mapTaskRequestToDelegateTaskRequest(
+      TaskRequest taskRequest, TaskData taskData, Set<String> taskSelectors) {
+    final SubmitTaskRequest submitTaskRequest = taskRequest.getDelegateTaskRequest().getRequest();
+    return DelegateTaskRequest.builder()
+        .taskParameters((TaskParameters) taskData.getParameters()[0])
+        .taskType(taskData.getTaskType())
+        .parked(taskData.isParked())
+        .accountId(submitTaskRequest.getAccountId().getId())
+        .taskSetupAbstractions(submitTaskRequest.getSetupAbstractions().getValuesMap())
+        .taskSelectors(taskSelectors)
+        .executionTimeout(Duration.ofMillis(taskData.getTimeout()))
+        .logStreamingAbstractions(new LinkedHashMap<>(submitTaskRequest.getLogAbstractions().getValuesMap()))
+        .forceExecute(submitTaskRequest.getForceExecute())
+        .expressionFunctorToken(taskData.getExpressionFunctorToken())
+        .eligibleToExecuteDelegateIds(submitTaskRequest.getEligibleToExecuteDelegateIdsList())
+        .executeOnHarnessHostedDelegates(submitTaskRequest.getExecuteOnHarnessHostedDelegates())
+        .emitEvent(submitTaskRequest.getEmitEvent())
+        .stageId(submitTaskRequest.getStageId())
+        .build();
   }
 }

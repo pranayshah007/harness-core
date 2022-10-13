@@ -34,6 +34,7 @@ import io.harness.cdng.visitor.YamlTypes;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.TaskSelector;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
+import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.task.artifacts.ArtifactSourceDelegateRequest;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.delegate.task.artifacts.ArtifactTaskType;
@@ -49,6 +50,8 @@ import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.AsyncExecutableResponse;
 import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.contracts.execution.tasks.TaskCategory;
+import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
@@ -60,7 +63,9 @@ import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.serializer.KryoSerializer;
 import io.harness.service.DelegateGrpcClientWrapper;
+import io.harness.steps.StepUtils;
 import io.harness.tasks.ResponseData;
 
 import software.wings.beans.LogColor;
@@ -70,12 +75,14 @@ import software.wings.beans.LogWeight;
 import com.google.inject.Inject;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
@@ -89,13 +96,14 @@ public class ArtifactsStepV2 implements AsyncExecutable<EmptyStepParameters> {
                                                .setStepCategory(StepCategory.STEP)
                                                .build();
 
-  private static final Duration DEFAULT_TIMEOUT = Duration.ofMinutes(1);
+  private static final long DEFAULT_TIMEOUT = TimeUnit.MINUTES.toMillis(1);
   static final String ARTIFACTS_STEP_V_2 = "artifacts_step_v2";
   @Inject private ExecutionSweepingOutputService sweepingOutputService;
   @Inject private ServiceStepsHelper serviceStepsHelper;
   @Inject private ArtifactStepHelper artifactStepHelper;
   @Inject private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
 
+  @Inject private KryoSerializer kryoSerializer;
   @Inject private CDStepHelper cdStepHelper;
   @Inject private CDExpressionResolver cdExpressionResolver;
 
@@ -133,7 +141,7 @@ public class ArtifactsStepV2 implements AsyncExecutable<EmptyStepParameters> {
     final NGLogCallback logCallback = serviceStepsHelper.getServiceLogCallback(ambiance);
     if (artifacts.getPrimary() != null) {
       if (shouldCreateDelegateTask(artifacts.getPrimary().getSourceType(), artifacts.getPrimary().getSpec())) {
-        primaryArtifactTaskId = handle(
+        primaryArtifactTaskId = createDelegateTask(
             ambiance, logCallback, artifacts.getPrimary().getSpec(), artifacts.getPrimary().getSourceType(), true);
         taskIds.add(primaryArtifactTaskId);
         artifactConfigMap.put(primaryArtifactTaskId, artifacts.getPrimary().getSpec());
@@ -145,7 +153,7 @@ public class ArtifactsStepV2 implements AsyncExecutable<EmptyStepParameters> {
     if (isNotEmpty(artifacts.getSidecars())) {
       for (SidecarArtifactWrapper sidecar : artifacts.getSidecars()) {
         if (shouldCreateDelegateTask(sidecar.getSidecar().getSourceType(), sidecar.getSidecar().getSpec())) {
-          String taskId = handle(
+          String taskId = createDelegateTask(
               ambiance, logCallback, sidecar.getSidecar().getSpec(), sidecar.getSidecar().getSourceType(), false);
           taskIds.add(taskId);
           artifactConfigMap.put(taskId, sidecar.getSidecar().getSpec());
@@ -282,8 +290,8 @@ public class ArtifactsStepV2 implements AsyncExecutable<EmptyStepParameters> {
     logCallback.saveExecutionLog("Artifacts Step was aborted", LogLevel.ERROR, CommandExecutionStatus.FAILURE);
   }
 
-  private String handle(final Ambiance ambiance, final NGLogCallback logCallback, final ArtifactConfig artifactConfig,
-      final ArtifactSourceType sourceType, final boolean isPrimary) {
+  private String createDelegateTask(final Ambiance ambiance, final NGLogCallback logCallback,
+      final ArtifactConfig artifactConfig, final ArtifactSourceType sourceType, final boolean isPrimary) {
     if (isPrimary) {
       logCallback.saveExecutionLog("Processing primary artifact...");
       logCallback.saveExecutionLog(
@@ -307,15 +315,21 @@ public class ArtifactsStepV2 implements AsyncExecutable<EmptyStepParameters> {
 
     final List<TaskSelector> delegateSelectors = artifactStepHelper.getDelegateSelectors(artifactConfig, ambiance);
 
-    final DelegateTaskRequest delegateTaskRequest =
-        DelegateTaskRequest.builder()
-            .accountId(AmbianceUtils.getAccountId(ambiance))
-            .taskParameters(taskParameters)
-            .taskSelectors(delegateSelectors.stream().map(TaskSelector::getSelector).collect(Collectors.toSet()))
-            .taskType(artifactStepHelper.getArtifactStepTaskType(artifactConfig).name())
-            .executionTimeout(DEFAULT_TIMEOUT)
-            .taskSetupAbstraction("ng", "true")
-            .build();
+    final TaskData taskData = TaskData.builder()
+                                  .async(true)
+                                  .taskType(artifactStepHelper.getArtifactStepTaskType(artifactConfig).name())
+                                  .parameters(new Object[] {taskParameters})
+                                  .timeout(DEFAULT_TIMEOUT)
+                                  .build();
+
+    String taskName = artifactStepHelper.getArtifactStepTaskType(artifactConfig).getDisplayName() + ": "
+        + taskParameters.getArtifactTaskType().getDisplayName();
+
+    TaskRequest taskRequest = StepUtils.prepareTaskRequestWithTaskSelector(ambiance, taskData, kryoSerializer,
+        TaskCategory.DELEGATE_TASK_V2, Collections.emptyList(), false, taskName, delegateSelectors);
+
+    final DelegateTaskRequest delegateTaskRequest = cdStepHelper.mapTaskRequestToDelegateTaskRequest(
+        taskRequest, taskData, delegateSelectors.stream().map(TaskSelector::getSelector).collect(Collectors.toSet()));
 
     return delegateGrpcClientWrapper.submitAsyncTask(delegateTaskRequest, Duration.ZERO);
   }
@@ -357,11 +371,8 @@ public class ArtifactsStepV2 implements AsyncExecutable<EmptyStepParameters> {
                                                               .getShellScriptBaseStepInfo()
                                                               .getSource()
                                                               .getSpec();
-      if (isEmpty(customScriptInlineSource.getScript().getValue().trim())) {
-        return false;
-      }
+      return !isEmpty(customScriptInlineSource.getScript().getValue().trim());
     }
-    return true;
   }
 
   private boolean nonDelegateTaskArtifactsExist(OptionalSweepingOutput outputOptional) {
