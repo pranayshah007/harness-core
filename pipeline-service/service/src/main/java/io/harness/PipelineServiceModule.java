@@ -715,6 +715,16 @@ public class PipelineServiceModule extends AbstractModule {
 
   @Provides
   @Singleton
+  @Named("pipelineSchemaCache")
+  public Cache<String, String> completePipelineSchemaCache(
+      HarnessCacheManager harnessCacheManager, VersionInfoManager versionInfoManager) {
+    return harnessCacheManager.getCache("pipelineSchemaCache", String.class, String.class,
+        CreatedExpiryPolicy.factoryOf(new Duration(TimeUnit.HOURS, 1)),
+        versionInfoManager.getVersionInfo().getBuildNo());
+  }
+
+  @Provides
+  @Singleton
   @Named("partialSchemaCache")
   public Cache<SchemaCacheKey, PartialSchemaDTOWrapperValue> partialSchemaCache(
       HarnessCacheManager harnessCacheManager, VersionInfoManager versionInfoManager) {

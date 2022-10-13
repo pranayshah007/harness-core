@@ -7,9 +7,6 @@
 
 package io.harness.pms.pipeline.service;
 
-import static io.harness.pms.pipeline.service.yamlschema.PmsYamlSchemaHelper.APPROVAL_NAMESPACE;
-import static io.harness.pms.pipeline.service.yamlschema.PmsYamlSchemaHelper.FLATTENED_PARALLEL_STEP_ELEMENT_CONFIG_SCHEMA;
-import static io.harness.pms.pipeline.service.yamlschema.PmsYamlSchemaHelper.PARALLEL_STEP_ELEMENT_CONFIG;
 import static io.harness.yaml.schema.beans.SchemaConstants.ALL_OF_NODE;
 import static io.harness.yaml.schema.beans.SchemaConstants.DEFINITIONS_NODE;
 import static io.harness.yaml.schema.beans.SchemaConstants.ONE_OF_NODE;
@@ -45,6 +42,7 @@ import io.harness.pms.pipeline.service.yamlschema.featureflag.FeatureFlagYamlSer
 import io.harness.pms.sdk.PmsSdkInstanceService;
 import io.harness.pms.utils.CompletableFutures;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.serializer.JsonUtils;
 import io.harness.yaml.schema.YamlSchemaGenerator;
 import io.harness.yaml.schema.YamlSchemaProvider;
 import io.harness.yaml.schema.YamlSchemaTransientHelper;
@@ -76,6 +74,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import javax.cache.Cache;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 
@@ -97,6 +96,7 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
   private final FeatureFlagYamlService featureFlagYamlService;
   private final SchemaFetcher schemaFetcher;
   private final NgLicenseHttpClient ngLicenseHttpClient;
+  private final Cache<String, String> pipelineSchemaCache;
   Integer allowedParallelStages;
 
   @Inject
@@ -104,7 +104,8 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
       YamlSchemaValidator yamlSchemaValidator, PmsSdkInstanceService pmsSdkInstanceService,
       PmsYamlSchemaHelper pmsYamlSchemaHelper, ApprovalYamlSchemaService approvalYamlSchemaService,
       FeatureFlagYamlService featureFlagYamlService, SchemaFetcher schemaFetcher,
-      NgLicenseHttpClient ngLicenseHttpClient, @Named("allowedParallelStages") Integer allowedParallelStages) {
+      NgLicenseHttpClient ngLicenseHttpClient, @Named("allowedParallelStages") Integer allowedParallelStages,
+      @Named("pipelineSchemaCache") Cache<String, String> pipelineSchemaCache) {
     this.yamlSchemaProvider = yamlSchemaProvider;
     this.yamlSchemaGenerator = yamlSchemaGenerator;
     this.yamlSchemaValidator = yamlSchemaValidator;
@@ -115,13 +116,19 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
     this.schemaFetcher = schemaFetcher;
     this.ngLicenseHttpClient = ngLicenseHttpClient;
     this.allowedParallelStages = allowedParallelStages;
+    this.pipelineSchemaCache = pipelineSchemaCache;
   }
-
   @Override
   public JsonNode getPipelineYamlSchema(
       String accountIdentifier, String projectIdentifier, String orgIdentifier, Scope scope) {
     try {
-      return getPipelineYamlSchemaInternal(accountIdentifier, projectIdentifier, orgIdentifier, scope);
+      if (pipelineSchemaCache.containsKey(accountIdentifier)) {
+        return JsonUtils.readTree(pipelineSchemaCache.get(accountIdentifier));
+      } else {
+        JsonNode schema = getPipelineYamlSchemaInternal(accountIdentifier, projectIdentifier, orgIdentifier, scope);
+        pipelineSchemaCache.put(accountIdentifier, schema.toString());
+        return schema;
+      }
     } catch (Exception e) {
       log.error("[PMS] Failed to get pipeline yaml schema");
       throw new JsonSchemaException(e.getMessage());
@@ -166,6 +173,7 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
 
   @Override
   public void invalidateAllCache() {
+    pipelineSchemaCache.clear();
     schemaFetcher.invalidateAllCache();
   }
 
@@ -203,35 +211,28 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
         schemaWithDetailsList.stream()
             .filter(o -> o.getYamlSchemaMetadata().getYamlGroup().getGroup().equals(StepCategory.STEP.name()))
             .collect(Collectors.toList());
-    CompletableFutures<List<PartialSchemaDTO>> completableFutures = new CompletableFutures<>(executor);
+    CompletableFutures<Boolean> completableFutures = new CompletableFutures<>(executor);
+    List<List<PartialSchemaDTO>> partialSchemaDTOList = new ArrayList<>();
+
     for (ModuleType enabledModule : enabledModules) {
       List<YamlSchemaWithDetails> moduleYamlSchemaDetails =
           filterYamlSchemaDetailsByModule(stepsSchemaWithDetails, enabledModule);
-      completableFutures.supplyAsync(
-          () -> schemaFetcher.fetchSchema(accountIdentifier, enabledModule, moduleYamlSchemaDetails));
+      completableFutures.supplyAsync(()
+                                         -> partialSchemaDTOList.add(schemaFetcher.fetchSchema(
+                                             accountIdentifier, enabledModule, moduleYamlSchemaDetails)));
     }
 
     try {
-      List<List<PartialSchemaDTO>> partialSchemaDTOList = completableFutures.allOf().get(2, TimeUnit.MINUTES);
-
-      partialSchemaDTOList.stream()
-          .filter(Objects::nonNull)
-          .forEach(partialSchemaDTOList1
-              -> partialSchemaDTOList1.forEach(partialSchemaDTO
-                  -> pmsYamlSchemaHelper.processPartialStageSchema(finalMergedDefinitions, pipelineStepsDefinitions,
-                      stageElementConfig, partialSchemaDTO, accountIdentifier)));
-      // These logs are only for debugging the invalid schema generation issue. Checking only for approval stage
-      if (!finalMergedDefinitions.get(APPROVAL_NAMESPACE)
-               .get(PARALLEL_STEP_ELEMENT_CONFIG)
-               .toString()
-               .equals(FLATTENED_PARALLEL_STEP_ELEMENT_CONFIG_SCHEMA)) {
-        log.warn(
-            "Final flattened ParallelStepElementConfig schema is incorrect for approval stage merging all stage schemas for account after {}",
-            accountIdentifier);
-      }
+      completableFutures.allOf().get(8, TimeUnit.SECONDS);
     } catch (Exception e) {
       log.error(format("[PMS] Exception while merging yaml schema: %s", e.getMessage()), e);
     }
+    partialSchemaDTOList.stream()
+        .filter(Objects::nonNull)
+        .forEach(partialSchemaDTOList1
+            -> partialSchemaDTOList1.forEach(partialSchemaDTO
+                -> pmsYamlSchemaHelper.processPartialStageSchema(finalMergedDefinitions, pipelineStepsDefinitions,
+                    stageElementConfig, partialSchemaDTO, accountIdentifier)));
 
     log.info("[PMS] Merging all stages into pipeline schema");
     pmsYamlSchemaHelper.processStageSchema(schemaWithDetailsList, pipelineDefinitions);
@@ -314,14 +315,23 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
 
   protected List<YamlSchemaWithDetails> fetchSchemaWithDetailsFromModules(
       String accountIdentifier, List<ModuleType> moduleTypes) {
+    CompletableFutures<Boolean> completableFutures = new CompletableFutures<>(executor);
+
     List<YamlSchemaWithDetails> yamlSchemaWithDetailsList = new ArrayList<>();
     for (ModuleType moduleType : moduleTypes) {
       try {
-        yamlSchemaWithDetailsList.addAll(
-            schemaFetcher.fetchSchemaDetail(accountIdentifier, moduleType).getYamlSchemaWithDetailsList());
+        completableFutures.supplyAsync(
+            ()
+                -> yamlSchemaWithDetailsList.addAll(
+                    schemaFetcher.fetchSchemaDetail(accountIdentifier, moduleType).getYamlSchemaWithDetailsList()));
       } catch (Exception e) {
         log.error(e.getMessage());
       }
+    }
+    try {
+      completableFutures.allOf().get(4, TimeUnit.SECONDS);
+    } catch (Exception e) {
+      log.error(format("[PMS] Exception while merging yaml schema: %s", e.getMessage()), e);
     }
     return yamlSchemaWithDetailsList;
   }

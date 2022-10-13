@@ -62,6 +62,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.List;
+import javax.cache.Cache;
 import org.apache.commons.io.IOUtils;
 import org.assertj.core.api.Assertions;
 import org.junit.Before;
@@ -79,6 +80,7 @@ public class PMSYamlSchemaServiceImplTest {
   @Mock PmsYamlSchemaHelper pmsYamlSchemaHelper;
   @Mock PmsSdkInstanceService pmsSdkInstanceService;
   @Mock YamlSchemaValidator yamlSchemaValidator;
+  @Mock Cache<String, String> pipelineSchemaCache;
   @InjectMocks private PMSYamlSchemaServiceImpl pmsYamlSchemaService;
 
   private static final String ACC_ID = "accountId";
@@ -173,8 +175,14 @@ public class PMSYamlSchemaServiceImplTest {
   @Category(UnitTests.class)
   public void verifyGetPipelineYamlSchema() throws Throwable {
     final Scope scope = Scope.ORG;
+    when(pipelineSchemaCache.containsKey(ACC_ID)).thenReturn(true);
+    when(pipelineSchemaCache.get(ACC_ID)).thenReturn("{}");
+    pmsYamlSchemaService.getPipelineYamlSchema(ACC_ID, ORG_ID, PRJ_ID, scope);
+    verify(pipelineSchemaCache, times(1)).get(ACC_ID);
+    when(pipelineSchemaCache.containsKey(ACC_ID)).thenReturn(false);
     prepareAndAssertGetPipelineYamlSchemaInternal(
         scope, () -> pmsYamlSchemaService.getPipelineYamlSchema(ACC_ID, PRJ_ID, ORG_ID, scope));
+    verify(pipelineSchemaCache, times(1)).get(ACC_ID);
   }
 
   @Test
@@ -183,6 +191,7 @@ public class PMSYamlSchemaServiceImplTest {
   public void shouldInvalidateCaches() {
     pmsYamlSchemaService.invalidateAllCache();
     verify(schemaFetcher).invalidateAllCache();
+    verify(pipelineSchemaCache, times(1)).clear();
   }
 
   @Test
@@ -256,7 +265,7 @@ public class PMSYamlSchemaServiceImplTest {
           .thenReturn(finalMergedDefinitions);
       ObjectNode stepElementConfig = mock(ObjectNode.class);
       when(finalMergedDefinitions.get(STEP_ELEMENT_CONFIG)).thenReturn(stepElementConfig);
-
+      when(pipelineSchema.set(DEFINITIONS_NODE, pipelineDefinitions)).thenReturn(mock(ObjectNode.class));
       // EXECUTE
       verification.apply();
       verify(pipelineSchema).set(DEFINITIONS_NODE, pipelineDefinitions);
