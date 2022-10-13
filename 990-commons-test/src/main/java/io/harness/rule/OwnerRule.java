@@ -538,6 +538,7 @@ public class OwnerRule implements TestRule {
           .put(ABHINAV3, defaultUserInfo(ABHINAV3).slack("U03RHN86V5L").team(CE).build())
           .put(RAGHAV_MURALI, defaultUserInfo(RAGHAV_MURALI).slack("U03SSLFQ295").team(PL).build())
           .put(KAPIL_GARG, defaultUserInfo(KAPIL_GARG).slack("U03TGHL3068").team(SMP).build())
+          .put(SAHIBA, defaultUserInfo(SAHIBA).slack("U04080DMQTT").team(CE).build())
           .build();
 
   private static String prDeveloperId = findDeveloperId(System.getenv(GHPRB_PULL_AUTHOR_EMAIL));
