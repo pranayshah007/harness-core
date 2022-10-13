@@ -290,11 +290,7 @@ public class GitAwarePersistenceNewImpl implements GitAwarePersistence {
       String repo, String branch, Boolean isFindDefaultFromOtherBranches, Class entityClass) {
     final GitSdkEntityHandlerInterface gitSdkEntityHandlerInterface =
         gitPersistenceHelperServiceMap.get(entityClass.getCanonicalName());
-    Criteria criteria = new Criteria()
-                            .and(gitSdkEntityHandlerInterface.getBranchKey())
-                            .is(branch)
-                            .and(gitSdkEntityHandlerInterface.getYamlGitConfigRefKey())
-                            .is(repo);
+    Criteria criteria = new Criteria().and(gitSdkEntityHandlerInterface.getYamlGitConfigRefKey()).is(repo);
     if (isFindDefaultFromOtherBranches != null && isFindDefaultFromOtherBranches) {
       return new Criteria().orOperator(criteria,
           Criteria.where(gitSdkEntityHandlerInterface.getIsFromDefaultBranchKey())
