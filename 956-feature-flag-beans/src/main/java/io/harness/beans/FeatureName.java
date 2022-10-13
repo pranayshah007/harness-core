@@ -461,7 +461,9 @@ public enum FeatureName {
   SPG_LIVE_DASHBOARD_STATS_DEBUGGING("Live debugging for dashboard stats in CG", HarnessTeam.SPG),
   TI_MFE_ENABLED("Migrating TI UI to Microfrontend. This feature flag is needed to test/control the new architecture",
       HarnessTeam.CI),
-  CI_CACHE_INTELLIGENCE("Feature flag for cache intelligence feature", HarnessTeam.CI);
+  CI_CACHE_INTELLIGENCE("Feature flag for cache intelligence feature", HarnessTeam.CI),
+  USE_INSTANCES_PURGE_ITERATOR_FW(
+      "Switch to use iterator fw instead of quartz scheduler for InstancesPurgeJob", HarnessTeam.CDP);
 
   @Deprecated
   FeatureName() {
