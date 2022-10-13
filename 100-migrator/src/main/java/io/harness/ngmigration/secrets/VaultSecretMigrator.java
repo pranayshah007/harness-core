@@ -7,6 +7,8 @@
 
 package io.harness.ngmigration.secrets;
 
+import static io.harness.secretmanagerclient.SecretType.SecretText;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EncryptedData;
@@ -16,13 +18,13 @@ import io.harness.delegate.beans.connector.vaultconnector.VaultConnectorDTO.Vaul
 import io.harness.encryption.Scope;
 import io.harness.encryption.SecretRefData;
 import io.harness.ng.core.dto.secrets.SecretDTOV2;
+import io.harness.ng.core.dto.secrets.SecretDTOV2.SecretDTOV2Builder;
 import io.harness.ng.core.dto.secrets.SecretTextSpecDTO;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
 import io.harness.ngmigration.dto.SecretManagerCreatedDTO;
 import io.harness.ngmigration.service.MigratorUtility;
-import io.harness.secretmanagerclient.SecretType;
 import io.harness.secretmanagerclient.ValueType;
 
 import software.wings.beans.VaultConfig;
@@ -37,7 +39,7 @@ import org.apache.commons.lang3.StringUtils;
 @OwnedBy(HarnessTeam.CDC)
 public class VaultSecretMigrator implements SecretMigrator {
   @Override
-  public SecretTextSpecDTO getSecretSpec(
+  public SecretDTOV2Builder getSecretDTOBuilder(
       EncryptedData encryptedData, SecretManagerConfig secretManagerConfig, String secretManagerIdentifier) {
     VaultConfig vaultConfig = (VaultConfig) secretManagerConfig;
     String value;
@@ -47,11 +49,13 @@ public class VaultSecretMigrator implements SecretMigrator {
       String basePath = StringUtils.isNotBlank(vaultConfig.getBasePath()) ? vaultConfig.getBasePath() : "/harness";
       value = basePath + encryptedData.getEncryptionKey() + "#value";
     }
-    return SecretTextSpecDTO.builder()
-        .valueType(ValueType.Reference)
-        .value(value)
-        .secretManagerIdentifier(secretManagerIdentifier)
-        .build();
+    return SecretDTOV2.builder()
+        .type(SecretText)
+        .spec(SecretTextSpecDTO.builder()
+                  .valueType(ValueType.Reference)
+                  .value(value)
+                  .secretManagerIdentifier(secretManagerIdentifier)
+                  .build());
   }
 
   @Override
@@ -123,27 +127,5 @@ public class VaultSecretMigrator implements SecretMigrator {
     }
 
     return SecretManagerCreatedDTO.builder().connector(connectorDTO.build()).secrets(secrets).build();
-  }
-
-  private SecretDTOV2 getSecretDTO(
-      VaultConfig vaultConfig, MigrationInputDTO inputDTO, String secretIdentifier, String actualSecret) {
-    return SecretDTOV2.builder()
-        .identifier(secretIdentifier)
-        .name(secretIdentifier)
-        .description(String.format("Auto Generated Secret for Secret Manager - %s", vaultConfig.getName()))
-        .orgIdentifier(inputDTO.getOrgIdentifier())
-        .projectIdentifier(inputDTO.getProjectIdentifier())
-        .type(SecretType.SecretText)
-        .spec(SecretTextSpecDTO.builder()
-                  .secretManagerIdentifier(
-                      MigratorUtility.getIdentifierWithScope(NgEntityDetail.builder()
-                                                                 .projectIdentifier(inputDTO.getProjectIdentifier())
-                                                                 .orgIdentifier(inputDTO.getOrgIdentifier())
-                                                                 .identifier("harnessSecretManager")
-                                                                 .build()))
-                  .value(actualSecret)
-                  .valueType(ValueType.Inline)
-                  .build())
-        .build();
   }
 }

@@ -1,6 +1,6 @@
 #Any edit in this file should accompany an increment in version.
 name : settingsConfiguration
-version : 3
+version : 4
 settings :
   - identifier: mandate_webhook_secrets_for_github_triggers_CD
     name: Mandate Webhook Secrets for Github Triggers - CD
@@ -22,3 +22,10 @@ settings :
       - ACCOUNT
       - ORGANIZATION
       - PROJECT
+  - identifier: disable_harness_built_in_secret_manager
+    name: Disable Harness Built-In Secret Manager
+    category : CORE
+    defaultValue: false
+    valueType : BOOLEAN
+    allowedScopes :
+      - ACCOUNT

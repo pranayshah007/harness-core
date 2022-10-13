@@ -25,6 +25,7 @@ import io.dropwizard.testing.ConfigOverride;
 import io.dropwizard.testing.DropwizardTestSupport;
 import java.io.File;
 import java.net.InetSocketAddress;
+import java.nio.file.Files;
 import java.nio.file.Paths;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.core.Response;
@@ -61,6 +62,14 @@ public class DelegateServiceAppStartupTest extends DelegateServiceAppTestBase {
     MONGO_SERVER = startMongoServer();
     String directoryPath = Project.moduleDirectory(DelegateServiceAppStartupTest.class);
     String configPath = Paths.get(directoryPath, "delegate-service-config.yml").toString();
+
+    // Handle sandboxed bazel path - remove path starting from /sandbox till execroot. This is because the source
+    // code is present outside the sandbox directory created by bazel.
+    if (!Files.exists(Paths.get(configPath)) && configPath.contains("/sandbox/")) {
+      configPath = configPath.substring(0, configPath.indexOf("/sandbox/"))
+          + configPath.substring(configPath.indexOf("/execroot"));
+    }
+
     SUPPORT = new DropwizardTestSupport<DelegateServiceConfig>(DelegateServiceApplication.class,
         String.valueOf(new File(configPath)), ConfigOverride.config("server.applicationConnectors[0].port", "0"),
         ConfigOverride.config("server.applicationConnectors[0].type", "https"),

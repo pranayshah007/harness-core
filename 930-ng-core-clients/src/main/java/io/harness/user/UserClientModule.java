@@ -20,6 +20,7 @@ import io.harness.user.remote.UserHttpClientFactory;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Scopes;
+import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
 
@@ -46,6 +47,7 @@ public class UserClientModule extends AbstractModule {
   }
 
   @Provides
+  @Singleton
   private UserHttpClientFactory userClientFactory(KryoConverterFactory kryoConverterFactory) {
     return new UserHttpClientFactory(serviceHttpClientConfig, serviceSecret, new ServiceTokenGenerator(),
         kryoConverterFactory, clientId, ClientMode.NON_PRIVILEGED);
@@ -53,6 +55,7 @@ public class UserClientModule extends AbstractModule {
 
   @Provides
   @Named("PRIVILEGED")
+  @Singleton
   private UserHttpClientFactory privilegedUserClientFactory() {
     return new UserHttpClientFactory(
         serviceHttpClientConfig, serviceSecret, new ServiceTokenGenerator(), null, clientId, ClientMode.PRIVILEGED);

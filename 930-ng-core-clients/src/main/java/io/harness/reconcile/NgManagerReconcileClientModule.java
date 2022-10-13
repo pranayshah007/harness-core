@@ -19,6 +19,7 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Provides;
 import com.google.inject.Scopes;
+import com.google.inject.Singleton;
 
 @OwnedBy(HarnessTeam.CDC)
 public class NgManagerReconcileClientModule extends AbstractModule {
@@ -35,6 +36,7 @@ public class NgManagerReconcileClientModule extends AbstractModule {
   }
 
   @Provides
+  @Singleton
   private NgManagerReconcileClientHttpFactory ngManagerReconcileClientHttpFactory(
       KryoConverterFactory kryoConverterFactory) {
     return new NgManagerReconcileClientHttpFactory(this.ngManagerReconcileClientConfig, this.serviceSecret,

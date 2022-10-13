@@ -1073,10 +1073,7 @@ public class EcsContainerServiceImpl implements EcsContainerService {
 
       Service service = services.get(0);
 
-      // Even if service task count is already equal to desired count, try to resize
-      // This should help retry step in case of timeouts or ECS provisioning issue
-      if (service.getDesiredCount() != desiredCount
-          || (timeoutErrorSupported && !isServiceStable(desiredCount, service))) {
+      if (timeoutErrorSupported) {
         List<ServiceEvent> serviceEvents = new ArrayList<>();
         if (isNotEmpty(service.getEvents())) {
           serviceEvents.addAll(service.getEvents());
@@ -1098,11 +1095,35 @@ public class EcsContainerServiceImpl implements EcsContainerService {
         updateServiceCount(serviceCountRequestData);
         executionLogCallback.saveExecutionLog("Service update request successfully submitted.", LogLevel.INFO);
         waitForTasksToBeInRunningStateWithHandledExceptions(serviceCountRequestData);
-        if (desiredCount > service.getDesiredCount()) { // don't do it for downsize.
-          waitForServiceToReachSteadyState(serviceSteadyStateTimeout, serviceCountRequestData);
+        waitForServiceToReachSteadyState(serviceSteadyStateTimeout, serviceCountRequestData);
+      } else {
+        if (service.getDesiredCount() != desiredCount || !isServiceStable(desiredCount, service)) {
+          List<ServiceEvent> serviceEvents = new ArrayList<>();
+          if (isNotEmpty(service.getEvents())) {
+            serviceEvents.addAll(service.getEvents());
+          }
+
+          UpdateServiceCountRequestData serviceCountRequestData =
+              UpdateServiceCountRequestData.builder()
+                  .region(region)
+                  .encryptedDataDetails(encryptedDataDetails)
+                  .cluster(clusterName)
+                  .serviceName(serviceName)
+                  .desiredCount(desiredCount)
+                  .executionLogCallback(executionLogCallback)
+                  .awsConfig(awsConfig)
+                  .serviceEvents(serviceEvents)
+                  .timeOut(serviceSteadyStateTimeout < 10 ? 10 : serviceSteadyStateTimeout)
+                  .build();
+
+          updateServiceCount(serviceCountRequestData);
+          executionLogCallback.saveExecutionLog("Service update request successfully submitted.", LogLevel.INFO);
+          waitForTasksToBeInRunningStateWithHandledExceptions(serviceCountRequestData);
+          if (desiredCount > service.getDesiredCount()) { // don't do it for downsize.
+            waitForServiceToReachSteadyState(serviceSteadyStateTimeout, serviceCountRequestData);
+          }
         }
       }
-
       return getContainerInfosAfterEcsWait(
           region, awsConfig, encryptedDataDetails, clusterName, serviceName, originalTaskArns, executionLogCallback);
     } catch (TimeoutException e) {
@@ -1122,7 +1143,8 @@ public class EcsContainerServiceImpl implements EcsContainerService {
    * @return
    */
   private boolean isServiceStable(int desiredCount, Service service) {
-    return service.getRunningCount() == desiredCount && !isEmpty(service.getDeployments());
+    List<Deployment> deployments = service.getDeployments();
+    return service.getRunningCount() == desiredCount && (deployments.size() == 1);
   }
 
   @Override
@@ -1462,7 +1484,7 @@ public class EcsContainerServiceImpl implements EcsContainerService {
           printAwsEvent(services.get(0), requestData.getServiceEvents(), requestData.getExecutionLogCallback());
 
           if (isNotEmpty(services)) {
-            if (hasServiceReachedSteadyState(services.get(0))) {
+            if (isServiceStable(requestData.getDesiredCount(), services.get(0))) {
               executionLogCallback.saveExecutionLog("Service has reached a steady state", LogLevel.INFO);
               return true;
             }

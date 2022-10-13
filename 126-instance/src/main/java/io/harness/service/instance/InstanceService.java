@@ -39,7 +39,8 @@ public interface InstanceService {
 
   Optional<InstanceDTO> findAndReplace(InstanceDTO instanceDTO);
 
-  List<InstanceDTO> getActiveInstancesByAccount(String accountIdentifier, long timestamp);
+  List<InstanceDTO> getActiveInstancesByAccountOrgProjectAndService(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, String serviceIdentifier, long timestamp);
 
   List<InstanceDTO> getInstancesDeployedInInterval(String accountIdentifier, long startTimestamp, long endTimeStamp);
 

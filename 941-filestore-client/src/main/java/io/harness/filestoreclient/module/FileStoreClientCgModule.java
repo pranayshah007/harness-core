@@ -15,6 +15,7 @@ import io.harness.serializer.kryo.KryoConverterFactory;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Scopes;
+import com.google.inject.Singleton;
 
 public class FileStoreClientCgModule extends AbstractModule {
   private String baseUrl;
@@ -28,6 +29,7 @@ public class FileStoreClientCgModule extends AbstractModule {
   }
 
   @Provides
+  @Singleton
   public FileStoreClientFactoryForCg secretManagerHttpClientFactory(KryoConverterFactory kryoConverterFactory) {
     return new FileStoreClientFactoryForCg(baseUrl, serviceSecret, serviceTokenGenerator);
   }

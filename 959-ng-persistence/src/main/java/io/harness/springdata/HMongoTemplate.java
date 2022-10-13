@@ -136,7 +136,7 @@ public class HMongoTemplate extends MongoTemplate implements HealthMonitor {
     }
     if (checkIfListIsLarge(list)) {
       log.warn("find query {} returns {} items for collection {}. Consider using an Iterator to avoid causing OOM",
-          query, list.size(), collectionName);
+          query, list.size(), collectionName, new Exception());
     }
     return list;
   }
@@ -182,7 +182,7 @@ public class HMongoTemplate extends MongoTemplate implements HealthMonitor {
     if (checkIfListIsLarge(list)) {
       log.warn(
           "findDistinct query {} returns {} items for collection {}. Consider using an Iterator to avoid causing OOM",
-          query, list.size(), collectionName);
+          query, list.size(), collectionName, new Exception());
     }
     return list;
   }
@@ -238,7 +238,7 @@ public class HMongoTemplate extends MongoTemplate implements HealthMonitor {
     if (checkIfListIsLarge(list)) {
       log.warn(
           "FindAllAndRemove query {} returns {} items for collection {}. Consider using an Iterator to avoid causing OOM",
-          query, list.size(), collectionName);
+          query, list.size(), collectionName, new Exception());
     }
     return list;
   }
@@ -313,7 +313,7 @@ public class HMongoTemplate extends MongoTemplate implements HealthMonitor {
     final AggregationResults<O> results = super.aggregate(aggregation, collectionName, outputType, context);
     if (checkIfListIsLarge(results.getMappedResults())) {
       log.warn("Aggregate query {} returns {} items for collection {}. Consider using an Iterator to avoid causing OOM",
-          aggregation, results.getMappedResults().size(), collectionName);
+          aggregation, results.getMappedResults().size(), collectionName, new Exception());
     }
     return results;
   }

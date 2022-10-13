@@ -23,6 +23,7 @@ java_library(
         "//clients/access-control/sdk:module",
         "@maven//:com_fasterxml_jackson_core_jackson_annotations",
         "@maven//:com_google_inject_guice",
+        "@maven//:io_harness_smp_license",
         "@maven//:io_swagger_core_v3_swagger_annotations",
         "@maven//:javax_validation_validation_api",
         "@maven//:javax_ws_rs_javax_ws_rs_api",

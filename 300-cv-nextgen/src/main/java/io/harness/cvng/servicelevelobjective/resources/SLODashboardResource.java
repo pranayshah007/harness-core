@@ -82,7 +82,7 @@ public class SLODashboardResource {
   @GET
   @Path("widgets")
   @ExceptionMetered
-  @ApiOperation(value = "get widget list", nickname = "getSLODashboardWidgets")
+  @ApiOperation(value = "get widget list", nickname = "getSLODashboardWidgets", hidden = true)
   @Operation(operationId = "getSLODashboardWidgets", summary = "Get widget list",
       responses =
       {
@@ -90,6 +90,7 @@ public class SLODashboardResource {
         ApiResponse(responseCode = "default", description = "Gets the SLOs for dashboard")
       })
   @NGAccessControlCheck(resourceType = SLO, permission = VIEW_PERMISSION)
+  @Deprecated
   public ResponseDTO<PageResponse<SLODashboardWidget>>
   getSloDashboardWidgets(@NotNull @BeanParam ProjectParams projectParams, @BeanParam SLODashboardApiFilter filter,
       @BeanParam PageParams pageParams) {

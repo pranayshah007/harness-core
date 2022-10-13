@@ -11,7 +11,6 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.NGCommonEntityConstants;
 import io.harness.accesscontrol.AccountIdentifier;
-import io.harness.accesscontrol.NGAccessControlCheck;
 import io.harness.accesscontrol.OrgIdentifier;
 import io.harness.accesscontrol.ProjectIdentifier;
 import io.harness.annotations.dev.OwnedBy;
@@ -19,7 +18,6 @@ import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.pms.pipeline.PipelineResourceConstants;
-import io.harness.pms.rbac.PipelineRbacPermissions;
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -72,7 +70,6 @@ public interface WaitStepResource {
   @POST
   @Path("/{nodeExecutionId}")
   @ApiOperation(value = "Marks the Wait Step as fail or success", nickname = "markWaitStep")
-  @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_EXECUTE)
   @Operation(operationId = "markWaitStep", summary = "Marks the wait step as fail or success",
       responses =
       {
@@ -91,7 +88,6 @@ public interface WaitStepResource {
   @GET
   @Path("/executionDetails/{nodeExecutionId}")
   @ApiOperation(value = "Get Wait Step execution details", nickname = "executionDetails")
-  @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_VIEW)
   @Operation(operationId = "executionDetails", summary = "Get Wait Step execution details",
       responses =
       {

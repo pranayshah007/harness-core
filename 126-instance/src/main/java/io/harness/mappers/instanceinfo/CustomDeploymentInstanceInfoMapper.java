@@ -20,14 +20,14 @@ public class CustomDeploymentInstanceInfoMapper {
   public CustomDeploymentInstanceInfoDTO toDTO(CustomDeploymentInstanceInfo customDeploymentInstanceInfo) {
     return CustomDeploymentInstanceInfoDTO.builder()
         .infrastructureKey(customDeploymentInstanceInfo.getInfrastructureKey())
-        .hostname(customDeploymentInstanceInfo.getHostname())
+        .instanceName(customDeploymentInstanceInfo.getInstancename())
         .properties(customDeploymentInstanceInfo.getProperties())
         .build();
   }
   public CustomDeploymentInstanceInfo toEntity(CustomDeploymentInstanceInfoDTO customDeploymentInstanceInfoDTO) {
     return CustomDeploymentInstanceInfo.builder()
         .infrastructureKey(customDeploymentInstanceInfoDTO.getInfrastructureKey())
-        .hostname(customDeploymentInstanceInfoDTO.getHostname())
+        .instancename(customDeploymentInstanceInfoDTO.getInstanceName())
         .properties(customDeploymentInstanceInfoDTO.getProperties())
         .build();
   }

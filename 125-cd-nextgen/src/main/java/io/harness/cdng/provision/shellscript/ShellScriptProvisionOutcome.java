@@ -16,7 +16,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @OwnedBy(HarnessTeam.CDP)
-@RecasterAlias("io.harness.cdng.provision.azure.ShellScriptProvisionOutcome")
+@RecasterAlias("io.harness.cdng.provision.shellscript.ShellScriptProvisionOutcome")
 public class ShellScriptProvisionOutcome extends HashMap<String, Object> implements Outcome {
   public ShellScriptProvisionOutcome(Map<String, ?> m) {
     super(m);

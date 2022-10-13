@@ -114,7 +114,9 @@ public class ACLDAOImpl implements ACLDAO {
 
     // if RESOURCE_TYPE is a scope, query for scope = {given_scope}/RESOURCE_TYPE/{resourceIdentifier}
     if (scopeResourceTypes.contains(resourceType)) {
-      scope = scope.concat(PATH_DELIMITER + resourceType + PATH_DELIMITER + resourceIdentifier);
+      if (resourceIdentifier != null) {
+        scope = scope.concat(PATH_DELIMITER + resourceType + PATH_DELIMITER + resourceIdentifier);
+      }
 
       // and resource = /RESOURCE_TYPE/{resourceIdentifier}
       if (!StringUtils.isEmpty(resourceIdentifier)) {

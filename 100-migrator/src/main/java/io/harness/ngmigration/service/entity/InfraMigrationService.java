@@ -205,7 +205,7 @@ public class InfraMigrationService extends NgMigrationService {
       Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities,
       NgEntityDetail ngEntityDetail) {
     InfrastructureDefinition infra = (InfrastructureDefinition) entities.get(entityId).getEntity();
-    migratorExpressionUtils.render(infra);
+    migratorExpressionUtils.render(infra, inputDTO.getCustomExpressions());
     String name = MigratorUtility.generateName(inputDTO.getOverrides(), entityId, infra.getName());
     String identifier = MigratorUtility.generateIdentifierDefaultName(inputDTO.getOverrides(), entityId, name);
     String projectIdentifier = MigratorUtility.getProjectIdentifier(Scope.PROJECT, inputDTO);
@@ -282,7 +282,7 @@ public class InfraMigrationService extends NgMigrationService {
   public InfrastructureDef getInfraDef(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
       Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities) {
     InfrastructureDefinition infrastructureDefinition = (InfrastructureDefinition) entities.get(entityId).getEntity();
-    migratorExpressionUtils.render(infrastructureDefinition);
+    migratorExpressionUtils.render(infrastructureDefinition, inputDTO.getCustomExpressions());
 
     if (infrastructureDefinition.getCloudProviderType() != KUBERNETES_CLUSTER) {
       throw new InvalidRequestException("Only support K8s deployment");
