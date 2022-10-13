@@ -253,7 +253,7 @@ public class WorkflowMigrationService extends NgMigrationService {
   public StageElementWrapperConfig getNgStage(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
       Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities) {
     Workflow workflow = (Workflow) entities.get(entityId).getEntity();
-    migratorExpressionUtils.render(workflow);
+    migratorExpressionUtils.render(workflow, inputDTO.getCustomExpressions());
     WorkflowHandler workflowHandler = workflowHandlerFactory.getWorkflowHandler(workflow);
     List<ExecutionWrapperConfig> steps = new ArrayList<>();
     List<ExecutionWrapperConfig> rollingSteps = new ArrayList<>();

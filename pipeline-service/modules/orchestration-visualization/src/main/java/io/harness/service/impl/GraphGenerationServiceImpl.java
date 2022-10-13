@@ -255,7 +255,9 @@ public class GraphGenerationServiceImpl implements GraphGenerationService {
 
   private void sendUpdateEventIfAny(OrchestrationGraph orchestrationGraph) {
     String planExecutionId = orchestrationGraph.getPlanExecutionId();
-    if (!StatusUtils.isFinalStatus(orchestrationGraph.getStatus())) {
+    if (!StatusUtils.isFinalStatus(orchestrationGraph.getStatus())
+        || orchestrationEventLogRepository.checkIfAnyUnprocessedEvents(
+            orchestrationGraph.getPlanExecutionId(), orchestrationGraph.getLastUpdatedAt())) {
       orchestrationLogPublisher.sendLogEvent(planExecutionId);
     }
   }

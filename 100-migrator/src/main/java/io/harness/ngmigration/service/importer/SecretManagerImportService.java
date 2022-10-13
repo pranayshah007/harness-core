@@ -46,19 +46,21 @@ public class SecretManagerImportService implements ImportService {
                                .collect(Collectors.toList());
         break;
       case TYPE:
-        secretManagerIds = secretManagerConfigService.listSecretManagers(accountId, false)
-                               .stream()
-                               .filter(secretManagerConfig -> {
-                                 try {
-                                   SecretFactory.getConnectorType(secretManagerConfig);
-                                   return true;
-                                 } catch (Exception e) {
-                                   log.warn("Unsupported secret manager", e);
-                                   return false;
-                                 }
-                               })
-                               .map(SecretManagerConfig::getUuid)
-                               .collect(Collectors.toList());
+        secretManagerIds =
+            secretManagerConfigService.listSecretManagers(accountId, false)
+                .stream()
+                .filter(secretManagerConfig -> filter.getTypes().contains(secretManagerConfig.getEncryptionType()))
+                .filter(secretManagerConfig -> {
+                  try {
+                    SecretFactory.getConnectorType(secretManagerConfig);
+                    return true;
+                  } catch (Exception e) {
+                    log.warn("Unsupported secret manager", e);
+                    return false;
+                  }
+                })
+                .map(SecretManagerConfig::getUuid)
+                .collect(Collectors.toList());
         break;
       case SPECIFIC:
         secretManagerIds = filter.getIds();

@@ -10,8 +10,7 @@ package io.harness.ngmigration.dto;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ngmigration.beans.ImportMechanism;
-
-import software.wings.settings.SettingVariableTypes;
+import io.harness.security.encryption.EncryptionType;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -34,5 +33,5 @@ public class SecretManagerFilter extends Filter {
 
   @Parameter(description = "To be provided if mechanism is ID") private List<String> ids;
 
-  @Parameter(description = "To be provided if mechanism is TYPE") private Set<SettingVariableTypes> types;
+  @Parameter(description = "To be provided if mechanism is TYPE") private Set<EncryptionType> types;
 }

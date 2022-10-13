@@ -17,6 +17,7 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.validator.EntityIdentifier;
 import io.harness.data.validator.EntityName;
 import io.harness.data.validator.Trimmed;
+import io.harness.gitsync.beans.StoreType;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
@@ -24,6 +25,7 @@ import io.harness.ng.core.common.beans.NGTag;
 import io.harness.ng.core.service.mappers.NGServiceEntityMapper;
 import io.harness.ng.core.service.yaml.NGServiceConfig;
 import io.harness.persistence.PersistentEntity;
+import io.harness.persistence.gitaware.GitAware;
 import io.harness.template.yaml.TemplateRefHelper;
 
 import com.google.common.collect.ImmutableList;
@@ -55,7 +57,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @TypeAlias("io.harness.ng.core.service.entity.ServiceEntity")
 @ChangeDataCapture(table = "services", dataStore = "ng-harness", fields = {}, handler = "Services")
 @ChangeDataCapture(table = "tags_info", dataStore = "ng-harness", fields = {}, handler = "TagsInfoCD")
-public class ServiceEntity implements PersistentEntity {
+public class ServiceEntity implements PersistentEntity, GitAware {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()
@@ -99,12 +101,19 @@ public class ServiceEntity implements PersistentEntity {
   String yaml;
 
   // GitSync entities
+  // Todo(Tathagat): Check if need to be deleted
   @Wither @Setter @NonFinal String objectIdOfYaml;
   @Setter @NonFinal Boolean isFromDefaultBranch;
   @Setter @NonFinal String branch;
   @Setter @NonFinal String yamlGitConfigRef;
   @Setter @NonFinal String filePath;
   @Setter @NonFinal String rootFolder;
+
+  // GitX Entities
+  @Wither @Setter @NonFinal StoreType storeType;
+  @Wither @Setter @NonFinal String repo;
+  @Wither @Setter @NonFinal String connectorRef;
+  @Wither @Setter @NonFinal String repoURL;
 
   public String fetchNonEmptyYaml() {
     if (EmptyPredicate.isEmpty(yaml)) {
@@ -119,5 +128,15 @@ public class ServiceEntity implements PersistentEntity {
       return false;
     }
     return TemplateRefHelper.hasTemplateRef(yaml);
+  }
+
+  @Override
+  public String getData() {
+    return this.yaml;
+  }
+
+  @Override
+  public void setData(String data) {
+    this.yaml = data;
   }
 }

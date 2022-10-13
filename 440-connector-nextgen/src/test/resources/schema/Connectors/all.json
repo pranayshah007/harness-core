@@ -1984,7 +1984,6 @@
             "Gcp",
             "Aws",
             "Azure",
-            "Spot",
             "Artifactory",
             "Jira",
             "Nexus",
@@ -2011,7 +2010,8 @@
             "CustomSecretManager",
             "ELK",
             "GcpSecretManager",
-            "AzureArtifacts"
+            "AzureArtifacts",
+            "Spot"
           ]
         }
       },

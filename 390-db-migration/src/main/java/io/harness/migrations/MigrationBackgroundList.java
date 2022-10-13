@@ -70,6 +70,7 @@ import io.harness.migrations.all.CleanupOrphanInfraMappings;
 import io.harness.migrations.all.CleanupOrphanInstances;
 import io.harness.migrations.all.CleanupSyncStatusForDeletedEntities;
 import io.harness.migrations.all.ConvertHttpHeadersStringTypeToList;
+import io.harness.migrations.all.CorrectingQuartzTriggerFrequency;
 import io.harness.migrations.all.CreateDefaultNgDelegateTokenMigration;
 import io.harness.migrations.all.CreateNgPrimaryProfileForExistingAccounts;
 import io.harness.migrations.all.CreatePrimiryProfileForAllAccounts;
@@ -401,6 +402,7 @@ public class MigrationBackgroundList {
         .add(Pair.of(233, BaseMigration.class))
         .add(Pair.of(234, SettingAttributesServiceAccountTokenMigration.class))
         .add(Pair.of(235, ExecuteWorkflowAbortActionMigration.class))
+        .add(Pair.of(236, CorrectingQuartzTriggerFrequency.class))
         .build();
   }
 }
