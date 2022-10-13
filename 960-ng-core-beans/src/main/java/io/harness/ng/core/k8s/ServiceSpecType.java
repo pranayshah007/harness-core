@@ -18,4 +18,5 @@ public interface ServiceSpecType {
   String WINRM = "WinRm";
   String AZURE_WEBAPP = "AzureWebApp";
   String CUSTOM_DEPLOYMENT = "CustomDeployment";
+  String ELASTIGROUP = "Elastigroup";
 }
