@@ -15,6 +15,7 @@ import static io.harness.delegate.beans.connector.ConnectorType.BITBUCKET;
 import static io.harness.delegate.beans.connector.ConnectorType.GITHUB;
 import static io.harness.rule.OwnerRule.BHAVYA;
 import static io.harness.rule.OwnerRule.DEEPAK;
+import static io.harness.rule.OwnerRule.DEV_MITTAL;
 import static io.harness.rule.OwnerRule.MEET;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -54,6 +55,7 @@ import io.harness.product.ci.scm.proto.FileContent;
 import io.harness.product.ci.scm.proto.GetLatestCommitOnFileResponse;
 import io.harness.product.ci.scm.proto.GetLatestCommitResponse;
 import io.harness.product.ci.scm.proto.GetUserRepoResponse;
+import io.harness.product.ci.scm.proto.GetUserReposResponse;
 import io.harness.product.ci.scm.proto.ListBranchesResponse;
 import io.harness.product.ci.scm.proto.ListBranchesWithDefaultRequest;
 import io.harness.product.ci.scm.proto.ListBranchesWithDefaultResponse;
@@ -64,6 +66,7 @@ import io.harness.product.ci.scm.proto.SCMGrpc;
 import io.harness.product.ci.scm.proto.UpdateFileResponse;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
+import io.harness.utils.ScmGrpcClientUtils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -76,6 +79,7 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.MockitoAnnotations;
 import org.mockito.junit.MockitoJUnitRunner;
 
@@ -293,6 +297,48 @@ public class ScmServiceClientImplTest extends CategoryTest {
             GetUserRepoResponse.newBuilder().setRepo(Repository.newBuilder().setBranch(branch).build()).build());
     GetUserRepoResponse getUserRepoResponse = scmServiceClient.getRepoDetails(scmConnector, scmBlockingStub);
     assertThat(getUserRepoResponse.getRepo().getBranch()).isEqualTo(branch);
+  }
+
+  @Test
+  @Owner(developers = DEV_MITTAL)
+  @Category(UnitTests.class)
+  public void testGetUserReposViaManager() {
+    GithubConnectorDTO githubConnector = GithubConnectorDTO.builder()
+                                             .apiAccess(GithubApiAccessDTO.builder().build())
+                                             .url(repoUrl)
+                                             .connectionType(GitConnectionType.REPO)
+                                             .executeOnDelegate(false)
+                                             .build();
+    ConnectorInfoDTO connectorInfo = ConnectorInfoDTO.builder().connectorConfig(githubConnector).build();
+    scmConnector = (ScmConnector) connectorInfo.getConnectorConfig();
+    when(scmGitProviderMapper.mapToSCMGitProvider(any())).thenReturn(getGitProviderDefault());
+
+    try (MockedStatic mockStatic = mockStatic(ScmGrpcClientUtils.class)) {
+      GetUserReposResponse getUserReposResponse =
+          scmServiceClient.getUserRepos(scmConnector, PageRequestDTO.builder().build(), scmBlockingStub);
+      mockStatic.verify(() -> ScmGrpcClientUtils.retryAndProcessException(any(), any(), eq(4)));
+    }
+  }
+
+  @Test
+  @Owner(developers = DEV_MITTAL)
+  @Category(UnitTests.class)
+  public void testGetUserReposViaDelegate() {
+    GithubConnectorDTO githubConnector = GithubConnectorDTO.builder()
+                                             .apiAccess(GithubApiAccessDTO.builder().build())
+                                             .url(repoUrl)
+                                             .connectionType(GitConnectionType.REPO)
+                                             .executeOnDelegate(true)
+                                             .build();
+    ConnectorInfoDTO connectorInfo = ConnectorInfoDTO.builder().connectorConfig(githubConnector).build();
+    scmConnector = (ScmConnector) connectorInfo.getConnectorConfig();
+    when(scmGitProviderMapper.mapToSCMGitProvider(any())).thenReturn(getGitProviderDefault());
+
+    try (MockedStatic mockStatic = mockStatic(ScmGrpcClientUtils.class)) {
+      GetUserReposResponse getUserReposResponse =
+          scmServiceClient.getUserRepos(scmConnector, PageRequestDTO.builder().build(), scmBlockingStub);
+      mockStatic.verify(() -> ScmGrpcClientUtils.retryAndProcessException(any(), any(), eq(1)));
+    }
   }
 
   @Test
