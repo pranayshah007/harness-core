@@ -227,6 +227,13 @@ public class InstanceServiceImpl implements InstanceService {
         accountIdentifier, orgIdentifier, projectIdentifier, serviceId);
   }
 
+  @Override
+  public AggregationResults<ActiveServiceInstanceInfo> getActiveServiceGitOpsInstanceInfo(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId) {
+    return instanceRepository.getActiveServiceGitOpsInstanceInfo(
+        accountIdentifier, orgIdentifier, projectIdentifier, serviceId);
+  }
+
   /*
     Returns aggregated result containing total {limit} instances for given buildIds
    */
