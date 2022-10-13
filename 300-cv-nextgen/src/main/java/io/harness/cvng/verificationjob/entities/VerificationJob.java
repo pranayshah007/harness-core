@@ -128,8 +128,6 @@ public abstract class VerificationJob
     Preconditions.checkNotNull(orgIdentifier, generateErrorMessageFromParam(VerificationJobKeys.orgIdentifier));
     Preconditions.checkNotNull(envIdentifier, generateErrorMessageFromParam(VerificationJobKeys.envIdentifier));
     Preconditions.checkNotNull(duration, generateErrorMessageFromParam(VerificationJobKeys.duration));
-    //    Preconditions.checkNotNull(failOnNoAnalysis,
-    //    generateErrorMessageFromParam(VerificationJobKeys.failOnNoAnalysis));
     // Preconditions.checkNotNull(activitySourceIdentifier,
     // generateErrorMessageFromParam(VerificationJobKeys.activitySourceIdentifier));
     if (!duration.isRuntimeParam()) {
@@ -207,6 +205,13 @@ public abstract class VerificationJob
       return null;
     }
     return Duration.ofMinutes(Integer.parseInt(duration.getValue().substring(0, duration.getValue().length() - 1)));
+  }
+
+  public boolean isFailOnNoAnalysis() {
+    if (failOnNoAnalysis.isRuntimeParam()) {
+      return false;
+    }
+    return Boolean.valueOf(failOnNoAnalysis.getValue());
   }
 
   public String getServiceIdentifier() {

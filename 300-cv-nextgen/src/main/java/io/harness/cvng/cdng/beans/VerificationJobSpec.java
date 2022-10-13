@@ -59,8 +59,13 @@ public abstract class VerificationJobSpec {
 
   @ApiModelProperty(hidden = true)
   public VerificationJobBuilder getVerificationJobBuilder() {
+    RuntimeParameter failOnNoAnalysisFromParam =
+        getFailOnNoAnalysis() == null || getFailOnNoAnalysis().getValue() == null
+        ? RuntimeParameter.builder().value("false").build()
+        : RuntimeParameter.builder().value(getFailOnNoAnalysis().getValue().toString()).build();
     VerificationJobBuilder verificationJobBuilder = verificationJobBuilder();
-    return verificationJobBuilder.duration(RuntimeParameter.builder().value(duration.getValue()).build());
+    return verificationJobBuilder.duration(RuntimeParameter.builder().value(duration.getValue()).build())
+        .failOnNoAnalysis(failOnNoAnalysisFromParam);
   }
   @ApiModelProperty(hidden = true) protected abstract VerificationJobBuilder verificationJobBuilder();
   public void validate() {
