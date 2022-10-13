@@ -76,6 +76,7 @@ public class OwnerRule implements TestRule {
   public static final String GTM = "GTM";
   public static final String SPG = "SPG";
   public static final String STO = "STO";
+  public static final String SMP = "SMP";
 
   public static final String AADITI = "aaditi.joag";
   public static final String ABHIJEET = "abhijeet.sharma";
@@ -302,6 +303,7 @@ public class OwnerRule implements TestRule {
   public static final String JIMIT_GANDHI = "jimit.gandhi";
   public static final String XINGCHI_JIN = "xingchi.jin";
   public static final String RAGHAV_MURALI = "raghavendra.murali";
+  public static final String KAPIL_GARG = "kapil.garg";
   @Deprecated public static final String UNKNOWN = "unknown";
 
   private static UserInfoBuilder defaultUserInfo(String user) {
@@ -534,6 +536,7 @@ public class OwnerRule implements TestRule {
           .put(XINGCHI_JIN, defaultUserInfo(XINGCHI_JIN).slack("U03QHE0HBCN").team(PL).build())
           .put(ABHINAV3, defaultUserInfo(ABHINAV3).slack("U03RHN86V5L").team(CE).build())
           .put(RAGHAV_MURALI, defaultUserInfo(RAGHAV_MURALI).slack("U03SSLFQ295").team(PL).build())
+          .put(KAPIL_GARG, defaultUserInfo(KAPIL_GARG).slack("U03TGHL3068").team(SMP).build())
           .build();
 
   private static String prDeveloperId = findDeveloperId(System.getenv(GHPRB_PULL_AUTHOR_EMAIL));
