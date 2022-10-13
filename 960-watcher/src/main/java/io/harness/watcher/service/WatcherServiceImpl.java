@@ -502,7 +502,7 @@ public class WatcherServiceImpl implements WatcherService {
     }
     try {
       Map<String, Object> heartbeatData = new HashMap<>();
-      heartbeatData.put(WATCHER_HEARTBEAT, clock.millis());
+//      heartbeatData.put(WATCHER_HEARTBEAT, clock.millis());
       heartbeatData.put(WATCHER_PROCESS, getProcessId());
       heartbeatData.put(WATCHER_VERSION, getVersion());
       messageService.putAllData(WATCHER_DATA, heartbeatData);
