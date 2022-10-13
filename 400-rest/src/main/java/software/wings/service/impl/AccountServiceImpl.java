@@ -103,6 +103,7 @@ import io.harness.ng.core.account.DefaultExperience;
 import io.harness.ng.core.account.OauthProviderType;
 import io.harness.observer.RemoteObserverInformer;
 import io.harness.observer.Subject;
+import io.harness.outbox.OutboxEvent;
 import io.harness.outbox.api.OutboxService;
 import io.harness.persistence.HIterator;
 import io.harness.persistence.HPersistence;
@@ -1736,16 +1737,21 @@ public class AccountServiceImpl implements AccountService {
   private void ngAuditLoginSettings(
       String accountIdentifier, Set<String> oldWhitelistedDomains, Set<String> newWhitelistedDomains) {
     try {
-      outboxService.save(LoginSettingsWhitelistedDomainsUpdateEvent.builder()
-                             .accountIdentifier(accountIdentifier)
-                             .oldWhitelistedDomainsYamlDTO(
-                                 WhitelistedDomainsYamlDTO.builder().whitelistedDomains(oldWhitelistedDomains).build())
-                             .newWhitelistedDomainsYamlDTO(
-                                 WhitelistedDomainsYamlDTO.builder().whitelistedDomains(newWhitelistedDomains).build())
-                             .build());
+      OutboxEvent outboxEvent = outboxService.save(
+          LoginSettingsWhitelistedDomainsUpdateEvent.builder()
+              .accountIdentifier(accountIdentifier)
+              .oldWhitelistedDomainsYamlDTO(
+                  WhitelistedDomainsYamlDTO.builder().whitelistedDomains(oldWhitelistedDomains).build())
+              .newWhitelistedDomainsYamlDTO(
+                  WhitelistedDomainsYamlDTO.builder().whitelistedDomains(newWhitelistedDomains).build())
+              .build());
+      log.info(
+          "NG Auth Audits: for account {} and outboxEventId {} successfully saved the audit for LoginSettingsWhitelistedDomainsUpdateEvent to outbox",
+          accountIdentifier, outboxEvent.getId());
     } catch (Exception ex) {
       log.error(
-          "For account {} Audit trails for LoginSettings update event failed with exception: ", accountIdentifier, ex);
+          "NG Auth Audits: for account {} saving the LoginSettingsWhitelistedDomainsUpdateEvent to outbox failed with exception: ",
+          accountIdentifier, ex);
     }
   }
 

@@ -54,6 +54,8 @@ import io.harness.azure.utility.AzureResourceUtility;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 
+import software.wings.beans.AzureImageGallery;
+
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Singleton;
 import com.microsoft.azure.PagedList;
@@ -281,6 +283,23 @@ public class AzureComputeClientImpl extends AzureClient implements AzureComputeC
     log.debug("Start listing resource groups names for subscriptionId {}", subscriptionId);
     List<ResourceGroup> resourceGroupList = azure.resourceGroups().list();
     return resourceGroupList.stream().map(HasName::name).collect(Collectors.toList());
+  }
+
+  @Override
+  public List<AzureImageGallery> listImageGalleries(
+      AzureConfig azureConfig, String subscriptionId, String resourceGroup) {
+    Azure azure = getAzureClient(azureConfig, subscriptionId);
+    return azure.galleries()
+        .listByResourceGroup(resourceGroup)
+        .stream()
+        .map(ig
+            -> AzureImageGallery.builder()
+                   .name(ig.name())
+                   .subscriptionId(subscriptionId)
+                   .resourceGroupName(resourceGroup)
+                   .regionName(ig.regionName())
+                   .build())
+        .collect(Collectors.toList());
   }
 
   @Override
@@ -665,6 +684,19 @@ public class AzureComputeClientImpl extends AzureClient implements AzureComputeC
       VirtualMachine virtualMachine, AzureHostConnectionType hostConnectionType) {
     VirtualMachineDataBuilder builder = VirtualMachineData.builder().hostName(virtualMachine.name());
 
+    setAddress(virtualMachine, hostConnectionType, builder);
+    return builder.hostName(virtualMachine.name())
+        .privateIp(virtualMachine.getPrimaryNetworkInterface() != null
+                ? virtualMachine.getPrimaryNetworkInterface().primaryPrivateIP()
+                : null)
+        .publicIp(virtualMachine.getPrimaryPublicIPAddress() != null
+                ? virtualMachine.getPrimaryPublicIPAddress().ipAddress()
+                : null)
+        .build();
+  }
+
+  private void setAddress(
+      VirtualMachine virtualMachine, AzureHostConnectionType hostConnectionType, VirtualMachineDataBuilder builder) {
     if (AzureHostConnectionType.PUBLIC_IP.equals(hostConnectionType)
         && virtualMachine.getPrimaryPublicIPAddress() != null) {
       builder.address(virtualMachine.getPrimaryPublicIPAddress().ipAddress());
@@ -674,7 +706,5 @@ public class AzureComputeClientImpl extends AzureClient implements AzureComputeC
     } else if (AzureHostConnectionType.HOSTNAME.equals(hostConnectionType)) {
       builder.address(virtualMachine.name());
     }
-
-    return builder.build();
   }
 }

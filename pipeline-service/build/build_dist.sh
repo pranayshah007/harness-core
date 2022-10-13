@@ -31,8 +31,6 @@ cp ../../pipeline-service/service/src/main/resources/enterprise-redisson-jcache.
 cp ../../dockerization/base-images/apm/inject-onprem-apm-bins-into-dockerimage.sh .
 cp ../../dockerization/base-images/apm/inject-saas-apm-bins-into-dockerimage.sh .
 
-cp ../../pipeline-service/build/container/Dockerfile-pipeline-service-jenkins-k8-openjdk ./Dockerfile
-cp ../../pipeline-service/build/container/Dockerfile-pipeline-service-jenkins-k8-gcr-openjdk ./Dockerfile-gcr
 cp ../../pipeline-service/build/container/Dockerfile-pipeline-service-cie-jdk ./Dockerfile-cie-jdk
 
 cp -r ../../pipeline-service/build/container/scripts/ .

@@ -9,6 +9,9 @@ package io.harness.pms.rbac;
 
 import static io.harness.rule.OwnerRule.SAHIL;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+
 import io.harness.CategoryTest;
 import io.harness.EntityType;
 import io.harness.annotations.dev.HarnessTeam;
@@ -21,6 +24,7 @@ import io.harness.ng.core.EntityDetail;
 import io.harness.ng.core.entitysetupusage.dto.EntityReferencesDTO;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.rule.Owner;
+import io.harness.utils.NGFeatureFlagHelperService;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -40,6 +44,7 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 public class InternalReferredEntityExtractorTest extends CategoryTest {
   private static final String ACCOUNT_ID = "accountId";
   @Mock EntitySetupUsageClient entitySetupUsageClient;
+  @Mock NGFeatureFlagHelperService ngFeatureFlagHelperService;
   @InjectMocks InternalReferredEntityExtractor internalReferredEntityExtractor;
 
   @Before
@@ -60,7 +65,7 @@ public class InternalReferredEntityExtractorTest extends CategoryTest {
     List<EntityDetail> entityDetailList = new ArrayList<>();
 
     Mockito.mockStatic(NGRestUtils.class);
-    Mockito.when(NGRestUtils.getResponse(Mockito.any(), Mockito.any()))
+    Mockito.when(NGRestUtils.getResponse(any(), any()))
         .thenReturn(EntityReferencesDTO.builder().entitySetupUsageBatchList(new ArrayList<>()).build());
 
     for (int i = 0; i < 5; i++) {
@@ -73,6 +78,7 @@ public class InternalReferredEntityExtractorTest extends CategoryTest {
       entityDetailList.add(getEntityDetail("is-" + name, EntityType.INPUT_SETS));
     }
 
+    Mockito.doReturn(false).when(ngFeatureFlagHelperService).isEnabled(eq(ACCOUNT_ID), any());
     internalReferredEntityExtractor.extractInternalEntities(ACCOUNT_ID, entityDetailList);
 
     Mockito.verify(entitySetupUsageClient)
@@ -93,6 +99,28 @@ public class InternalReferredEntityExtractorTest extends CategoryTest {
                 "accountId/ORG/PROJ/ENV/infra-dummy2/", "accountId/ORG/PROJ/ENV/infra-dummy3/",
                 "accountId/ORG/PROJ/ENV/infra-dummy4/"),
             EntityType.INFRASTRUCTURE, EntityType.CONNECTORS);
+
+    Mockito.doReturn(true).when(ngFeatureFlagHelperService).isEnabled(eq(ACCOUNT_ID), any());
+    internalReferredEntityExtractor.extractInternalEntities(ACCOUNT_ID, entityDetailList);
+
+    Mockito.verify(entitySetupUsageClient, Mockito.times(2))
+        .listAllReferredUsagesBatch(ACCOUNT_ID,
+            Arrays.asList("accountId/svc-dummy0", "accountId/svc-dummy1", "accountId/svc-dummy2",
+                "accountId/svc-dummy3", "accountId/svc-dummy4"),
+            EntityType.SERVICE, EntityType.CONNECTORS);
+
+    Mockito.verify(entitySetupUsageClient, Mockito.times(2))
+        .listAllReferredUsagesBatch(ACCOUNT_ID,
+            Arrays.asList("accountId/ORG/PROJ/ENV/infra-dummy0/", "accountId/ORG/PROJ/ENV/infra-dummy1/",
+                "accountId/ORG/PROJ/ENV/infra-dummy2/", "accountId/ORG/PROJ/ENV/infra-dummy3/",
+                "accountId/ORG/PROJ/ENV/infra-dummy4/"),
+            EntityType.INFRASTRUCTURE, EntityType.CONNECTORS);
+
+    Mockito.verify(entitySetupUsageClient, Mockito.times(1))
+        .listAllReferredUsagesBatch(ACCOUNT_ID,
+            Arrays.asList("accountId/conn-dummy0", "accountId/conn-dummy1", "accountId/conn-dummy2",
+                "accountId/conn-dummy3", "accountId/conn-dummy4"),
+            EntityType.CONNECTORS, EntityType.SECRETS);
   }
 
   private EntityDetail getInfraDefRefEntityDetail(String name) {

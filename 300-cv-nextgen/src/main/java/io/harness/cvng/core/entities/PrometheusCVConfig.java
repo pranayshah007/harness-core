@@ -19,7 +19,6 @@ import io.harness.cvng.beans.TimeSeriesMetricType;
 import io.harness.cvng.core.beans.PrometheusMetricDefinition;
 import io.harness.cvng.core.beans.PrometheusMetricDefinition.PrometheusFilter;
 import io.harness.cvng.core.entities.PrometheusCVConfig.MetricInfo;
-import io.harness.cvng.core.services.CVNextGenConstants;
 import io.harness.cvng.core.utils.analysisinfo.AnalysisInfoUtility;
 import io.harness.cvng.core.utils.analysisinfo.DevelopmentVerificationTransformer;
 import io.harness.cvng.core.utils.analysisinfo.LiveMonitoringTransformer;
@@ -151,7 +150,7 @@ public class PrometheusCVConfig extends MetricCVConfig<MetricInfo> {
                                 .accountId(getAccountId())
                                 .dataSourceType(DataSourceType.PROMETHEUS)
                                 .projectIdentifier(getProjectIdentifier())
-                                .identifier(CVNextGenConstants.CUSTOM_PACK_IDENTIFIER)
+                                .identifier(category.getDisplayName())
                                 .build();
 
     metricDefinitions.forEach(prometheusMetricDefinition -> {

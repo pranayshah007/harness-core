@@ -69,7 +69,7 @@ public class PrometheusHealthSourceSpecTransformer
     return PrometheusHealthSourceSpec.builder()
         .connectorRef(cvConfigs.get(0).getConnectorIdentifier())
         .metricDefinitions(metricDefinitions)
-        .metricPacks(addMetricPacks(cvConfigs))
+        .metricPacks(addCustomMetricPacks(cvConfigs))
         .build();
   }
 

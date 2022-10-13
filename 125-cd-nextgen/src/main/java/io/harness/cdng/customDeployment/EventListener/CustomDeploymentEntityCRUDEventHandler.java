@@ -12,7 +12,7 @@ import static software.wings.beans.AccountType.log;
 import static java.util.Objects.isNull;
 
 import io.harness.EntityType;
-import io.harness.beans.IdentifierRef;
+import io.harness.beans.InfraDefReference;
 import io.harness.beans.Scope;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
@@ -41,14 +41,16 @@ public class CustomDeploymentEntityCRUDEventHandler {
   @Inject EntitySetupUsageService entitySetupUsageService;
   @Inject InfrastructureEntityService infrastructureEntityService;
   @Inject TemplateResourceClient templateResourceClient;
+  public static final String STABLE_VERSION = "__STABLE__";
   public boolean updateInfraAsObsolete(
       String accountRef, String orgRef, String projectRef, String identifier, String versionLabel) {
     Scope scope =
         Scope.builder().accountIdentifier(accountRef).orgIdentifier(orgRef).projectIdentifier(projectRef).build();
     String entityFQN = getFullyQualifiedIdentifier(accountRef, orgRef, projectRef, identifier) + "/";
-    if (versionLabel != null) {
-      entityFQN = entityFQN + versionLabel + "/";
+    if (versionLabel == null) {
+      versionLabel = STABLE_VERSION;
     }
+    entityFQN = entityFQN + versionLabel + "/";
     List<EntitySetupUsageDTO> entitySetupUsages = entitySetupUsageService.listAllEntityUsagePerReferredEntityScope(
         scope, entityFQN, EntityType.TEMPLATE, EntityType.INFRASTRUCTURE, null, null);
     if (entitySetupUsages.isEmpty()) {
@@ -61,7 +63,7 @@ public class CustomDeploymentEntityCRUDEventHandler {
     for (EntitySetupUsageDTO entitySetupUsage : entitySetupUsages) {
       String infraId = entitySetupUsage.getReferredByEntity().getEntityRef().getIdentifier();
       String environment =
-          ((IdentifierRef) entitySetupUsage.getReferredByEntity().getEntityRef()).getMetadata().get("envId");
+          ((InfraDefReference) entitySetupUsage.getReferredByEntity().getEntityRef()).getEnvIdentifier();
       String orgIdentifierEnv = entitySetupUsage.getReferredByEntity().getEntityRef().getOrgIdentifier();
       String projectIdentifierEnv = entitySetupUsage.getReferredByEntity().getEntityRef().getProjectIdentifier();
       infraIdsList.add(infraId);
@@ -85,8 +87,7 @@ public class CustomDeploymentEntityCRUDEventHandler {
     String infraId = entitySetupUsage.getReferredByEntity().getEntityRef().getIdentifier();
     String orgId = entitySetupUsage.getReferredByEntity().getEntityRef().getOrgIdentifier();
     String projectId = entitySetupUsage.getReferredByEntity().getEntityRef().getProjectIdentifier();
-    String environment =
-        ((IdentifierRef) entitySetupUsage.getReferredByEntity().getEntityRef()).getMetadata().get("envId");
+    String environment = ((InfraDefReference) entitySetupUsage.getReferredByEntity().getEntityRef()).getEnvIdentifier();
     Optional<InfrastructureEntity> infrastructureOptional =
         infrastructureEntityService.get(entitySetupUsage.getReferredByEntity().getEntityRef().getAccountIdentifier(),
             orgId, projectId, environment, infraId);
@@ -99,6 +100,9 @@ public class CustomDeploymentEntityCRUDEventHandler {
   }
   public String getTemplateYaml(
       String accountRef, String orgRef, String projectRef, String identifier, String versionLabel) {
+    if (versionLabel.equals(STABLE_VERSION)) {
+      versionLabel = null;
+    }
     TemplateResponseDTO response = NGRestUtils.getResponse(
         templateResourceClient.get(identifier, accountRef, orgRef, projectRef, versionLabel, false));
     return response.getYaml();

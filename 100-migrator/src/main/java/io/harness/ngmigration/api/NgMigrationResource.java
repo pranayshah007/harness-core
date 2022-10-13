@@ -22,7 +22,6 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.ngmigration.beans.DiscoveryInput;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.MigrationInputResult;
-import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.summary.BaseSummary;
 import io.harness.ngmigration.dto.ImportDTO;
 import io.harness.ngmigration.dto.SaveSummaryDTO;
@@ -46,7 +45,6 @@ import java.io.IOException;
 import java.time.Instant;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.List;
 import java.util.Map;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -149,12 +147,12 @@ public class NgMigrationResource {
   @Path("/save")
   @Timed
   @ExceptionMetered
-  public RestResponse<List<NGYamlFile>> getMigratedFiles(@HeaderParam("Authorization") String auth,
+  public RestResponse<SaveSummaryDTO> getMigratedFiles(@HeaderParam("Authorization") String auth,
       @QueryParam("entityId") String entityId, @QueryParam("appId") String appId,
       @QueryParam("accountId") String accountId, @QueryParam("entityType") NGMigrationEntityType entityType,
       MigrationInputDTO inputDTO) {
     DiscoveryResult result = discoveryService.discover(accountId, appId, entityId, entityType, null);
-    return new RestResponse<>(discoveryService.migrateEntity(auth, inputDTO, result, false));
+    return new RestResponse<>(discoveryService.migrateEntity(auth, inputDTO, result));
   }
 
   @POST

@@ -13,13 +13,17 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.dto.secrets.SecretResponseWrapper;
+import io.harness.ng.core.filestore.dto.FileDTO;
 import io.harness.ng.core.service.dto.ServiceResponse;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import okhttp3.RequestBody;
 import retrofit2.Call;
 import retrofit2.http.Body;
 import retrofit2.http.Header;
+import retrofit2.http.Multipart;
 import retrofit2.http.POST;
+import retrofit2.http.Part;
 import retrofit2.http.Query;
 
 @OwnedBy(HarnessTeam.CDC)
@@ -45,4 +49,14 @@ public interface NGClient {
   @POST("infrastructures")
   Call<ResponseDTO<ConnectorResponseDTO>> createInfrastructure(@Header("Authorization") String auth,
       @Query(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier, @Body JsonNode infraDTO);
+
+  @POST("file-store")
+  @Multipart
+  Call<ResponseDTO<FileDTO>> createFileInFileStore(@Header("Authorization") String auth,
+      @Query(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @Query(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @Query(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier, @Part("content") RequestBody content,
+      @Part("name") RequestBody name, @Part("identifier") RequestBody identifier,
+      @Part("fileUsage") RequestBody fileUsage, @Part("type") RequestBody type,
+      @Part("parentIdentifier") RequestBody parentIdentifier, @Part("mimeType") RequestBody mimeType);
 }

@@ -7,8 +7,6 @@
 
 package io.harness.delegate.beans.connector.helm;
 
-import io.harness.annotation.RecasterFieldName;
-
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -28,9 +26,8 @@ import lombok.NoArgsConstructor;
 @JsonDeserialize(using = HelmAuthenticationDTODeserializer.class)
 @Schema(name = "HttpHelmAuthentication", description = "This contains http helm authentication details")
 public class HttpHelmAuthenticationDTO {
-  @NotNull @RecasterFieldName(name = "type") @JsonProperty("type") HttpHelmAuthType authType;
+  @NotNull @JsonProperty("type") HttpHelmAuthType authType;
 
-  @RecasterFieldName(name = "spec")
   @JsonProperty("spec")
   @JsonTypeInfo(
       use = JsonTypeInfo.Id.NAME, property = "type", include = JsonTypeInfo.As.EXTERNAL_PROPERTY, visible = true)

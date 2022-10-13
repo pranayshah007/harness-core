@@ -750,6 +750,7 @@ public class WingsApplication extends Application<MainConfiguration> {
     }
 
     // Register collection iterators
+    log.info("The value for enableIterators is : {} ", configuration.isEnableIterators());
     if (configuration.isEnableIterators()) {
       if (isManager()) {
         registerIteratorsManager(configuration.getIteratorsConfig(), injector);
@@ -1468,7 +1469,8 @@ public class WingsApplication extends Application<MainConfiguration> {
     injector.getInstance(TimeoutEngine.class)
         .registerIterators(
             IteratorConfig.builder().enabled(true).targetIntervalInSeconds(10).threadPoolCount(5).build());
-    injector.getInstance(GitSyncPollingIterator.class).registerIterators();
+    injector.getInstance(GitSyncPollingIterator.class)
+        .registerIterators(iteratorsConfig.getGitSyncPollingIteratorConfig().getThreadPoolSize());
   }
 
   private void registerCronJobs(Injector injector) {

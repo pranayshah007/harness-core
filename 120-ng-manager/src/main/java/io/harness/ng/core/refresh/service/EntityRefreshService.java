@@ -13,7 +13,9 @@ import io.harness.template.beans.refresh.v2.InputsValidationResponse;
 
 @OwnedBy(HarnessTeam.CDC)
 public interface EntityRefreshService {
-  InputsValidationResponse validateInputsForYaml(String accountId, String orgId, String projectId, String yaml);
+  InputsValidationResponse validateInputsForYaml(
+      String accountId, String orgId, String projectId, String yaml, String resolvedTemplatesYaml);
 
-  String refreshLinkedInputs(String accountId, String orgId, String projectId, String yaml);
+  String refreshLinkedInputs(
+      String accountId, String orgId, String projectId, String yaml, String resolvedTemplatesYaml);
 }

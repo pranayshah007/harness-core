@@ -130,6 +130,8 @@ public class PluginSettingUtils {
   public static final String SECURITY_ENV_PREFIX = "SECURITY_";
   public static final String PLUGIN_BACKEND_OPERATION_TIMEOUT = "PLUGIN_BACKEND_OPERATION_TIMEOUT";
   public static final String PLUGIN_CACHE_KEY = "PLUGIN_CACHE_KEY";
+  public static final String PLUGIN_AUTO_DETECT_CACHE = "PLUGIN_AUTO_CACHE";
+  public static final String PLUGIN_AUTO_CACHE_ACCOUNT_ID = "PLUGIN_ACCOUNT_ID";
   public static final String PLUGIN_BACKEND = "PLUGIN_BACKEND";
   public static final String PLUGIN_OVERRIDE = "PLUGIN_OVERRIDE";
   public static final String PLUGIN_ARCHIVE_FORMAT = "PLUGIN_ARCHIVE_FORMAT";
@@ -923,15 +925,7 @@ public class PluginSettingUtils {
 
   // converts list "value1", "value2" to string "value1,value2"
   private static String listToStringSlice(List<String> stringList) {
-    if (isEmpty(stringList)) {
-      return "";
-    }
-    StringBuilder listAsString = new StringBuilder();
-    for (String value : stringList) {
-      listAsString.append(value).append(',');
-    }
-    listAsString.deleteCharAt(listAsString.length() - 1);
-    return listAsString.toString();
+    return String.join(",", stringList);
   }
 
   private static void setOptionalEnvironmentVariable(Map<String, String> envVarMap, String var, String value) {

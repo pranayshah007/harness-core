@@ -12,6 +12,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.common.NGExpressionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.pms.merger.YamlConfig;
 import io.harness.pms.merger.fqn.FQN;
@@ -22,8 +23,11 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.TextNode;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 import lombok.experimental.UtilityClass;
 
 @OwnedBy(CDC)
@@ -32,6 +36,11 @@ public class RuntimeInputsValidator {
   private final String DUMMY_NODE = "dummy";
 
   public boolean areInputsValidAgainstSourceNode(JsonNode nodeToValidate, JsonNode sourceNode) {
+    return areInputsValidAgainstSourceNode(nodeToValidate, sourceNode, new HashSet<>());
+  }
+
+  public boolean areInputsValidAgainstSourceNode(
+      JsonNode nodeToValidate, JsonNode sourceNode, Set<String> skipValidationIfAbsentKeySet) {
     // if source node is null, should return true if nodeToValidate is null
     if (sourceNode == null) {
       return nodeToValidate == null;
@@ -59,11 +68,17 @@ public class RuntimeInputsValidator {
     dummyNodeToValidate.set(DUMMY_NODE, nodeToValidate);
     String dummyNodeToValidateYaml = convertToYaml(dummyNodeToValidate);
 
-    return validateInputsAgainstSourceNode(dummyNodeToValidateYaml, sourceNodeInputSetFormatYaml);
+    return validateInputsAgainstSourceNode(
+        dummyNodeToValidateYaml, sourceNodeInputSetFormatYaml, skipValidationIfAbsentKeySet);
   }
 
   // Assume both have same root node and structure
   public boolean validateInputsAgainstSourceNode(String nodeToValidateYaml, String sourceNodeInputSetFormatYaml) {
+    return validateInputsAgainstSourceNode(nodeToValidateYaml, sourceNodeInputSetFormatYaml, new HashSet<>());
+  }
+
+  private boolean validateInputsAgainstSourceNode(
+      String nodeToValidateYaml, String sourceNodeInputSetFormatYaml, Set<String> skipValidationIfAbsentKeySet) {
     YamlConfig sourceNodeYamlConfig = new YamlConfig(sourceNodeInputSetFormatYaml);
     Map<FQN, Object> sourceNodeFqnToValueMap = sourceNodeYamlConfig.getFqnToValueMap();
 
@@ -93,6 +108,12 @@ public class RuntimeInputsValidator {
         Map<FQN, Object> subMap = YamlSubMapExtractor.getFQNToObjectSubMap(nodeToValidateFqnToValueMap, key);
         // If subMap is empty, return false since value is not present in nodeToValidateFqnToValueMap.
         if (isEmpty(subMap)) {
+          // if the following keys are runtime inputs, it's okay to ignore them if they are missing
+          String fqnExp = key.getExpressionFqn();
+          if (value instanceof TextNode && NGExpressionUtils.matchesInputSetPattern(((TextNode) value).asText())
+              && skipValidationIfAbsentKeySet.stream().anyMatch(fqnExp::endsWith)) {
+            continue;
+          }
           return false;
         }
         // remove the subMap from nodeToValidateFqnToValueMap

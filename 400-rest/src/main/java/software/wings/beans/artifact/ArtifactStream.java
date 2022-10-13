@@ -10,6 +10,8 @@ package software.wings.beans.artifact;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import static software.wings.ngmigration.NGMigrationEntityType.ARTIFACT_STREAM;
+
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
 
@@ -37,6 +39,7 @@ import software.wings.beans.Service;
 import software.wings.beans.Variable;
 import software.wings.beans.config.ArtifactSourceable;
 import software.wings.beans.entityinterface.KeywordsAware;
+import software.wings.ngmigration.CgBasicInfo;
 import software.wings.ngmigration.NGMigrationEntity;
 import software.wings.utils.Utils;
 import software.wings.yaml.BaseEntityYaml;
@@ -258,6 +261,18 @@ public abstract class ArtifactStream
   @Override
   public String getMigrationEntityName() {
     return getName();
+  }
+
+  @JsonIgnore
+  @Override
+  public CgBasicInfo getCgBasicInfo() {
+    return CgBasicInfo.builder()
+        .id(getUuid())
+        .name(getName())
+        .type(ARTIFACT_STREAM)
+        .appId(getAppId())
+        .accountId(getAccountId())
+        .build();
   }
 
   @Data

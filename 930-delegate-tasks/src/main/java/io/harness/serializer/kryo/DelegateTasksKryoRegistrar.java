@@ -25,6 +25,7 @@ import io.harness.delegate.beans.ldap.NGLdapTestAuthenticationTaskResponse;
 import io.harness.delegate.task.executioncapability.BatchCapabilityCheckTaskParameters;
 import io.harness.delegate.task.executioncapability.BatchCapabilityCheckTaskResponse;
 import io.harness.delegate.task.winrm.AuthenticationScheme;
+import io.harness.delegate.utils.NexusVersion;
 import io.harness.exception.SecretManagementException;
 import io.harness.helpers.ext.vault.SSHVaultAuthResult;
 import io.harness.helpers.ext.vault.SecretEngineSummary;
@@ -998,5 +999,6 @@ public class DelegateTasksKryoRegistrar implements KryoRegistrar {
     kryo.register(ManifestFile.class, 5539);
     kryo.register(AWSPrometheusInfo.class, 90001);
     kryo.register(CustomSecretNGManagerConfig.class, 40114);
+    kryo.register(NexusVersion.class, 40115);
   }
 }

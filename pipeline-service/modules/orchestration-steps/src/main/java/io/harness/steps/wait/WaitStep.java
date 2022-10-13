@@ -15,6 +15,7 @@ import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.AsyncExecutableResponse;
 import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.execution.SdkGraphVisualizationDataService;
@@ -61,7 +62,10 @@ public class WaitStep implements AsyncExecutable<StepElementParameters> {
             WaitStepDetailsInfo.builder().actionTaken(WaitStepStatus.MARKED_AS_FAIL).build();
         sdkGraphVisualizationDataService.publishStepDetailInformation(
             ambiance, waitStepDetailsInfo, "waitStepActionTaken");
-        return StepResponse.builder().status(Status.FAILED).build();
+        return StepResponse.builder()
+            .status(Status.FAILED)
+            .failureInfo(FailureInfo.newBuilder().setErrorMessage("User marked this step as failed").build())
+            .build();
       } else {
         WaitStepDetailsInfo waitStepDetailsInfo =
             WaitStepDetailsInfo.builder().actionTaken(WaitStepStatus.MARKED_AS_SUCCESS).build();

@@ -198,10 +198,13 @@ public class CreatePRStep extends TaskExecutableWithRollbackAndRbac<NGGitOpsResp
         if (filePath.contains("<+env.name>")) {
           file = file.replaceAll("<\\+env.name>", cluster.getEnvName());
         }
+        List<String> files = new ArrayList<>();
+        files.add(file);
         // Resolve any other expressions in the filepaths. eg. service variables
         ExpressionEvaluatorUtils.updateExpressions(
-            file, new CDExpressionResolveFunctor(engineExpressionService, ambiance));
+            files, new CDExpressionResolveFunctor(engineExpressionService, ambiance));
 
+        file = files.get(0);
         ExpressionEvaluatorUtils.updateExpressions(
             cluster.getVariables(), new CDExpressionResolveFunctor(engineExpressionService, ambiance));
 

@@ -83,6 +83,17 @@ public class AzureTask extends AbstractDelegateRunnableTask {
         return azureAsyncTaskHelper.listResourceGroups(azureTaskParams.getEncryptionDetails(),
             azureTaskParams.getAzureConnector(),
             azureTaskParams.getAdditionalParams().get(AzureAdditionalParams.SUBSCRIPTION_ID));
+      case LIST_IMAGE_GALLERIES:
+        validateAzureResourceExist(azureTaskParams,
+            "Could not retrieve any image galleries because of invalid parameter(s)",
+            AzureAdditionalParams.SUBSCRIPTION_ID);
+        validateAzureResourceExist(azureTaskParams,
+            "Could not retrieve any image galleries because of invalid parameter(s)",
+            AzureAdditionalParams.RESOURCE_GROUP);
+        return azureAsyncTaskHelper.listImageGalleries(azureTaskParams.getEncryptionDetails(),
+            azureTaskParams.getAzureConnector(),
+            azureTaskParams.getAdditionalParams().get(AzureAdditionalParams.SUBSCRIPTION_ID),
+            azureTaskParams.getAdditionalParams().get(AzureAdditionalParams.RESOURCE_GROUP));
       case LIST_WEBAPP_NAMES:
         msg = "Could not retrieve any Azure Web App names because of invalid parameter(s)";
         validateAzureResourceExist(azureTaskParams, msg, AzureAdditionalParams.SUBSCRIPTION_ID);

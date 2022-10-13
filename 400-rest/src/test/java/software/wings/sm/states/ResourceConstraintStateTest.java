@@ -8,20 +8,17 @@
 package software.wings.sm.states;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
-import static io.harness.beans.FeatureName.RESOURCE_CONSTRAINT_SCOPE_PIPELINE_ENABLED;
 import static io.harness.rule.OwnerRule.LUCAS_SALES;
 import static io.harness.rule.OwnerRule.ROHIT_KUMAR;
 import static io.harness.rule.OwnerRule.YOGESH;
 
 import static software.wings.utils.WingsTestConstants.ACCOUNT_ID;
 import static software.wings.utils.WingsTestConstants.APP_ID;
-import static software.wings.utils.WingsTestConstants.PIPELINE;
 import static software.wings.utils.WingsTestConstants.WORKFLOW_EXECUTION_ID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -33,7 +30,6 @@ import io.harness.beans.ResourceConstraint;
 import io.harness.category.element.UnitTests;
 import io.harness.context.ContextElementType;
 import io.harness.distribution.constraint.Constraint;
-import io.harness.exception.InvalidRequestException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.rule.Owner;
 
@@ -89,9 +85,6 @@ public class ResourceConstraintStateTest extends WingsBaseTest {
   @Owner(developers = YOGESH)
   @Category(UnitTests.class)
   public void alreadyAcquiredPermits() {
-    doReturn(true)
-        .when(featureFlagService)
-        .isEnabled(eq(RESOURCE_CONSTRAINT_SCOPE_PIPELINE_ENABLED), nullable(String.class));
     when(resourceConstraintService.getAllCurrentlyAcquiredPermits(
              HoldingScope.WORKFLOW.name(), ResourceConstraintService.releaseEntityId(WORKFLOW_EXECUTION_ID), APP_ID))
         .thenReturn(0, 1);
@@ -121,27 +114,11 @@ public class ResourceConstraintStateTest extends WingsBaseTest {
   @Owner(developers = LUCAS_SALES)
   @Category(UnitTests.class)
   public void alreadyAcquiredPermitsPipeline() {
-    doReturn(true)
-        .when(featureFlagService)
-        .isEnabled(eq(RESOURCE_CONSTRAINT_SCOPE_PIPELINE_ENABLED), nullable(String.class));
     when(resourceConstraintService.getAllCurrentlyAcquiredPermits(
              HoldingScope.PIPELINE.name(), ResourceConstraintService.releaseEntityId(PIPELINE_DEPLOYMENT_UUID), APP_ID))
         .thenReturn(1);
     int permits = state.alreadyAcquiredPermits(HoldingScope.PIPELINE.name(), executionContext);
     assertThat(permits).isEqualTo(1);
-  }
-
-  @Test(expected = InvalidRequestException.class)
-  @Owner(developers = LUCAS_SALES)
-  @Category(UnitTests.class)
-  public void alreadyAcquiredPermitsPipelineWithFFDisabled_error() {
-    doReturn(false)
-        .when(featureFlagService)
-        .isEnabled(eq(RESOURCE_CONSTRAINT_SCOPE_PIPELINE_ENABLED), nullable(String.class));
-    when(resourceConstraintService.getAllCurrentlyAcquiredPermits(
-             HoldingScope.PIPELINE.name(), ResourceConstraintService.releaseEntityId(PIPELINE_DEPLOYMENT_UUID), APP_ID))
-        .thenReturn(1);
-    state.alreadyAcquiredPermits(HoldingScope.PIPELINE.name(), executionContext);
   }
 
   @Test(expected = IllegalArgumentException.class)
@@ -176,27 +153,5 @@ public class ResourceConstraintStateTest extends WingsBaseTest {
     final ResourceConstraintExecutionData stateExecutionData =
         (ResourceConstraintExecutionData) executionResponseBuilder.build().getStateExecutionData();
     assertThat(stateExecutionData.getUsage()).isEqualTo(10);
-  }
-
-  @Test(expected = InvalidRequestException.class)
-  @Owner(developers = LUCAS_SALES)
-  @Category(UnitTests.class)
-  public void testExecuteWithScopePipelineFFDisabled_error() {
-    doReturn("accountid").when(applicationService).getAccountIdByAppId(nullable(String.class));
-    doReturn(Constraint.builder().build())
-        .when(resourceConstraintService)
-        .createAbstraction(any(ResourceConstraint.class));
-    doReturn(false)
-        .when(featureFlagService)
-        .isEnabled(eq(RESOURCE_CONSTRAINT_SCOPE_PIPELINE_ENABLED), nullable(String.class));
-
-    doReturn(mock(ResourceConstraint.class))
-        .when(resourceConstraintService)
-        .get(nullable(String.class), nullable(String.class));
-    doReturn(2).when(state).alreadyAcquiredPermits(any(), any());
-
-    state.setAcquireMode(AcquireMode.ENSURE);
-    state.setHoldingScope(PIPELINE);
-    state.execute(executionContext);
   }
 }

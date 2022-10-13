@@ -42,6 +42,7 @@ io.harness.steps.approval.step.harness.HarnessApprovalStepInfo
 io.harness.steps.http.HttpOutcome
 io.harness.advisers.rollback.OnFailRollbackParameters
 io.harness.steps.shellscript.ExecutionTarget
+io.harness.pms.pipelinestage.PipelineStageStepParameters
 io.harness.pms.sdk.core.plan.MapStepParameters
 io.harness.steps.shellscript.ShellScriptStepParameters
 io.harness.steps.jira.update.JiraUpdateStepInfo

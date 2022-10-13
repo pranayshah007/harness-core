@@ -4,3 +4,4 @@ labels:
   - accountId
   - leTaskType
   - leTaskStatus
+  - analysisDurationMinutes

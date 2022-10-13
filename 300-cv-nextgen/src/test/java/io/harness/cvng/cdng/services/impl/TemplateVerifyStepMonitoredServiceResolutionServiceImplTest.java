@@ -9,6 +9,7 @@ package io.harness.cvng.cdng.services.impl;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.persistence.HQuery.excludeAuthority;
+import static io.harness.rule.OwnerRule.DEEPAK_CHHIKARA;
 import static io.harness.rule.OwnerRule.DHRUVX;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -33,6 +34,7 @@ import io.harness.cvng.core.entities.SideKick;
 import io.harness.cvng.core.services.api.MetricPackService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
 import io.harness.persistence.HPersistence;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -53,6 +55,7 @@ public class TemplateVerifyStepMonitoredServiceResolutionServiceImplTest extends
   @Inject private MetricPackService metricPackService;
   @Inject HPersistence hPersistence;
   @Inject ObjectMapper objectMapper;
+  @Inject TemplateVerifyStepMonitoredServiceResolutionServiceImpl templateVerifyStepMonitoredServiceResolutionService;
   private BuilderFactory builderFactory;
   private String accountId;
   private String projectIdentifier;
@@ -194,6 +197,41 @@ public class TemplateVerifyStepMonitoredServiceResolutionServiceImplTest extends
     List<SideKick> sideKicks = hPersistence.createQuery(SideKick.class, excludeAuthority).asList();
     assertThat(monitoringSourcePerpetualTasks).hasSize(0);
     assertThat(sideKicks).hasSize(0);
+  }
+
+  @Test
+  @Owner(developers = DEEPAK_CHHIKARA)
+  @Category(UnitTests.class)
+  public void testGetTemplateYaml() throws IOException {
+    URL testFile = TemplateVerifyStepMonitoredServiceResolutionServiceImplTest.class.getResource(
+        "verify-step-with-template-1.json");
+    JsonNode templateInputsNode = objectMapper.readTree(testFile);
+    ParameterField<String> parameterField = io.harness.pms.yaml.ParameterField.createValueField("abc");
+    TemplateMonitoredServiceSpec templateMonitoredServiceSpec = TemplateMonitoredServiceSpec.builder()
+                                                                    .monitoredServiceTemplateRef(parameterField)
+                                                                    .versionLabel("1")
+                                                                    .templateInputs(templateInputsNode)
+                                                                    .build();
+    String expectedResponse = "---\n"
+        + "monitoredService:\n"
+        + "  template:\n"
+        + "    templateRef: \"abc\"\n"
+        + "    versionLabel: \"1\"\n"
+        + "    templateInputs:\n"
+        + "      sources:\n"
+        + "        healthSources:\n"
+        + "        - identifier: \"datadog\"\n"
+        + "          type: \"DatadogLog\"\n"
+        + "          spec:\n"
+        + "            queries:\n"
+        + "            - identifier: \"Datadog_Logs_Query\"\n"
+        + "              indexes:\n"
+        + "              - \"abc\"\n"
+        + "              query: \"abc\"\n"
+        + "              serviceInstanceIdentifier: \"Instance\"\n"
+        + "      type: \"Application\"\n";
+    String response = templateVerifyStepMonitoredServiceResolutionService.getTemplateYaml(templateMonitoredServiceSpec);
+    assertThat(expectedResponse).isEqualTo(response);
   }
 
   private MonitoredServiceNode getDefaultMonitoredServiceNode() {

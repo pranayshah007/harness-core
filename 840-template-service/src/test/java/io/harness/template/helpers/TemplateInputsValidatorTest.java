@@ -68,7 +68,7 @@ public class TemplateInputsValidatorTest extends TemplateServiceTestBase {
     on(inputsValidator).set("featureFlagHelperService", featureFlagHelperService);
     on(inputsValidator).set("ngManagerReconcileClient", ngManagerReconcileClient);
     on(templateInputsValidator).set("inputsValidator", inputsValidator);
-    when(featureFlagHelperService.isEnabled(ACCOUNT_ID, FeatureName.SERVICE_ENV_RECONCILIATION)).thenReturn(false);
+    when(featureFlagHelperService.isEnabled(ACCOUNT_ID, FeatureName.CD_SERVICE_ENV_RECONCILIATION)).thenReturn(false);
   }
 
   private String readFile(String filename) {
