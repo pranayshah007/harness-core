@@ -866,7 +866,6 @@ public class TemplateServiceImpl implements TemplateService {
 
   @Override
   public void loadDefaultTemplates(TemplateType templateType, String accountId, String accountName) {
-    log.info("Loading default templates for template type {}", templateType);
     AbstractTemplateProcessor abstractTemplateProcessor = getTemplateProcessor(templateType.name());
     abstractTemplateProcessor.loadDefaultTemplates(accountId, accountName);
     log.info("Loading default templates for template type {} success", templateType);
@@ -925,7 +924,6 @@ public class TemplateServiceImpl implements TemplateService {
     }
     final List<Template> templates = batchGet(templateUuids, accountId);
 
-    log.info("To be deleted linked template uuids {}", templateUuids);
     // Since the template folder will be deleted only if all the folder inside it are deleted. Hence validating linkage
     // beforehand. Verify if Service Commands contains the given ids
     String errorMessage = String.format("Template Folder : [%s] couldn't be deleted", templateFolder.getName());
@@ -1417,7 +1415,6 @@ public class TemplateServiceImpl implements TemplateService {
     // First
     templateFiles.forEach(templatePath -> {
       try {
-        log.info("Loading url file {} for the account {} ", templatePath, accountId);
         loadAndSaveTemplate(templatePath, accountId, accountName);
       } catch (WingsException exception) {
         String msg = "Failed to save template from file [" + templatePath + "] for the account [" + accountId

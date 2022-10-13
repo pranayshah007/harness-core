@@ -7,6 +7,7 @@
 
 package software.wings.service.intfc.instance.stats;
 
+import software.wings.beans.Account;
 import software.wings.beans.infrastructure.instance.stats.InstanceStatsSnapshot;
 import software.wings.resources.stats.model.InstanceTimeline;
 
@@ -26,11 +27,12 @@ public interface InstanceStatService {
   boolean save(InstanceStatsSnapshot stats);
 
   /**
-   * Purge all stats up-to a given instant
+   * Purge all stats up-to a given instant for a given account
    *
    * @param timestamp   - exclusive
+   * @param account   - Account entity
    */
-  boolean purgeUpTo(Instant timestamp);
+  boolean purgeUpTo(Instant timestamp, Account account);
 
   /**
    * Get a "timeline" of instance history usage.

@@ -11,6 +11,7 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.Scope;
 import io.harness.exception.InvalidRequestException;
 import io.harness.freeze.beans.FreezeType;
+import io.harness.freeze.beans.response.FreezeDetailedResponseDTO;
 import io.harness.freeze.beans.response.FreezeResponseDTO;
 import io.harness.freeze.beans.response.FreezeSummaryResponseDTO;
 import io.harness.freeze.beans.yaml.FreezeConfig;
@@ -73,7 +74,7 @@ public class NGFreezeDtoMapper {
         .accountId(freezeConfigEntity.getAccountId())
         .orgIdentifier(freezeConfigEntity.getOrgIdentifier())
         .projectIdentifier(freezeConfigEntity.getProjectIdentifier())
-        .freezeWindows(freezeConfig.getFreezeInfoConfig().getWindows())
+        .windows(freezeConfig.getFreezeInfoConfig().getWindows())
         .rules(freezeConfig.getFreezeInfoConfig().getRules())
         .identifier(freezeConfigEntity.getIdentifier())
         .description(freezeConfigEntity.getDescription())
@@ -87,6 +88,77 @@ public class NGFreezeDtoMapper {
         .lastUpdatedAt(freezeConfigEntity.getLastUpdatedAt())
         .currentOrUpcomingActiveWindow(
             FreezeTimeUtils.fetchCurrentOrUpcomingTimeWindow(freezeConfig.getFreezeInfoConfig().getWindows()))
+        .build();
+  }
+
+  public FreezeDetailedResponseDTO prepareDetailedFreezeResponseDto(FreezeConfigEntity freezeConfigEntity) {
+    FreezeConfig freezeConfig = toFreezeConfig(freezeConfigEntity.getYaml());
+    return FreezeDetailedResponseDTO.builder()
+        .accountId(freezeConfigEntity.getAccountId())
+        .orgIdentifier(freezeConfigEntity.getOrgIdentifier())
+        .projectIdentifier(freezeConfigEntity.getProjectIdentifier())
+        .windows(freezeConfig.getFreezeInfoConfig().getWindows())
+        .rules(freezeConfig.getFreezeInfoConfig().getRules())
+        .identifier(freezeConfigEntity.getIdentifier())
+        .description(freezeConfigEntity.getDescription())
+        .name(freezeConfigEntity.getName())
+        .status(freezeConfigEntity.getStatus())
+        .freezeScope(freezeConfigEntity.getFreezeScope())
+        .tags(TagMapper.convertToMap(freezeConfigEntity.getTags()))
+        .lastUpdatedAt(freezeConfigEntity.getLastUpdatedAt())
+        .createdAt(freezeConfigEntity.getCreatedAt())
+        .type(freezeConfigEntity.getType())
+        .lastUpdatedAt(freezeConfigEntity.getLastUpdatedAt())
+        .currentOrUpcomingActiveWindow(
+            FreezeTimeUtils.fetchCurrentOrUpcomingTimeWindow(freezeConfig.getFreezeInfoConfig().getWindows()))
+        .yaml(freezeConfigEntity.getYaml())
+        .build();
+  }
+
+  public FreezeSummaryResponseDTO prepareFreezeResponseSummaryDto(FreezeResponseDTO freezeResponseDTO) {
+    FreezeConfig freezeConfig = toFreezeConfig(freezeResponseDTO.getYaml());
+    return FreezeSummaryResponseDTO.builder()
+        .accountId(freezeResponseDTO.getAccountId())
+        .orgIdentifier(freezeResponseDTO.getOrgIdentifier())
+        .projectIdentifier(freezeResponseDTO.getProjectIdentifier())
+        .windows(freezeConfig.getFreezeInfoConfig().getWindows())
+        .rules(freezeConfig.getFreezeInfoConfig().getRules())
+        .identifier(freezeResponseDTO.getIdentifier())
+        .description(freezeResponseDTO.getDescription())
+        .name(freezeResponseDTO.getName())
+        .status(freezeResponseDTO.getStatus())
+        .freezeScope(freezeResponseDTO.getFreezeScope())
+        .tags(freezeResponseDTO.getTags())
+        .lastUpdatedAt(freezeResponseDTO.getLastUpdatedAt())
+        .createdAt(freezeResponseDTO.getCreatedAt())
+        .type(freezeResponseDTO.getType())
+        .lastUpdatedAt(freezeResponseDTO.getLastUpdatedAt())
+        .currentOrUpcomingActiveWindow(
+            FreezeTimeUtils.fetchCurrentOrUpcomingTimeWindow(freezeConfig.getFreezeInfoConfig().getWindows()))
+        .build();
+  }
+
+  public FreezeDetailedResponseDTO prepareDetailedFreezeResponseDto(FreezeResponseDTO freezeResponseDTO) {
+    FreezeConfig freezeConfig = toFreezeConfig(freezeResponseDTO.getYaml());
+    return FreezeDetailedResponseDTO.builder()
+        .accountId(freezeResponseDTO.getAccountId())
+        .orgIdentifier(freezeResponseDTO.getOrgIdentifier())
+        .projectIdentifier(freezeResponseDTO.getProjectIdentifier())
+        .windows(freezeConfig.getFreezeInfoConfig().getWindows())
+        .rules(freezeConfig.getFreezeInfoConfig().getRules())
+        .identifier(freezeResponseDTO.getIdentifier())
+        .description(freezeResponseDTO.getDescription())
+        .name(freezeResponseDTO.getName())
+        .status(freezeResponseDTO.getStatus())
+        .freezeScope(freezeResponseDTO.getFreezeScope())
+        .tags(freezeResponseDTO.getTags())
+        .lastUpdatedAt(freezeResponseDTO.getLastUpdatedAt())
+        .createdAt(freezeResponseDTO.getCreatedAt())
+        .type(freezeResponseDTO.getType())
+        .lastUpdatedAt(freezeResponseDTO.getLastUpdatedAt())
+        .currentOrUpcomingActiveWindow(
+            FreezeTimeUtils.fetchCurrentOrUpcomingTimeWindow(freezeConfig.getFreezeInfoConfig().getWindows()))
+        .yaml(freezeResponseDTO.getYaml())
         .build();
   }
 

@@ -17,6 +17,7 @@ java_library(
         "//980-commons:module",
         "//950-ng-core:module",
         "//959-ng-persistence:module",
+        "//953-yaml-commons:module",
         "//clients/access-control/sdk:module",
         "@maven//:com_fasterxml_jackson_core_jackson_annotations",
         #        "@maven//:javax_validation_validation_api",
