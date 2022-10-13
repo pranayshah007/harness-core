@@ -151,10 +151,11 @@ public class AppMigrationService extends NgMigrationService {
     for (Map.Entry<String, String> entry : application.getDefaults().entrySet()) {
       String name = entry.getKey();
       String value = entry.getValue();
-      Map<String, String> variableSpec = ImmutableMap.<String, String>builder()
-                                             .put("valueType", "FIXED")
-                                             .put("fixedValue", (String) migratorExpressionUtils.render(value))
-                                             .build();
+      Map<String, String> variableSpec =
+          ImmutableMap.<String, String>builder()
+              .put("valueType", "FIXED")
+              .put("fixedValue", (String) migratorExpressionUtils.render(value, inputDTO.getCustomExpressions()))
+              .build();
       Map<String, Object> variable =
           ImmutableMap.<String, Object>builder()
               .put(YAMLFieldNameConstants.NAME, name)
