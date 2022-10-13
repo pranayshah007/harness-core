@@ -37,12 +37,12 @@ import retrofit.http.Body;
 @Produces({"application/json", "text/yaml", "text/html"})
 @Consumes({"application/json", "text/yaml", "text/html", "text/plain"})
 @Slf4j
-@NextGenManagerAuth
+//@NextGenManagerAuth
 public class ChaosResource {
   ChaosService chaosService;
 
   @POST
-  @InternalApi
+//  @InternalApi
   @ApiOperation(value = "Apply K8s manifest for chaos", nickname = "chaosK8sApply", hidden = true)
   public ResponseDTO<String> applyChaosK8sManifest(
       @Parameter(description = ACCOUNT_PARAM_MESSAGE, required = true) @NotBlank
@@ -53,7 +53,7 @@ public class ChaosResource {
 
   @POST
   @Path("/notify")
-  @InternalApi
+//  @InternalApi
   @ApiOperation(value = "Notify on completion of chaos experiment", nickname = "chaosStepNotify", hidden = true)
   public ResponseDTO<Boolean> chaosStepNotify(@Body ChaosStepNotifyResponse stepNotifyResponse) {
     try {

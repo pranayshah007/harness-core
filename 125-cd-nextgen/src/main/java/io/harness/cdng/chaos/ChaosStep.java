@@ -1,5 +1,6 @@
 package io.harness.cdng.chaos;
 
+import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.eraro.ErrorCode.GENERAL_ERROR;
 
 import io.harness.chaos.client.beans.ChaosQuery;
@@ -50,7 +51,8 @@ public class ChaosStep implements AsyncExecutable<StepElementParameters> {
   public AsyncExecutableResponse executeAsync(Ambiance ambiance, StepElementParameters stepParameters,
       StepInputPackage inputPackage, PassThroughData passThroughData) {
     ChaosStepParameters params = (ChaosStepParameters) stepParameters.getSpec();
-    String callbackId = triggerWorkflow(ambiance, params);
+//    String callbackId = triggerWorkflow(ambiance, params);
+    String callbackId = generateUuid();
     log.info("Triggered chaos experiment with ref: {}, workflowRunId: {}", params.getExperimentRef(), callbackId);
     return AsyncExecutableResponse.newBuilder().addCallbackIds(callbackId).build();
   }
