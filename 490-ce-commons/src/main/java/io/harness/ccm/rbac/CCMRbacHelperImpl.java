@@ -145,20 +145,20 @@ public class CCMRbacHelperImpl implements CCMRbacHelper {
   @Override
   public void checkPolicyEditPermission(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
-        Resource.of(POLICY, null), POLICY_CREATE_AND_EDIT,
+        Resource.of(PERSPECTIVE, null), PERSPECTIVE_CREATE_AND_EDIT,
         String.format(PERMISSION_MISSING_MESSAGE, EDIT_PERMISSION, RESOURCE_POLICY));
   }
   @Override
   public void checkPolicyViewPermission(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
     System.out.println("in checkPolicyViewPermission ");
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
-        Resource.of(POLICY, null), POLICY_VIEW,
+        Resource.of(PERSPECTIVE, null), PERSPECTIVE_VIEW,
         String.format(PERMISSION_MISSING_MESSAGE, VIEW_PERMISSION, RESOURCE_POLICY));
   }
   @Override
   public void checkPolicyDeletePermission(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
-        Resource.of(POLICY, null), POLICY_DELETE,
+        Resource.of(PERSPECTIVE, null), PERSPECTIVE_DELETE,
         String.format(PERMISSION_MISSING_MESSAGE, DELETE_PERMISSION, RESOURCE_POLICY));
   }
   @Override
