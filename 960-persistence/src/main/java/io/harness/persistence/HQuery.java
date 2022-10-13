@@ -99,7 +99,8 @@ public class HQuery<T> extends QueryImpl<T> {
     }
 
     if (list.size() > 5000) {
-      log.warn("Key list query returns {} items.  Consider using an Iterator to avoid causing OOM", list.size());
+      log.warn("Key list query returns {} items.  Consider using an Iterator to avoid causing OOM", list.size(),
+          new Exception());
     }
   }
 
@@ -109,7 +110,8 @@ public class HQuery<T> extends QueryImpl<T> {
     }
 
     if (list.size() > 1000) {
-      log.warn("List query returns {} items. Consider using an Iterator to avoid causing OOM", list.size());
+      log.warn(
+          "List query returns {} items. Consider using an Iterator to avoid causing OOM", list.size(), new Exception());
     }
   }
 
