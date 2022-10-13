@@ -448,7 +448,7 @@ public class VerificationJobInstanceServiceImplTest extends CvNextGenTestBase {
   }
 
   @Test
-  @Owner(developers = KANHAIYA)
+  @Owner(developers = ABHIJITH)
   @Category(UnitTests.class)
   public void testGetDeploymentVerificationStatus_isFailOnNoAnalysisTrue() {
     cvConfigService.save(newCVConfig());
@@ -470,7 +470,7 @@ public class VerificationJobInstanceServiceImplTest extends CvNextGenTestBase {
   }
 
   @Test
-  @Owner(developers = KANHAIYA)
+  @Owner(developers = ABHIJITH)
   @Category(UnitTests.class)
   public void testGetDeploymentVerificationStatus_isFailOnNoAnalysisFalse() {
     cvConfigService.save(newCVConfig());

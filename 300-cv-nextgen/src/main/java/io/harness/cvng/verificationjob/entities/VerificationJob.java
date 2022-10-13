@@ -208,7 +208,7 @@ public abstract class VerificationJob
   }
 
   public boolean isFailOnNoAnalysis() {
-    if (failOnNoAnalysis.isRuntimeParam()) {
+    if (failOnNoAnalysis == null || failOnNoAnalysis.isRuntimeParam()) {
       return false;
     }
     return Boolean.valueOf(failOnNoAnalysis.getValue());
