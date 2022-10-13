@@ -9,10 +9,11 @@ package io.harness.serializer.kryo;
 
 import static java.util.Arrays.stream;
 
-import io.harness.serializer.KryoSerializerWrapper;
+import io.harness.serializer.KryoSerializer;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 import lombok.extern.slf4j.Slf4j;
@@ -28,14 +29,14 @@ import retrofit2.Retrofit;
 public class DelegateKryoConverterFactory extends Factory {
   private static final MediaType MEDIA_TYPE = MediaType.parse("application/x-kryo-v2");
 
-  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer kryoSerializer;
 
   @Override
   public Converter<?, RequestBody> requestBodyConverter(
       Type type, Annotation[] parameterAnnotations, Annotation[] methodAnnotations, Retrofit retrofit) {
     if (stream(methodAnnotations)
             .anyMatch(annotation -> annotation.annotationType().isAssignableFrom(KryoRequest.class))) {
-      return value -> RequestBody.create(MEDIA_TYPE, kryoSerializerWrapper.asBytes(value));
+      return value -> RequestBody.create(MEDIA_TYPE, kryoSerializer.asBytes(value));
     }
     return null;
   }
@@ -45,7 +46,7 @@ public class DelegateKryoConverterFactory extends Factory {
     if (stream(annotations).anyMatch(annotation -> annotation.annotationType().isAssignableFrom(KryoResponse.class))) {
       return value -> {
         try {
-          return kryoSerializerWrapper.asObject(value.bytes());
+          return kryoSerializer.asObject(value.bytes());
         } finally {
           value.close();
         }

@@ -58,7 +58,6 @@ public class KryoModule extends AbstractModule {
           MapBinder.newMapBinder(binder(), String.class, TestExecution.class);
       testExecutionMapBinder.addBinding("Kryo test registration").toInstance(() -> testAutomaticSearch(provider));
     }
-    bind(KryoSerializerWrapper.class);
   }
 
   @Provides
@@ -66,12 +65,5 @@ public class KryoModule extends AbstractModule {
   @Singleton
   public KryoSerializer getKryoSerializer(Provider<Set<Class<? extends KryoRegistrar>>> provider) {
     return new KryoSerializer(provider.get(), false, false);
-  }
-
-  @Provides
-  @Named("referenceTrueKryoSerializer")
-  @Singleton
-  public KryoSerializer getKryoSerializerReferenceTrue(Provider<Set<Class<? extends KryoRegistrar>>> provider) {
-    return new KryoSerializer(provider.get(), false, true);
   }
 }

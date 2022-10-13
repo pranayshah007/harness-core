@@ -11,7 +11,6 @@ import static io.harness.rule.OwnerRule.ABHISHEK;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 
 import io.harness.beans.KeyValuePair;
@@ -34,10 +33,14 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockedStatic;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 
-@RunWith(MockitoJUnitRunner.class)
+@RunWith(PowerMockRunner.class)
+@PrepareForTest({StringUtils.class, Http.class})
+@PowerMockIgnore({"javax.xml.*", "org.xml.*", "javax.net.ssl.*"})
 public class HttpConnectionExecutionCapabilityCheckTest {
   @InjectMocks HttpConnectionExecutionCapabilityCheck httpConnectionExecutionCapabilityCheck;
   @Mock CapabilityParameters parameters;
@@ -63,21 +66,15 @@ public class HttpConnectionExecutionCapabilityCheckTest {
   @Owner(developers = ABHISHEK)
   @Category(UnitTests.class)
   public void performCapabilityCheck_NG_False_Headers_Null_IgnoreRedirect_Valid() {
-    MockedStatic<StringUtils> mockStringUtils = mockStatic(StringUtils.class);
-    mockStringUtils.when(() -> StringUtils.isNotBlank(anyString())).thenReturn(false);
+    PowerMockito.mockStatic(StringUtils.class);
+    PowerMockito.mockStatic(Http.class);
+    when(StringUtils.isNotBlank(anyString())).thenAnswer(mockBool -> false);
 
-    MockedStatic<Http> mockHttp = mockStatic(Http.class);
-    mockHttp
-        .when(()
-                  -> Http.connectableHttpUrlWithoutFollowingRedirect(
-                      httpConnectionExecutionCapability_HeaderNull_IgnoreRedirectTrue.fetchConnectableUrl()))
-        .thenReturn(true);
-
+    when(Http.connectableHttpUrlWithoutFollowingRedirect(
+             httpConnectionExecutionCapability_HeaderNull_IgnoreRedirectTrue.fetchConnectableUrl()))
+        .thenAnswer(mockBool -> true);
     CapabilityResponse response = httpConnectionExecutionCapabilityCheck.performCapabilityCheck(
         httpConnectionExecutionCapability_HeaderNull_IgnoreRedirectTrue);
-
-    mockStringUtils.close();
-    mockHttp.close();
 
     assertThat(response.isValidated()).isEqualTo(true);
   }
@@ -86,21 +83,16 @@ public class HttpConnectionExecutionCapabilityCheckTest {
   @Owner(developers = ABHISHEK)
   @Category(UnitTests.class)
   public void performCapabilityCheck_NG_False_Headers_Null_Redirect_Valid() {
-    MockedStatic<StringUtils> mockStringUtils = mockStatic(StringUtils.class);
-    mockStringUtils.when(() -> StringUtils.isNotBlank(anyString())).thenReturn(false);
+    PowerMockito.mockStatic(StringUtils.class);
+    PowerMockito.mockStatic(Http.class);
 
-    MockedStatic<Http> mockHttp = mockStatic(Http.class);
-    mockHttp
-        .when(()
-                  -> Http.connectableHttpUrl(
-                      httpConnectionExecutionCapability_HeaderNull_IgnoreRedirectFalse.fetchConnectableUrl()))
-        .thenReturn(true);
+    when(StringUtils.isNotBlank(anyString())).thenAnswer(mockBool -> false);
+    when(
+        Http.connectableHttpUrl(httpConnectionExecutionCapability_HeaderNull_IgnoreRedirectFalse.fetchConnectableUrl()))
+        .thenAnswer(mockBool -> true);
 
     CapabilityResponse response = httpConnectionExecutionCapabilityCheck.performCapabilityCheck(
         httpConnectionExecutionCapability_HeaderNull_IgnoreRedirectFalse);
-
-    mockStringUtils.close();
-    mockHttp.close();
 
     assertThat(response.isValidated()).isEqualTo(true);
   }
@@ -109,21 +101,17 @@ public class HttpConnectionExecutionCapabilityCheckTest {
   @Owner(developers = ABHISHEK)
   @Category(UnitTests.class)
   public void performCapabilityCheck_NG_False_Headers_Valid() {
-    MockedStatic<StringUtils> mockStringUtils = mockStatic(StringUtils.class);
-    mockStringUtils.when(() -> StringUtils.isNotBlank(anyString())).thenReturn(false);
+    PowerMockito.mockStatic(StringUtils.class);
+    PowerMockito.mockStatic(Http.class);
 
-    MockedStatic<Http> mockHttp = mockStatic(Http.class);
-    mockHttp
-        .when(()
-                  -> Http.connectableHttpUrlWithHeaders(httpConnectionExecutionCapability_Header.fetchConnectableUrl(),
-                      httpConnectionExecutionCapability_Header.getHeaders()))
-        .thenReturn(true);
+    when(StringUtils.isNotBlank(anyString())).thenAnswer(mockBool -> false);
+
+    when(Http.connectableHttpUrlWithHeaders(httpConnectionExecutionCapability_Header.fetchConnectableUrl(),
+             httpConnectionExecutionCapability_Header.getHeaders()))
+        .thenAnswer(mockBool -> true);
 
     CapabilityResponse response =
         httpConnectionExecutionCapabilityCheck.performCapabilityCheck(httpConnectionExecutionCapability_Header);
-
-    mockStringUtils.close();
-    mockHttp.close();
 
     assertThat(response.isValidated()).isEqualTo(true);
   }
@@ -132,22 +120,16 @@ public class HttpConnectionExecutionCapabilityCheckTest {
   @Owner(developers = ABHISHEK)
   @Category(UnitTests.class)
   public void performCapabilityCheck_NG_Headers_Valid() {
-    MockedStatic<Http> mockHttp = mockStatic(Http.class);
-    mockHttp
-        .when(()
-                  -> Http.connectableHttpUrlWithHeaders(httpConnectionExecutionCapability_Header.fetchConnectableUrl(),
-                      httpConnectionExecutionCapability_Header.getHeaders()))
-        .thenReturn(true);
-    mockHttp
-        .when(()
-                  -> Http.connectableHttpUrlWithoutFollowingRedirect(
-                      httpConnectionExecutionCapability_Header.fetchConnectableUrl()))
-        .thenReturn(true);
+    PowerMockito.mockStatic(Http.class);
+    when(Http.connectableHttpUrlWithHeaders(httpConnectionExecutionCapability_Header.fetchConnectableUrl(),
+             httpConnectionExecutionCapability_Header.getHeaders()))
+        .thenAnswer(mockBool -> true);
+    when(
+        Http.connectableHttpUrlWithoutFollowingRedirect(httpConnectionExecutionCapability_Header.fetchConnectableUrl()))
+        .thenAnswer(mockBool -> true);
 
     CapabilityResponse response =
         httpConnectionExecutionCapabilityCheck.performCapabilityCheck(httpConnectionExecutionCapability_Header);
-
-    mockHttp.close();
 
     assertThat(response.isValidated()).isEqualTo(true);
   }
@@ -172,13 +154,11 @@ public class HttpConnectionExecutionCapabilityCheckTest {
     when(parameters.getCapabilityCase()).thenReturn(CapabilityParameters.CapabilityCase.HTTP_CONNECTION_PARAMETERS);
     when(parameters.getHttpConnectionParameters()).thenReturn(temp);
 
-    MockedStatic<Http> mockHttp = mockStatic(Http.class);
-    mockHttp.when(() -> Http.connectableHttpUrl(temp.getUrl())).thenReturn(false);
+    PowerMockito.mockStatic(Http.class);
+    when(Http.connectableHttpUrl(temp.getUrl())).thenAnswer(mockBool -> false);
 
     CapabilitySubjectPermission result =
         httpConnectionExecutionCapabilityCheck.performCapabilityCheckWithProto(parameters);
-
-    mockHttp.close();
 
     assertThat(result.getPermissionResult()).isEqualTo(CapabilitySubjectPermission.PermissionResult.DENIED);
   }
@@ -195,20 +175,16 @@ public class HttpConnectionExecutionCapabilityCheckTest {
     when(parameters.getCapabilityCase()).thenReturn(CapabilityParameters.CapabilityCase.HTTP_CONNECTION_PARAMETERS);
     when(parameters.getHttpConnectionParameters()).thenReturn(temp);
 
-    MockedStatic<Http> mockHttp = mockStatic(Http.class);
-    mockHttp
-        .when(()
-                  -> Http.connectableHttpUrlWithHeaders(temp.getUrl(),
-                      temp.getHeadersList()
-                          .stream()
-                          .map(entry -> KeyValuePair.builder().key(entry.getKey()).value(entry.getValue()).build())
-                          .collect(Collectors.toList())))
-        .thenReturn(false);
+    PowerMockito.mockStatic(Http.class);
+    when(Http.connectableHttpUrlWithHeaders(temp.getUrl(),
+             temp.getHeadersList()
+                 .stream()
+                 .map(entry -> KeyValuePair.builder().key(entry.getKey()).value(entry.getValue()).build())
+                 .collect(Collectors.toList())))
+        .thenAnswer(mockBool -> false);
 
     CapabilitySubjectPermission result =
         httpConnectionExecutionCapabilityCheck.performCapabilityCheckWithProto(parameters);
-
-    mockHttp.close();
 
     assertThat(result.getPermissionResult()).isEqualTo(CapabilitySubjectPermission.PermissionResult.DENIED);
   }

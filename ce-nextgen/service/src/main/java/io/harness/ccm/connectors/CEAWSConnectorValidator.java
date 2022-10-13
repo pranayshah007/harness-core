@@ -294,7 +294,6 @@ public class CEAWSConnectorValidator extends io.harness.ccm.connectors.AbstractC
   public AWSCredentialsProvider getCredentialProvider(
       CrossAccountAccessDTO crossAccountAccessDTO, Boolean isAWSGovCloudAccount) {
     log.info("isAWSGovCloudAccount: {}", isAWSGovCloudAccount);
-    log.info("getAwsGovCloudConfig: {}", configuration.getAwsGovCloudConfig());
     final AWSCredentialsProvider BasicAwsCredentials = awsClient.constructStaticBasicAwsCredentials(isAWSGovCloudAccount
             ? configuration.getAwsGovCloudConfig().getAccessKey()
             : configuration.getAwsConfig().getAccessKey(),

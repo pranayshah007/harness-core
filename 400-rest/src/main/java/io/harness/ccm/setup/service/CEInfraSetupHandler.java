@@ -37,7 +37,6 @@ public abstract class CEInfraSetupHandler {
   private static class AccountIdentifierKey {
     String accountId;
     String infraAccountId;
-    String infraMasterAccountId;
   }
 
   protected void updateLinkedAccounts(
@@ -71,8 +70,7 @@ public abstract class CEInfraSetupHandler {
 
   private Map<AccountIdentifierKey, CECloudAccount> createAccountMap(List<CECloudAccount> cloudAccounts) {
     return cloudAccounts.stream().collect(Collectors.toMap(cloudAccount
-        -> new AccountIdentifierKey(
-            cloudAccount.getAccountId(), cloudAccount.getInfraAccountId(), cloudAccount.getInfraMasterAccountId()),
+        -> new AccountIdentifierKey(cloudAccount.getAccountId(), cloudAccount.getInfraAccountId()),
         Function.identity()));
   }
 }

@@ -19,7 +19,7 @@ import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.grpc.DelegateServiceGrpcClient;
-import io.harness.serializer.KryoSerializerWrapper;
+import io.harness.serializer.KryoSerializer;
 import io.harness.tasks.BinaryResponseData;
 import io.harness.tasks.ResponseData;
 
@@ -35,7 +35,7 @@ public class DelegateGrpcClientWrapper {
   @Inject private DelegateServiceGrpcClient delegateServiceGrpcClient;
   @Inject private Supplier<DelegateCallbackToken> delegateCallbackTokenSupplier;
   @Inject @Named("disableDeserialization") private boolean disableDeserialization;
-  @Inject private KryoSerializerWrapper kryoSerializerWrapper;
+  @Inject private KryoSerializer kryoSerializer;
 
   public DelegateResponseData executeSyncTask(DelegateTaskRequest delegateTaskRequest) {
     final ResponseData responseData = delegateServiceGrpcClient.executeSyncTaskReturningResponseData(
@@ -43,7 +43,7 @@ public class DelegateGrpcClientWrapper {
     DelegateResponseData delegateResponseData;
     if (disableDeserialization) {
       delegateResponseData =
-          (DelegateResponseData) kryoSerializerWrapper.asInflatedObject(((BinaryResponseData) responseData).getData());
+          (DelegateResponseData) kryoSerializer.asInflatedObject(((BinaryResponseData) responseData).getData());
       if (delegateResponseData instanceof ErrorNotifyResponseData) {
         WingsException exception = ((ErrorNotifyResponseData) delegateResponseData).getException();
         // if task registered to error handling framework on delegate, then exception won't be null

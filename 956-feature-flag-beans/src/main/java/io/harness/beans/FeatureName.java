@@ -460,7 +460,8 @@ public enum FeatureName {
       "Active services slow api call optimization. Also solves MOM issue in CG.", HarnessTeam.SPG),
   SPG_LIVE_DASHBOARD_STATS_DEBUGGING("Live debugging for dashboard stats in CG", HarnessTeam.SPG),
   TI_MFE_ENABLED("Migrating TI UI to Microfrontend. This feature flag is needed to test/control the new architecture",
-      HarnessTeam.CI);
+      HarnessTeam.CI),
+  CI_CACHE_INTELLIGENCE("Feature flag for cache intelligence feature", HarnessTeam.CI);
 
   @Deprecated
   FeatureName() {

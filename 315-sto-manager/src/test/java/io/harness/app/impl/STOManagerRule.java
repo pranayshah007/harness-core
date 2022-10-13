@@ -41,7 +41,6 @@ import io.harness.rule.Cache;
 import io.harness.rule.InjectorRuleMixin;
 import io.harness.serializer.CiBeansRegistrars;
 import io.harness.serializer.ConnectorNextGenRegistrars;
-import io.harness.serializer.KryoModule;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.serializer.YamlBeansModuleRegistrars;
 import io.harness.springdata.SpringPersistenceTestModule;
@@ -191,7 +190,6 @@ public class STOManagerRule implements MethodRule, InjectorRuleMixin, MongoRuleM
     modules.add(new SpringPersistenceTestModule());
     modules.add(new STOManagerServiceModule(configuration));
     modules.add(PmsSdkModule.getInstance(getPmsSdkConfiguration()));
-    modules.add(KryoModule.getInstance());
     return modules;
   }
 

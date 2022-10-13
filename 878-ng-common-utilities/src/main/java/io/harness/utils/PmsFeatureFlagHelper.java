@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.pms.helpers;
+package io.harness.utils;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
@@ -13,7 +13,6 @@ import io.harness.account.AccountClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureFlag;
 import io.harness.beans.FeatureName;
-import io.harness.pms.PmsFeatureFlagService;
 import io.harness.remote.client.CGRestUtils;
 
 import com.google.common.cache.CacheBuilder;

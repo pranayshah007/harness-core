@@ -45,7 +45,6 @@ import io.harness.rule.Cache;
 import io.harness.rule.InjectorRuleMixin;
 import io.harness.serializer.CiBeansRegistrars;
 import io.harness.serializer.ConnectorNextGenRegistrars;
-import io.harness.serializer.KryoModule;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.serializer.PersistenceRegistrars;
 import io.harness.serializer.PrimaryVersionManagerRegistrars;
@@ -203,7 +202,6 @@ public class CIManagerRule implements MethodRule, InjectorRuleMixin, MongoRuleMi
     modules.add(new SpringPersistenceTestModule());
     modules.add(new CIManagerServiceModule(configuration));
     modules.add(PmsSdkModule.getInstance(getPmsSdkConfiguration()));
-    modules.add(KryoModule.getInstance());
     return modules;
   }
 
