@@ -34,7 +34,9 @@ import io.harness.cvng.analysis.beans.CanaryAdditionalInfo;
 import io.harness.cvng.analysis.beans.DeploymentLogAnalysisDTO;
 import io.harness.cvng.analysis.beans.Risk;
 import io.harness.cvng.analysis.entities.DeploymentLogAnalysis;
+import io.harness.cvng.analysis.entities.DeploymentTimeSeriesAnalysis;
 import io.harness.cvng.analysis.services.api.DeploymentLogAnalysisService;
+import io.harness.cvng.analysis.services.api.DeploymentTimeSeriesAnalysisService;
 import io.harness.cvng.analysis.services.api.VerificationJobInstanceAnalysisService;
 import io.harness.cvng.beans.AppDynamicsDataCollectionInfo;
 import io.harness.cvng.beans.DataCollectionExecutionStatus;
@@ -104,6 +106,8 @@ public class VerificationJobInstanceServiceImplTest extends CvNextGenTestBase {
   @Inject private MonitoringSourcePerpetualTaskService monitoringSourcePerpetualTaskService;
   @Inject private VerificationJobInstanceAnalysisService verificationJobInstanceAnalysisService;
   @Inject private DeploymentLogAnalysisService deploymentLogAnalysisService;
+
+  @Inject private DeploymentTimeSeriesAnalysisService deploymentTimeSeriesAnalysisService;
 
   @Mock private Clock clock;
   private Instant fakeNow;
@@ -441,6 +445,50 @@ public class VerificationJobInstanceServiceImplTest extends CvNextGenTestBase {
     ActivityVerificationStatus activityVerificationStatus =
         verificationJobInstanceService.getDeploymentVerificationStatus(verificationJobInstance);
     assertThat(activityVerificationStatus).isEqualTo(VERIFICATION_FAILED);
+  }
+
+  @Test
+  @Owner(developers = KANHAIYA)
+  @Category(UnitTests.class)
+  public void testGetDeploymentVerificationStatus_isFailOnNoAnalysisTrue() {
+    cvConfigService.save(newCVConfig());
+    VerificationJobInstance verificationJobInstance = createVerificationJobInstance();
+    verificationJobInstance.setExecutionStatus(ExecutionStatus.SUCCESS);
+    verificationJobInstance.getResolvedJob().setFailOnNoAnalysis(RuntimeParameter.builder().value("true").build());
+    String verificationJobInstanceId = verificationJobInstance.getUuid();
+    String verificationTaskId =
+        verificationTaskService.getVerificationTaskId(accountId, cvConfigId, verificationJobInstanceId);
+    DeploymentTimeSeriesAnalysis deploymentTimeSeriesAnalysis = DeploymentTimeSeriesAnalysis.builder()
+                                                                    .accountId(accountId)
+                                                                    .verificationTaskId(verificationTaskId)
+                                                                    .risk(Risk.NO_ANALYSIS)
+                                                                    .build();
+    deploymentTimeSeriesAnalysisService.save(deploymentTimeSeriesAnalysis);
+    ActivityVerificationStatus activityVerificationStatus =
+        verificationJobInstanceService.getDeploymentVerificationStatus(verificationJobInstance);
+    assertThat(activityVerificationStatus).isEqualTo(VERIFICATION_FAILED);
+  }
+
+  @Test
+  @Owner(developers = KANHAIYA)
+  @Category(UnitTests.class)
+  public void testGetDeploymentVerificationStatus_isFailOnNoAnalysisFalse() {
+    cvConfigService.save(newCVConfig());
+    VerificationJobInstance verificationJobInstance = createVerificationJobInstance();
+    verificationJobInstance.setExecutionStatus(ExecutionStatus.SUCCESS);
+    verificationJobInstance.getResolvedJob().setFailOnNoAnalysis(RuntimeParameter.builder().value("true").build());
+    String verificationJobInstanceId = verificationJobInstance.getUuid();
+    String verificationTaskId =
+        verificationTaskService.getVerificationTaskId(accountId, cvConfigId, verificationJobInstanceId);
+    DeploymentTimeSeriesAnalysis deploymentTimeSeriesAnalysis = DeploymentTimeSeriesAnalysis.builder()
+                                                                    .accountId(accountId)
+                                                                    .verificationTaskId(verificationTaskId)
+                                                                    .risk(Risk.NO_ANALYSIS)
+                                                                    .build();
+    deploymentTimeSeriesAnalysisService.save(deploymentTimeSeriesAnalysis);
+    ActivityVerificationStatus activityVerificationStatus =
+        verificationJobInstanceService.getDeploymentVerificationStatus(verificationJobInstance);
+    assertThat(activityVerificationStatus).isEqualTo(VERIFICATION_PASSED);
   }
 
   @Test
