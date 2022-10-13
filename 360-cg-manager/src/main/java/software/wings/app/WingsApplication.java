@@ -920,6 +920,9 @@ public class WingsApplication extends Application<MainConfiguration> {
     if (configuration.isSearchEnabled()) {
       modules.add(new SearchModule());
     }
+
+    modules.add(new TimescaleModule());
+
     modules.add(new ProviderModule() {
       @Provides
       public GrpcServerConfig getGrpcServerConfig() {
