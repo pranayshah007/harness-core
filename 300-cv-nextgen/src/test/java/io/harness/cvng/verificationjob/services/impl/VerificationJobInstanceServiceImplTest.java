@@ -476,7 +476,6 @@ public class VerificationJobInstanceServiceImplTest extends CvNextGenTestBase {
     cvConfigService.save(newCVConfig());
     VerificationJobInstance verificationJobInstance = createVerificationJobInstance();
     verificationJobInstance.setExecutionStatus(ExecutionStatus.SUCCESS);
-    verificationJobInstance.getResolvedJob().setFailOnNoAnalysis(RuntimeParameter.builder().value("true").build());
     String verificationJobInstanceId = verificationJobInstance.getUuid();
     String verificationTaskId =
         verificationTaskService.getVerificationTaskId(accountId, cvConfigId, verificationJobInstanceId);
