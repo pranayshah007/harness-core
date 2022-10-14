@@ -7,6 +7,7 @@
 
 package io.harness.gitaware.helper;
 
+import static io.harness.rule.OwnerRule.ADITHYA;
 import static io.harness.rule.OwnerRule.NAMAN;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -18,6 +19,9 @@ import io.harness.CategoryTest;
 import io.harness.beans.Scope;
 import io.harness.category.element.UnitTests;
 import io.harness.context.GlobalContext;
+import io.harness.exception.ExceptionUtils;
+import io.harness.exception.InvalidRequestException;
+import io.harness.exception.WingsException;
 import io.harness.gitaware.dto.GitContextRequestParams;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.interceptor.GitSyncBranchContext;
@@ -61,6 +65,8 @@ public class GitAwareEntityHelperTest extends CategoryTest {
   GitContextRequestParams __default__branchGitParams;
   Scope scope;
 
+  String yamlFilePath = ".harness/test.yaml";
+
   @Before
   public void setUp() {
     MockitoAnnotations.initMocks(this);
@@ -70,14 +76,14 @@ public class GitAwareEntityHelperTest extends CategoryTest {
     gitContextRequestParams = GitContextRequestParams.builder()
                                   .connectorRef(connectorRef)
                                   .repoName(repoName)
-                                  .filePath(filePath)
+                                  .filePath(yamlFilePath)
                                   .branchName(branch)
                                   .build();
 
     __default__branchGitParams = GitContextRequestParams.builder()
                                      .connectorRef(connectorRef)
                                      .repoName(repoName)
-                                     .filePath(filePath)
+                                     .filePath(yamlFilePath)
                                      .branchName("__default__")
                                      .build();
   }
@@ -90,7 +96,7 @@ public class GitAwareEntityHelperTest extends CategoryTest {
         ScmGetFileResponse.builder().fileContent(data).gitMetaData(scmGitMetaData).build();
     doReturn(getFileResponse)
         .when(scmGitSyncHelper)
-        .getFileByBranch(scope, repoName, branch, filePath, connectorRef, null);
+        .getFileByBranch(scope, repoName, branch, yamlFilePath, connectorRef, null);
     DummyGitAware dummyGitAware = DummyGitAware.builder().build();
     GitAware gitAware = gitAwareEntityHelper.fetchEntityFromRemote(dummyGitAware, scope, gitContextRequestParams, null);
     assertThat(gitAware.getData()).isEqualTo(data);
@@ -107,7 +113,9 @@ public class GitAwareEntityHelperTest extends CategoryTest {
   public void testFetchEntityFromRemoteWithBranchAs__Default__() {
     ScmGetFileResponse getFileResponse =
         ScmGetFileResponse.builder().fileContent(data).gitMetaData(scmGitMetaData).build();
-    doReturn(getFileResponse).when(scmGitSyncHelper).getFileByBranch(scope, repoName, "", filePath, connectorRef, null);
+    doReturn(getFileResponse)
+        .when(scmGitSyncHelper)
+        .getFileByBranch(scope, repoName, "", yamlFilePath, connectorRef, null);
     DummyGitAware dummyGitAware = DummyGitAware.builder().build();
     GitAware gitAware =
         gitAwareEntityHelper.fetchEntityFromRemote(dummyGitAware, scope, __default__branchGitParams, null);
@@ -127,7 +135,7 @@ public class GitAwareEntityHelperTest extends CategoryTest {
         ScmGetFileResponse.builder().fileContent(data).gitMetaData(scmGitMetaData).build();
     doReturn(getFileResponse)
         .when(scmGitSyncHelper)
-        .getFileByBranch(scope, repoName, branch, filePath, connectorRef, null);
+        .getFileByBranch(scope, repoName, branch, yamlFilePath, connectorRef, null);
     String data = gitAwareEntityHelper.fetchYAMLFromRemote(scope, gitContextRequestParams, null);
     assertThat(data).isEqualTo(data);
     ScmGitMetaData scmGitMetaDataInContext = GitAwareContextHelper.getScmGitMetaData();
@@ -143,7 +151,9 @@ public class GitAwareEntityHelperTest extends CategoryTest {
   public void testFetchYAMLFromRemoteWithBranchAs__Default__() {
     ScmGetFileResponse getFileResponse =
         ScmGetFileResponse.builder().fileContent(data).gitMetaData(scmGitMetaData).build();
-    doReturn(getFileResponse).when(scmGitSyncHelper).getFileByBranch(scope, repoName, "", filePath, connectorRef, null);
+    doReturn(getFileResponse)
+        .when(scmGitSyncHelper)
+        .getFileByBranch(scope, repoName, "", yamlFilePath, connectorRef, null);
     String data = gitAwareEntityHelper.fetchYAMLFromRemote(scope, __default__branchGitParams, null);
     assertThat(data).isEqualTo(data);
     ScmGitMetaData scmGitMetaDataInContext = GitAwareContextHelper.getScmGitMetaData();
@@ -157,7 +167,8 @@ public class GitAwareEntityHelperTest extends CategoryTest {
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
   public void testCreateEntityOnGit() {
-    GitEntityInfo gitEntityInfo = GitEntityInfo.builder().branch(branch).commitMsg(commitMsg).build();
+    GitEntityInfo gitEntityInfo =
+        GitEntityInfo.builder().branch(branch).commitMsg(commitMsg).filePath(yamlFilePath).build();
     setupGitContext(gitEntityInfo);
     DummyGitAware dummyGitAware =
         DummyGitAware.builder().connectorRef(connectorRef).repo(repoName).filePath(filePath).build();
@@ -197,7 +208,8 @@ public class GitAwareEntityHelperTest extends CategoryTest {
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
   public void testUpdateEntityOnGit() {
-    GitEntityInfo gitEntityInfo = GitEntityInfo.builder().branch(branch).commitMsg(commitMsg).build();
+    GitEntityInfo gitEntityInfo =
+        GitEntityInfo.builder().branch(branch).commitMsg(commitMsg).filePath(yamlFilePath).build();
     setupGitContext(gitEntityInfo);
     DummyGitAware dummyGitAware =
         DummyGitAware.builder().connectorRef(connectorRef).repo(repoName).filePath(filePath).build();
@@ -240,6 +252,21 @@ public class GitAwareEntityHelperTest extends CategoryTest {
                                      .build();
     assertThatThrownBy(() -> gitAwareEntityHelper.updateEntityOnGit(noBranchName, data, scope))
         .hasMessage("No branch provided for updating the file.");
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testValidateFilePath_whenFilePathHasInvalidExtension() {
+    String filePath = ".harness/abc.py";
+    try {
+      gitAwareEntityHelper.validateFilePathHasCorrectExtension(filePath);
+    } catch (Exception ex) {
+      WingsException exception = ExceptionUtils.cause(InvalidRequestException.class, ex);
+      assertThat(exception).isNotNull();
+      assertThat(exception.getMessage())
+          .isEqualTo(String.format(GitAwareEntityHelper.FILE_PATH_INVALID_EXTENSION_ERROR_FORMAT, filePath));
+    }
   }
 
   @Data

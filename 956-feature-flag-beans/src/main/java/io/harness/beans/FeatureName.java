@@ -83,6 +83,7 @@ public enum FeatureName {
   FFM_2134_FF_PIPELINES_TRIGGER,
   FFM_3938_STALE_FLAGS_ACTIVE_CARD_HIDE_SHOW,
   FFM_4117_INTEGRATE_SRM("Enable Feature Flags to send events to the SRM module", HarnessTeam.CF),
+  FFM_3959_FF_MFE_Environment_Detail("Enable Feature Flag MFE Environment page", HarnessTeam.CF),
   FFM_3961_ENHANCED_ONBOARDING("Enable new onboarding experience for FeatureFlags", HarnessTeam.CF),
   WINRM_COPY_CONFIG_OPTIMIZE,
   ECS_MULTI_LBS,
@@ -431,6 +432,7 @@ public enum FeatureName {
   SRM_ENABLE_VERIFY_STEP_LONG_DURATION("Enable longer duration for verify step", HarnessTeam.CV),
   SETTING_ATTRIBUTES_SERVICE_ACCOUNT_TOKEN_MIGRATION("Migrate erroneous service account tokens", HarnessTeam.PL),
   ARTIFACT_SOURCE_TEMPLATE("Flag to add support for artifact source templates", HarnessTeam.CDC),
+  LOOKER_ENTITY_RECONCILIATION,
   NG_DEPLOYMENT_FREEZE("Enables Deployment freeze for NG", HarnessTeam.CDC),
   PL_ENABLE_SWITCH_ACCOUNT_PAGINATION("Enables new API for Switch Account which is paginated", HarnessTeam.PL),
   SHELL_SCRIPT_PROVISION_NG("Used to allow customers to access Shell Script Provision NG", HarnessTeam.CDP),
@@ -461,7 +463,9 @@ public enum FeatureName {
   SPG_LIVE_DASHBOARD_STATS_DEBUGGING("Live debugging for dashboard stats in CG", HarnessTeam.SPG),
   TI_MFE_ENABLED("Migrating TI UI to Microfrontend. This feature flag is needed to test/control the new architecture",
       HarnessTeam.CI),
-  CI_CACHE_INTELLIGENCE("Feature flag for cache intelligence feature", HarnessTeam.CI);
+  CI_CACHE_INTELLIGENCE("Feature flag for cache intelligence feature", HarnessTeam.CI),
+  USE_INSTANCES_PURGE_ITERATOR_FW(
+      "Switch to use iterator fw instead of quartz scheduler for InstancesPurgeJob", HarnessTeam.CDP);
 
   @Deprecated
   FeatureName() {

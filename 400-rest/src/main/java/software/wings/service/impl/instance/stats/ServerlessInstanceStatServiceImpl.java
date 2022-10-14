@@ -129,29 +129,16 @@ public class ServerlessInstanceStatServiceImpl implements ServerlessInstanceStat
   }
 
   @Override
-  public boolean purgeUpTo(@NotNull Instant timestamp) {
-    log.info("Purging serverless instance stats up to {}", timestamp);
-    // Deleting old serverless instances separately for each active account and then for deleted accounts
-    // So that the deletion happens in a staggered way
-    try (HIterator<Account> accounts =
-             new HIterator<>(persistence.createQuery(Account.class).project(Account.ID_KEY2, true).fetch())) {
-      while (accounts.hasNext()) {
-        final Account account = accounts.next();
-        log.info(
-            "Purging serverless instance stats for account {} with ID {}", account.getAccountName(), account.getUuid());
-        Query<ServerlessInstanceStats> query = persistence.createQuery(ServerlessInstanceStats.class)
-                                                   .filter(ServerlessInstanceStatsKeys.accountId, account.getUuid())
-                                                   .field(ServerlessInstanceStatsKeys.timestamp)
-                                                   .lessThan(timestamp);
-
-        persistence.delete(query);
-      }
-    }
-    log.info("Purging serverless instance stats for deleted accounts if present");
+  public boolean purgeUpTo(@NotNull Instant timestamp, @NotNull Account account) {
+    log.info("Purging serverless instance stats up to {} for account {} with ID {}", timestamp,
+        account.getAccountName(), account.getUuid());
     Query<ServerlessInstanceStats> query = persistence.createQuery(ServerlessInstanceStats.class)
+                                               .filter(ServerlessInstanceStatsKeys.accountId, account.getUuid())
                                                .field(ServerlessInstanceStatsKeys.timestamp)
                                                .lessThan(timestamp);
+
     persistence.delete(query);
+
     return true;
   }
 

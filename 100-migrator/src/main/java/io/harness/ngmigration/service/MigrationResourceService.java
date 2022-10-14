@@ -78,9 +78,11 @@ public class MigrationResourceService {
   private static MigrationInputDTO getMigrationInput(ImportDTO importDTO) {
     Map<NGMigrationEntityType, InputDefaults> defaults = new HashMap<>();
     Map<CgEntityId, BaseProvidedInput> overrides = new HashMap<>();
+    Map<String, String> expressions = new HashMap<>();
     if (importDTO.getInputs() != null) {
       overrides = importDTO.getInputs().getOverrides();
       defaults = importDTO.getInputs().getDefaults();
+      expressions = importDTO.getInputs().getExpressions();
     }
     return MigrationInputDTO.builder()
         .accountIdentifier(importDTO.getAccountIdentifier())
@@ -89,6 +91,7 @@ public class MigrationResourceService {
         .migrateReferencedEntities(importDTO.isMigrateReferencedEntities())
         .overrides(overrides)
         .defaults(defaults)
+        .customExpressions(expressions)
         .build();
   }
 }

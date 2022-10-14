@@ -1818,6 +1818,10 @@
 73985:io.harness.delegate.beans.DelegateEntityOwner
 73986:io.harness.delegate.beans.DelegateSizeDetails
 73987:io.harness.delegate.beans.DelegateSize
+73988:io.harness.delegate.beans.NoInstalledDelegatesException
+73989:io.harness.delegate.NoEligibleDelegatesInAccountException
+73990:io.harness.delegate.beans.NoAvailableDelegatesException
+73991:io.harness.delegate.beans.NoDelegatesException
 80302:software.wings.helpers.ext.azure.devops.AzureArtifactsFeeds
 80303:software.wings.helpers.ext.azure.devops.AzureArtifactsPackageFile
 80304:software.wings.helpers.ext.azure.devops.AzureArtifactsPackageFileInfo
@@ -2385,6 +2389,7 @@
 980033:io.harness.exception.ngexception.beans.templateservice.TemplateInputsErrorDTO
 980034:io.harness.exception.ngexception.beans.templateservice.TemplateInputsErrorMetadataDTO
 980035:io.harness.exception.ngexception.AzureARMTaskException
+980036:io.harness.delegate.beans.DelegateTaskExpiredException
 980037:io.harness.exception.ngexception.AzureBPTaskException
 9300122:io.harness.yaml.core.timeout.Timeout
 9300123:io.harness.beans.WebhookEncryptedSecretDTO
