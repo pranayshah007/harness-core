@@ -70,4 +70,12 @@ public class ServiceOverridesMapper {
       throw new InvalidRequestException(String.format("Cannot read serviceOverride yaml %s ", entityYaml));
     }
   }
+
+  public String toYaml(NGServiceOverrideConfig serviceOverrideConfig) {
+    try {
+      return YamlPipelineUtils.getYamlString(serviceOverrideConfig);
+    } catch (IOException e) {
+      throw new InvalidRequestException("Cannot create service entity due to " + e.getMessage());
+    }
+  }
 }
