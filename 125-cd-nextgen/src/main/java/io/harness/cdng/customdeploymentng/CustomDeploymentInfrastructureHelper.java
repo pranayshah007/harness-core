@@ -29,7 +29,6 @@ import io.harness.filestore.service.FileStoreService;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.merger.YamlConfig;
-import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
@@ -72,9 +71,7 @@ public class CustomDeploymentInfrastructureHelper {
             }
             ConnectorResponseDTO connectorResponseDTO = response.get();
             ConnectorInfoDTO connectorInfoDTO = connectorResponseDTO.getConnector();
-            connectorNGVariable.setConnector(
-                ParameterField.<ConnectorInfoDTO>builder().value(connectorInfoDTO).build());
-            mapOfVariables.put(connectorNGVariable.getName(), connectorInfoDTO);
+            mapOfVariables.put(connectorNGVariable.getName(), connectorInfoDTO.toOutcome());
           } else if (!isNull(connectorNGVariable.getValue().getExpressionValue())) {
             mapOfVariables.put(connectorNGVariable.getName(), connectorNGVariable.getValue().getExpressionValue());
           }
