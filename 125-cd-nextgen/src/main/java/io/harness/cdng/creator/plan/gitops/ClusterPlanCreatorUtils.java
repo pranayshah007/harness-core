@@ -7,10 +7,9 @@
 
 package io.harness.cdng.creator.plan.gitops;
 
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static java.util.Arrays.asList;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -18,15 +17,20 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.creator.plan.PlanCreatorConstants;
 import io.harness.cdng.envGroup.yaml.EnvGroupPlanCreatorConfig;
 import io.harness.cdng.environment.yaml.EnvironmentPlanCreatorConfig;
+import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
 import io.harness.cdng.gitops.steps.ClusterStepParameters;
 import io.harness.cdng.gitops.steps.EnvClusterRefs;
 import io.harness.cdng.gitops.steps.GitopsClustersStep;
 import io.harness.cdng.gitops.steps.Metadata;
+import io.harness.cdng.gitops.yaml.ClusterYaml;
+import io.harness.data.structure.UUIDGenerator;
+import io.harness.exception.InvalidRequestException;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.sdk.core.plan.PlanNode;
 import io.harness.pms.sdk.core.plan.PlanNode.PlanNodeBuilder;
+import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.pms.yaml.ParameterField;
 
 import java.util.Collections;
@@ -50,6 +54,58 @@ public class ClusterPlanCreatorUtils {
             FacilitatorObtainment.newBuilder()
                 .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.SYNC).build())
                 .build());
+  }
+
+  public PlanNode getGitOpsClustersStepPlanNode(EnvironmentYamlV2 envYaml) {
+    String uuid = "gitOpsClusters" + UUIDGenerator.generateUuid();
+    return PlanNode.builder()
+        .uuid(uuid)
+        .name(PlanCreatorConstants.GITOPS_INFRA_NODE_NAME)
+        .identifier(PlanCreatorConstants.GITOPS_INFRA_NODE_NAME)
+        .stepType(GitopsClustersStep.STEP_TYPE)
+        .stepParameters(getStepParams(envYaml))
+        .facilitatorObtainment(
+            FacilitatorObtainment.newBuilder()
+                .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.SYNC).build())
+                .build())
+        .build();
+  }
+
+  private static ClusterStepParameters getStepParams(EnvironmentYamlV2 envYaml) {
+    ParameterField<Boolean> deployToAll = envYaml.getDeployToAll();
+    if (deployToAll.isExpression()) {
+     throw new InvalidRequestException(String.format("Deploy to all [%s] cannot be resolved", envYaml.getDeployToAll().getExpressionValue());
+    }
+    if (deployToAll.getValue()) {
+      return ClusterStepParameters.builder()
+          .envClusterRef(EnvClusterRefs.builder()
+                             .envRef((String) envYaml.getEnvironmentRef().fetchFinalValue())
+                             .deployToAll(true)
+                             .build())
+          .build();
+    }
+
+    if (ParameterField.isNull(envYaml.getGitOpsClusters())) {
+      throw new InvalidRequestException(
+          String.format("gitOpsClusters [%s] cannot be resolved", envYaml.getGitOpsClusters().getExpressionValue()));
+    }
+
+    checkArgument(isNotEmpty(envYaml.getGitOpsClusters().getValue()),
+        "list of gitops clusterRefs must be provided when not deploying to all clusters");
+
+    return ClusterStepParameters.builder()
+        .envClusterRefs(Collections.singletonList(EnvClusterRefs.builder()
+                                                      .envRef((String) envYaml.getEnvironmentRef().fetchFinalValue())
+                                                      /*.envName(envConfig.getName())*/
+                                                      .clusterRefs(envYaml.getGitOpsClusters()
+                                                                       .getValue()
+                                                                       .stream()
+                                                                       .map(ClusterYaml::getIdentifier)
+                                                                       .map(ParameterField::fetchFinalValue)
+                                                                       .map(String.class ::cast)
+                                                                       .collect(Collectors.toSet()))
+                                                      .build()))
+        .build();
   }
 
   public PlanNodeBuilder getGitopsClustersStepPlanNodeBuilder(
@@ -112,6 +168,31 @@ public class ClusterPlanCreatorUtils {
             .collect(Collectors.toList());
 
     return ClusterStepParameters.builder().envClusterRefs(clusterRefs).build();
+  }
+
+  private static StepParameters getStepParams(
+      String envRef, String envName, List<String> gitOpsClusterRefs, boolean deployToAll) {
+    if (deployToAll) {
+      return ClusterStepParameters.builder()
+          .envClusterRefs(
+              // Todo: (yogesh) set env name here
+              List.of(
+                  EnvClusterRefs.builder().envRef(envRef)./*envName(envConfig.getName())*/ deployToAll(true).build()))
+          .build();
+    }
+
+    checkArgument(isNotEmpty(gitOpsClusterRefs),
+        "list of gitops clusterRefs must be provided when not deploying to all clusters");
+
+    return ClusterStepParameters.builder()
+        .envClusterRefs(
+            Collections.singletonList(EnvClusterRefs.builder()
+                                          .envRef(envRef)
+                                          // Todo: (yogesh) set env name here
+                                          /*                                      .envName(envConfig.getName())*/
+                                          .clusterRefs(Set.of(gitOpsClusterRefs))
+                                          .build()))
+        .build();
   }
 
   private Set<String> getClusterRefs(EnvironmentPlanCreatorConfig config) {

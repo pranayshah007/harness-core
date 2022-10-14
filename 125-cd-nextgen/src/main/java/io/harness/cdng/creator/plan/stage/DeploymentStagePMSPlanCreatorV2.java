@@ -13,6 +13,7 @@ import static io.harness.cdng.pipeline.steps.MultiDeploymentSpawnerUtils.SERVICE
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.creator.plan.envGroup.EnvGroupPlanCreatorHelper;
 import io.harness.cdng.creator.plan.environment.EnvironmentPlanCreatorHelper;
+import io.harness.cdng.creator.plan.gitops.ClusterPlanCreatorUtils;
 import io.harness.cdng.creator.plan.infrastructure.InfrastructurePmsPlanCreator;
 import io.harness.cdng.creator.plan.service.ServiceAllInOnePlanCreatorUtils;
 import io.harness.cdng.creator.plan.service.ServicePlanCreatorHelper;
@@ -512,8 +513,14 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
     } else {
       environment = stageNode.getDeploymentStageConfig().getEnvironment();
     }
-    PlanNode node = InfrastructurePmsPlanCreator.getInfraTaskExecutableStepV2PlanNode(environment, adviserObtainments,
-        stageNode.getDeploymentStageConfig().getDeploymentType(), stageNode.skipInstances);
+
+    final PlanNode node;
+    if (!stageNode.getDeploymentStageConfig().getGitOpsEnabled()) {
+      node = InfrastructurePmsPlanCreator.getInfraTaskExecutableStepV2PlanNode(environment, adviserObtainments,
+          stageNode.getDeploymentStageConfig().getDeploymentType(), stageNode.skipInstances);
+    } else {
+      node = ClusterPlanCreatorUtils.getGitOpsClustersStepPlanNode(environment);
+    }
     planCreationResponseMap.put(node.getUuid(), PlanCreationResponse.builder().planNode(node).build());
     return node.getUuid();
   }
