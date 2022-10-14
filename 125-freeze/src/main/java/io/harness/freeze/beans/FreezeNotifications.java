@@ -7,7 +7,21 @@
 
 package io.harness.freeze.beans;
 
+import io.harness.pms.yaml.ParameterField;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+import io.swagger.annotations.ApiModelProperty;
+import java.util.List;
 import lombok.Data;
 
 @Data
-public class FreezeNotifications {}
+public class FreezeNotifications {
+  String name;
+  boolean enabled;
+
+  List<FreezeEvent> freezeEvents;
+
+  @ApiModelProperty(dataType = "io.harness.freeze.beans.FreezeNotificationChannelWrapper")
+  @JsonProperty("notificationMethod")
+  ParameterField<FreezeNotificationChannelWrapper> notificationChannelWrapper;
+}

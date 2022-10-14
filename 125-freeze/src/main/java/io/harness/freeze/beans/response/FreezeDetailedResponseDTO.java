@@ -14,10 +14,13 @@ import io.harness.data.validator.EntityIdentifier;
 import io.harness.data.validator.EntityName;
 import io.harness.data.validator.Trimmed;
 import io.harness.encryption.Scope;
+import io.harness.freeze.beans.CurrentOrUpcomingActiveWindow;
+import io.harness.freeze.beans.FreezeEntityRule;
 import io.harness.freeze.beans.FreezeStatus;
 import io.harness.freeze.beans.FreezeType;
 import io.harness.freeze.beans.FreezeWindow;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.annotations.ApiModel;
@@ -37,10 +40,10 @@ import lombok.With;
 @Builder
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@ApiModel("FreezeResponse")
-@Schema(name = "FreezeResponse", description = "This contains details of the Freeze Response")
+@ApiModel("FreezeDetailedResponse")
+@Schema(name = "FreezeDetailedResponse", description = "This contains detailed information of the Freeze Config")
 @EqualsAndHashCode
-public class FreezeResponseDTO {
+public class FreezeDetailedResponseDTO {
   @NotEmpty String accountId;
 
   FreezeType type;
@@ -54,12 +57,16 @@ public class FreezeResponseDTO {
   @With @Trimmed String projectIdentifier;
 
   List<FreezeWindow> windows;
+  @JsonIgnore List<FreezeEntityRule> rules;
+
+  CurrentOrUpcomingActiveWindow currentOrUpcomingActiveWindow;
 
   @With @NotEmpty @EntityIdentifier String identifier;
-  @NotEmpty String yaml;
 
   long createdAt;
   long lastUpdatedAt;
 
   Scope freezeScope;
+
+  String yaml;
 }

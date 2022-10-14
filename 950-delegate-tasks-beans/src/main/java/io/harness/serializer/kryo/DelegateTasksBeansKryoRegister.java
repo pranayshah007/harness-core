@@ -26,9 +26,11 @@ import io.harness.capability.TestingCapability;
 import io.harness.ccm.config.CCMConfig;
 import io.harness.cvng.beans.DataCollectionConnectorBundle;
 import io.harness.cvng.beans.DataCollectionType;
+import io.harness.delegate.NoEligibleDelegatesInAccountException;
 import io.harness.delegate.beans.DelegateStringProgressData;
 import io.harness.delegate.beans.DelegateStringResponseData;
 import io.harness.delegate.beans.DelegateTaskDetails;
+import io.harness.delegate.beans.DelegateTaskExpiredException;
 import io.harness.delegate.beans.DelegateTaskNotifyResponseData;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskRank;
@@ -36,6 +38,9 @@ import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.beans.MailTaskParams;
 import io.harness.delegate.beans.MicrosoftTeamsTaskParams;
+import io.harness.delegate.beans.NoAvailableDelegatesException;
+import io.harness.delegate.beans.NoDelegatesException;
+import io.harness.delegate.beans.NoInstalledDelegatesException;
 import io.harness.delegate.beans.NotificationProcessingResponse;
 import io.harness.delegate.beans.NotificationTaskResponse;
 import io.harness.delegate.beans.PagerDutyTaskParams;
@@ -1873,5 +1878,10 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(ArtifactoryFetchImagePathResponse.class, 55428);
     kryo.register(NexusArtifactDelegateConfig.class, 55429);
     kryo.register(SshConnectivityExecutionCapability.class, 55435);
+    kryo.register(NoInstalledDelegatesException.class, 73988);
+    kryo.register(NoEligibleDelegatesInAccountException.class, 73989);
+    kryo.register(NoAvailableDelegatesException.class, 73990);
+    kryo.register(NoDelegatesException.class, 73991);
+    kryo.register(DelegateTaskExpiredException.class, 980036);
   }
 }

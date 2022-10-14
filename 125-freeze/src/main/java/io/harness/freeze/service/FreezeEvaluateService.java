@@ -17,7 +17,9 @@ public interface FreezeEvaluateService {
   List<FreezeSummaryResponseDTO> getActiveFreezeEntities(
       String accountId, String orgIdentifier, String projectIdentifier, Map<FreezeEntityType, List<String>> entityMap);
 
-  boolean globalFreezeActive(String accountId, String orgIdentifier, String projectIdentifier);
+  List<FreezeSummaryResponseDTO> shouldDisableDeployment(
+      String accountId, String orgIdentifier, String projectIdentifier);
 
-  boolean shouldDisableDeployment(String accountId, String orgIdentifier, String projectIdentifier);
+  List<FreezeSummaryResponseDTO> anyGlobalFreezeActive(
+      String accountId, String orgIdentifier, String projectIdentifier);
 }
