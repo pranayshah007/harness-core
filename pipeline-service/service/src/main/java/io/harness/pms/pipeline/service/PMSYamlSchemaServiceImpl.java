@@ -28,8 +28,11 @@ import io.harness.encryption.Scope;
 import io.harness.exception.InvalidYamlException;
 import io.harness.exception.JsonSchemaException;
 import io.harness.exception.JsonSchemaValidationException;
+import io.harness.exception.UnexpectedException;
 import io.harness.jackson.JsonNodeUtils;
 import io.harness.licensing.remote.NgLicenseHttpClient;
+import io.harness.lock.AcquiredLock;
+import io.harness.lock.PersistentLocker;
 import io.harness.manage.ManagedExecutorService;
 import io.harness.plancreator.stages.stage.StageElementConfig;
 import io.harness.plancreator.steps.StepElementConfig;
@@ -42,7 +45,6 @@ import io.harness.pms.pipeline.service.yamlschema.featureflag.FeatureFlagYamlSer
 import io.harness.pms.sdk.PmsSdkInstanceService;
 import io.harness.pms.utils.CompletableFutures;
 import io.harness.pms.yaml.YamlUtils;
-import io.harness.serializer.JsonUtils;
 import io.harness.yaml.schema.YamlSchemaGenerator;
 import io.harness.yaml.schema.YamlSchemaProvider;
 import io.harness.yaml.schema.YamlSchemaTransientHelper;
@@ -61,6 +63,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.io.IOException;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -74,7 +77,6 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
-import javax.cache.Cache;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 
@@ -96,8 +98,8 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
   private final FeatureFlagYamlService featureFlagYamlService;
   private final SchemaFetcher schemaFetcher;
   private final NgLicenseHttpClient ngLicenseHttpClient;
-  private final Cache<String, String> pipelineSchemaCache;
   Integer allowedParallelStages;
+  private final PersistentLocker persistentLocker;
 
   @Inject
   public PMSYamlSchemaServiceImpl(YamlSchemaProvider yamlSchemaProvider, YamlSchemaGenerator yamlSchemaGenerator,
@@ -105,7 +107,7 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
       PmsYamlSchemaHelper pmsYamlSchemaHelper, ApprovalYamlSchemaService approvalYamlSchemaService,
       FeatureFlagYamlService featureFlagYamlService, SchemaFetcher schemaFetcher,
       NgLicenseHttpClient ngLicenseHttpClient, @Named("allowedParallelStages") Integer allowedParallelStages,
-      @Named("pipelineSchemaCache") Cache<String, String> pipelineSchemaCache) {
+      PersistentLocker persistentLocker) {
     this.yamlSchemaProvider = yamlSchemaProvider;
     this.yamlSchemaGenerator = yamlSchemaGenerator;
     this.yamlSchemaValidator = yamlSchemaValidator;
@@ -116,17 +118,27 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
     this.schemaFetcher = schemaFetcher;
     this.ngLicenseHttpClient = ngLicenseHttpClient;
     this.allowedParallelStages = allowedParallelStages;
-    this.pipelineSchemaCache = pipelineSchemaCache;
+    this.persistentLocker = persistentLocker;
   }
   @Override
   public JsonNode getPipelineYamlSchema(
       String accountIdentifier, String projectIdentifier, String orgIdentifier, Scope scope) {
     try {
-      if (pipelineSchemaCache.containsKey(accountIdentifier)) {
-        return JsonUtils.readTree(pipelineSchemaCache.get(accountIdentifier));
-      } else {
-        JsonNode schema = getPipelineYamlSchemaInternal(accountIdentifier, projectIdentifier, orgIdentifier, scope);
-        pipelineSchemaCache.put(accountIdentifier, schema.toString());
+      JsonNode schema = schemaFetcher.getPipelineSchemaFromCache(accountIdentifier);
+      if (schema != null) {
+        return schema;
+      }
+      String lockName = "YamlSchema_" + accountIdentifier;
+      try (AcquiredLock<?> lock =
+               persistentLocker.waitToAcquireLock(lockName, Duration.ofSeconds(10), Duration.ofSeconds(10))) {
+        if (lock == null) {
+          log.error("Could not acquire lock for generating pipeline schema for account: [{}]", accountIdentifier);
+          throw new UnexpectedException("Unable to occupy lock therefore throwing the exception");
+        }
+        log.info("Generating the pipeline schema for account {}", accountIdentifier);
+        schema = getPipelineYamlSchemaInternal(accountIdentifier, projectIdentifier, orgIdentifier, scope);
+        schemaFetcher.putPipelineSchemaInCache(accountIdentifier, schema);
+        log.info("Generated the pipeline schema for account {}", accountIdentifier);
         return schema;
       }
     } catch (Exception e) {
@@ -173,7 +185,6 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
 
   @Override
   public void invalidateAllCache() {
-    pipelineSchemaCache.clear();
     schemaFetcher.invalidateAllCache();
   }
 

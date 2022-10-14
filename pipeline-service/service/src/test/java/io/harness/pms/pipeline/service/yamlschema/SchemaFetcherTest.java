@@ -29,6 +29,7 @@ import io.harness.pms.pipeline.service.yamlschema.cache.SchemaCacheUtils;
 import io.harness.pms.pipeline.service.yamlschema.cache.YamlSchemaDetailsValue;
 import io.harness.pms.pipeline.service.yamlschema.cache.YamlSchemaDetailsWrapperValue;
 import io.harness.rule.Owner;
+import io.harness.serializer.JsonUtils;
 import io.harness.yaml.schema.beans.PartialSchemaDTO;
 import io.harness.yaml.schema.beans.YamlSchemaDetailsWrapper;
 import io.harness.yaml.schema.beans.YamlSchemaMetadata;
@@ -55,6 +56,7 @@ public class SchemaFetcherTest {
   @Mock Cache<SchemaCacheKey, PartialSchemaDTOWrapperValue> schemaCache;
   @Mock SchemaGetterFactory schemaGetterFactory;
   @Mock LocalSchemaGetter localSchemaGetter;
+  @Mock Cache<String, String> pipelineSchemaCache;
   @InjectMocks SchemaFetcher schemaFetcher;
 
   @Before
@@ -173,6 +175,26 @@ public class SchemaFetcherTest {
     schemaFetcher.invalidateAllCache();
     verify(schemaCache, times(1)).clear();
     verify(schemaDetailsCache, times(1)).clear();
+  }
+
+  @Test
+  @Owner(developers = BRIJESH)
+  @Category(UnitTests.class)
+  public void testGetPipelineSchemaFromCache() {
+    String accountId = "accountId";
+    assertNull(schemaFetcher.getPipelineSchemaFromCache(accountId));
+    doReturn(true).when(pipelineSchemaCache).containsKey(accountId);
+    doReturn("{}").when(pipelineSchemaCache).get(accountId);
+    assertNotNull(schemaFetcher.getPipelineSchemaFromCache(accountId));
+  }
+
+  @Test
+  @Owner(developers = BRIJESH)
+  @Category(UnitTests.class)
+  public void testPutPipelineSchemaInCache() {
+    String accountId = "accountId";
+    schemaFetcher.putPipelineSchemaInCache(accountId, JsonUtils.readTree("{}"));
+    verify(pipelineSchemaCache, times(1)).put(accountId, "{}");
   }
 
   private String getResource() throws IOException {

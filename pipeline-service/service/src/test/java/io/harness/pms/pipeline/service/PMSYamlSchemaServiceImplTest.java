@@ -16,6 +16,7 @@ import static io.harness.yaml.schema.beans.SchemaConstants.ONE_OF_NODE;
 
 import static junit.framework.TestCase.assertEquals;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -38,6 +39,8 @@ import io.harness.category.element.UnitTests;
 import io.harness.encryption.Scope;
 import io.harness.exception.InvalidYamlException;
 import io.harness.jackson.JsonNodeUtils;
+import io.harness.lock.PersistentLocker;
+import io.harness.lock.redis.RedisAcquiredLock;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.merger.helpers.FQNMapGenerator;
 import io.harness.pms.pipeline.service.yamlschema.PmsYamlSchemaHelper;
@@ -45,6 +48,7 @@ import io.harness.pms.pipeline.service.yamlschema.SchemaFetcher;
 import io.harness.pms.sdk.PmsSdkInstanceService;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
+import io.harness.serializer.JsonUtils;
 import io.harness.yaml.schema.YamlSchemaProvider;
 import io.harness.yaml.schema.YamlSchemaTransientHelper;
 import io.harness.yaml.schema.beans.YamlGroup;
@@ -62,7 +66,6 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.List;
-import javax.cache.Cache;
 import org.apache.commons.io.IOUtils;
 import org.assertj.core.api.Assertions;
 import org.junit.Before;
@@ -80,7 +83,7 @@ public class PMSYamlSchemaServiceImplTest {
   @Mock PmsYamlSchemaHelper pmsYamlSchemaHelper;
   @Mock PmsSdkInstanceService pmsSdkInstanceService;
   @Mock YamlSchemaValidator yamlSchemaValidator;
-  @Mock Cache<String, String> pipelineSchemaCache;
+  @Mock PersistentLocker persistentLocker;
   @InjectMocks private PMSYamlSchemaServiceImpl pmsYamlSchemaService;
 
   private static final String ACC_ID = "accountId";
@@ -175,14 +178,17 @@ public class PMSYamlSchemaServiceImplTest {
   @Category(UnitTests.class)
   public void verifyGetPipelineYamlSchema() throws Throwable {
     final Scope scope = Scope.ORG;
-    when(pipelineSchemaCache.containsKey(ACC_ID)).thenReturn(true);
-    when(pipelineSchemaCache.get(ACC_ID)).thenReturn("{}");
+    assertThatThrownBy(() -> pmsYamlSchemaService.getPipelineYamlSchema(ACC_ID, ORG_ID, PRJ_ID, scope))
+        .hasMessage("Unable to occupy lock therefore throwing the exception");
+    verify(schemaFetcher, times(1)).getPipelineSchemaFromCache(ACC_ID);
+    when(schemaFetcher.getPipelineSchemaFromCache(ACC_ID)).thenReturn(JsonUtils.readTree("{}"));
+    when(persistentLocker.waitToAcquireLock(any(), any(), any())).thenReturn(RedisAcquiredLock.builder().build());
     pmsYamlSchemaService.getPipelineYamlSchema(ACC_ID, ORG_ID, PRJ_ID, scope);
-    verify(pipelineSchemaCache, times(1)).get(ACC_ID);
-    when(pipelineSchemaCache.containsKey(ACC_ID)).thenReturn(false);
+    verify(schemaFetcher, times(2)).getPipelineSchemaFromCache(ACC_ID);
+    when(schemaFetcher.getPipelineSchemaFromCache(ACC_ID)).thenReturn(null);
     prepareAndAssertGetPipelineYamlSchemaInternal(
         scope, () -> pmsYamlSchemaService.getPipelineYamlSchema(ACC_ID, PRJ_ID, ORG_ID, scope));
-    verify(pipelineSchemaCache, times(1)).get(ACC_ID);
+    verify(schemaFetcher, times(3)).getPipelineSchemaFromCache(ACC_ID);
   }
 
   @Test
@@ -191,7 +197,6 @@ public class PMSYamlSchemaServiceImplTest {
   public void shouldInvalidateCaches() {
     pmsYamlSchemaService.invalidateAllCache();
     verify(schemaFetcher).invalidateAllCache();
-    verify(pipelineSchemaCache, times(1)).clear();
   }
 
   @Test

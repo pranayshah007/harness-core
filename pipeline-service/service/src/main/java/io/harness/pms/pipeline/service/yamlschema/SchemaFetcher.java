@@ -18,6 +18,7 @@ import io.harness.encryption.Scope;
 import io.harness.pms.pipeline.service.yamlschema.cache.PartialSchemaDTOWrapperValue;
 import io.harness.pms.pipeline.service.yamlschema.cache.SchemaCacheUtils;
 import io.harness.pms.pipeline.service.yamlschema.cache.YamlSchemaDetailsWrapperValue;
+import io.harness.serializer.JsonUtils;
 import io.harness.yaml.schema.beans.PartialSchemaDTO;
 import io.harness.yaml.schema.beans.YamlSchemaDetailsWrapper;
 import io.harness.yaml.schema.beans.YamlSchemaWithDetails;
@@ -40,6 +41,7 @@ public class SchemaFetcher {
   @Inject @Named("schemaDetailsCache") Cache<SchemaCacheKey, YamlSchemaDetailsWrapperValue> schemaDetailsCache;
   @Inject @Named("partialSchemaCache") Cache<SchemaCacheKey, PartialSchemaDTOWrapperValue> schemaCache;
   @Inject private SchemaGetterFactory schemaGetterFactory;
+  @Inject @Named("pipelineSchemaCache") private Cache<String, String> pipelineSchemaCache;
 
   /**
    * Schema is taken from cache, so every modification will affect cache value.
@@ -74,6 +76,18 @@ public class SchemaFetcher {
     }
   }
 
+  public JsonNode getPipelineSchemaFromCache(String accountId) {
+    if (pipelineSchemaCache.containsKey(accountId)) {
+      log.info("Getting pipeline schema from cache for account {}", accountId);
+      return JsonUtils.readTree(pipelineSchemaCache.get(accountId));
+    }
+    return null;
+  }
+
+  public void putPipelineSchemaInCache(String accountId, JsonNode schema) {
+    pipelineSchemaCache.put(accountId, schema.toString());
+  }
+
   public YamlSchemaDetailsWrapper fetchSchemaDetail(String accountId, ModuleType moduleType) {
     try {
       SchemaCacheKey schemaCacheKey =
@@ -99,6 +113,7 @@ public class SchemaFetcher {
 
   public void invalidateAllCache() {
     log.info("[PMS] Invalidating yaml schema cache");
+    pipelineSchemaCache.clear();
     schemaCache.clear();
     schemaDetailsCache.clear();
     log.info("[PMS] Yaml schema cache was successfully invalidated");
