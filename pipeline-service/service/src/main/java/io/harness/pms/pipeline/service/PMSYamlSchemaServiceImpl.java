@@ -124,16 +124,16 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
   public JsonNode getPipelineYamlSchema(
       String accountIdentifier, String projectIdentifier, String orgIdentifier, Scope scope) {
     try {
-      JsonNode schema = schemaFetcher.getPipelineSchemaFromCache(accountIdentifier);
-      if (schema != null) {
-        return schema;
-      }
       String lockName = "YamlSchema_" + accountIdentifier;
       try (AcquiredLock<?> lock =
                persistentLocker.waitToAcquireLock(lockName, Duration.ofSeconds(10), Duration.ofSeconds(10))) {
         if (lock == null) {
           log.error("Could not acquire lock for generating pipeline schema for account: [{}]", accountIdentifier);
           throw new UnexpectedException("Unable to occupy lock therefore throwing the exception");
+        }
+        JsonNode schema = schemaFetcher.getPipelineSchemaFromCache(accountIdentifier);
+        if (schema != null) {
+          return schema;
         }
         log.info("Generating the pipeline schema for account {}", accountIdentifier);
         schema = getPipelineYamlSchemaInternal(accountIdentifier, projectIdentifier, orgIdentifier, scope);

@@ -180,15 +180,14 @@ public class PMSYamlSchemaServiceImplTest {
     final Scope scope = Scope.ORG;
     assertThatThrownBy(() -> pmsYamlSchemaService.getPipelineYamlSchema(ACC_ID, ORG_ID, PRJ_ID, scope))
         .hasMessage("Unable to occupy lock therefore throwing the exception");
-    verify(schemaFetcher, times(1)).getPipelineSchemaFromCache(ACC_ID);
     when(schemaFetcher.getPipelineSchemaFromCache(ACC_ID)).thenReturn(JsonUtils.readTree("{}"));
     when(persistentLocker.waitToAcquireLock(any(), any(), any())).thenReturn(RedisAcquiredLock.builder().build());
     pmsYamlSchemaService.getPipelineYamlSchema(ACC_ID, ORG_ID, PRJ_ID, scope);
-    verify(schemaFetcher, times(2)).getPipelineSchemaFromCache(ACC_ID);
+    verify(schemaFetcher, times(1)).getPipelineSchemaFromCache(ACC_ID);
     when(schemaFetcher.getPipelineSchemaFromCache(ACC_ID)).thenReturn(null);
     prepareAndAssertGetPipelineYamlSchemaInternal(
         scope, () -> pmsYamlSchemaService.getPipelineYamlSchema(ACC_ID, PRJ_ID, ORG_ID, scope));
-    verify(schemaFetcher, times(3)).getPipelineSchemaFromCache(ACC_ID);
+    verify(schemaFetcher, times(2)).getPipelineSchemaFromCache(ACC_ID);
   }
 
   @Test
