@@ -7,7 +7,6 @@
 
 package io.harness.cdng.visitor.helpers.serviceconfig;
 
-import io.harness.cdng.service.beans.EcsServiceSpec;
 import io.harness.cdng.service.beans.ElastigroupServiceSpec;
 import io.harness.walktree.visitor.validation.ConfigValidator;
 import io.harness.walktree.visitor.validation.ValidationVisitor;

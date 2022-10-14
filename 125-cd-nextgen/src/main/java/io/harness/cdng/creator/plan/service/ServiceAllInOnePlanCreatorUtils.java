@@ -195,21 +195,21 @@ public class ServiceAllInOnePlanCreatorUtils {
     // Add Elastigroup settings node
     if (serviceType == ServiceDefinitionType.ELASTIGROUP) {
       PlanNode elastigroupSettingsNode =
-              PlanNode.builder()
-                      .uuid("elastigroup-settings-" + UUIDGenerator.generateUuid())
-                      .stepType(ElastigroupServiceSettingsStep.STEP_TYPE)
-                      .name(PlanCreatorConstants.CONNECTION_STRINGS)
-                      .identifier(YamlTypes.ELASTIGROUP_SERVICE_SETTINGS_STEP)
-                      .stepParameters(new EmptyStepParameters())
-                      .facilitatorObtainment(
-                              FacilitatorObtainment.newBuilder()
-                                      .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.SYNC).build())
-                                      .build())
-                      .skipExpressionChain(true)
-                      .build();
+          PlanNode.builder()
+              .uuid("elastigroup-settings-" + UUIDGenerator.generateUuid())
+              .stepType(ElastigroupServiceSettingsStep.STEP_TYPE)
+              .name(PlanCreatorConstants.CONNECTION_STRINGS)
+              .identifier(YamlTypes.ELASTIGROUP_SERVICE_SETTINGS_STEP)
+              .stepParameters(new EmptyStepParameters())
+              .facilitatorObtainment(
+                  FacilitatorObtainment.newBuilder()
+                      .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.SYNC).build())
+                      .build())
+              .skipExpressionChain(true)
+              .build();
       nodeIds.add(elastigroupSettingsNode.getUuid());
       planCreationResponseMap.put(
-              elastigroupSettingsNode.getUuid(), PlanCreationResponse.builder().planNode(elastigroupSettingsNode).build());
+          elastigroupSettingsNode.getUuid(), PlanCreationResponse.builder().planNode(elastigroupSettingsNode).build());
     }
     return nodeIds;
   }

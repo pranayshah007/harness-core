@@ -7,48 +7,29 @@
 
 package io.harness.cdng.elastigroup;
 
-import com.google.common.annotations.VisibleForTesting;
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
-import com.google.inject.name.Named;
+import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.cdng.manifest.yaml.harness.HarnessStoreConstants.HARNESS_STORE_TYPE;
+import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+
+import static java.lang.String.format;
+
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.DelegateTaskRequest;
 import io.harness.beans.FileReference;
 import io.harness.beans.IdentifierRef;
-import io.harness.cdng.artifact.resources.acr.mappers.AcrResourceMapper;
-import io.harness.cdng.common.beans.SetupAbstractionKeys;
 import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.manifest.ManifestStoreType;
 import io.harness.cdng.manifest.yaml.harness.HarnessStore;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
-import io.harness.common.NGTaskType;
-import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
 import io.harness.connector.utils.ConnectorUtils;
-import io.harness.delegate.beans.DelegateResponseData;
-import io.harness.delegate.beans.ErrorNotifyResponseData;
-import io.harness.delegate.beans.azure.AcrResponseDTO;
-import io.harness.delegate.beans.azure.response.AzureDelegateTaskResponse;
-import io.harness.delegate.beans.connector.ConnectorType;
-import io.harness.delegate.beans.connector.azureconnector.AzureConnectorDTO;
-import io.harness.delegate.beans.connector.azureconnector.AzureCredentialType;
-import io.harness.delegate.beans.connector.azureconnector.AzureManualDetailsDTO;
-import io.harness.delegate.beans.connector.azureconnector.AzureTaskParams;
-import io.harness.delegate.beans.executioncapability.ExecutionCapabilityDemander;
-import io.harness.delegate.task.TaskParameters;
-import io.harness.delegate.task.artifacts.ArtifactTaskType;
-import io.harness.delegate.task.artifacts.azure.AcrArtifactDelegateRequest;
-import io.harness.delegate.task.artifacts.azure.AcrArtifactDelegateResponse;
-import io.harness.delegate.task.artifacts.request.ArtifactTaskParameters;
-import io.harness.delegate.task.artifacts.response.ArtifactTaskExecutionResponse;
-import io.harness.delegate.task.artifacts.response.ArtifactTaskResponse;
-import io.harness.exception.*;
+import io.harness.exception.InvalidArgumentsException;
+import io.harness.exception.InvalidRequestException;
 import io.harness.exception.exceptionmanager.ExceptionManager;
 import io.harness.filestore.dto.node.FileStoreNodeDTO;
 import io.harness.filestore.service.FileStoreService;
-import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.core.NGAccess;
 import io.harness.ng.core.api.NGEncryptedDataService;
 import io.harness.ng.core.entities.NGEncryptedData;
@@ -56,24 +37,17 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
-import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.service.DelegateGrpcClientWrapper;
 import io.harness.utils.IdentifierRefHelper;
+
+import com.google.common.annotations.VisibleForTesting;
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
+import com.google.inject.name.Named;
+import java.util.List;
+import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
-import software.wings.beans.TaskType;
-
-import javax.annotation.Nonnull;
-import javax.validation.constraints.NotNull;
-import java.util.*;
-import java.util.stream.Collectors;
-
-import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.cdng.manifest.yaml.harness.HarnessStoreConstants.HARNESS_STORE_TYPE;
-import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
-import static io.harness.logging.CommandExecutionStatus.SUCCESS;
-import static java.lang.String.format;
 
 @Singleton
 @Slf4j
@@ -95,7 +69,7 @@ public class ElastigroupHelperService {
     String storeKind = storeConfig.getKind();
     if (HARNESS_STORE_TYPE.equals(storeKind)) {
       validateSettingsFileRefs((HarnessStore) storeConfig, ambiance, entityType);
-    } else if(!storeKind.equals(ManifestStoreType.INLINE)){
+    } else if (!storeKind.equals(ManifestStoreType.INLINE)) {
       validateSettingsConnectorByRef(storeConfig, ambiance, entityType);
     }
   }

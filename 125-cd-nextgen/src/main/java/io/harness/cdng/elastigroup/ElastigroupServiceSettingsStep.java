@@ -7,16 +7,12 @@
 
 package io.harness.cdng.elastigroup;
 
-import com.google.inject.Inject;
+import static io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants.STARTUP_SCRIPT;
+
 import io.harness.cdng.CDStepHelper;
-import io.harness.cdng.azure.AzureHelperService;
-import io.harness.cdng.azure.config.ApplicationSettingsOutcome;
-import io.harness.cdng.azure.config.ConnectionStringsOutcome;
-import io.harness.cdng.azure.config.StartupCommandOutcome;
 import io.harness.cdng.elastigroup.config.StartupScriptOutcome;
 import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
-import io.harness.cdng.service.beans.AzureWebAppServiceSpec;
 import io.harness.cdng.service.beans.ElastigroupServiceSpec;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.cdng.service.steps.ServiceStepsHelper;
@@ -33,13 +29,12 @@ import io.harness.pms.sdk.core.steps.executables.SyncExecutable;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
-import lombok.extern.slf4j.Slf4j;
 
+import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-
-import static io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants.*;
+import lombok.extern.slf4j.Slf4j;
 
 /*
 Single step for Startup Script

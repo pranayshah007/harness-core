@@ -120,7 +120,7 @@ public class AggregateOrganizationServiceImpl implements AggregateOrganizationSe
 
     List<Future<OrganizationAggregateDTO>> futures;
     try {
-      futures = executorService.invokeAll(tasks, 30, TimeUnit.SECONDS);
+      futures = executorService.invokeAll(tasks, 10, TimeUnit.SECONDS);
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
       return Page.empty();

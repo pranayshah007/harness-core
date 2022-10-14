@@ -7,18 +7,14 @@
 
 package io.harness.cdng.service.beans;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.artifact.bean.yaml.ArtifactListConfig;
-import io.harness.cdng.azure.config.yaml.StartupCommandConfiguration;
 import io.harness.cdng.configfile.ConfigFileWrapper;
 import io.harness.cdng.elastigroup.config.yaml.StartupScriptConfiguration;
 import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
 import io.harness.cdng.service.ServiceSpec;
-import io.harness.cdng.visitor.helpers.serviceconfig.EcsServiceSpecVisitorHelper;
 import io.harness.cdng.visitor.helpers.serviceconfig.ElastigroupServiceSpecVisitorHelper;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.ng.core.k8s.ServiceSpecType;
@@ -27,13 +23,15 @@ import io.harness.walktree.beans.VisitableChildren;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
 import io.harness.walktree.visitor.Visitable;
 import io.harness.yaml.core.variables.NGVariable;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
+import java.util.List;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Value;
 import org.springframework.data.annotation.TypeAlias;
-
-import java.util.List;
 
 @OwnedBy(HarnessTeam.CDP)
 @Value

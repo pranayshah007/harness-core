@@ -7,12 +7,12 @@
 
 package io.harness.cdng.visitor.helpers.elastigroup;
 
+import static io.harness.annotations.dev.HarnessTeam.CDP;
+
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.azure.config.yaml.StartupCommandConfiguration;
 import io.harness.walktree.visitor.validation.ConfigValidator;
 import io.harness.walktree.visitor.validation.ValidationVisitor;
-
-import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 @OwnedBy(CDP)
 public class StartupScriptConfigurationVisitorHelper implements ConfigValidator {
