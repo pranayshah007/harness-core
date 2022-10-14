@@ -540,6 +540,11 @@ public class InviteServiceImpl implements InviteService {
     boolean isAutoInviteAcceptanceEnabled = isAutoInviteAcceptanceEnabled(accountId);
 
     try {
+      Thread.sleep(5000);
+    } catch (InterruptedException e) {
+      log.error("Thread interupted", e);
+    }
+    try {
       sendInvitationMail(
           savedInvite, isSSOEnabled, isPLNoEmailForSamlAccountInvitesEnabled, isAutoInviteAcceptanceEnabled);
     } catch (URISyntaxException ex) {
@@ -550,6 +555,12 @@ public class InviteServiceImpl implements InviteService {
     } catch (Exception ex) {
       log.error("For invite: {} while inviting or notifying user to join harness an exception occurred: ",
           savedInvite.getId(), ex);
+    }
+
+    try {
+      Thread.sleep(5000);
+    } catch (InterruptedException e) {
+      log.error("2 Thread interupted", e);
     }
 
     String email = invite.getEmail().trim();
