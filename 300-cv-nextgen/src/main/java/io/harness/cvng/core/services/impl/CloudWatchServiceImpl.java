@@ -15,13 +15,11 @@ import io.harness.cvng.core.beans.OnboardingResponseDTO;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.services.api.CloudWatchService;
 import io.harness.cvng.core.services.api.OnboardingService;
-import io.harness.cvng.utils.CloudWatchUtils;
 import io.harness.datacollection.exception.DataCollectionException;
 import io.harness.serializer.JsonUtils;
 
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
-import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -66,10 +64,5 @@ public class CloudWatchServiceImpl implements CloudWatchService {
     } catch (DataCollectionException ex) {
       return null;
     }
-  }
-
-  @Override
-  public List<String> fetchRegions() {
-    return CloudWatchUtils.getAwsRegions();
   }
 }

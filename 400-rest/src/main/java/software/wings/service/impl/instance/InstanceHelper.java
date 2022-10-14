@@ -764,8 +764,6 @@ public class InstanceHelper {
       handler.processInstanceSyncResponseFromPerpetualTask(infrastructureMapping, response);
     } catch (NoInstancesException ex) {
       checkAndDeletePerpetualTask(infrastructureMapping, ex);
-      log.warn("Error handling Instance sync response. Infrastructure Mapping : [{}], Perpetual Task Id : [{}]",
-          infrastructureMapping.getUuid(), perpetualTaskRecord.getUuid(), ex);
     } catch (Exception ex) {
       checkAndDeletePerpetualTask(infrastructureMapping, ex);
       log.error("Error handling Instance sync response. Infrastructure Mapping : [{}], Perpetual Task Id : [{}]",

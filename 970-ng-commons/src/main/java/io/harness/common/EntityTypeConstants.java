@@ -129,4 +129,5 @@ public interface EntityTypeConstants {
   String ARTIFACT_SOURCE_TEMPLATE = "ArtifactSource";
   String SHELL_SCRIPT_PROVISION_STEP = "ShellScriptProvision";
   String FREEZE = "Freeze";
+  String CHAOS_STEP = "Chaos";
 }

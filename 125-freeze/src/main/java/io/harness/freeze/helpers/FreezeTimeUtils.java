@@ -8,9 +8,11 @@
 package io.harness.freeze.helpers;
 
 import io.harness.freeze.beans.CurrentOrUpcomingActiveWindow;
+import io.harness.freeze.beans.FreezeDuration;
 import io.harness.freeze.beans.FreezeWindow;
 import io.harness.freeze.beans.RecurrenceType;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
@@ -39,20 +41,32 @@ public class FreezeTimeUtils {
   }
   private CurrentOrUpcomingActiveWindow fetchCurrentOrUpcomingTimeWindow(FreezeWindow freezeWindow) {
     TimeZone timeZone = TimeZone.getTimeZone(freezeWindow.getTimeZone());
-    String firstWindowStartTime = freezeWindow.getStartTime();
-    String firstWindowEndTime = freezeWindow.getEndTime();
+    LocalDateTime firstWindowStartTime = LocalDateTime.parse(freezeWindow.getStartTime(), dtf);
+    LocalDateTime firstWindowEndTime;
+    if (freezeWindow.getEndTime() == null) {
+      FreezeDuration freezeDuration = FreezeDuration.fromString(freezeWindow.getDuration());
+      Long endTime = getEpochValueFromDateString(firstWindowStartTime, timeZone) + freezeDuration.getTimeoutInMillis();
+      firstWindowEndTime = Instant.ofEpochMilli(endTime).atZone(timeZone.toZoneId()).toLocalDateTime();
+    } else {
+      firstWindowEndTime = LocalDateTime.parse(freezeWindow.getEndTime(), dtf);
+    }
     if (freezeWindow.getRecurrence() == null) {
-      if (getCurrentTime() > getEpochValueFromDateString(freezeWindow.getEndTime(), timeZone)) {
+      if (getCurrentTime() > getEpochValueFromDateString(firstWindowEndTime, timeZone)) {
         return null;
       } else {
         return CurrentOrUpcomingActiveWindow.builder()
-            .startTime(getEpochValueFromDateString(freezeWindow.getStartTime(), timeZone))
-            .endTime(getEpochValueFromDateString(freezeWindow.getEndTime(), timeZone))
+            .startTime(getEpochValueFromDateString(firstWindowStartTime, timeZone))
+            .endTime(getEpochValueFromDateString(firstWindowEndTime, timeZone))
             .build();
       }
     } else {
-      Long lastWindowEndTimeEpoch =
-          getEpochValueFromDateString(freezeWindow.getRecurrence().getSpec().getUntil(), timeZone);
+      LocalDateTime until;
+      if (freezeWindow.getRecurrence().getSpec() == null) {
+        until = getLocalDateTime(RecurrenceType.YEARLY, firstWindowEndTime, 5);
+      } else {
+        until = LocalDateTime.parse(freezeWindow.getRecurrence().getSpec().getUntil(), dtf);
+      }
+      Long lastWindowEndTimeEpoch = getEpochValueFromDateString(until, timeZone);
       if (getCurrentTime() > lastWindowEndTimeEpoch) {
         return null;
       } else {
@@ -62,8 +76,8 @@ public class FreezeTimeUtils {
     }
   }
 
-  private CurrentOrUpcomingActiveWindow fetchCurrentOrUpcomingTimeWindow(String firstWindowStartTime,
-      String firstWindowEndTime, Long lastWindowEndTimeEpoch, RecurrenceType recurrenceType, TimeZone timeZone) {
+  private CurrentOrUpcomingActiveWindow fetchCurrentOrUpcomingTimeWindow(LocalDateTime firstWindowStartTime,
+      LocalDateTime firstWindowEndTime, Long lastWindowEndTimeEpoch, RecurrenceType recurrenceType, TimeZone timeZone) {
     int recurrenceNumber = 0;
     Long currentWindowStartTime = getEpochValue(recurrenceType, firstWindowStartTime, timeZone, recurrenceNumber);
     Long currentWindowEndTime = getEpochValue(recurrenceType, firstWindowEndTime, timeZone, recurrenceNumber);
@@ -93,23 +107,37 @@ public class FreezeTimeUtils {
             currentOrUpcomingActiveWindow.getStartTime(), currentOrUpcomingActiveWindow.getEndTime());
   }
 
-  private Long getEpochValue(RecurrenceType offsetType, String dateString, TimeZone timeZone, int offsetValue) {
-    LocalDateTime zdt = LocalDateTime.parse(dateString, dtf);
+  private Long getEpochValue(RecurrenceType offsetType, LocalDateTime date, TimeZone timeZone, int offsetValue) {
     ZoneOffset zoneOffset = timeZone.toZoneId().getRules().getOffset(now);
     if (offsetValue == 0) {
-      return zdt.toInstant(zoneOffset).toEpochMilli();
+      return date.toInstant(zoneOffset).toEpochMilli();
     }
     switch (offsetType) {
       case DAILY:
-        return zdt.plusDays(offsetValue).toInstant(zoneOffset).toEpochMilli();
+        return date.plusDays(offsetValue).toInstant(zoneOffset).toEpochMilli();
       case WEEKLY:
-        return zdt.plusWeeks(offsetValue).toInstant(zoneOffset).toEpochMilli();
+        return date.plusWeeks(offsetValue).toInstant(zoneOffset).toEpochMilli();
       case MONTHLY:
-        return zdt.plusMonths(offsetValue).toInstant(zoneOffset).toEpochMilli();
+        return date.plusMonths(offsetValue).toInstant(zoneOffset).toEpochMilli();
       case YEARLY:
-        return zdt.plusYears(offsetValue).toInstant(zoneOffset).toEpochMilli();
+        return date.plusYears(offsetValue).toInstant(zoneOffset).toEpochMilli();
       default:
-        return zdt.toInstant(zoneOffset).toEpochMilli();
+        return date.toInstant(zoneOffset).toEpochMilli();
+    }
+  }
+
+  private LocalDateTime getLocalDateTime(RecurrenceType offsetType, LocalDateTime date, int offsetValue) {
+    switch (offsetType) {
+      case DAILY:
+        return date.plusDays(offsetValue);
+      case WEEKLY:
+        return date.plusWeeks(offsetValue);
+      case MONTHLY:
+        return date.plusMonths(offsetValue);
+      case YEARLY:
+        return date.plusYears(offsetValue);
+      default:
+        return date;
     }
   }
 
@@ -117,12 +145,12 @@ public class FreezeTimeUtils {
     return new Date().getTime();
   }
 
-  private Long getEpochValueFromDateString(String dateString, TimeZone timeZone) {
-    if (dateString == null) {
+  private Long getEpochValueFromDateString(LocalDateTime date, TimeZone timeZone) {
+    if (date == null) {
       return null;
     }
-    LocalDateTime zdt = LocalDateTime.parse(dateString, dtf);
+
     ZoneOffset zoneOffset = timeZone.toZoneId().getRules().getOffset(now);
-    return zdt.toInstant(zoneOffset).toEpochMilli();
+    return date.toInstant(zoneOffset).toEpochMilli();
   }
 }

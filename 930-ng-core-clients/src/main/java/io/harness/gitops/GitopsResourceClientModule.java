@@ -17,6 +17,7 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Provides;
 import com.google.inject.Scopes;
+import com.google.inject.Singleton;
 
 public class GitopsResourceClientModule extends AbstractModule {
   private final ServiceHttpClientConfig clientConfig;
@@ -38,6 +39,7 @@ public class GitopsResourceClientModule extends AbstractModule {
   }
 
   @Provides
+  @Singleton
   private GitopsResourceClientHttpFactory gitopsResourceClientHttpFactory(KryoConverterFactory kryoConverterFactory) {
     return new GitopsResourceClientHttpFactory(
         this.clientConfig, this.serviceSecret, new ServiceTokenGenerator(), kryoConverterFactory, clientId);

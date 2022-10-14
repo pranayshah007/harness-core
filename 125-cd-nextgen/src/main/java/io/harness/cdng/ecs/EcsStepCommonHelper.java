@@ -300,8 +300,9 @@ public class EcsStepCommonHelper extends EcsStepUtils {
 
     if (areAllManifestsFromHarnessFileStore(ecsManifestOutcomes)) {
       logCallback.saveExecutionLog("Fetched all manifests from Harness Store ", INFO, CommandExecutionStatus.SUCCESS);
-      CommandUnitsProgress commandUnitsProgress = CommandUnitsProgress.builder().build();
-      UnitProgressData unitProgressData = UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress);
+
+      UnitProgressData unitProgressData =
+          getCommandUnitProgressData(EcsCommandUnitConstants.fetchManifests.toString(), CommandExecutionStatus.SUCCESS);
 
       if (ecsStepExecutor instanceof EcsRollingDeployStep) {
         EcsPrepareRollbackDataPassThroughData ecsPrepareRollbackDataPassThroughData =

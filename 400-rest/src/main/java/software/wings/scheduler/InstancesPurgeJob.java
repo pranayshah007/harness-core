@@ -7,10 +7,14 @@
 
 package software.wings.scheduler;
 
+import io.harness.beans.FeatureName;
+import io.harness.ff.FeatureFlagService;
+import io.harness.persistence.HIterator;
+import io.harness.persistence.HPersistence;
 import io.harness.scheduler.BackgroundExecutorService;
 import io.harness.scheduler.PersistentScheduler;
 
-import software.wings.graphql.datafetcher.instance.InstanceTimeSeriesDataHelper;
+import software.wings.beans.Account;
 import software.wings.service.intfc.instance.InstanceService;
 import software.wings.service.intfc.instance.stats.InstanceStatService;
 import software.wings.service.intfc.instance.stats.ServerlessInstanceStatService;
@@ -47,7 +51,8 @@ public class InstancesPurgeJob implements Job {
   @Inject private InstanceService instanceService;
   @Inject private InstanceStatService instanceStatsService;
   @Inject private ServerlessInstanceStatService serverlessInstanceStatService;
-  @Inject InstanceTimeSeriesDataHelper instanceTimeSeriesDataHelper;
+  @Inject private HPersistence persistence;
+  @Inject private FeatureFlagService featureFlagService;
 
   public static void add(PersistentScheduler jobScheduler) {
     JobDetail job = JobBuilder.newJob(InstancesPurgeJob.class)
@@ -59,7 +64,6 @@ public class InstancesPurgeJob implements Job {
                           .withSchedule(CronScheduleBuilder.atHourAndMinuteOnGivenDaysOfWeek(
                               12, 0, DateBuilder.SATURDAY, DateBuilder.SUNDAY))
                           .build();
-
     jobScheduler.ensureJob__UnderConstruction(job, trigger);
   }
 
@@ -74,53 +78,69 @@ public class InstancesPurgeJob implements Job {
     log.info("Starting execution of instances and instance stats purge job");
     Stopwatch sw = Stopwatch.createStarted();
 
-    // TODO: purging stats can be removed in Jan 2023 as we started adding 6 months TTL index in July
-    purgeOldStats();
-    purgeOldServerlessInstanceStats();
-    purgeOldDeletedInstances();
+    try (HIterator<Account> accounts =
+             new HIterator<>(persistence.createQuery(Account.class).project(Account.ID_KEY2, true).fetch())) {
+      while (accounts.hasNext()) {
+        final Account account = accounts.next();
+        if (featureFlagService.isNotEnabled(FeatureName.USE_INSTANCES_PURGE_ITERATOR_FW, account.getUuid())) {
+          // TODO: purging stats can be removed in Jan 2023 as we started adding 6 months TTL index in July
+          purgeOldStats(account);
+          purgeOldServerlessInstanceStats(account);
+          purgeOldDeletedInstances(account);
+        } else {
+          log.info(String.format(
+              "Feature flag %s is enabled for account %s which means instances purging task will be handled by iterator framework",
+              FeatureName.USE_INSTANCES_PURGE_ITERATOR_FW, account.getUuid()));
+        }
+      }
+    }
 
     log.info("Execution of instances and instance stats purge job completed. Time taken: {} millis",
         sw.elapsed(TimeUnit.MILLISECONDS));
   }
 
-  private void purgeOldStats() {
-    log.info("Starting purge of instance stats");
+  private void purgeOldStats(Account account) {
+    log.info("Starting purge of instance stats for account {}", account.getUuid());
     Stopwatch sw = Stopwatch.createStarted();
 
-    boolean purged =
-        instanceStatsService.purgeUpTo(getRetentionStartTime(MONTHS_TO_RETAIN_INSTANCE_STATS_EXCLUDING_CURRENT_MONTH));
+    boolean purged = instanceStatsService.purgeUpTo(
+        getRetentionStartTime(MONTHS_TO_RETAIN_INSTANCE_STATS_EXCLUDING_CURRENT_MONTH), account);
     if (purged) {
-      log.info(
-          "Purge of instance stats completed successfully. Time taken: {} millis", sw.elapsed(TimeUnit.MILLISECONDS));
+      log.info("Purge of instance stats completed successfully for account {}. Time taken: {} millis",
+          account.getUuid(), sw.elapsed(TimeUnit.MILLISECONDS));
     } else {
-      log.info("Purge of instance stats failed. Time taken: {} millis", sw.elapsed(TimeUnit.MILLISECONDS));
+      log.info("Purge of instance stats failed for account {}. Time taken: {} millis", account.getUuid(),
+          sw.elapsed(TimeUnit.MILLISECONDS));
     }
   }
 
-  private void purgeOldServerlessInstanceStats() {
-    log.info("Starting purge of serverless instance stats");
+  private void purgeOldServerlessInstanceStats(Account account) {
+    log.info("Starting purge of serverless instance stats for account {}", account.getUuid());
     Stopwatch sw = Stopwatch.createStarted();
 
     boolean purged = serverlessInstanceStatService.purgeUpTo(
-        getRetentionStartTime(MONTHS_TO_RETAIN_INSTANCE_STATS_EXCLUDING_CURRENT_MONTH));
+        getRetentionStartTime(MONTHS_TO_RETAIN_INSTANCE_STATS_EXCLUDING_CURRENT_MONTH), account);
     if (purged) {
-      log.info("Purge of serverless instance stats completed successfully. Time taken: {} millis",
-          sw.elapsed(TimeUnit.MILLISECONDS));
+      log.info("Purge of serverless instance stats completed successfully for account {}. Time taken: {} millis",
+          account.getUuid(), sw.elapsed(TimeUnit.MILLISECONDS));
     } else {
-      log.info("Purge of serverless instance stats failed. Time taken: {} millis", sw.elapsed(TimeUnit.MILLISECONDS));
+      log.info("Purge of serverless instance stats failed for account {}. Time taken: {} millis", account.getUuid(),
+          sw.elapsed(TimeUnit.MILLISECONDS));
     }
   }
 
-  private void purgeOldDeletedInstances() {
-    log.info("Starting purge of instances");
+  private void purgeOldDeletedInstances(Account account) {
+    log.info("Starting purge of instances for account {}", account.getUuid());
     Stopwatch sw = Stopwatch.createStarted();
 
-    boolean purged =
-        instanceService.purgeDeletedUpTo(getRetentionStartTime(MONTHS_TO_RETAIN_INSTANCES_EXCLUDING_CURRENT_MONTH));
+    boolean purged = instanceService.purgeDeletedUpTo(
+        getRetentionStartTime(MONTHS_TO_RETAIN_INSTANCES_EXCLUDING_CURRENT_MONTH), account);
     if (purged) {
-      log.info("Purge of instances completed successfully. Time taken: {} millis", sw.elapsed(TimeUnit.MILLISECONDS));
+      log.info("Purge of instances completed successfully for account {}. Time taken: {} millis", account.getUuid(),
+          sw.elapsed(TimeUnit.MILLISECONDS));
     } else {
-      log.info("Purge of instances failed. Time taken: {} millis", sw.elapsed(TimeUnit.MILLISECONDS));
+      log.info("Purge of instances failed for account {}. Time taken: {} millis", account.getUuid(),
+          sw.elapsed(TimeUnit.MILLISECONDS));
     }
   }
 

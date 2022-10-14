@@ -11,10 +11,12 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EncryptedData;
 import io.harness.beans.MigratedEntityMapping;
+import io.harness.encryption.Scope;
 import io.harness.exception.InvalidRequestException;
 import io.harness.gitsync.beans.YamlDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.dto.secrets.SecretDTOV2;
+import io.harness.ng.core.dto.secrets.SecretDTOV2.SecretDTOV2Builder;
 import io.harness.ng.core.dto.secrets.SecretRequestWrapper;
 import io.harness.ng.core.dto.secrets.SecretResponseWrapper;
 import io.harness.ngmigration.beans.BaseEntityInput;
@@ -141,26 +143,37 @@ public class SecretMigrationService extends NgMigrationService {
       NgEntityDetail ngEntityDetail) {
     EncryptedData encryptedData = (EncryptedData) entities.get(entityId).getEntity();
     List<NGYamlFile> files = new ArrayList<>();
-    String identifier = MigratorUtility.generateIdentifier(encryptedData.getName());
-    NGYamlFile yamlFile =
-        NGYamlFile.builder()
-            .type(NGMigrationEntityType.SECRET)
-            .filename("secret/" + encryptedData.getName() + ".yaml")
-            .yaml(SecretRequestWrapper.builder()
-                      .secret(secretFactory.getSecret(inputDTO, identifier, encryptedData, entities, migratedEntities))
-                      .build())
-            .ngEntityDetail(NgEntityDetail.builder()
-                                .identifier(identifier)
-                                .orgIdentifier(inputDTO.getOrgIdentifier())
-                                .projectIdentifier(inputDTO.getProjectIdentifier())
-                                .build())
-            .cgBasicInfo(CgBasicInfo.builder()
-                             .id(encryptedData.getUuid())
-                             .accountId(encryptedData.getAccountId())
-                             .appId(null)
-                             .type(NGMigrationEntityType.SECRET)
-                             .build())
-            .build();
+    String name = MigratorUtility.generateName(inputDTO.getOverrides(), entityId, encryptedData.getName());
+    String identifier = MigratorUtility.generateIdentifierDefaultName(inputDTO.getOverrides(), entityId, name);
+    Scope scope = MigratorUtility.getDefaultScope(inputDTO, entityId, Scope.PROJECT);
+    String projectIdentifier = MigratorUtility.getProjectIdentifier(scope, inputDTO);
+    String orgIdentifier = MigratorUtility.getOrgIdentifier(scope, inputDTO);
+    SecretDTOV2Builder secretDTOV2Builder = secretFactory.getSecret(encryptedData, entities, migratedEntities);
+    if (secretDTOV2Builder == null) {
+      return files;
+    }
+    SecretDTOV2 secretDTOV2 = secretDTOV2Builder.projectIdentifier(projectIdentifier)
+                                  .orgIdentifier(orgIdentifier)
+                                  .identifier(identifier)
+                                  .name(name)
+                                  .build();
+    NGYamlFile yamlFile = NGYamlFile.builder()
+                              .type(NGMigrationEntityType.SECRET)
+                              .filename("secret/" + name + ".yaml")
+                              .yaml(SecretRequestWrapper.builder().secret(secretDTOV2).build())
+                              .ngEntityDetail(NgEntityDetail.builder()
+                                                  .identifier(identifier)
+                                                  .orgIdentifier(orgIdentifier)
+                                                  .projectIdentifier(projectIdentifier)
+                                                  .build())
+                              .cgBasicInfo(CgBasicInfo.builder()
+                                               .id(encryptedData.getUuid())
+                                               .accountId(encryptedData.getAccountId())
+                                               .appId(null)
+                                               .name(encryptedData.getName())
+                                               .type(NGMigrationEntityType.SECRET)
+                                               .build())
+                              .build();
     files.add(yamlFile);
 
     // TODO: make it more obvious that migratedEntities needs to be updated by having compile-time check

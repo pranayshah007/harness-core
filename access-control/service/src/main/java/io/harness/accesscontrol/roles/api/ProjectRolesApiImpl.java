@@ -38,6 +38,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.enforcement.client.annotation.FeatureRestrictionCheck;
 import io.harness.enforcement.constants.FeatureRestrictionName;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ng.beans.PageRequest;
 import io.harness.ng.beans.PageResponse;
 import io.harness.outbox.api.OutboxService;
 import io.harness.spec.server.accesscontrol.ProjectRolesApi;
@@ -68,19 +69,21 @@ public class ProjectRolesApiImpl implements ProjectRolesApi {
   private final TransactionTemplate transactionTemplate;
   private final OutboxService outboxService;
   private final AccessControlClient accessControlClient;
+  private final RolesApiUtils rolesApiUtils;
 
   private final RetryPolicy<Object> transactionRetryPolicy = DEFAULT_RETRY_POLICY;
 
   @Inject
   public ProjectRolesApiImpl(RoleService roleService, ScopeService scopeService, RoleDTOMapper roleDTOMapper,
       @Named(OUTBOX_TRANSACTION_TEMPLATE) TransactionTemplate transactionTemplate, OutboxService outboxService,
-      AccessControlClient accessControlClient) {
+      AccessControlClient accessControlClient, RolesApiUtils rolesApiUtils) {
     this.roleService = roleService;
     this.scopeService = scopeService;
     this.roleDTOMapper = roleDTOMapper;
     this.transactionTemplate = transactionTemplate;
     this.outboxService = outboxService;
     this.accessControlClient = accessControlClient;
+    this.rolesApiUtils = rolesApiUtils;
   }
 
   @Override
@@ -92,14 +95,14 @@ public class ProjectRolesApiImpl implements ProjectRolesApi {
     HarnessScopeParams harnessScopeParams =
         HarnessScopeParams.builder().accountIdentifier(account).orgIdentifier(org).projectIdentifier(project).build();
     Scope scope = scopeService.getOrCreate(ScopeMapper.fromParams(harnessScopeParams));
-    RoleDTO roleDTO = RoleApiUtils.getRoleProjectDTO(body);
+    RoleDTO roleDTO = rolesApiUtils.getRoleProjectDTO(body);
     roleDTO.setAllowedScopeLevels(Sets.newHashSet(scope.getLevel().toString()));
 
     RolesResponse response = Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
       RoleResponseDTO responseDTO = roleDTOMapper.toResponseDTO(roleService.create(fromDTO(scope.toString(), roleDTO)));
       outboxService.save(new RoleCreateEvent(
           responseDTO.getScope().getAccountIdentifier(), responseDTO.getRole(), responseDTO.getScope()));
-      return RoleApiUtils.getRolesResponse(responseDTO);
+      return RolesApiUtils.getRolesResponse(responseDTO);
     }));
     return Response.status(201).entity(response).build();
   }
@@ -115,7 +118,7 @@ public class ProjectRolesApiImpl implements ProjectRolesApi {
       RoleResponseDTO responseDTO = roleDTOMapper.toResponseDTO(roleService.delete(role, scopeIdentifier));
       outboxService.save(new RoleDeleteEvent(
           responseDTO.getScope().getAccountIdentifier(), responseDTO.getRole(), responseDTO.getScope()));
-      return RoleApiUtils.getRolesResponse(responseDTO);
+      return RolesApiUtils.getRolesResponse(responseDTO);
     }));
     return Response.ok().entity(response).build();
   }
@@ -127,7 +130,7 @@ public class ProjectRolesApiImpl implements ProjectRolesApi {
     HarnessScopeParams harnessScopeParams =
         HarnessScopeParams.builder().accountIdentifier(account).orgIdentifier(org).projectIdentifier(project).build();
     String scopeIdentifier = ScopeMapper.fromParams(harnessScopeParams).toString();
-    RolesResponse response = RoleApiUtils.getRolesResponse(roleDTOMapper.toResponseDTO(
+    RolesResponse response = RolesApiUtils.getRolesResponse(roleDTOMapper.toResponseDTO(
         roleService.get(role, scopeIdentifier, NO_FILTER).<InvalidRequestException>orElseThrow(() -> {
           throw new InvalidRequestException("Role not found in Project scope for given identifier.");
         })));
@@ -135,8 +138,8 @@ public class ProjectRolesApiImpl implements ProjectRolesApi {
   }
 
   @Override
-  public Response listRolesProject(
-      String org, String project, String account, Integer page, Integer limit, String searchTerm) {
+  public Response listRolesProject(String org, String project, Integer page, Integer limit, String searchTerm,
+      String account, String sort, String order) {
     accessControlClient.checkForAccessOrThrow(
         ResourceScope.of(account, org, project), Resource.of(ROLE, null), VIEW_ROLE_PERMISSION);
     HarnessScopeParams harnessScopeParams =
@@ -144,14 +147,15 @@ public class ProjectRolesApiImpl implements ProjectRolesApi {
     String scopeIdentifier = ScopeMapper.fromParams(harnessScopeParams).toString();
     RoleFilter roleFilter =
         RoleFilter.builder().searchTerm(searchTerm).scopeIdentifier(scopeIdentifier).managedFilter(NO_FILTER).build();
-    PageResponse<Role> pageResponse = roleService.list(RoleApiUtils.getPageRequest(page, limit), roleFilter);
+    PageRequest pageRequest = RolesApiUtils.getPageRequest(page, limit, sort, order);
+    PageResponse<Role> pageResponse = roleService.list(pageRequest, roleFilter);
     ResponseBuilder responseBuilder = Response.ok();
-    ResponseBuilder responseBuilderWithLinks = RoleApiUtils.addLinksHeader(responseBuilder,
+    ResponseBuilder responseBuilderWithLinks = RolesApiUtils.addLinksHeader(responseBuilder,
         format("/v1/orgs/%s/projects/%s/roles)", org, project), pageResponse.getContent().size(), page, limit);
     return responseBuilderWithLinks
         .entity(pageResponse.getContent()
                     .stream()
-                    .map(role -> RoleApiUtils.getRolesResponse(roleDTOMapper.toResponseDTO(role)))
+                    .map(role -> RolesApiUtils.getRolesResponse(roleDTOMapper.toResponseDTO(role)))
                     .collect(Collectors.toList()))
         .build();
   }
@@ -168,11 +172,11 @@ public class ProjectRolesApiImpl implements ProjectRolesApi {
     String scopeIdentifier = ScopeMapper.fromParams(harnessScopeParams).toString();
     RolesResponse response = Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
       RoleUpdateResult roleUpdateResult =
-          roleService.update(fromDTO(scopeIdentifier, RoleApiUtils.getRoleProjectDTO(body)));
+          roleService.update(fromDTO(scopeIdentifier, rolesApiUtils.getRoleProjectDTO(body)));
       RoleResponseDTO responseDTO = roleDTOMapper.toResponseDTO(roleUpdateResult.getUpdatedRole());
       outboxService.save(new RoleUpdateEvent(responseDTO.getScope().getAccountIdentifier(), responseDTO.getRole(),
           roleDTOMapper.toResponseDTO(roleUpdateResult.getOriginalRole()).getRole(), responseDTO.getScope()));
-      return RoleApiUtils.getRolesResponse(responseDTO);
+      return RolesApiUtils.getRolesResponse(responseDTO);
     }));
     return Response.ok().entity(response).build();
   }

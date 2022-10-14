@@ -147,8 +147,13 @@ public class WorkflowMigrationService extends NgMigrationService {
     Workflow workflow = (Workflow) entity;
     String entityId = workflow.getUuid();
     CgEntityId workflowEntityId = CgEntityId.builder().type(WORKFLOW).id(entityId).build();
-    CgEntityNode workflowNode =
-        CgEntityNode.builder().id(entityId).type(WORKFLOW).entityId(workflowEntityId).entity(workflow).build();
+    CgEntityNode workflowNode = CgEntityNode.builder()
+                                    .id(entityId)
+                                    .type(WORKFLOW)
+                                    .appId(workflow.getAppId())
+                                    .entityId(workflowEntityId)
+                                    .entity(workflow)
+                                    .build();
 
     Set<CgEntityId> children = new HashSet<>();
     if (EmptyPredicate.isNotEmpty(workflow.getServices())) {
@@ -248,7 +253,7 @@ public class WorkflowMigrationService extends NgMigrationService {
   public StageElementWrapperConfig getNgStage(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
       Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities) {
     Workflow workflow = (Workflow) entities.get(entityId).getEntity();
-    migratorExpressionUtils.render(workflow);
+    migratorExpressionUtils.render(workflow, inputDTO.getCustomExpressions());
     WorkflowHandler workflowHandler = workflowHandlerFactory.getWorkflowHandler(workflow);
     List<ExecutionWrapperConfig> steps = new ArrayList<>();
     List<ExecutionWrapperConfig> rollingSteps = new ArrayList<>();

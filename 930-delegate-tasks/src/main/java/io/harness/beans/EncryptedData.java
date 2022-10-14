@@ -15,6 +15,8 @@ import static io.harness.secretmanagerclient.NGMetadata.NGMetadataKeys;
 import static io.harness.security.encryption.EncryptionType.CUSTOM;
 import static io.harness.security.encryption.EncryptionType.LOCAL;
 
+import static software.wings.ngmigration.NGMigrationEntityType.SECRET;
+
 import io.harness.annotation.HarnessEntity;
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
@@ -40,6 +42,7 @@ import io.harness.security.encryption.EncryptedRecord;
 import io.harness.security.encryption.EncryptionType;
 import io.harness.validation.Update;
 
+import software.wings.ngmigration.CgBasicInfo;
 import software.wings.ngmigration.NGMigrationEntity;
 import software.wings.security.ScopedEntity;
 import software.wings.security.UsageRestrictions;
@@ -410,6 +413,12 @@ public class EncryptedData implements EncryptedRecord, PersistentEntity, UuidAwa
   @Override
   public String getMigrationEntityName() {
     return getName();
+  }
+
+  @JsonIgnore
+  @Override
+  public CgBasicInfo getCgBasicInfo() {
+    return CgBasicInfo.builder().id(getUuid()).name(getName()).type(SECRET).accountId(getAccountId()).build();
   }
 
   @UtilityClass

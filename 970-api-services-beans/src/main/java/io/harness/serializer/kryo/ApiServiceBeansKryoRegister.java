@@ -100,6 +100,7 @@ import io.harness.manifest.CustomManifestSource;
 import io.harness.manifest.CustomSourceConfig;
 import io.harness.manifest.CustomSourceFile;
 import io.harness.nexus.NexusRequest;
+import io.harness.ngtriggers.WebhookSecretData;
 import io.harness.pcf.model.CfCliVersion;
 import io.harness.pcf.model.ManifestType;
 import io.harness.provision.TfVarScriptRepositorySource;
@@ -470,5 +471,6 @@ public class ApiServiceBeansKryoRegister implements KryoRegistrar {
     kryo.register(AzureArtifactsProtocolMetadataData.class, 80309);
     kryo.register(AzureDevopsProjects.class, 80310);
     kryo.register(ArtifactoryImagePath.class, 80311);
+    kryo.register(WebhookSecretData.class, 80312);
   }
 }

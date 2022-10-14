@@ -117,7 +117,7 @@ public class YamlGitConfig implements EncryptableSetting, PersistentEntity, Uuid
   @NotEmpty private String entityId;
   @NotNull private EntityType entityType;
   @Transient private String entityName;
-  private long gitPollingIterator;
+  @FdIndex private long gitPollingIterator;
 
   @Override
   public SettingVariableTypes getSettingType() {

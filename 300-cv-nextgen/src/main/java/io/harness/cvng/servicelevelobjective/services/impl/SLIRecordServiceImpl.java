@@ -209,6 +209,14 @@ public class SLIRecordServiceImpl implements SLIRecordService {
         }
         if (!isCalculatingSLI && sliRecord.getSliVersion() != sliVersion) {
           isReCalculatingSLI = true;
+          return SLOGraphData.builder()
+              .errorBudgetBurndown(errorBudgetBurndown)
+              .errorBudgetRemaining(errorBudgetRemaining)
+              .sloPerformanceTrend(sliTread)
+              .isRecalculatingSLI(isReCalculatingSLI)
+              .isCalculatingSLI(isCalculatingSLI)
+              .errorBudgetRemainingPercentage(errorBudgetRemainingPercentage)
+              .build();
         }
         sliValue = sliMissingDataType.calculateSLIValue(
             goodCountFromStart, badCountFromStart, minutesFromStart, disabledMinutesFromStart);

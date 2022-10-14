@@ -17,6 +17,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import lombok.experimental.UtilityClass;
 
 public interface MultilineStringMixin {
@@ -36,6 +38,12 @@ public interface MultilineStringMixin {
       String classPath = testClassElement.getClassName().replace('.', '/') + ".java";
       String absolutePath = Project.moduleDirectory(clazz) + TEST_DIR + classPath;
 
+      // Handle sandboxed bazel path - remove path starting from /sandbox till execroot. This is because the source
+      // code is present outside the sandbox directory created by bazel.
+      if (!Files.exists(Paths.get(absolutePath)) && absolutePath.contains("/sandbox/")) {
+        absolutePath = absolutePath.substring(0, absolutePath.indexOf("/sandbox/"))
+            + absolutePath.substring(absolutePath.lastIndexOf("/execroot"));
+      }
       StringBuilder sb = new StringBuilder();
       try (InputStream in = new FileInputStream(new File(absolutePath));
            BufferedReader reader = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8))) {

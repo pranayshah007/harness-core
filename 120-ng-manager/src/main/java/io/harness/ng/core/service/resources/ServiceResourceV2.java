@@ -338,7 +338,10 @@ public class ServiceResourceV2 {
               "Specifies the sorting criteria of the list. Like sorting based on the last updated entity, alphabetical sorting in an ascending or descending order")
       @QueryParam("sort") List<String> sort,
       @QueryParam("type") ServiceDefinitionType type, @QueryParam("gitOpsEnabled") Boolean gitOpsEnabled,
+      @Parameter(description = "The Identifier of deployment template if infrastructure is of type custom deployment")
       @QueryParam("deploymentTemplateIdentifier") String deploymentTemplateIdentifier,
+      @Parameter(
+          description = "The version label of deployment template if infrastructure is of type custom deployment")
       @QueryParam("versionLabel") String versionLabel) {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgIdentifier, projectIdentifier),
         Resource.of(NGResourceType.SERVICE, null), SERVICE_VIEW_PERMISSION, "Unauthorized to list services");
@@ -397,7 +400,10 @@ public class ServiceResourceV2 {
               "Specifies the sorting criteria of the list. Like sorting based on the last updated entity, alphabetical sorting in an ascending or descending order")
       @QueryParam("sort") List<String> sort,
       @QueryParam("type") ServiceDefinitionType type, @QueryParam("gitOpsEnabled") Boolean gitOpsEnabled,
+      @Parameter(description = "The Identifier of deployment template if infrastructure is of type custom deployment")
       @QueryParam("deploymentTemplateIdentifier") String deploymentTemplateIdentifier,
+      @Parameter(
+          description = "The version label of deployment template if infrastructure is of type custom deployment")
       @QueryParam("versionLabel") String versionLabel) {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgIdentifier, projectIdentifier),
         Resource.of(PROJECT, projectIdentifier), VIEW_PROJECT_PERMISSION, "Unauthorized to list services");

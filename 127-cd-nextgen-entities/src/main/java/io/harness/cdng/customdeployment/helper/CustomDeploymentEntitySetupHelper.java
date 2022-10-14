@@ -20,7 +20,7 @@ import io.harness.eventsframework.api.Producer;
 import io.harness.eventsframework.producer.Message;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum;
-import io.harness.eventsframework.schemas.entity.IdentifierRefProtoDTO;
+import io.harness.eventsframework.schemas.entity.InfraDefinitionReferenceProtoDTO;
 import io.harness.eventsframework.schemas.entity.ScopeProtoEnum;
 import io.harness.eventsframework.schemas.entity.TemplateReferenceProtoDTO;
 import io.harness.eventsframework.schemas.entitysetupusage.EntitySetupUsageCreateV2DTO;
@@ -83,14 +83,13 @@ public class CustomDeploymentEntitySetupHelper {
     referredEntityTypeToReferredEntities.put(entityDetailProtoDTO.getType().name(), entityDetailProtoDTOS);
     EntityDetailProtoDTO referredByEntity =
         EntityDetailProtoDTO.newBuilder()
-            .setIdentifierRef(IdentifierRefProtoDTO.newBuilder()
-                                  .setIdentifier(StringValue.of(infraEntity.getIdentifier()))
-                                  .setAccountIdentifier(StringValue.of(infraEntity.getAccountId()))
-                                  .setOrgIdentifier(StringValue.of(infraEntity.getOrgIdentifier()))
-                                  .setProjectIdentifier(StringValue.of(infraEntity.getProjectIdentifier()))
-                                  .putMetadata("envId", infraEntity.getEnvIdentifier())
-                                  .putMetadata("CustomDeployment", "true")
-                                  .build())
+            .setInfraDefRef(InfraDefinitionReferenceProtoDTO.newBuilder()
+                                .setIdentifier(StringValue.of(infraEntity.getIdentifier()))
+                                .setAccountIdentifier(StringValue.of(infraEntity.getAccountId()))
+                                .setOrgIdentifier(StringValue.of(infraEntity.getOrgIdentifier()))
+                                .setProjectIdentifier(StringValue.of(infraEntity.getProjectIdentifier()))
+                                .setEnvIdentifier(StringValue.of(infraEntity.getEnvIdentifier()))
+                                .build())
             .setType(EntityTypeProtoEnum.INFRASTRUCTURE)
             .setName(infraEntity.getName())
             .build();
@@ -184,18 +183,17 @@ public class CustomDeploymentEntitySetupHelper {
     }
   }
   private EntityDetailProtoDTO getEntityProtoForDelete(@NotNull InfrastructureEntity infraEntity) {
-    IdentifierRefProtoDTO identifierRefProtoDTO =
-        IdentifierRefProtoDTO.newBuilder()
+    InfraDefinitionReferenceProtoDTO infraDefinitionReferenceProtoDTO =
+        InfraDefinitionReferenceProtoDTO.newBuilder()
             .setAccountIdentifier(StringValue.of(infraEntity.getAccountId()))
             .setOrgIdentifier(StringValue.of(infraEntity.getOrgIdentifier()))
             .setProjectIdentifier(StringValue.of(infraEntity.getProjectIdentifier()))
             .setIdentifier(StringValue.of(infraEntity.getIdentifier()))
-            .putMetadata("envId", infraEntity.getEnvIdentifier())
-            .putMetadata("CustomDeployment", "true")
+            .setEnvIdentifier(StringValue.of(infraEntity.getEnvIdentifier()))
             .build();
 
     return EntityDetailProtoDTO.newBuilder()
-        .setIdentifierRef(identifierRefProtoDTO)
+        .setInfraDefRef(infraDefinitionReferenceProtoDTO)
         .setType(EntityTypeProtoEnum.INFRASTRUCTURE)
         .setName(infraEntity.getName())
         .build();

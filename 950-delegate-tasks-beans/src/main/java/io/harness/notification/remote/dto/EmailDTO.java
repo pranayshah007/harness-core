@@ -8,23 +8,19 @@
 package io.harness.notification.remote.dto;
 
 import com.google.inject.Inject;
-import java.util.List;
+import java.util.Set;
 import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 @Getter
-@Setter
 @Builder
-@NoArgsConstructor
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 public class EmailDTO {
   @NotNull String accountId;
-  @NotNull List<String> recipients;
-  @NotNull List<String> ccRecipients;
+  @NotNull Set<String> ccRecipients;
+  @NotNull Set<String> toRecipients;
   @NotNull String notificationId;
   @NotNull String subject;
   @NotNull String body;

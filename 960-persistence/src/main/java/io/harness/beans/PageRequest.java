@@ -431,6 +431,34 @@ public class PageRequest<T> {
     return clone;
   }
 
+  public PageRequest<T> deepCopy() {
+    List<SearchFilter> filtersCopy = new ArrayList<>();
+    filtersCopy.addAll(this.filters);
+    List<String> fieldsExcludedsCopy = new ArrayList<>();
+    fieldsExcludedsCopy.addAll(this.fieldsExcluded);
+    List<String> fieldsIncludedCopy = new ArrayList<>();
+    fieldsIncludedCopy.addAll(this.fieldsIncluded);
+    List<SortOrder> ordersCopy = new ArrayList<>();
+    ordersCopy.addAll(this.orders);
+    List<PageRequest.Option> optionsCopy = new ArrayList<>();
+    ordersCopy.addAll(this.orders);
+
+    PageRequest<T> clone = new PageRequest<>();
+    clone.persistentClass = this.persistentClass;
+    clone.offset = this.offset;
+    clone.start = this.start;
+    clone.limit = this.limit;
+    clone.filters = filtersCopy;
+    clone.orders = orders;
+    clone.fieldsExcluded = fieldsExcludedsCopy;
+    clone.fieldsIncluded = fieldsIncludedCopy;
+    clone.uriInfo = this.uriInfo;
+    clone.requestContext = this.requestContext;
+    clone.isOr = this.isOr;
+    clone.options = optionsCopy;
+    return clone;
+  }
+
   /* (non-Javadoc)
    * @see java.lang.Object#equals(java.lang.Object)
    */

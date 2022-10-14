@@ -318,7 +318,7 @@ public class InstanceServiceTest extends WingsBaseTest {
           instanceService.save(buildInstance(UUIDGenerator.generateUuid(), true, 9999999L, true)));
       a += 2;
     }
-    final boolean b = instanceService.purgeDeletedUpTo(Instant.ofEpochMilli(12346 + a));
+    final boolean b = instanceService.purgeDeletedUpTo(Instant.ofEpochMilli(12346 + a), account);
     assertThat(b).isTrue();
     final Instance instance = instanceService.get(instancesToBeDeleted.get(0).getUuid(), true);
     assertThat(instance).isNull();

@@ -142,8 +142,8 @@ public class ChangeTracker {
   }
 
   private void openChangeStreams(Set<ChangeTrackingInfo<?>> changeTrackingInfos) {
-    executorService =
-        Executors.newFixedThreadPool(8, new ThreadFactoryBuilder().setNameFormat("change-tracker-%d").build());
+    executorService = Executors.newFixedThreadPool(
+        changeTrackingInfos.size(), new ThreadFactoryBuilder().setNameFormat("change-tracker-%d").build());
     createChangeStreamTasks(changeTrackingInfos);
     changeTrackingTasksFuture = new HashSet<>();
 

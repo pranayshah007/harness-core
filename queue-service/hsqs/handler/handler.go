@@ -20,21 +20,22 @@ func NewHandler(s store.Store) *Handler {
 }
 
 func (h *Handler) Register(g *echo.Group) {
-	g.POST("/queue", h.handleQueue())
+	g.POST("/queue", h.handleEnqueue())
 	g.POST("/dequeue", h.handleDequeue())
 	g.POST("/ack", h.ack())
 	g.POST("/unack", h.unAck())
 }
 
-// handleQueue godoc
+// handleEnqueue godoc
 // @Summary     Enqueue
 // @Description Enqueue the request
 // @Accept      json
 // @Produce     json
 // @Param       request body store.EnqueueRequest true "query params"
+// @Param 		Authorization header string true "Authorization"
 // @Success     200 {object} store.EnqueueResponse
 // @Router      /v1/queue [POST]
-func (h *Handler) handleQueue() echo.HandlerFunc {
+func (h *Handler) handleEnqueue() echo.HandlerFunc {
 	return func(c echo.Context) error {
 
 		// bind request body to enqueue request
@@ -58,6 +59,7 @@ func (h *Handler) handleQueue() echo.HandlerFunc {
 // @Accept      json
 // @Produce     json
 // @Param       request body store.DequeueRequest true "query params"
+// @Param 		Authorization header string true "Authorization"
 // @Success     200 {object} store.DequeueResponse
 // @Router      /v1/dequeue [POST]
 func (h *Handler) handleDequeue() echo.HandlerFunc {
@@ -83,6 +85,7 @@ func (h *Handler) handleDequeue() echo.HandlerFunc {
 // @Accept      json
 // @Produce     json
 // @Param       request body store.AckRequest true "query params"
+// @Param 		Authorization header string true "Authorization"
 // @Success     200 {object} store.AckResponse
 // @Router      /v1/ack [POST]
 func (h *Handler) ack() echo.HandlerFunc {
@@ -108,6 +111,7 @@ func (h *Handler) ack() echo.HandlerFunc {
 // @Accept      json
 // @Produce     json
 // @Param       request body store.UnAckRequest true "query params"
+// @Param 		Authorization header string true "Authorization"
 // @Success     200 {object} store.UnAckResponse
 // @Router      /v1/unack [POST]
 func (h *Handler) unAck() echo.HandlerFunc {

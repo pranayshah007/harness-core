@@ -10,6 +10,7 @@ package software.wings.ngmigration;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -23,6 +24,7 @@ import lombok.NoArgsConstructor;
 public class CgBasicInfo {
   private String id;
   private String appId;
-  private String accountId;
+  @JsonIgnore private String accountId;
   private NGMigrationEntityType type;
+  private String name;
 }

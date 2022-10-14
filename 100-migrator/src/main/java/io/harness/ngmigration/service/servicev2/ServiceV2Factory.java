@@ -16,6 +16,8 @@ import software.wings.beans.Service;
 @OwnedBy(HarnessTeam.CDC)
 public class ServiceV2Factory {
   private static final ServiceV2Mapper k8sServiceV2Mapper = new K8sServiceV2Mapper();
+  private static final ServiceV2Mapper sshServiceV2Mapper = new SshServiceV2Mapper();
+  private static final ServiceV2Mapper winrmServiceV2Mapper = new WinrmServiceV2Mapper();
   private static final ServiceV2Mapper nativeHelmServiceV2Mapper = new NativeHelmServiceV2Mapper();
   private static final ServiceV2Mapper unsupportedServiceV2Mapper = new UnsupportedServiceV2Mapper();
 
@@ -25,6 +27,12 @@ public class ServiceV2Factory {
     }
     if (DeploymentType.HELM.equals(service.getDeploymentType())) {
       return nativeHelmServiceV2Mapper;
+    }
+    if (DeploymentType.SSH.equals(service.getDeploymentType())) {
+      return sshServiceV2Mapper;
+    }
+    if (DeploymentType.WINRM.equals(service.getDeploymentType())) {
+      return winrmServiceV2Mapper;
     }
     return unsupportedServiceV2Mapper;
   }

@@ -279,9 +279,15 @@ public class EnvironmentRefreshHelper {
     YamlNode serviceNodeInResolvedTemplatesYaml =
         YamlNodeUtils.goToPathUsingFqn(stageYamlNodeInResolvedTemplatesYaml, "spec.service");
     if (serviceNodeInResolvedTemplatesYaml == null) {
-      log.warn("Env node in Resolved templates yaml is null");
+      log.warn("service node in Resolved templates yaml is null");
       return;
     }
+
+    // ex. use from stage
+    if (serviceNodeInResolvedTemplatesYaml.getField(YamlTypes.SERVICE_REF) == null) {
+      return;
+    }
+
     JsonNode serviceRefInResolvedTemplatesYaml =
         serviceNodeInResolvedTemplatesYaml.getField(YamlTypes.SERVICE_REF).getNode().getCurrJsonNode();
     refreshServiceOverrideInputs(
@@ -528,12 +534,21 @@ public class EnvironmentRefreshHelper {
 
   private YamlNode getCorrespondingStageNodeInResolvedTemplatesYaml(
       YamlNode entityNode, YamlNode resolvedTemplatesYamlNode) {
+    if (isStageTemplate(resolvedTemplatesYamlNode)) {
+      return new YamlNode(resolvedTemplatesYamlNode.getCurrJsonNode().get(YamlTypes.TEMPLATE).get(YamlTypes.SPEC));
+    }
     String stageIdentifier = getStageIdentifierForGivenEnvironmentField(entityNode);
     if (stageIdentifier == null) {
       log.warn("Stage not found, returning null");
       return null;
     }
     return findStageWithGivenIdentifier(resolvedTemplatesYamlNode, stageIdentifier);
+  }
+
+  private boolean isStageTemplate(YamlNode resolvedTemplatesYamlNode) {
+    return resolvedTemplatesYamlNode != null && resolvedTemplatesYamlNode.getTemplate() != null
+        && resolvedTemplatesYamlNode.getTemplate().get("type") != null
+        && "Stage".equals(resolvedTemplatesYamlNode.getTemplate().get("type").asText());
   }
 
   boolean isNodeNotNullAndNotHaveRuntimeValue(JsonNode jsonNode) {
@@ -552,7 +567,7 @@ public class EnvironmentRefreshHelper {
     return getStageIdentifierForGivenEnvironmentField(entityNode.getParentNode());
   }
 
-  public YamlNode findStageWithGivenIdentifier(YamlNode resolvedTemplatesYamlNode, String stageIdentifier) {
+  private YamlNode findStageWithGivenIdentifier(YamlNode resolvedTemplatesYamlNode, String stageIdentifier) {
     if (resolvedTemplatesYamlNode == null) {
       return null;
     }

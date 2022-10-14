@@ -22,5 +22,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class MigrationImportSummaryDTO {
+  private boolean success;
   private List<ImportError> errors;
 }

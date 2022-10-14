@@ -39,4 +39,12 @@ public class OrchestrationEventLogRepositoryCustomImpl implements OrchestrationE
     Criteria criteria = Criteria.where(OrchestrationEventLogKeys.planExecutionId).is(planExecutionId);
     mongoTemplate.remove(new Query(criteria), OrchestrationEventLog.class);
   }
+
+  @Override
+  public boolean checkIfAnyUnprocessedEvents(String planExecutionId, long lastUpdatedAt) {
+    Criteria criteria = Criteria.where(OrchestrationEventLogKeys.planExecutionId).is(planExecutionId);
+    criteria.andOperator(Criteria.where(OrchestrationEventLogKeys.createdAt).gt(lastUpdatedAt));
+    Query query = new Query(criteria);
+    return mongoTemplate.exists(query, OrchestrationEventLog.class);
+  }
 }

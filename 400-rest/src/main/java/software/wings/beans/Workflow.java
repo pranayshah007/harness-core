@@ -16,6 +16,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static software.wings.beans.Workflow.WorkflowBuilder.aWorkflow;
+import static software.wings.ngmigration.NGMigrationEntityType.WORKFLOW;
 
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
@@ -41,6 +42,7 @@ import software.wings.api.DeploymentType;
 import software.wings.beans.entityinterface.ApplicationAccess;
 import software.wings.beans.entityinterface.KeywordsAware;
 import software.wings.beans.entityinterface.TagAware;
+import software.wings.ngmigration.CgBasicInfo;
 import software.wings.ngmigration.NGMigrationEntity;
 import software.wings.service.impl.workflow.WorkflowServiceTemplateHelper;
 
@@ -425,6 +427,18 @@ public class Workflow
   @Override
   public String getMigrationEntityName() {
     return getName();
+  }
+
+  @JsonIgnore
+  @Override
+  public CgBasicInfo getCgBasicInfo() {
+    return CgBasicInfo.builder()
+        .id(getUuid())
+        .name(getName())
+        .type(WORKFLOW)
+        .appId(getAppId())
+        .accountId(getAccountId())
+        .build();
   }
 
   public static final class WorkflowBuilder {

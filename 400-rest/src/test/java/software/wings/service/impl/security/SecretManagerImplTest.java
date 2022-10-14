@@ -12,6 +12,7 @@ import static io.harness.rule.OwnerRule.ANKIT;
 import static io.harness.rule.OwnerRule.BOJANA;
 import static io.harness.rule.OwnerRule.DEEPAK;
 import static io.harness.rule.OwnerRule.LUCAS_SALES;
+import static io.harness.rule.OwnerRule.NISHANT;
 import static io.harness.rule.OwnerRule.UTKARSH;
 import static io.harness.rule.OwnerRule.VIKAS;
 import static io.harness.security.encryption.EncryptionType.GCP_KMS;
@@ -23,6 +24,7 @@ import static software.wings.service.impl.security.SecretManagerImpl.ENCRYPTION_
 import static software.wings.utils.WingsTestConstants.ENV_ID;
 import static software.wings.utils.WingsTestConstants.SERVICE_VARIABLE_NAME;
 
+import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
@@ -41,11 +43,13 @@ import io.harness.beans.PageResponse;
 import io.harness.beans.SearchFilter;
 import io.harness.beans.SecretFile;
 import io.harness.beans.SecretText;
+import io.harness.beans.SecretUsageLog;
 import io.harness.category.element.UnitTests;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.rule.Owner;
 import io.harness.secrets.SecretsRBACService;
 import io.harness.secrets.setupusage.SecretSetupUsage;
+import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.EncryptionType;
 
 import software.wings.WingsBaseTest;
@@ -58,6 +62,7 @@ import software.wings.beans.ServiceTemplate;
 import software.wings.beans.ServiceVariable;
 import software.wings.beans.ServiceVariable.ServiceVariableKeys;
 import software.wings.beans.User;
+import software.wings.beans.WorkflowExecution;
 import software.wings.dl.WingsPersistence;
 import software.wings.expression.EncryptedDataDetails;
 import software.wings.security.EnvFilter;
@@ -83,6 +88,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import javax.cache.Cache;
 import org.apache.commons.lang3.reflect.FieldUtils;
@@ -555,5 +561,81 @@ public class SecretManagerImplTest extends WingsBaseTest {
 
     secretManager.deleteSecret(account.getUuid(), hiddenFileRecordId, new HashMap<>(), false);
     secretManager.deleteSecret(account.getUuid(), recordId, new HashMap<>(), false);
+  }
+
+  @Test
+  @Owner(developers = NISHANT)
+  @Category(UnitTests.class)
+  public void testEncryptedDataDetails() throws IllegalAccessException {
+    String accountId = randomAlphabetic(10);
+    String fieldName = randomAlphabetic(10);
+    String secret = randomAlphabetic(10);
+    SecretText secretText =
+        SecretText.builder().name(secret).kmsId(accountId).value("value").scopedToAccount(true).build();
+    String encryptedDataId = secretManager.saveSecretText(accountId, secretText, true);
+    String workflowExecutionId = wingsPersistence.insert(WorkflowExecution.builder().accountId(accountId).build());
+    Optional<EncryptedDataDetail> encryptedDataDetails =
+        secretManager.encryptedDataDetails(accountId, fieldName, encryptedDataId, workflowExecutionId);
+    assertEncryptedDataDetails(accountId, encryptedDataId, encryptedDataDetails, 1);
+  }
+
+  @Test
+  @Owner(developers = NISHANT)
+  @Category(UnitTests.class)
+  public void testEncryptedDataDetailsWithUpdateSecretUsageAsFalse() throws IllegalAccessException {
+    String accountId = randomAlphabetic(10);
+    String fieldName = randomAlphabetic(10);
+    String secret = randomAlphabetic(10);
+    SecretText secretText =
+        SecretText.builder().name(secret).kmsId(accountId).value("value").scopedToAccount(true).build();
+    String encryptedDataId = secretManager.saveSecretText(accountId, secretText, true);
+    String workflowExecutionId = wingsPersistence.insert(WorkflowExecution.builder().accountId(accountId).build());
+    Optional<EncryptedDataDetail> encryptedDataDetails =
+        secretManager.encryptedDataDetails(accountId, fieldName, encryptedDataId, workflowExecutionId, false);
+    assertEncryptedDataDetails(accountId, encryptedDataId, encryptedDataDetails, 0);
+  }
+
+  @Test
+  @Owner(developers = NISHANT)
+  @Category(UnitTests.class)
+  public void testGetEncryptedDataDetails() throws IllegalAccessException {
+    String accountId = randomAlphabetic(10);
+    String fieldName = randomAlphabetic(10);
+    String secret = randomAlphabetic(10);
+    SecretText secretText =
+        SecretText.builder().name(secret).kmsId(accountId).value("value").scopedToAccount(true).build();
+    String encryptedDataId = secretManager.saveSecretText(accountId, secretText, true);
+    EncryptedData encryptedData = secretManager.getSecretById(accountId, encryptedDataId);
+    String workflowExecutionId = wingsPersistence.insert(WorkflowExecution.builder().accountId(accountId).build());
+    Optional<EncryptedDataDetail> encryptedDataDetails =
+        secretManager.getEncryptedDataDetails(accountId, fieldName, encryptedData, workflowExecutionId);
+    assertEncryptedDataDetails(accountId, encryptedDataId, encryptedDataDetails, 1);
+  }
+
+  @Test
+  @Owner(developers = NISHANT)
+  @Category(UnitTests.class)
+  public void testGetEncryptedDataDetailsWithUpdateSecretUsageAsFalse() throws IllegalAccessException {
+    String accountId = randomAlphabetic(10);
+    String fieldName = randomAlphabetic(10);
+    String secret = randomAlphabetic(10);
+    SecretText secretText =
+        SecretText.builder().name(secret).kmsId(accountId).value("value").scopedToAccount(true).build();
+    String encryptedDataId = secretManager.saveSecretText(accountId, secretText, true);
+    EncryptedData encryptedData = secretManager.getSecretById(accountId, encryptedDataId);
+    String workflowExecutionId = wingsPersistence.insert(WorkflowExecution.builder().accountId(accountId).build());
+    Optional<EncryptedDataDetail> encryptedDataDetails =
+        secretManager.getEncryptedDataDetails(accountId, fieldName, encryptedData, workflowExecutionId, false);
+    assertEncryptedDataDetails(accountId, encryptedDataId, encryptedDataDetails, 0);
+  }
+
+  private void assertEncryptedDataDetails(String accountId, String encryptedDataId,
+      Optional<EncryptedDataDetail> encryptedDataDetails, int expectedUsageCount) throws IllegalAccessException {
+    PageRequest<SecretUsageLog> pageRequest = new PageRequest<>();
+    pageRequest.setPageSize(10);
+    PageResponse<SecretUsageLog> secretUsage =
+        secretManager.getUsageLogs(pageRequest, accountId, encryptedDataId, SettingVariableTypes.SECRET_TEXT);
+    assertThat(encryptedDataDetails.isPresent()).isTrue();
+    assertThat(secretUsage.getTotal()).isEqualTo(expectedUsageCount);
   }
 }

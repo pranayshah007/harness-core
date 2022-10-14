@@ -16,6 +16,7 @@ import io.harness.cdng.artifact.steps.ArtifactStepParameters;
 import io.harness.cdng.azure.webapp.ApplicationSettingsParameters;
 import io.harness.cdng.azure.webapp.ConnectionStringsParameters;
 import io.harness.cdng.azure.webapp.StartupCommandParameters;
+import io.harness.cdng.chaos.ChaosStepNotifyData;
 import io.harness.cdng.configfile.steps.ConfigFileStepParameters;
 import io.harness.cdng.configfile.steps.ConfigFilesOutcome;
 import io.harness.cdng.customDeployment.FetchInstanceScriptStepInfo;
@@ -189,5 +190,6 @@ public class NGKryoRegistrar implements KryoRegistrar {
 
     kryo.register(FetchInstanceScriptStepInfo.class, 12614);
     kryo.register(FetchInstanceScriptStepParameters.class, 12615);
+    kryo.register(ChaosStepNotifyData.class, 12616);
   }
 }

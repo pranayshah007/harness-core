@@ -57,7 +57,6 @@ import io.harness.ngtriggers.utils.PollingSubscriptionHelper;
 import io.harness.ngtriggers.validations.TriggerValidationHandler;
 import io.harness.outbox.api.OutboxService;
 import io.harness.pipeline.remote.PipelineServiceClient;
-import io.harness.pms.PmsFeatureFlagService;
 import io.harness.pms.inputset.MergeInputSetResponseDTOPMS;
 import io.harness.polling.client.PollingResourceClient;
 import io.harness.polling.contracts.GitPollingPayload;
@@ -66,6 +65,7 @@ import io.harness.polling.contracts.PollingPayloadData;
 import io.harness.repositories.spring.NGTriggerRepository;
 import io.harness.rule.Owner;
 import io.harness.serializer.KryoSerializer;
+import io.harness.utils.PmsFeatureFlagService;
 import io.harness.utils.YamlPipelineUtils;
 
 import com.google.common.io.Resources;

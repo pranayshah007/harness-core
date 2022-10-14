@@ -42,6 +42,8 @@ import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.envGroup.beans.EnvironmentGroupEntity;
+import io.harness.cdng.envGroup.services.EnvironmentGroupService;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
@@ -56,8 +58,8 @@ import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.beans.Environment.EnvironmentKeys;
 import io.harness.ng.core.environment.beans.EnvironmentFilterPropertiesDTO;
+import io.harness.ng.core.environment.beans.EnvironmentInputSetYamlAndServiceOverridesMetadataDTO;
 import io.harness.ng.core.environment.beans.EnvironmentInputsetYamlAndServiceOverridesMetadataInput;
-import io.harness.ng.core.environment.beans.EnvironmentInputsetYamlandServiceOverridesMetadataDTO;
 import io.harness.ng.core.environment.beans.EnvironmentType;
 import io.harness.ng.core.environment.dto.EnvironmentRequestDTO;
 import io.harness.ng.core.environment.dto.EnvironmentResponse;
@@ -167,6 +169,7 @@ public class EnvironmentResourceV2 {
   private final ServiceEntityValidationHelper serviceEntityValidationHelper;
   private final EnvironmentFilterHelper environmentFilterHelper;
   private final CDFeatureFlagHelper cdFeatureFlagHelper;
+  private final EnvironmentGroupService environmentGroupService;
   public static final String ENVIRONMENT_YAML_METADATA_INPUT_PARAM_MESSAGE =
       "Lists of Environment Identifiers and service identifiers for the entities";
 
@@ -447,12 +450,19 @@ public class EnvironmentResourceV2 {
       @Parameter(description = "The word to be searched and included in the list response") @QueryParam(
           NGResourceFilterConstants.SEARCH_TERM_KEY) String searchTerm,
       @Parameter(description = "List of EnvironmentIds") @QueryParam("envIdentifiers") List<String> envIdentifiers,
+      @Parameter(description = "Environment group identifier") @QueryParam(
+          "envGroupIdentifier") String envGroupIdentifier,
       @Parameter(
           description =
               "Specifies sorting criteria of the list. Like sorting based on the last updated entity, alphabetical sorting in an ascending or descending order")
       @QueryParam("sort") List<String> sort) {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgIdentifier, projectIdentifier),
         Resource.of(PROJECT, projectIdentifier), VIEW_PROJECT_PERMISSION, "Unauthorized to list environments");
+    if (isEmpty(envIdentifiers) && isNotEmpty(envGroupIdentifier)) {
+      Optional<EnvironmentGroupEntity> environmentGroupEntity =
+          environmentGroupService.get(accountId, orgIdentifier, projectIdentifier, envGroupIdentifier, false);
+      environmentGroupEntity.ifPresent(groupEntity -> envIdentifiers.addAll(groupEntity.getEnvIdentifiers()));
+    }
     Criteria criteria = CoreCriteriaUtils.createCriteriaForGetList(accountId, orgIdentifier, projectIdentifier, false);
 
     if (isNotEmpty(envIdentifiers)) {
@@ -521,7 +531,7 @@ public class EnvironmentResourceV2 {
   @ApiOperation(value = "This api returns environments runtime input YAML and serviceOverrides Yaml",
       nickname = "getEnvironmentsInputYamlAndServiceOverrides")
   @Hidden
-  public ResponseDTO<EnvironmentInputsetYamlandServiceOverridesMetadataDTO>
+  public ResponseDTO<EnvironmentInputSetYamlAndServiceOverridesMetadataDTO>
   getEnvironmentsInputYamlAndServiceOverrides(
       @Parameter(description = ENVIRONMENT_YAML_METADATA_INPUT_PARAM_MESSAGE) @Valid
       @NotNull EnvironmentInputsetYamlAndServiceOverridesMetadataInput environmentYamlMetadata,
@@ -531,10 +541,18 @@ public class EnvironmentResourceV2 {
           NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
       @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier) {
-    EnvironmentInputsetYamlandServiceOverridesMetadataDTO environmentInputsetYamlandServiceOverridesMetadataDTO =
+    List<String> envIdentifiers = new ArrayList<>();
+    if (isNotEmpty(environmentYamlMetadata.getEnvIdentifiers())) {
+      envIdentifiers.addAll(environmentYamlMetadata.getEnvIdentifiers());
+    }
+    if (isNotEmpty(environmentYamlMetadata.getEnvGroupIdentifier())) {
+      Optional<EnvironmentGroupEntity> environmentGroupEntity = environmentGroupService.get(
+          accountId, orgIdentifier, projectIdentifier, environmentYamlMetadata.getEnvGroupIdentifier(), false);
+      environmentGroupEntity.ifPresent(groupEntity -> envIdentifiers.addAll(groupEntity.getEnvIdentifiers()));
+    }
+    EnvironmentInputSetYamlAndServiceOverridesMetadataDTO environmentInputsetYamlandServiceOverridesMetadataDTO =
         environmentService.getEnvironmentsInputYamlAndServiceOverridesMetadata(accountId, orgIdentifier,
-            projectIdentifier, environmentYamlMetadata.getEnvIdentifiers(),
-            environmentYamlMetadata.getServiceIdentifiers());
+            projectIdentifier, envIdentifiers, environmentYamlMetadata.getServiceIdentifiers());
 
     return ResponseDTO.newResponse(environmentInputsetYamlandServiceOverridesMetadataDTO);
   }

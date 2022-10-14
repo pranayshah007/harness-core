@@ -7,6 +7,8 @@
 
 package software.wings.search.entities.environment;
 
+import io.harness.event.reconciliation.service.EnvironmentEntityReconServiceImpl;
+import io.harness.event.reconciliation.service.LookerEntityReconService;
 import io.harness.persistence.PersistentEntity;
 
 import software.wings.beans.Environment;
@@ -19,6 +21,7 @@ import java.util.Set;
 
 public class EnvironmentTimeScaleEntity implements TimeScaleEntity<Environment> {
   @Inject private EnvironmentTimescaleChangeHandler environmentTimescaleChangeHandler;
+  @Inject private EnvironmentEntityReconServiceImpl environmentEntityReconService;
   @Inject private MigrateEnvironmentsToTimeScaleDB migrateEnvironmentsToTimeScaleDB;
 
   public static final Class<Environment> SOURCE_ENTITY_CLASS = Environment.class;
@@ -29,8 +32,18 @@ public class EnvironmentTimeScaleEntity implements TimeScaleEntity<Environment> 
   }
 
   @Override
+  public String getMigrationClassName() {
+    return migrateEnvironmentsToTimeScaleDB.getTimescaleDBClass();
+  }
+
+  @Override
   public ChangeHandler getChangeHandler() {
     return environmentTimescaleChangeHandler;
+  }
+
+  @Override
+  public LookerEntityReconService getReconService() {
+    return environmentEntityReconService;
   }
 
   @Override
@@ -43,5 +56,15 @@ public class EnvironmentTimeScaleEntity implements TimeScaleEntity<Environment> 
   @Override
   public boolean runMigration(String accountId) {
     return migrateEnvironmentsToTimeScaleDB.runTimeScaleMigration(accountId);
+  }
+
+  @Override
+  public void savetoTimescale(Environment entity) {
+    migrateEnvironmentsToTimeScaleDB.saveToTimeScale(entity);
+  }
+
+  @Override
+  public void deleteFromTimescale(String id) {
+    migrateEnvironmentsToTimeScaleDB.deleteFromTimescale(id);
   }
 }

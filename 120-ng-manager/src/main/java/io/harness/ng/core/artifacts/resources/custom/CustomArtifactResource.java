@@ -69,7 +69,7 @@ public class CustomArtifactResource {
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
       @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.PIPELINE_KEY) String pipelineIdentifier,
+      @QueryParam(NGCommonEntityConstants.PIPELINE_KEY) String pipelineIdentifier,
       @NotNull @RequestBody(required = true, description = "Shell Script to fetch builds")
       CustomScriptInfo customScriptInfo, @NotNull @QueryParam("versionPath") String versionPath,
       @NotNull @QueryParam("arrayPath") String arrayPath, @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo,

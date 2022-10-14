@@ -7,8 +7,12 @@
 
 package io.harness.utils;
 
+import java.util.Map;
+import java.util.Objects;
 import lombok.Builder;
 import lombok.Data;
+import org.json.JSONObject;
+import org.yaml.snakeyaml.Yaml;
 
 @Data
 @Builder
@@ -17,4 +21,27 @@ public class InvalidResourceData {
   String property;
   Object replacementValue;
   int expectedResponseCode;
+  String expectedErrorMessage;
+
+  public static String replace(String text, InvalidResourceData invalidResourceData) {
+    Yaml yaml = new Yaml();
+    Map<String, Object> map = yaml.load(text);
+    JSONObject jsonObject = new JSONObject(map);
+    JSONObject iteratorObject = jsonObject;
+    if (Objects.nonNull(invalidResourceData.getPath())) {
+      String[] path = invalidResourceData.getPath().split("\\\\");
+      for (String value : path) {
+        JSONObject dataObject = iteratorObject.optJSONObject(value);
+        if (Objects.nonNull(dataObject)) {
+          iteratorObject = iteratorObject.getJSONObject(value);
+        } else {
+          iteratorObject = iteratorObject.getJSONArray(value).getJSONObject(0);
+        }
+      }
+    }
+    iteratorObject.remove(invalidResourceData.getProperty());
+    iteratorObject.put(invalidResourceData.getProperty(), invalidResourceData.getReplacementValue());
+
+    return jsonObject.toString();
+  }
 }

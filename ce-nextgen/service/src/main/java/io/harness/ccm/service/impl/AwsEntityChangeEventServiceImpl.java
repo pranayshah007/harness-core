@@ -110,26 +110,7 @@ public class AwsEntityChangeEventServiceImpl implements AwsEntityChangeEventServ
               configuration.getGcpConfig().getGcpAwsConnectorCrudPubSubTopic(),
               bigQueryService.getCredentials(GOOGLE_CREDENTIALS_PATH));
         }
-        log.info("CEAwsConnectorDTO: {}", ceAwsConnectorDTO);
-        List<CECloudAccount> awsAccounts = new ArrayList<>();
-        try {
-          awsAccounts = awsOrganizationHelperService.getAWSAccounts(
-              accountIdentifier, identifier, ceAwsConnectorDTO, awsConfig.getAccessKey(), awsConfig.getSecretKey());
-          log.info("Number of AWS Accounts: {}, Not Processing Create AWS Account Metadata", awsAccounts.size());
-        } catch (AWSOrganizationsNotInUseException ex) {
-          log.info("AWSOrganizationsNotInUseException for AWS Connector: {}", ceAwsConnectorDTO.getAwsAccountId(), ex);
-        } catch (AccessDeniedException accessDeniedException) {
-          log.info("AccessDeniedException for AWS Connector: {}, Not Processing Create AWS Account Metadata",
-              ceAwsConnectorDTO.getAwsAccountId(), accessDeniedException);
-        } catch (Exception ex) {
-          log.info("Exception for AWS Connector:, {}, Not Processing Create AWS Account Metadata",
-              ceAwsConnectorDTO.getAwsAccountId(), ex);
-        }
-        for (CECloudAccount account : awsAccounts) {
-          log.info("Inserting CECloudAccount: {}", account);
-          cloudAccountDao.create(account);
-        }
-
+        updateCECloudAccountMongoCollection(accountIdentifier, identifier, ceAwsConnectorDTO, awsConfig);
         break;
       case UPDATE_ACTION:
         ceAwsConnectorDTO =
@@ -156,6 +137,7 @@ public class AwsEntityChangeEventServiceImpl implements AwsEntityChangeEventServ
               configuration.getGcpConfig().getGcpAwsConnectorCrudPubSubTopic(),
               bigQueryService.getCredentials(GOOGLE_CREDENTIALS_PATH));
         }
+        updateCECloudAccountMongoCollection(accountIdentifier, identifier, ceAwsConnectorDTO, awsConfig);
         break;
       case DELETE_ACTION:
         lightwingAutoCUDDC(DELETE_ACTION, accountIdentifier, null);
@@ -169,6 +151,30 @@ public class AwsEntityChangeEventServiceImpl implements AwsEntityChangeEventServ
         log.info("Not processing AWS Event, action: {}, entityChangeDTO: {}", action, entityChangeDTO);
     }
     return true;
+  }
+
+  private void updateCECloudAccountMongoCollection(
+      String accountIdentifier, String identifier, CEAwsConnectorDTO ceAwsConnectorDTO, AwsConfig awsConfig) {
+    // fetch AWS accounts under organization and upsert these account details in ceCloudAccount collection in mongo
+    log.info("CEAwsConnectorDTO: {}", ceAwsConnectorDTO);
+    List<CECloudAccount> awsAccounts = new ArrayList<>();
+    try {
+      awsAccounts = awsOrganizationHelperService.getAWSAccounts(
+          accountIdentifier, identifier, ceAwsConnectorDTO, awsConfig.getAccessKey(), awsConfig.getSecretKey());
+      log.info("Number of AWS Accounts: {}, Not Processing Create AWS Account Metadata", awsAccounts.size());
+    } catch (AWSOrganizationsNotInUseException ex) {
+      log.info("AWSOrganizationsNotInUseException for AWS Connector: {}", ceAwsConnectorDTO.getAwsAccountId(), ex);
+    } catch (AccessDeniedException accessDeniedException) {
+      log.info("AccessDeniedException for AWS Connector: {}, Not Processing Create AWS Account Metadata",
+          ceAwsConnectorDTO.getAwsAccountId(), accessDeniedException);
+    } catch (Exception ex) {
+      log.info("Exception for AWS Connector:, {}, Not Processing Create AWS Account Metadata",
+          ceAwsConnectorDTO.getAwsAccountId(), ex);
+    }
+    for (CECloudAccount account : awsAccounts) {
+      log.info("Upserting CECloudAccount: {}", account);
+      log.info("New UUID: {}", cloudAccountDao.upsert(account));
+    }
   }
 
   private void updateEventData(String action, String identifier, String accountIdentifier,
