@@ -113,6 +113,7 @@ import net.jodah.failsafe.RetryPolicy;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.message.BasicNameValuePair;
+import org.bson.types.ObjectId;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -252,8 +253,8 @@ public class InviteServiceImpl implements InviteService {
 
   @Override
   public Optional<Invite> getInvite(String inviteId, boolean allowDeleted) {
-    return allowDeleted ? inviteRepository.findById(inviteId)
-                        : inviteRepository.findFirstByIdAndDeleted(inviteId, FALSE);
+    return allowDeleted ? inviteRepository.findById(new ObjectId(inviteId))
+                        : inviteRepository.findFirstByIdAndDeleted(new ObjectId(inviteId), FALSE);
   }
 
   @Override
