@@ -537,15 +537,15 @@ public class InviteServiceImpl implements InviteService {
     checkUserLimit(invite.getAccountIdentifier(), invite.getEmail());
     Invite savedInvite = inviteRepository.save(invite);
     String accountId = invite.getAccountIdentifier();
+    Optional<Invite> dbInvite = inviteRepository.findById(new ObjectId(savedInvite.getId()));
+    if (!dbInvite.isPresent()) {
+      log.error("Invite is not saved to database yet");
+    } else {
+      log.info("Invite has been saved to db successfully with ID: {}", dbInvite.get().getId());
+    }
     boolean isSSOEnabled = CGRestUtils.getResponse(accountClient.isSSOEnabled(accountId));
     boolean isPLNoEmailForSamlAccountInvitesEnabled = isPLNoEmailForSamlAccountInvitesEnabled(accountId);
     boolean isAutoInviteAcceptanceEnabled = isAutoInviteAcceptanceEnabled(accountId);
-
-    try {
-      Thread.sleep(5000);
-    } catch (InterruptedException e) {
-      log.error("Thread interupted", e);
-    }
     try {
       sendInvitationMail(
           savedInvite, isSSOEnabled, isPLNoEmailForSamlAccountInvitesEnabled, isAutoInviteAcceptanceEnabled);
@@ -557,12 +557,6 @@ public class InviteServiceImpl implements InviteService {
     } catch (Exception ex) {
       log.error("For invite: {} while inviting or notifying user to join harness an exception occurred: ",
           savedInvite.getId(), ex);
-    }
-
-    try {
-      Thread.sleep(5000);
-    } catch (InterruptedException e) {
-      log.error("2 Thread interupted", e);
     }
 
     String email = invite.getEmail().trim();
@@ -606,9 +600,21 @@ public class InviteServiceImpl implements InviteService {
   private void updateJWTTokenInInvite(Invite invite) {
     String jwtToken = jwtGeneratorUtils.generateJWTToken(ImmutableMap.of(InviteKeys.id, invite.getId()),
         TimeUnit.MILLISECONDS.convert(LINK_VALIDITY_IN_DAYS, TimeUnit.DAYS), jwtPasswordSecret);
+    log.info("Token generated for new invite: {}", jwtToken);
     invite.setInviteToken(jwtToken);
     Update update = new Update().set(InviteKeys.inviteToken, invite.getInviteToken());
     inviteRepository.updateInvite(invite.getId(), update);
+
+    Optional<Invite> byId = inviteRepository.findById(new ObjectId(invite.getId()));
+    if (!byId.isPresent()) {
+      log.error("Invite is not present in db after update");
+    } else {
+      if (byId.get().getInviteToken().equals(jwtToken)) {
+        log.info("Token is successfully saved in db");
+      } else {
+        log.error("Token is not saved in DB. DB Token: {}", byId.get().getInviteToken());
+      }
+    }
   }
 
   private void sendInvitationMail(Invite invite, boolean isSSOEnabled, boolean isPLNoEmailForSamlAccountInvitesEnabled,
