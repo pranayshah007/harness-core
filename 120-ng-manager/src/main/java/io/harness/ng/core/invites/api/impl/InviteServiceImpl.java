@@ -469,6 +469,7 @@ public class InviteServiceImpl implements InviteService {
   @Override
   public Optional<Invite> getInviteFromToken(String jwtToken, boolean allowDeleted) {
     if (isBlank(jwtToken)) {
+      log.error("JWT token is blank");
       return Optional.empty();
     }
     Optional<String> inviteIdOptional = Optional.empty();
@@ -481,6 +482,7 @@ public class InviteServiceImpl implements InviteService {
       log.warn("Invalid token. verification failed");
       return Optional.empty();
     }
+    log.info("Invite ID: {}", inviteIdOptional.get());
     return getInvite(inviteIdOptional.get(), allowDeleted);
   }
 
@@ -695,8 +697,10 @@ public class InviteServiceImpl implements InviteService {
   public boolean completeInvite(Optional<Invite> inviteOpt) {
     log.info("NG User Invite: call from manager has arrived to ng-manager");
     if (!inviteOpt.isPresent()) {
+      log.error("Invite not found in DB");
       return false;
     }
+    log.info("Invite ID: {}, Invite email: {}", inviteOpt.get().getId(), inviteOpt.get().getEmail());
     Invite invite = inviteOpt.get();
     String email = invite.getEmail();
     Optional<UserMetadataDTO> userOpt = ngUserService.getUserByEmail(email, true);
