@@ -7,6 +7,7 @@
 
 package io.harness.freeze.service.impl;
 
+import io.harness.encryption.Scope;
 import io.harness.freeze.beans.CurrentOrUpcomingActiveWindow;
 import io.harness.freeze.beans.EntityConfig;
 import io.harness.freeze.beans.FilterType;
@@ -18,6 +19,7 @@ import io.harness.freeze.beans.response.FreezeSummaryResponseDTO;
 import io.harness.freeze.entity.FreezeConfigEntity.FreezeConfigEntityKeys;
 import io.harness.freeze.helpers.FreezeFilterHelper;
 import io.harness.freeze.helpers.FreezeTimeUtils;
+import io.harness.freeze.mappers.NGFreezeDtoMapper;
 import io.harness.freeze.service.FreezeEvaluateService;
 
 import com.google.common.collect.Lists;
@@ -44,6 +46,7 @@ public class FreezeEvaluateServiceImpl implements FreezeEvaluateService {
     this.freezeCRUDService = freezeCRUDService;
   }
 
+  @Override
   public List<FreezeSummaryResponseDTO> getActiveFreezeEntities(
       String accountId, String orgIdentifier, String projectIdentifier, Map<FreezeEntityType, List<String>> entityMap) {
     List<FreezeSummaryResponseDTO> freezeSummaryResponseDTOList = new LinkedList<>();
@@ -63,52 +66,72 @@ public class FreezeEvaluateServiceImpl implements FreezeEvaluateService {
     return freezeSummaryResponseDTOList;
   }
 
-  public boolean globalFreezeActive(String accountId, String orgIdentifier, String projectIdentifier) {
-    Criteria criteria = FreezeFilterHelper.createCriteriaForGetList(
-        accountId, orgIdentifier, projectIdentifier, null, FreezeType.GLOBAL, FreezeStatus.ENABLED, null, null);
-    PageRequest pageRequest = PageRequest.of(0, 1, Sort.by(Sort.Direction.DESC, FreezeConfigEntityKeys.createdAt));
-    Page<FreezeSummaryResponseDTO> result = freezeCRUDService.list(criteria, pageRequest);
-    List<FreezeSummaryResponseDTO> configs = result.getContent();
-    for (FreezeSummaryResponseDTO freezeSummaryResponseDTO : configs) {
-      CurrentOrUpcomingActiveWindow currentOrUpcomingActiveWindow =
-          freezeSummaryResponseDTO.getCurrentOrUpcomingActiveWindow();
-      if (FreezeTimeUtils.currentWindowIsActive(currentOrUpcomingActiveWindow)) {
-        return true;
-      }
+  @Override
+  public List<FreezeSummaryResponseDTO> anyGlobalFreezeActive(
+      String accountId, String orgIdentifier, String projectIdentifier) {
+    Scope scope = NGFreezeDtoMapper.getScopeFromFreezeDto(orgIdentifier, projectIdentifier);
+    List<FreezeSummaryResponseDTO> globalFreeze = new LinkedList<>();
+    FreezeSummaryResponseDTO freezeSummaryResponseDTO;
+    switch (scope) {
+      case PROJECT:
+        freezeSummaryResponseDTO = getGlobalFreezeIfActive(accountId, orgIdentifier, projectIdentifier);
+        if (freezeSummaryResponseDTO != null) {
+          globalFreeze.add(freezeSummaryResponseDTO);
+        }
+        // fallthrough to ignore
+      case ORG:
+        freezeSummaryResponseDTO = getGlobalFreezeIfActive(accountId, orgIdentifier, null);
+        if (freezeSummaryResponseDTO != null) {
+          globalFreeze.add(freezeSummaryResponseDTO);
+        }
+        // fallthrough to ignore
+      case ACCOUNT:
+        freezeSummaryResponseDTO = getGlobalFreezeIfActive(accountId, null, null);
+        if (freezeSummaryResponseDTO != null) {
+          globalFreeze.add(freezeSummaryResponseDTO);
+        }
+        return globalFreeze;
+      default:
+        return globalFreeze;
     }
-    return false;
+  }
+
+  private FreezeSummaryResponseDTO getGlobalFreezeIfActive(
+      String accountId, String orgIdentifier, String projectIdentifier) {
+    FreezeSummaryResponseDTO freezeSummaryResponseDTO = NGFreezeDtoMapper.prepareFreezeResponseSummaryDto(
+        freezeCRUDService.getGlobalFreeze(accountId, orgIdentifier, projectIdentifier));
+    CurrentOrUpcomingActiveWindow currentOrUpcomingActiveWindow =
+        freezeSummaryResponseDTO.getCurrentOrUpcomingActiveWindow();
+    if (FreezeStatus.ENABLED.equals(freezeSummaryResponseDTO.getStatus())
+        && FreezeTimeUtils.currentWindowIsActive(currentOrUpcomingActiveWindow)) {
+      return freezeSummaryResponseDTO;
+    }
+    return null;
   }
 
   @Override
-  public boolean shouldDisableDeployment(String accountId, String orgIdentifier, String projectIdentifier) {
+  public List<FreezeSummaryResponseDTO> shouldDisableDeployment(
+      String accountId, String orgIdentifier, String projectIdentifier) {
+    List<FreezeSummaryResponseDTO> activeFreezeList = new LinkedList<>();
+    activeFreezeList.addAll(anyGlobalFreezeActive(accountId, orgIdentifier, projectIdentifier));
     Map<FreezeEntityType, List<String>> entityMap = new HashMap<>();
     entityMap.put(FreezeEntityType.ORG, Lists.newArrayList(orgIdentifier));
     entityMap.put(FreezeEntityType.PROJECT, Lists.newArrayList(projectIdentifier));
-    return scopeFrozen(accountId, null, null, entityMap) || scopeFrozen(accountId, orgIdentifier, null, entityMap)
-        || scopeFrozen(accountId, orgIdentifier, projectIdentifier, entityMap);
-  }
-
-  private boolean scopeFrozen(
-      String accountId, String orgId, String projectId, Map<FreezeEntityType, List<String>> entityMap) {
-    if (globalFreezeActive(accountId, orgId, projectId)) {
-      return true;
+    Scope scope = NGFreezeDtoMapper.getScopeFromFreezeDto(orgIdentifier, projectIdentifier);
+    switch (scope) {
+      case PROJECT:
+        activeFreezeList.addAll(getActiveFreezeEntities(accountId, orgIdentifier, projectIdentifier, entityMap));
+        // fallthrough to ignore
+      case ORG:
+        activeFreezeList.addAll(getActiveFreezeEntities(accountId, orgIdentifier, null, entityMap));
+        // fallthrough to ignore
+      case ACCOUNT:
+        activeFreezeList.addAll(getActiveFreezeEntities(accountId, null, null, entityMap));
+        break;
+      default:
+        break;
     }
-
-    Criteria criteria = FreezeFilterHelper.createCriteriaForGetList(
-        accountId, orgId, projectId, null, FreezeType.MANUAL, FreezeStatus.ENABLED, null, null);
-    PageRequest pageRequest = PageRequest.of(0, 100, Sort.by(Sort.Direction.DESC, FreezeConfigEntityKeys.createdAt));
-    Page<FreezeSummaryResponseDTO> result = freezeCRUDService.list(criteria, pageRequest);
-    List<FreezeSummaryResponseDTO> configs = result.getContent();
-
-    for (FreezeSummaryResponseDTO freezeSummaryResponseDTO : configs) {
-      CurrentOrUpcomingActiveWindow currentOrUpcomingActiveWindow =
-          freezeSummaryResponseDTO.getCurrentOrUpcomingActiveWindow();
-      if (FreezeTimeUtils.currentWindowIsActive(currentOrUpcomingActiveWindow)
-          && matchesEntities(entityMap, freezeSummaryResponseDTO.getRules())) {
-        return true;
-      }
-    }
-    return false;
+    return activeFreezeList;
   }
 
   private boolean matchesEntities(Map<FreezeEntityType, List<String>> entityMap, List<FreezeEntityRule> rules) {

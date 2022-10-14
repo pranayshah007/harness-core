@@ -11,6 +11,8 @@ import io.harness.NGCommonEntityConstants;
 import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.accesscontrol.OrgIdentifier;
 import io.harness.accesscontrol.ProjectIdentifier;
+import io.harness.data.structure.EmptyPredicate;
+import io.harness.freeze.beans.response.FreezeSummaryResponseDTO;
 import io.harness.freeze.service.FreezeEvaluateService;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
@@ -28,6 +30,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.List;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -81,7 +84,7 @@ public class FreezeEvalutationResource {
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
-        ApiResponse(responseCode = "default", description = "Returns true if global freeze is active")
+        ApiResponse(responseCode = "default", description = "Returns true if global freeze is active at any scope")
       })
   @Hidden
   public ResponseDTO<Boolean>
@@ -91,7 +94,9 @@ public class FreezeEvalutationResource {
           NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgId,
       @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId) {
-    return ResponseDTO.newResponse(freezeEvaluateService.globalFreezeActive(accountId, orgId, projectId));
+    List<FreezeSummaryResponseDTO> freezeSummaryResponseDTO =
+        freezeEvaluateService.anyGlobalFreezeActive(accountId, orgId, projectId);
+    return ResponseDTO.newResponse(!EmptyPredicate.isEmpty(freezeSummaryResponseDTO));
   }
 
   @GET
@@ -111,6 +116,8 @@ public class FreezeEvalutationResource {
           NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgId,
       @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId) {
-    return ResponseDTO.newResponse(freezeEvaluateService.shouldDisableDeployment(accountId, orgId, projectId));
+    List<FreezeSummaryResponseDTO> freezeSummaryResponseDTO =
+        freezeEvaluateService.shouldDisableDeployment(accountId, orgId, projectId);
+    return ResponseDTO.newResponse(!EmptyPredicate.isEmpty(freezeSummaryResponseDTO));
   }
 }

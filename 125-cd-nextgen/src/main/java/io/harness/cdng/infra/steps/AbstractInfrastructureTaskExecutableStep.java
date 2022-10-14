@@ -160,8 +160,8 @@ abstract class AbstractInfrastructureTaskExecutableStep {
     return new OutcomeSet(serviceOutcome, environmentOutcome);
   }
 
-  protected TaskRequestData obtainTaskInternal(
-      Ambiance ambiance, Infrastructure infrastructure, NGLogCallback logCallback, Boolean addRcStep) {
+  protected TaskRequestData obtainTaskInternal(Ambiance ambiance, Infrastructure infrastructure,
+      NGLogCallback logCallback, Boolean addRcStep, boolean skipInstances) {
     saveExecutionLog(logCallback, "Starting infrastructure step...");
 
     validateConnector(infrastructure, ambiance);
@@ -179,8 +179,6 @@ abstract class AbstractInfrastructureTaskExecutableStep {
         infrastructureMapper.toOutcome(infrastructure, environmentOutcome, serviceOutcome,
             ngAccess.getAccountIdentifier(), ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier());
 
-    // save infrastructure sweeping output for further use within the step
-    boolean skipInstances = infrastructureStepHelper.getSkipInstances(infrastructure);
     executionSweepingOutputService.consume(ambiance, INFRA_TASK_EXECUTABLE_STEP_OUTPUT,
         InfrastructureTaskExecutableStepSweepingOutput.builder()
             .infrastructureOutcome(infrastructureOutcome)

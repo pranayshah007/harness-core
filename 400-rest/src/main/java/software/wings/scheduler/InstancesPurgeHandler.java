@@ -7,92 +7,91 @@
 
 package software.wings.scheduler;
 
+import static io.harness.mongo.iterator.MongoPersistenceIterator.SchedulingType.REGULAR;
+
+import static software.wings.beans.Account.AccountKeys;
+
+import static java.time.Duration.ofDays;
+import static java.time.Duration.ofHours;
+import static java.time.Duration.ofMinutes;
+
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.ff.FeatureFlagService;
-import io.harness.persistence.HIterator;
-import io.harness.persistence.HPersistence;
-import io.harness.scheduler.BackgroundExecutorService;
-import io.harness.scheduler.PersistentScheduler;
+import io.harness.iterator.PersistenceIteratorFactory;
+import io.harness.mongo.iterator.MongoPersistenceIterator;
+import io.harness.mongo.iterator.filter.MorphiaFilterExpander;
+import io.harness.mongo.iterator.provider.MorphiaPersistenceProvider;
+import io.harness.workers.background.AccountLevelEntityProcessController;
 
 import software.wings.beans.Account;
+import software.wings.service.intfc.AccountService;
 import software.wings.service.intfc.instance.InstanceService;
 import software.wings.service.intfc.instance.stats.InstanceStatService;
 import software.wings.service.intfc.instance.stats.ServerlessInstanceStatService;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Stopwatch;
 import com.google.inject.Inject;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.time.temporal.TemporalAdjusters;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
-import org.quartz.CronScheduleBuilder;
-import org.quartz.DateBuilder;
 import org.quartz.DisallowConcurrentExecution;
-import org.quartz.Job;
-import org.quartz.JobBuilder;
-import org.quartz.JobDetail;
-import org.quartz.JobExecutionContext;
-import org.quartz.Trigger;
-import org.quartz.TriggerBuilder;
 
 @DisallowConcurrentExecution
 @Slf4j
-public class InstancesPurgeJob implements Job {
-  private static final String INSTANCES_PURGE_CRON_NAME = "INSTANCES_PURGE_CRON_NAME";
-  private static final String INSTANCES_PURGE_CRON_GROUP = "INSTANCES_PURGE_CRON_GROUP";
-
+@OwnedBy(HarnessTeam.CDP)
+public class InstancesPurgeHandler implements MongoPersistenceIterator.Handler<Account> {
   private static final int MONTHS_TO_RETAIN_INSTANCES_EXCLUDING_CURRENT_MONTH = 2;
   private static final int MONTHS_TO_RETAIN_INSTANCE_STATS_EXCLUDING_CURRENT_MONTH = 6;
 
-  @Inject private BackgroundExecutorService executorService;
+  @Inject private AccountService accountService;
   @Inject private InstanceService instanceService;
   @Inject private InstanceStatService instanceStatsService;
   @Inject private ServerlessInstanceStatService serverlessInstanceStatService;
-  @Inject private HPersistence persistence;
   @Inject private FeatureFlagService featureFlagService;
+  @Inject private PersistenceIteratorFactory persistenceIteratorFactory;
+  @Inject private MorphiaPersistenceProvider<Account> persistenceProvider;
 
-  public static void add(PersistentScheduler jobScheduler) {
-    JobDetail job = JobBuilder.newJob(InstancesPurgeJob.class)
-                        .withIdentity(INSTANCES_PURGE_CRON_NAME, INSTANCES_PURGE_CRON_GROUP)
-                        .build();
-
-    Trigger trigger = TriggerBuilder.newTrigger()
-                          .withIdentity(INSTANCES_PURGE_CRON_NAME, INSTANCES_PURGE_CRON_GROUP)
-                          .withSchedule(CronScheduleBuilder.atHourAndMinuteOnGivenDaysOfWeek(
-                              12, 0, DateBuilder.SATURDAY, DateBuilder.SUNDAY))
-                          .build();
-    jobScheduler.ensureJob__UnderConstruction(job, trigger);
+  public void registerIterators() {
+    persistenceIteratorFactory.createPumpIteratorWithDedicatedThreadPool(
+        PersistenceIteratorFactory.PumpExecutorOptions.builder()
+            .name("InstancesPurging")
+            .poolSize(5)
+            .interval(Duration.ofMinutes(1))
+            .build(),
+        Account.class,
+        MongoPersistenceIterator.<Account, MorphiaFilterExpander<Account>>builder()
+            .clazz(Account.class)
+            .fieldName(AccountKeys.instancesPurgeTaskIteration)
+            .targetInterval(ofDays(7))
+            .acceptableNoAlertDelay(ofMinutes(Integer.MAX_VALUE))
+            .acceptableExecutionTime(ofHours(15))
+            .handler(this)
+            .entityProcessController(new AccountLevelEntityProcessController(accountService))
+            .schedulingType(REGULAR)
+            .persistenceProvider(persistenceProvider)
+            .redistribute(true));
   }
 
   @Override
-  public void execute(JobExecutionContext jobExecutionContext) {
-    log.info("Triggering instances and instance stats purge job asynchronously");
-    executorService.submit(this::purge);
-  }
-
-  @VisibleForTesting
-  void purge() {
+  public void handle(Account account) {
     log.info("Starting execution of instances and instance stats purge job");
     Stopwatch sw = Stopwatch.createStarted();
 
-    try (HIterator<Account> accounts =
-             new HIterator<>(persistence.createQuery(Account.class).project(Account.ID_KEY2, true).fetch())) {
-      while (accounts.hasNext()) {
-        final Account account = accounts.next();
-        if (featureFlagService.isNotEnabled(FeatureName.USE_INSTANCES_PURGE_ITERATOR_FW, account.getUuid())) {
-          // TODO: purging stats can be removed in Jan 2023 as we started adding 6 months TTL index in July
-          purgeOldStats(account);
-          purgeOldServerlessInstanceStats(account);
-          purgeOldDeletedInstances(account);
-        } else {
-          log.info(String.format(
-              "Feature flag %s is enabled for account %s which means instances purging task will be handled by iterator framework",
-              FeatureName.USE_INSTANCES_PURGE_ITERATOR_FW, account.getUuid()));
-        }
-      }
+    if (featureFlagService.isEnabled(FeatureName.USE_INSTANCES_PURGE_ITERATOR_FW, account.getUuid())) {
+      // TODO: purging stats can be removed in Jan 2023 as we started adding 6 months TTL index in July
+      purgeOldStats(account);
+      purgeOldServerlessInstanceStats(account);
+      purgeOldDeletedInstances(account);
+    } else {
+      log.info(String.format(
+          "Feature flag %s is NOT enabled for account %s which means instances purging task will be handled by legacy quartz job",
+          FeatureName.USE_INSTANCES_PURGE_ITERATOR_FW, account.getUuid()));
     }
 
     log.info("Execution of instances and instance stats purge job completed. Time taken: {} millis",
