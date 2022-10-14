@@ -478,6 +478,8 @@ public class WatcherServiceImpl implements WatcherService {
         new Schedulable("Error while logging-performance", this::logPerformance), 0, 60, TimeUnit.SECONDS);
     watchExecutor.scheduleWithFixedDelay(
         new Schedulable("Error while watching delegate", this::syncWatchDelegate), 0, 10, TimeUnit.SECONDS);
+    upgradeExecutor.scheduleWithFixedDelay(
+        new Schedulable("Error while cleaning up garbage", this::cleanupOlderVersions), 1, 10, TimeUnit.DAYS);
   }
 
   private void logPerformance() {
@@ -587,7 +589,7 @@ public class WatcherServiceImpl implements WatcherService {
           if (working.compareAndSet(false, true)) {
             downloadRunScriptsBeforeRestartingDelegateAndWatcher();
             startDelegateProcess(
-                getPrimaryDelegate(expectedVersions), ".", emptyList(), "DelegateStartScript", getProcessId(), false);
+                getPrimaryDelegate(expectedVersions), ".", emptyList(), "DelegateStartScript", getProcessId());
           }
         }
       } else {
@@ -774,7 +776,7 @@ public class WatcherServiceImpl implements WatcherService {
             log.warn(
                 "Delegate processes {} need restart. Starting new process and draining old", drainingRestartNeededList);
             startDelegateProcess(getPrimaryDelegate(expectedVersions), ".", drainingRestartNeededList,
-                DELEGATE_RESTART_SCRIPT, getProcessId(), false);
+                DELEGATE_RESTART_SCRIPT, getProcessId());
           }
         }
         if (!multiVersion && isNotEmpty(upgradeNeededList)) {
@@ -783,8 +785,8 @@ public class WatcherServiceImpl implements WatcherService {
             upgradeNeededList.forEach(
                 delegateProcess -> messageService.writeMessageToChannel(DELEGATE, delegateProcess, UPGRADING_DELEGATE));
             downloadRunScriptsBeforeRestartingDelegateAndWatcher();
-            startDelegateProcess(getPrimaryDelegate(expectedVersions), ".", upgradeNeededList, "DelegateUpgradeScript",
-                getProcessId(), false);
+            startDelegateProcess(
+                getPrimaryDelegate(expectedVersions), ".", upgradeNeededList, "DelegateUpgradeScript", getProcessId());
           }
         }
 
@@ -820,8 +822,7 @@ public class WatcherServiceImpl implements WatcherService {
             log.info("New delegate process for version {} will be started", version);
             downloadRunScripts(version, version, false);
             downloadDelegateJar(version);
-            startDelegateProcess(
-                version, version, drainingNeededList, "DelegateStartScriptVersioned", getProcessId(), true);
+            startDelegateProcess(version, version, drainingNeededList, "DelegateStartScriptVersioned", getProcessId());
             break;
           } catch (IOException ioe) {
             if (ioe.getMessage().contains(NO_SPACE_LEFT_ON_DEVICE_ERROR)) {
@@ -926,8 +927,7 @@ public class WatcherServiceImpl implements WatcherService {
     if (multiVersion) {
       runningDelegates.forEach(this::drainDelegateProcess);
     } else if (working.compareAndSet(false, true)) {
-      startDelegateProcess(
-          null, ".", new ArrayList<>(runningDelegates), DELEGATE_RESTART_SCRIPT, getProcessId(), false);
+      startDelegateProcess(null, ".", new ArrayList<>(runningDelegates), DELEGATE_RESTART_SCRIPT, getProcessId());
     }
   }
 
@@ -1183,7 +1183,7 @@ public class WatcherServiceImpl implements WatcherService {
   }
 
   private void startDelegateProcess(String version, String versionFolder, List<String> oldDelegateProcesses,
-      String scriptName, String watcherProcess, boolean cleanOlderDelegateFiles) {
+      String scriptName, String watcherProcess) {
     if (!new File(versionFolder + File.separator + DELEGATE_SCRIPT).exists()) {
       working.set(false);
       return;
@@ -1230,12 +1230,6 @@ public class WatcherServiceImpl implements WatcherService {
               success = true;
               log.info("Adding new delegate process {} to process map", newDelegateProcess);
               delegateProcessMap.put(newDelegateProcess, newDelegate.getProcess());
-              if (cleanOlderDelegateFiles && isNotEmpty(oldDelegateProcesses)) {
-                Set<String> allVersions = new HashSet<>(findExpectedDelegateVersions());
-                allVersions.addAll(oldDelegateProcesses);
-                removeDelegateVersionsFromCapsule(allVersions);
-                cleanupOldDelegateVersions(allVersions);
-              }
             }
           }
         }
@@ -1493,6 +1487,16 @@ public class WatcherServiceImpl implements WatcherService {
       }
     } finally {
       working.set(false);
+    }
+  }
+
+  private void cleanupOlderVersions() {
+    synchronized (this) {
+      log.info("Removing older delegate version if any");
+      Set<String> allVersions = new HashSet<>(findExpectedDelegateVersions());
+      allVersions.addAll(runningDelegates);
+      removeDelegateVersionsFromCapsule(allVersions);
+      cleanupOldDelegateVersions(allVersions);
     }
   }
 
