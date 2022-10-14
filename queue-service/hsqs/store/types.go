@@ -7,6 +7,7 @@
 package store
 
 import (
+	"fmt"
 	"time"
 )
 
@@ -17,7 +18,8 @@ type RegisterTopicMetadata struct {
 	Topic      string
 	MaxRetries int
 	// time in nanoseconds
-	MaxProcessingTime      time.Duration
+	// swagger:strfmt maxProcessingTime
+	MaxProcessingTime      time.Duration `json:"maxProcessingTime"`
 	MaxUnProcessedMessages int
 }
 
@@ -35,16 +37,22 @@ type EnqueueResponse struct {
 	ItemID string `json:"itemId"`
 }
 
-// EnqueueErrorResponse Error Mesaage object for Enqueuing messages
+// EnqueueErrorResponse Error Message object for Enqueuing messages
 type EnqueueErrorResponse struct {
 	ErrorMessage string
 }
 
+func (e *EnqueueErrorResponse) Error() string {
+	return fmt.Sprintf("EnqueueErrorResponse: message - %s",
+		e.ErrorMessage)
+}
+
 // DequeueRequest Request object for Dequeuing messages
 type DequeueRequest struct {
-	Topic        string
-	BatchSize    int
-	ConsumerName string
+	Topic           string        `json:"topic"`
+	BatchSize       int           `json:"batchSize"`
+	ConsumerName    string        `json:"consumerName"`
+	MaxWaitDuration time.Duration `json:"maxWaitDuration"`
 }
 
 // DequeueResponse Response object for Dequeuing messages
@@ -58,13 +66,18 @@ type DequeueResponse struct {
 
 // DequeueItemMetadata DequeuingItem metadata request
 type DequeueItemMetadata struct {
-	CurrentRetryCount int
-	MaxProcessingTime float64
+	CurrentRetryCount int     `json:"currentRetryCount"`
+	MaxProcessingTime float64 `json:"maxProcessingTime"`
 }
 
 // DequeueErrorResponse Error Response object for Dequeue Request response
 type DequeueErrorResponse struct {
 	ErrorMessage string
+}
+
+func (e *DequeueErrorResponse) Error() string {
+	return fmt.Sprintf("DequeueErrorResponse: message - %s",
+		e.ErrorMessage)
 }
 
 // AckRequest Request object for Acknowledging a message
@@ -85,6 +98,11 @@ type AckErrorResponse struct {
 	ErrorMessage string
 }
 
+func (e *AckErrorResponse) Error() string {
+	return fmt.Sprintf("AckErrorResponse: message - %s",
+		e.ErrorMessage)
+}
+
 type UnAckType int
 
 const (
@@ -97,12 +115,13 @@ func (u UnAckType) String() string {
 }
 
 // UnAckRequest Request object for UnAck a message
+// swagger:model UnAckRequest
 type UnAckRequest struct {
 	ItemID   string
 	Topic    string
 	SubTopic string
 	// Retry topic + subtopic after RetryAfterTimeDuration nanoseconds
-	RetryAfterTimeDuration time.Duration
+	RetryAfterTimeDuration time.Duration `json:"retryTimeAfterDuration"`
 	Type                   UnAckType
 }
 
@@ -117,4 +136,9 @@ type UnAckResponse struct {
 // UnAckErrorResponse Response object for UnAck a message
 type UnAckErrorResponse struct {
 	ErrorMessage string
+}
+
+func (e *UnAckErrorResponse) Error() string {
+	return fmt.Sprintf("UnAckErrorResponse: message - %s",
+		e.ErrorMessage)
 }

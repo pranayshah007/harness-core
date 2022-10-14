@@ -32,5 +32,4 @@
     <module name="TreeWalker">
         <module name="io.harness.checks.StringLiteralsCheck"/>
     </module>
-
 </module>

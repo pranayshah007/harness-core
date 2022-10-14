@@ -49,6 +49,7 @@ import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.plancreator.steps.common.rollback.TaskExecutableWithRollbackAndRbac;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
@@ -89,6 +90,7 @@ public class FetchInstanceScriptStep extends TaskExecutableWithRollbackAndRbac<S
                                                .build();
   public static final String OUTPUT_PATH_KEY = "INSTANCE_OUTPUT_PATH";
   public static final String WORKING_DIRECTORY = "/tmp";
+  public static final String INSTANCE_NAME = "instancename";
   @Inject private CDStepHelper cdStepHelper;
   @Inject private KryoSerializer kryoSerializer;
   @Inject private StepHelper stepHelper;
@@ -100,8 +102,8 @@ public class FetchInstanceScriptStep extends TaskExecutableWithRollbackAndRbac<S
   static Function<InstanceMapperUtils.HostProperties, CustomDeploymentServerInstanceInfo> instanceElementMapper =
       hostProperties -> {
     return CustomDeploymentServerInstanceInfo.builder()
-        .hostId(UUIDGenerator.generateUuid())
-        .hostName(hostProperties.getHostName())
+        .instanceId(UUIDGenerator.generateUuid())
+        .instanceName(hostProperties.getHostName())
         .properties(hostProperties.getOtherPropeties())
         .build();
   };
@@ -182,38 +184,47 @@ public class FetchInstanceScriptStep extends TaskExecutableWithRollbackAndRbac<S
   @Override
   public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
       ThrowingSupplier<ShellScriptTaskResponseNG> responseDataSupplier) throws Exception {
-    ShellScriptTaskResponseNG response;
     try {
-      response = responseDataSupplier.get();
-    } catch (Exception ex) {
-      log.error("Error while processing Fetch Instance script task response: {}", ExceptionUtils.getMessage(ex), ex);
-      throw ex;
-    }
-    StepResponseBuilder builder = StepResponse.builder()
-                                      .unitProgressList(response.getUnitProgressData().getUnitProgresses())
-                                      .status(Status.FAILED);
-    CustomDeploymentInfrastructureOutcome infrastructureOutcome =
-        (CustomDeploymentInfrastructureOutcome) cdStepHelper.getInfrastructureOutcome(ambiance);
-    List<CustomDeploymentServerInstanceInfo> instanceElements = new ArrayList<>();
-    if (response.getStatus() == SUCCESS) {
-      builder.status(Status.SUCCEEDED);
+      ShellScriptTaskResponseNG response;
+      try {
+        response = responseDataSupplier.get();
+      } catch (Exception ex) {
+        log.error("Error while processing Fetch Instance script task response: {}", ExceptionUtils.getMessage(ex), ex);
+        throw ex;
+      }
+      if (response.getStatus() != SUCCESS) {
+        return StepResponse.builder()
+            .unitProgressList(response.getUnitProgressData().getUnitProgresses())
+            .status(Status.FAILED)
+            .failureInfo(FailureInfo.newBuilder().setErrorMessage(response.getErrorMessage()).build())
+            .build();
+      }
+      StepResponseBuilder builder = StepResponse.builder()
+                                        .unitProgressList(response.getUnitProgressData().getUnitProgresses())
+                                        .status(Status.SUCCEEDED);
+      List<CustomDeploymentServerInstanceInfo> instanceElements = new ArrayList<>();
       if (response.getExecuteCommandResponse().getCommandExecutionData() instanceof ShellExecutionData) {
         Map<String, String> output =
             ((ShellExecutionData) response.getExecuteCommandResponse().getCommandExecutionData())
                 .getSweepingOutputEnvVariables();
-        instanceElements = InstanceMapperUtils.mapJsonToInstanceElements(infrastructureOutcome.getInstanceAttributes(),
-            infrastructureOutcome.getInstancesListPath(), output.get(OUTPUT_PATH_KEY), instanceElementMapper);
+        CustomDeploymentInfrastructureOutcome infrastructureOutcome =
+            (CustomDeploymentInfrastructureOutcome) cdStepHelper.getInfrastructureOutcome(ambiance);
+        instanceElements =
+            InstanceMapperUtils.mapJsonToInstanceElements(INSTANCE_NAME, infrastructureOutcome.getInstanceAttributes(),
+                infrastructureOutcome.getInstancesListPath(), output.get(OUTPUT_PATH_KEY), instanceElementMapper);
         instanceElements.forEach(serverInstanceInfo -> {
           serverInstanceInfo.setInstanceFetchScript(getResolvedFetchInstanceScript(ambiance, infrastructureOutcome));
           serverInstanceInfo.setInfrastructureKey(infrastructureOutcome.getInfrastructureKey());
         });
         validateInstanceElements(instanceElements, infrastructureOutcome);
       }
+      StepResponse.StepOutcome stepOutcome = instanceInfoService.saveServerInstancesIntoSweepingOutput(ambiance,
+          instanceElements.stream().map(element -> (ServerInstanceInfo) element).collect(Collectors.toList()));
+
+      return builder.stepOutcome(stepOutcome).build();
+    } finally {
+      closeLogStream(ambiance);
     }
-    StepResponse.StepOutcome stepOutcome = instanceInfoService.saveServerInstancesIntoSweepingOutput(
-        ambiance, instanceElements.stream().map(element -> (ServerInstanceInfo) element).collect(Collectors.toList()));
-    closeLogStream(ambiance);
-    return builder.stepOutcome(stepOutcome).build();
   }
 
   private void closeLogStream(Ambiance ambiance) {
@@ -230,11 +241,13 @@ public class FetchInstanceScriptStep extends TaskExecutableWithRollbackAndRbac<S
 
   private void validateInstanceElements(
       List<CustomDeploymentServerInstanceInfo> instanceElements, CustomDeploymentInfrastructureOutcome infrastructure) {
-    final boolean elementWithoutHostnameExists =
-        instanceElements.stream().map(CustomDeploymentServerInstanceInfo::getHostName).anyMatch(StringUtils::isBlank);
+    final boolean elementWithoutHostnameExists = instanceElements.stream()
+                                                     .map(CustomDeploymentServerInstanceInfo::getInstanceName)
+                                                     .anyMatch(StringUtils::isBlank);
     if (elementWithoutHostnameExists) {
-      throw new InvalidRequestException(format("Could not find \"%s\" field from Json Array",
-                                            getHostnameFieldName(infrastructure.getInstanceAttributes())),
+      throw new InvalidRequestException(
+          format("Could not find \"%s\" field from Json Array",
+              getHostnameFieldName(INSTANCE_NAME, infrastructure.getInstanceAttributes())),
           WingsException.USER);
     }
   }

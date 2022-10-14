@@ -64,6 +64,9 @@ public final class TerraformConstants {
   public static final String TERRAFORM_HUMAN_READABLE_PLAN_FILE_VAR_NAME = "${terraformApply.tfHumanReadablePlan}";
   public static final String TERRAFORM_DESTROY_HUMAN_READABLE_PLAN_FILE_VAR_NAME =
       "${terraformDestroy.tfHumanReadablePlan}";
+  public static final String PLAN_HUMAN_READABLE_FILE_PREFIX = "harnessTfHumanReadablePlan";
+  public static final String PLAN_HUMAN_READABLE_FILE_NAME = "terraform.harnessTfHumanReadablePlan";
+  public static final String PLAN_HUMAN_READABLE_TXT_FILE_NAME = "%s.txt";
   public static final String TERRAFORM_DESTROY_PLAN_FILE_VAR_NAME = "${terraformDestroy.tfplan}";
   public static final String TERRAFORM_PLAN_FILE_NAME = "terraform.tfplan";
   public static final String TERRAFORM_PLAN_JSON_FILE_NAME = "%s.json";

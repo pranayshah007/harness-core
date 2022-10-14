@@ -43,8 +43,6 @@ public class SimpleServiceLevelObjective extends AbstractServiceLevelObjective {
           .set(SimpleServiceLevelObjectiveKeys.monitoredServiceIdentifier,
               serviceLevelObjectiveV2DTO.getMonitoredServiceRef())
           .set(SimpleServiceLevelObjectiveKeys.serviceLevelIndicatorType,
-              serviceLevelObjectiveV2DTO.getServiceLevelIndicators())
-          .set(SimpleServiceLevelObjectiveKeys.serviceLevelIndicatorType,
               serviceLevelObjectiveV2DTO.getServiceLevelIndicatorType());
     }
   }

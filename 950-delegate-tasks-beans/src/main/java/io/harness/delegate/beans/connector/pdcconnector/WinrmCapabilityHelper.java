@@ -23,12 +23,12 @@ import lombok.experimental.UtilityClass;
 @UtilityClass
 public class WinrmCapabilityHelper {
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(
-      WinRmInfraDelegateConfig winRmInfraDelegateConfig, boolean useWinRMKerberosUniqueCacheFile) {
+      WinRmInfraDelegateConfig winRmInfraDelegateConfig, boolean useWinRMKerberosUniqueCacheFile, String host) {
     List<ExecutionCapability> capabilityList = new ArrayList<>();
 
     WinrmConnectivityExecutionCapability winrmConnectivityExecutionCapability =
         WinrmConnectivityCapabilityGenerator.buildWinrmConnectivityExecutionCapability(
-            winRmInfraDelegateConfig, useWinRMKerberosUniqueCacheFile);
+            winRmInfraDelegateConfig, useWinRMKerberosUniqueCacheFile, host);
     capabilityList.add(winrmConnectivityExecutionCapability);
     return capabilityList;
   }

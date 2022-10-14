@@ -10,6 +10,7 @@ package software.wings.timescale.migrations;
 import static io.harness.persistence.HQuery.excludeAuthority;
 
 import static software.wings.beans.SettingAttribute.SettingCategory.CLOUD_PROVIDER;
+import static software.wings.timescale.migrations.TimescaleEntityMigrationHelper.deleteFromTimescaleDB;
 
 import io.harness.persistence.HIterator;
 import io.harness.timescaledb.TimeScaleDBService;
@@ -29,7 +30,7 @@ import org.mongodb.morphia.query.FindOptions;
 
 @Slf4j
 @Singleton
-public class MigrateCloudProvidersToTimescaleDB {
+public class MigrateCloudProvidersToTimescaleDB implements TimeScaleEntityMigrationInterface {
   @Inject TimeScaleDBService timeScaleDBService;
   @Inject WingsPersistence wingsPersistence;
 
@@ -37,6 +38,8 @@ public class MigrateCloudProvidersToTimescaleDB {
 
   private static final String upsert_statement =
       "INSERT INTO CG_CLOUD_PROVIDERS (ID,NAME,ACCOUNT_ID,APP_ID,CREATED_AT,LAST_UPDATED_AT,CREATED_BY,LAST_UPDATED_BY) VALUES (?,?,?,?,?,?,?,?) ON CONFLICT(ID) DO UPDATE SET NAME = excluded.NAME,ACCOUNT_ID = excluded.ACCOUNT_ID,APP_ID = excluded.APP_ID,CREATED_AT = excluded.CREATED_AT,LAST_UPDATED_AT = excluded.LAST_UPDATED_AT,CREATED_BY = excluded.CREATED_BY,LAST_UPDATED_BY = excluded.LAST_UPDATED_BY;";
+
+  private static final String TABLE_NAME = "CG_CLOUD_PROVIDERS";
 
   public boolean runTimeScaleMigration(String accountId) {
     if (!timeScaleDBService.isValid()) {
@@ -56,7 +59,7 @@ public class MigrateCloudProvidersToTimescaleDB {
                                    .fetch(findOptions_cloud_providers))) {
         while (iterator.hasNext()) {
           SettingAttribute settingAttribute = iterator.next();
-          prepareTimeScaleQueries(settingAttribute);
+          saveToTimeScale(settingAttribute);
           count++;
         }
       }
@@ -69,7 +72,15 @@ public class MigrateCloudProvidersToTimescaleDB {
     return true;
   }
 
-  private void prepareTimeScaleQueries(SettingAttribute settingAttribute) {
+  public void deleteFromTimescale(String id) {
+    deleteFromTimescaleDB(id, timeScaleDBService, MAX_RETRY, TABLE_NAME);
+  }
+
+  public String getTimescaleDBClass() {
+    return TABLE_NAME;
+  }
+
+  public void saveToTimeScale(SettingAttribute settingAttribute) {
     long startTime = System.currentTimeMillis();
     boolean successful = false;
     int retryCount = 0;

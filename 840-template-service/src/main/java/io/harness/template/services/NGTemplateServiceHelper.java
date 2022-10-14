@@ -31,12 +31,14 @@ import io.harness.filter.FilterType;
 import io.harness.filter.dto.FilterDTO;
 import io.harness.filter.service.FilterService;
 import io.harness.git.model.ChangeType;
+import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.interceptor.GitSyncBranchContext;
 import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.ng.core.common.beans.NGTag;
 import io.harness.ng.core.common.beans.NGTag.NGTagKeys;
 import io.harness.ng.core.mapper.TagMapper;
+import io.harness.ng.core.template.ListingScope;
 import io.harness.ng.core.template.TemplateListType;
 import io.harness.repositories.NGTemplateRepository;
 import io.harness.springdata.SpringDataMongoUtils;
@@ -74,6 +76,7 @@ public class NGTemplateServiceHelper {
   private final FilterService filterService;
   private final NGTemplateRepository templateRepository;
   private GitSyncSdkService gitSyncSdkService;
+  private TemplateGitXService templateGitXService;
 
   public Optional<TemplateEntity> getTemplateOrThrowExceptionIfInvalid(String accountId, String orgIdentifier,
       String projectIdentifier, String templateIdentifier, String versionLabel, boolean deleted) {
@@ -157,6 +160,19 @@ public class NGTemplateServiceHelper {
     } else {
       criteria.and(TemplateEntityKeys.orgIdentifier).is(orgId);
       criteria.and(TemplateEntityKeys.projectIdentifier).is(projectId);
+    }
+
+    if (filterProperties != null && filterProperties.getListingScope() != null) {
+      ListingScope listingScope = filterProperties.getListingScope();
+      if (listingScope.getAccountIdentifier() != null) {
+        if (gitSyncSdkService.isGitSyncEnabled(listingScope.getAccountIdentifier(), listingScope.getOrgIdentifier(),
+                listingScope.getProjectIdentifier())) {
+          criteria.and("storeType").in(StoreType.INLINE.name(), null);
+        } else if (!templateGitXService.isNewGitXEnabled(listingScope.getAccountIdentifier(),
+                       listingScope.getOrgIdentifier(), listingScope.getProjectIdentifier())) {
+          criteria.and("storeType").in(StoreType.INLINE.name(), null);
+        }
+      }
     }
 
     criteria.and(TemplateEntityKeys.deleted).is(deleted);

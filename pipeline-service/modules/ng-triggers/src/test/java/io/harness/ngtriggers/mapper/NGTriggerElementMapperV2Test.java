@@ -97,9 +97,9 @@ import io.harness.ngtriggers.beans.source.webhook.v2.gitlab.GitlabSpec;
 import io.harness.ngtriggers.beans.source.webhook.v2.gitlab.action.GitlabMRCommentAction;
 import io.harness.ngtriggers.beans.source.webhook.v2.gitlab.action.GitlabPRAction;
 import io.harness.ngtriggers.beans.source.webhook.v2.gitlab.event.GitlabTriggerEvent;
-import io.harness.pms.PmsFeatureFlagService;
 import io.harness.repositories.spring.TriggerEventHistoryRepository;
 import io.harness.rule.Owner;
+import io.harness.utils.PmsFeatureFlagService;
 import io.harness.webhook.WebhookConfigProvider;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -1040,7 +1040,7 @@ public class NGTriggerElementMapperV2Test extends CategoryTest {
   @Owner(developers = ADWAIT)
   @Category(UnitTests.class)
   public void testToResponseDTO() {
-    when(pmsFeatureFlagService.isEnabled(any(), eq(FeatureName.GIT_WEBHOOK_POLLING))).thenReturn(Boolean.FALSE);
+    when(pmsFeatureFlagService.isEnabled(any(), eq(FeatureName.CD_GIT_WEBHOOK_POLLING))).thenReturn(Boolean.FALSE);
     NGTriggerEntity ngTriggerEntity =
         ngTriggerElementMapper.toTriggerDetails("accId", "org", "proj", ngTriggerYaml_gitlab_pr, false)
             .getNgTriggerEntity();
@@ -1061,7 +1061,7 @@ public class NGTriggerElementMapperV2Test extends CategoryTest {
   @Owner(developers = SRIDHAR)
   @Category(UnitTests.class)
   public void testToResponseDTOGitPolling() {
-    when(pmsFeatureFlagService.isEnabled(any(), eq(FeatureName.GIT_WEBHOOK_POLLING))).thenReturn(Boolean.TRUE);
+    when(pmsFeatureFlagService.isEnabled(any(), eq(FeatureName.CD_GIT_WEBHOOK_POLLING))).thenReturn(Boolean.TRUE);
     NGTriggerEntity ngTriggerEntity =
         ngTriggerElementMapper.toTriggerDetails("accId", "org", "proj", ngTriggerYaml_gitpolling, false)
             .getNgTriggerEntity();

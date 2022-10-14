@@ -45,6 +45,7 @@ import io.harness.cdng.execution.helper.StageExecutionHelper;
 import io.harness.cdng.infra.InfrastructureMapper;
 import io.harness.cdng.infra.InfrastructureValidator;
 import io.harness.cdng.infra.beans.InfraMapping;
+import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sAzureInfraMapping;
 import io.harness.cdng.infra.beans.K8sDirectInfraMapping;
 import io.harness.cdng.infra.beans.K8sGcpInfraMapping;
@@ -66,6 +67,9 @@ import io.harness.cdng.infra.yaml.PdcInfrastructure;
 import io.harness.cdng.infra.yaml.SshWinRmAwsInfrastructure;
 import io.harness.cdng.infra.yaml.SshWinRmAwsInfrastructure.SshWinRmAwsInfrastructureBuilder;
 import io.harness.cdng.infra.yaml.SshWinRmAzureInfrastructure;
+import io.harness.cdng.instance.InstanceOutcomeHelper;
+import io.harness.cdng.instance.outcome.InstanceOutcome;
+import io.harness.cdng.instance.outcome.InstancesOutcome;
 import io.harness.cdng.pipeline.PipelineInfrastructure;
 import io.harness.cdng.service.steps.ServiceStepOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
@@ -93,6 +97,7 @@ import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
+import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.reflection.ReflectionUtils;
 import io.harness.repositories.UpsertOptions;
@@ -105,10 +110,12 @@ import io.harness.steps.shellscript.WinRmInfraDelegateConfigOutput;
 import com.google.inject.name.Named;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -134,6 +141,7 @@ public class InfrastructureStepTest extends CategoryTest {
   @Mock NGLogCallback ngLogCallbackOpen;
   @Mock InfrastructureMapper infrastructureMapper;
   @Mock InfrastructureValidator infrastructureValidator;
+  @Mock InstanceOutcomeHelper instanceOutcomeHelper;
 
   private final String ACCOUNT_ID = "accountId";
 
@@ -239,8 +247,12 @@ public class InfrastructureStepTest extends CategoryTest {
                     HostFilterDTO.builder().type(HostFilterType.ALL).spec(AllHostsFilterDTO.builder().build()).build())
                 .infrastructureKey("0ebad79c13bd2f86edbae354b72b4d2a410f3bab")
                 .build());
+    when(instanceOutcomeHelper.saveAndGetInstancesOutcome(
+             eq(ambiance), any(InfrastructureOutcome.class), any(Set.class)))
+        .thenReturn(getInstancesOutcome());
 
-    infrastructureStep.executeSyncAfterRbac(ambiance, infrastructureSpec, StepInputPackage.builder().build(), null);
+    StepResponse stepResponse =
+        infrastructureStep.executeSyncAfterRbac(ambiance, infrastructureSpec, StepInputPackage.builder().build(), null);
 
     ArgumentCaptor<SshInfraDelegateConfigOutput> pdcConfigOutputCaptor =
         ArgumentCaptor.forClass(SshInfraDelegateConfigOutput.class);
@@ -250,6 +262,13 @@ public class InfrastructureStepTest extends CategoryTest {
     SshInfraDelegateConfigOutput pdcInfraDelegateConfigOutput = pdcConfigOutputCaptor.getValue();
     assertThat(pdcInfraDelegateConfigOutput).isNotNull();
     assertThat(pdcInfraDelegateConfigOutput.getSshInfraDelegateConfig()).isEqualTo(pdcSshInfraDelegateConfig);
+    Collection<StepResponse.StepOutcome> stepOutcomes = stepResponse.getStepOutcomes();
+    assertThat(stepOutcomes.contains(StepResponse.StepOutcome.builder()
+                                         .outcome(getInstancesOutcome())
+                                         .name(OutcomeExpressionConstants.INSTANCES)
+                                         .group(OutcomeExpressionConstants.INFRASTRUCTURE_GROUP)
+                                         .build()))
+        .isTrue();
   }
 
   @Test
@@ -280,8 +299,12 @@ public class InfrastructureStepTest extends CategoryTest {
                     HostFilterDTO.builder().type(HostFilterType.ALL).spec(AllHostsFilterDTO.builder().build()).build())
                 .infrastructureKey("0ebad79c13bd2f86edbae354b72b4d2a410f3bab")
                 .build());
+    when(instanceOutcomeHelper.saveAndGetInstancesOutcome(
+             eq(ambiance), any(InfrastructureOutcome.class), any(Set.class)))
+        .thenReturn(getInstancesOutcome());
 
-    infrastructureStep.executeSyncAfterRbac(ambiance, infrastructureSpec, StepInputPackage.builder().build(), null);
+    StepResponse stepResponse =
+        infrastructureStep.executeSyncAfterRbac(ambiance, infrastructureSpec, StepInputPackage.builder().build(), null);
 
     ArgumentCaptor<WinRmInfraDelegateConfigOutput> pdcConfigOutputCaptor =
         ArgumentCaptor.forClass(WinRmInfraDelegateConfigOutput.class);
@@ -291,6 +314,13 @@ public class InfrastructureStepTest extends CategoryTest {
     WinRmInfraDelegateConfigOutput pdcInfraDelegateConfigOutput = pdcConfigOutputCaptor.getValue();
     assertThat(pdcInfraDelegateConfigOutput).isNotNull();
     assertThat(pdcInfraDelegateConfigOutput.getWinRmInfraDelegateConfig()).isEqualTo(pdcWinRmInfraDelegateConfig);
+    Collection<StepResponse.StepOutcome> stepOutcomes = stepResponse.getStepOutcomes();
+    assertThat(stepOutcomes.contains(StepResponse.StepOutcome.builder()
+                                         .outcome(getInstancesOutcome())
+                                         .name(OutcomeExpressionConstants.INSTANCES)
+                                         .group(OutcomeExpressionConstants.INFRASTRUCTURE_GROUP)
+                                         .build()))
+        .isTrue();
   }
 
   @Test
@@ -837,5 +867,11 @@ public class InfrastructureStepTest extends CategoryTest {
     Ambiance ambiance = Ambiance.newBuilder().putSetupAbstractions(SetupAbstractionKeys.accountId, ACCOUNT_ID).build();
     assertThatThrownBy(() -> infrastructureStep.validateConnector(infrastructure, ambiance))
         .hasMessageContaining(message);
+  }
+
+  private InstancesOutcome getInstancesOutcome() {
+    return InstancesOutcome.builder()
+        .instances(List.of(InstanceOutcome.builder().name("instanceName").hostName("instanceHostname").build()))
+        .build();
   }
 }

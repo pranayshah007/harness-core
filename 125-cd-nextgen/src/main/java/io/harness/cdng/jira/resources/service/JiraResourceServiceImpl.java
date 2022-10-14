@@ -106,11 +106,14 @@ public class JiraResourceServiceImpl implements JiraResourceService {
   public JiraIssueCreateMetadataNG getIssueCreateMetadata(IdentifierRef jiraConnectorRef, String orgId,
       String projectId, String projectKey, String issueType, String expand, boolean fetchStatus,
       boolean ignoreComment) {
+    boolean useNewMetaData =
+        cdFeatureFlagHelper.isEnabled(jiraConnectorRef.getAccountIdentifier(), FeatureName.SPG_USE_NEW_METADATA);
     JiraTaskNGParametersBuilder paramsBuilder = JiraTaskNGParameters.builder()
                                                     .action(JiraActionNG.GET_ISSUE_CREATE_METADATA)
                                                     .projectKey(projectKey)
                                                     .issueType(issueType)
                                                     .expand(expand)
+                                                    .newMetadata(useNewMetaData)
                                                     .fetchStatus(fetchStatus)
                                                     .ignoreComment(ignoreComment);
     JiraTaskNGResponse jiraTaskResponse = obtainJiraTaskNGResponse(jiraConnectorRef, orgId, projectId, paramsBuilder);

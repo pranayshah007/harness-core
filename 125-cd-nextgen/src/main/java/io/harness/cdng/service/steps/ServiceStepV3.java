@@ -153,13 +153,6 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
       throw new InvalidRequestException("Environment ref not found in pipeline yaml");
     }
 
-    final List<Object> toResolve = new ArrayList<>();
-    if (envRef.isExpression()) {
-      toResolve.add(envRef);
-    }
-    toResolve.add(envInputs);
-    expressionResolver.updateExpressions(ambiance, toResolve);
-
     log.info("Starting execution for Environment Step [{}]", envRef.getValue());
     if (envRef.fetchFinalValue() != null) {
       Optional<Environment> environment =
@@ -192,6 +185,8 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
             mergeSvcOverrideInputs(ngServiceOverridesEntity.get().getYaml(), parameters.getServiceOverrideInputs());
       }
 
+      resolve(ambiance, ngEnvironmentConfig, ngServiceOverrides);
+
       final EnvironmentOutcome environmentOutcome =
           EnvironmentMapper.toEnvironmentOutcome(environment.get(), ngEnvironmentConfig, ngServiceOverrides);
 
@@ -208,6 +203,11 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
           servicePartResponse.getNgServiceConfig(), ngServiceOverrides, ngEnvironmentConfig, ambiance,
           SERVICE_CONFIG_FILES_SWEEPING_OUTPUT);
     }
+  }
+
+  private void resolve(Ambiance ambiance, Object... objects) {
+    final List<Object> toResolve = new ArrayList<>(Arrays.asList(objects));
+    expressionResolver.updateExpressions(ambiance, toResolve);
   }
 
   private NGServiceOverrideConfig mergeSvcOverrideInputs(

@@ -20,4 +20,5 @@ import java.util.List;
 public interface OrchestrationEventLogRepositoryCustom {
   List<OrchestrationEventLog> findUnprocessedEvents(String planExecutionId, long lastUpdatedAt);
   void deleteLogsForGivenPlanExecutionId(String planExecutionId);
+  boolean checkIfAnyUnprocessedEvents(String planExecutionId, long lastUpdatedAt);
 }

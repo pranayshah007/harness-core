@@ -58,6 +58,11 @@ import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
 import io.harness.connector.validator.scmValidators.GitConfigAuthenticationInfoHelper;
+import io.harness.delegate.AccountId;
+import io.harness.delegate.SubmitTaskRequest;
+import io.harness.delegate.TaskLogAbstractions;
+import io.harness.delegate.TaskSetupAbstractions;
+import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.connector.scm.GitAuthType;
 import io.harness.delegate.beans.connector.scm.GitConnectionType;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketApiAccessDTO;
@@ -81,6 +86,7 @@ import io.harness.delegate.beans.storeconfig.FetchType;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
 import io.harness.delegate.task.git.GitFetchFilesConfig;
 import io.harness.delegate.task.helm.HelmFetchFileConfig;
+import io.harness.delegate.task.k8s.K8sApplyRequest;
 import io.harness.encryption.SecretRefData;
 import io.harness.exception.GeneralException;
 import io.harness.exception.InvalidArgumentsException;
@@ -96,18 +102,24 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureData;
 import io.harness.pms.contracts.execution.failure.FailureType;
+import io.harness.pms.contracts.execution.tasks.DelegateTaskRequest;
+import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
+import io.harness.rule.OwnerRule;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.security.encryption.EncryptedDataDetail;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -127,12 +139,12 @@ public class CDStepHelperTest extends CategoryTest {
   @Mock private ConnectorInfoDTO connectorInfoDTO;
   @Mock private LogStreamingStepClientFactory logStreamingStepClientFactory;
   @Spy @InjectMocks private K8sEntityHelper k8sEntityHelper;
-  @Spy @InjectMocks private CDStepHelper CDStepHelper;
+  @Spy @InjectMocks private CDStepHelper cdStepHelper;
   @Spy @InjectMocks private K8sHelmCommonStepHelper k8sHelmCommonStepHelper;
   private final Ambiance ambiance = Ambiance.newBuilder().putSetupAbstractions("accountId", "test-account").build();
   private String id = "identifier";
-  private ParameterField folderPath = ParameterField.createValueField("folderPath/");
-  private List<String> paths = asList("test/path1.yaml", "test/path2.yaml");
+  private final ParameterField folderPath = ParameterField.createValueField("folderPath/");
+  private final List<String> paths = asList("test/path1.yaml", "test/path2.yaml");
 
   @Before
   public void setup() {
@@ -172,7 +184,7 @@ public class CDStepHelperTest extends CategoryTest {
     doReturn(sshKeySpecDTO).when(gitConfigAuthenticationInfoHelper).getSSHKey(any(), any(), any(), any());
     doReturn(apiEncryptedDataDetails).when(secretManagerClientService).getEncryptionDetails(any(), any());
 
-    GitStoreDelegateConfig gitStoreDelegateConfig = CDStepHelper.getGitStoreDelegateConfig(
+    GitStoreDelegateConfig gitStoreDelegateConfig = cdStepHelper.getGitStoreDelegateConfig(
         gitStoreConfig, connectorInfoDTO, K8sManifestOutcome.builder().build(), paths, ambiance);
 
     assertThat(gitStoreDelegateConfig).isNotNull();
@@ -219,7 +231,7 @@ public class CDStepHelperTest extends CategoryTest {
     doReturn(sshKeySpecDTO).when(gitConfigAuthenticationInfoHelper).getSSHKey(any(), any(), any(), any());
     doReturn(apiEncryptedDataDetails).when(secretManagerClientService).getEncryptionDetails(any(), any());
 
-    GitStoreDelegateConfig gitStoreDelegateConfig = CDStepHelper.getGitStoreDelegateConfig(
+    GitStoreDelegateConfig gitStoreDelegateConfig = cdStepHelper.getGitStoreDelegateConfig(
         gitStoreConfig, connectorInfoDTO, K8sManifestOutcome.builder().build(), paths, ambiance);
 
     assertThat(gitStoreDelegateConfig).isNotNull();
@@ -250,7 +262,7 @@ public class CDStepHelperTest extends CategoryTest {
     doReturn(true).when(cdFeatureFlagHelper).isEnabled(any(), eq(OPTIMIZED_GIT_FETCH_FILES));
     doReturn(sshKeySpecDTO).when(gitConfigAuthenticationInfoHelper).getSSHKey(any(), any(), any(), any());
 
-    GitStoreDelegateConfig gitStoreDelegateConfig = CDStepHelper.getGitStoreDelegateConfig(
+    GitStoreDelegateConfig gitStoreDelegateConfig = cdStepHelper.getGitStoreDelegateConfig(
         gitStoreConfig, connectorInfoDTO, K8sManifestOutcome.builder().build(), paths, ambiance);
 
     assertThat(gitStoreDelegateConfig).isNotNull();
@@ -292,7 +304,7 @@ public class CDStepHelperTest extends CategoryTest {
     doReturn(true).when(cdFeatureFlagHelper).isEnabled(any(), eq(OPTIMIZED_GIT_FETCH_FILES));
     doReturn(sshKeySpecDTO).when(gitConfigAuthenticationInfoHelper).getSSHKey(any(), any(), any(), any());
 
-    GitStoreDelegateConfig gitStoreDelegateConfig = CDStepHelper.getGitStoreDelegateConfig(
+    GitStoreDelegateConfig gitStoreDelegateConfig = cdStepHelper.getGitStoreDelegateConfig(
         gitStoreConfig, connectorInfoDTO, K8sManifestOutcome.builder().build(), paths, ambiance);
 
     assertThat(gitStoreDelegateConfig).isNotNull();
@@ -337,7 +349,7 @@ public class CDStepHelperTest extends CategoryTest {
     doReturn(sshKeySpecDTO).when(gitConfigAuthenticationInfoHelper).getSSHKey(any(), any(), any(), any());
     doReturn(apiEncryptedDataDetails).when(secretManagerClientService).getEncryptionDetails(any(), any());
 
-    GitStoreDelegateConfig gitStoreDelegateConfig = CDStepHelper.getGitStoreDelegateConfig(
+    GitStoreDelegateConfig gitStoreDelegateConfig = cdStepHelper.getGitStoreDelegateConfig(
         gitStoreConfig, connectorInfoDTO, KustomizeManifestOutcome.builder().build(), paths, ambiance);
 
     assertThat(gitStoreDelegateConfig).isNotNull();
@@ -364,7 +376,7 @@ public class CDStepHelperTest extends CategoryTest {
 
     doReturn(sshKeySpecDTO).when(gitConfigAuthenticationInfoHelper).getSSHKey(any(), any(), any(), any());
 
-    GitStoreDelegateConfig gitStoreDelegateConfig = CDStepHelper.getGitStoreDelegateConfig(
+    GitStoreDelegateConfig gitStoreDelegateConfig = cdStepHelper.getGitStoreDelegateConfig(
         gitStoreConfig, connectorInfoDTO, K8sManifestOutcome.builder().build(), paths, ambiance);
 
     assertThat(gitStoreDelegateConfig).isNotNull();
@@ -391,7 +403,7 @@ public class CDStepHelperTest extends CategoryTest {
 
     doReturn(sshKeySpecDTO).when(gitConfigAuthenticationInfoHelper).getSSHKey(any(), any(), any(), any());
 
-    GitStoreDelegateConfig gitStoreDelegateConfig = CDStepHelper.getGitStoreDelegateConfig(
+    GitStoreDelegateConfig gitStoreDelegateConfig = cdStepHelper.getGitStoreDelegateConfig(
         gitStoreConfig, connectorInfoDTO, K8sManifestOutcome.builder().build(), paths, ambiance);
 
     assertThat(gitStoreDelegateConfig).isNotNull();
@@ -415,7 +427,7 @@ public class CDStepHelperTest extends CategoryTest {
 
     doReturn(sshKeySpecDTO).when(gitConfigAuthenticationInfoHelper).getSSHKey(any(), any(), any(), any());
     try {
-      CDStepHelper.getGitStoreDelegateConfig(
+      cdStepHelper.getGitStoreDelegateConfig(
           gitStoreConfig, connectorInfoDTO, K8sManifestOutcome.builder().build(), paths, ambiance);
     } catch (Exception thrown) {
       assertThat(thrown).isNotNull();
@@ -442,7 +454,7 @@ public class CDStepHelperTest extends CategoryTest {
 
     doReturn(sshKeySpecDTO).when(gitConfigAuthenticationInfoHelper).getSSHKey(any(), any(), any(), any());
 
-    GitStoreDelegateConfig gitStoreDelegateConfig = CDStepHelper.getGitStoreDelegateConfig(
+    GitStoreDelegateConfig gitStoreDelegateConfig = cdStepHelper.getGitStoreDelegateConfig(
         gitStoreConfig, connectorInfoDTO, K8sManifestOutcome.builder().build(), paths, ambiance);
 
     assertThat(gitStoreDelegateConfig.getBranch()).isEqualTo("branch");
@@ -458,8 +470,8 @@ public class CDStepHelperTest extends CategoryTest {
     StepElementParameters definedValue =
         StepElementParameters.builder().timeout(ParameterField.createValueField("15m")).build();
     StepElementParameters nullValue = StepElementParameters.builder().timeout(ParameterField.ofNull()).build();
-    assertThat(CDStepHelper.getTimeoutValue(definedValue)).isEqualTo("15m");
-    assertThat(CDStepHelper.getTimeoutValue(nullValue)).isEqualTo("10m");
+    assertThat(cdStepHelper.getTimeoutValue(definedValue)).isEqualTo("15m");
+    assertThat(cdStepHelper.getTimeoutValue(nullValue)).isEqualTo("10m");
   }
 
   @Test
@@ -468,7 +480,7 @@ public class CDStepHelperTest extends CategoryTest {
   public void testGetTimeoutInMin() {
     StepElementParameters value =
         StepElementParameters.builder().timeout(ParameterField.createValueField("15m")).build();
-    assertThat(CDStepHelper.getTimeoutInMin(value)).isEqualTo(15);
+    assertThat(cdStepHelper.getTimeoutInMin(value)).isEqualTo(15);
   }
 
   @Test
@@ -477,7 +489,7 @@ public class CDStepHelperTest extends CategoryTest {
   public void testGetTimeoutInMillis() {
     StepElementParameters value =
         StepElementParameters.builder().timeout(ParameterField.createValueField("15m")).build();
-    assertThat(CDStepHelper.getTimeoutInMillis(value)).isEqualTo(900000);
+    assertThat(cdStepHelper.getTimeoutInMillis(value)).isEqualTo(900000);
   }
 
   public Ambiance getAmbiance() {
@@ -500,7 +512,7 @@ public class CDStepHelperTest extends CategoryTest {
         Optional.of(ConnectorResponseDTO.builder().connector(connectorDTO).build());
     doReturn(connectorDTOOptional).when(connectorService).get("account1", "org1", "project1", "abcConnector");
 
-    ConnectorInfoDTO actualConnector = CDStepHelper.getConnector("abcConnector", ambiance);
+    ConnectorInfoDTO actualConnector = cdStepHelper.getConnector("abcConnector", ambiance);
     assertThat(actualConnector).isEqualTo(connectorDTO);
   }
 
@@ -514,7 +526,7 @@ public class CDStepHelperTest extends CategoryTest {
         Optional.of(ConnectorResponseDTO.builder().connector(connectorDTO).build());
     doReturn(connectorDTOOptional).when(connectorService).get("account1", "org1", null, "abcConnector");
 
-    ConnectorInfoDTO actualConnector = CDStepHelper.getConnector("org.abcConnector", ambiance);
+    ConnectorInfoDTO actualConnector = cdStepHelper.getConnector("org.abcConnector", ambiance);
     assertThat(actualConnector).isEqualTo(connectorDTO);
   }
 
@@ -524,39 +536,39 @@ public class CDStepHelperTest extends CategoryTest {
   public void testGetReleaseName() {
     // Invalid formats
     assertThatThrownBy(()
-                           -> CDStepHelper.getReleaseName(ambiance,
+                           -> cdStepHelper.getReleaseName(ambiance,
                                K8sDirectInfrastructureOutcome.builder().releaseName("").build()))
         .isInstanceOf(InvalidArgumentsException.class); // empty releaseName
 
     assertThatThrownBy(()
-                           -> CDStepHelper.getReleaseName(ambiance,
+                           -> cdStepHelper.getReleaseName(ambiance,
                                K8sDirectInfrastructureOutcome.builder().releaseName("NameWithUpperCase").build()))
         .isInstanceOf(InvalidRequestException.class);
     assertThatThrownBy(
         ()
-            -> CDStepHelper.getReleaseName(
+            -> cdStepHelper.getReleaseName(
                 ambiance, K8sGcpInfrastructureOutcome.builder().releaseName("-starting.with.non.alphanumeric").build()))
         .isInstanceOf(InvalidRequestException.class);
     assertThatThrownBy(
         ()
-            -> CDStepHelper.getReleaseName(ambiance,
+            -> cdStepHelper.getReleaseName(ambiance,
                 K8sDirectInfrastructureOutcome.builder().releaseName(".starting.with.non.alphanumeric").build()))
         .isInstanceOf(InvalidRequestException.class);
     assertThatThrownBy(
         ()
-            -> CDStepHelper.getReleaseName(
+            -> cdStepHelper.getReleaseName(
                 ambiance, K8sGcpInfrastructureOutcome.builder().releaseName("containing)invalid.characters+").build()))
         .isInstanceOf(InvalidRequestException.class);
 
     // Valid Formats
-    CDStepHelper.getReleaseName(
+    cdStepHelper.getReleaseName(
         ambiance, K8sDirectInfrastructureOutcome.builder().releaseName("alphanumeriname124").build());
-    CDStepHelper.getReleaseName(
+    cdStepHelper.getReleaseName(
         ambiance, K8sGcpInfrastructureOutcome.builder().releaseName("1starting.with.number").build());
-    CDStepHelper.getReleaseName(
+    cdStepHelper.getReleaseName(
         ambiance, K8sDirectInfrastructureOutcome.builder().releaseName("starting.with.alphabet").build());
-    CDStepHelper.getReleaseName(ambiance, K8sGcpInfrastructureOutcome.builder().releaseName("containing.dot").build());
-    CDStepHelper.getReleaseName(
+    cdStepHelper.getReleaseName(ambiance, K8sGcpInfrastructureOutcome.builder().releaseName("containing.dot").build());
+    cdStepHelper.getReleaseName(
         ambiance, K8sDirectInfrastructureOutcome.builder().releaseName("containing-hyphen").build());
   }
 
@@ -573,13 +585,13 @@ public class CDStepHelperTest extends CategoryTest {
     doReturn(Optional.empty()).when(connectorService).get("account1", "org1", null, "abcConnector");
     doReturn(Optional.empty()).when(connectorService).get("account1", "org1", "project1", "abcConnector");
 
-    ConnectorInfoDTO actualConnector = CDStepHelper.getConnector("account.abcConnector", ambiance);
+    ConnectorInfoDTO actualConnector = cdStepHelper.getConnector("account.abcConnector", ambiance);
     assertThat(actualConnector).isEqualTo(connectorDTO);
 
-    assertThatThrownBy(() -> CDStepHelper.getConnector("org.abcConnector", ambiance))
+    assertThatThrownBy(() -> cdStepHelper.getConnector("org.abcConnector", ambiance))
         .hasMessageContaining("Connector not found for identifier : [org.abcConnector]");
 
-    assertThatThrownBy(() -> CDStepHelper.getConnector("abcConnector", ambiance))
+    assertThatThrownBy(() -> cdStepHelper.getConnector("abcConnector", ambiance))
         .hasMessageContaining("Connector not found for identifier : [abcConnector]");
   }
 
@@ -594,7 +606,7 @@ public class CDStepHelperTest extends CategoryTest {
             .errorMessage("Something went wrong")
             .build();
 
-    StepResponse result = CDStepHelper.handleStepExceptionFailure(data);
+    StepResponse result = cdStepHelper.handleStepExceptionFailure(data);
 
     assertThat(result.getUnitProgressList()).isEqualTo(progressList);
     assertThat(result.getStatus()).isEqualTo(Status.FAILED);
@@ -614,7 +626,7 @@ public class CDStepHelperTest extends CategoryTest {
         ManifestStoreType.GITLAB, ManifestStoreType.HTTP, ManifestStoreType.S3, ManifestStoreType.GCS,
         ManifestStoreType.OCI};
     for (String storeType : manifestStoreTypes) {
-      assertThatThrownBy(() -> CDStepHelper.validateManifest(storeType, ConnectorInfoDTO.builder().build(), ""))
+      assertThatThrownBy(() -> cdStepHelper.validateManifest(storeType, ConnectorInfoDTO.builder().build(), ""))
           .isInstanceOf(InvalidRequestException.class);
     }
   }
@@ -632,11 +644,11 @@ public class CDStepHelperTest extends CategoryTest {
     K8sDirectInfrastructureOutcomeBuilder outcomeBuilder =
         K8sDirectInfrastructureOutcome.builder().connectorRef("abcConnector").namespace("valid");
 
-    assertThatThrownBy(() -> CDStepHelper.getK8sInfraDelegateConfig(outcomeBuilder.build(), ambiance))
+    assertThatThrownBy(() -> cdStepHelper.getK8sInfraDelegateConfig(outcomeBuilder.build(), ambiance))
         .isInstanceOf(UnsupportedOperationException.class);
 
     assertThatThrownBy(()
-                           -> CDStepHelper.getK8sInfraDelegateConfig(K8sGcpInfrastructureOutcome.builder()
+                           -> cdStepHelper.getK8sInfraDelegateConfig(K8sGcpInfrastructureOutcome.builder()
                                                                          .connectorRef("abcConnector")
                                                                          .namespace("valid")
                                                                          .cluster("cluster")
@@ -660,7 +672,7 @@ public class CDStepHelperTest extends CategoryTest {
 
     try {
       outcomeBuilder.namespace("");
-      CDStepHelper.getK8sInfraDelegateConfig(outcomeBuilder.build(), ambiance);
+      cdStepHelper.getK8sInfraDelegateConfig(outcomeBuilder.build(), ambiance);
       fail("Should not reach here.");
     } catch (InvalidArgumentsException ex) {
       assertThat(ex.getParams().get("args")).isEqualTo("Namespace: Namespace cannot be empty");
@@ -668,7 +680,7 @@ public class CDStepHelperTest extends CategoryTest {
 
     try {
       outcomeBuilder.namespace(" namespace test ");
-      CDStepHelper.getK8sInfraDelegateConfig(outcomeBuilder.build(), ambiance);
+      cdStepHelper.getK8sInfraDelegateConfig(outcomeBuilder.build(), ambiance);
       fail("Should not reach here.");
     } catch (InvalidArgumentsException ex) {
       assertThat(ex.getParams().get("args"))
@@ -680,7 +692,7 @@ public class CDStepHelperTest extends CategoryTest {
   @Owner(developers = NGONZALEZ)
   @Category(UnitTests.class)
   public void testValidateGitStoreConfigWithNoArguments() {
-    CDStepHelper.validateGitStoreConfig(null);
+    cdStepHelper.validateGitStoreConfig(null);
   }
 
   @Test(expected = InvalidRequestException.class)
@@ -688,7 +700,7 @@ public class CDStepHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testValidateGitStoreConfigWithEmptyBranch() {
     GithubStore gitStore = GithubStore.builder().gitFetchType(FetchType.BRANCH).build();
-    CDStepHelper.validateGitStoreConfig(gitStore);
+    cdStepHelper.validateGitStoreConfig(gitStore);
   }
 
   @Test(expected = InvalidRequestException.class)
@@ -696,7 +708,7 @@ public class CDStepHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testValidateGitStoreConfigWithEmptyCommit() {
     GithubStore gitStore = GithubStore.builder().gitFetchType(FetchType.COMMIT).build();
-    CDStepHelper.validateGitStoreConfig(gitStore);
+    cdStepHelper.validateGitStoreConfig(gitStore);
   }
 
   @Test
@@ -709,9 +721,9 @@ public class CDStepHelperTest extends CategoryTest {
     branch.setValue("branch");
     commit.setValue("commit");
     GithubStore gitStore = GithubStore.builder().gitFetchType(FetchType.BRANCH).branch(branch).build();
-    CDStepHelper.validateGitStoreConfig(gitStore);
+    cdStepHelper.validateGitStoreConfig(gitStore);
     GithubStore gitStore2 = GithubStore.builder().gitFetchType(FetchType.COMMIT).commitId(commit).build();
-    CDStepHelper.validateGitStoreConfig(gitStore2);
+    cdStepHelper.validateGitStoreConfig(gitStore2);
     assertThat(gitStore.getBranch()).isEqualTo(branch);
     assertThat(gitStore2.getCommitId()).isEqualTo(commit);
   }
@@ -721,7 +733,7 @@ public class CDStepHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testCompleteUnitProgressDataEmpty() {
     Ambiance ambiance = getAmbiance();
-    UnitProgressData response = CDStepHelper.completeUnitProgressData(null, ambiance, "foobar");
+    UnitProgressData response = cdStepHelper.completeUnitProgressData(null, ambiance, "foobar");
     assertThat(response.getUnitProgresses().size()).isEqualTo(0);
   }
 
@@ -733,7 +745,7 @@ public class CDStepHelperTest extends CategoryTest {
     unitProgresses.add(UnitProgress.newBuilder().setStatus(UnitStatus.SUCCESS).build());
     UnitProgressData unitProgressData = UnitProgressData.builder().unitProgresses(unitProgresses).build();
     Ambiance ambiance = getAmbiance();
-    UnitProgressData response = CDStepHelper.completeUnitProgressData(unitProgressData, ambiance, "foobar");
+    UnitProgressData response = cdStepHelper.completeUnitProgressData(unitProgressData, ambiance, "foobar");
     assertThat(response.getUnitProgresses().size()).isEqualTo(1);
   }
 
@@ -746,11 +758,11 @@ public class CDStepHelperTest extends CategoryTest {
     UnitProgressData unitProgressData = UnitProgressData.builder().unitProgresses(unitProgresses).build();
     Ambiance ambiance = getAmbiance();
     NGLogCallback mockCallback = mock(NGLogCallback.class);
-    doReturn(mockCallback).when(CDStepHelper).getLogCallback("foobar", ambiance, true);
+    doReturn(mockCallback).when(cdStepHelper).getLogCallback("foobar", ambiance, true);
     doNothing().when(mockCallback).saveExecutionLog(any(), any(), any());
     ILogStreamingStepClient mockLogSgtreamingStepClient = mock(ILogStreamingStepClient.class);
     doReturn(mockLogSgtreamingStepClient).when(logStreamingStepClientFactory).getLogStreamingStepClient(ambiance);
-    UnitProgressData response = CDStepHelper.completeUnitProgressData(unitProgressData, ambiance, "foobar");
+    UnitProgressData response = cdStepHelper.completeUnitProgressData(unitProgressData, ambiance, "foobar");
     assertThat(response.getUnitProgresses().get(0).getStatus()).isEqualTo(UnitStatus.FAILURE);
   }
 
@@ -768,7 +780,7 @@ public class CDStepHelperTest extends CategoryTest {
                                      .build();
     GitStoreDelegateConfig gitStoreDelegateConfig = GitStoreDelegateConfig.builder().paths(paths).build();
     doReturn(connectorDTO).when(k8sEntityHelper).getConnectorInfoDTO(any(), any());
-    doReturn(gitStoreDelegateConfig).when(CDStepHelper).getGitStoreDelegateConfig(any(), any(), any(), any(), any());
+    doReturn(gitStoreDelegateConfig).when(cdStepHelper).getGitStoreDelegateConfig(any(), any(), any(), any(), any());
     ManifestOutcome valuesManifestOutcome = ValuesManifestOutcome.builder().identifier(id).store(githubStore).build();
     GitFetchFilesConfig valuesGitFetchFilesConfig =
         k8sHelmCommonStepHelper.getGitFetchFilesConfig(ambiance, githubStore, "passed", valuesManifestOutcome);
@@ -791,7 +803,7 @@ public class CDStepHelperTest extends CategoryTest {
                                      .build();
     GitStoreDelegateConfig gitStoreDelegateConfig = GitStoreDelegateConfig.builder().paths(paths).build();
     doReturn(connectorDTO).when(k8sEntityHelper).getConnectorInfoDTO(any(), any());
-    doReturn(gitStoreDelegateConfig).when(CDStepHelper).getGitStoreDelegateConfig(any(), any(), any(), any(), any());
+    doReturn(gitStoreDelegateConfig).when(cdStepHelper).getGitStoreDelegateConfig(any(), any(), any(), any(), any());
     InheritFromManifestStoreConfig inheritFromManifestStoreConfig =
         InheritFromManifestStoreConfig.builder().paths(ParameterField.createValueField(paths)).build();
     ManifestOutcome kustomizeManifestOutcome = KustomizeManifestOutcome.builder().store(githubStore).build();
@@ -858,7 +870,7 @@ public class CDStepHelperTest extends CategoryTest {
     doReturn(sshKeySpecDTO).when(gitConfigAuthenticationInfoHelper).getSSHKey(any(), any(), any(), any());
     doReturn(apiEncryptedDataDetails).when(secretManagerClientService).getEncryptionDetails(any(), any());
 
-    GitStoreDelegateConfig gitStoreDelegateConfig = CDStepHelper.getGitStoreDelegateConfig(
+    GitStoreDelegateConfig gitStoreDelegateConfig = cdStepHelper.getGitStoreDelegateConfig(
         gitStoreConfig, connectorInfoDTO, K8sManifestOutcome.builder().build(), paths, ambiance);
 
     assertThat(gitStoreDelegateConfig).isNotNull();
@@ -905,7 +917,7 @@ public class CDStepHelperTest extends CategoryTest {
     doReturn(sshKeySpecDTO).when(gitConfigAuthenticationInfoHelper).getSSHKey(any(), any(), any(), any());
     doReturn(apiEncryptedDataDetails).when(secretManagerClientService).getEncryptionDetails(any(), any());
 
-    GitStoreDelegateConfig gitStoreDelegateConfig = CDStepHelper.getGitStoreDelegateConfig(
+    GitStoreDelegateConfig gitStoreDelegateConfig = cdStepHelper.getGitStoreDelegateConfig(
         gitStoreConfig, connectorInfoDTO, K8sManifestOutcome.builder().build(), paths, ambiance);
 
     assertThat(gitStoreDelegateConfig).isNotNull();
@@ -917,5 +929,56 @@ public class CDStepHelperTest extends CategoryTest {
     assertThat(convertedBitbucketConnectorDTO.getUrl()).isEqualTo("http://localhost/parent-repo/module");
     assertThat(convertedBitbucketConnectorDTO.getConnectionType()).isEqualTo(GitConnectionType.REPO);
     assertThat(convertedBitbucketConnectorDTO.getApiAccess()).isNotNull();
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.YOGESH)
+  @Category(UnitTests.class)
+  public void mapTaskRequestToDelegateTaskRequest() {
+    io.harness.beans.DelegateTaskRequest delegateTaskRequest = cdStepHelper.mapTaskRequestToDelegateTaskRequest(
+        TaskRequest.newBuilder()
+            .setDelegateTaskRequest(
+                DelegateTaskRequest.newBuilder()
+                    .setRequest(
+                        SubmitTaskRequest.newBuilder()
+                            .setAccountId(AccountId.newBuilder().setId("accountId").build())
+                            .setSetupAbstractions(TaskSetupAbstractions.newBuilder().putValues("k", "v").build())
+                            .setLogAbstractions(TaskLogAbstractions.newBuilder().putValues("l", "v_l").build())
+                            .addEligibleToExecuteDelegateIds("d1")
+                            .setExecuteOnHarnessHostedDelegates(true)
+                            .setEmitEvent(true)
+                            .setStageId("stage_1")
+                            .setForceExecute(true)
+                            .build())
+                    .build())
+            .build(),
+        TaskData.builder()
+            .parked(true)
+            .taskType("tasktype")
+            .timeout(100L)
+            .expressionFunctorToken(12345)
+            .parameters(new Object[] {K8sApplyRequest.builder().build()})
+            .build(),
+        Set.of("s1", "s2"));
+
+    assertThat(delegateTaskRequest)
+        .isEqualTo(io.harness.beans.DelegateTaskRequest.builder()
+                       .accountId("accountId")
+                       .taskType("tasktype")
+                       .taskParameters(K8sApplyRequest.builder().build())
+                       .parked(true)
+                       .taskSetupAbstractions(Map.of("k", "v"))
+                       .logStreamingAbstractions(new LinkedHashMap<>() {
+                         { put("l", "v_l"); }
+                       })
+                       .taskSelectors(Set.of("s1", "s2"))
+                       .eligibleToExecuteDelegateIds(List.of("d1"))
+                       .expressionFunctorToken(12345)
+                       .forceExecute(true)
+                       .executeOnHarnessHostedDelegates(true)
+                       .stageId("stage_1")
+                       .emitEvent(true)
+                       .executionTimeout(Duration.ofNanos(100000000))
+                       .build());
   }
 }

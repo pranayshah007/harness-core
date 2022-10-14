@@ -49,6 +49,11 @@ public class AzureArtifactsOutcome implements ArtifactOutcome {
   String scope;
 
   /**
+   * PackageType
+   */
+  String packageType;
+
+  /**
    * PackageId
    */
   String packageId;

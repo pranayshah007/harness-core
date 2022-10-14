@@ -34,8 +34,12 @@ import io.harness.delegate.beans.ecs.EcsTask;
 import io.harness.delegate.task.aws.AwsNgConfigMapper;
 import io.harness.delegate.task.ecs.request.EcsBlueGreenCreateServiceRequest;
 import io.harness.delegate.task.ecs.request.EcsBlueGreenRollbackRequest;
+import io.harness.exception.CommandExecutionException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NestedExceptionUtils;
+import io.harness.exception.TimeoutException;
+import io.harness.exception.WingsException;
+import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
 import io.harness.serializer.YamlUtils;
@@ -69,6 +73,7 @@ import software.amazon.awssdk.services.applicationautoscaling.model.DescribeScal
 import software.amazon.awssdk.services.applicationautoscaling.model.PutScalingPolicyRequest;
 import software.amazon.awssdk.services.applicationautoscaling.model.RegisterScalableTargetRequest;
 import software.amazon.awssdk.services.applicationautoscaling.model.ServiceNamespace;
+import software.amazon.awssdk.services.ecs.model.Container;
 import software.amazon.awssdk.services.ecs.model.CreateServiceRequest;
 import software.amazon.awssdk.services.ecs.model.CreateServiceResponse;
 import software.amazon.awssdk.services.ecs.model.DeleteServiceRequest;
@@ -82,11 +87,13 @@ import software.amazon.awssdk.services.ecs.model.ListTasksResponse;
 import software.amazon.awssdk.services.ecs.model.RegisterTaskDefinitionRequest;
 import software.amazon.awssdk.services.ecs.model.RegisterTaskDefinitionResponse;
 import software.amazon.awssdk.services.ecs.model.RunTaskRequest;
+import software.amazon.awssdk.services.ecs.model.RunTaskResponse;
 import software.amazon.awssdk.services.ecs.model.Service;
 import software.amazon.awssdk.services.ecs.model.ServiceEvent;
 import software.amazon.awssdk.services.ecs.model.ServiceField;
 import software.amazon.awssdk.services.ecs.model.Tag;
 import software.amazon.awssdk.services.ecs.model.TagResourceRequest;
+import software.amazon.awssdk.services.ecs.model.Task;
 import software.amazon.awssdk.services.ecs.model.UntagResourceRequest;
 import software.amazon.awssdk.services.ecs.model.UpdateServiceRequest;
 import software.amazon.awssdk.services.ecs.model.UpdateServiceResponse;
@@ -1134,5 +1141,88 @@ public class EcsCommandTaskNGHelper {
 
   public boolean isServiceActive(Service service) {
     return service != null && service.status().equals("ACTIVE");
+  }
+
+  public RunTaskResponse runTask(RunTaskRequest runTaskRequest, AwsConnectorDTO awsConnectorDTO, String region) {
+    AwsInternalConfig awsInternalConfig = awsNgConfigMapper.createAwsInternalConfig(awsConnectorDTO);
+    return ecsV2Client.runTask(awsInternalConfig, runTaskRequest, region);
+  }
+
+  public List<Task> getTasksFromTaskARNs(List<String> triggeredRunTaskArns, String cluster, String region,
+      AwsConnectorDTO awsConnectorDTO, LogCallback logCallback) {
+    return ecsV2Client
+        .getTasks(awsNgConfigMapper.createAwsInternalConfig(awsConnectorDTO), cluster, triggeredRunTaskArns, region)
+        .tasks();
+  }
+
+  public void waitAndDoSteadyStateCheck(List<String> triggeredRunTaskArns, Long timeout,
+      AwsConnectorDTO awsConnectorDTO, String region, String clusterName, LogCallback logCallback) {
+    try {
+      HTimeLimiter.callInterruptible(timeLimiter, Duration.ofMillis(timeout), () -> {
+        while (true) {
+          List<Task> tasks =
+              getTasksFromTaskARNs(triggeredRunTaskArns, clusterName, region, awsConnectorDTO, logCallback);
+
+          List<Task> notInStoppedStateTasks =
+              tasks.stream()
+                  .filter(t -> !t.lastStatus().equals(com.amazonaws.services.ecs.model.DesiredStatus.STOPPED.name()))
+                  .collect(Collectors.toList());
+
+          List<Task> tasksWithFailedContainers =
+              tasks.stream()
+                  .filter(task -> task.containers().stream().anyMatch(container -> isEcsTaskContainerFailed(container)))
+                  .collect(Collectors.toList());
+
+          if (EmptyPredicate.isNotEmpty(tasksWithFailedContainers)) {
+            String errorMsg =
+                tasksWithFailedContainers.stream()
+                    .flatMap(
+                        task -> task.containers().stream().filter(container -> isEcsTaskContainerFailed(container)))
+                    .map(container
+                        -> container.taskArn() + " => " + container.containerArn()
+                            + " => exit code : " + container.exitCode())
+                    .collect(Collectors.joining("\n"));
+            logCallback.saveExecutionLog(
+                "Containers in some tasks failed and are showing non zero exit code\n" + errorMsg, LogLevel.ERROR,
+                CommandExecutionStatus.FAILURE);
+            throw new CommandExecutionException(
+                "Containers in some tasks failed and are showing non zero exit code\n " + errorMsg);
+          }
+
+          if (EmptyPredicate.isEmpty(notInStoppedStateTasks)) {
+            return true;
+          }
+
+          String taskStatusLog = tasks.stream()
+                                     .map(task
+                                         -> format("%s : %s : %s : %s", task.taskDefinitionArn(), task.lastStatus(),
+                                             task.stopCode(), task.stoppedReason()))
+                                     .collect(Collectors.joining("\n"));
+
+          logCallback.saveExecutionLog(format("%d tasks have not completed", notInStoppedStateTasks.size()));
+          logCallback.saveExecutionLog(taskStatusLog);
+          sleep(ofSeconds(10));
+        }
+      });
+    } catch (UncheckedTimeoutException e) {
+      logCallback.saveExecutionLog(
+          "Timed out waiting for run tasks to complete", LogLevel.ERROR, CommandExecutionStatus.FAILURE);
+      throw new TimeoutException(
+          "Timed out waiting for tasks to be in running state", "Timeout", e, WingsException.EVERYBODY);
+    } catch (WingsException e) {
+      logCallback.saveExecutionLog(
+          "Got Some exception while waiting for tasks to complete", LogLevel.ERROR, CommandExecutionStatus.FAILURE);
+      throw e;
+    } catch (Exception e) {
+      logCallback.saveExecutionLog(
+          "Got Some exception while waiting for tasks to complete", LogLevel.ERROR, CommandExecutionStatus.FAILURE);
+      throw new InvalidRequestException("Error while waiting for run tasks to complete", e);
+    }
+    logCallback.saveExecutionLog("All Tasks completed successfully.", LogLevel.INFO, CommandExecutionStatus.SUCCESS);
+  }
+
+  public boolean isEcsTaskContainerFailed(Container container) {
+    return (container.exitCode() != null && container.exitCode() != 0)
+        || (container.lastStatus() != null && container.lastStatus().equals("STOPPED") && container.exitCode() == null);
   }
 }

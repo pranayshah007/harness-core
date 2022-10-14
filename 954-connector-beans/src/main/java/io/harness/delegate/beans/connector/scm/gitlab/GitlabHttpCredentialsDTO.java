@@ -7,8 +7,6 @@
 
 package io.harness.delegate.beans.connector.scm.gitlab;
 
-import io.harness.annotation.RecasterFieldName;
-
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -31,7 +29,6 @@ import lombok.experimental.FieldDefaults;
     description = "This contains details of the Gitlab credentials used via HTTP connections")
 public class GitlabHttpCredentialsDTO implements GitlabCredentialsDTO {
   @NotNull GitlabHttpAuthenticationType type;
-  @RecasterFieldName(name = "spec")
   @JsonProperty("spec")
   @JsonTypeInfo(
       use = JsonTypeInfo.Id.NAME, property = "type", include = JsonTypeInfo.As.EXTERNAL_PROPERTY, visible = true)

@@ -23,7 +23,7 @@ template:
         - name: image
           type: Connector
           value: account.Docker
-          description: "Hello"
+          description: "image"
       fetchInstancesScript:
         store:
           type: Harness

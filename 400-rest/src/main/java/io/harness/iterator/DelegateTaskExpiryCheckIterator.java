@@ -25,7 +25,6 @@ import io.harness.logging.AutoLogContext;
 import io.harness.mongo.iterator.MongoPersistenceIterator;
 import io.harness.mongo.iterator.filter.MorphiaFilterExpander;
 import io.harness.mongo.iterator.provider.MorphiaPersistenceProvider;
-import io.harness.perpetualtask.internal.PerpetualTaskRecordDao;
 
 import software.wings.service.intfc.DelegateService;
 import software.wings.service.intfc.DelegateTaskServiceClassic;
@@ -49,7 +48,6 @@ public class DelegateTaskExpiryCheckIterator implements MongoPersistenceIterator
   @Inject private DelegateTaskServiceClassic delegateTaskServiceClassic;
   @Inject private DelegateService delegateService;
   @Inject private FeatureFlagService featureFlagService;
-  @Inject private PerpetualTaskRecordDao perpetualTaskRecordDao;
 
   public void registerIterators(int threadPoolSize) {
     PumpExecutorOptions options = PumpExecutorOptions.builder()
@@ -87,7 +85,6 @@ public class DelegateTaskExpiryCheckIterator implements MongoPersistenceIterator
       delegateService.updateLastExpiredEventHeartbeatTime(
           delegate.getLastHeartBeat(), delegate.getUuid(), delegate.getAccountId());
     }
-    perpetualTaskRecordDao.markBatchOfPerpetualTasksWithNoHeartBeatToRebalanceForAccount(delegate.getAccountId());
   }
 
   private boolean isDelegateExpiryCheckDoneAlready(Delegate delegate) {

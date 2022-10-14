@@ -72,6 +72,10 @@ if [[ "" != "$TIMESCALEDB_PASSWORD" ]]; then
   export TIMESCALEDB_PASSWORD; yq -i '.timescaledb.timescaledbPassword=env(TIMESCALEDB_PASSWORD)' $CONFIG_FILE
 fi
 
+if [[ "" != "$TIMESCALEDB_VALIDATE_CONNECTIONS" ]]; then
+  export TIMESCALEDB_VALIDATE_CONNECTIONS; yq -i '.timescaledb.isConnectionValidationNeeded=env(TIMESCALEDB_VALIDATE_CONNECTIONS)' $CONFIG_FILE
+fi
+
 if [[ "" != "$GCP_PROJECT_ID" ]]; then
   export GCP_PROJECT_ID; yq -i '.gcp-project-id=env(GCP_PROJECT_ID)' $CONFIG_FILE
 fi

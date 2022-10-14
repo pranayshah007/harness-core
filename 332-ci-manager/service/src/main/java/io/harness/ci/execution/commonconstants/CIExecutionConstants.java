@@ -32,6 +32,7 @@ public class CIExecutionConstants {
   public static final String STEP_VOLUME = "harness";
   public static final String STEP_MOUNT_PATH = "/harness";
   public static final String OSX_STEP_MOUNT_PATH = "/tmp/harness";
+  public static final String OSX_ADDON_MOUNT_PATH = "/tmp/addon";
   public static final String STEP_WORK_DIR = STEP_MOUNT_PATH;
   public static final String ETC_DIR = "/etc";
 
@@ -46,6 +47,14 @@ public class CIExecutionConstants {
   public static final String GIT_SSL_NO_VERIFY = "GIT_SSL_NO_VERIFY";
   public static final String GIT_URL_SUFFIX = ".git";
   public static final String PATH_SEPARATOR = "/";
+
+  // Constants for implict cache steps
+  public static final String RESTORE_CACHE_STEP_ID = "restore-cache-harness";
+  public static final String SAVE_CACHE_STEP_ID = "save-cache-harness";
+  public static final String RESTORE_CACHE_STEP_NAME = "Restore Cache From Harness";
+  public static final String SAVE_CACHE_STEP_NAME = "Save Cache to Harness";
+  public static final String CACHE_ARCHIVE_TYPE_TAR = "tar";
+  public static final String CACHE_GCS_BACKEND = "gcs";
 
   // Constant for
   public static final String UNIX_STEP_COMMAND = "/addon/bin/ci-addon";

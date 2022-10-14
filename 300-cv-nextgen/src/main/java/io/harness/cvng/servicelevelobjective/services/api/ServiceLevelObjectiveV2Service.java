@@ -7,11 +7,19 @@
 
 package io.harness.cvng.servicelevelobjective.services.api;
 
+import io.harness.cvng.beans.cvnglog.CVNGLogDTO;
+import io.harness.cvng.core.beans.params.PageParams;
 import io.harness.cvng.core.beans.params.ProjectParams;
+import io.harness.cvng.core.beans.params.logsFilterParams.SLILogsFilter;
 import io.harness.cvng.core.services.api.DeleteEntityByHandler;
+import io.harness.cvng.notification.beans.NotificationRuleResponse;
+import io.harness.cvng.servicelevelobjective.SLORiskCountResponse;
+import io.harness.cvng.servicelevelobjective.beans.SLODashboardApiFilter;
+import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveFilter;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2DTO;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2Response;
 import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObjective;
+import io.harness.ng.beans.PageResponse;
 
 import java.util.List;
 
@@ -31,4 +39,30 @@ public interface ServiceLevelObjectiveV2Service extends DeleteEntityByHandler<Ab
 
   void updateNotificationRuleRefInSLO(ProjectParams projectParams, AbstractServiceLevelObjective serviceLevelObjective,
       List<String> notificationRuleRefs);
+
+  PageResponse<ServiceLevelObjectiveV2Response> get(ProjectParams projectParams, Integer offset, Integer pageSize,
+      ServiceLevelObjectiveFilter serviceLevelObjectiveFilter);
+
+  ServiceLevelObjectiveV2Response get(ProjectParams projectParams, String identifier);
+
+  SLORiskCountResponse getRiskCount(ProjectParams projectParams, SLODashboardApiFilter serviceLevelObjectiveFilter);
+
+  List<AbstractServiceLevelObjective> getAllSLOs(ProjectParams projectParams);
+
+  List<AbstractServiceLevelObjective> getByMonitoredServiceIdentifier(
+      ProjectParams projectParams, String monitoredServiceIdentifier);
+
+  PageResponse<CVNGLogDTO> getCVNGLogs(
+      ProjectParams projectParams, String identifier, SLILogsFilter sliLogsFilter, PageParams pageParams);
+
+  PageResponse<AbstractServiceLevelObjective> getSLOForListView(
+      ProjectParams projectParams, SLODashboardApiFilter filter, PageParams pageParams, String filterByName);
+
+  AbstractServiceLevelObjective getFromSLIIdentifier(
+      ProjectParams projectParams, String serviceLevelIndicatorIdentifier);
+
+  PageResponse<NotificationRuleResponse> getNotificationRules(
+      ProjectParams projectParams, String sloIdentifier, PageParams pageParams);
+
+  void beforeNotificationRuleDelete(ProjectParams projectParams, String notificationRuleRef);
 }

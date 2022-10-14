@@ -194,6 +194,10 @@ public class ArtifactResponseToOutcomeMapper {
         .identifier(azureArtifactsConfig.getIdentifier())
         .primaryArtifact(azureArtifactsConfig.isPrimaryArtifact())
         .versionRegex(azureArtifactsConfig.getVersionRegex().getValue())
+        .feed(azureArtifactsConfig.getFeed().getValue())
+        .project(azureArtifactsConfig.getProject().getValue())
+        .packageType(azureArtifactsConfig.getPackageType().getValue())
+        .scope(azureArtifactsConfig.getScope().getValue())
         .build();
   }
 
@@ -311,7 +315,10 @@ public class ArtifactResponseToOutcomeMapper {
       artifactPath = nexusRegistryDockerConfig.getArtifactPath() != null
           ? nexusRegistryDockerConfig.getArtifactPath().getValue()
           : null;
+    } else {
+      artifactPath = artifactDelegateResponse != null ? artifactDelegateResponse.getBuildDetails().getBuildUrl() : null;
     }
+
     return NexusArtifactOutcome.builder()
         .repositoryName(artifactConfig.getRepository().getValue())
         .image(getImageValue(artifactDelegateResponse))
@@ -326,11 +333,16 @@ public class ArtifactResponseToOutcomeMapper {
         .primaryArtifact(artifactConfig.isPrimaryArtifact())
         .imagePullSecret(createImagePullSecret(ArtifactUtils.getArtifactKey(artifactConfig)))
         .registryHostname(getRegistryHostnameValue(artifactDelegateResponse))
+        .metadata(useDelegateResponse ? getMetadata(artifactDelegateResponse) : null)
         .build();
   }
 
   private NexusArtifactOutcome getNexus2ArtifactOutcome(Nexus2RegistryArtifactConfig artifactConfig,
       NexusArtifactDelegateResponse artifactDelegateResponse, boolean useDelegateResponse) {
+    String artifactPath = null;
+    if (!artifactConfig.getRepositoryFormat().getValue().equalsIgnoreCase("docker")) {
+      artifactPath = artifactDelegateResponse != null ? artifactDelegateResponse.getBuildDetails().getBuildUrl() : null;
+    }
     return NexusArtifactOutcome.builder()
         .repositoryName(artifactConfig.getRepository().getValue())
         .image(getImageValue(artifactDelegateResponse))
@@ -344,6 +356,8 @@ public class ArtifactResponseToOutcomeMapper {
         .primaryArtifact(artifactConfig.isPrimaryArtifact())
         .imagePullSecret(createImagePullSecret(ArtifactUtils.getArtifactKey(artifactConfig)))
         .registryHostname(getRegistryHostnameValue(artifactDelegateResponse))
+        .metadata(useDelegateResponse ? getMetadata(artifactDelegateResponse) : null)
+        .artifactPath(artifactPath)
         .build();
   }
 
@@ -482,6 +496,15 @@ public class ArtifactResponseToOutcomeMapper {
     }
     return EmptyPredicate.isNotEmpty(artifactDelegateResponse.getBuildDetails().getMetadata())
         ? artifactDelegateResponse.getBuildDetails().getMetadata().get(ArtifactMetadataKeys.REGISTRY_HOSTNAME)
+        : null;
+  }
+
+  private Map<String, String> getMetadata(ArtifactDelegateResponse artifactDelegateResponse) {
+    if (artifactDelegateResponse == null || artifactDelegateResponse.getBuildDetails() == null) {
+      return null;
+    }
+    return EmptyPredicate.isNotEmpty(artifactDelegateResponse.getBuildDetails().getMetadata())
+        ? artifactDelegateResponse.getBuildDetails().getMetadata()
         : null;
   }
 

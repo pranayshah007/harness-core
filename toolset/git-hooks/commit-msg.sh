@@ -16,7 +16,7 @@ SHDIR=$(dirname "$0")
 PROJFILE="$SHDIR/jira-projects.txt"
 check_file_present $PROJFILE
 PROJECTS=$(<$PROJFILE)
-
+COMMIT_CONTENT="\[feat]|\[fix]|\[techdebt]|feat|fix|techdebt"
 CHECK_MESSAGE=hook.commit-msg.check
 if [ "`git config $CHECK_MESSAGE`" == "false" ]
 then
@@ -25,8 +25,9 @@ else
     echo -e '\033[0;34m' checking message ... to disable: '\033[0;37m'git config --add $CHECK_MESSAGE false '\033[0m'
 
     # regex to validate in commit msg
-    commit_regex='^\[('$PROJECTS')-[0-9]+]: |Merge branch '
-    error_msg="Aborting commit. [`cat $1`] is missing a JIRA Issue and Commit Content. Example Commit Message: \"[JIRAProject-123]: Message \""
+    commit_regex='^\('$COMMIT_CONTENT'):[('$PROJECTS')-[0-9]+]: |Merge branch '
+    echo "your message should be in following format --> Text:[JiraID]: Text "
+    error_msg="Aborting commit. [`cat $1`] is missing a JIRA Issue and Commit Content. Example Commit Message: \"[feat]|\[fix]|\[techdebt]|feat|fix|techdebt:[JIRAProject-123]: Message \""
 
     if [ ! -z "`cat $1`" ]
     then

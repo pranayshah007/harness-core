@@ -38,9 +38,11 @@ import io.harness.spec.server.pipeline.model.GitCreateDetails;
 import io.harness.spec.server.pipeline.model.GitDetails;
 import io.harness.spec.server.pipeline.model.GitUpdateDetails;
 import io.harness.spec.server.pipeline.model.NodeInfo;
+import io.harness.spec.server.pipeline.model.PipelineCreateRequestBody;
 import io.harness.spec.server.pipeline.model.PipelineGetResponseBody;
 import io.harness.spec.server.pipeline.model.PipelineListResponseBody;
 import io.harness.spec.server.pipeline.model.PipelineListResponseBody.StoreTypeEnum;
+import io.harness.spec.server.pipeline.model.PipelineUpdateRequestBody;
 import io.harness.spec.server.pipeline.model.RecentExecutionInfo;
 import io.harness.spec.server.pipeline.model.RecentExecutionInfo.ExecutionStatusEnum;
 import io.harness.spec.server.pipeline.model.YAMLSchemaErrorWrapper;
@@ -109,12 +111,27 @@ public class PipelinesApiUtils {
   public static PipelineGetResponseBody getGetResponseBody(PipelineEntity pipelineEntity) {
     PipelineGetResponseBody pipelineGetResponseBody = new PipelineGetResponseBody();
     pipelineGetResponseBody.setPipelineYaml(pipelineEntity.getYaml());
+    pipelineGetResponseBody.setSlug(pipelineEntity.getIdentifier());
+    pipelineGetResponseBody.setName(pipelineEntity.getName());
+    pipelineGetResponseBody.setDescription(pipelineEntity.getDescription());
+    pipelineGetResponseBody.setTags(getTagsFromNGTag(pipelineEntity.getTags()));
     pipelineGetResponseBody.setGitDetails(getGitDetails(PMSPipelineDtoMapper.getEntityGitDetails(pipelineEntity)));
     pipelineGetResponseBody.setModules(getModules(pipelineEntity.getFilters().keySet()));
     pipelineGetResponseBody.setCreated(pipelineEntity.getCreatedAt());
     pipelineGetResponseBody.setUpdated(pipelineEntity.getLastUpdatedAt());
     pipelineGetResponseBody.setValid(true);
     return pipelineGetResponseBody;
+  }
+
+  public static Map<String, String> getTagsFromNGTag(List<NGTag> ngTags) {
+    if (isEmpty(ngTags)) {
+      return null;
+    }
+    Map<String, String> tags = new HashMap<>();
+    for (NGTag ngTag : ngTags) {
+      tags.put(ngTag.getKey(), ngTag.getValue());
+    }
+    return tags;
   }
 
   public static List<String> getModules(Set<String> modules) {
@@ -378,6 +395,32 @@ public class PipelinesApiUtils {
         .baseBranch(gitDetails.getBaseBranch())
         .lastCommitId(gitDetails.getLastCommitId())
         .lastObjectId(gitDetails.getLastObjectId())
+        .build();
+  }
+
+  public static PipelineRequestInfoDTO mapCreateToRequestInfoDTO(PipelineCreateRequestBody createRequestBody) {
+    if (createRequestBody == null) {
+      throw new InvalidRequestException("Create Request Body cannot be null.");
+    }
+    return PipelineRequestInfoDTO.builder()
+        .identifier(createRequestBody.getSlug())
+        .name(createRequestBody.getName())
+        .yaml(createRequestBody.getPipelineYaml())
+        .description(createRequestBody.getDescription())
+        .tags(createRequestBody.getTags())
+        .build();
+  }
+
+  public static PipelineRequestInfoDTO mapUpdateToRequestInfoDTO(PipelineUpdateRequestBody updateRequestBody) {
+    if (updateRequestBody == null) {
+      throw new InvalidRequestException("Update Request Body cannot be null.");
+    }
+    return PipelineRequestInfoDTO.builder()
+        .identifier(updateRequestBody.getSlug())
+        .name(updateRequestBody.getName())
+        .yaml(updateRequestBody.getPipelineYaml())
+        .description(updateRequestBody.getDescription())
+        .tags(updateRequestBody.getTags())
         .build();
   }
 }

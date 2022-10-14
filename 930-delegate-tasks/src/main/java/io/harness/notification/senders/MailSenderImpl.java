@@ -32,8 +32,8 @@ import org.apache.commons.mail.HtmlEmail;
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @Slf4j
 public class MailSenderImpl {
-  public NotificationProcessingResponse send(
-      List<String> emailIds, String subject, String body, String notificationId, SmtpConfig smtpConfig) {
+  public NotificationProcessingResponse send(List<String> emailIds, List<String> ccEmailIds, String subject,
+      String body, String notificationId, SmtpConfig smtpConfig) {
     try {
       if (Objects.isNull(stripToNull(body))) {
         log.error("No email body available. Aborting notification request {}", notificationId);
@@ -59,9 +59,11 @@ public class MailSenderImpl {
         log.error(ExceptionUtils.getMessage(e), e);
       }
       email.setFrom(smtpConfig.getFromAddress(), HARNESS_NAME);
-
       for (String emailId : emailIds) {
         email.addTo(emailId);
+      }
+      for (String ccEmailId : ccEmailIds) {
+        email.addCc(ccEmailId);
       }
 
       email.setSubject(subject);

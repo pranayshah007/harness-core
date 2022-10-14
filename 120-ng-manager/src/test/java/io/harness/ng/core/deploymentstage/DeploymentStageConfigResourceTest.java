@@ -47,7 +47,8 @@ public class DeploymentStageConfigResourceTest extends CategoryTest {
   @Parameterized.Parameters
   public static Collection<Object[]> data() {
     return asList(new Object[][] {{"deploymentstage/cdStageWithSvcEnvV1.yaml", "service1a", "environment1a"},
-        {"deploymentstage/cdStageWithSvcEnvV2.yaml", "service2", "environment2"}});
+        {"deploymentstage/cdParallelStagesWithInheritedService.yaml", "S1", "EnvFromStage2"},
+        {"deploymentstage/cdStageWithSvcEnvV2.yaml", "S2", "Env2"}});
   }
 
   @Test
@@ -55,8 +56,11 @@ public class DeploymentStageConfigResourceTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetCdStageMetadata() throws IOException {
     final String cdStageYaml = readFile(cdStageYamlFilePath);
+    CdDeployStageMetadataRequestDTO requestDTO =
+        CdDeployStageMetadataRequestDTO.builder().stageIdentifier("S2").pipelineYaml(cdStageYaml).build();
+
     final ResponseDTO<CDStageMetaDataDTO> cdStageMetadata =
-        deploymentStageConfigResource.getCdDeployStageMetadata(cdStageYaml);
+        deploymentStageConfigResource.getCdDeployStageMetadata(requestDTO);
 
     assertThat(cdStageMetadata.getData().getServiceRef()).isEqualTo(expectedSvcRef);
     assertThat(cdStageMetadata.getData().getEnvironmentRef()).isEqualTo(expectedEnvRef);

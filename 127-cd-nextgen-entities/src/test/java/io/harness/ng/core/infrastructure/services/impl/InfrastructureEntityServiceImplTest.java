@@ -73,7 +73,7 @@ public class InfrastructureEntityServiceImplTest extends CDNGEntitiesTestBase {
   }
 
   @Test
-  @Owner(developers = HINGER)
+  @Owner(developers = INDER)
   @Category(UnitTests.class)
   public void testCreateInfrastructureInputs() throws IOException {
     String filename = "infrastructure-with-runtime-inputs.yaml";
@@ -94,6 +94,10 @@ public class InfrastructureEntityServiceImplTest extends CDNGEntitiesTestBase {
         ACCOUNT_ID, ORG_ID, PROJECT_ID, "ENV_IDENTIFIER", Arrays.asList("IDENTIFIER"), false);
     String resFile = "infrastructure-with-runtime-inputs-res.yaml";
     String resInputs = readFile(resFile);
+    assertThat(infrastructureInputsFromYaml).isEqualTo(resInputs);
+
+    infrastructureInputsFromYaml = infrastructureEntityService.createInfrastructureInputsFromYamlV2(
+        ACCOUNT_ID, ORG_ID, PROJECT_ID, "ENV_IDENTIFIER", Arrays.asList("IDENTIFIER"), false);
     assertThat(infrastructureInputsFromYaml).isEqualTo(resInputs);
   }
 
@@ -118,6 +122,31 @@ public class InfrastructureEntityServiceImplTest extends CDNGEntitiesTestBase {
         ACCOUNT_ID, ORG_ID, PROJECT_ID, "ENV_IDENTIFIER", Arrays.asList("IDENTIFIER1"), false);
 
     assertThat(infrastructureInputsFromYaml).isNull();
+  }
+
+  @Test
+  @Owner(developers = INDER)
+  @Category(UnitTests.class)
+  public void testCreateInfrastructureInputsV2WithoutRuntimeInputs() throws IOException {
+    String filename = "infrastructure-without-runtime-inputs.yaml";
+    String yaml = readFile(filename);
+    InfrastructureEntity createInfraRequest = InfrastructureEntity.builder()
+                                                  .accountId(ACCOUNT_ID)
+                                                  .identifier("IDENTIFIER")
+                                                  .orgIdentifier(ORG_ID)
+                                                  .projectIdentifier(PROJECT_ID)
+                                                  .envIdentifier("ENV_IDENTIFIER")
+                                                  .yaml(yaml)
+                                                  .build();
+
+    infrastructureEntityService.create(createInfraRequest);
+
+    String infrastructureInputsFromYaml = infrastructureEntityService.createInfrastructureInputsFromYamlV2(
+        ACCOUNT_ID, ORG_ID, PROJECT_ID, "ENV_IDENTIFIER", Arrays.asList("IDENTIFIER"), false);
+
+    assertThat(infrastructureInputsFromYaml).isNotNull().isNotEmpty();
+    String resInputs = readFile("infra-inputset-yaml-with-no-runtime-inputs.yaml");
+    assertThat(infrastructureInputsFromYaml).isEqualTo(resInputs);
   }
 
   @Test

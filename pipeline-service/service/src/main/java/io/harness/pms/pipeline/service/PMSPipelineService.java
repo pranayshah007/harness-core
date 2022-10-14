@@ -37,8 +37,8 @@ public interface PMSPipelineService {
   Optional<PipelineEntity> get(
       String accountId, String orgIdentifier, String projectIdentifier, String identifier, boolean deleted);
 
-  Optional<PipelineEntity> getWithoutPerformingValidations(
-      String accountId, String orgIdentifier, String projectIdentifier, String identifier, boolean deleted);
+  Optional<PipelineEntity> getPipelineWithoutPerformingValidations(String accountId, String orgIdentifier,
+      String projectIdentifier, String identifier, boolean deleted, boolean getMetadataOnly);
 
   PipelineCRUDResult updatePipelineYaml(PipelineEntity pipelineEntity, ChangeType changeType);
 

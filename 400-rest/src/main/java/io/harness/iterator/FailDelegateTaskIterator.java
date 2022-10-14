@@ -101,7 +101,9 @@ public class FailDelegateTaskIterator implements MongoPersistenceIterator.Handle
             .targetInterval(Duration.ofSeconds(DELEGATE_TASK_FAIL_TIMEOUT))
             .acceptableNoAlertDelay(Duration.ofSeconds(45))
             .acceptableExecutionTime(Duration.ofSeconds(30))
-            .filterExpander(query -> query.field(DelegateTaskKeys.expiry).lessThan(currentTimeMillis()))
+            .filterExpander(query
+                -> query.criteria(DelegateTaskKeys.createdAt)
+                       .lessThan(currentTimeMillis() - TimeUnit.MINUTES.toMillis(1)))
             .handler(this)
             .schedulingType(MongoPersistenceIterator.SchedulingType.REGULAR)
             .persistenceProvider(persistenceProvider)

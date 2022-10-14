@@ -11,15 +11,24 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import io.harness.CategoryTest;
+import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.engine.executions.node.NodeExecutionService;
+import io.harness.engine.executions.plan.PlanExecutionService;
+import io.harness.execution.NodeExecution;
+import io.harness.execution.PlanExecution;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
 import io.harness.steps.wait.WaitStepAction;
@@ -38,6 +47,9 @@ import org.mockito.junit.MockitoJUnitRunner;
 @OwnedBy(HarnessTeam.PIPELINE)
 public class WaitStepResourceImplTest extends CategoryTest {
   @Mock WaitStepService waitStepService;
+  @Mock AccessControlClient accessControlClient;
+  @Mock NodeExecutionService nodeExecutionService;
+  @Mock PlanExecutionService planExecutionService;
   @InjectMocks WaitStepResourceImpl waitStepResourceImpl;
   String accountId;
   String projectId;
@@ -50,6 +62,16 @@ public class WaitStepResourceImplTest extends CategoryTest {
     orgId = "orgId";
     projectId = "projectId";
     nodeExecutionId = generateUuid();
+    doReturn(
+        NodeExecution.builder().ambiance(Ambiance.newBuilder().setPlanExecutionId("planExecutionId").build()).build())
+        .when(nodeExecutionService)
+        .get(nodeExecutionId);
+    doReturn(PlanExecution.builder()
+                 .metadata(ExecutionMetadata.newBuilder().setPipelineIdentifier("pipelineId").build())
+                 .build())
+        .when(planExecutionService)
+        .get("planExecutionId");
+    doNothing().when(accessControlClient).checkForAccessOrThrow(any(), any(), any());
   }
 
   @Test

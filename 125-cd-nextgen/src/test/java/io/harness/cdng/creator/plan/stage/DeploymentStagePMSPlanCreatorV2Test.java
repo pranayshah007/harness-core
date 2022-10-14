@@ -12,12 +12,9 @@ import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doReturn;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDNGTestBase;
 import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
@@ -63,7 +60,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
 @OwnedBy(HarnessTeam.CDC)
@@ -123,7 +119,6 @@ public class DeploymentStagePMSPlanCreatorV2Test extends CDNGTestBase {
   @Category(UnitTests.class)
   @Parameters(method = "getDeploymentStageConfig")
   public void testCreatePlanForChildrenNodes_0(DeploymentStageNode node) {
-    doReturn(true).when(featureFlagHelperService).isEnabled(Mockito.anyString(), eq(FeatureName.SERVICE_V2_EXPRESSION));
     node.setFailureStrategies(List.of(FailureStrategyConfig.builder()
                                           .onFailure(OnFailureConfig.builder()
                                                          .errors(List.of(NGFailureType.ALL_ERRORS))

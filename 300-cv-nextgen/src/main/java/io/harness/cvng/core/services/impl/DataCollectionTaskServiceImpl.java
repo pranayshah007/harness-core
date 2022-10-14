@@ -307,7 +307,8 @@ public class DataCollectionTaskServiceImpl implements DataCollectionTaskService 
                               .filter(DataCollectionTaskKeys.uuid, task.getNextTaskId())
                               .filter(DataCollectionTaskKeys.status, DataCollectionExecutionStatus.WAITING),
           updateOperations);
-      executionLogService.getLogger(task).log(task.getLogLevel(), "Data collection task status: " + task.getStatus());
+      executionLogService.getLogger(task).log(
+          task.getLogLevel(), "Data collection task status: " + DataCollectionExecutionStatus.QUEUED);
     }
   }
 
@@ -321,6 +322,9 @@ public class DataCollectionTaskServiceImpl implements DataCollectionTaskService 
       Query<DataCollectionTask> query = hPersistence.createQuery(DataCollectionTask.class)
                                             .filter(DataCollectionTaskKeys.uuid, dataCollectionTask.getUuid());
       hPersistence.update(query, updateOperations);
+      executionLogService.getLogger(dataCollectionTask)
+          .log(
+              dataCollectionTask.getLogLevel(), "Data collection task status: " + DataCollectionExecutionStatus.QUEUED);
     } else {
       markDependentTasksFailed(dataCollectionTask);
       if (dataCollectionTask.shouldCreateNextTask()) {
@@ -331,8 +335,6 @@ public class DataCollectionTaskServiceImpl implements DataCollectionTaskService 
       log.error("Task is in the past. Enqueuing next task with new data collection startTime. {}, {}, {}",
           dataCollectionTask.getUuid(), dataCollectionTask.getException(), dataCollectionTask.getStacktrace());
     }
-    executionLogService.getLogger(dataCollectionTask)
-        .log(dataCollectionTask.getLogLevel(), "Data collection task status: " + dataCollectionTask.getStatus());
   }
 
   @Override

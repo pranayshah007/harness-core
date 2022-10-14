@@ -7,7 +7,6 @@
 
 package io.harness.delegate.beans.connector.azureconnector;
 
-import io.harness.annotation.RecasterFieldName;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
@@ -32,7 +31,7 @@ import lombok.experimental.FieldDefaults;
 public class AzureMSIAuthUADTO implements AzureMSIAuthDTO {
   @NotNull @JsonProperty("type") AzureManagedIdentityType azureManagedIdentityType;
 
-  @RecasterFieldName(name = "spec") @JsonProperty("spec") @NotNull AzureUserAssignedMSIAuthDTO credentials;
+  @JsonProperty("spec") @NotNull AzureUserAssignedMSIAuthDTO credentials;
 
   @Builder
   public AzureMSIAuthUADTO(AzureManagedIdentityType azureManagedIdentityType, AzureUserAssignedMSIAuthDTO credentials) {

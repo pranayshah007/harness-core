@@ -96,7 +96,7 @@ _Note: if using If-None-Match header for PUT actions, e.g. to get optimistic loc
 
 ## 4xx Client Error
 
-4xx range errors are to indicate the client made an error in the request and should resolve the problem before trying again. Apart from the 
+4xx range errors are to indicate the client made an error in the request and should resolve the problem before trying again. 
 
 ### 400 Bad Request
 
@@ -172,7 +172,7 @@ This response should be used when a rate limit is exceeded.
 
 ```json
 {
-  "error": "Unsupported Media Type"
+  "error": "Too Many Requests"
 }
 ```
 

@@ -34,6 +34,7 @@ import io.harness.iterator.PersistentCronIterable;
 import io.harness.ng.core.account.AuthenticationMechanism;
 import io.harness.ng.core.account.OauthProviderType;
 import io.harness.ng.core.dto.UserGroupDTO;
+import io.harness.outbox.OutboxEvent;
 import io.harness.outbox.api.OutboxService;
 import io.harness.persistence.HIterator;
 import io.harness.remote.client.NGRestUtils;
@@ -75,6 +76,7 @@ import software.wings.features.api.RestrictedApi;
 import software.wings.features.extractors.LdapSettingsAccountIdExtractor;
 import software.wings.features.extractors.SamlSettingsAccountIdExtractor;
 import software.wings.scheduler.LdapGroupScheduledHandler;
+import software.wings.scheduler.LdapGroupSyncJob;
 import software.wings.scheduler.LdapGroupSyncJobHelper;
 import software.wings.scheduler.LdapSyncJobConfig;
 import software.wings.security.authentication.oauth.OauthOptions;
@@ -203,40 +205,52 @@ public class SSOSettingServiceImpl implements SSOSettingService {
 
   private void ngAuditLoginSettingsForSAMLUpload(SamlSettings newSamlSettings) {
     try {
-      outboxService.save(
+      OutboxEvent outboxEvent = outboxService.save(
           LoginSettingsSAMLCreateEvent.builder()
               .accountIdentifier(newSamlSettings.getAccountId())
               .newSamlSettingsYamlDTO(SamlSettingsYamlDTO.builder().samlSettings(newSamlSettings).build())
               .build());
+      log.info(
+          "NG Auth Audits: for account {} and outboxEventId {} successfully saved the audit for LoginSettingsSAMLCreateEvent to outbox",
+          newSamlSettings.getAccountId(), outboxEvent.getId());
     } catch (Exception ex) {
-      log.error("For account {} Audit trails for SAML SSO upload event failed with exception: ",
+      log.error(
+          "NG Auth Audits: for account {} saving the LoginSettingsSAMLCreateEvent to outbox failed with exception: ",
           newSamlSettings.getAccountId(), ex);
     }
   }
 
   private void ngAuditLoginSettingsForSAMLUpdate(SamlSettings oldSamlSettings, SamlSettings newSamlSettings) {
     try {
-      outboxService.save(
+      OutboxEvent outboxEvent = outboxService.save(
           LoginSettingsSAMLUpdateEvent.builder()
               .accountIdentifier(newSamlSettings.getAccountId())
               .oldSamlSettingsYamlDTO(SamlSettingsYamlDTO.builder().samlSettings(oldSamlSettings).build())
               .newSamlSettingsYamlDTO(SamlSettingsYamlDTO.builder().samlSettings(newSamlSettings).build())
               .build());
+      log.info(
+          "NG Auth Audits: for account {} and outboxEventId {} successfully saved the audit for LoginSettingsSAMLUpdateEvent to outbox",
+          newSamlSettings.getAccountId(), outboxEvent.getId());
     } catch (Exception ex) {
-      log.error("For account {} Audit trails for SAML SSO update event failed with exception: ",
+      log.error(
+          "NG Auth Audits: for account {} saving the LoginSettingsSAMLUpdateEvent to outbox failed with exception: ",
           newSamlSettings.getAccountId(), ex);
     }
   }
 
   private void ngAuditLoginSettingsForSAMLDelete(SamlSettings oldSamlSettings) {
     try {
-      outboxService.save(
+      OutboxEvent outboxEvent = outboxService.save(
           LoginSettingsSAMLDeleteEvent.builder()
               .accountIdentifier(oldSamlSettings.getAccountId())
               .oldSamlSettingsYamlDTO(SamlSettingsYamlDTO.builder().samlSettings(oldSamlSettings).build())
               .build());
+      log.info(
+          "NG Auth Audits: for account {} and outboxEventId {} successfully saved the audit for LoginSettingsSAMLDeleteEvent to outbox",
+          oldSamlSettings.getAccountId(), outboxEvent.getId());
     } catch (Exception ex) {
-      log.error("For account {} Audit trails for SAML SSO delete event failed with exception: ",
+      log.error(
+          "NG Auth Audits: for account {} saving the LoginSettingsSAMLDeleteEvent to outbox failed with exception: ",
           oldSamlSettings.getAccountId(), ex);
     }
   }
@@ -269,42 +283,54 @@ public class SSOSettingServiceImpl implements SSOSettingService {
 
   private void ngAuditLoginSettingsForOAuthUpload(String accountIdentifier, OauthSettings newOauthSettings) {
     try {
-      outboxService.save(
+      OutboxEvent outboxEvent = outboxService.save(
           LoginSettingsOAuthCreateEvent.builder()
               .accountIdentifier(accountIdentifier)
               .newOAuthSettingsYamlDTO(OAuthSettingsYamlDTO.builder().oauthSettings(newOauthSettings).build())
               .build());
+      log.info(
+          "NG Auth Audits: for account {} and outboxEventId {} successfully saved the audit for LoginSettingsOAuthCreateEvent to outbox",
+          accountIdentifier, outboxEvent.getId());
     } catch (Exception ex) {
       log.error(
-          "For account {} Audit trails for OAuth Provider Upload event failed with exception: ", accountIdentifier, ex);
+          "NG Auth Audits: for account {} saving the LoginSettingsOAuthCreateEvent to outbox failed with exception: ",
+          accountIdentifier, ex);
     }
   }
 
   private void ngAuditLoginSettingsForOAuthUpdate(
       String accountIdentifier, OauthSettings oldOauthSettings, OauthSettings newOauthSettings) {
     try {
-      outboxService.save(
+      OutboxEvent outboxEvent = outboxService.save(
           LoginSettingsOAuthUpdateEvent.builder()
               .accountIdentifier(accountIdentifier)
               .oldOAuthSettingsYamlDTO(OAuthSettingsYamlDTO.builder().oauthSettings(oldOauthSettings).build())
               .newOAuthSettingsYamlDTO(OAuthSettingsYamlDTO.builder().oauthSettings(newOauthSettings).build())
               .build());
+      log.info(
+          "NG Auth Audits: for account {} and outboxEventId {} successfully saved the audit for LoginSettingsOAuthUpdateEvent to outbox",
+          accountIdentifier, outboxEvent.getId());
     } catch (Exception ex) {
       log.error(
-          "For account {} Audit trails for OAuth Provider Update event failed with exception: ", accountIdentifier, ex);
+          "NG Auth Audits: for account {} saving the LoginSettingsOAuthUpdateEvent to outbox failed with exception: ",
+          accountIdentifier, ex);
     }
   }
 
   private void ngAuditLoginSettingsForOAuthDelete(String accountIdentifier, OauthSettings oldOauthSettings) {
     try {
-      outboxService.save(
+      OutboxEvent outboxEvent = outboxService.save(
           LoginSettingsOAuthDeleteEvent.builder()
               .accountIdentifier(accountIdentifier)
               .oldOAuthSettingsYamlDTO(OAuthSettingsYamlDTO.builder().oauthSettings(oldOauthSettings).build())
               .build());
+      log.info(
+          "NG Auth Audits: for account {} and outboxEventId {} successfully saved the audit for LoginSettingsOAuthDeleteEvent to outbox",
+          accountIdentifier, outboxEvent.getId());
     } catch (Exception ex) {
       log.error(
-          "For account {} Audit trails for OAuth Provider Delete event failed with exception: ", accountIdentifier, ex);
+          "NG Auth Audits: for account {} saving the LoginSettingsOAuthDeleteEvent to outbox failed with exception: ",
+          accountIdentifier, ex);
     }
   }
 
@@ -396,6 +422,7 @@ public class SSOSettingServiceImpl implements SSOSettingService {
     }
     updateNextIterations(settings);
     LdapSettings savedSettings = wingsPersistence.saveAndGet(LdapSettings.class, settings);
+    LdapGroupSyncJob.add(jobScheduler, savedSettings.getAccountId(), savedSettings.getUuid());
     ldapGroupScheduledHandler.wakeup();
     auditServiceHelper.reportForAuditingUsingAccountId(settings.getAccountId(), null, settings, Event.Type.CREATE);
     ngAuditLoginSettingsForLdapUpload(savedSettings.getAccountId(), savedSettings);
@@ -438,6 +465,7 @@ public class SSOSettingServiceImpl implements SSOSettingService {
         settings.getAccountId(), oldSettings, savedSettings, Event.Type.UPDATE);
     ngAuditLoginSettingsForLdapUpdate(settings.getAccountId(), currentLdapSettings, savedSettings);
     log.info("Auditing updation of LDAP for account={}", savedSettings.getAccountId());
+    LdapGroupSyncJob.add(jobScheduler, savedSettings.getAccountId(), savedSettings.getUuid());
     ldapGroupScheduledHandler.wakeup();
     return savedSettings;
   }
@@ -471,6 +499,7 @@ public class SSOSettingServiceImpl implements SSOSettingService {
           settings.getAccountId(), settings.getConnectionSettings().getEncryptedBindPassword(), new HashMap<>(), false);
     }
     wingsPersistence.delete(settings);
+    LdapGroupSyncJob.delete(jobScheduler, this, settings.getAccountId(), settings.getUuid());
     auditServiceHelper.reportDeleteForAuditingUsingAccountId(settings.getAccountId(), settings);
     ngAuditLoginSettingsForLdapDelete(settings.getAccountId(), settings);
     log.info("Auditing deletion of LDAP Settings for account={}", settings.getAccountId());
@@ -479,39 +508,54 @@ public class SSOSettingServiceImpl implements SSOSettingService {
 
   private void ngAuditLoginSettingsForLdapUpload(String accountIdentifier, LdapSettings newLdapSettings) {
     try {
-      outboxService.save(
+      OutboxEvent outboxEvent = outboxService.save(
           LoginSettingsLDAPCreateEvent.builder()
               .accountIdentifier(accountIdentifier)
               .newLdapSettingsYamlDTO(LdapSettingsYamlDTO.builder().ldapSettings(newLdapSettings).build())
               .build());
+      log.info(
+          "NG Auth Audits: for account {} and outboxEventId {} successfully saved the audit for LoginSettingsLDAPCreateEvent to outbox",
+          accountIdentifier, outboxEvent.getId());
     } catch (Exception ex) {
-      log.error("For account {} Audit trails for LDAP SSO create event failed with exception: ", accountIdentifier, ex);
+      log.error(
+          "NG Auth Audits: for account {} saving the LoginSettingsLDAPCreateEvent to outbox failed with exception: ",
+          accountIdentifier, ex);
     }
   }
 
   private void ngAuditLoginSettingsForLdapUpdate(
       String accountIdentifier, LdapSettings oldLdapSettings, LdapSettings newLdapSettings) {
     try {
-      outboxService.save(
+      OutboxEvent outboxEvent = outboxService.save(
           LoginSettingsLDAPUpdateEvent.builder()
               .accountIdentifier(accountIdentifier)
               .oldLdapSettingsYamlDTO(LdapSettingsYamlDTO.builder().ldapSettings(oldLdapSettings).build())
               .newLdapSettingsYamlDTO(LdapSettingsYamlDTO.builder().ldapSettings(newLdapSettings).build())
               .build());
+      log.info(
+          "NG Auth Audits: for account {} and outboxEventId {} successfully saved the audit for LoginSettingsLDAPUpdateEvent to outbox",
+          accountIdentifier, outboxEvent.getId());
     } catch (Exception ex) {
-      log.error("For account {} Audit trails for LDAP SSO upload event failed with exception: ", accountIdentifier, ex);
+      log.error(
+          "NG Auth Audits: for account {} saving the LoginSettingsLDAPUpdateEvent to outbox failed with exception: ",
+          accountIdentifier, ex);
     }
   }
 
   private void ngAuditLoginSettingsForLdapDelete(String accountIdentifier, LdapSettings oldLdapSettings) {
     try {
-      outboxService.save(
+      OutboxEvent outboxEvent = outboxService.save(
           LoginSettingsLDAPDeleteEvent.builder()
               .accountIdentifier(accountIdentifier)
               .oldLdapSettingsYamlDTO(LdapSettingsYamlDTO.builder().ldapSettings(oldLdapSettings).build())
               .build());
+      log.info(
+          "NG Auth Audits: for account {} and outboxEventId {} successfully saved the audit for LoginSettingsLDAPDeleteEvent to outbox",
+          accountIdentifier, outboxEvent.getId());
     } catch (Exception ex) {
-      log.error("For account {} Audit trails for LDAP SSO delete event failed with exception: ", accountIdentifier, ex);
+      log.error(
+          "NG Auth Audits: for account {} saving the LoginSettingsLDAPDeleteEvent to outbox failed with exception: ",
+          accountIdentifier, ex);
     }
   }
 

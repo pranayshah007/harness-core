@@ -40,11 +40,14 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.artifact.ArtifactSummary;
 import io.harness.cdng.artifact.bean.yaml.ArtifactSourceConfig;
+import io.harness.cdng.artifact.utils.ArtifactSourceTemplateHelper;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.OrgAndProjectValidationHelper;
+import io.harness.ng.core.artifact.ArtifactSourceYamlRequestDTO;
 import io.harness.ng.core.beans.NGEntityTemplateResponseDTO;
 import io.harness.ng.core.beans.ServiceV2YamlMetadata;
 import io.harness.ng.core.beans.ServicesV2YamlMetadataDTO;
@@ -80,6 +83,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.ArrayList;
 import java.util.List;
@@ -148,6 +152,7 @@ public class ServiceResourceV2 {
   private final ServiceEntityManagementService serviceEntityManagementService;
   private final OrgAndProjectValidationHelper orgAndProjectValidationHelper;
   @Inject CustomDeploymentYamlHelper customDeploymentYamlHelper;
+  @Inject ArtifactSourceTemplateHelper artifactSourceTemplateHelper;
   public static final String SERVICE_PARAM_MESSAGE = "Service Identifier for the entity";
   public static final String SERVICE_YAML_METADATA_INPUT_PARAM_MESSAGE = "List of Service Identifiers for the entities";
 
@@ -333,7 +338,10 @@ public class ServiceResourceV2 {
               "Specifies the sorting criteria of the list. Like sorting based on the last updated entity, alphabetical sorting in an ascending or descending order")
       @QueryParam("sort") List<String> sort,
       @QueryParam("type") ServiceDefinitionType type, @QueryParam("gitOpsEnabled") Boolean gitOpsEnabled,
+      @Parameter(description = "The Identifier of deployment template if infrastructure is of type custom deployment")
       @QueryParam("deploymentTemplateIdentifier") String deploymentTemplateIdentifier,
+      @Parameter(
+          description = "The version label of deployment template if infrastructure is of type custom deployment")
       @QueryParam("versionLabel") String versionLabel) {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgIdentifier, projectIdentifier),
         Resource.of(NGResourceType.SERVICE, null), SERVICE_VIEW_PERMISSION, "Unauthorized to list services");
@@ -392,7 +400,10 @@ public class ServiceResourceV2 {
               "Specifies the sorting criteria of the list. Like sorting based on the last updated entity, alphabetical sorting in an ascending or descending order")
       @QueryParam("sort") List<String> sort,
       @QueryParam("type") ServiceDefinitionType type, @QueryParam("gitOpsEnabled") Boolean gitOpsEnabled,
+      @Parameter(description = "The Identifier of deployment template if infrastructure is of type custom deployment")
       @QueryParam("deploymentTemplateIdentifier") String deploymentTemplateIdentifier,
+      @Parameter(
+          description = "The version label of deployment template if infrastructure is of type custom deployment")
       @QueryParam("versionLabel") String versionLabel) {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgIdentifier, projectIdentifier),
         Resource.of(PROJECT, projectIdentifier), VIEW_PROJECT_PERMISSION, "Unauthorized to list services");
@@ -564,6 +575,32 @@ public class ServiceResourceV2 {
   // do not delete this.
   public ResponseDTO<ArtifactSourceConfig> getArtifactSourceConfig() {
     return ResponseDTO.newResponse(ArtifactSourceConfig.builder().build());
+  }
+
+  @POST
+  @Path("/artifact-source-references")
+  @ApiOperation(
+      value = "Gets Artifact Source Template entity references", nickname = "getArtifactSourceTemplateEntityReferences")
+  @Operation(operationId = "getArtifactSourceTemplateEntityReferences",
+      summary = "Gets Artifact Source Template entity references",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            responseCode = "default", description = "Returns all entity references in the artifact source template.")
+      })
+  @Hidden
+  public ResponseDTO<List<EntityDetailProtoDTO>>
+  getEntityReferences(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
+                          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
+      @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgId,
+      @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId,
+      @RequestBody(required = true, description = "Artifact Source Yaml Request DTO containing entityYaml")
+      @NotNull ArtifactSourceYamlRequestDTO artifactSourceYamlRequestDTO) {
+    List<EntityDetailProtoDTO> entityReferences = artifactSourceTemplateHelper.getReferencesFromYaml(
+        accountId, orgId, projectId, artifactSourceYamlRequestDTO.getEntityYaml());
+    return ResponseDTO.newResponse(entityReferences);
   }
 
   private List<ServiceResponse> filterByPermissionAndId(

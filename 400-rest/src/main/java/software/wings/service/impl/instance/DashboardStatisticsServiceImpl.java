@@ -59,6 +59,7 @@ import io.harness.exception.WingsException;
 import io.harness.exception.WingsException.ReportTarget;
 import io.harness.ff.FeatureFlagService;
 import io.harness.logging.ExceptionLogger;
+import io.harness.persistence.HIterator;
 import io.harness.persistence.HPersistence;
 import io.harness.time.EpochUtils;
 
@@ -128,9 +129,6 @@ import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
-import com.mongodb.BasicDBObject;
-import com.mongodb.DBCollection;
-import com.mongodb.ReadPreference;
 import com.mongodb.TagSet;
 import java.util.ArrayList;
 import java.util.Date;
@@ -995,20 +993,24 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
     query.project("appId", true);
     query.project(Instance.CREATED_AT_KEY, true);
 
-    // Find the timestamp of oldest instance alive at fromTimestamp
-    long lhsCreatedAt = getCreatedTimeOfInstanceAtTimestamp(accountId, fromTimestamp, query, true);
     // Find the timestamp of latest instance alive at toTimestamp
     long rhsCreatedAt = getCreatedTimeOfInstanceAtTimestamp(accountId, toTimestamp, query, false);
 
-    DBCollection dbCollection = wingsPersistence.getCollection(Instance.class);
-    BasicDBObject instanceQuery = new BasicDBObject();
-    List<BasicDBObject> conditions = new ArrayList<>();
-    conditions.add(new BasicDBObject(InstanceKeys.accountId, accountId));
-    conditions.add(new BasicDBObject(Instance.CREATED_AT_KEY, new BasicDBObject("$gte", lhsCreatedAt)));
-    conditions.add(new BasicDBObject(Instance.CREATED_AT_KEY, new BasicDBObject("$lte", rhsCreatedAt)));
-    instanceQuery.put("$and", conditions);
-    Set<String> appIdsFromInstances =
-        new HashSet<>(dbCollection.distinct(InstanceKeys.appId, instanceQuery, ReadPreference.secondaryPreferred()));
+    Query<Instance> instanceQuery = wingsPersistence.createQuery(Instance.class)
+                                        .filter(InstanceKeys.accountId, accountId)
+                                        .field(Instance.CREATED_AT_KEY)
+                                        .greaterThanOrEq(fromTimestamp)
+                                        .field(Instance.CREATED_AT_KEY)
+                                        .lessThanOrEq(rhsCreatedAt)
+                                        .project("appId", true);
+
+    Set<String> appIdsFromInstances = new HashSet<>();
+    try (HIterator<Instance> iterator =
+             new HIterator<>(instanceQuery.fetch(wingsPersistence.analyticNodePreferenceOptions()))) {
+      while (iterator.hasNext()) {
+        appIdsFromInstances.add(iterator.next().getAppId());
+      }
+    }
 
     List<Application> appsByAccountId = appService.getAppsByAccountId(accountId);
     Set<String> existingApps = appsByAccountId.stream().map(Application::getUuid).collect(Collectors.toSet());

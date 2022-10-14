@@ -25,8 +25,8 @@ import io.harness.opaclient.OpaServiceClient;
 import io.harness.opaclient.model.OpaConstants;
 import io.harness.opaclient.model.OpaEvaluationResponseHolder;
 import io.harness.opaclient.model.PipelineOpaEvaluationContext;
-import io.harness.pms.PmsFeatureFlagService;
 import io.harness.rule.Owner;
+import io.harness.utils.PmsFeatureFlagService;
 
 import java.io.IOException;
 import java.util.Collections;

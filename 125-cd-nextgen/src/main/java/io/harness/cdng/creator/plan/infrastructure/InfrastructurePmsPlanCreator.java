@@ -94,7 +94,8 @@ public class InfrastructurePmsPlanCreator {
   }
 
   public PlanNode getInfraTaskExecutableStepV2PlanNode(EnvironmentYamlV2 environmentYamlV2,
-      List<AdviserObtainment> adviserObtainments, ServiceDefinitionType deploymentType) {
+      List<AdviserObtainment> adviserObtainments, ServiceDefinitionType deploymentType,
+      ParameterField<Boolean> skipInstances) {
     ParameterField<String> infraRef;
     ParameterField<Map<String, Object>> infraInputs;
 
@@ -114,6 +115,7 @@ public class InfrastructurePmsPlanCreator {
                                                           .infraRef(infraRef)
                                                           .infraInputs(infraInputs)
                                                           .deploymentType(deploymentType)
+                                                          .skipInstances(skipInstances)
                                                           .build();
     return PlanNode.builder()
         .uuid(UUIDGenerator.generateUuid())
