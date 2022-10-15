@@ -18,6 +18,7 @@ import static io.harness.delegate.message.MessageConstants.DELEGATE_ID;
 import static io.harness.delegate.message.MessageConstants.DELEGATE_IS_NEW;
 import static io.harness.delegate.message.MessageConstants.DELEGATE_JRE_VERSION;
 import static io.harness.delegate.message.MessageConstants.DELEGATE_MIGRATE;
+import static io.harness.delegate.message.MessageConstants.DELEGATE_READY;
 import static io.harness.delegate.message.MessageConstants.DELEGATE_RESTART_NEEDED;
 import static io.harness.delegate.message.MessageConstants.DELEGATE_RESUME;
 import static io.harness.delegate.message.MessageConstants.DELEGATE_SELF_DESTRUCT;
@@ -1221,12 +1222,25 @@ public class WatcherServiceImpl implements WatcherService {
             message = messageService.readMessageFromChannel(DELEGATE, newDelegateProcess, MINUTES.toMillis(2));
             if (message != null && message.getMessage().equals(DELEGATE_STARTED)) {
               log.info("Retrieved delegate-started message from new delegate {}", newDelegateProcess);
-              oldDelegateProcesses.forEach(oldDelegateProcess -> {
-                log.info("Sending old delegate process {} stop-acquiring message", oldDelegateProcess);
-                messageService.writeMessageToChannel(DELEGATE, oldDelegateProcess, DELEGATE_STOP_ACQUIRING);
-              });
               log.info("Sending new delegate process {} go-ahead message", newDelegateProcess);
               messageService.writeMessageToChannel(DELEGATE, newDelegateProcess, DELEGATE_GO_AHEAD);
+
+              log.info("Waiting for delegate process {} to be ready", newDelegateProcess);
+              message = messageService.waitForMessage(DELEGATE_READY, TimeUnit.MINUTES.toMillis(5));
+              if (message != null) {
+                oldDelegateProcesses.forEach(oldDelegateProcess -> {
+                  log.info(
+                      "New delegate process ready to acquire task, sending old delegate process {} stop-acquiring message",
+                      oldDelegateProcess);
+                  messageService.writeMessageToChannel(DELEGATE, oldDelegateProcess, DELEGATE_STOP_ACQUIRING);
+                });
+              } else {
+                log.info("Timed out waiting delegate to come up, proceeding anyway {}", oldDelegateProcesses);
+                oldDelegateProcesses.forEach(oldDelegateProcess -> {
+                  log.info("Sending old delegate process {} stop-acquiring message", oldDelegateProcess);
+                  messageService.writeMessageToChannel(DELEGATE, oldDelegateProcess, DELEGATE_STOP_ACQUIRING);
+                });
+              }
               success = true;
               log.info("Adding new delegate process {} to process map", newDelegateProcess);
               delegateProcessMap.put(newDelegateProcess, newDelegate.getProcess());

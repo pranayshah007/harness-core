@@ -24,6 +24,7 @@ import static io.harness.delegate.message.MessageConstants.DELEGATE_ID;
 import static io.harness.delegate.message.MessageConstants.DELEGATE_IS_NEW;
 import static io.harness.delegate.message.MessageConstants.DELEGATE_JRE_VERSION;
 import static io.harness.delegate.message.MessageConstants.DELEGATE_MIGRATE;
+import static io.harness.delegate.message.MessageConstants.DELEGATE_READY;
 import static io.harness.delegate.message.MessageConstants.DELEGATE_RESTART_NEEDED;
 import static io.harness.delegate.message.MessageConstants.DELEGATE_RESUME;
 import static io.harness.delegate.message.MessageConstants.DELEGATE_SELF_DESTRUCT;
@@ -667,6 +668,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       }
 
       log.info("Delegate started with config {} ", getDelegateConfig());
+      messageService.writeMessage(DELEGATE_READY);
       log.info("Manager Authority:{}, Manager Target:{}", delegateConfiguration.getManagerAuthority(),
           delegateConfiguration.getManagerTarget());
 
