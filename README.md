@@ -403,7 +403,6 @@ The admin username and password are in BaseIntegrationTest.java.
 * Refer to the readme under python/splunk_intelligence
 
 
-
 # Go Development
 ## Prerequisites
 ### Install Go
