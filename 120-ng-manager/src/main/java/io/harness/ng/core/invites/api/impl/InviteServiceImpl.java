@@ -252,7 +252,8 @@ public class InviteServiceImpl implements InviteService {
 
   @Override
   public Optional<Invite> getInvite(String inviteId, boolean allowDeleted) {
-    return allowDeleted ? inviteRepository.findById(inviteId) : inviteRepository.findByIdAndDeleted(inviteId, FALSE);
+    return allowDeleted ? inviteRepository.findById(inviteId)
+                        : inviteRepository.findFirstByIdAndDeleted(inviteId, FALSE);
   }
 
   @Override
@@ -619,7 +620,7 @@ public class InviteServiceImpl implements InviteService {
       boolean isAutoInviteAcceptanceEnabled) throws URISyntaxException, UnsupportedEncodingException {
     updateJWTTokenInInvite(invite);
 
-    Optional<Invite> firstByIdAndDeleted = inviteRepository.findByIdAndDeleted(invite.getId(), FALSE);
+    Optional<Invite> firstByIdAndDeleted = inviteRepository.findFirstByIdAndDeleted(invite.getId(), FALSE);
     if (!firstByIdAndDeleted.isPresent()) {
       log.info("Successfully found invite using findFirstByIdAndDeleted");
     } else {

@@ -20,7 +20,7 @@ import org.springframework.data.repository.PagingAndSortingRepository;
 @HarnessRepo
 @OwnedBy(PL)
 public interface InviteRepository extends PagingAndSortingRepository<Invite, String>, InviteRepositoryCustom {
-  Optional<Invite> findByIdAndDeleted(String id, Boolean deleted);
+  Optional<Invite> findFirstByIdAndDeleted(String id, Boolean deleted);
 
   Optional<Invite> findFirstByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndEmailAndDeletedFalse(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String email);
