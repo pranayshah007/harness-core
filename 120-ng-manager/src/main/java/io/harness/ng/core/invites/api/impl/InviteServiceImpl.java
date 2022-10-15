@@ -482,7 +482,11 @@ public class InviteServiceImpl implements InviteService {
       return Optional.empty();
     }
     log.info("Invite ID: {}", inviteIdOptional.get());
-    return getInvite(inviteIdOptional.get(), allowDeleted);
+    Optional<Invite> invite = getInvite(inviteIdOptional.get(), allowDeleted);
+    if (invite.isPresent()) {
+      log.info("Found invite in db with ID: {}", invite.get().getId());
+    }
+    return invite;
   }
 
   @Override
@@ -621,7 +625,7 @@ public class InviteServiceImpl implements InviteService {
     updateJWTTokenInInvite(invite);
 
     Optional<Invite> firstByIdAndDeleted = inviteRepository.findFirstByIdAndDeleted(invite.getId(), FALSE);
-    if (!firstByIdAndDeleted.isPresent()) {
+    if (firstByIdAndDeleted.isPresent()) {
       log.info("Successfully found invite using findFirstByIdAndDeleted");
     } else {
       log.error("findFirstByIdAndDeleted not working");

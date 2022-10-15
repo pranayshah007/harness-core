@@ -273,7 +273,7 @@ public class InviteResource {
       })
   public ResponseDTO<Boolean>
   completeInvite(@Parameter(description = "JWT Token") @QueryParam("token") String token) {
-    Optional<Invite> inviteOpt = inviteService.getInviteFromToken(token, true);
+    Optional<Invite> inviteOpt = inviteService.getInviteFromToken(token, false);
     return ResponseDTO.newResponse(inviteService.completeInvite(inviteOpt));
   }
 
