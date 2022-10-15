@@ -217,6 +217,7 @@ public class PMSYamlSchemaServiceImplTest {
     final Scope scope = Scope.PROJECT;
     pmsYamlSchemaService.allowedParallelStages = 0;
 
+    when(persistentLocker.waitToAcquireLock(any(), any(), any())).thenReturn(RedisAcquiredLock.builder().build());
     when(pmsYamlSchemaHelper.isFeatureFlagEnabled(FeatureName.DISABLE_PIPELINE_SCHEMA_VALIDATION, ACC_ID))
         .thenReturn(false);
     when(pmsYamlSchemaHelper.isFeatureFlagEnabled(FeatureName.DONT_RESTRICT_PARALLEL_STAGE_COUNT, ACC_ID))
