@@ -315,7 +315,7 @@ public class InviteServiceImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void deleteInvite_inviteExists() {
     ArgumentCaptor<String> idArgumentCaptor = ArgumentCaptor.forClass(String.class);
-    when(inviteRepository.findFirstByIdAndDeleted(any(), any())).thenReturn(Optional.of(getDummyInvite()));
+    when(inviteRepository.findByIdAndDeleted(any(), any())).thenReturn(Optional.of(getDummyInvite()));
     when(inviteRepository.updateInvite(any(), any())).thenReturn(getDummyInvite());
 
     inviteService.deleteInvite(inviteId);
@@ -329,7 +329,7 @@ public class InviteServiceImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void deleteInvite_InviteDNE() {
     ArgumentCaptor<String> idArgumentCaptor = ArgumentCaptor.forClass(String.class);
-    when(inviteRepository.findFirstByIdAndDeleted(any(), any())).thenReturn(Optional.empty());
+    when(inviteRepository.findByIdAndDeleted(any(), any())).thenReturn(Optional.empty());
 
     inviteService.deleteInvite(inviteId);
     verify(inviteRepository, times(0)).updateInvite(idArgumentCaptor.capture(), any());
@@ -378,7 +378,7 @@ public class InviteServiceImplTest extends CategoryTest {
   @Owner(developers = ANKUSH)
   @Category(UnitTests.class)
   public void updateInvite_invalidInviteId() {
-    when(inviteRepository.findFirstByIdAndDeleted(any(), any())).thenReturn(Optional.empty());
+    when(inviteRepository.findByIdAndDeleted(any(), any())).thenReturn(Optional.empty());
     Optional<Invite> returnInvite = inviteService.updateInvite(getDummyInvite());
     assertThat(returnInvite.isPresent()).isFalse();
   }
@@ -389,7 +389,7 @@ public class InviteServiceImplTest extends CategoryTest {
   public void updateInvite_ValidInviteId() {
     String dummyJWTToken = "Dummy jwt token";
     Claim claim = mock(Claim.class);
-    when(inviteRepository.findFirstByIdAndDeleted(any(), any())).thenReturn(Optional.of(getDummyInvite()));
+    when(inviteRepository.findByIdAndDeleted(any(), any())).thenReturn(Optional.of(getDummyInvite()));
     when(claim.asString()).thenReturn(inviteId);
     when(jwtGeneratorUtils.generateJWTToken(any(), any(), any())).thenReturn(dummyJWTToken);
     when(notificationClient.sendNotificationAsync(any())).thenReturn(NotificationResultWithStatus.builder().build());
@@ -407,7 +407,7 @@ public class InviteServiceImplTest extends CategoryTest {
     Invite invite = getDummyInvite();
     invite.setInviteType(InviteType.USER_INITIATED_INVITE);
     Claim claim = mock(Claim.class);
-    when(inviteRepository.findFirstByIdAndDeleted(any(), any())).thenReturn(Optional.of(invite));
+    when(inviteRepository.findByIdAndDeleted(any(), any())).thenReturn(Optional.of(invite));
     when(claim.asString()).thenReturn(inviteId);
     when(jwtGeneratorUtils.generateJWTToken(any(), any(), any())).thenReturn(dummyJWTToken);
     when(notificationClient.sendNotificationAsync(any())).thenReturn(NotificationResultWithStatus.builder().build());
@@ -433,7 +433,7 @@ public class InviteServiceImplTest extends CategoryTest {
     Claim claim = mock(Claim.class);
     when(claim.asString()).thenReturn(inviteId);
     when(jwtGeneratorUtils.verifyJWTToken(any(), any())).thenReturn(Collections.singletonMap(InviteKeys.id, claim));
-    when(inviteRepository.findFirstByIdAndDeleted(any(), any())).thenReturn(Optional.of(getDummyInvite()));
+    when(inviteRepository.findByIdAndDeleted(any(), any())).thenReturn(Optional.of(getDummyInvite()));
     when(ngUserService.getUserByEmail(any(), anyBoolean())).thenReturn(Optional.empty());
 
     assertThatThrownBy(() -> inviteService.completeInvite(Optional.of(getDummyInvite())))
@@ -457,7 +457,7 @@ public class InviteServiceImplTest extends CategoryTest {
 
     when(claim.asString()).thenReturn(inviteId);
     when(jwtGeneratorUtils.verifyJWTToken(any(), any())).thenReturn(Collections.singletonMap(InviteKeys.id, claim));
-    when(inviteRepository.findFirstByIdAndDeleted(any(), any())).thenReturn(Optional.of(getDummyInvite()));
+    when(inviteRepository.findByIdAndDeleted(any(), any())).thenReturn(Optional.of(getDummyInvite()));
     when(ngUserService.getUserByEmail(any(), anyBoolean())).thenReturn(Optional.of(user));
     boolean result = inviteService.completeInvite(Optional.of(getDummyInvite()));
 

@@ -113,7 +113,6 @@ import net.jodah.failsafe.RetryPolicy;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.message.BasicNameValuePair;
-import org.bson.types.ObjectId;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -253,8 +252,7 @@ public class InviteServiceImpl implements InviteService {
 
   @Override
   public Optional<Invite> getInvite(String inviteId, boolean allowDeleted) {
-    return allowDeleted ? inviteRepository.findById(new ObjectId(inviteId))
-                        : inviteRepository.findFirstByIdAndDeleted(new ObjectId(inviteId), FALSE);
+    return allowDeleted ? inviteRepository.findById(inviteId) : inviteRepository.findByIdAndDeleted(inviteId, FALSE);
   }
 
   @Override
@@ -537,7 +535,7 @@ public class InviteServiceImpl implements InviteService {
     checkUserLimit(invite.getAccountIdentifier(), invite.getEmail());
     Invite savedInvite = inviteRepository.save(invite);
     String accountId = invite.getAccountIdentifier();
-    Optional<Invite> dbInvite = inviteRepository.findById(new ObjectId(savedInvite.getId()));
+    Optional<Invite> dbInvite = inviteRepository.findById(savedInvite.getId());
     if (!dbInvite.isPresent()) {
       log.error("Invite is not saved to database yet");
     } else {
@@ -605,7 +603,7 @@ public class InviteServiceImpl implements InviteService {
     Update update = new Update().set(InviteKeys.inviteToken, invite.getInviteToken());
     inviteRepository.updateInvite(invite.getId(), update);
 
-    Optional<Invite> byId = inviteRepository.findById(new ObjectId(invite.getId()));
+    Optional<Invite> byId = inviteRepository.findById(invite.getId());
     if (!byId.isPresent()) {
       log.error("Invite is not present in db after update");
     } else {
@@ -620,6 +618,13 @@ public class InviteServiceImpl implements InviteService {
   private void sendInvitationMail(Invite invite, boolean isSSOEnabled, boolean isPLNoEmailForSamlAccountInvitesEnabled,
       boolean isAutoInviteAcceptanceEnabled) throws URISyntaxException, UnsupportedEncodingException {
     updateJWTTokenInInvite(invite);
+
+    Optional<Invite> firstByIdAndDeleted = inviteRepository.findByIdAndDeleted(invite.getId(), FALSE);
+    if (!firstByIdAndDeleted.isPresent()) {
+      log.info("Successfully found invite using findFirstByIdAndDeleted");
+    } else {
+      log.error("findFirstByIdAndDeleted not working");
+    }
     if (isPLNoEmailForSamlAccountInvitesEnabled && isSSOEnabled) {
       log.info("NG User Invite: both isPLNoEmailForSamlAccountInvitesEnabled and isSSOEnabled is enabled");
       return;
