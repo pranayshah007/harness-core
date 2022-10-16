@@ -11,6 +11,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.ng.accesscontrol.PlatformPermissions.VIEW_PROJECT_PERMISSION;
 import static io.harness.ng.accesscontrol.PlatformResourceTypes.PROJECT;
+import static io.harness.ng.core.service.resources.ServiceResourceApiUtils.mustBeAtProjectLevel;
 import static io.harness.rbac.CDNGRbacPermissions.SERVICE_CREATE_PERMISSION;
 import static io.harness.rbac.CDNGRbacPermissions.SERVICE_UPDATE_PERMISSION;
 import static io.harness.rbac.CDNGRbacPermissions.SERVICE_VIEW_PERMISSION;
@@ -209,6 +210,9 @@ public class ServiceResourceV2 {
     accessControlClient.checkForAccessOrThrow(
         ResourceScope.of(accountId, serviceRequestDTO.getOrgIdentifier(), serviceRequestDTO.getProjectIdentifier()),
         Resource.of(NGResourceType.SERVICE, null), SERVICE_CREATE_PERMISSION);
+
+    ServiceResourceApiUtils.mustBeAtProjectLevel(serviceRequestDTO);
+
     ServiceEntity serviceEntity = ServiceElementMapper.toServiceEntity(accountId, serviceRequestDTO);
     orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(
         serviceEntity.getOrgIdentifier(), serviceEntity.getProjectIdentifier(), serviceEntity.getAccountId());
@@ -233,6 +237,7 @@ public class ServiceResourceV2 {
           description = "Details of the Services to be created") @Valid List<ServiceRequestDTO> serviceRequestDTOs) {
     throwExceptionForNoRequestDTO(serviceRequestDTOs);
     for (ServiceRequestDTO serviceRequestDTO : serviceRequestDTOs) {
+      ServiceResourceApiUtils.mustBeAtProjectLevel(serviceRequestDTO);
       accessControlClient.checkForAccessOrThrow(
           ResourceScope.of(accountId, serviceRequestDTO.getOrgIdentifier(), serviceRequestDTO.getProjectIdentifier()),
           Resource.of(NGResourceType.SERVICE, null), SERVICE_CREATE_PERMISSION);
@@ -279,6 +284,7 @@ public class ServiceResourceV2 {
           NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
       @Parameter(description = "Details of the Service to be updated") @Valid ServiceRequestDTO serviceRequestDTO) {
     throwExceptionForNoRequestDTO(serviceRequestDTO);
+    ServiceResourceApiUtils.mustBeAtProjectLevel(serviceRequestDTO);
     accessControlClient.checkForAccessOrThrow(
         ResourceScope.of(accountId, serviceRequestDTO.getOrgIdentifier(), serviceRequestDTO.getProjectIdentifier()),
         Resource.of(NGResourceType.SERVICE, serviceRequestDTO.getIdentifier()), SERVICE_UPDATE_PERMISSION);
@@ -300,6 +306,7 @@ public class ServiceResourceV2 {
           NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
       @Parameter(description = "Details of the Service to be updated") @Valid ServiceRequestDTO serviceRequestDTO) {
     throwExceptionForNoRequestDTO(serviceRequestDTO);
+    mustBeAtProjectLevel(serviceRequestDTO);
     accessControlClient.checkForAccessOrThrow(
         ResourceScope.of(accountId, serviceRequestDTO.getOrgIdentifier(), serviceRequestDTO.getProjectIdentifier()),
         Resource.of(NGResourceType.SERVICE, serviceRequestDTO.getIdentifier()), SERVICE_UPDATE_PERMISSION);
