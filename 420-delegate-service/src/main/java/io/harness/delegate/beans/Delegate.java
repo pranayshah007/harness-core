@@ -109,7 +109,10 @@ public class Delegate implements PersistentEntity, UuidAware, CreatedAtAware, Ac
 
   private List<DelegateScope> includeScopes;
   private List<DelegateScope> excludeScopes;
+  // these are tags added from UI/APIs
   private List<String> tags;
+  // these are tags added from delegate.yaml
+  private List<String> tagsFromYaml;
   private String profileResult;
   private boolean profileError;
   private long profileExecutedAt;

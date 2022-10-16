@@ -30,19 +30,22 @@ public class WinRmExecutorFactory {
   @Inject private DelegateLogService logService;
   @Inject private DelegateFileManager delegateFileManager;
 
-  public WinRmExecutor getExecutor(WinRmSessionConfig config, boolean disableCommandEncoding) {
-    return new DefaultWinRmExecutor(getExecutionLogCallback(config), true, config, disableCommandEncoding);
-  }
-
   public WinRmExecutor getExecutor(
-      WinRmSessionConfig config, boolean disableCommandEncoding, boolean shouldSaveExecutionLogs) {
+      WinRmSessionConfig config, boolean disableCommandEncoding, boolean winrmScriptCommandSplit) {
     return new DefaultWinRmExecutor(
-        getExecutionLogCallback(config), shouldSaveExecutionLogs, config, disableCommandEncoding);
+        getExecutionLogCallback(config), true, config, disableCommandEncoding, winrmScriptCommandSplit);
   }
 
-  public FileBasedWinRmExecutor getFiledBasedWinRmExecutor(WinRmSessionConfig config, boolean disableCommandEncoding) {
-    return new FileBasedWinRmExecutor(
-        getExecutionLogCallback(config), delegateFileManager, true, config, disableCommandEncoding);
+  public WinRmExecutor getExecutor(WinRmSessionConfig config, boolean disableCommandEncoding,
+      boolean shouldSaveExecutionLogs, boolean winrmScriptCommandSplit) {
+    return new DefaultWinRmExecutor(getExecutionLogCallback(config), shouldSaveExecutionLogs, config,
+        disableCommandEncoding, winrmScriptCommandSplit);
+  }
+
+  public FileBasedWinRmExecutor getFiledBasedWinRmExecutor(
+      WinRmSessionConfig config, boolean disableCommandEncoding, boolean winrmScriptCommandSplit) {
+    return new FileBasedWinRmExecutor(getExecutionLogCallback(config), delegateFileManager, true, config,
+        disableCommandEncoding, winrmScriptCommandSplit);
   }
 
   ExecutionLogCallback getExecutionLogCallback(WinRmSessionConfig config) {

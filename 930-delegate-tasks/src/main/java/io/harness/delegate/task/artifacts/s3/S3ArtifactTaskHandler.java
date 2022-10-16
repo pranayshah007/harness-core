@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 
 @Singleton
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
@@ -39,6 +40,14 @@ public class S3ArtifactTaskHandler extends DelegateArtifactTaskHandler<S3Artifac
   public ArtifactTaskExecutionResponse getLastSuccessfulBuild(S3ArtifactDelegateRequest s3ArtifactDelegateRequest) {
     String filePath = s3ArtifactDelegateRequest.getFilePath();
     ArtifactTaskExecutionResponse artifactTaskExecutionResponse;
+
+    if (StringUtils.isBlank(s3ArtifactDelegateRequest.getBucketName())) {
+      throw new InvalidRequestException("Please specify the bucket for the S3 artifact source.");
+    }
+
+    if (StringUtils.isAllBlank(s3ArtifactDelegateRequest.getFilePath(), s3ArtifactDelegateRequest.getFilePathRegex())) {
+      throw new InvalidRequestException("Please specify a filePath or filePathRegex before executing the pipeline.");
+    }
 
     if (EmptyPredicate.isNotEmpty(filePath)) {
       AwsConnectorDTO awsConnectorDTO = s3ArtifactDelegateRequest.getAwsConnectorDTO();

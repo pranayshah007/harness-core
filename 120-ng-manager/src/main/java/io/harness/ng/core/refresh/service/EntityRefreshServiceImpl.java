@@ -10,6 +10,7 @@ package io.harness.ng.core.refresh.service;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ng.core.refresh.helper.InputsValidationHelper;
+import io.harness.ng.core.refresh.helper.RefreshInputsHelper;
 import io.harness.template.beans.refresh.v2.InputsValidationResponse;
 
 import com.google.inject.Inject;
@@ -17,9 +18,17 @@ import com.google.inject.Inject;
 @OwnedBy(HarnessTeam.CDC)
 public class EntityRefreshServiceImpl implements EntityRefreshService {
   @Inject InputsValidationHelper inputsValidationHelper;
+  @Inject RefreshInputsHelper refreshInputsHelper;
 
   @Override
-  public InputsValidationResponse validateInputsForYaml(String accountId, String orgId, String projectId, String yaml) {
-    return inputsValidationHelper.validateInputsForYaml(accountId, orgId, projectId, yaml);
+  public InputsValidationResponse validateInputsForYaml(
+      String accountId, String orgId, String projectId, String yaml, String resolvedTemplatesYaml) {
+    return inputsValidationHelper.validateInputsForYaml(accountId, orgId, projectId, yaml, resolvedTemplatesYaml);
+  }
+
+  @Override
+  public String refreshLinkedInputs(
+      String accountId, String orgId, String projectId, String yaml, String resolvedTemplatesYaml) {
+    return refreshInputsHelper.refreshInputs(accountId, orgId, projectId, yaml, resolvedTemplatesYaml);
   }
 }

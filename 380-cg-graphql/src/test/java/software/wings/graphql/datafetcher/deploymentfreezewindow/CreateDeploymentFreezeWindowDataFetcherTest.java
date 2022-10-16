@@ -25,6 +25,7 @@ import io.harness.governance.AllAppFilter;
 import io.harness.governance.AllEnvFilter;
 import io.harness.governance.ApplicationFilter;
 import io.harness.governance.BlackoutWindowFilterType;
+import io.harness.governance.CustomAppFilter;
 import io.harness.governance.EnvironmentFilter;
 import io.harness.governance.EnvironmentFilter.EnvironmentFilterType;
 import io.harness.governance.ServiceFilter;
@@ -54,6 +55,7 @@ import software.wings.service.intfc.compliance.GovernanceConfigService;
 import com.google.inject.Inject;
 import java.lang.reflect.Method;
 import java.util.Arrays;
+import java.util.Collections;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -102,6 +104,14 @@ public class CreateDeploymentFreezeWindowDataFetcherTest extends AbstractDataFet
                                                        .envIds(null)
                                                        .servIds(null)
                                                        .build();
+    QLFreezeWindowInput qlValidExcludeFreezeWindowInput = QLFreezeWindowInput.builder()
+                                                              .appFilter(BlackoutWindowFilterType.CUSTOM)
+                                                              .envTypeFilter(QLEnvironmentTypeFilterInput.ALL)
+                                                              .serviceTypeFilter(QLServiceTypeFilterInput.ALL)
+                                                              .appIds(Collections.singletonList("app1"))
+                                                              .envIds(null)
+                                                              .servIds(null)
+                                                              .build();
 
     QLSetupInput qlValidSetupInput = QLSetupInput.builder().isDurationBased(true).duration(3600000L).build();
 
@@ -111,6 +121,7 @@ public class CreateDeploymentFreezeWindowDataFetcherTest extends AbstractDataFet
             .name("DFW")
             .description("freeze description")
             .freezeWindows(Arrays.asList(qlValidFreezeWindowInput))
+            .excludeFreezeWindows(Arrays.asList(qlValidExcludeFreezeWindowInput))
             .setup(qlValidSetupInput)
             .notifyTo(Arrays.asList("usergroups"))
             .build();
@@ -121,6 +132,8 @@ public class CreateDeploymentFreezeWindowDataFetcherTest extends AbstractDataFet
 
     ApplicationFilter applicationFilter =
         new AllAppFilter(BlackoutWindowFilterType.ALL, environmentFilter, serviceFilter);
+    ApplicationFilter excludeApplicationFilter = new CustomAppFilter(
+        BlackoutWindowFilterType.CUSTOM, environmentFilter, Collections.singletonList("app1"), serviceFilter);
 
     TimeRange timeRange = new TimeRange(System.currentTimeMillis(), System.currentTimeMillis() + 3600000, "time-zone",
         true, 3600000L, System.currentTimeMillis() + 3600000, TimeRangeOccurrence.ANNUAL, false);
@@ -131,6 +144,7 @@ public class CreateDeploymentFreezeWindowDataFetcherTest extends AbstractDataFet
                                                           .description("freeze description")
                                                           .userGroups(Arrays.asList("usergroups"))
                                                           .appSelections(Arrays.asList(applicationFilter))
+                                                          .excludeAppSelections(Arrays.asList(excludeApplicationFilter))
                                                           .timeRange(timeRange)
                                                           .build();
 
@@ -149,7 +163,14 @@ public class CreateDeploymentFreezeWindowDataFetcherTest extends AbstractDataFet
                                         .envIds(null)
                                         .servIds(null)
                                         .build();
-
+    QLFreezeWindow qlExcludeFreezeWindow = QLFreezeWindow.builder()
+                                               .appFilter(BlackoutWindowFilterType.CUSTOM)
+                                               .envFilterType(EnvironmentFilterType.ALL)
+                                               .servFilterType(ServiceFilterType.ALL)
+                                               .appIds(Collections.singletonList("app1"))
+                                               .envIds(null)
+                                               .servIds(null)
+                                               .build();
     QLSetup qlSetup = QLSetup.builder().isDurationBased(true).duration(3600000L).build();
 
     QLDeploymentFreezeWindow qlDeploymentFreezeWindow = QLDeploymentFreezeWindow.builder()
@@ -157,6 +178,7 @@ public class CreateDeploymentFreezeWindowDataFetcherTest extends AbstractDataFet
                                                             .name("DFW")
                                                             .description("freeze description")
                                                             .freezeWindows(Arrays.asList(qlFreezeWindow))
+                                                            .excludeFreezeWindows(Arrays.asList(qlExcludeFreezeWindow))
                                                             .setup(qlSetup)
                                                             .notifyTo(Arrays.asList("usergroups"))
                                                             .build();
@@ -177,6 +199,12 @@ public class CreateDeploymentFreezeWindowDataFetcherTest extends AbstractDataFet
     assertThat(payload.getDeploymentFreezeWindow().getFreezeWindows().get(0).getAppFilter())
         .isEqualTo(BlackoutWindowFilterType.ALL);
     assertThat(payload.getDeploymentFreezeWindow().getFreezeWindows().get(0).getEnvFilterType())
+        .isEqualTo(EnvironmentFilterType.ALL);
+    assertThat(payload.getDeploymentFreezeWindow().getExcludeFreezeWindows().get(0).getAppFilter())
+        .isEqualTo(BlackoutWindowFilterType.CUSTOM);
+    assertThat(payload.getDeploymentFreezeWindow().getExcludeFreezeWindows().get(0).getAppIds().get(0))
+        .isEqualTo("app1");
+    assertThat(payload.getDeploymentFreezeWindow().getExcludeFreezeWindows().get(0).getEnvFilterType())
         .isEqualTo(EnvironmentFilterType.ALL);
     assertThat(payload.getDeploymentFreezeWindow().getNotifyTo()).isEqualTo(Arrays.asList("usergroups"));
   }
@@ -214,6 +242,9 @@ public class CreateDeploymentFreezeWindowDataFetcherTest extends AbstractDataFet
     ApplicationFilter applicationFilter =
         new AllAppFilter(BlackoutWindowFilterType.ALL, environmentFilter, serviceFilter);
 
+    ApplicationFilter excludeApplicationFilter = new CustomAppFilter(
+        BlackoutWindowFilterType.CUSTOM, environmentFilter, Collections.singletonList("app1"), serviceFilter);
+
     TimeRange timeRange = new TimeRange(163400000L, 1635000000L, "time-zone", true, 3600000L,
         System.currentTimeMillis() + 3600000, TimeRangeOccurrence.ANNUAL, false);
 
@@ -223,6 +254,7 @@ public class CreateDeploymentFreezeWindowDataFetcherTest extends AbstractDataFet
                                                           .description("freeze description")
                                                           .userGroups(Arrays.asList("usergroups"))
                                                           .appSelections(Arrays.asList(applicationFilter))
+                                                          .excludeAppSelections(Arrays.asList(excludeApplicationFilter))
                                                           .timeRange(timeRange)
                                                           .build();
 
@@ -241,6 +273,14 @@ public class CreateDeploymentFreezeWindowDataFetcherTest extends AbstractDataFet
                                         .envIds(null)
                                         .servIds(null)
                                         .build();
+    QLFreezeWindow qlExcludeFreezeWindow = QLFreezeWindow.builder()
+                                               .appFilter(BlackoutWindowFilterType.CUSTOM)
+                                               .envFilterType(EnvironmentFilterType.ALL)
+                                               .servFilterType(ServiceFilterType.ALL)
+                                               .appIds(Collections.singletonList("app1"))
+                                               .envIds(null)
+                                               .servIds(null)
+                                               .build();
 
     QLSetup qlSetup = QLSetup.builder().isDurationBased(false).from(163400000L).to(163500000L).build();
 
@@ -249,6 +289,7 @@ public class CreateDeploymentFreezeWindowDataFetcherTest extends AbstractDataFet
                                                             .name("DFW")
                                                             .description("freeze description")
                                                             .freezeWindows(Arrays.asList(qlFreezeWindow))
+                                                            .excludeFreezeWindows(Arrays.asList(qlExcludeFreezeWindow))
                                                             .setup(qlSetup)
                                                             .notifyTo(Arrays.asList("usergroups"))
                                                             .build();
@@ -270,6 +311,12 @@ public class CreateDeploymentFreezeWindowDataFetcherTest extends AbstractDataFet
     assertThat(payload.getDeploymentFreezeWindow().getFreezeWindows().get(0).getAppFilter())
         .isEqualTo(BlackoutWindowFilterType.ALL);
     assertThat(payload.getDeploymentFreezeWindow().getFreezeWindows().get(0).getEnvFilterType())
+        .isEqualTo(EnvironmentFilterType.ALL);
+    assertThat(payload.getDeploymentFreezeWindow().getExcludeFreezeWindows().get(0).getAppFilter())
+        .isEqualTo(BlackoutWindowFilterType.CUSTOM);
+    assertThat(payload.getDeploymentFreezeWindow().getExcludeFreezeWindows().get(0).getAppIds().get(0))
+        .isEqualTo("app1");
+    assertThat(payload.getDeploymentFreezeWindow().getExcludeFreezeWindows().get(0).getEnvFilterType())
         .isEqualTo(EnvironmentFilterType.ALL);
     assertThat(payload.getDeploymentFreezeWindow().getNotifyTo()).isEqualTo(Arrays.asList("usergroups"));
   }

@@ -17,6 +17,8 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.PageRequestDTO;
 import io.harness.beans.Scope;
+import io.harness.beans.request.GitFileRequest;
+import io.harness.beans.response.GitFileResponse;
 import io.harness.connector.ConnectorValidationResult;
 import io.harness.connector.services.ConnectorService;
 import io.harness.delegate.beans.connector.scm.GitAuthType;
@@ -220,6 +222,30 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
         .blobId(fileContent.getBlobId())
         .commitId(getLatestCommitOnFileResponse.getCommitId())
         .branchName(branchName)
+        .build();
+  }
+
+  @Override
+  public ScmGetFileResponseDTO getFileByBranchV2(ScmGetFileByBranchRequestDTO scmGetFileByBranchRequestDTO) {
+    Scope scope = scmGetFileByBranchRequestDTO.getScope();
+    ScmConnector scmConnector = gitSyncConnectorHelper.getScmConnectorForGivenRepo(scope.getAccountIdentifier(),
+        scope.getOrgIdentifier(), scope.getProjectIdentifier(), scmGetFileByBranchRequestDTO.getConnectorRef(),
+        scmGetFileByBranchRequestDTO.getRepoName());
+    GitFileResponse gitFileResponse =
+        scmOrchestratorService.processScmRequestUsingConnectorSettings(scmClientFacilitatorService
+            -> scmClientFacilitatorService.getFile(scope, scmConnector,
+                GitFileRequest.builder()
+                    .branch(scmGetFileByBranchRequestDTO.getBranchName())
+                    .commitId(null)
+                    .filepath(scmGetFileByBranchRequestDTO.getFilePath())
+                    .build()),
+            scmConnector);
+
+    return ScmGetFileResponseDTO.builder()
+        .fileContent(gitFileResponse.getContent())
+        .blobId(gitFileResponse.getObjectId())
+        .commitId(gitFileResponse.getCommitId())
+        .branchName(gitFileResponse.getBranch())
         .build();
   }
 

@@ -22,6 +22,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.reconcile.remote.NgManagerReconcileClient;
 import io.harness.rule.Owner;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.helpers.TemplateInputsRefreshHelper;
@@ -45,6 +46,8 @@ public class TemplateInputsRefreshHelperTest extends TemplateServiceTestBase {
 
   @InjectMocks TemplateInputsRefreshHelper templateInputsRefreshHelper;
   @InjectMocks TemplateMergeServiceHelper templateMergeServiceHelper;
+  @Mock NGTemplateFeatureFlagHelperService featureFlagHelperService;
+  @Mock NgManagerReconcileClient ngManagerReconcileClient;
 
   @Mock private NGTemplateFeatureFlagHelperService featureFlagHelperService;
 
@@ -63,7 +66,11 @@ public class TemplateInputsRefreshHelperTest extends TemplateServiceTestBase {
   public void setup() throws IllegalAccessException {
     on(templateMergeServiceHelper).set("templateServiceHelper", templateServiceHelper);
     on(templateInputsRefreshHelper).set("templateMergeServiceHelper", templateMergeServiceHelper);
+
     when(featureFlagHelperService.isEnabled(null, FeatureName.NG_TEMPLATE_VARIABLES)).thenReturn(false);
+    on(templateInputsRefreshHelper).set("featureFlagHelperService", featureFlagHelperService);
+    on(templateInputsRefreshHelper).set("ngManagerReconcileClient", ngManagerReconcileClient);
+    when(featureFlagHelperService.isEnabled(ACCOUNT_ID, FeatureName.CD_SERVICE_ENV_RECONCILIATION)).thenReturn(false);
   }
 
   @Test

@@ -40,7 +40,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
-import java.util.TimeZone;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -48,8 +47,8 @@ import org.junit.experimental.categories.Category;
 @OwnedBy(CDC)
 public class NGFreezeDtoMapperTest extends CategoryTest {
   private final String ACCOUNT_ID = "accountId";
-  private final String ORG_IDENTIFIER = "orgId";
-  private final String PROJ_IDENTIFIER = "projId";
+  private final String ORG_IDENTIFIER = "oId";
+  private final String PROJ_IDENTIFIER = "pId";
   private final String FREEZE_IDENTIFIER = "freezeId";
 
   private String yaml;
@@ -79,26 +78,28 @@ public class NGFreezeDtoMapperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testToTemplateDto() {
     FreezeConfigEntity entity =
-        NGFreezeDtoMapper.toFreezeConfigEntity(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, yaml);
+        NGFreezeDtoMapper.toFreezeConfigEntity(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, yaml, FreezeType.MANUAL);
     assertThat(entity).isNotNull();
+    assertThat(entity.getType()).isEqualTo(FreezeType.MANUAL);
+    assertThat(entity.getAccountId()).isEqualTo(ACCOUNT_ID);
+    assertThat(entity.getOrgIdentifier()).isEqualTo(ORG_IDENTIFIER);
+    assertThat(entity.getProjectIdentifier()).isEqualTo(PROJ_IDENTIFIER);
+    assertThat(entity.getYaml()).isEqualTo(yaml);
   }
 
   @Test
   @Owner(developers = ABHINAV_MITTAL)
   @Category(UnitTests.class)
   public void testToTemplateDto1() {
-    FreezeConfig freezeConfig = new FreezeConfig();
-    FreezeInfoConfig freezeInfoConfig = new FreezeInfoConfig();
+    FreezeInfoConfig freezeInfoConfig =
+        FreezeInfoConfig.builder().identifier("id").name("name").status(FreezeStatus.ENABLED).build();
     List<EntityConfig> entities = new LinkedList<>();
     List<FreezeEntityRule> freezeEntityRules = new LinkedList<>();
     FreezeEntityRule freezeEntityRule = new FreezeEntityRule();
     List<FreezeWindow> windows = new LinkedList<>();
-    freezeInfoConfig.setStatus(FreezeStatus.ENABLED);
     freezeInfoConfig.setDescription(ParameterField.<String>builder().value("desc").build());
-    freezeInfoConfig.setIdentifier("id");
-    freezeInfoConfig.setName("name");
-    freezeInfoConfig.setOrgIdentifier("oId");
-    freezeInfoConfig.setProjectIdentifier("pId");
+    //    freezeInfoConfig.setOrgIdentifier("oId");
+    //    freezeInfoConfig.setProjectIdentifier("pId");
     freezeInfoConfig.setRules(freezeEntityRules);
     freezeInfoConfig.setWindows(windows);
     EntityConfig entity = new EntityConfig();
@@ -108,15 +109,16 @@ public class NGFreezeDtoMapperTest extends CategoryTest {
     entities.add(entity);
     freezeEntityRule.setEntityConfigList(entities);
     freezeEntityRules.add(freezeEntityRule);
+
+    FreezeConfig freezeConfig = FreezeConfig.builder().freezeInfoConfig(freezeInfoConfig).build();
     freezeConfig.setFreezeInfoConfig(freezeInfoConfig);
     FreezeWindow freezeWindow = new FreezeWindow();
     freezeWindow.setEndTime("Asd");
     freezeWindow.setStartTime("st");
-    freezeWindow.setTimeZone(TimeZone.getDefault());
+    freezeWindow.setTimeZone("timezone");
     Recurrence recurrence = new Recurrence();
     recurrence.setRecurrenceType(RecurrenceType.DAILY);
     RecurrenceSpec recurrenceSpec = new RecurrenceSpec();
-    recurrenceSpec.setCount(1);
     recurrenceSpec.setUntil("until");
     recurrence.setSpec(recurrenceSpec);
     freezeWindow.setRecurrence(recurrence);

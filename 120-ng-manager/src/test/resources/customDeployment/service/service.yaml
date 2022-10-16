@@ -1,0 +1,17 @@
+service:
+  name: TestService
+  identifier: TestService
+  serviceDefinition:
+    type: CustomDeployment
+    spec:
+      customDeploymentRef:
+        templateRef: account.OpenStack
+        versionLabel: V1
+      artifacts:
+        primary:
+          spec:
+            connectorRef: account.Docker
+            imagePath: library/nginx
+            tag: <+input>
+          type: DockerRegistry
+  gitOpsEnabled: false

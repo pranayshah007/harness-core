@@ -79,8 +79,7 @@ public class PmsSdkInitHelper {
       return Collections.emptyMap();
     }
 
-    Map<String, Set<String>> supportedTypes = PmsSdkInitValidator.supportedTypesPlanCreator(planCreators);
-    PmsSdkInitValidator.validatePlanCreators(supportedTypes, pipelineServiceInfoProvider);
+    Map<String, Set<String>> supportedTypes = PmsSdkInitValidator.validatePlanCreators(pipelineServiceInfoProvider);
 
     Map<String, Types> finalMap = new HashMap<>();
     supportedTypes.forEach((k, v) -> finalMap.put(k, Types.newBuilder().addAllTypes(v).build()));

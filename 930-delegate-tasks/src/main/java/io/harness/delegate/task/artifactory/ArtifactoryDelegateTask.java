@@ -10,6 +10,7 @@ package io.harness.delegate.task.artifactory;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 
 import io.harness.artifactory.ArtifactoryConfigRequest;
+import io.harness.artifactory.ArtifactoryImagePath;
 import io.harness.artifactory.ArtifactoryNgService;
 import io.harness.connector.ConnectorValidationResult;
 import io.harness.connector.task.artifactory.ArtifactoryValidationHandler;
@@ -17,6 +18,7 @@ import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.beans.artifactory.ArtifactoryFetchBuildsResponse;
+import io.harness.delegate.beans.artifactory.ArtifactoryFetchImagePathResponse;
 import io.harness.delegate.beans.artifactory.ArtifactoryFetchRepositoriesResponse;
 import io.harness.delegate.beans.artifactory.ArtifactoryTaskParams;
 import io.harness.delegate.beans.artifactory.ArtifactoryTaskParams.TaskType;
@@ -74,6 +76,8 @@ public class ArtifactoryDelegateTask extends AbstractDelegateRunnableTask {
         return fetchRepositories(artifactoryConnectorDTO, artifactoryTaskParams.getRepoType());
       case FETCH_BUILDS:
         return fetchFileBuilds(artifactoryTaskParams);
+      case FETCH_IMAGE_PATHS:
+        return fetchImagePath(artifactoryConnectorDTO, artifactoryTaskParams);
       default:
         throw new InvalidRequestException("No task found for " + taskType.name());
     }
@@ -97,6 +101,18 @@ public class ArtifactoryDelegateTask extends AbstractDelegateRunnableTask {
     return ArtifactoryFetchRepositoriesResponse.builder()
         .commandExecutionStatus(SUCCESS)
         .repositories(repositories)
+        .build();
+  }
+  private DelegateResponseData fetchImagePath(
+      ArtifactoryConnectorDTO artifactoryConnectorDTO, ArtifactoryTaskParams artifactoryTaskParams) {
+    ArtifactoryConfigRequest artifactoryConfigRequest =
+        artifactoryRequestMapper.toArtifactoryRequest(artifactoryConnectorDTO);
+
+    List<ArtifactoryImagePath> imagePaths =
+        artifactoryNgService.getImagePaths(artifactoryConfigRequest, artifactoryTaskParams.getRepoName());
+    return ArtifactoryFetchImagePathResponse.builder()
+        .commandExecutionStatus(SUCCESS)
+        .artifactoryImagePathsFetchDTO(imagePaths)
         .build();
   }
 

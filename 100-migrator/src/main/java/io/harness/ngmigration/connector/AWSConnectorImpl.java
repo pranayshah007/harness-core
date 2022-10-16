@@ -109,17 +109,19 @@ public class AWSConnectorImpl implements BaseConnector {
       boolean isAssumeCrossAccountRole) {
     return AwsCredentialDTO.builder()
         .awsCredentialType(awsCredentialType)
-        .crossAccountAccess(getAwsCrossAccountAccessDTO(awsCrossAccountAttributes.getCrossAccountRoleArn(),
-            awsCrossAccountAttributes.getExternalId(), isAssumeCrossAccountRole))
+        .crossAccountAccess(getAwsCrossAccountAccessDTO(awsCrossAccountAttributes, isAssumeCrossAccountRole))
         .config(awsCredentialSpecDTO)
         .testRegion(testRegion)
         .build();
   }
 
   private CrossAccountAccessDTO getAwsCrossAccountAccessDTO(
-      String crossAccountRoleArn, String externalId, boolean isAssumeCrossAccountRole) {
-    if (isAssumeCrossAccountRole) {
-      return CrossAccountAccessDTO.builder().crossAccountRoleArn(crossAccountRoleArn).externalId(externalId).build();
+      AwsCrossAccountAttributes crossAccountAttributes, boolean isAssumeCrossAccountRole) {
+    if (isAssumeCrossAccountRole && crossAccountAttributes != null) {
+      return CrossAccountAccessDTO.builder()
+          .crossAccountRoleArn(crossAccountAttributes.getCrossAccountRoleArn())
+          .externalId(crossAccountAttributes.getExternalId())
+          .build();
     }
     return null;
   }

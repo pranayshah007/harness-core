@@ -48,14 +48,13 @@ public class RetryAdviserResponseHandler implements AdviserResponseHandler {
       log.info("Retry Wait Interval : {}", advise.getWaitInterval());
       String resumeId = delayEventHelper.delay(advise.getWaitInterval(), Collections.emptyMap());
       waitNotifyEngine.waitForAllOn(publisherName,
-          new EngineWaitRetryCallback(
-              nodeExecution.getAmbiance().getPlanExecutionId(), advise.getRetryNodeExecutionId()),
+          new EngineWaitRetryCallback(nodeExecution.getAmbiance().getPlanExecutionId(), nodeExecution.getUuid()),
           resumeId);
       return;
     }
     InterruptPackage interruptPackage =
         InterruptPackage.builder()
-            .nodeExecutionId(advise.getRetryNodeExecutionId())
+            .nodeExecutionId(nodeExecution.getUuid())
             .planExecutionId(nodeExecution.getAmbiance().getPlanExecutionId())
             .interruptType(InterruptType.RETRY)
             .interruptConfig(

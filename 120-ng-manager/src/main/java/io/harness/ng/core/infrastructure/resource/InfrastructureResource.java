@@ -8,6 +8,7 @@
 package io.harness.ng.core.infrastructure.resource;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.ng.core.environment.resources.EnvironmentResourceV2.ENVIRONMENT_PARAM_MESSAGE;
 import static io.harness.rbac.CDNGRbacPermissions.ENVIRONMENT_UPDATE_PERMISSION;
 import static io.harness.rbac.CDNGRbacPermissions.ENVIRONMENT_VIEW_PERMISSION;
@@ -57,6 +58,7 @@ import io.harness.repositories.UpsertOptions;
 import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.utils.PageUtils;
 
+import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -146,8 +148,7 @@ public class InfrastructureResource {
   @ApiOperation(value = "Gets an Infrastructure by identifier", nickname = "getInfrastructure")
   @NGAccessControlCheck(resourceType = NGResourceType.ENVIRONMENT, permission = "core_environment_view")
   @Operation(operationId = "getInfrastructure", summary = "Gets an Infrastructure by identifier",
-      responses = { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "The saved Infrastructure") },
-      hidden = true)
+      responses = { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "The saved Infrastructure") })
   public ResponseDTO<InfrastructureResponse>
   get(@Parameter(description = INFRA_PARAM_MESSAGE) @PathParam(
           "infraIdentifier") @ResourceIdentifier String infraIdentifier,
@@ -189,14 +190,15 @@ public class InfrastructureResource {
   @ApiOperation(value = "Create an Infrastructure in an Environment", nickname = "createInfrastructure")
   @Operation(operationId = "createInfrastructure", summary = "Create an Infrastructure in an Environment",
       responses =
-      { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Returns the created Infrastructure") },
-      hidden = true)
+      { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Returns the created Infrastructure") })
   public ResponseDTO<InfrastructureResponse>
   create(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
              NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
       @Parameter(description = "Details of the Infrastructure to be created")
       @Valid InfrastructureRequestDTO infrastructureRequestDTO) {
     throwExceptionForNoRequestDTO(infrastructureRequestDTO);
+    mustBeAtProjectLevel(infrastructureRequestDTO);
+
     orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(
         infrastructureRequestDTO.getOrgIdentifier(), infrastructureRequestDTO.getProjectIdentifier(), accountId);
     environmentValidationHelper.checkThatEnvExists(accountId, infrastructureRequestDTO.getOrgIdentifier(),
@@ -230,6 +232,7 @@ public class InfrastructureResource {
       @Valid List<InfrastructureRequestDTO> infrastructureRequestDTOS) {
     throwExceptionForNoRequestDTO(infrastructureRequestDTOS);
     infrastructureRequestDTOS.forEach(infrastructureRequestDTO -> {
+      mustBeAtProjectLevel(infrastructureRequestDTO);
       orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(
           infrastructureRequestDTO.getOrgIdentifier(), infrastructureRequestDTO.getProjectIdentifier(), accountId);
       environmentValidationHelper.checkThatEnvExists(accountId, infrastructureRequestDTO.getOrgIdentifier(),
@@ -257,8 +260,7 @@ public class InfrastructureResource {
       {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(description = "Returns true if the Infrastructure is deleted")
-      },
-      hidden = true)
+      })
   public ResponseDTO<Boolean>
   delete(@Parameter(description = INFRA_PARAM_MESSAGE) @PathParam(
              "infraIdentifier") @ResourceIdentifier String infraIdentifier,
@@ -283,14 +285,14 @@ public class InfrastructureResource {
   @ApiOperation(value = "Update an Infrastructure by identifier", nickname = "updateInfrastructure")
   @Operation(operationId = "updateInfrastructure", summary = "Update an Infrastructure by identifier",
       responses =
-      { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Returns the updated Infrastructure") },
-      hidden = true)
+      { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Returns the updated Infrastructure") })
   public ResponseDTO<InfrastructureResponse>
   update(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
              NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
       @Parameter(description = "Details of the Infrastructure to be updated")
       @Valid InfrastructureRequestDTO infrastructureRequestDTO) {
     throwExceptionForNoRequestDTO(infrastructureRequestDTO);
+    mustBeAtProjectLevel(infrastructureRequestDTO);
     orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(
         infrastructureRequestDTO.getOrgIdentifier(), infrastructureRequestDTO.getProjectIdentifier(), accountId);
     environmentValidationHelper.checkThatEnvExists(accountId, infrastructureRequestDTO.getOrgIdentifier(),
@@ -319,6 +321,7 @@ public class InfrastructureResource {
       @Parameter(description = "Details of the Infrastructure to be updated")
       @Valid InfrastructureRequestDTO infrastructureRequestDTO) {
     throwExceptionForNoRequestDTO(infrastructureRequestDTO);
+    mustBeAtProjectLevel(infrastructureRequestDTO);
     orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(
         infrastructureRequestDTO.getOrgIdentifier(), infrastructureRequestDTO.getProjectIdentifier(), accountId);
     environmentValidationHelper.checkThatEnvExists(accountId, infrastructureRequestDTO.getOrgIdentifier(),
@@ -341,8 +344,7 @@ public class InfrastructureResource {
       {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(description = "Returns the list of Infrastructure for an Environment")
-      },
-      hidden = true)
+      })
   public ResponseDTO<PageResponse<InfrastructureResponse>>
   listInfrastructures(@Parameter(description = NGCommonEntityConstants.PAGE_PARAM_MESSAGE) @QueryParam(
                           NGCommonEntityConstants.PAGE) @DefaultValue("0") int page,
@@ -360,6 +362,11 @@ public class InfrastructureResource {
           NGResourceFilterConstants.SEARCH_TERM_KEY) String searchTerm,
       @Parameter(description = "List of InfrastructureIds") @QueryParam("infraIdentifiers")
       List<String> infraIdentifiers, @QueryParam("deploymentType") ServiceDefinitionType deploymentType,
+      @Parameter(description = "The Identifier of deployment template if infrastructure is of type custom deployment")
+      @QueryParam("deploymentTemplateIdentifier") String deploymentTemplateIdentifier,
+      @Parameter(
+          description = "The version label of deployment template if infrastructure is of type custom deployment")
+      @QueryParam("versionLabel") String versionLabel,
       @Parameter(
           description =
               "Specifies the sorting criteria of the list. Like sorting based on the last updated entity, alphabetical sorting in an ascending or descending order")
@@ -378,7 +385,11 @@ public class InfrastructureResource {
       pageRequest = PageUtils.getPageRequest(page, size, sort);
     }
     Page<InfrastructureEntity> infraEntities = infrastructureEntityService.list(criteria, pageRequest);
-
+    if (ServiceDefinitionType.CUSTOM_DEPLOYMENT == deploymentType && !isEmpty(deploymentTemplateIdentifier)
+        && !isEmpty(versionLabel)) {
+      infraEntities = customDeploymentYamlHelper.getFilteredInfraEntities(
+          page, size, sort, deploymentTemplateIdentifier, versionLabel, infraEntities);
+    }
     return ResponseDTO.newResponse(getNGPageResponse(infraEntities.map(InfrastructureMapper::toResponseWrapper)));
   }
 
@@ -479,5 +490,16 @@ public class InfrastructureResource {
             environmentIdentifier, infrastructureYamlMetadata.getInfrastructureIdentifiers());
     return ResponseDTO.newResponse(
         InfrastructureYamlMetadataDTO.builder().infrastructureYamlMetadataList(infrastructureYamlMetadataList).build());
+  }
+
+  private void mustBeAtProjectLevel(InfrastructureRequestDTO requestDTO) {
+    try {
+      Preconditions.checkArgument(isNotEmpty(requestDTO.getOrgIdentifier()),
+          "org identifier must be specified. Infrastructure Definitions can only be created at Project scope");
+      Preconditions.checkArgument(isNotEmpty(requestDTO.getProjectIdentifier()),
+          "project identifier must be specified. Infrastructure Definitions can only be created at Project scope");
+    } catch (Exception ex) {
+      throw new InvalidRequestException(ex.getMessage());
+    }
   }
 }

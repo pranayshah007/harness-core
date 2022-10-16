@@ -25,20 +25,19 @@ import org.mongodb.morphia.query.QueryImpl;
 @OwnedBy(HarnessTeam.PL)
 public class QueryFactory extends DefaultQueryFactory {
   private final TraceMode traceMode;
+  @Getter private final int maxOperationTimeInMillis;
   @Getter private final Subject<Tracer> tracerSubject = new Subject<>();
 
-  public QueryFactory() {
-    this.traceMode = TraceMode.DISABLED;
-  }
-
-  public QueryFactory(TraceMode traceMode) {
-    this.traceMode = traceMode;
+  public QueryFactory(MongoConfig mongoConfig) {
+    this.traceMode = mongoConfig.getTraceMode();
+    this.maxOperationTimeInMillis = mongoConfig.getMaxOperationTimeInMillis();
   }
 
   @Override
   public <T> Query<T> createQuery(
       final Datastore datastore, final DBCollection collection, final Class<T> type, final DBObject query) {
-    final QueryImpl<T> item = new HQuery<>(type, collection, datastore, traceMode, tracerSubject);
+    final QueryImpl<T> item =
+        new HQuery<>(type, collection, datastore, traceMode, tracerSubject, maxOperationTimeInMillis);
 
     if (query != null) {
       item.setQueryObject(query);

@@ -85,7 +85,7 @@ public class EnvGroupPlanCreatorHelper {
 
     List<EnvironmentPlanCreatorConfig> envConfigs = new ArrayList<>();
     if (!envGroupYaml.getDeployToAll().getValue()) {
-      List<EnvironmentYamlV2> envV2Yamls = envGroupYaml.getEnvironments();
+      List<EnvironmentYamlV2> envV2Yamls = envGroupYaml.getEnvironments().getValue();
       for (EnvironmentYamlV2 envYaml : envV2Yamls) {
         Environment environment = envMapping.get(envYaml.getEnvironmentRef().getValue());
         if (environment == null) {

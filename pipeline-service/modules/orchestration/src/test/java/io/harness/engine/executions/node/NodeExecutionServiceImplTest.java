@@ -831,4 +831,21 @@ public class NodeExecutionServiceImplTest extends OrchestrationTestBase {
     assertThat(query.toString())
         .isEqualTo("Query: { \"ambiance.planExecutionId\" : \"tempId\", \"oldRetry\" : false}, Fields: {}, Sort: {}");
   }
+
+  @Test
+  @Owner(developers = BRIJESH)
+  @Category(UnitTests.class)
+  public void testGetPipelineNodeExecution() {
+    mongoTemplate = mock(MongoTemplate.class);
+
+    String planExecutionId = "tempId";
+    on(nodeExecutionService).set("mongoTemplate", mongoTemplate);
+    ArgumentCaptor<Query> argumentCaptor = ArgumentCaptor.forClass(Query.class);
+    nodeExecutionService.getPipelineNodeExecution(planExecutionId);
+    verify(mongoTemplate, times(1)).findOne(argumentCaptor.capture(), any());
+    Query query = argumentCaptor.getValue();
+    assertThat(query.toString())
+        .isEqualTo(
+            "Query: { \"ambiance.planExecutionId\" : \"tempId\", \"stepType.stepCategory\" : { \"$java\" : PIPELINE } }, Fields: {}, Sort: { \"createdAt\" : 1}");
+  }
 }

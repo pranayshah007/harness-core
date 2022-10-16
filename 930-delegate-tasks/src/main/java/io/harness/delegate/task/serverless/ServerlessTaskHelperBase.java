@@ -56,6 +56,7 @@ import io.harness.delegate.beans.storeconfig.FetchType;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
 import io.harness.delegate.task.artifactory.ArtifactoryRequestMapper;
 import io.harness.delegate.task.aws.AwsNgConfigMapper;
+import io.harness.delegate.task.git.GitFetchTaskHelper;
 import io.harness.delegate.task.git.ScmFetchFilesHelperNG;
 import io.harness.eraro.ErrorCode;
 import io.harness.eraro.Level;
@@ -97,7 +98,7 @@ import org.apache.commons.io.IOUtils;
 @Slf4j
 @OwnedBy(CDP)
 public class ServerlessTaskHelperBase {
-  @Inject private ServerlessGitFetchTaskHelper serverlessGitFetchTaskHelper;
+  @Inject private GitFetchTaskHelper gitFetchTaskHelper;
   @Inject private ScmFetchFilesHelperNG scmFetchFilesHelper;
   @Inject private GitDecryptionHelper gitDecryptionHelper;
   @Inject private NGGitService ngGitService;
@@ -141,7 +142,7 @@ public class ServerlessTaskHelperBase {
     try {
       if (gitStoreDelegateConfig.isOptimizedFilesFetch()) {
         executionLogCallback.saveExecutionLog("Using optimized file fetch");
-        serverlessGitFetchTaskHelper.decryptGitStoreConfig(gitStoreDelegateConfig);
+        gitFetchTaskHelper.decryptGitStoreConfig(gitStoreDelegateConfig);
         scmFetchFilesHelper.downloadFilesUsingScm(workingDirectory, gitStoreDelegateConfig, executionLogCallback);
       } else {
         GitConfigDTO gitConfigDTO = ScmConnectorMapper.toGitConfigDTO(gitStoreDelegateConfig.getGitConfigDTO());

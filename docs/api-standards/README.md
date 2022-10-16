@@ -1,6 +1,6 @@
 # Harness API Guidelines
 
-This repo holds the collection of guides on writing APIs within Harness. 
+This repo holds the collection of guides on writing APIs within Harness and relates to the APIs located at `https://api.app.harness.io/v1`.
 
 ## REST
 

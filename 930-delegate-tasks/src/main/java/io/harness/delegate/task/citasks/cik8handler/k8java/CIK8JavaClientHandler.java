@@ -90,7 +90,7 @@ public class CIK8JavaClientHandler {
   @Inject private ApiClientFactory apiClientFactory;
   @Inject private AzureAsyncTaskHelper azureAsyncTaskHelper;
 
-  private final int DELETION_MAX_ATTEMPTS = 15;
+  private final int DELETION_MAX_ATTEMPTS = 6;
 
   public V1Pod createOrReplacePodWithRetries(CoreV1Api coreV1Api, V1Pod pod, String namespace) {
     RetryPolicy<Object> retryPolicy =

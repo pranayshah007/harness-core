@@ -64,6 +64,7 @@ import io.harness.threading.ExecutorModule;
 import io.harness.token.TokenClientModule;
 import io.harness.user.UserClientModule;
 import io.harness.usergroups.UserGroupClientModule;
+import io.harness.userng.UserNGClientModule;
 import io.harness.version.VersionModule;
 import io.harness.waiter.AbstractWaiterModule;
 import io.harness.waiter.WaiterConfiguration;
@@ -114,7 +115,7 @@ public class NotificationServiceModule extends AbstractModule {
     final DelegateCallbackToken delegateCallbackToken = delegateServiceClient.registerCallback(
         DelegateCallback.newBuilder()
             .setMongoDatabase(MongoDatabase.newBuilder()
-                                  .setCollectionNamePrefix("!!!custom")
+                                  .setCollectionNamePrefix("ns")
                                   .setConnection(appConfig.getNotificationServiceConfig().getMongoConfig().getUri())
                                   .build())
             .build());
@@ -204,6 +205,8 @@ public class NotificationServiceModule extends AbstractModule {
         appConfig.getPlatformSecrets().getNgManagerServiceSecret(), NOTIFICATION_SERVICE.getServiceId()));
     install(new UserClientModule(appConfig.getManagerServiceConfig(),
         appConfig.getPlatformSecrets().getNgManagerServiceSecret(), NOTIFICATION_SERVICE.getServiceId()));
+    install(new UserNGClientModule(appConfig.getNgManagerServiceConfig(),
+        appConfig.getPlatformSecrets().getNgManagerServiceSecret(), NOTIFICATION_SERVICE.getServiceId()));
     bind(ChannelService.class).to(ChannelServiceImpl.class);
     install(new SmtpConfigClientModule(
         appConfig.getManagerServiceConfig(), appConfig.getPlatformSecrets().getNgManagerServiceSecret()));
@@ -225,9 +228,9 @@ public class NotificationServiceModule extends AbstractModule {
   @Named("morphiaClasses")
   Map<Class, String> morphiaCustomCollectionNames() {
     return ImmutableMap.<Class, String>builder()
-        .put(DelegateSyncTaskResponse.class, "delegateSyncTaskResponses")
-        .put(DelegateAsyncTaskResponse.class, "delegateAsyncTaskResponses")
-        .put(DelegateTaskProgressResponse.class, "delegateTaskProgressResponses")
+        .put(DelegateSyncTaskResponse.class, "ns_delegateSyncTaskResponses")
+        .put(DelegateAsyncTaskResponse.class, "ns_delegateAsyncTaskResponses")
+        .put(DelegateTaskProgressResponse.class, "ns_delegateTaskProgressResponses")
         .build();
   }
 

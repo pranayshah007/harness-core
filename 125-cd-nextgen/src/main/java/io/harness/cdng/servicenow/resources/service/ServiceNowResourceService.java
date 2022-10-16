@@ -9,6 +9,7 @@ package io.harness.cdng.servicenow.resources.service;
 
 import io.harness.beans.IdentifierRef;
 import io.harness.servicenow.ServiceNowFieldNG;
+import io.harness.servicenow.ServiceNowStagingTable;
 import io.harness.servicenow.ServiceNowTemplate;
 
 import java.util.List;
@@ -22,4 +23,5 @@ public interface ServiceNowResourceService {
 
   List<ServiceNowTemplate> getTemplateList(IdentifierRef connectorRef, String orgId, String projectId, int limit,
       int offset, String templateName, String ticketType);
+  List<ServiceNowStagingTable> getStagingTableList(IdentifierRef connectorRef, String orgId, String projectId);
 }

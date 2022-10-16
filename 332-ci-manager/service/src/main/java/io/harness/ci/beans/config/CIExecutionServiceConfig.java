@@ -29,5 +29,6 @@ public class CIExecutionServiceConfig {
   String liteEngineImage;
   String ciImageTag;
   CIStepConfig stepConfig;
+  CICacheIntelligenceConfig cacheIntelligenceConfig;
   boolean isLocal;
 }

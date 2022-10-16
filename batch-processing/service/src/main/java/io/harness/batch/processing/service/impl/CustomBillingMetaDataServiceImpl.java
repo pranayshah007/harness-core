@@ -17,8 +17,10 @@ import io.harness.batch.processing.dao.intfc.BillingDataPipelineRecordDao;
 import io.harness.batch.processing.pricing.gcp.bigquery.BigQueryHelperService;
 import io.harness.batch.processing.pricing.vmpricing.VMInstanceBillingData;
 import io.harness.batch.processing.service.intfc.CustomBillingMetaDataService;
+import io.harness.beans.FeatureName;
 import io.harness.ccm.commons.dao.CEMetadataRecordDao;
 import io.harness.ccm.commons.entities.batch.CEMetadataRecord;
+import io.harness.ff.FeatureFlagService;
 
 import software.wings.graphql.datafetcher.billing.CloudBillingHelper;
 import software.wings.service.intfc.instance.CloudToHarnessMappingService;
@@ -45,6 +47,7 @@ public class CustomBillingMetaDataServiceImpl implements CustomBillingMetaDataSe
   private final CEMetadataRecordDao ceMetadataRecordDao;
   private final CloudBillingHelper cloudBillingHelper;
   private final BatchMainConfig mainConfig;
+  private final FeatureFlagService featureFlagService;
   private final BillingDataServiceImpl billingDataService;
 
   private LoadingCache<String, String> awsBillingMetaDataCache =
@@ -52,6 +55,9 @@ public class CustomBillingMetaDataServiceImpl implements CustomBillingMetaDataSe
 
   private LoadingCache<String, String> azureBillingMetaDataCache =
       Caffeine.newBuilder().expireAfterWrite(4, TimeUnit.HOURS).build(this::getAzureBillingMetaData);
+
+  private LoadingCache<String, String> gcpBillingMetaDataCache =
+      Caffeine.newBuilder().expireAfterWrite(4, TimeUnit.HOURS).build(this::getGcpBillingMetaData);
 
   private LoadingCache<CacheKey, Boolean> pipelineJobStatusCache =
       Caffeine.newBuilder()
@@ -69,13 +75,14 @@ public class CustomBillingMetaDataServiceImpl implements CustomBillingMetaDataSe
   public CustomBillingMetaDataServiceImpl(CloudToHarnessMappingService cloudToHarnessMappingService,
       BillingDataPipelineRecordDao billingDataPipelineRecordDao, BigQueryHelperService bigQueryHelperService,
       CEMetadataRecordDao ceMetadataRecordDao, CloudBillingHelper cloudBillingHelper, BatchMainConfig mainConfig,
-      BillingDataServiceImpl billingDataService) {
+      FeatureFlagService featureFlagService, BillingDataServiceImpl billingDataService) {
     this.cloudToHarnessMappingService = cloudToHarnessMappingService;
     this.billingDataPipelineRecordDao = billingDataPipelineRecordDao;
     this.bigQueryHelperService = bigQueryHelperService;
     this.ceMetadataRecordDao = ceMetadataRecordDao;
     this.cloudBillingHelper = cloudBillingHelper;
     this.mainConfig = mainConfig;
+    this.featureFlagService = featureFlagService;
     this.billingDataService = billingDataService;
   }
 
@@ -87,6 +94,11 @@ public class CustomBillingMetaDataServiceImpl implements CustomBillingMetaDataSe
   @Override
   public String getAzureDataSetId(String accountId) {
     return azureBillingMetaDataCache.get(accountId);
+  }
+
+  @Override
+  public String getGcpDataSetId(String accountId) {
+    return gcpBillingMetaDataCache.get(accountId);
   }
 
   @Override
@@ -123,6 +135,18 @@ public class CustomBillingMetaDataServiceImpl implements CustomBillingMetaDataSe
     if (null != ceMetadataRecord && null != ceMetadataRecord.getAzureDataPresent()
         && ceMetadataRecord.getAzureDataPresent()) {
       return cloudBillingHelper.getDataSetId(accountId);
+    }
+    return null;
+  }
+
+  private String getGcpBillingMetaData(String accountId) {
+    boolean enabled = featureFlagService.isEnabled(FeatureName.CE_GCP_CUSTOM_PRICING, accountId);
+    if (enabled) {
+      CEMetadataRecord ceMetadataRecord = ceMetadataRecordDao.getByAccountId(accountId);
+      if (null != ceMetadataRecord && null != ceMetadataRecord.getGcpDataPresent()
+          && ceMetadataRecord.getGcpDataPresent()) {
+        return cloudBillingHelper.getDataSetId(accountId);
+      }
     }
     return null;
   }

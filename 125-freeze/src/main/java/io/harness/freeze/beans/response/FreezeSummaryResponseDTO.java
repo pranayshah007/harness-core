@@ -14,10 +14,13 @@ import io.harness.data.validator.EntityIdentifier;
 import io.harness.data.validator.EntityName;
 import io.harness.data.validator.Trimmed;
 import io.harness.encryption.Scope;
+import io.harness.freeze.beans.CurrentOrUpcomingActiveWindow;
+import io.harness.freeze.beans.FreezeEntityRule;
 import io.harness.freeze.beans.FreezeStatus;
 import io.harness.freeze.beans.FreezeType;
 import io.harness.freeze.beans.FreezeWindow;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.annotations.ApiModel;
@@ -53,7 +56,10 @@ public class FreezeSummaryResponseDTO {
   @With @Trimmed String orgIdentifier;
   @With @Trimmed String projectIdentifier;
 
-  List<FreezeWindow> freezeWindows;
+  List<FreezeWindow> windows;
+  @JsonIgnore List<FreezeEntityRule> rules;
+
+  CurrentOrUpcomingActiveWindow currentOrUpcomingActiveWindow;
 
   @With @NotEmpty @EntityIdentifier String identifier;
 

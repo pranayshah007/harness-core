@@ -47,7 +47,6 @@ public class CustomArtifactService {
   private static final String ARTIFACT_RESULT_PATH = "HARNESS_ARTIFACT_RESULT_PATH";
 
   public ArtifactTaskExecutionResponse getBuilds(CustomArtifactDelegateRequest attributesRequest) {
-    String script = attributesRequest.getScript();
     List<BuildDetails> buildDetails = getBuildDetails(attributesRequest);
     List<CustomArtifactDelegateResponse> customArtifactDelegateResponseList =
         buildDetails.stream()
@@ -58,7 +57,6 @@ public class CustomArtifactService {
   }
 
   public ArtifactTaskExecutionResponse getLastSuccessfulBuild(CustomArtifactDelegateRequest attributesRequest) {
-    String script = attributesRequest.getScript();
     List<BuildDetails> buildDetails = new ArrayList<>();
     buildDetails = getBuildDetails(attributesRequest);
     if (filterVersion(buildDetails, attributesRequest) != null

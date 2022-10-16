@@ -57,11 +57,13 @@ import io.harness.persistence.NoopUserProvider;
 import io.harness.persistence.UserProvider;
 import io.harness.pipeline.yamlschema.PipelineYamlSchemaClientModule;
 import io.harness.project.ProjectClientModule;
+import io.harness.reconcile.NgManagerReconcileClientModule;
 import io.harness.redis.RedisConfig;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.serializer.TemplateServiceModuleRegistrars;
 import io.harness.service.DelegateServiceDriverModule;
+import io.harness.service.ServiceResourceClientModule;
 import io.harness.template.event.OrgEntityCrudStreamListener;
 import io.harness.template.event.ProjectEntityCrudStreamListener;
 import io.harness.template.events.TemplateOutboxEventHandler;
@@ -173,6 +175,8 @@ public class TemplateServiceModule extends AbstractModule {
         this.templateServiceConfiguration.isEnableAudit()));
     install(new CustomDeploymentClientModule(this.templateServiceConfiguration.getNgManagerServiceHttpClientConfig(),
         this.templateServiceConfiguration.getNgManagerServiceSecret(), TEMPLATE_SERVICE.getServiceId()));
+    install(new NgManagerReconcileClientModule(this.templateServiceConfiguration.getNgManagerServiceHttpClientConfig(),
+        this.templateServiceConfiguration.getNgManagerServiceSecret(), TEMPLATE_SERVICE.getServiceId()));
     install(new TransactionOutboxModule(DEFAULT_OUTBOX_POLL_CONFIGURATION, TEMPLATE_SERVICE.getServiceId(), false));
     install(new TokenClientModule(this.templateServiceConfiguration.getNgManagerServiceHttpClientConfig(),
         this.templateServiceConfiguration.getNgManagerServiceSecret(), TEMPLATE_SERVICE.getServiceId()));
@@ -209,6 +213,9 @@ public class TemplateServiceModule extends AbstractModule {
     install(EnforcementClientModule.getInstance(templateServiceConfiguration.getNgManagerServiceHttpClientConfig(),
         templateServiceConfiguration.getNgManagerServiceSecret(), TEMPLATE_SERVICE.getServiceId(),
         templateServiceConfiguration.getEnforcementClientConfiguration()));
+
+    install(new ServiceResourceClientModule(this.templateServiceConfiguration.getNgManagerServiceHttpClientConfig(),
+        this.templateServiceConfiguration.getNgManagerServiceSecret(), TEMPLATE_SERVICE.getServiceId()));
 
     MapBinder<String, FilterPropertiesMapper> filterPropertiesMapper =
         MapBinder.newMapBinder(binder(), String.class, FilterPropertiesMapper.class);

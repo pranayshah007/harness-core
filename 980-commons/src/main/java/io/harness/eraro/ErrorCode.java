@@ -25,6 +25,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
 import com.google.common.base.Splitter;
+
 /**
  * The enum Error codes.
  */
@@ -633,6 +634,7 @@ public enum ErrorCode {
   DUPLICATE_FILE_IMPORT,
   AZURE_APP_SERVICES_TASK_EXCEPTION,
   AZURE_ARM_TASK_EXCEPTION,
+  AZURE_BP_TASK_EXCEPTION,
 
   MEDIA_NOT_SUPPORTED(UNSUPPORTED_MEDIA_TYPE),
 

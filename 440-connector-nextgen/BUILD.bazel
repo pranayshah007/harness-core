@@ -43,6 +43,7 @@ java_library(
         "//clients/access-control/sdk:module",
         "//clients/audit:module",
         "//platform-service/modules/audit-service/contracts:module",
+        "@maven//:io_harness_ng_manager_server_spec",
     ],
 )
 

@@ -11,6 +11,7 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
+import io.harness.delegate.beans.AutoUpgrade;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -27,7 +28,7 @@ import lombok.Value;
 public class DelegateScalingGroup {
   String groupName;
   List<DelegateStatus.DelegateInner> delegates;
-  boolean autoUpgrade;
+  AutoUpgrade autoUpgrade;
   long upgraderLastUpdated;
   long delegateGroupExpirationTime;
   boolean immutable;

@@ -21,7 +21,8 @@ public interface PmsEngineExpressionService {
   String renderExpression(Ambiance ambiance, String expression, boolean skipUnresolvedExpressionsCheck);
 
   String evaluateExpression(Ambiance ambiance, String expression);
-  Object resolve(Ambiance ambiance, Object o, boolean skipUnresolvedExpressionsCheck);
+  String evaluateExpression(Ambiance ambiance, String expression, ExpressionMode expressionMode);
+  @Deprecated Object resolve(Ambiance ambiance, Object o, boolean skipUnresolvedExpressionsCheck);
   Object resolve(Ambiance ambiance, Object o, ExpressionMode expressionMode);
   default EngineExpressionEvaluator prepareExpressionEvaluator(Ambiance ambiance) {
     return null;

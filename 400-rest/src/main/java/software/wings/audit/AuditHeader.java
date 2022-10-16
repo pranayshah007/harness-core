@@ -91,6 +91,12 @@ public class AuditHeader extends Base implements AccountAccess {
                  .rangeField(AuditHeaderKeys.affectedResourceOp)
                  .rangeField(AuditHeaderKeys.affectedResourceType)
                  .build())
+        .add(SortCompoundMongoIndex.builder()
+                 .name("accountId_entityId_createdAt")
+                 .field(AuditHeaderKeys.accountId)
+                 .field(AuditHeaderKeys.entityId)
+                 .descSortField(AuditHeaderKeys.createdAt)
+                 .build())
         .build();
   }
 
@@ -434,6 +440,7 @@ public class AuditHeader extends Base implements AccountAccess {
     public static final String affectedResourceId = "entityAuditRecords.affectedResourceId";
     public static final String affectedResourceType = "entityAuditRecords.affectedResourceType";
     public static final String affectedResourceOp = "entityAuditRecords.affectedResourceOperation";
+    public static final String entityId = "entityAuditRecords.entityId";
   }
   /**
    * The Enum RequestType.

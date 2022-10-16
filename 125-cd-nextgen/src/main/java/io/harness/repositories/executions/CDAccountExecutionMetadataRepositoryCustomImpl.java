@@ -44,7 +44,7 @@ public class CDAccountExecutionMetadataRepositoryCustomImpl implements CDAccount
     Query query = new Query(criteria);
     // Since there can be parallel executions for a given account, update after taking a lock
     try (
-        AcquiredLock<?> lock = persistentLocker.tryToAcquireLock(LOCK_NAME_PREFIX + accountId, Duration.ofMinutes(2))) {
+        AcquiredLock<?> lock = persistentLocker.tryToAcquireLock(LOCK_NAME_PREFIX + accountId, Duration.ofMinutes(7))) {
       if (lock == null) {
         throw new InvalidRequestException("Could not acquire lock");
       }

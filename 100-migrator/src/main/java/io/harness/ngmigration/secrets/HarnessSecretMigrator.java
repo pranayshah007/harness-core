@@ -7,13 +7,19 @@
 
 package io.harness.ngmigration.secrets;
 
+import static io.harness.secretmanagerclient.SecretType.SecretText;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EncryptedData;
 import io.harness.beans.SecretManagerConfig;
-import io.harness.delegate.beans.connector.ConnectorConfigDTO;
+import io.harness.exception.SecretManagementException;
+import io.harness.ng.core.dto.secrets.SecretDTOV2;
+import io.harness.ng.core.dto.secrets.SecretDTOV2.SecretDTOV2Builder;
 import io.harness.ng.core.dto.secrets.SecretTextSpecDTO;
+import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
+import io.harness.ngmigration.dto.SecretManagerCreatedDTO;
 import io.harness.secretmanagerclient.ValueType;
 import io.harness.secrets.SecretService;
 
@@ -21,24 +27,34 @@ import software.wings.ngmigration.CgEntityId;
 
 import com.google.inject.Inject;
 import java.util.Map;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @OwnedBy(HarnessTeam.CDC)
 public class HarnessSecretMigrator implements SecretMigrator {
   @Inject private SecretService secretService;
 
   @Override
-  public SecretTextSpecDTO getSecretSpec(
+  public SecretDTOV2Builder getSecretDTOBuilder(
       EncryptedData encryptedData, SecretManagerConfig vaultConfig, String secretManagerIdentifier) {
-    return SecretTextSpecDTO.builder()
-        .valueType(ValueType.Inline)
-        .value(String.valueOf(secretService.fetchSecretValue(encryptedData)))
-        .secretManagerIdentifier(secretManagerIdentifier)
-        .build();
+    String value = "PLACE_HOLDER_SECRET";
+    try {
+      value = String.valueOf(secretService.fetchSecretValue(encryptedData));
+    } catch (SecretManagementException e) {
+      log.warn("There was an error with fetching actual secret value", e);
+    }
+    return SecretDTOV2.builder()
+        .type(SecretText)
+        .spec(SecretTextSpecDTO.builder()
+                  .valueType(ValueType.Inline)
+                  .value(value)
+                  .secretManagerIdentifier(secretManagerIdentifier)
+                  .build());
   }
 
   @Override
-  public ConnectorConfigDTO getConfigDTO(
-      SecretManagerConfig secretManagerConfig, Map<CgEntityId, NGYamlFile> migratedEntities) {
-    return null;
+  public SecretManagerCreatedDTO getConfigDTO(SecretManagerConfig secretManagerConfig, MigrationInputDTO inputDTO,
+      Map<CgEntityId, NGYamlFile> migratedEntities) {
+    return SecretManagerCreatedDTO.builder().build();
   }
 }

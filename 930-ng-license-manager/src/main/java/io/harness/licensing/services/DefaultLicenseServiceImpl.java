@@ -30,6 +30,8 @@ import io.harness.licensing.LicenseType;
 import io.harness.licensing.beans.EditionActionDTO;
 import io.harness.licensing.beans.modules.AccountLicenseDTO;
 import io.harness.licensing.beans.modules.ModuleLicenseDTO;
+import io.harness.licensing.beans.modules.SMPEncLicenseDTO;
+import io.harness.licensing.beans.modules.SMPLicenseRequestDTO;
 import io.harness.licensing.beans.modules.StartTrialDTO;
 import io.harness.licensing.beans.response.CheckExpiryResultDTO;
 import io.harness.licensing.beans.summary.LicensesWithSummaryDTO;
@@ -45,6 +47,11 @@ import io.harness.repositories.ModuleLicenseRepository;
 import io.harness.security.SourcePrincipalContextBuilder;
 import io.harness.security.dto.Principal;
 import io.harness.security.dto.UserPrincipal;
+import io.harness.smp.license.models.AccountInfo;
+import io.harness.smp.license.models.LibraryVersion;
+import io.harness.smp.license.models.LicenseMeta;
+import io.harness.smp.license.models.SMPLicense;
+import io.harness.smp.license.v1.LicenseGenerator;
 import io.harness.telemetry.Category;
 import io.harness.telemetry.Destination;
 import io.harness.telemetry.TelemetryReporter;
@@ -56,9 +63,11 @@ import com.google.inject.name.Named;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -76,6 +85,7 @@ public class DefaultLicenseServiceImpl implements LicenseService {
   private final CeLicenseClient ceLicenseClient;
   private final LicenseComplianceResolver licenseComplianceResolver;
   private final Cache<String, List> cache;
+  private final LicenseGenerator licenseGenerator;
 
   static final String FAILED_OPERATION = "START_TRIAL_ATTEMPT_FAILED";
   static final String SUCCEED_START_FREE_OPERATION = "FREE_PLAN";
@@ -89,7 +99,8 @@ public class DefaultLicenseServiceImpl implements LicenseService {
   public DefaultLicenseServiceImpl(ModuleLicenseRepository moduleLicenseRepository,
       LicenseObjectConverter licenseObjectConverter, ModuleLicenseInterface licenseInterface,
       AccountService accountService, TelemetryReporter telemetryReporter, CeLicenseClient ceLicenseClient,
-      LicenseComplianceResolver licenseComplianceResolver, @Named(LICENSE_CACHE_NAMESPACE) Cache<String, List> cache) {
+      LicenseComplianceResolver licenseComplianceResolver, @Named(LICENSE_CACHE_NAMESPACE) Cache<String, List> cache,
+      LicenseGenerator licenseGenerator) {
     this.moduleLicenseRepository = moduleLicenseRepository;
     this.licenseObjectConverter = licenseObjectConverter;
     this.licenseInterface = licenseInterface;
@@ -98,6 +109,7 @@ public class DefaultLicenseServiceImpl implements LicenseService {
     this.ceLicenseClient = ceLicenseClient;
     this.licenseComplianceResolver = licenseComplianceResolver;
     this.cache = cache;
+    this.licenseGenerator = licenseGenerator;
   }
 
   @Override
@@ -433,6 +445,37 @@ public class DefaultLicenseServiceImpl implements LicenseService {
   public List<ModuleLicenseDTO> getAllModuleLicences(String accountIdentifier) {
     List<ModuleLicense> licenses = moduleLicenseRepository.findByAccountIdentifier(accountIdentifier);
     return licenses.stream().map(licenseObjectConverter::<ModuleLicenseDTO>toDTO).collect(Collectors.toList());
+  }
+
+  @Override
+  public SMPEncLicenseDTO generateSMPLicense(String accountId, SMPLicenseRequestDTO licenseRequest) {
+    AccountLicenseDTO accountLicenseDTO = getAccountLicense(accountId);
+    AccountDTO accountDTO = accountService.getAccount(accountId);
+    if (Objects.isNull(accountLicenseDTO) || Objects.isNull(accountLicenseDTO.getAllModuleLicenses())
+        || accountLicenseDTO.getAllModuleLicenses().isEmpty() || Objects.isNull(accountDTO)) {
+      throw new InvalidRequestException("There might be no account or module license present in db");
+    }
+    List<ModuleLicenseDTO> moduleLicenseDTOS = accountLicenseDTO.getAllModuleLicenses()
+                                                   .values()
+                                                   .stream()
+                                                   .flatMap(Collection::stream)
+                                                   .collect(Collectors.toList());
+    if (moduleLicenseDTOS.isEmpty()) {
+      throw new InvalidRequestException("No module license found for account: " + accountId);
+    }
+    LicenseMeta licenseMeta = new LicenseMeta();
+    licenseMeta.setAccountDTO(AccountInfo.builder()
+                                  .name(accountDTO.getName())
+                                  .identifier(accountDTO.getIdentifier())
+                                  .companyName(accountDTO.getCompanyName())
+                                  .build());
+    licenseMeta.setIssueDate(new Date());
+    licenseMeta.setLicenseVersion(0);
+    licenseMeta.setLibraryVersion(LibraryVersion.V1);
+    licenseMeta.setAccountOptional(licenseRequest.isAccountOptional());
+    SMPLicense smpLicense = SMPLicense.builder().licenseMeta(licenseMeta).moduleLicenses(moduleLicenseDTOS).build();
+    String license = licenseGenerator.generateLicense(smpLicense);
+    return SMPEncLicenseDTO.builder().encryptedLicense(license).build();
   }
 
   private EditionActionDTO toEditionActionDTO(EditionAction editionAction) {

@@ -18,6 +18,8 @@ import io.harness.artifactory.ArtifactoryNgService;
 import io.harness.artifactory.ArtifactoryNgServiceImpl;
 import io.harness.artifactory.service.ArtifactoryRegistryService;
 import io.harness.artifactory.service.ArtifactoryRegistryServiceImpl;
+import io.harness.artifacts.azureartifacts.service.AzureArtifactsRegistryService;
+import io.harness.artifacts.azureartifacts.service.AzureArtifactsRegistryServiceImpl;
 import io.harness.artifacts.docker.client.DockerRestClientFactory;
 import io.harness.artifacts.docker.client.DockerRestClientFactoryImpl;
 import io.harness.artifacts.docker.service.DockerRegistryService;
@@ -114,6 +116,7 @@ import io.harness.delegate.ecs.EcsCommandTaskNGHandler;
 import io.harness.delegate.ecs.EcsPrepareRollbackCommandTaskHandler;
 import io.harness.delegate.ecs.EcsRollingDeployCommandTaskHandler;
 import io.harness.delegate.ecs.EcsRollingRollbackCommandTaskHandler;
+import io.harness.delegate.ecs.EcsRunTaskCommandTaskHandler;
 import io.harness.delegate.exceptionhandler.handler.AmazonClientExceptionHandler;
 import io.harness.delegate.exceptionhandler.handler.AmazonServiceExceptionHandler;
 import io.harness.delegate.exceptionhandler.handler.AuthenticationExceptionHandler;
@@ -175,6 +178,9 @@ import io.harness.delegate.task.artifacts.artifactory.ArtifactoryGenericArtifact
 import io.harness.delegate.task.artifacts.azure.AcrArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.azure.AcrArtifactTaskHandler;
 import io.harness.delegate.task.artifacts.azure.AcrArtifactTaskNG;
+import io.harness.delegate.task.artifacts.azureartifacts.AzureArtifactsDelegateRequest;
+import io.harness.delegate.task.artifacts.azureartifacts.AzureArtifactsTaskHandler;
+import io.harness.delegate.task.artifacts.azureartifacts.AzureArtifactsTaskNG;
 import io.harness.delegate.task.artifacts.custom.CustomArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.custom.CustomArtifactTaskHandler;
 import io.harness.delegate.task.artifacts.custom.CustomArtifactTaskNG;
@@ -222,8 +228,11 @@ import io.harness.delegate.task.azure.artifact.AzureArtifactDownloadService;
 import io.harness.delegate.task.azure.artifact.AzureArtifactDownloadServiceImpl;
 import io.harness.delegate.task.azure.exception.AzureARMRuntimeExceptionHandler;
 import io.harness.delegate.task.azure.exception.AzureAppServicesRuntimeExceptionHandler;
+import io.harness.delegate.task.azure.exception.AzureBPRuntimeExceptionHandler;
 import io.harness.delegate.task.azure.exception.AzureClientExceptionHandler;
 import io.harness.delegate.task.azure.resource.operation.AzureResourceProvider;
+import io.harness.delegate.task.azureartifacts.AzureArtifactsTestConnectionDelegateTask;
+import io.harness.delegate.task.azureartifacts.AzureArtifactsValidationHandler;
 import io.harness.delegate.task.cek8s.CEKubernetesTestConnectionDelegateTask;
 import io.harness.delegate.task.cek8s.CEKubernetesValidationHandler;
 import io.harness.delegate.task.cf.PcfCommandTask;
@@ -243,6 +252,7 @@ import io.harness.delegate.task.cvng.CVConnectorValidationHandler;
 import io.harness.delegate.task.docker.DockerTestConnectionDelegateTask;
 import io.harness.delegate.task.ecs.EcsCommandTaskNG;
 import io.harness.delegate.task.ecs.EcsCommandTypeNG;
+import io.harness.delegate.task.ecs.EcsGitFetchRunTask;
 import io.harness.delegate.task.ecs.EcsGitFetchTask;
 import io.harness.delegate.task.executioncapability.BatchCapabilityCheckTask;
 import io.harness.delegate.task.gcp.GcpTask;
@@ -305,11 +315,13 @@ import io.harness.delegate.task.servicenow.connection.ServiceNowTestConnectionTa
 import io.harness.delegate.task.shell.CommandTaskNG;
 import io.harness.delegate.task.shell.ShellScriptTaskNG;
 import io.harness.delegate.task.shell.WinRmShellScriptTaskNG;
+import io.harness.delegate.task.shell.provisioner.ShellScriptProvisionTaskNG;
 import io.harness.delegate.task.shell.ssh.ArtifactCommandUnitHandler;
 import io.harness.delegate.task.shell.ssh.ArtifactoryCommandUnitHandler;
 import io.harness.delegate.task.shell.ssh.AwsS3ArtifactCommandUnitHandler;
 import io.harness.delegate.task.shell.ssh.CommandHandler;
 import io.harness.delegate.task.shell.ssh.JenkinsArtifactCommandUnitHandler;
+import io.harness.delegate.task.shell.ssh.NexusArtifactCommandUnitHandler;
 import io.harness.delegate.task.shell.ssh.SshCleanupCommandHandler;
 import io.harness.delegate.task.shell.ssh.SshCopyCommandHandler;
 import io.harness.delegate.task.shell.ssh.SshDownloadArtifactCommandHandler;
@@ -320,6 +332,7 @@ import io.harness.delegate.task.shell.winrm.WinRmCopyCommandHandler;
 import io.harness.delegate.task.shell.winrm.WinRmDownloadArtifactCommandHandler;
 import io.harness.delegate.task.shell.winrm.WinRmInitCommandHandler;
 import io.harness.delegate.task.shell.winrm.WinRmScriptCommandHandler;
+import io.harness.delegate.task.spot.SpotDelegateTask;
 import io.harness.delegate.task.ssh.NGCommandUnitType;
 import io.harness.delegate.task.ssh.artifact.SshWinRmArtifactType;
 import io.harness.delegate.task.stepstatus.StepStatusTask;
@@ -331,10 +344,12 @@ import io.harness.delegate.task.terraform.handlers.TerraformAbstractTaskHandler;
 import io.harness.delegate.task.terraform.handlers.TerraformApplyTaskHandler;
 import io.harness.delegate.task.terraform.handlers.TerraformDestroyTaskHandler;
 import io.harness.delegate.task.terraform.handlers.TerraformPlanTaskHandler;
+import io.harness.delegate.task.trigger.TriggerAuthenticationTask;
 import io.harness.delegate.task.winrm.ArtifactDownloadHandler;
 import io.harness.delegate.task.winrm.ArtifactoryArtifactDownloadHandler;
 import io.harness.delegate.task.winrm.AwsS3ArtifactDownloadHandler;
 import io.harness.delegate.task.winrm.JenkinsArtifactDownloadHandler;
+import io.harness.delegate.task.winrm.NexusArtifactDownloadHandler;
 import io.harness.delegate.utils.DecryptionHelperDelegate;
 import io.harness.delegatetasks.DeleteSecretTask;
 import io.harness.delegatetasks.EncryptSecretTask;
@@ -1301,6 +1316,7 @@ public class DelegateModule extends AbstractModule {
     // HelmNG Task Handlers
 
     bind(DockerRegistryService.class).to(DockerRegistryServiceImpl.class);
+    bind(AzureArtifactsRegistryService.class).to(AzureArtifactsRegistryServiceImpl.class);
     bind(GithubPackagesRegistryService.class).to(GithubPackagesRegistryServiceImpl.class);
     bind(NexusRegistryService.class).to(NexusRegistryServiceImpl.class);
     bind(ArtifactoryRegistryService.class).to(ArtifactoryRegistryServiceImpl.class);
@@ -1331,6 +1347,13 @@ public class DelegateModule extends AbstractModule {
                 new TypeLiteral<Class<? extends DelegateArtifactTaskHandler>>() {});
     githubPackagesArtifactServiceMapBinder.addBinding(GithubPackagesArtifactDelegateRequest.class)
         .toInstance(GithubPackagesArtifactTaskHandler.class);
+
+    MapBinder<Class<? extends ArtifactSourceDelegateRequest>, Class<? extends DelegateArtifactTaskHandler>>
+        azureArtifactsServiceMapBinder =
+            MapBinder.newMapBinder(binder(), new TypeLiteral<Class<? extends ArtifactSourceDelegateRequest>>() {},
+                new TypeLiteral<Class<? extends DelegateArtifactTaskHandler>>() {});
+    azureArtifactsServiceMapBinder.addBinding(AzureArtifactsDelegateRequest.class)
+        .toInstance(AzureArtifactsTaskHandler.class);
 
     MapBinder<Class<? extends ArtifactSourceDelegateRequest>, Class<? extends DelegateArtifactTaskHandler>>
         jenkinsArtifactServiceMapBinder =
@@ -1480,12 +1503,15 @@ public class DelegateModule extends AbstractModule {
     artifactHandlers.addBinding(SshWinRmArtifactType.ARTIFACTORY).to(ArtifactoryArtifactDownloadHandler.class);
     artifactHandlers.addBinding(SshWinRmArtifactType.JENKINS).to(JenkinsArtifactDownloadHandler.class);
     artifactHandlers.addBinding(SshWinRmArtifactType.AWS_S3).to(AwsS3ArtifactDownloadHandler.class);
+    artifactHandlers.addBinding(SshWinRmArtifactType.NEXUS_PACKAGE).to(NexusArtifactDownloadHandler.class);
 
     MapBinder<String, ArtifactCommandUnitHandler> artifactCommandHandlers =
         MapBinder.newMapBinder(binder(), String.class, ArtifactCommandUnitHandler.class);
     artifactCommandHandlers.addBinding(SshWinRmArtifactType.ARTIFACTORY.name()).to(ArtifactoryCommandUnitHandler.class);
     artifactCommandHandlers.addBinding(SshWinRmArtifactType.JENKINS.name()).to(JenkinsArtifactCommandUnitHandler.class);
     artifactCommandHandlers.addBinding(SshWinRmArtifactType.AWS_S3.name()).to(AwsS3ArtifactCommandUnitHandler.class);
+    artifactCommandHandlers.addBinding(SshWinRmArtifactType.NEXUS_PACKAGE.name())
+        .to(NexusArtifactCommandUnitHandler.class);
 
     registerSecretManagementBindings();
     registerConnectorValidatorsBindings();
@@ -1726,6 +1752,7 @@ public class DelegateModule extends AbstractModule {
     mapBinder.addBinding(TaskType.KUBERNETES_STEADY_STATE_CHECK_TASK).toInstance(KubernetesSteadyStateCheckTask.class);
     mapBinder.addBinding(TaskType.PCF_COMMAND_TASK).toInstance(PcfCommandTask.class);
     mapBinder.addBinding(TaskType.SPOTINST_COMMAND_TASK).toInstance(SpotInstTask.class);
+    mapBinder.addBinding(TaskType.SPOT_TASK_NG).toInstance(SpotDelegateTask.class);
     mapBinder.addBinding(TaskType.ECS_COMMAND_TASK).toInstance(EcsCommandTask.class);
     mapBinder.addBinding(TaskType.COLLABORATION_PROVIDER_TASK).toInstance(CollaborationProviderTask.class);
     mapBinder.addBinding(TaskType.PROMETHEUS_METRIC_DATA_PER_HOST).toInstance(ServiceImplDelegateTask.class);
@@ -1774,6 +1801,7 @@ public class DelegateModule extends AbstractModule {
     mapBinder.addBinding(TaskType.DOCKER_ARTIFACT_TASK_NG).toInstance(DockerArtifactTaskNG.class);
     mapBinder.addBinding(TaskType.AMAZON_S3_ARTIFACT_TASK_NG).toInstance(S3ArtifactTaskNG.class);
     mapBinder.addBinding(TaskType.JENKINS_ARTIFACT_TASK_NG).toInstance(JenkinsArtifactTaskNG.class);
+    mapBinder.addBinding(TaskType.AZURE_ARTIFACT_TASK_NG).toInstance(AzureArtifactsTaskNG.class);
     mapBinder.addBinding(TaskType.GITHUB_PACKAGES_TASK_NG).toInstance(GithubPackagesArtifactTaskNG.class);
     mapBinder.addBinding(TaskType.GOOGLE_ARTIFACT_REGISTRY_TASK_NG).toInstance(GARArtifactTaskNG.class);
     mapBinder.addBinding(TaskType.GCR_ARTIFACT_TASK_NG).toInstance(GcrArtifactTaskNG.class);
@@ -1817,6 +1845,8 @@ public class DelegateModule extends AbstractModule {
     mapBinder.addBinding(TaskType.NG_HOST_CONNECTIVITY_TASK).toInstance(HostConnectivityValidationDelegateTask.class);
     mapBinder.addBinding(TaskType.DOCKER_CONNECTIVITY_TEST_TASK).toInstance(DockerTestConnectionDelegateTask.class);
     mapBinder.addBinding(TaskType.JENKINS_CONNECTIVITY_TEST_TASK).toInstance(JenkinsTestConnectionDelegateTask.class);
+    mapBinder.addBinding(TaskType.AZURE_ARTIFACTS_CONNECTIVITY_TEST_TASK)
+        .toInstance(AzureArtifactsTestConnectionDelegateTask.class);
     mapBinder.addBinding(TaskType.NG_AWS_TASK).toInstance(AwsDelegateTask.class);
     mapBinder.addBinding(TaskType.JIRA_CONNECTIVITY_TASK_NG).toInstance(JiraTestConnectionTaskNG.class);
     mapBinder.addBinding(TaskType.JIRA_TASK_NG).toInstance(JiraTaskNG.class);
@@ -1859,6 +1889,7 @@ public class DelegateModule extends AbstractModule {
     mapBinder.addBinding(TaskType.SERVERLESS_COMMAND_TASK).toInstance(ServerlessCommandTask.class);
     mapBinder.addBinding(TaskType.AZURE_WEB_APP_TASK_NG).toInstance(AzureWebAppTaskNG.class);
     mapBinder.addBinding(TaskType.COMMAND_TASK_NG).toInstance(CommandTaskNG.class);
+    mapBinder.addBinding(TaskType.TRIGGER_AUTHENTICATION_TASK).toInstance(TriggerAuthenticationTask.class);
     // ECS NG
     MapBinder<String, EcsCommandTaskNGHandler> ecsTaskTypeToTaskHandlerMap =
         MapBinder.newMapBinder(binder(), String.class, EcsCommandTaskNGHandler.class);
@@ -1880,13 +1911,16 @@ public class DelegateModule extends AbstractModule {
         .to(EcsBlueGreenSwapTargetGroupsCommandTaskHandler.class);
     ecsTaskTypeToTaskHandlerMap.addBinding(EcsCommandTypeNG.ECS_BLUE_GREEN_ROLLBACK.name())
         .to(EcsBlueGreenRollbackCommandTaskHandler.class);
+    ecsTaskTypeToTaskHandlerMap.addBinding(EcsCommandTypeNG.ECS_RUN_TASK.name()).to(EcsRunTaskCommandTaskHandler.class);
 
     mapBinder.addBinding(TaskType.ECS_GIT_FETCH_TASK_NG).toInstance(EcsGitFetchTask.class);
+    mapBinder.addBinding(TaskType.ECS_GIT_FETCH_RUN_TASK_NG).toInstance(EcsGitFetchRunTask.class);
     mapBinder.addBinding(TaskType.ECS_COMMAND_TASK_NG).toInstance(EcsCommandTaskNG.class);
 
     bind(EcsV2Client.class).to(EcsV2ClientImpl.class);
     bind(ElbV2Client.class).to(ElbV2ClientImpl.class);
     mapBinder.addBinding(TaskType.AZURE_NG_ARM).toInstance(AzureResourceCreationTaskNG.class);
+    mapBinder.addBinding(TaskType.SHELL_SCRIPT_PROVISION).toInstance(ShellScriptProvisionTaskNG.class);
   }
 
   private void registerSecretManagementBindings() {
@@ -1973,6 +2007,8 @@ public class DelegateModule extends AbstractModule {
         .to(DockerValidationHandler.class);
     connectorTypeToConnectorValidationHandlerMap.addBinding(ConnectorType.JENKINS.getDisplayName())
         .to(JenkinsValidationHandler.class);
+    connectorTypeToConnectorValidationHandlerMap.addBinding(ConnectorType.AZURE_ARTIFACTS.getDisplayName())
+        .to(AzureArtifactsValidationHandler.class);
     connectorTypeToConnectorValidationHandlerMap.addBinding(ConnectorType.HTTP_HELM_REPO.getDisplayName())
         .to(HttpHelmValidationHandler.class);
     connectorTypeToConnectorValidationHandlerMap.addBinding(ConnectorType.OCI_HELM_REPO.getDisplayName())
@@ -2071,5 +2107,7 @@ public class DelegateModule extends AbstractModule {
         exception -> exceptionHandlerMapBinder.addBinding(exception).to(AzureClientExceptionHandler.class));
     AzureARMRuntimeExceptionHandler.exceptions().forEach(
         exception -> exceptionHandlerMapBinder.addBinding(exception).to(AzureARMRuntimeExceptionHandler.class));
+    AzureBPRuntimeExceptionHandler.exceptions().forEach(
+        exception -> exceptionHandlerMapBinder.addBinding(exception).to(AzureBPRuntimeExceptionHandler.class));
   }
 }

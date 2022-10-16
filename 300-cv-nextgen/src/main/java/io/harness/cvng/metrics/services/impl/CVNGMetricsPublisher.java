@@ -37,12 +37,14 @@ import io.harness.persistence.PersistentEntity;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
+import com.mongodb.AggregationOptions;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
@@ -107,7 +109,8 @@ public class CVNGMetricsPublisher implements MetricsPublisher, MetricDefinitionI
           .createAggregation(clazz)
           .match(query)
           .group(id(grouping("accountId", "accountId")), grouping("count", accumulator("$sum", 1)))
-          .aggregate(InstanceCount.class)
+          .aggregate(InstanceCount.class,
+              AggregationOptions.builder().maxTime(hPersistence.getMaxTimeMs(clazz), TimeUnit.MILLISECONDS).build())
           .forEachRemaining(instanceCount -> {
             try (AccountMetricContext accountMetricContext = new AccountMetricContext(instanceCount.id.accountId)) {
               metricService.recordMetric(getNonFinalStatusMetricName(queryParams.getName()), instanceCount.count);
@@ -118,7 +121,8 @@ public class CVNGMetricsPublisher implements MetricsPublisher, MetricDefinitionI
             .createAggregation(clazz)
             .match(hPersistence.createQuery(clazz).field(queryParams.getStatusField()).equal(status))
             .group(id(grouping("accountId", "accountId")), grouping("count", accumulator("$sum", 1)))
-            .aggregate(InstanceCount.class)
+            .aggregate(InstanceCount.class,
+                AggregationOptions.builder().maxTime(hPersistence.getMaxTimeMs(clazz), TimeUnit.MILLISECONDS).build())
             .forEachRemaining(instanceCount -> {
               try (AutoMetricContext accountMetricContext = new AccountMetricContext(instanceCount.id.accountId)) {
                 metricService.recordMetric(getStatusMetricName(queryParams, status.toString()), instanceCount.count);

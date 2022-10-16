@@ -157,7 +157,7 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
       }
     } else {
       throw new InvalidYamlRuntimeException(
-          format("serviceConfig or Service should be present in stage [%s]. Please add it and try again",
+          format("serviceConfig or service should be present in stage [%s]. Please add it and try again",
               YamlUtils.getFullyQualifiedName(filterCreationContext.getCurrentField().getNode())));
     }
   }
@@ -274,10 +274,6 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
       throw new InvalidYamlRuntimeException(
           format("envGroupRef should be present in stage [%s]. Please add it and try again",
               YamlUtils.getFullyQualifiedName(filterCreationContext.getCurrentField().getNode())));
-    }
-    if (gitOpsEnabled != Boolean.TRUE) {
-      throw new InvalidYamlRuntimeException(
-          "Deploy to all environment groups is not supported yet. Please try deploying to specific infrastructure and try again");
     }
   }
 

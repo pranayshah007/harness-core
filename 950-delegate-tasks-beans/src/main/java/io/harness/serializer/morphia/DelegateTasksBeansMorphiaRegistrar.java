@@ -39,6 +39,8 @@ import io.harness.delegate.beans.executioncapability.WinrmConnectivityExecutionC
 import io.harness.delegate.command.CommandExecutionResult;
 import io.harness.delegate.task.HDelegateTask;
 import io.harness.delegate.task.ListNotifyResponseData;
+import io.harness.delegate.task.artifacts.azureartifacts.AzureArtifactsDelegateRequest;
+import io.harness.delegate.task.artifacts.azureartifacts.AzureArtifactsDelegateResponse;
 import io.harness.delegate.task.artifacts.custom.CustomArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.custom.CustomArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.docker.DockerArtifactDelegateRequest;
@@ -164,6 +166,9 @@ public class DelegateTasksBeansMorphiaRegistrar implements MorphiaRegistrar {
     h.put("delegate.task.artifacts.request.ArtifactTaskParameters", ArtifactTaskParameters.class);
     h.put("delegate.task.artifacts.docker.DockerArtifactDelegateRequest", DockerArtifactDelegateRequest.class);
     h.put("delegate.task.artifacts.jenkins.JenkinsArtifactDelegateRequest", JenkinsArtifactDelegateRequest.class);
+    h.put("delegate.task.artifacts.azureartifacts.AzureArtifactsDelegateRequest", AzureArtifactsDelegateRequest.class);
+    h.put(
+        "delegate.task.artifacts.azureartifacts.AzureArtifactsDelegateResponse", AzureArtifactsDelegateResponse.class);
     h.put("delegate.task.artifacts.custom.CustomArtifactDelegateRequest", CustomArtifactDelegateRequest.class);
     h.put("delegate.task.artifacts.custom.CustomArtifactDelegateResponse", CustomArtifactDelegateResponse.class);
     h.put("delegate.task.artifacts.gcr.GcrArtifactDelegateRequest", GcrArtifactDelegateRequest.class);

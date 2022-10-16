@@ -590,6 +590,39 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "CacheOptions": {
+      "type": "object",
+      "properties": {
+        "cachedPaths": {
+          "oneOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
+        },
+        "enabled": {
+          "oneOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "Capabilities": {
       "type": "object",
       "properties": {
@@ -1399,7 +1432,7 @@
             "StepGroupRollback",
             "PipelineRollback",
             "ManualIntervention",
-            "ProceedWithDefaultValue"
+            "ProceedWithDefaultValues"
           ]
         }
       },
@@ -1987,6 +2020,9 @@
     "IntegrationStageConfig": {
       "type": "object",
       "properties": {
+        "cacheOptions": {
+          "$ref": "#/definitions/CacheOptions"
+        },
         "cloneCodebase": {
           "$ref": "#/definitions/ParameterFieldBoolean"
         },
@@ -2014,6 +2050,13 @@
     "IntegrationStageConfigImpl": {
       "type": "object",
       "properties": {
+        "cacheOptions": {
+          "oneOf": [
+            {
+              "$ref": "#/definitions/CacheOptions"
+            }
+          ]
+        },
         "cloneCodebase": {
           "oneOf": [
             {
@@ -2757,7 +2800,7 @@
               "Verification",
               "DelegateProvisioning",
               "PolicyEvaluationFailure",
-              "ExecutionInputTimeoutError"
+              "InputTimeoutError"
             ]
           }
         }
@@ -3562,7 +3605,7 @@
             "type": {
               "type": "string",
               "enum": [
-                "ProceedWithDefaultValue"
+                "ProceedWithDefaultValues"
               ]
             }
           }

@@ -24,6 +24,7 @@ import io.harness.ccm.config.GcpOrganization;
 import io.harness.ccm.config.GcpServiceAccount;
 import io.harness.dashboard.DashboardSettings;
 import io.harness.event.reconciliation.deployment.DeploymentReconRecord;
+import io.harness.event.reconciliation.looker.LookerEntityReconRecord;
 import io.harness.execution.export.request.ExportExecutionsRequest;
 import io.harness.governance.pipeline.service.model.PipelineGovernanceConfig;
 import io.harness.marketplace.gcp.procurement.pubsub.ProcurementPubsubMessage;
@@ -848,6 +849,7 @@ public class ManagerMorphiaRegistrar implements MorphiaRegistrar {
     set.add(AccessRequest.class);
     set.add(AgentMtlsEndpoint.class);
     set.add(ArtifactView.class);
+    set.add(LookerEntityReconRecord.class);
   }
 
   @Override

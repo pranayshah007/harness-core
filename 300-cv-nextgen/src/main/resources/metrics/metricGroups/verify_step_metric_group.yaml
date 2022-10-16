@@ -1,0 +1,5 @@
+name: Verify Step Metric Group Configuration
+identifier: verify_step_metric_group
+labels:
+  - accountId
+  - durationMinutes

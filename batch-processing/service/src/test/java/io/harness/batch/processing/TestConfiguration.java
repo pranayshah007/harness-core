@@ -12,6 +12,7 @@ import static org.springframework.test.util.ReflectionTestUtils.getField;
 import io.harness.batch.processing.config.BatchMainConfig;
 import io.harness.factory.ClosingFactory;
 import io.harness.govern.ProviderModule;
+import io.harness.mongo.MongoConfig;
 import io.harness.mongo.QueryFactory;
 import io.harness.persistence.HPersistence;
 import io.harness.serializer.PersistenceRegistrars;
@@ -64,7 +65,7 @@ public class TestConfiguration implements MongoRuleMixin {
       ClosingFactory closingFactory, HPersistence hPersistence, BatchMainConfig config, Morphia morphia) {
     AdvancedDatastore eventsDatastore =
         (AdvancedDatastore) morphia.createDatastore(fakeMongoClient(closingFactory), "events");
-    eventsDatastore.setQueryFactory(new QueryFactory());
+    eventsDatastore.setQueryFactory(new QueryFactory(MongoConfig.builder().build()));
 
     @SuppressWarnings("unchecked")
     val datastoreMap = (Map<String, AdvancedDatastore>) getField(hPersistence, "datastoreMap");

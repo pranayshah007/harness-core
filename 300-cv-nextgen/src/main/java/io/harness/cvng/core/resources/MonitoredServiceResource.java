@@ -376,7 +376,7 @@ public class MonitoredServiceResource {
   @ApiOperation(value = "yaml template for monitored service", nickname = "getMonitoredServiceYamlTemplate")
   @NGAccessControlCheck(resourceType = MONITORED_SERVICE, permission = VIEW_PERMISSION)
   public RestResponse<String> yamlTemplate(
-      @NotNull @Valid @BeanParam ProjectParams projectParams, @ApiParam @QueryParam("type") MonitoredServiceType type) {
+      @NotNull @BeanParam ProjectParams projectParams, @ApiParam @QueryParam("type") MonitoredServiceType type) {
     return new RestResponse<>(monitoredServiceService.getYamlTemplate(projectParams, type));
   }
 

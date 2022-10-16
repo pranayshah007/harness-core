@@ -45,17 +45,25 @@ public class FreezeFilterHelper {
   }
 
   public static Criteria createCriteriaForGetList(String accountId, String orgIdentifier, String projectIdentifier,
-      String searchTerm, FreezeType type, FreezeStatus freezeStatus) {
+      String searchTerm, FreezeType type, FreezeStatus freezeStatus, Long startTime, Long endTime) {
     Criteria criteria = CoreCriteriaUtils.createCriteriaForGetList(accountId, orgIdentifier, projectIdentifier);
     final List<Criteria> andCriterias = new ArrayList<>();
     if (isNotEmpty(searchTerm)) {
       Criteria searchCriteria =
           new Criteria().orOperator(where(FreezeConfigEntityKeys.name)
                                         .regex(searchTerm, NGResourceFilterConstants.CASE_INSENSITIVE_MONGO_OPTIONS),
-              where(FreezeConfigEntityKeys.status).is(freezeStatus),
               where(FreezeConfigEntityKeys.identifier)
                   .regex(searchTerm, NGResourceFilterConstants.CASE_INSENSITIVE_MONGO_OPTIONS));
       andCriterias.add(searchCriteria);
+    }
+
+    if (freezeStatus != null) {
+      andCriterias.add(new Criteria().where(FreezeConfigEntityKeys.status).is(freezeStatus));
+    }
+    if (startTime != null && endTime != null) {
+      Criteria timeFilterCriteria = new Criteria().andOperator(where(FreezeConfigEntityKeys.lastUpdatedAt).lte(endTime),
+          where(FreezeConfigEntityKeys.lastUpdatedAt).gte(startTime));
+      andCriterias.add(timeFilterCriteria);
     }
 
     if (type != null) {

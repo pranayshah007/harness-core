@@ -23,7 +23,7 @@ public enum FailureType {
   AUTHORIZATION_ERROR(""),
   TIMEOUT_ERROR(""),
   POLICY_EVALUATION_FAILURE(""),
-  EXECUTION_INPUT_TIMEOUT_FAILURE("");
+  INPUT_TIMEOUT_FAILURE("");
 
   String errorMessage;
 

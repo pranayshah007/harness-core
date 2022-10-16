@@ -8,6 +8,7 @@
 package io.harness.template.resources;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.rule.OwnerRule.ADITHYA;
 import static io.harness.rule.OwnerRule.ARCHIT;
 import static io.harness.rule.OwnerRule.INDER;
 import static io.harness.template.resources.NGTemplateResource.TEMPLATE;
@@ -30,6 +31,7 @@ import io.harness.customDeployment.remote.CustomDeploymentResourceClient;
 import io.harness.encryption.Scope;
 import io.harness.exception.InvalidRequestException;
 import io.harness.git.model.ChangeType;
+import io.harness.gitaware.helper.GitImportInfoDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.template.TemplateApplyRequestDTO;
 import io.harness.ng.core.template.TemplateEntityType;
@@ -45,6 +47,8 @@ import io.harness.pms.contracts.service.VariablesServiceRequest;
 import io.harness.rule.Owner;
 import io.harness.template.beans.PermissionTypes;
 import io.harness.template.beans.TemplateDeleteListRequestDTO;
+import io.harness.template.beans.TemplateImportRequestDTO;
+import io.harness.template.beans.TemplateImportSaveResponse;
 import io.harness.template.beans.TemplateResponseDTO;
 import io.harness.template.beans.TemplateWrapperResponseDTO;
 import io.harness.template.entity.TemplateEntity;
@@ -54,6 +58,7 @@ import io.harness.template.helpers.TemplateYamlConversionHelper;
 import io.harness.template.services.NGTemplateService;
 import io.harness.template.services.NGTemplateServiceHelper;
 import io.harness.template.services.TemplateMergeService;
+import io.harness.template.services.TemplateVariableCreatorFactory;
 
 import com.google.common.io.Resources;
 import com.google.inject.Inject;
@@ -98,6 +103,7 @@ public class NGTemplateResourceTest extends CategoryTest {
   @Mock TemplateYamlConversionHelper templateYamlConversionHelper;
   @Mock TemplateReferenceHelper templateReferenceHelper;
   @Mock CustomDeploymentResourceClient customDeploymentResourceClient;
+  @Mock TemplateVariableCreatorFactory templateVariableCreatorFactory;
 
   private final String ACCOUNT_ID = "account_id";
   private final String ORG_IDENTIFIER = "orgId";
@@ -144,7 +150,7 @@ public class NGTemplateResourceTest extends CategoryTest {
 
     templateResource = new NGTemplateResource(templateService, templateServiceHelper, accessControlClient,
         templateMergeService, variablesServiceBlockingStub, templateYamlConversionHelper, templateReferenceHelper,
-        customDeploymentResourceClient);
+        customDeploymentResourceClient, templateVariableCreatorFactory);
     ClassLoader classLoader = this.getClass().getClassLoader();
     String filename = "template.yaml";
     yaml = Resources.toString(Objects.requireNonNull(classLoader.getResource(filename)), StandardCharsets.UTF_8);
@@ -383,5 +389,20 @@ public class NGTemplateResourceTest extends CategoryTest {
     assertThat(responseDTO.getData()).isEqualTo(templateMergeResponseDTO);
     verify(templateService)
         .checkLinkedTemplateAccess(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, templateMergeResponseDTO);
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testImportPipelineFromGit() {
+    GitImportInfoDTO gitImportInfoDTO = GitImportInfoDTO.builder().branch("br").isForceImport(false).build();
+    TemplateImportRequestDTO templateImportRequestDTO = TemplateImportRequestDTO.builder().build();
+    doReturn(TemplateEntity.builder().identifier(TEMPLATE_IDENTIFIER).build())
+        .when(templateService)
+        .importTemplateFromRemote(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER,
+            templateImportRequestDTO, gitImportInfoDTO.getIsForceImport());
+    ResponseDTO<TemplateImportSaveResponse> importTemplateFromGit = templateResource.importTemplateFromGit(
+        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, gitImportInfoDTO, templateImportRequestDTO);
+    assertThat(importTemplateFromGit.getData().getTemplateIdentifier()).isEqualTo(TEMPLATE_IDENTIFIER);
   }
 }

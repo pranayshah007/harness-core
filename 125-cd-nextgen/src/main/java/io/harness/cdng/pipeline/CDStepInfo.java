@@ -22,8 +22,10 @@ import io.harness.cdng.ecs.EcsCanaryDeleteStepInfo;
 import io.harness.cdng.ecs.EcsCanaryDeployStepInfo;
 import io.harness.cdng.ecs.EcsRollingDeployStepInfo;
 import io.harness.cdng.ecs.EcsRollingRollbackStepInfo;
+import io.harness.cdng.ecs.EcsRunTaskStepInfo;
 import io.harness.cdng.gitops.CreatePRStepInfo;
 import io.harness.cdng.gitops.MergePRStepInfo;
+import io.harness.cdng.gitops.UpdateReleaseRepoStepInfo;
 import io.harness.cdng.helm.HelmDeployStepInfo;
 import io.harness.cdng.helm.rollback.HelmRollbackStepInfo;
 import io.harness.cdng.jenkins.jenkinsstep.JenkinsBuildStepInfo;
@@ -43,6 +45,7 @@ import io.harness.cdng.provision.azure.AzureCreateBPStepInfo;
 import io.harness.cdng.provision.cloudformation.CloudformationCreateStackStepInfo;
 import io.harness.cdng.provision.cloudformation.CloudformationDeleteStackStepInfo;
 import io.harness.cdng.provision.cloudformation.CloudformationRollbackStepInfo;
+import io.harness.cdng.provision.shellscript.ShellScriptProvisionStepInfo;
 import io.harness.cdng.provision.terraform.TerraformApplyStepInfo;
 import io.harness.cdng.provision.terraform.TerraformDestroyStepInfo;
 import io.harness.cdng.provision.terraform.TerraformPlanStepInfo;
@@ -74,7 +77,8 @@ import io.swagger.annotations.ApiModel;
         AzureARMRollbackStepInfo.class, EcsRollingDeployStepInfo.class, EcsRollingRollbackStepInfo.class,
         EcsCanaryDeployStepInfo.class, EcsCanaryDeleteStepInfo.class, EcsBlueGreenCreateServiceStepInfo.class,
         EcsBlueGreenSwapTargetGroupsStepInfo.class, EcsBlueGreenRollbackStepInfo.class,
-        FetchInstanceScriptStepInfo.class})
+        FetchInstanceScriptStepInfo.class, ShellScriptProvisionStepInfo.class, UpdateReleaseRepoStepInfo.class,
+        EcsRunTaskStepInfo.class})
 
 @OwnedBy(HarnessTeam.CDC)
 public interface CDStepInfo extends StepSpecType, WithStepElementParameters, WithDelegateSelector {

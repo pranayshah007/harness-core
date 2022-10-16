@@ -69,6 +69,7 @@ import io.harness.mongo.QueryFactory;
 import io.harness.mongo.tracing.TraceMode;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.ng.core.CorrelationFilter;
+import io.harness.ng.core.TraceFilter;
 import io.harness.ngmigration.api.NgMigrationResource;
 import io.harness.ngmigration.serializer.CurrentGenRegistrars;
 import io.harness.observer.NoOpRemoteObserverInformerImpl;
@@ -223,6 +224,7 @@ import javax.validation.Validation;
 import javax.validation.ValidatorFactory;
 import javax.ws.rs.Path;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.BooleanUtils;
 import org.atmosphere.cpr.AtmosphereServlet;
 import org.atmosphere.cpr.BroadcasterFactory;
 import org.atmosphere.cpr.MetaBroadcaster;
@@ -385,6 +387,10 @@ public class NGMigrationApplication extends Application<MigratorConfig> {
     // Authentication/Authorization filters
     registerAuthFilters(configuration, environment, injector);
     registerCorrelationFilter(environment, injector);
+
+    if (BooleanUtils.isTrue(configuration.getEnableOpentelemetry())) {
+      registerTraceFilter(environment, injector);
+    }
 
     environment.lifecycle().addServerLifecycleListener(server -> {
       for (Connector connector : server.getConnectors()) {
@@ -720,6 +726,10 @@ public class NGMigrationApplication extends Application<MigratorConfig> {
 
   private void registerCorrelationFilter(Environment environment, Injector injector) {
     environment.jersey().register(injector.getInstance(CorrelationFilter.class));
+  }
+
+  private void registerTraceFilter(Environment environment, Injector injector) {
+    environment.jersey().register(injector.getInstance(TraceFilter.class));
   }
 
   /**

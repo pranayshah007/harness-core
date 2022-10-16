@@ -44,6 +44,7 @@ public class AzureInstanceInfrastructure implements InfraMappingInfrastructurePr
   private String hostConnectionAttrs;
   private String winRmConnectionAttributes;
   private boolean usePublicDns;
+  private boolean usePrivateIp;
 
   @Override
   public InfrastructureMapping getInfraMapping() {
@@ -55,6 +56,7 @@ public class AzureInstanceInfrastructure implements InfraMappingInfrastructurePr
         .withHostConnectionAttributes(hostConnectionAttrs)
         .withWinRmConnectionAttributes(winRmConnectionAttributes)
         .withUsePublicDns(usePublicDns)
+        .withUsePrivateIp(usePrivateIp)
         .withResourceGroup(resourceGroup)
         .withInfraMappingType(InfrastructureMappingType.AZURE_INFRA.name())
         .build();

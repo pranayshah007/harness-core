@@ -55,6 +55,9 @@ public interface ServiceEntityService {
 
   String createServiceInputsYaml(String yaml, String serviceIdentifier);
 
+  String createServiceInputsYamlGivenPrimaryArtifactRef(
+      String serviceYaml, String serviceIdentifier, String primaryArtifactRef);
+
   ArtifactSourcesResponseDTO getArtifactSourceInputs(String yaml, String serviceIdentifier);
 
   boolean forceDeleteAllInProject(String accountId, String orgIdentifier, String projectIdentifier);
@@ -76,5 +79,9 @@ public interface ServiceEntityService {
   List<ServiceEntity> getServices(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, List<String> serviceIdentifiers);
 
+  List<ServiceEntity> getNonDeletedServices(String accountIdentifier);
   boolean isServiceField(String fieldName, JsonNode value);
+
+  Optional<ServiceEntity> getService(
+      String accountId, String orgIdentifier, String projectIdentifier, String serviceIdentifier);
 }

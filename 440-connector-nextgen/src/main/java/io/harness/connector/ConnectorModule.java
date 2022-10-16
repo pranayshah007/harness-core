@@ -54,6 +54,8 @@ import io.harness.ng.core.accountsetting.services.NGAccountSettingService;
 import io.harness.ng.core.accountsetting.services.NGAccountSettingServiceImpl;
 import io.harness.persistence.HPersistence;
 import io.harness.service.ScmServiceClient;
+import io.harness.spotinst.SpotInstHelperServiceDelegate;
+import io.harness.spotinst.SpotInstHelperServiceDelegateImpl;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.multibindings.MapBinder;
@@ -121,6 +123,7 @@ public class ConnectorModule extends AbstractModule {
     bind(AwsClient.class).to(AwsClientImpl.class);
     bind(GcpClient.class).to(GcpClientImpl.class);
     bind(AzureAuthorizationClient.class).to(AzureAuthorizationClientImpl.class);
+    bind(SpotInstHelperServiceDelegate.class).to(SpotInstHelperServiceDelegateImpl.class);
     bind(NGGitService.class).to(NGGitServiceImpl.class);
     bind(DockerRestClientFactory.class).to(DockerRestClientFactoryImpl.class);
     bind(GitClientV2.class).to(GitClientV2Impl.class);

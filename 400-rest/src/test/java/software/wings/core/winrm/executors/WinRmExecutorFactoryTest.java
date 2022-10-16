@@ -32,7 +32,7 @@ public class WinRmExecutorFactoryTest extends CategoryTest {
   @Category(UnitTests.class)
   public void shouldGetWinRmExecutor() {
     winRmSessionConfig = WinRmSessionConfig.builder().build();
-    assertThat(winRmExecutorFactory.getExecutor(winRmSessionConfig, false))
+    assertThat(winRmExecutorFactory.getExecutor(winRmSessionConfig, false, false))
         .isNotNull()
         .isInstanceOf(WinRmExecutor.class);
   }

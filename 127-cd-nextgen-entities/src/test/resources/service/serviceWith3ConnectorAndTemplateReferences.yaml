@@ -1,0 +1,32 @@
+service:
+  name: v2serviceTEMP
+  identifier: v2serviceTEMP
+  tags: {}
+  serviceDefinition:
+    spec:
+      artifacts:
+        primary:
+          sources:
+            - name: fromtemp1
+              identifier: fromtemp1
+              template:
+                templateRef: ast1
+                versionLabel: v1
+                templateInputs:
+                  type: DockerRegistry
+                  spec:
+                    tag: <+input>
+            - name: fromtemp2
+              identifier: fromtemp2
+              template:
+                templateRef: ast1
+                versionLabel: v1
+                templateInputs:
+                  type: DockerRegistry
+                  spec:
+                    tag: stable
+      variables:
+        - name: svar1
+          type: String
+          value: <+input>
+    type: Kubernetes

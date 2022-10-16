@@ -88,17 +88,7 @@ public class EnvironmentRepositoryCustomImpl implements EnvironmentRepositoryCus
     RetryPolicy<Object> retryPolicy = getRetryPolicy(
         "[Retrying]: Failed deleting Environment; attempt: {}", "[Failed]: Failed deleting Environment; attempt: {}");
     DeleteResult deleteResult = Failsafe.with(retryPolicy).get(() -> mongoTemplate.remove(query, Environment.class));
-    return deleteResult.wasAcknowledged() && deleteResult.getDeletedCount() > 0;
-  }
-
-  @Override
-  public UpdateResult deleteMany(Criteria criteria) {
-    Query query = new Query(criteria);
-    Update updateOperationsForDelete = EnvironmentFilterHelper.getUpdateOperationsForDelete();
-    RetryPolicy<Object> retryPolicy = getRetryPolicy(
-        "[Retrying]: Failed deleting Environment; attempt: {}", "[Failed]: Failed deleting Environment; attempt: {}");
-    return Failsafe.with(retryPolicy)
-        .get(() -> mongoTemplate.updateMulti(query, updateOperationsForDelete, Environment.class));
+    return deleteResult.wasAcknowledged();
   }
 
   @Override

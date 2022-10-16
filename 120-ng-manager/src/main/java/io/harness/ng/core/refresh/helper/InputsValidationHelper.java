@@ -9,16 +9,13 @@ package io.harness.ng.core.refresh.helper;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
-import io.harness.EntityType;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.IdentifierRef;
 import io.harness.cdng.visitor.YamlTypes;
-import io.harness.common.EntityReferenceHelper;
 import io.harness.common.NGExpressionUtils;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
-import io.harness.exception.ngexception.NGTemplateException;
+import io.harness.ng.core.refresh.bean.EntityRefreshContext;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.mappers.ServiceElementMapper;
 import io.harness.ng.core.service.services.ServiceEntityService;
@@ -26,12 +23,12 @@ import io.harness.persistence.PersistentEntity;
 import io.harness.pms.merger.helpers.RuntimeInputsValidator;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
+import io.harness.pms.yaml.YamlNodeUtils;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.template.beans.refresh.NodeInfo;
 import io.harness.template.beans.refresh.v2.InputsValidationResponse;
 import io.harness.template.beans.refresh.v2.NodeErrorSummary;
 import io.harness.template.beans.refresh.v2.ServiceNodeErrorSummary;
-import io.harness.utils.IdentifierRefHelper;
 import io.harness.utils.YamlPipelineUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -41,30 +38,39 @@ import com.google.inject.Inject;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.CDC)
 @Slf4j
 public class InputsValidationHelper {
   @Inject ServiceEntityService serviceEntityService;
+  @Inject EntityFetchHelper entityFetchHelper;
+  @Inject EnvironmentRefreshHelper environmentRefreshHelper;
 
-  public InputsValidationResponse validateInputsForYaml(String accountId, String orgId, String projectId, String yaml) {
-    return validateInputsForYaml(accountId, orgId, projectId, yaml, new HashMap<>());
+  public InputsValidationResponse validateInputsForYaml(
+      String accountId, String orgId, String projectId, String yaml, String resolvedTemplatesYaml) {
+    return validateInputsForYaml(accountId, orgId, projectId, yaml, resolvedTemplatesYaml, new HashMap<>());
   }
 
-  private InputsValidationResponse validateInputsForYaml(
-      String accountId, String orgId, String projectId, String yaml, Map<String, PersistentEntity> cacheMap) {
+  private InputsValidationResponse validateInputsForYaml(String accountId, String orgId, String projectId, String yaml,
+      String resolvedTemplatesYaml, Map<String, PersistentEntity> cacheMap) {
     YamlNode yamlNode = validateAndGetYamlNode(yaml);
+    YamlNode resolvedTemplatesYamlNode = isEmpty(resolvedTemplatesYaml) ? null : getYamlNode(resolvedTemplatesYaml);
     InputsValidationResponse inputsValidationResponse =
         InputsValidationResponse.builder().isValid(true).childrenErrorNodes(new ArrayList<>()).build();
+    EntityRefreshContext entityRefreshContext = EntityRefreshContext.builder()
+                                                    .accountId(accountId)
+                                                    .orgId(orgId)
+                                                    .projectId(projectId)
+                                                    .resolvedTemplatesYamlNode(resolvedTemplatesYamlNode)
+                                                    .cacheMap(cacheMap)
+                                                    .build();
     if (yamlNode.isObject()) {
-      validateInputsInObject(accountId, orgId, projectId, yamlNode, cacheMap, inputsValidationResponse);
+      validateInputsInObject(yamlNode, entityRefreshContext, inputsValidationResponse);
     } else if (yamlNode.isArray()) {
-      validateInputsInArray(accountId, orgId, projectId, yamlNode, cacheMap, inputsValidationResponse);
+      validateInputsInArray(yamlNode, entityRefreshContext, inputsValidationResponse);
     }
     return inputsValidationResponse;
   }
@@ -72,61 +78,65 @@ public class InputsValidationHelper {
   private YamlNode validateAndGetYamlNode(String yaml) {
     // Case -> empty YAML, cannot validate
     if (isEmpty(yaml)) {
-      throw new NGTemplateException("Yaml to be validated cannot be empty.");
+      throw new InvalidRequestException("Yaml to be validated cannot be empty.");
     }
+    return getYamlNode(yaml);
+  }
 
+  private YamlNode getYamlNode(String yaml) {
     YamlNode yamlNode;
     try {
       // Parsing the YAML to get the YamlNode
       yamlNode = YamlUtils.readTree(yaml).getNode();
     } catch (IOException e) {
       log.error("Could not convert yaml to JsonNode. Yaml:\n" + yaml, e);
-      throw new NGTemplateException("Could not convert yaml to JsonNode: " + e.getMessage());
+      throw new InvalidRequestException("Could not convert yaml to JsonNode: " + e.getMessage());
     }
     return yamlNode;
   }
 
-  private void validateInputsInObject(String accountId, String orgId, String projectId, YamlNode yamlNode,
-      Map<String, PersistentEntity> cacheMap, InputsValidationResponse inputsValidationResponse) {
+  private void validateInputsInObject(
+      YamlNode yamlNode, EntityRefreshContext context, InputsValidationResponse inputsValidationResponse) {
     for (YamlField childYamlField : yamlNode.fields()) {
       String fieldName = childYamlField.getName();
       YamlNode currentYamlNode = childYamlField.getNode();
       JsonNode value = currentYamlNode.getCurrJsonNode();
 
-      // If Template is present, validate the Template Inputs
+      // If Service is present, validate the Service Inputs
       if (serviceEntityService.isServiceField(fieldName, value)) {
-        validateServiceInputs(accountId, orgId, projectId, currentYamlNode, cacheMap, inputsValidationResponse);
+        validateServiceInputs(currentYamlNode, context, inputsValidationResponse);
+        continue;
+      } else if (inputsValidationResponse.isValid() && environmentRefreshHelper.isEnvironmentField(fieldName, value)) {
+        environmentRefreshHelper.validateEnvironmentInputs(currentYamlNode, context, inputsValidationResponse);
         continue;
       }
 
       if (value.isArray() && !YamlUtils.checkIfNodeIsArrayWithPrimitiveTypes(value)) {
         // Value -> Array
-        validateInputsInArray(
-            accountId, orgId, projectId, childYamlField.getNode(), cacheMap, inputsValidationResponse);
+        validateInputsInArray(childYamlField.getNode(), context, inputsValidationResponse);
       } else if (value.isObject()) {
         // Value -> Object
-        validateInputsInObject(
-            accountId, orgId, projectId, childYamlField.getNode(), cacheMap, inputsValidationResponse);
+        validateInputsInObject(childYamlField.getNode(), context, inputsValidationResponse);
       }
     }
   }
 
-  private void validateInputsInArray(String accountId, String orgId, String projectId, YamlNode yamlNode,
-      Map<String, PersistentEntity> templateCacheMap, InputsValidationResponse childrenNodeErrorSummary) {
+  private void validateInputsInArray(
+      YamlNode yamlNode, EntityRefreshContext context, InputsValidationResponse childrenNodeErrorSummary) {
     // Iterate over the array
     for (YamlNode arrayElement : yamlNode.asArray()) {
       if (arrayElement.isArray()) {
         // Value -> Array
-        validateInputsInArray(accountId, orgId, projectId, arrayElement, templateCacheMap, childrenNodeErrorSummary);
+        validateInputsInArray(arrayElement, context, childrenNodeErrorSummary);
       } else if (arrayElement.isObject()) {
         // Value -> Object
-        validateInputsInObject(accountId, orgId, projectId, arrayElement, templateCacheMap, childrenNodeErrorSummary);
+        validateInputsInObject(arrayElement, context, childrenNodeErrorSummary);
       }
     }
   }
 
-  void validateServiceInputs(String accountId, String orgId, String projectId, YamlNode entityNode,
-      Map<String, PersistentEntity> cacheMap, InputsValidationResponse errorNodeSummary) {
+  void validateServiceInputs(
+      YamlNode entityNode, EntityRefreshContext context, InputsValidationResponse errorNodeSummary) {
     JsonNode serviceNode = entityNode.getCurrJsonNode();
     String serviceRef = serviceNode.get(YamlTypes.SERVICE_REF).asText();
     JsonNode serviceInputs = serviceNode.get(YamlTypes.SERVICE_INPUTS);
@@ -136,54 +146,37 @@ public class InputsValidationHelper {
         errorNodeSummary.setValid(false);
         return;
       }
-    }
-    ServiceEntity serviceEntity = getService(accountId, orgId, projectId, serviceRef, cacheMap);
-
-    String serviceYaml = serviceEntity.fetchNonEmptyYaml();
-    InputsValidationResponse childrenErrorNodeSummary =
-        validateInputsForYaml(accountId, orgId, projectId, serviceYaml, cacheMap);
-
-    if (!childrenErrorNodeSummary.isValid()) {
-      childrenErrorNodeSummary.setValid(false);
-      errorNodeSummary.addChildErrorNode(
-          createServiceErrorNode(entityNode, serviceEntity, childrenErrorNodeSummary.getChildrenErrorNodes()));
       return;
     }
+    ServiceEntity serviceEntity = entityFetchHelper.getService(
+        context.getAccountId(), context.getOrgId(), context.getProjectId(), serviceRef, context.getCacheMap());
 
-    String serviceRuntimeInputYaml = serviceEntityService.createServiceInputsYaml(serviceYaml, serviceRef);
+    String serviceYaml = serviceEntity.fetchNonEmptyYaml();
+
+    // TODO: call Template service to resolve artifact source templates. If inputs issue, add service as nodeError.
+
+    YamlNode primaryArtifactRefNode = YamlNodeUtils.goToPathUsingFqn(
+        entityNode, "serviceInputs.serviceDefinition.spec.artifacts.primary.primaryArtifactRef");
+    String serviceRuntimeInputYaml = serviceEntityService.createServiceInputsYamlGivenPrimaryArtifactRef(
+        serviceYaml, serviceRef, primaryArtifactRefNode == null ? null : primaryArtifactRefNode.asText());
+    if (EmptyPredicate.isEmpty(serviceRuntimeInputYaml)) {
+      if (serviceInputs != null) {
+        errorNodeSummary.setValid(false);
+      }
+      return;
+    }
     ObjectMapper mapper = new ObjectMapper();
     ObjectNode serviceInputsNode = mapper.createObjectNode();
     serviceInputsNode.set(YamlTypes.SERVICE_INPUTS, serviceInputs);
-    if (!RuntimeInputsValidator.validateInputsAgainstSourceNode(
-            YamlPipelineUtils.writeYamlString(serviceInputsNode), serviceRuntimeInputYaml)) {
+    String linkedServiceInputsYaml = YamlPipelineUtils.writeYamlString(serviceInputsNode);
+    if (!RuntimeInputsValidator.validateInputsAgainstSourceNode(linkedServiceInputsYaml, serviceRuntimeInputYaml)) {
       errorNodeSummary.setValid(false);
     }
   }
 
-  private ServiceEntity getService(
-      String accountId, String orgId, String projectId, String serviceRef, Map<String, PersistentEntity> cacheMap) {
-    IdentifierRef serviceIdentifierRef = IdentifierRefHelper.getIdentifierRef(serviceRef, accountId, orgId, projectId);
-    String uniqueServiceIdentifier =
-        generateUniqueIdentifier(serviceIdentifierRef.getAccountIdentifier(), serviceIdentifierRef.getOrgIdentifier(),
-            serviceIdentifierRef.getProjectIdentifier(), serviceIdentifierRef.getIdentifier(), EntityType.SERVICE);
-    if (cacheMap.containsKey(uniqueServiceIdentifier)) {
-      return (ServiceEntity) cacheMap.get(uniqueServiceIdentifier);
-    }
-
-    Optional<ServiceEntity> serviceEntity =
-        serviceEntityService.get(serviceIdentifierRef.getAccountIdentifier(), serviceIdentifierRef.getOrgIdentifier(),
-            serviceIdentifierRef.getProjectIdentifier(), serviceIdentifierRef.getIdentifier(), false);
-    if (!serviceEntity.isPresent()) {
-      throw new InvalidRequestException(String.format(
-          "Service with identifier [%s] in project [%s], org [%s] not found", serviceIdentifierRef.getIdentifier(),
-          serviceIdentifierRef.getProjectIdentifier(), serviceIdentifierRef.getOrgIdentifier()));
-    }
-    cacheMap.put(uniqueServiceIdentifier, serviceEntity.get());
-    return serviceEntity.get();
-  }
-
   private NodeErrorSummary createServiceErrorNode(
       YamlNode serviceNode, ServiceEntity serviceEntity, List<NodeErrorSummary> childrenErrorNodes) {
+    // TODO: test this before it's usage.
     YamlNode parentNode = serviceNode.getParentNode();
     if (parentNode != null) {
       // this is stage node now.
@@ -198,20 +191,5 @@ public class InputsValidationHelper {
         .serviceResponse(ServiceElementMapper.writeDTO(serviceEntity))
         .childrenErrorNodes(childrenErrorNodes)
         .build();
-  }
-
-  private String generateUniqueIdentifier(
-      String accountId, String orgId, String projectId, String entityIdentifier, EntityType entityType) {
-    List<String> fqnList = new LinkedList<>();
-    fqnList.add(accountId);
-    if (EmptyPredicate.isNotEmpty(orgId)) {
-      fqnList.add(orgId);
-    }
-    if (EmptyPredicate.isNotEmpty(projectId)) {
-      fqnList.add(projectId);
-    }
-    fqnList.add(entityIdentifier);
-    fqnList.add(entityType.getYamlName());
-    return EntityReferenceHelper.createFQN(fqnList);
   }
 }

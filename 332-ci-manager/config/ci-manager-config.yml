@@ -112,9 +112,12 @@ ciExecutionServiceConfig:
   defaultInternalImageConnector: ''
   pvcDefaultStorageSize: 25600
   delegateServiceEndpointVariableValue: "delegate-service:8080"
-  addonImage: harness/ci-addon:1.14.15
-  liteEngineImage: harness/ci-lite-engine:1.14.15
+  addonImage: harness/ci-addon:1.14.19
+  liteEngineImage: harness/ci-lite-engine:1.14.19
   isLocal: false
+  cacheIntelligenceConfig:
+    bucket: "gcp_bucket"
+    serviceKey: "gcp_service_key"
   stepConfig:
     # The below config is for K8 steps
     gitCloneConfig:
@@ -220,14 +223,14 @@ pmsGrpcClientConfig:
 
 apiUrl: https://localhost:8181/#/
 
-shouldConfigureWithPMS: false
+shouldConfigureWithPMS: ${SHOULD_CONFIGURE_WITH_PMS:-false}
 
 enableDashboardTimescale: false
 
 timescaledb:
-  timescaledbUrl: "jdbc:postgresql://34.83.25.129:5432/harness"
-  timescaledbUsername: "harnessappdev"
-  timescaledbPassword: "harnessappdev"
+  timescaledbUrl: "jdbc:postgresql://localhost:5432/harness"
+  timescaledbUsername: "postgres"
+  timescaledbPassword: ""
   connectTimeout: 10
   socketTimeout: 30
   logUnclosedConnections: false
@@ -277,3 +280,5 @@ pmsPlanCreatorServicePoolConfig:
   maxPoolSize: ${PLAN_CREATOR_SERVICE_EXECUTOR_POOL_MAX_SIZE:-3}
   idleTime: ${PLAN_CREATOR_SERVICE_EXECUTOR_POOL_IDLE_TIME:-30}
   timeUnit: ${PLAN_CREATOR_SERVICE_EXECUTOR_POOL_IDLE_TIME_TIME_UNIT:-SECONDS}
+
+enableOpentelemetry: false

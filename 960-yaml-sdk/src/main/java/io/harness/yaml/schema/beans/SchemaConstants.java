@@ -64,6 +64,11 @@ public class SchemaConstants {
   public static final String NUMBER_STRING_WITH_EXPRESSION_PATTERN = "("
       + "^[+-]?[0-9]+\\.?[0-9]*$"
       + "|" + EXPRESSION_PATTERN + ")";
+  public static final String NUMBER_STRING_WITH_EXPRESSION_PATTERN_WITH_EMPTY_VALUE = "("
+      + "^[+-]?[0-9]+\\.?[0-9]*$"
+      + "|" + EXPRESSION_PATTERN + "|^$"
+      + ")";
+
   public static final String SPEC_NODE = "spec";
   public static final String STAGE_ELEMENT_WRAPPER_CONFIG = "StageElementWrapperConfig";
   public static final String STAGE_ELEMENT_CONFIG_REF_VALUE = "#/definitions/StageElementConfig";
