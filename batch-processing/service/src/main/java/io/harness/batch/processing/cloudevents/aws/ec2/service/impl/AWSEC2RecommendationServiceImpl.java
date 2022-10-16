@@ -43,7 +43,7 @@ public class AWSEC2RecommendationServiceImpl implements AWSEC2RecommendationServ
                     getRecommendations(request.getRegion(), request.getAwsCrossAccountAttributes(), recommendationRequest);
             log.info("recommendationResult.size() = {}", recommendationResult.getRightsizingRecommendations().size());
             if (!recommendationResult.getRightsizingRecommendations().isEmpty()) {
-                log.info("recommendationResult.get(0) = {}", recommendationResult.getRightsizingRecommendations().get(0));
+                log.info("recommendationResult = {}", recommendationResult);
             }
             recommendationsResult.addAll(recommendationResult.getRightsizingRecommendations());
             nextPageToken = recommendationResult.getNextPageToken();

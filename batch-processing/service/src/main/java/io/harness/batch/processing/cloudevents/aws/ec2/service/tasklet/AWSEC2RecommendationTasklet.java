@@ -69,7 +69,7 @@ public class AWSEC2RecommendationTasklet  implements Tasklet {
                 Instant now = Instant.now().truncatedTo(ChronoUnit.HOURS);
                 if (entry.getKey().equals("890436954479")) {
                     log.info("found the harness-ce account");
-                    List<String> instances = new ArrayList<>(Arrays.asList("i-0cf7994781dce538a", "i-0ee034ec9d9f456e8", "i-07bd941e66e9273c5", "i-054f2bed517243117", ""));
+                    List<String> instances = new ArrayList<>(Arrays.asList("i-0cf7994781dce538a", "i-0ee034ec9d9f456e8", "i-07bd941e66e9273c5", "i-054f2bed517243117"));
                     List<Ec2UtilzationData> utilzationData =
                             ec2MetricHelper.getUtilizationMetrics(entry.getValue(), Date.from(now.minus(2, ChronoUnit.DAYS)),
                             Date.from(now.minus(1, ChronoUnit.DAYS)), instances, "us-east-1");
