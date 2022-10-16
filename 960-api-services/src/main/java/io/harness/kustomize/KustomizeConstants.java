@@ -19,9 +19,13 @@ import lombok.experimental.UtilityClass;
 public final class KustomizeConstants {
   static final String KUSTOMIZE_BINARY_PATH = "${KUSTOMIZE_BINARY_PATH}";
   static final String KUSTOMIZE_DIR_PATH = "${DIR_PATH}";
+  static final String KUSTOMIZE_PLUGIN_FLAG = "${KUSTOMIZE_PLUGIN_FLAG}";
   static final String KUSTOMIZE_BUILD_COMMAND = KUSTOMIZE_BINARY_PATH + " build " + KUSTOMIZE_DIR_PATH;
   static final String XDG_CONFIG_HOME = "${XDG_CONFIG_HOME}";
   static final String KUSTOMIZE_BUILD_COMMAND_WITH_PLUGINS = "XDG_CONFIG_HOME=" + XDG_CONFIG_HOME + " "
-      + KUSTOMIZE_BINARY_PATH + " build --enable_alpha_plugins " + KUSTOMIZE_DIR_PATH;
+      + KUSTOMIZE_BINARY_PATH + " build " + KUSTOMIZE_PLUGIN_FLAG + " " + KUSTOMIZE_DIR_PATH;
   static final long KUSTOMIZE_COMMAND_TIMEOUT = TimeUnit.MINUTES.toMillis(1);
+  static final String KUSTOMIZE_PLUGIN_FLAG_VERSION_LT_4_0_1 = "--enable_alpha_plugins";
+  static final String KUSTOMIZE_PLUGIN_FLAG_LATEST = "--enable-alpha-plugins";
+  static final String KUSTOMIZE_VERSION_V4_0_0 = "4.0.0";
 }

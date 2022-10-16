@@ -15,6 +15,8 @@ import lombok.Getter;
 public class ActiveServiceInstanceInfo {
   private String infraIdentifier;
   private String infraName;
+  private String clusterIdentifier;
+  private String agentIdentifier;
   private String lastPipelineExecutionId;
   private String lastPipelineExecutionName;
   private String lastDeployedAt;

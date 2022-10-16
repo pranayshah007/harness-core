@@ -139,6 +139,14 @@ if [[ "" != "$VM_SECURITY_IMAGE" ]]; then
   export VM_SECURITY_IMAGE; yq -i '.ciExecutionServiceConfig.stepConfig.vmImageConfig.security=env(VM_SECURITY_IMAGE)' $CONFIG_FILE
 fi
 
+if [[ "" != "$CACHE_BUCKET" ]]; then
+  export $CACHE_BUCKET; yq -i '.ciExecutionServiceConfig.cacheIntelligenceConfig.bucket=env($CACHE_BUCKET)' $CONFIG_FILE
+fi
+
+if [[ "" != "$CACHE_SERVICE_KEY" ]]; then
+  export $CACHE_SERVICE_KEY; yq -i '.ciExecutionServiceConfig.cacheIntelligenceConfig.serviceKey=env($CACHE_SERVICE_KEY)' $CONFIG_FILE
+fi
+
 if [[ "" != "$DEFAULT_MEMORY_LIMIT" ]]; then
   export DEFAULT_MEMORY_LIMIT; yq -i '.ciExecutionServiceConfig.defaultMemoryLimit=env(DEFAULT_MEMORY_LIMIT)' $CONFIG_FILE
 fi

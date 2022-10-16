@@ -157,7 +157,7 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
       }
     } else {
       throw new InvalidYamlRuntimeException(
-          format("serviceConfig or Service should be present in stage [%s]. Please add it and try again",
+          format("serviceConfig or service should be present in stage [%s]. Please add it and try again",
               YamlUtils.getFullyQualifiedName(filterCreationContext.getCurrentField().getNode())));
     }
   }

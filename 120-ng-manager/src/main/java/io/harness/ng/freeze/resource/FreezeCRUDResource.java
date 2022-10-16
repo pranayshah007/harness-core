@@ -24,12 +24,14 @@ import io.harness.freeze.beans.FreezeStatus;
 import io.harness.freeze.beans.FreezeType;
 import io.harness.freeze.beans.PermissionTypes;
 import io.harness.freeze.beans.request.FreezeFilterPropertiesDTO;
+import io.harness.freeze.beans.response.FreezeDetailedResponseDTO;
 import io.harness.freeze.beans.response.FreezeResponseDTO;
 import io.harness.freeze.beans.response.FreezeResponseWrapperDTO;
 import io.harness.freeze.beans.response.FreezeSummaryResponseDTO;
 import io.harness.freeze.entity.FreezeConfigEntity.FreezeConfigEntityKeys;
 import io.harness.freeze.helpers.FreezeFilterHelper;
 import io.harness.freeze.helpers.FreezeRBACHelper;
+import io.harness.freeze.mappers.NGFreezeDtoMapper;
 import io.harness.freeze.service.FreezeCRUDService;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.ErrorDTO;
@@ -290,14 +292,15 @@ public class FreezeCRUDResource {
         ApiResponse(responseCode = "default", description = "Get Global Freeze Yaml")
       })
   @Hidden
-  public ResponseDTO<FreezeResponseDTO>
+  public ResponseDTO<FreezeDetailedResponseDTO>
   getGlobalFreeze(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
                       NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
       @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgId,
       @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId) {
-    return ResponseDTO.newResponse(freezeCRUDService.getGlobalFreeze(accountId, orgId, projectId));
+    return ResponseDTO.newResponse(NGFreezeDtoMapper.prepareDetailedFreezeResponseDto(
+        freezeCRUDService.getGlobalFreeze(accountId, orgId, projectId)));
   }
 
   @POST
@@ -322,8 +325,6 @@ public class FreezeCRUDResource {
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
       @Parameter(description = "This contains details of Freeze filters")
       FreezeFilterPropertiesDTO freezeFilterPropertiesDTO) {
-    List<String> freezeIdentifiers =
-        freezeFilterPropertiesDTO == null ? null : freezeFilterPropertiesDTO.getFreezeIdentifiers();
     String searchTerm = freezeFilterPropertiesDTO == null ? null : freezeFilterPropertiesDTO.getSearchTerm();
     FreezeStatus status = freezeFilterPropertiesDTO == null ? null : freezeFilterPropertiesDTO.getFreezeStatus();
     Criteria criteria = FreezeFilterHelper.createCriteriaForGetList(accountId, orgIdentifier, projectIdentifier,
