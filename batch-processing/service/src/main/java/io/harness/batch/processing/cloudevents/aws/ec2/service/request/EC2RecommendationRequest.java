@@ -7,11 +7,8 @@ import software.wings.beans.AwsCrossAccountAttributes;
 @Data
 public class EC2RecommendationRequest {
     private AwsCrossAccountAttributes awsCrossAccountAttributes;
-    private String region;
-
     @Builder
-    public EC2RecommendationRequest(AwsCrossAccountAttributes awsCrossAccountAttributes, String region) {
+    public EC2RecommendationRequest(AwsCrossAccountAttributes awsCrossAccountAttributes) {
         this.awsCrossAccountAttributes = awsCrossAccountAttributes;
-        this.region = region;
     }
 }

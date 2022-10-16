@@ -8,7 +8,7 @@ import com.amazonaws.services.costexplorer.model.*;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
 import io.harness.batch.processing.cloudevents.aws.ec2.service.AWSEC2RecommendationService;
 import io.harness.batch.processing.cloudevents.aws.ec2.service.request.EC2RecommendationRequest;
-import io.harness.batch.processing.cloudevents.aws.ec2.service.request.EC2RecommendationResponse;
+import io.harness.batch.processing.cloudevents.aws.ec2.service.response.EC2RecommendationResponse;
 import io.harness.batch.processing.cloudevents.aws.ecs.service.support.AwsCredentialHelper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,7 +40,7 @@ public class AWSEC2RecommendationServiceImpl implements AWSEC2RecommendationServ
         do {
             recommendationRequest.withNextPageToken(nextPageToken);
             GetRightsizingRecommendationResult recommendationResult =
-                    getRecommendations(request.getRegion(), request.getAwsCrossAccountAttributes(), recommendationRequest);
+                    getRecommendations(request.getAwsCrossAccountAttributes(), recommendationRequest);
             log.info("recommendationResult.size() = {}", recommendationResult.getRightsizingRecommendations().size());
             if (!recommendationResult.getRightsizingRecommendations().isEmpty()) {
                 log.info("recommendationResult = {}", recommendationResult);
@@ -48,13 +48,18 @@ public class AWSEC2RecommendationServiceImpl implements AWSEC2RecommendationServ
             recommendationsResult.addAll(recommendationResult.getRightsizingRecommendations());
             nextPageToken = recommendationResult.getNextPageToken();
         } while (nextPageToken != null);
+        if (!recommendationsResult.isEmpty()) {
+            log.info("returning EC2RecommendationResponse");
+            return EC2RecommendationResponse.builder().
+                    recommendationList(recommendationsResult).build();
+        }
         return null;
     }
 
-    GetRightsizingRecommendationResult getRecommendations(String region, AwsCrossAccountAttributes awsCrossAccountAttributes,
+    GetRightsizingRecommendationResult getRecommendations(AwsCrossAccountAttributes awsCrossAccountAttributes,
                                                           GetRightsizingRecommendationRequest request) {
         try (CloseableAmazonWebServiceClient<AWSCostExplorerClient> closeableAWSCostExplorerClient =
-                     new CloseableAmazonWebServiceClient(getAWSCostExplorerClient(region, awsCrossAccountAttributes))) {
+                     new CloseableAmazonWebServiceClient(getAWSCostExplorerClient(awsCrossAccountAttributes))) {
             log.info("AWSCostExplorerClient created! {}", closeableAWSCostExplorerClient.getClient());
             return closeableAWSCostExplorerClient.getClient().getRightsizingRecommendation(request);
         } catch (Exception ex) {
@@ -63,7 +68,7 @@ public class AWSEC2RecommendationServiceImpl implements AWSEC2RecommendationServ
         return new GetRightsizingRecommendationResult();
     }
 
-    AWSCostExplorerClient getAWSCostExplorerClient(String region, AwsCrossAccountAttributes awsCrossAccountAttributes) {
+    AWSCostExplorerClient getAWSCostExplorerClient(AwsCrossAccountAttributes awsCrossAccountAttributes) {
         AWSSecurityTokenService awsSecurityTokenService = awsCredentialHelper.constructAWSSecurityTokenService();
         AWSCostExplorerClientBuilder builder = AWSCostExplorerClientBuilder.standard().withRegion(aWSRegion);
         AWSCredentialsProvider credentialsProvider =

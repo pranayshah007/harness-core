@@ -1,12 +1,16 @@
 package io.harness.batch.processing.cloudevents.aws.ec2.service.tasklet;
 
+import com.amazonaws.services.costexplorer.model.EC2InstanceDetails;
 import com.google.inject.Singleton;
 import io.harness.batch.processing.billing.timeseries.data.InstanceUtilizationData;
 import io.harness.batch.processing.billing.timeseries.service.impl.UtilizationDataServiceImpl;
 import io.harness.batch.processing.ccm.CCMJobConstants;
 import io.harness.batch.processing.cloudevents.aws.ec2.service.AWSEC2RecommendationService;
+import io.harness.batch.processing.cloudevents.aws.ec2.service.helper.AWSEC2Details;
+import io.harness.batch.processing.cloudevents.aws.ec2.service.helper.AWSRegionHelper;
 import io.harness.batch.processing.cloudevents.aws.ec2.service.helper.EC2MetricHelper;
 import io.harness.batch.processing.cloudevents.aws.ec2.service.request.EC2RecommendationRequest;
+import io.harness.batch.processing.cloudevents.aws.ec2.service.response.EC2RecommendationResponse;
 import io.harness.batch.processing.cloudevents.aws.ec2.service.response.Ec2UtilzationData;
 import io.harness.batch.processing.cloudevents.aws.ec2.service.response.MetricValue;
 import io.harness.batch.processing.cloudevents.aws.ecs.service.tasklet.support.ng.NGConnectorHelper;
@@ -27,6 +31,7 @@ import org.springframework.batch.core.step.tasklet.Tasklet;
 import org.springframework.batch.repeat.RepeatStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.CollectionUtils;
+import software.amazon.awssdk.regions.Region;
 import software.wings.beans.AwsCrossAccountAttributes;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.ce.CEAwsConfig;
@@ -36,6 +41,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static io.harness.batch.processing.ccm.UtilizationInstanceType.EC2_INSTANCE;
 import static software.wings.beans.SettingAttribute.SettingCategory.CE_CONNECTOR;
@@ -68,18 +74,27 @@ public class AWSEC2RecommendationTasklet  implements Tasklet {
                 log.info("Key = {} Value = {}", entry.getKey(), entry.getValue());
                 Instant now = Instant.now().truncatedTo(ChronoUnit.HOURS);
                 if (entry.getKey().equals("890436954479")) {
+
                     log.info("found the harness-ce account");
-                    List<String> instances = new ArrayList<>(Arrays.asList("i-0cf7994781dce538a", "i-0ee034ec9d9f456e8", "i-07bd941e66e9273c5", "i-054f2bed517243117"));
-                    List<Ec2UtilzationData> utilzationData =
-                            ec2MetricHelper.getUtilizationMetrics(entry.getValue(), Date.from(now.minus(2, ChronoUnit.DAYS)),
-                            Date.from(now.minus(1, ChronoUnit.DAYS)), instances, "us-east-1");
-                    log.info("utilzationData.size = {}", utilzationData.size());
-                    updateUtilData(accountId, utilzationData);
-                    log.info("Started recomm data retrieval for us-east-1");
-                    awsec2RecommendationService.getRecommendations(EC2RecommendationRequest.builder()
-                                    .region("us-east-1")
+                    EC2RecommendationResponse ec2RecommendationResponse =
+                            awsec2RecommendationService.getRecommendations(EC2RecommendationRequest.builder()
                                     .awsCrossAccountAttributes(entry.getValue())
                                     .build());
+                    if (!Objects.nonNull(ec2RecommendationResponse) &&
+                            !ec2RecommendationResponse.getRecommendationList().isEmpty()) {
+                        log.info("recomm non null");
+//                        List<String> instances = new ArrayList<>(Arrays.asList("i-0cf7994781dce538a", "i-0ee034ec9d9f456e8", "i-07bd941e66e9273c5", "i-054f2bed517243117"));
+                        List<AWSEC2Details> instances = exctractEC2InstanceDetails(ec2RecommendationResponse);
+                        log.info("List<AWSEC2Details>.size = {}", instances.size());
+                        log.info("instaceList = {}", instances);
+                        List<Ec2UtilzationData> utilzationData =
+                                ec2MetricHelper.getUtilizationMetrics(entry.getValue(), Date.from(now.minus(2, ChronoUnit.DAYS)),
+                                        Date.from(now.minus(1, ChronoUnit.DAYS)), instances);
+                        log.info("utilzationData.size = {}", utilzationData.size());
+                        updateUtilData(accountId, utilzationData);
+                    }
+
+
                     log.info("exiting the ec2 recomm!");
                 }
             }
@@ -176,6 +191,20 @@ public class AWSEC2RecommendationTasklet  implements Tasklet {
 
     private double getScaledUtilValue(double value) {
         return value / 100;
+    }
+
+    private List<AWSEC2Details> exctractEC2InstanceDetails(EC2RecommendationResponse response) {
+        List<AWSEC2Details> awsec2Details = new ArrayList<>();
+        awsec2Details = response.getRecommendationList().stream()
+                .map(rightsizingRecommendation -> {
+                    String instanceId = rightsizingRecommendation.getCurrentInstance().getResourceId();
+                    String region = rightsizingRecommendation.getCurrentInstance().getResourceDetails().getEC2ResourceDetails().getRegion();
+                    log.info("instanceId = {} region = {}", instanceId, region);
+                    log.info("AWSRegionHelper.getRegionNameFromDisplayName(region) = {}",
+                            AWSRegionHelper.getRegionNameFromDisplayName(region));
+                    return new AWSEC2Details(instanceId, AWSRegionHelper.getRegionNameFromDisplayName(region));
+                }).collect(Collectors.toList());
+        return awsec2Details;
     }
 
     private Map<String, AwsCrossAccountAttributes> getCrossAccountAttributes(String accountId) {
