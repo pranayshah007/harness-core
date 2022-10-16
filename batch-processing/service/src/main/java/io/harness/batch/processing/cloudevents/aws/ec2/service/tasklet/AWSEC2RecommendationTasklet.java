@@ -149,25 +149,24 @@ public class AWSEC2RecommendationTasklet  implements Tasklet {
             }
 
             // POJO and insertion to DB
-            for (int metricIndex = 0; metricIndex < metricsListSize; metricIndex++) {
-                long startTime = startTimestampList.get(metricIndex).toInstant().toEpochMilli();
-                long oneHourMillis = Duration.ofDays(1).toMillis();
 
-                InstanceUtilizationData utilizationData =
-                        InstanceUtilizationData.builder()
-                                .accountId(accountId)
-                                .instanceId(instanceId)
-                                .instanceType(instanceType)
-                                .cpuUtilizationMax(getScaledUtilValue(cpuUtilizationMaxList.get(metricIndex)))
-                                .cpuUtilizationAvg(getScaledUtilValue(cpuUtilizationAvgList.get(metricIndex)))
-                                .memoryUtilizationMax(getScaledUtilValue(memoryUtilizationMaxList.get(metricIndex)))
-                                .memoryUtilizationAvg(getScaledUtilValue(memoryUtilizationAvgList.get(metricIndex)))
-                                .startTimestamp(startTime)
-                                .endTimestamp(startTime + oneHourMillis)
-                                .build();
-                log.info("utilizationData = {}", utilizationData);
-                instanceUtilizationDataList.add(utilizationData);
-            }
+            long startTime = startTimestampList.get(0).toInstant().toEpochMilli();
+            long oneHourMillis = Duration.ofDays(1).toMillis();
+
+            InstanceUtilizationData utilizationData =
+                    InstanceUtilizationData.builder()
+                            .accountId(accountId)
+                            .instanceId(instanceId)
+                            .instanceType(instanceType)
+                            .cpuUtilizationMax(getScaledUtilValue(cpuUtilizationMaxList.get(0)))
+                            .cpuUtilizationAvg(getScaledUtilValue(cpuUtilizationAvgList.get(0)))
+                            .memoryUtilizationMax(getScaledUtilValue(memoryUtilizationMaxList.get(0)))
+                            .memoryUtilizationAvg(getScaledUtilValue(memoryUtilizationAvgList.get(0)))
+                            .startTimestamp(startTime)
+                            .endTimestamp(startTime + oneHourMillis)
+                            .build();
+            log.info("utilizationData = {}", utilizationData);
+            instanceUtilizationDataList.add(utilizationData);
         });
 
         log.info("size of the instanceUtilizationDataList lise = {}", instanceUtilizationDataList.size());
