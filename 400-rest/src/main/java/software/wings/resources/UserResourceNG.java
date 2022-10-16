@@ -276,7 +276,12 @@ public class UserResourceNG {
   @Path("invites/create-user")
   public RestResponse<Boolean> createUserForInvite(
       @Body @NotNull UserInviteDTO userInvite, @QueryParam("isScimInvite") boolean isScimInvite) {
-    userService.completeNGInvite(userInvite, isScimInvite);
+    try {
+      userService.completeNGInvite(userInvite, isScimInvite);
+    } catch (Exception e) {
+      log.error("Unable to create user in CG", e);
+      return new RestResponse<>(false);
+    }
     return new RestResponse<>(true);
   }
 

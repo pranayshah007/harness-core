@@ -1998,6 +1998,9 @@ public class UserServiceImpl implements UserService {
       boolean managerToNgManagerCallResponse =
           NGRestUtils.getResponse(ngInviteClient.completeInvite(userInvite.getToken()));
       log.info("NG User Invite: managerToNgManagerCallResponse = {}", managerToNgManagerCallResponse);
+      if (!managerToNgManagerCallResponse) {
+        throw new RuntimeException("Could not complete invite on NG");
+      }
     } catch (Exception ex) {
       log.error("NG User Invite: while calling ngInviteClient.completeInvite() an expection: ", ex);
     }
