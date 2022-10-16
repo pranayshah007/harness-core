@@ -42,6 +42,7 @@ import io.harness.ngmigration.beans.summary.BaseSummary;
 import io.harness.ngmigration.beans.summary.ServiceSummary;
 import io.harness.ngmigration.client.NGClient;
 import io.harness.ngmigration.client.PmsClient;
+import io.harness.ngmigration.client.TemplateClient;
 import io.harness.ngmigration.dto.ImportError;
 import io.harness.ngmigration.dto.MigrationImportSummaryDTO;
 import io.harness.ngmigration.expressions.MigratorExpressionUtils;
@@ -208,7 +209,7 @@ public class ServiceMigrationService extends NgMigrationService {
 
   @Override
   public MigrationImportSummaryDTO migrate(String auth, NGClient ngClient, PmsClient pmsClient,
-      MigrationInputDTO inputDTO, NGYamlFile yamlFile) throws IOException {
+      TemplateClient templateClient, MigrationInputDTO inputDTO, NGYamlFile yamlFile) throws IOException {
     if (yamlFile.isExists()) {
       log.info("Skipping creation of service as it already exists");
       return MigrationImportSummaryDTO.builder()
