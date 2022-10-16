@@ -20,10 +20,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import static software.wings.service.impl.aws.model.AwsConstants.AWS_DEFAULT_REGION;
+
 @Slf4j
 @Service
 public class AWSEC2RecommendationServiceImpl implements AWSEC2RecommendationService {
     @Autowired private AwsCredentialHelper awsCredentialHelper;
+    private static final String aWSRegion = AWS_DEFAULT_REGION;
 
     @Override
     public EC2RecommendationResponse getRecommendations(EC2RecommendationRequest request) {
@@ -51,7 +54,7 @@ public class AWSEC2RecommendationServiceImpl implements AWSEC2RecommendationServ
     GetRightsizingRecommendationResult getRecommendations(String region, AwsCrossAccountAttributes awsCrossAccountAttributes,
                                                           GetRightsizingRecommendationRequest request) {
         try (CloseableAmazonWebServiceClient<AWSCostExplorerClient> closeableAWSCostExplorerClient =
-                     new CloseableAmazonWebServiceClient(getAWSCostExplorerClient(awsCrossAccountAttributes))) {
+                     new CloseableAmazonWebServiceClient(getAWSCostExplorerClient(region, awsCrossAccountAttributes))) {
             log.info("AWSCostExplorerClient created! {}", closeableAWSCostExplorerClient.getClient());
             return closeableAWSCostExplorerClient.getClient().getRightsizingRecommendation(request);
         } catch (Exception ex) {
@@ -60,9 +63,9 @@ public class AWSEC2RecommendationServiceImpl implements AWSEC2RecommendationServ
         return new GetRightsizingRecommendationResult();
     }
 
-    AWSCostExplorerClient getAWSCostExplorerClient(AwsCrossAccountAttributes awsCrossAccountAttributes) {
+    AWSCostExplorerClient getAWSCostExplorerClient(String region, AwsCrossAccountAttributes awsCrossAccountAttributes) {
         AWSSecurityTokenService awsSecurityTokenService = awsCredentialHelper.constructAWSSecurityTokenService();
-        AWSCostExplorerClientBuilder builder = AWSCostExplorerClientBuilder.standard();
+        AWSCostExplorerClientBuilder builder = AWSCostExplorerClientBuilder.standard().withRegion(aWSRegion);
         AWSCredentialsProvider credentialsProvider =
                 new STSAssumeRoleSessionCredentialsProvider
                         .Builder(awsCrossAccountAttributes.getCrossAccountRoleArn(), UUID.randomUUID().toString())
