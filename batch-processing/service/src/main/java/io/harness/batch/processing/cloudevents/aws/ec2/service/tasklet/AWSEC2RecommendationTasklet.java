@@ -77,7 +77,7 @@ public class AWSEC2RecommendationTasklet  implements Tasklet {
 
                     List<Ec2UtilzationData> utilzationData =
                             ec2MetricHelper.getUtilizationMetrics(entry.getValue(), Date.from(now.minus(2, ChronoUnit.HOURS)),
-                            Date.from(now.minus(1, ChronoUnit.HOURS)), "i-0fbd100c13bf0f7b4", "us-east-1");
+                            Date.from(now.minus(1, ChronoUnit.HOURS)), "i-0ee034ec9d9f456e8", "us-east-1");
                     log.info("utilzationData.size = {}", utilzationData.size());
                     updateUtilData(accountId, utilzationData);
                     log.info("Started recomm data retrieval for us-east-1");
@@ -85,11 +85,6 @@ public class AWSEC2RecommendationTasklet  implements Tasklet {
                                     .region("us-east-1")
                                     .awsCrossAccountAttributes(entry.getValue())
                                     .build());
-                    log.info("Started recomm data retrieval for us-west-1");
-                    awsec2RecommendationService.getRecommendations(EC2RecommendationRequest.builder()
-                            .region("us-west-1")
-                            .awsCrossAccountAttributes(entry.getValue())
-                            .build());
                     log.info("exiting the ec2 recomm!");
                 }
             }

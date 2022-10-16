@@ -30,7 +30,7 @@ public class AWSEC2RecommendationServiceImpl implements AWSEC2RecommendationServ
 
         GetRightsizingRecommendationRequest recommendationRequest = new GetRightsizingRecommendationRequest()
                 .withConfiguration(new RightsizingRecommendationConfiguration()
-                        .withRecommendationTarget(RecommendationTarget.SAME_INSTANCE_FAMILY))
+                        .withRecommendationTarget(RecommendationTarget.CROSS_INSTANCE_FAMILY))
                 .withService("AmazonEC2");
         String nextPageToken = null;
         List<RightsizingRecommendation> recommendationsResult = new ArrayList<>();
@@ -51,7 +51,7 @@ public class AWSEC2RecommendationServiceImpl implements AWSEC2RecommendationServ
     GetRightsizingRecommendationResult getRecommendations(String region, AwsCrossAccountAttributes awsCrossAccountAttributes,
                                                           GetRightsizingRecommendationRequest request) {
         try (CloseableAmazonWebServiceClient<AWSCostExplorerClient> closeableAWSCostExplorerClient =
-                     new CloseableAmazonWebServiceClient(getAWSCostExplorerClient(region, awsCrossAccountAttributes))) {
+                     new CloseableAmazonWebServiceClient(getAWSCostExplorerClient(awsCrossAccountAttributes))) {
             log.info("AWSCostExplorerClient created! {}", closeableAWSCostExplorerClient.getClient());
             return closeableAWSCostExplorerClient.getClient().getRightsizingRecommendation(request);
         } catch (Exception ex) {
@@ -60,9 +60,9 @@ public class AWSEC2RecommendationServiceImpl implements AWSEC2RecommendationServ
         return new GetRightsizingRecommendationResult();
     }
 
-    AWSCostExplorerClient getAWSCostExplorerClient(String region, AwsCrossAccountAttributes awsCrossAccountAttributes) {
+    AWSCostExplorerClient getAWSCostExplorerClient(AwsCrossAccountAttributes awsCrossAccountAttributes) {
         AWSSecurityTokenService awsSecurityTokenService = awsCredentialHelper.constructAWSSecurityTokenService();
-        AWSCostExplorerClientBuilder builder = AWSCostExplorerClientBuilder.standard().withRegion(region);
+        AWSCostExplorerClientBuilder builder = AWSCostExplorerClientBuilder.standard();
         AWSCredentialsProvider credentialsProvider =
                 new STSAssumeRoleSessionCredentialsProvider
                         .Builder(awsCrossAccountAttributes.getCrossAccountRoleArn(), UUID.randomUUID().toString())
