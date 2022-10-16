@@ -41,13 +41,13 @@ public class DeploymentStepEventProcessor implements StepEventProcessor<TimeSeri
         successful = true;
       } catch (SQLException e) {
         if (retryCount >= MAX_RETRY) {
-          log.error("Failed to save deployment data,[{}],retryCount=[{}] ", eventInfo, retryCount++, e);
+          log.error("Failed to save step deployment data,[{}],retryCount=[{}] ", eventInfo, retryCount++, e);
         } else {
-          log.error("Failed to save deployment data,[{}]", eventInfo, e);
+          log.error("Failed to save step deployment data,[{}]", eventInfo, e);
         }
         retryCount++;
       } catch (Exception e) {
-        log.error("Failed to save deployment data,[{}]", eventInfo, e);
+        log.error("Failed to save step deployment data,[{}]", eventInfo, e);
         retryCount = MAX_RETRY + 1;
       } finally {
         log.info("Total time=[{}]", System.currentTimeMillis() - startTime);
