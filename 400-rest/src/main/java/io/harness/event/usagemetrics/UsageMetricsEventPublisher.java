@@ -118,8 +118,6 @@ public class UsageMetricsEventPublisher {
       longData.put(
           StepEventProcessor.DURATION, stateExecutionInstance.getEndTs() - stateExecutionInstance.getStartTs());
 
-    longData.put(StepEventProcessor.APPROVAL_EXPIRY, stateExecutionInstance.getExpiryTs());
-
     if (APPROVAL.equals(stateExecutionInstance.getStateType()) && stateExecutionInstance.getStateExecutionMap() != null
         && stateExecutionInstance.getStateExecutionMap().get(stateExecutionInstance.getStateName()) != null) {
       StateExecutionData stateExecutionData =
@@ -127,6 +125,11 @@ public class UsageMetricsEventPublisher {
       if (stateExecutionData instanceof ApprovalStateExecutionData) {
         ApprovalStateExecutionData approvalStateExecutionData = (ApprovalStateExecutionData) stateExecutionData;
         longData.put(StepEventProcessor.APPROVED_AT, approvalStateExecutionData.getApprovedOn());
+
+        if (approvalStateExecutionData.getStartTs() != null && approvalStateExecutionData.getTimeoutMillis() != null)
+          longData.put(StepEventProcessor.APPROVAL_EXPIRY,
+              approvalStateExecutionData.getStartTs() + approvalStateExecutionData.getTimeoutMillis());
+
         stringData.put(StepEventProcessor.APPROVAL_COMMENT, approvalStateExecutionData.getComments());
         if (approvalStateExecutionData.getApprovalStateType() != null)
           stringData.put(

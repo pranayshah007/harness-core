@@ -18,7 +18,7 @@ public class DeploymentStepEventProcessor implements StepEventProcessor<TimeSeri
   @Inject private TimeScaleDBService timeScaleDBService;
 
   private static final String upsert_statement =
-      "INSERT INTO DEPLOYMENT_STEP (ID,ACCOUNT_ID,APP_ID,STEP_NAME,STEP_TYPE,STATUS,FAILURE_DETAILS,START_TIME,END_TIME,DURATION,PARENT_TYPE,EXECUTION_ID,APPROVED_BY,APPROVAL_TYPE,APPROVED_AT,APPROVAL_COMMENT,APPROVAL_EXPIRY) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT (ID) DO UPDATE SET ACCOUNT_ID = excluded.ACCOUNT_ID,APP_ID = excluded.APP_ID,STEP_NAME = excluded.STEP_NAME,STEP_TYPE = excluded.STEP_TYPE,STATUS = excluded.STATUS,FAILURE_DETAILS = excluded.FAILURE_DETAILS,START_TIME = excluded.START_TIME,END_TIME = excluded.END_TIME,DURATION = excluded.DURATION,PARENT_TYPE = excluded.PARENT_TYPE,EXECUTION_ID = excluded.EXECUTION_ID,APPROVED_BY = excluded.APPROVED_BY,APPROVAL_TYPE = excluded.APPROVAL_TYPE,APPROVED_AT = excluded.APPROVED_AT,APPROVAL_COMMENT = excluded.APPROVAL_COMMENT,APPROVAL_EXPIRY = excluded.APPROVAL_EXPIRY";
+      "INSERT INTO DEPLOYMENT_STEP (ID,ACCOUNT_ID,APP_ID,STEP_NAME,STEP_TYPE,STATUS,FAILURE_DETAILS,START_TIME,END_TIME,DURATION,PARENT_TYPE,EXECUTION_ID,APPROVED_BY,APPROVAL_TYPE,APPROVED_AT,APPROVAL_COMMENT,APPROVAL_EXPIRY,MANUAL_INTERVENTION) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT (ID) DO UPDATE SET ACCOUNT_ID = excluded.ACCOUNT_ID,APP_ID = excluded.APP_ID,STEP_NAME = excluded.STEP_NAME,STEP_TYPE = excluded.STEP_TYPE,STATUS = excluded.STATUS,FAILURE_DETAILS = excluded.FAILURE_DETAILS,START_TIME = excluded.START_TIME,END_TIME = excluded.END_TIME,DURATION = excluded.DURATION,PARENT_TYPE = excluded.PARENT_TYPE,EXECUTION_ID = excluded.EXECUTION_ID,APPROVED_BY = excluded.APPROVED_BY,APPROVAL_TYPE = excluded.APPROVAL_TYPE,APPROVED_AT = excluded.APPROVED_AT,APPROVAL_COMMENT = excluded.APPROVAL_COMMENT,APPROVAL_EXPIRY = excluded.APPROVAL_EXPIRY,MANUAL_INTERVENTION = excluded.MANUAL_INTERVENTION";
 
   @Override
   public void processEvent(TimeSeriesEventInfo eventInfo) throws Exception {
@@ -63,16 +63,23 @@ public class DeploymentStepEventProcessor implements StepEventProcessor<TimeSeri
     upsertStatement.setString(++index, eventInfo.getStringData().get(STEP_TYPE));
     upsertStatement.setString(++index, eventInfo.getStringData().get(STATUS));
     upsertStatement.setString(++index, eventInfo.getStringData().get(FAILURE_DETAILS));
-    upsertStatement.setLong(++index, eventInfo.getLongData().get(START_TIME));
-    upsertStatement.setLong(++index, eventInfo.getLongData().get(END_TIME));
-    upsertStatement.setLong(++index, eventInfo.getLongData().get(DURATION));
+    upsertStatement.setLong(++index, getLongValue(START_TIME, eventInfo));
+    upsertStatement.setLong(++index, getLongValue(END_TIME, eventInfo));
+    upsertStatement.setLong(++index, getLongValue(DURATION, eventInfo));
     upsertStatement.setString(++index, eventInfo.getStringData().get(PARENT_TYPE));
     upsertStatement.setString(++index, eventInfo.getStringData().get(EXECUTION_ID));
     upsertStatement.setString(++index, eventInfo.getStringData().get(APPROVED_BY));
     upsertStatement.setString(++index, eventInfo.getStringData().get(APPROVAL_TYPE));
-    upsertStatement.setLong(++index, eventInfo.getLongData().get(APPROVED_AT));
+    upsertStatement.setLong(++index, getLongValue(APPROVED_AT, eventInfo));
     upsertStatement.setString(++index, eventInfo.getStringData().get(APPROVAL_COMMENT));
-    upsertStatement.setLong(++index, eventInfo.getLongData().get(APPROVAL_EXPIRY));
+    upsertStatement.setLong(++index, getLongValue(APPROVAL_EXPIRY, eventInfo));
+    upsertStatement.setBoolean(++index, eventInfo.getBooleanData().get(MANUAL_INTERVENTION));
     upsertStatement.execute();
+  }
+  private Long getLongValue(String key, TimeSeriesEventInfo eventInfo) {
+    if (eventInfo != null && eventInfo.getLongData() != null && eventInfo.getLongData().get(key) != null) {
+      return eventInfo.getLongData().get(key);
+    }
+    return 0L;
   }
 }
