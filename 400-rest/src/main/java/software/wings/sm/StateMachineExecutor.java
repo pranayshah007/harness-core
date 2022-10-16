@@ -83,6 +83,7 @@ import io.harness.delegate.beans.DelegateTaskDetails;
 import io.harness.delegate.beans.DelegateTaskNotifyResponseData;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.eraro.ErrorCode;
+import io.harness.event.usagemetrics.UsageMetricsEventPublisher;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.FailureType;
 import io.harness.exception.InvalidRequestException;
@@ -227,6 +228,7 @@ public class StateMachineExecutor implements StateInspectionListener {
   @Inject private KryoSerializer kryoSerializer;
   @Inject private RemoteObserverInformer remoteObserverInformer;
   @Inject private WorkflowExecutionUpdate workflowExecutionUpdate;
+  @Inject private UsageMetricsEventPublisher usageMetricsEventPublisher;
   /**
    * Execute.
    *
@@ -387,6 +389,8 @@ public class StateMachineExecutor implements StateInspectionListener {
 
     stateExecutionInstance.setExpiryTs(Long.MAX_VALUE);
     wingsPersistence.save(stateExecutionInstance);
+    usageMetricsEventPublisher.publishDeploymentStepTimeSeriesEvent(
+        stateExecutionInstance.getAccountId(), stateExecutionInstance);
     return stateExecutionInstance;
   }
 
@@ -877,6 +881,8 @@ public class StateMachineExecutor implements StateInspectionListener {
     if (updated == null) {
       log.error("[TimeOut Op] StateExecutionInstance stateTimeout update Failed");
     }
+    usageMetricsEventPublisher.publishDeploymentStepTimeSeriesEvent(
+        stateExecutionInstance.getAccountId(), stateExecutionInstance);
     return updated;
   }
 
@@ -1092,6 +1098,8 @@ public class StateMachineExecutor implements StateInspectionListener {
               + "stateExecutionInstance: {},  status: {}",
           stateExecutionInstance.getUuid(), status);
     }
+    usageMetricsEventPublisher.publishDeploymentStepTimeSeriesEvent(
+        stateExecutionInstance.getAccountId(), stateExecutionInstance);
 
     final StateStatusUpdateInfo arg =
         StateStatusUpdateInfo.buildFromStateExecutionInstance(stateExecutionInstance, false);
@@ -1131,6 +1139,9 @@ public class StateMachineExecutor implements StateInspectionListener {
               + "stateExecutionInstance: {},  status: {}",
           stateExecutionInstance.getUuid(), status);
     }
+
+    usageMetricsEventPublisher.publishDeploymentStepTimeSeriesEvent(
+        stateExecutionInstance.getAccountId(), stateExecutionInstance);
 
     final StateStatusUpdateInfo arg =
         StateStatusUpdateInfo.buildFromStateExecutionInstance(stateExecutionInstance, false);
@@ -1799,6 +1810,9 @@ public class StateMachineExecutor implements StateInspectionListener {
           stateExecutionInstance.getUuid(), status, existingExecutionStatus);
       return false;
     }
+    usageMetricsEventPublisher.publishDeploymentStepTimeSeriesEvent(
+        stateExecutionInstance.getAccountId(), stateExecutionInstance);
+
     final StateStatusUpdateInfo arg = StateStatusUpdateInfo.buildFromStateExecutionInstance(stateExecutionInstance,
         reason != null
             && (RESUME_ALL == reason.getExecutionInterruptType()
@@ -1932,6 +1946,9 @@ public class StateMachineExecutor implements StateInspectionListener {
 
       return false;
     }
+
+    usageMetricsEventPublisher.publishDeploymentStepTimeSeriesEvent(
+        stateExecutionInstance.getAccountId(), stateExecutionInstance);
 
     final StateStatusUpdateInfo arg = StateStatusUpdateInfo.buildFromStateExecutionInstance(stateExecutionInstance,
         isApprovalResumed(stateExecutionInstance.getStateType(), stateExecutionInstance.getStatus()));
@@ -2240,6 +2257,10 @@ public class StateMachineExecutor implements StateInspectionListener {
     if (updateResult == null || updateResult.getWriteResult() == null || updateResult.getWriteResult().getN() != 1) {
       throw new WingsException(ErrorCode.RETRY_FAILED).addParam("displayName", stateExecutionInstance.getDisplayName());
     }
+
+    usageMetricsEventPublisher.publishDeploymentStepTimeSeriesEvent(
+        stateExecutionInstance.getAccountId(), stateExecutionInstance);
+
     final StateStatusUpdateInfo arg =
         StateStatusUpdateInfo.buildFromStateExecutionInstance(stateExecutionInstance, false);
     statusUpdateSubject.fireInform(StateStatusUpdate::stateExecutionStatusUpdated, arg);
@@ -2296,6 +2317,14 @@ public class StateMachineExecutor implements StateInspectionListener {
           workflowExecutionInterrupt.getAppId(), workflowExecutionInterrupt.getExecutionUuid());
       return false;
     }
+
+    for (String id : leafInstanceIds) {
+      StateExecutionInstance stateExecutionInstance = getStateExecutionInstance(
+          workflowExecutionInterrupt.getAppId(), workflowExecutionInterrupt.getExecutionUuid(), id);
+      usageMetricsEventPublisher.publishDeploymentStepTimeSeriesEvent(
+          stateExecutionInstance.getAccountId(), stateExecutionInstance);
+    }
+
     return true;
   }
 

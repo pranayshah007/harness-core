@@ -20,6 +20,7 @@ import io.harness.queue.QueuePublisher;
 import io.harness.version.VersionInfoManager;
 
 import software.wings.api.DeploymentEvent;
+import software.wings.api.DeploymentStepTimeSeriesEvent;
 import software.wings.api.DeploymentTimeSeriesEvent;
 import software.wings.api.InstanceEvent;
 import software.wings.collect.ArtifactCollectEventListener;
@@ -30,6 +31,7 @@ import software.wings.prune.PruneEntityListener;
 import software.wings.prune.PruneEvent;
 import software.wings.service.impl.ExecutionEvent;
 import software.wings.service.impl.ExecutionEventListener;
+import software.wings.service.impl.event.DeploymentStepTimeSeriesEventListener;
 import software.wings.service.impl.event.DeploymentTimeSeriesEventListener;
 import software.wings.service.impl.event.GenericEventListener;
 import software.wings.service.impl.instance.DeploymentEventListener;
@@ -158,6 +160,22 @@ public class ManagerQueueModule extends AbstractModule {
         asList(asList(versionInfoManager.getVersionInfo().getVersion())), config);
   }
 
+  @Provides
+  @Singleton
+  QueuePublisher<DeploymentStepTimeSeriesEvent> deploymentStepTimeSeriesQueuePublisher(
+      Injector injector, VersionInfoManager versionInfoManager, PublisherConfiguration config) {
+    return QueueFactory.createQueuePublisher(injector, DeploymentStepTimeSeriesEvent.class,
+        asList(versionInfoManager.getVersionInfo().getVersion()), config);
+  }
+
+  @Provides
+  @Singleton
+  QueueConsumer<DeploymentStepTimeSeriesEvent> deploymentStepTimeSeriesQueueConsumer(
+      Injector injector, VersionInfoManager versionInfoManager, PublisherConfiguration config) {
+    return QueueFactory.createQueueConsumer(injector, DeploymentStepTimeSeriesEvent.class, ofMinutes(1),
+        asList(asList(versionInfoManager.getVersionInfo().getVersion())), config);
+  }
+
   @Override
   protected void configure() {
     bind(new TypeLiteral<QueueListener<PruneEvent>>() {}).to(PruneEntityListener.class);
@@ -168,5 +186,7 @@ public class ManagerQueueModule extends AbstractModule {
     bind(new TypeLiteral<QueueListener<GenericEvent>>() {}).to(GenericEventListener.class);
     bind(new TypeLiteral<QueueListener<InstanceEvent>>() {}).to(InstanceEventListener.class);
     bind(new TypeLiteral<QueueListener<DeploymentTimeSeriesEvent>>() {}).to(DeploymentTimeSeriesEventListener.class);
+    bind(new TypeLiteral<QueueListener<DeploymentStepTimeSeriesEvent>>() {
+    }).to(DeploymentStepTimeSeriesEventListener.class);
   }
 }

@@ -14,6 +14,7 @@ import static java.util.stream.Collectors.groupingBy;
 import io.harness.beans.WorkflowType;
 import io.harness.event.timeseries.processor.EventProcessor;
 import io.harness.event.timeseries.processor.StepEventProcessor;
+import io.harness.persistence.HPersistence;
 import io.harness.queue.QueuePublisher;
 
 import software.wings.api.ApprovalStateExecutionData;
@@ -53,6 +54,7 @@ public class UsageMetricsEventPublisher {
   @Inject private QueuePublisher<DeploymentTimeSeriesEvent> deploymentTimeSeriesEventQueue;
   @Inject private QueuePublisher<InstanceEvent> instanceTimeSeriesEventQueue;
   @Inject private QueuePublisher<DeploymentStepTimeSeriesEvent> deploymentStepTimeSeriesEventQueue;
+  @Inject HPersistence persistence;
   SimpleDateFormat sdf;
 
   private String APPROVAL = "APPROVAL";
@@ -99,7 +101,15 @@ public class UsageMetricsEventPublisher {
     stringData.put(StepEventProcessor.PARENT_TYPE, stateExecutionInstance.getExecutionType().toString());
     stringData.put(StepEventProcessor.EXECUTION_ID, stateExecutionInstance.getExecutionUuid());
 
-    // logic for failure details
+    if (stateExecutionInstance.getStateExecutionMap() != null) {
+      if (stateExecutionInstance.getStateExecutionMap().get(stateExecutionInstance.getStateName()) != null) {
+        stringData.put(StepEventProcessor.FAILURE_DETAILS,
+            stateExecutionInstance.getStateExecutionMap().get(stateExecutionInstance.getStateName()).getErrorMsg());
+      } else if (stateExecutionInstance.getStateExecutionMap().get(stateExecutionInstance.getDisplayName()) != null) {
+        stringData.put(StepEventProcessor.FAILURE_DETAILS,
+            stateExecutionInstance.getStateExecutionMap().get(stateExecutionInstance.getDisplayName()).getErrorMsg());
+      }
+    }
 
     longData.put(StepEventProcessor.START_TIME, stateExecutionInstance.getStartTs());
     longData.put(StepEventProcessor.END_TIME, stateExecutionInstance.getEndTs());
@@ -127,6 +137,22 @@ public class UsageMetricsEventPublisher {
     }
 
     booleanData.put(StepEventProcessor.MANUAL_INTERVENTION, stateExecutionInstance.isWaitingForManualIntervention());
+
+    /*
+
+    // logic for manual intervention details
+
+    if (stateExecutionInstance.isWaitingForManualIntervention()) {
+
+      try (HIterator<ExecutionInterrupt> iterator = new
+    HIterator<>(persistence.createQuery(ExecutionInterrupt.class).field(ExecutionInterruptKeys.stateExecutionInstanceId).equal(stateExecutionInstance.getUuid()).field(ExecutionInterruptKeys.accountId).equal(accountId).field(ExecutionInterruptKeys.appId).equal(stateExecutionInstance.getAppId()).fetch()))
+    { while (iterator.hasNext()) {
+
+        }
+      }
+    }
+
+     */
 
     return DeploymentStepTimeSeriesEvent.builder()
         .timeSeriesEventInfo(TimeSeriesEventInfo.builder()
