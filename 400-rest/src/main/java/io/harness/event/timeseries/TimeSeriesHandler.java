@@ -12,10 +12,7 @@ import static io.harness.event.model.EventType.*;
 import io.harness.event.handler.EventHandler;
 import io.harness.event.listener.EventListener;
 import io.harness.event.model.Event;
-import io.harness.event.timeseries.processor.DeploymentEventProcessor;
-import io.harness.event.timeseries.processor.DeploymentStepEventProcessor;
-import io.harness.event.timeseries.processor.ServiceGuardSetupEventProcessor;
-import io.harness.event.timeseries.processor.VerificationEventProcessor;
+import io.harness.event.timeseries.processor.*;
 import io.harness.event.timeseries.processor.instanceeventprocessor.InstanceEventProcessor;
 import io.harness.logging.AutoLogContext;
 
@@ -36,6 +33,7 @@ public class TimeSeriesHandler implements EventHandler {
   @Inject private InstanceEventProcessor instanceEventProcessor;
   @Inject private VerificationEventProcessor verificationEventProcessor;
   @Inject private ServiceGuardSetupEventProcessor serviceGuardSetupEventProcessor;
+  @Inject private ExecutionInterruptProcessor executionInterruptProcessor;
 
   @Inject
   public TimeSeriesHandler(EventListener eventListener) {
@@ -44,8 +42,8 @@ public class TimeSeriesHandler implements EventHandler {
 
   private void registerForEvents(EventListener eventListener) {
     eventListener.registerEventHandler(this,
-        Sets.newHashSet(
-            DEPLOYMENT_EVENT, DEPLOYMENT_STEP_EVENT, INSTANCE_EVENT, DEPLOYMENT_VERIFIED, SERVICE_GUARD_SETUP));
+        Sets.newHashSet(DEPLOYMENT_EVENT, DEPLOYMENT_STEP_EVENT, EXECUTION_INTERRUPT, INSTANCE_EVENT,
+            DEPLOYMENT_VERIFIED, SERVICE_GUARD_SETUP));
   }
 
   @Override
@@ -71,6 +69,14 @@ public class TimeSeriesHandler implements EventHandler {
       case DEPLOYMENT_STEP_EVENT:
         try {
           deploymentStepEventProcessor.processEvent((TimeSeriesEventInfo) event.getEventData().getEventInfo());
+        } catch (Exception ex) {
+          log.error(
+              "Failed to process Event : [{}] , error : [{}]", event.toString(), Arrays.toString(ex.getStackTrace()));
+        }
+        break;
+      case EXECUTION_INTERRUPT:
+        try {
+          executionInterruptProcessor.processEvent((TimeSeriesEventInfo) event.getEventData().getEventInfo());
         } catch (Exception ex) {
           log.error(
               "Failed to process Event : [{}] , error : [{}]", event.toString(), Arrays.toString(ex.getStackTrace()));

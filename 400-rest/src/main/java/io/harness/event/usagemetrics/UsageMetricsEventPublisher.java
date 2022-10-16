@@ -17,10 +17,7 @@ import io.harness.event.timeseries.processor.StepEventProcessor;
 import io.harness.persistence.HPersistence;
 import io.harness.queue.QueuePublisher;
 
-import software.wings.api.ApprovalStateExecutionData;
-import software.wings.api.DeploymentStepTimeSeriesEvent;
-import software.wings.api.DeploymentTimeSeriesEvent;
-import software.wings.api.InstanceEvent;
+import software.wings.api.*;
 import software.wings.beans.EnvSummary;
 import software.wings.beans.WorkflowExecution;
 import software.wings.beans.artifact.Artifact;
@@ -30,6 +27,7 @@ import software.wings.service.impl.event.timeseries.TimeSeriesBatchEventInfo;
 import software.wings.service.impl.event.timeseries.TimeSeriesBatchEventInfo.DataPoint;
 import software.wings.service.impl.event.timeseries.TimeSeriesEventInfo;
 import software.wings.service.intfc.WorkflowExecutionService;
+import software.wings.sm.ExecutionInterrupt;
 import software.wings.sm.StateExecutionData;
 import software.wings.sm.StateExecutionInstance;
 
@@ -54,6 +52,7 @@ public class UsageMetricsEventPublisher {
   @Inject private QueuePublisher<DeploymentTimeSeriesEvent> deploymentTimeSeriesEventQueue;
   @Inject private QueuePublisher<InstanceEvent> instanceTimeSeriesEventQueue;
   @Inject private QueuePublisher<DeploymentStepTimeSeriesEvent> deploymentStepTimeSeriesEventQueue;
+  @Inject private QueuePublisher<ExecutionInterruptTimeSeriesEvent> executionInterruptTimeSeriesEventQueue;
   @Inject HPersistence persistence;
   SimpleDateFormat sdf;
 
@@ -164,6 +163,51 @@ public class UsageMetricsEventPublisher {
                                  .longData(longData)
                                  .stringData(stringData)
                                  .build())
+        .build();
+  }
+
+  public void publishExecutionInterruptTimeSeriesEvent(String accountId, ExecutionInterrupt executionInterrupt) {
+    ExecutionInterruptTimeSeriesEvent event = constructExecutionInterruptTimeSeriesEvent(accountId, executionInterrupt);
+    executorService.submit(() -> {
+      try {
+        executionInterruptTimeSeriesEventQueue.send(event);
+      } catch (Exception e) {
+        log.error("Failed to publish execution interrupt time series event:[{}]", event.getId(), e);
+      }
+    });
+  }
+
+  private ExecutionInterruptTimeSeriesEvent constructExecutionInterruptTimeSeriesEvent(
+      String accountId, ExecutionInterrupt executionInterrupt) {
+    log.info("Reporting execution interrupt");
+    Map<String, String> stringData = new HashMap<>();
+    Map<String, Long> longData = new HashMap<>();
+
+    stringData.put(StepEventProcessor.MANUAL_INTERVENTION_ID, executionInterrupt.getUuid());
+    if (executionInterrupt.getExecutionInterruptType() != null) {
+      stringData.put(
+          StepEventProcessor.MANUAL_INTERVENTION_TYPE, executionInterrupt.getExecutionInterruptType().toString());
+    }
+
+    stringData.put(StepEventProcessor.EXECUTION_ID, executionInterrupt.getExecutionUuid());
+    stringData.put(StepEventProcessor.APP_ID, executionInterrupt.getAppId());
+    stringData.put(StepEventProcessor.ID, executionInterrupt.getStateExecutionInstanceId());
+
+    if (executionInterrupt.getCreatedBy() != null && executionInterrupt.getCreatedBy().getEmail() != null) {
+      stringData.put(StepEventProcessor.MANUAL_INTERVENTION_CREATED_BY, executionInterrupt.getCreatedBy().getEmail());
+    }
+
+    if (executionInterrupt.getLastUpdatedBy() != null && executionInterrupt.getLastUpdatedBy().getEmail() != null) {
+      stringData.put(
+          StepEventProcessor.MANUAL_INTERVENTION_UPDATED_BY, executionInterrupt.getLastUpdatedBy().getEmail());
+    }
+
+    longData.put(StepEventProcessor.MANUAL_INTERVENTION_CREATED_AT, executionInterrupt.getCreatedAt());
+    longData.put(StepEventProcessor.MANUAL_INTERVENTION_UPDATED_AT, executionInterrupt.getLastUpdatedAt());
+
+    return ExecutionInterruptTimeSeriesEvent.builder()
+        .timeSeriesEventInfo(
+            TimeSeriesEventInfo.builder().stringData(stringData).longData(longData).accountId(accountId).build())
         .build();
   }
 

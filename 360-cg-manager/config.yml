@@ -655,6 +655,7 @@ eventListenersCountConfig:
   instanceEventListenerCount: ${INSTANCE_EVENT_LISTENER_COUNT:-2}
   deploymentTimeSeriesEventListenerCount: ${DEPLOYMENT_TIME_SERIES_EVENT_LISTENER_COUNT:-2}
   deploymentStepTimeSeriesEventListenerCount: ${DEPLOYMENT_STEP_TIME_SERIES_EVENT_LISTENER_COUNT:-2}
+  executionInterruptTimeSeriesEventListenerCount: ${EXECUTION_INTERRUPT_TIME_SERIES_EVENT_LISTENER_COUNT:-2}
   executionEventListenerCount: ${EXECUTION_EVENT_LISTENER_COUNT:-3}
   generalNotifyEventListenerCount: ${GENERAL_NOTIFY_EVENT_LISTENER_COUNT:-5}
   orchestrationNotifyEventListenerCount: ${ORCHESTRATION_NOTIFY_EVENT_LISTENER_COUNT:-5}

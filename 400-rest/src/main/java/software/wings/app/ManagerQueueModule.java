@@ -19,10 +19,7 @@ import io.harness.queue.QueueListener;
 import io.harness.queue.QueuePublisher;
 import io.harness.version.VersionInfoManager;
 
-import software.wings.api.DeploymentEvent;
-import software.wings.api.DeploymentStepTimeSeriesEvent;
-import software.wings.api.DeploymentTimeSeriesEvent;
-import software.wings.api.InstanceEvent;
+import software.wings.api.*;
 import software.wings.collect.ArtifactCollectEventListener;
 import software.wings.collect.CollectEvent;
 import software.wings.helpers.ext.mail.EmailData;
@@ -33,6 +30,7 @@ import software.wings.service.impl.ExecutionEvent;
 import software.wings.service.impl.ExecutionEventListener;
 import software.wings.service.impl.event.DeploymentStepTimeSeriesEventListener;
 import software.wings.service.impl.event.DeploymentTimeSeriesEventListener;
+import software.wings.service.impl.event.ExecutionInterruptTimeSeriesEventListener;
 import software.wings.service.impl.event.GenericEventListener;
 import software.wings.service.impl.instance.DeploymentEventListener;
 import software.wings.service.impl.instance.InstanceEventListener;
@@ -176,6 +174,22 @@ public class ManagerQueueModule extends AbstractModule {
         asList(asList(versionInfoManager.getVersionInfo().getVersion())), config);
   }
 
+  @Provides
+  @Singleton
+  QueuePublisher<ExecutionInterruptTimeSeriesEvent> ExecutionInterruptTimeSeriesQueuePublisher(
+      Injector injector, VersionInfoManager versionInfoManager, PublisherConfiguration config) {
+    return QueueFactory.createQueuePublisher(injector, ExecutionInterruptTimeSeriesEvent.class,
+        asList(versionInfoManager.getVersionInfo().getVersion()), config);
+  }
+
+  @Provides
+  @Singleton
+  QueueConsumer<ExecutionInterruptTimeSeriesEvent> ExecutionInterruptTimeSeriesQueueConsumer(
+      Injector injector, VersionInfoManager versionInfoManager, PublisherConfiguration config) {
+    return QueueFactory.createQueueConsumer(injector, ExecutionInterruptTimeSeriesEvent.class, ofMinutes(1),
+        asList(asList(versionInfoManager.getVersionInfo().getVersion())), config);
+  }
+
   @Override
   protected void configure() {
     bind(new TypeLiteral<QueueListener<PruneEvent>>() {}).to(PruneEntityListener.class);
@@ -188,5 +202,7 @@ public class ManagerQueueModule extends AbstractModule {
     bind(new TypeLiteral<QueueListener<DeploymentTimeSeriesEvent>>() {}).to(DeploymentTimeSeriesEventListener.class);
     bind(new TypeLiteral<QueueListener<DeploymentStepTimeSeriesEvent>>() {
     }).to(DeploymentStepTimeSeriesEventListener.class);
+    bind(new TypeLiteral<QueueListener<ExecutionInterruptTimeSeriesEvent>>() {
+    }).to(ExecutionInterruptTimeSeriesEventListener.class);
   }
 }
