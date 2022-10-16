@@ -76,8 +76,8 @@ public class AWSEC2RecommendationTasklet  implements Tasklet {
                     log.info("found the harness-ce account");
 
                     List<Ec2UtilzationData> utilzationData =
-                            ec2MetricHelper.getUtilizationMetrics(entry.getValue(), Date.from(now.minus(2, ChronoUnit.HOURS)),
-                            Date.from(now.minus(1, ChronoUnit.HOURS)), "i-0ee034ec9d9f456e8", "us-east-1");
+                            ec2MetricHelper.getUtilizationMetrics(entry.getValue(), Date.from(now.minus(2, ChronoUnit.DAYS)),
+                            Date.from(now.minus(1, ChronoUnit.DAYS)), "i-0ee034ec9d9f456e8", "us-east-1");
                     log.info("utilzationData.size = {}", utilzationData.size());
                     updateUtilData(accountId, utilzationData);
                     log.info("Started recomm data retrieval for us-east-1");
@@ -105,6 +105,8 @@ public class AWSEC2RecommendationTasklet  implements Tasklet {
             // Initialising List of Metrics to handle Utilization Metrics Downtime (Ideally this will be of size 1)
             // We do not need a Default value as such a scenario will never exist, if there is no data. It will not be
             // inserted to DB.
+            long startTime = 0L;
+            long oneHourMillis = Duration.ofDays(1).toMillis();
             List<Double> cpuUtilizationAvgList = new ArrayList<>();
             List<Double> cpuUtilizationMaxList = new ArrayList<>();
             List<Double> memoryUtilizationAvgList = new ArrayList<>();
@@ -114,7 +116,11 @@ public class AWSEC2RecommendationTasklet  implements Tasklet {
 
             for (MetricValue utilizationMetric : utilizationMetrics.getMetricValues()) {
                 // Assumption that size of all the metrics and timestamps will be same across the 4 metrics
-                startTimestampList = utilizationMetric.getTimestamps();
+                if (!utilizationMetric.getTimestamps().isEmpty()) {
+                    startTime = utilizationMetric.getTimestamps().get(0).toInstant().toEpochMilli();
+                    log.info("startTime = {}", startTime);
+                }
+
                 List<Double> metricsList = utilizationMetric.getValues();
                 metricsListSize = metricsList.size();
                 log.info("metricsListSize = {}", metricsListSize);
@@ -150,18 +156,15 @@ public class AWSEC2RecommendationTasklet  implements Tasklet {
 
             // POJO and insertion to DB
 
-            long startTime = startTimestampList.get(0).toInstant().toEpochMilli();
-            long oneHourMillis = Duration.ofDays(1).toMillis();
-
             InstanceUtilizationData utilizationData =
                     InstanceUtilizationData.builder()
                             .accountId(accountId)
                             .instanceId(instanceId)
                             .instanceType(instanceType)
-                            .cpuUtilizationMax(getScaledUtilValue(cpuUtilizationMaxList.get(0)))
-                            .cpuUtilizationAvg(getScaledUtilValue(cpuUtilizationAvgList.get(0)))
-                            .memoryUtilizationMax(getScaledUtilValue(memoryUtilizationMaxList.get(0)))
-                            .memoryUtilizationAvg(getScaledUtilValue(memoryUtilizationAvgList.get(0)))
+                            .cpuUtilizationMax((!cpuUtilizationMaxList.isEmpty()) ? getScaledUtilValue(cpuUtilizationMaxList.get(0)) : 0.0)
+                            .cpuUtilizationAvg((!cpuUtilizationAvgList.isEmpty()) ?getScaledUtilValue(cpuUtilizationAvgList.get(0)) : 0.0)
+                            .memoryUtilizationMax((!memoryUtilizationMaxList.isEmpty()) ?getScaledUtilValue(memoryUtilizationMaxList.get(0)) : 0.0)
+                            .memoryUtilizationAvg((!memoryUtilizationAvgList.isEmpty()) ?getScaledUtilValue(memoryUtilizationAvgList.get(0)) : 0.0)
                             .startTimestamp(startTime)
                             .endTimestamp(startTime + oneHourMillis)
                             .build();

@@ -104,7 +104,8 @@ public class EC2MetricHelper {
                     .stream()
                     .collect(Collectors.toMap(MetricDataResult::getId, Function.identity())));
         });
-        log.info("metricDataResultMap = {}", metricDataResultMap.toString());
+        log.info("metricDataResultMap = {}", metricDataResultMap);
+        log.info("metricDataResultMap.size = {}", metricDataResultMap.size());
         if (metricDataResultMap.containsKey("890436954479")) {
             log.info("metricDataResultMap(890436954479) = {}", metricDataResultMap.get("890436954479").toString());
         }
@@ -131,6 +132,7 @@ public class EC2MetricHelper {
                 }
             }
         }
+        log.info("metricValues.size = {}", metricValues.size());
         metrics.metricValues(metricValues);
         return metrics.build();
     }
