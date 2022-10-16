@@ -25,7 +25,8 @@ public class DeploymentStepEventProcessor implements StepEventProcessor<TimeSeri
       log.info("TimeScaleDB not found, not saving step deployment data to TimeScaleDB");
       return;
     }
-    if (eventInfo.getAccountId() == null || eventInfo.getLongData() == null || eventInfo.getStringData() == null) {
+    if (eventInfo.getAccountId() == null || eventInfo.getLongData() == null || eventInfo.getStringData() == null
+        || eventInfo.getBooleanData() == null) {
       log.info("Invalid TimeSeriesEventInfo [{}] , not saving step deployment data to TimeScaleDB", eventInfo);
       return;
     }
