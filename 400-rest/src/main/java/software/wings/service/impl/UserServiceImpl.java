@@ -2003,6 +2003,7 @@ public class UserServiceImpl implements UserService {
       }
     } catch (Exception ex) {
       log.error("NG User Invite: while calling ngInviteClient.completeInvite() an expection: ", ex);
+      throw new RuntimeException("Could not complete invite in NG");
     }
   }
 
