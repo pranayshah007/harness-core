@@ -1,5 +1,7 @@
 package io.harness.event.timeseries.processor;
 
+import static io.harness.event.timeseries.processor.ProcessorHelper.getLongValue;
+
 import io.harness.timescaledb.TimeScaleDBService;
 
 import software.wings.service.impl.event.timeseries.TimeSeriesEventInfo;
@@ -77,11 +79,5 @@ public class DeploymentStepEventProcessor implements StepEventProcessor<TimeSeri
     upsertStatement.setLong(++index, getLongValue(APPROVAL_EXPIRY, eventInfo));
     upsertStatement.setBoolean(++index, eventInfo.getBooleanData().get(MANUAL_INTERVENTION));
     upsertStatement.execute();
-  }
-  private Long getLongValue(String key, TimeSeriesEventInfo eventInfo) {
-    if (eventInfo != null && eventInfo.getLongData() != null && eventInfo.getLongData().get(key) != null) {
-      return eventInfo.getLongData().get(key);
-    }
-    return 0L;
   }
 }
