@@ -210,7 +210,8 @@ public class InviteServiceImpl implements InviteService {
     }
     boolean[] scimLdapArray = {isScimInvite, isLdap};
     try {
-      return wrapperForTransactions(this::newInvite, invite, scimLdapArray);
+      return this.newInvite(invite, scimLdapArray);
+      //      return wrapperForTransactions(this::newInvite, invite, scimLdapArray);
     } catch (DuplicateKeyException ex) {
       throw new DuplicateFieldException(getExceptionMessage(invite), USER_SRE, ex);
     }
