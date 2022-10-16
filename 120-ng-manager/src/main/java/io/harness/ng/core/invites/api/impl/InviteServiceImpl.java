@@ -362,7 +362,10 @@ public class InviteServiceImpl implements InviteService {
     UserInviteDTO userInviteDTO =
         UserInviteDTO.builder().accountId(accountIdentifier).email(email).name(email).token(jwtToken).build();
     log.info("NG User Invite: calling using userClient to createUserAndCompleteNGInvite");
-    CGRestUtils.getResponse(userClient.createUserAndCompleteNGInvite(userInviteDTO, isScimInvite));
+    Boolean response = CGRestUtils.getResponse(userClient.createUserAndCompleteNGInvite(userInviteDTO, isScimInvite));
+    if (!response) {
+      throw new RuntimeException("CG Manager could not complete invite");
+    }
   }
 
   private URI getUserInfoSubmitUrl(
