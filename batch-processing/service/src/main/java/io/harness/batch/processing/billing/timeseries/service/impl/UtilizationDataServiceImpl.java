@@ -60,32 +60,38 @@ public class UtilizationDataServiceImpl {
 
   public boolean create(List<InstanceUtilizationData> instanceUtilizationDataList) {
     boolean successfulInsert = false;
-    if (timeScaleDBService.isValid() && isNotEmpty(instanceUtilizationDataList)) {
-      log.info("Util data size {}", instanceUtilizationDataList.size());
-      int retryCount = 0;
-      while (!successfulInsert && retryCount < MAX_RETRY_COUNT) {
-        try (Connection dbConnection = timeScaleDBService.getDBConnection();
-             PreparedStatement statement = dbConnection.prepareStatement(INSERT_STATEMENT)) {
-          int index = 0;
-          for (InstanceUtilizationData instanceUtilizationData : instanceUtilizationDataList) {
-            updateInsertStatement(statement, instanceUtilizationData);
-            statement.addBatch();
-            index++;
+    if (timeScaleDBService.isValid()) {
+      log.info("timeScaleDBService is valid");
+      log.info("Util data = {}", instanceUtilizationDataList);
+      if (isNotEmpty(instanceUtilizationDataList)) {
+        log.info("Util data size {}", instanceUtilizationDataList.size());
+          int retryCount = 0;
+          while (!successfulInsert && retryCount < MAX_RETRY_COUNT) {
+            try (Connection dbConnection = timeScaleDBService.getDBConnection();
+                 PreparedStatement statement = dbConnection.prepareStatement(INSERT_STATEMENT)) {
+              int index = 0;
+              for (InstanceUtilizationData instanceUtilizationData : instanceUtilizationDataList) {
+                updateInsertStatement(statement, instanceUtilizationData);
+                statement.addBatch();
+                index++;
 
-            if (index % BATCH_SIZE == 0 || index == instanceUtilizationDataList.size()) {
-              statement.executeBatch();
+                if (index % BATCH_SIZE == 0 || index == instanceUtilizationDataList.size()) {
+                  log.info("executing the insert statement for ec2 util");
+                  statement.executeBatch();
+                }
+              }
+              successfulInsert = true;
+            } catch (SQLException e) {
+              log.error("Failed to save instance Utilization data,[{}],retryCount=[{}], Exception: ",
+                      instanceUtilizationDataList, retryCount, e);
+              retryCount++;
             }
           }
-          successfulInsert = true;
-        } catch (SQLException e) {
-          log.error("Failed to save instance Utilization data,[{}],retryCount=[{}], Exception: ",
-              instanceUtilizationDataList, retryCount, e);
-          retryCount++;
-        }
+        } else {
+          log.info("Not processing instance Utilization data:[{}]", instanceUtilizationDataList);
       }
-    } else {
-      log.info("Not processing instance Utilization data:[{}]", instanceUtilizationDataList);
     }
+
     return successfulInsert;
   }
 

@@ -58,7 +58,7 @@ public class AWSEC2RecommendationTasklet  implements Tasklet {
 
     @Override
     public RepeatStatus execute(StepContribution stepContribution, ChunkContext chunkContext) throws Exception {
-        log.info("Started EC2 recommendation data");
+        log.info("Started EC2 recommendation job");
         final JobConstants jobConstants = CCMJobConstants.fromContext(chunkContext);
         String accountId = jobConstants.getAccountId();
         Instant startTime = Instant.ofEpochMilli(jobConstants.getJobStartTime());
@@ -78,6 +78,7 @@ public class AWSEC2RecommendationTasklet  implements Tasklet {
                     List<Ec2UtilzationData> utilzationData =
                             ec2MetricHelper.getUtilizationMetrics(entry.getValue(), Date.from(now.minus(2, ChronoUnit.HOURS)),
                             Date.from(now.minus(1, ChronoUnit.HOURS)), "i-0fbd100c13bf0f7b4", "us-east-1");
+                    log.info("utilzationData.size = {}", utilzationData.size());
                     updateUtilData(accountId, utilzationData);
                     log.info("Started recomm data retrieval for us-east-1");
                     awsec2RecommendationService.getRecommendations(EC2RecommendationRequest.builder()
@@ -99,6 +100,7 @@ public class AWSEC2RecommendationTasklet  implements Tasklet {
 
     private void updateUtilData(String accountId, List<Ec2UtilzationData> utilizationMetricsList) {
         List<InstanceUtilizationData> instanceUtilizationDataList = new ArrayList<>();
+        log.info("utilizationMetricsList size = {}", utilizationMetricsList.size());
         utilizationMetricsList.forEach(utilizationMetrics -> {
             String instanceId;
             String instanceType;
@@ -120,7 +122,7 @@ public class AWSEC2RecommendationTasklet  implements Tasklet {
                 startTimestampList = utilizationMetric.getTimestamps();
                 List<Double> metricsList = utilizationMetric.getValues();
                 metricsListSize = metricsList.size();
-
+                log.info("metricsListSize = {}", metricsListSize);
                 switch (utilizationMetric.getStatistic()) {
                     case "Maximum":
                         switch (utilizationMetric.getMetricName()) {
@@ -154,7 +156,7 @@ public class AWSEC2RecommendationTasklet  implements Tasklet {
             // POJO and insertion to DB
             for (int metricIndex = 0; metricIndex < metricsListSize; metricIndex++) {
                 long startTime = startTimestampList.get(metricIndex).toInstant().toEpochMilli();
-                long oneHourMillis = Duration.ofHours(1).toMillis();
+                long oneHourMillis = Duration.ofDays(1).toMillis();
 
                 InstanceUtilizationData utilizationData =
                         InstanceUtilizationData.builder()
@@ -168,10 +170,12 @@ public class AWSEC2RecommendationTasklet  implements Tasklet {
                                 .startTimestamp(startTime)
                                 .endTimestamp(startTime + oneHourMillis)
                                 .build();
-
+                log.info("utilizationData = {}", utilizationData);
                 instanceUtilizationDataList.add(utilizationData);
             }
         });
+
+        log.info("size of the instanceUtilizationDataList lise = {}", instanceUtilizationDataList.size());
 
         utilizationDataService.create(instanceUtilizationDataList);
     }
