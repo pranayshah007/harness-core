@@ -80,7 +80,7 @@ public class AWSEC2RecommendationTasklet  implements Tasklet {
                             awsec2RecommendationService.getRecommendations(EC2RecommendationRequest.builder()
                                     .awsCrossAccountAttributes(entry.getValue())
                                     .build());
-                    if (!Objects.nonNull(ec2RecommendationResponse) &&
+                    if (Objects.nonNull(ec2RecommendationResponse) &&
                             !ec2RecommendationResponse.getRecommendationList().isEmpty()) {
                         log.info("recomm non null");
 //                        List<String> instances = new ArrayList<>(Arrays.asList("i-0cf7994781dce538a", "i-0ee034ec9d9f456e8", "i-07bd941e66e9273c5", "i-054f2bed517243117"));
