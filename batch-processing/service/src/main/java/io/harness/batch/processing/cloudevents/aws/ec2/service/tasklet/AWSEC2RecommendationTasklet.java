@@ -161,6 +161,8 @@ public class AWSEC2RecommendationTasklet  implements Tasklet {
                             .accountId(accountId)
                             .instanceId(instanceId)
                             .instanceType(instanceType)
+                            .settingId(instanceId)
+                            .clusterId(instanceId)
                             .cpuUtilizationMax((!cpuUtilizationMaxList.isEmpty()) ? getScaledUtilValue(cpuUtilizationMaxList.get(0)) : 0.0)
                             .cpuUtilizationAvg((!cpuUtilizationAvgList.isEmpty()) ?getScaledUtilValue(cpuUtilizationAvgList.get(0)) : 0.0)
                             .memoryUtilizationMax((!memoryUtilizationMaxList.isEmpty()) ?getScaledUtilValue(memoryUtilizationMaxList.get(0)) : 0.0)
