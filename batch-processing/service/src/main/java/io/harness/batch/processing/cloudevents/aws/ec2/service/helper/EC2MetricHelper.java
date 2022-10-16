@@ -73,22 +73,24 @@ public class EC2MetricHelper {
     }
 
     public List<Ec2UtilzationData> getUtilizationMetrics(AwsCrossAccountAttributes awsCrossAccountAttributes,
-                                                          Date startTime, Date endTime, String instanceId, String region) {
+                                                          Date startTime, Date endTime, List<String> instanceIds, String region) {
         // Aggregate all the individual metric queries we need into a single query.
         List<MetricDataQuery> aggregatedQuery = new ArrayList<>();
         log.info("entred in utilisation metric func!");
         for (Statistic stat : Arrays.asList(Average, Maximum)) {
             for (String metricName : Arrays.asList(CPU_UTILIZATION, MEMORY_UTILIZATION)) {
                 // instance level metrics
-                Metric clusterMetric = metricFor(metricName, instanceId);
-                aggregatedQuery.add(
-                        new MetricDataQuery()
-                                .withId(generateId(metricName, stat.toString(), instanceId))
-                                .withMetricStat(
-                                        new MetricStat().withPeriod(PERIOD).withStat(stat.toString()).withMetric(clusterMetric)));
+                for (String instanceId: instanceIds) {
+                    Metric clusterMetric = metricFor(metricName, instanceId);
+                    aggregatedQuery.add(
+                            new MetricDataQuery()
+                                    .withId(generateId(metricName, stat.toString(), instanceId))
+                                    .withMetricStat(
+                                            new MetricStat().withPeriod(PERIOD).withStat(stat.toString()).withMetric(clusterMetric)));
+                }
             }
         }
-        log.info("aggregatedQuery = {}", aggregatedQuery.get(0).toString());
+        log.info("aggregatedQuery = {}", aggregatedQuery);
 
         final Map<String, MetricDataResult> metricDataResultMap = new HashMap<>();
         Iterables.partition(aggregatedQuery, AwsCloudWatchHelperService.MAX_QUERIES_PER_CALL).forEach(part -> {
@@ -110,7 +112,12 @@ public class EC2MetricHelper {
             log.info("metricDataResultMap(890436954479) = {}", metricDataResultMap.get("890436954479").toString());
         }
         List<Ec2UtilzationData> utilizationMetrics = new ArrayList<>();
-        utilizationMetrics.add(extractMetricResult(metricDataResultMap, instanceId));
+
+        for (String instanceId : instanceIds) {
+            log.info("adding to the utilizationMetrics");
+            utilizationMetrics.add(extractMetricResult(metricDataResultMap, instanceId));
+        }
+        log.info("utilizationMetrics list = {}", utilizationMetrics);
         return utilizationMetrics;
     }
 

@@ -35,12 +35,7 @@ import software.wings.service.intfc.instance.CloudToHarnessMappingService;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static io.harness.batch.processing.ccm.UtilizationInstanceType.EC2_INSTANCE;
 import static software.wings.beans.SettingAttribute.SettingCategory.CE_CONNECTOR;
@@ -74,10 +69,10 @@ public class AWSEC2RecommendationTasklet  implements Tasklet {
                 Instant now = Instant.now().truncatedTo(ChronoUnit.HOURS);
                 if (entry.getKey().equals("890436954479")) {
                     log.info("found the harness-ce account");
-
+                    List<String> instances = new ArrayList<>(Arrays.asList("i-0cf7994781dce538a", "i-0ee034ec9d9f456e8", "i-07bd941e66e9273c5", "i-054f2bed517243117", ""));
                     List<Ec2UtilzationData> utilzationData =
                             ec2MetricHelper.getUtilizationMetrics(entry.getValue(), Date.from(now.minus(2, ChronoUnit.DAYS)),
-                            Date.from(now.minus(1, ChronoUnit.DAYS)), "i-0ee034ec9d9f456e8", "us-east-1");
+                            Date.from(now.minus(1, ChronoUnit.DAYS)), instances, "us-east-1");
                     log.info("utilzationData.size = {}", utilzationData.size());
                     updateUtilData(accountId, utilzationData);
                     log.info("Started recomm data retrieval for us-east-1");
