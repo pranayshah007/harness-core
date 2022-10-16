@@ -13,10 +13,10 @@ import io.harness.event.handler.EventHandler;
 import io.harness.event.listener.EventListener;
 import io.harness.event.model.Event;
 import io.harness.event.timeseries.processor.DeploymentEventProcessor;
+import io.harness.event.timeseries.processor.DeploymentStepEventProcessor;
 import io.harness.event.timeseries.processor.ServiceGuardSetupEventProcessor;
 import io.harness.event.timeseries.processor.VerificationEventProcessor;
 import io.harness.event.timeseries.processor.instanceeventprocessor.InstanceEventProcessor;
-import io.harness.event.timeseries.processor.utils.DeploymentStepEventProcessor;
 import io.harness.logging.AutoLogContext;
 
 import software.wings.service.impl.event.timeseries.TimeSeriesBatchEventInfo;

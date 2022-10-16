@@ -1,6 +1,5 @@
-package io.harness.event.timeseries.processor.utils;
+package io.harness.event.timeseries.processor;
 
-import io.harness.event.timeseries.processor.StepEventProcessor;
 import io.harness.timescaledb.TimeScaleDBService;
 
 import software.wings.service.impl.event.timeseries.TimeSeriesEventInfo;
@@ -24,9 +23,11 @@ public class DeploymentStepEventProcessor implements StepEventProcessor<TimeSeri
   public void processEvent(TimeSeriesEventInfo eventInfo) throws Exception {
     if (!timeScaleDBService.isValid()) {
       log.info("TimeScaleDB not found, not saving step deployment data to TimeScaleDB");
+      return;
     }
     if (eventInfo.getAccountId() == null || eventInfo.getLongData() == null || eventInfo.getStringData() == null) {
       log.info("Invalid TimeSeriesEventInfo [{}] , not saving step deployment data to TimeScaleDB", eventInfo);
+      return;
     }
     long startTime = System.currentTimeMillis();
     boolean successful = false;

@@ -1,6 +1,6 @@
 package software.wings.service.impl.event;
 
-import io.harness.event.timeseries.processor.utils.DeploymentStepEventProcessor;
+import io.harness.event.timeseries.processor.DeploymentStepEventProcessor;
 import io.harness.queue.QueueConsumer;
 import io.harness.queue.QueueListener;
 
