@@ -151,23 +151,6 @@ public class TemplateResourceApiUtils {
         .build();
   }
 
-  public Response updateStableTemplate(@AccountIdentifier String account, @OrgIdentifier String org,
-      @ProjectIdentifier String project, @ResourceIdentifier String templateIdentifier, String versionLabel,
-      GitFindDetails gitEntityBasicInfo, String comments) {
-    accessControlClient.checkForAccessOrThrow(ResourceScope.of(account, org, project),
-        Resource.of(TEMPLATE, templateIdentifier), PermissionTypes.TEMPLATE_EDIT_PERMISSION);
-    GitAwareContextHelper.populateGitDetails(templateResourceApiMapper.populateGitFindDetails(gitEntityBasicInfo));
-    log.info(String.format(
-        "Updating Stable Template with identifier %s with versionLabel %s in project %s, org %s, account %s",
-        templateIdentifier, versionLabel, project, org, account));
-
-    TemplateEntity templateEntity =
-        templateService.updateStableTemplateVersion(account, org, project, templateIdentifier, versionLabel, comments);
-    TemplateUpdateStableResponse templateUpdateStableResponse = new TemplateUpdateStableResponse();
-    templateUpdateStableResponse.setStableVersion(templateEntity.getVersionLabel());
-    return Response.ok().entity(templateUpdateStableResponse).tag(templateEntity.getVersion().toString()).build();
-  }
-
   public Response updateTemplate(@AccountIdentifier String account, @OrgIdentifier String org,
       @ProjectIdentifier String project, @ResourceIdentifier String templateIdentifier, String versionLabel,
       GitUpdateDetails gitEntityInfo, String templateYaml, boolean setDefaultTemplate, String comments) {
@@ -187,6 +170,23 @@ public class TemplateResourceApiUtils {
         .entity(templateResourceApiMapper.toTemplateResponse(templateResponseDTO))
         .tag(updatedTemplate.getVersion().toString())
         .build();
+  }
+
+  public Response updateStableTemplate(@AccountIdentifier String account, @OrgIdentifier String org,
+      @ProjectIdentifier String project, @ResourceIdentifier String templateIdentifier, String versionLabel,
+      GitFindDetails gitEntityBasicInfo, String comments) {
+    accessControlClient.checkForAccessOrThrow(ResourceScope.of(account, org, project),
+        Resource.of(TEMPLATE, templateIdentifier), PermissionTypes.TEMPLATE_EDIT_PERMISSION);
+    GitAwareContextHelper.populateGitDetails(templateResourceApiMapper.populateGitFindDetails(gitEntityBasicInfo));
+    log.info(String.format(
+        "Updating Stable Template with identifier %s with versionLabel %s in project %s, org %s, account %s",
+        templateIdentifier, versionLabel, project, org, account));
+
+    TemplateEntity templateEntity =
+        templateService.updateStableTemplateVersion(account, org, project, templateIdentifier, versionLabel, comments);
+    TemplateUpdateStableResponse templateUpdateStableResponse = new TemplateUpdateStableResponse();
+    templateUpdateStableResponse.setStableVersion(templateEntity.getVersionLabel());
+    return Response.ok().entity(templateUpdateStableResponse).tag(templateEntity.getVersion().toString()).build();
   }
 
   public Response deleteTemplate(@AccountIdentifier String account, @OrgIdentifier String org,

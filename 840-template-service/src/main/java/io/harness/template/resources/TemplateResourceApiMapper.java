@@ -205,6 +205,7 @@ public class TemplateResourceApiMapper {
         .baseBranch(gitDetails.getBaseBranch())
         .lastCommitId(gitDetails.getLastCommitId())
         .lastObjectId(gitDetails.getLastObjectId())
+        .connectorRef(gitDetails.getConnectorRef())
         .build();
   }
   public GitEntityInfo populateGitFindDetails(GitFindDetails gitDetails) {
