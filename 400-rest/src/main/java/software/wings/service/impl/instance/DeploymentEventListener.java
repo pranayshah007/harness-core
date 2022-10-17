@@ -11,6 +11,7 @@ import io.harness.queue.QueueConsumer;
 import io.harness.queue.QueueListener;
 
 import software.wings.api.DeploymentEvent;
+import software.wings.instancesyncv2.CgInstanceSyncServiceV2;
 
 import com.google.inject.Inject;
 
@@ -24,6 +25,7 @@ import com.google.inject.Inject;
  */
 public class DeploymentEventListener extends QueueListener<DeploymentEvent> {
   @Inject private InstanceHelper instanceHelper;
+  @Inject private CgInstanceSyncServiceV2 instanceSyncServiceV2;
 
   @Inject
   public DeploymentEventListener(QueueConsumer<DeploymentEvent> queueConsumer) {
@@ -35,6 +37,7 @@ public class DeploymentEventListener extends QueueListener<DeploymentEvent> {
    */
   @Override
   public void onMessage(DeploymentEvent deploymentEvent) {
+    instanceSyncServiceV2.handleInstanceSync(deploymentEvent);
     instanceHelper.processDeploymentEvent(deploymentEvent);
   }
 }
