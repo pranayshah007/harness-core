@@ -29,9 +29,12 @@ import com.google.inject.multibindings.Multibinder;
 import com.google.inject.name.Names;
 import io.grpc.BindableService;
 import io.grpc.ServerInterceptor;
+import lombok.extern.slf4j.Slf4j;
+
 import java.util.List;
 import java.util.Set;
 
+@Slf4j
 public class DelegateGrpcServiceModule extends AbstractModule {
   private static final String SERVICE_ID = "delegate-grpc-service";
   private final int servicePort;
@@ -45,6 +48,7 @@ public class DelegateGrpcServiceModule extends AbstractModule {
 
   @Override
   protected void configure() {
+    long start = System.currentTimeMillis();
     install(new ExpressionServiceModule());
 
     Multibinder<BindableService> bindableServiceMultibinder = Multibinder.newSetBinder(binder(), BindableService.class);
@@ -62,6 +66,7 @@ public class DelegateGrpcServiceModule extends AbstractModule {
 
     install(new GrpcServerModule(getConnectors(), getProvider(Key.get(new TypeLiteral<Set<BindableService>>() {})),
         getProvider(Key.get(new TypeLiteral<Set<ServerInterceptor>>() {}))));
+    log.info("time taken to intialize DelegateGrpcServiceModule in ms {} ", System.currentTimeMillis() - start);
   }
 
   @Provides

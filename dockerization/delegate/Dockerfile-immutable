@@ -21,8 +21,7 @@ COPY scripts/client_tools.sh /opt/harness-delegate/client_tools.sh
 WORKDIR /opt/harness-delegate
 
 ARG disable_client_tools=true
-ARG TARGETARCH
-RUN ./client_tools.sh $disable_client_tools $TARGETARCH\
+RUN ./client_tools.sh $disable_client_tools amd64\
     && chmod -R 755 /opt/harness-delegate \
     && chgrp -R 0 /opt/harness-delegate  \
     && chmod -R g=u /opt/harness-delegate \

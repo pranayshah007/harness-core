@@ -87,6 +87,7 @@ public class DelegateAgentModule extends AbstractModule {
   private void configureCcmEventPublishing() {
     final String deployMode = System.getenv(DEPLOY_MODE);
     if (!isOnPrem(deployMode) && isImmutableDelegate) {
+      //final String managerHostAndPort = configuration.getManagerUrl();
       final String managerHostAndPort = System.getenv("MANAGER_HOST_AND_PORT");
       if (isNotBlank(managerHostAndPort)) {
         log.info("Running immutable delegate, starting CCM event tailer");
@@ -100,7 +101,9 @@ public class DelegateAgentModule extends AbstractModule {
                 .clientCertificateKeyFilePath(configuration.getClientCertificateKeyFilePath())
                 .trustAllCertificates(configuration.isTrustAllCertificates())
                 .build();
+        long startTime = System.currentTimeMillis();
         install(new DelegateTailerModule(tailerConfig));
+        log.info("time taken to initialise DelegateTailerModule time in ms {}", System.currentTimeMillis() - startTime);
       } else {
         log.warn("Unable to configure event publisher configs. Event publisher will be disabled");
       }
@@ -108,6 +111,8 @@ public class DelegateAgentModule extends AbstractModule {
       log.info("Skip running tailer by delegate. For mutable it runs in watcher, for on prem we never run it.");
     }
     final Config appenderConfig = Config.builder().queueFilePath(configuration.getQueueFilePath()).build();
+    long startTime = System.currentTimeMillis();
     install(new AppenderModule(appenderConfig, () -> getDelegateId().orElse("UNREGISTERED")));
+    log.info("time taken to initialise AppenderModule time in ms {}", System.currentTimeMillis() - startTime);
   }
 }

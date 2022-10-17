@@ -41,6 +41,7 @@ public class DelegateManagerClientModule extends AbstractModule {
 
   @Override
   protected void configure() {
+    long startTime = System.currentTimeMillis();
     TokenGenerator tokenGenerator = new TokenGenerator(accountId, accountSecret);
     bind(TokenGenerator.class).toInstance(tokenGenerator);
     bind(DelegateAgentManagerClient.class)
@@ -52,5 +53,6 @@ public class DelegateManagerClientModule extends AbstractModule {
     bind(CVNextGenServiceClient.class)
         .toProvider(new CVNextGenServiceClientFactory(cvNextGenUrl, tokenGenerator, clientCertificateFilePath,
             clientCertificateKeyFilePath, trustAllCertificates));
+
   }
 }

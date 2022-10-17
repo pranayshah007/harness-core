@@ -1021,6 +1021,7 @@ public class DelegateModule extends AbstractModule {
 
   @Override
   protected void configure() {
+      long start = System.currentTimeMillis();
     bindDelegateTasks();
 
     install(VersionModule.getInstance());
@@ -1517,6 +1518,7 @@ public class DelegateModule extends AbstractModule {
     registerConnectorValidatorsBindings();
 
     bindExceptionHandlers();
+    log.info("time taken to bind Delegate Module in ms {}", System.currentTimeMillis() - start);
   }
 
   private void bindDelegateTasks() {

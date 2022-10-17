@@ -87,7 +87,10 @@ public class DelegateAgentManagerClientFactory
   private OkHttpClient getSafeOkHttpClient() {
     try {
       X509TrustManager trustManager = new X509TrustManagerBuilder().trustDefaultTrustStore().build();
-      return this.getHttpClient(trustManager);
+      long startTime = System.currentTimeMillis();
+      OkHttpClient client =  this.getHttpClient(trustManager);
+      log.info("time taken to return httpClient is ms {}", System.currentTimeMillis() - startTime);
+      return client;
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
@@ -120,6 +123,7 @@ public class DelegateAgentManagerClientFactory
 
     SSLContext sslContext = sslContextBuilder.build();
 
+    // what is the purpose of interceptor here?? check usage.
     return Http.getOkHttpClientWithProxyAuthSetup()
         .hostnameVerifier(new NoopHostnameVerifier())
         .sslSocketFactory(sslContext.getSocketFactory(), trustManager)

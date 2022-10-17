@@ -20,6 +20,7 @@ import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import io.grpc.CallCredentials;
 import io.grpc.Channel;
+import lombok.extern.slf4j.Slf4j;
 
 @TargetModule(HarnessModule._420_DELEGATE_AGENT)
 public class DelegateServiceGrpcAgentClientModule extends AbstractModule {

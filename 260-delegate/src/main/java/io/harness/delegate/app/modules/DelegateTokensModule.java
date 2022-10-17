@@ -13,17 +13,21 @@ import io.harness.security.ServiceTokenGenerator;
 
 import com.google.inject.AbstractModule;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @RequiredArgsConstructor
+@Slf4j
 public class DelegateTokensModule extends AbstractModule {
   private final DelegateConfiguration configuration;
 
   @Override
   protected void configure() {
+    long start = System.currentTimeMillis();
     bind(DelegateServiceTokenHelper.class)
         .toInstance(DelegateServiceTokenHelper.builder()
                         .serviceTokenGenerator(new ServiceTokenGenerator())
                         .accountSecret(configuration.getDelegateToken())
                         .build());
+    log.info("time taken to intialize DelegateTokensModule in ms {} ", System.currentTimeMillis() - start);
   }
 }
