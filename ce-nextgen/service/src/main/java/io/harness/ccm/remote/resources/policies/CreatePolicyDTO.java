@@ -11,5 +11,5 @@ import lombok.experimental.FieldDefaults;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class CreatePolicyDTO {
-  @JsonProperty("policies") @Valid PolicyStore policyStore;
+  @JsonProperty("policies") @Valid Policy policy;
 }

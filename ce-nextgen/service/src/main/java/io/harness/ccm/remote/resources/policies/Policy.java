@@ -35,20 +35,9 @@ import org.mongodb.morphia.annotations.Id;
 @Entity(value = "governancePolicy", noClassnameStored = true)
 @Schema(description = "This object will contain the complete definition of a Cloud Cost Policies")
 
-public final class PolicyStore implements PersistentEntity, UuidAware, CreatedAtAware, UpdatedAtAware, AccountAccess,
+public final class Policy implements PersistentEntity, UuidAware, CreatedAtAware, UpdatedAtAware, AccountAccess,
                                           CreatedByAware, UpdatedByAware {
-  public static List<MongoIndex> mongoIndexes() {
-    return ImmutableList.<MongoIndex>builder()
-        .add(CompoundMongoIndex.builder()
-                 .name("policy")
-                 .field(PolicyId.uuid)
-                 .field(PolicyId.accountId)
-                 .field(PolicyId.cloudProvider)
-                 .build())
-        .add(CompoundMongoIndex.builder().name("sort1").field(PolicyId.lastUpdatedAt).build())
-        .add(CompoundMongoIndex.builder().name("sort2").field(PolicyId.createdAt).build())
-        .build();
-  }
+
   @Id @Schema(description = "unique id") String uuid;
   @Schema(description = "account id") String accountId;
   @Schema(description = "Identifier") String name;
@@ -67,8 +56,20 @@ public final class PolicyStore implements PersistentEntity, UuidAware, CreatedAt
   @Schema(description = "created by") private EmbeddedUser createdBy;
   @Schema(description = "updated by") private EmbeddedUser lastUpdatedBy;
 
-  public PolicyStore toDTO() {
-    return PolicyStore.builder()
+  public static List<MongoIndex> mongoIndexes() {
+    return ImmutableList.<MongoIndex>builder()
+            .add(CompoundMongoIndex.builder()
+                    .name("policy")
+                    .field(PolicyId.uuid)
+                    .field(PolicyId.accountId)
+                    .field(PolicyId.cloudProvider)
+                    .build())
+            .add(CompoundMongoIndex.builder().name("sort1").field(PolicyId.lastUpdatedAt).build())
+            .add(CompoundMongoIndex.builder().name("sort2").field(PolicyId.createdAt).build())
+            .build();
+  }
+  public Policy toDTO() {
+    return Policy.builder()
         .uuid(getUuid())
         .accountId(getAccountId())
         .name(getName())

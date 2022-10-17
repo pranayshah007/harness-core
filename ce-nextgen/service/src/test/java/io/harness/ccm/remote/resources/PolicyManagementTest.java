@@ -25,8 +25,8 @@ import org.junit.runner.RunWith;
 import org.mockito.junit.MockitoJUnitRunner;
 
 @RunWith(MockitoJUnitRunner.class)
-public class PolicyManagementTest extends CategoryTest {
-  private PolicyStoreService policyStoreService = mock(PolicyStoreService.class);
+public class GovernancePolicyTest extends CategoryTest {
+  private PolicyService policyService = mock(PolicyService.class);
   private CCMRbacHelper rbacHelper = mock(CCMRbacHelper.class);
 
   private final String ACCOUNT_ID = "ACCOUNT_ID";
@@ -39,16 +39,16 @@ public class PolicyManagementTest extends CategoryTest {
   private final String DESCRIPTION = "DESCRIPTION";
   private final String ORG_PARAM_MESSAGE = "ORG_PARAM_MESSAGE";
   private final String PROJECT_PARAM_MESSAGE = "PROJECT_PARAM_MESSAGE";
-  private List<PolicyStore> Policies = new ArrayList<>();
-  private PolicyStore policyStore;
-  private QueryFeild queryFeild;
-  private PolicyStore createPolicyDTO;
-  private PolicyManagement policymanagement;
+  private List<Policy> Policies = new ArrayList<>();
+  private Policy policy;
+  private PolicyRequest policyRequest;
+  private Policy createPolicyDTO;
+  private GovernancePolicy policymanagement;
   private ListDTO listDTO;
 
   @Before
   public void setUp() throws IllegalAccessException, IOException {
-    policyStore = PolicyStore.builder()
+    policy = Policy.builder()
                       .uuid(UNIQUE_ID)
                       .accountId(ACCOUNT_ID)
                       .name(NAME)
@@ -59,26 +59,26 @@ public class PolicyManagementTest extends CategoryTest {
                       .orgIdentifier(ORG_PARAM_MESSAGE)
                       .projectIdentifier(PROJECT_PARAM_MESSAGE)
                       .build();
-    policymanagement = new PolicyManagement(policyStoreService, rbacHelper);
-    createPolicyDTO = policyStore.toDTO();
-    Policies.add(policyStore);
+    policymanagement = new GovernancePolicy(policyService, rbacHelper);
+    createPolicyDTO = policy.toDTO();
+    Policies.add(policy);
   }
 
   @Test
   @Owner(developers = SAHIBA)
   @Category(UnitTests.class)
   public void testCreatePolicy() {
-    policymanagement.create(ACCOUNT_ID, CreatePolicyDTO.builder().policyStore(policyStore).build());
-    verify(policyStoreService).save(policyStore);
+    policymanagement.create(ACCOUNT_ID, CreatePolicyDTO.builder().policy(policy).build());
+    verify(policyService).save(policy);
   }
 
   @Test
   @Owner(developers = SAHIBA)
   @Category(UnitTests.class)
   public void testUpadtePolicy() {
-    ResponseDTO<PolicyStore> res =
-        policymanagement.updatePolicy(ACCOUNT_ID, CreatePolicyDTO.builder().policyStore(policyStore).build());
-    assertThat(res.getData()).isEqualTo(policyStore);
+    ResponseDTO<Policy> res =
+        policymanagement.updatePolicy(ACCOUNT_ID, CreatePolicyDTO.builder().policy(policy).build());
+    assertThat(res.getData()).isEqualTo(policy);
   }
 
   @Test
@@ -86,6 +86,6 @@ public class PolicyManagementTest extends CategoryTest {
   @Category(UnitTests.class)
   public void deletePolicy() {
     policymanagement.delete(ACCOUNT_ID, UNIQUE_ID);
-    verify(policyStoreService).delete(ACCOUNT_ID, UNIQUE_ID);
+    verify(policyService).delete(ACCOUNT_ID, UNIQUE_ID);
   }
 }
