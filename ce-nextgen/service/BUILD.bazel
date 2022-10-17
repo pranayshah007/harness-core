@@ -48,6 +48,7 @@ shared_dependencies = [
     "@maven//:com_amazonaws_aws_java_sdk_s3",
     "@maven//:com_amazonaws_aws_java_sdk_sts",
     "@maven//:aopalliance_aopalliance",
+    "@maven//:com_google_code_gson_gson",
     "@maven//:com_google_inject_guice",
     "@maven//:com_google_cloud_google_cloud_pubsub",
     "@maven//:com_squareup_retrofit2_retrofit",
