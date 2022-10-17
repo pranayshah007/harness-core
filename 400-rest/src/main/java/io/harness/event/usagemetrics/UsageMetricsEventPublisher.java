@@ -39,6 +39,7 @@ import com.google.inject.Singleton;
 import io.fabric8.utils.Lists;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -60,6 +61,7 @@ public class UsageMetricsEventPublisher {
 
   private String APPROVAL = "APPROVAL";
   private String ORCHESTRATION = "ORCHESTRATION";
+  private final List<String> STATE_TYPES = Arrays.asList("PHASE_STEP", "PHASE");
 
   public UsageMetricsEventPublisher() {
     sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss z");
@@ -78,6 +80,11 @@ public class UsageMetricsEventPublisher {
   }
 
   public void publishDeploymentStepTimeSeriesEvent(String accountId, StateExecutionInstance stateExecutionInstance) {
+    for (String stateType : STATE_TYPES) {
+      if (stateType.equals(stateExecutionInstance.getStateType())) {
+        return;
+      }
+    }
     DeploymentStepTimeSeriesEvent event = constructDeploymentStepTimeSeriesEvent(accountId, stateExecutionInstance);
     if (event.getTimeSeriesEventInfo().getLongData().get(StepEventProcessor.START_TIME) == null) {
       return;
@@ -117,7 +124,20 @@ public class UsageMetricsEventPublisher {
       }
     }
 
-    longData.put(StepEventProcessor.START_TIME, stateExecutionInstance.getStartTs());
+    long startTime = stateExecutionInstance.getStartTs() != null ? stateExecutionInstance.getStartTs() : -1L;
+    List<StateExecutionData> stateExecutionDataList = stateExecutionInstance.getStateExecutionDataHistory();
+    if (stateExecutionDataList != null) {
+      for (StateExecutionData stateExecutionData : stateExecutionDataList) {
+        if (stateExecutionData.getStartTs() != null
+            && (startTime == -1L || startTime > stateExecutionData.getStartTs())) {
+          startTime = stateExecutionData.getStartTs();
+        }
+      }
+    }
+    if (startTime != -1L) {
+      longData.put(StepEventProcessor.START_TIME, startTime);
+    }
+
     longData.put(StepEventProcessor.END_TIME, stateExecutionInstance.getEndTs());
 
     if (stateExecutionInstance.getStartTs() != null && stateExecutionInstance.getEndTs() != null)
