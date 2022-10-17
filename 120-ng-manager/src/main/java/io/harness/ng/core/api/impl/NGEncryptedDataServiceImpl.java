@@ -42,6 +42,7 @@ import io.harness.beans.DecryptableEntity;
 import io.harness.beans.DecryptedSecretValue;
 import io.harness.beans.FeatureName;
 import io.harness.beans.SecretManagerConfig;
+import io.harness.beans.SecretText;
 import io.harness.connector.ConnectorDTO;
 import io.harness.connector.helper.CustomSecretManagerHelper;
 import io.harness.connector.services.NGConnectorSecretManagerService;
@@ -280,9 +281,14 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
               encryptedData.getAccountIdentifier(), FeatureName.DO_NOT_RENEW_APPROLE_TOKEN))) {
         ((BaseVaultConfig) secretManagerConfig).setRenewAppRoleToken(false);
       }
-      encryptedRecord =
-          vaultEncryptorsRegistry.getVaultEncryptor(secretManagerConfig.getEncryptionType())
-              .createSecret(encryptedData.getAccountIdentifier(), encryptedData.getName(), value, secretManagerConfig);
+      encryptedRecord = vaultEncryptorsRegistry.getVaultEncryptor(secretManagerConfig.getEncryptionType())
+                            .createSecret(encryptedData.getAccountIdentifier(),
+                                io.harness.beans.SecretText.builder()
+                                    .name(encryptedData.getName())
+                                    .value(value)
+                                    .additionalMetadata(encryptedData.getAdditionalMetadata())
+                                    .build(),
+                                secretManagerConfig);
       validateEncryptedRecord(encryptedRecord);
     } else {
       throw new UnsupportedOperationException("Secret Manager type not supported: " + secretManagerType);
