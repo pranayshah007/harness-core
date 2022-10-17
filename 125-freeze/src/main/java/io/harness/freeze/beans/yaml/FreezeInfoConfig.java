@@ -50,5 +50,5 @@ public class FreezeInfoConfig {
 
   @JsonProperty("entityConfigs") List<FreezeEntityRule> rules;
 
-  @JsonIgnore FreezeNotifications notifications;
+  @JsonIgnore List<FreezeNotifications> notifications;
 }

@@ -3557,7 +3557,7 @@
             "runTaskRequestDefinition": {
               "$ref": "#/definitions/StoreConfigWrapper"
             },
-            "skiSteadyStateCheck": {
+            "skipSteadyStateCheck": {
               "oneOf": [
                 {
                   "type": "boolean"
@@ -4762,7 +4762,9 @@
             "History",
             "Delete",
             "Uninstall",
-            "List"
+            "List",
+            "Add",
+            "Update"
           ]
         },
         "flag": {

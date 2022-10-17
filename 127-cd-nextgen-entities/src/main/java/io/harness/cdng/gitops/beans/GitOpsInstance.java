@@ -25,12 +25,10 @@ public class GitOpsInstance {
   @NotEmpty private String orgIdentifier;
   @NotEmpty private String projectIdentifier;
   @NotEmpty private String applicationIdentifier;
-  @NotEmpty private String agentIdentifier;
   @NotEmpty private String envIdentifier;
   @NotEmpty private String serviceIdentifier;
   @NotEmpty private String serviceEnvIdentifier;
   @NotEmpty private String buildId;
-  @NotEmpty private String clusterIdentifier;
   @NotNull private long creationTimestamp;
   @NotNull private long lastDeployedAt;
   @NotNull private GitOpsInstanceRequest.K8sBasicInfo instanceInfo; // PodInfo

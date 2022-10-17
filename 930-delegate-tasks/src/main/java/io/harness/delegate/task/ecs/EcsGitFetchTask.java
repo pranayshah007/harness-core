@@ -7,6 +7,8 @@
 
 package io.harness.delegate.task.ecs;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.logging.LogLevel.ERROR;
 import static io.harness.logging.LogLevel.INFO;
 
@@ -20,7 +22,6 @@ import static java.lang.String.format;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.task.git.GitDecryptionHelper;
-import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskResponse;
@@ -40,9 +41,11 @@ import io.harness.delegate.task.ecs.response.EcsGitFetchResponse;
 import io.harness.delegate.task.git.GitFetchTaskHelper;
 import io.harness.delegate.task.git.TaskStatus;
 import io.harness.ecs.EcsCommandUnitConstants;
+import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.git.model.FetchFilesResult;
+import io.harness.git.model.GitFile;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
@@ -180,7 +183,7 @@ public class EcsGitFetchTask extends AbstractDelegateRunnableTask {
     }
     FetchFilesResult filesResult = null;
     try {
-      if (EmptyPredicate.isNotEmpty(gitStoreDelegateConfig.getPaths())) {
+      if (isNotEmpty(gitStoreDelegateConfig.getPaths())) {
         String filePath = ecsGitFetchFileConfig.getGitStoreDelegateConfig().getPaths().get(0);
 
         List<String> filePaths = Collections.singletonList(filePath);
@@ -213,9 +216,22 @@ public class EcsGitFetchTask extends AbstractDelegateRunnableTask {
       executionLogCallback.saveExecutionLog(msg, ERROR, CommandExecutionStatus.FAILURE);
       throw sanitizedException;
     }
+    checkIfFilesContentAreNotEmpty(
+        filesResult, ecsGitFetchFileConfig.getGitStoreDelegateConfig().getGitConfigDTO().getUrl());
     return filesResult;
   }
 
+  public void checkIfFilesContentAreNotEmpty(FetchFilesResult filesResult, String gitUrl) {
+    for (GitFile file : filesResult.getFiles()) {
+      String fileContent = file.getFileContent();
+      if (isEmpty(fileContent)) {
+        Throwable e = new InvalidRequestException(format("EMPTY FILE CONTENT in %s", file.getFilePath()));
+        throw NestedExceptionUtils.hintWithExplanationException(
+            format("Please check the file content of the file %s", file.getFilePath()),
+            format("The following file %s in Git Repo %s has empty content", file.getFilePath(), gitUrl), e);
+      }
+    }
+  }
   public boolean isSupportingErrorFramework() {
     return true;
   }

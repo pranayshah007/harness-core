@@ -53,7 +53,7 @@ public class FreezeResponseDTO {
   @With @Trimmed String orgIdentifier;
   @With @Trimmed String projectIdentifier;
 
-  List<FreezeWindow> freezeWindows;
+  List<FreezeWindow> windows;
 
   @With @NotEmpty @EntityIdentifier String identifier;
   @NotEmpty String yaml;

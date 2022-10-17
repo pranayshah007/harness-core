@@ -41,6 +41,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
+import com.mongodb.AggregationOptions;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -293,7 +294,10 @@ public class GitChangeSetRunnable implements Runnable {
                 grouping(YamlChangeSetKeys.accountId, first(YamlChangeSetKeys.accountId)),
                 grouping(YamlChangeSetKeys.queueKey, first(YamlChangeSetKeys.queueKey)),
                 grouping("count", accumulator("$sum", 1)))
-            .aggregate(ChangeSetGroupingKey.class);
+            .aggregate(ChangeSetGroupingKey.class,
+                AggregationOptions.builder()
+                    .maxTime(wingsPersistence.getMaxTimeMs(YamlChangeSet.class), TimeUnit.MILLISECONDS)
+                    .build());
 
     final Set<ChangeSetGroupingKey> keys = new HashSet<>();
     groupingKeyIterator.forEachRemaining(keys::add);

@@ -15,6 +15,7 @@ import static org.springframework.data.mongodb.core.aggregation.Aggregation.newA
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.dtos.GitOpsInstanceDTO;
 import io.harness.entities.Instance;
 import io.harness.entities.Instance.InstanceKeys;
 import io.harness.models.ActiveServiceInstanceInfo;
@@ -271,6 +272,34 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
                                     .as(InstanceSyncConstants.COUNT);
     return mongoTemplate.aggregate(
         newAggregation(matchStage, groupEnvId), Instance.class, ActiveServiceInstanceInfo.class);
+  }
+
+  @Override
+  public AggregationResults<ActiveServiceInstanceInfo> getActiveServiceGitOpsInstanceInfo(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId) {
+    Criteria criteria = Criteria.where(InstanceKeys.accountIdentifier)
+                            .is(accountIdentifier)
+                            .and(InstanceKeys.orgIdentifier)
+                            .is(orgIdentifier)
+                            .and(InstanceKeys.projectIdentifier)
+                            .is(projectIdentifier)
+                            .and(InstanceKeys.serviceIdentifier)
+                            .is(serviceId)
+                            .and(InstanceKeysAdditional.instanceInfoClusterIdentifier)
+                            .exists(true)
+                            .and(InstanceKeys.isDeleted)
+                            .is(false);
+
+    MatchOperation matchStage = Aggregation.match(criteria);
+    GroupOperation groupClusterEnvId =
+        group(InstanceKeysAdditional.instanceInfoClusterIdentifier, InstanceKeysAdditional.instanceInfoAgentIdentifier,
+            InstanceKeys.lastPipelineExecutionId, InstanceKeys.lastPipelineExecutionName, InstanceKeys.lastDeployedAt,
+            InstanceKeys.envIdentifier, InstanceKeys.envName, InstanceSyncConstants.PRIMARY_ARTIFACT_TAG,
+            InstanceSyncConstants.PRIMARY_ARTIFACT_DISPLAY_NAME)
+            .count()
+            .as(InstanceSyncConstants.COUNT);
+    return mongoTemplate.aggregate(
+        newAggregation(matchStage, groupClusterEnvId), GitOpsInstanceDTO.class, ActiveServiceInstanceInfo.class);
   }
 
   /*

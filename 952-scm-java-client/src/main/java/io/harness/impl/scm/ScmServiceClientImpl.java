@@ -23,6 +23,8 @@ import io.harness.beans.gitsync.GitFileDetails;
 import io.harness.beans.gitsync.GitFilePathDetails;
 import io.harness.beans.gitsync.GitPRCreateRequest;
 import io.harness.beans.gitsync.GitWebhookDetails;
+import io.harness.beans.request.GitFileRequest;
+import io.harness.beans.response.GitFileResponse;
 import io.harness.connector.ManagerExecutable;
 import io.harness.constants.Constants;
 import io.harness.delegate.beans.connector.ConnectorType;
@@ -913,6 +915,69 @@ public class ScmServiceClientImpl implements ScmServiceClient {
   public GetLatestCommitOnFileResponse getLatestCommitOnFile(
       ScmConnector scmConnector, String branchName, String filepath, SCMGrpc.SCMBlockingStub scmBlockingStub) {
     return getLatestCommitOnFile(scmConnector, scmBlockingStub, branchName, filepath);
+  }
+
+  @Override
+  public GitFileResponse getFile(
+      ScmConnector scmConnector, GitFileRequest gitFileContentRequest, SCMGrpc.SCMBlockingStub scmBlockingStub) {
+    String commitId = gitFileContentRequest.getCommitId();
+    String branch = gitFileContentRequest.getBranch();
+    // give higher precedence to commit id if not empty
+    if (isNotEmpty(commitId)) {
+      branch = null;
+    } else if (isEmpty(branch)) {
+      GetUserRepoResponse getUserRepoResponse = getRepoDetails(scmConnector, scmBlockingStub);
+      if (isFailureResponse(getUserRepoResponse.getStatus())) {
+        return GitFileResponse.builder()
+            .error(getUserRepoResponse.getError())
+            .statusCode(getUserRepoResponse.getStatus())
+            .build();
+      }
+      branch = getUserRepoResponse.getRepo().getBranch();
+    }
+
+    FileContent fileContent = getFileContent(scmConnector,
+        GitFilePathDetails.builder()
+            .filePath(gitFileContentRequest.getFilepath())
+            .ref(gitFileContentRequest.getCommitId())
+            .branch(branch)
+            .build(),
+        scmBlockingStub);
+    if (isFailureResponse(fileContent.getStatus())) {
+      return GitFileResponse.builder()
+          .error(fileContent.getError())
+          .statusCode(fileContent.getStatus())
+          .branch(branch)
+          .build();
+    }
+
+    if (isEmpty(commitId)) {
+      if (isEmpty(fileContent.getCommitId())) {
+        if (isNotEmpty(branch)) {
+          GetLatestCommitOnFileResponse getLatestCommitOnFileResponse =
+              getLatestCommitOnFile(scmConnector, scmBlockingStub, branch, gitFileContentRequest.getFilepath());
+          if (isNotEmpty(getLatestCommitOnFileResponse.getError())) {
+            return GitFileResponse.builder()
+                .error(getLatestCommitOnFileResponse.getError())
+                .statusCode(Constants.SCM_BAD_RESPONSE_ERROR_CODE)
+                .branch(branch)
+                .build();
+          }
+          commitId = getLatestCommitOnFileResponse.getCommitId();
+        }
+      } else {
+        commitId = fileContent.getCommitId();
+      }
+    }
+
+    return GitFileResponse.builder()
+        .commitId(commitId)
+        .filepath(gitFileContentRequest.getFilepath())
+        .content(fileContent.getContent())
+        .objectId(fileContent.getBlobId())
+        .branch(branch)
+        .statusCode(Constants.HTTP_SUCCESS_STATUS_CODE)
+        .build();
   }
 
   private FileContentBatchResponse processListFilesByFilePaths(ScmConnector connector, List<String> filePaths,

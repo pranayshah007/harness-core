@@ -21,9 +21,9 @@ import io.harness.ng.core.entitysetupusage.service.EntitySetupUsageService;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity.InfrastructureEntityKeys;
 import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
+import io.harness.ng.core.template.TemplateResponseDTO;
 import io.harness.pms.merger.YamlConfig;
 import io.harness.remote.client.NGRestUtils;
-import io.harness.template.beans.TemplateResponseDTO;
 import io.harness.template.remote.TemplateResourceClient;
 
 import com.fasterxml.jackson.databind.JsonNode;

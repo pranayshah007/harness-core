@@ -1796,12 +1796,20 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
         new HashMap<>();
     Map<String, String> envIdToEnvNameMap = new HashMap<>();
     Map<String, String> buildIdToArtifactPathMap = new HashMap<>();
+
     List<ActiveServiceInstanceInfo> activeServiceInstanceInfoList =
         instanceDashboardService.getActiveServiceInstanceInfo(
             accountIdentifier, orgIdentifier, projectIdentifier, serviceId);
+    List<ActiveServiceInstanceInfo> activeServiceInstanceGitOpsInfoList =
+        instanceDashboardService.getActiveServiceGitOpsInstanceInfo(
+            accountIdentifier, orgIdentifier, projectIdentifier, serviceId);
+    activeServiceInstanceInfoList.addAll(activeServiceInstanceGitOpsInfoList);
+
     activeServiceInstanceInfoList.forEach(activeServiceInstanceInfo -> {
       final String infraIdentifier = activeServiceInstanceInfo.getInfraIdentifier();
       final String infraName = activeServiceInstanceInfo.getInfraName();
+      final String clusterIdentifier = activeServiceInstanceInfo.getClusterIdentifier();
+      final String agentIdentifier = activeServiceInstanceInfo.getAgentIdentifier();
       final String lastPipelineExecutionId = activeServiceInstanceInfo.getLastPipelineExecutionId();
       final String lastPipelineExecutionName = activeServiceInstanceInfo.getLastPipelineExecutionName();
       final String lastDeployedAt = activeServiceInstanceInfo.getLastDeployedAt();
@@ -1817,6 +1825,8 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
           InstanceGroupedByArtifactList.InstanceGroupedByInfrastructure.builder()
               .infraIdentifier(infraIdentifier)
               .infraName(infraName)
+              .agentIdentifier(agentIdentifier)
+              .clusterIdentifier(clusterIdentifier)
               .count(count)
               .lastDeployedAt(lastDeployedAt)
               .lastPipelineExecutionId(lastPipelineExecutionId)
@@ -1827,7 +1837,6 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
     });
     List<InstanceGroupedByArtifactList.InstanceGroupedByArtifact> instanceGroupedByArtifactList =
         groupedByArtifacts(buildEnvInfraMap, envIdToEnvNameMap, buildIdToArtifactPathMap);
-
     return InstanceGroupedByArtifactList.builder().instanceGroupedByArtifactList(instanceGroupedByArtifactList).build();
   }
 
@@ -1859,11 +1868,17 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
           envInfraMap.entrySet()) {
         String envId = entry1.getKey();
         String envName = envIdToEnvNameMap.get(envId);
+
+        List<InstanceGroupedByArtifactList.InstanceGroupedByInfrastructure> instanceList = entry1.getValue();
         List<InstanceGroupedByArtifactList.InstanceGroupedByInfrastructure> instanceGroupedByInfrastructureList =
-            entry1.getValue();
+            instanceList.stream().filter(e -> e.getInfraIdentifier() != null).collect(Collectors.toList());
+        List<InstanceGroupedByArtifactList.InstanceGroupedByInfrastructure> instanceGroupedByClusterList =
+            instanceList.stream().filter(e -> e.getClusterIdentifier() != null).collect(Collectors.toList());
+
         instanceGroupedByEnvironmentList.add(InstanceGroupedByArtifactList.InstanceGroupedByEnvironment.builder()
                                                  .envId(envId)
                                                  .envName(envName)
+                                                 .instanceGroupedByClusterList(instanceGroupedByClusterList)
                                                  .instanceGroupedByInfraList(instanceGroupedByInfrastructureList)
                                                  .build());
       }

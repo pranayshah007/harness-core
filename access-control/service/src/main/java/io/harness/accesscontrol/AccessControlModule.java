@@ -65,6 +65,9 @@ import io.harness.accesscontrol.resources.resourcegroups.HarnessResourceGroupSer
 import io.harness.accesscontrol.resources.resourcegroups.HarnessResourceGroupServiceImpl;
 import io.harness.accesscontrol.resources.resourcegroups.events.ResourceGroupEventConsumer;
 import io.harness.accesscontrol.roleassignments.RoleAssignment;
+import io.harness.accesscontrol.roleassignments.api.AccountRoleAssignmentsApiImpl;
+import io.harness.accesscontrol.roleassignments.api.OrgRoleAssignmentsApiImpl;
+import io.harness.accesscontrol.roleassignments.api.ProjectRoleAssignmentsApiImpl;
 import io.harness.accesscontrol.roleassignments.api.RoleAssignmentDTO;
 import io.harness.accesscontrol.roleassignments.api.RoleAssignmentResource;
 import io.harness.accesscontrol.roleassignments.api.RoleAssignmentResourceImpl;
@@ -117,8 +120,11 @@ import io.harness.redis.RedissonClientFactory;
 import io.harness.remote.client.ClientMode;
 import io.harness.resourcegroupclient.ResourceGroupClientModule;
 import io.harness.serviceaccount.ServiceAccountClientModule;
+import io.harness.spec.server.accesscontrol.AccountRoleAssignmentsApi;
 import io.harness.spec.server.accesscontrol.AccountRolesApi;
+import io.harness.spec.server.accesscontrol.OrgRoleAssignmentsApi;
 import io.harness.spec.server.accesscontrol.OrganizationRolesApi;
+import io.harness.spec.server.accesscontrol.ProjectRoleAssignmentsApi;
 import io.harness.spec.server.accesscontrol.ProjectRolesApi;
 import io.harness.telemetry.AbstractTelemetryModule;
 import io.harness.telemetry.TelemetryConfiguration;
@@ -392,5 +398,8 @@ public class AccessControlModule extends AbstractModule {
     bind(AccountRolesApi.class).to(AccountRolesApiImpl.class);
     bind(OrganizationRolesApi.class).to(OrgRolesApiImpl.class);
     bind(ProjectRolesApi.class).to(ProjectRolesApiImpl.class);
+    bind(AccountRoleAssignmentsApi.class).to(AccountRoleAssignmentsApiImpl.class);
+    bind(OrgRoleAssignmentsApi.class).to(OrgRoleAssignmentsApiImpl.class);
+    bind(ProjectRoleAssignmentsApi.class).to(ProjectRoleAssignmentsApiImpl.class);
   }
 }

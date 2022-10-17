@@ -53,6 +53,7 @@ import software.wings.service.intfc.WorkflowExecutionService;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.mongodb.AggregationOptions;
 import com.mongodb.BasicDBObject;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -64,6 +65,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import lombok.extern.slf4j.Slf4j;
@@ -306,9 +308,12 @@ public class StatisticsServiceImpl implements StatisticsService {
                     addToSet("serviceExecutionSummaries.instanceStatusSummaries.instanceElement.uuid")))
             .project(Projection.expression("count", new BasicDBObject("$size", "$serviceExecutionSummaries")),
                 projection("_id", "_id"), projection("createdAt", "createdAt"));
-    pipelineInstancesDeployedAggregation.aggregate(ExecutionCount.class).forEachRemaining(e -> {
-      getExecutionCount(instancesDeployedViaPipeline, e);
-    });
+    pipelineInstancesDeployedAggregation
+        .aggregate(ExecutionCount.class,
+            AggregationOptions.builder()
+                .maxTime(wingsPersistence.getMaxTimeMs(WorkflowExecution.class), TimeUnit.MILLISECONDS)
+                .build())
+        .forEachRemaining(e -> { getExecutionCount(instancesDeployedViaPipeline, e); });
     return instancesDeployedViaPipeline;
   }
 
@@ -345,7 +350,11 @@ public class StatisticsServiceImpl implements StatisticsService {
                     addToSet("serviceExecutionSummaries.instanceStatusSummaries.instanceElement.uuid")))
             .project(Projection.expression("count", new BasicDBObject("$size", "$serviceExecutionSummaries")),
                 projection("_id", "_id"), projection("createdAt", "createdAt"));
-    workflowInstancesDeployedAggregation.aggregate(ExecutionCount.class)
+    workflowInstancesDeployedAggregation
+        .aggregate(ExecutionCount.class,
+            AggregationOptions.builder()
+                .maxTime(wingsPersistence.getMaxTimeMs(WorkflowExecution.class), TimeUnit.MILLISECONDS)
+                .build())
         .forEachRemaining(e -> getExecutionCount(instancesDeployedViaWorkflow, e));
     return instancesDeployedViaWorkflow;
   }
@@ -367,7 +376,11 @@ public class StatisticsServiceImpl implements StatisticsService {
                 projection("createdAt", "createdAt"))
             .group(Group.id(grouping("date")), grouping("createdAt", Group.first("createdAt")),
                 grouping("count", accumulator("$sum", 1)));
-    totalFailedExecutionAggregation.aggregate(ExecutionCount.class)
+    totalFailedExecutionAggregation
+        .aggregate(ExecutionCount.class,
+            AggregationOptions.builder()
+                .maxTime(wingsPersistence.getMaxTimeMs(WorkflowExecution.class), TimeUnit.MILLISECONDS)
+                .build())
         .forEachRemaining(e -> getExecutionCount(failedExecutionCount, e));
     return failedExecutionCount;
   }
@@ -387,7 +400,11 @@ public class StatisticsServiceImpl implements StatisticsService {
                 projection("createdAt", "createdAt"))
             .group(Group.id(grouping("date")), grouping("createdAt", Group.first("createdAt")),
                 grouping("count", accumulator("$sum", 1)));
-    totalExecutionAggregation.aggregate(ExecutionCount.class)
+    totalExecutionAggregation
+        .aggregate(ExecutionCount.class,
+            AggregationOptions.builder()
+                .maxTime(wingsPersistence.getMaxTimeMs(WorkflowExecution.class), TimeUnit.MILLISECONDS)
+                .build())
         .forEachRemaining(e -> getExecutionCount(totalExecutionCount, e));
     return totalExecutionCount;
   }
@@ -468,9 +485,12 @@ public class StatisticsServiceImpl implements StatisticsService {
 
     addServiceGroupingLogic(pipelineServiceDeployedAggregation);
 
-    pipelineServiceDeployedAggregation.aggregate(ConsumersInfo.class).forEachRemaining(consumersInfo -> {
-      populateTopConsumerMap(topConsumerMap, consumersInfo);
-    });
+    pipelineServiceDeployedAggregation
+        .aggregate(ConsumersInfo.class,
+            AggregationOptions.builder()
+                .maxTime(wingsPersistence.getMaxTimeMs(WorkflowExecution.class), TimeUnit.MILLISECONDS)
+                .build())
+        .forEachRemaining(consumersInfo -> { populateTopConsumerMap(topConsumerMap, consumersInfo); });
   }
 
   private void populateTopConsumerMapForWorkflow(
@@ -486,9 +506,12 @@ public class StatisticsServiceImpl implements StatisticsService {
             .unwind("serviceExecutionSummaries");
     addServiceGroupingLogic(workflowServiceDeployedAggregation);
 
-    workflowServiceDeployedAggregation.aggregate(ConsumersInfo.class).forEachRemaining(consumersInfo -> {
-      populateTopConsumerMap(topConsumerMap, consumersInfo);
-    });
+    workflowServiceDeployedAggregation
+        .aggregate(ConsumersInfo.class,
+            AggregationOptions.builder()
+                .maxTime(wingsPersistence.getMaxTimeMs(WorkflowExecution.class), TimeUnit.MILLISECONDS)
+                .build())
+        .forEachRemaining(consumersInfo -> { populateTopConsumerMap(topConsumerMap, consumersInfo); });
   }
   private void populateTopConsumerMap(Map<String, TopConsumer> topConsumerMap, ConsumersInfo consumersInfo) {
     if (!topConsumerMap.containsKey(consumersInfo.getServiceId())) {

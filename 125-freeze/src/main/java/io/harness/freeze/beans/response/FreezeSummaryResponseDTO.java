@@ -56,7 +56,7 @@ public class FreezeSummaryResponseDTO {
   @With @Trimmed String orgIdentifier;
   @With @Trimmed String projectIdentifier;
 
-  List<FreezeWindow> freezeWindows;
+  List<FreezeWindow> windows;
   @JsonIgnore List<FreezeEntityRule> rules;
 
   CurrentOrUpcomingActiveWindow currentOrUpcomingActiveWindow;

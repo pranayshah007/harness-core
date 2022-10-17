@@ -159,7 +159,7 @@ public final class HelmCommandTemplateFactory {
           default:
             return HelmConstants.V2Commands.HELM_REPO_ADD_COMMAND_FOR_HTTP;
         }
-      case REPO_ADD_CHART_MEUSEUM:
+      case REPO_ADD_CHART_MUSEUM:
         switch (version) {
           case V3:
           case V380:
