@@ -15,8 +15,8 @@ import lombok.experimental.FieldDefaults;
 @NoArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldDefaults(level = AccessLevel.PRIVATE)
-@Schema(name = "QueryFeild", description = "This has the query to list the policies")
-public class QueryFeild {
+@Schema(name = "PolicyRequest", description = "This has the query to list the policies")
+public class PolicyRequest {
   @Schema(description = "unique id") String uuid;
   @Schema(description = "account id") String accountId;
   @Schema(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) String orgIdentifier;
@@ -28,7 +28,7 @@ public class QueryFeild {
   @Schema(description = "isOOTBPolicy") String isOOTBPolicy;
 
   @Builder
-  public QueryFeild toDTO(String uuid, String accountId, String orgIdentifier, String projectIdentifier,
+  public PolicyRequest (String uuid, String accountId, String orgIdentifier, String projectIdentifier,
       String resource, String tags, String cloudProvider, String isStablePolicy, String isOOTBPolicy) {
     this.uuid = uuid;
     this.accountId = accountId;
@@ -39,6 +39,5 @@ public class QueryFeild {
     this.cloudProvider = cloudProvider;
     this.isStablePolicy = isStablePolicy;
     this.isOOTBPolicy = isOOTBPolicy;
-    return QueryFeild.this;
   }
 }

@@ -59,12 +59,12 @@ import javax.ws.rs.core.MediaType;
 
 //@NextGenManagerAuth
 @PublicApi
-public class PolicyManagement {
-  private final PolicyStoreService policyStoreService;
+public class GovernancePolicy {
+  private final PolicyService policyService;
   private final CCMRbacHelper rbacHelper;
   @Inject
-  public PolicyManagement(PolicyStoreService policyStoreService, CCMRbacHelper rbacHelper) {
-    this.policyStoreService = policyStoreService;
+  public GovernancePolicy(PolicyService policyService, CCMRbacHelper rbacHelper) {
+    this.policyService = policyService;
     this.rbacHelper = rbacHelper;
   }
 
@@ -82,16 +82,16 @@ public class PolicyManagement {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(responseCode = "default", description = "Returns newly created policy")
       })
-  public ResponseDTO<PolicyStore>
+  public ResponseDTO<Policy>
   create(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
              NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @RequestBody(required = true,
           description = "Request body containing Policy store object") @Valid CreatePolicyDTO createPolicyDTO) {
     rbacHelper.checkPolicyEditPermission(accountId, null, null);
-    PolicyStore policyStore = createPolicyDTO.getPolicyStore();
-    policyStore.setAccountId(accountId);
-    policyStoreService.save(policyStore);
-    return ResponseDTO.newResponse(policyStore.toDTO());
+    Policy policy = createPolicyDTO.getPolicy();
+    policy.setAccountId(accountId);
+    policyService.save(policy);
+    return ResponseDTO.newResponse(policy.toDTO());
   }
 
   // Update a policy already made
@@ -109,17 +109,17 @@ public class PolicyManagement {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "update a existing OOTB Policy",
             content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
       })
-  public ResponseDTO<PolicyStore>
+  public ResponseDTO<Policy>
   updatePolicy(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
                    NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @RequestBody(required = true,
           description = "Request body containing ceViewFolder object") @Valid CreatePolicyDTO createPolicyDTO) {
     rbacHelper.checkPolicyEditPermission(accountId, null, null);
-    PolicyStore policyStore = createPolicyDTO.getPolicyStore();
-    policyStore.toDTO();
-    policyStore.setAccountId(accountId);
-    policyStoreService.update(policyStore);
-    return ResponseDTO.newResponse(policyStore);
+    Policy policy = createPolicyDTO.getPolicy();
+    policy.toDTO();
+    policy.setAccountId(accountId);
+    policyService.update(policy);
+    return ResponseDTO.newResponse(policy);
   }
 
   // Internal API for deletion of OOTB policies
@@ -146,7 +146,7 @@ public class PolicyManagement {
       @PathParam("policyId") @Parameter(
           required = true, description = "Unique identifier for the policy") @NotNull @Valid String uuid) {
     rbacHelper.checkPolicyDeletePermission(accountId, null, null);
-    boolean result = policyStoreService.delete(accountId, uuid);
+    boolean result = policyService.delete(accountId, uuid);
     return ResponseDTO.newResponse(result);
   }
 
@@ -162,46 +162,42 @@ public class PolicyManagement {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(
             description = "Returns List of policies", content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
       })
-  public ResponseDTO<List<PolicyStore>>
+  public ResponseDTO<List<Policy>>
   listPolicy(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
                  NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @RequestBody(
           required = true, description = "Request body containing ceViewFolder object") @Valid ListDTO listDTO) {
-    rbacHelper.checkPolicyViewPermission(accountId, null, null);
-    QueryFeild query = listDTO.getQueryFeild();
-    List<PolicyStore> Policies = new ArrayList<>();
+    //rbacHelper.checkPolicyViewPermission(accountId, null, null);
+    PolicyRequest query = listDTO.getPolicyRequest();
+    List<Policy> Policies = new ArrayList<>();
     query.setAccountId(accountId);
     String uuid = query.getUuid();
-    String orgIdentifier = query.getOrgIdentifier();
-    String projectIdentifier = query.getProjectIdentifier();
-    String cloudProvider = query.getCloudProvider();
     String isStablePolicy = query.getIsStablePolicy();
-    String isOOTBPolicy = query.getIsOOTBPolicy();
     String resource = query.getResource();
     String tags = query.getTags();
     if (uuid != null) {
-      PolicyStore policyStore = policyStoreService.listid(accountId, uuid);
-      Policies.add(policyStore);
+      Policy policy = policyService.listid(accountId, uuid);
+      Policies.add(policy);
       return ResponseDTO.newResponse(Policies);
     }
     if (isStablePolicy != null) {
-      Policies = policyStoreService.findByStability(isStablePolicy, accountId);
+      Policies = policyService.findByStability(isStablePolicy, accountId);
       return ResponseDTO.newResponse(Policies);
     }
     if (resource != null && tags == null) {
-      Policies = policyStoreService.findByResource(resource, accountId);
+      Policies = policyService.findByResource(resource, accountId);
       return ResponseDTO.newResponse(Policies);
     }
     if (resource == null && tags != null) {
-      Policies = policyStoreService.findByTag(tags, accountId);
+      Policies = policyService.findByTag(tags, accountId);
       return ResponseDTO.newResponse(Policies);
     }
     if (resource != null && tags != null) {
-      Policies = policyStoreService.findByTagAndResource(resource, tags, accountId);
+      Policies = policyService.findByTagAndResource(resource, tags, accountId);
       return ResponseDTO.newResponse(Policies);
     }
 
-    Policies = policyStoreService.list(accountId);
+    Policies = policyService.list(accountId);
     return ResponseDTO.newResponse(Policies);
   }
 }
