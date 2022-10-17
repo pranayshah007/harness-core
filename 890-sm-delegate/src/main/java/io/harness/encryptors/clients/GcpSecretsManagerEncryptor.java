@@ -263,7 +263,6 @@ public class GcpSecretsManagerEncryptor implements VaultEncryptor {
 
   private String getRegionInformation(SecretText secretText) {
     if (secretText.getAdditionalMetadata() != null) {
-      log.info("Region value is "+ secretText.getAdditionalMetadata().getValues().getOrDefault("regions", ""));
       return String.valueOf(secretText.getAdditionalMetadata().getValues().getOrDefault("regions", ""));
     }
     return "";
