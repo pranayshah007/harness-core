@@ -1,21 +1,21 @@
 BEGIN;
 CREATE TABLE IF NOT EXISTS EXECUTION_INTERRUPT (
     ID TEXT NOT NULL,
-    Type TEXT NOT NULL,
-    ExecutionId TEXT NOT NULL,
-    AppId TEXT NOT NULL,
-    CreatedBy TEXT,
-    CreatedAt BIGINT NOT NULL,
-    LastUpdatedBy TEXT,
-    LastUpdatedAt BIGINT,
-    AccountId TEXT NOT NULL,
-    StateExecutionInstanceId TEXT,
-    PRIMARY KEY(ID,CreatedAt)
+    ACCOUNT_ID TEXT NOT NULL,
+    APP_ID TEXT NOT NULL,
+    EXECUTION_ID TEXT NOT NULL,
+    STATE_EXECUTION_INSTANCE_ID TEXT,
+    TYPE TEXT NOT NULL,
+    CREATED_BY TEXT,
+    CREATED_AT BIGINT NOT NULL,
+    LAST_UPDATED_BY TEXT,
+    LAST_UPDATED_AT BIGINT,
+    PRIMARY KEY(ID,CREATED_AT)
 );
 COMMIT;
 
 
-SELECT CREATE_HYPERTABLE('EXECUTION_INTERRUPT','createdat',if_not_exists => TRUE,migrate_data => true,chunk_time_interval => 86400000000);
+SELECT CREATE_HYPERTABLE('EXECUTION_INTERRUPT','created_at',if_not_exists => TRUE,migrate_data => true,chunk_time_interval => 86400000000);
 
 CREATE OR REPLACE FUNCTION unix_now() returns BIGINT LANGUAGE SQL STABLE as $$ SELECT extract(epoch from now())::BIGINT $$;
 
