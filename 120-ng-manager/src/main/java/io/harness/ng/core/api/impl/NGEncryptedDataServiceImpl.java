@@ -326,13 +326,23 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
             encryptedRecord = existingEncryptedData;
           } else {
             encryptedRecord = vaultEncryptorsRegistry.getVaultEncryptor(secretManagerConfig.getEncryptionType())
-                                  .renameSecret(encryptedData.getAccountIdentifier(), encryptedData.getName(),
+                                  .renameSecret(encryptedData.getAccountIdentifier(),
+                                      io.harness.beans.SecretText.builder()
+                                          .name(encryptedData.getName())
+                                          .value(value)
+                                          .additionalMetadata(encryptedData.getAdditionalMetadata())
+                                          .build(),
                                       existingEncryptedData, secretManagerConfig);
             validateEncryptedRecord(encryptedRecord);
           }
         } else {
           encryptedRecord = vaultEncryptorsRegistry.getVaultEncryptor(secretManagerConfig.getEncryptionType())
-                                .updateSecret(encryptedData.getAccountIdentifier(), encryptedData.getName(), value,
+                                .updateSecret(encryptedData.getAccountIdentifier(),
+                                    io.harness.beans.SecretText.builder()
+                                        .name(encryptedData.getName())
+                                        .value(value)
+                                        .additionalMetadata(encryptedData.getAdditionalMetadata())
+                                        .build(),
                                     existingEncryptedData, secretManagerConfig);
           validateEncryptedRecord(encryptedRecord);
         }
@@ -340,7 +350,12 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
         // Existing one is Reference Secret
         if (isNotEmpty(value)) {
           encryptedRecord = vaultEncryptorsRegistry.getVaultEncryptor(secretManagerConfig.getEncryptionType())
-                                .createSecret(encryptedData.getAccountIdentifier(), encryptedData.getName(), value,
+                                .createSecret(encryptedData.getAccountIdentifier(),
+                                    io.harness.beans.SecretText.builder()
+                                        .name(encryptedData.getName())
+                                        .value(value)
+                                        .additionalMetadata(encryptedData.getAdditionalMetadata())
+                                        .build(),
                                     secretManagerConfig);
           validateEncryptedRecord(encryptedRecord);
         } else {
