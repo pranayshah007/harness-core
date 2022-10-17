@@ -13,7 +13,6 @@ import io.harness.cvng.beans.customhealth.TimestampInfo;
 import io.harness.delegate.beans.connector.customhealthconnector.CustomHealthConnectorDTO;
 import io.harness.delegate.beans.connector.customhealthconnector.CustomHealthMethod;
 import io.harness.delegate.beans.cvng.customhealth.CustomHealthConnectorValidationInfoUtils;
-import io.harness.serializer.JsonUtils;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -58,7 +57,7 @@ public class CustomHealthDataCollectionInfo extends TimeSeriesDataCollectionInfo
     List<String> metricNames = new ArrayList<>();
     List<String> metricIdentifiers = new ArrayList<>();
     List<String> urlPaths = new ArrayList<>();
-    List<Object> bodies = new ArrayList<>();
+    List<String> bodies = new ArrayList<>();
     List<String> methods = new ArrayList<>();
     List<String> startTimePlaceholders = new ArrayList<>();
     List<String> endTimePlaceholders = new ArrayList<>();
@@ -77,7 +76,7 @@ public class CustomHealthDataCollectionInfo extends TimeSeriesDataCollectionInfo
     getMetricInfoList().forEach(metricInfo -> {
       metricNames.add(metricInfo.getMetricName());
       metricIdentifiers.add(metricInfo.getMetricIdentifier());
-      bodies.add(isEmpty(metricInfo.getBody()) ? null : JsonUtils.asMap(metricInfo.body));
+      bodies.add(isEmpty(metricInfo.getBody()) ? null : metricInfo.body);
       methods.add(metricInfo.getMethod().toString());
       urlPaths.add(metricInfo.getUrlPath());
       startTimePlaceholders.add(metricInfo.getStartTime().getPlaceholder());

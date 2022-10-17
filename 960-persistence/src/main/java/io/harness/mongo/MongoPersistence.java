@@ -42,6 +42,7 @@ import com.google.inject.name.Named;
 import com.mongodb.DBCollection;
 import com.mongodb.DBObject;
 import com.mongodb.DuplicateKeyException;
+import com.mongodb.MongoExecutionTimeoutException;
 import com.mongodb.ReadPreference;
 import com.mongodb.WriteResult;
 import java.time.Duration;
@@ -55,6 +56,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.StreamSupport;
 import lombok.Builder;
 import lombok.Value;
@@ -475,22 +477,43 @@ public class MongoPersistence implements HPersistence {
   @Override
   public <T extends PersistentEntity> T findAndModify(
       Query<T> query, UpdateOperations<T> updateOperations, FindAndModifyOptions findAndModifyOptions) {
-    onUpdate(query, updateOperations, currentTimeMillis());
-    AdvancedDatastore datastore = getDatastore(query.getEntityClass());
-    return HPersistence.retry(() -> datastore.findAndModify(query, updateOperations, findAndModifyOptions));
+    try {
+      onUpdate(query, updateOperations, currentTimeMillis());
+      AdvancedDatastore datastore = getDatastore(query.getEntityClass());
+      setMaxTimeInOptions(datastore, findAndModifyOptions);
+      return HPersistence.retry(() -> datastore.findAndModify(query, updateOperations, findAndModifyOptions));
+    } catch (MongoExecutionTimeoutException ex) {
+      log.error(
+          "findAndModify query exceeded max time limit for entityClass {} with error {}", query.getEntityClass(), ex);
+      throw ex;
+    }
   }
 
   @Override
   public <T extends PersistentEntity> T findAndModifySystemData(
       Query<T> query, UpdateOperations<T> updateOperations, FindAndModifyOptions findAndModifyOptions) {
-    AdvancedDatastore datastore = getDatastore(query.getEntityClass());
-    return HPersistence.retry(() -> datastore.findAndModify(query, updateOperations, findAndModifyOptions));
+    try {
+      AdvancedDatastore datastore = getDatastore(query.getEntityClass());
+      setMaxTimeInOptions(datastore, findAndModifyOptions);
+      return HPersistence.retry(() -> datastore.findAndModify(query, updateOperations, findAndModifyOptions));
+    } catch (MongoExecutionTimeoutException ex) {
+      log.error("findAndModifySystemData query exceeded max time limit for entityClass {} with error {}",
+          query.getEntityClass(), ex);
+      throw ex;
+    }
   }
 
   @Override
   public <T extends PersistentEntity> T findAndDelete(Query<T> query, FindAndModifyOptions findAndModifyOptions) {
-    AdvancedDatastore datastore = getDatastore(query.getEntityClass());
-    return HPersistence.retry(() -> datastore.findAndDelete(query, findAndModifyOptions));
+    try {
+      AdvancedDatastore datastore = getDatastore(query.getEntityClass());
+      setMaxTimeInOptions(datastore, findAndModifyOptions);
+      return HPersistence.retry(() -> datastore.findAndDelete(query, findAndModifyOptions));
+    } catch (MongoExecutionTimeoutException ex) {
+      log.error(
+          "findAndDelete query exceeded max time limit for entityClass {} with error {}", query.getEntityClass(), ex);
+      throw ex;
+    }
   }
 
   @Override
@@ -498,5 +521,13 @@ public class MongoPersistence implements HPersistence {
     onEntityUpdate(entity, currentTimeMillis());
     AdvancedDatastore datastore = getDatastore(entity);
     return HPersistence.retry(() -> datastore.merge(entity).getId().toString());
+  }
+
+  private void setMaxTimeInOptions(AdvancedDatastore datastore, FindAndModifyOptions findAndModifyOptions) {
+    if (findAndModifyOptions.getMaxTime(TimeUnit.MILLISECONDS) == 0
+        && datastore.getQueryFactory() instanceof QueryFactory) {
+      QueryFactory queryFactory = (QueryFactory) datastore.getQueryFactory();
+      findAndModifyOptions.maxTime(queryFactory.getMaxOperationTimeInMillis(), TimeUnit.MILLISECONDS);
+    }
   }
 }

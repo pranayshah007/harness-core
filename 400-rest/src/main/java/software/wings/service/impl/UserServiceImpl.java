@@ -27,6 +27,7 @@ import static io.harness.ng.core.invites.dto.InviteOperationResponse.INVITE_INVA
 import static io.harness.ng.core.invites.dto.InviteOperationResponse.USER_ALREADY_ADDED;
 import static io.harness.ng.core.invites.dto.InviteOperationResponse.USER_ALREADY_INVITED;
 import static io.harness.ng.core.invites.dto.InviteOperationResponse.USER_INVITED_SUCCESSFULLY;
+import static io.harness.ng.core.invites.dto.InviteOperationResponse.USER_INVITE_NOT_REQUIRED;
 import static io.harness.persistence.AccountAccess.ACCOUNT_ID_KEY;
 import static io.harness.persistence.HQuery.excludeAuthority;
 
@@ -1454,7 +1455,10 @@ public class UserServiceImpl implements UserService {
       addUserToUserGroups(accountId, user, userGroups, false, true);
     }
     boolean isSSOEnabled = accountService.isSSOEnabled(account);
-    if (!(isSSOEnabled && featureFlagService.isEnabled(FeatureName.PL_NO_EMAIL_FOR_SAML_ACCOUNT_INVITES, accountId))) {
+    boolean isPLNoEmailForSamlAccountInvitesEnabled =
+        featureFlagService.isEnabled(FeatureName.PL_NO_EMAIL_FOR_SAML_ACCOUNT_INVITES, accountId);
+
+    if (!(isSSOEnabled && isPLNoEmailForSamlAccountInvitesEnabled)) {
       if (!isInviteAcceptanceRequired && isSSOEnabled) {
         sendUserInvitationToOnlySsoAccountMail(account, user);
       } else {
@@ -1466,7 +1470,12 @@ public class UserServiceImpl implements UserService {
         accountId, null, user, createNewUser ? Type.CREATE : Type.UPDATE);
     userGroups.forEach(userGroupAdded
         -> auditServiceHelper.reportForAuditingUsingAccountId(accountId, null, userGroupAdded, Type.ADD));
-    eventPublishHelper.publishUserInviteFromAccountEvent(accountId, userInvite.getEmail());
+
+    if (isSSOEnabled && isPLNoEmailForSamlAccountInvitesEnabled) {
+      return USER_INVITE_NOT_REQUIRED;
+    } else {
+      eventPublishHelper.publishUserInviteFromAccountEvent(accountId, userInvite.getEmail());
+    }
 
     return USER_INVITED_SUCCESSFULLY;
   }

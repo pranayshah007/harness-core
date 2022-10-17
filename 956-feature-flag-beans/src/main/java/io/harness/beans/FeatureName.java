@@ -465,7 +465,10 @@ public enum FeatureName {
       HarnessTeam.CI),
   CI_CACHE_INTELLIGENCE("Feature flag for cache intelligence feature", HarnessTeam.CI),
   USE_INSTANCES_PURGE_ITERATOR_FW(
-      "Switch to use iterator fw instead of quartz scheduler for InstancesPurgeJob", HarnessTeam.CDP);
+      "Switch to use iterator fw instead of quartz scheduler for InstancesPurgeJob", HarnessTeam.CDP),
+  SYNC_GIT_CLONE_AND_COPY_TO_DEST_DIR(
+      "This feature flag helps in synchronizing the git clone of repo and copying the files then to destination directory",
+      HarnessTeam.CDP);
 
   @Deprecated
   FeatureName() {

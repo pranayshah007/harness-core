@@ -315,8 +315,6 @@ public class ArtifactResponseToOutcomeMapper {
       artifactPath = nexusRegistryDockerConfig.getArtifactPath() != null
           ? nexusRegistryDockerConfig.getArtifactPath().getValue()
           : null;
-    } else {
-      artifactPath = artifactDelegateResponse != null ? artifactDelegateResponse.getBuildDetails().getBuildUrl() : null;
     }
 
     return NexusArtifactOutcome.builder()
@@ -339,10 +337,6 @@ public class ArtifactResponseToOutcomeMapper {
 
   private NexusArtifactOutcome getNexus2ArtifactOutcome(Nexus2RegistryArtifactConfig artifactConfig,
       NexusArtifactDelegateResponse artifactDelegateResponse, boolean useDelegateResponse) {
-    String artifactPath = null;
-    if (!artifactConfig.getRepositoryFormat().getValue().equalsIgnoreCase("docker")) {
-      artifactPath = artifactDelegateResponse != null ? artifactDelegateResponse.getBuildDetails().getBuildUrl() : null;
-    }
     return NexusArtifactOutcome.builder()
         .repositoryName(artifactConfig.getRepository().getValue())
         .image(getImageValue(artifactDelegateResponse))
@@ -357,7 +351,6 @@ public class ArtifactResponseToOutcomeMapper {
         .imagePullSecret(createImagePullSecret(ArtifactUtils.getArtifactKey(artifactConfig)))
         .registryHostname(getRegistryHostnameValue(artifactDelegateResponse))
         .metadata(useDelegateResponse ? getMetadata(artifactDelegateResponse) : null)
-        .artifactPath(artifactPath)
         .build();
   }
 

@@ -217,6 +217,7 @@ import com.google.common.collect.Sets;
 import com.google.common.collect.Sets.SetView;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.mongodb.AggregationOptions;
 import com.mongodb.DuplicateKeyException;
 import io.fabric8.utils.CountingMap;
 import java.lang.reflect.Field;
@@ -234,6 +235,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
@@ -1787,7 +1789,10 @@ public class InfrastructureDefinitionServiceImpl implements InfrastructureDefini
         .match(query)
         .group(Group.id(grouping("envId")), grouping("count", accumulator("$sum", 1)))
         .project(projection("envId", "_id.envId"), projection("count"))
-        .aggregate(EnvInfraDefStats.class)
+        .aggregate(EnvInfraDefStats.class,
+            AggregationOptions.builder()
+                .maxTime(wingsPersistence.getMaxTimeMs(InfrastructureDefinition.class), TimeUnit.MILLISECONDS)
+                .build())
         .forEachRemaining(envInfraDefStat -> envIdInfraDefCountMap.put(envInfraDefStat.envId, envInfraDefStat.count));
 
     return envIdInfraDefCountMap;
