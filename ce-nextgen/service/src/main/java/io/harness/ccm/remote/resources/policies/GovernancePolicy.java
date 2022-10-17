@@ -11,6 +11,7 @@ import io.harness.ccm.utils.LogAccountIdentifier;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.security.annotations.PublicApi;
 
 import com.codahale.metrics.annotation.ExceptionMetered;
@@ -56,9 +57,8 @@ import javax.ws.rs.core.MediaType;
       @ApiResponse(code = 400, response = FailureDTO.class, message = "Bad Request")
       , @ApiResponse(code = 500, response = ErrorDTO.class, message = "Internal server error")
     })
-
-//@NextGenManagerAuth
-@PublicApi
+@NextGenManagerAuth
+//@PublicApi
 public class GovernancePolicy {
   private final PolicyService policyService;
   private final CCMRbacHelper rbacHelper;
@@ -87,7 +87,7 @@ public class GovernancePolicy {
              NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @RequestBody(required = true,
           description = "Request body containing Policy store object") @Valid CreatePolicyDTO createPolicyDTO) {
-    rbacHelper.checkPolicyEditPermission(accountId, null, null);
+   // rbacHelper.checkPolicyEditPermission(accountId, null, null);
     Policy policy = createPolicyDTO.getPolicy();
     policy.setAccountId(accountId);
     policyService.save(policy);
@@ -114,7 +114,7 @@ public class GovernancePolicy {
                    NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @RequestBody(required = true,
           description = "Request body containing ceViewFolder object") @Valid CreatePolicyDTO createPolicyDTO) {
-    rbacHelper.checkPolicyEditPermission(accountId, null, null);
+    //rbacHelper.checkPolicyEditPermission(accountId, null, null);
     Policy policy = createPolicyDTO.getPolicy();
     policy.toDTO();
     policy.setAccountId(accountId);
@@ -145,7 +145,7 @@ public class GovernancePolicy {
              NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @PathParam("policyId") @Parameter(
           required = true, description = "Unique identifier for the policy") @NotNull @Valid String uuid) {
-    rbacHelper.checkPolicyDeletePermission(accountId, null, null);
+    //rbacHelper.checkPolicyDeletePermission(accountId, null, null);
     boolean result = policyService.delete(accountId, uuid);
     return ResponseDTO.newResponse(result);
   }

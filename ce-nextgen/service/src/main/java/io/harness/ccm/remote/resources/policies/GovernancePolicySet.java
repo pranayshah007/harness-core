@@ -12,6 +12,7 @@ import io.harness.ccm.utils.LogAccountIdentifier;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.security.annotations.PublicApi;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -37,8 +38,8 @@ import static io.harness.annotations.dev.HarnessTeam.CE;
 @Path("policyset")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-//@NextGenManagerAuth
-@PublicApi
+@NextGenManagerAuth
+//@PublicApi
 @Service
 @OwnedBy(CE)
 @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Bad Request",
