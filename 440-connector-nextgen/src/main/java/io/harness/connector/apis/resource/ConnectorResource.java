@@ -230,8 +230,6 @@ public class ConnectorResource {
               + "CLOUD_PROVIDER, SECRET_MANAGER, CLOUD_COST, ARTIFACTORY, CODE_REPO,  "
               + "MONITORING and TICKETING") @QueryParam(SOURCE_CATEGORY_KEY) ConnectorCategory sourceCategory,
       @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
-    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
-        Resource.of(ResourceTypes.CONNECTOR, null), VIEW_CONNECTOR_PERMISSION);
     return ResponseDTO.newResponse(getNGPageResponse(connectorService.list(
         page, size, accountIdentifier, orgIdentifier, projectIdentifier, searchTerm, type, category, sourceCategory)));
   }
@@ -273,8 +271,6 @@ public class ConnectorResource {
               "This when set to true along with GitSync enabled for the Connector, you can get one connector entity from each identifier. "
               + "The connector entity can belong to any branch") @QueryParam("getDistinctFromBranches")
       Boolean getDistinctFromBranches) {
-    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
-        Resource.of(ResourceTypes.CONNECTOR, null), VIEW_CONNECTOR_PERMISSION);
     return ResponseDTO.newResponse(getNGPageResponse(
         connectorService.list(page, size, accountIdentifier, connectorListFilter, orgIdentifier, projectIdentifier,
             filterIdentifier, searchTerm, includeAllConnectorsAccessibleAtScope, getDistinctFromBranches)));
@@ -317,8 +313,6 @@ public class ConnectorResource {
               "This when set to true along with GitSync enabled for the Connector, you can get one connector entity from each identifier. "
               + "The connector entity can belong to any branch") @QueryParam("getDistinctFromBranches")
       Boolean getDistinctFromBranches) {
-    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
-        Resource.of(ResourceTypes.CONNECTOR, null), VIEW_CONNECTOR_PERMISSION);
     return ResponseDTO.newResponse(getNGPageResponse(connectorService.listCcmK8S(page, size, accountIdentifier,
         connectorListFilter, orgIdentifier, projectIdentifier, filterIdentifier, searchTerm,
         includeAllConnectorsAccessibleAtScope, getDistinctFromBranches)));

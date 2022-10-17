@@ -12,11 +12,13 @@ import static io.harness.NGConstants.CONNECTOR_STRING;
 import static io.harness.NGConstants.HARNESS_SECRET_MANAGER_IDENTIFIER;
 import static io.harness.connector.ConnectivityStatus.FAILURE;
 import static io.harness.connector.ConnectivityStatus.UNKNOWN;
+import static io.harness.connector.accesscontrol.ConnectorsAccessControlPermissions.VIEW_CONNECTOR_PERMISSION;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.errorhandling.NGErrorHelper.DEFAULT_ERROR_SUMMARY;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.git.model.ChangeType.ADD;
+import static io.harness.springdata.SpringDataMongoUtils.populateInFilter;
 import static io.harness.utils.PageUtils.getPageRequest;
 import static io.harness.utils.RestCallToNGManagerClientUtils.execute;
 
@@ -25,10 +27,19 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toList;
+import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.springframework.data.mongodb.core.query.Criteria.where;
 
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Streams;
 import io.harness.EntityType;
+import io.harness.accesscontrol.acl.api.AccessCheckResponseDTO;
+import io.harness.accesscontrol.acl.api.AccessControlDTO;
+import io.harness.accesscontrol.acl.api.PermissionCheckDTO;
+import io.harness.accesscontrol.acl.api.Resource;
+import io.harness.accesscontrol.acl.api.ResourceScope;
+import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
@@ -47,6 +58,7 @@ import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.ConnectorValidationResult;
 import io.harness.connector.ConnectorValidationResult.ConnectorValidationResultBuilder;
 import io.harness.connector.ManagerExecutable;
+import io.harness.connector.accesscontrol.ResourceTypes;
 import io.harness.connector.entities.Connector;
 import io.harness.connector.entities.Connector.ConnectorKeys;
 import io.harness.connector.events.ConnectorCreateEvent;
@@ -122,6 +134,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -133,6 +146,9 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import javax.ws.rs.NotFoundException;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -164,6 +180,7 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
   ConnectorHeartbeatService connectorHeartbeatService;
   private final HarnessManagedConnectorHelper harnessManagedConnectorHelper;
   private final ConnectorEntityReferenceHelper connectorEntityReferenceHelper;
+  private final AccessControlClient accessControlClient;
   GitSyncSdkService gitSyncSdkService;
   OutboxService outboxService;
   YamlGitConfigClient yamlGitConfigClient;
@@ -232,24 +249,103 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
     Criteria criteria =
         filterService.createCriteriaFromConnectorListQueryParams(accountIdentifier, orgIdentifier, projectIdentifier,
             filterIdentifier, searchTerm, filterProperties, includeAllConnectorsAccessibleAtScope, isBuiltInSMDisabled);
-    Pageable pageable = getPageRequest(
-        PageRequest.builder()
-            .pageIndex(page)
-            .pageSize(size)
-            .sortOrders(Collections.singletonList(
-                SortOrder.Builder.aSortOrder().withField(ConnectorKeys.createdAt, OrderType.DESC).build()))
-            .build());
-    Page<Connector> connectors;
+
+    List<Connector> connectors;
     if (Boolean.TRUE.equals(getDistinctFromBranches)
         && gitSyncSdkService.isGitSyncEnabled(accountIdentifier, orgIdentifier, projectIdentifier)) {
-      connectors = connectorRepository.findAll(criteria, pageable, true);
+      connectors = connectorRepository.findAll(criteria, Pageable.unpaged(), true).getContent();
     } else if (Boolean.FALSE.equals(getDistinctFromBranches)
         && gitSyncSdkService.isGitSyncEnabled(accountIdentifier, orgIdentifier, projectIdentifier)) {
-      connectors = connectorRepository.findAll(criteria, pageable, false);
+      connectors = connectorRepository.findAll(criteria, Pageable.unpaged(), false).getContent();
     } else {
-      connectors = connectorRepository.findAll(criteria, pageable, projectIdentifier, orgIdentifier, accountIdentifier);
+      connectors = connectorRepository.findAll(criteria, Pageable.unpaged(), projectIdentifier, orgIdentifier, accountIdentifier).getContent();
     }
-    return connectors;
+    if(!accessControlClient.hasAccess(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
+            Resource.of(ResourceTypes.CONNECTOR, null), VIEW_CONNECTOR_PERMISSION)) {
+      connectors = getPermitted(connectors);
+    }
+    populateInFilter(criteria, ConnectorKeys.identifier, connectors.stream().map(Connector::getIdentifier).collect(toList()));
+    Pageable pageable = getPageRequest(
+            PageRequest.builder()
+                    .pageIndex(page)
+                    .pageSize(size)
+                    .sortOrders(Collections.singletonList(
+                            SortOrder.Builder.aSortOrder().withField(ConnectorKeys.createdAt, OrderType.DESC).build()))
+                    .build());
+    Page<Connector> filteredConnectors;
+    if (Boolean.TRUE.equals(getDistinctFromBranches)
+            && gitSyncSdkService.isGitSyncEnabled(accountIdentifier, orgIdentifier, projectIdentifier)) {
+      filteredConnectors = connectorRepository.findAll(criteria, pageable, true);
+    } else if (Boolean.FALSE.equals(getDistinctFromBranches)
+            && gitSyncSdkService.isGitSyncEnabled(accountIdentifier, orgIdentifier, projectIdentifier)) {
+      filteredConnectors = connectorRepository.findAll(criteria, pageable, false);
+    } else {
+      filteredConnectors = connectorRepository.findAll(criteria, pageable, projectIdentifier, orgIdentifier, accountIdentifier);
+    }
+    return filteredConnectors;
+  }
+
+  private List<Connector> getPermitted(List<Connector> connectors) {
+    return Streams.stream(Iterables.partition(connectors, 10000))
+            .map(this::checkAccess)
+            .flatMap(Collection::stream)
+            .collect(Collectors.toList());
+  }
+
+  private Collection<Connector> checkAccess(List<Connector> connectors) {
+    Map<ConnectorResource, List<Connector>> connectorsMap = connectors.stream().collect(groupingBy(ConnectorResource::fromConnector));
+    List<PermissionCheckDTO> permissionChecks =
+            connectors.stream()
+                    .map(connector
+                            -> PermissionCheckDTO.builder()
+                            .permission(VIEW_CONNECTOR_PERMISSION)
+                            .resourceIdentifier(connector.getIdentifier())
+                            .resourceScope(ResourceScope.of(
+                                    connector.getAccountIdentifier(), connector.getOrgIdentifier(), connector.getProjectIdentifier()))
+                            .resourceType(ResourceTypes.CONNECTOR)
+                            .build())
+                    .collect(Collectors.toList());
+    AccessCheckResponseDTO accessCheckResponse = accessControlClient.checkForAccess(permissionChecks);
+
+    Collection<Connector> permittedConnectors = new ArrayList<>();
+    for(AccessControlDTO accessControlDTO : accessCheckResponse.getAccessControlList()) {
+      if (accessControlDTO.isPermitted()) {
+        permittedConnectors.add(connectorsMap.get(ConnectorResource.fromAccessControlDTO(accessControlDTO)).get(0));
+      }
+    }
+    return permittedConnectors;
+  }
+
+  @Value
+  @Data
+  @Builder
+  private static class ConnectorResource {
+    String accountIdentifier;
+    String orgIdentifier;
+    String projectIdentifier;
+    String identifier;
+
+    static ConnectorResource fromConnector(Connector connector) {
+      return ConnectorResource.builder()
+              .accountIdentifier(connector.getAccountIdentifier())
+              .orgIdentifier(isBlank(connector.getOrgIdentifier()) ? null : connector.getOrgIdentifier())
+              .projectIdentifier(isBlank(connector.getProjectIdentifier()) ? null : connector.getProjectIdentifier())
+              .identifier(connector.getIdentifier())
+              .build();
+    }
+
+    static ConnectorResource fromAccessControlDTO(AccessControlDTO accessControlDTO) {
+      return ConnectorResource.builder()
+              .accountIdentifier(accessControlDTO.getResourceScope().getAccountIdentifier())
+              .orgIdentifier(isBlank(accessControlDTO.getResourceScope().getOrgIdentifier())
+                      ? null
+                      : accessControlDTO.getResourceScope().getOrgIdentifier())
+              .projectIdentifier(isBlank(accessControlDTO.getResourceScope().getProjectIdentifier())
+                      ? null
+                      : accessControlDTO.getResourceScope().getProjectIdentifier())
+              .identifier(accessControlDTO.getResourceIdentifier())
+              .build();
+    }
   }
 
   private ConnectorResponseDTO getResponse(
@@ -356,6 +452,13 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
         accountSettingService.getIsBuiltInSMDisabled(accountIdentifier, null, null, AccountSettingType.CONNECTOR);
     Criteria criteria = filterService.createCriteriaFromConnectorFilter(accountIdentifier, orgIdentifier,
         projectIdentifier, searchTerm, type, category, sourceCategory, isBuiltInSMDisabled);
+    List<Connector> connectors =
+            connectorRepository.findAll(criteria, Pageable.unpaged(), projectIdentifier, orgIdentifier, accountIdentifier).getContent();
+    if(!accessControlClient.hasAccess(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
+            Resource.of(ResourceTypes.CONNECTOR, null), VIEW_CONNECTOR_PERMISSION)) {
+      connectors = getPermitted(connectors);
+    }
+    populateInFilter(criteria, ConnectorKeys.identifier, connectors.stream().map(Connector::getIdentifier).collect(toList()));
     Pageable pageable = getPageRequest(
         PageRequest.builder()
             .pageIndex(page)
@@ -363,9 +466,9 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
             .sortOrders(Collections.singletonList(
                 SortOrder.Builder.aSortOrder().withField(ConnectorKeys.createdAt, OrderType.DESC).build()))
             .build());
-    Page<Connector> connectors =
+    Page<Connector> filteredConnectors =
         connectorRepository.findAll(criteria, pageable, projectIdentifier, orgIdentifier, accountIdentifier);
-    return getResponseList(accountIdentifier, orgIdentifier, projectIdentifier, connectors);
+    return getResponseList(accountIdentifier, orgIdentifier, projectIdentifier, filteredConnectors);
   }
 
   @VisibleForTesting
