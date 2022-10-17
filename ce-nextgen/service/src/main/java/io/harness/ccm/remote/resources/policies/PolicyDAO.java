@@ -49,13 +49,18 @@ public class PolicyDAO {
     }
 
     public Policy listid(String accountId, String uuid) {
-        return hPersistence.createQuery(Policy.class)
-                .field(Policy.PolicyId.accountId)
-                .equal(accountId)
-                .field(Policy.PolicyId.uuid)
-                .equal(uuid)
-                .asList()
-                .get(0);
+      try{
+          return hPersistence.createQuery(Policy.class)
+                  .field(Policy.PolicyId.accountId)
+                  .equal(accountId)
+                  .field(Policy.PolicyId.uuid)
+                  .equal(uuid)
+                  .asList()
+                  .get(0);
+      } catch (IndexOutOfBoundsException e) {
+          log.error("No such policy exists");
+         return null;
+      }
     }
 
     public List<Policy> findByTagAndResource(String resource, String tag, String accountId) {

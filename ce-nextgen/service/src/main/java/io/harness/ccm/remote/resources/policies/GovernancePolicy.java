@@ -8,6 +8,7 @@ import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.rbac.CCMRbacHelper;
 import io.harness.ccm.utils.LogAccountIdentifier;
+import io.harness.ng.core.Status;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -57,8 +58,8 @@ import javax.ws.rs.core.MediaType;
       @ApiResponse(code = 400, response = FailureDTO.class, message = "Bad Request")
       , @ApiResponse(code = 500, response = ErrorDTO.class, message = "Internal server error")
     })
-@NextGenManagerAuth
-//@PublicApi
+//@NextGenManagerAuth
+@PublicApi
 public class GovernancePolicy {
   private final PolicyService policyService;
   private final CCMRbacHelper rbacHelper;
@@ -90,7 +91,17 @@ public class GovernancePolicy {
    // rbacHelper.checkPolicyEditPermission(accountId, null, null);
     Policy policy = createPolicyDTO.getPolicy();
     policy.setAccountId(accountId);
-    policyService.save(policy);
+    String uuid=policy.getUuid();
+    if(policyService.listid(accountId, uuid)==null) {
+      policyService.save(policy);
+    }
+    else
+    {
+      ResponseDTO res= ResponseDTO.newResponse(policy);
+      res.setStatus(Status.ERROR);
+      res.setMetaData("Policy already exists with this name");
+      return res;
+    }
     return ResponseDTO.newResponse(policy.toDTO());
   }
 
@@ -178,7 +189,13 @@ public class GovernancePolicy {
     if (uuid != null) {
       Policy policy = policyService.listid(accountId, uuid);
       Policies.add(policy);
-      return ResponseDTO.newResponse(Policies);
+      ResponseDTO res= ResponseDTO.newResponse(Policies);
+      if(policyService.listid(accountId, uuid)==null)
+      {
+      res.setStatus(Status.ERROR);
+      res.setMetaData("No such policy exists");
+      }
+      return res;
     }
     if (isStablePolicy != null) {
       Policies = policyService.findByStability(isStablePolicy, accountId);
