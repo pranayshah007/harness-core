@@ -59,6 +59,7 @@ public class UsageMetricsEventPublisher {
   SimpleDateFormat sdf;
 
   private String APPROVAL = "APPROVAL";
+  private String ORCHESTRATION = "ORCHESTRATION";
 
   public UsageMetricsEventPublisher() {
     sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss z");
@@ -102,7 +103,8 @@ public class UsageMetricsEventPublisher {
     stringData.put(StepEventProcessor.STEP_NAME, stateExecutionInstance.getStateName());
     stringData.put(StepEventProcessor.STEP_TYPE, stateExecutionInstance.getStateType());
     stringData.put(StepEventProcessor.STATUS, stateExecutionInstance.getStatus().toString());
-    stringData.put(StepEventProcessor.PARENT_TYPE, stateExecutionInstance.getExecutionType().toString());
+    booleanData.put(
+        StepEventProcessor.IS_WORKFLOW, ORCHESTRATION.equals(stateExecutionInstance.getExecutionType().toString()));
     stringData.put(StepEventProcessor.EXECUTION_ID, stateExecutionInstance.getExecutionUuid());
 
     if (stateExecutionInstance.getStateExecutionMap() != null) {

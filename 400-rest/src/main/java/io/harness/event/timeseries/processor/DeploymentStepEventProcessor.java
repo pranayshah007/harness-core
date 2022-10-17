@@ -17,7 +17,7 @@ public class DeploymentStepEventProcessor implements StepEventProcessor<TimeSeri
   @Inject private TimeScaleDBService timeScaleDBService;
 
   private static final String upsert_statement =
-      "INSERT INTO DEPLOYMENT_STEP (ID,ACCOUNT_ID,APP_ID,STEP_NAME,STEP_TYPE,STATUS,FAILURE_DETAILS,START_TIME,END_TIME,DURATION,PARENT_TYPE,EXECUTION_ID,APPROVED_BY,APPROVAL_TYPE,APPROVED_AT,APPROVAL_COMMENT,APPROVAL_EXPIRY,MANUAL_INTERVENTION) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT (ID) DO UPDATE SET ACCOUNT_ID = excluded.ACCOUNT_ID,APP_ID = excluded.APP_ID,STEP_NAME = excluded.STEP_NAME,STEP_TYPE = excluded.STEP_TYPE,STATUS = excluded.STATUS,FAILURE_DETAILS = excluded.FAILURE_DETAILS,START_TIME = excluded.START_TIME,END_TIME = excluded.END_TIME,DURATION = excluded.DURATION,PARENT_TYPE = excluded.PARENT_TYPE,EXECUTION_ID = excluded.EXECUTION_ID,APPROVED_BY = excluded.APPROVED_BY,APPROVAL_TYPE = excluded.APPROVAL_TYPE,APPROVED_AT = excluded.APPROVED_AT,APPROVAL_COMMENT = excluded.APPROVAL_COMMENT,APPROVAL_EXPIRY = excluded.APPROVAL_EXPIRY,MANUAL_INTERVENTION = excluded.MANUAL_INTERVENTION";
+      "INSERT INTO DEPLOYMENT_STEP (ID,ACCOUNT_ID,APP_ID,STEP_NAME,STEP_TYPE,STATUS,FAILURE_DETAILS,START_TIME,END_TIME,DURATION,IS_WORKFLOW,EXECUTION_ID,APPROVED_BY,APPROVAL_TYPE,APPROVED_AT,APPROVAL_COMMENT,APPROVAL_EXPIRY,MANUAL_INTERVENTION) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT (ID) DO UPDATE SET ACCOUNT_ID = excluded.ACCOUNT_ID,APP_ID = excluded.APP_ID,STEP_NAME = excluded.STEP_NAME,STEP_TYPE = excluded.STEP_TYPE,STATUS = excluded.STATUS,FAILURE_DETAILS = excluded.FAILURE_DETAILS,START_TIME = excluded.START_TIME,END_TIME = excluded.END_TIME,DURATION = excluded.DURATION,PARENT_TYPE = excluded.PARENT_TYPE,EXECUTION_ID = excluded.EXECUTION_ID,APPROVED_BY = excluded.APPROVED_BY,APPROVAL_TYPE = excluded.APPROVAL_TYPE,APPROVED_AT = excluded.APPROVED_AT,APPROVAL_COMMENT = excluded.APPROVAL_COMMENT,APPROVAL_EXPIRY = excluded.APPROVAL_EXPIRY,MANUAL_INTERVENTION = excluded.MANUAL_INTERVENTION";
 
   @Override
   public void processEvent(TimeSeriesEventInfo eventInfo) throws Exception {
@@ -68,7 +68,7 @@ public class DeploymentStepEventProcessor implements StepEventProcessor<TimeSeri
     upsertStatement.setLong(++index, ProcessorHelper.getLongValue(START_TIME, eventInfo));
     upsertStatement.setLong(++index, ProcessorHelper.getLongValue(END_TIME, eventInfo));
     upsertStatement.setLong(++index, ProcessorHelper.getLongValue(DURATION, eventInfo));
-    upsertStatement.setString(++index, eventInfo.getStringData().get(PARENT_TYPE));
+    upsertStatement.setBoolean(++index, eventInfo.getBooleanData().get(IS_WORKFLOW));
     upsertStatement.setString(++index, eventInfo.getStringData().get(EXECUTION_ID));
     upsertStatement.setString(++index, eventInfo.getStringData().get(APPROVED_BY));
     upsertStatement.setString(++index, eventInfo.getStringData().get(APPROVAL_TYPE));
