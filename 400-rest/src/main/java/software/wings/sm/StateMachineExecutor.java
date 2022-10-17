@@ -389,8 +389,12 @@ public class StateMachineExecutor implements StateInspectionListener {
 
     stateExecutionInstance.setExpiryTs(Long.MAX_VALUE);
     wingsPersistence.save(stateExecutionInstance);
-    usageMetricsEventPublisher.publishDeploymentStepTimeSeriesEvent(
-        stateExecutionInstance.getAccountId(), stateExecutionInstance);
+    try {
+      usageMetricsEventPublisher.publishDeploymentStepTimeSeriesEvent(
+          stateExecutionInstance.getAccountId(), stateExecutionInstance);
+    } catch (Exception e) {
+      log.error("Failed to publish deployment step event [{}] , [{}]", stateExecutionInstance, e);
+    }
     return stateExecutionInstance;
   }
 
@@ -1096,8 +1100,12 @@ public class StateMachineExecutor implements StateInspectionListener {
               + "stateExecutionInstance: {},  status: {}",
           stateExecutionInstance.getUuid(), status);
     }
-    usageMetricsEventPublisher.publishDeploymentStepTimeSeriesEvent(
-        stateExecutionInstance.getAccountId(), stateExecutionInstance);
+    try {
+      usageMetricsEventPublisher.publishDeploymentStepTimeSeriesEvent(
+          stateExecutionInstance.getAccountId(), stateExecutionInstance);
+    } catch (Exception e) {
+      log.error("Failed to publish deployment step event [{}] , [{}]", stateExecutionInstance, e);
+    }
 
     final StateStatusUpdateInfo arg =
         StateStatusUpdateInfo.buildFromStateExecutionInstance(stateExecutionInstance, false);
@@ -1138,8 +1146,12 @@ public class StateMachineExecutor implements StateInspectionListener {
           stateExecutionInstance.getUuid(), status);
     }
 
-    usageMetricsEventPublisher.publishDeploymentStepTimeSeriesEvent(
-        stateExecutionInstance.getAccountId(), stateExecutionInstance);
+    try {
+      usageMetricsEventPublisher.publishDeploymentStepTimeSeriesEvent(
+          stateExecutionInstance.getAccountId(), stateExecutionInstance);
+    } catch (Exception e) {
+      log.error("Failed to publish deployment step event [{}] , [{}]", stateExecutionInstance, e);
+    }
 
     final StateStatusUpdateInfo arg =
         StateStatusUpdateInfo.buildFromStateExecutionInstance(stateExecutionInstance, false);
@@ -1808,8 +1820,12 @@ public class StateMachineExecutor implements StateInspectionListener {
           stateExecutionInstance.getUuid(), status, existingExecutionStatus);
       return false;
     }
-    usageMetricsEventPublisher.publishDeploymentStepTimeSeriesEvent(
-        stateExecutionInstance.getAccountId(), stateExecutionInstance);
+    try {
+      usageMetricsEventPublisher.publishDeploymentStepTimeSeriesEvent(
+          stateExecutionInstance.getAccountId(), stateExecutionInstance);
+    } catch (Exception e) {
+      log.error("Failed to publish deployment step event [{}] , [{}]", stateExecutionInstance, e);
+    }
 
     final StateStatusUpdateInfo arg = StateStatusUpdateInfo.buildFromStateExecutionInstance(stateExecutionInstance,
         reason != null
@@ -1945,8 +1961,12 @@ public class StateMachineExecutor implements StateInspectionListener {
       return false;
     }
 
-    usageMetricsEventPublisher.publishDeploymentStepTimeSeriesEvent(
-        stateExecutionInstance.getAccountId(), stateExecutionInstance);
+    try {
+      usageMetricsEventPublisher.publishDeploymentStepTimeSeriesEvent(
+          stateExecutionInstance.getAccountId(), stateExecutionInstance);
+    } catch (Exception e) {
+      log.error("Failed to publish deployment step event [{}] , [{}]", stateExecutionInstance, e);
+    }
 
     final StateStatusUpdateInfo arg = StateStatusUpdateInfo.buildFromStateExecutionInstance(stateExecutionInstance,
         isApprovalResumed(stateExecutionInstance.getStateType(), stateExecutionInstance.getStatus()));
@@ -2256,8 +2276,12 @@ public class StateMachineExecutor implements StateInspectionListener {
       throw new WingsException(ErrorCode.RETRY_FAILED).addParam("displayName", stateExecutionInstance.getDisplayName());
     }
 
-    usageMetricsEventPublisher.publishDeploymentStepTimeSeriesEvent(
-        stateExecutionInstance.getAccountId(), stateExecutionInstance);
+    try {
+      usageMetricsEventPublisher.publishDeploymentStepTimeSeriesEvent(
+          stateExecutionInstance.getAccountId(), stateExecutionInstance);
+    } catch (Exception e) {
+      log.error("Failed to publish deployment step event [{}] , [{}]", stateExecutionInstance, e);
+    }
 
     final StateStatusUpdateInfo arg =
         StateStatusUpdateInfo.buildFromStateExecutionInstance(stateExecutionInstance, false);
@@ -2319,8 +2343,12 @@ public class StateMachineExecutor implements StateInspectionListener {
     for (String id : leafInstanceIds) {
       StateExecutionInstance stateExecutionInstance = getStateExecutionInstance(
           workflowExecutionInterrupt.getAppId(), workflowExecutionInterrupt.getExecutionUuid(), id);
-      usageMetricsEventPublisher.publishDeploymentStepTimeSeriesEvent(
-          stateExecutionInstance.getAccountId(), stateExecutionInstance);
+      try {
+        usageMetricsEventPublisher.publishDeploymentStepTimeSeriesEvent(
+            stateExecutionInstance.getAccountId(), stateExecutionInstance);
+      } catch (Exception e) {
+        log.error("Failed to publish deployment step event [{}] , [{}]", stateExecutionInstance, e);
+      }
     }
 
     return true;

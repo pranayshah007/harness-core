@@ -199,8 +199,12 @@ public class ExecutionInterruptManager {
     }
     wingsPersistence.save(executionInterrupt);
 
-    usageMetricsEventPublisher.publishExecutionInterruptTimeSeriesEvent(
-        executionInterrupt.getAccountId(), executionInterrupt);
+    try {
+      usageMetricsEventPublisher.publishExecutionInterruptTimeSeriesEvent(
+          executionInterrupt.getAccountId(), executionInterrupt);
+    } catch (Exception e) {
+      log.error("Failed to publish execution interrupt [{}] , [{}]", executionInterrupt, e);
+    }
 
     stateMachineExecutor.handleInterrupt(executionInterrupt);
 
