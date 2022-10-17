@@ -53,6 +53,7 @@ public class AwsCloudWatchHelperServiceImpl implements AwsCloudWatchHelperServic
       metricDataResults.addAll(metricDataResult.getMetricDataResults());
       nextToken = metricDataResult.getNextToken();
     } while (nextToken != null);
+    log.info("Per metricDataResults = {}", metricDataResults);
     return AwsCloudWatchMetricDataResponse.builder()
         .metricDataResults(metricDataResults)
         .executionStatus(ExecutionStatus.SUCCESS)

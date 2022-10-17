@@ -76,10 +76,10 @@ public class EC2MetricHelper {
     public List<Ec2UtilzationData> getUtilizationMetrics(AwsCrossAccountAttributes awsCrossAccountAttributes,
                                                           Date startTime, Date endTime, List<AWSEC2Details> instanceDetails) {
         // Aggregate all the individual metric queries we need into a single query.
-        List<MetricDataQuery> aggregatedQuery = new ArrayList<>();
         final Map<String, MetricDataResult> metricDataResultMap = new HashMap<>();
         log.info("entred in utilisation metric func!");
         for (AWSEC2Details instance: instanceDetails) {
+            List<MetricDataQuery> aggregatedQuery = new ArrayList<>();
             for (Statistic stat : Arrays.asList(Average, Maximum)) {
                 for (String metricName : Arrays.asList(CPU_UTILIZATION, MEMORY_UTILIZATION)) {
                     // instance level metrics
