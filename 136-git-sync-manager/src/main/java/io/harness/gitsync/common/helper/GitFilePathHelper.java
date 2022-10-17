@@ -8,12 +8,10 @@
 package io.harness.gitsync.common.helper;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
-import io.harness.exception.InvalidRequestException;
 import io.harness.gitsync.beans.GitRepositoryDTO;
 
 import com.google.inject.Inject;
@@ -27,28 +25,13 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(PL)
 public class GitFilePathHelper {
   GitSyncConnectorHelper gitSyncConnectorHelper;
-  public static final String FILE_PATH_SEPARATOR = "/";
-  public static final String FILE_PATH_INVALID_EXTENSION_ERROR_FORMAT = "FilePath [%s] doesn't have right extension.";
   public static final String NULL_FILE_PATH_ERROR_MESSAGE = "FilePath cannot be null or empty.";
   public static final String INVALID_FILE_PATH_FORMAT_ERROR_MESSAGE = "FilePath [%s] should not start or end with [/].";
-
-  public void validateFilePath(String filePath) {
-    validateFilePathFormat(filePath);
-  }
 
   public String getFileUrl(
       Scope scope, String connectorRef, String branchName, String filePath, GitRepositoryDTO gitRepositoryDTO) {
     ScmConnector scmConnector = gitSyncConnectorHelper.getScmConnectorForGivenRepo(scope.getAccountIdentifier(),
         scope.getOrgIdentifier(), scope.getProjectIdentifier(), connectorRef, gitRepositoryDTO.getName());
     return scmConnector.getFileUrl(branchName, filePath, gitRepositoryDTO);
-  }
-
-  private static void validateFilePathFormat(String filePath) {
-    if (isEmpty(filePath)) {
-      throw new InvalidRequestException(NULL_FILE_PATH_ERROR_MESSAGE);
-    }
-    if (filePath.startsWith(FILE_PATH_SEPARATOR) || filePath.endsWith(FILE_PATH_SEPARATOR)) {
-      throw new InvalidRequestException(String.format(INVALID_FILE_PATH_FORMAT_ERROR_MESSAGE, filePath));
-    }
   }
 }

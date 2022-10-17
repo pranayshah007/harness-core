@@ -7,8 +7,7 @@
 
 package io.harness.gitaware.helper;
 
-import static io.harness.rule.OwnerRule.ADITHYA;
-import static io.harness.rule.OwnerRule.NAMAN;
+import static io.harness.rule.OwnerRule.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -23,6 +22,7 @@ import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.gitaware.dto.GitContextRequestParams;
+import io.harness.gitsync.common.helper.GitFilePathHelper;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.interceptor.GitSyncBranchContext;
 import io.harness.gitsync.scm.SCMGitSyncHelper;
@@ -260,12 +260,40 @@ public class GitAwareEntityHelperTest extends CategoryTest {
   public void testValidateFilePath_whenFilePathHasInvalidExtension() {
     String filePath = ".harness/abc.py";
     try {
-      gitAwareEntityHelper.validateFilePathHasCorrectExtension(filePath);
+      gitAwareEntityHelper.validateFilePath(filePath);
     } catch (Exception ex) {
       WingsException exception = ExceptionUtils.cause(InvalidRequestException.class, ex);
       assertThat(exception).isNotNull();
       assertThat(exception.getMessage())
           .isEqualTo(String.format(GitAwareEntityHelper.FILE_PATH_INVALID_EXTENSION_ERROR_FORMAT, filePath));
+    }
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testNullFilePath() {
+    try {
+      gitAwareEntityHelper.validateFilePath(null);
+    } catch (Exception ex) {
+      WingsException exception = ExceptionUtils.cause(InvalidRequestException.class, ex);
+      assertThat(exception).isNotNull();
+      assertThat(exception.getMessage()).isEqualTo(GitFilePathHelper.NULL_FILE_PATH_ERROR_MESSAGE);
+    }
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testValidateFilePath_whenFilePathDoesNotHaveCorrectFormat() {
+    String filePath = "//.harness/abc.yaml////";
+    try {
+      gitAwareEntityHelper.validateFilePath(filePath);
+    } catch (Exception ex) {
+      WingsException exception = ExceptionUtils.cause(InvalidRequestException.class, ex);
+      assertThat(exception).isNotNull();
+      assertThat(exception.getMessage())
+          .isEqualTo(String.format(GitFilePathHelper.INVALID_FILE_PATH_FORMAT_ERROR_MESSAGE, filePath));
     }
   }
 

@@ -381,7 +381,6 @@ public class HarnessToGitHelperServiceImpl implements HarnessToGitHelperService 
   public GetFileResponse getFileByBranch(GetFileRequest getFileRequest) {
     try {
       Scope scope = ScopeIdentifierMapper.getScopeFromScopeIdentifiers(getFileRequest.getScopeIdentifiers());
-      gitFilePathHelper.validateFilePath(getFileRequest.getFilePath());
       ScmGetFileResponseDTO scmGetFileResponseDTO =
           scmFacilitatorService.getFileByBranch(ScmGetFileByBranchRequestDTO.builder()
                                                     .branchName(getFileRequest.getBranchName())
@@ -410,7 +409,6 @@ public class HarnessToGitHelperServiceImpl implements HarnessToGitHelperService 
   public io.harness.gitsync.CreateFileResponse createFile(CreateFileRequest createFileRequest) {
     try {
       Scope scope = ScopeIdentifierMapper.getScopeFromScopeIdentifiers(createFileRequest.getScopeIdentifiers());
-      gitFilePathHelper.validateFilePath(createFileRequest.getFilePath());
       ScmCommitFileResponseDTO scmCommitFileResponseDTO =
           scmFacilitatorService.createFile(ScmCreateFileRequestDTO.builder()
                                                .repoName(createFileRequest.getRepoName())
@@ -443,7 +441,6 @@ public class HarnessToGitHelperServiceImpl implements HarnessToGitHelperService 
   public io.harness.gitsync.UpdateFileResponse updateFile(UpdateFileRequest updateFileRequest) {
     try {
       Scope scope = ScopeIdentifierMapper.getScopeFromScopeIdentifiers(updateFileRequest.getScopeIdentifiers());
-      gitFilePathHelper.validateFilePath(updateFileRequest.getFilePath());
       ScmCommitFileResponseDTO scmCommitFileResponseDTO =
           scmFacilitatorService.updateFile(ScmUpdateFileRequestDTO.builder()
                                                .repoName(updateFileRequest.getRepoName())

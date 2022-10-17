@@ -26,7 +26,6 @@ import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectorDTO;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketAuthenticationDTO;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
-import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.gitsync.beans.GitRepositoryDTO;
@@ -56,34 +55,6 @@ public class GitFilePathHelperTest extends CategoryTest {
   @Before
   public void setUp() {
     MockitoAnnotations.initMocks(this);
-  }
-
-  @Test
-  @Owner(developers = BHAVYA)
-  @Category(UnitTests.class)
-  public void testNullFilePath() {
-    try {
-      gitFilePathHelper.validateFilePath(null);
-    } catch (Exception ex) {
-      WingsException exception = ExceptionUtils.cause(InvalidRequestException.class, ex);
-      assertThat(exception).isNotNull();
-      assertThat(exception.getMessage()).isEqualTo(GitFilePathHelper.NULL_FILE_PATH_ERROR_MESSAGE);
-    }
-  }
-
-  @Test
-  @Owner(developers = BHAVYA)
-  @Category(UnitTests.class)
-  public void testValidateFilePath_whenFilePathDoesNotHaveCorrectFormat() {
-    String filePath = "//.harness/abc.yaml////";
-    try {
-      gitFilePathHelper.validateFilePath(filePath);
-    } catch (Exception ex) {
-      WingsException exception = ExceptionUtils.cause(InvalidRequestException.class, ex);
-      assertThat(exception).isNotNull();
-      assertThat(exception.getMessage())
-          .isEqualTo(String.format(GitFilePathHelper.INVALID_FILE_PATH_FORMAT_ERROR_MESSAGE, filePath));
-    }
   }
 
   @Test
