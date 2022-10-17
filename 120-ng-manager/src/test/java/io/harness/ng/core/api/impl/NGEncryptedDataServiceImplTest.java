@@ -167,7 +167,7 @@ public class NGEncryptedDataServiceImplTest extends CategoryTest {
     when(ngConnectorSecretManagerService.getUsingIdentifier(any(), any(), any(), any(), anyBoolean()))
         .thenReturn(vaultConfigDTO);
     ArgumentCaptor<SecretManagerConfig> argumentCaptor = ArgumentCaptor.forClass(SecretManagerConfig.class);
-    when(vaultEncryptor.createSecret(any(), any(), any(), argumentCaptor.capture()))
+    when(vaultEncryptor.createSecret(any(), any(), argumentCaptor.capture()))
         .thenReturn(NGEncryptedData.builder()
                         .name("name")
                         .encryptedValue("encryptedValue".toCharArray())
@@ -215,7 +215,7 @@ public class NGEncryptedDataServiceImplTest extends CategoryTest {
     when(ngConnectorSecretManagerService.getUsingIdentifier(any(), any(), any(), any(), anyBoolean()))
         .thenReturn(vaultConfigDTO);
     ArgumentCaptor<SecretManagerConfig> argumentCaptor = ArgumentCaptor.forClass(SecretManagerConfig.class);
-    when(vaultEncryptor.createSecret(any(), any(), any(), argumentCaptor.capture()))
+    when(vaultEncryptor.createSecret(any(), any(), argumentCaptor.capture()))
         .thenReturn(NGEncryptedData.builder()
                         .name("name")
                         .encryptedValue("encryptedValue".toCharArray())
@@ -433,7 +433,7 @@ public class NGEncryptedDataServiceImplTest extends CategoryTest {
     when(ngConnectorSecretManagerService.getUsingIdentifier(any(), any(), any(), any(), anyBoolean()))
         .thenReturn(vaultConfigDTO);
     ArgumentCaptor<SecretManagerConfig> argumentCaptor = ArgumentCaptor.forClass(SecretManagerConfig.class);
-    when(vaultEncryptor.createSecret(any(), any(), any(), argumentCaptor.capture()))
+    when(vaultEncryptor.createSecret(any(), any(), argumentCaptor.capture()))
         .thenReturn(NGEncryptedData.builder()
                         .name("name")
                         .encryptedValue("encryptedValue".toCharArray())
