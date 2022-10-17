@@ -76,9 +76,12 @@ public class CompositeSLOMetricAnalysisStateExecutor extends AnalysisStateExecut
       serviceLevelObjectivesDetailSLIRecordMap.put(objectivesDetail, sliRecords);
       objectivesDetailSLIMissingDataTypeMap.put(objectivesDetail, serviceLevelIndicator.getSliMissingDataType());
     }
-    compositeSLORecordService.create(serviceLevelObjectivesDetailSLIRecordMap, objectivesDetailSLIMissingDataTypeMap,
-        compositeServiceLevelObjective.getVersion(), verificationTaskId, startTime, endTime);
-    sloHealthIndicatorService.upsert(compositeServiceLevelObjective);
+    if (serviceLevelObjectivesDetailSLIRecordMap.size()
+        == compositeServiceLevelObjective.getServiceLevelObjectivesDetails().size()) {
+      compositeSLORecordService.create(serviceLevelObjectivesDetailSLIRecordMap, objectivesDetailSLIMissingDataTypeMap,
+          compositeServiceLevelObjective.getVersion(), verificationTaskId, startTime, endTime);
+      sloHealthIndicatorService.upsert(compositeServiceLevelObjective);
+    }
     analysisState.setStatus(AnalysisStatus.SUCCESS);
     return analysisState;
   }

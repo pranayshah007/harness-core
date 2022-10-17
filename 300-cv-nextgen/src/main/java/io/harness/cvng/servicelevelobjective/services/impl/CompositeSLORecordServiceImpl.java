@@ -341,4 +341,13 @@ public class CompositeSLORecordServiceImpl implements CompositeSLORecordService 
         .order(Sort.descending(CompositeSLORecordKeys.timestamp))
         .get();
   }
+
+  @Override
+  public CompositeSLORecord getLatestCompositeSLORecordWithVersion(String sloId, int sloVersion) {
+    return hPersistence.createQuery(CompositeSLORecord.class, excludeAuthorityCount)
+        .filter(CompositeSLORecordKeys.sloId, sloId)
+        .filter(CompositeSLORecordKeys.sloVersion, sloVersion)
+        .order(Sort.descending(CompositeSLORecordKeys.timestamp))
+        .get();
+  }
 }

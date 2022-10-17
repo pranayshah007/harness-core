@@ -28,4 +28,5 @@ public interface CompositeSLORecordService {
   SLOGraphData getGraphData(CompositeServiceLevelObjective compositeServiceLevelObjective, Instant startTime,
       Instant endTime, int totalErrorBudgetMinutes, int sloVersion, TimeRangeParams timeRangeParams);
   CompositeSLORecord getLatestCompositeSLORecord(String sloId);
+  CompositeSLORecord getLatestCompositeSLORecordWithVersion(String sloId, int sloVersion);
 }
