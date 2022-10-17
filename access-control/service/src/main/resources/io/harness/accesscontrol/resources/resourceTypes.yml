@@ -104,6 +104,8 @@ resourceTypes:
     permissionKey: autoStoppingRule
   - identifier: CCM_LOADBALANCER
     permissionKey: loadBalancer
+  - identifier: CCM_GOVERNANCE
+    permissionKey: governance
   - identifier: SMTP
     permissionKey: smtp
   - identifier: SETTING
