@@ -5,7 +5,10 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ccm.views.dto;
+package io.harness.ccm.remote.resources.governance;
 
-public class GovernancePolicySetResponseDTO {
+public interface PolicyPackService {
+  boolean save(PolicyPack policyPack);
+  boolean delete(String accountId, String uuid);
+  PolicyPack update(PolicyPack policyPack);
 }

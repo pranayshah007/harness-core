@@ -57,10 +57,11 @@ import io.harness.ccm.rbac.CCMRbacHelper;
 import io.harness.ccm.rbac.CCMRbacHelperImpl;
 import io.harness.ccm.remote.mapper.anomaly.AnomalyFilterPropertiesMapper;
 import io.harness.ccm.remote.mapper.recommendation.CCMRecommendationFilterPropertiesMapper;
-import io.harness.ccm.remote.resources.policies.PolicyService;
-import io.harness.ccm.remote.resources.policies.PolicyServiceImpl;
-import io.harness.ccm.remote.resources.policies.PolicySetService;
-import io.harness.ccm.remote.resources.policies.PolicySetServiceImpl;
+import io.harness.ccm.remote.resources.governance.PolicyService;
+import io.harness.ccm.remote.resources.governance.PolicyServiceImpl;
+import io.harness.ccm.remote.resources.governance.PolicyPackService;
+import io.harness.ccm.remote.resources.governance.PolicyPackServiceImpl;
+import io.harness.ccm.scheduler.SchedulerClientModule;
 import io.harness.ccm.service.impl.AWSBucketPolicyHelperServiceImpl;
 import io.harness.ccm.service.impl.AWSOrganizationHelperServiceImpl;
 import io.harness.ccm.service.impl.AnomalyServiceImpl;
@@ -269,6 +270,8 @@ public class CENextGenModule extends AbstractModule {
         configuration.getNgManagerServiceSecret(), CE_NEXT_GEN.getServiceId(), ClientMode.PRIVILEGED));
     install(new LightwingClientModule(configuration.getLightwingAutoCUDClientConfig(),
         configuration.getNgManagerServiceSecret(), CE_NEXT_GEN.getServiceId(), ClientMode.PRIVILEGED));
+    install(new SchedulerClientModule(configuration.getDkronClientConfig(),
+            configuration.getNgManagerServiceSecret(), CE_NEXT_GEN.getServiceId(), ClientMode.PRIVILEGED));
     install(new K8sWatchTaskResourceClientModule(
         configuration.getManagerClientConfig(), configuration.getNgManagerServiceSecret(), CE_NEXT_GEN.getServiceId()));
     install(new TokenClientModule(configuration.getNgManagerClientConfig(), configuration.getNgManagerServiceSecret(),
@@ -332,7 +335,7 @@ public class CENextGenModule extends AbstractModule {
     bind(OutboxEventHandler.class).to(CENextGenOutboxEventHandler.class);
     bind(CCMRbacHelper.class).to(CCMRbacHelperImpl.class);
     bind(PolicyService.class).to(PolicyServiceImpl.class);
-    bind(PolicySetService.class).to(PolicySetServiceImpl.class);
+    bind(PolicyPackService.class).to(PolicyPackServiceImpl.class);
 
     registerEventsFrameworkMessageListeners();
 

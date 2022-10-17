@@ -1,4 +1,11 @@
-package io.harness.ccm.remote.resources.policies;
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
+package io.harness.ccm.remote.resources.governance;
 
 import static io.harness.NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE;
 import static io.harness.annotations.dev.HarnessTeam.CE;
@@ -8,11 +15,12 @@ import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.rbac.CCMRbacHelper;
 import io.harness.ccm.utils.LogAccountIdentifier;
+import io.harness.ccm.views.dto.GovernanceEnqueueResponseDTO;
+import io.harness.ccm.views.dto.GovernanceJobEnqueueDTO;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.security.annotations.NextGenManagerAuth;
-import io.harness.security.annotations.PublicApi;
 
 import com.codahale.metrics.annotation.ExceptionMetered;
 import com.codahale.metrics.annotation.Timed;
@@ -31,11 +39,22 @@ import java.util.ArrayList;
 import java.util.List;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
-import javax.ws.rs.*;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
 
-@Api("policy")
-@Path("policy")
+@Slf4j
+@Service
+@Api("governance")
+@Path("governance")
 @OwnedBy(CE)
 @Produces({"application/json", "text/yaml"})
 @Consumes({"application/json"})
@@ -59,11 +78,12 @@ import javax.ws.rs.core.MediaType;
     })
 @NextGenManagerAuth
 //@PublicApi
-public class GovernancePolicy {
+public class GovernancePolicyResource {
   private final PolicyService policyService;
   private final CCMRbacHelper rbacHelper;
+
   @Inject
-  public GovernancePolicy(PolicyService policyService, CCMRbacHelper rbacHelper) {
+  public GovernancePolicyResource(PolicyService policyService, CCMRbacHelper rbacHelper) {
     this.policyService = policyService;
     this.rbacHelper = rbacHelper;
   }
@@ -73,7 +93,7 @@ public class GovernancePolicy {
   @POST
   //  @Hidden
   //  @InternalApi
-  @Path("add")
+  @Path("policy")
   @Consumes(MediaType.APPLICATION_JSON)
   @ApiOperation(value = "Add a new policy internal api", nickname = "addPolicyNameInternal")
   @Operation(operationId = "addPolicyNameInternal", summary = "Add a new OOTB policy to be executed",
@@ -87,7 +107,7 @@ public class GovernancePolicy {
              NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @RequestBody(required = true,
           description = "Request body containing Policy store object") @Valid CreatePolicyDTO createPolicyDTO) {
-   // rbacHelper.checkPolicyEditPermission(accountId, null, null);
+    // rbacHelper.checkPolicyEditPermission(accountId, null, null);
     Policy policy = createPolicyDTO.getPolicy();
     policy.setAccountId(accountId);
     policyService.save(policy);
@@ -99,7 +119,7 @@ public class GovernancePolicy {
   @PUT
   //  @Hidden
   //  @InternalApi
-  @Path("update")
+  @Path("policy")
   @Consumes(MediaType.APPLICATION_JSON)
   @ApiOperation(value = "Update a existing OOTB Policy", nickname = "updatePolicy")
   @LogAccountIdentifier
@@ -114,7 +134,7 @@ public class GovernancePolicy {
                    NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @RequestBody(required = true,
           description = "Request body containing ceViewFolder object") @Valid CreatePolicyDTO createPolicyDTO) {
-    //rbacHelper.checkPolicyEditPermission(accountId, null, null);
+    // rbacHelper.checkPolicyEditPermission(accountId, null, null);
     Policy policy = createPolicyDTO.getPolicy();
     policy.toDTO();
     policy.setAccountId(accountId);
@@ -127,7 +147,7 @@ public class GovernancePolicy {
   @DELETE
   //  @Hidden
   //  @InternalApi
-  @Path("{policyId}")
+  @Path("policy/{policyId}")
   @Timed
   @ExceptionMetered
   @ApiOperation(value = "Delete a policy", nickname = "deletePolicy")
@@ -145,7 +165,7 @@ public class GovernancePolicy {
              NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @PathParam("policyId") @Parameter(
           required = true, description = "Unique identifier for the policy") @NotNull @Valid String uuid) {
-    //rbacHelper.checkPolicyDeletePermission(accountId, null, null);
+    // rbacHelper.checkPolicyDeletePermission(accountId, null, null);
     boolean result = policyService.delete(accountId, uuid);
     return ResponseDTO.newResponse(result);
   }
@@ -153,7 +173,7 @@ public class GovernancePolicy {
   // API to list all OOTB Policies
 
   @POST
-  @Path("list")
+  @Path("policy/list")
   @ApiOperation(value = "Get OOTB policies for account", nickname = "getPolicies")
   @Produces(MediaType.APPLICATION_JSON)
   @Operation(operationId = "getPolicies", description = "Fetch policies ", summary = "Fetch policies for account",
@@ -167,7 +187,7 @@ public class GovernancePolicy {
                  NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @RequestBody(
           required = true, description = "Request body containing ceViewFolder object") @Valid ListDTO listDTO) {
-    //rbacHelper.checkPolicyViewPermission(accountId, null, null);
+    // rbacHelper.checkPolicyViewPermission(accountId, null, null);
     PolicyRequest query = listDTO.getPolicyRequest();
     List<Policy> Policies = new ArrayList<>();
     query.setAccountId(accountId);
@@ -199,5 +219,28 @@ public class GovernancePolicy {
 
     Policies = policyService.list(accountId);
     return ResponseDTO.newResponse(Policies);
+  }
+
+  @POST
+  @Path("enqueue")
+  @Timed
+  @ExceptionMetered
+  @Consumes(MediaType.APPLICATION_JSON)
+  @ApiOperation(value = "Enqueues job for execution", nickname = "enqueueGovernanceJob")
+  // TODO: Also check with PL team as this does not require accountId to be passed, how to add accountId in the log
+  // context here ?
+  @Operation(operationId = "enqueueGovernanceJob", description = "Enqueues job for execution.",
+      summary = "Enqueues job for execution",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Returns success when job is enqueued",
+            content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
+      })
+  public ResponseDTO<GovernanceEnqueueResponseDTO>
+  enqueue(@RequestBody(required = true, description = "Request body for queuing the governance job")
+      @Valid GovernanceJobEnqueueDTO governanceJobEnqueueDTO) {
+    log.info("Policy setid is {}", governanceJobEnqueueDTO.getPolicySetId());
+    // Next is fetch from Mongo this policySetId and enqueue in the Faktory queue one by one.
+    return ResponseDTO.newResponse();
   }
 }

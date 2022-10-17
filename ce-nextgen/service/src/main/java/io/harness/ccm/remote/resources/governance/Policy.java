@@ -1,4 +1,11 @@
-package io.harness.ccm.remote.resources.policies;
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
+package io.harness.ccm.remote.resources.governance;
 
 import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.StoreIn;
@@ -36,8 +43,7 @@ import org.mongodb.morphia.annotations.Id;
 @Schema(description = "This object will contain the complete definition of a Cloud Cost Policies")
 
 public final class Policy implements PersistentEntity, UuidAware, CreatedAtAware, UpdatedAtAware, AccountAccess,
-                                          CreatedByAware, UpdatedByAware {
-
+                                     CreatedByAware, UpdatedByAware {
   @Id @Schema(description = "unique id") String uuid;
   @Schema(description = "account id") String accountId;
   @Schema(description = "Identifier") String name;
@@ -58,15 +64,15 @@ public final class Policy implements PersistentEntity, UuidAware, CreatedAtAware
 
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
-            .add(CompoundMongoIndex.builder()
-                    .name("policy")
-                    .field(PolicyId.uuid)
-                    .field(PolicyId.accountId)
-                    .field(PolicyId.cloudProvider)
-                    .build())
-            .add(CompoundMongoIndex.builder().name("sort1").field(PolicyId.lastUpdatedAt).build())
-            .add(CompoundMongoIndex.builder().name("sort2").field(PolicyId.createdAt).build())
-            .build();
+        .add(CompoundMongoIndex.builder()
+                 .name("policy")
+                 .field(PolicyId.uuid)
+                 .field(PolicyId.accountId)
+                 .field(PolicyId.cloudProvider)
+                 .build())
+        .add(CompoundMongoIndex.builder().name("sort1").field(PolicyId.lastUpdatedAt).build())
+        .add(CompoundMongoIndex.builder().name("sort2").field(PolicyId.createdAt).build())
+        .build();
   }
   public Policy toDTO() {
     return Policy.builder()
