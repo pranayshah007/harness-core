@@ -1,3 +1,10 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.serializer;
 
 import static java.lang.String.format;
@@ -8,7 +15,6 @@ import com.esotericsoftware.kryo.util.IntMap;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
-import java.io.OutputStream;
 import lombok.extern.slf4j.Slf4j;
 
 @Singleton
@@ -36,75 +42,21 @@ public class KryoSerializerWrapper {
     }
   }
 
-  public String asString(Object obj) {
-    try {
-      return referenceFalseKryoSerializer.asString(obj);
-    } catch (KryoException kryoException) {
-      return referenceTrueKryoSerializer.asString(obj);
-    }
-  }
-
   public byte[] asBytes(Object obj) {
     try {
-      return referenceFalseKryoSerializer.asBytes(obj);
-    } catch (KryoException kryoException) {
       return referenceTrueKryoSerializer.asBytes(obj);
-    }
-  }
-
-  public byte[] asDeflatedBytes(Object obj) {
-    try {
-      return referenceFalseKryoSerializer.asDeflatedBytes(obj);
     } catch (KryoException kryoException) {
-      return referenceTrueKryoSerializer.asDeflatedBytes(obj);
-    }
-  }
-
-  private void writeToStream(Object obj, OutputStream outputStream) {
-    try {
-      referenceFalseKryoSerializer.writeToStream(obj, outputStream);
-    } catch (KryoException kryoException) {
-      referenceTrueKryoSerializer.writeToStream(obj, outputStream);
-    }
-  }
-
-  public <T> T clone(T obj) {
-    try {
-      return referenceFalseKryoSerializer.clone(obj);
-    } catch (KryoException kryoException) {
-      return referenceTrueKryoSerializer.clone(obj);
+      log.info("Using kryo serializer on 'asBytes' method with setReference of false");
+      return referenceFalseKryoSerializer.asBytes(obj);
     }
   }
 
   public Object asObject(byte[] bytes) {
     try {
-      return referenceFalseKryoSerializer.asObject(bytes);
-    } catch (KryoException kryoException) {
       return referenceTrueKryoSerializer.asObject(bytes);
-    }
-  }
-
-  public Object asInflatedObject(byte[] bytes) {
-    try {
-      return referenceFalseKryoSerializer.asInflatedObject(bytes);
     } catch (KryoException kryoException) {
-      return referenceTrueKryoSerializer.asInflatedObject(bytes);
-    }
-  }
-
-  public Object asObject(String base64) {
-    try {
-      return referenceFalseKryoSerializer.asObject(base64);
-    } catch (KryoException kryoException) {
-      return referenceTrueKryoSerializer.asObject(base64);
-    }
-  }
-
-  public boolean isRegistered(Class cls) {
-    try {
-      return referenceFalseKryoSerializer.isRegistered(cls);
-    } catch (KryoException kryoException) {
-      return referenceTrueKryoSerializer.isRegistered(cls);
+      log.info("Using kryo serializer on 'asObject' method with setReference of false");
+      return referenceFalseKryoSerializer.asObject(bytes);
     }
   }
 }

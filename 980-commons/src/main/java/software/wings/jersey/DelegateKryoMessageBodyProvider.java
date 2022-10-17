@@ -7,12 +7,11 @@
 
 package software.wings.jersey;
 
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.KryoSerializerWrapper;
 
 import com.google.common.io.ByteStreams;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.google.inject.name.Named;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -34,7 +33,7 @@ import lombok.extern.slf4j.Slf4j;
 @Produces("application/x-kryo-v2")
 @Singleton
 public class DelegateKryoMessageBodyProvider implements MessageBodyWriter<Object>, MessageBodyReader<Object> {
-  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializerWrapper kryoSerializer;
 
   @Override
   public long getSize(final Object object, final Class<?> type, final Type genericType, final Annotation[] annotations,
