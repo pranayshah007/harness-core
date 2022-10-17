@@ -62,6 +62,7 @@ public class RoleAssignmentDTOMapper {
                             .resourceGroupIdentifier(object.getResourceGroupIdentifier())
                             .roleIdentifier(object.getRoleIdentifier())
                             .disabled(object.isDisabled())
+                            .managed(object.isManaged())
                             .build())
         .scope(ScopeMapper.toDTO(scope))
         .harnessManaged(object.isManaged())
