@@ -159,7 +159,6 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
         dto.getProjectIdentifier(), secret.getSecretManagerIdentifier(), false);
 
     NGEncryptedData encryptedData = buildNGEncryptedData(accountIdentifier, dto, secretManager);
-    encryptedData.setAdditionalMetadata(dto.getSpec().additionalMetadata);
 
     switch (secret.getValueType()) {
       case Inline:
@@ -251,7 +250,8 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
         .orgIdentifier(dto.getOrgIdentifier())
         .projectIdentifier(dto.getProjectIdentifier())
         .identifier(dto.getIdentifier())
-        .name(dto.getName());
+        .name(dto.getName())
+        .additionalMetadata(dto.getSpec().additionalMetadata);
     builder.secretManagerIdentifier(secretManager.getIdentifier()).encryptionType(secretManager.getEncryptionType());
     if (SecretText.equals(dto.getType())) {
       SecretTextSpecDTO secret = (SecretTextSpecDTO) dto.getSpec();
