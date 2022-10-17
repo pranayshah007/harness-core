@@ -881,8 +881,6 @@ public class StateMachineExecutor implements StateInspectionListener {
     if (updated == null) {
       log.error("[TimeOut Op] StateExecutionInstance stateTimeout update Failed");
     }
-    usageMetricsEventPublisher.publishDeploymentStepTimeSeriesEvent(
-        stateExecutionInstance.getAccountId(), stateExecutionInstance);
     return updated;
   }
 

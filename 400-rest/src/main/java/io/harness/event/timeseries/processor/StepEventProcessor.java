@@ -15,7 +15,7 @@ public interface StepEventProcessor<T extends EventInfo> {
   String START_TIME = "START_TIME";
   String END_TIME = "END_TIME";
   String DURATION = "DURATION";
-  String IS_WORKFLOW = "IS_WORKFLOW";
+  String STAGE_NAME = "STAGE_NAME";
   String EXECUTION_ID = "EXECUTION_ID";
 
   String MANUAL_INTERVENTION = "MANUAL_INTERVENTION";
