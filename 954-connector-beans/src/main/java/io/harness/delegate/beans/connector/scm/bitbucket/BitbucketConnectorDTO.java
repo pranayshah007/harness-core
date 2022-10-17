@@ -11,7 +11,6 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.utils.FilePathUtils.FILE_PATH_SEPARATOR;
 import static io.harness.utils.FilePathUtils.removeStartingAndEndingSlash;
 
-import io.harness.annotation.RecasterFieldName;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
@@ -61,7 +60,6 @@ import org.hibernate.validator.constraints.NotBlank;
 public class BitbucketConnectorDTO
     extends ConnectorConfigDTO implements ScmConnector, DelegateSelectable, ManagerExecutable {
   @NotNull
-  @RecasterFieldName(name = "type")
   @JsonProperty("type")
   @Schema(type = "string", allowableValues = {"Account", "Repo"})
   private GitConnectionType connectionType;
@@ -157,7 +155,7 @@ public class BitbucketConnectorDTO
       String httpRepoUrl = GitClientHelper.getCompleteHTTPUrlForBitbucketSaas(repoUrl);
       return String.format("%s/src/%s/%s", httpRepoUrl, branchName, filePath);
     }
-    return getFileUrlForBitbucketServer(repoUrl, branchName, filePath);
+    return getFileUrlForBitbucketServer(repoUrl, branchName, filePath, gitRepositoryDTO);
   }
 
   @Override
@@ -189,7 +187,8 @@ public class BitbucketConnectorDTO
     }
   }
 
-  private String getFileUrlForBitbucketServer(String repoUrl, String branchName, String filePath) {
+  private String getFileUrlForBitbucketServer(
+      String repoUrl, String branchName, String filePath, GitRepositoryDTO gitRepositoryDTO) {
     if (GitAuthType.SSH.equals(authentication.getAuthType())) {
       repoUrl = GitClientHelper.getCompleteHTTPUrlFromSSHUrlForBitbucketServer(repoUrl);
     }
@@ -201,8 +200,18 @@ public class BitbucketConnectorDTO
       log.error("Exception occurred while parsing bitbucket server url.", ex);
       throw new InvalidRequestException("Exception occurred while parsing bitbucket server url.");
     }
-    return String.format("%s/projects/%s/repos/%s/browse/%s?at=refs/heads/%s", hostUrl,
-        getGitRepositoryDetails().getOrg(), getGitRepositoryDetails().getName(), filePath, branchName);
+
+    String org, repoName;
+    if (gitRepositoryDTO.getName() != null && gitRepositoryDTO.getName().contains("/")) {
+      org = gitRepositoryDTO.getName().substring(0, gitRepositoryDTO.getName().indexOf("/"));
+      repoName = gitRepositoryDTO.getName().substring(gitRepositoryDTO.getName().indexOf("/") + 1);
+    } else {
+      org = getGitRepositoryDetails().getOrg();
+      repoName = gitRepositoryDTO.getName();
+    }
+
+    return String.format(
+        "%s/projects/%s/repos/%s/browse/%s?at=refs/heads/%s", hostUrl, org, repoName, filePath, branchName);
   }
 
   /*

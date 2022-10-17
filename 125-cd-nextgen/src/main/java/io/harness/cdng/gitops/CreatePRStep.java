@@ -69,7 +69,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import joptsimple.internal.Strings;
 import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(GITOPS)
@@ -190,7 +189,7 @@ public class CreatePRStep extends TaskExecutableWithRollbackAndRbac<NGGitOpsResp
       GitopsClustersOutcome output = (GitopsClustersOutcome) optionalSweepingOutput.getOutput();
       List<GitopsClustersOutcome.ClusterData> clustersData = output.getClustersData();
 
-      String file = Strings.EMPTY;
+      String file = filePath;
 
       for (GitopsClustersOutcome.ClusterData cluster : clustersData) {
         if (filePath.contains("<+cluster.name>")) {
@@ -199,10 +198,13 @@ public class CreatePRStep extends TaskExecutableWithRollbackAndRbac<NGGitOpsResp
         if (filePath.contains("<+env.name>")) {
           file = file.replaceAll("<\\+env.name>", cluster.getEnvName());
         }
+        List<String> files = new ArrayList<>();
+        files.add(file);
         // Resolve any other expressions in the filepaths. eg. service variables
         ExpressionEvaluatorUtils.updateExpressions(
-            file, new CDExpressionResolveFunctor(engineExpressionService, ambiance));
+            files, new CDExpressionResolveFunctor(engineExpressionService, ambiance));
 
+        file = files.get(0);
         ExpressionEvaluatorUtils.updateExpressions(
             cluster.getVariables(), new CDExpressionResolveFunctor(engineExpressionService, ambiance));
 

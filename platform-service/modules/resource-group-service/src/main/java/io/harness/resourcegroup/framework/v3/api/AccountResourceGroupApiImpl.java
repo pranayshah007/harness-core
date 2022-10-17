@@ -14,6 +14,7 @@ import static io.harness.resourcegroup.v1.remote.dto.ManagedFilter.NO_FILTER;
 
 import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.accesscontrol.NGAccessControlCheck;
+import io.harness.accesscontrol.ResourceIdentifier;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
@@ -59,7 +60,7 @@ public class AccountResourceGroupApiImpl implements AccountResourceGroupsApi {
 
   @Override
   @NGAccessControlCheck(resourceType = RESOURCE_GROUP, permission = DELETE_RESOURCEGROUP_PERMISSION)
-  public Response deleteResourceGroupAcc(String resourceGroup, String account) {
+  public Response deleteResourceGroupAcc(@ResourceIdentifier String resourceGroup, @AccountIdentifier String account) {
     ResourceGroupsResponse resourceGroupsResponse = ResourceGroupApiUtils.getResourceGroupResponse(
         resourceGroupService.get(Scope.of(account, null, null), resourceGroup, NO_FILTER).orElse(null));
     if (resourceGroupService.delete(Scope.of(account, null, null), resourceGroup)) {
@@ -70,7 +71,7 @@ public class AccountResourceGroupApiImpl implements AccountResourceGroupsApi {
 
   @Override
   @NGAccessControlCheck(resourceType = RESOURCE_GROUP, permission = VIEW_RESOURCEGROUP_PERMISSION)
-  public Response getResourceGroupAcc(String resourceGroup, String account) {
+  public Response getResourceGroupAcc(@ResourceIdentifier String resourceGroup, @AccountIdentifier String account) {
     ResourceGroupsResponse resourceGroupsResponse = ResourceGroupApiUtils.getResourceGroupResponse(
         resourceGroupService.get(Scope.of(account, null, null), resourceGroup, NO_FILTER).orElse(null));
     if (resourceGroupsResponse == null) {
@@ -82,7 +83,7 @@ public class AccountResourceGroupApiImpl implements AccountResourceGroupsApi {
   @Override
   @NGAccessControlCheck(resourceType = RESOURCE_GROUP, permission = VIEW_RESOURCEGROUP_PERMISSION)
   public Response listResourceGroupsAcc(
-      Integer page, Integer limit, String searchTerm, String account, String sort, String order) {
+      Integer page, Integer limit, String searchTerm, @AccountIdentifier String account, String sort, String order) {
     PageRequest pageRequest = ResourceGroupApiUtils.getPageRequest(page, limit, sort, order);
     Page<ResourceGroupResponse> pageResponse =
         resourceGroupService.list(Scope.of(account, null, null), pageRequest, searchTerm);
@@ -99,7 +100,8 @@ public class AccountResourceGroupApiImpl implements AccountResourceGroupsApi {
 
   @Override
   @NGAccessControlCheck(resourceType = RESOURCE_GROUP, permission = EDIT_RESOURCEGROUP_PERMISSION)
-  public Response updateResourceGroupAcc(CreateResourceGroupRequest body, String resourceGroup, String account) {
+  public Response updateResourceGroupAcc(
+      CreateResourceGroupRequest body, @ResourceIdentifier String resourceGroup, @AccountIdentifier String account) {
     if (!resourceGroup.equals(body.getSlug())) {
       throw new InvalidRequestException("Resource Group identifier in the request body and the URL do not match.");
     }

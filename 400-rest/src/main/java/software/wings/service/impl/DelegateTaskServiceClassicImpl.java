@@ -100,11 +100,9 @@ import io.harness.event.handler.impl.EventPublishHelper;
 import io.harness.eventframework.manager.ManagerObserverEventProducer;
 import io.harness.exception.CriticalExpressionEvaluationException;
 import io.harness.exception.DelegateNotAvailableException;
-import io.harness.exception.DelegateTaskExpiredException;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
-import io.harness.exception.WingsException;
 import io.harness.expression.ExpressionEvaluator;
 import io.harness.expression.ExpressionReflectionUtils;
 import io.harness.ff.FeatureFlagService;
@@ -119,6 +117,7 @@ import io.harness.network.SafeHttpCall;
 import io.harness.observer.RemoteObserverInformer;
 import io.harness.observer.Subject;
 import io.harness.persistence.HPersistence;
+import io.harness.reflection.ReflectionUtils;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.EncryptionConfig;
@@ -533,7 +532,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
       } catch (Exception exception) {
         log.info("Task id {} failed with error {}", task.getUuid(), exception);
         printErrorMessageOnTaskFailure(task);
-        handleTaskFailureResponse(task, exception);
+        handleTaskFailureResponse(task, ExceptionUtils.getMessage(exception));
         if (!task.getData().isAsync()) {
           throw exception;
         }
@@ -553,21 +552,12 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
     return eligibleListOfDelegates.get(random.nextInt(eligibleListOfDelegates.size()));
   }
 
-  private void handleTaskFailureResponse(DelegateTask task, Exception exception) {
+  private void handleTaskFailureResponse(DelegateTask task, String errorMessage) {
     Query<DelegateTask> taskQuery = persistence.createQuery(DelegateTask.class)
                                         .filter(DelegateTaskKeys.accountId, task.getAccountId())
                                         .filter(DelegateTaskKeys.uuid, task.getUuid());
-    WingsException ex = null;
-    if (exception instanceof WingsException) {
-      ex = (WingsException) exception;
-    } else {
-      log.error("Encountered unknown exception and failing task", exception);
-    }
     DelegateTaskResponse response = DelegateTaskResponse.builder()
-                                        .response(ErrorNotifyResponseData.builder()
-                                                      .errorMessage(ExceptionUtils.getMessage(exception))
-                                                      .exception(ex)
-                                                      .build())
+                                        .response(ErrorNotifyResponseData.builder().errorMessage(errorMessage).build())
                                         .responseCode(ResponseCode.FAILED)
                                         .accountId(task.getAccountId())
                                         .build();
@@ -1091,6 +1081,17 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
       task.getData().setParameters(delegateTask.getData().getParameters());
       delegateSelectionLogsService.logTaskAssigned(delegateId, task);
 
+      if (delegateTask.isEmitEvent()) {
+        Map<String, String> eventData = new HashMap<>();
+        String taskType = task.getData().getTaskType();
+
+        managerObserverEventProducer.sendEvent(
+            ReflectionUtils.getMethod(CIDelegateTaskObserver.class, "onTaskAssigned", String.class, String.class,
+                String.class, String.class, String.class),
+            DelegateTaskServiceClassicImpl.class, delegateTask.getAccountId(), taskId, delegateId,
+            delegateTask.getStageId(), taskType);
+      }
+
       delegateMetricsService.recordDelegateTaskMetrics(delegateTask, DELEGATE_TASK_ACQUIRE);
 
       return resolvePreAssignmentExpressions(task, SecretManagerMode.APPLY);
@@ -1146,11 +1147,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
 
           if (isNotBlank(delegateTask.getWaitId())) {
             waitNotifyEngine.doneWith(delegateTask.getWaitId(),
-                ErrorNotifyResponseData.builder()
-                    .errorMessage(errorMessage)
-                    .expired(true)
-                    .exception(new DelegateTaskExpiredException(delegateTaskId))
-                    .build());
+                ErrorNotifyResponseData.builder().errorMessage(errorMessage).expired(true).build());
           }
         }
       }

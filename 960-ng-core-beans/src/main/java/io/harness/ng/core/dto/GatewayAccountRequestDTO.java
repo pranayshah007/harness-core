@@ -36,4 +36,5 @@ public class GatewayAccountRequestDTO {
   DefaultExperience defaultExperience;
   boolean createdFromNG;
   boolean isNextGenEnabled;
+  boolean smpAccount;
 }

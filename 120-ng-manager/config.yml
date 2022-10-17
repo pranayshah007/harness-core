@@ -95,6 +95,7 @@ mongo:
   transactionsEnabled: false
   aliasDBName: ng-harness
   traceMode: DISABLED
+  maxOperationTimeInMillis: 300000
 
 accountConfig:
   deploymentClusterName: ""
@@ -169,7 +170,7 @@ templateServiceClientConfig:
   readTimeOutSeconds: 15
 
 chaosServiceClientConfig:
-  baseUrl: http://localhost:9000
+  baseUrl: ${CHAOS_SERVICE_BASE_URL:-http://localhost:8080}
   connectTimeOutSeconds: 15
   readTimeOutSeconds: 15
 
@@ -392,9 +393,9 @@ featureFlagConfig:
 enableDashboardTimescale: false
 
 timescaledb:
-  timescaledbUrl: "jdbc:postgresql://34.83.25.129:5432/harnessdev"
-  timescaledbUsername: "harnessappdev"
-  timescaledbPassword: "harnessappdev"
+  timescaledbUrl: "jdbc:postgresql://localhost:5432/harness"
+  timescaledbUsername: "postgres"
+  timescaledbPassword: ""
   connectTimeout: 10
   socketTimeout: 30
   logUnclosedConnections: false
@@ -468,3 +469,5 @@ debeziumConsumerConfigs:
     debeziumBatchSize: ${DEBEZIUM_CONSUMER_BATCH_SIZE:-100}
 
 cdTsDbRetentionPeriodMonths: 7
+
+enableOpentelemetry: false

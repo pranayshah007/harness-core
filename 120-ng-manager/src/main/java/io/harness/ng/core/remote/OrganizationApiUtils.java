@@ -13,14 +13,13 @@ import static io.harness.NGCommonEntityConstants.PAGE_SIZE;
 import static io.harness.NGCommonEntityConstants.PREVIOUS_REL;
 import static io.harness.NGCommonEntityConstants.SELF_REL;
 import static io.harness.beans.SortOrder.Builder.aSortOrder;
-import static io.harness.beans.SortOrder.OrderType.ASC;
 import static io.harness.beans.SortOrder.OrderType.DESC;
 import static io.harness.ng.core.entities.Organization.OrganizationKeys;
-import static io.harness.utils.PageUtils.COMMA_SEPARATOR;
 
 import static javax.ws.rs.core.UriBuilder.fromPath;
 
 import io.harness.beans.SortOrder;
+import io.harness.ng.beans.PageRequest;
 import io.harness.ng.core.common.beans.NGTag;
 import io.harness.ng.core.dto.OrganizationDTO;
 import io.harness.ng.core.entities.Organization;
@@ -29,6 +28,7 @@ import io.harness.spec.server.ng.model.OrganizationResponse;
 import io.harness.spec.server.ng.model.UpdateOrganizationRequest;
 import io.harness.utils.PageUtils;
 
+import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
 import io.dropwizard.jersey.validation.JerseyViolationException;
 import java.util.ArrayList;
@@ -42,6 +42,7 @@ import javax.validation.Validator;
 import javax.ws.rs.core.Link;
 import javax.ws.rs.core.Response.ResponseBuilder;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.EnumUtils;
 import org.springframework.data.domain.Pageable;
 
 public class OrganizationApiUtils {
@@ -68,9 +69,9 @@ public class OrganizationApiUtils {
     return organizationDto;
   }
 
-  public OrganizationDTO getOrganizationDto(String slug, UpdateOrganizationRequest request) {
+  public OrganizationDTO getOrganizationDto(UpdateOrganizationRequest request) {
     OrganizationDTO organizationDto = new OrganizationDTO();
-    organizationDto.setIdentifier(slug);
+    organizationDto.setIdentifier(request.getOrg().getSlug());
     organizationDto.setName(request.getOrg().getName());
     organizationDto.setDescription(request.getOrg().getDescription());
     organizationDto.setTags(request.getOrg().getTags());
@@ -103,18 +104,36 @@ public class OrganizationApiUtils {
     return tags.stream().collect(Collectors.toMap(NGTag::getKey, NGTag::getValue));
   }
 
-  public Pageable getPageRequest(Integer page, Integer limit) {
-    List<SortOrder> sortOrders = new ArrayList<>();
-    SortOrder harnessManagedOrder = aSortOrder().withField(OrganizationKeys.harnessManaged, DESC).build();
-    SortOrder nameOrder = aSortOrder().withField(OrganizationKeys.name, ASC).build();
-    sortOrders.add(harnessManagedOrder);
-    sortOrders.add(nameOrder);
-
-    List<String> orders = new ArrayList<>();
-    for (SortOrder sortOrder : sortOrders) {
-      orders.add(sortOrder.getFieldName() + COMMA_SEPARATOR + sortOrder.getOrderType());
+  public Pageable getPageRequest(int page, int limit, String sort, String order) {
+    List<SortOrder> sortOrders;
+    String mappedFieldName = getFieldName(sort);
+    if (mappedFieldName != null) {
+      SortOrder.OrderType fieldOrder = EnumUtils.getEnum(SortOrder.OrderType.class, order, DESC);
+      sortOrders = ImmutableList.of(aSortOrder().withField(mappedFieldName, fieldOrder).build());
+    } else {
+      sortOrders = ImmutableList.of(aSortOrder().withField(OrganizationKeys.lastModifiedAt, DESC).build());
     }
-    return PageUtils.getPageRequest(page, limit, orders);
+    return PageUtils.getPageRequest(new PageRequest(page, limit, sortOrders));
+  }
+
+  private String getFieldName(String sort) {
+    PageUtils.SortFields sortField = PageUtils.SortFields.fromValue(sort);
+    if (sortField == null) {
+      sortField = PageUtils.SortFields.UNSUPPORTED;
+    }
+    switch (sortField) {
+      case SLUG:
+        return OrganizationKeys.identifier;
+      case NAME:
+        return OrganizationKeys.name;
+      case CREATED:
+        return OrganizationKeys.createdAt;
+      case UPDATED:
+        return OrganizationKeys.lastModifiedAt;
+      case UNSUPPORTED:
+      default:
+        return null;
+    }
   }
 
   public ResponseBuilder addLinksHeader(

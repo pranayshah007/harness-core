@@ -29,7 +29,6 @@ import io.harness.exception.WingsException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.lock.AcquiredLock;
 import io.harness.lock.PersistentLocker;
-import io.harness.persistence.HIterator;
 import io.harness.queue.QueuePublisher;
 
 import software.wings.api.InstanceEvent;
@@ -45,7 +44,6 @@ import software.wings.beans.infrastructure.instance.key.InstanceKey;
 import software.wings.beans.infrastructure.instance.key.PcfInstanceKey;
 import software.wings.beans.infrastructure.instance.key.PodInstanceKey;
 import software.wings.dl.WingsMongoPersistence;
-import software.wings.dl.WingsPersistence;
 import software.wings.service.intfc.AppService;
 import software.wings.service.intfc.instance.InstanceService;
 
@@ -53,7 +51,6 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.mongodb.ReadPreference;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -67,6 +64,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 import javax.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 import org.mongodb.morphia.Key;
 import org.mongodb.morphia.query.FindOptions;
 import org.mongodb.morphia.query.Query;
@@ -80,8 +78,7 @@ import org.mongodb.morphia.query.UpdateOperations;
 @OwnedBy(HarnessTeam.DX)
 public class InstanceServiceImpl implements InstanceService {
   @Inject FeatureFlagService featureFlagService;
-  @Inject private WingsPersistence wingsPersistence;
-  @Inject private WingsMongoPersistence wingsMongoPersistence;
+  @Inject private WingsMongoPersistence wingsPersistence;
   @Inject private AppService appService;
   @Inject private PersistentLocker persistentLocker;
   @Inject private QueuePublisher<InstanceEvent> eventQueue;
@@ -295,41 +292,37 @@ public class InstanceServiceImpl implements InstanceService {
   }
 
   @Override
-  public boolean purgeDeletedUpTo(Instant timestamp) {
-    try (HIterator<Account> accounts =
-             new HIterator<>(wingsPersistence.createQuery(Account.class).project(Account.ID_KEY2, true).fetch())) {
-      while (accounts.hasNext()) {
-        final Account account = accounts.next();
-        Query<Instance> query;
-        do {
-          try {
-            query = wingsPersistence.createQuery(Instance.class)
-                        .filter(InstanceKeys.accountId, account.getUuid())
-                        .filter(InstanceKeys.isDeleted, true)
-                        .field(InstanceKeys.deletedAt)
-                        .lessThan(timestamp.toEpochMilli())
-                        .project(InstanceKeys.uuid, true)
-                        .project(InstanceKeys.deletedAt, true)
-                        .order(InstanceKeys.deletedAt);
-            final List<Instance> instances = query.asList(new FindOptions().limit(500));
-            if (isEmpty(instances)) {
-              break;
-            }
-            final Instance instance = instances.get(instances.size() - 1);
+  public boolean purgeDeletedUpTo(@NotNull Instant timestamp, @NotNull Account account) {
+    log.info("Purging deleted instance up to {} for account {} with ID {}", timestamp, account.getAccountName(),
+        account.getUuid());
+    Query<Instance> query;
+    do {
+      try {
+        query = wingsPersistence.createQuery(Instance.class)
+                    .filter(InstanceKeys.accountId, account.getUuid())
+                    .filter(InstanceKeys.isDeleted, true)
+                    .field(InstanceKeys.deletedAt)
+                    .lessThan(timestamp.toEpochMilli())
+                    .project(InstanceKeys.uuid, true)
+                    .project(InstanceKeys.deletedAt, true)
+                    .order(InstanceKeys.deletedAt);
+        final List<Instance> instances = query.asList(new FindOptions().limit(500));
+        if (isEmpty(instances)) {
+          break;
+        }
+        final Instance instance = instances.get(instances.size() - 1);
 
-            final Query<Instance> deleteQuery = wingsPersistence.createQuery(Instance.class)
-                                                    .filter(InstanceKeys.accountId, account.getUuid())
-                                                    .filter(InstanceKeys.isDeleted, true)
-                                                    .field(InstanceKeys.deletedAt)
-                                                    .lessThanOrEq(instance.getDeletedAt());
-            wingsPersistence.delete(deleteQuery);
-          } catch (Exception e) {
-            log.error("Failed to delete some instances for account {}", account.getUuid(), e);
-            break;
-          }
-        } while (query.count() > 0);
+        final Query<Instance> deleteQuery = wingsPersistence.createQuery(Instance.class)
+                                                .filter(InstanceKeys.accountId, account.getUuid())
+                                                .filter(InstanceKeys.isDeleted, true)
+                                                .field(InstanceKeys.deletedAt)
+                                                .lessThanOrEq(instance.getDeletedAt());
+        wingsPersistence.delete(deleteQuery);
+      } catch (Exception e) {
+        log.error("Failed to delete some instances for account {}", account.getUuid(), e);
+        break;
       }
-    }
+    } while (query.count() > 0);
     return true;
   }
 
@@ -348,13 +341,13 @@ public class InstanceServiceImpl implements InstanceService {
   @Override
   public PageResponse<Instance> list(PageRequest<Instance> pageRequest) {
     pageRequest.addFilter("isDeleted", Operator.EQ, false);
-    return wingsPersistence.query(Instance.class, pageRequest);
+    return wingsPersistence.querySecondary(Instance.class, pageRequest);
   }
 
   @Override
   public List<Instance> listV2(Query<Instance> query) {
     query.filter(InstanceKeys.isDeleted, false);
-    return query.asList();
+    return query.asList(wingsPersistence.analyticNodePreferenceOptions());
   }
 
   @Override
@@ -362,7 +355,7 @@ public class InstanceServiceImpl implements InstanceService {
     long twoDaysOldTimeInMills = System.currentTimeMillis() - TimeUnit.DAYS.toMillis(2);
     query.and(query.or(query.criteria(InstanceKeys.deletedAt).greaterThanOrEq(twoDaysOldTimeInMills),
         query.criteria(InstanceKeys.isDeleted).equal(false)));
-    return query.asList(new FindOptions().readPreference(ReadPreference.secondaryPreferred()));
+    return query.asList(wingsPersistence.analyticNodePreferenceOptions());
   }
 
   @Override
@@ -506,14 +499,17 @@ public class InstanceServiceImpl implements InstanceService {
     // todo: GA this FF if works good and remove else clause
     if (featureFlagService.isGlobalEnabled(CHANGE_INSTANCE_QUERY_OPERATOR_TO_NE)) {
       pageRequest.addFilter(InstanceKeys.lastWorkflowExecutionId, Operator.NOT_EQ, new Object[] {null});
-      instance = wingsPersistence.convertToQuery(Instance.class, pageRequest).get();
+      instance = wingsPersistence.convertToQuery(Instance.class, pageRequest)
+                     .get(wingsPersistence.analyticNodePreferenceOptions());
     } else {
-      instance = wingsPersistence.convertToQuery(Instance.class, pageRequest).get();
+      instance = wingsPersistence.convertToQuery(Instance.class, pageRequest)
+                     .get(wingsPersistence.analyticNodePreferenceOptions());
       if (instance.getLastWorkflowExecutionId() == null) {
         log.error("Got last workflow execution Id null which is not expected. Details: appid:{}, inframapping id: {}.",
             appId, infrastructureDefinitionId);
         pageRequest.addFilter(InstanceKeys.lastWorkflowExecutionId, Operator.EXISTS);
-        instance = wingsPersistence.convertToQuery(Instance.class, pageRequest).get();
+        instance = wingsPersistence.convertToQuery(Instance.class, pageRequest)
+                       .get(wingsPersistence.analyticNodePreferenceOptions());
       }
     }
 

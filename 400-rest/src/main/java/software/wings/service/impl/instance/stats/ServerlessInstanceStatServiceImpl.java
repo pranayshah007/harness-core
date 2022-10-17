@@ -16,7 +16,7 @@ import software.wings.beans.User;
 import software.wings.beans.infrastructure.instance.InvocationCount.InvocationCountKey;
 import software.wings.beans.infrastructure.instance.stats.ServerlessInstanceStats;
 import software.wings.beans.infrastructure.instance.stats.ServerlessInstanceStats.ServerlessInstanceStatsKeys;
-import software.wings.dl.WingsPersistence;
+import software.wings.dl.WingsMongoPersistence;
 import software.wings.resources.stats.model.ServerlessInstanceTimeline;
 import software.wings.resources.stats.rbac.TimelineRbacFilters;
 import software.wings.security.UserThreadLocal;
@@ -46,7 +46,7 @@ import org.mongodb.morphia.query.Sort;
 @Singleton
 public class ServerlessInstanceStatServiceImpl implements ServerlessInstanceStatService {
   public static final String TIMESTAMP = "timestamp";
-  @Inject private WingsPersistence persistence;
+  @Inject private WingsMongoPersistence persistence;
   @Inject private ServerlessDashboardService serverlessDashboardService;
   @Inject private AppService appService;
   @Inject private UserService userService;
@@ -67,7 +67,7 @@ public class ServerlessInstanceStatServiceImpl implements ServerlessInstanceStat
   @Override
   @Nullable
   public Instant getLastSnapshotTime(@NotNull String accountId) {
-    FindOptions options = new FindOptions();
+    FindOptions options = persistence.analyticNodePreferenceOptions();
     options.limit(1);
 
     List<ServerlessInstanceStats> snapshots = persistence.createQuery(ServerlessInstanceStats.class)
@@ -85,7 +85,7 @@ public class ServerlessInstanceStatServiceImpl implements ServerlessInstanceStat
   @Override
   @Nullable
   public Instant getFirstSnapshotTime(@NotNull String accountId) {
-    FindOptions options = new FindOptions();
+    FindOptions options = persistence.analyticNodePreferenceOptions();
     options.limit(1);
 
     List<ServerlessInstanceStats> snapshots = persistence.createQuery(ServerlessInstanceStats.class)
@@ -129,29 +129,16 @@ public class ServerlessInstanceStatServiceImpl implements ServerlessInstanceStat
   }
 
   @Override
-  public boolean purgeUpTo(@NotNull Instant timestamp) {
-    log.info("Purging serverless instance stats up to {}", timestamp);
-    // Deleting old serverless instances separately for each active account and then for deleted accounts
-    // So that the deletion happens in a staggered way
-    try (HIterator<Account> accounts =
-             new HIterator<>(persistence.createQuery(Account.class).project(Account.ID_KEY2, true).fetch())) {
-      while (accounts.hasNext()) {
-        final Account account = accounts.next();
-        log.info(
-            "Purging serverless instance stats for account {} with ID {}", account.getAccountName(), account.getUuid());
-        Query<ServerlessInstanceStats> query = persistence.createQuery(ServerlessInstanceStats.class)
-                                                   .filter(ServerlessInstanceStatsKeys.accountId, account.getUuid())
-                                                   .field(ServerlessInstanceStatsKeys.timestamp)
-                                                   .lessThan(timestamp);
-
-        persistence.delete(query);
-      }
-    }
-    log.info("Purging serverless instance stats for deleted accounts if present");
+  public boolean purgeUpTo(@NotNull Instant timestamp, @NotNull Account account) {
+    log.info("Purging serverless instance stats up to {} for account {} with ID {}", timestamp,
+        account.getAccountName(), account.getUuid());
     Query<ServerlessInstanceStats> query = persistence.createQuery(ServerlessInstanceStats.class)
+                                               .filter(ServerlessInstanceStatsKeys.accountId, account.getUuid())
                                                .field(ServerlessInstanceStatsKeys.timestamp)
                                                .lessThan(timestamp);
+
     persistence.delete(query);
+
     return true;
   }
 
@@ -171,7 +158,8 @@ public class ServerlessInstanceStatServiceImpl implements ServerlessInstanceStat
 
     List<ServerlessInstanceStats> timeline = new LinkedList<>();
 
-    try (HIterator<ServerlessInstanceStats> iterator = new HIterator<>(query.fetch())) {
+    try (HIterator<ServerlessInstanceStats> iterator =
+             new HIterator<>(query.fetch(persistence.analyticNodePreferenceOptions()))) {
       while (iterator.hasNext()) {
         timeline.add(iterator.next());
       }

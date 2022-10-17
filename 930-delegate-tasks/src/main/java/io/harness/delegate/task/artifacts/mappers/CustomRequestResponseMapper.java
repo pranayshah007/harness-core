@@ -22,7 +22,7 @@ public class CustomRequestResponseMapper {
     return CustomArtifactDelegateResponse.builder()
         .buildDetails(ArtifactBuildDetailsMapper.toBuildDetailsNG(buildDetails))
         .sourceType(ArtifactSourceType.CUSTOM_ARTIFACT)
-        .version(attributeRequest.getVersion())
+        .version(attributeRequest.getVersion() != null ? attributeRequest.getVersion() : buildDetails.getNumber())
         .metadata(buildDetails.getMetadata())
         .build();
   }

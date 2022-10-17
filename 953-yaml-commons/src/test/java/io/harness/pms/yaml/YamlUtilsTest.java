@@ -18,12 +18,14 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.rule.Owner;
+import io.harness.rule.OwnerRule;
 
 import com.google.api.client.util.Charsets;
 import com.google.common.io.Resources;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Arrays;
+import java.util.LinkedHashMap;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -317,5 +319,12 @@ public class YamlUtilsTest extends CategoryTest {
         stage1Node.getField("spec").getNode().getField("execution").getNode().getField("steps").getNode();
     YamlNode step1Node = stepsNode.asArray().get(0).getField("step").getNode();
     assertThat(YamlUtils.getStageFqnPath(step1Node)).isEqualTo("pipeline.stages.qaStage");
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.YOGESH)
+  @Category(UnitTests.class)
+  public void testCoercionConfig() throws IOException {
+    assertThat(YamlUtils.read("\"\"", LinkedHashMap.class)).isNull();
   }
 }

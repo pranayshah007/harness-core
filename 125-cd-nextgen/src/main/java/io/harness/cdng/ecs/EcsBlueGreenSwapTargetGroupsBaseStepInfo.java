@@ -8,6 +8,7 @@
 package io.harness.cdng.ecs;
 
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.string;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -35,6 +36,10 @@ public class EcsBlueGreenSwapTargetGroupsBaseStepInfo {
   @YamlSchemaTypes({runtime})
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
+
+  @ApiModelProperty(dataType = SwaggerConstants.BOOLEAN_CLASSPATH)
+  @YamlSchemaTypes({string})
+  ParameterField<Boolean> doNotDownsizeOldService;
 
   @JsonIgnore String ecsBlueGreenCreateServiceFnq;
   @JsonIgnore String ecsBlueGreenSwapTargetGroupsFnq;

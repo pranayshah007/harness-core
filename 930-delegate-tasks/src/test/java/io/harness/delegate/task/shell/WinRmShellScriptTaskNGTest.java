@@ -71,7 +71,7 @@ public class WinRmShellScriptTaskNGTest extends CategoryTest {
     MockitoAnnotations.initMocks(this);
     when(shellExecutorFactory.getExecutor(any(), any(), any())).thenReturn(executor);
 
-    when(winRmExecutorFactoryNG.getExecutor(any(), anyBoolean(), any(), any())).thenReturn(winRmExecutor);
+    when(winRmExecutorFactoryNG.getExecutor(any(), anyBoolean(), anyBoolean(), any(), any())).thenReturn(winRmExecutor);
   }
 
   @Test(expected = NotImplementedException.class)

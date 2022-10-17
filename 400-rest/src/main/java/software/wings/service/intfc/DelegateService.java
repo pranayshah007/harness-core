@@ -94,6 +94,8 @@ public interface DelegateService extends OwnedByAccount {
 
   Delegate updateTags(@Valid Delegate delegate);
 
+  Delegate updateTagsFromUI(Delegate delegate, DelegateTags delegateTags);
+
   Delegate updateDescription(String accountId, String delegateId, String newDescription);
 
   Delegate updateApprovalStatus(String accountId, String delegateId, DelegateApproval action)

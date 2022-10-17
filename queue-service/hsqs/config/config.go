@@ -24,6 +24,8 @@ type Config struct {
 		SSLEnabled bool   `envconfig:"HSQS_REDIS_REDIS_SSL_ENABLED"`
 		CertPath   string `envconfig:"HSQS_REDIS__SSL_CA_CERT_PATH"`
 	}
+
+	Secret string `envconfig:"JWT_SECRET" default:"vhtftr5486786764563452fhtfthffuygiogyuyryr543432453"`
 }
 
 // Load loads the configuration from the environment.

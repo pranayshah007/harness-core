@@ -9,6 +9,7 @@ package io.harness.delegate.task.scm;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.response.GitFileResponse;
 import io.harness.delegate.beans.DelegateResponseData;
 
 import lombok.AllArgsConstructor;
@@ -27,5 +28,6 @@ public class GitFileTaskResponseData implements DelegateResponseData {
   GitFileTaskType gitFileTaskType;
   byte[] fileBatchContentResponse;
   byte[] fileContent;
+  GitFileResponse gitFileResponse;
   String commitId;
 }

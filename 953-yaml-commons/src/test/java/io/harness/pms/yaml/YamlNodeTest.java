@@ -20,6 +20,8 @@ import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
+import io.harness.pms.contracts.steps.StepCategory;
+import io.harness.pms.contracts.steps.StepType;
 import io.harness.rule.Owner;
 
 import com.google.common.io.Resources;
@@ -156,6 +158,51 @@ public class YamlNodeTest extends CategoryTest {
                    .addLevels(Level.newBuilder().setOriginalIdentifier("execution").buildPartial())
                    .addLevels(Level.newBuilder().setOriginalIdentifier("steps").buildPartial())
                    .addLevels(Level.newBuilder().setOriginalIdentifier("httpStep8").buildPartial())
+                   .build();
+    yaml = YamlNode.getNodeYaml(pipelineYaml, ambiance);
+    assertThat(yaml).isEqualTo("step:\n"
+        + "  name: \"http step 8\"\n"
+        + "  identifier: \"httpStep8\"\n"
+        + "  type: \"Http\"\n"
+        + "  spec:\n"
+        + "    socketTimeoutMillis: 1000\n"
+        + "    method: \"GET\"\n"
+        + "    url: \"https://google.com\"\n");
+
+    // Adding strategy level. it should be ignored while traversing to field node and should get the exact above yaml.
+    ambiance = Ambiance.newBuilder()
+                   .addLevels(Level.newBuilder()
+                                  .setStepType(StepType.newBuilder().setStepCategory(StepCategory.PIPELINE).build())
+                                  .setOriginalIdentifier("pipeline")
+                                  .buildPartial())
+                   .addLevels(Level.newBuilder()
+                                  .setStepType(StepType.newBuilder().setStepCategory(StepCategory.STAGES).build())
+                                  .setOriginalIdentifier("stages")
+                                  .buildPartial())
+                   .addLevels(Level.newBuilder()
+                                  .setOriginalIdentifier("qaStage4Strategy<+strategy.identifierPostFix>")
+                                  .setStepType(StepType.newBuilder().setStepCategory(StepCategory.STRATEGY).build())
+                                  .buildPartial())
+                   .addLevels(Level.newBuilder()
+                                  .setStepType(StepType.newBuilder().setStepCategory(StepCategory.STAGE).build())
+                                  .setOriginalIdentifier("qaStage4<+strategy.identifierPostFix>")
+                                  .buildPartial())
+                   .addLevels(Level.newBuilder()
+                                  .setStepType(StepType.newBuilder().setStepCategory(StepCategory.STEP).build())
+                                  .setOriginalIdentifier("spec")
+                                  .buildPartial())
+                   .addLevels(Level.newBuilder()
+                                  .setStepType(StepType.newBuilder().setStepCategory(StepCategory.FORK).build())
+                                  .setOriginalIdentifier("execution")
+                                  .buildPartial())
+                   .addLevels(Level.newBuilder()
+                                  .setStepType(StepType.newBuilder().setStepCategory(StepCategory.FORK).build())
+                                  .setOriginalIdentifier("steps")
+                                  .buildPartial())
+                   .addLevels(Level.newBuilder()
+                                  .setStepType(StepType.newBuilder().setStepCategory(StepCategory.STEP).build())
+                                  .setOriginalIdentifier("httpStep8")
+                                  .buildPartial())
                    .build();
     yaml = YamlNode.getNodeYaml(pipelineYaml, ambiance);
     assertThat(yaml).isEqualTo("step:\n"

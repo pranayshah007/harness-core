@@ -27,6 +27,7 @@ import io.harness.DelegateServiceTestBase;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.delegate.beans.AutoUpgrade;
 import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.Delegate.DelegateBuilder;
 import io.harness.delegate.beans.DelegateEntityOwner;
@@ -254,6 +255,9 @@ public class DelegateSetupServiceTest extends DelegateServiceTestBase {
         .extracting(DelegateGroupDetails::getGroupName)
         .containsOnly("grp1", "grp2", "grp4");
     assertThat(delegateGroupListing.getDelegateGroupDetails().get(0).getGroupVersion()).isEqualTo("22.09.76614");
+    assertThat(delegateGroupListing.getDelegateGroupDetails().get(0).getAutoUpgrade())
+        .isEqualTo(AutoUpgrade.SYNCHRONIZING);
+    assertThat(delegateGroupListing.getDelegateGroupDetails().get(1).getAutoUpgrade()).isEqualTo(AutoUpgrade.ON);
   }
 
   @Test(expected = InvalidRequestException.class)
@@ -1280,6 +1284,7 @@ public class DelegateSetupServiceTest extends DelegateServiceTestBase {
                              .description("description1")
                              .hostName("kube-0")
                              .version("22.09.76614")
+                             .immutable(true)
                              .delegateGroupId(TEST_DELEGATE_GROUP_ID_1)
                              .delegateProfileId("delegateProfileId1")
                              .build();
@@ -1295,6 +1300,7 @@ public class DelegateSetupServiceTest extends DelegateServiceTestBase {
                              .description("description")
                              .hostName("kube-1")
                              .version("22.11.76800")
+                             .immutable(true)
                              .delegateGroupId(TEST_DELEGATE_GROUP_ID_1)
                              .delegateProfileId("delegateProfileId1")
                              .lastHeartBeat(System.currentTimeMillis() - 60000)

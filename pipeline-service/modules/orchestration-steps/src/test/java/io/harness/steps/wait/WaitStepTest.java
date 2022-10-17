@@ -107,6 +107,7 @@ public class WaitStepTest extends OrchestrationStepsTestBase {
     WaitStepDetailsInfo waitStepDetailsInfo =
         WaitStepDetailsInfo.builder().actionTaken(WaitStepStatus.MARKED_AS_FAIL).build();
     assertEquals(response.getStatus(), Status.FAILED);
+    assertEquals(response.getFailureInfo().getErrorMessage(), "User marked this step as failed");
     verify(sdkGraphVisualizationDataService, times(1))
         .publishStepDetailInformation(ambiance, waitStepDetailsInfo, "waitStepActionTaken");
   }

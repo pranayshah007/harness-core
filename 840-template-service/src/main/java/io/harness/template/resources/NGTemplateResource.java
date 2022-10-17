@@ -55,7 +55,6 @@ import io.harness.ng.core.template.TemplateWithInputsResponseDTO;
 import io.harness.pms.contracts.service.VariableMergeResponseProto;
 import io.harness.pms.contracts.service.VariablesServiceGrpc.VariablesServiceBlockingStub;
 import io.harness.pms.contracts.service.VariablesServiceRequest;
-import io.harness.pms.contracts.service.VariablesServiceRequestV2;
 import io.harness.pms.mappers.VariablesResponseDtoMapper;
 import io.harness.pms.variables.VariableMergeServiceResponse;
 import io.harness.remote.client.NGRestUtils;
@@ -83,6 +82,8 @@ import io.harness.template.mappers.NGTemplateDtoMapper;
 import io.harness.template.services.NGTemplateService;
 import io.harness.template.services.NGTemplateServiceHelper;
 import io.harness.template.services.TemplateMergeService;
+import io.harness.template.services.TemplateVariableCreatorFactory;
+import io.harness.template.services.TemplateVariableCreatorService;
 import io.harness.utils.PageUtils;
 import io.harness.yaml.utils.NGVariablesUtils;
 
@@ -173,6 +174,7 @@ public class NGTemplateResource {
 
   private final AccountClient accountClient;
   @Inject CustomDeploymentResourceClient customDeploymentResourceClient;
+  @Inject TemplateVariableCreatorFactory templateVariableCreatorFactory;
 
   public static final String TEMPLATE_PARAM_MESSAGE = "Template Identifier for the entity";
 
@@ -774,6 +776,7 @@ public class NGTemplateResource {
             description = "Returns all Variables used that are valid to be used as expression in template.")
       })
   @ApiOperation(value = "Create variables for Template", nickname = "createVariablesV2")
+  @Hidden
   public ResponseDTO<VariableMergeServiceResponse>
   createVariablesV2(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE,
                         required = true) @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
@@ -822,6 +825,10 @@ public class NGTemplateResource {
                   variableMergeServiceResponse, appliedTemplateYaml)
               : variableMergeServiceResponse);
     }
+    TemplateVariableCreatorService ngTemplateVariableService =
+        templateVariableCreatorFactory.getVariablesService(templateEntity.getTemplateEntityType());
+    return ResponseDTO.newResponse(ngTemplateVariableService.getVariables(
+        accountId, orgId, projectId, entityYaml, templateEntity.getTemplateEntityType()));
   }
 
   @GET
@@ -910,6 +917,12 @@ public class NGTemplateResource {
       @Parameter(description = TEMPLATE_PARAM_MESSAGE) @PathParam(
           "templateIdentifier") @ResourceIdentifier String templateIdentifier,
       @BeanParam GitImportInfoDTO gitImportInfoDTO, TemplateImportRequestDTO templateImportRequestDTO) {
-    return ResponseDTO.newResponse(TemplateImportSaveResponse.builder().build());
+    TemplateEntity importedTemplateFromRemote =
+        templateService.importTemplateFromRemote(accountIdentifier, orgIdentifier, projectIdentifier,
+            templateIdentifier, templateImportRequestDTO, gitImportInfoDTO.getIsForceImport());
+    return ResponseDTO.newResponse(TemplateImportSaveResponse.builder()
+                                       .templateIdentifier(importedTemplateFromRemote.getIdentifier())
+                                       .templateVersion(importedTemplateFromRemote.getVersionLabel())
+                                       .build());
   }
 }

@@ -3,6 +3,8 @@
 // that can be found in the licenses directory at the root of this repository, also available at
 // https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
 
+// swag init -g cmd/server.go
+
 package cmd
 
 import (
@@ -22,9 +24,6 @@ import (
 )
 
 const envarg = "envfile"
-
-// todo: use config file to access these values
-const redisAddr = "127.0.0.1:6379"
 
 // @title          Swagger Doc- hsqs
 // @version        1.0
@@ -62,7 +61,7 @@ var serverCmd = &cobra.Command{
 
 func startServer(c *config.Config) {
 
-	r := router.New(c.Debug)
+	r := router.New(c)
 	r.GET("/swagger/*", echoSwagger.WrapHandler)
 	r.GET("/", func(c echo.Context) error {
 		return c.String(http.StatusOK, "Hello, World!")
@@ -70,7 +69,7 @@ func startServer(c *config.Config) {
 
 	g := r.Group("v1")
 
-	store := redis.NewRedisStore(redisAddr)
+	store := redis.NewRedisStore(c.Redis.Endpoint)
 	h := handler.NewHandler(store)
 	h.Register(g)
 

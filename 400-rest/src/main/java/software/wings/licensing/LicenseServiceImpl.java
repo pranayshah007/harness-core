@@ -46,6 +46,8 @@ import software.wings.service.intfc.EmailNotificationService;
 import software.wings.service.intfc.UserGroupService;
 import software.wings.service.intfc.UserService;
 
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
@@ -107,6 +109,8 @@ public class LicenseServiceImpl implements LicenseService {
 
   @Inject private MainConfiguration mainConfiguration;
 
+  private final Cache<String, CheckExpiryResultDTO> licenseExpiryCache;
+
   @Inject
   public LicenseServiceImpl(AccountService accountService, AccountDao accountDao, WingsPersistence wingsPersistence,
       GenericDbCache dbCache, ExecutorService executorService, LicenseProvider licenseProvider,
@@ -124,6 +128,7 @@ public class LicenseServiceImpl implements LicenseService {
     this.userService = userService;
     this.userGroupService = userGroupService;
     this.ngLicenseHttpClient = ngLicenseHttpClient;
+    this.licenseExpiryCache = Caffeine.newBuilder().expireAfterWrite(6, TimeUnit.HOURS).build();
 
     DefaultSalesContacts defaultSalesContacts = mainConfiguration.getDefaultSalesContacts();
     if (defaultSalesContacts != null && defaultSalesContacts.isEnabled()) {
@@ -155,16 +160,11 @@ public class LicenseServiceImpl implements LicenseService {
       // Check if all ng licenses inactive before decides expire account
       CheckExpiryResultDTO ngLicenseDecision = CheckExpiryResultDTO.builder().shouldDelete(false).build();
       try {
-        ngLicenseDecision = getResponse(ngLicenseHttpClient.checkExpiry(account.getUuid()));
+        ngLicenseDecision = licenseExpiryCache.get(
+            account.getUuid(), accountId -> getResponse(ngLicenseHttpClient.checkExpiry(accountId)));
       } catch (Exception e) {
         log.warn("Error occurred during check NG license allInactive flag for account {}, due to {}", account.getUuid(),
             e.getMessage());
-        try {
-          ngLicenseDecision = getResponse(ngLicenseHttpClient.checkExpiry(account.getUuid()));
-        } catch (Exception ex) {
-          log.warn("Retry failed on check NG license allInactive flag for account {}, due to {}", account.getUuid(),
-              ex.getMessage());
-        }
       }
 
       LicenseInfo licenseInfo = account.getLicenseInfo();

@@ -54,7 +54,7 @@ body: >-
             <tr>
                <td align="center" valign="top" style="-webkit-font-smoothing: antialiased; text-size-adjust: 100%; -ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; mso-table-lspace: 0pt; mso-table-rspace: 0pt; border-spacing: 0; margin: 0; padding: 0; padding-left: 6.25%; padding-right: 6.25%; width: 87.5%; font-size: 27px; font-weight: 600; line-height: 160%; padding-top: 25px; padding-bottom: 10px; color: #000000; font-family: 'Inter', sans-serif; border-collapse: collapse;" class="paragraph" width="87.5%">
                  <div style="color: #000000; line-height: 30px; font-weight: normal;">
-                              You are now on the modern software delivery system
+                              You are now on the modern software delivery platform
                  </div>
                </td>
             </tr>

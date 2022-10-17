@@ -11,6 +11,7 @@ import io.harness.annotations.ExposeInternalException;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cvng.core.beans.params.ProjectParams;
+import io.harness.cvng.core.services.api.AwsService;
 import io.harness.cvng.core.services.api.CloudWatchService;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
@@ -26,6 +27,7 @@ import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import java.util.List;
 import java.util.Map;
+import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.BeanParam;
 import javax.ws.rs.GET;
@@ -46,6 +48,7 @@ import javax.ws.rs.QueryParam;
 @OwnedBy(HarnessTeam.CV)
 public class CloudWatchMetricsResource {
   @Inject private CloudWatchService cloudWatchService;
+  @Inject private AwsService awsService;
 
   @GET
   @Path("/metrics/fetch-sample-data")
@@ -53,10 +56,10 @@ public class CloudWatchMetricsResource {
   @ExceptionMetered
   @ApiOperation(value = "get sample data for given query", nickname = "getSampleDataForQuery")
   public ResponseDTO<Map> getSampleDataForQuery(@NotNull @BeanParam ProjectParams projectParams,
-      @QueryParam("connectorIdentifier") @NotNull String connectorIdentifier,
-      @QueryParam("requestGuid") @NotNull String requestGuid, @QueryParam("region") @NotNull String region,
-      @QueryParam("expression") @NotNull String expression, @QueryParam("metricName") @NotNull String metricName,
-      @QueryParam("metricIdentifier") @NotNull String metricIdentifier) {
+      @QueryParam("connectorIdentifier") @NotBlank String connectorIdentifier,
+      @QueryParam("requestGuid") @NotBlank String requestGuid, @QueryParam("region") @NotBlank String region,
+      @QueryParam("expression") @NotBlank String expression, @QueryParam("metricName") String metricName,
+      @QueryParam("metricIdentifier") String metricIdentifier) {
     return ResponseDTO.newResponse(cloudWatchService.fetchSampleData(
         projectParams, connectorIdentifier, requestGuid, expression, region, metricName, metricIdentifier));
   }
@@ -66,7 +69,8 @@ public class CloudWatchMetricsResource {
   @Timed
   @ExceptionMetered
   @ApiOperation(value = "get regions", nickname = "getRegions")
+  @Deprecated
   public ResponseDTO<List<String>> getRegions() {
-    return ResponseDTO.newResponse(cloudWatchService.fetchRegions());
+    return ResponseDTO.newResponse(awsService.fetchRegions());
   }
 }

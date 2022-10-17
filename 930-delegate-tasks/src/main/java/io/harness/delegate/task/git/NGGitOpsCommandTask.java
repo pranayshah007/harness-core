@@ -138,6 +138,7 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
       case MERGE_PR:
         return handleMergePR(gitOpsTaskParams);
       case CREATE_PR:
+      case UPDATE_RELEASE_REPO:
         return handleCreatePR(gitOpsTaskParams);
       default:
         return NGGitOpsResponse.builder()

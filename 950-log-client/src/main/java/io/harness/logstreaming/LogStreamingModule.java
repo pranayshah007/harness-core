@@ -8,6 +8,7 @@
 package io.harness.logstreaming;
 
 import com.google.inject.AbstractModule;
+import com.google.inject.Singleton;
 
 public class LogStreamingModule extends AbstractModule {
   private final String logStreamingServiceBaseUrl;
@@ -31,6 +32,7 @@ public class LogStreamingModule extends AbstractModule {
   }
 
   @Override
+  @Singleton
   protected void configure() {
     bind(LogStreamingClient.class)
         .toProvider(new LogStreamingClientFactory(this.logStreamingServiceBaseUrl, this.clientCertificateFilePath,

@@ -9,6 +9,8 @@ package software.wings.timescale.migrations;
 
 import static io.harness.persistence.HQuery.excludeAuthority;
 
+import static software.wings.timescale.migrations.TimescaleEntityMigrationHelper.deleteFromTimescaleDB;
+
 import io.harness.persistence.HIterator;
 import io.harness.timescaledb.TimeScaleDBService;
 
@@ -27,7 +29,7 @@ import org.mongodb.morphia.query.FindOptions;
 
 @Slf4j
 @Singleton
-public class MigrateEnvironmentsToTimeScaleDB {
+public class MigrateEnvironmentsToTimeScaleDB implements TimeScaleEntityMigrationInterface {
   @Inject TimeScaleDBService timeScaleDBService;
   @Inject WingsPersistence wingsPersistence;
 
@@ -35,6 +37,8 @@ public class MigrateEnvironmentsToTimeScaleDB {
 
   private static final String upsert_statement =
       "INSERT INTO CG_ENVIRONMENTS (ID,NAME,ACCOUNT_ID,ENV_TYPE,APP_ID,CREATED_AT,LAST_UPDATED_AT,CREATED_BY,LAST_UPDATED_BY) VALUES (?,?,?,?,?,?,?,?,?) ON CONFLICT(ID) DO UPDATE SET NAME = excluded.NAME,ACCOUNT_ID = excluded.ACCOUNT_ID,ENV_TYPE = excluded.ENV_TYPE,APP_ID = excluded.APP_ID,CREATED_AT = excluded.CREATED_AT,LAST_UPDATED_AT = excluded.LAST_UPDATED_AT,CREATED_BY = excluded.CREATED_BY,LAST_UPDATED_BY = excluded.LAST_UPDATED_BY;";
+
+  private static final String TABLE_NAME = "CG_ENVIRONMENTS";
 
   public boolean runTimeScaleMigration(String accountId) {
     if (!timeScaleDBService.isValid()) {
@@ -53,7 +57,7 @@ public class MigrateEnvironmentsToTimeScaleDB {
                                    .fetch(findOptions_environments))) {
         while (iterator.hasNext()) {
           Environment environment = iterator.next();
-          prepareTimeScaleQueries(environment);
+          saveToTimeScale(environment);
           count++;
         }
       }
@@ -66,7 +70,7 @@ public class MigrateEnvironmentsToTimeScaleDB {
     return true;
   }
 
-  private void prepareTimeScaleQueries(Environment environment) {
+  public void saveToTimeScale(Environment environment) {
     long startTime = System.currentTimeMillis();
     boolean successful = false;
     int retryCount = 0;
@@ -116,5 +120,13 @@ public class MigrateEnvironmentsToTimeScaleDB {
     upsertPreparedStatement.setString(9, last_updated_by);
 
     upsertPreparedStatement.execute();
+  }
+
+  public void deleteFromTimescale(String id) {
+    deleteFromTimescaleDB(id, timeScaleDBService, MAX_RETRY, TABLE_NAME);
+  }
+
+  public String getTimescaleDBClass() {
+    return TABLE_NAME;
   }
 }

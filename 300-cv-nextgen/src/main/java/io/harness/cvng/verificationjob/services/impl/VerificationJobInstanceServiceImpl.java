@@ -51,6 +51,7 @@ import io.harness.cvng.core.services.api.MetricPackService;
 import io.harness.cvng.core.services.api.MonitoringSourcePerpetualTaskService;
 import io.harness.cvng.core.services.api.VerificationTaskService;
 import io.harness.cvng.metrics.CVNGMetricsUtils;
+import io.harness.cvng.metrics.beans.VerifyStepMetricContext;
 import io.harness.cvng.metrics.services.impl.MetricContextBuilder;
 import io.harness.cvng.statemachine.services.api.OrchestrationService;
 import io.harness.cvng.verificationjob.beans.AdditionalInfo;
@@ -248,10 +249,7 @@ public class VerificationJobInstanceServiceImpl implements VerificationJobInstan
     if (hasAllVerificationTaskCompleted || hasAnyVerificationTaskTerminated) {
       verificationJobInstance.setExecutionStatus(ExecutionStatus.SUCCESS);
       ActivityVerificationStatus activityVerificationStatus = getDeploymentVerificationStatus(verificationJobInstance);
-      metricService.incCounter(CVNGMetricsUtils.getVerificationJobInstanceStatusMetricName(activityVerificationStatus));
-      metricService.incCounter(CVNGMetricsUtils.getVerificationJobInstanceStatusMetricName(ExecutionStatus.SUCCESS));
-      metricService.recordDuration(
-          VERIFICATION_JOB_INSTANCE_EXTRA_TIME, verificationJobInstance.getExtraTimeTakenToFinish(clock.instant()));
+      publishDoneMetrics(verificationJobInstance);
       UpdateOperations<VerificationJobInstance> verificationJobInstanceUpdateOperations =
           hPersistence.createUpdateOperations(VerificationJobInstance.class);
       verificationJobInstanceUpdateOperations.set(VerificationJobInstanceKeys.executionStatus, SUCCESS)
@@ -521,6 +519,15 @@ public class VerificationJobInstanceServiceImpl implements VerificationJobInstan
     return getDeploymentVerificationJobInstanceSummary(verificationJobInstance);
   }
 
+  private void publishDoneMetrics(VerificationJobInstance verificationJobInstance) {
+    try (VerifyStepMetricContext verifyStepMetricContext = new VerifyStepMetricContext(verificationJobInstance)) {
+      metricService.incCounter(CVNGMetricsUtils.getVerificationJobInstanceStatusMetricName(
+          getDeploymentVerificationStatus(verificationJobInstance)));
+      metricService.incCounter(CVNGMetricsUtils.getVerificationJobInstanceStatusMetricName(ExecutionStatus.SUCCESS));
+      metricService.recordDuration(
+          VERIFICATION_JOB_INSTANCE_EXTRA_TIME, verificationJobInstance.getExtraTimeTakenToFinish(clock.instant()));
+    }
+  }
   private EnvironmentResponseDTO getEnvironment(VerificationJob verificationJob) {
     return nextGenService.getEnvironment(verificationJob.getAccountId(), verificationJob.getOrgIdentifier(),
         verificationJob.getProjectIdentifier(), verificationJob.getEnvIdentifier());

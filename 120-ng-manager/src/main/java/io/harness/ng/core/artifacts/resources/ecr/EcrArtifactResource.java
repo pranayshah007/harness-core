@@ -204,16 +204,33 @@ public class EcrArtifactResource {
     return ResponseDTO.newResponse(isValidArtifact);
   }
 
-  @GET
+  @POST
   @Path("getImages")
   @ApiOperation(value = "Gets ecr images", nickname = "getImagesListForEcr")
-  public ResponseDTO<EcrListImagesDTO> getImages(@NotNull @QueryParam("region") String region,
-      @NotNull @QueryParam("connectorRef") String ecrConnectorIdentifier,
+  public ResponseDTO<EcrListImagesDTO> getImages(@QueryParam("region") String region,
+      @QueryParam("connectorRef") String ecrConnectorIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
-      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier, @QueryParam("fqnPath") String fqnPath,
+      String runtimeInputYaml, @QueryParam(NGCommonEntityConstants.PIPELINE_KEY) String pipelineIdentifier,
+      @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceRef,
+      @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo,
       @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier) {
+    if (isNotEmpty(serviceRef)) {
+      final ArtifactConfig artifactSpecFromService = artifactResourceUtils.locateArtifactInService(
+          accountId, orgIdentifier, projectIdentifier, serviceRef, fqnPath);
+      EcrArtifactConfig ecrArtifactConfig = (EcrArtifactConfig) artifactSpecFromService;
+      if (isEmpty(region)) {
+        region = (String) ecrArtifactConfig.getRegion().fetchFinalValue();
+      }
+      if (isEmpty(ecrConnectorIdentifier)) {
+        ecrConnectorIdentifier = ecrArtifactConfig.getConnectorRef().getValue();
+      }
+    }
+    region = artifactResourceUtils.getResolvedImagePath(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+        runtimeInputYaml, region, fqnPath, gitEntityBasicInfo, serviceRef);
     IdentifierRef connectorRef =
         IdentifierRefHelper.getIdentifierRef(ecrConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
+
     EcrListImagesDTO ecrListImagesDTO =
         ecrResourceService.getImages(connectorRef, region, orgIdentifier, projectIdentifier);
     return ResponseDTO.newResponse(ecrListImagesDTO);

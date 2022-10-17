@@ -14,6 +14,7 @@ import io.harness.cdng.artifact.bean.yaml.ArtifactOverrideSetWrapper;
 import io.harness.cdng.artifact.bean.yaml.ArtifactOverrideSets;
 import io.harness.cdng.artifact.bean.yaml.ArtifactSource;
 import io.harness.cdng.artifact.bean.yaml.ArtifactoryRegistryArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.AzureArtifactsConfig;
 import io.harness.cdng.artifact.bean.yaml.CustomArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.DockerHubArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.EcrArtifactConfig;
@@ -40,6 +41,7 @@ import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryNpmConfig;
 import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryNugetConfig;
 import io.harness.cdng.artifact.outcome.AcrArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactoryGenericArtifactOutcome;
+import io.harness.cdng.artifact.outcome.AzureArtifactsOutcome;
 import io.harness.cdng.artifact.outcome.DockerArtifactOutcome;
 import io.harness.cdng.artifact.outcome.EcrArtifactOutcome;
 import io.harness.cdng.artifact.outcome.GarArtifactOutcome;
@@ -64,6 +66,14 @@ import io.harness.cdng.infra.beans.EcsInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sDirectInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sGcpInfrastructureOutcome;
 import io.harness.cdng.infra.beans.ServerlessAwsLambdaInfrastructureOutcome;
+import io.harness.cdng.infra.yaml.CustomDeploymentInfrastructure;
+import io.harness.cdng.infra.yaml.EcsInfrastructure;
+import io.harness.cdng.infra.yaml.K8SDirectInfrastructure;
+import io.harness.cdng.infra.yaml.K8sGcpInfrastructure;
+import io.harness.cdng.infra.yaml.PdcInfrastructure;
+import io.harness.cdng.infra.yaml.ServerlessAwsLambdaInfrastructure;
+import io.harness.cdng.infra.yaml.SshWinRmAwsInfrastructure;
+import io.harness.cdng.infra.yaml.SshWinRmAzureInfrastructure;
 import io.harness.cdng.instance.outcome.DeploymentInfoOutcome;
 import io.harness.cdng.manifest.ManifestConfigType;
 import io.harness.cdng.manifest.yaml.ArtifactoryStoreConfig;
@@ -263,6 +273,8 @@ public class NGEntitiesKryoRegistrar implements KryoRegistrar {
     kryo.register(StartupCommandConfiguration.class, 130016);
     kryo.register(GithubPackagesArtifactConfig.class, 130028);
     kryo.register(GithubPackagesArtifactOutcome.class, 130029);
+    kryo.register(AzureArtifactsConfig.class, 14700);
+    kryo.register(AzureArtifactsOutcome.class, 14701);
     kryo.register(EcsServiceDefinitionManifest.class, 140001);
     kryo.register(EcsTaskDefinitionManifest.class, 140002);
     kryo.register(EcsTaskDefinitionManifestOutcome.class, 140003);
@@ -296,5 +308,14 @@ public class NGEntitiesKryoRegistrar implements KryoRegistrar {
     kryo.register(CustomDeploymentNumberNGVariable.class, 130034);
     kryo.register(CustomDeploymentSecretNGVariable.class, 130035);
     kryo.register(CustomDeploymentNGVariableType.class, 130036);
+
+    kryo.register(K8SDirectInfrastructure.class, 8028);
+    kryo.register(K8sGcpInfrastructure.class, 8301);
+    kryo.register(PdcInfrastructure.class, 8302);
+    kryo.register(SshWinRmAzureInfrastructure.class, 8303);
+    kryo.register(SshWinRmAwsInfrastructure.class, 8304);
+    kryo.register(EcsInfrastructure.class, 12612);
+    kryo.register(CustomDeploymentInfrastructure.class, 12613);
+    kryo.register(ServerlessAwsLambdaInfrastructure.class, 12579);
   }
 }
