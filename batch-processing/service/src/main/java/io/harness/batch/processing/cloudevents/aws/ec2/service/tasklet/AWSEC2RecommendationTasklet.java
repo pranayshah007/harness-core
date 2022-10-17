@@ -94,7 +94,6 @@ public class AWSEC2RecommendationTasklet  implements Tasklet {
                         updateUtilData(accountId, utilzationData);
                     }
 
-
                     log.info("exiting the ec2 recomm!");
                 }
             }

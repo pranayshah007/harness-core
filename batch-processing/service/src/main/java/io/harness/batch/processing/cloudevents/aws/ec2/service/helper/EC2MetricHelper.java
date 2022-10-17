@@ -79,30 +79,31 @@ public class EC2MetricHelper {
         List<MetricDataQuery> aggregatedQuery = new ArrayList<>();
         final Map<String, MetricDataResult> metricDataResultMap = new HashMap<>();
         log.info("entred in utilisation metric func!");
-        for (Statistic stat : Arrays.asList(Average, Maximum)) {
-            for (String metricName : Arrays.asList(CPU_UTILIZATION, MEMORY_UTILIZATION)) {
-                // instance level metrics
-                for (AWSEC2Details instance: instanceDetails) {
+        for (AWSEC2Details instance: instanceDetails) {
+            for (Statistic stat : Arrays.asList(Average, Maximum)) {
+                for (String metricName : Arrays.asList(CPU_UTILIZATION, MEMORY_UTILIZATION)) {
+                    // instance level metrics
+
                     Metric clusterMetric = metricFor(metricName, instance.getInstanceId());
                     aggregatedQuery.add(
                             new MetricDataQuery()
                                     .withId(generateId(metricName, stat.toString(), instance.getInstanceId()))
                                     .withMetricStat(
                                             new MetricStat().withPeriod(PERIOD).withStat(stat.toString()).withMetric(clusterMetric)));
-                    log.info("aggregatedQuery = {}", aggregatedQuery);
-                    metricDataResultMap.putAll(awsCloudWatchHelperService
-                            .getMetricData(AwsCloudWatchMetricDataRequest.builder()
-                                    .region(instance.getRegion())
-                                    .awsCrossAccountAttributes(awsCrossAccountAttributes)
-                                    .startTime(startTime)
-                                    .endTime(endTime)
-                                    .metricDataQueries(aggregatedQuery)
-                                    .build())
-                            .getMetricDataResults()
-                            .stream()
-                            .collect(Collectors.toMap(MetricDataResult::getId, Function.identity())));
                 }
             }
+            log.info("aggregatedQuery = {}", aggregatedQuery);
+            metricDataResultMap.putAll(awsCloudWatchHelperService
+                    .getMetricData(AwsCloudWatchMetricDataRequest.builder()
+                            .region(instance.getRegion())
+                            .awsCrossAccountAttributes(awsCrossAccountAttributes)
+                            .startTime(startTime)
+                            .endTime(endTime)
+                            .metricDataQueries(aggregatedQuery)
+                            .build())
+                    .getMetricDataResults()
+                    .stream()
+                    .collect(Collectors.toMap(MetricDataResult::getId, Function.identity())));
         }
 
 
@@ -121,9 +122,6 @@ public class EC2MetricHelper {
 //        });
         log.info("metricDataResultMap = {}", metricDataResultMap);
         log.info("metricDataResultMap.size = {}", metricDataResultMap.size());
-        if (metricDataResultMap.containsKey("890436954479")) {
-            log.info("metricDataResultMap(890436954479) = {}", metricDataResultMap.get("890436954479").toString());
-        }
         List<Ec2UtilzationData> utilizationMetrics = new ArrayList<>();
 
         for (AWSEC2Details instance : instanceDetails) {
