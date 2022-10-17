@@ -287,7 +287,6 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
                                 io.harness.beans.SecretText.builder()
                                     .name(encryptedData.getName())
                                     .value(value)
-                                    .path(encryptedData.getPath())
                                     .additionalMetadata(encryptedData.getAdditionalMetadata())
                                     .build(),
                                 secretManagerConfig);
@@ -332,7 +331,6 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
                                       io.harness.beans.SecretText.builder()
                                           .name(encryptedData.getName())
                                           .value(value)
-                                          .path(encryptedData.getPath())
                                           .additionalMetadata(encryptedData.getAdditionalMetadata())
                                           .build(),
                                       existingEncryptedData, secretManagerConfig);
@@ -344,7 +342,6 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
                                     io.harness.beans.SecretText.builder()
                                         .name(encryptedData.getName())
                                         .value(value)
-                                        .path(encryptedData.getPath())
                                         .additionalMetadata(encryptedData.getAdditionalMetadata())
                                         .build(),
                                     existingEncryptedData, secretManagerConfig);
@@ -358,7 +355,6 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
                                     io.harness.beans.SecretText.builder()
                                         .name(encryptedData.getName())
                                         .value(value)
-                                        .path(encryptedData.getPath())
                                         .additionalMetadata(encryptedData.getAdditionalMetadata())
                                         .build(),
                                     secretManagerConfig);
