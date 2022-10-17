@@ -7,11 +7,6 @@
 
 package io.harness.ng.core.environment.resources;
 
-import static io.harness.NGCommonEntityConstants.NEXT_REL;
-import static io.harness.NGCommonEntityConstants.PAGE;
-import static io.harness.NGCommonEntityConstants.PAGE_SIZE;
-import static io.harness.NGCommonEntityConstants.PREVIOUS_REL;
-import static io.harness.NGCommonEntityConstants.SELF_REL;
 import static io.harness.NGConstants.HARNESS_BLUE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -20,12 +15,9 @@ import static io.harness.ng.core.mapper.TagMapper.convertToList;
 import static io.harness.ng.core.mapper.TagMapper.convertToMap;
 
 import static java.lang.String.format;
-import static javax.ws.rs.core.UriBuilder.fromPath;
 
 import io.harness.accesscontrol.acl.api.PermissionCheckDTO;
 import io.harness.accesscontrol.acl.api.ResourceScope;
-import io.harness.annotations.dev.HarnessTeam;
-import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.configfile.ConfigFile;
 import io.harness.cdng.configfile.ConfigFileWrapper;
 import io.harness.cdng.manifest.yaml.ManifestConfig;
@@ -49,8 +41,10 @@ import io.harness.spec.server.ng.model.ServiceOverrideRequest;
 import io.harness.spec.server.ng.model.ServiceOverrideResponse;
 import io.harness.utils.YamlPipelineUtils;
 
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
+import io.dropwizard.jersey.validation.JerseyViolationException;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -59,24 +53,21 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.validation.ConstraintViolation;
 import javax.validation.Valid;
-import javax.validation.Validation;
 import javax.validation.Validator;
-import javax.validation.ValidatorFactory;
-import javax.ws.rs.core.Link;
-import javax.ws.rs.core.Response.ResponseBuilder;
-import lombok.experimental.UtilityClass;
 import org.jetbrains.annotations.NotNull;
 
-@OwnedBy(HarnessTeam.CDC)
-@UtilityClass
+@Singleton
 public class EnvironmentsResourceApiUtils {
-  ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
-  Validator validator = factory.getValidator();
-  public static final int FIRST_PAGE = 1;
+  private final Validator validator;
+
+  @Inject
+  public EnvironmentsResourceApiUtils(Validator validator) {
+    this.validator = validator;
+  }
 
   public Environment toEnvironmentEntity(
       String accountId, EnvironmentRequest environmentRequest, String org, String project) {
-    final Environment environment;
+    Environment environment;
     if (isNotEmpty(environmentRequest.getYaml())) {
       NGEnvironmentConfig ngEnvironmentConfig = toNGEnvironmentConfig(environmentRequest, org, project);
 
@@ -102,11 +93,15 @@ public class EnvironmentsResourceApiUtils {
       return environment;
     }
     environment = toNGEnvironmentEntity(accountId, environmentRequest, org, project);
-    NGEnvironmentConfig ngEnvironmentConfig = toNGEnvironmentConfig(environment);
+    NGEnvironmentConfig ngEnvironmentConfig = EnvironmentMapper.toNGEnvironmentConfig(environment);
     environment.setYaml(toYaml(ngEnvironmentConfig));
+    Set<ConstraintViolation<Environment>> violations = validator.validate(environment);
+    if (!violations.isEmpty()) {
+      throw new JerseyViolationException(violations, null);
+    }
     return environment;
   }
-  public static NGEnvironmentConfig toNGEnvironmentConfig(EnvironmentRequest dto, String org, String project) {
+  public NGEnvironmentConfig toNGEnvironmentConfig(EnvironmentRequest dto, String org, String project) {
     if (isNotEmpty(dto.getYaml())) {
       try {
         return YamlUtils.read(dto.getYaml(), NGEnvironmentConfig.class);
@@ -123,27 +118,6 @@ public class EnvironmentsResourceApiUtils {
                                      .description(dto.getDescription())
                                      .tags(dto.getTags())
                                      .type(EnvironmentType.valueOf(dto.getType().toString()))
-                                     .build())
-        .build();
-  }
-
-  public static NGEnvironmentConfig toNGEnvironmentConfig(Environment environmentEntity) {
-    if (isNotEmpty(environmentEntity.getYaml())) {
-      try {
-        return YamlUtils.read(environmentEntity.getYaml(), NGEnvironmentConfig.class);
-      } catch (IOException e) {
-        throw new InvalidRequestException("Cannot create environment config due to " + e.getMessage());
-      }
-    }
-    return NGEnvironmentConfig.builder()
-        .ngEnvironmentInfoConfig(NGEnvironmentInfoConfig.builder()
-                                     .name(environmentEntity.getName())
-                                     .identifier(environmentEntity.getIdentifier())
-                                     .orgIdentifier(environmentEntity.getOrgIdentifier())
-                                     .projectIdentifier(environmentEntity.getProjectIdentifier())
-                                     .description(environmentEntity.getDescription())
-                                     .tags(convertToMap(environmentEntity.getTags()))
-                                     .type(environmentEntity.getType())
                                      .build())
         .build();
   }
@@ -186,6 +160,26 @@ public class EnvironmentsResourceApiUtils {
     environmentResponse.setEnvironment(writeDTO(environment));
     environmentResponse.setCreated(environment.getCreatedAt());
     environmentResponse.setUpdated(environment.getLastModifiedAt());
+    Set<ConstraintViolation<EnvironmentResponse>> violations = validator.validate(environmentResponse);
+    if (!violations.isEmpty()) {
+      throw new JerseyViolationException(violations, null);
+    }
+    return environmentResponse;
+  }
+
+  public io.harness.spec.server.ng.model.Environment writeDTO(Environment environment) {
+    io.harness.spec.server.ng.model.Environment environmentResponse = new io.harness.spec.server.ng.model.Environment();
+    environmentResponse.setAccount(environment.getAccountId());
+    environmentResponse.setOrg(environment.getOrgIdentifier());
+    environmentResponse.setProject(environment.getProjectIdentifier());
+    environmentResponse.setSlug(environment.getIdentifier());
+    environmentResponse.setName(environment.getName());
+    environmentResponse.setColor(environment.getColor());
+    environmentResponse.setDescription(environment.getDescription());
+    environmentResponse.setType(
+        io.harness.spec.server.ng.model.Environment.TypeEnum.fromValue(environment.getType().toString()));
+    environmentResponse.setTags(convertToMap(environment.getTags()));
+    environmentResponse.setYaml(environment.getYaml());
     return environmentResponse;
   }
   // ServiceOverrides
@@ -202,6 +196,10 @@ public class EnvironmentsResourceApiUtils {
 
     // validating the yaml
     NGServiceOverrideEntityConfigMapper.toNGServiceOverrideConfig(serviceOverridesEntity);
+    Set<ConstraintViolation<NGServiceOverridesEntity>> violations = validator.validate(serviceOverridesEntity);
+    if (!violations.isEmpty()) {
+      throw new JerseyViolationException(violations, null);
+    }
     return serviceOverridesEntity;
   }
 
@@ -213,10 +211,14 @@ public class EnvironmentsResourceApiUtils {
     serviceOverrideResponse.setProject(serviceOverridesEntity.getProjectIdentifier());
     serviceOverrideResponse.setAccount(serviceOverridesEntity.getAccountId());
     serviceOverrideResponse.setYaml(serviceOverridesEntity.getYaml());
+    Set<ConstraintViolation<ServiceOverrideResponse>> violations = validator.validate(serviceOverrideResponse);
+    if (!violations.isEmpty()) {
+      throw new JerseyViolationException(violations, null);
+    }
     return serviceOverrideResponse;
   }
 
-  public static void checkDuplicateManifestIdentifiersWithIn(List<ManifestConfigWrapper> manifests) {
+  public void checkDuplicateManifestIdentifiersWithIn(List<ManifestConfigWrapper> manifests) {
     if (isEmpty(manifests)) {
       return;
     }
@@ -229,7 +231,7 @@ public class EnvironmentsResourceApiUtils {
     }
   }
 
-  public static void checkDuplicateConfigFilesIdentifiersWithIn(List<ConfigFileWrapper> configFiles) {
+  public void checkDuplicateConfigFilesIdentifiersWithIn(List<ConfigFileWrapper> configFiles) {
     if (isEmpty(configFiles)) {
       return;
     }
@@ -242,24 +244,8 @@ public class EnvironmentsResourceApiUtils {
     }
   }
 
-  public io.harness.spec.server.ng.model.Environment writeDTO(Environment environment) {
-    io.harness.spec.server.ng.model.Environment environmentResponse = new io.harness.spec.server.ng.model.Environment();
-    environmentResponse.setAccount(environment.getAccountId());
-    environmentResponse.setOrg(environment.getOrgIdentifier());
-    environmentResponse.setProject(environment.getProjectIdentifier());
-    environmentResponse.setSlug(environment.getProjectIdentifier());
-    environmentResponse.setName(environment.getName());
-    environmentResponse.setColor(environment.getColor());
-    environmentResponse.setDescription(environment.getDescription());
-    environmentResponse.setType(
-        io.harness.spec.server.ng.model.Environment.TypeEnum.fromValue(environment.getType().toString()));
-    environmentResponse.setTags(convertToMap(environment.getTags()));
-    environmentResponse.setYaml(environment.getYaml());
-    return environmentResponse;
-  }
-
   @NotNull
-  private static Set<String> getDuplicateIdentifiers(Stream<String> identifierStream) {
+  private Set<String> getDuplicateIdentifiers(Stream<String> identifierStream) {
     Set<String> uniqueIds = new HashSet<>();
     Set<String> duplicateIds = new HashSet<>();
     identifierStream.forEach(id -> {
@@ -269,7 +255,7 @@ public class EnvironmentsResourceApiUtils {
     });
     return duplicateIds;
   }
-  public static String toYaml(@Valid NGEnvironmentConfig ngEnvironmentConfig) {
+  public String toYaml(@Valid NGEnvironmentConfig ngEnvironmentConfig) {
     try {
       return YamlPipelineUtils.getYamlString(ngEnvironmentConfig);
     } catch (IOException e) {
@@ -306,26 +292,6 @@ public class EnvironmentsResourceApiUtils {
         property = sort;
     }
     return property + ',' + order;
-  }
-
-  public ResponseBuilder addLinksHeader(
-      ResponseBuilder responseBuilder, String path, int currentResultCount, int page, int limit) {
-    ArrayList<Link> links = new ArrayList<>();
-
-    links.add(
-        Link.fromUri(fromPath(path).queryParam(PAGE, page).queryParam(PAGE_SIZE, limit).build()).rel(SELF_REL).build());
-
-    if (page >= FIRST_PAGE) {
-      links.add(Link.fromUri(fromPath(path).queryParam(PAGE, page - 1).queryParam(PAGE_SIZE, limit).build())
-                    .rel(PREVIOUS_REL)
-                    .build());
-    }
-    if (limit == currentResultCount) {
-      links.add(Link.fromUri(fromPath(path).queryParam(PAGE, page + 1).queryParam(PAGE_SIZE, limit).build())
-                    .rel(NEXT_REL)
-                    .build());
-    }
-    return responseBuilder.links(links.toArray(new Link[links.size()]));
   }
 
   public PermissionCheckDTO environmentResponseToPermissionCheckDTO(EnvironmentResponse environmentResponse) {

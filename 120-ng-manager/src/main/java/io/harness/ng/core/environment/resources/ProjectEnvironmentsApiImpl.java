@@ -7,15 +7,16 @@
 
 package io.harness.ng.core.environment.resources;
 
+import static io.harness.NGCommonEntityConstants.NEXT_REL;
+import static io.harness.NGCommonEntityConstants.PAGE;
+import static io.harness.NGCommonEntityConstants.PAGE_SIZE;
+import static io.harness.NGCommonEntityConstants.PREVIOUS_REL;
+import static io.harness.NGCommonEntityConstants.SELF_REL;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.ng.accesscontrol.PlatformPermissions.VIEW_PROJECT_PERMISSION;
 import static io.harness.ng.accesscontrol.PlatformResourceTypes.PROJECT;
-import static io.harness.ng.core.environment.mappers.EnvironmentMapper.checkDuplicateConfigFilesIdentifiersWithIn;
-import static io.harness.ng.core.environment.mappers.EnvironmentMapper.checkDuplicateManifestIdentifiersWithIn;
-import static io.harness.ng.core.environment.mappers.EnvironmentMapper.toNGEnvironmentConfig;
-import static io.harness.ng.core.serviceoverride.mapper.NGServiceOverrideEntityConfigMapper.toNGServiceOverrideConfig;
 import static io.harness.pms.rbac.NGResourceType.ENVIRONMENT;
 import static io.harness.pms.rbac.NGResourceType.SERVICE;
 import static io.harness.rbac.CDNGRbacPermissions.ENVIRONMENT_CREATE_PERMISSION;
@@ -25,6 +26,7 @@ import static io.harness.rbac.CDNGRbacPermissions.SERVICE_UPDATE_PERMISSION;
 
 import static java.lang.Long.parseLong;
 import static java.lang.String.format;
+import static javax.ws.rs.core.UriBuilder.fromPath;
 import static org.apache.commons.lang3.StringUtils.isNumeric;
 
 import io.harness.accesscontrol.AccountIdentifier;
@@ -39,7 +41,6 @@ import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
@@ -55,6 +56,7 @@ import io.harness.ng.core.environment.yaml.NGEnvironmentConfig;
 import io.harness.ng.core.service.ServiceEntityValidationHelper;
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity;
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity.NGServiceOverridesEntityKeys;
+import io.harness.ng.core.serviceoverride.mapper.NGServiceOverrideEntityConfigMapper;
 import io.harness.ng.core.serviceoverride.mapper.ServiceOverridesMapper;
 import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
 import io.harness.ng.core.serviceoverride.yaml.NGServiceOverrideConfig;
@@ -78,6 +80,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.ws.rs.NotFoundException;
+import javax.ws.rs.core.Link;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
 import lombok.AccessLevel;
@@ -93,6 +96,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
 @NextGenManagerAuth
 public class ProjectEnvironmentsApiImpl implements ProjectEnvironmentsApi {
+  public static final int FIRST_PAGE = 1;
   private final EnvironmentService environmentService;
   private final AccessControlClient accessControlClient;
   private final OrgAndProjectValidationHelper orgAndProjectValidationHelper;
@@ -100,8 +104,7 @@ public class ProjectEnvironmentsApiImpl implements ProjectEnvironmentsApi {
   private final EnvironmentValidationHelper environmentValidationHelper;
   private final ServiceEntityValidationHelper serviceEntityValidationHelper;
   private final EnvironmentFilterHelper environmentFilterHelper;
-  private final CDFeatureFlagHelper cdFeatureFlagHelper;
-
+  private final EnvironmentsResourceApiUtils environmentsResourceApiUtils;
   @Override
   public Response createEnvironment(EnvironmentRequest environmentRequest, @OrgIdentifier String org,
       @ProjectIdentifier String project, @AccountIdentifier String account) {
@@ -115,13 +118,13 @@ public class ProjectEnvironmentsApiImpl implements ProjectEnvironmentsApi {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(account, org, project),
         Resource.of(ENVIRONMENT, null, environmentAttributes), ENVIRONMENT_CREATE_PERMISSION);
     Environment environmentEntity =
-        EnvironmentsResourceApiUtils.toEnvironmentEntity(account, environmentRequest, org, project);
+        environmentsResourceApiUtils.toEnvironmentEntity(account, environmentRequest, org, project);
     orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(environmentEntity.getOrgIdentifier(),
         environmentEntity.getProjectIdentifier(), environmentEntity.getAccountId());
     Environment createdEnvironment = environmentService.create(environmentEntity);
 
     return Response.status(Response.Status.CREATED)
-        .entity(EnvironmentsResourceApiUtils.toEnvironmentResponseWrapper(createdEnvironment))
+        .entity(environmentsResourceApiUtils.toEnvironmentResponseWrapper(createdEnvironment))
         .tag(createdEnvironment.getVersion().toString())
         .build();
   }
@@ -143,15 +146,17 @@ public class ProjectEnvironmentsApiImpl implements ProjectEnvironmentsApi {
     if (environmentOptional.isPresent()) {
       version = environmentOptional.get().getVersion().toString();
       if (EmptyPredicate.isEmpty(environmentOptional.get().getYaml())) {
-        NGEnvironmentConfig ngEnvironmentConfig = toNGEnvironmentConfig(environmentOptional.get());
-        environmentOptional.get().setYaml(EnvironmentMapper.toYaml(ngEnvironmentConfig));
+        NGEnvironmentConfig ngEnvironmentConfig = EnvironmentMapper.toNGEnvironmentConfig(environmentOptional.get());
+        environmentOptional.get().setYaml(environmentsResourceApiUtils.toYaml(ngEnvironmentConfig));
       }
     } else {
       throw new NotFoundException(String.format(
           "Environment with identifier [%s] in project [%s], org [%s] not found", environment, project, org));
     }
+
+    Environment optionalEnvironment = environmentOptional.get();
     return Response.ok()
-        .entity(environmentOptional.map(EnvironmentMapper::toResponseWrapper).orElse(null))
+        .entity(environmentsResourceApiUtils.toEnvironmentResponseWrapper(optionalEnvironment))
         .tag(version)
         .build();
   }
@@ -171,12 +176,12 @@ public class ProjectEnvironmentsApiImpl implements ProjectEnvironmentsApi {
 
       List<EnvironmentResponse> environmentList = environmentService.listAccess(criteria)
                                                       .stream()
-                                                      .map(EnvironmentsResourceApiUtils::toEnvironmentResponseWrapper)
+                                                      .map(environmentsResourceApiUtils::toEnvironmentResponseWrapper)
                                                       .collect(Collectors.toList());
 
       List<PermissionCheckDTO> permissionCheckDTOS =
           environmentList.stream()
-              .map(EnvironmentsResourceApiUtils::environmentResponseToPermissionCheckDTO)
+              .map(environmentsResourceApiUtils::environmentResponseToPermissionCheckDTO)
               .collect(Collectors.toList());
       List<AccessControlDTO> accessControlList =
           accessControlClient.checkForAccess(permissionCheckDTOS).getAccessControlList();
@@ -185,7 +190,7 @@ public class ProjectEnvironmentsApiImpl implements ProjectEnvironmentsApi {
           filterEnvironmentResponseByPermissionAndId(accessControlList, environmentList);
       ResponseBuilder responseBuilder = Response.ok();
 
-      ResponseBuilder responseBuilderWithLinks = EnvironmentsResourceApiUtils.addLinksHeader(responseBuilder,
+      ResponseBuilder responseBuilderWithLinks = addLinksHeader(responseBuilder,
           format("/v1/orgs/%s/projects/%s/services)", org, project), filterEnvironmentList.size(), page, limit);
       return responseBuilderWithLinks.entity(filterEnvironmentList).build();
     }
@@ -200,24 +205,24 @@ public class ProjectEnvironmentsApiImpl implements ProjectEnvironmentsApi {
     if (isEmpty(sort)) {
       pageRequest = PageRequest.of(page, limit, Sort.by(Sort.Direction.DESC, EnvironmentKeys.createdAt));
     } else {
-      String sortQuery = EnvironmentsResourceApiUtils.mapSort(sort, order);
+      String sortQuery = environmentsResourceApiUtils.mapSort(sort, order);
       pageRequest = PageUtils.getPageRequest(page, limit, Collections.singletonList(sortQuery));
     }
     Page<Environment> environmentEntities = environmentService.list(criteria, pageRequest);
     environmentEntities.forEach(environment -> {
       if (EmptyPredicate.isEmpty(environment.getYaml())) {
-        NGEnvironmentConfig ngEnvironmentConfig = toNGEnvironmentConfig(environment);
-        environment.setYaml(EnvironmentMapper.toYaml(ngEnvironmentConfig));
+        NGEnvironmentConfig ngEnvironmentConfig = EnvironmentMapper.toNGEnvironmentConfig(environment);
+        environment.setYaml(environmentsResourceApiUtils.toYaml(ngEnvironmentConfig));
       }
     });
 
     Page<EnvironmentResponse> environmentResponsePage =
-        environmentEntities.map(EnvironmentsResourceApiUtils::toEnvironmentResponseWrapper);
+        environmentEntities.map(environmentsResourceApiUtils::toEnvironmentResponseWrapper);
     List<EnvironmentResponse> environmentResponseList = environmentResponsePage.getContent();
 
     ResponseBuilder responseBuilder = Response.ok();
 
-    ResponseBuilder responseBuilderWithLinks = EnvironmentsResourceApiUtils.addLinksHeader(responseBuilder,
+    ResponseBuilder responseBuilderWithLinks = addLinksHeader(responseBuilder,
         format("/v1/orgs/%s/projects/%s/services)", org, project), environmentResponseList.size(), page, limit);
 
     return responseBuilderWithLinks.entity(environmentResponseList).build();
@@ -231,11 +236,10 @@ public class ProjectEnvironmentsApiImpl implements ProjectEnvironmentsApi {
         ResourceScope.of(account, org, project), Resource.of(ENVIRONMENT, environment), ENVIRONMENT_UPDATE_PERMISSION);
 
     Environment requestEnvironment =
-        EnvironmentsResourceApiUtils.toEnvironmentEntity(account, environmentRequest, org, project);
-    requestEnvironment.setVersion(isNumeric("ifMatch") ? parseLong("ifMatch") : null);
+        environmentsResourceApiUtils.toEnvironmentEntity(account, environmentRequest, org, project);
     Environment updatedEnvironment = environmentService.update(requestEnvironment);
     return Response.ok()
-        .entity(EnvironmentsResourceApiUtils.toEnvironmentResponseWrapper(updatedEnvironment))
+        .entity(environmentsResourceApiUtils.toEnvironmentResponseWrapper(updatedEnvironment))
         .tag(updatedEnvironment.getVersion().toString())
         .build();
   }
@@ -246,7 +250,7 @@ public class ProjectEnvironmentsApiImpl implements ProjectEnvironmentsApi {
       @AccountIdentifier String account) {
     throwExceptionForNoRequestDTO(serviceOverrideRequest);
 
-    NGServiceOverridesEntity serviceOverridesEntity = EnvironmentsResourceApiUtils.toServiceOverridesEntity(
+    NGServiceOverridesEntity serviceOverridesEntity = environmentsResourceApiUtils.toServiceOverridesEntity(
         account, serviceOverrideRequest, org, project, environment, service);
     orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(serviceOverridesEntity.getOrgIdentifier(),
         serviceOverridesEntity.getProjectIdentifier(), serviceOverridesEntity.getAccountId());
@@ -263,7 +267,7 @@ public class ProjectEnvironmentsApiImpl implements ProjectEnvironmentsApi {
 
     NGServiceOverridesEntity createdServiceOverride = serviceOverrideService.upsert(serviceOverridesEntity);
     return Response.status(Response.Status.CREATED)
-        .entity(EnvironmentsResourceApiUtils.toServiceOverrideResponse(createdServiceOverride))
+        .entity(environmentsResourceApiUtils.toServiceOverrideResponse(createdServiceOverride))
         .build();
   }
 
@@ -293,7 +297,8 @@ public class ProjectEnvironmentsApiImpl implements ProjectEnvironmentsApi {
         serviceOverrideService.get(account, org, project, environment, service);
     if (serviceOverridesEntity.isPresent()) {
       if (EmptyPredicate.isEmpty(serviceOverridesEntity.get().getYaml())) {
-        NGServiceOverrideConfig ngServiceOverrideConfig = toNGServiceOverrideConfig(serviceOverridesEntity.get());
+        NGServiceOverrideConfig ngServiceOverrideConfig =
+            NGServiceOverrideEntityConfigMapper.toNGServiceOverrideConfig(serviceOverridesEntity.get());
         serviceOverridesEntity.get().setYaml(ServiceOverridesMapper.toYaml(ngServiceOverrideConfig));
       }
     } else {
@@ -302,7 +307,7 @@ public class ProjectEnvironmentsApiImpl implements ProjectEnvironmentsApi {
           environment, service, project, org));
     }
     return Response.ok()
-        .entity(EnvironmentsResourceApiUtils.toServiceOverrideResponse(serviceOverridesEntity.get()))
+        .entity(environmentsResourceApiUtils.toServiceOverrideResponse(serviceOverridesEntity.get()))
         .build();
   }
 
@@ -323,17 +328,17 @@ public class ProjectEnvironmentsApiImpl implements ProjectEnvironmentsApi {
     if (isEmpty(sort)) {
       pageRequest = PageRequest.of(page, limit, Sort.by(Sort.Direction.DESC, NGServiceOverridesEntityKeys.createdAt));
     } else {
-      String sortQuery = EnvironmentsResourceApiUtils.mapSort(sort, order);
+      String sortQuery = environmentsResourceApiUtils.mapSort(sort, order);
       pageRequest = PageUtils.getPageRequest(page, limit, Collections.singletonList(sortQuery));
     }
     Page<NGServiceOverridesEntity> serviceOverridesEntities = serviceOverrideService.list(criteria, pageRequest);
     Page<ServiceOverrideResponse> serviceResponsePage =
-        serviceOverridesEntities.map(EnvironmentsResourceApiUtils::toServiceOverrideResponse);
+        serviceOverridesEntities.map(environmentsResourceApiUtils::toServiceOverrideResponse);
     List<ServiceOverrideResponse> serviceOverrideResponseList = serviceResponsePage.getContent();
 
     ResponseBuilder responseBuilder = Response.ok();
 
-    ResponseBuilder responseBuilderWithLinks = EnvironmentsResourceApiUtils.addLinksHeader(responseBuilder,
+    ResponseBuilder responseBuilderWithLinks = addLinksHeader(responseBuilder,
         format("/v1/orgs/%s/projects/%s/services)", org, project), serviceOverrideResponseList.size(), page, limit);
 
     return responseBuilderWithLinks.entity(serviceOverrideResponseList).build();
@@ -345,7 +350,7 @@ public class ProjectEnvironmentsApiImpl implements ProjectEnvironmentsApi {
       @AccountIdentifier String account) {
     throwExceptionForNoRequestDTO(serviceOverrideRequest);
 
-    NGServiceOverridesEntity serviceOverridesEntity = EnvironmentsResourceApiUtils.toServiceOverridesEntity(
+    NGServiceOverridesEntity serviceOverridesEntity = environmentsResourceApiUtils.toServiceOverridesEntity(
         account, serviceOverrideRequest, org, project, environment, service);
     orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(serviceOverridesEntity.getOrgIdentifier(),
         serviceOverridesEntity.getProjectIdentifier(), serviceOverridesEntity.getAccountId());
@@ -361,7 +366,7 @@ public class ProjectEnvironmentsApiImpl implements ProjectEnvironmentsApi {
     validateServiceOverrides(serviceOverridesEntity);
 
     NGServiceOverridesEntity createdServiceOverride = serviceOverrideService.upsert(serviceOverridesEntity);
-    return Response.ok().entity(EnvironmentsResourceApiUtils.toServiceOverrideResponse(createdServiceOverride)).build();
+    return Response.ok().entity(environmentsResourceApiUtils.toServiceOverrideResponse(createdServiceOverride)).build();
   }
 
   private void throwExceptionForNoRequestDTO(EnvironmentRequest dto) {
@@ -371,7 +376,8 @@ public class ProjectEnvironmentsApiImpl implements ProjectEnvironmentsApi {
     }
   }
   private void validateServiceOverrides(NGServiceOverridesEntity serviceOverridesEntity) {
-    final NGServiceOverrideConfig serviceOverrideConfig = toNGServiceOverrideConfig(serviceOverridesEntity);
+    final NGServiceOverrideConfig serviceOverrideConfig =
+        NGServiceOverrideEntityConfigMapper.toNGServiceOverrideConfig(serviceOverridesEntity);
     if (serviceOverrideConfig.getServiceOverrideInfoConfig() != null) {
       final NGServiceOverrideInfoConfig serviceOverrideInfoConfig =
           serviceOverrideConfig.getServiceOverrideInfoConfig();
@@ -388,13 +394,13 @@ public class ProjectEnvironmentsApiImpl implements ProjectEnvironmentsApi {
           throw new InvalidRequestException("No overrides found in request");
         }
       }
-
-      checkDuplicateManifestIdentifiersWithIn(serviceOverrideInfoConfig.getManifests());
-      checkDuplicateConfigFilesIdentifiersWithIn(serviceOverrideInfoConfig.getConfigFiles());
+      environmentsResourceApiUtils.checkDuplicateManifestIdentifiersWithIn(serviceOverrideInfoConfig.getManifests());
+      environmentsResourceApiUtils.checkDuplicateConfigFilesIdentifiersWithIn(
+          serviceOverrideInfoConfig.getConfigFiles());
     }
   }
 
-  private void checkForServiceOverrideUpdateAccess(
+  public void checkForServiceOverrideUpdateAccess(
       String accountId, String orgIdentifier, String projectIdentifier, String environmentRef, String serviceRef) {
     final List<PermissionCheckDTO> permissionCheckDTOList = new ArrayList<>();
     permissionCheckDTOList.add(PermissionCheckDTO.builder()
@@ -442,5 +448,25 @@ public class ProjectEnvironmentsApiImpl implements ProjectEnvironmentsApi {
       }
     }
     return filteredAccessControlDtoList;
+  }
+
+  public ResponseBuilder addLinksHeader(
+      ResponseBuilder responseBuilder, String path, int currentResultCount, int page, int limit) {
+    ArrayList<Link> links = new ArrayList<>();
+
+    links.add(
+        Link.fromUri(fromPath(path).queryParam(PAGE, page).queryParam(PAGE_SIZE, limit).build()).rel(SELF_REL).build());
+
+    if (page >= FIRST_PAGE) {
+      links.add(Link.fromUri(fromPath(path).queryParam(PAGE, page - 1).queryParam(PAGE_SIZE, limit).build())
+                    .rel(PREVIOUS_REL)
+                    .build());
+    }
+    if (limit == currentResultCount) {
+      links.add(Link.fromUri(fromPath(path).queryParam(PAGE, page + 1).queryParam(PAGE_SIZE, limit).build())
+                    .rel(NEXT_REL)
+                    .build());
+    }
+    return responseBuilder.links(links.toArray(new Link[links.size()]));
   }
 }
