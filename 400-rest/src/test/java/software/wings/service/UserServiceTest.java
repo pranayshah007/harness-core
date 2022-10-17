@@ -1828,7 +1828,7 @@ public class UserServiceTest extends WingsBaseTest {
 
     List<InviteOperationResponse> inviteOperationResponses = userService.inviteUsers(userInvite);
 
-    assertThat(inviteOperationResponses.get(0)).isEqualTo(InviteOperationResponse.USER_INVITED_SUCCESSFULLY);
+    assertThat(inviteOperationResponses.get(0)).isEqualTo(InviteOperationResponse.USER_INVITE_NOT_REQUIRED);
     verify(emailDataNotificationService, times(0)).send(any());
   }
 
