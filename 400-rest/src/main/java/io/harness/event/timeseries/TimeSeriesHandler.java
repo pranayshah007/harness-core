@@ -7,12 +7,21 @@
 
 package io.harness.event.timeseries;
 
-import static io.harness.event.model.EventType.*;
+import static io.harness.event.model.EventType.DEPLOYMENT_EVENT;
+import static io.harness.event.model.EventType.DEPLOYMENT_STEP_EVENT;
+import static io.harness.event.model.EventType.DEPLOYMENT_VERIFIED;
+import static io.harness.event.model.EventType.EXECUTION_INTERRUPT;
+import static io.harness.event.model.EventType.INSTANCE_EVENT;
+import static io.harness.event.model.EventType.SERVICE_GUARD_SETUP;
 
 import io.harness.event.handler.EventHandler;
 import io.harness.event.listener.EventListener;
 import io.harness.event.model.Event;
-import io.harness.event.timeseries.processor.*;
+import io.harness.event.timeseries.processor.DeploymentEventProcessor;
+import io.harness.event.timeseries.processor.DeploymentStepEventProcessor;
+import io.harness.event.timeseries.processor.ExecutionInterruptProcessor;
+import io.harness.event.timeseries.processor.ServiceGuardSetupEventProcessor;
+import io.harness.event.timeseries.processor.VerificationEventProcessor;
 import io.harness.event.timeseries.processor.instanceeventprocessor.InstanceEventProcessor;
 import io.harness.logging.AutoLogContext;
 
