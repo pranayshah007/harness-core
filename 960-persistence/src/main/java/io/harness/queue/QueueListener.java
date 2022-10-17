@@ -22,7 +22,6 @@ import io.harness.logging.ExceptionLogger;
 import io.harness.manage.GlobalContextManager.GlobalContextGuard;
 import io.harness.mongo.DelayLogContext;
 import io.harness.mongo.MessageLogContext;
-import io.harness.mongo.ProcessTimeLogContext;
 import io.harness.queue.QueueConsumer.Filter;
 
 import com.google.inject.Inject;
