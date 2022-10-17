@@ -3557,7 +3557,7 @@
             "runTaskRequestDefinition": {
               "$ref": "#/definitions/StoreConfigWrapper"
             },
-            "skiSteadyStateCheck": {
+            "skipSteadyStateCheck": {
               "oneOf": [
                 {
                   "type": "boolean"
