@@ -139,13 +139,6 @@ public abstract class QueueListener<T extends Queuable> implements Runnable {
       queueConsumer.ack(message);
     } catch (Throwable exception) {
       onException(exception, message);
-    } finally {
-      long processTime = currentTimeMillis() - startTime;
-      try (ProcessTimeLogContext ignore2 = new ProcessTimeLogContext(processTime, OVERRIDE_ERROR)) {
-        log.info("Done with message");
-      } catch (Throwable exception) {
-        log.error("Exception while recording the processing of message", exception);
-      }
     }
   }
 
