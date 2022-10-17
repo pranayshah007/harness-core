@@ -22,7 +22,6 @@ import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.gitaware.dto.GitContextRequestParams;
-import io.harness.gitsync.common.helper.GitFilePathHelper;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.interceptor.GitSyncBranchContext;
 import io.harness.gitsync.scm.SCMGitSyncHelper;
@@ -278,7 +277,7 @@ public class GitAwareEntityHelperTest extends CategoryTest {
     } catch (Exception ex) {
       WingsException exception = ExceptionUtils.cause(InvalidRequestException.class, ex);
       assertThat(exception).isNotNull();
-      assertThat(exception.getMessage()).isEqualTo(GitFilePathHelper.NULL_FILE_PATH_ERROR_MESSAGE);
+      assertThat(exception.getMessage()).isEqualTo(GitAwareEntityHelper.NULL_FILE_PATH_ERROR_MESSAGE);
     }
   }
 
@@ -293,7 +292,7 @@ public class GitAwareEntityHelperTest extends CategoryTest {
       WingsException exception = ExceptionUtils.cause(InvalidRequestException.class, ex);
       assertThat(exception).isNotNull();
       assertThat(exception.getMessage())
-          .isEqualTo(String.format(GitFilePathHelper.INVALID_FILE_PATH_FORMAT_ERROR_MESSAGE, filePath));
+          .isEqualTo(String.format(GitAwareEntityHelper.INVALID_FILE_PATH_FORMAT_ERROR_MESSAGE, filePath));
     }
   }
 
