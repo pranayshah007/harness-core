@@ -779,7 +779,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setType(StepSpecTypeConstants.CUSTOM_DEPLOYMENT_FETCH_INSTANCE_SCRIPT)
             .setStepMetaData(
                 StepMetaData.newBuilder().addCategory("CustomDeployment").addFolderPaths("CustomDeployment").build())
-            .setFeatureFlag(FeatureName.NG_DEPLOYMENT_TEMPLATE.name())
+            .setFeatureFlag(FeatureName.NG_SVC_ENV_REDESIGN.name())
             .build();
 
     StepInfo shellScriptProvision = StepInfo.newBuilder()
