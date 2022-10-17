@@ -7,7 +7,8 @@
 
 package io.harness.gitaware.helper;
 
-import static io.harness.rule.OwnerRule.*;
+import static io.harness.rule.OwnerRule.ADITHYA;
+import static io.harness.rule.OwnerRule.NAMAN;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;

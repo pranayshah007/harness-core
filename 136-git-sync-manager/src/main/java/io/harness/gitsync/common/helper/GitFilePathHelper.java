@@ -25,8 +25,6 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(PL)
 public class GitFilePathHelper {
   GitSyncConnectorHelper gitSyncConnectorHelper;
-  public static final String NULL_FILE_PATH_ERROR_MESSAGE = "FilePath cannot be null or empty.";
-  public static final String INVALID_FILE_PATH_FORMAT_ERROR_MESSAGE = "FilePath [%s] should not start or end with [/].";
 
   public String getFileUrl(
       Scope scope, String connectorRef, String branchName, String filePath, GitRepositoryDTO gitRepositoryDTO) {
