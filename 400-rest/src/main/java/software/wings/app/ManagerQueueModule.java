@@ -19,7 +19,11 @@ import io.harness.queue.QueueListener;
 import io.harness.queue.QueuePublisher;
 import io.harness.version.VersionInfoManager;
 
-import software.wings.api.*;
+import software.wings.api.DeploymentEvent;
+import software.wings.api.DeploymentStepTimeSeriesEvent;
+import software.wings.api.DeploymentTimeSeriesEvent;
+import software.wings.api.ExecutionInterruptTimeSeriesEvent;
+import software.wings.api.InstanceEvent;
 import software.wings.collect.ArtifactCollectEventListener;
 import software.wings.collect.CollectEvent;
 import software.wings.helpers.ext.mail.EmailData;
@@ -176,7 +180,7 @@ public class ManagerQueueModule extends AbstractModule {
 
   @Provides
   @Singleton
-  QueuePublisher<ExecutionInterruptTimeSeriesEvent> ExecutionInterruptTimeSeriesQueuePublisher(
+  QueuePublisher<ExecutionInterruptTimeSeriesEvent> executionInterruptTimeSeriesQueuePublisher(
       Injector injector, VersionInfoManager versionInfoManager, PublisherConfiguration config) {
     return QueueFactory.createQueuePublisher(injector, ExecutionInterruptTimeSeriesEvent.class,
         asList(versionInfoManager.getVersionInfo().getVersion()), config);
@@ -184,7 +188,7 @@ public class ManagerQueueModule extends AbstractModule {
 
   @Provides
   @Singleton
-  QueueConsumer<ExecutionInterruptTimeSeriesEvent> ExecutionInterruptTimeSeriesQueueConsumer(
+  QueueConsumer<ExecutionInterruptTimeSeriesEvent> executionInterruptTimeSeriesQueueConsumer(
       Injector injector, VersionInfoManager versionInfoManager, PublisherConfiguration config) {
     return QueueFactory.createQueueConsumer(injector, ExecutionInterruptTimeSeriesEvent.class, ofMinutes(1),
         asList(asList(versionInfoManager.getVersionInfo().getVersion())), config);

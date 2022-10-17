@@ -1,7 +1,5 @@
 package io.harness.event.timeseries.processor;
 
-import static io.harness.event.timeseries.processor.ProcessorHelper.getLongValue;
-
 import io.harness.timescaledb.TimeScaleDBService;
 
 import software.wings.service.impl.event.timeseries.TimeSeriesEventInfo;
@@ -67,16 +65,16 @@ public class DeploymentStepEventProcessor implements StepEventProcessor<TimeSeri
     upsertStatement.setString(++index, eventInfo.getStringData().get(STEP_TYPE));
     upsertStatement.setString(++index, eventInfo.getStringData().get(STATUS));
     upsertStatement.setString(++index, eventInfo.getStringData().get(FAILURE_DETAILS));
-    upsertStatement.setLong(++index, getLongValue(START_TIME, eventInfo));
-    upsertStatement.setLong(++index, getLongValue(END_TIME, eventInfo));
-    upsertStatement.setLong(++index, getLongValue(DURATION, eventInfo));
+    upsertStatement.setLong(++index, ProcessorHelper.getLongValue(START_TIME, eventInfo));
+    upsertStatement.setLong(++index, ProcessorHelper.getLongValue(END_TIME, eventInfo));
+    upsertStatement.setLong(++index, ProcessorHelper.getLongValue(DURATION, eventInfo));
     upsertStatement.setString(++index, eventInfo.getStringData().get(PARENT_TYPE));
     upsertStatement.setString(++index, eventInfo.getStringData().get(EXECUTION_ID));
     upsertStatement.setString(++index, eventInfo.getStringData().get(APPROVED_BY));
     upsertStatement.setString(++index, eventInfo.getStringData().get(APPROVAL_TYPE));
-    upsertStatement.setLong(++index, getLongValue(APPROVED_AT, eventInfo));
+    upsertStatement.setLong(++index, ProcessorHelper.getLongValue(APPROVED_AT, eventInfo));
     upsertStatement.setString(++index, eventInfo.getStringData().get(APPROVAL_COMMENT));
-    upsertStatement.setLong(++index, getLongValue(APPROVAL_EXPIRY, eventInfo));
+    upsertStatement.setLong(++index, ProcessorHelper.getLongValue(APPROVAL_EXPIRY, eventInfo));
     upsertStatement.setBoolean(++index, eventInfo.getBooleanData().get(MANUAL_INTERVENTION));
     upsertStatement.execute();
   }

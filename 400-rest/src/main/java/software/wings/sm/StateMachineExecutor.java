@@ -1045,15 +1045,13 @@ public class StateMachineExecutor implements StateInspectionListener {
                   stateExecutionInstance.getExecutionUuid(), stateExecutionInstance.getUuid()),
               resumeId);
         } else {
-          ExecutionInterrupt executionInterrupt = executionInterruptManager.registerExecutionInterrupt(
+          executionInterruptManager.registerExecutionInterrupt(
               anExecutionInterrupt()
                   .appId(stateExecutionInstance.getAppId())
                   .executionUuid(stateExecutionInstance.getExecutionUuid())
                   .stateExecutionInstanceId(stateExecutionInstance.getUuid())
                   .executionInterruptType(RETRY)
                   .build());
-          usageMetricsEventPublisher.publishExecutionInterruptTimeSeriesEvent(
-              executionInterrupt.getAccountId(), executionInterrupt);
         }
         break;
       }

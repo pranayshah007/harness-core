@@ -18,7 +18,7 @@ import org.mongodb.morphia.annotations.Entity;
 @Builder
 @EqualsAndHashCode(callSuper = true)
 @StoreIn(DbAliases.HARNESS)
-@Entity(value = "ExecutionInterruptTimeSeriesEventQueue", noClassnameStored = true)
+@Entity(value = "executionInterruptTimeSeriesEventQueue", noClassnameStored = true)
 @HarnessEntity(exportable = false)
 public class ExecutionInterruptTimeSeriesEvent extends Queuable {
   private TimeSeriesEventInfo timeSeriesEventInfo;

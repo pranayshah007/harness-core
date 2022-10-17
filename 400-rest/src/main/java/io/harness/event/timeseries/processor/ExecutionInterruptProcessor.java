@@ -1,7 +1,5 @@
 package io.harness.event.timeseries.processor;
 
-import static io.harness.event.timeseries.processor.ProcessorHelper.getLongValue;
-
 import io.harness.timescaledb.TimeScaleDBService;
 
 import software.wings.service.impl.event.timeseries.TimeSeriesEventInfo;
@@ -66,9 +64,9 @@ public class ExecutionInterruptProcessor implements StepEventProcessor<TimeSerie
     upsertStatement.setString(++index, eventInfo.getStringData().get(EXECUTION_ID));
     upsertStatement.setString(++index, eventInfo.getStringData().get(APP_ID));
     upsertStatement.setString(++index, eventInfo.getStringData().get(MANUAL_INTERVENTION_CREATED_BY));
-    upsertStatement.setLong(++index, getLongValue(MANUAL_INTERVENTION_CREATED_AT, eventInfo));
+    upsertStatement.setLong(++index, ProcessorHelper.getLongValue(MANUAL_INTERVENTION_CREATED_AT, eventInfo));
     upsertStatement.setString(++index, eventInfo.getStringData().get(MANUAL_INTERVENTION_UPDATED_BY));
-    upsertStatement.setLong(++index, getLongValue(MANUAL_INTERVENTION_UPDATED_AT, eventInfo));
+    upsertStatement.setLong(++index, ProcessorHelper.getLongValue(MANUAL_INTERVENTION_UPDATED_AT, eventInfo));
     upsertStatement.execute();
   }
 }

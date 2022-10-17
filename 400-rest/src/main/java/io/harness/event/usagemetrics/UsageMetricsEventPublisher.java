@@ -14,10 +14,13 @@ import static java.util.stream.Collectors.groupingBy;
 import io.harness.beans.WorkflowType;
 import io.harness.event.timeseries.processor.EventProcessor;
 import io.harness.event.timeseries.processor.StepEventProcessor;
-import io.harness.persistence.HPersistence;
 import io.harness.queue.QueuePublisher;
 
-import software.wings.api.*;
+import software.wings.api.ApprovalStateExecutionData;
+import software.wings.api.DeploymentStepTimeSeriesEvent;
+import software.wings.api.DeploymentTimeSeriesEvent;
+import software.wings.api.ExecutionInterruptTimeSeriesEvent;
+import software.wings.api.InstanceEvent;
 import software.wings.beans.EnvSummary;
 import software.wings.beans.WorkflowExecution;
 import software.wings.beans.artifact.Artifact;
@@ -53,7 +56,6 @@ public class UsageMetricsEventPublisher {
   @Inject private QueuePublisher<InstanceEvent> instanceTimeSeriesEventQueue;
   @Inject private QueuePublisher<DeploymentStepTimeSeriesEvent> deploymentStepTimeSeriesEventQueue;
   @Inject private QueuePublisher<ExecutionInterruptTimeSeriesEvent> executionInterruptTimeSeriesEventQueue;
-  @Inject HPersistence persistence;
   SimpleDateFormat sdf;
 
   private String APPROVAL = "APPROVAL";
@@ -76,6 +78,9 @@ public class UsageMetricsEventPublisher {
 
   public void publishDeploymentStepTimeSeriesEvent(String accountId, StateExecutionInstance stateExecutionInstance) {
     DeploymentStepTimeSeriesEvent event = constructDeploymentStepTimeSeriesEvent(accountId, stateExecutionInstance);
+    if (event.getTimeSeriesEventInfo().getLongData().get(StepEventProcessor.START_TIME) == null) {
+      return;
+    }
     executorService.submit(() -> {
       try {
         deploymentStepTimeSeriesEventQueue.send(event);
@@ -140,22 +145,6 @@ public class UsageMetricsEventPublisher {
 
     booleanData.put(StepEventProcessor.MANUAL_INTERVENTION, stateExecutionInstance.isWaitingForManualIntervention());
 
-    /*
-
-    // logic for manual intervention details
-
-    if (stateExecutionInstance.isWaitingForManualIntervention()) {
-
-      try (HIterator<ExecutionInterrupt> iterator = new
-    HIterator<>(persistence.createQuery(ExecutionInterrupt.class).field(ExecutionInterruptKeys.stateExecutionInstanceId).equal(stateExecutionInstance.getUuid()).field(ExecutionInterruptKeys.accountId).equal(accountId).field(ExecutionInterruptKeys.appId).equal(stateExecutionInstance.getAppId()).fetch()))
-    { while (iterator.hasNext()) {
-
-        }
-      }
-    }
-
-     */
-
     return DeploymentStepTimeSeriesEvent.builder()
         .timeSeriesEventInfo(TimeSeriesEventInfo.builder()
                                  .accountId(accountId)
@@ -168,6 +157,9 @@ public class UsageMetricsEventPublisher {
 
   public void publishExecutionInterruptTimeSeriesEvent(String accountId, ExecutionInterrupt executionInterrupt) {
     ExecutionInterruptTimeSeriesEvent event = constructExecutionInterruptTimeSeriesEvent(accountId, executionInterrupt);
+    if (event.getTimeSeriesEventInfo().getLongData().get(StepEventProcessor.MANUAL_INTERVENTION_CREATED_AT) == null) {
+      return;
+    }
     executorService.submit(() -> {
       try {
         executionInterruptTimeSeriesEventQueue.send(event);
