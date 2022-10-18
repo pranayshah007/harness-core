@@ -1,7 +1,6 @@
 package io.harness.batch.processing.cloudevents.aws.ec2.service.tasklet;
 
 import com.amazonaws.services.costexplorer.model.EC2ResourceDetails;
-import com.amazonaws.services.costexplorer.model.EC2ResourceUtilization;
 import com.amazonaws.services.costexplorer.model.RecommendationTarget;
 import com.amazonaws.services.costexplorer.model.RightsizingRecommendation;
 import com.google.inject.Singleton;
@@ -31,7 +30,6 @@ import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.ceawsconnector.CEAwsConnectorDTO;
 import io.harness.exception.InvalidRequestException;
 import lombok.extern.slf4j.Slf4j;
-import org.bouncycastle.jcajce.provider.asymmetric.ec.KeyFactorySpi;
 import org.springframework.batch.core.StepContribution;
 import org.springframework.batch.core.scope.context.ChunkContext;
 import org.springframework.batch.core.step.tasklet.Tasklet;
@@ -72,102 +70,80 @@ public class AWSEC2RecommendationTasklet  implements Tasklet {
         final JobConstants jobConstants = CCMJobConstants.fromContext(chunkContext);
         String accountId = jobConstants.getAccountId();
         Instant startTime = Instant.ofEpochMilli(jobConstants.getJobStartTime());
-        //TODO: Retrieve the recommendation data and store in db
         log.info("accountId = {}", accountId);
-        // call aws get-metric-data to get the cpu utilisation data
+        // call aws get-metric-data to get the cpu & memory utilisation data
         Map<String, AwsCrossAccountAttributes> infraAccCrossArnMap = getCrossAccountAttributes(accountId);
         log.info("infraAccCrossArnMap.size = {}", infraAccCrossArnMap.size());
 
         if (!infraAccCrossArnMap.isEmpty()) {
-            for (Map.Entry<String, AwsCrossAccountAttributes> entry : infraAccCrossArnMap.entrySet()) {
-                log.info("Key = {} Value = {}", entry.getKey(), entry.getValue());
-                Instant now = Instant.now().truncatedTo(ChronoUnit.HOURS);
-                if (entry.getKey().equals("890436954479")) {
+            for (Map.Entry<String, AwsCrossAccountAttributes> infraAccCrossArn : infraAccCrossArnMap.entrySet()) {
+                Instant now = Instant.now().truncatedTo(ChronoUnit.DAYS);
+                // fetching the aws ec2 recommendations
+                EC2RecommendationResponse ec2RecommendationResponse =
+                        awsec2RecommendationService.getRecommendations(EC2RecommendationRequest.builder()
+                                .awsCrossAccountAttributes(infraAccCrossArn.getValue())
+                                .build());
+                log.info("Ec2RecommendationResponse = {}", ec2RecommendationResponse);
 
-                    log.info("found the harness-ce account");
-                    EC2RecommendationResponse ec2RecommendationResponse =
-                            awsec2RecommendationService.getRecommendations(EC2RecommendationRequest.builder()
-                                    .awsCrossAccountAttributes(entry.getValue())
-                                    .build());
-                    log.info("ec2RecommendationResponse = {}", ec2RecommendationResponse);
-
-                    if (Objects.nonNull(ec2RecommendationResponse) &&
-                            !ec2RecommendationResponse.getRecommendationMap().isEmpty()) {
-                        log.info("recomm non null");
-//                        List<String> instances = new ArrayList<>(Arrays.asList("i-0cf7994781dce538a", "i-0ee034ec9d9f456e8", "i-07bd941e66e9273c5", "i-054f2bed517243117"));
-                        for (Map.Entry<RecommendationTarget, List<RightsizingRecommendation>> rightsizingRecommendations
-                                : ec2RecommendationResponse.getRecommendationMap().entrySet()) {
-                            log.info("map entry rightsizingRecommendations = {}", rightsizingRecommendations);
-                            if (!rightsizingRecommendations.getValue().isEmpty()) {
-                                rightsizingRecommendations.getValue().forEach(rightsizingRecommendation -> {
-                                    log.info("list entry rightsizingRecommendation = {}", rightsizingRecommendation);
-                                    EC2Recommendation recommendation;
-                                    String type;
-                                    if (rightsizingRecommendation.getRightsizingType().equalsIgnoreCase(MODIFY)) {
-                                        log.info("modify typed recomm");
-                                        recommendation = convertRecommendationObject(rightsizingRecommendation);
-                                        recommendation.setRecommendationType(rightsizingRecommendations.getKey().name());
-                                        type = MODIFY;
-                                    } else {
-                                        log.info("terminate typed recomm");
-                                        recommendation = convertRecommendationForTermination(rightsizingRecommendation);
-                                        recommendation.setRecommendationType(TERMINATE);
-                                        type = TERMINATE;
-                                    }
-                                    recommendation.setAccountId(accountId);
-                                    recommendation.setLastUpdatedTime(startTime);
-                                    log.info("recommendation = {}", recommendation);
-                                    EC2Recommendation ec2Recommendation = ec2RecommendationDAO.saveRecommendation(recommendation);
-                                    log.info("ec2Recommendation which saved to mongo= {}", ec2Recommendation);
-                                    log.info("saved to mongo");
-                                    // Save the recommendation to timescale
-                                    saveRecommendationInTimeScaleDB(ec2Recommendation);
-                                });
-                            }
+                if (Objects.nonNull(ec2RecommendationResponse) &&
+                        !ec2RecommendationResponse.getRecommendationMap().isEmpty()) {
+                    for (Map.Entry<RecommendationTarget, List<RightsizingRecommendation>> rightsizingRecommendations
+                            : ec2RecommendationResponse.getRecommendationMap().entrySet()) {
+                        if (!rightsizingRecommendations.getValue().isEmpty()) {
+                            rightsizingRecommendations.getValue().forEach(rightsizingRecommendation -> {
+                                EC2Recommendation recommendation;
+                                if (rightsizingRecommendation.getRightsizingType().equalsIgnoreCase(MODIFY)) {
+                                    recommendation = buildRecommendationObjectFromModifyType(rightsizingRecommendation);
+                                    recommendation.setRecommendationType(rightsizingRecommendations.getKey().name());
+                                } else {
+                                    recommendation = buildRecommendationForTerminationType(rightsizingRecommendation);
+                                    recommendation.setRecommendationType(TERMINATE);
+                                }
+                                recommendation.setAccountId(accountId);
+                                recommendation.setLastUpdatedTime(startTime);
+                                // Save the ec2 recommendation to mongo and timescale
+                                EC2Recommendation ec2Recommendation = ec2RecommendationDAO.saveRecommendation(recommendation);
+                                log.info("ec2Recommendation which saved to mongo= {}", ec2Recommendation);
+                                saveRecommendationInTimeScaleDB(ec2Recommendation);
+                            });
                         }
-
-                        List<AWSEC2Details> instances = extractEC2InstanceDetails(ec2RecommendationResponse);
-                        log.info("List<AWSEC2Details>.size = {}", instances.size());
-                        log.info("instaceList = {}", instances);
-                        List<Ec2UtilzationData> utilzationData =
-                                ec2MetricHelper.getUtilizationMetrics(entry.getValue(), Date.from(now.minus(2, ChronoUnit.DAYS)),
-                                        Date.from(now.minus(1, ChronoUnit.DAYS)), instances);
-                        log.info("utilzationData.size = {}", utilzationData.size());
-                        updateUtilData(accountId, utilzationData);
                     }
 
-                    log.info("exiting the ec2 recomm!");
+                    List<AWSEC2Details> instances = extractEC2InstanceDetails(ec2RecommendationResponse);
+                    List<Ec2UtilzationData> utilizationData =
+                            ec2MetricHelper.getUtilizationMetrics(infraAccCrossArn.getValue(), Date.from(now.minus(1, ChronoUnit.DAYS)),
+                                    Date.from(now), instances);
+                    log.info("utilzationData.size = {}", utilizationData.size());
+                    log.info("utilizationData = {}", utilizationData);
+                    saveUtilDataToTimescaleDB(accountId, utilizationData);
                 }
+
+                log.info("exiting the ec2 recomm!");
             }
         }
 
         return null;
     }
 
-    private void updateUtilData(String accountId, List<Ec2UtilzationData> utilizationMetricsList) {
+    private void saveUtilDataToTimescaleDB(String accountId, List<Ec2UtilzationData> utilizationMetricsList) {
         List<InstanceUtilizationData> instanceUtilizationDataList = new ArrayList<>();
-        log.info("utilizationMetricsList size = {}", utilizationMetricsList.size());
         utilizationMetricsList.forEach(utilizationMetrics -> {
             String instanceId;
             String instanceType;
             instanceId = utilizationMetrics.getInstanceId();
             instanceType = EC2_INSTANCE;
 
-            // Initialising List of Metrics to handle Utilization Metrics Downtime (Ideally this will be of size 1)
-            // We do not need a Default value as such a scenario will never exist, if there is no data. It will not be
-            // inserted to DB.
             long startTime = 0L;
-            long oneHourMillis = Duration.ofDays(1).toMillis();
+            long oneDayMillis = Duration.ofDays(1).toMillis();
+            boolean utilDataPresent = false;
             List<Double> cpuUtilizationAvgList = new ArrayList<>();
             List<Double> cpuUtilizationMaxList = new ArrayList<>();
             List<Double> memoryUtilizationAvgList = new ArrayList<>();
             List<Double> memoryUtilizationMaxList = new ArrayList<>();
 
             for (MetricValue utilizationMetric : utilizationMetrics.getMetricValues()) {
-                // Assumption that size of all the metrics and timestamps will be same across the 4 metrics
                 if (!utilizationMetric.getTimestamps().isEmpty()) {
                     startTime = utilizationMetric.getTimestamps().get(0).toInstant().toEpochMilli();
-                    log.info("startTime = {}", startTime);
                 }
 
                 List<Double> metricsList = utilizationMetric.getValues();
@@ -176,9 +152,11 @@ public class AWSEC2RecommendationTasklet  implements Tasklet {
                         switch (utilizationMetric.getMetricName()) {
                             case "MemoryUtilization":
                                 memoryUtilizationMaxList = metricsList;
+                                utilDataPresent = true;
                                 break;
                             case "CPUUtilization":
                                 cpuUtilizationMaxList = metricsList;
+                                utilDataPresent = true;
                                 break;
                             default:
                                 throw new InvalidRequestException("Invalid Utilization metric name");
@@ -188,9 +166,11 @@ public class AWSEC2RecommendationTasklet  implements Tasklet {
                         switch (utilizationMetric.getMetricName()) {
                             case "MemoryUtilization":
                                 memoryUtilizationAvgList = metricsList;
+                                utilDataPresent = true;
                                 break;
                             case "CPUUtilization":
                                 cpuUtilizationAvgList = metricsList;
+                                utilDataPresent = true;
                                 break;
                             default:
                                 throw new InvalidRequestException("Invalid Utilization metric name");
@@ -200,8 +180,6 @@ public class AWSEC2RecommendationTasklet  implements Tasklet {
                         throw new InvalidRequestException("Invalid Utilization metric Statistic");
                 }
             }
-
-            // POJO and insertion to DB
 
             InstanceUtilizationData utilizationData =
                     InstanceUtilizationData.builder()
@@ -215,15 +193,18 @@ public class AWSEC2RecommendationTasklet  implements Tasklet {
                             .memoryUtilizationMax((!memoryUtilizationMaxList.isEmpty()) ?getScaledUtilValue(memoryUtilizationMaxList.get(0)) : 0.0)
                             .memoryUtilizationAvg((!memoryUtilizationAvgList.isEmpty()) ?getScaledUtilValue(memoryUtilizationAvgList.get(0)) : 0.0)
                             .startTimestamp(startTime)
-                            .endTimestamp(startTime + oneHourMillis)
+                            .endTimestamp(startTime + oneDayMillis)
                             .build();
             log.info("utilizationData = {}", utilizationData);
-            instanceUtilizationDataList.add(utilizationData);
+            if (utilDataPresent) {
+                instanceUtilizationDataList.add(utilizationData);
+            }
         });
 
         log.info("size of the instanceUtilizationDataList lise = {}", instanceUtilizationDataList.size());
-
-        utilizationDataService.create(instanceUtilizationDataList);
+        if (!instanceUtilizationDataList.isEmpty()) {
+            utilizationDataService.create(instanceUtilizationDataList);
+        }
     }
 
     private double getScaledUtilValue(double value) {
@@ -247,7 +228,7 @@ public class AWSEC2RecommendationTasklet  implements Tasklet {
         return awsec2Details;
     }
 
-    private EC2Recommendation convertRecommendationObject(RightsizingRecommendation recommendation) {
+    private EC2Recommendation buildRecommendationObjectFromModifyType(RightsizingRecommendation recommendation) {
         return EC2Recommendation.builder()
                 .awsAccountId(recommendation.getAccountId())
                 .currentMaxCPU(recommendation.getCurrentInstance().getResourceUtilization().getEC2ResourceUtilization().getMaxCpuUtilizationPercentage())
@@ -271,7 +252,7 @@ public class AWSEC2RecommendationTasklet  implements Tasklet {
                 .build();
     }
 
-    private EC2Recommendation convertRecommendationForTermination(RightsizingRecommendation recommendation) {
+    private EC2Recommendation buildRecommendationForTerminationType(RightsizingRecommendation recommendation) {
         return EC2Recommendation.builder()
                 .awsAccountId(recommendation.getAccountId())
                 .currentMaxCPU(recommendation.getCurrentInstance().getResourceUtilization().getEC2ResourceUtilization().getMaxCpuUtilizationPercentage())

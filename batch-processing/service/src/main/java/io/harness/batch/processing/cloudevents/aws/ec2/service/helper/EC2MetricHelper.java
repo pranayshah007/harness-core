@@ -70,12 +70,8 @@ public class EC2MetricHelper {
 
     public List<Ec2UtilzationData> getUtilizationMetrics(AwsCrossAccountAttributes awsCrossAccountAttributes,
                                                           Date startTime, Date endTime, List<AWSEC2Details> instanceDetails) {
-        // Aggregate all the individual metric queries we need into a single query.
         final Map<String, MetricDataResult> metricDataResultMap = new HashMap<>();
-        log.info("entred in utilisation metric func!");
-
         Set<AWSEC2Details> uniqueInstances = new HashSet<>();
-
         for(AWSEC2Details instance : instanceDetails) {
             uniqueInstances.add(instance);
         }
@@ -111,25 +107,10 @@ public class EC2MetricHelper {
                     .collect(Collectors.toMap(MetricDataResult::getId, Function.identity())));
         });
 
-
-//        Iterables.partition(aggregatedQuery, AwsCloudWatchHelperService.MAX_QUERIES_PER_CALL).forEach(part -> {
-//            metricDataResultMap.putAll(awsCloudWatchHelperService
-//                    .getMetricData(AwsCloudWatchMetricDataRequest.builder()
-//                            .region()
-//                            .awsCrossAccountAttributes(awsCrossAccountAttributes)
-//                            .startTime(startTime)
-//                            .endTime(endTime)
-//                            .metricDataQueries(part)
-//                            .build())
-//                    .getMetricDataResults()
-//                    .stream()
-//                    .collect(Collectors.toMap(MetricDataResult::getId, Function.identity())));
-//        });
         log.info("metricDataResultMap = {}", metricDataResultMap);
-        log.info("metricDataResultMap.size = {}", metricDataResultMap.size());
         List<Ec2UtilzationData> utilizationMetrics = new ArrayList<>();
 
-        for (AWSEC2Details instance : instanceDetails) {
+        for (AWSEC2Details instance : uniqueInstances) {
             log.info("adding to the utilizationMetrics");
             utilizationMetrics.add(extractMetricResult(metricDataResultMap, instance.getInstanceId()));
         }
@@ -155,7 +136,6 @@ public class EC2MetricHelper {
                 }
             }
         }
-        log.info("metricValues.size = {}", metricValues.size());
         metrics.metricValues(metricValues);
         return metrics.build();
     }

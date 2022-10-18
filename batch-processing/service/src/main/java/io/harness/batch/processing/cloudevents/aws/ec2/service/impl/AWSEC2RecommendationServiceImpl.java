@@ -40,7 +40,7 @@ public class AWSEC2RecommendationServiceImpl implements AWSEC2RecommendationServ
         if (!recommendationsOnSameFamilyType.isEmpty()) {
             recommendationTargetListMap.put(RecommendationTarget.SAME_INSTANCE_FAMILY, recommendationsOnSameFamilyType);
         }
-
+        log.info("EC2 recommendation map = {}", recommendationTargetListMap);
         return EC2RecommendationResponse.builder()
                 .recommendationMap(recommendationTargetListMap)
                 .build();
@@ -58,10 +58,6 @@ public class AWSEC2RecommendationServiceImpl implements AWSEC2RecommendationServ
             recommendationRequest.withNextPageToken(nextPageToken);
             GetRightsizingRecommendationResult recommendationResult =
                     getRecommendations(request.getAwsCrossAccountAttributes(), recommendationRequest);
-            log.info("recommendationResult.size() = {}", recommendationResult.getRightsizingRecommendations().size());
-            if (!recommendationResult.getRightsizingRecommendations().isEmpty()) {
-                log.info("{} type recommendationResult = {}", recommendationTarget.toString(), recommendationResult);
-            }
             recommendationsResult.addAll(recommendationResult.getRightsizingRecommendations());
             nextPageToken = recommendationResult.getNextPageToken();
         } while (nextPageToken != null);
@@ -73,10 +69,9 @@ public class AWSEC2RecommendationServiceImpl implements AWSEC2RecommendationServ
                                                           GetRightsizingRecommendationRequest request) {
         try (CloseableAmazonWebServiceClient<AWSCostExplorerClient> closeableAWSCostExplorerClient =
                      new CloseableAmazonWebServiceClient(getAWSCostExplorerClient(awsCrossAccountAttributes))) {
-            log.info("AWSCostExplorerClient created! {}", closeableAWSCostExplorerClient.getClient());
             return closeableAWSCostExplorerClient.getClient().getRightsizingRecommendation(request);
         } catch (Exception ex) {
-            log.error("Exception getRightsizingRecommendation ", ex);
+            log.error("Exception from getRightsizingRecommendation api: ", ex);
         }
         return new GetRightsizingRecommendationResult();
     }
