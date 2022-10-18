@@ -31,6 +31,7 @@ import static io.harness.secretmanagerclient.ValueType.Reference;
 import static io.harness.security.SimpleEncryption.CHARSET;
 import static io.harness.security.encryption.AccessType.APP_ROLE;
 import static io.harness.security.encryption.EncryptionType.GCP_KMS;
+import static io.harness.security.encryption.EncryptionType.GCP_SECRETS_MANAGER;
 import static io.harness.security.encryption.EncryptionType.LOCAL;
 import static io.harness.security.encryption.SecretManagerType.KMS;
 import static io.harness.security.encryption.SecretManagerType.VAULT;
@@ -42,7 +43,6 @@ import io.harness.beans.DecryptableEntity;
 import io.harness.beans.DecryptedSecretValue;
 import io.harness.beans.FeatureName;
 import io.harness.beans.SecretManagerConfig;
-import io.harness.beans.SecretText;
 import io.harness.connector.ConnectorDTO;
 import io.harness.connector.helper.CustomSecretManagerHelper;
 import io.harness.connector.services.NGConnectorSecretManagerService;
@@ -88,6 +88,7 @@ import software.wings.service.impl.security.GlobalEncryptDecryptClient;
 import software.wings.service.impl.security.NGEncryptorService;
 import software.wings.settings.SettingVariableTypes;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.io.ByteStreams;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -158,6 +159,9 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
     SecretManagerConfigDTO secretManager = getSecretManagerOrThrow(accountIdentifier, dto.getOrgIdentifier(),
         dto.getProjectIdentifier(), secret.getSecretManagerIdentifier(), false);
 
+    if (GCP_SECRETS_MANAGER.equals(secretManager.getEncryptionType())) {
+      validateEncryptedRecordForGcpSecretManagerEncryptionType(secret);
+    }
     NGEncryptedData encryptedData = buildNGEncryptedData(accountIdentifier, dto, secretManager);
 
     switch (secret.getValueType()) {
@@ -178,6 +182,33 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
         throw new RuntimeException("Secret value type is unknown");
     }
     return encryptedDataDao.save(encryptedData);
+  }
+  @VisibleForTesting
+  public void validateEncryptedRecordForGcpSecretManagerEncryptionType(SecretTextSpecDTO secretTextSpecDTO) {
+    // Inline secret text
+    if (Inline.equals(secretTextSpecDTO.getValueType())) {
+      if (secretTextSpecDTO.getAdditionalMetadata() != null
+          && secretTextSpecDTO.getAdditionalMetadata().getValues() != null) {
+        Map<String, Object> values = secretTextSpecDTO.getAdditionalMetadata().getValues();
+        if (values.size() == 0 || (values.size() == 1 && values.containsKey("regions"))) {
+          return;
+        } else {
+          throw new InvalidRequestException(
+              String.format("Additional metadata values %s keys are invalid. ", values.keySet()));
+        }
+      }
+    }
+    // Reference secret text
+    else {
+      if (secretTextSpecDTO.getAdditionalMetadata() == null
+          || secretTextSpecDTO.getAdditionalMetadata().getValues() == null) {
+        throw new InvalidRequestException("Version information in additional metadata values field is missing. ");
+      }
+      Map<String, Object> values = secretTextSpecDTO.getAdditionalMetadata().getValues();
+      if (values.size() != 1 || !values.containsKey("version")) {
+        throw new InvalidRequestException("Additional metadata values field should have only one field - version");
+      }
+    }
   }
 
   private void validateCustomSecretManagerPathValue(
