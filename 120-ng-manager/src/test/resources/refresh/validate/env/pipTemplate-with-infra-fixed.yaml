@@ -1,0 +1,28 @@
+template:
+  name: pipTemp
+  identifier: pipTemp
+  versionLabel: v1
+  type: Pipeline
+  projectIdentifier: inder_test
+  orgIdentifier: default
+  tags: {}
+  spec:
+    stages:
+      - stage:
+          name: test1
+          identifier: test1
+          template:
+            templateRef: stage_temp_with_env_fixed
+            versionLabel: v1
+            templateInputs:
+              type: Deployment
+              spec:
+                service:
+                  serviceRef: <+input>
+                  serviceInputs: <+input>
+                environment:
+                  infrastructureDefinitions:
+                    - identifier: infra1
+                      inputs:
+                        spec:
+                          namespace: <+input>

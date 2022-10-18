@@ -110,6 +110,7 @@ import io.harness.cvng.core.jobs.StateMachineMessageProcessor;
 import io.harness.cvng.core.jobs.StateMachineMessageProcessorImpl;
 import io.harness.cvng.core.services.CVNextGenConstants;
 import io.harness.cvng.core.services.api.AppDynamicsService;
+import io.harness.cvng.core.services.api.AwsService;
 import io.harness.cvng.core.services.api.CVConfigService;
 import io.harness.cvng.core.services.api.CVNGLogService;
 import io.harness.cvng.core.services.api.CVNGYamlSchemaService;
@@ -159,6 +160,7 @@ import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceServic
 import io.harness.cvng.core.services.api.monitoredService.ServiceDependencyService;
 import io.harness.cvng.core.services.impl.AppDynamicsDataCollectionInfoMapper;
 import io.harness.cvng.core.services.impl.AppDynamicsServiceImpl;
+import io.harness.cvng.core.services.impl.AwsServiceImpl;
 import io.harness.cvng.core.services.impl.CVConfigServiceImpl;
 import io.harness.cvng.core.services.impl.CVNGLogServiceImpl;
 import io.harness.cvng.core.services.impl.CVNGYamlSchemaServiceImpl;
@@ -301,6 +303,7 @@ import io.harness.cvng.servicelevelobjective.entities.RatioServiceLevelIndicator
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator.ServiceLevelIndicatorUpdatableEntity;
 import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective.SimpleServiceLevelObjectiveUpdatableEntity;
 import io.harness.cvng.servicelevelobjective.entities.ThresholdServiceLevelIndicator.ThresholdServiceLevelIndicatorUpdatableEntity;
+import io.harness.cvng.servicelevelobjective.services.api.CompositeSLORecordService;
 import io.harness.cvng.servicelevelobjective.services.api.SLIAnalyserService;
 import io.harness.cvng.servicelevelobjective.services.api.SLIDataProcessorService;
 import io.harness.cvng.servicelevelobjective.services.api.SLIRecordService;
@@ -311,6 +314,7 @@ import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorS
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveV2Service;
 import io.harness.cvng.servicelevelobjective.services.api.UserJourneyService;
+import io.harness.cvng.servicelevelobjective.services.impl.CompositeSLORecordServiceImpl;
 import io.harness.cvng.servicelevelobjective.services.impl.RatioAnalyserServiceImpl;
 import io.harness.cvng.servicelevelobjective.services.impl.SLIDataProcessorServiceImpl;
 import io.harness.cvng.servicelevelobjective.services.impl.SLIRecordServiceImpl;
@@ -336,6 +340,7 @@ import io.harness.cvng.statemachine.beans.AnalysisState.StateType;
 import io.harness.cvng.statemachine.services.api.AnalysisStateExecutor;
 import io.harness.cvng.statemachine.services.api.AnalysisStateMachineService;
 import io.harness.cvng.statemachine.services.api.CanaryTimeSeriesAnalysisStateExecutor;
+import io.harness.cvng.statemachine.services.api.CompositeSLOMetricAnalysisStateExecutor;
 import io.harness.cvng.statemachine.services.api.DeploymentLogAnalysisStateExecutor;
 import io.harness.cvng.statemachine.services.api.DeploymentLogClusterStateExecutor;
 import io.harness.cvng.statemachine.services.api.OrchestrationService;
@@ -471,6 +476,7 @@ public class CVServiceModule extends AbstractModule {
     bind(MetricPackService.class).to(MetricPackServiceImpl.class);
     bind(SplunkService.class).to(SplunkServiceImpl.class);
     bind(CVConfigService.class).to(CVConfigServiceImpl.class);
+    bind(CompositeSLORecordService.class).to(CompositeSLORecordServiceImpl.class);
     MapBinder<DataSourceType, CVConfigToHealthSourceTransformer> dataSourceTypeToHealthSourceTransformerMapBinder =
         MapBinder.newMapBinder(binder(), DataSourceType.class, CVConfigToHealthSourceTransformer.class);
     dataSourceTypeToHealthSourceTransformerMapBinder.addBinding(DataSourceType.APP_DYNAMICS)
@@ -645,6 +651,7 @@ public class CVServiceModule extends AbstractModule {
         .to(ConnectorChangeEventMessageProcessor.class);
     bind(NewRelicService.class).to(NewRelicServiceImpl.class);
     bind(CloudWatchService.class).to(CloudWatchServiceImpl.class);
+    bind(AwsService.class).to(AwsServiceImpl.class);
     bind(ParseSampleDataService.class).to(ParseSampleDataServiceImpl.class);
     bind(VerifyStepDemoService.class).to(VerifyStepDemoServiceImpl.class);
     bind(StateMachineEventPublisherService.class).to(StateMachineEventPublisherServiceImpl.class);
@@ -1047,6 +1054,9 @@ public class CVServiceModule extends AbstractModule {
         .in(Scopes.SINGLETON);
     stateTypeAnalysisStateExecutorMap.addBinding(StateType.SLI_METRIC_ANALYSIS)
         .to(SLIMetricAnalysisStateExecutor.class)
+        .in(Scopes.SINGLETON);
+    stateTypeAnalysisStateExecutorMap.addBinding(StateType.COMPOSOITE_SLO_METRIC_ANALYSIS)
+        .to(CompositeSLOMetricAnalysisStateExecutor.class)
         .in(Scopes.SINGLETON);
   }
 

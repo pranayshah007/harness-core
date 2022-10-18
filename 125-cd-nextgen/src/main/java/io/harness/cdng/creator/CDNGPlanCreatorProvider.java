@@ -57,6 +57,9 @@ import io.harness.cdng.azure.webapp.variablecreator.AzureWebAppRollbackStepVaria
 import io.harness.cdng.azure.webapp.variablecreator.AzureWebAppSlotDeploymentStepVariableCreator;
 import io.harness.cdng.azure.webapp.variablecreator.AzureWebAppSwapSlotStepVariableCreator;
 import io.harness.cdng.azure.webapp.variablecreator.AzureWebAppTrafficShiftStepVariableCreator;
+import io.harness.cdng.chaos.ChaosStepFilterJsonCreator;
+import io.harness.cdng.chaos.ChaosStepPlanCreator;
+import io.harness.cdng.chaos.ChaosStepVariableCreator;
 import io.harness.cdng.creator.filters.DeploymentStageFilterJsonCreatorV2;
 import io.harness.cdng.creator.plan.CDStepGroupPmsPlanCreator;
 import io.harness.cdng.creator.plan.CDStepsPlanCreator;
@@ -120,6 +123,7 @@ import io.harness.cdng.creator.plan.steps.ecs.EcsCanaryDeleteStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.ecs.EcsCanaryDeployStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.ecs.EcsRollingDeployStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.ecs.EcsRollingRollbackStepPlanCreator;
+import io.harness.cdng.creator.plan.steps.ecs.EcsRunTaskStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.serverless.ServerlessAwsLambdaDeployStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.serverless.ServerlessAwsLambdaRollbackStepPlanCreator;
 import io.harness.cdng.creator.variables.CommandStepVariableCreator;
@@ -131,6 +135,7 @@ import io.harness.cdng.creator.variables.EcsCanaryDeleteStepVariableCreator;
 import io.harness.cdng.creator.variables.EcsCanaryDeployStepVariableCreator;
 import io.harness.cdng.creator.variables.EcsRollingDeployStepVariableCreator;
 import io.harness.cdng.creator.variables.EcsRollingRollbackStepVariableCreator;
+import io.harness.cdng.creator.variables.EcsRunTaskStepVariableCreator;
 import io.harness.cdng.creator.variables.GitOpsCreatePRStepVariableCreator;
 import io.harness.cdng.creator.variables.GitOpsMergePRStepVariableCreator;
 import io.harness.cdng.creator.variables.GitOpsUpdateReleaseRepoStepVariableCreator;
@@ -147,6 +152,7 @@ import io.harness.cdng.creator.variables.K8sRollingStepVariableCreator;
 import io.harness.cdng.creator.variables.K8sScaleStepVariableCreator;
 import io.harness.cdng.creator.variables.ServerlessAwsLambdaDeployStepVariableCreator;
 import io.harness.cdng.creator.variables.ServerlessAwsLambdaRollbackStepVariableCreator;
+import io.harness.cdng.creator.variables.StepGroupVariableCreator;
 import io.harness.cdng.customDeployment.variablecreator.FetchInstanceScriptStepVariableCreator;
 import io.harness.cdng.jenkins.jenkinsstep.JenkinsBuildStepVariableCreator;
 import io.harness.cdng.jenkins.jenkinsstep.JenkinsCreateStepPlanCreator;
@@ -224,6 +230,9 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
   private static final Set<String> EMPTY_FILTER_IDENTIFIERS = Sets.newHashSet(SIDECARS, SPEC, SERVICE_CONFIG,
       CONFIG_FILE, STARTUP_COMMAND, APPLICATION_SETTINGS, ARTIFACTS, ROLLBACK_STEPS, CONNECTION_STRINGS, STEPS,
       CONFIG_FILES, ENVIRONMENT_GROUP_YAML, SERVICE_ENTITY, MANIFEST_LIST_CONFIG, STEP_GROUP);
+  private static final Set<String> EMPTY_VARIABLE_IDENTIFIERS = Sets.newHashSet(SIDECARS, SPEC, SERVICE_CONFIG,
+      CONFIG_FILE, STARTUP_COMMAND, APPLICATION_SETTINGS, ARTIFACTS, ROLLBACK_STEPS, CONNECTION_STRINGS, STEPS,
+      CONFIG_FILES, ENVIRONMENT_GROUP_YAML, SERVICE_ENTITY, MANIFEST_LIST_CONFIG);
   private static final Set<String> EMPTY_SIDECAR_TYPES = Sets.newHashSet(CUSTOM_ARTIFACT_NAME, JENKINS_NAME,
       DOCKER_REGISTRY_NAME, ACR_NAME, AMAZON_S3_NAME, ARTIFACTORY_REGISTRY_NAME, ECR_NAME,
       GOOGLE_ARTIFACT_REGISTRY_NAME, GCR_NAME, NEXUS3_REGISTRY_NAME, GITHUB_PACKAGES_NAME, AZURE_ARTIFACTS_NAME);
@@ -309,12 +318,16 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     planCreators.add(new EcsBlueGreenCreateServiceStepPlanCreator());
     planCreators.add(new EcsBlueGreenSwapTargetGroupsStepPlanCreator());
     planCreators.add(new EcsBlueGreenRollbackStepPlanCreator());
+    planCreators.add(new EcsRunTaskStepPlanCreator());
 
     planCreators.add(new AzureCreateARMResourceStepPlanCreator());
     planCreators.add(new AzureCreateBPResourceStepPlanCreator());
 
     planCreators.add(new AzureARMRollbackResourceStepPlanCreator());
     planCreators.add(new ShellScriptProvisionStepPlanCreator());
+
+    // CHaos
+    planCreators.add(new ChaosStepPlanCreator());
     injectorUtils.injectMembers(planCreators);
     return planCreators;
   }
@@ -329,6 +342,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     filterJsonCreators.add(new ParallelGenericFilterJsonCreator());
     filterJsonCreators.add(new StepGroupPmsFilterJsonCreator());
     filterJsonCreators.add(new CDPMSCommandStepFilterJsonCreator());
+    filterJsonCreators.add(new ChaosStepFilterJsonCreator());
     filterJsonCreators.add(new EmptyAnyFilterJsonCreator(EMPTY_FILTER_IDENTIFIERS));
     filterJsonCreators.add(new EmptyAnyFilterJsonCreator(Sets.newHashSet(STRATEGY)));
     filterJsonCreators.add(new EmptyFilterJsonCreator(SIDECAR, EMPTY_SIDECAR_TYPES));
@@ -343,7 +357,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
 
   @Override
   public List<VariableCreator> getVariableCreators() {
-    Set<String> emptyVariableIdentifiers = new HashSet<>(EMPTY_FILTER_IDENTIFIERS);
+    Set<String> emptyVariableIdentifiers = new HashSet<>(EMPTY_VARIABLE_IDENTIFIERS);
     emptyVariableIdentifiers.add(YAMLFieldNameConstants.PARALLEL);
 
     List<VariableCreator> variableCreators = new ArrayList<>();
@@ -358,6 +372,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     variableCreators.add(new GitOpsUpdateReleaseRepoStepVariableCreator());
     variableCreators.add(deploymentStageVariableCreator);
     variableCreators.add(new ExecutionVariableCreator());
+    variableCreators.add(new StepGroupVariableCreator());
     variableCreators.add(new K8sApplyStepVariableCreator());
     variableCreators.add(new K8sBGSwapServicesVariableCreator());
     variableCreators.add(new K8sBlueGreenStepVariableCreator());
@@ -394,11 +409,13 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     variableCreators.add(new EcsBlueGreenCreateServiceStepVariableCreator());
     variableCreators.add(new EcsBlueGreenSwapTargetGroupsStepVariableCreator());
     variableCreators.add(new EcsBlueGreenRollbackStepVariableCreator());
+    variableCreators.add(new EcsRunTaskStepVariableCreator());
 
     variableCreators.add(new AzureCreateARMResourceStepVariableCreator());
     variableCreators.add(new AzureCreateBPStepVariableCreator());
     variableCreators.add(new AzureARMRollbackStepVariableCreator());
     variableCreators.add(new ShellScriptProvisionStepVariableCreator());
+    variableCreators.add(new ChaosStepVariableCreator());
     return variableCreators;
   }
 
@@ -586,7 +603,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setName("Ecs Rolling Deploy")
             .setType(StepSpecTypeConstants.ECS_ROLLING_DEPLOY)
             .setStepMetaData(StepMetaData.newBuilder().addCategory("ECS").setFolderPath("ECS").build())
-            .setFeatureFlag(FeatureName.ECS_NG.name())
+            .setFeatureFlag(FeatureName.NG_SVC_ENV_REDESIGN.name())
             .build();
 
     StepInfo ecsRollingRollack =
@@ -594,7 +611,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setName("Ecs Rolling Rollback")
             .setType(StepSpecTypeConstants.ECS_ROLLING_ROLLBACK)
             .setStepMetaData(StepMetaData.newBuilder().addCategory("ECS").setFolderPath("ECS").build())
-            .setFeatureFlag(FeatureName.ECS_NG.name())
+            .setFeatureFlag(FeatureName.NG_SVC_ENV_REDESIGN.name())
             .build();
 
     StepInfo ecsCanaryDeploy =
@@ -602,7 +619,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setName("Ecs Canary Deploy")
             .setType(StepSpecTypeConstants.ECS_CANARY_DEPLOY)
             .setStepMetaData(StepMetaData.newBuilder().addCategory("ECS").setFolderPath("ECS").build())
-            .setFeatureFlag(FeatureName.ECS_NG.name())
+            .setFeatureFlag(FeatureName.NG_SVC_ENV_REDESIGN.name())
             .build();
 
     StepInfo ecsCanaryDelete =
@@ -610,7 +627,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setName("Ecs Canary Delete")
             .setType(StepSpecTypeConstants.ECS_CANARY_DELETE)
             .setStepMetaData(StepMetaData.newBuilder().addCategory("ECS").setFolderPath("ECS").build())
-            .setFeatureFlag(FeatureName.ECS_NG.name())
+            .setFeatureFlag(FeatureName.NG_SVC_ENV_REDESIGN.name())
             .build();
 
     StepInfo ecsBlueGreenCreateService =
@@ -618,7 +635,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setName("Ecs Blue Green Create Service")
             .setType(StepSpecTypeConstants.ECS_BLUE_GREEN_CREATE_SERVICE)
             .setStepMetaData(StepMetaData.newBuilder().addCategory("ECS").setFolderPath("ECS").build())
-            .setFeatureFlag(FeatureName.ECS_NG.name())
+            .setFeatureFlag(FeatureName.NG_SVC_ENV_REDESIGN.name())
             .build();
 
     StepInfo ecsBlueGreenSwapTargetGroups =
@@ -626,7 +643,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setName("Ecs Blue Green Swap Target Groups")
             .setType(StepSpecTypeConstants.ECS_BLUE_GREEN_SWAP_TARGET_GROUPS)
             .setStepMetaData(StepMetaData.newBuilder().addCategory("ECS").setFolderPath("ECS").build())
-            .setFeatureFlag(FeatureName.ECS_NG.name())
+            .setFeatureFlag(FeatureName.NG_SVC_ENV_REDESIGN.name())
             .build();
 
     StepInfo ecsBlueGreenRollback =
@@ -634,7 +651,15 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setName("Ecs Blue Green Rollback")
             .setType(StepSpecTypeConstants.ECS_BLUE_GREEN_ROLLBACK)
             .setStepMetaData(StepMetaData.newBuilder().addCategory("ECS").setFolderPath("ECS").build())
-            .setFeatureFlag(FeatureName.ECS_NG.name())
+            .setFeatureFlag(FeatureName.NG_SVC_ENV_REDESIGN.name())
+            .build();
+
+    StepInfo ecsRunTask =
+        StepInfo.newBuilder()
+            .setName("Ecs Run Task")
+            .setType(StepSpecTypeConstants.ECS_RUN_TASK)
+            .setStepMetaData(StepMetaData.newBuilder().addCategory("ECS").setFolderPath("ECS").build())
+            .setFeatureFlag(FeatureName.NG_SVC_ENV_REDESIGN.name())
             .build();
 
     StepInfo createStack = StepInfo.newBuilder()
@@ -673,7 +698,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setType(StepSpecTypeConstants.AZURE_SLOT_DEPLOYMENT)
             .setFeatureRestrictionName(FeatureRestrictionName.AZURE_SLOT_DEPLOYMENT.name())
             .setStepMetaData(StepMetaData.newBuilder().addCategory("AzureWebApp").addFolderPaths("AzureWebApp").build())
-            .setFeatureFlag(FeatureName.AZURE_WEBAPP_NG.name())
+            .setFeatureFlag(FeatureName.NG_SVC_ENV_REDESIGN.name())
             .build();
 
     StepInfo azureWebAppTrafficShift =
@@ -682,7 +707,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setType(StepSpecTypeConstants.AZURE_TRAFFIC_SHIFT)
             .setFeatureRestrictionName(FeatureRestrictionName.AZURE_TRAFFIC_SHIFT.name())
             .setStepMetaData(StepMetaData.newBuilder().addCategory("AzureWebApp").addFolderPaths("AzureWebApp").build())
-            .setFeatureFlag(FeatureName.AZURE_WEBAPP_NG.name())
+            .setFeatureFlag(FeatureName.NG_SVC_ENV_REDESIGN.name())
             .build();
 
     StepInfo azureWebAppSwapSlot =
@@ -691,7 +716,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setType(StepSpecTypeConstants.AZURE_SWAP_SLOT)
             .setFeatureRestrictionName(FeatureRestrictionName.AZURE_SWAP_SLOT.name())
             .setStepMetaData(StepMetaData.newBuilder().addCategory("AzureWebApp").addFolderPaths("AzureWebApp").build())
-            .setFeatureFlag(FeatureName.AZURE_WEBAPP_NG.name())
+            .setFeatureFlag(FeatureName.NG_SVC_ENV_REDESIGN.name())
             .build();
 
     StepInfo azureWebAppRollback =
@@ -700,7 +725,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setType(StepSpecTypeConstants.AZURE_WEBAPP_ROLLBACK)
             .setFeatureRestrictionName(FeatureRestrictionName.AZURE_WEBAPP_ROLLBACK.name())
             .setStepMetaData(StepMetaData.newBuilder().addCategory("AzureWebApp").addFolderPaths("AzureWebApp").build())
-            .setFeatureFlag(FeatureName.AZURE_WEBAPP_NG.name())
+            .setFeatureFlag(FeatureName.NG_SVC_ENV_REDESIGN.name())
             .build();
 
     StepInfo jenkinsBuildStepInfo =
@@ -754,7 +779,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setType(StepSpecTypeConstants.CUSTOM_DEPLOYMENT_FETCH_INSTANCE_SCRIPT)
             .setStepMetaData(
                 StepMetaData.newBuilder().addCategory("CustomDeployment").addFolderPaths("CustomDeployment").build())
-            .setFeatureFlag(FeatureName.NG_DEPLOYMENT_TEMPLATE.name())
+            .setFeatureFlag(FeatureName.NG_SVC_ENV_REDESIGN.name())
             .build();
 
     StepInfo shellScriptProvision = StepInfo.newBuilder()
@@ -767,6 +792,15 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
                                                              .build())
                                         .setFeatureFlag(FeatureName.SHELL_SCRIPT_PROVISION_NG.name())
                                         .build();
+
+    StepInfo chaosStep =
+        StepInfo.newBuilder()
+            .setName("Chaos Step")
+            .setType(StepSpecTypeConstants.CHAOS_STEP)
+            .setStepMetaData(
+                StepMetaData.newBuilder().addAllCategory(Arrays.asList("Chaos")).addFolderPaths("Chaos").build())
+            .setFeatureFlag(FeatureName.CHAOS_ENABLED.name())
+            .build();
 
     List<StepInfo> stepInfos = new ArrayList<>();
 
@@ -803,6 +837,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     stepInfos.add(ecsRollingRollack);
     stepInfos.add(ecsCanaryDeploy);
     stepInfos.add(ecsCanaryDelete);
+    stepInfos.add(ecsRunTask);
     stepInfos.add(azureCreateARMResources);
     stepInfos.add(azureCreateBPResources);
     stepInfos.add(azureARMRollback);
@@ -811,6 +846,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     stepInfos.add(ecsBlueGreenSwapTargetGroups);
     stepInfos.add(ecsBlueGreenRollback);
     stepInfos.add(shellScriptProvision);
+    stepInfos.add(chaosStep);
     return stepInfos;
   }
 }

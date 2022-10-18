@@ -388,7 +388,9 @@ public interface PipelineResource {
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId,
       @PathParam(NGCommonEntityConstants.PIPELINE_KEY) @ResourceIdentifier @Parameter(
           description = PipelineResourceConstants.PIPELINE_ID_PARAM_MESSAGE) String pipelineId,
-      @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo);
+      @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo,
+      @Parameter(description = " ", hidden = true) @QueryParam(
+          PipelineResourceConstants.GET_METADATA_ONLY_PARAM_KEY) Boolean getMetadataOnly);
 
   @POST
   @Path("/import/{pipelineIdentifier}")

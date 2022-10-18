@@ -11,6 +11,7 @@ import static io.harness.cvng.CVConstants.RUNTIME_PARAM_STRING;
 import static io.harness.cvng.core.utils.ErrorMessageUtils.generateErrorMessageFromParam;
 import static io.harness.cvng.verificationjob.CVVerificationJobConstants.DURATION_KEY;
 import static io.harness.cvng.verificationjob.CVVerificationJobConstants.ENV_IDENTIFIER_KEY;
+import static io.harness.cvng.verificationjob.CVVerificationJobConstants.FAIL_ON_NO_ANALYSIS_KEY;
 import static io.harness.cvng.verificationjob.CVVerificationJobConstants.RUNTIME_STRING;
 import static io.harness.cvng.verificationjob.CVVerificationJobConstants.SERVICE_IDENTIFIER_KEY;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -54,6 +55,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.SuperBuilder;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.utils.URIBuilder;
 import org.mongodb.morphia.annotations.Entity;
 import org.mongodb.morphia.annotations.Id;
@@ -111,6 +113,7 @@ public abstract class VerificationJob
   private boolean allMonitoringSourcesEnabled;
 
   private RuntimeParameter duration;
+  private RuntimeParameter failOnNoAnalysis;
   private boolean isDefaultJob;
 
   private List<CVConfig> cvConfigs;
@@ -192,11 +195,25 @@ public abstract class VerificationJob
         duration == null ? null : RuntimeParameter.builder().isRuntimeParam(isRuntimeParam).value(duration).build();
   }
 
+  public void setFailOnNoAnalysis(String failOnNoAnalysis, boolean isRuntimeParam) {
+    this.failOnNoAnalysis = failOnNoAnalysis == null
+        ? null
+        : RuntimeParameter.builder().isRuntimeParam(isRuntimeParam).value(failOnNoAnalysis).build();
+  }
+
   public Duration getDuration() {
     if (duration.isRuntimeParam()) {
       return null;
     }
     return Duration.ofMinutes(Integer.parseInt(duration.getValue().substring(0, duration.getValue().length() - 1)));
+  }
+
+  public boolean isFailOnNoAnalysis() {
+    if (failOnNoAnalysis == null || StringUtils.isEmpty(failOnNoAnalysis.getValue())
+        || failOnNoAnalysis.isRuntimeParam) {
+      return false;
+    }
+    return Boolean.parseBoolean(failOnNoAnalysis.getValue());
   }
 
   public String getServiceIdentifier() {
@@ -242,6 +259,11 @@ public abstract class VerificationJob
           case DURATION_KEY:
             if (duration.isRuntimeParam()) {
               this.setDuration(runtimeParameters.get(key), false);
+            }
+            break;
+          case FAIL_ON_NO_ANALYSIS_KEY:
+            if (failOnNoAnalysis.isRuntimeParam()) {
+              this.setFailOnNoAnalysis(runtimeParameters.get(key), false);
             }
             break;
           default:
@@ -311,6 +333,7 @@ public abstract class VerificationJob
     verificationJob.setServiceIdentifier(getRunTimeParameter(RUNTIME_PARAM_STRING, true));
     verificationJob.setEnvIdentifier(getRunTimeParameter(RUNTIME_PARAM_STRING, true));
     verificationJob.setDuration(RUNTIME_PARAM_STRING, true);
+    verificationJob.setFailOnNoAnalysis(RUNTIME_PARAM_STRING, true);
     verificationJob.setDefaultJob(true);
   }
 }

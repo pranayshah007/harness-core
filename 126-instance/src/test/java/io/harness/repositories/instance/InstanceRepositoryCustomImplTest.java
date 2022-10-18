@@ -11,8 +11,8 @@ import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
 import static io.harness.rule.OwnerRule.VIKYATH_HAREKAL;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -88,22 +88,66 @@ public class InstanceRepositoryCustomImplTest extends InstancesTestBase {
   @Test
   @Owner(developers = PIYUSH_BHUWALKA)
   @Category(UnitTests.class)
+  public void getActiveInstancesByAccountTestWithoutTimestamp() {
+    Instance instance = Instance.builder().instanceKey("abc").build();
+    Criteria criteria = Criteria.where(InstanceKeys.accountIdentifier)
+                            .is(ACCOUNT_ID)
+                            .and(InstanceKeys.orgIdentifier)
+                            .is(ORGANIZATION_ID)
+                            .and(InstanceKeys.projectIdentifier)
+                            .is(PROJECT_ID)
+                            .and(InstanceKeys.serviceIdentifier)
+                            .is(SERVICE_ID)
+                            .and(InstanceKeys.isDeleted)
+                            .is(false);
+    Query query = new Query().addCriteria(criteria);
+    when(mongoTemplate.find(query, Instance.class)).thenReturn(Collections.singletonList(instance));
+
+    assertThat(instanceRepositoryCustom.getActiveInstancesByAccountOrgProjectAndService(
+                   ACCOUNT_ID, ORGANIZATION_ID, PROJECT_ID, SERVICE_ID, -1))
+        .containsExactlyInAnyOrderElementsOf(Collections.singletonList(instance));
+  }
+
+  @Test
+  @Owner(developers = PIYUSH_BHUWALKA)
+  @Category(UnitTests.class)
   public void getActiveInstancesByAccountTest() {
     Instance instance1 = Instance.builder().instanceKey("abc").build();
-    Criteria criteria1 = Criteria.where(InstanceKeys.accountIdentifier).is(ACCOUNT_ID);
-    criteria1.andOperator(
-        Criteria.where(InstanceKeys.isDeleted).is(false), Criteria.where(InstanceKeys.createdAt).lte(TIMESTAMP));
+    Criteria criteria1 = Criteria.where(InstanceKeys.accountIdentifier)
+                             .is(ACCOUNT_ID)
+                             .and(InstanceKeys.orgIdentifier)
+                             .is(ORGANIZATION_ID)
+                             .and(InstanceKeys.projectIdentifier)
+                             .is(PROJECT_ID)
+                             .and(InstanceKeys.serviceIdentifier)
+                             .is(SERVICE_ID)
+                             .and(InstanceKeys.isDeleted)
+                             .is(false)
+                             .and(InstanceKeys.createdAt)
+                             .lte(TIMESTAMP);
     Query query1 = new Query().addCriteria(criteria1);
     when(mongoTemplate.find(query1, Instance.class)).thenReturn(Collections.singletonList(instance1));
 
     Instance instance2 = Instance.builder().instanceKey("def").build();
-    Criteria criteria2 = Criteria.where(InstanceKeys.accountIdentifier).is(ACCOUNT_ID);
-    criteria2.andOperator(
-        Criteria.where(InstanceKeys.deletedAt).gte(TIMESTAMP), Criteria.where(InstanceKeys.createdAt).lte(TIMESTAMP));
+    Criteria criteria2 = Criteria.where(InstanceKeys.accountIdentifier)
+                             .is(ACCOUNT_ID)
+                             .and(InstanceKeys.orgIdentifier)
+                             .is(ORGANIZATION_ID)
+                             .and(InstanceKeys.projectIdentifier)
+                             .is(PROJECT_ID)
+                             .and(InstanceKeys.serviceIdentifier)
+                             .is(SERVICE_ID)
+                             .and(InstanceKeys.isDeleted)
+                             .is(true)
+                             .and(InstanceKeys.createdAt)
+                             .lte(TIMESTAMP)
+                             .and(InstanceKeys.deletedAt)
+                             .gte(TIMESTAMP);
     Query query2 = new Query().addCriteria(criteria2);
     when(mongoTemplate.find(query2, Instance.class)).thenReturn(Collections.singletonList(instance2));
 
-    assertThat(instanceRepositoryCustom.getActiveInstancesByAccount(ACCOUNT_ID, TIMESTAMP))
+    assertThat(instanceRepositoryCustom.getActiveInstancesByAccountOrgProjectAndService(
+                   ACCOUNT_ID, ORGANIZATION_ID, PROJECT_ID, SERVICE_ID, TIMESTAMP))
         .containsExactlyInAnyOrderElementsOf(Arrays.asList(instance1, instance2));
   }
 

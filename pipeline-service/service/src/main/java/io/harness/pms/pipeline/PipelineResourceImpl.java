@@ -35,12 +35,12 @@ import io.harness.governance.GovernanceMetadata;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
 import io.harness.ng.core.template.exception.NGTemplateResolveExceptionV2;
+import io.harness.ng.core.template.refresh.ValidateTemplateInputsResponseDTO;
 import io.harness.notification.bean.NotificationRules;
 import io.harness.plancreator.steps.internal.PmsAbstractStepNode;
 import io.harness.pms.annotations.PipelineServiceAuth;
 import io.harness.pms.governance.PipelineSaveResponse;
 import io.harness.pms.helpers.PipelineCloneHelper;
-import io.harness.pms.helpers.PmsFeatureFlagHelper;
 import io.harness.pms.pipeline.PipelineEntity.PipelineEntityKeys;
 import io.harness.pms.pipeline.mappers.NodeExecutionToExecutioNodeMapper;
 import io.harness.pms.pipeline.mappers.PMSPipelineDtoMapper;
@@ -55,8 +55,8 @@ import io.harness.pms.variables.VariableCreatorMergeService;
 import io.harness.pms.variables.VariableMergeServiceResponse;
 import io.harness.steps.template.TemplateStepNode;
 import io.harness.steps.template.stage.TemplateStageNode;
-import io.harness.template.beans.refresh.ValidateTemplateInputsResponseDTO;
 import io.harness.utils.PageUtils;
+import io.harness.utils.PmsFeatureFlagHelper;
 import io.harness.yaml.core.StepSpecType;
 import io.harness.yaml.schema.YamlSchemaResource;
 import io.harness.yaml.validator.InvalidYamlException;
@@ -320,19 +320,21 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_VIEW)
   public ResponseDTO<PMSPipelineSummaryResponseDTO> getPipelineSummary(@NotNull @AccountIdentifier String accountId,
       @NotNull @OrgIdentifier String orgId, @NotNull @ProjectIdentifier String projectId,
-      @ResourceIdentifier String pipelineId, GitEntityFindInfoDTO gitEntityBasicInfo) {
+      @ResourceIdentifier String pipelineId, GitEntityFindInfoDTO gitEntityBasicInfo, Boolean getMetadataOnly) {
     log.info(
         String.format("Get pipeline summary for pipeline with with identifier %s in project %s, org %s, account %s",
             pipelineId, projectId, orgId, accountId));
 
     Optional<PipelineEntity> pipelineEntity;
-    pipelineEntity = pmsPipelineService.getWithoutPerformingValidations(accountId, orgId, projectId, pipelineId, false);
+    pipelineEntity = pmsPipelineService.getPipelineWithoutPerformingValidations(
+        accountId, orgId, projectId, pipelineId, false, Boolean.TRUE.equals(getMetadataOnly));
 
-    PMSPipelineSummaryResponseDTO pipelineSummary =
-        PMSPipelineDtoMapper.preparePipelineSummary(pipelineEntity.orElseThrow(
+    PMSPipelineSummaryResponseDTO pipelineSummary = PMSPipelineDtoMapper.preparePipelineSummary(
+        pipelineEntity.orElseThrow(
             ()
                 -> new EntityNotFoundException(
-                    String.format("Pipeline with the given ID: %s does not exist or has been deleted", pipelineId))));
+                    String.format("Pipeline with the given ID: %s does not exist or has been deleted", pipelineId))),
+        getMetadataOnly);
 
     return ResponseDTO.newResponse(pipelineSummary);
   }

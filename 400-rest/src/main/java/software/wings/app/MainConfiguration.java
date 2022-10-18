@@ -129,7 +129,7 @@ public class MainConfiguration extends Configuration implements AssetsBundleConf
   @JsonProperty("commonPoolConfig") private ThreadPoolConfig commonPoolConfig;
   @JsonProperty @ConfigSecret private PortalConfig portal = new PortalConfig();
   @JsonProperty("disableResourceValidation") private boolean disableResourceValidation;
-  @JsonProperty(defaultValue = "true") private boolean enableIterators = true;
+  @JsonProperty("enableIterators") private boolean enableIterators;
   @JsonProperty(defaultValue = "true") private boolean enableAuth = true;
   @JsonProperty(defaultValue = "50") private int jenkinsBuildQuerySize = 50;
   @JsonProperty("iteratorsConfig") private IteratorsConfig iteratorsConfig;

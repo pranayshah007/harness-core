@@ -154,6 +154,7 @@ public class HealthService extends HealthCheck {
     timeStampFormats.add("MMM dd HH:mm:ss");
     timeStampFormats.add("yyyy-MM-dd'T'HH:mm:ssZZZZ");
     timeStampFormats.add("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+    timeStampFormats.add("yyyy-MM-dd'T'HH:mm:ss.SSSX");
     timeStampFormats.add("yyyy-MM-dd HH:mm:ss ZZZZ");
     timeStampFormats.add("yyyy-MM-dd HH:mm:ssZZZZ");
     timeStampFormats.add("yyyy-MM-dd HH:mm:ss,SSS");

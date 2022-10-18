@@ -8,6 +8,8 @@
 package io.harness.remote.client;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.network.Http.DEFAULT_OKHTTP_CLIENT;
+import static io.harness.network.Http.checkAndGetNonProxyIfApplicable;
 import static io.harness.ng.core.CorrelationContext.getCorrelationIdInterceptor;
 import static io.harness.request.RequestContextFilter.getRequestContextInterceptor;
 import static io.harness.security.JWTAuthenticationFilter.X_SOURCE_PRINCIPAL;
@@ -24,7 +26,6 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.interceptor.GitSyncBranchContext;
 import io.harness.manage.GlobalContextManager;
-import io.harness.network.Http;
 import io.harness.security.PmsAuthInterceptor;
 import io.harness.security.SecurityContextBuilder;
 import io.harness.security.ServiceTokenGenerator;
@@ -62,7 +63,6 @@ import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509TrustManager;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
-import okhttp3.ConnectionPool;
 import okhttp3.HttpUrl;
 import okhttp3.Interceptor;
 import okhttp3.OkHttpClient;
@@ -133,16 +133,6 @@ public abstract class AbstractHttpClientFactory {
   }
 
   protected Retrofit getRetrofit() {
-    /*
-    .baseUrl(baseUrl)
-    .addConverterFactory(kryoConverterFactory)
-    .client(getUnsafeOkHttpClient(baseUrl))
-    .addCallAdapterFactory(CircuitBreakerCallAdapter.of(getCircuitBreaker()))
-    .addConverterFactory(JacksonConverterFactory.create(objectMapper))
-    .build();
-
-     Order of factories of a particular type is important while creating the builder, please do not change the order
-     */
     return getRetrofit(false);
   }
 
@@ -154,7 +144,7 @@ public abstract class AbstractHttpClientFactory {
     return CircuitBreaker.ofDefaults(this.clientId);
   }
 
-  protected ObjectMapper getObjectMapper() {
+  private ObjectMapper getObjectMapper() {
     ObjectMapper objMapper = HObjectMapper.get();
     objMapper.setSubtypeResolver(new JsonSubtypeResolver(objMapper.getSubtypeResolver()));
     objMapper.setConfig(objMapper.getSerializationConfig().withView(JsonViews.Public.class));
@@ -168,7 +158,7 @@ public abstract class AbstractHttpClientFactory {
     return objMapper;
   }
 
-  protected OkHttpClient getSafeOkHttpClient() {
+  private OkHttpClient getSafeOkHttpClient() {
     try {
       KeyStore keyStore = getKeyStore();
 
@@ -180,11 +170,7 @@ public abstract class AbstractHttpClientFactory {
       SSLContext sslContext = SSLContext.getInstance("TLS");
       sslContext.init(null, trustManagers, null);
 
-      return Http.getOkHttpClientWithProxyAuthSetup()
-          .connectionPool(new ConnectionPool())
-          .connectTimeout(5, TimeUnit.SECONDS)
-          .readTimeout(10, TimeUnit.SECONDS)
-          .retryOnConnectionFailure(true)
+      return DEFAULT_OKHTTP_CLIENT.newBuilder()
           .addInterceptor(new PmsAuthInterceptor(serviceSecret))
           .sslSocketFactory(sslContext.getSocketFactory(), (X509TrustManager) trustManagers[0])
           .build();
@@ -218,13 +204,13 @@ public abstract class AbstractHttpClientFactory {
     return keyStore;
   }
 
-  protected OkHttpClient getUnsafeOkHttpClient(String baseUrl, ClientMode clientMode, boolean addHttpLogging) {
+  private OkHttpClient getUnsafeOkHttpClient(String baseUrl, ClientMode clientMode, boolean addHttpLogging) {
     try {
       OkHttpClient.Builder builder =
-          Http.getUnsafeOkHttpClientBuilder(baseUrl, serviceHttpClientConfig.getConnectTimeOutSeconds(),
-                  serviceHttpClientConfig.getReadTimeOutSeconds())
-              .connectionPool(new ConnectionPool())
-              .retryOnConnectionFailure(true)
+          DEFAULT_OKHTTP_CLIENT.newBuilder()
+              .proxy(checkAndGetNonProxyIfApplicable(baseUrl))
+              .connectTimeout(serviceHttpClientConfig.getConnectTimeOutSeconds(), TimeUnit.SECONDS)
+              .readTimeout(serviceHttpClientConfig.getReadTimeOutSeconds(), TimeUnit.SECONDS)
               .addInterceptor(getAuthorizationInterceptor(clientMode))
               .addInterceptor(getCorrelationIdInterceptor())
               .addInterceptor(getGitContextInterceptor())
@@ -250,7 +236,7 @@ public abstract class AbstractHttpClientFactory {
   }
 
   @NotNull
-  protected Interceptor getGitContextInterceptor() {
+  private Interceptor getGitContextInterceptor() {
     return chain -> {
       Request request = chain.request();
       GlobalContextData globalContextData = GlobalContextManager.get(GitSyncBranchContext.NG_GIT_SYNC_CONTEXT);
@@ -300,7 +286,7 @@ public abstract class AbstractHttpClientFactory {
     };
   }
 
-  protected String getServiceSecret() {
+  private String getServiceSecret() {
     String managerServiceSecret = this.serviceSecret;
     if (StringUtils.isNotBlank(managerServiceSecret)) {
       return managerServiceSecret.trim();

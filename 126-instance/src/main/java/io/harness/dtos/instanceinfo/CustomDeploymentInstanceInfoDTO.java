@@ -21,13 +21,13 @@ import lombok.EqualsAndHashCode;
 @Builder
 @EqualsAndHashCode(callSuper = true)
 public class CustomDeploymentInstanceInfoDTO extends InstanceInfoDTO {
-  @NotNull private String hostname;
+  @NotNull private String instanceName;
   @NotNull private String infrastructureKey;
   private Map<String, Object> properties;
 
   @Override
   public String prepareInstanceKey() {
-    return InstanceSyncKey.builder().clazz(CustomDeploymentInstanceInfoDTO.class).part(hostname).build().toString();
+    return InstanceSyncKey.builder().clazz(CustomDeploymentInstanceInfoDTO.class).part(instanceName).build().toString();
   }
 
   @Override
@@ -37,7 +37,7 @@ public class CustomDeploymentInstanceInfoDTO extends InstanceInfoDTO {
 
   @Override
   public String getPodName() {
-    return hostname;
+    return instanceName;
   }
 
   @Override

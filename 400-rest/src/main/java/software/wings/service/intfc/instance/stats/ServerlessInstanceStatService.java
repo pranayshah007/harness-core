@@ -7,6 +7,7 @@
 
 package software.wings.service.intfc.instance.stats;
 
+import software.wings.beans.Account;
 import software.wings.beans.infrastructure.instance.InvocationCount.InvocationCountKey;
 import software.wings.beans.infrastructure.instance.stats.ServerlessInstanceStats;
 import software.wings.resources.stats.model.ServerlessInstanceTimeline;
@@ -24,5 +25,5 @@ public interface ServerlessInstanceStatService {
   @Nullable Instant getLastSnapshotTime(String accountId);
   @Nullable Instant getFirstSnapshotTime(String accountId);
   ServerlessInstanceTimeline aggregate(String accountId, long from, long to, InvocationCountKey invocationCountKey);
-  boolean purgeUpTo(Instant startingInstantOfRetentionOfInstanceStats);
+  boolean purgeUpTo(Instant startingInstantOfRetentionOfInstanceStats, Account account);
 }

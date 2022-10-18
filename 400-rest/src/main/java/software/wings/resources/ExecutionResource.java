@@ -71,6 +71,7 @@ import software.wings.security.PermissionAttribute.ResourceType;
 import software.wings.security.UserThreadLocal;
 import software.wings.security.annotations.AuthRule;
 import software.wings.security.annotations.Scope;
+import software.wings.service.impl.WorkflowExecutionOptimizationHelper;
 import software.wings.service.impl.WorkflowExecutionTimeFilterHelper;
 import software.wings.service.impl.pipeline.resume.PipelineResumeUtils;
 import software.wings.service.impl.security.auth.DeploymentAuthHandler;
@@ -120,6 +121,7 @@ public class ExecutionResource {
   @Inject private FeatureFlagService featureFlagService;
   @Inject @Named(DeploymentHistoryFeature.FEATURE_NAME) private RestrictedFeature deploymentHistoryFeature;
   @Inject private WorkflowExecutionTimeFilterHelper workflowExecutionTimeFilterHelper;
+  @Inject private WorkflowExecutionOptimizationHelper workflowExecutionOptimizationHelper;
   private static final String EXECUTION_DOES_NOT_EXIST = "No workflow execution exists for id: ";
 
   /**
@@ -191,6 +193,10 @@ public class ExecutionResource {
     pageRequest.setOptions(options);
     // We will ask for one more than limit, and if its not exactly one more, we know we are at the end of the list.
     pageRequest.setLimit(Integer.toString(Integer.parseInt(pageRequest.getLimit()) + 1));
+
+    if (featureFlagService.isEnabled(FeatureName.SPG_OPTIMIZE_WORKFLOW_EXECUTIONS_LISTING, accountId)) {
+      workflowExecutionOptimizationHelper.enforceAppIdFromChildrenEntities(pageRequest);
+    }
 
     PageResponse<WorkflowExecution> workflowExecutions =
         workflowExecutionService.listExecutions(pageRequest, includeGraph, true, true, false, true);

@@ -48,14 +48,18 @@ public class DelegateMetricsPublisher implements MetricsPublisher {
 
   @VisibleForTesting
   void sendActiveDelegateCountMetrics() {
-    log.info("Starting getting delegate metrics.");
+    if (log.isDebugEnabled()) {
+      log.debug("Starting getting delegate metrics.");
+    }
     long startTime = Instant.now().toEpochMilli();
 
     recordDelegateMetrics();
     recordPerpetualTaskMetrics();
 
-    log.info("Total time taken to collect metrics for active delegates count: {} (ms)",
-        Instant.now().toEpochMilli() - startTime);
+    if (log.isDebugEnabled()) {
+      log.debug("Total time taken to collect metrics for active delegates count: {} (ms)",
+          Instant.now().toEpochMilli() - startTime);
+    }
   }
 
   private void recordDelegateMetrics() {

@@ -11,6 +11,7 @@ import io.harness.annotations.ExposeInternalException;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cvng.core.beans.params.ProjectParams;
+import io.harness.cvng.core.services.api.AwsService;
 import io.harness.cvng.core.services.api.CloudWatchService;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
@@ -47,6 +48,7 @@ import javax.ws.rs.QueryParam;
 @OwnedBy(HarnessTeam.CV)
 public class CloudWatchMetricsResource {
   @Inject private CloudWatchService cloudWatchService;
+  @Inject private AwsService awsService;
 
   @GET
   @Path("/metrics/fetch-sample-data")
@@ -67,7 +69,8 @@ public class CloudWatchMetricsResource {
   @Timed
   @ExceptionMetered
   @ApiOperation(value = "get regions", nickname = "getRegions")
+  @Deprecated
   public ResponseDTO<List<String>> getRegions() {
-    return ResponseDTO.newResponse(cloudWatchService.fetchRegions());
+    return ResponseDTO.newResponse(awsService.fetchRegions());
   }
 }

@@ -284,7 +284,7 @@ public class JiraIssueUtilsNGTest extends CategoryTest {
     assertThat(currFields.size()).isEqualTo(3);
     assertThat(currFields.get("summary")).isEqualTo("summary");
     assertThat(currFields.get("description")).isEqualTo("description");
-    assertThat(currFields.get("customfield_10211")).isEqualTo("2022-09-30T11:30:11Z");
+    assertThat(currFields.get("customfield_10211")).isEqualTo("2022-09-30T11:30:11.000+0000");
   }
 
   private String getResource(String path) throws IOException {

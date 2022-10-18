@@ -12,6 +12,7 @@ import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2DTO;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.util.List;
+import java.util.Optional;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.FieldNameConstants;
@@ -32,6 +33,11 @@ public class SimpleServiceLevelObjective extends AbstractServiceLevelObjective {
   List<String> serviceLevelIndicators;
   ServiceLevelIndicatorType serviceLevelIndicatorType;
 
+  @Override
+  public Optional<String> mayBeGetMonitoredServiceIdentifier() {
+    return Optional.ofNullable(monitoredServiceIdentifier);
+  }
+
   public static class SimpleServiceLevelObjectiveUpdatableEntity
       extends AbstractServiceLevelObjectiveUpdatableEntity<SimpleServiceLevelObjective, ServiceLevelObjectiveV2DTO> {
     @Override
@@ -42,8 +48,6 @@ public class SimpleServiceLevelObjective extends AbstractServiceLevelObjective {
           .set(SimpleServiceLevelObjectiveKeys.healthSourceIdentifier, serviceLevelObjectiveV2DTO.getHealthSourceRef())
           .set(SimpleServiceLevelObjectiveKeys.monitoredServiceIdentifier,
               serviceLevelObjectiveV2DTO.getMonitoredServiceRef())
-          .set(SimpleServiceLevelObjectiveKeys.serviceLevelIndicatorType,
-              serviceLevelObjectiveV2DTO.getServiceLevelIndicators())
           .set(SimpleServiceLevelObjectiveKeys.serviceLevelIndicatorType,
               serviceLevelObjectiveV2DTO.getServiceLevelIndicatorType());
     }

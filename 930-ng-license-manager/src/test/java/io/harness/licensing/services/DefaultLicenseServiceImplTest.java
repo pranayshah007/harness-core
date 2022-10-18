@@ -23,6 +23,7 @@ import static io.harness.licensing.services.DefaultLicenseServiceImpl.SUCCEED_EX
 import static io.harness.licensing.services.DefaultLicenseServiceImpl.SUCCEED_START_FREE_OPERATION;
 import static io.harness.licensing.services.DefaultLicenseServiceImpl.SUCCEED_START_TRIAL_OPERATION;
 import static io.harness.licensing.services.DefaultLicenseServiceImpl.TRIAL_ENDED;
+import static io.harness.rule.OwnerRule.KAPIL_GARG;
 import static io.harness.rule.OwnerRule.NATHAN;
 import static io.harness.rule.OwnerRule.XIN;
 import static io.harness.rule.OwnerRule.ZHUO;
@@ -42,6 +43,7 @@ import io.harness.account.services.AccountService;
 import io.harness.beans.EmbeddedUser;
 import io.harness.category.element.UnitTests;
 import io.harness.ccm.license.remote.CeLicenseClient;
+import io.harness.exception.InvalidRequestException;
 import io.harness.licensing.Edition;
 import io.harness.licensing.EditionAction;
 import io.harness.licensing.LicenseStatus;
@@ -52,6 +54,8 @@ import io.harness.licensing.beans.modules.CDModuleLicenseDTO;
 import io.harness.licensing.beans.modules.CEModuleLicenseDTO;
 import io.harness.licensing.beans.modules.CIModuleLicenseDTO;
 import io.harness.licensing.beans.modules.ModuleLicenseDTO;
+import io.harness.licensing.beans.modules.SMPEncLicenseDTO;
+import io.harness.licensing.beans.modules.SMPLicenseRequestDTO;
 import io.harness.licensing.beans.modules.StartTrialDTO;
 import io.harness.licensing.beans.response.CheckExpiryResultDTO;
 import io.harness.licensing.checks.LicenseComplianceResolver;
@@ -65,6 +69,7 @@ import io.harness.ng.core.account.DefaultExperience;
 import io.harness.ng.core.dto.AccountDTO;
 import io.harness.repositories.ModuleLicenseRepository;
 import io.harness.rule.Owner;
+import io.harness.smp.license.v1.LicenseGenerator;
 import io.harness.telemetry.TelemetryReporter;
 
 import com.google.common.collect.ImmutableList;
@@ -86,6 +91,7 @@ import org.junit.experimental.categories.Category;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 
 public class DefaultLicenseServiceImplTest extends CategoryTest {
   @Mock ModuleLicenseRepository moduleLicenseRepository;
@@ -96,6 +102,7 @@ public class DefaultLicenseServiceImplTest extends CategoryTest {
   @Mock CeLicenseClient ceLicenseClient;
   @Mock LicenseComplianceResolver licenseComplianceResolver;
   @Mock Cache<String, List> cache;
+  @Mock LicenseGenerator licenseGenerator;
   @InjectMocks DefaultLicenseServiceImpl licenseService;
 
   private StartTrialDTO startTrialRequestDTO;
@@ -531,5 +538,99 @@ public class DefaultLicenseServiceImplTest extends CategoryTest {
     licenseService.deleteModuleLicense("id");
     verify(moduleLicenseRepository, times(1)).deleteById("id");
     verify(cache, times(1)).remove(any());
+  }
+
+  @Test
+  @Owner(developers = KAPIL_GARG)
+  @Category(UnitTests.class)
+  public void testGenerateSMPLicense() {
+    List<ModuleLicense> moduleLicenses = getModuleLicenses();
+    AccountDTO accountDTO = getAccountDTO();
+
+    when(accountService.getAccount(accountDTO.getIdentifier())).thenReturn(accountDTO);
+    when(moduleLicenseRepository.findByAccountIdentifierAndModuleType(
+             Mockito.eq(accountDTO.getIdentifier()), Mockito.any()))
+        .thenReturn(moduleLicenses);
+    when(licenseGenerator.generateLicense(Mockito.any())).thenReturn("somelicense");
+
+    SMPLicenseRequestDTO licenseRequestDTO = new SMPLicenseRequestDTO();
+    licenseRequestDTO.setAccountOptional(false);
+
+    SMPEncLicenseDTO encLicenseDTO = licenseService.generateSMPLicense(accountDTO.getIdentifier(), licenseRequestDTO);
+    assertThat(encLicenseDTO).isNotNull();
+    assertThat(encLicenseDTO.getEncryptedLicense()).isNotNull();
+    assertThat(encLicenseDTO.getEncryptedLicense().length()).isGreaterThan(0);
+  }
+
+  @Test(expected = InvalidRequestException.class)
+  @Owner(developers = KAPIL_GARG)
+  @Category(UnitTests.class)
+  public void testGenerateSMPLicenseNoAccountLicenseFound() {
+    AccountDTO accountDTO = getAccountDTO();
+
+    when(accountService.getAccount(accountDTO.getIdentifier())).thenReturn(accountDTO);
+    when(moduleLicenseRepository.findByAccountIdentifierAndModuleType(
+             Mockito.eq(accountDTO.getIdentifier()), Mockito.any()))
+        .thenReturn(new ArrayList<>());
+
+    SMPLicenseRequestDTO licenseRequestDTO = new SMPLicenseRequestDTO();
+    licenseRequestDTO.setAccountOptional(false);
+
+    licenseService.generateSMPLicense(accountDTO.getIdentifier(), licenseRequestDTO);
+  }
+
+  @Test(expected = RuntimeException.class)
+  @Owner(developers = KAPIL_GARG)
+  @Category(UnitTests.class)
+  public void testGenerateSMPLicenseLibraryInternalError() {
+    List<ModuleLicense> moduleLicenses = getModuleLicenses();
+    AccountDTO accountDTO = getAccountDTO();
+
+    when(accountService.getAccount(accountDTO.getIdentifier())).thenReturn(null);
+    when(moduleLicenseRepository.findByAccountIdentifierAndModuleType(
+             Mockito.eq(accountDTO.getIdentifier()), Mockito.any()))
+        .thenReturn(moduleLicenses);
+    when(licenseGenerator.generateLicense(Mockito.any())).thenThrow(RuntimeException.class);
+
+    SMPLicenseRequestDTO licenseRequestDTO = new SMPLicenseRequestDTO();
+    licenseRequestDTO.setAccountOptional(false);
+
+    licenseService.generateSMPLicense(accountDTO.getIdentifier(), licenseRequestDTO);
+  }
+
+  @Test(expected = InvalidRequestException.class)
+  @Owner(developers = KAPIL_GARG)
+  @Category(UnitTests.class)
+  public void testGenerateSMPLicenseNoAccountFound() {
+    List<ModuleLicense> moduleLicenses = getModuleLicenses();
+
+    when(accountService.getAccount("test")).thenReturn(null);
+    when(moduleLicenseRepository.findByAccountIdentifierAndModuleType(Mockito.eq("test"), Mockito.any()))
+        .thenReturn(moduleLicenses);
+
+    SMPLicenseRequestDTO licenseRequestDTO = new SMPLicenseRequestDTO();
+    licenseRequestDTO.setAccountOptional(false);
+
+    licenseService.generateSMPLicense("test", licenseRequestDTO);
+  }
+
+  private AccountDTO getAccountDTO() {
+    return AccountDTO.builder().identifier("test").name("test-account").companyName("test-company").build();
+  }
+
+  private List<ModuleLicense> getModuleLicenses() {
+    CDModuleLicense cdModuleLicense = CDModuleLicense.builder().workloads(Integer.valueOf(UNLIMITED)).build();
+    cdModuleLicense.setId("id");
+    cdModuleLicense.setAccountIdentifier(ACCOUNT_IDENTIFIER);
+    cdModuleLicense.setModuleType(DEFAULT_MODULE_TYPE);
+    cdModuleLicense.setEdition(Edition.FREE);
+    cdModuleLicense.setStatus(LicenseStatus.ACTIVE);
+    cdModuleLicense.setStartTime(1);
+    cdModuleLicense.setExpiryTime(Long.valueOf(UNLIMITED));
+    cdModuleLicense.setCreatedAt(0L);
+    cdModuleLicense.setLastUpdatedAt(1000L);
+    List<ModuleLicense> moduleLicenses = new ArrayList<>();
+    moduleLicenses.add(cdModuleLicense);
+    return moduleLicenses;
   }
 }

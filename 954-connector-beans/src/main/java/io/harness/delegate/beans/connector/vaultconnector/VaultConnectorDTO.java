@@ -28,7 +28,6 @@ import static com.fasterxml.jackson.annotation.JsonInclude.Include;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
 import io.harness.SecretManagerDescriptionConstants;
-import io.harness.annotation.RecasterFieldName;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
 import io.harness.connector.DelegateSelectable;
@@ -98,7 +97,6 @@ public class VaultConnectorDTO extends ConnectorConfigDTO implements DelegateSel
   @SecretReference
   @ApiModelProperty(dataType = "string")
   @Schema(description = VAULT_AWS_IAM_HEADER)
-  @RecasterFieldName(name = "xvaultAwsIamServerId")
   @JsonProperty(value = "xvaultAwsIamServerId")
   private SecretRefData headerAwsIam;
   @Schema(description = USE_K8s_AUTH) private boolean useK8sAuth;

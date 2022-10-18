@@ -23,6 +23,7 @@ import io.harness.beans.Scope;
 import io.harness.eventsframework.api.Consumer;
 import io.harness.eventsframework.api.EventsFrameworkDownException;
 import io.harness.eventsframework.consumer.Message;
+import io.harness.eventsframework.impl.redis.RedisTraceConsumer;
 import io.harness.ng.beans.PageRequest;
 import io.harness.resourcegroup.framework.v1.service.Resource;
 import io.harness.resourcegroup.framework.v1.service.ResourceInfo;
@@ -54,7 +55,7 @@ import org.springframework.data.domain.Page;
 @OwnedBy(PL)
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 @Slf4j
-public class ResourceGroupSyncConciliationJob implements Runnable {
+public class ResourceGroupSyncConciliationJob extends RedisTraceConsumer {
   private static final int WAIT_TIME_IN_SECONDS = 30;
 
   Consumer redisConsumer;
@@ -113,16 +114,8 @@ public class ResourceGroupSyncConciliationJob implements Runnable {
     }
   }
 
-  private boolean handleMessage(Message message) {
-    try {
-      return processMessage(message);
-    } catch (Exception ex) {
-      log.error(String.format("Error occurred in processing message with id %s", message.getId()), ex);
-      return false;
-    }
-  }
-
-  private boolean processMessage(Message message) {
+  @Override
+  protected boolean processMessage(Message message) {
     if (!message.hasMessage()) {
       return true;
     }

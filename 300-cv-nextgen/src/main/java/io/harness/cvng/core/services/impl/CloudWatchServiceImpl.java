@@ -15,16 +15,11 @@ import io.harness.cvng.core.beans.OnboardingResponseDTO;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.services.api.CloudWatchService;
 import io.harness.cvng.core.services.api.OnboardingService;
-import io.harness.cvng.utils.CloudWatchUtils;
 import io.harness.datacollection.exception.DataCollectionException;
 import io.harness.serializer.JsonUtils;
 
 import com.google.common.base.Preconditions;
-import com.google.common.reflect.TypeToken;
-import com.google.gson.Gson;
 import com.google.inject.Inject;
-import java.lang.reflect.Type;
-import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -65,21 +60,9 @@ public class CloudWatchServiceImpl implements CloudWatchService {
 
       OnboardingResponseDTO response =
           onboardingService.getOnboardingResponse(projectParams.getAccountIdentifier(), onboardingRequestDTO);
-
-      final Gson gson = new Gson();
-      Type type = new TypeToken<Map<String, Object>>() {}.getType();
-      // Todo: Add validation for response data. Should not have multiple time-series responses.
-      Map<String, Object> result = gson.fromJson(JsonUtils.asJson(response.getResult()), type);
-      List timeseries = (List) result.get("MetricDataResults");
-      Preconditions.checkState(timeseries.size() == 1, "Single time-series expected.");
-      return result;
+      return JsonUtils.asMap(JsonUtils.asJson(response.getResult()));
     } catch (DataCollectionException ex) {
       return null;
     }
-  }
-
-  @Override
-  public List<String> fetchRegions() {
-    return CloudWatchUtils.getAwsRegions();
   }
 }

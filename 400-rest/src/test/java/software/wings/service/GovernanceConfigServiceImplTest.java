@@ -154,6 +154,43 @@ public class GovernanceConfigServiceImplTest extends WingsBaseTest {
   }
 
   @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void shouldThrowExceptionForCustomAppEnvServiceSelectionContainingEmptyValue() {
+    GovernanceConfig governanceConfig =
+        JsonUtils.readResourceFile("governance/governance_config.json", GovernanceConfig.class);
+    ((CustomAppFilter) governanceConfig.getTimeRangeBasedFreezeConfigs().get(0).getAppSelections().get(0))
+        .setApps(Collections.singletonList(""));
+    assertThatThrownBy(() -> governanceConfigService.upsert(governanceConfig.getAccountId(), governanceConfig))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Application filter must contain valid app Ids");
+
+    GovernanceConfig governanceConfig1 =
+        JsonUtils.readResourceFile("governance/governance_config.json", GovernanceConfig.class);
+    ((CustomEnvFilter) governanceConfig1.getTimeRangeBasedFreezeConfigs()
+            .get(0)
+            .getAppSelections()
+            .get(0)
+            .getEnvSelection())
+        .setEnvironments(Collections.singletonList(""));
+    assertThatThrownBy(() -> governanceConfigService.upsert(governanceConfig1.getAccountId(), governanceConfig1))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Environment filter must contain valid env Ids");
+
+    GovernanceConfig governanceConfig2 =
+        JsonUtils.readResourceFile("governance/governance_config.json", GovernanceConfig.class);
+    governanceConfig2.getTimeRangeBasedFreezeConfigs()
+        .get(0)
+        .getAppSelections()
+        .get(0)
+        .getServiceSelection()
+        .setServices(Collections.singletonList(""));
+    assertThatThrownBy(() -> governanceConfigService.upsert(governanceConfig2.getAccountId(), governanceConfig2))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Service filter must contain valid service Ids");
+  }
+
+  @Test
   @Owner(developers = PRABU)
   @Category(UnitTests.class)
   public void shouldThrowExceptionForCustomEnvWithNonCustomApp() {

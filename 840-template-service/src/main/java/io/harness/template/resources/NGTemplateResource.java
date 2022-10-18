@@ -46,6 +46,7 @@ import io.harness.ng.core.template.TemplateListType;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
 import io.harness.ng.core.template.TemplateMetadataSummaryResponseDTO;
 import io.harness.ng.core.template.TemplateReferenceRequestDTO;
+import io.harness.ng.core.template.TemplateResponseDTO;
 import io.harness.ng.core.template.TemplateRetainVariablesRequestDTO;
 import io.harness.ng.core.template.TemplateRetainVariablesResponse;
 import io.harness.ng.core.template.TemplateSummaryResponseDTO;
@@ -65,7 +66,6 @@ import io.harness.template.beans.TemplateDeleteListRequestDTO;
 import io.harness.template.beans.TemplateFilterProperties;
 import io.harness.template.beans.TemplateImportRequestDTO;
 import io.harness.template.beans.TemplateImportSaveResponse;
-import io.harness.template.beans.TemplateResponseDTO;
 import io.harness.template.beans.TemplateWrapperResponseDTO;
 import io.harness.template.beans.yaml.NGTemplateConfig;
 import io.harness.template.entity.TemplateEntity;
@@ -854,6 +854,12 @@ public class NGTemplateResource {
       @Parameter(description = TEMPLATE_PARAM_MESSAGE) @PathParam(
           "templateIdentifier") @ResourceIdentifier String templateIdentifier,
       @BeanParam GitImportInfoDTO gitImportInfoDTO, TemplateImportRequestDTO templateImportRequestDTO) {
-    return ResponseDTO.newResponse(TemplateImportSaveResponse.builder().build());
+    TemplateEntity importedTemplateFromRemote =
+        templateService.importTemplateFromRemote(accountIdentifier, orgIdentifier, projectIdentifier,
+            templateIdentifier, templateImportRequestDTO, gitImportInfoDTO.getIsForceImport());
+    return ResponseDTO.newResponse(TemplateImportSaveResponse.builder()
+                                       .templateIdentifier(importedTemplateFromRemote.getIdentifier())
+                                       .templateVersion(importedTemplateFromRemote.getVersionLabel())
+                                       .build());
   }
 }

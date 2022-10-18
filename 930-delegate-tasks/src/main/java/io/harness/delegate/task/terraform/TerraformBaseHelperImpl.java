@@ -24,6 +24,7 @@ import static io.harness.logging.LogLevel.ERROR;
 import static io.harness.logging.LogLevel.INFO;
 import static io.harness.logging.LogLevel.WARN;
 import static io.harness.provision.TerraformConstants.ACTIVITY_ID_BASED_TF_BASE_DIR;
+import static io.harness.provision.TerraformConstants.PLAN_HUMAN_READABLE_TXT_FILE_NAME;
 import static io.harness.provision.TerraformConstants.TERRAFORM_APPLY_PLAN_FILE_VAR_NAME;
 import static io.harness.provision.TerraformConstants.TERRAFORM_DESTROY_PLAN_FILE_OUTPUT_NAME;
 import static io.harness.provision.TerraformConstants.TERRAFORM_DESTROY_PLAN_FILE_VAR_NAME;
@@ -1051,6 +1052,24 @@ public class TerraformBaseHelperImpl implements TerraformBaseHelper {
       delegateFileManagerBase.upload(delegateFile, fileStream);
     }
 
+    return delegateFile.getFileId();
+  }
+
+  @Override
+  public String uploadTfPlanHumanReadable(String accountId, String delegateId, String taskId, String entityId,
+      String planName, String localFilePath) throws IOException {
+    final DelegateFile delegateFile = aDelegateFile()
+                                          .withAccountId(accountId)
+                                          .withDelegateId(delegateId)
+                                          .withTaskId(taskId)
+                                          .withEntityId(entityId)
+                                          .withBucket(FileBucket.TERRAFORM_HUMAN_READABLE_PLAN)
+                                          .withFileName(format(PLAN_HUMAN_READABLE_TXT_FILE_NAME, planName))
+                                          .build();
+
+    try (InputStream fileStream = new FileInputStream(localFilePath)) {
+      delegateFileManagerBase.upload(delegateFile, fileStream);
+    }
     return delegateFile.getFileId();
   }
 }

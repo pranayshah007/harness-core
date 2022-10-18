@@ -9,6 +9,7 @@ package software.wings.scheduler;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.logging.AutoLogContext.OverrideBehavior;
 import static io.harness.obfuscate.Obfuscator.obfuscate;
 
 import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
@@ -20,6 +21,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.delegate.beans.Delegate;
+import io.harness.logging.AccountLogContext;
 import io.harness.scheduler.PersistentScheduler;
 
 import software.wings.app.MainConfiguration;
@@ -49,6 +51,7 @@ import org.quartz.JobBuilder;
 import org.quartz.JobDetail;
 import org.quartz.JobExecutionContext;
 import org.quartz.SimpleScheduleBuilder;
+import org.quartz.SimpleTrigger;
 import org.quartz.TriggerBuilder;
 
 /**
@@ -75,6 +78,15 @@ public class AlertCheckJob implements Job {
 
   @Inject private ExecutorService executorService;
 
+  private static TriggerBuilder<SimpleTrigger> alertTriggerBuilder(String accountId) {
+    return TriggerBuilder.newTrigger()
+        .withIdentity(accountId, GROUP)
+        .withSchedule(SimpleScheduleBuilder.simpleSchedule().withIntervalInSeconds(POLL_INTERVAL).repeatForever());
+  }
+
+  public TriggerBuilder<SimpleTrigger> getAlertTriggerBuilder(String accountId) {
+    return alertTriggerBuilder(accountId);
+  }
   public static void addWithDelay(PersistentScheduler jobScheduler, String accountId) {
     // Add some randomness in the trigger start time to avoid overloading quartz by firing jobs at the same time.
     long startTime = System.currentTimeMillis() + random.nextInt((int) TimeUnit.SECONDS.toMillis(START_DELAY_TIME));
@@ -90,11 +102,7 @@ public class AlertCheckJob implements Job {
                         .withIdentity(accountId, GROUP)
                         .usingJobData(ACCOUNT_ID_KEY, accountId)
                         .build();
-
-    TriggerBuilder triggerBuilder =
-        TriggerBuilder.newTrigger()
-            .withIdentity(accountId, GROUP)
-            .withSchedule(SimpleScheduleBuilder.simpleSchedule().withIntervalInSeconds(POLL_INTERVAL).repeatForever());
+    TriggerBuilder triggerBuilder = alertTriggerBuilder(accountId);
     if (triggerStartTime != null) {
       triggerBuilder.startAt(triggerStartTime);
     }
@@ -114,20 +122,24 @@ public class AlertCheckJob implements Job {
 
   @VisibleForTesting
   void executeInternal(String accountId) {
-    log.info("Checking account " + accountId + " for alert conditions.");
-    List<Delegate> delegates = delegateService.getNonDeletedDelegatesForAccount(accountId);
+    try (AccountLogContext ignore1 = new AccountLogContext(accountId, OverrideBehavior.OVERRIDE_ERROR)) {
+      log.info("Checking account " + accountId + " for alert conditions.");
+      List<Delegate> delegates = delegateService.getNonDeletedDelegatesForAccount(accountId);
 
-    if (isEmpty(delegates)) {
-      Account account = wingsPersistence.get(Account.class, accountId);
-      if (account == null) {
-        jobScheduler.deleteJob(accountId, GROUP);
-        return;
+      if (isEmpty(delegates)) {
+        Account account = wingsPersistence.get(Account.class, accountId);
+        if (account == null) {
+          jobScheduler.deleteJob(accountId, GROUP);
+          return;
+        }
       }
+      if (!isEmpty(delegates)) {
+        checkIfAnyDelegatesAreDown(accountId, delegates);
+      }
+      checkForInvalidValidSMTP(accountId);
+    } catch (Exception e) {
+      log.error("Exception happened in alert check for account {}", accountId);
     }
-    if (!isEmpty(delegates)) {
-      checkIfAnyDelegatesAreDown(accountId, delegates);
-    }
-    checkForInvalidValidSMTP(accountId);
   }
 
   @VisibleForTesting

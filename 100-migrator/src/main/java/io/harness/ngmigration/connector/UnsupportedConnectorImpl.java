@@ -41,6 +41,6 @@ public class UnsupportedConnectorImpl implements BaseConnector {
   @Override
   public ConnectorConfigDTO getConfigDTO(
       SettingAttribute settingAttribute, Set<CgEntityId> childEntities, Map<CgEntityId, NGYamlFile> migratedEntities) {
-    throw new InvalidRequestException(settingAttribute.getName() + "is not supported for migration");
+    throw new InvalidRequestException(settingAttribute.getName() + " is not supported for migration");
   }
 }

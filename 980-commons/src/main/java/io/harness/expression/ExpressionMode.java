@@ -17,7 +17,15 @@ package io.harness.expression;
  */
 
 public enum ExpressionMode {
-  THROW_EXCEPTION_IF_UNRESOLVED,
-  RETURN_NULL_IF_UNRESOLVED,
-  RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED
+  UNKNOWN_MODE(0),
+  RETURN_NULL_IF_UNRESOLVED(1),
+  RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED(2),
+  THROW_EXCEPTION_IF_UNRESOLVED(3);
+  final int index;
+  ExpressionMode(int index) {
+    this.index = index;
+  }
+  public int getIndex() {
+    return index;
+  }
 }

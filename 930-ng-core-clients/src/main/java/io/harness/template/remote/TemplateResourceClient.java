@@ -21,11 +21,11 @@ import io.harness.ng.core.template.TemplateApplyRequestDTO;
 import io.harness.ng.core.template.TemplateListType;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
 import io.harness.ng.core.template.TemplateReferenceRequestDTO;
+import io.harness.ng.core.template.TemplateResponseDTO;
 import io.harness.ng.core.template.TemplateSummaryResponseDTO;
+import io.harness.ng.core.template.refresh.ValidateTemplateInputsResponseDTO;
+import io.harness.ng.core.template.refresh.YamlFullRefreshResponseDTO;
 import io.harness.template.TemplateFilterPropertiesDTO;
-import io.harness.template.beans.TemplateResponseDTO;
-import io.harness.template.beans.refresh.ValidateTemplateInputsResponseDTO;
-import io.harness.template.beans.refresh.YamlFullRefreshResponseDTO;
 
 import java.util.List;
 import org.hibernate.validator.constraints.NotEmpty;
@@ -56,7 +56,7 @@ public interface TemplateResourceClient {
       @Query(value = NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @Query(value = NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @Query(value = "templateListType") TemplateListType templateListType,
-      @Query(value = NGResourceFilterConstants.PAGE_KEY) int page, @Query(NGResourceFilterConstants.SIZE_KEY) int size,
+      @Query(value = NGResourceFilterConstants.PAGE_KEY) int page, @Query(NGCommonEntityConstants.SIZE) int size,
       @Body TemplateFilterPropertiesDTO filterProperties);
 
   @POST(TEMPLATE_ENDPOINT + "applyTemplates")

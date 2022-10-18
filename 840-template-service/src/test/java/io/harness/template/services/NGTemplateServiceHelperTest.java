@@ -51,6 +51,8 @@ public class NGTemplateServiceHelperTest extends CategoryTest {
   @Mock NGTemplateRepository templateRepository;
   @Mock GitSyncSdkService gitSyncSdkService;
 
+  @Mock TemplateGitXService templateGitXService;
+
   private final String ACCOUNT_ID = "account_id";
   private final String ORG_IDENTIFIER = "orgId";
   private final String PROJ_IDENTIFIER = "projId";
@@ -60,7 +62,8 @@ public class NGTemplateServiceHelperTest extends CategoryTest {
   @Before
   public void setUp() {
     MockitoAnnotations.initMocks(this);
-    templateServiceHelper = new NGTemplateServiceHelper(filterService, templateRepository, gitSyncSdkService);
+    templateServiceHelper =
+        new NGTemplateServiceHelper(filterService, templateRepository, gitSyncSdkService, templateGitXService);
   }
 
   @Test

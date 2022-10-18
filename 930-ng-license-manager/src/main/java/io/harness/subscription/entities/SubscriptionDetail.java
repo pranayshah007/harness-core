@@ -71,4 +71,7 @@ public class SubscriptionDetail implements PersistentEntity, NGAccountAccess {
   public boolean isIncomplete() {
     return "incomplete".equalsIgnoreCase(status);
   }
+  public boolean isActive() {
+    return "active".equalsIgnoreCase(status);
+  }
 }

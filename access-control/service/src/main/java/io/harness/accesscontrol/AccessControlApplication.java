@@ -61,6 +61,7 @@ import io.harness.ng.core.CorrelationFilter;
 import io.harness.ng.core.TraceFilter;
 import io.harness.ng.core.exceptionmappers.GenericExceptionMapperV2;
 import io.harness.ng.core.exceptionmappers.JerseyViolationExceptionMapperV2;
+import io.harness.ng.core.exceptionmappers.NotFoundExceptionMapper;
 import io.harness.ng.core.exceptionmappers.WingsExceptionMapperV2;
 import io.harness.outbox.OutboxEventPollService;
 import io.harness.persistence.HPersistence;
@@ -267,6 +268,7 @@ public class AccessControlApplication extends Application<AccessControlConfigura
     environment.jersey().register(JerseyViolationExceptionMapperV2.class);
     environment.jersey().register(NGAccessDeniedExceptionMapper.class);
     environment.jersey().register(WingsExceptionMapperV2.class);
+    environment.jersey().register(NotFoundExceptionMapper.class);
     environment.jersey().register(GenericExceptionMapperV2.class);
   }
 

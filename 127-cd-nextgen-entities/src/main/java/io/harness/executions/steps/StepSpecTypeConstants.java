@@ -62,9 +62,12 @@ public interface StepSpecTypeConstants {
   String ECS_ROLLING_ROLLBACK = "EcsRollingRollback";
   String ECS_CANARY_DEPLOY = "EcsCanaryDeploy";
   String ECS_CANARY_DELETE = "EcsCanaryDelete";
+  String ECS_RUN_TASK = "EcsRunTask";
   String ECS_BLUE_GREEN_CREATE_SERVICE = "EcsBlueGreenCreateService";
   String ECS_BLUE_GREEN_SWAP_TARGET_GROUPS = "EcsBlueGreenSwapTargetGroups";
   String ECS_BLUE_GREEN_ROLLBACK = "EcsBlueGreenRollback";
 
   String SHELL_SCRIPT_PROVISION = "ShellScriptProvision";
+
+  String CHAOS_STEP = "Chaos";
 }

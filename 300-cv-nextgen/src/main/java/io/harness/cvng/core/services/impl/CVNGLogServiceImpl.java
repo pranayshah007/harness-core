@@ -72,39 +72,51 @@ public class CVNGLogServiceImpl implements CVNGLogService {
     UpdateOptions options = new UpdateOptions();
     options.upsert(true);
 
-    callLogs.forEach(logRecord -> {
-      CVNGLogRecord cvngLogRecord = CVNGLog.toCVNGLogRecord(logRecord);
-      List<CVNGLogTag> cvngLogTags = new ArrayList<>();
-      TagResult tagResult = getTags(logRecord);
-      cvngLogTags.addAll(logRecord.getTags());
-      cvngLogTags.addAll(getCommonLogTags(logRecord));
-      cvngLogTags.addAll(tagResult.getCvngLogTags());
-      cvngLogRecord.setTags(cvngLogTags);
-      cvngLogRecord.recordsMetrics(metricService, tagResult.getTagsMap());
-      cvngLogRecord.setCreatedAt(clock.instant().toEpochMilli());
-      Instant startTime = Instant.ofEpochMilli(logRecord.getStartTime());
-      Instant endTime = Instant.ofEpochMilli(logRecord.getEndTime());
-      Query<CVNGLog> cvngLogQuery = hPersistence.createQuery(CVNGLog.class)
-                                        .filter(CVNGLogKeys.accountId, logRecord.getAccountId())
-                                        .filter(CVNGLogKeys.logType, logRecord.getType())
-                                        .filter(CVNGLogKeys.traceableType, logRecord.getTraceableType())
-                                        .filter(CVNGLogKeys.traceableId, logRecord.getTraceableId())
-                                        .filter(CVNGLogKeys.endTime, endTime)
-                                        .filter(CVNGLogKeys.startTime, startTime);
+    callLogs.stream()
+        .collect(Collectors.groupingBy(cvngLogDTO -> CVNGLogKey.fromDTO(cvngLogDTO)))
+        .entrySet()
+        .forEach(cvngLogKeyDTOEntry -> {
+          List<CVNGLogRecord> logRecords =
+              cvngLogKeyDTOEntry.getValue().stream().map(this::dtoToLogRecord).collect(Collectors.toList());
+          CVNGLogKey logKey = cvngLogKeyDTOEntry.getKey();
 
-      hPersistence.getDatastore(CVNGLog.class)
-          .update(cvngLogQuery,
-              hPersistence.createUpdateOperations(CVNGLog.class)
-                  .setOnInsert(CVNGLogKeys.accountId, logRecord.getAccountId())
-                  .setOnInsert(CVNGLogKeys.traceableId, logRecord.getTraceableId())
-                  .setOnInsert(CVNGLogKeys.startTime, startTime)
-                  .setOnInsert(CVNGLogKeys.endTime, endTime)
-                  .setOnInsert(CVNGLogKeys.traceableType, logRecord.getTraceableType())
-                  .setOnInsert(CVNGLogKeys.logType, logRecord.getType())
-                  .setOnInsert(CVNGLogKeys.validUntil, CVNGLog.builder().build().getValidUntil())
-                  .addToSet(CVNGLogKeys.logRecords, cvngLogRecord),
-              options);
-    });
+          Instant startTime = Instant.ofEpochMilli(logKey.getStartTime());
+          Instant endTime = Instant.ofEpochMilli(logKey.getEndTime());
+
+          Query<CVNGLog> cvngLogQuery = hPersistence.createQuery(CVNGLog.class)
+                                            .filter(CVNGLogKeys.accountId, logKey.getAccountId())
+                                            .filter(CVNGLogKeys.logType, logKey.getLogType())
+                                            .filter(CVNGLogKeys.traceableType, logKey.getTraceableType())
+                                            .filter(CVNGLogKeys.traceableId, logKey.getTraceableId())
+                                            .filter(CVNGLogKeys.endTime, endTime)
+                                            .filter(CVNGLogKeys.startTime, startTime);
+
+          hPersistence.getDatastore(CVNGLog.class)
+              .update(cvngLogQuery,
+                  hPersistence.createUpdateOperations(CVNGLog.class)
+                      .setOnInsert(CVNGLogKeys.accountId, logKey.getAccountId())
+                      .setOnInsert(CVNGLogKeys.traceableId, logKey.getTraceableId())
+                      .setOnInsert(CVNGLogKeys.startTime, startTime)
+                      .setOnInsert(CVNGLogKeys.endTime, endTime)
+                      .setOnInsert(CVNGLogKeys.traceableType, logKey.getTraceableType())
+                      .setOnInsert(CVNGLogKeys.logType, logKey.getLogType())
+                      .setOnInsert(CVNGLogKeys.validUntil, CVNGLog.builder().build().getValidUntil())
+                      .push(CVNGLogKeys.logRecords, logRecords),
+                  options);
+        });
+  }
+
+  private CVNGLogRecord dtoToLogRecord(CVNGLogDTO logRecord) {
+    CVNGLogRecord cvngLogRecord = CVNGLog.toCVNGLogRecord(logRecord);
+    List<CVNGLogTag> cvngLogTags = new ArrayList<>();
+    TagResult tagResult = getTags(logRecord);
+    cvngLogTags.addAll(logRecord.getTags());
+    cvngLogTags.addAll(getCommonLogTags(logRecord));
+    cvngLogTags.addAll(tagResult.getCvngLogTags());
+    cvngLogRecord.setTags(cvngLogTags);
+    cvngLogRecord.recordsMetrics(metricService, tagResult.getTagsMap());
+    cvngLogRecord.setCreatedAt(clock.instant().toEpochMilli());
+    return cvngLogRecord;
   }
 
   private List<CVNGLogTag> getCommonLogTags(CVNGLogDTO cvngLogDTO) {
@@ -279,5 +291,27 @@ public class CVNGLogServiceImpl implements CVNGLogService {
   private static class TagResult {
     Map<String, String> tagsMap;
     List<CVNGLogTag> cvngLogTags;
+  }
+
+  @Value
+  @Builder
+  private static class CVNGLogKey {
+    private String accountId;
+    private CVNGLogType logType;
+    private TraceableType traceableType;
+    private String traceableId;
+    private Long endTime;
+    private Long startTime;
+
+    static CVNGLogKey fromDTO(CVNGLogDTO cvngLogDTO) {
+      return CVNGLogKey.builder()
+          .accountId(cvngLogDTO.getAccountId())
+          .logType(cvngLogDTO.getType())
+          .traceableType(cvngLogDTO.getTraceableType())
+          .traceableId(cvngLogDTO.getTraceableId())
+          .startTime(cvngLogDTO.getStartTime())
+          .endTime(cvngLogDTO.getEndTime())
+          .build();
+    }
   }
 }

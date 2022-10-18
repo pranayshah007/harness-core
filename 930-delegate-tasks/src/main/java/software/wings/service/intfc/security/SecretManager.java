@@ -69,12 +69,22 @@ public interface SecretManager extends OwnedByAccount {
 
   Optional<EncryptedDataDetail> encryptedDataDetails(
       String accountId, String fieldName, String refId, String workflowExecutionId);
+
+  Optional<EncryptedDataDetail> encryptedDataDetails(String accountId, String fieldName, String encryptedDataId,
+      String workflowExecutionId, boolean updateSecretUsage);
+
   Optional<EncryptedDataDetail> getEncryptedDataDetails(
       String accountId, String fieldName, EncryptedData encryptedData, String workflowExecutionId);
+
+  Optional<EncryptedDataDetail> getEncryptedDataDetails(String accountId, String fieldName, EncryptedData encryptedData,
+      String workflowExecutionId, boolean updateSecretUsage);
 
   List<EncryptedDataDetail> getEncryptionDetails(EncryptableSetting object);
 
   List<EncryptedDataDetail> getEncryptionDetails(EncryptableSetting object, String appId, String workflowExecutionId);
+
+  List<EncryptedDataDetail> getEncryptionDetails(
+      EncryptableSetting object, String appId, String workflowExecutionId, boolean updateSecretUsage);
 
   String getEncryptedYamlRef(String accountId, String secretId);
 

@@ -97,7 +97,7 @@ public final class HelmConstants {
     public static final String HELM_RELEASE_HIST_COMMAND_TEMPLATE =
         "KUBECONFIG=${KUBECONFIG_PATH} ${HELM_PATH} hist ${RELEASE_NAME} ${COMMAND_FLAGS}  ${FLAGS}";
     public static final String HELM_ADD_REPO_COMMAND_TEMPLATE = "${HELM_PATH} repo add ${REPO_NAME} ${REPO_URL}";
-    public static final String HELM_REPO_UPDATE_COMMAND_TEMPLATE = "${HELM_PATH} repo update";
+    public static final String HELM_REPO_UPDATE_COMMAND_TEMPLATE = "${HELM_PATH} repo update ${COMMAND_FLAGS}";
     public static final String HELM_REPO_LIST_COMMAND_TEMPLATE = "${HELM_PATH} repo list";
     public static final String HELM_DELETE_RELEASE_TEMPLATE =
         "KUBECONFIG=${KUBECONFIG_PATH} ${HELM_PATH} uninstall ${RELEASE_NAME} ${COMMAND_FLAGS}";
@@ -105,9 +105,9 @@ public final class HelmConstants {
         "${HELM_PATH} template ${RELEASE_NAME} ${CHART_LOCATION} ${COMMAND_FLAGS} --namespace ${NAMESPACE} ${OVERRIDE_VALUES}";
     public static final String HELM_SEARCH_COMMAND_TEMPLATE = "${HELM_PATH} search repo ${CHART_INFO}";
     public static final String HELM_REPO_ADD_COMMAND_FOR_CHART_MUSEUM =
-        "${HELM_PATH} repo add ${REPO_NAME} ${REPO_URL}";
+        "${HELM_PATH} repo add ${REPO_NAME} ${REPO_URL} ${COMMAND_FLAGS}";
     public static final String HELM_REPO_ADD_COMMAND_FOR_HTTP =
-        "${HELM_PATH} repo add ${REPO_NAME} ${REPO_URL} ${USERNAME} ${PASSWORD}";
+        "${HELM_PATH} repo add ${REPO_NAME} ${REPO_URL} ${USERNAME} ${PASSWORD} ${COMMAND_FLAGS}";
     public static final String HELM_FETCH_COMMAND =
         "${HELM_PATH} pull ${REPO_NAME}/${CHART_NAME} ${COMMAND_FLAGS} --untar ${CHART_VERSION}";
     public static final String HELM_REPO_REMOVE_COMMAND = "${HELM_PATH} repo remove ${REPO_NAME}";

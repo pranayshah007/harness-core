@@ -119,7 +119,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import org.apache.commons.lang3.reflect.FieldUtils;
 import org.junit.Before;
 import org.junit.Test;
@@ -930,9 +929,7 @@ public class ServiceLevelObjectiveServiceImplTest extends CvNextGenTestBase {
     List<String> verificationTaskIds =
         verificationTaskService.getSLIVerificationTaskIds(projectParams.getAccountIdentifier(), sliIds);
     List<CVNGLogDTO> cvngLogDTOs =
-        IntStream.range(0, 3)
-            .mapToObj(index -> builderFactory.executionLogDTOBuilder().traceableId(verificationTaskIds.get(0)).build())
-            .collect(Collectors.toList());
+        Arrays.asList(builderFactory.executionLogDTOBuilder().traceableId(verificationTaskIds.get(0)).build());
     cvngLogService.save(cvngLogDTOs);
 
     SLILogsFilter sliLogsFilter = SLILogsFilter.builder()

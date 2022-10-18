@@ -10,6 +10,7 @@ package io.harness.audit.client.api.impl;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.ng.core.CorrelationContext.getCorrelationIdKey;
 import static io.harness.rule.OwnerRule.KARAN;
+import static io.harness.rule.OwnerRule.NISHANT;
 
 import static java.util.Collections.singletonMap;
 import static junit.framework.TestCase.assertEquals;
@@ -29,6 +30,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.audit.Action;
 import io.harness.audit.beans.AuditEntry;
 import io.harness.audit.beans.AuditEventDTO;
+import io.harness.audit.beans.AuthenticationInfoDTO;
 import io.harness.audit.beans.PrincipalType;
 import io.harness.audit.beans.ResourceDTO;
 import io.harness.audit.beans.ResourceScopeDTO;
@@ -120,6 +122,35 @@ public class AuditClientServiceImplTest extends CategoryTest {
     assertAuditEventDTO(auditEntry, auditEventDTO);
   }
 
+  @Test
+  @Owner(developers = NISHANT)
+  @Category(UnitTests.class)
+  public void testPublishAuditWithAuthenticationInfo() throws IOException {
+    AuditEntry auditEntry = getAuditEntry();
+    GlobalContext globalContext = new GlobalContext();
+
+    UserPrincipal userPrincipal =
+        new UserPrincipal(randomAlphabetic(10), randomAlphabetic(10), randomAlphabetic(10), randomAlphabetic(10));
+    AuthenticationInfoDTO authenticationInfoDTO = AuthenticationInfoDTO.fromSecurityPrincipal(userPrincipal);
+
+    MdcGlobalContextData mdcGlobalContextData =
+        MdcGlobalContextData.builder().map(singletonMap(getCorrelationIdKey(), randomAlphabetic(10))).build();
+    globalContext.upsertGlobalContextRecord(mdcGlobalContextData);
+
+    final ArgumentCaptor<AuditEventDTO> auditEventDTOArgumentCaptor = ArgumentCaptor.forClass(AuditEventDTO.class);
+    verifyMethodInvocation(auditEventDTOArgumentCaptor, auditEntry, globalContext, authenticationInfoDTO);
+    AuditEventDTO auditEventDTO = auditEventDTOArgumentCaptor.getValue();
+
+    assertAuditEventDTO(auditEntry, auditEventDTO);
+    assertNotNull(auditEventDTO.getAuthenticationInfo());
+    assertNotNull(auditEventDTO.getAuthenticationInfo().getPrincipal());
+    assertEquals(PrincipalType.USER, auditEventDTO.getAuthenticationInfo().getPrincipal().getType());
+    assertEquals(authenticationInfoDTO, auditEventDTO.getAuthenticationInfo());
+    assertNotNull(auditEventDTO.getInternalInfo());
+    assertEquals(
+        mdcGlobalContextData.getMap().get(getCorrelationIdKey()), auditEventDTO.getInternalInfo().get("correlationId"));
+  }
+
   private void assertAuditEventDTO(AuditEntry auditEntry, AuditEventDTO auditEventDTO) {
     assertEquals(auditEntry.getInsertId(), auditEventDTO.getInsertId());
     assertEquals(auditEntry.getResourceScope(), auditEventDTO.getResourceScope());
@@ -141,6 +172,19 @@ public class AuditClientServiceImplTest extends CategoryTest {
     when(responseDTOCall.execute()).thenReturn(response);
 
     auditClientService.publishAudit(auditEntry, globalContext);
+
+    verify(auditClient, times(1)).createAudit(auditEventDTOArgumentCaptor.capture());
+  }
+
+  private void verifyMethodInvocation(ArgumentCaptor<AuditEventDTO> auditEventDTOArgumentCaptor, AuditEntry auditEntry,
+      GlobalContext globalContext, AuthenticationInfoDTO authenticationInfoDTO) throws IOException {
+    ResponseDTO<Boolean> restResponse = ResponseDTO.newResponse(true);
+    Response<ResponseDTO<Boolean>> response = Response.success(restResponse);
+    Call<ResponseDTO<Boolean>> responseDTOCall = mock(Call.class);
+    when(auditClient.createAudit(any())).thenReturn(responseDTOCall);
+    when(responseDTOCall.execute()).thenReturn(response);
+
+    auditClientService.publishAudit(auditEntry, authenticationInfoDTO, globalContext);
 
     verify(auditClient, times(1)).createAudit(auditEventDTOArgumentCaptor.capture());
   }

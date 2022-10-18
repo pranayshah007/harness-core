@@ -13,16 +13,21 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anySet;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doCallRealMethod;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 
-import io.harness.CategoryTest;
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.category.element.UnitTests;
+import io.harness.cdng.CDNGTestBase;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.artifact.bean.ArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.ArtifactListConfig;
@@ -35,21 +40,31 @@ import io.harness.cdng.artifact.bean.yaml.SidecarArtifact;
 import io.harness.cdng.artifact.bean.yaml.SidecarArtifactWrapper;
 import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
 import io.harness.cdng.artifact.utils.ArtifactStepHelper;
+import io.harness.cdng.common.beans.SetupAbstractionKeys;
 import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.service.beans.KubernetesServiceSpec;
 import io.harness.cdng.service.beans.ServiceDefinition;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.cdng.service.steps.ServiceStepsHelper;
 import io.harness.cdng.steps.EmptyStepParameters;
+import io.harness.connector.ConnectorInfoDTO;
+import io.harness.connector.ConnectorResponseDTO;
+import io.harness.connector.services.ConnectorService;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
+import io.harness.delegate.beans.connector.docker.DockerAuthType;
+import io.harness.delegate.beans.connector.docker.DockerAuthenticationDTO;
+import io.harness.delegate.beans.connector.docker.DockerConnectorDTO;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
+import io.harness.delegate.task.artifacts.ArtifactTaskType;
 import io.harness.delegate.task.artifacts.docker.DockerArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.docker.DockerArtifactDelegateResponse;
+import io.harness.delegate.task.artifacts.request.ArtifactTaskParameters;
 import io.harness.delegate.task.artifacts.response.ArtifactBuildDetailsNG;
 import io.harness.delegate.task.artifacts.response.ArtifactTaskExecutionResponse;
 import io.harness.delegate.task.artifacts.response.ArtifactTaskResponse;
 import io.harness.exception.ArtifactServerException;
+import io.harness.gitsync.sdk.EntityValidityDetails;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logstreaming.NGLogCallback;
 import io.harness.ng.core.service.yaml.NGServiceConfig;
@@ -67,9 +82,11 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
+import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
+import io.harness.serializer.KryoSerializer;
 import io.harness.service.DelegateGrpcClientWrapper;
 
-import software.wings.beans.TaskType;
+import software.wings.beans.SerializationFormat;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -77,7 +94,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
+import org.jooq.tools.reflect.Reflect;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -88,16 +107,21 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
-public class ArtifactsStepV2Test extends CategoryTest {
+@OwnedBy(HarnessTeam.CDC)
+public class ArtifactsStepV2Test extends CDNGTestBase {
   private static final String ACCOUNT_ID = "ACCOUNT_ID";
   @Mock private NGLogCallback mockNgLogCallback;
   @Mock private ServiceStepsHelper serviceStepsHelper;
   @Mock private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
-  @Mock private ArtifactStepHelper artifactStepHelper;
   @Mock private ExecutionSweepingOutputService mockSweepingOutputService;
-  @Mock private CDStepHelper cdStepHelper;
+  @Mock private CDStepHelper cdStepHelper = Mockito.spy(CDStepHelper.class);
   @Mock private CDExpressionResolver expressionResolver;
+  @Mock private KryoSerializer kryoSerializer;
+
   @InjectMocks private ArtifactsStepV2 step = new ArtifactsStepV2();
+  private final ArtifactStepHelper stepHelper = new ArtifactStepHelper();
+  @Mock private ConnectorService connectorService;
+  @Mock private SecretManagerClientService secretManagerClientService;
 
   private final EmptyStepParameters stepParameters = new EmptyStepParameters();
   private final StepInputPackage inputPackage = StepInputPackage.builder().build();
@@ -111,22 +135,39 @@ public class ArtifactsStepV2Test extends CategoryTest {
   public void setUp() throws Exception {
     mocks = MockitoAnnotations.openMocks(this);
 
+    Reflect.on(stepHelper).set("connectorService", connectorService);
+    Reflect.on(stepHelper).set("secretManagerClientService", secretManagerClientService);
+    Reflect.on(step).set("artifactStepHelper", stepHelper);
+
+    // setup mock for connector
+    doReturn(Optional.of(
+                 ConnectorResponseDTO.builder()
+                     .entityValidityDetails(EntityValidityDetails.builder().valid(true).build())
+                     .connector(
+                         ConnectorInfoDTO.builder()
+                             .projectIdentifier("projectId")
+                             .orgIdentifier("orgId")
+                             .connectorConfig(
+                                 DockerConnectorDTO.builder()
+                                     .dockerRegistryUrl("https://index.docker.com/v1")
+                                     .auth(DockerAuthenticationDTO.builder().authType(DockerAuthType.ANONYMOUS).build())
+                                     .delegateSelectors(Set.of("d1"))
+                                     .build())
+                             .build())
+                     .build()))
+        .when(connectorService)
+        .get(anyString(), anyString(), anyString(), eq("connector"));
+
     // mock serviceStepsHelper
     doReturn(mockNgLogCallback).when(serviceStepsHelper).getServiceLogCallback(Mockito.any());
     doReturn(mockNgLogCallback).when(serviceStepsHelper).getServiceLogCallback(Mockito.any(), Mockito.anyBoolean());
-
-    // mock artifactStepHelper
-    doReturn(DockerArtifactDelegateRequest.builder().build())
-        .when(artifactStepHelper)
-        .toSourceDelegateRequest(any(ArtifactConfig.class), any(Ambiance.class));
-    doReturn(TaskType.DOCKER_ARTIFACT_TASK_NG)
-        .when(artifactStepHelper)
-        .getArtifactStepTaskType(any(ArtifactConfig.class));
 
     // mock delegateGrpcClientWrapper
     doAnswer(invocationOnMock -> UUIDGenerator.generateUuid())
         .when(delegateGrpcClientWrapper)
         .submitAsyncTask(any(DelegateTaskRequest.class), any(Duration.class));
+
+    doCallRealMethod().when(cdStepHelper).mapTaskRequestToDelegateTaskRequest(any(), any(), anySet());
   }
 
   @After
@@ -151,6 +192,8 @@ public class ArtifactsStepV2Test extends CategoryTest {
   @Category(UnitTests.class)
   public void executeAsyncOnlyPrimary() {
     ArgumentCaptor<ArtifactsStepV2SweepingOutput> captor = ArgumentCaptor.forClass(ArtifactsStepV2SweepingOutput.class);
+    ArgumentCaptor<DelegateTaskRequest> delegateTaskRequestArgumentCaptor =
+        ArgumentCaptor.forClass(DelegateTaskRequest.class);
 
     doReturn(getServiceConfig(ArtifactListConfig.builder()
                                   .primary(PrimaryArtifact.builder()
@@ -169,6 +212,8 @@ public class ArtifactsStepV2Test extends CategoryTest {
 
     verify(mockSweepingOutputService).consume(any(Ambiance.class), anyString(), captor.capture(), eq(""));
     verify(expressionResolver, times(1)).updateExpressions(any(Ambiance.class), any());
+    verify(delegateGrpcClientWrapper, times(1))
+        .submitAsyncTask(delegateTaskRequestArgumentCaptor.capture(), eq(Duration.ZERO));
 
     ArtifactsStepV2SweepingOutput output = captor.getValue();
 
@@ -178,6 +223,9 @@ public class ArtifactsStepV2Test extends CategoryTest {
         output.getArtifactConfigMap().values().stream().map(ArtifactConfig::getIdentifier).collect(Collectors.toSet()))
         .containsExactly("primary");
     assertThat(response.getCallbackIdsCount()).isEqualTo(1);
+
+    DelegateTaskRequest taskRequest = delegateTaskRequestArgumentCaptor.getValue();
+    verifyDockerArtifactRequest(taskRequest, "latest");
   }
 
   @Test
@@ -200,6 +248,8 @@ public class ArtifactsStepV2Test extends CategoryTest {
 
     AsyncExecutableResponse response = step.executeAsync(ambiance, stepParameters, inputPackage, null);
 
+    verifyNoInteractions(delegateGrpcClientWrapper);
+
     verify(mockSweepingOutputService).consume(any(Ambiance.class), anyString(), captor.capture(), eq(""));
     verify(expressionResolver, times(1)).updateExpressions(any(Ambiance.class), any());
 
@@ -221,6 +271,8 @@ public class ArtifactsStepV2Test extends CategoryTest {
   @Category(UnitTests.class)
   public void executeAsyncWithArtifactSources() {
     ArgumentCaptor<ArtifactsStepV2SweepingOutput> captor = ArgumentCaptor.forClass(ArtifactsStepV2SweepingOutput.class);
+    ArgumentCaptor<DelegateTaskRequest> delegateTaskRequestArgumentCaptor =
+        ArgumentCaptor.forClass(DelegateTaskRequest.class);
 
     // Prepare test data
     ArtifactSource source1 = ArtifactSource.builder()
@@ -237,7 +289,7 @@ public class ArtifactsStepV2Test extends CategoryTest {
                                  .sourceType(ArtifactSourceType.GCR)
                                  .spec(GcrArtifactConfig.builder()
                                            .connectorRef(ParameterField.createValueField("connector"))
-                                           .tag(ParameterField.createValueField("latest"))
+                                           .tag(ParameterField.createValueField("latest-1"))
                                            .imagePath(ParameterField.createValueField("nginx"))
                                            .build())
                                  .build();
@@ -253,7 +305,7 @@ public class ArtifactsStepV2Test extends CategoryTest {
                                                .sourceType(ArtifactSourceType.DOCKER_REGISTRY)
                                                .spec(DockerHubArtifactConfig.builder()
                                                          .connectorRef(ParameterField.createValueField("connector"))
-                                                         .tag(ParameterField.createValueField("latest"))
+                                                         .tag(ParameterField.createValueField("latest-2"))
                                                          .imagePath(ParameterField.createValueField("nginx"))
                                                          .build())
                                                .build())
@@ -264,7 +316,7 @@ public class ArtifactsStepV2Test extends CategoryTest {
                                                .sourceType(ArtifactSourceType.DOCKER_REGISTRY)
                                                .spec(DockerHubArtifactConfig.builder()
                                                          .connectorRef(ParameterField.createValueField("connector"))
-                                                         .tag(ParameterField.createValueField("latest"))
+                                                         .tag(ParameterField.createValueField("latest-3"))
                                                          .imagePath(ParameterField.createValueField("nginx"))
                                                          .build())
                                                .build())
@@ -275,6 +327,8 @@ public class ArtifactsStepV2Test extends CategoryTest {
 
     AsyncExecutableResponse response = step.executeAsync(ambiance, stepParameters, inputPackage, null);
 
+    verify(delegateGrpcClientWrapper, times(3))
+        .submitAsyncTask(delegateTaskRequestArgumentCaptor.capture(), eq(Duration.ZERO));
     verify(mockSweepingOutputService).consume(any(Ambiance.class), anyString(), captor.capture(), eq(""));
     verify(expressionResolver, times(1)).updateExpressions(any(Ambiance.class), any());
 
@@ -286,6 +340,10 @@ public class ArtifactsStepV2Test extends CategoryTest {
         output.getArtifactConfigMap().values().stream().map(ArtifactConfig::getIdentifier).collect(Collectors.toSet()))
         .containsExactlyInAnyOrder("primary", "s1", "s2");
     assertThat(response.getCallbackIdsCount()).isEqualTo(3);
+
+    verifyDockerArtifactRequest(delegateTaskRequestArgumentCaptor.getAllValues().get(0), "latest");
+    verifyDockerArtifactRequest(delegateTaskRequestArgumentCaptor.getAllValues().get(1), "latest-2");
+    verifyDockerArtifactRequest(delegateTaskRequestArgumentCaptor.getAllValues().get(2), "latest-3");
   }
 
   @Test
@@ -293,6 +351,9 @@ public class ArtifactsStepV2Test extends CategoryTest {
   @Category(UnitTests.class)
   public void executeAsyncPrimaryAndSidecars() {
     ArgumentCaptor<ArtifactsStepV2SweepingOutput> captor = ArgumentCaptor.forClass(ArtifactsStepV2SweepingOutput.class);
+    ArgumentCaptor<DelegateTaskRequest> delegateTaskRequestArgumentCaptor =
+        ArgumentCaptor.forClass(DelegateTaskRequest.class);
+
     doReturn(getServiceConfig(
                  ArtifactListConfig.builder()
                      .primary(PrimaryArtifact.builder()
@@ -309,7 +370,7 @@ public class ArtifactsStepV2Test extends CategoryTest {
                                                .sourceType(ArtifactSourceType.DOCKER_REGISTRY)
                                                .spec(DockerHubArtifactConfig.builder()
                                                          .connectorRef(ParameterField.createValueField("connector"))
-                                                         .tag(ParameterField.createValueField("latest"))
+                                                         .tag(ParameterField.createValueField("latest-1"))
                                                          .imagePath(ParameterField.createValueField("nginx"))
                                                          .build())
                                                .build())
@@ -320,7 +381,7 @@ public class ArtifactsStepV2Test extends CategoryTest {
                                                .sourceType(ArtifactSourceType.DOCKER_REGISTRY)
                                                .spec(DockerHubArtifactConfig.builder()
                                                          .connectorRef(ParameterField.createValueField("connector"))
-                                                         .tag(ParameterField.createValueField("latest"))
+                                                         .tag(ParameterField.createValueField("latest-2"))
                                                          .imagePath(ParameterField.createValueField("nginx"))
                                                          .build())
                                                .build())
@@ -340,6 +401,8 @@ public class ArtifactsStepV2Test extends CategoryTest {
 
     AsyncExecutableResponse response = step.executeAsync(ambiance, stepParameters, inputPackage, null);
 
+    verify(delegateGrpcClientWrapper, times(3))
+        .submitAsyncTask(delegateTaskRequestArgumentCaptor.capture(), eq(Duration.ZERO));
     verify(mockSweepingOutputService).consume(any(Ambiance.class), anyString(), captor.capture(), eq(""));
     verify(expressionResolver, times(1)).updateExpressions(any(Ambiance.class), any());
 
@@ -357,6 +420,10 @@ public class ArtifactsStepV2Test extends CategoryTest {
         ((CustomArtifactConfig) output.getArtifactConfigMapForNonDelegateTaskTypes().get(0)).getVersion().getValue())
         .isEqualTo("1.0");
     assertThat(output.getArtifactConfigMapForNonDelegateTaskTypes().get(0).isPrimaryArtifact()).isFalse();
+
+    verifyDockerArtifactRequest(delegateTaskRequestArgumentCaptor.getAllValues().get(0), "latest");
+    verifyDockerArtifactRequest(delegateTaskRequestArgumentCaptor.getAllValues().get(1), "latest-1");
+    verifyDockerArtifactRequest(delegateTaskRequestArgumentCaptor.getAllValues().get(2), "latest-2");
   }
 
   @Test
@@ -364,6 +431,9 @@ public class ArtifactsStepV2Test extends CategoryTest {
   @Category(UnitTests.class)
   public void executeAsyncOnlySidecars() {
     ArgumentCaptor<ArtifactsStepV2SweepingOutput> captor = ArgumentCaptor.forClass(ArtifactsStepV2SweepingOutput.class);
+    ArgumentCaptor<DelegateTaskRequest> delegateTaskRequestArgumentCaptor =
+        ArgumentCaptor.forClass(DelegateTaskRequest.class);
+
     doReturn(getServiceConfig(
                  ArtifactListConfig.builder()
                      .sidecar(SidecarArtifactWrapper.builder()
@@ -372,7 +442,7 @@ public class ArtifactsStepV2Test extends CategoryTest {
                                                .sourceType(ArtifactSourceType.DOCKER_REGISTRY)
                                                .spec(DockerHubArtifactConfig.builder()
                                                          .connectorRef(ParameterField.createValueField("connector"))
-                                                         .tag(ParameterField.createValueField("latest"))
+                                                         .tag(ParameterField.createValueField("latest-1"))
                                                          .imagePath(ParameterField.createValueField("nginx"))
                                                          .build())
                                                .build())
@@ -383,7 +453,7 @@ public class ArtifactsStepV2Test extends CategoryTest {
                                                .sourceType(ArtifactSourceType.DOCKER_REGISTRY)
                                                .spec(DockerHubArtifactConfig.builder()
                                                          .connectorRef(ParameterField.createValueField("connector"))
-                                                         .tag(ParameterField.createValueField("latest"))
+                                                         .tag(ParameterField.createValueField("latest-2"))
                                                          .imagePath(ParameterField.createValueField("nginx"))
                                                          .build())
                                                .build())
@@ -394,6 +464,8 @@ public class ArtifactsStepV2Test extends CategoryTest {
 
     AsyncExecutableResponse response = step.executeAsync(ambiance, stepParameters, inputPackage, null);
 
+    verify(delegateGrpcClientWrapper, times(2))
+        .submitAsyncTask(delegateTaskRequestArgumentCaptor.capture(), eq(Duration.ZERO));
     verify(mockSweepingOutputService).consume(any(Ambiance.class), anyString(), captor.capture(), eq(""));
     verify(expressionResolver, times(1)).updateExpressions(any(Ambiance.class), any());
 
@@ -405,6 +477,9 @@ public class ArtifactsStepV2Test extends CategoryTest {
         output.getArtifactConfigMap().values().stream().map(ArtifactConfig::getIdentifier).collect(Collectors.toSet()))
         .containsExactly("s1", "s2");
     assertThat(response.getCallbackIdsCount()).isEqualTo(2);
+
+    verifyDockerArtifactRequest(delegateTaskRequestArgumentCaptor.getAllValues().get(0), "latest-1");
+    verifyDockerArtifactRequest(delegateTaskRequestArgumentCaptor.getAllValues().get(1), "latest-2");
   }
 
   @Test
@@ -572,9 +647,41 @@ public class ArtifactsStepV2Test extends CategoryTest {
                    .build());
     return Ambiance.newBuilder()
         .setPlanExecutionId(generateUuid())
-        .putAllSetupAbstractions(Map.of("accountId", ACCOUNT_ID))
+        .putAllSetupAbstractions(Map.of(SetupAbstractionKeys.accountId, ACCOUNT_ID, SetupAbstractionKeys.orgIdentifier,
+            "orgId", SetupAbstractionKeys.projectIdentifier, "projectId"))
         .addAllLevels(levels)
         .setExpressionFunctorToken(1234)
         .build();
+  }
+
+  private void verifyDockerArtifactRequest(DelegateTaskRequest taskRequest, String tag) {
+    assertThat(taskRequest.isParked()).isFalse();
+    assertThat(taskRequest.getTaskSelectors()).containsExactly("d1");
+    assertThat(taskRequest.getSerializationFormat()).isEqualTo(SerializationFormat.KRYO);
+    assertThat(taskRequest.getAccountId()).isEqualTo(ACCOUNT_ID);
+    assertThat(taskRequest.getTaskType()).isEqualTo("DOCKER_ARTIFACT_TASK_NG");
+    assertThat(taskRequest.getTaskSetupAbstractions()).hasSize(5);
+    assertThat(taskRequest.getTaskParameters())
+        .isEqualTo(
+            ArtifactTaskParameters.builder()
+                .accountId(ACCOUNT_ID)
+                .attributes(
+                    DockerArtifactDelegateRequest.builder()
+                        .imagePath("nginx")
+                        .connectorRef("connector")
+                        .tag(tag)
+                        .tagRegex("")
+                        .encryptedDataDetails(List.of())
+                        .sourceType(ArtifactSourceType.DOCKER_REGISTRY)
+                        .dockerConnectorDTO(
+                            DockerConnectorDTO.builder()
+                                .dockerRegistryUrl("https://index.docker.com/v1")
+                                .auth(DockerAuthenticationDTO.builder().authType(DockerAuthType.ANONYMOUS).build())
+                                .executeOnDelegate(true)
+                                .delegateSelectors(Set.of("d1"))
+                                .build())
+                        .build())
+                .artifactTaskType(ArtifactTaskType.GET_LAST_SUCCESSFUL_BUILD)
+                .build());
   }
 }

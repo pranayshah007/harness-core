@@ -16,19 +16,19 @@ import io.harness.beans.FeatureName;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ngexception.NGTemplateException;
-import io.harness.ng.core.template.RefreshRequestDTO;
+import io.harness.ng.core.template.refresh.NgManagerRefreshRequestDTO;
+import io.harness.ng.core.template.refresh.NodeInfo;
+import io.harness.ng.core.template.refresh.v2.InputsValidationResponse;
+import io.harness.ng.core.template.refresh.v2.NodeErrorSummary;
+import io.harness.ng.core.template.refresh.v2.TemplateNodeErrorSummary;
+import io.harness.ng.core.template.refresh.v2.UnknownNodeErrorSummary;
+import io.harness.ng.core.template.refresh.v2.ValidateInputsResponseDTO;
 import io.harness.pms.merger.helpers.RuntimeInputsValidator;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.reconcile.remote.NgManagerReconcileClient;
 import io.harness.remote.client.NGRestUtils;
-import io.harness.template.beans.refresh.NodeInfo;
-import io.harness.template.beans.refresh.v2.InputsValidationResponse;
-import io.harness.template.beans.refresh.v2.NodeErrorSummary;
-import io.harness.template.beans.refresh.v2.TemplateNodeErrorSummary;
-import io.harness.template.beans.refresh.v2.UnknownNodeErrorSummary;
-import io.harness.template.beans.refresh.v2.ValidateInputsResponseDTO;
 import io.harness.template.beans.yaml.NGTemplateConfig;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.mappers.NGTemplateDtoMapper;
@@ -43,6 +43,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.CDC)
@@ -50,6 +51,8 @@ import lombok.extern.slf4j.Slf4j;
 @Singleton
 public class InputsValidator {
   private static final int MAX_DEPTH = 10;
+  private final Set<String> KEYS_TO_IGNORE =
+      Set.of("service.serviceInputs", "environment.environmentInputs", "environment.serviceOverrideInputs");
   @Inject private TemplateMergeServiceHelper templateMergeServiceHelper;
   @Inject private NGTemplateFeatureFlagHelperService featureFlagHelperService;
   @Inject private NgManagerReconcileClient ngManagerReconcileClient;
@@ -107,10 +110,13 @@ public class InputsValidator {
     YamlNode yamlNode = validateAndGetYamlNode(yaml);
     InputsValidationResponse templateInputsValidationResponse =
         validateTemplateInputs(accountId, orgId, projectId, yamlNode, templateCacheMap, depth);
-    if (featureFlagHelperService.isEnabled(accountId, FeatureName.SERVICE_ENV_RECONCILIATION)) {
+    if (featureFlagHelperService.isEnabled(accountId, FeatureName.CD_SERVICE_ENV_RECONCILIATION)) {
+      Map<String, Object> resolvedTemplatesMap = templateMergeServiceHelper.mergeTemplateInputsInObject(
+          accountId, orgId, projectId, yamlNode, templateCacheMap, 0);
+      String resolvedTemplatesYaml = YamlPipelineUtils.writeYamlString(resolvedTemplatesMap);
       InputsValidationResponse ngManagerInputsValidationResponse =
-          NGRestUtils.getResponse(ngManagerReconcileClient.validateYaml(
-              accountId, orgId, projectId, RefreshRequestDTO.builder().yaml(yaml).build()));
+          NGRestUtils.getResponse(ngManagerReconcileClient.validateYaml(accountId, orgId, projectId,
+              NgManagerRefreshRequestDTO.builder().yaml(yaml).resolvedTemplatesYaml(resolvedTemplatesYaml).build()));
       templateInputsValidationResponse.setValid(
           templateInputsValidationResponse.isValid() && ngManagerInputsValidationResponse.isValid());
       if (EmptyPredicate.isNotEmpty(ngManagerInputsValidationResponse.getChildrenErrorNodes())) {
@@ -247,7 +253,7 @@ public class InputsValidator {
 
     // if no child node of template is invalid, then verify template inputs against the template.
     JsonNode templateInputs = templateNodeValue.get(TEMPLATE_INPUTS);
-    if (!RuntimeInputsValidator.areInputsValidAgainstSourceNode(templateInputs, templateSpec)) {
+    if (!RuntimeInputsValidator.areInputsValidAgainstSourceNode(templateInputs, templateSpec, KEYS_TO_IGNORE)) {
       inputsValidationResponse.setValid(false);
     }
   }

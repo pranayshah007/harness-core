@@ -7,8 +7,11 @@
 
 package io.harness.ci.integrationstage;
 
+import static io.harness.beans.serializer.RunTimeInputHandler.resolveArchType;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveOSType;
 import static io.harness.ci.commonconstants.CIExecutionConstants.ACCOUNT_ID_ATTR;
+import static io.harness.ci.commonconstants.CIExecutionConstants.ADDON_VOLUME;
+import static io.harness.ci.commonconstants.CIExecutionConstants.ADDON_VOL_MOUNT_PATH;
 import static io.harness.ci.commonconstants.CIExecutionConstants.BUILD_NUMBER_ATTR;
 import static io.harness.ci.commonconstants.CIExecutionConstants.HARNESS_ACCOUNT_ID_VARIABLE;
 import static io.harness.ci.commonconstants.CIExecutionConstants.HARNESS_BUILD_ID_VARIABLE;
@@ -18,6 +21,7 @@ import static io.harness.ci.commonconstants.CIExecutionConstants.HARNESS_PIPELIN
 import static io.harness.ci.commonconstants.CIExecutionConstants.HARNESS_PROJECT_ID_VARIABLE;
 import static io.harness.ci.commonconstants.CIExecutionConstants.HARNESS_STAGE_ID_VARIABLE;
 import static io.harness.ci.commonconstants.CIExecutionConstants.ORG_ID_ATTR;
+import static io.harness.ci.commonconstants.CIExecutionConstants.OSX_ADDON_MOUNT_PATH;
 import static io.harness.ci.commonconstants.CIExecutionConstants.OSX_STEP_MOUNT_PATH;
 import static io.harness.ci.commonconstants.CIExecutionConstants.PIPELINE_EXECUTION_ID_ATTR;
 import static io.harness.ci.commonconstants.CIExecutionConstants.PIPELINE_ID_ATTR;
@@ -43,11 +47,14 @@ import io.harness.beans.steps.stepinfo.BackgroundStepInfo;
 import io.harness.beans.steps.stepinfo.RunStepInfo;
 import io.harness.beans.steps.stepinfo.RunTestsStepInfo;
 import io.harness.beans.sweepingoutputs.StageDetails;
+import io.harness.beans.yaml.extended.infrastrucutre.HostedVmInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.beans.yaml.extended.infrastrucutre.VmInfraSpec;
 import io.harness.beans.yaml.extended.infrastrucutre.VmInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.VmPoolYaml;
+import io.harness.beans.yaml.extended.platform.ArchType;
+import io.harness.beans.yaml.extended.platform.Platform;
 import io.harness.ci.buildstate.PluginSettingUtils;
 import io.harness.cimanager.stages.IntegrationStageConfig;
 import io.harness.exception.InvalidRequestException;
@@ -195,7 +202,9 @@ public class VmInitializeUtils {
   public Map<String, String> getVolumeToMountPath(ParameterField<List<String>> parameterSharedPaths, OSType os) {
     Map<String, String> volumeToMountPath = new HashMap<>();
     String stepMountPath = getStepMountPath(os);
+    String addonMountPath = getAddonMountPath(os);
     volumeToMountPath.put(STEP_VOLUME, stepMountPath);
+    volumeToMountPath.put(ADDON_VOLUME, addonMountPath);
 
     if (parameterSharedPaths == null) {
       return volumeToMountPath;
@@ -229,6 +238,13 @@ public class VmInitializeUtils {
     return STEP_MOUNT_PATH;
   }
 
+  private String getAddonMountPath(OSType os) {
+    if (os.equals(OSType.MacOS)) {
+      return OSX_ADDON_MOUNT_PATH;
+    }
+    return ADDON_VOL_MOUNT_PATH;
+  }
+
   public String getWorkDir(OSType os) {
     return getStepMountPath(os);
   }
@@ -255,6 +271,17 @@ public class VmInitializeUtils {
 
     VmPoolYaml vmPoolYaml = (VmPoolYaml) vmInfraYaml.getSpec();
     return resolveOSType(vmPoolYaml.getSpec().getOs());
+  }
+
+  public static ArchType getArchType(Infrastructure infrastructure) {
+    if (infrastructure.getType() == Infrastructure.Type.HOSTED_VM) {
+      HostedVmInfraYaml hostedVmInfraYaml = (HostedVmInfraYaml) infrastructure;
+      ParameterField<Platform> platform = hostedVmInfraYaml.getSpec().getPlatform();
+      if (platform != null && platform.getValue() != null) {
+        return resolveArchType(platform.getValue().getArch());
+      }
+    }
+    return ArchType.Amd64;
   }
 
   public Map<String, String> getBuildTags(Ambiance ambiance, StageDetails stageDetails) {

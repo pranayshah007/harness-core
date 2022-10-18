@@ -18,19 +18,19 @@ import java.util.List;
 
 public interface AzureArtifactsResourceService {
   List<AzureArtifactsPackage> listAzureArtifactsPackages(IdentifierRef connectorRef, String accountId,
-      String orgIdentifier, String projectIdentifier, String org, String project, String feed, String packageType);
+      String orgIdentifier, String projectIdentifier, String project, String feed, String packageType);
 
   List<BuildDetails> listVersionsOfAzureArtifactsPackage(IdentifierRef connectorRef, String accountId,
-      String orgIdentifier, String projectIdentifier, String org, String project, String feed, String packageType,
+      String orgIdentifier, String projectIdentifier, String project, String feed, String packageType,
       String packageName, String versionRegex);
 
   BuildDetails getLastSuccessfulVersion(IdentifierRef connectorRef, String accountId, String orgIdentifier,
-      String projectIdentifier, String org, String project, String feed, String packageType, String packageName,
-      String version, String versionRegex);
+      String projectIdentifier, String project, String feed, String packageType, String packageName, String version,
+      String versionRegex);
 
   List<AzureDevopsProject> listAzureArtifactsProjects(
-      IdentifierRef connectorRef, String accountId, String orgIdentifier, String projectIdentifier, String org);
+      IdentifierRef connectorRef, String accountId, String orgIdentifier, String projectIdentifier);
 
-  List<AzureArtifactsFeed> listAzureArtifactsFeeds(IdentifierRef connectorRef, String accountId, String orgIdentifier,
-      String projectIdentifier, String org, String project);
+  List<AzureArtifactsFeed> listAzureArtifactsFeeds(
+      IdentifierRef connectorRef, String accountId, String orgIdentifier, String projectIdentifier, String project);
 }

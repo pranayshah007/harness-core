@@ -194,6 +194,10 @@ public class ArtifactResponseToOutcomeMapper {
         .identifier(azureArtifactsConfig.getIdentifier())
         .primaryArtifact(azureArtifactsConfig.isPrimaryArtifact())
         .versionRegex(azureArtifactsConfig.getVersionRegex().getValue())
+        .feed(azureArtifactsConfig.getFeed().getValue())
+        .project(azureArtifactsConfig.getProject().getValue())
+        .packageType(azureArtifactsConfig.getPackageType().getValue())
+        .scope(azureArtifactsConfig.getScope().getValue())
         .build();
   }
 
@@ -312,6 +316,7 @@ public class ArtifactResponseToOutcomeMapper {
           ? nexusRegistryDockerConfig.getArtifactPath().getValue()
           : null;
     }
+
     return NexusArtifactOutcome.builder()
         .repositoryName(artifactConfig.getRepository().getValue())
         .image(getImageValue(artifactDelegateResponse))
@@ -326,6 +331,7 @@ public class ArtifactResponseToOutcomeMapper {
         .primaryArtifact(artifactConfig.isPrimaryArtifact())
         .imagePullSecret(createImagePullSecret(ArtifactUtils.getArtifactKey(artifactConfig)))
         .registryHostname(getRegistryHostnameValue(artifactDelegateResponse))
+        .metadata(useDelegateResponse ? getMetadata(artifactDelegateResponse) : null)
         .build();
   }
 
@@ -344,6 +350,7 @@ public class ArtifactResponseToOutcomeMapper {
         .primaryArtifact(artifactConfig.isPrimaryArtifact())
         .imagePullSecret(createImagePullSecret(ArtifactUtils.getArtifactKey(artifactConfig)))
         .registryHostname(getRegistryHostnameValue(artifactDelegateResponse))
+        .metadata(useDelegateResponse ? getMetadata(artifactDelegateResponse) : null)
         .build();
   }
 
@@ -482,6 +489,15 @@ public class ArtifactResponseToOutcomeMapper {
     }
     return EmptyPredicate.isNotEmpty(artifactDelegateResponse.getBuildDetails().getMetadata())
         ? artifactDelegateResponse.getBuildDetails().getMetadata().get(ArtifactMetadataKeys.REGISTRY_HOSTNAME)
+        : null;
+  }
+
+  private Map<String, String> getMetadata(ArtifactDelegateResponse artifactDelegateResponse) {
+    if (artifactDelegateResponse == null || artifactDelegateResponse.getBuildDetails() == null) {
+      return null;
+    }
+    return EmptyPredicate.isNotEmpty(artifactDelegateResponse.getBuildDetails().getMetadata())
+        ? artifactDelegateResponse.getBuildDetails().getMetadata()
         : null;
   }
 
