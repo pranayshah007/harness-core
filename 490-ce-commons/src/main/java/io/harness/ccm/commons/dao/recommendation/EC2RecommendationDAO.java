@@ -74,9 +74,12 @@ public class EC2RecommendationDAO {
                         .set(EC2Recommendation.EC2RecommendationKeys.currentMaxMemory, ec2Recommendation.getCurrentMaxMemory())
                         .set(EC2Recommendation.EC2RecommendationKeys.expectedMaxCPU, ec2Recommendation.getExpectedMaxCPU())
                         .set(EC2Recommendation.EC2RecommendationKeys.expectedMaxMemory, ec2Recommendation.getExpectedMaxMemory())
-                        .set(EC2Recommendation.EC2RecommendationKeys.currentMonthlyCost, ec2Recommendation.getExpectedMaxMemory())
-                        .set(EC2Recommendation.EC2RecommendationKeys.currencyCode, ec2Recommendation.getExpectedMaxMemory())
+                        .set(EC2Recommendation.EC2RecommendationKeys.currentMonthlyCost, ec2Recommendation.getCurrentMonthlyCost())
+                        .set(EC2Recommendation.EC2RecommendationKeys.currencyCode, ec2Recommendation.getCurrencyCode())
                         .set(EC2Recommendation.EC2RecommendationKeys.recommendationInfo, ec2Recommendation.getRecommendationInfo())
+                        .set(EC2Recommendation.EC2RecommendationKeys.expectedMonthlyCost, ec2Recommendation.getExpectedMonthlyCost())
+                        .set(EC2Recommendation.EC2RecommendationKeys.expectedMonthlySaving, ec2Recommendation.getExpectedMonthlySaving())
+                        .set(EC2Recommendation.EC2RecommendationKeys.rightsizingType, ec2Recommendation.getRightsizingType())
                         .set(EC2Recommendation.EC2RecommendationKeys.lastUpdatedAt, ec2Recommendation.getLastUpdatedAt());
 
         return hPersistence.upsert(query, updateOperations, upsertReturnNewOptions);

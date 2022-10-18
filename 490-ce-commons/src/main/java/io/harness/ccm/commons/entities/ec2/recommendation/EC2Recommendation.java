@@ -67,6 +67,7 @@ public final class EC2Recommendation
     @NotEmpty String recommendationType;
     @NotEmpty String awsAccountId;
     @NotEmpty String instanceId;
+    String rightsizingType;
     String instanceName;
     String instanceType;
     String platform;
@@ -81,6 +82,8 @@ public final class EC2Recommendation
     String currentMonthlyCost;
     String currencyCode;
     EC2RecommendationDetail recommendationInfo;
+    String expectedMonthlySaving;
+    String expectedMonthlyCost;
     Instant lastUpdatedTime;
 
 }

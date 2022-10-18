@@ -98,7 +98,14 @@ public class AWSEC2RecommendationTasklet  implements Tasklet {
                             if (!rightsizingRecommendations.getValue().isEmpty()) {
                                 rightsizingRecommendations.getValue().forEach(rightsizingRecommendation -> {
                                     log.info("list entry rightsizingRecommendation = {}", rightsizingRecommendation);
-                                    EC2Recommendation ec2Recommendation = convertRecommendationObject(rightsizingRecommendation);
+                                    EC2Recommendation ec2Recommendation;
+                                    if (rightsizingRecommendation.getRightsizingType().equalsIgnoreCase("Modify")) {
+                                        log.info("modify typed recomm");
+                                        ec2Recommendation = convertRecommendationObject(rightsizingRecommendation);
+                                    } else {
+                                        log.info("terminate typed recomm");
+                                        ec2Recommendation = convertRecommendationForTermination(rightsizingRecommendation);
+                                    }
                                     ec2Recommendation.setAccountId(accountId);
                                     ec2Recommendation.setRecommendationType(rightsizingRecommendations.getKey().name());
                                     ec2Recommendation.setLastUpdatedTime(startTime);
@@ -252,6 +259,29 @@ public class AWSEC2RecommendationTasklet  implements Tasklet {
                 .expectedMaxCPU(recommendation.getModifyRecommendationDetail().getTargetInstances().get(0).getExpectedResourceUtilization().getEC2ResourceUtilization().getMaxCpuUtilizationPercentage())
                 .expectedMaxMemory(recommendation.getModifyRecommendationDetail().getTargetInstances().get(0).getExpectedResourceUtilization().getEC2ResourceUtilization().getMaxMemoryUtilizationPercentage())
                 .recommendationInfo(buildRecommendationInfo(recommendation))
+                .expectedMonthlyCost(recommendation.getModifyRecommendationDetail().getTargetInstances().get(0).getEstimatedMonthlyCost())
+                .expectedMonthlySaving(recommendation.getModifyRecommendationDetail().getTargetInstances().get(0).getEstimatedMonthlySavings())
+                .rightsizingType(recommendation.getRightsizingType())
+                .build();
+    }
+
+    private EC2Recommendation convertRecommendationForTermination(RightsizingRecommendation recommendation) {
+        return EC2Recommendation.builder()
+                .awsAccountId(recommendation.getAccountId())
+                .currentMaxCPU(recommendation.getCurrentInstance().getResourceUtilization().getEC2ResourceUtilization().getMaxCpuUtilizationPercentage())
+                .currentMaxMemory(recommendation.getCurrentInstance().getResourceUtilization().getEC2ResourceUtilization().getMaxMemoryUtilizationPercentage())
+                .currentMonthlyCost(recommendation.getCurrentInstance().getMonthlyCost())
+                .currencyCode(recommendation.getCurrentInstance().getCurrencyCode())
+                .instanceId(recommendation.getCurrentInstance().getResourceId())
+                .instanceName(recommendation.getCurrentInstance().getInstanceName())
+                .instanceType(recommendation.getCurrentInstance().getResourceDetails().getEC2ResourceDetails().getInstanceType())
+                .memory(recommendation.getCurrentInstance().getResourceDetails().getEC2ResourceDetails().getMemory())
+                .platform(recommendation.getCurrentInstance().getResourceDetails().getEC2ResourceDetails().getPlatform())
+                .region(recommendation.getCurrentInstance().getResourceDetails().getEC2ResourceDetails().getRegion())
+                .sku(recommendation.getCurrentInstance().getResourceDetails().getEC2ResourceDetails().getSku())
+                .vcpu(recommendation.getCurrentInstance().getResourceDetails().getEC2ResourceDetails().getVcpu())
+                .expectedMonthlySaving(recommendation.getTerminateRecommendationDetail().getEstimatedMonthlySavings())
+                .rightsizingType(recommendation.getRightsizingType())
                 .build();
     }
 
@@ -260,8 +290,6 @@ public class AWSEC2RecommendationTasklet  implements Tasklet {
                 recommendation.getModifyRecommendationDetail().getTargetInstances().get(0).getResourceDetails().getEC2ResourceDetails();
         return EC2RecommendationDetail.builder()
                 .instanceType(ec2ResourceDetails.getInstanceType())
-                .expectedMonthlyCost(recommendation.getModifyRecommendationDetail().getTargetInstances().get(0).getEstimatedMonthlyCost())
-                .expectedMonthlySaving(recommendation.getModifyRecommendationDetail().getTargetInstances().get(0).getEstimatedMonthlySavings())
                 .hourlyOnDemandRate(ec2ResourceDetails.getHourlyOnDemandRate())
                 .memory(ec2ResourceDetails.getMemory())
                 .platform(ec2ResourceDetails.getPlatform())
