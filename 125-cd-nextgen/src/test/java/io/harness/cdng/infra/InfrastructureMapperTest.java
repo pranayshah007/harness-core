@@ -24,6 +24,7 @@ import static org.mockito.Mockito.doReturn;
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.cdng.elastigroup.ElastigroupConfiguration;
 import io.harness.cdng.infra.beans.AzureWebAppInfrastructureOutcome;
 import io.harness.cdng.infra.beans.ElastigroupInfrastructureOutcome;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
@@ -48,11 +49,9 @@ import io.harness.cdng.infra.yaml.PdcInfrastructure;
 import io.harness.cdng.infra.yaml.ServerlessAwsLambdaInfrastructure;
 import io.harness.cdng.infra.yaml.SshWinRmAzureInfrastructure;
 import io.harness.cdng.manifest.yaml.InlineStoreConfig;
-import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigType;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
 import io.harness.cdng.service.steps.ServiceStepOutcome;
-import io.harness.cdng.spot.config.yaml.ElastigroupConfiguration;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
@@ -208,7 +207,7 @@ public class InfrastructureMapperTest extends CategoryTest {
   @Owner(developers = ARVIND)
   @Category(UnitTests.class)
   public void testElastigroupInfraMapper() {
-    StoreConfig storeConfig =
+    InlineStoreConfig storeConfig =
         InlineStoreConfig.builder().content(ParameterField.createValueField("this is content")).build();
     ElastigroupInfrastructure infrastructure =
         ElastigroupInfrastructure.builder()
@@ -222,7 +221,6 @@ public class InfrastructureMapperTest extends CategoryTest {
     ElastigroupInfrastructureOutcome expectedOutcome =
         ElastigroupInfrastructureOutcome.builder()
             .connectorRef("connectorId")
-            .configuration(storeConfig)
             .environment(environment)
             .infrastructureKey("bef2304c702e57cf3f33982f5473222df5c1731f")
             .build();

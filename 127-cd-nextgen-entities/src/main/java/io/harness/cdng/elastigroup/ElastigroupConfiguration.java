@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.cdng.spot.config.yaml;
+package io.harness.cdng.elastigroup;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
@@ -26,7 +26,7 @@ import org.springframework.data.annotation.TypeAlias;
 @Builder
 @SimpleVisitorHelper(helperClass = StartupCommandConfigurationVisitorHelper.class)
 @TypeAlias("elastigroupConfiguration")
-@RecasterAlias("io.harness.cdng.spot.config.yaml.ElastigroupConfiguration")
+@RecasterAlias("io.harness.cdng.elastigroup.ElastigroupConfiguration")
 @OwnedBy(HarnessTeam.CDP)
 public class ElastigroupConfiguration implements Visitable {
   @NotNull StoreConfigWrapper store;
