@@ -34,6 +34,7 @@ public class SecretTextSpec extends SecretSpec {
     return SecretTextSpecDTO.builder()
         .secretManagerIdentifier(getSecretManagerIdentifier())
         .valueType(getValueType())
+        .additionalMetadata(getAdditionalMetadata())
         .value(value)
         .build();
   }
