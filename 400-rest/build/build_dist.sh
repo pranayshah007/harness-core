@@ -30,6 +30,8 @@ cp ../../360-cg-manager/cert.pem .
 cp ../../360-cg-manager/newrelic.yml .
 cp ../../360-cg-manager/config.yml .
 cp ../../400-rest/src/main/resources/redisson-jcache.yaml .
+cp ../../400-rest/src/main/resources/jfr/default.jfc .
+cp ../../400-rest/src/main/resources/jfr/profile.jfc .
 
 cp ../../dockerization/manager/Dockerfile-manager-jenkins-k8-openjdk ./Dockerfile
 cp ../../dockerization/manager/Dockerfile-manager-jenkins-k8-gcr-openjdk ./Dockerfile-gcr

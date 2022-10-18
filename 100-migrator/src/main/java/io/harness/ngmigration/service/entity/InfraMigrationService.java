@@ -202,8 +202,7 @@ public class InfraMigrationService extends NgMigrationService {
 
   @Override
   public List<NGYamlFile> generateYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
-      Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities,
-      NgEntityDetail ngEntityDetail) {
+      Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities) {
     InfrastructureDefinition infra = (InfrastructureDefinition) entities.get(entityId).getEntity();
     migratorExpressionUtils.render(infra, inputDTO.getCustomExpressions());
     String name = MigratorUtility.generateName(inputDTO.getOverrides(), entityId, infra.getName());

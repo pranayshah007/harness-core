@@ -26,6 +26,7 @@ import static java.util.stream.Collectors.toList;
 import static org.mongodb.morphia.aggregation.Accumulator.accumulator;
 import static org.mongodb.morphia.aggregation.Group.addToSet;
 import static org.mongodb.morphia.aggregation.Group.grouping;
+import static org.mongodb.morphia.aggregation.Projection.expression;
 import static org.mongodb.morphia.aggregation.Projection.projection;
 
 import io.harness.beans.EnvironmentType;
@@ -278,36 +279,18 @@ public class StatisticsServiceImpl implements StatisticsService {
       Query<WorkflowExecution> baseQuery, AdvancedDatastore datastore) {
     List<ExecutionCount> instancesDeployedViaPipeline = new ArrayList<>();
     Query<WorkflowExecution> pipelineInstancesDeployedQuery = baseQuery.cloneQuery();
-    pipelineInstancesDeployedQuery.and(pipelineInstancesDeployedQuery.and(
-        pipelineInstancesDeployedQuery.criteria(WorkflowExecutionKeys.workflowType).equal(PIPELINE),
-        pipelineInstancesDeployedQuery.criteria(WorkflowExecutionKeys.pipelineExecution).exists()));
+    pipelineInstancesDeployedQuery.filter(WorkflowExecutionKeys.workflowType, PIPELINE)
+        .field(WorkflowExecutionKeys.pipelineExecution)
+        .exists();
     AggregationPipeline pipelineInstancesDeployedAggregation =
         datastore.createAggregation(WorkflowExecution.class)
             .match(pipelineInstancesDeployedQuery)
             .unwind(WorkflowExecutionKeys.pipelineExecution_pipelineStageExecutions)
             .unwind(WorkflowExecutionKeys.pipelineExecution_pipelineStageExecutions + ".workflowExecutions")
-            .project(projection("_id", "_id"),
-                projection("serviceExecutionSummaries",
-                    "pipelineExecution.pipelineStageExecutions.workflowExecutions.serviceExecutionSummaries"),
-                projection("createdAt", "createdAt"))
-            .project(projection("day", Projection.expression("$add", new Date(0), "$createdAt")),
-                projection(
-                    WorkflowExecutionKeys.serviceExecutionSummaries, WorkflowExecutionKeys.serviceExecutionSummaries),
-                projection("createdAt", "createdAt"))
-            .project(projection("date",
-                         Projection.expression("$dayOfYear",
-                             new BasicDBObject("date", "$day").append("timezone", "America/Los_Angeles"))),
-                projection(
-                    WorkflowExecutionKeys.serviceExecutionSummaries, WorkflowExecutionKeys.serviceExecutionSummaries),
-                projection("createdAt", "createdAt"))
-            .unwind("serviceExecutionSummaries")
-            .unwind("serviceExecutionSummaries.instanceStatusSummaries")
-            .unwind("serviceExecutionSummaries.instanceStatusSummaries.instanceElement")
-            .group(Group.id(grouping("date")), grouping("createdAt", Group.first("createdAt")),
-                grouping("serviceExecutionSummaries",
-                    addToSet("serviceExecutionSummaries.instanceStatusSummaries.instanceElement.uuid")))
-            .project(Projection.expression("count", new BasicDBObject("$size", "$serviceExecutionSummaries")),
-                projection("_id", "_id"), projection("createdAt", "createdAt"));
+            .project(projection("serviceExecutionSummaries",
+                         "pipelineExecution.pipelineStageExecutions.workflowExecutions.serviceExecutionSummaries"),
+                projection("createdAt", "createdAt"));
+    addInstanceDeployedAggregationInternal(pipelineInstancesDeployedAggregation);
     pipelineInstancesDeployedAggregation
         .aggregate(ExecutionCount.class,
             AggregationOptions.builder()
@@ -330,26 +313,9 @@ public class StatisticsServiceImpl implements StatisticsService {
     workflowInstancesDeployed.and(
         workflowInstancesDeployed.criteria(WorkflowExecutionKeys.workflowType).equal(ORCHESTRATION));
     AggregationPipeline workflowInstancesDeployedAggregation =
-        datastore.createAggregation(WorkflowExecution.class)
-            .match(workflowInstancesDeployed)
-            .project(projection("day", Projection.expression("$add", new Date(0), "$createdAt")),
-                projection(
-                    WorkflowExecutionKeys.serviceExecutionSummaries, WorkflowExecutionKeys.serviceExecutionSummaries),
-                projection("createdAt", "createdAt"))
-            .project(projection("date",
-                         Projection.expression("$dayOfYear",
-                             new BasicDBObject("date", "$day").append("timezone", "America/Los_Angeles"))),
-                projection(
-                    WorkflowExecutionKeys.serviceExecutionSummaries, WorkflowExecutionKeys.serviceExecutionSummaries),
-                projection("createdAt", "createdAt"))
-            .unwind("serviceExecutionSummaries")
-            .unwind("serviceExecutionSummaries.instanceStatusSummaries")
-            .unwind("serviceExecutionSummaries.instanceStatusSummaries.instanceElement")
-            .group(Group.id(grouping("date")), grouping("createdAt", Group.first("createdAt")),
-                grouping("serviceExecutionSummaries",
-                    addToSet("serviceExecutionSummaries.instanceStatusSummaries.instanceElement.uuid")))
-            .project(Projection.expression("count", new BasicDBObject("$size", "$serviceExecutionSummaries")),
-                projection("_id", "_id"), projection("createdAt", "createdAt"));
+        datastore.createAggregation(WorkflowExecution.class).match(workflowInstancesDeployed);
+
+    addInstanceDeployedAggregationInternal(workflowInstancesDeployedAggregation);
     workflowInstancesDeployedAggregation
         .aggregate(ExecutionCount.class,
             AggregationOptions.builder()
@@ -357,6 +323,25 @@ public class StatisticsServiceImpl implements StatisticsService {
                 .build())
         .forEachRemaining(e -> getExecutionCount(instancesDeployedViaWorkflow, e));
     return instancesDeployedViaWorkflow;
+  }
+
+  private void addInstanceDeployedAggregationInternal(AggregationPipeline workflowInstancesDeployedAggregation) {
+    workflowInstancesDeployedAggregation
+        .project(projection("day", Projection.expression("$add", new Date(0), "$createdAt")),
+            projection(
+                WorkflowExecutionKeys.serviceExecutionSummaries, WorkflowExecutionKeys.serviceExecutionSummaries),
+            projection("createdAt", "createdAt"))
+        .unwind("serviceExecutionSummaries")
+        .group(Group.id(grouping("day"), grouping("serviceExecutionSummaries"), grouping("createdAt")),
+            grouping("instanceIds", addToSet("serviceExecutionSummaries.instanceStatusSummaries.instanceElement.uuid")))
+        .unwind("instanceIds")
+        .project(projection("date",
+                     Projection.expression("$dayOfYear",
+                         new BasicDBObject("date", "$_id.day").append("timezone", "America/Los_Angeles"))),
+            projection("createdAt", "_id.createdAt"),
+            expression("instanceCount", new BasicDBObject("$size", "$instanceIds")))
+        .group(Group.id(grouping("date")), grouping("createdAt", Group.first("createdAt")),
+            grouping("count", accumulator("$sum", "instanceCount")));
   }
 
   private List<ExecutionCount> getFailedExecutionsPerDay(
@@ -472,16 +457,14 @@ public class StatisticsServiceImpl implements StatisticsService {
     AggregationPipeline pipelineServiceDeployedAggregation =
         datastore.createAggregation(WorkflowExecution.class)
             .match(query)
-            .unwind(WorkflowExecutionKeys.pipelineExecution)
             .unwind(WorkflowExecutionKeys.pipelineExecution_pipelineStageExecutions)
             .unwind(WorkflowExecutionKeys.pipelineExecution_pipelineStageExecutions + ".workflowExecutions")
             .project(projection(WorkflowExecutionKeys.serviceExecutionSummaries,
-                         WorkflowExecutionKeys.pipelineExecution_pipelineStageExecutions + ".workflowExecutions"
-                             + "." + WorkflowExecutionKeys.serviceExecutionSummaries),
+                         WorkflowExecutionKeys.pipelineExecution_pipelineStageExecutions
+                             + ".workflowExecutions.serviceExecutionSummaries"),
                 projection("createdAt", "createdAt"),
                 projection(WorkflowExecutionKeys.status, WorkflowExecutionKeys.status), projection("appId", "appId"),
-                projection("appName", "appName"))
-            .unwind(WorkflowExecutionKeys.serviceExecutionSummaries);
+                projection("appName", "appName"), projection("executionId", "_id"));
 
     addServiceGroupingLogic(pipelineServiceDeployedAggregation);
 
@@ -502,8 +485,7 @@ public class StatisticsServiceImpl implements StatisticsService {
                          WorkflowExecutionKeys.serviceExecutionSummaries),
                 projection("createdAt", "createdAt"),
                 projection(WorkflowExecutionKeys.status, WorkflowExecutionKeys.status), projection("appId", "appId"),
-                projection("appName", "appName"))
-            .unwind("serviceExecutionSummaries");
+                projection("appName", "appName"), projection("executionId", "_id"));
     addServiceGroupingLogic(workflowServiceDeployedAggregation);
 
     workflowServiceDeployedAggregation
@@ -539,7 +521,7 @@ public class StatisticsServiceImpl implements StatisticsService {
   }
 
   private void addServiceGroupingLogic(AggregationPipeline aggregationPipeline) {
-    aggregationPipeline
+    aggregationPipeline.unwind(WorkflowExecutionKeys.serviceExecutionSummaries)
         .project(projection(
                      WorkflowExecutionKeys.serviceExecutionSummaries, WorkflowExecutionKeys.serviceExecutionSummaries),
             projection("createdAt", "createdAt"),
@@ -550,7 +532,7 @@ public class StatisticsServiceImpl implements StatisticsService {
                         "if", new BasicDBObject("$eq", Arrays.asList("$serviceExecutionSummaries.status", null)))
                         .append("then", "$status")
                         .append("else", "$serviceExecutionSummaries.status"))),
-            projection("appId", "appId"), projection("appName", "appName"))
+            projection("appId", "appId"), projection("appName", "appName"), projection("executionId", "executionId"))
         .project(projection(
                      WorkflowExecutionKeys.serviceExecutionSummaries, WorkflowExecutionKeys.serviceExecutionSummaries),
             projection("createdAt", "createdAt"),
@@ -560,12 +542,15 @@ public class StatisticsServiceImpl implements StatisticsService {
                     new BasicDBObject("if", new BasicDBObject("$eq", Arrays.asList("$originalStatus", "SUCCESS")))
                         .append("then", "SUCCESS")
                         .append("else", "FAILED"))),
-            projection("appId", "appId"), projection("appName", "appName"))
-        .group(Group.id(grouping("serviceId", "serviceExecutionSummaries.contextElement.uuid"),
-                   grouping("status", "finalStatus")),
+            projection("appId", "appId"), projection("appName", "appName"), projection("executionId", "executionId"))
+        .group(
+            Group.id(grouping("serviceId", "serviceExecutionSummaries.contextElement.uuid"), grouping("executionId")),
+            grouping("status", Group.last("finalStatus")), grouping("appId", Group.first("appId")),
+            grouping("appName", Group.first("appName")),
+            grouping("serviceName", Group.first("serviceExecutionSummaries.contextElement.name")))
+        .group(Group.id(grouping("serviceId", "_id.serviceId"), grouping("status", "status")),
             grouping("appId", Group.first("appId")), grouping("appName", Group.first("appName")),
-            grouping("serviceName", Group.first("serviceExecutionSummaries.contextElement.name")),
-            grouping("count", accumulator("$sum", 1)))
+            grouping("serviceName", Group.first("serviceName")), grouping("count", accumulator("$sum", 1)))
         .project(projection("status", "_id.status"), projection("serviceId", "_id.serviceId"),
             projection("appId", "appId"), projection("appName", "appName"), projection("serviceName", "serviceName"),
             projection("count", "count"), projection("_id").suppress());

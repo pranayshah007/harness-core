@@ -75,17 +75,30 @@ public class UpdateReleaseRepoStepTest extends CategoryTest {
     variables.put(
         "config4", ParameterField.builder().expression(true).expressionValue("<+env.name>/<+variable.foo>").build());
     GithubStore githubStore =
-        GithubStore.builder().paths(ParameterField.<List<String>>builder().value(List.of("FILE_PATH")).build()).build();
+        GithubStore.builder()
+            .paths(ParameterField.<List<String>>builder().value(List.of("FILE_PATH/<+cluster.name>")).build())
+            .build();
     ManifestOutcome manifestOutcome = K8sManifestOutcome.builder().store(githubStore).build();
 
-    List<GitopsClustersOutcome.ClusterData> clusterDataList = List.of(GitopsClustersOutcome.ClusterData.builder()
-                                                                          .envId("IDENTIFIER")
-                                                                          .envName("ENV_NAME")
-                                                                          .clusterName("CLUSTER_NAME")
-                                                                          .clusterId("CLUSTER_ID")
-                                                                          .scope("SCOPE")
-                                                                          .variables(new HashMap<>())
-                                                                          .build());
+    GitopsClustersOutcome.ClusterData cluster1 = GitopsClustersOutcome.ClusterData.builder()
+                                                     .envId("IDENTIFIER")
+                                                     .envName("ENV_NAME")
+                                                     .clusterName("CLUSTER_NAME")
+                                                     .clusterId("CLUSTER_ID")
+                                                     .scope("SCOPE")
+                                                     .variables(new HashMap<>())
+                                                     .build();
+
+    GitopsClustersOutcome.ClusterData cluster2 = GitopsClustersOutcome.ClusterData.builder()
+                                                     .envId("IDENTIFIER2")
+                                                     .envName("ENV_NAME2")
+                                                     .clusterName("CLUSTER_NAME2")
+                                                     .clusterId("CLUSTER_ID2")
+                                                     .scope("SCOPE2")
+                                                     .variables(new HashMap<>())
+                                                     .build();
+
+    List<GitopsClustersOutcome.ClusterData> clusterDataList = List.of(cluster1, cluster2);
 
     GitopsClustersOutcome gitopsClustersOutcome = new GitopsClustersOutcome(clusterDataList);
     OptionalSweepingOutput optionalSweepingOutput =
@@ -95,11 +108,17 @@ public class UpdateReleaseRepoStepTest extends CategoryTest {
         .resolveOptional(any(), eq(RefObjectUtils.getOutcomeRefObject(GitopsClustersStep.GITOPS_SWEEPING_OUTPUT)));
 
     Map<String, Map<String, String>> map = step.buildFilePathsToVariablesMap(manifestOutcome, ambiance, variables);
-    Map<String, String> fileVariables = map.get("FILE_PATH");
+    Map<String, String> fileVariables = map.get("FILE_PATH/CLUSTER_NAME");
     assertThat(fileVariables).isNotNull();
     assertThat(fileVariables.get("config1")).isEqualTo("VALUE1");
     assertThat(fileVariables.get("config2")).isEqualTo("CLUSTER_NAME");
     assertThat(fileVariables.get("config3")).isEqualTo("ENV_NAME");
+    Map<String, String> fileVariables2 = map.get("FILE_PATH/CLUSTER_NAME2");
+    assertThat(fileVariables2).isNotNull();
+    assertThat(fileVariables2.get("config1")).isEqualTo("VALUE1");
+    assertThat(fileVariables2.get("config2")).isEqualTo("CLUSTER_NAME2");
+    assertThat(fileVariables2.get("config3")).isEqualTo("ENV_NAME2");
     verify(engineExpressionService).renderExpression(ambiance, "ENV_NAME/<+variable.foo>");
+    verify(engineExpressionService).renderExpression(ambiance, "ENV_NAME2/<+variable.foo>");
   }
 }

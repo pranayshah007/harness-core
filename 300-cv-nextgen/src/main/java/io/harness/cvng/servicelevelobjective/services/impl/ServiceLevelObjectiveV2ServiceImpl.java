@@ -38,6 +38,7 @@ import io.harness.cvng.servicelevelobjective.beans.slospec.SimpleServiceLevelObj
 import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObjective.AbstractServiceLevelObjectiveUpdatableEntity;
 import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObjective.ServiceLevelObjectiveV2Keys;
+import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
 import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective;
@@ -64,6 +65,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import javax.annotation.Nullable;
 import javax.ws.rs.NotFoundException;
 import lombok.Builder;
 import lombok.Value;
@@ -93,14 +95,21 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
   public ServiceLevelObjectiveV2Response create(
       ProjectParams projectParams, ServiceLevelObjectiveV2DTO serviceLevelObjectiveDTO) {
     validateCreate(serviceLevelObjectiveDTO, projectParams);
-    MonitoredService monitoredService = monitoredServiceService.getMonitoredService(
-        MonitoredServiceParams.builderWithProjectParams(projectParams)
-            .monitoredServiceIdentifier(
-                ((SimpleServiceLevelObjectiveSpec) serviceLevelObjectiveDTO.getSpec()).getMonitoredServiceRef())
-            .build());
-    AbstractServiceLevelObjective serviceLevelObjective =
-        saveServiceLevelObjectiveV2Entity(projectParams, serviceLevelObjectiveDTO, monitoredService.isEnabled());
-    return getSLOResponse(serviceLevelObjective.getIdentifier(), projectParams);
+    if (serviceLevelObjectiveDTO.getType().equals(ServiceLevelObjectiveType.SIMPLE)) {
+      MonitoredService monitoredService = monitoredServiceService.getMonitoredService(
+          MonitoredServiceParams.builderWithProjectParams(projectParams)
+              .monitoredServiceIdentifier(((SimpleServiceLevelObjectiveSpec) serviceLevelObjectiveDTO.getSpec()).getMonitoredServiceRef())
+              .build());
+      SimpleServiceLevelObjective simpleServiceLevelObjective =
+          (SimpleServiceLevelObjective) saveServiceLevelObjectiveV2Entity(
+              projectParams, serviceLevelObjectiveDTO, monitoredService.isEnabled());
+      return getSLOResponse(simpleServiceLevelObjective.getIdentifier(), projectParams);
+    } else {
+      CompositeServiceLevelObjective compositeServiceLevelObjective =
+          (CompositeServiceLevelObjective) saveServiceLevelObjectiveV2Entity(
+              projectParams, serviceLevelObjectiveDTO, true);
+      return getSLOResponse(compositeServiceLevelObjective.getIdentifier(), projectParams);
+    }
   }
 
   @Override
@@ -384,6 +393,12 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
                 ", ", serviceLevelObjectives.stream().map(slo -> slo.getName()).collect(Collectors.toList())));
   }
 
+  @Nullable
+  @Override
+  public AbstractServiceLevelObjective get(String sloId) {
+    return hPersistence.get(AbstractServiceLevelObjective.class, sloId);
+  }
+
   private AbstractServiceLevelObjective updateSLOV2Entity(ProjectParams projectParams,
       AbstractServiceLevelObjective abstractServiceLevelObjective,
       ServiceLevelObjectiveV2DTO serviceLevelObjectiveV2DTO, List<String> serviceLevelIndicators) {
@@ -456,7 +471,9 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
           "serviceLevelObjectiveV2 with identifier %s and orgIdentifier %s and projectIdentifier %s is already present",
           sloCreateDTO.getIdentifier(), projectParams.getOrgIdentifier(), projectParams.getProjectIdentifier()));
     }
-    validate(sloCreateDTO, projectParams);
+    if (sloCreateDTO.getType().equals(ServiceLevelObjectiveType.SIMPLE)) {
+      validate(sloCreateDTO, projectParams);
+    }
   }
 
   private void validate(ServiceLevelObjectiveV2DTO sloCreateDTO, ProjectParams projectParams) {

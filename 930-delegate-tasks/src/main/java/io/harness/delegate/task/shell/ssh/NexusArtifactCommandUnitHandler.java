@@ -62,8 +62,8 @@ public class NexusArtifactCommandUnitHandler extends ArtifactCommandUnitHandler 
         White, Bold));
     logCallback.saveExecutionLog("Nexus Artifact Url: " + artifactUrl);
     try {
-      String artifactName =
-          getNexusArtifactFileName(nexusVersion, nexusArtifactDelegateConfig.getRepositoryFormat(), artifactUrl);
+      String artifactName = getNexusArtifactFileName(
+          nexusVersion, nexusArtifactDelegateConfig.getRepositoryFormat(), nexusArtifactDelegateConfig.getMetadata());
       return nexusService.downloadArtifactByUrl(nexusRequest, artifactName, artifactUrl).getValue();
     } catch (Exception e) {
       Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
@@ -84,10 +84,9 @@ public class NexusArtifactCommandUnitHandler extends ArtifactCommandUnitHandler 
         getNexusArtifactDelegateConfig(context.getArtifactDelegateConfig());
     NexusVersion nexusVersion = getNexusVersion(nexusArtifactDelegateConfig);
     NexusRequest nexusRequest = nexusMapper.toNexusRequest(nexusArtifactDelegateConfig);
-    String artifactUrl = nexusArtifactDelegateConfig.getArtifactUrl();
 
-    String artifactName =
-        getNexusArtifactFileName(nexusVersion, nexusArtifactDelegateConfig.getRepositoryFormat(), artifactUrl);
+    String artifactName = getNexusArtifactFileName(
+        nexusVersion, nexusArtifactDelegateConfig.getRepositoryFormat(), nexusArtifactDelegateConfig.getMetadata());
     context.getArtifactMetadata().put(ArtifactMetadataKeys.artifactName, artifactName);
 
     return nexusService.getFileSize(nexusRequest, artifactName, nexusArtifactDelegateConfig.getArtifactUrl());
