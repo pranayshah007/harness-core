@@ -98,7 +98,8 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
     if (serviceLevelObjectiveDTO.getType().equals(ServiceLevelObjectiveType.SIMPLE)) {
       MonitoredService monitoredService = monitoredServiceService.getMonitoredService(
           MonitoredServiceParams.builderWithProjectParams(projectParams)
-              .monitoredServiceIdentifier(((SimpleServiceLevelObjectiveSpec) serviceLevelObjectiveDTO.getSpec()).getMonitoredServiceRef())
+              .monitoredServiceIdentifier(
+                  ((SimpleServiceLevelObjectiveSpec) serviceLevelObjectiveDTO.getSpec()).getMonitoredServiceRef())
               .build());
       SimpleServiceLevelObjective simpleServiceLevelObjective =
           (SimpleServiceLevelObjective) saveServiceLevelObjectiveV2Entity(
