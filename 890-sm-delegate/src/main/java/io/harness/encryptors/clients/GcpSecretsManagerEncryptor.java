@@ -64,6 +64,7 @@ import org.threeten.bp.Duration;
 public class GcpSecretsManagerEncryptor implements VaultEncryptor {
   public static final int MAX_RETRY_ATTEMPTS = 3;
   public static final int TOTAL_TIMEOUT_IN_SECONDS = 30;
+  private static final String VERSION = "version";
   private final TimeLimiter timeLimiter;
 
   @Inject
@@ -138,15 +139,25 @@ public class GcpSecretsManagerEncryptor implements VaultEncryptor {
     try (SecretManagerServiceClient gcpSecretsManagerClient = getGcpSecretsManagerClient(googleCredentials)) {
       SecretVersionName secretVersionName = null;
       if (isNotEmpty(encryptedRecord.getPath())) {
-        String secretName =
-            encryptedRecord.getEncryptionKey() != null ? encryptedRecord.getEncryptionKey() : encryptedRecord.getName();
+        String secretName;
+        String version;
+        if (encryptedRecord.getAdditionalMetadata() != null
+            && encryptedRecord.getAdditionalMetadata().getValues() != null
+            && encryptedRecord.getAdditionalMetadata().getValues().containsKey(VERSION)) {
+          secretName = encryptedRecord.getPath();
+          version = encryptedRecord.getAdditionalMetadata().getValues().get(VERSION).toString();
+        } else {
+          secretName = encryptedRecord.getEncryptionKey() != null ? encryptedRecord.getEncryptionKey()
+                                                                  : encryptedRecord.getName();
+          version = encryptedRecord.getPath();
+        }
         if (secretName == null || isEmpty(secretName)) {
           throw new SecretManagementException(GCP_SECRET_OPERATION_ERROR,
               "Secret Referencing Failed - Cannot Reference Secret in Gcp Secret Manager Without Name",
               WingsException.USER);
         }
         // referenced secret
-        secretVersionName = SecretVersionName.of(projectId, secretName, encryptedRecord.getPath());
+        secretVersionName = SecretVersionName.of(projectId, secretName, version);
       } else if (isNotEmpty(encryptedRecord.getEncryptedValue())) {
         SecretVersionName latestVersionName =
             SecretVersionName.parse(String.valueOf(encryptedRecord.getEncryptedValue()));
