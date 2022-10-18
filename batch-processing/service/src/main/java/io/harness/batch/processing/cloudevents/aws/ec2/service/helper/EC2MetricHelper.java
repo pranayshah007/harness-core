@@ -76,9 +76,6 @@ public class EC2MetricHelper {
             uniqueInstances.add(instance);
         }
 
-        log.info("uniqueInstances.size = {} and instanceDetails.size() = {}", uniqueInstances.size(), instanceDetails.size());
-        log.info("uniqueInstances = {}", uniqueInstances);
-
         uniqueInstances.forEach(instance -> {
             List<MetricDataQuery> aggregatedQuery = new ArrayList<>();
             for (Statistic stat : Arrays.asList(Average, Maximum)) {
@@ -93,7 +90,7 @@ public class EC2MetricHelper {
                                             new MetricStat().withPeriod(PERIOD).withStat(stat.toString()).withMetric(clusterMetric)));
                 }
             }
-            log.info("aggregatedQuery = {}", aggregatedQuery);
+            log.info("aggregatedQuery to getMetricData api= {}", aggregatedQuery);
             metricDataResultMap.putAll(awsCloudWatchHelperService
                     .getMetricData(AwsCloudWatchMetricDataRequest.builder()
                             .region(instance.getRegion())
@@ -109,12 +106,9 @@ public class EC2MetricHelper {
 
         log.info("metricDataResultMap = {}", metricDataResultMap);
         List<Ec2UtilzationData> utilizationMetrics = new ArrayList<>();
-
         for (AWSEC2Details instance : uniqueInstances) {
-            log.info("adding to the utilizationMetrics");
             utilizationMetrics.add(extractMetricResult(metricDataResultMap, instance.getInstanceId()));
         }
-        log.info("utilizationMetrics list = {}", utilizationMetrics);
         return utilizationMetrics;
     }
 

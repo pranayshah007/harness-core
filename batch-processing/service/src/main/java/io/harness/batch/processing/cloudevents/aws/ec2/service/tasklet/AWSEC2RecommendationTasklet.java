@@ -66,14 +66,12 @@ public class AWSEC2RecommendationTasklet  implements Tasklet {
 
     @Override
     public RepeatStatus execute(StepContribution stepContribution, ChunkContext chunkContext) throws Exception {
-        log.info("Started EC2 recommendation job");
         final JobConstants jobConstants = CCMJobConstants.fromContext(chunkContext);
         String accountId = jobConstants.getAccountId();
         Instant startTime = Instant.ofEpochMilli(jobConstants.getJobStartTime());
         log.info("accountId = {}", accountId);
         // call aws get-metric-data to get the cpu & memory utilisation data
         Map<String, AwsCrossAccountAttributes> infraAccCrossArnMap = getCrossAccountAttributes(accountId);
-        log.info("infraAccCrossArnMap.size = {}", infraAccCrossArnMap.size());
 
         if (!infraAccCrossArnMap.isEmpty()) {
             for (Map.Entry<String, AwsCrossAccountAttributes> infraAccCrossArn : infraAccCrossArnMap.entrySet()) {
@@ -103,7 +101,7 @@ public class AWSEC2RecommendationTasklet  implements Tasklet {
                                 recommendation.setLastUpdatedTime(startTime);
                                 // Save the ec2 recommendation to mongo and timescale
                                 EC2Recommendation ec2Recommendation = ec2RecommendationDAO.saveRecommendation(recommendation);
-                                log.info("ec2Recommendation which saved to mongo= {}", ec2Recommendation);
+                                log.info("ec2Recommendation saved to mongoDB = {}", ec2Recommendation);
                                 saveRecommendationInTimeScaleDB(ec2Recommendation);
                             });
                         }
@@ -113,12 +111,10 @@ public class AWSEC2RecommendationTasklet  implements Tasklet {
                     List<Ec2UtilzationData> utilizationData =
                             ec2MetricHelper.getUtilizationMetrics(infraAccCrossArn.getValue(), Date.from(now.minus(1, ChronoUnit.DAYS)),
                                     Date.from(now), instances);
-                    log.info("utilzationData.size = {}", utilizationData.size());
-                    log.info("utilizationData = {}", utilizationData);
-                    saveUtilDataToTimescaleDB(accountId, utilizationData);
+                    if (!utilizationData.isEmpty()) {
+                        saveUtilDataToTimescaleDB(accountId, utilizationData);
+                    }
                 }
-
-                log.info("exiting the ec2 recomm!");
             }
         }
 
@@ -195,13 +191,11 @@ public class AWSEC2RecommendationTasklet  implements Tasklet {
                             .startTimestamp(startTime)
                             .endTimestamp(startTime + oneDayMillis)
                             .build();
-            log.info("utilizationData = {}", utilizationData);
             if (utilDataPresent) {
                 instanceUtilizationDataList.add(utilizationData);
             }
         });
 
-        log.info("size of the instanceUtilizationDataList lise = {}", instanceUtilizationDataList.size());
         if (!instanceUtilizationDataList.isEmpty()) {
             utilizationDataService.create(instanceUtilizationDataList);
         }
@@ -219,9 +213,6 @@ public class AWSEC2RecommendationTasklet  implements Tasklet {
                     .map(rightsizingRecommendation -> {
                         String instanceId = rightsizingRecommendation.getCurrentInstance().getResourceId();
                         String region = rightsizingRecommendation.getCurrentInstance().getResourceDetails().getEC2ResourceDetails().getRegion();
-                        log.info("instanceId = {} region = {}", instanceId, region);
-                        log.info("AWSRegionHelper.getRegionNameFromDisplayName(region) = {}",
-                        AWSRegionHelper.getRegionNameFromDisplayName(region));
                         return new AWSEC2Details(instanceId, AWSRegionHelper.getRegionNameFromDisplayName(region));
             }).collect(Collectors.toList()));
         }
@@ -294,7 +285,6 @@ public class AWSEC2RecommendationTasklet  implements Tasklet {
         ec2RecommendationDAO.upsertCeRecommendation(ec2Recommendation.getUuid(),
                 ec2Recommendation.getAccountId(), ec2Recommendation.getInstanceId(), ec2Recommendation.getAwsAccountId(),
                 ec2Recommendation.getInstanceName(), currentMonthCost, monthlySaving, ec2Recommendation.getLastUpdatedTime());
-        log.info("saved to ce_recomm");
     }
 
     private Map<String, AwsCrossAccountAttributes> getCrossAccountAttributes(String accountId) {

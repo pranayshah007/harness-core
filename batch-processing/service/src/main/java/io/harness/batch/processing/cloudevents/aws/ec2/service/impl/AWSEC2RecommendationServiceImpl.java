@@ -40,7 +40,6 @@ public class AWSEC2RecommendationServiceImpl implements AWSEC2RecommendationServ
         if (!recommendationsOnSameFamilyType.isEmpty()) {
             recommendationTargetListMap.put(RecommendationTarget.SAME_INSTANCE_FAMILY, recommendationsOnSameFamilyType);
         }
-        log.info("EC2 recommendation map = {}", recommendationTargetListMap);
         return EC2RecommendationResponse.builder()
                 .recommendationMap(recommendationTargetListMap)
                 .build();
