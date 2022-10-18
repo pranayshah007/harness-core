@@ -20,12 +20,12 @@ import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.ng.core.template.TemplateEntityType;
 import io.harness.ng.core.template.TemplateMetadataSummaryResponseDTO;
+import io.harness.ng.core.template.TemplateResponseDTO;
 import io.harness.ng.core.template.TemplateWithInputsResponseDTO;
 import io.harness.rule.Owner;
 import io.harness.spec.server.template.model.TemplateMetadataSummaryResponse;
 import io.harness.spec.server.template.model.TemplateResponse;
 import io.harness.spec.server.template.model.TemplateWithInputsResponse;
-import io.harness.template.beans.TemplateResponseDTO;
 
 import java.util.Set;
 import javax.validation.ConstraintViolation;

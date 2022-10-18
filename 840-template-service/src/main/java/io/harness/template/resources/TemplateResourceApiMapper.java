@@ -12,6 +12,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.ng.core.template.TemplateMetadataSummaryResponseDTO;
+import io.harness.ng.core.template.TemplateResponseDTO;
 import io.harness.ng.core.template.TemplateWithInputsResponseDTO;
 import io.harness.spec.server.template.model.EntityGitDetails;
 import io.harness.spec.server.template.model.GitCreateDetails;
@@ -20,7 +21,6 @@ import io.harness.spec.server.template.model.GitUpdateDetails;
 import io.harness.spec.server.template.model.TemplateMetadataSummaryResponse;
 import io.harness.spec.server.template.model.TemplateResponse;
 import io.harness.spec.server.template.model.TemplateWithInputsResponse;
-import io.harness.template.beans.TemplateResponseDTO;
 import io.harness.template.entity.TemplateEntity.TemplateEntityKeys;
 
 import com.google.inject.Inject;
