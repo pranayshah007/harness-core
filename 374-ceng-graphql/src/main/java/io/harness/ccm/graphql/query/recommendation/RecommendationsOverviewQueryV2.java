@@ -12,10 +12,12 @@ import static io.harness.ccm.commons.beans.InstanceType.ECS_TASK_EC2;
 import static io.harness.ccm.commons.beans.InstanceType.ECS_TASK_FARGATE;
 import static io.harness.ccm.commons.beans.InstanceType.K8S_POD;
 import static io.harness.ccm.commons.beans.InstanceType.K8S_POD_FARGATE;
+
 import static io.harness.ccm.commons.constants.ViewFieldConstants.CLOUD_SERVICE_NAME_FIELD_ID;
 import static io.harness.ccm.commons.constants.ViewFieldConstants.CLUSTER_NAME_FIELD_ID;
 import static io.harness.ccm.commons.constants.ViewFieldConstants.INSTANCE_NAME_FIELD_ID;
 import static io.harness.ccm.commons.constants.ViewFieldConstants.NAMESPACE_FIELD_ID;
+import static io.harness.ccm.commons.constants.ViewFieldConstants.THRESHOLD_DAYS;
 import static io.harness.ccm.commons.constants.ViewFieldConstants.WORKLOAD_NAME_FIELD_ID;
 import static io.harness.ccm.commons.utils.TimeUtils.offsetDateTimeNow;
 import static io.harness.ccm.views.entities.ViewFieldIdentifier.BUSINESS_MAPPING;
@@ -526,7 +528,7 @@ public class RecommendationsOverviewQueryV2 {
         .eq(true)
         // based on current-gen workload recommendation dataFetcher
         .and(CE_RECOMMENDATIONS.LASTPROCESSEDAT.greaterOrEqual(
-            offsetDateTimeNow().truncatedTo(ChronoUnit.DAYS).minusDays(thresholdDays)))
+            offsetDateTimeNow().truncatedTo(ChronoUnit.DAYS).minusDays(THRESHOLD_DAYS)))
         .and(nonDelegate());
   }
 

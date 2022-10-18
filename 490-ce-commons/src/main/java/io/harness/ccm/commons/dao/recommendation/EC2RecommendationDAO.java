@@ -27,9 +27,9 @@ import java.time.temporal.ChronoUnit;
 import java.util.Optional;
 
 import static io.harness.annotations.dev.HarnessTeam.CE;
+import static io.harness.ccm.commons.constants.ViewFieldConstants.THRESHOLD_DAYS;
 import static io.harness.ccm.commons.utils.TimeUtils.offsetDateTimeNow;
 import static io.harness.ccm.commons.utils.TimeUtils.toOffsetDateTime;
-import static io.harness.ccm.graphql.query.recommendation.RecommendationsOverviewQueryV2.thresholdDays;
 import static io.harness.persistence.HPersistence.upsertReturnNewOptions;
 import static io.harness.persistence.HQuery.excludeValidate;
 import static io.harness.timescaledb.Tables.CE_RECOMMENDATIONS;
@@ -109,14 +109,14 @@ public class EC2RecommendationDAO {
                 .set(CE_RECOMMENDATIONS.MONTHLYSAVING, monthlySaving)
                 .set(CE_RECOMMENDATIONS.ISVALID, true)
                 .set(CE_RECOMMENDATIONS.LASTPROCESSEDAT, toOffsetDateTime(
-                        lastReceivedUntilAt.minus(thresholdDays - 1, ChronoUnit.DAYS)))
+                        lastReceivedUntilAt.minus(THRESHOLD_DAYS - 1, ChronoUnit.DAYS)))
                 .set(CE_RECOMMENDATIONS.UPDATEDAT, offsetDateTimeNow())
                 .onConflictOnConstraint(CE_RECOMMENDATIONS.getPrimaryKey())
                 .doUpdate()
                 .set(CE_RECOMMENDATIONS.MONTHLYCOST, monthlyCost)
                 .set(CE_RECOMMENDATIONS.MONTHLYSAVING, monthlySaving)
                 .set(CE_RECOMMENDATIONS.LASTPROCESSEDAT, toOffsetDateTime(
-                        lastReceivedUntilAt.minus(thresholdDays - 1, ChronoUnit.DAYS)))
+                        lastReceivedUntilAt.minus(THRESHOLD_DAYS - 1, ChronoUnit.DAYS)))
                 .set(CE_RECOMMENDATIONS.UPDATEDAT, offsetDateTimeNow())
                 .execute();
     }
