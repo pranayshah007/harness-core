@@ -7,6 +7,7 @@
 
 package io.harness.ngmigration.connector;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.delegate.beans.connector.k8Connector.KubernetesClusterConfigDTO.builder;
 import static io.harness.delegate.beans.connector.k8Connector.KubernetesCredentialType.INHERIT_FROM_DELEGATE;
 import static io.harness.delegate.beans.connector.k8Connector.KubernetesCredentialType.MANUAL_CREDENTIALS;
@@ -115,11 +116,12 @@ public class KubernetesConnectorImpl implements BaseConnector {
 
   private KubernetesCredentialDTO getUsernamePasswordCredentials(
       String masterUrl, char[] username, SecretRefData usernameRef, SecretRefData encryptedPassword) {
-    KubernetesAuthCredentialDTO kubernetesAuthCredentialDTO = KubernetesUserNamePasswordDTO.builder()
-                                                                  .username(new String(username))
-                                                                  .usernameRef(usernameRef)
-                                                                  .passwordRef(encryptedPassword)
-                                                                  .build();
+    KubernetesAuthCredentialDTO kubernetesAuthCredentialDTO =
+        KubernetesUserNamePasswordDTO.builder()
+            .username(isEmpty(username) ? null : new String(username))
+            .usernameRef(usernameRef)
+            .passwordRef(encryptedPassword)
+            .build();
     return getKubernetesCredentialDTO(kubernetesAuthCredentialDTO, masterUrl, KubernetesAuthType.USER_PASSWORD);
   }
 

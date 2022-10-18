@@ -48,6 +48,14 @@ public class CIExecutionConstants {
   public static final String GIT_URL_SUFFIX = ".git";
   public static final String PATH_SEPARATOR = "/";
 
+  // Constants for implict cache steps
+  public static final String RESTORE_CACHE_STEP_ID = "restore-cache-harness";
+  public static final String SAVE_CACHE_STEP_ID = "save-cache-harness";
+  public static final String RESTORE_CACHE_STEP_NAME = "Restore Cache From Harness";
+  public static final String SAVE_CACHE_STEP_NAME = "Save Cache to Harness";
+  public static final String CACHE_ARCHIVE_TYPE_TAR = "tar";
+  public static final String CACHE_GCS_BACKEND = "gcs";
+
   // Constant for
   public static final String UNIX_STEP_COMMAND = "/addon/bin/ci-addon";
   public static final String WIN_STEP_COMMAND = "C:\\addon\\bin\\addon.exe";
@@ -159,4 +167,9 @@ public class CIExecutionConstants {
 
   public static final String MEMORY = "MEMORY";
   public static final String CPU = "CPU";
+
+  // build multiplier values
+  public static final Double MACOS_BUILD_MULTIPLIER = 10.0;
+  public static final Double WINDOWS_BUILD_MULTIPLIER = 2.0;
+  public static final Double DEFAULT_BUILD_MULTIPLIER = 1.0;
 }

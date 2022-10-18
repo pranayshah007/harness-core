@@ -59,4 +59,8 @@ public interface NGClient {
       @Part("name") RequestBody name, @Part("identifier") RequestBody identifier,
       @Part("fileUsage") RequestBody fileUsage, @Part("type") RequestBody type,
       @Part("parentIdentifier") RequestBody parentIdentifier, @Part("mimeType") RequestBody mimeType);
+
+  @POST("variables")
+  Call<ResponseDTO<ConnectorResponseDTO>> createVariable(@Header("Authorization") String auth,
+      @Query(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier, @Body JsonNode variableRequestDTO);
 }

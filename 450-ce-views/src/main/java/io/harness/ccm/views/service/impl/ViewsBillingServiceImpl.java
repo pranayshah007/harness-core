@@ -675,6 +675,12 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
         }
       }
     }
+
+    // Group by is only needed in case of business mapping
+    if (!viewsQueryHelper.isGroupByBusinessMappingPresent(groupBy)) {
+      groupBy = Collections.emptyList();
+    }
+
     String businessMappingId = viewsQueryHelper.getBusinessMappingIdFromGroupBy(groupBy);
     List<String> businessMappingIdsFromRulesAndFilters = getBusinessMappingIdsFromRulesAndFilters(filters);
     BusinessMapping businessMapping =
@@ -1057,7 +1063,7 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
               break;
           }
         }
-        if (costTargetBucketNames.contains(name)) {
+        if (Objects.nonNull(cost) && costTargetBucketNames.contains(name)) {
           entityCosts.put(name, cost);
           totalCost += cost;
         }
@@ -1473,6 +1479,7 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
         modifiedGroupBy = addAdditionalRequiredGroupBy(modifiedGroupBy);
         // Changes column name for product to clustername in case of cluster perspective
         idFilters = getModifiedIdFilters(addNotNullFilters(idFilters, modifiedGroupBy), true);
+        viewRuleList = getModifiedRuleFilters(viewRuleList);
         // Changes column name for cost to billingamount
         aggregateFunction = getModifiedAggregations(aggregateFunction);
         sort = getModifiedSort(sort);
@@ -1532,6 +1539,36 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
                 .values(idFilter.getValues())
                 .build()));
     return modifiedIdFilters;
+  }
+
+  private List<ViewRule> getModifiedRuleFilters(final List<ViewRule> viewRules) {
+    final List<ViewRule> modifiedRuleFilters = new ArrayList<>();
+    viewRules.forEach(viewRule -> {
+      if (!Lists.isNullOrEmpty(viewRule.getViewConditions())) {
+        final List<ViewCondition> modifiedConditions = new ArrayList<>();
+        viewRule.getViewConditions().forEach(viewCondition -> {
+          final ViewIdCondition viewIdCondition = (ViewIdCondition) viewCondition;
+          modifyViewIdCondition(viewIdCondition);
+          modifiedConditions.add(viewIdCondition);
+        });
+        modifiedRuleFilters.add(ViewRule.builder().viewConditions(modifiedConditions).build());
+      } else {
+        modifiedRuleFilters.add(viewRule);
+      }
+    });
+    return modifiedRuleFilters;
+  }
+
+  private void modifyViewIdCondition(final ViewIdCondition viewIdCondition) {
+    final ViewField viewField = viewIdCondition.getViewField();
+    if (COMMON.equals(viewField.getIdentifier()) && "product".equals(viewField.getFieldId())) {
+      viewIdCondition.setViewField(ViewField.builder()
+                                       .fieldId("clustername")
+                                       .fieldName("Cluster Name")
+                                       .identifier(COMMON)
+                                       .identifierName("Common")
+                                       .build());
+    }
   }
 
   public static List<ViewRule> convertQLCEViewRuleToViewRule(@NotNull List<QLCEViewRule> ruleList) {

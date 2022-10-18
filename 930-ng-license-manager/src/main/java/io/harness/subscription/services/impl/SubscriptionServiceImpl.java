@@ -9,6 +9,7 @@ package io.harness.subscription.services.impl;
 
 import io.harness.ModuleType;
 import io.harness.beans.FeatureName;
+import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnsupportedOperationException;
 import io.harness.licensing.Edition;
@@ -31,6 +32,7 @@ import io.harness.subscription.dto.SubscriptionDTO;
 import io.harness.subscription.dto.SubscriptionDetailDTO;
 import io.harness.subscription.entities.StripeCustomer;
 import io.harness.subscription.entities.SubscriptionDetail;
+import io.harness.subscription.enums.PaymentFrequency;
 import io.harness.subscription.handlers.StripeEventHandler;
 import io.harness.subscription.helpers.StripeHelper;
 import io.harness.subscription.params.BillingParams;
@@ -65,6 +67,8 @@ public class SubscriptionServiceImpl implements SubscriptionService {
 
   private final Map<String, StripeEventHandler> eventHandlers;
 
+  private static final String QUANTITY_GREATER_THAN_MAX =
+      "Quantity requested is greater than maximum quantity allowed.";
   private static final double RECOMMENDATION_MULTIPLIER = 1.2d;
 
   @Inject
@@ -185,6 +189,12 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     val developerPriceId = stripeHelper.getPrice(
         ModuleType.CF, "DEVELOPERS", subscriptionDTO.getEdition(), subscriptionDTO.getPaymentFreq());
 
+    int maxDevelopers = Integer.parseInt(developerPriceId.getMetadata().getOrDefault("max", "0"));
+
+    if (subscriptionDTO.getNumberOfDevelopers() > maxDevelopers) {
+      throw new InvalidArgumentsException(QUANTITY_GREATER_THAN_MAX);
+    }
+
     subscriptionItems.add(ItemParams.builder()
                               .priceId(developerPriceId.getId())
                               .quantity((long) subscriptionDTO.getNumberOfDevelopers())
@@ -196,6 +206,9 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     subscriptionItems.add(ItemParams.builder().priceId(mauPriceId.getId()).quantity(1L).build());
 
     if (subscriptionDTO.isPremiumSupport()) {
+      if (subscriptionDTO.getPaymentFreq().equalsIgnoreCase(PaymentFrequency.MONTHLY.toString())) {
+        throw new InvalidArgumentsException("Cannot subscribe to premium support with a monthly renewal rate.");
+      }
       val mauSupportPriceId = stripeHelper.getPrice(ModuleType.CF, "MAU_SUPPORT", subscriptionDTO.getEdition(),
           subscriptionDTO.getPaymentFreq(), subscriptionDTO.getNumberOfMau());
 
@@ -203,6 +216,12 @@ public class SubscriptionServiceImpl implements SubscriptionService {
 
       val developerSupportPriceId = stripeHelper.getPrice(
           ModuleType.CF, "DEVELOPERS_SUPPORT", subscriptionDTO.getEdition(), subscriptionDTO.getPaymentFreq());
+
+      int maxDevelopersSupport = Integer.parseInt(developerSupportPriceId.getMetadata().getOrDefault("max", "0"));
+
+      if (subscriptionDTO.getNumberOfDevelopers() > maxDevelopersSupport) {
+        throw new InvalidArgumentsException(QUANTITY_GREATER_THAN_MAX);
+      }
 
       subscriptionItems.add(new ItemParams(
           developerSupportPriceId.getId(), (long) subscriptionDTO.getNumberOfDevelopers(), Prices.PREMIUM_SUPPORT));

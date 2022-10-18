@@ -74,6 +74,19 @@ public class Instance {
                  .sortField(InstanceKeys.createdAt)
                  .sortField(InstanceKeys.deletedAt)
                  .build())
+        .add(
+            SortCompoundMongoIndex.builder()
+                .name("accountId_organizationId_projectId_serviceId_instanceInfo.Agent_ClusterIdentifier_createdAt_idx")
+                .field(InstanceKeys.accountIdentifier)
+                .field(InstanceKeys.orgIdentifier)
+                .field(InstanceKeys.projectIdentifier)
+                .field(InstanceKeys.serviceIdentifier)
+                .field(InstanceKeysAdditional.instanceInfoAgentIdentifier)
+                .field(InstanceKeysAdditional.instanceInfoClusterIdentifier)
+                .field(InstanceKeys.isDeleted)
+                .sortField(InstanceKeys.createdAt)
+                .sortField(InstanceKeys.deletedAt)
+                .build())
         .add(SortCompoundMongoIndex.builder()
                  .name("accountId_organizationId_projectId_infrastructureMappingId_isDeleted_createdAt_deletedAt_idx")
                  .field(InstanceKeys.accountIdentifier)
@@ -166,5 +179,7 @@ public class Instance {
   public static class InstanceKeysAdditional {
     public static final String instanceInfoPodName = "instanceInfo.podName";
     public static final String instanceInfoNamespace = "instanceInfo.namespace";
+    public static final String instanceInfoClusterIdentifier = "instanceInfo.clusterIdentifier";
+    public static final String instanceInfoAgentIdentifier = "instanceInfo.agentIdentifier";
   }
 }

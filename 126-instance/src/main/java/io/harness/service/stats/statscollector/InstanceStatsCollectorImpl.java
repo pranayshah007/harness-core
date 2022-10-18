@@ -11,6 +11,8 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.dtos.InstanceDTO;
 import io.harness.helper.SnapshotTimeProvider;
+import io.harness.ng.core.service.entity.ServiceEntity;
+import io.harness.ng.core.service.services.ServiceEntityService;
 import io.harness.service.instance.InstanceService;
 import io.harness.service.instancestats.InstanceStatsService;
 import io.harness.service.stats.usagemetrics.eventpublisher.UsageMetricsEventPublisher;
@@ -38,24 +40,42 @@ public class InstanceStatsCollectorImpl implements StatsCollector {
   private InstanceStatsService instanceStatsService;
   private InstanceService instanceService;
   private UsageMetricsEventPublisher usageMetricsEventPublisher;
+  private final ServiceEntityService serviceEntityService;
 
   @Override
   public boolean createStats(String accountId) {
-    Instant lastSnapshot = instanceStatsService.getLastSnapshotTime(accountId);
-    if (null == lastSnapshot) {
-      return createStats(accountId, alignedWithMinute(Instant.now(), SYNC_INTERVAL_MINUTES));
-    }
-
-    SnapshotTimeProvider snapshotTimeProvider = new SnapshotTimeProvider(lastSnapshot, SYNC_INTERVAL);
+    // Currently we are fetching last snapshot for each service separately in the loop.
+    // We explored other options as well, these can be revisited if we see any perf issues,
+    // - group by org, project, service - takes more than a minute
+    // - IN / UNION query for each org, project, service combination
+    // - store metadata and latest time snapshot in a separate table
+    List<ServiceEntity> services = serviceEntityService.getNonDeletedServices(accountId);
     boolean ranAtLeastOnce = false;
-    while (snapshotTimeProvider.hasNext()) {
-      Instant nextTs = snapshotTimeProvider.next();
-      if (nextTs == null) {
-        throw new IllegalStateException("nextTs is null even though hasNext() returned true. Shouldn't be possible");
+    for (ServiceEntity service : services) {
+      log.info("Collect and publish stats for service {} (account {}, org {}, project {})", service.getIdentifier(),
+          service.getAccountId(), service.getOrgIdentifier(), service.getProjectIdentifier());
+      Instant lastSnapshot = instanceStatsService.getLastSnapshotTime(
+          accountId, service.getOrgIdentifier(), service.getProjectIdentifier(), service.getIdentifier());
+      log.info("Last published timestamp: {}", lastSnapshot);
+      if (null == lastSnapshot) {
+        boolean success = createStats(accountId, service.getOrgIdentifier(), service.getProjectIdentifier(),
+            service.getIdentifier(), alignedWithMinute(Instant.now(), SYNC_INTERVAL_MINUTES));
+        ranAtLeastOnce = ranAtLeastOnce || success;
+      } else {
+        SnapshotTimeProvider snapshotTimeProvider = new SnapshotTimeProvider(lastSnapshot, SYNC_INTERVAL);
+        while (snapshotTimeProvider.hasNext()) {
+          Instant nextTs = snapshotTimeProvider.next();
+          if (nextTs == null) {
+            throw new IllegalStateException(
+                "nextTs is null even though hasNext() returned true. Shouldn't be possible");
+          }
+          boolean success = createStats(
+              accountId, service.getOrgIdentifier(), service.getProjectIdentifier(), service.getIdentifier(), nextTs);
+          ranAtLeastOnce = ranAtLeastOnce || success;
+        }
       }
-      boolean success = createStats(accountId, nextTs);
-      ranAtLeastOnce = ranAtLeastOnce || success;
     }
+    log.info("Published instance stats. Account: {}", accountId);
 
     return ranAtLeastOnce;
   }
@@ -74,22 +94,23 @@ public class InstanceStatsCollectorImpl implements StatsCollector {
 
     return value;
   }
-
-  private boolean createStats(String accountId, Instant instant) {
+  private boolean createStats(String accountId, String orgId, String projectId, String serviceId, Instant instant) {
     List<InstanceDTO> instances;
     try {
       if (isRecentCollection(instant)) {
-        instances = instanceService.getActiveInstancesByAccount(accountId, -1);
+        instances =
+            instanceService.getActiveInstancesByAccountOrgProjectAndService(accountId, orgId, projectId, serviceId, -1);
         usageMetricsEventPublisher.publishInstanceStatsTimeSeries(accountId, Instant.now().toEpochMilli(), instances);
       } else {
-        instances = instanceService.getActiveInstancesByAccount(accountId, instant.toEpochMilli());
+        instances = instanceService.getActiveInstancesByAccountOrgProjectAndService(
+            accountId, orgId, projectId, serviceId, instant.toEpochMilli());
         usageMetricsEventPublisher.publishInstanceStatsTimeSeries(accountId, instant.toEpochMilli(), instances);
       }
-
-      log.info("Fetched instances. Count: {}, Account: {}, Time: {}", instances.size(), accountId, instant);
       return true;
     } catch (Exception e) {
-      log.error("Unable to publish instance stats for Account [{}] with exception {}", accountId, e);
+      log.error(
+          "Unable to publish instance stats for service: {} (account: {}, org: {}, project: {}) with exception {}",
+          serviceId, accountId, orgId, projectId, e);
       return false;
     }
   }

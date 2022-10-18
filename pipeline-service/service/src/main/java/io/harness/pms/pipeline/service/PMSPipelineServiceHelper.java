@@ -46,7 +46,6 @@ import io.harness.ng.core.template.TemplateReferenceSummary;
 import io.harness.ng.core.template.exception.NGTemplateResolveExceptionV2;
 import io.harness.opaclient.model.OpaConstants;
 import io.harness.opaclient.model.PipelineGovernanceGitConfig;
-import io.harness.pms.PmsFeatureFlagService;
 import io.harness.pms.contracts.governance.ExpansionRequestMetadata;
 import io.harness.pms.contracts.governance.ExpansionResponseBatch;
 import io.harness.pms.contracts.governance.ExpansionResponseProto;
@@ -70,9 +69,11 @@ import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YAMLMetadataFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.pms.yaml.YamlVersion;
 import io.harness.repositories.pipeline.PMSPipelineRepository;
 import io.harness.serializer.JsonUtils;
 import io.harness.telemetry.TelemetryReporter;
+import io.harness.utils.PmsFeatureFlagService;
 import io.harness.yaml.validator.InvalidYamlException;
 
 import com.google.common.collect.Lists;
@@ -143,7 +144,17 @@ public class PMSPipelineServiceHelper {
     return criteria;
   }
 
-  public PipelineEntity updatePipelineInfo(PipelineEntity pipelineEntity) throws IOException {
+  public PipelineEntity updatePipelineInfo(PipelineEntity pipelineEntity, YamlVersion pipelineVersion)
+      throws IOException {
+    switch (pipelineVersion) {
+      case V1:
+        return pipelineEntity;
+      default:
+        return updatePipelineInfoInternal(pipelineEntity);
+    }
+  }
+
+  private PipelineEntity updatePipelineInfoInternal(PipelineEntity pipelineEntity) throws IOException {
     FilterCreatorMergeServiceResponse filtersAndStageCount = filterCreatorMergeService.getPipelineInfo(pipelineEntity);
     PipelineEntity newEntity = pipelineEntity.withStageCount(filtersAndStageCount.getStageCount())
                                    .withStageNames(filtersAndStageCount.getStageNames());
@@ -434,12 +445,25 @@ public class PMSPipelineServiceHelper {
   }
 
   public static void checkAndThrowMismatchInImportedPipelineMetadata(String orgIdentifier, String projectIdentifier,
-      String pipelineIdentifier, PipelineImportRequestDTO pipelineImportRequest, String importedPipeline) {
+      String pipelineIdentifier, PipelineImportRequestDTO pipelineImportRequest, String importedPipeline,
+      YamlVersion pipelineVersion) {
     if (EmptyPredicate.isEmpty(importedPipeline)) {
       String errorMessage = PipelineCRUDErrorResponse.errorMessageForEmptyYamlOnGit(
           orgIdentifier, projectIdentifier, pipelineIdentifier, GitAwareContextHelper.getBranchInRequest());
       throw PMSPipelineServiceHelper.buildInvalidYamlException(errorMessage, importedPipeline);
     }
+    switch (pipelineVersion) {
+      case V1:
+        return;
+      default:
+        checkAndThrowMismatchInImportedPipelineMetadataInternal(
+            orgIdentifier, projectIdentifier, pipelineIdentifier, pipelineImportRequest, importedPipeline);
+    }
+  }
+
+  private static void checkAndThrowMismatchInImportedPipelineMetadataInternal(String orgIdentifier,
+      String projectIdentifier, String pipelineIdentifier, PipelineImportRequestDTO pipelineImportRequest,
+      String importedPipeline) {
     YamlField pipelineYamlField;
     try {
       pipelineYamlField = YamlUtils.readTree(importedPipeline);

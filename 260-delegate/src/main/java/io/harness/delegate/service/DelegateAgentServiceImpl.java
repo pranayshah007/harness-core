@@ -1975,8 +1975,9 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
             log.warn("Delegate task package is null for task: {} - accountId: {}", delegateTaskId,
                 delegateTaskEvent.getAccountId());
           } else {
-            log.warn("Delegate task data not available for task: {} - accountId: {}", delegateTaskId,
-                delegateTaskEvent.getAccountId());
+            log.info(
+                "Delegate task data not available for task: {} - accountId: {}. This is because the task has been already acquired, executed or timed out",
+                delegateTaskId, delegateTaskEvent.getAccountId());
           }
           return;
         } else {

@@ -7,6 +7,8 @@
 
 package io.harness.ngmigration.service.manifest;
 
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidRequestException;
 
 import software.wings.beans.appmanifest.AppManifestKind;
@@ -16,11 +18,16 @@ import software.wings.service.intfc.ApplicationManifestService;
 
 import com.google.inject.Inject;
 
+@OwnedBy(HarnessTeam.CDC)
 public class NgManifestFactory {
   @Inject K8sManifestRemoteStoreService k8sManifestRemoteStoreService;
   @Inject K8sManifestHelmSourceRepoStoreService k8sManifestHelmSourceRepoStoreService;
+  @Inject K8sManifestHelmChartRepoStoreService k8sManifestHelmChartRepoStoreService;
   @Inject ValuesManifestRemoteStoreService valuesManifestRemoteStoreService;
+  @Inject ValuesManifestLocalStoreService valuesManifestLocalStoreService;
   @Inject K8sManifestLocalStoreService k8sManifestLocalStoreService;
+  @Inject KustomizeSourceRepoStoreService kustomizeSourceRepoStoreService;
+  @Inject OpenshiftSourceRepoStoreService openshiftSourceRepoStoreService;
   @Inject ApplicationManifestService applicationManifestService;
 
   public NgManifestService getNgManifestService(ApplicationManifest applicationManifest) {
@@ -39,6 +46,12 @@ public class NgManifestFactory {
             return k8sManifestRemoteStoreService;
           case HelmSourceRepo:
             return k8sManifestHelmSourceRepoStoreService;
+          case HelmChartRepo:
+            return k8sManifestHelmChartRepoStoreService;
+          case KustomizeSourceRepo:
+            return kustomizeSourceRepoStoreService;
+          case CUSTOM_OPENSHIFT_TEMPLATE:
+            return openshiftSourceRepoStoreService;
           default:
             throw new InvalidRequestException(String.format(
                 "%s storetype is currently not supported for %s appManifestKind", storeType, appManifestKind));
@@ -47,6 +60,8 @@ public class NgManifestFactory {
         switch (storeType) {
           case Remote:
             return valuesManifestRemoteStoreService;
+          case Local:
+            return valuesManifestLocalStoreService;
           default:
             throw new InvalidRequestException(String.format(
                 "%s storetype is currently not supported for %s appManifestKind", storeType, appManifestKind));

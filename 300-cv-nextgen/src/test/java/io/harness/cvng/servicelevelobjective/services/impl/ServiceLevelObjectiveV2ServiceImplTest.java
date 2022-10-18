@@ -7,40 +7,68 @@
 
 package io.harness.cvng.servicelevelobjective.services.impl;
 
+import static io.harness.rule.OwnerRule.KAPIL;
 import static io.harness.rule.OwnerRule.VARSHA_LALWANI;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 import io.harness.CvNextGenTestBase;
 import io.harness.category.element.UnitTests;
 import io.harness.cvng.BuilderFactory;
+import io.harness.cvng.CVNGTestConstants;
+import io.harness.cvng.beans.cvnglog.CVNGLogDTO;
+import io.harness.cvng.beans.cvnglog.CVNGLogType;
+import io.harness.cvng.beans.cvnglog.ExecutionLogDTO;
+import io.harness.cvng.beans.cvnglog.TraceableType;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO;
+import io.harness.cvng.core.beans.params.PageParams;
 import io.harness.cvng.core.beans.params.ProjectParams;
+import io.harness.cvng.core.beans.params.logsFilterParams.SLILogsFilter;
+import io.harness.cvng.core.services.api.CVNGLogService;
+import io.harness.cvng.core.services.api.VerificationTaskService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
+import io.harness.cvng.notification.beans.NotificationRuleDTO;
+import io.harness.cvng.notification.beans.NotificationRuleRefDTO;
+import io.harness.cvng.notification.beans.NotificationRuleResponse;
+import io.harness.cvng.notification.beans.NotificationRuleType;
+import io.harness.cvng.notification.services.api.NotificationRuleService;
+import io.harness.cvng.servicelevelobjective.SLORiskCountResponse;
 import io.harness.cvng.servicelevelobjective.beans.DayOfWeek;
+import io.harness.cvng.servicelevelobjective.beans.ErrorBudgetRisk;
 import io.harness.cvng.servicelevelobjective.beans.SLOCalenderType;
+import io.harness.cvng.servicelevelobjective.beans.SLODashboardApiFilter;
 import io.harness.cvng.servicelevelobjective.beans.SLOTargetDTO;
 import io.harness.cvng.servicelevelobjective.beans.SLOTargetType;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorDTO;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorType;
+import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveFilter;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2DTO;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2Response;
 import io.harness.cvng.servicelevelobjective.beans.slotargetspec.CalenderSLOTargetSpec;
 import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObjective;
+import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveV2Service;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ng.beans.PageResponse;
+import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
 
 import com.google.inject.Inject;
 import java.text.ParseException;
+import java.time.Instant;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.stream.Collectors;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -48,6 +76,10 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
   @Inject MonitoredServiceService monitoredServiceService;
   @Inject ServiceLevelObjectiveV2Service serviceLevelObjectiveV2Service;
   @Inject ServiceLevelIndicatorService serviceLevelIndicatorService;
+  @Inject VerificationTaskService verificationTaskService;
+  @Inject CVNGLogService cvngLogService;
+  @Inject NotificationRuleService notificationRuleService;
+  @Inject HPersistence hPersistence;
 
   private BuilderFactory builderFactory;
   ProjectParams projectParams;
@@ -145,7 +177,6 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
   @Test
   @Owner(developers = VARSHA_LALWANI)
   @Category(UnitTests.class)
-  @Ignore("will re-enable after we modify the read operation to happen from V2 entity")
   public void testDelete_validationFailedForIncorrectSLO() {
     ServiceLevelObjectiveV2DTO sloDTO = createSLOBuilder();
     createMonitoredService();
@@ -154,7 +185,7 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
     assertThatThrownBy(() -> serviceLevelObjectiveV2Service.delete(projectParams, sloDTO.getIdentifier()))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage(String.format(
-            "SLO  with identifier %s, accountId %s, orgIdentifier %s and projectIdentifier %s  is not present",
+            "[SLOV2 Not Found] SLO  with identifier %s, accountId %s, orgIdentifier %s and projectIdentifier %s  is not present",
             sloDTO.getIdentifier(), projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier(),
             projectParams.getProjectIdentifier()));
   }
@@ -283,7 +314,6 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
   @Test
   @Owner(developers = VARSHA_LALWANI)
   @Category(UnitTests.class)
-  @Ignore("will re-enable after we modify the read operation to happen from V2 entity")
   public void testUpdate_FailedWithEntityNotPresent() {
     ServiceLevelObjectiveV2DTO sloDTO = createSLOBuilder();
     createMonitoredService();
@@ -300,9 +330,388 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
                                projectParams, sloDTO.getIdentifier(), sloDTO, serviceLevelIndicators))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage(String.format(
-            "SLO  with identifier %s, accountId %s, orgIdentifier %s and projectIdentifier %s  is not present",
+            "[SLOV2 Not Found] SLO  with identifier %s, accountId %s, orgIdentifier %s and projectIdentifier %s  is not present",
             sloDTO.getIdentifier(), projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier(),
             projectParams.getProjectIdentifier()));
+  }
+
+  @Test
+  @Owner(developers = VARSHA_LALWANI)
+  @Category(UnitTests.class)
+  public void testGet_IdentifierBasedQuery() {
+    ServiceLevelObjectiveV2DTO sloDTO = createSLOBuilder();
+    createMonitoredService();
+    serviceLevelIndicatorService.create(projectParams, sloDTO.getServiceLevelIndicators(), sloDTO.getIdentifier(),
+        sloDTO.getMonitoredServiceRef(), sloDTO.getHealthSourceRef());
+    serviceLevelObjectiveV2Service.create(projectParams, sloDTO);
+    ServiceLevelObjectiveV2Response serviceLevelObjectiveV2Response =
+        serviceLevelObjectiveV2Service.get(projectParams, sloDTO.getIdentifier());
+    assertThat(serviceLevelObjectiveV2Response.getServiceLevelObjectiveV2DTO()).isEqualTo(sloDTO);
+  }
+
+  @Test
+  @Owner(developers = VARSHA_LALWANI)
+  @Category(UnitTests.class)
+  public void testGet_OnUserJourneyFilter() {
+    ServiceLevelObjectiveV2DTO sloDTO1 =
+        builderFactory.getSimpleServiceLevelObjectiveV2DTOBuilder().identifier("id1").build();
+    createMonitoredService();
+    sloDTO1.setUserJourneyRefs(Arrays.asList("Uid1", "Uid2"));
+    serviceLevelIndicatorService.create(projectParams, sloDTO1.getServiceLevelIndicators(), sloDTO1.getIdentifier(),
+        sloDTO1.getMonitoredServiceRef(), sloDTO1.getHealthSourceRef());
+    serviceLevelObjectiveV2Service.create(projectParams, sloDTO1);
+
+    ServiceLevelObjectiveV2DTO sloDTO2 =
+        builderFactory.getSimpleServiceLevelObjectiveV2DTOBuilder().identifier("id2").build();
+    sloDTO2.setUserJourneyRefs(Arrays.asList("Uid4", "Uid3"));
+    serviceLevelIndicatorService.create(projectParams, sloDTO2.getServiceLevelIndicators(), sloDTO2.getIdentifier(),
+        sloDTO2.getMonitoredServiceRef(), sloDTO2.getHealthSourceRef());
+    serviceLevelObjectiveV2Service.create(projectParams, sloDTO2);
+
+    ServiceLevelObjectiveV2DTO sloDTO3 =
+        builderFactory.getSimpleServiceLevelObjectiveV2DTOBuilder().identifier("id3").build();
+    sloDTO3.setUserJourneyRefs(Arrays.asList("Uid4", "Uid2"));
+    serviceLevelIndicatorService.create(projectParams, sloDTO3.getServiceLevelIndicators(), sloDTO3.getIdentifier(),
+        sloDTO3.getMonitoredServiceRef(), sloDTO3.getHealthSourceRef());
+    serviceLevelObjectiveV2Service.create(projectParams, sloDTO3);
+
+    List<ServiceLevelObjectiveV2Response> serviceLevelObjectiveV2ResponseList =
+        serviceLevelObjectiveV2Service
+            .get(projectParams, 0, 2,
+                ServiceLevelObjectiveFilter.builder().userJourneys(Arrays.asList("Uid1", "Uid3")).build())
+            .getContent();
+    assertThat(serviceLevelObjectiveV2ResponseList).hasSize(2);
+  }
+
+  @Test
+  @Owner(developers = VARSHA_LALWANI)
+  @Category(UnitTests.class)
+  public void testGetRiskCount_Success() {
+    createMonitoredService();
+    ServiceLevelObjectiveV2DTO sloDTO =
+        builderFactory.getSimpleServiceLevelObjectiveV2DTOBuilder().identifier("id1").build();
+    ServiceLevelObjectiveV2Response serviceLevelObjectiveResponse =
+        serviceLevelObjectiveV2Service.create(projectParams, sloDTO);
+    SLOHealthIndicator sloHealthIndicator = builderFactory.sLOHealthIndicatorBuilder()
+                                                .serviceLevelObjectiveIdentifier(sloDTO.getIdentifier())
+                                                .errorBudgetRemainingPercentage(10)
+                                                .errorBudgetRisk(ErrorBudgetRisk.UNHEALTHY)
+                                                .build();
+    hPersistence.save(sloHealthIndicator);
+    sloDTO = builderFactory.getSimpleServiceLevelObjectiveV2DTOBuilder().identifier("id2").build();
+    serviceLevelObjectiveResponse = serviceLevelObjectiveV2Service.create(projectParams, sloDTO);
+    sloHealthIndicator = builderFactory.sLOHealthIndicatorBuilder()
+                             .serviceLevelObjectiveIdentifier(sloDTO.getIdentifier())
+                             .errorBudgetRemainingPercentage(-10)
+                             .errorBudgetRisk(ErrorBudgetRisk.EXHAUSTED)
+                             .build();
+    hPersistence.save(sloHealthIndicator);
+    sloDTO = builderFactory.getSimpleServiceLevelObjectiveV2DTOBuilder().identifier("id3").build();
+    serviceLevelObjectiveResponse = serviceLevelObjectiveV2Service.create(projectParams, sloDTO);
+
+    SLORiskCountResponse sloRiskCountResponse =
+        serviceLevelObjectiveV2Service.getRiskCount(projectParams, SLODashboardApiFilter.builder().build());
+
+    assertThat(sloRiskCountResponse.getTotalCount()).isEqualTo(3);
+    assertThat(sloRiskCountResponse.getRiskCounts()).hasSize(5);
+    assertThat(sloRiskCountResponse.getRiskCounts()
+                   .stream()
+                   .filter(rc -> rc.getErrorBudgetRisk().equals(ErrorBudgetRisk.EXHAUSTED))
+                   .findAny()
+                   .get()
+                   .getDisplayName())
+        .isEqualTo(ErrorBudgetRisk.EXHAUSTED.getDisplayName());
+    assertThat(sloRiskCountResponse.getRiskCounts()
+                   .stream()
+                   .filter(rc -> rc.getErrorBudgetRisk().equals(ErrorBudgetRisk.EXHAUSTED))
+                   .findAny()
+                   .get()
+                   .getCount())
+        .isEqualTo(1);
+    assertThat(sloRiskCountResponse.getRiskCounts()
+                   .stream()
+                   .filter(rc -> rc.getErrorBudgetRisk().equals(ErrorBudgetRisk.UNHEALTHY))
+                   .findAny()
+                   .get()
+                   .getCount())
+        .isEqualTo(1);
+  }
+
+  @Test
+  @Owner(developers = VARSHA_LALWANI)
+  @Category(UnitTests.class)
+  public void testGetRiskCount_WithFilters() {
+    createMonitoredService();
+    ServiceLevelObjectiveV2DTO sloDTO = builderFactory.getSimpleServiceLevelObjectiveV2DTOBuilder()
+                                            .identifier("id1")
+                                            .userJourneyRefs(Collections.singletonList("uj1"))
+                                            .serviceLevelIndicatorType(ServiceLevelIndicatorType.AVAILABILITY)
+                                            .build();
+    ServiceLevelObjectiveV2Response serviceLevelObjectiveResponse =
+        serviceLevelObjectiveV2Service.create(projectParams, sloDTO);
+    SLOHealthIndicator sloHealthIndicator = builderFactory.sLOHealthIndicatorBuilder()
+                                                .serviceLevelObjectiveIdentifier(sloDTO.getIdentifier())
+                                                .errorBudgetRemainingPercentage(10)
+                                                .errorBudgetRisk(ErrorBudgetRisk.UNHEALTHY)
+                                                .build();
+    hPersistence.save(sloHealthIndicator);
+    sloDTO = builderFactory.getSimpleServiceLevelObjectiveV2DTOBuilder()
+                 .identifier("id5")
+                 .userJourneyRefs(Collections.singletonList("uj2"))
+                 .serviceLevelIndicatorType(ServiceLevelIndicatorType.AVAILABILITY)
+                 .build();
+    serviceLevelObjectiveResponse = serviceLevelObjectiveV2Service.create(projectParams, sloDTO);
+    sloHealthIndicator = builderFactory.sLOHealthIndicatorBuilder()
+                             .serviceLevelObjectiveIdentifier(sloDTO.getIdentifier())
+                             .errorBudgetRemainingPercentage(10)
+                             .errorBudgetRisk(ErrorBudgetRisk.UNHEALTHY)
+                             .build();
+    hPersistence.save(sloHealthIndicator);
+    sloDTO =
+        builderFactory.getSimpleServiceLevelObjectiveV2DTOBuilder()
+            .identifier("id2")
+            .userJourneyRefs(Collections.singletonList("uj1"))
+            .serviceLevelIndicatorType(ServiceLevelIndicatorType.AVAILABILITY)
+            .sloTarget(
+                SLOTargetDTO.builder()
+                    .type(SLOTargetType.CALENDER)
+                    .sloTargetPercentage(80.0)
+                    .spec(
+                        CalenderSLOTargetSpec.builder()
+                            .type(SLOCalenderType.WEEKLY)
+                            .spec(
+                                CalenderSLOTargetSpec.WeeklyCalendarSpec.builder().dayOfWeek(DayOfWeek.MONDAY).build())
+                            .build())
+                    .build())
+            .build();
+    serviceLevelObjectiveResponse = serviceLevelObjectiveV2Service.create(projectParams, sloDTO);
+    sloHealthIndicator = builderFactory.sLOHealthIndicatorBuilder()
+                             .serviceLevelObjectiveIdentifier(sloDTO.getIdentifier())
+                             .errorBudgetRemainingPercentage(-10)
+                             .errorBudgetRisk(ErrorBudgetRisk.EXHAUSTED)
+                             .build();
+    hPersistence.save(sloHealthIndicator);
+    sloDTO = builderFactory.getSimpleServiceLevelObjectiveV2DTOBuilder()
+                 .identifier("id3")
+                 .serviceLevelIndicatorType(ServiceLevelIndicatorType.AVAILABILITY)
+                 .userJourneyRefs(Collections.singletonList("uj3"))
+                 .build();
+    serviceLevelObjectiveResponse = serviceLevelObjectiveV2Service.create(projectParams, sloDTO);
+
+    SLORiskCountResponse sloRiskCountResponse = serviceLevelObjectiveV2Service.getRiskCount(projectParams,
+        SLODashboardApiFilter.builder()
+            .userJourneyIdentifiers(Arrays.asList("uj1"))
+            .sliTypes(Arrays.asList(ServiceLevelIndicatorType.AVAILABILITY))
+            .targetTypes(Arrays.asList(SLOTargetType.ROLLING))
+            .build());
+
+    assertThat(sloRiskCountResponse.getTotalCount()).isEqualTo(1);
+    assertThat(sloRiskCountResponse.getRiskCounts()).hasSize(5);
+    assertThat(sloRiskCountResponse.getRiskCounts()
+                   .stream()
+                   .filter(rc -> rc.getErrorBudgetRisk().equals(ErrorBudgetRisk.UNHEALTHY))
+                   .findAny()
+                   .get()
+                   .getDisplayName())
+        .isEqualTo(ErrorBudgetRisk.UNHEALTHY.getDisplayName());
+    assertThat(sloRiskCountResponse.getRiskCounts()
+                   .stream()
+                   .filter(rc -> rc.getErrorBudgetRisk().equals(ErrorBudgetRisk.UNHEALTHY))
+                   .findAny()
+                   .get()
+                   .getCount())
+        .isEqualTo(1);
+  }
+
+  @Test
+  @Owner(developers = VARSHA_LALWANI)
+  @Category(UnitTests.class)
+  public void testGetCVNGLogs() {
+    Instant startTime = CVNGTestConstants.FIXED_TIME_FOR_TESTS.instant().minusSeconds(5);
+    Instant endTime = CVNGTestConstants.FIXED_TIME_FOR_TESTS.instant();
+    ServiceLevelObjectiveV2DTO sloDTO = createSLOBuilder();
+    createMonitoredService();
+    serviceLevelIndicatorService.create(projectParams, sloDTO.getServiceLevelIndicators(), sloDTO.getIdentifier(),
+        sloDTO.getMonitoredServiceRef(), sloDTO.getHealthSourceRef());
+    serviceLevelObjectiveV2Service.create(projectParams, sloDTO);
+    List<String> serviceLevelIndicators = sloDTO.getServiceLevelIndicators()
+                                              .stream()
+                                              .map(ServiceLevelIndicatorDTO::getIdentifier)
+                                              .collect(Collectors.toList());
+    List<String> sliIds = serviceLevelIndicatorService.getEntities(projectParams, serviceLevelIndicators)
+                              .stream()
+                              .map(ServiceLevelIndicator::getUuid)
+                              .collect(Collectors.toList());
+    List<String> verificationTaskIds =
+        verificationTaskService.getSLIVerificationTaskIds(projectParams.getAccountIdentifier(), sliIds);
+    List<CVNGLogDTO> cvngLogDTOs =
+        Arrays.asList(builderFactory.executionLogDTOBuilder().traceableId(verificationTaskIds.get(0)).build());
+    cvngLogService.save(cvngLogDTOs);
+
+    SLILogsFilter sliLogsFilter = SLILogsFilter.builder()
+                                      .logType(CVNGLogType.EXECUTION_LOG)
+                                      .startTime(startTime.toEpochMilli())
+                                      .endTime(endTime.toEpochMilli())
+                                      .build();
+    PageResponse<CVNGLogDTO> cvngLogDTOResponse = serviceLevelObjectiveV2Service.getCVNGLogs(
+        projectParams, sloDTO.getIdentifier(), sliLogsFilter, PageParams.builder().page(0).size(10).build());
+
+    assertThat(cvngLogDTOResponse.getContent().size()).isEqualTo(1);
+    assertThat(cvngLogDTOResponse.getPageIndex()).isEqualTo(0);
+    assertThat(cvngLogDTOResponse.getPageSize()).isEqualTo(10);
+
+    ExecutionLogDTO executionLogDTOS = (ExecutionLogDTO) cvngLogDTOResponse.getContent().get(0);
+    assertThat(executionLogDTOS.getAccountId()).isEqualTo(accountId);
+    assertThat(executionLogDTOS.getTraceableId()).isEqualTo(verificationTaskIds.get(0));
+    assertThat(executionLogDTOS.getTraceableType()).isEqualTo(TraceableType.VERIFICATION_TASK);
+    assertThat(executionLogDTOS.getType()).isEqualTo(CVNGLogType.EXECUTION_LOG);
+    assertThat(executionLogDTOS.getLogLevel()).isEqualTo(ExecutionLogDTO.LogLevel.INFO);
+    assertThat(executionLogDTOS.getLog()).isEqualTo("Data Collection successfully completed.");
+  }
+
+  @Test
+  @Owner(developers = VARSHA_LALWANI)
+  @Category(UnitTests.class)
+  public void testGetNotificationRules() {
+    NotificationRuleDTO notificationRuleDTO =
+        builderFactory.getNotificationRuleDTOBuilder(NotificationRuleType.SLO).build();
+    NotificationRuleResponse notificationRuleResponseOne =
+        notificationRuleService.create(builderFactory.getContext().getProjectParams(), notificationRuleDTO);
+    ServiceLevelObjectiveV2DTO sloDTO = createSLOBuilder();
+    sloDTO.setNotificationRuleRefs(
+        Arrays.asList(NotificationRuleRefDTO.builder()
+                          .notificationRuleRef(notificationRuleResponseOne.getNotificationRule().getIdentifier())
+                          .enabled(true)
+                          .build()));
+    createMonitoredService();
+    serviceLevelObjectiveV2Service.create(projectParams, sloDTO);
+    PageResponse<NotificationRuleResponse> notificationRuleResponsePageResponse =
+        serviceLevelObjectiveV2Service.getNotificationRules(
+            projectParams, sloDTO.getIdentifier(), PageParams.builder().page(0).size(10).build());
+    assertThat(notificationRuleResponsePageResponse.getTotalPages()).isEqualTo(1);
+    assertThat(notificationRuleResponsePageResponse.getTotalItems()).isEqualTo(1);
+    assertThat(notificationRuleResponsePageResponse.getContent().get(0).isEnabled()).isTrue();
+    assertThat(notificationRuleResponsePageResponse.getContent().get(0).getNotificationRule().getIdentifier())
+        .isEqualTo(notificationRuleDTO.getIdentifier());
+  }
+
+  @Test
+  @Owner(developers = VARSHA_LALWANI)
+  @Category(UnitTests.class)
+  public void testBeforeNotificationRuleDelete() {
+    ServiceLevelObjectiveV2DTO sloDTO = createSLOBuilder();
+    sloDTO.setNotificationRuleRefs(
+        Arrays.asList(NotificationRuleRefDTO.builder().notificationRuleRef("rule1").enabled(true).build(),
+            NotificationRuleRefDTO.builder().notificationRuleRef("rule2").enabled(true).build(),
+            NotificationRuleRefDTO.builder().notificationRuleRef("rule3").enabled(true).build()));
+    createMonitoredService();
+    serviceLevelObjectiveV2Service.create(projectParams, sloDTO);
+    assertThatThrownBy(()
+                           -> serviceLevelObjectiveV2Service.beforeNotificationRuleDelete(
+                               builderFactory.getContext().getProjectParams(), "rule1"))
+        .hasMessage(
+            "Deleting notification rule is used in SLOs, Please delete the notification rule inside SLOs before deleting notification rule. SLOs : sloName");
+  }
+
+  private AbstractServiceLevelObjective getServiceLevelObjective(String identifier) {
+    return hPersistence.createQuery(AbstractServiceLevelObjective.class)
+        .filter(AbstractServiceLevelObjective.ServiceLevelObjectiveV2Keys.accountId, accountId)
+        .filter(AbstractServiceLevelObjective.ServiceLevelObjectiveV2Keys.orgIdentifier, orgIdentifier)
+        .filter(AbstractServiceLevelObjective.ServiceLevelObjectiveV2Keys.projectIdentifier, projectIdentifier)
+        .filter(AbstractServiceLevelObjective.ServiceLevelObjectiveV2Keys.identifier, identifier)
+        .get();
+  }
+
+  @Test
+  @Owner(developers = KAPIL)
+  @Category(UnitTests.class)
+  public void testCreate_withIncorrectNotificationRule() {
+    NotificationRuleDTO notificationRuleDTO =
+        builderFactory.getNotificationRuleDTOBuilder(NotificationRuleType.MONITORED_SERVICE).build();
+    NotificationRuleResponse notificationRuleResponseOne =
+        notificationRuleService.create(builderFactory.getContext().getProjectParams(), notificationRuleDTO);
+    ServiceLevelObjectiveV2DTO sloDTO = createSLOBuilder();
+    sloDTO.setNotificationRuleRefs(
+        Arrays.asList(NotificationRuleRefDTO.builder()
+                          .notificationRuleRef(notificationRuleResponseOne.getNotificationRule().getIdentifier())
+                          .enabled(true)
+                          .build()));
+    createMonitoredService();
+    assertThatThrownBy(() -> serviceLevelObjectiveV2Service.create(projectParams, sloDTO))
+        .hasMessage("NotificationRule with identifier rule is of type MONITORED_SERVICE and cannot be added into SLO");
+  }
+
+  @Test
+  @Owner(developers = VARSHA_LALWANI)
+  @Category(UnitTests.class)
+  public void testDeleteByProjectIdentifier_Success() {
+    ServiceLevelObjectiveV2DTO sloDTO = createSLOBuilder();
+    createMonitoredService();
+    ServiceLevelObjectiveV2Service mockServiceLevelObjectiveService = spy(serviceLevelObjectiveV2Service);
+    mockServiceLevelObjectiveService.create(projectParams, sloDTO);
+    sloDTO.setIdentifier("secondSLO");
+    mockServiceLevelObjectiveService.create(projectParams, sloDTO);
+    mockServiceLevelObjectiveService.deleteByProjectIdentifier(AbstractServiceLevelObjective.class,
+        projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier(), projectParams.getProjectIdentifier());
+    verify(mockServiceLevelObjectiveService, times(2)).delete(any(), any());
+  }
+
+  @Test
+  @Owner(developers = VARSHA_LALWANI)
+  @Category(UnitTests.class)
+  public void testDeleteByOrgIdentifier_Success() {
+    ServiceLevelObjectiveV2DTO sloDTO = createSLOBuilder();
+    createMonitoredService();
+    ServiceLevelObjectiveV2Service mockServiceLevelObjectiveService = spy(serviceLevelObjectiveV2Service);
+    mockServiceLevelObjectiveService.create(projectParams, sloDTO);
+    sloDTO.setIdentifier("secondSLO");
+    mockServiceLevelObjectiveService.create(projectParams, sloDTO);
+    mockServiceLevelObjectiveService.deleteByOrgIdentifier(
+        AbstractServiceLevelObjective.class, projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier());
+    verify(mockServiceLevelObjectiveService, times(2)).delete(any(), any());
+  }
+
+  @Test
+  @Owner(developers = VARSHA_LALWANI)
+  @Category(UnitTests.class)
+  public void testDeleteByAccountIdentifier_Success() {
+    ServiceLevelObjectiveV2DTO sloDTO = createSLOBuilder();
+    createMonitoredService();
+    ServiceLevelObjectiveV2Service mockServiceLevelObjectiveService = spy(serviceLevelObjectiveV2Service);
+    mockServiceLevelObjectiveService.create(projectParams, sloDTO);
+    sloDTO.setIdentifier("secondSLO");
+    mockServiceLevelObjectiveService.create(projectParams, sloDTO);
+    mockServiceLevelObjectiveService.deleteByAccountIdentifier(
+        AbstractServiceLevelObjective.class, projectParams.getAccountIdentifier());
+    verify(mockServiceLevelObjectiveService, times(2)).delete(any(), any());
+  }
+
+  @Test
+  @Owner(developers = VARSHA_LALWANI)
+  @Category(UnitTests.class)
+  public void testGetAllSLOs() {
+    ServiceLevelObjectiveV2DTO sloDTO1 =
+        builderFactory.getSimpleServiceLevelObjectiveV2DTOBuilder().identifier("id1").build();
+    createMonitoredService();
+    sloDTO1.setUserJourneyRefs(Arrays.asList("Uid1", "Uid2"));
+    serviceLevelIndicatorService.create(projectParams, sloDTO1.getServiceLevelIndicators(), sloDTO1.getIdentifier(),
+        sloDTO1.getMonitoredServiceRef(), sloDTO1.getHealthSourceRef());
+    serviceLevelObjectiveV2Service.create(projectParams, sloDTO1);
+
+    ServiceLevelObjectiveV2DTO sloDTO2 =
+        builderFactory.getSimpleServiceLevelObjectiveV2DTOBuilder().identifier("id2").build();
+    sloDTO2.setUserJourneyRefs(Arrays.asList("Uid4", "Uid3"));
+    serviceLevelIndicatorService.create(projectParams, sloDTO2.getServiceLevelIndicators(), sloDTO2.getIdentifier(),
+        sloDTO2.getMonitoredServiceRef(), sloDTO2.getHealthSourceRef());
+    serviceLevelObjectiveV2Service.create(projectParams, sloDTO2);
+
+    ServiceLevelObjectiveV2DTO sloDTO3 =
+        builderFactory.getSimpleServiceLevelObjectiveV2DTOBuilder().identifier("id3").build();
+    sloDTO3.setUserJourneyRefs(Arrays.asList("Uid4", "Uid2"));
+    serviceLevelIndicatorService.create(projectParams, sloDTO3.getServiceLevelIndicators(), sloDTO3.getIdentifier(),
+        sloDTO3.getMonitoredServiceRef(), sloDTO3.getHealthSourceRef());
+    serviceLevelObjectiveV2Service.create(projectParams, sloDTO3);
+    assertThat(serviceLevelObjectiveV2Service.getAllSLOs(projectParams)).hasSize(3);
   }
 
   private ServiceLevelObjectiveV2DTO createSLOBuilder() {

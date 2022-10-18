@@ -26,9 +26,11 @@ import io.harness.capability.TestingCapability;
 import io.harness.ccm.config.CCMConfig;
 import io.harness.cvng.beans.DataCollectionConnectorBundle;
 import io.harness.cvng.beans.DataCollectionType;
+import io.harness.delegate.NoEligibleDelegatesInAccountException;
 import io.harness.delegate.beans.DelegateStringProgressData;
 import io.harness.delegate.beans.DelegateStringResponseData;
 import io.harness.delegate.beans.DelegateTaskDetails;
+import io.harness.delegate.beans.DelegateTaskExpiredException;
 import io.harness.delegate.beans.DelegateTaskNotifyResponseData;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskRank;
@@ -36,6 +38,9 @@ import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.beans.MailTaskParams;
 import io.harness.delegate.beans.MicrosoftTeamsTaskParams;
+import io.harness.delegate.beans.NoAvailableDelegatesException;
+import io.harness.delegate.beans.NoDelegatesException;
+import io.harness.delegate.beans.NoInstalledDelegatesException;
 import io.harness.delegate.beans.NotificationProcessingResponse;
 import io.harness.delegate.beans.NotificationTaskResponse;
 import io.harness.delegate.beans.PagerDutyTaskParams;
@@ -232,6 +237,9 @@ import io.harness.delegate.beans.connector.servicenow.ServiceNowValidationParams
 import io.harness.delegate.beans.connector.servicenow.connection.ServiceNowTestConnectionTaskNGResponse;
 import io.harness.delegate.beans.connector.splunkconnector.SplunkConnectionTaskParams;
 import io.harness.delegate.beans.connector.splunkconnector.SplunkConnectionTaskResponse;
+import io.harness.delegate.beans.connector.spotconnector.SpotTaskParams;
+import io.harness.delegate.beans.connector.spotconnector.SpotTaskType;
+import io.harness.delegate.beans.connector.spotconnector.SpotValidateTaskResponse;
 import io.harness.delegate.beans.connector.vaultconnector.VaultValidationParams;
 import io.harness.delegate.beans.ecs.EcsBlueGreenCreateServiceResult;
 import io.harness.delegate.beans.ecs.EcsBlueGreenPrepareRollbackDataResult;
@@ -243,6 +251,7 @@ import io.harness.delegate.beans.ecs.EcsContainer;
 import io.harness.delegate.beans.ecs.EcsPrepareRollbackDataResult;
 import io.harness.delegate.beans.ecs.EcsRollingDeployResult;
 import io.harness.delegate.beans.ecs.EcsRollingRollbackResult;
+import io.harness.delegate.beans.ecs.EcsRunTaskResult;
 import io.harness.delegate.beans.ecs.EcsTask;
 import io.harness.delegate.beans.executioncapability.AlwaysFalseValidationCapability;
 import io.harness.delegate.beans.executioncapability.AwsCliInstallationCapability;
@@ -268,6 +277,7 @@ import io.harness.delegate.beans.executioncapability.SmbConnectionCapability;
 import io.harness.delegate.beans.executioncapability.SmtpCapability;
 import io.harness.delegate.beans.executioncapability.SocketConnectivityBulkOrExecutionCapability;
 import io.harness.delegate.beans.executioncapability.SocketConnectivityExecutionCapability;
+import io.harness.delegate.beans.executioncapability.SshConnectivityExecutionCapability;
 import io.harness.delegate.beans.executioncapability.SystemEnvCheckerCapability;
 import io.harness.delegate.beans.executioncapability.WinrmConnectivityExecutionCapability;
 import io.harness.delegate.beans.git.GitCommandExecutionResponse;
@@ -325,6 +335,8 @@ import io.harness.delegate.beans.storeconfig.HttpHelmStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.LocalFileStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.OciHelmStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.S3HelmStoreDelegateConfig;
+import io.harness.delegate.beans.trigger.TriggerAuthenticationTaskParams;
+import io.harness.delegate.beans.trigger.TriggerAuthenticationTaskResponse;
 import io.harness.delegate.command.CommandExecutionResult;
 import io.harness.delegate.exception.DelegateRetryableException;
 import io.harness.delegate.exception.EcsNGException;
@@ -492,6 +504,7 @@ import io.harness.delegate.task.cloudformation.CloudformationTaskNGResponse;
 import io.harness.delegate.task.cloudformation.CloudformationTaskType;
 import io.harness.delegate.task.ecs.EcsCommandTypeNG;
 import io.harness.delegate.task.ecs.EcsGitFetchFileConfig;
+import io.harness.delegate.task.ecs.EcsGitFetchRunTaskFileConfig;
 import io.harness.delegate.task.ecs.EcsInfraConfig;
 import io.harness.delegate.task.ecs.EcsInfraType;
 import io.harness.delegate.task.ecs.EcsLoadBalancerConfig;
@@ -503,9 +516,11 @@ import io.harness.delegate.task.ecs.request.EcsBlueGreenSwapTargetGroupsRequest;
 import io.harness.delegate.task.ecs.request.EcsCanaryDeleteRequest;
 import io.harness.delegate.task.ecs.request.EcsCanaryDeployRequest;
 import io.harness.delegate.task.ecs.request.EcsGitFetchRequest;
+import io.harness.delegate.task.ecs.request.EcsGitFetchRunTaskRequest;
 import io.harness.delegate.task.ecs.request.EcsPrepareRollbackDataRequest;
 import io.harness.delegate.task.ecs.request.EcsRollingDeployRequest;
 import io.harness.delegate.task.ecs.request.EcsRollingRollbackRequest;
+import io.harness.delegate.task.ecs.request.EcsRunTaskRequest;
 import io.harness.delegate.task.ecs.response.EcsBlueGreenCreateServiceResponse;
 import io.harness.delegate.task.ecs.response.EcsBlueGreenPrepareRollbackDataResponse;
 import io.harness.delegate.task.ecs.response.EcsBlueGreenRollbackResponse;
@@ -513,9 +528,11 @@ import io.harness.delegate.task.ecs.response.EcsBlueGreenSwapTargetGroupsRespons
 import io.harness.delegate.task.ecs.response.EcsCanaryDeleteResponse;
 import io.harness.delegate.task.ecs.response.EcsCanaryDeployResponse;
 import io.harness.delegate.task.ecs.response.EcsGitFetchResponse;
+import io.harness.delegate.task.ecs.response.EcsGitFetchRunTaskResponse;
 import io.harness.delegate.task.ecs.response.EcsPrepareRollbackDataResponse;
 import io.harness.delegate.task.ecs.response.EcsRollingDeployResponse;
 import io.harness.delegate.task.ecs.response.EcsRollingRollbackResponse;
+import io.harness.delegate.task.ecs.response.EcsRunTaskResponse;
 import io.harness.delegate.task.gcp.GcpTaskType;
 import io.harness.delegate.task.gcp.request.GcpListBucketsRequest;
 import io.harness.delegate.task.gcp.request.GcpListClustersRequest;
@@ -704,6 +721,7 @@ import io.harness.delegate.task.ssh.artifact.ArtifactoryDockerArtifactDelegateCo
 import io.harness.delegate.task.ssh.artifact.AwsS3ArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.CustomArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.JenkinsArtifactDelegateConfig;
+import io.harness.delegate.task.ssh.artifact.NexusArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.NexusDockerArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.SkipCopyArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.SshWinRmArtifactDelegateConfig;
@@ -1271,6 +1289,10 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(S3HelmStoreDelegateConfig.class, 19702);
     kryo.register(GcsHelmStoreDelegateConfig.class, 19703);
 
+    kryo.register(SpotValidateTaskResponse.class, 21006);
+    kryo.register(SpotTaskParams.class, 21007);
+    kryo.register(SpotTaskType.class, 21008);
+
     kryo.register(SecretType.class, 543214);
     kryo.register(ValueType.class, 543215);
     kryo.register(SSHKeySpecDTO.class, 543222);
@@ -1613,6 +1635,8 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(AwsListElbListenerRulesTaskParamsRequest.class, 83083);
     kryo.register(AwsListElbListenerRulesTaskResponse.class, 83084);
     kryo.register(AwsListElbListenersTaskResponse.class, 83085);
+    kryo.register(TriggerAuthenticationTaskParams.class, 83086);
+    kryo.register(TriggerAuthenticationTaskResponse.class, 83087);
 
     // WinRm
     kryo.register(WinRmCredentialsSpecDTO.class, 600001);
@@ -1801,6 +1825,12 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(EcsBlueGreenRollbackResponse.class, 573536);
     kryo.register(EcsBlueGreenRollbackResult.class, 573537);
     kryo.register(EcsLoadBalancerConfig.class, 573538);
+    kryo.register(EcsGitFetchRunTaskRequest.class, 573539);
+    kryo.register(EcsGitFetchRunTaskResponse.class, 573540);
+    kryo.register(EcsGitFetchRunTaskFileConfig.class, 573541);
+    kryo.register(EcsRunTaskRequest.class, 573542);
+    kryo.register(EcsRunTaskResponse.class, 573543);
+    kryo.register(EcsRunTaskResult.class, 573544);
 
     kryo.register(AzurePackageArtifactConfig.class, 55410);
     kryo.register(AzureArtifactRequestDetails.class, 55411);
@@ -1846,5 +1876,12 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(ShellScriptProvisionTaskNGRequest.class, 55426);
     kryo.register(ShellScriptProvisionTaskNGResponse.class, 55427);
     kryo.register(ArtifactoryFetchImagePathResponse.class, 55428);
+    kryo.register(NexusArtifactDelegateConfig.class, 55429);
+    kryo.register(SshConnectivityExecutionCapability.class, 55435);
+    kryo.register(NoInstalledDelegatesException.class, 73988);
+    kryo.register(NoEligibleDelegatesInAccountException.class, 73989);
+    kryo.register(NoAvailableDelegatesException.class, 73990);
+    kryo.register(NoDelegatesException.class, 73991);
+    kryo.register(DelegateTaskExpiredException.class, 980036);
   }
 }

@@ -99,7 +99,8 @@ public class HQuery<T> extends QueryImpl<T> {
     }
 
     if (list.size() > 5000) {
-      log.warn("Key list query returns {} items.  Consider using an Iterator to avoid causing OOM", list.size());
+      log.warn("Key list query returns {} items.  Consider using an Iterator to avoid causing OOM", list.size(),
+          new Exception());
     }
   }
 
@@ -109,7 +110,8 @@ public class HQuery<T> extends QueryImpl<T> {
     }
 
     if (list.size() > 1000) {
-      log.warn("List query returns {} items. Consider using an Iterator to avoid causing OOM", list.size());
+      log.warn(
+          "List query returns {} items. Consider using an Iterator to avoid causing OOM", list.size(), new Exception());
     }
   }
 
@@ -123,10 +125,9 @@ public class HQuery<T> extends QueryImpl<T> {
       }
       return HPersistence.retry(() -> super.get(options));
     } catch (MongoExecutionTimeoutException ex) {
-      log.error("Get query exceeded max time limit for collection {} with options {} with error {}", collectionName,
-          options, ex);
-      options.maxTime(0, TimeUnit.MILLISECONDS);
-      return HPersistence.retry(() -> super.get(options));
+      log.error("Get query exceeded max time limit of {} ms for collection {} with error {}", maxOperationTimeInMillis,
+          collectionName, ex);
+      throw ex;
     }
   }
 
@@ -140,10 +141,9 @@ public class HQuery<T> extends QueryImpl<T> {
       }
       return HPersistence.retry(() -> super.getKey(options));
     } catch (MongoExecutionTimeoutException ex) {
-      log.error("getKey query exceeded max time limit for entityClass {} with options {} with error {}", entityClass,
-          options, ex);
-      options.maxTime(0, TimeUnit.MILLISECONDS);
-      return HPersistence.retry(() -> super.getKey(options));
+      log.error("getKey query exceeded max time limit of {} ms for entityClass {} with error {}",
+          maxOperationTimeInMillis, entityClass, ex);
+      throw ex;
     }
   }
 
@@ -163,14 +163,9 @@ public class HQuery<T> extends QueryImpl<T> {
         return list;
       });
     } catch (MongoExecutionTimeoutException ex) {
-      log.error("asKeyList query exceeded max time limit for entityClass {} with options {} with error {}", entityClass,
-          options, ex);
-      options.maxTime(0, TimeUnit.MILLISECONDS);
-      return HPersistence.retry(() -> {
-        final List<Key<T>> list = super.asKeyList(options);
-        checkKeyListSize(list);
-        return list;
-      });
+      log.error("asKeyList query exceeded max time limit of {} ms for entityClass {} with error {}",
+          maxOperationTimeInMillis, entityClass, ex);
+      throw ex;
     }
   }
 
@@ -190,14 +185,9 @@ public class HQuery<T> extends QueryImpl<T> {
         return list;
       });
     } catch (MongoExecutionTimeoutException ex) {
-      log.error("asList query exceeded max time limit for collection {} with options {} with error {}", collectionName,
-          options, ex);
-      options.maxTime(0, TimeUnit.MILLISECONDS);
-      return HPersistence.retry(() -> {
-        final List<T> list = super.asList(options);
-        checkListSize(list);
-        return list;
-      });
+      log.error("asList query exceeded max time limit of {} ms for collection {} with error {}",
+          maxOperationTimeInMillis, collectionName, ex);
+      throw ex;
     }
   }
 
@@ -217,10 +207,9 @@ public class HQuery<T> extends QueryImpl<T> {
       }
       return HPersistence.retry(() -> super.count(options));
     } catch (MongoExecutionTimeoutException ex) {
-      log.error("count query exceeded max time limit for entityClass {} with options {} with error {}", entityClass,
-          options, ex);
-      options.maxTime(0, TimeUnit.MILLISECONDS);
-      return HPersistence.retry(() -> super.count(options));
+      log.error("count query exceeded max time limit of {} ms for entityClass {} with error {}",
+          maxOperationTimeInMillis, entityClass, ex);
+      throw ex;
     }
   }
 
@@ -239,10 +228,9 @@ public class HQuery<T> extends QueryImpl<T> {
       }
       return HPersistence.retry(() -> { return super.fetch(options); });
     } catch (MongoExecutionTimeoutException ex) {
-      log.error("fetch query exceeded max time limit for entityClass {} with options {} with error {}", entityClass,
-          options, ex);
-      options.maxTime(0, TimeUnit.MILLISECONDS);
-      return HPersistence.retry(() -> { return super.fetch(options); });
+      log.error("fetch query exceeded max time limit of {} ms for entityClass {} with error {}",
+          maxOperationTimeInMillis, entityClass, ex);
+      throw ex;
     }
   }
 
@@ -258,10 +246,9 @@ public class HQuery<T> extends QueryImpl<T> {
       }
       return HPersistence.retry(() -> { return super.fetchEmptyEntities(options); });
     } catch (MongoExecutionTimeoutException ex) {
-      log.error("fetchEmptyEntities query exceeded max time limit for entityClass {} with options {} with error {}",
-          entityClass, options, ex);
-      options.maxTime(0, TimeUnit.MILLISECONDS);
-      return HPersistence.retry(() -> { return super.fetchEmptyEntities(options); });
+      log.error("fetchEmptyEntities query exceeded max time limit of {} ms for entityClass {} with error {}",
+          maxOperationTimeInMillis, entityClass, ex);
+      throw ex;
     }
   }
 
@@ -277,10 +264,9 @@ public class HQuery<T> extends QueryImpl<T> {
       }
       return HPersistence.retry(() -> super.fetchKeys(options));
     } catch (MongoExecutionTimeoutException ex) {
-      log.error("fetchKeys query exceeded max time limit for entityClass {} with options {} with error {}", entityClass,
-          options, ex);
-      options.maxTime(0, TimeUnit.MILLISECONDS);
-      return HPersistence.retry(() -> super.fetchKeys(options));
+      log.error("fetchKeys query exceeded max time limit of {} ms for entityClass {} with error {}",
+          maxOperationTimeInMillis, entityClass, ex);
+      throw ex;
     }
   }
 

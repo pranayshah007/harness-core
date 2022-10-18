@@ -20,6 +20,7 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Provides;
 import com.google.inject.Scopes;
+import com.google.inject.Singleton;
 
 @OwnedBy(CDC)
 public class TemplateResourceClientModule extends AbstractModule {
@@ -36,6 +37,7 @@ public class TemplateResourceClientModule extends AbstractModule {
   }
 
   @Provides
+  @Singleton
   private TemplateResourceClientHttpFactory templateResourceClientHttpFactory(
       KryoConverterFactory kryoConverterFactory) {
     return new TemplateResourceClientHttpFactory(

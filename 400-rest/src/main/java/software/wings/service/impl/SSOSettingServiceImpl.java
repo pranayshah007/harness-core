@@ -76,7 +76,6 @@ import software.wings.features.api.RestrictedApi;
 import software.wings.features.extractors.LdapSettingsAccountIdExtractor;
 import software.wings.features.extractors.SamlSettingsAccountIdExtractor;
 import software.wings.scheduler.LdapGroupScheduledHandler;
-import software.wings.scheduler.LdapGroupSyncJob;
 import software.wings.scheduler.LdapGroupSyncJobHelper;
 import software.wings.scheduler.LdapSyncJobConfig;
 import software.wings.security.authentication.oauth.OauthOptions;
@@ -422,7 +421,6 @@ public class SSOSettingServiceImpl implements SSOSettingService {
     }
     updateNextIterations(settings);
     LdapSettings savedSettings = wingsPersistence.saveAndGet(LdapSettings.class, settings);
-    LdapGroupSyncJob.add(jobScheduler, savedSettings.getAccountId(), savedSettings.getUuid());
     ldapGroupScheduledHandler.wakeup();
     auditServiceHelper.reportForAuditingUsingAccountId(settings.getAccountId(), null, settings, Event.Type.CREATE);
     ngAuditLoginSettingsForLdapUpload(savedSettings.getAccountId(), savedSettings);
@@ -465,7 +463,6 @@ public class SSOSettingServiceImpl implements SSOSettingService {
         settings.getAccountId(), oldSettings, savedSettings, Event.Type.UPDATE);
     ngAuditLoginSettingsForLdapUpdate(settings.getAccountId(), currentLdapSettings, savedSettings);
     log.info("Auditing updation of LDAP for account={}", savedSettings.getAccountId());
-    LdapGroupSyncJob.add(jobScheduler, savedSettings.getAccountId(), savedSettings.getUuid());
     ldapGroupScheduledHandler.wakeup();
     return savedSettings;
   }
@@ -499,7 +496,6 @@ public class SSOSettingServiceImpl implements SSOSettingService {
           settings.getAccountId(), settings.getConnectionSettings().getEncryptedBindPassword(), new HashMap<>(), false);
     }
     wingsPersistence.delete(settings);
-    LdapGroupSyncJob.delete(jobScheduler, this, settings.getAccountId(), settings.getUuid());
     auditServiceHelper.reportDeleteForAuditingUsingAccountId(settings.getAccountId(), settings);
     ngAuditLoginSettingsForLdapDelete(settings.getAccountId(), settings);
     log.info("Auditing deletion of LDAP Settings for account={}", settings.getAccountId());

@@ -39,7 +39,6 @@ import io.harness.pms.contracts.plan.RerunInfo;
 import io.harness.pms.contracts.plan.RetryExecutionInfo;
 import io.harness.pms.exception.PmsExceptionUtils;
 import io.harness.pms.gitsync.PmsGitSyncHelper;
-import io.harness.pms.helpers.PmsFeatureFlagHelper;
 import io.harness.pms.helpers.PrincipalInfoHelper;
 import io.harness.pms.helpers.TriggeredByHelper;
 import io.harness.pms.merger.YamlConfig;
@@ -66,6 +65,7 @@ import io.harness.pms.yaml.YamlUtils;
 import io.harness.repositories.executions.PmsExecutionSummaryRespository;
 import io.harness.template.yaml.TemplateRefHelper;
 import io.harness.threading.Morpheus;
+import io.harness.utils.PmsFeatureFlagHelper;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
@@ -242,6 +242,13 @@ public class ExecutionHelper {
     long start = System.currentTimeMillis();
     if (isEmpty(mergedRuntimeInputYaml)) {
       pipelineYamlConfig = new YamlConfig(pipelineEntity.getYaml());
+      // WHEN A PIPELINE DECLARES ALLOWED VALUES INSIDE RUNTIME INPUTS, IS
+      // REQUIRED TO PROVIDE THESE VALUES BEFORE THE EXECUTIONS.
+      List<FQN> missingFQNs = InputSetErrorsHelper.getMissingFQNsInInputSet(pipelineYamlConfig);
+      if (EmptyPredicate.isNotEmpty(missingFQNs)) {
+        throw new InvalidRequestException("Pipeline need runtime input values for: "
+            + missingFQNs.stream().map(FQN::getExpressionFqn).collect(Collectors.toList()));
+      }
       pipelineYamlConfigForSchemaValidations = pipelineYamlConfig;
     } else {
       YamlConfig pipelineEntityYamlConfig = new YamlConfig(pipelineEntity.getYaml());

@@ -34,7 +34,9 @@ import software.wings.api.DeploymentType;
 import software.wings.beans.entityinterface.ApplicationAccess;
 import software.wings.beans.entityinterface.KeywordsAware;
 import software.wings.beans.entityinterface.TagAware;
+import software.wings.ngmigration.CgBasicInfo;
 import software.wings.ngmigration.NGMigrationEntity;
+import software.wings.ngmigration.NGMigrationEntityType;
 import software.wings.yaml.BaseEntityYaml;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -170,6 +172,18 @@ public class Pipeline
   @Override
   public String getMigrationEntityName() {
     return getName();
+  }
+
+  @JsonIgnore
+  @Override
+  public CgBasicInfo getCgBasicInfo() {
+    return CgBasicInfo.builder()
+        .id(getUuid())
+        .name(getName())
+        .type(NGMigrationEntityType.PIPELINE)
+        .appId(getAppId())
+        .accountId(getAccountId())
+        .build();
   }
 
   @Data

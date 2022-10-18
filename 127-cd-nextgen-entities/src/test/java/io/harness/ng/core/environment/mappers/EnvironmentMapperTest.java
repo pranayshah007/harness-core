@@ -34,6 +34,7 @@ import io.harness.rule.OwnerRule;
 
 import com.google.common.collect.ImmutableMap;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
@@ -186,6 +187,30 @@ public class EnvironmentMapperTest extends CategoryTest {
                    .map(ConfigFileWrapper::getConfigFile)
                    .map(ConfigFile::getIdentifier))
         .containsExactly("c1", "c2");
+  }
+
+  @Test
+  @Owner(developers = TATHAGAT)
+  @Category(UnitTests.class)
+  public void testToEnvForInputFromRequestDTO() {
+    final String filename = "env-with-no-override.yaml";
+    final String yaml = readFile(filename, getClass());
+    final EnvironmentRequestDTO requestDTO = EnvironmentRequestDTO.builder()
+                                                 .identifier("ENV1")
+                                                 .orgIdentifier("ORG_ID1")
+                                                 .projectIdentifier("PROJECT_ID1")
+                                                 .description("dto description")
+                                                 .type(PreProduction)
+                                                 .tags(Collections.singletonMap("dto_key", "dto_value"))
+                                                 .yaml(yaml)
+                                                 .build();
+    Environment environment = EnvironmentMapper.toEnvironmentEntity("ACCOUNT_ID", requestDTO);
+    assertThat(environment).isNotNull();
+    assertThat(environment.getTags()).hasSize(1);
+    assertThat(environment.getTags().get(0).getKey()).isEqualTo("dto_key");
+    assertThat(environment.getTags().get(0).getValue()).isEqualTo("dto_value");
+    assertThat(environment.getDescription()).isEqualTo(requestDTO.getDescription());
+    assertThat(environment.getType()).isEqualTo(requestDTO.getType());
   }
 
   @Test

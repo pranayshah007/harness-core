@@ -11,13 +11,21 @@ import static io.harness.rule.OwnerRule.ADITHYA;
 
 import static junit.framework.TestCase.assertTrue;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mockStatic;
 import static org.powermock.api.mockito.PowerMockito.doReturn;
 import static org.powermock.api.mockito.PowerMockito.when;
 
 import io.harness.beans.Scope;
 import io.harness.category.element.UnitTests;
 import io.harness.context.GlobalContext;
+import io.harness.exception.DuplicateFileImportException;
+import io.harness.exception.InvalidRequestException;
+import io.harness.gitaware.helper.GitAwareContextHelper;
+import io.harness.gitaware.helper.GitAwareEntityHelper;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.interceptor.GitSyncBranchContext;
@@ -25,7 +33,9 @@ import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.gitsync.scm.SCMGitSyncHelper;
 import io.harness.gitsync.scm.beans.ScmGetRepoUrlResponse;
 import io.harness.manage.GlobalContextManager;
+import io.harness.repositories.NGTemplateRepository;
 import io.harness.rule.Owner;
+import io.harness.template.beans.TemplateImportRequestDTO;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.utils.NGTemplateFeatureFlagHelperService;
 
@@ -35,6 +45,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.MockitoAnnotations;
 
 public class TemplateGitXServiceImplTest {
@@ -45,6 +56,10 @@ public class TemplateGitXServiceImplTest {
   @Mock GitSyncSdkService gitSyncSdkService;
 
   @Mock NGTemplateFeatureFlagHelperService ngTemplateFeatureFlagHelperService;
+
+  @Mock NGTemplateRepository templateRepository;
+
+  @Mock GitAwareEntityHelper gitAwareEntityHelper;
 
   private static final String BranchName = "branch";
   private static final String ACCOUNT_IDENTIFIER = "accountIdentifier";
@@ -59,11 +74,32 @@ public class TemplateGitXServiceImplTest {
 
   private static final String PIPELINE_YAML = "pipeline: yaml";
 
+  private static final String IMPORTED_YAML = "template:\n"
+      + "  name: importT7\n"
+      + "  identifier: importT7\n"
+      + "  versionLabel: v2\n"
+      + "  type: Step\n"
+      + "  projectIdentifier: GitX_Remote\n"
+      + "  orgIdentifier: default\n"
+      + "  tags: {}\n"
+      + "  spec:\n"
+      + "    timeout: 10m\n"
+      + "    type: ShellScript\n"
+      + "    spec:\n"
+      + "      shell: Bash\n"
+      + "      onDelegate: true\n"
+      + "      source:\n"
+      + "        type: Inline\n"
+      + "        spec:\n"
+      + "          script: echo \"import Template v2\"\n"
+      + "      environmentVariables: []\n"
+      + "      outputVariables: []\n";
+
   @Before
   public void setUp() throws IOException {
     MockitoAnnotations.initMocks(this);
-    templateGitXService =
-        new TemplateGitXServiceImpl(scmGitSyncHelper, ngTemplateFeatureFlagHelperService, gitSyncSdkService);
+    templateGitXService = new TemplateGitXServiceImpl(scmGitSyncHelper, ngTemplateFeatureFlagHelperService,
+        gitSyncSdkService, templateRepository, gitAwareEntityHelper);
   }
 
   @Test
@@ -162,5 +198,43 @@ public class TemplateGitXServiceImplTest {
 
     boolean isNewGitXEnabled = templateGitXService.isNewGitXEnabledAndIsRemoteEntity(templateToSave, branchInfo);
     assertTrue(isNewGitXEnabled);
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testImportTemplateFromRemote() {
+    InvalidRequestException thrownException = new InvalidRequestException(
+        "Requested metadata params do not match the values found in the YAML on Git for these fields: [identifier, versionLabel, orgIdentifier, projectIdentifier]");
+    TemplateImportRequestDTO templateImportRequestDTO =
+        TemplateImportRequestDTO.builder().templateName("importT7").templateVersion("v1").build();
+
+    Exception exception = assertThrows(InvalidRequestException.class, () -> {
+      templateGitXService.performImportFlowYamlValidations(
+          ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, templateImportRequestDTO, IMPORTED_YAML);
+    });
+
+    assertEquals(thrownException.getMessage(), exception.getMessage());
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testGetRepoUrlAndCheckForFileUniqueness() {
+    String repoUrl = "repoUrl";
+    GitEntityInfo gitEntityInfo = GitEntityInfo.builder().filePath("filePath").build();
+    MockedStatic<GitAwareContextHelper> utilities = mockStatic(GitAwareContextHelper.class);
+    utilities.when(GitAwareContextHelper::getGitRequestParamsInfo).thenReturn(gitEntityInfo);
+
+    doReturn(repoUrl).when(gitAwareEntityHelper).getRepoUrl(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER);
+    doReturn(10L).when(templateRepository).countFileInstances(ACCOUNT_IDENTIFIER, repoUrl, gitEntityInfo.getFilePath());
+    assertThatThrownBy(()
+                           -> templateGitXService.checkForFileUniquenessAndGetRepoURL(
+                               ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, TEMPLATE_ID, false))
+        .isInstanceOf(DuplicateFileImportException.class);
+
+    assertThat(templateGitXService.checkForFileUniquenessAndGetRepoURL(
+                   ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, TEMPLATE_ID, true))
+        .isEqualTo(repoUrl);
   }
 }

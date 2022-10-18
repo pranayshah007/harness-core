@@ -37,7 +37,6 @@ import io.harness.generator.OrchestrationAdjacencyListGenerator;
 import io.harness.lock.AcquiredLock;
 import io.harness.lock.PersistentLocker;
 import io.harness.plan.NodeType;
-import io.harness.pms.PmsFeatureFlagService;
 import io.harness.pms.contracts.execution.events.OrchestrationEventType;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.execution.utils.StatusUtils;
@@ -47,7 +46,9 @@ import io.harness.pms.plan.execution.service.PmsExecutionSummaryService;
 import io.harness.repositories.orchestrationEventLog.OrchestrationEventLogRepository;
 import io.harness.service.GraphGenerationService;
 import io.harness.skip.service.VertexSkipperService;
+import io.harness.utils.PmsFeatureFlagService;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -125,7 +126,8 @@ public class GraphGenerationServiceImpl implements GraphGenerationService {
   }
 
   // This must always be called after acquiring the lock
-  private boolean updateGraphUnderLock(String planExecutionId) {
+  @VisibleForTesting
+  boolean updateGraphUnderLock(String planExecutionId) {
     OrchestrationGraph orchestrationGraph = getCachedOrchestrationGraph(planExecutionId);
     if (orchestrationGraph == null) {
       log.warn("[PMS_GRAPH] Graph not yet generated. Passing on to next iteration");
@@ -135,7 +137,8 @@ public class GraphGenerationServiceImpl implements GraphGenerationService {
   }
 
   // This must always be called after acquiring the lock
-  private boolean updateGraphUnderLock(OrchestrationGraph orchestrationGraph) {
+  @VisibleForTesting
+  boolean updateGraphUnderLock(OrchestrationGraph orchestrationGraph) {
     if (orchestrationGraph == null) {
       return false;
     }
@@ -255,7 +258,9 @@ public class GraphGenerationServiceImpl implements GraphGenerationService {
 
   private void sendUpdateEventIfAny(OrchestrationGraph orchestrationGraph) {
     String planExecutionId = orchestrationGraph.getPlanExecutionId();
-    if (!StatusUtils.isFinalStatus(orchestrationGraph.getStatus())) {
+    if (!StatusUtils.isFinalStatus(orchestrationGraph.getStatus())
+        || orchestrationEventLogRepository.checkIfAnyUnprocessedEvents(
+            orchestrationGraph.getPlanExecutionId(), orchestrationGraph.getLastUpdatedAt())) {
       orchestrationLogPublisher.sendLogEvent(planExecutionId);
     }
   }

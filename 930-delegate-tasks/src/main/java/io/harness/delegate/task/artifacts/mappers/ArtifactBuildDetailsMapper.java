@@ -7,20 +7,31 @@
 
 package io.harness.delegate.task.artifacts.mappers;
 
+import io.harness.artifact.ArtifactMetadataKeys;
 import io.harness.artifacts.beans.BuildDetailsInternal;
+import io.harness.datacollection.utils.EmptyPredicate;
 import io.harness.delegate.task.artifacts.response.ArtifactBuildDetailsNG;
 
 import software.wings.helpers.ext.jenkins.BuildDetails;
 
+import java.util.HashMap;
 import java.util.Map;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
 public class ArtifactBuildDetailsMapper {
   public ArtifactBuildDetailsNG toBuildDetailsNG(BuildDetailsInternal buildDetailsInternal) {
+    Map<String, String> metadata = new HashMap<>();
+    if (EmptyPredicate.isNotEmpty(buildDetailsInternal.getMetadata())) {
+      metadata = buildDetailsInternal.getMetadata();
+    }
+    metadata.put(ArtifactMetadataKeys.url, buildDetailsInternal.getBuildUrl());
+    metadata.put(ArtifactMetadataKeys.artifactName, buildDetailsInternal.getBuildFullDisplayName());
+    metadata.put(ArtifactMetadataKeys.artifactPath, buildDetailsInternal.getArtifactPath());
+
     return ArtifactBuildDetailsNG.builder()
         .buildUrl(buildDetailsInternal.getBuildUrl())
-        .metadata(buildDetailsInternal.getMetadata())
+        .metadata(metadata)
         .number(buildDetailsInternal.getNumber())
         .uiDisplayName(buildDetailsInternal.getUiDisplayName())
         .build();

@@ -19,7 +19,7 @@ type RegisterTopicMetadata struct {
 	MaxRetries int
 	// time in nanoseconds
 	// swagger:strfmt maxProcessingTime
-	MaxProcessingTime      time.Duration `json:"maxProcessingTime" type:integer`
+	MaxProcessingTime      time.Duration `json:"maxProcessingTime"`
 	MaxUnProcessedMessages int
 }
 
@@ -49,9 +49,10 @@ func (e *EnqueueErrorResponse) Error() string {
 
 // DequeueRequest Request object for Dequeuing messages
 type DequeueRequest struct {
-	Topic        string
-	BatchSize    int
-	ConsumerName string
+	Topic           string        `json:"topic"`
+	BatchSize       int           `json:"batchSize"`
+	ConsumerName    string        `json:"consumerName"`
+	MaxWaitDuration time.Duration `json:"maxWaitDuration"`
 }
 
 // DequeueResponse Response object for Dequeuing messages
@@ -65,8 +66,8 @@ type DequeueResponse struct {
 
 // DequeueItemMetadata DequeuingItem metadata request
 type DequeueItemMetadata struct {
-	CurrentRetryCount int
-	MaxProcessingTime float64
+	CurrentRetryCount int     `json:"currentRetryCount"`
+	MaxProcessingTime float64 `json:"maxProcessingTime"`
 }
 
 // DequeueErrorResponse Error Response object for Dequeue Request response

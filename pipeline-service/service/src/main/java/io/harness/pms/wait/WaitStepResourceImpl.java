@@ -7,18 +7,36 @@
 
 package io.harness.pms.wait;
 
+import static io.harness.audit.ResourceTypeConstants.PIPELINE;
+import static io.harness.pms.rbac.PipelineRbacPermissions.PIPELINE_EXECUTE;
+import static io.harness.pms.rbac.PipelineRbacPermissions.PIPELINE_VIEW;
+
+import io.harness.accesscontrol.acl.api.Resource;
+import io.harness.accesscontrol.acl.api.ResourceScope;
+import io.harness.accesscontrol.clients.AccessControlClient;
+import io.harness.engine.executions.node.NodeExecutionService;
+import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.pms.annotations.PipelineServiceAuth;
 import io.harness.steps.wait.WaitStepService;
 import io.harness.wait.WaitStepInstance;
 
 import com.google.inject.Inject;
 
+@PipelineServiceAuth
 public class WaitStepResourceImpl implements WaitStepResource {
   @Inject WaitStepService waitStepService;
+  @Inject private AccessControlClient accessControlClient;
+  @Inject NodeExecutionService nodeExecutionService;
+  @Inject PlanExecutionService planExecutionService;
 
   @Override
   public ResponseDTO<WaitStepResponseDto> markAsFailOrSuccess(
       String accountId, String orgId, String projectId, String nodeExecutionId, WaitStepRequestDto waitStepRequestDto) {
+    String planExecutionId = nodeExecutionService.get(nodeExecutionId).getPlanExecutionId();
+    String pipelineIdentifier = planExecutionService.get(planExecutionId).getMetadata().getPipelineIdentifier();
+    accessControlClient.checkForAccessOrThrow(
+        ResourceScope.of(accountId, orgId, projectId), Resource.of(PIPELINE, pipelineIdentifier), PIPELINE_EXECUTE);
     waitStepService.markAsFailOrSuccess(
         nodeExecutionId, WaitStepActionMapper.mapWaitStepAction(waitStepRequestDto.getAction()));
     return ResponseDTO.newResponse(WaitStepResponseDto.builder().status(true).build());
@@ -27,6 +45,10 @@ public class WaitStepResourceImpl implements WaitStepResource {
   @Override
   public ResponseDTO<WaitStepExecutionDetailsDto> getWaitStepExecutionDetails(
       String accountId, String orgId, String projectId, String nodeExecutionId) {
+    String planExecutionId = nodeExecutionService.get(nodeExecutionId).getPlanExecutionId();
+    String pipelineIdentifier = planExecutionService.get(planExecutionId).getMetadata().getPipelineIdentifier();
+    accessControlClient.checkForAccessOrThrow(
+        ResourceScope.of(accountId, orgId, projectId), Resource.of(PIPELINE, pipelineIdentifier), PIPELINE_VIEW);
     WaitStepInstance waitStepInstance = waitStepService.getWaitStepExecutionDetails(nodeExecutionId);
     return ResponseDTO.newResponse(WaitStepExecutionDetailsDto.builder()
                                        .createdAt(waitStepInstance.getCreatedAt())

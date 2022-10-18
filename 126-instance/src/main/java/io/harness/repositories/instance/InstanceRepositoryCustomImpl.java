@@ -15,6 +15,7 @@ import static org.springframework.data.mongodb.core.aggregation.Aggregation.newA
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.dtos.GitOpsInstanceDTO;
 import io.harness.entities.Instance;
 import io.harness.entities.Instance.InstanceKeys;
 import io.harness.models.ActiveServiceInstanceInfo;
@@ -60,31 +61,64 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
   }
 
   @Override
-  public List<Instance> getActiveInstancesByAccount(String accountIdentifier, long timestamp) {
+  public List<Instance> getActiveInstancesByAccountOrgProjectAndService(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, String serviceIdentifier, long timestamp) {
     if (timestamp <= 0) {
-      Criteria criteria = Criteria.where(InstanceKeys.accountIdentifier).is(accountIdentifier);
-      criteria = criteria.andOperator(Criteria.where(InstanceKeys.isDeleted).is(false));
+      Criteria criteria = Criteria.where(InstanceKeys.accountIdentifier)
+                              .is(accountIdentifier)
+                              .and(InstanceKeys.orgIdentifier)
+                              .is(orgIdentifier)
+                              .and(InstanceKeys.projectIdentifier)
+                              .is(projectIdentifier)
+                              .and(InstanceKeys.serviceIdentifier)
+                              .is(serviceIdentifier)
+                              .and(InstanceKeys.isDeleted)
+                              .is(false);
       Query query = new Query().addCriteria(criteria);
       return mongoTemplate.find(query, Instance.class);
     }
     Set<Instance> instances = new HashSet<>();
-    instances.addAll(getInstancesCreatedBefore(accountIdentifier, timestamp));
-    instances.addAll(getInstancesDeletedAfter(accountIdentifier, timestamp));
+    instances.addAll(
+        getInstancesCreatedBefore(accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier, timestamp));
+    instances.addAll(
+        getInstancesDeletedAfter(accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier, timestamp));
     return new ArrayList<>(instances);
   }
 
-  private List<Instance> getInstancesCreatedBefore(String accountIdentifier, long timestamp) {
-    Criteria criteria = Criteria.where(InstanceKeys.accountIdentifier).is(accountIdentifier);
-    criteria.andOperator(
-        Criteria.where(InstanceKeys.isDeleted).is(false), Criteria.where(InstanceKeys.createdAt).lte(timestamp));
+  private List<Instance> getInstancesCreatedBefore(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, String serviceIdentifier, long timestamp) {
+    Criteria criteria = Criteria.where(InstanceKeys.accountIdentifier)
+                            .is(accountIdentifier)
+                            .and(InstanceKeys.orgIdentifier)
+                            .is(orgIdentifier)
+                            .and(InstanceKeys.projectIdentifier)
+                            .is(projectIdentifier)
+                            .and(InstanceKeys.serviceIdentifier)
+                            .is(serviceIdentifier)
+                            .and(InstanceKeys.isDeleted)
+                            .is(false)
+                            .and(InstanceKeys.createdAt)
+                            .lte(timestamp);
     Query query = new Query().addCriteria(criteria);
     return mongoTemplate.find(query, Instance.class);
   }
 
-  private List<Instance> getInstancesDeletedAfter(String accountIdentifier, long timestamp) {
-    Criteria criteria = Criteria.where(InstanceKeys.accountIdentifier).is(accountIdentifier);
-    criteria.andOperator(
-        Criteria.where(InstanceKeys.deletedAt).gte(timestamp), Criteria.where(InstanceKeys.createdAt).lte(timestamp));
+  private List<Instance> getInstancesDeletedAfter(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, String serviceIdentifier, long timestamp) {
+    Criteria criteria = Criteria.where(InstanceKeys.accountIdentifier)
+                            .is(accountIdentifier)
+                            .and(InstanceKeys.orgIdentifier)
+                            .is(orgIdentifier)
+                            .and(InstanceKeys.projectIdentifier)
+                            .is(projectIdentifier)
+                            .and(InstanceKeys.serviceIdentifier)
+                            .is(serviceIdentifier)
+                            .and(InstanceKeys.isDeleted)
+                            .is(true)
+                            .and(InstanceKeys.createdAt)
+                            .lte(timestamp)
+                            .and(InstanceKeys.deletedAt)
+                            .gte(timestamp);
     Query query = new Query().addCriteria(criteria);
     return mongoTemplate.find(query, Instance.class);
   }
@@ -238,6 +272,34 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
                                     .as(InstanceSyncConstants.COUNT);
     return mongoTemplate.aggregate(
         newAggregation(matchStage, groupEnvId), Instance.class, ActiveServiceInstanceInfo.class);
+  }
+
+  @Override
+  public AggregationResults<ActiveServiceInstanceInfo> getActiveServiceGitOpsInstanceInfo(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId) {
+    Criteria criteria = Criteria.where(InstanceKeys.accountIdentifier)
+                            .is(accountIdentifier)
+                            .and(InstanceKeys.orgIdentifier)
+                            .is(orgIdentifier)
+                            .and(InstanceKeys.projectIdentifier)
+                            .is(projectIdentifier)
+                            .and(InstanceKeys.serviceIdentifier)
+                            .is(serviceId)
+                            .and(InstanceKeysAdditional.instanceInfoClusterIdentifier)
+                            .exists(true)
+                            .and(InstanceKeys.isDeleted)
+                            .is(false);
+
+    MatchOperation matchStage = Aggregation.match(criteria);
+    GroupOperation groupClusterEnvId =
+        group(InstanceKeysAdditional.instanceInfoClusterIdentifier, InstanceKeysAdditional.instanceInfoAgentIdentifier,
+            InstanceKeys.lastPipelineExecutionId, InstanceKeys.lastPipelineExecutionName, InstanceKeys.lastDeployedAt,
+            InstanceKeys.envIdentifier, InstanceKeys.envName, InstanceSyncConstants.PRIMARY_ARTIFACT_TAG,
+            InstanceSyncConstants.PRIMARY_ARTIFACT_DISPLAY_NAME)
+            .count()
+            .as(InstanceSyncConstants.COUNT);
+    return mongoTemplate.aggregate(
+        newAggregation(matchStage, groupClusterEnvId), GitOpsInstanceDTO.class, ActiveServiceInstanceInfo.class);
   }
 
   /*

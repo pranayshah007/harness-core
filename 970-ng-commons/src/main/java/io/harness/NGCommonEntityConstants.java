@@ -19,6 +19,7 @@ public class NGCommonEntityConstants {
   public static final String ACCOUNT_HEADER = "Harness-Account";
   public static final String ACCOUNT = "account";
   public static final String ACCOUNT_KEY = "accountIdentifier";
+  public static final String EMAIL_KEY = "emailIdentifier";
   public static final String ORG_KEY = "orgIdentifier";
   public static final String ORGS_KEY = "orgIdentifiers";
   public static final String PROJECT_KEY = "projectIdentifier";
@@ -52,6 +53,7 @@ public class NGCommonEntityConstants {
   public static final String REFERRED_BY_ENTITY_TYPE = "referredByEntityType";
   public static final String MODULE_TYPE = "moduleType";
   public static final String REFERER = "referer";
+  public static final String GA_CLIENT_ID = "ga_client_id";
   public static final String ENTITY_TYPE = "entityType";
   public static final String SEARCH_TERM = "searchTerm";
   public static final String USER_ID = "userId";

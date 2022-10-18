@@ -1,3 +1,6 @@
+io.harness.cdng.chaos.ChaosStepParameters
+io.harness.cdng.chaos.ChaosStepNode
+io.harness.cdng.chaos.ChaosStepInfo
 io.harness.cdng.customdeployment.CustomDeploymentSecretNGVariable
 io.harness.cdng.customdeployment.CustomDeploymentConnectorNGVariable
 io.harness.cdng.customdeployment.CustomDeploymentNumberNGVariable
@@ -477,6 +480,7 @@ io.harness.cdng.manifest.yaml.EcsServiceDefinitionManifestOutcome
 io.harness.cdng.manifest.yaml.kinds.EcsTaskDefinitionManifest
 io.harness.cdng.steps.EmptyStepParameters
 io.harness.cdng.service.steps.ServiceSweepingOutput
+io.harness.cdng.envgroup.yaml.EnvironmentGroupMetadata
 io.harness.cdng.environment.yaml.EnvironmentsYaml
 io.harness.cdng.service.beans.ServicesMetadata
 io.harness.cdng.service.beans.Services
@@ -509,7 +513,11 @@ io.harness.cdng.ecs.EcsBlueGreenRollbackOutcome
 io.harness.cdng.ecs.EcsBlueGreenSwapTargetGroupsOutcome
 io.harness.cdng.ecs.EcsBlueGreenRollbackStepNode
 io.harness.cdng.artifact.bean.yaml.Nexus2RegistryArtifactConfig
-io.harness.cdng.provision.azure.ShellScriptProvisionOutcome
+io.harness.cdng.ecs.EcsRunTaskStepInfo
+io.harness.cdng.manifest.yaml.EcsRunTaskRequestDefinitionManifestOutcome
+io.harness.cdng.ecs.EcsRunTaskStepParameters
+io.harness.cdng.ecs.EcsRunTaskStepNode
+io.harness.cdng.provision.shellscript.ShellScriptProvisionOutcome
 io.harness.cdng.provision.shellscript.ShellScriptProvisionStepInfo
 io.harness.cdng.provision.shellscript.ShellScriptProvisionStepNode
 io.harness.cdng.provision.shellscript.ShellScriptProvisionStepParameters

@@ -13,6 +13,7 @@ import static io.harness.NGCommonEntityConstants.PAGE_SIZE;
 import static io.harness.NGCommonEntityConstants.PREVIOUS_REL;
 import static io.harness.NGCommonEntityConstants.SELF_REL;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.ng.core.mapper.TagMapper.convertToList;
 import static io.harness.ng.core.mapper.TagMapper.convertToMap;
 
@@ -20,6 +21,8 @@ import static javax.ws.rs.core.UriBuilder.fromPath;
 
 import io.harness.accesscontrol.acl.api.PermissionCheckDTO;
 import io.harness.accesscontrol.acl.api.ResourceScope;
+import io.harness.exception.InvalidRequestException;
+import io.harness.ng.core.service.dto.ServiceRequestDTO;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.entity.ServiceEntity.ServiceEntityKeys;
 import io.harness.ng.core.service.mappers.NGServiceEntityMapper;
@@ -31,6 +34,7 @@ import io.harness.spec.server.ng.model.Service;
 import io.harness.spec.server.ng.model.ServiceRequest;
 import io.harness.spec.server.ng.model.ServiceResponse;
 
+import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import io.dropwizard.jersey.validation.JerseyViolationException;
@@ -177,5 +181,16 @@ public class ServiceResourceApiUtils {
         property = sort;
     }
     return property + ',' + order;
+  }
+
+  static void mustBeAtProjectLevel(ServiceRequestDTO requestDTO) {
+    try {
+      Preconditions.checkArgument(isNotEmpty(requestDTO.getOrgIdentifier()),
+          "org identifier must be specified. Services can only be created at Project scope");
+      Preconditions.checkArgument(isNotEmpty(requestDTO.getProjectIdentifier()),
+          "project identifier must be specified. Services can only be created at Project scope");
+    } catch (Exception ex) {
+      throw new InvalidRequestException(ex.getMessage());
+    }
   }
 }

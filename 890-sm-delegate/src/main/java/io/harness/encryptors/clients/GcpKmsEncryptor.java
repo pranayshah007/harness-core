@@ -170,7 +170,7 @@ public class GcpKmsEncryptor implements KmsEncryptor {
       try {
         byte[] cachedEncryptedKey = getCachedEncryptedKey(encryptedData);
         if (isNotEmpty(cachedEncryptedKey)) {
-          return decryptInternalIfCached(encryptedData, cachedEncryptedKey, System.currentTimeMillis());
+          return decryptInternalIfCached(encryptedData, cachedEncryptedKey);
         } else {
           // Use HTimeLimiter.callInterruptible only if the KMS plain text key is not cached.
           return HTimeLimiter.callInterruptible21(timeLimiter, Duration.ofSeconds(DEFAULT_GCP_KMS_TIMEOUT),
@@ -221,17 +221,16 @@ public class GcpKmsEncryptor implements KmsEncryptor {
       return encryptedKey;
     });
 
-    return decryptInternalIfCached(data, encryptedPlainTextKey, startTime);
+    return decryptInternalIfCached(data, encryptedPlainTextKey);
   }
 
-  private char[] decryptInternalIfCached(EncryptedRecord data, byte[] encryptedPlainTextKey, long startTime)
+  private char[] decryptInternalIfCached(EncryptedRecord data, byte[] encryptedPlainTextKey)
       throws IllegalBlockSizeException, InvalidKeyException, BadPaddingException, NoSuchAlgorithmException,
              NoSuchPaddingException {
     KmsEncryptionKeyCacheKey cacheKey = new KmsEncryptionKeyCacheKey(data.getUuid(), data.getEncryptionKey());
     byte[] plainTextKey = simpleDecryptDek(encryptedPlainTextKey, cacheKey.getUuid());
     String decrypted = decryptDataUsingDek(data.getEncryptedValue(), new SecretKeySpec(plainTextKey, "AES"));
 
-    log.info("Finished decrypting secret {} in {} ms.", data.getUuid(), System.currentTimeMillis() - startTime);
     return decrypted == null ? null : decrypted.toCharArray();
   }
 

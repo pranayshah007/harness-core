@@ -28,6 +28,8 @@ public interface InstanceDashboardService {
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId, long timestampInMs);
   List<ActiveServiceInstanceInfo> getActiveServiceInstanceInfo(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId);
+  List<ActiveServiceInstanceInfo> getActiveServiceGitOpsInstanceInfo(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId);
   List<InstanceDetailsByBuildId> getActiveInstancesByServiceIdEnvIdAndBuildIds(String accountIdentifier,
       String orgIdentifier, String projectIdentifier, String serviceId, String envId, List<String> buildIds,
       long timestampInMs);

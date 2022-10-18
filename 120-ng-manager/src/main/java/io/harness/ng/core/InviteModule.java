@@ -21,8 +21,6 @@ import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import lombok.AllArgsConstructor;
-import org.springframework.data.mongodb.MongoTransactionManager;
-import org.springframework.transaction.support.TransactionTemplate;
 
 @OwnedBy(PL)
 @AllArgsConstructor
@@ -46,12 +44,6 @@ public class InviteModule extends AbstractModule {
   @Named("isNgAuthUIEnabled")
   public boolean isNGAuthUIEnabled() {
     return isNGAuthUIEnabled;
-  }
-
-  @Provides
-  @Singleton
-  protected TransactionTemplate getTransactionTemplate(MongoTransactionManager mongoTransactionManager) {
-    return new TransactionTemplate(mongoTransactionManager);
   }
 
   private void registerRequiredBindings() {

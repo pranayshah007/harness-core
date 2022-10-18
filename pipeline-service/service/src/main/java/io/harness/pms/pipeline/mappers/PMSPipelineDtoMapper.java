@@ -38,7 +38,10 @@ import io.harness.pms.pipeline.RecentExecutionInfo;
 import io.harness.pms.pipeline.RecentExecutionInfoDTO;
 import io.harness.pms.pipeline.api.PipelineRequestInfoDTO;
 import io.harness.pms.pipeline.yaml.BasicPipeline;
+import io.harness.pms.pipeline.yaml.PipelineYaml;
+import io.harness.pms.utils.IdentifierGeneratorUtils;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.pms.yaml.YamlVersion;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
@@ -71,6 +74,17 @@ public class PMSPipelineDtoMapper {
         : null;
   }
 
+  private EntityGitDetails getEntityGitDetailsForMetadataResponse(PipelineEntity pipelineEntity) {
+    EntityGitDetails entityGitDetails = pipelineEntity.getStoreType() == null
+        ? EntityGitDetailsMapper.mapEntityGitDetails(pipelineEntity)
+        : pipelineEntity.getStoreType() == StoreType.REMOTE ? GitAwareContextHelper.getEntityGitDetails(pipelineEntity)
+                                                            : null;
+    if (entityGitDetails != null) {
+      entityGitDetails.setRepoUrl(pipelineEntity.getRepoURL());
+    }
+    return entityGitDetails;
+  }
+
   public EntityValidityDetails getEntityValidityDetails(PipelineEntity pipelineEntity) {
     return pipelineEntity.getStoreType() != null || !pipelineEntity.isEntityInvalid()
         ? EntityValidityDetails.builder().valid(true).build()
@@ -99,13 +113,40 @@ public class PMSPipelineDtoMapper {
     }
   }
 
+  public PipelineEntity toSimplifiedPipelineEntity(String accountId, String orgId, String projectId, String yaml) {
+    try {
+      PipelineYaml pipelineYaml = YamlUtils.read(yaml, PipelineYaml.class);
+      String pipelineIdentifier = IdentifierGeneratorUtils.getPipelineIdentifier(pipelineYaml.getName());
+      if (NGExpressionUtils.matchesInputSetPattern(pipelineIdentifier)) {
+        throw new InvalidRequestException("Pipeline identifier cannot be runtime input");
+      }
+      return PipelineEntity.builder()
+          .yaml(yaml)
+          .accountId(accountId)
+          .orgIdentifier(orgId)
+          .projectIdentifier(projectId)
+          .name(pipelineYaml.getName())
+          .identifier(pipelineIdentifier)
+          .tags(TagMapper.convertToList(null))
+          .build();
+    } catch (IOException e) {
+      throw new InvalidRequestException("Cannot create pipeline entity due to " + e.getMessage());
+    }
+  }
+
   public PipelineEntity toPipelineEntity(
-      String accountId, String orgId, String projectId, String yaml, Boolean isDraft) {
-    PipelineEntity pipelineEntity = toPipelineEntity(accountId, orgId, projectId, yaml);
+      String accountId, String orgId, String projectId, String yaml, Boolean isDraft, YamlVersion pipelineVersion) {
+    PipelineEntity pipelineEntity;
+    if (pipelineVersion != null && pipelineVersion != YamlVersion.V0) {
+      pipelineEntity = toSimplifiedPipelineEntity(accountId, orgId, projectId, yaml);
+    } else {
+      pipelineEntity = toPipelineEntity(accountId, orgId, projectId, yaml);
+    }
     if (isDraft == null) {
       isDraft = false;
     }
     pipelineEntity.setIsDraft(isDraft);
+    pipelineEntity.setHarnessVersion(pipelineVersion);
     return pipelineEntity;
   }
 
@@ -151,8 +192,8 @@ public class PMSPipelineDtoMapper {
   }
 
   public PipelineEntity toPipelineEntityWithVersion(String accountId, String orgId, String projectId, String pipelineId,
-      String yaml, String ifMatch, Boolean isDraft) {
-    PipelineEntity pipelineEntity = toPipelineEntity(accountId, orgId, projectId, yaml, isDraft);
+      String yaml, String ifMatch, Boolean isDraft, YamlVersion pipelineVersion) {
+    PipelineEntity pipelineEntity = toPipelineEntity(accountId, orgId, projectId, yaml, isDraft, pipelineVersion);
     PipelineEntity withVersion = pipelineEntity.withVersion(isNumeric(ifMatch) ? parseLong(ifMatch) : null);
     if (!Objects.equals(pipelineId, withVersion.getIdentifier())) {
       throw new InvalidRequestException(String.format(
@@ -161,7 +202,10 @@ public class PMSPipelineDtoMapper {
     return withVersion;
   }
 
-  public PMSPipelineSummaryResponseDTO preparePipelineSummary(PipelineEntity pipelineEntity) {
+  public PMSPipelineSummaryResponseDTO preparePipelineSummary(PipelineEntity pipelineEntity, Boolean getMetadataOnly) {
+    if (Boolean.TRUE.equals(getMetadataOnly)) {
+      return preparePipelineSummary(pipelineEntity, getEntityGitDetailsForMetadataResponse(pipelineEntity));
+    }
     return preparePipelineSummary(pipelineEntity, getEntityGitDetails(pipelineEntity));
   }
 
@@ -170,10 +214,7 @@ public class PMSPipelineDtoMapper {
     // For List View, getEntityGitDetails(...) method cant be used because for REMOTE pipelines. That is because
     // GitAwareContextHelper.getEntityGitDetailsFromScmGitMetadata() cannot be used, because there won't be any
     // SCM Context set in the List call.
-    EntityGitDetails entityGitDetails = pipelineEntity.getStoreType() == null
-        ? EntityGitDetailsMapper.mapEntityGitDetails(pipelineEntity)
-        : pipelineEntity.getStoreType() == StoreType.REMOTE ? GitAwareContextHelper.getEntityGitDetails(pipelineEntity)
-                                                            : null;
+    EntityGitDetails entityGitDetails = getEntityGitDetailsForMetadataResponse(pipelineEntity);
     PMSPipelineSummaryResponseDTO pmsPipelineSummaryResponseDTO =
         preparePipelineSummary(pipelineEntity, entityGitDetails);
     List<RecentExecutionInfoDTO> recentExecutionsInfo =

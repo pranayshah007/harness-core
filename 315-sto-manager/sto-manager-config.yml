@@ -204,7 +204,7 @@ pmsGrpcClientConfig:
 
 apiUrl: https://localhost:8181/#/
 
-shouldConfigureWithPMS: false
+shouldConfigureWithPMS: ${SHOULD_CONFIGURE_WITH_PMS:-false}
 
 
 eventsFramework:

@@ -10,5 +10,5 @@ package io.harness.repositories.instancestats;
 import io.harness.models.InstanceStats;
 
 public interface InstanceStatsRepository {
-  InstanceStats getLatestRecord(String accountId);
+  InstanceStats getLatestRecord(String accountId, String orgId, String projectId, String serviceId);
 }

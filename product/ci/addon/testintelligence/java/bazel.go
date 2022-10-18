@@ -109,12 +109,18 @@ func (b *bazelRunner) GetCmd(ctx context.Context, tests []types.RunnableTest, us
 	}
 	rulesM := make(map[string]struct{})
 	rules := []string{} // List of unique bazel rules to be executed
+	set := make(map[string]interface{})
 	for i := 0; i < len(pkgs); i++ {
 		// If the rule is present in the test, use it and skip querying bazel to get the rule
 		if rls[i] != "" {
 			rules = append(rules, rls[i])
 			continue
 		}
+		if _, ok := set[clss[i]]; ok {
+			// The class has already been queried
+			continue
+		}
+		set[clss[i]] = struct{}{}
 		c := fmt.Sprintf("%s query 'attr(name, %s.%s, //...)'", bazelCmd, pkgs[i], clss[i])
 		cmdArgs := []string{"-c", c}
 		resp, err := b.cmdContextFactory.CmdContextWithSleep(ctx, time.Duration(0), "sh", cmdArgs...).Output()

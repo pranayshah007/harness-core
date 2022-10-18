@@ -8,16 +8,21 @@
 package io.harness.pms.preflight.connector;
 
 import static io.harness.rule.OwnerRule.NAMAN;
+import static io.harness.rule.OwnerRule.VIVEK_DIXIT;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.NGTemplateReference;
 import io.harness.category.element.UnitTests;
+import io.harness.common.EntityReference;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
+import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.gitsync.sdk.EntityValidityDetails;
+import io.harness.ng.core.EntityDetail;
 import io.harness.pms.merger.fqn.FQN;
 import io.harness.pms.merger.helpers.FQNMapGenerator;
 import io.harness.pms.preflight.PreFlightStatus;
@@ -103,5 +108,33 @@ public class ConnectorPreflightHandlerTest extends CategoryTest {
     assertThat(response.getStageIdentifier()).isEqualTo("qaStage");
     assertThat(response.getStageName()).isEqualTo("qa stage");
     assertThat(response.getErrorInfo()).isNotNull();
+  }
+
+  @Test
+  @Owner(developers = VIVEK_DIXIT)
+  @Category(UnitTests.class)
+  public void testFilterConnectorResponse() {
+    EntityReference entityReference =
+        NGTemplateReference.builder().branch("main").identifier("connector").repoIdentifier("repo").build();
+    List<EntityDetail> connectorUsages =
+        Collections.singletonList(EntityDetail.builder().entityRef(entityReference).build());
+
+    ConnectorResponseDTO connectorResponseDTO1 =
+        ConnectorResponseDTO.builder()
+            .connector(ConnectorInfoDTO.builder().identifier("connector").build())
+            .gitDetails(EntityGitDetails.builder().branch("main").repoIdentifier("repo").build())
+            .build();
+    ConnectorResponseDTO connectorResponseDTO2 =
+        ConnectorResponseDTO.builder()
+            .connector(ConnectorInfoDTO.builder().identifier("connector").build())
+            .gitDetails(EntityGitDetails.builder().branch("another_branch").repoIdentifier("repo").build())
+            .build();
+    List<ConnectorResponseDTO> unFilteredResponse = new ArrayList<>();
+    unFilteredResponse.add(connectorResponseDTO1);
+    unFilteredResponse.add(connectorResponseDTO2);
+    List<ConnectorResponseDTO> filteredResponse =
+        connectorPreflightHandler.filterConnectorResponse(unFilteredResponse, connectorUsages);
+    assertThat(filteredResponse.size()).isEqualTo(1);
+    assertThat(filteredResponse.get(0).getGitDetails().getBranch()).isEqualTo("main");
   }
 }

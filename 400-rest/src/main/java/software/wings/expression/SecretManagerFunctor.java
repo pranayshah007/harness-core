@@ -154,6 +154,7 @@ public class SecretManagerFunctor implements ExpressionFunctor, SecretManagerFun
   }
 
   private Object obtainInternal(String secretName) {
+    boolean updateSecretUsage = !SecretManagerMode.DRY_RUN.equals(mode);
     if (evaluatedSecrets.containsKey(secretName)) {
       return returnSecretValue(secretName, evaluatedSecrets.get(secretName));
     }
@@ -193,7 +194,8 @@ public class SecretManagerFunctor implements ExpressionFunctor, SecretManagerFun
 
     if (isEmpty(encryptedDataDetails)) {
       // Cache miss.
-      encryptedDataDetails = secretManager.getEncryptionDetails(serviceVariable, appId, workflowExecutionId);
+      encryptedDataDetails =
+          secretManager.getEncryptionDetails(serviceVariable, appId, workflowExecutionId, updateSecretUsage);
 
       if (EmptyPredicate.isEmpty(encryptedDataDetails)) {
         throw new InvalidRequestException("No secret found with identifier + [" + secretName + "]", USER);

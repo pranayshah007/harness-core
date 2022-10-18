@@ -101,14 +101,19 @@ public class NGTriggerWebhookRegistrationServiceImpl implements NGTriggerWebhook
       upsertWebhookResponseDTO = getResponse(webhookEventClient.upsertWebhook(upsertWebhookRequestDTO));
     } catch (Exception ex) {
       log.error("Failed to register webhook", ex);
-      metadataBuilder.webhookAutoRegistrationStatus(
-          WebhookAutoRegistrationStatus.builder().registrationResult(WebhookRegistrationStatus.ERROR).build());
+      metadataBuilder.webhookAutoRegistrationStatus(WebhookAutoRegistrationStatus.builder()
+                                                        .detailedMessage(ex.getMessage())
+                                                        .registrationResult(WebhookRegistrationStatus.ERROR)
+                                                        .build());
 
       return metadataBuilder.build();
     }
     if (upsertWebhookResponseDTO.getStatus() > 300) {
-      metadataBuilder.webhookAutoRegistrationStatus(
-          WebhookAutoRegistrationStatus.builder().registrationResult(WebhookRegistrationStatus.FAILED).build());
+      log.info("Failed to auto register webhook: {}", upsertWebhookResponseDTO.getError());
+      metadataBuilder.webhookAutoRegistrationStatus(WebhookAutoRegistrationStatus.builder()
+                                                        .detailedMessage(upsertWebhookResponseDTO.getError())
+                                                        .registrationResult(WebhookRegistrationStatus.FAILED)
+                                                        .build());
 
       return metadataBuilder.build();
     }

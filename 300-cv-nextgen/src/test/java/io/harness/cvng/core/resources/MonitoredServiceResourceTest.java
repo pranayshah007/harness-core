@@ -11,6 +11,7 @@ import static io.harness.rule.OwnerRule.ABHIJITH;
 import static io.harness.rule.OwnerRule.DEEPAK_CHHIKARA;
 import static io.harness.rule.OwnerRule.KAMAL;
 import static io.harness.rule.OwnerRule.KAPIL;
+import static io.harness.rule.OwnerRule.KARAN_SARASWAT;
 import static io.harness.rule.OwnerRule.VARSHA_LALWANI;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -46,11 +47,19 @@ import io.harness.cvng.notification.services.api.NotificationRuleService;
 import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 import io.harness.rule.ResourceTestRule;
+import io.harness.utils.InvalidResourceData;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
+import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import java.io.IOException;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -434,6 +443,432 @@ public class MonitoredServiceResourceTest extends CvNextGenTestBase {
   }
 
   @Test
+  @Owner(developers = KARAN_SARASWAT)
+  @Category(UnitTests.class)
+  public void monitoredServiceTemplateValidation() throws IOException {
+    String monitoredServiceYaml = getResource("monitoredservice/monitored-service-appd-validation.yaml");
+    List<InvalidResourceData> invalidResourceDataList = new ArrayList<>();
+    invalidResourceDataList.add(InvalidResourceData.builder()
+                                    .path("monitoredService")
+                                    .property("serviceRef")
+                                    .replacementValue(null)
+                                    .expectedResponseCode(500)
+                                    .build());
+    invalidResourceDataList.add(InvalidResourceData.builder()
+                                    .path("monitoredService")
+                                    .property("serviceRef")
+                                    .replacementValue("")
+                                    .expectedResponseCode(500)
+                                    .build());
+    invalidResourceDataList.add(InvalidResourceData.builder()
+                                    .path("monitoredService")
+                                    .property("type")
+                                    .replacementValue(null)
+                                    .expectedResponseCode(500)
+                                    .build());
+    invalidResourceDataList.add(InvalidResourceData.builder()
+                                    .path("monitoredService")
+                                    .property("type")
+                                    .replacementValue("")
+                                    .expectedResponseCode(500)
+                                    .build());
+    invalidResourceDataList.add(InvalidResourceData.builder()
+                                    .path("monitoredService")
+                                    .property("environmentRef")
+                                    .replacementValue(null)
+                                    .expectedResponseCode(500)
+                                    .build());
+    invalidResourceDataList.add(InvalidResourceData.builder()
+                                    .path("monitoredService")
+                                    .property("environmentRef")
+                                    .replacementValue("")
+                                    .expectedResponseCode(500)
+                                    .build());
+    invalidResourceDataList.add(InvalidResourceData.builder()
+                                    .path("monitoredService\\sources\\healthSources")
+                                    .property("identifier")
+                                    .replacementValue("")
+                                    .expectedResponseCode(500)
+                                    .build());
+    invalidResourceDataList.add(InvalidResourceData.builder()
+                                    .path("monitoredService\\sources\\healthSources")
+                                    .property("identifier")
+                                    .replacementValue(null)
+                                    .expectedResponseCode(500)
+                                    .build());
+    invalidResourceDataList.add(InvalidResourceData.builder()
+                                    .path("monitoredService\\sources\\healthSources")
+                                    .property("name")
+                                    .replacementValue("")
+                                    .expectedResponseCode(500)
+                                    .build());
+    invalidResourceDataList.add(InvalidResourceData.builder()
+                                    .path("monitoredService\\sources\\healthSources")
+                                    .property("name")
+                                    .replacementValue(null)
+                                    .expectedResponseCode(500)
+                                    .build());
+    invalidResourceDataList.add(InvalidResourceData.builder()
+                                    .path("monitoredService\\sources\\healthSources\\spec")
+                                    .property("connectorRef")
+                                    .replacementValue(null)
+                                    .expectedResponseCode(500)
+                                    .build());
+    invalidResourceDataList.add(InvalidResourceData.builder()
+                                    .path("monitoredService\\sources\\healthSources\\spec")
+                                    .property("connectorRef")
+                                    .replacementValue("")
+                                    .expectedResponseCode(500)
+                                    .build());
+    invalidResourceDataList.add(InvalidResourceData.builder()
+                                    .path("monitoredService\\sources\\healthSources\\spec\\metricDefinitions")
+                                    .property("groupName")
+                                    .replacementValue(null)
+                                    .expectedResponseCode(500)
+                                    .build());
+    invalidResourceDataList.add(InvalidResourceData.builder()
+                                    .path("monitoredService\\sources\\healthSources\\spec\\metricDefinitions")
+                                    .property("groupName")
+                                    .replacementValue(null)
+                                    .expectedResponseCode(500)
+                                    .build());
+    invalidResourceDataList.add(InvalidResourceData.builder()
+                                    .path("monitoredService\\sources\\healthSources")
+                                    .property("type")
+                                    .replacementValue("")
+                                    .expectedResponseCode(500)
+                                    .build());
+    invalidResourceDataList.add(InvalidResourceData.builder()
+                                    .path("monitoredService\\sources\\healthSources")
+                                    .property("type")
+                                    .replacementValue("random")
+                                    .expectedResponseCode(500)
+                                    .build());
+    for (InvalidResourceData invalidResourceData : invalidResourceDataList) {
+      String msJson = InvalidResourceData.replace(monitoredServiceYaml, invalidResourceData);
+      String msYaml = convertToYaml(msJson);
+      Response response = RESOURCES.client()
+                              .target("http://localhost:9998/monitored-service/yaml")
+                              .queryParam("accountId", builderFactory.getContext().getAccountId())
+                              .queryParam("orgIdentifier", builderFactory.getContext().getOrgIdentifier())
+                              .queryParam("projectIdentifier", builderFactory.getContext().getProjectIdentifier())
+                              .request(MediaType.APPLICATION_JSON_TYPE)
+                              .post(Entity.text(msYaml));
+      assertThat(response.getStatus()).isEqualTo(invalidResourceData.getExpectedResponseCode());
+    }
+  }
+
+  @Test
+  @Owner(developers = KARAN_SARASWAT)
+  @Category(UnitTests.class)
+  public void monitoredServiceAppDTemplateValidation() throws IOException {
+    String monitoredServiceYaml = getResource("monitoredservice/monitored-service-appd-validation.yaml");
+    List<InvalidResourceData> invalidResourceDataList = new ArrayList<>();
+    invalidResourceDataList.add(InvalidResourceData.builder()
+                                    .path("monitoredService\\sources\\healthSources\\spec")
+                                    .property("applicationName")
+                                    .replacementValue(null)
+                                    .expectedResponseCode(500)
+                                    .build());
+    invalidResourceDataList.add(InvalidResourceData.builder()
+                                    .path("monitoredService\\sources\\healthSources\\spec")
+                                    .property("applicationName")
+                                    .replacementValue("")
+                                    .expectedResponseCode(500)
+                                    .build());
+    invalidResourceDataList.add(InvalidResourceData.builder()
+                                    .path("monitoredService\\sources\\healthSources\\spec")
+                                    .property("tierName")
+                                    .replacementValue(null)
+                                    .expectedResponseCode(500)
+                                    .build());
+    invalidResourceDataList.add(InvalidResourceData.builder()
+                                    .path("monitoredService\\sources\\healthSources\\spec")
+                                    .property("tierName")
+                                    .replacementValue("")
+                                    .expectedResponseCode(500)
+                                    .build());
+    invalidResourceDataList.add(InvalidResourceData.builder()
+                                    .path("monitoredService\\sources\\healthSources\\spec\\metricDefinitions\\analysis")
+                                    .property("riskProfile")
+                                    .replacementValue(null)
+                                    .expectedResponseCode(500)
+                                    .build());
+    invalidResourceDataList.add(InvalidResourceData.builder()
+                                    .path("monitoredService\\sources\\healthSources\\spec")
+                                    .property("feature")
+                                    .replacementValue(null)
+                                    .expectedResponseCode(500)
+                                    .build());
+    invalidResourceDataList.add(InvalidResourceData.builder()
+                                    .path("monitoredService\\sources\\healthSources\\spec")
+                                    .property("connectorRef")
+                                    .replacementValue(null)
+                                    .expectedResponseCode(500)
+                                    .build());
+    invalidResourceDataList.add(InvalidResourceData.builder()
+                                    .path("monitoredService\\sources\\healthSources\\spec")
+                                    .property("connectorRef")
+                                    .replacementValue("")
+                                    .expectedResponseCode(500)
+                                    .build());
+    for (InvalidResourceData invalidResourceData : invalidResourceDataList) {
+      String msJson = InvalidResourceData.replace(monitoredServiceYaml, invalidResourceData);
+      String msYaml = convertToYaml(msJson);
+      Response response = RESOURCES.client()
+                              .target("http://localhost:9998/monitored-service/yaml")
+                              .queryParam("accountId", builderFactory.getContext().getAccountId())
+                              .queryParam("orgIdentifier", builderFactory.getContext().getOrgIdentifier())
+                              .queryParam("projectIdentifier", builderFactory.getContext().getProjectIdentifier())
+                              .request(MediaType.APPLICATION_JSON_TYPE)
+                              .post(Entity.text(msYaml));
+      assertThat(response.getStatus()).isEqualTo(invalidResourceData.getExpectedResponseCode());
+    }
+  }
+
+  @Test
+  @Owner(developers = KARAN_SARASWAT)
+  @Category(UnitTests.class)
+  public void monitoredServicePrometheusTemplateValidation() throws IOException {
+    String monitoredServiceYaml = getResource("monitoredservice/monitored-service-prometheus-validation.yaml");
+    List<InvalidResourceData> invalidResourceDataList = new ArrayList<>();
+    invalidResourceDataList.add(InvalidResourceData.builder()
+                                    .path("monitoredService\\sources\\healthSources\\spec\\metricDefinitions")
+                                    .property("metricName")
+                                    .replacementValue(null)
+                                    .expectedResponseCode(500)
+                                    .build());
+    for (InvalidResourceData invalidResourceData : invalidResourceDataList) {
+      String msJson = InvalidResourceData.replace(monitoredServiceYaml, invalidResourceData);
+      String msYaml = convertToYaml(msJson);
+      Response response = RESOURCES.client()
+                              .target("http://localhost:9998/monitored-service/yaml")
+                              .queryParam("accountId", builderFactory.getContext().getAccountId())
+                              .queryParam("orgIdentifier", builderFactory.getContext().getOrgIdentifier())
+                              .queryParam("projectIdentifier", builderFactory.getContext().getProjectIdentifier())
+                              .request(MediaType.APPLICATION_JSON_TYPE)
+                              .post(Entity.text(msYaml));
+      assertThat(response.getStatus()).isEqualTo(invalidResourceData.getExpectedResponseCode());
+    }
+  }
+
+  @Test
+  @Owner(developers = KARAN_SARASWAT)
+  @Category(UnitTests.class)
+  public void monitoredServiceNewRelicTemplateValidation() throws IOException {
+    String monitoredServiceYaml = getResource("monitoredservice/monitored-service-newrelic-validation.yaml");
+    List<InvalidResourceData> invalidResourceDataList = new ArrayList<>();
+    invalidResourceDataList.add(InvalidResourceData.builder()
+                                    .path("monitoredService\\sources\\healthSources\\spec")
+                                    .property("applicationName")
+                                    .replacementValue(null)
+                                    .expectedResponseCode(500)
+                                    .build());
+    invalidResourceDataList.add(InvalidResourceData.builder()
+                                    .path("monitoredService\\sources\\healthSources\\spec")
+                                    .property("applicationId")
+                                    .replacementValue(null)
+                                    .expectedResponseCode(500)
+                                    .build());
+    invalidResourceDataList.add(InvalidResourceData.builder()
+                                    .path("monitoredService\\sources\\healthSources\\spec")
+                                    .property("applicationId")
+                                    .replacementValue("")
+                                    .expectedResponseCode(500)
+                                    .build());
+    //    invalidResourceDataList.add(
+    //            InvalidResourceData.builder().path("monitoredService\\sources\\healthSources\\spec\\newRelicMetricDefinitions\\responseMapping").property("metricValueJsonPath").replacementValue(null).expectedResponseCode(500).build());
+    //    invalidResourceDataList.add(
+    //            InvalidResourceData.builder().path("monitoredService\\sources\\healthSources\\spec\\newRelicMetricDefinitions\\responseMapping").property("timestampJsonPath").replacementValue(null).expectedResponseCode(500).build());
+    //    invalidResourceDataList.add(
+    //            InvalidResourceData.builder().path("monitoredService\\sources\\healthSources\\spec\\metricDefinitions\\analysis").property("riskProfile").replacementValue(null).expectedResponseCode(500).build());
+    for (InvalidResourceData invalidResourceData : invalidResourceDataList) {
+      String msJson = InvalidResourceData.replace(monitoredServiceYaml, invalidResourceData);
+      String msYaml = convertToYaml(msJson);
+      Response response = RESOURCES.client()
+                              .target("http://localhost:9998/monitored-service/yaml")
+                              .queryParam("accountId", builderFactory.getContext().getAccountId())
+                              .queryParam("orgIdentifier", builderFactory.getContext().getOrgIdentifier())
+                              .queryParam("projectIdentifier", builderFactory.getContext().getProjectIdentifier())
+                              .request(MediaType.APPLICATION_JSON_TYPE)
+                              .post(Entity.text(msYaml));
+      assertThat(response.getStatus()).isEqualTo(invalidResourceData.getExpectedResponseCode());
+    }
+  }
+
+  @Test
+  @Owner(developers = KARAN_SARASWAT)
+  @Category(UnitTests.class)
+  public void monitoredServiceDatadogLogsTemplateValidation() throws IOException {
+    String monitoredServiceYaml = getResource("monitoredservice/monitored-service-datadog-logs-validation.yaml");
+    List<InvalidResourceData> invalidResourceDataList = new ArrayList<>();
+    invalidResourceDataList.add(InvalidResourceData.builder()
+                                    .path("monitoredService\\sources\\healthSources\\spec")
+                                    .property("queries")
+                                    .replacementValue(null)
+                                    .expectedResponseCode(500)
+                                    .build());
+    invalidResourceDataList.add(InvalidResourceData.builder()
+                                    .path("monitoredService\\sources\\healthSources\\spec\\queries")
+                                    .property("query")
+                                    .replacementValue(null)
+                                    .expectedResponseCode(500)
+                                    .build());
+    invalidResourceDataList.add(InvalidResourceData.builder()
+                                    .path("monitoredService\\sources\\healthSources\\spec\\queries")
+                                    .property("serviceInstanceIdentifier")
+                                    .replacementValue(null)
+                                    .expectedResponseCode(500)
+                                    .build());
+    invalidResourceDataList.add(InvalidResourceData.builder()
+                                    .path("monitoredService\\sources\\healthSources\\spec\\queries")
+                                    .property("indexes")
+                                    .replacementValue(null)
+                                    .expectedResponseCode(500)
+                                    .build());
+    invalidResourceDataList.add(InvalidResourceData.builder()
+                                    .path("monitoredService\\sources\\healthSources\\spec")
+                                    .property("connectorRef")
+                                    .replacementValue(null)
+                                    .expectedResponseCode(500)
+                                    .build());
+    invalidResourceDataList.add(InvalidResourceData.builder()
+                                    .path("monitoredService\\sources\\healthSources\\spec")
+                                    .property("connectorRef")
+                                    .replacementValue("")
+                                    .expectedResponseCode(500)
+                                    .build());
+    for (InvalidResourceData invalidResourceData : invalidResourceDataList) {
+      String msJson = InvalidResourceData.replace(monitoredServiceYaml, invalidResourceData);
+      String msYaml = convertToYaml(msJson);
+      Response response = RESOURCES.client()
+                              .target("http://localhost:9998/monitored-service/yaml")
+                              .queryParam("accountId", builderFactory.getContext().getAccountId())
+                              .queryParam("orgIdentifier", builderFactory.getContext().getOrgIdentifier())
+                              .queryParam("projectIdentifier", builderFactory.getContext().getProjectIdentifier())
+                              .request(MediaType.APPLICATION_JSON_TYPE)
+                              .post(Entity.text(msYaml));
+      assertThat(response.getStatus()).isEqualTo(invalidResourceData.getExpectedResponseCode());
+    }
+  }
+
+  @Test
+  @Owner(developers = KARAN_SARASWAT)
+  @Category(UnitTests.class)
+  public void monitoredServiceDynatraceTemplateValidation() throws IOException {
+    String monitoredServiceYaml = getResource("monitoredservice/monitored-service-dynatrace-validation.yaml");
+    List<InvalidResourceData> invalidResourceDataList = new ArrayList<>();
+    invalidResourceDataList.add(InvalidResourceData.builder()
+                                    .path("monitoredService\\sources\\healthSources\\spec")
+                                    .property("serviceId")
+                                    .replacementValue(null)
+                                    .expectedResponseCode(500)
+                                    .build());
+    invalidResourceDataList.add(InvalidResourceData.builder()
+                                    .path("monitoredService\\sources\\healthSources\\spec")
+                                    .property("serviceName")
+                                    .replacementValue(null)
+                                    .expectedResponseCode(500)
+                                    .build());
+    //    invalidResourceDataList.add(
+    //            InvalidResourceData.builder().path("monitoredService\\sources\\healthSources\\spec").property("metricPacks").replacementValue(null).expectedResponseCode(500).build());
+    //    invalidResourceDataList.add(
+    //            InvalidResourceData.builder().path("monitoredService\\sources\\healthSources\\spec\\metricPacks").property("identifier").replacementValue("random").expectedResponseCode(500).build());
+    //    invalidResourceDataList.add(
+    //            InvalidResourceData.builder().path("monitoredService\\sources\\healthSources").property("serviceMethodIds").replacementValue(null).expectedResponseCode(500).build());
+    invalidResourceDataList.add(InvalidResourceData.builder()
+                                    .path("monitoredService\\sources\\healthSources\\spec")
+                                    .property("connectorRef")
+                                    .replacementValue("")
+                                    .expectedResponseCode(500)
+                                    .build());
+    for (InvalidResourceData invalidResourceData : invalidResourceDataList) {
+      String msJson = InvalidResourceData.replace(monitoredServiceYaml, invalidResourceData);
+      String msYaml = convertToYaml(msJson);
+      Response response = RESOURCES.client()
+                              .target("http://localhost:9998/monitored-service/yaml")
+                              .queryParam("accountId", builderFactory.getContext().getAccountId())
+                              .queryParam("orgIdentifier", builderFactory.getContext().getOrgIdentifier())
+                              .queryParam("projectIdentifier", builderFactory.getContext().getProjectIdentifier())
+                              .request(MediaType.APPLICATION_JSON_TYPE)
+                              .post(Entity.text(msYaml));
+      assertThat(response.getStatus()).isEqualTo(invalidResourceData.getExpectedResponseCode());
+    }
+  }
+
+  @Test
+  @Owner(developers = KARAN_SARASWAT)
+  @Category(UnitTests.class)
+  public void monitoredServiceGCPLogsTemplateValidation() throws IOException {
+    String monitoredServiceYaml = getResource("monitoredservice/monitored-service-gcp-logs-validation.yaml");
+    List<InvalidResourceData> invalidResourceDataList = new ArrayList<>();
+    invalidResourceDataList.add(InvalidResourceData.builder()
+                                    .path("monitoredService\\sources\\healthSources\\spec")
+                                    .property("queries")
+                                    .replacementValue(null)
+                                    .expectedResponseCode(500)
+                                    .build());
+    invalidResourceDataList.add(InvalidResourceData.builder()
+                                    .path("monitoredService\\sources\\healthSources\\spec\\queries")
+                                    .property("query")
+                                    .replacementValue(null)
+                                    .expectedResponseCode(500)
+                                    .build());
+    invalidResourceDataList.add(InvalidResourceData.builder()
+                                    .path("monitoredService\\sources\\healthSources\\spec\\queries")
+                                    .property("serviceInstanceIdentifier")
+                                    .replacementValue(null)
+                                    .expectedResponseCode(500)
+                                    .build());
+    //    invalidResourceDataList.add(
+    //            InvalidResourceData.builder().path("monitoredService\\sources\\healthSources\\spec\\queries").property("identifier").replacementValue(null).expectedResponseCode(500).build());
+    for (InvalidResourceData invalidResourceData : invalidResourceDataList) {
+      String msJson = InvalidResourceData.replace(monitoredServiceYaml, invalidResourceData);
+      String msYaml = convertToYaml(msJson);
+      Response response = RESOURCES.client()
+                              .target("http://localhost:9998/monitored-service/yaml")
+                              .queryParam("accountId", builderFactory.getContext().getAccountId())
+                              .queryParam("orgIdentifier", builderFactory.getContext().getOrgIdentifier())
+                              .queryParam("projectIdentifier", builderFactory.getContext().getProjectIdentifier())
+                              .request(MediaType.APPLICATION_JSON_TYPE)
+                              .post(Entity.text(msYaml));
+      assertThat(response.getStatus()).isEqualTo(invalidResourceData.getExpectedResponseCode());
+    }
+  }
+
+  @Test
+  @Owner(developers = KARAN_SARASWAT)
+  @Category(UnitTests.class)
+  public void monitoredServiceGCPMetricsTemplateValidation() throws IOException {
+    String monitoredServiceYaml = getResource("monitoredservice/monitored-service-gcp-metrics-validation.yaml");
+    List<InvalidResourceData> invalidResourceDataList = new ArrayList<>();
+    invalidResourceDataList.add(InvalidResourceData.builder()
+                                    .path("monitoredService\\sources\\healthSources\\spec\\metricDefinitions")
+                                    .property("jsonMetricDefinition")
+                                    .replacementValue(null)
+                                    .expectedResponseCode(500)
+                                    .build());
+    invalidResourceDataList.add(InvalidResourceData.builder()
+                                    .path("monitoredService\\sources\\healthSources\\spec\\metricDefinitions")
+                                    .property("serviceInstanceField")
+                                    .replacementValue(null)
+                                    .expectedResponseCode(500)
+                                    .build());
+    for (InvalidResourceData invalidResourceData : invalidResourceDataList) {
+      String msJson = InvalidResourceData.replace(monitoredServiceYaml, invalidResourceData);
+      String msYaml = convertToYaml(msJson);
+      Response response = RESOURCES.client()
+                              .target("http://localhost:9998/monitored-service/yaml")
+                              .queryParam("accountId", builderFactory.getContext().getAccountId())
+                              .queryParam("orgIdentifier", builderFactory.getContext().getOrgIdentifier())
+                              .queryParam("projectIdentifier", builderFactory.getContext().getProjectIdentifier())
+                              .request(MediaType.APPLICATION_JSON_TYPE)
+                              .post(Entity.text(msYaml));
+      assertThat(response.getStatus()).isEqualTo(invalidResourceData.getExpectedResponseCode());
+    }
+  }
+
+  @Test
   @Owner(developers = KAMAL)
   @Category(UnitTests.class)
   public void testListMonitoredService_listScreenAPI() {
@@ -723,5 +1158,12 @@ public class MonitoredServiceResourceTest extends CvNextGenTestBase {
 
     JSONObject jsonObject = new JSONObject(map);
     return jsonObject.toString();
+  }
+
+  private static String convertToYaml(String jsonString) throws JsonProcessingException {
+    JsonNode jsonNodeTree = new ObjectMapper().readTree(jsonString);
+    String jsonAsYaml = new YAMLMapper(new YAMLFactory().enable(YAMLGenerator.Feature.MINIMIZE_QUOTES))
+                            .writeValueAsString(jsonNodeTree);
+    return jsonAsYaml;
   }
 }

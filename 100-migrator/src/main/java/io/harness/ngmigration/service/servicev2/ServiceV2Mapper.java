@@ -13,10 +13,16 @@ import static software.wings.ngmigration.NGMigrationEntityType.ARTIFACT_STREAM;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.artifact.bean.yaml.ArtifactSource;
+import io.harness.cdng.artifact.bean.yaml.PrimaryArtifact;
 import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
 import io.harness.cdng.service.beans.ServiceDefinition;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
+import io.harness.ngmigration.service.MigratorUtility;
+import io.harness.ngmigration.service.artifactstream.ArtifactStreamFactory;
+import io.harness.pms.yaml.ParameterField;
 
 import software.wings.beans.Service;
 import software.wings.beans.artifact.ArtifactStream;
@@ -32,6 +38,10 @@ import java.util.stream.Collectors;
 
 @OwnedBy(HarnessTeam.CDC)
 public interface ServiceV2Mapper {
+  default boolean isMigrationSupported() {
+    return true;
+  }
+
   ServiceDefinition getServiceDefinition(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
       Map<CgEntityId, Set<CgEntityId>> graph, Service service, Map<CgEntityId, NGYamlFile> migratedEntities,
       List<ManifestConfigWrapper> manifests);
@@ -48,5 +58,29 @@ public interface ServiceV2Mapper {
           .collect(Collectors.toList());
     }
     return new ArrayList<>();
+  }
+
+  default PrimaryArtifact getPrimaryArtifactStream(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
+      Map<CgEntityId, Set<CgEntityId>> graph, Service service, Map<CgEntityId, NGYamlFile> migratedEntities) {
+    List<ArtifactStream> artifactStreams = getArtifactStream(entities, graph, service);
+    List<ArtifactSource> sources = new ArrayList<>();
+    if (EmptyPredicate.isNotEmpty(artifactStreams)) {
+      sources = artifactStreams.stream()
+                    .map(artifactStream -> {
+                      PrimaryArtifact artifactSource =
+                          ArtifactStreamFactory.getArtifactStreamMapper(artifactStream)
+                              .getArtifactDetails(inputDTO, entities, graph, artifactStream, migratedEntities);
+                      return ArtifactSource.builder()
+                          .sourceType(artifactSource.getSourceType())
+                          .identifier(MigratorUtility.generateIdentifier(artifactStream.getName()))
+                          .spec(artifactSource.getSpec())
+                          .build();
+                    })
+                    .collect(Collectors.toList());
+    }
+    return PrimaryArtifact.builder()
+        .primaryArtifactRef(ParameterField.createValueField("<+input>"))
+        .sources(sources)
+        .build();
   }
 }

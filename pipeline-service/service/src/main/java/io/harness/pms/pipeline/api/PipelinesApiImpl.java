@@ -45,6 +45,7 @@ import io.harness.yaml.validator.InvalidYamlException;
 import com.google.inject.Inject;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.ws.rs.core.Response;
@@ -184,6 +185,10 @@ public class PipelinesApiImpl implements PipelinesApi {
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT)
   public Response updatePipeline(PipelineUpdateRequestBody requestBody, @OrgIdentifier String org,
       @ProjectIdentifier String project, @ResourceIdentifier String pipeline, @AccountIdentifier String account) {
+    if (!Objects.equals(pipeline, requestBody.getSlug())) {
+      throw new InvalidRequestException(String.format(
+          "Expected Pipeline identifier in YAML to be [%s], but was [%s]", pipeline, requestBody.getSlug()));
+    }
     GitAwareContextHelper.populateGitDetails(PipelinesApiUtils.populateGitUpdateDetails(requestBody.getGitDetails()));
     log.info(String.format(
         "Updating Pipeline with identifier %s in project %s, org %s, account %s", pipeline, project, org, account));

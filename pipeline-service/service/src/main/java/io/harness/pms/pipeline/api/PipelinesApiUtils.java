@@ -111,12 +111,27 @@ public class PipelinesApiUtils {
   public static PipelineGetResponseBody getGetResponseBody(PipelineEntity pipelineEntity) {
     PipelineGetResponseBody pipelineGetResponseBody = new PipelineGetResponseBody();
     pipelineGetResponseBody.setPipelineYaml(pipelineEntity.getYaml());
+    pipelineGetResponseBody.setSlug(pipelineEntity.getIdentifier());
+    pipelineGetResponseBody.setName(pipelineEntity.getName());
+    pipelineGetResponseBody.setDescription(pipelineEntity.getDescription());
+    pipelineGetResponseBody.setTags(getTagsFromNGTag(pipelineEntity.getTags()));
     pipelineGetResponseBody.setGitDetails(getGitDetails(PMSPipelineDtoMapper.getEntityGitDetails(pipelineEntity)));
     pipelineGetResponseBody.setModules(getModules(pipelineEntity.getFilters().keySet()));
     pipelineGetResponseBody.setCreated(pipelineEntity.getCreatedAt());
     pipelineGetResponseBody.setUpdated(pipelineEntity.getLastUpdatedAt());
     pipelineGetResponseBody.setValid(true);
     return pipelineGetResponseBody;
+  }
+
+  public static Map<String, String> getTagsFromNGTag(List<NGTag> ngTags) {
+    if (isEmpty(ngTags)) {
+      return null;
+    }
+    Map<String, String> tags = new HashMap<>();
+    for (NGTag ngTag : ngTags) {
+      tags.put(ngTag.getKey(), ngTag.getValue());
+    }
+    return tags;
   }
 
   public static List<String> getModules(Set<String> modules) {

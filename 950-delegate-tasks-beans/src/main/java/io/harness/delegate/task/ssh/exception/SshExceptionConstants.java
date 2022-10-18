@@ -78,6 +78,10 @@ public class SshExceptionConstants {
       "Please make sure there is no copy artifact command unit specified";
   public final String DOWNLOAD_ARTIFACT_NOT_SUPPORTED_FOR_CUSTOM_ARTIFACT_HINT =
       "Please make sure there is no download artifact command unit specified";
+  public final String COPY_ARTIFACT_NOT_SUPPORTED_FOR_CUSTOM_ARTIFACT_EXPLANATION =
+      "Copy Artifact is not supported for Custom Repository artifacts defined in service";
+  public final String DOWNLOAD_ARTIFACT_NOT_SUPPORTED_FOR_CUSTOM_ARTIFACT_EXPLANATION =
+      "Download Artifact is not supported for Custom Repository artifacts defined in service";
   public final String UNDECRYPTABLE_CONFIG_FILE_PROVIDED = "Could not decrypt the encrypted secret config file %s";
   public final String UNDECRYPTABLE_CONFIG_FILE_PROVIDED_HINT =
       "Please provide a valid encrypted config file instead of %s";
@@ -89,4 +93,10 @@ public class SshExceptionConstants {
       + "S3 artifact path and bucket.";
   public final String S3_ARTIFACT_DOWNLOAD_EXPLANATION = "Failed to download S3 artifact with path: %s from"
       + " %s bucket";
+
+  public final String NEXUS_ARTIFACT_DOWNLOAD_FAILED = "Failed while downloading Nexus Artifact"
+      + " with identifier: %s";
+  public final String NEXUS_ARTIFACT_DOWNLOAD_HINT = "Please review the Nexus Artifact Details and check the"
+      + " repository and package details. We recommend also checking for the artifact on Nexus server";
+  public final String NEXUS_ARTIFACT_DOWNLOAD_EXPLANATION = "Failed to download Nexus Artifact with id: %s";
 }

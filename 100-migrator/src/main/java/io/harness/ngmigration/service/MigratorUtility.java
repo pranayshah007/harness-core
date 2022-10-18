@@ -9,18 +9,19 @@ package io.harness.ngmigration.service;
 
 import static software.wings.ngmigration.NGMigrationEntityType.SECRET;
 
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.Scope;
 import io.harness.encryption.SecretRefData;
 import io.harness.exception.InvalidArgumentsException;
-import io.harness.ng.core.dto.ResponseDTO;
-import io.harness.ng.core.filestore.dto.FileDTO;
+import io.harness.exception.InvalidRequestException;
+import io.harness.ngmigration.beans.BaseProvidedInput;
 import io.harness.ngmigration.beans.FileYamlDTO;
 import io.harness.ngmigration.beans.InputDefaults;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
-import io.harness.ngmigration.client.NGClient;
 import io.harness.ngmigration.secrets.SecretFactory;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.yaml.core.variables.NGVariable;
@@ -33,18 +34,16 @@ import software.wings.beans.ServiceVariableType;
 import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.NGMigrationEntityType;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
-import okhttp3.MediaType;
-import okhttp3.RequestBody;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.CaseUtils;
-import retrofit2.Response;
 
+@OwnedBy(HarnessTeam.CDC)
 @Slf4j
 public class MigratorUtility {
   public static String generateManifestIdentifier(String name) {
@@ -52,6 +51,9 @@ public class MigratorUtility {
   }
 
   public static String generateIdentifier(String name) {
+    if (StringUtils.isBlank(name)) {
+      return "";
+    }
     String generated = CaseUtils.toCamelCase(name.replaceAll("[^A-Za-z0-9]", " ").trim(), false, ' ');
     return Character.isDigit(generated.charAt(0)) ? "_" + generated : generated;
   }
@@ -93,13 +95,21 @@ public class MigratorUtility {
     }
   }
 
-  public static Scope getDefaultScope(Map<NGMigrationEntityType, InputDefaults> inputDefaultsMap,
-      NGMigrationEntityType entityType, Scope defaultScope) {
-    if (inputDefaultsMap == null || !inputDefaultsMap.containsKey(entityType)) {
+  public static Scope getDefaultScope(MigrationInputDTO inputDTO, CgEntityId entityId, Scope defaultScope) {
+    NGMigrationEntityType entityType = entityId.getType();
+    if (inputDTO == null) {
       return defaultScope;
     }
-    return inputDefaultsMap.get(entityType).getScope() != null ? inputDefaultsMap.get(entityType).getScope()
-                                                               : defaultScope;
+    Scope scope = defaultScope;
+    Map<NGMigrationEntityType, InputDefaults> defaults = inputDTO.getDefaults();
+    if (defaults != null && defaults.containsKey(entityType) && defaults.get(entityType).getScope() != null) {
+      scope = defaults.get(entityType).getScope();
+    }
+    Map<CgEntityId, BaseProvidedInput> inputs = inputDTO.getOverrides();
+    if (inputs != null && inputs.containsKey(entityId) && inputs.get(entityId).getScope() != null) {
+      scope = inputs.get(entityId).getScope();
+    }
+    return scope;
   }
 
   public static Scope getScope(NgEntityDetail entityDetail) {
@@ -166,25 +176,67 @@ public class MigratorUtility {
     return variables;
   }
 
-  public static void createFile(String auth, NGClient ngClient, MigrationInputDTO inputDTO, FileYamlDTO fileYamlDTO) {
-    RequestBody identifier = RequestBody.create(MediaType.parse("text/plain"), fileYamlDTO.getIdentifier());
-    RequestBody name = RequestBody.create(MediaType.parse("text/plain"), fileYamlDTO.getName());
-    RequestBody fileUsage = RequestBody.create(MediaType.parse("text/plain"), fileYamlDTO.getFileUsage());
-    RequestBody type = RequestBody.create(MediaType.parse("text/plain"), "FILE");
-    RequestBody parentIdentifier = RequestBody.create(MediaType.parse("text/plain"), "Root");
-    RequestBody mimeType = RequestBody.create(MediaType.parse("text/plain"), "txt");
-    RequestBody content = RequestBody.create(MediaType.parse("application/octet-stream"), fileYamlDTO.getContent());
-
-    Response<ResponseDTO<FileDTO>> resp = null;
-    try {
-      resp = ngClient
-                 .createFileInFileStore(auth, inputDTO.getAccountIdentifier(), inputDTO.getOrgIdentifier(),
-                     inputDTO.getProjectIdentifier(), content, name, identifier, fileUsage, type, parentIdentifier,
-                     mimeType)
-                 .execute();
-      log.info("Connector creation Response details {} {}", resp.code(), resp.message());
-    } catch (IOException e) {
-      log.error("Failed to create file", e);
+  public static String generateIdentifier(
+      Map<CgEntityId, BaseProvidedInput> inputs, CgEntityId entityId, String defaultIdentifier) {
+    if (inputs == null || !inputs.containsKey(entityId) || StringUtils.isBlank(inputs.get(entityId).getIdentifier())) {
+      return defaultIdentifier;
     }
+    return inputs.get(entityId).getIdentifier();
+  }
+
+  public static String generateIdentifierDefaultName(
+      Map<CgEntityId, BaseProvidedInput> inputs, CgEntityId entityId, String name) {
+    if (inputs == null || !inputs.containsKey(entityId) || StringUtils.isBlank(inputs.get(entityId).getIdentifier())) {
+      return generateIdentifier(name);
+    }
+    return inputs.get(entityId).getIdentifier();
+  }
+
+  public static String generateName(
+      Map<CgEntityId, BaseProvidedInput> inputs, CgEntityId entityId, String defaultName) {
+    if (inputs == null || !inputs.containsKey(entityId) || StringUtils.isBlank(inputs.get(entityId).getName())) {
+      return defaultName;
+    }
+    return inputs.get(entityId).getName();
+  }
+
+  public static String getOrgIdentifier(Scope scope, MigrationInputDTO inputDTO) {
+    if (Scope.ACCOUNT.equals(scope)) {
+      return null;
+    }
+    if (StringUtils.isBlank(inputDTO.getOrgIdentifier())) {
+      throw new InvalidRequestException("Trying to scope entity to Org but no org identifier provided in input");
+    }
+    return inputDTO.getOrgIdentifier();
+  }
+
+  public static String getProjectIdentifier(Scope scope, MigrationInputDTO inputDTO) {
+    if (Scope.ACCOUNT.equals(scope) || Scope.ORG.equals(scope)) {
+      return null;
+    }
+    if (StringUtils.isAllBlank(inputDTO.getOrgIdentifier(), inputDTO.getProjectIdentifier())) {
+      throw new InvalidRequestException("Trying to scope entity to Project but org/project identifier(s) are missing");
+    }
+    return inputDTO.getProjectIdentifier();
+  }
+
+  public static boolean endsWithIgnoreCase(String str, String arg, String... args) {
+    if (str.toLowerCase().endsWith(arg)) {
+      return true;
+    }
+    for (String arg1 : args) {
+      if (str.toLowerCase().endsWith(arg1)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  public static ParameterField<List<String>> getFileStorePaths(List<NGYamlFile> files) {
+    if (EmptyPredicate.isEmpty(files)) {
+      return ParameterField.ofNull();
+    }
+    return ParameterField.createValueField(
+        files.stream().map(file -> "/" + ((FileYamlDTO) file.getYaml()).getIdentifier()).collect(Collectors.toList()));
   }
 }

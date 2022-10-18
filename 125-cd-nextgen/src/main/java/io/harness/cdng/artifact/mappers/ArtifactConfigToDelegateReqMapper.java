@@ -90,10 +90,25 @@ public class ArtifactConfigToDelegateReqMapper {
 
   public S3ArtifactDelegateRequest getAmazonS3DelegateRequest(AmazonS3ArtifactConfig artifactConfig,
       AwsConnectorDTO connectorDTO, List<EncryptedDataDetail> encryptedDataDetails, String connectorRef) {
-    // If both are empty, regex is latest among all S3 artifacts.
-    String filePathRegex =
-        artifactConfig.getFilePathRegex() != null ? artifactConfig.getFilePathRegex().getValue() : "";
-    String filePath = artifactConfig.getFilePath() != null ? artifactConfig.getFilePath().getValue() : "";
+    String bucket = artifactConfig.getBucketName().getValue();
+    String filePath = artifactConfig.getFilePath().getValue();
+    String filePathRegex = artifactConfig.getFilePathRegex().getValue();
+
+    if (StringUtils.isBlank(bucket)) {
+      throw new InvalidRequestException("Please input bucketName.");
+    }
+
+    if (StringUtils.isAllBlank(filePathRegex, filePath)) {
+      throw new InvalidRequestException("Please input one of the field - filePath or filePathRegex.");
+    }
+
+    if (StringUtils.isBlank(filePath)) {
+      filePath = "";
+    }
+
+    if (StringUtils.isBlank(filePathRegex)) {
+      filePathRegex = "";
+    }
 
     return ArtifactDelegateRequestUtils.getAmazonS3DelegateRequest(artifactConfig.getBucketName().getValue(), filePath,
         filePathRegex, null, connectorRef, connectorDTO, encryptedDataDetails, ArtifactSourceType.AMAZONS3,
@@ -151,8 +166,10 @@ public class ArtifactConfigToDelegateReqMapper {
       JenkinsConnectorDTO connectorDTO, List<EncryptedDataDetail> encryptedDataDetails, String connectorRef) {
     String artifactPath = artifactConfig.getArtifactPath() != null ? artifactConfig.getArtifactPath().getValue() : "";
     String jobName = artifactConfig.getJobName() != null ? artifactConfig.getJobName().getValue() : "";
-    return ArtifactDelegateRequestUtils.getJenkinsDelegateRequest(connectorRef, connectorDTO, encryptedDataDetails,
-        ArtifactSourceType.JENKINS, null, null, jobName, Arrays.asList(artifactPath));
+    String buildNumber = artifactConfig.getBuild() != null ? artifactConfig.getBuild().getValue() : "";
+    return ArtifactDelegateRequestUtils.getJenkinsDelegateArtifactRequest(connectorRef, connectorDTO,
+        encryptedDataDetails, ArtifactSourceType.JENKINS, null, null, jobName, Arrays.asList(artifactPath),
+        buildNumber);
   }
   public CustomArtifactDelegateRequest getCustomDelegateRequest(
       CustomArtifactConfig artifactConfig, Ambiance ambiance) {

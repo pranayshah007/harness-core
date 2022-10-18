@@ -28,6 +28,7 @@ public class EcsGitFetchPassThroughData implements PassThroughData {
   String serviceDefinitionHarnessFileContent;
   List<String> scalableTargetHarnessFileContentList;
   List<String> scalingPolicyHarnessFileContentList;
+  String ecsRunTaskRequestDefinitionHarnessFileContent;
   String targetGroupArnKey;
   InfrastructureOutcome infrastructureOutcome;
 }

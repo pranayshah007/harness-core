@@ -22,9 +22,12 @@ import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
 import io.harness.cdng.manifest.yaml.harness.HarnessStore;
 import io.harness.datacollection.utils.EmptyPredicate;
 import io.harness.delegate.beans.storeconfig.FetchType;
+import io.harness.encryption.Scope;
 import io.harness.exception.InvalidRequestException;
 import io.harness.gitsync.beans.YamlDTO;
+import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.filestore.FileUsage;
+import io.harness.ng.core.filestore.dto.FileDTO;
 import io.harness.ngmigration.beans.BaseEntityInput;
 import io.harness.ngmigration.beans.BaseProvidedInput;
 import io.harness.ngmigration.beans.FileYamlDTO;
@@ -36,6 +39,8 @@ import io.harness.ngmigration.beans.summary.AppManifestSummary;
 import io.harness.ngmigration.beans.summary.BaseSummary;
 import io.harness.ngmigration.client.NGClient;
 import io.harness.ngmigration.client.PmsClient;
+import io.harness.ngmigration.dto.ImportError;
+import io.harness.ngmigration.dto.MigrationImportSummaryDTO;
 import io.harness.ngmigration.expressions.MigratorExpressionUtils;
 import io.harness.ngmigration.service.MigratorUtility;
 import io.harness.ngmigration.service.NgMigrationService;
@@ -69,9 +74,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
+import okhttp3.MediaType;
+import okhttp3.RequestBody;
 import org.apache.commons.lang3.StringUtils;
+import retrofit2.Response;
 
 @OwnedBy(HarnessTeam.CDC)
+@Slf4j
 public class ManifestMigrationService extends NgMigrationService {
   @Inject private ApplicationManifestService applicationManifestService;
   @Inject private MigratorExpressionUtils migratorExpressionUtils;
@@ -112,6 +122,7 @@ public class ManifestMigrationService extends NgMigrationService {
     CgEntityNode cgEntityNode = CgEntityNode.builder()
                                     .entityId(cgEntityId)
                                     .entity(appManifest)
+                                    .appId(appManifest.getAppId())
                                     .id(appManifest.getUuid())
                                     .type(NGMigrationEntityType.MANIFEST)
                                     .build();
@@ -157,24 +168,41 @@ public class ManifestMigrationService extends NgMigrationService {
   }
 
   @Override
-  public void migrate(String auth, NGClient ngClient, PmsClient pmsClient, MigrationInputDTO inputDTO,
-      NGYamlFile yamlFile) throws IOException {
+  public MigrationImportSummaryDTO migrate(String auth, NGClient ngClient, PmsClient pmsClient,
+      MigrationInputDTO inputDTO, NGYamlFile yamlFile) throws IOException {
     FileYamlDTO fileYamlDTO = (FileYamlDTO) yamlFile.getYaml();
-    MigratorUtility.createFile(auth, ngClient, inputDTO,
-        FileYamlDTO.builder()
-            .orgIdentifier(fileYamlDTO.getOrgIdentifier())
-            .projectIdentifier(fileYamlDTO.getProjectIdentifier())
-            .identifier(fileYamlDTO.getIdentifier())
-            .name(fileYamlDTO.getName())
-            .content(fileYamlDTO.getContent())
-            .fileUsage(fileYamlDTO.getFileUsage())
-            .build());
+    RequestBody identifier = RequestBody.create(MediaType.parse("text/plain"), fileYamlDTO.getIdentifier());
+    RequestBody name = RequestBody.create(MediaType.parse("text/plain"), fileYamlDTO.getName());
+    RequestBody fileUsage = RequestBody.create(MediaType.parse("text/plain"), fileYamlDTO.getFileUsage());
+    RequestBody type = RequestBody.create(MediaType.parse("text/plain"), "FILE");
+    RequestBody parentIdentifier = RequestBody.create(MediaType.parse("text/plain"), "Root");
+    RequestBody mimeType = RequestBody.create(MediaType.parse("text/plain"), "txt");
+    RequestBody content = RequestBody.create(MediaType.parse("application/octet-stream"), fileYamlDTO.getContent());
+
+    Response<ResponseDTO<FileDTO>> resp = null;
+    try {
+      resp = ngClient
+                 .createFileInFileStore(auth, inputDTO.getAccountIdentifier(), inputDTO.getOrgIdentifier(),
+                     inputDTO.getProjectIdentifier(), content, name, identifier, fileUsage, type, parentIdentifier,
+                     mimeType)
+                 .execute();
+      log.info("Connector creation Response details {} {}", resp.code(), resp.message());
+    } catch (IOException e) {
+      log.error("Failed to create file", e);
+      return MigrationImportSummaryDTO.builder()
+          .errors(
+              Collections.singletonList(ImportError.builder()
+                                            .message("There was an error creating the inline manifest in file store")
+                                            .entity(yamlFile.getCgBasicInfo())
+                                            .build()))
+          .build();
+    }
+    return handleResp(yamlFile, resp);
   }
 
   @Override
   public List<NGYamlFile> generateYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
-      Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities,
-      NgEntityDetail ngEntityDetail) {
+      Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities) {
     ApplicationManifest applicationManifest = (ApplicationManifest) entities.get(entityId).getEntity();
     return getYamlFilesForManifest(applicationManifest, inputDTO, entities);
   }
@@ -193,15 +221,26 @@ public class ManifestMigrationService extends NgMigrationService {
       throw new InvalidRequestException("No service found for manifest");
     }
     Service service = (Service) serviceNode.getEntity();
-    String projectIdentifier = inputDTO.getProjectIdentifier();
-    String orgIdentifier = inputDTO.getOrgIdentifier();
+    String projectIdentifier = MigratorUtility.getProjectIdentifier(Scope.PROJECT, inputDTO);
+    String orgIdentifier = MigratorUtility.getOrgIdentifier(Scope.PROJECT, inputDTO);
     String fileUsage = FileUsage.MANIFEST_FILE.name();
     return manifestFiles.stream()
         .map(manifestFile -> {
           // TODO: Fix the identifier & name
           String identifier =
               MigratorUtility.generateManifestIdentifier(service.getName() + " " + manifestFile.getFileName());
+          if (applicationManifest.getKind().equals(AppManifestKind.VALUES)) {
+            identifier = MigratorUtility.generateManifestIdentifier(
+                service.getName() + " ValuesOverride " + manifestFile.getFileName());
+          }
           String name = identifier;
+          if (MigratorUtility.endsWithIgnoreCase(identifier, "yaml", "yml")) {
+            name = MigratorUtility.endsWithIgnoreCase(identifier, "yaml")
+                ? identifier.substring(0, identifier.length() - 4) + ".yaml"
+                : identifier.substring(0, identifier.length() - 3) + ".yml";
+          }
+          String content =
+              (String) migratorExpressionUtils.render(manifestFile.getFileContent(), inputDTO.getCustomExpressions());
           return NGYamlFile.builder()
               .type(NGMigrationEntityType.MANIFEST)
               .filename(null)
@@ -209,7 +248,7 @@ public class ManifestMigrationService extends NgMigrationService {
                         .identifier(identifier)
                         .fileUsage(fileUsage)
                         .name(name)
-                        .content(manifestFile.getFileContent())
+                        .content(content)
                         .orgIdentifier(orgIdentifier)
                         .projectIdentifier(projectIdentifier)
                         .build())
@@ -222,6 +261,7 @@ public class ManifestMigrationService extends NgMigrationService {
                                .accountId(applicationManifest.getAccountId())
                                .appId(applicationManifest.getAppId())
                                .id(applicationManifest.getUuid())
+                               .name(applicationManifest.getName())
                                .type(NGMigrationEntityType.MANIFEST)
                                .build())
               .build();
@@ -256,9 +296,9 @@ public class ManifestMigrationService extends NgMigrationService {
     for (CgEntityId manifestEntityId : manifestEntityIds) {
       CgEntityNode manifestNode = entities.get(manifestEntityId);
       ApplicationManifest applicationManifest = (ApplicationManifest) manifestNode.getEntity();
-      migratorExpressionUtils.render(applicationManifest);
+      migratorExpressionUtils.render(applicationManifest, inputDTO.getCustomExpressions());
       BaseProvidedInput manifestInput =
-          inputDTO.getInputs() == null ? null : inputDTO.getInputs().get(manifestEntityId);
+          inputDTO.getOverrides() == null ? null : inputDTO.getOverrides().get(manifestEntityId);
       ManifestProvidedEntitySpec entitySpec = null;
       if (manifestInput != null && manifestInput.getSpec() != null) {
         entitySpec = JsonUtils.treeToValue(manifestInput.getSpec(), ManifestProvidedEntitySpec.class);
@@ -266,20 +306,19 @@ public class ManifestMigrationService extends NgMigrationService {
       List<NGYamlFile> files = getYamlFilesForManifest(applicationManifest, inputDTO, entities);
       NgManifestService ngManifestService = manifestFactory.getNgManifestService(applicationManifest);
 
-      ManifestConfigWrapper manifestConfigWrapper =
-          ngManifestService.getManifestConfigWrapper(applicationManifest, migratedEntities, entitySpec, files);
+      ManifestConfigWrapper manifestConfigWrapper = ngManifestService.getManifestConfigWrapper(
+          applicationManifest, entities, migratedEntities, entitySpec, files);
       ngManifests.add(manifestConfigWrapper);
     }
     return ngManifests;
   }
 
-  // TODO: use scoped connectorRef ref
   public GitStore getGitStore(
-      GitFileConfig gitFileConfig, ManifestProvidedEntitySpec manifestInput, String connectorRef) {
+      GitFileConfig gitFileConfig, ManifestProvidedEntitySpec manifestInput, NgEntityDetail connector) {
     GitStoreBuilder gitStoreBuilder =
         GitStore.builder()
             .commitId(ParameterField.createValueField(gitFileConfig.getCommitId()))
-            .connectorRef(ParameterField.createValueField(connectorRef))
+            .connectorRef(ParameterField.createValueField(MigratorUtility.getIdentifierWithScope(connector)))
             .gitFetchType(gitFileConfig.isUseBranch() ? FetchType.BRANCH : FetchType.COMMIT)
             .repoName(ParameterField.createValueField(gitFileConfig.getRepoName()));
     if (manifestInput != null) {
@@ -302,10 +341,7 @@ public class ManifestMigrationService extends NgMigrationService {
   }
 
   public HarnessStore getHarnessStore(List<NGYamlFile> files) {
-    return HarnessStore.builder()
-        .files(ParameterField.createValueField(
-            files.stream().map(file -> ((FileYamlDTO) file.getYaml()).getIdentifier()).collect(Collectors.toList())))
-        .build();
+    return HarnessStore.builder().files(MigratorUtility.getFileStorePaths(files)).build();
   }
 
   @Override

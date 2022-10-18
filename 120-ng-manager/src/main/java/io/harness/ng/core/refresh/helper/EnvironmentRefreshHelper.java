@@ -17,6 +17,7 @@ import io.harness.ng.core.environment.services.EnvironmentService;
 import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
 import io.harness.ng.core.refresh.bean.EntityRefreshContext;
 import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
+import io.harness.ng.core.template.refresh.v2.InputsValidationResponse;
 import io.harness.pms.merger.YamlConfig;
 import io.harness.pms.merger.fqn.FQN;
 import io.harness.pms.merger.helpers.RuntimeInputsValidator;
@@ -26,7 +27,6 @@ import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlNodeUtils;
 import io.harness.pms.yaml.YamlUtils;
-import io.harness.template.beans.refresh.v2.InputsValidationResponse;
 import io.harness.utils.YamlPipelineUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -68,12 +68,14 @@ public class EnvironmentRefreshHelper {
     if (envRefJsonNode != null) {
       envRefValue = envRefJsonNode.asText();
       JsonNode envInputsNode = envJsonNode.get(YamlTypes.ENVIRONMENT_INPUTS);
-      if (NGExpressionUtils.isRuntimeOrExpressionField(envRefValue)) {
+      if (NGExpressionUtils.isRuntimeField(envRefValue)) {
         if (isNodeNotNullAndNotHaveRuntimeValue(envInputsNode)
             || (infraDefsNode != null && isNodeNotNullAndNotHaveRuntimeValue(infraDefsNode))
             || (serviceOverrideInputs != null && isNodeNotNullAndNotHaveRuntimeValue(serviceOverrideInputs))) {
           errorNodeSummary.setValid(false);
         }
+        return;
+      } else if (NGExpressionUtils.isExpressionField(envRefValue)) {
         return;
       }
 
@@ -128,6 +130,10 @@ public class EnvironmentRefreshHelper {
         YamlNodeUtils.goToPathUsingFqn(stageYamlNodeInResolvedTemplatesYaml, "spec.service");
     if (serviceNodeInResolvedTemplatesYaml == null) {
       log.warn("Env node in Resolved templates yaml is null");
+      return;
+    }
+    if (serviceNodeInResolvedTemplatesYaml.getField(YamlTypes.SERVICE_REF) == null) {
+      log.warn("service ref in Resolved templates yaml is null " + serviceNodeInResolvedTemplatesYaml);
       return;
     }
     JsonNode serviceRefInResolvedTemplatesYaml =
@@ -231,7 +237,7 @@ public class EnvironmentRefreshHelper {
     if (envRefJsonNode != null) {
       envRefValue = envRefJsonNode.asText();
       JsonNode envInputsNode = envObjectNode.get(YamlTypes.ENVIRONMENT_INPUTS);
-      if (NGExpressionUtils.isRuntimeOrExpressionField(envRefValue)) {
+      if (NGExpressionUtils.isRuntimeField(envRefValue)) {
         envObjectNode.put(YamlTypes.ENVIRONMENT_INPUTS, "<+input>");
         if (infraDefsNode != null && isNodeNotNullAndNotHaveRuntimeValue(infraDefsNode)) {
           envObjectNode.put(YamlTypes.INFRASTRUCTURE_DEFS, "<+input>");
@@ -239,6 +245,8 @@ public class EnvironmentRefreshHelper {
         if (serviceOverrideInputs != null && isNodeNotNullAndNotHaveRuntimeValue(serviceOverrideInputs)) {
           envObjectNode.put(YamlTypes.SERVICE_OVERRIDE_INPUTS, "<+input>");
         }
+        return envObjectNode;
+      } else if (NGExpressionUtils.isExpressionField(envRefValue)) {
         return envObjectNode;
       }
 
@@ -279,9 +287,15 @@ public class EnvironmentRefreshHelper {
     YamlNode serviceNodeInResolvedTemplatesYaml =
         YamlNodeUtils.goToPathUsingFqn(stageYamlNodeInResolvedTemplatesYaml, "spec.service");
     if (serviceNodeInResolvedTemplatesYaml == null) {
-      log.warn("Env node in Resolved templates yaml is null");
+      log.warn("service node in Resolved templates yaml is null");
       return;
     }
+
+    // ex. use from stage
+    if (serviceNodeInResolvedTemplatesYaml.getField(YamlTypes.SERVICE_REF) == null) {
+      return;
+    }
+
     JsonNode serviceRefInResolvedTemplatesYaml =
         serviceNodeInResolvedTemplatesYaml.getField(YamlTypes.SERVICE_REF).getNode().getCurrJsonNode();
     refreshServiceOverrideInputs(
@@ -528,12 +542,21 @@ public class EnvironmentRefreshHelper {
 
   private YamlNode getCorrespondingStageNodeInResolvedTemplatesYaml(
       YamlNode entityNode, YamlNode resolvedTemplatesYamlNode) {
+    if (isStageTemplate(resolvedTemplatesYamlNode)) {
+      return new YamlNode(resolvedTemplatesYamlNode.getCurrJsonNode().get(YamlTypes.TEMPLATE).get(YamlTypes.SPEC));
+    }
     String stageIdentifier = getStageIdentifierForGivenEnvironmentField(entityNode);
     if (stageIdentifier == null) {
       log.warn("Stage not found, returning null");
       return null;
     }
     return findStageWithGivenIdentifier(resolvedTemplatesYamlNode, stageIdentifier);
+  }
+
+  private boolean isStageTemplate(YamlNode resolvedTemplatesYamlNode) {
+    return resolvedTemplatesYamlNode != null && resolvedTemplatesYamlNode.getTemplate() != null
+        && resolvedTemplatesYamlNode.getTemplate().get("type") != null
+        && "Stage".equals(resolvedTemplatesYamlNode.getTemplate().get("type").asText());
   }
 
   boolean isNodeNotNullAndNotHaveRuntimeValue(JsonNode jsonNode) {
@@ -552,7 +575,7 @@ public class EnvironmentRefreshHelper {
     return getStageIdentifierForGivenEnvironmentField(entityNode.getParentNode());
   }
 
-  public YamlNode findStageWithGivenIdentifier(YamlNode resolvedTemplatesYamlNode, String stageIdentifier) {
+  private YamlNode findStageWithGivenIdentifier(YamlNode resolvedTemplatesYamlNode, String stageIdentifier) {
     if (resolvedTemplatesYamlNode == null) {
       return null;
     }
