@@ -8,6 +8,7 @@ package io.harness.cvng.servicelevelobjective.entities;
 
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveType;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2DTO;
+import io.harness.cvng.servicelevelobjective.beans.slospec.CompositeServiceLevelObjectiveSpec;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.util.List;
@@ -45,7 +46,8 @@ public class CompositeServiceLevelObjective extends AbstractServiceLevelObjectiv
         ServiceLevelObjectiveV2DTO serviceLevelObjectiveV2DTO) {
       setCommonOperations(updateOperations, serviceLevelObjectiveV2DTO);
       updateOperations.set(CompositeServiceLevelObjectiveKeys.serviceLevelObjectivesDetails,
-          serviceLevelObjectiveV2DTO.getServiceLevelObjectivesDetails());
+          ((CompositeServiceLevelObjectiveSpec) serviceLevelObjectiveV2DTO.getSpec())
+              .getServiceLevelObjectivesDetails());
     }
   }
 }

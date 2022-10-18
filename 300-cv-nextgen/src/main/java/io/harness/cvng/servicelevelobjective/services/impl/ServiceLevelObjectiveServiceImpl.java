@@ -58,6 +58,7 @@ import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveResponse
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveType;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2DTO;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2Response;
+import io.harness.cvng.servicelevelobjective.beans.slospec.SimpleServiceLevelObjectiveSpec;
 import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
@@ -990,22 +991,24 @@ public class ServiceLevelObjectiveServiceImpl implements ServiceLevelObjectiveSe
 
   private ServiceLevelObjectiveDTO getServiceLevelObjectiveDTOFromV2(
       ServiceLevelObjectiveV2DTO serviceLevelObjectiveDTO) {
+    SimpleServiceLevelObjectiveSpec simpleServiceLevelObjectiveSpec =
+        (SimpleServiceLevelObjectiveSpec) serviceLevelObjectiveDTO.getSpec();
     return ServiceLevelObjectiveDTO.builder()
         .description(serviceLevelObjectiveDTO.getDescription())
         .identifier(serviceLevelObjectiveDTO.getIdentifier())
         .name(serviceLevelObjectiveDTO.getName())
         .orgIdentifier(serviceLevelObjectiveDTO.getOrgIdentifier())
         .projectIdentifier(serviceLevelObjectiveDTO.getProjectIdentifier())
-        .healthSourceRef(serviceLevelObjectiveDTO.getHealthSourceRef())
-        .monitoredServiceRef(serviceLevelObjectiveDTO.getMonitoredServiceRef())
-        .serviceLevelIndicators(serviceLevelObjectiveDTO.getServiceLevelIndicators())
+        .healthSourceRef(simpleServiceLevelObjectiveSpec.getHealthSourceRef())
+        .monitoredServiceRef(simpleServiceLevelObjectiveSpec.getMonitoredServiceRef())
+        .serviceLevelIndicators(simpleServiceLevelObjectiveSpec.getServiceLevelIndicators())
         .tags(serviceLevelObjectiveDTO.getTags())
         .target(serviceLevelObjectiveDTO.getSloTarget())
         .userJourneyRef(serviceLevelObjectiveDTO.getUserJourneyRefs().size() > 0
                 ? serviceLevelObjectiveDTO.getUserJourneyRefs().get(0)
                 : "")
         .notificationRuleRefs(serviceLevelObjectiveDTO.getNotificationRuleRefs())
-        .type(serviceLevelObjectiveDTO.getServiceLevelIndicatorType())
+        .type(simpleServiceLevelObjectiveSpec.getServiceLevelIndicatorType())
         .build();
   }
 

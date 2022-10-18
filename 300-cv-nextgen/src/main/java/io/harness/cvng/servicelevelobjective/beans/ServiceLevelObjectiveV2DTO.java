@@ -7,12 +7,16 @@
 
 package io.harness.cvng.servicelevelobjective.beans;
 
+import static io.harness.cvng.CVConstants.SLO_SPEC;
+
 import io.harness.cvng.notification.beans.NotificationRuleRefDTO;
+import io.harness.cvng.servicelevelobjective.beans.slospec.ServiceLevelObjectiveSpec;
 import io.harness.data.validator.EntityIdentifier;
 import io.harness.data.validator.NGEntityName;
 import io.harness.gitsync.beans.YamlDTO;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Collections;
@@ -45,12 +49,11 @@ public class ServiceLevelObjectiveV2DTO implements YamlDTO {
   String description;
   @Size(max = 128) Map<String, String> tags;
   @ApiModelProperty(required = true) @NotNull List<String> userJourneyRefs;
-  @ApiModelProperty(required = true) @NotNull String monitoredServiceRef;
-  @ApiModelProperty(required = true) @NotNull String healthSourceRef;
-  @Valid ServiceLevelIndicatorType serviceLevelIndicatorType;
-  @Valid List<ServiceLevelIndicatorDTO> serviceLevelIndicators;
-  @Valid List<ServiceLevelObjectiveDetailsDTO> serviceLevelObjectivesDetails;
   @Valid @NotNull SLOTargetDTO sloTarget;
+  @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = SLO_SPEC, include = JsonTypeInfo.As.EXTERNAL_PROPERTY)
+  @Valid
+  @NotNull
+  ServiceLevelObjectiveSpec spec;
   List<NotificationRuleRefDTO> notificationRuleRefs;
 
   public List<NotificationRuleRefDTO> getNotificationRuleRefs() {

@@ -165,6 +165,7 @@ import io.harness.cvng.servicelevelobjective.beans.slimetricspec.RatioSLIMetricS
 import io.harness.cvng.servicelevelobjective.beans.slimetricspec.ThresholdSLIMetricSpec;
 import io.harness.cvng.servicelevelobjective.beans.slimetricspec.ThresholdSLIMetricSpec.ThresholdSLIMetricSpecBuilder;
 import io.harness.cvng.servicelevelobjective.beans.slimetricspec.ThresholdType;
+import io.harness.cvng.servicelevelobjective.beans.slospec.SimpleServiceLevelObjectiveSpec;
 import io.harness.cvng.servicelevelobjective.beans.slotargetspec.RollingSLOTargetSpec;
 import io.harness.cvng.servicelevelobjective.entities.RatioServiceLevelIndicator;
 import io.harness.cvng.servicelevelobjective.entities.RatioServiceLevelIndicator.RatioServiceLevelIndicatorBuilder;
@@ -992,11 +993,13 @@ public class BuilderFactory {
                        .sloTargetPercentage(80.0)
                        .spec(RollingSLOTargetSpec.builder().periodLength("30d").build())
                        .build())
-        .serviceLevelIndicators(Collections.singletonList(getServiceLevelIndicatorDTOBuilder()))
+        .spec(SimpleServiceLevelObjectiveSpec.builder()
+                  .serviceLevelIndicators(Collections.singletonList(getServiceLevelIndicatorDTOBuilder()))
+                  .healthSourceRef("healthSourceIdentifier")
+                  .monitoredServiceRef(context.serviceIdentifier + "_" + context.getEnvIdentifier())
+                  .serviceLevelIndicatorType(ServiceLevelIndicatorType.AVAILABILITY)
+                  .build())
         .notificationRuleRefs(Collections.emptyList())
-        .healthSourceRef("healthSourceIdentifier")
-        .monitoredServiceRef(context.serviceIdentifier + "_" + context.getEnvIdentifier())
-        .serviceLevelIndicatorType(ServiceLevelIndicatorType.AVAILABILITY)
         .userJourneyRefs(Collections.singletonList("userJourney"));
   }
 

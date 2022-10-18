@@ -34,6 +34,7 @@ import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveFilter;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveType;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2DTO;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2Response;
+import io.harness.cvng.servicelevelobjective.beans.slospec.SimpleServiceLevelObjectiveSpec;
 import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObjective.AbstractServiceLevelObjectiveUpdatableEntity;
 import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObjective.ServiceLevelObjectiveV2Keys;
@@ -94,7 +95,8 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
     validateCreate(serviceLevelObjectiveDTO, projectParams);
     MonitoredService monitoredService = monitoredServiceService.getMonitoredService(
         MonitoredServiceParams.builderWithProjectParams(projectParams)
-            .monitoredServiceIdentifier(serviceLevelObjectiveDTO.getMonitoredServiceRef())
+            .monitoredServiceIdentifier(
+                ((SimpleServiceLevelObjectiveSpec) serviceLevelObjectiveDTO.getSpec()).getMonitoredServiceRef())
             .build());
     AbstractServiceLevelObjective serviceLevelObjective =
         saveServiceLevelObjectiveV2Entity(projectParams, serviceLevelObjectiveDTO, monitoredService.isEnabled());
@@ -387,7 +389,7 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
       ServiceLevelObjectiveV2DTO serviceLevelObjectiveV2DTO, List<String> serviceLevelIndicators) {
     UpdateOperations<AbstractServiceLevelObjective> updateOperations =
         hPersistence.createUpdateOperations(AbstractServiceLevelObjective.class);
-    serviceLevelObjectiveTypeUpdatableEntityTransformerMap.get(abstractServiceLevelObjective.getType())
+    serviceLevelObjectiveTypeUpdatableEntityTransformerMap.get(serviceLevelObjectiveV2DTO.getType())
         .setUpdateOperations(updateOperations, serviceLevelObjectiveV2DTO);
     updateOperations.set(ServiceLevelObjectiveV2Keys.sloTarget,
         sloTargetTypeSLOTargetTransformerMap.get(serviceLevelObjectiveV2DTO.getSloTarget().getType())
@@ -458,7 +460,8 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
   }
 
   private void validate(ServiceLevelObjectiveV2DTO sloCreateDTO, ProjectParams projectParams) {
-    monitoredServiceService.get(projectParams, sloCreateDTO.getMonitoredServiceRef());
+    monitoredServiceService.get(
+        projectParams, ((SimpleServiceLevelObjectiveSpec) sloCreateDTO.getSpec()).getMonitoredServiceRef());
   }
 
   public PageResponse<ServiceLevelObjectiveV2Response> get(
