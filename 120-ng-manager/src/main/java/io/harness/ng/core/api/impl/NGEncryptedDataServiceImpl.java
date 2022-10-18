@@ -250,8 +250,7 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
         .orgIdentifier(dto.getOrgIdentifier())
         .projectIdentifier(dto.getProjectIdentifier())
         .identifier(dto.getIdentifier())
-        .name(dto.getName())
-        .additionalMetadata(dto.getSpec().additionalMetadata);
+        .name(dto.getName());
     builder.secretManagerIdentifier(secretManager.getIdentifier()).encryptionType(secretManager.getEncryptionType());
     if (SecretText.equals(dto.getType())) {
       SecretTextSpecDTO secret = (SecretTextSpecDTO) dto.getSpec();
@@ -259,6 +258,7 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
         builder.path(secret.getValue());
       }
       builder.type(SettingVariableTypes.SECRET_TEXT);
+      builder.additionalMetadata(secret.getAdditionalMetadata());
     } else if (SecretFile.equals(dto.getType())) {
       builder.type(SettingVariableTypes.CONFIG_FILE);
     }
@@ -777,6 +777,7 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
         .kmsId(encryptedData.getKmsId())
         .encryptionType(encryptedData.getEncryptionType())
         .base64Encoded(encryptedData.isBase64Encoded())
+        .additionalMetadata(encryptedData.getAdditionalMetadata())
         .build();
   }
 
