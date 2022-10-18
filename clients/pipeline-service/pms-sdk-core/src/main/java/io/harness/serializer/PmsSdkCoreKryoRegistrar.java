@@ -13,6 +13,7 @@ import io.harness.advisers.manualIntervention.ManualInterventionAdviserRollbackP
 import io.harness.advisers.nextstep.NextStepAdviserParameters;
 import io.harness.advisers.retry.RetryAdviserRollbackParameters;
 import io.harness.advisers.rollback.OnFailRollbackParameters;
+import io.harness.advisers.rollback.RollbackStartAdvisorParameters;
 import io.harness.advisers.rollback.RollbackStrategy;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.async.AsyncResponseCallback;
@@ -78,5 +79,7 @@ public class PmsSdkCoreKryoRegistrar implements KryoRegistrar {
     kryo.register(StrategyMetadata.class, 878001);
     kryo.register(ProceedWithDefaultAdviserParameters.class, 878018);
     kryo.register(AsyncTimeoutResponseData.class, 878019);
+
+    kryo.register(RollbackStartAdvisorParameters.class, 878020);
   }
 }

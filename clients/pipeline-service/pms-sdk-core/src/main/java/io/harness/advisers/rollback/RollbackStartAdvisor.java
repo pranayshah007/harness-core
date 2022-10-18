@@ -19,8 +19,10 @@ import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.SectionStepSweepingOutput;
 
+import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 // duplicate of RollbackCustomAdvisor
@@ -50,7 +52,12 @@ public class RollbackStartAdvisor implements Adviser {
   @Override
   public boolean canAdvise(AdvisingEvent advisingEvent) {
     OnFailRollbackOutput rollbackOutcome = getRollbackOutputV2(advisingEvent);
+    RollbackStartAdvisorParameters adviserParameters = extractParameters(advisingEvent);
     if (rollbackOutcome == null) {
+      return false;
+    }
+    if (Objects.equals(rollbackOutcome.getStrategy(), RollbackStrategy.PIPELINE_ROLLBACK)
+        && !adviserParameters.getCanAdviseOnPipelineRollback()) {
       return false;
     }
     return StatusUtils.brokeStatuses().contains(advisingEvent.getToStatus());
@@ -95,5 +102,10 @@ public class RollbackStartAdvisor implements Adviser {
       return null;
     }
     return (OnFailRollbackOutput) optionalSweepingOutput.getOutput();
+  }
+
+  private RollbackStartAdvisorParameters extractParameters(AdvisingEvent advisingEvent) {
+    return (RollbackStartAdvisorParameters) Preconditions.checkNotNull(
+        kryoSerializer.asObject(advisingEvent.getAdviserParameters()));
   }
 }

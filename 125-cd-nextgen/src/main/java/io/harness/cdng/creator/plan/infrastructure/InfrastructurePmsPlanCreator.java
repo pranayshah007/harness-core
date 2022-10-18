@@ -9,9 +9,9 @@ package io.harness.cdng.creator.plan.infrastructure;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import io.harness.advisers.rollback.RollbackStartAdvisor;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.advisers.RollbackCustomAdviser;
 import io.harness.cdng.creator.plan.PlanCreatorConstants;
 import io.harness.cdng.creator.plan.gitops.ClusterPlanCreatorUtils;
 import io.harness.cdng.envGroup.yaml.EnvGroupPlanCreatorConfig;
@@ -291,7 +291,7 @@ public class InfrastructurePmsPlanCreator {
       }
     }
     // todo: check what parameters to send
-    adviserObtainments.add(AdviserObtainment.newBuilder().setType(RollbackCustomAdviser.ADVISER_TYPE).build());
+    adviserObtainments.add(AdviserObtainment.newBuilder().setType(RollbackStartAdvisor.ADVISER_TYPE).build());
     return adviserObtainments;
   }
 
@@ -305,7 +305,7 @@ public class InfrastructurePmsPlanCreator {
                 OnSuccessAdviserParameters.builder().nextNodeId(resourceConstraintField.getNode().getUuid()).build())))
             .build());
     // todo: check what parameters to send
-    adviserObtainments.add(AdviserObtainment.newBuilder().setType(RollbackCustomAdviser.ADVISER_TYPE).build());
+    adviserObtainments.add(AdviserObtainment.newBuilder().setType(RollbackStartAdvisor.ADVISER_TYPE).build());
     return adviserObtainments;
   }
 

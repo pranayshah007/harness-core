@@ -9,10 +9,10 @@ package io.harness.cdng.creator.plan;
 
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STEP_GROUP;
 
+import io.harness.advisers.rollback.RollbackStartAdvisor;
+import io.harness.advisers.rollback.RollbackStartAdvisorParameters;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.advisers.RollbackCustomAdviser;
-import io.harness.cdng.advisers.RollbackCustomAdviserParameters;
 import io.harness.plancreator.execution.StepsExecutionConfig;
 import io.harness.plancreator.steps.GenericStepsNodePlanCreator;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
@@ -54,13 +54,13 @@ public class CDStepsPlanCreator extends GenericStepsNodePlanCreator {
     if (YamlUtils.findParentNode(ctx.getCurrentField().getNode(), STEP_GROUP) != null) {
       return planNodeBuilder.build();
     }
-    RollbackCustomAdviserParameters rollbackCustomAdviserParameters =
-        RollbackCustomAdviserParameters.builder().canAdviseOnPipelineRollback(false).build();
+    RollbackStartAdvisorParameters rollbackCustomAdviserParameters =
+        RollbackStartAdvisorParameters.builder().canAdviseOnPipelineRollback(false).build();
 
     return planNodeBuilder
         .adviserObtainment(
             AdviserObtainment.newBuilder()
-                .setType(RollbackCustomAdviser.ADVISER_TYPE)
+                .setType(RollbackStartAdvisor.ADVISER_TYPE)
                 .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(rollbackCustomAdviserParameters)))
                 .build())
         .build();

@@ -10,8 +10,6 @@ package io.harness.serializer.kryo;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.advisers.RollbackCustomAdviserParameters;
-import io.harness.cdng.advisers.RollbackCustomStepParameters;
 import io.harness.cdng.artifact.bean.artifactsource.DockerArtifactSource;
 import io.harness.cdng.artifact.steps.ArtifactStepParameters;
 import io.harness.cdng.azure.webapp.ApplicationSettingsParameters;
@@ -141,7 +139,6 @@ public class NGKryoRegistrar implements KryoRegistrar {
     kryo.register(K8sDeleteStepInfo.class, 12521);
     kryo.register(GitFetchResponsePassThroughData.class, 12522);
 
-    kryo.register(RollbackCustomStepParameters.class, 12540);
     kryo.register(TerraformApplyStepInfo.class, 12541);
     kryo.register(TerraformPlanStepInfo.class, 12543);
     kryo.register(HelmValuesFetchResponsePassThroughData.class, 12544);
@@ -192,7 +189,5 @@ public class NGKryoRegistrar implements KryoRegistrar {
     kryo.register(FetchInstanceScriptStepInfo.class, 12614);
     kryo.register(FetchInstanceScriptStepParameters.class, 12615);
     kryo.register(ChaosStepNotifyData.class, 12616);
-
-    kryo.register(RollbackCustomAdviserParameters.class, 12617);
   }
 }

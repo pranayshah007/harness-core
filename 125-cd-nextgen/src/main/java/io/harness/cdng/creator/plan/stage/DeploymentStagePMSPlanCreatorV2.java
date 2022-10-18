@@ -10,9 +10,9 @@ package io.harness.cdng.creator.plan.stage;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.cdng.pipeline.steps.MultiDeploymentSpawnerUtils.SERVICE_REF_EXPRESSION;
 
+import io.harness.advisers.rollback.RollbackStartAdvisor;
+import io.harness.advisers.rollback.RollbackStartAdvisorParameters;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.advisers.RollbackCustomAdviser;
-import io.harness.cdng.advisers.RollbackCustomAdviserParameters;
 import io.harness.cdng.creator.plan.envGroup.EnvGroupPlanCreatorHelper;
 import io.harness.cdng.creator.plan.environment.EnvironmentPlanCreatorHelper;
 import io.harness.cdng.creator.plan.infrastructure.InfrastructurePmsPlanCreator;
@@ -199,11 +199,11 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
   List<AdviserObtainment> getAdviserObtainment(YamlField stageField) {
     List<AdviserObtainment> adviserObtainment = new ArrayList<>();
 
-    RollbackCustomAdviserParameters rollbackCustomAdviserParameters =
-        RollbackCustomAdviserParameters.builder().canAdviseOnPipelineRollback(true).build();
+    RollbackStartAdvisorParameters rollbackCustomAdviserParameters =
+        RollbackStartAdvisorParameters.builder().canAdviseOnPipelineRollback(true).build();
     adviserObtainment.add(
         AdviserObtainment.newBuilder()
-            .setType(RollbackCustomAdviser.ADVISER_TYPE)
+            .setType(RollbackStartAdvisor.ADVISER_TYPE)
             .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(rollbackCustomAdviserParameters)))
             .build());
 
