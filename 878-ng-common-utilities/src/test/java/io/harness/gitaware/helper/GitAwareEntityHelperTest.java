@@ -171,7 +171,7 @@ public class GitAwareEntityHelperTest extends CategoryTest {
         GitEntityInfo.builder().branch(branch).commitMsg(commitMsg).filePath(yamlFilePath).build();
     setupGitContext(gitEntityInfo);
     DummyGitAware dummyGitAware =
-        DummyGitAware.builder().connectorRef(connectorRef).repo(repoName).filePath(filePath).build();
+        DummyGitAware.builder().connectorRef(connectorRef).repo(repoName).filePath(yamlFilePath).build();
     ScmCreateFileGitResponse createFileResponse =
         ScmCreateFileGitResponse.builder().gitMetaData(scmGitMetaData).build();
     doReturn(createFileResponse).when(scmGitSyncHelper).createFile(any(), any(), any());
@@ -212,7 +212,7 @@ public class GitAwareEntityHelperTest extends CategoryTest {
         GitEntityInfo.builder().branch(branch).commitMsg(commitMsg).filePath(yamlFilePath).build();
     setupGitContext(gitEntityInfo);
     DummyGitAware dummyGitAware =
-        DummyGitAware.builder().connectorRef(connectorRef).repo(repoName).filePath(filePath).build();
+        DummyGitAware.builder().connectorRef(connectorRef).repo(repoName).filePath(yamlFilePath).build();
     ScmUpdateFileGitResponse createFileResponse =
         ScmUpdateFileGitResponse.builder().gitMetaData(scmGitMetaData).build();
     doReturn(createFileResponse).when(scmGitSyncHelper).updateFile(any(), any(), any());

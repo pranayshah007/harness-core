@@ -43,6 +43,8 @@ import static software.wings.beans.HelmCommandFlagConstants.HelmSubCommand.HISTO
 import static software.wings.beans.HelmCommandFlagConstants.HelmSubCommand.INSTALL;
 import static software.wings.beans.HelmCommandFlagConstants.HelmSubCommand.LIST;
 import static software.wings.beans.HelmCommandFlagConstants.HelmSubCommand.PULL;
+import static software.wings.beans.HelmCommandFlagConstants.HelmSubCommand.REPO_ADD;
+import static software.wings.beans.HelmCommandFlagConstants.HelmSubCommand.REPO_UPDATE;
 import static software.wings.beans.HelmCommandFlagConstants.HelmSubCommand.ROLLBACK;
 import static software.wings.beans.HelmCommandFlagConstants.HelmSubCommand.TEMPLATE;
 import static software.wings.beans.HelmCommandFlagConstants.HelmSubCommand.UNINSTALL;
@@ -899,7 +901,8 @@ public class ServiceResourceServiceImplTest extends WingsBaseTest {
     assertThat(serviceResourceService.getHelmCommandFlags(null, APP_ID, SERVICE_ID, StoreType.HelmChartRepo))
         .containsExactlyInAnyOrder(LIST, INSTALL, TEMPLATE, ROLLBACK, VERSION, DELETE, UPGRADE, HISTORY, FETCH);
     assertThat(serviceResourceService.getHelmCommandFlags(V3, APP_ID, SERVICE_ID, StoreType.HelmChartRepo))
-        .containsExactlyInAnyOrder(LIST, INSTALL, TEMPLATE, ROLLBACK, VERSION, UNINSTALL, UPGRADE, HISTORY, PULL);
+        .containsExactlyInAnyOrder(
+            LIST, INSTALL, TEMPLATE, ROLLBACK, VERSION, UNINSTALL, UPGRADE, HISTORY, PULL, REPO_ADD, REPO_UPDATE);
 
     assertThat(serviceResourceService.getHelmCommandFlags(V2, APP_ID, SERVICE_ID, StoreType.HelmSourceRepo))
         .containsExactlyInAnyOrder(LIST, INSTALL, TEMPLATE, ROLLBACK, VERSION, DELETE, UPGRADE, HISTORY);
@@ -914,9 +917,9 @@ public class ServiceResourceServiceImplTest extends WingsBaseTest {
     assertThat(serviceResourceService.getHelmCommandFlags(V2, APP_ID, SERVICE_ID, StoreType.HelmChartRepo))
         .containsExactlyInAnyOrder(FETCH, VERSION, TEMPLATE);
     assertThat(serviceResourceService.getHelmCommandFlags(null, APP_ID, SERVICE_ID, StoreType.HelmChartRepo))
-        .containsExactlyInAnyOrder(PULL, VERSION, TEMPLATE);
+        .containsExactlyInAnyOrder(PULL, VERSION, TEMPLATE, REPO_UPDATE, REPO_ADD);
     assertThat(serviceResourceService.getHelmCommandFlags(V3, APP_ID, SERVICE_ID, StoreType.HelmChartRepo))
-        .containsExactlyInAnyOrder(PULL, VERSION, TEMPLATE);
+        .containsExactlyInAnyOrder(PULL, VERSION, TEMPLATE, REPO_UPDATE, REPO_ADD);
 
     assertThat(serviceResourceService.getHelmCommandFlags(V2, APP_ID, SERVICE_ID, StoreType.HelmSourceRepo))
         .containsExactlyInAnyOrder(VERSION, TEMPLATE);

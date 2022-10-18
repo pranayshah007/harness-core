@@ -42,6 +42,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.persistence.HIterator;
 import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
+import io.harness.testlib.RealMongo;
 
 import software.wings.WingsBaseTest;
 import software.wings.api.ServiceElement;
@@ -190,6 +191,7 @@ public class StatisticsServiceTest extends WingsBaseTest {
   @Test
   @Owner(developers = ABHINAV)
   @Category(UnitTests.class)
+  @RealMongo
   public void shouldGetDeploymentStatisticsNew() {
     List<WorkflowExecution> executions = constructWorkflowServiceExecutions();
     wingsPersistence.save(executions);

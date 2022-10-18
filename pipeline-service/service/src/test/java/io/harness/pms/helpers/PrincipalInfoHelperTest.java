@@ -8,11 +8,14 @@
 package io.harness.pms.helpers;
 
 import static io.harness.rule.OwnerRule.ARCHIT;
+import static io.harness.rule.OwnerRule.SHALINI;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
+import io.harness.exception.AccessDeniedException;
 import io.harness.rule.Owner;
 import io.harness.security.dto.PrincipalType;
 
@@ -38,5 +41,14 @@ public class PrincipalInfoHelperTest extends CategoryTest {
       io.harness.pms.contracts.plan.PrincipalType principalType = principalInfoHelper.fromSecurityPrincipalType(value);
       assertThat(principalType).isNotNull();
     }
+  }
+
+  @Test
+  @Owner(developers = SHALINI)
+  @Category(UnitTests.class)
+  public void testGetPrincipalInfoFromSecurityContext() {
+    assertThatThrownBy(() -> principalInfoHelper.getPrincipalInfoFromSecurityContext())
+        .isInstanceOf(AccessDeniedException.class)
+        .hasMessage("Principal cannot be null");
   }
 }

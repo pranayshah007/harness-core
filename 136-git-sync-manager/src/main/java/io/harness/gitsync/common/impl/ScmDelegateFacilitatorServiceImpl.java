@@ -22,6 +22,8 @@ import io.harness.beans.gitsync.GitFileDetails.GitFileDetailsBuilder;
 import io.harness.beans.gitsync.GitFilePathDetails;
 import io.harness.beans.gitsync.GitPRCreateRequest;
 import io.harness.beans.gitsync.GitWebhookDetails;
+import io.harness.beans.request.GitFileRequest;
+import io.harness.beans.response.GitFileResponse;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.helper.GitApiAccessDecryptionHelper;
 import io.harness.connector.impl.ConnectorErrorMessagesHelper;
@@ -823,6 +825,22 @@ public class ScmDelegateFacilitatorServiceImpl extends AbstractScmClientFacilita
       log.error(errorMsg, e);
       throw new UnexpectedException(errorMsg);
     }
+  }
+
+  @Override
+  public GitFileResponse getFile(Scope scope, ScmConnector scmConnector, GitFileRequest gitFileContentRequest) {
+    final List<EncryptedDataDetail> encryptionDetails = getEncryptedDataDetailsForNewGitX(
+        scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(), scmConnector);
+    final GitFilePathDetails gitFilePathDetails = getGitFilePathDetails(
+        gitFileContentRequest.getFilepath(), gitFileContentRequest.getBranch(), gitFileContentRequest.getCommitId());
+    final ScmGitFileTaskParams scmGitFileTaskParams =
+        getScmGitFileTaskParams(scmConnector, encryptionDetails, gitFilePathDetails, GitFileTaskType.GET_FILE,
+            gitFileContentRequest.getCommitId(), gitFileContentRequest.getBranch(), null);
+    DelegateTaskRequest delegateTaskRequest = getDelegateTaskRequest(scope.getAccountIdentifier(),
+        scope.getOrgIdentifier(), scope.getProjectIdentifier(), scmGitFileTaskParams, TaskType.SCM_GIT_FILE_TASK);
+    final DelegateResponseData delegateResponseData = executeDelegateSyncTask(delegateTaskRequest);
+    GitFileTaskResponseData gitFileTaskResponseData = (GitFileTaskResponseData) delegateResponseData;
+    return gitFileTaskResponseData.getGitFileResponse();
   }
 
   // ------------------------------- PRIVATE METHODS -------------------------------

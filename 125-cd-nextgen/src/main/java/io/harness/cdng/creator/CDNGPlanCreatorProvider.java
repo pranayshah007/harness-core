@@ -603,7 +603,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setName("Ecs Rolling Deploy")
             .setType(StepSpecTypeConstants.ECS_ROLLING_DEPLOY)
             .setStepMetaData(StepMetaData.newBuilder().addCategory("ECS").setFolderPath("ECS").build())
-            .setFeatureFlag(FeatureName.ECS_NG.name())
+            .setFeatureFlag(FeatureName.NG_SVC_ENV_REDESIGN.name())
             .build();
 
     StepInfo ecsRollingRollack =
@@ -611,7 +611,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setName("Ecs Rolling Rollback")
             .setType(StepSpecTypeConstants.ECS_ROLLING_ROLLBACK)
             .setStepMetaData(StepMetaData.newBuilder().addCategory("ECS").setFolderPath("ECS").build())
-            .setFeatureFlag(FeatureName.ECS_NG.name())
+            .setFeatureFlag(FeatureName.NG_SVC_ENV_REDESIGN.name())
             .build();
 
     StepInfo ecsCanaryDeploy =
@@ -619,7 +619,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setName("Ecs Canary Deploy")
             .setType(StepSpecTypeConstants.ECS_CANARY_DEPLOY)
             .setStepMetaData(StepMetaData.newBuilder().addCategory("ECS").setFolderPath("ECS").build())
-            .setFeatureFlag(FeatureName.ECS_NG.name())
+            .setFeatureFlag(FeatureName.NG_SVC_ENV_REDESIGN.name())
             .build();
 
     StepInfo ecsCanaryDelete =
@@ -627,7 +627,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setName("Ecs Canary Delete")
             .setType(StepSpecTypeConstants.ECS_CANARY_DELETE)
             .setStepMetaData(StepMetaData.newBuilder().addCategory("ECS").setFolderPath("ECS").build())
-            .setFeatureFlag(FeatureName.ECS_NG.name())
+            .setFeatureFlag(FeatureName.NG_SVC_ENV_REDESIGN.name())
             .build();
 
     StepInfo ecsBlueGreenCreateService =
@@ -635,7 +635,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setName("Ecs Blue Green Create Service")
             .setType(StepSpecTypeConstants.ECS_BLUE_GREEN_CREATE_SERVICE)
             .setStepMetaData(StepMetaData.newBuilder().addCategory("ECS").setFolderPath("ECS").build())
-            .setFeatureFlag(FeatureName.ECS_NG.name())
+            .setFeatureFlag(FeatureName.NG_SVC_ENV_REDESIGN.name())
             .build();
 
     StepInfo ecsBlueGreenSwapTargetGroups =
@@ -643,7 +643,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setName("Ecs Blue Green Swap Target Groups")
             .setType(StepSpecTypeConstants.ECS_BLUE_GREEN_SWAP_TARGET_GROUPS)
             .setStepMetaData(StepMetaData.newBuilder().addCategory("ECS").setFolderPath("ECS").build())
-            .setFeatureFlag(FeatureName.ECS_NG.name())
+            .setFeatureFlag(FeatureName.NG_SVC_ENV_REDESIGN.name())
             .build();
 
     StepInfo ecsBlueGreenRollback =
@@ -651,7 +651,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setName("Ecs Blue Green Rollback")
             .setType(StepSpecTypeConstants.ECS_BLUE_GREEN_ROLLBACK)
             .setStepMetaData(StepMetaData.newBuilder().addCategory("ECS").setFolderPath("ECS").build())
-            .setFeatureFlag(FeatureName.ECS_NG.name())
+            .setFeatureFlag(FeatureName.NG_SVC_ENV_REDESIGN.name())
             .build();
 
     StepInfo ecsRunTask =
@@ -659,7 +659,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setName("Ecs Run Task")
             .setType(StepSpecTypeConstants.ECS_RUN_TASK)
             .setStepMetaData(StepMetaData.newBuilder().addCategory("ECS").setFolderPath("ECS").build())
-            .setFeatureFlag(FeatureName.ECS_NG.name())
+            .setFeatureFlag(FeatureName.NG_SVC_ENV_REDESIGN.name())
             .build();
 
     StepInfo createStack = StepInfo.newBuilder()
@@ -779,7 +779,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setType(StepSpecTypeConstants.CUSTOM_DEPLOYMENT_FETCH_INSTANCE_SCRIPT)
             .setStepMetaData(
                 StepMetaData.newBuilder().addCategory("CustomDeployment").addFolderPaths("CustomDeployment").build())
-            .setFeatureFlag(FeatureName.NG_DEPLOYMENT_TEMPLATE.name())
+            .setFeatureFlag(FeatureName.NG_SVC_ENV_REDESIGN.name())
             .build();
 
     StepInfo shellScriptProvision = StepInfo.newBuilder()

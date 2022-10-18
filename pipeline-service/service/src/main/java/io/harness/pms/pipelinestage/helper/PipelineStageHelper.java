@@ -9,11 +9,17 @@ package io.harness.pms.pipelinestage.helper;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
+import io.harness.accesscontrol.acl.api.Resource;
+import io.harness.accesscontrol.acl.api.ResourceScope;
+import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
+import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.service.PMSPipelineTemplateHelper;
+import io.harness.pms.pipelinestage.PipelineStageStepParameters;
+import io.harness.pms.rbac.PipelineRbacPermissions;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
@@ -78,5 +84,12 @@ public class PipelineStageHelper {
         && yamlNode.getField(YAMLFieldNameConstants.STAGE).getNode().getType().equals("Pipeline")) {
       throw new InvalidRequestException("Nested pipeline is not supported");
     }
+  }
+
+  public void validateResource(
+      AccessControlClient accessControlClient, Ambiance ambiance, PipelineStageStepParameters stepParameters) {
+    accessControlClient.checkForAccessOrThrow(ResourceScope.of(ambiance.getSetupAbstractions().get("accountId"),
+                                                  stepParameters.getOrg(), stepParameters.getProject()),
+        Resource.of("PIPELINE", stepParameters.getPipeline()), PipelineRbacPermissions.PIPELINE_EXECUTE);
   }
 }

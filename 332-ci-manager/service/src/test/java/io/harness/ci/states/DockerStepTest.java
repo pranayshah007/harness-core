@@ -122,7 +122,7 @@ public class DockerStepTest extends CIExecutionTestBase {
                       .dockerArtifact(
                           DockerArtifactDescriptor.builder()
                               .imageName("harness/ci-automation:latest")
-                              .digest("sha256:49f756463ad9dcfb9b6ade54d7d6f15476e7214f46a65b4b0c55d46845b12f70")
+                              .digest("sha256:49f756463ad9dcfb9b6ade54d7d6f15476e7214f46a65b4b0c55d46845b12f71")
                               .build())
                       .build())
             .build();
@@ -135,12 +135,14 @@ public class DockerStepTest extends CIExecutionTestBase {
                 .tag("1.0")
                 .url(
                     "https://hub.docker.com/layers/harness/ci-unittest/1.0/images/sha256-49f756463ad9dcfb9b6ade54d7d6f15476e7214f46a65b4b0c55d46845b12f70/")
+                .digest("sha256:49f756463ad9dcfb9b6ade54d7d6f15476e7214f46a65b4b0c55d46845b12f70")
                 .build(),
             PublishedImageArtifact.builder()
                 .imageName("harness/ci-automation")
                 .tag("latest")
                 .url(
-                    "https://hub.docker.com/layers/harness/ci-unittest/latest/images/sha256-49f756463ad9dcfb9b6ade54d7d6f15476e7214f46a65b4b0c55d46845b12f70/")
+                    "https://hub.docker.com/layers/harness/ci-unittest/latest/images/sha256-49f756463ad9dcfb9b6ade54d7d6f15476e7214f46a65b4b0c55d46845b12f71/")
+                .digest("sha256:49f756463ad9dcfb9b6ade54d7d6f15476e7214f46a65b4b0c55d46845b12f71")
                 .build());
   }
 
@@ -174,6 +176,7 @@ public class DockerStepTest extends CIExecutionTestBase {
                                                   .imageName("imageName")
                                                   .tag("1.0")
                                                   .url("https://hub.docker.com/layers/test/1.0/images/digest/")
+                                                  .digest("digest")
                                                   .build();
 
     when(serializedResponseDataHelper.deserialize(responseData)).thenReturn(responseData);

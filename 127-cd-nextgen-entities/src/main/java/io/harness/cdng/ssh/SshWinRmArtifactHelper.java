@@ -128,7 +128,8 @@ public class SshWinRmArtifactHelper {
             .connectorDTO(connectorDTO)
             .encryptedDataDetails(getArtifactEncryptionDataDetails(connectorDTO, ngAccess))
             .isCertValidationRequired(false)
-            .artifactUrl(nexusArtifactOutcome.getArtifactPath())
+            .artifactUrl(nexusArtifactOutcome.getMetadata().get("url"))
+            .metadata(nexusArtifactOutcome.getMetadata())
             .repositoryFormat(nexusArtifactOutcome.getRepositoryFormat())
             .build();
       }
@@ -225,8 +226,13 @@ public class SshWinRmArtifactHelper {
   private void validateArtifactOutcome(ArtifactOutcome artifactOutcome) {
     if (artifactOutcome instanceof NexusArtifactOutcome
         && NEXUS_PACKAGE_SUPPORTED_TYPES.contains(((NexusArtifactOutcome) artifactOutcome).getRepositoryFormat())) {
-      if (isEmpty(((NexusArtifactOutcome) artifactOutcome).getArtifactPath())) {
-        throw new InvalidRequestException("Nexus artifact outcome path cannot be null or empty");
+      NexusArtifactOutcome nexusArtifactOutcome = (NexusArtifactOutcome) artifactOutcome;
+      if (isEmpty(nexusArtifactOutcome.getMetadata())) {
+        throw new InvalidRequestException("Nexus artifact outcome metadata cannot be null or empty");
+      }
+
+      if (isEmpty(nexusArtifactOutcome.getMetadata().get("url"))) {
+        throw new InvalidRequestException("Nexus artifact outcome metadata url cannot be null or empty");
       }
     }
   }

@@ -33,6 +33,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
+// todo: remove after one release
 @OwnedBy(HarnessTeam.PIPELINE)
 public class RollbackCustomAdviser implements Adviser {
   @Inject ExecutionSweepingOutputService executionSweepingOutputService;

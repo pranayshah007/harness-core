@@ -159,8 +159,7 @@ public class SecretManagerMigrationService extends NgMigrationService {
 
   @Override
   public List<NGYamlFile> generateYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
-      Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities,
-      NgEntityDetail ngEntityDetail) {
+      Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities) {
     SecretManagerConfig secretManagerConfig = (SecretManagerConfig) entities.get(entityId).getEntity();
     String name = secretManagerConfig.getName().trim();
     String identifier;

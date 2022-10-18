@@ -155,6 +155,7 @@ import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorSpec;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorType;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveDTO;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveDTO.ServiceLevelObjectiveDTOBuilder;
+import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveDetailsDTO;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveType;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2DTO;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2DTO.ServiceLevelObjectiveV2DTOBuilder;
@@ -648,6 +649,43 @@ public class BuilderFactory {
         .build();
   }
 
+  public CustomHealthMetricCVConfig customHealthMetricCVConfigBuilderForELK(String metricName,
+      boolean isDeploymentEnabled, boolean isLiveMonitoringEnabled, boolean isSliEnabled,
+      MetricResponseMapping responseMapping, String group, HealthSourceQueryType queryType, CustomHealthMethod method,
+      CVMonitoringCategory category, String requestBody, String index) {
+    CustomHealthMetricCVConfig.CustomHealthCVConfigMetricDefinition metricDefinition =
+        CustomHealthMetricCVConfig.CustomHealthCVConfigMetricDefinition.builder()
+            .metricName(metricName)
+            .identifier(metricName)
+            .sli(AnalysisInfo.SLI.builder().enabled(isSliEnabled).build())
+            .deploymentVerification(AnalysisInfo.DeploymentVerification.builder().enabled(isDeploymentEnabled).build())
+            .liveMonitoring(AnalysisInfo.LiveMonitoring.builder().enabled(isLiveMonitoringEnabled).build())
+            .metricResponseMapping(responseMapping)
+            .requestDefinition(CustomHealthRequestDefinition.builder()
+                                   .startTimeInfo(TimestampInfo.builder()
+                                                      .placeholder("start_time")
+                                                      .timestampFormat(TimestampInfo.TimestampFormat.MILLISECONDS)
+                                                      .build())
+                                   .endTimeInfo(TimestampInfo.builder()
+                                                    .placeholder("end_time")
+                                                    .timestampFormat(TimestampInfo.TimestampFormat.MILLISECONDS)
+                                                    .build())
+                                   .method(method)
+                                   .urlPath(index + "/_search")
+                                   .requestBody(requestBody)
+                                   .build())
+            .build();
+
+    return CustomHealthMetricCVConfig.builder()
+        .metricDefinitions(new ArrayList<CustomHealthMetricCVConfig.CustomHealthCVConfigMetricDefinition>() {
+          { add(metricDefinition); }
+        })
+        .groupName(group)
+        .queryType(queryType)
+        .category(category)
+        .build();
+  }
+
   public CustomHealthSourceLogSpec customHealthLogSourceSpecBuilder(
       String queryName, String queryValueJSONPath, String urlPath, String timestampValueJSONPath) {
     List<CustomHealthLogDefinition> customHealthLogDefinitions = new ArrayList<>();
@@ -1000,6 +1038,35 @@ public class BuilderFactory {
         .userJourneyRefs(Collections.singletonList("userJourney"));
   }
 
+  public ServiceLevelObjectiveV2DTOBuilder getCompositeServiceLevelObjectiveV2DTOBuilder() {
+    return ServiceLevelObjectiveV2DTO.builder()
+        .type(ServiceLevelObjectiveType.COMPOSITE)
+        .projectIdentifier(context.getProjectIdentifier())
+        .orgIdentifier(context.getOrgIdentifier())
+        .identifier("compositeSloIdentifier")
+        .name("sloName")
+        .tags(new HashMap<String, String>() {
+          {
+            put("tag1", "value1");
+            put("tag2", "");
+          }
+        })
+        .description("slo description")
+        .sloTarget(SLOTargetDTO.builder()
+                       .type(SLOTargetType.ROLLING)
+                       .sloTargetPercentage(80.0)
+                       .spec(RollingSLOTargetSpec.builder().periodLength("30d").build())
+                       .build())
+        .serviceLevelObjectivesDetails(List.of(ServiceLevelObjectiveDetailsDTO.builder()
+                                                   .serviceLevelObjectiveRef("uuid1")
+                                                   .weightagePercentage(75.0)
+                                                   .build(),
+            ServiceLevelObjectiveDetailsDTO.builder()
+                .serviceLevelObjectiveRef("uuid2")
+                .weightagePercentage(25.0)
+                .build()))
+        .userJourneyRefs(Collections.singletonList("userJourney"));
+  }
   public SLOErrorBudgetResetDTOBuilder getSLOErrorBudgetResetDTOBuilder() {
     return SLOErrorBudgetResetDTO.builder()
         .serviceLevelObjectiveIdentifier("slo")
