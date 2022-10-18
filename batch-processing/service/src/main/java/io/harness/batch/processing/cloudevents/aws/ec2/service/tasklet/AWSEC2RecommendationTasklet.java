@@ -31,6 +31,7 @@ import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.ceawsconnector.CEAwsConnectorDTO;
 import io.harness.exception.InvalidRequestException;
 import lombok.extern.slf4j.Slf4j;
+import org.bouncycastle.jcajce.provider.asymmetric.ec.KeyFactorySpi;
 import org.springframework.batch.core.StepContribution;
 import org.springframework.batch.core.scope.context.ChunkContext;
 import org.springframework.batch.core.step.tasklet.Tasklet;
@@ -62,6 +63,8 @@ public class AWSEC2RecommendationTasklet  implements Tasklet {
     @Autowired private NGConnectorHelper ngConnectorHelper;
     @Autowired private UtilizationDataServiceImpl utilizationDataService;
     @Autowired private EC2RecommendationDAO ec2RecommendationDAO;
+    private static final String TERMINATE = "TERMINATE";
+    private static final String MODIFY = "Modify";
 
     @Override
     public RepeatStatus execute(StepContribution stepContribution, ChunkContext chunkContext) throws Exception {
@@ -98,20 +101,27 @@ public class AWSEC2RecommendationTasklet  implements Tasklet {
                             if (!rightsizingRecommendations.getValue().isEmpty()) {
                                 rightsizingRecommendations.getValue().forEach(rightsizingRecommendation -> {
                                     log.info("list entry rightsizingRecommendation = {}", rightsizingRecommendation);
-                                    EC2Recommendation ec2Recommendation;
-                                    if (rightsizingRecommendation.getRightsizingType().equalsIgnoreCase("Modify")) {
+                                    EC2Recommendation recommendation;
+                                    String type;
+                                    if (rightsizingRecommendation.getRightsizingType().equalsIgnoreCase(MODIFY)) {
                                         log.info("modify typed recomm");
-                                        ec2Recommendation = convertRecommendationObject(rightsizingRecommendation);
+                                        recommendation = convertRecommendationObject(rightsizingRecommendation);
+                                        recommendation.setRecommendationType(rightsizingRecommendations.getKey().name());
+                                        type = MODIFY;
                                     } else {
                                         log.info("terminate typed recomm");
-                                        ec2Recommendation = convertRecommendationForTermination(rightsizingRecommendation);
+                                        recommendation = convertRecommendationForTermination(rightsizingRecommendation);
+                                        recommendation.setRecommendationType(TERMINATE);
+                                        type = TERMINATE;
                                     }
-                                    ec2Recommendation.setAccountId(accountId);
-                                    ec2Recommendation.setRecommendationType(rightsizingRecommendations.getKey().name());
-                                    ec2Recommendation.setLastUpdatedTime(startTime);
-                                    log.info("ec2Recommendation = {}", ec2Recommendation);
-                                    ec2RecommendationDAO.saveRecommendation(ec2Recommendation);
+                                    recommendation.setAccountId(accountId);
+                                    recommendation.setLastUpdatedTime(startTime);
+                                    log.info("recommendation = {}", recommendation);
+                                    EC2Recommendation ec2Recommendation = ec2RecommendationDAO.saveRecommendation(recommendation);
+                                    log.info("ec2Recommendation which saved to mongo= {}", ec2Recommendation);
                                     log.info("saved to mongo");
+                                    // Save the recommendation to timescale
+                                    saveRecommendationInTimeScaleDB(ec2Recommendation);
                                 });
                             }
                         }
@@ -152,8 +162,6 @@ public class AWSEC2RecommendationTasklet  implements Tasklet {
             List<Double> cpuUtilizationMaxList = new ArrayList<>();
             List<Double> memoryUtilizationAvgList = new ArrayList<>();
             List<Double> memoryUtilizationMaxList = new ArrayList<>();
-            List<Date> startTimestampList = new ArrayList<>();
-            int metricsListSize = 0;
 
             for (MetricValue utilizationMetric : utilizationMetrics.getMetricValues()) {
                 // Assumption that size of all the metrics and timestamps will be same across the 4 metrics
@@ -163,8 +171,6 @@ public class AWSEC2RecommendationTasklet  implements Tasklet {
                 }
 
                 List<Double> metricsList = utilizationMetric.getValues();
-                metricsListSize = metricsList.size();
-                log.info("metricsListSize = {}", metricsListSize);
                 switch (utilizationMetric.getStatistic()) {
                     case "Maximum":
                         switch (utilizationMetric.getMetricName()) {
@@ -297,6 +303,17 @@ public class AWSEC2RecommendationTasklet  implements Tasklet {
                 .sku(ec2ResourceDetails.getSku())
                 .vcpu(ec2ResourceDetails.getVcpu())
                 .build();
+    }
+
+    private void saveRecommendationInTimeScaleDB(EC2Recommendation ec2Recommendation) {
+        Double currentMonthCost = Double.parseDouble(
+                ec2Recommendation.getCurrentMonthlyCost().isEmpty() ? "0.0" : ec2Recommendation.getCurrentMonthlyCost());
+        Double monthlySaving = Double.parseDouble(
+                ec2Recommendation.getExpectedMonthlySaving().isEmpty() ? "0.0" : ec2Recommendation.getExpectedMonthlySaving());
+        ec2RecommendationDAO.upsertCeRecommendation(ec2Recommendation.getUuid(),
+                ec2Recommendation.getAccountId(), ec2Recommendation.getInstanceId(), ec2Recommendation.getAwsAccountId(),
+                ec2Recommendation.getInstanceName(), currentMonthCost, monthlySaving, ec2Recommendation.getLastUpdatedTime());
+        log.info("saved to ce_recomm");
     }
 
     private Map<String, AwsCrossAccountAttributes> getCrossAccountAttributes(String accountId) {

@@ -28,12 +28,7 @@ import software.wings.beans.AwsCrossAccountAttributes;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -78,7 +73,17 @@ public class EC2MetricHelper {
         // Aggregate all the individual metric queries we need into a single query.
         final Map<String, MetricDataResult> metricDataResultMap = new HashMap<>();
         log.info("entred in utilisation metric func!");
-        for (AWSEC2Details instance: instanceDetails) {
+
+        Set<AWSEC2Details> uniqueInstances = new HashSet<>();
+
+        for(AWSEC2Details instance : instanceDetails) {
+            uniqueInstances.add(instance);
+        }
+
+        log.info("uniqueInstances.size = {} and instanceDetails.size() = {}", uniqueInstances.size(), instanceDetails.size());
+        log.info("uniqueInstances = {}", uniqueInstances);
+
+        uniqueInstances.forEach(instance -> {
             List<MetricDataQuery> aggregatedQuery = new ArrayList<>();
             for (Statistic stat : Arrays.asList(Average, Maximum)) {
                 for (String metricName : Arrays.asList(CPU_UTILIZATION, MEMORY_UTILIZATION)) {
@@ -104,7 +109,7 @@ public class EC2MetricHelper {
                     .getMetricDataResults()
                     .stream()
                     .collect(Collectors.toMap(MetricDataResult::getId, Function.identity())));
-        }
+        });
 
 
 //        Iterables.partition(aggregatedQuery, AwsCloudWatchHelperService.MAX_QUERIES_PER_CALL).forEach(part -> {

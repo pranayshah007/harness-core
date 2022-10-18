@@ -10,6 +10,8 @@ package io.harness.ccm.commons.dao.recommendation;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.retry.RetryOnException;
+import io.harness.ccm.commons.beans.recommendation.ResourceType;
 import io.harness.ccm.commons.entities.ec2.recommendation.EC2Recommendation;
 import io.harness.persistence.HPersistence;
 import lombok.NonNull;
@@ -19,11 +21,18 @@ import org.jooq.DSLContext;
 import org.mongodb.morphia.query.Query;
 import org.mongodb.morphia.query.UpdateOperations;
 
+import javax.annotation.Nullable;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Optional;
 
 import static io.harness.annotations.dev.HarnessTeam.CE;
+import static io.harness.ccm.commons.utils.TimeUtils.offsetDateTimeNow;
+import static io.harness.ccm.commons.utils.TimeUtils.toOffsetDateTime;
+import static io.harness.ccm.graphql.query.recommendation.RecommendationsOverviewQueryV2.thresholdDays;
 import static io.harness.persistence.HPersistence.upsertReturnNewOptions;
 import static io.harness.persistence.HQuery.excludeValidate;
+import static io.harness.timescaledb.Tables.CE_RECOMMENDATIONS;
 
 
 @Slf4j
@@ -83,5 +92,32 @@ public class EC2RecommendationDAO {
                         .set(EC2Recommendation.EC2RecommendationKeys.lastUpdatedAt, ec2Recommendation.getLastUpdatedAt());
 
         return hPersistence.upsert(query, updateOperations, upsertReturnNewOptions);
+    }
+
+    @RetryOnException(retryCount = RETRY_COUNT, sleepDurationInMilliseconds = SLEEP_DURATION)
+    public void upsertCeRecommendation(@NonNull String uuid, @NonNull String accountId, @NonNull String instanceId,
+                                       @NonNull String awsAccountId, String instanceName, @Nullable Double monthlyCost, @Nullable Double monthlySaving,
+                                       @NonNull Instant lastReceivedUntilAt) {
+        dslContext.insertInto(CE_RECOMMENDATIONS)
+                .set(CE_RECOMMENDATIONS.ACCOUNTID, accountId)
+                .set(CE_RECOMMENDATIONS.ID, uuid)
+                .set(CE_RECOMMENDATIONS.CLUSTERNAME, instanceId)
+                .set(CE_RECOMMENDATIONS.NAMESPACE, awsAccountId)
+                .set(CE_RECOMMENDATIONS.NAME, instanceName)
+                .set(CE_RECOMMENDATIONS.RESOURCETYPE, ResourceType.EC2_INSTANCE.name())
+                .set(CE_RECOMMENDATIONS.MONTHLYCOST, monthlyCost)
+                .set(CE_RECOMMENDATIONS.MONTHLYSAVING, monthlySaving)
+                .set(CE_RECOMMENDATIONS.ISVALID, true)
+                .set(CE_RECOMMENDATIONS.LASTPROCESSEDAT, toOffsetDateTime(
+                        lastReceivedUntilAt.minus(thresholdDays - 1, ChronoUnit.DAYS)))
+                .set(CE_RECOMMENDATIONS.UPDATEDAT, offsetDateTimeNow())
+                .onConflictOnConstraint(CE_RECOMMENDATIONS.getPrimaryKey())
+                .doUpdate()
+                .set(CE_RECOMMENDATIONS.MONTHLYCOST, monthlyCost)
+                .set(CE_RECOMMENDATIONS.MONTHLYSAVING, monthlySaving)
+                .set(CE_RECOMMENDATIONS.LASTPROCESSEDAT, toOffsetDateTime(
+                        lastReceivedUntilAt.minus(thresholdDays - 1, ChronoUnit.DAYS)))
+                .set(CE_RECOMMENDATIONS.UPDATEDAT, offsetDateTimeNow())
+                .execute();
     }
 }
