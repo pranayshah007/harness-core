@@ -2,6 +2,7 @@ package io.harness.event.timeseries.processor;
 
 import io.harness.timescaledb.TimeScaleDBService;
 
+import software.wings.graphql.datafetcher.DataFetcherUtils;
 import software.wings.service.impl.event.timeseries.TimeSeriesEventInfo;
 
 import com.google.inject.Inject;
@@ -9,12 +10,14 @@ import com.google.inject.Singleton;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import lombok.extern.slf4j.Slf4j;
 
 @Singleton
 @Slf4j
 public class ExecutionInterruptProcessor implements StepEventProcessor<TimeSeriesEventInfo> {
   @Inject private TimeScaleDBService timeScaleDBService;
+  @Inject DataFetcherUtils utils;
 
   private static final String upsert_statement =
       "INSERT INTO EXECUTION_INTERRUPT (ID,ACCOUNT_ID,STATE_EXECUTION_INSTANCE_ID,TYPE,EXECUTION_ID,APP_ID,CREATED_BY,CREATED_AT,LAST_UPDATED_BY,LAST_UPDATED_AT) VALUES (?,?,?,?,?,?,?,?,?,?) ON CONFLICT (ID,CREATED_AT) DO UPDATE SET ACCOUNT_ID = EXCLUDED.ACCOUNT_ID,STATE_EXECUTION_INSTANCE_ID = EXCLUDED.STATE_EXECUTION_INSTANCE_ID,TYPE = EXCLUDED.TYPE,EXECUTION_ID = EXCLUDED.EXECUTION_ID,APP_ID = EXCLUDED.APP_ID,CREATED_BY = EXCLUDED.CREATED_BY,LAST_UPDATED_BY = EXCLUDED.LAST_UPDATED_BY,LAST_UPDATED_AT = EXCLUDED.LAST_UPDATED_AT";
@@ -64,9 +67,13 @@ public class ExecutionInterruptProcessor implements StepEventProcessor<TimeSerie
     upsertStatement.setString(++index, eventInfo.getStringData().get(EXECUTION_ID));
     upsertStatement.setString(++index, eventInfo.getStringData().get(APP_ID));
     upsertStatement.setString(++index, eventInfo.getStringData().get(MANUAL_INTERVENTION_CREATED_BY));
-    upsertStatement.setLong(++index, ProcessorHelper.getLongValue(MANUAL_INTERVENTION_CREATED_AT, eventInfo));
+    upsertStatement.setTimestamp(++index,
+        new Timestamp(ProcessorHelper.getLongValue(MANUAL_INTERVENTION_CREATED_AT, eventInfo)),
+        utils.getDefaultCalendar());
     upsertStatement.setString(++index, eventInfo.getStringData().get(MANUAL_INTERVENTION_UPDATED_BY));
-    upsertStatement.setLong(++index, ProcessorHelper.getLongValue(MANUAL_INTERVENTION_UPDATED_AT, eventInfo));
+    upsertStatement.setTimestamp(++index,
+        new Timestamp(ProcessorHelper.getLongValue(MANUAL_INTERVENTION_UPDATED_AT, eventInfo)),
+        utils.getDefaultCalendar());
     upsertStatement.execute();
   }
 }
