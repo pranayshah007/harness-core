@@ -138,9 +138,10 @@ public class UsageMetricsEventPublisher {
 
     longData.put(StepEventProcessor.END_TIME, stateExecutionInstance.getEndTs());
 
-    if (stateExecutionInstance.getStartTs() != null && stateExecutionInstance.getEndTs() != null)
+    if (stateExecutionInstance.getStartTs() != null && stateExecutionInstance.getEndTs() != null) {
       longData.put(
           StepEventProcessor.DURATION, stateExecutionInstance.getEndTs() - stateExecutionInstance.getStartTs());
+    }
 
     if (APPROVAL.equals(stateExecutionInstance.getStateType()) && stateExecutionInstance.getStateExecutionMap() != null
         && stateExecutionInstance.getStateExecutionMap().get(stateExecutionInstance.getStateName()) != null) {
@@ -150,16 +151,19 @@ public class UsageMetricsEventPublisher {
         ApprovalStateExecutionData approvalStateExecutionData = (ApprovalStateExecutionData) stateExecutionData;
         longData.put(StepEventProcessor.APPROVED_AT, approvalStateExecutionData.getApprovedOn());
 
-        if (approvalStateExecutionData.getStartTs() != null && approvalStateExecutionData.getTimeoutMillis() != null)
+        if (approvalStateExecutionData.getStartTs() != null && approvalStateExecutionData.getTimeoutMillis() != null) {
           longData.put(StepEventProcessor.APPROVAL_EXPIRY,
               approvalStateExecutionData.getStartTs() + approvalStateExecutionData.getTimeoutMillis());
+        }
 
         stringData.put(StepEventProcessor.APPROVAL_COMMENT, approvalStateExecutionData.getComments());
-        if (approvalStateExecutionData.getApprovalStateType() != null)
+        if (approvalStateExecutionData.getApprovalStateType() != null) {
           stringData.put(
               StepEventProcessor.APPROVAL_TYPE, approvalStateExecutionData.getApprovalStateType().toString());
-        if (approvalStateExecutionData.getApprovedBy() != null)
+        }
+        if (approvalStateExecutionData.getApprovedBy() != null) {
           stringData.put(StepEventProcessor.APPROVED_BY, approvalStateExecutionData.getApprovedBy().getEmail());
+        }
       }
     }
 
