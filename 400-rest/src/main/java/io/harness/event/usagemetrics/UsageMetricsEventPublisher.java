@@ -79,6 +79,9 @@ public class UsageMetricsEventPublisher {
   }
 
   public void publishDeploymentStepTimeSeriesEvent(String accountId, StateExecutionInstance stateExecutionInstance) {
+    if (stateExecutionInstance == null) {
+      return;
+    }
     for (String stateType : STATE_TYPES) {
       if (stateType.equals(stateExecutionInstance.getStateType())) {
         return;
@@ -108,7 +111,9 @@ public class UsageMetricsEventPublisher {
     stringData.put(StepEventProcessor.APP_ID, stateExecutionInstance.getAppId());
     stringData.put(StepEventProcessor.STEP_NAME, stateExecutionInstance.getStateName());
     stringData.put(StepEventProcessor.STEP_TYPE, stateExecutionInstance.getStateType());
-    stringData.put(StepEventProcessor.STATUS, stateExecutionInstance.getStatus().toString());
+    if (stateExecutionInstance.getStatus() != null) {
+      stringData.put(StepEventProcessor.STATUS, stateExecutionInstance.getStatus().toString());
+    }
     stringData.put(StepEventProcessor.STAGE_NAME, stateExecutionInstance.getStageName());
     stringData.put(StepEventProcessor.EXECUTION_ID, stateExecutionInstance.getExecutionUuid());
 
@@ -180,6 +185,9 @@ public class UsageMetricsEventPublisher {
   }
 
   public void publishExecutionInterruptTimeSeriesEvent(String accountId, ExecutionInterrupt executionInterrupt) {
+    if (executionInterrupt == null) {
+      return;
+    }
     ExecutionInterruptTimeSeriesEvent event = constructExecutionInterruptTimeSeriesEvent(accountId, executionInterrupt);
     if (event.getTimeSeriesEventInfo().getLongData().get(StepEventProcessor.MANUAL_INTERVENTION_CREATED_AT) == null) {
       return;
