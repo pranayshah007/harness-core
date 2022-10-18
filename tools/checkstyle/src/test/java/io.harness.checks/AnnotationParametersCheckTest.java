@@ -7,7 +7,6 @@
 
 package io.harness.checks;
 
-import com.puppycrawl.tools.checkstyle.AbstractModuleTestSupport;
 import com.puppycrawl.tools.checkstyle.DefaultConfiguration;
 import com.puppycrawl.tools.checkstyle.TreeWalker;
 import org.junit.Test;

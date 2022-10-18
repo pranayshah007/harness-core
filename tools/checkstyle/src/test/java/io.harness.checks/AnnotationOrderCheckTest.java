@@ -7,7 +7,6 @@
 
 package io.harness.checks;
 
-import com.puppycrawl.tools.checkstyle.AbstractModuleTestSupport;
 import com.puppycrawl.tools.checkstyle.DefaultConfiguration;
 import com.puppycrawl.tools.checkstyle.TreeWalker;
 import org.junit.Test;
@@ -44,7 +43,7 @@ public class AnnotationOrderCheckTest extends AbstractModuleTestSupport {
 
   @Test
   public void testFalsePositive() throws Exception {
-    //    final String[] expected = {};
-    //    verify(config(), getPath("WingsExceptionCheckNonIssues.jv"), expected);
+    final String[] expected = {};
+    verify(config(), getPath("WingsExceptionCheckNonIssues.jv"), expected);
   }
 }
