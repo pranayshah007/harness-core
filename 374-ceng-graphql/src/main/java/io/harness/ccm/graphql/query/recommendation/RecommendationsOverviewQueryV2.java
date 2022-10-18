@@ -125,7 +125,6 @@ public class RecommendationsOverviewQueryV2 {
   private static final Set<String> WORKLOAD_INSTANCE_TYPES = ImmutableSet.of(K8S_POD.name(), K8S_POD_FARGATE.name());
   private static final Set<String> CLOUD_SERVICE_INSTANCE_TYPES =
       ImmutableSet.of(ECS_TASK_EC2.name(), ECS_TASK_FARGATE.name());
-  public static final long thresholdDays = 4;
 
   private static final Gson GSON = new Gson();
 

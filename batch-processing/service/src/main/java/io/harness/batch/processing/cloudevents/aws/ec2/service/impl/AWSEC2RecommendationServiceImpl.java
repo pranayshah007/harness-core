@@ -4,7 +4,11 @@ import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.STSAssumeRoleSessionCredentialsProvider;
 import com.amazonaws.services.costexplorer.AWSCostExplorerClient;
 import com.amazonaws.services.costexplorer.AWSCostExplorerClientBuilder;
-import com.amazonaws.services.costexplorer.model.*;
+import com.amazonaws.services.costexplorer.model.GetRightsizingRecommendationRequest;
+import com.amazonaws.services.costexplorer.model.GetRightsizingRecommendationResult;
+import com.amazonaws.services.costexplorer.model.RecommendationTarget;
+import com.amazonaws.services.costexplorer.model.RightsizingRecommendation;
+import com.amazonaws.services.costexplorer.model.RightsizingRecommendationConfiguration;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
 import io.harness.batch.processing.cloudevents.aws.ec2.service.AWSEC2RecommendationService;
 import io.harness.batch.processing.cloudevents.aws.ec2.service.request.EC2RecommendationRequest;
@@ -16,7 +20,11 @@ import org.springframework.stereotype.Service;
 import software.wings.beans.AwsCrossAccountAttributes;
 import software.wings.service.impl.aws.client.CloseableAmazonWebServiceClient;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 import static software.wings.service.impl.aws.model.AwsConstants.AWS_DEFAULT_REGION;
 

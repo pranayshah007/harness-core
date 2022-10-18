@@ -9,7 +9,7 @@ import io.harness.batch.processing.billing.timeseries.service.impl.UtilizationDa
 import io.harness.batch.processing.ccm.CCMJobConstants;
 import io.harness.batch.processing.cloudevents.aws.ec2.service.AWSEC2RecommendationService;
 import io.harness.batch.processing.cloudevents.aws.ec2.service.helper.AWSEC2Details;
-import io.harness.batch.processing.cloudevents.aws.ec2.service.helper.AWSRegionHelper;
+import io.harness.batch.processing.cloudevents.aws.ec2.service.helper.AWSRegionRegistry;
 import io.harness.batch.processing.cloudevents.aws.ec2.service.helper.EC2MetricHelper;
 import io.harness.batch.processing.cloudevents.aws.ec2.service.request.EC2RecommendationRequest;
 import io.harness.batch.processing.cloudevents.aws.ec2.service.response.EC2RecommendationResponse;
@@ -44,7 +44,13 @@ import software.wings.service.intfc.instance.CloudToHarnessMappingService;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import static io.harness.batch.processing.ccm.UtilizationInstanceType.EC2_INSTANCE;
@@ -213,7 +219,7 @@ public class AWSEC2RecommendationTasklet  implements Tasklet {
                     .map(rightsizingRecommendation -> {
                         String instanceId = rightsizingRecommendation.getCurrentInstance().getResourceId();
                         String region = rightsizingRecommendation.getCurrentInstance().getResourceDetails().getEC2ResourceDetails().getRegion();
-                        return new AWSEC2Details(instanceId, AWSRegionHelper.getRegionNameFromDisplayName(region));
+                        return new AWSEC2Details(instanceId, AWSRegionRegistry.getRegionNameFromDisplayName(region));
             }).collect(Collectors.toList()));
         }
         return awsec2Details;

@@ -6,7 +6,7 @@ import lombok.experimental.UtilityClass;
 import java.util.Map;
 
 @UtilityClass
-public class AWSRegionHelper {
+public class AWSRegionRegistry {
     private final String DEFAULT_REGION = "us-east-1";
      static final Map<String, String> regionMap = ImmutableMap.<String, String>builder()
              .put("AWS GovCloud (US)", "us-gov-west-1")

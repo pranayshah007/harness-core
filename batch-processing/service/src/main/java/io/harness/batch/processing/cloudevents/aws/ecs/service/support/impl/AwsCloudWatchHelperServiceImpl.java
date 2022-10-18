@@ -45,7 +45,6 @@ public class AwsCloudWatchHelperServiceImpl implements AwsCloudWatchHelperServic
                                                  .withMetricDataQueries(request.getMetricDataQueries());
     List<MetricDataResult> metricDataResults = new ArrayList<>();
     String nextToken = null;
-    log.info("AwsCloudWatchMetricDataRequest = {}", request);
     do {
       metricDataRequest.withNextToken(nextToken);
       GetMetricDataResult metricDataResult =
@@ -53,7 +52,6 @@ public class AwsCloudWatchHelperServiceImpl implements AwsCloudWatchHelperServic
       metricDataResults.addAll(metricDataResult.getMetricDataResults());
       nextToken = metricDataResult.getNextToken();
     } while (nextToken != null);
-    log.info("Per metricDataResults = {}", metricDataResults);
     return AwsCloudWatchMetricDataResponse.builder()
         .metricDataResults(metricDataResults)
         .executionStatus(ExecutionStatus.SUCCESS)
@@ -73,7 +71,6 @@ public class AwsCloudWatchHelperServiceImpl implements AwsCloudWatchHelperServic
 
   @VisibleForTesting
   AmazonCloudWatchClient getAwsCloudWatchClient(String region, AwsCrossAccountAttributes awsCrossAccountAttributes) {
-    log.info("Adding the region to CW client = {}", region);
     AWSSecurityTokenService awsSecurityTokenService = awsCredentialHelper.constructAWSSecurityTokenService();
     AmazonCloudWatchClientBuilder builder = AmazonCloudWatchClientBuilder.standard().withRegion(region);
     AWSCredentialsProvider credentialsProvider =

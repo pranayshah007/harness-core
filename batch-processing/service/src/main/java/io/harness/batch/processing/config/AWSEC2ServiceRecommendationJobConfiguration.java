@@ -1,4 +1,3 @@
-
 /*
  * Copyright 2022 Harness Inc. All rights reserved.
  * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
@@ -10,9 +9,7 @@ package io.harness.batch.processing.config;
 
 import io.harness.batch.processing.ccm.BatchJobType;
 import io.harness.batch.processing.cloudevents.aws.ec2.service.tasklet.AWSEC2RecommendationTasklet;
-import io.harness.batch.processing.cloudevents.aws.ecs.service.tasklet.AwsECSServiceRecommendationTasklet;
 import io.harness.batch.processing.svcmetrics.BatchJobExecutionListener;
-
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
