@@ -5,12 +5,11 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package software.wings.instancesyncv2.handler;
+package software.wings.instancesyncv2;
 
-import io.harness.perpetualtask.PerpetualTaskExecutionBundle;
+import com.google.inject.AbstractModule;
 
-import software.wings.api.DeploymentSummary;
-
-public interface CgInstanceSyncV2Handler {
-  PerpetualTaskExecutionBundle fetchInfraConnectorDetails(DeploymentSummary deploymentSummary);
+public class InstanceSyncV2Module extends AbstractModule {
+  @Override
+  protected void configure() {}
 }

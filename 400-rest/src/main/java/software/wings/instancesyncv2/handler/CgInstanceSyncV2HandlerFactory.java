@@ -16,12 +16,14 @@ import java.util.concurrent.ConcurrentHashMap;
 
 @Singleton
 public class CgInstanceSyncV2HandlerFactory {
-  @Inject private K8sInstanceSyncV2HandlerCg k8sHandler;
+  private K8sInstanceSyncV2HandlerCg k8sHandler;
 
   private ConcurrentHashMap<Class<? extends DeploymentInfo>, CgInstanceSyncV2Handler> holder;
 
-  public CgInstanceSyncV2HandlerFactory() {
+  @Inject
+  public CgInstanceSyncV2HandlerFactory(K8sInstanceSyncV2HandlerCg k8sHandler) {
     this.holder = new ConcurrentHashMap<>();
+    this.k8sHandler = k8sHandler;
 
     initHandlers();
   }
