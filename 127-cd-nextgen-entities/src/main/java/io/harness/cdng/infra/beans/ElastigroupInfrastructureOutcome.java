@@ -10,7 +10,6 @@ package io.harness.cdng.infra.beans;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.ng.core.infrastructure.InfrastructureKind;
 import io.harness.steps.environment.EnvironmentOutcome;
 import io.harness.yaml.core.VariableExpression;
@@ -30,7 +29,6 @@ public class ElastigroupInfrastructureOutcome extends InfrastructureOutcomeAbstr
   @VariableExpression(skipVariableExpression = true) EnvironmentOutcome environment;
   String infrastructureKey;
   String connectorRef;
-  StoreConfig configuration;
 
   @Override
   public String getKind() {
