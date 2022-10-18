@@ -89,7 +89,7 @@ public class EC2RecommendationDAO {
                         .set(EC2Recommendation.EC2RecommendationKeys.expectedMonthlyCost, ec2Recommendation.getExpectedMonthlyCost())
                         .set(EC2Recommendation.EC2RecommendationKeys.expectedMonthlySaving, ec2Recommendation.getExpectedMonthlySaving())
                         .set(EC2Recommendation.EC2RecommendationKeys.rightsizingType, ec2Recommendation.getRightsizingType())
-                        .set(EC2Recommendation.EC2RecommendationKeys.lastUpdatedAt, ec2Recommendation.getLastUpdatedAt());
+                        .set(EC2Recommendation.EC2RecommendationKeys.lastUpdatedTime, ec2Recommendation.getLastUpdatedTime());
 
         return hPersistence.upsert(query, updateOperations, upsertReturnNewOptions);
     }
