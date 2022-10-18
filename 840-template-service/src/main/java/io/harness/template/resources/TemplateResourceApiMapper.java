@@ -206,6 +206,9 @@ public class TemplateResourceApiMapper {
         .lastCommitId(gitDetails.getLastCommitId())
         .lastObjectId(gitDetails.getLastObjectId())
         .connectorRef(gitDetails.getConnectorRef())
+        .filePath(gitDetails.getFilePath())
+        .repoName(gitDetails.getRepoName())
+        .storeType(StoreType.getFromStringOrNull(gitDetails.getStoreType().toString()))
         .build();
   }
   public GitEntityInfo populateGitFindDetails(GitFindDetails gitDetails) {
