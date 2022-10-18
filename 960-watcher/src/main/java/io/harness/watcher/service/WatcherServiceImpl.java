@@ -480,7 +480,7 @@ public class WatcherServiceImpl implements WatcherService {
     watchExecutor.scheduleWithFixedDelay(
         new Schedulable("Error while watching delegate", this::syncWatchDelegate), 0, 10, TimeUnit.SECONDS);
     upgradeExecutor.scheduleWithFixedDelay(
-        new Schedulable("Error while cleaning up garbage", this::cleanupOlderVersions), 1, 10, TimeUnit.DAYS);
+        new Schedulable("Error while cleaning up garbage", this::cleanupOlderVersions), 1, 30, MINUTES);
   }
 
   private void logPerformance() {
@@ -1226,8 +1226,8 @@ public class WatcherServiceImpl implements WatcherService {
               messageService.writeMessageToChannel(DELEGATE, newDelegateProcess, DELEGATE_GO_AHEAD);
 
               log.info("Waiting for delegate process {} to be ready", newDelegateProcess);
-              message = messageService.waitForMessage(DELEGATE_READY, TimeUnit.MINUTES.toMillis(5));
-              if (message != null) {
+              message = messageService.readMessageFromChannel(DELEGATE, newDelegateProcess, MINUTES.toMillis(5));
+              if (message != null && message.getMessage().equals(DELEGATE_READY)) {
                 oldDelegateProcesses.forEach(oldDelegateProcess -> {
                   log.info(
                       "New delegate process ready to acquire task, sending old delegate process {} stop-acquiring message",
