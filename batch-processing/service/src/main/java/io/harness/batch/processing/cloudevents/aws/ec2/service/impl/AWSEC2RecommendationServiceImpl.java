@@ -16,9 +16,7 @@ import org.springframework.stereotype.Service;
 import software.wings.beans.AwsCrossAccountAttributes;
 import software.wings.service.impl.aws.client.CloseableAmazonWebServiceClient;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 import static software.wings.service.impl.aws.model.AwsConstants.AWS_DEFAULT_REGION;
 
@@ -27,14 +25,33 @@ import static software.wings.service.impl.aws.model.AwsConstants.AWS_DEFAULT_REG
 public class AWSEC2RecommendationServiceImpl implements AWSEC2RecommendationService {
     @Autowired private AwsCredentialHelper awsCredentialHelper;
     private static final String aWSRegion = AWS_DEFAULT_REGION;
+    private static final String AMAZON_EC2 = "AmazonEC2";
 
     @Override
     public EC2RecommendationResponse getRecommendations(EC2RecommendationRequest request) {
+        Map<RecommendationTarget, List<RightsizingRecommendation>> recommendationTargetListMap = new HashMap<>();
+        List<RightsizingRecommendation> recommendationsOnCrossFamilyType = getRecommendationsBasedRecommendationOnType(
+                RecommendationTarget.CROSS_INSTANCE_FAMILY, request);
+        if (!recommendationsOnCrossFamilyType.isEmpty()) {
+            recommendationTargetListMap.put(RecommendationTarget.CROSS_INSTANCE_FAMILY, recommendationsOnCrossFamilyType);
+        }
+        List<RightsizingRecommendation> recommendationsOnSameFamilyType = getRecommendationsBasedRecommendationOnType(
+        RecommendationTarget.SAME_INSTANCE_FAMILY, request);
+        if (!recommendationsOnSameFamilyType.isEmpty()) {
+            recommendationTargetListMap.put(RecommendationTarget.SAME_INSTANCE_FAMILY, recommendationsOnSameFamilyType);
+        }
 
+        return EC2RecommendationResponse.builder()
+                .recommendationMap(recommendationTargetListMap)
+                .build();
+    }
+
+    List<RightsizingRecommendation> getRecommendationsBasedRecommendationOnType(RecommendationTarget recommendationTarget,
+                                                                                EC2RecommendationRequest request) {
         GetRightsizingRecommendationRequest recommendationRequest = new GetRightsizingRecommendationRequest()
                 .withConfiguration(new RightsizingRecommendationConfiguration()
-                        .withRecommendationTarget(RecommendationTarget.CROSS_INSTANCE_FAMILY))
-                .withService("AmazonEC2");
+                        .withRecommendationTarget(recommendationTarget))
+                .withService(AMAZON_EC2);
         String nextPageToken = null;
         List<RightsizingRecommendation> recommendationsResult = new ArrayList<>();
         do {
@@ -43,17 +60,13 @@ public class AWSEC2RecommendationServiceImpl implements AWSEC2RecommendationServ
                     getRecommendations(request.getAwsCrossAccountAttributes(), recommendationRequest);
             log.info("recommendationResult.size() = {}", recommendationResult.getRightsizingRecommendations().size());
             if (!recommendationResult.getRightsizingRecommendations().isEmpty()) {
-                log.info("recommendationResult = {}", recommendationResult);
+                log.info("{} type recommendationResult = {}", recommendationTarget.toString(), recommendationResult);
             }
             recommendationsResult.addAll(recommendationResult.getRightsizingRecommendations());
             nextPageToken = recommendationResult.getNextPageToken();
         } while (nextPageToken != null);
-        if (!recommendationsResult.isEmpty()) {
-            log.info("returning EC2RecommendationResponse");
-            return EC2RecommendationResponse.builder().
-                    recommendationList(recommendationsResult).build();
-        }
-        return null;
+
+        return recommendationsResult;
     }
 
     GetRightsizingRecommendationResult getRecommendations(AwsCrossAccountAttributes awsCrossAccountAttributes,

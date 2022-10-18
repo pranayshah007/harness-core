@@ -1,6 +1,9 @@
 package io.harness.batch.processing.cloudevents.aws.ec2.service.tasklet;
 
-import com.amazonaws.services.costexplorer.model.EC2InstanceDetails;
+import com.amazonaws.services.costexplorer.model.EC2ResourceDetails;
+import com.amazonaws.services.costexplorer.model.EC2ResourceUtilization;
+import com.amazonaws.services.costexplorer.model.RecommendationTarget;
+import com.amazonaws.services.costexplorer.model.RightsizingRecommendation;
 import com.google.inject.Singleton;
 import io.harness.batch.processing.billing.timeseries.data.InstanceUtilizationData;
 import io.harness.batch.processing.billing.timeseries.service.impl.UtilizationDataServiceImpl;
@@ -15,7 +18,10 @@ import io.harness.batch.processing.cloudevents.aws.ec2.service.response.Ec2Utilz
 import io.harness.batch.processing.cloudevents.aws.ec2.service.response.MetricValue;
 import io.harness.batch.processing.cloudevents.aws.ecs.service.tasklet.support.ng.NGConnectorHelper;
 import io.harness.ccm.commons.beans.JobConstants;
+import io.harness.ccm.commons.dao.recommendation.EC2RecommendationDAO;
 import io.harness.ccm.commons.entities.billing.CECloudAccount;
+import io.harness.ccm.commons.entities.ec2.recommendation.EC2Recommendation;
+import io.harness.ccm.commons.entities.ec2.recommendation.EC2RecommendationDetail;
 import io.harness.ccm.setup.CECloudAccountDao;
 import io.harness.connector.ConnectivityStatus;
 import io.harness.connector.ConnectorInfoDTO;
@@ -31,7 +37,6 @@ import org.springframework.batch.core.step.tasklet.Tasklet;
 import org.springframework.batch.repeat.RepeatStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.CollectionUtils;
-import software.amazon.awssdk.regions.Region;
 import software.wings.beans.AwsCrossAccountAttributes;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.ce.CEAwsConfig;
@@ -56,6 +61,7 @@ public class AWSEC2RecommendationTasklet  implements Tasklet {
     @Autowired private CECloudAccountDao ceCloudAccountDao;
     @Autowired private NGConnectorHelper ngConnectorHelper;
     @Autowired private UtilizationDataServiceImpl utilizationDataService;
+    @Autowired private EC2RecommendationDAO ec2RecommendationDAO;
 
     @Override
     public RepeatStatus execute(StepContribution stepContribution, ChunkContext chunkContext) throws Exception {
@@ -80,11 +86,30 @@ public class AWSEC2RecommendationTasklet  implements Tasklet {
                             awsec2RecommendationService.getRecommendations(EC2RecommendationRequest.builder()
                                     .awsCrossAccountAttributes(entry.getValue())
                                     .build());
+                    log.info("ec2RecommendationResponse = {}", ec2RecommendationResponse);
+
                     if (Objects.nonNull(ec2RecommendationResponse) &&
-                            !ec2RecommendationResponse.getRecommendationList().isEmpty()) {
+                            !ec2RecommendationResponse.getRecommendationMap().isEmpty()) {
                         log.info("recomm non null");
 //                        List<String> instances = new ArrayList<>(Arrays.asList("i-0cf7994781dce538a", "i-0ee034ec9d9f456e8", "i-07bd941e66e9273c5", "i-054f2bed517243117"));
-                        List<AWSEC2Details> instances = exctractEC2InstanceDetails(ec2RecommendationResponse);
+                        for (Map.Entry<RecommendationTarget, List<RightsizingRecommendation>> rightsizingRecommendations
+                                : ec2RecommendationResponse.getRecommendationMap().entrySet()) {
+                            log.info("map entry rightsizingRecommendations = {}", rightsizingRecommendations);
+                            if (!rightsizingRecommendations.getValue().isEmpty()) {
+                                rightsizingRecommendations.getValue().forEach(rightsizingRecommendation -> {
+                                    log.info("list entry rightsizingRecommendation = {}", rightsizingRecommendation);
+                                    EC2Recommendation ec2Recommendation = convertRecommendationObject(rightsizingRecommendation);
+                                    ec2Recommendation.setAccountId(accountId);
+                                    ec2Recommendation.setRecommendationType(rightsizingRecommendations.getKey().name());
+                                    ec2Recommendation.setLastUpdatedTime(startTime);
+                                    log.info("ec2Recommendation = {}", ec2Recommendation);
+                                    ec2RecommendationDAO.saveRecommendation(ec2Recommendation);
+                                    log.info("saved to mongo");
+                                });
+                            }
+                        }
+
+                        List<AWSEC2Details> instances = extractEC2InstanceDetails(ec2RecommendationResponse);
                         log.info("List<AWSEC2Details>.size = {}", instances.size());
                         log.info("instaceList = {}", instances);
                         List<Ec2UtilzationData> utilzationData =
@@ -192,18 +217,58 @@ public class AWSEC2RecommendationTasklet  implements Tasklet {
         return value / 100;
     }
 
-    private List<AWSEC2Details> exctractEC2InstanceDetails(EC2RecommendationResponse response) {
+    private List<AWSEC2Details> extractEC2InstanceDetails(EC2RecommendationResponse response) {
         List<AWSEC2Details> awsec2Details = new ArrayList<>();
-        awsec2Details = response.getRecommendationList().stream()
-                .map(rightsizingRecommendation -> {
-                    String instanceId = rightsizingRecommendation.getCurrentInstance().getResourceId();
-                    String region = rightsizingRecommendation.getCurrentInstance().getResourceDetails().getEC2ResourceDetails().getRegion();
-                    log.info("instanceId = {} region = {}", instanceId, region);
-                    log.info("AWSRegionHelper.getRegionNameFromDisplayName(region) = {}",
-                            AWSRegionHelper.getRegionNameFromDisplayName(region));
-                    return new AWSEC2Details(instanceId, AWSRegionHelper.getRegionNameFromDisplayName(region));
-                }).collect(Collectors.toList());
+        for (Map.Entry<RecommendationTarget, List<RightsizingRecommendation>> rightsizingRecommendations
+                : response.getRecommendationMap().entrySet()) {
+            awsec2Details.addAll(rightsizingRecommendations.getValue().stream()
+                    .map(rightsizingRecommendation -> {
+                        String instanceId = rightsizingRecommendation.getCurrentInstance().getResourceId();
+                        String region = rightsizingRecommendation.getCurrentInstance().getResourceDetails().getEC2ResourceDetails().getRegion();
+                        log.info("instanceId = {} region = {}", instanceId, region);
+                        log.info("AWSRegionHelper.getRegionNameFromDisplayName(region) = {}",
+                        AWSRegionHelper.getRegionNameFromDisplayName(region));
+                        return new AWSEC2Details(instanceId, AWSRegionHelper.getRegionNameFromDisplayName(region));
+            }).collect(Collectors.toList()));
+        }
         return awsec2Details;
+    }
+
+    private EC2Recommendation convertRecommendationObject(RightsizingRecommendation recommendation) {
+        return EC2Recommendation.builder()
+                .awsAccountId(recommendation.getAccountId())
+                .currentMaxCPU(recommendation.getCurrentInstance().getResourceUtilization().getEC2ResourceUtilization().getMaxCpuUtilizationPercentage())
+                .currentMaxMemory(recommendation.getCurrentInstance().getResourceUtilization().getEC2ResourceUtilization().getMaxMemoryUtilizationPercentage())
+                .currentMonthlyCost(recommendation.getCurrentInstance().getMonthlyCost())
+                .currencyCode(recommendation.getCurrentInstance().getCurrencyCode())
+                .instanceId(recommendation.getCurrentInstance().getResourceId())
+                .instanceName(recommendation.getCurrentInstance().getInstanceName())
+                .instanceType(recommendation.getCurrentInstance().getResourceDetails().getEC2ResourceDetails().getInstanceType())
+                .memory(recommendation.getCurrentInstance().getResourceDetails().getEC2ResourceDetails().getMemory())
+                .platform(recommendation.getCurrentInstance().getResourceDetails().getEC2ResourceDetails().getPlatform())
+                .region(recommendation.getCurrentInstance().getResourceDetails().getEC2ResourceDetails().getRegion())
+                .sku(recommendation.getCurrentInstance().getResourceDetails().getEC2ResourceDetails().getSku())
+                .vcpu(recommendation.getCurrentInstance().getResourceDetails().getEC2ResourceDetails().getVcpu())
+                .expectedMaxCPU(recommendation.getModifyRecommendationDetail().getTargetInstances().get(0).getExpectedResourceUtilization().getEC2ResourceUtilization().getMaxCpuUtilizationPercentage())
+                .expectedMaxMemory(recommendation.getModifyRecommendationDetail().getTargetInstances().get(0).getExpectedResourceUtilization().getEC2ResourceUtilization().getMaxMemoryUtilizationPercentage())
+                .recommendationInfo(buildRecommendationInfo(recommendation))
+                .build();
+    }
+
+    private EC2RecommendationDetail buildRecommendationInfo(RightsizingRecommendation recommendation) {
+        EC2ResourceDetails ec2ResourceDetails =
+                recommendation.getModifyRecommendationDetail().getTargetInstances().get(0).getResourceDetails().getEC2ResourceDetails();
+        return EC2RecommendationDetail.builder()
+                .instanceType(ec2ResourceDetails.getInstanceType())
+                .expectedMonthlyCost(recommendation.getModifyRecommendationDetail().getTargetInstances().get(0).getEstimatedMonthlyCost())
+                .expectedMonthlySaving(recommendation.getModifyRecommendationDetail().getTargetInstances().get(0).getEstimatedMonthlySavings())
+                .hourlyOnDemandRate(ec2ResourceDetails.getHourlyOnDemandRate())
+                .memory(ec2ResourceDetails.getMemory())
+                .platform(ec2ResourceDetails.getPlatform())
+                .region(ec2ResourceDetails.getRegion())
+                .sku(ec2ResourceDetails.getSku())
+                .vcpu(ec2ResourceDetails.getVcpu())
+                .build();
     }
 
     private Map<String, AwsCrossAccountAttributes> getCrossAccountAttributes(String accountId) {
