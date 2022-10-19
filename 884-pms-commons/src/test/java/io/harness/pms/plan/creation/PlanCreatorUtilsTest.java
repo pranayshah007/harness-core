@@ -8,6 +8,7 @@
 package io.harness.pms.plan.creation;
 
 import static io.harness.rule.OwnerRule.GARVIT;
+import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
 import static io.harness.rule.OwnerRule.SAHIL;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -21,6 +22,7 @@ import io.harness.pms.yaml.PipelineVersion;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.pms.yaml.YamlVersion;
 import io.harness.rule.Owner;
 
 import com.google.common.base.Charsets;
@@ -145,5 +147,22 @@ public class PlanCreatorUtilsTest extends CategoryTest {
     String projectIdentifier = "projectIdentifier";
 
     assertThat(PlanCreatorUtils.autoLogContext(executionMetadata, accountId, orgId, projectIdentifier)).isNotNull();
+  }
+
+  @Test
+  @Owner(developers = RAGHAV_GUPTA)
+  @Category(UnitTests.class)
+  public void testSupportsFieldV2() throws IOException {
+    YamlField stageField = getPipelineNode().getField("stages").getNode().asArray().get(0).getField("stage");
+    assertThat(PlanCreatorUtils.supportsFieldV2(null, stageField, null, YamlVersion.V0)).isFalse();
+    assertThat(PlanCreatorUtils.supportsFieldV2(ImmutableMap.of("random", ImmutableSet.of("random")), stageField,
+                   ImmutableSet.of(YamlVersion.V1), YamlVersion.V0))
+        .isFalse();
+    assertThat(PlanCreatorUtils.supportsFieldV2(ImmutableMap.of("stage", ImmutableSet.of("random")), stageField,
+                   ImmutableSet.of(YamlVersion.V0), YamlVersion.V0))
+        .isFalse();
+    assertThat(PlanCreatorUtils.supportsFieldV2(ImmutableMap.of("stage", ImmutableSet.of("random", "Deployment")),
+                   stageField, ImmutableSet.of(YamlVersion.V0), YamlVersion.V0))
+        .isTrue();
   }
 }

@@ -259,6 +259,19 @@ public class ExecutionHelper {
 
   @VisibleForTesting
   TemplateMergeResponseDTO getPipelineYamlAndValidate(String mergedRuntimeInputYaml, PipelineEntity pipelineEntity) {
+    switch (pipelineEntity.getHarnessVersion()) {
+      case V1:
+        return TemplateMergeResponseDTO.builder()
+            .mergedPipelineYaml(pipelineEntity.getYaml())
+            .mergedPipelineYamlWithTemplateRef(pipelineEntity.getYaml())
+            .build();
+      default:
+        return getPipelineYamlAndValidateInternal(mergedRuntimeInputYaml, pipelineEntity);
+    }
+  }
+
+  private TemplateMergeResponseDTO getPipelineYamlAndValidateInternal(
+      String mergedRuntimeInputYaml, PipelineEntity pipelineEntity) {
     YamlConfig pipelineYamlConfig;
     YamlConfig pipelineYamlConfigForSchemaValidations;
 

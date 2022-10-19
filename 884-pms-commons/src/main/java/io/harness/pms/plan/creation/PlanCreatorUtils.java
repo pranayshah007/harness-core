@@ -20,6 +20,7 @@ import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.pms.yaml.YamlVersion;
 
 import com.google.common.collect.ImmutableMap;
 import java.io.IOException;
@@ -81,6 +82,17 @@ public class PlanCreatorUtils {
       default:
         throw new IllegalStateException("unsupported version");
     }
+  }
+
+  public boolean supportsFieldV2(Map<String, Set<String>> supportedTypes, YamlField field,
+      Set<YamlVersion> supportedVersions, YamlVersion yamlVersion) {
+    if (EmptyPredicate.isEmpty(supportedVersions)) {
+      return false;
+    }
+    if (!supportedVersions.contains(yamlVersion)) {
+      return false;
+    }
+    return supportsField(supportedTypes, field);
   }
 
   public YamlField getStageConfig(YamlField yamlField, String stageIdentifier) {
