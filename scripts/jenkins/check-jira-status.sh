@@ -19,16 +19,16 @@ function check_file_present(){
 
 # function to check all field for Bug ticket
 function check_bug_ticket(){
-  if [ ! -z $1 ]; then
+  if [ -z "$1" ]; then
     echo "ERROR: JIRA FIELD: bug resolution is empty" >> /tmp/error_fields
   fi
-  if [ $2 = "null" ]; then
+  if [ "$2" = "null" ]; then
     echo "ERROR: JIRA FIELD: jira_resolved_as is not selected" >> /tmp/error_fields
   fi
-  if [ $3 = "null" ]; then
+  if [ "$3" = "null" ]; then
     echo "ERROR: JIRA FIELD: phase_injected is not selected" >> /tmp/error_fields
   fi
-  if [ $4 = "null" ]; then
+  if [ "$4" = "null" ]; then
     echo "ERROR: JIRA FIELD: what_changed is not updated" >> /tmp/error_fields
   fi
 
