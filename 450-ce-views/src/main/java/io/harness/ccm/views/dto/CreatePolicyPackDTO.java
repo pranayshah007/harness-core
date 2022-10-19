@@ -5,18 +5,19 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ccm.remote.resources.governance;
+package io.harness.ccm.views.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import javax.validation.Valid;
+
+import io.harness.ccm.views.entities.PolicyPack;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Value;
 import lombok.experimental.FieldDefaults;
-
 @Value
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class ListDTO {
-  @JsonProperty("query") @Valid PolicyRequest policyRequest;
+public class CreatePolicyPackDTO {
+  @JsonProperty("policypack") @Valid PolicyPack policyPack;
 }

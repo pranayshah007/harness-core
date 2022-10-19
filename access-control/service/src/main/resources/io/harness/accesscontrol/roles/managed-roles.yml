@@ -561,6 +561,9 @@ roles:
         - ccm_policy_edit
         - ccm_policy_view
         - ccm_policy_delete
+        - ccm_policy_set_edit
+        - ccm_policy_set_view
+        - ccm_policy_set_delete
       allowedScopeLevels:
         - account
       managed: true
@@ -778,6 +781,9 @@ roles:
         - ccm_policy_edit
         - ccm_policy_view
         - ccm_policy_delete
+        - ccm_policy_set_edit
+        - ccm_policy_set_view
+        - ccm_policy_set_delete
       managed: true
       allowedScopeLevels:
         - account

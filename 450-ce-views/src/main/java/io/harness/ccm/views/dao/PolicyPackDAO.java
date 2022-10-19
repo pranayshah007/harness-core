@@ -5,8 +5,10 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ccm.remote.resources.governance;
+package io.harness.ccm.views.dao;
 
+import io.harness.ccm.views.entities.Policy;
+import io.harness.ccm.views.entities.PolicyPack;
 import io.harness.persistence.HPersistence;
 
 import com.google.inject.Inject;
@@ -20,9 +22,9 @@ import org.mongodb.morphia.query.UpdateOperations;
 public class PolicyPackDAO {
   @Inject private HPersistence hPersistence;
 
-  public boolean save(PolicyPack policyPack) {
-    log.info("created: {}", hPersistence.save(policyPack));
-    return hPersistence.save(policyPack) != null;
+  public boolean save(PolicyPack policySet) {
+    log.info("created: {}", hPersistence.save(policySet));
+    return hPersistence.save(policySet) != null;
   }
 
   public boolean delete(String accountId, String uuid) {
@@ -44,8 +46,12 @@ public class PolicyPackDAO {
     UpdateOperations<PolicyPack> updateOperations =
         hPersistence.createUpdateOperations(PolicyPack.class)
             .set(PolicyPack.PolicySetId.name, policy.getName())
-            .set(PolicyPack.PolicySetId.tags, policy.getTags())
-            .set(PolicyPack.PolicySetId.policiesIdentifier, policy.getPoliciesIdentifier())
+//            .set(PolicyPack.PolicySetId.tags, policy.getTags())
+//            .set(PolicyPack.PolicySetId.policySetPolicies, policy.getPolicySetPolicies())
+//            .set(PolicyPack.PolicySetId.policySetExecutionCron, policy.getPolicySetExecutionCron())
+//            .set(PolicyPack.PolicySetId.policySetTargetAccounts, policy.getPolicySetTargetAccounts())
+//            .set(PolicyPack.PolicySetId.policySetTargetRegions, policy.getPolicySetTargetRegions())
+//            .set(PolicyPack.PolicySetId.isEnabled, policy.getIsEnabled())
             .set(PolicyPack.PolicySetId.lastUpdatedAt, policy.getLastUpdatedAt());
 
     hPersistence.update(query, updateOperations);

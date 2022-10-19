@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ccm.remote.resources.governance;
+package io.harness.ccm.views.entities;
 
 import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.StoreIn;
@@ -36,28 +36,27 @@ import org.mongodb.morphia.annotations.Id;
 @Data
 @Builder
 @StoreIn(DbAliases.CENG)
-@FieldNameConstants(innerTypeName = "PolicySetId")
+@FieldNameConstants(innerTypeName = "PolicyId")
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldDefaults(level = AccessLevel.PRIVATE)
-@Entity(value = "governancePolicySets", noClassnameStored = true)
-@Schema(description = "This object will contain the complete definition of a Cloud Cost Policy set")
+@Entity(value = "governancePolicy", noClassnameStored = true)
+@Schema(description = "This object will contain the complete definition of a Cloud Cost Policies")
 
-public final class PolicySet implements PersistentEntity, UuidAware, CreatedAtAware, UpdatedAtAware, AccountAccess,
-                                        CreatedByAware, UpdatedByAware {
+public final class Policy implements PersistentEntity, UuidAware, CreatedAtAware, UpdatedAtAware, AccountAccess,
+                                     CreatedByAware, UpdatedByAware {
   @Id @Schema(description = "unique id") String uuid;
   @Schema(description = "account id") String accountId;
   @Schema(description = "Identifier") String name;
+  @Schema(description = NGCommonEntityConstants.RESOURCE) String resource;
   @Schema(description = NGCommonEntityConstants.DESCRIPTION) String description;
+  @Schema(description = NGCommonEntityConstants.POLICY) String policyYaml;
   @Schema(description = NGCommonEntityConstants.TAGS) List<String> tags;
   @Schema(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) String orgIdentifier;
   @Schema(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) String projectIdentifier;
   @Schema(description = "cloudProvider") String cloudProvider;
-  @Schema(description = "policySetPolicies") List<String> policySetPolicies;
-  @Schema(description = "policySetExecutionCron") String policySetExecutionCron;
-  @Schema(description = "policySetTargetAccounts") List<String> policySetTargetAccounts;
-  @Schema(description = "policySetTargetRegions") List<String> policySetTargetRegions;
-  @Schema(description = "deleted") String deleted;
-  @Schema(description = "isEnabled") String isEnabled;
+  @Schema(description = "versionLabel") String versionLabel;
+  @Schema(description = "isStablePolicy") String isStablePolicy;
+  @Schema(description = "versionLabel") String isOOTBPolicy;
   @Schema(description = NGCommonEntityConstants.CREATED_AT_MESSAGE) long createdAt;
   @Schema(description = NGCommonEntityConstants.UPDATED_AT_MESSAGE) long lastUpdatedAt;
   @Schema(description = "created by") private EmbeddedUser createdBy;
@@ -67,30 +66,29 @@ public final class PolicySet implements PersistentEntity, UuidAware, CreatedAtAw
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()
                  .name("policy")
-                 .field(Policy.PolicyId.uuid)
-                 .field(Policy.PolicyId.accountId)
-                 .field(Policy.PolicyId.cloudProvider)
+                 .field(PolicyId.uuid)
+                 .field(PolicyId.accountId)
+                 .field(PolicyId.cloudProvider)
                  .build())
-        .add(CompoundMongoIndex.builder().name("sort1").field(Policy.PolicyId.lastUpdatedAt).build())
-        .add(CompoundMongoIndex.builder().name("sort2").field(Policy.PolicyId.createdAt).build())
+        .add(CompoundMongoIndex.builder().name("sort1").field(PolicyId.lastUpdatedAt).build())
+        .add(CompoundMongoIndex.builder().name("sort2").field(PolicyId.createdAt).build())
         .build();
   }
-  public PolicySet toDTO() {
-    return PolicySet.builder()
+  public Policy toDTO() {
+    return Policy.builder()
         .uuid(getUuid())
         .accountId(getAccountId())
         .name(getName())
+        .resource(getResource())
         .description(getDescription())
+        .policyYaml(getPolicyYaml())
+        .cloudProvider(getCloudProvider())
+        .versionLabel(getVersionLabel())
+        .isStablePolicy(getIsStablePolicy())
+        .isOOTBPolicy(getIsOOTBPolicy())
+        .tags(getTags())
         .orgIdentifier(getOrgIdentifier())
         .projectIdentifier(getProjectIdentifier())
-        .cloudProvider(getCloudProvider())
-        .tags(getTags())
-        .policySetPolicies(getPolicySetPolicies())
-        .policySetExecutionCron(getPolicySetExecutionCron())
-        .policySetTargetAccounts(getPolicySetTargetAccounts())
-        .policySetTargetRegions(getPolicySetTargetRegions())
-        .deleted(getDeleted())
-        .isEnabled(getIsEnabled())
         .createdAt(getCreatedAt())
         .lastUpdatedAt(getLastUpdatedAt())
         .createdBy(getCreatedBy())

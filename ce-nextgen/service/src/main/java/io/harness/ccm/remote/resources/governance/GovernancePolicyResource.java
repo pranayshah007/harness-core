@@ -15,20 +15,24 @@ import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.rbac.CCMRbacHelper;
 import io.harness.ccm.utils.LogAccountIdentifier;
-import io.harness.ccm.views.dto.GovernanceEnqueueResponseDTO;
-import io.harness.ccm.views.dto.GovernanceJobEnqueueDTO;
+import io.harness.ccm.views.dto.CreatePolicyDTO;
+import io.harness.ccm.views.dto.ListDTO;
+import io.harness.ccm.views.entities.Policy;
+import io.harness.ccm.views.entities.PolicyRequest;
+import io.harness.ccm.views.service.GovernancePolicyService;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
-import io.harness.security.annotations.NextGenManagerAuth;
 
 import com.codahale.metrics.annotation.ExceptionMetered;
 import com.codahale.metrics.annotation.Timed;
 import com.google.inject.Inject;
+import io.harness.security.annotations.NextGenManagerAuth;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
+import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -77,22 +81,19 @@ import org.springframework.stereotype.Service;
       , @ApiResponse(code = 500, response = ErrorDTO.class, message = "Internal server error")
     })
 @NextGenManagerAuth
-//@PublicApi
 public class GovernancePolicyResource {
-  private final PolicyService policyService;
+  private final GovernancePolicyService governancePolicyService;
   private final CCMRbacHelper rbacHelper;
-
   @Inject
-  public GovernancePolicyResource(PolicyService policyService, CCMRbacHelper rbacHelper) {
-    this.policyService = policyService;
+  public GovernancePolicyResource(GovernancePolicyService governancePolicyService, CCMRbacHelper rbacHelper) {
+    this.governancePolicyService = governancePolicyService;
     this.rbacHelper = rbacHelper;
   }
 
   // Internal API for OOTB policy creation
 
   @POST
-  //  @Hidden
-  //  @InternalApi
+  @Hidden
   @Path("policy")
   @Consumes(MediaType.APPLICATION_JSON)
   @ApiOperation(value = "Add a new policy internal api", nickname = "addPolicyNameInternal")
@@ -110,15 +111,14 @@ public class GovernancePolicyResource {
     // rbacHelper.checkPolicyEditPermission(accountId, null, null);
     Policy policy = createPolicyDTO.getPolicy();
     policy.setAccountId(accountId);
-    policyService.save(policy);
+    governancePolicyService.save(policy);
     return ResponseDTO.newResponse(policy.toDTO());
   }
 
   // Update a policy already made
 
   @PUT
-  //  @Hidden
-  //  @InternalApi
+  @Hidden
   @Path("policy")
   @Consumes(MediaType.APPLICATION_JSON)
   @ApiOperation(value = "Update a existing OOTB Policy", nickname = "updatePolicy")
@@ -138,15 +138,14 @@ public class GovernancePolicyResource {
     Policy policy = createPolicyDTO.getPolicy();
     policy.toDTO();
     policy.setAccountId(accountId);
-    policyService.update(policy);
+    governancePolicyService.update(policy);
     return ResponseDTO.newResponse(policy);
   }
 
   // Internal API for deletion of OOTB policies
 
   @DELETE
-  //  @Hidden
-  //  @InternalApi
+  @Hidden
   @Path("policy/{policyId}")
   @Timed
   @ExceptionMetered
@@ -166,7 +165,7 @@ public class GovernancePolicyResource {
       @PathParam("policyId") @Parameter(
           required = true, description = "Unique identifier for the policy") @NotNull @Valid String uuid) {
     // rbacHelper.checkPolicyDeletePermission(accountId, null, null);
-    boolean result = policyService.delete(accountId, uuid);
+    boolean result = governancePolicyService.delete(accountId, uuid);
     return ResponseDTO.newResponse(result);
   }
 
@@ -196,51 +195,51 @@ public class GovernancePolicyResource {
     String resource = query.getResource();
     String tags = query.getTags();
     if (uuid != null) {
-      Policy policy = policyService.listid(accountId, uuid);
+      Policy policy = governancePolicyService.listid(accountId, uuid);
       Policies.add(policy);
       return ResponseDTO.newResponse(Policies);
     }
     if (isStablePolicy != null) {
-      Policies = policyService.findByStability(isStablePolicy, accountId);
+      Policies = governancePolicyService.findByStability(isStablePolicy, accountId);
       return ResponseDTO.newResponse(Policies);
     }
     if (resource != null && tags == null) {
-      Policies = policyService.findByResource(resource, accountId);
+      Policies = governancePolicyService.findByResource(resource, accountId);
       return ResponseDTO.newResponse(Policies);
     }
     if (resource == null && tags != null) {
-      Policies = policyService.findByTag(tags, accountId);
+      Policies = governancePolicyService.findByTag(tags, accountId);
       return ResponseDTO.newResponse(Policies);
     }
     if (resource != null && tags != null) {
-      Policies = policyService.findByTagAndResource(resource, tags, accountId);
+      Policies = governancePolicyService.findByTagAndResource(resource, tags, accountId);
       return ResponseDTO.newResponse(Policies);
     }
 
-    Policies = policyService.list(accountId);
+    Policies = governancePolicyService.list(accountId);
     return ResponseDTO.newResponse(Policies);
   }
 
-  @POST
-  @Path("enqueue")
-  @Timed
-  @ExceptionMetered
-  @Consumes(MediaType.APPLICATION_JSON)
-  @ApiOperation(value = "Enqueues job for execution", nickname = "enqueueGovernanceJob")
-  // TODO: Also check with PL team as this does not require accountId to be passed, how to add accountId in the log
-  // context here ?
-  @Operation(operationId = "enqueueGovernanceJob", description = "Enqueues job for execution.",
-      summary = "Enqueues job for execution",
-      responses =
-      {
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Returns success when job is enqueued",
-            content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
-      })
-  public ResponseDTO<GovernanceEnqueueResponseDTO>
-  enqueue(@RequestBody(required = true, description = "Request body for queuing the governance job")
-      @Valid GovernanceJobEnqueueDTO governanceJobEnqueueDTO) {
-    log.info("Policy setid is {}", governanceJobEnqueueDTO.getPolicySetId());
-    // Next is fetch from Mongo this policySetId and enqueue in the Faktory queue one by one.
-    return ResponseDTO.newResponse();
-  }
+//  @POST
+//  @Path("enqueue")
+//  @Timed
+//  @ExceptionMetered
+//  @Consumes(MediaType.APPLICATION_JSON)
+//  @ApiOperation(value = "Enqueues job for execution", nickname = "enqueueGovernanceJob")
+//  // TODO: Also check with PL team as this does not require accountId to be passed, how to add accountId in the log
+//  // context here ?
+//  @Operation(operationId = "enqueueGovernanceJob", description = "Enqueues job for execution.",
+//      summary = "Enqueues job for execution",
+//      responses =
+//      {
+//        @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Returns success when job is enqueued",
+//            content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
+//      })
+//  public ResponseDTO<GovernanceEnqueueResponseDTO>
+//  enqueue(@RequestBody(required = true, description = "Request body for queuing the governance job")
+//      @Valid GovernanceJobEnqueueDTO governanceJobEnqueueDTO) {
+//    log.info("Policy setid is {}", governanceJobEnqueueDTO.getPolicySetId());
+//    // Next is fetch from Mongo this policySetId and enqueue in the Faktory queue one by one.
+//    return ResponseDTO.newResponse();
+//  }
 }

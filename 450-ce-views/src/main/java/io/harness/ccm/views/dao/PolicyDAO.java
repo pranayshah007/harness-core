@@ -5,8 +5,9 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ccm.remote.resources.governance;
+package io.harness.ccm.views.dao;
 
+import io.harness.ccm.views.entities.Policy;
 import io.harness.exception.InvalidRequestException;
 import io.harness.persistence.HPersistence;
 

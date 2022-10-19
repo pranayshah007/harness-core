@@ -7,6 +7,11 @@
 
 package io.harness.ccm.remote.resources;
 
+import io.harness.ccm.views.dto.CreatePolicyDTO;
+import io.harness.ccm.views.dto.ListDTO;
+import io.harness.ccm.views.entities.Policy;
+import io.harness.ccm.views.entities.PolicyRequest;
+import io.harness.ccm.views.service.GovernancePolicyService;
 import static io.harness.rule.OwnerRule.SAHIBA;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -31,8 +36,8 @@ import org.junit.runner.RunWith;
 import org.mockito.junit.MockitoJUnitRunner;
 
 @RunWith(MockitoJUnitRunner.class)
-public class GovernancePolicyTest extends CategoryTest {
-  private PolicyService policyService = mock(PolicyService.class);
+public class GovernancePolicyResourceTest extends CategoryTest {
+  private GovernancePolicyService governancePolicyService = mock(GovernancePolicyService.class);
   private CCMRbacHelper rbacHelper = mock(CCMRbacHelper.class);
 
   private final String ACCOUNT_ID = "ACCOUNT_ID";
@@ -65,7 +70,7 @@ public class GovernancePolicyTest extends CategoryTest {
                  .orgIdentifier(ORG_PARAM_MESSAGE)
                  .projectIdentifier(PROJECT_PARAM_MESSAGE)
                  .build();
-    policymanagement = new GovernancePolicyResource(policyService, rbacHelper);
+    policymanagement = new GovernancePolicyResource(governancePolicyService, rbacHelper);
     createPolicyDTO = policy.toDTO();
     Policies.add(policy);
   }
@@ -75,7 +80,7 @@ public class GovernancePolicyTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testCreatePolicy() {
     policymanagement.create(ACCOUNT_ID, CreatePolicyDTO.builder().policy(policy).build());
-    verify(policyService).save(policy);
+    verify(governancePolicyService).save(policy);
   }
 
   @Test
@@ -92,6 +97,6 @@ public class GovernancePolicyTest extends CategoryTest {
   @Category(UnitTests.class)
   public void deletePolicy() {
     policymanagement.delete(ACCOUNT_ID, UNIQUE_ID);
-    verify(policyService).delete(ACCOUNT_ID, UNIQUE_ID);
+    verify(governancePolicyService).delete(ACCOUNT_ID, UNIQUE_ID);
   }
 }

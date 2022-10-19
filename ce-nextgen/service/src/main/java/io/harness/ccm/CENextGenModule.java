@@ -15,6 +15,10 @@ import static io.harness.audit.ResourceTypeConstants.PERSPECTIVE;
 import static io.harness.audit.ResourceTypeConstants.PERSPECTIVE_BUDGET;
 import static io.harness.audit.ResourceTypeConstants.PERSPECTIVE_FOLDER;
 import static io.harness.audit.ResourceTypeConstants.PERSPECTIVE_REPORT;
+import io.harness.ccm.views.service.GovernancePolicyService;
+import io.harness.ccm.views.service.PolicyPackService;
+import io.harness.ccm.views.service.impl.GovernancePolicyServiceImpl;
+import io.harness.ccm.views.service.impl.PolicyPackServiceImpl;
 import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.CONNECTOR_ENTITY;
 import static io.harness.lock.DistributedLockImplementation.MONGO;
@@ -57,11 +61,7 @@ import io.harness.ccm.rbac.CCMRbacHelper;
 import io.harness.ccm.rbac.CCMRbacHelperImpl;
 import io.harness.ccm.remote.mapper.anomaly.AnomalyFilterPropertiesMapper;
 import io.harness.ccm.remote.mapper.recommendation.CCMRecommendationFilterPropertiesMapper;
-import io.harness.ccm.remote.resources.governance.PolicyService;
-import io.harness.ccm.remote.resources.governance.PolicyServiceImpl;
-import io.harness.ccm.remote.resources.governance.PolicyPackService;
-import io.harness.ccm.remote.resources.governance.PolicyPackServiceImpl;
-import io.harness.ccm.scheduler.SchedulerClientModule;
+//import io.harness.ccm.scheduler.SchedulerClientModule;
 import io.harness.ccm.service.impl.AWSBucketPolicyHelperServiceImpl;
 import io.harness.ccm.service.impl.AWSOrganizationHelperServiceImpl;
 import io.harness.ccm.service.impl.AnomalyServiceImpl;
@@ -332,7 +332,8 @@ public class CENextGenModule extends AbstractModule {
     registerOutboxEventHandlers();
     bind(OutboxEventHandler.class).to(CENextGenOutboxEventHandler.class);
     bind(CCMRbacHelper.class).to(CCMRbacHelperImpl.class);
-
+    bind(GovernancePolicyService.class).to(GovernancePolicyServiceImpl.class);
+    bind(PolicyPackService.class).to(PolicyPackServiceImpl.class);
     registerEventsFrameworkMessageListeners();
 
     bindRetryOnExceptionInterceptor();

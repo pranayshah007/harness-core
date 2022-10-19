@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ccm.remote.resources.governance;
+package io.harness.ccm.views.service.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.CE;
 
@@ -13,27 +13,30 @@ import io.harness.annotations.dev.OwnedBy;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import io.harness.ccm.views.dao.PolicyPackDAO;
+import io.harness.ccm.views.entities.PolicyPack;
+import io.harness.ccm.views.service.PolicyPackService;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Singleton
 @OwnedBy(CE)
-public class PolicySetServiceImpl implements PolicySetService {
-  @Inject private PolicySetDAO policySetDAO;
+public class PolicyPackServiceImpl implements PolicyPackService {
+  @Inject private PolicyPackDAO policyPackDAO;
 
   @Override
 
-  public boolean save(PolicySet policySet) {
-    return policySetDAO.save(policySet);
+  public boolean save(PolicyPack policyPack) {
+    return policyPackDAO.save(policyPack);
   }
 
   @Override
   public boolean delete(String accountId, String uuid) {
-    return policySetDAO.delete(accountId, uuid);
+    return policyPackDAO.delete(accountId, uuid);
   }
 
   @Override
-  public PolicySet update(PolicySet policySet) {
-    { return policySetDAO.update(policySet); }
+  public PolicyPack update(PolicyPack policyPack) {
+    { return policyPackDAO.update(policyPack); }
   }
 }
