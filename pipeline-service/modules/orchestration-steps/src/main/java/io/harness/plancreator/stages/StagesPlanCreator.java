@@ -7,6 +7,7 @@
 
 package io.harness.plancreator.stages;
 
+import io.harness.plancreator.NGCommonUtilPlanCreationConstants;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.contracts.plan.EdgeLayoutList;
@@ -80,6 +81,17 @@ public class StagesPlanCreator extends ChildrenPlanCreator<StagesConfig> {
               .setNodeIdentifier(stageYamlField.getNode().getIdentifier())
               .setEdgeLayoutList(
                   i + 1 < edgeLayoutLists.size() ? edgeLayoutLists.get(i + 1) : EdgeLayoutList.newBuilder().build())
+              .build());
+
+      // create node for corresponding rollback Stage
+      stageYamlFieldMap.put(stageYamlField.getNode().getUuid() + "_rollbackStage",
+          GraphLayoutNode.newBuilder()
+              .setNodeUUID(stageYamlField.getNode().getUuid() + "_rollbackStage")
+              .setNodeType(stageYamlField.getNode().getType())
+              .setName(
+                  stageYamlField.getNode().getName() + " " + NGCommonUtilPlanCreationConstants.ROLLBACK_STAGE_NODE_NAME)
+              .setNodeGroup(StepOutcomeGroup.STAGE.name())
+              .setNodeIdentifier(stageYamlField.getNode().getUuid() + "_rollbackStage")
               .build());
     }
     return GraphLayoutResponse.builder()
