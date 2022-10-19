@@ -287,8 +287,7 @@ public class AWSEC2RecommendationTasklet implements Tasklet {
                                .getEC2ResourceUtilization()
                                .getMaxMemoryUtilizationPercentage())
         .recommendationInfo(buildRecommendationInfo(recommendations))
-        .expectedMonthlyCost(calculateMaxCost(recommendations))
-        .expectedMonthlySaving(calculateMaxSaving(recommendations))
+        .expectedSaving(calculateMaxSaving(recommendations))
         .rightsizingType(recommendation.getRightsizingType())
         .build();
   }
@@ -316,7 +315,7 @@ public class AWSEC2RecommendationTasklet implements Tasklet {
         .region(recommendation.getCurrentInstance().getResourceDetails().getEC2ResourceDetails().getRegion())
         .sku(recommendation.getCurrentInstance().getResourceDetails().getEC2ResourceDetails().getSku())
         .vcpu(recommendation.getCurrentInstance().getResourceDetails().getEC2ResourceDetails().getVcpu())
-        .expectedMonthlySaving(recommendation.getTerminateRecommendationDetail().getEstimatedMonthlySavings())
+        .expectedSaving(recommendation.getTerminateRecommendationDetail().getEstimatedMonthlySavings())
         .rightsizingType(recommendation.getRightsizingType())
         .build();
   }
@@ -339,6 +338,16 @@ public class AWSEC2RecommendationTasklet implements Tasklet {
               .sku(ec2ResourceDetails.getSku())
               .vcpu(ec2ResourceDetails.getVcpu())
               .recommendationType(recommendation.getRecommendationType())
+              .expectedMonthlySaving(recommendation.getRecommendation()
+                                         .getModifyRecommendationDetail()
+                                         .getTargetInstances()
+                                         .get(0)
+                                         .getEstimatedMonthlySavings())
+              .expectedMonthlyCost(recommendation.getRecommendation()
+                                       .getModifyRecommendationDetail()
+                                       .getTargetInstances()
+                                       .get(0)
+                                       .getEstimatedMonthlyCost())
               .build();
         })
         .collect(Collectors.toList());
@@ -348,23 +357,10 @@ public class AWSEC2RecommendationTasklet implements Tasklet {
     Double currentMonthCost = Double.parseDouble(
         ec2Recommendation.getCurrentMonthlyCost().isEmpty() ? "0.0" : ec2Recommendation.getCurrentMonthlyCost());
     Double monthlySaving = Double.parseDouble(
-        ec2Recommendation.getExpectedMonthlySaving().isEmpty() ? "0.0" : ec2Recommendation.getExpectedMonthlySaving());
+        ec2Recommendation.getExpectedSaving().isEmpty() ? "0.0" : ec2Recommendation.getExpectedSaving());
     ec2RecommendationDAO.upsertCeRecommendation(ec2Recommendation.getUuid(), ec2Recommendation.getAccountId(),
         ec2Recommendation.getInstanceId(), ec2Recommendation.getAwsAccountId(), ec2Recommendation.getInstanceName(),
         currentMonthCost, monthlySaving, ec2Recommendation.getLastUpdatedTime());
-  }
-
-  private String calculateMaxCost(List<EC2InstanceRecommendationInfo> recommendations) {
-    Double maxCost = recommendations.stream()
-                         .map(rightsizingRecommendation
-                             -> Double.valueOf(rightsizingRecommendation.getRecommendation()
-                                                   .getModifyRecommendationDetail()
-                                                   .getTargetInstances()
-                                                   .get(0)
-                                                   .getEstimatedMonthlyCost()))
-                         .reduce(Double::max)
-                         .orElse(0.0);
-    return String.valueOf(maxCost);
   }
 
   private String calculateMaxSaving(List<EC2InstanceRecommendationInfo> recommendations) {

@@ -14,4 +14,6 @@ public class EC2RecommendationDetail {
   String sku;
   String hourlyOnDemandRate;
   String vcpu;
+  String expectedMonthlySaving;
+  String expectedMonthlyCost;
 }

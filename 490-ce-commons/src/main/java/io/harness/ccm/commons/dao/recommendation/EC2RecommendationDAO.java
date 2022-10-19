@@ -80,8 +80,7 @@ public class EC2RecommendationDAO {
             .set(EC2RecommendationKeys.currentMonthlyCost, ec2Recommendation.getCurrentMonthlyCost())
             .set(EC2RecommendationKeys.currencyCode, ec2Recommendation.getCurrencyCode())
             .set(EC2RecommendationKeys.recommendationInfo, ec2Recommendation.getRecommendationInfo())
-            .set(EC2RecommendationKeys.expectedMonthlyCost, ec2Recommendation.getExpectedMonthlyCost())
-            .set(EC2RecommendationKeys.expectedMonthlySaving, ec2Recommendation.getExpectedMonthlySaving())
+            .set(EC2RecommendationKeys.expectedSaving, ec2Recommendation.getExpectedSaving())
             .set(EC2RecommendationKeys.rightsizingType, ec2Recommendation.getRightsizingType())
             .set(EC2RecommendationKeys.lastUpdatedTime, ec2Recommendation.getLastUpdatedTime());
 

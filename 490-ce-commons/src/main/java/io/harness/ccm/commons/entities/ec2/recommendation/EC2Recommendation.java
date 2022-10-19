@@ -78,7 +78,6 @@ public final class EC2Recommendation
   String currentMonthlyCost;
   String currencyCode;
   List<EC2RecommendationDetail> recommendationInfo;
-  String expectedMonthlySaving;
-  String expectedMonthlyCost;
+  String expectedSaving;
   Instant lastUpdatedTime;
 }
