@@ -10,6 +10,7 @@ package io.harness.freeze.mappers;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.Scope;
 import io.harness.exception.InvalidRequestException;
+import io.harness.freeze.beans.FreezeDuration;
 import io.harness.freeze.beans.FreezeType;
 import io.harness.freeze.beans.FreezeWindow;
 import io.harness.freeze.beans.Recurrence;
@@ -25,6 +26,9 @@ import io.harness.utils.YamlPipelineUtils;
 
 import java.io.IOException;
 import java.text.ParseException;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.TimeZone;
 import lombok.experimental.UtilityClass;
 
@@ -32,6 +36,7 @@ import lombok.experimental.UtilityClass;
 public class NGFreezeDtoMapper {
   private static final long MIN_FREEZE_WINDOW_TIME = 1800000L;
   private static final long MAX_FREEZE_WINDOW_TIME = 31536000000L;
+  DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd hh:mm a");
 
   public FreezeConfigEntity toFreezeConfigEntity(
       String accountId, String orgId, String projectId, String freezeConfigYaml, FreezeType type) {
@@ -174,8 +179,8 @@ public class NGFreezeDtoMapper {
     return YamlPipelineUtils.writeYamlString(freezeConfig);
   }
 
-  private FreezeConfigEntity toFreezeConfigEntityResponse(
-      String accountId, FreezeConfig freezeConfig, String freezeConfigYaml, String orgId, String projectId) {
+  private FreezeConfigEntity toFreezeConfigEntityResponse(String accountId, FreezeConfig freezeConfig,
+      String freezeConfigYaml, FreezeType type, String orgId, String projectId) {
     validateFreezeYaml(freezeConfig, orgId, projectId);
     String description = null;
     if (freezeConfig.getFreezeInfoConfig().getDescription() != null) {
@@ -224,8 +229,16 @@ public class NGFreezeDtoMapper {
       throw new InvalidRequestException("Time zone cannot be empty");
     }
     TimeZone timeZone = TimeZone.getTimeZone(freezeWindow.getTimeZone());
-    String firstWindowStartTime = freezeWindow.getStartTime();
-    String firstWindowEndTime = freezeWindow.getEndTime();
+    LocalDateTime firstWindowStartTime = LocalDateTime.parse(freezeWindow.getStartTime(), dtf);
+    LocalDateTime firstWindowEndTime;
+    if (freezeWindow.getEndTime() == null) {
+      FreezeDuration freezeDuration = FreezeDuration.fromString(freezeWindow.getDuration());
+      Long endTime = FreezeTimeUtils.getEpochValueFromDateString(firstWindowStartTime, timeZone)
+          + freezeDuration.getTimeoutInMillis();
+      firstWindowEndTime = Instant.ofEpochMilli(endTime).atZone(timeZone.toZoneId()).toLocalDateTime();
+    } else {
+      firstWindowEndTime = LocalDateTime.parse(freezeWindow.getEndTime(), dtf);
+    }
 
     // Time difference in milliseconds.
     long timeDifferenceInMilliseconds = FreezeTimeUtils.getEpochValueFromDateString(firstWindowEndTime, timeZone)
@@ -247,7 +260,6 @@ public class NGFreezeDtoMapper {
     }
   }
 
-  private Scope getScopeFromFreezeDto(String orgId, String projId) {
   public Scope getScopeFromFreezeDto(String orgId, String projId) {
     if (EmptyPredicate.isNotEmpty(projId)) {
       return Scope.PROJECT;
