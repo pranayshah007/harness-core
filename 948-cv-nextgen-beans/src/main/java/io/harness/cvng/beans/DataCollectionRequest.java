@@ -117,7 +117,7 @@ public abstract class DataCollectionRequest<T extends ConnectorConfigDTO> implem
       case CUSTOM_HEALTH:
         return CustomHealthCapabilityHelper.fetchRequiredExecutionCapabilities(
             maskingEvaluator, connectorInfoDTO.getConnectorConfig());
-      case ELK:
+      case ELASTICSEARCH:
         return ELKCapabilityHelper.fetchRequiredExecutionCapabilities(
             connectorInfoDTO.getConnectorConfig(), maskingEvaluator);
       case AWS:

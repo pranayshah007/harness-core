@@ -42,6 +42,7 @@ public interface CVConstants {
   int STATE_MACHINE_IGNORE_MINUTES_FOR_SLI = Integer.MAX_VALUE;
 
   String DATA_SOURCE_TYPE = "type";
+  String SLO_SPEC = "type";
   String SLO_TARGET_TYPE = "type";
   String SLI_METRIC_TYPE = "type";
   String METRIC_THRESHOLD_METRIC_TYPE = "type";

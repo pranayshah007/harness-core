@@ -481,8 +481,17 @@ public class NGTriggerServiceImpl implements NGTriggerService {
 
   @Override
   public WebhookEventProcessingDetails fetchTriggerEventHistory(String accountId, String eventId) {
-    TriggerEventHistory triggerEventHistory =
+    List<TriggerEventHistory> triggerEventHistoryList =
         triggerEventHistoryRepository.findByAccountIdAndEventCorrelationId(accountId, eventId);
+    if (triggerEventHistoryList.size() == 0) {
+      throw new InvalidRequestException(String.format("Trigger event history %s does not exist", eventId));
+    }
+    TriggerEventHistory triggerEventHistory = triggerEventHistoryList.get(0);
+    String warningMsg = null;
+    if (triggerEventHistoryList.size() > 1) {
+      warningMsg =
+          "There are multiple trigger events generated from this eventId. This response contains only one of them.";
+    }
     WebhookEventProcessingDetailsBuilder builder =
         WebhookEventProcessingDetails.builder().eventId(eventId).accountIdentifier(accountId);
     if (triggerEventHistory == null) {
@@ -497,7 +506,8 @@ public class NGTriggerServiceImpl implements NGTriggerService {
           .status(triggerEventHistory.getFinalStatus())
           .message(triggerEventHistory.getMessage())
           .payload(triggerEventHistory.getPayload())
-          .eventCreatedAt(triggerEventHistory.getCreatedAt());
+          .eventCreatedAt(triggerEventHistory.getCreatedAt())
+          .warningMsg(warningMsg);
 
       if (triggerEventHistory.getTargetExecutionSummary() != null) {
         builder.pipelineExecutionId(triggerEventHistory.getTargetExecutionSummary().getPlanExecutionId())

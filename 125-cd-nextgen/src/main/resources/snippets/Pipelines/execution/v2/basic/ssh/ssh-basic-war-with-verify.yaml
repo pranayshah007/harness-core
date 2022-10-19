@@ -1,0 +1,48 @@
+spec:
+  execution:
+    steps:
+      - step:
+          name: "Deploy"
+          identifier: Deploy
+          timeout: 10m
+          strategy:
+            repeat:
+              items: <+stage.output.hosts>
+          template:
+            templateRef: account.Default_Install_War_Bash
+            templateInputs:
+              type: Command
+              spec:
+                environmentVariables:
+                  - name: DestinationDirectory
+                    type: String
+                    value: "$HOME/<+service.name>/<+env.name>"
+      - step:
+          type: Verify
+          name: Verify
+          identifier: Verify
+          timeout: 2h
+          spec: { }
+    rollbackSteps:
+      - step:
+          name: "Rollback"
+          identifier: Rollback
+          timeout: 10m
+          strategy:
+            repeat:
+              items: <+stage.output.hosts>
+          template:
+            templateRef: account.Default_Install_War_Bash
+            templateInputs:
+              type: Command
+              spec:
+                environmentVariables:
+                  - name: DestinationDirectory
+                    type: String
+                    value: "$HOME/<+service.name>/<+env.name>"
+      - step:
+          type: Verify
+          name: Verify Rollback
+          identifier: Verify_Rollback
+          timeout: 2h
+          spec: { }

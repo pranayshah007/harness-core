@@ -16,6 +16,7 @@ import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveDTO;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveDetailsDTO;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveType;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2DTO;
+import io.harness.cvng.servicelevelobjective.beans.slospec.CompositeServiceLevelObjectiveSpec;
 import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.transformer.servicelevelindicator.SLOTargetTransformer;
@@ -34,6 +35,8 @@ public class CompositeSLOTransformer implements SLOV2Transformer<CompositeServic
   @Override
   public CompositeServiceLevelObjective getSLOV2(
       ProjectParams projectParams, ServiceLevelObjectiveV2DTO serviceLevelObjectiveV2DTO, Boolean isEnabled) {
+    CompositeServiceLevelObjectiveSpec compositeServiceLevelObjectiveSpec =
+        (CompositeServiceLevelObjectiveSpec) serviceLevelObjectiveV2DTO.getSpec();
     return CompositeServiceLevelObjective.builder()
         .accountId(projectParams.getAccountIdentifier())
         .orgIdentifier(projectParams.getOrgIdentifier())
@@ -48,7 +51,7 @@ public class CompositeSLOTransformer implements SLOV2Transformer<CompositeServic
         .sloTarget(sloTargetTypeSLOTargetTransformerMap.get(serviceLevelObjectiveV2DTO.getSloTarget().getType())
                        .getSLOTarget(serviceLevelObjectiveV2DTO.getSloTarget().getSpec()))
         .serviceLevelObjectivesDetails(
-            serviceLevelObjectiveV2DTO.getServiceLevelObjectivesDetails()
+            compositeServiceLevelObjectiveSpec.getServiceLevelObjectivesDetails()
                 .stream()
                 .map(serviceLevelObjectiveDetailsDTO
                     -> CompositeServiceLevelObjective.ServiceLevelObjectivesDetail.builder()
@@ -76,15 +79,18 @@ public class CompositeSLOTransformer implements SLOV2Transformer<CompositeServic
         .identifier(serviceLevelObjective.getIdentifier())
         .name(serviceLevelObjective.getName())
         .description(serviceLevelObjective.getDesc())
-        .serviceLevelObjectivesDetails(
-            serviceLevelObjective.getServiceLevelObjectivesDetails()
-                .stream()
-                .map(serviceLevelObjectiveDetailsDTO
-                    -> ServiceLevelObjectiveDetailsDTO.builder()
-                           .serviceLevelObjectiveRef(serviceLevelObjectiveDetailsDTO.getServiceLevelObjectiveRef())
-                           .weightagePercentage(serviceLevelObjectiveDetailsDTO.getWeightagePercentage())
-                           .build())
-                .collect(Collectors.toList()))
+        .spec(CompositeServiceLevelObjectiveSpec.builder()
+                  .serviceLevelObjectivesDetails(
+                      serviceLevelObjective.getServiceLevelObjectivesDetails()
+                          .stream()
+                          .map(serviceLevelObjectiveDetailsDTO
+                              -> ServiceLevelObjectiveDetailsDTO.builder()
+                                     .serviceLevelObjectiveRef(
+                                         serviceLevelObjectiveDetailsDTO.getServiceLevelObjectiveRef())
+                                     .weightagePercentage(serviceLevelObjectiveDetailsDTO.getWeightagePercentage())
+                                     .build())
+                          .collect(Collectors.toList()))
+                  .build())
         .notificationRuleRefs(
             notificationRuleService.getNotificationRuleRefDTOs(serviceLevelObjective.getNotificationRuleRefs()))
         .sloTarget(SLOTargetDTO.builder()
