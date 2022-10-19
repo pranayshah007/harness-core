@@ -10,6 +10,7 @@ package io.harness.ci.states;
 import static io.harness.annotations.dev.HarnessTeam.CI;
 import static io.harness.beans.outcomes.LiteEnginePodDetailsOutcome.POD_DETAILS_OUTCOME;
 import static io.harness.beans.outcomes.VmDetailsOutcome.VM_DETAILS_OUTCOME;
+import static io.harness.beans.sweepingoutputs.CISweepingOutputNames.INITIALIZE_EXECUTION;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.beans.ci.CIInitializeTaskParams.Type.DLITE_VM;
@@ -27,12 +28,14 @@ import io.harness.beans.outcomes.LiteEnginePodDetailsOutcome;
 import io.harness.beans.outcomes.VmDetailsOutcome;
 import io.harness.beans.outcomes.VmDetailsOutcome.VmDetailsOutcomeBuilder;
 import io.harness.beans.steps.stepinfo.InitializeStepInfo;
+import io.harness.beans.sweepingoutputs.InitializeExecutionSweepingOutput;
 import io.harness.beans.yaml.extended.infrastrucutre.DockerInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.HostedVmInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml;
 import io.harness.ci.buildstate.BuildSetupUtils;
 import io.harness.ci.buildstate.ConnectorUtils;
+import io.harness.ci.execution.BackgroundTaskUtility;
 import io.harness.ci.integrationstage.BuildJobEnvInfoBuilder;
 import io.harness.ci.integrationstage.DockerInitializeTaskParamsBuilder;
 import io.harness.ci.integrationstage.IntegrationStageUtils;
@@ -68,7 +71,9 @@ import io.harness.pms.contracts.plan.ExecutionPrincipalInfo;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.rbac.PipelineRbacHelper;
+import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
+import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
@@ -121,6 +126,7 @@ public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementPar
   public static final StepType STEP_TYPE = InitializeStepInfo.STEP_TYPE;
   @Inject private BuildJobEnvInfoBuilder buildJobEnvInfoBuilder;
   @Inject private CIYAMLSanitizationService sanitizationService;
+  @Inject private BackgroundTaskUtility backgroundTaskUtility;
   @Override
   public Class<StepElementParameters> getStepParametersClass() {
     return StepElementParameters.class;
@@ -248,6 +254,7 @@ public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementPar
   public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance,
       StepElementParameters stepElementParameters, ThrowingSupplier<CITaskExecutionResponse> responseSupplier)
       throws Exception {
+    backgroundTaskUtility.queueJob(() -> saveInitialiseExecutionSweepingOutput(ambiance));
     ResponseData responseData = serializedResponseDataHelper.deserialize(responseSupplier.get());
     CITaskExecutionResponse ciTaskExecutionResponse = (CITaskExecutionResponse) responseData;
     CITaskExecutionResponse.Type type = ciTaskExecutionResponse.getType();
@@ -507,5 +514,23 @@ public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementPar
     IdentifierRef connectorRef =
         IdentifierRefHelper.getIdentifierRef(connectorIdentifier, accountIdentifier, orgIdentifier, projectIdentifier);
     return EntityDetail.builder().entityRef(connectorRef).type(EntityType.CONNECTORS).build();
+  }
+
+  private void saveInitialiseExecutionSweepingOutput(Ambiance ambiance) {
+    long startTime = AmbianceUtils.getCurrentLevelStartTs(ambiance);
+    long currentTime = System.currentTimeMillis();
+
+    OptionalSweepingOutput optionalSweepingOutput = executionSweepingOutputResolver.resolveOptional(
+        ambiance, RefObjectUtils.getOutcomeRefObject(INITIALIZE_EXECUTION));
+    if (!optionalSweepingOutput.isFound()) {
+      try {
+        InitializeExecutionSweepingOutput initializeExecutionSweepingOutput =
+            InitializeExecutionSweepingOutput.builder().initialiseExecutionTime(currentTime - startTime).build();
+        executionSweepingOutputResolver.consume(
+            ambiance, INITIALIZE_EXECUTION, initializeExecutionSweepingOutput, StepOutcomeGroup.STAGE.name());
+      } catch (Exception e) {
+        log.error("Error while consuming initialize execution sweeping output", e);
+      }
+    }
   }
 }

@@ -237,7 +237,8 @@ public class DefaultLicenseServiceImpl implements LicenseService {
   }
 
   @Override
-  public ModuleLicenseDTO startFreeLicense(String accountIdentifier, ModuleType moduleType, String referer) {
+  public ModuleLicenseDTO startFreeLicense(
+      String accountIdentifier, ModuleType moduleType, String referer, String gaClientId) {
     ModuleLicenseDTO trialLicenseDTO = licenseInterface.generateFreeLicense(accountIdentifier, moduleType);
     verifyAccountExistence(accountIdentifier);
 
@@ -246,7 +247,7 @@ public class DefaultLicenseServiceImpl implements LicenseService {
 
     licenseComplianceResolver.preCheck(trialLicense, EditionAction.START_FREE);
     ModuleLicense savedEntity = saveLicense(trialLicense);
-    sendSucceedTelemetryEvents(SUCCEED_START_FREE_OPERATION, savedEntity, accountIdentifier, referer);
+    sendSucceedTelemetryEvents(SUCCEED_START_FREE_OPERATION, savedEntity, accountIdentifier, referer, gaClientId);
 
     log.info("Free license for module [{}] is started in account [{}]", moduleType, accountIdentifier);
 
@@ -293,7 +294,7 @@ public class DefaultLicenseServiceImpl implements LicenseService {
 
     licenseComplianceResolver.preCheck(trialLicense, EditionAction.START_TRIAL);
     ModuleLicense savedEntity = saveLicense(trialLicense);
-    sendSucceedTelemetryEvents(SUCCEED_START_TRIAL_OPERATION, savedEntity, accountIdentifier, referer);
+    sendSucceedTelemetryEvents(SUCCEED_START_TRIAL_OPERATION, savedEntity, accountIdentifier, referer, null);
 
     log.info("Trial license for module [{}] is started in account [{}]", startTrialRequestDTO.getModuleType(),
         accountIdentifier);
@@ -320,7 +321,7 @@ public class DefaultLicenseServiceImpl implements LicenseService {
     licenseComplianceResolver.preCheck(licenseToBeExtended, EditionAction.EXTEND_TRIAL);
     ModuleLicense savedEntity = saveLicense(licenseToBeExtended);
 
-    sendSucceedTelemetryEvents(SUCCEED_EXTEND_TRIAL_OPERATION, savedEntity, accountIdentifier, null);
+    sendSucceedTelemetryEvents(SUCCEED_EXTEND_TRIAL_OPERATION, savedEntity, accountIdentifier, null, null);
     syncLicenseChangeToCGForCE(savedEntity);
     log.info("Trial license for module [{}] is extended in account [{}]", moduleType, accountIdentifier);
     return licenseObjectConverter.toDTO(savedEntity);
@@ -483,7 +484,7 @@ public class DefaultLicenseServiceImpl implements LicenseService {
   }
 
   private void sendSucceedTelemetryEvents(
-      String eventName, ModuleLicense moduleLicense, String accountIdentifier, String referer) {
+      String eventName, ModuleLicense moduleLicense, String accountIdentifier, String referer, String gaClientId) {
     String email = getEmailFromPrincipal();
     HashMap<String, Object> properties = new HashMap<>();
     properties.put("email", email);
@@ -498,6 +499,9 @@ public class DefaultLicenseServiceImpl implements LicenseService {
     }
     if (referer != null) {
       properties.put("refererURL", referer);
+    }
+    if (gaClientId != null) {
+      properties.put("ga_client_id", gaClientId);
     }
     properties.put("platform", "NG");
     properties.put("startTime", String.valueOf(moduleLicense.getStartTime()));
