@@ -33,8 +33,10 @@ import software.wings.service.intfc.AuditService;
 
 import com.google.inject.Inject;
 import java.util.List;
+import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(PL)
+@Slf4j
 public class EntityAuditRecordHandler implements Handler<AuditRecord> {
   @Inject private AccountService accountService;
   @Inject private PersistenceIteratorFactory persistenceIteratorFactory;
@@ -60,7 +62,9 @@ public class EntityAuditRecordHandler implements Handler<AuditRecord> {
   @Override
   public void handle(AuditRecord entity) {
     // if not last with match auditHeaderId, EXIT
+    log.error("AUDIT_DEBUG: entity: {}", entity);
     AuditRecord mostRecentAuditRecord = auditService.fetchMostRecentAuditRecord(entity.getAuditHeaderId());
+    log.error("AUDIT_DEBUG: mostRecentAuditRecord: {}", mostRecentAuditRecord);
     if (mostRecentAuditRecord != null && mostRecentAuditRecord.getUuid() != null
         && !mostRecentAuditRecord.getUuid().equals(entity.getUuid())) {
       // Seems there are more recent records added in "AuditRecord" collection for this AuditHeaderId.
@@ -78,10 +82,14 @@ public class EntityAuditRecordHandler implements Handler<AuditRecord> {
 
     List<EntityAuditRecord> recordsToBeAdded =
         auditRecords.stream().map(AuditRecord::getEntityAuditRecord).collect(toList());
-
+    log.error("AUDIT_DEBUG: recordsToBeAdded: {}", recordsToBeAdded);
     if (isNotEmpty(recordsToBeAdded)) {
+      log.info("AUDIT_DEBUG: Adding record to audits collection. auditHeaderId: {}", entity.getAuditHeaderId());
       auditService.addEntityAuditRecordsToSet(recordsToBeAdded, entity.getAccountId(), entity.getAuditHeaderId());
+      log.info("AUDIT_DEBUG: deleting records from entityAuditRecords collection. auditHeaderId: {}",
+          entity.getAuditHeaderId());
       auditService.deleteTempAuditRecords(auditRecords.stream().map(AuditRecord::getUuid).collect(toList()));
+      log.info("AUDIT_DEBUG: done auditing collection. auditHeaderId: {}", entity.getAuditHeaderId());
     }
   }
 }
