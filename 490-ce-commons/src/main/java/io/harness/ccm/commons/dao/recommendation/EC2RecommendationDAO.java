@@ -48,8 +48,8 @@ public class EC2RecommendationDAO {
   @NonNull
   public Optional<EC2Recommendation> fetchECSRecommendationById(@NonNull String accountIdentifier, @NonNull String id) {
     return Optional.ofNullable(hPersistence.createQuery(EC2Recommendation.class, excludeValidate)
-                                   .filter(EC2Recommendation.EC2RecommendationKeys.accountId, accountIdentifier)
-                                   .filter(EC2Recommendation.EC2RecommendationKeys.uuid, new ObjectId(id))
+                                   .filter(EC2RecommendationKeys.accountId, accountIdentifier)
+                                   .filter(EC2RecommendationKeys.uuid, new ObjectId(id))
                                    .get());
   }
 
