@@ -200,8 +200,10 @@ public class LicenseResource {
       @Parameter(required = true, description = "A Harness Platform module.") @NotNull @QueryParam(
           NGCommonEntityConstants.MODULE_TYPE) ModuleType moduleType,
       @Parameter(required = true, description = "Referer URL") @QueryParam(
-          NGCommonEntityConstants.REFERER) String referer) {
-    return ResponseDTO.newResponse(licenseService.startFreeLicense(accountIdentifier, moduleType, referer));
+          NGCommonEntityConstants.REFERER) String referer,
+      @Parameter(required = true, description = "Google Analytics Client Id") @QueryParam(
+          NGCommonEntityConstants.GA_CLIENT_ID) String gaClientId) {
+    return ResponseDTO.newResponse(licenseService.startFreeLicense(accountIdentifier, moduleType, referer, gaClientId));
   }
 
   @POST

@@ -35,6 +35,9 @@ import software.wings.beans.yaml.GitFilesBetweenCommitsRequest;
 public interface GitClient {
   void ensureRepoLocallyClonedAndUpdated(GitOperationContext gitOperationContext);
 
+  void cloneRepoAndCopyToDestDir(
+      GitOperationContext gitOperationContext, String destinationDir, LogCallback logCallback);
+
   GitDiffResult diff(GitOperationContext gitOperationContext, boolean excludeFilesOutsideSetupFolder);
 
   @Deprecated String validate(GitConfig gitConfig);

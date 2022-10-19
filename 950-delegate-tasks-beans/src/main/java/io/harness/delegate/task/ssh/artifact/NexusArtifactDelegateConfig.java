@@ -17,6 +17,7 @@ import io.harness.expression.ExpressionReflectionUtils.NestedAnnotationResolver;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import java.util.List;
+import java.util.Map;
 import lombok.Builder;
 import lombok.Value;
 import lombok.experimental.NonFinal;
@@ -31,6 +32,7 @@ public class NexusArtifactDelegateConfig implements SshWinRmArtifactDelegateConf
   List<EncryptedDataDetail> encryptedDataDetails;
   boolean isCertValidationRequired;
   String repositoryFormat;
+  Map<String, String> metadata;
 
   @Override
   public SshWinRmArtifactType getArtifactType() {

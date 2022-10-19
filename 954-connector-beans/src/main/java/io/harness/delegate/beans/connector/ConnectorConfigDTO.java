@@ -106,7 +106,7 @@ import java.util.List;
       @JsonSubTypes.Type(value = JenkinsConnectorDTO.class, name = "Jenkins"),
       @JsonSubTypes.Type(value = OciHelmConnectorDTO.class, name = "OciHelmRepo"),
       @JsonSubTypes.Type(value = CustomSecretManagerConnectorDTO.class, name = "CustomSecretManager"),
-      @JsonSubTypes.Type(value = ELKConnectorDTO.class, name = "ELK"),
+      @JsonSubTypes.Type(value = ELKConnectorDTO.class, name = "ElasticSearch"),
       @JsonSubTypes.Type(value = GcpSecretManagerConnectorDTO.class, name = "GcpSecretManager"),
       @JsonSubTypes.Type(value = AzureArtifactsConnectorDTO.class, name = "AzureArtifacts")
 })

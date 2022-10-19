@@ -54,7 +54,8 @@ public class WebhookServiceImpl implements WebhookService, WebhookEventService {
   @Override
   public WebhookEvent addEventToQueue(WebhookEvent webhookEvent) {
     try {
-      log.info("received webhook event in the accountId {} ", webhookEvent.getAccountId());
+      log.info(
+          "received webhook event with id {} in the accountId {}", webhookEvent.getUuid(), webhookEvent.getAccountId());
       return webhookEventRepository.save(webhookEvent);
     } catch (Exception e) {
       throw new InvalidRequestException("Webhook event could not be saved for processing");

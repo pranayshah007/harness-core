@@ -37,9 +37,9 @@ public class ArtifactoryHelmRepositoryService implements ManifestRepositoryServi
     HttpHelmRepoConfig helmRepoConfig =
         (HttpHelmRepoConfig) helmChartCollectionParams.getHelmChartConfigParams().getHelmRepoConfig();
 
-    log.info("Collecting helm charts by name: {}; from artifactory for appManifestId: {}; located on bucket: {}",
+    log.info("Collecting helm charts by name: {}; from artifactory for appManifestId: {}",
         helmChartCollectionParams.getHelmChartConfigParams().getChartName(),
-        helmChartCollectionParams.getAppManifestId(), helmRepoConfig.getBucketName());
+        helmChartCollectionParams.getAppManifestId());
 
     encryptionService.decrypt(
         helmRepoConfig, helmChartCollectionParams.getHelmChartConfigParams().getEncryptedDataDetails(), false);

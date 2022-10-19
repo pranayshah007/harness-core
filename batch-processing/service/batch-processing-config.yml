@@ -10,6 +10,7 @@ events-mongo:
   connectTimeout: 30000
   serverSelectionTimeout: 90000
   maxConnectionIdleTime: 600000
+  maxOperationTimeInMillis: 600000
   connectionsPerHost: 300
   indexManagerMode: AUTO
   aliasDBName: events
