@@ -191,76 +191,82 @@ public class NGEncryptedDataServiceImplTest extends CategoryTest {
   @Test
   @Owner(developers = SHREYAS)
   @Category(UnitTests.class)
-  public void testInlineSecretWithRegion_forGoogleSecretManager_shouldNotThrowException() {
+  public void testInlineSecretWithRegion_forGcpSecretManager_shouldNotThrowException() {
     values.put("regions", regions);
     AdditionalMetadata additionalMetadata = AdditionalMetadata.builder().values(values).build();
     SecretTextSpecDTO secretTextSpecDTO =
         SecretTextSpecDTO.builder().valueType(ValueType.Inline).additionalMetadata(additionalMetadata).build();
-    assertThatCode(
-        () -> ngEncryptedDataService.validateEncryptedRecordForGcpSecretManagerEncryptionType(secretTextSpecDTO))
+    assertThatCode(()
+                       -> ngEncryptedDataService.validateAdditionalMetadataInSecretTextSpecDTOForGcpSecretManager(
+                           secretTextSpecDTO))
         .doesNotThrowAnyException();
   }
 
   @Test
   @Owner(developers = SHREYAS)
   @Category(UnitTests.class)
-  public void testInlineSecretWithoutRegion_forGoogleSecretManager_shouldNotThrowException() {
+  public void testInlineSecretWithoutRegion_forGcpSecretManager_shouldNotThrowException() {
     SecretTextSpecDTO secretTextSpecDTO = SecretTextSpecDTO.builder().valueType(ValueType.Inline).build();
-    assertThatCode(
-        () -> ngEncryptedDataService.validateEncryptedRecordForGcpSecretManagerEncryptionType(secretTextSpecDTO))
+    assertThatCode(()
+                       -> ngEncryptedDataService.validateAdditionalMetadataInSecretTextSpecDTOForGcpSecretManager(
+                           secretTextSpecDTO))
         .doesNotThrowAnyException();
   }
 
   @Test
   @Owner(developers = SHREYAS)
   @Category(UnitTests.class)
-  public void testInlineSecretValidationWithWrongMetadata_forGoogleSecretManager_shouldThrowException() {
+  public void testInlineSecretValidationWithWrongMetadata_forGcpSecretManager_shouldThrowException() {
     String invalidKey = randomAlphabetic(10);
     values.put(invalidKey, regions);
     AdditionalMetadata additionalMetadata = AdditionalMetadata.builder().values(values).build();
     SecretTextSpecDTO secretTextSpecDTO =
         SecretTextSpecDTO.builder().valueType(ValueType.Inline).additionalMetadata(additionalMetadata).build();
-    assertThatThrownBy(
-        () -> ngEncryptedDataService.validateEncryptedRecordForGcpSecretManagerEncryptionType(secretTextSpecDTO))
+    assertThatThrownBy(()
+                           -> ngEncryptedDataService.validateAdditionalMetadataInSecretTextSpecDTOForGcpSecretManager(
+                               secretTextSpecDTO))
         .isInstanceOf(InvalidRequestException.class)
-        .hasMessage(String.format("Additional metadata values %s keys are invalid. ", values.keySet()));
+        .hasMessage("Additional metadata values expect only one key - regions");
   }
 
   @Test
   @Owner(developers = SHREYAS)
   @Category(UnitTests.class)
-  public void testReferenceSecretValidationWithVersion_forGoogleSecretManager_shouldNotThrowException() {
+  public void testReferenceSecretValidationWithVersion_forGcpSecretManager_shouldNotThrowException() {
     values.put("version", version);
     AdditionalMetadata additionalMetadata = AdditionalMetadata.builder().values(values).build();
     SecretTextSpecDTO secretTextSpecDTO =
         SecretTextSpecDTO.builder().valueType(ValueType.Reference).additionalMetadata(additionalMetadata).build();
-    assertThatCode(
-        () -> ngEncryptedDataService.validateEncryptedRecordForGcpSecretManagerEncryptionType(secretTextSpecDTO))
+    assertThatCode(()
+                       -> ngEncryptedDataService.validateAdditionalMetadataInSecretTextSpecDTOForGcpSecretManager(
+                           secretTextSpecDTO))
         .doesNotThrowAnyException();
   }
 
   @Test
   @Owner(developers = SHREYAS)
   @Category(UnitTests.class)
-  public void testReferenceSecretValidationWithNoVersion_forGoogleSecretManager_shouldThrowException() {
+  public void testReferenceSecretValidationWithNoVersion_forGcpSecretManager_shouldThrowException() {
     SecretTextSpecDTO secretTextSpecDTO = SecretTextSpecDTO.builder().valueType(ValueType.Reference).build();
-    assertThatThrownBy(
-        () -> ngEncryptedDataService.validateEncryptedRecordForGcpSecretManagerEncryptionType(secretTextSpecDTO))
+    assertThatThrownBy(()
+                           -> ngEncryptedDataService.validateAdditionalMetadataInSecretTextSpecDTOForGcpSecretManager(
+                               secretTextSpecDTO))
         .isInstanceOf(InvalidRequestException.class)
-        .hasMessage("Version information in additional metadata values field is missing. ");
+        .hasMessage("Version information in additional metadata values field is missing.");
   }
 
   @Test
   @Owner(developers = SHREYAS)
   @Category(UnitTests.class)
-  public void testReferenceSecretValidationWithWrongMetadata_forGoogleSecretManager_shouldThrowException() {
+  public void testReferenceSecretValidationWithWrongMetadata_forGcpSecretManager_shouldThrowException() {
     String invalidKey = randomAlphabetic(10);
     values.put(invalidKey, regions);
     AdditionalMetadata additionalMetadata = AdditionalMetadata.builder().values(values).build();
     SecretTextSpecDTO secretTextSpecDTO =
         SecretTextSpecDTO.builder().valueType(ValueType.Reference).additionalMetadata(additionalMetadata).build();
-    assertThatThrownBy(
-        () -> ngEncryptedDataService.validateEncryptedRecordForGcpSecretManagerEncryptionType(secretTextSpecDTO))
+    assertThatThrownBy(()
+                           -> ngEncryptedDataService.validateAdditionalMetadataInSecretTextSpecDTOForGcpSecretManager(
+                               secretTextSpecDTO))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("Additional metadata values field should have only one field - version");
   }

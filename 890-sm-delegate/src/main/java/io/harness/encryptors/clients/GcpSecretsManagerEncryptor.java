@@ -141,9 +141,7 @@ public class GcpSecretsManagerEncryptor implements VaultEncryptor {
       if (isNotEmpty(encryptedRecord.getPath())) {
         String secretName;
         String version;
-        if (encryptedRecord.getAdditionalMetadata() != null
-            && encryptedRecord.getAdditionalMetadata().getValues() != null
-            && encryptedRecord.getAdditionalMetadata().getValues().containsKey(VERSION)) {
+        if (encryptedRecord.getAdditionalMetadata() != null) {
           secretName = encryptedRecord.getPath();
           version = encryptedRecord.getAdditionalMetadata().getValues().get(VERSION).toString();
         } else {
@@ -151,7 +149,7 @@ public class GcpSecretsManagerEncryptor implements VaultEncryptor {
                                                                   : encryptedRecord.getName();
           version = encryptedRecord.getPath();
         }
-        if (secretName == null || isEmpty(secretName)) {
+        if (isEmpty(secretName)) {
           throw new SecretManagementException(GCP_SECRET_OPERATION_ERROR,
               "Secret Referencing Failed - Cannot Reference Secret in Gcp Secret Manager Without Name",
               WingsException.USER);
