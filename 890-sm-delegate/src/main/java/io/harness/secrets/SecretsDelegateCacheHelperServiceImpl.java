@@ -24,8 +24,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Singleton
 public class SecretsDelegateCacheHelperServiceImpl implements SecretsDelegateCacheHelperService {
-  @Inject private DelegateConfigurationServiceProvider delegateConfigurationServiceProvider;
-  @Inject private DelegatePropertiesServiceProvider delegatePropertiesServiceProvider;
+//  @Inject private DelegateConfigurationServiceProvider delegateConfigurationServiceProvider;
+//  @Inject private DelegatePropertiesServiceProvider delegatePropertiesServiceProvider;
 
   /*
    * Method to allow user configurable cache expiry ttl in hours specified in account preferences.
@@ -33,39 +33,40 @@ public class SecretsDelegateCacheHelperServiceImpl implements SecretsDelegateCac
    */
   @Override
   public Duration initializeCacheExpiryTTL() {
-    try {
-      GetDelegatePropertiesRequest delegatePropertiesRequest =
-          GetDelegatePropertiesRequest.newBuilder()
-              .setAccountId(delegateConfigurationServiceProvider.getAccount())
-              .addRequestEntry(Any.pack(AccountPreferenceQuery.newBuilder().build()))
-              .build();
-
-      // call to manager to get the TTL value from account pref
-      GetDelegatePropertiesResponse delegatePropertiesResponse =
-          delegatePropertiesServiceProvider.getDelegateProperties(delegatePropertiesRequest);
-
-      if (delegatePropertiesResponse != null
-          && delegatePropertiesResponse.getResponseEntry(0).is(AccountPreference.class)) {
-        AccountPreference secretManagerCacheTTL =
-            delegatePropertiesResponse.getResponseEntry(0).unpack(AccountPreference.class);
-        if (secretManagerCacheTTL != null) {
-          long expireCacheTTLFromAccountPref = secretManagerCacheTTL.getDelegateSecretsCacheTTLInHours();
-          log.info("Fetched SecretsCacheTTL from Account Preferences and set expiry to {} hours",
-              expireCacheTTLFromAccountPref);
-          return Duration.ofHours(expireCacheTTLFromAccountPref);
-        }
-      }
-      log.info("SecretsCacheTTL not set in account preferences, defaulting to 1 hour");
-      return Duration.ofHours(1);
-
-    } catch (InvalidProtocolBufferException invalidProtocolBufferException) {
-      log.warn("Unable to fetch secretsCacheExpiryTTL from manager for account {}, defaulting to 1 hour",
-          delegateConfigurationServiceProvider.getAccount(), invalidProtocolBufferException);
-      return Duration.ofHours(1);
-    } catch (Exception exception) {
-      log.warn("Unable to fetch secretsCacheExpiryTTL from manager for account {}, defaulting to 1 hour",
-          delegateConfigurationServiceProvider.getAccount(), exception);
-      return Duration.ofHours(1);
-    }
+    return Duration.ofHours(1);
+//    try {
+//      GetDelegatePropertiesRequest delegatePropertiesRequest =
+//          GetDelegatePropertiesRequest.newBuilder()
+//              .setAccountId(delegateConfigurationServiceProvider.getAccount())
+//              .addRequestEntry(Any.pack(AccountPreferenceQuery.newBuilder().build()))
+//              .build();
+//
+//      // call to manager to get the TTL value from account pref
+//      GetDelegatePropertiesResponse delegatePropertiesResponse =
+//          delegatePropertiesServiceProvider.getDelegateProperties(delegatePropertiesRequest);
+//
+//      if (delegatePropertiesResponse != null
+//          && delegatePropertiesResponse.getResponseEntry(0).is(AccountPreference.class)) {
+//        AccountPreference secretManagerCacheTTL =
+//            delegatePropertiesResponse.getResponseEntry(0).unpack(AccountPreference.class);
+//        if (secretManagerCacheTTL != null) {
+//          long expireCacheTTLFromAccountPref = secretManagerCacheTTL.getDelegateSecretsCacheTTLInHours();
+//          log.info("Fetched SecretsCacheTTL from Account Preferences and set expiry to {} hours",
+//              expireCacheTTLFromAccountPref);
+//          return Duration.ofHours(expireCacheTTLFromAccountPref);
+//        }
+//      }
+//      log.info("SecretsCacheTTL not set in account preferences, defaulting to 1 hour");
+//      return Duration.ofHours(1);
+//
+//    } catch (InvalidProtocolBufferException invalidProtocolBufferException) {
+//      log.warn("Unable to fetch secretsCacheExpiryTTL from manager for account {}, defaulting to 1 hour",
+//          delegateConfigurationServiceProvider.getAccount(), invalidProtocolBufferException);
+//      return Duration.ofHours(1);
+//    } catch (Exception exception) {
+//      log.warn("Unable to fetch secretsCacheExpiryTTL from manager for account {}, defaulting to 1 hour",
+//          delegateConfigurationServiceProvider.getAccount(), exception);
+//      return Duration.ofHours(1);
+//    }
   }
 }
