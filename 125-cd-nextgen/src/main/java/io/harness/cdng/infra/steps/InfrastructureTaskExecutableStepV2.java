@@ -37,6 +37,7 @@ import io.harness.cdng.infra.beans.K8sGcpInfrastructureOutcome;
 import io.harness.cdng.infra.mapper.InfrastructureEntityConfigMapper;
 import io.harness.cdng.infra.yaml.Infrastructure;
 import io.harness.cdng.infra.yaml.InfrastructureConfig;
+import io.harness.cdng.infra.yaml.InfrastructureDetailsAbstract;
 import io.harness.cdng.instance.outcome.InstancesOutcome;
 import io.harness.cdng.service.steps.ServiceStepOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
@@ -149,7 +150,7 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
     boolean skipInstances = ParameterFieldHelper.getBooleanParameterFieldValue(stepParameters.getSkipInstances());
 
     validateResources(ambiance, infraSpec);
-
+    setInfraIdentifierAndName(infraSpec, infrastructureConfig);
     resolver.updateExpressions(ambiance, infraSpec);
 
     final NGLogCallback logCallback = infrastructureStepHelper.getInfrastructureLogCallback(ambiance, true, LOG_SUFFIX);
@@ -280,6 +281,15 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
     final Set<EntityDetailProtoDTO> entityDetails =
         entityReferenceExtractorUtils.extractReferredEntities(ambiance, infraSpec);
     pipelineRbacHelper.checkRuntimePermissions(ambiance, entityDetails);
+  }
+
+  public void setInfraIdentifierAndName(Infrastructure infraSpec, InfrastructureConfig infrastructureConfig) {
+    if (infraSpec instanceof InfrastructureDetailsAbstract) {
+      ((InfrastructureDetailsAbstract) infraSpec)
+          .setInfraIdentifier(infrastructureConfig.getInfrastructureDefinitionConfig().getIdentifier());
+      ((InfrastructureDetailsAbstract) infraSpec)
+          .setInfraName(infrastructureConfig.getInfrastructureDefinitionConfig().getName());
+    }
   }
 
   private void executeSync(

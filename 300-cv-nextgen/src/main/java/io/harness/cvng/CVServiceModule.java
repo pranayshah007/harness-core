@@ -509,7 +509,7 @@ public class CVServiceModule extends AbstractModule {
     dataSourceTypeToHealthSourceTransformerMapBinder.addBinding(DataSourceType.CUSTOM_HEALTH_METRIC)
         .to(CustomHealthSourceSpecMetricTransformer.class)
         .in(Scopes.SINGLETON);
-    dataSourceTypeToHealthSourceTransformerMapBinder.addBinding(DataSourceType.ELK_LOG)
+    dataSourceTypeToHealthSourceTransformerMapBinder.addBinding(DataSourceType.ELASTICSEARCH)
         .to(ELKHealthSourceSpecTransformer.class)
         .in(Scopes.SINGLETON);
     dataSourceTypeToHealthSourceTransformerMapBinder.addBinding(DataSourceType.CUSTOM_HEALTH_LOG)
@@ -558,7 +558,7 @@ public class CVServiceModule extends AbstractModule {
     dataSourceTypeDataCollectionInfoMapperMapBinder.addBinding(DataSourceType.DATADOG_LOG)
         .to(DatadogLogDataCollectionInfoMapper.class)
         .in(Scopes.SINGLETON);
-    dataSourceTypeDataCollectionInfoMapperMapBinder.addBinding(DataSourceType.ELK_LOG)
+    dataSourceTypeDataCollectionInfoMapperMapBinder.addBinding(DataSourceType.ELASTICSEARCH)
         .to(ELKDataCollectionInfoMapper.class)
         .in(Scopes.SINGLETON);
     dataSourceTypeDataCollectionInfoMapperMapBinder.addBinding(DataSourceType.DYNATRACE)
@@ -712,7 +712,7 @@ public class CVServiceModule extends AbstractModule {
     dataSourceTypeCVConfigMapBinder.addBinding(DataSourceType.DATADOG_LOG)
         .to(DatadogLogCVConfigUpdatableEntity.class)
         .in(Scopes.SINGLETON);
-    dataSourceTypeCVConfigMapBinder.addBinding(DataSourceType.ELK_LOG)
+    dataSourceTypeCVConfigMapBinder.addBinding(DataSourceType.ELASTICSEARCH)
         .to(ELKCVConfigUpdatableEntity.class)
         .in(Scopes.SINGLETON);
     dataSourceTypeCVConfigMapBinder.addBinding(DataSourceType.DYNATRACE)

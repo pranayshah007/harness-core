@@ -19,7 +19,6 @@ import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.verify;
@@ -32,9 +31,7 @@ import io.harness.cdng.azure.webapp.beans.AzureWebAppPreDeploymentDataOutput;
 import io.harness.cdng.azure.webapp.beans.AzureWebAppSlotDeploymentDataOutput;
 import io.harness.cdng.azure.webapp.beans.AzureWebAppSwapSlotsDataOutput;
 import io.harness.cdng.common.beans.SetupAbstractionKeys;
-import io.harness.cdng.execution.StageExecutionInfo;
 import io.harness.cdng.execution.azure.webapps.AzureWebAppsStageExecutionDetails;
-import io.harness.cdng.execution.service.StageExecutionInfoService;
 import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConnectorDTO;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
@@ -83,7 +80,6 @@ public class AzureWebAppRollbackStepTest extends CDNGTestBase {
   @Mock private AzureWebAppStepHelper stepHelper;
   @Mock private ExecutionSweepingOutputService executionSweepingOutputService;
   @Mock private InstanceInfoService instanceInfoService;
-  @Mock private StageExecutionInfoService stageExecutionInfoService;
 
   @InjectMocks private AzureWebAppRollbackStep azureWebAppRollbackStep;
 
@@ -239,6 +235,9 @@ public class AzureWebAppRollbackStepTest extends CDNGTestBase {
     AzurePackageArtifactConfig lastArtifactConfig = AzurePackageArtifactConfig.builder().build();
     AzureWebAppsStageExecutionDetails azureWebAppsStageExecutionDetails =
         AzureWebAppsStageExecutionDetails.builder().artifactConfig(lastArtifactConfig).build();
+    doReturn(azureWebAppsStageExecutionDetails)
+        .when(stepHelper)
+        .findLastSuccessfulStageExecutionDetails(ambiance, azureWebAppInfraDelegateConfig);
     doReturn(OptionalSweepingOutput.builder()
                  .found(true)
                  .output(AzureWebAppSwapSlotsDataOutput.builder()
@@ -252,9 +251,6 @@ public class AzureWebAppRollbackStepTest extends CDNGTestBase {
     doReturn(azureAppServicePreDeploymentData).when(stepHelper).getPreDeploymentData(eq(ambiance), any());
     doReturn(azureWebAppInfraDelegateConfig).when(stepHelper).getInfraDelegateConfig(any(), any(), any());
     doReturn(true).when(stepHelper).isPackageArtifactType(any());
-    doReturn(Arrays.asList(StageExecutionInfo.builder().executionDetails(azureWebAppsStageExecutionDetails).build()))
-        .when(stageExecutionInfoService)
-        .listLatestSuccessfulStageExecutionInfo(any(), any(), anyInt());
     ArgumentCaptor<TaskParameters> taskParametersArgumentCaptor = ArgumentCaptor.forClass(TaskParameters.class);
     doReturn(TaskRequest.newBuilder().build())
         .when(stepHelper)
@@ -270,7 +266,6 @@ public class AzureWebAppRollbackStepTest extends CDNGTestBase {
             eq(TaskType.AZURE_WEB_APP_TASK_NG),
             eq(Arrays.asList(FETCH_ARTIFACT_FILE, SLOT_SWAP, UPDATE_SLOT_CONFIGURATION_SETTINGS, DEPLOY_TO_SLOT,
                 SLOT_TRAFFIC_PERCENTAGE)));
-    verify(stepHelper).getExecutionInfoKey(any(), any());
 
     AzureWebAppRollbackRequest requestParameters = (AzureWebAppRollbackRequest) taskParametersArgumentCaptor.getValue();
 
@@ -298,6 +293,9 @@ public class AzureWebAppRollbackStepTest extends CDNGTestBase {
         AzureWebAppsStageExecutionDetails.builder().targetSlot("targetSlot").artifactConfig(lastArtifactConfig).build();
     AzureWebAppsStageExecutionDetails preLastExecutionDetails =
         AzureWebAppsStageExecutionDetails.builder().artifactConfig(preLastArtifactConfig).build();
+    doReturn(preLastExecutionDetails)
+        .when(stepHelper)
+        .findLastSuccessfulStageExecutionDetails(ambiance, azureWebAppInfraDelegateConfig);
     doReturn(OptionalSweepingOutput.builder()
                  .found(true)
                  .output(AzureWebAppSwapSlotsDataOutput.builder()
@@ -311,10 +309,6 @@ public class AzureWebAppRollbackStepTest extends CDNGTestBase {
     doReturn(azureAppServicePreDeploymentData).when(stepHelper).getPreDeploymentData(eq(ambiance), any());
     doReturn(azureWebAppInfraDelegateConfig).when(stepHelper).getInfraDelegateConfig(any(), any(), any());
     doReturn(true).when(stepHelper).isPackageArtifactType(any());
-    doReturn(Arrays.asList(StageExecutionInfo.builder().executionDetails(lastAzureExecutionDetails).build(),
-                 StageExecutionInfo.builder().executionDetails(preLastExecutionDetails).build()))
-        .when(stageExecutionInfoService)
-        .listLatestSuccessfulStageExecutionInfo(any(), any(), anyInt());
     ArgumentCaptor<TaskParameters> taskParametersArgumentCaptor = ArgumentCaptor.forClass(TaskParameters.class);
     doReturn(TaskRequest.newBuilder().build())
         .when(stepHelper)
@@ -330,7 +324,6 @@ public class AzureWebAppRollbackStepTest extends CDNGTestBase {
             eq(TaskType.AZURE_WEB_APP_TASK_NG),
             eq(Arrays.asList(FETCH_ARTIFACT_FILE, SLOT_SWAP, UPDATE_SLOT_CONFIGURATION_SETTINGS, DEPLOY_TO_SLOT,
                 SLOT_TRAFFIC_PERCENTAGE)));
-    verify(stepHelper).getExecutionInfoKey(any(), any());
 
     AzureWebAppRollbackRequest requestParameters = (AzureWebAppRollbackRequest) taskParametersArgumentCaptor.getValue();
 
