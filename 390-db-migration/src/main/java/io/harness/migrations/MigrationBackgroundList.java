@@ -53,6 +53,7 @@ import io.harness.migrations.all.AddEnableIteratorsToGovernanceConfig;
 import io.harness.migrations.all.AddHarnessOwnedToResourceConstraint;
 import io.harness.migrations.all.AddInfraMappingNameToInstanceData;
 import io.harness.migrations.all.AddIsDefaultFlagToUserGroup;
+import io.harness.migrations.all.AddIsSmpAccountToAccount;
 import io.harness.migrations.all.AddNotificationGroupReferenceToUserGroups;
 import io.harness.migrations.all.AddOrchestrationToWorkflows;
 import io.harness.migrations.all.AddPipelinesReferenceToUserGroups;
@@ -403,6 +404,7 @@ public class MigrationBackgroundList {
         .add(Pair.of(234, SettingAttributesServiceAccountTokenMigration.class))
         .add(Pair.of(235, ExecuteWorkflowAbortActionMigration.class))
         .add(Pair.of(236, CorrectingQuartzTriggerFrequency.class))
+        .add(Pair.of(237, AddIsSmpAccountToAccount.class))
         .build();
   }
 }
