@@ -31,7 +31,6 @@ import static io.harness.secretmanagerclient.ValueType.Reference;
 import static io.harness.security.SimpleEncryption.CHARSET;
 import static io.harness.security.encryption.AccessType.APP_ROLE;
 import static io.harness.security.encryption.EncryptionType.GCP_KMS;
-import static io.harness.security.encryption.EncryptionType.GCP_SECRETS_MANAGER;
 import static io.harness.security.encryption.EncryptionType.LOCAL;
 import static io.harness.security.encryption.SecretManagerType.KMS;
 import static io.harness.security.encryption.SecretManagerType.VAULT;
@@ -159,9 +158,7 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
     SecretManagerConfigDTO secretManager = getSecretManagerOrThrow(accountIdentifier, dto.getOrgIdentifier(),
         dto.getProjectIdentifier(), secret.getSecretManagerIdentifier(), false);
 
-    if (GCP_SECRETS_MANAGER.equals(secretManager.getEncryptionType())) {
-      validateEncryptedRecordForGcpSecretManagerEncryptionType(secret);
-    }
+    validateAdditionalMetadata(secretManager, secret);
     NGEncryptedData encryptedData = buildNGEncryptedData(accountIdentifier, dto, secretManager);
 
     switch (secret.getValueType()) {
@@ -183,30 +180,44 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
     }
     return encryptedDataDao.save(encryptedData);
   }
+
+  private void validateAdditionalMetadata(SecretManagerConfigDTO secretManager, SecretTextSpecDTO secret) {
+    switch (secretManager.getEncryptionType()) {
+      case GCP_SECRETS_MANAGER:
+        validateAdditionalMetadataInSecretTextSpecDTOForGcpSecretManager(secret);
+        return;
+    }
+  }
+
   @VisibleForTesting
-  public void validateEncryptedRecordForGcpSecretManagerEncryptionType(SecretTextSpecDTO secretTextSpecDTO) {
+  void validateAdditionalMetadataInSecretTextSpecDTOForGcpSecretManager(SecretTextSpecDTO secretTextSpecDTO) {
     // Inline secret text
     if (Inline.equals(secretTextSpecDTO.getValueType())) {
-      if (secretTextSpecDTO.getAdditionalMetadata() != null
-          && secretTextSpecDTO.getAdditionalMetadata().getValues() != null) {
-        Map<String, Object> values = secretTextSpecDTO.getAdditionalMetadata().getValues();
-        if (values.size() == 0 || (values.size() == 1 && values.containsKey("regions"))) {
-          return;
-        } else {
-          throw new InvalidRequestException(
-              String.format("Additional metadata values %s keys are invalid. ", values.keySet()));
-        }
-      }
+      validateInlineSecretAdditionalMetadataForGcpSecretManager(secretTextSpecDTO);
     }
     // Reference secret text
     else {
-      if (secretTextSpecDTO.getAdditionalMetadata() == null
-          || secretTextSpecDTO.getAdditionalMetadata().getValues() == null) {
-        throw new InvalidRequestException("Version information in additional metadata values field is missing. ");
-      }
+      validateReferenceSecretAdditionalMetadataForGcpSecretManager(secretTextSpecDTO);
+    }
+  }
+
+  private void validateReferenceSecretAdditionalMetadataForGcpSecretManager(SecretTextSpecDTO secretTextSpecDTO) {
+    if (secretTextSpecDTO.getAdditionalMetadata() == null
+        || secretTextSpecDTO.getAdditionalMetadata().getValues() == null) {
+      throw new InvalidRequestException("Version information in additional metadata values field is missing.");
+    }
+    Map<String, Object> values = secretTextSpecDTO.getAdditionalMetadata().getValues();
+    if (values.size() != 1 || !values.containsKey("version")) {
+      throw new InvalidRequestException("Additional metadata values field should have only one field - version");
+    }
+  }
+
+  private void validateInlineSecretAdditionalMetadataForGcpSecretManager(SecretTextSpecDTO secretTextSpecDTO) {
+    if (secretTextSpecDTO.getAdditionalMetadata() != null
+        && secretTextSpecDTO.getAdditionalMetadata().getValues() != null) {
       Map<String, Object> values = secretTextSpecDTO.getAdditionalMetadata().getValues();
-      if (values.size() != 1 || !values.containsKey("version")) {
-        throw new InvalidRequestException("Additional metadata values field should have only one field - version");
+      if (!values.isEmpty() && (values.size() != 1 || !values.containsKey("regions"))) {
+        throw new InvalidRequestException("Additional metadata values expect only one key - regions");
       }
     }
   }
