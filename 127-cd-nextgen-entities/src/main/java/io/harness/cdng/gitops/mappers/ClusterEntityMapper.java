@@ -81,7 +81,7 @@ public class ClusterEntityMapper {
   }
 
   public ClusterResponse writeDTO(Cluster cluster, Map<String, ClusterFromGitops> clusterFromGitops) {
-    String clusterRef = cluster.getClusterRef().toLowerCase();
+    String clusterRef = cluster.getClusterRef();
     ClusterFromGitops gitOpsCluster = clusterFromGitops.getOrDefault(clusterRef, ClusterFromGitops.builder().build());
     final ScopeAndRef scopeFromClusterRef = getScopeFromClusterRef(clusterRef);
 
