@@ -159,7 +159,7 @@ public class SignupServiceImpl implements SignupService {
     AccountDTO account = createAccount(dto);
     UserInfo user = createUser(dto, account);
     sendSucceedTelemetryEvent(dto.getEmail(), dto.getUtmInfo(), account.getIdentifier(), user,
-        SignupType.SIGNUP_FORM_FLOW, account.getName(), referer);
+        SignupType.SIGNUP_FORM_FLOW, account.getName(), referer, null);
     executorService.submit(() -> {
       SignupVerificationToken verificationToken = generateNewToken(user.getEmail());
       try {
@@ -275,7 +275,7 @@ public class SignupServiceImpl implements SignupService {
    * Complete Signup in email verification blocking flow
    */
   @Override
-  public UserInfo completeSignupInvite(String token, String referer) {
+  public UserInfo completeSignupInvite(String token, String referer, String gaClientId) {
     if (DeployVariant.isCommunity(deployVersion)) {
       throw new InvalidRequestException("You are not allowed to complete a signup invite with community edition");
     }
@@ -298,10 +298,10 @@ public class SignupServiceImpl implements SignupService {
 
     UserInfo userInfo = null;
     try {
-      userInfo = getResponse(userClient.completeSignupInvite(verificationToken.getEmail(), null));
+      userInfo = getResponse(userClient.completeSignupInvite(verificationToken.getEmail()));
       verificationTokenRepository.delete(verificationToken);
       sendSucceedTelemetryEvent(userInfo.getEmail(), userInfo.getUtmInfo(), userInfo.getDefaultAccountId(), userInfo,
-          SignupType.SIGNUP_FORM_FLOW, userInfo.getAccounts().get(0).getAccountName(), referer);
+          SignupType.SIGNUP_FORM_FLOW, userInfo.getAccounts().get(0).getAccountName(), referer, gaClientId);
 
       UserInfo finalUserInfo = userInfo;
       executorService.submit(() -> {
@@ -321,7 +321,7 @@ public class SignupServiceImpl implements SignupService {
             !userInfo.getIntent().equals("") ? ModuleType.valueOf(userInfo.getIntent().toUpperCase()) : null,
             userInfo.getEdition() != null ? Edition.valueOf(userInfo.getEdition()) : null,
             userInfo.getSignupAction() != null ? SignupAction.valueOf(userInfo.getSignupAction()) : null,
-            userInfo.getDefaultAccountId(), referer);
+            userInfo.getDefaultAccountId(), referer, gaClientId);
       }
 
       log.info("Completed NG signup for {}", userInfo.getEmail());
@@ -429,7 +429,7 @@ public class SignupServiceImpl implements SignupService {
   }
 
   @Override
-  public UserInfo oAuthSignup(OAuthSignupDTO dto, String referer) {
+  public UserInfo oAuthSignup(OAuthSignupDTO dto) {
     if (DeployVariant.isCommunity(deployVersion)) {
       throw new InvalidRequestException("You are not allowed to oauth signup with community edition");
     }
@@ -456,7 +456,7 @@ public class SignupServiceImpl implements SignupService {
     }
 
     sendSucceedTelemetryEvent(dto.getEmail(), dto.getUtmInfo(), account.getIdentifier(), oAuthUser,
-        SignupType.OAUTH_FLOW, account.getName(), referer);
+        SignupType.OAUTH_FLOW, account.getName(), dto.getReferer(), dto.getGaClientId());
 
     executorService.submit(() -> {
       try {
@@ -469,21 +469,22 @@ public class SignupServiceImpl implements SignupService {
     });
 
     if (featureFlagService.isGlobalEnabled(AUTO_FREE_MODULE_LICENSE)) {
-      enableModuleLicense(dto.getIntent(), dto.getEdition(), dto.getSignupAction(), account.getIdentifier(), referer);
+      enableModuleLicense(dto.getIntent(), dto.getEdition(), dto.getSignupAction(), account.getIdentifier(),
+          dto.getReferer(), dto.getGaClientId());
     }
     waitForRbacSetup(oAuthUser.getDefaultAccountId(), oAuthUser.getUuid(), oAuthUser.getEmail());
     return oAuthUser;
   }
 
-  private void enableModuleLicense(
-      ModuleType intent, Edition edition, SignupAction signupAction, String accountIdentifier, String referer) {
+  private void enableModuleLicense(ModuleType intent, Edition edition, SignupAction signupAction,
+      String accountIdentifier, String referer, String gaClientId) {
     if (intent != null) {
       if (signupAction != null && edition != null && signupAction.equals(SignupAction.TRIAL)) {
         StartTrialDTO startTrialDTO = StartTrialDTO.builder().edition(edition).moduleType(intent).build();
         licenseService.startTrialLicense(accountIdentifier, startTrialDTO, referer);
         return;
       }
-      licenseService.startFreeLicense(accountIdentifier, intent, referer);
+      licenseService.startFreeLicense(accountIdentifier, intent, referer, gaClientId);
     }
   }
 
@@ -594,7 +595,7 @@ public class SignupServiceImpl implements SignupService {
   }
 
   private void sendSucceedTelemetryEvent(String email, UtmInfo utmInfo, String accountId, UserInfo userInfo,
-      String source, String accountName, String referer) {
+      String source, String accountName, String referer, String gaClientId) {
     HashMap<String, Object> properties = new HashMap<>();
     properties.put(EMAIL, email);
     properties.put("name", userInfo.getName());
@@ -652,6 +653,9 @@ public class SignupServiceImpl implements SignupService {
     }
     if (referer != null) {
       trackProperties.put("refererURL", referer);
+    }
+    if (gaClientId != null) {
+      trackProperties.put("ga_client_id", gaClientId);
     }
     tempExecutor.schedule(
         ()
