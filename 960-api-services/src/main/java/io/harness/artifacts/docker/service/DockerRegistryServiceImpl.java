@@ -322,7 +322,8 @@ public class DockerRegistryServiceImpl implements DockerRegistryService {
   @Override
   public boolean validateCredentials(DockerInternalConfig dockerConfig) {
     String dockerRegistryUrl = dockerConfig.getDockerRegistryUrl();
-    if (!(dockerRegistryUrl.endsWith("/v2") || dockerRegistryUrl.endsWith("/v2/"))) {
+    if ((!DockerRegistryProviderType.HARBOR.equals(dockerConfig.getProviderType()))
+        && (!(dockerRegistryUrl.endsWith("/v2") || dockerRegistryUrl.endsWith("/v2/")))) {
       dockerRegistryUrl =
           dockerRegistryUrl.endsWith("/") ? dockerRegistryUrl.concat("v2") : dockerRegistryUrl.concat("/v2");
     }
