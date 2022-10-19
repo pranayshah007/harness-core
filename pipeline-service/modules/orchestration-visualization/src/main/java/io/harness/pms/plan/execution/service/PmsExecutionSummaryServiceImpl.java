@@ -16,7 +16,6 @@ import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.utils.OrchestrationUtils;
 import io.harness.execution.NodeExecution;
 import io.harness.graph.stepDetail.service.PmsGraphStepDetailsService;
-import io.harness.plan.Node;
 import io.harness.plan.NodeType;
 import io.harness.plancreator.strategy.StrategyType;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -25,13 +24,13 @@ import io.harness.pms.execution.ExecutionStatus;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.plan.execution.ExecutionSummaryUpdateUtils;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
+import io.harness.pms.plan.execution.beans.dto.EdgeLayoutListDTO;
 import io.harness.pms.plan.execution.beans.dto.GraphLayoutNodeDTO;
 import io.harness.pms.plan.execution.beans.dto.GraphLayoutNodeDTO.GraphLayoutNodeDTOKeys;
 import io.harness.repositories.executions.PmsExecutionSummaryRespository;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
-
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -183,7 +182,12 @@ public class PmsExecutionSummaryServiceImpl implements PmsExecutionSummaryServic
     if (!previousStageId.isPresent()) {
       return;
     }
-    GraphLayoutNodeDTO prevGraphLayoutNode = graphLayoutNodeDTOMap.get(previousStageId.get());
+    List<String> newNextIdList = Collections.singletonList(planNodeUuid);
+
+    Update update = new Update();
+    update.set(PlanExecutionSummaryKeys.layoutNodeMap + "." + previousStageId.get() + ".edgeLayoutList.nextIds",
+        newNextIdList);
+    update(planExecutionId, update);
   }
 
   @Override
