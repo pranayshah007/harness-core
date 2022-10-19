@@ -186,6 +186,8 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
       case GCP_SECRETS_MANAGER:
         validateAdditionalMetadataInSecretTextSpecDTOForGcpSecretManager(secret);
         return;
+      default:
+        return;
     }
   }
 
