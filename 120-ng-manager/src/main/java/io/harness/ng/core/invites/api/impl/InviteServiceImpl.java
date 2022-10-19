@@ -74,6 +74,7 @@ import io.harness.remote.client.CGRestUtils;
 import io.harness.repositories.invites.spring.InviteRepository;
 import io.harness.security.SecurityContextBuilder;
 import io.harness.security.dto.Principal;
+import io.harness.springdata.HTransactionTemplate;
 import io.harness.telemetry.Destination;
 import io.harness.telemetry.TelemetryReporter;
 import io.harness.user.remote.UserClient;
@@ -210,6 +211,9 @@ public class InviteServiceImpl implements InviteService {
     }
     boolean[] scimLdapArray = {isScimInvite, isLdap};
     try {
+      log.debug("Transactions isolation level: {}, Transactions are enabled: {} ",
+          ((HTransactionTemplate) transactionTemplate).getIsolationLevel(),
+          ((HTransactionTemplate) transactionTemplate).isTransactionsEnabled());
       return this.newInvite(invite, scimLdapArray);
       //      return wrapperForTransactions(this::newInvite, invite, scimLdapArray);
     } catch (DuplicateKeyException ex) {

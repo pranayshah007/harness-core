@@ -8,6 +8,7 @@
 package io.harness.springdata;
 
 import java.util.function.Consumer;
+import lombok.Getter;
 import org.springframework.data.mongodb.MongoTransactionManager;
 import org.springframework.transaction.TransactionException;
 import org.springframework.transaction.TransactionStatus;
@@ -16,7 +17,7 @@ import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionTemplate;
 
 public class HTransactionTemplate extends TransactionTemplate {
-  boolean transactionsEnabled;
+  @Getter boolean transactionsEnabled;
 
   public HTransactionTemplate(MongoTransactionManager mongoTransactionManager, boolean transactionsEnabled) {
     super(mongoTransactionManager);
