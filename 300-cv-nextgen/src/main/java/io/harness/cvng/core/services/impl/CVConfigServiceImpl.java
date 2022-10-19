@@ -33,6 +33,7 @@ import com.google.inject.Inject;
 import com.mongodb.BasicDBObject;
 import java.time.Clock;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -93,6 +94,15 @@ public class CVConfigServiceImpl implements CVConfigService {
 
   @Override
   public void delete(@NotNull String cvConfigId) {
+    delete(cvConfigId, clock.instant().plus(Duration.ofHours(2)));
+  }
+
+  @Override
+  public void deleteImmediately(@NotNull String cvConfigId) {
+    delete(cvConfigId, clock.instant());
+  }
+
+  private void delete(String cvConfigId, Instant deleteAfter) {
     CVConfig cvConfig = get(cvConfigId);
     if (cvConfig == null) {
       return;
@@ -101,7 +111,7 @@ public class CVConfigServiceImpl implements CVConfigService {
         verificationTaskService.getServiceGuardVerificationTaskId(cvConfig.getAccountId(), cvConfig.getUuid());
     sideKickService.schedule(
         VerificationTaskCleanupSideKickData.builder().verificationTaskId(verificationTaskId).cvConfig(cvConfig).build(),
-        clock.instant().plus(Duration.ofHours(2)));
+        deleteAfter);
     hPersistence.delete(CVConfig.class, cvConfigId);
   }
 
