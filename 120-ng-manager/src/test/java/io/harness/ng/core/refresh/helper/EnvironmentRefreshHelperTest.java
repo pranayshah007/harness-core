@@ -16,10 +16,10 @@ import io.harness.ng.core.environment.yaml.NGEnvironmentInfoConfig;
 import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
 import io.harness.ng.core.refresh.bean.EntityRefreshContext;
 import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
+import io.harness.ng.core.template.refresh.v2.InputsValidationResponse;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
-import io.harness.template.beans.refresh.v2.InputsValidationResponse;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import java.io.IOException;

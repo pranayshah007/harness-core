@@ -33,6 +33,7 @@ import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.services.impl.ServiceEntityServiceImpl;
 import io.harness.ng.core.service.services.impl.ServiceEntitySetupUsageHelper;
 import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
+import io.harness.ng.core.template.refresh.v2.InputsValidationResponse;
 import io.harness.outbox.api.OutboxService;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.repositories.environment.spring.EnvironmentRepository;
@@ -40,7 +41,6 @@ import io.harness.repositories.infrastructure.spring.InfrastructureRepository;
 import io.harness.repositories.service.spring.ServiceRepository;
 import io.harness.rule.Owner;
 import io.harness.setupusage.InfrastructureEntitySetupUsageHelper;
-import io.harness.template.beans.refresh.v2.InputsValidationResponse;
 
 import com.google.common.io.Resources;
 import java.io.IOException;

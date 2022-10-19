@@ -1122,6 +1122,35 @@ public class GitClientImpl implements GitClient {
     return fetchResult;
   }
 
+  public void cloneRepoAndCopyToDestDir(
+      GitOperationContext gitOperationContext, String destinationDir, LogCallback logCallback) {
+    String gitConnectorId = gitOperationContext.getGitConnectorId();
+    saveInfoExecutionLogs(logCallback, "Trying to start synchronized git clone and copy to destination directory");
+    File lockFile = gitClientHelper.getLockObject(gitConnectorId);
+    synchronized (lockFile) {
+      log.info("Trying to acquire lock on {}", lockFile);
+      try (FileOutputStream fileOutputStream = new FileOutputStream(lockFile);
+           FileLock lock = fileOutputStream.getChannel().lock()) {
+        log.info("Successfully acquired lock on {}", lockFile);
+        saveInfoExecutionLogs(
+            logCallback, "Started synchronized operation: Cloning repo from git and copying to destination directory");
+        ensureRepoLocallyClonedAndUpdated(gitOperationContext);
+        File dest = new File(destinationDir);
+        File src = new File(gitClientHelper.getRepoDirectory(gitOperationContext));
+        deleteDirectoryAndItsContentIfExists(dest.getAbsolutePath());
+        FileUtils.copyDirectory(src, dest);
+        FileIo.waitForDirectoryToBeAccessibleOutOfProcess(dest.getPath(), 10);
+      } catch (WingsException e) {
+        tryResetWorkingDir(gitOperationContext.getGitConfig(), gitOperationContext.getGitConnectorId());
+        throw e;
+      } catch (Exception e) {
+        logPossibleFileLockRelatedExceptions(e);
+        tryResetWorkingDir(gitOperationContext.getGitConfig(), gitOperationContext.getGitConnectorId());
+        throw new YamlException("Error in cloning and copying files to provisioner specific directory", e, USER);
+      }
+    }
+  }
+
   @Override
   public synchronized void ensureRepoLocallyClonedAndUpdated(GitOperationContext gitOperationContext) {
     GitConfig gitConfig = gitOperationContext.getGitConfig();

@@ -10,7 +10,7 @@ package io.harness.ng.core.template.exception;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.ngexception.NGTemplateException;
-import io.harness.template.beans.refresh.ValidateTemplateInputsResponseDTO;
+import io.harness.ng.core.template.refresh.ValidateTemplateInputsResponseDTO;
 
 import java.util.EnumSet;
 import lombok.Getter;

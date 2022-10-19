@@ -124,6 +124,7 @@ import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.util.CollectionUtils;
 
 @Singleton
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
@@ -619,7 +620,10 @@ public class NGTriggerServiceImpl implements NGTriggerService {
     }
 
     if (isNotEmpty(triggerDetails.getNgTriggerConfigV2().getInputYaml())) {
-      validatePipelineRef(triggerDetails);
+      Map<String, Map<String, String>> errorMap = validatePipelineRef(triggerDetails);
+      if (!CollectionUtils.isEmpty(errorMap)) {
+        throw new InvalidTriggerYamlException("Invalid Yaml", errorMap, triggerDetails, null);
+      }
     }
 
     NGTriggerSourceV2 triggerSource = triggerDetails.getNgTriggerConfigV2().getSource();
@@ -686,7 +690,10 @@ public class NGTriggerServiceImpl implements NGTriggerService {
 
   public MergeInputSetResponseDTOPMS validateInputSetsInternal(TriggerDetails triggerDetails) {
     if (isEmpty(triggerDetails.getNgTriggerConfigV2().getPipelineBranchName())) {
-      validatePipelineRef(triggerDetails);
+      Map<String, Map<String, String>> errorMap = validatePipelineRef(triggerDetails);
+      if (!CollectionUtils.isEmpty(errorMap)) {
+        throw new InvalidTriggerYamlException("Invalid Yaml", errorMap, triggerDetails, null);
+      }
       return null;
     } else {
       NGTriggerEntity ngTriggerEntity = triggerDetails.getNgTriggerEntity();
@@ -707,8 +714,10 @@ public class NGTriggerServiceImpl implements NGTriggerService {
     }
   }
 
-  private void validatePipelineRef(TriggerDetails triggerDetails) {
+  @Override
+  public Map<String, Map<String, String>> validatePipelineRef(TriggerDetails triggerDetails) {
     Optional<String> pipelineYmlOptional = validationHelper.fetchPipelineForTrigger(triggerDetails);
+    Map<String, Map<String, String>> errorMap = new HashMap<>();
     if (pipelineYmlOptional.isPresent()) {
       String pipelineYaml = pipelineYmlOptional.get();
       String templateYaml = createRuntimeInputForm(pipelineYaml);
@@ -716,17 +725,17 @@ public class NGTriggerServiceImpl implements NGTriggerService {
       String triggerPipelineYml = getPipelineComponent(triggerYaml);
       Map<FQN, String> invalidFQNs = getInvalidFQNsInTrigger(templateYaml, triggerPipelineYml);
       if (EmptyPredicate.isEmpty(invalidFQNs)) {
-        return;
+        return errorMap;
       }
-      Map<String, Map<String, String>> errorMap = new HashMap<>();
+
       for (Map.Entry<FQN, String> entry : invalidFQNs.entrySet()) {
         Map<String, String> innerMap = new HashMap<>();
         innerMap.put("fieldName", entry.getKey().getFieldName());
         innerMap.put("message", entry.getValue());
         errorMap.put(entry.getKey().getExpressionFqn(), innerMap);
       }
-      throw new InvalidTriggerYamlException("Invalid Yaml", errorMap, triggerDetails, null);
     }
+    return errorMap;
   }
 
   private String getPipelineComponent(String triggerYml) {
@@ -755,10 +764,16 @@ public class NGTriggerServiceImpl implements NGTriggerService {
     YamlConfig triggerConfig = new YamlConfig(triggerPipelineCompYaml);
     Set<FQN> triggerFQNs = new LinkedHashSet<>(triggerConfig.getFqnToValueMap().keySet());
     if (EmptyPredicate.isEmpty(templateYaml)) {
-      triggerFQNs.forEach(fqn -> errorMap.put(fqn, "Pipeline no longer contains any runtime input"));
+      triggerFQNs.forEach(fqn -> errorMap.put(fqn, "Pipeline no longer contains runtime input"));
       return errorMap;
     }
     YamlConfig templateConfig = new YamlConfig(templateYaml);
+
+    if (CollectionUtils.isEmpty(triggerFQNs)) {
+      templateConfig.getFqnToValueMap().keySet().forEach(
+          fqn -> errorMap.put(fqn, "Trigger does not contain pipeline runtime input"));
+      return errorMap;
+    }
 
     // Make sure everything in trigger exist in pipeline
     templateConfig.getFqnToValueMap().keySet().forEach(key -> {

@@ -19,6 +19,7 @@ io.harness.steps.approval.step.jira.beans.KeyValuesCriteriaSpec
 io.harness.plancreator.steps.common.StageElementParameters
 io.harness.when.beans.StageWhenCondition
 io.harness.pms.expressions.PMSExpressionEvaluatorTest$TestStepParameters
+io.harness.pms.pipelinestage.output.PipelineStageOutput
 io.harness.cf.pipeline.FeatureFlagStageStepParameters
 io.harness.steps.shellscript.ShellScriptOutcome
 io.harness.plancreator.steps.barrier.BarrierStepInfo

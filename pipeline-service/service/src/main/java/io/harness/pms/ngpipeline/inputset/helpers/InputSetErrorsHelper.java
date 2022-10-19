@@ -25,7 +25,10 @@ import io.harness.pms.merger.helpers.YamlSubMapExtractor;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntityType;
 
+import com.fasterxml.jackson.databind.node.TextNode;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -39,6 +42,7 @@ import lombok.experimental.UtilityClass;
 public class InputSetErrorsHelper {
   public final String INVALID_INPUT_SET_MESSAGE = "Reference is an invalid Input Set";
   public final String OUTDATED_INPUT_SET_MESSAGE = "Reference is an outdated input set";
+  private static final TextNode EMPTY_STRING_NODE = new TextNode("");
 
   public InputSetErrorWrapperDTOPMS getErrorMap(String pipelineYaml, String inputSetYaml) {
     String pipelineComp = getPipelineComponent(inputSetYaml);
@@ -151,23 +155,30 @@ public class InputSetErrorsHelper {
     return getInvalidFQNsInInputSetFromTemplateConfig(templateYamlConfig, inputSetConfig);
   }
 
-  Map<FQN, String> getInvalidFQNsInInputSetFromTemplateConfig(YamlConfig templateConfig, YamlConfig inputSetConfig) {
+  public Map<FQN, String> getInvalidFQNsInInputSetFromTemplateConfig(
+      YamlConfig pipelineYamlConfig, YamlConfig inputSetConfig) {
+    return getInvalidFQNsInInputSetFromTemplateConfig(
+        pipelineYamlConfig != null ? pipelineYamlConfig.getFqnToValueMap() : null, inputSetConfig.getFqnToValueMap());
+  }
+
+  Map<FQN, String> getInvalidFQNsInInputSetFromTemplateConfig(
+      Map<FQN, Object> templateFqnToValueMap, Map<FQN, Object> inputFqnToValueMap) {
     Map<FQN, String> errorMap = new LinkedHashMap<>();
-    Set<FQN> inputSetFQNs = new LinkedHashSet<>(inputSetConfig.getFqnToValueMap().keySet());
-    if (templateConfig == null || EmptyPredicate.isEmpty(templateConfig.getFqnToValueMap())) {
+    Set<FQN> inputSetFQNs = new LinkedHashSet<>(inputFqnToValueMap.keySet());
+    if (EmptyPredicate.isEmpty(templateFqnToValueMap)) {
       inputSetFQNs.forEach(fqn -> errorMap.put(fqn, "Pipeline no longer contains any runtime input"));
       return errorMap;
     }
 
-    templateConfig.getFqnToValueMap().keySet().forEach(key -> {
+    templateFqnToValueMap.keySet().forEach(key -> {
       if (inputSetFQNs.contains(key)) {
-        Object templateValue = templateConfig.getFqnToValueMap().get(key);
-        Object value = inputSetConfig.getFqnToValueMap().get(key);
+        Object templateValue = templateFqnToValueMap.get(key);
+        Object value = inputFqnToValueMap.get(key);
         if (key.isType() || key.isIdentifierOrVariableName()) {
           if (!value.toString().equals(templateValue.toString())) {
             errorMap.put(key,
-                "The value for " + key.getExpressionFqn() + " is " + templateValue.toString()
-                    + "in the pipeline yaml, but the input set has it as " + value.toString());
+                "The value for " + key.getExpressionFqn() + " is " + templateValue
+                    + "in the pipeline yaml, but the input set has it as " + value);
           }
         } else {
           String error = validateStaticValues(templateValue, value);
@@ -178,11 +189,37 @@ public class InputSetErrorsHelper {
 
         inputSetFQNs.remove(key);
       } else {
-        Map<FQN, Object> subMap = YamlSubMapExtractor.getFQNToObjectSubMap(inputSetConfig.getFqnToValueMap(), key);
+        if (!key.isType() || !key.isIdentifierOrVariableName()) {
+          String error = validateStaticValues(templateFqnToValueMap.get(key));
+          if (EmptyPredicate.isNotEmpty(error)) {
+            errorMap.put(key, error);
+          }
+        }
+        Map<FQN, Object> subMap = YamlSubMapExtractor.getFQNToObjectSubMap(inputFqnToValueMap, key);
         subMap.keySet().forEach(inputSetFQNs::remove);
       }
     });
     inputSetFQNs.forEach(fqn -> errorMap.put(fqn, "Field not a runtime input"));
     return errorMap;
+  }
+
+  /**
+   * Return a list of missing {@link FQN} declared as runtime input from the pipeline.
+   */
+  public List<FQN> getMissingFQNsInInputSet(YamlConfig pipelineYamlConfig) {
+    YamlConfig templateYamlConfig = RuntimeInputFormHelper.createRuntimeInputFormYamlConfig(pipelineYamlConfig, true);
+    final Map<FQN, Object> templateFqnToValueMap = templateYamlConfig.getFqnToValueMap();
+    final Map<FQN, Object> inputFqnToValueMap = new HashMap<>(templateFqnToValueMap.size());
+
+    templateFqnToValueMap.forEach((key, value) -> {
+      if (key.isType() || key.isIdentifierOrVariableName()) {
+        inputFqnToValueMap.put(key, value);
+      } else {
+        inputFqnToValueMap.put(key, EMPTY_STRING_NODE);
+      }
+    });
+
+    return new ArrayList<>(
+        getInvalidFQNsInInputSetFromTemplateConfig(templateFqnToValueMap, inputFqnToValueMap).keySet());
   }
 }

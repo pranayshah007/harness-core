@@ -15,5 +15,6 @@ import io.harness.annotations.dev.OwnedBy;
 public enum CommonAdviserTypes {
   RETRY_WITH_ROLLBACK,
   MANUAL_INTERVENTION_WITH_ROLLBACK,
-  ON_FAIL_ROLLBACK
+  ON_FAIL_ROLLBACK,
+  ROLLBACK_START
 }

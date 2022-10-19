@@ -26,6 +26,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.filestore.dto.node.FileNodeDTO;
 import io.harness.filestore.dto.node.FileStoreNodeDTO;
 import io.harness.filestore.service.FileStoreService;
+import io.harness.ng.core.template.TemplateResponseDTO;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.merger.YamlConfig;
@@ -34,7 +35,6 @@ import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.remote.client.NGRestUtils;
-import io.harness.template.beans.TemplateResponseDTO;
 import io.harness.template.remote.TemplateResourceClient;
 import io.harness.yaml.utils.NGVariablesUtils;
 

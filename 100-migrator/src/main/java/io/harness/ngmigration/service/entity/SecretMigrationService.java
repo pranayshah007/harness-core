@@ -139,8 +139,7 @@ public class SecretMigrationService extends NgMigrationService {
 
   @Override
   public List<NGYamlFile> generateYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
-      Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities,
-      NgEntityDetail ngEntityDetail) {
+      Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities) {
     EncryptedData encryptedData = (EncryptedData) entities.get(entityId).getEntity();
     List<NGYamlFile> files = new ArrayList<>();
     String name = MigratorUtility.generateName(inputDTO.getOverrides(), entityId, encryptedData.getName());

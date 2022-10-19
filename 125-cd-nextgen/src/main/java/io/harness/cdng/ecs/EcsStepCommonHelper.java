@@ -53,9 +53,7 @@ import io.harness.delegate.beans.ecs.EcsRollingRollbackResult;
 import io.harness.delegate.beans.ecs.EcsRunTaskResult;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.mapper.EcsTaskToServerInstanceInfoMapper;
-import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
-import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
 import io.harness.delegate.exception.TaskNGDataException;
 import io.harness.delegate.task.ecs.EcsGitFetchFileConfig;
 import io.harness.delegate.task.ecs.EcsGitFetchRunTaskFileConfig;
@@ -419,8 +417,8 @@ public class EcsStepCommonHelper extends EcsStepUtils {
       logCallback.saveExecutionLog("Fetched both task definition and run task request definition from Harness Store ",
           INFO, CommandExecutionStatus.SUCCESS);
 
-      CommandUnitsProgress commandUnitsProgress = CommandUnitsProgress.builder().build();
-      UnitProgressData unitProgressData = UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress);
+      UnitProgressData unitProgressData =
+          getCommandUnitProgressData(EcsCommandUnitConstants.fetchManifests.toString(), CommandExecutionStatus.SUCCESS);
 
       EcsStepExecutorParams ecsStepExecutorParams =
           EcsStepExecutorParams.builder()
@@ -438,7 +436,7 @@ public class EcsStepCommonHelper extends EcsStepUtils {
           ambiance, stepElementParameters, ecsExecutionPassThroughData, unitProgressData, ecsStepExecutorParams);
     }
 
-    return getGitFetchFileRunTaskResponse(ambiance, true, stepElementParameters, ecsGitFetchPassThroughData,
+    return getGitFetchFileRunTaskResponse(ambiance, false, stepElementParameters, ecsGitFetchPassThroughData,
         taskDefinitionEcsGitFetchRunTaskFileConfig, ecsRunTaskRequestDefinitionEcsGitFetchRunTaskFileConfig);
   }
 

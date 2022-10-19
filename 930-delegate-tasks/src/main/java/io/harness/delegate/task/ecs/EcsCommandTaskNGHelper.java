@@ -1194,9 +1194,7 @@ public class EcsCommandTaskNGHelper {
           }
 
           String taskStatusLog = tasks.stream()
-                                     .map(task
-                                         -> format("%s : %s : %s : %s", task.taskDefinitionArn(), task.lastStatus(),
-                                             task.stopCode(), task.stoppedReason()))
+                                     .map(task -> format("%s : %s", task.taskArn(), task.lastStatus()))
                                      .collect(Collectors.joining("\n"));
 
           logCallback.saveExecutionLog(format("%d tasks have not completed", notInStoppedStateTasks.size()));

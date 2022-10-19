@@ -31,12 +31,12 @@ import io.harness.ng.core.customDeployment.CustomDeploymentVariableResponseDTO;
 import io.harness.ng.core.customDeployment.CustomDeploymentYamlRequestDTO;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
 import io.harness.ng.core.service.entity.ServiceEntity;
+import io.harness.ng.core.template.TemplateResponseDTO;
 import io.harness.plancreator.customDeployment.StepTemplateRef;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
-import io.harness.template.beans.TemplateResponseDTO;
 
 import com.google.common.io.Resources;
 import com.google.protobuf.StringValue;

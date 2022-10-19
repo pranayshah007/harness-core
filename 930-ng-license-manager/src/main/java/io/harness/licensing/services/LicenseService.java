@@ -22,7 +22,7 @@ import java.util.Map;
 import java.util.Set;
 
 public interface LicenseService extends LicenseCrudService {
-  ModuleLicenseDTO startFreeLicense(String accountIdentifier, ModuleType moduleType, String referer);
+  ModuleLicenseDTO startFreeLicense(String accountIdentifier, ModuleType moduleType, String referer, String gaClientId);
 
   ModuleLicenseDTO startCommunityLicense(String accountIdentifier, ModuleType moduleType);
 

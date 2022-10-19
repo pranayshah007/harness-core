@@ -290,7 +290,7 @@ public class HelmClientImplTest extends CategoryTest {
     assertThat(getCommandWithNoValueOverride(HelmVersion.V3, command, helmInstallCommandData))
         .isEqualTo("/client-tools/v3.1/helm repo update");
     assertThat(getCommandWithCommandFlags(HelmVersion.V3, command, helmInstallCommandData))
-        .isEqualTo("/client-tools/v3.1/helm repo update");
+        .isEqualTo("/client-tools/v3.1/helm repo update --debug --tls");
   }
 
   @Test

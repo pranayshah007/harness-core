@@ -202,8 +202,7 @@ public class ManifestMigrationService extends NgMigrationService {
 
   @Override
   public List<NGYamlFile> generateYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
-      Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities,
-      NgEntityDetail ngEntityDetail) {
+      Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities) {
     ApplicationManifest applicationManifest = (ApplicationManifest) entities.get(entityId).getEntity();
     return getYamlFilesForManifest(applicationManifest, inputDTO, entities);
   }
@@ -235,6 +234,11 @@ public class ManifestMigrationService extends NgMigrationService {
                 service.getName() + " ValuesOverride " + manifestFile.getFileName());
           }
           String name = identifier;
+          if (MigratorUtility.endsWithIgnoreCase(identifier, "yaml", "yml")) {
+            name = MigratorUtility.endsWithIgnoreCase(identifier, "yaml")
+                ? identifier.substring(0, identifier.length() - 4) + ".yaml"
+                : identifier.substring(0, identifier.length() - 3) + ".yml";
+          }
           String content =
               (String) migratorExpressionUtils.render(manifestFile.getFileContent(), inputDTO.getCustomExpressions());
           return NGYamlFile.builder()
@@ -337,10 +341,7 @@ public class ManifestMigrationService extends NgMigrationService {
   }
 
   public HarnessStore getHarnessStore(List<NGYamlFile> files) {
-    return HarnessStore.builder()
-        .files(ParameterField.createValueField(
-            files.stream().map(file -> ((FileYamlDTO) file.getYaml()).getIdentifier()).collect(Collectors.toList())))
-        .build();
+    return HarnessStore.builder().files(MigratorUtility.getFileStorePaths(files)).build();
   }
 
   @Override

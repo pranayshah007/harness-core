@@ -233,7 +233,7 @@ public class DefaultLicenseServiceImplTest extends CategoryTest {
     when(moduleLicenseInterface.generateFreeLicense(eq(ACCOUNT_IDENTIFIER), eq(DEFAULT_MODULE_TYPE)))
         .thenReturn(ciModuleLicenseDTO);
     when(accountService.getAccount(ACCOUNT_IDENTIFIER)).thenReturn(AccountDTO.builder().build());
-    ModuleLicenseDTO result = licenseService.startFreeLicense(ACCOUNT_IDENTIFIER, CI, null);
+    ModuleLicenseDTO result = licenseService.startFreeLicense(ACCOUNT_IDENTIFIER, CI, null, null);
     verify(accountService, times(1)).updateDefaultExperienceIfApplicable(ACCOUNT_IDENTIFIER, DefaultExperience.NG);
     verify(telemetryReporter, times(1)).sendGroupEvent(eq(ACCOUNT_IDENTIFIER), any(), any());
     verify(telemetryReporter, times(1))
@@ -276,7 +276,7 @@ public class DefaultLicenseServiceImplTest extends CategoryTest {
     when(moduleLicenseInterface.generateFreeLicense(eq(ACCOUNT_IDENTIFIER), eq(DEFAULT_MODULE_TYPE)))
         .thenReturn(cdModuleLicenseDTO);
     when(accountService.getAccount(ACCOUNT_IDENTIFIER)).thenReturn(AccountDTO.builder().build());
-    ModuleLicenseDTO result = licenseService.startFreeLicense(ACCOUNT_IDENTIFIER, CI, null);
+    ModuleLicenseDTO result = licenseService.startFreeLicense(ACCOUNT_IDENTIFIER, CI, null, null);
     verify(accountService, times(1)).updateDefaultExperienceIfApplicable(ACCOUNT_IDENTIFIER, DefaultExperience.NG);
     verify(telemetryReporter, times(1)).sendGroupEvent(eq(ACCOUNT_IDENTIFIER), any(), any());
     verify(telemetryReporter, times(1))

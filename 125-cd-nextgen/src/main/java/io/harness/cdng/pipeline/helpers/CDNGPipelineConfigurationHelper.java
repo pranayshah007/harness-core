@@ -118,7 +118,7 @@ public class CDNGPipelineConfigurationHelper {
   public List<ServiceDefinitionType> getServiceDefinitionTypes(String accountId) {
     return Arrays.stream(ServiceDefinitionType.values())
         .filter(enumFilter.filter(accountId, FeatureName.SSH_NG))
-        .filter(enumFilter.filter(accountId, FeatureName.NG_DEPLOYMENT_TEMPLATE))
+        .filter(enumFilter.filter(accountId, FeatureName.NG_SVC_ENV_REDESIGN))
         .collect(Collectors.toList());
   }
 

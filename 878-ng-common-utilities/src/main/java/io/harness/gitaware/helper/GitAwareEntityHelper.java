@@ -49,8 +49,11 @@ public class GitAwareEntityHelper {
     String branch =
         isNullOrDefault(gitContextRequestParams.getBranchName()) ? "" : gitContextRequestParams.getBranchName();
     String filePath = gitContextRequestParams.getFilePath();
+    if (isNullOrDefault(filePath)) {
+      throw new InvalidRequestException("No file path provided.");
+    }
+    validateFilePathHasCorrectExtension(filePath);
     String connectorRef = gitContextRequestParams.getConnectorRef();
-    validateFilePathHasCorrectExtension(gitContextRequestParams.getFilePath());
     ScmGetFileResponse scmGetFileResponse =
         scmGitSyncHelper.getFileByBranch(Scope.builder()
                                              .accountIdentifier(scope.getAccountIdentifier())
@@ -122,7 +125,7 @@ public class GitAwareEntityHelper {
     if (gitEntityInfo.isNewBranch() && isNullOrDefault(baseBranch)) {
       throw new InvalidRequestException("No base branch provided for committing to new branch");
     }
-    validateFilePathHasCorrectExtension(gitEntityInfo.getFilePath());
+    validateFilePathHasCorrectExtension(filePath);
     // if branch is empty, then git sdk will figure out the default branch for the repo by itself
     String branch = isNullOrDefault(gitEntityInfo.getBranch()) ? "" : gitEntityInfo.getBranch();
     // if commitMsg is empty, then git sdk will use some default Commit Message
@@ -179,7 +182,7 @@ public class GitAwareEntityHelper {
     if (isNullOrDefault(branch)) {
       throw new InvalidRequestException("No branch provided for updating the file.");
     }
-    validateFilePathHasCorrectExtension(gitEntityInfo.getFilePath());
+    validateFilePathHasCorrectExtension(filePath);
     // if commitMsg is empty, then git sdk will use some default Commit Message
     String commitMsg = isNullOrDefault(gitEntityInfo.getCommitMsg()) ? "" : gitEntityInfo.getCommitMsg();
     ScmUpdateFileGitRequest scmUpdateFileGitRequest = ScmUpdateFileGitRequest.builder()

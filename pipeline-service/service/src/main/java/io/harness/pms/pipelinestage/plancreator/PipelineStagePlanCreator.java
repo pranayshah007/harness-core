@@ -17,6 +17,7 @@ import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.execution.utils.SkipInfoUtils;
 import io.harness.pms.pipelinestage.PipelineStageStepParameters;
+import io.harness.pms.pipelinestage.step.PipelineStageStep;
 import io.harness.pms.sdk.core.plan.PlanNode;
 import io.harness.pms.sdk.core.plan.PlanNode.PlanNodeBuilder;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
@@ -60,13 +61,13 @@ public class PipelineStagePlanCreator implements PartialPlanCreator<PipelineStag
 
   @Override
   public PlanCreationResponse createPlanForField(PlanCreationContext ctx, PipelineStageNode stageNode) {
-    // TODO: add step type
     PlanNodeBuilder builder =
         PlanNode.builder()
             .uuid(StrategyUtils.getSwappedPlanNodeId(ctx, stageNode.getUuid()))
             .name(stageNode.getName())
             .identifier(stageNode.getIdentifier())
             .group(StepCategory.STAGE.name())
+            .stepType(PipelineStageStep.STEP_TYPE)
             .stepParameters(getStepParameter(stageNode.getPipelineStageConfig()))
             .skipCondition(SkipInfoUtils.getSkipCondition(stageNode.getSkipCondition()))
             .whenCondition(RunInfoUtils.getRunCondition(stageNode.getWhen()))

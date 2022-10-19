@@ -8,6 +8,7 @@
 package io.harness.cvng.metrics.services.impl;
 
 import static io.harness.cvng.analysis.entities.LearningEngineTask.ExecutionStatus.QUEUED;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import static org.mongodb.morphia.aggregation.Accumulator.accumulator;
 import static org.mongodb.morphia.aggregation.Group.grouping;
@@ -58,6 +59,7 @@ import org.mongodb.morphia.query.Sort;
 @Slf4j
 public class CVNGMetricsPublisher implements MetricsPublisher, MetricDefinitionInitializer {
   private static final Map<Class<? extends PersistentEntity>, QueryParams> TASKS_INFO = new HashMap<>();
+  private static final String ENV = isEmpty(System.getenv("ENV")) ? "localhost" : System.getenv("ENV");
   static {
     TASKS_INFO.put(CVNGStepTask.class,
         QueryParams.builder()
@@ -141,7 +143,7 @@ public class CVNGMetricsPublisher implements MetricsPublisher, MetricDefinitionI
                                           .order(Sort.ascending(LearningEngineTaskKeys.lastUpdatedAt))
                                           .get();
     long timeSinceTask = earliestTask == null ? 0l : now - earliestTask.getLastUpdatedAt();
-    metricService.recordMetric("learning_engine_max_queued_time", timeSinceTask);
+    metricService.recordMetric("learning_engine_max_queued_time_" + ENV, timeSinceTask);
 
     LearningEngineTask earliestDeploymentTask = hPersistence.createQuery(LearningEngineTask.class)
                                                     .filter(LearningEngineTaskKeys.taskStatus, QUEUED)
@@ -151,7 +153,7 @@ public class CVNGMetricsPublisher implements MetricsPublisher, MetricDefinitionI
                                                     .get();
 
     timeSinceTask = earliestDeploymentTask == null ? 0l : now - earliestDeploymentTask.getLastUpdatedAt();
-    metricService.recordMetric("learning_engine_deployment_max_queued_time", timeSinceTask);
+    metricService.recordMetric("learning_engine_deployment_max_queued_time+" + ENV, timeSinceTask);
 
     LearningEngineTask earliestLiveHealthTask = hPersistence.createQuery(LearningEngineTask.class)
                                                     .filter(LearningEngineTaskKeys.taskStatus, QUEUED)
@@ -161,7 +163,7 @@ public class CVNGMetricsPublisher implements MetricsPublisher, MetricDefinitionI
                                                     .get();
 
     timeSinceTask = earliestLiveHealthTask == null ? 0l : now - earliestLiveHealthTask.getLastUpdatedAt();
-    metricService.recordMetric("learning_engine_service_health_max_queued_time", timeSinceTask);
+    metricService.recordMetric("learning_engine_service_health_max_queued_time_" + ENV, timeSinceTask);
   }
   @Override
   public List<MetricConfiguration> getMetricConfiguration() {

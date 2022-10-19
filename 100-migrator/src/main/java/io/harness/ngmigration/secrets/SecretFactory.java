@@ -7,6 +7,7 @@
 
 package io.harness.ngmigration.secrets;
 
+import static io.harness.secretmanagerclient.SecretType.SecretFile;
 import static io.harness.secretmanagerclient.SecretType.SecretText;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -17,6 +18,7 @@ import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.dto.secrets.SecretDTOV2;
 import io.harness.ng.core.dto.secrets.SecretDTOV2.SecretDTOV2Builder;
+import io.harness.ng.core.dto.secrets.SecretFileSpecDTO;
 import io.harness.ng.core.dto.secrets.SecretRequestWrapper;
 import io.harness.ng.core.dto.secrets.SecretSpecDTO;
 import io.harness.ng.core.dto.secrets.SecretTextSpecDTO;
@@ -34,6 +36,7 @@ import software.wings.beans.VaultConfig;
 import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.CgEntityNode;
 import software.wings.ngmigration.NGMigrationEntityType;
+import software.wings.settings.SettingVariableTypes;
 
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
@@ -87,10 +90,17 @@ public class SecretFactory {
       return null;
     }
     SecretManagerConfig secretManagerConfig = (SecretManagerConfig) entities.get(secretManagerId).getEntity();
-
+    String secretManagerIdentifier =
+        MigratorUtility.getIdentifierWithScope(migratedEntities.get(secretManagerId).getNgEntityDetail());
+    // Support secret file
+    if (encryptedData.getType().equals(SettingVariableTypes.CONFIG_FILE)) {
+      return SecretDTOV2.builder()
+          .spec(SecretFileSpecDTO.builder().secretManagerIdentifier(secretManagerIdentifier).build())
+          .type(SecretFile);
+    }
+    // Support secret text
     return getSecretMigrator(secretManagerConfig)
-        .getSecretDTOBuilder(encryptedData, secretManagerConfig,
-            MigratorUtility.getIdentifierWithScope(migratedEntities.get(secretManagerId).getNgEntityDetail()));
+        .getSecretDTOBuilder(encryptedData, secretManagerConfig, secretManagerIdentifier);
   }
 
   public static SecretDTOV2 getHarnessSecretManagerSpec(

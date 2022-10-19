@@ -1,0 +1,35 @@
+pipeline:
+  name: Missing Runtime
+  identifier: Missing_Runtime
+  projectIdentifier: FernandoD
+  orgIdentifier: default
+  tags: {}
+  stages:
+    - stage:
+        name: Stage A
+        identifier: StageA
+        description: ""
+        type: Custom
+        spec:
+          execution:
+            steps:
+              - step:
+                  type: ShellScript
+                  name: Ping
+                  identifier: Ping
+                  spec:
+                    shell: Bash
+                    onDelegate: true
+                    source:
+                      type: Inline
+                      spec:
+                        script: echo "Ping"
+                    environmentVariables: []
+                    outputVariables: []
+                    executionTarget: {}
+                  timeout: 10m
+        tags: {}
+  variables:
+    - name: var1
+      type: Number
+      value: 1410
