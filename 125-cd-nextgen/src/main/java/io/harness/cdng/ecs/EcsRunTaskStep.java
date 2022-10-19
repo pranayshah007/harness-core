@@ -136,6 +136,8 @@ public class EcsRunTaskStep extends TaskChainExecutableWithRollbackAndRbac imple
     InfrastructureOutcome infrastructureOutcome = executionPassThroughData.getInfrastructure();
     final String accountId = AmbianceUtils.getAccountId(ambiance);
 
+    EcsRunTaskStepParameters ecsRunTaskStepParameters = (EcsRunTaskStepParameters) stepElementParameters.getSpec();
+
     EcsRunTaskRequest ecsRunTaskRequest =
         EcsRunTaskRequest.builder()
             .accountId(accountId)
@@ -147,6 +149,7 @@ public class EcsRunTaskStep extends TaskChainExecutableWithRollbackAndRbac imple
             .ecsTaskDefinitionManifestContent(ecsStepExecutorParams.getEcsTaskDefinitionManifestContent())
             .ecsRunTaskRequestDefinitionManifestContent(
                 ecsStepExecutorParams.getEcsRunTaskRequestDefinitionManifestContent())
+            .skipSteadyStateCheck(ecsRunTaskStepParameters.getSkipSteadyStateCheck().getValue())
             .build();
 
     return ecsStepCommonHelper.queueEcsTask(

@@ -21,6 +21,7 @@ import io.harness.EntityType;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
+import io.harness.beans.Scope;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.fileservice.FileServiceClientFactory;
@@ -40,6 +41,9 @@ import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
 import io.harness.cdng.provision.terraform.TerraformConfig.TerraformConfigBuilder;
 import io.harness.cdng.provision.terraform.TerraformConfig.TerraformConfigKeys;
 import io.harness.cdng.provision.terraform.TerraformInheritOutput.TerraformInheritOutputBuilder;
+import io.harness.cdng.provision.terraform.executions.TFPlanExecutionDetailsKey;
+import io.harness.cdng.provision.terraform.executions.TerraformPlanExectionDetailsService;
+import io.harness.cdng.provision.terraform.executions.TerraformPlanExecutionDetails;
 import io.harness.cdng.provision.terraform.output.TerraformPlanJsonOutput;
 import io.harness.common.ParameterFieldHelper;
 import io.harness.connector.ConnectorInfoDTO;
@@ -119,6 +123,7 @@ public class TerraformStepHelper {
 
   @Inject private HPersistence persistence;
   @Inject private K8sStepHelper k8sStepHelper;
+  @Inject TerraformPlanExectionDetailsService terraformPlanExectionDetailsService;
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
   @Inject private GitConfigAuthenticationInfoHelper gitConfigAuthenticationInfoHelper;
   @Inject private FileServiceClientFactory fileService;
@@ -339,29 +344,68 @@ public class TerraformStepHelper {
     return outputName;
   }
 
-  public void cleanupTfPlanJsonForProvisioner(Ambiance ambiance, List<String> planStepFQNs, String provisioner) {
-    for (String planStepFQN : planStepFQNs) {
-      OptionalSweepingOutput tfPlanJsonSweepingOutput = executionSweepingOutputService.resolveOptional(ambiance,
-          RefObjectUtils.getSweepingOutputRefObject(TerraformPlanJsonOutput.getOutputName(planStepFQN, provisioner)));
-      if (tfPlanJsonSweepingOutput == null || !tfPlanJsonSweepingOutput.isFound()) {
-        continue;
-      }
+  public void saveTerraformPlanExecutionDetails(
+      Ambiance ambiance, TerraformTaskNGResponse response, String provisionerIdentifier) {
+    if (isEmpty(response.getTfPlanJsonFileId())) {
+      return;
+    }
+    String planExecutionId = ambiance.getPlanExecutionId();
+    String accountId = AmbianceUtils.getAccountId(ambiance);
+    String projectId = AmbianceUtils.getProjectIdentifier(ambiance);
+    String orgId = AmbianceUtils.getOrgIdentifier(ambiance);
+    String stageExecutionId = ambiance.getStageExecutionId();
+    TerraformPlanExecutionDetails terraformPlanExecutionDetails =
+        TerraformPlanExecutionDetails.builder()
+            .accountIdentifier(accountId)
+            .orgIdentifier(orgId)
+            .projectIdentifier(projectId)
+            .pipelineExecutionId(planExecutionId)
+            .stageExecutionId(stageExecutionId)
+            .provisionerId(provisionerIdentifier)
+            .tfPlanJsonFieldId(response.getTfPlanJsonFileId())
+            .tfPlanFileBucket(FileBucket.TERRAFORM_PLAN_JSON.name())
+            .build();
 
-      TerraformPlanJsonOutput tfPlanJsonOutput = (TerraformPlanJsonOutput) tfPlanJsonSweepingOutput.getOutput();
-      if (isNotEmpty(tfPlanJsonOutput.getProvisionerIdentifier())
-          && provisioner.equals(tfPlanJsonOutput.getProvisionerIdentifier())) {
-        if (isNotEmpty(tfPlanJsonOutput.getTfPlanFileId()) && isNotEmpty(tfPlanJsonOutput.getTfPlanFileBucket())) {
-          try {
-            FileBucket fileBucket = FileBucket.valueOf(tfPlanJsonOutput.getTfPlanFileBucket());
-            log.info("Remove terraform plan json file [{}] from bucket [{}] for provisioner [{}]",
-                tfPlanJsonOutput.getTfPlanFileId(), fileBucket, tfPlanJsonOutput.getProvisionerIdentifier());
-            CGRestUtils.getResponse(fileService.get().deleteFile(tfPlanJsonOutput.getTfPlanFileId(), fileBucket));
-          } catch (Exception e) {
-            log.warn("Failed to remove terraform plan json file [{}] for provisioner [{}]",
-                tfPlanJsonOutput.getTfPlanFileId(), tfPlanJsonOutput.getProvisionerIdentifier(), e);
-          }
+    terraformPlanExectionDetailsService.save(terraformPlanExecutionDetails);
+  }
+
+  public void cleanupTfPlanJson(Ambiance ambiance) {
+    String planExecutionId = ambiance.getPlanExecutionId();
+    String accountId = AmbianceUtils.getAccountId(ambiance);
+    String projectId = AmbianceUtils.getProjectIdentifier(ambiance);
+    String orgId = AmbianceUtils.getOrgIdentifier(ambiance);
+
+    TFPlanExecutionDetailsKey tfPlanExecutionDetailsKey =
+        TFPlanExecutionDetailsKey.builder()
+            .scope(
+                Scope.builder().accountIdentifier(accountId).orgIdentifier(orgId).projectIdentifier(projectId).build())
+            .pipelineExecutionId(planExecutionId)
+            .build();
+
+    List<TerraformPlanExecutionDetails> terraformPlanExecutionDetailsList =
+        terraformPlanExectionDetailsService.listAllPipelineTFPlanExecutionDetails(tfPlanExecutionDetailsKey);
+
+    for (TerraformPlanExecutionDetails terraformPlanExecutionDetails : terraformPlanExecutionDetailsList) {
+      if (isNotEmpty(terraformPlanExecutionDetails.getTfPlanJsonFieldId())
+          && isNotEmpty(terraformPlanExecutionDetails.getTfPlanFileBucket())) {
+        FileBucket fileBucket = FileBucket.valueOf(terraformPlanExecutionDetails.getTfPlanFileBucket());
+        try {
+          log.info("Remove terraform plan json file [{}] from bucket [{}] for provisioner [{}]",
+              terraformPlanExecutionDetails.getTfPlanJsonFieldId(), fileBucket,
+              terraformPlanExecutionDetails.getProvisionerId());
+          CGRestUtils.getResponse(
+              fileService.get().deleteFile(terraformPlanExecutionDetails.getTfPlanJsonFieldId(), fileBucket));
+        } catch (Exception e) {
+          log.warn("Failed to remove terraform plan json file [{}] for provisioner [{}]",
+              terraformPlanExecutionDetails.getTfPlanJsonFieldId(), terraformPlanExecutionDetails.getProvisionerId(),
+              e);
         }
       }
+    }
+    boolean deleteSuccess =
+        terraformPlanExectionDetailsService.deleteAllTerraformPlanExecutionDetails(tfPlanExecutionDetailsKey);
+    if (!deleteSuccess) {
+      log.warn("Unable to delete the TerraformPlanExecutionDetails");
     }
   }
 

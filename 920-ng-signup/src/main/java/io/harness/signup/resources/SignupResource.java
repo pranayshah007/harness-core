@@ -88,9 +88,9 @@ public class SignupResource {
   @PUT
   @Path("/complete/{token}")
   @PublicApi
-  public RestResponse<UserInfo> completeSignupInvite(
-      @PathParam("token") String token, @QueryParam("referer") String referer) {
-    return new RestResponse<>(signupService.completeSignupInvite(token, referer));
+  public RestResponse<UserInfo> completeSignupInvite(@PathParam("token") String token,
+      @QueryParam("referer") String referer, @QueryParam("gaClientId") String gaClientId) {
+    return new RestResponse<>(signupService.completeSignupInvite(token, referer, gaClientId));
   }
 
   /**
@@ -102,8 +102,8 @@ public class SignupResource {
   @POST
   @Path("/oauth")
   @PublicApi
-  public RestResponse<UserInfo> signupOAuth(OAuthSignupDTO dto, @QueryParam("referer") String referer) {
-    return new RestResponse<>(signupService.oAuthSignup(dto, referer));
+  public RestResponse<UserInfo> signupOAuth(OAuthSignupDTO dto) {
+    return new RestResponse<>(signupService.oAuthSignup(dto));
   }
 
   @POST

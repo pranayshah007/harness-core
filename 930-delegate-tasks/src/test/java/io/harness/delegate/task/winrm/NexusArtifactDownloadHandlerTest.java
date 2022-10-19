@@ -34,6 +34,8 @@ import io.harness.security.encryption.SecretDecryptionService;
 import io.harness.shell.ScriptType;
 
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -106,11 +108,15 @@ public class NexusArtifactDownloadHandlerTest extends CategoryTest {
     ConnectorInfoDTO connectorInfoDTO =
         ConnectorInfoDTO.builder().connectorConfig(connectorDTO).connectorType(ConnectorType.NEXUS).build();
 
+    Map<String, String> metadata = new HashMap<>();
+    metadata.put("url", ARTIFACT_URL);
+
     return NexusArtifactDelegateConfig.builder()
         .artifactUrl(ARTIFACT_URL)
         .identifier("identifier")
         .isCertValidationRequired(false)
         .connectorDTO(connectorInfoDTO)
+        .metadata(metadata)
         .encryptedDataDetails(Collections.emptyList())
         .build();
   }

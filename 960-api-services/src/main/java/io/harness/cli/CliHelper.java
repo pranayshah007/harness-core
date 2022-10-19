@@ -73,4 +73,9 @@ public class CliHelper {
         .exitCode(processResult.getExitValue())
         .build();
   }
+
+  @Nonnull
+  public ProcessResult executeCommand(String command) throws IOException, InterruptedException, TimeoutException {
+    return new ProcessExecutor().commandSplit(command).readOutput(true).execute();
+  }
 }

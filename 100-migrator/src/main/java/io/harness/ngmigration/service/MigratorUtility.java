@@ -17,6 +17,7 @@ import io.harness.encryption.SecretRefData;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ngmigration.beans.BaseProvidedInput;
+import io.harness.ngmigration.beans.FileYamlDTO;
 import io.harness.ngmigration.beans.InputDefaults;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
@@ -37,6 +38,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.CaseUtils;
@@ -216,5 +218,25 @@ public class MigratorUtility {
       throw new InvalidRequestException("Trying to scope entity to Project but org/project identifier(s) are missing");
     }
     return inputDTO.getProjectIdentifier();
+  }
+
+  public static boolean endsWithIgnoreCase(String str, String arg, String... args) {
+    if (str.toLowerCase().endsWith(arg)) {
+      return true;
+    }
+    for (String arg1 : args) {
+      if (str.toLowerCase().endsWith(arg1)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  public static ParameterField<List<String>> getFileStorePaths(List<NGYamlFile> files) {
+    if (EmptyPredicate.isEmpty(files)) {
+      return ParameterField.ofNull();
+    }
+    return ParameterField.createValueField(
+        files.stream().map(file -> "/" + ((FileYamlDTO) file.getYaml()).getIdentifier()).collect(Collectors.toList()));
   }
 }

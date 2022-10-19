@@ -84,6 +84,8 @@ import org.springframework.data.mongodb.core.mapping.Document;
     handler = "PipelineExecutionSummaryEntityCD")
 @ChangeDataCapture(table = "service_infra_info", dataStore = "pms-harness", fields = {},
     handler = "PipelineExecutionSummaryEntityServiceAndInfra")
+@ChangeDataCapture(table = "stage_execution_summary_ci", dataStore = "pms-harness", fields = {},
+    handler = "PipelineExecutionSummaryEntityCIStage")
 public class PipelineExecutionSummaryEntity implements PersistentEntity, UuidAware, CreatedAtAware, UpdatedAtAware {
   public static final Duration TTL = ofDays(183);
   public static final long TTL_MONTHS = 6;

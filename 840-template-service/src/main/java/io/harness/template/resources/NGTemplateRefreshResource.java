@@ -23,11 +23,11 @@ import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.template.RefreshRequestDTO;
 import io.harness.ng.core.template.RefreshResponseDTO;
+import io.harness.ng.core.template.refresh.ValidateTemplateInputsResponseDTO;
+import io.harness.ng.core.template.refresh.YamlDiffResponseDTO;
+import io.harness.ng.core.template.refresh.YamlFullRefreshResponseDTO;
 import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.template.beans.PermissionTypes;
-import io.harness.template.beans.refresh.ValidateTemplateInputsResponseDTO;
-import io.harness.template.beans.refresh.YamlDiffResponseDTO;
-import io.harness.template.beans.refresh.YamlFullRefreshResponseDTO;
 import io.harness.template.services.TemplateRefreshService;
 
 import com.google.inject.Inject;

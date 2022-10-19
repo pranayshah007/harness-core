@@ -15,6 +15,7 @@ import static io.harness.beans.FeatureName.ACTIVITY_ID_BASED_TF_BASE_DIR;
 import static io.harness.beans.FeatureName.ANALYSE_TF_PLAN_SUMMARY;
 import static io.harness.beans.FeatureName.GIT_HOST_CONNECTIVITY;
 import static io.harness.beans.FeatureName.SAVE_TERRAFORM_APPLY_SWEEPING_OUTPUT_TO_WORKFLOW;
+import static io.harness.beans.FeatureName.SYNC_GIT_CLONE_AND_COPY_TO_DEST_DIR;
 import static io.harness.beans.FeatureName.TERRAFORM_AWS_CP_AUTHENTICATION;
 import static io.harness.beans.FeatureName.TERRAFORM_REMOTE_BACKEND_CONFIG;
 import static io.harness.beans.OrchestrationWorkflowType.BUILD;
@@ -960,6 +961,8 @@ public abstract class TerraformProvisionState extends State {
                 featureFlagService.isEnabled(GIT_HOST_CONNECTIVITY, executionContext.getApp().getAccountId()))
             .useActivityIdBasedTfBaseDir(
                 featureFlagService.isEnabled(ACTIVITY_ID_BASED_TF_BASE_DIR, context.getAccountId()))
+            .syncGitCloneAndCopyToDestDir(
+                featureFlagService.isEnabled(SYNC_GIT_CLONE_AND_COPY_TO_DEST_DIR, context.getAccountId()))
             .analyseTfPlanSummary(
                 featureFlagService.isEnabled(FeatureName.ANALYSE_TF_PLAN_SUMMARY, context.getAccountId()));
 
@@ -1257,6 +1260,8 @@ public abstract class TerraformProvisionState extends State {
                 featureFlagService.isEnabled(GIT_HOST_CONNECTIVITY, executionContext.getApp().getAccountId()))
             .useActivityIdBasedTfBaseDir(
                 featureFlagService.isEnabled(ACTIVITY_ID_BASED_TF_BASE_DIR, context.getAccountId()))
+            .syncGitCloneAndCopyToDestDir(
+                featureFlagService.isEnabled(SYNC_GIT_CLONE_AND_COPY_TO_DEST_DIR, context.getAccountId()))
             .analyseTfPlanSummary(
                 featureFlagService.isEnabled(FeatureName.ANALYSE_TF_PLAN_SUMMARY, context.getAccountId()));
 

@@ -36,6 +36,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import lombok.AccessLevel;
@@ -158,6 +159,7 @@ public abstract class AbstractServiceLevelObjective
     throw new IllegalArgumentException("Invalid fieldName " + fieldName);
   }
 
+  public abstract Optional<String> mayBeGetMonitoredServiceIdentifier();
   public abstract static class AbstractServiceLevelObjectiveUpdatableEntity<T extends AbstractServiceLevelObjective, D
                                                                                 extends ServiceLevelObjectiveV2DTO>
       implements UpdatableEntity<T, D> {

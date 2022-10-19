@@ -63,7 +63,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.TimeZone;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -159,7 +158,14 @@ public class LicenseServiceImpl implements LicenseService {
       account = accountService.get(account.getUuid());
 
       // Check if all ng licenses inactive before decides expire account
-      CheckExpiryResultDTO ngLicenseDecision = getNgLicenseExpiryDetails(account.getUuid());
+      CheckExpiryResultDTO ngLicenseDecision = CheckExpiryResultDTO.builder().shouldDelete(false).build();
+      try {
+        ngLicenseDecision = licenseExpiryCache.get(
+            account.getUuid(), accountId -> getResponse(ngLicenseHttpClient.checkExpiry(accountId)));
+      } catch (Exception e) {
+        log.warn("Error occurred during check NG license allInactive flag for account {}, due to {}", account.getUuid(),
+            e.getMessage());
+      }
 
       LicenseInfo licenseInfo = account.getLicenseInfo();
 
@@ -210,25 +216,6 @@ public class LicenseServiceImpl implements LicenseService {
     } catch (Exception e) {
       log.warn("Failed to check license info", e);
     }
-  }
-
-  private CheckExpiryResultDTO getNgLicenseExpiryDetails(String accountId) {
-    CheckExpiryResultDTO ngLicenseDecision = null;
-    try {
-      ngLicenseDecision = licenseExpiryCache.getIfPresent(accountId);
-      if (ngLicenseDecision == null) {
-        ngLicenseDecision = getResponse(ngLicenseHttpClient.checkExpiry(accountId));
-      }
-    } catch (Exception e) {
-      log.warn("Error occurred during check NG license allInactive flag for account {}, due to {}", accountId,
-          e.getMessage());
-    }
-
-    if (Objects.nonNull(ngLicenseDecision)) {
-      licenseExpiryCache.put(accountId, ngLicenseDecision);
-      return ngLicenseDecision;
-    }
-    return CheckExpiryResultDTO.builder().shouldDelete(false).build();
   }
 
   @VisibleForTesting

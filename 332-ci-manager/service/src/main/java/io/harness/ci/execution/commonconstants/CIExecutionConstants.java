@@ -167,4 +167,9 @@ public class CIExecutionConstants {
 
   public static final String MEMORY = "MEMORY";
   public static final String CPU = "CPU";
+
+  // build multiplier values
+  public static final Double MACOS_BUILD_MULTIPLIER = 10.0;
+  public static final Double WINDOWS_BUILD_MULTIPLIER = 2.0;
+  public static final Double DEFAULT_BUILD_MULTIPLIER = 1.0;
 }
