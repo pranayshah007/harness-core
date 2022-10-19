@@ -52,7 +52,8 @@ public class StagesPlanCreator extends ChildrenPlanCreator<StagesConfig> {
               .dependencies(DependenciesUtils.toDependenciesProto(stageYamlFieldMap))
               .build());
       PlanCreationResponse planForRollbackStage = RollbackStagePlanCreator.createPlanForRollbackStage(stageYamlField);
-      responseMap.put(stageYamlField.getNode().getUuid() + "_rollbackStage", planForRollbackStage);
+      responseMap.put(stageYamlField.getNode().getUuid() + NGCommonUtilPlanCreationConstants.ROLLBACK_STAGE_UUID_SUFFIX,
+          planForRollbackStage);
     }
     return responseMap;
   }
@@ -81,17 +82,6 @@ public class StagesPlanCreator extends ChildrenPlanCreator<StagesConfig> {
               .setNodeIdentifier(stageYamlField.getNode().getIdentifier())
               .setEdgeLayoutList(
                   i + 1 < edgeLayoutLists.size() ? edgeLayoutLists.get(i + 1) : EdgeLayoutList.newBuilder().build())
-              .build());
-
-      // create node for corresponding rollback Stage
-      stageYamlFieldMap.put(stageYamlField.getNode().getUuid() + "_rollbackStage",
-          GraphLayoutNode.newBuilder()
-              .setNodeUUID(stageYamlField.getNode().getUuid() + "_rollbackStage")
-              .setNodeType(stageYamlField.getNode().getType())
-              .setName(
-                  stageYamlField.getNode().getName() + " " + NGCommonUtilPlanCreationConstants.ROLLBACK_STAGE_NODE_NAME)
-              .setNodeGroup(StepOutcomeGroup.STAGE.name())
-              .setNodeIdentifier(stageYamlField.getNode().getUuid() + "_rollbackStage")
               .build());
     }
     return GraphLayoutResponse.builder()

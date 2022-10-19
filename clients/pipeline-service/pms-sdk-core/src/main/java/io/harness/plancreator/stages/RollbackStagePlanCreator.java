@@ -43,9 +43,9 @@ public class RollbackStagePlanCreator {
     // todo: create rollback node for non cd stages
     PlanNode rollbackStagePlanNode =
         PlanNode.builder()
-            .uuid(stageNode.getUuid() + "_rollbackStage")
+            .uuid(stageNode.getUuid() + NGCommonUtilPlanCreationConstants.ROLLBACK_STAGE_UUID_SUFFIX)
             .name(stageNode.getName() + " " + NGCommonUtilPlanCreationConstants.ROLLBACK_STAGE_NODE_NAME)
-            .identifier(stageNode.getUuid() + "_rollbackStage")
+            .identifier(stageNode.getUuid() + NGCommonUtilPlanCreationConstants.ROLLBACK_STAGE_UUID_SUFFIX)
             .stepType(NGSectionStep.STEP_TYPE)
             .stepParameters(
                 NGSectionStepParameters.builder()
@@ -68,13 +68,13 @@ public class RollbackStagePlanCreator {
     List<String> childNodeIDs = new ArrayList<>();
     stageNodes.forEach(stageNode -> {
       planCreationResponse.merge(createPlanForSingleStage(stageNode));
-      childNodeIDs.add(stageNode.getUuid() + "_rollbackStage");
+      childNodeIDs.add(stageNode.getUuid() + NGCommonUtilPlanCreationConstants.ROLLBACK_STAGE_UUID_SUFFIX);
     });
     PlanNode parallelRollbackPlanNode =
         PlanNode.builder()
-            .uuid(parallelStageNode.getUuid() + "_rollbackStage")
+            .uuid(parallelStageNode.getUuid() + NGCommonUtilPlanCreationConstants.ROLLBACK_STAGE_UUID_SUFFIX)
             .name(NGCommonUtilPlanCreationConstants.ROLLBACK_STAGE_NODE_NAME)
-            .identifier(parallelStageNode.getUuid() + "_rollbackStage")
+            .identifier(parallelStageNode.getUuid() + NGCommonUtilPlanCreationConstants.ROLLBACK_STAGE_UUID_SUFFIX)
             .stepType(NGForkStep.STEP_TYPE)
             .stepParameters(ForkStepParameters.builder().parallelNodeIds(childNodeIDs).build())
             .facilitatorObtainment(

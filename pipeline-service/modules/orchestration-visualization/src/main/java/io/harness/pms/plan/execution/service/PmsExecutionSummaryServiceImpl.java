@@ -17,6 +17,7 @@ import io.harness.engine.utils.OrchestrationUtils;
 import io.harness.execution.NodeExecution;
 import io.harness.graph.stepDetail.service.PmsGraphStepDetailsService;
 import io.harness.plan.NodeType;
+import io.harness.plancreator.NGCommonUtilPlanCreationConstants;
 import io.harness.plancreator.strategy.StrategyType;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.steps.StepCategory;
@@ -161,7 +162,7 @@ public class PmsExecutionSummaryServiceImpl implements PmsExecutionSummaryServic
   public void addStageNodeInGraphForPipelineRollback(
       String planExecutionId, NodeExecution nodeExecution, Update summaryUpdate) {
     String planNodeUuid = nodeExecution.getNodeId();
-    if (!planNodeUuid.endsWith("_rollbackStage")) {
+    if (!planNodeUuid.endsWith(NGCommonUtilPlanCreationConstants.ROLLBACK_STAGE_UUID_SUFFIX)) {
       return;
     }
 
