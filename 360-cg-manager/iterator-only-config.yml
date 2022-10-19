@@ -57,7 +57,7 @@ serviceScheduler:
   enabled: true
   #mongoUri: mongodb://localhost:27017/service_scheduler
 
-enableIterators: false
+enableIterators: true
 trialRegistrationAllowed: true
 eventsFrameworkAvailableInOnPrem: false
 trialRegistrationAllowedForBugathon: false
