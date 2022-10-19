@@ -36,6 +36,8 @@ function copy_cg_manager_jars(){
 	cp ../../360-cg-manager/newrelic.yml .
 	cp ../../360-cg-manager/config.yml .
 	cp ../../400-rest/src/main/resources/redisson-jcache.yaml .
+	cp ../../400-rest/src/main/resources/jfr/default.jfc .
+  cp ../../400-rest/src/main/resources/jfr/profile.jfc .
 
 	cp ../../dockerization/manager/Dockerfile-manager-cie-jdk ./Dockerfile-cie-jdk
 	cp ../../dockerization/base-images/apm/inject-onprem-apm-bins-into-dockerimage.sh .

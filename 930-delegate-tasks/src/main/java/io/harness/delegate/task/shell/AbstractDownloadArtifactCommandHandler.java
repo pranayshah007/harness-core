@@ -110,7 +110,8 @@ public abstract class AbstractDownloadArtifactCommandHandler implements CommandH
 
     logCallback.saveExecutionLog(format("Begin execution of command: %s", commandUnit.getName()), INFO);
     logCallback.saveExecutionLog("Downloading artifact from " + getArtifactType(artifactDelegateConfig) + " to "
-            + commandUnit.getDestinationPath() + "\\" + getArtifactFileName(artifactDelegateConfig),
+            + commandUnit.getDestinationPath() + ((ScriptType.BASH == getScriptType()) ? "/" : "\\")
+            + getArtifactFileName(artifactDelegateConfig),
         INFO);
 
     if (isEmpty(commandUnit.getDestinationPath())) {
@@ -164,8 +165,8 @@ public abstract class AbstractDownloadArtifactCommandHandler implements CommandH
     if (artifactDelegateConfig instanceof NexusArtifactDelegateConfig) {
       NexusArtifactDelegateConfig nexusArtifactDelegateConfig = (NexusArtifactDelegateConfig) artifactDelegateConfig;
       NexusVersion nexusVersion = getNexusVersion(nexusArtifactDelegateConfig);
-      return getNexusArtifactFileName(nexusVersion, nexusArtifactDelegateConfig.getRepositoryFormat(),
-          nexusArtifactDelegateConfig.getArtifactUrl());
+      return getNexusArtifactFileName(
+          nexusVersion, nexusArtifactDelegateConfig.getRepositoryFormat(), nexusArtifactDelegateConfig.getMetadata());
     }
 
     return ArtifactoryUtils.getArtifactFileName(artifactDelegateConfig.getArtifactPath());

@@ -28,6 +28,7 @@ import io.harness.pms.plan.execution.beans.dto.GraphLayoutNodeDTO;
 import io.harness.pms.plan.execution.beans.dto.GraphLayoutNodeDTO.GraphLayoutNodeDTOKeys;
 import io.harness.repositories.executions.PmsExecutionSummaryRespository;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import java.util.List;
 import java.util.Map;
@@ -198,8 +199,8 @@ public class PmsExecutionSummaryServiceImpl implements PmsExecutionSummaryServic
     }
   }
 
-  private void updateStrategyNodeFields(
-      NodeExecution nodeExecution, Update update, boolean isStrategyTypeAlreadyChecked) {
+  @VisibleForTesting
+  void updateStrategyNodeFields(NodeExecution nodeExecution, Update update, boolean isStrategyTypeAlreadyChecked) {
     ConcurrentChildInstance concurrentChildInstance =
         pmsGraphStepDetailsService.fetchConcurrentChildInstance(nodeExecution.getUuid());
     if (concurrentChildInstance != null) {

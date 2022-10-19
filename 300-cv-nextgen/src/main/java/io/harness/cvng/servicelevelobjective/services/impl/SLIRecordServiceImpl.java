@@ -365,8 +365,8 @@ public class SLIRecordServiceImpl implements SLIRecordService {
         .asList();
   }
 
-  @VisibleForTesting
-  List<SLIRecord> getSLIRecords(String sliId, Instant startTimeStamp, Instant endTimeStamp) {
+  @Override
+  public List<SLIRecord> getSLIRecords(String sliId, Instant startTimeStamp, Instant endTimeStamp) {
     return hPersistence.createQuery(SLIRecord.class, excludeAuthorityCount)
         .filter(SLIRecordKeys.sliId, sliId)
         .field(SLIRecordKeys.timestamp)

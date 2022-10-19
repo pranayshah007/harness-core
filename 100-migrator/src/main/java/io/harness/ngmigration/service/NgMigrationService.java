@@ -78,8 +78,7 @@ public abstract class NgMigrationService {
   }
 
   public abstract List<NGYamlFile> generateYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
-      Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities,
-      NgEntityDetail ngEntityDetail);
+      Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities);
 
   public boolean canMigrate(CgEntityId id, CgEntityId root, boolean canMigrateAll) {
     return canMigrateAll;
@@ -111,7 +110,7 @@ public abstract class NgMigrationService {
       }
       if (yamlDTO == null) {
         // Deleted
-        return generateYaml(inputDTO, entities, graph, entityId, migratedEntities, ngEntityDetail);
+        return generateYaml(inputDTO, entities, graph, entityId, migratedEntities);
       } else {
         ngYamlFile.setExists(true);
         ngYamlFile.setYaml(yamlDTO);
@@ -119,7 +118,7 @@ public abstract class NgMigrationService {
         return Arrays.asList(ngYamlFile);
       }
     } else {
-      return generateYaml(inputDTO, entities, graph, entityId, migratedEntities, ngEntityDetail);
+      return generateYaml(inputDTO, entities, graph, entityId, migratedEntities);
     }
   }
 

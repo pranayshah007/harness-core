@@ -54,10 +54,20 @@ public abstract class VerificationJobSpec {
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH, value = "Possible values: [Low, Medium, High]")
   ParameterField<String> sensitivity;
 
+  @ApiModelProperty(dataType = SwaggerConstants.BOOLEAN_CLASSPATH, value = "Possible values: [true, false]")
+  ParameterField<Boolean> failOnNoAnalysis;
+
+  @ApiModelProperty(hidden = true)
+  public ParameterField<Boolean> getFailOnNoAnalysis() {
+    return failOnNoAnalysis == null || failOnNoAnalysis.getValue() == null ? ParameterField.createValueField(false)
+                                                                           : failOnNoAnalysis;
+  }
+
   @ApiModelProperty(hidden = true)
   public VerificationJobBuilder getVerificationJobBuilder() {
     VerificationJobBuilder verificationJobBuilder = verificationJobBuilder();
-    return verificationJobBuilder.duration(RuntimeParameter.builder().value(duration.getValue()).build());
+    return verificationJobBuilder.duration(RuntimeParameter.builder().value(duration.getValue()).build())
+        .failOnNoAnalysis(RuntimeParameter.builder().value(getFailOnNoAnalysis().getValue().toString()).build());
   }
   @ApiModelProperty(hidden = true) protected abstract VerificationJobBuilder verificationJobBuilder();
   public void validate() {

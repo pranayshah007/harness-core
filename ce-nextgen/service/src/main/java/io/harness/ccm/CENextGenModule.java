@@ -61,6 +61,10 @@ import io.harness.ccm.remote.resources.policies.PolicyService;
 import io.harness.ccm.remote.resources.policies.PolicyServiceImpl;
 import io.harness.ccm.remote.resources.policies.PolicySetService;
 import io.harness.ccm.remote.resources.policies.PolicySetServiceImpl;
+import io.harness.ccm.remote.resources.governance.PolicyService;
+import io.harness.ccm.remote.resources.governance.PolicyServiceImpl;
+import io.harness.ccm.remote.resources.governance.PolicySetService;
+import io.harness.ccm.remote.resources.governance.PolicySetServiceImpl;
 import io.harness.ccm.service.impl.AWSBucketPolicyHelperServiceImpl;
 import io.harness.ccm.service.impl.AWSOrganizationHelperServiceImpl;
 import io.harness.ccm.service.impl.AnomalyServiceImpl;
@@ -331,8 +335,6 @@ public class CENextGenModule extends AbstractModule {
     registerOutboxEventHandlers();
     bind(OutboxEventHandler.class).to(CENextGenOutboxEventHandler.class);
     bind(CCMRbacHelper.class).to(CCMRbacHelperImpl.class);
-    bind(PolicyService.class).to(PolicyServiceImpl.class);
-    bind(PolicySetService.class).to(PolicySetServiceImpl.class);
 
     registerEventsFrameworkMessageListeners();
 

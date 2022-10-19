@@ -1,3 +1,10 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.ccm.remote.resources;
 
 import static io.harness.rule.OwnerRule.SAHIBA;
@@ -10,6 +17,7 @@ import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
 import io.harness.ccm.rbac.CCMRbacHelper;
 import io.harness.ccm.remote.resources.policies.*;
+import io.harness.ccm.remote.resources.governance.*;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.rule.Owner;
 
@@ -43,23 +51,23 @@ public class GovernancePolicyTest extends CategoryTest {
   private Policy policy;
   private PolicyRequest policyRequest;
   private Policy createPolicyDTO;
-  private GovernancePolicy policymanagement;
+  private GovernanceResource policymanagement;
   private ListDTO listDTO;
 
   @Before
   public void setUp() throws IllegalAccessException, IOException {
     policy = Policy.builder()
-                      .uuid(UNIQUE_ID)
-                      .accountId(ACCOUNT_ID)
-                      .name(NAME)
-                      .resource(RESOURCE)
-                      .description(DESCRIPTION)
-                      .policyYaml(POLICY)
-                      .tags(TAGS)
-                      .orgIdentifier(ORG_PARAM_MESSAGE)
-                      .projectIdentifier(PROJECT_PARAM_MESSAGE)
-                      .build();
-    policymanagement = new GovernancePolicy(policyService, rbacHelper);
+                 .uuid(UNIQUE_ID)
+                 .accountId(ACCOUNT_ID)
+                 .name(NAME)
+                 .resource(RESOURCE)
+                 .description(DESCRIPTION)
+                 .policyYaml(POLICY)
+                 .tags(TAGS)
+                 .orgIdentifier(ORG_PARAM_MESSAGE)
+                 .projectIdentifier(PROJECT_PARAM_MESSAGE)
+                 .build();
+    policymanagement = new GovernanceResource(policyService, rbacHelper);
     createPolicyDTO = policy.toDTO();
     Policies.add(policy);
   }
