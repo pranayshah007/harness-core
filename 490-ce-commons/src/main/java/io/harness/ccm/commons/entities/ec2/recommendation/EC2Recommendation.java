@@ -7,8 +7,8 @@
 
 package io.harness.ccm.commons.entities.ec2.recommendation;
 
+import static io.harness.annotations.dev.HarnessTeam.CE;
 
-import com.google.common.collect.ImmutableList;
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.MongoMapSanitizer;
@@ -20,6 +20,10 @@ import io.harness.persistence.CreatedAtAware;
 import io.harness.persistence.PersistentEntity;
 import io.harness.persistence.UpdatedAtAware;
 import io.harness.persistence.UuidAware;
+
+import com.google.common.collect.ImmutableList;
+import java.time.Instant;
+import java.util.List;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
@@ -29,11 +33,6 @@ import org.hibernate.validator.constraints.NotEmpty;
 import org.mongodb.morphia.annotations.Entity;
 import org.mongodb.morphia.annotations.Id;
 
-import java.time.Instant;
-import java.util.List;
-
-import static io.harness.annotations.dev.HarnessTeam.CE;
-
 @Data
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
@@ -42,48 +41,44 @@ import static io.harness.annotations.dev.HarnessTeam.CE;
 @Entity(value = "ec2Recommendation", noClassnameStored = true)
 @OwnedBy(CE)
 public final class EC2Recommendation
-        implements PersistentEntity, UuidAware, CreatedAtAware, UpdatedAtAware, AccountAccess {
-    public static List<MongoIndex> mongoIndexes() {
-        return ImmutableList.<MongoIndex>builder()
-                .add(CompoundMongoIndex.builder()
-                        .name("unique_accountId_recommendationType_awsAccountId_instanceId")
-                        .unique(true)
-                        .field(EC2RecommendationKeys.accountId)
-                        .field(EC2RecommendationKeys.recommendationType)
-                        .field(EC2RecommendationKeys.awsAccountId)
-                        .field(EC2RecommendationKeys.instanceId)
-                        .build())
-                .build();
-    }
+    implements PersistentEntity, UuidAware, CreatedAtAware, UpdatedAtAware, AccountAccess {
+  public static List<MongoIndex> mongoIndexes() {
+    return ImmutableList.<MongoIndex>builder()
+        .add(CompoundMongoIndex.builder()
+                 .name("unique_accountId_awsAccountId_instanceId")
+                 .unique(true)
+                 .field(EC2RecommendationKeys.accountId)
+                 .field(EC2RecommendationKeys.awsAccountId)
+                 .field(EC2RecommendationKeys.instanceId)
+                 .build())
+        .build();
+  }
 
-    private static final MongoMapSanitizer SANITIZER = new MongoMapSanitizer('~');
+  private static final MongoMapSanitizer SANITIZER = new MongoMapSanitizer('~');
 
-    @Id
-    String uuid;
-    long createdAt;
-    long lastUpdatedAt;
+  @Id String uuid;
+  long createdAt;
+  long lastUpdatedAt;
 
-    @NotEmpty String accountId;
-    @NotEmpty String recommendationType;
-    @NotEmpty String awsAccountId;
-    @NotEmpty String instanceId;
-    String rightsizingType;
-    String instanceName;
-    String instanceType;
-    String platform;
-    String region;
-    String memory;
-    String sku;
-    String vcpu;
-    String currentMaxCPU;
-    String expectedMaxCPU;
-    String currentMaxMemory;
-    String expectedMaxMemory;
-    String currentMonthlyCost;
-    String currencyCode;
-    EC2RecommendationDetail recommendationInfo;
-    String expectedMonthlySaving;
-    String expectedMonthlyCost;
-    Instant lastUpdatedTime;
-
+  @NotEmpty String accountId;
+  @NotEmpty String awsAccountId;
+  @NotEmpty String instanceId;
+  String rightsizingType;
+  String instanceName;
+  String instanceType;
+  String platform;
+  String region;
+  String memory;
+  String sku;
+  String vcpu;
+  String currentMaxCPU;
+  String expectedMaxCPU;
+  String currentMaxMemory;
+  String expectedMaxMemory;
+  String currentMonthlyCost;
+  String currencyCode;
+  List<EC2RecommendationDetail> recommendationInfo;
+  String expectedMonthlySaving;
+  String expectedMonthlyCost;
+  Instant lastUpdatedTime;
 }
