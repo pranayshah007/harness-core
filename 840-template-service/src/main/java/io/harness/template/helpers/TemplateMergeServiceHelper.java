@@ -466,7 +466,8 @@ public class TemplateMergeServiceHelper {
     TemplateVariableEvaluator variableEvaluator = new TemplateVariableEvaluator(variableValues);
     EngineExpressionEvaluator.PartialEvaluateResult result =
         variableEvaluator.partialRenderExpression(mergedYaml);
-    return result==null || isEmpty(result.getExpressionValue()) ? mergedYaml : result.getExpressionValue();
+    String finalYaml = result.getExpressionValue() == null? (String) result.getValue(): result.getExpressionValue();
+    return isEmpty(finalYaml) ? mergedYaml : finalYaml;
   }
 
   private String removeOmittedRuntimeInputsFromMergedYaml(String mergedYaml, String templateInputsYaml)

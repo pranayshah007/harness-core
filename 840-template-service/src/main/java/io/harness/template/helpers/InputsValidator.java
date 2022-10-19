@@ -8,8 +8,11 @@
 package io.harness.template.helpers;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.template.beans.NGTemplateConstants.TEMPLATE;
 import static io.harness.template.beans.NGTemplateConstants.TEMPLATE_INPUTS;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
@@ -18,6 +21,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ngexception.NGTemplateException;
 import io.harness.ng.core.template.refresh.NgManagerRefreshRequestDTO;
 import io.harness.pms.merger.helpers.RuntimeInputsValidator;
+import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
@@ -41,6 +45,7 @@ import com.google.inject.Singleton;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -241,11 +246,24 @@ public class InputsValidator {
       return;
     }
 
+    boolean templateVariablesEnabled =
+            featureFlagHelperService.isEnabled(accountId, FeatureName.NG_TEMPLATE_VARIABLES );
+
+    ObjectNode templateVariablesFromTemplate = null;
     // Generate the Template Spec from the Template YAML
     JsonNode templateSpec;
     try {
       NGTemplateConfig templateConfig = YamlPipelineUtils.read(templateYaml, NGTemplateConfig.class);
       templateSpec = templateConfig.getTemplateInfoConfig().getSpec();
+      YamlField templateYamlField = YamlUtils.readTree(templateYaml).getNode().getField(TEMPLATE);
+      if (templateVariablesEnabled) {
+        if (templateYamlField == null) {
+          log.error("Yaml provided is not a template yaml. Yaml:\n" + templateYaml);
+          throw new NGTemplateException("Yaml provided is not a template yaml.");
+        }
+        templateVariablesFromTemplate = (ObjectNode) templateYamlField.getNode().getCurrJsonNode();
+        templateVariablesFromTemplate.retain(YAMLFieldNameConstants.VARIABLES);
+      }
     } catch (IOException e) {
       log.error("Could not read template yaml", e);
       throw new NGTemplateException("Could not read template yaml: " + e.getMessage());
@@ -254,6 +272,20 @@ public class InputsValidator {
     // if no child node of template is invalid, then verify template inputs against the template.
     JsonNode templateInputs = templateNodeValue.get(TEMPLATE_INPUTS);
     if (!RuntimeInputsValidator.areInputsValidAgainstSourceNode(templateInputs, templateSpec, KEYS_TO_IGNORE)) {
+      inputsValidationResponse.setValid(false);
+    }
+
+    if(!templateVariablesEnabled){
+      return;
+    }
+    JsonNode templateVariables = templateNodeValue.get(YAMLFieldNameConstants.VARIABLES);
+    ObjectMapper mapper = new ObjectMapper();
+    ObjectNode templateVariablesFromPipelineWithRoot = null;
+    if(templateVariables!=null && !templateVariables.isEmpty()) {
+      templateVariablesFromPipelineWithRoot = mapper.createObjectNode();
+      templateVariablesFromPipelineWithRoot.set(YAMLFieldNameConstants.VARIABLES, templateVariables);
+    }
+    if (!RuntimeInputsValidator.areInputsValidAgainstSourceNode(templateVariablesFromPipelineWithRoot, templateVariablesFromTemplate, new HashSet<>())) {
       inputsValidationResponse.setValid(false);
     }
   }

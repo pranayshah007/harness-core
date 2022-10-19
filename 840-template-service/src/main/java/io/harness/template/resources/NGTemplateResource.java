@@ -793,42 +793,11 @@ public class NGTemplateResource {
     String entityYaml = templateYamlConversionHelper.convertTemplateYamlToEntityYaml(templateEntity);
     boolean templateVariablesEnabled =
         TemplateYamlSchemaMergeHelper.isFeatureFlagEnabled(FeatureName.NG_TEMPLATE_VARIABLES, accountId, accountClient);
-    if (templateEntity.getTemplateEntityType().getOwnerTeam().equals(PIPELINE)) {
-      VariablesServiceRequestV2.Builder requestBuilder = VariablesServiceRequestV2.newBuilder();
-      requestBuilder.setAccountId(accountId);
-      if (EmptyPredicate.isNotEmpty(orgId)) {
-        requestBuilder.setOrgId(orgId);
-      }
-      if (EmptyPredicate.isNotEmpty(projectId)) {
-        requestBuilder.setProjectId(projectId);
-      }
-      requestBuilder.setYaml(entityYaml);
-      VariablesServiceRequestV2 request = requestBuilder.build();
-      VariableMergeResponseProto variables = variablesServiceBlockingStub.getVariablesV2(request);
-      VariableMergeServiceResponse variableMergeServiceResponse = VariablesResponseDtoMapper.toDto(variables);
-      return ResponseDTO.newResponse(templateVariablesEnabled
-              ? templateServiceHelper.addTemplateVariablesToVariablesApi(
-                  variableMergeServiceResponse, appliedTemplateYaml)
-              : variableMergeServiceResponse);
-    } else if (templateEntity.getTemplateEntityType().equals(TemplateEntityType.CUSTOM_DEPLOYMENT_TEMPLATE)) {
-      CustomDeploymentYamlRequestDTO requestDTO =
-          CustomDeploymentYamlRequestDTO.builder().entityYaml(entityYaml).build();
-      CustomDeploymentVariableResponseDTO customDeploymentVariableResponseDTO =
-          NGRestUtils.getResponse(customDeploymentResourceClient.getExpressionVariables(requestDTO));
-      return ResponseDTO.newResponse(
-          CustomDeploymentVariablesUtils.getVariablesFromResponse(customDeploymentVariableResponseDTO));
-    } else {
-      VariableMergeServiceResponse variableMergeServiceResponse =
-          YamlVariablesUtils.getVariablesFromYaml(entityYaml, templateEntity.getTemplateEntityType());
-      return ResponseDTO.newResponse(templateVariablesEnabled
-              ? templateServiceHelper.addTemplateVariablesToVariablesApi(
-                  variableMergeServiceResponse, appliedTemplateYaml)
-              : variableMergeServiceResponse);
-    }
     TemplateVariableCreatorService ngTemplateVariableService =
         templateVariableCreatorFactory.getVariablesService(templateEntity.getTemplateEntityType());
-    return ResponseDTO.newResponse(ngTemplateVariableService.getVariables(
-        accountId, orgId, projectId, entityYaml, templateEntity.getTemplateEntityType()));
+    VariableMergeServiceResponse variableResponse = ngTemplateVariableService.getVariables(
+    accountId, orgId, projectId, entityYaml, templateEntity.getTemplateEntityType());
+    return ResponseDTO.newResponse(templateVariablesEnabled? templateServiceHelper.addTemplateVariablesToVariablesApi(variableResponse, appliedTemplateYaml): variableResponse);
   }
 
   @GET

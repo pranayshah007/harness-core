@@ -106,8 +106,7 @@ public class NGTemplateResourceTest extends CategoryTest {
   @Mock CustomDeploymentResourceClient customDeploymentResourceClient;
   @Mock TemplateVariableCreatorFactory templateVariableCreatorFactory;
 
-  @Mock
-  AccountClient accountClient;
+  @Mock AccountClient accountClient;
 
   private final String ACCOUNT_ID = "account_id";
   private final String ORG_IDENTIFIER = "orgId";
@@ -153,8 +152,8 @@ public class NGTemplateResourceTest extends CategoryTest {
     variablesServiceBlockingStub = VariablesServiceGrpc.newBlockingStub(channel);
 
     templateResource = new NGTemplateResource(templateService, templateServiceHelper, accessControlClient,
-        templateMergeService, variablesServiceBlockingStub, templateYamlConversionHelper, templateReferenceHelper, accountClient,
-        customDeploymentResourceClient, templateVariableCreatorFactory);
+        templateMergeService, variablesServiceBlockingStub, templateYamlConversionHelper, templateReferenceHelper,
+        accountClient, customDeploymentResourceClient, templateVariableCreatorFactory);
     ClassLoader classLoader = this.getClass().getClassLoader();
     String filename = "template.yaml";
     yaml = Resources.toString(Objects.requireNonNull(classLoader.getResource(filename)), StandardCharsets.UTF_8);
