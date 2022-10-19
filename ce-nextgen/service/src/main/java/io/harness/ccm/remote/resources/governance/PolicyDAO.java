@@ -7,6 +7,7 @@
 
 package io.harness.ccm.remote.resources.governance;
 
+import io.harness.exception.InvalidRequestException;
 import io.harness.persistence.HPersistence;
 
 import com.google.inject.Inject;
@@ -55,13 +56,18 @@ public class PolicyDAO {
   }
 
   public Policy listid(String accountId, String uuid) {
+  try {
     return hPersistence.createQuery(Policy.class)
-        .field(Policy.PolicyId.accountId)
-        .equal(accountId)
-        .field(Policy.PolicyId.uuid)
-        .equal(uuid)
-        .asList()
-        .get(0);
+            .field(Policy.PolicyId.accountId)
+            .equal(accountId)
+            .field(Policy.PolicyId.uuid)
+            .equal(uuid)
+            .asList()
+            .get(0);
+  } catch (IndexOutOfBoundsException e) {
+    log.error("No such policy exists,{} accountId{} uuid{}", e,accountId,uuid);
+    throw new InvalidRequestException("No such policy exists");
+  }
   }
 
   public List<Policy> findByTagAndResource(String resource, String tag, String accountId) {

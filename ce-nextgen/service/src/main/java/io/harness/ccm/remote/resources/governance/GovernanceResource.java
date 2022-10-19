@@ -25,6 +25,7 @@ import io.harness.security.annotations.NextGenManagerAuth;
 import com.codahale.metrics.annotation.ExceptionMetered;
 import com.codahale.metrics.annotation.Timed;
 import com.google.inject.Inject;
+import io.harness.security.annotations.PublicApi;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
@@ -49,6 +50,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
 
 @Slf4j
 @Service
@@ -75,8 +77,8 @@ import lombok.extern.slf4j.Slf4j;
       @ApiResponse(code = 400, response = FailureDTO.class, message = "Bad Request")
       , @ApiResponse(code = 500, response = ErrorDTO.class, message = "Internal server error")
     })
-@NextGenManagerAuth
-//@PublicApi
+//@NextGenManagerAuth
+@PublicApi
 public class GovernanceResource {
   private final PolicyService policyService;
   private final CCMRbacHelper rbacHelper;
@@ -219,26 +221,26 @@ public class GovernanceResource {
     return ResponseDTO.newResponse(Policies);
   }
 
-  @POST
-  @Path("enqueue")
-  @Timed
-  @ExceptionMetered
-  @Consumes(MediaType.APPLICATION_JSON)
-  @ApiOperation(value = "Enqueues job for execution", nickname = "enqueueGovernanceJob")
-  // TODO: Also check with PL team as this does not require accountId to be passed, how to add accountId in the log
-  // context here ?
-  @Operation(operationId = "enqueueGovernanceJob", description = "Enqueues job for execution.",
-      summary = "Enqueues job for execution",
-      responses =
-      {
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Returns success when job is enqueued",
-            content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
-      })
-  public ResponseDTO<GovernanceEnqueueResponseDTO>
-  enqueue(@RequestBody(required = true, description = "Request body for queuing the governance job")
-      @Valid GovernanceJobEnqueueDTO governanceJobEnqueueDTO) {
-    log.info("Policy setid is {}", governanceJobEnqueueDTO.getPolicySetId());
-    // Next is fetch from Mongo this policySetId and enqueue in the Faktory queue one by one.
-    return ResponseDTO.newResponse();
-  }
+//  @POST
+//  @Path("enqueue")
+//  @Timed
+//  @ExceptionMetered
+//  @Consumes(MediaType.APPLICATION_JSON)
+//  @ApiOperation(value = "Enqueues job for execution", nickname = "enqueueGovernanceJob")
+//  // TODO: Also check with PL team as this does not require accountId to be passed, how to add accountId in the log
+//  // context here ?
+//  @Operation(operationId = "enqueueGovernanceJob", description = "Enqueues job for execution.",
+//      summary = "Enqueues job for execution",
+//      responses =
+//      {
+//        @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Returns success when job is enqueued",
+//            content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
+//      })
+//  public ResponseDTO<GovernanceEnqueueResponseDTO>
+//  enqueue(@RequestBody(required = true, description = "Request body for queuing the governance job")
+//      @Valid GovernanceJobEnqueueDTO governanceJobEnqueueDTO) {
+//    log.info("Policy setid is {}", governanceJobEnqueueDTO.getPolicySetId());
+//    // Next is fetch from Mongo this policySetId and enqueue in the Faktory queue one by one.
+//    return ResponseDTO.newResponse();
+//  }
 }

@@ -16,7 +16,6 @@ import static org.mockito.Mockito.verify;
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
 import io.harness.ccm.rbac.CCMRbacHelper;
-import io.harness.ccm.remote.resources.policies.*;
 import io.harness.ccm.remote.resources.governance.*;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.rule.Owner;

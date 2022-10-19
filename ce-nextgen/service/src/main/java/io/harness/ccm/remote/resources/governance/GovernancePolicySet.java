@@ -15,6 +15,7 @@ import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.rbac.CCMRbacHelper;
 import io.harness.ccm.utils.LogAccountIdentifier;
+import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -23,6 +24,7 @@ import io.harness.security.annotations.NextGenManagerAuth;
 import com.codahale.metrics.annotation.ExceptionMetered;
 import com.codahale.metrics.annotation.Timed;
 import com.google.inject.Inject;
+import io.harness.security.annotations.PublicApi;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
@@ -45,12 +47,15 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Api("policyset")
 @Path("policyset")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-@NextGenManagerAuth
-//@PublicApi
+//@NextGenManagerAuth
+@PublicApi
 @Service
 @OwnedBy(CE)
 @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Bad Request",
@@ -74,11 +79,14 @@ import org.springframework.stereotype.Service;
 public class GovernancePolicySet {
   private final CCMRbacHelper rbacHelper;
   private final PolicySetService policySetService;
+  private final PolicyService policyService;
 
   @Inject
-  public GovernancePolicySet(PolicySetService policySetService, CCMRbacHelper rbacHelper) {
+  public GovernancePolicySet(PolicySetService policySetService, CCMRbacHelper rbacHelper, PolicyService policyService) {
     this.rbacHelper = rbacHelper;
     this.policySetService = policySetService;
+    this.policyService = policyService;
+
   }
 
   @POST
@@ -99,6 +107,12 @@ public class GovernancePolicySet {
     // rbacHelper.checkPolicySetEditPermission(accountId, null, null);
     PolicySet policySet = createPolicySetDTO.getPolicyset();
     policySet.setAccountId(accountId);
+    List<String> UUIDList = policySet.getPolicySetPolicies();
+    for(String i :UUIDList)
+    {
+      policyService.listid(accountId,i);
+    }
+    validateDkronSchedule(policySet.getPolicySetExecutionCron());
     policySetService.save(policySet);
     return ResponseDTO.newResponse(policySet.toDTO());
   }
@@ -150,4 +164,60 @@ public class GovernancePolicySet {
     boolean result = policySetService.delete(accountId, uuid);
     return ResponseDTO.newResponse(result);
   }
+
+  @POST
+  @Path("listPolicies/{policySetId}")
+  @ApiOperation(value = "Get policies for a set", nickname = "getPolicies")
+  @Produces(MediaType.APPLICATION_JSON)
+  @Operation(operationId = "getPolicies", description = "Fetch policies ", summary = "Fetch policies for policy set",
+          responses =
+                  {
+                          @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                                  description = "Returns List of policies", content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
+                  })
+  public ResponseDTO<List<Policy>>
+  listPolicy(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId, @PathParam("policySetId") @Parameter(
+          required = true, description = "Unique identifier for the policy") @NotNull @Valid String uuid,
+             @RequestBody(
+                     required = true, description = "Request body containing ceViewFolder object") @Valid CreatePolicySetDTO createPolicySetDTO ) {
+    //rbacHelper.checkPolicyViewPermission(accountId, null, null);
+    PolicySet query = createPolicySetDTO.getPolicyset();
+    List<Policy> Policies = new ArrayList<>();
+    List<String> UUIDList = query.getPolicySetPolicies();
+
+    for(String i :UUIDList)
+    {
+      Policies.add(policyService.listid(accountId,i));
+    }
+
+    return ResponseDTO.newResponse(Policies);
+  }
+
+  private boolean validateDkronSchedule(String schedule)
+  {
+    String regex= "^(\\*|(?:\\*|(?:[0-9]|(?:[1-5][0-9])))\\/(?:[0-9]|(?:[1-5][0-9]))|" +
+            "(?:[0-9]|(?:[1-5][0-9]))(?:(?:\\-[0-9]|\\-(?:[1-5][0-9]))?|(?:\\,(?:[0-9]|(?:[1-5][0-9])))*)) " +
+            "(\\*|(?:\\*|(?:[0-9]|(?:[1-5][0-9])))\\/(?:[0-9]|(?:[1-5][0-9]))|(?:[0-9]|" +
+            "(?:[1-5][0-9]))(?:(?:\\-[0-9]|\\-(?:[1-5][0-9]))?|(?:\\,(?:[0-9]|(?:[1-5][0-9])))*)) " +
+            "(\\*|(?:\\*|(?:\\*|(?:[0-9]|1[0-9]|2[0-3])))\\/(?:[0-9]|1[0-9]|2[0-3])|" +
+            "(?:[0-9]|1[0-9]|2[0-3])(?:(?:\\-(?:[0-9]|1[0-9]|2[0-3]))?|(?:\\,(?:[0-9]|1[0-9]|2[0-3]))*)) " +
+            "(\\*|\\?|L(?:W|\\-(?:[1-9]|(?:[12][0-9])|3[01]))?|(?:[1-9]|(?:[12][0-9])|" +
+            "3[01])(?:W|\\/(?:[1-9]|(?:[12][0-9])|3[01]))?|(?:[1-9]|(?:[12][0-9])|3[01])" +
+            "(?:(?:\\-(?:[1-9]|(?:[12][0-9])|3[01]))?|(?:\\,(?:[1-9]|(?:[12][0-9])|3[01]))*)) " +
+            "(\\*|(?:[1-9]|1[012]|JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)" +
+            "(?:(?:\\-(?:[1-9]|1[012]|JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC))?|" +
+            "(?:\\,(?:[1-9]|1[012]|JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC))*)) " +
+            "(\\*|\\?|[0-6](?:L|\\#[1-5])?|(?:[0-6]|SUN|MON|TUE|WED|THU|FRI|SAT)" +
+            "(?:(?:\\-(?:[0-6]|SUN|MON|TUE|WED|THU|FRI|SAT))?|(?:\\,(?:[0-6]|SUN|MON|TUE|WED|THU|FRI|SAT))*))";
+    if(schedule.matches(regex))
+    {
+      return true;
+    }
+    else
+    {
+      throw new InvalidRequestException("Cron expression is not valid");
+    }
+  }
+
 }
