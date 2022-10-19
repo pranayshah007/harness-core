@@ -118,7 +118,6 @@ import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.configuration.DelegateConfiguration;
 import io.harness.delegate.expression.DelegateExpressionEvaluator;
-import io.harness.delegate.logging.DelegateStackdriverLogAppender;
 import io.harness.delegate.message.Message;
 import io.harness.delegate.message.MessageService;
 import io.harness.delegate.task.AbstractDelegateRunnableTask;
@@ -465,8 +464,8 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       startTime = clock.millis();
       delegateHealthTimeLimiter = HTimeLimiter.create(healthMonitorExecutor);
       delegateTaskTimeLimiter = HTimeLimiter.create(taskExecutor);
-      DelegateStackdriverLogAppender.setTimeLimiter(delegateHealthTimeLimiter);
-      DelegateStackdriverLogAppender.setManagerClient(delegateAgentManagerClient);
+//      DelegateStackdriverLogAppender.setTimeLimiter(delegateHealthTimeLimiter);
+//      DelegateStackdriverLogAppender.setManagerClient(delegateAgentManagerClient);
 
       logProxyConfiguration();
 
@@ -581,7 +580,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       delegateId = registerDelegate(builder);
       DelegateAgentCommonVariables.setDelegateId(delegateId);
       log.info("[New] Delegate registered in {} ms", clock.millis() - start);
-      DelegateStackdriverLogAppender.setDelegateId(delegateId);
+//      DelegateStackdriverLogAppender.setDelegateId(delegateId);
       if (delegateConfiguration.isDynamicHandlingOfRequestEnabled()
           && DeployMode.KUBERNETES.name().equals(System.getenv().get(DeployMode.DEPLOY_MODE))) {
         // Enable dynamic throttling of requests only for kubernetes pod(s)
@@ -2473,7 +2472,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       finalizeSocket();
     }
 
-    DelegateStackdriverLogAppender.setManagerClient(null);
+//    DelegateStackdriverLogAppender.setManagerClient(null);
     if (perpetualTaskWorker != null) {
       perpetualTaskWorker.stop();
     }
