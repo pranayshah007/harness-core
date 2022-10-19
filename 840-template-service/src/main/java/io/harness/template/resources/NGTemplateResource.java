@@ -796,8 +796,10 @@ public class NGTemplateResource {
     TemplateVariableCreatorService ngTemplateVariableService =
         templateVariableCreatorFactory.getVariablesService(templateEntity.getTemplateEntityType());
     VariableMergeServiceResponse variableResponse = ngTemplateVariableService.getVariables(
-    accountId, orgId, projectId, entityYaml, templateEntity.getTemplateEntityType());
-    return ResponseDTO.newResponse(templateVariablesEnabled? templateServiceHelper.addTemplateVariablesToVariablesApi(variableResponse, appliedTemplateYaml): variableResponse);
+        accountId, orgId, projectId, entityYaml, templateEntity.getTemplateEntityType());
+    return ResponseDTO.newResponse(templateVariablesEnabled
+            ? templateServiceHelper.addTemplateVariablesToVariablesApi(variableResponse, appliedTemplateYaml)
+            : variableResponse);
   }
 
   @GET

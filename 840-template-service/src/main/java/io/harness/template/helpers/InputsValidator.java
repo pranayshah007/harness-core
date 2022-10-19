@@ -11,8 +11,6 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.template.beans.NGTemplateConstants.TEMPLATE;
 import static io.harness.template.beans.NGTemplateConstants.TEMPLATE_INPUTS;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
@@ -40,6 +38,8 @@ import io.harness.template.utils.NGTemplateFeatureFlagHelperService;
 import io.harness.utils.YamlPipelineUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.io.IOException;
@@ -246,8 +246,7 @@ public class InputsValidator {
       return;
     }
 
-    boolean templateVariablesEnabled =
-            featureFlagHelperService.isEnabled(accountId, FeatureName.NG_TEMPLATE_VARIABLES );
+    boolean templateVariablesEnabled = featureFlagHelperService.isEnabled(accountId, FeatureName.NG_TEMPLATE_VARIABLES);
 
     ObjectNode templateVariablesFromTemplate = null;
     // Generate the Template Spec from the Template YAML
@@ -275,17 +274,18 @@ public class InputsValidator {
       inputsValidationResponse.setValid(false);
     }
 
-    if(!templateVariablesEnabled){
+    if (!templateVariablesEnabled) {
       return;
     }
     JsonNode templateVariables = templateNodeValue.get(YAMLFieldNameConstants.VARIABLES);
     ObjectMapper mapper = new ObjectMapper();
     ObjectNode templateVariablesFromPipelineWithRoot = null;
-    if(templateVariables!=null && !templateVariables.isEmpty()) {
+    if (templateVariables != null && !templateVariables.isEmpty()) {
       templateVariablesFromPipelineWithRoot = mapper.createObjectNode();
       templateVariablesFromPipelineWithRoot.set(YAMLFieldNameConstants.VARIABLES, templateVariables);
     }
-    if (!RuntimeInputsValidator.areInputsValidAgainstSourceNode(templateVariablesFromPipelineWithRoot, templateVariablesFromTemplate, new HashSet<>())) {
+    if (!RuntimeInputsValidator.areInputsValidAgainstSourceNode(
+            templateVariablesFromPipelineWithRoot, templateVariablesFromTemplate, new HashSet<>())) {
       inputsValidationResponse.setValid(false);
     }
   }

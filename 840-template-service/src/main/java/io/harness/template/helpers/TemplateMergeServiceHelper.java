@@ -441,9 +441,10 @@ public class TemplateMergeServiceHelper {
       ArrayNode templateVariablesArray = (ArrayNode) templateVariables;
       for (JsonNode templateVariable : templateVariablesArray) {
         String type = templateVariable.get(YAMLFieldNameConstants.TYPE).asText();
-        String value = NGVariableType.SECRET.getYamlProperty().equals(type)? NGVariablesUtils.fetchSecretExpression(templateVariable.get(YAMLFieldNameConstants.VALUE).asText()): templateVariable.get(YAMLFieldNameConstants.VALUE).asText();
-        variableValues.put(templateVariable.get(YAMLFieldNameConstants.NAME).asText(),
-            value);
+        String value = NGVariableType.SECRET.getYamlProperty().equals(type)
+            ? NGVariablesUtils.fetchSecretExpression(templateVariable.get(YAMLFieldNameConstants.VALUE).asText())
+            : templateVariable.get(YAMLFieldNameConstants.VALUE).asText();
+        variableValues.put(templateVariable.get(YAMLFieldNameConstants.NAME).asText(), value);
       }
     }
     return variableValues;
@@ -462,11 +463,10 @@ public class TemplateMergeServiceHelper {
       variableValues.putAll(templateVariablesFromPipeline);
     }
 
-    variableValues.replaceAll((key,value) -> value.replace("\"", "\\\""));
+    variableValues.replaceAll((key, value) -> value.replace("\"", "\\\""));
     TemplateVariableEvaluator variableEvaluator = new TemplateVariableEvaluator(variableValues);
-    EngineExpressionEvaluator.PartialEvaluateResult result =
-        variableEvaluator.partialRenderExpression(mergedYaml);
-    String finalYaml = result.getExpressionValue() == null? (String) result.getValue(): result.getExpressionValue();
+    EngineExpressionEvaluator.PartialEvaluateResult result = variableEvaluator.partialRenderExpression(mergedYaml);
+    String finalYaml = result.getExpressionValue() == null ? (String) result.getValue() : result.getExpressionValue();
     return isEmpty(finalYaml) ? mergedYaml : finalYaml;
   }
 
