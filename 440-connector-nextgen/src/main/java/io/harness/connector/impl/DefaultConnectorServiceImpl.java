@@ -97,6 +97,7 @@ import io.harness.gitsync.interceptor.GitSyncBranchContext;
 import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.gitsync.scm.EntityObjectIdUtils;
 import io.harness.gitsync.sdk.EntityGitDetailsMapper;
+import io.harness.helpers.ext.gcp.GcpRegion;
 import io.harness.manage.GlobalContextManager;
 import io.harness.ng.beans.PageRequest;
 import io.harness.ng.core.BaseNGAccess;
@@ -664,6 +665,11 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
     }
 
     return attributes;
+  }
+
+  @Override
+  public List<String> getGcpRegions() {
+    return Arrays.stream(GcpRegion.values()).map(GcpRegion::getName).collect(Collectors.toList());
   }
 
   private void deleteTheExistingReferences(
