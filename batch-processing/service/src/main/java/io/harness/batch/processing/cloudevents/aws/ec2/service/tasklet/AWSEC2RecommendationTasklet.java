@@ -11,6 +11,7 @@ import io.harness.batch.processing.ccm.CCMJobConstants;
 import io.harness.batch.processing.cloudevents.aws.ec2.service.AWSEC2RecommendationService;
 import io.harness.batch.processing.cloudevents.aws.ec2.service.helper.AWSEC2Details;
 import io.harness.batch.processing.cloudevents.aws.ec2.service.helper.AWSRegionRegistry;
+import io.harness.batch.processing.cloudevents.aws.ec2.service.helper.EC2InstanceRecommendationInfo;
 import io.harness.batch.processing.cloudevents.aws.ec2.service.helper.EC2MetricHelper;
 import io.harness.batch.processing.cloudevents.aws.ec2.service.request.EC2RecommendationRequest;
 import io.harness.batch.processing.cloudevents.aws.ec2.service.response.EC2RecommendationResponse;
@@ -88,7 +89,7 @@ public class AWSEC2RecommendationTasklet implements Tasklet {
         // fetching the aws ec2 recommendations
         EC2RecommendationResponse ec2RecommendationResponse = awsec2RecommendationService.getRecommendations(
             EC2RecommendationRequest.builder().awsCrossAccountAttributes(infraAccCrossArn.getValue()).build());
-        Map<String, List<RightsizingRecommendation>> instanceLevelRecommendations = new HashMap<>();
+        Map<String, List<EC2InstanceRecommendationInfo>> instanceLevelRecommendations = new HashMap<>();
         log.info("Ec2RecommendationResponse = {}", ec2RecommendationResponse);
 
         if (Objects.nonNull(ec2RecommendationResponse) && !ec2RecommendationResponse.getRecommendationMap().isEmpty()) {
@@ -99,17 +100,22 @@ public class AWSEC2RecommendationTasklet implements Tasklet {
                 instanceLevelRecommendations.putIfAbsent(
                     rightsizingRecommendation.getCurrentInstance().getResourceId(), new ArrayList<>());
                 instanceLevelRecommendations.get(rightsizingRecommendation.getCurrentInstance().getResourceId())
-                    .add(rightsizingRecommendation);
+                    .add(new EC2InstanceRecommendationInfo(
+                        rightsizingRecommendations.getKey().name(), rightsizingRecommendation));
               });
             }
           }
           log.info("instanceLevelRecommendations.size() = {}", instanceLevelRecommendations.size());
           log.info("instanceLevelRecommendations = {}", instanceLevelRecommendations);
-          for (Map.Entry<String, List<RightsizingRecommendation>> instanceLevelRecommendation :
+          for (Map.Entry<String, List<EC2InstanceRecommendationInfo>> instanceLevelRecommendation :
               instanceLevelRecommendations.entrySet()) {
             if (!instanceLevelRecommendation.getValue().isEmpty()) {
               EC2Recommendation recommendation;
-              if (instanceLevelRecommendation.getValue().get(0).getRightsizingType().equalsIgnoreCase(MODIFY)) {
+              if (instanceLevelRecommendation.getValue()
+                      .get(0)
+                      .getRecommendation()
+                      .getRightsizingType()
+                      .equalsIgnoreCase(MODIFY)) {
                 recommendation = buildRecommendationObjectFromModifyType(instanceLevelRecommendation.getValue());
               } else {
                 recommendation = buildRecommendationForTerminationType(instanceLevelRecommendation.getValue());
@@ -244,8 +250,9 @@ public class AWSEC2RecommendationTasklet implements Tasklet {
     return awsec2Details;
   }
 
-  private EC2Recommendation buildRecommendationObjectFromModifyType(List<RightsizingRecommendation> recommendations) {
-    RightsizingRecommendation recommendation = recommendations.get(0);
+  private EC2Recommendation buildRecommendationObjectFromModifyType(
+      List<EC2InstanceRecommendationInfo> recommendations) {
+    RightsizingRecommendation recommendation = recommendations.get(0).getRecommendation();
     return EC2Recommendation.builder()
         .awsAccountId(recommendation.getAccountId())
         .currentMaxCPU(recommendation.getCurrentInstance()
@@ -286,8 +293,8 @@ public class AWSEC2RecommendationTasklet implements Tasklet {
         .build();
   }
 
-  private EC2Recommendation buildRecommendationForTerminationType(List<RightsizingRecommendation> recommendations) {
-    RightsizingRecommendation recommendation = recommendations.get(0);
+  private EC2Recommendation buildRecommendationForTerminationType(List<EC2InstanceRecommendationInfo> recommendations) {
+    RightsizingRecommendation recommendation = recommendations.get(0).getRecommendation();
     return EC2Recommendation.builder()
         .awsAccountId(recommendation.getAccountId())
         .currentMaxCPU(recommendation.getCurrentInstance()
@@ -314,10 +321,11 @@ public class AWSEC2RecommendationTasklet implements Tasklet {
         .build();
   }
 
-  private List<EC2RecommendationDetail> buildRecommendationInfo(List<RightsizingRecommendation> recommendations) {
+  private List<EC2RecommendationDetail> buildRecommendationInfo(List<EC2InstanceRecommendationInfo> recommendations) {
     return recommendations.stream()
         .map(recommendation -> {
-          EC2ResourceDetails ec2ResourceDetails = recommendation.getModifyRecommendationDetail()
+          EC2ResourceDetails ec2ResourceDetails = recommendation.getRecommendation()
+                                                      .getModifyRecommendationDetail()
                                                       .getTargetInstances()
                                                       .get(0)
                                                       .getResourceDetails()
@@ -330,6 +338,7 @@ public class AWSEC2RecommendationTasklet implements Tasklet {
               .region(ec2ResourceDetails.getRegion())
               .sku(ec2ResourceDetails.getSku())
               .vcpu(ec2ResourceDetails.getVcpu())
+              .recommendationType(recommendation.getRecommendationType())
               .build();
         })
         .collect(Collectors.toList());
@@ -345,10 +354,11 @@ public class AWSEC2RecommendationTasklet implements Tasklet {
         currentMonthCost, monthlySaving, ec2Recommendation.getLastUpdatedTime());
   }
 
-  private String calculateMaxCost(List<RightsizingRecommendation> rightsizingRecommendations) {
-    Double maxCost = rightsizingRecommendations.stream()
+  private String calculateMaxCost(List<EC2InstanceRecommendationInfo> recommendations) {
+    Double maxCost = recommendations.stream()
                          .map(rightsizingRecommendation
-                             -> Double.valueOf(rightsizingRecommendation.getModifyRecommendationDetail()
+                             -> Double.valueOf(rightsizingRecommendation.getRecommendation()
+                                                   .getModifyRecommendationDetail()
                                                    .getTargetInstances()
                                                    .get(0)
                                                    .getEstimatedMonthlyCost()))
@@ -357,10 +367,11 @@ public class AWSEC2RecommendationTasklet implements Tasklet {
     return String.valueOf(maxCost);
   }
 
-  private String calculateMaxSaving(List<RightsizingRecommendation> rightsizingRecommendations) {
-    Double maxCost = rightsizingRecommendations.stream()
+  private String calculateMaxSaving(List<EC2InstanceRecommendationInfo> recommendations) {
+    Double maxCost = recommendations.stream()
                          .map(rightsizingRecommendation
-                             -> Double.valueOf(rightsizingRecommendation.getModifyRecommendationDetail()
+                             -> Double.valueOf(rightsizingRecommendation.getRecommendation()
+                                                   .getModifyRecommendationDetail()
                                                    .getTargetInstances()
                                                    .get(0)
                                                    .getEstimatedMonthlySavings()))
