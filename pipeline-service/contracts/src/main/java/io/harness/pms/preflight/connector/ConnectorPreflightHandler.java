@@ -37,6 +37,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @OwnedBy(HarnessTeam.PIPELINE)
@@ -92,10 +93,15 @@ public class ConnectorPreflightHandler {
     List<ConnectorResponseDTO> filteredConnectorResponse = new ArrayList<>();
     for (ConnectorResponseDTO responseDTO : connectorResponseDTO) {
       if (connectorUsages.stream().anyMatch(connectorUse
-              -> connectorUse.getEntityRef().getBranch().equals(responseDTO.getGitDetails().getBranch())
-                  && connectorUse.getEntityRef().getRepoIdentifier().equals(
-                      responseDTO.getGitDetails().getRepoIdentifier())
-                  && connectorUse.getEntityRef().getIdentifier().equals(responseDTO.getConnector().getIdentifier()))) {
+              -> connectorUse.getEntityRef().getBranch() != null
+                  && connectorUse.getEntityRef().getRepoIdentifier() != null
+                  && connectorUse.getEntityRef().getIdentifier() != null && responseDTO.getGitDetails() != null
+                  && responseDTO.getConnector() != null
+                  && Objects.equals(connectorUse.getEntityRef().getBranch(), responseDTO.getGitDetails().getBranch())
+                  && Objects.equals(
+                      connectorUse.getEntityRef().getRepoIdentifier(), responseDTO.getGitDetails().getRepoIdentifier())
+                  && Objects.equals(
+                      connectorUse.getEntityRef().getIdentifier(), responseDTO.getConnector().getIdentifier()))) {
         filteredConnectorResponse.add(responseDTO);
       }
     }
