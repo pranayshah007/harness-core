@@ -9,14 +9,17 @@ package io.harness.freeze;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.rule.OwnerRule.ABHINAV_MITTAL;
+import static io.harness.rule.OwnerRule.UTKARSH_CHOUBEY;
 
 import static com.google.common.collect.Lists.newArrayList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.encryption.Scope;
+import io.harness.exception.InvalidRequestException;
 import io.harness.freeze.beans.EntityConfig;
 import io.harness.freeze.beans.FilterType;
 import io.harness.freeze.beans.FreezeEntityRule;
@@ -125,5 +128,35 @@ public class NGFreezeDtoMapperTest extends CategoryTest {
     windows.add(freezeWindow);
     String entityYaml = NGFreezeDtoMapper.toYaml(freezeConfig);
     assertThat(entityYaml).isNotNull();
+  }
+
+  @Test
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void testValidateYamlWithEmptyFreezeInfoConfig() {
+    FreezeConfig freezeConfig = FreezeConfig.builder().build();
+    assertThatThrownBy(() -> NGFreezeDtoMapper.validateFreezeYaml(freezeConfig, ORG_IDENTIFIER, PROJ_IDENTIFIER))
+        .isInstanceOf(InvalidRequestException.class);
+  }
+
+  @Test
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void testValidateYamlWithMultipleWindows() {
+    FreezeInfoConfig freezeInfoConfig =
+        FreezeInfoConfig.builder().identifier("id").name("name").status(FreezeStatus.ENABLED).build();
+    List<FreezeWindow> windows = new LinkedList<>();
+    FreezeWindow freezeWindow1 = new FreezeWindow();
+    freezeWindow1.setStartTime("st");
+    freezeWindow1.setTimeZone("timezone");
+    FreezeWindow freezeWindow2 = new FreezeWindow();
+    freezeWindow2.setStartTime("st");
+    freezeWindow2.setTimeZone("timezone");
+    windows.add(freezeWindow1);
+    windows.add(freezeWindow2);
+    freezeInfoConfig.setWindows(windows);
+    FreezeConfig freezeConfig = FreezeConfig.builder().freezeInfoConfig(freezeInfoConfig).build();
+    assertThatThrownBy(() -> NGFreezeDtoMapper.validateFreezeYaml(freezeConfig, ORG_IDENTIFIER, PROJ_IDENTIFIER))
+        .isInstanceOf(InvalidRequestException.class);
   }
 }

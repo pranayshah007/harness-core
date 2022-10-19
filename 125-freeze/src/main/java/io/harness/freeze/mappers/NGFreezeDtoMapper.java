@@ -202,7 +202,7 @@ public class NGFreezeDtoMapper {
         .build();
   }
 
-  private static void validateFreezeYaml(FreezeConfig freezeConfig, String orgId, String projectId) {
+  public static void validateFreezeYaml(FreezeConfig freezeConfig, String orgId, String projectId) {
     if (freezeConfig.getFreezeInfoConfig() == null) {
       throw new InvalidRequestException("FreezeInfoConfig cannot be empty");
     }
