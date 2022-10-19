@@ -26,7 +26,11 @@ public interface CCMRbacPermissions {
 
   String COST_OVERVIEW_VIEW = "ccm_overview_view";
 
-//  String POLICY_CREATE_AND_EDIT = "ccm_policy_edit";
-//  String POLICY_VIEW = "ccm_policy_view";
-//  String POLICY_DELETE = "ccm_policy_delete";
+  String POLICY_CREATE_AND_EDIT = "ccm_policy_edit";
+  String POLICY_VIEW = "ccm_policy_view";
+  String POLICY_DELETE = "ccm_policy_delete";
+
+  String POLICY_PACK_CREATE_AND_EDIT = "ccm_policy_pack_edit";
+  String POLICY_PACK_VIEW = "ccm_policy_set_view";
+  String POLICY_PACK_DELETE = "ccm_policy_set_delete";
 }

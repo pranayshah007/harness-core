@@ -1278,3 +1278,21 @@ permissions:
     includedInAllRoles: false
     allowedScopeLevels:
       - account
+  - identifier: ccm_policy_pack_edit
+    name: Edit a CCM Governance Policy Set
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+  - identifier: ccm_policy_pack_view
+    name: View a CCM Governance Policy Set
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+  - identifier: ccm_policy_pack_delete
+    name: Delete a CCM Governance Policy Set
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account

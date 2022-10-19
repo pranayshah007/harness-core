@@ -106,6 +106,8 @@ resourceTypes:
     permissionKey: loadBalancer
   - identifier: CCM_GOVERNANCE
     permissionKey: governance
+  - identifier: CCM_POLICY_PACK
+    permissionKey: policySet
   - identifier: SMTP
     permissionKey: smtp
   - identifier: SETTING

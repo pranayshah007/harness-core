@@ -13,4 +13,5 @@ public interface CCMResources {
   String BUDGET = "CCM_BUDGET";
   String COST_CATEGORY = "CCM_COSTCATEGORY";
   String POLICY = "CCM_GOVERNANCE";
+  String POLICY_PACK= "CCM_POLICY_PACK";
 }

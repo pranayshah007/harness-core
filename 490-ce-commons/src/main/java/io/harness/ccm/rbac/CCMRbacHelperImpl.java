@@ -7,18 +7,37 @@
 
 package io.harness.ccm.rbac;
 
-import static io.harness.ccm.rbac.CCMRbacPermissions.*;
+import static io.harness.ccm.rbac.CCMRbacPermissions.BUDGET_CREATE_AND_EDIT;
+import static io.harness.ccm.rbac.CCMRbacPermissions.BUDGET_DELETE;
+import static io.harness.ccm.rbac.CCMRbacPermissions.BUDGET_VIEW;
+import static io.harness.ccm.rbac.CCMRbacPermissions.COST_CATEGORY_CREATE_AND_EDIT;
+import static io.harness.ccm.rbac.CCMRbacPermissions.COST_CATEGORY_DELETE;
+import static io.harness.ccm.rbac.CCMRbacPermissions.COST_CATEGORY_VIEW;
+import static io.harness.ccm.rbac.CCMRbacPermissions.COST_OVERVIEW_VIEW;
+import static io.harness.ccm.rbac.CCMRbacPermissions.FOLDER_CREATE_AND_EDIT;
+import static io.harness.ccm.rbac.CCMRbacPermissions.FOLDER_DELETE;
+import static io.harness.ccm.rbac.CCMRbacPermissions.FOLDER_VIEW;
+import static io.harness.ccm.rbac.CCMRbacPermissions.PERSPECTIVE_CREATE_AND_EDIT;
+import static io.harness.ccm.rbac.CCMRbacPermissions.PERSPECTIVE_DELETE;
+import static io.harness.ccm.rbac.CCMRbacPermissions.PERSPECTIVE_VIEW;
+import static io.harness.ccm.rbac.CCMRbacPermissions.POLICY_CREATE_AND_EDIT;
+import static io.harness.ccm.rbac.CCMRbacPermissions.POLICY_DELETE;
+import static io.harness.ccm.rbac.CCMRbacPermissions.POLICY_PACK_CREATE_AND_EDIT;
+import static io.harness.ccm.rbac.CCMRbacPermissions.POLICY_PACK_DELETE;
+import static io.harness.ccm.rbac.CCMRbacPermissions.POLICY_PACK_VIEW;
+import static io.harness.ccm.rbac.CCMRbacPermissions.POLICY_VIEW;
 import static io.harness.ccm.rbac.CCMResources.BUDGET;
 import static io.harness.ccm.rbac.CCMResources.COST_CATEGORY;
 import static io.harness.ccm.rbac.CCMResources.FOLDER;
 import static io.harness.ccm.rbac.CCMResources.PERSPECTIVE;
 import static io.harness.ccm.rbac.CCMResources.POLICY;
-
+import static io.harness.ccm.rbac.CCMResources.POLICY_PACK;
 import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 
 import com.google.inject.Inject;
+
 
 public class CCMRbacHelperImpl implements CCMRbacHelper {
   @Inject AccessControlClient accessControlClient;
@@ -145,20 +164,38 @@ public class CCMRbacHelperImpl implements CCMRbacHelper {
   @Override
   public void checkPolicyEditPermission(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
-        Resource.of(PERSPECTIVE, null), PERSPECTIVE_CREATE_AND_EDIT,
+        Resource.of(POLICY, null), POLICY_CREATE_AND_EDIT,
         String.format(PERMISSION_MISSING_MESSAGE, EDIT_PERMISSION, RESOURCE_POLICY));
   }
   @Override
   public void checkPolicyViewPermission(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
     System.out.println("in checkPolicyViewPermission ");
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
-        Resource.of(PERSPECTIVE, null), PERSPECTIVE_VIEW,
+        Resource.of(POLICY, null), POLICY_VIEW,
         String.format(PERMISSION_MISSING_MESSAGE, VIEW_PERMISSION, RESOURCE_POLICY));
   }
   @Override
   public void checkPolicyDeletePermission(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
-        Resource.of(PERSPECTIVE, null), PERSPECTIVE_DELETE,
+        Resource.of(POLICY, null), POLICY_DELETE,
+        String.format(PERMISSION_MISSING_MESSAGE, DELETE_PERMISSION, RESOURCE_POLICY));
+  } @Override
+  public void checkPolicyPackEditPermission(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
+        Resource.of(POLICY_PACK, null), POLICY_PACK_CREATE_AND_EDIT,
+        String.format(PERMISSION_MISSING_MESSAGE, EDIT_PERMISSION, RESOURCE_POLICY));
+  }
+  @Override
+  public void checkPolicyPackViewPermission(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+    System.out.println("in checkPolicyViewPermission ");
+    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
+        Resource.of(POLICY_PACK, null), POLICY_PACK_VIEW,
+        String.format(PERMISSION_MISSING_MESSAGE, VIEW_PERMISSION, RESOURCE_POLICY));
+  }
+  @Override
+  public void checkPolicyPackDeletePermission(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
+        Resource.of(POLICY_PACK, null), POLICY_PACK_DELETE,
         String.format(PERMISSION_MISSING_MESSAGE, DELETE_PERMISSION, RESOURCE_POLICY));
   }
   @Override
