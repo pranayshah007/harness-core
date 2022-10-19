@@ -14,7 +14,6 @@ import static io.harness.pms.pipeline.service.PMSPipelineServiceStepHelper.LIBRA
 import static java.lang.String.format;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.eventsframework.api.EventsFrameworkDownException;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
@@ -26,7 +25,6 @@ import io.harness.exception.ExplanationException;
 import io.harness.exception.HintException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.InvalidYamlException;
-import io.harness.exception.InvalidYamlVersionException;
 import io.harness.exception.ScmException;
 import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorDTO;
 import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorWrapperDTO;
@@ -58,11 +56,8 @@ import io.harness.pms.pipeline.StepPalleteModuleInfo;
 import io.harness.pms.pipeline.mappers.PMSPipelineDtoMapper;
 import io.harness.pms.pipeline.mappers.PMSPipelineFilterHelper;
 import io.harness.pms.sdk.PmsSdkInstanceService;
-import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
-import io.harness.pms.yaml.YamlVersion;
 import io.harness.repositories.pipeline.PMSPipelineRepository;
-import io.harness.utils.PmsFeatureFlagHelper;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -100,14 +95,12 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   @Inject private final CommonStepInfo commonStepInfo;
   @Inject private final PipelineCloneHelper pipelineCloneHelper;
   @Inject private final GitAwareEntityHelper gitAwareEntityHelper;
-  @Inject private final PmsFeatureFlagHelper pmsFeatureFlagHelper;
 
   public static final String CREATING_PIPELINE = "creating new pipeline";
   public static final String UPDATING_PIPELINE = "updating existing pipeline";
 
   private static final String DUP_KEY_EXP_FORMAT_STRING =
       "Pipeline [%s] under Project[%s], Organization [%s] already exists or has been deleted.";
-  private static final String VERSION_FIELD_NAME = "version";
 
   @Override
   public PipelineCRUDResult create(PipelineEntity pipelineEntity) {
@@ -123,8 +116,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
       if (governanceMetadata.getDeny()) {
         return PipelineCRUDResult.builder().governanceMetadata(governanceMetadata).build();
       }
-      PipelineEntity entityWithUpdatedInfo =
-          pmsPipelineServiceHelper.updatePipelineInfo(pipelineEntity, pipelineEntity.getHarnessVersion());
+      PipelineEntity entityWithUpdatedInfo = pmsPipelineServiceHelper.updatePipelineInfo(pipelineEntity);
       PipelineEntity createdEntity;
       PipelineCRUDResult pipelineCRUDResult = createWithoutValidations(entityWithUpdatedInfo);
       createdEntity = pipelineCRUDResult.getPipelineEntity();
@@ -347,8 +339,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
       if (pipelineEntity.getIsDraft() != null && pipelineEntity.getIsDraft()) {
         entityWithUpdatedInfo = pipelineEntity;
       } else {
-        entityWithUpdatedInfo =
-            pmsPipelineServiceHelper.updatePipelineInfo(pipelineEntity, pipelineEntity.getHarnessVersion());
+        entityWithUpdatedInfo = pmsPipelineServiceHelper.updatePipelineInfo(pipelineEntity);
       }
       PipelineEntity updatedResult;
       if (isOldFlow) {
@@ -477,16 +468,14 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
         accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, isForceImport);
     String importedPipelineYAML =
         pmsPipelineServiceHelper.importPipelineFromRemote(accountId, orgIdentifier, projectIdentifier);
-    YamlVersion pipelineVersion = pipelineVersion(accountId, importedPipelineYAML);
-    PMSPipelineServiceHelper.checkAndThrowMismatchInImportedPipelineMetadata(orgIdentifier, projectIdentifier,
-        pipelineIdentifier, pipelineImportRequest, importedPipelineYAML, pipelineVersion);
-    PipelineEntity pipelineEntity = PMSPipelineDtoMapper.toPipelineEntity(
-        accountId, orgIdentifier, projectIdentifier, importedPipelineYAML, false, pipelineVersion);
+    PMSPipelineServiceHelper.checkAndThrowMismatchInImportedPipelineMetadata(
+        orgIdentifier, projectIdentifier, pipelineIdentifier, pipelineImportRequest, importedPipelineYAML);
+    PipelineEntity pipelineEntity =
+        PMSPipelineDtoMapper.toPipelineEntity(accountId, orgIdentifier, projectIdentifier, importedPipelineYAML);
     pipelineEntity.setRepoURL(repoUrl);
 
     try {
-      PipelineEntity entityWithUpdatedInfo =
-          pmsPipelineServiceHelper.updatePipelineInfo(pipelineEntity, pipelineVersion);
+      PipelineEntity entityWithUpdatedInfo = pmsPipelineServiceHelper.updatePipelineInfo(pipelineEntity);
       PipelineEntity savedPipelineEntity =
           pmsPipelineRepository.savePipelineEntityForImportedYAML(entityWithUpdatedInfo);
       pmsPipelineServiceHelper.sendPipelineSaveTelemetryEvent(savedPipelineEntity, CREATING_PIPELINE);
@@ -611,26 +600,5 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
                         .set(PipelineEntityKeys.rootFolder, gitEntityFilePath.getRootFolder());
     return updatePipelineMetadata(pipelineEntity.getAccountId(), pipelineEntity.getOrgIdentifier(),
         pipelineEntity.getProjectIdentifier(), criteria, update);
-  }
-
-  @Override
-  public YamlVersion pipelineVersion(String accountId, String yaml) {
-    boolean isYamlSimplificationEnabled = pmsFeatureFlagHelper.isEnabled(accountId, FeatureName.CI_YAML_VERSIONING);
-    YamlField version;
-    try {
-      YamlField yamlField = YamlUtils.readTree(yaml);
-      version = yamlField.getNode().getField(VERSION_FIELD_NAME);
-    } catch (IOException ioException) {
-      throw new InvalidRequestException("Invalid yaml passed.");
-    }
-
-    if (isYamlSimplificationEnabled && version != null) {
-      if (version.getNode() == null) {
-        throw new InvalidYamlVersionException("Invalid yaml version passed.");
-      }
-      return YamlVersion.fromString(version.getNode().toString());
-    } else {
-      return YamlVersion.V0;
-    }
   }
 }

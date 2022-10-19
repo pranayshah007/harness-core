@@ -29,7 +29,6 @@ import io.harness.persistence.PersistentEntity;
 import io.harness.persistence.UpdatedAtAware;
 import io.harness.persistence.UuidAware;
 import io.harness.persistence.gitaware.GitAware;
-import io.harness.pms.yaml.YamlVersion;
 import io.harness.template.yaml.TemplateRefHelper;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -148,9 +147,6 @@ public class PipelineEntity
   @Wither @Setter @NonFinal String repo;
   @Wither @Setter @NonFinal String connectorRef;
   @Wither @Setter @NonFinal String repoURL;
-
-  // to maintain pipeline version
-  @Setter @NonFinal YamlVersion harnessVersion;
 
   public String getData() {
     return yaml;
