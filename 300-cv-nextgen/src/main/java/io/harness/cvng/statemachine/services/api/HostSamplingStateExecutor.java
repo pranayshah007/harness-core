@@ -55,70 +55,71 @@ public class HostSamplingStateExecutor extends AnalysisStateExecutor<HostSamplin
     Set<String> postDeploymentHosts =
         postDeploymentTimeSeriesRecords.stream().map(TimeSeriesRecordDTO::getHost).collect(Collectors.toSet());
 
-    for (TimeSeriesRecordDTO timeSeriesRecordDTO : preDeploymentTimeSeriesRecords) {
-      preDeploymentHosts.add(timeSeriesRecordDTO.getHost());
-    }
-    for (TimeSeriesRecordDTO timeSeriesRecordDTO : postDeploymentTimeSeriesRecords) {
-      postDeploymentHosts.add(timeSeriesRecordDTO.getHost());
-    }
-
-    // Case 1: v2 = postDeploymentHosts - (preDeploymentHosts and postDeploymentHosts intersection)
-    // is None in that case test hosts is None and control data is postdeployment host
-    // Case 2: v2 = postDeploymentHosts - (preDeploymentHosts and postDeploymentHosts intersection)
-    // is not None and it's not equal to postDeployment Hosts
-    // in that case control hosts are postDeployment old hosts, and test host are v2
-    // Case 3: v2 = postDeploymentHosts - (preDeploymentHosts and postDeploymentHosts intersection)
-    // is not None and is equal to postDeployment hosts
-    // in that case test hosts is None and control hosts is postdeployment hosts
     Set<String> newHosts = new HashSet<>(postDeploymentHosts);
     Set<String> commonHosts = new HashSet<>(preDeploymentHosts);
     commonHosts.retainAll(postDeploymentHosts);
     newHosts.removeAll(commonHosts);
     AnalysisInput.AnalysisInputBuilder analysisInputBuilder = AnalysisInput.builder();
+    analysisState.setStatus(AnalysisStatus.RUNNING);
     switch (verificationJob.getType()) {
       case CANARY:
-        // always canary
         analysisInputBuilder.learningEngineTaskType(LearningEngineTaskType.CANARY_METRIC);
-        analysisState.setStatus(AnalysisStatus.RUNNING);
         if (newHosts.isEmpty()) {
-          // predeployment nodes: n1, n2
-          // postdeployment nodes: n1, n2
+          /*
+           For example:
+           Pre deployment hosts are n1, n2
+           Post deployment hosts are also n1, n2
+           */
           Set<String> controlHosts = new HashSet<>(postDeploymentHosts);
           Set<String> testHosts = new HashSet<>();
           analysisInputBuilder = analysisInputBuilder.controlHosts(controlHosts).testHosts(testHosts);
           analysisState.setInputs(analysisInputBuilder.build());
+          analysisState.setControlHosts(controlHosts);
+          analysisState.setTestHosts(testHosts);
         } else if (!newHosts.equals(postDeploymentHosts)) {
-          // predeployment nodes: n1, n2
-          // postdeployment nodes: n1, n2, n3
+          /*
+           For example:
+           Pre deployment hosts are n1, n2
+           Post deployment hosts are n1, n2, n3
+           */
           Set<String> testHosts = new HashSet<>(newHosts);
           Set<String> controlHosts = new HashSet<>(postDeploymentHosts);
           controlHosts.removeAll(testHosts);
           analysisInputBuilder = analysisInputBuilder.controlHosts(controlHosts).testHosts(testHosts);
           analysisState.setInputs(analysisInputBuilder.build());
+          analysisState.setControlHosts(controlHosts);
+          analysisState.setTestHosts(testHosts);
         } else {
-          // predeployment nodes: n1, n2
-          // postdeploymnet nodes: n3, n4
+          /*
+           For example:
+           Pre deployment hosts are n1, n2
+           Post deployment hosts are n3, n4
+           */
           Set<String> testHosts = new HashSet<>();
-          Set<String> controlHosts = new HashSet<>();
+          Set<String> controlHosts = new HashSet<>(preDeploymentHosts);
           analysisInputBuilder = analysisInputBuilder.controlHosts(controlHosts).testHosts(testHosts);
           analysisState.setInputs(analysisInputBuilder.build());
+          analysisState.setControlHosts(controlHosts);
+          analysisState.setTestHosts(testHosts);
         }
         break;
       case ROLLING:
       case BLUE_GREEN:
-        // always improvised canary
-        analysisState.setLearningEngineTaskType(LearningEngineTaskType.BEFORE_AFTER_DEPLOYMENT_METRIC);
-        analysisInputBuilder.learningEngineTaskType(LearningEngineTaskType.BEFORE_AFTER_DEPLOYMENT_METRIC);
         Set<String> controlHosts = new HashSet<>(preDeploymentHosts);
         Set<String> testHosts = new HashSet<>(postDeploymentHosts);
+        analysisState.setLearningEngineTaskType(LearningEngineTaskType.BEFORE_AFTER_DEPLOYMENT_METRIC);
+        analysisInputBuilder.learningEngineTaskType(LearningEngineTaskType.BEFORE_AFTER_DEPLOYMENT_METRIC);
         analysisInputBuilder = analysisInputBuilder.controlHosts(controlHosts).testHosts(testHosts);
         analysisState.setInputs(analysisInputBuilder.build());
+        analysisState.setControlHosts(controlHosts);
+        analysisState.setTestHosts(testHosts);
         break;
       case AUTO:
         if (newHosts.isEmpty()) {
-          // it's before after
-          // predeployment nodes: n1, n2
-          // postdeployment nodes: n1, n2
+          /*
+            For example:
+            Pre deployments hosts and post deployments hosts both are n1, n2
+          */
           controlHosts = new HashSet<>(preDeploymentHosts);
           testHosts = new HashSet<>(postDeploymentHosts);
           analysisInputBuilder = analysisInputBuilder.controlHosts(controlHosts)
@@ -126,19 +127,29 @@ public class HostSamplingStateExecutor extends AnalysisStateExecutor<HostSamplin
                                      .learningEngineTaskType(LearningEngineTaskType.BEFORE_AFTER_DEPLOYMENT_METRIC);
           analysisState.setInputs(analysisInputBuilder.build());
           analysisState.setLearningEngineTaskType(LearningEngineTaskType.BEFORE_AFTER_DEPLOYMENT_METRIC);
+          analysisState.setControlHosts(controlHosts);
+          analysisState.setTestHosts(testHosts);
         } else {
-          // predeployment nodes: n1, n2 (or n1, n2)
-          // postdeployment nodes: n1, n2, n3 (or n3, n4)
           controlHosts = new HashSet<>(preDeploymentHosts);
           testHosts = new HashSet<>(newHosts);
           analysisState.setTestHosts(testHosts);
           analysisState.setControlHosts(controlHosts);
           analysisInputBuilder = analysisInputBuilder.controlHosts(controlHosts).testHosts(testHosts);
           if (newHosts.equals(postDeploymentHosts)) {
+            /*
+              For example:
+              Pre deployment hosts are n1, n2
+              Post deployment hosts are n1, n2, n3
+             */
             analysisState.setLearningEngineTaskType(LearningEngineTaskType.BEFORE_AFTER_DEPLOYMENT_METRIC);
             analysisInputBuilder.learningEngineTaskType(LearningEngineTaskType.BEFORE_AFTER_DEPLOYMENT_METRIC);
             analysisState.setInputs(analysisInputBuilder.build());
           } else {
+            /*
+              For example:
+              Pre deployment hosts are n1, n2
+              Post deployment hosts are n3, n4
+             */
             analysisState.setLearningEngineTaskType(LearningEngineTaskType.CANARY_METRIC);
             analysisInputBuilder.learningEngineTaskType(LearningEngineTaskType.CANARY_METRIC);
             analysisState.setInputs(analysisInputBuilder.build());
@@ -184,6 +195,7 @@ public class HostSamplingStateExecutor extends AnalysisStateExecutor<HostSamplin
     analysisState.setStatus(AnalysisStatus.SUCCESS);
     CanaryAnalysisState canaryAnalysisState = new CanaryAnalysisState();
     canaryAnalysisState.setInputs(analysisState.getInputs());
+    canaryAnalysisState.setStatus(AnalysisStatus.CREATED);
     return canaryAnalysisState;
   }
 

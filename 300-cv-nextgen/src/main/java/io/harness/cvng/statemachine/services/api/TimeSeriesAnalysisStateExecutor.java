@@ -26,7 +26,6 @@ import lombok.extern.slf4j.Slf4j;
 public abstract class TimeSeriesAnalysisStateExecutor<T extends TimeSeriesAnalysisState>
     extends AnalysisStateExecutor<T> {
   @Inject protected transient TimeSeriesAnalysisService timeSeriesAnalysisService;
-  @Inject protected AnalysisState analysisState;
 
   @Override
   public AnalysisState execute(T analysisState) {

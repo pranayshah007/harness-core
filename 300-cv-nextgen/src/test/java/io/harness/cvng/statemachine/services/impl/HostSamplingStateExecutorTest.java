@@ -16,6 +16,7 @@ import static org.mockito.Mockito.when;
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
 import io.harness.cvng.BuilderFactory;
+import io.harness.cvng.analysis.beans.TimeSeriesRecordDTO;
 import io.harness.cvng.analysis.entities.LearningEngineTask;
 import io.harness.cvng.analysis.services.api.TimeSeriesAnalysisService;
 import io.harness.cvng.core.beans.TimeRange;
@@ -32,12 +33,14 @@ import io.harness.rule.Owner;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import org.apache.commons.lang3.reflect.FieldUtils;
 import org.junit.Before;
 import org.junit.Test;
@@ -57,6 +60,10 @@ public class HostSamplingStateExecutorTest extends CategoryTest {
 
   private HostSamplingState hostSamplingState;
   private HostSamplingStateExecutor hostSamplingStateExecutor = new HostSamplingStateExecutor();
+
+  public List<TimeSeriesRecordDTO> getTimeSeriesRecordDTO(List<String> hosts) {
+    return hosts.stream().map(h -> TimeSeriesRecordDTO.builder().host(h).build()).collect(Collectors.toList());
+  }
 
   @Before
   public void setup() throws Exception {
@@ -81,7 +88,7 @@ public class HostSamplingStateExecutorTest extends CategoryTest {
   @Test
   @Owner(developers = NAVEEN)
   @Category(UnitTests.class)
-  public void testExecute() {
+  public void testExecuteSuccess_CanaryNoNewNodes() {
     VerificationJobInstance verificationJobInstance =
         VerificationJobInstance.builder()
             .deploymentStartTime(Instant.now())
@@ -89,20 +96,298 @@ public class HostSamplingStateExecutorTest extends CategoryTest {
             .resolvedJob(builderFactory.canaryVerificationJobBuilder().build())
             .build();
     hostSamplingState.setVerificationJobInstanceId(verificationJobInstance.getUuid());
+    when(verificationJobInstanceService.getVerificationJobInstance(hostSamplingState.getVerificationJobInstanceId()))
+        .thenReturn(verificationJobInstance);
 
     Optional<TimeRange> preDeploymentTimeRange = verificationJobInstance.getResolvedJob().getPreActivityTimeRange(
         verificationJobInstance.getDeploymentStartTime());
     when(timeSeriesRecordService.getTimeSeriesRecordDTOs(hostSamplingState.getInputs().getVerificationTaskId(),
              preDeploymentTimeRange.get().getStartTime(), preDeploymentTimeRange.get().getEndTime()))
-        .thenReturn(new ArrayList<>());
+        .thenReturn(getTimeSeriesRecordDTO(Arrays.asList("host1", "host2")));
 
-    hostSamplingState = (HostSamplingState) hostSamplingStateExecutor.execute(hostSamplingState);
     when(timeSeriesRecordService.getTimeSeriesRecordDTOs(hostSamplingState.getInputs().getVerificationTaskId(),
              hostSamplingState.getInputs().getStartTime(), hostSamplingState.getInputs().getEndTime()))
-        .thenReturn(new ArrayList<>());
+        .thenReturn(getTimeSeriesRecordDTO(Arrays.asList("host1", "host2")));
+
+    hostSamplingState = (HostSamplingState) hostSamplingStateExecutor.execute(hostSamplingState);
 
     assertThat(hostSamplingState.getStatus().name()).isEqualTo(AnalysisStatus.RUNNING.name());
     assertThat(hostSamplingState.getRetryCount()).isEqualTo(0);
+    assertThat(hostSamplingState.getControlHosts()).isEqualTo(new HashSet<>(Arrays.asList("host1", "host2")));
+    assertThat(hostSamplingState.getTestHosts()).isEmpty();
+    assertThat(hostSamplingState.getInputs().getLearningEngineTaskType())
+        .isEqualTo(LearningEngineTask.LearningEngineTaskType.CANARY_METRIC);
+  }
+
+  @Test
+  @Owner(developers = NAVEEN)
+  @Category(UnitTests.class)
+  public void testExecuteSuccess_CanaryFewNewNodes() {
+    VerificationJobInstance verificationJobInstance =
+        VerificationJobInstance.builder()
+            .deploymentStartTime(Instant.now())
+            .startTime(Instant.now().plus(Duration.ofMinutes(2)))
+            .resolvedJob(builderFactory.canaryVerificationJobBuilder().build())
+            .build();
+    hostSamplingState.setVerificationJobInstanceId(verificationJobInstance.getUuid());
+    when(verificationJobInstanceService.getVerificationJobInstance(hostSamplingState.getVerificationJobInstanceId()))
+        .thenReturn(verificationJobInstance);
+
+    Optional<TimeRange> preDeploymentTimeRange = verificationJobInstance.getResolvedJob().getPreActivityTimeRange(
+        verificationJobInstance.getDeploymentStartTime());
+    when(timeSeriesRecordService.getTimeSeriesRecordDTOs(hostSamplingState.getInputs().getVerificationTaskId(),
+             preDeploymentTimeRange.get().getStartTime(), preDeploymentTimeRange.get().getEndTime()))
+        .thenReturn(getTimeSeriesRecordDTO(Arrays.asList("host1", "host2")));
+
+    when(timeSeriesRecordService.getTimeSeriesRecordDTOs(hostSamplingState.getInputs().getVerificationTaskId(),
+             hostSamplingState.getInputs().getStartTime(), hostSamplingState.getInputs().getEndTime()))
+        .thenReturn(getTimeSeriesRecordDTO(Arrays.asList("host1", "host2", "host3")));
+
+    hostSamplingState = (HostSamplingState) hostSamplingStateExecutor.execute(hostSamplingState);
+    assertThat(hostSamplingState.getStatus().name()).isEqualTo(AnalysisStatus.RUNNING.name());
+    assertThat(hostSamplingState.getRetryCount()).isEqualTo(0);
+    assertThat(hostSamplingState.getControlHosts()).isEqualTo(new HashSet<>(Arrays.asList("host1", "host2")));
+    assertThat(hostSamplingState.getTestHosts()).isEqualTo(new HashSet<>(Arrays.asList("host3")));
+    assertThat(hostSamplingState.getInputs().getLearningEngineTaskType())
+        .isEqualTo(LearningEngineTask.LearningEngineTaskType.CANARY_METRIC);
+  }
+
+  @Test
+  @Owner(developers = NAVEEN)
+  @Category(UnitTests.class)
+  public void testExecuteSuccess_CanaryAllNewNodes() {
+    VerificationJobInstance verificationJobInstance =
+        VerificationJobInstance.builder()
+            .deploymentStartTime(Instant.now())
+            .startTime(Instant.now().plus(Duration.ofMinutes(2)))
+            .resolvedJob(builderFactory.canaryVerificationJobBuilder().build())
+            .build();
+    hostSamplingState.setVerificationJobInstanceId(verificationJobInstance.getUuid());
+    when(verificationJobInstanceService.getVerificationJobInstance(hostSamplingState.getVerificationJobInstanceId()))
+        .thenReturn(verificationJobInstance);
+
+    Optional<TimeRange> preDeploymentTimeRange = verificationJobInstance.getResolvedJob().getPreActivityTimeRange(
+        verificationJobInstance.getDeploymentStartTime());
+    when(timeSeriesRecordService.getTimeSeriesRecordDTOs(hostSamplingState.getInputs().getVerificationTaskId(),
+             preDeploymentTimeRange.get().getStartTime(), preDeploymentTimeRange.get().getEndTime()))
+        .thenReturn(getTimeSeriesRecordDTO(Arrays.asList("host1", "host2")));
+
+    when(timeSeriesRecordService.getTimeSeriesRecordDTOs(hostSamplingState.getInputs().getVerificationTaskId(),
+             hostSamplingState.getInputs().getStartTime(), hostSamplingState.getInputs().getEndTime()))
+        .thenReturn(getTimeSeriesRecordDTO(Arrays.asList("host3", "host4")));
+
+    hostSamplingState = (HostSamplingState) hostSamplingStateExecutor.execute(hostSamplingState);
+
+    assertThat(hostSamplingState.getStatus().name()).isEqualTo(AnalysisStatus.RUNNING.name());
+    assertThat(hostSamplingState.getRetryCount()).isEqualTo(0);
+    assertThat(hostSamplingState.getTestHosts()).isEmpty();
+    assertThat(hostSamplingState.getControlHosts()).isEqualTo(new HashSet<>(Arrays.asList("host1", "host2")));
+    assertThat(hostSamplingState.getInputs().getLearningEngineTaskType())
+        .isEqualTo(LearningEngineTask.LearningEngineTaskType.CANARY_METRIC);
+  }
+
+  @Test
+  @Owner(developers = NAVEEN)
+  @Category(UnitTests.class)
+  public void testExecuteSuccess_BlueGreenNoNewNodes() {
+    VerificationJobInstance verificationJobInstance =
+        VerificationJobInstance.builder()
+            .deploymentStartTime(Instant.now())
+            .startTime(Instant.now().plus(Duration.ofMinutes(2)))
+            .resolvedJob(builderFactory.blueGreenVerificationJobBuilder().build())
+            .build();
+    hostSamplingState.setVerificationJobInstanceId(verificationJobInstance.getUuid());
+    when(verificationJobInstanceService.getVerificationJobInstance(hostSamplingState.getVerificationJobInstanceId()))
+        .thenReturn(verificationJobInstance);
+
+    Optional<TimeRange> preDeploymentTimeRange = verificationJobInstance.getResolvedJob().getPreActivityTimeRange(
+        verificationJobInstance.getDeploymentStartTime());
+    when(timeSeriesRecordService.getTimeSeriesRecordDTOs(hostSamplingState.getInputs().getVerificationTaskId(),
+             preDeploymentTimeRange.get().getStartTime(), preDeploymentTimeRange.get().getEndTime()))
+        .thenReturn(getTimeSeriesRecordDTO(Arrays.asList("host1", "host2")));
+
+    when(timeSeriesRecordService.getTimeSeriesRecordDTOs(hostSamplingState.getInputs().getVerificationTaskId(),
+             hostSamplingState.getInputs().getStartTime(), hostSamplingState.getInputs().getEndTime()))
+        .thenReturn(getTimeSeriesRecordDTO(Arrays.asList("host1", "host2")));
+
+    hostSamplingState = (HostSamplingState) hostSamplingStateExecutor.execute(hostSamplingState);
+
+    assertThat(hostSamplingState.getStatus().name()).isEqualTo(AnalysisStatus.RUNNING.name());
+    assertThat(hostSamplingState.getRetryCount()).isEqualTo(0);
+    assertThat(hostSamplingState.getControlHosts()).isEqualTo(new HashSet<>(Arrays.asList("host1", "host2")));
+    assertThat(hostSamplingState.getTestHosts()).isEqualTo(new HashSet<>(Arrays.asList("host1", "host2")));
+    assertThat(hostSamplingState.getInputs().getLearningEngineTaskType())
+        .isEqualTo(LearningEngineTask.LearningEngineTaskType.BEFORE_AFTER_DEPLOYMENT_METRIC);
+  }
+
+  @Test
+  @Owner(developers = NAVEEN)
+  @Category(UnitTests.class)
+  public void testExecuteSuccess_BlueGreenFewNewNodes() {
+    VerificationJobInstance verificationJobInstance =
+        VerificationJobInstance.builder()
+            .deploymentStartTime(Instant.now())
+            .startTime(Instant.now().plus(Duration.ofMinutes(2)))
+            .resolvedJob(builderFactory.blueGreenVerificationJobBuilder().build())
+            .build();
+    hostSamplingState.setVerificationJobInstanceId(verificationJobInstance.getUuid());
+    when(verificationJobInstanceService.getVerificationJobInstance(hostSamplingState.getVerificationJobInstanceId()))
+        .thenReturn(verificationJobInstance);
+
+    Optional<TimeRange> preDeploymentTimeRange = verificationJobInstance.getResolvedJob().getPreActivityTimeRange(
+        verificationJobInstance.getDeploymentStartTime());
+    when(timeSeriesRecordService.getTimeSeriesRecordDTOs(hostSamplingState.getInputs().getVerificationTaskId(),
+             preDeploymentTimeRange.get().getStartTime(), preDeploymentTimeRange.get().getEndTime()))
+        .thenReturn(getTimeSeriesRecordDTO(Arrays.asList("host1", "host2")));
+
+    when(timeSeriesRecordService.getTimeSeriesRecordDTOs(hostSamplingState.getInputs().getVerificationTaskId(),
+             hostSamplingState.getInputs().getStartTime(), hostSamplingState.getInputs().getEndTime()))
+        .thenReturn(getTimeSeriesRecordDTO(Arrays.asList("host1", "host2", "host3")));
+
+    hostSamplingState = (HostSamplingState) hostSamplingStateExecutor.execute(hostSamplingState);
+
+    assertThat(hostSamplingState.getStatus().name()).isEqualTo(AnalysisStatus.RUNNING.name());
+    assertThat(hostSamplingState.getRetryCount()).isEqualTo(0);
+    assertThat(hostSamplingState.getControlHosts()).isEqualTo(new HashSet<>(Arrays.asList("host1", "host2")));
+    assertThat(hostSamplingState.getTestHosts()).isEqualTo(new HashSet<>(Arrays.asList("host1", "host2", "host3")));
+    assertThat(hostSamplingState.getInputs().getLearningEngineTaskType())
+        .isEqualTo(LearningEngineTask.LearningEngineTaskType.BEFORE_AFTER_DEPLOYMENT_METRIC);
+  }
+
+  @Test
+  @Owner(developers = NAVEEN)
+  @Category(UnitTests.class)
+  public void testExecuteSuccess_BlueGreenAllNewNodes() {
+    VerificationJobInstance verificationJobInstance =
+        VerificationJobInstance.builder()
+            .deploymentStartTime(Instant.now())
+            .startTime(Instant.now().plus(Duration.ofMinutes(2)))
+            .resolvedJob(builderFactory.blueGreenVerificationJobBuilder().build())
+            .build();
+    hostSamplingState.setVerificationJobInstanceId(verificationJobInstance.getUuid());
+    when(verificationJobInstanceService.getVerificationJobInstance(hostSamplingState.getVerificationJobInstanceId()))
+        .thenReturn(verificationJobInstance);
+
+    Optional<TimeRange> preDeploymentTimeRange = verificationJobInstance.getResolvedJob().getPreActivityTimeRange(
+        verificationJobInstance.getDeploymentStartTime());
+    when(timeSeriesRecordService.getTimeSeriesRecordDTOs(hostSamplingState.getInputs().getVerificationTaskId(),
+             preDeploymentTimeRange.get().getStartTime(), preDeploymentTimeRange.get().getEndTime()))
+        .thenReturn(getTimeSeriesRecordDTO(Arrays.asList("host1", "host2")));
+
+    when(timeSeriesRecordService.getTimeSeriesRecordDTOs(hostSamplingState.getInputs().getVerificationTaskId(),
+             hostSamplingState.getInputs().getStartTime(), hostSamplingState.getInputs().getEndTime()))
+        .thenReturn(getTimeSeriesRecordDTO(Arrays.asList("host3", "host4")));
+
+    hostSamplingState = (HostSamplingState) hostSamplingStateExecutor.execute(hostSamplingState);
+
+    assertThat(hostSamplingState.getStatus().name()).isEqualTo(AnalysisStatus.RUNNING.name());
+    assertThat(hostSamplingState.getRetryCount()).isEqualTo(0);
+    assertThat(hostSamplingState.getControlHosts()).isEqualTo(new HashSet<>(Arrays.asList("host1", "host2")));
+    assertThat(hostSamplingState.getTestHosts()).isEqualTo(new HashSet<>(Arrays.asList("host3", "host4")));
+    assertThat(hostSamplingState.getInputs().getLearningEngineTaskType())
+        .isEqualTo(LearningEngineTask.LearningEngineTaskType.BEFORE_AFTER_DEPLOYMENT_METRIC);
+  }
+
+  @Test
+  @Owner(developers = NAVEEN)
+  @Category(UnitTests.class)
+  public void testExecuteSuccess_AutoNoNewNodes() {
+    VerificationJobInstance verificationJobInstance =
+        VerificationJobInstance.builder()
+            .deploymentStartTime(Instant.now())
+            .startTime(Instant.now().plus(Duration.ofMinutes(2)))
+            .resolvedJob(builderFactory.autoVerificationJobBuilder().build())
+            .build();
+    hostSamplingState.setVerificationJobInstanceId(verificationJobInstance.getUuid());
+    when(verificationJobInstanceService.getVerificationJobInstance(hostSamplingState.getVerificationJobInstanceId()))
+        .thenReturn(verificationJobInstance);
+
+    Optional<TimeRange> preDeploymentTimeRange = verificationJobInstance.getResolvedJob().getPreActivityTimeRange(
+        verificationJobInstance.getDeploymentStartTime());
+    when(timeSeriesRecordService.getTimeSeriesRecordDTOs(hostSamplingState.getInputs().getVerificationTaskId(),
+             preDeploymentTimeRange.get().getStartTime(), preDeploymentTimeRange.get().getEndTime()))
+        .thenReturn(getTimeSeriesRecordDTO(Arrays.asList("host1", "host2")));
+
+    when(timeSeriesRecordService.getTimeSeriesRecordDTOs(hostSamplingState.getInputs().getVerificationTaskId(),
+             hostSamplingState.getInputs().getStartTime(), hostSamplingState.getInputs().getEndTime()))
+        .thenReturn(getTimeSeriesRecordDTO(Arrays.asList("host1", "host2")));
+
+    hostSamplingState = (HostSamplingState) hostSamplingStateExecutor.execute(hostSamplingState);
+
+    assertThat(hostSamplingState.getStatus().name()).isEqualTo(AnalysisStatus.RUNNING.name());
+    assertThat(hostSamplingState.getRetryCount()).isEqualTo(0);
+    assertThat(hostSamplingState.getControlHosts()).isEqualTo(new HashSet<>(Arrays.asList("host1", "host2")));
+    assertThat(hostSamplingState.getTestHosts()).isEqualTo(new HashSet<>(Arrays.asList("host1", "host2")));
+    assertThat(hostSamplingState.getInputs().getLearningEngineTaskType())
+        .isEqualTo(LearningEngineTask.LearningEngineTaskType.BEFORE_AFTER_DEPLOYMENT_METRIC);
+  }
+
+  @Test
+  @Owner(developers = NAVEEN)
+  @Category(UnitTests.class)
+  public void testExecuteSuccess_AutoFewNewNodes() {
+    VerificationJobInstance verificationJobInstance =
+        VerificationJobInstance.builder()
+            .deploymentStartTime(Instant.now())
+            .startTime(Instant.now().plus(Duration.ofMinutes(2)))
+            .resolvedJob(builderFactory.autoVerificationJobBuilder().build())
+            .build();
+    hostSamplingState.setVerificationJobInstanceId(verificationJobInstance.getUuid());
+    when(verificationJobInstanceService.getVerificationJobInstance(hostSamplingState.getVerificationJobInstanceId()))
+        .thenReturn(verificationJobInstance);
+
+    Optional<TimeRange> preDeploymentTimeRange = verificationJobInstance.getResolvedJob().getPreActivityTimeRange(
+        verificationJobInstance.getDeploymentStartTime());
+    when(timeSeriesRecordService.getTimeSeriesRecordDTOs(hostSamplingState.getInputs().getVerificationTaskId(),
+             preDeploymentTimeRange.get().getStartTime(), preDeploymentTimeRange.get().getEndTime()))
+        .thenReturn(getTimeSeriesRecordDTO(Arrays.asList("host1", "host2")));
+
+    when(timeSeriesRecordService.getTimeSeriesRecordDTOs(hostSamplingState.getInputs().getVerificationTaskId(),
+             hostSamplingState.getInputs().getStartTime(), hostSamplingState.getInputs().getEndTime()))
+        .thenReturn(getTimeSeriesRecordDTO(Arrays.asList("host1", "host2", "host3")));
+
+    hostSamplingState = (HostSamplingState) hostSamplingStateExecutor.execute(hostSamplingState);
+
+    assertThat(hostSamplingState.getStatus().name()).isEqualTo(AnalysisStatus.RUNNING.name());
+    assertThat(hostSamplingState.getRetryCount()).isEqualTo(0);
+    assertThat(hostSamplingState.getControlHosts()).isEqualTo(new HashSet<>(Arrays.asList("host1", "host2")));
+    assertThat(hostSamplingState.getTestHosts()).isEqualTo(new HashSet<>(Arrays.asList("host3")));
+    assertThat(hostSamplingState.getInputs().getLearningEngineTaskType())
+        .isEqualTo(LearningEngineTask.LearningEngineTaskType.CANARY_METRIC);
+  }
+
+  @Test
+  @Owner(developers = NAVEEN)
+  @Category(UnitTests.class)
+  public void testExecuteSuccess_AutoAllNewNodes() {
+    VerificationJobInstance verificationJobInstance =
+        VerificationJobInstance.builder()
+            .deploymentStartTime(Instant.now())
+            .startTime(Instant.now().plus(Duration.ofMinutes(2)))
+            .resolvedJob(builderFactory.autoVerificationJobBuilder().build())
+            .build();
+    hostSamplingState.setVerificationJobInstanceId(verificationJobInstance.getUuid());
+    when(verificationJobInstanceService.getVerificationJobInstance(hostSamplingState.getVerificationJobInstanceId()))
+        .thenReturn(verificationJobInstance);
+
+    Optional<TimeRange> preDeploymentTimeRange = verificationJobInstance.getResolvedJob().getPreActivityTimeRange(
+        verificationJobInstance.getDeploymentStartTime());
+    when(timeSeriesRecordService.getTimeSeriesRecordDTOs(hostSamplingState.getInputs().getVerificationTaskId(),
+             preDeploymentTimeRange.get().getStartTime(), preDeploymentTimeRange.get().getEndTime()))
+        .thenReturn(getTimeSeriesRecordDTO(Arrays.asList("host1", "host2")));
+
+    when(timeSeriesRecordService.getTimeSeriesRecordDTOs(hostSamplingState.getInputs().getVerificationTaskId(),
+             hostSamplingState.getInputs().getStartTime(), hostSamplingState.getInputs().getEndTime()))
+        .thenReturn(getTimeSeriesRecordDTO(Arrays.asList("host3", "host4")));
+
+    hostSamplingState = (HostSamplingState) hostSamplingStateExecutor.execute(hostSamplingState);
+
+    assertThat(hostSamplingState.getStatus().name()).isEqualTo(AnalysisStatus.RUNNING.name());
+    assertThat(hostSamplingState.getRetryCount()).isEqualTo(0);
+    assertThat(hostSamplingState.getControlHosts()).isEqualTo(new HashSet<>(Arrays.asList("host1", "host2")));
+    assertThat(hostSamplingState.getTestHosts()).isEqualTo(new HashSet<>(Arrays.asList("host3", "host4")));
+    assertThat(hostSamplingState.getLearningEngineTaskType())
+        .isEqualTo(LearningEngineTask.LearningEngineTaskType.BEFORE_AFTER_DEPLOYMENT_METRIC);
   }
 
   @Test
@@ -158,6 +443,8 @@ public class HostSamplingStateExecutorTest extends CategoryTest {
             .resolvedJob(builderFactory.canaryVerificationJobBuilder().build())
             .build();
     hostSamplingState.setVerificationJobInstanceId(verificationJobInstance.getUuid());
+    when(verificationJobInstanceService.getVerificationJobInstance(hostSamplingState.getVerificationJobInstanceId()))
+        .thenReturn(verificationJobInstance);
     hostSamplingState.setRetryCount(2);
     hostSamplingState.setStatus(AnalysisStatus.FAILED);
     hostSamplingState = (HostSamplingState) hostSamplingStateExecutor.handleRerun(hostSamplingState);
@@ -192,6 +479,8 @@ public class HostSamplingStateExecutorTest extends CategoryTest {
             .resolvedJob(builderFactory.canaryVerificationJobBuilder().build())
             .build();
     hostSamplingState.setVerificationJobInstanceId(verificationJobInstance.getUuid());
+    when(verificationJobInstanceService.getVerificationJobInstance(hostSamplingState.getVerificationJobInstanceId()))
+        .thenReturn(verificationJobInstance);
     hostSamplingState.setRetryCount(1);
     hostSamplingState = (HostSamplingState) hostSamplingStateExecutor.handleRetry(hostSamplingState);
 

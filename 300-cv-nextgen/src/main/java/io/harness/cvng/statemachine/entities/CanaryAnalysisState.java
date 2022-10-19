@@ -15,5 +15,5 @@ import lombok.extern.slf4j.Slf4j;
 @NoArgsConstructor
 @Slf4j
 public class CanaryAnalysisState extends TimeSeriesAnalysisState {
-  private final StateType type = StateType.CANARY_TIME_SERIES;
+  private final StateType type = StateType.CANARY_ANALYSIS_STATE;
 }

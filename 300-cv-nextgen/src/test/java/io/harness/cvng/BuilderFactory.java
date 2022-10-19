@@ -175,6 +175,8 @@ import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator.SLOHeal
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelObjective.RollingSLOTarget;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelObjective.ServiceLevelObjectiveBuilder;
+import io.harness.cvng.verificationjob.entities.AutoVerificationJob;
+import io.harness.cvng.verificationjob.entities.AutoVerificationJob.AutoVerificationJobBuilder;
 import io.harness.cvng.verificationjob.entities.BlueGreenVerificationJob;
 import io.harness.cvng.verificationjob.entities.BlueGreenVerificationJob.BlueGreenVerificationJobBuilder;
 import io.harness.cvng.verificationjob.entities.CanaryBlueGreenVerificationJob.CanaryBlueGreenVerificationJobBuilder;
@@ -1222,6 +1224,7 @@ public class BuilderFactory {
         .sensitivity(RuntimeParameter.builder().value("High").build())
         .duration(RuntimeParameter.builder().value("10m").build());
   }
+
   public BlueGreenVerificationJobBuilder blueGreenVerificationJobBuilder() {
     return BlueGreenVerificationJob.builder()
         .accountId(context.getAccountId())
@@ -1236,6 +1239,22 @@ public class BuilderFactory {
         .trafficSplitPercentage(10)
         .duration(RuntimeParameter.builder().value("10m").build());
   }
+
+  public AutoVerificationJobBuilder autoVerificationJobBuilder() {
+    return AutoVerificationJob.builder()
+        .accountId(context.getAccountId())
+        .orgIdentifier(context.getOrgIdentifier())
+        .projectIdentifier(context.getProjectIdentifier())
+        .identifier("identifier")
+        .monitoredServiceIdentifier(context.getMonitoredServiceIdentifier())
+        .serviceIdentifier(RuntimeParameter.builder().value(context.getServiceIdentifier()).build())
+        .envIdentifier(RuntimeParameter.builder().value(context.getEnvIdentifier()).build())
+        .monitoringSources(Collections.singletonList(context.getMonitoredServiceIdentifier() + "/" + generateUuid()))
+        .sensitivity(RuntimeParameter.builder().value("High").build())
+        .trafficSplitPercentage(10)
+        .duration(RuntimeParameter.builder().value("10m").build());
+  }
+
   public TestVerificationJobBuilder testVerificationJobBuilder() {
     return TestVerificationJob.builder()
         .accountId(context.getAccountId())
