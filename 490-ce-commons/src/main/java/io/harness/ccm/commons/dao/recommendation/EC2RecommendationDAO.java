@@ -19,6 +19,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.retry.RetryOnException;
 import io.harness.ccm.commons.beans.recommendation.ResourceType;
 import io.harness.ccm.commons.entities.ec2.recommendation.EC2Recommendation;
+import io.harness.ccm.commons.entities.ec2.recommendation.EC2Recommendation.EC2RecommendationKeys;
 import io.harness.persistence.HPersistence;
 
 import com.google.inject.Inject;
@@ -55,36 +56,34 @@ public class EC2RecommendationDAO {
   @NonNull
   public EC2Recommendation saveRecommendation(EC2Recommendation ec2Recommendation) {
     Query<EC2Recommendation> query = hPersistence.createQuery(EC2Recommendation.class)
-                                         .field(EC2Recommendation.EC2RecommendationKeys.accountId)
+                                         .field(EC2RecommendationKeys.accountId)
                                          .equal(ec2Recommendation.getAccountId())
-                                         .field(EC2Recommendation.EC2RecommendationKeys.awsAccountId)
+                                         .field(EC2RecommendationKeys.awsAccountId)
                                          .equal(ec2Recommendation.getAwsAccountId())
-                                         .field(EC2Recommendation.EC2RecommendationKeys.instanceId)
+                                         .field(EC2RecommendationKeys.instanceId)
                                          .equal(ec2Recommendation.getInstanceId());
     UpdateOperations<EC2Recommendation> updateOperations =
         hPersistence.createUpdateOperations(EC2Recommendation.class)
-            .set(EC2Recommendation.EC2RecommendationKeys.accountId, ec2Recommendation.getAccountId())
-            .set(EC2Recommendation.EC2RecommendationKeys.awsAccountId, ec2Recommendation.getAwsAccountId())
-            .set(EC2Recommendation.EC2RecommendationKeys.instanceId, ec2Recommendation.getInstanceId())
-            .set(EC2Recommendation.EC2RecommendationKeys.instanceName, ec2Recommendation.getInstanceName())
-            .set(EC2Recommendation.EC2RecommendationKeys.instanceType, ec2Recommendation.getInstanceType())
-            .set(EC2Recommendation.EC2RecommendationKeys.platform, ec2Recommendation.getPlatform())
-            .set(EC2Recommendation.EC2RecommendationKeys.region, ec2Recommendation.getRegion())
-            .set(EC2Recommendation.EC2RecommendationKeys.memory, ec2Recommendation.getMemory())
-            .set(EC2Recommendation.EC2RecommendationKeys.sku, ec2Recommendation.getSku())
-            .set(EC2Recommendation.EC2RecommendationKeys.currentMaxCPU, ec2Recommendation.getCurrentMaxCPU())
-            .set(EC2Recommendation.EC2RecommendationKeys.currentMaxMemory, ec2Recommendation.getCurrentMaxMemory())
-            .set(EC2Recommendation.EC2RecommendationKeys.expectedMaxCPU, ec2Recommendation.getExpectedMaxCPU())
-            .set(EC2Recommendation.EC2RecommendationKeys.expectedMaxMemory, ec2Recommendation.getExpectedMaxMemory())
-            .set(EC2Recommendation.EC2RecommendationKeys.currentMonthlyCost, ec2Recommendation.getCurrentMonthlyCost())
-            .set(EC2Recommendation.EC2RecommendationKeys.currencyCode, ec2Recommendation.getCurrencyCode())
-            .set(EC2Recommendation.EC2RecommendationKeys.recommendationInfo, ec2Recommendation.getRecommendationInfo())
-            .set(
-                EC2Recommendation.EC2RecommendationKeys.expectedMonthlyCost, ec2Recommendation.getExpectedMonthlyCost())
-            .set(EC2Recommendation.EC2RecommendationKeys.expectedMonthlySaving,
-                ec2Recommendation.getExpectedMonthlySaving())
-            .set(EC2Recommendation.EC2RecommendationKeys.rightsizingType, ec2Recommendation.getRightsizingType())
-            .set(EC2Recommendation.EC2RecommendationKeys.lastUpdatedTime, ec2Recommendation.getLastUpdatedTime());
+            .set(EC2RecommendationKeys.accountId, ec2Recommendation.getAccountId())
+            .set(EC2RecommendationKeys.awsAccountId, ec2Recommendation.getAwsAccountId())
+            .set(EC2RecommendationKeys.instanceId, ec2Recommendation.getInstanceId())
+            .set(EC2RecommendationKeys.instanceName, ec2Recommendation.getInstanceName())
+            .set(EC2RecommendationKeys.instanceType, ec2Recommendation.getInstanceType())
+            .set(EC2RecommendationKeys.platform, ec2Recommendation.getPlatform())
+            .set(EC2RecommendationKeys.region, ec2Recommendation.getRegion())
+            .set(EC2RecommendationKeys.memory, ec2Recommendation.getMemory())
+            .set(EC2RecommendationKeys.sku, ec2Recommendation.getSku())
+            .set(EC2RecommendationKeys.currentMaxCPU, ec2Recommendation.getCurrentMaxCPU())
+            .set(EC2RecommendationKeys.currentMaxMemory, ec2Recommendation.getCurrentMaxMemory())
+            .set(EC2RecommendationKeys.expectedMaxCPU, ec2Recommendation.getExpectedMaxCPU())
+            .set(EC2RecommendationKeys.expectedMaxMemory, ec2Recommendation.getExpectedMaxMemory())
+            .set(EC2RecommendationKeys.currentMonthlyCost, ec2Recommendation.getCurrentMonthlyCost())
+            .set(EC2RecommendationKeys.currencyCode, ec2Recommendation.getCurrencyCode())
+            .set(EC2RecommendationKeys.recommendationInfo, ec2Recommendation.getRecommendationInfo())
+            .set(EC2RecommendationKeys.expectedMonthlyCost, ec2Recommendation.getExpectedMonthlyCost())
+            .set(EC2RecommendationKeys.expectedMonthlySaving, ec2Recommendation.getExpectedMonthlySaving())
+            .set(EC2RecommendationKeys.rightsizingType, ec2Recommendation.getRightsizingType())
+            .set(EC2RecommendationKeys.lastUpdatedTime, ec2Recommendation.getLastUpdatedTime());
 
     return hPersistence.upsert(query, updateOperations, upsertReturnNewOptions);
   }
