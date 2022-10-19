@@ -757,11 +757,6 @@ public class ExecutionHelperTest extends CategoryTest {
     verify(pmsGitSyncHelper, times(1))
         .getGitSyncBranchContextBytesThreadLocal(pipelineEntity, pipelineEntity.getStoreType(), null);
     verify(pmsYamlSchemaService, times(0)).validateYamlSchema(accountId, orgId, projectId, pipelineYaml);
-    if (pipelineEntity.getStoreType() != StoreType.REMOTE) {
-      verify(pipelineRbacServiceImpl, times(1))
-          .extractAndValidateStaticallyReferredEntities(
-              accountId, orgId, projectId, pipelineId, pipelineYamlWithoutInputSet);
-    }
     verify(pipelineRbacServiceImpl, times(0))
         .extractAndValidateStaticallyReferredEntities(accountId, orgId, projectId, pipelineId, pipelineYaml);
     verify(planExecutionMetadataService, times(0)).findByPlanExecutionId(anyString());
