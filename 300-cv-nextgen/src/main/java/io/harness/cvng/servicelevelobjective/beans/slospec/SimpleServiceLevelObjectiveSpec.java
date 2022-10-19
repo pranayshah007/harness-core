@@ -23,8 +23,8 @@ import lombok.experimental.SuperBuilder;
 public class SimpleServiceLevelObjectiveSpec extends ServiceLevelObjectiveSpec {
   @ApiModelProperty(required = true) @NotNull String monitoredServiceRef;
   @ApiModelProperty(required = true) @NotNull String healthSourceRef;
-  @Valid ServiceLevelIndicatorType serviceLevelIndicatorType;
-  @Valid List<ServiceLevelIndicatorDTO> serviceLevelIndicators;
+  @Valid @NotNull ServiceLevelIndicatorType serviceLevelIndicatorType;
+  @Valid @NotNull List<ServiceLevelIndicatorDTO> serviceLevelIndicators;
 
   @Override
   public ServiceLevelObjectiveType getType() {

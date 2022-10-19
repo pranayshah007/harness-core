@@ -32,7 +32,7 @@ public class CompositeServiceLevelObjective extends AbstractServiceLevelObjectiv
   }
   private int version;
 
-  @Size(max = 20) List<ServiceLevelObjectivesDetail> serviceLevelObjectivesDetails;
+  @Size(min = 2, max = 20) List<ServiceLevelObjectivesDetail> serviceLevelObjectivesDetails;
 
   @Data
   @Builder

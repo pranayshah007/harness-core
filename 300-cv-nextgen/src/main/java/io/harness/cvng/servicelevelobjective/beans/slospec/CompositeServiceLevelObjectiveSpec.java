@@ -6,6 +6,8 @@ import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveType;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.util.List;
 import javax.validation.Valid;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
 import lombok.AccessLevel;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -18,7 +20,7 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class CompositeServiceLevelObjectiveSpec extends ServiceLevelObjectiveSpec {
-  @Valid List<ServiceLevelObjectiveDetailsDTO> serviceLevelObjectivesDetails;
+  @Size(min = 2, max = 20) @Valid @NotNull List<ServiceLevelObjectiveDetailsDTO> serviceLevelObjectivesDetails;
 
   @Override
   public ServiceLevelObjectiveType getType() {

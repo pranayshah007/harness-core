@@ -41,7 +41,6 @@ import lombok.experimental.FieldDefaults;
 @Schema(name = "AbstractServiceLevelObjective",
     description = "This is the Service Level Objective V2 entity defined in Harness")
 public class ServiceLevelObjectiveV2DTO implements YamlDTO {
-  @ApiModelProperty(required = true) @NotNull @EntityIdentifier ServiceLevelObjectiveType type;
   @ApiModelProperty(required = true) @EntityIdentifier(allowBlank = true) String orgIdentifier;
   @ApiModelProperty(required = true) @EntityIdentifier(allowBlank = true) String projectIdentifier;
   @ApiModelProperty(required = true) @NotNull @EntityIdentifier String identifier;
@@ -50,6 +49,7 @@ public class ServiceLevelObjectiveV2DTO implements YamlDTO {
   @Size(max = 128) Map<String, String> tags;
   @ApiModelProperty(required = true) @NotNull List<String> userJourneyRefs;
   @Valid @NotNull SLOTargetDTO sloTarget;
+  @ApiModelProperty(required = true) @NotNull @EntityIdentifier ServiceLevelObjectiveType type;
   @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = SLO_SPEC, include = JsonTypeInfo.As.EXTERNAL_PROPERTY)
   @Valid
   @NotNull
