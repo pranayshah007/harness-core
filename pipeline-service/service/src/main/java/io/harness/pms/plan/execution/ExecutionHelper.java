@@ -75,6 +75,7 @@ import com.google.inject.Singleton;
 import com.google.protobuf.ByteString;
 import java.io.IOException;
 import java.time.Duration;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -166,16 +167,26 @@ public class ExecutionHelper {
       String pipelineYaml = templateMergeResponseDTO.getMergedPipelineYaml();
       String pipelineYamlWithTemplateRef = templateMergeResponseDTO.getMergedPipelineYamlWithTemplateRef();
 
-      BasicPipeline basicPipeline = YamlUtils.read(pipelineYaml, BasicPipeline.class);
+      boolean allowStageExecutions;
+      List<NotificationRules> notificationRules = Collections.emptyList();
+      switch (pipelineEntity.getHarnessVersion()) {
+        case V1:
+          allowStageExecutions = false;
+          break;
+        default:
+          BasicPipeline basicPipeline = YamlUtils.read(pipelineYaml, BasicPipeline.class);
+          allowStageExecutions = basicPipeline.isAllowStageExecutions();
+          notificationRules = basicPipeline.getNotificationRules();
+      }
       StagesExecutionInfo stagesExecutionInfo = StagesExecutionInfo.builder()
                                                     .isStagesExecution(false)
                                                     .pipelineYamlToRun(pipelineYaml)
-                                                    .allowStagesExecution(basicPipeline.isAllowStageExecutions())
+                                                    .allowStagesExecution(allowStageExecutions)
                                                     .build();
       if (EmptyPredicate.isNotEmpty(stagesToRun)) {
-        if (!basicPipeline.isAllowStageExecutions()) {
+        if (!allowStageExecutions) {
           throw new InvalidRequestException(
-              String.format("Stage executions are not allowed for pipeline [%s]", basicPipeline.getIdentifier()));
+              String.format("Stage executions are not allowed for pipeline [%s]", pipelineEntity.getIdentifier()));
         }
 
         StagesExecutionHelper.throwErrorIfAllStagesAreDeleted(pipelineYaml, stagesToRun);
@@ -197,9 +208,8 @@ public class ExecutionHelper {
           pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(), pipelineYamlWithTemplateRef, true);
       planExecutionMetadataBuilder.expandedPipelineJson(expandedJson);
       PlanExecutionMetadata planExecutionMetadata = planExecutionMetadataBuilder.build();
-      basicPipeline = YamlUtils.read(planExecutionMetadata.getYaml(), BasicPipeline.class);
       ExecutionMetadata executionMetadata = buildExecutionMetadata(pipelineEntity.getIdentifier(), moduleType,
-          triggerInfo, pipelineEntity, executionId, retryExecutionInfo, basicPipeline.getNotificationRules());
+          triggerInfo, pipelineEntity, executionId, retryExecutionInfo, notificationRules);
       return ExecArgs.builder().metadata(executionMetadata).planExecutionMetadata(planExecutionMetadata).build();
     } finally {
       log.info("[PMS_EXECUTE] Pipeline build execution args took time {}ms", System.currentTimeMillis() - start);
@@ -218,7 +228,8 @@ public class ExecutionHelper {
             .setPipelineIdentifier(pipelineIdentifier)
             .setRetryInfo(retryExecutionInfo)
             .setPrincipalInfo(principalInfoHelper.getPrincipalInfoFromSecurityContext())
-            .setIsNotificationConfigured(EmptyPredicate.isNotEmpty(notificationRules));
+            .setIsNotificationConfigured(EmptyPredicate.isNotEmpty(notificationRules))
+            .setHarnessVersion(pipelineEntity.getHarnessVersion().toString());
     ByteString gitSyncBranchContext = pmsGitSyncHelper.getGitSyncBranchContextBytesThreadLocal(
         pipelineEntity, pipelineEntity.getStoreType(), pipelineEntity.getRepo());
     if (gitSyncBranchContext != null) {
@@ -236,6 +247,19 @@ public class ExecutionHelper {
 
   @VisibleForTesting
   TemplateMergeResponseDTO getPipelineYamlAndValidate(String mergedRuntimeInputYaml, PipelineEntity pipelineEntity) {
+    switch (pipelineEntity.getHarnessVersion()) {
+      case V1:
+        return TemplateMergeResponseDTO.builder()
+            .mergedPipelineYaml(pipelineEntity.getYaml())
+            .mergedPipelineYamlWithTemplateRef(pipelineEntity.getYaml())
+            .build();
+      default:
+        return getPipelineYamlAndValidateInternal(mergedRuntimeInputYaml, pipelineEntity);
+    }
+  }
+
+  private TemplateMergeResponseDTO getPipelineYamlAndValidateInternal(
+      String mergedRuntimeInputYaml, PipelineEntity pipelineEntity) {
     YamlConfig pipelineYamlConfig;
     YamlConfig pipelineYamlConfigForSchemaValidations;
 
