@@ -84,17 +84,6 @@ public class PlanCreatorUtils {
     }
   }
 
-  public boolean supportsFieldV2(Map<String, Set<String>> supportedTypes, YamlField field,
-      Set<YamlVersion> supportedVersions, YamlVersion yamlVersion) {
-    if (EmptyPredicate.isEmpty(supportedVersions)) {
-      return false;
-    }
-    if (!supportedVersions.contains(yamlVersion)) {
-      return false;
-    }
-    return supportsField(supportedTypes, field);
-  }
-
   public YamlField getStageConfig(YamlField yamlField, String stageIdentifier) {
     if (EmptyPredicate.isEmpty(stageIdentifier)) {
       return null;

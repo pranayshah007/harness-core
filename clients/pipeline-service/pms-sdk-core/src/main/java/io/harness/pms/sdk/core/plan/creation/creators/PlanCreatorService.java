@@ -47,7 +47,6 @@ import io.harness.pms.sdk.core.variables.VariableCreatorService;
 import io.harness.pms.utils.CompletableFutures;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
-import io.harness.pms.yaml.YamlVersion;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -251,7 +250,6 @@ public class PlanCreatorService extends PlanCreationServiceImplBase {
                  ctx.getMetadata().getOrgIdentifier(), ctx.getMetadata().getProjectIdentifier())) {
       try {
         String fullyQualifiedName = YamlUtils.getFullyQualifiedName(field.getNode());
-        YamlVersion pipelineVersion = YamlVersion.valueOf(ctx.getMetadata().getMetadata().getHarnessVersion());
         Optional<PartialPlanCreator<?>> planCreatorOptional =
             PlanCreatorServiceHelper.findPlanCreator(planCreators, field, ctx.getYamlVersion());
         if (!planCreatorOptional.isPresent()) {
