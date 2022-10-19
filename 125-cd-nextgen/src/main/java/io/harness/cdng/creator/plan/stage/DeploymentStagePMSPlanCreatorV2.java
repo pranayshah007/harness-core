@@ -172,12 +172,6 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
         Preconditions.checkNotNull(ctx.getCurrentField().getNode().getField(YAMLFieldNameConstants.SPEC));
     stageParameters.specConfig(getSpecParameters(specField.getNode().getUuid(), ctx, stageNode));
     String uuid = MultiDeploymentSpawnerUtils.getUuidForMultiDeployment(stageNode);
-    List<AdviserObtainment> adviserObtainments = new ArrayList<>();
-    DeploymentStageConfig stageConfig = stageNode.getDeploymentStageConfig();
-    if (stageConfig.getServices() == null && stageConfig.getEnvironments() == null
-        && stageConfig.getEnvironmentGroup() == null) {
-      adviserObtainments = getAdviserObtainment(ctx.getCurrentField());
-    }
     // We need to swap the ids if strategy is present
     PlanNodeBuilder builder =
         PlanNode.builder()
@@ -193,7 +187,7 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
                 FacilitatorObtainment.newBuilder()
                     .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.CHILD).build())
                     .build())
-            .adviserObtainments(adviserObtainments);
+            .adviserObtainments(getAdviserObtainment(ctx.getCurrentField(), stageNode));
 
     if (!EmptyPredicate.isEmpty(ctx.getExecutionInputTemplate())) {
       builder.executionInputTemplate(ctx.getExecutionInputTemplate());
@@ -201,7 +195,7 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
     return builder.build();
   }
 
-  List<AdviserObtainment> getAdviserObtainment(YamlField stageField) {
+  List<AdviserObtainment> getAdviserObtainment(YamlField stageField, DeploymentStageNode stageNode) {
     List<AdviserObtainment> adviserObtainment = new ArrayList<>();
 
     RollbackStartAdvisorParameters rollbackCustomAdviserParameters =
@@ -212,7 +206,11 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
             .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(rollbackCustomAdviserParameters)))
             .build());
 
-    adviserObtainment.addAll(getAdviserObtainmentFromMetaData(stageField));
+    DeploymentStageConfig stageConfig = stageNode.getDeploymentStageConfig();
+    if (stageConfig.getServices() == null && stageConfig.getEnvironments() == null
+        && stageConfig.getEnvironmentGroup() == null) {
+      adviserObtainment.addAll(getAdviserObtainmentFromMetaData(stageField));
+    }
     return adviserObtainment;
   }
 
