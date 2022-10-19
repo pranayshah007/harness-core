@@ -23,6 +23,7 @@ import io.harness.event.handler.impl.EventPublishHelper;
 import io.harness.exception.InvalidRequestException;
 import io.harness.licensing.beans.response.CheckExpiryResultDTO;
 import io.harness.licensing.remote.NgLicenseHttpClient;
+import io.harness.observer.Subject;
 
 import software.wings.app.MainConfiguration;
 import software.wings.beans.Account;
@@ -45,6 +46,7 @@ import software.wings.service.intfc.AccountService;
 import software.wings.service.intfc.EmailNotificationService;
 import software.wings.service.intfc.UserGroupService;
 import software.wings.service.intfc.UserService;
+import software.wings.service.intfc.account.AccountLicenseObserver;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
@@ -110,13 +112,14 @@ public class LicenseServiceImpl implements LicenseService {
   @Inject private MainConfiguration mainConfiguration;
 
   private final Cache<String, CheckExpiryResultDTO> licenseExpiryCache;
+  private final Subject<AccountLicenseObserver> accountLicenseObserverSubject;
 
   @Inject
   public LicenseServiceImpl(AccountService accountService, AccountDao accountDao, WingsPersistence wingsPersistence,
       GenericDbCache dbCache, ExecutorService executorService, LicenseProvider licenseProvider,
       EmailNotificationService emailNotificationService, EventPublishHelper eventPublishHelper,
       MainConfiguration mainConfiguration, UserService userService, UserGroupService userGroupService,
-      NgLicenseHttpClient ngLicenseHttpClient) {
+      NgLicenseHttpClient ngLicenseHttpClient, Subject<AccountLicenseObserver> accountLicenseObserverSubject) {
     this.accountService = accountService;
     this.accountDao = accountDao;
     this.wingsPersistence = wingsPersistence;
@@ -128,6 +131,7 @@ public class LicenseServiceImpl implements LicenseService {
     this.userService = userService;
     this.userGroupService = userGroupService;
     this.ngLicenseHttpClient = ngLicenseHttpClient;
+    this.accountLicenseObserverSubject = accountLicenseObserverSubject = new Subject<>();
     this.licenseExpiryCache = Caffeine.newBuilder().expireAfterWrite(6, TimeUnit.HOURS).build();
 
     DefaultSalesContacts defaultSalesContacts = mainConfiguration.getDefaultSalesContacts();
@@ -251,6 +255,7 @@ public class LicenseServiceImpl implements LicenseService {
     LicenseInfo licenseInfo = account.getLicenseInfo();
     licenseInfo.setAccountStatus(AccountStatus.MARKED_FOR_DELETION);
     updateAccountLicense(account.getUuid(), licenseInfo);
+    accountLicenseObserverSubject.fireInform(AccountLicenseObserver::onLicenseChange, account);
   }
 
   @VisibleForTesting
@@ -423,6 +428,7 @@ public class LicenseServiceImpl implements LicenseService {
     dbCache.invalidate(Account.class, accountId);
     Account updatedAccount = wingsPersistence.get(Account.class, accountId);
     LicenseUtils.decryptLicenseInfo(updatedAccount, false);
+    accountLicenseObserverSubject.fireInform(AccountLicenseObserver::onLicenseChange, accountId);
 
     eventPublishHelper.publishLicenseChangeEvent(accountId, oldAccountType, licenseInfo.getAccountType());
     return true;
@@ -572,6 +578,7 @@ public class LicenseServiceImpl implements LicenseService {
   private void expireLicense(String accountId, LicenseInfo licenseInfo) {
     licenseInfo.setAccountStatus(AccountStatus.EXPIRED);
     updateAccountLicense(accountId, licenseInfo);
+    accountLicenseObserverSubject.fireInform(AccountLicenseObserver::onLicenseChange, accountId);
   }
 
   private void updateEmailSentToSales(String accountId, boolean status) {
@@ -622,6 +629,7 @@ public class LicenseServiceImpl implements LicenseService {
       log.error("Invalid AWS productcode received:[{}],", productCode);
       return false;
     }
+    accountLicenseObserverSubject.fireInform(AccountLicenseObserver::onLicenseChange, accountId);
     return true;
   }
 
