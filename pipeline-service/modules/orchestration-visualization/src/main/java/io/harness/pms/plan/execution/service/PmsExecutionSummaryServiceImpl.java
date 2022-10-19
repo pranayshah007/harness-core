@@ -16,6 +16,7 @@ import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.utils.OrchestrationUtils;
 import io.harness.execution.NodeExecution;
 import io.harness.graph.stepDetail.service.PmsGraphStepDetailsService;
+import io.harness.plan.Node;
 import io.harness.plan.NodeType;
 import io.harness.plancreator.strategy.StrategyType;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -30,8 +31,11 @@ import io.harness.repositories.executions.PmsExecutionSummaryRespository;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
+
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -152,6 +156,34 @@ public class PmsExecutionSummaryServiceImpl implements PmsExecutionSummaryServic
       Query query = new Query(criteria);
       pmsExecutionSummaryRepository.update(query, update);
     }
+  }
+
+  @Override
+  public void addStageNodeInGraphForPipelineRollback(
+      String planExecutionId, NodeExecution nodeExecution, Update summaryUpdate) {
+    String planNodeUuid = nodeExecution.getNodeId();
+    if (!planNodeUuid.endsWith("_rollbackStage")) {
+      return;
+    }
+
+    Ambiance ambiance = nodeExecution.getAmbiance();
+    Optional<PipelineExecutionSummaryEntity> entity = getPipelineExecutionSummary(AmbianceUtils.getAccountId(ambiance),
+        AmbianceUtils.getOrgIdentifier(ambiance), AmbianceUtils.getProjectIdentifier(ambiance), planExecutionId);
+    if (!entity.isPresent()) {
+      return;
+    }
+    PipelineExecutionSummaryEntity pipelineExecutionSummaryEntity = entity.get();
+    Map<String, GraphLayoutNodeDTO> graphLayoutNodeDTOMap = pipelineExecutionSummaryEntity.getLayoutNodeMap();
+    Optional<String> previousStageId =
+        graphLayoutNodeDTOMap.keySet()
+            .stream()
+            .filter(key
+                -> Objects.equals(graphLayoutNodeDTOMap.get(key).getNodeExecutionId(), nodeExecution.getPreviousId()))
+            .findFirst();
+    if (!previousStageId.isPresent()) {
+      return;
+    }
+    GraphLayoutNodeDTO prevGraphLayoutNode = graphLayoutNodeDTOMap.get(previousStageId.get());
   }
 
   @Override

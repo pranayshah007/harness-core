@@ -178,6 +178,8 @@ public class GraphGenerationServiceImpl implements GraphGenerationService {
           }
           processedNodeExecutionIds.add(nodeExecutionId);
           NodeExecution nodeExecution = nodeExecutionService.get(nodeExecutionId);
+          pmsExecutionSummaryService.addStageNodeInGraphForPipelineRollback(
+              planExecutionId, nodeExecution, executionSummaryUpdate);
           pmsExecutionSummaryService.addStageNodeInGraphIfUnderStrategy(
               planExecutionId, nodeExecution, executionSummaryUpdate);
           pmsExecutionSummaryService.updateStrategyNode(planExecutionId, nodeExecution, executionSummaryUpdate);
