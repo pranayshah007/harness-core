@@ -13,6 +13,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import io.harness.cvng.beans.DataSourceType;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.google.common.io.Resources;
 import java.io.IOException;
@@ -59,6 +60,7 @@ public class ELKCVConfig extends LogCVConfig {
     return DSL;
   }
 
+  @JsonIgnore
   @Override
   public String getHostCollectionDSL() {
     throw new RuntimeException("Not implemented");

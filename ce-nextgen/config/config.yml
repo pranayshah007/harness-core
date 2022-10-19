@@ -226,3 +226,11 @@ lightwingAutoCUDClientConfig:
   readTimeOutSeconds: 15
 
 enableOpentelemetry: false
+
+dkronClientConfig:
+  baseUrl: http://localhost:8080/
+  connectTimeOutSeconds: 15
+  readTimeOutSeconds: 15
+
+governanceConfig:
+  useDkron: true

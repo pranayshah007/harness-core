@@ -236,7 +236,6 @@ public enum FeatureName {
   SELF_SERVICE_ENABLED,
   CHI_CUSTOM_HEALTH,
   CHI_CUSTOM_HEALTH_LOGS,
-  AZURE_SAML_150_GROUPS_SUPPORT,
   CLOUDFORMATION_SKIP_WAIT_FOR_RESOURCES,
   CLOUDFORMATION_CHANGE_SET,
   FAIL_WORKFLOW_IF_SECRET_DECRYPTION_FAILS,
@@ -367,7 +366,6 @@ public enum FeatureName {
       HarnessTeam.SPG),
   HOSTED_BUILDS("Used to enabled Hosted builds in paid accounts", HarnessTeam.CI),
   CD_ONBOARDING_ENABLED,
-  ECS_NG,
   ATTRIBUTE_TYPE_ACL_ENABLED("Enable attribute filter on NG UI for ACL", HarnessTeam.PL),
   CREATE_DEFAULT_PROJECT("Enables auto create default project after user signup", HarnessTeam.GTM),
   ANALYSE_TF_PLAN_SUMMARY(
@@ -465,7 +463,8 @@ public enum FeatureName {
       "Switch to use iterator fw instead of quartz scheduler for InstancesPurgeJob", HarnessTeam.CDP),
   SYNC_GIT_CLONE_AND_COPY_TO_DEST_DIR(
       "This feature flag helps in synchronizing the git clone of repo and copying the files then to destination directory",
-      HarnessTeam.CDP);
+      HarnessTeam.CDP),
+  CI_YAML_VERSIONING("Feature flag for yaml simplification", HarnessTeam.CI);
 
   @Deprecated
   FeatureName() {

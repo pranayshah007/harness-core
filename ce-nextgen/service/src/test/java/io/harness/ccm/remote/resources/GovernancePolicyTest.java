@@ -24,7 +24,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import lombok.extern.slf4j.Slf4j;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -50,7 +49,7 @@ public class GovernancePolicyTest extends CategoryTest {
   private Policy policy;
   private PolicyRequest policyRequest;
   private Policy createPolicyDTO;
-  private GovernanceResource policymanagement;
+  private GovernancePolicyResource policymanagement;
   private ListDTO listDTO;
 
   @Before
@@ -66,7 +65,7 @@ public class GovernancePolicyTest extends CategoryTest {
                  .orgIdentifier(ORG_PARAM_MESSAGE)
                  .projectIdentifier(PROJECT_PARAM_MESSAGE)
                  .build();
-    policymanagement = new GovernanceResource(policyService, rbacHelper);
+    policymanagement = new GovernancePolicyResource(policyService, rbacHelper);
     createPolicyDTO = policy.toDTO();
     Policies.add(policy);
   }

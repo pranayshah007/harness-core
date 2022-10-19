@@ -3665,6 +3665,15 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "EnvironmentGroupMetadata": {
+      "type": "object",
+      "properties": {
+        "parallel": {
+          "type": "boolean"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "EnvironmentGroupYaml": {
       "type": "object",
       "required": [
@@ -3705,7 +3714,7 @@
           ]
         },
         "metadata": {
-          "type": "string"
+          "$ref": "#/definitions/EnvironmentGroupMetadata"
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"

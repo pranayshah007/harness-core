@@ -68,12 +68,14 @@ public class EnvironmentRefreshHelper {
     if (envRefJsonNode != null) {
       envRefValue = envRefJsonNode.asText();
       JsonNode envInputsNode = envJsonNode.get(YamlTypes.ENVIRONMENT_INPUTS);
-      if (NGExpressionUtils.isRuntimeOrExpressionField(envRefValue)) {
+      if (NGExpressionUtils.isRuntimeField(envRefValue)) {
         if (isNodeNotNullAndNotHaveRuntimeValue(envInputsNode)
             || (infraDefsNode != null && isNodeNotNullAndNotHaveRuntimeValue(infraDefsNode))
             || (serviceOverrideInputs != null && isNodeNotNullAndNotHaveRuntimeValue(serviceOverrideInputs))) {
           errorNodeSummary.setValid(false);
         }
+        return;
+      } else if (NGExpressionUtils.isExpressionField(envRefValue)) {
         return;
       }
 
@@ -128,6 +130,10 @@ public class EnvironmentRefreshHelper {
         YamlNodeUtils.goToPathUsingFqn(stageYamlNodeInResolvedTemplatesYaml, "spec.service");
     if (serviceNodeInResolvedTemplatesYaml == null) {
       log.warn("Env node in Resolved templates yaml is null");
+      return;
+    }
+    if (serviceNodeInResolvedTemplatesYaml.getField(YamlTypes.SERVICE_REF) == null) {
+      log.warn("service ref in Resolved templates yaml is null " + serviceNodeInResolvedTemplatesYaml);
       return;
     }
     JsonNode serviceRefInResolvedTemplatesYaml =
@@ -231,7 +237,7 @@ public class EnvironmentRefreshHelper {
     if (envRefJsonNode != null) {
       envRefValue = envRefJsonNode.asText();
       JsonNode envInputsNode = envObjectNode.get(YamlTypes.ENVIRONMENT_INPUTS);
-      if (NGExpressionUtils.isRuntimeOrExpressionField(envRefValue)) {
+      if (NGExpressionUtils.isRuntimeField(envRefValue)) {
         envObjectNode.put(YamlTypes.ENVIRONMENT_INPUTS, "<+input>");
         if (infraDefsNode != null && isNodeNotNullAndNotHaveRuntimeValue(infraDefsNode)) {
           envObjectNode.put(YamlTypes.INFRASTRUCTURE_DEFS, "<+input>");
@@ -239,6 +245,8 @@ public class EnvironmentRefreshHelper {
         if (serviceOverrideInputs != null && isNodeNotNullAndNotHaveRuntimeValue(serviceOverrideInputs)) {
           envObjectNode.put(YamlTypes.SERVICE_OVERRIDE_INPUTS, "<+input>");
         }
+        return envObjectNode;
+      } else if (NGExpressionUtils.isExpressionField(envRefValue)) {
         return envObjectNode;
       }
 
