@@ -2077,7 +2077,7 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
   public io.harness.ng.overview.dto.ServiceHeaderInfo getServiceHeaderInfo(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId) {
     Optional<ServiceEntity> service =
-        ServiceEntityServiceImpl.get(accountIdentifier, orgIdentifier, projectIdentifier, serviceId, false);
+        ServiceEntityServiceImpl.get(accountIdentifier, orgIdentifier, projectIdentifier, serviceId, false, null);
     ServiceEntity serviceEntity = service.get();
     Set<String> deploymentTypes =
         getDeploymentType(accountIdentifier, orgIdentifier, projectIdentifier, Arrays.asList(serviceId))

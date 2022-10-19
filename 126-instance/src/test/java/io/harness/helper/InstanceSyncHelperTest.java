@@ -83,7 +83,7 @@ public class InstanceSyncHelperTest extends InstancesTestBase {
     ServiceEntity serviceEntity = ServiceEntity.builder().build();
     when(serviceEntityService.get(infrastructureMappingDTO.getAccountIdentifier(),
              infrastructureMappingDTO.getOrgIdentifier(), infrastructureMappingDTO.getProjectIdentifier(),
-             infrastructureMappingDTO.getServiceIdentifier(), false))
+             infrastructureMappingDTO.getServiceIdentifier(), false, null))
         .thenReturn(Optional.of(serviceEntity));
     assertThat(instanceSyncHelper.fetchService(infrastructureMappingDTO)).isEqualTo(serviceEntity);
   }

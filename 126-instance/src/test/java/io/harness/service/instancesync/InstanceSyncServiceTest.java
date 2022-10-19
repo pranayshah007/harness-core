@@ -148,7 +148,7 @@ public class InstanceSyncServiceTest extends InstancesTestBase {
         instanceSyncMonitoringService, accountClient);
 
     ServiceEntity serviceEntity = ServiceEntity.builder().name(TEST_SERVICE_NAME).identifier(TEST_SERVICE_ID).build();
-    when(serviceEntityService.get(anyString(), anyString(), anyString(), anyString(), anyBoolean()))
+    when(serviceEntityService.get(anyString(), anyString(), anyString(), anyString(), anyBoolean(), null))
         .thenReturn(Optional.of(serviceEntity));
     Environment environment =
         Environment.builder().identifier(TEST_ENV_ID).type(EnvironmentType.PreProduction).name(TEST_ENV_NAME).build();

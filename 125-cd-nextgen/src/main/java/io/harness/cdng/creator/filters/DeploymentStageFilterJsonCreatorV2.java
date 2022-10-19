@@ -337,7 +337,7 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
     if (!serviceEntityRef.isExpression()) {
       Optional<ServiceEntity> serviceEntityOptional = serviceEntityService.get(
           filterCreationContext.getSetupMetadata().getAccountId(), filterCreationContext.getSetupMetadata().getOrgId(),
-          filterCreationContext.getSetupMetadata().getProjectId(), serviceEntityRef.getValue(), false);
+          filterCreationContext.getSetupMetadata().getProjectId(), serviceEntityRef.getValue(), false, null);
       serviceEntityOptional.ifPresent(se -> {
         NGServiceV2InfoConfig config = NGServiceEntityMapper.toNGServiceConfig(se).getNgServiceV2InfoConfig();
         filterBuilder.serviceName(se.getName());
@@ -372,7 +372,7 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
     if (serviceRef != null && !serviceRef.isExpression()) {
       Optional<ServiceEntity> serviceEntityOptional = serviceEntityService.get(
           filterCreationContext.getSetupMetadata().getAccountId(), filterCreationContext.getSetupMetadata().getOrgId(),
-          filterCreationContext.getSetupMetadata().getProjectId(), serviceRef.getValue(), false);
+          filterCreationContext.getSetupMetadata().getProjectId(), serviceRef.getValue(), false, null);
       serviceEntityOptional.ifPresent(serviceEntity -> cdFilter.serviceName(serviceEntity.getName()));
     }
 

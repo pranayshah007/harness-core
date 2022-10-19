@@ -43,7 +43,7 @@ public class InstanceSyncHelper {
   public ServiceEntity fetchService(InfrastructureMappingDTO infrastructureMappingDTO) {
     Optional<ServiceEntity> serviceEntityOptional = serviceEntityService.get(
         infrastructureMappingDTO.getAccountIdentifier(), infrastructureMappingDTO.getOrgIdentifier(),
-        infrastructureMappingDTO.getProjectIdentifier(), infrastructureMappingDTO.getServiceIdentifier(), false);
+        infrastructureMappingDTO.getProjectIdentifier(), infrastructureMappingDTO.getServiceIdentifier(), false, null);
     return serviceEntityOptional.orElseThrow(()
                                                  -> new InvalidRequestException("Service not found for serviceId : {}"
                                                      + infrastructureMappingDTO.getServiceIdentifier()));

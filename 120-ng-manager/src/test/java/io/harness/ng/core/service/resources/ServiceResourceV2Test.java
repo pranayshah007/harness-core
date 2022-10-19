@@ -106,7 +106,7 @@ public class ServiceResourceV2Test extends CategoryTest {
     when(orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(
              ORG_IDENTIFIER, PROJ_IDENTIFIER, ACCOUNT_ID))
         .thenReturn(true);
-    when(serviceEntityService.create(any())).thenReturn(entity);
+    when(serviceEntityService.create(any(), serviceGitXMetadataDTO)).thenReturn(entity);
     serviceResourceV2.create(ACCOUNT_ID, serviceRequestDTO);
     verify(accessControlClient, times(1))
         .checkForAccessOrThrow(ResourceScope.of(ACCOUNT_ID, serviceRequestDTO.getOrgIdentifier(),
@@ -144,7 +144,7 @@ public class ServiceResourceV2Test extends CategoryTest {
   @Owner(developers = SHIVAM)
   @Category(UnitTests.class)
   public void testListTemplate() {
-    when(serviceEntityService.get(any(), any(), any(), any(), eq(false))).thenReturn(Optional.of(entity));
+    when(serviceEntityService.get(any(), any(), any(), any(), eq(false), null)).thenReturn(Optional.of(entity));
     serviceResourceV2.get(IDENTIFIER, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, false);
   }
 
@@ -152,7 +152,7 @@ public class ServiceResourceV2Test extends CategoryTest {
   @Owner(developers = SHIVAM)
   @Category(UnitTests.class)
   public void testListTemplateForNotFoundException() {
-    when(serviceEntityService.get(any(), any(), any(), any(), eq(false))).thenReturn(Optional.empty());
+    when(serviceEntityService.get(any(), any(), any(), any(), eq(false), null)).thenReturn(Optional.empty());
     assertThatThrownBy(() -> serviceResourceV2.get(IDENTIFIER, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, false))
         .hasMessage("Service with identifier [identifier] in project [projId], org [orgId] not found");
   }
@@ -164,7 +164,7 @@ public class ServiceResourceV2Test extends CategoryTest {
     when(orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(
              ORG_IDENTIFIER, PROJ_IDENTIFIER, ACCOUNT_ID))
         .thenReturn(true);
-    when(serviceEntityService.update(any())).thenReturn(entity);
+    when(serviceEntityService.update(any(), serviceRequestDTO.getServiceGitXMetadataRequestDTO())).thenReturn(entity);
     serviceResourceV2.update("IF_MATCH", ACCOUNT_ID, serviceRequestDTO);
     verify(accessControlClient, times(1))
         .checkForAccessOrThrow(ResourceScope.of(ACCOUNT_ID, serviceRequestDTO.getOrgIdentifier(),
@@ -179,7 +179,9 @@ public class ServiceResourceV2Test extends CategoryTest {
     when(orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(
              ORG_IDENTIFIER, PROJ_IDENTIFIER, ACCOUNT_ID))
         .thenReturn(true);
-    when(serviceEntityService.upsert(any(), eq(UpsertOptions.DEFAULT))).thenReturn(entity);
+    when(serviceEntityService.upsert(
+             any(), eq(UpsertOptions.DEFAULT), serviceRequestDTO.getServiceGitXMetadataRequestDTO()))
+        .thenReturn(entity);
     serviceResourceV2.upsert("IF_MATCH", ACCOUNT_ID, serviceRequestDTO);
     verify(accessControlClient, times(1))
         .checkForAccessOrThrow(ResourceScope.of(ACCOUNT_ID, serviceRequestDTO.getOrgIdentifier(),

@@ -22,6 +22,7 @@ import io.harness.gitsync.scm.beans.ScmGetFileResponse;
 import io.harness.gitsync.scm.beans.ScmGitMetaData;
 import io.harness.gitsync.scm.beans.ScmUpdateFileGitRequest;
 import io.harness.gitsync.scm.beans.ScmUpdateFileGitResponse;
+import io.harness.ng.core.service.entity.ServiceGitXMetadataDTO;
 import io.harness.persistence.gitaware.GitAware;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -29,6 +30,7 @@ import com.google.inject.Inject;
 import groovy.lang.Singleton;
 import java.util.Collections;
 import java.util.Map;
+import lombok.NonNull;
 
 @OwnedBy(HarnessTeam.PL)
 @Singleton
@@ -43,6 +45,27 @@ public class GitAwareEntityHelper {
   public static final String FILE_PATH_INVALID_EXTENSION_ERROR_FORMAT = "FilePath [%s] doesn't have right extension.";
 
   public GitAware fetchEntityFromRemote(
+      GitAware entity, Scope scope, GitContextRequestParams gitContextRequestParams, Map<String, String> contextMap) {
+    String repoName = gitContextRequestParams.getRepoName();
+    // if branch is empty, then git sdk will figure out the default branch for the repo by itself
+    String branch =
+        isNullOrDefault(gitContextRequestParams.getBranchName()) ? "" : gitContextRequestParams.getBranchName();
+    String filePath = gitContextRequestParams.getFilePath();
+    String connectorRef = gitContextRequestParams.getConnectorRef();
+    validateFilePathHasCorrectExtension(gitContextRequestParams.getFilePath());
+    ScmGetFileResponse scmGetFileResponse =
+        scmGitSyncHelper.getFileByBranch(Scope.builder()
+                                             .accountIdentifier(scope.getAccountIdentifier())
+                                             .orgIdentifier(scope.getOrgIdentifier())
+                                             .projectIdentifier(scope.getProjectIdentifier())
+                                             .build(),
+            repoName, branch, filePath, connectorRef, contextMap);
+    entity.setData(scmGetFileResponse.getFileContent());
+    GitAwareContextHelper.updateScmGitMetaData(scmGetFileResponse.getGitMetaData());
+    return entity;
+  }
+
+  public GitAware fetchServiceEntityFromRemote(
       GitAware entity, Scope scope, GitContextRequestParams gitContextRequestParams, Map<String, String> contextMap) {
     String repoName = gitContextRequestParams.getRepoName();
     // if branch is empty, then git sdk will figure out the default branch for the repo by itself
@@ -144,6 +167,48 @@ public class GitAwareEntityHelper {
     return scmCreateFileGitResponse;
   }
 
+  public ScmCreateFileGitResponse createServiceEntityOnGit(
+      GitAware gitAwareEntity, ServiceGitXMetadataDTO serviceGitXMetadataDTO, String yaml, Scope scope) {
+    String repoName = gitAwareEntity.getRepo();
+    if (isNullOrDefault(repoName)) {
+      throw new InvalidRequestException("No repo name provided.");
+    }
+    String filePath = gitAwareEntity.getFilePath();
+    if (isNullOrDefault(filePath)) {
+      throw new InvalidRequestException("No file path provided.");
+    }
+    String connectorRef = gitAwareEntity.getConnectorRef();
+    if (isNullOrDefault(connectorRef)) {
+      throw new InvalidRequestException("No Connector reference provided.");
+    }
+    String baseBranch = serviceGitXMetadataDTO.getBaseBranch();
+    if (serviceGitXMetadataDTO.isCommitToNewBranch() && isNullOrDefault(baseBranch)) {
+      throw new InvalidRequestException("No base branch provided for committing to new branch");
+    }
+    validateFilePathHasCorrectExtension(gitAwareEntity.getFilePath());
+    // if branch is empty, then git sdk will figure out the default branch for the repo by itself
+    String branch = isNullOrDefault(serviceGitXMetadataDTO.getBranch()) ? "" : serviceGitXMetadataDTO.getBranch();
+    // if commitMsg is empty, then git sdk will use some default Commit Message
+    String commitMsg =
+        isNullOrDefault(serviceGitXMetadataDTO.getCommitMessage()) ? "" : serviceGitXMetadataDTO.getCommitMessage();
+    ScmCreateFileGitRequest scmCreateFileGitRequest =
+        ScmCreateFileGitRequest.builder()
+            .repoName(repoName)
+            .branchName(branch)
+            .fileContent(yaml)
+            .filePath(filePath)
+            .connectorRef(connectorRef)
+            .isCommitToNewBranch(serviceGitXMetadataDTO.isCommitToNewBranch())
+            .commitMessage(commitMsg)
+            .baseBranch(baseBranch)
+            .build();
+
+    ScmCreateFileGitResponse scmCreateFileGitResponse =
+        scmGitSyncHelper.createFile(scope, scmCreateFileGitRequest, Collections.emptyMap());
+    GitAwareContextHelper.updateScmGitMetaData(scmCreateFileGitResponse.getGitMetaData());
+    return scmCreateFileGitResponse;
+  }
+
   public ScmUpdateFileGitResponse updateEntityOnGit(GitAware gitAwareEntity, String yaml, Scope scope) {
     GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
     return updateEntityOnGit(
@@ -197,6 +262,54 @@ public class GitAwareEntityHelper {
 
     ScmUpdateFileGitResponse scmUpdateFileGitResponse =
         scmGitSyncHelper.updateFile(scope, scmUpdateFileGitRequest, Collections.emptyMap());
+    GitAwareContextHelper.updateScmGitMetaData(scmUpdateFileGitResponse.getGitMetaData());
+    return scmUpdateFileGitResponse;
+  }
+
+  public ScmUpdateFileGitResponse updateServiceEntityOnGit(
+      GitAware gitAwareEntity, String yaml, Scope scope, @NonNull ServiceGitXMetadataDTO serviceGitXMetadataDTO) {
+    String repoName = gitAwareEntity.getRepo();
+    if (isNullOrDefault(repoName)) {
+      throw new InvalidRequestException("No repo name provided.");
+    }
+    String filePath = gitAwareEntity.getFilePath();
+    if (isNullOrDefault(filePath)) {
+      throw new InvalidRequestException("No file path provided.");
+    }
+    String connectorRef = gitAwareEntity.getConnectorRef();
+    if (isNullOrDefault(connectorRef)) {
+      throw new InvalidRequestException("No Connector reference provided.");
+    }
+    String baseBranch = serviceGitXMetadataDTO.getBaseBranch();
+    if (serviceGitXMetadataDTO.isCommitToNewBranch() && isNullOrDefault(baseBranch)) {
+      throw new InvalidRequestException("No base branch provided for committing to new branch");
+    }
+    // if branch is empty, then git sdk will figure out the default branch for the repo by itself
+    String branch = serviceGitXMetadataDTO.getBranch();
+    if (isNullOrDefault(branch)) {
+      throw new InvalidRequestException("No branch provided for updating the file.");
+    }
+    validateFilePathHasCorrectExtension(gitAwareEntity.getFilePath());
+    // if commitMsg is empty, then git sdk will use some default Commit Message
+    String commitMsg =
+        isNullOrDefault(serviceGitXMetadataDTO.getCommitMessage()) ? "" : serviceGitXMetadataDTO.getCommitMessage();
+    ScmUpdateFileGitRequest scmUpdateFileGitRequest =
+        ScmUpdateFileGitRequest.builder()
+            .repoName(repoName)
+            .branchName(branch)
+            .fileContent(yaml)
+            .filePath(filePath)
+            .connectorRef(connectorRef)
+            .isCommitToNewBranch(serviceGitXMetadataDTO.isCommitToNewBranch())
+            .commitMessage(commitMsg)
+            .baseBranch(baseBranch)
+            .oldFileSha(serviceGitXMetadataDTO.getLastObjectId())
+            .oldCommitId(serviceGitXMetadataDTO.getLastCommitId())
+            .build();
+
+    ScmUpdateFileGitResponse scmUpdateFileGitResponse =
+        scmGitSyncHelper.updateFile(scope, scmUpdateFileGitRequest, Collections.emptyMap());
+    // Todo(Tathagat): need to check where this is getting used
     GitAwareContextHelper.updateScmGitMetaData(scmUpdateFileGitResponse.getGitMetaData());
     return scmUpdateFileGitResponse;
   }

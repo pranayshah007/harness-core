@@ -171,7 +171,7 @@ public class ServicePlanCreatorHelperTest extends CategoryTest {
 
     ServiceEntity serviceEntity =
         ServiceEntity.builder().name(SERVICE_IDENTIFIER).name(SERVICE_IDENTIFIER).yaml(serviceYaml).build();
-    when(serviceEntityService.get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, SERVICE_IDENTIFIER, false))
+    when(serviceEntityService.get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, SERVICE_IDENTIFIER, false, null))
         .thenReturn(Optional.of(serviceEntity));
     YamlField serviceFieldForV2 =
         servicePlanCreatorHelper.getResolvedServiceFieldForV2(null, stageNode, specField, context);
@@ -236,7 +236,7 @@ public class ServicePlanCreatorHelperTest extends CategoryTest {
 
     ServiceEntity serviceEntity =
         ServiceEntity.builder().name(SERVICE_IDENTIFIER).name(SERVICE_IDENTIFIER).yaml(serviceYaml).build();
-    when(serviceEntityService.get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, SERVICE_IDENTIFIER, false))
+    when(serviceEntityService.get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, SERVICE_IDENTIFIER, false, null))
         .thenReturn(Optional.of(serviceEntity));
     YamlField serviceFieldForV2 =
         servicePlanCreatorHelper.getResolvedServiceFieldForV2(null, stageNode, specField, context);

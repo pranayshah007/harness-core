@@ -13,11 +13,14 @@ import static io.harness.ng.core.mapper.TagMapper.convertToList;
 import static io.harness.ng.core.mapper.TagMapper.convertToMap;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.gitsync.beans.StoreType;
+import io.harness.ng.core.service.dto.ServiceGitXMetadataRequestDTO;
 import io.harness.ng.core.service.dto.ServiceRequestDTO;
 import io.harness.ng.core.service.dto.ServiceResponse;
 import io.harness.ng.core.service.dto.ServiceResponseDTO;
 import io.harness.ng.core.service.entity.ServiceBasicInfo;
 import io.harness.ng.core.service.entity.ServiceEntity;
+import io.harness.ng.core.service.entity.ServiceGitXMetadataDTO;
 import io.harness.ng.core.service.yaml.NGServiceConfig;
 import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
 
@@ -27,16 +30,19 @@ import lombok.experimental.UtilityClass;
 @UtilityClass
 public class ServiceElementMapper {
   public ServiceEntity toServiceEntity(String accountId, ServiceRequestDTO serviceRequestDTO) {
-    ServiceEntity serviceEntity = ServiceEntity.builder()
-                                      .identifier(serviceRequestDTO.getIdentifier())
-                                      .accountId(accountId)
-                                      .orgIdentifier(serviceRequestDTO.getOrgIdentifier())
-                                      .projectIdentifier(serviceRequestDTO.getProjectIdentifier())
-                                      .name(serviceRequestDTO.getName())
-                                      .description(serviceRequestDTO.getDescription())
-                                      .tags(convertToList(serviceRequestDTO.getTags()))
-                                      .yaml(serviceRequestDTO.getYaml())
-                                      .build();
+    ServiceEntity.ServiceEntityBuilder serviceEntityBuilder =
+        ServiceEntity.builder()
+            .identifier(serviceRequestDTO.getIdentifier())
+            .accountId(accountId)
+            .orgIdentifier(serviceRequestDTO.getOrgIdentifier())
+            .projectIdentifier(serviceRequestDTO.getProjectIdentifier())
+            .name(serviceRequestDTO.getName())
+            .description(serviceRequestDTO.getDescription())
+            .tags(convertToList(serviceRequestDTO.getTags()))
+            .yaml(serviceRequestDTO.getYaml());
+    setGitXRelatedFieldsInBuilder(serviceEntityBuilder, serviceRequestDTO);
+    ServiceEntity serviceEntity = serviceEntityBuilder.build();
+
     // This also validates the service yaml
     final NGServiceConfig ngServiceConfig = NGServiceEntityMapper.toNGServiceConfig(serviceEntity);
     final NGServiceV2InfoConfig ngServiceV2InfoConfig = ngServiceConfig.getNgServiceV2InfoConfig();
@@ -104,6 +110,29 @@ public class ServiceElementMapper {
         .orgIdentifier(serviceEntity.getOrgIdentifier())
         .projectIdentifier(serviceEntity.getProjectIdentifier())
         .tags(convertToMap(serviceEntity.getTags()))
+        .build();
+  }
+
+  private void setGitXRelatedFieldsInBuilder(
+      ServiceEntity.ServiceEntityBuilder serviceEntityBuilder, ServiceRequestDTO requestDTO) {
+    ServiceGitXMetadataRequestDTO serviceGitXMetadataRequestDTO = requestDTO.getServiceGitXMetadataRequestDTO();
+    if (serviceGitXMetadataRequestDTO != null) {
+      serviceEntityBuilder.storeType(serviceGitXMetadataRequestDTO.getStoreType())
+          .connectorRef(serviceGitXMetadataRequestDTO.getConnectorRef())
+          .repo(serviceGitXMetadataRequestDTO.getRepoName())
+          .filePath(serviceGitXMetadataRequestDTO.getFilePath())
+          .storeType(StoreType.REMOTE);
+    } else {
+      serviceEntityBuilder.storeType(StoreType.INLINE);
+    }
+  }
+
+  public ServiceGitXMetadataDTO toServiceGitXMetadataDTO(ServiceGitXMetadataRequestDTO requestDTO) {
+    return ServiceGitXMetadataDTO.builder()
+        .branch(requestDTO.getBranch())
+        .commitMessage(requestDTO.getCommitMessage())
+        .isCommitToNewBranch(requestDTO.isCommitToNewBranch())
+        .baseBranch(requestDTO.getBaseBranch())
         .build();
   }
 }

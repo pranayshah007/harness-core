@@ -323,7 +323,7 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
   public void testGetResolvedPathWhenServiceAndEnvironmentDoesNotHaveYaml() throws IOException {
     String yaml = readFile("artifacts/pipeline-without-ser-env-refactoring.yaml");
     mockMergeInputSetCall(yaml);
-    when(serviceEntityService.get(anyString(), anyString(), anyString(), eq("svc1"), anyBoolean()))
+    when(serviceEntityService.get(anyString(), anyString(), anyString(), eq("svc1"), anyBoolean(), null))
         .thenReturn(Optional.of(ServiceEntity.builder().name("svc1").identifier("svc1").build()));
 
     when(environmentService.get(anyString(), anyString(), anyString(), eq("env1"), anyBoolean()))
@@ -354,7 +354,7 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
   }
 
   private void mockServiceGetCall(String svcId) {
-    when(serviceEntityService.get(anyString(), anyString(), anyString(), eq(svcId), anyBoolean()))
+    when(serviceEntityService.get(anyString(), anyString(), anyString(), eq(svcId), anyBoolean(), null))
         .thenReturn(Optional.of(ServiceEntity.builder()
                                     .name("svc1")
                                     .identifier("svc1")
@@ -383,7 +383,7 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
   }
 
   private void mockServiceV2GetCall(String svcId) {
-    when(serviceEntityService.get(anyString(), anyString(), anyString(), eq(svcId), anyBoolean()))
+    when(serviceEntityService.get(anyString(), anyString(), anyString(), eq(svcId), anyBoolean(), null))
         .thenReturn(Optional.of(ServiceEntity.builder()
                                     .name("svc1")
                                     .identifier("svc1")

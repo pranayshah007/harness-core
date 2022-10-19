@@ -82,7 +82,7 @@ public class ServicesApiImpl implements ProjectServicesApi {
     ServiceEntity serviceEntity = serviceResourceApiUtils.getServiceEntity(serviceRequest, org, project, account);
     orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(
         serviceEntity.getOrgIdentifier(), serviceEntity.getProjectIdentifier(), serviceEntity.getAccountId());
-    ServiceEntity createdService = serviceEntityService.create(serviceEntity);
+    ServiceEntity createdService = serviceEntityService.create(serviceEntity, serviceGitXMetadataDTO);
     ServiceResponse serviceResponse = serviceResourceApiUtils.mapToServiceResponse(createdService);
     return Response.status(Response.Status.CREATED)
         .entity(serviceResponse)
@@ -94,7 +94,8 @@ public class ServicesApiImpl implements ProjectServicesApi {
   @Override
   public Response deleteService(@OrgIdentifier String org, @ProjectIdentifier String project,
       @ResourceIdentifier String service, @AccountIdentifier String account) {
-    Optional<ServiceEntity> serviceEntityOptional = serviceEntityService.get(account, org, project, service, false);
+    Optional<ServiceEntity> serviceEntityOptional =
+        serviceEntityService.get(account, org, project, service, false, null);
     if (!serviceEntityOptional.isPresent()) {
       throw new NotFoundException(String.format("Service with identifier [%s] not found", service));
     }
@@ -112,7 +113,7 @@ public class ServicesApiImpl implements ProjectServicesApi {
   @Override
   public Response getService(@OrgIdentifier String org, @ProjectIdentifier String project,
       @ResourceIdentifier String service, @AccountIdentifier String account) {
-    Optional<ServiceEntity> serviceEntity = serviceEntityService.get(account, org, project, service, false);
+    Optional<ServiceEntity> serviceEntity = serviceEntityService.get(account, org, project, service, false, null);
     if (!serviceEntity.isPresent()) {
       throw new NotFoundException(
           format("Service with identifier [%s] in project [%s], org [%s] not found", service, project, org));
@@ -194,7 +195,8 @@ public class ServicesApiImpl implements ProjectServicesApi {
     ServiceEntity requestService = serviceResourceApiUtils.getServiceEntity(serviceRequest, org, project, account);
     orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(
         requestService.getOrgIdentifier(), requestService.getProjectIdentifier(), requestService.getAccountId());
-    ServiceEntity updateService = serviceEntityService.update(requestService);
+    ServiceEntity updateService =
+        serviceEntityService.update(requestService, serviceRequestDTO.getServiceGitXMetadataRequestDTO());
 
     return Response.ok()
         .entity(serviceResourceApiUtils.mapToServiceResponse(updateService))

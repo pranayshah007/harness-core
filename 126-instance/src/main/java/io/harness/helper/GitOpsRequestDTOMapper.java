@@ -63,7 +63,7 @@ public class GitOpsRequestDTOMapper {
 
       ServiceEntity service = serviceEntityMap.computeIfAbsent(svcId,
           k
-          -> serviceEntityService.get(accountId, orgIdentifier, projectIdentifier, k, false)
+          -> serviceEntityService.get(accountId, orgIdentifier, projectIdentifier, k, false, null)
                  .orElseGet(() -> ServiceEntity.builder().build()));
 
       Environment env = envEntityMap.computeIfAbsent(envId,

@@ -104,7 +104,7 @@ public class ServiceStepUtils {
         && EmptyPredicate.isNotEmpty(stepParameters.getServiceRefInternal().getValue())) {
       String serviceIdentifier = stepParameters.getServiceRefInternal().getValue();
       Optional<ServiceEntity> serviceEntity =
-          serviceEntityService.get(accountId, orgIdentifier, projectIdentifier, serviceIdentifier, false);
+          serviceEntityService.get(accountId, orgIdentifier, projectIdentifier, serviceIdentifier, false, null);
       if (serviceEntity.isPresent()) {
         ServiceEntity finalServiceEntity = serviceEntity.get();
         finalServiceEntity.setVersion(null);

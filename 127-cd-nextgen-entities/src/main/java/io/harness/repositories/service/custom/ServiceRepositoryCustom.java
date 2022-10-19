@@ -10,9 +10,11 @@ package io.harness.repositories.service.custom;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ng.core.service.entity.ServiceEntity;
+import io.harness.ng.core.service.entity.ServiceGitXMetadataDTO;
 
 import com.mongodb.client.result.DeleteResult;
 import java.util.List;
+import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -21,8 +23,8 @@ import org.springframework.data.mongodb.core.query.Criteria;
 public interface ServiceRepositoryCustom {
   Page<ServiceEntity> findAll(Criteria criteria, Pageable pageable);
   List<ServiceEntity> findAll(Criteria criteria);
-  ServiceEntity upsert(Criteria criteria, ServiceEntity serviceEntity);
-  ServiceEntity update(Criteria criteria, ServiceEntity serviceEntity);
+  ServiceEntity upsert(Criteria criteria, ServiceEntity serviceEntity, ServiceGitXMetadataDTO serviceGitXMetadataDTO);
+  ServiceEntity update(Criteria criteria, ServiceEntity serviceEntity, ServiceGitXMetadataDTO serviceGitXMetadataDTO);
   @Deprecated boolean softDelete(Criteria criteria);
   boolean delete(Criteria criteria);
   DeleteResult deleteMany(Criteria criteria);
@@ -32,6 +34,15 @@ public interface ServiceRepositoryCustom {
 
   List<ServiceEntity> findAllRunTimePermission(Criteria criteria);
 
-  ServiceEntity find(String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceIdentifier,
-      boolean deleted);
+  Optional<ServiceEntity> find(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String serviceIdentifier, boolean deleted, String branch, boolean getMetadataOnly);
+
+  /**
+   * To support git experience, This method expects serviceEntity field to be populated with GitX related fields
+   *
+   * @param serviceEntity
+   * @param serviceGitXMetadataDTO
+   * @return serviceEntity
+   */
+  ServiceEntity save(ServiceEntity serviceEntity, ServiceGitXMetadataDTO serviceGitXMetadataDTO);
 }

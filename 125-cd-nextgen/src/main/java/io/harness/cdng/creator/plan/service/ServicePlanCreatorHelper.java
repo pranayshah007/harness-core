@@ -153,7 +153,7 @@ public class ServicePlanCreatorHelper {
     final String projectIdentifier = ctx.getMetadata().getProjectIdentifier();
     final String serviceRef = serviceYamlV2.getServiceRef().getValue();
     final Optional<ServiceEntity> serviceEntity =
-        serviceEntityService.get(accountIdentifier, orgIdentifier, projectIdentifier, serviceRef, false);
+        serviceEntityService.get(accountIdentifier, orgIdentifier, projectIdentifier, serviceRef, false, null);
 
     if (serviceEntity.isEmpty()) {
       throw new InvalidRequestException(

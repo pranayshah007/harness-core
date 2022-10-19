@@ -94,7 +94,7 @@ public class ServiceResource {
       @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @QueryParam(NGCommonEntityConstants.DELETED_KEY) @DefaultValue("false") boolean deleted) {
     Optional<ServiceEntity> serviceEntity =
-        serviceEntityService.get(accountId, orgIdentifier, projectIdentifier, serviceIdentifier, deleted);
+        serviceEntityService.get(accountId, orgIdentifier, projectIdentifier, serviceIdentifier, deleted, null);
     if (!serviceEntity.isPresent()) {
       throw new NotFoundException(String.format("Service with identifier [%s] in project [%s], org [%s] not found",
           serviceIdentifier, projectIdentifier, orgIdentifier));
@@ -108,7 +108,7 @@ public class ServiceResource {
   public ResponseDTO<ServiceResponseDTO> create(
       @QueryParam("accountId") String accountId, @NotNull @Valid ServiceRequestDTO serviceRequestDTO) {
     ServiceEntity serviceEntity = ServiceElementMapper.toServiceEntity(accountId, serviceRequestDTO);
-    ServiceEntity createdService = serviceEntityService.create(serviceEntity);
+    ServiceEntity createdService = serviceEntityService.create(serviceEntity, serviceGitXMetadataDTO);
     return ResponseDTO.newResponse(
         createdService.getVersion().toString(), ServiceElementMapper.writeDTO(createdService));
   }
@@ -143,7 +143,8 @@ public class ServiceResource {
       @QueryParam("accountId") String accountId, @NotNull @Valid ServiceRequestDTO serviceRequestDTO) {
     ServiceEntity requestService = ServiceElementMapper.toServiceEntity(accountId, serviceRequestDTO);
     requestService.setVersion(isNumeric(ifMatch) ? parseLong(ifMatch) : null);
-    ServiceEntity updatedService = serviceEntityService.update(requestService);
+    ServiceEntity updatedService =
+        serviceEntityService.update(requestService, serviceRequestDTO.getServiceGitXMetadataRequestDTO());
     return ResponseDTO.newResponse(
         updatedService.getVersion().toString(), ServiceElementMapper.writeDTO(updatedService));
   }
@@ -155,7 +156,8 @@ public class ServiceResource {
       @QueryParam("accountId") String accountId, @NotNull @Valid ServiceRequestDTO serviceRequestDTO) {
     ServiceEntity requestService = ServiceElementMapper.toServiceEntity(accountId, serviceRequestDTO);
     requestService.setVersion(isNumeric(ifMatch) ? parseLong(ifMatch) : null);
-    ServiceEntity upsertedService = serviceEntityService.upsert(requestService, UpsertOptions.DEFAULT);
+    ServiceEntity upsertedService = serviceEntityService.upsert(
+        requestService, UpsertOptions.DEFAULT, serviceRequestDTO.getServiceGitXMetadataRequestDTO());
     return ResponseDTO.newResponse(
         upsertedService.getVersion().toString(), ServiceElementMapper.writeDTO(upsertedService));
   }

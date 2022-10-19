@@ -108,7 +108,7 @@ public class ServiceResourceTest extends CategoryTest {
     doReturn(Optional.of(serviceEntity))
         .when(serviceEntityService)
         .get("ACCOUNT_ID", serviceRequestDTO.getOrgIdentifier(), serviceRequestDTO.getProjectIdentifier(),
-            serviceRequestDTO.getIdentifier(), false);
+            serviceRequestDTO.getIdentifier(), false, null);
 
     ServiceResponseDTO serviceResponse =
         serviceResource.get("IDENTIFIER", "ACCOUNT_ID", "ORG_ID", "PROJECT_ID", false).getData();
@@ -124,7 +124,7 @@ public class ServiceResourceTest extends CategoryTest {
     doReturn(Optional.empty())
         .when(serviceEntityService)
         .get("ACCOUNT_ID", serviceRequestDTO.getOrgIdentifier(), serviceRequestDTO.getProjectIdentifier(),
-            serviceRequestDTO.getIdentifier(), false);
+            serviceRequestDTO.getIdentifier(), false, null);
     assertThatThrownBy(() -> serviceResource.get("IDENTIFIER", "ACCOUNT_ID", "ORG_ID", "PROJECT_ID", false))
         .hasMessage("Service with identifier [IDENTIFIER] in project [PROJECT_ID], org [ORG_ID] not found");
   }
@@ -133,7 +133,7 @@ public class ServiceResourceTest extends CategoryTest {
   @Owner(developers = ARCHIT)
   @Category(UnitTests.class)
   public void testCreate() {
-    doReturn(serviceEntity).when(serviceEntityService).create(any());
+    doReturn(serviceEntity).when(serviceEntityService).create(any(), serviceGitXMetadataDTO);
     ServiceResponseDTO serviceResponse =
         serviceResource.create(serviceEntity.getAccountId(), serviceRequestDTO).getData();
     assertThat(serviceResponse).isEqualTo(serviceResponseDTO);
@@ -156,7 +156,9 @@ public class ServiceResourceTest extends CategoryTest {
   @Owner(developers = ARCHIT)
   @Category(UnitTests.class)
   public void testUpdate() {
-    doReturn(serviceEntity).when(serviceEntityService).update(serviceEntity);
+    doReturn(serviceEntity)
+        .when(serviceEntityService)
+        .update(serviceEntity, serviceRequestDTO.getServiceGitXMetadataRequestDTO());
     ServiceResponseDTO response =
         serviceResource.update("0", serviceEntity.getAccountId(), serviceRequestDTO).getData();
     assertThat(response).isNotNull();
@@ -167,7 +169,9 @@ public class ServiceResourceTest extends CategoryTest {
   @Owner(developers = ARCHIT)
   @Category(UnitTests.class)
   public void testUpsert() {
-    doReturn(serviceEntity).when(serviceEntityService).upsert(serviceEntity, UpsertOptions.DEFAULT);
+    doReturn(serviceEntity)
+        .when(serviceEntityService)
+        .upsert(serviceEntity, UpsertOptions.DEFAULT, serviceRequestDTO.getServiceGitXMetadataRequestDTO());
     ServiceResponseDTO response =
         serviceResource.upsert("0", serviceEntity.getAccountId(), serviceRequestDTO).getData();
     assertThat(response).isNotNull();

@@ -61,6 +61,7 @@ import io.harness.ng.core.service.dto.ServiceResponse;
 import io.harness.ng.core.service.entity.ArtifactSourcesResponseDTO;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.entity.ServiceEntity.ServiceEntityKeys;
+import io.harness.ng.core.service.entity.ServiceGitXMetadataDTO;
 import io.harness.ng.core.service.mappers.NGServiceEntityMapper;
 import io.harness.ng.core.service.mappers.ServiceElementMapper;
 import io.harness.ng.core.service.mappers.ServiceFilterHelper;
@@ -176,9 +177,11 @@ public class ServiceResourceV2 {
       @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
       @Parameter(description = "Specify whether Service is deleted or not") @QueryParam(
-          NGCommonEntityConstants.DELETED_KEY) @DefaultValue("false") boolean deleted) {
+          NGCommonEntityConstants.DELETED_KEY) @DefaultValue("false") boolean deleted,
+      @Parameter(description = "Specify the remote branch to fetch Service ") @QueryParam(
+          NGCommonEntityConstants.BRANCH) @DefaultValue("false") String branch) {
     Optional<ServiceEntity> serviceEntity =
-        serviceEntityService.get(accountId, orgIdentifier, projectIdentifier, serviceIdentifier, deleted);
+        serviceEntityService.get(accountId, orgIdentifier, projectIdentifier, serviceIdentifier, deleted, null);
     String version = "0";
     if (serviceEntity.isPresent()) {
       version = serviceEntity.get().getVersion().toString();
@@ -212,7 +215,9 @@ public class ServiceResourceV2 {
     ServiceEntity serviceEntity = ServiceElementMapper.toServiceEntity(accountId, serviceRequestDTO);
     orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(
         serviceEntity.getOrgIdentifier(), serviceEntity.getProjectIdentifier(), serviceEntity.getAccountId());
-    ServiceEntity createdService = serviceEntityService.create(serviceEntity);
+    ServiceGitXMetadataDTO serviceGitXMetadataDTO =
+        ServiceElementMapper.toServiceGitXMetadataDTO(serviceRequestDTO.getServiceGitXMetadataRequestDTO());
+    ServiceEntity createdService = serviceEntityService.create(serviceEntity, serviceGitXMetadataDTO);
     return ResponseDTO.newResponse(
         createdService.getVersion().toString(), ServiceElementMapper.toResponseWrapper(createdService));
   }
@@ -284,7 +289,9 @@ public class ServiceResourceV2 {
         Resource.of(NGResourceType.SERVICE, serviceRequestDTO.getIdentifier()), SERVICE_UPDATE_PERMISSION);
     ServiceEntity requestService = ServiceElementMapper.toServiceEntity(accountId, serviceRequestDTO);
     requestService.setVersion(isNumeric(ifMatch) ? parseLong(ifMatch) : null);
-    ServiceEntity updatedService = serviceEntityService.update(requestService);
+    ServiceGitXMetadataDTO serviceGitXMetadataDTO =
+        ServiceElementMapper.toServiceGitXMetadataDTO(serviceRequestDTO.getServiceGitXMetadataRequestDTO());
+    ServiceEntity updatedService = serviceEntityService.update(requestService, serviceGitXMetadataDTO);
     return ResponseDTO.newResponse(
         updatedService.getVersion().toString(), ServiceElementMapper.toResponseWrapper(updatedService));
   }
@@ -307,7 +314,10 @@ public class ServiceResourceV2 {
     requestService.setVersion(isNumeric(ifMatch) ? parseLong(ifMatch) : null);
     orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(
         requestService.getOrgIdentifier(), requestService.getProjectIdentifier(), requestService.getAccountId());
-    ServiceEntity upsertService = serviceEntityService.upsert(requestService, UpsertOptions.DEFAULT);
+    ServiceGitXMetadataDTO serviceGitXMetadataDTO =
+        ServiceElementMapper.toServiceGitXMetadataDTO(serviceRequestDTO.getServiceGitXMetadataRequestDTO());
+    ServiceEntity upsertService =
+        serviceEntityService.upsert(requestService, UpsertOptions.DEFAULT, serviceGitXMetadataDTO);
     return ResponseDTO.newResponse(
         upsertService.getVersion().toString(), ServiceElementMapper.toResponseWrapper(upsertService));
   }
@@ -478,7 +488,7 @@ public class ServiceResourceV2 {
       @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier) {
     Optional<ServiceEntity> serviceEntity =
-        serviceEntityService.get(accountId, orgIdentifier, projectIdentifier, serviceIdentifier, false);
+        serviceEntityService.get(accountId, orgIdentifier, projectIdentifier, serviceIdentifier, false, null);
 
     if (serviceEntity.isPresent()) {
       if (EmptyPredicate.isEmpty(serviceEntity.get().getYaml())) {
@@ -553,7 +563,7 @@ public class ServiceResourceV2 {
       @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier) {
     Optional<ServiceEntity> serviceEntity =
-        serviceEntityService.get(accountId, orgIdentifier, projectIdentifier, serviceIdentifier, false);
+        serviceEntityService.get(accountId, orgIdentifier, projectIdentifier, serviceIdentifier, false, null);
 
     if (serviceEntity.isPresent()) {
       if (EmptyPredicate.isEmpty(serviceEntity.get().getYaml())) {

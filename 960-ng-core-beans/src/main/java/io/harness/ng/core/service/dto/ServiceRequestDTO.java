@@ -40,4 +40,6 @@ public class ServiceRequestDTO {
   @Schema(description = NGCommonEntityConstants.TAGS) Map<String, String> tags;
 
   @Schema(description = "YAML for the Service Request") String yaml;
+
+  @Schema(description = "Parameters for gitX support") ServiceGitXMetadataRequestDTO serviceGitXMetadataRequestDTO;
 }

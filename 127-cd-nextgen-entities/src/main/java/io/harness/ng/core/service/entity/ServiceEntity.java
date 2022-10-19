@@ -100,20 +100,11 @@ public class ServiceEntity implements PersistentEntity, GitAware {
   Long deletedAt;
   String yaml;
 
-  // GitSync entities
-  // Todo(Tathagat): Check if need to be deleted
-  @Wither @Setter @NonFinal String objectIdOfYaml;
-  @Setter @NonFinal Boolean isFromDefaultBranch;
-  @Setter @NonFinal String branch;
-  @Setter @NonFinal String yamlGitConfigRef;
-  @Setter @NonFinal String filePath;
-  @Setter @NonFinal String rootFolder;
-
-  // GitX Entities
+  // git experience parameters after simplification
   @Wither @Setter @NonFinal StoreType storeType;
   @Wither @Setter @NonFinal String repo;
   @Wither @Setter @NonFinal String connectorRef;
-  @Wither @Setter @NonFinal String repoURL;
+  @Wither @Setter @NonFinal String filePath;
 
   public String fetchNonEmptyYaml() {
     if (EmptyPredicate.isEmpty(yaml)) {

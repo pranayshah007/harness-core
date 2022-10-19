@@ -113,7 +113,7 @@ public class DeploymentStageFilterJsonCreatorV2Test extends CategoryTest {
 
     doReturn(Optional.of(serviceEntity))
         .when(serviceEntityService)
-        .get("accountId", "orgId", "projectId", "service-id", false);
+        .get("accountId", "orgId", "projectId", "service-id", false, null);
     doReturn(Optional.of(envEntity)).when(environmentService).get("accountId", "orgId", "projectId", "env-id", false);
     doReturn(Optional.of(infra)).when(infraService).get("accountId", "orgId", "projectId", "env-id", "infra-id");
     doReturn(Lists.newArrayList(infra))

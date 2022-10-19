@@ -514,7 +514,7 @@ public class ServiceStepV3Test {
   private void mockService(ServiceEntity serviceEntity) {
     doReturn(Optional.ofNullable(serviceEntity))
         .when(serviceEntityService)
-        .get(anyString(), anyString(), anyString(), anyString(), eq(false));
+        .get(anyString(), anyString(), anyString(), anyString(), eq(false), null);
   }
 
   private void mockEnv(Environment environment) {

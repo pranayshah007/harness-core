@@ -224,7 +224,7 @@ public class DeploymentStageVariableCreatorTest extends CategoryTest {
                                                     .build();
 
     // mocks
-    when(serviceEntityService.get(any(), any(), any(), any(), eq(false))).thenReturn(Optional.of(serviceEntity));
+    when(serviceEntityService.get(any(), any(), any(), any(), eq(false), null)).thenReturn(Optional.of(serviceEntity));
     when(environmentService.get(any(), any(), any(), any(), eq(false))).thenReturn(Optional.of(environmentEntity));
     when(infrastructureEntityService.get(any(), any(), any(), any(), any()))
         .thenReturn(Optional.of(infrastructureEntity));
@@ -342,7 +342,7 @@ public class DeploymentStageVariableCreatorTest extends CategoryTest {
                                                     .build();
 
     // mocks
-    when(serviceEntityService.get(any(), any(), any(), any(), eq(false))).thenReturn(Optional.of(serviceEntity));
+    when(serviceEntityService.get(any(), any(), any(), any(), eq(false), null)).thenReturn(Optional.of(serviceEntity));
     when(environmentService.get(any(), any(), any(), any(), eq(false))).thenReturn(Optional.of(environmentEntity));
     when(infrastructureEntityService.get(any(), any(), any(), any(), any()))
         .thenReturn(Optional.of(infrastructureEntity));
@@ -442,7 +442,7 @@ public class DeploymentStageVariableCreatorTest extends CategoryTest {
                                                     .build();
 
     // mocks
-    when(serviceEntityService.get(any(), any(), any(), any(), eq(false))).thenReturn(Optional.of(serviceEntity));
+    when(serviceEntityService.get(any(), any(), any(), any(), eq(false), null)).thenReturn(Optional.of(serviceEntity));
     when(environmentService.get(any(), any(), any(), any(), eq(false))).thenReturn(Optional.of(environmentEntity));
     when(infrastructureEntityService.get(any(), any(), any(), any(), any()))
         .thenReturn(Optional.of(infrastructureEntity));

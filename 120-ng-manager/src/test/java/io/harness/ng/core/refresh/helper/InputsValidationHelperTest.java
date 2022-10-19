@@ -114,7 +114,7 @@ public class InputsValidationHelperTest extends NgManagerTestBase {
     String pipelineYmlWithService = readFile("pipeline-with-single-service.yaml");
     String serviceYaml = readFile("serverless-service-valid.yaml");
 
-    when(serviceEntityService.get(ACCOUNT_ID, ORG_ID, PROJECT_ID, "serverless", false))
+    when(serviceEntityService.get(ACCOUNT_ID, ORG_ID, PROJECT_ID, "serverless", false, null))
         .thenReturn(Optional.of(ServiceEntity.builder().yaml(serviceYaml).build()));
     doReturn(null).when(environmentService).createEnvironmentInputsYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, "testenv");
     doReturn("infrastructureDefinitions:\n"
@@ -141,7 +141,7 @@ public class InputsValidationHelperTest extends NgManagerTestBase {
     String pipelineYmlWithService = readFile("pipeline-with-single-service.yaml");
     String serviceYaml = readFile("serverless-service.yaml");
 
-    when(serviceEntityService.get(ACCOUNT_ID, ORG_ID, PROJECT_ID, "serverless", false))
+    when(serviceEntityService.get(ACCOUNT_ID, ORG_ID, PROJECT_ID, "serverless", false, null))
         .thenReturn(Optional.of(ServiceEntity.builder().yaml(serviceYaml).build()));
 
     InputsValidationResponse validationResponse =
@@ -179,7 +179,7 @@ public class InputsValidationHelperTest extends NgManagerTestBase {
     String pipelineYmlWithService = readFile("pipeline-with-primaryRef-fixed-source-runtime.yaml");
     String serviceYaml = readFile("serverless-service.yaml");
 
-    when(serviceEntityService.get(ACCOUNT_ID, ORG_ID, PROJECT_ID, "serverless", false))
+    when(serviceEntityService.get(ACCOUNT_ID, ORG_ID, PROJECT_ID, "serverless", false, null))
         .thenReturn(Optional.of(ServiceEntity.builder().yaml(serviceYaml).build()));
 
     InputsValidationResponse validationResponse =
@@ -200,7 +200,7 @@ public class InputsValidationHelperTest extends NgManagerTestBase {
     String pipelineYmlWithService = readFile("pipeline-with-single-service.yaml");
     String serviceYaml = readFile("serverless-service-with-all-values-fixed.yaml");
 
-    when(serviceEntityService.get(ACCOUNT_ID, ORG_ID, PROJECT_ID, "serverless", false))
+    when(serviceEntityService.get(ACCOUNT_ID, ORG_ID, PROJECT_ID, "serverless", false, null))
         .thenReturn(Optional.of(ServiceEntity.builder().yaml(serviceYaml).build()));
 
     InputsValidationResponse validationResponse =
@@ -221,7 +221,7 @@ public class InputsValidationHelperTest extends NgManagerTestBase {
     String pipelineYmlWithService = readFile("pipeline-with-no-serviceInputs.yaml");
     String serviceYaml = readFile("serverless-service-with-all-values-fixed.yaml");
 
-    when(serviceEntityService.get(ACCOUNT_ID, ORG_ID, PROJECT_ID, "serverless", false))
+    when(serviceEntityService.get(ACCOUNT_ID, ORG_ID, PROJECT_ID, "serverless", false, null))
         .thenReturn(Optional.of(ServiceEntity.builder().yaml(serviceYaml).build()));
 
     InputsValidationResponse validationResponse =
@@ -238,7 +238,7 @@ public class InputsValidationHelperTest extends NgManagerTestBase {
     String pipelineYmlWithService = readFile("env/pipeline-with-env-ref-runtime-and-envInputs-infraDefs-fixed.yaml");
     String serviceYaml = readFile("serverless-service-with-all-values-fixed.yaml");
 
-    when(serviceEntityService.get(ACCOUNT_ID, ORG_ID, PROJECT_ID, "serverless", false))
+    when(serviceEntityService.get(ACCOUNT_ID, ORG_ID, PROJECT_ID, "serverless", false, null))
         .thenReturn(Optional.of(ServiceEntity.builder().yaml(serviceYaml).build()));
 
     InputsValidationResponse validationResponse =
@@ -255,7 +255,7 @@ public class InputsValidationHelperTest extends NgManagerTestBase {
     String pipelineYmlWithService = readFile("env/pipeline-with-envRef-envInputs-infraDefs-runtime.yaml");
     String serviceYaml = readFile("serverless-service-with-all-values-fixed.yaml");
 
-    when(serviceEntityService.get(ACCOUNT_ID, ORG_ID, PROJECT_ID, "serverless", false))
+    when(serviceEntityService.get(ACCOUNT_ID, ORG_ID, PROJECT_ID, "serverless", false, null))
         .thenReturn(Optional.of(ServiceEntity.builder().yaml(serviceYaml).build()));
 
     InputsValidationResponse validationResponse =
@@ -272,7 +272,7 @@ public class InputsValidationHelperTest extends NgManagerTestBase {
     String pipelineYmlWithService = readFile("env/pipeline-with-fixed-envRef-incorrect-envInputs.yaml");
     String serviceYaml = readFile("serverless-service-with-all-values-fixed.yaml");
 
-    when(serviceEntityService.get(ACCOUNT_ID, ORG_ID, PROJECT_ID, "serverless", false))
+    when(serviceEntityService.get(ACCOUNT_ID, ORG_ID, PROJECT_ID, "serverless", false, null))
         .thenReturn(Optional.of(ServiceEntity.builder().yaml(serviceYaml).build()));
     doReturn(null).when(environmentService).createEnvironmentInputsYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, "testenv");
 
@@ -290,7 +290,7 @@ public class InputsValidationHelperTest extends NgManagerTestBase {
     String pipelineYmlWithService = readFile("env/pipeline-with-env-ref-fixed-and-infraDefs-incorrect.yaml");
     String serviceYaml = readFile("serverless-service-with-all-values-fixed.yaml");
 
-    when(serviceEntityService.get(ACCOUNT_ID, ORG_ID, PROJECT_ID, "serverless", false))
+    when(serviceEntityService.get(ACCOUNT_ID, ORG_ID, PROJECT_ID, "serverless", false, null))
         .thenReturn(Optional.of(ServiceEntity.builder().yaml(serviceYaml).build()));
     doReturn(null).when(environmentService).createEnvironmentInputsYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, "testenv");
     doReturn("infrastructureDefinitions:\n"

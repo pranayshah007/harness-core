@@ -11,6 +11,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ng.core.service.entity.ArtifactSourcesResponseDTO;
 import io.harness.ng.core.service.entity.ServiceEntity;
+import io.harness.ng.core.service.entity.ServiceGitXMetadataDTO;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.repositories.UpsertOptions;
 
@@ -25,16 +26,28 @@ import org.springframework.data.mongodb.core.query.Criteria;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public interface ServiceEntityService {
-  ServiceEntity create(ServiceEntity serviceEntity);
+  ServiceEntity create(ServiceEntity serviceEntity, ServiceGitXMetadataDTO serviceGitXMetadataDTO);
 
-  Optional<ServiceEntity> get(
-      String accountId, String orgIdentifier, String projectIdentifier, String serviceIdentifier, boolean deleted);
+  /**
+   * This method accepts branch as NULLABLE parameters, if not null it would handle the git experience
+   *
+   * @param accountId
+   * @param orgIdentifier
+   * @param projectIdentifier
+   * @param serviceIdentifier
+   * @param deleted
+   * @param branch
+   * @return
+   */
+  Optional<ServiceEntity> get(String accountId, String orgIdentifier, String projectIdentifier,
+      String serviceIdentifier, boolean deleted, String branch);
 
   // TODO(archit): make it transactional
-  ServiceEntity update(ServiceEntity requestService);
+  ServiceEntity update(ServiceEntity requestService, ServiceGitXMetadataDTO serviceGitXMetadataDTO);
 
   // TODO(archit): make it transactional
-  ServiceEntity upsert(ServiceEntity requestService, UpsertOptions upsertOptions);
+  ServiceEntity upsert(
+      ServiceEntity requestService, UpsertOptions upsertOptions, ServiceGitXMetadataDTO serviceGitXMetadataDTO);
 
   Page<ServiceEntity> list(Criteria criteria, Pageable pageable);
 

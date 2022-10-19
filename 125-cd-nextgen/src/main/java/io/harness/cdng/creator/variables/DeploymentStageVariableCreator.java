@@ -268,8 +268,8 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
 
     if (isNotEmpty(serviceRef.getValue()) && !serviceRef.isExpression()) {
       outputProperties.addAll(handleServiceStepOutcome());
-      Optional<ServiceEntity> optionalService =
-          serviceEntityService.get(accountIdentifier, orgIdentifier, projectIdentifier, serviceRef.getValue(), false);
+      Optional<ServiceEntity> optionalService = serviceEntityService.get(
+          accountIdentifier, orgIdentifier, projectIdentifier, serviceRef.getValue(), false, null);
 
       NGServiceConfig ngServiceConfig = null;
       if (optionalService.isPresent()) {

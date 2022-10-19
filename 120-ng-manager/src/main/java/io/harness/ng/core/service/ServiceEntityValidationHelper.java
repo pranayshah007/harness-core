@@ -24,7 +24,7 @@ public class ServiceEntityValidationHelper {
   public void checkThatServiceExists(@NotEmpty String accountIdentifier, @NotEmpty String orgIdentifier,
       @NotEmpty String projectIdentifier, @NotEmpty String serviceIdentifier) {
     Optional<ServiceEntity> service =
-        serviceEntityService.get(accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier, false);
+        serviceEntityService.get(accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier, false, null);
     if (!service.isPresent()) {
       throw new NotFoundException(String.format("service [%s] not found.", serviceIdentifier));
     }

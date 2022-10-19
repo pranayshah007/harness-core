@@ -18,6 +18,7 @@ import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.String.format;
 import static java.util.Collections.emptyList;
+import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.EntityType;
@@ -48,6 +49,7 @@ import io.harness.ng.core.events.ServiceUpsertEvent;
 import io.harness.ng.core.service.entity.ArtifactSourcesResponseDTO;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.entity.ServiceEntity.ServiceEntityKeys;
+import io.harness.ng.core.service.entity.ServiceGitXMetadataDTO;
 import io.harness.ng.core.service.mappers.ServiceFilterHelper;
 import io.harness.ng.core.service.services.ServiceEntityService;
 import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
@@ -139,14 +141,15 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
   }
 
   @Override
-  public ServiceEntity create(@NotNull @Valid ServiceEntity serviceEntity) {
+  public ServiceEntity create(
+      @NotNull @Valid ServiceEntity serviceEntity, ServiceGitXMetadataDTO serviceGitXMetadataDTO) {
     try {
       validatePresenceOfRequiredFields(serviceEntity.getAccountId(), serviceEntity.getIdentifier());
       setNameIfNotPresent(serviceEntity);
       modifyServiceRequest(serviceEntity);
       ServiceEntity createdService =
           Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
-            ServiceEntity service = serviceRepository.save(serviceEntity);
+            ServiceEntity service = serviceRepository.save(serviceEntity, serviceGitXMetadataDTO);
             outboxService.save(ServiceCreateEvent.builder()
                                    .accountIdentifier(serviceEntity.getAccountId())
                                    .orgIdentifier(serviceEntity.getOrgIdentifier())
@@ -168,26 +171,31 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
   }
 
   @Override
-  public Optional<ServiceEntity> get(
-      String accountId, String orgIdentifier, String projectIdentifier, String serviceIdentifier, boolean deleted) {
-    return serviceRepository.findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndDeletedNot(
-        accountId, orgIdentifier, projectIdentifier, serviceIdentifier, !deleted);
+  public Optional<ServiceEntity> get(String accountId, String orgIdentifier, String projectIdentifier,
+      String serviceIdentifier, boolean deleted, String branch) {
+    if (isBlank(branch)) {
+      return serviceRepository.findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndDeletedNot(
+          accountId, orgIdentifier, projectIdentifier, serviceIdentifier, !deleted);
+    } else {
+      return serviceRepository.find(
+          accountId, orgIdentifier, projectIdentifier, serviceIdentifier, !deleted, branch, false);
+    }
   }
 
   @Override
-  public ServiceEntity update(@Valid ServiceEntity requestService) {
+  public ServiceEntity update(@Valid ServiceEntity requestService, ServiceGitXMetadataDTO serviceGitXMetadataDTO) {
     validatePresenceOfRequiredFields(requestService.getAccountId(), requestService.getIdentifier());
     setNameIfNotPresent(requestService);
     modifyServiceRequest(requestService);
     Criteria criteria = getServiceEqualityCriteria(requestService, requestService.getDeleted());
     Optional<ServiceEntity> serviceEntityOptional =
         get(requestService.getAccountId(), requestService.getOrgIdentifier(), requestService.getProjectIdentifier(),
-            requestService.getIdentifier(), false);
+            requestService.getIdentifier(), false, null);
     if (serviceEntityOptional.isPresent()) {
       ServiceEntity oldService = serviceEntityOptional.get();
       ServiceEntity updatedService =
           Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
-            ServiceEntity updatedResult = serviceRepository.update(criteria, requestService);
+            ServiceEntity updatedResult = serviceRepository.update(criteria, requestService, serviceGitXMetadataDTO);
             if (updatedResult == null) {
               throw new InvalidRequestException(String.format(
                   "Service [%s] under Project[%s], Organization [%s] couldn't be updated or doesn't exist.",
@@ -216,14 +224,15 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
   }
 
   @Override
-  public ServiceEntity upsert(@Valid ServiceEntity requestService, UpsertOptions upsertOptions) {
+  public ServiceEntity upsert(
+      @Valid ServiceEntity requestService, UpsertOptions upsertOptions, ServiceGitXMetadataDTO serviceGitXMetadataDTO) {
     validatePresenceOfRequiredFields(requestService.getAccountId(), requestService.getIdentifier());
     setNameIfNotPresent(requestService);
     modifyServiceRequest(requestService);
     Criteria criteria = getServiceEqualityCriteria(requestService, requestService.getDeleted());
     ServiceEntity upsertedService =
         Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
-          ServiceEntity result = serviceRepository.upsert(criteria, requestService);
+          ServiceEntity result = serviceRepository.upsert(criteria, requestService, serviceGitXMetadataDTO);
           if (result == null) {
             throw new InvalidRequestException(
                 String.format("Service [%s] under Project[%s], Organization [%s] couldn't be upserted.",
@@ -275,7 +284,7 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
     checkThatServiceIsNotReferredByOthers(serviceEntity);
     Criteria criteria = getServiceEqualityCriteria(serviceEntity, false);
     Optional<ServiceEntity> serviceEntityOptional =
-        get(accountId, orgIdentifier, projectIdentifier, serviceIdentifier, false);
+        get(accountId, orgIdentifier, projectIdentifier, serviceIdentifier, false, null);
 
     if (serviceEntityOptional.isPresent()) {
       boolean success = Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
@@ -627,7 +636,7 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
   @Override
   public YamlNode getYamlNodeForFqn(String accountId, String orgIdentifier, String projectIdentifier,
       @NotEmpty String serviceIdentifier, String fqn) {
-    Optional<ServiceEntity> entity = get(accountId, orgIdentifier, projectIdentifier, serviceIdentifier, false);
+    Optional<ServiceEntity> entity = get(accountId, orgIdentifier, projectIdentifier, serviceIdentifier, false, null);
     if (entity.isEmpty()) {
       throw new InvalidRequestException(format("Service: %s does not exist", serviceIdentifier));
     }

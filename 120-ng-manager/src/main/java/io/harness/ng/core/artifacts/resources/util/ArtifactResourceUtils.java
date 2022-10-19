@@ -173,7 +173,7 @@ public class ArtifactResourceUtils {
     List<YamlField> yamlFields = new ArrayList<>();
     if (isNotEmpty(serviceId)) {
       Optional<ServiceEntity> optionalService =
-          serviceEntityService.get(accountId, orgIdentifier, projectIdentifier, serviceId, false);
+          serviceEntityService.get(accountId, orgIdentifier, projectIdentifier, serviceId, false, null);
       optionalService.ifPresent(
           service -> yamlFields.add(getYamlField(service.fetchNonEmptyYaml(), YAMLFieldNameConstants.SERVICE)));
     }

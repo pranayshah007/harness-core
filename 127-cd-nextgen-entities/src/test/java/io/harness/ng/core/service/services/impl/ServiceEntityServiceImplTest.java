@@ -111,7 +111,7 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
                                       .build();
 
     // Create operations
-    ServiceEntity createdService = serviceEntityService.create(serviceEntity);
+    ServiceEntity createdService = serviceEntityService.create(serviceEntity, serviceGitXMetadataDTO);
     assertThat(createdService).isNotNull();
     assertThat(createdService.getAccountId()).isEqualTo(serviceEntity.getAccountId());
     assertThat(createdService.getOrgIdentifier()).isEqualTo(serviceEntity.getOrgIdentifier());
@@ -122,7 +122,7 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
 
     // Get operations
     Optional<ServiceEntity> getService =
-        serviceEntityService.get("ACCOUNT_ID", "ORG_ID", "PROJECT_ID", "IDENTIFIER", false);
+        serviceEntityService.get("ACCOUNT_ID", "ORG_ID", "PROJECT_ID", "IDENTIFIER", false, null);
     assertThat(getService).isPresent();
     assertThat(getService.get()).isEqualTo(createdService);
 
@@ -135,7 +135,8 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
                                              .name("UPDATED_SERVICE")
                                              .description("NEW_DESCRIPTION")
                                              .build();
-    ServiceEntity updatedServiceResponse = serviceEntityService.update(updateServiceRequest);
+    ServiceEntity updatedServiceResponse =
+        serviceEntityService.update(updateServiceRequest, serviceRequestDTO.getServiceGitXMetadataRequestDTO());
     assertThat(updatedServiceResponse.getAccountId()).isEqualTo(updateServiceRequest.getAccountId());
     assertThat(updatedServiceResponse.getOrgIdentifier()).isEqualTo(updateServiceRequest.getOrgIdentifier());
     assertThat(updatedServiceResponse.getProjectIdentifier()).isEqualTo(updateServiceRequest.getProjectIdentifier());
@@ -145,7 +146,8 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
     assertThat(updatedServiceResponse.getVersion()).isEqualTo(1L);
 
     updateServiceRequest.setAccountId("NEW_ACCOUNT");
-    assertThatThrownBy(() -> serviceEntityService.update(updateServiceRequest))
+    assertThatThrownBy(
+        () -> serviceEntityService.update(updateServiceRequest, serviceRequestDTO.getServiceGitXMetadataRequestDTO()))
         .isInstanceOf(InvalidRequestException.class);
     updatedServiceResponse.setAccountId("ACCOUNT_ID");
 
@@ -158,7 +160,8 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
                                              .name("UPSERTED_SERVICE")
                                              .description("NEW_DESCRIPTION")
                                              .build();
-    ServiceEntity upsertService = serviceEntityService.upsert(upsertServiceRequest, UpsertOptions.DEFAULT);
+    ServiceEntity upsertService = serviceEntityService.upsert(
+        upsertServiceRequest, UpsertOptions.DEFAULT, serviceRequestDTO.getServiceGitXMetadataRequestDTO());
     assertThat(upsertService.getAccountId()).isEqualTo(upsertServiceRequest.getAccountId());
     assertThat(upsertService.getOrgIdentifier()).isEqualTo(upsertServiceRequest.getOrgIdentifier());
     assertThat(upsertService.getProjectIdentifier()).isEqualTo(upsertServiceRequest.getProjectIdentifier());
@@ -190,7 +193,8 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
                                                      .name("UPSERTED_SERVICE")
                                                      .description("NEW_DESCRIPTION")
                                                      .build();
-    upsertService = serviceEntityService.upsert(upsertServiceRequestOrgLevel, UpsertOptions.DEFAULT);
+    upsertService = serviceEntityService.upsert(
+        upsertServiceRequestOrgLevel, UpsertOptions.DEFAULT, serviceRequestDTO.getServiceGitXMetadataRequestDTO());
     assertThat(upsertService.getAccountId()).isEqualTo(upsertServiceRequest.getAccountId());
     assertThat(upsertService.getOrgIdentifier()).isEqualTo(upsertServiceRequest.getOrgIdentifier());
     assertThat(upsertService.getProjectIdentifier()).isNull();
@@ -215,7 +219,7 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
     verify(serviceOverrideService).deleteAllInProjectForAService("ACCOUNT_ID", "ORG_ID", "PROJECT_ID", "IDENTIFIER");
 
     Optional<ServiceEntity> deletedService =
-        serviceEntityService.get("ACCOUNT_ID", "ORG_ID", "PROJECT_ID", "UPDATED_SERVICE", false);
+        serviceEntityService.get("ACCOUNT_ID", "ORG_ID", "PROJECT_ID", "UPDATED_SERVICE", false, null);
     assertThat(deletedService.isPresent()).isFalse();
   }
 
@@ -234,7 +238,7 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
     for (int i = 0; i < 5; i++) {
       String serviceIdentifier = "identifier " + i;
       Optional<ServiceEntity> serviceEntitySaved =
-          serviceEntityService.get(ACCOUNT_ID, ORG_ID, PROJECT_ID, serviceIdentifier, false);
+          serviceEntityService.get(ACCOUNT_ID, ORG_ID, PROJECT_ID, serviceIdentifier, false, null);
       assertThat(serviceEntitySaved.isPresent()).isTrue();
     }
   }
@@ -393,8 +397,8 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
                                        .build();
 
     // Create operations
-    serviceEntityService.create(serviceEntity1);
-    serviceEntityService.create(serviceEntity2);
+    serviceEntityService.create(serviceEntity1, serviceGitXMetadataDTO);
+    serviceEntityService.create(serviceEntity2, serviceGitXMetadataDTO);
 
     boolean delete = serviceEntityService.forceDeleteAllInProject("ACCOUNT_ID", "ORG_ID", "PROJECT_ID");
     assertThat(delete).isTrue();
@@ -421,7 +425,7 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
                                       .name("Service")
                                       .build();
 
-    serviceEntityService.create(serviceEntity);
+    serviceEntityService.create(serviceEntity, serviceGitXMetadataDTO);
     when(entitySetupUsageService.listAllEntityUsage(anyInt(), anyInt(), anyString(), anyString(), any(), anyString()))
         .thenReturn(Page.empty());
     boolean delete = serviceEntityService.delete("ACCOUNT_ID", "ORG_ID", "PROJECT_ID", id, 0L);
@@ -558,7 +562,7 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
                                       .projectIdentifier("PROJECT_ID")
                                       .build();
 
-    ServiceEntity created = serviceEntityService.create(createRequest);
+    ServiceEntity created = serviceEntityService.create(createRequest, serviceGitXMetadataDTO);
 
     ServiceEntity upsertRequest = ServiceEntity.builder()
                                       .accountId("ACCOUNT_ID")
@@ -569,7 +573,8 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
                                       .description("NEW_DESCRIPTION")
                                       .build();
 
-    ServiceEntity upserted = serviceEntityService.upsert(upsertRequest, UpsertOptions.DEFAULT.withNoOutbox());
+    ServiceEntity upserted = serviceEntityService.upsert(
+        upsertRequest, UpsertOptions.DEFAULT.withNoOutbox(), serviceRequestDTO.getServiceGitXMetadataRequestDTO());
 
     assertThat(upserted).isNotNull();
 
@@ -590,7 +595,7 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
                                       .yaml(yaml)
                                       .build();
 
-    serviceEntityService.create(createRequest);
+    serviceEntityService.create(createRequest, serviceGitXMetadataDTO);
 
     YamlNode primaryNode =
         serviceEntityService.getYamlNodeForFqn(ACCOUNT_ID, ORG_ID, PROJECT_ID, "testGetYamlNodeForFqn",
@@ -625,7 +630,7 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
                                       .yaml(yaml)
                                       .build();
 
-    serviceEntityService.create(createRequest);
+    serviceEntityService.create(createRequest, serviceGitXMetadataDTO);
 
     YamlNode primaryNode = serviceEntityService.getYamlNodeForFqn(ACCOUNT_ID, ORG_ID, PROJECT_ID,
         "testGetYamlNodeForFqn",

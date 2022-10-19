@@ -85,7 +85,7 @@ public class ServicesApiImplTest extends CategoryTest {
   public void testCreateService() throws IOException {
     when(orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(org, project, account))
         .thenReturn(true);
-    when(serviceEntityService.create(any())).thenReturn(entity);
+    when(serviceEntityService.create(any(), serviceGitXMetadataDTO)).thenReturn(entity);
     when(serviceResourceApiUtils.getServiceEntity(any(), any(), any(), any())).thenReturn(entity);
     ServiceRequest serviceRequest = new ServiceRequest();
     serviceRequest.setSlug(slug);
@@ -102,7 +102,7 @@ public class ServicesApiImplTest extends CategoryTest {
   @Owner(developers = TARUN_UBA)
   @Category(UnitTests.class)
   public void testGetService() {
-    when(serviceEntityService.get(any(), any(), any(), any(), eq(false))).thenReturn(Optional.of(entity));
+    when(serviceEntityService.get(any(), any(), any(), any(), eq(false), null)).thenReturn(Optional.of(entity));
     Service service = new Service();
     service.setAccount(account);
     service.setSlug(slug);
@@ -126,7 +126,7 @@ public class ServicesApiImplTest extends CategoryTest {
   @Owner(developers = TARUN_UBA)
   @Category(UnitTests.class)
   public void testListTemplate() {
-    when(serviceEntityService.get(any(), any(), any(), any(), eq(false))).thenReturn(Optional.of(entity));
+    when(serviceEntityService.get(any(), any(), any(), any(), eq(false), null)).thenReturn(Optional.of(entity));
     servicesApiImpl.getService(org, project, slug, account);
   }
 
@@ -134,7 +134,7 @@ public class ServicesApiImplTest extends CategoryTest {
   @Owner(developers = TARUN_UBA)
   @Category(UnitTests.class)
   public void testListTemplateForNotFoundException() {
-    when(serviceEntityService.get(any(), any(), any(), any(), eq(false))).thenReturn(Optional.empty());
+    when(serviceEntityService.get(any(), any(), any(), any(), eq(false), null)).thenReturn(Optional.empty());
     assertThatThrownBy(() -> servicesApiImpl.getService(org, project, slug, account))
         .hasMessage(format("Service with identifier [%s] in project [%s], org [%s] not found", slug, project, org));
   }
@@ -145,7 +145,7 @@ public class ServicesApiImplTest extends CategoryTest {
   public void testUpdateService() throws IOException {
     when(orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(org, project, account))
         .thenReturn(true);
-    when(serviceEntityService.update(any())).thenReturn(entity);
+    when(serviceEntityService.update(any(), serviceRequestDTO.getServiceGitXMetadataRequestDTO())).thenReturn(entity);
     when(serviceResourceApiUtils.getServiceEntity(any(), any(), any(), any())).thenReturn(entity);
     io.harness.spec.server.ng.model.ServiceRequest serviceRequest =
         new io.harness.spec.server.ng.model.ServiceRequest();
@@ -164,7 +164,7 @@ public class ServicesApiImplTest extends CategoryTest {
   public void testDeleteService() throws IOException {
     when(orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(org, project, account))
         .thenReturn(true);
-    when(serviceEntityService.create(any())).thenReturn(entity);
+    when(serviceEntityService.create(any(), serviceGitXMetadataDTO)).thenReturn(entity);
     when(serviceResourceApiUtils.getServiceEntity(any(), any(), any(), any())).thenReturn(entity);
     io.harness.spec.server.ng.model.ServiceRequest serviceRequest =
         new io.harness.spec.server.ng.model.ServiceRequest();
@@ -185,7 +185,7 @@ public class ServicesApiImplTest extends CategoryTest {
     serviceResponse.setService(service);
     when(orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(org, project, account))
         .thenReturn(true);
-    when(serviceEntityService.get(any(), any(), any(), any(), eq(false))).thenReturn(Optional.of(entity));
+    when(serviceEntityService.get(any(), any(), any(), any(), eq(false), null)).thenReturn(Optional.of(entity));
     when(serviceEntityManagementService.deleteService(any(), any(), any(), any(), any())).thenReturn(true);
     when(serviceResourceApiUtils.mapToServiceResponse(any())).thenReturn(serviceResponse);
 
@@ -201,7 +201,7 @@ public class ServicesApiImplTest extends CategoryTest {
   @Owner(developers = TARUN_UBA)
   @Category(UnitTests.class)
   public void testDeleteServiceFail() {
-    when(serviceEntityService.get(any(), any(), any(), any(), eq(false))).thenReturn(Optional.of(entity));
+    when(serviceEntityService.get(any(), any(), any(), any(), eq(false), null)).thenReturn(Optional.of(entity));
     doReturn(false).when(serviceEntityManagementService).deleteService(account, org, project, slug, "ifMatch");
     try {
       servicesApiImpl.deleteService(org, project, slug, account);

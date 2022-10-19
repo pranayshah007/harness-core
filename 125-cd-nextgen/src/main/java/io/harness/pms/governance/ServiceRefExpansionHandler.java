@@ -68,7 +68,7 @@ public class ServiceRefExpansionHandler implements JsonExpansionHandler {
   }
 
   Optional<ServiceEntity> getService(String accountId, String orgId, String projectId, String serviceId) {
-    return serviceEntityService.get(accountId, orgId, projectId, serviceId, false);
+    return serviceEntityService.get(accountId, orgId, projectId, serviceId, false, null);
   }
 
   ExpansionResponse sendErrorResponseForNotFoundService(String service) {
