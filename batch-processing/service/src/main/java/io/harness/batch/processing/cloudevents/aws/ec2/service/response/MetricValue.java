@@ -7,11 +7,10 @@
 
 package io.harness.batch.processing.cloudevents.aws.ec2.service.response;
 
-import lombok.Builder;
-import lombok.Data;
-
 import java.util.Date;
 import java.util.List;
+import lombok.Builder;
+import lombok.Data;
 
 @Data
 @Builder

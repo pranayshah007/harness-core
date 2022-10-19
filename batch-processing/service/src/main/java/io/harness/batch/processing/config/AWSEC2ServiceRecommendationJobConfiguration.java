@@ -10,6 +10,7 @@ package io.harness.batch.processing.config;
 import io.harness.batch.processing.ccm.BatchJobType;
 import io.harness.batch.processing.cloudevents.aws.ec2.service.tasklet.AWSEC2RecommendationTasklet;
 import io.harness.batch.processing.svcmetrics.BatchJobExecutionListener;
+
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
@@ -25,29 +26,28 @@ import org.springframework.context.annotation.Configuration;
 @Slf4j
 @Configuration
 public class AWSEC2ServiceRecommendationJobConfiguration {
-    @Autowired
-    private BatchJobExecutionListener batchJobExecutionListener;
+  @Autowired private BatchJobExecutionListener batchJobExecutionListener;
 
-    @Bean
-    public Tasklet awsEC2ServiceRecommendationTasklet() {
-        return new AWSEC2RecommendationTasklet();
-    }
+  @Bean
+  public Tasklet awsEC2ServiceRecommendationTasklet() {
+    return new AWSEC2RecommendationTasklet();
+  }
 
-    @Bean
-    @Autowired
-    @Qualifier(value = "awsEC2ServiceRecommendationJob")
-    public Job awsEC2ServiceRecommendationJob(JobBuilderFactory jobBuilderFactory, Step awsEC2ServiceRecommendationStep) {
-        return jobBuilderFactory.get(BatchJobType.AWS_EC2_SERVICE_RECOMMENDATION.name())
-                .incrementer(new RunIdIncrementer())
-                .listener(batchJobExecutionListener)
-                .start(awsEC2ServiceRecommendationStep)
-                .build();
-    }
+  @Bean
+  @Autowired
+  @Qualifier(value = "awsEC2ServiceRecommendationJob")
+  public Job awsEC2ServiceRecommendationJob(JobBuilderFactory jobBuilderFactory, Step awsEC2ServiceRecommendationStep) {
+    return jobBuilderFactory.get(BatchJobType.AWS_EC2_SERVICE_RECOMMENDATION.name())
+        .incrementer(new RunIdIncrementer())
+        .listener(batchJobExecutionListener)
+        .start(awsEC2ServiceRecommendationStep)
+        .build();
+  }
 
-    @Bean
-    public Step awsEC2ServiceRecommendationStep(StepBuilderFactory stepBuilderFactory) {
-        return stepBuilderFactory.get("awsEC2ServiceRecommendationStep")
-                .tasklet(awsEC2ServiceRecommendationTasklet())
-                .build();
-    }
+  @Bean
+  public Step awsEC2ServiceRecommendationStep(StepBuilderFactory stepBuilderFactory) {
+    return stepBuilderFactory.get("awsEC2ServiceRecommendationStep")
+        .tasklet(awsEC2ServiceRecommendationTasklet())
+        .build();
+  }
 }

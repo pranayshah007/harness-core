@@ -12,7 +12,6 @@ import static io.harness.ccm.commons.beans.InstanceType.ECS_TASK_EC2;
 import static io.harness.ccm.commons.beans.InstanceType.ECS_TASK_FARGATE;
 import static io.harness.ccm.commons.beans.InstanceType.K8S_POD;
 import static io.harness.ccm.commons.beans.InstanceType.K8S_POD_FARGATE;
-
 import static io.harness.ccm.commons.constants.ViewFieldConstants.CLOUD_SERVICE_NAME_FIELD_ID;
 import static io.harness.ccm.commons.constants.ViewFieldConstants.CLUSTER_NAME_FIELD_ID;
 import static io.harness.ccm.commons.constants.ViewFieldConstants.INSTANCE_NAME_FIELD_ID;
