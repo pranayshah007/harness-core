@@ -18,6 +18,7 @@ import static io.harness.delegate.message.MessageConstants.DELEGATE_ID;
 import static io.harness.delegate.message.MessageConstants.DELEGATE_IS_NEW;
 import static io.harness.delegate.message.MessageConstants.DELEGATE_JRE_VERSION;
 import static io.harness.delegate.message.MessageConstants.DELEGATE_MIGRATE;
+import static io.harness.delegate.message.MessageConstants.DELEGATE_READY;
 import static io.harness.delegate.message.MessageConstants.DELEGATE_RESTART_NEEDED;
 import static io.harness.delegate.message.MessageConstants.DELEGATE_RESUME;
 import static io.harness.delegate.message.MessageConstants.DELEGATE_SELF_DESTRUCT;
@@ -64,6 +65,7 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.emptySet;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.synchronizedList;
+import static java.util.concurrent.TimeUnit.DAYS;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
@@ -478,6 +480,8 @@ public class WatcherServiceImpl implements WatcherService {
         new Schedulable("Error while logging-performance", this::logPerformance), 0, 60, TimeUnit.SECONDS);
     watchExecutor.scheduleWithFixedDelay(
         new Schedulable("Error while watching delegate", this::syncWatchDelegate), 0, 10, TimeUnit.SECONDS);
+    upgradeExecutor.scheduleWithFixedDelay(
+        new Schedulable("Error while cleaning up garbage", this::cleanupOlderVersions), 1, 5, DAYS);
   }
 
   private void logPerformance() {
@@ -580,6 +584,7 @@ public class WatcherServiceImpl implements WatcherService {
       }
       Multimap<String, String> runningVersions = LinkedHashMultimap.create();
       List<String> shutdownPendingList = new ArrayList<>();
+      List<String> drainingNeededList = emptyList();
 
       if (isEmpty(runningDelegates)) {
         if (!multiVersion) {
@@ -595,7 +600,7 @@ public class WatcherServiceImpl implements WatcherService {
         List<String> drainingRestartNeededList = new ArrayList<>();
         List<String> upgradeNeededList = new ArrayList<>();
         List<String> shutdownNeededList = new ArrayList<>();
-        List<String> drainingNeededList = new ArrayList<>();
+        drainingNeededList = new ArrayList<>();
         List<String> stopGrpcServerList = new ArrayList<>();
         List<String> startGrpcServerList = new ArrayList<>();
 
@@ -752,14 +757,6 @@ public class WatcherServiceImpl implements WatcherService {
           }
         }
 
-        if (isNotEmpty(drainingNeededList)) {
-          log.info("Delegate processes {} to be drained.", drainingNeededList);
-          drainingNeededList.forEach(this::drainDelegateProcess);
-          Set<String> allVersions = new HashSet<>(expectedVersions);
-          allVersions.addAll(runningVersions.keySet());
-          removeDelegateVersionsFromCapsule(allVersions);
-          cleanupOldDelegateVersions(allVersions);
-        }
         if (isNotEmpty(shutdownNeededList)) {
           log.warn("Delegate processes {} exceeded grace period. Forcing shutdown", shutdownNeededList);
           shutdownNeededList.forEach(this::shutdownDelegate);
@@ -827,7 +824,7 @@ public class WatcherServiceImpl implements WatcherService {
             log.info("New delegate process for version {} will be started", version);
             downloadRunScripts(version, version, false);
             downloadDelegateJar(version);
-            startDelegateProcess(version, version, emptyList(), "DelegateStartScriptVersioned", getProcessId());
+            startDelegateProcess(version, version, drainingNeededList, "DelegateStartScriptVersioned", getProcessId());
             break;
           } catch (IOException ioe) {
             if (ioe.getMessage().contains(NO_SPACE_LEFT_ON_DEVICE_ERROR)) {
@@ -1226,12 +1223,25 @@ public class WatcherServiceImpl implements WatcherService {
             message = messageService.readMessageFromChannel(DELEGATE, newDelegateProcess, MINUTES.toMillis(2));
             if (message != null && message.getMessage().equals(DELEGATE_STARTED)) {
               log.info("Retrieved delegate-started message from new delegate {}", newDelegateProcess);
-              oldDelegateProcesses.forEach(oldDelegateProcess -> {
-                log.info("Sending old delegate process {} stop-acquiring message", oldDelegateProcess);
-                messageService.writeMessageToChannel(DELEGATE, oldDelegateProcess, DELEGATE_STOP_ACQUIRING);
-              });
               log.info("Sending new delegate process {} go-ahead message", newDelegateProcess);
               messageService.writeMessageToChannel(DELEGATE, newDelegateProcess, DELEGATE_GO_AHEAD);
+
+              log.info("Waiting for delegate process {} to be ready", newDelegateProcess);
+              message = messageService.readMessageFromChannel(DELEGATE, newDelegateProcess, MINUTES.toMillis(5));
+              if (message != null && message.getMessage().equals(DELEGATE_READY)) {
+                oldDelegateProcesses.forEach(oldDelegateProcess -> {
+                  log.info(
+                      "New delegate process ready to acquire task, sending old delegate process {} stop-acquiring message",
+                      oldDelegateProcess);
+                  messageService.writeMessageToChannel(DELEGATE, oldDelegateProcess, DELEGATE_STOP_ACQUIRING);
+                });
+              } else {
+                log.info("Timed out waiting delegate to come up, proceeding anyway {}", oldDelegateProcesses);
+                oldDelegateProcesses.forEach(oldDelegateProcess -> {
+                  log.info("Sending old delegate process {} stop-acquiring message", oldDelegateProcess);
+                  messageService.writeMessageToChannel(DELEGATE, oldDelegateProcess, DELEGATE_STOP_ACQUIRING);
+                });
+              }
               success = true;
               log.info("Adding new delegate process {} to process map", newDelegateProcess);
               delegateProcessMap.put(newDelegateProcess, newDelegate.getProcess());
@@ -1492,6 +1502,16 @@ public class WatcherServiceImpl implements WatcherService {
       }
     } finally {
       working.set(false);
+    }
+  }
+
+  private void cleanupOlderVersions() {
+    synchronized (this) {
+      log.info("Removing older delegate version if any");
+      Set<String> allVersions = new HashSet<>(findExpectedDelegateVersions());
+      allVersions.addAll(runningDelegates);
+      removeDelegateVersionsFromCapsule(allVersions);
+      cleanupOldDelegateVersions(allVersions);
     }
   }
 
