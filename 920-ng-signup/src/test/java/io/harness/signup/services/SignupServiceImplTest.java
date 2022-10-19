@@ -184,7 +184,7 @@ public class SignupServiceImplTest extends CategoryTest {
                 .edition("TEAM")
                 .build())));
 
-    when(userClient.completeSignupInvite(any(), any())).thenReturn(completeSignupInviteCall);
+    when(userClient.completeSignupInvite(any())).thenReturn(completeSignupInviteCall);
 
     SignupVerificationToken verificationToken =
 
@@ -192,7 +192,7 @@ public class SignupServiceImplTest extends CategoryTest {
     when(verificationTokenRepository.findByToken(TOKEN)).thenReturn(Optional.of(verificationToken));
     when(accessControlClient.hasAccess(any(), any(), any())).thenReturn(true);
     when(featureFlagService.isGlobalEnabled(any())).thenReturn(true);
-    UserInfo userInfo = signupServiceImpl.completeSignupInvite(TOKEN, null);
+    UserInfo userInfo = signupServiceImpl.completeSignupInvite(TOKEN, null, null);
 
     verify(telemetryReporter, times(1)).sendIdentifyEvent(eq(EMAIL), any(), any());
     verify(telemetryReporter, times(1))
@@ -214,7 +214,7 @@ public class SignupServiceImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testCompleteSignupInviteWithInvalidToken() throws IOException {
     when(verificationTokenRepository.findByToken(TOKEN)).thenReturn(Optional.ofNullable(null));
-    signupServiceImpl.completeSignupInvite(TOKEN, null);
+    signupServiceImpl.completeSignupInvite(TOKEN, null, null);
   }
 
   @Test
@@ -247,7 +247,7 @@ public class SignupServiceImplTest extends CategoryTest {
     when(accessControlClient.hasAccess(any(), any(), any())).thenReturn(true);
     when(featureFlagService.isGlobalEnabled(any())).thenReturn(true);
 
-    UserInfo returnedUser = signupServiceImpl.oAuthSignup(oAuthSignupDTO, null);
+    UserInfo returnedUser = signupServiceImpl.oAuthSignup(oAuthSignupDTO);
 
     verify(telemetryReporter, times(1)).sendIdentifyEvent(eq(EMAIL), any(), any());
     verify(telemetryReporter, times(1))
@@ -303,7 +303,7 @@ public class SignupServiceImplTest extends CategoryTest {
         .when(signupValidator)
         .validateEmail(oAuthSignupDTO.getEmail());
     try {
-      signupServiceImpl.oAuthSignup(oAuthSignupDTO, null);
+      signupServiceImpl.oAuthSignup(oAuthSignupDTO);
     } catch (SignupException e) {
       verify(telemetryReporter, times(2))
           .sendTrackEvent(

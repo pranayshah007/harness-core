@@ -142,7 +142,12 @@ public class MergeHelper {
       ParameterField<?> inputSetParameterField =
           RuntimeInputValuesValidator.getInputSetParameterField(inputSetValueText);
       if (inputSetParameterField != null && inputSetParameterField.isExecutionInput()) {
-        return inputSetValue;
+        if (NGExpressionUtils.matchesExecutionInputPattern(inputSetValueText)
+            && NGExpressionUtils.matchesInputSetPattern(pipelineValText)) {
+          return pipelineValText + ".executionInput()";
+        } else {
+          return inputSetValue;
+        }
       }
 
       return ParameterField.createExpressionField(true,

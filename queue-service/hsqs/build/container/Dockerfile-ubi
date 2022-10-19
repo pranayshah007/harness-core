@@ -1,0 +1,12 @@
+# Create image for queue-service.
+#
+# Build the queue-service image using:
+# > bazel build //queue-service/hsqs/...
+
+FROM registry.access.redhat.com/ubi8/ubi-minimal:8.6-751
+# Copy go binary
+COPY hsqs_/hsqs /usr/local/bin/hsqs
+RUN chown -R 65534:65534 /usr/local/bin
+USER 65534:65534
+WORKDIR /usr/local/bin
+CMD ["/usr/local/bin/hsqs", "server"]
