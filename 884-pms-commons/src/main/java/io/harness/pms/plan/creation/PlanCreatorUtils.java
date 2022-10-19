@@ -40,11 +40,23 @@ public class PlanCreatorUtils {
   public final String ANY_TYPE = "__any__";
   public final String TEMPLATE_TYPE = "__template__";
 
+  @Deprecated
   public boolean supportsField(Map<String, Set<String>> supportedTypes, YamlField field) {
-    if (EmptyPredicate.isEmpty(supportedTypes)) {
+    return supportsFieldV2(supportedTypes, field, Collections.singleton(YamlVersion.V0), YamlVersion.V0);
+  }
+
+  public boolean supportsFieldV2(Map<String, Set<String>> supportedTypes, YamlField field,
+      Set<YamlVersion> supportedVersions, YamlVersion yamlVersion) {
+    if (EmptyPredicate.isEmpty(supportedVersions)) {
+      return false;
+    }
+    if (!supportedVersions.contains(yamlVersion)) {
       return false;
     }
 
+    if (EmptyPredicate.isEmpty(supportedTypes)) {
+      return false;
+    }
     String fieldName = field.getName();
     Set<String> types = supportedTypes.get(fieldName);
     if (EmptyPredicate.isEmpty(types)) {
@@ -60,17 +72,6 @@ public class PlanCreatorUtils {
       }
     }
     return types.contains(fieldType);
-  }
-
-  public boolean supportsFieldV2(Map<String, Set<String>> supportedTypes, YamlField field,
-      Set<YamlVersion> supportedVersions, YamlVersion yamlVersion) {
-    if (EmptyPredicate.isEmpty(supportedVersions)) {
-      return false;
-    }
-    if (!supportedVersions.contains(yamlVersion)) {
-      return false;
-    }
-    return supportsField(supportedTypes, field);
   }
 
   public YamlField getStageConfig(YamlField yamlField, String stageIdentifier) {
