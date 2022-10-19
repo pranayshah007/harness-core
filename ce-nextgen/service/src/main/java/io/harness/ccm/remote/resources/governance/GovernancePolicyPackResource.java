@@ -9,6 +9,7 @@ package io.harness.ccm.remote.resources.governance;
 
 import com.codahale.metrics.annotation.ExceptionMetered;
 import com.codahale.metrics.annotation.Timed;
+import com.google.gson.Gson;
 import com.google.inject.Inject;
 import io.harness.NGCommonEntityConstants;
 import io.harness.accesscontrol.AccountIdentifier;
@@ -16,6 +17,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.CENextGenConfiguration;
 import io.harness.ccm.rbac.CCMRbacHelper;
 import io.harness.ccm.scheduler.SchedulerClient;
+import io.harness.ccm.scheduler.SchedulerRequestDTO;
 import io.harness.ccm.utils.LogAccountIdentifier;
 import io.harness.ccm.views.dto.CreatePolicyPackDTO;
 import io.harness.ccm.views.entities.Policy;
@@ -36,7 +38,9 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import lombok.extern.slf4j.Slf4j;
+import okhttp3.*;
 import org.springframework.stereotype.Service;
+import retrofit2.Response;
 
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
@@ -49,12 +53,11 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
+import java.util.ArrayList;
+import java.util.List;
 
 import static io.harness.NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE;
 import static io.harness.annotations.dev.HarnessTeam.CE;
-
-import java.util.ArrayList;
-import java.util.List;
 
 
 @Api("governance")
@@ -125,44 +128,25 @@ public class GovernancePolicyPackResource {
     policyPack.setAccountId(accountId);
     policyPackService.save(policyPack);
     if (configuration.getGovernanceConfig().isUseDkron()) {
+      log.info("USe dkron is enabled in config");
       try {
-        // JSONObject jsonObject = new JSONObject();
-        JSONObject json = (JSONObject) JSONSerializer.toJSON( "{\n" +
-                "  \"name\": \"get-cedev-version\",\n" +
-                "  \"schedule\": \"@every 30s\",\n" +
-                "  \"displayname\": \"nikunj_test_get-cedev-version\",\n" +
-                "  \"timezone\": \"\",\n" +
-                "  \"owner\": \"CCM Team\",\n" +
-                "  \"owner_email\": \"nikunj.badjatya@harness.io\",\n" +
-                "  \"disabled\": false,\n" +
-                "  \"tags\": {\n" +
-                "    \"server\": \"true\"\n" +
-                "  },\n" +
-                "  \"metadata\": {\n" +
-                "    \"hi\": \"hello\"\n" +
-                "  },\n" +
-                "  \"retries\": 2,\n" +
-                "  \"processors\": {\n" +
-                "        \"log\": {\n" +
-                "            \"forward\": \"true\"\n" +
-                "        }\n" +
-                "    },\n" +
-                "  \"concurrency\": \"allow\",\n" +
-                "  \"executor\": \"http\",\n" +
-                "  \"executor_config\": {\n" +
-                "      \"method\": \"GET\",\n" +
-                "      \"url\": \"https://ce-dev.harness.io/api/version\",\n" +
-                "      \"headers\": \"[]\",\n" +
-                "      \"body\": \"\",\n" +
-                "      \"timeout\": \"30\",\n" +
-                "      \"expectCode\": \"200\",\n" +
-                "      \"expectBody\": \"\",\n" +
-                "      \"debug\": \"true\"\n" +
-                "  }\n" +
-                "}" );
-
-        okhttp3.RequestBody body = okhttp3.RequestBody.create(okhttp3.MediaType.parse("application/json"), json.toString());
-        log.info("{}", NGRestUtils.getResponse(schedulerClient.createSchedule(body)));
+        SchedulerRequestDTO schedulerRequestDTO = SchedulerRequestDTO.builder()
+                                                      .schedule("@every 30s")
+                                                      .disabled(true)
+                                                      .name("get-cedev-version")
+                                                      .displayname("get-cedev-version")
+                                                      .timezone("UTC")
+                                                      .executor("http")
+                                                      .executor_config(SchedulerRequestDTO.ExecutorConfig.builder()
+                                                                           .method("GET")
+                                                                           .url("http://ce-dev.harness.io/api/version")
+                                                                           .build())
+                                                      .build();
+        log.info(new Gson().toJson(schedulerRequestDTO));
+        okhttp3.RequestBody body = okhttp3.RequestBody.create(
+            okhttp3.MediaType.parse("application/json"), new Gson().toJson(schedulerRequestDTO));
+        Response res = schedulerClient.createSchedule(body).execute();
+        log.info("code: {}, message: {}, body: {}", res.code(), res.message(), res.body());
       } catch (Exception e) {
         log.info("{}", e.toString());
       }

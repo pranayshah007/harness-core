@@ -7,7 +7,6 @@
 
 package io.harness.ccm.views.dto;
 
-import io.harness.ccm.views.entities.CEViewFolder;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
@@ -18,5 +17,5 @@ import lombok.experimental.FieldDefaults;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class GovernanceJobEnqueueDTO {
-    String policySetId;
+    String policyEnforcementId;
 }

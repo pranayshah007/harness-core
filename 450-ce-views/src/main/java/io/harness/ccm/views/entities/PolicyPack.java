@@ -32,6 +32,8 @@ import lombok.experimental.FieldNameConstants;
 import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 import org.mongodb.morphia.annotations.Entity;
 import org.mongodb.morphia.annotations.Id;
+import org.springframework.data.annotation.CreatedBy;
+import org.springframework.data.annotation.LastModifiedBy;
 
 @Data
 @Builder
@@ -41,9 +43,8 @@ import org.mongodb.morphia.annotations.Id;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Entity(value = "governancePolicyPack", noClassnameStored = true)
 @Schema(description = "This object will contain the complete definition of a Cloud Cost Policy set")
-
 public final class PolicyPack implements PersistentEntity, UuidAware, CreatedAtAware, UpdatedAtAware, AccountAccess,
-                                        CreatedByAware, UpdatedByAware {
+                                         CreatedByAware, UpdatedByAware {
   @Id @Schema(description = "unique id") String uuid;
   @Schema(description = "account id") String accountId;
   @Schema(description = "Identifier") String name;
@@ -52,16 +53,13 @@ public final class PolicyPack implements PersistentEntity, UuidAware, CreatedAtA
   @Schema(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) String orgIdentifier;
   @Schema(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) String projectIdentifier;
   @Schema(description = "cloudProvider") String cloudProvider;
-  @Schema(description = "List of policies identifiers from governancePolicy collection") List<String> policiesIdentifier;
-//  @Schema(description = "policySetExecutionCron") String policySetExecutionCron;
-//  @Schema(description = "policySetTargetAccounts") List<String> policySetTargetAccounts;
-//  @Schema(description = "policySetTargetRegions") List<String> policySetTargetRegions;
-  @Schema(description = "is OOTB flag") Boolean isOOTB;
-//  @Schema(description = "isEnabled") String isEnabled;
+  @Schema(description = "List of policies identifiers from governancePolicy collection")
+  List<String> policiesIdentifier;
+  @Schema(description = "is OOTB flag") @Builder.Default Boolean isOOTB;
   @Schema(description = NGCommonEntityConstants.CREATED_AT_MESSAGE) long createdAt;
   @Schema(description = NGCommonEntityConstants.UPDATED_AT_MESSAGE) long lastUpdatedAt;
-  @Schema(description = "created by") private EmbeddedUser createdBy;
-  @Schema(description = "updated by") private EmbeddedUser lastUpdatedBy;
+  @CreatedBy private EmbeddedUser createdBy;
+  @LastModifiedBy private EmbeddedUser lastUpdatedBy;
 
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
@@ -86,9 +84,6 @@ public final class PolicyPack implements PersistentEntity, UuidAware, CreatedAtA
         .cloudProvider(getCloudProvider())
         .tags(getTags())
         .policiesIdentifier(getPoliciesIdentifier())
-//        .policySetExecutionCron(getPolicySetExecutionCron())
-//        .policySetTargetAccounts(getPolicySetTargetAccounts())
-//        .policySetTargetRegions(getPolicySetTargetRegions())
         .isOOTB(getIsOOTB())
         .createdAt(getCreatedAt())
         .lastUpdatedAt(getLastUpdatedAt())

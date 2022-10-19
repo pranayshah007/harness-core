@@ -229,8 +229,8 @@ enableOpentelemetry: false
 
 dkronClientConfig:
   baseUrl: http://localhost:8080/
-  connectTimeOutSeconds: 15
-  readTimeOutSeconds: 15
+  connectTimeOutSeconds: 50
+  readTimeOutSeconds: 50
 
 governanceConfig:
   useDkron: true
