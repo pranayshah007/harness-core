@@ -61,11 +61,10 @@ public class EC2MetricHelper {
   }
 
   private Metric metricFor(String metricName, String instanceId) {
-    Metric metric = new Metric()
-                        .withNamespace(EC2_NAMESPACE)
-                        .withMetricName(metricName)
-                        .withDimensions(new Dimension().withName(INSTANCE_ID).withValue(instanceId));
-    return metric;
+    return new Metric()
+        .withNamespace(EC2_NAMESPACE)
+        .withMetricName(metricName)
+        .withDimensions(new Dimension().withName(INSTANCE_ID).withValue(instanceId));
   }
 
   // Generate a unique-per-request id to individual query in request with individual result in response.
