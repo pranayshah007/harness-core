@@ -196,14 +196,14 @@ public class NGVariablesUtils {
       if (value instanceof ParameterField) {
         ParameterField<?> parameterFieldValue = (ParameterField<?>) value;
         if (parameterFieldValue.getValue() == null) {
-          throw new InvalidRequestException(String.format("Env. variable [%s] value found to be null", key));
+          throw new InvalidRequestException(String.format("Variable [%s] value found to be null", key));
         }
         res.put(key, parameterFieldValue.getValue().toString());
       } else if (value instanceof String) {
         res.put(key, (String) value);
       } else {
         log.error(String.format(
-            "Value other than String or ParameterField found for env. variable [%s]. value: [%s]", key, value));
+            "Value other than String or ParameterField found for Variable [%s]. value: [%s]", key, value));
       }
     });
     return res;
