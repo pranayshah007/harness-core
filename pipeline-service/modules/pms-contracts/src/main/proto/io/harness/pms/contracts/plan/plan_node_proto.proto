@@ -36,4 +36,12 @@ message PlanNodeProto {
   bool skipUnresolvedExpressionsCheck = 17;
   string stageFqn = 18;
   string executionInputTemplate = 19;
+  ExpressionMode expressionMode = 20;
+}
+
+enum ExpressionMode {
+  UNKNOWN_MODE = 0;
+  RETURN_NULL_IF_UNRESOLVED = 1;
+  RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED = 2;
+  THROW_EXCEPTION_IF_UNRESOLVED = 3;
 }

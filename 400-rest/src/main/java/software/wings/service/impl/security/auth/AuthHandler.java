@@ -1888,8 +1888,8 @@ public class AuthHandler {
 
     AppPermission deploymentPermission =
         AppPermission.builder()
-            .actions(Sets.newHashSet(
-                Action.READ, Action.EXECUTE_WORKFLOW, Action.EXECUTE_PIPELINE, Action.EXECUTE_WORKFLOW_ROLLBACK))
+            .actions(Sets.newHashSet(Action.READ, Action.EXECUTE_WORKFLOW, Action.EXECUTE_PIPELINE,
+                Action.EXECUTE_WORKFLOW_ROLLBACK, Action.ABORT_WORKFLOW))
             .appFilter(AppFilter.builder().filterType(AppFilter.FilterType.ALL).build())
             .entityFilter(new EnvFilter(null, Sets.newHashSet(envFilterType)))
             .permissionType(PermissionType.DEPLOYMENT)
@@ -1946,7 +1946,7 @@ public class AuthHandler {
 
   private Set<Action> getAllActions() {
     return Sets.newHashSet(Action.CREATE, Action.READ, Action.UPDATE, Action.DELETE, Action.EXECUTE_WORKFLOW,
-        Action.EXECUTE_WORKFLOW_ROLLBACK, Action.EXECUTE_PIPELINE);
+        Action.EXECUTE_WORKFLOW_ROLLBACK, Action.ABORT_WORKFLOW, Action.EXECUTE_PIPELINE);
   }
 
   private Set<Action> getAllNonDeploymentActions() {

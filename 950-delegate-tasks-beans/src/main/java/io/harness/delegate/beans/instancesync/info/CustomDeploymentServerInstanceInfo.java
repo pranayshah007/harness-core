@@ -22,8 +22,8 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = true)
 @OwnedBy(HarnessTeam.CDP)
 public class CustomDeploymentServerInstanceInfo extends ServerInstanceInfo {
-  private String hostId;
-  private String hostName;
+  private String instanceId;
+  private String instanceName;
   private String instanceFetchScript;
   private String infrastructureKey;
   private Map<String, Object> properties;

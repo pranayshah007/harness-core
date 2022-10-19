@@ -43,7 +43,14 @@ public interface JiraRestClient {
 
   @GET("issue/createmeta")
   Call<JiraIssueCreateMetadataNG> getIssueCreateMetadata(@Query("projectKeys") String projectKeys,
-      @Query("issueTypeNames") String issueTypes, @Query("expand") String expand);
+      @Query("issuetypeNames") String issueTypes, @Query("expand") String expand);
+
+  @GET("issue/createmeta/{projectKey}/issuetypes")
+  Call<JiraIssueCreateMetadataNGIssueTypes> getIssueCreateMetadataIssueTypes(@Path("projectKey") String projectKey);
+
+  @GET("issue/createmeta/{projectKey}/issuetypes/{issueTypeId}")
+  Call<JiraIssueCreateMetadataNGFields> getIssueCreateMetadataFields(
+      @Path("projectKey") String projectKey, @Path("issueTypeId") String issueTypeId);
 
   @GET("issue/{issueKey}/editmeta")
   Call<JiraIssueUpdateMetadataNG> getIssueUpdateMetadata(@Path("issueKey") String issueKey);

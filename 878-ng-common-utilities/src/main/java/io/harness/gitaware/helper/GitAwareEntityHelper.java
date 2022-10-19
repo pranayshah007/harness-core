@@ -12,6 +12,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.NestedExceptionUtils;
 import io.harness.gitaware.dto.GitContextRequestParams;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.scm.SCMGitSyncHelper;
@@ -23,6 +24,7 @@ import io.harness.gitsync.scm.beans.ScmUpdateFileGitRequest;
 import io.harness.gitsync.scm.beans.ScmUpdateFileGitResponse;
 import io.harness.persistence.gitaware.GitAware;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import groovy.lang.Singleton;
 import java.util.Collections;
@@ -34,6 +36,11 @@ public class GitAwareEntityHelper {
   @Inject SCMGitSyncHelper scmGitSyncHelper;
   public static final String DEFAULT = "__default__";
   public static final String HARNESS_FOLDER_EXTENSION_WITH_SEPARATOR = ".harness/";
+  public static final String FILE_PATH_INVALID_HINT = "Please check if the requested filepath is valid.";
+  public static final String FILE_PATH_INVALID_EXTENSION_EXPLANATION =
+      "Harness File should have [.yaml] or [.yml] extension.";
+
+  public static final String FILE_PATH_INVALID_EXTENSION_ERROR_FORMAT = "FilePath [%s] doesn't have right extension.";
 
   public GitAware fetchEntityFromRemote(
       GitAware entity, Scope scope, GitContextRequestParams gitContextRequestParams, Map<String, String> contextMap) {
@@ -42,6 +49,10 @@ public class GitAwareEntityHelper {
     String branch =
         isNullOrDefault(gitContextRequestParams.getBranchName()) ? "" : gitContextRequestParams.getBranchName();
     String filePath = gitContextRequestParams.getFilePath();
+    if (isNullOrDefault(filePath)) {
+      throw new InvalidRequestException("No file path provided.");
+    }
+    validateFilePathHasCorrectExtension(filePath);
     String connectorRef = gitContextRequestParams.getConnectorRef();
     ScmGetFileResponse scmGetFileResponse =
         scmGitSyncHelper.getFileByBranch(Scope.builder()
@@ -114,6 +125,7 @@ public class GitAwareEntityHelper {
     if (gitEntityInfo.isNewBranch() && isNullOrDefault(baseBranch)) {
       throw new InvalidRequestException("No base branch provided for committing to new branch");
     }
+    validateFilePathHasCorrectExtension(filePath);
     // if branch is empty, then git sdk will figure out the default branch for the repo by itself
     String branch = isNullOrDefault(gitEntityInfo.getBranch()) ? "" : gitEntityInfo.getBranch();
     // if commitMsg is empty, then git sdk will use some default Commit Message
@@ -170,6 +182,7 @@ public class GitAwareEntityHelper {
     if (isNullOrDefault(branch)) {
       throw new InvalidRequestException("No branch provided for updating the file.");
     }
+    validateFilePathHasCorrectExtension(filePath);
     // if commitMsg is empty, then git sdk will use some default Commit Message
     String commitMsg = isNullOrDefault(gitEntityInfo.getCommitMsg()) ? "" : gitEntityInfo.getCommitMsg();
     ScmUpdateFileGitRequest scmUpdateFileGitRequest = ScmUpdateFileGitRequest.builder()
@@ -201,5 +214,14 @@ public class GitAwareEntityHelper {
     return scmGitSyncHelper
         .getRepoUrl(scope, gitEntityInfo.getRepoName(), gitEntityInfo.getConnectorRef(), Collections.emptyMap())
         .getRepoUrl();
+  }
+
+  @VisibleForTesting
+  void validateFilePathHasCorrectExtension(String filePath) {
+    if (!filePath.endsWith(".yaml") && !filePath.endsWith(".yml")) {
+      throw NestedExceptionUtils.hintWithExplanationException(FILE_PATH_INVALID_HINT,
+          FILE_PATH_INVALID_EXTENSION_EXPLANATION,
+          new InvalidRequestException(String.format(FILE_PATH_INVALID_EXTENSION_ERROR_FORMAT, filePath)));
+    }
   }
 }

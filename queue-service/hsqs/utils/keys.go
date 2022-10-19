@@ -7,7 +7,7 @@ package utils
 
 import "fmt"
 
-// GetStoreAllQueuesTopicKey key, all subtopics list is stored having actual stream redis key
+// GetStoreAllSubTopicsFromTopicKey key, all subtopics list is stored having actual stream redis key
 func GetStoreAllSubTopicsFromTopicKey(requestTopicName string) string {
 	return fmt.Sprintf("hsqs:%s:subtopics", requestTopicName)
 }
@@ -25,4 +25,8 @@ func GetTopicMetadataKey(topic string) string {
 // GetConsumerGroupKeyForGivenTopic key is the fixed consumerGroup name for a given topic
 func GetConsumerGroupKeyForGivenTopic(topic string) string {
 	return fmt.Sprintf("hsqs:%s:consumerGroup", topic)
+}
+
+func GetStoreAllBlockedSubTopicsFromTopicKey(topic string, subTopic string) string {
+	return fmt.Sprintf("hsqs:%s:%s:blocked", topic, subTopic)
 }

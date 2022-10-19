@@ -34,6 +34,7 @@ import io.harness.cdng.visitor.YamlTypes;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.InvalidYamlException;
 import io.harness.ng.core.environment.services.EnvironmentService;
 import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
 import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
@@ -77,6 +78,7 @@ import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -163,13 +165,17 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
       PlanCreationContext ctx, DeploymentStageNode stageNode, List<String> childrenNodeIds) {
     stageNode.setIdentifier(getIdentifierWithExpression(ctx, stageNode, stageNode.getIdentifier()));
     stageNode.setName(getIdentifierWithExpression(ctx, stageNode, stageNode.getName()));
-    DeploymentStageConfig config = stageNode.getDeploymentStageConfig();
     StageElementParametersBuilder stageParameters = CdStepParametersUtils.getStageParameters(stageNode);
     YamlField specField =
         Preconditions.checkNotNull(ctx.getCurrentField().getNode().getField(YAMLFieldNameConstants.SPEC));
     stageParameters.specConfig(getSpecParameters(specField.getNode().getUuid(), ctx, stageNode));
     String uuid = MultiDeploymentSpawnerUtils.getUuidForMultiDeployment(stageNode);
-
+    List<AdviserObtainment> adviserObtainments = new ArrayList<>();
+    DeploymentStageConfig stageConfig = stageNode.getDeploymentStageConfig();
+    if (stageConfig.getServices() == null && stageConfig.getEnvironments() == null
+        && stageConfig.getEnvironmentGroup() == null) {
+      adviserObtainments = getAdviserObtainmentFromMetaData(ctx.getCurrentField());
+    }
     // We need to swap the ids if strategy is present
     PlanNodeBuilder builder =
         PlanNode.builder()
@@ -185,7 +191,7 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
                 FacilitatorObtainment.newBuilder()
                     .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.CHILD).build())
                     .build())
-            .adviserObtainments(getAdviserObtainmentFromMetaData(ctx.getCurrentField()));
+            .adviserObtainments(adviserObtainments);
 
     if (!EmptyPredicate.isEmpty(ctx.getExecutionInputTemplate())) {
       builder.executionInputTemplate(ctx.getExecutionInputTemplate());
@@ -258,7 +264,8 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
     Map<String, GraphLayoutNode> stageYamlFieldMap = new LinkedHashMap<>();
     YamlField yamlField = context.getCurrentField();
     if (config.getDeploymentStageConfig().getServices() != null
-        || config.getDeploymentStageConfig().getEnvironments() != null) {
+        || config.getDeploymentStageConfig().getEnvironments() != null
+        || config.getDeploymentStageConfig().getEnvironmentGroup() != null) {
       YamlField siblingField = yamlField.getNode().nextSiblingFromParentArray(
           yamlField.getName(), Arrays.asList(YAMLFieldNameConstants.STAGE, YAMLFieldNameConstants.PARALLEL));
       EdgeLayoutList edgeLayoutList;
@@ -414,6 +421,23 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
         && stageConfig.getEnvironmentGroup() == null) {
       return;
     }
+
+    String subType;
+    if (stageConfig.getEnvironments() == null) {
+      subType = MultiDeploymentSpawnerUtils.MULTI_SERVICE_DEPLOYMENT;
+    } else if (stageConfig.getServices() == null) {
+      subType = MultiDeploymentSpawnerUtils.MULTI_ENV_DEPLOYMENT;
+    } else {
+      subType = MultiDeploymentSpawnerUtils.MULTI_SERVICE_ENV_DEPLOYMENT;
+    }
+    if (stageConfig.getServices() != null && ParameterField.isBlank(stageConfig.getServices().getValues())) {
+      throw new InvalidYamlException(
+          "No values of services provided. Please provide at least one service for deployment");
+    }
+    if (stageConfig.getEnvironments() != null && ParameterField.isBlank(stageConfig.getEnvironments().getValues())) {
+      throw new InvalidYamlException(
+          "No values of environments provided. Please provide at least one service for deployment");
+    }
     MultiDeploymentStepParameters stepParameters =
         MultiDeploymentStepParameters.builder()
             .strategyType(StrategyType.MATRIX)
@@ -421,6 +445,7 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
             .environments(stageConfig.getEnvironments())
             .environmentGroup(stageConfig.getEnvironmentGroup())
             .services(stageConfig.getServices())
+            .subType(subType)
             .build();
 
     MultiDeploymentMetadata metadata =
@@ -473,7 +498,8 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
     }
 
     EnvironmentYamlV2 environment;
-    if (stageNode.getDeploymentStageConfig().getEnvironments() != null) {
+    if (stageNode.getDeploymentStageConfig().getEnvironments() != null
+        || stageNode.getDeploymentStageConfig().getEnvironmentGroup() != null) {
       environment = MultiDeploymentSpawnerUtils.getEnvironmentYamlV2Node();
     } else {
       environment = stageNode.getDeploymentStageConfig().getEnvironment();
@@ -486,13 +512,14 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
   private String addInfrastructureNode(LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap,
       DeploymentStageNode stageNode, List<AdviserObtainment> adviserObtainments) throws IOException {
     EnvironmentYamlV2 environment;
-    if (stageNode.getDeploymentStageConfig().getEnvironments() != null) {
+    if (stageNode.getDeploymentStageConfig().getEnvironments() != null
+        || stageNode.getDeploymentStageConfig().getEnvironmentGroup() != null) {
       environment = MultiDeploymentSpawnerUtils.getEnvironmentYamlV2Node();
     } else {
       environment = stageNode.getDeploymentStageConfig().getEnvironment();
     }
-    PlanNode node = InfrastructurePmsPlanCreator.getInfraTaskExecutableStepV2PlanNode(
-        environment, adviserObtainments, stageNode.getDeploymentStageConfig().getDeploymentType());
+    PlanNode node = InfrastructurePmsPlanCreator.getInfraTaskExecutableStepV2PlanNode(environment, adviserObtainments,
+        stageNode.getDeploymentStageConfig().getDeploymentType(), stageNode.skipInstances);
     planCreationResponseMap.put(node.getUuid(), PlanCreationResponse.builder().planNode(node).build());
     return node.getUuid();
   }

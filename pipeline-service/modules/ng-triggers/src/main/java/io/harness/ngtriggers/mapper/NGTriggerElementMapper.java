@@ -85,11 +85,11 @@ import io.harness.ngtriggers.exceptions.InvalidTriggerYamlException;
 import io.harness.ngtriggers.helpers.TriggerHelper;
 import io.harness.ngtriggers.helpers.WebhookConfigHelper;
 import io.harness.ngtriggers.utils.WebhookEventPayloadParser;
-import io.harness.pms.PmsFeatureFlagService;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.repositories.spring.TriggerEventHistoryRepository;
+import io.harness.utils.PmsFeatureFlagService;
 import io.harness.utils.YamlPipelineUtils;
 import io.harness.webhook.WebhookConfigProvider;
 import io.harness.webhook.WebhookHelper;
@@ -359,7 +359,7 @@ public class NGTriggerElementMapper {
 
   private boolean isWebhookPollingEnabled(NGTriggerType type, String accountIdentifier, String pollInterval) {
     if (type == NGTriggerType.WEBHOOK
-        && pmsFeatureFlagService.isEnabled(accountIdentifier, FeatureName.GIT_WEBHOOK_POLLING)
+        && pmsFeatureFlagService.isEnabled(accountIdentifier, FeatureName.CD_GIT_WEBHOOK_POLLING)
         && !StringUtils.isEmpty(pollInterval)) {
       return true;
     }

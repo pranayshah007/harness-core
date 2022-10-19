@@ -38,9 +38,20 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 
 @OwnedBy(HarnessTeam.DX)
 public class ProjectApiUtilsTest extends CategoryTest {
+  public static final String SORT_SLUG_FIELD = "slug";
+  public static final String SORT_NAME_FIELD = "name";
+  public static final String SORT_IDENTIFIER_FIELD = "identifier";
+  public static final String ASCENDING_ORDER = "ASC";
+  public static final String DESCENDING_ORDER = "DESC";
+  public static final String SORT_CREATED_FIELD = "created";
+  public static final String SORT_UPDATED_FIELD = "updated";
+  public static final String SORT_CREATED_AT_FIELD = "createdAt";
+  public static final String SORT_LAST_MODIFIED_AT_FIELD = "lastModifiedAt";
   private ObjectMapper objectMapper;
   private Validator validator;
 
@@ -195,6 +206,49 @@ public class ProjectApiUtilsTest extends CategoryTest {
     assertThat(projectResponse.getProject().getTags()).isEmpty();
     assertThat(projectResponse.getCreated()).isEqualTo(1234567890L);
     assertThat(projectResponse.getUpdated()).isEqualTo(1234567890L);
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.ASHISHSANODIA)
+  @Category(UnitTests.class)
+  public void testPageRequestSortAndOrder() {
+    Pageable pageRequest = projectApiUtils.getPageRequest(0, 10, "slug", "desc");
+    assertThat(pageRequest.getSort()).isNotNull();
+    assertThat(pageRequest.getPageNumber()).isEqualTo(0);
+    assertThat(pageRequest.getPageSize()).isEqualTo(10);
+    assertThat(pageRequest.getSort()).isEqualTo(Sort.by(SORT_IDENTIFIER_FIELD).descending());
+
+    pageRequest = projectApiUtils.getPageRequest(0, 10, SORT_SLUG_FIELD, ASCENDING_ORDER);
+    assertThat(pageRequest.getSort()).isNotNull();
+    assertThat(pageRequest.getSort()).isEqualTo(Sort.by(SORT_IDENTIFIER_FIELD).ascending());
+
+    pageRequest = projectApiUtils.getPageRequest(0, 10, SORT_NAME_FIELD, DESCENDING_ORDER);
+    assertThat(pageRequest.getSort()).isNotNull();
+    assertThat(pageRequest.getSort()).isEqualTo(Sort.by(SORT_NAME_FIELD).descending());
+
+    pageRequest = projectApiUtils.getPageRequest(0, 10, SORT_CREATED_FIELD, DESCENDING_ORDER);
+    assertThat(pageRequest.getSort()).isNotNull();
+    assertThat(pageRequest.getSort()).isEqualTo(Sort.by(SORT_CREATED_AT_FIELD).descending());
+
+    pageRequest = projectApiUtils.getPageRequest(0, 10, SORT_UPDATED_FIELD, DESCENDING_ORDER);
+    assertThat(pageRequest.getSort()).isNotNull();
+    assertThat(pageRequest.getSort()).isEqualTo(Sort.by(SORT_LAST_MODIFIED_AT_FIELD).descending());
+
+    pageRequest = projectApiUtils.getPageRequest(0, 10, null, DESCENDING_ORDER);
+    assertThat(pageRequest.getSort()).isNotNull();
+    assertThat(pageRequest.getSort()).isEqualTo(Sort.by(SORT_LAST_MODIFIED_AT_FIELD).descending());
+
+    pageRequest = projectApiUtils.getPageRequest(0, 10, null, null);
+    assertThat(pageRequest.getSort()).isNotNull();
+    assertThat(pageRequest.getSort()).isEqualTo(Sort.by(SORT_LAST_MODIFIED_AT_FIELD).descending());
+
+    pageRequest = projectApiUtils.getPageRequest(0, 10, SORT_SLUG_FIELD, null);
+    assertThat(pageRequest.getSort()).isNotNull();
+    assertThat(pageRequest.getSort()).isEqualTo(Sort.by(SORT_IDENTIFIER_FIELD).descending());
+
+    pageRequest = projectApiUtils.getPageRequest(0, 10, SORT_SLUG_FIELD, "asc");
+    assertThat(pageRequest.getSort()).isNotNull();
+    assertThat(pageRequest.getSort()).isEqualTo(Sort.by(SORT_IDENTIFIER_FIELD).descending());
   }
 
   public static String readFileAsString(String file) {

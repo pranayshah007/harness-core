@@ -132,9 +132,14 @@ import io.harness.observer.consumer.AbstractRemoteObserverModule;
 import io.harness.outbox.OutboxEventPollService;
 import io.harness.persistence.HPersistence;
 import io.harness.pms.contracts.execution.events.OrchestrationEventType;
+import io.harness.pms.contracts.plan.ExpansionRequestType;
 import io.harness.pms.contracts.plan.JsonExpansionInfo;
+import io.harness.pms.contracts.steps.StepCategory;
+import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.events.base.PipelineEventConsumerController;
 import io.harness.pms.expressions.functors.ImagePullSecretFunctor;
+import io.harness.pms.expressions.functors.InstanceFunctor;
+import io.harness.pms.governance.EnvironmentExpansionHandler;
 import io.harness.pms.governance.EnvironmentRefExpansionHandler;
 import io.harness.pms.governance.ServiceRefExpansionHandler;
 import io.harness.pms.listener.NgOrchestrationNotifyEventListener;
@@ -181,6 +186,7 @@ import io.harness.telemetry.TelemetryReporter;
 import io.harness.telemetry.filter.APIAuthTelemetryFilter;
 import io.harness.telemetry.filter.APIAuthTelemetryResponseFilter;
 import io.harness.telemetry.filter.APIErrorsTelemetrySenderFilter;
+import io.harness.telemetry.filter.TerraformTelemetryFilter;
 import io.harness.telemetry.service.CdTelemetryRecordsJob;
 import io.harness.threading.ExecutorModule;
 import io.harness.threading.ThreadPool;
@@ -670,6 +676,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     sdkFunctorMap.put(ImagePullSecretFunctor.IMAGE_PULL_SECRET, ImagePullSecretFunctor.class);
     sdkFunctorMap.put(VariableFunctor.VARIABLE, VariableFunctor.class);
     sdkFunctorMap.put(TerraformPlanJsonFunctor.TERRAFORM_PLAN_JSON, TerraformPlanJsonFunctor.class);
+    sdkFunctorMap.put(InstanceFunctor.INSTANCE, InstanceFunctor.class);
     return sdkFunctorMap;
   }
 
@@ -687,15 +694,33 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
                                                          .jsonExpansionInfo(serviceRefInfo)
                                                          .expansionHandler(ServiceRefExpansionHandler.class)
                                                          .build();
+
     JsonExpansionInfo envRefInfo =
-        JsonExpansionInfo.newBuilder().setKey(YamlTypes.ENVIRONMENT_REF).setExpansionType(KEY).build();
+        JsonExpansionInfo.newBuilder()
+            .setKey("stage/spec/infrastructure/environmentRef")
+            .setExpansionType(ExpansionRequestType.LOCAL_FQN)
+            .setStageType(StepType.newBuilder().setStepCategory(StepCategory.STAGE).setType("Deployment").build())
+            .build();
     JsonExpansionHandlerInfo envRefHandlerInfo = JsonExpansionHandlerInfo.builder()
                                                      .jsonExpansionInfo(envRefInfo)
                                                      .expansionHandler(EnvironmentRefExpansionHandler.class)
                                                      .build();
+
+    JsonExpansionInfo envInfo =
+        JsonExpansionInfo.newBuilder()
+            .setKey("stage/spec/environment")
+            .setExpansionType(ExpansionRequestType.LOCAL_FQN)
+            .setStageType(StepType.newBuilder().setStepCategory(StepCategory.STAGE).setType("Deployment").build())
+            .build();
+    JsonExpansionHandlerInfo envHandlerInfo = JsonExpansionHandlerInfo.builder()
+                                                  .jsonExpansionInfo(envInfo)
+                                                  .expansionHandler(EnvironmentExpansionHandler.class)
+                                                  .build();
+
     jsonExpansionHandlers.add(connRefHandlerInfo);
     jsonExpansionHandlers.add(serviceRefHandlerInfo);
     jsonExpansionHandlers.add(envRefHandlerInfo);
+    jsonExpansionHandlers.add(envHandlerInfo);
     return jsonExpansionHandlers;
   }
 
@@ -830,6 +855,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
       NextGenConfiguration configuration, Environment environment, Injector injector) {
     if (configuration.getSegmentConfiguration() != null && configuration.getSegmentConfiguration().isEnabled()) {
       registerAPIAuthTelemetryFilter(environment, injector);
+      registerTerraformTelemetryFilter(environment, injector);
       registerAPIAuthTelemetryResponseFilter(environment, injector);
       registerAPIErrorsTelemetrySenderFilter(environment, injector);
     }
@@ -863,6 +889,11 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
   private void registerAPIAuthTelemetryFilter(Environment environment, Injector injector) {
     TelemetryReporter telemetryReporter = injector.getInstance(TelemetryReporter.class);
     environment.jersey().register(new APIAuthTelemetryFilter(telemetryReporter));
+  }
+
+  private void registerTerraformTelemetryFilter(Environment environment, Injector injector) {
+    TelemetryReporter telemetryReporter = injector.getInstance(TelemetryReporter.class);
+    environment.jersey().register(new TerraformTelemetryFilter(telemetryReporter));
   }
 
   private void registerAPIAuthTelemetryResponseFilter(Environment environment, Injector injector) {

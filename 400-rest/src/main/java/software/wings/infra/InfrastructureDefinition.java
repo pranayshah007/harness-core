@@ -10,6 +10,8 @@ package software.wings.infra;
 import static io.harness.annotations.dev.HarnessModule._957_CG_BEANS;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
+import static software.wings.ngmigration.NGMigrationEntityType.INFRA;
+
 import io.harness.annotation.HarnessEntity;
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
@@ -33,6 +35,7 @@ import software.wings.api.CloudProviderType;
 import software.wings.api.DeploymentType;
 import software.wings.beans.InfrastructureMapping;
 import software.wings.beans.entityinterface.ApplicationAccess;
+import software.wings.ngmigration.CgBasicInfo;
 import software.wings.ngmigration.NGMigrationEntity;
 import software.wings.service.intfc.customdeployment.CustomDeploymentTypeAware;
 
@@ -135,5 +138,17 @@ public class InfrastructureDefinition
   @Override
   public String getMigrationEntityName() {
     return getName();
+  }
+
+  @JsonIgnore
+  @Override
+  public CgBasicInfo getCgBasicInfo() {
+    return CgBasicInfo.builder()
+        .id(getUuid())
+        .name(getName())
+        .type(INFRA)
+        .appId(getAppId())
+        .accountId(getAccountId())
+        .build();
   }
 }

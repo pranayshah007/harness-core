@@ -1518,6 +1518,7 @@ public class DelegateServiceTest extends WingsBaseTest {
                                 .delegateType(ECS)
                                 .ip("127.0.0.2")
                                 .delegateGroupName(DELEGATE_GROUP_NAME + "UPDATED")
+                                .delegateGroupId(delegate.getDelegateGroupId())
                                 .delegateRandomToken("13")
                                 .version(VERSION + "UPDATED")
                                 .ng(false)
@@ -1750,6 +1751,7 @@ public class DelegateServiceTest extends WingsBaseTest {
     DelegateParams params = DelegateParams.builder()
                                 .delegateId(delegate.getUuid())
                                 .accountId(accountId)
+                                .delegateType(DOCKER_DELEGATE)
                                 .hostName(HOST_NAME + "UPDATED")
                                 .version(VERSION + "UPDATED")
                                 .proxy(true)
@@ -1861,6 +1863,7 @@ public class DelegateServiceTest extends WingsBaseTest {
                                         .version(VERSION)
                                         .lastHeartBeat(System.currentTimeMillis())
                                         .delegateGroupId(delegateGroup.getUuid())
+                                        .delegateType(SHELL_SCRIPT)
                                         .build();
 
     DelegateRegisterResponse registerResponse = delegateService.register(delegateParams, false);

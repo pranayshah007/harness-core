@@ -65,7 +65,7 @@ public class DatadogMetricHealthSourceSpecTransformer
     return DatadogMetricHealthSourceSpec.builder()
         .feature(cvConfigs.get(0).getProductName())
         .metricDefinitions(metricDefinitions)
-        .metricPacks(addMetricPacks(cvConfigs))
+        .metricPacks(addCustomMetricPacks(cvConfigs))
         .connectorRef(cvConfigs.get(0).getConnectorIdentifier())
         .build();
   }

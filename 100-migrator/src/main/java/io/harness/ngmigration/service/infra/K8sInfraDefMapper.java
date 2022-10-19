@@ -22,6 +22,7 @@ import io.harness.ngmigration.beans.NgEntityDetail;
 import io.harness.ngmigration.service.MigratorUtility;
 import io.harness.pms.yaml.ParameterField;
 
+import software.wings.infra.AzureKubernetesService;
 import software.wings.infra.DirectKubernetesInfrastructure;
 import software.wings.infra.GoogleKubernetesEngine;
 import software.wings.infra.InfrastructureDefinition;
@@ -76,6 +77,12 @@ public class K8sInfraDefMapper implements InfraDefMapper {
             .namespace(ParameterField.createValueField(gcpK8s.getNamespace()))
             .releaseName(ParameterField.createValueField(gcpK8s.getReleaseName()))
             .build();
+      case AZURE:
+        AzureKubernetesService aks = (AzureKubernetesService) infrastructureDefinition.getInfrastructure();
+        connectorDetail =
+            migratedEntities.get(CgEntityId.builder().type(CONNECTOR).id(aks.getCloudProviderId()).build())
+                .getNgEntityDetail();
+        return InfraDefMapperUtils.buildK8sAzureInfrastructure(aks, connectorDetail);
       default:
         throw new InvalidRequestException("Unsupported Infra for K8s deployment");
     }

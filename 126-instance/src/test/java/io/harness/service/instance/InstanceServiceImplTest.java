@@ -20,10 +20,10 @@ import static io.harness.rule.OwnerRule.VIKYATH_HAREKAL;
 import static junit.framework.TestCase.assertFalse;
 import static junit.framework.TestCase.assertTrue;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyList;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -162,13 +162,18 @@ public class InstanceServiceImplTest extends InstancesTestBase {
   @Category(UnitTests.class)
   public void getActiveInstancesByAccountTest() {
     String accountIdentifier = "Acc";
+    String orgIdentifier = "Org";
+    String projectIdentifier = "Proj";
+    String serviceIdentifier = "Svc";
     long timestamp = 123L;
     InstanceInfo instanceInfo = K8sInstanceInfo.builder().build();
     Instance instance =
         Instance.builder().instanceInfo(instanceInfo).deletedAt(234L).createdAt(123L).lastModifiedAt(3245L).build();
-    when(instanceRepository.getActiveInstancesByAccount(accountIdentifier, timestamp))
+    when(instanceRepository.getActiveInstancesByAccountOrgProjectAndService(
+             accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier, timestamp))
         .thenReturn(Arrays.asList(instance));
-    List<InstanceDTO> instanceDTOList = instanceService.getActiveInstancesByAccount(accountIdentifier, timestamp);
+    List<InstanceDTO> instanceDTOList = instanceService.getActiveInstancesByAccountOrgProjectAndService(
+        accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier, timestamp);
     assertThat(instanceDTOList.size()).isEqualTo(1);
     assertThat(instanceDTOList.get(0).getCreatedAt()).isEqualTo(123L);
   }

@@ -60,9 +60,15 @@ public interface InfrastructureEntityService {
   String createInfrastructureInputsFromYaml(String accountId, String orgIdentifier, String projectIdentifier,
       String environmentIdentifier, List<String> infraIdentifiers, boolean deployToAll);
 
+  String createInfrastructureInputsFromYamlV2(String accountId, String orgIdentifier, String projectIdentifier,
+      String environmentIdentifier, List<String> infraIdentifiers, boolean deployToAll);
+
   UpdateResult batchUpdateInfrastructure(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       String envIdentifier, List<String> infraIdentifier, Update update);
 
   List<InfrastructureYamlMetadata> createInfrastructureYamlMetadata(String accountId, String orgIdentifier,
       String projectIdentifier, String environmentIdentifier, List<String> infraIds);
+
+  String createInfrastructureInputsFromYaml(String accountId, String orgIdentifier, String projectIdentifier,
+      String environmentIdentifier, String infraIdentifier);
 }

@@ -13,5 +13,4 @@ import lombok.Data;
 @Data
 public class RecurrenceSpec {
   @NotNull String until;
-  Integer count;
 }

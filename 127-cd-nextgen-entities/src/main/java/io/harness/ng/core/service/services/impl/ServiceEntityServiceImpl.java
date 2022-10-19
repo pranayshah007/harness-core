@@ -435,6 +435,13 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
   }
 
   @Override
+  public List<ServiceEntity> getNonDeletedServices(String accountIdentifier) {
+    Criteria criteria =
+        Criteria.where(ServiceEntityKeys.accountId).is(accountIdentifier).and(ServiceEntityKeys.deleted).is(false);
+    return serviceRepository.findAll(criteria);
+  }
+
+  @Override
   public boolean isServiceField(String fieldName, JsonNode serviceValue) {
     return YamlTypes.SERVICE_ENTITY.equals(fieldName) && serviceValue.isObject()
         && serviceValue.get(YamlTypes.SERVICE_REF) != null;
@@ -570,7 +577,8 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
 
     ObjectNode primaryArtifactObjectNode = (ObjectNode) primaryArtifactField.getNode().getCurrJsonNode();
     if (NGExpressionUtils.matchesInputSetPattern(primaryArtifactRefValue)) {
-      if (EmptyPredicate.isNotEmpty(primaryArtifactRef)) {
+      if (EmptyPredicate.isNotEmpty(primaryArtifactRef)
+          && !NGExpressionUtils.matchesInputSetPattern(primaryArtifactRef)) {
         primaryArtifactRefValue = primaryArtifactRef;
       } else {
         primaryArtifactObjectNode.remove(YamlTypes.ARTIFACT_SOURCES);
@@ -763,5 +771,11 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
       // ignore this
       return false;
     }
+  }
+
+  public Optional<ServiceEntity> getService(
+      String accountId, String orgIdentifier, String projectIdentifier, String serviceIdentifier) {
+    return serviceRepository.findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifier(
+        accountId, orgIdentifier, projectIdentifier, serviceIdentifier);
   }
 }

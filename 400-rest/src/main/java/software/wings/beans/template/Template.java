@@ -7,6 +7,8 @@
 
 package software.wings.beans.template;
 
+import static software.wings.ngmigration.NGMigrationEntityType.TEMPLATE;
+
 import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL;
 import static java.util.Arrays.asList;
 
@@ -26,6 +28,7 @@ import software.wings.beans.Base;
 import software.wings.beans.Variable;
 import software.wings.beans.entityinterface.KeywordsAware;
 import software.wings.beans.template.dto.ImportedTemplateDetails;
+import software.wings.ngmigration.CgBasicInfo;
 import software.wings.ngmigration.NGMigrationEntity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -154,5 +157,17 @@ public class Template extends Base implements KeywordsAware, NameAccess, NGMigra
   @Override
   public String getMigrationEntityName() {
     return getName();
+  }
+
+  @JsonIgnore
+  @Override
+  public CgBasicInfo getCgBasicInfo() {
+    return CgBasicInfo.builder()
+        .id(getUuid())
+        .name(getName())
+        .type(TEMPLATE)
+        .appId(getAppId())
+        .accountId(getAccountId())
+        .build();
   }
 }

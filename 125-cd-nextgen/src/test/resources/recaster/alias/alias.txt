@@ -1,3 +1,6 @@
+io.harness.cdng.chaos.ChaosStepParameters
+io.harness.cdng.chaos.ChaosStepNode
+io.harness.cdng.chaos.ChaosStepInfo
 io.harness.cdng.customdeployment.CustomDeploymentSecretNGVariable
 io.harness.cdng.customdeployment.CustomDeploymentConnectorNGVariable
 io.harness.cdng.customdeployment.CustomDeploymentNumberNGVariable
@@ -114,7 +117,10 @@ io.harness.cdng.manifest.yaml.OpenshiftManifestOutcome
 io.harness.cdng.manifest.yaml.ReleaseRepoManifestOutcome
 io.harness.cdng.artifact.bean.yaml.EcrArtifactConfig
 io.harness.cdng.artifact.bean.yaml.AmazonS3ArtifactConfig
-io.harness.cdng.artifact.bean.yaml.AzureArtifactConfig
+io.harness.cdng.artifact.bean.yaml.AzureArtifactsConfig
+io.harness.cdng.artifact.bean.yaml.AMIArtifactConfig
+io.harness.cdng.artifact.bean.yaml.ami.AMITag
+io.harness.cdng.artifact.bean.yaml.ami.AMIFilter
 io.harness.steps.shellscript.K8sInfraDelegateConfigOutput
 io.harness.steps.shellscript.SshInfraDelegateConfigOutput
 io.harness.steps.shellscript.WinRmInfraDelegateConfigOutput
@@ -414,6 +420,8 @@ io.harness.cdng.azure.config.yaml.StartupCommandConfiguration
 io.harness.ngpipeline.artifact.bean.GithubPackagesArtifactOutcome
 io.harness.ngpipeline.pipeline.executions.beans.GithubPackagesArtifactSummary
 io.harness.cdng.artifact.bean.yaml.GithubPackageArtifactConfig
+io.harness.ngpipeline.artifact.bean.AzureArtifactsOutcome
+io.harness.ngpipeline.pipeline.executions.beans.AzureArtifactsSummary
 io.harness.cdng.provision.azure.AzureSubscriptionSpec
 io.harness.cdng.provision.azure.AzureTenantSpec
 io.harness.cdng.provision.azure.AzureResourceGroupSpec
@@ -472,6 +480,7 @@ io.harness.cdng.manifest.yaml.EcsServiceDefinitionManifestOutcome
 io.harness.cdng.manifest.yaml.kinds.EcsTaskDefinitionManifest
 io.harness.cdng.steps.EmptyStepParameters
 io.harness.cdng.service.steps.ServiceSweepingOutput
+io.harness.cdng.envgroup.yaml.EnvironmentGroupMetadata
 io.harness.cdng.environment.yaml.EnvironmentsYaml
 io.harness.cdng.service.beans.ServicesMetadata
 io.harness.cdng.service.beans.Services
@@ -504,8 +513,17 @@ io.harness.cdng.ecs.EcsBlueGreenRollbackOutcome
 io.harness.cdng.ecs.EcsBlueGreenSwapTargetGroupsOutcome
 io.harness.cdng.ecs.EcsBlueGreenRollbackStepNode
 io.harness.cdng.artifact.bean.yaml.Nexus2RegistryArtifactConfig
-io.harness.cdng.provision.azure.ShellScriptProvisionOutcome
+io.harness.cdng.ecs.EcsRunTaskStepInfo
+io.harness.cdng.manifest.yaml.EcsRunTaskRequestDefinitionManifestOutcome
+io.harness.cdng.ecs.EcsRunTaskStepParameters
+io.harness.cdng.ecs.EcsRunTaskStepNode
+io.harness.cdng.provision.shellscript.ShellScriptProvisionOutcome
 io.harness.cdng.provision.shellscript.ShellScriptProvisionStepInfo
 io.harness.cdng.provision.shellscript.ShellScriptProvisionStepNode
 io.harness.cdng.provision.shellscript.ShellScriptProvisionStepParameters
-
+io.harness.cdng.gitops.UpdateReleaseRepoStepNode
+io.harness.cdng.gitops.UpdateReleaseRepoStepInfo
+io.harness.cdng.gitops.UpdateReleaseRepoOutcome
+io.harness.cdng.instance.outcome.InstancesOutcome
+io.harness.cdng.instance.outcome.InstanceOutcome
+io.harness.cdng.instance.outcome.HostOutcome

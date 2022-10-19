@@ -11,10 +11,16 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EncryptedData;
 import io.harness.beans.SecretManagerConfig;
+import io.harness.ng.core.dto.secrets.SecretDTOV2;
+import io.harness.ng.core.dto.secrets.SecretDTOV2.SecretDTOV2Builder;
 import io.harness.ng.core.dto.secrets.SecretTextSpecDTO;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
+import io.harness.ngmigration.beans.NgEntityDetail;
 import io.harness.ngmigration.dto.SecretManagerCreatedDTO;
+import io.harness.ngmigration.service.MigratorUtility;
+import io.harness.secretmanagerclient.SecretType;
+import io.harness.secretmanagerclient.ValueType;
 
 import software.wings.ngmigration.CgEntityId;
 
@@ -22,9 +28,31 @@ import java.util.Map;
 
 @OwnedBy(HarnessTeam.CDC)
 public interface SecretMigrator {
-  SecretTextSpecDTO getSecretSpec(
+  SecretDTOV2Builder getSecretDTOBuilder(
       EncryptedData encryptedData, SecretManagerConfig vaultConfig, String secretManagerIdentifier);
 
   SecretManagerCreatedDTO getConfigDTO(SecretManagerConfig secretManagerConfig, MigrationInputDTO inputDTO,
       Map<CgEntityId, NGYamlFile> migratedEntities);
+
+  default SecretDTOV2 getSecretDTO(SecretManagerConfig secretsManagerConfig, MigrationInputDTO inputDTO,
+      String secretIdentifier, String actualSecret) {
+    return SecretDTOV2.builder()
+        .identifier(secretIdentifier)
+        .name(secretIdentifier)
+        .description(String.format("Auto Generated Secret for Secret Manager - %s", secretsManagerConfig.getName()))
+        .orgIdentifier(inputDTO.getOrgIdentifier())
+        .projectIdentifier(inputDTO.getProjectIdentifier())
+        .type(SecretType.SecretText)
+        .spec(SecretTextSpecDTO.builder()
+                  .secretManagerIdentifier(
+                      MigratorUtility.getIdentifierWithScope(NgEntityDetail.builder()
+                                                                 .projectIdentifier(inputDTO.getProjectIdentifier())
+                                                                 .orgIdentifier(inputDTO.getOrgIdentifier())
+                                                                 .identifier("harnessSecretManager")
+                                                                 .build()))
+                  .value(actualSecret)
+                  .valueType(ValueType.Inline)
+                  .build())
+        .build();
+  }
 }

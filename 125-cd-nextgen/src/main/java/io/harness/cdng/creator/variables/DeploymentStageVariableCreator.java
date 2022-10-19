@@ -21,6 +21,7 @@ import io.harness.cdng.artifact.mappers.ArtifactResponseToOutcomeMapper;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.creator.plan.stage.DeploymentStageNode;
 import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
+import io.harness.cdng.environment.yaml.EnvironmentsYaml;
 import io.harness.cdng.infra.InfrastructureMapper;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.infra.mapper.InfrastructureEntityConfigMapper;
@@ -31,6 +32,7 @@ import io.harness.cdng.manifest.yaml.ManifestConfig;
 import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
 import io.harness.cdng.service.beans.ServiceYamlV2;
+import io.harness.cdng.service.beans.ServicesYaml;
 import io.harness.cdng.service.steps.ServiceStepOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.cdng.visitor.YamlTypes;
@@ -193,20 +195,51 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
     LinkedHashMap<String, VariableCreationResponse> responseMap = new LinkedHashMap<>();
     try {
       final ParameterField<String> serviceRef = getServiceRef(config);
+      final ServicesYaml services = config.getDeploymentStageConfig().getServices();
+      final EnvironmentsYaml environmentsYaml = config.getDeploymentStageConfig().getEnvironments();
       final ParameterField<String> environmentRef = getEnvironmentRef(config);
       final List<String> infraDefinitionRefs = getInfraDefinitionRefs(config);
       // for collecting service variables from service/env/service overrides
       Set<String> serviceVariables = new HashSet<>();
 
+      if (environmentsYaml != null) {
+        if (!environmentsYaml.getValues().isExpression()) {
+          for (EnvironmentYamlV2 environmentYamlV2 : environmentsYaml.getValues().getValue()) {
+            ParameterField<String> envRef = environmentYamlV2.getEnvironmentRef();
+            if (envRef != null) {
+              createVariablesForEnvironment(ctx, envRef, responseMap, serviceVariables);
+            }
+            if (envRef != null && environmentYamlV2.getInfrastructureDefinitions() != null) {
+              if (!environmentYamlV2.getInfrastructureDefinitions().isExpression()) {
+                createVariablesForInfraDefinitions(ctx, envRef,
+                    environmentYamlV2.getInfrastructureDefinitions()
+                        .getValue()
+                        .stream()
+                        .map(InfraStructureDefinitionYaml::getIdentifier)
+                        .map(ParameterField::getValue)
+                        .collect(Collectors.toList()),
+                    responseMap);
+              }
+            }
+          }
+        }
+      }
       if (environmentRef != null) {
         createVariablesForEnvironment(ctx, environmentRef, responseMap, serviceVariables);
       }
       if (environmentRef != null && isNotEmpty(infraDefinitionRefs)) {
-        // todo: multi-infra
         createVariablesForInfraDefinitions(ctx, environmentRef, infraDefinitionRefs, responseMap);
       }
       if (serviceRef != null) {
         createVariablesForService(ctx, environmentRef, serviceRef, serviceVariables, responseMap);
+      }
+      if (services != null) {
+        if (!services.getValues().isExpression()) {
+          for (ServiceYamlV2 serviceRefValue : services.getValues().getValue()) {
+            createVariablesForService(
+                ctx, environmentRef, serviceRefValue.getServiceRef(), serviceVariables, responseMap);
+          }
+        }
       }
     } catch (Exception ex) {
       log.error("Exception during Deployment Stage Node variable creation", ex);
@@ -228,6 +261,10 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
     // service node in v2 yaml
     YamlField serviceField =
         currentField.getNode().getField(YAMLFieldNameConstants.SPEC).getNode().getField(YamlTypes.SERVICE_ENTITY);
+    if (serviceField == null) {
+      serviceField =
+          currentField.getNode().getField(YAMLFieldNameConstants.SPEC).getNode().getField(YamlTypes.SERVICE_ENTITIES);
+    }
 
     if (isNotEmpty(serviceRef.getValue()) && !serviceRef.isExpression()) {
       outputProperties.addAll(handleServiceStepOutcome());

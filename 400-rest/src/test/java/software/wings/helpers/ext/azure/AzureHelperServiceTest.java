@@ -13,6 +13,7 @@ import static io.harness.data.encoding.EncodingUtils.encodeBase64;
 import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.AGORODETKI;
 import static io.harness.rule.OwnerRule.ANSHUL;
+import static io.harness.rule.OwnerRule.BUHA;
 import static io.harness.rule.OwnerRule.DEEPAK_PUTHRAYA;
 
 import static software.wings.utils.WingsTestConstants.ACCOUNT_ID;
@@ -39,17 +40,24 @@ import io.harness.azure.AzureEnvironmentType;
 import io.harness.azure.model.tag.AzureListTagsResponse;
 import io.harness.azure.model.tag.TagDetails;
 import io.harness.azure.model.tag.TagValue;
+import io.harness.beans.PageResponse;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.network.Http;
 import io.harness.rule.Owner;
+import io.harness.security.encryption.EncryptedDataDetail;
 
 import software.wings.WingsBaseTest;
+import software.wings.api.DeploymentType;
 import software.wings.beans.AzureConfig;
 import software.wings.beans.AzureTagDetails;
 import software.wings.beans.AzureVaultConfig;
+import software.wings.beans.SettingAttribute;
+import software.wings.beans.infrastructure.Host;
 import software.wings.helpers.ext.azure.AksGetCredentialsResponse.AksGetCredentialProperties;
+import software.wings.infra.AzureInstanceInfrastructure;
+import software.wings.infra.InfrastructureDefinition;
 import software.wings.service.intfc.security.EncryptionService;
 
 import com.microsoft.aad.adal4j.AuthenticationException;
@@ -81,6 +89,7 @@ import com.microsoft.azure.management.compute.implementation.GalleryImageInner;
 import com.microsoft.azure.management.compute.implementation.GalleryImageVersionInner;
 import com.microsoft.azure.management.compute.implementation.GalleryInner;
 import com.microsoft.azure.management.containerservice.OSType;
+import com.microsoft.azure.management.network.NetworkInterface;
 import com.microsoft.azure.management.resources.Location;
 import com.microsoft.azure.management.resources.ResourceGroup;
 import com.microsoft.azure.management.resources.ResourceGroups;
@@ -93,6 +102,8 @@ import com.microsoft.azure.management.resources.implementation.SubscriptionInner
 import com.microsoft.rest.LogLevel;
 import com.microsoft.rest.RestException;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -125,6 +136,8 @@ public class AzureHelperServiceTest extends WingsBaseTest {
   @Mock private Azure azure;
   @Mock private EncryptionService encryptionService;
   @Mock private ResourceGroups resourceGroups;
+  @Mock private VirtualMachine vm;
+  @Mock private NetworkInterface networkInterface;
 
   @Mock AzureManagementRestClient azureManagementRestClient;
   @Mock Call<AksGetCredentialsResponse> aksGetCredentialsCall;
@@ -954,5 +967,35 @@ public class AzureHelperServiceTest extends WingsBaseTest {
           .isInstanceOf(InvalidRequestException.class)
           .hasMessageContaining("Invalid Azure credentials.");
     }
+  }
+
+  @Test
+  @Owner(developers = BUHA)
+  @Category(UnitTests.class)
+  public void listHostsWithPrivateIp() {
+    AzureHelperService spy = spy(azureHelperService);
+    AzureConfig azureConfig =
+        AzureConfig.builder().clientId("clientId").tenantId("13r1415114").key(new char[] {'t', 'e', 's', 't'}).build();
+
+    AzureInstanceInfrastructure azureInstanceInfrastructure =
+        AzureInstanceInfrastructure.builder().subscriptionId("dummy").resourceGroup("dummy").usePrivateIp(true).build();
+    InfrastructureDefinition infrastructureDefinition =
+        InfrastructureDefinition.builder().infrastructure(azureInstanceInfrastructure).build();
+    SettingAttribute settingAttribute = SettingAttribute.Builder.aSettingAttribute().withValue(azureConfig).build();
+    List<EncryptedDataDetail> encryptedDataDetails = new ArrayList<>();
+    DeploymentType deploymentType = DeploymentType.SSH;
+
+    List<VirtualMachine> vms = Collections.singletonList(vm);
+    Mockito.doReturn("vm1").when(vm).name();
+    Mockito.doReturn(networkInterface).when(vm).getPrimaryNetworkInterface();
+    Mockito.doReturn("privateIpAddress").when(networkInterface).primaryPrivateIP();
+    Mockito.doReturn(vms).when(spy).listVms(
+        azureInstanceInfrastructure, settingAttribute, encryptedDataDetails, deploymentType);
+    PageResponse<Host> hosts =
+        spy.listHosts(infrastructureDefinition, settingAttribute, encryptedDataDetails, deploymentType);
+
+    assertThat(hosts).isNotEmpty();
+    assertThat(hosts.get(0).getHostName()).isEqualTo("vm1");
+    assertThat(hosts.get(0).getPublicDns()).isEqualTo("privateIpAddress");
   }
 }

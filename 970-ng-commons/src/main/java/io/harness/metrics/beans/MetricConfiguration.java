@@ -45,6 +45,17 @@ public class MetricConfiguration {
     Measure measure;
     View view;
 
+    public String getMetricName() {
+      if (this.metricName.contains("{ENV}")) {
+        String env = System.getenv("ENV");
+        if (isEmpty(env)) {
+          env = "localhost";
+        }
+        return this.metricName.replaceAll("\\{ENV\\}", env);
+      }
+      return metricName;
+    }
+
     public View getView(List<TagKey> tagKeys) {
       Measure measure = MeasureDouble.create(this.getMetricName(), this.getMetricDefinition(), this.getUnit());
       this.setMeasure(measure);

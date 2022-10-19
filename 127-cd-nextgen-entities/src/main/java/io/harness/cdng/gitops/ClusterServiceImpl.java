@@ -152,7 +152,7 @@ public class ClusterServiceImpl implements ClusterService {
 
     Criteria criteria = getClusterEqCriteriaForAllClusters(accountId, orgIdentifier, projectIdentifier);
     DeleteResult delete = clusterRepository.delete(criteria);
-    return delete.wasAcknowledged() && delete.getDeletedCount() > 0;
+    return delete.wasAcknowledged();
   }
 
   public Page<Cluster> list(int page, int size, String accountIdentifier, String orgIdentifier,

@@ -20,6 +20,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorWrapperDTO;
 import io.harness.git.model.ChangeType;
 import io.harness.gitaware.helper.GitAwareContextHelper;
+import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.governance.GovernanceMetadata;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
 import io.harness.pms.annotations.PipelineServiceAuth;
@@ -44,6 +45,7 @@ import io.harness.yaml.validator.InvalidYamlException;
 import com.google.inject.Inject;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.ws.rs.core.Response;
@@ -70,8 +72,9 @@ public class PipelinesApiImpl implements PipelinesApi {
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT)
   public Response createPipeline(PipelineCreateRequestBody requestBody, @OrgIdentifier String org,
       @ProjectIdentifier String project, @AccountIdentifier String account) {
-    PipelineEntity pipelineEntity =
-        PMSPipelineDtoMapper.toPipelineEntity(account, org, project, requestBody.getPipelineYaml(), null);
+    GitAwareContextHelper.populateGitDetails(PipelinesApiUtils.populateGitCreateDetails(requestBody.getGitDetails()));
+    PipelineEntity pipelineEntity = PMSPipelineDtoMapper.toPipelineEntity(
+        PipelinesApiUtils.mapCreateToRequestInfoDTO(requestBody), account, org, project, null);
     log.info(String.format("Creating a Pipeline with identifier %s in project %s, org %s, account %s",
         pipelineEntity.getIdentifier(), project, org, account));
     PipelineCRUDResult pipelineCRUDResult = pmsPipelineService.create(pipelineEntity);
@@ -101,6 +104,7 @@ public class PipelinesApiImpl implements PipelinesApi {
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_VIEW)
   public Response getPipeline(@OrgIdentifier String org, @ProjectIdentifier String project,
       @ResourceIdentifier String pipeline, @AccountIdentifier String account, String branch, Boolean templatesApplied) {
+    GitAwareContextHelper.populateGitDetails(GitEntityInfo.builder().branch(branch).build());
     log.info(String.format(
         "Retrieving Pipeline with identifier %s in project %s, org %s, account %s", pipeline, project, org, account));
     Optional<PipelineEntity> pipelineEntity;
@@ -181,10 +185,15 @@ public class PipelinesApiImpl implements PipelinesApi {
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT)
   public Response updatePipeline(PipelineUpdateRequestBody requestBody, @OrgIdentifier String org,
       @ProjectIdentifier String project, @ResourceIdentifier String pipeline, @AccountIdentifier String account) {
+    if (!Objects.equals(pipeline, requestBody.getSlug())) {
+      throw new InvalidRequestException(String.format(
+          "Expected Pipeline identifier in YAML to be [%s], but was [%s]", pipeline, requestBody.getSlug()));
+    }
+    GitAwareContextHelper.populateGitDetails(PipelinesApiUtils.populateGitUpdateDetails(requestBody.getGitDetails()));
     log.info(String.format(
         "Updating Pipeline with identifier %s in project %s, org %s, account %s", pipeline, project, org, account));
-    PipelineEntity pipelineEntity =
-        PMSPipelineDtoMapper.toPipelineEntity(account, org, project, requestBody.getPipelineYaml(), null);
+    PipelineEntity pipelineEntity = PMSPipelineDtoMapper.toPipelineEntity(
+        PipelinesApiUtils.mapUpdateToRequestInfoDTO(requestBody), account, org, project, null);
     PipelineCRUDResult pipelineCRUDResult = pmsPipelineService.updatePipelineYaml(pipelineEntity, ChangeType.MODIFY);
     PipelineEntity updatedEntity = pipelineCRUDResult.getPipelineEntity();
     GovernanceMetadata governanceMetadata = pipelineCRUDResult.getGovernanceMetadata();

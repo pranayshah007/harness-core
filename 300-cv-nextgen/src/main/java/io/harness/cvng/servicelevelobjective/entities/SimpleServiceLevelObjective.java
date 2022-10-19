@@ -9,9 +9,11 @@ package io.harness.cvng.servicelevelobjective.entities;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorType;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveType;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2DTO;
+import io.harness.cvng.servicelevelobjective.beans.slospec.SimpleServiceLevelObjectiveSpec;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.util.List;
+import java.util.Optional;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.FieldNameConstants;
@@ -32,20 +34,26 @@ public class SimpleServiceLevelObjective extends AbstractServiceLevelObjective {
   List<String> serviceLevelIndicators;
   ServiceLevelIndicatorType serviceLevelIndicatorType;
 
+  @Override
+  public Optional<String> mayBeGetMonitoredServiceIdentifier() {
+    return Optional.ofNullable(monitoredServiceIdentifier);
+  }
+
   public static class SimpleServiceLevelObjectiveUpdatableEntity
       extends AbstractServiceLevelObjectiveUpdatableEntity<SimpleServiceLevelObjective, ServiceLevelObjectiveV2DTO> {
     @Override
     public void setUpdateOperations(UpdateOperations<SimpleServiceLevelObjective> updateOperations,
         ServiceLevelObjectiveV2DTO serviceLevelObjectiveV2DTO) {
+      SimpleServiceLevelObjectiveSpec simpleServiceLevelObjectiveSpec =
+          (SimpleServiceLevelObjectiveSpec) serviceLevelObjectiveV2DTO.getSpec();
       setCommonOperations(updateOperations, serviceLevelObjectiveV2DTO);
       updateOperations
-          .set(SimpleServiceLevelObjectiveKeys.healthSourceIdentifier, serviceLevelObjectiveV2DTO.getHealthSourceRef())
+          .set(SimpleServiceLevelObjectiveKeys.healthSourceIdentifier,
+              simpleServiceLevelObjectiveSpec.getHealthSourceRef())
           .set(SimpleServiceLevelObjectiveKeys.monitoredServiceIdentifier,
-              serviceLevelObjectiveV2DTO.getMonitoredServiceRef())
+              simpleServiceLevelObjectiveSpec.getMonitoredServiceRef())
           .set(SimpleServiceLevelObjectiveKeys.serviceLevelIndicatorType,
-              serviceLevelObjectiveV2DTO.getServiceLevelIndicators())
-          .set(SimpleServiceLevelObjectiveKeys.serviceLevelIndicatorType,
-              serviceLevelObjectiveV2DTO.getServiceLevelIndicatorType());
+              simpleServiceLevelObjectiveSpec.getServiceLevelIndicatorType());
     }
   }
 }

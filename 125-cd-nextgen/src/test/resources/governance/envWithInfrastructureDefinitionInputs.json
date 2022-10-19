@@ -1,0 +1,15 @@
+{
+  "environmentRef": "my_environment",
+  "deployToAll": false,
+  "infrastructureDefinition": {
+    "identifier": "my_infra_with_ns_runtime",
+    "inputs": {
+      "identifier": "my_infra_with_ns_runtime",
+      "type": "KubernetesDirect",
+      "spec": {
+        "namespace": "harness",
+        "releaseName": "dev-0001"
+      }
+    }
+  }
+}

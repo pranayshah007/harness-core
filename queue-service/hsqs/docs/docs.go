@@ -30,6 +30,44 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/v1/ack": {
+            "post": {
+                "description": "Ack a Redis message consumed successfully",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "Ack a Redis message",
+                "parameters": [
+                    {
+                        "description": "query params",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/store.AckRequest"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Authorization",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/store.AckResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/v1/dequeue": {
             "post": {
                 "description": "Dequeue a request",
@@ -49,6 +87,13 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/store.DequeueRequest"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Authorization",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -56,6 +101,26 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/store.DequeueResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/healthz": {
+            "get": {
+                "description": "Health API for Queue Service",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "Health API for Queue Service",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
                         }
                     }
                 }
@@ -80,6 +145,13 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/store.EnqueueRequest"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Authorization",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -91,9 +163,72 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/v1/unack": {
+            "post": {
+                "description": "UnAck a Redis message or SubTopic to stop processing",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "UnAck a Redis message or SubTopic",
+                "parameters": [
+                    {
+                        "description": "query params",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/store.UnAckRequest"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Authorization",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/store.UnAckResponse"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
+        "store.AckRequest": {
+            "type": "object",
+            "properties": {
+                "consumerName": {
+                    "type": "string"
+                },
+                "itemID": {
+                    "type": "string"
+                },
+                "subTopic": {
+                    "type": "string"
+                },
+                "topic": {
+                    "type": "string"
+                }
+            }
+        },
+        "store.AckResponse": {
+            "type": "object",
+            "properties": {
+                "itemID": {
+                    "type": "string"
+                }
+            }
+        },
         "store.DequeueItemMetadata": {
             "type": "object",
             "properties": {
@@ -114,6 +249,9 @@ const docTemplate = `{
                 "consumerName": {
                     "type": "string"
                 },
+                "maxWaitDuration": {
+                    "type": "integer"
+                },
                 "topic": {
                     "type": "string"
                 }
@@ -128,7 +266,12 @@ const docTemplate = `{
                 "metadata": {
                     "$ref": "#/definitions/store.DequeueItemMetadata"
                 },
-                "payload": {},
+                "payload": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
                 "queueKey": {
                     "type": "string"
                 },
@@ -141,8 +284,10 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "payload": {
-                    "type": "object",
-                    "additionalProperties": true
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
                 },
                 "producerName": {
                     "type": "string"
@@ -159,8 +304,46 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "itemId": {
-                    "description": "ItemId is the identifier of the task in the Queue",
+                    "description": "ItemID is the identifier of the task in the Queue",
                     "type": "string"
+                }
+            }
+        },
+        "store.UnAckRequest": {
+            "type": "object",
+            "properties": {
+                "itemID": {
+                    "type": "string"
+                },
+                "retryTimeAfterDuration": {
+                    "description": "Retry topic + subtopic after RetryAfterTimeDuration nanoseconds",
+                    "type": "integer"
+                },
+                "subTopic": {
+                    "type": "string"
+                },
+                "topic": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "integer"
+                }
+            }
+        },
+        "store.UnAckResponse": {
+            "type": "object",
+            "properties": {
+                "itemID": {
+                    "type": "string"
+                },
+                "subTopic": {
+                    "type": "string"
+                },
+                "topic": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "integer"
                 }
             }
         }

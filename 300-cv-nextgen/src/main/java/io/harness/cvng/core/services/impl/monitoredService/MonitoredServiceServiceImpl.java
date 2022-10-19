@@ -77,6 +77,7 @@ import io.harness.cvng.core.services.api.monitoredService.HealthSourceService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
 import io.harness.cvng.core.services.api.monitoredService.ServiceDependencyService;
 import io.harness.cvng.core.utils.FeatureFlagNames;
+import io.harness.cvng.core.utils.template.MonitoredServiceValidator;
 import io.harness.cvng.core.utils.template.MonitoredServiceYamlExpressionEvaluator;
 import io.harness.cvng.core.utils.template.TemplateFacade;
 import io.harness.cvng.dashboard.services.api.HeatMapService;
@@ -291,6 +292,7 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
     monitoredServiceDTO = (MonitoredServiceDTO) yamlExpressionEvaluator.resolve(monitoredServiceDTO, false);
     monitoredServiceDTO.setProjectIdentifier(projectParams.getProjectIdentifier());
     monitoredServiceDTO.setOrgIdentifier(projectParams.getOrgIdentifier());
+    MonitoredServiceValidator.validateMSDTO(monitoredServiceDTO);
     return monitoredServiceDTO;
   }
 
@@ -1359,12 +1361,26 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
         .build();
   }
 
+  @SneakyThrows
   public String getYamlTemplate(ProjectParams projectParams, MonitoredServiceType type) {
     // returning default yaml template, account/org/project specific templates can be generated later.
     String defaultTemplate = type == null ? MONITORED_SERVICE_YAML_TEMPLATE.get(MonitoredServiceType.APPLICATION)
                                           : MONITORED_SERVICE_YAML_TEMPLATE.get(type);
-    return StringUtils.replaceEach(defaultTemplate, new String[] {"$projectIdentifier", "$orgIdentifier"},
-        new String[] {projectParams.getProjectIdentifier(), projectParams.getOrgIdentifier()});
+
+    if (projectParams.getProjectIdentifier() == null) {
+      defaultTemplate = StringUtils.remove(defaultTemplate, "  projectIdentifier: $projectIdentifier\n");
+    } else {
+      defaultTemplate =
+          StringUtils.replace(defaultTemplate, "$projectIdentifier", projectParams.getProjectIdentifier());
+    }
+
+    if (projectParams.getOrgIdentifier() == null) {
+      defaultTemplate = StringUtils.remove(defaultTemplate, "  orgIdentifier: $orgIdentifier\n");
+    } else {
+      defaultTemplate = StringUtils.replace(defaultTemplate, "$orgIdentifier", projectParams.getOrgIdentifier());
+    }
+
+    return defaultTemplate;
   }
 
   @Override

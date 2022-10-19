@@ -186,6 +186,19 @@ public class CloudWatchMetricDataCollectionInfoTest extends CategoryTest {
     assertThat(envVariables.get("awsAccessKey")).isEqualTo(accessKey);
   }
 
+  @Test
+  @Owner(developers = DHRUVX)
+  @Category(UnitTests.class)
+  public void testGetDslEnvVariables_noMetricInfos() {
+    dataCollectionInfo.setCollectHostData(true);
+    dataCollectionInfo.setMetricInfos(null);
+    Map<String, Object> envVariables = dataCollectionInfo.getDslEnvVariables(testAwsConnector);
+    assertCommons(envVariables);
+    List<List<Map<String, Object>>> requestBodies = (List<List<Map<String, Object>>>) envVariables.get("bodies");
+    assertThat(requestBodies.size()).isEqualTo(0);
+    assertThat(envVariables.get("collectHostData")).isEqualTo(true);
+  }
+
   private void assertCommons(Map<String, Object> envVariables) {
     assertThat(envVariables.get("region")).isEqualTo(region);
     assertThat(envVariables.get("groupName")).isEqualTo(groupName);

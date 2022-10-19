@@ -20,6 +20,9 @@ import org.springframework.data.mongodb.core.query.Criteria;
 public interface FreezeCRUDService {
   FreezeResponseDTO createFreezeConfig(String deploymentFreezeYaml, String accountId, String orgId, String projectId);
 
+  FreezeResponseDTO manageGlobalFreezeConfig(
+      String deploymentFreezeYaml, String accountId, String orgId, String projectId);
+
   FreezeResponseDTO updateFreezeConfig(
       String deploymentFreezeYaml, String accountId, String orgId, String projectId, String freezeIdentifier);
 
@@ -34,4 +37,6 @@ public interface FreezeCRUDService {
 
   FreezeResponseWrapperDTO updateActiveStatus(
       FreezeStatus freezeStatus, String accountId, String orgId, String projectId, List<String> freezeIdentifiers);
+
+  FreezeResponseDTO getGlobalFreeze(String accountId, String orgId, String projectId);
 }

@@ -57,7 +57,7 @@ serviceScheduler:
   enabled: true
   #mongoUri: mongodb://localhost:27017/service_scheduler
 
-enableIterators: true
+enableIterators: ${ENABLE_ITERATORS:-true}
 trialRegistrationAllowed: true
 eventsFrameworkAvailableInOnPrem: false
 trialRegistrationAllowedForBugathon: false
@@ -301,7 +301,7 @@ mongo:
     mongoTagKey: none
     mongoTagValue: none
   aliasDBName: harness
-  maxOperationTimeInMillis: 900000
+  maxOperationTimeInMillis: 300000
 
 events-mongo:
   uri: mongodb://localhost:27017/events
@@ -330,7 +330,7 @@ deployMode: KUBERNETES
 deployVariant: SAAS
 envPath: ""
 
-scmVersion: e3ee71bd
+scmVersion: 4680eeef
 
 ngAuthUIEnabled: false
 
@@ -686,6 +686,8 @@ iteratorsConfig:
     threadPoolSize: ${DELEGATE_TASK_REBROADCAST_ITERATOR_THREAD_COUNT:-2}
   failDelegateTaskIteratorConfig:
       threadPoolSize: ${FAIL_DELEGATE_TASK_ITERATOR_THREAD_COUNT:-2}
+  gitSyncPollingIteratorConfig:
+      threadPoolSize: ${GIT_SYNC_POLLING_ITERATOR_THREAD_COUNT:-2}
 
 disableDelegateMgmtInManager: false
 

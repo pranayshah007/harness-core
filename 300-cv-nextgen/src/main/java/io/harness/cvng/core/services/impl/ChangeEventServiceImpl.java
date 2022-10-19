@@ -49,6 +49,7 @@ import io.harness.persistence.HQuery.QueryChecks;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
+import com.mongodb.AggregationOptions;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -61,6 +62,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -253,7 +255,10 @@ public class ChangeEventServiceImpl implements ChangeEventService {
                                                  Arrays.asList("$eventTime", new Date(startTime.toEpochMilli()))),
                                    timeRangeDuration.toMillis()))))),
             grouping("count", accumulator("$sum", 1)))
-        .aggregate(TimelineObject.class);
+        .aggregate(TimelineObject.class,
+            AggregationOptions.builder()
+                .maxTime(hPersistence.getMaxTimeMs(Activity.class), TimeUnit.MILLISECONDS)
+                .build());
   }
   @VisibleForTesting
   Iterator<TimelineObject> getTimelineObject(ProjectParams projectParams, List<String> serviceIdentifiers,

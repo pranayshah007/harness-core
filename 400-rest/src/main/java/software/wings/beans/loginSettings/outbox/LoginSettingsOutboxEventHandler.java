@@ -125,6 +125,9 @@ public class LoginSettingsOutboxEventHandler implements OutboxEventHandler {
     AuditEntry auditEntry = getAuditEntry(outboxEvent, Action.UPDATE,
         getYamlString(loginSettingsHarnessUsernamePasswordUpdateEvent.getOldLoginSettingsYamlDTO()),
         getYamlString(loginSettingsHarnessUsernamePasswordUpdateEvent.getNewLoginSettingsYamlDTO()));
+    log.info(
+        "NG Auth Audits: for account {} and outboxEventId {} publishing the audit for LoginSettingsHarnessUsernamePasswordUpdateEvent",
+        loginSettingsHarnessUsernamePasswordUpdateEvent.getAccountIdentifier(), outboxEvent.getId());
     return auditClientService.publishAudit(auditEntry, globalContext);
   }
 
@@ -135,6 +138,8 @@ public class LoginSettingsOutboxEventHandler implements OutboxEventHandler {
     AuditEntry auditEntry = getAuditEntry(outboxEvent, Action.UPDATE,
         getYamlString(loginSettingsWhitelistedDomainsUpdateEvent.getOldWhitelistedDomainsYamlDTO()),
         getYamlString(loginSettingsWhitelistedDomainsUpdateEvent.getNewWhitelistedDomainsYamlDTO()));
+    log.info("NG Auth Audits: for outboxEventId {} publishing the audit for LoginSettingsWhitelistedDomainsUpdateEvent",
+        outboxEvent.getId());
     return auditClientService.publishAudit(auditEntry, globalContext);
   }
 
@@ -144,6 +149,8 @@ public class LoginSettingsOutboxEventHandler implements OutboxEventHandler {
     AuditEntry auditEntry = getAuditEntry(outboxEvent, Action.CREATE,
         getYamlString(loginSettingsSAMLCreateEvent.getOldSamlSettingsYamlDTO()),
         getYamlString(loginSettingsSAMLCreateEvent.getNewSamlSettingsYamlDTO()));
+    log.info("NG Auth Audits: for outboxEventId {} publishing the audit for LoginSettingsSAMLCreateEvent",
+        outboxEvent.getId());
     return auditClientService.publishAudit(auditEntry, globalContext);
   }
 
@@ -153,6 +160,8 @@ public class LoginSettingsOutboxEventHandler implements OutboxEventHandler {
     AuditEntry auditEntry = getAuditEntry(outboxEvent, Action.UPDATE,
         getYamlString(loginSettingsSAMLUpdateEvent.getOldSamlSettingsYamlDTO()),
         getYamlString(loginSettingsSAMLUpdateEvent.getNewSamlSettingsYamlDTO()));
+    log.info("NG Auth Audits: for outboxEventId {} publishing the audit for LoginSettingsSAMLUpdateEvent",
+        outboxEvent.getId());
     return auditClientService.publishAudit(auditEntry, globalContext);
   }
 
@@ -162,6 +171,8 @@ public class LoginSettingsOutboxEventHandler implements OutboxEventHandler {
     AuditEntry auditEntry = getAuditEntry(outboxEvent, Action.DELETE,
         getYamlString(loginSettingsSAMLDeleteEvent.getOldSamlSettingsYamlDTO()),
         getYamlString(loginSettingsSAMLDeleteEvent.getNewSamlSettingsYamlDTO()));
+    log.info("NG Auth Audits: for outboxEventId {} publishing the audit for LoginSettingsSAMLDeleteEvent",
+        outboxEvent.getId());
     return auditClientService.publishAudit(auditEntry, globalContext);
   }
 
@@ -172,6 +183,8 @@ public class LoginSettingsOutboxEventHandler implements OutboxEventHandler {
     AuditEntry auditEntry = getAuditEntry(outboxEvent, Action.UPDATE,
         getYamlString(loginSettingsTwoFactorAuthEvent.getOldTwoFactorAuthYamlDTO()),
         getYamlString(loginSettingsTwoFactorAuthEvent.getNewTwoFactorAuthYamlDTO()));
+    log.info("NG Auth Audits: for outboxEventId {} publishing the audit for LoginSettingsTwoFactorAuthEvent",
+        outboxEvent.getId());
     return auditClientService.publishAudit(auditEntry, globalContext);
   }
 
@@ -182,6 +195,8 @@ public class LoginSettingsOutboxEventHandler implements OutboxEventHandler {
     AuditEntry auditEntry = getAuditEntry(outboxEvent, Action.CREATE,
         getYamlString(loginSettingsOAuthCreateEvent.getOldOAuthSettingsYamlDTO()),
         getYamlString(loginSettingsOAuthCreateEvent.getNewOAuthSettingsYamlDTO()));
+    log.info("NG Auth Audits: for outboxEventId {} publishing the audit for LoginSettingsOAuthCreateEvent",
+        outboxEvent.getId());
     return auditClientService.publishAudit(auditEntry, globalContext);
   }
 
@@ -192,6 +207,8 @@ public class LoginSettingsOutboxEventHandler implements OutboxEventHandler {
     AuditEntry auditEntry = getAuditEntry(outboxEvent, Action.UPDATE,
         getYamlString(loginSettingsOAuthUpdateEvent.getOldOAuthSettingsYamlDTO()),
         getYamlString(loginSettingsOAuthUpdateEvent.getNewOAuthSettingsYamlDTO()));
+    log.info("NG Auth Audits: for outboxEventId {} publishing the audit for LoginSettingsOAuthUpdateEvent",
+        outboxEvent.getId());
     return auditClientService.publishAudit(auditEntry, globalContext);
   }
 
@@ -202,6 +219,8 @@ public class LoginSettingsOutboxEventHandler implements OutboxEventHandler {
     AuditEntry auditEntry = getAuditEntry(outboxEvent, Action.DELETE,
         getYamlString(loginSettingsOAuthDeleteEvent.getOldOAuthSettingsYamlDTO()),
         getYamlString(loginSettingsOAuthDeleteEvent.getNewOAuthSettingsYamlDTO()));
+    log.info("NG Auth Audits: for outboxEventId {} publishing the audit for LoginSettingsOAuthDeleteEvent",
+        outboxEvent.getId());
     return auditClientService.publishAudit(auditEntry, globalContext);
   }
 
@@ -212,6 +231,8 @@ public class LoginSettingsOutboxEventHandler implements OutboxEventHandler {
     AuditEntry auditEntry = getAuditEntry(outboxEvent, Action.UPDATE,
         getYamlString(loginSettingsAuthMechanismUpdateEvent.getOldAuthMechanismYamlDTO()),
         getYamlString(loginSettingsAuthMechanismUpdateEvent.getNewAuthMechanismYamlDTO()));
+    log.info("NG Auth Audits: for outboxEventId {} publishing the audit for LoginSettingsAuthMechanismUpdateEvent",
+        outboxEvent.getId());
     return auditClientService.publishAudit(auditEntry, globalContext);
   }
 
@@ -221,6 +242,8 @@ public class LoginSettingsOutboxEventHandler implements OutboxEventHandler {
     AuditEntry auditEntry = getAuditEntry(outboxEvent, Action.CREATE,
         getYamlString(loginSettingsLDAPCreateEvent.getOldLdapSettingsYamlDTO()),
         getYamlString(loginSettingsLDAPCreateEvent.getNewLdapSettingsYamlDTO()));
+    log.info("NG Auth Audits: for outboxEventId {} publishing the audit for LoginSettingsLDAPCreateEvent",
+        outboxEvent.getId());
     return auditClientService.publishAudit(auditEntry, globalContext);
   }
 
@@ -230,6 +253,8 @@ public class LoginSettingsOutboxEventHandler implements OutboxEventHandler {
     AuditEntry auditEntry = getAuditEntry(outboxEvent, Action.UPDATE,
         getYamlString(loginSettingsLDAPUpdateEvent.getOldLdapSettingsYamlDTO()),
         getYamlString(loginSettingsLDAPUpdateEvent.getNewLdapSettingsYamlDTO()));
+    log.info("NG Auth Audits: for outboxEventId {} publishing the audit for LoginSettingsLDAPUpdateEvent",
+        outboxEvent.getId());
     return auditClientService.publishAudit(auditEntry, globalContext);
   }
 
@@ -239,6 +264,8 @@ public class LoginSettingsOutboxEventHandler implements OutboxEventHandler {
     AuditEntry auditEntry = getAuditEntry(outboxEvent, Action.DELETE,
         getYamlString(loginSettingsLDAPDeleteEvent.getOldLdapSettingsYamlDTO()),
         getYamlString(loginSettingsLDAPDeleteEvent.getNewLdapSettingsYamlDTO()));
+    log.info("NG Auth Audits: for outboxEventId {} publishing the audit for LoginSettingsLDAPDeleteEvent",
+        outboxEvent.getId());
     return auditClientService.publishAudit(auditEntry, globalContext);
   }
 }

@@ -181,6 +181,30 @@ public class ServiceStepV3Test {
   @Test
   @Owner(developers = OwnerRule.YOGESH)
   @Category(UnitTests.class)
+  public void executeWithOldEnv() {
+    final ServiceEntity serviceEntity = testServiceEntity();
+    final Environment environment = testEnvEntity();
+
+    mockService(serviceEntity);
+
+    // old env without yaml
+    environment.setYaml(null);
+    mockEnv(environment);
+
+    ChildrenExecutableResponse response = step.obtainChildren(buildAmbiance(),
+        ServiceStepV3Parameters.builder()
+            .serviceRef(ParameterField.createValueField(serviceEntity.getIdentifier()))
+            .envRef(ParameterField.createValueField(environment.getIdentifier()))
+            .childrenNodeIds(new ArrayList<>())
+            .build(),
+        null);
+
+    assertThat(response.getLogKeysCount()).isEqualTo(1);
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.YOGESH)
+  @Category(UnitTests.class)
   public void testVariableOverrides() {
     final ServiceEntity serviceEntity = testServiceEntity();
     final Environment environment = testEnvEntity();

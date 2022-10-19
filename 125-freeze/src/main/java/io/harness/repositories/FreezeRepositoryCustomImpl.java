@@ -7,6 +7,8 @@
 
 package io.harness.repositories;
 
+import io.harness.freeze.beans.FreezeStatus;
+import io.harness.freeze.beans.FreezeType;
 import io.harness.freeze.entity.FreezeConfigEntity;
 import io.harness.freeze.entity.FreezeConfigEntity.FreezeConfigEntityKeys;
 import io.harness.freeze.helpers.FreezeFilterHelper;
@@ -101,6 +103,24 @@ public class FreezeRepositoryCustomImpl implements FreezeRepositoryCustom {
                                   .is(accountId)
                                   .and(FreezeConfigEntityKeys.identifier)
                                   .is(freezeId);
+    FreezeConfigEntity eg = mongoTemplate.findOne(new Query(criteria), FreezeConfigEntity.class);
+    return Optional.ofNullable(eg);
+  }
+
+  @Override
+  public Optional<FreezeConfigEntity> findGlobalByAccountIdAndOrgIdentifierAndProjectIdentifier(
+      String accountId, String orgIdentifier, String projectIdentifier, FreezeStatus freezeStatus) {
+    final Criteria criteria = Criteria.where(FreezeConfigEntityKeys.projectIdentifier)
+                                  .is(projectIdentifier)
+                                  .and(FreezeConfigEntityKeys.orgIdentifier)
+                                  .is(orgIdentifier)
+                                  .and(FreezeConfigEntityKeys.accountId)
+                                  .is(accountId)
+                                  .and(FreezeConfigEntityKeys.type)
+                                  .is(FreezeType.GLOBAL);
+    if (freezeStatus != null) {
+      criteria.and(FreezeConfigEntityKeys.status).is(freezeStatus);
+    }
     FreezeConfigEntity eg = mongoTemplate.findOne(new Query(criteria), FreezeConfigEntity.class);
     return Optional.ofNullable(eg);
   }

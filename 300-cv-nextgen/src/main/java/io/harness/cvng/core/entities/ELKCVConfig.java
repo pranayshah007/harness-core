@@ -13,6 +13,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import io.harness.cvng.beans.DataSourceType;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.google.common.io.Resources;
 import java.io.IOException;
@@ -25,7 +26,7 @@ import lombok.experimental.FieldNameConstants;
 import lombok.experimental.SuperBuilder;
 import org.mongodb.morphia.query.UpdateOperations;
 
-@JsonTypeName("ELK_LOG")
+@JsonTypeName("ELASTICSEARCH")
 @Data
 @SuperBuilder
 @FieldNameConstants(innerTypeName = "ELKCVConfigKeys")
@@ -51,7 +52,7 @@ public class ELKCVConfig extends LogCVConfig {
 
   @Override
   public DataSourceType getType() {
-    return DataSourceType.ELK_LOG;
+    return DataSourceType.ELASTICSEARCH;
   }
 
   @Override
@@ -59,6 +60,7 @@ public class ELKCVConfig extends LogCVConfig {
     return DSL;
   }
 
+  @JsonIgnore
   @Override
   public String getHostCollectionDSL() {
     throw new RuntimeException("Not implemented");

@@ -20,19 +20,23 @@ func NewHandler(s store.Store) *Handler {
 }
 
 func (h *Handler) Register(g *echo.Group) {
-	g.POST("/queue", h.handleQueue())
+	g.POST("/queue", h.handleEnqueue())
 	g.POST("/dequeue", h.handleDequeue())
+	g.POST("/ack", h.ack())
+	g.POST("/unack", h.unAck())
+	g.GET("/healthz", h.healthz())
 }
 
-// handleQueue godoc
+// handleEnqueue godoc
 // @Summary     Enqueue
 // @Description Enqueue the request
 // @Accept      json
 // @Produce     json
 // @Param       request body store.EnqueueRequest true "query params"
+// @Param 		Authorization header string true "Authorization"
 // @Success     200 {object} store.EnqueueResponse
 // @Router      /v1/queue [POST]
-func (h *Handler) handleQueue() echo.HandlerFunc {
+func (h *Handler) handleEnqueue() echo.HandlerFunc {
 	return func(c echo.Context) error {
 
 		// bind request body to enqueue request
@@ -44,7 +48,7 @@ func (h *Handler) handleQueue() echo.HandlerFunc {
 
 		enqueue, err := h.s.Enqueue(c.Request().Context(), *p)
 		if err != nil {
-			return c.JSON(http.StatusBadRequest, nil)
+			return c.JSON(http.StatusBadRequest, err)
 		}
 		return c.JSON(http.StatusOK, enqueue)
 	}
@@ -55,15 +59,88 @@ func (h *Handler) handleQueue() echo.HandlerFunc {
 // @Description Dequeue a request
 // @Accept      json
 // @Produce     json
-// @Param        request body store.DequeueRequest true "query params"
+// @Param       request body store.DequeueRequest true "query params"
+// @Param 		Authorization header string true "Authorization"
 // @Success     200 {object} store.DequeueResponse
 // @Router      /v1/dequeue [POST]
 func (h *Handler) handleDequeue() echo.HandlerFunc {
 	return func(c echo.Context) error {
-		dequeue, err := h.s.Dequeue(c.Request().Context(), store.DequeueRequest{})
+
+		p := &store.DequeueRequest{}
+
+		if err := c.Bind(p); err != nil {
+			return c.JSON(http.StatusBadRequest, err)
+		}
+
+		dequeue, err := h.s.Dequeue(c.Request().Context(), *p)
 		if err != nil {
-			return c.JSON(http.StatusBadRequest, nil)
+			return c.JSON(http.StatusBadRequest, err)
 		}
 		return c.JSON(http.StatusOK, dequeue)
+	}
+}
+
+// ack godoc
+// @Summary     Ack a Redis message
+// @Description Ack a Redis message consumed successfully
+// @Accept      json
+// @Produce     json
+// @Param       request body store.AckRequest true "query params"
+// @Param 		Authorization header string true "Authorization"
+// @Success     200 {object} store.AckResponse
+// @Router      /v1/ack [POST]
+func (h *Handler) ack() echo.HandlerFunc {
+	return func(c echo.Context) error {
+
+		p := &store.AckRequest{}
+
+		if err := c.Bind(p); err != nil {
+			return c.JSON(http.StatusBadRequest, err)
+		}
+
+		ack, err := h.s.Ack(c.Request().Context(), *p)
+		if err != nil {
+			return c.JSON(http.StatusBadRequest, err)
+		}
+		return c.JSON(http.StatusOK, ack)
+	}
+}
+
+// unAck godoc
+// @Summary     UnAck a Redis message or SubTopic
+// @Description UnAck a Redis message or SubTopic to stop processing
+// @Accept      json
+// @Produce     json
+// @Param       request body store.UnAckRequest true "query params"
+// @Param 		Authorization header string true "Authorization"
+// @Success     200 {object} store.UnAckResponse
+// @Router      /v1/unack [POST]
+func (h *Handler) unAck() echo.HandlerFunc {
+	return func(c echo.Context) error {
+
+		p := &store.UnAckRequest{}
+
+		if err := c.Bind(p); err != nil {
+			return c.JSON(http.StatusBadRequest, err)
+		}
+
+		unAck, err := h.s.UnAck(c.Request().Context(), *p)
+		if err != nil {
+			return c.JSON(http.StatusBadRequest, err)
+		}
+		return c.JSON(http.StatusOK, unAck)
+	}
+}
+
+// healthz godoc
+// @Summary     Health API for Queue Service
+// @Description Health API for Queue Service
+// @Accept      json
+// @Produce     json
+// @Success     200 {object} string
+// @Router      /v1/healthz [get]
+func (h *Handler) healthz() echo.HandlerFunc {
+	return func(c echo.Context) error {
+		return c.JSON(http.StatusOK, "Queue Service is Healthy")
 	}
 }
