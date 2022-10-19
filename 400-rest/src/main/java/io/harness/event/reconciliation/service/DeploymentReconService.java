@@ -9,6 +9,11 @@ package io.harness.event.reconciliation.service;
 
 import io.harness.event.reconciliation.ReconciliationStatus;
 
+import java.util.Map;
+
 public interface DeploymentReconService {
   ReconciliationStatus performReconciliation(String accountId, long durationStartTs, long durationEndTs);
+  long getWFExecCountFromMongoDB(String accountId, long durationStartTs, long durationEndTs);
+  boolean isStatusMismatchedAndUpdated(Map<String, String> tsdbRunningWFs);
+  void insertMissingRecords(String accountId, long durationStartTs, long durationEndTs);
 }

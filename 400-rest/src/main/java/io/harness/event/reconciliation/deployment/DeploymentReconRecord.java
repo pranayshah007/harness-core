@@ -57,6 +57,7 @@ public class DeploymentReconRecord implements PersistentEntity, UuidAware, Accou
 
   @Id private String uuid;
   private String accountId;
+  private String entityClass;
   private long durationStartTs;
   private long durationEndTs;
   private DetectionStatus detectionStatus;
