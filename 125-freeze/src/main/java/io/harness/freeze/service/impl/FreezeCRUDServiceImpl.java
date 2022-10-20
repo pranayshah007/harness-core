@@ -109,8 +109,8 @@ public class FreezeCRUDServiceImpl implements FreezeCRUDService {
       throw new NGFreezeException(
           String.format(GLOBAL_FREEZE_CONFIG_WITH_WRONG_IDENTIFIER, freezeConfigEntity.getIdentifier()));
     }
-    freezeConfigRepository.upsert(FreezeFilterHelper.getFreezeEqualityCriteria(freezeConfigEntity), freezeConfigEntity);
-    return NGFreezeDtoMapper.prepareFreezeResponseDto(freezeConfigEntity);
+    return NGFreezeDtoMapper.prepareFreezeResponseDto(
+        updateFreezeConfig(freezeConfigEntity, accountId, orgId, projectId, freezeConfigEntity.getIdentifier()));
   }
 
   @Override
@@ -123,17 +123,8 @@ public class FreezeCRUDServiceImpl implements FreezeCRUDService {
     }
     FreezeConfigEntity updatedFreezeConfigEntity =
         NGFreezeDtoMapper.toFreezeConfigEntityManual(accountId, orgId, projectId, deploymentFreezeYaml);
-    Optional<FreezeConfigEntity> freezeConfigEntityOptional =
-        freezeConfigRepository.findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifier(
-            accountId, orgId, projectId, freezeIdentifier);
-    if (freezeConfigEntityOptional.isPresent()) {
-      freezeConfigRepository.update(
-          FreezeFilterHelper.getFreezeEqualityCriteria(updatedFreezeConfigEntity), updatedFreezeConfigEntity);
-      return NGFreezeDtoMapper.prepareFreezeResponseDto(updatedFreezeConfigEntity);
-    } else {
-      throw new EntityNotFoundException(
-          String.format(FREEZE_CONFIG_DOES_NOT_EXIST_ERROR_TEMPLATE, freezeIdentifier, orgId, projectId));
-    }
+    return NGFreezeDtoMapper.prepareFreezeResponseDto(
+        updateFreezeConfig(updatedFreezeConfigEntity, accountId, orgId, projectId, freezeIdentifier));
   }
 
   @Override
@@ -255,8 +246,7 @@ public class FreezeCRUDServiceImpl implements FreezeCRUDService {
       freezeConfig.getFreezeInfoConfig().setStatus(freezeStatus);
       freezeConfigEntity.setYaml(NGFreezeDtoMapper.toYaml(freezeConfig));
       freezeConfigEntity.setStatus(freezeStatus);
-      freezeConfigRepository.update(
-          FreezeFilterHelper.getFreezeEqualityCriteria(freezeConfigEntity), freezeConfigEntity);
+      freezeConfigEntity = freezeConfigRepository.save(freezeConfigEntity);
       return NGFreezeDtoMapper.prepareFreezeResponseDto(freezeConfigEntity);
     } else {
       throw new EntityNotFoundException(
@@ -273,5 +263,20 @@ public class FreezeCRUDServiceImpl implements FreezeCRUDService {
                                                           .build())
                                     .build();
     return NGFreezeDtoMapper.toYaml(freezeConfig);
+  }
+
+  private FreezeConfigEntity updateFreezeConfig(FreezeConfigEntity updatedFreezeConfigEntity, String accountId,
+      String orgId, String projectId, String freezeIdentifier) {
+    Optional<FreezeConfigEntity> oldFreezeConfigEntityOptional =
+        freezeConfigRepository.findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifier(
+            accountId, orgId, projectId, freezeIdentifier);
+    if (oldFreezeConfigEntityOptional.isPresent()) {
+      updatedFreezeConfigEntity =
+          NGFreezeDtoMapper.updateOldFreezeConfig(updatedFreezeConfigEntity, oldFreezeConfigEntityOptional.get());
+      return freezeConfigRepository.save(updatedFreezeConfigEntity);
+    } else {
+      throw new EntityNotFoundException(
+          String.format(FREEZE_CONFIG_DOES_NOT_EXIST_ERROR_TEMPLATE, freezeIdentifier, orgId, projectId));
+    }
   }
 }

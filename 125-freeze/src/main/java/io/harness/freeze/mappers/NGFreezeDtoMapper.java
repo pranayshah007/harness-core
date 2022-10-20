@@ -49,6 +49,20 @@ public class NGFreezeDtoMapper {
     }
   }
 
+  public static FreezeConfigEntity updateOldFreezeConfig(
+      FreezeConfigEntity newFreezeConfigEntity, FreezeConfigEntity oldFreezeConfigEntity) {
+    oldFreezeConfigEntity.setOrgIdentifier(newFreezeConfigEntity.getOrgIdentifier());
+    oldFreezeConfigEntity.setProjectIdentifier(newFreezeConfigEntity.getProjectIdentifier());
+    oldFreezeConfigEntity.setIdentifier(newFreezeConfigEntity.getIdentifier());
+    oldFreezeConfigEntity.setFreezeScope(newFreezeConfigEntity.getFreezeScope());
+    oldFreezeConfigEntity.setDescription(newFreezeConfigEntity.getDescription());
+    oldFreezeConfigEntity.setName(newFreezeConfigEntity.getName());
+    oldFreezeConfigEntity.setStatus(newFreezeConfigEntity.getStatus());
+    oldFreezeConfigEntity.setTags(newFreezeConfigEntity.getTags());
+    oldFreezeConfigEntity.setYaml(newFreezeConfigEntity.getYaml());
+    return oldFreezeConfigEntity;
+  }
+
   public FreezeResponseDTO prepareFreezeResponseDto(FreezeConfigEntity freezeConfigEntity) {
     return FreezeResponseDTO.builder()
         .accountId(freezeConfigEntity.getAccountId())

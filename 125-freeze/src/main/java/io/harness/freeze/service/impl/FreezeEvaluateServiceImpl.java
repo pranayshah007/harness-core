@@ -146,9 +146,7 @@ public class FreezeEvaluateServiceImpl implements FreezeEvaluateService {
   private boolean matchesEntities(Map<FreezeEntityType, List<String>> entityMap, FreezeEntityRule rules) {
     List<EntityConfig> entities = rules.getEntityConfigList()
                                       .stream()
-                                      .filter(entityConfig
-                                          -> !FilterType.ALL.equals(entityConfig.getFilterType())
-                                              && entityMap.containsKey(entityConfig.getFreezeEntityType()))
+                                      .filter(entityConfig -> !FilterType.ALL.equals(entityConfig.getFilterType()))
                                       .collect(Collectors.toList());
     for (EntityConfig entity : entities) {
       if (!matchesEntities(entityMap, entity)) {
@@ -158,11 +156,15 @@ public class FreezeEvaluateServiceImpl implements FreezeEvaluateService {
     return true;
   }
 
-  private boolean matchesEntities(Map<FreezeEntityType, List<String>> entityMap, EntityConfig entityConfig) {
-    if (FilterType.NOT_EQUALS.equals(entityConfig.getFilterType())) {
-      return !entityConfig.getEntityReference().contains(entityMap.get(entityConfig.getEntityReference()));
-    } else {
-      return entityConfig.getEntityReference().contains(entityMap.get(entityConfig.getEntityReference()));
+  protected boolean matchesEntities(Map<FreezeEntityType, List<String>> entityMap, EntityConfig entityConfig) {
+    if (!entityMap.containsKey(entityConfig.getFreezeEntityType())) {
+      return false;
     }
+    boolean match = entityConfig.getEntityReference().stream().anyMatch(
+        entityRef -> entityMap.get(entityConfig.getFreezeEntityType()).contains(entityRef));
+    if (FilterType.NOT_EQUALS.equals(entityConfig.getFilterType())) {
+      return !match;
+    }
+    return match;
   }
 }

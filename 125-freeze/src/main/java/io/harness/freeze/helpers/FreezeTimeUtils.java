@@ -16,15 +16,20 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 import java.util.TimeZone;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
 public class FreezeTimeUtils {
-  DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd hh:mm a");
+  DateTimeFormatter dtf = new DateTimeFormatterBuilder()
+                              .parseCaseInsensitive()
+                              .appendPattern("yyyy-MM-dd hh:mm a")
+                              .toFormatter(Locale.ENGLISH);
   LocalDateTime now = LocalDateTime.now();
 
   public CurrentOrUpcomingActiveWindow fetchCurrentOrUpcomingTimeWindow(List<FreezeWindow> freezeWindows) {

@@ -36,10 +36,7 @@ import java.util.List;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
-import lombok.Builder;
-import lombok.Data;
-import lombok.Setter;
-import lombok.Singular;
+import lombok.*;
 import lombok.experimental.FieldNameConstants;
 import org.mongodb.morphia.annotations.Entity;
 import org.springframework.data.annotation.CreatedBy;
@@ -70,7 +67,7 @@ public class FreezeConfigEntity implements PersistentEntity, AccountAccess, Uuid
 
   @NotNull FreezeType type;
 
-  @EntityName String name;
+  @With @EntityName String name;
 
   @Setter FreezeStatus status;
 
@@ -81,7 +78,7 @@ public class FreezeConfigEntity implements PersistentEntity, AccountAccess, Uuid
   @Trimmed String projectIdentifier;
 
   @NotEmpty @EntityIdentifier String identifier;
-  @NotEmpty String yaml;
+  @With @NotEmpty String yaml;
 
   @SchemaIgnore @FdIndex @CreatedDate long createdAt;
   @SchemaIgnore @NotNull @LastModifiedDate long lastUpdatedAt;
