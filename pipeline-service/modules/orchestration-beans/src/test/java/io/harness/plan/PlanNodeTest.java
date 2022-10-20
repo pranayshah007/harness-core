@@ -10,7 +10,6 @@ package io.harness.plan;
 import static io.harness.rule.OwnerRule.BRIJESH;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
@@ -26,11 +25,13 @@ public class PlanNodeTest extends CategoryTest {
   @Category(UnitTests.class)
   public void shouldTestFromExpressionModeProto() {
     for (ExpressionMode expressionMode : ExpressionMode.values()) {
-      if (expressionMode == ExpressionMode.UNRECOGNIZED) {
-        assertThatThrownBy(() -> PlanNode.fromExpressionModeProto(expressionMode));
+      if (expressionMode == ExpressionMode.UNRECOGNIZED || expressionMode == ExpressionMode.UNKNOWN_MODE) {
+        assertThat(ExpressionModeMapper.fromExpressionModeProto(expressionMode))
+            .isEqualTo(io.harness.expression.ExpressionMode.RETURN_NULL_IF_UNRESOLVED);
         continue;
       }
-      io.harness.expression.ExpressionMode mappedExpressionMode = PlanNode.fromExpressionModeProto(expressionMode);
+      io.harness.expression.ExpressionMode mappedExpressionMode =
+          ExpressionModeMapper.fromExpressionModeProto(expressionMode);
       assertThat(mappedExpressionMode.name()).isEqualTo(expressionMode.name());
       assertThat(mappedExpressionMode.getIndex()).isEqualTo(expressionMode.getNumber());
     }

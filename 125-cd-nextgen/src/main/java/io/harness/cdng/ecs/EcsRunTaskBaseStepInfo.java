@@ -54,5 +54,5 @@ public class EcsRunTaskBaseStepInfo {
 
   @YamlSchemaTypes(value = {SupportedPossibleFieldTypes.runtime})
   @ApiModelProperty(dataType = SwaggerConstants.BOOLEAN_CLASSPATH)
-  private ParameterField<Boolean> skiSteadyStateCheck;
+  private ParameterField<Boolean> skipSteadyStateCheck;
 }

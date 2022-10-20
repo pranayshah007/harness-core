@@ -9,12 +9,16 @@ package io.harness.service.impl;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.ALEXEI;
+import static io.harness.rule.OwnerRule.SHALINI;
 
+import static junit.framework.TestCase.assertTrue;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.doReturn;
 
 import io.harness.OrchestrationVisualizationTestBase;
 import io.harness.beans.GraphVertex;
+import io.harness.beans.OrchestrationEventLog;
 import io.harness.beans.OrchestrationGraph;
 import io.harness.beans.converter.GraphVertexConverter;
 import io.harness.beans.internal.EdgeListInternal;
@@ -34,8 +38,11 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.ExecutionMode;
 import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.contracts.execution.events.OrchestrationEventType;
 import io.harness.pms.contracts.steps.SkipType;
+import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
+import io.harness.repositories.orchestrationEventLog.OrchestrationEventLogRepository;
 import io.harness.rule.Owner;
 import io.harness.service.GraphGenerationService;
 
@@ -63,10 +70,12 @@ public class GraphGenerationServiceImplTest extends OrchestrationVisualizationTe
   @Inject @InjectMocks private PlanExecutionService planExecutionService;
   @Inject @InjectMocks private NodeExecutionService nodeExecutionService;
   @Inject @InjectMocks private SpringMongoStore mongoStore;
+  @Mock private OrchestrationEventLogRepository orchestrationEventLogRepository;
   @Inject private GraphVertexConverter graphVertexConverter;
   @InjectMocks @Inject private GraphGenerationService graphGenerationService;
   @Mock private OrchestrationEventEmitter eventEmitter;
   @Mock private PlanExecutionMetadataService planExecutionMetadataService;
+  @Inject @InjectMocks GraphGenerationServiceImpl graphGenerationServiceImpl;
 
   @Before
   public void setup() {
@@ -198,5 +207,62 @@ public class GraphGenerationServiceImplTest extends OrchestrationVisualizationTe
         .status(Status.SUCCEEDED)
         .adjacencyList(listInternal)
         .build();
+  }
+
+  @Test
+  @Owner(developers = SHALINI)
+  @Category(UnitTests.class)
+  public void testUpdateGraph() {
+    assertTrue(graphGenerationService.updateGraph(generateUuid()));
+  }
+
+  @Test
+  @Owner(developers = SHALINI)
+  @Category(UnitTests.class)
+  public void testUpdateGraphWithWaitLock() {
+    assertTrue(graphGenerationService.updateGraphWithWaitLock(generateUuid()));
+  }
+
+  @Test
+  @Owner(developers = SHALINI)
+  @Category(UnitTests.class)
+  public void testUpdateGraphUnderLock() {
+    assertTrue(graphGenerationServiceImpl.updateGraphUnderLock(generateUuid()));
+  }
+
+  @Test
+  @Owner(developers = SHALINI)
+  @Category(UnitTests.class)
+  public void testUpdateGraphUnderLockWithOrchestrationGraph() {
+    String planExecutionId = generateUuid();
+    String nodeExecutionId = generateUuid();
+    List<OrchestrationEventLog> logs = new ArrayList<>();
+    logs.add(OrchestrationEventLog.builder()
+                 .nodeExecutionId(nodeExecutionId)
+                 .orchestrationEventType(OrchestrationEventType.NODE_EXECUTION_START)
+                 .createdAt(1550L)
+                 .build());
+    doReturn(logs).when(orchestrationEventLogRepository).findUnprocessedEvents(planExecutionId, 1222L);
+    nodeExecutionService.save(
+        NodeExecution.builder()
+            .uuid(nodeExecutionId)
+            .stepType(StepType.newBuilder().setStepCategory(StepCategory.STEP).build())
+            .status(Status.SUCCEEDED)
+            .ambiance(Ambiance.newBuilder()
+                          .addLevels(Level.newBuilder().setNodeType(NodeType.PLAN_NODE.toString()).build())
+                          .build())
+            .module("cd")
+            .resolvedStepParameters(new HashMap<>())
+            .build());
+    assertTrue(
+        graphGenerationServiceImpl.updateGraphUnderLock(OrchestrationGraph.builder()
+                                                            .planExecutionId(planExecutionId)
+                                                            .rootNodeIds(new ArrayList<>())
+                                                            .lastUpdatedAt(1222L)
+                                                            .adjacencyList(OrchestrationAdjacencyListInternal.builder()
+                                                                               .adjacencyMap(new HashMap<>())
+                                                                               .graphVertexMap(new HashMap<>())
+                                                                               .build())
+                                                            .build()));
   }
 }

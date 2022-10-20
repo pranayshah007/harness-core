@@ -10,6 +10,7 @@ package io.harness.ng.core.invites.api.impl;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER_SRE;
+import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 import static io.harness.ng.accesscontrol.PlatformPermissions.INVITE_PERMISSION_IDENTIFIER;
 import static io.harness.ng.core.invites.InviteType.ADMIN_INITIATED_INVITE;
 import static io.harness.ng.core.invites.InviteType.USER_INITIATED_INVITE;
@@ -24,10 +25,12 @@ import static io.harness.springdata.PersistenceUtils.getRetryPolicy;
 
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
+import static java.lang.String.format;
 import static java.util.regex.Pattern.quote;
 import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
+import io.harness.NgInviteLogContext;
 import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
@@ -40,6 +43,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnexpectedException;
 import io.harness.exception.WingsException;
 import io.harness.invites.remote.InviteAcceptResponse;
+import io.harness.logging.AutoLogContext;
 import io.harness.mongo.MongoConfig;
 import io.harness.ng.accesscontrol.user.ACLAggregateFilter;
 import io.harness.ng.beans.PageRequest;
@@ -61,6 +65,8 @@ import io.harness.ng.core.invites.dto.RoleBinding.RoleBindingKeys;
 import io.harness.ng.core.invites.entities.Invite;
 import io.harness.ng.core.invites.entities.Invite.InviteKeys;
 import io.harness.ng.core.invites.utils.InviteUtils;
+import io.harness.ng.core.user.TwoFactorAuthMechanismInfo;
+import io.harness.ng.core.user.TwoFactorAuthSettingsInfo;
 import io.harness.ng.core.user.UserInfo;
 import io.harness.ng.core.user.remote.dto.UserMetadataDTO;
 import io.harness.ng.core.user.service.NgUserService;
@@ -68,6 +74,7 @@ import io.harness.notification.Team;
 import io.harness.notification.channeldetails.EmailChannel;
 import io.harness.notification.channeldetails.EmailChannel.EmailChannelBuilder;
 import io.harness.notification.notificationclient.NotificationClient;
+import io.harness.notification.notificationclient.NotificationResult;
 import io.harness.outbox.api.OutboxService;
 import io.harness.remote.client.CGRestUtils;
 import io.harness.repositories.invites.spring.InviteRepository;
@@ -86,6 +93,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
+import com.j256.twofactorauth.TimeBasedOneTimePasswordUtil;
 import com.mongodb.MongoClientURI;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
@@ -135,6 +143,10 @@ public class InviteServiceImpl implements InviteService {
   private static final String USER_INVITE = "user_invite";
   private static final String EMAIL_INVITE_TEMPLATE_ID = "email_invite";
   private static final String EMAIL_NOTIFY_TEMPLATE_ID = "email_notify";
+  private static final String SHOULD_MAIL_CONTAIN_TWO_FACTOR_INFO = "shouldMailContainTwoFactorInfo";
+  private static final String TOTP_SECRET = "totpSecret";
+  private static final String TOTP_URL = "totpUrl";
+  private static final String TOTP_URL_PREFIX = "otpauth://totp/%s:%s?secret=%s&issuer=Harness-Inc";
   private final String jwtPasswordSecret;
   private final JWTGeneratorUtils jwtGeneratorUtils;
   private final NgUserService ngUserService;
@@ -204,6 +216,7 @@ public class InviteServiceImpl implements InviteService {
       if (TRUE.equals(existingInviteOptional.get().getApproved())) {
         return InviteOperationResponse.ACCOUNT_INVITE_ACCEPTED;
       }
+      log.info("NG User Invite: resending the existing invite with inviteId {}", existingInviteOptional.get().getId());
       wrapperForTransactions(this::resendInvite, existingInviteOptional.get());
       return InviteOperationResponse.USER_ALREADY_INVITED;
     }
@@ -360,7 +373,16 @@ public class InviteServiceImpl implements InviteService {
       String accountIdentifier, String jwtToken, String email, boolean isScimInvite) {
     UserInviteDTO userInviteDTO =
         UserInviteDTO.builder().accountId(accountIdentifier).email(email).name(email).token(jwtToken).build();
-    CGRestUtils.getResponse(userClient.createUserAndCompleteNGInvite(userInviteDTO, isScimInvite));
+
+    try {
+      log.info("NG User Invite: making a userClient call to createUserAndCompleteNGInvite");
+      CGRestUtils.getResponse(userClient.createUserAndCompleteNGInvite(userInviteDTO, isScimInvite));
+    } catch (Exception ex) {
+      log.error(
+          "NG User Invite: while making a userClient call to createUserAndCompleteNGInvite an exception occurred: ",
+          ex);
+      throw ex;
+    }
   }
 
   private URI getUserInfoSubmitUrl(
@@ -391,37 +413,44 @@ public class InviteServiceImpl implements InviteService {
   }
 
   private Invite resendInvite(Invite newInvite) {
-    checkPermissions(newInvite.getAccountIdentifier(), newInvite.getOrgIdentifier(), newInvite.getProjectIdentifier(),
-        INVITE_PERMISSION_IDENTIFIER);
-    Update update = new Update()
-                        .set(InviteKeys.createdAt, new Date())
-                        .set(InviteKeys.validUntil,
-                            Date.from(OffsetDateTime.now().plusDays(INVITATION_VALIDITY_IN_DAYS).toInstant()))
-                        .set(InviteKeys.roleBindings, newInvite.getRoleBindings())
-                        .set(InviteKeys.userGroups, newInvite.getUserGroups());
-    inviteRepository.updateInvite(newInvite.getId(), update);
-    String accountId = newInvite.getAccountIdentifier();
-    boolean isSSOEnabled = isSSOEnabled(accountId);
-    boolean isPLNoEmailForSamlAccountInvitesEnabled = isPLNoEmailForSamlAccountInvitesEnabled(accountId);
-    boolean isAutoInviteAcceptanceEnabled = isAutoInviteAcceptanceEnabled(accountId);
+    try (AutoLogContext ignore =
+             new NgInviteLogContext(newInvite.getAccountIdentifier(), newInvite.getId(), OVERRIDE_ERROR)) {
+      checkPermissions(newInvite.getAccountIdentifier(), newInvite.getOrgIdentifier(), newInvite.getProjectIdentifier(),
+          INVITE_PERMISSION_IDENTIFIER);
+      Update update = new Update()
+                          .set(InviteKeys.createdAt, new Date())
+                          .set(InviteKeys.validUntil,
+                              Date.from(OffsetDateTime.now().plusDays(INVITATION_VALIDITY_IN_DAYS).toInstant()))
+                          .set(InviteKeys.roleBindings, newInvite.getRoleBindings())
+                          .set(InviteKeys.userGroups, newInvite.getUserGroups());
+      inviteRepository.updateInvite(newInvite.getId(), update);
+      String accountId = newInvite.getAccountIdentifier();
+      boolean isSSOEnabled = isSSOEnabled(accountId);
+      boolean isPLNoEmailForSamlAccountInvitesEnabledWithSSOEnabled =
+          isPLNoEmailForSamlAccountInvitesEnabled(accountId) && isSSOEnabled;
+      boolean isAutoInviteAcceptanceEnabledWithSSOEnabled = isAutoInviteAcceptanceEnabled(accountId) && isSSOEnabled;
+      TwoFactorAuthSettingsInfo twoFactorAuthSettingsInfo =
+          getTwoFactorAuthSettingsInfo(accountId, newInvite.getEmail());
 
-    try {
-      sendInvitationMail(
-          newInvite, isSSOEnabled, isPLNoEmailForSamlAccountInvitesEnabled, isAutoInviteAcceptanceEnabled);
-    } catch (URISyntaxException ex) {
-      log.error(
-          "For invite: {} Mail embed url incorrect, can't sent email due to an exception: ", newInvite.getId(), ex);
-    } catch (UnsupportedEncodingException ex) {
-      log.error("For invite: {} Invite Email resending failed due to encoding exception: ", newInvite.getId(), ex);
-    } catch (Exception ex) {
-      log.error("For invite: {} while inviting or notifying user to join harness an exception occurred: ",
-          newInvite.getId(), ex);
-    }
+      try {
+        sendInvitationMail(newInvite, isPLNoEmailForSamlAccountInvitesEnabledWithSSOEnabled,
+            isAutoInviteAcceptanceEnabledWithSSOEnabled, twoFactorAuthSettingsInfo);
+      } catch (URISyntaxException ex) {
+        log.error(
+            "For invite: {} Mail embed url incorrect, can't sent email due to an exception: ", newInvite.getId(), ex);
+      } catch (UnsupportedEncodingException ex) {
+        log.error("For invite: {} Invite Email resending failed due to encoding exception: ", newInvite.getId(), ex);
+      } catch (Exception ex) {
+        log.error("For invite: {} while inviting or notifying user to join harness an exception occurred: ",
+            newInvite.getId(), ex);
+      }
 
-    if (!isPLNoEmailForSamlAccountInvitesEnabled) {
-      ngAuditUserInviteUpdateEvent(newInvite);
+      if (!(isPLNoEmailForSamlAccountInvitesEnabledWithSSOEnabled
+              && !twoFactorAuthSettingsInfo.isTwoFactorAuthenticationEnabled())) {
+        ngAuditUserInviteUpdateEvent(newInvite);
+      }
+      return newInvite;
     }
-    return newInvite;
   }
 
   public InviteAcceptResponse acceptInvite(String jwtToken) {
@@ -531,46 +560,87 @@ public class InviteServiceImpl implements InviteService {
   private InviteOperationResponse newInvite(Invite invite, boolean[] scimLdapArray) {
     checkUserLimit(invite.getAccountIdentifier(), invite.getEmail());
     Invite savedInvite = inviteRepository.save(invite);
-    String accountId = invite.getAccountIdentifier();
-    boolean isSSOEnabled = isSSOEnabled(accountId);
-    boolean isPLNoEmailForSamlAccountInvitesEnabled = isPLNoEmailForSamlAccountInvitesEnabled(accountId);
-    boolean isAutoInviteAcceptanceEnabled = isAutoInviteAcceptanceEnabled(accountId);
 
+    try (AutoLogContext ignore =
+             new NgInviteLogContext(savedInvite.getAccountIdentifier(), savedInvite.getId(), OVERRIDE_ERROR)) {
+      String accountId = invite.getAccountIdentifier();
+      boolean isSSOEnabled = isSSOEnabled(accountId);
+      boolean isPLNoEmailForSamlAccountInvitesEnabledWithSSOEnabled =
+          isPLNoEmailForSamlAccountInvitesEnabled(accountId) && isSSOEnabled;
+      boolean isAutoInviteAcceptanceEnabledWithSSOEnabled = isAutoInviteAcceptanceEnabled(accountId) && isSSOEnabled;
+      TwoFactorAuthSettingsInfo twoFactorAuthSettingsInfo =
+          getTwoFactorAuthSettingsInfo(accountId, savedInvite.getEmail());
+
+      try {
+        sendInvitationMail(savedInvite, isPLNoEmailForSamlAccountInvitesEnabledWithSSOEnabled,
+            isAutoInviteAcceptanceEnabledWithSSOEnabled, twoFactorAuthSettingsInfo);
+      } catch (URISyntaxException ex) {
+        log.error("NG User Invite: Mail embed url incorrect, can't sent email due to an exception: ", ex);
+      } catch (UnsupportedEncodingException ex) {
+        log.error("NG User Invite: Invite Email sending failed due to encoding exception: ", ex);
+      } catch (Exception ex) {
+        log.error("NG User Invite: while inviting or notifying user to join harness an exception occurred: ", ex);
+      }
+
+      String email = invite.getEmail().trim();
+
+      if (scimLdapArray[0]) {
+        createAndInviteNonPasswordUser(accountId, invite.getInviteToken(), email, true);
+        updateUserTwoFactorAuthInfo(email, twoFactorAuthSettingsInfo);
+      } else if (scimLdapArray[1] || isAutoInviteAcceptanceEnabledWithSSOEnabled
+          || isPLNoEmailForSamlAccountInvitesEnabledWithSSOEnabled) {
+        createAndInviteNonPasswordUser(accountId, invite.getInviteToken(), email, false);
+        updateUserTwoFactorAuthInfo(email, twoFactorAuthSettingsInfo);
+      }
+      if (isPLNoEmailForSamlAccountInvitesEnabledWithSSOEnabled
+          && !twoFactorAuthSettingsInfo.isTwoFactorAuthenticationEnabled()) {
+        return InviteOperationResponse.USER_INVITE_NOT_REQUIRED;
+      } else {
+        ngAuditUserInviteCreateEvent(savedInvite);
+      }
+      return InviteOperationResponse.USER_INVITED_SUCCESSFULLY;
+    }
+  }
+
+  private void updateUserTwoFactorAuthInfo(String email, TwoFactorAuthSettingsInfo twoFactorAuthSettingsInfo) {
     try {
-      sendInvitationMail(
-          savedInvite, isSSOEnabled, isPLNoEmailForSamlAccountInvitesEnabled, isAutoInviteAcceptanceEnabled);
-    } catch (URISyntaxException ex) {
-      log.error(
-          "For invite: {} Mail embed url incorrect, can't sent email due to an exception: ", savedInvite.getId(), ex);
-    } catch (UnsupportedEncodingException ex) {
-      log.error("For invite: {} Invite Email sending failed due to encoding exception: ", savedInvite.getId(), ex);
+      if (twoFactorAuthSettingsInfo.isTwoFactorAuthenticationEnabled()) {
+        Optional<UserInfo> userInfo =
+            CGRestUtils.getResponse(userClient.updateUserTwoFactorAuthInfo(email, twoFactorAuthSettingsInfo));
+        userInfo.ifPresent(
+            info -> log.info("NG User Invite: two factor auth settings for the user {} is updated", info.getEmail()));
+      }
     } catch (Exception ex) {
-      log.error("For invite: {} while inviting or notifying user to join harness an exception occurred: ",
-          savedInvite.getId(), ex);
+      log.error(
+          "NG User Invite: while making an accountClient call to updateUserTwoFactorAuthInfo failed with exception: ",
+          ex);
+      throw ex;
     }
+  }
 
-    String email = invite.getEmail().trim();
+  private TwoFactorAuthSettingsInfo getTwoFactorAuthSettingsInfo(String accountIdentifier, String email) {
+    AccountDTO accountDTO = getAccountDTO(accountIdentifier);
+    if (accountDTO.isTwoFactorAdminEnforced()) {
+      String totpSecretKey = TimeBasedOneTimePasswordUtil.generateBase32Secret();
+      String otpUrl = generateOtpUrl(accountDTO.getCompanyName(), email, totpSecretKey);
 
-    if (scimLdapArray[0]) {
-      createAndInviteNonPasswordUser(accountId, invite.getInviteToken(), email, true);
-    } else if (scimLdapArray[1]
-        || ((isAutoInviteAcceptanceEnabled || isPLNoEmailForSamlAccountInvitesEnabled) && isSSOEnabled)) {
-      createAndInviteNonPasswordUser(accountId, invite.getInviteToken(), email, false);
-    }
-    if (isPLNoEmailForSamlAccountInvitesEnabled && isSSOEnabled) {
-      return InviteOperationResponse.USER_INVITE_NOT_REQUIRED;
+      return TwoFactorAuthSettingsInfo.builder()
+          .email(email)
+          .twoFactorAuthenticationEnabled(true)
+          .mechanism(TwoFactorAuthMechanismInfo.TOTP)
+          .totpSecretKey(totpSecretKey)
+          .totpqrurl(otpUrl)
+          .build();
     } else {
-      ngAuditUserInviteCreateEvent(savedInvite);
+      return TwoFactorAuthSettingsInfo.builder().twoFactorAuthenticationEnabled(false).build();
     }
-    return InviteOperationResponse.USER_INVITED_SUCCESSFULLY;
   }
 
   private boolean isSSOEnabled(String accountIdentifier) {
     try {
       return CGRestUtils.getResponse(accountClient.isSSOEnabled(accountIdentifier));
     } catch (Exception ex) {
-      log.error("For account {} while making an accountClient call to check isSSOEnabled failed with exception: ",
-          accountIdentifier, ex);
+      log.error("NG User Invite: while making an accountClient call to check isSSOEnabled failed with exception: ", ex);
       throw ex;
     }
   }
@@ -580,8 +650,8 @@ public class InviteServiceImpl implements InviteService {
       return ngFeatureFlagHelperService.isEnabled(accountIdentifier, FeatureName.PL_NO_EMAIL_FOR_SAML_ACCOUNT_INVITES);
     } catch (Exception ex) {
       log.error(
-          "For account {} while making an accountClient call to check FF PL_NO_EMAIL_FOR_SAML_ACCOUNT_INVITES status failed with exception: ",
-          accountIdentifier, ex);
+          "NG User Invite: while making an accountClient call to check FF PL_NO_EMAIL_FOR_SAML_ACCOUNT_INVITES status failed with exception: ",
+          ex);
       throw ex;
     }
   }
@@ -591,8 +661,8 @@ public class InviteServiceImpl implements InviteService {
       return CGRestUtils.getResponse(accountClient.checkAutoInviteAcceptanceEnabledForAccount(accountIdentifier));
     } catch (Exception ex) {
       log.error(
-          "For account {} while making an accountClient call to check AutoInviteAcceptanceEnabled failed with exception: ",
-          accountIdentifier, ex);
+          "NG User Invite: while making an accountClient call to check AutoInviteAcceptanceEnabled failed with exception: ",
+          ex);
       throw ex;
     }
   }
@@ -605,10 +675,13 @@ public class InviteServiceImpl implements InviteService {
     inviteRepository.updateInvite(invite.getId(), update);
   }
 
-  private void sendInvitationMail(Invite invite, boolean isSSOEnabled, boolean isPLNoEmailForSamlAccountInvitesEnabled,
-      boolean isAutoInviteAcceptanceEnabled) throws URISyntaxException, UnsupportedEncodingException {
+  private void sendInvitationMail(Invite invite, boolean isPLNoEmailForSamlAccountInvitesEnabledWithSSOEnabled,
+      boolean isAutoInviteAcceptanceEnabledWithSSOEnabled, TwoFactorAuthSettingsInfo twoFactorAuthSettingsInfo)
+      throws URISyntaxException, UnsupportedEncodingException {
     updateJWTTokenInInvite(invite);
-    if (isPLNoEmailForSamlAccountInvitesEnabled && isSSOEnabled) {
+    if (isPLNoEmailForSamlAccountInvitesEnabledWithSSOEnabled
+        && !twoFactorAuthSettingsInfo.isTwoFactorAuthenticationEnabled()) {
+      log.info("NG User Invite: is not required as FF PL_NO_EMAIL_FOR_SAML_ACCOUNT_INVITES and SSO is enabled");
       return;
     }
     String url = isNgAuthUIEnabled ? getAcceptInviteUrl(invite) : getInvitationMailEmbedUrl(invite);
@@ -617,12 +690,23 @@ public class InviteServiceImpl implements InviteService {
                                                   .recipients(Collections.singletonList(invite.getEmail()))
                                                   .team(Team.PL)
                                                   .userGroups(Collections.emptyList());
-    if (isAutoInviteAcceptanceEnabled && isSSOEnabled) {
+
+    if (isAutoInviteAcceptanceEnabledWithSSOEnabled
+        || (isPLNoEmailForSamlAccountInvitesEnabledWithSSOEnabled
+            && twoFactorAuthSettingsInfo.isTwoFactorAuthenticationEnabled())) {
       emailChannelBuilder.templateId(EMAIL_NOTIFY_TEMPLATE_ID);
     } else {
       emailChannelBuilder.templateId(EMAIL_INVITE_TEMPLATE_ID);
     }
+
     Map<String, String> templateData = new HashMap<>();
+    templateData.put(SHOULD_MAIL_CONTAIN_TWO_FACTOR_INFO,
+        Boolean.toString(twoFactorAuthSettingsInfo.isTwoFactorAuthenticationEnabled()));
+    if (twoFactorAuthSettingsInfo.isTwoFactorAuthenticationEnabled()) {
+      templateData.put(TOTP_SECRET, twoFactorAuthSettingsInfo.getTotpSecretKey());
+      templateData.put(TOTP_URL, twoFactorAuthSettingsInfo.getTotpqrurl());
+    }
+
     templateData.put("url", url);
     if (!isBlank(invite.getProjectIdentifier())) {
       templateData.put("projectname",
@@ -635,7 +719,24 @@ public class InviteServiceImpl implements InviteService {
       templateData.put("accountname", accountOrgProjectHelper.getAccountName(invite.getAccountIdentifier()));
     }
     emailChannelBuilder.templateData(templateData);
-    notificationClient.sendNotificationAsync(emailChannelBuilder.build());
+
+    NotificationResult notificationResult = notificationClient.sendNotificationAsync(emailChannelBuilder.build());
+    log.info("NG User Invite: notification with notificationId {} and templateId {} is successfully sent",
+        notificationResult.getNotificationId(), emailChannelBuilder.build().getTemplateId());
+  }
+
+  private AccountDTO getAccountDTO(String accountIdentifier) {
+    try {
+      return CGRestUtils.getResponse(accountClient.getAccountDTO(accountIdentifier));
+    } catch (Exception ex) {
+      log.error("NG User Invite:while making an accountClient call to get AccountDTO failed with exception: ",
+          accountIdentifier, ex);
+      throw ex;
+    }
+  }
+
+  private String generateOtpUrl(String companyName, String userEmailAddress, String secret) {
+    return format(TOTP_URL_PREFIX, companyName.replace(" ", "-"), userEmailAddress, secret);
   }
 
   private void ngAuditUserInviteCreateEvent(Invite invite) {

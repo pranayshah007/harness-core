@@ -57,6 +57,8 @@ import io.harness.cdng.k8s.resources.azure.service.AzureResourceService;
 import io.harness.cdng.k8s.resources.azure.service.AzureResourceServiceImpl;
 import io.harness.cdng.k8s.resources.gcp.service.GcpResourceService;
 import io.harness.cdng.k8s.resources.gcp.service.impl.GcpResourceServiceImpl;
+import io.harness.cdng.provision.terraform.executions.TerraformPlanExectionDetailsService;
+import io.harness.cdng.provision.terraform.executions.TerraformPlanExectionDetailsServiceImpl;
 import io.harness.cdng.servicenow.resources.service.ServiceNowResourceService;
 import io.harness.cdng.servicenow.resources.service.ServiceNowResourceServiceImpl;
 import io.harness.cdng.usage.impl.CDLicenseUsageImpl;
@@ -144,6 +146,7 @@ public class NGModule extends AbstractModule {
                 .setPriority(Thread.NORM_PRIORITY)
                 .build()));
     bind(StageExecutionInfoService.class).to(StageExecutionInfoServiceImpl.class);
+    bind(TerraformPlanExectionDetailsService.class).to(TerraformPlanExectionDetailsServiceImpl.class);
     bind(InstanceDeploymentInfoService.class).to(InstanceDeploymentInfoServiceImpl.class);
     bind(GARResourceService.class).to(GARResourceServiceImpl.class);
     MapBinder<String, FilterPropertiesMapper> filterPropertiesMapper =

@@ -56,6 +56,7 @@ public class ECRStep extends AbstractStepExecutable {
                                                           .imageName(image)
                                                           .tag(tag)
                                                           .url(format(ECR_URL_FORMAT, account, image, digest, region))
+                                                          .digest(digest)
                                                           .build());
         });
       }

@@ -111,5 +111,13 @@ public final class VerificationTask implements UuidAware, CreatedAtAware, Accoun
     @NonNull private String sliId;
   }
 
-  public enum TaskType { LIVE_MONITORING, DEPLOYMENT, SLI }
+  @Value
+  @Builder
+  @FieldNameConstants(innerTypeName = "CompositeSLOInfoKeys")
+  public static class CompositeSLOInfo extends TaskInfo {
+    private final TaskType taskType = TaskType.COMPOSITE_SLO;
+    @NonNull private String sloId;
+  }
+
+  public enum TaskType { LIVE_MONITORING, DEPLOYMENT, SLI, COMPOSITE_SLO }
 }

@@ -12,7 +12,6 @@ import static java.lang.String.format;
 import io.harness.account.services.AccountService;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.cdng.expressions.CDExpressionResolveFunctor;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.provision.terraform.TerraformConfig;
@@ -92,11 +91,6 @@ public class TerraformRollbackStep extends TaskExecutableWithRollbackAndRbac<Ter
         terraformStepHelper.generateFullIdentifier(stepParametersSpec.getProvisionerIdentifier(), ambiance);
     try (HIterator<TerraformConfig> configIterator = terraformConfigHelper.getIterator(ambiance, entityId)) {
       if (!configIterator.hasNext()) {
-        if (cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.EXPORT_TF_PLAN_JSON_NG)) {
-          terraformStepHelper.cleanupTfPlanJsonForProvisioner(
-              ambiance, stepParametersSpec.getPlanStepsFqn(), provisionerIdentifier);
-        }
-
         return TaskRequest.newBuilder()
             .setSkipTaskRequest(
                 SkipTaskRequest.newBuilder()

@@ -121,7 +121,12 @@ public class EcsStepUtils extends CDStepHelper {
         FileStoreNodeDTO fileStoreNodeDTO = valuesFile.get();
         if (NGFileType.FILE.equals(fileStoreNodeDTO.getType())) {
           FileNodeDTO file = (FileNodeDTO) fileStoreNodeDTO;
-          fileContents.add(file.getContent());
+          if (isNotEmpty(file.getContent())) {
+            fileContents.add(file.getContent());
+          } else {
+            throw new InvalidRequestException(
+                format("The following file %s in Harness File Store has empty content", scopedFilePath));
+          }
           logCallback.saveExecutionLog(color(format("- %s", scopedFilePath), LogColor.White));
         } else {
           throw new UnsupportedOperationException("Only File type is supported. Please enter the correct file path");

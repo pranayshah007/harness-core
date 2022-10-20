@@ -48,6 +48,7 @@ import io.harness.service.GraphGenerationService;
 import io.harness.skip.service.VertexSkipperService;
 import io.harness.utils.PmsFeatureFlagService;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -125,7 +126,8 @@ public class GraphGenerationServiceImpl implements GraphGenerationService {
   }
 
   // This must always be called after acquiring the lock
-  private boolean updateGraphUnderLock(String planExecutionId) {
+  @VisibleForTesting
+  boolean updateGraphUnderLock(String planExecutionId) {
     OrchestrationGraph orchestrationGraph = getCachedOrchestrationGraph(planExecutionId);
     if (orchestrationGraph == null) {
       log.warn("[PMS_GRAPH] Graph not yet generated. Passing on to next iteration");
@@ -135,7 +137,8 @@ public class GraphGenerationServiceImpl implements GraphGenerationService {
   }
 
   // This must always be called after acquiring the lock
-  private boolean updateGraphUnderLock(OrchestrationGraph orchestrationGraph) {
+  @VisibleForTesting
+  boolean updateGraphUnderLock(OrchestrationGraph orchestrationGraph) {
     if (orchestrationGraph == null) {
       return false;
     }

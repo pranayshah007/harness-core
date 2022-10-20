@@ -111,6 +111,8 @@ public interface WorkflowExecutionService extends StateStatusUpdate {
 
   WorkflowExecution getWorkflowExecution(@NotNull String appId, @NotNull String workflowExecutionId);
 
+  WorkflowExecution getUpdatedWorkflowExecution(@NotNull String appId, @NotNull String workflowExecutionId);
+
   String getPipelineExecutionId(@NotNull String appId, @NotNull String workflowExecutionId);
 
   WorkflowExecution getExecutionDetailsWithoutGraph(String appId, String workflowExecutionId);

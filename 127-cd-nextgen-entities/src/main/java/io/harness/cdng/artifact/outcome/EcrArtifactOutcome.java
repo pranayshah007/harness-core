@@ -15,6 +15,7 @@ import io.harness.cdng.artifact.ArtifactSummary;
 import io.harness.cdng.artifact.EcrArtifactSummary;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import java.util.Map;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Value;
@@ -49,6 +50,7 @@ public class EcrArtifactOutcome implements ArtifactOutcome {
   /** imagePullSecret for Ecr credentials base encoded.*/
   String imagePullSecret;
 
+  Map<String, String> label;
   @Override
   public ArtifactSummary getArtifactSummary() {
     return EcrArtifactSummary.builder().imagePath(imagePath).tag(tag).build();

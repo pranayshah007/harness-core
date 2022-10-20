@@ -96,7 +96,7 @@ public class ELKHealthSourceSpec extends HealthSourceSpec {
 
   @Override
   public DataSourceType getType() {
-    return DataSourceType.ELK_LOG;
+    return DataSourceType.ELASTICSEARCH;
   }
 
   @Override

@@ -419,7 +419,7 @@ public class CIStepGroupUtils {
     if (cacheDir != null && cacheDir.size() > 0) {
       envVariables.put(PLUGIN_MOUNT, String.join(",", cacheDir));
     }
-    envVariables.put(PLUGIN_EXIT_CODE, STRING_TRUE);
+    envVariables.put(PLUGIN_EXIT_CODE, STRING_FALSE);
     envVariables.put(PLUGIN_ARCHIVE_FORMAT, CACHE_ARCHIVE_TYPE_TAR);
     envVariables.put(PLUGIN_BACKEND, CACHE_GCS_BACKEND);
     envVariables.put(PLUGIN_BACKEND_OPERATION_TIMEOUT, TEN_K_SECONDS);

@@ -27,6 +27,7 @@ import io.harness.ngtriggers.beans.dto.NGTriggerCatalogDTO;
 import io.harness.ngtriggers.beans.dto.NGTriggerDetailsResponseDTO;
 import io.harness.ngtriggers.beans.dto.NGTriggerResponseDTO;
 import io.harness.ngtriggers.beans.dto.TriggerDetails;
+import io.harness.ngtriggers.beans.dto.ValidatePipelineInputsResponseDTO;
 import io.harness.ngtriggers.beans.entity.NGTriggerEntity;
 import io.harness.ngtriggers.beans.entity.NGTriggerEntity.NGTriggerEntityKeys;
 import io.harness.ngtriggers.beans.entity.metadata.catalog.TriggerCatalogItem;
@@ -45,6 +46,7 @@ import com.codahale.metrics.annotation.Timed;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
@@ -54,6 +56,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.util.CollectionUtils;
 
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
 @PipelineServiceAuth
@@ -201,5 +204,31 @@ public class NGTriggerResourceImpl implements NGTriggerResource {
   public ResponseDTO<NGTriggerCatalogDTO> getTriggerCatalog(String accountIdentifier) {
     List<TriggerCatalogItem> triggerCatalog = ngTriggerService.getTriggerCatalog(accountIdentifier);
     return ResponseDTO.newResponse(ngTriggerElementMapper.toCatalogDTO(triggerCatalog));
+  }
+
+  @Override
+  public ResponseDTO<ValidatePipelineInputsResponseDTO> validatePipelineInputs(
+      @NotNull @AccountIdentifier String accountIdentifier, @NotNull @OrgIdentifier String orgIdentifier,
+      @NotNull @ProjectIdentifier String projectIdentifier, @NotNull @ResourceIdentifier String targetIdentifier,
+      String triggerIdentifier) {
+    Optional<NGTriggerEntity> ngTriggerEntity = ngTriggerService.get(
+        accountIdentifier, orgIdentifier, projectIdentifier, targetIdentifier, triggerIdentifier, false);
+    if (!ngTriggerEntity.isPresent()) {
+      throw new InvalidRequestException(String.format("Trigger %s doesn't not exists", triggerIdentifier));
+    }
+    try {
+      TriggerDetails triggerDetails =
+          ngTriggerService.fetchTriggerEntity(accountIdentifier, orgIdentifier, projectIdentifier, targetIdentifier,
+              triggerIdentifier, ngTriggerEntity.get().getYaml(), ngTriggerEntity.get().getWithServiceV2());
+
+      Map<String, Map<String, String>> errorMap = ngTriggerService.validatePipelineRef(triggerDetails);
+      if (!CollectionUtils.isEmpty(errorMap)) {
+        return ResponseDTO.newResponse(
+            ValidatePipelineInputsResponseDTO.builder().validYaml(false).errorMap(errorMap).build());
+      }
+    } catch (Exception exception) {
+      throw new InvalidRequestException("Failed while validating trigger yaml: ", exception);
+    }
+    return ResponseDTO.newResponse(ValidatePipelineInputsResponseDTO.builder().validYaml(true).build());
   }
 }

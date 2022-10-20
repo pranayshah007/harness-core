@@ -27,6 +27,7 @@ import io.harness.pms.governance.ExpansionRequestsExtractor;
 import io.harness.pms.governance.JsonExpander;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.PipelineEntity.PipelineEntityKeys;
+import io.harness.pms.yaml.YamlVersion;
 import io.harness.repositories.pipeline.PMSPipelineRepository;
 import io.harness.rule.Owner;
 import io.harness.telemetry.TelemetryReporter;
@@ -84,6 +85,7 @@ public class PipelineServiceFormCriteriaTest extends PipelineServiceTestBase {
                          .identifier(PIPELINE_IDENTIFIER)
                          .name(PIPELINE_IDENTIFIER)
                          .yaml(yaml)
+                         .harnessVersion(YamlVersion.V0)
                          .stageCount(1)
                          .stageName("qaStage")
                          .version(null)
@@ -103,7 +105,9 @@ public class PipelineServiceFormCriteriaTest extends PipelineServiceTestBase {
     doReturn(Optional.empty()).when(pipelineMetadataService).getMetadata(any(), any(), any(), any());
     on(pmsPipelineService).set("pmsPipelineRepository", pmsPipelineRepository);
     doReturn(outboxEvent).when(outboxService).save(any());
-    doReturn(updatedPipelineEntity).when(pmsPipelineServiceHelperMocked).updatePipelineInfo(pipelineEntity);
+    doReturn(updatedPipelineEntity)
+        .when(pmsPipelineServiceHelperMocked)
+        .updatePipelineInfo(pipelineEntity, YamlVersion.V0);
     doReturn(GovernanceMetadata.newBuilder().setDeny(false).build())
         .when(pmsPipelineServiceHelperMocked)
         .validatePipelineYaml(any());
