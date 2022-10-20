@@ -11,14 +11,10 @@ import com.codahale.metrics.annotation.ExceptionMetered;
 import com.codahale.metrics.annotation.Timed;
 import com.google.inject.Inject;
 import io.harness.NGCommonEntityConstants;
-import static io.harness.NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE;
 import io.harness.accesscontrol.AccountIdentifier;
-import static io.harness.annotations.dev.HarnessTeam.CE;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.CENextGenConfiguration;
 import io.harness.ccm.rbac.CCMRbacHelper;
-//import io.harness.ccm.scheduler.SchedulerClient;
-//import io.harness.ccm.scheduler.SchedulerDTO;
 import io.harness.ccm.utils.LogAccountIdentifier;
 import io.harness.ccm.views.dto.CreatePolicyPackDTO;
 import io.harness.ccm.views.entities.Policy;
@@ -29,9 +25,6 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
-import io.harness.security.annotations.NextGenManagerAuth;
-
-
 import io.harness.security.annotations.PublicApi;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -42,8 +35,9 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
-import java.util.ArrayList;
-import java.util.List;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
@@ -55,8 +49,10 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
+import java.util.ArrayList;
+import java.util.List;
+
+import static io.harness.annotations.dev.HarnessTeam.CE;
 
 @Api("governance")
 @Path("governance")
@@ -85,13 +81,11 @@ import org.springframework.stereotype.Service;
       , @ApiResponse(code = 500, response = ErrorDTO.class, message = "Internal server error")
     })
 
-
 public class GovernancePolicyPackResource {
   public static final String ACCOUNT_ID = "accountId";
   private final CCMRbacHelper rbacHelper;
   private final PolicyPackService policyPackService;
   private final GovernancePolicyService policyService;
- // @Inject SchedulerClient schedulerClient;
   @Inject CENextGenConfiguration configuration;
 
   @Inject
@@ -113,7 +107,7 @@ public class GovernancePolicyPackResource {
         ApiResponse(responseCode = "default", description = "Returns newly created policy set")
       })
   public ResponseDTO<PolicyPack>
-  create(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
+  create(@Parameter(required = true, description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
              NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @RequestBody(required = true,
           description = "Request body containing Policy store object") @Valid CreatePolicyPackDTO createPolicySetDTO) {
@@ -141,7 +135,7 @@ public class GovernancePolicyPackResource {
             content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
       })
   public ResponseDTO<PolicyPack>
-  updatePolicy(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
+  updatePolicy(@Parameter(required = true, description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
                    NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @RequestBody(required = true,
           description = "Request body containing ceViewFolder object") @Valid CreatePolicyPackDTO createPolicySetDTO) {
@@ -166,10 +160,11 @@ public class GovernancePolicyPackResource {
             description = "Returns List of policies", content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
       })
   public ResponseDTO<List<Policy>>
-  listPolicy(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
-          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
-             @RequestBody(
-                     required = true, description = "Request body containing policy pack object") @Valid  CreatePolicyPackDTO createPolicyPackDTO,@PathParam("id") @Parameter(
+  listPolicy(@Parameter(required = true, description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
+                 NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
+      @RequestBody(required = true,
+          description = "Request body containing policy pack object") @Valid CreatePolicyPackDTO createPolicyPackDTO,
+      @PathParam("id") @Parameter(
           required = true, description = "Unique identifier for the policy") @NotNull @Valid String uuid) {
     // rbacHelper.checkPolicyPackPermission(accountId, null, null);
     PolicyPack query = createPolicyPackDTO.getPolicyPack();
@@ -180,22 +175,21 @@ public class GovernancePolicyPackResource {
     return ResponseDTO.newResponse(Policies);
   }
 
-
   @POST
   @Path("policypack/list")
   @ApiOperation(value = "Get policies for pack", nickname = "getPolicies")
   @Produces(MediaType.APPLICATION_JSON)
   @Operation(operationId = "getPolicies", description = "Fetch policies ", summary = "Fetch policies for account",
-          responses =
-                  {
-                          @io.swagger.v3.oas.annotations.responses.ApiResponse(
-                                  description = "Returns List of policies", content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
-                  })
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            description = "Returns List of policies", content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
+      })
   public ResponseDTO<List<PolicyPack>>
-  listPolicyPack(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
-          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
-             @RequestBody(
-                     required = true, description = "Request body containing policy pack object") @Valid  CreatePolicyPackDTO createPolicyPackDTO) {
+  listPolicyPack(@Parameter(required = true, description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
+                     NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
+      @RequestBody(required = true,
+          description = "Request body containing policy pack object") @Valid CreatePolicyPackDTO createPolicyPackDTO) {
     // rbacHelper.checkPolicyPackPermission(accountId, null, null);
 
     return ResponseDTO.newResponse(policyPackService.list(accountId));
@@ -208,22 +202,21 @@ public class GovernancePolicyPackResource {
   @ApiOperation(value = "Delete a policy set", nickname = "deletePolicySet")
   @LogAccountIdentifier
   @Operation(operationId = "deletePolicySet", description = "Delete a Policy set for the given a ID.",
-          summary = "Delete a policy set",
-          responses =
-                  {
-                          @io.swagger.v3.oas.annotations.responses.
-                                  ApiResponse(description = "A boolean whether the delete was successful or not",
-                                  content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
-                  })
+      summary = "Delete a policy set",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(description = "A boolean whether the delete was successful or not",
+            content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
+      })
   public ResponseDTO<Boolean>
-  delete(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
-          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
-         @PathParam("policyPackId") @Parameter(
-                 required = true, description = "Unique identifier for the policy") @NotNull @Valid String uuid) {
+  delete(@Parameter(required = true, description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
+             NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
+      @PathParam("policyPackId") @Parameter(
+          required = true, description = "Unique identifier for the policy") @NotNull @Valid String uuid) {
     // rbacHelper.checkPolicyPackDeletePermission(accountId, null, null);
     policyPackService.listid(accountId,uuid,false);
     boolean result = policyPackService.delete(accountId, uuid);
     return ResponseDTO.newResponse(result);
   }
-
 }

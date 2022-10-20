@@ -27,7 +27,6 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
-import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.security.annotations.PublicApi;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -58,7 +57,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import static io.harness.NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE;
 import static io.harness.annotations.dev.HarnessTeam.CE;
 
 @Slf4j
@@ -66,8 +64,6 @@ import static io.harness.annotations.dev.HarnessTeam.CE;
 @Api("governance")
 @Path("governance")
 @OwnedBy(CE)
-@Produces({"application/json", "text/yaml"})
-@Consumes({"application/json"})
 @Tag(name = "Policy", description = "This contains APIs related to Policy Management ")
 @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Bad Request",
     content =
@@ -103,6 +99,7 @@ public class GovernancePolicyResource {
   @Hidden
   @Path("policy")
   @Consumes(MediaType.APPLICATION_JSON)
+  @Produces(MediaType.APPLICATION_JSON)
   @ApiOperation(value = "Add a new policy internal api", nickname = "addPolicyNameInternal")
   @Operation(operationId = "addPolicyNameInternal", summary = "Add a new OOTB policy to be executed",
       responses =
@@ -111,11 +108,11 @@ public class GovernancePolicyResource {
         ApiResponse(responseCode = "default", description = "Returns newly created policy")
       })
   public ResponseDTO<Policy>
-  create(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
+  create(@Parameter(required = true, description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
              NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @RequestBody(required = true,
           description = "Request body containing Policy store object") @Valid CreatePolicyDTO createPolicyDTO) {
-    //rbacHelper.checkPolicyEditPermission(accountId, null, null);
+    // rbacHelper.checkPolicyEditPermission(accountId, null, null);
     Policy policy = createPolicyDTO.getPolicy();
     policy.setAccountId(accountId);
     if(governancePolicyService.listid(accountId,policy.getUuid(),true)!=null)
@@ -132,6 +129,7 @@ public class GovernancePolicyResource {
   @Hidden
   @Path("policy")
   @Consumes(MediaType.APPLICATION_JSON)
+  @Produces(MediaType.APPLICATION_JSON)
   @ApiOperation(value = "Update a existing OOTB Policy", nickname = "updatePolicy")
   @LogAccountIdentifier
   @Operation(operationId = "updatePolicy", description = "Update a Policy", summary = "Update a Policy",
@@ -141,11 +139,11 @@ public class GovernancePolicyResource {
             content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
       })
   public ResponseDTO<Policy>
-  updatePolicy(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
+  updatePolicy(@Parameter(required = true, description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
                    NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @RequestBody(required = true,
           description = "Request body containing policy object") @Valid CreatePolicyDTO createPolicyDTO) {
-    //rbacHelper.checkPolicyEditPermission(accountId, null, null);
+    // rbacHelper.checkPolicyEditPermission(accountId, null, null);
     Policy policy = createPolicyDTO.getPolicy();
     policy.toDTO();
     policy.setAccountId(accountId);
@@ -171,7 +169,7 @@ public class GovernancePolicyResource {
             content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
       })
   public ResponseDTO<Boolean>
-  delete(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
+  delete(@Parameter(required = true, description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
              NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @PathParam("policyId") @Parameter(
           required = true, description = "Unique identifier for the policy") @NotNull @Valid String uuid) {
@@ -186,6 +184,7 @@ public class GovernancePolicyResource {
   @POST
   @Path("policy/list")
   @ApiOperation(value = "Get OOTB policies for account", nickname = "getPolicies")
+  @Consumes(MediaType.APPLICATION_JSON)
   @Produces(MediaType.APPLICATION_JSON)
   @Operation(operationId = "getPolicies", description = "Fetch policies ", summary = "Fetch policies for account",
       responses =
@@ -194,11 +193,11 @@ public class GovernancePolicyResource {
             description = "Returns List of policies", content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
       })
   public ResponseDTO<List<Policy>>
-  listPolicy(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
+  listPolicy(@Parameter(required = true, description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
                  NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @RequestBody(
           required = true, description = "Request body containing ceViewFolder object") @Valid ListDTO listDTO) {
-    //rbacHelper.checkPolicyViewPermission(accountId, null, null);
+    // rbacHelper.checkPolicyViewPermission(accountId, null, null);
     PolicyRequest query = listDTO.getPolicyRequest();
     List<Policy> Policies = new ArrayList<>();
     query.setAccountId(accountId);
@@ -237,6 +236,7 @@ public class GovernancePolicyResource {
   @Timed
   @ExceptionMetered
   @Consumes(MediaType.APPLICATION_JSON)
+  @Produces(MediaType.APPLICATION_JSON)
   @ApiOperation(value = "Enqueues job for execution", nickname = "enqueueGovernanceJob")
   // TODO: Also check with PL team as this does not require accountId to be passed, how to add accountId in the log
   // context here ?
@@ -251,9 +251,11 @@ public class GovernancePolicyResource {
   enqueue(@RequestBody(required = true, description = "Request body for queuing the governance job")
       @Valid GovernanceJobEnqueueDTO governanceJobEnqueueDTO) throws IOException {
     log.info("Policy enforcement config id is {}", governanceJobEnqueueDTO.getPolicyEnforcementId());
-    // Next is fetch from Mongo this policySetId and enqueue in the Faktory queue one by one.
+    // TODO: Next is fetch from Mongo this policySetId and enqueue in the Faktory queue one by one.
     try {
-      FaktoryProducer.Push("aws", "aws", "");
+      // TEST
+      FaktoryProducer.Push("aws", "aws", "{}");
+      log.info("Pushed job in Faktory!");
     } catch (IOException e) {
       log.error("{}", e);
     }

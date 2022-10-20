@@ -15,12 +15,6 @@ import static io.harness.audit.ResourceTypeConstants.PERSPECTIVE;
 import static io.harness.audit.ResourceTypeConstants.PERSPECTIVE_BUDGET;
 import static io.harness.audit.ResourceTypeConstants.PERSPECTIVE_FOLDER;
 import static io.harness.audit.ResourceTypeConstants.PERSPECTIVE_REPORT;
-import io.harness.ccm.views.service.GovernancePolicyService;
-import io.harness.ccm.views.service.PolicyEnforcementService;
-import io.harness.ccm.views.service.PolicyPackService;
-import io.harness.ccm.views.service.impl.GovernancePolicyServiceImpl;
-import io.harness.ccm.views.service.impl.PolicyEnforcementServiceImpl;
-import io.harness.ccm.views.service.impl.PolicyPackServiceImpl;
 import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.CONNECTOR_ENTITY;
 import static io.harness.lock.DistributedLockImplementation.MONGO;
@@ -63,7 +57,8 @@ import io.harness.ccm.rbac.CCMRbacHelper;
 import io.harness.ccm.rbac.CCMRbacHelperImpl;
 import io.harness.ccm.remote.mapper.anomaly.AnomalyFilterPropertiesMapper;
 import io.harness.ccm.remote.mapper.recommendation.CCMRecommendationFilterPropertiesMapper;
-//import io.harness.ccm.scheduler.SchedulerClientModule;
+import io.harness.ccm.scheduler.SchedulerClientModule;
+// import io.harness.ccm.scheduler.SchedulerClientModule;
 import io.harness.ccm.service.impl.AWSBucketPolicyHelperServiceImpl;
 import io.harness.ccm.service.impl.AWSOrganizationHelperServiceImpl;
 import io.harness.ccm.service.impl.AnomalyServiceImpl;
@@ -96,11 +91,17 @@ import io.harness.ccm.views.businessMapping.service.intf.BusinessMappingService;
 import io.harness.ccm.views.service.CEReportScheduleService;
 import io.harness.ccm.views.service.CEViewFolderService;
 import io.harness.ccm.views.service.CEViewService;
+import io.harness.ccm.views.service.GovernancePolicyService;
+import io.harness.ccm.views.service.PolicyEnforcementService;
+import io.harness.ccm.views.service.PolicyPackService;
 import io.harness.ccm.views.service.ViewCustomFieldService;
 import io.harness.ccm.views.service.ViewsBillingService;
 import io.harness.ccm.views.service.impl.CEReportScheduleServiceImpl;
 import io.harness.ccm.views.service.impl.CEViewFolderServiceImpl;
 import io.harness.ccm.views.service.impl.CEViewServiceImpl;
+import io.harness.ccm.views.service.impl.GovernancePolicyServiceImpl;
+import io.harness.ccm.views.service.impl.PolicyEnforcementServiceImpl;
+import io.harness.ccm.views.service.impl.PolicyPackServiceImpl;
 import io.harness.ccm.views.service.impl.ViewCustomFieldServiceImpl;
 import io.harness.ccm.views.service.impl.ViewsBillingServiceImpl;
 import io.harness.connector.ConnectorResourceClientModule;
@@ -272,6 +273,8 @@ public class CENextGenModule extends AbstractModule {
         configuration.getNgManagerServiceSecret(), CE_NEXT_GEN.getServiceId(), ClientMode.PRIVILEGED));
     install(new LightwingClientModule(configuration.getLightwingAutoCUDClientConfig(),
         configuration.getNgManagerServiceSecret(), CE_NEXT_GEN.getServiceId(), ClientMode.PRIVILEGED));
+    install(new SchedulerClientModule(configuration.getDkronClientConfig(), configuration.getNgManagerServiceSecret(),
+        CE_NEXT_GEN.getServiceId(), ClientMode.PRIVILEGED));
     install(new K8sWatchTaskResourceClientModule(
         configuration.getManagerClientConfig(), configuration.getNgManagerServiceSecret(), CE_NEXT_GEN.getServiceId()));
     install(new TokenClientModule(configuration.getNgManagerClientConfig(), configuration.getNgManagerServiceSecret(),

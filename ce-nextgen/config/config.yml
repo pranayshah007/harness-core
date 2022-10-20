@@ -236,4 +236,5 @@ dkronClientConfig:
 governanceConfig:
   useDkron: true
   callbackApiEndpoint: http://localhost:7340/ccm/api/governance/enqueue
+  dkronJobEnabled: true
 
