@@ -7,6 +7,7 @@
 
 package io.harness.ngmigration.service.entity;
 
+import static io.harness.beans.SearchFilter.Operator.IN;
 import static io.harness.encryption.Scope.PROJECT;
 
 import static software.wings.ngmigration.NGMigrationEntityType.APPLICATION;
@@ -14,6 +15,8 @@ import static software.wings.ngmigration.NGMigrationEntityType.APPLICATION;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.MigratedEntityMapping;
+import io.harness.beans.PageRequest;
+import io.harness.beans.PageResponse;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.gitsync.beans.YamlDTO;
@@ -36,6 +39,7 @@ import io.harness.serializer.JsonUtils;
 
 import software.wings.beans.Application;
 import software.wings.beans.Service;
+import software.wings.beans.template.Template;
 import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.CgEntityNode;
 import software.wings.ngmigration.DiscoveryNode;
@@ -58,6 +62,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import retrofit2.Response;
+import software.wings.service.intfc.template.TemplateService;
 
 @OwnedBy(HarnessTeam.CDC)
 @Slf4j
@@ -66,6 +71,8 @@ public class AppMigrationService extends NgMigrationService {
   @Inject private HPersistence hPersistence;
   @Inject private EnvironmentService environmentService;
   @Inject private ServiceResourceService serviceResourceService;
+
+  @Inject private TemplateService templateService;
 
   @Inject private MigratorExpressionUtils migratorExpressionUtils;
 
@@ -111,6 +118,18 @@ public class AppMigrationService extends NgMigrationService {
                           .distinct()
                           .map(id -> CgEntityId.builder().id(id).type(NGMigrationEntityType.ENVIRONMENT).build())
                           .collect(Collectors.toSet()));
+    }
+
+    PageRequest<Template> pageRequest = new PageRequest<>();
+    pageRequest.addFilter(Template.TemplateKeys.accountId, IN, application.getAccountId());
+    pageRequest.addFilter(Template.TemplateKeys.appId, IN, appId);
+    PageResponse<Template> pageResponse = templateService.list(pageRequest, new ArrayList<>(), application.getAccountId(), true);
+    List<Template> templates = pageResponse.getResponse();
+    if (EmptyPredicate.isNotEmpty(templates)) {
+      children.addAll(templates.stream()
+              .distinct()
+              .map(template -> CgEntityId.builder().id(template.getUuid()).type(NGMigrationEntityType.TEMPLATE).build())
+              .collect(Collectors.toSet()));
     }
 
     return DiscoveryNode.builder()

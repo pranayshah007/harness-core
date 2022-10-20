@@ -55,8 +55,6 @@ public class MigratorModule extends AbstractModule {
     try {
       install(new ServiceResourceClientModule(migratorConfig.getNgClientConfig(),
           migratorConfig.getCg().getPortal().getJwtNextGenManagerSecret(), MIGRATOR.getServiceId()));
-      install(new ServiceResourceClientModule(migratorConfig.getTemplateServiceClientConfig(),
-          migratorConfig.getCg().getPortal().getJwtNextGenManagerSecret(), MIGRATOR.getServiceId()));
     } catch (Exception ex) {
       log.info("Could not create the service resource client module", ex);
     }

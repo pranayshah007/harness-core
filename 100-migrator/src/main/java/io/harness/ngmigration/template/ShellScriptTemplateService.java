@@ -13,28 +13,24 @@ import io.harness.ng.core.template.TemplateEntityType;
 import io.harness.ngmigration.service.MigratorUtility;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.serializer.JsonUtils;
-import io.harness.shell.ScriptType;
-import io.harness.steps.shellscript.ShellType;
 import io.harness.template.beans.yaml.NGTemplateConfig;
 import io.harness.template.beans.yaml.NGTemplateInfoConfig;
 import io.harness.yaml.core.variables.NGVariable;
+import io.harness.yaml.core.variables.NGVariableType;
 import io.harness.yaml.core.variables.StringNGVariable;
 
 import software.wings.beans.template.Template;
-import software.wings.beans.template.command.HttpTemplate;
 import software.wings.beans.template.command.ShellScriptTemplate;
 
 import com.google.common.collect.ImmutableMap;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 public class ShellScriptTemplateService implements NgTemplateService {
   @Override
-  public YamlDTO getNgTemplateConfig(Template template) {
+  public YamlDTO getNgTemplateConfig(Template template, String orgIdentifier, String projectIdentifier) {
     ShellScriptTemplate shellScriptTemplate = (ShellScriptTemplate) template.getTemplateObject();
     List<Map<String, String>> outputVariables = new ArrayList<>();
     if (EmptyPredicate.isNotEmpty(shellScriptTemplate.getOutputVars())) {
@@ -42,16 +38,16 @@ public class ShellScriptTemplateService implements NgTemplateService {
         outputVariables.add(ImmutableMap.of("name", varName, "type", "String", "value", varName));
       }
     }
-    if (EmptyPredicate.isNotEmpty(shellScriptTemplate.getOutputVars())) {
+    if (EmptyPredicate.isNotEmpty(shellScriptTemplate.getSecretOutputVars())) {
       for (String varName : shellScriptTemplate.getSecretOutputVars().split(",")) {
         outputVariables.add(ImmutableMap.of("name", varName, "type", "Secret", "value", varName));
       }
     }
     Map<String, Object> templateSpec =
         ImmutableMap.<String, Object>builder()
-            .put("source",
-                ImmutableMap.of("type", "Inline", "source",
-                    ImmutableMap.of("spec", ImmutableMap.of("script", shellScriptTemplate.getScriptString()))))
+            .put("onDelegate", true)
+                .put("source",
+                ImmutableMap.of("type", "Inline",  "spec", ImmutableMap.of("script", shellScriptTemplate.getScriptString())))
             .put("shell", "BASH".equals(shellScriptTemplate.getScriptType()) ? "Bash" : "PowerShell")
             .put("outputVariables", outputVariables)
             .build();
@@ -62,6 +58,7 @@ public class ShellScriptTemplateService implements NgTemplateService {
                       .map(variable
                           -> StringNGVariable.builder()
                                  .name(variable.getName())
+                              .type(NGVariableType.STRING)
                                  .value(ParameterField.createValueField(variable.getValue()))
                                  .build())
                       .collect(Collectors.toList());
@@ -72,9 +69,11 @@ public class ShellScriptTemplateService implements NgTemplateService {
                                 .identifier(MigratorUtility.generateIdentifier(template.getName()))
                                 .variables(variables)
                                 .name(template.getName())
-                                .versionLabel(template.getVersion().toString())
+                .projectIdentifier(projectIdentifier)
+                .orgIdentifier(orgIdentifier)
+                                .versionLabel("v"+template.getVersion().toString())
                                 .spec(JsonUtils.asTree(ImmutableMap.of("spec", templateSpec, "type", "ShellScript",
-                                    "timeout", shellScriptTemplate.getTimeoutMillis() / 1000 + "s")))
+                                    "timeout", shellScriptTemplate.getTimeoutMillis()<10000? "10s": shellScriptTemplate.getTimeoutMillis() / 1000 + "s")))
                                 .build())
         .build();
   }

@@ -14,15 +14,13 @@ import io.harness.exception.InvalidRequestException;
 import software.wings.beans.template.Template;
 import software.wings.beans.template.TemplateType;
 
-import com.google.inject.Inject;
-
 @OwnedBy(HarnessTeam.CDC)
 public class TemplateFactory {
   private static final HttpTemplateService httpTemplateService = new HttpTemplateService();
 
   private static final ShellScriptTemplateService shellScriptTemplateService = new ShellScriptTemplateService();
   public static NgTemplateService getTemplateService(Template template) {
-    if (TemplateType.SSH.name().equals(template.getType())) {
+    if (TemplateType.SHELL_SCRIPT.name().equals(template.getType())) {
       return shellScriptTemplateService;
     } else if (TemplateType.HTTP.name().equals(template.getType())) {
       return httpTemplateService;

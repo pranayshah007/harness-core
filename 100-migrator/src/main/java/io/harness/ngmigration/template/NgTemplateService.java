@@ -12,8 +12,16 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.gitsync.beans.YamlDTO;
 
 import software.wings.beans.template.Template;
+import software.wings.beans.template.command.HttpTemplate;
+import software.wings.beans.template.command.ShellScriptTemplate;
+import software.wings.ngmigration.NGMigrationStatus;
 
 @OwnedBy(HarnessTeam.CDC)
 public interface NgTemplateService {
-  YamlDTO getNgTemplateConfig(Template template);
+
+  static boolean isMigrationSupported(Template template) {
+    return template.getTemplateObject() instanceof HttpTemplate
+            || template.getTemplateObject() instanceof ShellScriptTemplate;
+  }
+  YamlDTO getNgTemplateConfig(Template template, String orgIdentifier, String projectIdentifier);
 }

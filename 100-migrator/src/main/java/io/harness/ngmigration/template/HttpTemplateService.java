@@ -16,29 +16,37 @@ import io.harness.serializer.JsonUtils;
 import io.harness.template.beans.yaml.NGTemplateConfig;
 import io.harness.template.beans.yaml.NGTemplateInfoConfig;
 import io.harness.yaml.core.variables.NGVariable;
+import io.harness.yaml.core.variables.NGVariableType;
 import io.harness.yaml.core.variables.StringNGVariable;
 
 import software.wings.beans.template.Template;
 import software.wings.beans.template.command.HttpTemplate;
 
 import com.google.common.collect.ImmutableMap;
-import java.util.ArrayList;
+
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 public class HttpTemplateService implements NgTemplateService {
   @Override
-  public YamlDTO getNgTemplateConfig(Template template) {
+  public YamlDTO getNgTemplateConfig(Template template, String orgIdentifier, String projectIdentifier) {
     HttpTemplate httpTemplate = (HttpTemplate) template.getTemplateObject();
 
-    Map<String, Object> templateSpec = ImmutableMap.<String, Object>builder()
-                                           .put("url", httpTemplate.getUrl())
-                                           .put("method", httpTemplate.getMethod())
-                                           .put("requestBody", httpTemplate.getBody())
-                                           .put("assertion", httpTemplate.getAssertion())
-                                           .put("headers", httpTemplate.getHeaders())
-                                           .build();
+    Map<String, Object> templateSpec = new HashMap<>();
+
+                                           templateSpec.put("url", httpTemplate.getUrl());
+                                           templateSpec.put("method", httpTemplate.getMethod());
+    if(EmptyPredicate.isNotEmpty(httpTemplate.getBody())){
+      templateSpec.put("requestBody", httpTemplate.getBody());
+    }
+    if(EmptyPredicate.isNotEmpty(httpTemplate.getAssertion())){
+      templateSpec.put("assertion", httpTemplate.getAssertion());
+    }
+    if(EmptyPredicate.isNotEmpty(httpTemplate.getHeaders())){
+      templateSpec.put("headers", httpTemplate.getHeaders());
+    }
     List<NGVariable> variables = null;
     if (EmptyPredicate.isNotEmpty(template.getVariables())) {
       variables = template.getVariables()
@@ -46,6 +54,7 @@ public class HttpTemplateService implements NgTemplateService {
                       .map(variable
                           -> StringNGVariable.builder()
                                  .name(variable.getName())
+                              .type(NGVariableType.STRING)
                                  .value(ParameterField.createValueField(variable.getValue()))
                                  .build())
                       .collect(Collectors.toList());
@@ -56,9 +65,11 @@ public class HttpTemplateService implements NgTemplateService {
                                 .identifier(MigratorUtility.generateIdentifier(template.getName()))
                                 .variables(variables)
                                 .name(template.getName())
-                                .versionLabel(template.getVersion().toString())
+                .projectIdentifier(projectIdentifier)
+                .orgIdentifier(orgIdentifier)
+                                .versionLabel("v"+template.getVersion().toString())
                                 .spec(JsonUtils.asTree(ImmutableMap.of("spec", templateSpec, "type", "Http", "timeout",
-                                    httpTemplate.getTimeoutMillis() / 1000 + "s")))
+                                    httpTemplate.getTimeoutMillis()<10000? "10s": httpTemplate.getTimeoutMillis() / 1000 + "s")))
                                 .build())
         .build();
   }
