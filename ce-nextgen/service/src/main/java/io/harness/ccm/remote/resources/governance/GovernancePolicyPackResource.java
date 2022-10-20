@@ -15,7 +15,8 @@ import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.CENextGenConfiguration;
 import io.harness.ccm.rbac.CCMRbacHelper;
-//import io.harness.ccm.scheduler.SchedulerClient;
+import io.harness.ccm.scheduler.SchedulerClient;
+import io.harness.ccm.scheduler.SchedulerDTO;
 import io.harness.ccm.utils.LogAccountIdentifier;
 import io.harness.ccm.views.dto.CreatePolicyPackDTO;
 import io.harness.ccm.views.entities.Policy;
@@ -26,7 +27,11 @@ import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.security.annotations.NextGenManagerAuth;
-import io.harness.security.annotations.PublicApi;
+
+import com.codahale.metrics.annotation.ExceptionMetered;
+import com.codahale.metrics.annotation.Timed;
+import com.google.gson.Gson;
+import com.google.inject.Inject;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
@@ -36,9 +41,8 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
-
+import java.util.ArrayList;
+import java.util.List;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
@@ -50,40 +54,36 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
-
-import static io.harness.NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE;
-import static io.harness.annotations.dev.HarnessTeam.CE;
-
-import java.util.ArrayList;
-import java.util.List;
-
+import lombok.extern.slf4j.Slf4j;
+import okhttp3.*;
+import org.springframework.stereotype.Service;
+import retrofit2.Response;
 
 @Api("governance")
 @Path("governance")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-//@NextGenManagerAuth
-@PublicApi
+@NextGenManagerAuth
 @Service
 @OwnedBy(CE)
 @Slf4j
 @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Bad Request",
-        content =
-                {
-                        @Content(mediaType = "application/json", schema = @Schema(implementation = FailureDTO.class))
-                        , @Content(mediaType = "application/yaml", schema = @Schema(implementation = FailureDTO.class))
-                })
+    content =
+    {
+      @Content(mediaType = "application/json", schema = @Schema(implementation = FailureDTO.class))
+      , @Content(mediaType = "application/yaml", schema = @Schema(implementation = FailureDTO.class))
+    })
 @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "Internal server error",
-        content =
-                {
-                        @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorDTO.class))
-                        , @Content(mediaType = "application/yaml", schema = @Schema(implementation = ErrorDTO.class))
-                })
+    content =
+    {
+      @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorDTO.class))
+      , @Content(mediaType = "application/yaml", schema = @Schema(implementation = ErrorDTO.class))
+    })
 @ApiResponses(value =
-        {
-                @ApiResponse(code = 400, response = FailureDTO.class, message = "Bad Request")
-                , @ApiResponse(code = 500, response = ErrorDTO.class, message = "Internal server error")
-        })
+    {
+      @ApiResponse(code = 400, response = FailureDTO.class, message = "Bad Request")
+      , @ApiResponse(code = 500, response = ErrorDTO.class, message = "Internal server error")
+    })
 
 
 public class GovernancePolicyPackResource {
@@ -91,13 +91,12 @@ public class GovernancePolicyPackResource {
   private final CCMRbacHelper rbacHelper;
   private final PolicyPackService policyPackService;
   private final GovernancePolicyService policyService;
-  //@Inject
-  //SchedulerClient schedulerClient;
-  @Inject
-  CENextGenConfiguration configuration;
+  @Inject SchedulerClient schedulerClient;
+  @Inject CENextGenConfiguration configuration;
 
   @Inject
-  public GovernancePolicyPackResource(PolicyPackService policyPackService, CCMRbacHelper rbacHelper, GovernancePolicyService policyService) {
+  public GovernancePolicyPackResource(
+      PolicyPackService policyPackService, CCMRbacHelper rbacHelper, GovernancePolicyService policyService) {
     this.rbacHelper = rbacHelper;
     this.policyPackService = policyPackService;
     this.policyService = policyService;
@@ -108,64 +107,47 @@ public class GovernancePolicyPackResource {
   @Consumes(MediaType.APPLICATION_JSON)
   @ApiOperation(value = "Add a new policy set", nickname = "addPolicySet")
   @Operation(operationId = "addPolicyNameInternal", summary = "Add a policy set ",
-          responses =
-                  {
-                          @io.swagger.v3.oas.annotations.responses.
-                                  ApiResponse(responseCode = "default", description = "Returns newly created policy set")
-                  })
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Returns newly created policy set")
+      })
   public ResponseDTO<PolicyPack>
   create(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
-          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
-         @RequestBody(required = true,
-                 description = "Request body containing Policy store object") @Valid CreatePolicyPackDTO createPolicyPackDTO) {
+             NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
+      @RequestBody(required = true,
+          description = "Request body containing Policy store object") @Valid CreatePolicyPackDTO createPolicySetDTO) {
     // rbacHelper.checkPolicySetEditPermission(accountId, null, null);
-    PolicyPack policyPack = createPolicyPackDTO.getPolicyPack();
-    policyPackService.check(accountId,policyPack.getPoliciesIdentifier());
+    PolicyPack policyPack = createPolicySetDTO.getPolicyPack();
+    for (String identifiers : policyPack.getPoliciesIdentifier()) {
+      policyService.listid(accountId, identifiers);
+    }
     policyPack.setAccountId(accountId);
     policyPackService.save(policyPack);
-//    if (configuration.getGovernanceConfig().isUseDkron()) {
-//      try {
-//        // JSONObject jsonObject = new JSONObject();
-//        JSONObject json = (JSONObject) JSONSerializer.toJSON( "{\n" +
-//                "  \"name\": \"get-cedev-version\",\n" +
-//                "  \"schedule\": \"@every 30s\",\n" +
-//                "  \"displayname\": \"nikunj_test_get-cedev-version\",\n" +
-//                "  \"timezone\": \"\",\n" +
-//                "  \"owner\": \"CCM Team\",\n" +
-//                "  \"owner_email\": \"nikunj.badjatya@harness.io\",\n" +
-//                "  \"disabled\": false,\n" +
-//                "  \"tags\": {\n" +
-//                "    \"server\": \"true\"\n" +
-//                "  },\n" +
-//                "  \"metadata\": {\n" +
-//                "    \"hi\": \"hello\"\n" +
-//                "  },\n" +
-//                "  \"retries\": 2,\n" +
-//                "  \"processors\": {\n" +
-//                "        \"log\": {\n" +
-//                "            \"forward\": \"true\"\n" +
-//                "        }\n" +
-//                "    },\n" +
-//                "  \"concurrency\": \"allow\",\n" +
-//                "  \"executor\": \"http\",\n" +
-//                "  \"executor_config\": {\n" +
-//                "      \"method\": \"GET\",\n" +
-//                "      \"url\": \"https://ce-dev.harness.io/api/version\",\n" +
-//                "      \"headers\": \"[]\",\n" +
-//                "      \"body\": \"\",\n" +
-//                "      \"timeout\": \"30\",\n" +
-//                "      \"expectCode\": \"200\",\n" +
-//                "      \"expectBody\": \"\",\n" +
-//                "      \"debug\": \"true\"\n" +
-//                "  }\n" +
-//                "}" );
-//
-//        okhttp3.RequestBody body = okhttp3.RequestBody.create(okhttp3.MediaType.parse("application/json"), json.toString());
-//        log.info("{}", NGRestUtils.getResponse(schedulerClient.createSchedule(body)));
-//      } catch (Exception e) {
-//        log.info("{}", e.toString());
-//      }
-    //}
+    if (configuration.getGovernanceConfig().isUseDkron()) {
+      log.info("USe dkron is enabled in config");
+      try {
+        SchedulerDTO schedulerDTO = SchedulerDTO.builder()
+                                        .schedule("@every 30s")
+                                        .disabled(true)
+                                        .name("get-cedev-version")
+                                        .displayname("get-cedev-version")
+                                        .timezone("UTC")
+                                        .executor("http")
+                                        .executor_config(SchedulerDTO.ExecutorConfig.builder()
+                                                             .method("GET")
+                                                             .url("http://ce-dev.harness.io/api/version")
+                                                             .build())
+                                        .build();
+        log.info(new Gson().toJson(schedulerDTO));
+        okhttp3.RequestBody body =
+            okhttp3.RequestBody.create(okhttp3.MediaType.parse("application/json"), new Gson().toJson(schedulerDTO));
+        Response res = schedulerClient.createSchedule(body).execute();
+        log.info("code: {}, message: {}, body: {}", res.code(), res.message(), res.body());
+      } catch (Exception e) {
+        log.info("{}", e.toString());
+      }
+    }
     // TODO: Add support for GCP cloud scheduler too
 
     return ResponseDTO.newResponse(policyPack.toDTO());
@@ -177,21 +159,20 @@ public class GovernancePolicyPackResource {
   @ApiOperation(value = "Update an existing policy set", nickname = "updatePolicySet")
   @LogAccountIdentifier
   @Operation(operationId = "updatePolicySet", description = "Update a Policy set", summary = "Update a Policy set",
-          responses =
-                  {
-                          @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "update a existing OOTB Policy",
-                                  content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
-                  })
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "update a existing OOTB Policy",
+            content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
+      })
   public ResponseDTO<PolicyPack>
   updatePolicy(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
-          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
-               @RequestBody(required = true,
-                       description = "Request body containing ceViewFolder object") @Valid CreatePolicyPackDTO createPolicySetDTO) {
+                   NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
+      @RequestBody(required = true,
+          description = "Request body containing ceViewFolder object") @Valid CreatePolicyPackDTO createPolicySetDTO) {
     //  rbacHelper.checkPolicySetEditPermission(accountId, null, null);
     PolicyPack policyPack = createPolicySetDTO.getPolicyPack();
     policyPack.toDTO();
     policyPack.setAccountId(accountId);
-    policyPackService.check(accountId,policyPack.getPoliciesIdentifier());
     policyPackService.update(policyPack);
     return ResponseDTO.newResponse(policyPack);
   }
@@ -201,11 +182,11 @@ public class GovernancePolicyPackResource {
   @ApiOperation(value = "Get policies for pack", nickname = "getPolicies")
   @Produces(MediaType.APPLICATION_JSON)
   @Operation(operationId = "getPolicies", description = "Fetch policies ", summary = "Fetch policies for account",
-          responses =
-                  {
-                          @io.swagger.v3.oas.annotations.responses.ApiResponse(
-                                  description = "Returns List of policies", content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
-                  })
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            description = "Returns List of policies", content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
+      })
   public ResponseDTO<List<Policy>>
   listPolicy(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
@@ -219,6 +200,7 @@ public class GovernancePolicyPackResource {
     {
       Policies.add(policyService.listid(accountId,it));
     }
+
     return ResponseDTO.newResponse(Policies);
   }
 

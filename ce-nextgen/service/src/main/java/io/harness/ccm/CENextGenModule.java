@@ -336,7 +336,6 @@ public class CENextGenModule extends AbstractModule {
     bind(CCMRbacHelper.class).to(CCMRbacHelperImpl.class);
     bind(GovernancePolicyService.class).to(GovernancePolicyServiceImpl.class);
     bind(PolicyPackService.class).to(PolicyPackServiceImpl.class);
-    bind(PolicyEnforcementService.class).to(PolicyEnforcementServiceImpl.class);
     registerEventsFrameworkMessageListeners();
 
     bindRetryOnExceptionInterceptor();

@@ -7,15 +7,17 @@
 
 package io.harness.ccm.remote.resources.governance;
 
-import static io.harness.NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE;
-import static io.harness.annotations.dev.HarnessTeam.CE;
-
+import com.codahale.metrics.annotation.ExceptionMetered;
+import com.codahale.metrics.annotation.Timed;
+import com.google.inject.Inject;
 import io.harness.NGCommonEntityConstants;
 import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.rbac.CCMRbacHelper;
 import io.harness.ccm.utils.LogAccountIdentifier;
 import io.harness.ccm.views.dto.CreatePolicyDTO;
+import io.harness.ccm.views.dto.GovernanceEnqueueResponseDTO;
+import io.harness.ccm.views.dto.GovernanceJobEnqueueDTO;
 import io.harness.ccm.views.dto.ListDTO;
 import io.harness.ccm.views.entities.Policy;
 import io.harness.ccm.views.entities.PolicyRequest;
@@ -23,10 +25,6 @@ import io.harness.ccm.views.service.GovernancePolicyService;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
-
-import com.codahale.metrics.annotation.ExceptionMetered;
-import com.codahale.metrics.annotation.Timed;
-import com.google.inject.Inject;
 import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.security.annotations.PublicApi;
 import io.swagger.annotations.Api;
@@ -40,8 +38,9 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import java.util.ArrayList;
-import java.util.List;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
@@ -53,8 +52,11 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
+import java.util.ArrayList;
+import java.util.List;
+
+import static io.harness.NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE;
+import static io.harness.annotations.dev.HarnessTeam.CE;
 
 @Slf4j
 @Service
@@ -223,26 +225,26 @@ public class GovernancePolicyResource {
     return ResponseDTO.newResponse(Policies);
   }
 
-//  @POST
-//  @Path("enqueue")
-//  @Timed
-//  @ExceptionMetered
-//  @Consumes(MediaType.APPLICATION_JSON)
-//  @ApiOperation(value = "Enqueues job for execution", nickname = "enqueueGovernanceJob")
-//  // TODO: Also check with PL team as this does not require accountId to be passed, how to add accountId in the log
-//  // context here ?
-//  @Operation(operationId = "enqueueGovernanceJob", description = "Enqueues job for execution.",
-//      summary = "Enqueues job for execution",
-//      responses =
-//      {
-//        @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Returns success when job is enqueued",
-//            content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
-//      })
-//  public ResponseDTO<GovernanceEnqueueResponseDTO>
-//  enqueue(@RequestBody(required = true, description = "Request body for queuing the governance job")
-//      @Valid GovernanceJobEnqueueDTO governanceJobEnqueueDTO) {
-//    log.info("Policy setid is {}", governanceJobEnqueueDTO.getPolicySetId());
-//    // Next is fetch from Mongo this policySetId and enqueue in the Faktory queue one by one.
-//    return ResponseDTO.newResponse();
-//  }
+  @POST
+  @Path("enqueue")
+  @Timed
+  @ExceptionMetered
+  @Consumes(MediaType.APPLICATION_JSON)
+  @ApiOperation(value = "Enqueues job for execution", nickname = "enqueueGovernanceJob")
+  // TODO: Also check with PL team as this does not require accountId to be passed, how to add accountId in the log
+  // context here ?
+  @Operation(operationId = "enqueueGovernanceJob", description = "Enqueues job for execution.",
+      summary = "Enqueues job for execution",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Returns success when job is enqueued",
+            content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
+      })
+  public ResponseDTO<GovernanceEnqueueResponseDTO>
+  enqueue(@RequestBody(required = true, description = "Request body for queuing the governance job")
+      @Valid GovernanceJobEnqueueDTO governanceJobEnqueueDTO) {
+    log.info("Policy setid is {}", governanceJobEnqueueDTO.getPolicyEnforcementId());
+    // Next is fetch from Mongo this policySetId and enqueue in the Faktory queue one by one.
+    return ResponseDTO.newResponse();
+  }
 }
