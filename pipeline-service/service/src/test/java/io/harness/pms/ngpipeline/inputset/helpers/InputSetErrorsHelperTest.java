@@ -13,7 +13,6 @@ import static io.harness.pms.merger.helpers.InputSetTemplateHelper.createTemplat
 import static io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntityType.INPUT_SET;
 import static io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntityType.OVERLAY_INPUT_SET;
 import static io.harness.pms.ngpipeline.inputset.helpers.InputSetErrorsHelper.getInvalidFQNsInInputSet;
-import static io.harness.rule.OwnerRule.FERNANDOD;
 import static io.harness.rule.OwnerRule.NAMAN;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -24,7 +23,6 @@ import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
 import io.harness.pms.inputset.InputSetErrorResponseDTOPMS;
 import io.harness.pms.inputset.InputSetErrorWrapperDTOPMS;
-import io.harness.pms.merger.YamlConfig;
 import io.harness.pms.merger.fqn.FQN;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity;
 import io.harness.rule.Owner;
@@ -228,129 +226,5 @@ public class InputSetErrorsHelperTest extends CategoryTest {
         "pipeline.stages.stage[identifier:d1].spec.serviceConfig.serviceDefinition.spec.manifests.manifest[identifier:m2].spec.store.spec.paths.";
     assertThat(invalidFQNStrings.contains(invalidFQN1)).isTrue();
     assertThat(invalidFQNStrings.contains(invalidFQN2)).isTrue();
-  }
-
-  @Test
-  @Owner(developers = FERNANDOD)
-  @Category(UnitTests.class)
-  public void shouldNotDetectMissingFQNs() {
-    String yamlFile = "missing-runtime-none.yaml";
-    YamlConfig yamlConfig = new YamlConfig(readFile(yamlFile));
-
-    final List<FQN> errors = InputSetErrorsHelper.getMissingFQNsInInputSet(yamlConfig);
-    assertThat(errors).isEmpty();
-  }
-
-  @Test
-  @Owner(developers = FERNANDOD)
-  @Category(UnitTests.class)
-  public void shouldNotDetectMissingFQNsWhenVariableHasDefaultValue() {
-    String yamlFile = "missing-runtime-variable-default-value.yaml";
-    YamlConfig yamlConfig = new YamlConfig(readFile(yamlFile));
-
-    final List<FQN> errors = InputSetErrorsHelper.getMissingFQNsInInputSet(yamlConfig);
-    assertThat(errors).isEmpty();
-  }
-
-  @Test
-  @Owner(developers = FERNANDOD)
-  @Category(UnitTests.class)
-  public void shouldMissingFQNsDetectVariableInputAllowedValues() {
-    String yamlFile = "missing-runtime-variable-allowedValues.yaml";
-    YamlConfig yamlConfig = new YamlConfig(readFile(yamlFile));
-
-    final List<FQN> errors = InputSetErrorsHelper.getMissingFQNsInInputSet(yamlConfig);
-    assertThat(errors).hasSize(1);
-    assertThat(errors.get(0).getExpressionFqn()).isEqualTo("pipeline.variables.var2");
-  }
-
-  @Test
-  @Owner(developers = FERNANDOD)
-  @Category(UnitTests.class)
-  public void shouldDetectInvalidInputSetAllowedValues() {
-    String runtimeInputSet = readFile("invalid-inputSet-allowedValues-r.yaml").replaceAll("__REPLACE__", "\"maybe\"");
-    YamlConfig yamlConfig = new YamlConfig(readFile("invalid-inputSet-allowedValues-p.yaml"));
-    YamlConfig yamlRuntime = new YamlConfig(runtimeInputSet);
-
-    final Map<FQN, String> result =
-        InputSetErrorsHelper.getInvalidFQNsInInputSetFromTemplateConfig(yamlConfig, yamlRuntime);
-    assertThat(result).hasSize(0);
-  }
-
-  @Test
-  @Owner(developers = FERNANDOD)
-  @Category(UnitTests.class)
-  public void shouldDetectInvalidInputSetAllowedValuesEmpty() {
-    String runtimeInputSet = readFile("invalid-inputSet-allowedValues-r.yaml").replaceAll("__REPLACE__", "\"\"");
-    YamlConfig yamlConfig = new YamlConfig(readFile("invalid-inputSet-allowedValues-p.yaml"));
-    YamlConfig yamlRuntime = new YamlConfig(runtimeInputSet);
-
-    final Map<FQN, String> result =
-        InputSetErrorsHelper.getInvalidFQNsInInputSetFromTemplateConfig(yamlConfig, yamlRuntime);
-    assertThat(result).hasSize(1);
-    assertThat(result.keySet().stream().map(FQN::getExpressionFqn).collect(Collectors.toList()))
-        .containsOnly("pipeline.variables.var2");
-    assertThat(result.values())
-        .containsOnly("The value provided  does not match any of the allowed values [true,false,maybe]");
-  }
-
-  @Test
-  @Owner(developers = FERNANDOD)
-  @Category(UnitTests.class)
-  public void shouldDetectInvalidInputSetAllowedValuesBlank() {
-    String runtimeInputSet = readFile("invalid-inputSet-allowedValues-r.yaml").replaceAll("__REPLACE__", "\" \"");
-    YamlConfig yamlConfig = new YamlConfig(readFile("invalid-inputSet-allowedValues-p.yaml"));
-    YamlConfig yamlRuntime = new YamlConfig(runtimeInputSet);
-
-    final Map<FQN, String> result =
-        InputSetErrorsHelper.getInvalidFQNsInInputSetFromTemplateConfig(yamlConfig, yamlRuntime);
-    assertThat(result).hasSize(1);
-    assertThat(result.keySet().stream().map(FQN::getExpressionFqn).collect(Collectors.toList()))
-        .containsOnly("pipeline.variables.var2");
-    assertThat(result.values())
-        .containsOnly("The value provided   does not match any of the allowed values [true,false,maybe]");
-  }
-
-  @Test
-  @Owner(developers = FERNANDOD)
-  @Category(UnitTests.class)
-  public void shouldDetectInvalidInputSetAllowedValuesWrong() {
-    String runtimeInputSet = readFile("invalid-inputSet-allowedValues-r.yaml").replaceAll("__REPLACE__", "\"notSure\"");
-    YamlConfig yamlConfig = new YamlConfig(readFile("invalid-inputSet-allowedValues-p.yaml"));
-    YamlConfig yamlRuntime = new YamlConfig(runtimeInputSet);
-
-    final Map<FQN, String> result =
-        InputSetErrorsHelper.getInvalidFQNsInInputSetFromTemplateConfig(yamlConfig, yamlRuntime);
-    assertThat(result).hasSize(1);
-    assertThat(result.keySet().stream().map(FQN::getExpressionFqn).collect(Collectors.toList()))
-        .containsOnly("pipeline.variables.var2");
-    assertThat(result.values())
-        .containsOnly("The value provided notSure does not match any of the allowed values [true,false,maybe]");
-  }
-
-  @Test
-  @Owner(developers = FERNANDOD)
-  @Category(UnitTests.class)
-  public void shouldDetectMissingInputSetAllowedValues() {
-    String yamlFile = "invalid-inputSet-allowedValues-p.yaml";
-    YamlConfig yamlConfig = new YamlConfig(readFile(yamlFile));
-
-    final List<FQN> errors = InputSetErrorsHelper.getMissingFQNsInInputSet(yamlConfig);
-    assertThat(errors).hasSize(1);
-    assertThat(errors.get(0).getExpressionFqn()).isEqualTo("pipeline.variables.var2");
-  }
-
-  @Test
-  @Owner(developers = FERNANDOD)
-  @Category(UnitTests.class)
-  public void shouldDetectMissingRuntimeInputSetWhenGetInvalidFQNsInInputSet() {
-    String pipelineFile = "inputSet-allowedValues-p.yaml";
-    YamlConfig pipelineConfig = new YamlConfig(readFile(pipelineFile));
-    String runtimeFile = "inputSet-allowedValues-r.yaml";
-    YamlConfig runtimeConfig = new YamlConfig(readFile(runtimeFile));
-
-    final Map<FQN, String> errors = getInvalidFQNsInInputSet(pipelineConfig, runtimeConfig);
-    assertThat(errors).hasSize(1);
-    assertThat(errors.keySet().iterator().next().getExpressionFqn()).isEqualTo("pipeline.variables.var1");
   }
 }
