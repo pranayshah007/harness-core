@@ -7,6 +7,7 @@
 
 package io.harness.ngmigration.service.entity;
 
+import static io.harness.beans.SearchFilter.Operator.IN;
 import static io.harness.encryption.Scope.PROJECT;
 
 import static software.wings.ngmigration.NGMigrationEntityType.APPLICATION;
@@ -14,6 +15,8 @@ import static software.wings.ngmigration.NGMigrationEntityType.APPLICATION;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.MigratedEntityMapping;
+import io.harness.beans.PageRequest;
+import io.harness.beans.PageResponse;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.gitsync.beans.YamlDTO;
@@ -24,6 +27,7 @@ import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
 import io.harness.ngmigration.client.NGClient;
 import io.harness.ngmigration.client.PmsClient;
+import io.harness.ngmigration.client.TemplateClient;
 import io.harness.ngmigration.dto.ImportError;
 import io.harness.ngmigration.dto.MigrationImportSummaryDTO;
 import io.harness.ngmigration.expressions.MigratorExpressionUtils;
@@ -35,6 +39,7 @@ import io.harness.serializer.JsonUtils;
 
 import software.wings.beans.Application;
 import software.wings.beans.Service;
+import software.wings.beans.template.Template;
 import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.CgEntityNode;
 import software.wings.ngmigration.DiscoveryNode;
@@ -44,6 +49,7 @@ import software.wings.ngmigration.NGMigrationStatus;
 import software.wings.service.intfc.AppService;
 import software.wings.service.intfc.EnvironmentService;
 import software.wings.service.intfc.ServiceResourceService;
+import software.wings.service.intfc.template.TemplateService;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
@@ -65,6 +71,8 @@ public class AppMigrationService extends NgMigrationService {
   @Inject private HPersistence hPersistence;
   @Inject private EnvironmentService environmentService;
   @Inject private ServiceResourceService serviceResourceService;
+
+  @Inject private TemplateService templateService;
 
   @Inject private MigratorExpressionUtils migratorExpressionUtils;
 
@@ -112,6 +120,20 @@ public class AppMigrationService extends NgMigrationService {
                           .collect(Collectors.toSet()));
     }
 
+    PageRequest<Template> pageRequest = new PageRequest<>();
+    pageRequest.addFilter(Template.TemplateKeys.accountId, IN, application.getAccountId());
+    pageRequest.addFilter(Template.TemplateKeys.appId, IN, appId);
+    PageResponse<Template> pageResponse =
+        templateService.list(pageRequest, new ArrayList<>(), application.getAccountId(), true);
+    List<Template> templates = pageResponse.getResponse();
+    if (EmptyPredicate.isNotEmpty(templates)) {
+      children.addAll(
+          templates.stream()
+              .distinct()
+              .map(template -> CgEntityId.builder().id(template.getUuid()).type(NGMigrationEntityType.TEMPLATE).build())
+              .collect(Collectors.toSet()));
+    }
+
     return DiscoveryNode.builder()
         .entityNode(CgEntityNode.builder()
                         .id(appId)
@@ -136,7 +158,7 @@ public class AppMigrationService extends NgMigrationService {
 
   @Override
   public MigrationImportSummaryDTO migrate(String auth, NGClient ngClient, PmsClient pmsClient,
-      MigrationInputDTO inputDTO, NGYamlFile yamlFile) throws IOException {
+      TemplateClient templateClient, MigrationInputDTO inputDTO, NGYamlFile yamlFile) throws IOException {
     Application application = appService.getApplicationWithDefaults(yamlFile.getCgBasicInfo().getAppId());
 
     if (EmptyPredicate.isEmpty(application.getDefaults())) {

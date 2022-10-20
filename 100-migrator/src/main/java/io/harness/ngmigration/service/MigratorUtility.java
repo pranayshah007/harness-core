@@ -78,6 +78,8 @@ public class MigratorUtility {
         return 1;
       case SECRET:
         return SecretFactory.isStoredInHarnessSecretManager(file) ? Integer.MIN_VALUE : 5;
+      case TEMPLATE:
+        return 7;
       case CONNECTOR:
         return 10;
       case MANIFEST:
