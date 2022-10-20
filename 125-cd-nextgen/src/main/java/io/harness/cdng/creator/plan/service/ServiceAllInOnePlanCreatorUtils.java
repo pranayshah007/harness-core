@@ -15,6 +15,7 @@ import io.harness.cdng.configfile.steps.ConfigFilesStepV2;
 import io.harness.cdng.creator.plan.PlanCreatorConstants;
 import io.harness.cdng.creator.plan.stage.DeploymentStageConfig;
 import io.harness.cdng.creator.plan.stage.DeploymentStageNode;
+import io.harness.cdng.elastigroup.ElastigroupServiceSettingsStep;
 import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
 import io.harness.cdng.manifest.steps.ManifestsStepV2;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
@@ -189,6 +190,26 @@ public class ServiceAllInOnePlanCreatorUtils {
       nodeIds.add(configFilesNode.getUuid());
       planCreationResponseMap.put(
           azureSettingsNode.getUuid(), PlanCreationResponse.builder().planNode(azureSettingsNode).build());
+    }
+
+    // Add Elastigroup settings node
+    if (serviceType == ServiceDefinitionType.ELASTIGROUP) {
+      PlanNode elastigroupSettingsNode =
+          PlanNode.builder()
+              .uuid("elastigroup-settings-" + UUIDGenerator.generateUuid())
+              .stepType(ElastigroupServiceSettingsStep.STEP_TYPE)
+              .name(PlanCreatorConstants.ELASTIGROUP_SERVICE_SETTINGS_NODE)
+              .identifier(YamlTypes.ELASTIGROUP_SERVICE_SETTINGS_STEP)
+              .stepParameters(new EmptyStepParameters())
+              .facilitatorObtainment(
+                  FacilitatorObtainment.newBuilder()
+                      .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.SYNC).build())
+                      .build())
+              .skipExpressionChain(true)
+              .build();
+      nodeIds.add(elastigroupSettingsNode.getUuid());
+      planCreationResponseMap.put(
+          elastigroupSettingsNode.getUuid(), PlanCreationResponse.builder().planNode(elastigroupSettingsNode).build());
     }
     return nodeIds;
   }
