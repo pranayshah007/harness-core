@@ -25,7 +25,6 @@ import io.harness.pms.execution.ExecutionStatus;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.plan.execution.ExecutionSummaryUpdateUtils;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
-import io.harness.pms.plan.execution.beans.dto.EdgeLayoutListDTO;
 import io.harness.pms.plan.execution.beans.dto.GraphLayoutNodeDTO;
 import io.harness.pms.plan.execution.beans.dto.GraphLayoutNodeDTO.GraphLayoutNodeDTOKeys;
 import io.harness.repositories.executions.PmsExecutionSummaryRespository;
@@ -166,14 +165,10 @@ public class PmsExecutionSummaryServiceImpl implements PmsExecutionSummaryServic
       return;
     }
 
-    Ambiance ambiance = nodeExecution.getAmbiance();
-    Optional<PipelineExecutionSummaryEntity> entity = getPipelineExecutionSummary(AmbianceUtils.getAccountId(ambiance),
-        AmbianceUtils.getOrgIdentifier(ambiance), AmbianceUtils.getProjectIdentifier(ambiance), planExecutionId);
-    if (!entity.isPresent()) {
+    Map<String, GraphLayoutNodeDTO> graphLayoutNodeDTOMap = getGraphLayoutNodeDTOMap(nodeExecution, planExecutionId);
+    if (graphLayoutNodeDTOMap == null) {
       return;
     }
-    PipelineExecutionSummaryEntity pipelineExecutionSummaryEntity = entity.get();
-    Map<String, GraphLayoutNodeDTO> graphLayoutNodeDTOMap = pipelineExecutionSummaryEntity.getLayoutNodeMap();
     Optional<String> previousStageId =
         graphLayoutNodeDTOMap.keySet()
             .stream()
@@ -201,22 +196,16 @@ public class PmsExecutionSummaryServiceImpl implements PmsExecutionSummaryServic
         && nodeExecution.getNode().getNodeType() != NodeType.IDENTITY_PLAN_NODE) {
       String stageSetupId = nodeExecution.getNodeId();
       Update update = new Update();
-      Ambiance ambiance = nodeExecution.getAmbiance();
-      Optional<PipelineExecutionSummaryEntity> entity =
-          getPipelineExecutionSummary(AmbianceUtils.getAccountId(ambiance), AmbianceUtils.getOrgIdentifier(ambiance),
-              AmbianceUtils.getProjectIdentifier(ambiance), planExecutionId);
-      if (!entity.isPresent()) {
-        return;
-      }
-      PipelineExecutionSummaryEntity pipelineExecutionSummaryEntity = entity.get();
-      Map<String, GraphLayoutNodeDTO> graphLayoutNodeDTOMap = pipelineExecutionSummaryEntity.getLayoutNodeMap();
-      if (graphLayoutNodeDTOMap.containsKey(nodeExecution.getUuid())
-          && graphLayoutNodeDTOMap.get(nodeExecution.getUuid()).getNodeExecutionId() != null) {
+      Map<String, GraphLayoutNodeDTO> graphLayoutNodeDTOMap = getGraphLayoutNodeDTOMap(nodeExecution, planExecutionId);
+      if (graphLayoutNodeDTOMap == null
+          || (graphLayoutNodeDTOMap.containsKey(nodeExecution.getUuid())
+              && graphLayoutNodeDTOMap.get(nodeExecution.getUuid()).getNodeExecutionId() != null)) {
         return;
       }
       GraphLayoutNodeDTO graphLayoutNodeDTO = graphLayoutNodeDTOMap.get(stageSetupId);
       cloneGraphLayoutNodeDtoWithModifications(graphLayoutNodeDTO, nodeExecution, update);
-      String strategyNodeId = AmbianceUtils.getStrategyLevelFromAmbiance(ambiance).get().getSetupId();
+      String strategyNodeId =
+          AmbianceUtils.getStrategyLevelFromAmbiance(nodeExecution.getAmbiance()).get().getSetupId();
       update.addToSet(PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.layoutNodeMap + "." + strategyNodeId
               + ".edgeLayoutList.currentNodeChildren",
           nodeExecution.getUuid());
@@ -227,6 +216,17 @@ public class PmsExecutionSummaryServiceImpl implements PmsExecutionSummaryServic
           PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.layoutNodeMap + "." + stageSetupId + ".hidden", true);
       update(planExecutionId, update);
     }
+  }
+
+  Map<String, GraphLayoutNodeDTO> getGraphLayoutNodeDTOMap(NodeExecution nodeExecution, String planExecutionId) {
+    Ambiance ambiance = nodeExecution.getAmbiance();
+    Optional<PipelineExecutionSummaryEntity> entity = getPipelineExecutionSummary(AmbianceUtils.getAccountId(ambiance),
+        AmbianceUtils.getOrgIdentifier(ambiance), AmbianceUtils.getProjectIdentifier(ambiance), planExecutionId);
+    if (!entity.isPresent()) {
+      return null;
+    }
+    PipelineExecutionSummaryEntity pipelineExecutionSummaryEntity = entity.get();
+    return pipelineExecutionSummaryEntity.getLayoutNodeMap();
   }
 
   @Override
