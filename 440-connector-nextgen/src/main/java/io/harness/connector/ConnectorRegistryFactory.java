@@ -242,7 +242,7 @@ public class ConnectorRegistryFactory {
             NoOpConnectorValidationParamsProvider.class, LocalDTOToEntity.class, LocalEntityToDTO.class,
             NotSupportedValidationHandler.class));
     registrar.put(ConnectorType.DOCKER,
-        new ConnectorRegistrar(ConnectorCategory.ARTIFACTORY, DockerConnectionValidator.class,
+        new ConnectorRegistrar(ConnectorCategory.ARTIFACT_SERVER, DockerConnectionValidator.class,
             DockerConnectorValidationParamsProvider.class, DockerDTOToEntity.class, DockerEntityToDTO.class,
             DockerValidationHandler.class));
     registrar.put(ConnectorType.GCP,
@@ -265,7 +265,7 @@ public class ConnectorRegistryFactory {
             NoOpConnectorValidationParamsProvider.class, CEAwsDTOToEntity.class, CEAwsEntityToDTO.class,
             NotSupportedValidationHandler.class));
     registrar.put(ConnectorType.ARTIFACTORY,
-        new ConnectorRegistrar(ConnectorCategory.ARTIFACTORY, ArtifactoryConnectionValidator.class,
+        new ConnectorRegistrar(ConnectorCategory.ARTIFACT_SERVER, ArtifactoryConnectionValidator.class,
             ArtifactoryValidationParamsProvider.class, ArtifactoryDTOToEntity.class, ArtifactoryEntityToDTO.class,
             ArtifactoryValidationHandler.class));
     registrar.put(ConnectorType.JIRA,
@@ -273,7 +273,7 @@ public class ConnectorRegistryFactory {
             JiraValidationParamsProvider.class, JiraDTOToEntity.class, JiraEntityToDTO.class,
             NotSupportedValidationHandler.class));
     registrar.put(ConnectorType.NEXUS,
-        new ConnectorRegistrar(ConnectorCategory.ARTIFACTORY, NexusConnectorValidator.class,
+        new ConnectorRegistrar(ConnectorCategory.ARTIFACT_SERVER, NexusConnectorValidator.class,
             NexusValidationParamsProvider.class, NexusDTOToEntity.class, NexusEntityToDTO.class,
             NotSupportedValidationHandler.class));
     registrar.put(ConnectorType.GITHUB,
@@ -301,11 +301,11 @@ public class ConnectorRegistryFactory {
             NoOpConnectorValidationParamsProvider.class, GcpCloudCostDTOToEntity.class, GcpCloudCostEntityToDTO.class,
             NotSupportedValidationHandler.class));
     registrar.put(ConnectorType.HTTP_HELM_REPO,
-        new ConnectorRegistrar(ConnectorCategory.ARTIFACTORY, HttpHelmRepoConnectionValidator.class,
+        new ConnectorRegistrar(ConnectorCategory.ARTIFACT_SERVER, HttpHelmRepoConnectionValidator.class,
             HttpHelmConnectorValidationParamsProvider.class, HttpHelmDTOToEntity.class, HttpHelmEntityToDTO.class,
             NotSupportedValidationHandler.class));
     registrar.put(ConnectorType.OCI_HELM_REPO,
-        new ConnectorRegistrar(ConnectorCategory.ARTIFACTORY, OciHelmRepoConnectionValidator.class,
+        new ConnectorRegistrar(ConnectorCategory.ARTIFACT_SERVER, OciHelmRepoConnectionValidator.class,
             OciHelmConnectorValidationParamsProvider.class, OciHelmDTOToEntity.class, OciHelmEntityToDTO.class,
             NotSupportedValidationHandler.class));
     registrar.put(ConnectorType.PAGER_DUTY,
@@ -333,7 +333,7 @@ public class ConnectorRegistryFactory {
             PhysicalDataCenterConnectorValidationParamsProvider.class, PhysicalDataCenterDTOToEntity.class,
             PhysicalDataCenterEntityToDTO.class, NotSupportedValidationHandler.class));
     registrar.put(ConnectorType.JENKINS,
-        new ConnectorRegistrar(ConnectorCategory.ARTIFACTORY, JenkinsConnectionValidator.class,
+        new ConnectorRegistrar(ConnectorCategory.ARTIFACT_SERVER, JenkinsConnectionValidator.class,
             JenkinsConnectorValidationsParamsProvider.class, JenkinsDTOToEntity.class, JenkinsEntityToDTO.class,
             NotSupportedValidationHandler.class));
     registrar.put(ConnectorType.CUSTOM_SECRET_MANAGER,
@@ -341,7 +341,7 @@ public class ConnectorRegistryFactory {
             CustomSecretManagerValidationParamProvider.class, CustomSecretManagerDTOToEntity.class,
             CustomSecretManagerEntityToDTO.class, NotSupportedValidationHandler.class));
     registrar.put(ConnectorType.AZURE_ARTIFACTS,
-        new ConnectorRegistrar(ConnectorCategory.ARTIFACTORY, AzureArtifactsConnectorValidator.class,
+        new ConnectorRegistrar(ConnectorCategory.ARTIFACT_SERVER, AzureArtifactsConnectorValidator.class,
             AzureArtifactsConnectorValidationParamsProvider.class, AzureArtifactsDTOToEntity.class,
             AzureArtifactsEntityToDTO.class, NotSupportedValidationHandler.class));
     registrar.put(ConnectorType.GCP_SECRET_MANAGER,

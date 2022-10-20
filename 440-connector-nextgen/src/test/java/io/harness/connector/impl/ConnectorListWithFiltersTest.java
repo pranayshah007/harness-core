@@ -8,7 +8,7 @@
 package io.harness.connector.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.DX;
-import static io.harness.connector.ConnectorCategory.ARTIFACTORY;
+import static io.harness.connector.ConnectorCategory.ARTIFACT_SERVER;
 import static io.harness.connector.ConnectorCategory.CLOUD_PROVIDER;
 import static io.harness.connector.impl.ConnectorFilterServiceImpl.CREDENTIAL_TYPE_KEY;
 import static io.harness.connector.impl.ConnectorFilterServiceImpl.INHERIT_FROM_DELEGATE_STRING;
@@ -339,7 +339,7 @@ public class ConnectorListWithFiltersTest extends ConnectorsTestBase {
     createConnectorsWithNames(Arrays.asList("docker connector", "docker dev"));
     createK8sConnector();
     ConnectorFilterPropertiesDTO connectorFilterPropertiesDTO =
-        ConnectorFilterPropertiesDTO.builder().categories(Arrays.asList(ARTIFACTORY, CLOUD_PROVIDER)).build();
+        ConnectorFilterPropertiesDTO.builder().categories(Arrays.asList(ARTIFACT_SERVER, CLOUD_PROVIDER)).build();
     Page<ConnectorResponseDTO> connectorDTOS = connectorService.list(0, 100, accountIdentifier,
         connectorFilterPropertiesDTO, orgIdentifier, projectIdentifier, "", "", false, false);
     assertThat(connectorDTOS).isNotNull();
