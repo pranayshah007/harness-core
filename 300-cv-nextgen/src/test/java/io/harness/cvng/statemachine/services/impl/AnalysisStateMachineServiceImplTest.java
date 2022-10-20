@@ -63,6 +63,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import org.junit.Before;
@@ -75,12 +76,11 @@ public class AnalysisStateMachineServiceImplTest extends CvNextGenTestBase {
   @Inject private Clock clock;
   @Inject HPersistence hPersistence;
   @Inject private VerificationJobInstanceService verificationJobInstanceService;
-
   @Inject private CVConfigService cvConfigService;
   @Inject private VerificationTaskService verificationTaskService;
   @Inject private ServiceLevelIndicatorService serviceLevelIndicatorService;
-
   @Inject private MonitoredServiceService monitoredServiceService;
+  @Inject private Map<VerificationTask.TaskType, AnalysisStateMachineService> taskTypeAnalysisStateMachineServiceMap;
 
   private final DataGenerator dataGenerator = DataGenerator.builder().accountId(generateUuid()).build();
   private String accountId;
@@ -140,7 +140,9 @@ public class AnalysisStateMachineServiceImplTest extends CvNextGenTestBase {
                                .endTime(Instant.now())
                                .build();
 
-    AnalysisStateMachine stateMachine = stateMachineService.createStateMachine(inputs);
+    AnalysisStateMachine stateMachine =
+        taskTypeAnalysisStateMachineServiceMap.get(VerificationTask.TaskType.LIVE_MONITORING)
+            .createStateMachine(inputs);
     assertThat(stateMachine).isNotNull();
   }
 
@@ -162,7 +164,8 @@ public class AnalysisStateMachineServiceImplTest extends CvNextGenTestBase {
                                .endTime(Instant.now())
                                .build();
 
-    AnalysisStateMachine stateMachine = stateMachineService.createStateMachine(inputs);
+    AnalysisStateMachine stateMachine =
+        taskTypeAnalysisStateMachineServiceMap.get(VerificationTask.TaskType.SLI).createStateMachine(inputs);
     assertThat(stateMachine).isNotNull();
     assertThat(stateMachine.getCurrentState().getType()).isEqualTo(AnalysisState.StateType.SLI_METRIC_ANALYSIS);
     assertThat(stateMachine.getStatus()).isEqualTo(AnalysisStatus.CREATED);
@@ -197,7 +200,8 @@ public class AnalysisStateMachineServiceImplTest extends CvNextGenTestBase {
                                .endTime(Instant.now())
                                .build();
 
-    AnalysisStateMachine stateMachine = stateMachineService.createStateMachine(inputs);
+    AnalysisStateMachine stateMachine =
+        taskTypeAnalysisStateMachineServiceMap.get(VerificationTask.TaskType.DEPLOYMENT).createStateMachine(inputs);
     assertThat(stateMachine).isNotNull();
   }
 
@@ -239,7 +243,8 @@ public class AnalysisStateMachineServiceImplTest extends CvNextGenTestBase {
                                .endTime(Instant.now())
                                .build();
 
-    AnalysisStateMachine stateMachine = stateMachineService.createStateMachine(inputs);
+    AnalysisStateMachine stateMachine =
+        taskTypeAnalysisStateMachineServiceMap.get(VerificationTask.TaskType.DEPLOYMENT).createStateMachine(inputs);
     assertThat(stateMachine).isNotNull();
   }
 
@@ -275,7 +280,8 @@ public class AnalysisStateMachineServiceImplTest extends CvNextGenTestBase {
                                .endTime(verificationJobInstance.getStartTime().minus(2, ChronoUnit.MINUTES))
                                .build();
 
-    AnalysisStateMachine stateMachine = stateMachineService.createStateMachine(inputs);
+    AnalysisStateMachine stateMachine =
+        taskTypeAnalysisStateMachineServiceMap.get(VerificationTask.TaskType.DEPLOYMENT).createStateMachine(inputs);
     assertThat(stateMachine).isNotNull();
     assertThat(stateMachine.getCurrentState()).isInstanceOf(PreDeploymentLogClusterState.class);
   }
@@ -310,7 +316,8 @@ public class AnalysisStateMachineServiceImplTest extends CvNextGenTestBase {
                                .endTime(verificationJobInstance.getStartTime().plus(2, ChronoUnit.MINUTES))
                                .build();
 
-    AnalysisStateMachine stateMachine = stateMachineService.createStateMachine(inputs);
+    AnalysisStateMachine stateMachine =
+        taskTypeAnalysisStateMachineServiceMap.get(VerificationTask.TaskType.DEPLOYMENT).createStateMachine(inputs);
     assertThat(stateMachine).isNotNull();
     assertThat(stateMachine.getCurrentState()).isInstanceOf(DeploymentLogClusterState.class);
   }

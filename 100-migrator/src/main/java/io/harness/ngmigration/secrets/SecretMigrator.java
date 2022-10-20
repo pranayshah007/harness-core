@@ -31,6 +31,10 @@ public interface SecretMigrator {
   SecretDTOV2Builder getSecretDTOBuilder(
       EncryptedData encryptedData, SecretManagerConfig vaultConfig, String secretManagerIdentifier);
 
+  default String getSecretFile(EncryptedData encryptedData, SecretManagerConfig secretManagerConfig) {
+    return null;
+  }
+
   SecretManagerCreatedDTO getConfigDTO(SecretManagerConfig secretManagerConfig, MigrationInputDTO inputDTO,
       Map<CgEntityId, NGYamlFile> migratedEntities);
 

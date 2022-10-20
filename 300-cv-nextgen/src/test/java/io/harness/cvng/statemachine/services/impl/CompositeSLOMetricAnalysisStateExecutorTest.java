@@ -17,6 +17,7 @@ import io.harness.CvNextGenTestBase;
 import io.harness.category.element.UnitTests;
 import io.harness.cvng.BuilderFactory;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO;
+import io.harness.cvng.core.services.api.VerificationTaskService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
 import io.harness.cvng.servicelevelobjective.beans.ErrorBudgetRisk;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveDetailsDTO;
@@ -48,6 +49,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.junit.Before;
@@ -62,6 +64,7 @@ public class CompositeSLOMetricAnalysisStateExecutorTest extends CvNextGenTestBa
   @Inject private MonitoredServiceService monitoredServiceService;
   @Inject private SLOHealthIndicatorServiceImpl sloHealthIndicatorService;
   @Inject ServiceLevelIndicatorService serviceLevelIndicatorService;
+  @Inject VerificationTaskService verificationTaskService;
   BuilderFactory builderFactory;
   private Instant startTime;
   private Instant endTime;
@@ -159,6 +162,8 @@ public class CompositeSLOMetricAnalysisStateExecutorTest extends CvNextGenTestBa
   @Owner(developers = VARSHA_LALWANI)
   @Category(UnitTests.class)
   public void testExecute() {
+    verificationTaskService.createCompositeSLOVerificationTask(
+        builderFactory.getContext().getAccountId(), compositeServiceLevelObjective.getUuid(), new HashMap<>());
     sloMetricAnalysisState =
         (CompositeSLOMetricAnalysisState) sloMetricAnalysisStateExecutor.execute(sloMetricAnalysisState);
     List<CompositeSLORecord> sloRecordList =

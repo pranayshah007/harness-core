@@ -54,7 +54,7 @@ public class CVConfigResource {
   @Path("/{identifier}")
   @Timed
   @ExceptionMetered
-  @ApiOperation(value = "Backdoor API to immediately delete CVConfig", nickname = "deleteCVConfig")
+  @ApiOperation(value = "Backdoor API to immediately delete CVConfig", nickname = "deleteCVConfig", hidden = true)
   public RestResponse<Void> deleteCVConfig(@NotNull @BeanParam ProjectParams projectParams,
       @ApiParam(required = true) @NotNull @NotBlank @PathParam("identifier") @ResourceIdentifier String cvConfigId) {
     cvConfigService.deleteImmediately(cvConfigId);

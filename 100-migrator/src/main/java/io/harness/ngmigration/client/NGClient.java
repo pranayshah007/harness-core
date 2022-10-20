@@ -21,6 +21,7 @@ import okhttp3.RequestBody;
 import retrofit2.Call;
 import retrofit2.http.Body;
 import retrofit2.http.Header;
+import retrofit2.http.Headers;
 import retrofit2.http.Multipart;
 import retrofit2.http.POST;
 import retrofit2.http.Part;
@@ -37,6 +38,21 @@ public interface NGClient {
       @Query(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
       @Query(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @Query(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier, @Body JsonNode secretDTO);
+
+  @POST("v2/secrets/yaml")
+  @Headers({"Content-Type: application/yaml"})
+  Call<ResponseDTO<SecretResponseWrapper>> createSecretUsingYaml(@Header("Authorization") String auth,
+      @Query(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @Query(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @Query(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier, @Body JsonNode yamlBody);
+
+  @POST("v2/secrets/files")
+  @Multipart
+  Call<ResponseDTO<SecretResponseWrapper>> createSecretFile(@Header("Authorization") String auth,
+      @Query(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @Query(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @Query(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier, @Part("file") RequestBody content,
+      @Part("spec") RequestBody spec);
 
   @POST("servicesV2")
   Call<ResponseDTO<ServiceResponse>> createService(@Header("Authorization") String auth,

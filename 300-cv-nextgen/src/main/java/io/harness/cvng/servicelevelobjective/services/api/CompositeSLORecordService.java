@@ -10,6 +10,7 @@ package io.harness.cvng.servicelevelobjective.services.api;
 import io.harness.cvng.core.beans.params.TimeRangeParams;
 import io.harness.cvng.servicelevelobjective.beans.SLIMissingDataType;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardWidget.SLOGraphData;
+import io.harness.cvng.servicelevelobjective.entities.CompositeSLORecord;
 import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective.ServiceLevelObjectivesDetail;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord;
@@ -26,4 +27,6 @@ public interface CompositeSLORecordService {
       Instant endTime, int totalErrorBudgetMinutes, int sloVersion);
   SLOGraphData getGraphData(CompositeServiceLevelObjective compositeServiceLevelObjective, Instant startTime,
       Instant endTime, int totalErrorBudgetMinutes, int sloVersion, TimeRangeParams timeRangeParams);
+  CompositeSLORecord getLatestCompositeSLORecord(String sloId);
+  CompositeSLORecord getLatestCompositeSLORecordWithVersion(String sloId, int sloVersion);
 }

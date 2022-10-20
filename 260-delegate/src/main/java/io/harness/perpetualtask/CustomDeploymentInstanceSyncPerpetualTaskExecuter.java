@@ -95,6 +95,9 @@ public class CustomDeploymentInstanceSyncPerpetualTaskExecuter implements Perpet
       PerpetualTaskId taskId, CustomDeploymentNGInstanceSyncPerpetualTaskParams taskParams) {
     try {
       final ShellScriptTaskResponseNG response = executeScript(taskParams, taskId.getId());
+      if (CommandExecutionStatus.FAILURE.equals(response.getStatus())) {
+        return Collections.emptyList();
+      }
       Map<String, String> output = ((ShellExecutionData) response.getExecuteCommandResponse().getCommandExecutionData())
                                        .getSweepingOutputEnvVariables();
       final List<CustomDeploymentServerInstanceInfo> customDeploymentServerInstanceInfos =
