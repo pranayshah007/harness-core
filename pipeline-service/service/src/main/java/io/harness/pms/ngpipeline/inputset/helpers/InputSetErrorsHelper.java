@@ -24,6 +24,7 @@ import io.harness.pms.merger.helpers.RuntimeInputFormHelper;
 import io.harness.pms.merger.helpers.YamlSubMapExtractor;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntityType;
+import io.harness.pms.yaml.validation.RuntimeInputValuesValidator;
 
 import com.fasterxml.jackson.databind.node.TextNode;
 import java.util.ArrayList;
@@ -189,12 +190,6 @@ public class InputSetErrorsHelper {
 
         inputSetFQNs.remove(key);
       } else {
-        if (!key.isType() || !key.isIdentifierOrVariableName()) {
-          String error = validateStaticValues(templateFqnToValueMap.get(key));
-          if (EmptyPredicate.isNotEmpty(error)) {
-            errorMap.put(key, error);
-          }
-        }
         Map<FQN, Object> subMap = YamlSubMapExtractor.getFQNToObjectSubMap(inputFqnToValueMap, key);
         subMap.keySet().forEach(inputSetFQNs::remove);
       }
@@ -208,18 +203,6 @@ public class InputSetErrorsHelper {
    */
   public List<FQN> getMissingFQNsInInputSet(YamlConfig pipelineYamlConfig) {
     YamlConfig templateYamlConfig = RuntimeInputFormHelper.createRuntimeInputFormYamlConfig(pipelineYamlConfig, true);
-    final Map<FQN, Object> templateFqnToValueMap = templateYamlConfig.getFqnToValueMap();
-    final Map<FQN, Object> inputFqnToValueMap = new HashMap<>(templateFqnToValueMap.size());
-
-    templateFqnToValueMap.forEach((key, value) -> {
-      if (key.isType() || key.isIdentifierOrVariableName()) {
-        inputFqnToValueMap.put(key, value);
-      } else {
-        inputFqnToValueMap.put(key, EMPTY_STRING_NODE);
-      }
-    });
-
-    return new ArrayList<>(
-        getInvalidFQNsInInputSetFromTemplateConfig(templateFqnToValueMap, inputFqnToValueMap).keySet());
+    return new ArrayList<>(getInvalidFQNsInInputSetFromTemplateConfig(pipelineYamlConfig, templateYamlConfig).keySet());
   }
 }
