@@ -457,6 +457,8 @@ public enum FeatureName {
   CI_CACHE_INTELLIGENCE("Feature flag for cache intelligence feature", HarnessTeam.CI),
   SPG_ENFORCE_TIME_RANGE_DEPLOYMENTS_WITHOUT_APP_ID(
       "This feature flag enforces maximum time range for workflow execution queries without appId", HarnessTeam.SPG),
+  USE_ACCOUNT_PASSWORD_EXPIRY_ITERATOR_FW(
+      "Switch to use iterator FW instead of quartz scheduler for AccountPasswordExpirationJob", HarnessTeam.PL),
   SYNC_GIT_CLONE_AND_COPY_TO_DEST_DIR(
       "This feature flag helps in synchronizing the git clone of repo and copying the files then to destination directory",
       HarnessTeam.CDP),

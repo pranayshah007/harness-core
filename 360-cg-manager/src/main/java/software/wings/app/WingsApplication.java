@@ -212,6 +212,7 @@ import software.wings.resources.AppResource;
 import software.wings.resources.SearchResource;
 import software.wings.resources.graphql.GraphQLResource;
 import software.wings.scheduler.AccessRequestHandler;
+import software.wings.scheduler.AccountPasswordExpirationHandler;
 import software.wings.scheduler.AccountPasswordExpirationJob;
 import software.wings.scheduler.DeletedEntityHandler;
 import software.wings.scheduler.InstancesPurgeJob;
@@ -1481,6 +1482,7 @@ public class WingsApplication extends Application<MainConfiguration> {
             IteratorConfig.builder().enabled(true).targetIntervalInSeconds(10).threadPoolCount(5).build());
     injector.getInstance(GitSyncPollingIterator.class)
         .registerIterators(iteratorsConfig.getGitSyncPollingIteratorConfig().getThreadPoolSize());
+    injector.getInstance(AccountPasswordExpirationHandler.class).registerIterators(2);
   }
 
   private void registerCronJobs(Injector injector) {

@@ -20,6 +20,7 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.EmbeddedUser;
+import io.harness.iterator.PersistentRegularIterable;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.FdUniqueIndex;
@@ -70,7 +71,7 @@ import org.mongodb.morphia.annotations.Transient;
 @FieldNameConstants(innerTypeName = "UserKeys")
 @TargetModule(HarnessModule._957_CG_BEANS)
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class User extends Base implements Principal {
+public class User extends Base implements PersistentRegularIterable, Principal {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder().name("accountsIdx").field(UserKeys.accounts).build(),
@@ -158,6 +159,8 @@ public class User extends Base implements Principal {
   @JsonIgnore private Set<String> reportedMarketoCampaigns = new HashSet<>();
   private Set<String> reportedSegmentTracks = new HashSet<>();
   private UtmInfo utmInfo;
+
+  @FdIndex private Long passwordExpiryIteration;
 
   /**
    * Return partial user object without sensitive information.
@@ -730,6 +733,16 @@ public class User extends Base implements Principal {
     this.twoFactorAuthenticationMechanism = twoFactorAuthenticationMechanism;
   }
 
+  @Override
+  public void updateNextIteration(String fieldName, long nextIteration) {
+    if (UserKeys.passwordExpiryIteration.equals(fieldName)) {
+      this.passwordExpiryIteration = nextIteration;
+      return;
+    }
+
+    throw new IllegalArgumentException("Invalid fieldName " + fieldName);
+  }
+
   public String getTotpSecretKey() {
     return totpSecretKey;
   }
@@ -744,6 +757,15 @@ public class User extends Base implements Principal {
 
   public void setTwoFactorJwtToken(String twoFactorJwtToken) {
     this.twoFactorJwtToken = twoFactorJwtToken;
+  }
+
+  @Override
+  public Long obtainNextIteration(String fieldName) {
+    if (UserKeys.passwordExpiryIteration.equals(fieldName)) {
+      return this.passwordExpiryIteration;
+    }
+
+    throw new IllegalArgumentException("Invalid fieldName " + fieldName);
   }
 
   public static final class Builder {
