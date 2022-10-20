@@ -83,6 +83,20 @@ public class StagesPlanCreator extends ChildrenPlanCreator<StagesConfig> {
               .setEdgeLayoutList(
                   i + 1 < edgeLayoutLists.size() ? edgeLayoutLists.get(i + 1) : EdgeLayoutList.newBuilder().build())
               .build());
+
+      // create node for corresponding rollback Stage
+      stageYamlFieldMap.put(
+          stageYamlField.getNode().getUuid() + NGCommonUtilPlanCreationConstants.ROLLBACK_STAGE_UUID_SUFFIX,
+          GraphLayoutNode.newBuilder()
+              .setNodeUUID(
+                  stageYamlField.getNode().getUuid() + NGCommonUtilPlanCreationConstants.ROLLBACK_STAGE_UUID_SUFFIX)
+              .setNodeType(stageYamlField.getNode().getType())
+              .setName(
+                  stageYamlField.getNode().getName() + " " + NGCommonUtilPlanCreationConstants.ROLLBACK_STAGE_NODE_NAME)
+              .setNodeGroup(StepOutcomeGroup.STAGE.name())
+              .setNodeIdentifier(
+                  stageYamlField.getNode().getUuid() + NGCommonUtilPlanCreationConstants.ROLLBACK_STAGE_UUID_SUFFIX)
+              .build());
     }
     return GraphLayoutResponse.builder()
         .layoutNodes(stageYamlFieldMap)
