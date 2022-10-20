@@ -55,15 +55,21 @@ public class GovernancePolicyServiceImpl implements GovernancePolicyService {
     return policyDao.findByTag(tag, accountId);
   }
   @Override
-  public Policy listid(String accountId, String uuid) {
-    return policyDao.listid(accountId, uuid);
+  public Policy listid(String accountId, String uuid, boolean create) {
+    return policyDao.listid(accountId, uuid,create);
   }
   @Override
   public List<Policy> findByTagAndResource(String resource, String tag, String accountId) {
     return policyDao.findByTagAndResource(resource, tag, accountId);
   }
+
   @Override
   public List<Policy> findByStability(String isStablePolicy, String accountId) {
     return policyDao.findByStability(isStablePolicy, accountId);
+  }
+
+  @Override
+  public void check(String accountId, List<String> policiesIdentifier ) {
+    policyDao.check( accountId,policiesIdentifier);
   }
 }

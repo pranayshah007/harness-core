@@ -29,15 +29,10 @@ public class PolicyEnforcementServiceImpl implements PolicyEnforcementService {
     }
 
     @Override
-    public PolicyEnforcement listid(String accountId, String uuid) {
-        { return policyEnforcementDAO.listid(accountId, uuid); }
+    public PolicyEnforcement listid(String accountId, String uuid,boolean create) {
+        { return policyEnforcementDAO.listid(accountId, uuid,create); }
     }
 
-    @Override
-    public void check(String accountId,List<String> policyIds , List<String> policyPackIDs) {
-        {
-            policyEnforcementDAO.check(accountId, policyIds , policyPackIDs); }
-    }
 
     @Override
     public  List<PolicyEnforcement> list(String accountId){

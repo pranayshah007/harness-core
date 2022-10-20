@@ -10,15 +10,12 @@ import static io.harness.annotations.dev.HarnessTeam.CE;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.rbac.CCMRbacHelper;
 import io.harness.ccm.utils.LogAccountIdentifier;
-import io.harness.ccm.views.dto.CreatePolicyDTO;
 import io.harness.ccm.views.dto.CreatePolicyEnforcementDTO;
-import io.harness.ccm.views.dto.CreatePolicyPackDTO;
-import io.harness.ccm.views.entities.Policy;
 import io.harness.ccm.views.entities.PolicyEnforcement;
-import io.harness.ccm.views.entities.PolicyPack;
 import io.harness.ccm.views.service.GovernancePolicyService;
 import io.harness.ccm.views.service.PolicyEnforcementService;
 import io.harness.ccm.views.service.PolicyPackService;
+import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -35,6 +32,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.support.CronSequenceGenerator;
 import org.springframework.stereotype.Service;
 
 import javax.validation.Valid;
@@ -110,7 +108,12 @@ public class GovernancePolicyEnforcementResource {
                    description = "Request body containing Policy store object") @Valid CreatePolicyEnforcementDTO createPolicyEnforcementDTO) {
         PolicyEnforcement policyEnforcement = createPolicyEnforcementDTO.getPolicyEnforcement();
         policyEnforcement.setAccountId(accountId);
-        policyEnforcementService.check(accountId,policyEnforcement.getPolicyIds(),policyEnforcement.getPolicyPackIDs());
+        if(policyEnforcementService.listid(accountId,policyEnforcement.getUuid(),true)!=null)
+        {
+            throw new InvalidRequestException("Policy Enforcement with this uuid already exits");
+        }
+        policyService.check(accountId, policyEnforcement.getPolicyIds());
+        policyPackService.check(accountId,policyEnforcement.getPolicyPackIDs());
         policyEnforcementService.save(policyEnforcement);
         return ResponseDTO.newResponse(policyEnforcement.toDTO());
     }
@@ -134,14 +137,9 @@ public class GovernancePolicyEnforcementResource {
                          description = "Request body containing policy enforcement object") @Valid CreatePolicyEnforcementDTO createPolicyEnforcementDTO) {
         PolicyEnforcement policyEnforcement = createPolicyEnforcementDTO.getPolicyEnforcement();
         policyEnforcement.setAccountId(accountId);
-        for(String identifiers: policyEnforcement.getPolicyIds() )
-        {
-            policyService.listid(accountId,identifiers);
-        }
-        for(String identifiers: policyEnforcement.getPolicyPackIDs() )
-        {
-            policyPackService.listid(accountId,identifiers);
-        }
+        policyEnforcementService.listid(accountId,policyEnforcement.getUuid(),false);
+        policyService.check(accountId, policyEnforcement.getPolicyIds());
+        policyPackService.check(accountId,policyEnforcement.getPolicyPackIDs());
         policyEnforcementService.update(policyEnforcement);
         return ResponseDTO.newResponse(policyEnforcement.toDTO());
     }
@@ -165,7 +163,7 @@ public class GovernancePolicyEnforcementResource {
             NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
            @PathParam("enforcementID") @Parameter(
                    required = true, description = "Unique identifier for the policy enforcement") @NotNull @Valid String uuid) {
-        policyEnforcementService.listid(accountId,uuid);
+        policyEnforcementService.listid(accountId,uuid,false);
         boolean result = policyEnforcementService.delete(accountId, uuid);
         return ResponseDTO.newResponse(result);
     }

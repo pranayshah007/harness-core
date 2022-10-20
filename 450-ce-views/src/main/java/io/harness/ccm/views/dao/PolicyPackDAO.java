@@ -10,6 +10,7 @@ package io.harness.ccm.views.dao;
 import io.harness.ccm.views.entities.Policy;
 import io.harness.ccm.views.entities.PolicyPack;
 import io.harness.ccm.views.entities.PolicyPack.PolicySetId;
+import io.harness.ccm.views.service.GovernancePolicyService;
 import io.harness.exception.InvalidRequestException;
 import io.harness.persistence.HPersistence;
 
@@ -24,9 +25,10 @@ import java.util.List;
 @Slf4j
 @Singleton
 public class PolicyPackDAO {
+
   @Inject
    private HPersistence hPersistence;
-   private PolicyDAO policyDAO;
+   private GovernancePolicyService policyService;
 
   public boolean save(PolicyPack policySet) {
     log.info("created: {}", hPersistence.save(policySet));
@@ -65,7 +67,7 @@ public class PolicyPackDAO {
     return policy;
   }
 
-  public PolicyPack listid(String accountId, String uuid) {
+  public PolicyPack listid(String accountId, String uuid, boolean create) {
     try {
       return hPersistence.createQuery(PolicyPack.class)
               .field(PolicySetId.accountId)
@@ -76,17 +78,18 @@ public class PolicyPackDAO {
               .get(0);
     } catch (IndexOutOfBoundsException e) {
       log.error("No such policy pack exists,{} accountId{} uuid{}", e,accountId,uuid);
+      if(create==true) {
+        return null;
+      }
       throw new InvalidRequestException("No such policy pack exists");
     }
   }
-  public void check(String accountId, List<String> policiesIdentifier) {
-    {
+  public void check(String accountId, List<String> policiesPackIdentifier) {
 
-      for(String identifiers: policiesIdentifier )
-      {
-        policyDAO.listid(accountId,identifiers);
-      }
-       }
+    for(String identifiers:  policiesPackIdentifier )
+    {
+      listid(accountId,identifiers,false);
+    }
   }
   public List<PolicyPack> list(String accountId) {
     return hPersistence.createQuery(PolicyPack.class).field(PolicySetId.accountId).equal(accountId).asList();

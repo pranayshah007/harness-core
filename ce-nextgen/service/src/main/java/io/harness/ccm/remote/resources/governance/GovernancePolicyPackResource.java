@@ -11,27 +11,28 @@ import com.codahale.metrics.annotation.ExceptionMetered;
 import com.codahale.metrics.annotation.Timed;
 import com.google.inject.Inject;
 import io.harness.NGCommonEntityConstants;
+import static io.harness.NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE;
 import io.harness.accesscontrol.AccountIdentifier;
+import static io.harness.annotations.dev.HarnessTeam.CE;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.CENextGenConfiguration;
 import io.harness.ccm.rbac.CCMRbacHelper;
-import io.harness.ccm.scheduler.SchedulerClient;
-import io.harness.ccm.scheduler.SchedulerDTO;
+//import io.harness.ccm.scheduler.SchedulerClient;
+//import io.harness.ccm.scheduler.SchedulerDTO;
 import io.harness.ccm.utils.LogAccountIdentifier;
 import io.harness.ccm.views.dto.CreatePolicyPackDTO;
 import io.harness.ccm.views.entities.Policy;
 import io.harness.ccm.views.entities.PolicyPack;
 import io.harness.ccm.views.service.GovernancePolicyService;
 import io.harness.ccm.views.service.PolicyPackService;
+import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.security.annotations.NextGenManagerAuth;
 
-import com.codahale.metrics.annotation.ExceptionMetered;
-import com.codahale.metrics.annotation.Timed;
-import com.google.gson.Gson;
-import com.google.inject.Inject;
+
+import io.harness.security.annotations.PublicApi;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
@@ -55,15 +56,14 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import lombok.extern.slf4j.Slf4j;
-import okhttp3.*;
 import org.springframework.stereotype.Service;
-import retrofit2.Response;
 
 @Api("governance")
 @Path("governance")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-@NextGenManagerAuth
+//@NextGenManagerAuth
+@PublicApi
 @Service
 @OwnedBy(CE)
 @Slf4j
@@ -91,7 +91,7 @@ public class GovernancePolicyPackResource {
   private final CCMRbacHelper rbacHelper;
   private final PolicyPackService policyPackService;
   private final GovernancePolicyService policyService;
-  @Inject SchedulerClient schedulerClient;
+ // @Inject SchedulerClient schedulerClient;
   @Inject CENextGenConfiguration configuration;
 
   @Inject
@@ -119,35 +119,37 @@ public class GovernancePolicyPackResource {
           description = "Request body containing Policy store object") @Valid CreatePolicyPackDTO createPolicySetDTO) {
     // rbacHelper.checkPolicySetEditPermission(accountId, null, null);
     PolicyPack policyPack = createPolicySetDTO.getPolicyPack();
-    for (String identifiers : policyPack.getPoliciesIdentifier()) {
-      policyService.listid(accountId, identifiers);
+    if(policyPackService.listid(accountId,policyPack.getUuid(),true)!=null)
+    {
+        throw new InvalidRequestException("Policy pack with this uuid already exits");
     }
     policyPack.setAccountId(accountId);
+    policyService.check(accountId, policyPack.getPoliciesIdentifier());
     policyPackService.save(policyPack);
-    if (configuration.getGovernanceConfig().isUseDkron()) {
-      log.info("USe dkron is enabled in config");
-      try {
-        SchedulerDTO schedulerDTO = SchedulerDTO.builder()
-                                        .schedule("@every 30s")
-                                        .disabled(true)
-                                        .name("get-cedev-version")
-                                        .displayname("get-cedev-version")
-                                        .timezone("UTC")
-                                        .executor("http")
-                                        .executor_config(SchedulerDTO.ExecutorConfig.builder()
-                                                             .method("GET")
-                                                             .url("http://ce-dev.harness.io/api/version")
-                                                             .build())
-                                        .build();
-        log.info(new Gson().toJson(schedulerDTO));
-        okhttp3.RequestBody body =
-            okhttp3.RequestBody.create(okhttp3.MediaType.parse("application/json"), new Gson().toJson(schedulerDTO));
-        Response res = schedulerClient.createSchedule(body).execute();
-        log.info("code: {}, message: {}, body: {}", res.code(), res.message(), res.body());
-      } catch (Exception e) {
-        log.info("{}", e.toString());
-      }
-    }
+//    if (configuration.getGovernanceConfig().isUseDkron()) {
+//      log.info("USe dkron is enabled in config");
+//      try {
+//        SchedulerDTO schedulerDTO = SchedulerDTO.builder()
+//                                        .schedule("@every 30s")
+//                                        .disabled(true)
+//                                        .name("get-cedev-version")
+//                                        .displayname("get-cedev-version")
+//                                        .timezone("UTC")
+//                                        .executor("http")
+//                                        .executor_config(SchedulerDTO.ExecutorConfig.builder()
+//                                                             .method("GET")
+//                                                             .url("http://ce-dev.harness.io/api/version")
+//                                                             .build())
+//                                        .build();
+//        log.info(new Gson().toJson(schedulerDTO));
+//        okhttp3.RequestBody body =
+//            okhttp3.RequestBody.create(okhttp3.MediaType.parse("application/json"), new Gson().toJson(schedulerDTO));
+//        Response res = schedulerClient.createSchedule(body).execute();
+//        log.info("code: {}, message: {}, body: {}", res.code(), res.message(), res.body());
+//      } catch (Exception e) {
+//        log.info("{}", e.toString());
+//      }
+//    }
     // TODO: Add support for GCP cloud scheduler too
 
     return ResponseDTO.newResponse(policyPack.toDTO());
@@ -173,6 +175,8 @@ public class GovernancePolicyPackResource {
     PolicyPack policyPack = createPolicySetDTO.getPolicyPack();
     policyPack.toDTO();
     policyPack.setAccountId(accountId);
+      policyPackService.listid(accountId,policyPack.getUuid(),false);
+      policyService.check(accountId, policyPack.getPoliciesIdentifier());
     policyPackService.update(policyPack);
     return ResponseDTO.newResponse(policyPack);
   }
@@ -196,10 +200,8 @@ public class GovernancePolicyPackResource {
     // rbacHelper.checkPolicyPackPermission(accountId, null, null);
     PolicyPack query = createPolicyPackDTO.getPolicyPack();
     List<Policy> Policies = new ArrayList<>();
-    for(String it: query.getPoliciesIdentifier())
-    {
-      Policies.add(policyService.listid(accountId,it));
-    }
+      policyPackService.listid(accountId,query.getUuid(),false);
+      policyService.check(accountId, query.getPoliciesIdentifier());
 
     return ResponseDTO.newResponse(Policies);
   }
@@ -245,7 +247,7 @@ public class GovernancePolicyPackResource {
          @PathParam("policyPackId") @Parameter(
                  required = true, description = "Unique identifier for the policy") @NotNull @Valid String uuid) {
     // rbacHelper.checkPolicyPackDeletePermission(accountId, null, null);
-    policyPackService.listid(accountId,uuid);
+    policyPackService.listid(accountId,uuid,false);
     boolean result = policyPackService.delete(accountId, uuid);
     return ResponseDTO.newResponse(result);
   }

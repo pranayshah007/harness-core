@@ -57,7 +57,7 @@ public class PolicyDAO {
     return query.asList();
   }
 
-  public Policy listid(String accountId, String uuid) {
+  public Policy listid(String accountId, String uuid,boolean create) {
   try {
     return hPersistence.createQuery(Policy.class)
             .field(PolicyId.accountId)
@@ -68,6 +68,10 @@ public class PolicyDAO {
             .get(0);
   } catch (IndexOutOfBoundsException e) {
     log.error("No such policy exists,{} accountId{} uuid{}", e,accountId,uuid);
+    if (create==true)
+    {
+      return null;
+    }
     throw new InvalidRequestException("No such policy exists");
   }
   }
@@ -107,5 +111,11 @@ public class PolicyDAO {
                               .filter(PolicyId.isStablePolicy, isStablePolicy)
                               .filter(PolicyId.accountId, accountId);
     return query.asList();
+  }
+  public void check(String accountId, List<String> policiesIdentifier )
+  {
+    for (String identifiers : policiesIdentifier) {
+      listid(accountId, identifiers,false);
+  }
   }
 }

@@ -6,6 +6,8 @@ import io.harness.ccm.views.entities.Policy;
 import io.harness.ccm.views.entities.PolicyEnforcement;
 import io.harness.ccm.views.entities.PolicyEnforcement.PolicyEnforcementId;
 import io.harness.ccm.views.entities.PolicyPack;
+import io.harness.ccm.views.service.GovernancePolicyService;
+import io.harness.ccm.views.service.PolicyPackService;
 import io.harness.exception.InvalidRequestException;
 import io.harness.persistence.HPersistence;
 import lombok.extern.slf4j.Slf4j;
@@ -14,14 +16,15 @@ import org.mongodb.morphia.query.UpdateOperations;
 
 import java.util.List;
 
-@Slf4j
-@Singleton
 
+@Singleton
+@Slf4j
 public class PolicyEnforcementDAO {
     @Inject
-    private HPersistence hPersistence;
-    private PolicyPackDAO policyPackDAO;
-    private PolicyDAO policyDAO;
+    private  HPersistence hPersistence;
+    private GovernancePolicyService policyService;
+    private  PolicyPackService policyPackService;
+
 
     public boolean save(PolicyEnforcement PolicyEnforcement) {
         log.info("created: {}", hPersistence.save(PolicyEnforcement));
@@ -29,7 +32,7 @@ public class PolicyEnforcementDAO {
     }
 
     public boolean delete(String accountId, String uuid) {
-        Query<PolicyPack> query = hPersistence.createQuery(PolicyPack.class)
+        Query<PolicyEnforcement> query = hPersistence.createQuery(PolicyEnforcement.class)
                 .field(PolicyEnforcementId.accountId)
                 .equal(accountId)
                 .field(PolicyEnforcementId.uuid)
@@ -63,7 +66,7 @@ public class PolicyEnforcementDAO {
         return policy;
     }
 
-    public PolicyEnforcement listid(String accountId, String uuid){
+    public PolicyEnforcement listid(String accountId, String uuid, boolean create){
         try {
             return hPersistence.createQuery(PolicyEnforcement.class)
                     .field(PolicyEnforcementId.accountId)
@@ -74,19 +77,11 @@ public class PolicyEnforcementDAO {
                     .get(0);
         } catch (IndexOutOfBoundsException e) {
             log.error("No such policy pack exists,{} accountId{} uuid{}", e,accountId,uuid);
+            if(create==true)
+            {
+                return null;
+            }
             throw new InvalidRequestException("No such policy pack exists");
-        }
-    }
-
-    public void check(String accountId, List<String> policyIds , List<String> policyPackIDs)
-    {
-        for(String identifiers: policyIds )
-        {
-            policyDAO.listid(accountId,identifiers);
-        }
-        for(String identifiers: policyPackIDs )
-        {
-            policyPackDAO.listid(accountId,identifiers);
         }
     }
 

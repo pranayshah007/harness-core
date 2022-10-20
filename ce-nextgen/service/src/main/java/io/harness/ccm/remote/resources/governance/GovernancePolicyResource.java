@@ -22,6 +22,7 @@ import io.harness.ccm.views.dto.ListDTO;
 import io.harness.ccm.views.entities.Policy;
 import io.harness.ccm.views.entities.PolicyRequest;
 import io.harness.ccm.views.service.GovernancePolicyService;
+import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -115,6 +116,10 @@ public class GovernancePolicyResource {
     //rbacHelper.checkPolicyEditPermission(accountId, null, null);
     Policy policy = createPolicyDTO.getPolicy();
     policy.setAccountId(accountId);
+    if(governancePolicyService.listid(accountId,policy.getUuid(),true)!=null)
+    {
+      throw new InvalidRequestException("Policy  with this uuid already exits");
+    }
     governancePolicyService.save(policy);
     return ResponseDTO.newResponse(policy.toDTO());
   }
@@ -169,7 +174,7 @@ public class GovernancePolicyResource {
       @PathParam("policyId") @Parameter(
           required = true, description = "Unique identifier for the policy") @NotNull @Valid String uuid) {
     //rbacHelper.checkPolicyDeletePermission(accountId, null, null);
-    governancePolicyService.listid(accountId,uuid);
+    governancePolicyService.listid(accountId,uuid,false);
     boolean result = governancePolicyService.delete(accountId, uuid);
     return ResponseDTO.newResponse(result);
   }
@@ -200,7 +205,7 @@ public class GovernancePolicyResource {
     String resource = query.getResource();
     String tags = query.getTags();
     if (uuid != null) {
-      Policy policy = governancePolicyService.listid(accountId, uuid);
+      Policy policy = governancePolicyService.listid(accountId, uuid,false);
       Policies.add(policy);
       return ResponseDTO.newResponse(Policies);
     }
