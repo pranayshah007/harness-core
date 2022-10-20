@@ -151,8 +151,22 @@ public class CDNGPipelineConfigurationResource {
   @ApiOperation(
       value = "Gets generated Yaml snippet based on strategy parameters", nickname = "postExecutionStrategyYaml")
   public ResponseDTO<String>
-  getExecutionStrategyYaml(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
-                               NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
+  getExecutionStrategyYaml(@NotNull @QueryParam("serviceDefinitionType") ServiceDefinitionType serviceDefinitionType,
+      @NotNull @QueryParam("strategyType") ExecutionStrategyType executionStrategyType,
+      @QueryParam("includeVerify") boolean includeVerify, @NotNull @Body StrategyParameters strategyParameters)
+      throws IOException {
+    return ResponseDTO.newResponse(cdngPipelineConfigurationHelper.generateExecutionStrategyYaml(
+        null, serviceDefinitionType, executionStrategyType, includeVerify, strategyParameters));
+  }
+
+  @POST
+  @Path("/strategies/yaml-snippets-v2/")
+  @ApiOperation(
+      value = "Gets generated Yaml snippet based on strategy parameters", nickname = "postExecutionStrategyYaml")
+  public ResponseDTO<String>
+  getExecutionStrategyYamlV2(
+      @Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
+          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
       @NotNull @QueryParam("serviceDefinitionType") ServiceDefinitionType serviceDefinitionType,
       @NotNull @QueryParam("strategyType") ExecutionStrategyType executionStrategyType,
       @QueryParam("includeVerify") boolean includeVerify, @NotNull @Body StrategyParameters strategyParameters)

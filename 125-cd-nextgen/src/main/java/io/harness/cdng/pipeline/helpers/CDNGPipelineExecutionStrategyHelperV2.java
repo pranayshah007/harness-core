@@ -71,6 +71,11 @@ public class CDNGPipelineExecutionStrategyHelperV2 {
 
   public String generateCanaryYaml(String accountIdentifier, ServiceDefinitionType serviceDefinitionType,
       boolean includeVerify, StrategyParameters strategyParameters) throws IOException {
+    if (null == accountIdentifier) {
+      log.info("No account identifier provided, generating yaml without templates");
+      return cdngPipelineExecutionStrategyHelper.generateSshWinRmCanaryYaml(
+          serviceDefinitionType, strategyParameters, includeVerify);
+    }
     try {
       return generateSshWinRmCanaryYaml(accountIdentifier, serviceDefinitionType, strategyParameters, includeVerify);
     } catch (Exception e) {
@@ -82,6 +87,11 @@ public class CDNGPipelineExecutionStrategyHelperV2 {
 
   public String generateBasicYaml(String accountIdentifier, ServiceDefinitionType serviceDefinitionType,
       boolean includeVerify, StrategyParameters strategyParameters) throws IOException {
+    if (null == accountIdentifier) {
+      log.info("No account identifier provided, generating yaml without templates");
+      return cdngPipelineExecutionStrategyHelper.generateSshWinRmBasicYaml(
+          serviceDefinitionType, strategyParameters, includeVerify);
+    }
     try {
       return generateSshWinRmBasicYaml(accountIdentifier, serviceDefinitionType, strategyParameters, includeVerify);
     } catch (Exception e) {
@@ -93,6 +103,11 @@ public class CDNGPipelineExecutionStrategyHelperV2 {
 
   public String generateRollingYaml(String accountIdentifier, ServiceDefinitionType serviceDefinitionType,
       boolean includeVerify, StrategyParameters strategyParameters) throws IOException {
+    if (null == accountIdentifier) {
+      log.info("No account identifier provided, generating yaml without templates");
+      return cdngPipelineExecutionStrategyHelper.generateSshWinRmRollingYaml(
+          serviceDefinitionType, strategyParameters, includeVerify);
+    }
     try {
       return generateSshWinRmRollingYaml(accountIdentifier, serviceDefinitionType, strategyParameters, includeVerify);
     } catch (Exception e) {
