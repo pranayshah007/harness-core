@@ -50,4 +50,6 @@ public interface AlertService extends OwnedByAccount, OwnedByApplication {
   Optional<Alert> findExistingAlert(String accountId, String appId, AlertType alertType, AlertData alertData);
 
   void deleteByArtifactStream(String appId, String artifactStreamId);
+
+  void deleteArtifactStreamAlertForAccount(String accountId);
 }

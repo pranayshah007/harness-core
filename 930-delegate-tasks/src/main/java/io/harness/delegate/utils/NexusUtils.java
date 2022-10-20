@@ -18,9 +18,11 @@ import io.harness.artifact.ArtifactUtilities;
 import io.harness.delegate.beans.connector.nexusconnector.NexusConnectorDTO;
 import io.harness.delegate.task.ssh.artifact.NexusArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.SshWinRmArtifactDelegateConfig;
+import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.nexus.NexusRequest;
 
+import java.util.Map;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.HttpUrl;
@@ -30,6 +32,10 @@ import okhttp3.HttpUrl;
 @OwnedBy(CDP)
 public class NexusUtils {
   private static final String MAVEN_REPOSITORY_FORMAT = "maven";
+  private static final String NUGET_REPOSITORY_FORMAT = "nuget";
+  private static final String METADATA_URL = "url";
+  private static final String METADATA_PACKAGE = "package";
+  private static final String METADATA_VERSION = "version";
 
   public static NexusArtifactDelegateConfig getNexusArtifactDelegateConfig(
       SshWinRmArtifactDelegateConfig artifactDelegateConfig) {
@@ -49,15 +55,27 @@ public class NexusUtils {
   }
 
   public static String getNexusArtifactFileName(
-      NexusVersion nexusVersion, final String repositoryFormat, final String artifactUrl) {
-    if (NexusVersion.NEXUS2 == nexusVersion && MAVEN_REPOSITORY_FORMAT.equals(repositoryFormat)) {
-      return buildNexusArtifactFileNameFromMavenArtifactUrl(artifactUrl);
+      NexusVersion nexusVersion, final String repositoryFormat, Map<String, String> metadata) {
+    final String artifactUrl = metadata.get(METADATA_URL);
+    if (isEmpty(artifactUrl)) {
+      throw new InvalidArgumentsException("Nexus metadata url cannot ne null or empty");
     }
-    // NEXUS3, NEXUS2 nuget, NEXUS2 npm
+
+    // NEXUS2 mvn
+    if (NexusVersion.NEXUS2 == nexusVersion && MAVEN_REPOSITORY_FORMAT.equals(repositoryFormat)) {
+      return buildNexus2MvnArtifactFileName(artifactUrl);
+    }
+
+    // NEXUS3 nuget, NEXUS2 nuget
+    if (NUGET_REPOSITORY_FORMAT.equals(repositoryFormat)) {
+      return buildNexusNugetArtifactFileName(metadata);
+    }
+
+    // NEXUS3 mvn npm, NEXUS2 npm
     return ArtifactUtilities.getArtifactName(artifactUrl);
   }
 
-  public static String buildNexusArtifactFileNameFromMavenArtifactUrl(final String mvnArtifactUrl) {
+  public static String buildNexus2MvnArtifactFileName(final String mvnArtifactUrl) {
     HttpUrl httpUrl = HttpUrl.parse(mvnArtifactUrl);
     if (httpUrl == null) {
       throw new InvalidRequestException(format("Unable to parse Nexus2 maven artifact url, %s", mvnArtifactUrl));
@@ -66,7 +84,7 @@ public class NexusUtils {
     String artifactId = httpUrl.queryParameter("a");
     if (isEmpty(artifactId)) {
       throw new InvalidRequestException(
-          format("Unable to found artifact Id from Nexus artifact path, artifactUrl: %s", mvnArtifactUrl));
+          format("Unable to found artifact Id from Nexus artifact url, artifactUrl: %s", mvnArtifactUrl));
     }
 
     StringBuilder artifactName = new StringBuilder(artifactId);
@@ -80,6 +98,19 @@ public class NexusUtils {
     }
     String extension = httpUrl.queryParameter("e");
     return artifactName.append('.').append(extension).toString();
+  }
+
+  private static String buildNexusNugetArtifactFileName(Map<String, String> metadata) {
+    final String packageName = metadata.get(METADATA_PACKAGE);
+    final String version = metadata.get(METADATA_VERSION);
+    if (isEmpty(packageName)) {
+      throw new InvalidArgumentsException("Nexus metadata package cannot be null or empty");
+    }
+    if (isEmpty(version)) {
+      throw new InvalidArgumentsException("Nexus metadata version cannot be null or empty");
+    }
+
+    return format("%s-%s.nupkg", packageName, version);
   }
 
   public static NexusVersion getNexusVersion(NexusArtifactDelegateConfig nexusArtifactDelegateConfig) {

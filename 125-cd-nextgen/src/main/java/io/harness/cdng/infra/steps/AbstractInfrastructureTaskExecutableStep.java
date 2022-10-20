@@ -33,6 +33,7 @@ import io.harness.cdng.infra.InfrastructureValidator;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.infra.yaml.AzureWebAppInfrastructure;
 import io.harness.cdng.infra.yaml.CustomDeploymentInfrastructure;
+import io.harness.cdng.infra.yaml.EcsInfrastructure;
 import io.harness.cdng.infra.yaml.Infrastructure;
 import io.harness.cdng.infra.yaml.K8SDirectInfrastructure;
 import io.harness.cdng.infra.yaml.K8sAzureInfrastructure;
@@ -160,8 +161,8 @@ abstract class AbstractInfrastructureTaskExecutableStep {
     return new OutcomeSet(serviceOutcome, environmentOutcome);
   }
 
-  protected TaskRequestData obtainTaskInternal(
-      Ambiance ambiance, Infrastructure infrastructure, NGLogCallback logCallback, Boolean addRcStep) {
+  protected TaskRequestData obtainTaskInternal(Ambiance ambiance, Infrastructure infrastructure,
+      NGLogCallback logCallback, Boolean addRcStep, boolean skipInstances) {
     saveExecutionLog(logCallback, "Starting infrastructure step...");
 
     validateConnector(infrastructure, ambiance);
@@ -179,8 +180,6 @@ abstract class AbstractInfrastructureTaskExecutableStep {
         infrastructureMapper.toOutcome(infrastructure, environmentOutcome, serviceOutcome,
             ngAccess.getAccountIdentifier(), ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier());
 
-    // save infrastructure sweeping output for further use within the step
-    boolean skipInstances = infrastructureStepHelper.getSkipInstances(infrastructure);
     executionSweepingOutputService.consume(ambiance, INFRA_TASK_EXECUTABLE_STEP_OUTPUT,
         InfrastructureTaskExecutableStepSweepingOutput.builder()
             .infrastructureOutcome(infrastructureOutcome)
@@ -724,6 +723,12 @@ abstract class AbstractInfrastructureTaskExecutableStep {
         AzureWebAppInfrastructure azureWebAppInfrastructure = (AzureWebAppInfrastructure) infrastructure;
         infrastructureStepHelper.validateExpression(azureWebAppInfrastructure.getConnectorRef(),
             azureWebAppInfrastructure.getSubscriptionId(), azureWebAppInfrastructure.getResourceGroup());
+        break;
+
+      case InfrastructureKind.ECS:
+        EcsInfrastructure ecsInfrastructure = (EcsInfrastructure) infrastructure;
+        infrastructureStepHelper.validateExpression(
+            ecsInfrastructure.getConnectorRef(), ecsInfrastructure.getRegion(), ecsInfrastructure.getCluster());
         break;
       default:
         throw new InvalidArgumentsException(format("Unknown Infrastructure Kind : [%s]", infrastructure.getKind()));

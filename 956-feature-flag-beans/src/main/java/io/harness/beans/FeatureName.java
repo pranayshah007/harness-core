@@ -35,9 +35,7 @@ public enum FeatureName {
   ARTIFACT_STREAM_DELEGATE_SCOPING,
   ARTIFACT_STREAM_DELEGATE_TIMEOUT,
   AUTO_ACCEPT_SAML_ACCOUNT_INVITES,
-  AZURE_VMSS,
   AZURE_WEBAPP,
-  AUDIT_TRAIL_ENHANCEMENT,
   BIND_FETCH_FILES_TASK_TO_DELEGATE,
   CCM_SUSTAINABILITY("Sustainability Feature in CCM Module", HarnessTeam.CE),
   CDNG_ENABLED,
@@ -55,7 +53,6 @@ public enum FeatureName {
   CUSTOM_APM_CV_TASK,
   CUSTOM_DASHBOARD,
   CUSTOM_DEPLOYMENT_ARTIFACT_FROM_INSTANCE_JSON,
-  NG_DEPLOYMENT_TEMPLATE,
   CUSTOM_MAX_PAGE_SIZE,
   EXTRA_LARGE_PAGE_SIZE,
   CVNG_ENABLED,
@@ -83,6 +80,7 @@ public enum FeatureName {
   FFM_2134_FF_PIPELINES_TRIGGER,
   FFM_3938_STALE_FLAGS_ACTIVE_CARD_HIDE_SHOW,
   FFM_4117_INTEGRATE_SRM("Enable Feature Flags to send events to the SRM module", HarnessTeam.CF),
+  FFM_3959_FF_MFE_Environment_Detail("Enable Feature Flag MFE Environment page", HarnessTeam.CF),
   FFM_3961_ENHANCED_ONBOARDING("Enable new onboarding experience for FeatureFlags", HarnessTeam.CF),
   WINRM_COPY_CONFIG_OPTIMIZE,
   ECS_MULTI_LBS,
@@ -188,7 +186,6 @@ public enum FeatureName {
   CI_OVERVIEW_PAGE("UI flag to show CI overview page", HarnessTeam.CI),
   SKIP_BASED_ON_STACK_STATUSES,
   WF_VAR_MULTI_SELECT_ALLOWED_VALUES,
-  LDAP_GROUP_SYNC_JOB_ITERATOR,
   CF_CLI7,
   CF_APP_NON_VERSIONING_INACTIVE_ROLLBACK,
   CF_ALLOW_SPECIAL_CHARACTERS,
@@ -238,7 +235,6 @@ public enum FeatureName {
   SELF_SERVICE_ENABLED,
   CHI_CUSTOM_HEALTH,
   CHI_CUSTOM_HEALTH_LOGS,
-  AZURE_SAML_150_GROUPS_SUPPORT,
   CLOUDFORMATION_SKIP_WAIT_FOR_RESOURCES,
   CLOUDFORMATION_CHANGE_SET,
   FAIL_WORKFLOW_IF_SECRET_DECRYPTION_FAILS,
@@ -314,7 +310,6 @@ public enum FeatureName {
   ENABLE_DEFAULT_TIMEFRAME_IN_DEPLOYMENTS,
   EXPORT_TF_PLAN_JSON_NG,
   ADD_MANIFEST_COLLECTION_STEP,
-  NG_FILE_STORE,
   ACCOUNT_BASIC_ROLE,
   CVNG_TEMPLATE_MONITORED_SERVICE,
   CVNG_TEMPLATE_VERIFY_STEP,
@@ -369,7 +364,6 @@ public enum FeatureName {
       HarnessTeam.SPG),
   HOSTED_BUILDS("Used to enabled Hosted builds in paid accounts", HarnessTeam.CI),
   CD_ONBOARDING_ENABLED,
-  ECS_NG,
   ATTRIBUTE_TYPE_ACL_ENABLED("Enable attribute filter on NG UI for ACL", HarnessTeam.PL),
   CREATE_DEFAULT_PROJECT("Enables auto create default project after user signup", HarnessTeam.GTM),
   ANALYSE_TF_PLAN_SUMMARY(
@@ -462,7 +456,14 @@ public enum FeatureName {
   SPG_LIVE_DASHBOARD_STATS_DEBUGGING("Live debugging for dashboard stats in CG", HarnessTeam.SPG),
   TI_MFE_ENABLED("Migrating TI UI to Microfrontend. This feature flag is needed to test/control the new architecture",
       HarnessTeam.CI),
-  CI_CACHE_INTELLIGENCE("Feature flag for cache intelligence feature", HarnessTeam.CI);
+  CI_CACHE_INTELLIGENCE("Feature flag for cache intelligence feature", HarnessTeam.CI),
+  USE_INSTANCES_PURGE_ITERATOR_FW(
+      "Switch to use iterator fw instead of quartz scheduler for InstancesPurgeJob", HarnessTeam.CDP),
+  SYNC_GIT_CLONE_AND_COPY_TO_DEST_DIR(
+      "This feature flag helps in synchronizing the git clone of repo and copying the files then to destination directory",
+      HarnessTeam.CDP),
+  ECS_ROLLBACK_MAX_DESIRED_COUNT("Changes ECS Rollback Desired Count to Max(OldService, NewService)", HarnessTeam.CDP),
+  CI_YAML_VERSIONING("Feature flag for yaml simplification", HarnessTeam.CI);
 
   @Deprecated
   FeatureName() {

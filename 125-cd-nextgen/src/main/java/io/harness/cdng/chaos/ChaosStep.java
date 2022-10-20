@@ -1,3 +1,10 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.cdng.chaos;
 
 import static io.harness.eraro.ErrorCode.GENERAL_ERROR;
@@ -5,7 +12,9 @@ import static io.harness.eraro.ErrorCode.GENERAL_ERROR;
 import io.harness.chaos.client.beans.ChaosQuery;
 import io.harness.chaos.client.beans.ChaosRerunResponse;
 import io.harness.chaos.client.remote.ChaosHttpClient;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.eraro.Level;
+import io.harness.exception.InvalidRequestException;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -23,6 +32,7 @@ import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepOutcome;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.tasks.ResponseData;
 
@@ -106,6 +116,19 @@ public class ChaosStep implements AsyncExecutable<StepElementParameters> {
           .build();
     }
 
+    if (!validateAssertions((ChaosStepParameters) stepParameters.getSpec(), data)) {
+      return responseBuilder.status(Status.FAILED)
+          .failureInfo(FailureInfo.newBuilder()
+                           .addFailureData(FailureData.newBuilder()
+                                               .setLevel(Level.ERROR.name())
+                                               .setCode(GENERAL_ERROR.name())
+                                               .addFailureTypes(FailureType.APPLICATION_FAILURE)
+                                               .setMessage("Assertion failed")
+                                               .build())
+                           .build())
+          .build();
+    }
+
     return responseBuilder.status(Status.SUCCEEDED).build();
   }
 
@@ -119,5 +142,27 @@ public class ChaosStep implements AsyncExecutable<StepElementParameters> {
     String query = String.format(BODY, experimentRef, AmbianceUtils.getOrgIdentifier(ambiance),
         AmbianceUtils.getProjectIdentifier(ambiance), AmbianceUtils.getAccountId(ambiance));
     return ChaosQuery.builder().query(query).build();
+  }
+
+  public static boolean validateAssertions(ChaosStepParameters stepParameters, ChaosStepNotifyData data) {
+    if (ParameterField.isNull(stepParameters.getAssertion())) {
+      return true;
+    }
+
+    ChaosStepExpressionEvaluator evaluator = new ChaosStepExpressionEvaluator(data);
+    String assertion = (String) stepParameters.getAssertion().fetchFinalValue();
+    if (assertion == null || EmptyPredicate.isEmpty(assertion.trim())) {
+      return true;
+    }
+    try {
+      Object value = evaluator.evaluateExpression(assertion);
+      if (!(value instanceof Boolean)) {
+        throw new InvalidRequestException(String.format(
+            "Expected boolean assertion, got %s value", value == null ? "null" : value.getClass().getSimpleName()));
+      }
+      return (boolean) value;
+    } catch (Exception e) {
+      throw new InvalidRequestException("Assertion provided is not a valid expression", e);
+    }
   }
 }

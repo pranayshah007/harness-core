@@ -50,6 +50,7 @@ public abstract class LogCVConfig extends CVConfig {
     return true;
   }
 
+  @JsonIgnore
   @Override
   public TimeRange getFirstTimeDataCollectionTimeRange() {
     TimeRange baseline = getBaseline();

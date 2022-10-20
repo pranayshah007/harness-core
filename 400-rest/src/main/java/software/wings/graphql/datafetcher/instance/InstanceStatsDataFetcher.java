@@ -50,11 +50,13 @@ import software.wings.service.impl.instance.FlatEntitySummaryStats;
 
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
+import com.mongodb.AggregationOptions;
 import graphql.schema.DataFetchingEnvironment;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.mongodb.morphia.aggregation.Group;
@@ -166,7 +168,10 @@ public class InstanceStatsDataFetcher
                   grouping(entityNameColumn, grouping("$first", entityNameColumn)))
               .project(projection("_id").suppress(), projection("entityId", "_id." + entityIdColumn),
                   projection("entityName", entityNameColumn), projection("count"))
-              .aggregate(FlatEntitySummaryStats.class)
+              .aggregate(FlatEntitySummaryStats.class,
+                  AggregationOptions.builder()
+                      .maxTime(wingsPersistence.getMaxTimeMs(Instance.class), TimeUnit.MILLISECONDS)
+                      .build())
               .forEachRemaining(flatEntitySummaryStats -> {
                 QLDataPoint dataPoint = getDataPoint(flatEntitySummaryStats, firstLevelAggregation.name());
                 dataPoints.add(dataPoint);
@@ -193,7 +198,10 @@ public class InstanceStatsDataFetcher
                           projection("name", secondLevelEntityNameColumn))))
               .sort(ascending("_id." + entityIdColumn), ascending("_id." + secondLevelEntityIdColumn),
                   descending("count"))
-              .aggregate(TwoLevelAggregatedData.class)
+              .aggregate(TwoLevelAggregatedData.class,
+                  AggregationOptions.builder()
+                      .maxTime(wingsPersistence.getMaxTimeMs(Instance.class), TimeUnit.MILLISECONDS)
+                      .build())
               .forEachRemaining(aggregatedDataList::add);
 
           return getStackedData(

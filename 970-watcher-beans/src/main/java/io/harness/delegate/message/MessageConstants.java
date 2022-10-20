@@ -56,6 +56,7 @@ public interface MessageConstants {
   // Messages received by watcher from delegate processes
   String NEW_DELEGATE = "new-delegate";
   String DELEGATE_STARTED = "delegate-started";
+  String DELEGATE_READY = "delegate-ready";
 
   // below msg will be sent to watcher if delegateId is not present
   String UNREGISTERED = "Unregistered";

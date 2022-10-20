@@ -26,9 +26,11 @@ import io.harness.capability.TestingCapability;
 import io.harness.ccm.config.CCMConfig;
 import io.harness.cvng.beans.DataCollectionConnectorBundle;
 import io.harness.cvng.beans.DataCollectionType;
+import io.harness.delegate.NoEligibleDelegatesInAccountException;
 import io.harness.delegate.beans.DelegateStringProgressData;
 import io.harness.delegate.beans.DelegateStringResponseData;
 import io.harness.delegate.beans.DelegateTaskDetails;
+import io.harness.delegate.beans.DelegateTaskExpiredException;
 import io.harness.delegate.beans.DelegateTaskNotifyResponseData;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskRank;
@@ -36,6 +38,9 @@ import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.beans.MailTaskParams;
 import io.harness.delegate.beans.MicrosoftTeamsTaskParams;
+import io.harness.delegate.beans.NoAvailableDelegatesException;
+import io.harness.delegate.beans.NoDelegatesException;
+import io.harness.delegate.beans.NoInstalledDelegatesException;
 import io.harness.delegate.beans.NotificationProcessingResponse;
 import io.harness.delegate.beans.NotificationTaskResponse;
 import io.harness.delegate.beans.PagerDutyTaskParams;
@@ -232,9 +237,11 @@ import io.harness.delegate.beans.connector.servicenow.ServiceNowValidationParams
 import io.harness.delegate.beans.connector.servicenow.connection.ServiceNowTestConnectionTaskNGResponse;
 import io.harness.delegate.beans.connector.splunkconnector.SplunkConnectionTaskParams;
 import io.harness.delegate.beans.connector.splunkconnector.SplunkConnectionTaskResponse;
+import io.harness.delegate.beans.connector.spotconnector.SpotDelegateTaskResponse;
 import io.harness.delegate.beans.connector.spotconnector.SpotTaskParams;
 import io.harness.delegate.beans.connector.spotconnector.SpotTaskType;
 import io.harness.delegate.beans.connector.spotconnector.SpotValidateTaskResponse;
+import io.harness.delegate.beans.connector.spotconnector.SpotValidationParams;
 import io.harness.delegate.beans.connector.vaultconnector.VaultValidationParams;
 import io.harness.delegate.beans.ecs.EcsBlueGreenCreateServiceResult;
 import io.harness.delegate.beans.ecs.EcsBlueGreenPrepareRollbackDataResult;
@@ -1287,6 +1294,8 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(SpotValidateTaskResponse.class, 21006);
     kryo.register(SpotTaskParams.class, 21007);
     kryo.register(SpotTaskType.class, 21008);
+    kryo.register(SpotValidationParams.class, 21009);
+    kryo.register(SpotDelegateTaskResponse.class, 21010);
 
     kryo.register(SecretType.class, 543214);
     kryo.register(ValueType.class, 543215);
@@ -1873,5 +1882,10 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(ArtifactoryFetchImagePathResponse.class, 55428);
     kryo.register(NexusArtifactDelegateConfig.class, 55429);
     kryo.register(SshConnectivityExecutionCapability.class, 55435);
+    kryo.register(NoInstalledDelegatesException.class, 73988);
+    kryo.register(NoEligibleDelegatesInAccountException.class, 73989);
+    kryo.register(NoAvailableDelegatesException.class, 73990);
+    kryo.register(NoDelegatesException.class, 73991);
+    kryo.register(DelegateTaskExpiredException.class, 980036);
   }
 }

@@ -452,7 +452,8 @@ public class AwsApiHelperService {
                                (String) history.get("v1Compatibility"), HashMap.class)))
                               .entrySet()
                               .stream()))
-        .filter(entry -> entry.getKey().equals("config"))
+        .filter(
+            entry -> entry.getKey().equals("config") && ((Map<String, Object>) entry.getValue()).get("Labels") != null)
         .flatMap(config
             -> ((Map<String, String>) ((Map<String, Object>) config.getValue()).get("Labels")).entrySet().stream())
         .collect(toMap(Map.Entry::getKey, Map.Entry::getValue));

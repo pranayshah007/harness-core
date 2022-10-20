@@ -37,10 +37,12 @@ import io.harness.cdng.infra.beans.K8sGcpInfrastructureOutcome;
 import io.harness.cdng.infra.mapper.InfrastructureEntityConfigMapper;
 import io.harness.cdng.infra.yaml.Infrastructure;
 import io.harness.cdng.infra.yaml.InfrastructureConfig;
+import io.harness.cdng.infra.yaml.InfrastructureDetailsAbstract;
 import io.harness.cdng.instance.outcome.InstancesOutcome;
 import io.harness.cdng.service.steps.ServiceStepOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.cdng.visitor.YamlTypes;
+import io.harness.common.ParameterFieldHelper;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.DelegateResponseData;
@@ -145,16 +147,17 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
 
     final InfrastructureConfig infrastructureConfig = fetchInfraConfigFromDBorThrow(ambiance, stepParameters);
     final Infrastructure infraSpec = infrastructureConfig.getInfrastructureDefinitionConfig().getSpec();
+    boolean skipInstances = ParameterFieldHelper.getBooleanParameterFieldValue(stepParameters.getSkipInstances());
 
     validateResources(ambiance, infraSpec);
-
+    setInfraIdentifierAndName(infraSpec, infrastructureConfig);
     resolver.updateExpressions(ambiance, infraSpec);
 
     final NGLogCallback logCallback = infrastructureStepHelper.getInfrastructureLogCallback(ambiance, true, LOG_SUFFIX);
     // Create delegate task for infra if needed
     if (isTaskStep(infraSpec.getKind())) {
       final TaskRequestData taskRequest = obtainTaskInternal(ambiance, infraSpec, logCallback,
-          !infrastructureConfig.getInfrastructureDefinitionConfig().isAllowSimultaneousDeployments());
+          !infrastructureConfig.getInfrastructureDefinitionConfig().isAllowSimultaneousDeployments(), skipInstances);
       final DelegateTaskRequest delegateTaskRequest =
           cdStepHelper.mapTaskRequestToDelegateTaskRequest(taskRequest.getTaskRequest(), taskRequest.getTaskData(),
               CollectionUtils.emptyIfNull(taskRequest.getTaskSelectorYamls())
@@ -169,7 +172,7 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
     }
 
     // If delegate task is not needed, just validate the infra spec
-    executeSync(ambiance, infrastructureConfig, logCallback);
+    executeSync(ambiance, infrastructureConfig, logCallback, skipInstances);
     return AsyncExecutableResponse.newBuilder()
         .addAllLogKeys(StepUtils.generateLogKeys(ambiance, List.of(LOG_SUFFIX)))
         .build();
@@ -280,7 +283,17 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
     pipelineRbacHelper.checkRuntimePermissions(ambiance, entityDetails);
   }
 
-  private void executeSync(Ambiance ambiance, InfrastructureConfig infrastructure, NGLogCallback logCallback) {
+  public void setInfraIdentifierAndName(Infrastructure infraSpec, InfrastructureConfig infrastructureConfig) {
+    if (infraSpec instanceof InfrastructureDetailsAbstract) {
+      ((InfrastructureDetailsAbstract) infraSpec)
+          .setInfraIdentifier(infrastructureConfig.getInfrastructureDefinitionConfig().getIdentifier());
+      ((InfrastructureDetailsAbstract) infraSpec)
+          .setInfraName(infrastructureConfig.getInfrastructureDefinitionConfig().getName());
+    }
+  }
+
+  private void executeSync(
+      Ambiance ambiance, InfrastructureConfig infrastructure, NGLogCallback logCallback, boolean skipInstances) {
     final Infrastructure spec = infrastructure.getInfrastructureDefinitionConfig().getSpec();
     validateConnector(spec, ambiance);
     saveExecutionLog(logCallback, "Fetching environment information...");
@@ -297,7 +310,6 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
         serviceOutcome, ngAccess.getAccountIdentifier(), ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier());
 
     // save spec sweeping output for further use within the step
-    boolean skipInstances = infrastructureStepHelper.getSkipInstances(spec);
     executionSweepingOutputService.consume(ambiance, INFRA_TASK_EXECUTABLE_STEP_OUTPUT,
         InfrastructureTaskExecutableStepSweepingOutput.builder()
             .infrastructureOutcome(infrastructureOutcome)

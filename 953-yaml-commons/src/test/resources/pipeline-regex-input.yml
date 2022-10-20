@@ -1,0 +1,6 @@
+pipeline:
+  identifier: "spipeline"
+  variables:
+    - name: "Var1"
+      type: "Number"
+      value: 99

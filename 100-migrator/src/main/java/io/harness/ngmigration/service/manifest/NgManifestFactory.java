@@ -26,6 +26,8 @@ public class NgManifestFactory {
   @Inject ValuesManifestRemoteStoreService valuesManifestRemoteStoreService;
   @Inject ValuesManifestLocalStoreService valuesManifestLocalStoreService;
   @Inject K8sManifestLocalStoreService k8sManifestLocalStoreService;
+  @Inject KustomizeSourceRepoStoreService kustomizeSourceRepoStoreService;
+  @Inject OpenshiftSourceRepoStoreService openshiftSourceRepoStoreService;
   @Inject ApplicationManifestService applicationManifestService;
 
   public NgManifestService getNgManifestService(ApplicationManifest applicationManifest) {
@@ -46,6 +48,10 @@ public class NgManifestFactory {
             return k8sManifestHelmSourceRepoStoreService;
           case HelmChartRepo:
             return k8sManifestHelmChartRepoStoreService;
+          case KustomizeSourceRepo:
+            return kustomizeSourceRepoStoreService;
+          case CUSTOM_OPENSHIFT_TEMPLATE:
+            return openshiftSourceRepoStoreService;
           default:
             throw new InvalidRequestException(String.format(
                 "%s storetype is currently not supported for %s appManifestKind", storeType, appManifestKind));

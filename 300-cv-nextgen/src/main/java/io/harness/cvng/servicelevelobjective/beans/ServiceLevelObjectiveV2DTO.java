@@ -7,12 +7,16 @@
 
 package io.harness.cvng.servicelevelobjective.beans;
 
+import static io.harness.cvng.CVConstants.SLO_SPEC;
+
 import io.harness.cvng.notification.beans.NotificationRuleRefDTO;
+import io.harness.cvng.servicelevelobjective.beans.slospec.ServiceLevelObjectiveSpec;
 import io.harness.data.validator.EntityIdentifier;
 import io.harness.data.validator.NGEntityName;
 import io.harness.gitsync.beans.YamlDTO;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Collections;
@@ -37,7 +41,6 @@ import lombok.experimental.FieldDefaults;
 @Schema(name = "AbstractServiceLevelObjective",
     description = "This is the Service Level Objective V2 entity defined in Harness")
 public class ServiceLevelObjectiveV2DTO implements YamlDTO {
-  @ApiModelProperty(required = true) @NotNull @EntityIdentifier ServiceLevelObjectiveType type;
   @ApiModelProperty(required = true) @EntityIdentifier(allowBlank = true) String orgIdentifier;
   @ApiModelProperty(required = true) @EntityIdentifier(allowBlank = true) String projectIdentifier;
   @ApiModelProperty(required = true) @NotNull @EntityIdentifier String identifier;
@@ -45,12 +48,12 @@ public class ServiceLevelObjectiveV2DTO implements YamlDTO {
   String description;
   @Size(max = 128) Map<String, String> tags;
   @ApiModelProperty(required = true) @NotNull List<String> userJourneyRefs;
-  @ApiModelProperty(required = true) @NotNull String monitoredServiceRef;
-  @ApiModelProperty(required = true) @NotNull String healthSourceRef;
-  @Valid ServiceLevelIndicatorType serviceLevelIndicatorType;
-  @Valid List<ServiceLevelIndicatorDTO> serviceLevelIndicators;
-  @Valid List<ServiceLevelObjectiveDetailsDTO> serviceLevelObjectivesDetails;
   @Valid @NotNull SLOTargetDTO sloTarget;
+  @ApiModelProperty(required = true) @NotNull @EntityIdentifier ServiceLevelObjectiveType type;
+  @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = SLO_SPEC, include = JsonTypeInfo.As.EXTERNAL_PROPERTY)
+  @Valid
+  @NotNull
+  ServiceLevelObjectiveSpec spec;
   List<NotificationRuleRefDTO> notificationRuleRefs;
 
   public List<NotificationRuleRefDTO> getNotificationRuleRefs() {

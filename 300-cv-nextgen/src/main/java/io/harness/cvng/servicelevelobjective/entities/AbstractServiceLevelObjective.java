@@ -36,6 +36,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import lombok.AccessLevel;
@@ -82,6 +83,7 @@ public abstract class AbstractServiceLevelObjective
   @NotNull private Double sloTargetPercentage;
   @FdIndex private long nextNotificationIteration;
   @FdIndex private long nextVerificationIteration;
+  @FdIndex private long createNextTaskIteration;
   @NotNull ServiceLevelObjectiveType type;
 
   public static List<MongoIndex> mongoIndexes() {
@@ -142,6 +144,9 @@ public abstract class AbstractServiceLevelObjective
     if (ServiceLevelObjectiveV2Keys.nextVerificationIteration.equals(fieldName)) {
       return this.nextVerificationIteration;
     }
+    if (ServiceLevelObjectiveV2Keys.createNextTaskIteration.equals(fieldName)) {
+      return this.createNextTaskIteration;
+    }
     throw new IllegalArgumentException("Invalid fieldName " + fieldName);
   }
 
@@ -155,9 +160,14 @@ public abstract class AbstractServiceLevelObjective
       this.nextVerificationIteration = nextIteration;
       return;
     }
+    if (ServiceLevelObjectiveV2Keys.createNextTaskIteration.equals(fieldName)) {
+      this.createNextTaskIteration = nextIteration;
+      return;
+    }
     throw new IllegalArgumentException("Invalid fieldName " + fieldName);
   }
 
+  public abstract Optional<String> mayBeGetMonitoredServiceIdentifier();
   public abstract static class AbstractServiceLevelObjectiveUpdatableEntity<T extends AbstractServiceLevelObjective, D
                                                                                 extends ServiceLevelObjectiveV2DTO>
       implements UpdatableEntity<T, D> {

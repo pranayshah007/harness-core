@@ -59,6 +59,7 @@ import io.harness.exception.WingsException;
 import io.harness.exception.WingsException.ReportTarget;
 import io.harness.ff.FeatureFlagService;
 import io.harness.logging.ExceptionLogger;
+import io.harness.persistence.HIterator;
 import io.harness.persistence.HPersistence;
 import io.harness.time.EpochUtils;
 
@@ -128,9 +129,7 @@ import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
-import com.mongodb.BasicDBObject;
-import com.mongodb.DBCollection;
-import com.mongodb.ReadPreference;
+import com.mongodb.AggregationOptions;
 import com.mongodb.TagSet;
 import java.util.ArrayList;
 import java.util.Date;
@@ -141,6 +140,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
@@ -262,7 +262,10 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
         .project(projection("_id").suppress(), projection("entityId", "_id." + entityIdColumn),
             projection("entityName", entityNameColumn), projection("count"))
         .sort(descending("count"))
-        .aggregate(FlatEntitySummaryStats.class)
+        .aggregate(FlatEntitySummaryStats.class,
+            AggregationOptions.builder()
+                .maxTime(wingsPersistence.getMaxTimeMs(Instance.class), TimeUnit.MILLISECONDS)
+                .build())
         .forEachRemaining(flatEntitySummaryStats -> {
           EntitySummaryStats entitySummaryStats = getEntitySummaryStats(flatEntitySummaryStats, groupByEntityType);
           entitySummaryStatsList.add(entitySummaryStats);
@@ -276,7 +279,10 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
         .createAggregation(Instance.class)
         .match(query)
         .group("_id", grouping("count", accumulator("$sum", 1)))
-        .aggregate(InstanceCount.class)
+        .aggregate(InstanceCount.class,
+            AggregationOptions.builder()
+                .maxTime(wingsPersistence.getMaxTimeMs(Instance.class), TimeUnit.MILLISECONDS)
+                .build())
         .forEachRemaining(instanceCount -> totalCount.addAndGet(instanceCount.getCount()));
     return totalCount.get();
   }
@@ -289,7 +295,10 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
         .group(Group.id(grouping("envType")), grouping("count", accumulator("$sum", 1)))
         .project(projection("_id").suppress(), projection("envType", "_id.envType"), projection("count"))
         .sort(ascending("_id.envType"))
-        .aggregate(EnvironmentSummaryStats.class)
+        .aggregate(EnvironmentSummaryStats.class,
+            AggregationOptions.builder()
+                .maxTime(wingsPersistence.getMaxTimeMs(Instance.class), TimeUnit.MILLISECONDS)
+                .build())
         .forEachRemaining(environmentSummaryStats -> {
           String envType = environmentSummaryStats.getEnvType();
           EntitySummary entitySummary =
@@ -472,7 +481,10 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
             grouping(
                 "instanceInfoList", grouping("$addToSet", projection("id", "_id"), projection("name", "hostName"))))
         .sort(ascending("_id.serviceId"), ascending("_id.envId"), descending("count"))
-        .aggregate(AggregationInfo.class)
+        .aggregate(AggregationInfo.class,
+            AggregationOptions.builder()
+                .maxTime(wingsPersistence.getMaxTimeMs(Instance.class), TimeUnit.MILLISECONDS)
+                .build())
         .forEachRemaining(instanceInfo -> {
           instanceInfoList.add(instanceInfo);
           log.info(instanceInfo.toString());
@@ -507,7 +519,10 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
             grouping(
                 "instanceInfoList", grouping("$addToSet", projection("id", "_id"), projection("name", "hostName"))))
         .sort(ascending("_id.envId"), descending("count"))
-        .aggregate(ServiceAggregationInfo.class)
+        .aggregate(ServiceAggregationInfo.class,
+            AggregationOptions.builder()
+                .maxTime(wingsPersistence.getMaxTimeMs(Instance.class), TimeUnit.MILLISECONDS)
+                .build())
         .forEachRemaining(serviceAggregationInfoList::add);
 
     return constructInstanceStatsForService(serviceId, serviceAggregationInfoList);
@@ -540,7 +555,11 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
     aggregationPipeline.limit(limit);
 
     final Iterator<ServiceInstanceCount> aggregate =
-        HPersistence.retry(() -> aggregationPipeline.aggregate(ServiceInstanceCount.class));
+        HPersistence.retry(()
+                               -> aggregationPipeline.aggregate(ServiceInstanceCount.class,
+                                   AggregationOptions.builder()
+                                       .maxTime(wingsPersistence.getMaxTimeMs(Instance.class), TimeUnit.MILLISECONDS)
+                                       .build()));
     aggregate.forEachRemaining(instanceInfoList::add);
 
     Set<String> serviceIds = new HashSet<>();
@@ -867,7 +886,10 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
                     projection("deployedAt", "lastDeployedAt"), projection("sourceName", "lastArtifactSourceName"),
                     projection("lastWorkflowExecutionId", "lastWorkflowExecutionId"))))
         .sort(descending("count"))
-        .aggregate(AggregationInfo.class)
+        .aggregate(AggregationInfo.class,
+            AggregationOptions.builder()
+                .maxTime(wingsPersistence.getMaxTimeMs(Instance.class), TimeUnit.MILLISECONDS)
+                .build())
         .forEachRemaining(instanceInfoList::add);
     return constructCurrentActiveInstances(instanceInfoList, appId, accountId, serviceId);
   }
@@ -995,20 +1017,24 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
     query.project("appId", true);
     query.project(Instance.CREATED_AT_KEY, true);
 
-    // Find the timestamp of oldest instance alive at fromTimestamp
-    long lhsCreatedAt = getCreatedTimeOfInstanceAtTimestamp(accountId, fromTimestamp, query, true);
     // Find the timestamp of latest instance alive at toTimestamp
     long rhsCreatedAt = getCreatedTimeOfInstanceAtTimestamp(accountId, toTimestamp, query, false);
 
-    DBCollection dbCollection = wingsPersistence.getCollection(Instance.class);
-    BasicDBObject instanceQuery = new BasicDBObject();
-    List<BasicDBObject> conditions = new ArrayList<>();
-    conditions.add(new BasicDBObject(InstanceKeys.accountId, accountId));
-    conditions.add(new BasicDBObject(Instance.CREATED_AT_KEY, new BasicDBObject("$gte", lhsCreatedAt)));
-    conditions.add(new BasicDBObject(Instance.CREATED_AT_KEY, new BasicDBObject("$lte", rhsCreatedAt)));
-    instanceQuery.put("$and", conditions);
-    Set<String> appIdsFromInstances =
-        new HashSet<>(dbCollection.distinct(InstanceKeys.appId, instanceQuery, ReadPreference.secondaryPreferred()));
+    Query<Instance> instanceQuery = wingsPersistence.createQuery(Instance.class)
+                                        .filter(InstanceKeys.accountId, accountId)
+                                        .field(Instance.CREATED_AT_KEY)
+                                        .greaterThanOrEq(fromTimestamp)
+                                        .field(Instance.CREATED_AT_KEY)
+                                        .lessThanOrEq(rhsCreatedAt)
+                                        .project("appId", true);
+
+    Set<String> appIdsFromInstances = new HashSet<>();
+    try (HIterator<Instance> iterator =
+             new HIterator<>(instanceQuery.fetch(wingsPersistence.analyticNodePreferenceOptions()))) {
+      while (iterator.hasNext()) {
+        appIdsFromInstances.add(iterator.next().getAppId());
+      }
+    }
 
     List<Application> appsByAccountId = appService.getAppsByAccountId(accountId);
     Set<String> existingApps = appsByAccountId.stream().map(Application::getUuid).collect(Collectors.toSet());
@@ -1351,7 +1377,11 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
     aggregationPipeline.limit(limit);
 
     final Iterator<CompareEnvironmentAggregationInfo> aggregate =
-        HPersistence.retry(() -> aggregationPipeline.aggregate(CompareEnvironmentAggregationInfo.class));
+        HPersistence.retry(()
+                               -> aggregationPipeline.aggregate(CompareEnvironmentAggregationInfo.class,
+                                   AggregationOptions.builder()
+                                       .maxTime(wingsPersistence.getMaxTimeMs(Instance.class), TimeUnit.MILLISECONDS)
+                                       .build()));
     aggregate.forEachRemaining(instanceInfoList::add);
 
     List<CompareEnvironmentAggregationResponseInfo> responseList = new ArrayList<>();
@@ -1382,7 +1412,11 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
                                                        .match(query)
                                                        .group(Group.id(grouping(InstanceKeys.serviceId)));
     final Iterator<String> aggregateForCount =
-        HPersistence.retry(() -> aggregationPipelineCount.aggregate(String.class));
+        HPersistence.retry(()
+                               -> aggregationPipelineCount.aggregate(String.class,
+                                   AggregationOptions.builder()
+                                       .maxTime(wingsPersistence.getMaxTimeMs(Instance.class), TimeUnit.MILLISECONDS)
+                                       .build()));
     aggregateForCount.forEachRemaining(serviceList::add);
 
     return aPageResponse()

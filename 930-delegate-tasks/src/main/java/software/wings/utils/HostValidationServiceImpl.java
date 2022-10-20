@@ -26,7 +26,6 @@ import io.harness.eraro.ErrorCode;
 import io.harness.eraro.ResponseMessage;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.logging.NoopExecutionCallback;
-import io.harness.manage.ManagedExecutorService;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.shell.SshSessionConfig;
 import io.harness.shell.SshSessionFactory;
@@ -53,13 +52,8 @@ import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.Session;
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -71,8 +65,6 @@ public class HostValidationServiceImpl implements HostValidationService {
   @Inject private EncryptionService encryptionService;
   @Inject private TimeLimiter timeLimiter;
   @Inject private SecretManagementDelegateService secretManagementDelegateService;
-
-  private final Executor hostsReachabilityExecutor = new ManagedExecutorService(Executors.newFixedThreadPool(5));
 
   @Override
   public List<HostValidationResponse> validateHost(List<String> hostNames, SettingAttribute connectionSetting,
@@ -142,40 +134,14 @@ public class HostValidationServiceImpl implements HostValidationService {
   public List<HostReachabilityInfo> validateReachability(List<String> hostNames, int port) {
     if (hostNames.isEmpty()) {
       return Collections.emptyList();
-    } else if (hostNames.size() == 1) {
-      String host = hostNames.get(0);
-      return Arrays.asList(HostReachabilityInfo.builder()
-                               .hostName(host)
-                               .reachable(SocketConnectivityCapabilityCheck.connectableHost(host, port))
-                               .build());
     } else {
-      List<CompletableFuture<HostReachabilityInfo>> completableFutureList =
-          hostNames.stream()
-              .map(host
-                  -> CompletableFuture.supplyAsync(
-                      ()
-                          -> HostReachabilityInfo.builder()
-                                 .hostName(host)
-                                 .reachable(SocketConnectivityCapabilityCheck.connectableHost(host, port))
-                                 .build(),
-                      hostsReachabilityExecutor))
-              .collect(Collectors.toList());
-
-      CompletableFuture<List<HostReachabilityInfo>> results = CompletableFutureUtils.allOf(completableFutureList);
-
-      List<HostReachabilityInfo> result;
-      try {
-        result = results.get();
-      } catch (InterruptedException e) {
-        Thread.currentThread().interrupt();
-        log.warn("validateReachability failed", e);
-        result = Collections.emptyList();
-      } catch (ExecutionException e) {
-        log.warn("validateReachability failed", e);
-        result = Collections.emptyList();
-      }
-
-      return result;
+      return hostNames.stream()
+          .map(host
+              -> HostReachabilityInfo.builder()
+                     .hostName(host)
+                     .reachable(SocketConnectivityCapabilityCheck.connectableHost(host, port))
+                     .build())
+          .collect(Collectors.toList());
     }
   }
 

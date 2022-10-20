@@ -51,6 +51,7 @@ public class PMSPipelineFilterHelperTest extends CategoryTest {
     fieldsToBeUpdated.add(PipelineEntityKeys.stageCount);
     fieldsToBeUpdated.add(PipelineEntityKeys.stageNames);
     fieldsToBeUpdated.add(PipelineEntityKeys.allowStageExecutions);
+    fieldsToBeUpdated.add(PipelineEntityKeys.harnessVersion);
 
     for (String field : fieldsToBeUpdated) {
       assertThat(true).isEqualTo(PMSPipelineFilterHelper.getUpdateOperations(pipelineEntity, 0L).modifies(field));

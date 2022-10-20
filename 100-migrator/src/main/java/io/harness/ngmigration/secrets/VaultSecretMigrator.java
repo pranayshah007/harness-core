@@ -47,6 +47,7 @@ public class VaultSecretMigrator implements SecretMigrator {
       value = encryptedData.getPath();
     } else {
       String basePath = StringUtils.isNotBlank(vaultConfig.getBasePath()) ? vaultConfig.getBasePath() : "/harness";
+      basePath = basePath.endsWith("/") ? basePath : (String.format("%s/", basePath));
       value = basePath + encryptedData.getEncryptionKey() + "#value";
     }
     return SecretDTOV2.builder()

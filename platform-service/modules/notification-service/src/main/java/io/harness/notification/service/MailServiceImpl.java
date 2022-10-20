@@ -226,6 +226,7 @@ public class MailServiceImpl implements ChannelService {
                                   .notificationId(notificationId)
                                   .subject(subject)
                                   .body(body)
+                                  .ccEmailIds(Collections.emptyList())
                                   .emailIds(emailIds)
                                   .smtpConfig(smtpConfigResponse.getSmtpConfig())
                                   .encryptionDetails(smtpConfigResponse.getEncryptionDetails())

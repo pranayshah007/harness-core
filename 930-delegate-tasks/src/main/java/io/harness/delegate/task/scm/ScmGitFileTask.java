@@ -10,6 +10,9 @@ package io.harness.delegate.task.scm;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FileContentBatchResponse;
+import io.harness.beans.gitsync.GitFilePathDetails;
+import io.harness.beans.request.GitFileRequest;
+import io.harness.beans.response.GitFileResponse;
 import io.harness.connector.helper.GitApiAccessDecryptionHelper;
 import io.harness.connector.service.scm.ScmDelegateClient;
 import io.harness.delegate.beans.DelegateResponseData;
@@ -86,6 +89,20 @@ public class ScmGitFileTask extends AbstractDelegateRunnableTask {
             .gitFileTaskType(scmGitFileTaskParams.getGitFileTaskType())
             .fileBatchContentResponse(fileBatchContentResponse.getFileBatchContentResponse().toByteArray())
             .commitId(fileBatchContentResponse.getCommitId())
+            .build();
+      case GET_FILE:
+        GitFilePathDetails gitFilePathDetails = scmGitFileTaskParams.getGitFilePathDetails();
+        GitFileResponse gitFileResponse = scmDelegateClient.processScmRequest(c
+            -> scmServiceClient.getFile(scmGitFileTaskParams.getScmConnector(),
+                GitFileRequest.builder()
+                    .filepath(gitFilePathDetails.getFilePath())
+                    .branch(gitFilePathDetails.getBranch())
+                    .commitId(gitFilePathDetails.getRef())
+                    .build(),
+                SCMGrpc.newBlockingStub(c)));
+        return GitFileTaskResponseData.builder()
+            .gitFileTaskType(scmGitFileTaskParams.getGitFileTaskType())
+            .gitFileResponse(gitFileResponse)
             .build();
       default:
         throw new UnknownEnumTypeException("GitFileTaskType", scmGitFileTaskParams.getGitFileTaskType().toString());

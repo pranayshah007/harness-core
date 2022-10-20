@@ -24,6 +24,7 @@ import io.harness.secretmanagerclient.ValueType;
 import io.harness.secrets.SecretService;
 
 import software.wings.ngmigration.CgEntityId;
+import software.wings.settings.SettingVariableTypes;
 
 import com.google.inject.Inject;
 import java.util.Map;
@@ -50,6 +51,14 @@ public class HarnessSecretMigrator implements SecretMigrator {
                   .value(value)
                   .secretManagerIdentifier(secretManagerIdentifier)
                   .build());
+  }
+
+  @Override
+  public String getSecretFile(EncryptedData encryptedData, SecretManagerConfig secretManagerConfig) {
+    if (!SettingVariableTypes.CONFIG_FILE.equals(encryptedData.getType())) {
+      return null;
+    }
+    return String.valueOf(secretService.fetchSecretValue(encryptedData));
   }
 
   @Override

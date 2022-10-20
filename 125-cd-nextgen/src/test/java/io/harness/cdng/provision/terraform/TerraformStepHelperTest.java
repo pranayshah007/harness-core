@@ -26,9 +26,7 @@ import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -55,6 +53,9 @@ import io.harness.cdng.manifest.yaml.GithubStoreDTO;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigType;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
 import io.harness.cdng.manifest.yaml.storeConfig.moduleSource.ModuleSource;
+import io.harness.cdng.provision.terraform.executions.TFPlanExecutionDetailsKey;
+import io.harness.cdng.provision.terraform.executions.TerraformPlanExectionDetailsService;
+import io.harness.cdng.provision.terraform.executions.TerraformPlanExecutionDetails;
 import io.harness.cdng.provision.terraform.output.TerraformPlanJsonOutput;
 import io.harness.common.ParameterFieldHelper;
 import io.harness.connector.ConnectorInfoDTO;
@@ -83,6 +84,7 @@ import io.harness.ng.core.dto.secrets.SSHKeySpecDTO;
 import io.harness.persistence.HPersistence;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.steps.StepCategory;
+import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.data.ExecutionSweepingOutput;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
@@ -127,6 +129,8 @@ public class TerraformStepHelperTest extends CategoryTest {
   @Mock private K8sStepHelper mockK8sStepHelper;
   @Mock private ExecutionSweepingOutputService mockExecutionSweepingOutputService;
   @Mock private GitConfigAuthenticationInfoHelper mockGitConfigAuthenticationInfoHelper;
+
+  @Mock TerraformPlanExectionDetailsService terraformPlanExectionDetailsService;
   @Mock private FileServiceClientFactory mockFileServiceFactory;
   @Mock private FileServiceClient mockFileService;
   @Mock private SecretManagerClientService mockSecretManagerClientService;
@@ -1211,78 +1215,69 @@ public class TerraformStepHelperTest extends CategoryTest {
   }
 
   @Test
-  @Owner(developers = ABOSII)
+  @Owner(developers = NAMAN_TALAYCHA)
   @Category(UnitTests.class)
-  public void testSaveTerraformPlanJsonOutputNullPlanFileId() {
+  public void testSaveTerraformPlanExecutionDetails() {
     final Ambiance ambiance = getAmbiance();
-    final TerraformTaskNGResponse response = TerraformTaskNGResponse.builder().tfPlanJsonFileId(null).build();
+    String planExecutionId = ambiance.getPlanExecutionId();
+    String accountId = AmbianceUtils.getAccountId(ambiance);
+    String projectId = AmbianceUtils.getProjectIdentifier(ambiance);
+    String orgId = AmbianceUtils.getOrgIdentifier(ambiance);
+    String stageExecutionId = ambiance.getStageExecutionId();
+    TerraformPlanExecutionDetails terraformPlanExecutionDetails =
+        TerraformPlanExecutionDetails.builder()
+            .accountIdentifier(accountId)
+            .orgIdentifier(orgId)
+            .projectIdentifier(projectId)
+            .pipelineExecutionId(planExecutionId)
+            .stageExecutionId(stageExecutionId)
+            .provisionerId("provisioner1")
+            .tfPlanJsonFieldId("testId")
+            .tfPlanFileBucket(FileBucket.TERRAFORM_PLAN_JSON.name())
+            .build();
 
-    String outputName = helper.saveTerraformPlanJsonOutput(ambiance, response, "provisioner1");
+    TerraformTaskNGResponse response = TerraformTaskNGResponse.builder().tfPlanJsonFileId("testId").build();
 
-    verify(mockExecutionSweepingOutputService, never())
-        .consume(eq(ambiance), anyString(), any(ExecutionSweepingOutput.class), anyString());
+    helper.saveTerraformPlanExecutionDetails(ambiance, response, "provisioner1");
 
-    assertThat(outputName).isNull();
+    ArgumentCaptor<TerraformPlanExecutionDetails> outputCaptor =
+        ArgumentCaptor.forClass(TerraformPlanExecutionDetails.class);
+    verify(terraformPlanExectionDetailsService).save(outputCaptor.capture());
+    TerraformPlanExecutionDetails output = outputCaptor.getValue();
+    assertThat(output).isEqualTo(terraformPlanExecutionDetails);
   }
 
   @Test
-  @Owner(developers = ABOSII)
+  @Owner(developers = NAMAN_TALAYCHA)
   @Category(UnitTests.class)
-  public void testCleanupTfPlanJsonForProvisioner() {
-    Ambiance ambiance = getAmbiance();
-    List<String> planStepsFqn =
-        asList("plan1_provisioner1", "plan2_provisioner1", "plan3_provisioner1_different_bucket",
-            "plan4_provisioner1_delete_exception", "plan5_provisioner2", "plan5_no_output");
+  public void testCleanupTfPlanJson() {
+    final Ambiance ambiance = getAmbiance();
+    String planExecutionId = ambiance.getPlanExecutionId();
+    String accountId = AmbianceUtils.getAccountId(ambiance);
+    String projectId = AmbianceUtils.getProjectIdentifier(ambiance);
+    String orgId = AmbianceUtils.getOrgIdentifier(ambiance);
+    String stageExecutionId = ambiance.getStageExecutionId();
+    TerraformPlanExecutionDetails terraformPlanExecutionDetails =
+        TerraformPlanExecutionDetails.builder()
+            .accountIdentifier(accountId)
+            .orgIdentifier(orgId)
+            .projectIdentifier(projectId)
+            .pipelineExecutionId(planExecutionId)
+            .stageExecutionId(stageExecutionId)
+            .provisionerId("provisioner1")
+            .tfPlanJsonFieldId("testId")
+            .tfPlanFileBucket(FileBucket.TERRAFORM_PLAN_JSON.name())
+            .build();
 
-    doReturn(OptionalSweepingOutput.builder()
-                 .output(TerraformPlanJsonOutput.builder()
-                             .tfPlanFileId("plan1_file1")
-                             .provisionerIdentifier("provisioner1")
-                             .tfPlanFileBucket(FileBucket.TERRAFORM_PLAN_JSON.name())
-                             .build())
-                 .build())
-        .when(mockExecutionSweepingOutputService)
-        .resolveOptional(ambiance,
-            RefObjectUtils.getSweepingOutputRefObject(
-                TerraformPlanJsonOutput.getOutputName("plan1_provisioner1", "provisioner1")));
+    doReturn(Collections.singletonList(terraformPlanExecutionDetails))
+        .when(terraformPlanExectionDetailsService)
+        .listAllPipelineTFPlanExecutionDetails(any(TFPlanExecutionDetailsKey.class));
+    helper.cleanupTfPlanJson(ambiance);
 
-    setupPlanJsonOutput(ambiance, "plan1_provisioner1", "plan1_file", "provisioner1", FileBucket.TERRAFORM_PLAN_JSON);
-    setupPlanJsonOutput(ambiance, "plan2_provisioner1", "plan2_file", "provisioner1", FileBucket.TERRAFORM_PLAN_JSON);
-    setupPlanJsonOutput(
-        ambiance, "plan3_provisioner1_different_bucket", "plan3_file", "provisioner1", FileBucket.TERRAFORM_PLAN);
-    setupPlanJsonOutput(
-        ambiance, "plan4_provisioner1_delete_exception", "plan4_file", "provisioner1", FileBucket.TERRAFORM_PLAN_JSON);
-    setupPlanJsonOutput(ambiance, "plan5_provisioner2", "plan5_file", "provisioner2", FileBucket.TERRAFORM_PLAN_JSON);
-    doReturn(OptionalSweepingOutput.builder().found(false).build())
-        .when(mockExecutionSweepingOutputService)
-        .resolveOptional(ambiance,
-            RefObjectUtils.getSweepingOutputRefObject(
-                TerraformPlanJsonOutput.getOutputName("plan5_no_output", "provisioner1")));
-
-    doThrow(new RuntimeException("Something went wrong"))
-        .when(mockFileService)
-        .deleteFile("plan4_file", FileBucket.TERRAFORM_PLAN_JSON);
-
-    helper.cleanupTfPlanJsonForProvisioner(getAmbiance(), planStepsFqn, "provisioner1");
-
-    verify(mockFileService).deleteFile("plan1_file", FileBucket.TERRAFORM_PLAN_JSON);
-    verify(mockFileService).deleteFile("plan2_file", FileBucket.TERRAFORM_PLAN_JSON);
-    verify(mockFileService).deleteFile("plan3_file", FileBucket.TERRAFORM_PLAN);
-    verify(mockFileService).deleteFile("plan4_file", FileBucket.TERRAFORM_PLAN_JSON);
-    verify(mockFileService, never()).deleteFile("plan5_file", FileBucket.TERRAFORM_PLAN_JSON);
-  }
-
-  private void setupPlanJsonOutput(Ambiance ambiance, String fqn, String file, String provisioner, FileBucket bucket) {
-    doReturn(OptionalSweepingOutput.builder()
-                 .found(true)
-                 .output(TerraformPlanJsonOutput.builder()
-                             .tfPlanFileId(file)
-                             .provisionerIdentifier(provisioner)
-                             .tfPlanFileBucket(bucket.name())
-                             .build())
-                 .build())
-        .when(mockExecutionSweepingOutputService)
-        .resolveOptional(ambiance,
-            RefObjectUtils.getSweepingOutputRefObject(TerraformPlanJsonOutput.getOutputName(fqn, provisioner)));
+    ArgumentCaptor<String> outputCaptor = ArgumentCaptor.forClass(String.class);
+    doReturn(mockFileService).when(mockFileServiceFactory).get();
+    verify(mockFileService).deleteFile(outputCaptor.capture(), any(FileBucket.class));
+    String output = outputCaptor.getValue();
+    assertThat(output).isEqualTo("testId");
   }
 }

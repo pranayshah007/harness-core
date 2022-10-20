@@ -8,6 +8,7 @@
 package io.harness.ng.core.infrastructure.resource;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.ng.core.environment.resources.EnvironmentResourceV2.ENVIRONMENT_PARAM_MESSAGE;
 import static io.harness.rbac.CDNGRbacPermissions.ENVIRONMENT_UPDATE_PERMISSION;
 import static io.harness.rbac.CDNGRbacPermissions.ENVIRONMENT_VIEW_PERMISSION;
@@ -57,6 +58,7 @@ import io.harness.repositories.UpsertOptions;
 import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.utils.PageUtils;
 
+import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -195,6 +197,8 @@ public class InfrastructureResource {
       @Parameter(description = "Details of the Infrastructure to be created")
       @Valid InfrastructureRequestDTO infrastructureRequestDTO) {
     throwExceptionForNoRequestDTO(infrastructureRequestDTO);
+    mustBeAtProjectLevel(infrastructureRequestDTO);
+
     orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(
         infrastructureRequestDTO.getOrgIdentifier(), infrastructureRequestDTO.getProjectIdentifier(), accountId);
     environmentValidationHelper.checkThatEnvExists(accountId, infrastructureRequestDTO.getOrgIdentifier(),
@@ -228,6 +232,7 @@ public class InfrastructureResource {
       @Valid List<InfrastructureRequestDTO> infrastructureRequestDTOS) {
     throwExceptionForNoRequestDTO(infrastructureRequestDTOS);
     infrastructureRequestDTOS.forEach(infrastructureRequestDTO -> {
+      mustBeAtProjectLevel(infrastructureRequestDTO);
       orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(
           infrastructureRequestDTO.getOrgIdentifier(), infrastructureRequestDTO.getProjectIdentifier(), accountId);
       environmentValidationHelper.checkThatEnvExists(accountId, infrastructureRequestDTO.getOrgIdentifier(),
@@ -287,6 +292,7 @@ public class InfrastructureResource {
       @Parameter(description = "Details of the Infrastructure to be updated")
       @Valid InfrastructureRequestDTO infrastructureRequestDTO) {
     throwExceptionForNoRequestDTO(infrastructureRequestDTO);
+    mustBeAtProjectLevel(infrastructureRequestDTO);
     orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(
         infrastructureRequestDTO.getOrgIdentifier(), infrastructureRequestDTO.getProjectIdentifier(), accountId);
     environmentValidationHelper.checkThatEnvExists(accountId, infrastructureRequestDTO.getOrgIdentifier(),
@@ -315,6 +321,7 @@ public class InfrastructureResource {
       @Parameter(description = "Details of the Infrastructure to be updated")
       @Valid InfrastructureRequestDTO infrastructureRequestDTO) {
     throwExceptionForNoRequestDTO(infrastructureRequestDTO);
+    mustBeAtProjectLevel(infrastructureRequestDTO);
     orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(
         infrastructureRequestDTO.getOrgIdentifier(), infrastructureRequestDTO.getProjectIdentifier(), accountId);
     environmentValidationHelper.checkThatEnvExists(accountId, infrastructureRequestDTO.getOrgIdentifier(),
@@ -483,5 +490,16 @@ public class InfrastructureResource {
             environmentIdentifier, infrastructureYamlMetadata.getInfrastructureIdentifiers());
     return ResponseDTO.newResponse(
         InfrastructureYamlMetadataDTO.builder().infrastructureYamlMetadataList(infrastructureYamlMetadataList).build());
+  }
+
+  private void mustBeAtProjectLevel(InfrastructureRequestDTO requestDTO) {
+    try {
+      Preconditions.checkArgument(isNotEmpty(requestDTO.getOrgIdentifier()),
+          "org identifier must be specified. Infrastructure Definitions can only be created at Project scope");
+      Preconditions.checkArgument(isNotEmpty(requestDTO.getProjectIdentifier()),
+          "project identifier must be specified. Infrastructure Definitions can only be created at Project scope");
+    } catch (Exception ex) {
+      throw new InvalidRequestException(ex.getMessage());
+    }
   }
 }

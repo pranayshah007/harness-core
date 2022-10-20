@@ -1,10 +1,8 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 
 go_library(
     name = "redis",
-    srcs = [
-        "redis_store.go",
-    ],
+    srcs = ["redis_store.go"],
     importpath = "github.com/harness/harness-core/queue-service/hsqs/store/redis",
     visibility = ["//visibility:public"],
     deps = [
@@ -12,5 +10,19 @@ go_library(
         "//queue-service/hsqs/utils",
         "@com_github_go_redis_redis_v8//:redis",
         "@com_github_rs_zerolog//:zerolog",
+    ],
+)
+
+go_test(
+    name = "redis_test",
+    srcs = ["redis_store_test.go"],
+    embed = [":redis"],
+    deps = [
+        "//queue-service/hsqs/store",
+        "//queue-service/hsqs/utils",
+        "@com_github_go_redis_redis_v8//:redis",
+        "@com_github_go_redis_redismock_v8//:go_default_library",
+        "@com_github_rs_zerolog//:zerolog",
+        "@com_github_stretchr_testify//assert",
     ],
 )

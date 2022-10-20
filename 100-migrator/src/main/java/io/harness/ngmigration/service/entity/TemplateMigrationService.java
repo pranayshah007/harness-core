@@ -87,8 +87,7 @@ public class TemplateMigrationService extends NgMigrationService {
 
   @Override
   public List<NGYamlFile> generateYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
-      Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities,
-      NgEntityDetail ngEntityDetail) {
+      Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities) {
     throw new InvalidRequestException("Generate yaml is not supported for templates");
   }
 

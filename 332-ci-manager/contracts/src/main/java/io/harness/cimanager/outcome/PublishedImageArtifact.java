@@ -24,4 +24,5 @@ public class PublishedImageArtifact {
   String imageName;
   String tag;
   String url;
+  String digest;
 }

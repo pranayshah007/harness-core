@@ -101,6 +101,7 @@ import com.google.common.io.Files;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
+import com.mongodb.AggregationOptions;
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -121,6 +122,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import javax.cache.Cache;
 import lombok.Builder;
@@ -463,7 +465,12 @@ public class SecretManagerImpl implements SecretManager, EncryptedSettingAttribu
             .project(projection(SecretChangeLogKeys.encryptedDataId, ID_KEY), projection("count"));
 
     List<SecretUsageSummary> secretUsageSummaries = new ArrayList<>();
-    aggregationPipeline.aggregate(SecretUsageSummary.class).forEachRemaining(secretUsageSummaries::add);
+    aggregationPipeline
+        .aggregate(SecretUsageSummary.class,
+            AggregationOptions.builder()
+                .maxTime(wingsPersistence.getMaxTimeMs(SecretUsageLog.class), TimeUnit.MILLISECONDS)
+                .build())
+        .forEachRemaining(secretUsageSummaries::add);
 
     return secretUsageSummaries.stream().collect(
         Collectors.toMap(summary -> summary.encryptedDataId, summary -> summary.count));
@@ -522,7 +529,12 @@ public class SecretManagerImpl implements SecretManager, EncryptedSettingAttribu
             .project(projection(SecretChangeLogKeys.encryptedDataId, ID_KEY), projection("count"));
 
     List<ChangeLogSummary> changeLogSummaries = new ArrayList<>();
-    aggregationPipeline.aggregate(ChangeLogSummary.class).forEachRemaining(changeLogSummaries::add);
+    aggregationPipeline
+        .aggregate(ChangeLogSummary.class,
+            AggregationOptions.builder()
+                .maxTime(wingsPersistence.getMaxTimeMs(SecretChangeLog.class), TimeUnit.MILLISECONDS)
+                .build())
+        .forEachRemaining(changeLogSummaries::add);
 
     return changeLogSummaries.stream().collect(
         Collectors.toMap(summary -> summary.encryptedDataId, summary -> summary.count));
