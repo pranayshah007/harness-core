@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.delegate.taskagent.client.delegate;
+package io.harness.delegate.runner.delegate;
 
 import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.serializer.kryo.KryoRequest;
@@ -15,7 +15,6 @@ import retrofit2.http.Body;
 import retrofit2.http.Headers;
 import retrofit2.http.POST;
 import retrofit2.http.Path;
-import retrofit2.http.Query;
 
 public interface DelegateCoreClient {
   @Headers({"Content-Type: application/x-kryo-v2"})

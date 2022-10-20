@@ -9,8 +9,8 @@ package io.harness.delegate.runner.modules;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Singleton;
-import io.harness.delegate.taskagent.client.delegate.DelegateCoreClient;
-import io.harness.delegate.taskagent.client.delegate.DelegateCoreClientFactory;
+import io.harness.delegate.runner.delegate.DelegateCoreClient;
+import io.harness.delegate.runner.delegate.DelegateCoreClientFactory;
 
 public class DelegateCoreClientModule extends AbstractModule {
     @Override

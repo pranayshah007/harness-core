@@ -17,9 +17,6 @@ import io.harness.delegate.runner.config.DelegateConfigurationProvider;
 import io.harness.delegate.runner.taskloader.DelegateTaskPackageProvider;
 import io.harness.delegate.runner.taskloader.TaskPackageReader;
 import io.harness.delegate.runner.taskloader.TaskPackageReaderImpl;
-import io.harness.delegate.taskagent.client.delegate.DelegateCoreClient;
-import io.harness.delegate.taskagent.client.delegate.DelegateCoreClientFactory;
-import io.harness.delegate.taskagent.servicediscovery.ServiceDiscovery;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.serializer.KryoSerializer;
 

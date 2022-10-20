@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.delegate.taskagent.client.delegate;
+package io.harness.delegate.runner.delegate;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.guava.GuavaModule;
@@ -18,7 +18,6 @@ import io.harness.network.NoopHostnameVerifier;
 import io.harness.security.X509SslContextBuilder;
 import io.harness.security.X509TrustManagerBuilder;
 import io.harness.serializer.kryo.DelegateKryoConverterFactory;
-import io.harness.serializer.kryo.KryoConverterFactory;
 
 import com.google.inject.Inject;
 import com.google.inject.Provider;
@@ -27,7 +26,6 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.X509TrustManager;
 import lombok.RequiredArgsConstructor;
 import okhttp3.OkHttpClient;
-import okhttp3.logging.HttpLoggingInterceptor;
 import retrofit2.Retrofit;
 import retrofit2.converter.jackson.JacksonConverterFactory;
 
