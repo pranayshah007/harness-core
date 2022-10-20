@@ -41,6 +41,7 @@ import io.harness.beans.PageRequest;
 import io.harness.beans.PageRequest.PageRequestBuilder;
 import io.harness.beans.PageResponse;
 import io.harness.beans.SearchFilter.Operator;
+import io.harness.beans.SortOrder;
 import io.harness.data.validator.EntityNameValidator;
 import io.harness.event.handler.impl.EventPublishHelper;
 import io.harness.exception.InvalidRequestException;
@@ -271,6 +272,9 @@ public class AppServiceImpl implements AppService {
   @Override
   public PageResponse<Application> list(
       PageRequest<Application> req, boolean details, boolean withTags, String tagFilter) {
+    if (req != null) {
+      req.addOrder("name", SortOrder.OrderType.ASC);
+    }
     PageResponse<Application> response =
         resourceLookupService.listWithTagFilters(req, tagFilter, EntityType.APPLICATION, withTags);
 
