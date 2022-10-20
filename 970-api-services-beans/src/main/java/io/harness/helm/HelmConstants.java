@@ -88,6 +88,7 @@ public final class HelmConstants {
   public static final class V3Commands {
     public static final String HELM_LIST_RELEASE_COMMAND_TEMPLATE =
         "KUBECONFIG=${KUBECONFIG_PATH} ${HELM_PATH} list ${COMMAND_FLAGS} --filter ^${RELEASE_NAME}$";
+
     public static final String HELM_ROLLBACK_COMMAND_TEMPLATE =
         "KUBECONFIG=${KUBECONFIG_PATH} ${HELM_PATH} rollback  ${RELEASE} ${REVISION} ${COMMAND_FLAGS}";
     public static final String HELM_INSTALL_COMMAND_TEMPLATE =

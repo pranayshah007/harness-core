@@ -296,7 +296,8 @@ public class CompositeSLORecordServiceImpl implements CompositeSLORecordService 
         .get();
   }
 
-  private CompositeSLORecord getLatestCompositeSLORecord(String sloId) {
+  @Override
+  public CompositeSLORecord getLatestCompositeSLORecord(String sloId) {
     return hPersistence.createQuery(CompositeSLORecord.class, excludeAuthorityCount)
         .filter(CompositeSLORecordKeys.sloId, sloId)
         .order(Sort.descending(CompositeSLORecordKeys.timestamp))
@@ -327,5 +328,14 @@ public class CompositeSLORecordServiceImpl implements CompositeSLORecordService 
             sliRecord.getTimestamp(), timeStampToTotalValue.getOrDefault(sliRecord.getTimestamp(), 0) + 1);
       }
     }
+  }
+
+  @Override
+  public CompositeSLORecord getLatestCompositeSLORecordWithVersion(String sloId, int sloVersion) {
+    return hPersistence.createQuery(CompositeSLORecord.class, excludeAuthorityCount)
+        .filter(CompositeSLORecordKeys.sloId, sloId)
+        .filter(CompositeSLORecordKeys.sloVersion, sloVersion)
+        .order(Sort.descending(CompositeSLORecordKeys.timestamp))
+        .get();
   }
 }

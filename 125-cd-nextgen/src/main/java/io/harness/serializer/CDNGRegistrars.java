@@ -654,7 +654,7 @@ public class CDNGRegistrars {
                    .availableAtAccountLevel(false)
                    .clazz(ChaosStepNode.class)
                    .yamlSchemaMetadata(YamlSchemaMetadata.builder()
-                                           .namespace(SchemaNamespaceConstants.CHAOS)
+                                           .namespace(SchemaNamespaceConstants.CD)
                                            .modulesSupported(ImmutableList.of(ModuleType.CD, ModuleType.PMS))
                                            .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
                                            .build())

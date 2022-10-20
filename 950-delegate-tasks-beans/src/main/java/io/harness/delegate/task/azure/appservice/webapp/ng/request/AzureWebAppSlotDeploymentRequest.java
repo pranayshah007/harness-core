@@ -25,6 +25,7 @@ import io.harness.delegate.task.azure.artifact.AzureContainerArtifactConfig;
 import io.harness.expression.ExpressionEvaluator;
 
 import java.util.List;
+import java.util.Set;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -34,15 +35,22 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = true)
 public class AzureWebAppSlotDeploymentRequest extends AbstractSlotDataRequest {
   private AzureAppServicePreDeploymentData preDeploymentData;
+  private Set<String> prevExecUserAddedAppSettingNames;
+  private Set<String> prevExecUserAddedConnStringNames;
+  private boolean prevExecUserChangedStartupCommand;
 
   @Builder
   public AzureWebAppSlotDeploymentRequest(String accountId, AzureAppServicePreDeploymentData preDeploymentData,
       CommandUnitsProgress commandUnitsProgress, AzureWebAppInfraDelegateConfig infrastructure,
       AppSettingsFile startupCommand, AppSettingsFile applicationSettings, AppSettingsFile connectionStrings,
-      AzureArtifactConfig artifact, Integer timeoutIntervalInMin) {
+      AzureArtifactConfig artifact, Integer timeoutIntervalInMin, Set<String> prevExecUserAddedAppSettingsNames,
+      Set<String> prevExecUserAddedConnStringsNames, boolean prevExecUserChangedStartupCommand) {
     super(accountId, commandUnitsProgress, infrastructure, startupCommand, applicationSettings, connectionStrings,
         artifact, timeoutIntervalInMin);
     this.preDeploymentData = preDeploymentData;
+    this.prevExecUserAddedAppSettingNames = prevExecUserAddedAppSettingsNames;
+    this.prevExecUserAddedConnStringNames = prevExecUserAddedConnStringsNames;
+    this.prevExecUserChangedStartupCommand = prevExecUserChangedStartupCommand;
   }
 
   @Override

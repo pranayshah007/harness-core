@@ -19,9 +19,9 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.dto.secrets.SecretDTOV2;
 import io.harness.ng.core.dto.secrets.SecretDTOV2.SecretDTOV2Builder;
 import io.harness.ng.core.dto.secrets.SecretFileSpecDTO;
-import io.harness.ng.core.dto.secrets.SecretRequestWrapper;
 import io.harness.ng.core.dto.secrets.SecretSpecDTO;
 import io.harness.ng.core.dto.secrets.SecretTextSpecDTO;
+import io.harness.ngmigration.beans.CustomSecretRequestWrapper;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
@@ -103,6 +103,21 @@ public class SecretFactory {
         .getSecretDTOBuilder(encryptedData, secretManagerConfig, secretManagerIdentifier);
   }
 
+  public String getSecretFileContent(EncryptedData encryptedData, Map<CgEntityId, CgEntityNode> entities) {
+    CgEntityId secretManagerId =
+        CgEntityId.builder().type(NGMigrationEntityType.SECRET_MANAGER).id(encryptedData.getKmsId()).build();
+    if (!entities.containsKey(secretManagerId)) {
+      return null;
+    }
+    SecretManagerConfig secretManagerConfig = (SecretManagerConfig) entities.get(secretManagerId).getEntity();
+    // Support secret file
+    if (!SettingVariableTypes.CONFIG_FILE.equals(encryptedData.getType())) {
+      return null;
+    }
+    // Support secret text
+    return getSecretMigrator(secretManagerConfig).getSecretFile(encryptedData, secretManagerConfig);
+  }
+
   public static SecretDTOV2 getHarnessSecretManagerSpec(
       NgEntityDetail entityDetail, String secretName, String secretValue) {
     SecretSpecDTO secretSpecDTO = SecretTextSpecDTO.builder()
@@ -132,7 +147,7 @@ public class SecretFactory {
   }
 
   public static boolean isStoredInHarnessSecretManager(NGYamlFile yamlFile) {
-    SecretRequestWrapper secretDTOV2 = (SecretRequestWrapper) yamlFile.getYaml();
+    CustomSecretRequestWrapper secretDTOV2 = (CustomSecretRequestWrapper) yamlFile.getYaml();
     if (SecretText.equals(secretDTOV2.getSecret().getType())) {
       SecretTextSpecDTO specDTO = (SecretTextSpecDTO) secretDTOV2.getSecret().getSpec();
       return Sets.newHashSet("account.harnessSecretManager", "org.harnessSecretManager", "harnessSecretManager")

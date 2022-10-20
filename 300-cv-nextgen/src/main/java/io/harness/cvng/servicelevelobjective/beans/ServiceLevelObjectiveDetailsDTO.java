@@ -7,12 +7,14 @@
 
 package io.harness.cvng.servicelevelobjective.beans;
 
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
 
 @Data
 @Builder
 public class ServiceLevelObjectiveDetailsDTO {
-  String serviceLevelObjectiveRef;
-  Double weightagePercentage;
+  @NotNull @NotBlank String serviceLevelObjectiveRef;
+  @NotNull @NotBlank Double weightagePercentage;
 }

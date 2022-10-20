@@ -384,9 +384,11 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
 
     Criteria filterCreatedAt = Criteria.where(InstanceKeys.createdAt).lte(timestampInMs);
     Criteria filterDeletedAt = Criteria.where(InstanceKeys.deletedAt).gte(timestampInMs);
+    Criteria filterDeleted = Criteria.where(InstanceKeys.isDeleted).is(true);
     Criteria filterNotDeleted = Criteria.where(InstanceKeys.isDeleted).is(false);
 
-    return baseCriteria.andOperator(filterCreatedAt.orOperator(filterNotDeleted, filterDeletedAt));
+    return baseCriteria.orOperator(
+        filterNotDeleted.andOperator(filterCreatedAt), filterDeleted.andOperator(filterCreatedAt, filterDeletedAt));
   }
 
   private Criteria getCriteriaForActiveInstances(

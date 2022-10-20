@@ -50,6 +50,9 @@ import io.harness.cdng.azure.config.ConnectionStringsOutcome;
 import io.harness.cdng.azure.config.StartupCommandOutcome;
 import io.harness.cdng.azure.webapp.beans.AzureWebAppPreDeploymentDataOutput;
 import io.harness.cdng.execution.ExecutionInfoKey;
+import io.harness.cdng.execution.StageExecutionInfo;
+import io.harness.cdng.execution.azure.webapps.AzureWebAppsStageExecutionDetails;
+import io.harness.cdng.execution.service.StageExecutionInfoService;
 import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.infra.beans.AzureWebAppInfrastructureOutcome;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
@@ -59,6 +62,7 @@ import io.harness.cdng.manifest.yaml.GitStoreConfig;
 import io.harness.cdng.manifest.yaml.harness.HarnessStore;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.cdng.service.steps.ServiceStepOutcome;
+import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.azure.registry.AzureRegistryType;
@@ -115,6 +119,7 @@ import io.harness.steps.environment.EnvironmentOutcome;
 import software.wings.beans.TaskType;
 
 import com.google.common.collect.ImmutableMap;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -138,6 +143,7 @@ public class AzureWebAppStepHelperTest extends CDNGTestBase {
   private static final String RESOURCE_GROUP = "resourceGroup";
   private static final String APP_NAME = "appName";
   private static final String DEPLOYMENT_SLOT = "deploymentSlot";
+  private static final String STAGE_EXECUTION_ID = "stageExecutionId";
 
   @Mock private OutcomeService outcomeService;
   @Mock private FileStoreService fileStoreService;
@@ -148,6 +154,7 @@ public class AzureWebAppStepHelperTest extends CDNGTestBase {
   @Mock private SecretManagerClientService secretManagerClientService;
   @Mock private ExecutionSweepingOutputService executionSweepingOutputService;
   @Mock private NGEncryptedDataService ngEncryptedDataService;
+  @Mock private StageExecutionInfoService stageExecutionInfoService;
 
   @InjectMocks private AzureWebAppStepHelper stepHelper;
 
@@ -155,6 +162,7 @@ public class AzureWebAppStepHelperTest extends CDNGTestBase {
                                         .putSetupAbstractions(SetupAbstractionKeys.accountId, ACCOUNT_ID)
                                         .putSetupAbstractions(SetupAbstractionKeys.projectIdentifier, PROJECT_ID)
                                         .putSetupAbstractions(SetupAbstractionKeys.orgIdentifier, ORG_ID)
+                                        .setStageExecutionId(STAGE_EXECUTION_ID)
                                         .build();
 
   @Before
@@ -621,6 +629,77 @@ public class AzureWebAppStepHelperTest extends CDNGTestBase {
     assertThat(azureArtifactRequestDetails.getRegion()).isEqualTo("testRegion");
     assertThat(packageArtifactConfig.getSourceType()).isEqualTo(AMAZONS3);
     assertThat(packageArtifactConfig.getEncryptedDataDetails()).isEqualTo(encryptedDataDetails);
+  }
+
+  @Test
+  @Owner(developers = ABOSII)
+  @Category(UnitTests.class)
+  public void testFindLastSuccessfulStageExecutionDetails() {
+    final AzureWebAppsStageExecutionDetails stageExecutionDetails =
+        AzureWebAppsStageExecutionDetails.builder().pipelineExecutionId("pipeline").build();
+    final List<StageExecutionInfo> stageExecutionInfos =
+        singletonList(StageExecutionInfo.builder().executionDetails(stageExecutionDetails).build());
+
+    testFindLastSuccessfulStageExecutionDetails(stageExecutionInfos, stageExecutionDetails);
+  }
+
+  @Test
+  @Owner(developers = ABOSII)
+  @Category(UnitTests.class)
+  public void testFindLastSuccessfulStageExecutionDetailsWithTargetSlot() {
+    final AzureWebAppsStageExecutionDetails stageExecutionDetails1 =
+        AzureWebAppsStageExecutionDetails.builder().pipelineExecutionId("pipeline1").targetSlot("slot1").build();
+    final AzureWebAppsStageExecutionDetails stageExecutionDetails2 =
+        AzureWebAppsStageExecutionDetails.builder().pipelineExecutionId("pipeline2").targetSlot("slot2").build();
+    final List<StageExecutionInfo> stageExecutionInfos =
+        Arrays.asList(StageExecutionInfo.builder().executionDetails(stageExecutionDetails1).build(),
+            StageExecutionInfo.builder().executionDetails(stageExecutionDetails2).build());
+
+    testFindLastSuccessfulStageExecutionDetails(stageExecutionInfos, stageExecutionDetails2);
+  }
+
+  private void testFindLastSuccessfulStageExecutionDetails(
+      List<StageExecutionInfo> stageExecutionInfos, AzureWebAppsStageExecutionDetails expectedExecutionDetails) {
+    final AzureWebAppInfraDelegateConfig infraDelegateConfig =
+        AzureWebAppInfraDelegateConfig.builder().appName(APP_NAME).deploymentSlot(DEPLOYMENT_SLOT).build();
+    final ServiceStepOutcome serviceStepOutcome = ServiceStepOutcome.builder().identifier("service1").build();
+    final AzureWebAppInfrastructureOutcome infrastructureOutcome =
+        AzureWebAppInfrastructureOutcome.builder()
+            .environment(EnvironmentOutcome.builder().identifier("env").build())
+            .subscription(SUBSCRIPTION_ID)
+            .resourceGroup(RESOURCE_GROUP)
+            .build();
+
+    doReturn(infrastructureOutcome).when(cdStepHelper).getInfrastructureOutcome(ambiance);
+
+    final ExecutionInfoKey expectedExecutionInfoKey =
+        ExecutionInfoKey.builder()
+            .scope(Scope.builder()
+                       .accountIdentifier(ACCOUNT_ID)
+                       .orgIdentifier(ORG_ID)
+                       .projectIdentifier(PROJECT_ID)
+                       .build())
+            .envIdentifier("env")
+            .serviceIdentifier("service1")
+            .deploymentIdentifier(stepHelper.getDeploymentIdentifier(ambiance, APP_NAME, DEPLOYMENT_SLOT))
+            .build();
+
+    doReturn(serviceStepOutcome)
+        .when(outcomeService)
+        .resolve(ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.SERVICE));
+
+    doReturn(stageExecutionInfos)
+        .when(stageExecutionInfoService)
+        .listLatestSuccessfulStageExecutionInfo(expectedExecutionInfoKey, STAGE_EXECUTION_ID, 2);
+
+    AzureWebAppsStageExecutionDetails executionDetails =
+        stepHelper.findLastSuccessfulStageExecutionDetails(ambiance, infraDelegateConfig);
+
+    verify(stageExecutionInfoService)
+        .listLatestSuccessfulStageExecutionInfo(expectedExecutionInfoKey, STAGE_EXECUTION_ID, 2);
+
+    assertThat(executionDetails).isNotNull();
+    assertThat(executionDetails).isEqualTo(expectedExecutionDetails);
   }
 
   private GitStore createTestGitStore() {

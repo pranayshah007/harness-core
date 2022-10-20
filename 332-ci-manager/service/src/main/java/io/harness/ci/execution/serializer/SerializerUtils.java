@@ -91,7 +91,7 @@ public class SerializerUtils {
     if (shellType == CIShellType.SH || shellType == CIShellType.BASH) {
       safeDirScript = "set +x\n"
           + "if [ -x \"$(command -v git)\" ]; then\n"
-          + "  git config --global --add safe.directory '*'\n"
+          + "  git config --global --add safe.directory '*' || true \n"
           + "fi\n"
           + "set -x\n";
     } else {

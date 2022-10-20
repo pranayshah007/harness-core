@@ -1,0 +1,36 @@
+pipeline:
+  name: spipeline
+  identifier: spipeline
+  projectIdentifier: test
+  orgIdentifier: default
+  tags: {}
+  stages:
+    - stage:
+        name: sapproval
+        identifier: sapproval
+        description: ""
+        type: Approval
+        spec:
+          execution:
+            steps:
+              - step:
+                  type: ShellScript
+                  name: script
+                  identifier: script
+                  spec:
+                    shell: Bash
+                    onDelegate: true
+                    source:
+                      type: Inline
+                      spec:
+                        script: echo "test"
+                    environmentVariables: []
+                    outputVariables: []
+                    executionTarget: {}
+                  timeout: 10m
+        tags: {}
+  variables:
+    - name: Var1
+      type: Number
+      description: ""
+      value: <+input>.regex(^[0-9][0-9]?$|^100$)

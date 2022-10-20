@@ -153,7 +153,7 @@ public class CVNGMetricsPublisher implements MetricsPublisher, MetricDefinitionI
                                                     .get();
 
     timeSinceTask = earliestDeploymentTask == null ? 0l : now - earliestDeploymentTask.getLastUpdatedAt();
-    metricService.recordMetric("learning_engine_deployment_max_queued_time+" + ENV, timeSinceTask);
+    metricService.recordMetric("learning_engine_deployment_max_queued_time_" + ENV, timeSinceTask);
 
     LearningEngineTask earliestLiveHealthTask = hPersistence.createQuery(LearningEngineTask.class)
                                                     .filter(LearningEngineTaskKeys.taskStatus, QUEUED)
