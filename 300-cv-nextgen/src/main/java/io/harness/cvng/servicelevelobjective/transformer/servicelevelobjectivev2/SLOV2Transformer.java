@@ -12,8 +12,11 @@ import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2DTO;
 import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelObjective;
 
+import java.util.List;
+
 public interface SLOV2Transformer<E extends AbstractServiceLevelObjective> {
-  E getSLOV2(ProjectParams projectParams, ServiceLevelObjectiveV2DTO serviceLevelObjectiveV2DTO, Boolean isEnabled);
+  E getSLOV2(ProjectParams projectParams, ServiceLevelObjectiveV2DTO serviceLevelObjectiveV2DTO, Boolean isEnabled,
+      List<String> serviceLevelIndicators);
 
   E getSLOV2(ServiceLevelObjective serviceLevelObjective);
 

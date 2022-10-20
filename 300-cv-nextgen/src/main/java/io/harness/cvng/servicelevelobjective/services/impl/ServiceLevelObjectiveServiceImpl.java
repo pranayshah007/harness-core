@@ -149,7 +149,8 @@ public class ServiceLevelObjectiveServiceImpl implements ServiceLevelObjectiveSe
       ServiceLevelObjectiveV2DTO serviceLevelObjectiveV2DTO =
           serviceLevelObjectiveTypeSLOV2TransformerMap.get(ServiceLevelObjectiveType.SIMPLE)
               .getSLOV2DTO(serviceLevelObjectiveDTO);
-      serviceLevelObjectiveV2Service.create(projectParams, serviceLevelObjectiveV2DTO);
+      List<String> serviceLevelIndicators = serviceLevelObjective.getServiceLevelIndicators();
+      serviceLevelObjectiveV2Service.createV2(projectParams, serviceLevelObjectiveV2DTO, serviceLevelIndicators);
     } catch (Exception e) {
       log.error("[SLO Data Mismatch]: SLOV2 not created", e);
     }

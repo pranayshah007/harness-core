@@ -26,8 +26,8 @@ import io.harness.ng.core.mapper.TagMapper;
 import com.google.inject.Inject;
 import java.time.Instant;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 public class SimpleSLOTransformer implements SLOV2Transformer<SimpleServiceLevelObjective> {
   @Inject NotificationRuleService notificationRuleService;
@@ -37,8 +37,8 @@ public class SimpleSLOTransformer implements SLOV2Transformer<SimpleServiceLevel
   @Inject private Map<SLOTargetType, SLOTargetTransformer> sloTargetTypeSLOTargetTransformerMap;
 
   @Override
-  public SimpleServiceLevelObjective getSLOV2(
-      ProjectParams projectParams, ServiceLevelObjectiveV2DTO serviceLevelObjectiveV2DTO, Boolean isEnabled) {
+  public SimpleServiceLevelObjective getSLOV2(ProjectParams projectParams,
+      ServiceLevelObjectiveV2DTO serviceLevelObjectiveV2DTO, Boolean isEnabled, List<String> serviceLevelIndicators) {
     SimpleServiceLevelObjectiveSpec simpleServiceLevelObjectiveSpec =
         (SimpleServiceLevelObjectiveSpec) serviceLevelObjectiveV2DTO.getSpec();
     return SimpleServiceLevelObjective.builder()
@@ -57,10 +57,7 @@ public class SimpleSLOTransformer implements SLOV2Transformer<SimpleServiceLevel
         .sloTargetPercentage(serviceLevelObjectiveV2DTO.getSloTarget().getSloTargetPercentage())
         .enabled(isEnabled)
         .serviceLevelIndicatorType(simpleServiceLevelObjectiveSpec.getServiceLevelIndicatorType())
-        .serviceLevelIndicators(simpleServiceLevelObjectiveSpec.getServiceLevelIndicators()
-                                    .stream()
-                                    .map(ServiceLevelIndicatorDTO::getIdentifier)
-                                    .collect(Collectors.toList()))
+        .serviceLevelIndicators(serviceLevelIndicators)
         .monitoredServiceIdentifier(simpleServiceLevelObjectiveSpec.getMonitoredServiceRef())
         .healthSourceIdentifier(simpleServiceLevelObjectiveSpec.getHealthSourceRef())
         .type(ServiceLevelObjectiveType.SIMPLE)

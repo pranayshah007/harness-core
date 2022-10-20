@@ -13,6 +13,7 @@ import io.harness.cvng.servicelevelobjective.beans.slospec.CompositeServiceLevel
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import javax.validation.constraints.Size;
 import lombok.Builder;
 import lombok.Data;
@@ -51,10 +52,19 @@ public class CompositeServiceLevelObjective extends AbstractServiceLevelObjectiv
     @Override
     public void setUpdateOperations(UpdateOperations<CompositeServiceLevelObjective> updateOperations,
         ServiceLevelObjectiveV2DTO serviceLevelObjectiveV2DTO) {
-      setCommonOperations(updateOperations, serviceLevelObjectiveV2DTO);
-      updateOperations.set(CompositeServiceLevelObjectiveKeys.serviceLevelObjectivesDetails,
+      List<ServiceLevelObjectivesDetail> serviceLevelObjectivesDetailList =
           ((CompositeServiceLevelObjectiveSpec) serviceLevelObjectiveV2DTO.getSpec())
-              .getServiceLevelObjectivesDetails());
+              .getServiceLevelObjectivesDetails()
+              .stream()
+              .map(serviceLevelObjectiveDetailsDTO
+                  -> CompositeServiceLevelObjective.ServiceLevelObjectivesDetail.builder()
+                         .serviceLevelObjectiveRef(serviceLevelObjectiveDetailsDTO.getServiceLevelObjectiveRef())
+                         .weightagePercentage(serviceLevelObjectiveDetailsDTO.getWeightagePercentage())
+                         .build())
+              .collect(Collectors.toList());
+      setCommonOperations(updateOperations, serviceLevelObjectiveV2DTO);
+      updateOperations.set(
+          CompositeServiceLevelObjectiveKeys.serviceLevelObjectivesDetails, serviceLevelObjectivesDetailList);
       updateOperations.inc(CompositeServiceLevelObjectiveKeys.version);
     }
   }

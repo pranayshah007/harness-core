@@ -15,6 +15,7 @@ import io.harness.cvng.core.services.api.DeleteEntityByHandler;
 import io.harness.cvng.notification.beans.NotificationRuleResponse;
 import io.harness.cvng.servicelevelobjective.SLORiskCountResponse;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardApiFilter;
+import io.harness.cvng.servicelevelobjective.beans.SLOErrorBudgetResetDTO;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveFilter;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2DTO;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2Response;
@@ -26,7 +27,11 @@ import java.util.List;
 public interface ServiceLevelObjectiveV2Service extends DeleteEntityByHandler<AbstractServiceLevelObjective> {
   ServiceLevelObjectiveV2Response create(
       ProjectParams projectParams, ServiceLevelObjectiveV2DTO serviceLevelObjectiveDTO);
+  ServiceLevelObjectiveV2Response createV2(ProjectParams projectParams,
+      ServiceLevelObjectiveV2DTO serviceLevelObjectiveDTO, List<String> serviceLevelIndicators);
 
+  ServiceLevelObjectiveV2Response updateV2(
+      ProjectParams projectParams, String identifier, ServiceLevelObjectiveV2DTO serviceLevelObjectiveDTO);
   ServiceLevelObjectiveV2Response update(ProjectParams projectParams, String identifier,
       ServiceLevelObjectiveV2DTO serviceLevelObjectiveDTO, List<String> serviceLevelIndicators);
 
@@ -60,6 +65,10 @@ public interface ServiceLevelObjectiveV2Service extends DeleteEntityByHandler<Ab
 
   AbstractServiceLevelObjective getFromSLIIdentifier(
       ProjectParams projectParams, String serviceLevelIndicatorIdentifier);
+
+  List<SLOErrorBudgetResetDTO> getErrorBudgetResetHistory(ProjectParams projectParams, String sloIdentifier);
+
+  SLOErrorBudgetResetDTO resetErrorBudget(ProjectParams projectParams, SLOErrorBudgetResetDTO resetDTO);
 
   PageResponse<NotificationRuleResponse> getNotificationRules(
       ProjectParams projectParams, String sloIdentifier, PageParams pageParams);
