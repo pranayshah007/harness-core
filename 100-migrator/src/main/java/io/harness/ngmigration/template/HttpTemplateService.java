@@ -23,7 +23,6 @@ import software.wings.beans.template.Template;
 import software.wings.beans.template.command.HttpTemplate;
 
 import com.google.common.collect.ImmutableMap;
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,15 +35,15 @@ public class HttpTemplateService implements NgTemplateService {
 
     Map<String, Object> templateSpec = new HashMap<>();
 
-                                           templateSpec.put("url", httpTemplate.getUrl());
-                                           templateSpec.put("method", httpTemplate.getMethod());
-    if(EmptyPredicate.isNotEmpty(httpTemplate.getBody())){
+    templateSpec.put("url", httpTemplate.getUrl());
+    templateSpec.put("method", httpTemplate.getMethod());
+    if (EmptyPredicate.isNotEmpty(httpTemplate.getBody())) {
       templateSpec.put("requestBody", httpTemplate.getBody());
     }
-    if(EmptyPredicate.isNotEmpty(httpTemplate.getAssertion())){
+    if (EmptyPredicate.isNotEmpty(httpTemplate.getAssertion())) {
       templateSpec.put("assertion", httpTemplate.getAssertion());
     }
-    if(EmptyPredicate.isNotEmpty(httpTemplate.getHeaders())){
+    if (EmptyPredicate.isNotEmpty(httpTemplate.getHeaders())) {
       templateSpec.put("headers", httpTemplate.getHeaders());
     }
     List<NGVariable> variables = null;
@@ -54,23 +53,24 @@ public class HttpTemplateService implements NgTemplateService {
                       .map(variable
                           -> StringNGVariable.builder()
                                  .name(variable.getName())
-                              .type(NGVariableType.STRING)
+                                 .type(NGVariableType.STRING)
                                  .value(ParameterField.createValueField(variable.getValue()))
                                  .build())
                       .collect(Collectors.toList());
     }
     return NGTemplateConfig.builder()
-        .templateInfoConfig(NGTemplateInfoConfig.builder()
-                                .type(TemplateEntityType.STEP_TEMPLATE)
-                                .identifier(MigratorUtility.generateIdentifier(template.getName()))
-                                .variables(variables)
-                                .name(template.getName())
+        .templateInfoConfig(
+            NGTemplateInfoConfig.builder()
+                .type(TemplateEntityType.STEP_TEMPLATE)
+                .identifier(MigratorUtility.generateIdentifier(template.getName()))
+                .variables(variables)
+                .name(template.getName())
                 .projectIdentifier(projectIdentifier)
                 .orgIdentifier(orgIdentifier)
-                                .versionLabel("v"+template.getVersion().toString())
-                                .spec(JsonUtils.asTree(ImmutableMap.of("spec", templateSpec, "type", "Http", "timeout",
-                                    httpTemplate.getTimeoutMillis()<10000? "10s": httpTemplate.getTimeoutMillis() / 1000 + "s")))
-                                .build())
+                .versionLabel("v" + template.getVersion().toString())
+                .spec(JsonUtils.asTree(ImmutableMap.of("spec", templateSpec, "type", "Http", "timeout",
+                    httpTemplate.getTimeoutMillis() < 10000 ? "10s" : httpTemplate.getTimeoutMillis() / 1000 + "s")))
+                .build())
         .build();
   }
 }

@@ -46,8 +46,9 @@ public class ShellScriptTemplateService implements NgTemplateService {
     Map<String, Object> templateSpec =
         ImmutableMap.<String, Object>builder()
             .put("onDelegate", true)
-                .put("source",
-                ImmutableMap.of("type", "Inline",  "spec", ImmutableMap.of("script", shellScriptTemplate.getScriptString())))
+            .put("source",
+                ImmutableMap.of(
+                    "type", "Inline", "spec", ImmutableMap.of("script", shellScriptTemplate.getScriptString())))
             .put("shell", "BASH".equals(shellScriptTemplate.getScriptType()) ? "Bash" : "PowerShell")
             .put("outputVariables", outputVariables)
             .build();
@@ -58,23 +59,26 @@ public class ShellScriptTemplateService implements NgTemplateService {
                       .map(variable
                           -> StringNGVariable.builder()
                                  .name(variable.getName())
-                              .type(NGVariableType.STRING)
+                                 .type(NGVariableType.STRING)
                                  .value(ParameterField.createValueField(variable.getValue()))
                                  .build())
                       .collect(Collectors.toList());
     }
     return NGTemplateConfig.builder()
-        .templateInfoConfig(NGTemplateInfoConfig.builder()
-                                .type(TemplateEntityType.STEP_TEMPLATE)
-                                .identifier(MigratorUtility.generateIdentifier(template.getName()))
-                                .variables(variables)
-                                .name(template.getName())
+        .templateInfoConfig(
+            NGTemplateInfoConfig.builder()
+                .type(TemplateEntityType.STEP_TEMPLATE)
+                .identifier(MigratorUtility.generateIdentifier(template.getName()))
+                .variables(variables)
+                .name(template.getName())
                 .projectIdentifier(projectIdentifier)
                 .orgIdentifier(orgIdentifier)
-                                .versionLabel("v"+template.getVersion().toString())
-                                .spec(JsonUtils.asTree(ImmutableMap.of("spec", templateSpec, "type", "ShellScript",
-                                    "timeout", shellScriptTemplate.getTimeoutMillis()<10000? "10s": shellScriptTemplate.getTimeoutMillis() / 1000 + "s")))
-                                .build())
+                .versionLabel("v" + template.getVersion().toString())
+                .spec(JsonUtils.asTree(ImmutableMap.of("spec", templateSpec, "type", "ShellScript", "timeout",
+                    shellScriptTemplate.getTimeoutMillis() < 10000
+                        ? "10s"
+                        : shellScriptTemplate.getTimeoutMillis() / 1000 + "s")))
+                .build())
         .build();
   }
 }

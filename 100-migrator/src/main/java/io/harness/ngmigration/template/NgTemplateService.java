@@ -18,10 +18,9 @@ import software.wings.ngmigration.NGMigrationStatus;
 
 @OwnedBy(HarnessTeam.CDC)
 public interface NgTemplateService {
-
   static boolean isMigrationSupported(Template template) {
     return template.getTemplateObject() instanceof HttpTemplate
-            || template.getTemplateObject() instanceof ShellScriptTemplate;
+        || template.getTemplateObject() instanceof ShellScriptTemplate;
   }
   YamlDTO getNgTemplateConfig(Template template, String orgIdentifier, String projectIdentifier);
 }

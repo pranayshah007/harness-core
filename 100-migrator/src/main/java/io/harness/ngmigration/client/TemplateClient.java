@@ -23,7 +23,6 @@ import javax.validation.constraints.NotNull;
 import javax.ws.rs.BeanParam;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.QueryParam;
-
 import okhttp3.RequestBody;
 import retrofit2.Call;
 import retrofit2.http.Body;
@@ -34,8 +33,8 @@ import retrofit2.http.Query;
 @OwnedBy(HarnessTeam.CDC)
 public interface TemplateClient {
   @POST("templates")
-  Call<ResponseDTO<ConnectorResponseDTO>> createTemplate(@Header("Authorization") String auth, @Header("Content-Type") String contentType,
-      @Query(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
+  Call<ResponseDTO<ConnectorResponseDTO>> createTemplate(@Header("Authorization") String auth,
+      @Header("Content-Type") String contentType, @Query(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
       @Query(NGCommonEntityConstants.ORG_KEY) String orgId,
       @Query(NGCommonEntityConstants.PROJECT_KEY) String projectId, @Body RequestBody templateYaml);
 }

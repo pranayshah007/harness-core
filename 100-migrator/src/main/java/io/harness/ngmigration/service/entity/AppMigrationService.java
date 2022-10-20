@@ -49,6 +49,7 @@ import software.wings.ngmigration.NGMigrationStatus;
 import software.wings.service.intfc.AppService;
 import software.wings.service.intfc.EnvironmentService;
 import software.wings.service.intfc.ServiceResourceService;
+import software.wings.service.intfc.template.TemplateService;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
@@ -62,7 +63,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import retrofit2.Response;
-import software.wings.service.intfc.template.TemplateService;
 
 @OwnedBy(HarnessTeam.CDC)
 @Slf4j
@@ -123,10 +123,12 @@ public class AppMigrationService extends NgMigrationService {
     PageRequest<Template> pageRequest = new PageRequest<>();
     pageRequest.addFilter(Template.TemplateKeys.accountId, IN, application.getAccountId());
     pageRequest.addFilter(Template.TemplateKeys.appId, IN, appId);
-    PageResponse<Template> pageResponse = templateService.list(pageRequest, new ArrayList<>(), application.getAccountId(), true);
+    PageResponse<Template> pageResponse =
+        templateService.list(pageRequest, new ArrayList<>(), application.getAccountId(), true);
     List<Template> templates = pageResponse.getResponse();
     if (EmptyPredicate.isNotEmpty(templates)) {
-      children.addAll(templates.stream()
+      children.addAll(
+          templates.stream()
               .distinct()
               .map(template -> CgEntityId.builder().id(template.getUuid()).type(NGMigrationEntityType.TEMPLATE).build())
               .collect(Collectors.toSet()));

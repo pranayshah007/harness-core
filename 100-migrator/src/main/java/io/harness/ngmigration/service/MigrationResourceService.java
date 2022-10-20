@@ -26,8 +26,8 @@ import io.harness.ngmigration.service.importer.ConnectorImportService;
 import io.harness.ngmigration.service.importer.SecretManagerImportService;
 import io.harness.ngmigration.service.importer.SecretsImportService;
 import io.harness.ngmigration.service.importer.ServiceImportService;
-
 import io.harness.ngmigration.service.importer.TemplateImportService;
+
 import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.DiscoveryResult;
 import software.wings.ngmigration.NGMigrationEntityType;
@@ -66,7 +66,7 @@ public class MigrationResourceService {
     if (filter instanceof ServiceFilter) {
       return serviceImportService.discover(authToken, importDTO);
     }
-    if(filter instanceof TemplateFilter){
+    if (filter instanceof TemplateFilter) {
       return templateImportService.discover(authToken, importDTO);
     }
     return DiscoveryResult.builder().build();
