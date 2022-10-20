@@ -169,22 +169,29 @@ public class PmsExecutionSummaryServiceImpl implements PmsExecutionSummaryServic
     if (graphLayoutNodeDTOMap == null) {
       return;
     }
-    Optional<String> previousStageId =
+
+    // get the node that is the previous node for the current node execution
+    Optional<String> optionalPrevStageID =
         graphLayoutNodeDTOMap.keySet()
             .stream()
             .filter(key
                 -> Objects.equals(graphLayoutNodeDTOMap.get(key).getNodeExecutionId(), nodeExecution.getPreviousId()))
             .findFirst();
-    if (!previousStageId.isPresent()) {
+    if (!optionalPrevStageID.isPresent()) {
       return;
     }
-    List<String> newNextIdList = Collections.singletonList(planNodeUuid);
-
     Update update = new Update();
-    update.set(PlanExecutionSummaryKeys.layoutNodeMap + "." + previousStageId.get() + ".edgeLayoutList.nextIds",
-        newNextIdList);
+    String prevStage = optionalPrevStageID.get();
+    // if prev stage is a non rollback stage, then we need to update the next node for this previous stage
+    if (!prevStage.endsWith(NGCommonUtilPlanCreationConstants.ROLLBACK_STAGE_UUID_SUFFIX)) {
+      List<String> newNextIdList = Collections.singletonList(planNodeUuid);
+      update.set(PlanExecutionSummaryKeys.layoutNodeMap + "." + prevStage + ".edgeLayoutList.nextIds", newNextIdList);
+    }
     update.set(PlanExecutionSummaryKeys.layoutNodeMap + "." + planNodeUuid + ".status",
         ExecutionStatus.getExecutionStatus(nodeExecution.getStatus()));
+    update.set(
+        PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.layoutNodeMap + "." + planNodeUuid + ".nodeExecutionId",
+        nodeExecution.getUuid());
     update(planExecutionId, update);
   }
 
