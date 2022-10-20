@@ -187,4 +187,8 @@ public class PipelineEntity
     }
     return TemplateRefHelper.hasTemplateRefOrCustomDeploymentRef(getData());
   }
+
+  public YamlVersion getHarnessVersion() {
+    return harnessVersion != null ? harnessVersion : YamlVersion.V0;
+  }
 }

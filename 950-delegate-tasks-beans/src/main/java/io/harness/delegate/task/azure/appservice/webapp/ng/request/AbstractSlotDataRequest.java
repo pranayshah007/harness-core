@@ -22,6 +22,7 @@ import io.harness.expression.ExpressionEvaluator;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import java.util.List;
+import java.util.Set;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
@@ -37,6 +38,10 @@ public abstract class AbstractSlotDataRequest extends AbstractWebAppTaskRequest 
   @Expression(ALLOW_SECRETS) private AppSettingsFile connectionStrings;
   @Expression(ALLOW_SECRETS) private AzureArtifactConfig artifact;
   private Integer timeoutIntervalInMin;
+
+  public abstract Set<String> getPrevExecUserAddedAppSettingNames();
+  public abstract Set<String> getPrevExecUserAddedConnStringNames();
+  public abstract boolean isPrevExecUserChangedStartupCommand();
 
   protected AbstractSlotDataRequest(String accountId, CommandUnitsProgress commandUnitsProgress,
       AzureWebAppInfraDelegateConfig infrastructure, AppSettingsFile startupCommand,

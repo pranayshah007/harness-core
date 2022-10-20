@@ -125,10 +125,15 @@ public class MigratorUtility {
   }
 
   public static SecretRefData getSecretRef(Map<CgEntityId, NGYamlFile> migratedEntities, String secretId) {
-    if (secretId == null) {
+    return getSecretRef(migratedEntities, secretId, SECRET);
+  }
+
+  public static SecretRefData getSecretRef(
+      Map<CgEntityId, NGYamlFile> migratedEntities, String entityId, NGMigrationEntityType entityType) {
+    if (entityId == null) {
       return null;
     }
-    CgEntityId secretEntityId = CgEntityId.builder().id(secretId).type(SECRET).build();
+    CgEntityId secretEntityId = CgEntityId.builder().id(entityId).type(entityType).build();
     if (!migratedEntities.containsKey(secretEntityId)) {
       return SecretRefData.builder().identifier("__PLEASE_FIX_ME__").scope(Scope.PROJECT).build();
     }

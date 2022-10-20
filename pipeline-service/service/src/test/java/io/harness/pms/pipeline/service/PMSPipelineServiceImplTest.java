@@ -9,6 +9,7 @@ package io.harness.pms.pipeline.service;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.rule.OwnerRule.BRIJESH;
+import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
 import static io.harness.rule.OwnerRule.SAHIL;
 import static io.harness.rule.OwnerRule.SOUMYAJIT;
 
@@ -395,5 +396,20 @@ public class PMSPipelineServiceImplTest extends PipelineServiceTestBase {
     pmsPipelineRepository.save(pipelineEntity);
     PipelineCRUDResult pipelineCRUDResult = pmsPipelineService.updatePipelineYaml(pipelineEntity, ChangeType.ADD);
     assertThat(pipelineCRUDResult.getPipelineEntity().getIdentifier()).isEqualTo(pipelineEntity.getIdentifier());
+  }
+
+  @Test
+  @Owner(developers = RAGHAV_GUPTA)
+  @Category(UnitTests.class)
+  public void testUpdatePipelineYamlWithoutHarnessVersion() throws IOException {
+    pipelineEntity.setHarnessVersion(null);
+    doReturn(Optional.empty()).when(pipelineMetadataService).getMetadata(any(), any(), any(), any());
+    on(pmsPipelineService).set("pmsPipelineRepository", pmsPipelineRepository);
+    doReturn(updatedPipelineEntity).when(pmsPipelineServiceHelper).updatePipelineInfo(pipelineEntity, YamlVersion.V0);
+    assertThatThrownBy(() -> pmsPipelineService.updatePipelineYaml(pipelineEntity, ChangeType.ADD))
+        .isInstanceOf(InvalidRequestException.class);
+    pmsPipelineService.create(pipelineEntity);
+    doReturn(updatedPipelineEntity).when(pmsPipelineServiceHelper).updatePipelineInfo(any(), eq(YamlVersion.V0));
+    pmsPipelineService.updatePipelineYaml(pipelineEntity, ChangeType.ADD);
   }
 }

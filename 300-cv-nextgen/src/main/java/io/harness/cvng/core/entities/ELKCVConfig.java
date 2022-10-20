@@ -26,7 +26,7 @@ import lombok.experimental.FieldNameConstants;
 import lombok.experimental.SuperBuilder;
 import org.mongodb.morphia.query.UpdateOperations;
 
-@JsonTypeName("ELK_LOG")
+@JsonTypeName("ELASTICSEARCH")
 @Data
 @SuperBuilder
 @FieldNameConstants(innerTypeName = "ELKCVConfigKeys")
@@ -52,7 +52,7 @@ public class ELKCVConfig extends LogCVConfig {
 
   @Override
   public DataSourceType getType() {
-    return DataSourceType.ELK_LOG;
+    return DataSourceType.ELASTICSEARCH;
   }
 
   @Override

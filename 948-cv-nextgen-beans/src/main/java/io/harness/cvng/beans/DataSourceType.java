@@ -29,7 +29,7 @@ public enum DataSourceType {
   CUSTOM_HEALTH_METRIC("CustomHealthMetric", VerificationType.TIME_SERIES, "prometheus"),
   CUSTOM_HEALTH_LOG("CustomHealthLog", VerificationType.LOG, "splunk"),
 
-  ELK_LOG("ELKLog", VerificationType.LOG, "splunk"),
+  ELASTICSEARCH("ElasticSearch", VerificationType.LOG, "splunk"),
   CLOUDWATCH_METRICS("CloudWatchMetrics", VerificationType.TIME_SERIES, "appdynamics");
 
   private String displayName;

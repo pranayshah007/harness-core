@@ -538,4 +538,13 @@ public class NGTemplateServiceHelper {
       return false;
     }
   }
+
+  public String getComment(String operationType, String templateIdentifier, String commitMessage) {
+    if (isNotEmpty(commitMessage)) {
+      return commitMessage;
+    } else {
+      return String.format(
+          "[HARNESS]: Template with template identifier [%s] has been [%s]", templateIdentifier, operationType);
+    }
+  }
 }

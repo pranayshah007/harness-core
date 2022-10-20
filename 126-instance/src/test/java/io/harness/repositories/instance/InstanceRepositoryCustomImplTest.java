@@ -210,9 +210,11 @@ public class InstanceRepositoryCustomImplTest extends InstancesTestBase {
 
     Criteria filterCreatedAt = Criteria.where(InstanceKeys.createdAt).lte(TIMESTAMP);
     Criteria filterDeletedAt = Criteria.where(InstanceKeys.deletedAt).gte(TIMESTAMP);
+    Criteria filterDeleted = Criteria.where(InstanceKeys.isDeleted).is(true);
     Criteria filterNotDeleted = Criteria.where(InstanceKeys.isDeleted).is(false);
 
-    Criteria criteria = baseCriteria.andOperator(filterCreatedAt.orOperator(filterNotDeleted, filterDeletedAt));
+    Criteria criteria = baseCriteria.orOperator(
+        filterNotDeleted.andOperator(filterCreatedAt), filterDeleted.andOperator(filterCreatedAt, filterDeletedAt));
     Instance instance = Instance.builder().build();
     Query query = new Query().addCriteria(criteria);
     when(mongoTemplate.find(query, Instance.class)).thenReturn(Arrays.asList(instance));
@@ -251,9 +253,12 @@ public class InstanceRepositoryCustomImplTest extends InstancesTestBase {
 
     Criteria filterCreatedAt = Criteria.where(InstanceKeys.createdAt).lte(TIMESTAMP);
     Criteria filterDeletedAt = Criteria.where(InstanceKeys.deletedAt).gte(TIMESTAMP);
+    Criteria filterDeleted = Criteria.where(InstanceKeys.isDeleted).is(true);
     Criteria filterNotDeleted = Criteria.where(InstanceKeys.isDeleted).is(false);
 
-    Criteria criteria = baseCriteria.andOperator(filterCreatedAt.orOperator(filterNotDeleted, filterDeletedAt))
+    Criteria criteria = baseCriteria
+                            .orOperator(filterNotDeleted.andOperator(filterCreatedAt),
+                                filterDeleted.andOperator(filterCreatedAt, filterDeletedAt))
                             .and(InstanceKeys.serviceIdentifier)
                             .is(SERVICE_ID);
     Query query = new Query().addCriteria(criteria);

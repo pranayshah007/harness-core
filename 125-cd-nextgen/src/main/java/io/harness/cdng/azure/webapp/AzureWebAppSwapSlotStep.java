@@ -127,9 +127,7 @@ public class AzureWebAppSwapSlotStep extends TaskExecutableWithRollbackAndRbac<A
             .build(),
         StepCategory.STEP.name());
 
-    if (stepHelper.isPackageArtifactType(stepHelper.getPrimaryArtifactOutcome(ambiance))) {
-      updateTargetSlot(ambiance, getParameterFieldValue(azureWebAppSwapSlotStepParameters.getTargetSlot()));
-    }
+    updateTargetSlot(ambiance, getParameterFieldValue(azureWebAppSwapSlotStepParameters.getTargetSlot()));
 
     builder.unitProgressList(response.getCommandUnitsProgress().getUnitProgresses());
     builder.status(Status.SUCCEEDED);

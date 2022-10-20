@@ -167,7 +167,7 @@ public class InputsValidationHelper {
     String serviceRuntimeInputYaml = serviceEntityService.createServiceInputsYamlGivenPrimaryArtifactRef(
         serviceYaml, serviceRef, primaryArtifactRefNode == null ? null : primaryArtifactRefNode.asText());
     if (EmptyPredicate.isEmpty(serviceRuntimeInputYaml)) {
-      if (serviceInputs != null) {
+      if (EnvironmentRefreshHelper.isNodeNotNullAndNotHaveRuntimeValue(serviceInputs)) {
         errorNodeSummary.setValid(false);
       }
       return;

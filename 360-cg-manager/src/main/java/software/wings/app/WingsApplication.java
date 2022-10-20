@@ -205,6 +205,7 @@ import software.wings.filter.AuditResponseFilter;
 import software.wings.jersey.JsonViews;
 import software.wings.jersey.KryoFeature;
 import software.wings.licensing.LicenseService;
+import software.wings.licensing.LicenseServiceImpl;
 import software.wings.notification.EmailNotificationListener;
 import software.wings.prune.PruneEntityListener;
 import software.wings.resources.AppResource;
@@ -239,6 +240,7 @@ import software.wings.security.encryption.migration.SettingAttributesSecretsMigr
 import software.wings.service.impl.AccountServiceImpl;
 import software.wings.service.impl.AppManifestCloudProviderPTaskManager;
 import software.wings.service.impl.ApplicationManifestServiceImpl;
+import software.wings.service.impl.ArtifactCollectionLicenseListener;
 import software.wings.service.impl.ArtifactStreamServiceImpl;
 import software.wings.service.impl.AuditServiceHelper;
 import software.wings.service.impl.AuditServiceImpl;
@@ -753,21 +755,7 @@ public class WingsApplication extends Application<MainConfiguration> {
 
     // Register collection iterators
     log.info("The value for enableIterators is : {} ", configuration.isEnableIterators());
-
-    /*
-    Note - The Iterators are being moved to a new manager deployment in batches. Thus, to minimize
-    the number of flags and env vars being introduced the existing "enableIterators" flag will be
-    used to move the Iterators in batches. Now the below 5 Iterators will run if the flag is true and
-    the remaining Iterators will run when the flag is false. Ultimately all the Iterators will run only
-    when this flag is true. Previously, enableIterators was  always true thus all the Iterators were always
-    running in all the manager pods. Now it will be toggled between the 2 deployments - 'true' for the
-    'manager-iterator' and 'false' for the 'manager' in PR, Pre-QA, QA and Prod environments.
-    * */
     if (configuration.isEnableIterators()) {
-      if (isManager()) {
-        registerIteratorsManagerBatch(injector);
-      }
-    } else {
       if (isManager()) {
         registerIteratorsManager(configuration.getIteratorsConfig(), injector);
       }
@@ -1432,6 +1420,12 @@ public class WingsApplication extends Application<MainConfiguration> {
         (ApplicationManifestServiceImpl) injector.getInstance(Key.get(ApplicationManifestService.class));
     applicationManifestService.getSubject().register(injector.getInstance(Key.get(ManifestPerpetualTaskManger.class)));
 
+    accountService.getAccountLicenseObserverSubject().register(
+        injector.getInstance(Key.get(ArtifactCollectionLicenseListener.class)));
+    LicenseServiceImpl licenseService = (LicenseServiceImpl) injector.getInstance(Key.get(LicenseService.class));
+    licenseService.getAccountLicenseObserverSubject().register(
+        injector.getInstance(Key.get(ArtifactCollectionLicenseListener.class)));
+
     ObserversHelper.registerSharedObservers(injector);
   }
 
@@ -1444,14 +1438,6 @@ public class WingsApplication extends Application<MainConfiguration> {
     injector.getInstance(FailDelegateTaskIterator.class)
         .registerIterators(iteratorsConfig.getFailDelegateTaskIteratorConfig().getThreadPoolSize());
     injector.getInstance(DelegateTelemetryPublisher.class).registerIterators();
-  }
-
-  public static void registerIteratorsManagerBatch(Injector injector) {
-    injector.getInstance(ExportExecutionsRequestHandler.class).registerIterators();
-    injector.getInstance(ExportExecutionsRequestCleanupHandler.class).registerIterators();
-    injector.getInstance(CeLicenseExpiryHandler.class).registerIterators();
-    injector.getInstance(DeleteAccountHandler.class).registerIterators();
-    injector.getInstance(DeletedEntityHandler.class).registerIterators();
   }
 
   public static void registerIteratorsManager(IteratorsConfig iteratorsConfig, Injector injector) {
@@ -1485,8 +1471,13 @@ public class WingsApplication extends Application<MainConfiguration> {
         .registerIterators(iteratorsConfig.getVaultSecretManagerRenewalIteratorConfig().getThreadPoolSize());
     injector.getInstance(SettingAttributesSecretsMigrationHandler.class).registerIterators();
     injector.getInstance(GitSyncEntitiesExpiryHandler.class).registerIterators();
+    injector.getInstance(ExportExecutionsRequestHandler.class).registerIterators();
+    injector.getInstance(ExportExecutionsRequestCleanupHandler.class).registerIterators();
     injector.getInstance(DeploymentFreezeActivationHandler.class).registerIterators();
     injector.getInstance(DeploymentFreezeDeactivationHandler.class).registerIterators();
+    injector.getInstance(CeLicenseExpiryHandler.class).registerIterators();
+    injector.getInstance(DeleteAccountHandler.class).registerIterators();
+    injector.getInstance(DeletedEntityHandler.class).registerIterators();
     injector.getInstance(ResourceLookupSyncHandler.class).registerIterators();
     injector.getInstance(AccessRequestHandler.class).registerIterators();
     injector.getInstance(ScheduledTriggerHandler.class).registerIterators();

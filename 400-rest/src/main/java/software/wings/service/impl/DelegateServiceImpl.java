@@ -3062,6 +3062,22 @@ public class DelegateServiceImpl implements DelegateService {
     }
   }
 
+  @Override
+  public List<Delegate> obtainDelegatesUsingName(String accountId, String delegateName) {
+    try {
+      return persistence.createQuery(Delegate.class)
+          .filter(DelegateKeys.accountId, accountId)
+          .filter(DelegateKeys.delegateName, delegateName)
+          .filter(DelegateKeys.ng, true)
+          .project(DelegateKeys.uuid, true)
+          .project(DelegateKeys.immutable, true)
+          .asList();
+    } catch (Exception e) {
+      log.error("Could not get delegates from DB.", e);
+      return null;
+    }
+  }
+
   @VisibleForTesting
   public List<CapabilityRequirement> createCapabilityRequirementInstances(
       String accountId, List<ExecutionCapability> agentCapabilities) {
@@ -3898,10 +3914,14 @@ public class DelegateServiceImpl implements DelegateService {
   }
 
   @Override
-  public List<String> getConnectedDelegates(String accountId, List<String> delegateIds) {
-    return delegateIds.stream()
-        .filter(
-            delegateId -> delegateConnectionDao.checkDelegateConnected(accountId, delegateId, getVersion(accountId)))
+  public List<Delegate> getConnectedDelegates(String accountId, List<Delegate> delegates) {
+    return delegates.stream()
+        .filter(delegate -> {
+          // Ignore version from ring while checking heartbeat for immutable delegate because client can use any version
+          // which might be different from immutable delegate version in ring.
+          String version = delegate.isImmutable() ? null : getVersion(accountId);
+          return delegateConnectionDao.checkDelegateConnected(accountId, delegate.getUuid(), version);
+        })
         .collect(toList());
   }
 

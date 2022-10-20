@@ -36,6 +36,7 @@ import software.wings.beans.Account;
 import software.wings.beans.Permit;
 import software.wings.beans.artifact.ArtifactStream;
 import software.wings.beans.artifact.ArtifactStream.ArtifactStreamKeys;
+import software.wings.beans.artifact.ArtifactStreamCollectionStatus;
 import software.wings.delegatetasks.buildsource.ArtifactStreamLogContext;
 import software.wings.service.impl.PermitServiceImpl;
 import software.wings.service.impl.artifact.ArtifactCollectionUtils;
@@ -87,7 +88,11 @@ public class ArtifactCollectionHandler implements Handler<ArtifactStream> {
             .entityProcessController(new AccountStatusBasedEntityProcessController<>(accountService))
             .schedulingType(REGULAR)
             .persistenceProvider(persistenceProvider)
-            .filterExpander(query -> query.field(ArtifactStreamKeys.collectionEnabled).in(Arrays.asList(true, null)))
+            .filterExpander(query
+                -> query.field(ArtifactStreamKeys.collectionEnabled)
+                       .in(Arrays.asList(true, null))
+                       .and(query.criteria(ArtifactStreamKeys.collectionStatus)
+                                .notEqual(ArtifactStreamCollectionStatus.STOPPED)))
             .redistribute(true));
 
     final SecureRandom random = new SecureRandom();

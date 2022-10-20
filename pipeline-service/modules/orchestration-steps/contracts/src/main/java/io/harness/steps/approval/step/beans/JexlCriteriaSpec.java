@@ -13,7 +13,6 @@ import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
 import io.harness.pms.yaml.ParameterField;
-import io.harness.pms.yaml.SkipAutoEvaluation;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
@@ -33,10 +32,7 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("jexlCriteriaSpec")
 @RecasterAlias("io.harness.steps.approval.step.jira.beans.JexlCriteriaSpec")
 public class JexlCriteriaSpec implements CriteriaSpec {
-  @NotNull
-  @SkipAutoEvaluation
-  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
-  private ParameterField<String> expression;
+  @NotNull @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) private ParameterField<String> expression;
 
   @Override
   public CriteriaSpecType getType() {

@@ -31,6 +31,7 @@ import io.harness.cdng.azure.webapp.beans.AzureSlotDeploymentPassThroughData.Azu
 import io.harness.cdng.azure.webapp.beans.AzureWebAppPreDeploymentDataOutput;
 import io.harness.cdng.azure.webapp.beans.AzureWebAppSlotDeploymentDataOutput;
 import io.harness.cdng.execution.StageExecutionInfo.StageExecutionInfoKeys;
+import io.harness.cdng.execution.azure.webapps.AzureWebAppsStageExecutionDetails;
 import io.harness.cdng.execution.azure.webapps.AzureWebAppsStageExecutionDetails.AzureWebAppsStageExecutionDetailsKeys;
 import io.harness.cdng.execution.service.StageExecutionInfoService;
 import io.harness.cdng.infra.beans.AzureWebAppInfrastructureOutcome;
@@ -46,6 +47,7 @@ import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
 import io.harness.delegate.task.azure.appservice.AzureAppServicePreDeploymentData;
 import io.harness.delegate.task.azure.appservice.settings.AppSettingsFile;
+import io.harness.delegate.task.azure.appservice.webapp.ng.AzureWebAppInfraDelegateConfig;
 import io.harness.delegate.task.azure.appservice.webapp.ng.request.AzureWebAppFetchPreDeploymentDataRequest;
 import io.harness.delegate.task.azure.appservice.webapp.ng.request.AzureWebAppSlotDeploymentRequest;
 import io.harness.delegate.task.azure.appservice.webapp.ng.response.AzureWebAppFetchPreDeploymentDataResponse;
@@ -199,11 +201,8 @@ public class AzureWebAppSlotDeploymentStep extends TaskChainExecutableWithRollba
         (AzureSlotDeploymentPassThroughData) passThroughData;
     AzureArtifactConfig azureArtifactConfig = azureWebAppStepHelper.getPrimaryArtifactConfig(
         ambiance, azureSlotDeploymentPassThroughData.getPrimaryArtifactOutcome());
-
-    if (azureArtifactConfig.getArtifactType().equals(AzureArtifactType.PACKAGE)) {
-      updateStageExecutionDetails(
-          ambiance, azureArtifactConfig, azureSlotDeploymentPassThroughData.getPreDeploymentData());
-    }
+    updateStageExecutionDetails(ambiance, azureArtifactConfig,
+        azureSlotDeploymentPassThroughData.getPreDeploymentData(), slotDeploymentResponse);
 
     StepResponse.StepOutcome stepOutcome = instanceInfoService.saveServerInstancesIntoSweepingOutput(ambiance,
         AzureWebAppToServerInstanceInfoMapper.toServerInstanceInfoList(
@@ -212,8 +211,8 @@ public class AzureWebAppSlotDeploymentStep extends TaskChainExecutableWithRollba
     return stepResponseBuilder.stepOutcome(stepOutcome).build();
   }
 
-  private void updateStageExecutionDetails(
-      Ambiance ambiance, AzureArtifactConfig azureArtifactConfig, AzureAppServicePreDeploymentData preDeploymentData) {
+  private void updateStageExecutionDetails(Ambiance ambiance, AzureArtifactConfig azureArtifactConfig,
+      AzureAppServicePreDeploymentData preDeploymentData, AzureWebAppSlotDeploymentResponse response) {
     Scope scope = Scope.of(AmbianceUtils.getAccountId(ambiance), AmbianceUtils.getOrgIdentifier(ambiance),
         AmbianceUtils.getProjectIdentifier(ambiance));
     Map<String, Object> updates = new HashMap<>();
@@ -221,8 +220,20 @@ public class AzureWebAppSlotDeploymentStep extends TaskChainExecutableWithRollba
         azureWebAppStepHelper.getDeploymentIdentifier(
             ambiance, preDeploymentData.getAppName(), preDeploymentData.getSlotName()));
     updates.put(String.format("%s.%s", StageExecutionInfoKeys.executionDetails,
-                    AzureWebAppsStageExecutionDetailsKeys.artifactConfig),
-        azureArtifactConfig);
+                    AzureWebAppsStageExecutionDetailsKeys.userAddedAppSettingNames),
+        response.getUserAddedAppSettingNames());
+    updates.put(String.format("%s.%s", StageExecutionInfoKeys.executionDetails,
+                    AzureWebAppsStageExecutionDetailsKeys.userAddedConnStringNames),
+        response.getUserAddedConnStringNames());
+    updates.put(String.format("%s.%s", StageExecutionInfoKeys.executionDetails,
+                    AzureWebAppsStageExecutionDetailsKeys.userChangedStartupCommand),
+        response.isUserChangedStartupCommand());
+    if (AzureArtifactType.PACKAGE == azureArtifactConfig.getArtifactType()) {
+      updates.put(String.format("%s.%s", StageExecutionInfoKeys.executionDetails,
+                      AzureWebAppsStageExecutionDetailsKeys.artifactConfig),
+          azureArtifactConfig);
+    }
+
     stageExecutionInfoService.update(scope, ambiance.getStageExecutionId(), updates);
   }
 
@@ -309,6 +320,13 @@ public class AzureWebAppSlotDeploymentStep extends TaskChainExecutableWithRollba
       AzureSlotDeploymentPassThroughData passThroughData) {
     AzureWebAppSlotDeploymentStepParameters azureWebAppSlotDeploymentStepParameters =
         (AzureWebAppSlotDeploymentStepParameters) stepElementParameters.getSpec();
+    AzureWebAppInfraDelegateConfig infraDelegateConfig =
+        azureWebAppStepHelper.getInfraDelegateConfig(ambiance, passThroughData.getInfrastructure(),
+            getParameterFieldValue(azureWebAppSlotDeploymentStepParameters.getWebApp()),
+            getParameterFieldValue(azureWebAppSlotDeploymentStepParameters.getDeploymentSlot()));
+    AzureWebAppsStageExecutionDetails prevExecutionDetails =
+        azureWebAppStepHelper.findLastSuccessfulStageExecutionDetails(ambiance, infraDelegateConfig);
+
     AzureWebAppSlotDeploymentRequest slotDeploymentRequest =
         AzureWebAppSlotDeploymentRequest.builder()
             .accountId(AmbianceUtils.getAccountId(ambiance))
@@ -316,13 +334,17 @@ public class AzureWebAppSlotDeploymentStep extends TaskChainExecutableWithRollba
             .applicationSettings(passThroughData.getConfigs().get(APPLICATION_SETTINGS))
             .connectionStrings(passThroughData.getConfigs().get(CONNECTION_STRINGS))
             .startupCommand(passThroughData.getConfigs().get(STARTUP_COMMAND))
-            .infrastructure(azureWebAppStepHelper.getInfraDelegateConfig(ambiance, passThroughData.getInfrastructure(),
-                getParameterFieldValue(azureWebAppSlotDeploymentStepParameters.getWebApp()),
-                getParameterFieldValue(azureWebAppSlotDeploymentStepParameters.getDeploymentSlot())))
+            .infrastructure(infraDelegateConfig)
             .artifact(
                 azureWebAppStepHelper.getPrimaryArtifactConfig(ambiance, passThroughData.getPrimaryArtifactOutcome()))
             .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepElementParameters))
             .commandUnitsProgress(passThroughData.getCommandUnitsProgress())
+            .prevExecUserAddedAppSettingsNames(
+                prevExecutionDetails != null ? prevExecutionDetails.getUserAddedAppSettingNames() : null)
+            .prevExecUserAddedConnStringsNames(
+                prevExecutionDetails != null ? prevExecutionDetails.getUserAddedConnStringNames() : null)
+            .prevExecUserChangedStartupCommand(prevExecutionDetails != null
+                && Boolean.TRUE.equals(prevExecutionDetails.getUserChangedStartupCommand()))
             .build();
 
     return TaskChainResponse.builder()
