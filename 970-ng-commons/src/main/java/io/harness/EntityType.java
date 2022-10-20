@@ -322,6 +322,9 @@ public enum EntityType {
   @JsonProperty(EntityTypeConstants.ECS_BLUE_GREEN_CREATE_SERVICE)
   ECS_BLUE_GREEN_CREATE_SERVICE_STEP(ModuleType.CD, EntityTypeConstants.ECS_BLUE_GREEN_CREATE_SERVICE,
       IdentifierRef.class, EntityYamlRootNames.ECS_BLUE_GREEN_CREATE_SERVICE),
+  @JsonProperty(EntityTypeConstants.ELASTIGROUP_SETUP)
+  ELASTIGROUP_SETUP(ModuleType.CD, EntityTypeConstants.ELASTIGROUP_SETUP,
+          IdentifierRef.class, EntityYamlRootNames.ELASTIGROUP_SERVICE),
   @JsonProperty(EntityTypeConstants.ECS_BLUE_GREEN_SWAP_TARGET_GROUPS)
   ECS_BLUE_GREEN_SWAP_TARGET_GROUPS_STEP(ModuleType.CD, EntityTypeConstants.ECS_BLUE_GREEN_SWAP_TARGET_GROUPS,
       IdentifierRef.class, EntityYamlRootNames.ECS_BLUE_GREEN_SWAP_TARGET_GROUPS),
