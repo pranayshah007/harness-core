@@ -198,7 +198,7 @@ public class ServiceAllInOnePlanCreatorUtils {
           PlanNode.builder()
               .uuid("elastigroup-settings-" + UUIDGenerator.generateUuid())
               .stepType(ElastigroupServiceSettingsStep.STEP_TYPE)
-              .name(PlanCreatorConstants.CONNECTION_STRINGS)
+              .name(PlanCreatorConstants.ELASTIGROUP_SERVICE_SETTINGS_NODE)
               .identifier(YamlTypes.ELASTIGROUP_SERVICE_SETTINGS_STEP)
               .stepParameters(new EmptyStepParameters())
               .facilitatorObtainment(
