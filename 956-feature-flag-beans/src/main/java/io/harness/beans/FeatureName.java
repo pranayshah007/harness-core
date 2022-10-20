@@ -49,6 +49,8 @@ public enum FeatureName {
   CF_ROLLBACK_CONFIG_FILTER,
   CING_ENABLED,
   CI_INDIRECT_LOG_UPLOAD,
+  CI_LE_STATUS_REST_ENABLED(
+      "Used for sending step status for CI via REST APIs instead of gRPC from Lite Engine to manager", HarnessTeam.CI),
   CUSTOM_APM_24_X_7_CV_TASK,
   CUSTOM_APM_CV_TASK,
   CUSTOM_DASHBOARD,
