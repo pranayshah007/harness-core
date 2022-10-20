@@ -8,5 +8,12 @@
 
 package io.harness.ccm.governance.faktory;
 
+import java.io.IOException;
+
 public class FaktoryProducer {
+    public static void Push(String jobType, String jobQueue, String jsonPayload) throws IOException {
+        FaktoryClient client = new FaktoryClient();
+        FaktoryJob job = new FaktoryJob(JobType.of(jobType), JobQueue.of(jobQueue), jsonPayload);
+        client.push(job);
+    }
 }

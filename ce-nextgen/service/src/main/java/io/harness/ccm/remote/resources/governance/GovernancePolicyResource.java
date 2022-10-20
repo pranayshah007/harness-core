@@ -13,6 +13,7 @@ import com.google.inject.Inject;
 import io.harness.NGCommonEntityConstants;
 import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.ccm.governance.faktory.FaktoryProducer;
 import io.harness.ccm.rbac.CCMRbacHelper;
 import io.harness.ccm.utils.LogAccountIdentifier;
 import io.harness.ccm.views.dto.CreatePolicyDTO;
@@ -53,6 +54,7 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -247,9 +249,15 @@ public class GovernancePolicyResource {
       })
   public ResponseDTO<GovernanceEnqueueResponseDTO>
   enqueue(@RequestBody(required = true, description = "Request body for queuing the governance job")
-      @Valid GovernanceJobEnqueueDTO governanceJobEnqueueDTO) {
-    log.info("Policy setid is {}", governanceJobEnqueueDTO.getPolicyEnforcementId());
+      @Valid GovernanceJobEnqueueDTO governanceJobEnqueueDTO) throws IOException {
+    log.info("Policy enforcement config id is {}", governanceJobEnqueueDTO.getPolicyEnforcementId());
     // Next is fetch from Mongo this policySetId and enqueue in the Faktory queue one by one.
+    try {
+      FaktoryProducer.Push("aws", "aws", "");
+    } catch (IOException e) {
+      log.error("{}", e);
+    }
+
     return ResponseDTO.newResponse();
   }
 }

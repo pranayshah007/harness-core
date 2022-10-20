@@ -126,32 +126,6 @@ public class GovernancePolicyPackResource {
     policyPack.setAccountId(accountId);
     policyService.check(accountId, policyPack.getPoliciesIdentifier());
     policyPackService.save(policyPack);
-//    if (configuration.getGovernanceConfig().isUseDkron()) {
-//      log.info("USe dkron is enabled in config");
-//      try {
-//        SchedulerDTO schedulerDTO = SchedulerDTO.builder()
-//                                        .schedule("@every 30s")
-//                                        .disabled(true)
-//                                        .name("get-cedev-version")
-//                                        .displayname("get-cedev-version")
-//                                        .timezone("UTC")
-//                                        .executor("http")
-//                                        .executor_config(SchedulerDTO.ExecutorConfig.builder()
-//                                                             .method("GET")
-//                                                             .url("http://ce-dev.harness.io/api/version")
-//                                                             .build())
-//                                        .build();
-//        log.info(new Gson().toJson(schedulerDTO));
-//        okhttp3.RequestBody body =
-//            okhttp3.RequestBody.create(okhttp3.MediaType.parse("application/json"), new Gson().toJson(schedulerDTO));
-//        Response res = schedulerClient.createSchedule(body).execute();
-//        log.info("code: {}, message: {}, body: {}", res.code(), res.message(), res.body());
-//      } catch (Exception e) {
-//        log.info("{}", e.toString());
-//      }
-//    }
-    // TODO: Add support for GCP cloud scheduler too
-
     return ResponseDTO.newResponse(policyPack.toDTO());
   }
 

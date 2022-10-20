@@ -100,7 +100,7 @@ ngManagerClientConfig:
   baseUrl: http://localhost:7457/
   connectTimeOutSeconds: 15
   readTimeOutSeconds: 15
-  
+
 enforcementClientConfiguration:
   enforcementCheckEnabled: false
 
@@ -232,5 +232,8 @@ dkronClientConfig:
   connectTimeOutSeconds: 50
   readTimeOutSeconds: 50
 
+
 governanceConfig:
   useDkron: true
+  callbackApiEndpoint: http://localhost:7340/ccm/api/governance/enqueue
+
