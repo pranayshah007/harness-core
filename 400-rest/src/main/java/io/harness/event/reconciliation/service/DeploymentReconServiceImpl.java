@@ -25,6 +25,7 @@ import software.wings.api.DeploymentTimeSeriesEvent;
 import software.wings.beans.WorkflowExecution;
 import software.wings.beans.WorkflowExecution.WorkflowExecutionKeys;
 import software.wings.graphql.datafetcher.DataFetcherUtils;
+import software.wings.search.framework.ExecutionEntity;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -52,23 +53,12 @@ public class DeploymentReconServiceImpl implements DeploymentReconService {
 
   private static final String FIND_DEPLOYMENT_IN_TSDB =
       "SELECT EXECUTIONID,STARTTIME FROM DEPLOYMENT WHERE EXECUTIONID=?";
-  protected static final long COOL_DOWN_INTERVAL = 15 * 60 * 1000; /* 15 MINS COOL DOWN INTERVAL */
-
-  private static final String CHECK_MISSING_DATA_QUERY =
-      "SELECT COUNT(DISTINCT(EXECUTIONID)) FROM DEPLOYMENT WHERE ACCOUNTID=? AND ((STARTTIME>=? AND STARTTIME<=?) OR (ENDTIME>=? AND ENDTIME<=?)) AND PARENT_EXECUTION IS NULL;";
-
-  private static final String CHECK_DUPLICATE_DATA_QUERY =
-      "SELECT DISTINCT(D.EXECUTIONID) FROM DEPLOYMENT D,(SELECT COUNT(EXECUTIONID), EXECUTIONID FROM DEPLOYMENT A WHERE ACCOUNTID = ? AND ((STARTTIME>=? AND STARTTIME<=?) OR (ENDTIME>=? AND ENDTIME<=?)) GROUP BY EXECUTIONID HAVING COUNT(EXECUTIONID) > 1) AS B WHERE D.EXECUTIONID = B.EXECUTIONID;";
-
-  private static final String DELETE_DUPLICATE = "DELETE FROM DEPLOYMENT WHERE EXECUTIONID = ANY (?);";
-
-  private static final String RUNNING_DEPLOYMENTS =
-      "SELECT EXECUTIONID,STATUS FROM DEPLOYMENT WHERE ACCOUNTID=? AND STATUS IN ('RUNNING','PAUSED')";
 
   @Override
-  public ReconciliationStatus performReconciliation(String accountId, long durationStartTs, long durationEndTs) {
+  public ReconciliationStatus performReconciliation(
+      String accountId, long durationStartTs, long durationEndTs, ExecutionEntity executionEntity) {
     return performReconciliationHelper(accountId, durationStartTs, durationEndTs, timeScaleDBService,
-        deploymentReconRecordRepository, persistence, persistentLocker, deploymentReconService, utils);
+        deploymentReconRecordRepository, persistence, persistentLocker, utils, executionEntity);
   }
 
   public long getWFExecCountFromMongoDB(String accountId, long durationStartTs, long durationEndTs) {
@@ -111,7 +101,8 @@ public class DeploymentReconServiceImpl implements DeploymentReconService {
 
     try (HIterator<WorkflowExecution> iterator = new HIterator<>(query.fetch())) {
       for (WorkflowExecution workflowExecution : iterator) {
-        if (isStatusMismatchedInMongoAndTSDB(tsdbRunningWFs, workflowExecution)) {
+        if (isStatusMismatchedInMongoAndTSDB(
+                tsdbRunningWFs, workflowExecution.getUuid(), workflowExecution.getStatus().toString())) {
           log.info("Status mismatch in MongoDB and TSDB for WorkflowExecution: [{}]", workflowExecution.getUuid());
           updateRunningWFsFromTSDB(workflowExecution);
           statusMismatch = true;
@@ -143,7 +134,7 @@ public class DeploymentReconServiceImpl implements DeploymentReconService {
             .exists()
             .project(WorkflowExecution.WorkflowExecutionKeys.serviceExecutionSummaries, false);
 
-    addTimeQuery(query, durationStartTs, durationEndTs);
+    addTimeQuery(query, durationStartTs, durationEndTs, WorkflowExecutionKeys.startTs, WorkflowExecutionKeys.endTs);
 
     try (HIterator<WorkflowExecution> iterator = new HIterator<>(query.fetch())) {
       for (WorkflowExecution workflowExecution : iterator) {

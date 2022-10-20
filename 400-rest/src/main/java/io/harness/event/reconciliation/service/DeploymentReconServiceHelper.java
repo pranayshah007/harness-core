@@ -1,7 +1,6 @@
 package io.harness.event.reconciliation.service;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.persistence.HQuery.excludeAuthority;
 
 import static java.time.Duration.ofMinutes;
 
@@ -10,23 +9,18 @@ import io.harness.event.reconciliation.ReconcilationAction;
 import io.harness.event.reconciliation.ReconciliationStatus;
 import io.harness.event.reconciliation.deployment.DeploymentReconRecord;
 import io.harness.event.reconciliation.deployment.DeploymentReconRecordRepository;
-import io.harness.event.timeseries.processor.DeploymentEventProcessor;
-import io.harness.event.usagemetrics.UsageMetricsEventPublisher;
 import io.harness.lock.AcquiredLock;
 import io.harness.lock.PersistentLocker;
-import io.harness.persistence.HIterator;
 import io.harness.persistence.HPersistence;
 import io.harness.timescaledb.DBUtils;
 import io.harness.timescaledb.TimeScaleDBService;
 
-import software.wings.api.DeploymentTimeSeriesEvent;
-import software.wings.beans.WorkflowExecution;
 import software.wings.graphql.datafetcher.DataFetcherUtils;
+import software.wings.search.framework.ExecutionEntity;
 
 import java.sql.*;
 import java.util.*;
 import java.util.Date;
-import javax.management.openmbean.InvalidKeyException;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import org.mongodb.morphia.query.*;
@@ -79,57 +73,47 @@ public class DeploymentReconServiceHelper {
   }
 
   public static Criteria getCriteria(String key, long durationStartTs, long durationEndTs, CriteriaContainer query) {
-    Criteria startTimeCriteria;
-    Criteria endTimeCriteria;
-
-    if (key.equals(WorkflowExecution.WorkflowExecutionKeys.startTs)) {
-      startTimeCriteria = query.criteria(key).lessThanOrEq(durationEndTs);
-      startTimeCriteria.attach(query.criteria(key).greaterThanOrEq(durationStartTs));
-      return startTimeCriteria;
-    } else if (key.equals(WorkflowExecution.WorkflowExecutionKeys.endTs)) {
-      endTimeCriteria = query.criteria(key).lessThanOrEq(durationEndTs);
-      endTimeCriteria.attach(query.criteria(key).greaterThanOrEq(durationStartTs));
-      return endTimeCriteria;
-    } else {
-      throw new InvalidKeyException("Unknown Time key " + key);
-    }
+    Criteria criteria;
+    criteria = query.criteria(key).lessThanOrEq(durationEndTs);
+    criteria.attach(query.criteria(key).greaterThanOrEq(durationStartTs));
+    return criteria;
   }
 
-  public static void addTimeQuery(Query query, long durationStartTs, long durationEndTs) {
+  public static void addTimeQuery(
+      Query query, long durationStartTs, long durationEndTs, String startTsKey, String endTsKey) {
     CriteriaContainer orQuery = query.or();
     CriteriaContainer startTimeQuery = query.and();
     CriteriaContainer endTimeQuery = query.and();
 
-    startTimeQuery.and(
-        getCriteria(WorkflowExecution.WorkflowExecutionKeys.startTs, durationStartTs, durationEndTs, startTimeQuery));
-    endTimeQuery.and(
-        getCriteria(WorkflowExecution.WorkflowExecutionKeys.endTs, durationStartTs, durationEndTs, endTimeQuery));
+    startTimeQuery.and(getCriteria(startTsKey, durationStartTs, durationEndTs, startTimeQuery));
+    endTimeQuery.and(getCriteria(endTsKey, durationStartTs, durationEndTs, endTimeQuery));
 
     orQuery.add(startTimeQuery, endTimeQuery);
     query.and(orQuery);
   }
-  public static boolean isStatusMismatchedInMongoAndTSDB(
-      Map<String, String> tsdbRunningWFs, WorkflowExecution workflowExecution) {
-    return tsdbRunningWFs.entrySet().stream().anyMatch(entry
-        -> entry.getKey().equals(workflowExecution.getUuid())
-            && !entry.getValue().equals(workflowExecution.getStatus().toString()));
+  public static boolean isStatusMismatchedInMongoAndTSDB(Map<String, String> tsdbRunningWFs, String id, String status) {
+    return tsdbRunningWFs.entrySet().stream().anyMatch(
+        entry -> entry.getKey().equals(id) && !entry.getValue().equals(status));
   }
 
   public static ReconciliationStatus performReconciliationHelper(String accountId, long durationStartTs,
       long durationEndTs, TimeScaleDBService timeScaleDBService,
       DeploymentReconRecordRepository deploymentReconRecordRepository, HPersistence persistence,
-      PersistentLocker persistentLocker, DeploymentReconService deploymentReconService, DataFetcherUtils utils) {
+      PersistentLocker persistentLocker, DataFetcherUtils utils, ExecutionEntity executionEntity) {
+    String sourceEntityClass = executionEntity.getSourceEntityClass().getCanonicalName();
+
     if (!timeScaleDBService.isValid()) {
       log.info("TimeScaleDB is not valid, skipping reconciliation for accountID:[{}] in duration:[{}-{}]", accountId,
           new Date(durationStartTs), new Date(durationEndTs));
       return ReconciliationStatus.SUCCESS;
     }
 
-    DeploymentReconRecord record = deploymentReconRecordRepository.getLatestDeploymentReconRecord(accountId);
+    DeploymentReconRecord record =
+        deploymentReconRecordRepository.getLatestDeploymentReconRecord(accountId, sourceEntityClass);
     if (record == null || shouldPerformReconciliation(record, durationEndTs, persistence)) {
       try (AcquiredLock ignore = persistentLocker.waitToAcquireLock(
                DeploymentReconRecord.class, "AccountID-" + accountId, ofMinutes(1), ofMinutes(5))) {
-        record = deploymentReconRecordRepository.getLatestDeploymentReconRecord(accountId);
+        record = deploymentReconRecordRepository.getLatestDeploymentReconRecord(accountId, sourceEntityClass);
 
         if (record != null && !shouldPerformReconciliation(record, durationEndTs, persistence)) {
           if (record.getReconciliationStatus() == ReconciliationStatus.IN_PROGRESS) {
@@ -145,6 +129,7 @@ public class DeploymentReconServiceHelper {
 
         record = DeploymentReconRecord.builder()
                      .accountId(accountId)
+                     .entityClass(sourceEntityClass)
                      .reconciliationStatus(ReconciliationStatus.IN_PROGRESS)
                      .reconStartTs(System.currentTimeMillis())
                      .durationStartTs(durationStartTs)
@@ -158,21 +143,23 @@ public class DeploymentReconServiceHelper {
         boolean missingRecordsDetected = false;
         boolean statusMismatchDetected;
 
-        List<String> executionIDs =
-            checkForDuplicates(accountId, durationStartTs, durationEndTs, timeScaleDBService, "", utils);
+        List<String> executionIDs = checkForDuplicates(
+            accountId, durationStartTs, durationEndTs, timeScaleDBService, executionEntity.getDuplicatesQuery(), utils);
         if (isNotEmpty(executionIDs)) {
           duplicatesDetected = true;
           log.warn("Duplicates detected for accountId:[{}] in duration:[{}-{}], executionIDs:[{}]", accountId,
               new Date(durationStartTs), new Date(durationEndTs), executionIDs);
-          deleteDuplicates(accountId, durationStartTs, durationEndTs, executionIDs, timeScaleDBService, "");
+          deleteDuplicates(accountId, durationStartTs, durationEndTs, executionIDs, timeScaleDBService,
+              executionEntity.getDeleteSetQuery());
         }
 
-        long primaryCount = deploymentReconService.getWFExecCountFromMongoDB(accountId, durationStartTs, durationEndTs);
+        long primaryCount =
+            executionEntity.getReconService().getWFExecCountFromMongoDB(accountId, durationStartTs, durationEndTs);
         long secondaryCount =
             getWFExecutionCountFromTSDB(accountId, durationStartTs, durationEndTs, timeScaleDBService, "", utils);
         if (primaryCount > secondaryCount) {
           missingRecordsDetected = true;
-          deploymentReconService.insertMissingRecords(accountId, durationStartTs, durationEndTs);
+          executionEntity.getReconService().insertMissingRecords(accountId, durationStartTs, durationEndTs);
         } else if (primaryCount == secondaryCount) {
           log.info("Everything is fine, no action required for accountID:[{}] in duration:[{}-{}]", accountId,
               new Date(durationStartTs), new Date(durationEndTs));
@@ -181,9 +168,9 @@ public class DeploymentReconServiceHelper {
               new Date(durationStartTs), new Date(durationEndTs));
         }
 
-        Map<String, String> tsdbRunningWFs =
-            getRunningWFsFromTSDB(accountId, durationStartTs, durationEndTs, timeScaleDBService, "");
-        statusMismatchDetected = deploymentReconService.isStatusMismatchedAndUpdated(tsdbRunningWFs);
+        Map<String, String> tsdbRunningWFs = getRunningWFsFromTSDB(
+            accountId, durationStartTs, durationEndTs, timeScaleDBService, executionEntity.getRunningExecutionQuery());
+        statusMismatchDetected = executionEntity.getReconService().isStatusMismatchedAndUpdated(tsdbRunningWFs);
 
         DetectionStatus detectionStatus;
         ReconcilationAction action;
@@ -244,17 +231,18 @@ public class DeploymentReconServiceHelper {
     }
     return ReconciliationStatus.SUCCESS;
   }
+
   public static DeploymentReconRecord fetchRecord(String uuid, HPersistence persistence) {
     return persistence.get(DeploymentReconRecord.class, uuid);
   }
 
   public static void deleteDuplicates(String accountId, long durationStartTs, long durationEndTs,
-      List<String> executionIDs, TimeScaleDBService timeScaleDBService, String DELETE_DUPLICATE) {
+      List<String> executionIDs, TimeScaleDBService timeScaleDBService, String query) {
     int totalTries = 0;
     String[] executionIdsArray = executionIDs.toArray(new String[executionIDs.size()]);
     while (totalTries <= 3) {
       try (Connection connection = timeScaleDBService.getDBConnection();
-           PreparedStatement statement = connection.prepareStatement(DELETE_DUPLICATE)) {
+           PreparedStatement statement = connection.prepareStatement(query)) {
         Array array = connection.createArrayOf("text", executionIdsArray);
         statement.setArray(1, array);
         statement.executeUpdate();
@@ -269,13 +257,13 @@ public class DeploymentReconServiceHelper {
   }
 
   public static List<String> checkForDuplicates(String accountId, long durationStartTs, long durationEndTs,
-      TimeScaleDBService timeScaleDBService, String CHECK_DUPLICATE_DATA_QUERY, DataFetcherUtils utils) {
+      TimeScaleDBService timeScaleDBService, String query, DataFetcherUtils utils) {
     int totalTries = 0;
     List<String> duplicates = new ArrayList<>();
     while (totalTries <= 3) {
       ResultSet resultSet = null;
       try (Connection connection = timeScaleDBService.getDBConnection();
-           PreparedStatement statement = connection.prepareStatement(CHECK_DUPLICATE_DATA_QUERY)) {
+           PreparedStatement statement = connection.prepareStatement(query)) {
         statement.setString(1, accountId);
         statement.setTimestamp(2, new Timestamp(durationStartTs), utils.getDefaultCalendar());
         statement.setTimestamp(3, new Timestamp(durationEndTs), utils.getDefaultCalendar());
@@ -300,12 +288,12 @@ public class DeploymentReconServiceHelper {
   }
 
   public static long getWFExecutionCountFromTSDB(String accountId, long durationStartTs, long durationEndTs,
-      TimeScaleDBService timeScaleDBService, String CHECK_MISSING_DATA_QUERY, DataFetcherUtils utils) {
+      TimeScaleDBService timeScaleDBService, String query, DataFetcherUtils utils) {
     int totalTries = 0;
     while (totalTries <= 3) {
       ResultSet resultSet = null;
       try (Connection connection = timeScaleDBService.getDBConnection();
-           PreparedStatement statement = connection.prepareStatement(CHECK_MISSING_DATA_QUERY)) {
+           PreparedStatement statement = connection.prepareStatement(query)) {
         statement.setString(1, accountId);
         statement.setTimestamp(2, new Timestamp(durationStartTs), utils.getDefaultCalendar());
         statement.setTimestamp(3, new Timestamp(durationEndTs), utils.getDefaultCalendar());
@@ -329,14 +317,14 @@ public class DeploymentReconServiceHelper {
     return 0;
   }
 
-  public static Map<String, String> getRunningWFsFromTSDB(String accountId, long durationStartTs, long durationEndTs,
-      TimeScaleDBService timeScaleDBService, String RUNNING_DEPLOYMENTS) {
+  public static Map<String, String> getRunningWFsFromTSDB(
+      String accountId, long durationStartTs, long durationEndTs, TimeScaleDBService timeScaleDBService, String query) {
     int totalTries = 0;
     Map<String, String> runningWFs = new HashMap<>();
     while (totalTries <= 3) {
       ResultSet resultSet = null;
       try (Connection connection = timeScaleDBService.getDBConnection();
-           PreparedStatement statement = connection.prepareStatement(RUNNING_DEPLOYMENTS)) {
+           PreparedStatement statement = connection.prepareStatement(query)) {
         statement.setString(1, accountId);
         resultSet = statement.executeQuery();
         while (resultSet.next()) {

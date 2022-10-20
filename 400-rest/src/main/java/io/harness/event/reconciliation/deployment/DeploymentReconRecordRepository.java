@@ -14,11 +14,13 @@ import org.mongodb.morphia.query.Sort;
 public class DeploymentReconRecordRepository {
   @Inject HPersistence persistence;
 
-  public DeploymentReconRecord getLatestDeploymentReconRecord(@NotNull String accountId) {
+  public DeploymentReconRecord getLatestDeploymentReconRecord(@NotNull String accountId, String entityClass) {
     try (HIterator<DeploymentReconRecord> iterator =
              new HIterator<>(persistence.createQuery(DeploymentReconRecord.class)
                                  .field(DeploymentReconRecord.DeploymentReconRecordKeys.accountId)
                                  .equal(accountId)
+                                 .field(DeploymentReconRecord.DeploymentReconRecordKeys.entityClass)
+                                 .equal(entityClass)
                                  .order(Sort.descending(DeploymentReconRecord.DeploymentReconRecordKeys.durationEndTs))
                                  .fetch())) {
       if (!iterator.hasNext()) {

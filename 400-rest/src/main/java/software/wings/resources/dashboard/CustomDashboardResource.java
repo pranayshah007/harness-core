@@ -44,6 +44,7 @@ import software.wings.beans.Account;
 import software.wings.beans.Application;
 import software.wings.beans.User;
 import software.wings.features.api.AccountId;
+import software.wings.search.entities.deployment.DeploymentExecutionEntity;
 import software.wings.search.framework.TimeScaleEntity;
 import software.wings.security.PermissionAttribute.ResourceType;
 import software.wings.security.UserThreadLocal;
@@ -98,6 +99,7 @@ public class CustomDashboardResource {
   private DeploymentEventProcessor deploymentEventProcessor;
 
   @Inject private Set<TimeScaleEntity<?>> timeScaleEntities;
+  @Inject private DeploymentExecutionEntity deploymentExecutionEntity;
 
   @Inject
   public CustomDashboardResource(DashboardSettingsService dashboardSettingsService,
@@ -246,8 +248,8 @@ public class CustomDashboardResource {
                                                          .build()))
             .build();
       }
-      ReconciliationStatus status =
-          deploymentReconService.performReconciliation(targetAccountId, durationStartTs, durationEndTs);
+      ReconciliationStatus status = deploymentReconService.performReconciliation(
+          targetAccountId, durationStartTs, durationEndTs, deploymentExecutionEntity);
       return Builder.aRestResponse()
           .withResponseMessages(Lists.newArrayList(ResponseMessage.builder()
                                                        .message(targetAccountId + ":" + status.name())
@@ -292,8 +294,8 @@ public class CustomDashboardResource {
       List<Account> accountList = accountService.listAllAccountWithDefaultsWithoutLicenseInfo();
       Map<String, String> accountReconStatusMap = new HashMap<>();
       for (Account account : accountList) {
-        ReconciliationStatus status =
-            deploymentReconService.performReconciliation(account.getUuid(), durationStartTs, durationEndTs);
+        ReconciliationStatus status = deploymentReconService.performReconciliation(
+            account.getUuid(), durationStartTs, durationEndTs, deploymentExecutionEntity);
         accountReconStatusMap.put(account.getAccountName(), status.name());
         log.info("Reconcilation completed for accountID:[{}],accountName:[{}],status:[{}]", account.getUuid(),
             account.getAccountName(), status);
