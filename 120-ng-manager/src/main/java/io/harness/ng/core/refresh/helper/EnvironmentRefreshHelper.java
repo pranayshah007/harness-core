@@ -184,7 +184,7 @@ public class EnvironmentRefreshHelper {
         serviceOverrideService.createServiceOverrideInputsYaml(context.getAccountId(), context.getOrgId(),
             context.getProjectId(), envRefInResolvedTemplatesYaml.asText(), serviceRefInResolvedTemplatesYaml.asText());
     if (EmptyPredicate.isEmpty(serviceOverrideInputsYaml)) {
-      if (serviceOverrideInputs != null) {
+      if (isNodeNotNullAndNotHaveRuntimeValue(serviceOverrideInputs)) {
         errorNodeSummary.setValid(false);
       }
       return;
@@ -486,7 +486,7 @@ public class EnvironmentRefreshHelper {
     String envInputsYaml = environmentService.createEnvironmentInputsYaml(
         context.getAccountId(), context.getOrgId(), context.getProjectId(), envRefValue);
     if (EmptyPredicate.isEmpty(envInputsYaml)) {
-      if (envInputsNode != null) {
+      if (isNodeNotNullAndNotHaveRuntimeValue(envInputsNode)) {
         errorNodeSummary.setValid(false);
         return false;
       }
@@ -559,7 +559,7 @@ public class EnvironmentRefreshHelper {
         && "Stage".equals(resolvedTemplatesYamlNode.getTemplate().get("type").asText());
   }
 
-  boolean isNodeNotNullAndNotHaveRuntimeValue(JsonNode jsonNode) {
+  public static boolean isNodeNotNullAndNotHaveRuntimeValue(JsonNode jsonNode) {
     return jsonNode != null
         && (jsonNode.isObject() || jsonNode.isArray()
             || (jsonNode.isValueNode() && !NGExpressionUtils.matchesInputSetPattern(jsonNode.asText())));

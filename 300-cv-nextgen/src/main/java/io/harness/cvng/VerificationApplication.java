@@ -60,6 +60,7 @@ import io.harness.cvng.core.entities.demo.CVNGDemoPerpetualTask;
 import io.harness.cvng.core.entities.demo.CVNGDemoPerpetualTask.CVNGDemoPerpetualTaskKeys;
 import io.harness.cvng.core.jobs.CVNGDemoPerpetualTaskHandler;
 import io.harness.cvng.core.jobs.ChangeSourceDemoHandler;
+import io.harness.cvng.core.jobs.CompositeSLODataExecutorTaskHandler;
 import io.harness.cvng.core.jobs.DataCollectionTasksPerpetualTaskStatusUpdateHandler;
 import io.harness.cvng.core.jobs.DeploymentChangeEventConsumer;
 import io.harness.cvng.core.jobs.EntityCRUDStreamConsumer;
@@ -461,6 +462,7 @@ public class VerificationApplication extends Application<VerificationConfigurati
     registerCVNGDemoPerpetualTaskIterator(injector);
     registerDataCollectionTasksPerpetualTaskStatusUpdateIterator(injector);
     registerServiceLevelObjectiveV2VerifyTaskIterator(injector);
+    registerCompositeSLODataExecutorTaskIterator(injector);
     injector.getInstance(CVNGStepTaskHandler.class).registerIterator();
     injector.getInstance(PrimaryVersionChangeScheduler.class).registerExecutors();
     registerExceptionMappers(environment.jersey());
@@ -906,6 +908,37 @@ public class VerificationApplication extends Application<VerificationConfigurati
     injector.injectMembers(serviceLevelObjectiveV2VerifyTaskIterator);
     serviceLevelObjectiveV2VerifyTaskExecutor.scheduleWithFixedDelay(
         () -> serviceLevelObjectiveV2VerifyTaskIterator.process(), 0, 5, TimeUnit.MINUTES);
+  }
+
+  private void registerCompositeSLODataExecutorTaskIterator(Injector injector) {
+    ScheduledThreadPoolExecutor compositeSLODataExecutorTaskExecutor = new ScheduledThreadPoolExecutor(
+        3, new ThreadFactoryBuilder().setNameFormat("composite-slo-data-collection-task-iterator").build());
+
+    CompositeSLODataExecutorTaskHandler compositeSLODataExecutorTaskHandler =
+        injector.getInstance(CompositeSLODataExecutorTaskHandler.class);
+
+    PersistenceIterator serviceLevelObjectiveV2CompositeSLOTaskIterator =
+        MongoPersistenceIterator
+            .<AbstractServiceLevelObjective, MorphiaFilterExpander<AbstractServiceLevelObjective>>builder()
+            .mode(PersistenceIterator.ProcessMode.PUMP)
+            .iteratorName("ServiceLevelObjectiveV2CompositeSLOTaskIterator")
+            .clazz(AbstractServiceLevelObjective.class)
+            .fieldName(ServiceLevelObjectiveV2Keys.createNextTaskIteration)
+            .targetInterval(ofMinutes(1))
+            .acceptableNoAlertDelay(ofMinutes(1))
+            .executorService(compositeSLODataExecutorTaskExecutor)
+            .semaphore(new Semaphore(2))
+            .handler(compositeSLODataExecutorTaskHandler)
+            .schedulingType(REGULAR)
+            .filterExpander(
+                query -> query.filter(ServiceLevelObjectiveV2Keys.type, ServiceLevelObjectiveType.COMPOSITE))
+            .persistenceProvider(injector.getInstance(MorphiaPersistenceProvider.class))
+            .redistribute(true)
+            .build();
+
+    injector.injectMembers(serviceLevelObjectiveV2CompositeSLOTaskIterator);
+    compositeSLODataExecutorTaskExecutor.scheduleWithFixedDelay(
+        () -> serviceLevelObjectiveV2CompositeSLOTaskIterator.process(), 0, 30, TimeUnit.SECONDS);
   }
 
   private void registerVerificationJobInstanceDataCollectionTaskIterator(Injector injector) {

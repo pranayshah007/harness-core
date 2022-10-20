@@ -136,4 +136,8 @@ public class NGCommonEntityConstants {
       "Request is having different org in payload and param";
   public static final String DIFFERENT_PROJECT_IN_PAYLOAD_AND_PARAM =
       "Request is having different project in payload and param";
+  public static final String JOB_NAME = "jobName";
+  public static final String FQN_PATH = "fqnPath";
+  public static final String ARTIFACT_PATH = "artifactPath";
+  public static final String PARENT_JOB_NAME = "parentJobName";
 }

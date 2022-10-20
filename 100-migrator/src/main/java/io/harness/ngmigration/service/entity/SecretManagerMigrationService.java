@@ -25,9 +25,9 @@ import io.harness.encryption.Scope;
 import io.harness.exception.InvalidRequestException;
 import io.harness.gitsync.beans.YamlDTO;
 import io.harness.ng.core.dto.ResponseDTO;
-import io.harness.ng.core.dto.secrets.SecretRequestWrapper;
 import io.harness.ngmigration.beans.BaseEntityInput;
 import io.harness.ngmigration.beans.BaseInputDefinition;
+import io.harness.ngmigration.beans.CustomSecretRequestWrapper;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.MigratorInputType;
 import io.harness.ngmigration.beans.NGYamlFile;
@@ -213,7 +213,7 @@ public class SecretManagerMigrationService extends NgMigrationService {
                        .stream()
                        .map(secretDTO
                            -> NGYamlFile.builder()
-                                  .yaml(SecretRequestWrapper.builder().secret(secretDTO).build())
+                                  .yaml(CustomSecretRequestWrapper.builder().secret(secretDTO).build())
                                   .type(SECRET)
                                   .ngEntityDetail(NgEntityDetail.builder()
                                                       .projectIdentifier(secretDTO.getProjectIdentifier())
