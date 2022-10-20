@@ -631,17 +631,4 @@ public class ConnectorResource {
         connectorService.getAttributes(accountId, orgIdentifier, projectIdentifier, connectorIdentifiers));
   }
 
-  @GET
-  @Path("/gcpRegions")
-  @ApiOperation(value = "Get GCP Regions", nickname = "getGcpRegions")
-  @Operation(operationId = "getGcpRegions", summary = "Get list of GCP Regions", description = "Lists all GCP Regions",
-      responses =
-      {
-        @io.swagger.v3.oas.annotations.responses.
-        ApiResponse(responseCode = "default", description = "Returns the list of GCP Regions")
-      })
-  public ResponseDTO<List<String>>
-  getGcpRegions() {
-    return ResponseDTO.newResponse(connectorService.getGcpRegions());
-  }
 }
