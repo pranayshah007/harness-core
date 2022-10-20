@@ -7,6 +7,8 @@
 
 package io.harness.ngmigration.connector;
 
+import static software.wings.ngmigration.NGMigrationEntityType.CONNECTOR;
+
 import io.harness.data.structure.CollectionUtils;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.ConnectorType;
@@ -16,8 +18,6 @@ import io.harness.delegate.beans.connector.scm.genericgitconnector.GitAuthentica
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitHTTPAuthenticationDTO;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitSSHAuthenticationDTO;
-import io.harness.encryption.Scope;
-import io.harness.encryption.SecretRefData;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.service.MigratorUtility;
@@ -65,20 +65,11 @@ public class GitConnectorImpl implements BaseConnector {
     if (gitConfig.getAuthenticationScheme() == AuthenticationScheme.HTTP_PASSWORD) {
       return GitHTTPAuthenticationDTO.builder()
           .username(gitConfig.getUsername())
-
           .passwordRef(MigratorUtility.getSecretRef(migratedEntities, gitConfig.getEncryptedPassword()))
-          // TODO: scope will come from inputs)
           .build();
     } else if (gitConfig.getAuthenticationScheme() == AuthenticationScheme.SSH_KEY) {
       return GitSSHAuthenticationDTO.builder()
-          .encryptedSshKey(
-              SecretRefData
-                  .builder()
-                  // TODO: identifier will come from inside ssh key ref setting attribute. It needs to be discovered and
-                  // mapped to a secret. Ref of that secret will be used here.
-                  .identifier(MigratorUtility.generateIdentifier(gitConfig.getSshSettingAttribute().getName()))
-                  .scope(Scope.PROJECT)
-                  .build())
+          .encryptedSshKey(MigratorUtility.getSecretRef(migratedEntities, gitConfig.getSshSettingId(), CONNECTOR))
           .build();
     } else {
       throw new InvalidRequestException("Unsupported git auth type: " + gitConfig.getAuthenticationScheme());

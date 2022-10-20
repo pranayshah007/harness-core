@@ -8,7 +8,6 @@
 package io.harness.pms.pipelinestage.step;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.OrchestrationStepTypes;
 import io.harness.accesscontrol.clients.AccessControlClient;
@@ -18,6 +17,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.AsyncExecutableResponse;
 import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.contracts.plan.PipelineStageInfo;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.pipelinestage.PipelineStageStepParameters;
@@ -83,19 +83,12 @@ public class PipelineStageStep implements AsyncExecutableWithRbac<PipelineStageS
 
     PlanExecutionResponseDto responseDto = null;
     setSourcePrincipal(ambiance);
-    if (isEmpty(stepParameters.getInputSetReferences())) {
-      // TODO: pass the runtime yaml
-      responseDto = pipelineExecutor.runPipelineWithInputSetPipelineYaml(
-          ambiance.getSetupAbstractions().get("accountId"), stepParameters.getOrg(), stepParameters.getProject(),
-          stepParameters.getPipeline(), ambiance.getMetadata().getModuleType(), "", false, false);
+    // TODO: pass the runtime yaml
+    PipelineStageInfo info = prepareParentStageInfo(ambiance, stepParameters);
+    responseDto = pipelineExecutor.runPipelineAsChildPipeline(ambiance.getSetupAbstractions().get("accountId"),
+        stepParameters.getOrg(), stepParameters.getProject(), stepParameters.getPipeline(),
+        ambiance.getMetadata().getModuleType(), "", false, false, stepParameters.getInputSetReferences(), info);
 
-    } else {
-      // TODO: fetch repo and branch from ambiance
-      responseDto =
-          pipelineExecutor.runPipelineWithInputSetReferencesList(ambiance.getSetupAbstractions().get("accountId"),
-              stepParameters.getOrg(), stepParameters.getProject(), stepParameters.getPipeline(),
-              ambiance.getMetadata().getModuleType(), stepParameters.getInputSetReferences(), "", "");
-    }
     if (responseDto == null) {
       throw new InvalidRequestException(
           String.format("Failed to execute child pipeline %s", stepParameters.getPipeline()));
@@ -106,6 +99,17 @@ public class PipelineStageStep implements AsyncExecutableWithRbac<PipelineStageS
         StepCategory.STAGE.name());
 
     return AsyncExecutableResponse.newBuilder().addCallbackIds(responseDto.getPlanExecution().getUuid()).build();
+  }
+
+  private PipelineStageInfo prepareParentStageInfo(Ambiance ambiance, PipelineStageStepParameters stepParameters) {
+    return PipelineStageInfo.newBuilder()
+        .setExecutionId(ambiance.getPlanExecutionId())
+        .setStageNodeExecutionId(ambiance.getStageExecutionId())
+        .setHasParentPipeline(true)
+        .setIdentifier(ambiance.getMetadata().getPipelineIdentifier())
+        .setProjectId(ambiance.getSetupAbstractions().get("projectIdentifier"))
+        .setOrgId(ambiance.getSetupAbstractions().get("orgIdentifier"))
+        .build();
   }
 
   @Override

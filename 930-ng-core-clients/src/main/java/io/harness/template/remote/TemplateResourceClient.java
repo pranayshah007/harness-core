@@ -28,10 +28,13 @@ import io.harness.ng.core.template.refresh.YamlFullRefreshResponseDTO;
 import io.harness.template.TemplateFilterPropertiesDTO;
 
 import java.util.List;
+import javax.validation.constraints.NotNull;
+import okhttp3.RequestBody;
 import org.hibernate.validator.constraints.NotEmpty;
 import retrofit2.Call;
 import retrofit2.http.Body;
 import retrofit2.http.GET;
+import retrofit2.http.Headers;
 import retrofit2.http.POST;
 import retrofit2.http.Path;
 import retrofit2.http.Query;
@@ -124,4 +127,12 @@ public interface TemplateResourceClient {
       @Query(value = GitSyncApiConstants.REPO_IDENTIFIER_KEY) String repoIdentifier,
       @Query(value = GitSyncApiConstants.DEFAULT_FROM_OTHER_REPO) Boolean defaultFromOtherRepo,
       @Body RefreshRequestDTO refreshRequest);
+
+  @Headers({"Content-Type: application/json", "Accept: application/json"})
+  @POST("templates")
+  Call<ResponseDTO<YamlFullRefreshResponseDTO>> create(
+      @Query(value = NGCommonEntityConstants.ACCOUNT_KEY) @NotEmpty String accountId,
+      @Query(value = NGCommonEntityConstants.ORG_KEY) String orgId,
+      @Query(value = NGCommonEntityConstants.PROJECT_KEY) String projectId, @Body @NotNull RequestBody templateYaml,
+      @Query(value = "setDefaultTemplate") boolean setDefaultTemplate, @Query(value = "comments") String comments);
 }

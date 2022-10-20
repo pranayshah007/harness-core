@@ -63,7 +63,7 @@ public abstract class NgMigrationService {
 
   public abstract NGMigrationStatus canMigrate(NGMigrationEntity entity);
 
-  public String getYamlString(NGYamlFile yamlFile) {
+  public static String getYamlString(NGYamlFile yamlFile) {
     return NGYamlUtils.getYamlString(yamlFile.getYaml());
   }
 

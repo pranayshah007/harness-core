@@ -33,6 +33,7 @@ import io.harness.ngmigration.beans.summary.BaseSummary;
 import io.harness.ngmigration.client.NGClient;
 import io.harness.ngmigration.client.PmsClient;
 import io.harness.ngmigration.dto.EntityMigratedStats;
+import io.harness.ngmigration.dto.ImportError;
 import io.harness.ngmigration.dto.MigratedDetails;
 import io.harness.ngmigration.dto.MigrationImportSummaryDTO;
 import io.harness.ngmigration.dto.SaveSummaryDTO;
@@ -349,6 +350,7 @@ public class DiscoveryService {
         migratorMappingService.mapCgNgEntity(file);
       } catch (IOException e) {
         log.error("Unable to migrate entity", e);
+        summaryDTO.getErrors().add(ImportError.builder().message(e.getMessage()).entity(file.getCgBasicInfo()).build());
       }
     }
     return summaryDTO;

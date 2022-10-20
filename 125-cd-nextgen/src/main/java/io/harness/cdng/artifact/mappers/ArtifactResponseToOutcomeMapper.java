@@ -323,6 +323,16 @@ public class ArtifactResponseToOutcomeMapper {
       artifactPath = nexusRegistryDockerConfig.getArtifactPath() != null
           ? nexusRegistryDockerConfig.getArtifactPath().getValue()
           : null;
+    } else if (artifactConfig.getRepositoryFormat().getValue().equalsIgnoreCase("maven")) {
+      if (artifactDelegateResponse != null) {
+        artifactPath = artifactDelegateResponse.getArtifactPath();
+      }
+    } else if (artifactConfig.getRepositoryFormat().getValue().equalsIgnoreCase("npm")
+        || artifactConfig.getRepositoryFormat().getValue().equalsIgnoreCase("nuget")) {
+      if (artifactDelegateResponse != null && artifactDelegateResponse.getBuildDetails() != null
+          && artifactDelegateResponse.getBuildDetails().getMetadata() != null) {
+        artifactPath = artifactDelegateResponse.getBuildDetails().getMetadata().get("package");
+      }
     }
 
     return NexusArtifactOutcome.builder()

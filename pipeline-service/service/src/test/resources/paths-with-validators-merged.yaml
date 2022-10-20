@@ -45,7 +45,7 @@ pipeline:
                         paths:
                         - "adha.regex(a.*a)"
                         - "australia.regex(a.*a)"
-                        branch: "master.regex(m.*)"
+                        branch: "master"
         infrastructure:
           environmentRef: "ee"
           infrastructureDefinition:

@@ -1600,6 +1600,8 @@
 21006:io.harness.delegate.beans.connector.spotconnector.SpotValidateTaskResponse
 21007:io.harness.delegate.beans.connector.spotconnector.SpotTaskParams
 21008:io.harness.delegate.beans.connector.spotconnector.SpotTaskType
+21009:io.harness.delegate.beans.connector.spotconnector.SpotValidationParams
+21010:io.harness.delegate.beans.connector.spotconnector.SpotDelegateTaskResponse
 22001:io.harness.ng.core.common.beans.NGTag
 22004:io.harness.ng.core.common.beans.KeyValuePair
 22005:io.harness.ng.core.ResourceScope

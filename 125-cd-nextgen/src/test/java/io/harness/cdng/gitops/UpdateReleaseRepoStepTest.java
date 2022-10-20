@@ -26,6 +26,7 @@ import io.harness.cdng.manifest.yaml.GithubStore;
 import io.harness.cdng.manifest.yaml.K8sManifestOutcome;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.plan.ExpressionMode;
 import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
@@ -67,7 +68,7 @@ public class UpdateReleaseRepoStepTest extends CategoryTest {
 
     doAnswer(invocation -> invocation.getArgument(1, String.class))
         .when(engineExpressionService)
-        .renderExpression(eq(ambiance), any());
+        .renderExpression(eq(ambiance), any(), eq(ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED));
     Map<String, Object> variables = new HashMap<>();
     variables.put("config1", ParameterField.builder().value("VALUE1").build());
     variables.put("config2", ParameterField.builder().expression(true).expressionValue("<+cluster.name>").build());
@@ -118,7 +119,11 @@ public class UpdateReleaseRepoStepTest extends CategoryTest {
     assertThat(fileVariables2.get("config1")).isEqualTo("VALUE1");
     assertThat(fileVariables2.get("config2")).isEqualTo("CLUSTER_NAME2");
     assertThat(fileVariables2.get("config3")).isEqualTo("ENV_NAME2");
-    verify(engineExpressionService).renderExpression(ambiance, "ENV_NAME/<+variable.foo>");
-    verify(engineExpressionService).renderExpression(ambiance, "ENV_NAME2/<+variable.foo>");
+    verify(engineExpressionService)
+        .renderExpression(
+            ambiance, "ENV_NAME/<+variable.foo>", ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED);
+    verify(engineExpressionService)
+        .renderExpression(
+            ambiance, "ENV_NAME2/<+variable.foo>", ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED);
   }
 }
