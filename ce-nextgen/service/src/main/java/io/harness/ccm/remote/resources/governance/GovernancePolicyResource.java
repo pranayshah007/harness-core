@@ -7,9 +7,8 @@
 
 package io.harness.ccm.remote.resources.governance;
 
-import com.codahale.metrics.annotation.ExceptionMetered;
-import com.codahale.metrics.annotation.Timed;
-import com.google.inject.Inject;
+import static io.harness.annotations.dev.HarnessTeam.CE;
+
 import io.harness.NGCommonEntityConstants;
 import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.annotations.dev.OwnedBy;
@@ -28,6 +27,10 @@ import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.security.annotations.PublicApi;
+
+import com.codahale.metrics.annotation.ExceptionMetered;
+import com.codahale.metrics.annotation.Timed;
+import com.google.inject.Inject;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
@@ -39,9 +42,9 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
-
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
@@ -53,11 +56,8 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-
-import static io.harness.annotations.dev.HarnessTeam.CE;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
 
 @Slf4j
 @Service
@@ -115,8 +115,7 @@ public class GovernancePolicyResource {
     // rbacHelper.checkPolicyEditPermission(accountId, null, null);
     Policy policy = createPolicyDTO.getPolicy();
     policy.setAccountId(accountId);
-    if(governancePolicyService.listid(accountId,policy.getUuid(),true)!=null)
-    {
+    if (governancePolicyService.listid(accountId, policy.getUuid(), true) != null) {
       throw new InvalidRequestException("Policy  with this uuid already exits");
     }
     governancePolicyService.save(policy);
@@ -173,8 +172,8 @@ public class GovernancePolicyResource {
              NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @PathParam("policyId") @Parameter(
           required = true, description = "Unique identifier for the policy") @NotNull @Valid String uuid) {
-    //rbacHelper.checkPolicyDeletePermission(accountId, null, null);
-    governancePolicyService.listid(accountId,uuid,false);
+    // rbacHelper.checkPolicyDeletePermission(accountId, null, null);
+    governancePolicyService.listid(accountId, uuid, false);
     boolean result = governancePolicyService.delete(accountId, uuid);
     return ResponseDTO.newResponse(result);
   }
@@ -206,7 +205,7 @@ public class GovernancePolicyResource {
     String resource = query.getResource();
     String tags = query.getTags();
     if (uuid != null) {
-      Policy policy = governancePolicyService.listid(accountId, uuid,false);
+      Policy policy = governancePolicyService.listid(accountId, uuid, false);
       Policies.add(policy);
       return ResponseDTO.newResponse(Policies);
     }

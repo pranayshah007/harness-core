@@ -7,9 +7,8 @@
 
 package io.harness.ccm.remote.resources.governance;
 
-import com.codahale.metrics.annotation.ExceptionMetered;
-import com.codahale.metrics.annotation.Timed;
-import com.google.inject.Inject;
+import static io.harness.annotations.dev.HarnessTeam.CE;
+
 import io.harness.NGCommonEntityConstants;
 import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.annotations.dev.OwnedBy;
@@ -26,6 +25,10 @@ import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.security.annotations.PublicApi;
+
+import com.codahale.metrics.annotation.ExceptionMetered;
+import com.codahale.metrics.annotation.Timed;
+import com.google.inject.Inject;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
@@ -35,9 +38,8 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
-
+import java.util.ArrayList;
+import java.util.List;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
@@ -49,10 +51,8 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
-import java.util.ArrayList;
-import java.util.List;
-
-import static io.harness.annotations.dev.HarnessTeam.CE;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
 
 @Api("governance")
 @Path("governance")
@@ -113,9 +113,8 @@ public class GovernancePolicyPackResource {
           description = "Request body containing Policy store object") @Valid CreatePolicyPackDTO createPolicySetDTO) {
     // rbacHelper.checkPolicySetEditPermission(accountId, null, null);
     PolicyPack policyPack = createPolicySetDTO.getPolicyPack();
-    if(policyPackService.listid(accountId,policyPack.getUuid(),true)!=null)
-    {
-        throw new InvalidRequestException("Policy pack with this uuid already exits");
+    if (policyPackService.listid(accountId, policyPack.getUuid(), true) != null) {
+      throw new InvalidRequestException("Policy pack with this uuid already exits");
     }
     policyPack.setAccountId(accountId);
     policyService.check(accountId, policyPack.getPoliciesIdentifier());
@@ -143,8 +142,8 @@ public class GovernancePolicyPackResource {
     PolicyPack policyPack = createPolicySetDTO.getPolicyPack();
     policyPack.toDTO();
     policyPack.setAccountId(accountId);
-      policyPackService.listid(accountId,policyPack.getUuid(),false);
-      policyService.check(accountId, policyPack.getPoliciesIdentifier());
+    policyPackService.listid(accountId, policyPack.getUuid(), false);
+    policyService.check(accountId, policyPack.getPoliciesIdentifier());
     policyPackService.update(policyPack);
     return ResponseDTO.newResponse(policyPack);
   }
@@ -169,8 +168,8 @@ public class GovernancePolicyPackResource {
     // rbacHelper.checkPolicyPackPermission(accountId, null, null);
     PolicyPack query = createPolicyPackDTO.getPolicyPack();
     List<Policy> Policies = new ArrayList<>();
-      policyPackService.listid(accountId,query.getUuid(),false);
-      policyService.check(accountId, query.getPoliciesIdentifier());
+    policyPackService.listid(accountId, query.getUuid(), false);
+    policyService.check(accountId, query.getPoliciesIdentifier());
 
     return ResponseDTO.newResponse(Policies);
   }
@@ -215,7 +214,7 @@ public class GovernancePolicyPackResource {
       @PathParam("policyPackId") @Parameter(
           required = true, description = "Unique identifier for the policy") @NotNull @Valid String uuid) {
     // rbacHelper.checkPolicyPackDeletePermission(accountId, null, null);
-    policyPackService.listid(accountId,uuid,false);
+    policyPackService.listid(accountId, uuid, false);
     boolean result = policyPackService.delete(accountId, uuid);
     return ResponseDTO.newResponse(result);
   }
