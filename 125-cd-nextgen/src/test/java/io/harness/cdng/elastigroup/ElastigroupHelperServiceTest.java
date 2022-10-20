@@ -29,8 +29,6 @@ import io.harness.cdng.manifest.yaml.GitStore;
 import io.harness.cdng.manifest.yaml.harness.HarnessStore;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigType;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
-import io.harness.connector.ConnectorInfoDTO;
-import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
 import io.harness.encryption.Scope;
 import io.harness.exception.InvalidArgumentsException;
@@ -38,7 +36,6 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.filestore.dto.node.FileNodeDTO;
 import io.harness.filestore.dto.node.FileStoreNodeDTO;
 import io.harness.filestore.service.FileStoreService;
-import io.harness.gitsync.sdk.EntityValidityDetails;
 import io.harness.ng.core.api.NGEncryptedDataService;
 import io.harness.ng.core.entities.NGEncryptedData;
 import io.harness.ng.core.filestore.FileUsage;
@@ -141,37 +138,6 @@ public class ElastigroupHelperServiceTest extends CDNGTestBase {
                                storeConfigWrapper, getAmbiance(), "Test Entity"))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessageContaining("Cannot find any file for Test Entity, store kind");
-  }
-
-  @Test
-  @Owner(developers = {PIYUSH_BHUWALKA})
-  @Category(UnitTests.class)
-  public void testValidateSettingsStoreReferencesGitStore() {
-    Ambiance ambiance = getAmbiance();
-    when(connectorService.get(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, CONNECTOR_REF))
-        .thenReturn(Optional.of(
-            ConnectorResponseDTO.builder()
-                .connector(ConnectorInfoDTO.builder().identifier(CONNECTOR_REF).name(CONNECTOR_NAME).build())
-                .entityValidityDetails(EntityValidityDetails.builder().valid(true).build())
-                .build()));
-
-    StoreConfigWrapper storeConfigWrapper = getStoreConfigWrapperWithGitStore();
-    assertThatCode(
-        () -> elastigroupHelperService.validateSettingsStoreReferences(storeConfigWrapper, ambiance, "Test Entity"))
-        .doesNotThrowAnyException();
-  }
-
-  @Test
-  @Owner(developers = PIYUSH_BHUWALKA)
-  @Category(UnitTests.class)
-  public void testValidateSettingsStoreReferencesNoGitConnector() {
-    Ambiance ambiance = getAmbiance();
-    when(connectorService.get(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, CONNECTOR_REF))
-        .thenReturn(Optional.empty());
-    StoreConfigWrapper storeConfigWrapper = getStoreConfigWrapperWithGitStore();
-    assertThatThrownBy(
-        () -> elastigroupHelperService.validateSettingsStoreReferences(storeConfigWrapper, ambiance, "Test Entity"))
-        .hasMessageContaining("Connector not found with identifier:");
   }
 
   private StoreConfigWrapper getStoreConfigWrapper() {
