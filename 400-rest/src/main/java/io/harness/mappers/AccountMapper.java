@@ -32,8 +32,6 @@ public class AccountMapper {
         .isNextGenEnabled(account.isNextGenEnabled())
         .serviceAccountConfig(account.getServiceAccountConfig())
         .isProductLed(account.isProductLed())
-        .smpAccount(account.isSmpAccount())
-        .isTwoFactorAdminEnforced(account.isTwoFactorAdminEnforced())
         .build();
   }
 
@@ -45,7 +43,6 @@ public class AccountMapper {
         .withDefaultExperience(dto.getDefaultExperience())
         .withNextGenEnabled(dto.isNextGenEnabled())
         .withServiceAccountConfig(dto.getServiceAccountConfig())
-        .withSmpAccount(dto.isSmpAccount())
         .build();
   }
 
@@ -57,7 +54,6 @@ public class AccountMapper {
         .createdFromNG(account.isCreatedFromNG())
         .isNextGenEnabled(account.isNextGenEnabled())
         .defaultExperience(account.getDefaultExperience())
-        .smpAccount(account.isSmpAccount())
         .build();
   }
 }
