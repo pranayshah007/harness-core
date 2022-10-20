@@ -70,7 +70,7 @@ public class ElastigroupHelperService {
     if (HARNESS_STORE_TYPE.equals(storeKind)) {
       validateSettingsFileRefs((HarnessStore) storeConfig, ambiance, entityType);
     } else if (!storeKind.equals(ManifestStoreType.INLINE)) {
-      validateSettingsConnectorByRef(storeConfig, ambiance, entityType);
+      throw new InvalidRequestException("Only Inline and Harness Store Type are supported as of now");
     }
   }
 
