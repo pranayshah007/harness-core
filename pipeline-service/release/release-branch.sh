@@ -145,3 +145,7 @@ if [[ "$EXECUTE_NEW_CODE" == "true" ]]; then
     git commit --allow-empty -m "Set the proper version branch release/${PURPOSE}/${newBranch}"
     git push origin release/${PURPOSE}/${newBranch}
 fi
+
+#updating the jira
+chmod +x pipeline-service/release/release-branch-update-jiras.sh
+pipeline-service/release/release-branch-update-jiras.sh
