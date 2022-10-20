@@ -527,3 +527,4 @@ io.harness.cdng.instance.outcome.HostOutcome
 io.harness.steps.shellscript.WinRmInfraDelegateConfigOutput
 io.harness.steps.shellscript.SshInfraDelegateConfigOutput
 io.harness.steps.shellscript.HostsOutput
+io.harness.cdng.freeze.FreezeOutcome

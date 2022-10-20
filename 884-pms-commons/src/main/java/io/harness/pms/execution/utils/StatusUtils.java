@@ -15,6 +15,7 @@ import static io.harness.pms.contracts.execution.Status.DISCONTINUING;
 import static io.harness.pms.contracts.execution.Status.ERRORED;
 import static io.harness.pms.contracts.execution.Status.EXPIRED;
 import static io.harness.pms.contracts.execution.Status.FAILED;
+import static io.harness.pms.contracts.execution.Status.FREEZE_FAILED;
 import static io.harness.pms.contracts.execution.Status.IGNORE_FAILED;
 import static io.harness.pms.contracts.execution.Status.INPUT_WAITING;
 import static io.harness.pms.contracts.execution.Status.INTERVENTION_WAITING;
@@ -56,10 +57,10 @@ public class StatusUtils {
 
   private final EnumSet<Status> POSITIVE_STATUSES = EnumSet.of(SUCCEEDED, SKIPPED, SUSPENDED, IGNORE_FAILED);
 
-  private final EnumSet<Status> BROKE_STATUSES = EnumSet.of(FAILED, ERRORED, EXPIRED, APPROVAL_REJECTED);
+  private final EnumSet<Status> BROKE_STATUSES = EnumSet.of(FAILED, ERRORED, EXPIRED, APPROVAL_REJECTED, FREEZE_FAILED);
 
   private final EnumSet<Status> BROKE_AND_ABORTED_STATUSES =
-      EnumSet.of(FAILED, ERRORED, EXPIRED, APPROVAL_REJECTED, ABORTED);
+      EnumSet.of(FAILED, ERRORED, EXPIRED, APPROVAL_REJECTED, ABORTED, FREEZE_FAILED);
 
   private final EnumSet<Status> RESUMABLE_STATUSES = EnumSet.of(QUEUED, RUNNING, ASYNC_WAITING, WAIT_STEP_RUNNING,
       APPROVAL_WAITING, RESOURCE_WAITING, TASK_WAITING, TIMED_WAITING, INTERVENTION_WAITING, INPUT_WAITING, PAUSED);
@@ -73,17 +74,18 @@ public class StatusUtils {
   private final EnumSet<Status> UNPAUSABLE_CHILD_STATUSES = EnumSet.of(RUNNING, INTERVENTION_WAITING, WAIT_STEP_RUNNING,
       APPROVAL_WAITING, ASYNC_WAITING, TASK_WAITING, TIMED_WAITING, DISCONTINUING, INPUT_WAITING);
 
-  private final EnumSet<Status> FINAL_STATUSES =
-      EnumSet.of(SKIPPED, IGNORE_FAILED, ABORTED, ERRORED, FAILED, EXPIRED, SUSPENDED, SUCCEEDED, APPROVAL_REJECTED);
+  private final EnumSet<Status> FINAL_STATUSES = EnumSet.of(SKIPPED, IGNORE_FAILED, ABORTED, ERRORED, FAILED, EXPIRED,
+      SUSPENDED, SUCCEEDED, APPROVAL_REJECTED, FREEZE_FAILED);
 
   private final EnumSet<Status> GRAPH_UPDATE_STATUSES =
       EnumSet.of(RUNNING, INTERVENTION_WAITING, TIMED_WAITING, ASYNC_WAITING, TASK_WAITING, DISCONTINUING, PAUSING,
           QUEUED, PAUSED, WAIT_STEP_RUNNING, APPROVAL_WAITING, RESOURCE_WAITING, INPUT_WAITING);
 
   private final EnumSet<Status> RETRYABLE_STATUSES =
-      EnumSet.of(INTERVENTION_WAITING, FAILED, ERRORED, EXPIRED, APPROVAL_REJECTED);
+      EnumSet.of(INTERVENTION_WAITING, FAILED, ERRORED, EXPIRED, APPROVAL_REJECTED, FREEZE_FAILED);
 
-  private final EnumSet<Status> RETRYABLE_FAILED_STATUSES = EnumSet.of(FAILED, EXPIRED, APPROVAL_REJECTED, ABORTED);
+  private final EnumSet<Status> RETRYABLE_FAILED_STATUSES =
+      EnumSet.of(FAILED, EXPIRED, APPROVAL_REJECTED, ABORTED, FREEZE_FAILED);
 
   private final EnumSet<Status> ADVISING_STATUSES = EnumSet.of(INPUT_WAITING);
   private final EnumSet<Status> ABORTING_STATUSES = EnumSet.of(QUEUED);
@@ -185,6 +187,7 @@ public class StatusUtils {
       case FAILED:
       case EXPIRED:
       case APPROVAL_REJECTED:
+      case FREEZE_FAILED:
         return FINALIZABLE_STATUSES;
       case SUCCEEDED:
         return EnumSet.of(INTERVENTION_WAITING, RUNNING, QUEUED);
@@ -246,6 +249,8 @@ public class StatusUtils {
       return ERRORED;
     } else if (statuses.stream().anyMatch(status -> status == FAILED)) {
       return FAILED;
+    } else if (statuses.stream().anyMatch(status -> status == FREEZE_FAILED)) {
+      return FREEZE_FAILED;
     } else if (statuses.stream().anyMatch(status -> status == APPROVAL_REJECTED)) {
       return APPROVAL_REJECTED;
     } else if (statuses.stream().anyMatch(status -> status == EXPIRED)) {
