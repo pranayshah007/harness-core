@@ -248,9 +248,9 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
       Sets.newHashSet(CUSTOM_ARTIFACT_NAME, JENKINS_NAME, DOCKER_REGISTRY_NAME, ACR_NAME, AMAZON_S3_NAME,
           ARTIFACTORY_REGISTRY_NAME, ECR_NAME, GOOGLE_ARTIFACT_REGISTRY_NAME, GCR_NAME, NEXUS3_REGISTRY_NAME,
           NEXUS2_REGISTRY_NAME, GITHUB_PACKAGES_NAME, AZURE_ARTIFACTS_NAME);
-  private static final Set<String> EMPTY_SERVICE_DEFINITION_TYPES =
-      Sets.newHashSet(ManifestType.ServerlessAwsLambda, DelegateType.ECS, ServiceSpecType.NATIVE_HELM,
-          ServiceSpecType.SSH, AZURE_WEBAPP, ServiceSpecType.WINRM, KUBERNETES, CUSTOM_DEPLOYMENT);
+  private static final Set<String> EMPTY_SERVICE_DEFINITION_TYPES = Sets.newHashSet(ManifestType.ServerlessAwsLambda,
+      DelegateType.ECS, ServiceSpecType.NATIVE_HELM, ServiceSpecType.SSH, AZURE_WEBAPP, ServiceSpecType.WINRM,
+      KUBERNETES, CUSTOM_DEPLOYMENT, ServiceSpecType.ELASTIGROUP);
 
   @Inject InjectorUtils injectorUtils;
   @Inject DeploymentStageVariableCreator deploymentStageVariableCreator;
