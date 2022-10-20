@@ -96,6 +96,11 @@ public class StagesPlanCreator extends ChildrenPlanCreator<StagesConfig> {
               .setNodeGroup(StepOutcomeGroup.STAGE.name())
               .setNodeIdentifier(
                   stageYamlField.getNode().getUuid() + NGCommonUtilPlanCreationConstants.ROLLBACK_STAGE_UUID_SUFFIX)
+              .setEdgeLayoutList(i == 0 ? EdgeLayoutList.newBuilder().build()
+                                        : EdgeLayoutList.newBuilder()
+                                              .addNextIds(stagesYamlField.get(i - 1).getNode().getUuid()
+                                                  + NGCommonUtilPlanCreationConstants.ROLLBACK_STAGE_UUID_SUFFIX)
+                                              .build())
               .build());
     }
     return GraphLayoutResponse.builder()

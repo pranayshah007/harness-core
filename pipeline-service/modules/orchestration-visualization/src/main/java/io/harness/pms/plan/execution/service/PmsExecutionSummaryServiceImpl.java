@@ -188,6 +188,8 @@ public class PmsExecutionSummaryServiceImpl implements PmsExecutionSummaryServic
     Update update = new Update();
     update.set(PlanExecutionSummaryKeys.layoutNodeMap + "." + previousStageId.get() + ".edgeLayoutList.nextIds",
         newNextIdList);
+    update.set(PlanExecutionSummaryKeys.layoutNodeMap + "." + planNodeUuid + ".status",
+        ExecutionStatus.getExecutionStatus(nodeExecution.getStatus()));
     update(planExecutionId, update);
   }
 
