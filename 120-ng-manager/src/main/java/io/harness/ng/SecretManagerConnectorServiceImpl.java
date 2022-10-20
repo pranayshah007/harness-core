@@ -399,9 +399,4 @@ public class SecretManagerConnectorServiceImpl implements ConnectorService {
       String accountId, String orgIdentifier, String projectIdentifier, List<String> connectorIdentifiers) {
     return defaultConnectorService.getAttributes(accountId, orgIdentifier, projectIdentifier, connectorIdentifiers);
   }
-
-  @Override
-  public List<String> getGcpRegions() {
-    return defaultConnectorService.getGcpRegions();
-  }
 }
