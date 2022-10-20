@@ -47,6 +47,4 @@ public interface ConnectorService extends ConnectorCrudService, ConnectorValidat
 
   List<Map<String, String>> getAttributes(
       String accountId, String orgIdentifier, String projectIdentifier, List<String> connectorIdentifiers);
-
-  List<String> getGcpRegions();
 }
