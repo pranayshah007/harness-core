@@ -27,6 +27,7 @@ import com.google.inject.Inject;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -55,7 +56,7 @@ public class TimeSeriesAnalysisResource {
   public RestResponse<List<TimeSeriesRecordDTO>>
   getTimeSeriesRecords(@QueryParam("verificationTaskId") @NotNull String verificationTaskId,
       @QueryParam("startTime") @NotNull Long startTime, @QueryParam("endTime") @NotNull Long endTime,
-      @QueryParam("controlHosts") List<String> controlHosts, @QueryParam("testHosts") List<String> testHosts) {
+      @QueryParam("controlHosts") String controlHosts, @QueryParam("testHosts") String testHosts) {
     return new RestResponse<>(timeSeriesAnalysisService.getDeploymentMetricTimeSeriesRecordDTOs(
         verificationTaskId, Instant.ofEpochMilli(startTime), Instant.ofEpochMilli(endTime), controlHosts, testHosts));
   }

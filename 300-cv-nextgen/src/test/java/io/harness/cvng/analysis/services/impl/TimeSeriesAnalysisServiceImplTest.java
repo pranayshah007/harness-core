@@ -35,6 +35,7 @@ import io.harness.cvng.analysis.entities.LearningEngineTask;
 import io.harness.cvng.analysis.entities.LearningEngineTask.LearningEngineTaskType;
 import io.harness.cvng.analysis.entities.TimeSeriesAnomalousPatterns;
 import io.harness.cvng.analysis.entities.TimeSeriesCanaryLearningEngineTask;
+import io.harness.cvng.analysis.entities.TimeSeriesCanaryLearningEngineTask_v2;
 import io.harness.cvng.analysis.entities.TimeSeriesCumulativeSums;
 import io.harness.cvng.analysis.entities.TimeSeriesLearningEngineTask;
 import io.harness.cvng.analysis.entities.TimeSeriesLoadTestLearningEngineTask;
@@ -78,9 +79,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.reflect.FieldUtils;
 import org.junit.Before;
@@ -200,6 +203,24 @@ public class TimeSeriesAnalysisServiceImplTest extends CvNextGenTestBase {
 
     assertThat(testData).isNotNull();
     assertThat(testData.size()).isEqualTo(183);
+  }
+
+  @Test
+  @Owner(developers = PRAVEEN)
+  @Category(UnitTests.class)
+  public void testGetDeploymentMetricTimeSeriesRecordDTOs() throws Exception {
+    List<TimeSeriesRecord> records = getTimeSeriesRecords();
+    hPersistence.save(records);
+    Instant start = Instant.parse("2020-07-07T02:40:00.000Z");
+    String controlHosts = "host1";
+    String testHosts = "host2";
+    List<TimeSeriesRecordDTO> testData = timeSeriesAnalysisService.getDeploymentMetricTimeSeriesRecordDTOs(
+        cvConfigId, start, start.plus(5, ChronoUnit.MINUTES), controlHosts, testHosts);
+    List<TimeSeriesRecordDTO> filteredTestData =
+        testData.stream()
+            .filter(t -> controlHosts.contains(t.getHost()) || testHosts.contains(t.getHost()))
+            .collect(Collectors.toList());
+    assertThat(testData.size()).isEqualTo(filteredTestData.size());
   }
 
   @Test
@@ -480,6 +501,39 @@ public class TimeSeriesAnalysisServiceImplTest extends CvNextGenTestBase {
   }
 
   @Test
+  @Owner(developers = SOWMYA)
+  @Category(UnitTests.class)
+  public void testScheduleDeploymentTimeSeriesAnalysis() {
+    VerificationJobInstance verificationJobInstance =
+        createVerificationJobInstance(builderFactory.canaryVerificationJobBuilder().build());
+    cvConfigService.save(newCVConfig());
+    AnalysisInput input = AnalysisInput.builder()
+                              .verificationTaskId(verificationTaskId)
+                              .startTime(instant.plus(10, ChronoUnit.MINUTES))
+                              .endTime(instant.plus(11, ChronoUnit.MINUTES))
+                              .controlHosts(new HashSet<>(Arrays.asList("host1")))
+                              .testHosts(new HashSet<>(Arrays.asList("host2")))
+                              .learningEngineTaskType(LearningEngineTaskType.CANARY_DEPLOYMENT_TIME_SERIES)
+                              .build();
+
+    List<String> taskIds = timeSeriesAnalysisService.scheduleDeploymentTimeSeriesAnalysis(input);
+    assertThat(taskIds).isNotNull();
+
+    assertThat(taskIds.size()).isEqualTo(1);
+
+    TimeSeriesCanaryLearningEngineTask_v2 task =
+        (TimeSeriesCanaryLearningEngineTask_v2) hPersistence.get(LearningEngineTask.class, taskIds.get(0));
+    assertThat(task).isNotNull();
+    assertThat(task.getVerificationTaskId()).isEqualTo(verificationTaskId);
+    assertThat(task.getDataLength()).isEqualTo(9);
+    assertThat(task.getDeploymentVerificationTaskInfo().getDeploymentStartTime())
+        .isEqualTo(verificationJobInstance.getDeploymentStartTime().toEpochMilli());
+    assertThat(Duration.between(task.getAnalysisStartTime(), input.getStartTime())).isZero();
+    assertThat(Duration.between(task.getAnalysisEndTime(), input.getEndTime())).isZero();
+    assertThat(task.getAnalysisType().name()).isEqualTo(LearningEngineTaskType.CANARY_DEPLOYMENT_TIME_SERIES.name());
+  }
+
+  @Test
   @Owner(developers = KANHAIYA)
   @Category(UnitTests.class)
   public void testGetMetricTemplate() {
@@ -703,12 +757,15 @@ public class TimeSeriesAnalysisServiceImplTest extends CvNextGenTestBase {
   private List<TimeSeriesRecord> getTimeSeriesRecords() throws Exception {
     File file = new File(getResourceFilePath("timeseries/timeseriesRecords.json"));
     final Gson gson = new Gson();
+    List<String> hosts = Arrays.asList("host1", "host2", "host3", "host4", "host5");
+    Random r = new Random();
     try (BufferedReader br = new BufferedReader(new FileReader(file))) {
       Type type = new TypeToken<List<TimeSeriesRecord>>() {}.getType();
       List<TimeSeriesRecord> timeSeriesMLAnalysisRecords = gson.fromJson(br, type);
       timeSeriesMLAnalysisRecords.forEach(timeSeriesMLAnalysisRecord -> {
         timeSeriesMLAnalysisRecord.setVerificationTaskId(verificationTaskId);
         timeSeriesMLAnalysisRecord.setBucketStartTime(Instant.parse("2020-07-07T02:40:00.000Z"));
+        timeSeriesMLAnalysisRecord.setHost(hosts.get(r.nextInt(hosts.size())));
         timeSeriesMLAnalysisRecord.getTimeSeriesGroupValues().forEach(groupVal -> {
           Instant baseTime = Instant.parse("2020-07-07T02:40:00.000Z");
           Random random = new Random();

@@ -39,7 +39,7 @@ public interface TimeSeriesAnalysisService {
   List<TimeSeriesMetricDefinition> getMetricTemplate(String cvConfigId);
   List<TimeSeriesRecordDTO> getTimeSeriesRecordDTOs(String verificationTaskId, Instant startTime, Instant endTime);
   List<TimeSeriesRecordDTO> getDeploymentMetricTimeSeriesRecordDTOs(
-      String verificationTaskId, Instant startTime, Instant endTime, List<String> controlHosts, List<String> testHosts);
+      String verificationTaskId, Instant startTime, Instant endTime, String controlHosts, String testHosts);
   void saveAnalysis(String taskId, ServiceGuardTimeSeriesAnalysisDTO analysis);
   void saveAnalysis(String taskId, DeploymentTimeSeriesAnalysisDTO analysis);
 

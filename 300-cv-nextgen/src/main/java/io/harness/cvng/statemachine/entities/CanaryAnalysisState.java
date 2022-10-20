@@ -15,5 +15,6 @@ import lombok.extern.slf4j.Slf4j;
 @NoArgsConstructor
 @Slf4j
 public class CanaryAnalysisState extends TimeSeriesAnalysisState {
+  protected String verificationJobInstanceId;
   private final StateType type = StateType.CANARY_ANALYSIS_STATE;
 }

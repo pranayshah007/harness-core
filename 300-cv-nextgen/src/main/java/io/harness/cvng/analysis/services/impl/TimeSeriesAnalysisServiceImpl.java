@@ -222,8 +222,8 @@ public class TimeSeriesAnalysisServiceImpl implements TimeSeriesAnalysisService 
 
   private TimeSeriesCanaryLearningEngineTask_v2 createDeploymentTimeSeriesLearningEngineTask(AnalysisInput input) {
     String taskId = generateUuid();
-    VerificationJobInstance verificationJobInstance = verificationJobInstanceService.getVerificationJobInstance(
-        verificationTaskService.getVerificationJobInstanceId(input.getVerificationTaskId()));
+    VerificationJobInstance verificationJobInstance =
+        verificationJobInstanceService.getVerificationJobInstance(input.getVerificationJobInstanceId());
     CanaryBlueGreenVerificationJob verificationJob =
         (CanaryBlueGreenVerificationJob) verificationJobInstance.getResolvedJob();
     Preconditions.checkNotNull(verificationJobInstance, "verificationJobInstance can not be null");
@@ -350,8 +350,10 @@ public class TimeSeriesAnalysisServiceImpl implements TimeSeriesAnalysisService 
     uriBuilder.addParameter("verificationTaskId", input.getVerificationTaskId());
     uriBuilder.addParameter("startTime", Long.toString(verificationJobInstance.getStartTime().toEpochMilli()));
     uriBuilder.addParameter("endTime", Long.toString(input.getEndTime().toEpochMilli()));
-    uriBuilder.addParameter("controlHosts", String.join(",", input.getControlHosts()));
-    uriBuilder.addParameter("testHosts", String.join(",", input.getTestHosts()));
+    if (input.getControlHosts() != null && !input.getControlHosts().isEmpty())
+      uriBuilder.addParameter("controlHosts", String.join(",", input.getControlHosts()));
+    if (input.getTestHosts() != null && !input.getTestHosts().isEmpty())
+      uriBuilder.addParameter("testHosts", String.join(",", input.getTestHosts()));
     return getUriString(uriBuilder);
   }
 
@@ -380,8 +382,10 @@ public class TimeSeriesAnalysisServiceImpl implements TimeSeriesAnalysisService 
     uriBuilder.addParameter("verificationTaskId", input.getVerificationTaskId());
     uriBuilder.addParameter("startTime", Long.toString(preDeploymentTimeRange.get().getStartTime().toEpochMilli()));
     uriBuilder.addParameter("endTime", Long.toString(preDeploymentTimeRange.get().getEndTime().toEpochMilli()));
-    uriBuilder.addParameter("controlHosts", String.join(",", input.getControlHosts()));
-    uriBuilder.addParameter("testHosts", String.join(",", input.getTestHosts()));
+    if (input.getControlHosts() != null && !input.getControlHosts().isEmpty())
+      uriBuilder.addParameter("controlHosts", String.join(",", input.getControlHosts()));
+    if (input.getTestHosts() != null && !input.getTestHosts().isEmpty())
+      uriBuilder.addParameter("testHosts", String.join(",", input.getTestHosts()));
     return getUriString(uriBuilder);
   }
 
@@ -595,12 +599,16 @@ public class TimeSeriesAnalysisServiceImpl implements TimeSeriesAnalysisService 
   }
 
   @Override
-  public List<TimeSeriesRecordDTO> getDeploymentMetricTimeSeriesRecordDTOs(String verificationTaskId, Instant startTime,
-      Instant endTime, List<String> controlHosts, List<String> testHosts) {
-    Set<String> controlHostsSet = new HashSet<>(controlHosts);
-    Set<String> testHostSet = new HashSet<>(testHosts);
+  public List<TimeSeriesRecordDTO> getDeploymentMetricTimeSeriesRecordDTOs(
+      String verificationTaskId, Instant startTime, Instant endTime, String controlHosts, String testHosts) {
+    Set<String> controlHostSet = new HashSet<>();
+    Set<String> testHostSet = new HashSet<>();
+    if (controlHosts != null)
+      controlHostSet = Arrays.stream(controlHosts.split(",")).collect(Collectors.toSet());
+    if (testHosts != null)
+      testHostSet = Arrays.stream(testHosts.split(",")).collect(Collectors.toSet());
     List<TimeSeriesRecordDTO> timeSeriesRecordDTOS = timeSeriesRecordService.getDeploymentMetricTimeSeriesRecordDTOs(
-        verificationTaskId, startTime, endTime, controlHostsSet, testHostSet);
+        verificationTaskId, startTime, endTime, controlHostSet, testHostSet);
     // in LE we pass metric identifier as the metric_name, as metric_name is the identifier for LE.
     timeSeriesRecordDTOS.forEach(
         timeSeriesRecordDTO -> timeSeriesRecordDTO.setMetricName(timeSeriesRecordDTO.getMetricIdentifier()));

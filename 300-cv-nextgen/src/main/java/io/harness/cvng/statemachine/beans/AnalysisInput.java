@@ -24,6 +24,7 @@ public class AnalysisInput {
   private Instant startTime;
   private Instant endTime;
   private String verificationTaskId;
+  private String verificationJobInstanceId;
   private Set<String> controlHosts;
   private Set<String> testHosts;
   private LearningEngineTask.LearningEngineTaskType learningEngineTaskType;

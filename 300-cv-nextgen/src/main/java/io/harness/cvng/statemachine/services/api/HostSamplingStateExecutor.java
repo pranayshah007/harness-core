@@ -60,10 +60,13 @@ public class HostSamplingStateExecutor extends AnalysisStateExecutor<HostSamplin
     commonHosts.retainAll(postDeploymentHosts);
     newHosts.removeAll(commonHosts);
     AnalysisInput.AnalysisInputBuilder analysisInputBuilder = AnalysisInput.builder();
+    analysisInputBuilder.startTime(analysisState.getInputs().getStartTime());
+    analysisInputBuilder.endTime(analysisState.getInputs().getEndTime());
+    analysisInputBuilder.verificationTaskId(analysisState.getInputs().getVerificationTaskId());
     analysisState.setStatus(AnalysisStatus.RUNNING);
     switch (verificationJob.getType()) {
       case CANARY:
-        analysisInputBuilder.learningEngineTaskType(LearningEngineTaskType.CANARY_METRIC);
+        analysisInputBuilder.learningEngineTaskType(LearningEngineTaskType.CANARY_DEPLOYMENT_TIME_SERIES);
         if (newHosts.isEmpty()) {
           /*
            For example:
@@ -107,8 +110,8 @@ public class HostSamplingStateExecutor extends AnalysisStateExecutor<HostSamplin
       case BLUE_GREEN:
         Set<String> controlHosts = new HashSet<>(preDeploymentHosts);
         Set<String> testHosts = new HashSet<>(postDeploymentHosts);
-        analysisState.setLearningEngineTaskType(LearningEngineTaskType.BEFORE_AFTER_DEPLOYMENT_METRIC);
-        analysisInputBuilder.learningEngineTaskType(LearningEngineTaskType.BEFORE_AFTER_DEPLOYMENT_METRIC);
+        analysisState.setLearningEngineTaskType(LearningEngineTaskType.BEFORE_AFTER_DEPLOYMENT_TIME_SERIES);
+        analysisInputBuilder.learningEngineTaskType(LearningEngineTaskType.BEFORE_AFTER_DEPLOYMENT_TIME_SERIES);
         analysisInputBuilder = analysisInputBuilder.controlHosts(controlHosts).testHosts(testHosts);
         analysisState.setInputs(analysisInputBuilder.build());
         analysisState.setControlHosts(controlHosts);
@@ -122,11 +125,12 @@ public class HostSamplingStateExecutor extends AnalysisStateExecutor<HostSamplin
           */
           controlHosts = new HashSet<>(preDeploymentHosts);
           testHosts = new HashSet<>(postDeploymentHosts);
-          analysisInputBuilder = analysisInputBuilder.controlHosts(controlHosts)
-                                     .testHosts(testHosts)
-                                     .learningEngineTaskType(LearningEngineTaskType.BEFORE_AFTER_DEPLOYMENT_METRIC);
+          analysisInputBuilder =
+              analysisInputBuilder.controlHosts(controlHosts)
+                  .testHosts(testHosts)
+                  .learningEngineTaskType(LearningEngineTaskType.BEFORE_AFTER_DEPLOYMENT_TIME_SERIES);
           analysisState.setInputs(analysisInputBuilder.build());
-          analysisState.setLearningEngineTaskType(LearningEngineTaskType.BEFORE_AFTER_DEPLOYMENT_METRIC);
+          analysisState.setLearningEngineTaskType(LearningEngineTaskType.BEFORE_AFTER_DEPLOYMENT_TIME_SERIES);
           analysisState.setControlHosts(controlHosts);
           analysisState.setTestHosts(testHosts);
         } else {
@@ -141,8 +145,8 @@ public class HostSamplingStateExecutor extends AnalysisStateExecutor<HostSamplin
               Pre deployment hosts are n1, n2
               Post deployment hosts are n1, n2, n3
              */
-            analysisState.setLearningEngineTaskType(LearningEngineTaskType.BEFORE_AFTER_DEPLOYMENT_METRIC);
-            analysisInputBuilder.learningEngineTaskType(LearningEngineTaskType.BEFORE_AFTER_DEPLOYMENT_METRIC);
+            analysisState.setLearningEngineTaskType(LearningEngineTaskType.BEFORE_AFTER_DEPLOYMENT_TIME_SERIES);
+            analysisInputBuilder.learningEngineTaskType(LearningEngineTaskType.BEFORE_AFTER_DEPLOYMENT_TIME_SERIES);
             analysisState.setInputs(analysisInputBuilder.build());
           } else {
             /*
@@ -150,8 +154,8 @@ public class HostSamplingStateExecutor extends AnalysisStateExecutor<HostSamplin
               Pre deployment hosts are n1, n2
               Post deployment hosts are n3, n4
              */
-            analysisState.setLearningEngineTaskType(LearningEngineTaskType.CANARY_METRIC);
-            analysisInputBuilder.learningEngineTaskType(LearningEngineTaskType.CANARY_METRIC);
+            analysisState.setLearningEngineTaskType(LearningEngineTaskType.CANARY_DEPLOYMENT_TIME_SERIES);
+            analysisInputBuilder.learningEngineTaskType(LearningEngineTaskType.CANARY_DEPLOYMENT_TIME_SERIES);
             analysisState.setInputs(analysisInputBuilder.build());
           }
         }
@@ -164,8 +168,11 @@ public class HostSamplingStateExecutor extends AnalysisStateExecutor<HostSamplin
 
   @Override
   public AnalysisStatus getExecutionStatus(HostSamplingState analysisState) {
-    if (!analysisState.getControlHosts().isEmpty() || !analysisState.getTestHosts().isEmpty()) {
+    if (analysisState.getControlHosts() != null || analysisState.getTestHosts() != null) {
       return AnalysisStatus.TRANSITION;
+    }
+    if (analysisState.getStatus() == AnalysisStatus.SUCCESS) {
+      return AnalysisStatus.SUCCESS;
     }
     return AnalysisStatus.RUNNING;
   }
@@ -196,6 +203,7 @@ public class HostSamplingStateExecutor extends AnalysisStateExecutor<HostSamplin
     CanaryAnalysisState canaryAnalysisState = new CanaryAnalysisState();
     canaryAnalysisState.setInputs(analysisState.getInputs());
     canaryAnalysisState.setStatus(AnalysisStatus.CREATED);
+    canaryAnalysisState.setVerificationJobInstanceId(analysisState.getVerificationJobInstanceId());
     return canaryAnalysisState;
   }
 
