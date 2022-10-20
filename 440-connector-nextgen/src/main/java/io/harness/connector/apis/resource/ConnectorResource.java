@@ -630,5 +630,4 @@ public class ConnectorResource {
     return ResponseDTO.newResponse(
         connectorService.getAttributes(accountId, orgIdentifier, projectIdentifier, connectorIdentifiers));
   }
-
 }
