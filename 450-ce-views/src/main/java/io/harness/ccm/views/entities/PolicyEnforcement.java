@@ -36,14 +36,14 @@ import org.mongodb.morphia.annotations.Id;
 @Data
 @Builder
 @StoreIn(DbAliases.CENG)
-@FieldNameConstants(innerTypeName = "PolicySetId")
+@FieldNameConstants(innerTypeName = "PolicyEnforcementId")
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldDefaults(level = AccessLevel.PRIVATE)
-@Entity(value = "governancePolicyPack", noClassnameStored = true)
-@Schema(description = "This object will contain the complete definition of a Cloud Cost Policy set")
+@Entity(value = "governancePolicyEnforcement", noClassnameStored = true)
+@Schema(description = "This object will contain the complete definition of a Cloud Cost Policy enforcement")
 
-public final class PolicyPack implements PersistentEntity, UuidAware, CreatedAtAware, UpdatedAtAware, AccountAccess,
-                                         CreatedByAware, UpdatedByAware {
+public final class PolicyEnforcement implements PersistentEntity, UuidAware, CreatedAtAware, UpdatedAtAware,
+                                                AccountAccess, CreatedByAware, UpdatedByAware {
   @Id @Schema(description = "unique id") String uuid;
   @Schema(description = "account id") String accountId;
   @Schema(description = "Identifier") String name;
@@ -52,9 +52,15 @@ public final class PolicyPack implements PersistentEntity, UuidAware, CreatedAtA
   @Schema(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) String orgIdentifier;
   @Schema(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) String projectIdentifier;
   @Schema(description = "cloudProvider") String cloudProvider;
-  @Schema(description = "List of policies identifiers from governancePolicy collection")
-  List<String> policiesIdentifier;
-  @Schema(description = "is OOTB flag") Boolean isOOTB;
+  @Schema(description = "policyIds") List<String> policyIds;
+  @Schema(description = "policyPackIDs") List<String> policyPackIDs;
+  @Schema(description = "executionSchedule") String executionSchedule;
+  @Schema(description = "executionTimezone") String executionTimezone;
+  @Schema(description = "targetAccounts") List<String> targetAccounts;
+  @Schema(description = "targetRegions") List<String> targetRegions;
+  @Schema(description = "isDryRun") Boolean isDryRun;
+  @Schema(description = "deleted") String deleted;
+  @Schema(description = "isEnabled") String isEnabled;
   @Schema(description = NGCommonEntityConstants.CREATED_AT_MESSAGE) long createdAt;
   @Schema(description = NGCommonEntityConstants.UPDATED_AT_MESSAGE) long lastUpdatedAt;
   @Schema(description = "created by") private EmbeddedUser createdBy;
@@ -63,27 +69,34 @@ public final class PolicyPack implements PersistentEntity, UuidAware, CreatedAtA
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()
-                 .name("PolicyPack")
-                 .field(PolicySetId.uuid)
-                 .field(PolicySetId.accountId)
-                 .field(PolicySetId.cloudProvider)
+                 .name("PolicyEnforcement")
+                 .field(PolicyEnforcementId.uuid)
+                 .field(PolicyEnforcementId.accountId)
+                 .field(PolicyEnforcementId.cloudProvider)
                  .build())
-        .add(CompoundMongoIndex.builder().name("sort1").field(PolicySetId.lastUpdatedAt).build())
-        .add(CompoundMongoIndex.builder().name("sort2").field(PolicySetId.createdAt).build())
+        .add(CompoundMongoIndex.builder().name("sort1").field(PolicyEnforcementId.lastUpdatedAt).build())
+        .add(CompoundMongoIndex.builder().name("sort2").field(PolicyEnforcementId.createdAt).build())
         .build();
   }
-  public PolicyPack toDTO() {
-    return PolicyPack.builder()
+  public PolicyEnforcement toDTO() {
+    return PolicyEnforcement.builder()
         .uuid(getUuid())
         .accountId(getAccountId())
         .name(getName())
         .description(getDescription())
+        .tags(getTags())
         .orgIdentifier(getOrgIdentifier())
         .projectIdentifier(getProjectIdentifier())
         .cloudProvider(getCloudProvider())
-        .tags(getTags())
-        .policiesIdentifier(getPoliciesIdentifier())
-        .isOOTB(getIsOOTB())
+        .executionSchedule(getExecutionSchedule())
+        .executionTimezone(getExecutionTimezone())
+        .policyIds(getPolicyIds())
+        .policyPackIDs(getPolicyPackIDs())
+        .targetAccounts(getTargetAccounts())
+        .targetRegions(getTargetRegions())
+        .isDryRun(getIsDryRun())
+        .isEnabled(getIsEnabled())
+        .deleted(getDeleted())
         .createdAt(getCreatedAt())
         .lastUpdatedAt(getLastUpdatedAt())
         .createdBy(getCreatedBy())

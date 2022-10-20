@@ -16,8 +16,10 @@ import static io.harness.audit.ResourceTypeConstants.PERSPECTIVE_BUDGET;
 import static io.harness.audit.ResourceTypeConstants.PERSPECTIVE_FOLDER;
 import static io.harness.audit.ResourceTypeConstants.PERSPECTIVE_REPORT;
 import io.harness.ccm.views.service.GovernancePolicyService;
+import io.harness.ccm.views.service.PolicyEnforcementService;
 import io.harness.ccm.views.service.PolicyPackService;
 import io.harness.ccm.views.service.impl.GovernancePolicyServiceImpl;
+import io.harness.ccm.views.service.impl.PolicyEnforcementServiceImpl;
 import io.harness.ccm.views.service.impl.PolicyPackServiceImpl;
 import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.CONNECTOR_ENTITY;
@@ -334,6 +336,7 @@ public class CENextGenModule extends AbstractModule {
     bind(CCMRbacHelper.class).to(CCMRbacHelperImpl.class);
     bind(GovernancePolicyService.class).to(GovernancePolicyServiceImpl.class);
     bind(PolicyPackService.class).to(PolicyPackServiceImpl.class);
+    bind(PolicyEnforcementService.class).to(PolicyEnforcementServiceImpl.class);
     registerEventsFrameworkMessageListeners();
 
     bindRetryOnExceptionInterceptor();

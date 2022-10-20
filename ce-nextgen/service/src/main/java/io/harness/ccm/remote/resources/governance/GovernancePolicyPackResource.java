@@ -15,7 +15,7 @@ import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.CENextGenConfiguration;
 import io.harness.ccm.rbac.CCMRbacHelper;
-import io.harness.ccm.scheduler.SchedulerClient;
+//import io.harness.ccm.scheduler.SchedulerClient;
 import io.harness.ccm.utils.LogAccountIdentifier;
 import io.harness.ccm.views.dto.CreatePolicyPackDTO;
 import io.harness.ccm.views.entities.Policy;
@@ -26,6 +26,7 @@ import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.security.annotations.NextGenManagerAuth;
+import io.harness.security.annotations.PublicApi;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
@@ -61,7 +62,8 @@ import java.util.List;
 @Path("governance")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-@NextGenManagerAuth
+//@NextGenManagerAuth
+@PublicApi
 @Service
 @OwnedBy(CE)
 @Slf4j
@@ -89,8 +91,8 @@ public class GovernancePolicyPackResource {
   private final CCMRbacHelper rbacHelper;
   private final PolicyPackService policyPackService;
   private final GovernancePolicyService policyService;
-  @Inject
-  SchedulerClient schedulerClient;
+  //@Inject
+  //SchedulerClient schedulerClient;
   @Inject
   CENextGenConfiguration configuration;
 
@@ -115,58 +117,55 @@ public class GovernancePolicyPackResource {
   create(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
          @RequestBody(required = true,
-                 description = "Request body containing Policy store object") @Valid CreatePolicyPackDTO createPolicySetDTO) {
+                 description = "Request body containing Policy store object") @Valid CreatePolicyPackDTO createPolicyPackDTO) {
     // rbacHelper.checkPolicySetEditPermission(accountId, null, null);
-    PolicyPack policyPack = createPolicySetDTO.getPolicyPack();
-    for(String identifiers: policyPack.getPoliciesIdentifier() )
-    {
-     policyService.listid(accountId,identifiers);
-    }
+    PolicyPack policyPack = createPolicyPackDTO.getPolicyPack();
+    policyPackService.check(accountId,policyPack.getPoliciesIdentifier());
     policyPack.setAccountId(accountId);
     policyPackService.save(policyPack);
-    if (configuration.getGovernanceConfig().isUseDkron()) {
-      try {
-        // JSONObject jsonObject = new JSONObject();
-        JSONObject json = (JSONObject) JSONSerializer.toJSON( "{\n" +
-                "  \"name\": \"get-cedev-version\",\n" +
-                "  \"schedule\": \"@every 30s\",\n" +
-                "  \"displayname\": \"nikunj_test_get-cedev-version\",\n" +
-                "  \"timezone\": \"\",\n" +
-                "  \"owner\": \"CCM Team\",\n" +
-                "  \"owner_email\": \"nikunj.badjatya@harness.io\",\n" +
-                "  \"disabled\": false,\n" +
-                "  \"tags\": {\n" +
-                "    \"server\": \"true\"\n" +
-                "  },\n" +
-                "  \"metadata\": {\n" +
-                "    \"hi\": \"hello\"\n" +
-                "  },\n" +
-                "  \"retries\": 2,\n" +
-                "  \"processors\": {\n" +
-                "        \"log\": {\n" +
-                "            \"forward\": \"true\"\n" +
-                "        }\n" +
-                "    },\n" +
-                "  \"concurrency\": \"allow\",\n" +
-                "  \"executor\": \"http\",\n" +
-                "  \"executor_config\": {\n" +
-                "      \"method\": \"GET\",\n" +
-                "      \"url\": \"https://ce-dev.harness.io/api/version\",\n" +
-                "      \"headers\": \"[]\",\n" +
-                "      \"body\": \"\",\n" +
-                "      \"timeout\": \"30\",\n" +
-                "      \"expectCode\": \"200\",\n" +
-                "      \"expectBody\": \"\",\n" +
-                "      \"debug\": \"true\"\n" +
-                "  }\n" +
-                "}" );
-
-        okhttp3.RequestBody body = okhttp3.RequestBody.create(okhttp3.MediaType.parse("application/json"), json.toString());
-        log.info("{}", NGRestUtils.getResponse(schedulerClient.createSchedule(body)));
-      } catch (Exception e) {
-        log.info("{}", e.toString());
-      }
-    }
+//    if (configuration.getGovernanceConfig().isUseDkron()) {
+//      try {
+//        // JSONObject jsonObject = new JSONObject();
+//        JSONObject json = (JSONObject) JSONSerializer.toJSON( "{\n" +
+//                "  \"name\": \"get-cedev-version\",\n" +
+//                "  \"schedule\": \"@every 30s\",\n" +
+//                "  \"displayname\": \"nikunj_test_get-cedev-version\",\n" +
+//                "  \"timezone\": \"\",\n" +
+//                "  \"owner\": \"CCM Team\",\n" +
+//                "  \"owner_email\": \"nikunj.badjatya@harness.io\",\n" +
+//                "  \"disabled\": false,\n" +
+//                "  \"tags\": {\n" +
+//                "    \"server\": \"true\"\n" +
+//                "  },\n" +
+//                "  \"metadata\": {\n" +
+//                "    \"hi\": \"hello\"\n" +
+//                "  },\n" +
+//                "  \"retries\": 2,\n" +
+//                "  \"processors\": {\n" +
+//                "        \"log\": {\n" +
+//                "            \"forward\": \"true\"\n" +
+//                "        }\n" +
+//                "    },\n" +
+//                "  \"concurrency\": \"allow\",\n" +
+//                "  \"executor\": \"http\",\n" +
+//                "  \"executor_config\": {\n" +
+//                "      \"method\": \"GET\",\n" +
+//                "      \"url\": \"https://ce-dev.harness.io/api/version\",\n" +
+//                "      \"headers\": \"[]\",\n" +
+//                "      \"body\": \"\",\n" +
+//                "      \"timeout\": \"30\",\n" +
+//                "      \"expectCode\": \"200\",\n" +
+//                "      \"expectBody\": \"\",\n" +
+//                "      \"debug\": \"true\"\n" +
+//                "  }\n" +
+//                "}" );
+//
+//        okhttp3.RequestBody body = okhttp3.RequestBody.create(okhttp3.MediaType.parse("application/json"), json.toString());
+//        log.info("{}", NGRestUtils.getResponse(schedulerClient.createSchedule(body)));
+//      } catch (Exception e) {
+//        log.info("{}", e.toString());
+//      }
+    //}
     // TODO: Add support for GCP cloud scheduler too
 
     return ResponseDTO.newResponse(policyPack.toDTO());
@@ -192,12 +191,13 @@ public class GovernancePolicyPackResource {
     PolicyPack policyPack = createPolicySetDTO.getPolicyPack();
     policyPack.toDTO();
     policyPack.setAccountId(accountId);
+    policyPackService.check(accountId,policyPack.getPoliciesIdentifier());
     policyPackService.update(policyPack);
     return ResponseDTO.newResponse(policyPack);
   }
 
   @POST
-  @Path("policypack/listpolicies/{id}")
+  @Path("policypack/list/{id}")
   @ApiOperation(value = "Get policies for pack", nickname = "getPolicies")
   @Produces(MediaType.APPLICATION_JSON)
   @Operation(operationId = "getPolicies", description = "Fetch policies ", summary = "Fetch policies for account",
@@ -210,7 +210,7 @@ public class GovernancePolicyPackResource {
   listPolicy(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
              @RequestBody(
-                     required = true, description = "Request body containing ceViewFolder object") @Valid  CreatePolicyPackDTO createPolicyPackDTO,@PathParam("id") @Parameter(
+                     required = true, description = "Request body containing policy pack object") @Valid  CreatePolicyPackDTO createPolicyPackDTO,@PathParam("id") @Parameter(
           required = true, description = "Unique identifier for the policy") @NotNull @Valid String uuid) {
     // rbacHelper.checkPolicyPackPermission(accountId, null, null);
     PolicyPack query = createPolicyPackDTO.getPolicyPack();
@@ -219,8 +219,28 @@ public class GovernancePolicyPackResource {
     {
       Policies.add(policyService.listid(accountId,it));
     }
-
     return ResponseDTO.newResponse(Policies);
+  }
+
+
+  @POST
+  @Path("policypack/list")
+  @ApiOperation(value = "Get policies for pack", nickname = "getPolicies")
+  @Produces(MediaType.APPLICATION_JSON)
+  @Operation(operationId = "getPolicies", description = "Fetch policies ", summary = "Fetch policies for account",
+          responses =
+                  {
+                          @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                                  description = "Returns List of policies", content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
+                  })
+  public ResponseDTO<List<PolicyPack>>
+  listPolicyPack(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
+             @RequestBody(
+                     required = true, description = "Request body containing policy pack object") @Valid  CreatePolicyPackDTO createPolicyPackDTO) {
+    // rbacHelper.checkPolicyPackPermission(accountId, null, null);
+
+    return ResponseDTO.newResponse(policyPackService.list(accountId));
   }
 
   @DELETE
@@ -242,7 +262,8 @@ public class GovernancePolicyPackResource {
           NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
          @PathParam("policyPackId") @Parameter(
                  required = true, description = "Unique identifier for the policy") @NotNull @Valid String uuid) {
-    // rbacHelper.checkPolicySetDeletePermission(accountId, null, null);
+    // rbacHelper.checkPolicyPackDeletePermission(accountId, null, null);
+    policyPackService.listid(accountId,uuid);
     boolean result = policyPackService.delete(accountId, uuid);
     return ResponseDTO.newResponse(result);
   }

@@ -9,8 +9,13 @@ package io.harness.ccm.views.service;
 
 import io.harness.ccm.views.entities.PolicyPack;
 
+import java.util.List;
+
 public interface PolicyPackService {
   boolean save(PolicyPack policyPack);
   boolean delete(String accountId, String uuid);
   PolicyPack update(PolicyPack policyPack);
+  PolicyPack listid(String accountId, String uuid);
+  void check(String accountId, List<String> policiesIdentifier );
+  List<PolicyPack> list(String accountId);
 }

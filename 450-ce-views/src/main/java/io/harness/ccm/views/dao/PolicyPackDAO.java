@@ -9,6 +9,8 @@ package io.harness.ccm.views.dao;
 
 import io.harness.ccm.views.entities.Policy;
 import io.harness.ccm.views.entities.PolicyPack;
+import io.harness.ccm.views.entities.PolicyPack.PolicySetId;
+import io.harness.exception.InvalidRequestException;
 import io.harness.persistence.HPersistence;
 
 import com.google.inject.Inject;
@@ -17,10 +19,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.mongodb.morphia.query.Query;
 import org.mongodb.morphia.query.UpdateOperations;
 
+import java.util.List;
+
 @Slf4j
 @Singleton
 public class PolicyPackDAO {
-  @Inject private HPersistence hPersistence;
+  @Inject
+   private HPersistence hPersistence;
+   private PolicyDAO policyDAO;
 
   public boolean save(PolicyPack policySet) {
     log.info("created: {}", hPersistence.save(policySet));
@@ -29,9 +35,9 @@ public class PolicyPackDAO {
 
   public boolean delete(String accountId, String uuid) {
     Query<PolicyPack> query = hPersistence.createQuery(PolicyPack.class)
-                                 .field(PolicyPack.PolicySetId.accountId)
+                                 .field(PolicySetId.accountId)
                                  .equal(accountId)
-                                 .field(PolicyPack.PolicySetId.uuid)
+                                 .field(PolicySetId.uuid)
                                  .equal(uuid);
     log.info("deleted policy: {}", uuid);
     return hPersistence.delete(query);
@@ -39,23 +45,50 @@ public class PolicyPackDAO {
 
   public PolicyPack update(PolicyPack policy) {
     Query query = hPersistence.createQuery(Policy.class)
-                      .field(PolicyPack.PolicySetId.accountId)
+                      .field(PolicySetId.accountId)
                       .equal(policy.getAccountId())
-                      .field(PolicyPack.PolicySetId.uuid)
+                      .field(PolicySetId.uuid)
                       .equal(policy.getUuid());
     UpdateOperations<PolicyPack> updateOperations =
         hPersistence.createUpdateOperations(PolicyPack.class)
-            .set(PolicyPack.PolicySetId.name, policy.getName())
-//            .set(PolicyPack.PolicySetId.tags, policy.getTags())
+            .set(PolicySetId.name, policy.getName())
+//          .set(PolicyPack.PolicySetId.tags, policy.getTags())
 //            .set(PolicyPack.PolicySetId.policySetPolicies, policy.getPolicySetPolicies())
 //            .set(PolicyPack.PolicySetId.policySetExecutionCron, policy.getPolicySetExecutionCron())
 //            .set(PolicyPack.PolicySetId.policySetTargetAccounts, policy.getPolicySetTargetAccounts())
 //            .set(PolicyPack.PolicySetId.policySetTargetRegions, policy.getPolicySetTargetRegions())
 //            .set(PolicyPack.PolicySetId.isEnabled, policy.getIsEnabled())
-            .set(PolicyPack.PolicySetId.lastUpdatedAt, policy.getLastUpdatedAt());
+            .set(PolicySetId.lastUpdatedAt, policy.getLastUpdatedAt());
 
     hPersistence.update(query, updateOperations);
     log.info("Updated policy: {}", policy.getUuid());
     return policy;
+  }
+
+  public PolicyPack listid(String accountId, String uuid) {
+    try {
+      return hPersistence.createQuery(PolicyPack.class)
+              .field(PolicySetId.accountId)
+              .equal(accountId)
+              .field(PolicySetId.uuid)
+              .equal(uuid)
+              .asList()
+              .get(0);
+    } catch (IndexOutOfBoundsException e) {
+      log.error("No such policy pack exists,{} accountId{} uuid{}", e,accountId,uuid);
+      throw new InvalidRequestException("No such policy pack exists");
+    }
+  }
+  public void check(String accountId, List<String> policiesIdentifier) {
+    {
+
+      for(String identifiers: policiesIdentifier )
+      {
+        policyDAO.listid(accountId,identifiers);
+      }
+       }
+  }
+  public List<PolicyPack> list(String accountId) {
+    return hPersistence.createQuery(PolicyPack.class).field(PolicySetId.accountId).equal(accountId).asList();
   }
 }

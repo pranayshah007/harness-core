@@ -18,6 +18,8 @@ import io.harness.ccm.views.entities.PolicyPack;
 import io.harness.ccm.views.service.PolicyPackService;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.List;
+
 @Slf4j
 @Singleton
 @OwnedBy(CE)
@@ -38,5 +40,23 @@ public class PolicyPackServiceImpl implements PolicyPackService {
   @Override
   public PolicyPack update(PolicyPack policyPack) {
     { return policyPackDAO.update(policyPack); }
+  }
+
+  @Override
+  public PolicyPack listid(String accountId, String uuid) {
+    {
+      return policyPackDAO.listid(accountId,uuid); }
+  }
+
+  @Override
+  public void check(String accountId, List<String> policiesIdentifier) {
+    {
+      policyPackDAO.check(accountId,policiesIdentifier); }
+  }
+
+  @Override
+  public List<PolicyPack> list(String accountId) {
+    {
+      return policyPackDAO.list(accountId); }
   }
 }

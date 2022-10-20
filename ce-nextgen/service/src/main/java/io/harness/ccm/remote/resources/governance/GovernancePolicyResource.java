@@ -28,6 +28,7 @@ import com.codahale.metrics.annotation.ExceptionMetered;
 import com.codahale.metrics.annotation.Timed;
 import com.google.inject.Inject;
 import io.harness.security.annotations.NextGenManagerAuth;
+import io.harness.security.annotations.PublicApi;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
@@ -80,7 +81,8 @@ import org.springframework.stereotype.Service;
       @ApiResponse(code = 400, response = FailureDTO.class, message = "Bad Request")
       , @ApiResponse(code = 500, response = ErrorDTO.class, message = "Internal server error")
     })
-@NextGenManagerAuth
+@PublicApi
+//@NextGenManagerAuth
 public class GovernancePolicyResource {
   private final GovernancePolicyService governancePolicyService;
   private final CCMRbacHelper rbacHelper;
@@ -108,7 +110,7 @@ public class GovernancePolicyResource {
              NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @RequestBody(required = true,
           description = "Request body containing Policy store object") @Valid CreatePolicyDTO createPolicyDTO) {
-    // rbacHelper.checkPolicyEditPermission(accountId, null, null);
+    //rbacHelper.checkPolicyEditPermission(accountId, null, null);
     Policy policy = createPolicyDTO.getPolicy();
     policy.setAccountId(accountId);
     governancePolicyService.save(policy);
@@ -133,8 +135,8 @@ public class GovernancePolicyResource {
   updatePolicy(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
                    NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @RequestBody(required = true,
-          description = "Request body containing ceViewFolder object") @Valid CreatePolicyDTO createPolicyDTO) {
-    // rbacHelper.checkPolicyEditPermission(accountId, null, null);
+          description = "Request body containing policy object") @Valid CreatePolicyDTO createPolicyDTO) {
+    //rbacHelper.checkPolicyEditPermission(accountId, null, null);
     Policy policy = createPolicyDTO.getPolicy();
     policy.toDTO();
     policy.setAccountId(accountId);
@@ -164,7 +166,8 @@ public class GovernancePolicyResource {
              NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @PathParam("policyId") @Parameter(
           required = true, description = "Unique identifier for the policy") @NotNull @Valid String uuid) {
-    // rbacHelper.checkPolicyDeletePermission(accountId, null, null);
+    //rbacHelper.checkPolicyDeletePermission(accountId, null, null);
+    governancePolicyService.listid(accountId,uuid);
     boolean result = governancePolicyService.delete(accountId, uuid);
     return ResponseDTO.newResponse(result);
   }
@@ -186,7 +189,7 @@ public class GovernancePolicyResource {
                  NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @RequestBody(
           required = true, description = "Request body containing ceViewFolder object") @Valid ListDTO listDTO) {
-    // rbacHelper.checkPolicyViewPermission(accountId, null, null);
+    //rbacHelper.checkPolicyViewPermission(accountId, null, null);
     PolicyRequest query = listDTO.getPolicyRequest();
     List<Policy> Policies = new ArrayList<>();
     query.setAccountId(accountId);
