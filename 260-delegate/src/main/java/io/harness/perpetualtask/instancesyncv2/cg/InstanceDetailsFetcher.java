@@ -10,5 +10,6 @@ import java.util.List;
 
 // instance sync v2
 public interface InstanceDetailsFetcher {
-  List<InstanceInfo> fetchRunningInstanceDetails(PerpetualTaskId taskId, CgInstanceSyncTaskParams params);
+  List<InstanceInfo> fetchRunningInstanceDetails(
+      PerpetualTaskId taskId, CgInstanceSyncTaskParams params, String releaseDtails);
 }

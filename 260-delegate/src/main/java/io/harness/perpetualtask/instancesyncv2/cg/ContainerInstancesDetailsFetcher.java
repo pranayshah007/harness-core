@@ -53,7 +53,8 @@ public class ContainerInstancesDetailsFetcher implements InstanceDetailsFetcher 
   @Inject private AzureDelegateHelperService azureDelegateHelperService;
   @Inject private GkeClusterService gkeClusterService;
   @Override
-  public List<InstanceInfo> fetchRunningInstanceDetails(PerpetualTaskId taskId, CgInstanceSyncTaskParams params) {
+  public List<InstanceInfo> fetchRunningInstanceDetails(
+      PerpetualTaskId taskId, CgInstanceSyncTaskParams params, String releaseDetails) {
     K8sClusterConfig config =
         (K8sClusterConfig) kryoSerializer.asObject(params.getCloudProviderDetails().toByteArray());
     SettingAttribute settingAttribute = aSettingAttribute().withValue(config.getCloudProvider()).build();
@@ -63,8 +64,8 @@ public class ContainerInstancesDetailsFetcher implements InstanceDetailsFetcher 
 
     // get deployment release details using manager API call
 
-    final List<V1Pod> pods = kubernetesContainerService.getRunningPodsWithLabels(kubernetesConfig,
-        config.getNamespace(), ImmutableMap.of(HelmConstants.HELM_RELEASE_LABEL, "replace with releaseName"));
+    final List<V1Pod> pods = kubernetesContainerService.getRunningPodsWithLabels(
+        kubernetesConfig, config.getNamespace(), ImmutableMap.of(HelmConstants.HELM_RELEASE_LABEL, releaseDetails));
     return pods.stream()
         .map(pod
             -> KubernetesContainerInfo.builder()
@@ -72,7 +73,7 @@ public class ContainerInstancesDetailsFetcher implements InstanceDetailsFetcher 
                    .podName(pod.getMetadata().getName())
                    .ip(pod.getStatus().getPodIP())
                    .namespace(config.getNamespace())
-                   .releaseName("replace with releaseName")
+                   .releaseName(releaseDetails)
                    .build())
         .collect(toList());
   }

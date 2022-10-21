@@ -24,13 +24,13 @@ import io.harness.perpetualtask.PerpetualTaskResponse;
 import io.harness.perpetualtask.instancesyncv2.CgInstanceSyncTaskParams;
 
 import software.wings.beans.infrastructure.instance.info.InstanceInfo;
-import software.wings.beans.infrastructure.instance.info.K8sPodInfo;
 
 import com.google.inject.Inject;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -56,9 +56,7 @@ public class CgInstanceSyncV2TaskExecutor implements PerpetualTaskExecutor {
 
     switch (cloudProviderType) {
       case "KUBERNETES":
-        ContainerInstancesDetailsFetcher containerInstancesDetailsFetcher =
-            (ContainerInstancesDetailsFetcher) instanceDetailsFetcher;
-        responseData = containerInstancesDetailsFetcher.fetchRunningInstanceDetails(taskId, taskParams);
+
         break;
       default:
         throw new InvalidRequestException(
@@ -66,11 +64,35 @@ public class CgInstanceSyncV2TaskExecutor implements PerpetualTaskExecutor {
     }
 
     return null;
-    /* boolean isFailureResponse = FAILURE == responseData.getCommandExecutionStatus();
-     return PerpetualTaskResponse.builder()
-         .responseCode(Response.SC_OK)
-         .responseMessage(isFailureResponse ? responseData.getErrorMessage() : "success")
-         .build();*/
+    boolean isFailureResponse = FAILURE == responseData.getCommandExecutionStatus();
+    return PerpetualTaskResponse.builder()
+        .responseCode(Response.SC_OK)
+        .responseMessage(isFailureResponse ? responseData.getErrorMessage() : "success")
+        .build();
+  }
+
+  private void batchingAndPublishInstanceSyncResult(
+      PerpetualTaskId taskId, String accountId, List<InstanceInfo> responseData) {
+    ContainerInstancesDetailsFetcher containerInstancesDetailsFetcher =
+        (ContainerInstancesDetailsFetcher) instanceDetailsFetcher;
+    int batchInstanceCount = 0;
+    int batchReleaseDetailsCount = 0;
+    List<String> releaseDetailsList = new ArrayList<>(); // call release detail API
+    Map<String, List<InstanceInfo> > buffer = new HashMap<>();
+    for (String releaseDetails : releaseDetailsList) {
+      List<InstanceInfo> instanceInfos =
+          containerInstancesDetailsFetcher.fetchRunningInstanceDetails(taskId, taskParams, releaseDetails);
+      buffer.put(releaseDetails, instanceInfos);
+      batchInstanceCount += instanceInfos.size();
+      batchReleaseDetailsCount++;
+      if (batchInstanceCount >= INSTANCE_COUNT_LIMIT || batchReleaseDetailsCount >= RELEASE_COUNT_LIMIT) {
+        // publish logic
+
+        buffer = new HashMap<>();
+        batchInstanceCount = 0;
+        batchReleaseDetailsCount = 0;
+      }
+    }
   }
 
   private void publishInstanceSyncResult(
@@ -82,25 +104,6 @@ public class CgInstanceSyncV2TaskExecutor implements PerpetualTaskExecutor {
           String.format("Failed to publish container instance sync result. namespace [%s] and PerpetualTaskId [%s]",
               namespace, taskId.getId()),
           e);
-    }
-  }
-  private void batchingAndPublishInstanceSyncResult(
-      PerpetualTaskId taskId, String accountId, String namespace, List<InstanceInfo> responseData) {
-    int batchInstanceCount = 0;
-    int batchReleaseDetailsCount = 0;
-    List<K8sPodInfo> buffer = new ArrayList<>();
-    for (InstanceInfo instanceInfo : responseData) {
-      K8sPodInfo k8sPodInfo = (K8sPodInfo) instanceInfo;
-      buffer.add(k8sPodInfo);
-      batchInstanceCount += k8sPodInfo.getContainers().size();
-      batchReleaseDetailsCount++;
-      if (batchInstanceCount >= INSTANCE_COUNT_LIMIT || batchReleaseDetailsCount >= RELEASE_COUNT_LIMIT) {
-        // publish logic
-
-        buffer = new ArrayList<>();
-        batchInstanceCount = 0;
-        batchReleaseDetailsCount = 0;
-      }
     }
   }
 
