@@ -8,7 +8,7 @@
 package io.harness.freeze.beans.response;
 
 import io.harness.encryption.Scope;
-import io.harness.freeze.beans.CurrentOrUpcomingActiveWindow;
+import io.harness.freeze.beans.CurrentOrUpcomingWindow;
 import io.harness.freeze.beans.FreezeWindow;
 
 import java.util.List;
@@ -19,7 +19,7 @@ import lombok.Data;
 @Data
 @Builder
 public class FreezeBannerDetails {
-  CurrentOrUpcomingActiveWindow currentOrUpcomingActiveWindow;
+  CurrentOrUpcomingWindow window;
   List<FreezeWindow> windows;
   String identifier;
   String name;

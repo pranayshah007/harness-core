@@ -101,7 +101,7 @@ public class NGFreezeDtoMapper {
         .createdAt(freezeConfigEntity.getCreatedAt())
         .type(freezeConfigEntity.getType())
         .lastUpdatedAt(freezeConfigEntity.getLastUpdatedAt())
-        .currentOrUpcomingActiveWindow(
+        .currentOrUpcomingWindow(
             FreezeTimeUtils.fetchCurrentOrUpcomingTimeWindow(freezeConfig.getFreezeInfoConfig().getWindows()))
         .build();
   }
@@ -124,7 +124,7 @@ public class NGFreezeDtoMapper {
         .createdAt(freezeConfigEntity.getCreatedAt())
         .type(freezeConfigEntity.getType())
         .lastUpdatedAt(freezeConfigEntity.getLastUpdatedAt())
-        .currentOrUpcomingActiveWindow(
+        .currentOrUpcomingWindow(
             FreezeTimeUtils.fetchCurrentOrUpcomingTimeWindow(freezeConfig.getFreezeInfoConfig().getWindows()))
         .yaml(freezeConfigEntity.getYaml())
         .build();
@@ -148,7 +148,7 @@ public class NGFreezeDtoMapper {
         .createdAt(freezeResponseDTO.getCreatedAt())
         .type(freezeResponseDTO.getType())
         .lastUpdatedAt(freezeResponseDTO.getLastUpdatedAt())
-        .currentOrUpcomingActiveWindow(
+        .currentOrUpcomingWindow(
             FreezeTimeUtils.fetchCurrentOrUpcomingTimeWindow(freezeConfig.getFreezeInfoConfig().getWindows()))
         .build();
   }
@@ -163,8 +163,7 @@ public class NGFreezeDtoMapper {
         .identifier(freezeResponseDTO.getIdentifier())
         .name(freezeResponseDTO.getName())
         .freezeScope(freezeResponseDTO.getFreezeScope())
-        .currentOrUpcomingActiveWindow(
-            FreezeTimeUtils.fetchCurrentOrUpcomingTimeWindow(freezeConfig.getFreezeInfoConfig().getWindows()))
+        .window(FreezeTimeUtils.fetchCurrentOrUpcomingTimeWindow(freezeConfig.getFreezeInfoConfig().getWindows()))
         .build();
   }
 
@@ -186,7 +185,7 @@ public class NGFreezeDtoMapper {
         .createdAt(freezeResponseDTO.getCreatedAt())
         .type(freezeResponseDTO.getType())
         .lastUpdatedAt(freezeResponseDTO.getLastUpdatedAt())
-        .currentOrUpcomingActiveWindow(
+        .currentOrUpcomingWindow(
             FreezeTimeUtils.fetchCurrentOrUpcomingTimeWindow(freezeConfig.getFreezeInfoConfig().getWindows()))
         .yaml(freezeResponseDTO.getYaml())
         .build();

@@ -12,7 +12,7 @@ import lombok.Data;
 
 @Data
 @Builder
-public class CurrentOrUpcomingActiveWindow {
+public class CurrentOrUpcomingWindow {
   Long startTime;
   Long endTime;
 }

@@ -24,7 +24,12 @@ import io.harness.freeze.beans.FreezeStatus;
 import io.harness.freeze.beans.FreezeType;
 import io.harness.freeze.beans.PermissionTypes;
 import io.harness.freeze.beans.request.FreezeFilterPropertiesDTO;
-import io.harness.freeze.beans.response.*;
+import io.harness.freeze.beans.response.FreezeBannerDetails;
+import io.harness.freeze.beans.response.FreezeDetailedResponseDTO;
+import io.harness.freeze.beans.response.FreezeResponseDTO;
+import io.harness.freeze.beans.response.FreezeResponseWrapperDTO;
+import io.harness.freeze.beans.response.FreezeSummaryResponseDTO;
+import io.harness.freeze.beans.response.GlobalFreezeWithBannerDetailsResponseDTO;
 import io.harness.freeze.entity.FreezeConfigEntity.FreezeConfigEntityKeys;
 import io.harness.freeze.helpers.FreezeFilterHelper;
 import io.harness.freeze.helpers.FreezeRBACHelper;
@@ -268,7 +273,7 @@ public class FreezeCRUDResource {
         ApiResponse(responseCode = "default", description = "Returns the created Freeze Config")
       })
   @Hidden
-  public ResponseDTO<FreezeResponseDTO>
+  public ResponseDTO<FreezeDetailedResponseDTO>
   get(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
           NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
       @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
@@ -277,7 +282,8 @@ public class FreezeCRUDResource {
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId,
       @Parameter(description = "Freeze Identifier.") @PathParam(
           "freezeIdentifier") @ResourceIdentifier String freezeIdentifier) {
-    return ResponseDTO.newResponse(freezeCRUDService.getFreezeConfig(freezeIdentifier, accountId, orgId, projectId));
+    return ResponseDTO.newResponse(NGFreezeDtoMapper.prepareDetailedFreezeResponseDto(
+        freezeCRUDService.getFreezeConfig(freezeIdentifier, accountId, orgId, projectId)));
   }
 
   @GET
@@ -326,8 +332,7 @@ public class FreezeCRUDResource {
             .collect(Collectors.toList());
     activeOrUpcomingParentGlobalFreezes =
         activeOrUpcomingParentGlobalFreezes.stream()
-            .filter(activeOrUpcomingParentGlobalFreeze
-                -> activeOrUpcomingParentGlobalFreeze.getCurrentOrUpcomingActiveWindow() != null)
+            .filter(activeOrUpcomingParentGlobalFreeze -> activeOrUpcomingParentGlobalFreeze.getWindow() != null)
             .collect(Collectors.toList());
     GlobalFreezeWithBannerDetailsResponseDTO globalFreezeWithBannerDetailsResponseDTO =
         GlobalFreezeWithBannerDetailsResponseDTO.builder()

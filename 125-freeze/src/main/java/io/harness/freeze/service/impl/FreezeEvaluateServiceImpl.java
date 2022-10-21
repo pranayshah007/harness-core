@@ -8,7 +8,7 @@
 package io.harness.freeze.service.impl;
 
 import io.harness.encryption.Scope;
-import io.harness.freeze.beans.CurrentOrUpcomingActiveWindow;
+import io.harness.freeze.beans.CurrentOrUpcomingWindow;
 import io.harness.freeze.beans.EntityConfig;
 import io.harness.freeze.beans.FilterType;
 import io.harness.freeze.beans.FreezeEntityRule;
@@ -56,9 +56,8 @@ public class FreezeEvaluateServiceImpl implements FreezeEvaluateService {
     Page<FreezeSummaryResponseDTO> result = freezeCRUDService.list(criteria, pageRequest);
     List<FreezeSummaryResponseDTO> configs = result.getContent();
     for (FreezeSummaryResponseDTO freezeSummaryResponseDTO : configs) {
-      CurrentOrUpcomingActiveWindow currentOrUpcomingActiveWindow =
-          freezeSummaryResponseDTO.getCurrentOrUpcomingActiveWindow();
-      if (FreezeTimeUtils.currentWindowIsActive(currentOrUpcomingActiveWindow)
+      CurrentOrUpcomingWindow currentOrUpcomingWindow = freezeSummaryResponseDTO.getCurrentOrUpcomingWindow();
+      if (FreezeTimeUtils.currentWindowIsActive(currentOrUpcomingWindow)
           && matchesEntities(entityMap, freezeSummaryResponseDTO.getRules())) {
         freezeSummaryResponseDTOList.add(freezeSummaryResponseDTO);
       }
@@ -100,10 +99,9 @@ public class FreezeEvaluateServiceImpl implements FreezeEvaluateService {
       String accountId, String orgIdentifier, String projectIdentifier) {
     FreezeSummaryResponseDTO freezeSummaryResponseDTO =
         freezeCRUDService.getGlobalFreezeSummary(accountId, orgIdentifier, projectIdentifier);
-    CurrentOrUpcomingActiveWindow currentOrUpcomingActiveWindow =
-        freezeSummaryResponseDTO.getCurrentOrUpcomingActiveWindow();
+    CurrentOrUpcomingWindow currentOrUpcomingWindow = freezeSummaryResponseDTO.getCurrentOrUpcomingWindow();
     if (FreezeStatus.ENABLED.equals(freezeSummaryResponseDTO.getStatus())
-        && FreezeTimeUtils.currentWindowIsActive(currentOrUpcomingActiveWindow)) {
+        && FreezeTimeUtils.currentWindowIsActive(currentOrUpcomingWindow)) {
       return freezeSummaryResponseDTO;
     }
     return null;
