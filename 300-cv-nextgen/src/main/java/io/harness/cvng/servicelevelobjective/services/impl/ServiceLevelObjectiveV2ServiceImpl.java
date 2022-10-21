@@ -30,12 +30,13 @@ import io.harness.cvng.servicelevelobjective.beans.SLODashboardApiFilter;
 import io.harness.cvng.servicelevelobjective.beans.SLOErrorBudgetResetDTO;
 import io.harness.cvng.servicelevelobjective.beans.SLOTargetDTO;
 import io.harness.cvng.servicelevelobjective.beans.SLOTargetType;
-import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorDTO;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorType;
+import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveDetailsDTO;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveFilter;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveType;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2DTO;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2Response;
+import io.harness.cvng.servicelevelobjective.beans.slospec.CompositeServiceLevelObjectiveSpec;
 import io.harness.cvng.servicelevelobjective.beans.slospec.SimpleServiceLevelObjectiveSpec;
 import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObjective.AbstractServiceLevelObjectiveUpdatableEntity;
@@ -45,6 +46,7 @@ import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
 import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective.SimpleServiceLevelObjectiveKeys;
+import io.harness.cvng.servicelevelobjective.entities.TimePeriod;
 import io.harness.cvng.servicelevelobjective.services.api.SLOErrorBudgetResetService;
 import io.harness.cvng.servicelevelobjective.services.api.SLOHealthIndicatorService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
@@ -61,6 +63,8 @@ import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 import java.time.Clock;
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -100,6 +104,7 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
   @Override
   public ServiceLevelObjectiveV2Response create(
       ProjectParams projectParams, ServiceLevelObjectiveV2DTO serviceLevelObjectiveDTO) {
+    validateCreate(serviceLevelObjectiveDTO, projectParams);
     List<String> serviceLevelIndicators = Collections.emptyList();
     if (serviceLevelObjectiveDTO.getType().equals(ServiceLevelObjectiveType.SIMPLE)) {
       SimpleServiceLevelObjectiveSpec simpleServiceLevelObjectiveSpec =
@@ -108,17 +113,18 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
           simpleServiceLevelObjectiveSpec.getServiceLevelIndicators(), serviceLevelObjectiveDTO.getIdentifier(),
           simpleServiceLevelObjectiveSpec.getMonitoredServiceRef(),
           simpleServiceLevelObjectiveSpec.getHealthSourceRef());
-      sloHealthIndicatorService.upsert(
-          serviceLevelObjectiveTypeSLOV2TransformerMap.get(serviceLevelObjectiveDTO.getType())
-              .getSLOV2(projectParams, serviceLevelObjectiveDTO, true, serviceLevelIndicators));
+    } else {
+      validateCompositeSLO(serviceLevelObjectiveDTO, projectParams);
     }
+    sloHealthIndicatorService.upsert(
+        serviceLevelObjectiveTypeSLOV2TransformerMap.get(serviceLevelObjectiveDTO.getType())
+            .getSLOV2(projectParams, serviceLevelObjectiveDTO, true, serviceLevelIndicators));
     return createV2(projectParams, serviceLevelObjectiveDTO, serviceLevelIndicators);
   }
 
   @Override
   public ServiceLevelObjectiveV2Response createV2(ProjectParams projectParams,
       ServiceLevelObjectiveV2DTO serviceLevelObjectiveDTO, List<String> serviceLevelIndicators) {
-    validateCreate(serviceLevelObjectiveDTO, projectParams);
     if (serviceLevelObjectiveDTO.getType().equals(ServiceLevelObjectiveType.SIMPLE)) {
       MonitoredService monitoredService = monitoredServiceService.getMonitoredService(
           MonitoredServiceParams.builderWithProjectParams(projectParams)
@@ -141,15 +147,34 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
   @Override
   public ServiceLevelObjectiveV2Response updateV2(
       ProjectParams projectParams, String identifier, ServiceLevelObjectiveV2DTO serviceLevelObjectiveDTO) {
+    if (serviceLevelObjectiveDTO.getType().equals(ServiceLevelObjectiveType.SIMPLE)) {
+      validate(serviceLevelObjectiveDTO, projectParams);
+    }
+    AbstractServiceLevelObjective serviceLevelObjective =
+        getEntity(projectParams, serviceLevelObjectiveDTO.getIdentifier());
     List<String> serviceLevelIndicators = Collections.emptyList();
     if (serviceLevelObjectiveDTO.getType().equals(ServiceLevelObjectiveType.SIMPLE)) {
+      SimpleServiceLevelObjective simpleServiceLevelObjective = (SimpleServiceLevelObjective) serviceLevelObjective;
       SimpleServiceLevelObjectiveSpec simpleServiceLevelObjectiveSpec =
           (SimpleServiceLevelObjectiveSpec) serviceLevelObjectiveDTO.getSpec();
-      serviceLevelIndicators = simpleServiceLevelObjectiveSpec.getServiceLevelIndicators()
-                                   .stream()
-                                   .map(ServiceLevelIndicatorDTO::getIdentifier)
-                                   .collect(Collectors.toList());
+      LocalDateTime currentLocalDate = LocalDateTime.ofInstant(clock.instant(), ZoneOffset.UTC);
+      TimePeriod timePeriod =
+          sloTargetTypeSLOTargetTransformerMap.get(serviceLevelObjectiveDTO.getSloTarget().getType())
+              .getSLOTarget(serviceLevelObjectiveDTO.getSloTarget().getSpec())
+              .getCurrentTimeRange(currentLocalDate);
+      TimePeriod currentTimePeriod = serviceLevelObjective.getCurrentTimeRange(currentLocalDate);
+      serviceLevelIndicators = serviceLevelIndicatorService.update(projectParams,
+          simpleServiceLevelObjectiveSpec.getServiceLevelIndicators(), serviceLevelObjectiveDTO.getIdentifier(),
+          simpleServiceLevelObjective.getServiceLevelIndicators(),
+          simpleServiceLevelObjectiveSpec.getMonitoredServiceRef(),
+          simpleServiceLevelObjectiveSpec.getHealthSourceRef(), timePeriod, currentTimePeriod);
+    } else {
+      validateCompositeSLO(serviceLevelObjectiveDTO, projectParams);
     }
+    sloHealthIndicatorService.upsert(
+        serviceLevelObjectiveTypeSLOV2TransformerMap.get(serviceLevelObjectiveDTO.getType())
+            .getSLOV2(projectParams, serviceLevelObjectiveDTO, true, serviceLevelIndicators));
+    sloErrorBudgetResetService.clearErrorBudgetResets(projectParams, identifier);
     return update(
         projectParams, serviceLevelObjectiveDTO.getIdentifier(), serviceLevelObjectiveDTO, serviceLevelIndicators);
   }
@@ -164,12 +189,9 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
         getEntity(projectParams, serviceLevelObjectiveDTO.getIdentifier());
     if (serviceLevelObjective == null) {
       throw new InvalidRequestException(String.format(
-          "[SLOV2 Not Found] SLO  with identifier %s, accountId %s, orgIdentifier %s and projectIdentifier %s is not present",
+          "[SLOV2 Not Found] SLO with identifier %s, accountId %s, orgIdentifier %s and projectIdentifier %s is not present",
           serviceLevelObjectiveDTO.getIdentifier(), projectParams.getAccountIdentifier(),
           projectParams.getOrgIdentifier(), projectParams.getProjectIdentifier()));
-    }
-    if (serviceLevelObjectiveDTO.getType().equals(ServiceLevelObjectiveType.SIMPLE)) {
-      validate(serviceLevelObjectiveDTO, projectParams);
     }
     updateSLOV2Entity(projectParams, serviceLevelObjective, serviceLevelObjectiveDTO, serviceLevelIndicators);
     return getSLOResponse(serviceLevelObjectiveDTO.getIdentifier(), projectParams);
@@ -518,7 +540,35 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
     return serviceLevelObjectiveV2;
   }
 
-  public void validateCreate(ServiceLevelObjectiveV2DTO sloCreateDTO, ProjectParams projectParams) {
+  private void validateCompositeSLO(ServiceLevelObjectiveV2DTO serviceLevelObjectiveDTO, ProjectParams projectParams) {
+    CompositeServiceLevelObjectiveSpec compositeServiceLevelObjectiveSpec =
+        (CompositeServiceLevelObjectiveSpec) serviceLevelObjectiveDTO.getSpec();
+    double sum =
+        compositeServiceLevelObjectiveSpec.getServiceLevelObjectivesDetails()
+            .stream()
+            .peek(serviceLevelObjectiveDetailsDTO
+                -> checkIfSLOPresent(serviceLevelObjectiveDetailsDTO.getServiceLevelObjectiveRef(), projectParams))
+            .mapToDouble(ServiceLevelObjectiveDetailsDTO::getWeightagePercentage)
+            .sum();
+
+    if (sum != 100) {
+      throw new InvalidRequestException(String.format(
+          "The weightage percentage of all the SLOs constituting the Composite SLO with identifier %s should sum upto 100.",
+          serviceLevelObjectiveDTO.getIdentifier()));
+    }
+  }
+
+  private void checkIfSLOPresent(String sloId, ProjectParams projectParams) {
+    AbstractServiceLevelObjective serviceLevelObjective = get(sloId);
+    if (serviceLevelObjective == null) {
+      throw new InvalidRequestException(String.format(
+          "[SLOV2 Not Found] SLO with identifier %s, accountId %s, orgIdentifier %s and projectIdentifier %s is not present",
+          sloId, projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier(),
+          projectParams.getProjectIdentifier()));
+    }
+  }
+
+  private void validateCreate(ServiceLevelObjectiveV2DTO sloCreateDTO, ProjectParams projectParams) {
     AbstractServiceLevelObjective serviceLevelObjective = getEntity(projectParams, sloCreateDTO.getIdentifier());
     if (serviceLevelObjective != null) {
       throw new DuplicateFieldException(String.format(

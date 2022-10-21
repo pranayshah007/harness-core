@@ -53,32 +53,33 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import retrofit2.http.Body;
 
-@Api("slo/v2")
+//@Api("slo/v2")
 @Path("slo/v2")
 @Produces("application/json")
 @ExposeInternalException
 @NextGenManagerAuth
-@Tag(name = "V2 SLOs", description = "This contains APIs related to CRUD operations of V2 SLOs")
-@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = NGCommonEntityConstants.BAD_REQUEST_CODE,
-    description = NGCommonEntityConstants.BAD_REQUEST_PARAM_MESSAGE,
-    content =
-    {
-      @Content(mediaType = NGCommonEntityConstants.APPLICATION_JSON_MEDIA_TYPE,
-          schema = @Schema(implementation = FailureDTO.class))
-      ,
-          @Content(mediaType = NGCommonEntityConstants.APPLICATION_YAML_MEDIA_TYPE,
-              schema = @Schema(implementation = FailureDTO.class))
-    })
-@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = NGCommonEntityConstants.INTERNAL_SERVER_ERROR_CODE,
-    description = NGCommonEntityConstants.INTERNAL_SERVER_ERROR_MESSAGE,
-    content =
-    {
-      @Content(mediaType = NGCommonEntityConstants.APPLICATION_JSON_MEDIA_TYPE,
-          schema = @Schema(implementation = ErrorDTO.class))
-      ,
-          @Content(mediaType = NGCommonEntityConstants.APPLICATION_YAML_MEDIA_TYPE,
-              schema = @Schema(implementation = ErrorDTO.class))
-    })
+//@Tag(name = "V2 SLOs", description = "This contains APIs related to CRUD operations of V2 SLOs")
+//@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = NGCommonEntityConstants.BAD_REQUEST_CODE,
+//    description = NGCommonEntityConstants.BAD_REQUEST_PARAM_MESSAGE,
+//    content =
+//    {
+//      @Content(mediaType = NGCommonEntityConstants.APPLICATION_JSON_MEDIA_TYPE,
+//          schema = @Schema(implementation = FailureDTO.class))
+//      ,
+//          @Content(mediaType = NGCommonEntityConstants.APPLICATION_YAML_MEDIA_TYPE,
+//              schema = @Schema(implementation = FailureDTO.class))
+//    })
+//@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode =
+//NGCommonEntityConstants.INTERNAL_SERVER_ERROR_CODE,
+//    description = NGCommonEntityConstants.INTERNAL_SERVER_ERROR_MESSAGE,
+//    content =
+//    {
+//      @Content(mediaType = NGCommonEntityConstants.APPLICATION_JSON_MEDIA_TYPE,
+//          schema = @Schema(implementation = ErrorDTO.class))
+//      ,
+//          @Content(mediaType = NGCommonEntityConstants.APPLICATION_YAML_MEDIA_TYPE,
+//              schema = @Schema(implementation = ErrorDTO.class))
+//    })
 @OwnedBy(HarnessTeam.CV)
 public class ServiceLevelObjectiveV2Resource {
   @Inject ServiceLevelObjectiveV2Service serviceLevelObjectiveService;

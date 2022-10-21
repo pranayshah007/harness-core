@@ -249,7 +249,7 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
     simpleServiceLevelObjectiveSpec.setServiceLevelIndicatorType(ServiceLevelIndicatorType.LATENCY);
     sloDTO.setSpec(simpleServiceLevelObjectiveSpec);
     ServiceLevelObjectiveV2Response updateServiceLevelObjectiveResponse =
-        serviceLevelObjectiveV2Service.update(projectParams, sloDTO.getIdentifier(), sloDTO, serviceLevelIndicators);
+        serviceLevelObjectiveV2Service.updateV2(projectParams, sloDTO.getIdentifier(), sloDTO);
     assertThat(updateServiceLevelObjectiveResponse.getServiceLevelObjectiveV2DTO()).isEqualTo(sloDTO);
   }
 
@@ -276,7 +276,7 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
     String sliIndicator = serviceLevelIndicatorOld.getUuid();
     sloDTO.setSloTarget(calendarSloTarget);
     ServiceLevelObjectiveV2Response updatedServiceLevelObjectiveResponse =
-        serviceLevelObjectiveV2Service.update(projectParams, sloDTO.getIdentifier(), sloDTO, serviceLevelIndicators);
+        serviceLevelObjectiveV2Service.updateV2(projectParams, sloDTO.getIdentifier(), sloDTO);
     String updatedSliIndicator =
         serviceLevelIndicatorService
             .getServiceLevelIndicator(builderFactory.getProjectParams(),
@@ -310,7 +310,7 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
     simpleServiceLevelObjectiveSpec.setHealthSourceRef("newHealthSourceRef");
     sloDTO.setSpec(simpleServiceLevelObjectiveSpec);
     ServiceLevelObjectiveV2Response updateServiceLevelObjectiveResponse =
-        serviceLevelObjectiveV2Service.update(projectParams, sloDTO.getIdentifier(), sloDTO, serviceLevelIndicators);
+        serviceLevelObjectiveV2Service.updateV2(projectParams, sloDTO.getIdentifier(), sloDTO);
     assertThat(updateServiceLevelObjectiveResponse.getServiceLevelObjectiveV2DTO()).isEqualTo(sloDTO);
   }
 
@@ -337,7 +337,7 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
     simpleServiceLevelObjectiveSpec.setMonitoredServiceRef("service1_env1");
     sloDTO.setSpec(simpleServiceLevelObjectiveSpec);
     ServiceLevelObjectiveV2Response updateServiceLevelObjectiveResponse =
-        serviceLevelObjectiveV2Service.update(projectParams, sloDTO.getIdentifier(), sloDTO, serviceLevelIndicators);
+        serviceLevelObjectiveV2Service.updateV2(projectParams, sloDTO.getIdentifier(), sloDTO);
     assertThat(updateServiceLevelObjectiveResponse.getServiceLevelObjectiveV2DTO()).isEqualTo(sloDTO);
   }
 
@@ -357,9 +357,7 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
     assertThat(serviceLevelObjectiveResponse.getServiceLevelObjectiveV2DTO()).isEqualTo(sloDTO);
     sloDTO.setIdentifier("newIdentifier");
     sloDTO.setDescription("newDescription");
-    assertThatThrownBy(()
-                           -> serviceLevelObjectiveV2Service.update(
-                               projectParams, sloDTO.getIdentifier(), sloDTO, serviceLevelIndicators))
+    assertThatThrownBy(() -> serviceLevelObjectiveV2Service.updateV2(projectParams, sloDTO.getIdentifier(), sloDTO))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage(String.format(
             "[SLOV2 Not Found] SLO  with identifier %s, accountId %s, orgIdentifier %s and projectIdentifier %s  is not present",

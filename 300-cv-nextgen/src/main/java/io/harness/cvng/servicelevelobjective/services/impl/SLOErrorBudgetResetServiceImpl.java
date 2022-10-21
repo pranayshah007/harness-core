@@ -79,13 +79,13 @@ public class SLOErrorBudgetResetServiceImpl implements SLOErrorBudgetResetServic
             .toInstant(ZoneOffset.UTC));
     hPersistence.save(sloErrorBudgetReset);
     sloHealthIndicatorService.upsert(serviceLevelObjective);
-    outboxService.save(ServiceLevelObjectiveErrorBudgetResetEvent.builder()
-                           .resourceName(serviceLevelObjective.getName())
-                           .accountIdentifier(projectParams.getAccountIdentifier())
-                           .serviceLevelObjectiveIdentifier(serviceLevelObjective.getIdentifier())
-                           .orgIdentifier(projectParams.getOrgIdentifier())
-                           .projectIdentifier(projectParams.getProjectIdentifier())
-                           .build());
+    //    outboxService.save(ServiceLevelObjectiveErrorBudgetResetEvent.builder()
+    //                           .resourceName(serviceLevelObjective.getName())
+    //                           .accountIdentifier(projectParams.getAccountIdentifier())
+    //                           .serviceLevelObjectiveIdentifier(serviceLevelObjective.getIdentifier())
+    //                           .orgIdentifier(projectParams.getOrgIdentifier())
+    //                           .projectIdentifier(projectParams.getProjectIdentifier())
+    //                           .build());
     return dtoFromEntity(sloErrorBudgetReset);
   }
 
