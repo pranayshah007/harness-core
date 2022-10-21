@@ -92,7 +92,7 @@ import io.harness.grpc.GrpcServiceConfigurationModule;
 import io.harness.grpc.server.GrpcServerConfig;
 import io.harness.health.HealthMonitor;
 import io.harness.health.HealthService;
-import io.harness.iterator.DelegateTaskExpiryCheckIterator;
+import io.harness.iterator.DelegateDisconnectDetectorIterator;
 import io.harness.iterator.FailDelegateTaskIterator;
 import io.harness.lock.AcquiredLock;
 import io.harness.lock.DistributedLockImplementation;
@@ -246,7 +246,6 @@ import software.wings.service.impl.AuditServiceHelper;
 import software.wings.service.impl.AuditServiceImpl;
 import software.wings.service.impl.BarrierServiceImpl;
 import software.wings.service.impl.CloudProviderObserver;
-import software.wings.service.impl.DelegateDisconnectedDetector;
 import software.wings.service.impl.DelegateObserver;
 import software.wings.service.impl.DelegateProfileServiceImpl;
 import software.wings.service.impl.DelegateServiceImpl;
@@ -1292,10 +1291,6 @@ public class WingsApplication extends Application<MainConfiguration> {
                                                 injector.getInstance(ProgressUpdateService.class)),
         0L, 5L, TimeUnit.SECONDS);
 
-    delegateExecutor.scheduleWithFixedDelay(new Schedulable("Failed while detecting disconnected delegates",
-                                                injector.getInstance(DelegateDisconnectedDetector.class)),
-        0L, 60L, TimeUnit.SECONDS);
-
     delegateExecutor.scheduleWithFixedDelay(new Schedulable("Failed while monitoring sync task responses",
                                                 injector.getInstance(DelegateSyncServiceImpl.class)),
         0L, 2L, TimeUnit.SECONDS);
@@ -1431,10 +1426,9 @@ public class WingsApplication extends Application<MainConfiguration> {
 
   public static void registerIteratorsDelegateService(IteratorsConfig iteratorsConfig, Injector injector) {
     injector.getInstance(PerpetualTaskRecordHandler.class)
-        .registerIterators(iteratorsConfig.getPerpetualTaskAssignmentIteratorConfig().getThreadPoolSize(),
-            iteratorsConfig.getPerpetualTaskRebalanceIteratorConfig().getThreadPoolSize());
-    injector.getInstance(DelegateTaskExpiryCheckIterator.class)
-        .registerIterators(iteratorsConfig.getDelegateTaskExpiryCheckIteratorConfig().getThreadPoolSize());
+        .registerIterators(iteratorsConfig.getPerpetualTaskAssignmentIteratorConfig().getThreadPoolSize());
+    injector.getInstance(DelegateDisconnectDetectorIterator.class)
+        .registerIterators(iteratorsConfig.getDelegateDisconnectDetectorIteratorConfig().getThreadPoolSize());
     injector.getInstance(FailDelegateTaskIterator.class)
         .registerIterators(iteratorsConfig.getFailDelegateTaskIteratorConfig().getThreadPoolSize());
     injector.getInstance(DelegateTelemetryPublisher.class).registerIterators();

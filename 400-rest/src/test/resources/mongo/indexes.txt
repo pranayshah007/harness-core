@@ -218,6 +218,7 @@ delegates {"name": "accountId_1", "background": true} {"accountId": 1}
 delegates {"name": "byAcctNgGroupIdOwner", "background": true} {"accountId": 1, "ng": 1, "delegateGroupId": 1, "owner": 1}
 delegates {"name": "capabilitiesCheckNextIteration_1", "background": true} {"capabilitiesCheckNextIteration": 1}
 delegates {"name": "createdAt_1", "background": true} {"createdAt": 1}
+delegates {"name": "delegateDisconnectDetectorNextIteration_1", "background": true} {"delegateDisconnectDetectorNextIteration": 1}
 delegates {"name": "lastHeartBeat_1", "background": true} {"lastHeartBeat": 1}
 delegates {"name": "taskExpiryCheckNextIteration_1", "background": true} {"taskExpiryCheckNextIteration": 1}
 delegates {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
@@ -873,6 +874,7 @@ workflowExecutions {"name": "accountId_appId_cdPageCandidate_pipelineSummary.pip
 workflowExecutions {"name": "accountId_appId_tags_createdAt", "background": true} {"accountId": 1, "appId": 1, "tags.name": 1, "createdAt": -1}
 workflowExecutions {"name": "accountId_cdPageCandidate_createdAt", "background": true} {"accountId": 1, "cdPageCandidate": 1, "createdAt": -1}
 workflowExecutions {"name": "accountId_cdPageCandidate_createdAt_keywords", "background": true} {"accountId": 1, "cdPageCandidate": 1, "createdAt": -1, "keywords": "text"}
+workflowExecutions {"name": "accountId_cdPageCandidate_workflowId_createdAt", "background": true} {"accountId": 1, "cdPageCandidate": 1, "workflowId": 1, "createdAt": -1}
 workflowExecutions {"name": "accountId_createdAt2", "background": true} {"accountId": 1, "createdAt": -1}
 workflowExecutions {"name": "accountId_endTs", "background": true} {"accountId": 1, "endTs": -1}
 workflowExecutions {"name": "accountId_pipExecutionId_createdAt", "background": true} {"accountId": 1, "pipelineExecutionId": 1, "createdAt": -1}

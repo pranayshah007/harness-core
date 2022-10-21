@@ -585,7 +585,27 @@ public class DelegateServiceImplTest extends WingsBaseTest {
     assertThat(retrievedDelegateConnection.getDelegateId()).isEqualTo(delegateId);
     assertThat(retrievedDelegateConnection.getAccountId()).isEqualTo(accountId);
     assertThat(retrievedDelegateConnection.isDisconnected()).isTrue();
+  }
 
+  @Test
+  @Owner(developers = JENNY)
+  @Category(UnitTests.class)
+  public void testDelegateObserverEventOnDelegateDisconnected() {
+    DelegateObserver delegateObserver = mock(DelegateObserver.class);
+    delegateService.getSubject().register(delegateObserver);
+
+    String delegateId = generateUuid();
+    String delegateConnectionId = generateUuid();
+    String accountId = generateUuid();
+
+    DelegateConnection delegateConnection = DelegateConnection.builder()
+                                                .accountId(accountId)
+                                                .uuid(delegateConnectionId)
+                                                .delegateId(delegateId)
+                                                .disconnected(false)
+                                                .build();
+    persistence.save(delegateConnection);
+    delegateService.onDelegateDisconnected(accountId, delegateId);
     verify(delegateObserver).onDisconnected(accountId, delegateId);
   }
 

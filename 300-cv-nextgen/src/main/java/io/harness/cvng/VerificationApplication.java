@@ -11,6 +11,7 @@ import static io.harness.AuthorizationServiceHeader.BEARER;
 import static io.harness.AuthorizationServiceHeader.CV_NEXT_GEN;
 import static io.harness.AuthorizationServiceHeader.DEFAULT;
 import static io.harness.AuthorizationServiceHeader.IDENTITY_SERVICE;
+import static io.harness.cvng.CVConstants.ENVIRONMENT;
 import static io.harness.cvng.cdng.services.impl.CVNGNotifyEventListener.CVNG_ORCHESTRATION;
 import static io.harness.cvng.migration.beans.CVNGSchema.CVNGMigrationStatus.RUNNING;
 import static io.harness.logging.LoggingInitializer.initializeLogging;
@@ -322,6 +323,7 @@ public class VerificationApplication extends Application<VerificationConfigurati
                                             .buildValidatorFactory();
 
     List<Module> modules = new ArrayList<>();
+
     modules.add(new ProviderModule() {
       @Provides
       @Singleton
@@ -481,6 +483,7 @@ public class VerificationApplication extends Application<VerificationConfigurati
     scheduleSidekickProcessing(injector);
     scheduleMaintenanceActivities(injector, configuration);
     initializeEnforcementSdk(injector);
+    initAutoscalingMetrics();
     registerOasResource(configuration, environment, injector);
 
     if (BooleanUtils.isTrue(configuration.getEnableOpentelemetry())) {
@@ -1190,5 +1193,14 @@ public class VerificationApplication extends Application<VerificationConfigurati
         .filter(
             klazz -> StringUtils.startsWithAny(klazz.getPackage().getName(), this.getClass().getPackage().getName()))
         .collect(Collectors.toSet());
+  }
+
+  private void initAutoscalingMetrics() {
+    CVConstants.LEARNING_ENGINE_TASKS_METRIC_LIST.forEach(metricName -> registerGaugeMetric(metricName, null));
+  }
+
+  private void registerGaugeMetric(String metricName, String[] labels) {
+    harnessMetricRegistry.registerGaugeMetric(metricName, labels, "");
+    harnessMetricRegistry.registerGaugeMetric(ENVIRONMENT + "_" + metricName, labels, "");
   }
 }
