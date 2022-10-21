@@ -12,7 +12,7 @@ import io.harness.cvng.analysis.services.api.TimeSeriesAnalysisService;
 import io.harness.cvng.statemachine.beans.AnalysisInput;
 import io.harness.cvng.statemachine.beans.AnalysisState;
 import io.harness.cvng.statemachine.beans.AnalysisStatus;
-import io.harness.cvng.statemachine.entities.CanaryAnalysisState;
+import io.harness.cvng.statemachine.entities.DeploymentTimeSeriesAnalysisState;
 import io.harness.cvng.statemachine.exception.AnalysisStateMachineException;
 import io.harness.cvng.verificationjob.services.api.VerificationJobInstanceService;
 
@@ -24,13 +24,14 @@ import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class CanaryAnalysisStateExecutor extends AnalysisStateExecutor<CanaryAnalysisState> {
+public class DeploymentTimeSeriesAnalysisStateExecutor
+    extends AnalysisStateExecutor<DeploymentTimeSeriesAnalysisState> {
   @Inject protected transient TimeSeriesAnalysisService timeSeriesAnalysisService;
 
   @Inject VerificationJobInstanceService verificationJobInstanceService;
 
   @Override
-  public AnalysisState execute(CanaryAnalysisState analysisState) {
+  public AnalysisState execute(DeploymentTimeSeriesAnalysisState analysisState) {
     analysisState.setVerificationJobInstanceId(analysisState.getVerificationJobInstanceId());
     analysisState.getInputs().setVerificationJobInstanceId(analysisState.getVerificationJobInstanceId());
     List<String> taskIds = scheduleAnalysis(analysisState.getInputs());
@@ -47,7 +48,7 @@ public class CanaryAnalysisStateExecutor extends AnalysisStateExecutor<CanaryAna
   }
 
   @Override
-  public AnalysisStatus getExecutionStatus(CanaryAnalysisState analysisState) {
+  public AnalysisStatus getExecutionStatus(DeploymentTimeSeriesAnalysisState analysisState) {
     if (!analysisState.getStatus().equals(AnalysisStatus.SUCCESS)) {
       Map<String, LearningEngineTask.ExecutionStatus> taskStatuses =
           timeSeriesAnalysisService.getTaskStatus(analysisState.getInputs().getVerificationTaskId(),
@@ -72,7 +73,7 @@ public class CanaryAnalysisStateExecutor extends AnalysisStateExecutor<CanaryAna
   }
 
   @Override
-  public AnalysisState handleRerun(CanaryAnalysisState analysisState) {
+  public AnalysisState handleRerun(DeploymentTimeSeriesAnalysisState analysisState) {
     // increment the retryCount without caring for the max
     // clean up state in underlying worker and then execute
 
@@ -85,30 +86,35 @@ public class CanaryAnalysisStateExecutor extends AnalysisStateExecutor<CanaryAna
   }
 
   @Override
-  public AnalysisState handleRunning(CanaryAnalysisState analysisState) {
+  public AnalysisState handleRunning(DeploymentTimeSeriesAnalysisState analysisState) {
     return analysisState;
   }
 
   @Override
-  public AnalysisState handleSuccess(CanaryAnalysisState analysisState) {
+  public AnalysisState handleSuccess(DeploymentTimeSeriesAnalysisState analysisState) {
     analysisState.setStatus(AnalysisStatus.SUCCESS);
     return analysisState;
   }
 
   @Override
-  public AnalysisState handleTransition(CanaryAnalysisState analysisState) {
+  public AnalysisState handleTransition(DeploymentTimeSeriesAnalysisState analysisState) {
     analysisState.setStatus(AnalysisStatus.SUCCESS);
     return analysisState;
   }
 
   @Override
-  public AnalysisState handleRetry(CanaryAnalysisState analysisState) {
+  public AnalysisState handleRetry(DeploymentTimeSeriesAnalysisState analysisState) {
     if (analysisState.getRetryCount() >= getMaxRetry()) {
       analysisState.setStatus(AnalysisStatus.FAILED);
     } else {
       return handleRerun(analysisState);
     }
     return analysisState;
+  }
+
+  @Override
+  public void handleFinalStatuses(DeploymentTimeSeriesAnalysisState analysisState) {
+    timeSeriesAnalysisService.logDeploymentVerificationProgress(analysisState.getInputs(), analysisState.getStatus());
   }
 
   protected List<String> scheduleAnalysis(AnalysisInput analysisInput) {

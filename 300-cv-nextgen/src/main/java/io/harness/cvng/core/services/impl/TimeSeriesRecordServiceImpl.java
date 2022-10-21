@@ -63,6 +63,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -71,6 +72,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import lombok.Builder;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
@@ -440,7 +442,7 @@ public class TimeSeriesRecordServiceImpl implements TimeSeriesRecordService {
   @Override
   public TimeSeriesTestDataDTO getTxnMetricDataForRange(
       String verificationTaskId, Instant startTime, Instant endTime, String metricName, String txnName) {
-    List<TimeSeriesRecord> records = getTimeSeriesRecords(verificationTaskId, startTime, endTime, metricName);
+    List<TimeSeriesRecord> records = getTimeSeriesRecords(verificationTaskId, startTime, endTime, metricName, null);
 
     Map<String, List<TimeSeriesGroupValue>> metricValueList = new HashMap<>();
     records.forEach(record -> {
@@ -476,12 +478,13 @@ public class TimeSeriesRecordServiceImpl implements TimeSeriesRecordService {
     return getSortedListOfTimeSeriesRecords(verificationTaskId, metricValueList);
   }
   // TODO: use accountId
-  private List<TimeSeriesRecord> getTimeSeriesRecords(String verificationTaskId, Instant startTime, Instant endTime) {
-    return getTimeSeriesRecords(verificationTaskId, startTime, endTime, null);
+  private List<TimeSeriesRecord> getTimeSeriesRecords(
+      String verificationTaskId, Instant startTime, Instant endTime, Set<String> hosts) {
+    return getTimeSeriesRecords(verificationTaskId, startTime, endTime, null, hosts);
   }
 
   private List<TimeSeriesRecord> getTimeSeriesRecords(
-      String verificationTaskId, Instant startTime, Instant endTime, String metricName) {
+      String verificationTaskId, Instant startTime, Instant endTime, String metricName, Set<String> hosts) {
     startTime = DateTimeUtils.roundDownToMinBoundary(startTime, (int) CV_ANALYSIS_WINDOW_MINUTES);
     Instant queryStartTime = startTime.truncatedTo(ChronoUnit.SECONDS);
     Instant queryEndTime = endTime.truncatedTo(ChronoUnit.SECONDS);
@@ -492,6 +495,9 @@ public class TimeSeriesRecordServiceImpl implements TimeSeriesRecordService {
             .greaterThanOrEq(queryStartTime)
             .field(TimeSeriesRecordKeys.bucketStartTime)
             .lessThan(queryEndTime);
+    if (isNotEmpty(hosts)) {
+      timeSeriesRecordsQuery.field(TimeSeriesRecordKeys.host).hasAnyOf(hosts);
+    }
     if (isNotEmpty(metricName)) {
       timeSeriesRecordsQuery = timeSeriesRecordsQuery.filter(TimeSeriesRecordKeys.metricName, metricName);
     }
@@ -502,7 +508,7 @@ public class TimeSeriesRecordServiceImpl implements TimeSeriesRecordService {
   @Override
   public List<TimeSeriesRecordDTO> getTimeSeriesRecordDTOs(
       String verificationTaskId, Instant startTime, Instant endTime) {
-    List<TimeSeriesRecord> timeSeriesRecords = getTimeSeriesRecords(verificationTaskId, startTime, endTime);
+    List<TimeSeriesRecord> timeSeriesRecords = getTimeSeriesRecords(verificationTaskId, startTime, endTime, null);
     List<TimeSeriesRecordDTO> timeSeriesRecordDTOS = new ArrayList<>();
     timeSeriesRecords.forEach(timeSeriesRecord -> {
       for (TimeSeriesRecord.TimeSeriesGroupValue record : timeSeriesRecord.getTimeSeriesGroupValues()) {
@@ -527,12 +533,12 @@ public class TimeSeriesRecordServiceImpl implements TimeSeriesRecordService {
   @Override
   public List<TimeSeriesRecordDTO> getDeploymentMetricTimeSeriesRecordDTOs(
       String verificationTaskId, Instant startTime, Instant endTime, Set<String> controlHosts, Set<String> testHosts) {
-    List<TimeSeriesRecord> timeSeriesRecords = getTimeSeriesRecords(verificationTaskId, startTime, endTime);
+    Set<String> allHosts = Stream.concat(controlHosts.stream(), testHosts.stream()).collect(Collectors.toSet());
+    List<TimeSeriesRecord> timeSeriesRecords = getTimeSeriesRecords(verificationTaskId, startTime, endTime, allHosts);
     List<TimeSeriesRecordDTO> timeSeriesRecordDTOS = new ArrayList<>();
     timeSeriesRecords.forEach(timeSeriesRecord -> {
       for (TimeSeriesRecord.TimeSeriesGroupValue record : timeSeriesRecord.getTimeSeriesGroupValues()) {
-        if (record.getTimeStamp().compareTo(startTime) >= 0 && record.getTimeStamp().compareTo(endTime) < 0
-            && (controlHosts.contains(timeSeriesRecord.getHost()) || testHosts.contains(timeSeriesRecord.getHost()))) {
+        if (record.getTimeStamp().compareTo(startTime) >= 0 && record.getTimeStamp().compareTo(endTime) < 0) {
           TimeSeriesRecordDTO timeSeriesRecordDTO =
               TimeSeriesRecordDTO.builder()
                   .groupName(record.getGroupName())

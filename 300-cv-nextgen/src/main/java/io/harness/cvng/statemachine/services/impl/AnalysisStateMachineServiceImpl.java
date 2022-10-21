@@ -383,19 +383,18 @@ public class AnalysisStateMachineServiceImpl implements AnalysisStateMachineServ
           testTimeSeriesAnalysisState.setStatus(AnalysisStatus.CREATED);
           testTimeSeriesAnalysisState.setInputs(inputForAnalysis);
           stateMachine.setCurrentState(testTimeSeriesAnalysisState);
+        } else if (featureFlagService.isFeatureFlagEnabled(
+                       stateMachine.getAccountId(), FeatureFlagNames.SRM_HOST_SAMPLING_ENABLE)) {
+          HostSamplingState hostSamplingState = new HostSamplingState();
+          hostSamplingState.setStatus(AnalysisStatus.CREATED);
+          hostSamplingState.setInputs(inputForAnalysis);
+          hostSamplingState.setVerificationJobInstanceId(verificationJobInstance.getUuid());
+          stateMachine.setCurrentState(hostSamplingState);
         } else {
           CanaryTimeSeriesAnalysisState canaryTimeSeriesAnalysisState = CanaryTimeSeriesAnalysisState.builder().build();
           canaryTimeSeriesAnalysisState.setStatus(AnalysisStatus.CREATED);
           canaryTimeSeriesAnalysisState.setInputs(inputForAnalysis);
           stateMachine.setCurrentState(canaryTimeSeriesAnalysisState);
-          if (featureFlagService.isFeatureFlagEnabled(
-                  stateMachine.getAccountId(), FeatureFlagNames.SRM_HOST_SAMPLING_ENABLE)) {
-            HostSamplingState hostSamplingState = new HostSamplingState();
-            hostSamplingState.setStatus(AnalysisStatus.CREATED);
-            hostSamplingState.setInputs(inputForAnalysis);
-            hostSamplingState.setVerificationJobInstanceId(verificationJobInstance.getUuid());
-            stateMachine.setCurrentState(hostSamplingState);
-          }
         }
         break;
       case LOG:

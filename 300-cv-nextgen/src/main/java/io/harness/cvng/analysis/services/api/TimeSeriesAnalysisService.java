@@ -37,9 +37,10 @@ public interface TimeSeriesAnalysisService {
   Map<String, Map<String, List<Double>>> getShortTermHistory(String verificationTaskId);
   Map<String, Map<String, List<TimeSeriesAnomaliesDTO>>> getLongTermAnomalies(String verificationTaskId);
   List<TimeSeriesMetricDefinition> getMetricTemplate(String cvConfigId);
+  @Deprecated
   List<TimeSeriesRecordDTO> getTimeSeriesRecordDTOs(String verificationTaskId, Instant startTime, Instant endTime);
-  List<TimeSeriesRecordDTO> getDeploymentMetricTimeSeriesRecordDTOs(
-      String verificationTaskId, Instant startTime, Instant endTime, String controlHosts, String testHosts);
+  List<TimeSeriesRecordDTO> getDeploymentMetricTimeSeriesRecordDTOs(String verificationTaskId, Instant startTime,
+      Instant endTime, String commaSeparatedControlHosts, String commaSeparatedTestHosts);
   void saveAnalysis(String taskId, ServiceGuardTimeSeriesAnalysisDTO analysis);
   void saveAnalysis(String taskId, DeploymentTimeSeriesAnalysisDTO analysis);
 

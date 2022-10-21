@@ -14,6 +14,7 @@ import static io.harness.cvng.beans.DataSourceType.APP_DYNAMICS;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.KAMAL;
 import static io.harness.rule.OwnerRule.KANHAIYA;
+import static io.harness.rule.OwnerRule.NAVEEN;
 import static io.harness.rule.OwnerRule.PRAVEEN;
 import static io.harness.rule.OwnerRule.SOWMYA;
 
@@ -206,7 +207,7 @@ public class TimeSeriesAnalysisServiceImplTest extends CvNextGenTestBase {
   }
 
   @Test
-  @Owner(developers = PRAVEEN)
+  @Owner(developers = NAVEEN)
   @Category(UnitTests.class)
   public void testGetDeploymentMetricTimeSeriesRecordDTOs() throws Exception {
     List<TimeSeriesRecord> records = getTimeSeriesRecords();

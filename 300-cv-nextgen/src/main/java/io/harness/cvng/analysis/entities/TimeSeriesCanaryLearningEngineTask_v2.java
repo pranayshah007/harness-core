@@ -16,6 +16,8 @@ import lombok.Value;
 public class TimeSeriesCanaryLearningEngineTask_v2 extends LearningEngineTask {
   private String preDeploymentDataUrl;
   private String postDeploymentDataUrl;
+  private String controlDataUrl;
+  private String testDataUrl;
   private String metricTemplateUrl;
   private TimeSeriesCanaryLearningEngineTask.DeploymentVerificationTaskInfo deploymentVerificationTaskInfo;
   private int dataLength;

@@ -15,7 +15,7 @@ import io.harness.cvng.core.services.api.TimeSeriesRecordService;
 import io.harness.cvng.statemachine.beans.AnalysisInput;
 import io.harness.cvng.statemachine.beans.AnalysisState;
 import io.harness.cvng.statemachine.beans.AnalysisStatus;
-import io.harness.cvng.statemachine.entities.CanaryAnalysisState;
+import io.harness.cvng.statemachine.entities.DeploymentTimeSeriesAnalysisState;
 import io.harness.cvng.statemachine.entities.HostSamplingState;
 import io.harness.cvng.verificationjob.entities.VerificationJob;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance;
@@ -143,7 +143,7 @@ public class HostSamplingStateExecutor extends AnalysisStateExecutor<HostSamplin
             /*
               For example:
               Pre deployment hosts are n1, n2
-              Post deployment hosts are n1, n2, n3
+              Post deployment hosts are n3, n4
              */
             analysisState.setLearningEngineTaskType(LearningEngineTaskType.BEFORE_AFTER_DEPLOYMENT_TIME_SERIES);
             analysisInputBuilder.learningEngineTaskType(LearningEngineTaskType.BEFORE_AFTER_DEPLOYMENT_TIME_SERIES);
@@ -152,7 +152,7 @@ public class HostSamplingStateExecutor extends AnalysisStateExecutor<HostSamplin
             /*
               For example:
               Pre deployment hosts are n1, n2
-              Post deployment hosts are n3, n4
+              Post deployment hosts are n1, n2, n3
              */
             analysisState.setLearningEngineTaskType(LearningEngineTaskType.CANARY_DEPLOYMENT_TIME_SERIES);
             analysisInputBuilder.learningEngineTaskType(LearningEngineTaskType.CANARY_DEPLOYMENT_TIME_SERIES);
@@ -200,11 +200,11 @@ public class HostSamplingStateExecutor extends AnalysisStateExecutor<HostSamplin
   @Override
   public AnalysisState handleTransition(HostSamplingState analysisState) {
     analysisState.setStatus(AnalysisStatus.SUCCESS);
-    CanaryAnalysisState canaryAnalysisState = new CanaryAnalysisState();
-    canaryAnalysisState.setInputs(analysisState.getInputs());
-    canaryAnalysisState.setStatus(AnalysisStatus.CREATED);
-    canaryAnalysisState.setVerificationJobInstanceId(analysisState.getVerificationJobInstanceId());
-    return canaryAnalysisState;
+    DeploymentTimeSeriesAnalysisState deploymentTimeSeriesAnalysisState = new DeploymentTimeSeriesAnalysisState();
+    deploymentTimeSeriesAnalysisState.setInputs(analysisState.getInputs());
+    deploymentTimeSeriesAnalysisState.setStatus(AnalysisStatus.CREATED);
+    deploymentTimeSeriesAnalysisState.setVerificationJobInstanceId(analysisState.getVerificationJobInstanceId());
+    return deploymentTimeSeriesAnalysisState;
   }
 
   @Override

@@ -23,10 +23,16 @@ import lombok.experimental.FieldNameConstants;
 public class AnalysisInput {
   private Instant startTime;
   private Instant endTime;
+
+  // Used in DeploymentTimeSeriesAnalysisState
   private String verificationTaskId;
+  // Used in DeploymentTimeSeriesAnalysisState
   private String verificationJobInstanceId;
+  // Used in DeploymentTimeSeriesAnalysisState
   private Set<String> controlHosts;
+  // Used in DeploymentTimeSeriesAnalysisState
   private Set<String> testHosts;
+  // Used in DeploymentTimeSeriesAnalysisState
   private LearningEngineTask.LearningEngineTaskType learningEngineTaskType;
 
   public TimeRange getTimeRange() {
