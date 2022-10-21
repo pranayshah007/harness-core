@@ -41,6 +41,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
+import net.minidev.json.JSONArray;
 import net.sf.json.JSONObject;
 import org.springframework.stereotype.Service;
 import retrofit2.Response;
@@ -56,7 +57,6 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -153,7 +153,8 @@ public class GovernancePolicyEnforcementResource {
         metadata.put(ACCOUNT_ID, policyEnforcement.getAccountId());
         metadata.put(EXECUTION_SCHEDULE, policyEnforcement.getExecutionSchedule());
         metadata.put(ENFORCEMENT_ID, policyEnforcement.getUuid());
-
+        JSONArray headers = new JSONArray();
+        headers.add("Content-Type: application/json");
         SchedulerDTO schedulerDTO =
             SchedulerDTO.builder()
                 .schedule(policyEnforcement.getExecutionSchedule())
@@ -167,7 +168,7 @@ public class GovernancePolicyEnforcementResource {
                                      .method(METHOD)
                                      .url(configuration.getGovernanceConfig().getCallbackApiEndpoint())
                                      .body(jsonObject.toString())
-                                     .headers(Arrays.asList("Content-Type: application/json"))
+                                     .headers(headers.toString())
                                      .build())
                 .build();
         log.info(new Gson().toJson(schedulerDTO));
