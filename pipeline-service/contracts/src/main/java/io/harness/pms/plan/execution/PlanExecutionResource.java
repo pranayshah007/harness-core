@@ -354,8 +354,8 @@ public interface PlanExecutionResource {
           NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
       @NotNull @Parameter(description = PipelineResourceConstants.PROJECT_PARAM_MESSAGE, required = true) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
-      @NotNull @Parameter(description = PipelineResourceConstants.MODULE_TYPE_PARAM_MESSAGE,
-          required = true) @QueryParam(NGCommonEntityConstants.MODULE_TYPE) String moduleType,
+      @Parameter(description = PipelineResourceConstants.MODULE_TYPE_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.MODULE_TYPE) String moduleType,
       @NotNull @Parameter(description = PipelineResourceConstants.ORIGINAL_EXECUTION_ID_PARAM_MESSAGE,
           required = true) @PathParam("originalExecutionId") String originalExecutionId,
       @Parameter(description = PipelineResourceConstants.PIPELINE_ID_PARAM_MESSAGE, required = true) @PathParam(

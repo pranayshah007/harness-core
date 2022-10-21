@@ -111,12 +111,8 @@ public class LicenseServiceImpl implements LicenseService {
   private List<String> paidDefaultContacts;
 
   @Inject private MainConfiguration mainConfiguration;
-
   private final Cache<String, CheckExpiryResultDTO> licenseExpiryCache;
-  private final Subject<AccountLicenseObserver> accountLicenseObserverSubject;
-
   @Getter private final Subject<AccountLicenseObserver> accountLicenseObserverSubject;
-
   @Inject
   public LicenseServiceImpl(AccountService accountService, AccountDao accountDao, WingsPersistence wingsPersistence,
       GenericDbCache dbCache, ExecutorService executorService, LicenseProvider licenseProvider,

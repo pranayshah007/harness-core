@@ -456,6 +456,7 @@ public class MigrationList {
         .add(Pair.of(373, AddRingDetailsToDelegateRing.class))
         .add(Pair.of(374, AddIsProductLedToAccount.class))
         .add(Pair.of(375, AddIsSmpAccountToAccount.class))
+        .add(Pair.of(376, UpdateRebalanceStateToTaskUnAssigned.class))
         .build();
   }
 }

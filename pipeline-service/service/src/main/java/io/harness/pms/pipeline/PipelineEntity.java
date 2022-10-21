@@ -21,6 +21,7 @@ import io.harness.gitsync.persistance.GitSyncableEntity;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.MongoIndex;
+import io.harness.mongo.index.SortCompoundMongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.ng.core.common.beans.NGTag;
 import io.harness.persistence.AccountAccess;
@@ -99,6 +100,14 @@ public class PipelineEntity
                  .field(PipelineEntityKeys.accountId)
                  .field(PipelineEntityKeys.repoURL)
                  .field(PipelineEntityKeys.filePath)
+                 .build())
+        .add(SortCompoundMongoIndex.builder()
+                 .name("accountId_orgId_projectId_repo_createdAt_idx")
+                 .field(PipelineEntityKeys.accountId)
+                 .field(PipelineEntityKeys.orgIdentifier)
+                 .field(PipelineEntityKeys.projectIdentifier)
+                 .field(PipelineEntityKeys.repo)
+                 .descSortField(PipelineEntityKeys.createdAt)
                  .build())
         .build();
   }

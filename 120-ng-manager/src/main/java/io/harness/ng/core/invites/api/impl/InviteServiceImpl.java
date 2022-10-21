@@ -334,7 +334,7 @@ public class InviteServiceImpl implements InviteService {
       if (isPasswordRequired) {
         return getUserInfoSubmitUrl(baseUrl, resourceUrl, email, jwtToken, inviteAcceptResponse);
       } else {
-        createAndInviteNonPasswordUser(accountIdentifier, jwtToken, decodedEmail.trim(), false);
+        createAndInviteNonPasswordUser(accountIdentifier, jwtToken, decodedEmail.trim(), false, true);
         return resourceUrl;
       }
     } else {
@@ -369,14 +369,15 @@ public class InviteServiceImpl implements InviteService {
     }
   }
 
-  private void createAndInviteNonPasswordUser(
-      String accountIdentifier, String jwtToken, String email, boolean isScimInvite) {
+  private void createAndInviteNonPasswordUser(String accountIdentifier, String jwtToken, String email,
+      boolean isScimInvite, boolean shouldSendTwoFactorAuthResetEmail) {
     UserInviteDTO userInviteDTO =
         UserInviteDTO.builder().accountId(accountIdentifier).email(email).name(email).token(jwtToken).build();
 
     try {
       log.info("NG User Invite: making a userClient call to createUserAndCompleteNGInvite");
-      CGRestUtils.getResponse(userClient.createUserAndCompleteNGInvite(userInviteDTO, isScimInvite));
+      CGRestUtils.getResponse(
+          userClient.createUserAndCompleteNGInvite(userInviteDTO, isScimInvite, shouldSendTwoFactorAuthResetEmail));
     } catch (Exception ex) {
       log.error(
           "NG User Invite: while making a userClient call to createUserAndCompleteNGInvite an exception occurred: ",
@@ -585,13 +586,14 @@ public class InviteServiceImpl implements InviteService {
       String email = invite.getEmail().trim();
 
       if (scimLdapArray[0]) {
-        createAndInviteNonPasswordUser(accountId, invite.getInviteToken(), email, true);
-        updateUserTwoFactorAuthInfo(email, twoFactorAuthSettingsInfo);
-      } else if (scimLdapArray[1] || isAutoInviteAcceptanceEnabledWithSSOEnabled
-          || isPLNoEmailForSamlAccountInvitesEnabledWithSSOEnabled) {
-        createAndInviteNonPasswordUser(accountId, invite.getInviteToken(), email, false);
-        updateUserTwoFactorAuthInfo(email, twoFactorAuthSettingsInfo);
+        createAndInviteNonPasswordUser(accountId, invite.getInviteToken(), email, true, true);
+      } else if (scimLdapArray[1]) {
+        createAndInviteNonPasswordUser(accountId, invite.getInviteToken(), email, false, true);
+      } else if (isAutoInviteAcceptanceEnabledWithSSOEnabled || isPLNoEmailForSamlAccountInvitesEnabledWithSSOEnabled) {
+        createAndInviteNonPasswordUser(accountId, invite.getInviteToken(), email, false, false);
       }
+      updateUserTwoFactorAuthInfo(email, twoFactorAuthSettingsInfo);
+
       if (isPLNoEmailForSamlAccountInvitesEnabledWithSSOEnabled
           && !twoFactorAuthSettingsInfo.isTwoFactorAuthenticationEnabled()) {
         return InviteOperationResponse.USER_INVITE_NOT_REQUIRED;

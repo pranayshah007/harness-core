@@ -189,6 +189,7 @@ public class NGTemplateDtoMapper {
           .templateEntityTypes(filterProperties.getTemplateEntityTypes())
           .childTypes(filterProperties.getChildTypes())
           .description(filterProperties.getDescription())
+          .repoName(filterProperties.getRepoName())
           .build();
     }
   }
