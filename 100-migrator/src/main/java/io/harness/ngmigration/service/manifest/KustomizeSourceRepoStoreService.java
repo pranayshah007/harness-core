@@ -10,6 +10,7 @@ package io.harness.ngmigration.service.manifest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.manifest.ManifestConfigType;
+import io.harness.cdng.manifest.yaml.GitStore;
 import io.harness.cdng.manifest.yaml.ManifestConfig;
 import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
 import io.harness.cdng.manifest.yaml.kinds.KustomizeManifest;
@@ -29,9 +30,9 @@ import software.wings.ngmigration.CgEntityNode;
 import software.wings.ngmigration.NGMigrationEntityType;
 
 import com.google.inject.Inject;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import org.apache.commons.lang3.StringUtils;
 
 @OwnedBy(HarnessTeam.CDC)
 public class KustomizeSourceRepoStoreService implements NgManifestService {
@@ -47,18 +48,18 @@ public class KustomizeSourceRepoStoreService implements NgManifestService {
             .get(CgEntityId.builder().id(gitFileConfig.getConnectorId()).type(NGMigrationEntityType.CONNECTOR).build())
             .getNgEntityDetail();
 
+    GitStore storeConfig = manifestMigrationService.getGitStore(gitFileConfig, entitySpec, connector);
+    String dirPath = StringUtils.isBlank(applicationManifest.getKustomizeConfig().getKustomizeDirPath())
+        ? "/"
+        : applicationManifest.getKustomizeConfig().getKustomizeDirPath();
+    storeConfig.setFolderPath(ParameterField.createValueField(dirPath));
     KustomizeManifest kustomizeManifest =
         KustomizeManifest.builder()
             .identifier(MigratorUtility.generateIdentifier(applicationManifest.getUuid()))
             .skipResourceVersioning(
                 ParameterField.createValueField(applicationManifest.getSkipVersioningForAllK8sObjects()))
             .store(ParameterField.createValueField(
-                StoreConfigWrapper.builder()
-                    .type(StoreConfigType.GIT)
-                    .spec(manifestMigrationService.getGitStore(gitFileConfig, entitySpec, connector))
-                    .build()))
-            .patchesPaths(ParameterField.createValueField(
-                Collections.singletonList(applicationManifest.getKustomizeConfig().getKustomizeDirPath())))
+                StoreConfigWrapper.builder().type(StoreConfigType.GIT).spec(storeConfig).build()))
             .pluginPath(ParameterField.createValueField(applicationManifest.getKustomizeConfig().getPluginRootDir()))
             .build();
     return ManifestConfigWrapper.builder()

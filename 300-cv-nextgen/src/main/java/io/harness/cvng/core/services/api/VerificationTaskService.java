@@ -25,11 +25,13 @@ public interface VerificationTaskService {
       String accountId, String cvConfigId, String verificationJobInstanceId, DataSourceType provider);
   String createLiveMonitoringVerificationTask(String accountId, String cvConfigId, Map<String, String> tags);
   String createSLIVerificationTask(String accountId, String sliId, Map<String, String> tags);
+  String createCompositeSLOVerificationTask(String accountId, String sliId, Map<String, String> tags);
   String createDeploymentVerificationTask(
       String accountId, String cvConfigId, String verificationJobInstanceId, Map<String, String> tags);
   String getCVConfigId(String verificationTaskId);
 
   String getSliId(String verificationTaskId);
+  String getCompositeSLOId(String verificationTaskId);
   String getVerificationJobInstanceId(String verificationTaskId);
   VerificationTask get(String verificationTaskId);
   Optional<VerificationTask> maybeGet(String verificationTaskId);
@@ -44,8 +46,10 @@ public interface VerificationTaskService {
 
   String getServiceGuardVerificationTaskId(String accountId, String cvConfigId);
   String getSLIVerificationTaskId(String accountId, String sliId);
+  String getCompositeSLOVerificationTaskId(String accountId, String sloId);
   List<String> getSLIVerificationTaskIds(String accountId, List<String> sliIds);
   VerificationTask getSLITask(String accountId, String sliId);
+  VerificationTask getCompositeSLOTask(String accountId, String sloId);
   List<String> getServiceGuardVerificationTaskIds(String accountId, List<String> cvConfigIds);
 
   boolean isServiceGuardId(String verificationTaskId);

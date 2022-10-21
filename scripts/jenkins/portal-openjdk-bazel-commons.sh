@@ -57,6 +57,7 @@ function copy_event_server_jars(){
 	cd dist/event-server
 
 	cp ${BAZEL_BIN}/350-event-server/module_deploy.jar event-server-capsule.jar
+	cp ../../350-event-server/keystore.jks .
 	cp ../../350-event-server/key.pem .
 	cp ../../350-event-server/cert.pem .
 	cp ../../350-event-server/event-service-config.yml .

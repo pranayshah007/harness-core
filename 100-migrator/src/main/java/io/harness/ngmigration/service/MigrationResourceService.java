@@ -20,11 +20,13 @@ import io.harness.ngmigration.dto.SaveSummaryDTO;
 import io.harness.ngmigration.dto.SecretFilter;
 import io.harness.ngmigration.dto.SecretManagerFilter;
 import io.harness.ngmigration.dto.ServiceFilter;
+import io.harness.ngmigration.dto.TemplateFilter;
 import io.harness.ngmigration.service.importer.AppImportService;
 import io.harness.ngmigration.service.importer.ConnectorImportService;
 import io.harness.ngmigration.service.importer.SecretManagerImportService;
 import io.harness.ngmigration.service.importer.SecretsImportService;
 import io.harness.ngmigration.service.importer.ServiceImportService;
+import io.harness.ngmigration.service.importer.TemplateImportService;
 
 import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.DiscoveryResult;
@@ -43,6 +45,7 @@ public class MigrationResourceService {
   @Inject private AppImportService appImportService;
   @Inject private ServiceImportService serviceImportService;
   @Inject private DiscoveryService discoveryService;
+  @Inject private TemplateImportService templateImportService;
 
   private DiscoveryResult discover(String authToken, ImportDTO importDTO) {
     // Migrate referenced entities as well.
@@ -62,6 +65,9 @@ public class MigrationResourceService {
     }
     if (filter instanceof ServiceFilter) {
       return serviceImportService.discover(authToken, importDTO);
+    }
+    if (filter instanceof TemplateFilter) {
+      return templateImportService.discover(authToken, importDTO);
     }
     return DiscoveryResult.builder().build();
   }

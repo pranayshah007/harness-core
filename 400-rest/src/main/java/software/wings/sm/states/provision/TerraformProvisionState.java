@@ -347,7 +347,7 @@ public abstract class TerraformProvisionState extends State {
 
     TerraformProvisionInheritPlanElement inheritPlanElement =
         TerraformProvisionInheritPlanElement.builder()
-            .entityId(generateEntityId(context, terraformExecutionData.getWorkspace(), terraformProvisioner, true))
+            .entityId(terraformExecutionData.getEntityId())
             .provisionerId(provisionerId)
             .targets(terraformExecutionData.getTargets())
             .delegateTag(terraformExecutionData.getDelegateTag())

@@ -37,6 +37,9 @@ import org.apache.commons.lang3.StringUtils;
 
 @Slf4j
 public class AwsUtils {
+  public static String getBaseUrl(String region, String serviceName) {
+    return "https://" + serviceName + "." + region + ".amazonaws.com";
+  }
   public static List<String> getAwsRegions() {
     List<String> awsRegions = new ArrayList<>();
     try {

@@ -1,0 +1,30 @@
+spec:
+  execution:
+    steps:
+      - step:
+          name: "Deploy"
+          identifier: Deploy
+          type: Command
+          timeout: 10m
+          strategy:
+            repeat:
+              items: <+stage.output.hosts>
+          spec:
+            onDelegate: false
+            environmentVariables: []
+            outputVariables: []
+            commandUnits: []
+    rollbackSteps:
+      - step:
+          name: "Rollback"
+          identifier: Rollback
+          type: Command
+          timeout: 10m
+          strategy:
+            repeat:
+              items: <+stage.output.hosts>
+          spec:
+            onDelegate: false
+            environmentVariables: []
+            outputVariables: []
+            commandUnits: []
