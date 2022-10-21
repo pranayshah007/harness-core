@@ -38,7 +38,7 @@ public class ElastigroupSetupStepNode extends CdAbstractStepNode {
   @JsonProperty("type")
   @NotNull
   ElastigroupSetupStepNode.StepType type =
-          StepType.ElastigroupService;
+          StepType.ElastigroupSetup;
   @JsonProperty("spec")
   @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
   ElastigroupSetupStepInfo elastigroupSetupStepInfo;
@@ -53,7 +53,7 @@ public class ElastigroupSetupStepNode extends CdAbstractStepNode {
   }
 
   enum StepType {
-    ElastigroupService(StepSpecTypeConstants.ELASTIGROUP_SETUP);
+    ElastigroupSetup(StepSpecTypeConstants.ELASTIGROUP_SETUP);
     @Getter String name;
     StepType(String name) {
       this.name = name;

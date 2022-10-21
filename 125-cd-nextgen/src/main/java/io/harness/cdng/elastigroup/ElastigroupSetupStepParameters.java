@@ -34,10 +34,9 @@ public class ElastigroupSetupStepParameters
     extends ElastigroupSetupBaseStepInfo implements ElastigroupSpecParameters {
   @Builder(builderMethodName = "infoBuilder")
   public ElastigroupSetupStepParameters(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
-                                        ParameterField<String> loadBalancer, ParameterField<String> prodListener,
-                                        ParameterField<String> prodListenerRuleArn, ParameterField<String> stageListener,
-                                        ParameterField<String> stageListenerRuleArn) {
-    super(delegateSelectors, loadBalancer, prodListener, prodListenerRuleArn, stageListener, stageListenerRuleArn);
+                                        ParameterField<String> loadBalancer, ParameterField<String> name,
+                                        ParameterField<String> instances) {
+    super(delegateSelectors, loadBalancer, name, instances);
   }
 
   public List<String> getCommandUnits() {

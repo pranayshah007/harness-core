@@ -52,10 +52,9 @@ public class ElastigroupSetupStepInfo
 
   @Builder(builderMethodName = "infoBuilder")
   public ElastigroupSetupStepInfo(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
-                                  ParameterField<String> loadBalancer, ParameterField<String> prodListener,
-                                  ParameterField<String> prodListenerRuleArn, ParameterField<String> stageListener,
-                                  ParameterField<String> stageListenerRuleArn) {
-    super(delegateSelectors, loadBalancer, prodListener, prodListenerRuleArn, stageListener, stageListenerRuleArn);
+                                  ParameterField<String> loadBalancer, ParameterField<String> name,
+                                  ParameterField<String> instances) {
+    super(delegateSelectors, loadBalancer, name, instances);
   }
 
   @Override
@@ -73,10 +72,7 @@ public class ElastigroupSetupStepInfo
     return ElastigroupSetupStepParameters.infoBuilder()
         .delegateSelectors(this.getDelegateSelectors())
         .loadBalancer(this.getLoadBalancer())
-        .prodListener(this.getProdListener())
-        .stageListener(this.getStageListener())
-        .prodListenerRuleArn(this.getProdListenerRuleArn())
-        .stageListenerRuleArn(this.getStageListenerRuleArn())
+
         .build();
   }
 
