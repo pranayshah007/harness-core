@@ -1165,7 +1165,7 @@ public class VerificationApplication extends Application<VerificationConfigurati
   }
 
   private void registerGaugeMetric(String metricName, String[] labels) {
-    harnessMetricRegistry.registerGaugeMetric(metricName, labels, "");
-    harnessMetricRegistry.registerGaugeMetric(ENVIRONMENT + "_" + metricName, labels, "");
+    harnessMetricRegistry.registerGaugeMetric(metricName, labels, "Metrics from CVNG for LE");
+    harnessMetricRegistry.registerGaugeMetric(ENVIRONMENT + "_" + metricName, labels, "Metrics from CVNG for LE");
   }
 }
