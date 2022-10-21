@@ -310,7 +310,7 @@ public class YamlNode implements Visitable {
     for (int i = 1; i < yamlNodes.size(); i++) {
       YamlField givenNode = yamlNodes.get(i).getField(currentFieldName);
       if (givenNode != null && givenNode.getNode().getUuid() != null
-              && givenNode.getNode().getUuid().equals(this.getUuid())) {
+          && givenNode.getNode().getUuid().equals(this.getUuid())) {
         return getMatchingFieldNameFromParent(yamlNodes.get(i - 1), new HashSet<>(possibleSiblingFieldNames));
       }
     }
