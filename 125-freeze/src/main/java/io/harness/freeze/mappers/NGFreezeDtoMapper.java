@@ -11,6 +11,7 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.Scope;
 import io.harness.exception.InvalidRequestException;
 import io.harness.freeze.beans.FreezeType;
+import io.harness.freeze.beans.response.FreezeBannerDetails;
 import io.harness.freeze.beans.response.FreezeDetailedResponseDTO;
 import io.harness.freeze.beans.response.FreezeResponseDTO;
 import io.harness.freeze.beans.response.FreezeSummaryResponseDTO;
@@ -152,6 +153,21 @@ public class NGFreezeDtoMapper {
         .build();
   }
 
+  public FreezeBannerDetails prepareBanner(FreezeResponseDTO freezeResponseDTO) {
+    FreezeConfig freezeConfig = toFreezeConfig(freezeResponseDTO.getYaml());
+    return FreezeBannerDetails.builder()
+        .accountId(freezeResponseDTO.getAccountId())
+        .orgIdentifier(freezeResponseDTO.getOrgIdentifier())
+        .projectIdentifier(freezeResponseDTO.getProjectIdentifier())
+        .windows(freezeConfig.getFreezeInfoConfig().getWindows())
+        .identifier(freezeResponseDTO.getIdentifier())
+        .name(freezeResponseDTO.getName())
+        .freezeScope(freezeResponseDTO.getFreezeScope())
+        .currentOrUpcomingActiveWindow(
+            FreezeTimeUtils.fetchCurrentOrUpcomingTimeWindow(freezeConfig.getFreezeInfoConfig().getWindows()))
+        .build();
+  }
+
   public FreezeDetailedResponseDTO prepareDetailedFreezeResponseDto(FreezeResponseDTO freezeResponseDTO) {
     FreezeConfig freezeConfig = toFreezeConfig(freezeResponseDTO.getYaml());
     return FreezeDetailedResponseDTO.builder()
@@ -211,5 +227,17 @@ public class NGFreezeDtoMapper {
       return Scope.ORG;
     }
     return Scope.ACCOUNT;
+  }
+
+  public String getFreezeRef(Scope freezeScope, String identifier) {
+    switch (freezeScope) {
+      case ACCOUNT:
+        return "account." + identifier;
+      case ORG:
+        return "org." + identifier;
+      case PROJECT:
+      default:
+        return identifier;
+    }
   }
 }

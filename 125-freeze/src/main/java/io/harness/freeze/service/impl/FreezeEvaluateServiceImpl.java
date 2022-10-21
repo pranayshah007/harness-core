@@ -98,8 +98,8 @@ public class FreezeEvaluateServiceImpl implements FreezeEvaluateService {
 
   private FreezeSummaryResponseDTO getGlobalFreezeIfActive(
       String accountId, String orgIdentifier, String projectIdentifier) {
-    FreezeSummaryResponseDTO freezeSummaryResponseDTO = NGFreezeDtoMapper.prepareFreezeResponseSummaryDto(
-        freezeCRUDService.getGlobalFreeze(accountId, orgIdentifier, projectIdentifier));
+    FreezeSummaryResponseDTO freezeSummaryResponseDTO =
+        freezeCRUDService.getGlobalFreezeSummary(accountId, orgIdentifier, projectIdentifier);
     CurrentOrUpcomingActiveWindow currentOrUpcomingActiveWindow =
         freezeSummaryResponseDTO.getCurrentOrUpcomingActiveWindow();
     if (FreezeStatus.ENABLED.equals(freezeSummaryResponseDTO.getStatus())
