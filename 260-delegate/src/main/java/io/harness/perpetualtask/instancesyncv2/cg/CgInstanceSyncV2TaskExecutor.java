@@ -22,16 +22,22 @@ import io.harness.perpetualtask.PerpetualTaskExecutor;
 import io.harness.perpetualtask.PerpetualTaskId;
 import io.harness.perpetualtask.PerpetualTaskResponse;
 import io.harness.perpetualtask.instancesyncv2.CgInstanceSyncTaskParams;
+import io.harness.perpetualtask.instancesyncv2.DirectK8sInstanceSyncTaskDetails;
+import io.harness.perpetualtask.instancesyncv2.InstanceSyncTrackedDeploymentDetails;
+import io.harness.serializer.KryoSerializer;
+import io.harness.util.DelegateRestUtils;
 
+import software.wings.beans.InfrastructureMappingType;
 import software.wings.beans.infrastructure.instance.info.InstanceInfo;
+import software.wings.helpers.ext.k8s.request.K8sClusterConfig;
 
 import com.google.inject.Inject;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -44,7 +50,12 @@ public class CgInstanceSyncV2TaskExecutor implements PerpetualTaskExecutor {
   private static final int INSTANCE_COUNT_LIMIT = 150;
 
   private static final int RELEASE_COUNT_LIMIT = 15;
+  private int batchInstanceCount = 0;
+  private int batchReleaseDetailsCount = 0;
+  private Map<String, List<InstanceInfo> > buffer = new HashMap<>();
+  private final KryoSerializer kryoSerializer;
 
+  @SneakyThrows
   @Override
   public PerpetualTaskResponse runOnce(
       PerpetualTaskId taskId, PerpetualTaskExecutionParams params, Instant heartbeatTime) {
@@ -52,47 +63,39 @@ public class CgInstanceSyncV2TaskExecutor implements PerpetualTaskExecutor {
     CgInstanceSyncTaskParams taskParams = AnyUtils.unpack(params.getCustomizedParams(), CgInstanceSyncTaskParams.class);
     String cloudProviderType = taskParams.getCloudProviderType();
 
-    List<InstanceInfo> responseData = null;
+    InstanceSyncTrackedDeploymentDetails trackedDeploymentDetails = DelegateRestUtils.executeRestCall(
+        delegateAgentManagerClient.fetchTrackedReleaseDetails(taskId.getId(), taskParams.getAccountId()));
 
-    switch (cloudProviderType) {
-      case "KUBERNETES":
+    trackedDeploymentDetails.getDeploymentDetailsList().stream().forEach(details -> {
+      if (details.getInfraMappingType().equals(InfrastructureMappingType.DIRECT_KUBERNETES.name())) {
+        DirectK8sInstanceSyncTaskDetails k8sInstanceSyncTaskDetails =
+            AnyUtils.unpack(details.getReleaseDetails(), DirectK8sInstanceSyncTaskDetails.class);
 
-        break;
-      default:
+        ContainerInstancesDetailsFetcher containerInstancesDetailsFetcher =
+            (ContainerInstancesDetailsFetcher) instanceDetailsFetcher;
+
+        K8sClusterConfig config =
+            (K8sClusterConfig) kryoSerializer.asObject(k8sInstanceSyncTaskDetails.getK8SClusterConfig().toByteArray());
+        List<InstanceInfo> instanceInfos =
+            containerInstancesDetailsFetcher.fetchRunningInstanceDetails(taskId, config, k8sInstanceSyncTaskDetails);
+        buffer.put(details.getTaskDetailsId(), instanceInfos);
+        batchInstanceCount += instanceInfos.size();
+        batchReleaseDetailsCount++;
+        if (batchInstanceCount >= INSTANCE_COUNT_LIMIT || batchReleaseDetailsCount >= RELEASE_COUNT_LIMIT) {
+          // publish api call for the buffer
+
+          buffer = new HashMap<>();
+          batchInstanceCount = 0;
+          batchReleaseDetailsCount = 0;
+        }
+
+      } else {
         throw new InvalidRequestException(
             format("Cloud Provider of given type : %s isn't supported", cloudProviderType));
-    }
+      }
+    });
 
     return null;
-    boolean isFailureResponse = FAILURE == responseData.getCommandExecutionStatus();
-    return PerpetualTaskResponse.builder()
-        .responseCode(Response.SC_OK)
-        .responseMessage(isFailureResponse ? responseData.getErrorMessage() : "success")
-        .build();
-  }
-
-  private void batchingAndPublishInstanceSyncResult(
-      PerpetualTaskId taskId, String accountId, List<InstanceInfo> responseData) {
-    ContainerInstancesDetailsFetcher containerInstancesDetailsFetcher =
-        (ContainerInstancesDetailsFetcher) instanceDetailsFetcher;
-    int batchInstanceCount = 0;
-    int batchReleaseDetailsCount = 0;
-    List<String> releaseDetailsList = new ArrayList<>(); // call release detail API
-    Map<String, List<InstanceInfo> > buffer = new HashMap<>();
-    for (String releaseDetails : releaseDetailsList) {
-      List<InstanceInfo> instanceInfos =
-          containerInstancesDetailsFetcher.fetchRunningInstanceDetails(taskId, taskParams, releaseDetails);
-      buffer.put(releaseDetails, instanceInfos);
-      batchInstanceCount += instanceInfos.size();
-      batchReleaseDetailsCount++;
-      if (batchInstanceCount >= INSTANCE_COUNT_LIMIT || batchReleaseDetailsCount >= RELEASE_COUNT_LIMIT) {
-        // publish logic
-
-        buffer = new HashMap<>();
-        batchInstanceCount = 0;
-        batchReleaseDetailsCount = 0;
-      }
-    }
   }
 
   private void publishInstanceSyncResult(

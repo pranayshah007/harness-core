@@ -7,8 +7,7 @@
 
 package software.wings.instancesyncv2.handler;
 
-import software.wings.api.DeploymentInfo;
-import software.wings.api.K8sDeploymentInfo;
+import software.wings.settings.SettingVariableTypes;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -18,7 +17,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class CgInstanceSyncV2HandlerFactory {
   private K8sInstanceSyncV2HandlerCg k8sHandler;
 
-  private ConcurrentHashMap<Class<? extends DeploymentInfo>, CgInstanceSyncV2Handler> holder;
+  private ConcurrentHashMap<SettingVariableTypes, CgInstanceSyncV2Handler> holder;
 
   @Inject
   public CgInstanceSyncV2HandlerFactory(K8sInstanceSyncV2HandlerCg k8sHandler) {
@@ -29,10 +28,10 @@ public class CgInstanceSyncV2HandlerFactory {
   }
 
   private void initHandlers() {
-    this.holder.put(K8sDeploymentInfo.class, k8sHandler);
+    this.holder.put(SettingVariableTypes.KUBERNETES_CLUSTER, k8sHandler);
   }
 
-  public CgInstanceSyncV2Handler getHandler(DeploymentInfo deploymentInfo) {
-    return this.holder.getOrDefault(deploymentInfo.getClass(), null);
+  public CgInstanceSyncV2Handler getHandler(SettingVariableTypes cloudProviderType) {
+    return this.holder.getOrDefault(cloudProviderType, null);
   }
 }

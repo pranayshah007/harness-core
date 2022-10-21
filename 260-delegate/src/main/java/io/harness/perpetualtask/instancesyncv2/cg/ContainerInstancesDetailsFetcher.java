@@ -1,7 +1,6 @@
 package io.harness.perpetualtask.instancesyncv2.cg;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.network.SafeHttpCall.execute;
 import static io.harness.validation.Validator.notNullCheck;
 
 import static software.wings.beans.SettingAttribute.Builder.aSettingAttribute;
@@ -9,17 +8,12 @@ import static software.wings.beans.SettingAttribute.Builder.aSettingAttribute;
 import static java.util.stream.Collectors.toList;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.helm.HelmConstants;
 import io.harness.k8s.KubernetesContainerService;
-import io.harness.k8s.kubectl.Kubectl;
 import io.harness.k8s.model.KubernetesConfig;
-import io.harness.managerclient.DelegateAgentManagerClient;
 import io.harness.perpetualtask.PerpetualTaskId;
-import io.harness.perpetualtask.PerpetualTaskResponse;
-import io.harness.perpetualtask.instancesyncv2.CgInstanceSyncTaskParams;
-import io.harness.serializer.KryoSerializer;
+import io.harness.perpetualtask.instancesyncv2.DirectK8sInstanceSyncTaskDetails;
 
 import software.wings.beans.AzureConfig;
 import software.wings.beans.GcpConfig;
@@ -31,7 +25,6 @@ import software.wings.beans.infrastructure.instance.info.KubernetesContainerInfo
 import software.wings.cloudprovider.gke.GkeClusterService;
 import software.wings.helpers.ext.azure.AzureDelegateHelperService;
 import software.wings.helpers.ext.k8s.request.K8sClusterConfig;
-import software.wings.service.impl.ContainerServiceParams;
 import software.wings.service.intfc.security.EncryptionService;
 import software.wings.settings.SettingValue;
 
@@ -47,33 +40,28 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(CDP)
 @RequiredArgsConstructor(onConstructor = @__({ @Inject }))
 public class ContainerInstancesDetailsFetcher implements InstanceDetailsFetcher {
-  private final KryoSerializer kryoSerializer;
   @Inject private KubernetesContainerService kubernetesContainerService;
   @Inject private EncryptionService encryptionService;
   @Inject private AzureDelegateHelperService azureDelegateHelperService;
   @Inject private GkeClusterService gkeClusterService;
   @Override
   public List<InstanceInfo> fetchRunningInstanceDetails(
-      PerpetualTaskId taskId, CgInstanceSyncTaskParams params, String releaseDetails) {
-    K8sClusterConfig config =
-        (K8sClusterConfig) kryoSerializer.asObject(params.getCloudProviderDetails().toByteArray());
-    SettingAttribute settingAttribute = aSettingAttribute().withValue(config.getCloudProvider()).build();
+      PerpetualTaskId taskId, K8sClusterConfig config, DirectK8sInstanceSyncTaskDetails k8sInstanceSyncTaskDetails) {
     KubernetesConfig kubernetesConfig = getKubernetesConfig(config, true);
     notNullCheck("KubernetesConfig", kubernetesConfig);
     List<ContainerInfo> result = new ArrayList<>();
 
-    // get deployment release details using manager API call
-
-    final List<V1Pod> pods = kubernetesContainerService.getRunningPodsWithLabels(
-        kubernetesConfig, config.getNamespace(), ImmutableMap.of(HelmConstants.HELM_RELEASE_LABEL, releaseDetails));
+    final List<V1Pod> pods =
+        kubernetesContainerService.getRunningPodsWithLabels(kubernetesConfig, config.getNamespace(),
+            ImmutableMap.of(HelmConstants.HELM_RELEASE_LABEL, k8sInstanceSyncTaskDetails.getReleaseName()));
     return pods.stream()
         .map(pod
             -> KubernetesContainerInfo.builder()
                    .clusterName(config.getClusterName())
                    .podName(pod.getMetadata().getName())
                    .ip(pod.getStatus().getPodIP())
-                   .namespace(config.getNamespace())
-                   .releaseName(releaseDetails)
+                   .namespace(k8sInstanceSyncTaskDetails.getNamespace())
+                   .releaseName(k8sInstanceSyncTaskDetails.getReleaseName())
                    .build())
         .collect(toList());
   }

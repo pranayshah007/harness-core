@@ -5,12 +5,8 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package software.wings.instancesyncv2.handler;
+package software.wings.instancesyncv2.model;
 
-import io.harness.perpetualtask.PerpetualTaskExecutionBundle;
-
-import software.wings.beans.SettingAttribute;
-
-public interface CgInstanceSyncV2Handler {
-  PerpetualTaskExecutionBundle fetchInfraConnectorDetails(SettingAttribute cloudProvider);
+public interface TrackedDeploymentReleaseDetails {
+  long getLastSuccessfulInstanceSync();
 }
