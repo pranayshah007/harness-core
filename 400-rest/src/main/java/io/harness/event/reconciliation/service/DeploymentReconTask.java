@@ -15,6 +15,7 @@ import io.harness.lock.AcquiredLock;
 import io.harness.lock.PersistentLocker;
 
 import software.wings.beans.Account;
+import software.wings.beans.WorkflowExecution;
 import software.wings.search.framework.ExecutionEntity;
 import software.wings.service.intfc.AccountService;
 
@@ -29,12 +30,11 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class DeploymentReconTask implements Runnable {
-  @Inject DeploymentReconService deploymentReconService;
   @Inject AccountService accountService;
   @Inject DeploymentEventProcessor deploymentEventProcessor;
   @Inject private FeatureFlagService featureFlagService;
   @Inject private PersistentLocker persistentLocker;
-  @Inject private Set<ExecutionEntity> executionEntities;
+  @Inject private Set<ExecutionEntity<?>> executionEntities;
 
   private static final Integer DATA_MIGRATION_INTERVAL_IN_HOURS = 24;
   // On safe side, cron cycle is around 15 minutes, so lock expiry set to 16 min
@@ -57,7 +57,7 @@ public class DeploymentReconTask implements Runnable {
             final long durationStartTs = startTime - 45 * 60 * 1000;
             final long durationEndTs = startTime - 5 * 60 * 1000;
             try {
-              ReconciliationStatus reconciliationStatus = deploymentReconService.performReconciliation(
+              ReconciliationStatus reconciliationStatus = executionEntity.getReconService().performReconciliation(
                   account.getUuid(), durationStartTs, durationEndTs, executionEntity);
               log.info(
                   "Completed reconciliation for accountID:[{}],accountName:[{}] durationStart:[{}],durationEnd:[{}],status:[{}]",
@@ -69,22 +69,24 @@ public class DeploymentReconTask implements Runnable {
                   account.getUuid(), account.getAccountName(), new Date(durationStartTs), new Date(durationEndTs), e);
             }
 
-            try (AcquiredLock lock = persistentLocker.tryToAcquireLock(Account.class,
-                     DATA_MIGRATION_CRON_LOCK_PREFIX + account.getUuid(),
-                     Duration.ofSeconds(DATA_MIGRATION_CRON_LOCK_EXPIRY_IN_SECONDS))) {
-              if (lock == null) {
-                log.error(
-                    "Unable to fetch lock for running deployment data migration for account : {}", account.getUuid());
-                return;
-              }
+            if (WorkflowExecution.class.equals(executionEntity.getSourceEntityClass())) {
+              try (AcquiredLock lock = persistentLocker.tryToAcquireLock(Account.class,
+                       DATA_MIGRATION_CRON_LOCK_PREFIX + account.getUuid(),
+                       Duration.ofSeconds(DATA_MIGRATION_CRON_LOCK_EXPIRY_IN_SECONDS))) {
+                if (lock == null) {
+                  log.error(
+                      "Unable to fetch lock for running deployment data migration for account : {}", account.getUuid());
+                  return;
+                }
 
-              if (featureFlagService.isEnabled(
-                      FeatureName.CUSTOM_DASHBOARD_ENABLE_CRON_DEPLOYMENT_DATA_MIGRATION, account.getUuid())) {
-                log.info("Triggering deployment data migration cron for account : {}", account.getUuid());
-                try {
-                  deploymentEventProcessor.doDataMigration(account.getUuid(), DATA_MIGRATION_INTERVAL_IN_HOURS);
-                } catch (Exception exception) {
-                  log.error("Deployment data migration failed for account id : {}", account.getUuid(), exception);
+                if (featureFlagService.isEnabled(
+                        FeatureName.CUSTOM_DASHBOARD_ENABLE_CRON_DEPLOYMENT_DATA_MIGRATION, account.getUuid())) {
+                  log.info("Triggering deployment data migration cron for account : {}", account.getUuid());
+                  try {
+                    deploymentEventProcessor.doDataMigration(account.getUuid(), DATA_MIGRATION_INTERVAL_IN_HOURS);
+                  } catch (Exception exception) {
+                    log.error("Deployment data migration failed for account id : {}", account.getUuid(), exception);
+                  }
                 }
               }
             }

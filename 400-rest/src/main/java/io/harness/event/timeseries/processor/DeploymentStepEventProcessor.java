@@ -23,7 +23,7 @@ public class DeploymentStepEventProcessor implements StepEventProcessor<TimeSeri
       "INSERT INTO DEPLOYMENT_STEP (ID,ACCOUNT_ID,APP_ID,STEP_NAME,STEP_TYPE,STATUS,FAILURE_DETAILS,START_TIME,END_TIME,DURATION,STAGE_NAME,EXECUTION_ID,APPROVED_BY,APPROVAL_TYPE,APPROVED_AT,APPROVAL_COMMENT,APPROVAL_EXPIRY,MANUAL_INTERVENTION) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT (ID,START_TIME) DO UPDATE SET ACCOUNT_ID = excluded.ACCOUNT_ID,APP_ID = excluded.APP_ID,STEP_NAME = excluded.STEP_NAME,STEP_TYPE = excluded.STEP_TYPE,STATUS = excluded.STATUS,FAILURE_DETAILS = excluded.FAILURE_DETAILS,END_TIME = excluded.END_TIME,DURATION = excluded.DURATION,STAGE_NAME = excluded.STAGE_NAME,EXECUTION_ID = excluded.EXECUTION_ID,APPROVED_BY = excluded.APPROVED_BY,APPROVAL_TYPE = excluded.APPROVAL_TYPE,APPROVED_AT = excluded.APPROVED_AT,APPROVAL_COMMENT = excluded.APPROVAL_COMMENT,APPROVAL_EXPIRY = excluded.APPROVAL_EXPIRY,MANUAL_INTERVENTION = excluded.MANUAL_INTERVENTION";
 
   @Override
-  public void processEvent(TimeSeriesEventInfo eventInfo) throws Exception {
+  public void processEvent(TimeSeriesEventInfo eventInfo) {
     if (!timeScaleDBService.isValid()) {
       log.info("TimeScaleDB not found, not saving step deployment data to TimeScaleDB");
       return;

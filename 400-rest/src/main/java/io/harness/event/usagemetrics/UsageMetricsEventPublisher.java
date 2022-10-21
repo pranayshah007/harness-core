@@ -100,7 +100,7 @@ public class UsageMetricsEventPublisher {
     });
   }
 
-  private DeploymentStepTimeSeriesEvent constructDeploymentStepTimeSeriesEvent(
+  public DeploymentStepTimeSeriesEvent constructDeploymentStepTimeSeriesEvent(
       String accountId, StateExecutionInstance stateExecutionInstance) {
     log.info("Reporting Step execution");
     Map<String, String> stringData = new HashMap<>();

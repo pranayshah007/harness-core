@@ -155,8 +155,8 @@ public class DeploymentReconServiceHelper {
 
         long primaryCount =
             executionEntity.getReconService().getWFExecCountFromMongoDB(accountId, durationStartTs, durationEndTs);
-        long secondaryCount =
-            getWFExecutionCountFromTSDB(accountId, durationStartTs, durationEndTs, timeScaleDBService, "", utils);
+        long secondaryCount = getWFExecutionCountFromTSDB(accountId, durationStartTs, durationEndTs, timeScaleDBService,
+            executionEntity.getEntityCountQuery(), utils);
         if (primaryCount > secondaryCount) {
           missingRecordsDetected = true;
           executionEntity.getReconService().insertMissingRecords(accountId, durationStartTs, durationEndTs);
@@ -328,7 +328,7 @@ public class DeploymentReconServiceHelper {
         statement.setString(1, accountId);
         resultSet = statement.executeQuery();
         while (resultSet.next()) {
-          runningWFs.put(resultSet.getString("executionId"), resultSet.getString("status"));
+          runningWFs.put(resultSet.getString(1), resultSet.getString(2));
         }
         return runningWFs;
 
