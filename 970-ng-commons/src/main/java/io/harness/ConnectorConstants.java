@@ -58,4 +58,7 @@ public class ConnectorConstants {
   public static final String CONNECTOR_TYPE_STATS = "Count of Connectors grouped by type.";
   public static final String CONNECTOR_STATUS_STATS = "Count of Connectors grouped by status.";
   public static final String CONNECTIVITY_MODE = "Connector connectivity mode on which the filter is applied";
+  public static final String REGIONS = "regions";
+  public static final String VERSION = "version";
+  public static final String LATEST = "latest";
 }

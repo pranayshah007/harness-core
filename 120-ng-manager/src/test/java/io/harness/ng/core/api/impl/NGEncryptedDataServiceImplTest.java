@@ -7,6 +7,9 @@
 
 package io.harness.ng.core.api.impl;
 
+import static io.harness.ConnectorConstants.LATEST;
+import static io.harness.ConnectorConstants.REGIONS;
+import static io.harness.ConnectorConstants.VERSION;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.eraro.ErrorCode.SECRET_MANAGEMENT_ERROR;
 import static io.harness.exception.WingsException.USER;
@@ -192,7 +195,7 @@ public class NGEncryptedDataServiceImplTest extends CategoryTest {
   @Owner(developers = SHREYAS)
   @Category(UnitTests.class)
   public void testInlineSecretWithRegion_forGcpSecretManager_shouldNotThrowException() {
-    values.put("regions", regions);
+    values.put(REGIONS, regions);
     AdditionalMetadata additionalMetadata = AdditionalMetadata.builder().values(values).build();
     SecretTextSpecDTO secretTextSpecDTO =
         SecretTextSpecDTO.builder().valueType(ValueType.Inline).additionalMetadata(additionalMetadata).build();
@@ -206,7 +209,7 @@ public class NGEncryptedDataServiceImplTest extends CategoryTest {
   @Owner(developers = SHREYAS)
   @Category(UnitTests.class)
   public void testInlineSecretWithNullRegion_forGcpSecretManager_shouldThrowException() {
-    values.put("regions", null);
+    values.put(REGIONS, null);
     AdditionalMetadata additionalMetadata = AdditionalMetadata.builder().values(values).build();
     SecretTextSpecDTO secretTextSpecDTO =
         SecretTextSpecDTO.builder().valueType(ValueType.Inline).additionalMetadata(additionalMetadata).build();
@@ -221,7 +224,7 @@ public class NGEncryptedDataServiceImplTest extends CategoryTest {
   @Owner(developers = SHREYAS)
   @Category(UnitTests.class)
   public void testInlineSecretWithEmptyRegion_forGcpSecretManager_shouldThrowException() {
-    values.put("regions", "");
+    values.put(REGIONS, "");
     AdditionalMetadata additionalMetadata = AdditionalMetadata.builder().values(values).build();
     SecretTextSpecDTO secretTextSpecDTO =
         SecretTextSpecDTO.builder().valueType(ValueType.Inline).additionalMetadata(additionalMetadata).build();
@@ -262,8 +265,8 @@ public class NGEncryptedDataServiceImplTest extends CategoryTest {
   @Test
   @Owner(developers = SHREYAS)
   @Category(UnitTests.class)
-  public void testReferenceSecretValidationWithVersion_forGcpSecretManager_shouldNotThrowException() {
-    values.put("version", version);
+  public void testReferenceSecretValidationWithVersionAsLatest_forGcpSecretManager_shouldNotThrowException() {
+    values.put(VERSION, LATEST);
     AdditionalMetadata additionalMetadata = AdditionalMetadata.builder().values(values).build();
     SecretTextSpecDTO secretTextSpecDTO =
         SecretTextSpecDTO.builder().valueType(ValueType.Reference).additionalMetadata(additionalMetadata).build();
@@ -299,6 +302,51 @@ public class NGEncryptedDataServiceImplTest extends CategoryTest {
                                secretTextSpecDTO))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("Additional metadata values field should have only one field - version");
+  }
+
+  @Test
+  @Owner(developers = SHREYAS)
+  @Category(UnitTests.class)
+  public void testReferenceSecretValidationWithEmptyVersion_forGcpSecretManager_shouldThrowException() {
+    values.put(VERSION, "");
+    AdditionalMetadata additionalMetadata = AdditionalMetadata.builder().values(values).build();
+    SecretTextSpecDTO secretTextSpecDTO =
+        SecretTextSpecDTO.builder().valueType(ValueType.Reference).additionalMetadata(additionalMetadata).build();
+    assertThatThrownBy(()
+                           -> ngEncryptedDataService.validateAdditionalMetadataInSecretTextSpecDTOForGcpSecretManager(
+                               secretTextSpecDTO))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Version can not be empty");
+  }
+
+  @Test
+  @Owner(developers = SHREYAS)
+  @Category(UnitTests.class)
+  public void testReferenceSecretValidationWithNullVersion_forGcpSecretManager_shouldThrowException() {
+    values.put(VERSION, null);
+    AdditionalMetadata additionalMetadata = AdditionalMetadata.builder().values(values).build();
+    SecretTextSpecDTO secretTextSpecDTO =
+        SecretTextSpecDTO.builder().valueType(ValueType.Reference).additionalMetadata(additionalMetadata).build();
+    assertThatThrownBy(()
+                           -> ngEncryptedDataService.validateAdditionalMetadataInSecretTextSpecDTOForGcpSecretManager(
+                               secretTextSpecDTO))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Version can not be null");
+  }
+
+  @Test
+  @Owner(developers = SHREYAS)
+  @Category(UnitTests.class)
+  public void testReferenceSecretValidationWithWrongVersionInfo_forGcpSecretManager_shouldThrowException() {
+    values.put(VERSION, randomAlphabetic(10));
+    AdditionalMetadata additionalMetadata = AdditionalMetadata.builder().values(values).build();
+    SecretTextSpecDTO secretTextSpecDTO =
+        SecretTextSpecDTO.builder().valueType(ValueType.Reference).additionalMetadata(additionalMetadata).build();
+    assertThatThrownBy(()
+                           -> ngEncryptedDataService.validateAdditionalMetadataInSecretTextSpecDTOForGcpSecretManager(
+                               secretTextSpecDTO))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Version should be either latest or an integer.");
   }
 
   @Test

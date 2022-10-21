@@ -7,6 +7,9 @@
 
 package io.harness.ng.core.api.impl;
 
+import static io.harness.ConnectorConstants.LATEST;
+import static io.harness.ConnectorConstants.REGIONS;
+import static io.harness.ConnectorConstants.VERSION;
 import static io.harness.NGConstants.HARNESS_SECRET_MANAGER_IDENTIFIER;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.beans.FeatureName.PL_ACCESS_SECRET_DYNAMICALLY_BY_PATH;
@@ -119,7 +122,6 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
       EnumSet.of(EncryptionType.VAULT);
   private static final String READ_ONLY_SECRET_MANAGER_ERROR =
       "Cannot create an Inline secret in read only secret manager";
-  private static final String REGIONS = "regions";
   private final NGEncryptedDataDao encryptedDataDao;
   private final KmsEncryptorsRegistry kmsEncryptorsRegistry;
   private final VaultEncryptorsRegistry vaultEncryptorsRegistry;
@@ -194,11 +196,9 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
 
   @VisibleForTesting
   void validateAdditionalMetadataInSecretTextSpecDTOForGcpSecretManager(SecretTextSpecDTO secretTextSpecDTO) {
-    // Inline secret text
     if (Inline.equals(secretTextSpecDTO.getValueType())) {
       validateInlineSecretAdditionalMetadataForGcpSecretManager(secretTextSpecDTO);
     }
-    // Reference secret text
     else {
       validateReferenceSecretAdditionalMetadataForGcpSecretManager(secretTextSpecDTO);
     }
@@ -210,8 +210,26 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
       throw new InvalidRequestException("Version information in additional metadata values field is missing.");
     }
     Map<String, Object> values = secretTextSpecDTO.getAdditionalMetadata().getValues();
-    if (values.size() != 1 || !values.containsKey("version")) {
+    if (values.size() != 1 || !values.containsKey(VERSION)) {
       throw new InvalidRequestException("Additional metadata values field should have only one field - version");
+    }
+    validateVersionInformation(values.get(VERSION));
+  }
+  private void validateVersionInformation(Object version) {
+    if (version == null) {
+      throw new InvalidRequestException("Version can not be null");
+    }
+    String versionString = String.valueOf(version);
+    if (isEmpty(versionString)) {
+      throw new InvalidRequestException("Version can not be empty");
+    }
+    if (version.equals(LATEST)) {
+      return;
+    }
+    try {
+      Integer.parseInt(versionString);
+    } catch (NumberFormatException numberFormatException) {
+      throw new InvalidRequestException("Version should be either latest or an integer.");
     }
   }
 
