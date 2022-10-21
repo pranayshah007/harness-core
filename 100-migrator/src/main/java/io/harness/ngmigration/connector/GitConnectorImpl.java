@@ -32,8 +32,18 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.apache.commons.lang3.StringUtils;
 
 public class GitConnectorImpl implements BaseConnector {
+  @Override
+  public List<String> getConnectorIds(SettingAttribute settingAttribute) {
+    GitConfig gitConfig = (GitConfig) settingAttribute.getValue();
+    if (StringUtils.isNotBlank(gitConfig.getSshSettingId())) {
+      return Collections.singletonList(gitConfig.getSshSettingId());
+    }
+    return Collections.emptyList();
+  }
+
   @Override
   public List<String> getSecretIds(SettingAttribute settingAttribute) {
     return Collections.singletonList(((GitConfig) settingAttribute.getValue()).getEncryptedPassword());

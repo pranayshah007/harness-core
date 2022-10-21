@@ -19,6 +19,7 @@ import com.codahale.metrics.annotation.Timed;
 import com.google.inject.Inject;
 import io.prometheus.client.exporter.common.TextFormat;
 import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.util.HashSet;
@@ -42,6 +43,7 @@ public class MetricResource {
   @GET
   @Timed
   @ExceptionMetered
+  @ApiOperation(value = "get metrics from metric registry", nickname = "getMetricsFromMetricRegistry", hidden = true)
   public String get() throws IOException {
     final StringWriter writer = new StringWriter();
     Set<String> metrics = new HashSet<>();

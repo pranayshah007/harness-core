@@ -7,6 +7,7 @@
 
 package io.harness.plancreator.stages;
 
+import io.harness.plancreator.NGCommonUtilPlanCreationConstants;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.contracts.plan.EdgeLayoutList;
@@ -51,7 +52,8 @@ public class StagesPlanCreator extends ChildrenPlanCreator<StagesConfig> {
               .dependencies(DependenciesUtils.toDependenciesProto(stageYamlFieldMap))
               .build());
       PlanCreationResponse planForRollbackStage = RollbackStagePlanCreator.createPlanForRollbackStage(stageYamlField);
-      responseMap.put(stageYamlField.getNode().getUuid() + "_rollbackStage", planForRollbackStage);
+      responseMap.put(stageYamlField.getNode().getUuid() + NGCommonUtilPlanCreationConstants.ROLLBACK_STAGE_UUID_SUFFIX,
+          planForRollbackStage);
     }
     return responseMap;
   }

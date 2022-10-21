@@ -49,8 +49,6 @@ import io.harness.remote.client.NGRestUtils;
 import io.harness.serializer.JsonUtils;
 
 import software.wings.beans.SettingAttribute;
-import software.wings.beans.settings.helm.AmazonS3HelmRepoConfig;
-import software.wings.beans.settings.helm.GCSHelmRepoConfig;
 import software.wings.ngmigration.CgBasicInfo;
 import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.CgEntityNode;
@@ -59,7 +57,6 @@ import software.wings.ngmigration.NGMigrationEntity;
 import software.wings.ngmigration.NGMigrationEntityType;
 import software.wings.ngmigration.NGMigrationStatus;
 import software.wings.service.intfc.SettingsService;
-import software.wings.settings.SettingVariableTypes;
 
 import com.google.inject.Inject;
 import java.io.IOException;
@@ -133,13 +130,12 @@ public class ConnectorMigrationService extends NgMigrationService {
                           .map(secret -> CgEntityId.builder().id(secret).type(NGMigrationEntityType.SECRET).build())
                           .collect(Collectors.toList()));
     }
-    if (SettingVariableTypes.AMAZON_S3_HELM_REPO.equals(settingAttribute.getValue().getSettingType())) {
-      AmazonS3HelmRepoConfig s3HelmRepoConfig = (AmazonS3HelmRepoConfig) settingAttribute.getValue();
-      children.add(CgEntityId.builder().id(s3HelmRepoConfig.getConnectorId()).type(CONNECTOR).build());
-    }
-    if (SettingVariableTypes.GCS_HELM_REPO.equals(settingAttribute.getValue().getSettingType())) {
-      GCSHelmRepoConfig gcsHelmRepoConfig = (GCSHelmRepoConfig) settingAttribute.getValue();
-      children.add(CgEntityId.builder().id(gcsHelmRepoConfig.getConnectorId()).type(CONNECTOR).build());
+    List<String> connectorIds = ConnectorFactory.getConnector(settingAttribute).getConnectorIds(settingAttribute);
+    if (EmptyPredicate.isNotEmpty(connectorIds)) {
+      children.addAll(connectorIds.stream()
+                          .filter(StringUtils::isNotBlank)
+                          .map(connectorId -> CgEntityId.builder().id(connectorId).type(CONNECTOR).build())
+                          .collect(Collectors.toList()));
     }
     return DiscoveryNode.builder().children(children).entityNode(connectorNode).build();
   }
