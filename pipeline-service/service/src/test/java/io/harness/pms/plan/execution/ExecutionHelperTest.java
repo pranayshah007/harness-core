@@ -534,17 +534,6 @@ public class ExecutionHelperTest extends CategoryTest {
   }
 
   @Test
-  @Owner(developers = FERNANDOD)
-  @Category(UnitTests.class)
-  public void testGetPipelineYamlAndValidateEmptyRuntime() {
-    String wrongRuntimeInputYaml = "";
-    pipelineEntity.setYaml(pipelineYamlAllowedValues);
-    assertThatThrownBy(() -> executionHelper.getPipelineYamlAndValidate(wrongRuntimeInputYaml, pipelineEntity))
-        .isInstanceOf(InvalidRequestException.class)
-        .hasMessage("Pipeline need runtime input values for: [pipeline.stages.s1.description]");
-  }
-
-  @Test
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
   public void testGetPipelineYamlAndValidateForPipelineWithAllowedValues() {
