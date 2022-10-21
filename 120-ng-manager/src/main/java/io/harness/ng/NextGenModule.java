@@ -72,9 +72,7 @@ import io.harness.connector.ConnectorResourceClientModule;
 import io.harness.connector.events.ConnectorEventHandler;
 import io.harness.connector.helper.DecryptionHelper;
 import io.harness.connector.helper.DecryptionHelperViaManager;
-import io.harness.connector.impl.GoogleSecretManagerConnectorServiceImpl;
 import io.harness.connector.services.ConnectorService;
-import io.harness.connector.services.GoogleSecretManagerConnectorService;
 import io.harness.delegate.beans.DelegateAsyncTaskResponse;
 import io.harness.delegate.beans.DelegateSyncTaskResponse;
 import io.harness.delegate.beans.DelegateTaskProgressResponse;
@@ -795,7 +793,6 @@ public class NextGenModule extends AbstractModule {
                 .setPriority(Thread.NORM_PRIORITY)
                 .build()));
 
-    bind(GoogleSecretManagerConnectorService.class).to(GoogleSecretManagerConnectorServiceImpl.class);
     MapBinder<SCMType, SourceCodeManagerMapper> sourceCodeManagerMapBinder =
         MapBinder.newMapBinder(binder(), SCMType.class, SourceCodeManagerMapper.class);
     sourceCodeManagerMapBinder.addBinding(SCMType.BITBUCKET).to(BitbucketSCMMapper.class);
