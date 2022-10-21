@@ -198,8 +198,7 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
   void validateAdditionalMetadataInSecretTextSpecDTOForGcpSecretManager(SecretTextSpecDTO secretTextSpecDTO) {
     if (Inline.equals(secretTextSpecDTO.getValueType())) {
       validateInlineSecretAdditionalMetadataForGcpSecretManager(secretTextSpecDTO);
-    }
-    else {
+    } else {
       validateReferenceSecretAdditionalMetadataForGcpSecretManager(secretTextSpecDTO);
     }
   }
