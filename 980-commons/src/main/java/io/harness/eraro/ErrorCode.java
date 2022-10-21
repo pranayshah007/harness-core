@@ -649,7 +649,10 @@ public enum ErrorCode {
   AWS_STS_ERROR,
 
   FREEZE_EXCEPTION,
-  DELEGATE_TASK_EXPIRED;
+
+  DELEGATE_TASK_EXPIRED,
+
+  DELEGATE_TASK_VALIDATION_FAILED;
 
   private Status status = BAD_REQUEST;
   private String description;

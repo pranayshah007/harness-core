@@ -9,7 +9,9 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/rs/zerolog"
 	"net/http"
+	"os"
 
 	"github.com/harness/harness-core/queue-service/hsqs/config"
 	_ "github.com/harness/harness-core/queue-service/hsqs/docs"
@@ -47,13 +49,15 @@ var serverCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		path, _ := cmd.Flags().GetString(envarg)
 		err := godotenv.Load(path)
+		l := zerolog.New(os.Stderr).With().Timestamp().Logger()
 		if err != nil {
-			panic("error parsing config file")
+			l.Error().Msgf("error parsing config file")
 		}
 
 		c, err := config.Load()
 		if err != nil {
-			panic("error loading config")
+			l.Error().Msgf("error in loading the environment variables")
+			panic("error loading environment variables")
 		}
 		startServer(c)
 	},

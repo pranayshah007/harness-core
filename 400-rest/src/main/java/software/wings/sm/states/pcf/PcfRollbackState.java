@@ -8,7 +8,6 @@
 package software.wings.sm.states.pcf;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.beans.FeatureName.IGNORE_PCF_CONNECTION_CONTEXT_CACHE;
 import static io.harness.beans.FeatureName.LIMIT_PCF_THREADS;
 
 import static com.google.common.base.MoreObjects.firstNonNull;
@@ -116,8 +115,6 @@ public class PcfRollbackState extends PcfDeployState {
         .useAppAutoscalar(setupSweepingOutputPcf.isUseAppAutoscalar())
         .useCfCLI(true)
         .limitPcfThreads(featureFlagService.isEnabled(LIMIT_PCF_THREADS, pcfConfig.getAccountId()))
-        .ignorePcfConnectionContextCache(
-            featureFlagService.isEnabled(IGNORE_PCF_CONNECTION_CONTEXT_CACHE, pcfConfig.getAccountId()))
         .cfCliVersion(
             pcfStateHelper.getCfCliVersionOrDefault(application.getAppId(), setupSweepingOutputPcf.getServiceId()))
         .versioningChanged(setupSweepingOutputPcf.isVersioningChanged())

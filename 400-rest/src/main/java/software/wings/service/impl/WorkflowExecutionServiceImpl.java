@@ -6686,4 +6686,9 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
       String appId, List<WorkflowExecution> workflowExecutions) {
     return workflowExecutionServiceHelper.populateFailureDetailsWithStepInfo(appId, workflowExecutions);
   }
+
+  @Override
+  public WorkflowExecution getUpdatedWorkflowExecution(String appId, String workflowExecutionId) {
+    return wingsPersistence.getWithAppId(WorkflowExecution.class, appId, workflowExecutionId);
+  }
 }

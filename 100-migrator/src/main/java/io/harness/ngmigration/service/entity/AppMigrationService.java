@@ -24,17 +24,20 @@ import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
 import io.harness.ngmigration.client.NGClient;
 import io.harness.ngmigration.client.PmsClient;
+import io.harness.ngmigration.client.TemplateClient;
 import io.harness.ngmigration.dto.ImportError;
 import io.harness.ngmigration.dto.MigrationImportSummaryDTO;
 import io.harness.ngmigration.expressions.MigratorExpressionUtils;
 import io.harness.ngmigration.service.MigratorUtility;
 import io.harness.ngmigration.service.NgMigrationService;
+import io.harness.ngmigration.service.importer.TemplateImportService;
 import io.harness.persistence.HPersistence;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.serializer.JsonUtils;
 
 import software.wings.beans.Application;
 import software.wings.beans.Service;
+import software.wings.beans.template.Template;
 import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.CgEntityNode;
 import software.wings.ngmigration.DiscoveryNode;
@@ -65,6 +68,8 @@ public class AppMigrationService extends NgMigrationService {
   @Inject private HPersistence hPersistence;
   @Inject private EnvironmentService environmentService;
   @Inject private ServiceResourceService serviceResourceService;
+
+  @Inject private TemplateImportService templateService;
 
   @Inject private MigratorExpressionUtils migratorExpressionUtils;
 
@@ -112,6 +117,15 @@ public class AppMigrationService extends NgMigrationService {
                           .collect(Collectors.toSet()));
     }
 
+    List<Template> templates = templateService.getTemplatesList(application.getAccountId(), appId, null);
+    if (EmptyPredicate.isNotEmpty(templates)) {
+      children.addAll(
+          templates.stream()
+              .distinct()
+              .map(template -> CgEntityId.builder().id(template.getUuid()).type(NGMigrationEntityType.TEMPLATE).build())
+              .collect(Collectors.toSet()));
+    }
+
     return DiscoveryNode.builder()
         .entityNode(CgEntityNode.builder()
                         .id(appId)
@@ -136,7 +150,7 @@ public class AppMigrationService extends NgMigrationService {
 
   @Override
   public MigrationImportSummaryDTO migrate(String auth, NGClient ngClient, PmsClient pmsClient,
-      MigrationInputDTO inputDTO, NGYamlFile yamlFile) throws IOException {
+      TemplateClient templateClient, MigrationInputDTO inputDTO, NGYamlFile yamlFile) throws IOException {
     Application application = appService.getApplicationWithDefaults(yamlFile.getCgBasicInfo().getAppId());
 
     if (EmptyPredicate.isEmpty(application.getDefaults())) {

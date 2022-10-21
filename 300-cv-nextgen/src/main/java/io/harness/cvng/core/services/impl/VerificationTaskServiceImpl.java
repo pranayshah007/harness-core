@@ -16,6 +16,8 @@ import static io.harness.persistence.HQuery.excludeValidate;
 import io.harness.cvng.CVConstants;
 import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.core.entities.VerificationTask;
+import io.harness.cvng.core.entities.VerificationTask.CompositeSLOInfo;
+import io.harness.cvng.core.entities.VerificationTask.CompositeSLOInfo.CompositeSLOInfoKeys;
 import io.harness.cvng.core.entities.VerificationTask.DeploymentInfo;
 import io.harness.cvng.core.entities.VerificationTask.DeploymentInfo.DeploymentInfoKeys;
 import io.harness.cvng.core.entities.VerificationTask.LiveMonitoringInfo;
@@ -100,6 +102,21 @@ public class VerificationTaskServiceImpl implements VerificationTaskService {
     return verificationTask.getUuid();
   }
 
+  @Override
+  public String createCompositeSLOVerificationTask(String accountId, String sloId, Map<String, String> tags) {
+    Preconditions.checkNotNull(accountId);
+    Preconditions.checkNotNull(sloId);
+    // TODO: Change to new generated uuid in a separate PR since it needs more validation.
+    VerificationTask verificationTask = VerificationTask.builder()
+                                            .uuid(sloId)
+                                            .accountId(accountId)
+                                            .tags(tags)
+                                            .taskInfo(CompositeSLOInfo.builder().sloId(sloId).build())
+                                            .build();
+    hPersistence.save(verificationTask);
+    return verificationTask.getUuid();
+  }
+
   public String createDeploymentVerificationTask(
       String accountId, String cvConfigId, String verificationJobInstanceId, Map<String, String> tags) {
     Preconditions.checkNotNull(accountId, "accountId can not be null");
@@ -147,6 +164,16 @@ public class VerificationTaskServiceImpl implements VerificationTaskService {
       return ((SLIInfo) verificationTask.getTaskInfo()).getSliId();
     }
     throw new IllegalStateException("Verification task is of not the right type to have ServiceLevelIndicator, type: "
+        + verificationTask.getTaskInfo().getTaskType());
+  }
+
+  @Override
+  public String getCompositeSLOId(String verificationTaskId) {
+    VerificationTask verificationTask = get(verificationTaskId);
+    if (verificationTask.getTaskInfo().getTaskType().equals(TaskType.COMPOSITE_SLO)) {
+      return ((CompositeSLOInfo) verificationTask.getTaskInfo()).getSloId();
+    }
+    throw new IllegalStateException("Verification task is of not the right type to have Composite SLO, type: "
         + verificationTask.getTaskInfo().getTaskType());
   }
 
@@ -222,6 +249,14 @@ public class VerificationTaskServiceImpl implements VerificationTaskService {
     VerificationTask result = getSLITask(accountId, sliId);
     Preconditions.checkNotNull(
         result, "VerificationTask mapping does not exist for SLI Id %s. Please check sliId", sliId);
+    return result.getUuid();
+  }
+
+  @Override
+  public String getCompositeSLOVerificationTaskId(String accountId, String sloId) {
+    VerificationTask result = getCompositeSLOTask(accountId, sloId);
+    Preconditions.checkNotNull(
+        result, "VerificationTask mapping does not exist for Composite SLO Id %s. Please check sloId", sloId);
     return result.getUuid();
   }
 
@@ -326,6 +361,15 @@ public class VerificationTaskServiceImpl implements VerificationTaskService {
         .filter(VerificationTaskKeys.accountId, accountId)
         .filter(VerificationTaskKeys.taskInfo + "." + TaskInfo.TASK_TYPE_FIELD_NAME, TaskType.SLI)
         .filter(VerificationTaskKeys.taskInfo + "." + SLIInfoKeys.sliId, sliId)
+        .get();
+  }
+
+  @Override
+  public VerificationTask getCompositeSLOTask(String accountId, String sloId) {
+    return hPersistence.createQuery(VerificationTask.class, excludeValidate)
+        .filter(VerificationTaskKeys.accountId, accountId)
+        .filter(VerificationTaskKeys.taskInfo + "." + TaskInfo.TASK_TYPE_FIELD_NAME, TaskType.COMPOSITE_SLO)
+        .filter(VerificationTaskKeys.taskInfo + "." + CompositeSLOInfoKeys.sloId, sloId)
         .get();
   }
 

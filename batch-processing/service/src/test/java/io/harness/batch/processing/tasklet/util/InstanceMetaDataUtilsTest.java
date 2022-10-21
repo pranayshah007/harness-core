@@ -20,6 +20,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import io.harness.batch.processing.BatchProcessingTestBase;
 import io.harness.batch.processing.writer.constants.K8sCCMConstants;
 import io.harness.category.element.UnitTests;
+import io.harness.ccm.commons.beans.InstanceType;
 import io.harness.ccm.commons.beans.billing.InstanceCategory;
 import io.harness.ccm.commons.constants.CloudProvider;
 import io.harness.ccm.commons.constants.InstanceMetaDataConstants;
@@ -181,6 +182,15 @@ public class InstanceMetaDataUtilsTest extends BatchProcessingTestBase {
 
     InstanceCategory instanceCategory = getInstanceCategory(CloudProvider.AZURE, label, null);
     assertThat(instanceCategory).isEqualTo(InstanceCategory.ON_DEMAND);
+  }
+
+  @Test
+  @Owner(developers = HITESH)
+  @Category(UnitTests.class)
+  public void shouldReturnAzureVirtualNode() {
+    boolean azureVirtualNode = InstanceMetaDataUtils.isAzureVirtualNode(
+        K8sCCMConstants.VIRTUAL_KUBELET, "test-virtual-node-aci-i", InstanceType.K8S_NODE);
+    assertTrue(azureVirtualNode);
   }
 
   @Test

@@ -25,9 +25,9 @@ import io.harness.encryption.Scope;
 import io.harness.exception.InvalidRequestException;
 import io.harness.gitsync.beans.YamlDTO;
 import io.harness.ng.core.dto.ResponseDTO;
-import io.harness.ng.core.dto.secrets.SecretRequestWrapper;
 import io.harness.ngmigration.beans.BaseEntityInput;
 import io.harness.ngmigration.beans.BaseInputDefinition;
+import io.harness.ngmigration.beans.CustomSecretRequestWrapper;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.MigratorInputType;
 import io.harness.ngmigration.beans.NGYamlFile;
@@ -36,6 +36,7 @@ import io.harness.ngmigration.beans.summary.BaseSummary;
 import io.harness.ngmigration.beans.summary.SecretManagerSummary;
 import io.harness.ngmigration.client.NGClient;
 import io.harness.ngmigration.client.PmsClient;
+import io.harness.ngmigration.client.TemplateClient;
 import io.harness.ngmigration.dto.ImportError;
 import io.harness.ngmigration.dto.MigrationImportSummaryDTO;
 import io.harness.ngmigration.dto.SecretManagerCreatedDTO;
@@ -138,7 +139,7 @@ public class SecretManagerMigrationService extends NgMigrationService {
 
   @Override
   public MigrationImportSummaryDTO migrate(String auth, NGClient ngClient, PmsClient pmsClient,
-      MigrationInputDTO inputDTO, NGYamlFile yamlFile) throws IOException {
+      TemplateClient templateClient, MigrationInputDTO inputDTO, NGYamlFile yamlFile) throws IOException {
     if (yamlFile.isExists()) {
       return MigrationImportSummaryDTO.builder()
           .errors(Collections.singletonList(
@@ -213,7 +214,7 @@ public class SecretManagerMigrationService extends NgMigrationService {
                        .stream()
                        .map(secretDTO
                            -> NGYamlFile.builder()
-                                  .yaml(SecretRequestWrapper.builder().secret(secretDTO).build())
+                                  .yaml(CustomSecretRequestWrapper.builder().secret(secretDTO).build())
                                   .type(SECRET)
                                   .ngEntityDetail(NgEntityDetail.builder()
                                                       .projectIdentifier(secretDTO.getProjectIdentifier())
