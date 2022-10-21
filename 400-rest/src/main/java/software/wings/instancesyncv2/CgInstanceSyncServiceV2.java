@@ -10,12 +10,12 @@ package software.wings.instancesyncv2;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.AccountId;
-import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.grpc.DelegateServiceGrpcClient;
 import io.harness.metrics.service.api.MetricService;
 import io.harness.perpetualtask.PerpetualTaskClientContextDetails;
 import io.harness.perpetualtask.PerpetualTaskId;
 import io.harness.perpetualtask.PerpetualTaskSchedule;
+import io.harness.perpetualtask.instancesyncv2.CgInstanceSyncResponse;
 import io.harness.perpetualtask.instancesyncv2.InstanceSyncTrackedDeploymentDetails;
 
 import software.wings.api.DeploymentEvent;
@@ -105,7 +105,7 @@ public class CgInstanceSyncServiceV2 {
             .setExecutionBundle(handlerFactory.getHandler(cloudProvider.getValue().getSettingType())
                                     .fetchInfraConnectorDetails(cloudProvider))
             .build(),
-        true, "Instance Sync V2 Perpetual Task");
+        true, "CloudProvider: [" + cloudProvider.getUuid() + "] Instance Sync V2 Perpetual Task");
     log.info("Created Perpetual Task with ID: [{}], for account: [{}], and cloud provider: [{}]", taskId.getId(),
         accountId, cloudProvider.getUuid());
     return taskId.getId();
@@ -118,7 +118,11 @@ public class CgInstanceSyncServiceV2 {
         .build();
   }
 
+  // todo move this to inside handler. Handler will check for infra mapping and other tracked details per deployment
+  // summary.
   public String getConfiguredInstanceSyncId(DeploymentSummary deploymentSummary) {
+    // fetch using the cloud provider ID
+    // infra mapping ID is to be used only to check if the deployment summary is part of tracked deployments.
     InstanceSyncTaskDetails instanceSyncTaskDetails =
         taskDetailsService.getForInfraMapping(deploymentSummary.getAccountId(), deploymentSummary.getInfraMappingId());
     return Objects.nonNull(instanceSyncTaskDetails) ? instanceSyncTaskDetails.getPerpetualTaskId() : StringUtils.EMPTY;
@@ -134,7 +138,7 @@ public class CgInstanceSyncServiceV2 {
                                 .build());
   }
 
-  public void processInstanceSyncResult(String perpetualTaskId, DelegateResponseData result) {
+  public void processInstanceSyncResult(String perpetualTaskId, CgInstanceSyncResponse result) {
     log.info("Got the result. Starting to process. Perpetual Task Id: [{}]", perpetualTaskId);
   }
 

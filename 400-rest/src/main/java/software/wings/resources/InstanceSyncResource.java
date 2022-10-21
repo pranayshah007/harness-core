@@ -21,6 +21,7 @@ import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
 import io.harness.perpetualtask.PerpetualTaskLogContext;
 import io.harness.perpetualtask.instancesync.InstanceSyncResponsePublisher;
+import io.harness.perpetualtask.instancesyncv2.CgInstanceSyncResponse;
 import io.harness.perpetualtask.instancesyncv2.InstanceSyncTrackedDeploymentDetails;
 import io.harness.rest.RestResponse;
 import io.harness.security.annotations.DelegateAuth;
@@ -32,6 +33,7 @@ import software.wings.service.impl.instance.InstanceHelper;
 import com.google.inject.Inject;
 import io.dropwizard.jersey.protobuf.ProtocolBufferMediaType;
 import io.swagger.annotations.Api;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -88,9 +90,10 @@ public class InstanceSyncResource {
   @DelegateAuth
   @POST
   @Path("instance-sync-v2/{perpetualTaskId}")
+  @Consumes(ProtocolBufferMediaType.APPLICATION_PROTOBUF)
   public RestResponse<Boolean> processInstanceSyncV2Result(
       @PathParam("perpetualTaskId") @NotEmpty String perpetualTaskId,
-      @QueryParam("accountId") @NotEmpty String accountId, DelegateResponseData response) {
+      @QueryParam("accountId") @NotEmpty String accountId, CgInstanceSyncResponse response) {
     try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR);
          AutoLogContext ignore2 = new PerpetualTaskLogContext(perpetualTaskId, OVERRIDE_ERROR)) {
       instanceSyncServiceV2.processInstanceSyncResult(perpetualTaskId.replaceAll("[\r\n]", ""), response);

@@ -11,17 +11,21 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.grpc.utils.AnyUtils;
+import io.harness.k8s.model.K8sPod;
 import io.harness.managerclient.DelegateAgentManagerClient;
 import io.harness.perpetualtask.PerpetualTaskExecutionParams;
 import io.harness.perpetualtask.PerpetualTaskExecutor;
 import io.harness.perpetualtask.PerpetualTaskId;
 import io.harness.perpetualtask.PerpetualTaskResponse;
+import io.harness.perpetualtask.instancesyncv2.CgInstanceSyncResponse;
 import io.harness.perpetualtask.instancesyncv2.CgInstanceSyncTaskParams;
+import io.harness.perpetualtask.instancesyncv2.InstanceSyncData;
 import io.harness.perpetualtask.instancesyncv2.InstanceSyncTrackedDeploymentDetails;
 import io.harness.serializer.KryoSerializer;
 import io.harness.util.DelegateRestUtils;
 
 import com.google.inject.Inject;
+import com.google.protobuf.ByteString;
 import java.time.Instant;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
@@ -44,6 +48,16 @@ public class CgInstanceSyncV2TaskExecutor implements PerpetualTaskExecutor {
     InstanceSyncTrackedDeploymentDetails trackedDeploymentDetails = DelegateRestUtils.executeRestCall(
         delegateAgentManagerClient.fetchTrackedReleaseDetails(taskId.getId(), taskParams.getAccountId()));
 
+    DelegateRestUtils.executeRestCall(delegateAgentManagerClient.publishInstanceSyncV2Result(taskId.getId(),
+        taskParams.getAccountId(),
+        CgInstanceSyncResponse.newBuilder()
+            .setPerpetualTaskId(taskId.getId())
+            .setAccountId(taskParams.getAccountId())
+            .addInstanceData(InstanceSyncData.newBuilder()
+                                 .setTaskDetailsId("taskDetailsId1")
+                                 .addInstanceData(ByteString.copyFrom(kryoSerializer.asBytes(K8sPod.builder().build())))
+                                 .build())
+            .build()));
     log.info("fetched tracked deployment details: [{}]", trackedDeploymentDetails);
     return PerpetualTaskResponse.builder().responseCode(200).responseMessage("SUCCESS").build();
   }
