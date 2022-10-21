@@ -75,8 +75,6 @@ public class EC2RecommendationDAO {
             .set(EC2RecommendationKeys.sku, ec2Recommendation.getSku())
             .set(EC2RecommendationKeys.currentMaxCPU, ec2Recommendation.getCurrentMaxCPU())
             .set(EC2RecommendationKeys.currentMaxMemory, ec2Recommendation.getCurrentMaxMemory())
-            .set(EC2RecommendationKeys.expectedMaxCPU, ec2Recommendation.getExpectedMaxCPU())
-            .set(EC2RecommendationKeys.expectedMaxMemory, ec2Recommendation.getExpectedMaxMemory())
             .set(EC2RecommendationKeys.currentMonthlyCost, ec2Recommendation.getCurrentMonthlyCost())
             .set(EC2RecommendationKeys.currencyCode, ec2Recommendation.getCurrencyCode())
             .set(EC2RecommendationKeys.recommendationInfo, ec2Recommendation.getRecommendationInfo())

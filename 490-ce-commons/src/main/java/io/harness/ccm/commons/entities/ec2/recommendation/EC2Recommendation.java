@@ -72,9 +72,7 @@ public final class EC2Recommendation
   String sku;
   String vcpu;
   String currentMaxCPU;
-  String expectedMaxCPU;
   String currentMaxMemory;
-  String expectedMaxMemory;
   String currentMonthlyCost;
   String currencyCode;
   List<EC2RecommendationDetail> recommendationInfo;

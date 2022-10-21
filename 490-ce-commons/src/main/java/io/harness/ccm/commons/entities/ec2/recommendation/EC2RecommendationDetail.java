@@ -16,4 +16,6 @@ public class EC2RecommendationDetail {
   String vcpu;
   String expectedMonthlySaving;
   String expectedMonthlyCost;
+  String expectedMaxCPU;
+  String expectedMaxMemory;
 }
