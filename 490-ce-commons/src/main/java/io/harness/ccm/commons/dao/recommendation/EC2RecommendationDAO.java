@@ -89,7 +89,6 @@ public class EC2RecommendationDAO {
   public void upsertCeRecommendation(@NonNull String uuid, @NonNull String accountId, @NonNull String instanceId,
       @NonNull String awsAccountId, String instanceName, @Nullable Double monthlyCost, @Nullable Double monthlySaving,
       @NonNull Instant lastReceivedUntilAt) {
-    log.info("saving to ce_recomm");
     dslContext.insertInto(CE_RECOMMENDATIONS)
         .set(CE_RECOMMENDATIONS.ACCOUNTID, accountId)
         .set(CE_RECOMMENDATIONS.ID, uuid)

@@ -111,7 +111,6 @@ public class UtilizationDataServiceImpl {
     statement.setDouble(18, instanceUtilizationData.getStorageRequestAvgValue());
     statement.setDouble(19, instanceUtilizationData.getStorageUsageMaxValue());
     statement.setDouble(20, instanceUtilizationData.getStorageRequestMaxValue());
-    log.info("statement = {}", statement);
   }
 
   public Map<String, UtilizationData> getUtilizationDataForInstances(List<? extends InstanceData> instanceDataList,

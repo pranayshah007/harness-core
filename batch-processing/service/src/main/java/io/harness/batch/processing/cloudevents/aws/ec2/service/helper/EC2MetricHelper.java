@@ -94,7 +94,6 @@ public class EC2MetricHelper {
                       new MetricStat().withPeriod(PERIOD).withStat(stat.toString()).withMetric(clusterMetric)));
         }
       }
-      log.info("aggregatedQuery to getMetricData api= {}", aggregatedQuery);
       metricDataResultMap.putAll(awsCloudWatchHelperService
                                      .getMetricData(AwsCloudWatchMetricDataRequest.builder()
                                                         .region(instance.getRegion())

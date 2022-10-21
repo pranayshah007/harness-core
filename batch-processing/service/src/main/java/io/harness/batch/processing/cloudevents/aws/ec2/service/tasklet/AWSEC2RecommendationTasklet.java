@@ -75,7 +75,7 @@ public class AWSEC2RecommendationTasklet implements Tasklet {
 
   @Override
   public RepeatStatus execute(StepContribution stepContribution, ChunkContext chunkContext) throws Exception {
-    log.info("running the EC2 recomm job");
+    log.info("Running the EC2 recommendation job");
     final JobConstants jobConstants = CCMJobConstants.fromContext(chunkContext);
     String accountId = jobConstants.getAccountId();
     Instant startTime = Instant.ofEpochMilli(jobConstants.getJobStartTime());
@@ -105,8 +105,6 @@ public class AWSEC2RecommendationTasklet implements Tasklet {
               });
             }
           }
-          log.info("instanceLevelRecommendations.size() = {}", instanceLevelRecommendations.size());
-          log.info("instanceLevelRecommendations = {}", instanceLevelRecommendations);
           for (Map.Entry<String, List<EC2InstanceRecommendationInfo>> instanceLevelRecommendation :
               instanceLevelRecommendations.entrySet()) {
             if (!instanceLevelRecommendation.getValue().isEmpty()) {
@@ -123,9 +121,8 @@ public class AWSEC2RecommendationTasklet implements Tasklet {
               recommendation.setAccountId(accountId);
               recommendation.setLastUpdatedTime(startTime);
               // Save the ec2 recommendation to mongo and timescale
-              log.info("recommendation to save in mongo = {}", recommendation);
               EC2Recommendation ec2Recommendation = ec2RecommendationDAO.saveRecommendation(recommendation);
-              log.info("ec2Recommendation saved to mongoDB = {}", ec2Recommendation);
+              log.info("EC2Recommendation saved to mongoDB = {}", ec2Recommendation);
               saveRecommendationInTimeScaleDB(ec2Recommendation);
             }
           }
