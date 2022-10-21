@@ -44,9 +44,7 @@ public class PolicyDAO {
   }
 
   public List<Policy> findByResource(String resource, String accountId) {
-    Query<Policy> query = hPersistence.createQuery(Policy.class)
-                              .filter(PolicyId.resource, resource)
-                              .filter(PolicyId.accountId, accountId);
+    Query<Policy> query = hPersistence.createQuery(Policy.class).filter(PolicyId.accountId, accountId);
     return query.asList();
   }
 
@@ -75,10 +73,8 @@ public class PolicyDAO {
   }
 
   public List<Policy> findByTagAndResource(String resource, String tag, String accountId) {
-    Query<Policy> query = hPersistence.createQuery(Policy.class)
-                              .filter(PolicyId.resource, resource)
-                              .filter(PolicyId.tags, tag)
-                              .filter(PolicyId.accountId, accountId);
+    Query<Policy> query =
+        hPersistence.createQuery(Policy.class).filter(PolicyId.tags, tag).filter(PolicyId.accountId, accountId);
     log.info("Query: {}", query);
     return query.asList();
   }
@@ -90,12 +86,11 @@ public class PolicyDAO {
                       .field(PolicyId.uuid)
                       .equal(policy.getUuid());
     UpdateOperations<Policy> updateOperations = hPersistence.createUpdateOperations(Policy.class)
-                                                    .set(PolicyId.resource, policy.getResource())
                                                     .set(PolicyId.name, policy.getName())
                                                     .set(PolicyId.description, policy.getDescription())
                                                     .set(PolicyId.policyYaml, policy.getPolicyYaml())
                                                     .set(PolicyId.isStablePolicy, policy.getIsStablePolicy())
-                                                    .set(PolicyId.isOOTBPolicy, policy.getIsOOTBPolicy())
+                                                    .set(PolicyId.isOOTB, policy.getIsOOTB())
                                                     .set(PolicyId.tags, policy.getTags())
                                                     .set(PolicyId.lastUpdatedAt, policy.getLastUpdatedAt());
 

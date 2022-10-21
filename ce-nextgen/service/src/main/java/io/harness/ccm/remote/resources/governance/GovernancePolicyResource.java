@@ -7,8 +7,9 @@
 
 package io.harness.ccm.remote.resources.governance;
 
-import static io.harness.annotations.dev.HarnessTeam.CE;
-
+import com.codahale.metrics.annotation.ExceptionMetered;
+import com.codahale.metrics.annotation.Timed;
+import com.google.inject.Inject;
 import io.harness.NGCommonEntityConstants;
 import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.annotations.dev.OwnedBy;
@@ -21,16 +22,13 @@ import io.harness.ccm.views.dto.GovernanceJobEnqueueDTO;
 import io.harness.ccm.views.dto.ListDTO;
 import io.harness.ccm.views.entities.Policy;
 import io.harness.ccm.views.entities.PolicyRequest;
+import io.harness.ccm.views.entities.PolicyStoreType;
 import io.harness.ccm.views.service.GovernancePolicyService;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.security.annotations.PublicApi;
-
-import com.codahale.metrics.annotation.ExceptionMetered;
-import com.codahale.metrics.annotation.Timed;
-import com.google.inject.Inject;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
@@ -42,9 +40,9 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
@@ -56,8 +54,11 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
+import static io.harness.annotations.dev.HarnessTeam.CE;
 
 @Slf4j
 @Service
@@ -94,7 +95,6 @@ public class GovernancePolicyResource {
   }
 
   // Internal API for OOTB policy creation
-
   @POST
   @Hidden
   @Path("policy")
@@ -114,16 +114,28 @@ public class GovernancePolicyResource {
           description = "Request body containing Policy store object") @Valid CreatePolicyDTO createPolicyDTO) {
     // rbacHelper.checkPolicyEditPermission(accountId, null, null);
     Policy policy = createPolicyDTO.getPolicy();
-    policy.setAccountId(accountId);
     if (governancePolicyService.listid(accountId, policy.getName(), true) != null) {
       throw new InvalidRequestException("Policy  with given name already exits");
     }
+
+      if (governancePolicyService.listid(accountId, policy.getUuid(), true) != null) {
+        throw new InvalidRequestException("Policy with this uuid already exits");
+      }
+    // Set accountId only in case of non OOTB policies
+    if (!policy.getIsOOTB()) {
+      policy.setAccountId(accountId);
+    } else {
+      policy.setAccountId("");
+    }
+    // TODO: Handle this for custom policies and git connectors
+    policy.setStoreType(PolicyStoreType.INLINE);
+    policy.setVersionLabel("0.0.1");
+    policy.setDeleted(false);
     governancePolicyService.save(policy);
     return ResponseDTO.newResponse(policy.toDTO());
   }
 
   // Update a policy already made
-
   @PUT
   @Hidden
   @Path("policy")

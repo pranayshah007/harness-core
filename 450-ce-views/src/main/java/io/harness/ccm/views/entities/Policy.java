@@ -47,16 +47,17 @@ public final class Policy implements PersistentEntity, UuidAware, CreatedAtAware
   @Id @Schema(description = "unique id") String uuid;
   @Schema(description = "account id") String accountId;
   @Schema(description = "Identifier") String name;
-  @Schema(description = NGCommonEntityConstants.RESOURCE) String resource;
   @Schema(description = NGCommonEntityConstants.DESCRIPTION) String description;
   @Schema(description = NGCommonEntityConstants.POLICY) String policyYaml;
   @Schema(description = NGCommonEntityConstants.TAGS) List<String> tags;
   @Schema(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) String orgIdentifier;
   @Schema(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) String projectIdentifier;
-  @Schema(description = "cloudProvider") String cloudProvider;
+  @Schema(description = "cloudProvider") PolicyCloudProviderType cloudProvider;
   @Schema(description = "versionLabel") String versionLabel;
-  @Schema(description = "isStablePolicy") String isStablePolicy;
-  @Schema(description = "versionLabel") String isOOTBPolicy;
+  @Schema(description = "isStablePolicy") Boolean isStablePolicy;
+  @Schema(description = "storeType") PolicyStoreType storeType;
+  @Schema(description = "isOOTB") Boolean isOOTB;
+  @Schema(description = "deleted") Boolean deleted;
   @Schema(description = NGCommonEntityConstants.CREATED_AT_MESSAGE) long createdAt;
   @Schema(description = NGCommonEntityConstants.UPDATED_AT_MESSAGE) long lastUpdatedAt;
   @Schema(description = "created by") private EmbeddedUser createdBy;
@@ -79,14 +80,14 @@ public final class Policy implements PersistentEntity, UuidAware, CreatedAtAware
         .uuid(getUuid())
         .accountId(getAccountId())
         .name(getName())
-        .resource(getResource())
         .description(getDescription())
         .policyYaml(getPolicyYaml())
         .cloudProvider(getCloudProvider())
         .versionLabel(getVersionLabel())
         .isStablePolicy(getIsStablePolicy())
-        .isOOTBPolicy(getIsOOTBPolicy())
+        .isOOTB(getIsOOTB())
         .tags(getTags())
+        .deleted(getDeleted())
         .orgIdentifier(getOrgIdentifier())
         .projectIdentifier(getProjectIdentifier())
         .createdAt(getCreatedAt())

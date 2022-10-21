@@ -7,8 +7,10 @@
 
 package io.harness.ccm.remote.resources.governance;
 
-import static io.harness.annotations.dev.HarnessTeam.CE;
-
+import com.codahale.metrics.annotation.ExceptionMetered;
+import com.codahale.metrics.annotation.Timed;
+import com.google.gson.Gson;
+import com.google.inject.Inject;
 import io.harness.NGCommonEntityConstants;
 import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.annotations.dev.OwnedBy;
@@ -18,7 +20,6 @@ import io.harness.ccm.scheduler.SchedulerClient;
 import io.harness.ccm.scheduler.SchedulerDTO;
 import io.harness.ccm.utils.LogAccountIdentifier;
 import io.harness.ccm.views.dto.CreatePolicyEnforcementDTO;
-import io.harness.ccm.views.entities.CEReportSchedule;
 import io.harness.ccm.views.entities.PolicyEnforcement;
 import io.harness.ccm.views.service.GovernancePolicyService;
 import io.harness.ccm.views.service.PolicyEnforcementService;
@@ -27,13 +28,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
-import io.harness.rest.RestResponse;
 import io.harness.security.annotations.PublicApi;
-
-import com.codahale.metrics.annotation.ExceptionMetered;
-import com.codahale.metrics.annotation.Timed;
-import com.google.gson.Gson;
-import com.google.inject.Inject;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
@@ -45,14 +40,10 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.TimeZone;
 import lombok.extern.slf4j.Slf4j;
 import net.minidev.json.JSONArray;
 import net.sf.json.JSONObject;
+import org.springframework.scheduling.support.CronSequenceGenerator;
 import org.springframework.stereotype.Service;
 import retrofit2.Response;
 
@@ -67,15 +58,10 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
-import lombok.extern.slf4j.Slf4j;
-import net.sf.json.JSONObject;
-import org.springframework.scheduling.support.CronSequenceGenerator;
-import org.springframework.stereotype.Service;
-import retrofit2.Response;
-// TODO: add pagination
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TimeZone;
 
 import static io.harness.annotations.dev.HarnessTeam.CE;
 
@@ -260,6 +246,7 @@ public class GovernancePolicyEnforcementResource {
     //  rbacHelper.checkPolicyEnforcementEditPermission(accountId, null, null);
     PolicyEnforcement policyEnforcement = createPolicyEnforcementDTO.getPolicyEnforcement();
     policyEnforcement.setAccountId(accountId);
+
     policyEnforcementService.listid(accountId, policyEnforcement.getName(), false);
     policyService.check(accountId, policyEnforcement.getPolicyIds());
     policyPackService.check(accountId, policyEnforcement.getPolicyPackIDs());
