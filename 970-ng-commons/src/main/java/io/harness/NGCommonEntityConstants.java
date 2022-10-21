@@ -95,7 +95,15 @@ public class NGCommonEntityConstants {
   public static final String FILE_LIST_IDENTIFIERS_PARAM_MESSAGE =
       "This is the list of File IDs. Details specific to these IDs would be fetched.";
   public static final String FILE_SEARCH_TERM_PARAM_MESSAGE =
-      "This would be used to filter Files. Any Files having the specified string in its Name, ID and Tag would be filtered.";
+      "This will be used to filter files or folders. Any file or folder having the specified search term in its Name or Identifier will be filtered";
+  public static final String FILE_TAGS_MESSAGE = "The File or Folder tags";
+  public static final String FILE_CONTENT_MESSAGE = "The content of the File as InputStream";
+  public static final String FILE_FILTER_PROPERTIES_MESSAGE = "Details of the File filter properties to be applied";
+  public static final String FILTER_IDENTIFIER_MESSAGE = "Filter identifier";
+  public static final String ENTITY_TYPE_MESSAGE = "Entity type";
+  public static final String FOLDER_DETAILS_MESSAGE = "Folder details";
+  public static final String FILE_YAML_DEFINITION_MESSAGE = "YAML definition of File or Folder";
+  public static final String FOLDER_NODE_MESSAGE = "Folder node for which to return the list of nodes";
 
   public static final String GCP_CONNECTOR_IDENTIFIER = "GCP Connector Identifier";
 
