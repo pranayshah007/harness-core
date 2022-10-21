@@ -171,7 +171,6 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
   @FdIndex private long delegateTelemetryPublisherIteration;
   @FdIndex private long delegateTaskRebroadcastIteration;
   @FdIndex private Long perpetualTaskRebalanceIteration;
-  @FdIndex private Long instancesPurgeTaskIteration;
 
   // adding this to avoid kryo exception. Its not used anymore, check DEL-5047
   @Deprecated private long delegateTaskFailIteration;
@@ -515,11 +514,6 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
       return;
     }
 
-    else if (AccountKeys.instancesPurgeTaskIteration.equals(fieldName)) {
-      this.instancesPurgeTaskIteration = nextIteration;
-      return;
-    }
-
     throw new IllegalArgumentException("Invalid fieldName " + fieldName);
   }
 
@@ -575,10 +569,6 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
 
     else if (AccountKeys.perpetualTaskRebalanceIteration.equals(fieldName)) {
       return this.perpetualTaskRebalanceIteration;
-    }
-
-    else if (AccountKeys.instancesPurgeTaskIteration.equals(fieldName)) {
-      return this.instancesPurgeTaskIteration;
     }
 
     throw new IllegalArgumentException("Invalid fieldName " + fieldName);

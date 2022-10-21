@@ -157,6 +157,19 @@ paths:
           schema:
             $ref: '#/definitions/store.DequeueResponse'
       summary: Dequeue in Redis
+  /v1/healthz:
+    get:
+      consumes:
+      - application/json
+      description: Health API for Queue Service
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: Health API for Queue Service
   /v1/queue:
     post:
       consumes:

@@ -2008,7 +2008,7 @@
             "Jenkins",
             "OciHelmRepo",
             "CustomSecretManager",
-            "ELK",
+            "ElasticSearch",
             "GcpSecretManager",
             "AzureArtifacts",
             "Spot"
@@ -2325,7 +2325,7 @@
           "if": {
             "properties": {
               "type": {
-                "const": "ELK"
+                "const": "ElasticSearch"
               }
             }
           },

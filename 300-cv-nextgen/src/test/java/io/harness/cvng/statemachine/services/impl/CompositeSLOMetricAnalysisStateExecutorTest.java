@@ -17,10 +17,13 @@ import io.harness.CvNextGenTestBase;
 import io.harness.category.element.UnitTests;
 import io.harness.cvng.BuilderFactory;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO;
+import io.harness.cvng.core.services.api.VerificationTaskService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
 import io.harness.cvng.servicelevelobjective.beans.ErrorBudgetRisk;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveDetailsDTO;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2DTO;
+import io.harness.cvng.servicelevelobjective.beans.slospec.CompositeServiceLevelObjectiveSpec;
+import io.harness.cvng.servicelevelobjective.beans.slospec.SimpleServiceLevelObjectiveSpec;
 import io.harness.cvng.servicelevelobjective.entities.CompositeSLORecord;
 import io.harness.cvng.servicelevelobjective.entities.CompositeSLORecord.CompositeSLORecordKeys;
 import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective;
@@ -46,6 +49,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.junit.Before;
@@ -60,6 +64,7 @@ public class CompositeSLOMetricAnalysisStateExecutorTest extends CvNextGenTestBa
   @Inject private MonitoredServiceService monitoredServiceService;
   @Inject private SLOHealthIndicatorServiceImpl sloHealthIndicatorService;
   @Inject ServiceLevelIndicatorService serviceLevelIndicatorService;
+  @Inject VerificationTaskService verificationTaskService;
   BuilderFactory builderFactory;
   private Instant startTime;
   private Instant endTime;
@@ -84,13 +89,15 @@ public class CompositeSLOMetricAnalysisStateExecutorTest extends CvNextGenTestBa
     MonitoredServiceDTO monitoredServiceDTO1 =
         builderFactory.monitoredServiceDTOBuilder().sources(MonitoredServiceDTO.Sources.builder().build()).build();
     monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO1);
-    simpleServiceLevelObjectiveDTO1 = builderFactory.getSimpleServiceLevelObjectiveV2DTOBuilder()
-                                          .monitoredServiceRef(monitoredServiceDTO1.getIdentifier())
-                                          .healthSourceRef(generateUuid())
-                                          .build();
+    simpleServiceLevelObjectiveDTO1 = builderFactory.getSimpleServiceLevelObjectiveV2DTOBuilder().build();
+    SimpleServiceLevelObjectiveSpec simpleServiceLevelObjectiveSpec1 =
+        (SimpleServiceLevelObjectiveSpec) simpleServiceLevelObjectiveDTO1.getSpec();
+    simpleServiceLevelObjectiveSpec1.setMonitoredServiceRef(monitoredServiceDTO1.getIdentifier());
+    simpleServiceLevelObjectiveSpec1.setHealthSourceRef(generateUuid());
     serviceLevelIndicatorService.create(builderFactory.getProjectParams(),
-        simpleServiceLevelObjectiveDTO1.getServiceLevelIndicators(), simpleServiceLevelObjectiveDTO1.getIdentifier(),
-        simpleServiceLevelObjectiveDTO1.getMonitoredServiceRef(), simpleServiceLevelObjectiveDTO1.getHealthSourceRef());
+        simpleServiceLevelObjectiveSpec1.getServiceLevelIndicators(), simpleServiceLevelObjectiveDTO1.getIdentifier(),
+        simpleServiceLevelObjectiveSpec1.getMonitoredServiceRef(),
+        simpleServiceLevelObjectiveSpec1.getHealthSourceRef());
     serviceLevelObjectiveV2Service.create(builderFactory.getProjectParams(), simpleServiceLevelObjectiveDTO1);
     simpleServiceLevelObjective1 = (SimpleServiceLevelObjective) serviceLevelObjectiveV2Service.getEntity(
         builderFactory.getProjectParams(), simpleServiceLevelObjectiveDTO1.getIdentifier());
@@ -102,28 +109,32 @@ public class CompositeSLOMetricAnalysisStateExecutorTest extends CvNextGenTestBa
                                                    .identifier("service1_env1")
                                                    .build();
     monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO2);
-    simpleServiceLevelObjectiveDTO2 = builderFactory.getSimpleServiceLevelObjectiveV2DTOBuilder()
-                                          .identifier("sloIdentifier2")
-                                          .monitoredServiceRef(monitoredServiceDTO2.getIdentifier())
-                                          .healthSourceRef(generateUuid())
-                                          .build();
+    simpleServiceLevelObjectiveDTO2 =
+        builderFactory.getSimpleServiceLevelObjectiveV2DTOBuilder().identifier("sloIdentifier2").build();
+    SimpleServiceLevelObjectiveSpec simpleServiceLevelObjectiveSpec2 =
+        (SimpleServiceLevelObjectiveSpec) simpleServiceLevelObjectiveDTO2.getSpec();
+    simpleServiceLevelObjectiveSpec2.setMonitoredServiceRef(monitoredServiceDTO2.getIdentifier());
+    simpleServiceLevelObjectiveSpec2.setHealthSourceRef(generateUuid());
     serviceLevelIndicatorService.create(builderFactory.getProjectParams(),
-        simpleServiceLevelObjectiveDTO2.getServiceLevelIndicators(), simpleServiceLevelObjectiveDTO2.getIdentifier(),
-        simpleServiceLevelObjectiveDTO2.getMonitoredServiceRef(), simpleServiceLevelObjectiveDTO2.getHealthSourceRef());
+        simpleServiceLevelObjectiveSpec2.getServiceLevelIndicators(), simpleServiceLevelObjectiveDTO2.getIdentifier(),
+        simpleServiceLevelObjectiveSpec2.getMonitoredServiceRef(),
+        simpleServiceLevelObjectiveSpec2.getHealthSourceRef());
     serviceLevelObjectiveV2Service.create(builderFactory.getProjectParams(), simpleServiceLevelObjectiveDTO2);
     simpleServiceLevelObjective2 = (SimpleServiceLevelObjective) serviceLevelObjectiveV2Service.getEntity(
         builderFactory.getProjectParams(), simpleServiceLevelObjectiveDTO2.getIdentifier());
 
     serviceLevelObjectiveV2DTO = builderFactory.getCompositeServiceLevelObjectiveV2DTOBuilder()
-                                     .serviceLevelObjectivesDetails(Arrays.asList(
-                                         ServiceLevelObjectiveDetailsDTO.builder()
-                                             .serviceLevelObjectiveRef(simpleServiceLevelObjective1.getUuid())
-                                             .weightagePercentage(75.0)
-                                             .build(),
-                                         ServiceLevelObjectiveDetailsDTO.builder()
-                                             .serviceLevelObjectiveRef(simpleServiceLevelObjective2.getUuid())
-                                             .weightagePercentage(25.0)
-                                             .build()))
+                                     .spec(CompositeServiceLevelObjectiveSpec.builder()
+                                               .serviceLevelObjectivesDetails(Arrays.asList(
+                                                   ServiceLevelObjectiveDetailsDTO.builder()
+                                                       .serviceLevelObjectiveRef(simpleServiceLevelObjective1.getUuid())
+                                                       .weightagePercentage(75.0)
+                                                       .build(),
+                                                   ServiceLevelObjectiveDetailsDTO.builder()
+                                                       .serviceLevelObjectiveRef(simpleServiceLevelObjective2.getUuid())
+                                                       .weightagePercentage(25.0)
+                                                       .build()))
+                                               .build())
                                      .build();
     serviceLevelObjectiveV2Service.create(builderFactory.getProjectParams(), serviceLevelObjectiveV2DTO);
     compositeServiceLevelObjective = (CompositeServiceLevelObjective) serviceLevelObjectiveV2Service.getEntity(
@@ -151,6 +162,8 @@ public class CompositeSLOMetricAnalysisStateExecutorTest extends CvNextGenTestBa
   @Owner(developers = VARSHA_LALWANI)
   @Category(UnitTests.class)
   public void testExecute() {
+    verificationTaskService.createCompositeSLOVerificationTask(
+        builderFactory.getContext().getAccountId(), compositeServiceLevelObjective.getUuid(), new HashMap<>());
     sloMetricAnalysisState =
         (CompositeSLOMetricAnalysisState) sloMetricAnalysisStateExecutor.execute(sloMetricAnalysisState);
     List<CompositeSLORecord> sloRecordList =

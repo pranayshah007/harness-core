@@ -185,10 +185,10 @@ public class ArtifactResponseToOutcomeMapper {
   private static AzureArtifactsOutcome getAzureArtifactsOutcome(AzureArtifactsConfig azureArtifactsConfig,
       AzureArtifactsDelegateResponse azureArtifactsDelegateResponse, boolean useDelegateResponse) {
     return AzureArtifactsOutcome.builder()
-        .image(azureArtifactsDelegateResponse.getPackageUrl())
+        .image(useDelegateResponse ? azureArtifactsDelegateResponse.getPackageUrl() : "")
         .imagePullSecret(createImagePullSecret(ArtifactUtils.getArtifactKey(azureArtifactsConfig)))
         .packageName(azureArtifactsConfig.getPackageName().getValue())
-        .version(azureArtifactsDelegateResponse.getVersion())
+        .version(useDelegateResponse ? azureArtifactsDelegateResponse.getVersion() : "")
         .connectorRef(azureArtifactsConfig.getConnectorRef().getValue())
         .type(ArtifactSourceType.AZURE_ARTIFACTS.getDisplayName())
         .identifier(azureArtifactsConfig.getIdentifier())
@@ -205,10 +205,10 @@ public class ArtifactResponseToOutcomeMapper {
       GithubPackagesArtifactConfig githubPackagesArtifactConfig,
       GithubPackagesArtifactDelegateResponse githubPackagesArtifactDelegateResponse, boolean useDelegateResponse) {
     return GithubPackagesArtifactOutcome.builder()
-        .image(githubPackagesArtifactDelegateResponse.getPackageUrl())
+        .image(useDelegateResponse ? githubPackagesArtifactDelegateResponse.getPackageUrl() : "")
         .imagePullSecret(createImagePullSecret(ArtifactUtils.getArtifactKey(githubPackagesArtifactConfig)))
         .packageName(githubPackagesArtifactConfig.getPackageName().getValue())
-        .version(githubPackagesArtifactDelegateResponse.getVersion())
+        .version(useDelegateResponse ? githubPackagesArtifactDelegateResponse.getVersion() : "")
         .connectorRef(githubPackagesArtifactConfig.getConnectorRef().getValue())
         .type(ArtifactSourceType.GITHUB_PACKAGES.getDisplayName())
         .identifier(githubPackagesArtifactConfig.getIdentifier())
@@ -223,7 +223,7 @@ public class ArtifactResponseToOutcomeMapper {
         .bucketName(amazonS3ArtifactConfig.getBucketName().getValue())
         .region(
             amazonS3ArtifactConfig.getRegion() != null ? amazonS3ArtifactConfig.getRegion().getValue() : "us-east-1")
-        .filePath(s3ArtifactDelegateResponse.getFilePath())
+        .filePath(useDelegateResponse ? s3ArtifactDelegateResponse.getFilePath() : "")
         .connectorRef(amazonS3ArtifactConfig.getConnectorRef().getValue())
         .type(ArtifactSourceType.AMAZONS3.getDisplayName())
         .identifier(amazonS3ArtifactConfig.getIdentifier())
@@ -303,7 +303,15 @@ public class ArtifactResponseToOutcomeMapper {
         .type(ArtifactSourceType.ECR.getDisplayName())
         .primaryArtifact(ecrArtifactConfig.isPrimaryArtifact())
         .imagePullSecret(createImagePullSecret(ArtifactUtils.getArtifactKey(ecrArtifactConfig)))
+        .label(getEcrLabels(ecrArtifactDelegateResponse))
         .build();
+  }
+
+  private static Map<String, String> getEcrLabels(EcrArtifactDelegateResponse artifactDelegateResponse) {
+    if (artifactDelegateResponse == null || EmptyPredicate.isEmpty(artifactDelegateResponse.getLabel())) {
+      return Collections.emptyMap();
+    }
+    return artifactDelegateResponse.getLabel();
   }
 
   private NexusArtifactOutcome getNexusArtifactOutcome(NexusRegistryArtifactConfig artifactConfig,
@@ -315,6 +323,16 @@ public class ArtifactResponseToOutcomeMapper {
       artifactPath = nexusRegistryDockerConfig.getArtifactPath() != null
           ? nexusRegistryDockerConfig.getArtifactPath().getValue()
           : null;
+    } else if (artifactConfig.getRepositoryFormat().getValue().equalsIgnoreCase("maven")) {
+      if (artifactDelegateResponse != null) {
+        artifactPath = artifactDelegateResponse.getArtifactPath();
+      }
+    } else if (artifactConfig.getRepositoryFormat().getValue().equalsIgnoreCase("npm")
+        || artifactConfig.getRepositoryFormat().getValue().equalsIgnoreCase("nuget")) {
+      if (artifactDelegateResponse != null && artifactDelegateResponse.getBuildDetails() != null
+          && artifactDelegateResponse.getBuildDetails().getMetadata() != null) {
+        artifactPath = artifactDelegateResponse.getBuildDetails().getMetadata().get("package");
+      }
     }
 
     return NexusArtifactOutcome.builder()
@@ -448,7 +466,7 @@ public class ArtifactResponseToOutcomeMapper {
         .type(ArtifactSourceType.JENKINS.getDisplayName())
         .identifier(jenkinsArtifactConfig.getIdentifier())
         .primaryArtifact(jenkinsArtifactConfig.isPrimaryArtifact())
-        .metadata(jenkinsArtifactDelegateResponse.getBuildDetails().getMetadata())
+        .metadata(useDelegateResponse ? jenkinsArtifactDelegateResponse.getBuildDetails().getMetadata() : Map.of())
         .build();
   }
 

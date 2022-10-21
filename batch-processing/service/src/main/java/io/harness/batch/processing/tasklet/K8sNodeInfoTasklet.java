@@ -116,6 +116,17 @@ public class K8sNodeInfoTasklet implements Tasklet {
           nodeInfo.getClusterId());
       return InstanceInfo.builder().metaData(metaData).build();
     }
+    // Handling for azure virtual node
+    boolean azureVirtualNode = false;
+    if (CloudProvider.ON_PREM == k8SCloudProvider) {
+      String type =
+          InstanceMetaDataUtils.getValueForKeyFromInstanceLabel(InstanceMetaDataConstants.TYPE_LABEL, labelsMap);
+      azureVirtualNode = InstanceMetaDataUtils.isAzureVirtualNode(type, nodeInfo.getNodeName(), InstanceType.K8S_NODE);
+      if (azureVirtualNode) {
+        k8SCloudProvider = CloudProvider.AZURE;
+        metaData.put(InstanceMetaDataConstants.VIRTUAL_NODE, "AZURE");
+      }
+    }
     metaData.put(InstanceMetaDataConstants.CLOUD_PROVIDER, k8SCloudProvider.name());
     metaData.put(InstanceMetaDataConstants.REGION, labelsMap.get(K8sCCMConstants.REGION));
     metaData.put(InstanceMetaDataConstants.ZONE, labelsMap.get(K8sCCMConstants.ZONE));

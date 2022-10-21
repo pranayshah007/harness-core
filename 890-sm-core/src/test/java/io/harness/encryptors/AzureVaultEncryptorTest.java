@@ -252,6 +252,36 @@ public class AzureVaultEncryptorTest extends CategoryTest {
   @Test
   @Owner(developers = RAGHAV_MURALI)
   @Category(UnitTests.class)
+  public void testUpdateSecretShouldHandleDeleteException() {
+    String plainText = UUIDGenerator.generateUuid();
+    String name = "My_Azure_Secret";
+    EncryptedRecord oldRecord = EncryptedRecordData.builder()
+                                    .name("MyAzureSecret")
+                                    .encryptionKey("MyAzureSecret")
+                                    .encryptedValue(UUIDGenerator.generateUuid().toCharArray())
+                                    .build();
+    SecretBundle secretBundle = new SecretBundle().withId(UUIDGenerator.generateUuid());
+    when(keyVaultClient.setSecret(any(SetSecretRequest.class))).thenReturn(secretBundle);
+
+    ObjectMapper objectMapper = new ObjectMapper();
+    String errorJson = "{\"error\" : {\"code\" : \"BadParameter\","
+        + " \"message\": \"The request URI contains an invalid name: My_Azure_Secret\"}}";
+
+    try {
+      KeyVaultError error = objectMapper.readValue(errorJson, KeyVaultError.class);
+      when(keyVaultClient.deleteSecret(anyString(), anyString()))
+          .thenThrow(new KeyVaultErrorException("Secret not found", null, error));
+    } catch (Exception e) {
+      // unable to process json
+      fail("Json processing error");
+    }
+
+    azureVaultEncryptor.updateSecret(azureVaultConfig.getAccountId(), name, plainText, oldRecord, azureVaultConfig);
+  }
+
+  @Test
+  @Owner(developers = RAGHAV_MURALI)
+  @Category(UnitTests.class)
   public void testUpdateSecretAuthenticationException() {
     String plainText = UUIDGenerator.generateUuid();
     String name = UUIDGenerator.generateUuid();
