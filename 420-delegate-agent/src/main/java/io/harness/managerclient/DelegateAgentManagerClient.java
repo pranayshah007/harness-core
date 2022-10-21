@@ -36,6 +36,7 @@ import io.harness.perpetualtask.HeartbeatRequest;
 import io.harness.perpetualtask.HeartbeatResponse;
 import io.harness.perpetualtask.PerpetualTaskContextResponse;
 import io.harness.perpetualtask.PerpetualTaskListResponse;
+import io.harness.perpetualtask.instancesyncv2.CgInstanceSyncResponse;
 import io.harness.perpetualtask.instancesyncv2.InstanceSyncTrackedDeploymentDetails;
 import io.harness.rest.RestResponse;
 import io.harness.serializer.kryo.KryoRequest;
@@ -133,7 +134,7 @@ public interface DelegateAgentManagerClient {
 
   @POST("instancesync/instance-sync-v2/{perpetualTaskId}")
   Call<RestResponse<Boolean>> publishInstanceSyncV2Result(@Path("perpetualTaskId") String perpetualTaskId,
-      @Query("accountId") String accountId, @Body DelegateResponseData responseData);
+      @Query("accountId") String accountId, @Body CgInstanceSyncResponse responseData);
 
   @GET("instancesync/instance-sync-v2/task-details/{perpetualTaskId}")
   @Consumes({"application/x-protobuf"})

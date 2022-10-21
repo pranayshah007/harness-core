@@ -7,6 +7,11 @@
 
 package software.wings.instancesyncv2.model;
 
+import static io.harness.annotations.dev.HarnessTeam.CDP;
+
+import io.harness.annotations.dev.OwnedBy;
+
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -14,9 +19,10 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class CgK8sDeploymentReleaseDetails implements TrackedDeploymentReleaseDetails {
+@JsonIgnoreProperties(ignoreUnknown = true)
+@OwnedBy(CDP)
+public class CgK8sReleaseIdentifier implements CgReleaseIdentifiers {
   private String namespace;
   private String releaseName;
-
-  private long lastSuccessfulInstanceSync;
+  private String clusterName;
 }

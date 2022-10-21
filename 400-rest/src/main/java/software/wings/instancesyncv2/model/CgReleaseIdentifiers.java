@@ -7,6 +7,4 @@
 
 package software.wings.instancesyncv2.model;
 
-public interface TrackedDeploymentReleaseDetails {
-  long getLastSuccessfulInstanceSync();
-}
+public interface CgReleaseIdentifiers {}
