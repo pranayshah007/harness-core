@@ -163,6 +163,8 @@ public interface DelegateService extends OwnedByAccount {
 
   List<String> obtainDelegateIdsUsingName(String accountId, String delegateName);
 
+  List<Delegate> obtainDelegatesUsingName(String accountId, String delegateName);
+
   boolean filter(String accountId, String delegateId);
 
   Delegate updateHeartbeatForDelegateWithPollingEnabled(Delegate delegate);
@@ -178,13 +180,15 @@ public interface DelegateService extends OwnedByAccount {
 
   void delegateDisconnected(String accountId, String delegateId, String delegateConnectionId);
 
+  void onDelegateDisconnected(String accountId, String delegateId);
+
   void deleteAllDelegatesExceptOne(String accountId, long shutdownInterval);
 
   CEDelegateStatus validateCEDelegate(String accountId, String delegateName);
 
   List<DelegateSizeDetails> fetchAvailableSizes();
 
-  List<String> getConnectedDelegates(String accountId, List<String> delegateIds);
+  List<Delegate> getConnectedDelegates(String accountId, List<Delegate> delegateIds);
 
   List<DelegateInitializationDetails> obtainDelegateInitializationDetails(String accountID, List<String> delegateIds);
 

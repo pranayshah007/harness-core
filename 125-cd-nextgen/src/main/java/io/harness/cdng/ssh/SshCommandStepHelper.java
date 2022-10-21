@@ -40,6 +40,8 @@ import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.service.steps.ServiceOutcomeHelper;
 import io.harness.cdng.service.steps.ServiceStepOutcome;
+import io.harness.cdng.ssh.output.SshInfraDelegateConfigOutput;
+import io.harness.cdng.ssh.output.WinRmInfraDelegateConfigOutput;
 import io.harness.cdng.ssh.rollback.CommandStepRollbackHelper;
 import io.harness.cdng.ssh.rollback.SshWinRmRollbackData;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
@@ -87,8 +89,6 @@ import io.harness.steps.OutputExpressionConstants;
 import io.harness.steps.shellscript.HarnessFileStoreSource;
 import io.harness.steps.shellscript.ShellScriptInlineSource;
 import io.harness.steps.shellscript.ShellScriptSourceWrapper;
-import io.harness.steps.shellscript.SshInfraDelegateConfigOutput;
-import io.harness.steps.shellscript.WinRmInfraDelegateConfigOutput;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -342,9 +342,8 @@ public class SshCommandStepHelper extends CDStepHelper {
         .host(onDelegate ? null : getHost(commandStepParameters))
         .useWinRMKerberosUniqueCacheFile(
             cdFeatureFlagHelper.isEnabled(accountId, FeatureName.WINRM_KERBEROS_CACHE_UNIQUE_FILE))
-        .disableWinRMCommandEncodingFFSet(
-            cdFeatureFlagHelper.isEnabled(accountId, FeatureName.DISABLE_WINRM_COMMAND_ENCODING))
-        .winrmScriptCommandSplit(cdFeatureFlagHelper.isEnabled(accountId, FeatureName.WINRM_SCRIPT_COMMAND_SPLIT))
+        .disableWinRMCommandEncodingFFSet(true)
+        .winrmScriptCommandSplit(true)
         .build();
   }
 
@@ -370,9 +369,8 @@ public class SshCommandStepHelper extends CDStepHelper {
         .host(onDelegate ? null : getHost(commandStepParameters))
         .useWinRMKerberosUniqueCacheFile(
             cdFeatureFlagHelper.isEnabled(accountId, FeatureName.WINRM_KERBEROS_CACHE_UNIQUE_FILE))
-        .disableWinRMCommandEncodingFFSet(
-            cdFeatureFlagHelper.isEnabled(accountId, FeatureName.DISABLE_WINRM_COMMAND_ENCODING))
-        .winrmScriptCommandSplit(cdFeatureFlagHelper.isEnabled(accountId, FeatureName.WINRM_SCRIPT_COMMAND_SPLIT))
+        .disableWinRMCommandEncodingFFSet(true)
+        .winrmScriptCommandSplit(true)
         .build();
   }
 

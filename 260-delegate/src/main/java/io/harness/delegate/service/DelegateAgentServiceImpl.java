@@ -1085,6 +1085,10 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       } catch (Exception e) {
         log.error("Error checking for profile", e);
       }
+    } else {
+      log.warn(
+          "Unable to check/start delegate profile, shouldContactManager :{}, currently executing profile :{}, isLocked :{}, frozen :{}.",
+          shouldContactManager(), executingProfile.get(), isLocked(new File("profile")), frozen.get());
     }
   }
 

@@ -201,20 +201,31 @@ public class InstanceRepositoryCustomImplTest extends InstancesTestBase {
   @Owner(developers = PIYUSH_BHUWALKA)
   @Category(UnitTests.class)
   public void getActiveInstancesTest() {
-    Criteria baseCriteria = Criteria.where(InstanceKeys.accountIdentifier)
-                                .is(ACCOUNT_ID)
-                                .and(InstanceKeys.orgIdentifier)
-                                .is(ORGANIZATION_ID)
-                                .and(InstanceKeys.projectIdentifier)
-                                .is(PROJECT_ID);
+    Criteria filterNotDeleted = Criteria.where(InstanceKeys.accountIdentifier)
+                                    .is(ACCOUNT_ID)
+                                    .and(InstanceKeys.orgIdentifier)
+                                    .is(ORGANIZATION_ID)
+                                    .and(InstanceKeys.projectIdentifier)
+                                    .is(PROJECT_ID)
+                                    .and(InstanceKeys.isDeleted)
+                                    .is(false)
+                                    .and(InstanceKeys.createdAt)
+                                    .lte(TIMESTAMP);
 
-    Criteria filterCreatedAt = Criteria.where(InstanceKeys.createdAt).lte(TIMESTAMP);
-    Criteria filterDeletedAt = Criteria.where(InstanceKeys.deletedAt).gte(TIMESTAMP);
-    Criteria filterDeleted = Criteria.where(InstanceKeys.isDeleted).is(true);
-    Criteria filterNotDeleted = Criteria.where(InstanceKeys.isDeleted).is(false);
+    Criteria filterDeletedAfter = Criteria.where(InstanceKeys.accountIdentifier)
+                                      .is(ACCOUNT_ID)
+                                      .and(InstanceKeys.orgIdentifier)
+                                      .is(ORGANIZATION_ID)
+                                      .and(InstanceKeys.projectIdentifier)
+                                      .is(PROJECT_ID)
+                                      .and(InstanceKeys.isDeleted)
+                                      .is(true)
+                                      .and(InstanceKeys.createdAt)
+                                      .lte(TIMESTAMP)
+                                      .and(InstanceKeys.deletedAt)
+                                      .gte(TIMESTAMP);
 
-    Criteria criteria = baseCriteria.orOperator(
-        filterNotDeleted.andOperator(filterCreatedAt), filterDeleted.andOperator(filterCreatedAt, filterDeletedAt));
+    Criteria criteria = new Criteria().orOperator(filterNotDeleted, filterDeletedAfter);
     Instance instance = Instance.builder().build();
     Query query = new Query().addCriteria(criteria);
     when(mongoTemplate.find(query, Instance.class)).thenReturn(Arrays.asList(instance));
@@ -244,21 +255,32 @@ public class InstanceRepositoryCustomImplTest extends InstancesTestBase {
   @Owner(developers = PIYUSH_BHUWALKA)
   @Category(UnitTests.class)
   public void getActiveInstancesByServiceIdTest() {
-    Criteria baseCriteria = Criteria.where(InstanceKeys.accountIdentifier)
-                                .is(ACCOUNT_ID)
-                                .and(InstanceKeys.orgIdentifier)
-                                .is(ORGANIZATION_ID)
-                                .and(InstanceKeys.projectIdentifier)
-                                .is(PROJECT_ID);
+    Criteria filterNotDeleted = Criteria.where(InstanceKeys.accountIdentifier)
+                                    .is(ACCOUNT_ID)
+                                    .and(InstanceKeys.orgIdentifier)
+                                    .is(ORGANIZATION_ID)
+                                    .and(InstanceKeys.projectIdentifier)
+                                    .is(PROJECT_ID)
+                                    .and(InstanceKeys.isDeleted)
+                                    .is(false)
+                                    .and(InstanceKeys.createdAt)
+                                    .lte(TIMESTAMP);
 
-    Criteria filterCreatedAt = Criteria.where(InstanceKeys.createdAt).lte(TIMESTAMP);
-    Criteria filterDeletedAt = Criteria.where(InstanceKeys.deletedAt).gte(TIMESTAMP);
-    Criteria filterDeleted = Criteria.where(InstanceKeys.isDeleted).is(true);
-    Criteria filterNotDeleted = Criteria.where(InstanceKeys.isDeleted).is(false);
+    Criteria filterDeletedAfter = Criteria.where(InstanceKeys.accountIdentifier)
+                                      .is(ACCOUNT_ID)
+                                      .and(InstanceKeys.orgIdentifier)
+                                      .is(ORGANIZATION_ID)
+                                      .and(InstanceKeys.projectIdentifier)
+                                      .is(PROJECT_ID)
+                                      .and(InstanceKeys.isDeleted)
+                                      .is(true)
+                                      .and(InstanceKeys.createdAt)
+                                      .lte(TIMESTAMP)
+                                      .and(InstanceKeys.deletedAt)
+                                      .gte(TIMESTAMP);
 
-    Criteria criteria = baseCriteria
-                            .orOperator(filterNotDeleted.andOperator(filterCreatedAt),
-                                filterDeleted.andOperator(filterCreatedAt, filterDeletedAt))
+    Criteria criteria = new Criteria()
+                            .orOperator(filterNotDeleted, filterDeletedAfter)
                             .and(InstanceKeys.serviceIdentifier)
                             .is(SERVICE_ID);
     Query query = new Query().addCriteria(criteria);
