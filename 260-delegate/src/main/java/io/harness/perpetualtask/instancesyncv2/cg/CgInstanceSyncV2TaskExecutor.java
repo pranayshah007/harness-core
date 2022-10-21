@@ -11,18 +11,20 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.grpc.utils.AnyUtils;
+import io.harness.managerclient.DelegateAgentManagerClient;
 import io.harness.perpetualtask.PerpetualTaskExecutionParams;
 import io.harness.perpetualtask.PerpetualTaskExecutor;
 import io.harness.perpetualtask.PerpetualTaskId;
 import io.harness.perpetualtask.PerpetualTaskResponse;
 import io.harness.perpetualtask.instancesyncv2.CgInstanceSyncTaskParams;
+import io.harness.perpetualtask.instancesyncv2.InstanceSyncTrackedDeploymentDetails;
 import io.harness.serializer.KryoSerializer;
-
-import software.wings.helpers.ext.k8s.request.K8sClusterConfig;
+import io.harness.util.DelegateRestUtils;
 
 import com.google.inject.Inject;
 import java.time.Instant;
 import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -30,16 +32,20 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor(onConstructor = @__({ @Inject }))
 public class CgInstanceSyncV2TaskExecutor implements PerpetualTaskExecutor {
   private final KryoSerializer kryoSerializer;
+  private final DelegateAgentManagerClient delegateAgentManagerClient;
 
+  @SneakyThrows
   @Override
   public PerpetualTaskResponse runOnce(
       PerpetualTaskId taskId, PerpetualTaskExecutionParams params, Instant heartbeatTime) {
     log.info("Came here. Add more details for task executor");
     CgInstanceSyncTaskParams taskParams = AnyUtils.unpack(params.getCustomizedParams(), CgInstanceSyncTaskParams.class);
     String cloudProviderType = taskParams.getCloudProviderType();
-    K8sClusterConfig config =
-        (K8sClusterConfig) kryoSerializer.asObject(taskParams.getCloudProviderDetails().toByteArray());
-    return null;
+    InstanceSyncTrackedDeploymentDetails trackedDeploymentDetails = DelegateRestUtils.executeRestCall(
+        delegateAgentManagerClient.fetchTrackedReleaseDetails(taskId.getId(), taskParams.getAccountId()));
+
+    log.info("fetched tracked deployment details: [{}]", trackedDeploymentDetails);
+    return PerpetualTaskResponse.builder().responseCode(200).responseMessage("SUCCESS").build();
   }
 
   @Override
