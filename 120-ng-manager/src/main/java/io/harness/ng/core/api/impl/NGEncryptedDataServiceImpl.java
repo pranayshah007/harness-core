@@ -119,6 +119,7 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
       EnumSet.of(EncryptionType.VAULT);
   private static final String READ_ONLY_SECRET_MANAGER_ERROR =
       "Cannot create an Inline secret in read only secret manager";
+  private static final String REGIONS = "regions";
   private final NGEncryptedDataDao encryptedDataDao;
   private final KmsEncryptorsRegistry kmsEncryptorsRegistry;
   private final VaultEncryptorsRegistry vaultEncryptorsRegistry;
@@ -218,8 +219,9 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
     if (secretTextSpecDTO.getAdditionalMetadata() != null
         && secretTextSpecDTO.getAdditionalMetadata().getValues() != null) {
       Map<String, Object> values = secretTextSpecDTO.getAdditionalMetadata().getValues();
-      if (!values.isEmpty() && (values.size() != 1 || !values.containsKey("regions"))) {
-        throw new InvalidRequestException("Additional metadata values expect only one key - regions");
+      if (!values.isEmpty() && (values.size() != 1 || !values.containsKey(REGIONS))) {
+        throw new InvalidRequestException(
+            String.format("Additional metadata values expect only one key - %s", REGIONS));
       }
     }
   }
