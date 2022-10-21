@@ -180,6 +180,8 @@ public interface DelegateService extends OwnedByAccount {
 
   void delegateDisconnected(String accountId, String delegateId, String delegateConnectionId);
 
+  void onDelegateDisconnected(String accountId, String delegateId);
+
   void deleteAllDelegatesExceptOne(String accountId, long shutdownInterval);
 
   CEDelegateStatus validateCEDelegate(String accountId, String delegateName);

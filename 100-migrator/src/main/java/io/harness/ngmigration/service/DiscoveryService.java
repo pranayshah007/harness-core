@@ -32,6 +32,7 @@ import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.summary.BaseSummary;
 import io.harness.ngmigration.client.NGClient;
 import io.harness.ngmigration.client.PmsClient;
+import io.harness.ngmigration.client.TemplateClient;
 import io.harness.ngmigration.dto.EntityMigratedStats;
 import io.harness.ngmigration.dto.ImportError;
 import io.harness.ngmigration.dto.MigratedDetails;
@@ -90,6 +91,8 @@ public class DiscoveryService {
   @Inject private MigratorMappingService migratorMappingService;
   @Inject @Named("ngClientConfig") private ServiceHttpClientConfig ngClientConfig;
   @Inject @Named("pipelineServiceClientConfig") private ServiceHttpClientConfig pipelineServiceClientConfig;
+
+  @Inject @Named("templateServiceClientConfig") private ServiceHttpClientConfig templateServiceClientConfig;
 
   private void travel(String accountId, String appId, Map<CgEntityId, CgEntityNode> entities,
       Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId parent, DiscoveryNode discoveryNode) {
@@ -314,6 +317,7 @@ public class DiscoveryService {
   private SaveSummaryDTO createEntities(String auth, MigrationInputDTO inputDTO, List<NGYamlFile> ngYamlFiles) {
     NGClient ngClient = getRestClient(ngClientConfig, NGClient.class);
     PmsClient pmsClient = getRestClient(pipelineServiceClientConfig, PmsClient.class);
+    TemplateClient templateClient = getRestClient(templateServiceClientConfig, TemplateClient.class);
     // Sort such that we create secrets first then connectors and so on.
     MigratorUtility.sort(ngYamlFiles);
     SaveSummaryDTO summaryDTO = SaveSummaryDTO.builder()
@@ -328,7 +332,8 @@ public class DiscoveryService {
         summaryDTO.getStats().putIfAbsent(file.getType(), new EntityMigratedStats());
         NgMigrationService ngMigration = migrationFactory.getMethod(file.getType());
         if (!file.isExists()) {
-          MigrationImportSummaryDTO importSummaryDTO = ngMigration.migrate(auth, ngClient, pmsClient, inputDTO, file);
+          MigrationImportSummaryDTO importSummaryDTO =
+              ngMigration.migrate(auth, ngClient, pmsClient, templateClient, inputDTO, file);
           if (importSummaryDTO != null && importSummaryDTO.isSuccess()) {
             summaryDTO.getStats().get(file.getType()).incrementSuccessfullyMigrated();
             summaryDTO.getSuccessfullyMigratedDetails().add(MigratedDetails.builder()

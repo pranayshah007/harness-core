@@ -8,6 +8,7 @@
 package io.harness.plancreator.steps;
 
 import static io.harness.rule.OwnerRule.NAMAN;
+import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -85,5 +86,113 @@ public class GenericPlanCreatorUtilsTest extends CategoryTest {
                     .getNode()
                     .getField("fieldB");
     assertThat(GenericPlanCreatorUtils.getRollbackStageNodeId(testField)).isEqualTo("a0parallel_rollbackStage");
+  }
+
+  @Test
+  @Owner(developers = PRASHANTSHARMA)
+  @Category(UnitTests.class)
+  public void testObtainNextSiblingFieldAtStageLevel() throws IOException {
+    String singleStageYaml = "pipeline:\n"
+        + "  stages:\n"
+        + "    - __uuid: a0\n"
+        + "      stage:\n"
+        + "         type: Pipeline\n"
+        + "         __uuid: a1\n";
+    YamlField pipelineYamlField = YamlUtils.readTree(singleStageYaml);
+    YamlField pipelineStageNode = pipelineYamlField.getNode()
+                                      .getField("pipeline")
+                                      .getNode()
+                                      .getField("stages")
+                                      .getNode()
+                                      .asArray()
+                                      .get(0)
+                                      .getField("stage");
+    YamlField nextSiblingField = GenericPlanCreatorUtils.obtainNextSiblingFieldAtStageLevel(pipelineStageNode);
+    assertThat(nextSiblingField).isNull();
+
+    String multiStageYaml = "pipeline:\n"
+        + "  stages:\n"
+        + "     - __uuid: a0\n"
+        + "       stage:\n"
+        + "         type: Pipeline\n"
+        + "         __uuid: a1\n"
+        + "     - __uuid: a3\n"
+        + "       stage:\n"
+        + "         type: Deployment\n"
+        + "         __uuid: a2\n";
+
+    pipelineYamlField = YamlUtils.readTree(multiStageYaml);
+    pipelineStageNode = pipelineYamlField.getNode()
+                            .getField("pipeline")
+                            .getNode()
+                            .getField("stages")
+                            .getNode()
+                            .asArray()
+                            .get(0)
+                            .getField("stage");
+    nextSiblingField = GenericPlanCreatorUtils.obtainNextSiblingFieldAtStageLevel(pipelineStageNode);
+    assertThat(nextSiblingField.getNode().getUuid()).isEqualTo("a2");
+
+    String parallelStageYaml = "pipeline:\n"
+        + "  stages:\n"
+        + "    - parallel:\n"
+        + "         - __uuid: a0\n"
+        + "           stage:\n"
+        + "             type: Pipeline\n"
+        + "           __uuid: a1\n"
+        + "         - __uuid: a3\n"
+        + "           stage:\n"
+        + "             type: Deployment\n"
+        + "             __uuid: a4\n";
+
+    pipelineYamlField = YamlUtils.readTree(parallelStageYaml);
+    pipelineStageNode = pipelineYamlField.getNode()
+                            .getField("pipeline")
+                            .getNode()
+                            .getField("stages")
+                            .getNode()
+                            .asArray()
+                            .get(0)
+                            .getField("parallel")
+                            .getNode()
+                            .asArray()
+                            .get(0)
+                            .getField("stage");
+    nextSiblingField = GenericPlanCreatorUtils.obtainNextSiblingFieldAtStageLevel(pipelineStageNode);
+    assertThat(nextSiblingField).isNull();
+
+    String parallelStageWithSeriesStage = "pipeline:\n"
+        + "  stages:\n"
+        + "    - parallel:\n"
+        + "         - __uuid: a0\n"
+        + "           stage:\n"
+        + "             type: Pipeline\n"
+        + "           __uuid: a1\n"
+        + "         - __uuid: a3\n"
+        + "           stage:\n"
+        + "             type: Deployment\n"
+        + "             __uuid: a4\n"
+        + "         - __uuid: a6\n"
+        + "           stage:\n"
+        + "             type: Deployment\n"
+        + "             __uuid: a7\n"
+        + "    - stage:\n"
+        + "       uuid: a5\n";
+
+    pipelineYamlField = YamlUtils.readTree(parallelStageWithSeriesStage);
+    pipelineStageNode = pipelineYamlField.getNode()
+                            .getField("pipeline")
+                            .getNode()
+                            .getField("stages")
+                            .getNode()
+                            .asArray()
+                            .get(0)
+                            .getField("parallel")
+                            .getNode()
+                            .asArray()
+                            .get(0)
+                            .getField("stage");
+    nextSiblingField = GenericPlanCreatorUtils.obtainNextSiblingFieldAtStageLevel(pipelineStageNode);
+    assertThat(nextSiblingField).isNull();
   }
 }

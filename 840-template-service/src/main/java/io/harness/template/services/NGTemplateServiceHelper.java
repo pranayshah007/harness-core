@@ -275,6 +275,7 @@ public class NGTemplateServiceHelper {
     if (criteriaList.size() != 0) {
       criteria.andOperator(criteriaList.toArray(new Criteria[0]));
     }
+    addRepoFilter(criteria, templateFilter.getRepoName());
     populateTagsFilter(criteria, templateFilter.getTags());
     populateInFilter(criteria, TemplateEntityKeys.templateEntityType, templateFilter.getTemplateEntityTypes());
     populateInFilter(criteria, TemplateEntityKeys.childType, templateFilter.getChildTypes());
@@ -303,9 +304,16 @@ public class NGTemplateServiceHelper {
     if (criteriaList.size() != 0) {
       criteria.andOperator(criteriaList.toArray(new Criteria[0]));
     }
+    addRepoFilter(criteria, templateFilter.getRepoName());
     populateTagsFilter(criteria, templateFilter.getTags());
     populateInFilter(criteria, TemplateEntityKeys.templateEntityType, templateFilter.getTemplateEntityTypes());
     populateInFilter(criteria, TemplateEntityKeys.childType, templateFilter.getChildTypes());
+  }
+
+  private static void addRepoFilter(Criteria criteria, String repoName) {
+    if (EmptyPredicate.isNotEmpty(repoName)) {
+      criteria.and(TemplateEntityKeys.repo).is(repoName);
+    }
   }
 
   private static Criteria getSearchTermCriteria(String searchTerm) {

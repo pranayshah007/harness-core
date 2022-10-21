@@ -79,7 +79,6 @@ public interface ServiceEntityService {
   List<ServiceEntity> getServices(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, List<String> serviceIdentifiers);
 
-  List<ServiceEntity> getNonDeletedServices(String accountIdentifier);
   boolean isServiceField(String fieldName, JsonNode value);
 
   Optional<ServiceEntity> getService(

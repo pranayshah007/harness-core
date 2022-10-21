@@ -48,6 +48,7 @@ import io.harness.delegate.beans.DelegateProfileScopingRule;
 import io.harness.delegate.beans.DelegateScope;
 import io.harness.delegate.beans.DelegateSelectionLogParams;
 import io.harness.delegate.beans.NgSetupFields;
+import io.harness.delegate.beans.NoAvailableDelegatesException;
 import io.harness.delegate.beans.TaskGroup;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.SelectorCapability;
@@ -848,7 +849,7 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
   }
 
   @Override
-  public List<String> getEligibleDelegatesToExecuteTask(DelegateTask task) {
+  public List<String> getEligibleDelegatesToExecuteTask(DelegateTask task) throws WingsException {
     // if task comes with eligibleToExecuteDelegateIds then no need to do assignment logic
     if (isNotEmpty(task.getEligibleToExecuteDelegateIds())) {
       log.info(
@@ -864,7 +865,7 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
       if (isEmpty(accountDelegates)) {
         task.getNonAssignableDelegates().putIfAbsent(NO_ACTIVE_DELEGATES, Collections.emptyList());
         delegateTaskServiceClassic.addToTaskActivityLog(task, NO_ACTIVE_DELEGATES);
-        return eligibleDelegateIds;
+        throw new NoAvailableDelegatesException();
       }
 
       List<Delegate> delegates = getDelegatesWithOwnerShipCriteriaMatch(task, accountDelegates);

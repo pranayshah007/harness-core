@@ -78,6 +78,10 @@ public class GenericPlanCreatorUtils {
         currentField.getName(), Arrays.asList(STEP, PARALLEL, STEP_GROUP));
   }
 
+  public YamlField obtainNextSiblingFieldAtStageLevel(YamlField currentField) {
+    return currentField.getNode().nextSiblingFromParentArray(currentField.getName(), Arrays.asList(STAGE, PARALLEL));
+  }
+
   public RepairActionCode toRepairAction(FailureStrategyActionConfig action) {
     switch (action.getType()) {
       case IGNORE:

@@ -52,6 +52,7 @@ import io.harness.ng.core.invites.dto.InviteOperationResponse;
 import io.harness.ng.core.invites.dto.RoleBinding;
 import io.harness.ng.core.invites.entities.Invite;
 import io.harness.ng.core.invites.entities.Invite.InviteKeys;
+import io.harness.ng.core.user.UserInfo;
 import io.harness.ng.core.user.remote.dto.UserMetadataDTO;
 import io.harness.ng.core.user.service.NgUserService;
 import io.harness.notification.channeldetails.NotificationChannel;
@@ -489,7 +490,7 @@ public class InviteServiceImplTest extends CategoryTest {
     when(accountClient.isSSOEnabled(any())).thenReturn(ffCall);
     when(ffCall.execute()).thenReturn(Response.success(new RestResponse<>(true)));
     Call<RestResponse<Boolean>> userCall = mock(Call.class);
-    when(userClient.createUserAndCompleteNGInvite(any(), anyBoolean())).thenReturn(userCall);
+    when(userClient.createUserAndCompleteNGInvite(any(), anyBoolean(), anyBoolean())).thenReturn(userCall);
     when(userCall.execute()).thenReturn(Response.success(new RestResponse<>(true)));
 
     InviteOperationResponse inviteOperationResponse = inviteService.create(getDummyInvite(), false, false);
@@ -512,7 +513,7 @@ public class InviteServiceImplTest extends CategoryTest {
              any(), any(), any(), any()))
         .thenReturn(Optional.empty());
     Call<RestResponse<Boolean>> call = mock(Call.class);
-    when(userClient.createUserAndCompleteNGInvite(any(), anyBoolean())).thenReturn(call);
+    when(userClient.createUserAndCompleteNGInvite(any(), anyBoolean(), anyBoolean())).thenReturn(call);
     when(accountClient.isSSOEnabled(any())).thenReturn(call);
     when(call.execute()).thenReturn(Response.success(new RestResponse<>(true)));
     when(ngFeatureFlagHelperService.isEnabled(anyString(), any(FeatureName.class))).thenReturn(true);
@@ -533,8 +534,12 @@ public class InviteServiceImplTest extends CategoryTest {
              any(), any(), any(), any()))
         .thenReturn(Optional.empty());
     Call<RestResponse<Boolean>> userCall = mock(Call.class);
-    when(userClient.createUserAndCompleteNGInvite(any(), anyBoolean())).thenReturn(userCall);
+    when(userClient.createUserAndCompleteNGInvite(any(), anyBoolean(), anyBoolean())).thenReturn(userCall);
     when(userCall.execute()).thenReturn(Response.success(new RestResponse<>(true)));
+    Call<RestResponse<Optional<UserInfo>>> userInfoCall = mock(Call.class);
+    when(userClient.updateUserTwoFactorAuthInfo(any(), any())).thenReturn(userInfoCall);
+    when(userInfoCall.execute())
+        .thenReturn(Response.success(new RestResponse<>(Optional.of(UserInfo.builder().build()))));
     when(accountClient.getAccountDTO(any()).execute())
         .thenReturn(Response.success(new RestResponse(AccountDTO.builder()
                                                           .identifier(accountIdentifier)
