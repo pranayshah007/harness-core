@@ -67,17 +67,17 @@ public class PolicyPackDAO {
     return policy;
   }
 
-  public PolicyPack listid(String accountId, String uuid, boolean create) {
+  public PolicyPack listid(String accountId, String name, boolean create) {
     try {
       return hPersistence.createQuery(PolicyPack.class)
               .field(PolicySetId.accountId)
               .equal(accountId)
-              .field(PolicySetId.uuid)
-              .equal(uuid)
+              .field(PolicySetId.name)
+              .equal(name)
               .asList()
               .get(0);
     } catch (IndexOutOfBoundsException e) {
-      log.error("No such policy pack exists,{} accountId{} uuid{}", e,accountId,uuid);
+      log.error("No such policy pack exists,{} accountId{} uuid{}", e,accountId,name);
       if(create==true) {
         return null;
       }

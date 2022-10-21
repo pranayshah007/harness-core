@@ -115,8 +115,8 @@ public class GovernancePolicyResource {
     // rbacHelper.checkPolicyEditPermission(accountId, null, null);
     Policy policy = createPolicyDTO.getPolicy();
     policy.setAccountId(accountId);
-    if (governancePolicyService.listid(accountId, policy.getUuid(), true) != null) {
-      throw new InvalidRequestException("Policy  with this uuid already exits");
+    if (governancePolicyService.listid(accountId, policy.getName(), true) != null) {
+      throw new InvalidRequestException("Policy  with given name already exits");
     }
     governancePolicyService.save(policy);
     return ResponseDTO.newResponse(policy.toDTO());
@@ -146,6 +146,7 @@ public class GovernancePolicyResource {
     Policy policy = createPolicyDTO.getPolicy();
     policy.toDTO();
     policy.setAccountId(accountId);
+    governancePolicyService.listid(accountId, policy.getName(), false);
     governancePolicyService.update(policy);
     return ResponseDTO.newResponse(policy);
   }
@@ -171,10 +172,9 @@ public class GovernancePolicyResource {
   delete(@Parameter(required = true, description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
              NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @PathParam("policyId") @Parameter(
-          required = true, description = "Unique identifier for the policy") @NotNull @Valid String uuid) {
+          required = true, description = "Unique identifier for the policy") @NotNull @Valid String name) {
     // rbacHelper.checkPolicyDeletePermission(accountId, null, null);
-    governancePolicyService.listid(accountId, uuid, false);
-    boolean result = governancePolicyService.delete(accountId, uuid);
+    boolean result = governancePolicyService.delete(accountId, governancePolicyService.listid(accountId, name, false).getUuid());
     return ResponseDTO.newResponse(result);
   }
 
@@ -200,12 +200,12 @@ public class GovernancePolicyResource {
     PolicyRequest query = listDTO.getPolicyRequest();
     List<Policy> Policies = new ArrayList<>();
     query.setAccountId(accountId);
-    String uuid = query.getUuid();
+    String name = query.getName();
     String isStablePolicy = query.getIsStablePolicy();
     String resource = query.getResource();
     String tags = query.getTags();
-    if (uuid != null) {
-      Policy policy = governancePolicyService.listid(accountId, uuid, false);
+    if (name != null) {
+      Policy policy = governancePolicyService.listid(accountId, name, false);
       Policies.add(policy);
       return ResponseDTO.newResponse(Policies);
     }

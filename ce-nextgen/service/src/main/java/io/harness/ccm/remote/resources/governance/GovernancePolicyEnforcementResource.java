@@ -7,10 +7,8 @@
 
 package io.harness.ccm.remote.resources.governance;
 
-import com.codahale.metrics.annotation.ExceptionMetered;
-import com.codahale.metrics.annotation.Timed;
-import com.google.gson.Gson;
-import com.google.inject.Inject;
+import static io.harness.annotations.dev.HarnessTeam.CE;
+
 import io.harness.NGCommonEntityConstants;
 import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.annotations.dev.OwnedBy;
@@ -20,6 +18,7 @@ import io.harness.ccm.scheduler.SchedulerClient;
 import io.harness.ccm.scheduler.SchedulerDTO;
 import io.harness.ccm.utils.LogAccountIdentifier;
 import io.harness.ccm.views.dto.CreatePolicyEnforcementDTO;
+import io.harness.ccm.views.entities.CEReportSchedule;
 import io.harness.ccm.views.entities.PolicyEnforcement;
 import io.harness.ccm.views.service.GovernancePolicyService;
 import io.harness.ccm.views.service.PolicyEnforcementService;
@@ -28,7 +27,13 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.rest.RestResponse;
 import io.harness.security.annotations.PublicApi;
+
+import com.codahale.metrics.annotation.ExceptionMetered;
+import com.codahale.metrics.annotation.Timed;
+import com.google.gson.Gson;
+import com.google.inject.Inject;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
@@ -40,6 +45,11 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.TimeZone;
 import lombok.extern.slf4j.Slf4j;
 import net.minidev.json.JSONArray;
 import net.sf.json.JSONObject;
@@ -57,6 +67,12 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
+import lombok.extern.slf4j.Slf4j;
+import net.sf.json.JSONObject;
+import org.springframework.scheduling.support.CronSequenceGenerator;
+import org.springframework.stereotype.Service;
+import retrofit2.Response;
+// TODO: add pagination
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -132,12 +148,25 @@ public class GovernancePolicyEnforcementResource {
     // rbacHelper.checkPolicyEnforcementEditPermission(accountId, null, null);
     PolicyEnforcement policyEnforcement = createPolicyEnforcementDTO.getPolicyEnforcement();
     policyEnforcement.setAccountId(accountId);
-    if (policyEnforcementService.listid(accountId, policyEnforcement.getUuid(), true) != null) {
-      throw new InvalidRequestException("Policy Enforcement with this uuid already exits");
+    try {
+      if (policyEnforcement.getExecutionTimezone() != null) {
+        CronSequenceGenerator cronSequenceGenerator = new CronSequenceGenerator(
+            policyEnforcement.getExecutionSchedule(), TimeZone.getTimeZone(policyEnforcement.getExecutionTimezone()));
+        CronSequenceGenerator.isValidExpression(String.valueOf(cronSequenceGenerator));
+      } else {
+        CronSequenceGenerator cronSequenceGenerator =
+            new CronSequenceGenerator(policyEnforcement.getExecutionSchedule(), TimeZone.getTimeZone("UTC"));
+        CronSequenceGenerator.isValidExpression(String.valueOf(cronSequenceGenerator));
+      }
+    } catch (Exception e) {
+      throw new InvalidRequestException("cron is not valid");
     }
-    //TODO: Re enable after testing
-    //policyService.check(accountId, policyEnforcement.getPolicyIds());
-    //policyPackService.check(accountId, policyEnforcement.getPolicyPackIDs());
+    if (policyEnforcementService.listid(accountId, policyEnforcement.getName(), true) != null) {
+      throw new InvalidRequestException("Policy Enforcement with given name already exits");
+    }
+    // TODO: Re enable after testing
+    // policyService.check(accountId, policyEnforcement.getPolicyIds());
+    // policyPackService.check(accountId, policyEnforcement.getPolicyPackIDs());
     policyEnforcementService.save(policyEnforcement);
 
     // Insert a record in dkron
@@ -202,10 +231,10 @@ public class GovernancePolicyEnforcementResource {
   delete(@Parameter(required = true, description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
              NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @PathParam("enforcementID") @Parameter(
-          required = true, description = "Unique identifier for the policy enforcement") @NotNull @Valid String uuid) {
+          required = true, description = "Unique identifier for the policy enforcement") @NotNull @Valid String name) {
     // rbacHelper.checkPolicyEnforcementDeletePermission(accountId, null, null);
-    policyEnforcementService.listid(accountId, uuid, false);
-    boolean result = policyEnforcementService.delete(accountId, uuid);
+    boolean result =
+        policyEnforcementService.delete(accountId, policyEnforcementService.listid(accountId, name, false).getUuid());
     // TODO: Delete the record from dkron as well.
     return ResponseDTO.newResponse(result);
   }
@@ -231,7 +260,7 @@ public class GovernancePolicyEnforcementResource {
     //  rbacHelper.checkPolicyEnforcementEditPermission(accountId, null, null);
     PolicyEnforcement policyEnforcement = createPolicyEnforcementDTO.getPolicyEnforcement();
     policyEnforcement.setAccountId(accountId);
-    policyEnforcementService.listid(accountId, policyEnforcement.getUuid(), false);
+    policyEnforcementService.listid(accountId, policyEnforcement.getName(), false);
     policyService.check(accountId, policyEnforcement.getPolicyIds());
     policyPackService.check(accountId, policyEnforcement.getPolicyPackIDs());
     policyEnforcementService.update(policyEnforcement);

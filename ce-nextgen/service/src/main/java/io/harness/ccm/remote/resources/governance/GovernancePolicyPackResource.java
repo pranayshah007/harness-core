@@ -113,8 +113,8 @@ public class GovernancePolicyPackResource {
           description = "Request body containing Policy store object") @Valid CreatePolicyPackDTO createPolicySetDTO) {
     // rbacHelper.checkPolicyPackEditPermission(accountId, null, null);
     PolicyPack policyPack = createPolicySetDTO.getPolicyPack();
-    if (policyPackService.listid(accountId, policyPack.getUuid(), true) != null) {
-      throw new InvalidRequestException("Policy pack with this uuid already exits");
+    if (policyPackService.listid(accountId, policyPack.getName(), true) != null) {
+      throw new InvalidRequestException("Policy pack with this name already exits");
     }
     policyPack.setAccountId(accountId);
     policyService.check(accountId, policyPack.getPoliciesIdentifier());
@@ -142,7 +142,7 @@ public class GovernancePolicyPackResource {
     PolicyPack policyPack = createPolicySetDTO.getPolicyPack();
     policyPack.toDTO();
     policyPack.setAccountId(accountId);
-    policyPackService.listid(accountId, policyPack.getUuid(), false);
+    policyPackService.listid(accountId, policyPack.getName(), false);
     policyService.check(accountId, policyPack.getPoliciesIdentifier());
     policyPackService.update(policyPack);
     return ResponseDTO.newResponse(policyPack);
@@ -168,7 +168,7 @@ public class GovernancePolicyPackResource {
     // rbacHelper.checkPolicyPackViewPermission(accountId, null, null);
     PolicyPack query = createPolicyPackDTO.getPolicyPack();
     List<Policy> Policies = new ArrayList<>();
-    policyPackService.listid(accountId, query.getUuid(), false);
+    policyPackService.listid(accountId, query.getName(), false);
     policyService.check(accountId, query.getPoliciesIdentifier());
 
     return ResponseDTO.newResponse(Policies);
@@ -212,10 +212,9 @@ public class GovernancePolicyPackResource {
   delete(@Parameter(required = true, description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
              NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @PathParam("policyPackId") @Parameter(
-          required = true, description = "Unique identifier for the policy") @NotNull @Valid String uuid) {
+          required = true, description = "Unique identifier for the policy") @NotNull @Valid String name) {
     // rbacHelper.checkPolicyPackDeletePermission(accountId, null, null);
-    policyPackService.listid(accountId, uuid, false);
-    boolean result = policyPackService.delete(accountId, uuid);
+    boolean result = policyPackService.delete(accountId, policyPackService.listid(accountId, name, false).getUuid());
     return ResponseDTO.newResponse(result);
   }
 }

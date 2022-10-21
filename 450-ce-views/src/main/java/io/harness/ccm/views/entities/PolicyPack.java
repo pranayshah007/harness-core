@@ -46,7 +46,7 @@ public final class PolicyPack implements PersistentEntity, UuidAware, CreatedAtA
                                          CreatedByAware, UpdatedByAware {
   @Id @Schema(description = "unique id") String uuid;
   @Schema(description = "account id") String accountId;
-  @Schema(description = "Identifier") String name;
+  @Schema(description = "name") String name;
   @Schema(description = NGCommonEntityConstants.DESCRIPTION) String description;
   @Schema(description = NGCommonEntityConstants.TAGS) List<String> tags;
   @Schema(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) String orgIdentifier;

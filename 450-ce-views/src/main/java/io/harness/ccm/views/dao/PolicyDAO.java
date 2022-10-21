@@ -56,17 +56,17 @@ public class PolicyDAO {
     return query.asList();
   }
 
-  public Policy listid(String accountId, String uuid, boolean create) {
+  public Policy listid(String accountId, String name, boolean create) {
     try {
       return hPersistence.createQuery(Policy.class)
           .field(PolicyId.accountId)
           .equal(accountId)
-          .field(PolicyId.uuid)
-          .equal(uuid)
+          .field(PolicyId.name)
+          .equal(name)
           .asList()
           .get(0);
     } catch (IndexOutOfBoundsException e) {
-      log.error("No such policy exists,{} accountId{} uuid{}", e, accountId, uuid);
+      log.error("No such policy exists,{} accountId{} uuid{}", e, accountId, name);
       if (create == true) {
         return null;
       }

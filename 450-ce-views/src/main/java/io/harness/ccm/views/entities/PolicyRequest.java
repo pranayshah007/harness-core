@@ -23,7 +23,7 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Schema(name = "PolicyRequest", description = "This has the query to list the policies")
 public class PolicyRequest {
-  @Schema(description = "unique id") String uuid;
+  @Schema(description = "name") String name;
   @Schema(description = "account id") String accountId;
   @Schema(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) String orgIdentifier;
   @Schema(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) String projectIdentifier;
@@ -34,9 +34,9 @@ public class PolicyRequest {
   @Schema(description = "isOOTBPolicy") String isOOTBPolicy;
 
   @Builder
-  public PolicyRequest(String uuid, String accountId, String orgIdentifier, String projectIdentifier, String resource,
+  public PolicyRequest(String name, String accountId, String orgIdentifier, String projectIdentifier, String resource,
       String tags, String cloudProvider, String isStablePolicy, String isOOTBPolicy) {
-    this.uuid = uuid;
+    this.name = name;
     this.accountId = accountId;
     this.orgIdentifier = orgIdentifier;
     this.projectIdentifier = projectIdentifier;
