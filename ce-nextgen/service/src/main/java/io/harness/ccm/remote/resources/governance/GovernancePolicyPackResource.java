@@ -111,7 +111,7 @@ public class GovernancePolicyPackResource {
              NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @RequestBody(required = true,
           description = "Request body containing Policy store object") @Valid CreatePolicyPackDTO createPolicySetDTO) {
-    // rbacHelper.checkPolicySetEditPermission(accountId, null, null);
+    // rbacHelper.checkPolicyPackEditPermission(accountId, null, null);
     PolicyPack policyPack = createPolicySetDTO.getPolicyPack();
     if (policyPackService.listid(accountId, policyPack.getUuid(), true) != null) {
       throw new InvalidRequestException("Policy pack with this uuid already exits");
@@ -138,7 +138,7 @@ public class GovernancePolicyPackResource {
                    NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @RequestBody(required = true,
           description = "Request body containing ceViewFolder object") @Valid CreatePolicyPackDTO createPolicySetDTO) {
-    //  rbacHelper.checkPolicySetEditPermission(accountId, null, null);
+    //  rbacHelper.checkPolicyPackEditPermission(accountId, null, null);
     PolicyPack policyPack = createPolicySetDTO.getPolicyPack();
     policyPack.toDTO();
     policyPack.setAccountId(accountId);
@@ -165,7 +165,7 @@ public class GovernancePolicyPackResource {
           description = "Request body containing policy pack object") @Valid CreatePolicyPackDTO createPolicyPackDTO,
       @PathParam("id") @Parameter(
           required = true, description = "Unique identifier for the policy") @NotNull @Valid String uuid) {
-    // rbacHelper.checkPolicyPackPermission(accountId, null, null);
+    // rbacHelper.checkPolicyPackViewPermission(accountId, null, null);
     PolicyPack query = createPolicyPackDTO.getPolicyPack();
     List<Policy> Policies = new ArrayList<>();
     policyPackService.listid(accountId, query.getUuid(), false);

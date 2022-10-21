@@ -128,6 +128,7 @@ public class GovernancePolicyEnforcementResource {
              NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @RequestBody(required = true, description = "Request body containing Policy store object")
       @Valid CreatePolicyEnforcementDTO createPolicyEnforcementDTO) {
+    // rbacHelper.checkPolicyEnforcementEditPermission(accountId, null, null);
     PolicyEnforcement policyEnforcement = createPolicyEnforcementDTO.getPolicyEnforcement();
     policyEnforcement.setAccountId(accountId);
     if (policyEnforcementService.listid(accountId, policyEnforcement.getUuid(), true) != null) {
@@ -198,6 +199,7 @@ public class GovernancePolicyEnforcementResource {
              NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @PathParam("enforcementID") @Parameter(
           required = true, description = "Unique identifier for the policy enforcement") @NotNull @Valid String uuid) {
+    // rbacHelper.checkPolicyEnforcementDeletePermission(accountId, null, null);
     policyEnforcementService.listid(accountId, uuid, false);
     boolean result = policyEnforcementService.delete(accountId, uuid);
     // TODO: Delete the record from dkron as well.
@@ -222,6 +224,7 @@ public class GovernancePolicyEnforcementResource {
              NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @RequestBody(required = true, description = "Request body containing policy enforcement object")
       @Valid CreatePolicyEnforcementDTO createPolicyEnforcementDTO) {
+    //  rbacHelper.checkPolicyEnforcementEditPermission(accountId, null, null);
     PolicyEnforcement policyEnforcement = createPolicyEnforcementDTO.getPolicyEnforcement();
     policyEnforcement.setAccountId(accountId);
     policyEnforcementService.listid(accountId, policyEnforcement.getUuid(), false);
@@ -249,6 +252,7 @@ public class GovernancePolicyEnforcementResource {
           NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @RequestBody(required = true, description = "Request body containing  Policy Enforcement  object")
       @Valid CreatePolicyEnforcementDTO createPolicyEnforcementDTO) {
+    // rbacHelper.checkPolicyEnforcementViewPermission(accountId, null, null);
     return ResponseDTO.newResponse(policyEnforcementService.list(accountId));
   }
 }

@@ -564,6 +564,9 @@ roles:
         - ccm_policy_pack_edit
         - ccm_policy_pack_view
         - ccm_policy_pack_delete
+        - ccm_policy_enforcement_edit
+        - ccm_policy_enforcement_view
+        - ccm_policy_enforcement_delete
       allowedScopeLevels:
         - account
       managed: true
@@ -784,6 +787,9 @@ roles:
         - ccm_policy_pack_edit
         - ccm_policy_pack_view
         - ccm_policy_pack_delete
+        - ccm_policy_enforcement_edit
+        - ccm_policy_enforcement_view
+        - ccm_policy_enforcement_delete
       managed: true
       allowedScopeLevels:
         - account

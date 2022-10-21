@@ -10,15 +10,14 @@ package io.harness.ccm.views.service.impl;
 import static io.harness.annotations.dev.HarnessTeam.CE;
 
 import io.harness.annotations.dev.OwnedBy;
-
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
 import io.harness.ccm.views.dao.PolicyPackDAO;
 import io.harness.ccm.views.entities.PolicyPack;
 import io.harness.ccm.views.service.PolicyPackService;
-import lombok.extern.slf4j.Slf4j;
 
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import java.util.List;
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Singleton
@@ -44,19 +43,16 @@ public class PolicyPackServiceImpl implements PolicyPackService {
 
   @Override
   public PolicyPack listid(String accountId, String uuid, boolean create) {
-    {
-      return policyPackDAO.listid(accountId,uuid,create); }
+    { return policyPackDAO.listid(accountId, uuid, create); }
   }
 
   @Override
   public List<PolicyPack> list(String accountId) {
-    {
-      return policyPackDAO.list(accountId); }
+    { return policyPackDAO.list(accountId); }
   }
 
   @Override
-  public  void check(String accountId, List<String> policyPackIdentifier ) {
-    {
-    policyPackDAO.check( accountId, policyPackIdentifier ); }
+  public void check(String accountId, List<String> policyPackIdentifier) {
+    { policyPackDAO.check(accountId, policyPackIdentifier); }
   }
 }

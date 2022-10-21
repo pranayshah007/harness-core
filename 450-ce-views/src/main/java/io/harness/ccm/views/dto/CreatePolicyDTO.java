@@ -7,10 +7,10 @@
 
 package io.harness.ccm.views.dto;
 
+import io.harness.ccm.views.entities.Policy;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 import javax.validation.Valid;
-
-import io.harness.ccm.views.entities.Policy;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Value;

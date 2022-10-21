@@ -10,14 +10,13 @@ package io.harness.ccm.views.service.impl;
 import static io.harness.annotations.dev.HarnessTeam.CE;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.ccm.views.dao.PolicyDAO;
+import io.harness.ccm.views.entities.Policy;
+import io.harness.ccm.views.service.GovernancePolicyService;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.List;
-
-import io.harness.ccm.views.dao.PolicyDAO;
-import io.harness.ccm.views.entities.Policy;
-import io.harness.ccm.views.service.GovernancePolicyService;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -56,7 +55,7 @@ public class GovernancePolicyServiceImpl implements GovernancePolicyService {
   }
   @Override
   public Policy listid(String accountId, String uuid, boolean create) {
-    return policyDao.listid(accountId, uuid,create);
+    return policyDao.listid(accountId, uuid, create);
   }
   @Override
   public List<Policy> findByTagAndResource(String resource, String tag, String accountId) {
@@ -69,7 +68,7 @@ public class GovernancePolicyServiceImpl implements GovernancePolicyService {
   }
 
   @Override
-  public void check(String accountId, List<String> policiesIdentifier ) {
-    policyDao.check( accountId,policiesIdentifier);
+  public void check(String accountId, List<String> policiesIdentifier) {
+    policyDao.check(accountId, policiesIdentifier);
   }
 }

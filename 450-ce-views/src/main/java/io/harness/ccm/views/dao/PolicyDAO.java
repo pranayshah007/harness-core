@@ -7,8 +7,8 @@
 
 package io.harness.ccm.views.dao;
 
-import io.harness.ccm.views.entities.Policy.PolicyId;
 import io.harness.ccm.views.entities.Policy;
+import io.harness.ccm.views.entities.Policy.PolicyId;
 import io.harness.exception.InvalidRequestException;
 import io.harness.persistence.HPersistence;
 
@@ -51,29 +51,27 @@ public class PolicyDAO {
   }
 
   public List<Policy> findByTag(String tag, String accountId) {
-    Query<Policy> query = hPersistence.createQuery(Policy.class)
-                              .filter(PolicyId.tags, tag)
-                              .filter(PolicyId.accountId, accountId);
+    Query<Policy> query =
+        hPersistence.createQuery(Policy.class).filter(PolicyId.tags, tag).filter(PolicyId.accountId, accountId);
     return query.asList();
   }
 
-  public Policy listid(String accountId, String uuid,boolean create) {
-  try {
-    return hPersistence.createQuery(Policy.class)
-            .field(PolicyId.accountId)
-            .equal(accountId)
-            .field(PolicyId.uuid)
-            .equal(uuid)
-            .asList()
-            .get(0);
-  } catch (IndexOutOfBoundsException e) {
-    log.error("No such policy exists,{} accountId{} uuid{}", e,accountId,uuid);
-    if (create==true)
-    {
-      return null;
+  public Policy listid(String accountId, String uuid, boolean create) {
+    try {
+      return hPersistence.createQuery(Policy.class)
+          .field(PolicyId.accountId)
+          .equal(accountId)
+          .field(PolicyId.uuid)
+          .equal(uuid)
+          .asList()
+          .get(0);
+    } catch (IndexOutOfBoundsException e) {
+      log.error("No such policy exists,{} accountId{} uuid{}", e, accountId, uuid);
+      if (create == true) {
+        return null;
+      }
+      throw new InvalidRequestException("No such policy exists");
     }
-    throw new InvalidRequestException("No such policy exists");
-  }
   }
 
   public List<Policy> findByTagAndResource(String resource, String tag, String accountId) {
@@ -112,10 +110,9 @@ public class PolicyDAO {
                               .filter(PolicyId.accountId, accountId);
     return query.asList();
   }
-  public void check(String accountId, List<String> policiesIdentifier )
-  {
+  public void check(String accountId, List<String> policiesIdentifier) {
     for (String identifiers : policiesIdentifier) {
-      listid(accountId, identifiers,false);
-  }
+      listid(accountId, identifiers, false);
+    }
   }
 }

@@ -35,6 +35,9 @@ public interface CCMRbacHelper {
   void checkPolicyPackViewPermission(String accountIdentifier, String orgIdentifier, String projectIdentifier);
   void checkPolicyPackDeletePermission(String accountIdentifier, String orgIdentifier, String projectIdentifier);
   void checkPolicyPackEditPermission(String accountIdentifier, String orgIdentifier, String projectIdentifier);
+  void checkPolicyEnforcementViewPermission(String accountIdentifier, String orgIdentifier, String projectIdentifier);
+  void checkPolicyEnforcementDeletePermission(String accountIdentifier, String orgIdentifier, String projectIdentifier);
+  void checkPolicyEnforcementEditPermission(String accountIdentifier, String orgIdentifier, String projectIdentifier);
 
   void checkPerspectiveOnlyViewPermission(String accountIdentifier, String orgIdentifier, String projectIdentifier);
 }
