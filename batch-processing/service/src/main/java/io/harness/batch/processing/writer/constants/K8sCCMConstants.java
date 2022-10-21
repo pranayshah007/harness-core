@@ -36,5 +36,7 @@ public class K8sCCMConstants {
   public static final String SPOT_INSTANCE = "spot";
   public static final String ON_DEMAND_INSTANCE = "od";
 
+  public static final String VIRTUAL_KUBELET = "virtual-kubelet";
+
   private K8sCCMConstants() {}
 }

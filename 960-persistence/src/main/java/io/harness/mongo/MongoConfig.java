@@ -108,7 +108,7 @@ public class MongoConfig {
 
   private AnalyticNodeMongoConfig analyticNodeConfig = AnalyticNodeMongoConfig.builder().build();
 
-  @NotEmpty private int maxOperationTimeInMillis = 300000;
+  @NotEmpty private int maxOperationTimeInMillis = 1800000;
 
   @JsonIgnore
   public ReadPreference getReadPreference() {
