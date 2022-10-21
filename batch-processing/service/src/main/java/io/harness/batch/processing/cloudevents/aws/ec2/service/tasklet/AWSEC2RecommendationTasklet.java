@@ -358,7 +358,7 @@ public class AWSEC2RecommendationTasklet implements Tasklet {
     Double monthlySaving = Double.parseDouble(
         ec2Recommendation.getExpectedSaving().isEmpty() ? "0.0" : ec2Recommendation.getExpectedSaving());
     ec2RecommendationDAO.upsertCeRecommendation(ec2Recommendation.getUuid(), ec2Recommendation.getAccountId(),
-        ec2Recommendation.getInstanceId(), ec2Recommendation.getAwsAccountId(), ec2Recommendation.getInstanceName(),
+        ec2Recommendation.getInstanceId(), ec2Recommendation.getAwsAccountId(), ec2Recommendation.getInstanceType(),
         currentMonthCost, monthlySaving, ec2Recommendation.getLastUpdatedTime());
   }
 
