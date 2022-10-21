@@ -223,6 +223,9 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
         throw new InvalidRequestException(
             String.format("Additional metadata values expect only one key - %s", REGIONS));
       }
+      if (values.get(REGIONS) == null || isEmpty(String.valueOf(values.get(REGIONS)))) {
+        throw new InvalidRequestException(String.format("%s should not be empty", REGIONS));
+      }
     }
   }
 

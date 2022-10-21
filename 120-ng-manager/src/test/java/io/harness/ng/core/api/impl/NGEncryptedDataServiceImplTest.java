@@ -205,6 +205,36 @@ public class NGEncryptedDataServiceImplTest extends CategoryTest {
   @Test
   @Owner(developers = SHREYAS)
   @Category(UnitTests.class)
+  public void testInlineSecretWithNullRegion_forGcpSecretManager_shouldThrowException() {
+    values.put("regions", null);
+    AdditionalMetadata additionalMetadata = AdditionalMetadata.builder().values(values).build();
+    SecretTextSpecDTO secretTextSpecDTO =
+        SecretTextSpecDTO.builder().valueType(ValueType.Inline).additionalMetadata(additionalMetadata).build();
+    assertThatThrownBy(()
+                           -> ngEncryptedDataService.validateAdditionalMetadataInSecretTextSpecDTOForGcpSecretManager(
+                               secretTextSpecDTO))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("regions should not be empty");
+  }
+
+  @Test
+  @Owner(developers = SHREYAS)
+  @Category(UnitTests.class)
+  public void testInlineSecretWithEmptyRegion_forGcpSecretManager_shouldThrowException() {
+    values.put("regions", "");
+    AdditionalMetadata additionalMetadata = AdditionalMetadata.builder().values(values).build();
+    SecretTextSpecDTO secretTextSpecDTO =
+        SecretTextSpecDTO.builder().valueType(ValueType.Inline).additionalMetadata(additionalMetadata).build();
+    assertThatThrownBy(()
+                           -> ngEncryptedDataService.validateAdditionalMetadataInSecretTextSpecDTOForGcpSecretManager(
+                               secretTextSpecDTO))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("regions should not be empty");
+  }
+
+  @Test
+  @Owner(developers = SHREYAS)
+  @Category(UnitTests.class)
   public void testInlineSecretWithoutRegion_forGcpSecretManager_shouldNotThrowException() {
     SecretTextSpecDTO secretTextSpecDTO = SecretTextSpecDTO.builder().valueType(ValueType.Inline).build();
     assertThatCode(()
