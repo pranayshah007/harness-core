@@ -413,7 +413,11 @@ public enum FeatureName {
   NG_ENABLE_LDAP_CHECK("Enables NG Ldap in NG-UI", HarnessTeam.PL),
   CUSTOM_SECRET_MANAGER_NG("Enable Custom Secret Manager in NG", HarnessTeam.PL),
   CV_AWS_PROMETHEUS("Enable AWS Prometheus for CV State", HarnessTeam.CV),
-  CI_TI_DASHBOARDS_ENABLED;
+  CI_TI_DASHBOARDS_ENABLED,
+  PL_LDAP_PARALLEL_GROUP_SYNC(
+      "Enables User Group sync operation to fetch data from Ldap Server in Parallel. Enable only if Ldap Server can take the load",
+      HarnessTeam.PL);
+
   @Deprecated
   FeatureName() {
     scope = Scope.PER_ACCOUNT;
