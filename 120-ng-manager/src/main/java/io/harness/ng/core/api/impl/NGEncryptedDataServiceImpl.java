@@ -217,9 +217,9 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
 
   private void validateInlineSecretAdditionalMetadataForGcpSecretManager(SecretTextSpecDTO secretTextSpecDTO) {
     if (secretTextSpecDTO.getAdditionalMetadata() != null
-        && secretTextSpecDTO.getAdditionalMetadata().getValues() != null) {
+        && !isEmpty(secretTextSpecDTO.getAdditionalMetadata().getValues())) {
       Map<String, Object> values = secretTextSpecDTO.getAdditionalMetadata().getValues();
-      if (!values.isEmpty() && (values.size() != 1 || !values.containsKey(REGIONS))) {
+      if (values.size() != 1 || !values.containsKey(REGIONS)) {
         throw new InvalidRequestException(
             String.format("Additional metadata values expect only one key - %s", REGIONS));
       }
