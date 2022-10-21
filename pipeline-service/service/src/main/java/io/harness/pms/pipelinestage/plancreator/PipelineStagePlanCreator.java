@@ -10,6 +10,7 @@ package io.harness.pms.pipelinestage.plancreator;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.plancreator.steps.internal.PmsStepPlanCreatorUtils;
 import io.harness.plancreator.strategy.StrategyUtils;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
@@ -75,7 +76,8 @@ public class PipelineStagePlanCreator implements PartialPlanCreator<PipelineStag
                 FacilitatorObtainment.newBuilder()
                     .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.ASYNC).build())
                     .build())
-            .adviserObtainments(StrategyUtils.getAdviserObtainments(ctx.getCurrentField(), kryoSerializer, true));
+            .adviserObtainments(
+                PmsStepPlanCreatorUtils.getAdviserObtainmentFromMetaData(kryoSerializer, ctx.getCurrentField(), true));
     if (!EmptyPredicate.isEmpty(ctx.getExecutionInputTemplate())) {
       builder.executionInputTemplate(ctx.getExecutionInputTemplate());
     }

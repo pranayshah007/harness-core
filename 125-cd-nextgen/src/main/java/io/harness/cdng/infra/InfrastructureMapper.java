@@ -244,6 +244,7 @@ public class InfrastructureMapper {
                 .environment(environmentOutcome)
                 .infrastructureKey(InfrastructureKey.generate(
                     service, environmentOutcome, elastigroupInfrastructure.getInfrastructureKeyValues()))
+                .configuration(elastigroupInfrastructure.getConfiguration().getStore().getSpec())
                 .build();
         setInfraIdentifierAndName(elastigroupInfrastructureOutcome, elastigroupInfrastructure.getInfraIdentifier(),
             elastigroupInfrastructure.getInfraName());

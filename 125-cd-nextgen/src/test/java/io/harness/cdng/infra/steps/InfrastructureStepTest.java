@@ -79,6 +79,8 @@ import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigType;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
 import io.harness.cdng.pipeline.PipelineInfrastructure;
 import io.harness.cdng.service.steps.ServiceStepOutcome;
+import io.harness.cdng.ssh.output.SshInfraDelegateConfigOutput;
+import io.harness.cdng.ssh.output.WinRmInfraDelegateConfigOutput;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.delegate.beans.connector.ConnectorType;
@@ -114,8 +116,6 @@ import io.harness.repositories.UpsertOptions;
 import io.harness.rule.Owner;
 import io.harness.steps.OutputExpressionConstants;
 import io.harness.steps.environment.EnvironmentOutcome;
-import io.harness.steps.shellscript.SshInfraDelegateConfigOutput;
-import io.harness.steps.shellscript.WinRmInfraDelegateConfigOutput;
 
 import com.google.common.collect.Lists;
 import com.google.inject.name.Named;
