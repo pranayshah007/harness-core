@@ -9,7 +9,9 @@ package io.harness.delegate.task.email;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.tasks.ResponseData;
+import io.harness.delegate.beans.DelegateMetaInfo;
+import io.harness.delegate.beans.DelegateTaskNotifyResponseData;
+import io.harness.logging.CommandExecutionStatus;
 
 import lombok.Builder;
 import lombok.Data;
@@ -17,4 +19,7 @@ import lombok.Data;
 @Data
 @Builder
 @OwnedBy(HarnessTeam.CDC)
-public class EmailStepResponse implements ResponseData {}
+public class EmailStepResponse implements DelegateTaskNotifyResponseData {
+  private DelegateMetaInfo delegateMetaInfo;
+  private CommandExecutionStatus commandExecutionStatus;
+}
