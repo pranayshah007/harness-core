@@ -64,7 +64,7 @@ public class CustomArtifactStreamMapper implements ArtifactStreamMapper {
                                                      CustomArtifactScriptInfo.builder()
                                                          .shell(ShellType.Bash)
                                                          .source(CustomArtifactScriptSourceWrapper.builder()
-                                                                 .type("Inline")
+                                                                     .type("Inline")
                                                                      .spec(CustomScriptInlineSource.builder()
                                                                                .script(ParameterField.createValueField(
                                                                                    primaryScript.getScriptString()))
