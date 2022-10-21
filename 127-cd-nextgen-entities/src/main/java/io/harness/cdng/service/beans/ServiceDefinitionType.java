@@ -62,9 +62,9 @@ public enum ServiceDefinitionType {
       ServiceSpecType.ECS),
 
   @JsonProperty(ServiceSpecType.ELASTIGROUP)
-  ELASTIGROUP("Elastigroup",
+  ELASTIGROUP(ServiceSpecType.ELASTIGROUP,
       Lists.newArrayList(ExecutionStrategyType.CANARY, ExecutionStrategyType.BLUE_GREEN, ExecutionStrategyType.BASIC),
-      "Elastigroup");
+      ServiceSpecType.ELASTIGROUP);
 
   /*
   //Unsupported for now
