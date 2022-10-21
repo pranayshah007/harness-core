@@ -40,6 +40,10 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.TimeZone;
 import lombok.extern.slf4j.Slf4j;
 import net.minidev.json.JSONArray;
 import net.sf.json.JSONObject;
@@ -58,10 +62,6 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.TimeZone;
 
 import static io.harness.annotations.dev.HarnessTeam.CE;
 
@@ -134,16 +134,14 @@ public class GovernancePolicyEnforcementResource {
     // rbacHelper.checkPolicyEnforcementEditPermission(accountId, null, null);
     PolicyEnforcement policyEnforcement = createPolicyEnforcementDTO.getPolicyEnforcement();
     policyEnforcement.setAccountId(accountId);
+    if (policyEnforcement.getExecutionTimezone() == null) {
+      policyEnforcement.setExecutionTimezone("UTC");
+    }
     try {
-      if (policyEnforcement.getExecutionTimezone() != null) {
-        CronSequenceGenerator cronSequenceGenerator = new CronSequenceGenerator(
-            policyEnforcement.getExecutionSchedule(), TimeZone.getTimeZone(policyEnforcement.getExecutionTimezone()));
+      CronSequenceGenerator cronSequenceGenerator = new CronSequenceGenerator(
+              policyEnforcement.getExecutionSchedule(), TimeZone.getTimeZone(policyEnforcement.getExecutionTimezone()));
         CronSequenceGenerator.isValidExpression(String.valueOf(cronSequenceGenerator));
-      } else {
-        CronSequenceGenerator cronSequenceGenerator =
-            new CronSequenceGenerator(policyEnforcement.getExecutionSchedule(), TimeZone.getTimeZone("UTC"));
-        CronSequenceGenerator.isValidExpression(String.valueOf(cronSequenceGenerator));
-      }
+        //Todo Timezone validtaion needs to be added
     } catch (Exception e) {
       throw new InvalidRequestException("cron is not valid");
     }
@@ -246,7 +244,6 @@ public class GovernancePolicyEnforcementResource {
     //  rbacHelper.checkPolicyEnforcementEditPermission(accountId, null, null);
     PolicyEnforcement policyEnforcement = createPolicyEnforcementDTO.getPolicyEnforcement();
     policyEnforcement.setAccountId(accountId);
-
     policyEnforcementService.listid(accountId, policyEnforcement.getName(), false);
     policyService.check(accountId, policyEnforcement.getPolicyIds());
     policyPackService.check(accountId, policyEnforcement.getPolicyPackIDs());
