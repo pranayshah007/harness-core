@@ -7,8 +7,10 @@
 
 package io.harness.ccm.remote.resources.governance;
 
-import static io.harness.annotations.dev.HarnessTeam.CE;
-
+import com.codahale.metrics.annotation.ExceptionMetered;
+import com.codahale.metrics.annotation.Timed;
+import com.google.gson.Gson;
+import com.google.inject.Inject;
 import io.harness.NGCommonEntityConstants;
 import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.annotations.dev.OwnedBy;
@@ -27,11 +29,6 @@ import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.security.annotations.PublicApi;
-
-import com.codahale.metrics.annotation.ExceptionMetered;
-import com.codahale.metrics.annotation.Timed;
-import com.google.gson.Gson;
-import com.google.inject.Inject;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
@@ -43,9 +40,11 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import lombok.extern.slf4j.Slf4j;
+import net.sf.json.JSONObject;
+import org.springframework.stereotype.Service;
+import retrofit2.Response;
+
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
@@ -57,10 +56,12 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
-import lombok.extern.slf4j.Slf4j;
-import net.sf.json.JSONObject;
-import org.springframework.stereotype.Service;
-import retrofit2.Response;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import static io.harness.annotations.dev.HarnessTeam.CE;
 
 @Slf4j
 @Service
@@ -134,8 +135,9 @@ public class GovernancePolicyEnforcementResource {
     if (policyEnforcementService.listid(accountId, policyEnforcement.getUuid(), true) != null) {
       throw new InvalidRequestException("Policy Enforcement with this uuid already exits");
     }
-    policyService.check(accountId, policyEnforcement.getPolicyIds());
-    policyPackService.check(accountId, policyEnforcement.getPolicyPackIDs());
+    //TODO: Re enable after testing
+    //policyService.check(accountId, policyEnforcement.getPolicyIds());
+    //policyPackService.check(accountId, policyEnforcement.getPolicyPackIDs());
     policyEnforcementService.save(policyEnforcement);
 
     // Insert a record in dkron
@@ -165,6 +167,7 @@ public class GovernancePolicyEnforcementResource {
                                      .method(METHOD)
                                      .url(configuration.getGovernanceConfig().getCallbackApiEndpoint())
                                      .body(jsonObject.toString())
+                                     .headers(Arrays.asList("Content-Type: application/json"))
                                      .build())
                 .build();
         log.info(new Gson().toJson(schedulerDTO));
