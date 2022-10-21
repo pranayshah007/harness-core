@@ -1,4 +1,4 @@
-package io.harness.connector.apis.resource.gcp;
+package io.harness.connector.gcp;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;

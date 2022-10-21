@@ -146,7 +146,7 @@ public class NextGenConfiguration extends Configuration {
   public static final String SETTINGS_RESOURCE_PACKAGE = "io.harness.ngsettings.remote";
   public static final String FREEZE_RESOURCE_PACKAGE = "io.harness.ng.freeze.resource";
   private static final String REFRESH_RESOURCE_PACKAGE = "io.harness.ng.core.refresh";
-  private static final String GCP_CONNECTOR_RESOURCE_PACKAGE = "io.harness.connector.apis.resource.gcp";
+  private static final String GCP_CONNECTOR_RESOURCE_PACKAGE = "io.harness.connector.gcp";
   public static final Collection<Class<?>> HARNESS_RESOURCE_CLASSES = getResourceClasses();
 
   @JsonProperty("swagger") private SwaggerBundleConfiguration swaggerBundleConfiguration;
