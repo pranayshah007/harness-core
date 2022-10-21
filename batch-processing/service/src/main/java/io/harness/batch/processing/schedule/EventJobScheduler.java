@@ -146,7 +146,7 @@ public class EventJobScheduler {
     runCloudEfficiencyEventJobs(BatchJobBucket.OUT_OF_CLUSTER, true);
   }
 
-  @Scheduled(cron = "0 */5 * ? * *") // 0 */10 * * * ?   for testing
+  @Scheduled(cron = "0 30 * ? * *") // 0 */10 * * * ?   for testing
   public void runCloudEfficiencyOutOfClusterECSJobs() {
     runCloudEfficiencyEventJobs(BatchJobBucket.OUT_OF_CLUSTER_ECS, true);
   }
@@ -394,9 +394,6 @@ public class EventJobScheduler {
 
   @SuppressWarnings("squid:S1166") // not required to rethrow exceptions.
   private void runJob(String accountId, Job job, boolean runningMode) {
-    if (BatchJobType.AWS_EC2_SERVICE_RECOMMENDATION != BatchJobType.fromJob(job)) {
-      return;
-    }
     if (BatchJobType.K8S_NODE_RECOMMENDATION == BatchJobType.fromJob(job)
         && !featureFlagService.isEnabled(FeatureName.NODE_RECOMMENDATION_AGGREGATE, accountId)) {
       return;
