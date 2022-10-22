@@ -93,6 +93,7 @@ import io.harness.ccm.views.service.CEViewFolderService;
 import io.harness.ccm.views.service.CEViewService;
 import io.harness.ccm.views.service.GovernancePolicyService;
 import io.harness.ccm.views.service.PolicyEnforcementService;
+import io.harness.ccm.views.service.PolicyExecutionService;
 import io.harness.ccm.views.service.PolicyPackService;
 import io.harness.ccm.views.service.ViewCustomFieldService;
 import io.harness.ccm.views.service.ViewsBillingService;
@@ -101,6 +102,7 @@ import io.harness.ccm.views.service.impl.CEViewFolderServiceImpl;
 import io.harness.ccm.views.service.impl.CEViewServiceImpl;
 import io.harness.ccm.views.service.impl.GovernancePolicyServiceImpl;
 import io.harness.ccm.views.service.impl.PolicyEnforcementServiceImpl;
+import io.harness.ccm.views.service.impl.PolicyExecutionServiceImpl;
 import io.harness.ccm.views.service.impl.PolicyPackServiceImpl;
 import io.harness.ccm.views.service.impl.ViewCustomFieldServiceImpl;
 import io.harness.ccm.views.service.impl.ViewsBillingServiceImpl;
@@ -340,6 +342,7 @@ public class CENextGenModule extends AbstractModule {
     bind(GovernancePolicyService.class).to(GovernancePolicyServiceImpl.class);
     bind(PolicyPackService.class).to(PolicyPackServiceImpl.class);
     bind(PolicyEnforcementService.class).to(PolicyEnforcementServiceImpl.class);
+    bind(PolicyExecutionService.class).to(PolicyExecutionServiceImpl.class);
 
     registerEventsFrameworkMessageListeners();
 

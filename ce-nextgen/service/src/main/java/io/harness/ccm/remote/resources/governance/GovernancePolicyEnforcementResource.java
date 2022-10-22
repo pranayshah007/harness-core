@@ -116,7 +116,6 @@ public class GovernancePolicyEnforcementResource {
   }
 
   @POST
-  @Hidden
   @Path("enforcement")
   @Consumes(MediaType.APPLICATION_JSON)
   @ApiOperation(value = "Add a new policy Enforcement api", nickname = "addPolicyEnforcement")
