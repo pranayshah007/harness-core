@@ -122,9 +122,7 @@ public class StagesPlanCreatorV1 extends ChildrenPlanCreator<YamlField> {
         Optional.of(planCreationContext.getCurrentField().getNode().asArray()).orElse(Collections.emptyList());
     List<YamlField> stageFields = new LinkedList<>();
 
-    yamlNodes.forEach(yamlNode -> {
-      stageFields.add(new YamlField(yamlNode));
-    });
+    yamlNodes.forEach(yamlNode -> { stageFields.add(new YamlField(yamlNode)); });
     return stageFields;
   }
 }
