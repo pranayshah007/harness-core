@@ -25,6 +25,7 @@ import software.wings.beans.InfrastructureMapping;
 import software.wings.beans.SettingAttribute;
 import software.wings.instancesyncv2.handler.CgInstanceSyncV2Handler;
 import software.wings.instancesyncv2.handler.CgInstanceSyncV2HandlerFactory;
+import software.wings.instancesyncv2.model.InstanceSyncTaskDetails;
 import software.wings.instancesyncv2.service.CgInstanceSyncTaskDetailsService;
 import software.wings.service.impl.SettingsServiceImpl;
 import software.wings.service.intfc.InfrastructureMappingService;
@@ -79,10 +80,10 @@ public class CgInstanceSyncServiceV2 {
           }
 
           String configuredPerpetualTaskId =
-              instanceSyncHandler.getConfiguredPerpetualTaskId(deploymentSummary, cloudProvider.getUuid());
+              getConfiguredPerpetualTaskId(deploymentSummary, cloudProvider.getUuid(), instanceSyncHandler);
           if (StringUtils.isEmpty(configuredPerpetualTaskId)) {
             String perpetualTaskId = createInstanceSyncPerpetualTask(cloudProvider);
-            instanceSyncHandler.trackDeploymentRelease(cloudProvider.getUuid(), perpetualTaskId, deploymentSummary);
+            trackDeploymentRelease(cloudProvider.getUuid(), perpetualTaskId, deploymentSummary, instanceSyncHandler);
           } else {
             updateInstanceSyncPerpetualTask(cloudProvider, configuredPerpetualTaskId);
           }
@@ -121,6 +122,46 @@ public class CgInstanceSyncServiceV2 {
         .setInterval(Durations.fromMinutes(10))
         .setTimeout(Durations.fromMinutes(5))
         .build();
+  }
+
+  private String getConfiguredPerpetualTaskId(
+      DeploymentSummary deploymentSummary, String cloudProviderId, CgInstanceSyncV2Handler instanceSyncHandler) {
+    InstanceSyncTaskDetails instanceSyncTaskDetails =
+        taskDetailsService.getForInfraMapping(deploymentSummary.getAccountId(), deploymentSummary.getInfraMappingId());
+
+    if (Objects.nonNull(instanceSyncTaskDetails)) {
+      instanceSyncTaskDetails.getReleaseIdentifiers().addAll(
+          instanceSyncHandler.buildReleaseIdentifiers(deploymentSummary.getDeploymentInfo()));
+
+      instanceSyncTaskDetails.setReleaseIdentifiers(
+          instanceSyncHandler.mergeReleaseIdentifiers(instanceSyncTaskDetails.getReleaseIdentifiers(),
+              instanceSyncHandler.buildReleaseIdentifiers(deploymentSummary.getDeploymentInfo())));
+
+      taskDetailsService.save(instanceSyncTaskDetails);
+      return instanceSyncTaskDetails.getPerpetualTaskId();
+    }
+
+    log.info("No Instance Sync details found for InfraMappingId: [{}]. Proceeding to handling it.",
+        deploymentSummary.getInfraMappingId());
+    instanceSyncTaskDetails =
+        taskDetailsService.fetchForCloudProvider(deploymentSummary.getAccountId(), cloudProviderId);
+    if (Objects.isNull(instanceSyncTaskDetails)) {
+      log.info("No Perpetual task found for cloud providerId: [{}].", cloudProviderId);
+      return StringUtils.EMPTY;
+    }
+
+    String perpetualTaskId = instanceSyncTaskDetails.getPerpetualTaskId();
+    InstanceSyncTaskDetails newTaskDetails =
+        instanceSyncHandler.prepareTaskDetails(deploymentSummary, cloudProviderId, perpetualTaskId);
+    taskDetailsService.save(newTaskDetails);
+    return perpetualTaskId;
+  }
+
+  private void trackDeploymentRelease(String cloudProviderId, String perpetualTaskId,
+      DeploymentSummary deploymentSummary, CgInstanceSyncV2Handler instanceSyncHandler) {
+    InstanceSyncTaskDetails newTaskDetails =
+        instanceSyncHandler.prepareTaskDetails(deploymentSummary, cloudProviderId, perpetualTaskId);
+    taskDetailsService.save(newTaskDetails);
   }
 
   public void processInstanceSyncResult(String perpetualTaskId, CgInstanceSyncResponse result) {

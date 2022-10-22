@@ -24,7 +24,6 @@ import software.wings.helpers.ext.container.ContainerDeploymentManagerHelper;
 import software.wings.instancesyncv2.model.CgK8sReleaseIdentifier;
 import software.wings.instancesyncv2.model.CgReleaseIdentifiers;
 import software.wings.instancesyncv2.model.InstanceSyncTaskDetails;
-import software.wings.instancesyncv2.service.CgInstanceSyncTaskDetailsService;
 import software.wings.settings.SettingVariableTypes;
 
 import com.google.inject.Inject;
@@ -33,7 +32,6 @@ import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
@@ -46,7 +44,6 @@ import org.apache.groovy.util.Maps;
 @Slf4j
 public class K8sInstanceSyncV2HandlerCg implements CgInstanceSyncV2Handler {
   private final ContainerDeploymentManagerHelper containerDeploymentManagerHelper;
-  private final CgInstanceSyncTaskDetailsService taskDetailsService;
   private final KryoSerializer kryoSerializer;
 
   @Override
@@ -77,39 +74,8 @@ public class K8sInstanceSyncV2HandlerCg implements CgInstanceSyncV2Handler {
   }
 
   @Override
-  public String getConfiguredPerpetualTaskId(DeploymentSummary deploymentSummary, String cloudProviderId) {
-    InstanceSyncTaskDetails instanceSyncTaskDetails =
-        taskDetailsService.getForInfraMapping(deploymentSummary.getAccountId(), deploymentSummary.getInfraMappingId());
-
-    if (Objects.nonNull(instanceSyncTaskDetails)) {
-      instanceSyncTaskDetails.getReleaseIdentifiers().addAll(
-          buildReleaseIdentifiers(deploymentSummary.getDeploymentInfo()));
-
-      instanceSyncTaskDetails.setReleaseIdentifiers(
-          mergeReleaseIdentifiers(instanceSyncTaskDetails.getReleaseIdentifiers(),
-              buildReleaseIdentifiers(deploymentSummary.getDeploymentInfo())));
-
-      taskDetailsService.save(instanceSyncTaskDetails);
-      return instanceSyncTaskDetails.getPerpetualTaskId();
-    }
-
-    log.info("No Instance Sync details found for InfraMappingId: [{}]. Proceeding to handling it.",
-        deploymentSummary.getInfraMappingId());
-    instanceSyncTaskDetails =
-        taskDetailsService.fetchForCloudProvider(deploymentSummary.getAccountId(), cloudProviderId);
-    if (Objects.isNull(instanceSyncTaskDetails)) {
-      log.info("No Perpetual task found for cloud providerId: [{}].", cloudProviderId);
-      return StringUtils.EMPTY;
-    }
-
-    String perpetualTaskId = instanceSyncTaskDetails.getPerpetualTaskId();
-    InstanceSyncTaskDetails newTaskDetails = prepareTaskDetails(deploymentSummary, cloudProviderId, perpetualTaskId);
-    taskDetailsService.save(newTaskDetails);
-    return perpetualTaskId;
-  }
-
-  private Set<CgReleaseIdentifiers> mergeReleaseIdentifiers(
-      Set<CgReleaseIdentifiers> existingIdentifiers, Set<CgReleaseIdentifiers> newIdentifiers) {
+  public Set<CgReleaseIdentifiers> mergeReleaseIdentifiers(
+      Set<CgReleaseIdentifiers> existingIdentifiers, Set<? extends CgReleaseIdentifiers> newIdentifiers) {
     Set<CgReleaseIdentifiers> identifiers = new HashSet<>();
     for (CgReleaseIdentifiers newIdentifier : newIdentifiers) {
       if (newIdentifier instanceof CgK8sReleaseIdentifier) {
@@ -140,13 +106,7 @@ public class K8sInstanceSyncV2HandlerCg implements CgInstanceSyncV2Handler {
   }
 
   @Override
-  public void trackDeploymentRelease(
-      String cloudProviderId, String perpetualTaskId, DeploymentSummary deploymentSummary) {
-    InstanceSyncTaskDetails newTaskDetails = prepareTaskDetails(deploymentSummary, cloudProviderId, perpetualTaskId);
-    taskDetailsService.save(newTaskDetails);
-  }
-
-  private InstanceSyncTaskDetails prepareTaskDetails(
+  public InstanceSyncTaskDetails prepareTaskDetails(
       DeploymentSummary deploymentSummary, String cloudProviderId, String perpetualTaskId) {
     return InstanceSyncTaskDetails.builder()
         .accountId(deploymentSummary.getAccountId())
@@ -158,7 +118,8 @@ public class K8sInstanceSyncV2HandlerCg implements CgInstanceSyncV2Handler {
         .build();
   }
 
-  private Set<CgReleaseIdentifiers> buildReleaseIdentifiers(DeploymentInfo deploymentInfo) {
+  @Override
+  public Set<CgReleaseIdentifiers> buildReleaseIdentifiers(DeploymentInfo deploymentInfo) {
     if (deploymentInfo instanceof K8sDeploymentInfo) {
       K8sDeploymentInfo k8sDeploymentInfo = (K8sDeploymentInfo) deploymentInfo;
       Set<String> namespaces = new HashSet<>(k8sDeploymentInfo.getNamespaces());

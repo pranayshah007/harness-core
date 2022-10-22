@@ -9,13 +9,22 @@ package software.wings.instancesyncv2.handler;
 
 import io.harness.perpetualtask.PerpetualTaskExecutionBundle;
 
+import software.wings.api.DeploymentInfo;
 import software.wings.api.DeploymentSummary;
 import software.wings.beans.SettingAttribute;
+import software.wings.instancesyncv2.model.CgReleaseIdentifiers;
+import software.wings.instancesyncv2.model.InstanceSyncTaskDetails;
+
+import java.util.Set;
 
 public interface CgInstanceSyncV2Handler {
   PerpetualTaskExecutionBundle fetchInfraConnectorDetails(SettingAttribute cloudProvider);
 
-  String getConfiguredPerpetualTaskId(DeploymentSummary deploymentSummary, String cloudProviderId);
+  InstanceSyncTaskDetails prepareTaskDetails(
+      DeploymentSummary deploymentSummary, String cloudProviderId, String perpetualTaskId);
 
-  void trackDeploymentRelease(String cloudProviderId, String perpetualTaskId, DeploymentSummary deploymentSummary);
+  Set<? extends CgReleaseIdentifiers> buildReleaseIdentifiers(DeploymentInfo deploymentInfo);
+
+  Set<CgReleaseIdentifiers> mergeReleaseIdentifiers(
+      Set<CgReleaseIdentifiers> releaseIdentifiers, Set<? extends CgReleaseIdentifiers> buildReleaseIdentifiers);
 }

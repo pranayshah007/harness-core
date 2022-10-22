@@ -29,7 +29,6 @@ import io.harness.perpetualtask.instancesyncv2.InstanceSyncTrackedDeploymentDeta
 import io.harness.serializer.KryoSerializer;
 import io.harness.util.DelegateRestUtils;
 
-import software.wings.beans.InfrastructureMappingType;
 import software.wings.beans.infrastructure.instance.info.InstanceInfo;
 import software.wings.beans.infrastructure.instance.info.K8sContainerInfo;
 import software.wings.beans.infrastructure.instance.info.K8sPodInfo;
@@ -75,7 +74,7 @@ public class CgInstanceSyncV2TaskExecutor implements PerpetualTaskExecutor {
         delegateAgentManagerClient.fetchTrackedReleaseDetails(taskId.getId(), taskParams.getAccountId()));
 
     trackedDeploymentDetails.getDeploymentDetailsList().stream().forEach(details -> {
-      if (details.getInfraMappingType().equals(InfrastructureMappingType.DIRECT_KUBERNETES.getName())) {
+      if (details.getInfraMappingType().equals("DIRECT_KUBERNETES")) {
         DirectK8sInstanceSyncTaskDetails k8sInstanceSyncTaskDetails =
             AnyUtils.unpack(details.getReleaseDetails(), DirectK8sInstanceSyncTaskDetails.class);
 
