@@ -1,3 +1,10 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.ccm.views.entities;
 
 import io.harness.NGCommonEntityConstants;
@@ -31,7 +38,6 @@ import org.mongodb.morphia.annotations.Id;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Entity(value = "governancePolicyExecution", noClassnameStored = true)
 @Schema(description = "This object will contain the complete definition of a Cloud Cost Policy Execution")
-
 public class PolicyExecution implements PersistentEntity, UuidAware, CreatedAtAware, UpdatedAtAware, AccountAccess {
   @Id @Schema(description = "unique id") String uuid;
   @Schema(description = "account id") String accountId;
@@ -43,6 +49,7 @@ public class PolicyExecution implements PersistentEntity, UuidAware, CreatedAtAw
   @Schema(description = "targetAccounts") List<String> targetAccounts;
   @Schema(description = "targetRegions") List<String> targetRegions;
   @Schema(description = "executionLogPath") String executionLogPath;
+  @Schema(description = "executionLogBucketType") String executionLogBucketType;
   @Schema(description = "executionCompletedAt") String executionCompletedAt;
   @Schema(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) String orgIdentifier;
   @Schema(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) String projectIdentifier;
@@ -65,6 +72,7 @@ public class PolicyExecution implements PersistentEntity, UuidAware, CreatedAtAw
         .add(CompoundMongoIndex.builder().name("sort2").field(PolicyExecutionId.createdAt).build())
         .build();
   }
+
   public PolicyExecution toDTO() {
     return PolicyExecution.builder()
         .uuid(getUuid())
@@ -77,6 +85,7 @@ public class PolicyExecution implements PersistentEntity, UuidAware, CreatedAtAw
         .targetAccounts(getTargetAccounts())
         .targetRegions(getTargetRegions())
         .executionLogPath(getExecutionLogPath())
+        .executionLogBucketType(getExecutionLogBucketType())
         .executionCompletedAt(getExecutionCompletedAt())
         .orgIdentifier(getOrgIdentifier())
         .projectIdentifier(getProjectIdentifier())
