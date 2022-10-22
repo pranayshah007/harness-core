@@ -39,7 +39,6 @@ import java.util.Set;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public class StepsPlanCreatorV1 extends ChildrenPlanCreator<YamlField> {
-
   @Override
   public LinkedHashMap<String, PlanCreationResponse> createPlanForChildrenNodes(
       PlanCreationContext ctx, YamlField config) {

@@ -485,14 +485,13 @@ public class YamlNode implements Visitable {
     return new YamlConfig(currentNode.getParentNode().getCurrJsonNode()).getYaml();
   }
 
-
   public String getProperty(String name) {
     JsonNode value = getValueInternal(name);
-    if (value == null){
+    if (value == null) {
       return null;
     }
 
-    if(value.isTextual()){
+    if (value.isTextual()) {
       return value.asText();
     }
 

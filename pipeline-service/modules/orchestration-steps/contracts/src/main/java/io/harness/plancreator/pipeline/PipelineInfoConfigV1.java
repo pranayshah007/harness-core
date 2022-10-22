@@ -53,9 +53,7 @@ public class PipelineInfoConfigV1 {
 
   @Singular @Size(min = 1) @VariableExpression(skipVariableExpression = true) List<StageElementWrapperConfig> stages;
 
-
-  public String getId(){
+  public String getId() {
     return IdentifierGeneratorUtils.getId(name);
   }
-
 }

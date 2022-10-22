@@ -294,7 +294,7 @@ public class AmbianceUtils {
 
   public static YamlVersion getYamlVersion(Ambiance ambiance) {
     ExecutionMetadata metadata = ambiance.getMetadata();
-    if(EmptyPredicate.isEmpty(metadata.getHarnessVersion())){
+    if (EmptyPredicate.isEmpty(metadata.getHarnessVersion())) {
       return YamlVersion.V0;
     }
     return YamlVersion.valueOf(metadata.getHarnessVersion());

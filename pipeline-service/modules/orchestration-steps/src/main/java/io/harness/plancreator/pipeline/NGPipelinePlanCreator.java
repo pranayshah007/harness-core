@@ -44,7 +44,6 @@ import java.util.Set;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public class NGPipelinePlanCreator extends ChildrenPlanCreator<PipelineInfoConfig> {
-
   @Override
   public String getStartingNodeId(PipelineInfoConfig field) {
     return field.getUuid();

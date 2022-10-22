@@ -29,6 +29,7 @@ import io.harness.pms.sdk.core.variables.beans.VariableCreationContext;
 import io.harness.pms.sdk.core.variables.beans.VariableCreationResponse;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.pms.yaml.YamlVersion;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -37,8 +38,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-
-import io.harness.pms.yaml.YamlVersion;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j

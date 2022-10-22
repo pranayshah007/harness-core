@@ -79,7 +79,7 @@ public class YamlField {
 
   public String getNodeName() {
     String name = node.getProperty("name");
-    if (EmptyPredicate.isEmpty(name)){
+    if (EmptyPredicate.isEmpty(name)) {
       return getType();
     }
     return name;
@@ -87,7 +87,7 @@ public class YamlField {
 
   public String getId() {
     String id = node.getProperty("id");
-    if (EmptyPredicate.isEmpty(id)){
+    if (EmptyPredicate.isEmpty(id)) {
       return getType();
     }
     return id;
