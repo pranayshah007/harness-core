@@ -532,9 +532,8 @@ public class TimeSeriesRecordServiceImpl implements TimeSeriesRecordService {
 
   @Override
   public List<TimeSeriesRecordDTO> getDeploymentMetricTimeSeriesRecordDTOs(
-      String verificationTaskId, Instant startTime, Instant endTime, Set<String> controlHosts, Set<String> testHosts) {
-    Set<String> allHosts = Stream.concat(controlHosts.stream(), testHosts.stream()).collect(Collectors.toSet());
-    List<TimeSeriesRecord> timeSeriesRecords = getTimeSeriesRecords(verificationTaskId, startTime, endTime, allHosts);
+      String verificationTaskId, Instant startTime, Instant endTime, Set<String> hosts) {
+    List<TimeSeriesRecord> timeSeriesRecords = getTimeSeriesRecords(verificationTaskId, startTime, endTime, hosts);
     List<TimeSeriesRecordDTO> timeSeriesRecordDTOS = new ArrayList<>();
     timeSeriesRecords.forEach(timeSeriesRecord -> {
       for (TimeSeriesRecord.TimeSeriesGroupValue record : timeSeriesRecord.getTimeSeriesGroupValues()) {

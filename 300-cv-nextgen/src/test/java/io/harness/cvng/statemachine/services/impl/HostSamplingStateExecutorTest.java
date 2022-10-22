@@ -403,8 +403,6 @@ public class HostSamplingStateExecutorTest extends CategoryTest {
     hostSamplingState.setVerificationJobInstanceId(verificationJobInstance.getUuid());
     String taskId = generateUuid();
     hostSamplingState.setStatus(AnalysisStatus.RUNNING);
-    hostSamplingState.setTestHosts(new HashSet<>());
-    hostSamplingState.setControlHosts(new HashSet<>());
     Map<String, LearningEngineTask.ExecutionStatus> taskStatusMap = new HashMap<>();
     taskStatusMap.put(taskId, LearningEngineTask.ExecutionStatus.SUCCESS);
     AnalysisStatus status = hostSamplingStateExecutor.getExecutionStatus(hostSamplingState);

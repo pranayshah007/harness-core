@@ -47,6 +47,7 @@ import io.harness.cvng.analysis.services.api.LearningEngineTaskService;
 import io.harness.cvng.analysis.services.api.TimeSeriesAnalysisService;
 import io.harness.cvng.beans.TimeSeriesMetricType;
 import io.harness.cvng.beans.job.VerificationJobType;
+import io.harness.cvng.core.beans.TimeRange;
 import io.harness.cvng.core.beans.TimeSeriesMetricDefinition;
 import io.harness.cvng.core.entities.AppDynamicsCVConfig;
 import io.harness.cvng.core.entities.CVConfig;
@@ -58,6 +59,7 @@ import io.harness.cvng.core.services.api.VerificationTaskService;
 import io.harness.cvng.dashboard.entities.HeatMap;
 import io.harness.cvng.dashboard.services.api.HeatMapService;
 import io.harness.cvng.statemachine.beans.AnalysisInput;
+import io.harness.cvng.verificationjob.entities.CanaryBlueGreenVerificationJob;
 import io.harness.cvng.verificationjob.entities.TestVerificationJob;
 import io.harness.cvng.verificationjob.entities.VerificationJob;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance;
@@ -83,8 +85,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Random;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.reflect.FieldUtils;
 import org.junit.Before;
@@ -213,14 +215,11 @@ public class TimeSeriesAnalysisServiceImplTest extends CvNextGenTestBase {
     List<TimeSeriesRecord> records = getTimeSeriesRecords();
     hPersistence.save(records);
     Instant start = Instant.parse("2020-07-07T02:40:00.000Z");
-    String controlHosts = "host1";
-    String testHosts = "host2";
+    String hosts = "host1,host2";
     List<TimeSeriesRecordDTO> testData = timeSeriesAnalysisService.getDeploymentMetricTimeSeriesRecordDTOs(
-        cvConfigId, start, start.plus(5, ChronoUnit.MINUTES), controlHosts, testHosts);
+        cvConfigId, start, start.plus(5, ChronoUnit.MINUTES), hosts);
     List<TimeSeriesRecordDTO> filteredTestData =
-        testData.stream()
-            .filter(t -> controlHosts.contains(t.getHost()) || testHosts.contains(t.getHost()))
-            .collect(Collectors.toList());
+        testData.stream().filter(t -> hosts.contains(t.getHost())).collect(Collectors.toList());
     assertThat(testData.size()).isEqualTo(filteredTestData.size());
   }
 
@@ -502,9 +501,9 @@ public class TimeSeriesAnalysisServiceImplTest extends CvNextGenTestBase {
   }
 
   @Test
-  @Owner(developers = SOWMYA)
+  @Owner(developers = NAVEEN)
   @Category(UnitTests.class)
-  public void testScheduleDeploymentTimeSeriesAnalysis() {
+  public void testScheduleDeploymentTimeSeriesAnalysisCanaryDeploymentTimeSeries() {
     VerificationJobInstance verificationJobInstance =
         createVerificationJobInstance(builderFactory.canaryVerificationJobBuilder().build());
     cvConfigService.save(newCVConfig());
@@ -512,8 +511,9 @@ public class TimeSeriesAnalysisServiceImplTest extends CvNextGenTestBase {
                               .verificationTaskId(verificationTaskId)
                               .startTime(instant.plus(10, ChronoUnit.MINUTES))
                               .endTime(instant.plus(11, ChronoUnit.MINUTES))
-                              .controlHosts(new HashSet<>(Arrays.asList("host1")))
-                              .testHosts(new HashSet<>(Arrays.asList("host2")))
+                              .controlHosts(new HashSet<>(Collections.singletonList("host1")))
+                              .testHosts(new HashSet<>(Collections.singletonList("host2")))
+                              .verificationJobInstanceId(verificationJobInstance.getUuid())
                               .learningEngineTaskType(LearningEngineTaskType.CANARY_DEPLOYMENT_TIME_SERIES)
                               .build();
 
@@ -532,6 +532,65 @@ public class TimeSeriesAnalysisServiceImplTest extends CvNextGenTestBase {
     assertThat(Duration.between(task.getAnalysisStartTime(), input.getStartTime())).isZero();
     assertThat(Duration.between(task.getAnalysisEndTime(), input.getEndTime())).isZero();
     assertThat(task.getAnalysisType().name()).isEqualTo(LearningEngineTaskType.CANARY_DEPLOYMENT_TIME_SERIES.name());
+    String controlDataUrl = String.format(
+        "/cv/api/timeseries-analysis/time-series-data?verificationTaskId=%s&hosts=%s&startTime=%s&endTime=%s",
+        input.getVerificationTaskId(), "host1", verificationJobInstance.getStartTime().toEpochMilli(),
+        input.getEndTime().toEpochMilli());
+    assertThat(task.getControlDataUrl()).isEqualTo(controlDataUrl);
+    String testDataUrl = String.format(
+        "/cv/api/timeseries-analysis/time-series-data?verificationTaskId=%s&startTime=%s&endTime=%s&hosts=%s",
+        input.getVerificationTaskId(), verificationJobInstance.getStartTime().toEpochMilli(),
+        input.getEndTime().toEpochMilli(), "host2");
+    assertThat(task.getTestDataUrl()).isEqualTo(testDataUrl);
+  }
+
+  @Test
+  @Owner(developers = NAVEEN)
+  @Category(UnitTests.class)
+  public void testScheduleDeploymentTimeSeriesAnalysisBeforeAfterDeployment() {
+    VerificationJobInstance verificationJobInstance =
+        createVerificationJobInstance(builderFactory.canaryVerificationJobBuilder().build());
+    cvConfigService.save(newCVConfig());
+    AnalysisInput input = AnalysisInput.builder()
+                              .verificationTaskId(verificationTaskId)
+                              .startTime(instant.plus(10, ChronoUnit.MINUTES))
+                              .endTime(instant.plus(11, ChronoUnit.MINUTES))
+                              .controlHosts(new HashSet<>(Collections.singletonList("host1")))
+                              .testHosts(new HashSet<>(Collections.singletonList("host2")))
+                              .verificationJobInstanceId(verificationJobInstance.getUuid())
+                              .learningEngineTaskType(LearningEngineTaskType.BEFORE_AFTER_DEPLOYMENT_TIME_SERIES)
+                              .build();
+
+    List<String> taskIds = timeSeriesAnalysisService.scheduleDeploymentTimeSeriesAnalysis(input);
+    assertThat(taskIds).isNotNull();
+
+    assertThat(taskIds.size()).isEqualTo(1);
+
+    TimeSeriesCanaryLearningEngineTask_v2 task =
+        (TimeSeriesCanaryLearningEngineTask_v2) hPersistence.get(LearningEngineTask.class, taskIds.get(0));
+    assertThat(task).isNotNull();
+    assertThat(task.getVerificationTaskId()).isEqualTo(verificationTaskId);
+    assertThat(task.getDataLength()).isEqualTo(9);
+    assertThat(task.getDeploymentVerificationTaskInfo().getDeploymentStartTime())
+        .isEqualTo(verificationJobInstance.getDeploymentStartTime().toEpochMilli());
+    assertThat(Duration.between(task.getAnalysisStartTime(), input.getStartTime())).isZero();
+    assertThat(Duration.between(task.getAnalysisEndTime(), input.getEndTime())).isZero();
+    assertThat(task.getAnalysisType().name())
+        .isEqualTo(LearningEngineTaskType.BEFORE_AFTER_DEPLOYMENT_TIME_SERIES.name());
+    CanaryBlueGreenVerificationJob verificationJob =
+        (CanaryBlueGreenVerificationJob) verificationJobInstance.getResolvedJob();
+    Optional<TimeRange> preDeploymentTimeRange =
+        verificationJob.getPreActivityTimeRange(verificationJobInstance.getDeploymentStartTime());
+    String controlDataUrl = String.format(
+        "/cv/api/timeseries-analysis/time-series-data?verificationTaskId=%s&hosts=%s&startTime=%s&endTime=%s",
+        input.getVerificationTaskId(), "host1", preDeploymentTimeRange.get().getStartTime().toEpochMilli(),
+        preDeploymentTimeRange.get().getEndTime().toEpochMilli());
+    assertThat(task.getControlDataUrl()).isEqualTo(controlDataUrl);
+    String testDataUrl = String.format(
+        "/cv/api/timeseries-analysis/time-series-data?verificationTaskId=%s&startTime=%s&endTime=%s&hosts=%s",
+        input.getVerificationTaskId(), verificationJobInstance.getStartTime().toEpochMilli(),
+        input.getEndTime().toEpochMilli(), "host2");
+    assertThat(task.getTestDataUrl()).isEqualTo(testDataUrl);
   }
 
   @Test

@@ -39,8 +39,8 @@ public interface TimeSeriesAnalysisService {
   List<TimeSeriesMetricDefinition> getMetricTemplate(String cvConfigId);
   @Deprecated
   List<TimeSeriesRecordDTO> getTimeSeriesRecordDTOs(String verificationTaskId, Instant startTime, Instant endTime);
-  List<TimeSeriesRecordDTO> getDeploymentMetricTimeSeriesRecordDTOs(String verificationTaskId, Instant startTime,
-      Instant endTime, String commaSeparatedControlHosts, String commaSeparatedTestHosts);
+  List<TimeSeriesRecordDTO> getDeploymentMetricTimeSeriesRecordDTOs(
+      String verificationTaskId, Instant startTime, Instant endTime, String commaSeparatedHosts);
   void saveAnalysis(String taskId, ServiceGuardTimeSeriesAnalysisDTO analysis);
   void saveAnalysis(String taskId, DeploymentTimeSeriesAnalysisDTO analysis);
 
