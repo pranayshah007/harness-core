@@ -37,7 +37,8 @@ public class PlanCreatorServiceHelper {
         .filter(planCreator -> {
           Map<String, Set<String>> supportedTypes = planCreator.getSupportedTypes();
           Set<YamlVersion> supportedVersions = planCreator.getSupportedYamlVersions();
-          return PlanCreatorUtils.supportsFieldV2(supportedTypes, field, supportedVersions, yamlVersion);
+          return supportedVersions.contains(yamlVersion)
+              && PlanCreatorUtils.supportsField(supportedTypes, field, yamlVersion);
         })
         .findFirst();
   }

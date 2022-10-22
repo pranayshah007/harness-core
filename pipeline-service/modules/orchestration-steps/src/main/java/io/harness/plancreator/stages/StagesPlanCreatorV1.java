@@ -7,6 +7,8 @@
 
 package io.harness.plancreator.stages;
 
+import static io.harness.data.structure.HarnessStringUtils.emptyIfNull;
+
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.contracts.plan.EdgeLayoutList;
@@ -24,13 +26,11 @@ import io.harness.pms.yaml.DependenciesUtils;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
-import io.harness.pms.yaml.YamlVersion;
 import io.harness.steps.StagesStep;
 import io.harness.steps.common.NGSectionStepParameters;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
@@ -39,10 +39,10 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-public class StagesPlanCreator extends ChildrenPlanCreator<StagesConfig> {
+public class StagesPlanCreatorV1 extends ChildrenPlanCreator<YamlField> {
   @Override
   public LinkedHashMap<String, PlanCreationResponse> createPlanForChildrenNodes(
-      PlanCreationContext ctx, StagesConfig config) {
+      PlanCreationContext ctx, YamlField config) {
     LinkedHashMap<String, PlanCreationResponse> responseMap = new LinkedHashMap<>();
     List<YamlField> stageYamlFields = getStageYamlFields(ctx);
     for (YamlField stageYamlField : stageYamlFields) {
@@ -52,14 +52,12 @@ public class StagesPlanCreator extends ChildrenPlanCreator<StagesConfig> {
           PlanCreationResponse.builder()
               .dependencies(DependenciesUtils.toDependenciesProto(stageYamlFieldMap))
               .build());
-      PlanCreationResponse planForRollbackStage = RollbackStagePlanCreator.createPlanForRollbackStage(stageYamlField);
-      responseMap.put(stageYamlField.getNode().getUuid() + "_rollbackStage", planForRollbackStage);
     }
     return responseMap;
   }
 
   @Override
-  public GraphLayoutResponse getLayoutNodeInfo(PlanCreationContext ctx, StagesConfig config) {
+  public GraphLayoutResponse getLayoutNodeInfo(PlanCreationContext ctx, YamlField config) {
     Map<String, GraphLayoutNode> stageYamlFieldMap = new LinkedHashMap<>();
     List<YamlField> stagesYamlField = getStageYamlFields(ctx);
     List<EdgeLayoutList> edgeLayoutLists = new ArrayList<>();
@@ -70,16 +68,16 @@ public class StagesPlanCreator extends ChildrenPlanCreator<StagesConfig> {
     }
     for (int i = 0; i < edgeLayoutLists.size(); i++) {
       YamlField stageYamlField = stagesYamlField.get(i);
-      if (stageYamlField.getName().equals("parallel")) {
+      if (stageYamlField.getType().equals("parallel")) {
         continue;
       }
       stageYamlFieldMap.put(stageYamlField.getNode().getUuid(),
           GraphLayoutNode.newBuilder()
               .setNodeUUID(stageYamlField.getNode().getUuid())
               .setNodeType(stageYamlField.getNode().getType())
-              .setName(stageYamlField.getNode().getName())
+              .setName(emptyIfNull(stageYamlField.getNode().getName()))
               .setNodeGroup(StepOutcomeGroup.STAGE.name())
-              .setNodeIdentifier(stageYamlField.getNode().getIdentifier())
+              .setNodeIdentifier(emptyIfNull(stageYamlField.getNode().getIdentifier()))
               .setEdgeLayoutList(
                   i + 1 < edgeLayoutLists.size() ? edgeLayoutLists.get(i + 1) : EdgeLayoutList.newBuilder().build())
               .build());
@@ -91,7 +89,7 @@ public class StagesPlanCreator extends ChildrenPlanCreator<StagesConfig> {
   }
 
   @Override
-  public PlanNode createPlanForParentNode(PlanCreationContext ctx, StagesConfig config, List<String> childrenNodeIds) {
+  public PlanNode createPlanForParentNode(PlanCreationContext ctx, YamlField config, List<String> childrenNodeIds) {
     StepParameters stepParameters =
         NGSectionStepParameters.builder().childNodeId(childrenNodeIds.get(0)).logMessage("Stages").build();
     return PlanNode.builder()
@@ -110,18 +108,13 @@ public class StagesPlanCreator extends ChildrenPlanCreator<StagesConfig> {
   }
 
   @Override
-  public Class<StagesConfig> getFieldClass() {
-    return StagesConfig.class;
+  public Class<YamlField> getFieldClass() {
+    return YamlField.class;
   }
 
   @Override
   public Map<String, Set<String>> getSupportedTypes() {
     return Collections.singletonMap("stages", Collections.singleton(PlanCreatorUtils.ANY_TYPE));
-  }
-
-  @Override
-  public Set<YamlVersion> getSupportedYamlVersions() {
-    return EnumSet.of(YamlVersion.V0);
   }
 
   private List<YamlField> getStageYamlFields(PlanCreationContext planCreationContext) {
@@ -130,13 +123,7 @@ public class StagesPlanCreator extends ChildrenPlanCreator<StagesConfig> {
     List<YamlField> stageFields = new LinkedList<>();
 
     yamlNodes.forEach(yamlNode -> {
-      YamlField stageField = yamlNode.getField("stage");
-      YamlField parallelStageField = yamlNode.getField("parallel");
-      if (stageField != null) {
-        stageFields.add(stageField);
-      } else if (parallelStageField != null) {
-        stageFields.add(parallelStageField);
-      }
+      stageFields.add(new YamlField(yamlNode));
     });
     return stageFields;
   }

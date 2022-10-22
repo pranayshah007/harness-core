@@ -67,13 +67,15 @@ public class PlanCreatorUtilsTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testSupportsField() throws IOException {
     YamlField stageField = getPipelineNode().getField("stages").getNode().asArray().get(0).getField("stage");
-    assertThat(PlanCreatorUtils.supportsField(null, stageField)).isFalse();
-    assertThat(PlanCreatorUtils.supportsField(ImmutableMap.of("random", ImmutableSet.of("random")), stageField))
-        .isFalse();
-    assertThat(PlanCreatorUtils.supportsField(ImmutableMap.of("stage", ImmutableSet.of("random")), stageField))
+    assertThat(PlanCreatorUtils.supportsField(null, stageField, YamlVersion.V0)).isFalse();
+    assertThat(PlanCreatorUtils.supportsField(
+                   ImmutableMap.of("random", ImmutableSet.of("random")), stageField, YamlVersion.V0))
         .isFalse();
     assertThat(
-        PlanCreatorUtils.supportsField(ImmutableMap.of("stage", ImmutableSet.of("random", "Deployment")), stageField))
+        PlanCreatorUtils.supportsField(ImmutableMap.of("stage", ImmutableSet.of("random")), stageField, YamlVersion.V0))
+        .isFalse();
+    assertThat(PlanCreatorUtils.supportsField(
+                   ImmutableMap.of("stage", ImmutableSet.of("random", "Deployment")), stageField, YamlVersion.V0))
         .isTrue();
   }
 
@@ -144,22 +146,5 @@ public class PlanCreatorUtilsTest extends CategoryTest {
     String projectIdentifier = "projectIdentifier";
 
     assertThat(PlanCreatorUtils.autoLogContext(executionMetadata, accountId, orgId, projectIdentifier)).isNotNull();
-  }
-
-  @Test
-  @Owner(developers = RAGHAV_GUPTA)
-  @Category(UnitTests.class)
-  public void testSupportsFieldV2() throws IOException {
-    YamlField stageField = getPipelineNode().getField("stages").getNode().asArray().get(0).getField("stage");
-    assertThat(PlanCreatorUtils.supportsFieldV2(null, stageField, null, YamlVersion.V0)).isFalse();
-    assertThat(PlanCreatorUtils.supportsFieldV2(ImmutableMap.of("random", ImmutableSet.of("random")), stageField,
-                   ImmutableSet.of(YamlVersion.V1), YamlVersion.V0))
-        .isFalse();
-    assertThat(PlanCreatorUtils.supportsFieldV2(ImmutableMap.of("stage", ImmutableSet.of("random")), stageField,
-                   ImmutableSet.of(YamlVersion.V0), YamlVersion.V0))
-        .isFalse();
-    assertThat(PlanCreatorUtils.supportsFieldV2(ImmutableMap.of("stage", ImmutableSet.of("random", "Deployment")),
-                   stageField, ImmutableSet.of(YamlVersion.V0), YamlVersion.V0))
-        .isTrue();
   }
 }

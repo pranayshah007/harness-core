@@ -19,10 +19,13 @@ import java.util.Set;
 public interface PartialPlanCreator<T> {
   Class<T> getFieldClass();
   Map<String, Set<String>> getSupportedTypes();
+
   PlanCreationResponse createPlanForField(PlanCreationContext ctx, T field);
+
   default String getExecutionInputTemplateAndModifyYamlField(YamlField yamlField) {
     return "";
   }
+
   default Set<YamlVersion> getSupportedYamlVersions() {
     return EnumSet.allOf(YamlVersion.class);
   }

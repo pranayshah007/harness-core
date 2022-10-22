@@ -15,11 +15,14 @@ import io.harness.exception.YamlException;
 import io.harness.logging.AutoLogContext;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.contracts.plan.YamlUpdates;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.pms.yaml.YamlVersion;
+import io.harness.utils.TimeoutUtils;
+import io.harness.yaml.core.timeout.Timeout;
 
 import com.google.common.collect.ImmutableMap;
 import java.io.IOException;
@@ -40,38 +43,47 @@ public class PlanCreatorUtils {
   public final String ANY_TYPE = "__any__";
   public final String TEMPLATE_TYPE = "__template__";
 
-  @Deprecated
-  public boolean supportsField(Map<String, Set<String>> supportedTypes, YamlField field) {
-    return supportsFieldV2(supportedTypes, field, Collections.singleton(YamlVersion.V0), YamlVersion.V0);
-  }
-
-  public boolean supportsFieldV2(Map<String, Set<String>> supportedTypes, YamlField field,
-      Set<YamlVersion> supportedVersions, YamlVersion yamlVersion) {
-    if (EmptyPredicate.isEmpty(supportedVersions)) {
-      return false;
-    }
-    if (!supportedVersions.contains(yamlVersion)) {
-      return false;
-    }
-
+  public boolean supportsField(Map<String, Set<String>> supportedTypes, YamlField field, YamlVersion harnessVersion) {
     if (EmptyPredicate.isEmpty(supportedTypes)) {
       return false;
     }
-    String fieldName = field.getName();
-    Set<String> types = supportedTypes.get(fieldName);
-    if (EmptyPredicate.isEmpty(types)) {
-      return false;
-    }
 
-    String fieldType = field.getNode().getType();
-    if (EmptyPredicate.isEmpty(fieldType)) {
-      if (field.getNode().getTemplate() == null) {
-        fieldType = ANY_TYPE;
-      } else {
-        fieldType = TEMPLATE_TYPE;
-      }
+    switch (harnessVersion) {
+      case V1:
+        Set<String> keys = supportedTypes.keySet();
+        String type = field.getNode().getType();
+        if (!EmptyPredicate.isEmpty(type)) {
+          if (supportedTypes.values().stream().anyMatch(v -> v.contains(type))) {
+            return true;
+          }
+
+          if (keys.contains(type)) {
+            return true;
+          }
+        }
+        if (EmptyPredicate.isEmpty(field.getName())) {
+          return false;
+        }
+        return keys.contains(field.getName());
+      case V0:
+        String fieldName = field.getName();
+        Set<String> types = supportedTypes.get(fieldName);
+        if (EmptyPredicate.isEmpty(types)) {
+          return false;
+        }
+
+        String fieldType = field.getNode().getType();
+        if (EmptyPredicate.isEmpty(fieldType)) {
+          if (field.getNode().getTemplate() == null) {
+            fieldType = ANY_TYPE;
+          } else {
+            fieldType = TEMPLATE_TYPE;
+          }
+        }
+        return types.contains(fieldType);
+      default:
+        throw new IllegalStateException("unsupported version");
     }
-    return types.contains(fieldType);
   }
 
   public YamlField getStageConfig(YamlField yamlField, String stageIdentifier) {
@@ -186,5 +198,15 @@ public class PlanCreatorUtils {
     logContextMap.put("projectIdentifier", projectIdentifier);
     logContextMap.put("sdkPlanCreatorRequestId", UUIDGenerator.generateUuid());
     return new AutoLogContext(logContextMap, AutoLogContext.OverrideBehavior.OVERRIDE_NESTS);
+  }
+
+  public static ParameterField<String> getTimeoutString(ParameterField<Timeout> field) {
+    ParameterField<Timeout> timeout = TimeoutUtils.getTimeout(field);
+    if (timeout.isExpression()) {
+      return ParameterField.createExpressionField(
+          true, timeout.getExpressionValue(), timeout.getInputSetValidator(), true);
+    } else {
+      return ParameterField.createValueField(timeout.getValue().getTimeoutString());
+    }
   }
 }

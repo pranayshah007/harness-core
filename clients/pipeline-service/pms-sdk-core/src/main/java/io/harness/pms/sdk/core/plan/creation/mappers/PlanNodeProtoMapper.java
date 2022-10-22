@@ -8,6 +8,7 @@
 package io.harness.pms.sdk.core.plan.creation.mappers;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.HarnessStringUtils.emptyIfNull;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -24,23 +25,27 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.google.protobuf.ByteString;
+import lombok.extern.slf4j.Slf4j;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 @Singleton
+@Slf4j
 public class PlanNodeProtoMapper {
   @Inject @Named(PmsSdkModuleUtils.SDK_SERVICE_NAME) String serviceName;
   @Inject private KryoSerializer kryoSerializer;
 
   public PlanNodeProto toPlanNodeProtoWithDecoratedFields(PlanNode node) {
+    log.info(node.getStepType().getType());
     PlanNodeProto.Builder builder =
         PlanNodeProto.newBuilder()
             .setUuid(node.getUuid())
             .setName(isEmpty(node.getName()) ? "" : node.getName())
             .setStepType(node.getStepType())
-            .setStageFqn(node.getStageFqn())
+            .setStageFqn(emptyIfNull(node.getStageFqn()))
             .setIdentifier(isEmpty(node.getIdentifier()) ? "" : node.getIdentifier())
             .setStepParameters(
                 node.getStepParameters() == null ? "" : RecastOrchestrationUtils.toJson(node.getStepParameters()))

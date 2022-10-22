@@ -25,6 +25,8 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+
+import io.harness.pms.yaml.YamlVersion;
 import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.PIPELINE)
@@ -70,7 +72,7 @@ public class PmsSdkHelper {
     return dependencies.getDependenciesMap()
         .entrySet()
         .stream()
-        .filter(entry -> containsSupportedSingleDependencyByYamlPath(serviceInfo, fullYamlField, entry))
+        .filter(entry -> containsSupportedSingleDependencyByYamlPath(serviceInfo, fullYamlField, entry, YamlVersion.V0))
         .map(Map.Entry::getKey)
         .findFirst()
         .isPresent();
@@ -80,14 +82,14 @@ public class PmsSdkHelper {
    * Checks if the service supports any of the dependency mentioned.
    */
   public boolean containsSupportedSingleDependencyByYamlPath(
-      PlanCreatorServiceInfo serviceInfo, YamlField fullYamlField, Map.Entry<String, String> dependencyEntry) {
+      PlanCreatorServiceInfo serviceInfo, YamlField fullYamlField, Map.Entry<String, String> dependencyEntry, YamlVersion harnessVersion) {
     if (dependencyEntry == null) {
       return false;
     }
     Map<String, Set<String>> supportedTypes = serviceInfo.getSupportedTypes();
     try {
       YamlField field = fullYamlField.fromYamlPath(dependencyEntry.getValue());
-      return PlanCreatorUtils.supportsField(supportedTypes, field);
+      return PlanCreatorUtils.supportsField(supportedTypes, field, harnessVersion);
     } catch (Exception ex) {
       String message = "Invalid yaml during plan creation for dependency path - " + dependencyEntry.getValue();
       log.error(message, ex);

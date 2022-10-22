@@ -36,6 +36,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import javax.validation.constraints.NotNull;
+
+import io.harness.pms.yaml.YamlVersion;
 import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.PIPELINE)
@@ -72,7 +74,7 @@ public class FilterCreatorService
     return filterJsonCreators.stream()
         .filter(filterJsonCreator -> {
           Map<String, Set<String>> supportedTypes = filterJsonCreator.getSupportedTypes();
-          return supportsField(supportedTypes, yamlField);
+          return supportsField(supportedTypes, yamlField, YamlVersion.V0);
         })
         .findFirst();
   }

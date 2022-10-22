@@ -40,6 +40,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
+
+import io.harness.pms.yaml.YamlVersion;
 import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.PIPELINE)
@@ -143,7 +145,7 @@ public class PipelineEnforcementServiceImpl implements PipelineEnforcementServic
         if (stageTypeToModule.containsKey(stageField.getNode().getType())) {
           modules.add(stageTypeToModule.get(stageField.getNode().getType()));
         } else {
-          if (PlanCreatorUtils.supportsField(supportedTypes, stageField)) {
+          if (PlanCreatorUtils.supportsField(supportedTypes, stageField, YamlVersion.V0)) {
             modules.add(planCreatorServiceInfoEntry.getKey());
             stageTypeToModule.put(stageField.getNode().getType(), planCreatorServiceInfoEntry.getKey());
           }

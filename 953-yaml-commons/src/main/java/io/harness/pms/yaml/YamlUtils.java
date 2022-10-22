@@ -219,6 +219,18 @@ public class YamlUtils {
     return false;
   }
 
+  public String injectUuidWithName(String content, String name) throws IOException {
+    JsonNode rootJsonNode = mapper.readTree(content);
+    if (rootJsonNode == null) {
+      return null;
+    }
+    injectUuid(rootJsonNode);
+    ((ObjectNode) rootJsonNode).put("type", name);
+    YamlNode rootYamlNode = new YamlNode(rootJsonNode);
+    YamlField rootField = new YamlField(name, rootYamlNode);
+    return rootField.getNode().toString();
+  }
+
   public String injectUuid(String content) throws IOException {
     YamlField yamlField = injectUuidInYamlField(content);
     return yamlField.getNode().toString();

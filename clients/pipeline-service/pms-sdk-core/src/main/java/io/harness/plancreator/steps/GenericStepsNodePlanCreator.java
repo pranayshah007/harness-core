@@ -19,8 +19,10 @@ import io.harness.pms.sdk.core.plan.creation.creators.ChildrenPlanCreator;
 import io.harness.pms.yaml.DependenciesUtils;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
+import io.harness.pms.yaml.YamlVersion;
 
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -55,5 +57,10 @@ public abstract class GenericStepsNodePlanCreator extends ChildrenPlanCreator<St
   @Override
   public Map<String, Set<String>> getSupportedTypes() {
     return Collections.singletonMap(YAMLFieldNameConstants.STEPS, Collections.singleton(PlanCreatorUtils.ANY_TYPE));
+  }
+
+  @Override
+  public Set<YamlVersion> getSupportedYamlVersions() {
+    return EnumSet.of(YamlVersion.V0);
   }
 }

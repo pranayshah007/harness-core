@@ -485,6 +485,20 @@ public class YamlNode implements Visitable {
     return new YamlConfig(currentNode.getParentNode().getCurrJsonNode()).getYaml();
   }
 
+
+  public String getProperty(String name) {
+    JsonNode value = getValueInternal(name);
+    if (value == null){
+      return null;
+    }
+
+    if(value.isTextual()){
+      return value.asText();
+    }
+
+    throw new IllegalArgumentException("property not string");
+  }
+
   // Check if YamlNode matches the nodeId.
   private static boolean getCurrentArrayElementIfMatches(YamlNode yamlNode, String nodeId) {
     return yamlNode.gotoPath("identifier") != null && yamlNode.gotoPath("identifier").asText().equals(nodeId)
