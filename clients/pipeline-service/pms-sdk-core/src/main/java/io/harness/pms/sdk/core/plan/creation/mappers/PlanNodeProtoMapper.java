@@ -25,6 +25,8 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.google.protobuf.ByteString;
+import lombok.extern.slf4j.Slf4j;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -38,6 +40,7 @@ public class PlanNodeProtoMapper {
   @Inject private KryoSerializer kryoSerializer;
 
   public PlanNodeProto toPlanNodeProtoWithDecoratedFields(PlanNode node) {
+    log.info(node.getStepType().getType());
     PlanNodeProto.Builder builder =
         PlanNodeProto.newBuilder()
             .setUuid(node.getUuid())

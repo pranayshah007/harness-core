@@ -285,41 +285,46 @@ public class ExecutionHelper {
     String pipelineYaml = templateMergeResponseDTO.getMergedPipelineYaml();
     String pipelineYamlWithTemplateRef = templateMergeResponseDTO.getMergedPipelineYamlWithTemplateRef();
 
-    BasicPipeline basicPipeline = YamlUtils.read(pipelineYaml, BasicPipeline.class);
-    StagesExecutionInfo stagesExecutionInfo = StagesExecutionInfo.builder()
-                                                  .isStagesExecution(false)
-                                                  .pipelineYamlToRun(pipelineYaml)
-                                                  .allowStagesExecution(basicPipeline.isAllowStageExecutions())
-                                                  .build();
-    if (EmptyPredicate.isNotEmpty(stagesToRun)) {
-      if (!basicPipeline.isAllowStageExecutions()) {
-        throw new InvalidRequestException(
-            String.format("Stage executions are not allowed for pipeline [%s]", basicPipeline.getIdentifier()));
+      StagesExecutionInfo stagesExecutionInfo = StagesExecutionInfo.builder()
+                                                    .isStagesExecution(false)
+                                                    .pipelineYamlToRun(pipelineYaml)
+                                                    .allowStagesExecution(allowedStageExecution)
+                                                    .build();
+      if (EmptyPredicate.isNotEmpty(stagesToRun)) {
+        if (!allowedStageExecution) {
+          throw new InvalidRequestException(
+              String.format("Stage executions are not allowed for pipeline [%s]", pipelineEntity.getIdentifier()));
+        }
+
+        StagesExecutionHelper.throwErrorIfAllStagesAreDeleted(pipelineYaml, stagesToRun);
+        pipelineYaml = StagesExpressionExtractor.replaceExpressions(pipelineYaml, expressionValues);
+        stagesExecutionInfo = StagesExecutionHelper.getStagesExecutionInfo(pipelineYaml, stagesToRun, expressionValues);
+        pipelineYamlWithTemplateRef =
+            InputSetMergeHelper.removeNonRequiredStages(pipelineYamlWithTemplateRef, stagesToRun);
       }
 
-      StagesExecutionHelper.throwErrorIfAllStagesAreDeleted(pipelineYaml, stagesToRun);
-      pipelineYaml = StagesExpressionExtractor.replaceExpressions(pipelineYaml, expressionValues);
-      stagesExecutionInfo = StagesExecutionHelper.getStagesExecutionInfo(pipelineYaml, stagesToRun, expressionValues);
-      pipelineYamlWithTemplateRef =
-          InputSetMergeHelper.removeNonRequiredStages(pipelineYamlWithTemplateRef, stagesToRun);
-    }
+      Builder planExecutionMetadataBuilder = obtainPlanExecutionMetadata(mergedRuntimeInputYaml, executionId,
+          stagesExecutionInfo, originalExecutionId, retryExecutionParameters, notifyOnlyUser, version);
+      if (stagesExecutionInfo.isStagesExecution()) {
+        pipelineEnforcementService.validateExecutionEnforcementsBasedOnStage(pipelineEntity.getAccountId(),
+            YamlUtils.extractPipelineField(planExecutionMetadataBuilder.build().getProcessedYaml()));
+      } else {
+        pipelineEnforcementService.validateExecutionEnforcementsBasedOnStage(pipelineEntity);
+      }
+      String expandedJson = pmsPipelineServiceHelper.fetchExpandedPipelineJSONFromYaml(pipelineEntity.getAccountId(),
+          pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(), pipelineYamlWithTemplateRef, true);
+      planExecutionMetadataBuilder.expandedPipelineJson(expandedJson);
+      PlanExecutionMetadata planExecutionMetadata = planExecutionMetadataBuilder.build();
 
-    PlanExecutionMetadata.Builder planExecutionMetadataBuilder = obtainPlanExecutionMetadata(mergedRuntimeInputYaml,
-        executionId, stagesExecutionInfo, originalExecutionId, retryExecutionParameters, notifyOnlyUser);
-    if (stagesExecutionInfo.isStagesExecution()) {
-      pipelineEnforcementService.validateExecutionEnforcementsBasedOnStage(pipelineEntity.getAccountId(),
-          YamlUtils.extractPipelineField(planExecutionMetadataBuilder.build().getProcessedYaml()));
-    } else {
-      pipelineEnforcementService.validateExecutionEnforcementsBasedOnStage(pipelineEntity);
+      boolean isRetry = retryExecutionParameters.isRetry();
+      // RetryExecutionInfo
+      RetryExecutionInfo retryExecutionInfo = buildRetryInfo(isRetry, originalExecutionId);
+      ExecutionMetadata executionMetadata = buildExecutionMetadata(pipelineEntity.getIdentifier(), moduleType,
+          triggerInfo, pipelineEntity, executionId, retryExecutionInfo, notificationRules);
+      return ExecArgs.builder().metadata(executionMetadata).planExecutionMetadata(planExecutionMetadata).build();
+    } finally {
+      log.info("[PMS_EXECUTE] Pipeline build execution args took time {}ms", System.currentTimeMillis() - start);
     }
-    String expandedJson = pmsPipelineServiceHelper.fetchExpandedPipelineJSONFromYaml(pipelineEntity.getAccountId(),
-        pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(), pipelineYamlWithTemplateRef, true);
-    planExecutionMetadataBuilder.expandedPipelineJson(expandedJson);
-    PlanExecutionMetadata planExecutionMetadata = planExecutionMetadataBuilder.build();
-    basicPipeline = YamlUtils.read(planExecutionMetadata.getYaml(), BasicPipeline.class);
-    ExecutionMetadata executionMetadata = buildExecutionMetadata(pipelineEntity.getIdentifier(), moduleType,
-        triggerInfo, pipelineEntity, executionId, retryExecutionInfo, basicPipeline.getNotificationRules());
-    return ExecArgs.builder().metadata(executionMetadata).planExecutionMetadata(planExecutionMetadata).build();
   }
 
   private ExecutionMetadata buildExecutionMetadata(@NotNull String pipelineIdentifier, String moduleType,

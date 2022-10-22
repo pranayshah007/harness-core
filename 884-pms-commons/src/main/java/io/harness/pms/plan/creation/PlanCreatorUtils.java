@@ -21,6 +21,8 @@ import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.pms.yaml.YamlVersion;
+import io.harness.utils.TimeoutUtils;
+import io.harness.yaml.core.timeout.Timeout;
 
 import com.google.common.collect.ImmutableMap;
 import java.io.IOException;
@@ -196,5 +198,15 @@ public class PlanCreatorUtils {
     logContextMap.put("projectIdentifier", projectIdentifier);
     logContextMap.put("sdkPlanCreatorRequestId", UUIDGenerator.generateUuid());
     return new AutoLogContext(logContextMap, AutoLogContext.OverrideBehavior.OVERRIDE_NESTS);
+  }
+
+  public static ParameterField<String> getTimeoutString(ParameterField<Timeout> field) {
+    ParameterField<Timeout> timeout = TimeoutUtils.getTimeout(field);
+    if (timeout.isExpression()) {
+      return ParameterField.createExpressionField(
+          true, timeout.getExpressionValue(), timeout.getInputSetValidator(), true);
+    } else {
+      return ParameterField.createValueField(timeout.getValue().getTimeoutString());
+    }
   }
 }

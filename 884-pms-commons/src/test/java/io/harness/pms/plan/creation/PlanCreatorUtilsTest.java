@@ -148,21 +148,4 @@ public class PlanCreatorUtilsTest extends CategoryTest {
 
     assertThat(PlanCreatorUtils.autoLogContext(executionMetadata, accountId, orgId, projectIdentifier)).isNotNull();
   }
-
-  @Test
-  @Owner(developers = RAGHAV_GUPTA)
-  @Category(UnitTests.class)
-  public void testSupportsFieldV2() throws IOException {
-    YamlField stageField = getPipelineNode().getField("stages").getNode().asArray().get(0).getField("stage");
-    assertThat(PlanCreatorUtils.supportsFieldV2(null, stageField, null, YamlVersion.V0)).isFalse();
-    assertThat(PlanCreatorUtils.supportsFieldV2(ImmutableMap.of("random", ImmutableSet.of("random")), stageField,
-                   ImmutableSet.of(YamlVersion.V1), YamlVersion.V0))
-        .isFalse();
-    assertThat(PlanCreatorUtils.supportsFieldV2(ImmutableMap.of("stage", ImmutableSet.of("random")), stageField,
-                   ImmutableSet.of(YamlVersion.V0), YamlVersion.V0))
-        .isFalse();
-    assertThat(PlanCreatorUtils.supportsFieldV2(ImmutableMap.of("stage", ImmutableSet.of("random", "Deployment")),
-                   stageField, ImmutableSet.of(YamlVersion.V0), YamlVersion.V0))
-        .isTrue();
-  }
 }
