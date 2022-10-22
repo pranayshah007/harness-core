@@ -1586,6 +1586,9 @@
             "experimentRef"
           ],
           "properties": {
+            "assertion": {
+              "type": "string"
+            },
             "expectedResilienceScore": {
               "type": "number",
               "format": "double"

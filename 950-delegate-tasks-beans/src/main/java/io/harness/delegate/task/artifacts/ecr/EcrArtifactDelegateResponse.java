@@ -11,6 +11,7 @@ import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.delegate.task.artifacts.response.ArtifactBuildDetailsNG;
 import io.harness.delegate.task.artifacts.response.ArtifactDelegateResponse;
 
+import java.util.Map;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Value;
@@ -26,13 +27,16 @@ public class EcrArtifactDelegateResponse extends ArtifactDelegateResponse {
   String imageUrl;
   String authToken;
 
+  Map<String, String> label;
+
   @Builder
   public EcrArtifactDelegateResponse(ArtifactBuildDetailsNG buildDetails, ArtifactSourceType sourceType,
-      String imagePath, String tag, String imageUrl, String authToken) {
+      String imagePath, String tag, String imageUrl, String authToken, Map<String, String> label) {
     super(buildDetails, sourceType);
     this.imagePath = imagePath;
     this.tag = tag;
     this.imageUrl = imageUrl;
     this.authToken = authToken;
+    this.label = label;
   }
 }

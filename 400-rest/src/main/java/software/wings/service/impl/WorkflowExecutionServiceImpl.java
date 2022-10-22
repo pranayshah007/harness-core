@@ -6656,6 +6656,19 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
         .get();
   }
 
+  public WorkflowExecution getLastWorkflowExecution(
+      String accountId, String appId, String workflowId, String envId, String serviceId, String infraMappingId) {
+    if (isEmpty(workflowId)) {
+      return null;
+    }
+    return wingsPersistence.createQuery(WorkflowExecution.class)
+        .filter(WorkflowExecutionKeys.appId, appId)
+        .filter(WorkflowExecutionKeys.workflowId, workflowId)
+        .filter(WorkflowExecutionKeys.infraMappingIds, infraMappingId)
+        .order(Sort.descending(WorkflowExecutionKeys.createdAt))
+        .get();
+  }
+
   @Override
   public WorkflowExecutionInfo getWorkflowExecutionInfo(String appId, String workflowExecutionId) {
     WorkflowExecution workflowExecution =
@@ -6685,5 +6698,10 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
   public List<WorkflowExecution> getWorkflowExecutionsWithFailureDetails(
       String appId, List<WorkflowExecution> workflowExecutions) {
     return workflowExecutionServiceHelper.populateFailureDetailsWithStepInfo(appId, workflowExecutions);
+  }
+
+  @Override
+  public WorkflowExecution getUpdatedWorkflowExecution(String appId, String workflowExecutionId) {
+    return wingsPersistence.getWithAppId(WorkflowExecution.class, appId, workflowExecutionId);
   }
 }

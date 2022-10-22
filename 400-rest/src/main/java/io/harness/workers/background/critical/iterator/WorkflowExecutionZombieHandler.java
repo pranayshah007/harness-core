@@ -60,7 +60,7 @@ public class WorkflowExecutionZombieHandler implements MongoPersistenceIterator.
     if (featureFlagService.isNotEnabled(FeatureName.WORKFLOW_EXECUTION_ZOMBIE_MONITOR, wfExecution.getAccountId())) {
       return;
     }
-    log.info("Evaluating if workflow execution {} is a zombie execution [workflowId={}]", wfExecution.getUuid(),
+    log.debug("Evaluating if workflow execution {} is a zombie execution [workflowId={}]", wfExecution.getUuid(),
         wfExecution.getWorkflowId());
 
     // SORT STATE EXECUTION INSTANCES BASED ON createdAt FIELD IN DESCENDING ORDER. WE NEED

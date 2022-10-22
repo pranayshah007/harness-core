@@ -11,15 +11,15 @@ import static io.harness.cvng.CVConstants.STATE_MACHINE_IGNORE_MINUTES;
 import static io.harness.cvng.CVConstants.STATE_MACHINE_IGNORE_MINUTES_DEFAULT;
 import static io.harness.cvng.CVConstants.STATE_MACHINE_IGNORE_MINUTES_FOR_DEMO;
 import static io.harness.cvng.CVConstants.STATE_MACHINE_IGNORE_MINUTES_FOR_SLI;
+import static io.harness.cvng.models.VerificationType.LOG;
+import static io.harness.cvng.models.VerificationType.TIME_SERIES;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.cvng.analysis.beans.LogClusterLevel;
-import io.harness.cvng.analysis.beans.TimeSeriesRecordDTO;
 import io.harness.cvng.beans.job.VerificationJobType;
 import io.harness.cvng.core.beans.TimeRange;
 import io.harness.cvng.core.entities.CVConfig;
-import io.harness.cvng.core.entities.TimeSeriesRecord;
 import io.harness.cvng.core.entities.VerificationTask;
 import io.harness.cvng.core.entities.VerificationTask.DeploymentInfo;
 import io.harness.cvng.core.entities.VerificationTask.TaskType;
@@ -59,7 +59,6 @@ import io.harness.persistence.HPersistence;
 
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
-import java.sql.Time;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -69,7 +68,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections4.CollectionUtils;
 import org.mongodb.morphia.query.Sort;
 
 @Slf4j

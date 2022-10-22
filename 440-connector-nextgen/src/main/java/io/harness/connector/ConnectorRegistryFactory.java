@@ -213,7 +213,7 @@ public class ConnectorRegistryFactory {
         new ConnectorRegistrar(ConnectorCategory.MONITORING, CVConnectorValidator.class,
             CVConnectorParamsProvider.class, DynatraceDTOToEntity.class, DynatraceEntityToDTO.class,
             NotSupportedValidationHandler.class));
-    registrar.put(ConnectorType.ELK,
+    registrar.put(ConnectorType.ELASTICSEARCH,
         new ConnectorRegistrar(ConnectorCategory.MONITORING, CVConnectorValidator.class,
             CVConnectorParamsProvider.class, ELKDTOToEntity.class, ELKEntityToDTO.class,
             NotSupportedValidationHandler.class));

@@ -95,6 +95,14 @@ public class NGExpressionUtils {
     return matchesInputSetPattern(fieldValue) || hasExpressions(fieldValue);
   }
 
+  public boolean isRuntimeField(String fieldValue) {
+    return matchesInputSetPattern(fieldValue);
+  }
+
+  public boolean isExpressionField(String fieldValue) {
+    return hasExpressions(fieldValue);
+  }
+
   public List<String> getListOfExpressions(String s) {
     Matcher matcher = GENERIC_EXPRESSIONS_PATTERN.matcher(s);
     List<String> allMatches = new ArrayList<>();

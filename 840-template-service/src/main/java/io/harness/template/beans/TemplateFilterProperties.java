@@ -42,4 +42,5 @@ public class TemplateFilterProperties extends FilterProperties {
   String description;
   List<TemplateEntityType> templateEntityTypes;
   List<String> childTypes;
+  String repoName;
 }

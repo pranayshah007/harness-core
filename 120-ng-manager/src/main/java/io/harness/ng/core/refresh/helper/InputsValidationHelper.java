@@ -140,7 +140,7 @@ public class InputsValidationHelper {
     JsonNode serviceNode = entityNode.getCurrJsonNode();
     String serviceRef = serviceNode.get(YamlTypes.SERVICE_REF).asText();
     JsonNode serviceInputs = serviceNode.get(YamlTypes.SERVICE_INPUTS);
-    if (NGExpressionUtils.isRuntimeOrExpressionField(serviceRef)) {
+    if (NGExpressionUtils.isRuntimeField(serviceRef)) {
       if (serviceInputs.isObject()
           || (serviceInputs.isValueNode() && !NGExpressionUtils.matchesInputSetPattern(serviceInputs.asText()))) {
         errorNodeSummary.setValid(false);
@@ -148,6 +148,13 @@ public class InputsValidationHelper {
       }
       return;
     }
+
+    // if serviceRef is expression, we cannot validate service inputs. We will allow user to save any input because
+    // there is no way as of now, to provide service inputs in this case
+    if (NGExpressionUtils.isExpressionField(serviceRef)) {
+      return;
+    }
+
     ServiceEntity serviceEntity = entityFetchHelper.getService(
         context.getAccountId(), context.getOrgId(), context.getProjectId(), serviceRef, context.getCacheMap());
 
@@ -160,7 +167,7 @@ public class InputsValidationHelper {
     String serviceRuntimeInputYaml = serviceEntityService.createServiceInputsYamlGivenPrimaryArtifactRef(
         serviceYaml, serviceRef, primaryArtifactRefNode == null ? null : primaryArtifactRefNode.asText());
     if (EmptyPredicate.isEmpty(serviceRuntimeInputYaml)) {
-      if (serviceInputs != null) {
+      if (EnvironmentRefreshHelper.isNodeNotNullAndNotHaveRuntimeValue(serviceInputs)) {
         errorNodeSummary.setValid(false);
       }
       return;

@@ -109,4 +109,5 @@ public interface Constants {
   String CD_TRIGGERS_MANDATE_GITHUB_AUTHENTICATION = "mandate_webhook_secrets_for_github_triggers_CD";
   String CI_TRIGGERS_MANDATE_GITHUB_AUTHENTICATION = "mandate_webhook_secrets_for_github_triggers_CI";
   String MANDATE_GITHUB_AUTHENTICATION_TRUE_VALUE = "true";
+  String PIPELINE_INPUTS_VALIDATION_ERROR = "PipelineInputsErrorMetadataV2";
 }

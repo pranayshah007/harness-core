@@ -49,6 +49,7 @@ import static io.harness.ng.core.k8s.ServiceSpecType.AZURE_WEBAPP;
 import static io.harness.ng.core.k8s.ServiceSpecType.CUSTOM_DEPLOYMENT;
 import static io.harness.ng.core.k8s.ServiceSpecType.ECS;
 import static io.harness.ng.core.k8s.ServiceSpecType.KUBERNETES;
+import static io.harness.ng.core.k8s.ServiceSpecType.SERVERLESS_AWS_LAMBDA;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -216,8 +217,9 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
   private static final String SSH_WINRM = "SshWinRM";
 
   private static final List<String> CLOUDFORMATION_CATEGORY =
-      Arrays.asList(KUBERNETES, PROVISIONER, CLOUDFORMATION_STEP_METADATA, HELM, ECS, SSH_WINRM);
-  private static final List<String> TERRAFORM_CATEGORY = Arrays.asList(KUBERNETES, PROVISIONER, HELM, ECS, SSH_WINRM);
+      Arrays.asList(KUBERNETES, PROVISIONER, CLOUDFORMATION_STEP_METADATA, HELM, ECS, SSH_WINRM, SERVERLESS_AWS_LAMBDA);
+  private static final List<String> TERRAFORM_CATEGORY =
+      Arrays.asList(KUBERNETES, PROVISIONER, HELM, ECS, SSH_WINRM, SERVERLESS_AWS_LAMBDA);
   private static final String BUILD_STEP = "Builds";
 
   private static final List<String> AZURE_RESOURCE_CATEGORY =

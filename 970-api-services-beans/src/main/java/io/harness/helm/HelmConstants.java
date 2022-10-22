@@ -88,6 +88,7 @@ public final class HelmConstants {
   public static final class V3Commands {
     public static final String HELM_LIST_RELEASE_COMMAND_TEMPLATE =
         "KUBECONFIG=${KUBECONFIG_PATH} ${HELM_PATH} list ${COMMAND_FLAGS} --filter ^${RELEASE_NAME}$";
+
     public static final String HELM_ROLLBACK_COMMAND_TEMPLATE =
         "KUBECONFIG=${KUBECONFIG_PATH} ${HELM_PATH} rollback  ${RELEASE} ${REVISION} ${COMMAND_FLAGS}";
     public static final String HELM_INSTALL_COMMAND_TEMPLATE =
@@ -130,7 +131,7 @@ public final class HelmConstants {
     }
   }
 
-  public static final long DEFAULT_HELM_COMMAND_TIMEOUT = TimeUnit.MINUTES.toMillis(30);
+  public static final long DEFAULT_HELM_COMMAND_TIMEOUT = TimeUnit.MINUTES.toMillis(120);
   public static final long DEFAULT_TILLER_CONNECTION_TIMEOUT_MILLIS = TimeUnit.SECONDS.toMillis(60);
   public static final String HELM_RELEASE_LABEL = "release";
   public static final String HELM_HOOK_ANNOTATION = "helm.sh/hook";

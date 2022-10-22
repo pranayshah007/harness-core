@@ -30,7 +30,9 @@ import software.wings.utils.ArtifactType;
 
 import com.google.inject.Inject;
 import java.util.Map;
+import javax.annotation.Nullable;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 
 @Slf4j
 @OwnedBy(CDP)
@@ -52,10 +54,15 @@ public abstract class AbstractSlotDataRequestHandler<T extends AbstractSlotDataR
                     ? taskRequest.getApplicationSettings().fetchFileContent()
                     : null)
             .build();
+
     Map<String, AzureAppServiceApplicationSetting> appSettingsToAdd =
         azureResourceUtilities.getAppSettingsToAdd(appServiceConfiguration.getAppSettings());
+    Map<String, AzureAppServiceApplicationSetting> appSettingsToRemove = azureResourceUtilities.getAppSettingsToRemove(
+        taskRequest.getPrevExecUserAddedAppSettingNames(), appSettingsToAdd);
     Map<String, AzureAppServiceConnectionString> connSettingsToAdd =
         azureResourceUtilities.getConnectionSettingsToAdd(appServiceConfiguration.getConnStrings());
+    Map<String, AzureAppServiceConnectionString> connSettingsToRemove = azureResourceUtilities.getConnStringsToRemove(
+        taskRequest.getPrevExecUserAddedConnStringNames(), connSettingsToAdd);
     Map<String, AzureAppServiceApplicationSetting> dockerSettings =
         azureRegistrySettingsAdapter.getContainerSettings(artifactConfig);
 
@@ -64,12 +71,13 @@ public abstract class AbstractSlotDataRequestHandler<T extends AbstractSlotDataR
 
     return AzureAppServiceDockerDeploymentContext.builder()
         .logCallbackProvider(logCallbackProvider)
-        .startupCommand(
-            taskRequest.getStartupCommand() != null ? taskRequest.getStartupCommand().fetchFileContent() : null)
+        .startupCommand(getStartupCommand(taskRequest))
         .slotName(infrastructure.getDeploymentSlot())
         .azureWebClientContext(clientContext)
         .appSettingsToAdd(appSettingsToAdd)
+        .appSettingsToRemove(appSettingsToRemove)
         .connSettingsToAdd(connSettingsToAdd)
+        .connSettingsToRemove(connSettingsToRemove)
         .dockerSettings(dockerSettings)
         .imagePathAndTag(imagePathAndTag)
         .steadyStateTimeoutInMin(azureResourceUtilities.getTimeoutIntervalInMin(taskRequest.getTimeoutIntervalInMin()))
@@ -93,17 +101,22 @@ public abstract class AbstractSlotDataRequestHandler<T extends AbstractSlotDataR
 
     Map<String, AzureAppServiceApplicationSetting> appSettingsToAdd =
         azureResourceUtilities.getAppSettingsToAdd(appServiceConfiguration.getAppSettings());
+    Map<String, AzureAppServiceApplicationSetting> appSettingsToRemove = azureResourceUtilities.getAppSettingsToRemove(
+        taskRequest.getPrevExecUserAddedAppSettingNames(), appSettingsToAdd);
     Map<String, AzureAppServiceConnectionString> connSettingsToAdd =
         azureResourceUtilities.getConnectionSettingsToAdd(appServiceConfiguration.getConnStrings());
+    Map<String, AzureAppServiceConnectionString> connSettingsToRemove = azureResourceUtilities.getConnStringsToRemove(
+        taskRequest.getPrevExecUserAddedConnStringNames(), connSettingsToAdd);
 
     return AzureAppServicePackageDeploymentContext.builder()
         .logCallbackProvider(logCallbackProvider)
         .appSettingsToAdd(appSettingsToAdd)
+        .appSettingsToRemove(appSettingsToRemove)
         .connSettingsToAdd(connSettingsToAdd)
+        .connSettingsToRemove(connSettingsToRemove)
         .slotName(taskRequest.getInfrastructure().getDeploymentSlot())
         .azureWebClientContext(clientContext)
-        .startupCommand(
-            taskRequest.getStartupCommand() != null ? taskRequest.getStartupCommand().fetchFileContent() : null)
+        .startupCommand(getStartupCommand(taskRequest))
         .artifactFile(artifactResponse != null ? artifactResponse.getArtifactFile() : null)
         .artifactType(artifactResponse != null ? artifactResponse.getArtifactType() : ArtifactType.ZIP)
         .steadyStateTimeoutInMin(azureResourceUtilities.getTimeoutIntervalInMin(taskRequest.getTimeoutIntervalInMin()))
@@ -111,5 +124,14 @@ public abstract class AbstractSlotDataRequestHandler<T extends AbstractSlotDataR
         .isBasicDeployment(
             DEPLOYMENT_SLOT_PRODUCTION_NAME.equalsIgnoreCase(taskRequest.getInfrastructure().getDeploymentSlot()))
         .build();
+  }
+
+  @Nullable
+  private String getStartupCommand(T taskRequest) {
+    if (taskRequest.getStartupCommand() != null) {
+      return taskRequest.getStartupCommand().fetchFileContent();
+    }
+
+    return taskRequest.isPrevExecUserChangedStartupCommand() ? StringUtils.EMPTY : null;
   }
 }

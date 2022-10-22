@@ -58,7 +58,7 @@ public interface CfDeploymentManager {
 
   List<String> getRouteMaps(CfRequestConfig cfRequestConfig) throws PivotalClientApiException;
 
-  String checkConnectivity(CfConfig cfConfig, boolean limitPcfThreads, boolean ignorePcfConnectionContextCache);
+  String checkConnectivity(CfConfig cfConfig, boolean limitPcfThreads);
 
   String createRouteMap(CfRequestConfig cfRequestConfig, String host, String domain, String path, boolean tcpRoute,
       boolean useRandomPort, Integer port) throws PivotalClientApiException, InterruptedException;

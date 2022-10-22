@@ -12,7 +12,7 @@ import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor
-final class ArtifactInfo {
+public final class ArtifactInfo {
   private String id;
   private String name;
   private String buildNo;

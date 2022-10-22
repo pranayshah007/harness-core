@@ -72,6 +72,8 @@ func getParseTokenFunc(token string, c echo.Context) (interface{}, error) {
 func skipperFunc(c echo.Context) bool {
 	if strings.Contains(c.Request().URL.Path, "swagger") {
 		return true
+	} else if strings.Contains(c.Request().URL.Path, "healthz") {
+		return true
 	}
 	return false
 }

@@ -14,7 +14,10 @@ import static io.harness.rule.OwnerRule.MOHIT_GARG;
 import static io.harness.rule.OwnerRule.VUK;
 import static io.harness.rule.OwnerRule.XIN;
 
+import static software.wings.service.impl.DelegateSelectionLogsServiceImpl.NO_ELIGIBLE_DELEGATES;
+
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyString;
@@ -22,17 +25,26 @@ import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import io.harness.beans.DelegateTask;
 import io.harness.category.element.UnitTests;
 import io.harness.data.structure.UUIDGenerator;
+import io.harness.delegate.DelegateTaskValidationFailedException;
+import io.harness.delegate.NoEligibleDelegatesInAccountException;
+import io.harness.delegate.beans.NoAvailableDelegatesException;
+import io.harness.delegate.beans.NoInstalledDelegatesException;
+import io.harness.exception.DelegateTaskExpiredException;
+import io.harness.exception.InvalidArgumentsException;
 import io.harness.observer.Subject;
 import io.harness.perpetualtask.ecs.EcsPerpetualTaskServiceClient;
 import io.harness.perpetualtask.instancesync.AwsSshInstanceSyncPerpetualTaskParams;
 import io.harness.perpetualtask.internal.PerpetualTaskRecord;
 import io.harness.perpetualtask.internal.PerpetualTaskRecordDao;
+import io.harness.perpetualtask.internal.PerpetualTaskRecordHandler;
 import io.harness.rule.Owner;
 import io.harness.service.intfc.PerpetualTaskStateObserver;
 
 import software.wings.WingsBaseTest;
+import software.wings.service.intfc.DelegateService;
 
 import com.google.inject.Inject;
 import com.google.protobuf.Any;
@@ -62,6 +74,10 @@ public class PerpetualTaskServiceImplTest extends WingsBaseTest {
   @Inject private PerpetualTaskScheduleService perpetualTaskScheduleService;
 
   @InjectMocks @Inject private PerpetualTaskServiceImpl perpetualTaskService;
+
+  @Mock DelegateService delegateService;
+  @Mock private PerpetualTaskServiceClientRegistry clientRegistry;
+  @InjectMocks @Inject private PerpetualTaskRecordHandler perpetualTaskRecordHandler;
 
   @Inject private BroadcasterFactory broadcasterFactory;
   @Mock private Broadcaster broadcaster;
@@ -590,6 +606,311 @@ public class PerpetualTaskServiceImplTest extends WingsBaseTest {
         perpetualTaskService.listAssignedTasks(DELEGATE_ID, ACCOUNT_ID);
     assertThat(perpetualTaskAssignDetailsList).hasSize(1);
     assertThat(perpetualTaskAssignDetailsList.get(0).getTaskId().getId()).isEqualTo(taskId);
+  }
+
+  @Test
+  @Owner(developers = JENNY)
+  @Category(UnitTests.class)
+  public void testPerpetualTaskState_FromUnAssigned_ToNonAssignable() throws InterruptedException {
+    PerpetualTaskRecord perpetualTaskRecord = createPerpetualTaskRecord();
+    when(delegateService.executeTask(nullable(DelegateTask.class))).thenAnswer(invocation -> {
+      throw new NoEligibleDelegatesInAccountException(NO_ELIGIBLE_DELEGATES);
+    });
+    perpetualTaskRecordHandler.assign(perpetualTaskRecord);
+    PerpetualTaskRecord updatedPtRecord = perpetualTaskRecordDao.getTask(perpetualTaskRecord.getUuid());
+    assertThat(updatedPtRecord.getState()).isEqualTo(PerpetualTaskState.TASK_UNASSIGNED);
+    assertThat(updatedPtRecord.getAssignTryCount()).isEqualTo(1);
+    assertThat(updatedPtRecord.getAssignAfterMs()).isGreaterThanOrEqualTo(System.currentTimeMillis());
+
+    updatedPtRecord.setAssignTryCount(10);
+    perpetualTaskRecordDao.save(updatedPtRecord);
+    perpetualTaskRecordHandler.assign(updatedPtRecord);
+    PerpetualTaskRecord updatedPtRecord1 = perpetualTaskRecordDao.getTask(perpetualTaskRecord.getUuid());
+    assertThat(updatedPtRecord1.getState()).isEqualTo(PerpetualTaskState.TASK_NON_ASSIGNABLE);
+  }
+
+  @Test
+  @Owner(developers = JENNY)
+  @Category(UnitTests.class)
+  public void testPerpetualTaskNonAssignableState_OnNonEligibleDelegate() throws InterruptedException {
+    PerpetualTaskRecord perpetualTaskRecord = createPerpetualTaskRecord();
+    when(delegateService.executeTask(nullable(DelegateTask.class))).thenAnswer(invocation -> {
+      throw new NoEligibleDelegatesInAccountException(NO_ELIGIBLE_DELEGATES);
+    });
+
+    perpetualTaskRecordHandler.assign(perpetualTaskRecord);
+    PerpetualTaskRecord updatedPtRecord = perpetualTaskRecordDao.getTask(perpetualTaskRecord.getUuid());
+    assertThat(updatedPtRecord.getState()).isEqualTo(PerpetualTaskState.TASK_UNASSIGNED);
+    assertThat(updatedPtRecord.getUnassignedReason()).isEqualTo(PerpetualTaskUnassignedReason.NO_ELIGIBLE_DELEGATES);
+  }
+
+  @Test
+  @Owner(developers = JENNY)
+  @Category(UnitTests.class)
+  public void testPerpetualTaskNonAssignableState_OnNonEligibleDelegate_AfterMaxAssignmentTry()
+      throws InterruptedException {
+    PerpetualTaskRecord perpetualTaskRecord = createPerpetualTaskRecordAndAssignTryCountAsMax();
+    when(delegateService.executeTask(nullable(DelegateTask.class))).thenAnswer(invocation -> {
+      throw new NoEligibleDelegatesInAccountException(NO_ELIGIBLE_DELEGATES);
+    });
+
+    perpetualTaskRecordHandler.assign(perpetualTaskRecord);
+    PerpetualTaskRecord updatedPtRecord = perpetualTaskRecordDao.getTask(perpetualTaskRecord.getUuid());
+    assertThat(updatedPtRecord.getState()).isEqualTo(PerpetualTaskState.TASK_NON_ASSIGNABLE);
+    assertThat(updatedPtRecord.getUnassignedReason()).isEqualTo(PerpetualTaskUnassignedReason.NO_ELIGIBLE_DELEGATES);
+  }
+
+  @Test
+  @Owner(developers = JENNY)
+  @Category(UnitTests.class)
+  public void testPerpetualTaskNonAssignableState_OnNoAvailableDelegate() throws InterruptedException {
+    PerpetualTaskRecord perpetualTaskRecord = createPerpetualTaskRecord();
+    when(delegateService.executeTask(nullable(DelegateTask.class))).thenAnswer(invocation -> {
+      throw new NoAvailableDelegatesException();
+    });
+
+    perpetualTaskRecordHandler.assign(perpetualTaskRecord);
+    PerpetualTaskRecord updatedPtRecord = perpetualTaskRecordDao.getTask(perpetualTaskRecord.getUuid());
+    assertThat(updatedPtRecord.getState()).isEqualTo(PerpetualTaskState.TASK_UNASSIGNED);
+    assertThat(updatedPtRecord.getUnassignedReason()).isEqualTo(PerpetualTaskUnassignedReason.NO_DELEGATE_AVAILABLE);
+  }
+
+  @Test
+  @Owner(developers = JENNY)
+  @Category(UnitTests.class)
+  public void testPerpetualTaskNonAssignableState_OnNoAvailableDelegate_AfterMaxAssignmentTry()
+      throws InterruptedException {
+    PerpetualTaskRecord perpetualTaskRecord = createPerpetualTaskRecordAndAssignTryCountAsMax();
+    when(delegateService.executeTask(nullable(DelegateTask.class))).thenAnswer(invocation -> {
+      throw new NoAvailableDelegatesException();
+    });
+
+    perpetualTaskRecordHandler.assign(perpetualTaskRecord);
+    PerpetualTaskRecord updatedPtRecord = perpetualTaskRecordDao.getTask(perpetualTaskRecord.getUuid());
+    assertThat(updatedPtRecord.getState()).isEqualTo(PerpetualTaskState.TASK_NON_ASSIGNABLE);
+    assertThat(updatedPtRecord.getUnassignedReason()).isEqualTo(PerpetualTaskUnassignedReason.NO_DELEGATE_AVAILABLE);
+  }
+
+  @Test
+  @Owner(developers = JENNY)
+  @Category(UnitTests.class)
+  public void testPerpetualTaskNonAssignableState_OnNoInstalledDelegate() throws InterruptedException {
+    PerpetualTaskRecord perpetualTaskRecord = createPerpetualTaskRecord();
+    when(delegateService.executeTask(nullable(DelegateTask.class))).thenAnswer(invocation -> {
+      throw new NoInstalledDelegatesException();
+    });
+
+    perpetualTaskRecordHandler.assign(perpetualTaskRecord);
+    PerpetualTaskRecord updatedPtRecord = perpetualTaskRecordDao.getTask(perpetualTaskRecord.getUuid());
+    assertThat(updatedPtRecord.getState()).isEqualTo(PerpetualTaskState.TASK_NON_ASSIGNABLE);
+    assertThat(updatedPtRecord.getUnassignedReason()).isEqualTo(PerpetualTaskUnassignedReason.NO_DELEGATE_INSTALLED);
+  }
+
+  @Test
+  @Owner(developers = JENNY)
+  @Category(UnitTests.class)
+  public void testPerpetualTaskNonAssignableState_OnTaskExpired() throws InterruptedException {
+    PerpetualTaskRecord perpetualTaskRecord = createPerpetualTaskRecord();
+    when(delegateService.executeTask(nullable(DelegateTask.class))).thenAnswer(invocation -> {
+      throw new DelegateTaskExpiredException("");
+    });
+
+    perpetualTaskRecordHandler.assign(perpetualTaskRecord);
+    PerpetualTaskRecord updatedPtRecord = perpetualTaskRecordDao.getTask(perpetualTaskRecord.getUuid());
+    assertThat(updatedPtRecord.getState()).isEqualTo(PerpetualTaskState.TASK_UNASSIGNED);
+    assertThat(updatedPtRecord.getUnassignedReason()).isEqualTo(PerpetualTaskUnassignedReason.TASK_EXPIRED);
+  }
+
+  @Test
+  @Owner(developers = JENNY)
+  @Category(UnitTests.class)
+  public void testPerpetualTaskNonAssignableState_OnTaskExpired_AfterMaxAssignmentTry() throws InterruptedException {
+    PerpetualTaskRecord perpetualTaskRecord = createPerpetualTaskRecordAndAssignTryCountAsMax();
+    when(delegateService.executeTask(nullable(DelegateTask.class))).thenAnswer(invocation -> {
+      throw new DelegateTaskExpiredException("");
+    });
+
+    perpetualTaskRecordHandler.assign(perpetualTaskRecord);
+    PerpetualTaskRecord updatedPtRecord = perpetualTaskRecordDao.getTask(perpetualTaskRecord.getUuid());
+    assertThat(updatedPtRecord.getState()).isEqualTo(PerpetualTaskState.TASK_NON_ASSIGNABLE);
+    assertThat(updatedPtRecord.getUnassignedReason()).isEqualTo(PerpetualTaskUnassignedReason.TASK_EXPIRED);
+  }
+
+  @Test
+  @Owner(developers = JENNY)
+  @Category(UnitTests.class)
+  public void testPerpetualTaskNonAssignableState_OnTaskValidationFailed() throws InterruptedException {
+    PerpetualTaskRecord perpetualTaskRecord = createPerpetualTaskRecord();
+    when(delegateService.executeTask(nullable(DelegateTask.class))).thenAnswer(invocation -> {
+      throw new DelegateTaskValidationFailedException("");
+    });
+
+    perpetualTaskRecordHandler.assign(perpetualTaskRecord);
+    PerpetualTaskRecord updatedPtRecord = perpetualTaskRecordDao.getTask(perpetualTaskRecord.getUuid());
+    assertThat(updatedPtRecord.getState()).isEqualTo(PerpetualTaskState.TASK_UNASSIGNED);
+    assertThat(updatedPtRecord.getUnassignedReason()).isEqualTo(PerpetualTaskUnassignedReason.TASK_VALIDATION_FAILED);
+  }
+
+  @Test
+  @Owner(developers = JENNY)
+  @Category(UnitTests.class)
+  public void testPerpetualTaskNonAssignableState_OnTaskValidationFailed_AfterMaxAssignmentTry()
+      throws InterruptedException {
+    PerpetualTaskRecord perpetualTaskRecord = createPerpetualTaskRecordAndAssignTryCountAsMax();
+    when(delegateService.executeTask(nullable(DelegateTask.class))).thenAnswer(invocation -> {
+      throw new DelegateTaskValidationFailedException("");
+    });
+
+    perpetualTaskRecordHandler.assign(perpetualTaskRecord);
+    PerpetualTaskRecord updatedPtRecord = perpetualTaskRecordDao.getTask(perpetualTaskRecord.getUuid());
+    assertThat(updatedPtRecord.getState()).isEqualTo(PerpetualTaskState.TASK_NON_ASSIGNABLE);
+    assertThat(updatedPtRecord.getUnassignedReason()).isEqualTo(PerpetualTaskUnassignedReason.TASK_VALIDATION_FAILED);
+  }
+
+  @Test
+  @Owner(developers = JENNY)
+  @Category(UnitTests.class)
+  public void testPerpetualTaskNonAssignableState_OnInvalidArgumentException() throws InterruptedException {
+    PerpetualTaskRecord perpetualTaskRecord = createPerpetualTaskRecord();
+    when(delegateService.executeTask(nullable(DelegateTask.class))).thenAnswer(invocation -> {
+      throw new InvalidArgumentsException("");
+    });
+
+    perpetualTaskRecordHandler.assign(perpetualTaskRecord);
+    PerpetualTaskRecord updatedPtRecord = perpetualTaskRecordDao.getTask(perpetualTaskRecord.getUuid());
+    assertThat(updatedPtRecord.getState()).isEqualTo(PerpetualTaskState.TASK_UNASSIGNED);
+    assertThat(updatedPtRecord.getUnassignedReason()).isEqualTo(PerpetualTaskUnassignedReason.TASK_EXPIRED);
+  }
+
+  @Test
+  @Owner(developers = JENNY)
+  @Category(UnitTests.class)
+  public void testPerpetualTaskNonAssignableState_OnInvalidArgumentException_AfterMaxAssignmentTry()
+      throws InterruptedException {
+    PerpetualTaskRecord perpetualTaskRecord = createPerpetualTaskRecordAndAssignTryCountAsMax();
+    when(delegateService.executeTask(nullable(DelegateTask.class))).thenAnswer(invocation -> {
+      throw new InvalidArgumentsException("");
+    });
+
+    perpetualTaskRecordHandler.assign(perpetualTaskRecord);
+    PerpetualTaskRecord updatedPtRecord = perpetualTaskRecordDao.getTask(perpetualTaskRecord.getUuid());
+    assertThat(updatedPtRecord.getState()).isEqualTo(PerpetualTaskState.TASK_NON_ASSIGNABLE);
+    assertThat(updatedPtRecord.getUnassignedReason()).isEqualTo(PerpetualTaskUnassignedReason.TASK_EXPIRED);
+  }
+
+  @Test
+  @Owner(developers = JENNY)
+  @Category(UnitTests.class)
+  public void testPerpetualTaskNonAssignableState_OnUnExpectedException() throws InterruptedException {
+    PerpetualTaskRecord perpetualTaskRecord = createPerpetualTaskRecord();
+    when(delegateService.executeTask(nullable(DelegateTask.class))).thenAnswer(invocation -> {
+      throw new InvalidArgumentsException("");
+    });
+
+    perpetualTaskRecordHandler.assign(perpetualTaskRecord);
+    PerpetualTaskRecord updatedPtRecord = perpetualTaskRecordDao.getTask(perpetualTaskRecord.getUuid());
+    assertThat(updatedPtRecord.getState()).isEqualTo(PerpetualTaskState.TASK_UNASSIGNED);
+    assertThat(updatedPtRecord.getUnassignedReason()).isEqualTo(PerpetualTaskUnassignedReason.TASK_EXPIRED);
+  }
+
+  @Test
+  @Owner(developers = JENNY)
+  @Category(UnitTests.class)
+  public void testPerpetualTaskNonAssignableState_OnUnExpectedException_AfterMaxAssignmentTry()
+      throws InterruptedException {
+    PerpetualTaskRecord perpetualTaskRecord = createPerpetualTaskRecord();
+    when(delegateService.executeTask(nullable(DelegateTask.class))).thenAnswer(invocation -> {
+      throw new InvalidArgumentsException("");
+    });
+
+    perpetualTaskRecordHandler.assign(perpetualTaskRecord);
+    PerpetualTaskRecord updatedPtRecord = perpetualTaskRecordDao.getTask(perpetualTaskRecord.getUuid());
+    assertThat(updatedPtRecord.getState()).isEqualTo(PerpetualTaskState.TASK_UNASSIGNED);
+    assertThat(updatedPtRecord.getUnassignedReason()).isEqualTo(PerpetualTaskUnassignedReason.TASK_EXPIRED);
+  }
+
+  @Test
+  @Owner(developers = JENNY)
+  @Category(UnitTests.class)
+  public void testUpdatePerpetualTaskAssignable() {
+    PerpetualTaskRecord perpetualTaskRecord1 = createPerpetualTaskRecord();
+    PerpetualTaskRecord perpetualTaskRecord2 = createPerpetualTaskRecord();
+    PerpetualTaskRecord perpetualTaskRecord3 = createPerpetualTaskRecord();
+    perpetualTaskRecordDao.updateTaskNonAssignableToAssignable(ACCOUNT_ID);
+    PerpetualTaskRecord updatedPtRecord1 = perpetualTaskRecordDao.getTask(perpetualTaskRecord1.getUuid());
+    assertThat(updatedPtRecord1.getState()).isEqualTo(PerpetualTaskState.TASK_UNASSIGNED);
+    assertThat(updatedPtRecord1.getUnassignedReason()).isNull();
+    PerpetualTaskRecord updatedPtRecord2 = perpetualTaskRecordDao.getTask(perpetualTaskRecord2.getUuid());
+    assertThat(updatedPtRecord2.getState()).isEqualTo(PerpetualTaskState.TASK_UNASSIGNED);
+    assertThat(updatedPtRecord2.getUnassignedReason()).isNull();
+    PerpetualTaskRecord updatedPtRecord3 = perpetualTaskRecordDao.getTask(perpetualTaskRecord3.getUuid());
+    assertThat(updatedPtRecord3.getState()).isEqualTo(PerpetualTaskState.TASK_UNASSIGNED);
+    assertThat(updatedPtRecord3.getUnassignedReason()).isNull();
+  }
+
+  @Test
+  @Owner(developers = JENNY)
+  @Category(UnitTests.class)
+  public void testPerpetualTaskContext_withNullTaskParams() {
+    PerpetualTaskRecord perpetualTaskRecord = createPerpetualTaskRecord();
+    perpetualTaskRecordDao.save(perpetualTaskRecord);
+    perpetualTaskService.perpetualTaskContext(perpetualTaskRecord.getUuid());
+    PerpetualTaskRecord updatedPtRecord = perpetualTaskRecordDao.getTask(perpetualTaskRecord.getUuid());
+    assertThat(updatedPtRecord.getState()).isEqualTo(PerpetualTaskState.TASK_INVALID);
+  }
+
+  @Test
+  @Owner(developers = JENNY)
+  @Category(UnitTests.class)
+  public void testPerpetualTaskContext_withNullTaskParamsAndAfterMaxAssignTry() {
+    PerpetualTaskRecord perpetualTaskRecord = createPerpetualTaskRecordAndAssignTryCountAsMax();
+    perpetualTaskService.perpetualTaskContext(perpetualTaskRecord.getUuid());
+    PerpetualTaskRecord updatedPtRecord = perpetualTaskRecordDao.getTask(perpetualTaskRecord.getUuid());
+    assertThat(updatedPtRecord.getState()).isEqualTo(PerpetualTaskState.TASK_INVALID);
+  }
+
+  @Test
+  @Owner(developers = JENNY)
+  @Category(UnitTests.class)
+  public void testPerpetualTaskState_FromNonAssignable_ToUnAssigned() throws InterruptedException {
+    PerpetualTaskRecord perpetualTaskRecord = createPerpetualTaskRecord();
+    perpetualTaskRecord.setState(PerpetualTaskState.TASK_NON_ASSIGNABLE);
+    perpetualTaskRecord.setAssignTryCount(3);
+    perpetualTaskRecord.setUnassignedReason(PerpetualTaskUnassignedReason.PT_TASK_FAILED);
+    perpetualTaskRecordDao.save(perpetualTaskRecord);
+
+    perpetualTaskRecordDao.updateTaskNonAssignableToAssignable(ACCOUNT_ID);
+    PerpetualTaskRecord updatedPtRecord = perpetualTaskRecordDao.getTask(perpetualTaskRecord.getUuid());
+    assertThat(updatedPtRecord.getState()).isEqualTo(PerpetualTaskState.TASK_UNASSIGNED);
+  }
+
+  private PerpetualTaskRecord createPerpetualTaskRecord() {
+    PerpetualTaskClientContext clientContext = clientContext();
+    PerpetualTaskRecord perpetualTaskRecord = perpetualTaskRecord();
+    perpetualTaskRecord.setClientContext(clientContext);
+    perpetualTaskRecord.setState(PerpetualTaskState.TASK_UNASSIGNED);
+
+    String taskId = perpetualTaskService.createTask(
+        PerpetualTaskType.ECS_CLUSTER, ACCOUNT_ID, clientContext, perpetualTaskSchedule(), false, TASK_DESCRIPTION);
+    assertThat(taskId).isNotNull();
+
+    return perpetualTaskRecordDao.getTask(taskId);
+  }
+
+  private PerpetualTaskRecord createPerpetualTaskRecordAndAssignTryCountAsMax() {
+    PerpetualTaskClientContext clientContext = clientContext();
+    PerpetualTaskRecord perpetualTaskRecord = perpetualTaskRecord();
+    perpetualTaskRecord.setClientContext(clientContext);
+    perpetualTaskRecord.setState(PerpetualTaskState.TASK_UNASSIGNED);
+    perpetualTaskRecord.setAssignTryCount(11);
+
+    String taskId = perpetualTaskService.createTask(
+        PerpetualTaskType.ECS_CLUSTER, ACCOUNT_ID, clientContext, perpetualTaskSchedule(), false, TASK_DESCRIPTION);
+    assertThat(taskId).isNotNull();
+    PerpetualTaskRecord perpetualTaskRecordAfterCreate = perpetualTaskRecordDao.getTask(taskId);
+    perpetualTaskRecordAfterCreate.setAssignTryCount(11);
+    perpetualTaskRecordDao.save(perpetualTaskRecordAfterCreate);
+    return perpetualTaskRecordDao.getTask(taskId);
   }
 
   private PerpetualTaskResponse perpetualTaskFailedResponse() {

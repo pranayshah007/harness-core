@@ -12,7 +12,9 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.dtos.InstanceDTO;
 import io.harness.helper.SnapshotTimeProvider;
 import io.harness.ng.core.service.entity.ServiceEntity;
-import io.harness.ng.core.service.services.ServiceEntityService;
+import io.harness.ng.core.service.entity.ServiceEntity.ServiceEntityKeys;
+import io.harness.persistence.HIterator;
+import io.harness.persistence.HPersistence;
 import io.harness.service.instance.InstanceService;
 import io.harness.service.instancestats.InstanceStatsService;
 import io.harness.service.stats.usagemetrics.eventpublisher.UsageMetricsEventPublisher;
@@ -27,6 +29,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.mongodb.morphia.query.Query;
 
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @Slf4j
@@ -40,7 +43,7 @@ public class InstanceStatsCollectorImpl implements StatsCollector {
   private InstanceStatsService instanceStatsService;
   private InstanceService instanceService;
   private UsageMetricsEventPublisher usageMetricsEventPublisher;
-  private final ServiceEntityService serviceEntityService;
+  private HPersistence persistence;
 
   @Override
   public boolean createStats(String accountId) {
@@ -49,29 +52,31 @@ public class InstanceStatsCollectorImpl implements StatsCollector {
     // - group by org, project, service - takes more than a minute
     // - IN / UNION query for each org, project, service combination
     // - store metadata and latest time snapshot in a separate table
-    List<ServiceEntity> services = serviceEntityService.getNonDeletedServices(accountId);
     boolean ranAtLeastOnce = false;
-    for (ServiceEntity service : services) {
-      log.info("Collect and publish stats for service {} (account {}, org {}, project {})", service.getIdentifier(),
-          service.getAccountId(), service.getOrgIdentifier(), service.getProjectIdentifier());
-      Instant lastSnapshot = instanceStatsService.getLastSnapshotTime(
-          accountId, service.getOrgIdentifier(), service.getProjectIdentifier(), service.getIdentifier());
-      log.info("Last published timestamp: {}", lastSnapshot);
-      if (null == lastSnapshot) {
-        boolean success = createStats(accountId, service.getOrgIdentifier(), service.getProjectIdentifier(),
-            service.getIdentifier(), alignedWithMinute(Instant.now(), SYNC_INTERVAL_MINUTES));
-        ranAtLeastOnce = ranAtLeastOnce || success;
-      } else {
-        SnapshotTimeProvider snapshotTimeProvider = new SnapshotTimeProvider(lastSnapshot, SYNC_INTERVAL);
-        while (snapshotTimeProvider.hasNext()) {
-          Instant nextTs = snapshotTimeProvider.next();
-          if (nextTs == null) {
-            throw new IllegalStateException(
-                "nextTs is null even though hasNext() returned true. Shouldn't be possible");
-          }
-          boolean success = createStats(
-              accountId, service.getOrgIdentifier(), service.getProjectIdentifier(), service.getIdentifier(), nextTs);
+    try (HIterator<ServiceEntity> services = new HIterator<>(getFetchServicesQuery(accountId).fetch())) {
+      while (services.hasNext()) {
+        ServiceEntity service = services.next();
+        log.info("Collect and publish stats for service {} (account {}, org {}, project {})", service.getIdentifier(),
+            accountId, service.getOrgIdentifier(), service.getProjectIdentifier());
+        Instant lastSnapshot = instanceStatsService.getLastSnapshotTime(
+            accountId, service.getOrgIdentifier(), service.getProjectIdentifier(), service.getIdentifier());
+        log.info("Last published timestamp: {}", lastSnapshot);
+        if (null == lastSnapshot) {
+          boolean success = createStats(accountId, service.getOrgIdentifier(), service.getProjectIdentifier(),
+              service.getIdentifier(), alignedWithMinute(Instant.now(), SYNC_INTERVAL_MINUTES));
           ranAtLeastOnce = ranAtLeastOnce || success;
+        } else {
+          SnapshotTimeProvider snapshotTimeProvider = new SnapshotTimeProvider(lastSnapshot, SYNC_INTERVAL);
+          while (snapshotTimeProvider.hasNext()) {
+            Instant nextTs = snapshotTimeProvider.next();
+            if (nextTs == null) {
+              throw new IllegalStateException(
+                  "nextTs is null even though hasNext() returned true. Shouldn't be possible");
+            }
+            boolean success = createStats(
+                accountId, service.getOrgIdentifier(), service.getProjectIdentifier(), service.getIdentifier(), nextTs);
+            ranAtLeastOnce = ranAtLeastOnce || success;
+          }
         }
       }
     }
@@ -81,6 +86,15 @@ public class InstanceStatsCollectorImpl implements StatsCollector {
   }
 
   // ------------------------ PRIVATE METHODS -----------------------------
+
+  private Query<ServiceEntity> getFetchServicesQuery(String accountId) {
+    return persistence.createQuery(ServiceEntity.class)
+        .filter(ServiceEntityKeys.accountId, accountId)
+        .filter(ServiceEntityKeys.deleted, false)
+        .project(ServiceEntityKeys.orgIdentifier, true)
+        .project(ServiceEntityKeys.projectIdentifier, true)
+        .project(ServiceEntityKeys.identifier, true);
+  }
 
   private Instant alignedWithMinute(Instant instant, int minuteToTruncateTo) {
     if (LocalDateTime.ofInstant(instant, ZoneOffset.UTC).getMinute() % minuteToTruncateTo == 0) {

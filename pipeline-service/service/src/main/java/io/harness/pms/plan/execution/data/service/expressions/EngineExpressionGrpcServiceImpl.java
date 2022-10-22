@@ -10,6 +10,8 @@ package io.harness.pms.plan.execution.data.service.expressions;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.engine.pms.data.PmsEngineExpressionService;
+import io.harness.plan.ExpressionModeMapper;
+import io.harness.pms.contracts.plan.ExpressionMode;
 import io.harness.pms.contracts.service.EngineExpressionProtoServiceGrpc.EngineExpressionProtoServiceImplBase;
 import io.harness.pms.contracts.service.ExpressionEvaluateBlobRequest;
 import io.harness.pms.contracts.service.ExpressionEvaluateBlobResponse;
@@ -33,8 +35,15 @@ public class EngineExpressionGrpcServiceImpl extends EngineExpressionProtoServic
   @Override
   public void renderExpression(
       ExpressionRenderBlobRequest request, StreamObserver<ExpressionRenderBlobResponse> responseObserver) {
-    String value = pmsEngineExpressionService.renderExpression(
-        request.getAmbiance(), request.getExpression(), request.getSkipUnresolvedExpressionsCheck());
+    final String value;
+    if (request.getExpressionMode() != ExpressionMode.UNKNOWN_MODE
+        && request.getExpressionMode() != ExpressionMode.UNRECOGNIZED) {
+      value = pmsEngineExpressionService.renderExpression(request.getAmbiance(), request.getExpression(),
+          ExpressionModeMapper.fromExpressionModeProto(request.getExpressionMode()));
+    } else {
+      value = pmsEngineExpressionService.renderExpression(
+          request.getAmbiance(), request.getExpression(), request.getSkipUnresolvedExpressionsCheck());
+    }
     responseObserver.onNext(ExpressionRenderBlobResponse.newBuilder().setValue(value).build());
     responseObserver.onCompleted();
   }

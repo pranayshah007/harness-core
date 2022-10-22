@@ -18,6 +18,10 @@ import lombok.Data;
 @AllArgsConstructor
 public class ClusterFromGitops {
   String identifier;
+
+  String agentIdentifier;
+
   String name;
+
   ScopeLevel scopeLevel;
 }

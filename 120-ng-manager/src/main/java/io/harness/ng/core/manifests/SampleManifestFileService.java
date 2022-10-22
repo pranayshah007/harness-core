@@ -47,12 +47,10 @@ public class SampleManifestFileService {
    */
   public SampleManifestFileCreateResponse createDefaultFilesInFileStore(String accountIdentifier) {
     final boolean shouldCreate =
-        ngFeatureFlagHelperService.isEnabled(accountIdentifier, FeatureName.NG_DEFAULT_K8S_MANIFESTS)
-        && ngFeatureFlagHelperService.isEnabled(accountIdentifier, FeatureName.NG_FILE_STORE);
+        ngFeatureFlagHelperService.isEnabled(accountIdentifier, FeatureName.NG_DEFAULT_K8S_MANIFESTS);
     if (!shouldCreate) {
-      return new SampleManifestFileCreateResponse(false,
-          String.format("Please enable following feature flags %s %s", FeatureName.NG_DEFAULT_K8S_MANIFESTS.name(),
-              FeatureName.NG_FILE_STORE.name()));
+      return new SampleManifestFileCreateResponse(
+          false, String.format("Please enable following feature flag %s", FeatureName.NG_DEFAULT_K8S_MANIFESTS.name()));
     }
 
     final String topLevelFolderName = "Sample K8s Manifests";

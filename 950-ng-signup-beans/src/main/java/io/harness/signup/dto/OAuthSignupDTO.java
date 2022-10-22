@@ -32,4 +32,6 @@ public class OAuthSignupDTO {
   ModuleType intent;
   SignupAction signupAction;
   Edition edition;
+  String referer;
+  String gaClientId;
 }
