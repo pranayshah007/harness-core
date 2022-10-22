@@ -25,6 +25,7 @@ import io.harness.persistence.UuidAware;
 
 import com.google.common.collect.ImmutableList;
 import java.util.List;
+import java.util.Set;
 import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.FieldNameConstants;
@@ -60,7 +61,7 @@ public class InstanceSyncTaskDetails implements PersistentEntity, UuidAware, Uui
   private String cloudProviderId;
   private String infraMappingId;
   private String perpetualTaskId;
-  private CgReleaseIdentifiers releaseIdentifiers;
+  private Set<CgReleaseIdentifiers> releaseIdentifiers;
   long lastSuccessfulRun;
   long createdAt;
   long lastUpdatedAt;

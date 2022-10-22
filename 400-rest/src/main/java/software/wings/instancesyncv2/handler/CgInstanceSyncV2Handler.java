@@ -9,8 +9,13 @@ package software.wings.instancesyncv2.handler;
 
 import io.harness.perpetualtask.PerpetualTaskExecutionBundle;
 
+import software.wings.api.DeploymentSummary;
 import software.wings.beans.SettingAttribute;
 
 public interface CgInstanceSyncV2Handler {
   PerpetualTaskExecutionBundle fetchInfraConnectorDetails(SettingAttribute cloudProvider);
+
+  String getConfiguredPerpetualTaskId(DeploymentSummary deploymentSummary, String cloudProviderId);
+
+  void trackDeploymentRelease(String cloudProviderId, String perpetualTaskId, DeploymentSummary deploymentSummary);
 }

@@ -10,6 +10,7 @@ package software.wings.instancesyncv2;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.AccountId;
+import io.harness.exception.InvalidRequestException;
 import io.harness.grpc.DelegateServiceGrpcClient;
 import io.harness.metrics.service.api.MetricService;
 import io.harness.perpetualtask.PerpetualTaskClientContextDetails;
@@ -22,8 +23,8 @@ import software.wings.api.DeploymentEvent;
 import software.wings.api.DeploymentSummary;
 import software.wings.beans.InfrastructureMapping;
 import software.wings.beans.SettingAttribute;
+import software.wings.instancesyncv2.handler.CgInstanceSyncV2Handler;
 import software.wings.instancesyncv2.handler.CgInstanceSyncV2HandlerFactory;
-import software.wings.instancesyncv2.model.InstanceSyncTaskDetails;
 import software.wings.instancesyncv2.service.CgInstanceSyncTaskDetailsService;
 import software.wings.service.impl.SettingsServiceImpl;
 import software.wings.service.intfc.InfrastructureMappingService;
@@ -68,16 +69,20 @@ public class CgInstanceSyncServiceV2 {
         .forEach(deploymentSummary -> {
           SettingAttribute cloudProvider = fetchCloudProvider(deploymentSummary);
 
-          if (Objects.isNull(handlerFactory.getHandler(cloudProvider.getValue().getSettingType()))) {
+          CgInstanceSyncV2Handler instanceSyncHandler =
+              handlerFactory.getHandler(cloudProvider.getValue().getSettingType());
+          if (Objects.isNull(instanceSyncHandler)) {
             log.error("No handler registered for cloud provider type: [{}]. Doing nothing",
                 cloudProvider.getValue().getSettingType());
-            return;
+            throw new InvalidRequestException("No handler registered for cloud provider type: ["
+                + cloudProvider.getValue().getSettingType() + "] with Instance Sync V2");
           }
 
-          String configuredPerpetualTaskId = getConfiguredInstanceSyncId(deploymentSummary);
+          String configuredPerpetualTaskId =
+              instanceSyncHandler.getConfiguredPerpetualTaskId(deploymentSummary, cloudProvider.getUuid());
           if (StringUtils.isEmpty(configuredPerpetualTaskId)) {
             String perpetualTaskId = createInstanceSyncPerpetualTask(cloudProvider);
-            saveConfiguredPerpetualTaskId(cloudProvider, perpetualTaskId, deploymentSummary.getInfraMappingId());
+            instanceSyncHandler.trackDeploymentRelease(cloudProvider.getUuid(), perpetualTaskId, deploymentSummary);
           } else {
             updateInstanceSyncPerpetualTask(cloudProvider, configuredPerpetualTaskId);
           }
@@ -116,26 +121,6 @@ public class CgInstanceSyncServiceV2 {
         .setInterval(Durations.fromMinutes(10))
         .setTimeout(Durations.fromMinutes(5))
         .build();
-  }
-
-  // todo move this to inside handler. Handler will check for infra mapping and other tracked details per deployment
-  // summary.
-  public String getConfiguredInstanceSyncId(DeploymentSummary deploymentSummary) {
-    // fetch using the cloud provider ID
-    // infra mapping ID is to be used only to check if the deployment summary is part of tracked deployments.
-    InstanceSyncTaskDetails instanceSyncTaskDetails =
-        taskDetailsService.getForInfraMapping(deploymentSummary.getAccountId(), deploymentSummary.getInfraMappingId());
-    return Objects.nonNull(instanceSyncTaskDetails) ? instanceSyncTaskDetails.getPerpetualTaskId() : StringUtils.EMPTY;
-  }
-
-  public void saveConfiguredPerpetualTaskId(
-      SettingAttribute cloudProvider, String perpetualTaskId, String infraMappingId) {
-    taskDetailsService.save(InstanceSyncTaskDetails.builder()
-                                .accountId(cloudProvider.getAccountId())
-                                .infraMappingId(infraMappingId)
-                                .cloudProviderId(cloudProvider.getUuid())
-                                .perpetualTaskId(perpetualTaskId)
-                                .build());
   }
 
   public void processInstanceSyncResult(String perpetualTaskId, CgInstanceSyncResponse result) {

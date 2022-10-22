@@ -12,17 +12,20 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import io.harness.annotations.dev.OwnedBy;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import java.util.Set;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
 @OwnedBy(CDP)
 public class CgK8sReleaseIdentifier implements CgReleaseIdentifiers {
-  private String namespace;
+  private Set<String> namespaces;
   private String releaseName;
   private String clusterName;
 }

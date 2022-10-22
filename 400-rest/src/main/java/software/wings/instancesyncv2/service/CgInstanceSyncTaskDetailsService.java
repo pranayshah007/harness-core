@@ -43,4 +43,12 @@ public class CgInstanceSyncTaskDetailsService {
                                                .filter(InstanceSyncTaskDetailsKeys.infraMappingId, infraMappingId);
     return query.get();
   }
+
+  public InstanceSyncTaskDetails fetchForCloudProvider(String accountId, String cloudProviderId) {
+    Query<InstanceSyncTaskDetails> query = mongoPersistence.createQuery(InstanceSyncTaskDetails.class)
+                                               .filter(InstanceSyncTaskDetailsKeys.accountId, accountId)
+                                               .filter(InstanceSyncTaskDetailsKeys.cloudProviderId, cloudProviderId);
+
+    return query.get();
+  }
 }
