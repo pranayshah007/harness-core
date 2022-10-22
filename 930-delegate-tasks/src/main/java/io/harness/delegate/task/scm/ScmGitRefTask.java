@@ -193,6 +193,15 @@ public class ScmGitRefTask extends AbstractDelegateRunnableTask {
             .getLatestCommitOnFileResponse(getLatestCommitOnFileResponse.toByteArray())
             .build();
       }
+      case LATEST_COMMIT_V2: {
+        GetLatestCommitResponse latestCommitResponse = scmDelegateClient.processScmRequest(c
+            -> scmServiceClient.getLatestCommit(scmGitRefTaskParams.getScmConnector(), scmGitRefTaskParams.getBranch(),
+                scmGitRefTaskParams.getRef(), SCMGrpc.newBlockingStub(c)));
+        return ScmGitRefTaskResponseData.builder()
+            .gitRefType(scmGitRefTaskParams.getGitRefType())
+            .getLatestCommitResponse(latestCommitResponse.toByteArray())
+            .build();
+      }
       default:
         throw new UnknownEnumTypeException("GitRefType", scmGitRefTaskParams.getGitRefType().toString());
     }

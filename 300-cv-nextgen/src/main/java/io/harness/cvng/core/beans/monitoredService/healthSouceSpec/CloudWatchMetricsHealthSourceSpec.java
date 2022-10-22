@@ -32,6 +32,7 @@ import java.util.stream.Collectors;
 import javax.validation.Valid;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
@@ -48,8 +49,8 @@ import org.apache.commons.lang3.StringUtils;
 @NoArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class CloudWatchMetricsHealthSourceSpec extends MetricHealthSourceSpec {
-  @NotBlank String region;
-  @NotBlank String feature;
+  @NotNull @NotBlank String region;
+  @NotNull @NotBlank String feature;
   @Valid Set<TimeSeriesMetricPackDTO> metricThresholds;
   @Valid @UniqueIdentifierCheck @NotEmpty List<CloudWatchMetricDefinition> metricDefinitions;
 
@@ -162,8 +163,8 @@ public class CloudWatchMetricsHealthSourceSpec extends MetricHealthSourceSpec {
   @NoArgsConstructor
   @FieldDefaults(level = AccessLevel.PRIVATE)
   public static class CloudWatchMetricDefinition extends HealthSourceMetricDefinition {
-    @NotBlank String groupName;
-    @NotBlank String expression;
+    @NotNull @NotBlank String groupName;
+    @NotNull @NotBlank String expression;
     MetricResponseMapping responseMapping;
   }
 

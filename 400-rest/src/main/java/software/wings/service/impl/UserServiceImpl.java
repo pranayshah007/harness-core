@@ -1455,11 +1455,13 @@ public class UserServiceImpl implements UserService {
       addUserToUserGroups(accountId, user, userGroups, false, true);
     }
     boolean isSSOEnabled = accountService.isSSOEnabled(account);
-    boolean isPLNoEmailForSamlAccountInvitesEnabled =
-        featureFlagService.isEnabled(FeatureName.PL_NO_EMAIL_FOR_SAML_ACCOUNT_INVITES, accountId);
+    boolean isAutoInviteAcceptanceEnabledWithSSOEnabled = !isInviteAcceptanceRequired && isSSOEnabled;
+    boolean isPLNoEmailForSamlAccountInvitesEnabledWithSSOEnabled =
+        featureFlagService.isEnabled(FeatureName.PL_NO_EMAIL_FOR_SAML_ACCOUNT_INVITES, accountId) && isSSOEnabled;
 
-    if (!(isSSOEnabled && isPLNoEmailForSamlAccountInvitesEnabled)) {
-      if (!isInviteAcceptanceRequired && isSSOEnabled) {
+    if (!(isPLNoEmailForSamlAccountInvitesEnabledWithSSOEnabled && !user.isTwoFactorAuthenticationEnabled())) {
+      if (isAutoInviteAcceptanceEnabledWithSSOEnabled
+          || (isPLNoEmailForSamlAccountInvitesEnabledWithSSOEnabled && user.isTwoFactorAuthenticationEnabled())) {
         sendUserInvitationToOnlySsoAccountMail(account, user);
       } else {
         sendNewInvitationMail(userInvite, account, user);
@@ -1471,7 +1473,7 @@ public class UserServiceImpl implements UserService {
     userGroups.forEach(userGroupAdded
         -> auditServiceHelper.reportForAuditingUsingAccountId(accountId, null, userGroupAdded, Type.ADD));
 
-    if (isSSOEnabled && isPLNoEmailForSamlAccountInvitesEnabled) {
+    if (isPLNoEmailForSamlAccountInvitesEnabledWithSSOEnabled && !user.isTwoFactorAuthenticationEnabled()) {
       return USER_INVITE_NOT_REQUIRED;
     } else {
       eventPublishHelper.publishUserInviteFromAccountEvent(accountId, userInvite.getEmail());

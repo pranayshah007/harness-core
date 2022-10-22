@@ -153,7 +153,7 @@ public class FetchInstanceScriptStepTest extends CDNGTestBase {
   @Owner(developers = RISHABH)
   @Category(UnitTests.class)
   public void testValidateResourcesFFEnabled() {
-    doReturn(true).when(cdFeatureFlagHelper).isEnabled(anyString(), eq(FeatureName.NG_DEPLOYMENT_TEMPLATE));
+    doReturn(true).when(cdFeatureFlagHelper).isEnabled(anyString(), eq(FeatureName.NG_SVC_ENV_REDESIGN));
     Ambiance ambiance = getAmbiance();
     StepElementParameters stepElementParameters =
         StepElementParameters.builder().type("FetchInstanceScript").spec(parameters).build();
@@ -164,13 +164,12 @@ public class FetchInstanceScriptStepTest extends CDNGTestBase {
   @Owner(developers = RISHABH)
   @Category(UnitTests.class)
   public void testValidateResourcesFFDisabled() {
-    doReturn(false).when(cdFeatureFlagHelper).isEnabled(anyString(), eq(FeatureName.NG_DEPLOYMENT_TEMPLATE));
+    doReturn(false).when(cdFeatureFlagHelper).isEnabled(anyString(), eq(FeatureName.NG_SVC_ENV_REDESIGN));
     Ambiance ambiance = getAmbiance();
     StepElementParameters stepElementParameters =
         StepElementParameters.builder().type("FetchInstanceScript").spec(parameters).build();
     assertThatThrownBy(() -> fetchInstanceScriptStep.validateResources(ambiance, stepElementParameters))
-        .hasMessage(
-            "Custom Deployment Template NG is not enabled for this account. Please contact harness customer care.");
+        .hasMessage("NG_SVC_ENV_REDESIGN FF is not enabled for this account. Please contact harness customer care.");
   }
 
   private Ambiance getAmbiance() {

@@ -480,6 +480,7 @@ io.harness.cdng.manifest.yaml.EcsServiceDefinitionManifestOutcome
 io.harness.cdng.manifest.yaml.kinds.EcsTaskDefinitionManifest
 io.harness.cdng.steps.EmptyStepParameters
 io.harness.cdng.service.steps.ServiceSweepingOutput
+io.harness.cdng.envgroup.yaml.EnvironmentGroupMetadata
 io.harness.cdng.environment.yaml.EnvironmentsYaml
 io.harness.cdng.service.beans.ServicesMetadata
 io.harness.cdng.service.beans.Services

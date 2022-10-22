@@ -65,4 +65,6 @@ public interface ServiceLevelObjectiveV2Service extends DeleteEntityByHandler<Ab
       ProjectParams projectParams, String sloIdentifier, PageParams pageParams);
 
   void beforeNotificationRuleDelete(ProjectParams projectParams, String notificationRuleRef);
+
+  AbstractServiceLevelObjective get(String sloId);
 }

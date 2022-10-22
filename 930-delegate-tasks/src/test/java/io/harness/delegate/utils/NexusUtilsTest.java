@@ -18,6 +18,8 @@ import io.harness.category.element.UnitTests;
 import io.harness.nexus.NexusRequest;
 import io.harness.rule.Owner;
 
+import java.util.HashMap;
+import java.util.Map;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -28,11 +30,11 @@ public class NexusUtilsTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testBuildArtifactFileNameFromMavenArtifactPath() {
     assertThat(
-        NexusUtils.buildNexusArtifactFileNameFromMavenArtifactUrl(
+        NexusUtils.buildNexus2MvnArtifactFileName(
             "https://nexus2.dev.harness.io/service/local/artifact/maven/content?r=releases&g=mygroup&a=todolist&v=1.0&p=war&e=war"))
         .isEqualTo("todolist-1.0.war");
     assertThat(
-        NexusUtils.buildNexusArtifactFileNameFromMavenArtifactUrl(
+        NexusUtils.buildNexus2MvnArtifactFileName(
             "https://nexus2.dev.harness.io/service/local/artifact/maven/content?r=releases&g=mygroup&a=todolist&v=1.0&c=javadoc&p=war&e=war"))
         .isEqualTo("todolist-1.0-javadoc.war");
   }
@@ -55,12 +57,15 @@ public class NexusUtilsTest extends CategoryTest {
   @Owner(developers = IVAN)
   @Category(UnitTests.class)
   public void testGetNexusArtifactName() {
-    assertThat(
-        NexusUtils.getNexusArtifactFileName(NexusVersion.NEXUS2, "maven",
-            "https://nexus2.dev.harness.io/service/local/artifact/maven/content?r=releases&g=mygroup&a=todolist&v=1.0&c=javadoc&p=war&e=war"))
+    Map<String, String> metadata = new HashMap<>();
+    metadata.put("url",
+        "https://nexus2.dev.harness.io/service/local/artifact/maven/content?r=releases&g=mygroup&a=todolist&v=1.0&c=javadoc&p=war&e=war");
+    assertThat(NexusUtils.getNexusArtifactFileName(NexusVersion.NEXUS2, "maven", metadata))
         .isEqualTo("todolist-1.0-javadoc.war");
-    assertThat(NexusUtils.getNexusArtifactFileName(NexusVersion.NEXUS3, "maven",
-                   "https://nexus2.dev.harness.io/service/local/artifact/maven/todolist-1.0-javadoc.war"))
+    metadata.clear();
+
+    metadata.put("url", "https://nexus2.dev.harness.io/service/local/artifact/maven/todolist-1.0-javadoc.war");
+    assertThat(NexusUtils.getNexusArtifactFileName(NexusVersion.NEXUS3, "maven", metadata))
         .isEqualTo("todolist-1.0-javadoc.war");
   }
 }

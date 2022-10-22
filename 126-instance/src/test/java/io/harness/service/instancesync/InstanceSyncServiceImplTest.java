@@ -141,6 +141,7 @@ public class InstanceSyncServiceImplTest extends InstancesTestBase {
                                                     .infrastructureMapping(infrastructureMappingDTO)
                                                     .deploymentInfoDTO(deploymentInfoDTO)
                                                     .infrastructureMappingId(INFRASTRUCTURE_MAPPING_ID)
+                                                    .serverInstanceInfoList(Collections.emptyList())
                                                     .build();
     RollbackInfo rollbackInfo = RollbackInfo.builder().build();
     InfrastructureOutcome infrastructureOutcome = K8sDirectInfrastructureOutcome.builder().build();

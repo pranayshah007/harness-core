@@ -9,12 +9,15 @@ package io.harness.cdng.pipeline.steps;
 
 import static io.harness.steps.SdkCoreStepUtils.createStepResponseFromChildResponse;
 
+import io.harness.cdng.envgroup.yaml.EnvironmentGroupMetadata;
 import io.harness.cdng.envgroup.yaml.EnvironmentGroupYaml;
 import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
+import io.harness.cdng.environment.yaml.EnvironmentsMetadata;
 import io.harness.cdng.environment.yaml.EnvironmentsYaml;
 import io.harness.cdng.infra.yaml.InfraStructureDefinitionYaml;
 import io.harness.cdng.pipeline.beans.MultiDeploymentStepParameters;
 import io.harness.cdng.service.beans.ServiceYamlV2;
+import io.harness.cdng.service.beans.ServicesMetadata;
 import io.harness.cdng.service.beans.ServicesYaml;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidYamlException;
@@ -74,9 +77,10 @@ public class MultiDeploymentSpawnerStep extends ChildrenExecutableWithRollbackAn
       int currentIteration = 0;
       int totalIterations = environmentsMapList.size();
       int maxConcurrency = 1;
-      if (stepParameters.getEnvironments() != null && stepParameters.getEnvironments().getEnvironmentsMetadata() != null
-          && stepParameters.getEnvironments().getEnvironmentsMetadata().getParallel() != null
-          && stepParameters.getEnvironments().getEnvironmentsMetadata().getParallel()) {
+      if ((stepParameters.getEnvironments() != null
+              && shouldDeployInParallel(stepParameters.getEnvironments().getEnvironmentsMetadata()))
+          || (stepParameters.getEnvironmentGroup() != null
+              && shouldDeployInParallel(stepParameters.getEnvironmentGroup().getEnvironmentGroupMetadata()))) {
         maxConcurrency = 0;
       }
       for (Map<String, String> environmentMap : environmentsMapList) {
@@ -91,9 +95,8 @@ public class MultiDeploymentSpawnerStep extends ChildrenExecutableWithRollbackAn
       int currentIteration = 0;
       int totalIterations = servicesMap.size();
       int maxConcurrency = 1;
-      if (stepParameters.getServices().getServicesMetadata() != null
-          && stepParameters.getServices().getServicesMetadata().getParallel() != null
-          && stepParameters.getServices().getServicesMetadata().getParallel()) {
+      if (stepParameters.getServices() != null
+          && shouldDeployInParallel(stepParameters.getServices().getServicesMetadata())) {
         maxConcurrency = 0;
       }
       for (Map<String, String> serviceMap : servicesMap) {
@@ -104,13 +107,13 @@ public class MultiDeploymentSpawnerStep extends ChildrenExecutableWithRollbackAn
       return ChildrenExecutableResponse.newBuilder().addAllChildren(children).setMaxConcurrency(maxConcurrency).build();
     }
 
-    boolean isServiceParallel = stepParameters.getServices().getServicesMetadata() != null
-        && stepParameters.getServices().getServicesMetadata().getParallel() != null
-        && stepParameters.getServices().getServicesMetadata().getParallel();
-    boolean isEnvironmentParallel = stepParameters.getEnvironments() != null
-        && stepParameters.getEnvironments().getEnvironmentsMetadata() != null
-        && stepParameters.getEnvironments().getEnvironmentsMetadata().getParallel() != null
-        && stepParameters.getEnvironments().getEnvironmentsMetadata().getParallel();
+    boolean isServiceParallel = stepParameters.getServices() != null
+        && shouldDeployInParallel(stepParameters.getServices().getServicesMetadata());
+    boolean isEnvironmentParallel =
+        (stepParameters.getEnvironments() != null
+            && shouldDeployInParallel(stepParameters.getEnvironments().getEnvironmentsMetadata()))
+        || (stepParameters.getEnvironmentGroup() != null
+            && shouldDeployInParallel(stepParameters.getEnvironmentGroup().getEnvironmentGroupMetadata()));
     int currentIteration = 0;
     int totalIterations = servicesMap.size() + environmentsMapList.size();
     int maxConcurrency = 0;
@@ -161,6 +164,18 @@ public class MultiDeploymentSpawnerStep extends ChildrenExecutableWithRollbackAn
                     MatrixMetadata.newBuilder().setSubType(subType).putAllMatrixValues(serviceMap).build())
                 .build())
         .build();
+  }
+
+  private boolean shouldDeployInParallel(EnvironmentsMetadata metadata) {
+    return metadata != null && metadata.getParallel() != null && metadata.getParallel();
+  }
+
+  private boolean shouldDeployInParallel(ServicesMetadata metadata) {
+    return metadata != null && metadata.getParallel() != null && metadata.getParallel();
+  }
+
+  private boolean shouldDeployInParallel(EnvironmentGroupMetadata metadata) {
+    return metadata != null && metadata.getParallel() != null && metadata.getParallel();
   }
 
   private ChildrenExecutableResponse.Child getChildForMultiServiceInfra(String childNodeId, int currentIteration,

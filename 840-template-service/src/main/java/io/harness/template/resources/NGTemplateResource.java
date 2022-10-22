@@ -242,6 +242,9 @@ public class NGTemplateResource {
     TemplateEntity templateEntity = NGTemplateDtoMapper.toTemplateEntity(accountId, orgId, projectId, templateYaml);
     log.info(String.format("Creating Template with identifier %s with label %s in project %s, org %s, account %s",
         templateEntity.getIdentifier(), templateEntity.getVersionLabel(), projectId, orgId, accountId));
+    if (comments.isEmpty() && gitEntityCreateInfo != null && gitEntityCreateInfo.getCommitMsg() != null) {
+      comments = gitEntityCreateInfo.getCommitMsg();
+    }
     TemplateEntity createdTemplate = templateService.create(templateEntity, setDefaultTemplate, comments);
     TemplateWrapperResponseDTO templateWrapperResponseDTO =
         TemplateWrapperResponseDTO.builder()
@@ -320,6 +323,9 @@ public class NGTemplateResource {
         String.format("Updating Template with identifier %s with versionLabel %s in project %s, org %s, account %s",
             templateEntity.getIdentifier(), templateEntity.getVersionLabel(), projectId, orgId, accountId));
     templateEntity = templateEntity.withVersion(isNumeric(ifMatch) ? parseLong(ifMatch) : null);
+    if (comments.isEmpty() && gitEntityInfo != null && gitEntityInfo.getCommitMsg() != null) {
+      comments = gitEntityInfo.getCommitMsg();
+    }
     TemplateEntity createdTemplate =
         templateService.updateTemplateEntity(templateEntity, ChangeType.MODIFY, setDefaultTemplate, comments);
     TemplateWrapperResponseDTO templateWrapperResponseDTO =
@@ -357,7 +363,9 @@ public class NGTemplateResource {
         Resource.of(TEMPLATE, templateIdentifier), PermissionTypes.TEMPLATE_DELETE_PERMISSION);
     log.info(String.format("Deleting Template with identifier %s and versionLabel %s in project %s, org %s, account %s",
         templateIdentifier, versionLabel, projectId, orgId, accountId));
-
+    if (comments.isEmpty() && entityDeleteInfo != null && entityDeleteInfo.getCommitMsg() != null) {
+      comments = entityDeleteInfo.getCommitMsg();
+    }
     return ResponseDTO.newResponse(templateService.delete(accountId, orgId, projectId, templateIdentifier, versionLabel,
         isNumeric(ifMatch) ? parseLong(ifMatch) : null, comments));
   }
@@ -392,7 +400,9 @@ public class NGTemplateResource {
     log.info(
         String.format("Deleting Template with identifier %s and versionLabel list %s in project %s, org %s, account %s",
             templateIdentifier, templateDeleteListRequestDTO.toString(), projectId, orgId, accountId));
-
+    if (comments.isEmpty() && entityDeleteInfo != null && entityDeleteInfo.getCommitMsg() != null) {
+      comments = entityDeleteInfo.getCommitMsg();
+    }
     return ResponseDTO.newResponse(templateService.deleteTemplates(accountId, orgId, projectId, templateIdentifier,
         new HashSet<>(templateDeleteListRequestDTO.getTemplateVersionLabels()), comments));
   }

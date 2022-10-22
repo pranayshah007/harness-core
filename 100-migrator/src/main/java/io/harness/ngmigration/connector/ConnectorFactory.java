@@ -13,6 +13,7 @@ import static software.wings.settings.SettingVariableTypes.AZURE;
 import static software.wings.settings.SettingVariableTypes.DOCKER;
 import static software.wings.settings.SettingVariableTypes.GCP;
 import static software.wings.settings.SettingVariableTypes.GIT;
+import static software.wings.settings.SettingVariableTypes.HOST_CONNECTION_ATTRIBUTES;
 import static software.wings.settings.SettingVariableTypes.HTTP_HELM_REPO;
 import static software.wings.settings.SettingVariableTypes.JENKINS;
 import static software.wings.settings.SettingVariableTypes.JIRA;
@@ -20,6 +21,7 @@ import static software.wings.settings.SettingVariableTypes.KUBERNETES_CLUSTER;
 import static software.wings.settings.SettingVariableTypes.NEXUS;
 import static software.wings.settings.SettingVariableTypes.OCI_HELM_REPO;
 import static software.wings.settings.SettingVariableTypes.SERVICENOW;
+import static software.wings.settings.SettingVariableTypes.WINRM_CONNECTION_ATTRIBUTES;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -48,6 +50,8 @@ public class ConnectorFactory {
   private static final BaseConnector serviceNowConnector = new ServiceNowConnectorImpl();
 
   private static final BaseConnector jenkinsConnector = new JenkinsConnectorImpl();
+  private static final BaseConnector sshConnector = new SshConnectorImpl();
+  private static final BaseConnector winRmConnector = new WinrmConnectorImpl();
 
   public static final Map<SettingVariableTypes, BaseConnector> CONNECTOR_FACTORY_MAP =
       ImmutableMap.<SettingVariableTypes, BaseConnector>builder()
@@ -64,6 +68,8 @@ public class ConnectorFactory {
           .put(JIRA, jiraConnector)
           .put(SERVICENOW, serviceNowConnector)
           .put(JENKINS, jenkinsConnector)
+          .put(HOST_CONNECTION_ATTRIBUTES, sshConnector)
+          .put(WINRM_CONNECTION_ATTRIBUTES, winRmConnector)
           .build();
 
   public static BaseConnector getConnector(SettingAttribute settingAttribute) {
