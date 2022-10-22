@@ -52,10 +52,15 @@ public interface PMSExecutionService {
   InterruptDTO registerInterrupt(PlanExecutionInterruptType executionInterruptType, String planExecutionId,
       String nodeExecutionId, InterruptConfig interruptConfig);
 
-  Criteria formCriteria(String accountId, String orgId, String projectId, List<String> pipelineIdentifier,
+  Criteria formCriteria(String accountId, String orgId, String projectId, String pipelineIdentifier,
       String filterIdentifier, PipelineExecutionFilterPropertiesDTO filterProperties, String moduleName,
       String searchTerm, List<ExecutionStatus> statusList, boolean myDeployments, boolean pipelineDeleted,
       ByteString gitEntityBasicInfo, boolean isLatest);
+
+  Criteria formCriteriaV2(String accountId, String orgId, String projectId, List<String> pipelineIdentifier,
+                        String filterIdentifier, PipelineExecutionFilterPropertiesDTO filterProperties, String moduleName,
+                        String searchTerm, List<ExecutionStatus> statusList, boolean myDeployments, boolean pipelineDeleted,
+                        ByteString gitEntityBasicInfo, boolean isLatest);
 
   void deleteExecutionsOnPipelineDeletion(PipelineEntity pipelineEntity);
 

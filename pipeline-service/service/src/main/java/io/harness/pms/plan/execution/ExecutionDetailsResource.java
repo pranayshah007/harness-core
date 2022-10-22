@@ -117,11 +117,11 @@ public class ExecutionDetailsResource {
   @Path("/summary")
   @ApiOperation(value = "Gets Executions list", nickname = "getListOfExecutions")
   @Operation(operationId = "getListOfExecutions",
-      description = "Returns a List of Pipeline Executions with Specific Filters", summary = "List Executions",
+      description = "Returns a List of Pipeline Executions with Specific Filter", summary = "List Executions",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
-        ApiResponse(responseCode = "default", description = "Returns all the Executions of pipelines for given filters")
+        ApiResponse(responseCode = "default", description = "Returns all the Executions of pipelines for given filter")
       })
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_VIEW)
   public ResponseDTO<Page<PipelineExecutionSummaryDTO>>
@@ -134,7 +134,7 @@ public class ExecutionDetailsResource {
       @Parameter(description = PipelineResourceConstants.PIPELINE_SEARCH_TERM_PARAM_MESSAGE) @QueryParam(
           NGResourceFilterConstants.SEARCH_TERM_KEY) String searchTerm,
       @Parameter(description = PipelineResourceConstants.PIPELINE_ID_LIST_PARAM_MESSAGE) @QueryParam(
-          NGCommonEntityConstants.PIPELINE_KEY) List<String> pipelineIdentifier,
+          NGCommonEntityConstants.PIPELINE_KEY) String pipelineIdentifier,
       @Parameter(description = NGCommonEntityConstants.PAGE_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PAGE) @DefaultValue("0") int page,
       @Parameter(description = NGCommonEntityConstants.SIZE_PARAM_MESSAGE) @QueryParam(
@@ -177,6 +177,75 @@ public class ExecutionDetailsResource {
                     e.getEntityGitDetails() != null
                         ? e.getEntityGitDetails()
                         : pmsGitSyncHelper.getEntityGitDetailsFromBytes(e.getGitSyncBranchContext())));
+
+    return ResponseDTO.newResponse(planExecutionSummaryDTOS);
+  }
+
+
+  @POST
+  @Path("/v2/summary")
+  @ApiOperation(value = "Gets Executions list", nickname = "getListOfExecutions")
+  @Operation(operationId = "getListOfExecutions",
+          description = "Returns a List of Pipeline Executions with Specific Filters", summary = "List Executions",
+          responses =
+                  {
+                          @io.swagger.v3.oas.annotations.responses.
+                                  ApiResponse(responseCode = "default", description = "Returns all the Executions of pipelines for given filters")
+                  })
+  @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_VIEW)
+  public ResponseDTO<Page<PipelineExecutionSummaryDTO>>
+  getListOfExecutionsV2(@Parameter(description = PipelineResourceConstants.ACCOUNT_PARAM_MESSAGE, required = true)
+                      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
+                      @Parameter(description = PipelineResourceConstants.ORG_PARAM_MESSAGE, required = true) @NotNull @QueryParam(
+                              NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgId,
+                      @Parameter(description = PipelineResourceConstants.PROJECT_PARAM_MESSAGE, required = true) @NotNull @QueryParam(
+                              NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId,
+                      @Parameter(description = PipelineResourceConstants.PIPELINE_SEARCH_TERM_PARAM_MESSAGE) @QueryParam(
+                              NGResourceFilterConstants.SEARCH_TERM_KEY) String searchTerm,
+                      @Parameter(description = PipelineResourceConstants.PIPELINE_ID_LIST_PARAM_MESSAGE) @QueryParam(
+                              NGCommonEntityConstants.PIPELINE_KEY) List<String> pipelineIdentifier,
+                      @Parameter(description = NGCommonEntityConstants.PAGE_PARAM_MESSAGE) @QueryParam(
+                              NGCommonEntityConstants.PAGE) @DefaultValue("0") int page,
+                      @Parameter(description = NGCommonEntityConstants.SIZE_PARAM_MESSAGE) @QueryParam(
+                              NGCommonEntityConstants.SIZE) @DefaultValue("10") int size,
+                      @Parameter(description = NGCommonEntityConstants.SORT_PARAM_MESSAGE) @QueryParam("sort") List<String> sort,
+                      @QueryParam(NGResourceFilterConstants.FILTER_KEY) String filterIdentifier,
+                      @QueryParam("module") String moduleName,
+                      @RequestBody(description = "Returns a List of Pipeline Executions with Specific Filters",
+                              content =
+                                      {
+                                              @Content(mediaType = "application/json",
+                                                      examples = @ExampleObject(name = "List", summary = "Sample List Pipeline Executions",
+                                                              value = PipelineAPIConstants.LIST_EXECUTIONS,
+                                                              description = "Sample List Pipeline Executions JSON Payload"))
+                                      }) FilterPropertiesDTO filterProperties,
+                      @QueryParam("status") List<ExecutionStatus> statusesList, @QueryParam("myDeployments") boolean myDeployments,
+                      @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
+    log.info("Get List of executions");
+    ByteString gitSyncBranchContext = pmsGitSyncHelper.getGitSyncBranchContextBytesThreadLocal();
+    if (EmptyPredicate.isEmpty(gitEntityBasicInfo.getBranch())) {
+      gitSyncBranchContext = null;
+    }
+    Criteria criteria = pmsExecutionService.formCriteriaV2(accountId, orgId, projectId, pipelineIdentifier,
+            filterIdentifier, (PipelineExecutionFilterPropertiesDTO) filterProperties, moduleName, searchTerm, statusesList,
+            myDeployments, false, gitSyncBranchContext, true);
+    Pageable pageRequest;
+    if (EmptyPredicate.isEmpty(sort)) {
+      pageRequest = PageRequest.of(page, size, Sort.by(Direction.DESC, PipelineEntityKeys.createdAt));
+    } else {
+      pageRequest = PageUtils.getPageRequest(page, size, sort);
+    }
+
+    // NOTE: We are getting entity git details from git context and not pipeline entity as we'll have to make DB calls
+    // to fetch them and each might have a different branch context so we cannot even batch them. The only data missing
+    // because of this approach is objectId which UI doesn't use.
+    Page<PipelineExecutionSummaryDTO> planExecutionSummaryDTOS =
+            pmsExecutionService.getPipelineExecutionSummaryEntity(criteria, pageRequest)
+                    .map(e
+                            -> PipelineExecutionSummaryDtoMapper.toDto(e,
+                            e.getEntityGitDetails() != null
+                                    ? e.getEntityGitDetails()
+                                    : pmsGitSyncHelper.getEntityGitDetailsFromBytes(e.getGitSyncBranchContext())));
 
     return ResponseDTO.newResponse(planExecutionSummaryDTOS);
   }

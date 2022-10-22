@@ -93,7 +93,7 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
   @Inject PlanExecutionMetadataService planExecutionMetadataService;
 
   @Override
-  public Criteria formCriteria(String accountId, String orgId, String projectId, List<String> pipelineIdentifier,
+  public Criteria formCriteria(String accountId, String orgId, String projectId, String pipelineIdentifier,
       String filterIdentifier, PipelineExecutionFilterPropertiesDTO filterProperties, String moduleName,
       String searchTerm, List<ExecutionStatus> statusList, boolean myDeployments, boolean pipelineDeleted,
       ByteString gitSyncBranchContext, boolean isLatest) {
@@ -108,7 +108,7 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
       criteria.and(PlanExecutionSummaryKeys.projectIdentifier).is(projectId);
     }
     if (EmptyPredicate.isNotEmpty(pipelineIdentifier)) {
-      criteria.and(PlanExecutionSummaryKeys.pipelineIdentifier).in(pipelineIdentifier);
+      criteria.and(PlanExecutionSummaryKeys.pipelineIdentifier).is(pipelineIdentifier);
     }
     if (EmptyPredicate.isNotEmpty(statusList)) {
       criteria.and(PlanExecutionSummaryKeys.status).in(statusList);
@@ -180,6 +180,104 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
             .and(PlanExecutionSummaryKeys.entityGitDetails + "."
                 + "repoName")
             .is(entityGitDetails.getRepoName());
+      }
+      gitCriteria.orOperator(gitCriteriaDeprecated, gitCriteriaNew);
+    }
+
+    criteria.andOperator(filterCriteria, moduleCriteria, searchCriteria, gitCriteria);
+
+    return criteria;
+  }
+
+
+  @Override
+  public Criteria formCriteriaV2(String accountId, String orgId, String projectId, List<String> pipelineIdentifier,
+                               String filterIdentifier, PipelineExecutionFilterPropertiesDTO filterProperties, String moduleName,
+                               String searchTerm, List<ExecutionStatus> statusList, boolean myDeployments, boolean pipelineDeleted,
+                               ByteString gitSyncBranchContext, boolean isLatest) {
+    Criteria criteria = new Criteria();
+    if (EmptyPredicate.isNotEmpty(accountId)) {
+      criteria.and(PlanExecutionSummaryKeys.accountId).is(accountId);
+    }
+    if (EmptyPredicate.isNotEmpty(orgId)) {
+      criteria.and(PlanExecutionSummaryKeys.orgIdentifier).is(orgId);
+    }
+    if (EmptyPredicate.isNotEmpty(projectId)) {
+      criteria.and(PlanExecutionSummaryKeys.projectIdentifier).is(projectId);
+    }
+    if (EmptyPredicate.isNotEmpty(pipelineIdentifier)) {
+      criteria.and(PlanExecutionSummaryKeys.pipelineIdentifier).in(pipelineIdentifier);
+    }
+    if (EmptyPredicate.isNotEmpty(statusList)) {
+      criteria.and(PlanExecutionSummaryKeys.status).in(statusList);
+    }
+
+    criteria.and(PlanExecutionSummaryKeys.isLatestExecution).ne(!isLatest);
+
+    Criteria filterCriteria = new Criteria();
+    if (EmptyPredicate.isNotEmpty(filterIdentifier) && filterProperties != null) {
+      throw new InvalidRequestException("Can not apply both filter properties and saved filter together");
+    } else if (EmptyPredicate.isNotEmpty(filterIdentifier) && filterProperties == null) {
+      populatePipelineFilterUsingIdentifier(filterCriteria, accountId, orgId, projectId, filterIdentifier);
+    } else if (EmptyPredicate.isEmpty(filterIdentifier) && filterProperties != null) {
+      populatePipelineFilter(filterCriteria, filterProperties);
+    }
+
+    if (myDeployments) {
+      criteria.and(PlanExecutionSummaryKeys.triggerType)
+              .is(MANUAL)
+              .and(PlanExecutionSummaryKeys.triggeredBy)
+              .is(triggeredByHelper.getFromSecurityContext());
+    }
+
+    Criteria moduleCriteria = new Criteria();
+    if (EmptyPredicate.isNotEmpty(moduleName)) {
+      // Check for pipeline with no filters also - empty pipeline or pipelines with only approval stage
+      moduleCriteria.orOperator(Criteria.where(PlanExecutionSummaryKeys.modules).is(Collections.emptyList()),
+              // This is here just for backward compatibility should be removed
+              Criteria.where(PlanExecutionSummaryKeys.modules)
+                      .is(Collections.singletonList(ModuleType.PMS.name().toLowerCase())),
+              Criteria.where(PlanExecutionSummaryKeys.modules).in(moduleName));
+    }
+
+    Criteria searchCriteria = new Criteria();
+    if (EmptyPredicate.isNotEmpty(searchTerm)) {
+      try {
+        searchCriteria.orOperator(where(PlanExecutionSummaryKeys.pipelineIdentifier)
+                        .regex(searchTerm, NGResourceFilterConstants.CASE_INSENSITIVE_MONGO_OPTIONS),
+                where(PlanExecutionSummaryKeys.name)
+                        .regex(searchTerm, NGResourceFilterConstants.CASE_INSENSITIVE_MONGO_OPTIONS),
+                where(PlanExecutionSummaryKeys.tags + "." + NGTagKeys.key)
+                        .regex(searchTerm, NGResourceFilterConstants.CASE_INSENSITIVE_MONGO_OPTIONS),
+                where(PlanExecutionSummaryKeys.tags + "." + NGTagKeys.value)
+                        .regex(searchTerm, NGResourceFilterConstants.CASE_INSENSITIVE_MONGO_OPTIONS));
+      } catch (PatternSyntaxException pex) {
+        throw new InvalidRequestException(pex.getMessage() + " Use \\\\ for special character", pex);
+      }
+    }
+
+    Criteria gitCriteria = new Criteria();
+    if (gitSyncBranchContext != null) {
+      Criteria gitCriteriaDeprecated =
+              Criteria.where(PlanExecutionSummaryKeys.gitSyncBranchContext).is(gitSyncBranchContext);
+
+      EntityGitDetails entityGitDetails = pmsGitSyncHelper.getEntityGitDetailsFromBytes(gitSyncBranchContext);
+      Criteria gitCriteriaNew = Criteria
+              .where(PlanExecutionSummaryKeys.entityGitDetails + "."
+                      + "branch")
+              .is(entityGitDetails.getBranch());
+      if (entityGitDetails.getRepoIdentifier() != null
+              && !entityGitDetails.getRepoIdentifier().equals(GitAwareEntityHelper.DEFAULT)) {
+        gitCriteriaNew
+                .and(PlanExecutionSummaryKeys.entityGitDetails + "."
+                        + "repoIdentifier")
+                .is(entityGitDetails.getRepoIdentifier());
+      } else if (entityGitDetails.getRepoName() != null
+              && !entityGitDetails.getRepoName().equals(GitAwareEntityHelper.DEFAULT)) {
+        gitCriteriaNew
+                .and(PlanExecutionSummaryKeys.entityGitDetails + "."
+                        + "repoName")
+                .is(entityGitDetails.getRepoName());
       }
       gitCriteria.orOperator(gitCriteriaDeprecated, gitCriteriaNew);
     }
