@@ -8,6 +8,7 @@ import static software.wings.beans.SettingAttribute.Builder.aSettingAttribute;
 import static java.util.stream.Collectors.toList;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.exception.InvalidRequestException;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.helm.HelmConstants;
 import io.harness.k8s.KubernetesContainerService;
@@ -19,7 +20,6 @@ import software.wings.beans.AzureConfig;
 import software.wings.beans.GcpConfig;
 import software.wings.beans.KubernetesClusterConfig;
 import software.wings.beans.SettingAttribute;
-import software.wings.beans.infrastructure.instance.info.ContainerInfo;
 import software.wings.beans.infrastructure.instance.info.InstanceInfo;
 import software.wings.beans.infrastructure.instance.info.KubernetesContainerInfo;
 import software.wings.cloudprovider.gke.GkeClusterService;
@@ -31,7 +31,6 @@ import software.wings.settings.SettingValue;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import io.kubernetes.client.openapi.models.V1Pod;
-import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -49,21 +48,25 @@ public class ContainerInstancesDetailsFetcher implements InstanceDetailsFetcher 
       PerpetualTaskId taskId, K8sClusterConfig config, DirectK8sInstanceSyncTaskDetails k8sInstanceSyncTaskDetails) {
     KubernetesConfig kubernetesConfig = getKubernetesConfig(config, true);
     notNullCheck("KubernetesConfig", kubernetesConfig);
-    List<ContainerInfo> result = new ArrayList<>();
-
-    final List<V1Pod> pods =
-        kubernetesContainerService.getRunningPodsWithLabels(kubernetesConfig, config.getNamespace(),
-            ImmutableMap.of(HelmConstants.HELM_RELEASE_LABEL, k8sInstanceSyncTaskDetails.getReleaseName()));
-    return pods.stream()
-        .map(pod
-            -> KubernetesContainerInfo.builder()
-                   .clusterName(config.getClusterName())
-                   .podName(pod.getMetadata().getName())
-                   .ip(pod.getStatus().getPodIP())
-                   .namespace(k8sInstanceSyncTaskDetails.getNamespace())
-                   .releaseName(k8sInstanceSyncTaskDetails.getReleaseName())
-                   .build())
-        .collect(toList());
+    try {
+      final List<V1Pod> pods =
+          kubernetesContainerService.getRunningPodsWithLabels(kubernetesConfig, config.getNamespace(),
+              ImmutableMap.of(HelmConstants.HELM_RELEASE_LABEL, k8sInstanceSyncTaskDetails.getReleaseName()));
+      return pods.stream()
+          .map(pod
+              -> KubernetesContainerInfo.builder()
+                     .clusterName(config.getClusterName())
+                     .podName(pod.getMetadata().getName())
+                     .ip(pod.getStatus().getPodIP())
+                     .namespace(k8sInstanceSyncTaskDetails.getNamespace())
+                     .releaseName(k8sInstanceSyncTaskDetails.getReleaseName())
+                     .build())
+          .collect(toList());
+    } catch (Exception exception) {
+      throw new InvalidRequestException(String.format("Failed to fetch containers info for namespace: [%s] ",
+                                            k8sInstanceSyncTaskDetails.getNamespace()),
+          exception);
+    }
   }
 
   private KubernetesConfig getKubernetesConfig(K8sClusterConfig config, boolean isInstanceSync) {

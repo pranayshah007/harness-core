@@ -8,13 +8,10 @@
 package io.harness.perpetualtask.instancesyncv2.cg;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.network.SafeHttpCall.execute;
 
 import static java.lang.String.format;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.container.ContainerInfo;
-import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.exception.InvalidRequestException;
 import io.harness.grpc.utils.AnyUtils;
 import io.harness.k8s.model.K8sContainer;
@@ -49,6 +46,7 @@ import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.eclipse.jetty.server.Response;
 
 @Slf4j
 @OwnedBy(CDP)
@@ -69,7 +67,7 @@ public class CgInstanceSyncV2TaskExecutor implements PerpetualTaskExecutor {
   @Override
   public PerpetualTaskResponse runOnce(
       PerpetualTaskId taskId, PerpetualTaskExecutionParams params, Instant heartbeatTime) {
-    log.info("Came here. Add more details for task executor");
+    log.info("Running the InstanceSyncV2 perpetual task executor for task id: {}", taskId);
     CgInstanceSyncTaskParams taskParams = AnyUtils.unpack(params.getCustomizedParams(), CgInstanceSyncTaskParams.class);
     String cloudProviderType = taskParams.getCloudProviderType();
 
@@ -86,24 +84,23 @@ public class CgInstanceSyncV2TaskExecutor implements PerpetualTaskExecutor {
 
         K8sClusterConfig config =
             (K8sClusterConfig) kryoSerializer.asObject(k8sInstanceSyncTaskDetails.getK8SClusterConfig().toByteArray());
-        List<InstanceInfo> instanceInfos =
-            containerInstancesDetailsFetcher.fetchRunningInstanceDetails(taskId, config, k8sInstanceSyncTaskDetails);
-        buffer.put(details.getTaskDetailsId(), instanceInfos);
-        batchInstanceCount += instanceInfos.size();
-        batchReleaseDetailsCount++;
-        if (batchInstanceCount >= INSTANCE_COUNT_LIMIT || batchReleaseDetailsCount >= RELEASE_COUNT_LIMIT) {
-          // publish api call for the buffer
-          K8sPodInfo k8sPodInfo = (K8sPodInfo) instanceInfos;
-          List<K8sContainer> k8sContainerList = new ArrayList<>();
-          for (K8sContainerInfo k8sContainerInfo : k8sPodInfo.getContainers()) {
-            k8sContainerList.add(K8sContainer.builder()
-                                     .containerId(k8sContainerInfo.getContainerId())
-                                     .image(k8sContainerInfo.getImage())
-                                     .name(k8sContainerInfo.getName())
-                                     .build());
-          }
+        try {
+          List<InstanceInfo> instanceInfos =
+              containerInstancesDetailsFetcher.fetchRunningInstanceDetails(taskId, config, k8sInstanceSyncTaskDetails);
+          buffer.put(details.getTaskDetailsId(), instanceInfos);
+          batchInstanceCount += instanceInfos.size();
+          batchReleaseDetailsCount++;
+          if (batchInstanceCount >= INSTANCE_COUNT_LIMIT || batchReleaseDetailsCount >= RELEASE_COUNT_LIMIT) {
+            K8sPodInfo k8sPodInfo = (K8sPodInfo) instanceInfos;
+            List<K8sContainer> k8sContainerList = new ArrayList<>();
+            for (K8sContainerInfo k8sContainerInfo : k8sPodInfo.getContainers()) {
+              k8sContainerList.add(K8sContainer.builder()
+                                       .containerId(k8sContainerInfo.getContainerId())
+                                       .image(k8sContainerInfo.getImage())
+                                       .name(k8sContainerInfo.getName())
+                                       .build());
+            }
 
-          try {
             DelegateRestUtils.executeRestCall(
                 delegateAgentManagerClient.publishInstanceSyncV2Result(taskId.getId(), taskParams.getAccountId(),
                     CgInstanceSyncResponse.newBuilder()
@@ -121,12 +118,13 @@ public class CgInstanceSyncV2TaskExecutor implements PerpetualTaskExecutor {
                                                                             .build())))
                                              .build())
                         .build()));
-          } catch (IOException e) {
-            throw new RuntimeException("Failure in Publishing the Instance sync V2 info", e);
+
+            buffer = new HashMap<>();
+            batchInstanceCount = 0;
+            batchReleaseDetailsCount = 0;
           }
-          buffer = new HashMap<>();
-          batchInstanceCount = 0;
-          batchReleaseDetailsCount = 0;
+        } catch (IOException e) {
+          throw new RuntimeException("Failure in Publishing the Instance sync V2 info", e);
         }
 
       } else {
@@ -135,19 +133,7 @@ public class CgInstanceSyncV2TaskExecutor implements PerpetualTaskExecutor {
       }
     });
 
-    return null;
-  }
-
-  private void publishInstanceSyncResult(
-      PerpetualTaskId taskId, String accountId, String namespace, DelegateResponseData responseData) {
-    try {
-      execute(delegateAgentManagerClient.publishInstanceSyncResult(taskId.getId(), accountId, responseData));
-    } catch (Exception e) {
-      log.error(
-          String.format("Failed to publish container instance sync result. namespace [%s] and PerpetualTaskId [%s]",
-              namespace, taskId.getId()),
-          e);
-    }
+    return PerpetualTaskResponse.builder().responseCode(Response.SC_OK).responseMessage("success").build();
   }
 
   @Override
