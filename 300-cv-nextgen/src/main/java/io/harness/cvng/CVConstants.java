@@ -10,7 +10,10 @@ package io.harness.cvng;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
+import com.google.common.collect.Sets;
 import java.time.Duration;
+import java.util.Collections;
+import java.util.Set;
 
 @OwnedBy(HarnessTeam.CV)
 public interface CVConstants {
@@ -63,4 +66,9 @@ public interface CVConstants {
   String SLI_TYPE_PARAM_MESSAGE = "For filtering on the basis of SLI types";
   String TARGET_TYPE_PARAM_MESSAGE = "For filtering on the basis of target types";
   String ERROR_BUDGET_RISK_PARAM_MESSAGE = "For filtering on the basis of error budget risks";
+
+  String ENVIRONMENT = System.getenv("ENV") == null ? "localhost" : System.getenv("ENV");
+  Set<String> LEARNING_ENGINE_TASKS_METRIC_LIST = Collections.unmodifiableSet(
+      Sets.newHashSet("ng_le_deployment_max_queued_time_sec", "ng_le_service_health_max_queued_time_sec",
+          "ng_le_deployment_task_count", "ng_le_service_health_task_count"));
 }

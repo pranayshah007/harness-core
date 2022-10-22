@@ -15,6 +15,7 @@ import static io.harness.eventsframework.EventsFrameworkConstants.SRM_STATEMACHI
 import static io.harness.eventsframework.EventsFrameworkConstants.SRM_STATEMACHINE_LOCK_WAIT_TIMEOUT;
 
 import io.harness.cvng.analysis.services.api.DeploymentTimeSeriesAnalysisService;
+import io.harness.cvng.core.entities.VerificationTask;
 import io.harness.cvng.core.jobs.StateMachineEventPublisherService;
 import io.harness.cvng.core.services.api.VerificationTaskService;
 import io.harness.cvng.metrics.CVNGMetricsUtils;
@@ -43,6 +44,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
@@ -61,6 +63,7 @@ public class OrchestrationServiceImpl implements OrchestrationService {
   @Inject private MetricService metricService;
   @Inject private MetricContextBuilder metricContextBuilder;
   @Inject private DeploymentTimeSeriesAnalysisService deploymentTimeSeriesAnalysisService;
+  @Inject private Map<VerificationTask.TaskType, AnalysisStateMachineService> taskTypeAnalysisStateMachineServiceMap;
 
   @Override
   public void queueAnalysis(String verificationTaskId, Instant startTime, Instant endTime) {
@@ -75,8 +78,11 @@ public class OrchestrationServiceImpl implements OrchestrationService {
     AnalysisInput inputForAnalysis =
         AnalysisInput.builder().verificationTaskId(verificationTaskId).startTime(startTime).endTime(endTime).build();
     validateAnalysisInputs(inputForAnalysis);
+    VerificationTask verificationTask = verificationTaskService.get(inputForAnalysis.getVerificationTaskId());
+    VerificationTask.TaskType verificationTaskType = verificationTask.getTaskInfo().getTaskType();
 
-    AnalysisStateMachine stateMachine = stateMachineService.createStateMachine(inputForAnalysis);
+    AnalysisStateMachine stateMachine =
+        taskTypeAnalysisStateMachineServiceMap.get(verificationTaskType).createStateMachine(inputForAnalysis);
 
     Query<AnalysisOrchestrator> orchestratorQuery =
         hPersistence.createQuery(AnalysisOrchestrator.class)

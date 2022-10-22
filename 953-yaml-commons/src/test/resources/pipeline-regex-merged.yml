@@ -1,0 +1,36 @@
+pipeline:
+  identifier: spipeline
+  name: spipeline
+  projectIdentifier: test
+  orgIdentifier: default
+  tags: {}
+  stages:
+    - stage:
+        identifier: sapproval
+        type: Approval
+        name: sapproval
+        description:
+        spec:
+          execution:
+            steps:
+              - step:
+                  identifier: script
+                  type: ShellScript
+                  name: script
+                  spec:
+                    shell: Bash
+                    onDelegate: true
+                    source:
+                      type: Inline
+                      spec:
+                        script: echo \test\
+                    environmentVariables: []
+                    outputVariables: []
+                    executionTarget: {}
+                  timeout: 10m
+        tags: {}
+  variables:
+    - name: Var1
+      type: Number
+      description:
+      value: 99

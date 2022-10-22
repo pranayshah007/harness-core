@@ -7,9 +7,11 @@
 
 package io.harness.cdng.customdeploymentng;
 
+import static io.harness.AuthorizationServiceHeader.TEMPLATE_SERVICE;
 import static io.harness.ccm.anomaly.graphql.AnomaliesFilter.log;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
+import static java.lang.String.format;
 import static java.util.Objects.isNull;
 
 import io.harness.beans.FileReference;
@@ -35,6 +37,8 @@ import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.remote.client.NGRestUtils;
+import io.harness.security.SecurityContextBuilder;
+import io.harness.security.dto.ServicePrincipal;
 import io.harness.template.remote.TemplateResourceClient;
 import io.harness.yaml.utils.NGVariablesUtils;
 
@@ -68,7 +72,8 @@ public class CustomDeploymentInfrastructureHelper {
             if (!response.isPresent()) {
               log.error("connector not found for connector ref :{}, for acc ref :{}",
                   connectorNGVariable.getValue().getValue(), accRef);
-              throw new InvalidRequestException("Connector not found for given connector ref");
+              throw new InvalidRequestException(format(
+                  "Connector not found for given connector ref :[%s]", connectorNGVariable.getValue().getValue()));
             }
             ConnectorResponseDTO connectorResponseDTO = response.get();
             ConnectorInfoDTO connectorInfoDTO = connectorResponseDTO.getConnector();
@@ -103,6 +108,7 @@ public class CustomDeploymentInfrastructureHelper {
   public String getTemplateYaml(
       String accRef, String orgRef, String projectRef, String templateRef, String versionLabel) {
     TemplateResponseDTO response;
+    SecurityContextBuilder.setContext(new ServicePrincipal(TEMPLATE_SERVICE.getServiceId()));
     if (templateRef.contains(ACCOUNT_IDENTIFIER)) {
       response = NGRestUtils.getResponse(templateResourceClient.get(
           templateRef.replace(ACCOUNT_IDENTIFIER, ""), accRef, null, null, versionLabel, false));
@@ -133,7 +139,7 @@ public class CustomDeploymentInfrastructureHelper {
     try {
       JsonNode templateInfra = getInfra(yaml);
       JsonNode scriptNode = templateInfra.get("fetchInstancesScript");
-      if (scriptNode.isNull()) {
+      if (isNull(scriptNode) || isEmpty(scriptNode.toString())) {
         log.error("No fetchInstance Script in Yaml for DT in acc :{}", accRef);
         throw new InvalidRequestException("Template yaml provided does not have script in it.");
       }
@@ -163,7 +169,7 @@ public class CustomDeploymentInfrastructureHelper {
   public String getInstancePath(String yaml, String accRef) {
     JsonNode templateInfra = getInfra(yaml);
     JsonNode instancePath = templateInfra.get("instancesListPath");
-    if (instancePath.isNull()) {
+    if (isNull(instancePath) || isEmpty(instancePath.toString())) {
       log.error("No instance path in Yaml for DT in acc :{}", accRef);
       throw new InvalidRequestException("Template yaml provided does not have instancePath in it.");
     }
@@ -173,7 +179,7 @@ public class CustomDeploymentInfrastructureHelper {
   public Map<String, String> getInstanceAttributes(String yaml, String accRef) {
     JsonNode templateInfra = getInfra(yaml);
     JsonNode instanceAttributes = templateInfra.get("instanceAttributes");
-    if (instanceAttributes.isNull()) {
+    if (isNull(instanceAttributes) || isEmpty(instanceAttributes.toString())) {
       log.error("No instance attributes in Yaml for DT in acc :{}", accRef);
       throw new InvalidRequestException("Template yaml provided does not have attributes in it.");
     }
@@ -225,19 +231,28 @@ public class CustomDeploymentInfrastructureHelper {
       throw new InvalidRequestException("Template does not exist for this infrastructure");
     }
     Map<String, String> variablesInTemplate = getTemplateVariables(templateYaml, accountIdentifier);
-    boolean flag = false;
-    if (variablesInTemplate.size() != variablesInInfra.size()) {
-      flag = true;
-    }
-    for (CustomDeploymentNGVariable variable : variablesInInfra) {
-      if (!variablesInTemplate.containsKey(variable.getName())) {
-        flag = true;
-      }
-    }
-    if (flag) {
-      throw new InvalidRequestException(" Infrastructure is obsolete, please update the infrastructure");
+    boolean isObsolete = variableListSizeNotSame(variablesInTemplate, variablesInInfra)
+        || variablesNameNotSame(variablesInTemplate, variablesInInfra);
+    if (isObsolete) {
+      throw new InvalidRequestException("Infrastructure is obsolete, please update the infrastructure");
     }
   }
+
+  private boolean variablesNameNotSame(
+      Map<String, String> variablesInTemplate, List<CustomDeploymentNGVariable> variablesInInfra) {
+    for (CustomDeploymentNGVariable variable : variablesInInfra) {
+      if (!variablesInTemplate.containsKey(variable.getName())) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private boolean variableListSizeNotSame(
+      Map<String, String> variablesInTemplate, List<CustomDeploymentNGVariable> variablesInInfra) {
+    return variablesInTemplate.size() != variablesInInfra.size();
+  }
+
   private Map<String, String> getTemplateVariables(String templateYaml, String accId) {
     YamlConfig templateConfig = new YamlConfig(templateYaml);
     JsonNode templateNode = templateConfig.getYamlMap().get("template");

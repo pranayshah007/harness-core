@@ -10,12 +10,14 @@ package io.harness.delegate.task.azure;
 import static io.harness.rule.OwnerRule.BUHA;
 import static io.harness.rule.OwnerRule.FILIP;
 import static io.harness.rule.OwnerRule.MLUKIC;
+import static io.harness.rule.OwnerRule.VITALIE;
 import static io.harness.rule.OwnerRule.VLICA;
 
 import static java.lang.String.format;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doReturn;
@@ -544,6 +546,43 @@ public class AzureAsyncTaskHelperTest extends CategoryTest {
         .hasSize(1)
         .flatExtracting(AzureHostResponse::getHostName)
         .containsExactly("vm-hostname");
+  }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void testGetLastSuccessfulBuildFromRegex() {
+    Registry registry = mock(Registry.class);
+    when(registry.loginServerUrl()).thenReturn("url");
+
+    when(azureContainerRegistryClient.findFirstContainerRegistryByNameOnSubscription(any(), anyString(), anyString()))
+        .thenReturn(Optional.of(registry));
+
+    when(azureContainerRegistryClient.listRepositoryTags(any(), anyString(), anyString()))
+        .thenReturn(Arrays.asList("tag1", "tag2"));
+
+    BuildDetailsInternal result = azureAsyncTaskHelper.getLastSuccessfulBuildFromRegex(
+        getAzureConfigSystemAssignedMSI(), "subscription", "registry", "repo", "[ab]");
+    assertThat(result.getNumber().equals("tag2"));
+  }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void testVerifyBuildNumber() {
+    String tag = "someTag";
+    Registry registry = mock(Registry.class);
+    when(registry.loginServerUrl()).thenReturn("url");
+
+    when(azureContainerRegistryClient.findFirstContainerRegistryByNameOnSubscription(any(), anyString(), anyString()))
+        .thenReturn(Optional.of(registry));
+
+    when(azureContainerRegistryClient.listRepositoryTags(any(), anyString(), anyString()))
+        .thenReturn(Arrays.asList("tag1", "tag2", tag));
+
+    BuildDetailsInternal result = azureAsyncTaskHelper.verifyBuildNumber(
+        getAzureConfigSystemAssignedMSI(), "subscription", "registry", "repo", tag);
+    assertThat(result.getNumber().equals(tag));
   }
 
   private void testValidateSuccessConnectionWithServicePrincipal(

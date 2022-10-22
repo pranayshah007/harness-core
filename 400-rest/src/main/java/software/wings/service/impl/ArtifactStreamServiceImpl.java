@@ -908,6 +908,42 @@ public class ArtifactStreamServiceImpl implements ArtifactStreamService {
   }
 
   @Override
+  public boolean resetStoppedArtifactCollectionForAccount(String accountId) {
+    Query<ArtifactStream> query =
+        wingsPersistence.createQuery(ArtifactStream.class)
+            .filter(ArtifactStreamKeys.accountId, accountId)
+            .filter(ArtifactStreamKeys.collectionStatus, ArtifactStreamCollectionStatus.STOPPED);
+    UpdateOperations<ArtifactStream> updateOperations =
+        wingsPersistence.createUpdateOperations(ArtifactStream.class)
+            .set(ArtifactStreamKeys.collectionStatus, ArtifactStreamCollectionStatus.UNSTABLE)
+            .set(ArtifactStreamKeys.failedCronAttempts, 0);
+
+    UpdateResults updateResults = wingsPersistence.update(query, updateOperations);
+    if (updateResults.getUpdatedCount() == 0) {
+      log.warn("No valid artifact source available to reset with accountId {}", accountId);
+    }
+    alertService.deleteArtifactStreamAlertForAccount(accountId);
+    // not handlng PT cases since they are deprecated.
+    return true;
+  }
+
+  @Override
+  public boolean stopArtifactCollectionForAccount(String accountId) {
+    Query<ArtifactStream> query =
+        wingsPersistence.createQuery(ArtifactStream.class).filter(ArtifactStreamKeys.accountId, accountId);
+    UpdateOperations<ArtifactStream> updateOperations =
+        wingsPersistence.createUpdateOperations(ArtifactStream.class)
+            .set(ArtifactStreamKeys.collectionStatus, ArtifactStreamCollectionStatus.STOPPED);
+
+    UpdateResults updateResults = wingsPersistence.update(query, updateOperations);
+    if (updateResults.getUpdatedCount() == 0) {
+      log.warn("No valid artifact source available to stop collecting for accountId {}", accountId);
+    }
+    // not handlng PT cases since they are deprecated.
+    return true;
+  }
+
+  @Override
   public void updateCollectionEnabled(ArtifactStream artifactStream, boolean collectionEnabled) {
     wingsPersistence.updateField(
         ArtifactStream.class, artifactStream.getUuid(), ArtifactStreamKeys.collectionEnabled, collectionEnabled);

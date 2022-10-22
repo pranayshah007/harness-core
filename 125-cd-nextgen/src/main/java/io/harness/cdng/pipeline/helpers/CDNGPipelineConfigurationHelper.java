@@ -40,7 +40,7 @@ import java.util.stream.Collectors;
 @OwnedBy(CDP)
 public class CDNGPipelineConfigurationHelper {
   @Inject private CdEnumFilter enumFilter;
-  @Inject private CDNGPipelineExecutionStrategyHelper cdngPipelineExecutionStrategyHelper;
+  @Inject private CDNGPipelineExecutionStrategyHelperV2 cdngPipelineExecutionStrategyHelperV2;
 
   @VisibleForTesting static String LIBRARY = "Library";
 
@@ -75,31 +75,31 @@ public class CDNGPipelineConfigurationHelper {
     }
   }
 
-  public String generateExecutionStrategyYaml(ServiceDefinitionType serviceDefinitionType,
+  public String generateExecutionStrategyYaml(String accountIdentifier, ServiceDefinitionType serviceDefinitionType,
       ExecutionStrategyType executionStrategyType, boolean includeVerify, StrategyParameters strategyParameters)
       throws IOException {
     String yamlName = serviceDefinitionType.getYamlName();
     if (ServiceDefinitionType.SSH.getYamlName().equals(yamlName)
         || ServiceDefinitionType.WINRM.getYamlName().equals(yamlName)) {
       return generateSshWinRmExecutionStrategyYaml(
-          serviceDefinitionType, executionStrategyType, includeVerify, strategyParameters);
+          accountIdentifier, serviceDefinitionType, executionStrategyType, includeVerify, strategyParameters);
     }
     throw new InvalidRequestException(
         String.format("Execution Strategy not supported for service type, yamlName: %s", yamlName));
   }
 
-  private String generateSshWinRmExecutionStrategyYaml(ServiceDefinitionType serviceDefinitionType,
-      ExecutionStrategyType executionStrategyType, boolean includeVerify, StrategyParameters strategyParameters)
-      throws IOException {
+  private String generateSshWinRmExecutionStrategyYaml(String accountIdentifier,
+      ServiceDefinitionType serviceDefinitionType, ExecutionStrategyType executionStrategyType, boolean includeVerify,
+      StrategyParameters strategyParameters) throws IOException {
     if (ExecutionStrategyType.CANARY.equals(executionStrategyType)) {
-      return cdngPipelineExecutionStrategyHelper.generateSshWinRmCanaryYaml(
-          serviceDefinitionType, strategyParameters, includeVerify);
+      return cdngPipelineExecutionStrategyHelperV2.generateCanaryYaml(
+          accountIdentifier, serviceDefinitionType, includeVerify, strategyParameters);
     } else if (ExecutionStrategyType.ROLLING.equals(executionStrategyType)) {
-      return cdngPipelineExecutionStrategyHelper.generateSshWinRmRollingYaml(
-          serviceDefinitionType, strategyParameters, includeVerify);
+      return cdngPipelineExecutionStrategyHelperV2.generateRollingYaml(
+          accountIdentifier, serviceDefinitionType, includeVerify, strategyParameters);
     } else if (ExecutionStrategyType.BASIC.equals(executionStrategyType)) {
-      return cdngPipelineExecutionStrategyHelper.generateSshWinRmBasicYaml(
-          serviceDefinitionType, strategyParameters, includeVerify);
+      return cdngPipelineExecutionStrategyHelperV2.generateBasicYaml(
+          accountIdentifier, serviceDefinitionType, includeVerify, strategyParameters);
     } else {
       return getExecutionStrategyYaml(serviceDefinitionType, executionStrategyType, includeVerify);
     }

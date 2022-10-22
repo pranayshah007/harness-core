@@ -361,7 +361,7 @@ public class ScmFacilitatorResource {
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
       @Parameter(description = GitSyncApiConstants.GIT_CONNECTOR_REF_PARAM_MESSAGE) @NotBlank @QueryParam(
           GitSyncApiConstants.CONNECTOR_REF) String connectorRef) {
-    return ResponseDTO.newResponse(scmFacilitatorService.listAllReposByRefConnector(
+    return ResponseDTO.newResponse(scmFacilitatorService.listAllReposForOnboardingFlow(
         accountIdentifier, orgIdentifier, projectIdentifier, connectorRef));
   }
 

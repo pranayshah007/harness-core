@@ -8,6 +8,7 @@
 package io.harness.pms.merger.helpers;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.beans.InputSetValidatorType.REGEX;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.common.NGExpressionUtils;
@@ -20,6 +21,7 @@ import io.harness.pms.merger.fqn.FQN;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.pms.yaml.validation.InputSetValidator;
 import io.harness.pms.yaml.validation.RuntimeInputValuesValidator;
 import io.harness.serializer.JsonUtils;
 
@@ -31,6 +33,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 
@@ -126,6 +129,16 @@ public class MergeHelper {
       if (parameterField.getInputSetValidator() == null) {
         return inputSetValue;
       }
+      InputSetValidator inputSetValidator = parameterField.getInputSetValidator();
+      if (inputSetValidator.getValidatorType() == REGEX) {
+        boolean matchesPattern =
+            NGExpressionUtils.matchesPattern(Pattern.compile(inputSetValidator.getParameters()), inputSetValueText);
+
+        if (matchesPattern) {
+          return inputSetValue;
+        }
+      }
+
       /*
       this if block appends the input set validator on every element of a list of primitive types
        */

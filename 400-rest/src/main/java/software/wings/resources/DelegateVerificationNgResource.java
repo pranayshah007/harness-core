@@ -19,6 +19,7 @@ import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
+import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.DelegateHeartbeatDetails;
 import io.harness.delegate.beans.DelegateInitializationDetails;
 import io.harness.ng.core.dto.ErrorDTO;
@@ -100,13 +101,13 @@ public class DelegateVerificationNgResource {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgId, projectId),
         Resource.of(DELEGATE_RESOURCE_TYPE, null), DELEGATE_EDIT_PERMISSION);
 
-    List<String> registeredDelegateIds = delegateService.obtainDelegateIdsUsingName(accountId, delegateName);
+    List<Delegate> registeredDelegates = delegateService.obtainDelegatesUsingName(accountId, delegateName);
 
-    if (CollectionUtils.isNotEmpty(registeredDelegateIds)) {
-      List<String> connectedDelegates = delegateService.getConnectedDelegates(accountId, registeredDelegateIds);
+    if (CollectionUtils.isNotEmpty(registeredDelegates)) {
+      List<Delegate> connectedDelegates = delegateService.getConnectedDelegates(accountId, registeredDelegates);
 
       return new RestResponse<>(DelegateHeartbeatDetails.builder()
-                                    .numberOfRegisteredDelegates(registeredDelegateIds.size())
+                                    .numberOfRegisteredDelegates(registeredDelegates.size())
                                     .numberOfConnectedDelegates(connectedDelegates.size())
                                     .build());
     }

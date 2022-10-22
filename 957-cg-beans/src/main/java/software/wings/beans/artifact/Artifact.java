@@ -419,6 +419,8 @@ public class Artifact implements PersistentEntity, UuidAware, CreatedAtAware, Cr
     private String artifactStreamType;
     private String uiDisplayName;
 
+    private String buildNo;
+
     private Builder() {}
 
     public static Builder anArtifact() {
@@ -545,6 +547,11 @@ public class Artifact implements PersistentEntity, UuidAware, CreatedAtAware, Cr
       return this;
     }
 
+    public Builder withBuildNo(String buildNo) {
+      this.buildNo = buildNo;
+      return this;
+    }
+
     public Builder but() {
       return anArtifact()
           .withArtifactStreamId(artifactStreamId)
@@ -570,6 +577,7 @@ public class Artifact implements PersistentEntity, UuidAware, CreatedAtAware, Cr
           .withSettingId(settingId)
           .withAccountId(accountId)
           .withArtifactStreamType(artifactStreamType)
+          .withBuildNo(buildNo)
           .withUiDisplayName(uiDisplayName);
     }
 

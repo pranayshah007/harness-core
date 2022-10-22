@@ -63,4 +63,8 @@ public class GitEntityFindInfoDTO {
   @Parameter(description = "Repo name of parent entity if its remote")
   @QueryParam(GitSyncApiConstants.PARENT_ENTITY_PROJECT_IDENTIFIER)
   String parentEntityProjectIdentifier;
+  @Hidden
+  @Parameter(description = GitSyncApiConstants.REPO_NAME_PARAM_MESSAGE)
+  @QueryParam(GitSyncApiConstants.REPO_NAME)
+  String repoName;
 }

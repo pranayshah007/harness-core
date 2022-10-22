@@ -43,11 +43,11 @@ public class SLIDataCollectionTaskServiceImpl implements DataCollectionTaskManag
 
   @Override
   public void handleCreateNextTask(ServiceLevelIndicator serviceLevelIndicator) {
-    String serviceGuardVerificationTaskId = verificationTaskService.getSLIVerificationTaskId(
+    String sliVerificationTaskId = verificationTaskService.getSLIVerificationTaskId(
         serviceLevelIndicator.getAccountId(), serviceLevelIndicator.getUuid());
 
     DataCollectionTask dataCollectionTask = dataCollectionTaskService.getLastDataCollectionTask(
-        serviceLevelIndicator.getAccountId(), serviceGuardVerificationTaskId);
+        serviceLevelIndicator.getAccountId(), sliVerificationTaskId);
     if (dataCollectionTask == null) {
       enqueueFirstTask(serviceLevelIndicator);
     } else {

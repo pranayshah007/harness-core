@@ -68,7 +68,6 @@ public class PcfCreatePcfResourceCommandTaskHandler extends PcfCommandTaskHandle
                 .endpointUrl(pcfConfig.getEndpointUrl())
                 .timeOutIntervalInMins(cfInfraMappingDataRequest.getTimeoutIntervalInMin())
                 .limitPcfThreads(cfInfraMappingDataRequest.isLimitPcfThreads())
-                .ignorePcfConnectionContextCache(cfInfraMappingDataRequest.isIgnorePcfConnectionContextCache())
                 .build(),
             cfInfraMappingDataRequest.getHost(), cfInfraMappingDataRequest.getDomain(),
             cfInfraMappingDataRequest.getPath(), cfInfraMappingDataRequest.isTcpRoute(),

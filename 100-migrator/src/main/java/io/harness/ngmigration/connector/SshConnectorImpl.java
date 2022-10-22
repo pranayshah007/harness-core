@@ -83,7 +83,7 @@ public class SshConnectorImpl implements BaseConnector {
       HostConnectionAttributes connectionAttributes, Map<CgEntityId, NGYamlFile> migratedEntities) {
     if (connectionAttributes.getAccessType().equals(AccessType.KEY) && !connectionAttributes.isKeyless()) {
       return SSHConfigDTO.builder()
-          .credentialType(SSHCredentialType.KeyPath)
+          .credentialType(SSHCredentialType.KeyReference)
           .spec(SSHKeyReferenceCredentialDTO.builder()
                     .userName(connectionAttributes.getUserName())
                     .key(MigratorUtility.getSecretRef(migratedEntities, connectionAttributes.getEncryptedKey()))
@@ -95,7 +95,7 @@ public class SshConnectorImpl implements BaseConnector {
 
     if (connectionAttributes.getAccessType().equals(AccessType.KEY) && connectionAttributes.isKeyless()) {
       return SSHConfigDTO.builder()
-          .credentialType(SSHCredentialType.KeyReference)
+          .credentialType(SSHCredentialType.KeyPath)
           .spec(SSHKeyPathCredentialDTO.builder()
                     .userName(connectionAttributes.getUserName())
                     .keyPath(connectionAttributes.getKeyPath())

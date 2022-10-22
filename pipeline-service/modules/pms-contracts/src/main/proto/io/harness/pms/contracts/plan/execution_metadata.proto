@@ -25,12 +25,22 @@ message ExecutionMetadata {
   bool isNotificationConfigured = 13;
   PipelineStoreType pipelineStoreType = 14;
   string pipelineConnectorRef = 15;
+  PipelineStageInfo pipelineStageInfo = 16;
 }
 
 message RetryExecutionInfo {
   bool isRetry = 1;
   string rootExecutionId = 2;
   string parentRetryId = 3;
+}
+
+message PipelineStageInfo {
+  bool hasParentPipeline = 1;
+  string stageNodeExecutionId = 2;
+  string executionId = 3;
+  string identifier = 4;
+  string projectId = 5;
+  string orgId = 6;
 }
 
 enum PipelineStoreType {

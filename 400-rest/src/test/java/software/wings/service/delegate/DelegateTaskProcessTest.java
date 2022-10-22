@@ -918,7 +918,6 @@ public class DelegateTaskProcessTest extends WingsBaseTest {
                                                     .pcfConfig(CfConfigToInternalMapper.toCfInternalConfig(pcfConfig))
                                                     .pcfCommandType(CfCommandRequest.PcfCommandType.VALIDATE)
                                                     .limitPcfThreads(false)
-                                                    .ignorePcfConnectionContextCache(false)
                                                     .timeoutIntervalInMin(2)
                                                     .build(),
                           null})
@@ -1127,7 +1126,6 @@ public class DelegateTaskProcessTest extends WingsBaseTest {
                                                     .pcfConfig(CfConfigToInternalMapper.toCfInternalConfig(pcfConfig))
                                                     .pcfCommandType(CfCommandRequest.PcfCommandType.VALIDATE)
                                                     .limitPcfThreads(false)
-                                                    .ignorePcfConnectionContextCache(false)
                                                     .timeoutIntervalInMin(2)
                                                     .build(),
                           null})
