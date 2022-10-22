@@ -52,7 +52,7 @@ public interface PMSExecutionService {
   InterruptDTO registerInterrupt(PlanExecutionInterruptType executionInterruptType, String planExecutionId,
       String nodeExecutionId, InterruptConfig interruptConfig);
 
-  Criteria formCriteria(String accountId, String orgId, String projectId, String pipelineIdentifier,
+  Criteria formCriteria(String accountId, String orgId, String projectId, List<String> pipelineIdentifier,
       String filterIdentifier, PipelineExecutionFilterPropertiesDTO filterProperties, String moduleName,
       String searchTerm, List<ExecutionStatus> statusList, boolean myDeployments, boolean pipelineDeleted,
       ByteString gitEntityBasicInfo, boolean isLatest);

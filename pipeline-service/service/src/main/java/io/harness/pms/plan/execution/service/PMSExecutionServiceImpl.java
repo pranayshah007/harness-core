@@ -93,7 +93,7 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
   @Inject PlanExecutionMetadataService planExecutionMetadataService;
 
   @Override
-  public Criteria formCriteria(String accountId, String orgId, String projectId, String pipelineIdentifier,
+  public Criteria formCriteria(String accountId, String orgId, String projectId, List<String> pipelineIdentifier,
       String filterIdentifier, PipelineExecutionFilterPropertiesDTO filterProperties, String moduleName,
       String searchTerm, List<ExecutionStatus> statusList, boolean myDeployments, boolean pipelineDeleted,
       ByteString gitSyncBranchContext, boolean isLatest) {
@@ -108,7 +108,7 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
       criteria.and(PlanExecutionSummaryKeys.projectIdentifier).is(projectId);
     }
     if (EmptyPredicate.isNotEmpty(pipelineIdentifier)) {
-      criteria.and(PlanExecutionSummaryKeys.pipelineIdentifier).is(pipelineIdentifier);
+      criteria.and(PlanExecutionSummaryKeys.pipelineIdentifier).in(pipelineIdentifier);
     }
     if (EmptyPredicate.isNotEmpty(statusList)) {
       criteria.and(PlanExecutionSummaryKeys.status).in(statusList);
