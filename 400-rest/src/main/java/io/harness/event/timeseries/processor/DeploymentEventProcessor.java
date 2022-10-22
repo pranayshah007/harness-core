@@ -355,6 +355,9 @@ public class DeploymentEventProcessor implements EventProcessor<TimeSeriesEventI
       insertStatement.setArray(++index, (Array) eventInfo.get(EventProcessor.ARTIFACT_LIST));
       insertStatement.setArray(++index, (Array) eventInfo.get(EventProcessor.ENVTYPES));
       insertStatement.setString(++index, (String) eventInfo.get(EventProcessor.PARENT_EXECUTION));
+      insertStatement.setArray(++index, (Array) eventInfo.get(EventProcessor.FAILURE_DETAILS));
+      insertStatement.setArray(++index, (Array) eventInfo.get(EventProcessor.FAILED_STEP_NAMES));
+      insertStatement.setString(++index, (String) eventInfo.get(EventProcessor.FAILED_STEP_TYPES));
       insertStatement.setString(++index, (String) eventInfo.get(EventProcessor.STAGENAME));
       insertStatement.setLong(++index, (Long) eventInfo.get(EventProcessor.ROLLBACK_DURATION));
       insertStatement.setInt(++index, (Integer) eventInfo.get(EventProcessor.INSTANCES_DEPLOYED));

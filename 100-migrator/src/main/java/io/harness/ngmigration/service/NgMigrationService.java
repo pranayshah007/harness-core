@@ -20,6 +20,7 @@ import io.harness.ngmigration.beans.NgEntityDetail;
 import io.harness.ngmigration.beans.summary.BaseSummary;
 import io.harness.ngmigration.client.NGClient;
 import io.harness.ngmigration.client.PmsClient;
+import io.harness.ngmigration.client.TemplateClient;
 import io.harness.ngmigration.dto.ImportError;
 import io.harness.ngmigration.dto.MigrationImportSummaryDTO;
 import io.harness.persistence.NameAccess;
@@ -63,7 +64,7 @@ public abstract class NgMigrationService {
 
   public abstract NGMigrationStatus canMigrate(NGMigrationEntity entity);
 
-  public String getYamlString(NGYamlFile yamlFile) {
+  public static String getYamlString(NGYamlFile yamlFile) {
     return NGYamlUtils.getYamlString(yamlFile.getYaml());
   }
 
@@ -73,7 +74,7 @@ public abstract class NgMigrationService {
   }
 
   public MigrationImportSummaryDTO migrate(String auth, NGClient ngClient, PmsClient pmsClient,
-      MigrationInputDTO inputDTO, NGYamlFile yamlFile) throws IOException {
+      TemplateClient templateClient, MigrationInputDTO inputDTO, NGYamlFile yamlFile) throws IOException {
     return null;
   }
 

@@ -13,6 +13,7 @@ import io.harness.beans.serializer.RunTimeInputHandler;
 import io.harness.beans.yaml.extended.CIShellType;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.pms.yaml.YamlUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -55,6 +56,7 @@ public class SerializerUtils {
 
   public static String convertJsonNodeToString(String key, JsonNode jsonNode) {
     try {
+      YamlUtils.removeUuid(jsonNode);
       if (jsonNode.isValueNode()) {
         return jsonNode.asText("");
       } else if (jsonNode.isArray() && isPrimitiveArray(jsonNode)) {
@@ -91,7 +93,7 @@ public class SerializerUtils {
     if (shellType == CIShellType.SH || shellType == CIShellType.BASH) {
       safeDirScript = "set +x\n"
           + "if [ -x \"$(command -v git)\" ]; then\n"
-          + "  git config --global --add safe.directory '*'\n"
+          + "  git config --global --add safe.directory '*' || true \n"
           + "fi\n"
           + "set -x\n";
     } else {

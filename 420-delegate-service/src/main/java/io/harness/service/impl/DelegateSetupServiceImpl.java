@@ -468,7 +468,7 @@ public class DelegateSetupServiceImpl implements DelegateSetupService {
         .delegateGroupIdentifier(delegateGroupIdentifier)
         .delegateType(delegateType)
         .groupName(groupName)
-        .autoUpgrade(setAutoUpgrade(upgraderLastUpdated, immutableDelegate, delegateCreationTime))
+        .autoUpgrade(setAutoUpgrade(upgraderLastUpdated, immutableDelegate, delegateCreationTime, groupVersion))
         .upgraderLastUpdated(upgraderLastUpdated)
         .delegateGroupExpirationTime(groupExpirationTime)
         .delegateDescription(delegateDescription)
@@ -798,7 +798,20 @@ public class DelegateSetupServiceImpl implements DelegateSetupService {
   }
 
   @Override
-  public AutoUpgrade setAutoUpgrade(long upgraderLastUpdated, boolean immutableDelegate, long delegateCreationTime) {
+  public AutoUpgrade setAutoUpgrade(
+      long upgraderLastUpdated, boolean immutableDelegate, long delegateCreationTime, String version) {
+    // version can be empty in case of delegateGroup with no delegates.
+    if (isNotEmpty(version)) {
+      try {
+        String[] split = version.split("\\.");
+        if (Integer.parseInt(split[2]) < 76300) {
+          return AutoUpgrade.OFF;
+        }
+      } catch (NumberFormatException ex) {
+        log.error("Unable to parse delegate version ", ex);
+      }
+    }
+
     // Auto Upgrade is on for legacy delegates.
     if (!immutableDelegate) {
       return AutoUpgrade.ON;

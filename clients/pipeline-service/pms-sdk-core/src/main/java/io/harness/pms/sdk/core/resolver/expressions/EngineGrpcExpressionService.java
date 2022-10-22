@@ -10,6 +10,7 @@ package io.harness.pms.sdk.core.resolver.expressions;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.plan.ExpressionMode;
 import io.harness.pms.contracts.service.EngineExpressionProtoServiceGrpc.EngineExpressionProtoServiceBlockingStub;
 import io.harness.pms.contracts.service.ExpressionEvaluateBlobRequest;
 import io.harness.pms.contracts.service.ExpressionEvaluateBlobResponse;
@@ -19,6 +20,7 @@ import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 import io.harness.pms.utils.PmsGrpcClientUtils;
 
+import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 
@@ -41,6 +43,21 @@ public class EngineGrpcExpressionService implements EngineExpressionService {
                 .setAmbiance(ambiance)
                 .setExpression(expression)
                 .setSkipUnresolvedExpressionsCheck(skipUnresolvedExpressionsCheck)
+                .build());
+    return expressionRenderBlobResponse.getValue();
+  }
+
+  @Override
+  public String renderExpression(Ambiance ambiance, String expression, ExpressionMode mode) {
+    Preconditions.checkNotNull(mode);
+    Preconditions.checkArgument(mode != ExpressionMode.UNKNOWN_MODE, "mode cannot be set to unknown");
+
+    ExpressionRenderBlobResponse expressionRenderBlobResponse =
+        PmsGrpcClientUtils.retryAndProcessException(engineExpressionProtoServiceBlockingStub::renderExpression,
+            ExpressionRenderBlobRequest.newBuilder()
+                .setAmbiance(ambiance)
+                .setExpression(expression)
+                .setExpressionMode(mode)
                 .build());
     return expressionRenderBlobResponse.getValue();
   }

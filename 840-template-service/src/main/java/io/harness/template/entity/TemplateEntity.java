@@ -192,6 +192,13 @@ public class TemplateEntity
                  .field(TemplateEntityKeys.repoURL)
                  .field(TemplateEntityKeys.filePath)
                  .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("accountId_orgId_projectId_repo")
+                 .field(TemplateEntityKeys.accountId)
+                 .field(TemplateEntityKeys.orgIdentifier)
+                 .field(TemplateEntityKeys.projectIdentifier)
+                 .field(TemplateEntityKeys.repo)
+                 .build())
         .build();
   }
 

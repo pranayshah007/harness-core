@@ -45,6 +45,9 @@ public interface PerpetualTaskService {
 
   void updateTaskUnassignedReason(String taskId, PerpetualTaskUnassignedReason reason, int assignTryCount);
 
+  void markStateAndNonAssignedReason_OnAssignTryCount(PerpetualTaskRecord perpetualTaskRecord,
+      PerpetualTaskUnassignedReason reason, PerpetualTaskState perpetualTaskState);
+
   void setTaskUnassigned(String taskId);
 
   String createPerpetualTaskInternal(String perpetualTaskType, String accountId,

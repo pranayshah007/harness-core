@@ -37,3 +37,14 @@ fi
 if [[ "" != "$EVENTS_MONGO_URI" ]]; then
   export EVENTS_MONGO_URI; yq -i '.events-mongo.uri=env(EVENTS_MONGO_URI)' $CONFIG_FILE
 fi
+
+if [[ "" != "$LOGGING_LEVEL" ]]; then
+  export LOGGING_LEVEL; yq -i '.logging.level=env(LOGGING_LEVEL)' $CONFIG_FILE
+fi
+
+if [[ "$STACK_DRIVER_LOGGING_ENABLED" == "true" ]]; then
+  yq -i 'del(.logging.appenders[0])' $CONFIG_FILE
+  yq -i '.logging.appenders[0].stackdriverLogEnabled=true' $CONFIG_FILE
+else
+  yq -i 'del(.logging.appenders[1])' $CONFIG_FILE
+fi

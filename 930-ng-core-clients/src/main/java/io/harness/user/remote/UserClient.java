@@ -113,8 +113,9 @@ public interface UserClient {
   @PUT(UPDATE_USER_API) Call<RestResponse<Optional<UserInfo>>> updateUser(@Body UserInfo userInfo);
 
   @PUT(CREATE_USER_VIA_INVITE)
-  Call<RestResponse<Boolean>> createUserAndCompleteNGInvite(
-      @Body UserInviteDTO userInviteDTO, @Query("isScimInvite") boolean isScimInvite);
+  Call<RestResponse<Boolean>> createUserAndCompleteNGInvite(@Body UserInviteDTO userInviteDTO,
+      @Query("isScimInvite") boolean isScimInvite,
+      @Query("shouldSendTwoFactorAuthResetEmail") boolean shouldSendTwoFactorAuthResetEmail);
 
   @GET(USER_IN_ACCOUNT_VERIFICATION)
   Call<RestResponse<Boolean>> isUserInAccount(

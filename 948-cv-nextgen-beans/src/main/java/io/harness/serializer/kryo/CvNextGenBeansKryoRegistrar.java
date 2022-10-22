@@ -59,6 +59,7 @@ import io.harness.cvng.beans.appd.AppDynamicsFetchAppRequest;
 import io.harness.cvng.beans.appd.AppDynamicsFetchTiersRequest;
 import io.harness.cvng.beans.appd.AppDynamicsFileDefinition;
 import io.harness.cvng.beans.appd.AppDynamicsMetricDataValidationRequest;
+import io.harness.cvng.beans.aws.AwsDataCollectionRequest;
 import io.harness.cvng.beans.cloudwatch.CloudWatchMetricFetchSampleDataRequest;
 import io.harness.cvng.beans.customhealth.CustomHealthFetchSampleDataRequest;
 import io.harness.cvng.beans.customhealth.TimestampInfo;
@@ -211,5 +212,6 @@ public class CvNextGenBeansKryoRegistrar implements KryoRegistrar {
     kryo.register(ELKIndexCollectionRequest.class, 9122);
     kryo.register(ELKSampleDataCollectionRequest.class, 9123);
     kryo.register(ELKDataCollectionInfo.class, 9124);
+    kryo.register(AwsDataCollectionRequest.class, 9130);
   }
 }

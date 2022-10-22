@@ -8,6 +8,7 @@
 package io.harness.cvng.statemachine.services.api;
 
 import io.harness.cvng.core.beans.params.ProjectParams;
+import io.harness.cvng.core.services.api.VerificationTaskService;
 import io.harness.cvng.servicelevelobjective.beans.SLIMissingDataType;
 import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective.ServiceLevelObjectivesDetail;
@@ -43,15 +44,16 @@ public class CompositeSLOMetricAnalysisStateExecutor extends AnalysisStateExecut
 
   @Inject private ServiceLevelIndicatorService serviceLevelIndicatorService;
 
+  @Inject private VerificationTaskService verificationTaskService;
   @Override
   public AnalysisState execute(CompositeSLOMetricAnalysisState analysisState) {
     Instant startTime = analysisState.getInputs().getStartTime();
     Instant endTime = analysisState.getInputs().getEndTime();
     String verificationTaskId = analysisState.getInputs().getVerificationTaskId();
-    // here startTime will be the prv Data endTime and endTime will be the max Time for which we have records for all
-    // simple SLO's contributing to the composite SLO. verificationTaskId is the composite SLO Ref Id.
+    // here startTime will be the prv Data endTime and endTime will be the current time.
+    String sloId = verificationTaskService.getCompositeSLOId(verificationTaskId);
     CompositeServiceLevelObjective compositeServiceLevelObjective =
-        (CompositeServiceLevelObjective) serviceLevelObjectiveV2Service.get(verificationTaskId);
+        (CompositeServiceLevelObjective) serviceLevelObjectiveV2Service.get(sloId);
     Map<ServiceLevelObjectivesDetail, List<SLIRecord>> serviceLevelObjectivesDetailSLIRecordMap = new HashMap<>();
     Map<ServiceLevelObjectivesDetail, SLIMissingDataType> objectivesDetailSLIMissingDataTypeMap = new HashMap<>();
     for (ServiceLevelObjectivesDetail objectivesDetail :
@@ -73,9 +75,12 @@ public class CompositeSLOMetricAnalysisStateExecutor extends AnalysisStateExecut
       serviceLevelObjectivesDetailSLIRecordMap.put(objectivesDetail, sliRecords);
       objectivesDetailSLIMissingDataTypeMap.put(objectivesDetail, serviceLevelIndicator.getSliMissingDataType());
     }
-    compositeSLORecordService.create(serviceLevelObjectivesDetailSLIRecordMap, objectivesDetailSLIMissingDataTypeMap,
-        compositeServiceLevelObjective.getVersion(), verificationTaskId, startTime, endTime);
-    sloHealthIndicatorService.upsert(compositeServiceLevelObjective);
+    if (serviceLevelObjectivesDetailSLIRecordMap.size()
+        == compositeServiceLevelObjective.getServiceLevelObjectivesDetails().size()) {
+      compositeSLORecordService.create(serviceLevelObjectivesDetailSLIRecordMap, objectivesDetailSLIMissingDataTypeMap,
+          compositeServiceLevelObjective.getVersion(), verificationTaskId, startTime, endTime);
+      sloHealthIndicatorService.upsert(compositeServiceLevelObjective);
+    }
     analysisState.setStatus(AnalysisStatus.SUCCESS);
     return analysisState;
   }
