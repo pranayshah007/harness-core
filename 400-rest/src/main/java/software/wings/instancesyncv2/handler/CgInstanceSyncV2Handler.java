@@ -8,6 +8,7 @@
 package software.wings.instancesyncv2.handler;
 
 import io.harness.perpetualtask.PerpetualTaskExecutionBundle;
+import io.harness.perpetualtask.instancesyncv2.CgDeploymentReleaseDetails;
 
 import software.wings.api.DeploymentInfo;
 import software.wings.api.DeploymentSummary;
@@ -15,6 +16,7 @@ import software.wings.beans.SettingAttribute;
 import software.wings.instancesyncv2.model.CgReleaseIdentifiers;
 import software.wings.instancesyncv2.model.InstanceSyncTaskDetails;
 
+import java.util.List;
 import java.util.Set;
 
 public interface CgInstanceSyncV2Handler {
@@ -27,4 +29,6 @@ public interface CgInstanceSyncV2Handler {
 
   Set<CgReleaseIdentifiers> mergeReleaseIdentifiers(
       Set<CgReleaseIdentifiers> releaseIdentifiers, Set<? extends CgReleaseIdentifiers> buildReleaseIdentifiers);
+
+  List<CgDeploymentReleaseDetails> getDeploymentReleaseDetails(InstanceSyncTaskDetails taskDetails);
 }

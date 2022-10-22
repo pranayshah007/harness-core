@@ -16,6 +16,7 @@ import software.wings.instancesyncv2.model.InstanceSyncTaskDetails.InstanceSyncT
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.util.List;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -50,5 +51,13 @@ public class CgInstanceSyncTaskDetailsService {
                                                .filter(InstanceSyncTaskDetailsKeys.cloudProviderId, cloudProviderId);
 
     return query.get();
+  }
+
+  public List<InstanceSyncTaskDetails> fetchAllForPerpetualTask(String accountId, String perpetualTaskId) {
+    Query<InstanceSyncTaskDetails> query = mongoPersistence.createQuery(InstanceSyncTaskDetails.class)
+                                               .filter(InstanceSyncTaskDetailsKeys.accountId, accountId)
+                                               .filter(InstanceSyncTaskDetailsKeys.perpetualTaskId, perpetualTaskId);
+
+    return query.asList();
   }
 }

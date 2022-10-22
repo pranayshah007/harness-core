@@ -58,6 +58,7 @@ public class InstanceSyncTaskDetails implements PersistentEntity, UuidAware, Uui
 
   @Id private String uuid;
   private String accountId;
+  private String appId;
   private String cloudProviderId;
   private String infraMappingId;
   private String perpetualTaskId;

@@ -16,6 +16,7 @@ import io.harness.metrics.service.api.MetricService;
 import io.harness.perpetualtask.PerpetualTaskClientContextDetails;
 import io.harness.perpetualtask.PerpetualTaskId;
 import io.harness.perpetualtask.PerpetualTaskSchedule;
+import io.harness.perpetualtask.instancesyncv2.CgDeploymentReleaseDetails;
 import io.harness.perpetualtask.instancesyncv2.CgInstanceSyncResponse;
 import io.harness.perpetualtask.instancesyncv2.InstanceSyncTrackedDeploymentDetails;
 
@@ -33,7 +34,11 @@ import software.wings.service.intfc.InfrastructureMappingService;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.protobuf.util.Durations;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -49,7 +54,7 @@ public class CgInstanceSyncServiceV2 {
   private final DelegateServiceGrpcClient delegateServiceClient;
   private final CgInstanceSyncTaskDetailsService taskDetailsService;
   private final InfrastructureMappingService infrastructureMappingService;
-  private final SettingsServiceImpl cloudProvideService;
+  private final SettingsServiceImpl cloudProviderService;
 
   public static final String INSTANCE_SYNC_V2_DURATION_METRIC = "instance_sync_v2_duration";
 
@@ -93,7 +98,7 @@ public class CgInstanceSyncServiceV2 {
   private SettingAttribute fetchCloudProvider(DeploymentSummary deploymentSummary) {
     InfrastructureMapping infraMapping =
         infrastructureMappingService.get(deploymentSummary.getAppId(), deploymentSummary.getInfraMappingId());
-    return cloudProvideService.get(infraMapping.getComputeProviderSettingId());
+    return cloudProviderService.get(infraMapping.getComputeProviderSettingId());
   }
 
   private void updateInstanceSyncPerpetualTask(SettingAttribute cloudProvider, String perpetualTaskId) {
@@ -130,9 +135,6 @@ public class CgInstanceSyncServiceV2 {
         taskDetailsService.getForInfraMapping(deploymentSummary.getAccountId(), deploymentSummary.getInfraMappingId());
 
     if (Objects.nonNull(instanceSyncTaskDetails)) {
-      instanceSyncTaskDetails.getReleaseIdentifiers().addAll(
-          instanceSyncHandler.buildReleaseIdentifiers(deploymentSummary.getDeploymentInfo()));
-
       instanceSyncTaskDetails.setReleaseIdentifiers(
           instanceSyncHandler.mergeReleaseIdentifiers(instanceSyncTaskDetails.getReleaseIdentifiers(),
               instanceSyncHandler.buildReleaseIdentifiers(deploymentSummary.getDeploymentInfo())));
@@ -169,6 +171,27 @@ public class CgInstanceSyncServiceV2 {
   }
 
   public InstanceSyncTrackedDeploymentDetails fetchTaskDetails(String perpetualTaskId, String accountId) {
-    return InstanceSyncTrackedDeploymentDetails.newBuilder().setPerpetualTaskId(perpetualTaskId).build();
+    List<InstanceSyncTaskDetails> instanceSyncTaskDetails =
+        taskDetailsService.fetchAllForPerpetualTask(accountId, perpetualTaskId);
+    Map<String, SettingAttribute> cloudProviders = new ConcurrentHashMap<>();
+
+    List<CgDeploymentReleaseDetails> deploymentReleaseDetails = new ArrayList<>();
+    instanceSyncTaskDetails.parallelStream().forEach(taskDetails -> {
+      SettingAttribute cloudProvider =
+          cloudProviders.computeIfAbsent(taskDetails.getCloudProviderId(), cloudProviderService::get);
+      CgInstanceSyncV2Handler instanceSyncHandler =
+          handlerFactory.getHandler(cloudProvider.getValue().getSettingType());
+      deploymentReleaseDetails.addAll(instanceSyncHandler.getDeploymentReleaseDetails(taskDetails));
+    });
+
+    if (cloudProviders.size() > 1) {
+      log.warn("Multiple cloud providers are being tracked by perpetual task: [{}]. This should not happen.");
+    }
+
+    return InstanceSyncTrackedDeploymentDetails.newBuilder()
+        .setAccountId(accountId)
+        .setPerpetualTaskId(perpetualTaskId)
+        .addAllDeploymentDetails(deploymentReleaseDetails)
+        .build();
   }
 }

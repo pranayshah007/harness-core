@@ -38,6 +38,6 @@ public class DeploymentEventListener extends QueueListener<DeploymentEvent> {
   @Override
   public void onMessage(DeploymentEvent deploymentEvent) {
     instanceSyncServiceV2.handleInstanceSync(deploymentEvent);
-    instanceHelper.processDeploymentEvent(deploymentEvent);
+    // instanceHelper.processDeploymentEvent(deploymentEvent);
   }
 }

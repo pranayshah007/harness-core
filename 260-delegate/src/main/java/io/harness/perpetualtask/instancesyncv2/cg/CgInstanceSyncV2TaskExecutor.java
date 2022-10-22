@@ -51,8 +51,9 @@ import org.eclipse.jetty.server.Response;
 @OwnedBy(CDP)
 @RequiredArgsConstructor(onConstructor = @__({ @Inject }))
 public class CgInstanceSyncV2TaskExecutor implements PerpetualTaskExecutor {
-  @Inject private InstanceDetailsFetcher instanceDetailsFetcher;
-  @Inject private DelegateAgentManagerClient delegateAgentManagerClient;
+  private final CgK8sInstancesDetailsFetcher instanceDetailsFetcher;
+  private final DelegateAgentManagerClient delegateAgentManagerClient;
+  private final KryoSerializer kryoSerializer;
 
   private static final int INSTANCE_COUNT_LIMIT = 150;
 
@@ -60,7 +61,6 @@ public class CgInstanceSyncV2TaskExecutor implements PerpetualTaskExecutor {
   private int batchInstanceCount = 0;
   private int batchReleaseDetailsCount = 0;
   private Map<String, List<InstanceInfo> > buffer = new HashMap<>();
-  private final KryoSerializer kryoSerializer;
 
   @SneakyThrows
   @Override
@@ -78,14 +78,14 @@ public class CgInstanceSyncV2TaskExecutor implements PerpetualTaskExecutor {
         DirectK8sInstanceSyncTaskDetails k8sInstanceSyncTaskDetails =
             AnyUtils.unpack(details.getReleaseDetails(), DirectK8sInstanceSyncTaskDetails.class);
 
-        ContainerInstancesDetailsFetcher containerInstancesDetailsFetcher =
-            (ContainerInstancesDetailsFetcher) instanceDetailsFetcher;
+        CgK8sInstancesDetailsFetcher cgK8sInstancesDetailsFetcher =
+            (CgK8sInstancesDetailsFetcher) instanceDetailsFetcher;
 
         K8sClusterConfig config =
             (K8sClusterConfig) kryoSerializer.asObject(k8sInstanceSyncTaskDetails.getK8SClusterConfig().toByteArray());
         try {
           List<InstanceInfo> instanceInfos =
-              containerInstancesDetailsFetcher.fetchRunningInstanceDetails(taskId, config, k8sInstanceSyncTaskDetails);
+              cgK8sInstancesDetailsFetcher.fetchRunningInstanceDetails(taskId, config, k8sInstanceSyncTaskDetails);
           buffer.put(details.getTaskDetailsId(), instanceInfos);
           batchInstanceCount += instanceInfos.size();
           batchReleaseDetailsCount++;

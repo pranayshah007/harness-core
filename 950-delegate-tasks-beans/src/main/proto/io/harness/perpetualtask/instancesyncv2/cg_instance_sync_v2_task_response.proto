@@ -13,6 +13,8 @@ message CgInstanceSyncResponse {
   string perpetual_task_id = 1;
   string account_id = 2;
   repeated InstanceSyncData instance_data = 3;
+  string execution_status = 4;
+  string error_message = 5;
 }
 
 message InstanceSyncData {

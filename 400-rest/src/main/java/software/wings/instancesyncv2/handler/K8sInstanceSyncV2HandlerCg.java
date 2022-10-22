@@ -13,27 +13,36 @@ import static io.harness.delegate.beans.NgSetupFields.OWNER;
 import io.harness.delegate.Capability;
 import io.harness.exception.InvalidRequestException;
 import io.harness.perpetualtask.PerpetualTaskExecutionBundle;
+import io.harness.perpetualtask.instancesyncv2.CgDeploymentReleaseDetails;
 import io.harness.perpetualtask.instancesyncv2.CgInstanceSyncTaskParams;
+import io.harness.perpetualtask.instancesyncv2.DirectK8sInstanceSyncTaskDetails;
 import io.harness.serializer.KryoSerializer;
 
 import software.wings.api.DeploymentInfo;
 import software.wings.api.DeploymentSummary;
 import software.wings.api.K8sDeploymentInfo;
+import software.wings.beans.ContainerInfrastructureMapping;
+import software.wings.beans.InfrastructureMapping;
 import software.wings.beans.SettingAttribute;
 import software.wings.helpers.ext.container.ContainerDeploymentManagerHelper;
+import software.wings.helpers.ext.k8s.request.K8sClusterConfig;
 import software.wings.instancesyncv2.model.CgK8sReleaseIdentifier;
 import software.wings.instancesyncv2.model.CgReleaseIdentifiers;
 import software.wings.instancesyncv2.model.InstanceSyncTaskDetails;
+import software.wings.service.intfc.InfrastructureMappingService;
 import software.wings.settings.SettingVariableTypes;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -44,6 +53,7 @@ import org.apache.groovy.util.Maps;
 @Slf4j
 public class K8sInstanceSyncV2HandlerCg implements CgInstanceSyncV2Handler {
   private final ContainerDeploymentManagerHelper containerDeploymentManagerHelper;
+  private final InfrastructureMappingService infrastructureMappingService;
   private final KryoSerializer kryoSerializer;
 
   @Override
@@ -110,6 +120,7 @@ public class K8sInstanceSyncV2HandlerCg implements CgInstanceSyncV2Handler {
       DeploymentSummary deploymentSummary, String cloudProviderId, String perpetualTaskId) {
     return InstanceSyncTaskDetails.builder()
         .accountId(deploymentSummary.getAccountId())
+        .appId(deploymentSummary.getAppId())
         .perpetualTaskId(perpetualTaskId)
         .cloudProviderId(cloudProviderId)
         .infraMappingId(deploymentSummary.getInfraMappingId())
@@ -133,5 +144,45 @@ public class K8sInstanceSyncV2HandlerCg implements CgInstanceSyncV2Handler {
 
     throw new InvalidRequestException("DeploymentInfo of type: [" + deploymentInfo.getClass().getCanonicalName()
         + "] not supported with V2 Instance Sync framework.");
+  }
+
+  @Override
+  public List<CgDeploymentReleaseDetails> getDeploymentReleaseDetails(InstanceSyncTaskDetails taskDetails) {
+    InfrastructureMapping infraMapping =
+        infrastructureMappingService.get(taskDetails.getAppId(), taskDetails.getInfraMappingId());
+
+    if (!(infraMapping instanceof ContainerInfrastructureMapping)) {
+      log.error("Unsupported infrastructure mapping being tracked here: [{}]. InfraMappingType found: [{}]",
+          taskDetails, infraMapping.getClass().getName());
+      return null;
+    }
+
+    ContainerInfrastructureMapping containerInfraMapping = (ContainerInfrastructureMapping) infraMapping;
+    K8sClusterConfig clusterConfig = containerDeploymentManagerHelper.getK8sClusterConfig(containerInfraMapping, null);
+
+    List<CgDeploymentReleaseDetails> releaseDetails = new ArrayList<>();
+    taskDetails.getReleaseIdentifiers()
+        .parallelStream()
+        .filter(releaseIdentifier -> releaseIdentifier instanceof CgK8sReleaseIdentifier)
+        .map(releaseIdentifier -> (CgK8sReleaseIdentifier) releaseIdentifier)
+        .forEach(releaseIdentifier
+            -> releaseDetails.addAll(
+                releaseIdentifier.getNamespaces()
+                    .parallelStream()
+                    .map(namespace
+                        -> CgDeploymentReleaseDetails.newBuilder()
+                               .setTaskDetailsId(taskDetails.getUuid())
+                               .setInfraMappingId(taskDetails.getInfraMappingId())
+                               .setInfraMappingType(infraMapping.getInfraMappingType())
+                               .setReleaseDetails(Any.pack(
+                                   DirectK8sInstanceSyncTaskDetails.newBuilder()
+                                       .setReleaseName(releaseIdentifier.getReleaseName())
+                                       .setNamespace(namespace)
+                                       .setK8SClusterConfig(ByteString.copyFrom(kryoSerializer.asBytes(clusterConfig)))
+                                       .build()))
+                               .build())
+                    .collect(Collectors.toList())));
+
+    return releaseDetails;
   }
 }
