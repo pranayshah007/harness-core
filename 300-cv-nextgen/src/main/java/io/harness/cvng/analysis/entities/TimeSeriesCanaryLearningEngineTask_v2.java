@@ -22,7 +22,7 @@ public class TimeSeriesCanaryLearningEngineTask_v2 extends LearningEngineTask {
   private TimeSeriesCanaryLearningEngineTask.DeploymentVerificationTaskInfo deploymentVerificationTaskInfo;
   private int dataLength;
   private int tolerance;
-  private LearningEngineTask.LearningEngineTaskType learningEngineTaskType;
+  private LearningEngineTaskType learningEngineTaskType;
   Set<String> controlHosts;
   Set<String> testHosts;
 

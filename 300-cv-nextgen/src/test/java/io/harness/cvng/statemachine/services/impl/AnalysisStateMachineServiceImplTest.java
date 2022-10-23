@@ -20,6 +20,7 @@ import static io.harness.rule.OwnerRule.SOWMYA;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -74,7 +75,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import org.apache.commons.lang3.reflect.FieldUtils;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -649,7 +649,7 @@ public class AnalysisStateMachineServiceImplTest extends CvNextGenTestBase {
                                .build();
 
     AnalysisStateMachine stateMachine = stateMachineService.createStateMachine(inputs);
-    Assert.assertEquals(stateMachine.getCurrentState().getClass(), HostSamplingState.class);
+    assertEquals(stateMachine.getCurrentState().getClass(), HostSamplingState.class);
     assertThat(stateMachine).isNotNull();
   }
 }

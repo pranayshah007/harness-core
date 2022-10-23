@@ -17,7 +17,8 @@ import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
 import io.harness.cvng.BuilderFactory;
 import io.harness.cvng.analysis.beans.TimeSeriesRecordDTO;
-import io.harness.cvng.analysis.entities.LearningEngineTask;
+import io.harness.cvng.analysis.entities.LearningEngineTask.ExecutionStatus;
+import io.harness.cvng.analysis.entities.LearningEngineTask.LearningEngineTaskType;
 import io.harness.cvng.analysis.services.api.TimeSeriesAnalysisService;
 import io.harness.cvng.core.beans.TimeRange;
 import io.harness.cvng.core.services.api.TimeSeriesRecordService;
@@ -116,7 +117,7 @@ public class HostSamplingStateExecutorTest extends CategoryTest {
     assertThat(hostSamplingState.getControlHosts()).isEqualTo(new HashSet<>(Arrays.asList("host1", "host2")));
     assertThat(hostSamplingState.getTestHosts()).isEmpty();
     assertThat(hostSamplingState.getInputs().getLearningEngineTaskType())
-        .isEqualTo(LearningEngineTask.LearningEngineTaskType.CANARY_DEPLOYMENT_TIME_SERIES);
+        .isEqualTo(LearningEngineTaskType.CANARY_DEPLOYMENT_TIME_SERIES);
   }
 
   @Test
@@ -149,7 +150,7 @@ public class HostSamplingStateExecutorTest extends CategoryTest {
     assertThat(hostSamplingState.getControlHosts()).isEqualTo(new HashSet<>(Arrays.asList("host1", "host2")));
     assertThat(hostSamplingState.getTestHosts()).isEqualTo(new HashSet<>(Arrays.asList("host3")));
     assertThat(hostSamplingState.getInputs().getLearningEngineTaskType())
-        .isEqualTo(LearningEngineTask.LearningEngineTaskType.CANARY_DEPLOYMENT_TIME_SERIES);
+        .isEqualTo(LearningEngineTaskType.CANARY_DEPLOYMENT_TIME_SERIES);
   }
 
   @Test
@@ -183,7 +184,7 @@ public class HostSamplingStateExecutorTest extends CategoryTest {
     assertThat(hostSamplingState.getTestHosts()).isEmpty();
     assertThat(hostSamplingState.getControlHosts()).isEqualTo(new HashSet<>(Arrays.asList("host1", "host2")));
     assertThat(hostSamplingState.getInputs().getLearningEngineTaskType())
-        .isEqualTo(LearningEngineTask.LearningEngineTaskType.CANARY_DEPLOYMENT_TIME_SERIES);
+        .isEqualTo(LearningEngineTaskType.CANARY_DEPLOYMENT_TIME_SERIES);
   }
 
   @Test
@@ -217,7 +218,7 @@ public class HostSamplingStateExecutorTest extends CategoryTest {
     assertThat(hostSamplingState.getControlHosts()).isEqualTo(new HashSet<>(Arrays.asList("host1", "host2")));
     assertThat(hostSamplingState.getTestHosts()).isEqualTo(new HashSet<>(Arrays.asList("host1", "host2")));
     assertThat(hostSamplingState.getInputs().getLearningEngineTaskType())
-        .isEqualTo(LearningEngineTask.LearningEngineTaskType.BEFORE_AFTER_DEPLOYMENT_TIME_SERIES);
+        .isEqualTo(LearningEngineTaskType.BEFORE_AFTER_DEPLOYMENT_TIME_SERIES);
   }
 
   @Test
@@ -251,7 +252,7 @@ public class HostSamplingStateExecutorTest extends CategoryTest {
     assertThat(hostSamplingState.getControlHosts()).isEqualTo(new HashSet<>(Arrays.asList("host1", "host2")));
     assertThat(hostSamplingState.getTestHosts()).isEqualTo(new HashSet<>(Arrays.asList("host1", "host2", "host3")));
     assertThat(hostSamplingState.getInputs().getLearningEngineTaskType())
-        .isEqualTo(LearningEngineTask.LearningEngineTaskType.BEFORE_AFTER_DEPLOYMENT_TIME_SERIES);
+        .isEqualTo(LearningEngineTaskType.BEFORE_AFTER_DEPLOYMENT_TIME_SERIES);
   }
 
   @Test
@@ -285,7 +286,7 @@ public class HostSamplingStateExecutorTest extends CategoryTest {
     assertThat(hostSamplingState.getControlHosts()).isEqualTo(new HashSet<>(Arrays.asList("host1", "host2")));
     assertThat(hostSamplingState.getTestHosts()).isEqualTo(new HashSet<>(Arrays.asList("host3", "host4")));
     assertThat(hostSamplingState.getInputs().getLearningEngineTaskType())
-        .isEqualTo(LearningEngineTask.LearningEngineTaskType.BEFORE_AFTER_DEPLOYMENT_TIME_SERIES);
+        .isEqualTo(LearningEngineTaskType.BEFORE_AFTER_DEPLOYMENT_TIME_SERIES);
   }
 
   @Test
@@ -319,7 +320,7 @@ public class HostSamplingStateExecutorTest extends CategoryTest {
     assertThat(hostSamplingState.getControlHosts()).isEqualTo(new HashSet<>(Arrays.asList("host1", "host2")));
     assertThat(hostSamplingState.getTestHosts()).isEqualTo(new HashSet<>(Arrays.asList("host1", "host2")));
     assertThat(hostSamplingState.getInputs().getLearningEngineTaskType())
-        .isEqualTo(LearningEngineTask.LearningEngineTaskType.BEFORE_AFTER_DEPLOYMENT_TIME_SERIES);
+        .isEqualTo(LearningEngineTaskType.BEFORE_AFTER_DEPLOYMENT_TIME_SERIES);
   }
 
   @Test
@@ -353,7 +354,7 @@ public class HostSamplingStateExecutorTest extends CategoryTest {
     assertThat(hostSamplingState.getControlHosts()).isEqualTo(new HashSet<>(Arrays.asList("host1", "host2")));
     assertThat(hostSamplingState.getTestHosts()).isEqualTo(new HashSet<>(Arrays.asList("host3")));
     assertThat(hostSamplingState.getInputs().getLearningEngineTaskType())
-        .isEqualTo(LearningEngineTask.LearningEngineTaskType.CANARY_DEPLOYMENT_TIME_SERIES);
+        .isEqualTo(LearningEngineTaskType.CANARY_DEPLOYMENT_TIME_SERIES);
   }
 
   @Test
@@ -387,7 +388,7 @@ public class HostSamplingStateExecutorTest extends CategoryTest {
     assertThat(hostSamplingState.getControlHosts()).isEqualTo(new HashSet<>(Arrays.asList("host1", "host2")));
     assertThat(hostSamplingState.getTestHosts()).isEqualTo(new HashSet<>(Arrays.asList("host3", "host4")));
     assertThat(hostSamplingState.getLearningEngineTaskType())
-        .isEqualTo(LearningEngineTask.LearningEngineTaskType.BEFORE_AFTER_DEPLOYMENT_TIME_SERIES);
+        .isEqualTo(LearningEngineTaskType.BEFORE_AFTER_DEPLOYMENT_TIME_SERIES);
   }
 
   @Test
@@ -403,8 +404,8 @@ public class HostSamplingStateExecutorTest extends CategoryTest {
     hostSamplingState.setVerificationJobInstanceId(verificationJobInstance.getUuid());
     String taskId = generateUuid();
     hostSamplingState.setStatus(AnalysisStatus.RUNNING);
-    Map<String, LearningEngineTask.ExecutionStatus> taskStatusMap = new HashMap<>();
-    taskStatusMap.put(taskId, LearningEngineTask.ExecutionStatus.SUCCESS);
+    Map<String, ExecutionStatus> taskStatusMap = new HashMap<>();
+    taskStatusMap.put(taskId, ExecutionStatus.SUCCESS);
     AnalysisStatus status = hostSamplingStateExecutor.getExecutionStatus(hostSamplingState);
     assertThat(status.name()).isEqualTo(AnalysisStatus.RUNNING.name());
   }
@@ -424,8 +425,8 @@ public class HostSamplingStateExecutorTest extends CategoryTest {
     hostSamplingState.setStatus(AnalysisStatus.RUNNING);
     hostSamplingState.setTestHosts(new HashSet<>(Collections.singleton("abc")));
     hostSamplingState.setControlHosts(new HashSet<>(Collections.singleton("def")));
-    Map<String, LearningEngineTask.ExecutionStatus> taskStatusMap = new HashMap<>();
-    taskStatusMap.put(taskId, LearningEngineTask.ExecutionStatus.SUCCESS);
+    Map<String, ExecutionStatus> taskStatusMap = new HashMap<>();
+    taskStatusMap.put(taskId, ExecutionStatus.SUCCESS);
     AnalysisStatus status = hostSamplingStateExecutor.getExecutionStatus(hostSamplingState);
     assertThat(status.name()).isEqualTo(AnalysisStatus.TRANSITION.name());
   }

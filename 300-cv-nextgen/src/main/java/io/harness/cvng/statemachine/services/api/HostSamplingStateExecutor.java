@@ -13,6 +13,7 @@ import io.harness.cvng.analysis.services.api.TimeSeriesAnalysisService;
 import io.harness.cvng.core.beans.TimeRange;
 import io.harness.cvng.core.services.api.TimeSeriesRecordService;
 import io.harness.cvng.statemachine.beans.AnalysisInput;
+import io.harness.cvng.statemachine.beans.AnalysisInput.AnalysisInputBuilder;
 import io.harness.cvng.statemachine.beans.AnalysisState;
 import io.harness.cvng.statemachine.beans.AnalysisStatus;
 import io.harness.cvng.statemachine.entities.DeploymentTimeSeriesAnalysisState;
@@ -59,7 +60,7 @@ public class HostSamplingStateExecutor extends AnalysisStateExecutor<HostSamplin
     Set<String> commonHosts = new HashSet<>(preDeploymentHosts);
     commonHosts.retainAll(postDeploymentHosts);
     newHosts.removeAll(commonHosts);
-    AnalysisInput.AnalysisInputBuilder analysisInputBuilder = AnalysisInput.builder();
+    AnalysisInputBuilder analysisInputBuilder = AnalysisInput.builder();
     analysisInputBuilder.startTime(analysisState.getInputs().getStartTime());
     analysisInputBuilder.endTime(analysisState.getInputs().getEndTime());
     analysisInputBuilder.verificationTaskId(analysisState.getInputs().getVerificationTaskId());

@@ -10,7 +10,6 @@ package io.harness.cvng.cdng.beans;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cvng.verificationjob.entities.AutoVerificationJob;
-import io.harness.cvng.verificationjob.entities.CanaryVerificationJob;
 import io.harness.cvng.verificationjob.entities.VerificationJob.VerificationJobBuilder;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;

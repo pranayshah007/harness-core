@@ -14,6 +14,7 @@ import static io.harness.cvng.analysis.CVAnalysisConstants.TIMESERIES_SAVE_ANALY
 import static io.harness.cvng.analysis.CVAnalysisConstants.TIMESERIES_SERVICE_GUARD_DATA_LENGTH;
 import static io.harness.cvng.analysis.CVAnalysisConstants.TIMESERIES_VERIFICATION_TASK_SAVE_ANALYSIS_PATH;
 import static io.harness.cvng.core.services.CVNextGenConstants.CV_ANALYSIS_WINDOW_MINUTES;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.persistence.HQuery.excludeAuthority;
 
@@ -349,8 +350,9 @@ public class TimeSeriesAnalysisServiceImpl implements TimeSeriesAnalysisService 
     uriBuilder.addParameter("verificationTaskId", input.getVerificationTaskId());
     uriBuilder.addParameter("startTime", Long.toString(verificationJobInstance.getStartTime().toEpochMilli()));
     uriBuilder.addParameter("endTime", Long.toString(input.getEndTime().toEpochMilli()));
-    if (input.getControlHosts() != null && !input.getControlHosts().isEmpty())
+    if (isNotEmpty(input.getControlHosts())) {
       uriBuilder.addParameter("hosts", String.join(",", input.getTestHosts()));
+    }
     return getUriString(uriBuilder);
   }
 
@@ -373,8 +375,9 @@ public class TimeSeriesAnalysisServiceImpl implements TimeSeriesAnalysisService 
     URIBuilder uriBuilder = new URIBuilder();
     uriBuilder.setPath(SERVICE_BASE_URL + "/" + TIMESERIES_ANALYSIS_RESOURCE + "/time-series-data");
     uriBuilder.addParameter("verificationTaskId", input.getVerificationTaskId());
-    if (input.getControlHosts() != null && !input.getControlHosts().isEmpty())
+    if (isNotEmpty(input.getControlHosts())) {
       uriBuilder.addParameter("hosts", String.join(",", input.getControlHosts()));
+    }
     if (input.getLearningEngineTaskType().equals(LearningEngineTaskType.CANARY_DEPLOYMENT_TIME_SERIES)) {
       uriBuilder.addParameter("startTime", Long.toString(verificationJobInstance.getStartTime().toEpochMilli()));
       uriBuilder.addParameter("endTime", Long.toString(input.getEndTime().toEpochMilli()));
@@ -602,9 +605,9 @@ public class TimeSeriesAnalysisServiceImpl implements TimeSeriesAnalysisService 
   public List<TimeSeriesRecordDTO> getDeploymentMetricTimeSeriesRecordDTOs(
       String verificationTaskId, Instant startTime, Instant endTime, String commaSeparatedHosts) {
     Set<String> hostSet = new HashSet<>();
-    Set<String> testHostSet = new HashSet<>();
-    if (commaSeparatedHosts != null)
+    if (commaSeparatedHosts != null) {
       hostSet = Arrays.stream(commaSeparatedHosts.split(",")).collect(Collectors.toSet());
+    }
     List<TimeSeriesRecordDTO> timeSeriesRecordDTOS = timeSeriesRecordService.getDeploymentMetricTimeSeriesRecordDTOs(
         verificationTaskId, startTime, endTime, hostSet);
     // in LE we pass metric identifier as the metric_name, as metric_name is the identifier for LE.
