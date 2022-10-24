@@ -17,6 +17,7 @@ import io.harness.delegate.beans.DelegateGroup;
 import io.harness.delegate.beans.DelegateGroup.DelegateGroupKeys;
 import io.harness.delegate.beans.DelegateProfile;
 import io.harness.delegate.beans.DelegateProfile.DelegateProfileKeys;
+import io.harness.delegate.beans.DelegateTaskCache;
 import io.harness.persistence.HPersistence;
 import io.harness.service.intfc.DelegateCache;
 
@@ -163,5 +164,10 @@ public class DelegateCacheImpl implements DelegateCache {
       log.warn("Unable to getDelegates from cache based on group id");
       return null;
     }
+  }
+
+  @Override
+  public DelegateTaskCache get(String delegateId) {
+    return null;
   }
 }
