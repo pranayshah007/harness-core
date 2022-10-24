@@ -29,7 +29,7 @@ java_library(
         "@maven//:com_google_http_client_google_http_client_apache_v2",
         "@maven//:com_microsoft_azure_azure",
         "@maven//:com_offbytwo_jenkins_jenkins_client",
-        "@maven//:com_squareup_retrofit2_converter_simplexml",
+        "@maven//:com_squareup_retrofit2_converter_jaxb",
         "@maven//:io_cloudsoft_windows_winrm4j_client",
         "@maven//:io_fabric8_istio_client",
         "@maven//:io_fabric8_kubernetes_api",

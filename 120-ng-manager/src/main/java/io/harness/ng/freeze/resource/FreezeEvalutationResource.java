@@ -13,6 +13,8 @@ import io.harness.accesscontrol.OrgIdentifier;
 import io.harness.accesscontrol.ProjectIdentifier;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.freeze.beans.response.FreezeSummaryResponseDTO;
+import io.harness.freeze.beans.response.ShouldDisableDeploymentFreezeResponseDTO;
+import io.harness.freeze.mappers.NGFreezeDtoMapper;
 import io.harness.freeze.service.FreezeEvaluateService;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
@@ -30,6 +32,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.LinkedList;
 import java.util.List;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
@@ -105,11 +108,11 @@ public class FreezeEvalutationResource {
   @Operation(operationId = "isGlobalFreezeActive", summary = "If to disable run button for deployment",
       responses =
       {
-        @io.swagger.v3.oas.annotations.responses.
-        ApiResponse(responseCode = "default", description = "Returns true if run button is t be disabled")
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            responseCode = "default", description = "Returns true along with metadata if run button is to be disabled")
       })
   @Hidden
-  public ResponseDTO<Boolean>
+  public ResponseDTO<ShouldDisableDeploymentFreezeResponseDTO>
   shouldDisableDeployment(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
                               NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
       @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
@@ -118,6 +121,13 @@ public class FreezeEvalutationResource {
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId) {
     List<FreezeSummaryResponseDTO> freezeSummaryResponseDTO =
         freezeEvaluateService.shouldDisableDeployment(accountId, orgId, projectId);
-    return ResponseDTO.newResponse(!EmptyPredicate.isEmpty(freezeSummaryResponseDTO));
+    List<String> freezeReferences = new LinkedList<>();
+    freezeSummaryResponseDTO.stream().forEach(freeze
+        -> freezeReferences.add(NGFreezeDtoMapper.getFreezeRef(freeze.getFreezeScope(), freeze.getIdentifier())));
+    boolean shouldDisableDeployment = !EmptyPredicate.isEmpty(freezeSummaryResponseDTO);
+    return ResponseDTO.newResponse(ShouldDisableDeploymentFreezeResponseDTO.builder()
+                                       .shouldDisable(shouldDisableDeployment)
+                                       .freezeReferences(freezeReferences)
+                                       .build());
   }
 }

@@ -11,6 +11,7 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.Scope;
 import io.harness.exception.InvalidRequestException;
 import io.harness.freeze.beans.FreezeType;
+import io.harness.freeze.beans.response.FreezeBannerDetails;
 import io.harness.freeze.beans.response.FreezeDetailedResponseDTO;
 import io.harness.freeze.beans.response.FreezeResponseDTO;
 import io.harness.freeze.beans.response.FreezeSummaryResponseDTO;
@@ -47,6 +48,20 @@ public class NGFreezeDtoMapper {
     } catch (IOException e) {
       throw new InvalidRequestException("Cannot create template entity due to " + e.getMessage());
     }
+  }
+
+  public static FreezeConfigEntity updateOldFreezeConfig(
+      FreezeConfigEntity newFreezeConfigEntity, FreezeConfigEntity oldFreezeConfigEntity) {
+    oldFreezeConfigEntity.setOrgIdentifier(newFreezeConfigEntity.getOrgIdentifier());
+    oldFreezeConfigEntity.setProjectIdentifier(newFreezeConfigEntity.getProjectIdentifier());
+    oldFreezeConfigEntity.setIdentifier(newFreezeConfigEntity.getIdentifier());
+    oldFreezeConfigEntity.setFreezeScope(newFreezeConfigEntity.getFreezeScope());
+    oldFreezeConfigEntity.setDescription(newFreezeConfigEntity.getDescription());
+    oldFreezeConfigEntity.setName(newFreezeConfigEntity.getName());
+    oldFreezeConfigEntity.setStatus(newFreezeConfigEntity.getStatus());
+    oldFreezeConfigEntity.setTags(newFreezeConfigEntity.getTags());
+    oldFreezeConfigEntity.setYaml(newFreezeConfigEntity.getYaml());
+    return oldFreezeConfigEntity;
   }
 
   public FreezeResponseDTO prepareFreezeResponseDto(FreezeConfigEntity freezeConfigEntity) {
@@ -86,7 +101,7 @@ public class NGFreezeDtoMapper {
         .createdAt(freezeConfigEntity.getCreatedAt())
         .type(freezeConfigEntity.getType())
         .lastUpdatedAt(freezeConfigEntity.getLastUpdatedAt())
-        .currentOrUpcomingActiveWindow(
+        .currentOrUpcomingWindow(
             FreezeTimeUtils.fetchCurrentOrUpcomingTimeWindow(freezeConfig.getFreezeInfoConfig().getWindows()))
         .build();
   }
@@ -109,7 +124,7 @@ public class NGFreezeDtoMapper {
         .createdAt(freezeConfigEntity.getCreatedAt())
         .type(freezeConfigEntity.getType())
         .lastUpdatedAt(freezeConfigEntity.getLastUpdatedAt())
-        .currentOrUpcomingActiveWindow(
+        .currentOrUpcomingWindow(
             FreezeTimeUtils.fetchCurrentOrUpcomingTimeWindow(freezeConfig.getFreezeInfoConfig().getWindows()))
         .yaml(freezeConfigEntity.getYaml())
         .build();
@@ -133,8 +148,22 @@ public class NGFreezeDtoMapper {
         .createdAt(freezeResponseDTO.getCreatedAt())
         .type(freezeResponseDTO.getType())
         .lastUpdatedAt(freezeResponseDTO.getLastUpdatedAt())
-        .currentOrUpcomingActiveWindow(
+        .currentOrUpcomingWindow(
             FreezeTimeUtils.fetchCurrentOrUpcomingTimeWindow(freezeConfig.getFreezeInfoConfig().getWindows()))
+        .build();
+  }
+
+  public FreezeBannerDetails prepareBanner(FreezeResponseDTO freezeResponseDTO) {
+    FreezeConfig freezeConfig = toFreezeConfig(freezeResponseDTO.getYaml());
+    return FreezeBannerDetails.builder()
+        .accountId(freezeResponseDTO.getAccountId())
+        .orgIdentifier(freezeResponseDTO.getOrgIdentifier())
+        .projectIdentifier(freezeResponseDTO.getProjectIdentifier())
+        .windows(freezeConfig.getFreezeInfoConfig().getWindows())
+        .identifier(freezeResponseDTO.getIdentifier())
+        .name(freezeResponseDTO.getName())
+        .freezeScope(freezeResponseDTO.getFreezeScope())
+        .window(FreezeTimeUtils.fetchCurrentOrUpcomingTimeWindow(freezeConfig.getFreezeInfoConfig().getWindows()))
         .build();
   }
 
@@ -156,7 +185,7 @@ public class NGFreezeDtoMapper {
         .createdAt(freezeResponseDTO.getCreatedAt())
         .type(freezeResponseDTO.getType())
         .lastUpdatedAt(freezeResponseDTO.getLastUpdatedAt())
-        .currentOrUpcomingActiveWindow(
+        .currentOrUpcomingWindow(
             FreezeTimeUtils.fetchCurrentOrUpcomingTimeWindow(freezeConfig.getFreezeInfoConfig().getWindows()))
         .yaml(freezeResponseDTO.getYaml())
         .build();
@@ -197,5 +226,17 @@ public class NGFreezeDtoMapper {
       return Scope.ORG;
     }
     return Scope.ACCOUNT;
+  }
+
+  public String getFreezeRef(Scope freezeScope, String identifier) {
+    switch (freezeScope) {
+      case ACCOUNT:
+        return "account." + identifier;
+      case ORG:
+        return "org." + identifier;
+      case PROJECT:
+      default:
+        return identifier;
+    }
   }
 }

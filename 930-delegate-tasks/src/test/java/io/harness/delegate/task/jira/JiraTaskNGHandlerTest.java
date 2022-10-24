@@ -456,6 +456,78 @@ public class JiraTaskNGHandlerTest extends CategoryTest {
   @Test
   @Owner(developers = YUVRAJ)
   @Category(UnitTests.class)
+  public void testcreateIssue2() throws Exception {
+    Map<String, String> fields = new HashMap<>();
+    fields.put("QE Assignee", "your-jira-account-id");
+    fields.put("Test Summary", "No test added");
+    JiraConnectorDTO jiraConnectorDTO =
+        JiraConnectorDTO.builder()
+            .jiraUrl("https://harness.atlassian.net/")
+            .username("username")
+            .passwordRef(SecretRefData.builder().decryptedValue(new char[] {'3', '4', 'f', '5', '1'}).build())
+            .build();
+    JiraTaskNGParameters jiraTaskNGParameters = JiraTaskNGParameters.builder()
+                                                    .jiraConnectorDTO(jiraConnectorDTO)
+                                                    .action(JiraActionNG.CREATE_ISSUE)
+                                                    .projectKey("TJI")
+                                                    .issueType("Bug")
+                                                    .fields(fields)
+                                                    .fetchStatus(false)
+                                                    .ignoreComment(false)
+                                                    .build();
+    JiraIssueCreateMetadataNG jiraIssueCreateMetadataNG = Mockito.mock(JiraIssueCreateMetadataNG.class);
+
+    JiraProjectNG jiraProjectNG = Mockito.mock(JiraProjectNG.class);
+    Map<String, JiraProjectNG> project = new HashMap<>();
+    project.put("TJI", jiraProjectNG);
+    when(jiraIssueCreateMetadataNG.getProjects()).thenReturn(project);
+
+    JiraIssueTypeNG jiraIssueTypeNG = Mockito.mock(JiraIssueTypeNG.class);
+    Map<String, JiraIssueTypeNG> issueType = new HashMap<>();
+    issueType.put("Bug", jiraIssueTypeNG);
+    when(jiraProjectNG.getIssueTypes()).thenReturn(issueType);
+
+    Map<String, JiraFieldNG> fieldsMap = new HashMap<>();
+    JiraFieldNG jiraFieldNG1 = JiraFieldNG.builder().build();
+    jiraFieldNG1.setKey("QE Assignee");
+    jiraFieldNG1.setName("field1");
+    jiraFieldNG1.setSchema(JiraFieldSchemaNG.builder().type(JiraFieldTypeNG.USER).build());
+
+    JiraFieldNG jiraFieldNG2 = JiraFieldNG.builder().build();
+    jiraFieldNG2.setKey("Test Summary");
+    jiraFieldNG2.setName("field2");
+    jiraFieldNG2.setSchema(JiraFieldSchemaNG.builder().type(JiraFieldTypeNG.STRING).build());
+
+    fieldsMap.put("QE Assignee", jiraFieldNG1);
+    fieldsMap.put("Test Summary", jiraFieldNG2);
+    when(jiraIssueTypeNG.getFields()).thenReturn(fieldsMap);
+
+    JiraClient jiraClient = Mockito.mock(JiraClient.class);
+    PowerMockito.whenNew(JiraClient.class).withAnyArguments().thenReturn(jiraClient);
+    when(jiraClient.getIssueCreateMetadata("TJI", "Bug", null, false, false, false))
+        .thenReturn(jiraIssueCreateMetadataNG);
+    JiraUserData jiraUserData = new JiraUserData("JIRAUSERaccountId", "assignee", true, "your-jira-account-id");
+    jiraUserData.setName("Assignee");
+    when(jiraClient.getUsers("your-jira-account-id", null, null)).thenReturn(Arrays.asList(jiraUserData));
+
+    JiraIssueNG jiraIssueNG = Mockito.mock(JiraIssueNG.class);
+    Map<String, String> fields1 = new HashMap<>();
+    fields1.put("QE Assignee", "Assignee");
+    fields1.put("Test Summary", "No test added");
+    when(jiraClient.createIssue("TJI", "Bug", fields1, true, false)).thenReturn(jiraIssueNG);
+    JiraInstanceData jiraInstanceData = new JiraInstanceData(JiraInstanceData.JiraDeploymentType.CLOUD);
+    when(jiraClient.getInstanceData()).thenReturn(jiraInstanceData);
+    JiraTaskNGResponse jiraTaskNGResponse = jiraTaskNGHandler.createIssue(jiraTaskNGParameters);
+
+    assertThat(jiraTaskNGResponse.getIssue()).isNotNull();
+    assertThat(jiraTaskNGResponse).isNotNull();
+    assertThat(jiraTaskNGResponse.getIssue()).isEqualTo(jiraIssueNG);
+    assertThat(jiraTaskNGParameters.getFields()).isEqualTo(fields1);
+  }
+
+  @Test
+  @Owner(developers = YUVRAJ)
+  @Category(UnitTests.class)
   public void testupdateIssue() throws Exception {
     Map<String, String> fields = new HashMap<>();
     fields.put("QE Assignee", "your-jira-account-id");

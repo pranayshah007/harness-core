@@ -171,7 +171,11 @@ public class JiraTaskNGHandler {
             throw new InvalidRequestException(
                 "Found " + userDataList.size() + " jira users with this query. Should be exactly 1.");
           }
-          params.getFields().put(key, userDataList.get(0).getAccountId());
+          if (userDataList.get(0).getAccountId().startsWith("JIRAUSER")) {
+            params.getFields().put(key, userDataList.get(0).getName());
+          } else {
+            params.getFields().put(key, userDataList.get(0).getAccountId());
+          }
         }
       }
     });

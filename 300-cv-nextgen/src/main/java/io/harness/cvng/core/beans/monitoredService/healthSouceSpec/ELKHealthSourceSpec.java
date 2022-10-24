@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.validation.Valid;
+import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -35,7 +36,6 @@ import lombok.NoArgsConstructor;
 import lombok.Value;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.SuperBuilder;
-import org.hibernate.validator.constraints.NotEmpty;
 
 @Data
 @SuperBuilder
@@ -44,7 +44,7 @@ import org.hibernate.validator.constraints.NotEmpty;
 @EqualsAndHashCode(callSuper = true)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class ELKHealthSourceSpec extends HealthSourceSpec {
-  @NotNull String feature;
+  @NotNull @NotEmpty String feature;
 
   @NotNull @NotEmpty @Valid List<QueryDTO> queries;
 
@@ -54,13 +54,13 @@ public class ELKHealthSourceSpec extends HealthSourceSpec {
   @AllArgsConstructor
   @JsonIgnoreProperties(ignoreUnknown = true)
   public static class QueryDTO {
-    @NotNull String name;
+    @NotNull @NotEmpty String name;
     @NotNull String query;
-    @NotNull String index;
-    @NotNull String serviceInstanceIdentifier;
-    @NotNull String timeStampIdentifier;
-    @NotNull String timeStampFormat;
-    @NotNull String messageIdentifier;
+    @NotNull @NotEmpty String index;
+    @NotNull @NotEmpty String serviceInstanceIdentifier;
+    @NotNull @NotEmpty String timeStampIdentifier;
+    @NotNull @NotEmpty String timeStampFormat;
+    @NotNull @NotEmpty String messageIdentifier;
   }
 
   @Value
