@@ -22,6 +22,9 @@ public enum CIStepInfoType {
   BACKGROUND(CI_LITE_ENGINE, "Background"),
   PLUGIN(CI_LITE_ENGINE, "Plugin"),
   SECURITY(CI_LITE_ENGINE, "Security"),
+
+  BANDIT(CI_LITE_ENGINE, "Bandit"),
+
   GIT_CLONE(CI_LITE_ENGINE, "GitClone"),
   INITIALIZE_TASK(CI_LITE_ENGINE, "liteEngineTask"),
   RUN_TESTS(CI_LITE_ENGINE, "RunTests"),

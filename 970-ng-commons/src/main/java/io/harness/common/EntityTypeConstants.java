@@ -68,6 +68,7 @@ public interface EntityTypeConstants {
   String RESTORE_CACHE_S3 = "RestoreCacheS3";
   String SAVE_CACHE_GCS = "SaveCacheGCS";
   String SAVE_CACHE_S3 = "SaveCacheS3";
+  String BANDIT = "Bandit";
   String SECURITY = "Security";
   String SECURITY_STAGE = "SecurityStage";
   String SECURITY_STEPS = "SecuritySteps";

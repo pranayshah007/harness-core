@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.STO;
 
 import io.harness.advisers.rollback.OnFailRollbackParameters;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.steps.stepinfo.BanditStepInfo;
 import io.harness.beans.steps.stepinfo.SecurityStepInfo;
 import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.plancreator.steps.common.StepElementParameters.StepElementParametersBuilder;
@@ -23,7 +24,7 @@ import io.swagger.annotations.ApiModel;
 import java.time.Duration;
 import java.util.List;
 
-@ApiModel(subTypes = {SecurityStepInfo.class})
+@ApiModel(subTypes = {SecurityStepInfo.class, BanditStepInfo.class})
 @OwnedBy(STO)
 public interface STOStepInfo extends StepSpecType, WithStepElementParameters, SpecParameters {
   int MIN_RETRY = 0;

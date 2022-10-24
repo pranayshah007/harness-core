@@ -14,9 +14,11 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.beans.steps.StepSpecTypeConstants;
+import io.harness.ci.creator.variables.BanditStepVariableCreator;
 import io.harness.ci.creator.variables.STOStageVariableCreator;
 import io.harness.ci.creator.variables.STOStepVariableCreator;
 import io.harness.ci.creator.variables.SecurityStepVariableCreator;
+import io.harness.ci.plancreator.BanditStepPlanCreator;
 import io.harness.ci.plancreator.SecurityStepPlanCreator;
 import io.harness.enforcement.constants.FeatureRestrictionName;
 import io.harness.filters.EmptyAnyFilterJsonCreator;
@@ -66,6 +68,7 @@ public class STOPipelineServiceInfoProvider implements PipelineServiceInfoProvid
     planCreators.add(new SecurityStagePMSPlanCreator());
     planCreators.add(new STOPMSStepPlanCreator());
 
+    planCreators.add(new BanditStepPlanCreator());
     planCreators.add(new SecurityStepPlanCreator());
     planCreators.add(new NGStageStepsPlanCreator());
     planCreators.add(new ExecutionPmsPlanCreator());
@@ -95,6 +98,7 @@ public class STOPipelineServiceInfoProvider implements PipelineServiceInfoProvid
     variableCreators.add(new ExecutionVariableCreator());
     variableCreators.add(new STOStepVariableCreator());
 
+    variableCreators.add(new BanditStepVariableCreator());
     variableCreators.add(new SecurityStepVariableCreator());
     variableCreators.add(new EmptyAnyVariableCreator(Set.of(YAMLFieldNameConstants.PARALLEL, STEPS)));
     variableCreators.add(

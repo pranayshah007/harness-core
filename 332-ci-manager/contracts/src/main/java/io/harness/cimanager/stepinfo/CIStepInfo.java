@@ -13,6 +13,7 @@ import io.harness.advisers.rollback.OnFailRollbackParameters;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.steps.stepinfo.ACRStepInfo;
 import io.harness.beans.steps.stepinfo.BackgroundStepInfo;
+import io.harness.beans.steps.stepinfo.BanditStepInfo;
 import io.harness.beans.steps.stepinfo.DockerStepInfo;
 import io.harness.beans.steps.stepinfo.ECRStepInfo;
 import io.harness.beans.steps.stepinfo.GCRStepInfo;
@@ -40,8 +41,8 @@ import java.time.Duration;
 import java.util.List;
 
 @ApiModel(subTypes = {DockerStepInfo.class, ECRStepInfo.class, GCRStepInfo.class, PluginStepInfo.class,
-              SecurityStepInfo.class, RestoreCacheGCSStepInfo.class, RestoreCacheS3StepInfo.class, RunStepInfo.class,
-              SaveCacheGCSStepInfo.class, SaveCacheS3StepInfo.class, UploadToGCSStepInfo.class,
+              SecurityStepInfo.class, BanditStepInfo.class, RestoreCacheGCSStepInfo.class, RestoreCacheS3StepInfo.class,
+              RunStepInfo.class, SaveCacheGCSStepInfo.class, SaveCacheS3StepInfo.class, UploadToGCSStepInfo.class,
               UploadToS3StepInfo.class, UploadToArtifactoryStepInfo.class, RunTestsStepInfo.class, ACRStepInfo.class,
               GitCloneStepInfo.class, BackgroundStepInfo.class})
 @OwnedBy(CI)

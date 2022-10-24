@@ -92,6 +92,7 @@ public class EntityYamlRootNames {
   public static final String BACKGROUND_STEP = "Background";
   public static final String RUN_TEST = "RunTests";
   public static final String PLUGIN = "Plugin";
+  public static final String BANDIT = "Bandit";
   public static final String SECURITY = "Security";
   public static final String SECURITY_STAGE = "securityStage";
   public static final String SECURITY_STEP = "securitySteps";

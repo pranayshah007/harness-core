@@ -227,6 +227,9 @@ public enum EntityType {
       ModuleType.CI, EntityTypeConstants.SAVE_CACHE_S3, IdentifierRef.class, EntityYamlRootNames.SAVE_CACHE_S3),
   @JsonProperty(EntityTypeConstants.SECURITY)
   SECURITY(ModuleType.CI, EntityTypeConstants.SECURITY, IdentifierRef.class, EntityYamlRootNames.SECURITY),
+  @JsonProperty(EntityTypeConstants.BANDIT)
+  BANDIT(ModuleType.STO, EntityTypeConstants.BANDIT, IdentifierRef.class, EntityYamlRootNames.BANDIT),
+
   @JsonProperty(EntityTypeConstants.GIT_CLONE)
   GIT_CLONE(ModuleType.CI, EntityTypeConstants.GIT_CLONE, IdentifierRef.class, EntityYamlRootNames.GIT_CLONE),
   @JsonProperty(EntityTypeConstants.ARTIFACTORY_UPLOAD)

@@ -13,6 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.plugin.compatible.PluginCompatibleStep;
 import io.harness.beans.steps.nodes.ArtifactoryUploadNode;
 import io.harness.beans.steps.nodes.BackgroundStepNode;
+import io.harness.beans.steps.nodes.BanditScanNode;
 import io.harness.beans.steps.nodes.BuildAndPushACRNode;
 import io.harness.beans.steps.nodes.BuildAndPushDockerNode;
 import io.harness.beans.steps.nodes.BuildAndPushECRNode;
@@ -77,6 +78,7 @@ public class CIExecutionServiceModule extends AbstractModule {
       add(RestoreCacheS3Node.class);
       add(PluginStepNode.class);
       add(SecurityNode.class);
+      add(BanditScanNode.class);
       add(ArtifactoryUploadNode.class);
       add(GitCloneStepNode.class);
       add(InitializeStepNode.class);

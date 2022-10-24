@@ -13,6 +13,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.stages.SecurityStageNode;
 import io.harness.beans.steps.CIStepInfo;
+import io.harness.beans.steps.nodes.BanditScanNode;
 import io.harness.beans.steps.nodes.SecurityNode;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.yaml.schema.beans.SchemaNamespaceConstants;
@@ -47,6 +48,17 @@ public class StoBeansRegistrars {
                    .availableAtOrgLevel(false)
                    .availableAtAccountLevel(false)
                    .clazz(CIStepInfo.class)
+                   .build())
+          .add(YamlSchemaRootClass.builder()
+                   .entityType(EntityType.BANDIT)
+                   .availableAtProjectLevel(true)
+                   .availableAtOrgLevel(false)
+                   .yamlSchemaMetadata(YamlSchemaMetadata.builder()
+                                           .modulesSupported(Collections.singletonList(ModuleType.STO))
+                                           .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
+                                           .build())
+                   .availableAtAccountLevel(false)
+                   .clazz(BanditScanNode.class)
                    .build())
           .add(YamlSchemaRootClass.builder()
                    .entityType(EntityType.SECURITY)

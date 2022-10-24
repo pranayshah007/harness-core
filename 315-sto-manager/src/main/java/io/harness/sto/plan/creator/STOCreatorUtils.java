@@ -23,6 +23,6 @@ public class STOCreatorUtils {
   }
 
   public Set<String> getSupportedStepsV2() {
-    return Sets.newHashSet("Security");
+    return Sets.newHashSet("Security", "Bandit");
   }
 }
