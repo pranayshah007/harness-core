@@ -4,6 +4,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static java.time.Duration.ofMinutes;
 
+import io.harness.datacollection.utils.EmptyPredicate;
 import io.harness.event.reconciliation.DetectionStatus;
 import io.harness.event.reconciliation.ReconcilationAction;
 import io.harness.event.reconciliation.ReconciliationStatus;
@@ -319,8 +320,11 @@ public class DeploymentReconServiceHelper {
 
   public static Map<String, String> getRunningWFsFromTSDB(
       String accountId, long durationStartTs, long durationEndTs, TimeScaleDBService timeScaleDBService, String query) {
-    int totalTries = 0;
     Map<String, String> runningWFs = new HashMap<>();
+    if (EmptyPredicate.isEmpty(query)) {
+      return runningWFs;
+    }
+    int totalTries = 0;
     while (totalTries <= 3) {
       ResultSet resultSet = null;
       try (Connection connection = timeScaleDBService.getDBConnection();

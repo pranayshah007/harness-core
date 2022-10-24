@@ -23,7 +23,7 @@ public class ExecutionInterruptProcessor implements StepEventProcessor<TimeSerie
       "INSERT INTO EXECUTION_INTERRUPT (ID,ACCOUNT_ID,STATE_EXECUTION_INSTANCE_ID,TYPE,EXECUTION_ID,APP_ID,CREATED_BY,CREATED_AT,LAST_UPDATED_BY,LAST_UPDATED_AT) VALUES (?,?,?,?,?,?,?,?,?,?) ON CONFLICT (ID,CREATED_AT) DO UPDATE SET ACCOUNT_ID = EXCLUDED.ACCOUNT_ID,STATE_EXECUTION_INSTANCE_ID = EXCLUDED.STATE_EXECUTION_INSTANCE_ID,TYPE = EXCLUDED.TYPE,EXECUTION_ID = EXCLUDED.EXECUTION_ID,APP_ID = EXCLUDED.APP_ID,CREATED_BY = EXCLUDED.CREATED_BY,LAST_UPDATED_BY = EXCLUDED.LAST_UPDATED_BY,LAST_UPDATED_AT = EXCLUDED.LAST_UPDATED_AT";
 
   @Override
-  public void processEvent(TimeSeriesEventInfo eventInfo) throws Exception {
+  public void processEvent(TimeSeriesEventInfo eventInfo) {
     if (!timeScaleDBService.isValid()) {
       log.info("TimeScaleDB not found, not saving execution interrupt data to TimeScaleDB");
       return;

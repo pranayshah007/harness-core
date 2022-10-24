@@ -201,7 +201,7 @@ public class UsageMetricsEventPublisher {
     });
   }
 
-  private ExecutionInterruptTimeSeriesEvent constructExecutionInterruptTimeSeriesEvent(
+  public ExecutionInterruptTimeSeriesEvent constructExecutionInterruptTimeSeriesEvent(
       String accountId, ExecutionInterrupt executionInterrupt) {
     log.info("Reporting execution interrupt");
     Map<String, String> stringData = new HashMap<>();
