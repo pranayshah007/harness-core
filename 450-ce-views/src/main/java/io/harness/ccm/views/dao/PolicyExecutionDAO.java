@@ -9,14 +9,12 @@ package io.harness.ccm.views.dao;
 
 import static io.harness.persistence.HQuery.excludeValidate;
 
-import io.harness.beans.SortOrder;
 import io.harness.ccm.commons.entities.CCMTimeFilter;
 import io.harness.ccm.views.entities.PolicyExecution;
 import io.harness.ccm.views.entities.PolicyExecution.PolicyExecutionKeys;
 import io.harness.ccm.views.entities.PolicyExecutionFilter;
 import io.harness.ccm.views.service.PolicyExecutionService;
 import io.harness.exception.InvalidRequestException;
-import io.harness.ng.beans.PageRequest;
 import io.harness.persistence.HPersistence;
 
 import com.google.inject.Inject;
@@ -45,10 +43,13 @@ public class PolicyExecutionDAO {
   }
   public PolicyExecution get(String accountId, String uuid) {
     log.info("accountId: {}, uuid: {}", accountId, uuid);
-    return hPersistence.createQuery(PolicyExecution.class, excludeValidate)
+    Query<PolicyExecution> query = hPersistence.createQuery(PolicyExecution.class, excludeValidate);
+    query.field(PolicyExecution.PolicyExecutionKeys.accountId)
+        .equal(accountId)
         .field(PolicyExecution.PolicyExecutionKeys.uuid)
-        .equal(uuid)
-        .get();
+        .equal(uuid);
+    log.info(query.toString());
+    return query.get();
   }
 
   public List<PolicyExecution> filterExecution(PolicyExecutionFilter policyExecutionFilter) {
@@ -57,7 +58,7 @@ public class PolicyExecutionDAO {
                                        .equal(policyExecutionFilter.getAccountId());
     log.info("Added accountId filter");
     if (policyExecutionFilter.getAccountName() != null) {
-      query.field(PolicyExecutionKeys.targetAccounts).in(policyExecutionFilter.getAccountName());
+      query.field(PolicyExecutionKeys.targetAccount).in(policyExecutionFilter.getAccountName());
       log.info("Added target account filter");
     }
     if (policyExecutionFilter.getPolicyName() != null) {

@@ -43,13 +43,13 @@ public class PolicyExecution implements PersistentEntity, UuidAware, CreatedAtAw
   @Schema(description = "account id") String accountId;
   @Schema(description = "policyEnforcementIdentifier") String policyEnforcementIdentifier;
   @Schema(description = "policyIdentifier") String policyIdentifier;
-  @Schema(description = "cloudProvider") String cloudProvider;
+  @Schema(description = "cloudProvider") PolicyCloudProviderType cloudProvider;
   @Schema(description = "isDryRun") Boolean isDryRun;
-  @Schema(description = "targetAccounts") List<String> targetAccounts;
+  @Schema(description = "targetAccounts") String targetAccount;
   @Schema(description = "targetRegions") List<String> targetRegions;
   @Schema(description = "executionLogPath") String executionLogPath;
   @Schema(description = "executionLogBucketType") String executionLogBucketType;
-  @Schema(description = "executionCompletedAt") String executionCompletedAt;
+  @Schema(description = "executionCompletedAt") long executionCompletedAt;
   @Schema(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) String orgIdentifier;
   @Schema(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) String projectIdentifier;
   @Schema(description = NGCommonEntityConstants.CREATED_AT_MESSAGE) long createdAt;
@@ -79,7 +79,7 @@ public class PolicyExecution implements PersistentEntity, UuidAware, CreatedAtAw
         .policyIdentifier(getPolicyIdentifier())
         .cloudProvider(getCloudProvider())
         .isDryRun(getIsDryRun())
-        .targetAccounts(getTargetAccounts())
+        .targetAccount(getTargetAccount())
         .targetRegions(getTargetRegions())
         .executionLogPath(getExecutionLogPath())
         .executionLogBucketType(getExecutionLogBucketType())

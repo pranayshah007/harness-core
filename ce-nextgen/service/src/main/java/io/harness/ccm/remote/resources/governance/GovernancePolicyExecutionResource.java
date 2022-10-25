@@ -7,12 +7,8 @@
 
 package io.harness.ccm.remote.resources.governance;
 
-import com.google.auth.oauth2.ServiceAccountCredentials;
-import com.google.cloud.storage.Blob;
-import com.google.cloud.storage.BlobId;
-import com.google.cloud.storage.Storage;
-import com.google.cloud.storage.StorageOptions;
-import com.google.inject.Inject;
+import static io.harness.annotations.dev.HarnessTeam.CE;
+
 import io.harness.NGCommonEntityConstants;
 import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.annotations.dev.OwnedBy;
@@ -21,7 +17,6 @@ import io.harness.ccm.bigQuery.BigQueryService;
 import io.harness.ccm.rbac.CCMRbacHelper;
 import io.harness.ccm.views.dto.CreatePolicyExecutionDTO;
 import io.harness.ccm.views.dto.CreatePolicyExecutionFilterDTO;
-import io.harness.ccm.views.dto.CreatePolicyPackDTO;
 import io.harness.ccm.views.entities.PolicyExecution;
 import io.harness.ccm.views.entities.PolicyExecutionFilter;
 import io.harness.ccm.views.service.PolicyExecutionService;
@@ -29,6 +24,13 @@ import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.security.annotations.PublicApi;
+
+import com.google.auth.oauth2.ServiceAccountCredentials;
+import com.google.cloud.storage.Blob;
+import com.google.cloud.storage.BlobId;
+import com.google.cloud.storage.Storage;
+import com.google.cloud.storage.StorageOptions;
+import com.google.inject.Inject;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
@@ -39,9 +41,8 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
-
+import java.util.List;
+import java.util.Objects;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
@@ -53,9 +54,8 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import java.util.List;
-
-import static io.harness.annotations.dev.HarnessTeam.CE;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
 
 @Api("governance")
 @Path("governance")
@@ -126,26 +126,27 @@ public class GovernancePolicyExecutionResource {
     return ResponseDTO.newResponse(policyExecution.toDTO());
   }
 
-    @POST
-    @Path("execution/list")
-    @ApiOperation(value = "Get execution for account", nickname = "getPolicyExecution")
-    @Produces(MediaType.APPLICATION_JSON)
-    @Operation(operationId = "getPolicyExecution", description = "Fetch PolicyExecution ", summary = "Fetch PolicyExecution for account",
-            responses =
-                    {
-                            @io.swagger.v3.oas.annotations.responses.ApiResponse(
-                                    description = "Returns List of PolicyExecution", content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
-                    })
-    public ResponseDTO<List<PolicyExecution>>
-    filterPolicy(@Parameter(required = true, description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
-            NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
-                 @RequestBody(required = true,
-                           description = "Request body containing policy pack object") @Valid CreatePolicyExecutionFilterDTO createPolicyExecutionFilterDTO) {
-        // rbacHelper.checkPolicyExecutionPermission(accountId, null, null);
-        // TODO: Implement search support in this api
-        PolicyExecutionFilter policyExecutionFilter= createPolicyExecutionFilterDTO.getPolicyExecutionFilter();
-        return ResponseDTO.newResponse(policyExecutionService.filterExecution(policyExecutionFilter));
-    }
+  @POST
+  @Path("execution/list")
+  @ApiOperation(value = "Get execution for account", nickname = "getPolicyExecution")
+  @Produces(MediaType.APPLICATION_JSON)
+  @Operation(operationId = "getPolicyExecution", description = "Fetch PolicyExecution ",
+      summary = "Fetch PolicyExecution for account",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Returns List of PolicyExecution",
+            content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
+      })
+  public ResponseDTO<List<PolicyExecution>>
+  filterPolicy(@Parameter(required = true, description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
+                   NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
+      @RequestBody(required = true, description = "Request body containing policy pack object")
+      @Valid CreatePolicyExecutionFilterDTO createPolicyExecutionFilterDTO) {
+    // rbacHelper.checkPolicyExecutionPermission(accountId, null, null);
+    // TODO: Implement search support in this api
+    PolicyExecutionFilter policyExecutionFilter = createPolicyExecutionFilterDTO.getPolicyExecutionFilter();
+    return ResponseDTO.newResponse(policyExecutionService.filterExecution(policyExecutionFilter));
+  }
 
   @GET
   @Path("execution/{policyExecutionId}")
@@ -163,42 +164,51 @@ public class GovernancePolicyExecutionResource {
           NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @PathParam("policyExecutionId") @NotNull @Valid String policyExecutionId) {
     // Only resources.json file is of interest to us.
+    // TODO: Remove some log lines post UI integration and testing
     log.info("policyExecutionId {}", policyExecutionId);
     PolicyExecution policyExecution = policyExecutionService.get(accountId, policyExecutionId);
     log.info("policyExecution from mongo {}", policyExecution);
-    String[] path =
-        "ccm-custodian-bucket/wFHXHD0RRQWoO8tIZT5YVw/ba68515791a54d5793e0a546473963c9/ec2-unoptimized-ebs/resources.json"
-            .split("/");
-    // policyExecution.getExecutionLogPath().split("/");
+    String[] path = policyExecution.getExecutionLogPath().split("/");
     String bucket = path[0];
     String[] objectPath = new String[path.length - 1];
     for (int i = 0; i < objectPath.length; i++) {
       objectPath[i] = path[1 + i];
     }
     String objectName = String.join("/", objectPath);
+    objectName = objectName + "/resources.json";
     log.info("objectName: {}, bucket: {}", objectName, bucket);
-    // if (Objects.equals(policyExecution.getExecutionLogBucketType(), "GCS")) {
-    // Other ways to return this file is by using a signed url concept.
-    // https://cloud.google.com/storage/docs/access-control/signed-urls
-    log.info("Fetching files from GCS");
-    ServiceAccountCredentials credentials = bigQueryService.getCredentials(GCP_CREDENTIALS_PATH);
-    log.info("configuration.getGcpConfig().getGcpProjectId(): {}", configuration.getGcpConfig().getGcpProjectId());
-    Storage storage = StorageOptions.newBuilder()
-                          .setProjectId(configuration.getGcpConfig().getGcpProjectId())
-                          .setCredentials(credentials)
-                          .build()
-                          .getService();
-    log.info("storage {}", storage);
-    BlobId blobId = BlobId.of(bucket, objectName);
-    log.info("blobId {}", blobId);
-    Blob blob = storage.get(blobId);
-    log.info("blob: {}", blob);
-    return Response.ok(blob.getContent())
-        .header(CONTENT_TRANSFER_ENCODING, BINARY)
-        .type("text/plain; charset=UTF-8")
-        .header(CONTENT_DISPOSITION, ATTACHMENT_FILENAME + RESOURCESFILENAME + EXTENSION)
-        .build();
-    //    }
-    //    return null;
+    // Return response only when bucket type is GCS and execution has been completed by the worker.
+    if (Objects.equals(policyExecution.getExecutionLogBucketType(), "GCS")
+        && policyExecution.getExecutionCompletedAt() > 0) {
+      try {
+        // Other ways to return this file is by using a signed url concept. We can see this when adoption grows
+        // https://cloud.google.com/storage/docs/access-control/signed-urls
+        log.info("Fetching files from GCS");
+        ServiceAccountCredentials credentials = bigQueryService.getCredentials(GCP_CREDENTIALS_PATH);
+        log.info("configuration.getGcpConfig().getGcpProjectId(): {}", configuration.getGcpConfig().getGcpProjectId());
+        Storage storage = StorageOptions.newBuilder()
+                              .setProjectId(configuration.getGcpConfig().getGcpProjectId())
+                              .setCredentials(credentials)
+                              .build()
+                              .getService();
+        log.info("storage {}", storage);
+        BlobId blobId = BlobId.of(bucket, objectName);
+        log.info("blobId {}", blobId);
+        Blob blob = storage.get(blobId);
+        log.info("blob: {}", blob);
+        return Response.ok(blob.getContent())
+            .header(CONTENT_TRANSFER_ENCODING, BINARY)
+            .type("text/plain; charset=UTF-8")
+            .header(CONTENT_DISPOSITION, ATTACHMENT_FILENAME + RESOURCESFILENAME + EXTENSION)
+            .build();
+      } catch (Exception e) {
+        log.error("{}", e);
+        return null;
+      }
+    } else {
+      // Non GCS Unsupported atm
+      log.error("Bucket type is not GCS or execution is not yet completed");
+      return null;
+    }
   }
 }
