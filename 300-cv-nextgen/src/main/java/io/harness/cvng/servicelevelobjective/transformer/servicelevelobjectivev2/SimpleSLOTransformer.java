@@ -37,8 +37,8 @@ public class SimpleSLOTransformer implements SLOV2Transformer<SimpleServiceLevel
   @Inject private Map<SLOTargetType, SLOTargetTransformer> sloTargetTypeSLOTargetTransformerMap;
 
   @Override
-  public SimpleServiceLevelObjective getSLOV2(ProjectParams projectParams,
-                                              ServiceLevelObjectiveV2DTO serviceLevelObjectiveV2DTO, Boolean isEnabled) {
+  public SimpleServiceLevelObjective getSLOV2(
+      ProjectParams projectParams, ServiceLevelObjectiveV2DTO serviceLevelObjectiveV2DTO, Boolean isEnabled) {
     SimpleServiceLevelObjectiveSpec simpleServiceLevelObjectiveSpec =
         (SimpleServiceLevelObjectiveSpec) serviceLevelObjectiveV2DTO.getSpec();
     return SimpleServiceLevelObjective.builder()
@@ -57,7 +57,10 @@ public class SimpleSLOTransformer implements SLOV2Transformer<SimpleServiceLevel
         .sloTargetPercentage(serviceLevelObjectiveV2DTO.getSloTarget().getSloTargetPercentage())
         .enabled(isEnabled)
         .serviceLevelIndicatorType(simpleServiceLevelObjectiveSpec.getServiceLevelIndicatorType())
-        .serviceLevelIndicators(simpleServiceLevelObjectiveSpec.getServiceLevelIndicators().stream().map(ServiceLevelIndicatorDTO::getIdentifier).collect(Collectors.toList()))
+        .serviceLevelIndicators(simpleServiceLevelObjectiveSpec.getServiceLevelIndicators()
+                                    .stream()
+                                    .map(ServiceLevelIndicatorDTO::getIdentifier)
+                                    .collect(Collectors.toList()))
         .monitoredServiceIdentifier(simpleServiceLevelObjectiveSpec.getMonitoredServiceRef())
         .healthSourceIdentifier(simpleServiceLevelObjectiveSpec.getHealthSourceRef())
         .type(ServiceLevelObjectiveType.SIMPLE)

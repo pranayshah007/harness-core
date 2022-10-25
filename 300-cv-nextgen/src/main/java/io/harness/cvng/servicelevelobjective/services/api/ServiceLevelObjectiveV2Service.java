@@ -29,8 +29,8 @@ public interface ServiceLevelObjectiveV2Service extends DeleteEntityByHandler<Ab
   ServiceLevelObjectiveV2Response create(
       ProjectParams projectParams, ServiceLevelObjectiveV2DTO serviceLevelObjectiveDTO);
 
-  ServiceLevelObjectiveV2Response update(ProjectParams projectParams, String identifier,
-      ServiceLevelObjectiveV2DTO serviceLevelObjectiveDTO);
+  ServiceLevelObjectiveV2Response update(
+      ProjectParams projectParams, String identifier, ServiceLevelObjectiveV2DTO serviceLevelObjectiveDTO);
 
   AbstractServiceLevelObjective getEntity(ProjectParams projectParams, String identifier);
 
@@ -62,7 +62,7 @@ public interface ServiceLevelObjectiveV2Service extends DeleteEntityByHandler<Ab
 
   SimpleServiceLevelObjective getFromSLIIdentifier(ProjectParams projectParams, String serviceLevelIndicatorIdentifier);
 
- PageResponse<NotificationRuleResponse> getNotificationRules(
+  PageResponse<NotificationRuleResponse> getNotificationRules(
       ProjectParams projectParams, String sloIdentifier, PageParams pageParams);
 
   void beforeNotificationRuleDelete(ProjectParams projectParams, String notificationRuleRef);

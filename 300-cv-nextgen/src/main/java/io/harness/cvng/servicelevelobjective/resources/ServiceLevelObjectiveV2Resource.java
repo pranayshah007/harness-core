@@ -58,7 +58,7 @@ import retrofit2.http.Body;
 //              schema = @Schema(implementation = FailureDTO.class))
 //    })
 //@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode =
-//NGCommonEntityConstants.INTERNAL_SERVER_ERROR_CODE,
+// NGCommonEntityConstants.INTERNAL_SERVER_ERROR_CODE,
 //    description = NGCommonEntityConstants.INTERNAL_SERVER_ERROR_MESSAGE,
 //    content =
 //    {
@@ -124,8 +124,7 @@ public class ServiceLevelObjectiveV2Resource {
           "identifier") @ResourceIdentifier String identifier,
       @Parameter(description = "Details of the SLO to be updated") @NotNull @Valid
       @Body ServiceLevelObjectiveV2DTO serviceLevelObjectiveDTO) {
-    return new RestResponse<>(
-        serviceLevelObjectiveService.update(projectParams, identifier, serviceLevelObjectiveDTO));
+    return new RestResponse<>(serviceLevelObjectiveService.update(projectParams, identifier, serviceLevelObjectiveDTO));
   }
 
   @DELETE

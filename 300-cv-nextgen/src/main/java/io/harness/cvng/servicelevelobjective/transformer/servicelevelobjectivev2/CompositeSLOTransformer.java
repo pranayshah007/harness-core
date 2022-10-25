@@ -33,8 +33,8 @@ public class CompositeSLOTransformer implements SLOV2Transformer<CompositeServic
   @Inject private Map<SLOTargetType, SLOTargetTransformer> sloTargetTypeSLOTargetTransformerMap;
 
   @Override
-  public CompositeServiceLevelObjective getSLOV2(ProjectParams projectParams,
-                                                 ServiceLevelObjectiveV2DTO serviceLevelObjectiveV2DTO, Boolean isEnabled) {
+  public CompositeServiceLevelObjective getSLOV2(
+      ProjectParams projectParams, ServiceLevelObjectiveV2DTO serviceLevelObjectiveV2DTO, Boolean isEnabled) {
     CompositeServiceLevelObjectiveSpec compositeServiceLevelObjectiveSpec =
         (CompositeServiceLevelObjectiveSpec) serviceLevelObjectiveV2DTO.getSpec();
     return CompositeServiceLevelObjective.builder()

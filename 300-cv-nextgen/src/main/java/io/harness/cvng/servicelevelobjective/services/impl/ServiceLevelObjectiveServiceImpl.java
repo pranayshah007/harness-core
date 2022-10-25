@@ -141,8 +141,8 @@ public class ServiceLevelObjectiveServiceImpl implements ServiceLevelObjectiveSe
     validateCreate(serviceLevelObjectiveDTO, projectParams);
     try {
       ServiceLevelObjectiveV2DTO serviceLevelObjectiveV2DTO =
-              serviceLevelObjectiveTypeSLOV2TransformerMap.get(ServiceLevelObjectiveType.SIMPLE)
-                      .getSLOV2DTO(serviceLevelObjectiveDTO);
+          serviceLevelObjectiveTypeSLOV2TransformerMap.get(ServiceLevelObjectiveType.SIMPLE)
+              .getSLOV2DTO(serviceLevelObjectiveDTO);
       serviceLevelObjectiveV2Service.create(projectParams, serviceLevelObjectiveV2DTO);
     } catch (Exception e) {
       log.error("[SLO Data Mismatch]: SLOV2 not created", e);
@@ -151,8 +151,11 @@ public class ServiceLevelObjectiveServiceImpl implements ServiceLevelObjectiveSe
         MonitoredServiceParams.builderWithProjectParams(projectParams)
             .monitoredServiceIdentifier(serviceLevelObjectiveDTO.getMonitoredServiceRef())
             .build());
-    SimpleServiceLevelObjective serviceLevelObjectiveV2 = (SimpleServiceLevelObjective) serviceLevelObjectiveV2Service.getEntity(projectParams, serviceLevelObjectiveDTO.getIdentifier());
-    saveServiceLevelObjectiveEntity(projectParams, serviceLevelObjectiveDTO, monitoredService.isEnabled(), serviceLevelObjectiveV2.getServiceLevelIndicators());
+    SimpleServiceLevelObjective serviceLevelObjectiveV2 =
+        (SimpleServiceLevelObjective) serviceLevelObjectiveV2Service.getEntity(
+            projectParams, serviceLevelObjectiveDTO.getIdentifier());
+    saveServiceLevelObjectiveEntity(projectParams, serviceLevelObjectiveDTO, monitoredService.isEnabled(),
+        serviceLevelObjectiveV2.getServiceLevelIndicators());
     outboxService.save(ServiceLevelObjectiveCreateEvent.builder()
                            .resourceName(serviceLevelObjectiveDTO.getName())
                            .newServiceLevelObjectiveDTO(serviceLevelObjectiveDTO)
@@ -179,17 +182,18 @@ public class ServiceLevelObjectiveServiceImpl implements ServiceLevelObjectiveSe
     }
     try {
       ServiceLevelObjectiveV2DTO serviceLevelObjectiveV2DTO =
-              serviceLevelObjectiveTypeSLOV2TransformerMap.get(ServiceLevelObjectiveType.SIMPLE)
-                      .getSLOV2DTO(serviceLevelObjectiveDTO);
-      serviceLevelObjectiveV2Service.update(
-              projectParams, identifier, serviceLevelObjectiveV2DTO);
+          serviceLevelObjectiveTypeSLOV2TransformerMap.get(ServiceLevelObjectiveType.SIMPLE)
+              .getSLOV2DTO(serviceLevelObjectiveDTO);
+      serviceLevelObjectiveV2Service.update(projectParams, identifier, serviceLevelObjectiveV2DTO);
     } catch (Exception e) {
       log.error("[SLO Data Mismatch]: SLOV2 not updated", e);
     }
     ServiceLevelObjectiveDTO existingServiceLevelObjective =
         serviceLevelObjectiveToServiceLevelObjectiveDTO(serviceLevelObjective);
-    SimpleServiceLevelObjective updatedSimpleServiceLevelObjective = (SimpleServiceLevelObjective) serviceLevelObjectiveV2Service.getEntity(projectParams, identifier);
-    updateSLOEntity(projectParams, serviceLevelObjective, serviceLevelObjectiveDTO, updatedSimpleServiceLevelObjective.getServiceLevelIndicators());
+    SimpleServiceLevelObjective updatedSimpleServiceLevelObjective =
+        (SimpleServiceLevelObjective) serviceLevelObjectiveV2Service.getEntity(projectParams, identifier);
+    updateSLOEntity(projectParams, serviceLevelObjective, serviceLevelObjectiveDTO,
+        updatedSimpleServiceLevelObjective.getServiceLevelIndicators());
     outboxService.save(ServiceLevelObjectiveUpdateEvent.builder()
                            .resourceName(serviceLevelObjectiveDTO.getName())
                            .oldServiceLevelObjectiveDTO(existingServiceLevelObjective)
@@ -804,8 +808,8 @@ public class ServiceLevelObjectiveServiceImpl implements ServiceLevelObjectiveSe
         .build();
   }
 
-  private ServiceLevelObjective saveServiceLevelObjectiveEntity(
-          ProjectParams projectParams, ServiceLevelObjectiveDTO serviceLevelObjectiveDTO, boolean isEnabled, List<String> serviceLevelIndicators) {
+  private ServiceLevelObjective saveServiceLevelObjectiveEntity(ProjectParams projectParams,
+      ServiceLevelObjectiveDTO serviceLevelObjectiveDTO, boolean isEnabled, List<String> serviceLevelIndicators) {
     ServiceLevelObjective serviceLevelObjective =
         ServiceLevelObjective.builder()
             .accountId(projectParams.getAccountIdentifier())
