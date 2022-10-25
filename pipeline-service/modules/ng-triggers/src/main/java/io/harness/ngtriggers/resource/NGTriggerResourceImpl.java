@@ -173,9 +173,20 @@ public class NGTriggerResourceImpl implements NGTriggerResource {
       pageRequest = PageUtils.getPageRequest(page, size, sort);
     }
 
-    return ResponseDTO.newResponse(getNGPageResponse(
-        ngTriggerService.list(criteria, pageRequest)
-            .map(triggerEntity -> ngTriggerElementMapper.toNGTriggerDetailsResponseDTO(triggerEntity, true, false))));
+    return ResponseDTO.newResponse(getNGPageResponse(ngTriggerService.list(criteria, pageRequest).map(triggerEntity -> {
+      TriggerDetails triggerDetails =
+          ngTriggerService.fetchTriggerEntity(accountIdentifier, orgIdentifier, projectIdentifier, targetIdentifier,
+              triggerEntity.getIdentifier(), triggerEntity.getYaml(), triggerEntity.getWithServiceV2());
+
+      Map<String, Map<String, String>> errorMap = ngTriggerService.validatePipelineRef(triggerDetails);
+      boolean isPipelineInputOutdated = false;
+      if (!CollectionUtils.isEmpty(errorMap)) {
+        isPipelineInputOutdated = true;
+      }
+      NGTriggerDetailsResponseDTO responseDTO =
+          ngTriggerElementMapper.toNGTriggerDetailsResponseDTO(triggerEntity, true, false, isPipelineInputOutdated);
+      return responseDTO;
+    })));
   }
 
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_VIEW)
@@ -190,8 +201,19 @@ public class NGTriggerResourceImpl implements NGTriggerResource {
       return ResponseDTO.newResponse(null);
     }
 
+    TriggerDetails triggerDetails = ngTriggerService.fetchTriggerEntity(accountIdentifier, orgIdentifier,
+        projectIdentifier, targetIdentifier, ngTriggerEntity.get().getIdentifier(), ngTriggerEntity.get().getYaml(),
+        ngTriggerEntity.get().getWithServiceV2());
+
+    Map<String, Map<String, String>> errorMap = ngTriggerService.validatePipelineRef(triggerDetails);
+    boolean isPipelineInputOutdated = false;
+    if (!CollectionUtils.isEmpty(errorMap)) {
+      isPipelineInputOutdated = true;
+    }
+
     return ResponseDTO.newResponse(ngTriggerEntity.get().getVersion().toString(),
-        ngTriggerElementMapper.toNGTriggerDetailsResponseDTO(ngTriggerEntity.get(), true, true));
+        ngTriggerElementMapper.toNGTriggerDetailsResponseDTO(
+            ngTriggerEntity.get(), true, true, isPipelineInputOutdated));
   }
 
   @Timed

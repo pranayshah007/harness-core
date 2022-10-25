@@ -12,9 +12,9 @@ import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.accesscontrol.OrgIdentifier;
 import io.harness.accesscontrol.ProjectIdentifier;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.freeze.beans.FreezeReference;
 import io.harness.freeze.beans.response.FreezeSummaryResponseDTO;
 import io.harness.freeze.beans.response.ShouldDisableDeploymentFreezeResponseDTO;
-import io.harness.freeze.mappers.NGFreezeDtoMapper;
 import io.harness.freeze.service.FreezeEvaluateService;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
@@ -121,9 +121,10 @@ public class FreezeEvalutationResource {
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId) {
     List<FreezeSummaryResponseDTO> freezeSummaryResponseDTO =
         freezeEvaluateService.shouldDisableDeployment(accountId, orgId, projectId);
-    List<String> freezeReferences = new LinkedList<>();
+    List<FreezeReference> freezeReferences = new LinkedList<>();
     freezeSummaryResponseDTO.stream().forEach(freeze
-        -> freezeReferences.add(NGFreezeDtoMapper.getFreezeRef(freeze.getFreezeScope(), freeze.getIdentifier())));
+        -> freezeReferences.add(
+            FreezeReference.builder().freezeScope(freeze.getFreezeScope()).identifier(freeze.getIdentifier()).build()));
     boolean shouldDisableDeployment = !EmptyPredicate.isEmpty(freezeSummaryResponseDTO);
     return ResponseDTO.newResponse(ShouldDisableDeploymentFreezeResponseDTO.builder()
                                        .shouldDisable(shouldDisableDeployment)

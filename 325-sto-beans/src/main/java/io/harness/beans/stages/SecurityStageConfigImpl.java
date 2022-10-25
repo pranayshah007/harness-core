@@ -14,7 +14,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
 import io.harness.beans.dependencies.DependencyElement;
 import io.harness.beans.steps.StepSpecTypeConstants;
-import io.harness.beans.yaml.extended.cache.CacheOptions;
+import io.harness.beans.yaml.extended.cache.Caching;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.UseFromStageInfraYaml;
 import io.harness.beans.yaml.extended.platform.Platform;
@@ -80,7 +80,7 @@ public class SecurityStageConfigImpl implements IntegrationStageConfig {
   private ParameterField<Boolean> cloneCodebase;
 
   @YamlSchemaTypes(value = {SupportedPossibleFieldTypes.runtime})
-  @ApiModelProperty(dataType = "io.harness.beans.yaml.extended.cache.CacheOptions")
+  @ApiModelProperty(dataType = "io.harness.beans.yaml.extended.cache.Caching")
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
-  private CacheOptions cacheOptions;
+  private Caching caching;
 }

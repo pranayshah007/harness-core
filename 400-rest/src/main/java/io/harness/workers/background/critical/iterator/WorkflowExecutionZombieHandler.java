@@ -14,7 +14,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.ExecutionInterruptType;
 import io.harness.beans.ExecutionStatus;
-import io.harness.beans.FeatureName;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ff.FeatureFlagService;
@@ -57,9 +56,6 @@ public class WorkflowExecutionZombieHandler implements MongoPersistenceIterator.
 
   @Override
   public void handle(WorkflowExecution wfExecution) {
-    if (featureFlagService.isNotEnabled(FeatureName.WORKFLOW_EXECUTION_ZOMBIE_MONITOR, wfExecution.getAccountId())) {
-      return;
-    }
     log.debug("Evaluating if workflow execution {} is a zombie execution [workflowId={}]", wfExecution.getUuid(),
         wfExecution.getWorkflowId());
 

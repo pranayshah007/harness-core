@@ -19,7 +19,6 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
-import io.harness.cf.client.api.CfClient;
 import io.harness.lock.AcquiredLock;
 import io.harness.lock.PersistentLocker;
 import io.harness.rule.Owner;
@@ -39,17 +38,16 @@ public class DebeziumControllerTest extends CategoryTest {
   @Mock AcquiredLock acquiredLock;
   @Mock PersistentLocker persistentLocker;
   @Mock ExecutorService executorService;
-  @Mock CfClient cfClient;
   Properties props = new Properties();
   EventsFrameworkChangeConsumer eventsFrameworkChangeConsumer =
-      new EventsFrameworkChangeConsumer(60, "coll1", null, 1000, 1000);
+      new EventsFrameworkChangeConsumer(60, "coll1", null, 1000, 1000, null);
   @Test
   @Owner(developers = SHALINI)
   @Category(UnitTests.class)
   public void testGetLockName() {
     props.setProperty(DebeziumConfiguration.CONNECTOR_NAME, "conn1");
     DebeziumController debeziumController =
-        new DebeziumController(props, eventsFrameworkChangeConsumer, persistentLocker, executorService, cfClient);
+        new DebeziumController(props, eventsFrameworkChangeConsumer, persistentLocker, executorService);
     assertEquals(debeziumController.getLockName(),
         DEBEZIUM_LOCK_PREFIX + props.get(DebeziumConfiguration.CONNECTOR_NAME) + "-"
             + "coll1");
@@ -60,7 +58,7 @@ public class DebeziumControllerTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetEngine() {
     DebeziumController debeziumController =
-        new DebeziumController(props, eventsFrameworkChangeConsumer, persistentLocker, executorService, cfClient);
+        new DebeziumController(props, eventsFrameworkChangeConsumer, persistentLocker, executorService);
     assertThat(debeziumController.getEngine(props)).isInstanceOf(DebeziumEngine.class);
   }
 
@@ -69,7 +67,7 @@ public class DebeziumControllerTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testAcquireLock() throws InterruptedException {
     DebeziumController debeziumController =
-        new DebeziumController(props, eventsFrameworkChangeConsumer, persistentLocker, executorService, cfClient);
+        new DebeziumController(props, eventsFrameworkChangeConsumer, persistentLocker, executorService);
     doReturn(acquiredLock).when(persistentLocker).tryToAcquireInfiniteLockWithPeriodicRefresh(any(), any());
     assertThat(debeziumController.acquireLock(false)).isInstanceOf(AcquiredLock.class);
   }

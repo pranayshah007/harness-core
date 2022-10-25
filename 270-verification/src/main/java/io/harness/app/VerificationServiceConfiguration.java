@@ -15,6 +15,7 @@ import static java.util.Collections.singletonList;
 import io.harness.cf.CfClientConfig;
 import io.harness.ff.FeatureFlagConfig;
 import io.harness.mongo.MongoConfig;
+import io.harness.mongo.iterator.IteratorConfig;
 import io.harness.scheduler.SchedulerConfig;
 
 import software.wings.DataStorageMode;
@@ -66,6 +67,7 @@ public class VerificationServiceConfiguration extends Configuration implements A
   @JsonProperty("dataStorageMode") private DataStorageMode dataStorageMode;
   @JsonProperty("cfClientConfig") private CfClientConfig cfClientConfig;
   @JsonProperty("featureFlagConfig") private FeatureFlagConfig featureFlagConfig;
+  @JsonProperty("serviceGuardIteratorConfig") private IteratorConfig serviceGuardIteratorConfig;
 
   /**
    * Instantiates a new Main configuration.

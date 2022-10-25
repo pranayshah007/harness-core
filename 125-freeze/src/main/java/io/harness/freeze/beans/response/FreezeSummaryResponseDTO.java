@@ -67,4 +67,6 @@ public class FreezeSummaryResponseDTO {
   long lastUpdatedAt;
 
   Scope freezeScope;
+
+  String yaml;
 }

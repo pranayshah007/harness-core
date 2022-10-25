@@ -7,6 +7,8 @@
 
 package io.harness.freeze.beans.response;
 
+import io.harness.freeze.beans.FreezeReference;
+
 import java.util.List;
 import lombok.Builder;
 import lombok.Data;
@@ -15,5 +17,5 @@ import lombok.Data;
 @Builder
 public class ShouldDisableDeploymentFreezeResponseDTO {
   boolean shouldDisable;
-  List<String> freezeReferences;
+  List<FreezeReference> freezeReferences;
 }

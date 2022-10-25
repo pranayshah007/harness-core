@@ -103,29 +103,6 @@ public class NGFreezeDtoMapper {
         .lastUpdatedAt(freezeConfigEntity.getLastUpdatedAt())
         .currentOrUpcomingWindow(
             FreezeTimeUtils.fetchCurrentOrUpcomingTimeWindow(freezeConfig.getFreezeInfoConfig().getWindows()))
-        .build();
-  }
-
-  public FreezeDetailedResponseDTO prepareDetailedFreezeResponseDto(FreezeConfigEntity freezeConfigEntity) {
-    FreezeConfig freezeConfig = toFreezeConfig(freezeConfigEntity.getYaml());
-    return FreezeDetailedResponseDTO.builder()
-        .accountId(freezeConfigEntity.getAccountId())
-        .orgIdentifier(freezeConfigEntity.getOrgIdentifier())
-        .projectIdentifier(freezeConfigEntity.getProjectIdentifier())
-        .windows(freezeConfig.getFreezeInfoConfig().getWindows())
-        .rules(freezeConfig.getFreezeInfoConfig().getRules())
-        .identifier(freezeConfigEntity.getIdentifier())
-        .description(freezeConfigEntity.getDescription())
-        .name(freezeConfigEntity.getName())
-        .status(freezeConfigEntity.getStatus())
-        .freezeScope(freezeConfigEntity.getFreezeScope())
-        .tags(TagMapper.convertToMap(freezeConfigEntity.getTags()))
-        .lastUpdatedAt(freezeConfigEntity.getLastUpdatedAt())
-        .createdAt(freezeConfigEntity.getCreatedAt())
-        .type(freezeConfigEntity.getType())
-        .lastUpdatedAt(freezeConfigEntity.getLastUpdatedAt())
-        .currentOrUpcomingWindow(
-            FreezeTimeUtils.fetchCurrentOrUpcomingTimeWindow(freezeConfig.getFreezeInfoConfig().getWindows()))
         .yaml(freezeConfigEntity.getYaml())
         .build();
   }
@@ -150,6 +127,7 @@ public class NGFreezeDtoMapper {
         .lastUpdatedAt(freezeResponseDTO.getLastUpdatedAt())
         .currentOrUpcomingWindow(
             FreezeTimeUtils.fetchCurrentOrUpcomingTimeWindow(freezeConfig.getFreezeInfoConfig().getWindows()))
+        .yaml(freezeResponseDTO.getYaml())
         .build();
   }
 

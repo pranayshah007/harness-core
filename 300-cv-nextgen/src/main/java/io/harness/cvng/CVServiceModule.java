@@ -345,6 +345,8 @@ import io.harness.cvng.statemachine.services.api.CanaryTimeSeriesAnalysisStateEx
 import io.harness.cvng.statemachine.services.api.CompositeSLOMetricAnalysisStateExecutor;
 import io.harness.cvng.statemachine.services.api.DeploymentLogAnalysisStateExecutor;
 import io.harness.cvng.statemachine.services.api.DeploymentLogClusterStateExecutor;
+import io.harness.cvng.statemachine.services.api.DeploymentTimeSeriesAnalysisStateExecutor;
+import io.harness.cvng.statemachine.services.api.HostSamplingStateExecutor;
 import io.harness.cvng.statemachine.services.api.OrchestrationService;
 import io.harness.cvng.statemachine.services.api.PreDeploymentLogClusterStateExecutor;
 import io.harness.cvng.statemachine.services.api.SLIMetricAnalysisStateExecutor;
@@ -1079,6 +1081,12 @@ public class CVServiceModule extends AbstractModule {
         .in(Scopes.SINGLETON);
     stateTypeAnalysisStateExecutorMap.addBinding(StateType.COMPOSOITE_SLO_METRIC_ANALYSIS)
         .to(CompositeSLOMetricAnalysisStateExecutor.class)
+        .in(Scopes.SINGLETON);
+    stateTypeAnalysisStateExecutorMap.addBinding(StateType.HOST_SAMPLING_STATE)
+        .to(HostSamplingStateExecutor.class)
+        .in(Scopes.SINGLETON);
+    stateTypeAnalysisStateExecutorMap.addBinding(StateType.DEPLOYMENT_TIME_SERIES_ANALYSIS_STATE)
+        .to(DeploymentTimeSeriesAnalysisStateExecutor.class)
         .in(Scopes.SINGLETON);
   }
 

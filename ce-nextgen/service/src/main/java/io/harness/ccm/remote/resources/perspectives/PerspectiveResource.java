@@ -380,6 +380,10 @@ public class PerspectiveResource {
     ceView.setAccountId(accountId);
     log.info(ceView.toString());
     CEView newPerspective = updateTotalCost(ceViewService.update(ceView));
+    if (ceView.getName() != null && !ceView.getName().equals("")
+        && !oldPerspective.getName().equals(ceView.getName())) {
+      budgetService.updatePerspectiveName(accountId, ceView.getUuid(), ceView.getName());
+    }
     return ResponseDTO.newResponse(
         Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
           outboxService.save(new PerspectiveUpdateEvent(accountId, newPerspective.toDTO(), oldPerspective.toDTO()));
