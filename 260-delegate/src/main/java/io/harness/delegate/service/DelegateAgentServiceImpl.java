@@ -656,9 +656,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
         }
       }
 
-      if (this.isImmutableDelegate) {
-        startChroniqleQueueMonitor();
-      }
+      startChroniqleQueueMonitor();
 
       startMonitoringWatcher();
       checkForSSLCertVerification(accountId);
@@ -1085,6 +1083,10 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       } catch (Exception e) {
         log.error("Error checking for profile", e);
       }
+    } else {
+      log.warn(
+          "Unable to check/start delegate profile, shouldContactManager :{}, currently executing profile :{}, isLocked :{}, frozen :{}.",
+          shouldContactManager(), executingProfile.get(), isLocked(new File("profile")), frozen.get());
     }
   }
 
@@ -1343,6 +1345,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
 
   private void startChroniqleQueueMonitor() {
     if (chronicleEventTailer != null) {
+      chronicleEventTailer.setAccountId(accountId);
       chronicleEventTailer.startAsync().awaitRunning();
     }
   }

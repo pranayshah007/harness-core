@@ -49,6 +49,8 @@ public class PipelineFilterPropertiesDto extends FilterPropertiesDTO {
   private String description;
   @Schema(description = "These are the Module Properties on which the filter will be applied.")
   private org.bson.Document moduleProperties;
+  @Schema(description = "This is the Pipeline repo filter on which the filter will be applied.")
+  private String repoName;
 
   @Override
   public FilterType getFilterType() {

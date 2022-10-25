@@ -360,6 +360,7 @@ public class VerificationJobInstanceServiceImpl implements VerificationJobInstan
     switch (verificationJobInstance.getResolvedJob().getType()) {
       case CANARY:
       case BLUE_GREEN:
+      case AUTO:
         return verificationJobInstanceAnalysisService.getCanaryBlueGreenAdditionalInfo(
             accountId, verificationJobInstance);
       case TEST:

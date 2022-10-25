@@ -428,6 +428,11 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     if (!Strings.isNullOrEmpty(customerDTO.getCompanyName())) {
       builder.name(customerDTO.getCompanyName());
     }
+
+    if (customerDTO.getAddress() != null) {
+      builder.address(customerDTO.getAddress());
+    }
+
     CustomerDetailDTO customerDetailDTO = stripeHelper.updateCustomer(builder.build());
 
     // Update customer information at local After succeed

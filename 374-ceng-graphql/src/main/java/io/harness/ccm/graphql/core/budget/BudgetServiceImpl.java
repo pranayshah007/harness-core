@@ -101,6 +101,11 @@ public class BudgetServiceImpl implements BudgetService {
   }
 
   @Override
+  public void updatePerspectiveName(String accountId, String perspectiveId, String perspectiveName) {
+    budgetDao.updatePerspectiveName(accountId, perspectiveId, perspectiveName);
+  }
+
+  @Override
   public List<Budget> list(String accountId) {
     return budgetDao.list(accountId, Integer.MAX_VALUE - 1, 0);
   }

@@ -25,7 +25,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.ExecutionInterruptType;
 import io.harness.beans.ExecutionStatus;
-import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.ff.FeatureFlagService;
 import io.harness.rule.Owner;
@@ -75,21 +74,8 @@ public class WorkflowExecutionZombieHandlerTest {
 
   @Before
   public void setup() {
-    when(featureFlagService.isNotEnabled(eq(FeatureName.WORKFLOW_EXECUTION_ZOMBIE_MONITOR), any())).thenReturn(false);
     argSort = ArgumentCaptor.forClass(Sort.class);
     argFindOptions = ArgumentCaptor.forClass(FindOptions.class);
-  }
-
-  @Test
-  @Owner(developers = FERNANDOD)
-  @Category(UnitTests.class)
-  public void shouldIgnoreExecutionWhenFeatureFlagDisable() {
-    when(featureFlagService.isNotEnabled(eq(FeatureName.WORKFLOW_EXECUTION_ZOMBIE_MONITOR), any())).thenReturn(true);
-
-    monitorHandler.handle(createValidWorkflowExecution());
-
-    verify(wingsPersistence, never()).createQuery(any());
-    verify(workflowExecutionService, never()).triggerExecutionInterrupt(any());
   }
 
   @Test
@@ -262,6 +248,7 @@ public class WorkflowExecutionZombieHandlerTest {
     prepareWingsPersistence(Collections.singletonList(seInstance));
   }
 
+  @SuppressWarnings("unchecked")
   private void prepareWingsPersistence(List<StateExecutionInstance> instances) {
     Query<StateExecutionInstance> query = mock(Query.class);
     when(wingsPersistence.createQuery(StateExecutionInstance.class)).thenReturn(query);

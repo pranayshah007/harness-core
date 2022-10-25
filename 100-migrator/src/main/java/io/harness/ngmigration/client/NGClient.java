@@ -15,6 +15,7 @@ import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.dto.secrets.SecretResponseWrapper;
 import io.harness.ng.core.filestore.dto.FileDTO;
 import io.harness.ng.core.service.dto.ServiceResponse;
+import io.harness.ng.core.serviceoverride.beans.ServiceOverrideResponseDTO;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import okhttp3.RequestBody;
@@ -61,6 +62,10 @@ public interface NGClient {
   @POST("environmentsV2")
   Call<ResponseDTO<ConnectorResponseDTO>> createEnvironment(@Header("Authorization") String auth,
       @Query(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier, @Body JsonNode environmentDTO);
+
+  @POST("environmentsV2/serviceOverrides")
+  Call<ResponseDTO<ServiceOverrideResponseDTO>> upsertServiceOverride(@Header("Authorization") String auth,
+      @Query(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier, @Body JsonNode serviceOverrides);
 
   @POST("infrastructures")
   Call<ResponseDTO<ConnectorResponseDTO>> createInfrastructure(@Header("Authorization") String auth,

@@ -220,7 +220,6 @@ public class PcfRollbackCommandTaskHandler extends PcfCommandTaskHandler {
             cfCommandRequest.isUseCfCLI(), cfCommandRequest.getCfCliVersion()))
         .cfCliVersion(cfCommandRequest.getCfCliVersion())
         .limitPcfThreads(commandRollbackRequest.isLimitPcfThreads())
-        .ignorePcfConnectionContextCache(commandRollbackRequest.isIgnorePcfConnectionContextCache())
         .build();
   }
 

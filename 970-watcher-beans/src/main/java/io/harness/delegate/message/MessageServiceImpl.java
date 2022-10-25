@@ -388,14 +388,11 @@ public class MessageServiceImpl implements MessageService {
       } else {
         log.error("Failed to acquire lock {}", file.getPath());
       }
-    } catch (UncheckedTimeoutException e) {
-      log.error("Timed out writing data to {}. Couldn't store {}", name, dataToWrite);
     } catch (Exception e) {
       if (e.getMessage().contains(NO_SPACE_LEFT_ON_DEVICE_ERROR)) {
         log.error("Disk space is full.");
-      } else {
-        log.error("Error while writing data to {}. Couldn't store {}", name, dataToWrite, e);
       }
+      log.error("Error while writing data to {}. Couldn't store {}", name, dataToWrite, e);
     }
   }
 

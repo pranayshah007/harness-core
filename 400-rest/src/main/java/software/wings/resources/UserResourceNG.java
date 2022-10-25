@@ -274,9 +274,10 @@ public class UserResourceNG {
 
   @PUT
   @Path("invites/create-user")
-  public RestResponse<Boolean> createUserForInvite(
-      @Body @NotNull UserInviteDTO userInvite, @QueryParam("isScimInvite") boolean isScimInvite) {
-    userService.completeNGInvite(userInvite, isScimInvite);
+  public RestResponse<Boolean> createUserForInvite(@Body @NotNull UserInviteDTO userInvite,
+      @QueryParam("isScimInvite") boolean isScimInvite,
+      @QueryParam("shouldSendTwoFactorAuthResetEmail") boolean shouldSendTwoFactorAuthResetEmail) {
+    userService.completeNGInvite(userInvite, isScimInvite, shouldSendTwoFactorAuthResetEmail);
     return new RestResponse<>(true);
   }
 
