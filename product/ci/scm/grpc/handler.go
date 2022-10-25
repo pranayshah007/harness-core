@@ -104,6 +104,11 @@ func (h *handler) GetBatchFile(ctx context.Context, in *pb.GetBatchFileRequest) 
 	return file.BatchFindFile(ctx, in, h.log)
 }
 
+// GetBatchFileBase64 is used to return multiple files
+func (h *handler) GetBatchFileBase64(ctx context.Context, in *pb.GetBatchFileRequest) (*pb.FileBatchContentResponse, error) {
+	return file.BatchFindFile(ctx, in, h.log)
+}
+
 // UpdateFile is used to update a file
 func (h *handler) UpdateFile(ctx context.Context, in *pb.FileModifyRequest) (*pb.UpdateFileResponse, error) {
 	return file.UpdateFile(ctx, in, h.log)

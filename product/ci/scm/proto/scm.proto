@@ -290,6 +290,7 @@ message GetFileRequest {
     string ref = 4;
   }
   Provider provider = 5;
+  bool base64Encoding = 6;
 }
 
 message GetBatchFileRequest {
@@ -764,6 +765,7 @@ service SCM {
   // File functions
   rpc GetFile(GetFileRequest) returns (FileContent);
   rpc GetBatchFile(GetBatchFileRequest) returns (FileBatchContentResponse);
+  rpc GetBatchFileBase64(GetBatchFileRequest) returns (FileBatchContentResponse);
   rpc GetLatestFile(GetLatestFileRequest) returns (FileContent);
   rpc IsLatestFile(IsLatestFileRequest) returns (IsLatestFileResponse);
   rpc FindFilesInBranch(FindFilesInBranchRequest) returns (FindFilesInBranchResponse);
