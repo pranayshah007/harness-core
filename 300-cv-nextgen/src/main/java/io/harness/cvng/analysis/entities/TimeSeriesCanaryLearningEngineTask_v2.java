@@ -14,8 +14,8 @@ import lombok.Value;
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 public class TimeSeriesCanaryLearningEngineTask_v2 extends LearningEngineTask {
-  private String preDeploymentDataUrl;
-  private String postDeploymentDataUrl;
+  @Deprecated private String preDeploymentDataUrl;
+  @Deprecated private String postDeploymentDataUrl;
   private String controlDataUrl;
   private String testDataUrl;
   private String metricTemplateUrl;
