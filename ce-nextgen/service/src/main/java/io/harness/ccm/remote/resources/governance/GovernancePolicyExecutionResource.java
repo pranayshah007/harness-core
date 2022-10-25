@@ -7,11 +7,17 @@
 
 package io.harness.ccm.remote.resources.governance;
 
+import com.google.auth.oauth2.ServiceAccountCredentials;
+import com.google.cloud.storage.Blob;
+import com.google.cloud.storage.BlobId;
+import com.google.cloud.storage.Storage;
+import com.google.cloud.storage.StorageOptions;
 import com.google.inject.Inject;
 import io.harness.NGCommonEntityConstants;
 import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.CENextGenConfiguration;
+import io.harness.ccm.bigQuery.BigQueryService;
 import io.harness.ccm.rbac.CCMRbacHelper;
 import io.harness.ccm.views.dto.CreatePolicyExecutionDTO;
 import io.harness.ccm.views.dto.CreatePolicyPackDTO;
@@ -20,7 +26,6 @@ import io.harness.ccm.views.service.PolicyExecutionService;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
-import io.harness.security.annotations.InternalApi;
 import io.harness.security.annotations.PublicApi;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -45,8 +50,8 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import java.util.List;
-import java.util.Objects;
 
 import static io.harness.annotations.dev.HarnessTeam.CE;
 
@@ -78,9 +83,17 @@ import static io.harness.annotations.dev.HarnessTeam.CE;
     })
 
 public class GovernancePolicyExecutionResource {
+  private static final String CONTENT_TRANSFER_ENCODING = "Content-Transfer-Encoding";
+  private static final String BINARY = "binary";
+  private static final String CONTENT_DISPOSITION = "Content-Disposition";
+  private static final String ATTACHMENT_FILENAME = "attachment; filename=";
+  private static final String EXTENSION = ".json";
+  private static final String RESOURCESFILENAME = "resources";
+  public static final String GCP_CREDENTIALS_PATH = "GOOGLE_APPLICATION_CREDENTIALS";
   private final CCMRbacHelper rbacHelper;
   private final PolicyExecutionService policyExecutionService;
   @Inject CENextGenConfiguration configuration;
+  @Inject private BigQueryService bigQueryService;
 
   @Inject
   public GovernancePolicyExecutionResource(CCMRbacHelper rbacHelper, PolicyExecutionService policyExecutionService) {
@@ -90,7 +103,6 @@ public class GovernancePolicyExecutionResource {
 
   @POST
   @Hidden
-  @InternalApi
   @Path("execution")
   @Consumes(MediaType.APPLICATION_JSON)
   @ApiOperation(value = "Add a new policy execution api", nickname = "addPolicyExecution")
@@ -124,17 +136,18 @@ public class GovernancePolicyExecutionResource {
             content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
       })
   public ResponseDTO<List<PolicyExecution>>
-  listPolicyPack(@Parameter(required = true, description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
-                     NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
+  listPolicyExecution(
+      @Parameter(required = true, description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @RequestBody(required = true,
           description = "Request body containing policy pack object") @Valid CreatePolicyPackDTO createPolicyPackDTO) {
     // rbacHelper.checkPolicyExecutionPermission(accountId, null, null);
-
+    // TODO: Implement search support in this api
     return ResponseDTO.newResponse(policyExecutionService.list(accountId));
   }
 
   @GET
-  @Path("policyexecution/{policyExecutionId}")
+  @Path("execution/{policyExecutionId}")
   @Consumes(MediaType.APPLICATION_JSON)
   @ApiOperation(value = "Return logs for a policy execution", nickname = "getPolicyExecutionDetails")
   @Operation(operationId = "getPolicyExecutionDetails", summary = "Return logs for a policy execution ",
@@ -143,16 +156,48 @@ public class GovernancePolicyExecutionResource {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(responseCode = "default", description = "Return logs for a policy execution")
       })
-  public ResponseDTO<PolicyExecution>
+  public Response
   getPolicyExecutionDetails(
       @Parameter(required = true, description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @PathParam("policyExecutionId") @NotNull @Valid String policyExecutionId) {
+    // Only resources.json file is of interest to us.
+    log.info("policyExecutionId {}", policyExecutionId);
     PolicyExecution policyExecution = policyExecutionService.get(accountId, policyExecutionId);
-    if (Objects.equals(policyExecution.getExecutionLogBucketType(), "GCS")) {
-      log.info("Fetching files from GCS");
-
+    log.info("policyExecution from mongo {}", policyExecution);
+    String[] path =
+        "ccm-custodian-bucket/wFHXHD0RRQWoO8tIZT5YVw/ba68515791a54d5793e0a546473963c9/ec2-unoptimized-ebs/resources.json"
+            .split("/");
+    // policyExecution.getExecutionLogPath().split("/");
+    String bucket = path[0];
+    String[] objectPath = new String[path.length - 1];
+    for (int i = 0; i < objectPath.length; i++) {
+      objectPath[i] = path[1 + i];
     }
-    return ResponseDTO.newResponse();
+    String objectName = String.join("/", objectPath);
+    log.info("objectName: {}, bucket: {}", objectName, bucket);
+    // if (Objects.equals(policyExecution.getExecutionLogBucketType(), "GCS")) {
+    // Other ways to return this file is by using a signed url concept.
+    // https://cloud.google.com/storage/docs/access-control/signed-urls
+    log.info("Fetching files from GCS");
+    ServiceAccountCredentials credentials = bigQueryService.getCredentials(GCP_CREDENTIALS_PATH);
+    log.info("configuration.getGcpConfig().getGcpProjectId(): {}", configuration.getGcpConfig().getGcpProjectId());
+    Storage storage = StorageOptions.newBuilder()
+                          .setProjectId(configuration.getGcpConfig().getGcpProjectId())
+                          .setCredentials(credentials)
+                          .build()
+                          .getService();
+    log.info("storage {}", storage);
+    BlobId blobId = BlobId.of(bucket, objectName);
+    log.info("blobId {}", blobId);
+    Blob blob = storage.get(blobId);
+    log.info("blob: {}", blob);
+    return Response.ok(blob.getContent())
+        .header(CONTENT_TRANSFER_ENCODING, BINARY)
+        .type("text/plain; charset=UTF-8")
+        .header(CONTENT_DISPOSITION, ATTACHMENT_FILENAME + RESOURCESFILENAME + EXTENSION)
+        .build();
+    //    }
+    //    return null;
   }
 }

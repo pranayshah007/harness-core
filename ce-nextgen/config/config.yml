@@ -129,7 +129,7 @@ featureFlagConfig:
 deploymentClusterName: ""
 
 gcpConfig:
-  gcpProjectId: gcpProjectIdPlaceHolder
+  gcpProjectId: ccm-play
   gcpAwsConnectorCrudPubSubTopic: "ce-aws-connector-crud"
   gcpGcpConnectorCrudPubSubTopic: "ce-gcp-connector-crud"
   gcpAzureConnectorCrudPubSubTopic: "ce-azure-connector-crud"

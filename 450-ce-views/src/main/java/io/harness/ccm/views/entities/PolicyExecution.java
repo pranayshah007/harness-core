@@ -33,7 +33,7 @@ import org.mongodb.morphia.annotations.Id;
 @Data
 @Builder
 @StoreIn(DbAliases.CENG)
-@FieldNameConstants(innerTypeName = "PolicyExecutionId")
+@FieldNameConstants(innerTypeName = "PolicyExecutionKeys")
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Entity(value = "governancePolicyExecution", noClassnameStored = true)
@@ -41,7 +41,6 @@ import org.mongodb.morphia.annotations.Id;
 public class PolicyExecution implements PersistentEntity, UuidAware, CreatedAtAware, UpdatedAtAware, AccountAccess {
   @Id @Schema(description = "unique id") String uuid;
   @Schema(description = "account id") String accountId;
-  @Schema(description = "identifier") String identifier;
   @Schema(description = "policyEnforcementIdentifier") String policyEnforcementIdentifier;
   @Schema(description = "policyIdentifier") String policyIdentifier;
   @Schema(description = "cloudProvider") String cloudProvider;
@@ -60,16 +59,15 @@ public class PolicyExecution implements PersistentEntity, UuidAware, CreatedAtAw
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()
                  .name("PolicyExecution")
-                 .field(PolicyExecutionId.identifier)
-                 .field(PolicyExecutionId.accountId)
-                 .field(PolicyExecutionId.cloudProvider)
-                 .field(PolicyExecutionId.policyEnforcementIdentifier)
-                 .field(PolicyExecutionId.policyIdentifier)
-                 .field(PolicyExecutionId.orgIdentifier)
-                 .field(PolicyExecutionId.projectIdentifier)
+                 .field(PolicyExecutionKeys.accountId)
+                 .field(PolicyExecutionKeys.cloudProvider)
+                 .field(PolicyExecutionKeys.policyEnforcementIdentifier)
+                 .field(PolicyExecutionKeys.policyIdentifier)
+                 .field(PolicyExecutionKeys.orgIdentifier)
+                 .field(PolicyExecutionKeys.projectIdentifier)
                  .build())
-        .add(CompoundMongoIndex.builder().name("sort1").field(PolicyExecutionId.lastUpdatedAt).build())
-        .add(CompoundMongoIndex.builder().name("sort2").field(PolicyExecutionId.createdAt).build())
+        .add(CompoundMongoIndex.builder().name("sort1").field(PolicyExecutionKeys.lastUpdatedAt).build())
+        .add(CompoundMongoIndex.builder().name("sort2").field(PolicyExecutionKeys.createdAt).build())
         .build();
   }
 
@@ -77,7 +75,6 @@ public class PolicyExecution implements PersistentEntity, UuidAware, CreatedAtAw
     return PolicyExecution.builder()
         .uuid(getUuid())
         .accountId(getAccountId())
-        .identifier(getIdentifier())
         .policyEnforcementIdentifier(getPolicyEnforcementIdentifier())
         .policyIdentifier(getPolicyIdentifier())
         .cloudProvider(getCloudProvider())

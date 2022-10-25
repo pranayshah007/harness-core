@@ -7,14 +7,16 @@
 
 package io.harness.ccm.views.dao;
 
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
+import static io.harness.persistence.HQuery.excludeValidate;
+
 import io.harness.ccm.views.entities.PolicyExecution;
 import io.harness.ccm.views.service.PolicyExecutionService;
 import io.harness.persistence.HPersistence;
-import lombok.extern.slf4j.Slf4j;
 
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import java.util.List;
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Singleton
@@ -29,16 +31,15 @@ public class PolicyExecutionDAO {
 
   public List<PolicyExecution> list(String accountId) {
     return hPersistence.createQuery(PolicyExecution.class)
-        .field(PolicyExecution.PolicyExecutionId.accountId)
+        .field(PolicyExecution.PolicyExecutionKeys.accountId)
         .equal(accountId)
         .asList();
   }
 
   public PolicyExecution get(String accountId, String uuid) {
-    return hPersistence.createQuery(PolicyExecution.class)
-        .field(PolicyExecution.PolicyExecutionId.accountId)
-        .equal(accountId)
-        .field(PolicyExecution.PolicyExecutionId.uuid)
+    log.info("accountId: {}, uuid: {}", accountId, uuid);
+    return hPersistence.createQuery(PolicyExecution.class, excludeValidate)
+        .field(PolicyExecution.PolicyExecutionKeys.uuid)
         .equal(uuid)
         .get();
   }
