@@ -13,7 +13,7 @@ import io.harness.ccm.commons.entities.CCMTimeFilter;
 import static io.harness.ccm.commons.utils.TimeUtils.toOffsetDateTime;
 import io.harness.ccm.views.entities.PolicyExecution;
 import io.harness.ccm.views.service.PolicyExecutionService;
-import io.harness.ccm.views.entities.PolicyExecution.PolicyExecutionId;
+import io.harness.ccm.views.entities.PolicyExecution.PolicyExecutionKeys;
 import io.harness.ccm.views.entities.PolicyExecutionFilter;
 import io.harness.exception.InvalidRequestException;
 import io.harness.persistence.HPersistence;
@@ -38,30 +38,40 @@ public class PolicyExecutionDAO {
   }
 
   public List<PolicyExecution> list(String accountId) {
-    return hPersistence.createQuery(PolicyExecution.class).field(PolicyExecutionId.accountId).equal(accountId).asList();
+    return hPersistence.createQuery(PolicyExecution.class).
+            field(PolicyExecutionKeys.accountId).
+            equal(accountId)
+            .asList();
+  }
+  public PolicyExecution get(String accountId, String uuid) {
+    log.info("accountId: {}, uuid: {}", accountId, uuid);
+    return hPersistence.createQuery(PolicyExecution.class, excludeValidate)
+            .field(PolicyExecution.PolicyExecutionKeys.uuid)
+            .equal(uuid)
+            .get();
   }
 
   public List<PolicyExecution> filterExecution(PolicyExecutionFilter policyExecutionFilter) {
-    Query<PolicyExecution> query= hPersistence.createQuery(PolicyExecution.class).field(PolicyExecutionId.accountId).equal(policyExecutionFilter.getAccountId());
+    Query<PolicyExecution> query= hPersistence.createQuery(PolicyExecution.class).field(PolicyExecutionKeys.accountId).equal(policyExecutionFilter.getAccountId());
     log.info("Added accountId filter");
     if(policyExecutionFilter.getAccountName()!=null)
     {
-      query.field(PolicyExecutionId.targetAccounts).in(policyExecutionFilter.getAccountName());
+      query.field(PolicyExecutionKeys.targetAccounts).in(policyExecutionFilter.getAccountName());
       log.info("Added target account filter");
     }
     if(policyExecutionFilter.getPolicyName()!=null)
     {
-      query.field(PolicyExecutionId.policyIdentifier).in(policyExecutionFilter.getAccountName());
+      query.field(PolicyExecutionKeys.policyIdentifier).in(policyExecutionFilter.getAccountName());
       log.info("Added policy Identifier filter");
     }
     if(policyExecutionFilter.getRegion()!=null)
     {
-      query.field(PolicyExecutionId.targetRegions).in(policyExecutionFilter.getRegion());
+      query.field(PolicyExecutionKeys.targetRegions).in(policyExecutionFilter.getRegion());
       log.info("Added  target Regions filter");
     }
     if(policyExecutionFilter.getCloudProvider()!=null)
     {
-      query.field(PolicyExecutionId.cloudProvider).equal(policyExecutionFilter.getCloudProvider());
+      query.field(PolicyExecutionKeys.cloudProvider).equal(policyExecutionFilter.getCloudProvider());
       log.info("Added  cloud Provider filter");
     }
     if(policyExecutionFilter.getTime()!=null) {
@@ -69,9 +79,9 @@ public class PolicyExecutionDAO {
         log.info("Added time filter {}",time.getOperator() );
         switch (time.getOperator()) {
           case AFTER :
-            query.field(PolicyExecutionId.lastUpdatedAt).greaterThanOrEq(time.getTimestamp());
+            query.field(PolicyExecutionKeys.lastUpdatedAt).greaterThanOrEq(time.getTimestamp());
           case BEFORE :
-            query.field(PolicyExecutionId.lastUpdatedAt).lessThanOrEq(time.getTimestamp());
+            query.field(PolicyExecutionKeys.lastUpdatedAt).lessThanOrEq(time.getTimestamp());
           default:
             throw new InvalidRequestException("Operator not supported not supported for time fields");
         }
