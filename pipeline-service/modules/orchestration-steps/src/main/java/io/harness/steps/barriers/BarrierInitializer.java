@@ -42,7 +42,7 @@ public class BarrierInitializer implements OrchestrationStartObserver {
     try {
       switch (version) {
         case V1:
-          // TODO: Add yaml version
+          // TODO: Barrier support
           return;
         case V0:
           Map<String, BarrierSetupInfo> barrierIdentifierSetupInfoMap =

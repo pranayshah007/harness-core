@@ -16,7 +16,6 @@ import io.harness.pms.contracts.advisers.AdviserType;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.contracts.plan.Dependency;
-import io.harness.pms.plan.creation.PlanCreatorUtils;
 import io.harness.pms.sdk.core.adviser.OrchestrationAdviserTypes;
 import io.harness.pms.sdk.core.plan.PlanNode;
 import io.harness.pms.sdk.core.plan.PlanNode.PlanNodeBuilder;
@@ -33,6 +32,7 @@ import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepSpecTypeConstants;
 import io.harness.steps.shellscript.ShellScriptStepNode;
 import io.harness.timeout.trackers.absolute.AbsoluteTimeoutTrackerFactory;
+import io.harness.utils.TimeoutUtils;
 import io.harness.when.utils.RunInfoUtils;
 
 import com.google.common.collect.Sets;
@@ -75,12 +75,13 @@ public class ShellScriptStepPlanCreatorV1 implements PartialPlanCreator<YamlFiel
                         FacilitatorType.newBuilder().setType(stepNode.getStepSpecType().getFacilitatorType()).build())
                     .build())
             .whenCondition(RunInfoUtils.getRunCondition(stepNode.getWhen()))
-            .timeoutObtainment(SdkTimeoutObtainment.builder()
-                                   .dimension(AbsoluteTimeoutTrackerFactory.DIMENSION)
-                                   .parameters(AbsoluteSdkTimeoutTrackerParameters.builder()
-                                                   .timeout(PlanCreatorUtils.getTimeoutString(stepNode.getTimeout()))
-                                                   .build())
-                                   .build())
+            .timeoutObtainment(
+                SdkTimeoutObtainment.builder()
+                    .dimension(AbsoluteTimeoutTrackerFactory.DIMENSION)
+                    .parameters(AbsoluteSdkTimeoutTrackerParameters.builder()
+                                    .timeout(TimeoutUtils.getTimeoutParameterFieldString(stepNode.getTimeout()))
+                                    .build())
+                    .build())
             .skipUnresolvedExpressionsCheck(stepNode.getStepSpecType().skipUnresolvedExpressionsCheck())
             .expressionMode(stepNode.getStepSpecType().getExpressionMode());
 

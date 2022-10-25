@@ -18,7 +18,6 @@ import io.harness.pms.contracts.advisers.AdviserType;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.contracts.plan.Dependency;
-import io.harness.pms.plan.creation.PlanCreatorUtils;
 import io.harness.pms.sdk.core.adviser.OrchestrationAdviserTypes;
 import io.harness.pms.sdk.core.plan.PlanNode;
 import io.harness.pms.sdk.core.plan.PlanNode.PlanNodeBuilder;
@@ -84,12 +83,13 @@ public class HttpStepPlanCreatorV1 implements PartialPlanCreator<YamlField> {
                         FacilitatorType.newBuilder().setType(stepNode.getStepSpecType().getFacilitatorType()).build())
                     .build())
             .whenCondition(RunInfoUtils.getRunCondition(stepNode.getWhen()))
-            .timeoutObtainment(SdkTimeoutObtainment.builder()
-                                   .dimension(AbsoluteTimeoutTrackerFactory.DIMENSION)
-                                   .parameters(AbsoluteSdkTimeoutTrackerParameters.builder()
-                                                   .timeout(PlanCreatorUtils.getTimeoutString(stepNode.getTimeout()))
-                                                   .build())
-                                   .build())
+            .timeoutObtainment(
+                SdkTimeoutObtainment.builder()
+                    .dimension(AbsoluteTimeoutTrackerFactory.DIMENSION)
+                    .parameters(AbsoluteSdkTimeoutTrackerParameters.builder()
+                                    .timeout(TimeoutUtils.getTimeoutParameterFieldString(stepNode.getTimeout()))
+                                    .build())
+                    .build())
             .skipUnresolvedExpressionsCheck(stepNode.getStepSpecType().skipUnresolvedExpressionsCheck())
             .expressionMode(stepNode.getStepSpecType().getExpressionMode());
 
