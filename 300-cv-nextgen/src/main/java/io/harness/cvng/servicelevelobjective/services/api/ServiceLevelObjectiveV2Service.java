@@ -28,13 +28,9 @@ import java.util.List;
 public interface ServiceLevelObjectiveV2Service extends DeleteEntityByHandler<AbstractServiceLevelObjective> {
   ServiceLevelObjectiveV2Response create(
       ProjectParams projectParams, ServiceLevelObjectiveV2DTO serviceLevelObjectiveDTO);
-  ServiceLevelObjectiveV2Response createV2(ProjectParams projectParams,
-      ServiceLevelObjectiveV2DTO serviceLevelObjectiveDTO, List<String> serviceLevelIndicators);
 
-  ServiceLevelObjectiveV2Response updateV2(
-      ProjectParams projectParams, String identifier, ServiceLevelObjectiveV2DTO serviceLevelObjectiveDTO);
   ServiceLevelObjectiveV2Response update(ProjectParams projectParams, String identifier,
-      ServiceLevelObjectiveV2DTO serviceLevelObjectiveDTO, List<String> serviceLevelIndicators);
+      ServiceLevelObjectiveV2DTO serviceLevelObjectiveDTO);
 
   AbstractServiceLevelObjective getEntity(ProjectParams projectParams, String identifier);
 
@@ -66,11 +62,7 @@ public interface ServiceLevelObjectiveV2Service extends DeleteEntityByHandler<Ab
 
   SimpleServiceLevelObjective getFromSLIIdentifier(ProjectParams projectParams, String serviceLevelIndicatorIdentifier);
 
-  List<SLOErrorBudgetResetDTO> getErrorBudgetResetHistory(ProjectParams projectParams, String sloIdentifier);
-
-  SLOErrorBudgetResetDTO resetErrorBudget(ProjectParams projectParams, SLOErrorBudgetResetDTO resetDTO);
-
-  PageResponse<NotificationRuleResponse> getNotificationRules(
+ PageResponse<NotificationRuleResponse> getNotificationRules(
       ProjectParams projectParams, String sloIdentifier, PageParams pageParams);
 
   void beforeNotificationRuleDelete(ProjectParams projectParams, String notificationRuleRef);

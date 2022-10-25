@@ -24,7 +24,6 @@ import io.harness.ng.core.mapper.TagMapper;
 
 import com.google.inject.Inject;
 import java.time.Instant;
-import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -35,7 +34,7 @@ public class CompositeSLOTransformer implements SLOV2Transformer<CompositeServic
 
   @Override
   public CompositeServiceLevelObjective getSLOV2(ProjectParams projectParams,
-      ServiceLevelObjectiveV2DTO serviceLevelObjectiveV2DTO, Boolean isEnabled, List<String> serviceLevelIndicators) {
+                                                 ServiceLevelObjectiveV2DTO serviceLevelObjectiveV2DTO, Boolean isEnabled) {
     CompositeServiceLevelObjectiveSpec compositeServiceLevelObjectiveSpec =
         (CompositeServiceLevelObjectiveSpec) serviceLevelObjectiveV2DTO.getSpec();
     return CompositeServiceLevelObjective.builder()

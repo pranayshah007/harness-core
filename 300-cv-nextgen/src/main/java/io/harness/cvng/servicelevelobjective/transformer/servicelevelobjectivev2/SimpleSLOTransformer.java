@@ -12,6 +12,7 @@ import io.harness.cvng.notification.beans.NotificationRuleType;
 import io.harness.cvng.notification.services.api.NotificationRuleService;
 import io.harness.cvng.servicelevelobjective.beans.SLOTargetDTO;
 import io.harness.cvng.servicelevelobjective.beans.SLOTargetType;
+import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorDTO;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveDTO;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveType;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2DTO;
@@ -25,8 +26,8 @@ import io.harness.ng.core.mapper.TagMapper;
 import com.google.inject.Inject;
 import java.time.Instant;
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class SimpleSLOTransformer implements SLOV2Transformer<SimpleServiceLevelObjective> {
   @Inject NotificationRuleService notificationRuleService;
@@ -37,7 +38,7 @@ public class SimpleSLOTransformer implements SLOV2Transformer<SimpleServiceLevel
 
   @Override
   public SimpleServiceLevelObjective getSLOV2(ProjectParams projectParams,
-      ServiceLevelObjectiveV2DTO serviceLevelObjectiveV2DTO, Boolean isEnabled, List<String> serviceLevelIndicators) {
+                                              ServiceLevelObjectiveV2DTO serviceLevelObjectiveV2DTO, Boolean isEnabled) {
     SimpleServiceLevelObjectiveSpec simpleServiceLevelObjectiveSpec =
         (SimpleServiceLevelObjectiveSpec) serviceLevelObjectiveV2DTO.getSpec();
     return SimpleServiceLevelObjective.builder()
@@ -56,7 +57,7 @@ public class SimpleSLOTransformer implements SLOV2Transformer<SimpleServiceLevel
         .sloTargetPercentage(serviceLevelObjectiveV2DTO.getSloTarget().getSloTargetPercentage())
         .enabled(isEnabled)
         .serviceLevelIndicatorType(simpleServiceLevelObjectiveSpec.getServiceLevelIndicatorType())
-        .serviceLevelIndicators(serviceLevelIndicators)
+        .serviceLevelIndicators(simpleServiceLevelObjectiveSpec.getServiceLevelIndicators().stream().map(ServiceLevelIndicatorDTO::getIdentifier).collect(Collectors.toList()))
         .monitoredServiceIdentifier(simpleServiceLevelObjectiveSpec.getMonitoredServiceRef())
         .healthSourceIdentifier(simpleServiceLevelObjectiveSpec.getHealthSourceRef())
         .type(ServiceLevelObjectiveType.SIMPLE)

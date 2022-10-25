@@ -17,8 +17,6 @@ import java.util.Set;
 public interface SLOErrorBudgetResetService {
   SLOErrorBudgetResetDTO resetErrorBudget(ProjectParams projectParams, SLOErrorBudgetResetDTO sloErrorBudgetResetDTO);
 
-  SLOErrorBudgetResetDTO resetErrorBudgetV2(ProjectParams projectParams, SLOErrorBudgetResetDTO sloErrorBudgetResetDTO);
-
   List<SLOErrorBudgetResetDTO> getErrorBudgetResets(ProjectParams projectParams, String sloIdentifier);
 
   Map<String, List<SLOErrorBudgetResetDTO>> getErrorBudgetResets(

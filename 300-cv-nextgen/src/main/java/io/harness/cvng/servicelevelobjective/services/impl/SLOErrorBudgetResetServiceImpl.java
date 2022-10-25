@@ -66,30 +66,6 @@ public class SLOErrorBudgetResetServiceImpl implements SLOErrorBudgetResetServic
   }
 
   @Override
-  public SLOErrorBudgetResetDTO resetErrorBudgetV2(
-      ProjectParams projectParams, SLOErrorBudgetResetDTO sloErrorBudgetResetDTO) {
-    AbstractServiceLevelObjective serviceLevelObjective = serviceLevelObjectiveV2Service.getEntity(
-        projectParams, sloErrorBudgetResetDTO.getServiceLevelObjectiveIdentifier());
-    Preconditions.checkNotNull(serviceLevelObjective, "SLO with identifier:%s not found",
-        sloErrorBudgetResetDTO.getServiceLevelObjectiveIdentifier());
-    SLOErrorBudgetReset sloErrorBudgetReset = entityFromDTO(projectParams, sloErrorBudgetResetDTO,
-        serviceLevelObjective
-            .getCurrentTimeRange(LocalDateTime.ofInstant(clock.instant(), serviceLevelObjective.getZoneOffset()))
-            .getEndTime()
-            .toInstant(ZoneOffset.UTC));
-    hPersistence.save(sloErrorBudgetReset);
-    sloHealthIndicatorService.upsert(serviceLevelObjective);
-    //    outboxService.save(ServiceLevelObjectiveErrorBudgetResetEvent.builder()
-    //                           .resourceName(serviceLevelObjective.getName())
-    //                           .accountIdentifier(projectParams.getAccountIdentifier())
-    //                           .serviceLevelObjectiveIdentifier(serviceLevelObjective.getIdentifier())
-    //                           .orgIdentifier(projectParams.getOrgIdentifier())
-    //                           .projectIdentifier(projectParams.getProjectIdentifier())
-    //                           .build());
-    return dtoFromEntity(sloErrorBudgetReset);
-  }
-
-  @Override
   public List<SLOErrorBudgetResetDTO> getErrorBudgetResets(ProjectParams projectParams, String sloIdentifier) {
     return hPersistence.createQuery(SLOErrorBudgetReset.class)
         .filter(SLOErrorBudgetResetKeys.accountId, projectParams.getAccountIdentifier())
