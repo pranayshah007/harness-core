@@ -17,17 +17,21 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.task.k8s.K8sTaskHelperBase;
 import io.harness.exception.InvalidRequestException;
 import io.harness.k8s.KubernetesContainerService;
+import io.harness.k8s.model.K8sContainer;
 import io.harness.k8s.model.K8sPod;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.perpetualtask.PerpetualTaskId;
 import io.harness.perpetualtask.instancesyncv2.DirectK8sInstanceSyncTaskDetails;
 
 import software.wings.beans.infrastructure.instance.info.InstanceInfo;
+import software.wings.beans.infrastructure.instance.info.K8sContainerInfo;
+import software.wings.beans.infrastructure.instance.info.K8sPodInfo;
 import software.wings.beans.infrastructure.instance.info.KubernetesContainerInfo;
 import software.wings.helpers.ext.container.ContainerDeploymentDelegateHelper;
 import software.wings.helpers.ext.k8s.request.K8sClusterConfig;
 
 import com.google.inject.Inject;
+import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -50,14 +54,25 @@ public class CgK8sInstancesDetailsFetcher implements InstanceDetailsFetcher {
       List<K8sPod> k8sPodList = k8sTaskHelperBase.getPodDetails(
           kubernetesConfig, config.getNamespace(), k8sInstanceSyncTaskDetails.getReleaseName(), timeoutMillis);
       return k8sPodList.stream()
-          .map(pod
-              -> KubernetesContainerInfo.builder()
-                     .clusterName(config.getClusterName())
-                     .podName(pod.getName())
-                     .ip(pod.getPodIP())
-                     .namespace(k8sInstanceSyncTaskDetails.getNamespace())
-                     .releaseName(k8sInstanceSyncTaskDetails.getReleaseName())
-                     .build())
+          .map(pod -> {
+            List<K8sContainerInfo> k8sContainerInfos = pod.getContainerList()
+                                                           .stream()
+                                                           .map(container
+                                                               -> K8sContainerInfo.builder()
+                                                                      .containerId(container.getContainerId())
+                                                                      .image(container.getImage())
+                                                                      .name(container.getName())
+                                                                      .build())
+                                                           .collect(toList());
+            return K8sPodInfo.builder()
+                .containers(k8sContainerInfos)
+                .clusterName(config.getClusterName())
+                .podName(pod.getName())
+                .ip(pod.getPodIP())
+                .namespace(k8sInstanceSyncTaskDetails.getNamespace())
+                .releaseName(k8sInstanceSyncTaskDetails.getReleaseName())
+                .build();
+          })
           .collect(toList());
     } catch (Exception exception) {
       throw new InvalidRequestException(String.format("Failed to fetch containers info for namespace: [%s] ",
