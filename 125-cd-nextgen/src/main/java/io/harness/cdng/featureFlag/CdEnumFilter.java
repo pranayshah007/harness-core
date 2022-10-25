@@ -24,7 +24,7 @@ public class CdEnumFilter extends EnumFeatureFlagFilter {
 
   public CdEnumFilter() {
     put(FeatureName.SSH_NG, Sets.newHashSet(ServiceDefinitionType.SSH, ServiceDefinitionType.WINRM));
-    put(FeatureName.NG_DEPLOYMENT_TEMPLATE, Sets.newHashSet(ServiceDefinitionType.CUSTOM_DEPLOYMENT));
+    put(FeatureName.NG_SVC_ENV_REDESIGN, Sets.newHashSet(ServiceDefinitionType.CUSTOM_DEPLOYMENT));
   }
 
   @Override

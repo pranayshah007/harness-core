@@ -8,6 +8,7 @@
 package software.wings.service.impl.instance;
 
 import static io.harness.annotations.dev.HarnessTeam.DX;
+import static io.harness.beans.ExecutionStatus.FAILED;
 import static io.harness.beans.PageRequest.PageRequestBuilder.aPageRequest;
 import static io.harness.beans.PageResponse.PageResponseBuilder.aPageResponse;
 import static io.harness.beans.SearchFilter.Operator.EQ;
@@ -28,6 +29,7 @@ import static software.wings.beans.EntityType.APPLICATION;
 import static software.wings.beans.EntityType.ARTIFACT;
 import static software.wings.beans.infrastructure.instance.Instance.InstanceKeys;
 import static software.wings.features.DeploymentHistoryFeature.FEATURE_NAME;
+import static software.wings.sm.StateType.PHASE;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
@@ -122,6 +124,7 @@ import software.wings.service.intfc.WorkflowService;
 import software.wings.service.intfc.instance.DashboardStatisticsService;
 import software.wings.service.intfc.instance.InstanceService;
 import software.wings.sm.PipelineSummary;
+import software.wings.sm.StateExecutionInstance;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
@@ -894,7 +897,8 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
     return constructCurrentActiveInstances(instanceInfoList, appId, accountId, serviceId);
   }
 
-  private List<CurrentActiveInstances> constructCurrentActiveInstances(
+  @VisibleForTesting
+  public List<CurrentActiveInstances> constructCurrentActiveInstances(
       List<AggregationInfo> aggregationInfoList, String appId, String accountId, String serviceId) {
     List<CurrentActiveInstances> currentActiveInstancesList = Lists.newArrayList();
     for (AggregationInfo aggregationInfo : aggregationInfoList) {
@@ -930,10 +934,23 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
       WorkflowExecution workflowExecution =
           wingsPersistence.getWithAppId(WorkflowExecution.class, appId, lastWorkflowExecutionId);
       WorkflowExecution lastSuccessfulWE = null;
+      WorkflowExecution lastWE = null;
+      StateExecutionInstance stateEI = null;
       if (workflowExecution != null) {
         // To fetch last successful execution
         lastSuccessfulWE = workflowExecutionService.getLastSuccessfulWorkflowExecution(
             accountId, appId, workflowExecution.getWorkflowId(), envInfo.getId(), serviceId, infraMappingInfo.getId());
+        // To fetch last execution
+        lastWE = workflowExecutionService.getLastWorkflowExecution(
+            accountId, appId, workflowExecution.getWorkflowId(), envInfo.getId(), serviceId, infraMappingInfo.getId());
+        if (lastWE != null) {
+          stateEI = wingsPersistence.createQuery(StateExecutionInstance.class)
+                        .filter("executionUuid", lastWE.getUuid())
+                        .filter("rollback", true)
+                        .filter("stateType", PHASE.getType())
+                        .filter("status", FAILED.name())
+                        .get();
+        }
       } else {
         log.warn("workflow execution with id {} has been deleted due to retention policy", lastWorkflowExecutionId);
       }
@@ -956,6 +973,40 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
                                      .instanceCount(count)
                                      .serviceInfra(serviceInfraSummary)
                                      .onDemandRollbackAvailable(false)
+                                     .build();
+      } else if (stateEI != null) {
+        // if is true, there is a rollback failed
+        boolean rollbackAvailable = workflowExecutionService.getOnDemandRollbackAvailable(appId, lastWE);
+        Artifact artifactRollback = lastWE.getArtifacts().get(0);
+        artifactSummary = getArtifactSummary(artifactRollback.getDisplayName(), artifactRollback.getUuid(),
+            artifactRollback.getBuildNo(), artifactRollback.getArtifactSourceName());
+
+        EntitySummary workflowExecutionSummary =
+            getEntitySummary(lastWE.getName(), lastWE.getUuid(), EntityType.WORKFLOW_EXECUTION.name());
+
+        PipelineSummary pipelineSummary = lastWE.getPipelineSummary();
+        // This is just precautionary this should never happen hence logging this
+        if (lastWE.isOnDemandRollback() && pipelineSummary != null) {
+          log.error("Pipeline Summary non null for rollback execution : {}", lastWE.getUuid());
+          pipelineSummary = null;
+        }
+        EntitySummary pipelineEntitySummary = null;
+        if (pipelineSummary != null) {
+          pipelineEntitySummary = getEntitySummary(
+              pipelineSummary.getPipelineName(), lastWE.getPipelineExecutionId(), EntityType.PIPELINE.name());
+        }
+
+        currentActiveInstances = CurrentActiveInstances.builder()
+                                     .artifact(artifactSummary)
+                                     .manifest(manifestSummary)
+                                     .lastWorkflowExecutionDate(new Date(lastWE.getStartTs()))
+                                     .deployedAt(new Date(lastWE.getStartTs()))
+                                     .environment(environmentSummary)
+                                     .instanceCount(count)
+                                     .serviceInfra(serviceInfraSummary)
+                                     .lastWorkflowExecution(workflowExecutionSummary)
+                                     .lastPipelineExecution(pipelineEntitySummary)
+                                     .onDemandRollbackAvailable(rollbackAvailable)
                                      .build();
       } else {
         boolean rollbackAvailable = workflowExecutionService.getOnDemandRollbackAvailable(appId, lastSuccessfulWE);

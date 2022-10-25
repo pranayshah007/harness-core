@@ -32,6 +32,7 @@ import io.harness.subscription.dto.SubscriptionDTO;
 import io.harness.subscription.dto.SubscriptionDetailDTO;
 import io.harness.subscription.entities.StripeCustomer;
 import io.harness.subscription.entities.SubscriptionDetail;
+import io.harness.subscription.enums.PaymentFrequency;
 import io.harness.subscription.handlers.StripeEventHandler;
 import io.harness.subscription.helpers.StripeHelper;
 import io.harness.subscription.params.BillingParams;
@@ -205,7 +206,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     subscriptionItems.add(ItemParams.builder().priceId(mauPriceId.getId()).quantity(1L).build());
 
     if (subscriptionDTO.isPremiumSupport()) {
-      if (subscriptionDTO.isMonthly()) {
+      if (subscriptionDTO.getPaymentFreq().equalsIgnoreCase(PaymentFrequency.MONTHLY.toString())) {
         throw new InvalidArgumentsException("Cannot subscribe to premium support with a monthly renewal rate.");
       }
       val mauSupportPriceId = stripeHelper.getPrice(ModuleType.CF, "MAU_SUPPORT", subscriptionDTO.getEdition(),
@@ -427,6 +428,11 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     if (!Strings.isNullOrEmpty(customerDTO.getCompanyName())) {
       builder.name(customerDTO.getCompanyName());
     }
+
+    if (customerDTO.getAddress() != null) {
+      builder.address(customerDTO.getAddress());
+    }
+
     CustomerDetailDTO customerDetailDTO = stripeHelper.updateCustomer(builder.build());
 
     // Update customer information at local After succeed

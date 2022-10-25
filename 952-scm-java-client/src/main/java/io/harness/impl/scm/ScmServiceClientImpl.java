@@ -25,7 +25,6 @@ import io.harness.beans.gitsync.GitPRCreateRequest;
 import io.harness.beans.gitsync.GitWebhookDetails;
 import io.harness.beans.request.GitFileRequest;
 import io.harness.beans.response.GitFileResponse;
-import io.harness.connector.ManagerExecutable;
 import io.harness.constants.Constants;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
@@ -829,22 +828,12 @@ public class ScmServiceClientImpl implements ScmServiceClient {
   public GetUserReposResponse getUserRepos(
       ScmConnector scmConnector, io.harness.beans.PageRequestDTO pageRequest, SCMGrpc.SCMBlockingStub scmBlockingStub) {
     Provider gitProvider = scmGitProviderMapper.mapToSCMGitProvider(scmConnector);
-    Boolean executeOnDelegate = Boolean.TRUE;
-    int maxRetries = 1;
-    if (scmConnector instanceof ManagerExecutable) {
-      executeOnDelegate = ((ManagerExecutable) scmConnector).getExecuteOnDelegate();
-    }
-    // Adding retry only on manager as delegate already has retry logic
-    if (!executeOnDelegate) {
-      maxRetries = 4;
-    }
     return ScmGrpcClientUtils.retryAndProcessException(scmBlockingStub::getUserRepos,
         GetUserReposRequest.newBuilder()
             .setPagination(PageRequest.newBuilder().setPage(pageRequest.getPageIndex() + 1).build())
             .setProvider(gitProvider)
             .setFetchAllRepos(pageRequest.isFetchAll())
-            .build(),
-        maxRetries);
+            .build());
   }
 
   @Override
@@ -952,22 +941,16 @@ public class ScmServiceClientImpl implements ScmServiceClient {
     }
 
     if (isEmpty(commitId)) {
-      if (isEmpty(fileContent.getCommitId())) {
-        if (isNotEmpty(branch)) {
-          GetLatestCommitOnFileResponse getLatestCommitOnFileResponse =
-              getLatestCommitOnFile(scmConnector, scmBlockingStub, branch, gitFileContentRequest.getFilepath());
-          if (isNotEmpty(getLatestCommitOnFileResponse.getError())) {
-            return GitFileResponse.builder()
-                .error(getLatestCommitOnFileResponse.getError())
-                .statusCode(Constants.SCM_BAD_RESPONSE_ERROR_CODE)
-                .branch(branch)
-                .build();
-          }
-          commitId = getLatestCommitOnFileResponse.getCommitId();
-        }
-      } else {
-        commitId = fileContent.getCommitId();
+      GetLatestCommitOnFileResponse getLatestCommitOnFileResponse =
+          getLatestCommitOnFile(scmConnector, scmBlockingStub, branch, gitFileContentRequest.getFilepath());
+      if (isNotEmpty(getLatestCommitOnFileResponse.getError())) {
+        return GitFileResponse.builder()
+            .error(getLatestCommitOnFileResponse.getError())
+            .statusCode(Constants.SCM_BAD_RESPONSE_ERROR_CODE)
+            .branch(branch)
+            .build();
       }
+      commitId = getLatestCommitOnFileResponse.getCommitId();
     }
 
     return GitFileResponse.builder()

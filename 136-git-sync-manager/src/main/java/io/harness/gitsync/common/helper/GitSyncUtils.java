@@ -12,6 +12,8 @@ import static io.harness.annotations.dev.HarnessTeam.DX;
 
 import io.harness.EntityType;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.connector.ManagerExecutable;
+import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.exception.InvalidRequestException;
 import io.harness.manage.GlobalContextManager;
 import io.harness.security.PrincipalContextData;
@@ -51,5 +53,14 @@ public class GitSyncUtils {
     if (principal != null) {
       GlobalContextManager.upsertGlobalContextRecord(principal);
     }
+  }
+
+  public boolean isExecuteOnDelegate(ScmConnector scmConnector) {
+    Boolean executeOnDelegate = Boolean.TRUE;
+
+    if (scmConnector instanceof ManagerExecutable) {
+      executeOnDelegate = ((ManagerExecutable) scmConnector).getExecuteOnDelegate();
+    }
+    return executeOnDelegate;
   }
 }

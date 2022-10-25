@@ -7,8 +7,10 @@
 
 package io.harness.delegate.service;
 
+import static io.harness.rule.OwnerRule.RAGHAV_MURALI;
 import static io.harness.rule.OwnerRule.SRINIVAS;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -110,5 +112,39 @@ public class DelegateAgentServiceImplTest extends CategoryTest {
 
     delegateService.applyDelegateSecretFunctor(delegateTaskPackage);
     verify(delegateDecryptionService, times(1)).decrypt(any());
+  }
+
+  @Test
+  @Owner(developers = RAGHAV_MURALI)
+  @Category(UnitTests.class)
+  public void applyDelegateFunctorForSecretsThrowsException() {
+    String delegateTaskId = UUIDGenerator.generateUuid();
+    String accountId = UUIDGenerator.generateUuid();
+
+    Map<String, EncryptionConfig> encryptionConfigMap = new HashMap<>();
+    KmsConfig kmsConfig = KmsConfig.builder().build();
+    kmsConfig.setUuid("KMS_CONFIG_UUID");
+    encryptionConfigMap.put("KMS_CONFIG_UUID", kmsConfig);
+
+    Map<String, SecretDetail> secretDetails = new HashMap<>();
+    SecretDetail secretDetail = SecretDetail.builder().configUuid("KMS_CONFIG_UUID").encryptedRecord(null).build();
+
+    secretDetails.put("SECRET_UUID", secretDetail);
+
+    DelegateTaskPackage delegateTaskPackage = DelegateTaskPackage.builder()
+                                                  .accountId(accountId)
+                                                  .delegateTaskId(delegateTaskId)
+                                                  .data(TaskData.builder().async(true).taskType("HTTP").build())
+                                                  .encryptionConfigs(encryptionConfigMap)
+                                                  .secretDetails(secretDetails)
+                                                  .build();
+
+    Map<String, char[]> decryptedRecords = new HashMap<>();
+    decryptedRecords.put("ENC_UUID", "test".toCharArray());
+    when(delegateDecryptionService.decrypt(any())).thenReturn(decryptedRecords);
+
+    assertThatThrownBy(() -> delegateService.applyDelegateSecretFunctor(delegateTaskPackage))
+        .isInstanceOf(NullPointerException.class)
+        .hasStackTraceContaining("applyDelegateSecretFunctor");
   }
 }

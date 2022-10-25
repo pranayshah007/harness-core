@@ -27,6 +27,7 @@ import static io.harness.ng.core.invites.dto.InviteOperationResponse.INVITE_INVA
 import static io.harness.ng.core.invites.dto.InviteOperationResponse.USER_ALREADY_ADDED;
 import static io.harness.ng.core.invites.dto.InviteOperationResponse.USER_ALREADY_INVITED;
 import static io.harness.ng.core.invites.dto.InviteOperationResponse.USER_INVITED_SUCCESSFULLY;
+import static io.harness.ng.core.invites.dto.InviteOperationResponse.USER_INVITE_NOT_REQUIRED;
 import static io.harness.persistence.AccountAccess.ACCOUNT_ID_KEY;
 import static io.harness.persistence.HQuery.excludeAuthority;
 
@@ -1454,8 +1455,13 @@ public class UserServiceImpl implements UserService {
       addUserToUserGroups(accountId, user, userGroups, false, true);
     }
     boolean isSSOEnabled = accountService.isSSOEnabled(account);
-    if (!(isSSOEnabled && featureFlagService.isEnabled(FeatureName.PL_NO_EMAIL_FOR_SAML_ACCOUNT_INVITES, accountId))) {
-      if (!isInviteAcceptanceRequired && isSSOEnabled) {
+    boolean isAutoInviteAcceptanceEnabledWithSSOEnabled = !isInviteAcceptanceRequired && isSSOEnabled;
+    boolean isPLNoEmailForSamlAccountInvitesEnabledWithSSOEnabled =
+        featureFlagService.isEnabled(FeatureName.PL_NO_EMAIL_FOR_SAML_ACCOUNT_INVITES, accountId) && isSSOEnabled;
+
+    if (!(isPLNoEmailForSamlAccountInvitesEnabledWithSSOEnabled && !user.isTwoFactorAuthenticationEnabled())) {
+      if (isAutoInviteAcceptanceEnabledWithSSOEnabled
+          || (isPLNoEmailForSamlAccountInvitesEnabledWithSSOEnabled && user.isTwoFactorAuthenticationEnabled())) {
         sendUserInvitationToOnlySsoAccountMail(account, user);
       } else {
         sendNewInvitationMail(userInvite, account, user);
@@ -1466,7 +1472,12 @@ public class UserServiceImpl implements UserService {
         accountId, null, user, createNewUser ? Type.CREATE : Type.UPDATE);
     userGroups.forEach(userGroupAdded
         -> auditServiceHelper.reportForAuditingUsingAccountId(accountId, null, userGroupAdded, Type.ADD));
-    eventPublishHelper.publishUserInviteFromAccountEvent(accountId, userInvite.getEmail());
+
+    if (isPLNoEmailForSamlAccountInvitesEnabledWithSSOEnabled && !user.isTwoFactorAuthenticationEnabled()) {
+      return USER_INVITE_NOT_REQUIRED;
+    } else {
+      eventPublishHelper.publishUserInviteFromAccountEvent(accountId, userInvite.getEmail());
+    }
 
     return USER_INVITED_SUCCESSFULLY;
   }
@@ -1891,7 +1902,7 @@ public class UserServiceImpl implements UserService {
     if (!validateNgInvite(userInvite)) {
       throw new InvalidRequestException("User invite token invalid");
     }
-    completeNGInvite(userInvite, false);
+    completeNGInvite(userInvite, false, true);
     return authenticationManager.defaultLogin(userInvite.getEmail(), userInvite.getPassword());
   }
 
@@ -1951,7 +1962,8 @@ public class UserServiceImpl implements UserService {
   }
 
   @Override
-  public void completeNGInvite(UserInviteDTO userInvite, boolean isScimInvite) {
+  public void completeNGInvite(
+      UserInviteDTO userInvite, boolean isScimInvite, boolean shouldSendTwoFactorAuthResetEmail) {
     String accountId = userInvite.getAccountId();
     limitCheck(accountId, userInvite.getEmail());
     Account account = accountService.get(accountId);
@@ -1983,9 +1995,11 @@ public class UserServiceImpl implements UserService {
       user.setPasswordHash(hashpw(userInvite.getPassword(), BCrypt.gensalt()));
     }
     user = createUser(user, accountId);
-    user = checkIfTwoFactorAuthenticationIsEnabledForAccount(user, account);
-    if (user.isTwoFactorAuthenticationEnabled()) {
-      totpAuthHandler.sendTwoFactorAuthenticationResetEmail(user);
+    if (shouldSendTwoFactorAuthResetEmail) {
+      user = checkIfTwoFactorAuthenticationIsEnabledForAccount(user, account);
+      if (user.isTwoFactorAuthenticationEnabled()) {
+        totpAuthHandler.sendTwoFactorAuthenticationResetEmail(user);
+      }
     }
     // Empty user group list because this user invite is from NG and the method adds user to CG user groups
     moveAccountFromPendingToConfirmed(user, account, Collections.emptyList(), true);
@@ -3948,7 +3962,7 @@ public class UserServiceImpl implements UserService {
                                           .name(email.trim())
                                           .token(userInvite.getUuid())
                                           .build();
-        completeNGInvite(userInviteDTO, false);
+        completeNGInvite(userInviteDTO, false, true);
         return ACCOUNT_INVITE_ACCEPTED;
       }
     } else {

@@ -28,10 +28,10 @@ import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
 import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
 import io.harness.ng.core.template.TemplateEntityType;
+import io.harness.ng.core.template.TemplateResponseDTO;
 import io.harness.plancreator.customDeployment.StepTemplateRef;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.security.annotations.NextGenManagerAuth;
-import io.harness.template.beans.TemplateResponseDTO;
 import io.harness.template.remote.TemplateResourceClient;
 
 import com.google.inject.Inject;

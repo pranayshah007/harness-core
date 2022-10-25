@@ -37,8 +37,12 @@ import io.harness.cdng.infra.beans.K8sGcpInfrastructureOutcome;
 import io.harness.cdng.infra.mapper.InfrastructureEntityConfigMapper;
 import io.harness.cdng.infra.yaml.Infrastructure;
 import io.harness.cdng.infra.yaml.InfrastructureConfig;
+import io.harness.cdng.infra.yaml.InfrastructureDetailsAbstract;
 import io.harness.cdng.instance.outcome.InstancesOutcome;
 import io.harness.cdng.service.steps.ServiceStepOutcome;
+import io.harness.cdng.ssh.output.HostsOutput;
+import io.harness.cdng.ssh.output.SshInfraDelegateConfigOutput;
+import io.harness.cdng.ssh.output.WinRmInfraDelegateConfigOutput;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.common.ParameterFieldHelper;
@@ -87,10 +91,7 @@ import io.harness.steps.OutputExpressionConstants;
 import io.harness.steps.StepUtils;
 import io.harness.steps.environment.EnvironmentOutcome;
 import io.harness.steps.executable.AsyncExecutableWithRbac;
-import io.harness.steps.shellscript.HostsOutput;
 import io.harness.steps.shellscript.K8sInfraDelegateConfigOutput;
-import io.harness.steps.shellscript.SshInfraDelegateConfigOutput;
-import io.harness.steps.shellscript.WinRmInfraDelegateConfigOutput;
 import io.harness.tasks.ResponseData;
 import io.harness.utils.YamlPipelineUtils;
 
@@ -149,7 +150,7 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
     boolean skipInstances = ParameterFieldHelper.getBooleanParameterFieldValue(stepParameters.getSkipInstances());
 
     validateResources(ambiance, infraSpec);
-
+    setInfraIdentifierAndName(infraSpec, infrastructureConfig);
     resolver.updateExpressions(ambiance, infraSpec);
 
     final NGLogCallback logCallback = infrastructureStepHelper.getInfrastructureLogCallback(ambiance, true, LOG_SUFFIX);
@@ -280,6 +281,15 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
     final Set<EntityDetailProtoDTO> entityDetails =
         entityReferenceExtractorUtils.extractReferredEntities(ambiance, infraSpec);
     pipelineRbacHelper.checkRuntimePermissions(ambiance, entityDetails);
+  }
+
+  public void setInfraIdentifierAndName(Infrastructure infraSpec, InfrastructureConfig infrastructureConfig) {
+    if (infraSpec instanceof InfrastructureDetailsAbstract) {
+      ((InfrastructureDetailsAbstract) infraSpec)
+          .setInfraIdentifier(infrastructureConfig.getInfrastructureDefinitionConfig().getIdentifier());
+      ((InfrastructureDetailsAbstract) infraSpec)
+          .setInfraName(infrastructureConfig.getInfrastructureDefinitionConfig().getName());
+    }
   }
 
   private void executeSync(

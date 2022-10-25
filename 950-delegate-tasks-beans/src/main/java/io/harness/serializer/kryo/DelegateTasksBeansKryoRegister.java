@@ -237,9 +237,11 @@ import io.harness.delegate.beans.connector.servicenow.ServiceNowValidationParams
 import io.harness.delegate.beans.connector.servicenow.connection.ServiceNowTestConnectionTaskNGResponse;
 import io.harness.delegate.beans.connector.splunkconnector.SplunkConnectionTaskParams;
 import io.harness.delegate.beans.connector.splunkconnector.SplunkConnectionTaskResponse;
+import io.harness.delegate.beans.connector.spotconnector.SpotDelegateTaskResponse;
 import io.harness.delegate.beans.connector.spotconnector.SpotTaskParams;
 import io.harness.delegate.beans.connector.spotconnector.SpotTaskType;
 import io.harness.delegate.beans.connector.spotconnector.SpotValidateTaskResponse;
+import io.harness.delegate.beans.connector.spotconnector.SpotValidationParams;
 import io.harness.delegate.beans.connector.vaultconnector.VaultValidationParams;
 import io.harness.delegate.beans.ecs.EcsBlueGreenCreateServiceResult;
 import io.harness.delegate.beans.ecs.EcsBlueGreenPrepareRollbackDataResult;
@@ -1292,6 +1294,8 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(SpotValidateTaskResponse.class, 21006);
     kryo.register(SpotTaskParams.class, 21007);
     kryo.register(SpotTaskType.class, 21008);
+    kryo.register(SpotValidationParams.class, 21009);
+    kryo.register(SpotDelegateTaskResponse.class, 21010);
 
     kryo.register(SecretType.class, 543214);
     kryo.register(ValueType.class, 543215);

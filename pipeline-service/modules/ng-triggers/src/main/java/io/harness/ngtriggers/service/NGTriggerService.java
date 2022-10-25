@@ -70,4 +70,6 @@ public interface NGTriggerService {
   Object fetchExecutionSummaryV2(String planExecutionId, String accountId, String orgId, String projectId);
 
   List<TriggerCatalogItem> getTriggerCatalog(String accountIdentifier);
+
+  Map<String, Map<String, String>> validatePipelineRef(TriggerDetails triggerDetails);
 }

@@ -23,7 +23,6 @@ import io.harness.security.encryption.EncryptionType;
 import software.wings.ngmigration.DiscoveryResult;
 import software.wings.ngmigration.NGMigrationEntityType;
 import software.wings.service.intfc.security.SecretManager;
-import software.wings.settings.SettingVariableTypes;
 
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
@@ -67,7 +66,6 @@ public class SecretsImportService implements ImportService {
                   .listSecrets(accountId,
                       PageRequestBuilder.<EncryptedData>aPageRequest()
                           .addFilter(EncryptedDataKeys.kmsId, Operator.IN, secretManagerIds.stream().toArray())
-                          .addFilter(EncryptedDataKeys.type, Operator.EQ, SettingVariableTypes.SECRET_TEXT)
                           .withLimit("UNLIMITED")
                           .build(),
                       null, null, true, false)

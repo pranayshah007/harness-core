@@ -18,6 +18,7 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.container.ContainerInfo;
 import io.harness.exception.ExceptionUtils;
+import io.harness.exception.InvalidRequestException;
 import io.harness.exception.TimeoutException;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.Misc;
@@ -34,7 +35,10 @@ import software.wings.helpers.ext.ecs.request.EcsCommandRequest;
 import software.wings.helpers.ext.ecs.request.EcsServiceDeployRequest;
 import software.wings.helpers.ext.ecs.response.EcsCommandExecutionResponse;
 import software.wings.helpers.ext.ecs.response.EcsServiceDeployResponse;
+import software.wings.service.impl.AwsHelperService;
 
+import com.amazonaws.services.ecs.model.DescribeServicesRequest;
+import com.amazonaws.services.ecs.model.Service;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.ArrayList;
@@ -48,6 +52,7 @@ import lombok.extern.slf4j.Slf4j;
 public class EcsDeployCommandHandler extends EcsCommandTaskHandler {
   @Inject private EcsDeployCommandTaskHelper ecsDeployCommandTaskHelper;
   @Inject private AwsClusterService awsClusterService;
+  @Inject private AwsHelperService awsHelperService;
   static final String DASH_STRING = "----------";
 
   @Override
@@ -91,6 +96,15 @@ public class EcsDeployCommandHandler extends EcsCommandTaskHandler {
 
         newInstanceDataList = resizeParams.getNewInstanceData();
         oldInstanceDataList = resizeParams.getOldInstanceData();
+        int desiredRollbackCount;
+        if (resizeParams.isFFMaxDesiredCountEnabled()) {
+          desiredRollbackCount = getECSMaxDesiredRollbackCount(
+              ecsCommandRequest, encryptedDataDetails, resizeParams, newInstanceDataList, oldInstanceDataList);
+          log.info(
+              "ECS_ROLLBACK_MAX_DESIRED_COUNT enabled, we'll be overriding the count in previous ECS service to Max");
+          originalServiceCounts.replace(resizeParams.getNewInstanceData().get(0).getName(), desiredRollbackCount);
+          newInstanceDataList.get(0).setDesiredCount(desiredRollbackCount);
+        }
 
         if (resizeParams.isRollbackAllPhases()) {
           // Roll back to original counts
@@ -154,6 +168,43 @@ public class EcsDeployCommandHandler extends EcsCommandTaskHandler {
     }
 
     return executionResponse;
+  }
+  public int getECSMaxDesiredRollbackCount(EcsCommandRequest ecsCommandRequest,
+      List<EncryptedDataDetail> encryptedDataDetails, EcsResizeParams resizeParams,
+      List<ContainerServiceData> newInstanceDataList, List<ContainerServiceData> oldInstanceDataList) {
+    //    Corner case: Initializing this variable as max of (oldServiceCount, newServiceCount)
+    int maxDesiredRollbackCount =
+        Integer.max(newInstanceDataList.get(0).getDesiredCount(), oldInstanceDataList.get(0).getDesiredCount());
+    // Naming convention to be followed, since this is rollback,
+    // unsuccessfulService = oldInstanceDataList } This is called old above in the code which calls this method as the
+    // EcsDeployCommandHandler is agnostic lastSuccessfulService = newInstanceDataList
+
+    try {
+      Service unsucessfulService =
+          awsHelperService
+              .describeServices(resizeParams.getRegion(), ecsCommandRequest.getAwsConfig(), encryptedDataDetails,
+                  new DescribeServicesRequest()
+                      .withCluster(resizeParams.getClusterName())
+                      .withServices(oldInstanceDataList.get(0).getName()))
+              .getServices()
+              .get(0);
+      Service lastSuccessfulService =
+          awsHelperService
+              .describeServices(resizeParams.getRegion(), ecsCommandRequest.getAwsConfig(), encryptedDataDetails,
+                  new DescribeServicesRequest()
+                      .withCluster(resizeParams.getClusterName())
+                      .withServices(newInstanceDataList.get(0).getName()))
+              .getServices()
+              .get(0);
+      int unsucessfulServiceCount = unsucessfulService.getDesiredCount();
+      int lastSuccessfulServiceCount = lastSuccessfulService.getDesiredCount();
+      maxDesiredRollbackCount = Integer.max(Integer.max(unsucessfulServiceCount, lastSuccessfulServiceCount),
+          newInstanceDataList.get(0).getDesiredCount());
+    } catch (Exception e) {
+      log.error("Failed to calculate the Max Desired Count {ECS_ROLLBACK_MAX_DESIRED_COUNT}", e);
+      throw new InvalidRequestException(ExceptionUtils.getMessage(e));
+    }
+    return maxDesiredRollbackCount;
   }
 
   private void handleAutoScalarBeforeResize(ContextData contextData, ExecutionLogCallback executionLogCallback) {

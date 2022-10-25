@@ -59,7 +59,7 @@ public class DebeziumControllerStarterTest extends CategoryTest {
     doReturn(collections).when(debeziumConfig).getMonitoredCollections();
     doReturn(null)
         .when(changeConsumerFactory)
-        .get(anyLong(), anyString(), any(ChangeConsumerConfig.class), anyLong(), anyInt());
+        .get(anyLong(), anyString(), any(ChangeConsumerConfig.class), anyLong(), anyInt(), any());
     MockedStatic<DebeziumConfiguration> utilities = Mockito.mockStatic(DebeziumConfiguration.class);
     utilities.when(() -> DebeziumConfiguration.getDebeziumProperties(any(DebeziumConfig.class), any(RedisConfig.class)))
         .thenReturn(null);

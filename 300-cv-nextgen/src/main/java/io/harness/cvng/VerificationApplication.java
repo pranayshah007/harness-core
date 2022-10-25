@@ -11,6 +11,7 @@ import static io.harness.AuthorizationServiceHeader.BEARER;
 import static io.harness.AuthorizationServiceHeader.CV_NEXT_GEN;
 import static io.harness.AuthorizationServiceHeader.DEFAULT;
 import static io.harness.AuthorizationServiceHeader.IDENTITY_SERVICE;
+import static io.harness.cvng.CVConstants.ENVIRONMENT;
 import static io.harness.cvng.cdng.services.impl.CVNGNotifyEventListener.CVNG_ORCHESTRATION;
 import static io.harness.cvng.migration.beans.CVNGSchema.CVNGMigrationStatus.RUNNING;
 import static io.harness.logging.LoggingInitializer.initializeLogging;
@@ -60,6 +61,7 @@ import io.harness.cvng.core.entities.demo.CVNGDemoPerpetualTask;
 import io.harness.cvng.core.entities.demo.CVNGDemoPerpetualTask.CVNGDemoPerpetualTaskKeys;
 import io.harness.cvng.core.jobs.CVNGDemoPerpetualTaskHandler;
 import io.harness.cvng.core.jobs.ChangeSourceDemoHandler;
+import io.harness.cvng.core.jobs.CompositeSLODataExecutorTaskHandler;
 import io.harness.cvng.core.jobs.DataCollectionTasksPerpetualTaskStatusUpdateHandler;
 import io.harness.cvng.core.jobs.DeploymentChangeEventConsumer;
 import io.harness.cvng.core.jobs.EntityCRUDStreamConsumer;
@@ -189,6 +191,7 @@ import io.harness.yaml.YamlSdkConfiguration;
 import io.harness.yaml.YamlSdkInitHelper;
 
 import com.codahale.metrics.MetricRegistry;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -291,6 +294,7 @@ public class VerificationApplication extends Application<VerificationConfigurati
   }
 
   public static void configureObjectMapper(final ObjectMapper mapper) {
+    mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
     HObjectMapper.configureObjectMapperForNG(mapper);
   }
 
@@ -319,6 +323,7 @@ public class VerificationApplication extends Application<VerificationConfigurati
                                             .buildValidatorFactory();
 
     List<Module> modules = new ArrayList<>();
+
     modules.add(new ProviderModule() {
       @Provides
       @Singleton
@@ -459,6 +464,7 @@ public class VerificationApplication extends Application<VerificationConfigurati
     registerCVNGDemoPerpetualTaskIterator(injector);
     registerDataCollectionTasksPerpetualTaskStatusUpdateIterator(injector);
     registerServiceLevelObjectiveV2VerifyTaskIterator(injector);
+    registerCompositeSLODataExecutorTaskIterator(injector);
     injector.getInstance(CVNGStepTaskHandler.class).registerIterator();
     injector.getInstance(PrimaryVersionChangeScheduler.class).registerExecutors();
     registerExceptionMappers(environment.jersey());
@@ -477,6 +483,7 @@ public class VerificationApplication extends Application<VerificationConfigurati
     scheduleSidekickProcessing(injector);
     scheduleMaintenanceActivities(injector, configuration);
     initializeEnforcementSdk(injector);
+    initAutoscalingMetrics();
     registerOasResource(configuration, environment, injector);
 
     if (BooleanUtils.isTrue(configuration.getEnableOpentelemetry())) {
@@ -906,6 +913,37 @@ public class VerificationApplication extends Application<VerificationConfigurati
         () -> serviceLevelObjectiveV2VerifyTaskIterator.process(), 0, 5, TimeUnit.MINUTES);
   }
 
+  private void registerCompositeSLODataExecutorTaskIterator(Injector injector) {
+    ScheduledThreadPoolExecutor compositeSLODataExecutorTaskExecutor = new ScheduledThreadPoolExecutor(
+        3, new ThreadFactoryBuilder().setNameFormat("composite-slo-data-collection-task-iterator").build());
+
+    CompositeSLODataExecutorTaskHandler compositeSLODataExecutorTaskHandler =
+        injector.getInstance(CompositeSLODataExecutorTaskHandler.class);
+
+    PersistenceIterator serviceLevelObjectiveV2CompositeSLOTaskIterator =
+        MongoPersistenceIterator
+            .<AbstractServiceLevelObjective, MorphiaFilterExpander<AbstractServiceLevelObjective>>builder()
+            .mode(PersistenceIterator.ProcessMode.PUMP)
+            .iteratorName("ServiceLevelObjectiveV2CompositeSLOTaskIterator")
+            .clazz(AbstractServiceLevelObjective.class)
+            .fieldName(ServiceLevelObjectiveV2Keys.createNextTaskIteration)
+            .targetInterval(ofMinutes(1))
+            .acceptableNoAlertDelay(ofMinutes(1))
+            .executorService(compositeSLODataExecutorTaskExecutor)
+            .semaphore(new Semaphore(2))
+            .handler(compositeSLODataExecutorTaskHandler)
+            .schedulingType(REGULAR)
+            .filterExpander(
+                query -> query.filter(ServiceLevelObjectiveV2Keys.type, ServiceLevelObjectiveType.COMPOSITE))
+            .persistenceProvider(injector.getInstance(MorphiaPersistenceProvider.class))
+            .redistribute(true)
+            .build();
+
+    injector.injectMembers(serviceLevelObjectiveV2CompositeSLOTaskIterator);
+    compositeSLODataExecutorTaskExecutor.scheduleWithFixedDelay(
+        () -> serviceLevelObjectiveV2CompositeSLOTaskIterator.process(), 0, 30, TimeUnit.SECONDS);
+  }
+
   private void registerVerificationJobInstanceDataCollectionTaskIterator(Injector injector) {
     ScheduledThreadPoolExecutor verificationTaskExecutor = new ScheduledThreadPoolExecutor(
         5, new ThreadFactoryBuilder().setNameFormat("verification-job-instance-data-collection-iterator").build());
@@ -1155,5 +1193,14 @@ public class VerificationApplication extends Application<VerificationConfigurati
         .filter(
             klazz -> StringUtils.startsWithAny(klazz.getPackage().getName(), this.getClass().getPackage().getName()))
         .collect(Collectors.toSet());
+  }
+
+  private void initAutoscalingMetrics() {
+    CVConstants.LEARNING_ENGINE_TASKS_METRIC_LIST.forEach(metricName -> registerGaugeMetric(metricName, null));
+  }
+
+  private void registerGaugeMetric(String metricName, String[] labels) {
+    harnessMetricRegistry.registerGaugeMetric(metricName, labels, "Metrics from CVNG for LE");
+    harnessMetricRegistry.registerGaugeMetric(ENVIRONMENT + "_" + metricName, labels, "Metrics from CVNG for LE");
   }
 }

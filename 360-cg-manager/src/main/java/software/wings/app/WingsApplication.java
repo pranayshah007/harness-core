@@ -92,7 +92,7 @@ import io.harness.grpc.GrpcServiceConfigurationModule;
 import io.harness.grpc.server.GrpcServerConfig;
 import io.harness.health.HealthMonitor;
 import io.harness.health.HealthService;
-import io.harness.iterator.DelegateTaskExpiryCheckIterator;
+import io.harness.iterator.DelegateDisconnectDetectorIterator;
 import io.harness.iterator.FailDelegateTaskIterator;
 import io.harness.lock.AcquiredLock;
 import io.harness.lock.DistributedLockImplementation;
@@ -205,6 +205,7 @@ import software.wings.filter.AuditResponseFilter;
 import software.wings.jersey.JsonViews;
 import software.wings.jersey.KryoFeature;
 import software.wings.licensing.LicenseService;
+import software.wings.licensing.LicenseServiceImpl;
 import software.wings.notification.EmailNotificationListener;
 import software.wings.prune.PruneEntityListener;
 import software.wings.resources.AppResource;
@@ -213,14 +214,12 @@ import software.wings.resources.graphql.GraphQLResource;
 import software.wings.scheduler.AccessRequestHandler;
 import software.wings.scheduler.AccountPasswordExpirationJob;
 import software.wings.scheduler.DeletedEntityHandler;
-import software.wings.scheduler.InstancesPurgeHandler;
 import software.wings.scheduler.InstancesPurgeJob;
 import software.wings.scheduler.LdapGroupScheduledHandler;
 import software.wings.scheduler.ManagerVersionsCleanUpJob;
 import software.wings.scheduler.ResourceLookupSyncHandler;
 import software.wings.scheduler.UsageMetricsHandler;
 import software.wings.scheduler.VaultSecretManagerRenewalHandler;
-import software.wings.scheduler.YamlChangeSetPruneJob;
 import software.wings.scheduler.account.DeleteAccountHandler;
 import software.wings.scheduler.account.LicenseCheckHandler;
 import software.wings.scheduler.approval.ApprovalPollingHandler;
@@ -240,12 +239,12 @@ import software.wings.security.encryption.migration.SettingAttributesSecretsMigr
 import software.wings.service.impl.AccountServiceImpl;
 import software.wings.service.impl.AppManifestCloudProviderPTaskManager;
 import software.wings.service.impl.ApplicationManifestServiceImpl;
+import software.wings.service.impl.ArtifactCollectionLicenseListener;
 import software.wings.service.impl.ArtifactStreamServiceImpl;
 import software.wings.service.impl.AuditServiceHelper;
 import software.wings.service.impl.AuditServiceImpl;
 import software.wings.service.impl.BarrierServiceImpl;
 import software.wings.service.impl.CloudProviderObserver;
-import software.wings.service.impl.DelegateDisconnectedDetector;
 import software.wings.service.impl.DelegateObserver;
 import software.wings.service.impl.DelegateProfileServiceImpl;
 import software.wings.service.impl.DelegateServiceImpl;
@@ -1291,10 +1290,6 @@ public class WingsApplication extends Application<MainConfiguration> {
                                                 injector.getInstance(ProgressUpdateService.class)),
         0L, 5L, TimeUnit.SECONDS);
 
-    delegateExecutor.scheduleWithFixedDelay(new Schedulable("Failed while detecting disconnected delegates",
-                                                injector.getInstance(DelegateDisconnectedDetector.class)),
-        0L, 60L, TimeUnit.SECONDS);
-
     delegateExecutor.scheduleWithFixedDelay(new Schedulable("Failed while monitoring sync task responses",
                                                 injector.getInstance(DelegateSyncServiceImpl.class)),
         0L, 2L, TimeUnit.SECONDS);
@@ -1419,15 +1414,20 @@ public class WingsApplication extends Application<MainConfiguration> {
         (ApplicationManifestServiceImpl) injector.getInstance(Key.get(ApplicationManifestService.class));
     applicationManifestService.getSubject().register(injector.getInstance(Key.get(ManifestPerpetualTaskManger.class)));
 
+    accountService.getAccountLicenseObserverSubject().register(
+        injector.getInstance(Key.get(ArtifactCollectionLicenseListener.class)));
+    LicenseServiceImpl licenseService = (LicenseServiceImpl) injector.getInstance(Key.get(LicenseService.class));
+    licenseService.getAccountLicenseObserverSubject().register(
+        injector.getInstance(Key.get(ArtifactCollectionLicenseListener.class)));
+
     ObserversHelper.registerSharedObservers(injector);
   }
 
   public static void registerIteratorsDelegateService(IteratorsConfig iteratorsConfig, Injector injector) {
     injector.getInstance(PerpetualTaskRecordHandler.class)
-        .registerIterators(iteratorsConfig.getPerpetualTaskAssignmentIteratorConfig().getThreadPoolSize(),
-            iteratorsConfig.getPerpetualTaskRebalanceIteratorConfig().getThreadPoolSize());
-    injector.getInstance(DelegateTaskExpiryCheckIterator.class)
-        .registerIterators(iteratorsConfig.getDelegateTaskExpiryCheckIteratorConfig().getThreadPoolSize());
+        .registerIterators(iteratorsConfig.getPerpetualTaskAssignmentIteratorConfig().getThreadPoolSize());
+    injector.getInstance(DelegateDisconnectDetectorIterator.class)
+        .registerIterators(iteratorsConfig.getDelegateDisconnectDetectorIteratorConfig().getThreadPoolSize());
     injector.getInstance(FailDelegateTaskIterator.class)
         .registerIterators(iteratorsConfig.getFailDelegateTaskIteratorConfig().getThreadPoolSize());
     injector.getInstance(DelegateTelemetryPublisher.class).registerIterators();
@@ -1481,7 +1481,6 @@ public class WingsApplication extends Application<MainConfiguration> {
             IteratorConfig.builder().enabled(true).targetIntervalInSeconds(10).threadPoolCount(5).build());
     injector.getInstance(GitSyncPollingIterator.class)
         .registerIterators(iteratorsConfig.getGitSyncPollingIteratorConfig().getThreadPoolSize());
-    injector.getInstance(InstancesPurgeHandler.class).registerIterators();
   }
 
   private void registerCronJobs(Injector injector) {
@@ -1496,7 +1495,6 @@ public class WingsApplication extends Application<MainConfiguration> {
       // If we do not get the lock, that's not critical - that's most likely because other managers took it
       // and they will initialize the jobs.
       if (acquiredLock != null) {
-        YamlChangeSetPruneJob.add(jobScheduler);
         InstancesPurgeJob.add(jobScheduler);
         AccountPasswordExpirationJob.add(jobScheduler);
       }

@@ -28,4 +28,6 @@ public interface SLIRecordService {
   List<SLIRecord> getLatestCountSLIRecords(String sliId, int count);
   List<SLIRecord> getSLIRecordsForLookBackDuration(String sliId, long lookBackDuration);
   double getErrorBudgetBurnRate(String sliId, long lookBackDuration, int totalErrorBudgetMinutes);
+  List<SLIRecord> getSLIRecords(String sliId, Instant startTime, Instant endTime);
+  List<SLIRecord> getSLIRecordsWithSLIVersion(String sliId, Instant startTime, Instant endTime, int sliVersion);
 }

@@ -11,7 +11,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ng.core.refresh.helper.InputsValidationHelper;
 import io.harness.ng.core.refresh.helper.RefreshInputsHelper;
-import io.harness.template.beans.refresh.v2.InputsValidationResponse;
+import io.harness.ng.core.template.refresh.v2.InputsValidationResponse;
 
 import com.google.inject.Inject;
 

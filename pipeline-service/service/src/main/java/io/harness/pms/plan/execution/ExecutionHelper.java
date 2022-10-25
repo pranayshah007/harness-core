@@ -242,6 +242,13 @@ public class ExecutionHelper {
     long start = System.currentTimeMillis();
     if (isEmpty(mergedRuntimeInputYaml)) {
       pipelineYamlConfig = new YamlConfig(pipelineEntity.getYaml());
+      // WHEN A PIPELINE DECLARES ALLOWED VALUES INSIDE RUNTIME INPUTS, IS
+      // REQUIRED TO PROVIDE THESE VALUES BEFORE THE EXECUTIONS.
+      List<FQN> missingFQNs = InputSetErrorsHelper.getMissingFQNsInInputSet(pipelineYamlConfig);
+      if (EmptyPredicate.isNotEmpty(missingFQNs)) {
+        throw new InvalidRequestException("Pipeline need runtime input values for: "
+            + missingFQNs.stream().map(FQN::getExpressionFqn).collect(Collectors.toList()));
+      }
       pipelineYamlConfigForSchemaValidations = pipelineYamlConfig;
     } else {
       YamlConfig pipelineEntityYamlConfig = new YamlConfig(pipelineEntity.getYaml());

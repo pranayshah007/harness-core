@@ -153,7 +153,6 @@ import software.wings.helpers.ext.mail.EmailData;
 import software.wings.licensing.LicenseService;
 import software.wings.scheduler.AlertCheckJob;
 import software.wings.scheduler.InstanceStatsCollectorJob;
-import software.wings.scheduler.LdapGroupSyncJob;
 import software.wings.scheduler.LdapGroupSyncJobHelper;
 import software.wings.scheduler.LimitVicinityCheckerJob;
 import software.wings.scheduler.ScheduledTriggerJob;
@@ -182,6 +181,7 @@ import software.wings.service.intfc.SystemCatalogService;
 import software.wings.service.intfc.UserService;
 import software.wings.service.intfc.WorkflowExecutionService;
 import software.wings.service.intfc.account.AccountCrudObserver;
+import software.wings.service.intfc.account.AccountLicenseObserver;
 import software.wings.service.intfc.compliance.GovernanceConfigService;
 import software.wings.service.intfc.template.TemplateGalleryService;
 import software.wings.service.intfc.verification.CVConfigurationService;
@@ -318,6 +318,8 @@ public class AccountServiceImpl implements AccountService {
   private Map<String, UrlInfo> techStackDocLinks;
 
   @Getter private Subject<AccountCrudObserver> accountCrudSubject = new Subject<>();
+
+  @Getter private Subject<AccountLicenseObserver> accountLicenseObserverSubject = new Subject<>();
 
   @Override
   public Account save(@Valid Account account, boolean fromDataGen) {
@@ -650,6 +652,7 @@ public class AccountServiceImpl implements AccountService {
   @Override
   public boolean delete(String accountId) {
     boolean success = accountId != null && deleteAccountHelper.deleteAccount(accountId);
+    accountLicenseObserverSubject.fireInform(AccountLicenseObserver::onLicenseChange, accountId);
     if (success) {
       publishAccountChangeEventViaEventFramework(accountId, DELETE_ACTION);
     }
@@ -949,6 +952,7 @@ public class AccountServiceImpl implements AccountService {
       remoteObserverInformer.sendEvent(
           ReflectionUtils.getMethod(AccountCrudObserver.class, "onAccountUpdated", Account.class),
           AccountServiceImpl.class, updatedAccount);
+      accountLicenseObserverSubject.fireInform(AccountLicenseObserver::onLicenseChange, updatedAccount);
     }
     return updatedAccount;
   }
@@ -1448,7 +1452,6 @@ public class AccountServiceImpl implements AccountService {
     // 3. LdapGroupSyncJob
     List<LdapSettings> ldapSettings = getAllLdapSettingsForAccount(accountId);
     for (LdapSettings ldapSetting : ldapSettings) {
-      LdapGroupSyncJob.add(jobScheduler, accountId, ldapSetting.getUuid());
       ldapGroupSyncJobHelper.syncJob(ldapSetting);
     }
     log.info("Started all background quartz jobs for account {}", accountId);
@@ -1470,10 +1473,6 @@ public class AccountServiceImpl implements AccountService {
     }
 
     // 3. LdapGroupSyncJob
-    List<LdapSettings> ldapSettings = getAllLdapSettingsForAccount(accountId);
-    for (LdapSettings ldapSetting : ldapSettings) {
-      LdapGroupSyncJob.delete(jobScheduler, ssoSettingService, accountId, ldapSetting.getUuid());
-    }
     log.info("Stopped all background quartz jobs for account {}", accountId);
   }
 

@@ -220,7 +220,7 @@ import org.mongodb.morphia.query.UpdateOperations;
 @BreakDependencyOn("io.harness.event.handler.impl.EventPublishHelper")
 @BreakDependencyOn("software.wings.expression.NgSecretManagerFunctor")
 @OwnedBy(DEL)
-public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassic {
+public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassic, DelegateObserver {
   private static final String ASYNC = "async";
   private static final String SYNC = "sync";
   private static final String STREAM_DELEGATE = "/stream/delegate/";
@@ -1388,5 +1388,20 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
             .stream()
             .filter(message -> message.startsWith("No matching criteria"))
             .collect(Collectors.joining("\n")));
+  }
+
+  @Override
+  public void onAdded(Delegate delegate) {
+    // do nothing
+  }
+
+  @Override
+  public void onDisconnected(String accountId, String delegateId) {
+    markAllTasksFailedForDelegate(accountId, delegateId);
+  }
+
+  @Override
+  public void onReconnected(String accountId, String delegateId) {
+    // do nothing
   }
 }

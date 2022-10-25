@@ -1150,7 +1150,6 @@ public class WorkflowServiceHelperTest extends WingsBaseTest {
     when(serviceResourceService.getWithDetails(APP_ID, SERVICE_ID)).thenReturn(lambdaService);
     when(infrastructureDefinitionService.get(APP_ID, INFRA_DEFINITION_ID)).thenReturn(infrastructureDefinition);
     when(infrastructureMappingService.get(APP_ID, INFRA_MAPPING_ID)).thenReturn(infrastructureMapping);
-    when(mockFeatureFlagService.isEnabled(FeatureName.AZURE_VMSS, ACCOUNT_ID)).thenReturn(true);
 
     // basic deployment test
     workflowServiceHelper.generateNewWorkflowPhaseStepsForAzureVMSS(APP_ID, ACCOUNT_ID, workflowPhase, BASIC, true);
@@ -1191,13 +1190,6 @@ public class WorkflowServiceHelperTest extends WingsBaseTest {
     assertThatThrownBy(()
                            -> workflowServiceHelper.generateNewWorkflowPhaseStepsForAzureVMSS(
                                APP_ID, ACCOUNT_ID, workflowPhase, OrchestrationWorkflowType.CUSTOM, true))
-        .isInstanceOf(InvalidRequestException.class);
-
-    // feature flag test
-    when(mockFeatureFlagService.isEnabled(FeatureName.AZURE_VMSS, ACCOUNT_ID)).thenReturn(false);
-    assertThatThrownBy(()
-                           -> workflowServiceHelper.generateNewWorkflowPhaseStepsForAzureVMSS(
-                               APP_ID, ACCOUNT_ID, workflowPhase, BASIC, true))
         .isInstanceOf(InvalidRequestException.class);
   }
 

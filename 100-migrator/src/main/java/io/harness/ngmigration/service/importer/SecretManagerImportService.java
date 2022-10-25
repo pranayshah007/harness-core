@@ -42,6 +42,15 @@ public class SecretManagerImportService implements ImportService {
         // Note: All here means all the connectors we support today
         secretManagerIds = secretManagerConfigService.listSecretManagers(accountId, false)
                                .stream()
+                               .filter(secretManagerConfig -> {
+                                 try {
+                                   SecretFactory.getConnectorType(secretManagerConfig);
+                                   return true;
+                                 } catch (Exception e) {
+                                   log.warn("Unsupported secret manager", e);
+                                   return false;
+                                 }
+                               })
                                .map(SecretManagerConfig::getUuid)
                                .collect(Collectors.toList());
         break;

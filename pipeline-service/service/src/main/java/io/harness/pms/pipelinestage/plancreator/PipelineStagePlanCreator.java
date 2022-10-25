@@ -10,6 +10,7 @@ package io.harness.pms.pipelinestage.plancreator;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.plancreator.steps.internal.PmsStepPlanCreatorUtils;
 import io.harness.plancreator.strategy.StrategyUtils;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
@@ -17,6 +18,7 @@ import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.execution.utils.SkipInfoUtils;
 import io.harness.pms.pipelinestage.PipelineStageStepParameters;
+import io.harness.pms.pipelinestage.step.PipelineStageStep;
 import io.harness.pms.sdk.core.plan.PlanNode;
 import io.harness.pms.sdk.core.plan.PlanNode.PlanNodeBuilder;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
@@ -60,13 +62,13 @@ public class PipelineStagePlanCreator implements PartialPlanCreator<PipelineStag
 
   @Override
   public PlanCreationResponse createPlanForField(PlanCreationContext ctx, PipelineStageNode stageNode) {
-    // TODO: add step type
     PlanNodeBuilder builder =
         PlanNode.builder()
             .uuid(StrategyUtils.getSwappedPlanNodeId(ctx, stageNode.getUuid()))
             .name(stageNode.getName())
             .identifier(stageNode.getIdentifier())
             .group(StepCategory.STAGE.name())
+            .stepType(PipelineStageStep.STEP_TYPE)
             .stepParameters(getStepParameter(stageNode.getPipelineStageConfig()))
             .skipCondition(SkipInfoUtils.getSkipCondition(stageNode.getSkipCondition()))
             .whenCondition(RunInfoUtils.getRunCondition(stageNode.getWhen()))
@@ -74,7 +76,8 @@ public class PipelineStagePlanCreator implements PartialPlanCreator<PipelineStag
                 FacilitatorObtainment.newBuilder()
                     .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.ASYNC).build())
                     .build())
-            .adviserObtainments(StrategyUtils.getAdviserObtainments(ctx.getCurrentField(), kryoSerializer, true));
+            .adviserObtainments(
+                PmsStepPlanCreatorUtils.getAdviserObtainmentFromMetaData(kryoSerializer, ctx.getCurrentField(), true));
     if (!EmptyPredicate.isEmpty(ctx.getExecutionInputTemplate())) {
       builder.executionInputTemplate(ctx.getExecutionInputTemplate());
     }

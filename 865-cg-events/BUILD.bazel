@@ -44,7 +44,7 @@ java_library(
         "@maven//:com_squareup_okio_okio",
         "@maven//:com_squareup_retrofit2_adapter_rxjava",
         "@maven//:com_squareup_retrofit2_converter_jackson",
-        "@maven//:com_squareup_retrofit2_converter_simplexml",
+        "@maven//:com_squareup_retrofit2_converter_jaxb",
         "@maven//:com_squareup_retrofit2_retrofit",
         "@maven//:commons_codec_commons_codec",
         "@maven//:commons_collections_commons_collections",
