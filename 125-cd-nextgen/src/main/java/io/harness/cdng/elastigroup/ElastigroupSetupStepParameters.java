@@ -33,10 +33,10 @@ import java.util.List;
 public class ElastigroupSetupStepParameters
     extends ElastigroupSetupBaseStepInfo implements ElastigroupSpecParameters {
   @Builder(builderMethodName = "infoBuilder")
-  public ElastigroupSetupStepParameters(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
-                                        ParameterField<String> loadBalancer, ParameterField<String> name,
+  public ElastigroupSetupStepParameters(ParameterField<List<TaskSelectorYaml>> delegateSelectors
+                                        , ParameterField<String> name,
                                         ParameterField<InstancesSpecAbstractYaml> instances) {
-    super(delegateSelectors, loadBalancer, name, instances);
+    super(delegateSelectors, name, instances);
   }
 
   public List<String> getCommandUnits() {

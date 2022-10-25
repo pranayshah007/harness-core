@@ -10,6 +10,8 @@ package io.harness.cdng.elastigroup;
 import com.google.inject.Inject;
 import io.harness.beans.DelegateTask;
 import io.harness.cdng.CDStepHelper;
+import io.harness.cdng.artifact.outcome.ArtifactOutcome;
+import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
 import io.harness.cdng.ecs.EcsBlueGreenCreateServiceStep;
 import io.harness.cdng.ecs.EcsCanaryDeployStep;
 import io.harness.cdng.ecs.EcsEntityHelper;
@@ -77,6 +79,7 @@ import io.harness.delegate.task.ecs.response.EcsPrepareRollbackDataResponse;
 import io.harness.delegate.task.ecs.response.EcsRollingDeployResponse;
 import io.harness.delegate.task.ecs.response.EcsRollingRollbackResponse;
 import io.harness.delegate.task.ecs.response.EcsRunTaskResponse;
+import io.harness.delegate.task.elastigroup.request.ElastigroupCommandRequest;
 import io.harness.delegate.task.git.TaskStatus;
 import io.harness.delegate.task.spotinst.request.SpotInstSetupTaskParameters;
 import io.harness.ecs.EcsCommandUnitConstants;
@@ -147,34 +150,8 @@ public class ElastigroupStepCommonHelper extends EcsStepUtils {
   public TaskChainResponse startChainLink(ElastigroupStepExecutor elastigroupStepExecutor, Ambiance ambiance,
                                           StepElementParameters stepElementParameters, EcsStepHelper ecsStepHelper) {
 
-    // Contains SpotInstCommandRequest + env/infra/activity/workflowExecution ids
-    SpotInstSetupStateExecutionData spotinstSetupStateExecutionData =
-            spotinstStateHelper.prepareStateExecutionData(context, this);
-
-    SpotInstSetupTaskParameters spotInstTaskParameters =
-            (SpotInstSetupTaskParameters) spotinstSetupStateExecutionData.getSpotinstCommandRequest()
-                    .getSpotInstTaskParameters();
-
-    DelegateTask delegateTask = spotinstStateHelper.getDelegateTask(spotInstTaskParameters.getAccountId(),
-            spotInstTaskParameters.getAppId(), TaskType.SPOTINST_COMMAND_TASK, spotInstTaskParameters.getActivityId(),
-            spotinstSetupStateExecutionData.getEnvId(), spotinstSetupStateExecutionData.getInfraMappingId(),
-            spotinstSetupStateExecutionData.getSpotinstCommandRequest(),
-            spotinstSetupStateExecutionData.getEnvironmentType(), spotinstSetupStateExecutionData.getServiceId(),
-            isSelectionLogsTrackingForTasksEnabled());
-
-    delegateService.queueTask(delegateTask);
-    appendDelegateTaskDetails(context, delegateTask);
-
-    return ExecutionResponse.builder()
-            .correlationIds(Arrays.asList(spotInstTaskParameters.getActivityId()))
-            .stateExecutionData(spotinstSetupStateExecutionData)
-            .async(true)
-            .build();
-
     // Get ManifestsOutcome
-
-
-    ManifestsOutcome manifestsOutcome = resolveEcsManifestsOutcome(ambiance);
+    Optional<ArtifactOutcome> artifactOutcome = resolveArtifactsOutcome(ambiance);
 
     // Get InfrastructureOutcome
     InfrastructureOutcome infrastructureOutcome = (InfrastructureOutcome) outcomeService.resolve(
@@ -182,15 +159,33 @@ public class ElastigroupStepCommonHelper extends EcsStepUtils {
 
     // Update expressions in ManifestsOutcome
     ExpressionEvaluatorUtils.updateExpressions(
-        manifestsOutcome, new CDExpressionResolveFunctor(engineExpressionService, ambiance));
+            artifactOutcome, new CDExpressionResolveFunctor(engineExpressionService, ambiance));
 
     // Validate ManifestsOutcome
-    validateManifestsOutcome(ambiance, manifestsOutcome);
+//    validateManifestsOutcome(ambiance, manifestsOutcome);
+//
+//    List<ManifestOutcome> ecsManifestOutcome = getEcsManifestOutcome(manifestsOutcome.values(), ecsStepHelper);
 
-    List<ManifestOutcome> ecsManifestOutcome = getEcsManifestOutcome(manifestsOutcome.values(), ecsStepHelper);
+//    return prepareEcsManifestGitFetchTask(
+//            elastigroupStepExecutor, ambiance, stepElementParameters, infrastructureOutcome, ecsManifestOutcome, ecsStepHelper);
+    if (elastigroupStepExecutor instanceof ElastigroupSetupStep) {
+      EcsExecutionPassThroughData executionPassThroughData =
+              EcsExecutionPassThroughData.builder()
+                      .infrastructure(ecsGitFetchPassThroughData.getInfrastructureOutcome())
+                      .lastActiveUnitProgressData(unitProgressData)
+                      .build();
 
-    return prepareEcsManifestGitFetchTask(
-            elastigroupStepExecutor, ambiance, stepElementParameters, infrastructureOutcome, ecsManifestOutcome, ecsStepHelper);
+      EcsStepExecutorParams ecsStepExecutorParams =
+              EcsStepExecutorParams.builder()
+                      .shouldOpenFetchFilesLogStream(false)
+                      .ecsTaskDefinitionManifestContent(ecsTaskDefinitionFileContent)
+                      .ecsServiceDefinitionManifestContent(ecsServiceDefinitionFileContent)
+                      .ecsScalableTargetManifestContentList(ecsScalableTargetFileContentList)
+                      .ecsScalingPolicyManifestContentList(ecsScalingPolicyFileContentList)
+                      .build();
+
+      return ecsStepExecutor.executeEcsTask(
+              ambiance, stepElementParameters, executionPassThroughData, unitProgressData, ecsStepExecutorParams);
   }
 
   public TaskChainResponse startChainLinkEcsRunTask(
@@ -207,20 +202,20 @@ public class ElastigroupStepCommonHelper extends EcsStepUtils {
     return ecsStepHelper.getEcsManifestOutcome(manifestOutcomes);
   }
 
-  public ManifestsOutcome resolveEcsManifestsOutcome(Ambiance ambiance) {
-    OptionalOutcome manifestsOutcome = outcomeService.resolveOptional(
-        ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.MANIFESTS));
+  public ArtifactsOutcome resolveElastigroupArtifactsOutcome(Ambiance ambiance) {
+    OptionalOutcome artifactsOutcome = outcomeService.resolveOptional(
+        ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.ARTIFACTS));
 
-    if (!manifestsOutcome.isFound()) {
+    if (!artifactsOutcome.isFound()) {
       String stageName =
           AmbianceUtils.getStageLevelFromAmbiance(ambiance).map(Level::getIdentifier).orElse("Deployment stage");
       String stepType =
-          Optional.ofNullable(AmbianceUtils.getCurrentStepType(ambiance)).map(StepType::getType).orElse("Ecs");
+          Optional.ofNullable(AmbianceUtils.getCurrentStepType(ambiance)).map(StepType::getType).orElse("Elastigroup");
       throw new GeneralException(
-          format("No manifests found in stage %s. %s step requires a manifest defined in stage service definition",
+          format("No artifacts found in stage %s. %s step requires a artifacts defined in stage service definition",
               stageName, stepType));
     }
-    return (ManifestsOutcome) manifestsOutcome.getOutcome();
+    return (ArtifactsOutcome) artifactsOutcome.getOutcome();
   }
 
   private TaskChainResponse prepareEcsManifestGitFetchTask(EcsStepExecutor ecsStepExecutor, Ambiance ambiance,
@@ -1205,22 +1200,22 @@ public class ElastigroupStepCommonHelper extends EcsStepUtils {
         ecsBlueGreenPrepareRollbackDataResponse.getUnitProgressData(), ecsStepExecutorParams);
   }
 
-  public TaskChainResponse queueEcsTask(StepElementParameters stepElementParameters,
-      EcsCommandRequest ecsCommandRequest, Ambiance ambiance, PassThroughData passThroughData, boolean isChainEnd) {
+  public TaskChainResponse queueElastigroupTask(StepElementParameters stepElementParameters,
+                                        ElastigroupCommandRequest elastigroupCommandRequest, Ambiance ambiance, PassThroughData passThroughData, boolean isChainEnd) {
     TaskData taskData = TaskData.builder()
-                            .parameters(new Object[] {ecsCommandRequest})
-                            .taskType(TaskType.ECS_COMMAND_TASK_NG.name())
+                            .parameters(new Object[] {elastigroupCommandRequest})
+                            .taskType(TaskType.ELASTIGROUP_COMMAND_TASK_NG.name())
                             .timeout(CDStepHelper.getTimeoutInMillis(stepElementParameters))
                             .async(true)
                             .build();
 
-    String taskName = TaskType.ECS_COMMAND_TASK_NG.getDisplayName() + " : " + ecsCommandRequest.getCommandName();
+    String taskName = TaskType.ELASTIGROUP_COMMAND_TASK_NG.getDisplayName() + " : " + elastigroupCommandRequest.getCommandName();
 
-    EcsSpecParameters ecsSpecParameters = (EcsSpecParameters) stepElementParameters.getSpec();
+    ElastigroupSpecParameters elastigroupSpecParameters = (ElastigroupSpecParameters) stepElementParameters.getSpec();
 
     final TaskRequest taskRequest = prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
-        ecsSpecParameters.getCommandUnits(), taskName,
-        TaskSelectorYaml.toTaskSelector(emptyIfNull(getParameterFieldValue(ecsSpecParameters.getDelegateSelectors()))),
+            elastigroupSpecParameters.getCommandUnits(), taskName,
+        TaskSelectorYaml.toTaskSelector(emptyIfNull(getParameterFieldValue(elastigroupSpecParameters.getDelegateSelectors()))),
         stepHelper.getEnvironmentType(ambiance));
     return TaskChainResponse.builder()
         .taskRequest(taskRequest)
