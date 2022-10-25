@@ -12,7 +12,7 @@ import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor
-final class EnvInfo {
+public final class EnvInfo {
   private String id;
   private String name;
   private String type;

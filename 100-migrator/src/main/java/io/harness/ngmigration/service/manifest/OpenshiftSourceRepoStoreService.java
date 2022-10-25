@@ -29,7 +29,6 @@ import software.wings.ngmigration.CgEntityNode;
 import software.wings.ngmigration.NGMigrationEntityType;
 
 import com.google.inject.Inject;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -57,8 +56,6 @@ public class OpenshiftSourceRepoStoreService implements NgManifestService {
                     .type(StoreConfigType.GIT)
                     .spec(manifestMigrationService.getGitStore(gitFileConfig, entitySpec, connector))
                     .build()))
-            .paramsPaths(ParameterField.createValueField(
-                Collections.singletonList(applicationManifest.getCustomSourceConfig().getPath())))
             .build();
     return ManifestConfigWrapper.builder()
         .manifest(ManifestConfig.builder()

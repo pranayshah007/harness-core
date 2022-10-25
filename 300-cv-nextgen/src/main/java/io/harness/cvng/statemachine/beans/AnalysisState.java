@@ -23,6 +23,7 @@ public abstract class AnalysisState {
   }
 
   public enum StateType {
+    HOST_SAMPLING_STATE,
     CANARY_TIME_SERIES,
     DEPLOYMENT_LOG_ANALYSIS,
     SERVICE_GUARD_LOG_ANALYSIS,
@@ -33,6 +34,7 @@ public abstract class AnalysisState {
     SERVICE_GUARD_LOG_CLUSTER,
     SERVICE_GUARD_TREND_ANALYSIS,
     SLI_METRIC_ANALYSIS,
+    DEPLOYMENT_TIME_SERIES_ANALYSIS_STATE,
     COMPOSOITE_SLO_METRIC_ANALYSIS
   }
 }

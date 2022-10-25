@@ -12,6 +12,7 @@ import io.harness.migration.NGMigration;
 import io.harness.migration.beans.MigrationType;
 import io.harness.ng.core.migration.PopulateYamlFieldInNGEnvironmentMigration;
 import io.harness.ng.core.migration.background.AddDeploymentTypeToInfrastructureEntityMigration;
+import io.harness.ng.core.migration.background.PopulateYamlFieldInNGServiceEntityMigration;
 
 import com.google.common.collect.ImmutableList;
 import java.util.List;
@@ -33,6 +34,7 @@ public class NGCoreBackgroundMigrationDetails implements MigrationDetails {
     return new ImmutableList.Builder<Pair<Integer, Class<? extends NGMigration>>>()
         .add(Pair.of(1, AddDeploymentTypeToInfrastructureEntityMigration.class))
         .add(Pair.of(2, PopulateYamlFieldInNGEnvironmentMigration.class))
+        .add(Pair.of(3, PopulateYamlFieldInNGServiceEntityMigration.class))
         .build();
   }
 }

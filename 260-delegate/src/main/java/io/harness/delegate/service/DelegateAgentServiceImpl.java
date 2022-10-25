@@ -656,9 +656,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
         }
       }
 
-      if (this.isImmutableDelegate) {
-        startChroniqleQueueMonitor();
-      }
+      startChroniqleQueueMonitor();
 
       startMonitoringWatcher();
       checkForSSLCertVerification(accountId);
@@ -1347,6 +1345,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
 
   private void startChroniqleQueueMonitor() {
     if (chronicleEventTailer != null) {
+      chronicleEventTailer.setAccountId(accountId);
       chronicleEventTailer.startAsync().awaitRunning();
     }
   }

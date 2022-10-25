@@ -16,9 +16,7 @@ import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.mockito.ArgumentMatchers.anyList;
-import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -27,10 +25,10 @@ import io.harness.category.element.UnitTests;
 import io.harness.ccm.commons.entities.events.PublishedMessage;
 import io.harness.event.PublishMessage;
 import io.harness.event.PublishRequest;
-import io.harness.event.PublishResponse;
 import io.harness.event.app.EventServiceConfig;
 import io.harness.event.config.EventDataBatchQueryConfig;
 import io.harness.event.payloads.Lifecycle;
+import io.harness.event.service.impl.EventPublisherServiceImpl;
 import io.harness.event.service.intfc.EventDataBulkWriteService;
 import io.harness.event.service.intfc.LastReceivedPublishedMessageRepository;
 import io.harness.grpc.auth.DelegateAuthServerInterceptor;
@@ -44,12 +42,10 @@ import com.google.common.collect.Streams;
 import com.google.protobuf.Any;
 import com.google.protobuf.Message;
 import io.grpc.Context;
-import io.grpc.Status.Code;
-import io.grpc.StatusException;
-import io.grpc.stub.StreamObserver;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.IntStream;
@@ -64,26 +60,25 @@ import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
 @RunWith(MockitoJUnitRunner.class)
-public class EventPublisherServerImplTest extends CategoryTest {
+public class EventPublisherServiceImplTest extends CategoryTest {
   private static final String TEST_ACC_ID = UUID.randomUUID().toString();
+  private static final String TEST_DEL_ID = UUID.randomUUID().toString();
 
   @Mock private EventDataBulkWriteService eventDataBulkWriteService;
   @Mock private EventDataBatchQueryConfig eventDataBatchQueryConfig;
   @Mock private EventServiceConfig eventServiceConfig;
   @Mock private HPersistence hPersistence;
-  @Mock private StreamObserver<PublishResponse> observer;
   @Mock private LastReceivedPublishedMessageRepository lastReceivedPublishedMessageRepository;
   @Mock private MessageProcessorRegistry messageProcessorRegistry;
   @Mock private MetricService metricService;
 
-  @InjectMocks private EventPublisherServerImpl publisherServer;
-
+  @InjectMocks private EventPublisherServiceImpl publisherService;
   @Test
   @Owner(developers = AVMOHAN)
   @Category(UnitTests.class)
   public void shouldFailIfAccountIdIsNotSet() {
     assertThatExceptionOfType(NullPointerException.class)
-        .isThrownBy(() -> publisherServer.publish(PublishRequest.newBuilder().build(), observer));
+        .isThrownBy(() -> publisherService.publish(null, TEST_DEL_ID, Collections.emptyList(), 0));
   }
 
   @Test
@@ -110,7 +105,8 @@ public class EventPublisherServerImplTest extends CategoryTest {
                                              .build())
                                   .collect(toList()))
               .build();
-      publisherServer.publish(publishRequest, observer);
+      publisherService.publish(
+          TEST_ACC_ID, TEST_DEL_ID, publishRequest.getMessagesList(), publishRequest.getMessagesCount());
       verify(hPersistence).saveIgnoringDuplicateKeys(captor.capture());
       List<PublishedMessage> captured = captor.getValue();
       updateToDefaultUUIDs(captured);
@@ -154,7 +150,8 @@ public class EventPublisherServerImplTest extends CategoryTest {
                                              .build())
                                   .collect(toList()))
               .build();
-      publisherServer.publish(publishRequest, observer);
+      publisherService.publish(
+          TEST_ACC_ID, TEST_DEL_ID, publishRequest.getMessagesList(), publishRequest.getMessagesCount());
       verify(eventDataBulkWriteService).bulkInsertPublishedMessages(captor.capture());
       List<PublishedMessage> captured = captor.getValue();
       updateToDefaultUUIDs(captured);
@@ -174,7 +171,7 @@ public class EventPublisherServerImplTest extends CategoryTest {
     });
   }
 
-  @Test
+  @Test(expected = RuntimeException.class)
   @Owner(developers = AVMOHAN)
   @Category(UnitTests.class)
   public void shouldRespondErrorWhenPersistFail() {
@@ -182,25 +179,18 @@ public class EventPublisherServerImplTest extends CategoryTest {
     when(eventServiceConfig.getEventDataBatchQueryConfig()).thenReturn(eventDataBatchQueryConfig);
     when(eventServiceConfig.getEventDataBatchQueryConfig().isEnableBatchWrite()).thenReturn(false);
     doThrow(exception).when(hPersistence).saveIgnoringDuplicateKeys(anyList());
-    ArgumentCaptor<StatusException> captor = ArgumentCaptor.forClass(StatusException.class);
-    Context.current().withValue(DelegateAuthServerInterceptor.ACCOUNT_ID_CTX_KEY, TEST_ACC_ID).run(() -> {
-      publisherServer.publish(
-          PublishRequest.newBuilder()
-              .addAllMessages(testMessages()
-                                  .stream()
-                                  .map(x -> PublishMessage.newBuilder().setPayload(Any.pack(x)).build())
-                                  .collect(toList()))
-              .build(),
-          observer);
-      verify(observer).onError(captor.capture());
-      assertThat(captor.getValue().getStatus().getCode()).isEqualTo(Code.INTERNAL);
-      assertThat(captor.getValue().getStatus().getCause()).isSameAs(exception);
-      verify(observer, never()).onNext(any());
-      verify(observer, never()).onCompleted();
-    });
+    PublishRequest publishRequest =
+        PublishRequest.newBuilder()
+            .addAllMessages(testMessages()
+                                .stream()
+                                .map(x -> PublishMessage.newBuilder().setPayload(Any.pack(x)).build())
+                                .collect(toList()))
+            .build();
+    publisherService.publish(
+        TEST_ACC_ID, TEST_DEL_ID, publishRequest.getMessagesList(), publishRequest.getMessagesCount());
   }
 
-  @Test
+  @Test(expected = RuntimeException.class)
   @Owner(developers = SAHILDEEP)
   @Category(UnitTests.class)
   public void shouldRespondErrorWhenPersistBulkFail() {
@@ -208,22 +198,15 @@ public class EventPublisherServerImplTest extends CategoryTest {
     when(eventServiceConfig.getEventDataBatchQueryConfig()).thenReturn(eventDataBatchQueryConfig);
     when(eventServiceConfig.getEventDataBatchQueryConfig().isEnableBatchWrite()).thenReturn(true);
     doThrow(exception).when(eventDataBulkWriteService).bulkInsertPublishedMessages(anyList());
-    ArgumentCaptor<StatusException> captor = ArgumentCaptor.forClass(StatusException.class);
-    Context.current().withValue(DelegateAuthServerInterceptor.ACCOUNT_ID_CTX_KEY, TEST_ACC_ID).run(() -> {
-      publisherServer.publish(
-          PublishRequest.newBuilder()
-              .addAllMessages(testMessages()
-                                  .stream()
-                                  .map(x -> PublishMessage.newBuilder().setPayload(Any.pack(x)).build())
-                                  .collect(toList()))
-              .build(),
-          observer);
-      verify(observer).onError(captor.capture());
-      assertThat(captor.getValue().getStatus().getCode()).isEqualTo(Code.INTERNAL);
-      assertThat(captor.getValue().getStatus().getCause()).isSameAs(exception);
-      verify(observer, never()).onNext(any());
-      verify(observer, never()).onCompleted();
-    });
+    PublishRequest publishRequest =
+        PublishRequest.newBuilder()
+            .addAllMessages(testMessages()
+                                .stream()
+                                .map(x -> PublishMessage.newBuilder().setPayload(Any.pack(x)).build())
+                                .collect(toList()))
+            .build();
+    publisherService.publish(
+        TEST_ACC_ID, TEST_DEL_ID, publishRequest.getMessagesList(), publishRequest.getMessagesCount());
   }
 
   private List<Message> testMessages() {

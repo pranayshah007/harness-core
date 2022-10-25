@@ -256,7 +256,7 @@ import org.mockito.Mock;
 @BreakDependencyOn("software.wings.beans.Event")
 public class DelegateServiceTest extends WingsBaseTest {
   private static final String VERSION = "1.0.0";
-  private static final String IMMUTABLE_DELEGATE_VERSION = "22.08.10000";
+  private static final String IMMUTABLE_DELEGATE_VERSION = "22.08.76400";
   private static final String DELEGATE_NAME = "harness-delegate";
   private static final String DELEGATE_PROFILE_ID = "QFWin33JRlKWKBzpzE5A9A";
   private static final String DELEGATE_ID_1 = "delegateId1";
@@ -566,6 +566,7 @@ public class DelegateServiceTest extends WingsBaseTest {
     Delegate delegateWithScalingGroup1 = createDelegateBuilder().build();
     delegateWithScalingGroup1.setAccountId(accountId);
     delegateWithScalingGroup1.setDelegateGroupName("test1");
+    delegateWithScalingGroup1.setVersion(IMMUTABLE_DELEGATE_VERSION);
     DelegateGroup scalingGroup1 = DelegateGroup.builder()
                                       .accountId(accountId)
                                       .name("test1")
@@ -578,6 +579,7 @@ public class DelegateServiceTest extends WingsBaseTest {
     delegateWithScalingGroup2.setAccountId(accountId);
     delegateWithScalingGroup2.setDelegateGroupName("test2");
     delegateWithScalingGroup2.setImmutable(true);
+    delegateWithScalingGroup2.setVersion(IMMUTABLE_DELEGATE_VERSION);
     DelegateGroup scalingGroup2 = DelegateGroup.builder()
                                       .accountId(accountId)
                                       .name("test2")

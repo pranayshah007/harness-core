@@ -90,6 +90,8 @@ public class MigratorUtility {
         return 25;
       case INFRA:
         return 35;
+      case SERVICE_VARIABLE:
+        return 40;
       case PIPELINE:
         return 50;
       default:
@@ -144,6 +146,13 @@ public class MigratorUtility {
         .identifier(migratedSecret.getIdentifier())
         .scope(MigratorUtility.getScope(migratedSecret))
         .build();
+  }
+
+  public static String getIdentifierWithScope(
+      Map<CgEntityId, NGYamlFile> migratedEntities, String entityId, NGMigrationEntityType entityType) {
+    NgEntityDetail detail =
+        migratedEntities.get(CgEntityId.builder().type(entityType).id(entityId).build()).getNgEntityDetail();
+    return getIdentifierWithScope(detail);
   }
 
   public static String getIdentifierWithScope(NgEntityDetail entityDetail) {

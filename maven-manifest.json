@@ -28982,30 +28982,6 @@
             "org.relaxng.datatype.helpers": [
                 "@maven//:com_sun_xml_bind_jaxb_osgi"
             ],
-            "org.simpleframework.xml": [
-                "@maven//:org_simpleframework_simple_xml"
-            ],
-            "org.simpleframework.xml.convert": [
-                "@maven//:org_simpleframework_simple_xml"
-            ],
-            "org.simpleframework.xml.core": [
-                "@maven//:org_simpleframework_simple_xml"
-            ],
-            "org.simpleframework.xml.filter": [
-                "@maven//:org_simpleframework_simple_xml"
-            ],
-            "org.simpleframework.xml.strategy": [
-                "@maven//:org_simpleframework_simple_xml"
-            ],
-            "org.simpleframework.xml.stream": [
-                "@maven//:org_simpleframework_simple_xml"
-            ],
-            "org.simpleframework.xml.transform": [
-                "@maven//:org_simpleframework_simple_xml"
-            ],
-            "org.simpleframework.xml.util": [
-                "@maven//:org_simpleframework_simple_xml"
-            ],
             "org.slf4j": [
                 "@maven//:com_github_tomakehurst_wiremock_jre8_standalone",
                 "@maven//:org_slf4j_slf4j_api"
@@ -31435,8 +31411,8 @@
             "retrofit2.converter.protobuf": [
                 "@maven//:com_squareup_retrofit2_converter_protobuf"
             ],
-            "retrofit2.converter.simplexml": [
-                "@maven//:com_squareup_retrofit2_converter_simplexml"
+            "retrofit2.converter.jaxb": [
+                "@maven//:com_squareup_retrofit2_converter_jaxb"
             ],
             "retrofit2.http": [
                 "@maven//:com_squareup_retrofit2_retrofit"

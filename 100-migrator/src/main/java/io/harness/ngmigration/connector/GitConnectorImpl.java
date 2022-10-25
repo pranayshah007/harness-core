@@ -18,10 +18,8 @@ import io.harness.delegate.beans.connector.scm.genericgitconnector.GitAuthentica
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitHTTPAuthenticationDTO;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitSSHAuthenticationDTO;
-import io.harness.exception.InvalidRequestException;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.service.MigratorUtility;
-import io.harness.shell.AuthenticationScheme;
 
 import software.wings.beans.GitConfig;
 import software.wings.beans.SettingAttribute;
@@ -63,26 +61,23 @@ public class GitConnectorImpl implements BaseConnector {
         .branchName(gitConfig.getBranch())
         .delegateSelectors(new HashSet<>(CollectionUtils.emptyIfNull(gitConfig.getDelegateSelectors())))
         .executeOnDelegate(true)
-        .gitAuthType(getAuthType(gitConfig.getAuthenticationScheme()))
-        .gitAuth(getGitAuth(gitConfig, childEntities, migratedEntities))
+        .gitAuthType(getAuthType(gitConfig))
+        .gitAuth(getGitAuth(gitConfig, migratedEntities))
         .gitConnectionType(getGitConnectionType(gitConfig.getUrlType()))
         .url(gitConfig.getRepoUrl())
         .build();
   }
 
-  private static GitAuthenticationDTO getGitAuth(
-      GitConfig gitConfig, Set<CgEntityId> childEntities, Map<CgEntityId, NGYamlFile> migratedEntities) {
-    if (gitConfig.getAuthenticationScheme() == AuthenticationScheme.HTTP_PASSWORD) {
+  private static GitAuthenticationDTO getGitAuth(GitConfig gitConfig, Map<CgEntityId, NGYamlFile> migratedEntities) {
+    if (StringUtils.isBlank(gitConfig.getSshSettingId())) {
       return GitHTTPAuthenticationDTO.builder()
           .username(gitConfig.getUsername())
           .passwordRef(MigratorUtility.getSecretRef(migratedEntities, gitConfig.getEncryptedPassword()))
           .build();
-    } else if (gitConfig.getAuthenticationScheme() == AuthenticationScheme.SSH_KEY) {
+    } else {
       return GitSSHAuthenticationDTO.builder()
           .encryptedSshKey(MigratorUtility.getSecretRef(migratedEntities, gitConfig.getSshSettingId(), CONNECTOR))
           .build();
-    } else {
-      throw new InvalidRequestException("Unsupported git auth type: " + gitConfig.getAuthenticationScheme());
     }
   }
 
@@ -90,14 +85,10 @@ public class GitConnectorImpl implements BaseConnector {
     return urlType == GitConfig.UrlType.REPO ? GitConnectionType.REPO : GitConnectionType.ACCOUNT;
   }
 
-  private static GitAuthType getAuthType(AuthenticationScheme authenticationScheme) {
-    switch (authenticationScheme) {
-      case HTTP_PASSWORD:
-        return GitAuthType.HTTP;
-      case SSH_KEY:
-        return GitAuthType.SSH;
-      default:
-        throw new InvalidRequestException("Git auth Type not supported : " + authenticationScheme);
+  private static GitAuthType getAuthType(GitConfig gitConfig) {
+    if (StringUtils.isNotBlank(gitConfig.getSshSettingId())) {
+      return GitAuthType.SSH;
     }
+    return GitAuthType.HTTP;
   }
 }

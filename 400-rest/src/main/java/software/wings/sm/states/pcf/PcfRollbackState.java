@@ -8,7 +8,6 @@
 package software.wings.sm.states.pcf;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.beans.FeatureName.IGNORE_PCF_CONNECTION_CONTEXT_CACHE;
 import static io.harness.beans.FeatureName.LIMIT_PCF_THREADS;
 
 import static com.google.common.base.MoreObjects.firstNonNull;
@@ -38,13 +37,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
-import org.simpleframework.xml.Transient;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 @OwnedBy(CDP)
 public class PcfRollbackState extends PcfDeployState {
-  @Inject @Transient private SweepingOutputService sweepingOutputService;
-  @Inject @Transient private PcfStateHelper pcfStateHelper;
+  @Inject private SweepingOutputService sweepingOutputService;
+  @Inject private PcfStateHelper pcfStateHelper;
   /**
    * Instantiates a new state.
    *
@@ -116,8 +114,6 @@ public class PcfRollbackState extends PcfDeployState {
         .useAppAutoscalar(setupSweepingOutputPcf.isUseAppAutoscalar())
         .useCfCLI(true)
         .limitPcfThreads(featureFlagService.isEnabled(LIMIT_PCF_THREADS, pcfConfig.getAccountId()))
-        .ignorePcfConnectionContextCache(
-            featureFlagService.isEnabled(IGNORE_PCF_CONNECTION_CONTEXT_CACHE, pcfConfig.getAccountId()))
         .cfCliVersion(
             pcfStateHelper.getCfCliVersionOrDefault(application.getAppId(), setupSweepingOutputPcf.getServiceId()))
         .versioningChanged(setupSweepingOutputPcf.isVersioningChanged())

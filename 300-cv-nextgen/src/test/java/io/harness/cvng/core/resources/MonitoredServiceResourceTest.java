@@ -8,6 +8,7 @@
 package io.harness.cvng.core.resources;
 
 import static io.harness.rule.OwnerRule.ABHIJITH;
+import static io.harness.rule.OwnerRule.ARPITJ;
 import static io.harness.rule.OwnerRule.DEEPAK_CHHIKARA;
 import static io.harness.rule.OwnerRule.KAMAL;
 import static io.harness.rule.OwnerRule.KAPIL;
@@ -852,6 +853,92 @@ public class MonitoredServiceResourceTest extends CvNextGenTestBase {
                                     .path("monitoredService\\sources\\healthSources\\spec\\metricDefinitions")
                                     .property("serviceInstanceField")
                                     .replacementValue(null)
+                                    .expectedResponseCode(500)
+                                    .build());
+    for (InvalidResourceData invalidResourceData : invalidResourceDataList) {
+      String msJson = InvalidResourceData.replace(monitoredServiceYaml, invalidResourceData);
+      String msYaml = convertToYaml(msJson);
+      Response response = RESOURCES.client()
+                              .target("http://localhost:9998/monitored-service/yaml")
+                              .queryParam("accountId", builderFactory.getContext().getAccountId())
+                              .queryParam("orgIdentifier", builderFactory.getContext().getOrgIdentifier())
+                              .queryParam("projectIdentifier", builderFactory.getContext().getProjectIdentifier())
+                              .request(MediaType.APPLICATION_JSON_TYPE)
+                              .post(Entity.text(msYaml));
+      assertThat(response.getStatus()).isEqualTo(invalidResourceData.getExpectedResponseCode());
+    }
+  }
+
+  @Test
+  @Owner(developers = ARPITJ)
+  @Category(UnitTests.class)
+  public void monitoredServiceElasticSearchValidation() throws IOException {
+    String monitoredServiceYaml = getResource("monitoredservice/monitored-service-elasticsearch-validation.yaml");
+    List<InvalidResourceData> invalidResourceDataList = new ArrayList<>();
+    invalidResourceDataList.add(InvalidResourceData.builder()
+                                    .path("monitoredService\\sources\\healthSources\\spec")
+                                    .property("queries")
+                                    .replacementValue(null)
+                                    .expectedResponseCode(500)
+                                    .build());
+    invalidResourceDataList.add(InvalidResourceData.builder()
+                                    .path("monitoredService\\sources\\healthSources\\spec\\queries")
+                                    .property("query")
+                                    .replacementValue(null)
+                                    .expectedResponseCode(500)
+                                    .build());
+    invalidResourceDataList.add(InvalidResourceData.builder()
+                                    .path("monitoredService\\sources\\healthSources\\spec\\queries")
+                                    .property("serviceInstanceIdentifier")
+                                    .replacementValue(null)
+                                    .expectedResponseCode(500)
+                                    .build());
+    invalidResourceDataList.add(InvalidResourceData.builder()
+                                    .path("monitoredService\\sources\\healthSources\\spec\\queries")
+                                    .property("index")
+                                    .replacementValue(null)
+                                    .expectedResponseCode(500)
+                                    .build());
+    invalidResourceDataList.add(InvalidResourceData.builder()
+                                    .path("monitoredService\\sources\\healthSources\\spec\\queries")
+                                    .property("index")
+                                    .replacementValue("")
+                                    .expectedResponseCode(500)
+                                    .build());
+    invalidResourceDataList.add(InvalidResourceData.builder()
+                                    .path("monitoredService\\sources\\healthSources\\spec\\queries")
+                                    .property("name")
+                                    .replacementValue(null)
+                                    .expectedResponseCode(500)
+                                    .build());
+    invalidResourceDataList.add(InvalidResourceData.builder()
+                                    .path("monitoredService\\sources\\healthSources\\spec\\queries")
+                                    .property("name")
+                                    .replacementValue("")
+                                    .expectedResponseCode(500)
+                                    .build());
+    invalidResourceDataList.add(InvalidResourceData.builder()
+                                    .path("monitoredService\\sources\\healthSources\\spec")
+                                    .property("connectorRef")
+                                    .replacementValue(null)
+                                    .expectedResponseCode(500)
+                                    .build());
+    invalidResourceDataList.add(InvalidResourceData.builder()
+                                    .path("monitoredService\\sources\\healthSources\\spec")
+                                    .property("feature")
+                                    .replacementValue(null)
+                                    .expectedResponseCode(500)
+                                    .build());
+    invalidResourceDataList.add(InvalidResourceData.builder()
+                                    .path("monitoredService\\sources\\healthSources\\spec")
+                                    .property("feature")
+                                    .replacementValue("")
+                                    .expectedResponseCode(500)
+                                    .build());
+    invalidResourceDataList.add(InvalidResourceData.builder()
+                                    .path("monitoredService\\sources\\healthSources\\spec")
+                                    .property("connectorRef")
+                                    .replacementValue("")
                                     .expectedResponseCode(500)
                                     .build());
     for (InvalidResourceData invalidResourceData : invalidResourceDataList) {
