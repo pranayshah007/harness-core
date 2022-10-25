@@ -97,13 +97,14 @@ public class RollbackStagePlanCreator {
 
     List<String> childNodeIDs = new ArrayList<>();
     stageNodes.forEach(stageNode -> {
-      planCreationResponse.merge(createPlanForSingleStage(stageNode, kryoSerializer));
-      childNodeIDs.add(stageNode.getUuid() + NGCommonUtilPlanCreationConstants.ROLLBACK_STAGE_UUID_SUFFIX);
+      YamlNode stageNodeInternal = stageNode.getFieldOrThrow(YAMLFieldNameConstants.STAGE).getNode();
+      planCreationResponse.merge(createPlanForSingleStage(stageNodeInternal, kryoSerializer));
+      childNodeIDs.add(stageNodeInternal.getUuid() + NGCommonUtilPlanCreationConstants.ROLLBACK_STAGE_UUID_SUFFIX);
     });
     PlanNode parallelRollbackPlanNode =
         PlanNode.builder()
             .uuid(parallelStageNode.getUuid() + NGCommonUtilPlanCreationConstants.ROLLBACK_STAGE_UUID_SUFFIX)
-            .name(NGCommonUtilPlanCreationConstants.ROLLBACK_STAGE_NODE_NAME)
+            .name("Parallel Block" + NGCommonUtilPlanCreationConstants.ROLLBACK_STAGE_NODE_NAME)
             .identifier(parallelStageNode.getUuid() + NGCommonUtilPlanCreationConstants.ROLLBACK_STAGE_UUID_SUFFIX)
             .stepType(NGForkStep.STEP_TYPE)
             .stepParameters(ForkStepParameters.builder().parallelNodeIds(childNodeIDs).build())
